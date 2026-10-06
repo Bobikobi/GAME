@@ -1,0 +1,46 @@
+{
+  "$schema": "../../../schema/json/treasure.schema.json",
+  "format": 1,
+  "type": "treasure",
+  "id": "core/ruins-deep",
+  "title": "Deep ruins",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/stone-idol",
+      "name": "Stone idol",
+      "description": "Small, heavy, and older than the town.",
+      "kind": "treasure",
+      "rarity": "rare",
+      "sprite": "core/base-kit:items/stone-idol"
+    }
+  ],
+  "dig": {
+    "hint": "Something older rests deeper in.",
+    "active_ms": 7000,
+    "respawn_ms": 300000,
+    "count": 2,
+    "tool": "trowel",
+    "level": 2,
+    "finds": [
+      {
+        "item": "core/old-coin",
+        "chance_pct": 30,
+        "share_pct": 45
+      },
+      {
+        "item": "core/stone-idol",
+        "chance_pct": 5,
+        "share_pct": 40
+      },
+      {
+        "item": "core/pottery-shard",
+        "chance_pct": 20,
+        "share_pct": 15
+      }
+    ],
+    "place": {
+      "slot": "core/ruins-deep"
+    }
+  }
+}

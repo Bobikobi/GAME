@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../schema/json/quest.schema.json",
+  "format": 1,
+  "type": "quest",
+  "id": "core/first-fire",
+  "title": "A fire and a meal",
+  "creator": "core",
+  "quest": {
+    "summary": "Gather branches, build a campfire across the river, and cook berry mash.",
+    "requires": [
+      "core/fix-the-bridge"
+    ],
+    "steps": [
+      {
+        "kind": "build",
+        "camp": "core/campfire"
+      },
+      {
+        "kind": "make",
+        "recipe": "core/berry-mash"
+      }
+    ],
+    "reward": {
+      "rep": 0
+    }
+  }
+}

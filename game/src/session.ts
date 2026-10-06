@@ -1,0 +1,246 @@
+/**
+ * One player's game in this browser: the kernel state, the clock and the
+ * save. The kernel decides everything; this class only feeds it actions with
+ * the current tick and remembers the result.
+ *
+ * The tick is game time in ms. It runs while the world is on screen and
+ * stops while a menu or a dialogue is open, so reading never costs satiety.
+ */
+import {
+  type Action,
+  type Bundle,
+  type GameEvent,
+  KERNEL_VERSION,
+  type State,
+  makeWalkable,
+  newState,
+  serialize,
+  step,
+} from '@game/kernel';
+import { SAVE_KEY } from './config';
+
+export type Facing = 'down' | 'up' | 'left' | 'right';
+export interface LogEntry {
+  a: Action;
+  tick: number;
+}
+
+interface SaveFile {
+  v: 1;
+  kernel: string;
+  content: string;
+  tick: number;
+  /** canonical text of the kernel state (rule R3) */
+  state: string;
+  pos: [number, number];
+  facing: Facing;
+  /** the last actions, attached to bug reports */
+  tail: LogEntry[];
+}
+
+type Listener = (payload: never) => void;
+export interface SessionEvents {
+  /** an action started that keeps the player busy for `ms` */
+  busy: { verb: string; ms: number };
+  /** what an action produced, shown once the player is free again */
+  events: GameEvent[];
+  /** the state changed: redraw what depends on it */
+  change: undefined;
+}
+
+const TAIL = 40;
+
+export class Session {
+  readonly bundle: Bundle;
+  state: State;
+  tick = 0;
+  pos: [number, number];
+  facing: Facing = 'down';
+  tail: LogEntry[] = [];
+  /** set when the save was made with other content and had to be adapted */
+  adapted = false;
+  private pauses = 0;
+  private deferred: GameEvent[] = [];
+  private listeners = new Map<keyof SessionEvents, Set<Listener>>();
+  private sinceSave = 0;
+
+  private constructor(bundle: Bundle, state: State) {
+    this.bundle = bundle;
+    this.state = state;
+    this.pos = [state.player.at[0], state.player.at[1]];
+  }
+
+  static fresh(bundle: Bundle): Session {
+    const seed = new Uint32Array(1);
+    crypto.getRandomValues(seed);
+    return new Session(bundle, newState(bundle, seed[0] ?? 1));
+  }
+
+  static hasSave(): boolean {
+    return readSave() !== undefined;
+  }
+
+  static restore(bundle: Bundle): Session | undefined {
+    const file = readSave();
+    if (!file) return undefined;
+    let state: State;
+    try {
+      state = JSON.parse(file.state) as State;
+    } catch {
+      return undefined;
+    }
+    const session = new Session(bundle, state);
+    if (state.content !== bundle.tag) {
+      // a new version of the world was published: keep what still exists
+      if (!adapt(bundle, state)) return undefined;
+      session.adapted = true;
+    }
+    session.tick = Math.max(file.tick, state.tick, state.player.busyUntil);
+    session.facing = file.facing;
+    session.tail = file.tail.slice(-TAIL);
+    const walkable = makeWalkable(bundle);
+    const [x, y] = file.pos;
+    session.pos = walkable(x, y, state.player) ? [x, y] : [state.player.at[0], state.player.at[1]];
+    if (!walkable(session.pos[0], session.pos[1], state.player)) session.pos = [bundle.map.spawn.x, bundle.map.spawn.y];
+    return session;
+  }
+
+  static erase(): void {
+    try {
+      localStorage.removeItem(SAVE_KEY);
+    } catch {
+      // storage may be blocked; nothing to erase then
+    }
+  }
+
+  get started(): boolean {
+    return this.state.player.starter !== '';
+  }
+
+  get busy(): boolean {
+    return this.tick < this.state.player.busyUntil;
+  }
+
+  get paused(): boolean {
+    return this.pauses > 0;
+  }
+
+  pause(): void {
+    this.pauses++;
+  }
+
+  resume(): void {
+    this.pauses = Math.max(0, this.pauses - 1);
+  }
+
+  on<K extends keyof SessionEvents>(name: K, fn: (payload: SessionEvents[K]) => void): () => void {
+    let set = this.listeners.get(name);
+    if (!set) {
+      set = new Set();
+      this.listeners.set(name, set);
+    }
+    set.add(fn as Listener);
+    return () => set.delete(fn as Listener);
+  }
+
+  private emit<K extends keyof SessionEvents>(name: K, payload: SessionEvents[K]): void {
+    for (const fn of this.listeners.get(name) ?? []) (fn as (p: SessionEvents[K]) => void)(payload);
+  }
+
+  /** Called every frame with real elapsed ms. */
+  advance(dt: number): void {
+    if (!this.started || this.paused) return;
+    // a long frame (tab switch, debugger) never fast-forwards the world
+    this.tick += Math.max(0, Math.min(250, Math.round(dt)));
+    if (this.deferred.length > 0 && !this.busy) {
+      const events = this.deferred;
+      this.deferred = [];
+      this.emit('events', events);
+      this.emit('change', undefined);
+    }
+    this.sinceSave += dt;
+    if (this.sinceSave > 5000) this.save();
+  }
+
+  /** Ask the kernel without changing anything: would this action be accepted? */
+  check(action: Action): string | undefined {
+    const r = step(this.bundle, this.state, action, this.tick);
+    return r.ok ? undefined : r.error;
+  }
+
+  act(action: Action): { ok: true; events: GameEvent[] } | { ok: false; error: string } {
+    const r = step(this.bundle, this.state, action, this.tick);
+    if (!r.ok) return r;
+    this.state = r.state;
+    this.tail.push({ a: action, tick: this.tick });
+    if (this.tail.length > TAIL) this.tail.splice(0, this.tail.length - TAIL);
+    const busy = r.events.find((e) => e.e === 'busy');
+    if (busy && busy.e === 'busy') {
+      this.deferred.push(...r.events.filter((e) => e.e !== 'busy'));
+      this.emit('busy', { verb: busy.verb, ms: busy.ms });
+    } else {
+      this.emit('events', r.events);
+      this.emit('change', undefined);
+    }
+    this.save();
+    return { ok: true, events: r.events };
+  }
+
+  save(): void {
+    this.sinceSave = 0;
+    if (!this.started) return;
+    const file: SaveFile = {
+      v: 1,
+      kernel: KERNEL_VERSION,
+      content: this.bundle.tag,
+      tick: this.tick,
+      state: serialize(this.state),
+      pos: this.pos,
+      facing: this.facing,
+      tail: this.tail,
+    };
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(file));
+    } catch {
+      // private mode or full storage: the game still plays, it just will not resume
+    }
+  }
+}
+
+function readSave(): SaveFile | undefined {
+  try {
+    const text = localStorage.getItem(SAVE_KEY);
+    if (!text) return undefined;
+    const file = JSON.parse(text) as SaveFile;
+    return file.v === 1 && typeof file.state === 'string' ? file : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Fit a save made with older content to the current bundle: drop what no
+ * longer exists and keep the rest. Returns false when the character itself
+ * is gone and the save cannot be used.
+ */
+function adapt(bundle: Bundle, state: State): boolean {
+  const p = state.player;
+  if (p.starter !== '' && !bundle.starters[p.starter]) return false;
+  const keepKeys = <T>(record: Record<string, T>, known: Record<string, unknown>): Record<string, T> =>
+    Object.fromEntries(Object.entries(record).filter(([k]) => k in known));
+  p.bag = keepKeys(p.bag, bundle.items);
+  p.wear = keepKeys(p.wear, bundle.items);
+  p.made = keepKeys(p.made, bundle.recipes);
+  p.quests = keepKeys(p.quests, bundle.quests);
+  p.rep = keepKeys(p.rep, bundle.npcs);
+  p.xp = keepKeys(p.xp, bundle.professions);
+  p.journal = p.journal.filter((id) => id in bundle.items);
+  p.recipes = p.recipes.filter((id) => id in bundle.recipes);
+  p.restored = p.restored.filter((id) => id in bundle.restores);
+  p.camp = p.camp.filter((id) => id in bundle.camps);
+  p.visited = p.visited.filter((id) => bundle.map.slots.some((s) => s.id === id));
+  state.nodes = keepKeys(state.nodes, bundle.instances);
+  state.content = bundle.tag;
+  state.kernel = KERNEL_VERSION;
+  return true;
+}

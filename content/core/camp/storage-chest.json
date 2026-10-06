@@ -1,0 +1,24 @@
+{
+  "$schema": "../../../schema/json/camp.schema.json",
+  "format": 1,
+  "type": "camp",
+  "id": "core/storage-chest",
+  "title": "Storage chest",
+  "creator": "core",
+  "camp": {
+    "slot": "storage",
+    "inputs": [
+      {
+        "item": "core/branch",
+        "qty": 6
+      },
+      {
+        "item": "core/stone",
+        "qty": 4
+      }
+    ],
+    "active_ms": 6000,
+    "sprite": "core/base-kit:props/chest",
+    "bag_bonus": 10
+  }
+}

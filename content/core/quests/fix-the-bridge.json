@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../schema/json/quest.schema.json",
+  "format": 1,
+  "type": "quest",
+  "id": "core/fix-the-bridge",
+  "title": "Mend the bridge",
+  "creator": "core",
+  "quest": {
+    "summary": "The bridge is broken. Gather 3 river stones and mend it.",
+    "steps": [
+      {
+        "kind": "restore",
+        "restore": "core/old-bridge"
+      }
+    ],
+    "reward": {
+      "rep": 0
+    }
+  }
+}

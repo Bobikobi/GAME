@@ -1,0 +1,315 @@
+/**
+ * Turns the loaded files into one Bundle and reports every structural
+ * problem on the way: who may write which type where, duplicate ids, and
+ * references to things that do not exist.
+ */
+import { dirname } from 'node:path';
+import {
+  type Bundle,
+  type Credit,
+  type ItemInfo,
+  type MapDef,
+  type Params,
+  type SpriteInfo,
+  canonical,
+  computeValues,
+  hashText,
+  layoutInstances,
+} from '@game/kernel';
+import { CORE_ONLY_TYPES, type ParamsBody } from '@game/schema';
+import { toRepoPath, type Issue, type Loaded } from './load';
+
+export interface Assembled {
+  bundle: Bundle | undefined;
+  issues: Issue[];
+  /** kit id -> folder (absolute) and sprite list, for the PNG checks and the copy */
+  kits: Record<string, { dir: string; rel: string; sprites: Record<string, { file: string; w: number; h: number; frames: number }>; palette?: string[] }>;
+  /** record id -> the file it came from */
+  origin: Record<string, string>;
+}
+
+type RecordKey = 'resources' | 'treasures' | 'recipes' | 'npcs' | 'quests' | 'restores' | 'camps' | 'starters' | 'professions' | 'shops';
+const KEY_OF: Record<string, RecordKey | undefined> = {
+  resource: 'resources',
+  treasure: 'treasures',
+  recipe: 'recipes',
+  npc: 'npcs',
+  quest: 'quests',
+  restore: 'restores',
+  camp: 'camps',
+  starter: 'starters',
+  profession: 'professions',
+  shop: 'shops',
+};
+const BODY_OF: Record<string, string> = {
+  resource: 'node',
+  treasure: 'dig',
+  recipe: 'recipe',
+  npc: 'npc',
+  quest: 'quest',
+  restore: 'restore',
+  camp: 'camp',
+  starter: 'starter',
+  profession: 'profession',
+  shop: 'shop',
+  params: 'params',
+  kit: 'kit',
+  map: 'map',
+};
+
+/** Which slot kinds each placed type may fill. */
+const SLOT_KINDS_FOR: Record<string, string[]> = {
+  resource: ['resource'],
+  treasure: ['ruin'],
+  npc: ['npc'],
+  restore: ['restore', 'building'],
+};
+
+export function flattenParams(p: ParamsBody): Params {
+  return {
+    k_permille: p.k_permille.value,
+    r_mg_per_value_ms: p.r_mg_per_value_ms.value,
+    t_min_ms: p.t_min_ms.value,
+    max_action_ms: p.max_action_ms.value,
+    effort_permille: {
+      easy: p.effort_permille.easy.value,
+      medium: p.effort_permille.medium.value,
+      craft: p.effort_permille.craft.value,
+      hard: p.effort_permille.hard.value,
+    },
+    power_cap_permille: [...p.power_cap_permille],
+    rarity_budget_permille: p.rarity_budget_permille.value,
+    rarity_bonus_ms: { ...p.rarity_bonus_ms },
+    drift_budget_permille: p.drift_budget_permille.value,
+    satiety_cap: p.satiety_cap.value,
+    satiety_drain_per_min: p.satiety_drain_per_min.value,
+    day_length_ms: p.day_length_ms.value,
+    bag_base: p.bag_base.value,
+    starting_gold_mg: p.starting_gold_mg.value,
+  };
+}
+
+export function assemble(files: Loaded[]): Assembled {
+  const issues: Issue[] = [];
+  const err = (f: Loaded | string, where: string, message: string) =>
+    issues.push({ file: typeof f === 'string' ? f : toRepoPath(f.abs), where, message, level: 'error' });
+
+  const items: Record<string, ItemInfo> = {};
+  const records: Record<RecordKey, Record<string, unknown>> = {
+    resources: {},
+    treasures: {},
+    recipes: {},
+    npcs: {},
+    quests: {},
+    restores: {},
+    camps: {},
+    starters: {},
+    professions: {},
+    shops: {},
+  };
+  const origin: Record<string, string> = {};
+  const credits: Credit[] = [];
+  const kits: Assembled['kits'] = {};
+  let params: Params | undefined;
+  let map: MapDef | undefined;
+
+  for (const f of files) {
+    const d = f.data;
+    const file = toRepoPath(f.abs);
+    const top = f.rel.split('/')[0];
+    // where a file lives decides who may have written it
+    if (top === 'core') {
+      if (d.creator !== 'core') err(f, 'creator', 'files under content/core are written by "core"');
+    } else if (top === 'extensions') {
+      const handle = f.rel.split('/')[1];
+      if (d.creator !== handle) err(f, 'creator', `files under content/extensions/${handle}/ must have creator "${handle}"`);
+      if ((CORE_ONLY_TYPES as readonly string[]).includes(d.type)) err(f, 'type', `"${d.type}" files are part of the core and cannot be extensions`);
+    } else if (top === 'kit') {
+      if (d.type !== 'kit') err(f, 'type', 'content/kit holds kit files only');
+    } else {
+      err(f, '', 'content files go under content/core, content/extensions/<your handle>/ or content/kit');
+    }
+    if (d.type === 'kit' && top !== 'kit') err(f, 'type', 'kit files go under content/kit/<creator>/');
+    if (!d.id.startsWith(`${d.creator}/`)) err(f, 'id', `ids start with your creator handle: "${d.creator}/..."`);
+    if (origin[d.id]) err(f, 'id', `"${d.id}" is already used by ${origin[d.id]}`);
+    origin[d.id] = file;
+
+    for (const [i, item] of (d.items ?? []).entries()) {
+      if (!item.id.startsWith(`${d.creator}/`)) err(f, `items.${i}.id`, `item ids start with "${d.creator}/"`);
+      if (items[item.id]) err(f, `items.${i}.id`, `item "${item.id}" is already defined in ${items[item.id]!.file}`);
+      items[item.id] = { ...item, creator: d.creator, file };
+    }
+    credits.push({ id: d.id, type: d.type, title: d.title, creator: d.creator, file, ai_tools: d.ai_tools ?? [] });
+
+    const body = (d as unknown as Record<string, unknown>)[BODY_OF[d.type] ?? ''];
+    const meta = { id: d.id, creator: d.creator, title: d.title, file, ...(d.ai_tools ? { ai_tools: d.ai_tools } : {}) };
+    const key = KEY_OF[d.type];
+    if (key) {
+      records[key][d.id] = { ...meta, ...(body as object) };
+    } else if (d.type === 'params') {
+      if (params) err(f, '', 'there is more than one params file');
+      params = flattenParams(d.params);
+    } else if (d.type === 'map') {
+      if (map) err(f, '', 'there is more than one map file (a second region comes later)');
+      map = { ...meta, ...d.map };
+    } else if (d.type === 'kit') {
+      kits[d.id] = {
+        dir: dirname(f.abs),
+        rel: toRepoPath(dirname(f.abs)),
+        sprites: Object.fromEntries(
+          Object.entries(d.kit.sprites).map(([name, s]) => [name, { file: s.file, w: s.w, h: s.h, frames: s.frames ?? 1 }]),
+        ),
+        ...(d.kit.palette ? { palette: d.kit.palette } : {}),
+      };
+    }
+  }
+
+  if (!params) err('content/core/params.json', '', 'the params file is missing');
+  if (!map) err('content/core/map.json', '', 'the map file is missing');
+  if (!params || !map) return { bundle: undefined, issues, kits, origin };
+
+  const sprites: Record<string, SpriteInfo> = {};
+  for (const [kitId, kit] of Object.entries(kits)) {
+    for (const [name, s] of Object.entries(kit.sprites)) {
+      sprites[`${kitId}:${name}`] = { url: `kit/${kitId}/${s.file}`, w: s.w, h: s.h, frames: s.frames };
+    }
+  }
+
+  const r = records as unknown as Pick<Bundle, RecordKey>;
+  const verbs = { gather: '', dig: '', craft: '' };
+  for (const id of Object.keys(r.professions).sort()) {
+    const v = r.professions[id]!.verb;
+    if (verbs[v]) err(origin[id]!, 'profession.verb', `"${v}" is already trained by ${verbs[v]}`);
+    else verbs[v] = id;
+  }
+  for (const v of Object.keys(verbs) as (keyof typeof verbs)[]) {
+    if (!verbs[v]) err('content/core', '', `no profession trains "${v}"`);
+  }
+
+  const content = { params, items, ...r, map, sprites, verbs, credits };
+  const tag = hashText(canonical(content));
+  const instances = layoutInstances(map, r.resources, r.treasures);
+  const { values } = computeValues({ params, items, resources: r.resources, treasures: r.treasures, recipes: r.recipes });
+  const bundle: Bundle = { format: 1, tag, ...content, instances, values };
+  checkReferences(bundle, origin, issues);
+  return { bundle, issues, kits, origin };
+}
+
+function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issue[]): void {
+  const err = (id: string, where: string, message: string) =>
+    issues.push({ file: origin[id] ?? b.items[id]?.file ?? 'content', where, message, level: 'error' });
+  const item = (owner: string, where: string, id: string) => {
+    if (!b.items[id]) err(owner, where, `no item "${id}" exists`);
+  };
+  const sprite = (owner: string, where: string, ref: string) => {
+    if (!b.sprites[ref]) err(owner, where, `no sprite "${ref}" in any kit`);
+  };
+  const slotFill: Record<string, string[]> = {};
+  const place = (owner: string, type: string, slotId: string) => {
+    const slot = b.map.slots.find((s) => s.id === slotId);
+    if (!slot) return err(owner, 'place.slot', `no slot "${slotId}" on the map`);
+    const allowed = SLOT_KINDS_FOR[type] ?? [];
+    if (!allowed.includes(slot.kind)) err(owner, 'place.slot', `"${slotId}" is a ${slot.kind} slot; a ${type} needs one of: ${allowed.join(', ')}`);
+    (slotFill[slotId] ??= []).push(owner);
+  };
+
+  for (const [id, it] of Object.entries(b.items)) {
+    sprite(id, 'sprite', it.sprite);
+    if (it.fragment && !b.recipes[it.fragment.unlocks]) err(id, 'fragment.unlocks', `no recipe "${it.fragment.unlocks}"`);
+    if (it.kind === 'food' && !it.food) err(id, 'food', 'a food item needs "food": { "satiety": n }');
+    if (it.kind === 'tool' && !it.tool) err(id, 'tool', 'a tool item needs "tool": { kind, tier, uses }');
+    if (it.kind === 'fragment' && !it.fragment) err(id, 'fragment', 'a fragment item needs "fragment": { "unlocks": recipe id }');
+  }
+  for (const [id, res] of Object.entries(b.resources)) {
+    item(id, 'node.output', res.output);
+    sprite(id, 'node.sprite', res.sprite);
+    if (res.sprite_empty) sprite(id, 'node.sprite_empty', res.sprite_empty);
+    place(id, 'resource', res.place.slot);
+  }
+  for (const [id, t] of Object.entries(b.treasures)) {
+    t.finds.forEach((f, i) => item(id, `dig.finds.${i}.item`, f.item));
+    const chance = t.finds.reduce((n, f) => n + f.chance_pct, 0);
+    if (chance > 100) err(id, 'dig.finds', `chances add up to ${chance}%, at most 100%`);
+    place(id, 'treasure', t.place.slot);
+  }
+  for (const [id, c] of Object.entries(b.recipes)) {
+    c.inputs.forEach((s, i) => item(id, `recipe.inputs.${i}.item`, s.item));
+    c.outputs.forEach((s, i) => item(id, `recipe.outputs.${i}.item`, s.item));
+  }
+  for (const [id, n] of Object.entries(b.npcs)) {
+    sprite(id, 'npc.sprite', n.sprite);
+    place(id, 'npc', n.place.slot);
+    if (n.shop && !b.shops[n.shop]) err(id, 'npc.shop', `no shop "${n.shop}"`);
+  }
+  for (const [id, s] of Object.entries(b.shops)) s.sells.forEach((o, i) => item(id, `shop.sells.${i}.item`, o.item));
+  for (const [id, q] of Object.entries(b.quests)) {
+    if (q.giver && !b.npcs[q.giver]) err(id, 'quest.giver', `no npc "${q.giver}"`);
+    (q.requires ?? []).forEach((r, i) => {
+      if (!b.quests[r]) err(id, `quest.requires.${i}`, `no quest "${r}"`);
+    });
+    q.steps.forEach((st, i) => {
+      const w = `quest.steps.${i}`;
+      if (st.kind === 'bring') item(id, w, st.item);
+      if (st.kind === 'make' && !b.recipes[st.recipe]) err(id, w, `no recipe "${st.recipe}"`);
+      if (st.kind === 'restore' && !b.restores[st.restore]) err(id, w, `no restore "${st.restore}"`);
+      if (st.kind === 'build' && !b.camps[st.camp]) err(id, w, `no camp part "${st.camp}"`);
+      if (st.kind === 'visit' && !b.map.slots.some((s) => s.id === st.slot)) err(id, w, `no slot "${st.slot}"`);
+    });
+    (q.reward.items ?? []).forEach((s, i) => item(id, `quest.reward.items.${i}`, s.item));
+    (q.reward.recipes ?? []).forEach((rid, i) => {
+      if (!b.recipes[rid]) err(id, `quest.reward.recipes.${i}`, `no recipe "${rid}"`);
+    });
+  }
+  for (const [id, r] of Object.entries(b.restores)) {
+    r.inputs.forEach((s, i) => item(id, `restore.inputs.${i}.item`, s.item));
+    sprite(id, 'restore.before', r.before);
+    sprite(id, 'restore.after', r.after);
+    place(id, 'restore', r.place.slot);
+  }
+  for (const [id, c] of Object.entries(b.camps)) {
+    c.inputs.forEach((s, i) => item(id, `camp.inputs.${i}.item`, s.item));
+    sprite(id, 'camp.sprite', c.sprite);
+  }
+  const totals = Object.entries(b.starters).map(([id, s]) => [id, Object.values(s.attributes).reduce((n, v) => n + v, 0)] as const);
+  for (const [id, total] of totals) {
+    sprite(id, 'starter.sprite', b.starters[id]!.sprite);
+    if (total !== STARTER_POINTS) err(id, 'starter.attributes', `attributes add up to ${total}; every starter has exactly ${STARTER_POINTS}`);
+  }
+  for (const [slotId, owners] of Object.entries(slotFill)) {
+    if (owners.length > 1) {
+      for (const owner of owners) err(owner, 'place.slot', `slot "${slotId}" is taken by more than one extension: ${owners.join(', ')}`);
+    }
+  }
+  checkMap(b, origin, issues);
+}
+
+/** Every starter gets the same number of attribute points: different, never better. */
+export const STARTER_POINTS = 6;
+
+function checkMap(b: Bundle, origin: Record<string, string>, issues: Issue[]): void {
+  const m = b.map;
+  const file = origin[m.id] ?? 'content/core/map.json';
+  const err = (where: string, message: string) => issues.push({ file, where, message, level: 'error' });
+  if (m.ground.length !== m.height) err('map.ground', `has ${m.ground.length} rows, the map is ${m.height} high`);
+  m.ground.forEach((row, y) => {
+    if (row.length !== m.width) err(`map.ground.${y}`, `row is ${row.length} wide, the map is ${m.width} wide`);
+    for (const ch of new Set(row)) if (!m.legend[ch]) err(`map.ground.${y}`, `"${ch}" is not in the legend`);
+  });
+  for (const [ch, tile] of Object.entries(m.legend)) {
+    if (!b.sprites[tile.sprite]) err(`map.legend.${ch}`, `no sprite "${tile.sprite}"`);
+  }
+  m.props.forEach((p, i) => {
+    if (!b.sprites[p.sprite]) err(`map.props.${i}`, `no sprite "${p.sprite}"`);
+    if (p.x + p.w > m.width || p.y + p.h > m.height) err(`map.props.${i}`, 'reaches past the edge of the map');
+    if (p.sign && !m.slots.some((s) => s.id === p.sign)) err(`map.props.${i}.sign`, `no slot "${p.sign}"`);
+  });
+  const seen = new Set<string>();
+  m.slots.forEach((s, i) => {
+    if (seen.has(s.id)) err(`map.slots.${i}`, `slot id "${s.id}" is used twice`);
+    seen.add(s.id);
+    if (s.x + s.w > m.width || s.y + s.h > m.height) err(`map.slots.${i}`, 'reaches past the edge of the map');
+  });
+  if (m.spawn.x >= m.width || m.spawn.y >= m.height) err('map.spawn', 'is outside the map');
+  const row = m.ground[m.spawn.y] ?? '';
+  if (m.legend[row[m.spawn.x] ?? '']?.solid) err('map.spawn', 'is on a solid tile');
+}

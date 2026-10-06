@@ -1,0 +1,26 @@
+{
+  "$schema": "../../../schema/json/quest.schema.json",
+  "format": 1,
+  "type": "quest",
+  "id": "core/a-coin-for-maru",
+  "title": "An old coin",
+  "creator": "core",
+  "quest": {
+    "giver": "core/elder",
+    "summary": "Elder Maru wants an old coin from the ruins to the south-east.",
+    "requires": [
+      "core/three-fruits"
+    ],
+    "steps": [
+      {
+        "kind": "bring",
+        "item": "core/old-coin",
+        "qty": 1
+      }
+    ],
+    "reward": {
+      "rep": 20,
+      "gold_mg": 20000
+    }
+  }
+}

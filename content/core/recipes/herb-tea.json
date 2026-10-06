@@ -1,0 +1,40 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/herb-tea",
+  "title": "Herb tea",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/herb-tea",
+      "name": "Herb tea",
+      "description": "The elder swears by it.",
+      "kind": "food",
+      "rarity": "common",
+      "sprite": "core/base-kit:items/herb-tea",
+      "food": {
+        "satiety": 10
+      }
+    }
+  ],
+  "recipe": {
+    "station": "fire",
+    "active_ms": 3000,
+    "level": 1,
+    "inputs": [
+      {
+        "item": "core/herb",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/herb-tea",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "found"
+  }
+}

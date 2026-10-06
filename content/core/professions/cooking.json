@@ -1,0 +1,38 @@
+{
+  "$schema": "../../../schema/json/profession.schema.json",
+  "format": 1,
+  "type": "profession",
+  "id": "core/cooking",
+  "title": "Cooking",
+  "creator": "core",
+  "profession": {
+    "name": "Cooking",
+    "verb": "craft",
+    "xp_levels": [
+      4,
+      40,
+      150,
+      360,
+      720,
+      1400,
+      2400,
+      3800
+    ],
+    "techniques": [
+      {
+        "level": 2,
+        "name": "Practiced",
+        "effect": "craft_speed_pct",
+        "value": 25,
+        "text": "Cooking is 25% faster."
+      },
+      {
+        "level": 4,
+        "name": "Hearty",
+        "effect": "meal_fill_pct",
+        "value": 25,
+        "text": "Meals fill 25% more."
+      }
+    ]
+  }
+}

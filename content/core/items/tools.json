@@ -1,0 +1,37 @@
+{
+  "$schema": "../../../schema/json/items.schema.json",
+  "format": 1,
+  "type": "items",
+  "id": "core/tools",
+  "title": "Tools",
+  "creator": "core",
+  "description": "Tools are sold by Pell and never bought back.",
+  "items": [
+    {
+      "id": "core/basket",
+      "name": "Basket",
+      "description": "For herbs and mushrooms. Opens foraging in the grove.",
+      "kind": "tool",
+      "rarity": "common",
+      "sprite": "core/base-kit:items/basket",
+      "tool": {
+        "kind": "basket",
+        "tier": 1,
+        "uses": 60
+      }
+    },
+    {
+      "id": "core/trowel",
+      "name": "Trowel",
+      "description": "For digging in the ruins.",
+      "kind": "tool",
+      "rarity": "common",
+      "sprite": "core/base-kit:items/trowel",
+      "tool": {
+        "kind": "trowel",
+        "tier": 1,
+        "uses": 40
+      }
+    }
+  ]
+}

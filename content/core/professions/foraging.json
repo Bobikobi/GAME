@@ -1,0 +1,38 @@
+{
+  "$schema": "../../../schema/json/profession.schema.json",
+  "format": 1,
+  "type": "profession",
+  "id": "core/foraging",
+  "title": "Foraging",
+  "creator": "core",
+  "profession": {
+    "name": "Foraging",
+    "verb": "gather",
+    "xp_levels": [
+      7,
+      60,
+      180,
+      400,
+      800,
+      1500,
+      2600,
+      4000
+    ],
+    "techniques": [
+      {
+        "level": 2,
+        "name": "Keen eye",
+        "effect": "see_ripe",
+        "value": 0,
+        "text": "Ripe plants shine from afar."
+      },
+      {
+        "level": 4,
+        "name": "Steady hands",
+        "effect": "timing_window_pct",
+        "value": 20,
+        "text": "The timing window is 20% wider."
+      }
+    ]
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "$schema": "../../../schema/json/resource.schema.json",
+  "format": 1,
+  "type": "resource",
+  "id": "core/forest-mushrooms",
+  "title": "Forest mushrooms",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/mushroom",
+      "name": "Forest mushroom",
+      "description": "Comes up in the cool hours, from evening to mid-morning.",
+      "kind": "food",
+      "rarity": "uncommon",
+      "sprite": "core/base-kit:items/mushroom",
+      "food": {
+        "satiety": 3
+      }
+    }
+  ],
+  "node": {
+    "output": "core/mushroom",
+    "yield": 2,
+    "active_ms": 3500,
+    "respawn_ms": 90000,
+    "count": 3,
+    "sprite": "core/base-kit:props/mushroom_patch",
+    "tool": "basket",
+    "level": 2,
+    "hours": [
+      18,
+      10
+    ],
+    "place": {
+      "slot": "core/forest-mushrooms"
+    }
+  }
+}

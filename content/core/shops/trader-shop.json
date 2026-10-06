@@ -1,0 +1,25 @@
+{
+  "$schema": "../../../schema/json/shop.schema.json",
+  "format": 1,
+  "type": "shop",
+  "id": "core/trader-shop",
+  "title": "Pell's stall",
+  "creator": "core",
+  "shop": {
+    "sells": [
+      {
+        "item": "core/basket",
+        "price_mg": 30000
+      },
+      {
+        "item": "core/trowel",
+        "price_mg": 30000
+      },
+      {
+        "item": "core/berry",
+        "price_mg": 5000
+      }
+    ],
+    "buys": true
+  }
+}

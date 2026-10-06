@@ -1,0 +1,29 @@
+{
+  "$schema": "../../../schema/json/quest.schema.json",
+  "format": 1,
+  "type": "quest",
+  "id": "core/three-fruits",
+  "title": "Three redberries",
+  "creator": "core",
+  "quest": {
+    "giver": "core/elder",
+    "summary": "Elder Maru asks for 3 redberries.",
+    "requires": [
+      "core/into-town"
+    ],
+    "steps": [
+      {
+        "kind": "bring",
+        "item": "core/berry",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "rep": 10,
+      "gold_mg": 30000,
+      "recipes": [
+        "core/herb-tea"
+      ]
+    }
+  }
+}

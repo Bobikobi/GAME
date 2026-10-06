@@ -1,0 +1,310 @@
+{
+  "$schema": "../../../schema/json/kit.schema.json",
+  "format": 1,
+  "type": "kit",
+  "id": "core/base-kit",
+  "title": "Base kit",
+  "creator": "core",
+  "description": "The core palette, terrain tiles, items, props and characters every extension builds from.",
+  "ai_tools": [
+    "Nano Banana (gemini-3.1-flash-image) via Antigravity",
+    "Codex: text-grid sprites in tools/src/kit/sketches.ts"
+  ],
+  "kit": {
+    "palette": [
+      "#1b1a2e",
+      "#3a3554",
+      "#5d6177",
+      "#8f94a8",
+      "#c6cad6",
+      "#f5f4ef",
+      "#1f3d2b",
+      "#2e6b3b",
+      "#4c9a3f",
+      "#84c450",
+      "#c8e88a",
+      "#3d2618",
+      "#6e4226",
+      "#9e6b3c",
+      "#c99a5e",
+      "#ebd3a2",
+      "#172a52",
+      "#275a99",
+      "#3f8fd1",
+      "#7cc4ec",
+      "#c4ecf8",
+      "#5e1c28",
+      "#a8302f",
+      "#e2533f",
+      "#f6a07f",
+      "#b8661f",
+      "#eda83a",
+      "#f8de62",
+      "#d38c66",
+      "#f3c7a0",
+      "#5b3373",
+      "#9a5bb0"
+    ],
+    "sprites": {
+      "chars/elder": {
+        "file": "chars/elder.png",
+        "w": 16,
+        "h": 24
+      },
+      "chars/player_down": {
+        "file": "chars/player_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/player_left": {
+        "file": "chars/player_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/player_up": {
+        "file": "chars/player_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/trader": {
+        "file": "chars/trader.png",
+        "w": 16,
+        "h": 24
+      },
+      "items/basket": {
+        "file": "items/basket.png",
+        "w": 16,
+        "h": 16
+      },
+      "items/berry": {
+        "file": "items/berry.png",
+        "w": 16,
+        "h": 16
+      },
+      "items/berry-mash": {
+        "file": "items/berry-mash.png",
+        "w": 16,
+        "h": 16
+      },
+      "items/branch": {
+        "file": "items/branch.png",
+        "w": 16,
+        "h": 16
+      },
+      "items/herb": {
+        "file": "items/herb.png",
+        "w": 16,
+        "h": 16
+      },
+      "items/herb-stew": {
+        "file": "items/herb-stew.png",
+        "w": 16,
+        "h": 16
+      },
+      "items/herb-tea": {
+        "file": "items/herb-tea.png",
+        "w": 16,
+        "h": 16
+      },
+      "items/mushroom": {
+        "file": "items/mushroom.png",
+        "w": 16,
+        "h": 16
+      },
+      "items/mushroom-skewer": {
+        "file": "items/mushroom-skewer.png",
+        "w": 16,
+        "h": 16
+      },
+      "items/old-coin": {
+        "file": "items/old-coin.png",
+        "w": 16,
+        "h": 16
+      },
+      "items/pottery-shard": {
+        "file": "items/pottery-shard.png",
+        "w": 16,
+        "h": 16
+      },
+      "items/stew-scrap": {
+        "file": "items/stew-scrap.png",
+        "w": 16,
+        "h": 16
+      },
+      "items/stone": {
+        "file": "items/stone.png",
+        "w": 16,
+        "h": 16
+      },
+      "items/stone-idol": {
+        "file": "items/stone-idol.png",
+        "w": 16,
+        "h": 16
+      },
+      "items/trowel": {
+        "file": "items/trowel.png",
+        "w": 16,
+        "h": 16
+      },
+      "props/bush_berry": {
+        "file": "props/bush_berry.png",
+        "w": 16,
+        "h": 16
+      },
+      "props/bush_empty": {
+        "file": "props/bush_empty.png",
+        "w": 16,
+        "h": 16
+      },
+      "props/campfire_lit": {
+        "file": "props/campfire_lit.png",
+        "w": 16,
+        "h": 16
+      },
+      "props/campfire_unlit": {
+        "file": "props/campfire_unlit.png",
+        "w": 16,
+        "h": 16
+      },
+      "props/chest": {
+        "file": "props/chest.png",
+        "w": 16,
+        "h": 16
+      },
+      "props/dig_spot": {
+        "file": "props/dig_spot.png",
+        "w": 16,
+        "h": 16
+      },
+      "props/fallen_branches": {
+        "file": "props/fallen_branches.png",
+        "w": 16,
+        "h": 16
+      },
+      "props/flowers": {
+        "file": "props/flowers.png",
+        "w": 16,
+        "h": 16
+      },
+      "props/fog": {
+        "file": "props/fog.png",
+        "w": 32,
+        "h": 32
+      },
+      "props/herb_plant": {
+        "file": "props/herb_plant.png",
+        "w": 16,
+        "h": 16
+      },
+      "props/house_small": {
+        "file": "props/house_small.png",
+        "w": 48,
+        "h": 48
+      },
+      "props/market_stall": {
+        "file": "props/market_stall.png",
+        "w": 32,
+        "h": 32
+      },
+      "props/mushroom_patch": {
+        "file": "props/mushroom_patch.png",
+        "w": 16,
+        "h": 16
+      },
+      "props/rock_stones": {
+        "file": "props/rock_stones.png",
+        "w": 16,
+        "h": 16
+      },
+      "props/ruin_pillar": {
+        "file": "props/ruin_pillar.png",
+        "w": 16,
+        "h": 32
+      },
+      "props/shelf": {
+        "file": "props/shelf.png",
+        "w": 16,
+        "h": 16
+      },
+      "props/sign": {
+        "file": "props/sign.png",
+        "w": 16,
+        "h": 16
+      },
+      "props/tree_oak": {
+        "file": "props/tree_oak.png",
+        "w": 32,
+        "h": 32
+      },
+      "props/well_old": {
+        "file": "props/well_old.png",
+        "w": 32,
+        "h": 32
+      },
+      "tiles/bridge": {
+        "file": "tiles/bridge.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/bridge_broken": {
+        "file": "tiles/bridge_broken.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/cobble": {
+        "file": "tiles/cobble.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/forest": {
+        "file": "tiles/forest.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/grass": {
+        "file": "tiles/grass.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/grass_flowers": {
+        "file": "tiles/grass_flowers.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/grove": {
+        "file": "tiles/grove.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/path": {
+        "file": "tiles/path.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/rubble": {
+        "file": "tiles/rubble.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/ruin_floor": {
+        "file": "tiles/ruin_floor.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/sand": {
+        "file": "tiles/sand.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/water": {
+        "file": "tiles/water.png",
+        "w": 16,
+        "h": 16,
+        "frames": 2
+      }
+    }
+  }
+}

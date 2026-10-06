@@ -1,0 +1,24 @@
+{
+  "$schema": "../../../schema/json/restore.schema.json",
+  "format": 1,
+  "type": "restore",
+  "id": "core/old-bridge",
+  "title": "Old bridge",
+  "creator": "core",
+  "restore": {
+    "place": {
+      "slot": "core/old-bridge"
+    },
+    "before": "core/base-kit:tiles/bridge_broken",
+    "after": "core/base-kit:tiles/bridge",
+    "inputs": [
+      {
+        "item": "core/stone",
+        "qty": 3
+      }
+    ],
+    "active_ms": 4000,
+    "passable": true,
+    "sign": "Bridge"
+  }
+}

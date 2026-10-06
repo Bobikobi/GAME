@@ -1,0 +1,31 @@
+# Contributing
+
+There are two ways to help: add something to the valley (content), or improve the game itself (code). Most people start with content.
+
+## Adding content
+
+1. Follow [Add a fruit in 10 minutes](docs/creators/README.md). It walks through a whole extension, from copying the template to opening a pull request.
+2. Your files live in `content/extensions/<your-handle>/`, and art in `content/kit/<your-handle>/`. Ids start with your handle.
+3. Run `pnpm check` until it reports no errors. CI runs the same check on every pull request and shows its report on the run's summary page.
+4. Open a pull request. Fill in the author checklist from the template.
+
+### How a pull request is merged
+
+- The check is green, and the opening still plays in Chrome (CI does this too).
+- Three reviewers approve, each going through the reviewer checklist in the pull request.
+- One extension per slot. When two proposals compete for the same request or slot, both stay open until the vote on the request decides.
+
+### Requests and open calls
+
+Anyone can ask for something with the "Request for the valley" issue form. Others vote with a 👍 on the first post. A request with enough votes is labelled **open call**: an invitation to every creator to build it.
+
+## Changing the game
+
+- `kernel/` is the simulation. It must stay pure: no clocks, timers, randomness, floats or I/O. ESLint enforces this, and `kernel/test/invariants.test.ts` replays thousands of random actions to check it.
+- A change to any value anchor (`content/values.lock.json`) is a core maintainer decision: run `pnpm values` and say why in the pull request.
+- Write down a design choice, or an approach that did not work, in [DECISIONS.md](DECISIONS.md).
+- Before a pull request: `pnpm verify` and `pnpm e2e`.
+
+## Conduct
+
+Be kind, assume good intent, and keep the valley a place for all ages. Reviewers may close anything that is not.

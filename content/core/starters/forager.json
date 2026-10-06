@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../schema/json/starter.schema.json",
+  "format": 1,
+  "type": "starter",
+  "id": "core/forager",
+  "title": "Forager",
+  "creator": "core",
+  "starter": {
+    "name": "Forager",
+    "summary": "Quick hands and a big bag. At home where things grow.",
+    "attributes": {
+      "carry": 2,
+      "senses": 1,
+      "agility": 2,
+      "luck": 0,
+      "stamina": 1
+    },
+    "sprite": "core/base-kit:chars/player_down"
+  }
+}

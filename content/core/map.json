@@ -1,0 +1,609 @@
+{
+  "$schema": "../../schema/json/map.schema.json",
+  "format": 1,
+  "type": "map",
+  "id": "core/world",
+  "title": "The valley",
+  "creator": "core",
+  "description": "The first region: a river, a town, a grove and the ruins.",
+  "map": {
+    "width": 48,
+    "height": 36,
+    "legend": {
+      ".": {
+        "sprite": "core/base-kit:tiles/grass",
+        "solid": false,
+        "tag": "meadow"
+      },
+      ",": {
+        "sprite": "core/base-kit:tiles/grass_flowers",
+        "solid": false,
+        "tag": "meadow"
+      },
+      "\"": {
+        "sprite": "core/base-kit:tiles/grove",
+        "solid": false,
+        "tag": "grove"
+      },
+      "T": {
+        "sprite": "core/base-kit:tiles/forest",
+        "solid": true,
+        "tag": "grove"
+      },
+      "~": {
+        "sprite": "core/base-kit:tiles/water",
+        "solid": true,
+        "tag": "water"
+      },
+      "_": {
+        "sprite": "core/base-kit:tiles/sand",
+        "solid": false,
+        "tag": "riverbank"
+      },
+      ":": {
+        "sprite": "core/base-kit:tiles/path",
+        "solid": false,
+        "tag": "path"
+      },
+      "=": {
+        "sprite": "core/base-kit:tiles/cobble",
+        "solid": false,
+        "tag": "town"
+      },
+      "#": {
+        "sprite": "core/base-kit:tiles/ruin_floor",
+        "solid": false,
+        "tag": "ruin"
+      },
+      "%": {
+        "sprite": "core/base-kit:tiles/rubble",
+        "solid": true,
+        "tag": "ruin"
+      }
+    },
+    "ground": [
+      "TTTTTTTTTTTTT~~~TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+      "TTTTTTTTTTTTT~~~TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+      "TTTTTT......_~~~_......................,TTTTTTTT",
+      "TTTTTT......_~~~_.....================..TTTTTTTT",
+      "TTTTTT...,.._~~~_.....================......TTTT",
+      "TT.........._~~~_,....================..,...TTTT",
+      "TT,........._~~~_.....================......TTTT",
+      "TT........,._~~~_.....================......TTTT",
+      "TT.........._~~~_.,...================...,..TTTT",
+      "TT.,........_~~~_.....================......TTTT",
+      "TT.........,_~~~_.....================........TT",
+      "TT.........._~~~_..,..================....,...TT",
+      "TT..,....____~~~_.....================........TT",
+      "TT.......____~~~_.....======:=========........TT",
+      "TT.......____~~~_...,.......:..............,..TT",
+      "TT...,...____~~~_...........:.................TT",
+      "TT.......____~~~_...........:.......,.........TT",
+      "TT.:::::::::_~~~_:::::::::::::::::::::......,.TT",
+      "TT....,..____~~~_............,.......:........TT",
+      "TT.......____~~~_...............%%##########%.TT",
+      "TT.......____~~~_.....,.........############%,TT",
+      "TT.....,.____~~~_.............,.#############.TT",
+      "TT.........._~~~_...............#############.TT",
+      "TT.........._~~~_......,........#############.TT",
+      "TT......,..._~~~_..............,#############.TT",
+      "TT.........._~~~_\"\"\"\"\"\"\"\"\"\"\"\"\"\".######%%#####.TT",
+      "TT.........._~~~_\"T\"\"\"\"\"\"\"\"\"\"\"T.#############.TT",
+      "TT.......,.._~~~_\"\"\"\"\"\"T\"\"\"\"\"\"\".#############.TT",
+      "TTTTTTT....._~~~_\"\"\"\"\"\"\"\"\"\"\"\"\"\".#############.TT",
+      "TTTTTTT....._~~~_\"\"\"\"\"\"\"\"\"\"\"\"\"\".#############.TT",
+      "TTTTTTT...,._~~~_\"\"\"\"\"\"\"\"\"\"\"\"\"\".#############.TT",
+      "TTTTTTT....._~~~_TTTT\"\"\"\"\"\"\"\"\"\".%############.TT",
+      "TTTTTTT....._~~~_TTTT\"\"\"\"\"\"\"TTTT#%#########%%.TT",
+      "TTTTTTT....,_~~~_TTTT\"\"\"TTT\"TTTT..,...........TT",
+      "TTTTTTTTTTTTT~~~TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+      "TTTTTTTTTTTTT~~~TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+    ],
+    "props": [
+      {
+        "sprite": "core/base-kit:props/house_small",
+        "x": 23,
+        "y": 5,
+        "w": 3,
+        "h": 2,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/house_small",
+        "x": 31,
+        "y": 5,
+        "w": 3,
+        "h": 2,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/house_small",
+        "x": 23,
+        "y": 10,
+        "w": 3,
+        "h": 2,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/well_old",
+        "x": 29,
+        "y": 9,
+        "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/market_stall",
+        "x": 34,
+        "y": 10,
+        "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/tree_oak",
+        "x": 4,
+        "y": 8,
+        "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/tree_oak",
+        "x": 7,
+        "y": 25,
+        "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/tree_oak",
+        "x": 3,
+        "y": 13,
+        "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/tree_oak",
+        "x": 20,
+        "y": 9,
+        "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/tree_oak",
+        "x": 38,
+        "y": 15,
+        "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/tree_oak",
+        "x": 10,
+        "y": 4,
+        "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/tree_oak",
+        "x": 42,
+        "y": 14,
+        "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/tree_oak",
+        "x": 19,
+        "y": 3,
+        "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 34,
+        "y": 21,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 42,
+        "y": 21,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 34,
+        "y": 29,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 42,
+        "y": 29,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 37,
+        "y": 24,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/flowers",
+        "x": 6,
+        "y": 20,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/flowers",
+        "x": 25,
+        "y": 15,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/flowers",
+        "x": 33,
+        "y": 15,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/flowers",
+        "x": 10,
+        "y": 9,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/sign",
+        "x": 8,
+        "y": 13,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "sign": "core/river-stones"
+      },
+      {
+        "sprite": "core/base-kit:props/sign",
+        "x": 12,
+        "y": 16,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "sign": "core/old-bridge"
+      },
+      {
+        "sprite": "core/base-kit:props/sign",
+        "x": 17,
+        "y": 19,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "sign": "core/camp"
+      },
+      {
+        "sprite": "core/base-kit:props/sign",
+        "x": 17,
+        "y": 16,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "sign": "core/berry-bushes"
+      },
+      {
+        "sprite": "core/base-kit:props/sign",
+        "x": 27,
+        "y": 19,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "sign": "core/fallen-branches"
+      },
+      {
+        "sprite": "core/base-kit:props/sign",
+        "x": 19,
+        "y": 25,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "sign": "core/wild-herbs"
+      },
+      {
+        "sprite": "core/base-kit:props/sign",
+        "x": 29,
+        "y": 26,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "sign": "core/forest-mushrooms"
+      },
+      {
+        "sprite": "core/base-kit:props/sign",
+        "x": 29,
+        "y": 4,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "sign": "core/elder-house"
+      },
+      {
+        "sprite": "core/base-kit:props/sign",
+        "x": 37,
+        "y": 11,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "sign": "core/trader-stall"
+      },
+      {
+        "sprite": "core/base-kit:props/sign",
+        "x": 33,
+        "y": 22,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "sign": "core/ruins-gate"
+      },
+      {
+        "sprite": "core/base-kit:props/sign",
+        "x": 40,
+        "y": 25,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "sign": "core/ruins-deep"
+      },
+      {
+        "sprite": "core/base-kit:props/sign",
+        "x": 37,
+        "y": 8,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "sign": "core/town-edge"
+      },
+      {
+        "sprite": "core/base-kit:props/sign",
+        "x": 33,
+        "y": 12,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "sign": "core/town-corner"
+      },
+      {
+        "sprite": "core/base-kit:props/sign",
+        "x": 34,
+        "y": 28,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "sign": "core/ruins-hall"
+      },
+      {
+        "sprite": "core/base-kit:props/sign",
+        "x": 39,
+        "y": 20,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "sign": "core/ruins-garden"
+      },
+      {
+        "sprite": "core/base-kit:props/sign",
+        "x": 8,
+        "y": 21,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "sign": "core/west-glade"
+      },
+      {
+        "sprite": "core/base-kit:props/sign",
+        "x": 28,
+        "y": 31,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "sign": "core/grove-clearing"
+      }
+    ],
+    "spawn": {
+      "x": 6,
+      "y": 17
+    },
+    "slots": [
+      {
+        "id": "core/river-stones",
+        "kind": "resource",
+        "x": 9,
+        "y": 13,
+        "w": 3,
+        "h": 6,
+        "tag": "riverbank"
+      },
+      {
+        "id": "core/old-bridge",
+        "kind": "restore",
+        "x": 13,
+        "y": 17,
+        "w": 3,
+        "h": 1,
+        "label": "Old bridge"
+      },
+      {
+        "id": "core/camp",
+        "kind": "camp",
+        "x": 18,
+        "y": 19,
+        "w": 5,
+        "h": 4,
+        "label": "Your camp"
+      },
+      {
+        "id": "core/berry-bushes",
+        "kind": "resource",
+        "x": 17,
+        "y": 12,
+        "w": 6,
+        "h": 4,
+        "tag": "meadow"
+      },
+      {
+        "id": "core/fallen-branches",
+        "kind": "resource",
+        "x": 23,
+        "y": 19,
+        "w": 4,
+        "h": 5,
+        "tag": "meadow"
+      },
+      {
+        "id": "core/wild-herbs",
+        "kind": "resource",
+        "x": 19,
+        "y": 26,
+        "w": 5,
+        "h": 4,
+        "tag": "grove"
+      },
+      {
+        "id": "core/forest-mushrooms",
+        "kind": "resource",
+        "x": 25,
+        "y": 27,
+        "w": 5,
+        "h": 4,
+        "tag": "grove"
+      },
+      {
+        "id": "core/town-square",
+        "kind": "area",
+        "x": 26,
+        "y": 7,
+        "w": 4,
+        "h": 4,
+        "tag": "town",
+        "label": "Town square"
+      },
+      {
+        "id": "core/elder-house",
+        "kind": "npc",
+        "x": 26,
+        "y": 4,
+        "w": 3,
+        "h": 3,
+        "tag": "town"
+      },
+      {
+        "id": "core/trader-stall",
+        "kind": "npc",
+        "x": 34,
+        "y": 11,
+        "w": 3,
+        "h": 1,
+        "tag": "town"
+      },
+      {
+        "id": "core/ruins-gate",
+        "kind": "ruin",
+        "x": 34,
+        "y": 22,
+        "w": 5,
+        "h": 5,
+        "tag": "ruin"
+      },
+      {
+        "id": "core/ruins-deep",
+        "kind": "ruin",
+        "x": 39,
+        "y": 26,
+        "w": 5,
+        "h": 5,
+        "tag": "ruin"
+      },
+      {
+        "id": "core/town-edge",
+        "kind": "building",
+        "x": 36,
+        "y": 4,
+        "w": 3,
+        "h": 4,
+        "tag": "town",
+        "label": "Ruined house"
+      },
+      {
+        "id": "core/town-corner",
+        "kind": "npc",
+        "x": 31,
+        "y": 11,
+        "w": 2,
+        "h": 2,
+        "tag": "town",
+        "label": "Empty corner"
+      },
+      {
+        "id": "core/ruins-hall",
+        "kind": "ruin",
+        "x": 35,
+        "y": 28,
+        "w": 4,
+        "h": 4,
+        "tag": "ruin",
+        "label": "Collapsed hall"
+      },
+      {
+        "id": "core/ruins-garden",
+        "kind": "resource",
+        "x": 40,
+        "y": 20,
+        "w": 4,
+        "h": 4,
+        "tag": "ruin",
+        "label": "Overgrown garden"
+      },
+      {
+        "id": "core/west-glade",
+        "kind": "resource",
+        "x": 3,
+        "y": 21,
+        "w": 5,
+        "h": 4,
+        "tag": "meadow",
+        "label": "Quiet glade"
+      },
+      {
+        "id": "core/grove-clearing",
+        "kind": "npc",
+        "x": 25,
+        "y": 31,
+        "w": 3,
+        "h": 2,
+        "tag": "grove",
+        "label": "Clearing"
+      }
+    ]
+  }
+}
