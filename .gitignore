@@ -1,0 +1,21 @@
+node_modules/
+dist/
+coverage/
+.vercel/
+.scratch/
+*.log
+.DS_Store
+game/src/generated/
+# copied from content/kit by pnpm bundle
+game/public/kit/
+# written by the kit importer tests
+tools/test/fixtures/kit/out/
+tools/.cache/
+# secrets never go into git
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+client_secret*.json
