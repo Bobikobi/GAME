@@ -231,9 +231,10 @@ export function itemBenefit(b: Bundle, id: string): string {
     return `${tier} · ${unlocks} · ${uses}${speed}`;
   }
   if (it.food) {
-    const sat = it.food.satiety / 1000;
-    const min = Math.round(it.food.satiety / b.params.satiety_drain_per_min);
-    return `+${sat} satiety · sustains ~${min} min of work`;
+    // food is in whole meter points; the kernel drains thousandths of a point per minute of work
+    const workMs = Math.round((it.food.satiety * 1000 * 60_000) / b.params.satiety_drain_per_min);
+    const lasts = workMs >= 60_000 ? `${Math.round(workMs / 60_000)} min` : `${Math.round(workMs / 1000)} s`;
+    return `+${it.food.satiety} food · about ${lasts} of work`;
   }
   if (it.fragment) {
     return `Unlocks recipe: ${b.recipes[it.fragment.unlocks]?.title ?? it.fragment.unlocks}`;

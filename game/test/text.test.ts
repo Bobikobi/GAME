@@ -25,3 +25,10 @@ describe('tool benefits', () => {
     expect(itemBenefit(withReeds, 'core/basket')).toContain('gathers forest mushrooms & reeds & wild herbs');
   });
 });
+
+describe('food benefits', () => {
+  test('speak in food meter points and minutes of work', () => {
+    expect(itemBenefit(bundle, 'core/berry')).toBe('+4 food · about 34 s of work');
+    expect(itemBenefit(bundle, 'core/berry-mash')).toBe('+15 food · about 2 min of work');
+  });
+});
