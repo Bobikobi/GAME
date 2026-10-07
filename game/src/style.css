@@ -310,7 +310,7 @@ body {
 
 .card.starter p {
   margin: 2px 0 6px;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--ink2);
 }
 
@@ -1019,7 +1019,7 @@ textarea {
   align-items: center;
   padding: 4px 0 6px;
   border-bottom: 2px solid var(--paper2);
-  font-size: 15px;
+  font-size: 16px;
 }
 
 .attr > .pips {
@@ -1226,9 +1226,17 @@ textarea {
   font-variant-numeric: tabular-nums;
 }
 
+/* "Look" and two tabs on one line */
 .look-toggle {
   justify-content: center;
+  align-items: center;
+  gap: 6px;
   margin: 8px 0 0;
+}
+
+.look-toggle > span {
+  margin-right: 4px;
+  color: var(--ink2);
 }
 
 .attr-name {
@@ -1304,7 +1312,7 @@ textarea {
   min-height: 44px;
   padding: 7px 8px 7px 10px;
   font: inherit;
-  font-size: 15px;
+  font-size: 16px;
   text-align: left;
   color: var(--ink);
   background: var(--cream);
