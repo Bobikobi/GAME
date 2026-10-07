@@ -1,0 +1,11 @@
+{
+  "open_call_votes": 5,
+  "approvals_to_merge": 3,
+  "required_checks": ["Check, test, build and play"],
+  "approvals_must_match_head": true,
+  "quota": { "new_creator": 1, "per_accepted": 1, "cap": 5 },
+  "vote_days": 7,
+  "min_votes_to_decide": 5,
+  "min_votes_for_percent": 10,
+  "min_account_age_days": 30
+}

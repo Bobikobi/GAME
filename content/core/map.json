@@ -295,6 +295,15 @@
         "sign": "core/elder-house"
       },
       {
+        "sprite": "core/base-kit:props/sign",
+        "x": 37,
+        "y": 8,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "sign": "core/town-edge"
+      },
+      {
         "sprite": "core/base-kit:props/standing_stone",
         "x": 7,
         "y": 15,

@@ -4,8 +4,6 @@
  * kernel would refuse.
  */
 import {
-  ATTRIBUTES,
-  type Attribute,
   KERNEL_VERSION,
   bagCapacity,
   bagUsed,
@@ -16,10 +14,11 @@ import {
 } from '@game/kernel';
 import guideText from '../../../docs/creators/README.md?raw';
 import { app } from '../app';
+import { sound } from '../audio';
 import { GAME_TITLE, REPO_URL } from '../config';
 import type { SignInfo } from '../scenes/world';
 import { Session } from '../session';
-import { ATTRIBUTE_TEXT, gold, itemBenefit, itemName, questSteps, seconds, stacks } from '../text';
+import { ATTRIBUTE_MAX, attributeEffects, gold, itemBenefit, itemName, questSteps, seconds, stacks } from '../text';
 import { say } from './dialog';
 import { button, h, sprite } from './dom';
 import { markdown } from './markdown';
@@ -208,6 +207,7 @@ export function openJournal(ui: UI, tab: JournalTab = 'tasks'): void {
   const skillsTab = (): HTMLElement => {
     const st = s.state;
     const points = skillPoints(b, st);
+    const effects = attributeEffects(b, st);
     return h(
       'div',
       null,
@@ -215,21 +215,25 @@ export function openJournal(ui: UI, tab: JournalTab = 'tasks'): void {
       h(
         'div',
         { class: 'attrs' },
-        ATTRIBUTES.map((a: Attribute) =>
-          h(
+        effects.map((fx) => {
+          const value = st.player.attrs[fx.attr];
+          const full = value >= ATTRIBUTE_MAX;
+          return h(
             'div',
             { class: 'attr' },
-            h('span', { class: 'attr-name' }, ATTRIBUTE_TEXT[a] ?? a),
-            h('span', { class: 'pips' }, Array.from({ length: 10 }, (_, i) => h('i', { class: i < st.player.attrs[a] ? 'on' : '' }))),
-            points > 0 && st.player.attrs[a] < 10
+            h('span', { class: 'attr-name' }, `${fx.name} - ${fx.what}`),
+            h('span', { class: 'pips' }, Array.from({ length: ATTRIBUTE_MAX }, (_, i) => h('i', { class: i < value ? 'on' : '' }))),
+            h('span', { class: 'muted' }, `${fx.now} -> ${full ? 'at its limit' : fx.next}`),
+            fx.note ? h('span', { class: 'muted' }, fx.note) : null,
+            points > 0 && !full
               ? button('+', () => {
-                  const r = s.act({ t: 'spend', attr: a });
+                  const r = s.act({ t: 'spend', attr: fx.attr });
                   if (!r.ok) ui.toast(r.error, 'bad');
                   render();
                 }, 'small plus')
               : null,
-          ),
-        ),
+          );
+        }),
       ),
       h('h3', null, 'Professions'),
       Object.entries(b.professions)
@@ -392,19 +396,27 @@ export function openMenu(ui: UI): void {
     p.close();
     fn();
   };
-  p.body.replaceChildren(
-    h(
-      'div',
-      { class: 'menu-list' },
-      button('Controls', go(() => openControls(ui))),
-      button('Creator guide', go(() => openGuide(ui))),
-      button('Credits', go(() => openCredits(ui))),
-      button('Report a problem', go(() => openReport(ui))),
-      button('About this demo', go(() => ui.aboutDemo())),
-      button('Start over', go(() => startOver(ui)), 'danger'),
-    ),
-    h('p', { class: 'muted version' }, `${GAME_TITLE} demo - content ${app.bundle.tag.slice(0, 8)} - kernel ${KERNEL_VERSION}`),
-  );
+  const render = () => {
+    p.body.replaceChildren(
+      h(
+        'div',
+        { class: 'menu-list' },
+        button(`Sound: ${sound.muted ? 'Off' : 'On'}`, () => {
+          sound.setMuted(!sound.muted);
+          render();
+        }),
+        button('Controls', go(() => openControls(ui))),
+        button('Creator guide', go(() => openGuide(ui))),
+        button('Creators', go(() => openCreators(ui))),
+        button('Credits', go(() => openCredits(ui))),
+        button('Report a problem', go(() => openReport(ui))),
+        button('About this demo', go(() => ui.aboutDemo())),
+        button('Start over', go(() => startOver(ui)), 'danger'),
+      ),
+      h('p', { class: 'muted version' }, `${GAME_TITLE} demo - content ${app.bundle.tag.slice(0, 8)} - kernel ${KERNEL_VERSION}`),
+    );
+  };
+  render();
 }
 
 function openControls(ui: UI): void {
@@ -426,35 +438,38 @@ function openControls(ui: UI): void {
   );
 }
 
-const AI_CREATOR_PROMPT = `I want to add a new content extension to Mistvale (a community-built 2D RPG).
-Guidelines:
-- Read docs/creators/README.md and templates/extension/.
-- Place files in content/extensions/<my-handle>/ (resources, recipes, items, npcs, quests).
-- Validate all IDs start with <my-handle>/ and conform to schema/json/*.
-- Values are calculated automatically via relaxation solver (no hardcoded prices).
-- Run \`pnpm check\` and ensure 0 errors.
-
-Please help me create a new extension.`;
+const AI_CREATOR_INSTRUCTIONS = `I want to add a new content extension to Mistvale (a community-built 2D RPG).
+Use the complete creator guide included below as your instructions. Help me choose a small addition, create the required files, and validate it with the commands in the guide.`;
 
 export function openGuide(ui: UI): void {
   const p = panel(ui, 'Creator guide', 'guide wide');
   const article = h('article', { class: 'md' });
   article.innerHTML = markdown(guideText);
 
-  let copyTimer = 0;
-  const copyBtn = button('Copy prompt for AI', async () => {
+  const copyText = async (text: string, copyBtn: HTMLButtonElement, copiedLabel: string) => {
+    const original = copyBtn.textContent ?? 'Copy';
     try {
-      await navigator.clipboard.writeText(AI_CREATOR_PROMPT);
-      ui.toast('Copied AI prompt to clipboard!', 'good');
+      await navigator.clipboard.writeText(text);
+      ui.toast(copiedLabel, 'good');
       copyBtn.textContent = 'Copied!';
-      window.clearTimeout(copyTimer);
-      copyTimer = window.setTimeout(() => {
-        copyBtn.textContent = 'Copy prompt for AI';
+      window.setTimeout(() => {
+        copyBtn.textContent = original;
       }, 2000);
     } catch {
       ui.toast('Failed to copy to clipboard', 'bad');
     }
+  };
+
+  const copyBtn = button('Copy guide for AI', () => {
+    void copyText(`${AI_CREATOR_INSTRUCTIONS}\n\n--- COMPLETE CREATOR GUIDE ---\n\n${guideText}`, copyBtn, 'Copied the instructions and full guide!');
   }, 'small');
+
+  for (const code of article.querySelectorAll('pre code')) {
+    const copyCode = button('Copy', () => {
+      void copyText(code.textContent ?? '', copyCode, 'Copied code block!');
+    }, 'small');
+    code.parentElement?.before(copyCode);
+  }
 
   const welcome = h(
     'div',
@@ -463,7 +478,7 @@ export function openGuide(ui: UI): void {
     h(
       'p',
       { class: 'muted' },
-      'Mistvale is built together by the community. Every bush, recipe, sign, and ruin is a declarative JSON file in the repo. Use this guide to add your own part of the world in 10 minutes—by hand or with your favorite AI tool.',
+      'Mistvale is built together by the community. Every bush, recipe, sign, and ruin is a declarative JSON file in the repo. Use this guide to add your own part of the world in 10 minutes - by hand or with your favorite AI tool.',
     ),
     h('div', { class: 'actions' }, copyBtn),
   );
@@ -472,6 +487,25 @@ export function openGuide(ui: UI): void {
     welcome,
     article,
     h('p', null, h('a', { href: `${REPO_URL}/blob/main/docs/creators/README.md`, target: '_blank', rel: 'noopener' }, 'Read it on GitHub')),
+  );
+}
+
+function openCreators(ui: UI): void {
+  const b = app.bundle;
+  const p = panel(ui, 'Creators', 'wide');
+  const creators = Object.entries(b.creators).sort(([a], [z]) => (a === 'core' ? -1 : z === 'core' ? 1 : a.localeCompare(z)));
+  p.body.replaceChildren(
+    h('p', { class: 'muted' }, 'Hours are estimates based on commit sessions.'),
+    ...creators.map(([handle, profile]) => {
+      const entry = b.board[handle];
+      return h(
+        'div',
+        { class: 'card' },
+        h('b', null, profile.name),
+        profile.role ? h('div', { class: 'muted' }, profile.role) : null,
+        h('div', null, `${entry?.points ?? 0} creator points - about ${entry?.hours ?? 0} hours`),
+      );
+    }),
   );
 }
 
