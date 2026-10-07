@@ -52,6 +52,15 @@ importers:
         specifier: workspace:*
         version: link:../schema
 
+  mcp:
+    dependencies:
+      '@game/schema':
+        specifier: workspace:*
+        version: link:../schema
+      '@sinclair/typebox':
+        specifier: 0.34.52
+        version: 0.34.52
+
   schema:
     dependencies:
       '@sinclair/typebox':
