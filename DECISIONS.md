@@ -103,3 +103,13 @@ Elad: the gaps between skill points were not meaningful. The per-point values gr
 
 A creator's profile (name, role, designed signature) is a content file of type `creator`. The board (spec C-1) is content/board.json, written by `pnpm board` from the git history and committed, because a deploy builds from a shallow clone. Neither changes the content tag, so a renamed signature or a new commit does not invalidate saves. Points: 10 per content record plus 1 per commit. Hours: commits less than 2 h apart are one session, plus 30 min per session - an estimate, about 2 h with today's 8 commits, and the sign has to say so.
 **Retry when:** accounts exist (stage 2a); then points and hours come from the server. Model: claude-opus-5-5.
+
+## 2026-10-07 ✅ CREDITS.md is written by a bot after merges, not checked on pull requests
+
+`pnpm credits --verify` left `pnpm verify`. The loop's `credits` job regenerates CREDITS.md on each push to main and commits it; Vercel's `ignoreCommand` skips a deploy whose last commit touched only that file (if `HEAD^` is missing the diff fails and the deploy goes ahead). Keeping the check would have made every proposal fail until its author regenerated a file the bot owns.
+**Retry when:** credits stop being derived from main's history. Model: gpt-5 codex (wrote), claude-opus-5-5 (reviewed).
+
+## 2026-10-07 ✅ The next-discovery vote starts by hand
+
+The loop first opened a discovery vote hourly whenever none was open, so a closed vote would be followed an hour later by an identical one over the same documents. It now runs only from the Actions page (`discovery`). The weekly summary also got its own concurrency group, because a waiting run in the shared group is replaced by any newer pull request event.
+**Retry when:** discovery documents carry a state (proposed, chosen) the loop can read. Model: claude-opus-5-5.

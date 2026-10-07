@@ -1,0 +1,101 @@
+# Runs the community request, proposal, vote, summary, and credits loop.
+name: Community loop
+
+on:
+  schedule:
+    - cron: '23 * * * *'
+    - cron: '7 7 * * 1'
+  workflow_dispatch:
+    inputs:
+      command:
+        description: Loop command to run
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - requests
+          - proposals
+          - votes
+          - discovery
+          - summary
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review, labeled, unlabeled]
+  pull_request_review:
+    types: [submitted, dismissed]
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+  push:
+    branches: [main]
+
+permissions: {}
+
+# one run at a time, since every run rewrites the same comments and labels; the weekly summary
+# gets its own group, so a burst of pull request events cannot replace it while it waits
+concurrency:
+  group: ${{ github.event.schedule == '7 7 * * 1' && 'loop-summary' || 'loop' }}
+  cancel-in-progress: false
+
+jobs:
+  loop:
+    if: github.event_name != 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+      statuses: write
+    steps:
+      # SECURITY: pull_request_target checks out the default branch, never the PR head, and no PR code is run.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Run the community loop
+        # event values go through env, never straight into the script
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+          COMMAND: ${{ inputs.command }}
+        run: |
+          if [ "$EVENT" = "schedule" ] && [ "$SCHEDULE" = "23 * * * *" ]; then
+            pnpm loop all
+          elif [ "$EVENT" = "schedule" ]; then
+            pnpm loop summary --post
+          elif [ "$EVENT" = "workflow_dispatch" ]; then
+            pnpm loop "$COMMAND"
+          else
+            pnpm loop proposals
+          fi
+
+  credits:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm credits
+      - name: Commit current credits
+        run: |
+          git diff --quiet -- CREDITS.md && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CREDITS.md
+          git commit -m "Update credits"
+          git push
