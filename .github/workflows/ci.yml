@@ -37,7 +37,7 @@ jobs:
           [ -f check.txt ] || exit 0
           { echo '### pnpm check'; echo '```'; cat check.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Schemas, credits, lint, types, tests and build
+      - name: Schemas, content, lint, types, tests and build
         run: pnpm verify
 
       - name: Play the opening in Chrome, on a phone screen and a desktop
