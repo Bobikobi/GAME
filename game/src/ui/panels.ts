@@ -17,6 +17,7 @@ import {
 import guideText from '../../../docs/creators/README.md?raw';
 import { app } from '../app';
 import { GAME_TITLE, REPO_URL } from '../config';
+import type { SignInfo } from '../scenes/world';
 import { Session } from '../session';
 import { ATTRIBUTE_TEXT, gold, itemBenefit, itemName, questSteps, seconds, stacks } from '../text';
 import { say } from './dialog';
@@ -536,4 +537,28 @@ function startOver(ui: UI): void {
     Session.erase();
     location.reload();
   });
+}
+
+/** A filled sign: the creator's signature as it hangs over the sign, who they are and what they gave. */
+export function openSignCard(ui: UI, info: SignInfo): void {
+  const c = info.creator;
+  if (!c) return;
+  const p = panel(ui, info.title, 'sign-card');
+  const sig = c.signature;
+  const mark = h('div', { class: `signature sig-${sig?.style ?? 'ink'}` });
+  if (sig?.glyph && sig.glyph !== 'none') mark.append(h('i', { class: `glyph g-${sig.glyph}` }));
+  mark.append(sig?.text ?? c.name);
+  const stat = (value: string, label: string) => h('div', { class: 'sign-stat' }, h('b', null, value), h('span', null, label));
+  const hasBoard = c.points !== undefined || c.hours !== undefined;
+  const parts: (HTMLElement | null)[] = [
+    mark,
+    h('p', { class: 'sign-who' }, `Added by ${c.name}`, c.role ? h('small', null, c.role) : null),
+    hasBoard
+      ? h('div', { class: 'sign-stats' }, stat(String(c.points ?? 0), 'creator points'), stat(String(c.hours ?? 0), 'hours, estimated'))
+      : null,
+    hasBoard ? h('p', { class: 'sign-note' }, 'Hours are an estimate from commit sessions.') : null,
+    c.ai.length ? h('div', { class: 'sign-tools' }, h('p', { class: 'sign-note' }, 'Made with'), c.ai.map((t) => h('span', null, t))) : null,
+    c.mendedBy ? h('p', { class: 'sign-mended' }, `Mended by ${c.mendedBy}`) : null,
+  ];
+  p.body.replaceChildren(...parts.filter((x): x is HTMLElement => x !== null));
 }

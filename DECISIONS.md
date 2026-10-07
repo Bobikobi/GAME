@@ -67,7 +67,7 @@ On a phone, A opened the cooking panel on pointerdown; the click the browser sen
 `game/e2e/` drives headless Chrome over CDP with Node's built-in WebSocket: no extra dependency, and nothing to download in CI, where the runner already has Chrome.
 **Retry when:** tests need Firefox or Safari; switch to Playwright then. Model: claude-opus-5-5.
 
-## 2026-10-07 ✅ System sans body font for mobile dialogue and reading readability
+## 2026-10-07 ⏸ System sans body font for mobile dialogue and reading readability
 
 `Pixelify Sans` remains for titles, buttons, numbers, and retro HUD elements. For body text—dialogue, panel bodies, item details, and creator guides—`--font-body` (system sans-serif) with generous line-height is used to prevent mobile reading fatigue on high-DPI screens. Model: antigravity.
 
@@ -103,3 +103,8 @@ Elad: the gaps between skill points were not meaningful. The per-point values gr
 
 A creator's profile (name, role, designed signature) is a content file of type `creator`. The board (spec C-1) is content/board.json, written by `pnpm board` from the git history and committed, because a deploy builds from a shallow clone. Neither changes the content tag, so a renamed signature or a new commit does not invalidate saves. Points: 10 per content record plus 1 per commit. Hours: commits less than 2 h apart are one session, plus 30 min per session - an estimate, about 2 h with today's 8 commits, and the sign has to say so.
 **Retry when:** accounts exist (stage 2a); then points and hours come from the server. Model: claude-opus-5-5.
+
+## 2026-10-07 ✅ Pixel font everywhere again, with its ligatures turned off
+
+Supersedes "System sans body font". Elad played the preview and found the system body font too generic next to the pixel art, and saw letters missing. The missing letters were Pixelify Sans's broken "fi" ligature: "Fire" rendered as "Are" and "Campfire" as "CampAre". Fix: `font-variant-ligatures: none` and `font-feature-settings: 'liga' 0, 'clig' 0, 'calt' 0` on the page, `--font-body` points back to the pixel font, and body text is 16px or more on a phone (dialogue 18px). Retry the system font when: players report reading fatigue in long texts, and then only for the creator guide. Model: Claude Opus 5.5.
+

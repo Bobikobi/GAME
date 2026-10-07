@@ -1005,6 +1005,7 @@ export class WorldScene extends Phaser.Scene {
         points: entry?.points,
         hours: entry?.hours,
         ai: content.ai_tools ?? [],
+        mendedBy: content.kind === 'restore' && p?.restored.includes(content.id) ? p.name : undefined,
       },
     };
   }
@@ -1037,6 +1038,8 @@ export interface SignInfo {
     points?: number;
     hours?: number;
     ai: string[];
+    /** the player, when this place is one they mended */
+    mendedBy?: string;
   };
 }
 
