@@ -21,7 +21,8 @@
     "kit:sketches": "tsx tools/src/kit/sketches.ts",
     "e2e": "tsx game/e2e/opening.ts",
     "credits": "tsx tools/src/cli.ts credits",
-    "verify": "pnpm schemas --verify && pnpm check && pnpm credits --verify && pnpm bundle && pnpm lint && pnpm typecheck && pnpm test && pnpm --filter game build"
+    "loop": "tsx tools/src/loop/cli.ts",
+    "verify": "pnpm schemas --verify && pnpm check && pnpm bundle && pnpm lint && pnpm typecheck && pnpm test && pnpm --filter game build"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
