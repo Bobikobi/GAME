@@ -1,0 +1,81 @@
+/*
+ * The shared tokens of the game and the site (docs/team/PLATFORM.md, section 5).
+ *
+ * One rule: every colour here is one of the 32 colours of the core palette
+ * (tools/src/kit/palette.ts), so a page and a sprite are made of the same
+ * paint. tools/test/design-tokens.test.ts fails on any other hex. No rgba, no
+ * gradients, no radius: the look is the 2px pixel frame with a hard 4px
+ * shadow, from the game.
+ *
+ * The game keeps its own copy of the colour tokens in game/src/style.css until
+ * the import lands (docs/team/GRUNT.md, item 2); the test keeps the copies
+ * equal meanwhile.
+ */
+:root {
+  /* outline and greys, dark to light */
+  --ink: #1b1a2e;
+  --ink2: #3a3554;
+  --grey: #5d6177;
+  --grey2: #8f94a8;
+  --paper2: #c6cad6;
+  --paper: #f5f4ef;
+
+  /* greens */
+  --green: #2e6b3b;
+  --green2: #4c9a3f;
+  --green3: #84c450;
+  --green4: #c8e88a;
+
+  /* earth and wood */
+  --wood: #6e4226;
+  --wood2: #9e6b3c;
+  --cream: #ebd3a2;
+
+  /* water and sky */
+  --blue: #275a99;
+  --blue2: #3f8fd1;
+  --sky: #7cc4ec;
+
+  /* reds, gold, yellow, purple */
+  --red: #a8302f;
+  --red2: #e2533f;
+  --gold: #eda83a;
+  --yellow: #f8de62;
+  --purple2: #9a5bb0;
+
+  /* the pixel unit: borders, offsets and sprite scaling are whole multiples of it */
+  --px: 2px;
+
+  /* faces: the pixel face for display, numbers and the game; the reading face for site body text only */
+  --font: 'Pixelify Sans', ui-monospace, monospace;
+  --font-reading: 'Atkinson Hyperlegible', system-ui, sans-serif;
+
+  /* type scale, whole pixels; nothing a person reads is below --text-s */
+  --text-s: 15px;
+  --text-m: 17px;
+  --text-l: 22px;
+  --text-xl: 32px;
+  --text-2xl: 48px;
+  --leading: 1.5;
+  --leading-tight: 1.15;
+  --measure: 64ch;
+
+  /* spacing steps */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-12: 48px;
+
+  /* the signature element: a 2px frame with a hard offset shadow, never rounded */
+  --frame: var(--px) solid var(--ink);
+  --frame-shadow: var(--s-1) var(--s-1) 0 var(--ink);
+  --radius: 0;
+
+  /* the one site layout number: content column */
+  --column: 1120px;
+
+  color-scheme: light;
+}

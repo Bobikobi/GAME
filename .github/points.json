@@ -1,0 +1,7 @@
+{
+  "per_record": 10,
+  "per_commit": 1,
+  "per_approval": 5,
+  "weekly_pool": 1000,
+  "weekly_pool_active": false
+}

@@ -3,6 +3,7 @@ packages:
   - schema
   - tools
   - game
+  - mcp
 
 # esbuild (through tsx and vite) is the only dependency allowed to run an install script
 onlyBuiltDependencies:

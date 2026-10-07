@@ -1,0 +1,194 @@
+{
+  "$schema": "../../json/hub-data.schema.json",
+  "format": 1,
+  "built_at": "2026-10-07T15:00:00Z",
+  "source": {
+    "repository": "Bobikobi/GAME",
+    "ref": "develop",
+    "sha": "d3318bd",
+    "content_tag": "7f3a9c1e2b5d",
+    "kernel_version": "0.1.0",
+    "schema_format": 1
+  },
+  "sources": {
+    "git": { "commits": 212, "newest_at": "2026-10-07T14:52:00Z" },
+    "github": { "fetched_at": "2026-10-07T15:00:00Z" },
+    "vercel": { "fetched_at": "2026-10-07T15:00:00Z" },
+    "usage": null
+  },
+  "creators": [
+    {
+      "handle": "core",
+      "name": "Core team",
+      "role": "Core",
+      "points": 542,
+      "records": 33,
+      "commits": 212,
+      "extensions": ["core/berry", "core/trowel"],
+      "url": "https://github.com/Bobikobi/GAME/tree/develop/content/core"
+    },
+    {
+      "handle": "trout-maker",
+      "name": "Trout Maker",
+      "signature": { "text": "Trout Maker", "style": "ink", "glyph": "wave" },
+      "points": 13,
+      "records": 1,
+      "commits": 3,
+      "extensions": ["trout-maker/river-trout"],
+      "url": "https://github.com/Bobikobi/GAME/tree/develop/content/extensions/trout-maker"
+    }
+  ],
+  "reviewers": [
+    { "handle": "bobikobi", "approvals": 2, "points": 10, "url": "https://github.com/bobikobi" }
+  ],
+  "extensions": [
+    {
+      "id": "core/berry",
+      "type": "resource",
+      "title": "Berry bush",
+      "creator": "core",
+      "file": "content/core/resources/berry.json",
+      "url": "https://github.com/Bobikobi/GAME/blob/develop/content/core/resources/berry.json",
+      "slot": "core/grove-1",
+      "ai_tools": []
+    },
+    {
+      "id": "core/trowel",
+      "type": "recipe",
+      "title": "Trowel",
+      "creator": "core",
+      "file": "content/core/recipes/trowel.json",
+      "url": "https://github.com/Bobikobi/GAME/blob/develop/content/core/recipes/trowel.json",
+      "ai_tools": []
+    },
+    {
+      "id": "trout-maker/river-trout",
+      "type": "resource",
+      "title": "River trout",
+      "creator": "trout-maker",
+      "file": "content/extensions/trout-maker/resources/river-trout.json",
+      "url": "https://github.com/Bobikobi/GAME/blob/develop/content/extensions/trout-maker/resources/river-trout.json",
+      "slot": "core/riverbank-2",
+      "ai_tools": ["Claude Code"],
+      "merged_at": "2026-10-06T19:40:00Z"
+    }
+  ],
+  "kits": [
+    { "id": "core/base-kit", "title": "Base kit", "creator": "core", "sprites": 118, "url": "https://github.com/Bobikobi/GAME/tree/develop/content/kit/core" }
+  ],
+  "slots": [
+    { "id": "core/grove-1", "kind": "resource", "label": "Grove", "x": 12, "y": 8, "w": 2, "h": 2, "filled_by": "core/berry" },
+    { "id": "core/riverbank-2", "kind": "resource", "label": "Riverbank", "x": 30, "y": 14, "w": 2, "h": 1, "filled_by": "trout-maker/river-trout" },
+    { "id": "core/ruin-east", "kind": "ruin", "label": "East ruin", "x": 40, "y": 20, "w": 4, "h": 3, "filled_by": null }
+  ],
+  "requests": [
+    {
+      "number": 12,
+      "title": "A fish for the riverbank",
+      "url": "https://github.com/Bobikobi/GAME/issues/12",
+      "author": "bobikobi",
+      "kind": "resource",
+      "support": 6,
+      "open_call": true,
+      "capability": false,
+      "created_at": "2026-10-03T09:12:00Z",
+      "proposals": [15]
+    },
+    {
+      "number": 14,
+      "title": "Weather in the valley",
+      "url": "https://github.com/Bobikobi/GAME/issues/14",
+      "author": "trout-maker",
+      "kind": "other",
+      "support": 2,
+      "open_call": false,
+      "capability": false,
+      "created_at": "2026-10-05T11:00:00Z",
+      "proposals": []
+    }
+  ],
+  "proposals": [
+    {
+      "number": 15,
+      "title": "River trout",
+      "url": "https://github.com/Bobikobi/GAME/pull/15",
+      "author": "trout-maker",
+      "state": "merged",
+      "slots": ["core/riverbank-2"],
+      "answers": 12,
+      "merge_rule": "pass",
+      "checks": [
+        { "rule": "Required checks green", "state": "pass" },
+        { "rule": "Approvals on the current head", "state": "pass", "detail": "3 of 3" },
+        { "rule": "Quota", "state": "pass", "detail": "1 open of 1" }
+      ],
+      "approvals": 3,
+      "reviewers": ["bobikobi", "mossy", "keeper"],
+      "competing": [],
+      "preview": "https://game-git-trout-maker-river-trout.vercel.app/play/",
+      "created_at": "2026-10-04T08:30:00Z",
+      "updated_at": "2026-10-06T19:40:00Z",
+      "merged_at": "2026-10-06T19:40:00Z"
+    },
+    {
+      "number": 18,
+      "title": "Moss lantern",
+      "url": "https://github.com/Bobikobi/GAME/pull/18",
+      "author": "mossy",
+      "state": "open",
+      "slots": ["core/ruin-east"],
+      "merge_rule": "pending",
+      "checks": [
+        { "rule": "Required checks green", "state": "pass" },
+        { "rule": "Approvals on the current head", "state": "pending", "detail": "1 of 3" },
+        { "rule": "Quota", "state": "pass", "detail": "1 open of 1" }
+      ],
+      "approvals": 1,
+      "reviewers": ["bobikobi"],
+      "competing": [],
+      "preview": "https://game-git-mossy-moss-lantern.vercel.app/play/",
+      "created_at": "2026-10-07T07:15:00Z",
+      "updated_at": "2026-10-07T14:02:00Z"
+    }
+  ],
+  "votes": [
+    {
+      "number": 16,
+      "title": "Next discovery",
+      "url": "https://github.com/Bobikobi/GAME/issues/16",
+      "kind": "discovery",
+      "state": "open",
+      "opened_at": "2026-10-05T07:10:00Z",
+      "closes_at": "2026-10-12T07:10:00Z",
+      "options": [
+        { "key": "docs/discovery/harbour.md", "title": "The harbour", "url": "https://github.com/Bobikobi/GAME/blob/develop/docs/discovery/harbour.md", "bar": 100, "percent": null },
+        { "key": "docs/discovery/mine.md", "title": "The old mine", "url": "https://github.com/Bobikobi/GAME/blob/develop/docs/discovery/mine.md", "bar": 60, "percent": null }
+      ]
+    }
+  ],
+  "summary": { "week": "2026-W41", "number": 17, "url": "https://github.com/Bobikobi/GAME/issues/17", "posted_at": "2026-10-05T07:07:00Z" },
+  "parameters": {
+    "loop": {
+      "open_call_votes": 5,
+      "approvals_to_merge": 3,
+      "required_checks": ["Check, test, build and play"],
+      "approvals_must_match_head": true,
+      "quota": { "new_creator": 1, "per_accepted": 1, "cap": 5 },
+      "vote_days": 7,
+      "min_votes_to_decide": 5,
+      "min_votes_for_percent": 10,
+      "min_account_age_days": 30
+    },
+    "points": { "per_record": 10, "per_commit": 1, "per_approval": 5, "weekly_pool": 1000, "weekly_pool_active": false },
+    "game": {
+      "k_permille": { "value": 500, "min": 100, "max": 1000, "step": 10 },
+      "t_min_ms": { "value": 1000, "min": 250, "max": 5000, "step": 250 },
+      "effort_permille.easy": { "value": 400, "min": 100, "max": 1000, "step": 50 },
+      "power_cap_permille.0": { "value": 1000, "min": 100, "max": 2000, "step": 50 },
+      "drift_budget_permille": { "value": 100, "min": 0, "max": 500, "step": 10 }
+    },
+    "values": { "core/berry": 12, "core/trowel": 48, "trout-maker/river-trout": 30 }
+  },
+  "players": null,
+  "usage": null
+}

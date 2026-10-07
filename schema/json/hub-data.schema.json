@@ -1,0 +1,1432 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "format",
+    "built_at",
+    "source",
+    "sources",
+    "creators",
+    "reviewers",
+    "extensions",
+    "kits",
+    "slots",
+    "requests",
+    "proposals",
+    "votes",
+    "summary",
+    "parameters",
+    "players",
+    "usage"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "format": {
+      "description": "Format version of this document.",
+      "const": 1,
+      "type": "number"
+    },
+    "built_at": {
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+      "description": "UTC time, ISO 8601, for example 2026-10-07T15:00:00Z.",
+      "type": "string"
+    },
+    "source": {
+      "additionalProperties": false,
+      "description": "What the document was built from. The three things that move separately: code, content, site.",
+      "type": "object",
+      "required": [
+        "repository",
+        "ref",
+        "sha",
+        "content_tag",
+        "kernel_version",
+        "schema_format"
+      ],
+      "properties": {
+        "repository": {
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+          "description": "\"owner/name\" on GitHub.",
+          "type": "string"
+        },
+        "ref": {
+          "minLength": 1,
+          "maxLength": 120,
+          "description": "The branch or tag the document was built from.",
+          "type": "string"
+        },
+        "sha": {
+          "pattern": "^[0-9a-f]{7,40}$",
+          "type": "string"
+        },
+        "content_tag": {
+          "minLength": 1,
+          "maxLength": 80,
+          "description": "The tag of the content bundle (kernel rule R5).",
+          "type": "string"
+        },
+        "kernel_version": {
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "The version of @game/kernel.",
+          "type": "string"
+        },
+        "schema_format": {
+          "description": "The format of the content files this was built from.",
+          "const": 1,
+          "type": "number"
+        }
+      }
+    },
+    "sources": {
+      "additionalProperties": false,
+      "description": "Provenance. A section with a null source is empty, never guessed.",
+      "type": "object",
+      "required": [
+        "git",
+        "github",
+        "vercel",
+        "usage"
+      ],
+      "properties": {
+        "git": {
+          "additionalProperties": false,
+          "description": "The history the creators board was computed from.",
+          "type": "object",
+          "required": [
+            "commits",
+            "newest_at"
+          ],
+          "properties": {
+            "commits": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "newest_at": {
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+              "description": "UTC time, ISO 8601, for example 2026-10-07T15:00:00Z.",
+              "type": "string"
+            }
+          }
+        },
+        "github": {
+          "description": "null when the document was built without GitHub access; requests, proposals, votes, reviewers and the summary are then empty.",
+          "anyOf": [
+            {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "fetched_at"
+              ],
+              "properties": {
+                "fetched_at": {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+                  "description": "UTC time, ISO 8601, for example 2026-10-07T15:00:00Z.",
+                  "type": "string"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "vercel": {
+          "description": "null when preview links could not be read; proposals then carry no preview.",
+          "anyOf": [
+            {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "fetched_at"
+              ],
+              "properties": {
+                "fetched_at": {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+                  "description": "UTC time, ISO 8601, for example 2026-10-07T15:00:00Z.",
+                  "type": "string"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "usage": {
+          "description": "null until the stage-1 service (spec S-1) exists.",
+          "anyOf": [
+            {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "fetched_at",
+                "window_days"
+              ],
+              "properties": {
+                "fetched_at": {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+                  "description": "UTC time, ISO 8601, for example 2026-10-07T15:00:00Z.",
+                  "type": "string"
+                },
+                "window_days": {
+                  "minimum": 1,
+                  "maximum": 90,
+                  "type": "integer"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "creators": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "description": "One row of the creators board (spec C-1): points = per_record * records + per_commit * commits, from the git history. Hours are not published (DECISIONS.md, 2026-10-07).",
+        "type": "object",
+        "required": [
+          "handle",
+          "name",
+          "points",
+          "records",
+          "commits",
+          "extensions",
+          "url"
+        ],
+        "properties": {
+          "handle": {
+            "pattern": "^[a-z0-9_-]+$",
+            "maxLength": 39,
+            "description": "GitHub handle, lowercase. \"core\" is the core team.",
+            "type": "string"
+          },
+          "name": {
+            "minLength": 1,
+            "maxLength": 40,
+            "description": "From the creator profile, or the handle when there is none.",
+            "type": "string"
+          },
+          "role": {
+            "minLength": 1,
+            "maxLength": 40,
+            "type": "string"
+          },
+          "signature": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "text",
+              "style"
+            ],
+            "properties": {
+              "text": {
+                "minLength": 1,
+                "maxLength": 24,
+                "type": "string"
+              },
+              "style": {
+                "anyOf": [
+                  {
+                    "const": "carved",
+                    "type": "string"
+                  },
+                  {
+                    "const": "painted",
+                    "type": "string"
+                  },
+                  {
+                    "const": "ink",
+                    "type": "string"
+                  },
+                  {
+                    "const": "gold",
+                    "type": "string"
+                  },
+                  {
+                    "const": "moss",
+                    "type": "string"
+                  }
+                ]
+              },
+              "glyph": {
+                "anyOf": [
+                  {
+                    "const": "none",
+                    "type": "string"
+                  },
+                  {
+                    "const": "leaf",
+                    "type": "string"
+                  },
+                  {
+                    "const": "star",
+                    "type": "string"
+                  },
+                  {
+                    "const": "sun",
+                    "type": "string"
+                  },
+                  {
+                    "const": "flower",
+                    "type": "string"
+                  },
+                  {
+                    "const": "key",
+                    "type": "string"
+                  },
+                  {
+                    "const": "wave",
+                    "type": "string"
+                  }
+                ]
+              }
+            }
+          },
+          "points": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "records": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "commits": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "extensions": {
+            "description": "Ids of the records the creator has in the game now.",
+            "type": "array",
+            "items": {
+              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+              "maxLength": 80,
+              "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+              "type": "string"
+            }
+          },
+          "url": {
+            "pattern": "^https://",
+            "maxLength": 400,
+            "type": "string"
+          }
+        }
+      }
+    },
+    "reviewers": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "description": "One row of the reviewers board (spec C-1): approvals that counted on merged proposals, from GitHub; points = per_approval * approvals.",
+        "type": "object",
+        "required": [
+          "handle",
+          "approvals",
+          "points",
+          "url"
+        ],
+        "properties": {
+          "handle": {
+            "pattern": "^[a-z0-9_-]+$",
+            "maxLength": 39,
+            "description": "GitHub handle, lowercase. \"core\" is the core team.",
+            "type": "string"
+          },
+          "approvals": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "points": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "url": {
+            "pattern": "^https://",
+            "maxLength": 400,
+            "type": "string"
+          }
+        }
+      }
+    },
+    "extensions": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "description": "One accepted record: content that is in the game now.",
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "title",
+          "creator",
+          "file",
+          "url",
+          "ai_tools"
+        ],
+        "properties": {
+          "id": {
+            "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+            "maxLength": 80,
+            "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+            "type": "string"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "const": "resource",
+                "type": "string"
+              },
+              {
+                "const": "treasure",
+                "type": "string"
+              },
+              {
+                "const": "recipe",
+                "type": "string"
+              },
+              {
+                "const": "npc",
+                "type": "string"
+              },
+              {
+                "const": "quest",
+                "type": "string"
+              },
+              {
+                "const": "restore",
+                "type": "string"
+              },
+              {
+                "const": "camp",
+                "type": "string"
+              },
+              {
+                "const": "starter",
+                "type": "string"
+              },
+              {
+                "const": "items",
+                "type": "string"
+              },
+              {
+                "const": "creator",
+                "type": "string"
+              },
+              {
+                "const": "shop",
+                "type": "string"
+              },
+              {
+                "const": "profession",
+                "type": "string"
+              },
+              {
+                "const": "params",
+                "type": "string"
+              },
+              {
+                "const": "kit",
+                "type": "string"
+              },
+              {
+                "const": "map",
+                "type": "string"
+              }
+            ]
+          },
+          "title": {
+            "minLength": 1,
+            "maxLength": 40,
+            "type": "string"
+          },
+          "creator": {
+            "pattern": "^[a-z0-9_-]+$",
+            "maxLength": 39,
+            "description": "GitHub handle, lowercase. \"core\" is the core team.",
+            "type": "string"
+          },
+          "file": {
+            "pattern": "^[A-Za-z0-9_./-]+$",
+            "maxLength": 240,
+            "description": "A path relative to the repository root.",
+            "type": "string"
+          },
+          "url": {
+            "pattern": "^https://",
+            "maxLength": 400,
+            "type": "string"
+          },
+          "slot": {
+            "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+            "maxLength": 80,
+            "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+            "type": "string"
+          },
+          "ai_tools": {
+            "type": "array",
+            "items": {
+              "minLength": 1,
+              "maxLength": 60,
+              "type": "string"
+            }
+          },
+          "merged_at": {
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+            "description": "UTC time, ISO 8601, for example 2026-10-07T15:00:00Z.",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "kits": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "creator",
+          "sprites",
+          "url"
+        ],
+        "properties": {
+          "id": {
+            "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+            "maxLength": 80,
+            "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+            "type": "string"
+          },
+          "title": {
+            "minLength": 1,
+            "maxLength": 40,
+            "type": "string"
+          },
+          "creator": {
+            "pattern": "^[a-z0-9_-]+$",
+            "maxLength": 39,
+            "description": "GitHub handle, lowercase. \"core\" is the core team.",
+            "type": "string"
+          },
+          "sprites": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "url": {
+            "pattern": "^https://",
+            "maxLength": 400,
+            "type": "string"
+          }
+        }
+      }
+    },
+    "slots": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "description": "One slot of the ruins map (spec L-2).",
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "x",
+          "y",
+          "w",
+          "h",
+          "filled_by"
+        ],
+        "properties": {
+          "id": {
+            "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+            "maxLength": 80,
+            "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+            "type": "string"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "const": "resource",
+                "type": "string"
+              },
+              {
+                "const": "ruin",
+                "type": "string"
+              },
+              {
+                "const": "npc",
+                "type": "string"
+              },
+              {
+                "const": "building",
+                "type": "string"
+              },
+              {
+                "const": "restore",
+                "type": "string"
+              },
+              {
+                "const": "camp",
+                "type": "string"
+              },
+              {
+                "const": "area",
+                "type": "string"
+              }
+            ]
+          },
+          "label": {
+            "minLength": 1,
+            "maxLength": 40,
+            "type": "string"
+          },
+          "x": {
+            "minimum": 0,
+            "maximum": 1023,
+            "type": "integer"
+          },
+          "y": {
+            "minimum": 0,
+            "maximum": 1023,
+            "type": "integer"
+          },
+          "w": {
+            "minimum": 1,
+            "maximum": 64,
+            "type": "integer"
+          },
+          "h": {
+            "minimum": 1,
+            "maximum": 64,
+            "type": "integer"
+          },
+          "filled_by": {
+            "description": "The record in this slot, or null when it awaits a creator.",
+            "anyOf": [
+              {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "requests": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "number",
+          "title",
+          "url",
+          "author",
+          "kind",
+          "support",
+          "open_call",
+          "capability",
+          "created_at",
+          "proposals"
+        ],
+        "properties": {
+          "number": {
+            "minimum": 1,
+            "description": "GitHub issue or pull request number.",
+            "type": "integer"
+          },
+          "title": {
+            "minLength": 1,
+            "maxLength": 200,
+            "type": "string"
+          },
+          "url": {
+            "pattern": "^https://",
+            "maxLength": 400,
+            "type": "string"
+          },
+          "author": {
+            "pattern": "^[a-z0-9_-]+$",
+            "maxLength": 39,
+            "description": "GitHub handle, lowercase. \"core\" is the core team.",
+            "type": "string"
+          },
+          "kind": {
+            "description": "The kind picked in the request form, mapped to one word.",
+            "anyOf": [
+              {
+                "const": "resource",
+                "type": "string"
+              },
+              {
+                "const": "recipe",
+                "type": "string"
+              },
+              {
+                "const": "treasure",
+                "type": "string"
+              },
+              {
+                "const": "character",
+                "type": "string"
+              },
+              {
+                "const": "place",
+                "type": "string"
+              },
+              {
+                "const": "other",
+                "type": "string"
+              }
+            ]
+          },
+          "support": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "open_call": {
+            "description": "Support reached parameters.loop.open_call_votes. Never goes back to false.",
+            "type": "boolean"
+          },
+          "capability": {
+            "description": "An open call that needs core code, not content alone.",
+            "type": "boolean"
+          },
+          "created_at": {
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+            "description": "UTC time, ISO 8601, for example 2026-10-07T15:00:00Z.",
+            "type": "string"
+          },
+          "proposals": {
+            "description": "Pull requests that answer this request.",
+            "type": "array",
+            "items": {
+              "minimum": 1,
+              "description": "GitHub issue or pull request number.",
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "proposals": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "description": "One content proposal. The preview is the trial world of this proposal: the game at /play/ of its deployment.",
+        "type": "object",
+        "required": [
+          "number",
+          "title",
+          "url",
+          "author",
+          "state",
+          "slots",
+          "merge_rule",
+          "checks",
+          "approvals",
+          "reviewers",
+          "competing",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "number": {
+            "minimum": 1,
+            "description": "GitHub issue or pull request number.",
+            "type": "integer"
+          },
+          "title": {
+            "minLength": 1,
+            "maxLength": 200,
+            "type": "string"
+          },
+          "url": {
+            "pattern": "^https://",
+            "maxLength": 400,
+            "type": "string"
+          },
+          "author": {
+            "pattern": "^[a-z0-9_-]+$",
+            "maxLength": 39,
+            "description": "GitHub handle, lowercase. \"core\" is the core team.",
+            "type": "string"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "const": "open",
+                "type": "string"
+              },
+              {
+                "const": "merged",
+                "type": "string"
+              },
+              {
+                "const": "closed",
+                "type": "string"
+              }
+            ]
+          },
+          "slots": {
+            "type": "array",
+            "items": {
+              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+              "maxLength": 80,
+              "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+              "type": "string"
+            }
+          },
+          "answers": {
+            "minimum": 1,
+            "description": "GitHub issue or pull request number.",
+            "type": "integer"
+          },
+          "merge_rule": {
+            "description": "The loop's merge-rule status: \"pass\" (ready), \"pending\" (checks or approvals still due) or \"fail\" (a blocker).",
+            "anyOf": [
+              {
+                "const": "pass",
+                "type": "string"
+              },
+              {
+                "const": "pending",
+                "type": "string"
+              },
+              {
+                "const": "fail",
+                "type": "string"
+              }
+            ]
+          },
+          "checks": {
+            "description": "The checklist the loop keeps on the pull request, one line per rule.",
+            "type": "array",
+            "items": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "rule",
+                "state"
+              ],
+              "properties": {
+                "rule": {
+                  "minLength": 1,
+                  "maxLength": 240,
+                  "type": "string"
+                },
+                "state": {
+                  "description": "The loop's merge-rule status: \"pass\" (ready), \"pending\" (checks or approvals still due) or \"fail\" (a blocker).",
+                  "anyOf": [
+                    {
+                      "const": "pass",
+                      "type": "string"
+                    },
+                    {
+                      "const": "pending",
+                      "type": "string"
+                    },
+                    {
+                      "const": "fail",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "detail": {
+                  "minLength": 1,
+                  "maxLength": 240,
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "approvals": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "reviewers": {
+            "description": "Whose approvals counted on the current head.",
+            "type": "array",
+            "items": {
+              "pattern": "^[a-z0-9_-]+$",
+              "maxLength": 39,
+              "description": "GitHub handle, lowercase. \"core\" is the core team.",
+              "type": "string"
+            }
+          },
+          "competing": {
+            "type": "array",
+            "items": {
+              "minimum": 1,
+              "description": "GitHub issue or pull request number.",
+              "type": "integer"
+            }
+          },
+          "vote": {
+            "minimum": 1,
+            "description": "GitHub issue or pull request number.",
+            "type": "integer"
+          },
+          "preview": {
+            "pattern": "^https://",
+            "maxLength": 400,
+            "type": "string"
+          },
+          "created_at": {
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+            "description": "UTC time, ISO 8601, for example 2026-10-07T15:00:00Z.",
+            "type": "string"
+          },
+          "updated_at": {
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+            "description": "UTC time, ISO 8601, for example 2026-10-07T15:00:00Z.",
+            "type": "string"
+          },
+          "merged_at": {
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+            "description": "UTC time, ISO 8601, for example 2026-10-07T15:00:00Z.",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "votes": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "description": "A vote is cast on GitHub. The hub shows it and never counts voters.",
+        "type": "object",
+        "required": [
+          "number",
+          "title",
+          "url",
+          "kind",
+          "state",
+          "opened_at",
+          "closes_at",
+          "options"
+        ],
+        "properties": {
+          "number": {
+            "minimum": 1,
+            "description": "GitHub issue or pull request number.",
+            "type": "integer"
+          },
+          "title": {
+            "minLength": 1,
+            "maxLength": 200,
+            "type": "string"
+          },
+          "url": {
+            "pattern": "^https://",
+            "maxLength": 400,
+            "type": "string"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "const": "proposal",
+                "type": "string"
+              },
+              {
+                "const": "discovery",
+                "type": "string"
+              }
+            ]
+          },
+          "state": {
+            "anyOf": [
+              {
+                "const": "open",
+                "type": "string"
+              },
+              {
+                "const": "decided",
+                "type": "string"
+              },
+              {
+                "const": "postponed",
+                "type": "string"
+              }
+            ]
+          },
+          "opened_at": {
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+            "description": "UTC time, ISO 8601, for example 2026-10-07T15:00:00Z.",
+            "type": "string"
+          },
+          "closes_at": {
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+            "description": "UTC time, ISO 8601, for example 2026-10-07T15:00:00Z.",
+            "type": "string"
+          },
+          "options": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "key",
+                "title",
+                "bar",
+                "percent"
+              ],
+              "properties": {
+                "key": {
+                  "minLength": 1,
+                  "maxLength": 80,
+                  "type": "string"
+                },
+                "title": {
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                "url": {
+                  "pattern": "^https://",
+                  "maxLength": 400,
+                  "type": "string"
+                },
+                "bar": {
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "Relative to the leading option, 0-100. Never a count.",
+                  "type": "integer"
+                },
+                "percent": {
+                  "description": "Exact share once min_votes_for_percent is reached, null before.",
+                  "anyOf": [
+                    {
+                      "minimum": 0,
+                      "maximum": 100,
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "winner": {
+            "minLength": 1,
+            "maxLength": 80,
+            "type": "string"
+          }
+        }
+      }
+    },
+    "summary": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "description": "The current weekly summary issue.",
+          "type": "object",
+          "required": [
+            "week",
+            "number",
+            "url",
+            "posted_at"
+          ],
+          "properties": {
+            "week": {
+              "pattern": "^\\d{4}-W\\d{2}$",
+              "type": "string"
+            },
+            "number": {
+              "minimum": 1,
+              "description": "GitHub issue or pull request number.",
+              "type": "integer"
+            },
+            "url": {
+              "pattern": "^https://",
+              "maxLength": 400,
+              "type": "string"
+            },
+            "posted_at": {
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+              "description": "UTC time, ISO 8601, for example 2026-10-07T15:00:00Z.",
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "parameters": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "loop",
+        "points",
+        "game",
+        "values"
+      ],
+      "properties": {
+        "loop": {
+          "additionalProperties": false,
+          "description": "A copy of .github/loop.json.",
+          "type": "object",
+          "required": [
+            "open_call_votes",
+            "approvals_to_merge",
+            "required_checks",
+            "approvals_must_match_head",
+            "quota",
+            "vote_days",
+            "min_votes_to_decide",
+            "min_votes_for_percent",
+            "min_account_age_days"
+          ],
+          "properties": {
+            "open_call_votes": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "approvals_to_merge": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "required_checks": {
+              "type": "array",
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "approvals_must_match_head": {
+              "type": "boolean"
+            },
+            "quota": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "new_creator",
+                "per_accepted",
+                "cap"
+              ],
+              "properties": {
+                "new_creator": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "per_accepted": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "cap": {
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              }
+            },
+            "vote_days": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "min_votes_to_decide": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "min_votes_for_percent": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "min_account_age_days": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        },
+        "points": {
+          "additionalProperties": false,
+          "description": "A copy of .github/points.json: every number a ranking is computed with.",
+          "type": "object",
+          "required": [
+            "per_record",
+            "per_commit",
+            "per_approval",
+            "weekly_pool",
+            "weekly_pool_active"
+          ],
+          "properties": {
+            "per_record": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "per_commit": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "per_approval": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "weekly_pool": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "weekly_pool_active": {
+              "description": "false until usage exists; the pool is then shared by usage, never by seniority.",
+              "type": "boolean"
+            }
+          }
+        },
+        "game": {
+          "description": "Every bounded number of content/core/params.json, flattened (\"effort_permille.easy\", \"power_cap_permille.0\").",
+          "type": "object",
+          "patternProperties": {
+            "^[a-z0-9_]+(\\.[a-z0-9_]+)*$": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        },
+        "values": {
+          "description": "content/values.lock.json: the anchored value of every item (rule R11).",
+          "type": "object",
+          "patternProperties": {
+            "^[a-z0-9_-]+/[a-z0-9_-]+$": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "players": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "description": "Verified player boards (spec A-3), computed by the server only. null until stage 2a.",
+          "type": "object",
+          "required": [
+            "verified_at",
+            "wealth",
+            "collection",
+            "professions"
+          ],
+          "properties": {
+            "verified_at": {
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+              "description": "UTC time, ISO 8601, for example 2026-10-07T15:00:00Z.",
+              "type": "string"
+            },
+            "wealth": {
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "rank",
+                  "player",
+                  "gold_mg"
+                ],
+                "properties": {
+                  "rank": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "player": {
+                    "minLength": 1,
+                    "maxLength": 16,
+                    "description": "The name the player chose in the game, never an account id.",
+                    "type": "string"
+                  },
+                  "gold_mg": {
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                }
+              }
+            },
+            "collection": {
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "rank",
+                  "player",
+                  "entries"
+                ],
+                "properties": {
+                  "rank": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "player": {
+                    "minLength": 1,
+                    "maxLength": 16,
+                    "description": "The name the player chose in the game, never an account id.",
+                    "type": "string"
+                  },
+                  "entries": {
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                }
+              }
+            },
+            "professions": {
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "rank",
+                  "player",
+                  "profession",
+                  "level"
+                ],
+                "properties": {
+                  "rank": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "player": {
+                    "minLength": 1,
+                    "maxLength": 16,
+                    "description": "The name the player chose in the game, never an account id.",
+                    "type": "string"
+                  },
+                  "profession": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "level": {
+                    "minimum": 1,
+                    "maximum": 20,
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "usage": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "since",
+            "until",
+            "extensions",
+            "stops"
+          ],
+          "properties": {
+            "since": {
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+              "description": "UTC time, ISO 8601, for example 2026-10-07T15:00:00Z.",
+              "type": "string"
+            },
+            "until": {
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+              "description": "UTC time, ISO 8601, for example 2026-10-07T15:00:00Z.",
+              "type": "string"
+            },
+            "extensions": {
+              "description": "Per accepted record (spec C-2), from the stage-1 service.",
+              "type": "object",
+              "patternProperties": {
+                "^[a-z0-9_-]+/[a-z0-9_-]+$": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "visits",
+                    "pickups",
+                    "reports"
+                  ],
+                  "properties": {
+                    "visits": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "pickups": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "reports": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            },
+            "stops": {
+              "description": "Where players stop: the last opening step reached, counted per step.",
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "step",
+                  "players"
+                ],
+                "properties": {
+                  "step": {
+                    "minLength": 1,
+                    "maxLength": 80,
+                    "type": "string"
+                  },
+                  "players": {
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "$id": "https://github.com/Bobikobi/GAME/schema/json/hub-data.schema.json"
+}
