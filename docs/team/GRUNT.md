@@ -693,7 +693,12 @@ Files:
   `{ kind: 'find', item: Id, clue: Text }` (a bring whose journal line is the
   clue, not the count, until the item is in the bag) and
   `{ kind: 'riddle', clue: Text, props: Id[] (1-4), answer: { kind: 'dig', treasure: Id } | { kind: 'visit', slot: Id, at: 'day' | 'night' } }`.
-  Map props gain an optional `id: Id`. Descriptions on every new field.
+  Map props gain an optional `id: Id`. `QuestBody` gains `type`, one of the
+  twelve palette keys in GAME_RULES.md section 3 (`investigation`,
+  `discovery`, `fetch_twist`, `dilemma`, `skill`, `collection`, `tending`,
+  `riddle`, `mastery`, `gamble`, `persuasion`, `errand`); optional for one
+  release so extensions keep validating, then required. Descriptions on
+  every new field.
 - `schema/json/`: regenerated with `pnpm schemas`.
 - `tools/src/assemble.ts`: a riddle citing a prop id or treasure that does not
   exist is an error; a `find` of an item that is not dig-only is an error
@@ -705,7 +710,9 @@ Files:
   the answer; the tracker shows the clue's first line.
 - `tools/src/play.ts`: `find` and `riddle` count as beats for G2; G8 becomes
   per prop: a note prop with an id that no riddle cites is reported by id, a
-  note prop without an id stays in the count line.
+  note prop without an id stays in the count line. G17: two consecutive
+  quests of one type in a `requires` chain, and fewer than five types among
+  the first ten quests, each a line that names the quests.
 - `templates/extension/`: a quest example with a `find` step and a comment
   line in the creators' guide on when to use it.
 - Tests: `schema/test` (both kinds validate; an unknown prop is refused),
@@ -738,8 +745,10 @@ Files:
   has (items, recipes) unless P-2 added a place.
 - `content/core/map.json`: ids on the inscription props a riddle cites; each
   note is at most two lines and reads as a clue (G8, G14). The four notes
-  that pay into no riddle stay only if the owner named the arc they seed;
-  otherwise they are removed.
+  that pay into no riddle are removed (the owner's ruling, 7.10); they come
+  back with the arc they seed.
+- Every core quest declares its `type`; the chain of six covers at least four
+  types of the palette, and no two in a row share one (G17).
 - `tools/src/play.ts`: `PLAY_LEVEL` becomes `'error'`; the test that pinned it
   to `'warning'` flips.
 - `game/e2e/opening.ts`: one riddle solved end to end after the town.

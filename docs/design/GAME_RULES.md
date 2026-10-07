@@ -29,8 +29,10 @@ pillar higher on this list wins. A feature that serves none of them is cut.
    door, a changed tile. Test: time the gaps in a recording.
 2. **Doing beats reading.** The player learns by acting. No more than two lines
    of text before the next input; lore is asked for, never pushed.
-3. **Every task is a question.** A quest is a small problem with a context:
-   something to notice, choose or work out. A counter is not a question.
+3. **Every task is a question, and the next one is a different kind.** A quest
+   is a small problem with a context: something to notice, choose or work
+   out. A counter is not a question, and the same kind of question twice in a
+   row is a counter.
 4. **The world is the interface.** World objects carry play: they change what
    the player can do or where they can go. Menus carry information and live in
    buttons. Nothing is built in the world in order to open a menu.
@@ -135,6 +137,48 @@ and G10 are the ones `pnpm check` can test today (section 8).
 - **G16 A session ends on a mark and leaves a door.** The day summary says
   what was found, built and learned, and names one thing waiting for tomorrow.
 
+### Variety
+
+Top-tier games (Skyrim, The Witcher 3, Fallout) keep a player for hundreds of
+hours not because each quest is good but because the next one asks for a
+different kind of effort and pays a different feeling. The need behind each
+feeling is known: competence (I can), autonomy (I chose), relatedness (someone
+needed me), and with them curiosity, completion and surprise. A chain that
+pays the same feeling twice in a row is a counter even when every quest in it
+passes G1-G5. The owner's words (2026-10-07): collecting in the game must not
+be one style; different quests and their actions answer different player
+psychology.
+
+- **G17 No two in a row of the same type.** Every quest declares its type
+  from the palette below (`quest.type`, P-2). Two consecutive quests in a
+  chain never share a type, and the first ten quests of the valley cover at
+  least five types. The check counts (section 8).
+- **G18 Getting an item is not one motion.** Across a chain, the way an item
+  is obtained varies: the timed strike, a spot found with senses, a time of
+  day, a trade, a dig with a chance, a question asked right, a thing tended
+  over days. Three quests in a row whose items come by the same motion are a
+  counter in disguise.
+
+The palette. "Feeling" is what the player says afterwards; "need" is the
+psychology behind it (the three needs of Ryan, Rigby and Przybylski; Lazzaro's
+four keys of fun); "model" is a game where the type is done well; "here" is
+what it looks like in the valley.
+
+| Type | What the player does | Feeling | Need | Model | Here |
+|---|---|---|---|---|---|
+| `investigation` | Reads the scene, follows marks, deduces where. | "I worked it out." | Competence, curiosity | The Witcher 3 contracts (witcher senses) | Moss, footprints and a glow lead to the right dig; senses shortens the search. |
+| `discovery` | Goes where nothing sends them and finds a place. | "I found it myself." | Autonomy, wonder | Skyrim's far peaks and cave mouths | A place in the mist that opens when you stand at the arch at night. |
+| `fetch_twist` | Brings a thing that is not where it should be, or that someone else wants too. | "So that is where it was." | Competence, surprise | Fallout's "simple" deliveries | The berries grow only where the bells rang (three-fruits after P-3). |
+| `dilemma` | Chooses between two answers with no right one; both lead on. | "That was my call." | Autonomy, meaning | The Witcher 3's choices; Fallout's water chip | Give the old coin to Maru, or trade it with Pell; the valley remembers either. |
+| `skill` | Beats a timing or precision challenge with a harder window. | "Nailed it." | Competence, hard fun | Skyrim's lockpicking; Fallout's VATS | A rare node whose strike window is half the usual; a miss still keeps half. |
+| `collection` | Completes a set shown in one place. | "One more." | Completion, ownership | Skyrim's Stones of Barenziah; Fallout's bobbleheads | A set of treasures on a shelf that NPCs notice when it is full (the shelf's future, section 5 row 1). |
+| `tending` | Keeps something alive or safe over time. | "They needed me." | Relatedness, care | Companions in Skyrim; animals in Stardew Valley | Keep the fire lit through one night; a sapling watered three mornings. |
+| `riddle` | Reads clues in the world and answers with an action. | "Aha." | Insight, hard fun | Skyrim's pillar puzzles; The Witcher 3's riddles | The three ruin stones and the dig under the hill-facing statue. |
+| `mastery` | Learns a technique and uses it on something harder. | "I am getting better." | Competence over time | Skyrim's smithing; The Witcher 3's alchemy | A stew that needs two techniques the player has levelled. |
+| `gamble` | Takes a known risk for a rare find. | "Lucky me." | Thrill, variable reward | Fallout's luck | A dig spot with one rare find in five; luck changes the odds. |
+| `persuasion` | Asks the right question or brings the right fact. | "I talked my way in." | Relatedness, autonomy | Fallout's speech checks; The Witcher 3's talks | The trade opens only after the player asks Pell about the mist. |
+| `errand` | Repeats a known task for a known pay. | "Easy coins." | Routine, easy fun | Skyrim's radiant quests; The Witcher 3's notice boards | Pell's standing order for herbs, marked as an errand, only after the main beat (G4). |
+
 ## 4. Forbidden patterns
 
 Named so a review can point at one in two words.
@@ -152,19 +196,20 @@ Named so a review can point at one in two words.
 | Double back | A leg of the map with nothing on it. | G5 |
 | Fake choice | One side greyed out, or both sides the same. | G12 |
 | Typed answer | A riddle solved in a text box. | G6 |
+| Same again | Two quests in a row of one type, or three items in a row got by the same motion. | G17, G18 |
 
 ## 5. Known breaches on 2026-10-07
 
-Found by the owner playing the preview. Each one waits for his ruling on the
-fix (the "decision" column); the GRUNT items P-1 to P-4 carry the work.
+Found by the owner playing the preview. He ruled on all five the same evening
+(the "decision" column); the GRUNT items P-1 to P-4 carry the work.
 
 | What | Rule | Proposed fix (recommended default) | Decision |
 |---|---|---|---|
-| `core/collection-shelf`: four branches and a shard build a shelf that opens the journal's items tab. | G10 | Remove the camp. The journal already has its Log button and the J key. The `shelf` slot stays empty with its sign until it has a real function (a trophy shelf whose placed finds change what NPCs say) or is dropped. | Remove the camp now; the slot's future is a separate question. |
-| `core/three-fruits`: bring 3 redberries. `core/herbs-for-pell`: bring 4 herbs. Both are the gather verb repeated. | G1, G2 | Rewrite each around one thing to notice. Berries: Maru says they grew thickest where the bells rang; one bush near the bell ruin gives the three in one strike at the right time of day. Herbs: Pell says the best herbs stand where the mist is thin at noon; the herb that counts only yields at midday. Both need the `find` step (P-2). | Yes to both rewrites, with the `find` step. |
-| `core/a-coin-for-maru`: dig in the ruins for an old coin. | G2 (borderline) | It is already a find with a hint. Add the catch: the coin is under the statue that faces the hills, and the first dig elsewhere gives a shard and a hint. | Keep, add the catch with P-3. |
-| The seven inscriptions (the carved marks, two lantern statues, the stone head, the scratched names, the cold arch, the totem with fresh grass). Reading any of them changes nothing. | G8, G9 | One riddle ties the three ruin stones: the marks name the order the town was restored in; at night the lantern of the statue facing the hills glows and lights the tile to dig. The other four are seeds of a later arc (someone was here recently): each stays only if P-3 names the arc it pays into, otherwise it is cut until that arc exists. Needs the `riddle` step and prop ids (P-2), then the content (P-3). | One riddle across the three ruin stones; the owner says which of the other four stay. |
-| `core/herbs-for-pell` and `core/a-coin-for-maru` reward gold and reputation only. | G4 | Herbs: Pell teaches herb stew. Coin: Maru opens the elder's house (a place). | As proposed. |
+| `core/collection-shelf`: four branches and a shard build a shelf that opens the journal's items tab. | G10 | Remove the camp. The journal already has its Log button and the J key. The `shelf` slot stays empty with its sign until it has a real function (a trophy shelf whose placed finds change what NPCs say) or is dropped. | Yes (Motty, 7.10). Remove the camp now; the slot's future is a separate question. |
+| `core/three-fruits`: bring 3 redberries. `core/herbs-for-pell`: bring 4 herbs. Both are the gather verb repeated. | G1, G2 | Rewrite each around one thing to notice. Berries: Maru says they grew thickest where the bells rang; one bush near the bell ruin gives the three in one strike at the right time of day. Herbs: Pell says the best herbs stand where the mist is thin at noon; the herb that counts only yields at midday. Both need the `find` step (P-2). | Yes (Motty, 7.10) to both rewrites, with the `find` step. |
+| `core/a-coin-for-maru`: dig in the ruins for an old coin. | G2 (borderline) | It is already a find with a hint. Add the catch: the coin is under the statue that faces the hills, and the first dig elsewhere gives a shard and a hint. | Yes (Motty, 7.10). Keep, add the catch with P-3. |
+| The seven inscriptions (the carved marks, two lantern statues, the stone head, the scratched names, the cold arch, the totem with fresh grass). Reading any of them changes nothing. | G8, G9 | One riddle ties the three ruin stones: the marks name the order the town was restored in; at night the lantern of the statue facing the hills glows and lights the tile to dig. The other four are seeds of a later arc (someone was here recently): each stays only if P-3 names the arc it pays into, otherwise it is cut until that arc exists. Needs the `riddle` step and prop ids (P-2), then the content (P-3). | Yes (Motty, 7.10). One riddle across the three ruin stones; the other four are cut until an arc names them. |
+| `core/herbs-for-pell` and `core/a-coin-for-maru` reward gold and reputation only. | G4 | Herbs: Pell teaches herb stew. Coin: Maru opens the elder's house (a place). | Yes (Motty, 7.10). As proposed. |
 
 ## 6. When a request collides with a rule
 
@@ -241,6 +286,7 @@ the checklist above.
 | G4 | A quest outside the opening chain that rewards gold and reputation only. | warning |
 | G8 | Map props with a `note` that nothing refers to (today nothing can; the `riddle` step and prop ids come with P-2). | warning, one line with the count |
 | G10 | A camp with neither a station nor a bag bonus. | warning |
+| G17 | Two consecutive quests of one type in a `requires` chain, or fewer than five types among the first ten quests. | needs `quest.type` (P-2) |
 
 When the `find` and `riddle` steps exist, G2 counts them as beats and G8 checks
 each note against the riddles that cite it.
@@ -259,5 +305,10 @@ each note against the riddles that cite it.
   tree, the fetch with no context.
 - Celia Hodent, "The Gamer's Brain" (2017): usability and engage-ability,
   behind G13-G15.
+- Richard Ryan, Scott Rigby and Andrew Przybylski, "The Motivational Pull of
+  Video Games" (2006): competence, autonomy and relatedness, the "need" column
+  of the palette.
+- Nicole Lazzaro, "Why We Play Games: Four Keys to More Emotion Without Story"
+  (2004): hard fun, easy fun, serious fun, people fun.
 
 The links and what each gives are in [TOOLKIT.md](TOOLKIT.md).
