@@ -70,7 +70,7 @@ Mistvale's opening flow today:
 | **1. HUD Density** | HUD displays Bag, Log, Menu and Day/Time clock immediately upon waking up. | Bag has 0 items; Log has 1 quest. New players tap them unnecessarily and get empty screens. | Hide Log and Menu until the player mends the bridge; open Bag only upon first item gain. |
 | **2. Visual Wayfinding** | Player tracker reads *"River stone 0/3"*, but stones can blend with ground tiles on small mobile screens. | Some players walk west into the dead-end glade before finding the river stones to the north-east. | Add subtle visual glint/sparkle particle on the river stones during the opening quest. |
 | **3. Mobile Touch Ergonomics** | On-screen D-pad and A/B buttons work well, but no haptic feedback exists. | Players lack tactile confirmation when tapping A, hitting a minigame sweet spot, or walking over transitions. | Integrate `navigator.vibrate([15])` on minigame beats and action confirms (supported on Android/mobile browsers). |
-| **4. Typography Readability** | Pixel font (`Pixelify Sans`) previously used for all dialogue and descriptions. | Pixel typography at 14–16px on high-DPI phone screens causes eye fatigue for reading lore. | Completed in feat/feedback-1: added `--font-body` (system sans-serif) for dialogue, markdown, and descriptions while keeping retro pixel font for titles and HUD. |
+| **4. Typography Readability** | Pixel font (`Pixelify Sans`) previously used for all dialogue and descriptions. | Pixel typography at 14–16px on high-DPI phone screens causes eye fatigue for reading lore. | Tried a system sans-serif body font in feat/feedback-1; reverted in feat/ui-polish because it looked generic next to the art (see DECISIONS.md). Now the pixel font everywhere with ligatures off, body text 16px or more and dialogue 18px. |
 | **5. Narrative Hook Urgency** | Elder Maru now explains the town and mist on first conversation. | The opening text by the river is still a passive dialogue box. | Add an atmospheric camera pan or subtle mist drift across the river toward the town smoke before handing control to the player. |
 | **6. Session Closure Hook** | When players finish the opening tasks, no explicit "day summary" or milestone badge is presented. | Mobile players often leave without a clear sense of having completed the first milestone (M1). | Show a "Day 1 Complete" celebratory splash when the bridge is mended and the first town quest is accepted. |
 
@@ -79,7 +79,7 @@ Mistvale's opening flow today:
 ## 5. Implementation Roadmap for FTUE Enhancements
 
 - **Phase 1 (Immediate / Completed in feat/feedback-1)**:
-  - Readable system body font on mobile screens (`--font-body`).
+  - Readable body text on mobile screens: 16px or more, dialogue 18px.
   - Elder Maru's town & mist lore on first talk.
   - First stone gives level-up and skill point modal pop.
   - Forgiving miss gamble (50% keep chance).

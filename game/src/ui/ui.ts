@@ -28,6 +28,7 @@ import {
   openJournal,
   openMenu,
   openShop,
+  openSignCard,
   confirmBuild,
   confirmRestore,
 } from './panels';
@@ -407,6 +408,7 @@ export class UI {
   async sign(slotId: string): Promise<void> {
     const info = app.world?.signText(slotId);
     if (!info) return;
+    if (info.creator) return openSignCard(this, info);
     const options: Option[] = info.empty ? [{ label: 'Open the creator guide', value: 'guide' }, { label: 'Close', value: 'close' }] : [];
     const pick = await say(this, info.title, info.lines, options);
     if (pick === 'guide') openGuide(this);

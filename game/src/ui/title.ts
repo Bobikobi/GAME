@@ -69,8 +69,9 @@ export function showTitle(ui: UI): Promise<void> {
 
       const drawToggle = () =>
         lookToggle.replaceChildren(
-          button('Appearance: Male', () => { look = 0; drawCards(); drawToggle(); }, `tab ${look === 0 ? 'on' : ''}`),
-          button('Appearance: Female', () => { look = 1; drawCards(); drawToggle(); }, `tab ${look === 1 ? 'on' : ''}`),
+          h('span', null, 'Look'),
+          button('Male', () => { look = 0; drawCards(); drawToggle(); }, `tab ${look === 0 ? 'on' : ''}`),
+          button('Female', () => { look = 1; drawCards(); drawToggle(); }, `tab ${look === 1 ? 'on' : ''}`),
         );
 
       const drawCards = () =>

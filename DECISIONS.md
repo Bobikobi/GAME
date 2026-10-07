@@ -67,7 +67,7 @@ On a phone, A opened the cooking panel on pointerdown; the click the browser sen
 `game/e2e/` drives headless Chrome over CDP with Node's built-in WebSocket: no extra dependency, and nothing to download in CI, where the runner already has Chrome.
 **Retry when:** tests need Firefox or Safari; switch to Playwright then. Model: claude-opus-5-5.
 
-## 2026-10-07 ✅ System sans body font for mobile dialogue and reading readability
+## 2026-10-07 ⏸ System sans body font for mobile dialogue and reading readability
 
 `Pixelify Sans` remains for titles, buttons, numbers, and retro HUD elements. For body text—dialogue, panel bodies, item details, and creator guides—`--font-body` (system sans-serif) with generous line-height is used to prevent mobile reading fatigue on high-DPI screens. Model: antigravity.
 
@@ -113,3 +113,7 @@ A creator's profile (name, role, designed signature) is a content file of type `
 
 The loop first opened a discovery vote hourly whenever none was open, so a closed vote would be followed an hour later by an identical one over the same documents. It now runs only from the Actions page (`discovery`). The weekly summary also got its own concurrency group, because a waiting run in the shared group is replaced by any newer pull request event.
 **Retry when:** discovery documents carry a state (proposed, chosen) the loop can read. Model: claude-opus-5-5.
+
+## 2026-10-07 ✅ Pixel font everywhere again, with its ligatures turned off
+
+Supersedes "System sans body font". Elad played the preview and found the system body font too generic next to the pixel art, and saw letters missing. The missing letters were Pixelify Sans's broken "fi" ligature: "Fire" rendered as "Are" and "Campfire" as "CampAre". Fix: `font-variant-ligatures: none` and `font-feature-settings: 'liga' 0, 'clig' 0, 'calt' 0` on the page, `--font-body` points back to the pixel font, and body text is 16px or more on a phone (dialogue 18px). Retry the system font when: players report reading fatigue in long texts, and then only for the creator guide. Model: Claude Opus 5.5.

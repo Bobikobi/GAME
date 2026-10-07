@@ -30,7 +30,8 @@
   --purple2: #9a5bb0;
   --px: 2px;
   --font: 'Pixelify Sans', ui-monospace, monospace;
-  --font-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  /* body text is the pixel face too; it reads well from 16px up */
+  --font-body: var(--font);
   color-scheme: light;
 }
 
@@ -48,6 +49,12 @@ body {
   font-family: var(--font);
   font-size: 16px;
   line-height: 1.25;
+  /* Pixelify Sans draws its "fi" ligature as a broken glyph ("Fire" read "Are") */
+  font-variant-ligatures: none;
+  font-feature-settings:
+    'liga' 0,
+    'clig' 0,
+    'calt' 0;
   -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none;
   user-select: none;
@@ -111,7 +118,7 @@ body {
 .chip {
   background: var(--paper);
   border: 3px solid var(--ink);
-  border-radius: 6px;
+  border-radius: 0;
   box-shadow:
     inset 0 0 0 2px var(--paper2),
     0 3px 0 rgba(27, 26, 46, 0.45);
@@ -122,7 +129,7 @@ body {
   color: var(--ink);
   background: var(--cream);
   border: 3px solid var(--ink);
-  border-radius: 5px;
+  border-radius: 0;
   padding: 6px 12px;
   min-height: 40px;
   cursor: pointer;
@@ -185,7 +192,7 @@ body {
   width: 32px;
   height: 32px;
   border: 2px dashed var(--grey2);
-  border-radius: 4px;
+  border-radius: 0;
   text-align: center;
   line-height: 28px;
   color: var(--grey2);
@@ -209,7 +216,7 @@ body {
   width: 220px;
   height: 14px;
   border: 3px solid var(--paper);
-  border-radius: 4px;
+  border-radius: 0;
 }
 
 .loading-bar i {
@@ -279,7 +286,7 @@ body {
 .card {
   background: var(--paper);
   border: 3px solid var(--paper2);
-  border-radius: 6px;
+  border-radius: 0;
   padding: 10px;
   margin: 8px 0;
   text-align: left;
@@ -303,7 +310,7 @@ body {
 
 .card.starter p {
   margin: 2px 0 6px;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--ink2);
 }
 
@@ -352,7 +359,7 @@ textarea {
   color: var(--ink);
   background: #fff;
   border: 3px solid var(--ink);
-  border-radius: 4px;
+  border-radius: 0;
   padding: 6px 8px;
   user-select: text;
   -webkit-user-select: text;
@@ -737,16 +744,16 @@ textarea {
   padding: 0 8px;
   background: var(--cream);
   border: 3px solid var(--ink);
-  border-radius: 4px;
+  border-radius: 0;
   font-size: 15px;
 }
 
 .dialog-text {
   margin: 6px 0 0;
-  min-height: 2.6em;
+  min-height: 2.8em;
   font-family: var(--font-body);
-  font-size: 16px;
-  line-height: 1.45;
+  font-size: 18px;
+  line-height: 1.4;
 }
 
 .dialog-arrow {
@@ -851,7 +858,7 @@ textarea {
   place-items: center;
   background: var(--cream);
   border: 3px solid var(--wood2);
-  border-radius: 5px;
+  border-radius: 0;
   cursor: pointer;
   padding: 0;
 }
@@ -985,7 +992,7 @@ textarea {
   align-items: center;
   padding: 4px;
   border: 2px solid var(--paper2);
-  border-radius: 4px;
+  border-radius: 0;
 }
 
 .entry.unknown {
@@ -1003,12 +1010,31 @@ textarea {
   gap: 6px;
 }
 
+/* name and pips on top, now -> next and any note under them, the + button at the side */
 .attr {
   display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  column-gap: 8px;
+  row-gap: 2px;
   align-items: center;
+  padding: 4px 0 6px;
+  border-bottom: 2px solid var(--paper2);
+  font-size: 16px;
+}
+
+.attr > .pips {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.attr > .muted {
+  grid-column: 1 / 3;
   font-size: 14px;
+}
+
+.attr > .btn {
+  grid-column: 3;
+  grid-row: 1 / span 2;
 }
 
 .btn.plus {
@@ -1058,8 +1084,8 @@ textarea {
 .md p,
 .md li {
   font-family: var(--font-body);
-  font-size: 15px;
-  line-height: 1.45;
+  font-size: 16px;
+  line-height: 1.4;
 }
 
 .detail p,
@@ -1072,7 +1098,7 @@ textarea {
 .md code {
   background: var(--paper2);
   padding: 0 3px;
-  border-radius: 3px;
+  border-radius: 0;
   font-family: ui-monospace, monospace;
   font-size: 13px;
 }
@@ -1081,13 +1107,23 @@ textarea {
   background: var(--ink);
   color: var(--paper);
   padding: 8px;
-  border-radius: 4px;
+  border-radius: 0;
   overflow-x: auto;
 }
 
 .md pre code {
   background: none;
   color: inherit;
+}
+
+/* the copy button over each code block */
+.md > .btn {
+  display: flex;
+  margin: 10px 0 0 auto;
+}
+
+.md > .btn + pre {
+  margin-top: 0;
 }
 
 .md blockquote {
@@ -1112,7 +1148,7 @@ textarea {
   height: 28px;
   background: #e9b8a8;
   border: 3px solid var(--ink);
-  border-radius: 3px;
+  border-radius: 0;
   overflow: hidden;
 }
 
@@ -1176,6 +1212,620 @@ textarea {
   }
 }
 
+/* ------------------------------------------------------------ small labels */
+
+.loading-title {
+  letter-spacing: 1px;
+}
+
+.meter-label {
+  color: var(--ink2);
+}
+
+.chip.gold {
+  font-variant-numeric: tabular-nums;
+}
+
+/* "Look" and two tabs on one line */
+.look-toggle {
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 0;
+}
+
+.look-toggle > span {
+  margin-right: 4px;
+  color: var(--ink2);
+}
+
+.attr-name {
+  font-weight: 600;
+}
+
+.card.dev-welcome {
+  border-color: var(--blue2);
+  background: #eef6fd;
+}
+
+/* ------------------------------------------------------------ level up */
+
+.levelup-layer {
+  background: rgba(27, 26, 46, 0.6);
+}
+
+.panel.levelup {
+  position: relative;
+  overflow: hidden;
+  width: min(100%, 460px);
+  border-color: var(--ink);
+  box-shadow:
+    inset 0 0 0 2px var(--yellow),
+    0 4px 0 rgba(27, 26, 46, 0.5);
+}
+
+.levelup-body {
+  position: relative;
+  padding: 14px 14px 12px;
+  overflow-y: auto;
+}
+
+.levelup-body h2 {
+  margin: 0;
+  font-size: 28px;
+  text-align: center;
+  color: var(--green);
+  text-shadow:
+    2px 2px 0 var(--green4),
+    4px 4px 0 var(--ink);
+}
+
+.levelup-sub {
+  margin: 6px 0 2px;
+  text-align: center;
+  color: var(--ink2);
+}
+
+.levelup-body > .muted {
+  margin: 8px 0;
+  text-align: center;
+}
+
+.choices {
+  display: grid;
+  gap: 6px;
+}
+
+/* name and +1 on the first line, what it does and the numbers under it */
+.choice {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'name plus'
+    'what plus'
+    'change plus'
+    'note plus';
+  column-gap: 10px;
+  row-gap: 2px;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 7px 8px 7px 10px;
+  font: inherit;
+  font-size: 16px;
+  text-align: left;
+  color: var(--ink);
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 0;
+  box-shadow: inset 0 -3px 0 var(--wood2);
+  cursor: pointer;
+}
+
+.choice:hover:not(:disabled) {
+  background: #f3e2b8;
+}
+
+.choice:focus-visible {
+  background: var(--yellow);
+  outline: none;
+}
+
+.choice:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: inset 0 -1px 0 var(--wood2);
+}
+
+.choice:disabled {
+  cursor: default;
+  background: var(--paper);
+  box-shadow: none;
+  border-color: var(--paper2);
+  color: var(--grey);
+}
+
+.choice.spent {
+  background: var(--green4);
+  border-color: var(--green);
+  animation: pop 0.25s ease-out;
+}
+
+.choice-name {
+  grid-area: name;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.choice-name small {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--grey);
+}
+
+.choice-what {
+  grid-area: what;
+  color: var(--ink2);
+}
+
+.choice-change {
+  grid-area: change;
+  font-variant-numeric: tabular-nums;
+}
+
+.choice-change s {
+  color: var(--grey);
+}
+
+.choice-change b {
+  color: var(--green);
+}
+
+.choice-note {
+  grid-area: note;
+  font-size: 13px;
+  color: var(--blue);
+}
+
+.choice-plus {
+  grid-area: plus;
+  display: grid;
+  place-items: center;
+  min-width: 40px;
+  min-height: 40px;
+  font-size: 18px;
+  color: var(--paper);
+  background: var(--green2);
+  border: 3px solid var(--ink);
+  box-shadow: inset 0 -3px 0 var(--green);
+}
+
+.choice:disabled .choice-plus {
+  background: var(--paper2);
+  box-shadow: none;
+  border-color: var(--grey2);
+}
+
+.levelup-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+/* rays that turn slowly behind a level-up, a jackpot or a point */
+.burst {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 360px;
+  height: 360px;
+  margin: -180px 0 0 -180px;
+  pointer-events: none;
+  background: repeating-conic-gradient(rgba(248, 222, 98, 0.32) 0deg 12deg, transparent 12deg 30deg);
+  -webkit-mask-image: radial-gradient(circle, #000 30%, transparent 70%);
+  mask-image: radial-gradient(circle, #000 30%, transparent 70%);
+  animation: burst-turn 9s linear infinite;
+}
+
+.panel.levelup > .burst {
+  top: 46px;
+  z-index: 0;
+}
+
+@keyframes burst-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ------------------------------------------------------------ rewards in motion */
+
+/* overlays: an id-free rule would lose to "#ui > *" and catch every tap on the world */
+#ui > .banner,
+#ui > .coin.flying,
+#ui > .purse-float,
+#ui > .world-labels {
+  pointer-events: none;
+}
+
+.banner {
+  position: fixed;
+  left: 50%;
+  top: 38%;
+  z-index: 30;
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  animation: banner 1.6s ease-out forwards;
+}
+
+.banner span {
+  position: relative;
+  z-index: 1;
+  padding: 6px 18px;
+  font-size: 34px;
+  white-space: nowrap;
+  color: var(--yellow);
+  background: var(--ink);
+  border: 3px solid var(--yellow);
+  box-shadow:
+    inset 0 0 0 2px var(--ink2),
+    0 4px 0 rgba(27, 26, 46, 0.5);
+  text-shadow: 3px 3px 0 var(--wood);
+}
+
+.banner.jackpot span {
+  color: var(--ink);
+  background: var(--gold);
+  border-color: var(--ink);
+  text-shadow: 2px 2px 0 var(--yellow);
+}
+
+.banner.point span {
+  font-size: 26px;
+  padding: 2px 12px;
+  color: var(--paper);
+  background: var(--green2);
+  border-color: var(--ink);
+  text-shadow: 2px 2px 0 var(--green);
+}
+
+.banner .burst {
+  width: 240px;
+  height: 240px;
+  margin: -120px 0 0 -120px;
+}
+
+@keyframes banner {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  12% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+  22% {
+    transform: scale(1);
+  }
+  78% {
+    opacity: 1;
+    transform: translateY(-6px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-24px);
+  }
+}
+
+/* the JS moves it with transform, from the player to the gold chip */
+.coin.flying {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 31;
+  margin: -7px 0 0 -7px;
+  width: 14px;
+  height: 14px;
+  background: var(--yellow);
+  box-shadow:
+    inset -3px -3px 0 var(--gold),
+    0 0 0 1px var(--paper);
+}
+
+.purse-float {
+  position: fixed;
+  z-index: 31;
+  translate: -50% 0;
+  padding: 1px 6px;
+  font-size: 16px;
+  white-space: nowrap;
+  border: 2px solid var(--ink);
+  animation: purse-float 1.3s ease-out forwards;
+}
+
+.purse-float.earned {
+  color: var(--ink);
+  background: var(--yellow);
+}
+
+.purse-float.spent {
+  color: var(--paper);
+  background: var(--red2);
+}
+
+@keyframes purse-float {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+/* ------------------------------------------------------------ labels over the world */
+
+/* #ui's padding box is the whole viewport; this layer comes first, so the HUD paints over it */
+.world-labels {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* placePinned() writes transform every frame, so centring uses translate, which adds to it */
+.world-labels > * {
+  position: absolute;
+  left: 0;
+  top: 0;
+  translate: -50% -100%;
+  white-space: nowrap;
+}
+
+/* grows with the screen, since the world's tiles do too */
+.signature {
+  display: none;
+  align-items: center;
+  gap: 0.3em;
+  padding: 1px 0.5em 2px;
+  font-size: clamp(14px, 1.2vw + 6px, 20px);
+  line-height: 1.2;
+  border: 2px solid var(--ink);
+  box-shadow: 0 2px 0 rgba(27, 26, 46, 0.45);
+}
+
+.signature.on {
+  display: inline-flex;
+  animation: sig-in 0.18s ease-out;
+}
+
+/* scale and opacity only: transform belongs to placePinned() */
+@keyframes sig-in {
+  from {
+    opacity: 0;
+    scale: 0.85;
+  }
+}
+
+/* a notch that points down at the sign */
+.signature::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  background: inherit;
+  border: 2px solid var(--ink);
+  border-top: 0;
+  border-left: 0;
+  rotate: 45deg;
+}
+
+.sig-carved {
+  color: var(--cream);
+  background: var(--wood);
+  text-shadow: 0 -1px 0 #3d2414;
+  box-shadow:
+    inset 0 2px 0 var(--wood2),
+    0 2px 0 rgba(27, 26, 46, 0.45);
+}
+
+.sig-painted {
+  color: var(--red);
+  background: var(--paper);
+  border-color: var(--red);
+}
+
+.sig-ink {
+  color: var(--ink);
+  background: var(--paper);
+  font-style: italic;
+}
+
+.sig-gold {
+  color: var(--yellow);
+  background: var(--ink);
+  border-color: var(--gold);
+  text-shadow: 1px 1px 0 var(--wood);
+}
+
+.sig-moss {
+  color: var(--green4);
+  background: var(--green);
+  text-shadow: 1px 1px 0 #1d4527;
+}
+
+.signature.empty {
+  color: var(--grey);
+  background: var(--paper2);
+  border-style: dashed;
+}
+
+/* the glyphs are 8x8 pixel masks, so they take the colour of the words beside them */
+.glyph {
+  display: inline-block;
+  flex: none;
+  width: 0.85em;
+  height: 0.85em;
+  background: currentColor;
+  -webkit-mask: var(--g) center / contain no-repeat;
+  mask: var(--g) center / contain no-repeat;
+  image-rendering: pixelated;
+}
+
+.g-leaf {
+  --g: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath d='M4 0h3v1h1v3h-1v2h-1v1h-2v1h-3v-1h1v-1h-1v-3h1v-1h1v-1h1z'/%3E%3C/svg%3E");
+}
+
+.g-star {
+  --g: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath d='M3 0h2v2h3v2h-1v1h1v3h-2v-1h-2v1h-2v-3h1v-1h-1v-2h3z'/%3E%3C/svg%3E");
+}
+
+.g-sun {
+  --g: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath d='M3 0h2v1h-2zM0 3h1v2h-1zM7 3h1v2h-1zM3 7h2v1h-2zM1 1h1v1h-1zM6 1h1v1h-1zM1 6h1v1h-1zM6 6h1v1h-1zM3 2h2v1h1v2h-1v1h-2v-1h-1v-2h1z'/%3E%3C/svg%3E");
+}
+
+.g-flower {
+  --g: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath d='M3 0h2v2h-2zM0 3h2v2h-2zM6 3h2v2h-2zM3 6h2v2h-2zM3 3h2v2h-2zM1 1h1v1h-1zM6 1h1v1h-1zM1 6h1v1h-1zM6 6h1v1h-1z'/%3E%3C/svg%3E");
+}
+
+.g-key {
+  --g: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath d='M0 1h3v1h1v1h4v2h-1v1h-1v-1h-1v1h-1v-1h-1v1h-1v1h-2zM1 2v2h1v-2z' fill-rule='evenodd'/%3E%3C/svg%3E");
+}
+
+.g-wave {
+  --g: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath d='M0 2h2v1h1v1h2v-1h1v-1h2v2h-1v1h-1v1h-2v-1h-1v-1h-1v-1h-1v1h-1z'/%3E%3C/svg%3E");
+}
+
+.whisper {
+  font-size: 15px;
+  color: #d9d4f0;
+  text-shadow:
+    0 0 6px rgba(154, 91, 176, 0.9),
+    1px 1px 0 var(--ink);
+  font-style: italic;
+  opacity: 0;
+  animation: whisper 3.6s ease-in-out forwards;
+}
+
+@keyframes whisper {
+  0% {
+    opacity: 0;
+    filter: blur(2px);
+  }
+  25%,
+  70% {
+    opacity: 0.9;
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    filter: blur(2px);
+    translate: -50% calc(-100% - 14px);
+  }
+}
+
+/* ------------------------------------------------------------ the sign card */
+
+.panel.sign-card {
+  width: min(100%, 420px);
+  background: #f3e6c4;
+  box-shadow:
+    inset 0 0 0 3px var(--wood2),
+    0 4px 0 rgba(27, 26, 46, 0.5);
+}
+
+.sign-card .panel-body {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  text-align: center;
+}
+
+.sign-card .signature {
+  position: static;
+  display: inline-flex;
+  font-size: 22px;
+  padding: 4px 14px 5px;
+}
+
+.sign-card .signature::after {
+  display: none;
+}
+
+
+.sign-who {
+  margin: 0;
+  font-size: 18px;
+}
+
+.sign-who small {
+  display: block;
+  font-size: 15px;
+  color: var(--ink2);
+}
+
+.sign-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
+}
+
+.sign-stat {
+  padding: 6px 4px;
+  background: var(--paper);
+  border: 2px solid var(--wood2);
+}
+
+.sign-stat b {
+  display: block;
+  font-size: 22px;
+  color: var(--wood);
+}
+
+.sign-stat span {
+  font-size: 13px;
+  color: var(--ink2);
+}
+
+.sign-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--grey);
+}
+
+.sign-tools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+
+.sign-tools span {
+  padding: 1px 6px;
+  font-size: 14px;
+  background: var(--sky);
+  border: 2px solid var(--ink);
+}
+
+.sign-mended {
+  margin: 0;
+  padding: 4px 10px;
+  color: var(--green);
+  background: var(--green4);
+  border: 2px dashed var(--green);
+}
+
 @media (max-width: 420px) {
   .meter-bar {
     width: 64px;
@@ -1189,19 +1839,22 @@ textarea {
     padding: 10px 14px 14px;
   }
   .dialog-text {
-    font-size: 15px;
+    font-size: 17px;
     line-height: 1.4;
   }
   .md p,
   .md li {
-    font-size: 14px;
-    line-height: 1.45;
+    font-size: 16px;
+    line-height: 1.4;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .toast,
-  .dialog-arrow {
+  .dialog-arrow,
+  .burst,
+  .choice.spent,
+  .signature.on {
     animation: none;
   }
 }
