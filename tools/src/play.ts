@@ -12,6 +12,9 @@ export const RULES_PAGE = 'docs/design/GAME_RULES.md';
 /** The opening chain teaches each verb by repetition; G2 and G4 apply after it. */
 export const OPENING_QUESTS: ReadonlySet<string> = new Set(['core/fix-the-bridge', 'core/first-fire', 'core/into-town']);
 
+/** About two lines of dialogue on a phone at the dialogue size (G14). */
+export const BOX_CHARS = 80;
+
 /** Flipped to 'error' in the pull request that fixes the core content (P-3). */
 export const PLAY_LEVEL: Issue['level'] = 'warning';
 
@@ -55,6 +58,36 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
         file: at(c.id),
         where: 'camp',
         message: `no station and no bag bonus: a build must change play, a panel gets a button (${rule('G10', 'menu in disguise')})`,
+        level: PLAY_LEVEL,
+      });
+    }
+  }
+
+  // G14 and G21: talk stays short, counted per character so one line names the problem.
+  for (const n of Object.values(b.npcs)) {
+    const d = n.dialogue;
+    const over: string[] = [];
+    if (d.first !== undefined && d.first.length > 3) over.push(`first meeting ${d.first.length} boxes (3 at most)`);
+    for (const standing of ['stranger', 'acquaintance', 'friend', 'family'] as const) {
+      const lines = d[standing];
+      if (lines !== undefined && lines.length > 2) over.push(`${standing} ${lines.length} boxes (2 at most)`);
+    }
+    for (const t of n.topics ?? []) if (t.lines.length > 4) over.push(`topic "${t.ask}" ${t.lines.length} boxes (4 at most)`);
+    if (over.length > 0) {
+      issues.push({
+        file: at(n.id),
+        where: 'npc.dialogue',
+        message: `${over.join(', ')}: the player pulls, the rest waits behind a topic (${rule('G21', 'lore wall')})`,
+        level: PLAY_LEVEL,
+      });
+    }
+    const boxes = [d.first ?? [], d.stranger, d.acquaintance ?? [], d.friend ?? [], d.family ?? [], ...(n.topics ?? []).map((t) => t.lines)].flat();
+    const long = boxes.filter((line) => line.length > BOX_CHARS).length;
+    if (long > 0) {
+      issues.push({
+        file: at(n.id),
+        where: 'npc.dialogue',
+        message: `${long} of ${boxes.length} boxes over ${BOX_CHARS} characters, about two phone lines (${rule('G14', 'lore wall')})`,
         level: PLAY_LEVEL,
       });
     }

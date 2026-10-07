@@ -197,3 +197,8 @@ The `play` rules are warnings, not errors, because the shipped core content brea
 
 Motty, the same evening, yes to all five rows of GAME_RULES.md section 5: the collection shelf stops being a build (P-1); three-fruits and herbs-for-pell become finds with a clue; a-coin-for-maru gets its catch; one riddle over the three ruin stones, and the other four inscriptions are cut until an arc names them; rewards that change play. His addition, in his words: collecting in the game must not be one style; like Skyrim, The Witcher and Fallout, different quests and their actions answer different player psychology. That became rules G17 and G18 and the palette of twelve quest types in GAME_RULES.md section 3, `quest.type` in P-2, and a G17 line in the check once the field exists.
 **Retry when:** a palette type has no quest after P-3; then the palette shrinks, not the rule. Model: Claude Fable 5.1.
+
+## 2026-10-07 ✅ Dialogue has rules of its own: every line does one job, one voice per character, the player pulls
+
+The owner asked whether language and talk were covered; they were only by the two-line box rule. Now GAME_RULES.md section 3 has G19-G23 (one job per line, a voice sheet per character, the player pulls with a first meeting of three boxes at most, plain words for all ages with the valley's own names, real talk choices), four proposed voice sheets (Maru, Pell, the narrator, signs) waiting for his word, and `pnpm check` counts boxes over the limits per character. Maru's eight-box first meeting is a known breach, fixed with P-3. English stays the only language until the owner decides on a language field.
+**Retry when:** the owner edits a voice sheet; the lines follow the sheet, never the other way round. Model: Claude Fable 5.1.

@@ -15,6 +15,12 @@ the right step, and nothing in the repository guarded that. Now something does:
 this page, the review checklist in section 7, and the `play` rules in
 `pnpm check` (section 8).
 
+What it is for, in the owner's words (2026-10-07): to reach an end product the
+game has to carry a community, so the foundations must be clear. This page
+and the files beside it are those foundations. A creator who has never met the
+team, a developer in a hurry and an AI with a free hand must all be able to
+tell right from wrong here without asking, and must get the same answer.
+
 Read with it: [FTUE_RESEARCH.md](../FTUE_RESEARCH.md) for the first five
 minutes (its five principles are assumed here, not repeated) and
 [TOOLKIT.md](TOOLKIT.md) for the free tools that help keep these rules.
@@ -179,6 +185,49 @@ what it looks like in the valley.
 | `persuasion` | Asks the right question or brings the right fact. | "I talked my way in." | Relatedness, autonomy | Fallout's speech checks; The Witcher 3's talks | The trade opens only after the player asks Pell about the mist. |
 | `errand` | Repeats a known task for a known pay. | "Easy coins." | Routine, easy fun | Skyrim's radiant quests; The Witcher 3's notice boards | Pell's standing order for herbs, marked as an errand, only after the main beat (G4). |
 
+### Dialogue and voice
+
+Talk in the valley is short, in character, and always does work. The content
+shape already says so: a character has a first meeting, one line or two per
+standing (stranger, acquaintance, friend, family), and up to four topics the
+player asks about. That shape is the rule: the player pulls, the character
+answers, and every answer pays (G8). A box is one entry in those lists; on a
+phone at the dialogue size a box holds about two lines, which is about 80
+characters.
+
+- **G19 Every line does one job.** It asks a question, gives a clue, shows
+  who is talking, offers a choice, or lands a laugh. A line that only explains
+  is cut; a fact the player needs is given by the world (a sign, a glow, a
+  tile) before it is given by a mouth.
+- **G20 One voice per character.** Each character has a voice sheet (how they
+  talk, what they want, what they never say), and two of their lines next to
+  two of another's are tellable apart with the names hidden. The sheets are
+  below; the owner approves a new one before the character speaks.
+- **G21 The player pulls.** A first meeting is at most three boxes; everything
+  else waits behind a topic. A standing line is one box, two at most. A topic
+  is at most four boxes. A new topic appears when the world changed (a quest
+  done, a place mended), so coming back to a character pays.
+- **G22 Plain words, all ages, the valley's own names.** A child of eight
+  reads every line: no slang, no jokes about games, no brand names, no
+  irony at the player's expense. The valley's words (the mist, the bells, the
+  ruins, the hills, the grove) are the same in every mouth and on every sign.
+  English for now; a second language is a format decision (a language field
+  on content, never a copied folder) and an open question for the owner.
+- **G23 Talk choices are real.** Topics are a choice of what to learn, never
+  a quiz with one right pick. When the player gets answers of their own
+  (P-2 or later), at most three, each a different stance (ask, doubt, offer),
+  and each pays something the others do not.
+
+The voice sheets. "Proposed" means written from the lines that exist today,
+waiting for the owner's word.
+
+| Voice | How they talk | What they want | Never | Status |
+|---|---|---|---|---|
+| Elder Maru | Slow. Short sentences. Speaks of "once" and of mending. Hints at the mist, does not explain it. Calls the player "you", never by name until friend. | The town back, one mended thing at a time. | Prices. Hurry. A straight answer about the bells. | Proposed |
+| Pell | Quick. Counts everything. Every subject becomes a trade or a rumour. Jokes about prices, not about people. | Customers, and the roads open again. | Sentiment. Lore of her own; she repeats what travellers say. | Proposed |
+| The narrator (the river text, toasts, the journal) | Second person, present tense, concrete nouns, one adjective at most. Says what is there, not what to feel. | Nothing; it is the valley speaking. | "You feel", "amazing", exclamation marks outside a level-up. | Proposed |
+| Signs and inscriptions | Fewest words. A fact and a hook. No "you". | To be read twice. | A full sentence where a fragment does. | Proposed |
+
 ## 4. Forbidden patterns
 
 Named so a review can point at one in two words.
@@ -190,13 +239,14 @@ Named so a review can point at one in two words.
 | Free read | Text with no payoff: a statue that says something and nothing follows. | G8 |
 | Christmas tree | More than two open quests lit up at once. | G3 |
 | Empty tab | A bag, log or tab shown before it has anything in it. | FTUE 3 |
-| Lore wall | More than two lines before the next input. | G14 |
+| Lore wall | More than two lines before the next input, or a first meeting past three boxes. | G14, G21 |
 | Gold for gold | A reward that is only coins, outside a marked errand. | G4 |
 | Reward without a beat | Progress with no sound, name or place. | G13 |
 | Double back | A leg of the map with nothing on it. | G5 |
 | Fake choice | One side greyed out, or both sides the same. | G12 |
 | Typed answer | A riddle solved in a text box. | G6 |
 | Same again | Two quests in a row of one type, or three items in a row got by the same motion. | G17, G18 |
+| Quiz talk | A topic list with one right pick, or a line that exists to explain. | G19, G23 |
 
 ## 5. Known breaches on 2026-10-07
 
@@ -210,6 +260,7 @@ Found by the owner playing the preview. He ruled on all five the same evening
 | `core/a-coin-for-maru`: dig in the ruins for an old coin. | G2 (borderline) | It is already a find with a hint. Add the catch: the coin is under the statue that faces the hills, and the first dig elsewhere gives a shard and a hint. | Yes (Motty, 7.10). Keep, add the catch with P-3. |
 | The seven inscriptions (the carved marks, two lantern statues, the stone head, the scratched names, the cold arch, the totem with fresh grass). Reading any of them changes nothing. | G8, G9 | One riddle ties the three ruin stones: the marks name the order the town was restored in; at night the lantern of the statue facing the hills glows and lights the tile to dig. The other four are seeds of a later arc (someone was here recently): each stays only if P-3 names the arc it pays into, otherwise it is cut until that arc exists. Needs the `riddle` step and prop ids (P-2), then the content (P-3). | Yes (Motty, 7.10). One riddle across the three ruin stones; the other four are cut until an arc names them. |
 | `core/herbs-for-pell` and `core/a-coin-for-maru` reward gold and reputation only. | G4 | Herbs: Pell teaches herb stew. Coin: Maru opens the elder's house (a place). | Yes (Motty, 7.10). As proposed. |
+| Maru's first meeting is eight boxes, most over two phone lines; Pell's standing lines run to three boxes. | G14, G21 | Maru: three boxes at the first meeting (who he is, what he wants, where to go); the rest moves behind the three topics that already exist. Every box within two phone lines. Pell: two boxes per standing. | Owner's word; recommended yes, with P-3. |
 
 ## 6. When a request collides with a rule
 
@@ -262,7 +313,8 @@ names the rule and the pull request waits.
 2. After the opening, is there a beat that is not repeat-the-verb? (G2)
 3. Does the reward change what the player can do? (G4)
 4. Does every new sign, note or line pay in a clue, a key, a character or a
-   laugh? (G8)
+   laugh, and can you tell who is speaking with the name hidden? (G8, G19,
+   G20)
 5. Does every new build change play, not open a panel? (G10)
 6. Is every new choice real, with both sides shown before choosing? (G12)
 7. Does every new action answer within a tenth of a second and land with a
@@ -287,6 +339,7 @@ the checklist above.
 | G8 | Map props with a `note` that nothing refers to (today nothing can; the `riddle` step and prop ids come with P-2). | warning, one line with the count |
 | G10 | A camp with neither a station nor a bag bonus. | warning |
 | G17 | Two consecutive quests of one type in a `requires` chain, or fewer than five types among the first ten quests. | needs `quest.type` (P-2) |
+| G14, G21 | A character's first meeting over three boxes, a standing over two, a topic over four; boxes over 80 characters, counted per character. | warning |
 
 When the `find` and `riddle` steps exist, G2 counts them as beats and G8 checks
 each note against the riddles that cite it.

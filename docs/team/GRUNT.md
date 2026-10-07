@@ -749,6 +749,11 @@ Files:
   back with the arc they seed.
 - Every core quest declares its `type`; the chain of six covers at least four
   types of the palette, and no two in a row share one (G17).
+- `content/core/npcs/elder.json`, `trader.json`: Maru's first meeting cut to
+  three boxes with the rest behind his topics; every box within 80
+  characters; Pell's standings at two boxes (G14, G21). The voice sheets in
+  GAME_RULES.md section 3 are the measure: a reviewer hides the names and
+  tells the two apart.
 - `tools/src/play.ts`: `PLAY_LEVEL` becomes `'error'`; the test that pinned it
   to `'warning'` flips.
 - `game/e2e/opening.ts`: one riddle solved end to end after the town.

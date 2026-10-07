@@ -64,6 +64,21 @@ describe('play rules', () => {
     expect(checkPlay(fixed, origin).filter((i) => i.where === 'camp' && i.file === origin['core/collection-shelf'])).toEqual([]);
   });
 
+  it('counts the long first meeting and the long boxes per character (G14, G21)', () => {
+    expect(cites('core/elder', 'G21')).toBe(true);
+    expect(cites('core/elder', 'G14')).toBe(true);
+    expect(cites('core/trader', 'G21')).toBe(true);
+    expect(about('core/elder').filter((i) => i.where === 'npc.dialogue')).toHaveLength(2);
+  });
+
+  it('is silent about a character who talks within the limits', () => {
+    const elder = bundle.npcs['core/elder'];
+    if (!elder) throw new Error('core/elder is not in the bundle');
+    const quiet = { ...elder, dialogue: { stranger: ['Stay near the fire after dark.'], first: ['I am Maru.', 'You mended the bridge. That is how it starts.'] }, topics: undefined };
+    const fixed: Bundle = { ...bundle, npcs: { ...bundle.npcs, 'core/elder': quiet } };
+    expect(checkPlay(fixed, origin).filter((i) => i.where === 'npc.dialogue' && i.file === origin['core/elder'])).toEqual([]);
+  });
+
   it('reaches pnpm check', () => {
     expect(all.some((i) => i.message.includes('G10, "menu in disguise"'))).toBe(true);
     expect(all.filter((i) => i.level === 'error')).toEqual([]);
