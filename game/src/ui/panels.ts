@@ -495,7 +495,6 @@ function openCreators(ui: UI): void {
   const p = panel(ui, 'Creators', 'wide');
   const creators = Object.entries(b.creators).sort(([a], [z]) => (a === 'core' ? -1 : z === 'core' ? 1 : a.localeCompare(z)));
   p.body.replaceChildren(
-    h('p', { class: 'muted' }, 'Hours are estimates based on commit sessions.'),
     ...creators.map(([handle, profile]) => {
       const entry = b.board[handle];
       return h(
@@ -503,7 +502,7 @@ function openCreators(ui: UI): void {
         { class: 'card' },
         h('b', null, profile.name),
         profile.role ? h('div', { class: 'muted' }, profile.role) : null,
-        h('div', null, `${entry?.points ?? 0} creator points - about ${entry?.hours ?? 0} hours`),
+        h('div', null, `${entry?.points ?? 0} creator points - ${entry?.records ?? 0} records, ${entry?.commits ?? 0} commits`),
       );
     }),
   );
@@ -583,14 +582,13 @@ export function openSignCard(ui: UI, info: SignInfo): void {
   if (sig?.glyph && sig.glyph !== 'none') mark.append(h('i', { class: `glyph g-${sig.glyph}` }));
   mark.append(sig?.text ?? c.name);
   const stat = (value: string, label: string) => h('div', { class: 'sign-stat' }, h('b', null, value), h('span', null, label));
-  const hasBoard = c.points !== undefined || c.hours !== undefined;
+  const hasBoard = c.points !== undefined || c.commits !== undefined;
   const parts: (HTMLElement | null)[] = [
     mark,
     h('p', { class: 'sign-who' }, `Added by ${c.name}`, c.role ? h('small', null, c.role) : null),
     hasBoard
-      ? h('div', { class: 'sign-stats' }, stat(String(c.points ?? 0), 'creator points'), stat(String(c.hours ?? 0), 'hours, estimated'))
+      ? h('div', { class: 'sign-stats' }, stat(String(c.points ?? 0), 'creator points'), stat(String(c.commits ?? 0), 'commits'))
       : null,
-    hasBoard ? h('p', { class: 'sign-note' }, 'Hours are an estimate from commit sessions.') : null,
     c.ai.length ? h('div', { class: 'sign-tools' }, h('p', { class: 'sign-note' }, 'Made with'), c.ai.map((t) => h('span', null, t))) : null,
     c.mendedBy ? h('p', { class: 'sign-mended' }, `Mended by ${c.mendedBy}`) : null,
   ];
