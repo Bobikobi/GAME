@@ -30,7 +30,7 @@ interface AudioGraph {
   ambiencePlayer: AmbiencePlayer;
 }
 
-interface SoundApi {
+export interface SoundApi {
   unlock(): void;
   installUnlock(target?: EventTarget): void;
   music(id: SongId | null, fadeMs?: number): void;
