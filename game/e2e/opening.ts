@@ -380,7 +380,9 @@ class Player {
 
   /** Gathers from a resource's nodes until the bag holds `want` of its item. */
   async gather(source: string, item: string, want: number): Promise<void> {
-    for (let round = 0; round < 8 && (await this.bag(item)) < want; round++) {
+    // a missed minigame can leave a node empty, so wait out a respawn (up to 90 s of game time) on a slow machine
+    const deadline = Date.now() + 150_000;
+    while (Date.now() < deadline && (await this.bag(item)) < want) {
       const nodes = await this.page.eval<{ id: string; x: number; y: number; ready: boolean }[]>(`__e2e.nodes(${JSON.stringify(source)})`);
       const ready = nodes.filter((n) => n.ready);
       if (ready.length === 0) {
