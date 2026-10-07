@@ -989,7 +989,7 @@ export class WorldScene extends Phaser.Scene {
     const role = profile?.role ? ` (${profile.role})` : '';
     lines.push(`Added by ${name}${role}.`);
     if (entry) {
-      lines.push(`${entry.points} creator points · ~${entry.hours}h invested`);
+      lines.push(`${entry.points} creator points · about ${entry.hours} hours`);
     }
     if (content.ai_tools?.length) {
       lines.push(`Made with: ${content.ai_tools.join(', ')}.`);
