@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../schema/json/camp.schema.json",
+  "format": 1,
+  "type": "camp",
+  "id": "core/campfire",
+  "title": "Campfire",
+  "creator": "core",
+  "camp": {
+    "slot": "fire",
+    "inputs": [
+      {
+        "item": "core/branch",
+        "qty": 3
+      }
+    ],
+    "active_ms": 3000,
+    "sprite": "core/base-kit:props/campfire_lit",
+    "provides": "fire"
+  }
+}

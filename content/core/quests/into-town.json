@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../schema/json/quest.schema.json",
+  "format": 1,
+  "type": "quest",
+  "id": "core/into-town",
+  "title": "Smoke over the town",
+  "creator": "core",
+  "quest": {
+    "summary": "Someone lives in the town to the north-east. Go to the town square.",
+    "requires": [
+      "core/first-fire"
+    ],
+    "steps": [
+      {
+        "kind": "visit",
+        "slot": "core/town-square"
+      }
+    ],
+    "reward": {
+      "rep": 0
+    }
+  }
+}

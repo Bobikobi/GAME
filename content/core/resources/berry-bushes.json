@@ -1,0 +1,34 @@
+{
+  "$schema": "../../../schema/json/resource.schema.json",
+  "format": 1,
+  "type": "resource",
+  "id": "core/berry-bushes",
+  "title": "Redberry bushes",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/berry",
+      "name": "Redberry",
+      "description": "Sweet and a little sour.",
+      "kind": "food",
+      "rarity": "common",
+      "sprite": "core/base-kit:items/berry",
+      "food": {
+        "satiety": 4
+      }
+    }
+  ],
+  "node": {
+    "output": "core/berry",
+    "yield": 2,
+    "active_ms": 2500,
+    "respawn_ms": 45000,
+    "count": 4,
+    "sprite": "core/base-kit:props/bush_berry",
+    "sprite_empty": "core/base-kit:props/bush_empty",
+    "level": 1,
+    "place": {
+      "slot": "core/berry-bushes"
+    }
+  }
+}

@@ -1,0 +1,39 @@
+/**
+ * The creator template must pass the check as it is, so "add a fruit in 10
+ * minutes" starts from something that works.
+ */
+import { cpSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterAll, describe, expect, it } from 'vitest';
+import { runCheck } from '../src/check';
+import { CONTENT_DIR, REPO_ROOT } from '../src/load';
+
+describe('templates/extension', () => {
+  const root = mkdtempSync(join(tmpdir(), 'mistvale-template-'));
+  afterAll(() => rmSync(root, { recursive: true, force: true }));
+
+  cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
+  cpSync(join(CONTENT_DIR, 'kit'), join(root, 'kit'), { recursive: true });
+  cpSync(join(REPO_ROOT, 'templates', 'extension'), join(root, 'extensions', 'your-handle'), {
+    recursive: true,
+    filter: (src) => !src.endsWith('.md'),
+  });
+  const result = runCheck(root);
+
+  it('passes the check unchanged', () => {
+    expect(result.issues.filter((i) => i.level === 'error')).toEqual([]);
+  });
+
+  it('grows its fruit in the empty glade, credited to the creator', () => {
+    const b = result.assembled.bundle!;
+    expect(b.items['your-handle/plum']?.creator).toBe('your-handle');
+    const nodes = Object.values(b.instances).filter((i) => i.source === 'your-handle/wild-plums');
+    expect(nodes).toHaveLength(4);
+    const glade = b.map.slots.find((s) => s.id === 'core/west-glade')!;
+    for (const n of nodes) {
+      expect(n.x >= glade.x && n.x < glade.x + glade.w && n.y >= glade.y && n.y < glade.y + glade.h).toBe(true);
+    }
+    expect(b.values['your-handle/plum']).toBeGreaterThan(0);
+  });
+});

@@ -1,0 +1,38 @@
+{
+  "$schema": "../../../schema/json/profession.schema.json",
+  "format": 1,
+  "type": "profession",
+  "id": "core/digging",
+  "title": "Digging",
+  "creator": "core",
+  "profession": {
+    "name": "Digging",
+    "verb": "dig",
+    "xp_levels": [
+      15,
+      90,
+      240,
+      500,
+      900,
+      1600,
+      2800,
+      4200
+    ],
+    "techniques": [
+      {
+        "level": 2,
+        "name": "Old signs",
+        "effect": "second_hint",
+        "value": 0,
+        "text": "You read a second kind of hint."
+      },
+      {
+        "level": 4,
+        "name": "Lucky strike",
+        "effect": "rare_find_pct",
+        "value": 10,
+        "text": "Rare finds are 10% more likely."
+      }
+    ]
+  }
+}

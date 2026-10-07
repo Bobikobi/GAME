@@ -1,0 +1,34 @@
+name: Request for the valley
+description: Something you would like to find in the game. Others vote with a thumbs up.
+title: "[Request] "
+labels: ["request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Vote for requests you like with a 👍 on the first post. A request with enough votes becomes an **open call**: an invitation to every creator to build it, with competing proposals welcome.
+  - type: textarea
+    id: what
+    attributes:
+      label: What would you like to find in the valley?
+      placeholder: A night-blooming flower in the ruins garden that only opens after 9 pm.
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of thing is it?
+      options:
+        - A plant or other resource
+        - A recipe
+        - A ruin or a treasure to dig
+        - A character or a quest
+        - A building or a place
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: What would it add to the game?
+      placeholder: A reason to come back at night, and a rare ingredient for tea.

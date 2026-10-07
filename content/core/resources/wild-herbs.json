@@ -1,0 +1,31 @@
+{
+  "$schema": "../../../schema/json/resource.schema.json",
+  "format": 1,
+  "type": "resource",
+  "id": "core/wild-herbs",
+  "title": "Wild herbs",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/herb",
+      "name": "Wild herb",
+      "description": "Smells like rain.",
+      "kind": "material",
+      "rarity": "common",
+      "sprite": "core/base-kit:items/herb"
+    }
+  ],
+  "node": {
+    "output": "core/herb",
+    "yield": 2,
+    "active_ms": 3000,
+    "respawn_ms": 60000,
+    "count": 3,
+    "sprite": "core/base-kit:props/herb_plant",
+    "tool": "basket",
+    "level": 1,
+    "place": {
+      "slot": "core/wild-herbs"
+    }
+  }
+}

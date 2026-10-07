@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../schema/json/npc.schema.json",
+  "format": 1,
+  "type": "npc",
+  "id": "core/trader",
+  "title": "Pell the trader",
+  "creator": "core",
+  "npc": {
+    "name": "Pell",
+    "sprite": "core/base-kit:chars/trader",
+    "place": {
+      "slot": "core/trader-stall"
+    },
+    "shop": "core/trader-shop",
+    "dialogue": {
+      "stranger": [
+        "Baskets, trowels, berries. And I buy what you find."
+      ],
+      "acquaintance": [
+        "Herbs are selling well. The grove has plenty, if you have a basket."
+      ],
+      "friend": [
+        "Best customer this side of the river."
+      ]
+    }
+  }
+}

@@ -1,0 +1,134 @@
+/** The title screen and the choice of character. */
+import { app } from '../app';
+import { GAME_TITLE } from '../config';
+import { Session } from '../session';
+import { ATTRIBUTE_TEXT } from '../text';
+import { say } from './dialog';
+import { button, h, sprite } from './dom';
+import type { UI } from './ui';
+
+export function showTitle(ui: UI): Promise<void> {
+  return new Promise((resolve) => {
+    const el = h('div', { class: 'title-screen' });
+    ui.root.append(el);
+    const done = () => {
+      el.remove();
+      resolve();
+    };
+
+    const home = () => {
+      const canContinue = Session.hasSave();
+      el.replaceChildren(
+        h(
+          'div',
+          { class: 'title-box' },
+          h('h1', { class: 'logo' }, GAME_TITLE),
+          h('p', { class: 'tagline' }, 'A valley the players rebuild together'),
+          h(
+            'div',
+            { class: 'title-actions' },
+            canContinue ? button('Continue', () => resume(), 'big') : null,
+            button('New game', () => (canContinue ? confirmNew() : choose()), canContinue ? '' : 'big'),
+          ),
+          h('p', { class: 'demo-note' }, 'Demo: your progress is saved in this browser only, and will not move to an account later.'),
+        ),
+      );
+      (el.querySelector('button') as HTMLElement | null)?.focus();
+    };
+
+    const resume = () => {
+      const session = Session.restore(app.bundle);
+      if (!session) {
+        el.querySelector('.demo-note')!.textContent = 'That save could not be read. Start a new game.';
+        return;
+      }
+      done();
+      ui.begin(session);
+    };
+
+    const confirmNew = () => {
+      el.replaceChildren(
+        h(
+          'div',
+          { class: 'title-box' },
+          h('p', null, 'A new game replaces the one saved in this browser.'),
+          h('div', { class: 'title-actions' }, button('Start a new game', () => choose(), 'danger'), button('Back', () => home())),
+        ),
+      );
+    };
+
+    const choose = () => {
+      const b = app.bundle;
+      const starters = Object.entries(b.starters).sort(([x], [y]) => x.localeCompare(y));
+      let picked = starters[0]?.[0] ?? '';
+      const nameInput = h('input', { class: 'name', maxlength: 16, placeholder: 'Your name', autocomplete: 'off', spellcheck: 'false' });
+      const error = h('p', { class: 'error' });
+      const cards = h('div', { class: 'cards' });
+      const drawCards = () =>
+        cards.replaceChildren(
+          ...starters.map(([id, st]) =>
+            h(
+              'button',
+              { class: `card starter ${picked === id ? 'on' : ''}`, type: 'button', onclick: () => ((picked = id), drawCards()) },
+              sprite(b, st.sprite, 3, 1),
+              h('b', null, st.name),
+              h('p', null, st.summary),
+              h(
+                'div',
+                { class: 'mini-attrs' },
+                Object.entries(st.attributes).map(([a, v]) =>
+                  h('div', { title: ATTRIBUTE_TEXT[a] ?? a }, h('span', null, a), h('span', { class: 'pips' }, Array.from({ length: 3 }, (_, i) => h('i', { class: i < v ? 'on' : '' })))),
+                ),
+              ),
+            ),
+          ),
+        );
+      drawCards();
+      const start = () => {
+        const name = nameInput.value.trim();
+        if (!/^[A-Za-z0-9 _-]{1,16}$/.test(name)) {
+          error.textContent = 'A name is 1 to 16 letters, digits, spaces, "_" or "-".';
+          nameInput.focus();
+          return;
+        }
+        Session.erase();
+        const session = Session.fresh(b);
+        const r = session.act({ t: 'start', starter: picked, name });
+        if (!r.ok) {
+          error.textContent = r.error;
+          return;
+        }
+        done();
+        ui.begin(session);
+        void intro(ui);
+      };
+      nameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') start();
+      });
+      el.replaceChildren(
+        h(
+          'div',
+          { class: 'title-box wide' },
+          h('h2', null, 'Who wakes up by the river?'),
+          cards,
+          h('label', { class: 'name-row' }, 'Name ', nameInput),
+          error,
+          h('div', { class: 'title-actions' }, button('Wake up', start, 'big'), button('Back', () => home())),
+        ),
+      );
+      nameInput.focus();
+    };
+
+    home();
+  });
+}
+
+async function intro(ui: UI): Promise<void> {
+  await say(ui, null, [
+    'You wake up in the tall grass beside a river.',
+    'Across the water, smoke rises over a town. The old bridge between is broken.',
+    'River stones lie on the bank nearby. Three should be enough to mend it.',
+  ]);
+  const touch = matchMedia('(pointer: coarse)').matches;
+  ui.toast(touch ? 'Walk with the pad. Press A next to things.' : 'Walk with the arrows or WASD. Press Space next to things.', 'info');
+}

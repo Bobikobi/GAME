@@ -1,0 +1,321 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "$id": "https://github.com/Bobikobi/GAME/schema/json/resource.schema.json",
+  "type": "object",
+  "required": [
+    "format",
+    "id",
+    "title",
+    "creator",
+    "type",
+    "node"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "format": {
+      "description": "Format version of this file.",
+      "const": 1,
+      "type": "number"
+    },
+    "id": {
+      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+      "maxLength": 80,
+      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+      "type": "string"
+    },
+    "title": {
+      "minLength": 1,
+      "maxLength": 40,
+      "type": "string"
+    },
+    "creator": {
+      "pattern": "^[a-z0-9_-]+$",
+      "maxLength": 39,
+      "description": "GitHub handle, lowercase.",
+      "type": "string"
+    },
+    "description": {
+      "minLength": 1,
+      "maxLength": 240,
+      "type": "string"
+    },
+    "ai_tools": {
+      "maxItems": 8,
+      "description": "AI tools used to make this file or its art. Required when any were used.",
+      "type": "array",
+      "items": {
+        "minLength": 1,
+        "maxLength": 60,
+        "type": "string"
+      }
+    },
+    "items": {
+      "maxItems": 40,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "rarity",
+          "sprite"
+        ],
+        "properties": {
+          "id": {
+            "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+            "maxLength": 80,
+            "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+            "type": "string"
+          },
+          "name": {
+            "minLength": 1,
+            "maxLength": 40,
+            "type": "string"
+          },
+          "description": {
+            "minLength": 1,
+            "maxLength": 240,
+            "type": "string"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "const": "material",
+                "type": "string"
+              },
+              {
+                "const": "food",
+                "type": "string"
+              },
+              {
+                "const": "tool",
+                "type": "string"
+              },
+              {
+                "const": "fragment",
+                "type": "string"
+              },
+              {
+                "const": "treasure",
+                "type": "string"
+              }
+            ]
+          },
+          "rarity": {
+            "description": "Declared rarity. The check compares it with the rarity computed from the data.",
+            "anyOf": [
+              {
+                "const": "common",
+                "type": "string"
+              },
+              {
+                "const": "uncommon",
+                "type": "string"
+              },
+              {
+                "const": "rare",
+                "type": "string"
+              },
+              {
+                "const": "legendary",
+                "type": "string"
+              }
+            ]
+          },
+          "sprite": {
+            "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
+            "maxLength": 120,
+            "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
+            "type": "string"
+          },
+          "food": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "satiety"
+            ],
+            "properties": {
+              "satiety": {
+                "minimum": 1,
+                "maximum": 100,
+                "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                "type": "integer"
+              }
+            }
+          },
+          "tool": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "kind",
+              "tier",
+              "uses"
+            ],
+            "properties": {
+              "kind": {
+                "anyOf": [
+                  {
+                    "const": "basket",
+                    "type": "string"
+                  },
+                  {
+                    "const": "trowel",
+                    "type": "string"
+                  }
+                ]
+              },
+              "tier": {
+                "minimum": 1,
+                "maximum": 5,
+                "description": "Better tools work faster. The calculator clamps the total.",
+                "type": "integer"
+              },
+              "uses": {
+                "minimum": 1,
+                "maximum": 1000,
+                "description": "The tool wears out after this many uses.",
+                "type": "integer"
+              }
+            }
+          },
+          "fragment": {
+            "additionalProperties": false,
+            "description": "A found scrap that teaches a recipe.",
+            "type": "object",
+            "required": [
+              "unlocks"
+            ],
+            "properties": {
+              "unlocks": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "type": {
+      "const": "resource",
+      "type": "string"
+    },
+    "node": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "output",
+        "yield",
+        "active_ms",
+        "respawn_ms",
+        "count",
+        "sprite",
+        "level",
+        "place"
+      ],
+      "properties": {
+        "output": {
+          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+          "maxLength": 80,
+          "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+          "type": "string"
+        },
+        "yield": {
+          "minimum": 1,
+          "maximum": 20,
+          "description": "Units gathered per execution at perfect timing.",
+          "type": "integer"
+        },
+        "active_ms": {
+          "minimum": 0,
+          "maximum": 3600000,
+          "description": "Time the player is busy gathering once.",
+          "type": "integer"
+        },
+        "respawn_ms": {
+          "minimum": 0,
+          "maximum": 3600000,
+          "description": "Time before the same plant gives again. Waiting is never paid.",
+          "type": "integer"
+        },
+        "count": {
+          "minimum": 1,
+          "maximum": 12,
+          "description": "How many of these nodes the slot holds.",
+          "type": "integer"
+        },
+        "sprite": {
+          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
+          "maxLength": 120,
+          "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
+          "type": "string"
+        },
+        "sprite_empty": {
+          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
+          "maxLength": 120,
+          "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
+          "type": "string"
+        },
+        "tool": {
+          "anyOf": [
+            {
+              "const": "basket",
+              "type": "string"
+            },
+            {
+              "const": "trowel",
+              "type": "string"
+            }
+          ]
+        },
+        "level": {
+          "minimum": 1,
+          "maximum": 20,
+          "description": "Foraging level required.",
+          "type": "integer"
+        },
+        "hours": {
+          "description": "Hours of the in-game day when it can be gathered, [from, to).",
+          "type": "array",
+          "items": [
+            {
+              "minimum": 0,
+              "maximum": 23,
+              "type": "integer"
+            },
+            {
+              "minimum": 1,
+              "maximum": 24,
+              "type": "integer"
+            }
+          ],
+          "additionalItems": false,
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "place": {
+          "additionalProperties": false,
+          "description": "An empty slot from the ruins map. Only one extension is active per slot.",
+          "type": "object",
+          "required": [
+            "slot"
+          ],
+          "properties": {
+            "slot": {
+              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+              "maxLength": 80,
+              "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

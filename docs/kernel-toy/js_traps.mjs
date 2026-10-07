@@ -1,0 +1,26 @@
+// JavaScript behaviours that break "integers only, fixed order" silently. Scratch only.
+const out = (label, v) => console.log(label.padEnd(58), JSON.stringify(v));
+out("2**53 + 1 === 2**53", 2 ** 53 + 1 === 2 ** 53);
+out("(2**31 + 5) | 0", (2 ** 31 + 5) | 0);
+const base = 1_000_000, factor = 1_500_000, qty = 10_001;
+out("1e6 * 1.5e6 * 10001 as Number", base * factor * qty);
+out("same product as BigInt", (BigInt(base) * BigInt(factor) * BigInt(qty)).toString());
+out("is the Number product a safe integer", Number.isSafeInteger(base * factor * qty));
+const m = 94906267;
+out("94906267**2 Number vs BigInt", [m * m, (BigInt(m) * BigInt(m)).toString()]);
+out("floor(-7/2), trunc(-7/2), (-7/2)|0, -7 % 2", [Math.floor(-7 / 2), Math.trunc(-7 / 2), (-7 / 2) | 0, -7 % 2]);
+out("Object.is(Math.round(-0.4), -0); JSON of -0", [Object.is(Math.round(-0.4), -0), JSON.stringify({ x: -0 })]);
+let t = 0; for (let i = 0; i < 20; i++) t += 0.05;
+out("20 additions of 0.05 === 1", [t === 1, t]);
+const a = {}; a["berry"] = 1; a["10"] = 2; a["2"] = 3;
+out("key order of {berry, '10', '2'} inserted in that order", Object.keys(a));
+const s1 = {}; s1.berry = 1; s1.stone = 2; const s2 = {}; s2.stone = 2; s2.berry = 1;
+out("JSON equal for same content, different insertion order", JSON.stringify(s1) === JSON.stringify(s2));
+out("[10, 9, 1].sort()", [10, 9, 1].sort());
+const ids = ["item_b", "Item_a", "item_A", "item-a"];
+out("ids sorted by code unit", [...ids].sort());
+out("ids sorted by localeCompare", [...ids].sort((x, y) => x.localeCompare(y)));
+out("['ä','z','a'] localeCompare de vs sv", [["ä", "z", "a"].sort((x, y) => x.localeCompare(y, "de")), ["ä", "z", "a"].sort((x, y) => x.localeCompare(y, "sv"))]);
+out("JSON of NaN, Infinity, undefined", JSON.stringify({ a: NaN, b: Infinity, c: undefined }));
+out("Math.sin(1e22), Math.pow(2, 0.5), Math.exp(1) on this engine", [Math.sin(1e22), Math.pow(2, 0.5), Math.exp(1)]);
+out("engine", process.versions.v8);

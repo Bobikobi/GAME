@@ -1,0 +1,48 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/herb-stew",
+  "title": "Herb stew",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/herb-stew",
+      "name": "Herb stew",
+      "description": "An old recipe, found in the ruins.",
+      "kind": "food",
+      "rarity": "uncommon",
+      "sprite": "core/base-kit:items/herb-stew",
+      "food": {
+        "satiety": 40
+      }
+    }
+  ],
+  "recipe": {
+    "station": "fire",
+    "active_ms": 6000,
+    "level": 2,
+    "inputs": [
+      {
+        "item": "core/herb",
+        "qty": 2
+      },
+      {
+        "item": "core/mushroom",
+        "qty": 2
+      },
+      {
+        "item": "core/berry",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/herb-stew",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "found"
+  }
+}

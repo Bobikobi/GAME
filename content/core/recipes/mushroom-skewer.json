@@ -1,0 +1,44 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/mushroom-skewer",
+  "title": "Mushroom skewer",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/mushroom-skewer",
+      "name": "Mushroom skewer",
+      "description": "Smoky.",
+      "kind": "food",
+      "rarity": "common",
+      "sprite": "core/base-kit:items/mushroom-skewer",
+      "food": {
+        "satiety": 25
+      }
+    }
+  ],
+  "recipe": {
+    "station": "fire",
+    "active_ms": 4000,
+    "level": 1,
+    "inputs": [
+      {
+        "item": "core/mushroom",
+        "qty": 2
+      },
+      {
+        "item": "core/branch",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/mushroom-skewer",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start"
+  }
+}

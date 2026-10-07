@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../schema/json/resource.schema.json",
+  "format": 1,
+  "type": "resource",
+  "id": "core/river-stones",
+  "title": "River stones",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/stone",
+      "name": "River stone",
+      "description": "Smooth and heavy. Good for mending.",
+      "kind": "material",
+      "rarity": "common",
+      "sprite": "core/base-kit:items/stone"
+    }
+  ],
+  "node": {
+    "output": "core/stone",
+    "yield": 1,
+    "active_ms": 2500,
+    "respawn_ms": 30000,
+    "count": 3,
+    "sprite": "core/base-kit:props/rock_stones",
+    "level": 1,
+    "place": {
+      "slot": "core/river-stones"
+    }
+  }
+}

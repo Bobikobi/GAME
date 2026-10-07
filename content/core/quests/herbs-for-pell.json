@@ -1,0 +1,26 @@
+{
+  "$schema": "../../../schema/json/quest.schema.json",
+  "format": 1,
+  "type": "quest",
+  "id": "core/herbs-for-pell",
+  "title": "Herbs for Pell",
+  "creator": "core",
+  "quest": {
+    "giver": "core/trader",
+    "summary": "Pell needs 4 wild herbs from the grove.",
+    "requires": [
+      "core/three-fruits"
+    ],
+    "steps": [
+      {
+        "kind": "bring",
+        "item": "core/herb",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "rep": 15,
+      "gold_mg": 15000
+    }
+  }
+}

@@ -1,0 +1,320 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "$id": "https://github.com/Bobikobi/GAME/schema/json/profession.schema.json",
+  "type": "object",
+  "required": [
+    "format",
+    "id",
+    "title",
+    "creator",
+    "type",
+    "profession"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "format": {
+      "description": "Format version of this file.",
+      "const": 1,
+      "type": "number"
+    },
+    "id": {
+      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+      "maxLength": 80,
+      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+      "type": "string"
+    },
+    "title": {
+      "minLength": 1,
+      "maxLength": 40,
+      "type": "string"
+    },
+    "creator": {
+      "pattern": "^[a-z0-9_-]+$",
+      "maxLength": 39,
+      "description": "GitHub handle, lowercase.",
+      "type": "string"
+    },
+    "description": {
+      "minLength": 1,
+      "maxLength": 240,
+      "type": "string"
+    },
+    "ai_tools": {
+      "maxItems": 8,
+      "description": "AI tools used to make this file or its art. Required when any were used.",
+      "type": "array",
+      "items": {
+        "minLength": 1,
+        "maxLength": 60,
+        "type": "string"
+      }
+    },
+    "items": {
+      "maxItems": 40,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "rarity",
+          "sprite"
+        ],
+        "properties": {
+          "id": {
+            "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+            "maxLength": 80,
+            "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+            "type": "string"
+          },
+          "name": {
+            "minLength": 1,
+            "maxLength": 40,
+            "type": "string"
+          },
+          "description": {
+            "minLength": 1,
+            "maxLength": 240,
+            "type": "string"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "const": "material",
+                "type": "string"
+              },
+              {
+                "const": "food",
+                "type": "string"
+              },
+              {
+                "const": "tool",
+                "type": "string"
+              },
+              {
+                "const": "fragment",
+                "type": "string"
+              },
+              {
+                "const": "treasure",
+                "type": "string"
+              }
+            ]
+          },
+          "rarity": {
+            "description": "Declared rarity. The check compares it with the rarity computed from the data.",
+            "anyOf": [
+              {
+                "const": "common",
+                "type": "string"
+              },
+              {
+                "const": "uncommon",
+                "type": "string"
+              },
+              {
+                "const": "rare",
+                "type": "string"
+              },
+              {
+                "const": "legendary",
+                "type": "string"
+              }
+            ]
+          },
+          "sprite": {
+            "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
+            "maxLength": 120,
+            "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
+            "type": "string"
+          },
+          "food": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "satiety"
+            ],
+            "properties": {
+              "satiety": {
+                "minimum": 1,
+                "maximum": 100,
+                "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                "type": "integer"
+              }
+            }
+          },
+          "tool": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "kind",
+              "tier",
+              "uses"
+            ],
+            "properties": {
+              "kind": {
+                "anyOf": [
+                  {
+                    "const": "basket",
+                    "type": "string"
+                  },
+                  {
+                    "const": "trowel",
+                    "type": "string"
+                  }
+                ]
+              },
+              "tier": {
+                "minimum": 1,
+                "maximum": 5,
+                "description": "Better tools work faster. The calculator clamps the total.",
+                "type": "integer"
+              },
+              "uses": {
+                "minimum": 1,
+                "maximum": 1000,
+                "description": "The tool wears out after this many uses.",
+                "type": "integer"
+              }
+            }
+          },
+          "fragment": {
+            "additionalProperties": false,
+            "description": "A found scrap that teaches a recipe.",
+            "type": "object",
+            "required": [
+              "unlocks"
+            ],
+            "properties": {
+              "unlocks": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "type": {
+      "const": "profession",
+      "type": "string"
+    },
+    "profession": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "verb",
+        "xp_levels",
+        "techniques"
+      ],
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "maxLength": 40,
+          "type": "string"
+        },
+        "verb": {
+          "anyOf": [
+            {
+              "const": "gather",
+              "type": "string"
+            },
+            {
+              "const": "dig",
+              "type": "string"
+            },
+            {
+              "const": "craft",
+              "type": "string"
+            }
+          ]
+        },
+        "xp_levels": {
+          "minItems": 1,
+          "maxItems": 20,
+          "description": "Total experience (active seconds) needed for level 2, 3, ...",
+          "type": "array",
+          "items": {
+            "minimum": 1,
+            "maximum": 10000000,
+            "type": "integer"
+          }
+        },
+        "techniques": {
+          "maxItems": 10,
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "level",
+              "name",
+              "effect",
+              "value",
+              "text"
+            ],
+            "properties": {
+              "level": {
+                "minimum": 2,
+                "maximum": 20,
+                "type": "integer"
+              },
+              "name": {
+                "minLength": 1,
+                "maxLength": 40,
+                "type": "string"
+              },
+              "effect": {
+                "description": "What a technique does. A closed list: the kernel knows how to apply each one.",
+                "anyOf": [
+                  {
+                    "const": "see_ripe",
+                    "type": "string"
+                  },
+                  {
+                    "const": "timing_window_pct",
+                    "type": "string"
+                  },
+                  {
+                    "const": "second_hint",
+                    "type": "string"
+                  },
+                  {
+                    "const": "rare_find_pct",
+                    "type": "string"
+                  },
+                  {
+                    "const": "craft_speed_pct",
+                    "type": "string"
+                  },
+                  {
+                    "const": "meal_fill_pct",
+                    "type": "string"
+                  }
+                ]
+              },
+              "value": {
+                "minimum": 0,
+                "maximum": 100,
+                "type": "integer"
+              },
+              "text": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

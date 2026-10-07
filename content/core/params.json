@@ -1,0 +1,125 @@
+{
+  "$schema": "../../schema/json/params.schema.json",
+  "format": 1,
+  "type": "params",
+  "id": "core/params",
+  "title": "Game parameters",
+  "creator": "core",
+  "description": "Every tunable number, with the range a vote may move it in and the largest single step.",
+  "params": {
+    "k_permille": {
+      "value": 500,
+      "min": 300,
+      "max": 700,
+      "step": 50
+    },
+    "r_mg_per_value_ms": {
+      "value": 10,
+      "min": 5,
+      "max": 20,
+      "step": 1
+    },
+    "t_min_ms": {
+      "value": 1000,
+      "min": 500,
+      "max": 2000,
+      "step": 250
+    },
+    "max_action_ms": {
+      "value": 15000,
+      "min": 8000,
+      "max": 30000,
+      "step": 1000
+    },
+    "effort_permille": {
+      "easy": {
+        "value": 400,
+        "min": 300,
+        "max": 500,
+        "step": 50
+      },
+      "medium": {
+        "value": 600,
+        "min": 500,
+        "max": 700,
+        "step": 50
+      },
+      "craft": {
+        "value": 800,
+        "min": 700,
+        "max": 900,
+        "step": 50
+      },
+      "hard": {
+        "value": 1000,
+        "min": 900,
+        "max": 1000,
+        "step": 50
+      }
+    },
+    "power_cap_permille": [
+      1000,
+      1100,
+      1200,
+      1300,
+      1450,
+      1600,
+      1750,
+      1900,
+      2050,
+      2200,
+      2400,
+      2600,
+      2800,
+      3000
+    ],
+    "rarity_budget_permille": {
+      "value": 100,
+      "min": 0,
+      "max": 200,
+      "step": 25
+    },
+    "rarity_bonus_ms": {
+      "common": 0,
+      "uncommon": 150,
+      "rare": 400,
+      "legendary": 1000
+    },
+    "drift_budget_permille": {
+      "value": 100,
+      "min": 0,
+      "max": 300,
+      "step": 25
+    },
+    "satiety_cap": {
+      "value": 100,
+      "min": 60,
+      "max": 200,
+      "step": 10
+    },
+    "satiety_drain_per_min": {
+      "value": 7000,
+      "min": 2000,
+      "max": 15000,
+      "step": 500
+    },
+    "day_length_ms": {
+      "value": 1200000,
+      "min": 600000,
+      "max": 2400000,
+      "step": 60000
+    },
+    "bag_base": {
+      "value": 30,
+      "min": 20,
+      "max": 60,
+      "step": 5
+    },
+    "starting_gold_mg": {
+      "value": 0,
+      "min": 0,
+      "max": 50000,
+      "step": 5000
+    }
+  }
+}

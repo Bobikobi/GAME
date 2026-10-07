@@ -1,0 +1,31 @@
+{
+  "$schema": "../../../schema/json/npc.schema.json",
+  "format": 1,
+  "type": "npc",
+  "id": "core/elder",
+  "title": "Elder Maru",
+  "creator": "core",
+  "npc": {
+    "name": "Elder Maru",
+    "sprite": "core/base-kit:chars/elder",
+    "place": {
+      "slot": "core/elder-house"
+    },
+    "dialogue": {
+      "stranger": [
+        "A new face. You came over the old bridge?",
+        "Most of this valley is still asleep under the mist."
+      ],
+      "acquaintance": [
+        "The ruins keep what we forgot. Dig carefully.",
+        "Every house here was mended by someone. Look at the signs."
+      ],
+      "friend": [
+        "You remind me of the first ones who came back here."
+      ],
+      "family": [
+        "This valley is yours as much as mine now."
+      ]
+    }
+  }
+}

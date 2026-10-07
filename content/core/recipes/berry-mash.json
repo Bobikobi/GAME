@@ -1,0 +1,40 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/berry-mash",
+  "title": "Berry mash",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/berry-mash",
+      "name": "Berry mash",
+      "description": "Warm and filling.",
+      "kind": "food",
+      "rarity": "common",
+      "sprite": "core/base-kit:items/berry-mash",
+      "food": {
+        "satiety": 15
+      }
+    }
+  ],
+  "recipe": {
+    "station": "fire",
+    "active_ms": 4000,
+    "level": 1,
+    "inputs": [
+      {
+        "item": "core/berry",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/berry-mash",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start"
+  }
+}
