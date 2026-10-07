@@ -51,7 +51,7 @@ export class Browser {
       '--enable-unsafe-swiftshader',
       'about:blank',
     ];
-    if (process.env.CI) args.unshift('--no-sandbox');
+    if (process.env.CI || process.platform === 'linux') args.unshift('--no-sandbox', '--disable-setuid-sandbox');
     const proc = spawn(findChrome(), args, { stdio: ['ignore', 'ignore', 'pipe'] });
     const port = await new Promise<number>((resolve, reject) => {
       let seen = '';

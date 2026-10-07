@@ -107,27 +107,14 @@ window.__e2e = (() => {
       }
       return null;
     },
-    /** Resolves when the timing marker is well inside the perfect zone. */
-    sweetSpot() {
-      return new Promise((done) => {
-        const t0 = performance.now();
-        const look = () => {
-          const m = document.querySelector('.timing .marker'), z = document.querySelector('.timing .zone.perfect');
-          if (m && z && m.style.left) {
-            const at = parseFloat(m.style.left), left = parseFloat(z.style.left), width = parseFloat(z.style.width);
-            if (at >= left + width * 0.3 && at <= left + width * 0.7) return done(true);
-          }
-          if (performance.now() - t0 > 4000) return done(false);
-          requestAnimationFrame(look);
-        };
-        look();
-      });
+    soundState() {
+      return g().sound ? g().sound.state() : null;
     },
     dialog() {
       const d = document.querySelector('.dialog');
       if (!d) return null;
       const o = d.querySelector('.dialog-options');
-      return { text: d.querySelector('.dialog-text').textContent,
+      return { text: d.querySelector('.dialog-text')?.textContent ?? '',
         options: o && !o.hidden ? [...o.querySelectorAll('button')].map((b) => b.textContent) : [] };
     },
   };
@@ -197,12 +184,14 @@ class Player {
 
   /** The A button: Enter on a keyboard, the round A on a phone. */
   async a(): Promise<void> {
+    await this.settle();
     if (this.touch) await this.page.tap('.tbtn.a');
     else await this.page.press('Enter');
   }
 
   /** One tile in a direction, or just a turn when the way is blocked. */
   async step(dir: Dir): Promise<void> {
+    await this.settle();
     const before = await this.state();
     await this.holdDir(dir);
     const end = Date.now() + 600;
@@ -244,7 +233,13 @@ class Player {
   async talkThrough(pick?: string): Promise<string[]> {
     const seen: string[] = [];
     for (let i = 0; i < 80; i++) {
-      const d = await this.page.eval<{ text: string; options: string[] } | null>('__e2e.dialog()');
+      let d = await this.page.eval<{ text: string; options: string[] } | null>('__e2e.dialog()');
+      if (!d) {
+        for (let wait = 0; !d && wait < 4; wait++) {
+          await sleep(150);
+          d = await this.page.eval<{ text: string; options: string[] } | null>('__e2e.dialog()');
+        }
+      }
       if (!d) {
         if (pick) throw new Error(`expected a choice "${pick}", but no dialogue is open`);
         await sleep(200);
@@ -254,7 +249,10 @@ class Player {
       if (d.text && seen[seen.length - 1] !== d.text) seen.push(d.text);
       if (d.options.length > 0) {
         const want = pick ? d.options.findIndex((o) => o.includes(pick)) : -1;
-        if (want < 0) throw new Error(`no option "${pick ?? ''}" in [${d.options.join(' | ')}] after: ${seen.join(' / ')}`);
+        if (want < 0) {
+          if (!pick) return seen;
+          throw new Error(`no option "${pick ?? ''}" in [${d.options.join(' | ')}] after: ${seen.join(' / ')}`);
+        }
         if (this.touch) await this.page.tap('.dialog-options button', d.options[want]);
         else {
           for (let k = 0; k < want; k++) await this.page.press('ArrowDown');
@@ -267,6 +265,63 @@ class Player {
       await sleep(90);
     }
     throw new Error(`the dialogue never ended: ${seen.join(' / ')}`);
+  }
+
+  /** Solves any minigame (timing, strike, pick, snap) by waiting for data-cue="now". */
+  async solveMinigame(): Promise<void> {
+    const start = Date.now();
+    await this.page.waitFor('!!document.querySelector(".minigame[data-game]")', 'minigame to open', 5000);
+    while (Date.now() - start < 30_000) {
+      const open = await this.page.eval<boolean>('!!document.querySelector(".minigame[data-game]")');
+      if (!open) break;
+
+      const cue = await this.page.waitFor<string>(
+        `(() => {
+          const m = document.querySelector('.minigame[data-game]');
+          if (!m) return 'closed';
+          return m.getAttribute('data-cue') === 'now' ? 'now' : '';
+        })()`,
+        'data-cue="now"',
+        10_000,
+      ).catch(() => 'closed');
+
+      if (cue === 'closed') break;
+      if (cue === 'now') {
+        if (this.touch) {
+          await this.page.eval(`(() => {
+            const l = document.querySelector('.minigame-layer');
+            if (l) l.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
+          })()`);
+        } else {
+          await this.page.press('Enter');
+        }
+        await sleep(80);
+      }
+    }
+    await this.page.waitFor('!document.querySelector(".minigame-layer")', 'minigame layer to close', 5000).catch(() => undefined);
+  }
+
+  /** A level brought a point: the window opens about 0.7 s after the jingle. Handle it before doing anything else. */
+  async settle(): Promise<void> {
+    if (!(await this.page.eval<boolean>('!!(__game.ui.levelUpOpen || document.querySelector(".levelup-layer"))'))) return;
+    await this.page.waitFor('!!document.querySelector(".levelup-layer")', 'the level-up window', 3000);
+    await this.handleLevelUp();
+  }
+
+  /** Handles the level-up window if open: spends every point on the first open choice, then closes it. */
+  async handleLevelUp(): Promise<boolean> {
+    if (!(await this.page.eval<boolean>('!!document.querySelector(".levelup-layer")'))) return false;
+    for (let i = 0; i < 12; i++) {
+      if (!(await this.page.eval<boolean>('!!document.querySelector(".levelup-layer")'))) return true;
+      if (this.touch) {
+        const choice = await this.page.eval<boolean>('!!document.querySelector(".levelup button.choice:not(:disabled)")');
+        await this.page.tap(choice ? '.levelup button.choice:not(:disabled)' : '.levelup-actions button');
+      } else {
+        await this.page.press('Enter');
+      }
+      await sleep(150);
+    }
+    throw new Error('the level-up window never closed');
   }
 
   /** Waits for the current action to finish; dialogue it opens stays open. */
@@ -295,6 +350,8 @@ class Player {
   }
 
   async idle(what: string, timeoutMs = 20_000): Promise<void> {
+    await this.page.waitFor('(() => { const s = __e2e.state(); return !s.busy && !s.moving; })()', what, timeoutMs);
+    await this.settle();
     await this.page.waitFor('(() => { const s = __e2e.state(); return !s.busy && !s.blocking && !s.moving; })()', what, timeoutMs);
   }
 
@@ -312,10 +369,7 @@ class Player {
         await this.walkTo({ x: n.x, y: n.y, w: 1, h: 1 }, n.id);
         await this.expectPrompt(/^Gather/, n.id);
         await this.a();
-        await this.page.waitFor(`!!document.querySelector('.timing')`, 'the timing bar');
-        await this.page.eval('__e2e.sweetSpot()');
-        if (this.touch) await this.page.tapAt(195, 300);
-        else await this.page.press('Enter');
+        await this.solveMinigame();
         await this.idle(`gathering ${n.id}`);
       }
     }
@@ -359,7 +413,33 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
     await me.snap('wake');
     log('woke up by the river');
 
-    // 3. three stones, the first timing minigame
+    // check audio state
+    const audio = await page.eval<{ song: string | null; unlocked: boolean } | null>('__e2e.soundState()');
+    if (!audio) throw new Error('no audio state');
+    if (audio.song !== 'valley') throw new Error(`expected song "valley", got "${audio.song}"`);
+    if (typeof audio.unlocked !== 'boolean') throw new Error(`invalid audio unlock state: ${audio.unlocked}`);
+    log(`audio state verified: song=${audio.song}, unlocked=${audio.unlocked}`);
+
+    // 3. three stones, the first minigame
+    // verify: after a stone node is gathered, the player can step onto its tile
+    const stoneNodes = await page.eval<{ id: string; x: number; y: number; ready: boolean }[]>('__e2e.nodes("core/river-stones")');
+    const firstStone = stoneNodes.find((n) => n.ready);
+    if (!firstStone) throw new Error('no ready river-stones node found');
+    await me.walkTo({ x: firstStone.x, y: firstStone.y, w: 1, h: 1 }, firstStone.id);
+    const beforeGather = await me.state();
+    await me.expectPrompt(/^Gather/, firstStone.id);
+    await me.a();
+    await me.solveMinigame();
+    await me.idle(`gathering first ${firstStone.id}`);
+    // step onto the gathered node tile
+    await me.step(beforeGather.facing);
+    const onNode = await me.state();
+    if (onNode.pos[0] !== firstStone.x || onNode.pos[1] !== firstStone.y) {
+      throw new Error(`expected player to step onto node [${firstStone.x}, ${firstStone.y}], got [${onNode.pos.join(', ')}]`);
+    }
+    log(`verified: stepped onto gathered stone node at [${firstStone.x}, ${firstStone.y}]`);
+    await me.step(OPPOSITE[beforeGather.facing]);
+
     await me.gather('core/river-stones', 'core/stone', 3);
     log('gathered 3 stones');
 
