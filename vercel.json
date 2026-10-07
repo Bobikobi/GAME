@@ -3,6 +3,7 @@
   "framework": null,
   "installCommand": "pnpm install --frozen-lockfile",
   "buildCommand": "pnpm build",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . ':(exclude)CREDITS.md'",
   "outputDirectory": "game/dist",
   "headers": [
     {
