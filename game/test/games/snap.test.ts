@@ -3,29 +3,29 @@ import { describe, expect, it } from 'vitest';
 import { snapGrade, snapLimits } from '../../src/ui/games/shared';
 
 describe('snapLimits', () => {
-  it('returns the base limits at zero agility', () => {
-    expect(snapLimits(0, 0)).toEqual([2200, 3000, 4200, 5000]);
+  it('returns the base limits at the base scale', () => {
+    expect(snapLimits(100)).toEqual([1900, 2600, 3500, 4500]);
   });
 
-  it('widens all limits with agility and techniques', () => {
-    expect(snapLimits(10, 0)).toEqual([3080, 4200, 5880, 7000]);
-    expect(snapLimits(0, 50)).toEqual([3300, 4500, 6300, 7500]);
+  it('widens all limits with the scale', () => {
+    expect(snapLimits(150)).toEqual([2850, 3900, 5250, 6750]);
   });
 });
 
 describe('snapGrade', () => {
-  const limits = snapLimits(0, 0);
+  const limits = snapLimits(100);
 
   it.each([
-    [0, 3],
-    [2200, 3],
-    [2201, 2],
-    [3000, 2],
-    [3001, 1],
-    [4200, 1],
-    [4201, 0],
-    [5000, 0],
-    [5001, 0],
+    [0, 4],
+    [1330, 4],
+    [1331, 3],
+    [1900, 3],
+    [1901, 2],
+    [2600, 2],
+    [2601, 1],
+    [3500, 1],
+    [3501, 0],
+    [4600, 0],
   ] as const)('grades a completed time of %d ms as %d', (ms, grade) => {
     expect(snapGrade(ms, limits, true)).toBe(grade);
   });

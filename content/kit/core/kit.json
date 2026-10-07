@@ -69,10 +69,52 @@
         "h": 24,
         "frames": 3
       },
+      "chars/player_work_down": {
+        "file": "chars/player_work_down.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      "chars/player_work_left": {
+        "file": "chars/player_work_left.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      "chars/player_work_up": {
+        "file": "chars/player_work_up.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
       "chars/trader": {
         "file": "chars/trader.png",
         "w": 16,
         "h": 24
+      },
+      "chars/woman_down": {
+        "file": "chars/woman_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/woman_left": {
+        "file": "chars/woman_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/woman_up": {
+        "file": "chars/woman_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/woman_work_down": {
+        "file": "chars/woman_work_down.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
       },
       "items/basket": {
         "file": "items/basket.png",
@@ -149,6 +191,11 @@
         "w": 16,
         "h": 16
       },
+      "props/broken_statue": {
+        "file": "props/broken_statue.png",
+        "w": 16,
+        "h": 32
+      },
       "props/bush_berry": {
         "file": "props/bush_berry.png",
         "w": 16,
@@ -174,6 +221,11 @@
         "w": 16,
         "h": 16
       },
+      "props/dead_tree": {
+        "file": "props/dead_tree.png",
+        "w": 32,
+        "h": 32
+      },
       "props/dig_spot": {
         "file": "props/dig_spot.png",
         "w": 16,
@@ -193,6 +245,11 @@
         "file": "props/fog.png",
         "w": 32,
         "h": 32
+      },
+      "props/glow_mushrooms": {
+        "file": "props/glow_mushrooms.png",
+        "w": 16,
+        "h": 16
       },
       "props/herb_plant": {
         "file": "props/herb_plant.png",
@@ -219,9 +276,24 @@
         "w": 16,
         "h": 16
       },
+      "props/rubble": {
+        "file": "props/rubble.png",
+        "w": 32,
+        "h": 16
+      },
+      "props/ruin_arch": {
+        "file": "props/ruin_arch.png",
+        "w": 32,
+        "h": 32
+      },
       "props/ruin_pillar": {
         "file": "props/ruin_pillar.png",
         "w": 16,
+        "h": 32
+      },
+      "props/ruin_wall": {
+        "file": "props/ruin_wall.png",
+        "w": 32,
         "h": 32
       },
       "props/shelf": {
@@ -233,6 +305,21 @@
         "file": "props/sign.png",
         "w": 16,
         "h": 16
+      },
+      "props/standing_stone": {
+        "file": "props/standing_stone.png",
+        "w": 16,
+        "h": 32
+      },
+      "props/statue_head": {
+        "file": "props/statue_head.png",
+        "w": 32,
+        "h": 32
+      },
+      "props/totem": {
+        "file": "props/totem.png",
+        "w": 16,
+        "h": 32
       },
       "props/tree_oak": {
         "file": "props/tree_oak.png",

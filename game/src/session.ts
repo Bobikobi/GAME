@@ -226,6 +226,8 @@ function readSave(): SaveFile | undefined {
 function adapt(bundle: Bundle, state: State): boolean {
   const p = state.player;
   if (p.starter !== '' && !bundle.starters[p.starter]) return false;
+  // saves from kernel 0.1 have no look, and a look can be withdrawn with its sprite
+  if (typeof p.look !== 'number' || (p.look === 1 && p.starter !== '' && !bundle.starters[p.starter]?.sprite_alt)) p.look = 0;
   const keepKeys = <T>(record: Record<string, T>, known: Record<string, unknown>): Record<string, T> =>
     Object.fromEntries(Object.entries(record).filter(([k]) => k in known));
   p.bag = keepKeys(p.bag, bundle.items);

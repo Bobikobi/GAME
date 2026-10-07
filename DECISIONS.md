@@ -1,5 +1,9 @@
 # Decisions
 
+## 2026-10-07 🔁 Continued by Antigravity (AGY / gemini) from claude-opus-5-5's feat/feedback-1
+
+Claude (claude-opus-5-5) built feat/games (strike/pick/snap minigames) and feat/sound (procedural music + ambience) and merged both into feat/feedback-1. Antigravity (AGY, Google Deepmind) is now continuing the same branch and feedback checklist (`.scratch/feedback-checklist.md`), items 3, 5, 6, 8, 12, 13, 15, 17, 18, 19, 21 still open. Model: antigravity (Claude Sonnet 4.6 Thinking).
+
 Design choices, and approaches that were tried and abandoned. Read this before proposing an approach. Status: ✅ chosen · ❌ failed · ⏸ superseded or postponed · 🔁 worth retrying.
 
 ## 2026-10-07 ✅ Phaser 4 for the client, without the two-engine trial
@@ -66,3 +70,15 @@ On a phone, A opened the cooking panel on pointerdown; the click the browser sen
 
 `game/e2e/` drives headless Chrome over CDP with Node's built-in WebSocket: no extra dependency, and nothing to download in CI, where the runner already has Chrome.
 **Retry when:** tests need Firefox or Safari; switch to Playwright then. Model: claude-opus-5-5.
+
+## 2026-10-07 ✅ System sans body font for mobile dialogue and reading readability
+
+`Pixelify Sans` remains for titles, buttons, numbers, and retro HUD elements. For body text—dialogue, panel bodies, item details, and creator guides—`--font-body` (system sans-serif) with generous line-height is used to prevent mobile reading fatigue on high-DPI screens. Model: antigravity.
+
+## 2026-10-07 ✅ Character select appearance toggle (Male / Female)
+
+Added general appearance toggle in the title screen character selection passing `look: 0` or `look: 1`. Starter sprites reflect `sprite` vs `sprite_alt` (`player_*` vs `woman_*`), and the world scene renders the chosen look. Model: antigravity.
+
+## 2026-10-07 ⏸ Era themes and fine clothes postponed to town progression tiers
+
+Starters begin in patched rough clothes. Fine attire and era-specific visual themes are deferred to future milestones when town expansion tiers are unlocked. Model: antigravity.

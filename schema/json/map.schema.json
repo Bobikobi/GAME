@@ -349,6 +349,12 @@
                 "maxLength": 80,
                 "description": "Makes the prop a readable sign that names whoever filled this slot, or says it awaits restoration.",
                 "type": "string"
+              },
+              "note": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string",
+                "description": "A line shown when the player looks at this prop, for example an old inscription."
               }
             }
           }

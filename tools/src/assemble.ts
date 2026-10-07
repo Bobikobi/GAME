@@ -5,6 +5,7 @@
  */
 import { dirname } from 'node:path';
 import {
+  type BoardEntry,
   type Bundle,
   type Credit,
   type ItemInfo,
@@ -16,7 +17,7 @@ import {
   hashText,
   layoutInstances,
 } from '@game/kernel';
-import { CORE_ONLY_TYPES, type ParamsBody } from '@game/schema';
+import { CORE_ONLY_TYPES, type CreatorProfile, type ParamsBody } from '@game/schema';
 import { toRepoPath, type Issue, type Loaded } from './load';
 
 export interface Assembled {
@@ -86,10 +87,17 @@ export function flattenParams(p: ParamsBody): Params {
     day_length_ms: p.day_length_ms.value,
     bag_base: p.bag_base.value,
     starting_gold_mg: p.starting_gold_mg.value,
+    per_point: {
+      carry: p.per_point.carry.value,
+      senses: p.per_point.senses.value,
+      agility_pct: p.per_point.agility_pct.value,
+      luck_permille: p.per_point.luck_permille.value,
+      stamina: p.per_point.stamina.value,
+    },
   };
 }
 
-export function assemble(files: Loaded[]): Assembled {
+export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}): Assembled {
   const issues: Issue[] = [];
   const err = (f: Loaded | string, where: string, message: string) =>
     issues.push({ file: typeof f === 'string' ? f : toRepoPath(f.abs), where, message, level: 'error' });
@@ -112,6 +120,7 @@ export function assemble(files: Loaded[]): Assembled {
   const kits: Assembled['kits'] = {};
   let params: Params | undefined;
   let map: MapDef | undefined;
+  const creators: Record<string, CreatorProfile> = {};
 
   for (const f of files) {
     const d = f.data;
@@ -139,13 +148,17 @@ export function assemble(files: Loaded[]): Assembled {
       if (items[item.id]) err(f, `items.${i}.id`, `item "${item.id}" is already defined in ${items[item.id]!.file}`);
       items[item.id] = { ...item, creator: d.creator, file };
     }
-    credits.push({ id: d.id, type: d.type, title: d.title, creator: d.creator, file, ai_tools: d.ai_tools ?? [] });
+    if (d.type !== 'creator') credits.push({ id: d.id, type: d.type, title: d.title, creator: d.creator, file, ai_tools: d.ai_tools ?? [] });
 
     const body = (d as unknown as Record<string, unknown>)[BODY_OF[d.type] ?? ''];
     const meta = { id: d.id, creator: d.creator, title: d.title, file, ...(d.ai_tools ? { ai_tools: d.ai_tools } : {}) };
     const key = KEY_OF[d.type];
     if (key) {
       records[key][d.id] = { ...meta, ...(body as object) };
+    } else if (d.type === 'creator') {
+      if (d.id !== `${d.creator}/profile`) err(f, 'id', `a creator profile has the id "${d.creator}/profile"`);
+      if (creators[d.creator]) err(f, '', `"${d.creator}" already has a profile`);
+      creators[d.creator] = d.profile;
     } else if (d.type === 'params') {
       if (params) err(f, '', 'there is more than one params file');
       params = flattenParams(d.params);
@@ -190,7 +203,7 @@ export function assemble(files: Loaded[]): Assembled {
   const tag = hashText(canonical(content));
   const instances = layoutInstances(map, r.resources, r.treasures);
   const { values } = computeValues({ params, items, resources: r.resources, treasures: r.treasures, recipes: r.recipes });
-  const bundle: Bundle = { format: 1, tag, ...content, instances, values };
+  const bundle: Bundle = { format: 1, tag, ...content, instances, values, creators, board };
   checkReferences(bundle, origin, issues);
   return { bundle, issues, kits, origin };
 }
@@ -273,6 +286,8 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
   const totals = Object.entries(b.starters).map(([id, s]) => [id, Object.values(s.attributes).reduce((n, v) => n + v, 0)] as const);
   for (const [id, total] of totals) {
     sprite(id, 'starter.sprite', b.starters[id]!.sprite);
+    const alt = b.starters[id]!.sprite_alt;
+    if (alt) sprite(id, 'starter.sprite_alt', alt);
     if (total !== STARTER_POINTS) err(id, 'starter.attributes', `attributes add up to ${total}; every starter has exactly ${STARTER_POINTS}`);
   }
   for (const [slotId, owners] of Object.entries(slotFill)) {

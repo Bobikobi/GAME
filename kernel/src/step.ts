@@ -5,10 +5,12 @@
  * only advances while playing) and luck is a draw from rng.ts.
  *
  * An action happens at once and keeps the player busy until busyUntil; the
- * client plays the animation for that long. The timing grade (0-3) comes
- * from the minigame and can only lower the output below perfect play (D2),
- * so a client that always claims "perfect" earns what the economy already
- * assumes.
+ * client plays the animation for that long. The timing grade (0-4) comes
+ * from the minigame and can only lower the goods below perfect play (D2), so
+ * a client that always claims "perfect" earns what the economy already
+ * assumes. Grade 4, the jackpot, is a thin strip inside "perfect": the same
+ * goods, three times the experience. Experience is not part of item values,
+ * so the jackpot speeds up levels and nothing else.
  */
 import type { Bundle, Verb } from './bundle';
 import { canonical } from './canon';
@@ -33,10 +35,10 @@ import { rarityRank, payFor } from './values';
 import { campTile, findSlot, inRect, makeWalkable, near, npcTile, type Rect } from './world';
 
 export type Tile = [number, number];
-export type Grade = 0 | 1 | 2 | 3;
+export type Grade = 0 | 1 | 2 | 3 | 4;
 
 export type Action =
-  | { t: 'start'; starter: string; name: string }
+  | { t: 'start'; starter: string; name: string; look?: number }
   | { t: 'gather'; node: string; grade: Grade; at: Tile }
   | { t: 'dig'; spot: string; grade: Grade; at: Tile }
   | { t: 'craft'; recipe: string; at: Tile }
@@ -65,14 +67,32 @@ export type GameEvent =
   | { e: 'eat'; item: string; satiety: number }
   | { e: 'busy'; verb: string; ms: number }
   | { e: 'nothing'; verb: string }
+  | { e: 'jackpot'; verb: string }
   | { e: 'tool_broke'; item: string }
   | { e: 'visit'; slot: string }
   | { e: 'attr'; attr: Attribute; value: number };
 
 export type StepResult = { ok: true; state: State; events: GameEvent[] } | { ok: false; error: string };
 
-/** Output share per timing grade: miss, ok, good, perfect. */
-export const GRADE_PCT = [0, 50, 80, 100] as const;
+/** Output share per timing grade: miss, ok, good, perfect, jackpot. A missed dig keeps a quarter of its chances. */
+export const GRADE_PCT = [25, 50, 80, 100, 100] as const;
+/** A missed gather still brings one unit home this often, in basis points, before luck: a miss is a gamble, not a wall. */
+export const MISS_KEEP_BP = 5000;
+/** Luck never makes a miss a sure thing. */
+export const MISS_KEEP_MAX_BP = 9000;
+/** Experience for a jackpot, as a multiple of a normal action's. */
+export const JACKPOT_XP = 3;
+
+/** How often a missed gather still brings one unit home, in basis points: luck raises it. */
+export function missKeepBp(bundle: Bundle, state: State): number {
+  return Math.min(MISS_KEEP_MAX_BP, MISS_KEEP_BP + 10 * bundle.params.per_point.luck_permille * state.player.attrs.luck);
+}
+
+/** The multiplier on rare and legendary dig chances, in permille: luck and techniques, inside the power cap. */
+export function rareFindPermille(bundle: Bundle, state: State): number {
+  const raw = 1000 + bundle.params.per_point.luck_permille * state.player.attrs.luck + 10 * techniqueValue(bundle, state, 'rare_find_pct');
+  return clamp(raw, 1000, powerCap(bundle, state));
+}
 
 class Refusal extends Error {}
 function refuse(message: string): never {
@@ -133,7 +153,7 @@ export function replay(
 
 function apply(ctx: Ctx, a: Action): void {
   const { s } = ctx;
-  if (a.t === 'start') return start(ctx, a.starter, a.name);
+  if (a.t === 'start') return start(ctx, a.starter, a.name, a.look ?? 0);
   if (s.player.starter === '') refuse('Pick a character first.');
   if (ctx.tick < s.player.busyUntil) refuse('You are still busy.');
   // satiety is kept lazily: bring it up to now before anything reads it
@@ -171,16 +191,18 @@ function apply(ctx: Ctx, a: Action): void {
   }
 }
 
-function start(ctx: Ctx, starterId: string, name: string): void {
+function start(ctx: Ctx, starterId: string, name: string, look: number): void {
   const { b, s } = ctx;
   if (s.player.starter !== '') refuse('The character is already chosen.');
   const starter = b.starters[starterId];
   if (!starter) refuse('Unknown character.');
+  if (look !== 0 && !(look === 1 && starter.sprite_alt)) refuse('Unknown look.');
   if (!/^[A-Za-z0-9 _-]{1,16}$/.test(name) || name.trim() === '') {
     refuse('A name is 1 to 16 letters, digits, spaces, "_" or "-".');
   }
   s.player.name = name.trim();
   s.player.starter = starterId;
+  s.player.look = look;
   s.player.attrs = { ...starter.attributes };
   s.player.gold = b.params.starting_gold_mg;
   if (b.params.starting_gold_mg > 0) s.ledger.minted += b.params.starting_gold_mg;
@@ -208,14 +230,19 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   if (bagCapacity(b, s) - bagUsed(s) <= 0) refuse('Your bag is full.');
 
   const ms = duration(ctx, r.active_ms, speedPermille(ctx, tool ? 150 * (toolTier(ctx, tool) - 1) : 0));
-  const qty = gradeYield(r.yield, grade);
+  let qty = gradeYield(r.yield, grade);
+  if (grade === 0) {
+    if (drawBasisPoints(s.seed, nodeId, node.draws) < missKeepBp(b, s)) qty = 1;
+    node.draws += 1;
+  }
   if (qty > 0) addItem(ctx, r.output, qty);
   else ctx.events.push({ e: 'nothing', verb: 'gather' });
   if (tool) wearTool(ctx, tool);
   node.readyAt = ctx.tick + ms + r.respawn_ms;
   s.nodes[nodeId] = node;
   busy(ctx, 'gather', ms);
-  gainXp(ctx, 'gather', r.active_ms);
+  gainXp(ctx, 'gather', grade === 4 ? r.active_ms * JACKPOT_XP : r.active_ms);
+  if (grade === 4) ctx.events.push({ e: 'jackpot', verb: 'gather' });
 }
 
 function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
@@ -233,7 +260,7 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
 
   const ms = duration(ctx, d.active_ms, speedPermille(ctx, 150 * (toolTier(ctx, tool) - 1)));
   // luck and the rare-find technique raise only rare and legendary chances, inside the power cap
-  const luck = clamp(1000 + 50 * s.player.attrs.luck + 10 * techniqueValue(b, s, 'rare_find_pct'), 1000, powerCap(b, s));
+  const luck = rareFindPermille(b, s);
   const roll = drawBasisPoints(s.seed, spotId, node.draws);
   node.draws += 1;
   let edge = 0;
@@ -253,7 +280,8 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
   node.readyAt = ctx.tick + ms + d.respawn_ms;
   s.nodes[spotId] = node;
   busy(ctx, 'dig', ms);
-  gainXp(ctx, 'dig', d.active_ms);
+  gainXp(ctx, 'dig', grade === 4 ? d.active_ms * JACKPOT_XP : d.active_ms);
+  if (grade === 4) ctx.events.push({ e: 'jackpot', verb: 'dig' });
 }
 
 function craft(ctx: Ctx, recipeId: string, at: Tile): void {
@@ -502,7 +530,7 @@ function spend(ctx: Ctx, attr: Attribute): void {
 // ------------------------------------------------------------------ helpers
 
 function checkGrade(grade: number): void {
-  if (!Number.isSafeInteger(grade) || grade < 0 || grade > 3) refuse('Bad timing grade.');
+  if (!Number.isSafeInteger(grade) || grade < 0 || grade > 4) refuse('Bad timing grade.');
 }
 
 function checkAt(ctx: Ctx, at: Tile, target: Rect): void {
@@ -519,6 +547,7 @@ function inHours(hour: number, [from, to]: readonly [number, number]): boolean {
   return from < to ? hour >= from && hour < to : hour >= from || hour < to;
 }
 
+/** Units for a grade; a miss is 0 here, and gather() may still bring one home. */
 export function gradeYield(base: number, grade: Grade): number {
   if (grade === 0) return 0;
   return Math.max(1, mulDiv(base, GRADE_PCT[grade], 100));

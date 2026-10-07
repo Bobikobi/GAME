@@ -126,6 +126,11 @@ export const ResourceBody = Type.Object(
     sprite_empty: Type.Optional(SpriteRef),
     tool: Type.Optional(ToolKind),
     level: Int(1, 20, 'Foraging level required.'),
+    game: Type.Optional(
+      Type.Union([Type.Literal('timing'), Type.Literal('strike'), Type.Literal('pick'), Type.Literal('snap')], {
+        description: 'The minigame played when gathering: "timing" (stop a marker in the middle, the default), "strike" (three timed hammer strikes, for stone), "pick" (press only for the ripe ones, for plants) or "snap" (press fast, for wood).',
+      }),
+    ),
     hours: Type.Optional(
       Type.Tuple([Int(0, 23), Int(1, 24)], { description: 'Hours of the in-game day when it can be gathered, [from, to).' }),
     ),
@@ -182,8 +187,23 @@ export const NpcBody = Type.Object(
         acquaintance: Type.Optional(Type.Array(Text, { minItems: 1, maxItems: 6 })),
         friend: Type.Optional(Type.Array(Text, { minItems: 1, maxItems: 6 })),
         family: Type.Optional(Type.Array(Text, { minItems: 1, maxItems: 6 })),
+        first: Type.Optional(
+          Type.Array(Text, { minItems: 1, maxItems: 8, description: 'Said the first time the player talks to them, before anything else.' }),
+        ),
       },
       { additionalProperties: false },
+    ),
+    topics: Type.Optional(
+      Type.Array(
+        Type.Object(
+          {
+            ask: Type.String({ minLength: 1, maxLength: 40, description: 'The question the player can pick, for example "About the mist".' }),
+            lines: Type.Array(Text, { minItems: 1, maxItems: 6 }),
+          },
+          { additionalProperties: false },
+        ),
+        { maxItems: 4, description: 'Things the player can always ask about.' },
+      ),
     ),
     shop: Type.Optional(Id),
   },
@@ -265,6 +285,13 @@ export const StarterBody = Type.Object(
       { additionalProperties: false },
     ),
     sprite: SpriteRef,
+    sprite_alt: Type.Optional(
+      Type.String({
+        pattern: SPRITE_PATTERN,
+        maxLength: 120,
+        description: 'Another look of the same character (for example a woman instead of a man), offered by one toggle on the character screen. Same sprite sizes and directions as `sprite`.',
+      }),
+    ),
   },
   { additionalProperties: false },
 );
@@ -331,6 +358,14 @@ export const ParamsBody = Type.Object(
     day_length_ms: Bounded,
     bag_base: Bounded,
     starting_gold_mg: Bounded,
+    per_point: Type.Object(
+      { carry: Bounded, senses: Bounded, agility_pct: Bounded, luck_permille: Bounded, stamina: Bounded },
+      {
+        additionalProperties: false,
+        description:
+          'What one point in an attribute adds: bag places (carry), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina).',
+      },
+    ),
   },
   { additionalProperties: false },
 );
@@ -394,12 +429,36 @@ export const MapBody = Type.Object(
           h: Int(1, 8, 'Footprint height in tiles.'),
           solid: Type.Boolean(),
           sign: Type.Optional({ ...Id, description: 'Makes the prop a readable sign that names whoever filled this slot, or says it awaits restoration.' }),
+          note: Type.Optional({ ...Text, description: 'A line shown when the player looks at this prop, for example an old inscription.' }),
         },
         { additionalProperties: false },
       ),
     ),
     spawn: Type.Object({ x: Int(0, 1023), y: Int(0, 1023) }, { additionalProperties: false }),
     slots: Type.Array(Slot),
+  },
+  { additionalProperties: false },
+);
+
+export const SIGNATURE_STYLES = ['carved', 'painted', 'ink', 'gold', 'moss'] as const;
+export const SIGNATURE_GLYPHS = ['none', 'leaf', 'star', 'sun', 'flower', 'key', 'wave'] as const;
+
+export const CreatorBody = Type.Object(
+  {
+    name: { ...Name, description: 'How the game names you on signs and in the credits.' },
+    role: Type.Optional(Type.String({ minLength: 1, maxLength: 40, description: 'A few words under your name, for example "Main developer".' })),
+    signature: Type.Optional(
+      Type.Object(
+        {
+          text: Type.String({ minLength: 1, maxLength: 24, description: 'The words of your signature, shown over your signs without a click.' }),
+          style: Type.Union(SIGNATURE_STYLES.map((k) => Type.Literal(k)), {
+            description: '"carved" (into stone), "painted" (on wood), "ink", "gold" (leaf) or "moss".',
+          }),
+          glyph: Type.Optional(Type.Union(SIGNATURE_GLYPHS.map((k) => Type.Literal(k)), { description: 'A small mark beside the words.' })),
+        },
+        { additionalProperties: false },
+      ),
+    ),
   },
   { additionalProperties: false },
 );
@@ -435,6 +494,7 @@ export const QuestFile = record('quest', 'quest', QuestBody);
 export const RestoreFile = record('restore', 'restore', RestoreBody);
 export const CampFile = record('camp', 'camp', CampBody);
 export const StarterFile = record('starter', 'starter', StarterBody);
+export const CreatorFile = record('creator', 'profile', CreatorBody);
 export const ItemsFile = Type.Object({ ...envelope, type: Type.Literal('items') }, { additionalProperties: false });
 // Core-only types: a creator file of these types is refused by the check.
 export const ShopFile = record('shop', 'shop', ShopBody);
@@ -443,7 +503,7 @@ export const ParamsFile = record('params', 'params', ParamsBody);
 export const KitFile = record('kit', 'kit', KitBody);
 export const MapFile = record('map', 'map', MapBody);
 
-export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'npc', 'quest', 'restore', 'camp', 'starter', 'items'] as const;
+export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'npc', 'quest', 'restore', 'camp', 'starter', 'items', 'creator'] as const;
 export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map'] as const;
 
 export const ExtensionFile = Type.Union([
@@ -456,6 +516,7 @@ export const ExtensionFile = Type.Union([
   CampFile,
   StarterFile,
   ItemsFile,
+  CreatorFile,
   ShopFile,
   ProfessionFile,
   ParamsFile,
@@ -477,6 +538,8 @@ export type RestoreFile = Static<typeof RestoreFile>;
 export type CampFile = Static<typeof CampFile>;
 export type StarterFile = Static<typeof StarterFile>;
 export type ItemsFile = Static<typeof ItemsFile>;
+export type CreatorFile = Static<typeof CreatorFile>;
+export type CreatorProfile = Static<typeof CreatorBody>;
 export type ShopFile = Static<typeof ShopFile>;
 export type ProfessionFile = Static<typeof ProfessionFile>;
 export type ParamsFile = Static<typeof ParamsFile>;
@@ -512,6 +575,7 @@ export const SCHEMAS = {
   camp: CampFile,
   starter: StarterFile,
   items: ItemsFile,
+  creator: CreatorFile,
   shop: ShopFile,
   profession: ProfessionFile,
   params: ParamsFile,

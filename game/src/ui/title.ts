@@ -61,16 +61,26 @@ export function showTitle(ui: UI): Promise<void> {
       const b = app.bundle;
       const starters = Object.entries(b.starters).sort(([x], [y]) => x.localeCompare(y));
       let picked = starters[0]?.[0] ?? '';
+      let look = 0;
       const nameInput = h('input', { class: 'name', maxlength: 16, placeholder: 'Your name', autocomplete: 'off', spellcheck: 'false' });
       const error = h('p', { class: 'error' });
       const cards = h('div', { class: 'cards' });
+      const lookToggle = h('div', { class: 'tabs look-toggle' });
+
+      const drawToggle = () =>
+        lookToggle.replaceChildren(
+          button('Appearance: Male', () => { look = 0; drawCards(); drawToggle(); }, `tab ${look === 0 ? 'on' : ''}`),
+          button('Appearance: Female', () => { look = 1; drawCards(); drawToggle(); }, `tab ${look === 1 ? 'on' : ''}`),
+        );
+
       const drawCards = () =>
         cards.replaceChildren(
-          ...starters.map(([id, st]) =>
-            h(
+          ...starters.map(([id, st]) => {
+            const spr = look === 1 && st.sprite_alt ? st.sprite_alt : st.sprite;
+            return h(
               'button',
               { class: `card starter ${picked === id ? 'on' : ''}`, type: 'button', onclick: () => ((picked = id), drawCards()) },
-              sprite(b, st.sprite, 3, 1),
+              sprite(b, spr, 3, 1),
               h('b', null, st.name),
               h('p', null, st.summary),
               h(
@@ -80,9 +90,10 @@ export function showTitle(ui: UI): Promise<void> {
                   h('div', { title: ATTRIBUTE_TEXT[a] ?? a }, h('span', null, a), h('span', { class: 'pips' }, Array.from({ length: 3 }, (_, i) => h('i', { class: i < v ? 'on' : '' })))),
                 ),
               ),
-            ),
-          ),
+            );
+          }),
         );
+      drawToggle();
       drawCards();
       const start = () => {
         const name = nameInput.value.trim();
@@ -93,7 +104,7 @@ export function showTitle(ui: UI): Promise<void> {
         }
         Session.erase();
         const session = Session.fresh(b);
-        const r = session.act({ t: 'start', starter: picked, name });
+        const r = session.act({ t: 'start', starter: picked, name, look });
         if (!r.ok) {
           error.textContent = r.error;
           return;
@@ -110,6 +121,7 @@ export function showTitle(ui: UI): Promise<void> {
           'div',
           { class: 'title-box wide' },
           h('h2', null, 'Who wakes up by the river?'),
+          lookToggle,
           cards,
           h('label', { class: 'name-row' }, 'Name ', nameInput),
           error,

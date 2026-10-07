@@ -3,7 +3,7 @@ import type { Grade } from '@game/kernel';
 import { app } from '../../app';
 import { h, sprite } from '../dom';
 import type { Layer } from '../ui';
-import { GRADE_NAMES, type Minigame, pickGrade, pickSequence, pickWindow } from './shared';
+import { GRADE_NAMES, type Minigame, PICK_QUICK_MS, pickGrade, pickSequence, pickWindow } from './shared';
 
 export { pickGrade, pickSequence, pickWindow } from './shared';
 
@@ -14,7 +14,7 @@ const PRESS_GUARD_MS = 40;
 export const pick: Minigame = (ui, opts) =>
   new Promise((resolve) => {
     const sequence = pickSequence(opts.random);
-    const windowMs = pickWindow(opts.agility, opts.widenPct);
+    const windowMs = pickWindow(opts.scalePct);
     const result = h('div', { class: 'minigame-result', 'aria-live': 'polite' }, ' ');
     const item = h('div', { class: 'pick-item' });
     const stage = h('div', { class: 'minigame-stage pick-stage' }, item);
@@ -24,7 +24,7 @@ export const pick: Minigame = (ui, opts) =>
       h('div', { class: 'minigame-title' }, opts.title),
       stage,
       result,
-      h('div', { class: 'minigame-help' }, 'Press A or tap only when it is ripe'),
+      h('div', { class: 'minigame-help' }, 'Press A or tap only when it is ripe. All four, quick, no mistakes: jackpot.'),
     );
     const el = h('div', { class: 'layer minigame-layer' }, game);
 
@@ -33,6 +33,7 @@ export const pick: Minigame = (ui, opts) =>
     let index = 0;
     let correct = 0;
     let mistakes = 0;
+    let quick = 0;
     let pressed = false;
     let state: 'active' | 'gap' | 'final' = 'active';
     let stateStart = performance.now();
@@ -66,12 +67,13 @@ export const pick: Minigame = (ui, opts) =>
     };
 
     const finish = (now: number) => {
-      const grade = pickGrade(correct, mistakes);
+      const grade = pickGrade(correct, mistakes, quick);
       state = 'final';
       stateUntil = now + RESULT_MS;
       game.dataset.cue = 'wait';
       stage.classList.add('gap');
       setResult(grade, `Final: ${GRADE_NAMES[grade]}`);
+      if (grade === 4) game.classList.add('jackpot');
     };
 
     const press = () => {
@@ -83,6 +85,7 @@ export const pick: Minigame = (ui, opts) =>
       game.dataset.cue = 'wait';
       if (sequence[index]) {
         correct += 1;
+        if (now - stateStart <= PICK_QUICK_MS) quick += 1;
         item.classList.add('picked');
         setResult(3);
         opts.onBeat?.(index, 3);
@@ -112,7 +115,7 @@ export const pick: Minigame = (ui, opts) =>
         state = 'active';
         showItem();
       } else if (state === 'final' && now >= stateUntil) {
-        exit(pickGrade(correct, mistakes));
+        exit(pickGrade(correct, mistakes, quick));
         return;
       }
       raf = requestAnimationFrame(frame);

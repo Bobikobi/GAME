@@ -12,20 +12,56 @@
       "slot": "core/elder-house"
     },
     "dialogue": {
+      "first": [
+        "I am Maru. I have kept this town longer than anyone can remember. Sit a moment.",
+        "This was Mistvale once: a market, a garden, fires by the river at dusk, children running over that bridge.",
+        "Then the mist came down from the hills. People left, one family after another. Nobody could say why.",
+        "A house falls quiet when no one lives in it. Some of ours fell apart. Some are only waiting.",
+        "At night the mist grows thick. Things move in it. Bells ring in the ruins, and nobody is there to ring them.",
+        "But a town is not gone while someone still mends it. You mended the bridge. That is how it starts.",
+        "The market is two minutes east - Pell keeps a stall there with tools and food. The ruins lie south-east, past the broken arch.",
+        "If you want to help, I have small tasks. Small is how everything here begins again."
+      ],
       "stranger": [
-        "A new face. You came over the old bridge?",
-        "Most of this valley is still asleep under the mist."
+        "You came over the old bridge. It has been a long time since anyone did.",
+        "Stay near the fire after dark. The mist is kinder by day."
       ],
       "acquaintance": [
-        "The ruins keep what we forgot. Dig carefully.",
-        "Every house here was mended by someone. Look at the signs."
+        "The ruins keep what we forgot. Dig carefully, and leave before the bells.",
+        "Every house here was mended by someone. Their signs say who."
       ],
       "friend": [
-        "You remind me of the first ones who came back here."
+        "You remind me of the first ones who came back here. They did not stay. I hope you do."
       ],
       "family": [
         "This valley is yours as much as mine now."
       ]
-    }
+    },
+    "topics": [
+      {
+        "ask": "About the mist",
+        "lines": [
+          "It rolls in from the hills every evening. It was not always this thick.",
+          "Some nights you hear things in it. Bells. Voices too faint to place. Footsteps that stop when yours do.",
+          "I do not fear it. But I do not walk the ruins after dark, and neither should you."
+        ]
+      },
+      {
+        "ask": "About the ruins",
+        "lines": [
+          "South-east of the town, past the broken arch. Houses, a hall, a garden, all fallen in on themselves.",
+          "People lived there, same as here. They left in a hurry, and they left things behind.",
+          "A trowel will find them. What you find is yours, and some of it is older than the town."
+        ]
+      },
+      {
+        "ask": "About the town",
+        "lines": [
+          "We had a market, a well with sweet water, a garden behind every second house.",
+          "Most of it is overgrown now. Roofs caved in. Paths lost under the weeds.",
+          "The mist hides the places nobody has mended yet. Every one someone mends comes back out of it."
+        ]
+      }
+    ]
   }
 }

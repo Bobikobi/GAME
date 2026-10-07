@@ -21,7 +21,7 @@ const BEATS = 3;
 
 export const strike: Minigame = (ui, opts) =>
   new Promise((resolve) => {
-    const windows = strikeWindows(opts.agility, opts.widenPct);
+    const windows = strikeWindows(opts.scalePct);
     const grades: Grade[] = [];
     const result = h('div', { class: 'minigame-result', 'aria-live': 'polite' }, ' ');
     const ring = h('i', { class: 'strike-ring' });
@@ -37,7 +37,7 @@ export const strike: Minigame = (ui, opts) =>
       h('div', { class: 'minigame-title' }, opts.title),
       h('div', { class: 'minigame-stage strike-stage' }, stone),
       result,
-      h('div', { class: 'minigame-help' }, 'Press A or tap when the ring meets the circle'),
+      h('div', { class: 'minigame-help' }, 'Press A or tap when the ring meets the circle. Three perfect blows: jackpot.'),
     );
     const el = h('div', { class: 'layer minigame-layer' }, game);
 
@@ -80,6 +80,7 @@ export const strike: Minigame = (ui, opts) =>
       if (beat === BEATS) {
         const total = strikeTotal(grades);
         setResult(total, `${GRADE_NAMES[grade]} · Final: ${GRADE_NAMES[total]}`);
+        if (total === 4) game.classList.add('jackpot');
         state = 'final';
         stateUntil = now + RESULT_MS;
       } else {

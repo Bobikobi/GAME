@@ -23,6 +23,7 @@
     "count": 3,
     "sprite": "core/base-kit:props/fallen_branches",
     "level": 1,
+    "game": "snap",
     "place": {
       "slot": "core/fallen-branches"
     }

@@ -13,7 +13,7 @@ const PRESS_GUARD_MS = 40;
 
 export const snap: Minigame = (ui, opts) =>
   new Promise((resolve) => {
-    const limits = snapLimits(opts.agility, opts.widenPct);
+    const limits = snapLimits(opts.scalePct);
     const result = h('div', { class: 'minigame-result', 'aria-live': 'polite' }, ' ');
     const fill = h('i');
     const bar = h('div', { class: 'snap-bar' }, fill);
@@ -24,7 +24,7 @@ export const snap: Minigame = (ui, opts) =>
       h('div', { class: 'minigame-title' }, opts.title),
       h('div', { class: 'minigame-stage snap-stage' }, branch, bar),
       result,
-      h('div', { class: 'minigame-help' }, 'Press A or tap fast to snap it'),
+      h('div', { class: 'minigame-help' }, 'Press A or tap fast to snap it. Very fast: jackpot.'),
     );
     const el = h('div', { class: 'layer minigame-layer' }, game);
 
@@ -51,12 +51,13 @@ export const snap: Minigame = (ui, opts) =>
       resolve(grade);
     };
 
-    const finish = (grade: Grade, now: number, lastBeat = false) => {
+    const finish = (grade: Grade, now: number, snapped = false) => {
       finalGrade = grade;
       state = 'final';
       stateUntil = now + RESULT_MS;
       game.dataset.cue = 'wait';
-      setResult(grade, `${lastBeat ? 'Perfect! · ' : ''}Final: ${GRADE_NAMES[grade]}`);
+      setResult(grade, `${snapped ? 'Snap! · ' : ''}Final: ${GRADE_NAMES[grade]}`);
+      if (grade === 4) game.classList.add('jackpot');
     };
 
     const press = () => {

@@ -1,11 +1,17 @@
 /** Words for numbers and events. Display only: the kernel never sees these. */
 import {
+  type Attribute,
   type Bundle,
   type GameEvent,
   type State,
+  bagCapacity,
   campTile,
   findSlot,
+  missKeepBp,
+  powerCap,
   questSatisfied,
+  rareFindPermille,
+  satietyCap,
   techniqueValue,
 } from '@game/kernel';
 
@@ -36,10 +42,59 @@ export function clock(minuteOfDay: number): string {
 export const ATTRIBUTE_TEXT: Record<string, string> = {
   carry: 'Carry - room in your bag',
   senses: 'Senses - spot dig sites from farther away',
-  agility: 'Agility - a wider timing window',
-  luck: 'Luck - better odds of rare finds',
-  stamina: 'Stamina - a bigger satiety meter',
+  agility: 'Agility - wider zones in every minigame',
+  luck: 'Luck - a miss keeps something more often, and rarer finds',
+  stamina: 'Stamina - a bigger food meter, so you eat less often',
 };
+
+/** The most points one attribute can take (the kernel refuses more). */
+export const ATTRIBUTE_MAX = 10;
+
+/** How wide the minigame windows are, in percent of the base. */
+export function windowScalePct(b: Bundle, s: State): number {
+  return 100 + b.params.per_point.agility_pct * s.player.attrs.agility + techniqueValue(b, s, 'timing_window_pct');
+}
+
+export interface AttributeEffect {
+  attr: Attribute;
+  name: string;
+  /** what the number measures, for example "Bag" */
+  what: string;
+  now: string;
+  next: string;
+  /** a short honest note, for example when the level cap holds luck back */
+  note?: string;
+}
+
+/** What one more point in each attribute really changes, as numbers. */
+export function attributeEffects(b: Bundle, s: State): AttributeEffect[] {
+  const plus = (a: Attribute): State => ({ ...s, player: { ...s.player, attrs: { ...s.player.attrs, [a]: s.player.attrs[a] + 1 } } });
+  const minutes = (st: State) => Math.floor(satietyCap(b, st) / b.params.satiety_drain_per_min);
+  const pct = (bp: number) => `${Math.round(bp / 100)}%`;
+  const times = (permille: number) => `x${(permille / 1000).toFixed(2).replace(/0$/, '')}`;
+  const luckNext = plus('luck');
+  const capped = rareFindPermille(b, luckNext) === rareFindPermille(b, s) && rareFindPermille(b, s) >= powerCap(b, s);
+  return [
+    { attr: 'carry', name: 'Carry', what: 'Bag', now: `${bagCapacity(b, s)} places`, next: `${bagCapacity(b, plus('carry'))} places` },
+    { attr: 'senses', name: 'Senses', what: 'See dig sites', now: `${hintDistance(b, s)} tiles away`, next: `${hintDistance(b, plus('senses'))} tiles away` },
+    { attr: 'agility', name: 'Agility', what: 'Minigame zones', now: `${windowScalePct(b, s)}% wide`, next: `${windowScalePct(b, plus('agility'))}% wide` },
+    {
+      attr: 'luck',
+      name: 'Luck',
+      what: 'A miss still keeps 1',
+      now: `${pct(missKeepBp(b, s))} of the time`,
+      next: `${pct(missKeepBp(b, luckNext))} of the time`,
+      note: `Rare finds ${times(rareFindPermille(b, s))} -> ${times(rareFindPermille(b, luckNext))}${capped ? ' (held by your level: level up to raise it)' : ''}`,
+    },
+    {
+      attr: 'stamina',
+      name: 'Stamina',
+      what: 'Food meter',
+      now: `${satietyCap(b, s) / 1000} (${minutes(s)} min of work)`,
+      next: `${satietyCap(b, plus('stamina')) / 1000} (${minutes(plus('stamina'))} min)`,
+    },
+  ];
+}
 
 export function stacks(b: Bundle, list: readonly { item: string; qty: number }[]): string {
   return list.map((s) => `${s.qty} ${itemName(b, s.item)}`).join(', ');
@@ -97,7 +152,7 @@ export function readyToHandIn(b: Bundle, s: State, questId: string): boolean {
 }
 
 export function hintDistance(b: Bundle, s: State): number {
-  return 2 + s.player.attrs.senses + (techniqueValue(b, s, 'second_hint') > 0 ? 2 : 0);
+  return 2 + b.params.per_point.senses * s.player.attrs.senses + (techniqueValue(b, s, 'second_hint') > 0 ? 2 : 0);
 }
 
 export function campSpotOf(b: Bundle, campId: string): [number, number] | undefined {
@@ -140,6 +195,8 @@ export function describe(b: Bundle, s: State, e: GameEvent): { text: string; ico
       return { text: `Your ${itemName(b, e.item)} broke`, tone: 'bad' };
     case 'attr':
       return { text: `${e.attr[0]?.toUpperCase()}${e.attr.slice(1)} is now ${e.value}`, tone: 'good' };
+    case 'jackpot':
+      return { text: 'Jackpot! Three times the experience', tone: 'good' };
     case 'visit': {
       const slot = findSlot(b.map, e.slot);
       return slot?.label ? { text: `You reached the ${slot.label}`, tone: 'info' } : undefined;
@@ -147,4 +204,31 @@ export function describe(b: Bundle, s: State, e: GameEvent): { text: string; ico
     default:
       return undefined;
   }
+}
+
+/** Concrete effect/benefit of an item: tool speed & durability, food satiety minutes, recipe learned, or description. */
+export function itemBenefit(b: Bundle, id: string): string {
+  const it = b.items[id];
+  if (!it) return '';
+  if (it.tool) {
+    const tier = `Tier ${it.tool.tier} ${it.tool.kind}`;
+    const uses = `${it.tool.uses} uses`;
+    const speed = it.tool.tier > 1 ? ` · +${15 * (it.tool.tier - 1)}% gathering speed` : '';
+    const unlocks =
+      it.tool.kind === 'basket'
+        ? 'gathers bushes & herbs'
+        : it.tool.kind === 'trowel'
+          ? 'digs earth & ruin spots'
+          : `tool for ${it.tool.kind}`;
+    return `${tier} · ${unlocks} · ${uses}${speed}`;
+  }
+  if (it.food) {
+    const sat = it.food.satiety / 1000;
+    const min = Math.round(it.food.satiety / b.params.satiety_drain_per_min);
+    return `+${sat} satiety · sustains ~${min} min of work`;
+  }
+  if (it.fragment) {
+    return `Unlocks recipe: ${b.recipes[it.fragment.unlocks]?.title ?? it.fragment.unlocks}`;
+  }
+  return it.description ?? '';
 }

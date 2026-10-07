@@ -25,12 +25,12 @@ describe('pickSequence', () => {
 
 describe('pickWindow', () => {
   it('widens from the base duration', () => {
-    expect(pickWindow(0, 0)).toBe(900);
-    expect(pickWindow(10, 0)).toBe(1260);
+    expect(pickWindow(100)).toBe(750);
+    expect(pickWindow(150)).toBe(1125);
   });
 
-  it('caps at 1500 ms', () => {
-    expect(pickWindow(10, 100)).toBe(1500);
+  it('caps at 1400 ms', () => {
+    expect(pickWindow(300)).toBe(1400);
   });
 });
 
@@ -48,5 +48,11 @@ describe('pickGrade', () => {
   it('subtracts mistakes without going below zero', () => {
     expect(pickGrade(4, 1)).toBe(2);
     expect(pickGrade(1, 3)).toBe(0);
+  });
+
+  it('gives the jackpot only for four quick picks and no mistakes', () => {
+    expect(pickGrade(4, 0, 4)).toBe(4);
+    expect(pickGrade(4, 0, 3)).toBe(3);
+    expect(pickGrade(4, 1, 4)).toBe(2);
   });
 });

@@ -21,6 +21,7 @@
     "kit:sketches": "tsx tools/src/kit/sketches.ts",
     "e2e": "tsx game/e2e/opening.ts",
     "credits": "tsx tools/src/cli.ts credits",
+    "board": "tsx tools/src/cli.ts board",
     "verify": "pnpm schemas --verify && pnpm check && pnpm credits --verify && pnpm bundle && pnpm lint && pnpm typecheck && pnpm test && pnpm --filter game build"
   },
   "devDependencies": {

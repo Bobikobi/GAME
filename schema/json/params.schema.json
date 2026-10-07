@@ -223,7 +223,8 @@
         "satiety_drain_per_min",
         "day_length_ms",
         "bag_base",
-        "starting_gold_mg"
+        "starting_gold_mg",
+        "per_point"
       ],
       "properties": {
         "k_permille": {
@@ -660,6 +661,150 @@
               "minimum": 0,
               "description": "Largest change one decision may make.",
               "type": "integer"
+            }
+          }
+        },
+        "per_point": {
+          "additionalProperties": false,
+          "description": "What one point in an attribute adds: bag places (carry), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina).",
+          "type": "object",
+          "required": [
+            "carry",
+            "senses",
+            "agility_pct",
+            "luck_permille",
+            "stamina"
+          ],
+          "properties": {
+            "carry": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              }
+            },
+            "senses": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              }
+            },
+            "agility_pct": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              }
+            },
+            "luck_permille": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              }
+            },
+            "stamina": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              }
             }
           }
         }

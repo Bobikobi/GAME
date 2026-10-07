@@ -23,6 +23,7 @@
     "count": 3,
     "sprite": "core/base-kit:props/rock_stones",
     "level": 1,
+    "game": "strike",
     "place": {
       "slot": "core/river-stones"
     }

@@ -282,6 +282,27 @@
               "description": "Foraging level required.",
               "type": "integer"
             },
+            "game": {
+              "description": "The minigame played when gathering: \"timing\" (stop a marker in the middle, the default), \"strike\" (three timed hammer strikes, for stone), \"pick\" (press only for the ripe ones, for plants) or \"snap\" (press fast, for wood).",
+              "anyOf": [
+                {
+                  "const": "timing",
+                  "type": "string"
+                },
+                {
+                  "const": "strike",
+                  "type": "string"
+                },
+                {
+                  "const": "pick",
+                  "type": "string"
+                },
+                {
+                  "const": "snap",
+                  "type": "string"
+                }
+              ]
+            },
             "hours": {
               "description": "Hours of the in-game day when it can be gathered, [from, to).",
               "type": "array",
@@ -1245,6 +1266,48 @@
                     "minLength": 1,
                     "maxLength": 240,
                     "type": "string"
+                  }
+                },
+                "first": {
+                  "minItems": 1,
+                  "maxItems": 8,
+                  "description": "Said the first time the player talks to them, before anything else.",
+                  "type": "array",
+                  "items": {
+                    "minLength": 1,
+                    "maxLength": 240,
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "topics": {
+              "maxItems": 4,
+              "description": "Things the player can always ask about.",
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "ask",
+                  "lines"
+                ],
+                "properties": {
+                  "ask": {
+                    "minLength": 1,
+                    "maxLength": 40,
+                    "description": "The question the player can pick, for example \"About the mist\".",
+                    "type": "string"
+                  },
+                  "lines": {
+                    "minItems": 1,
+                    "maxItems": 6,
+                    "type": "array",
+                    "items": {
+                      "minLength": 1,
+                      "maxLength": 240,
+                      "type": "string"
+                    }
                   }
                 }
               }
@@ -2528,6 +2591,12 @@
               "maxLength": 120,
               "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
               "type": "string"
+            },
+            "sprite_alt": {
+              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
+              "maxLength": 120,
+              "description": "Another look of the same character (for example a woman instead of a man), offered by one toggle on the character screen. Same sprite sizes and directions as `sprite`.",
+              "type": "string"
             }
           }
         }
@@ -2737,6 +2806,310 @@
         "type": {
           "const": "items",
           "type": "string"
+        }
+      }
+    },
+    {
+      "additionalProperties": false,
+      "$id": "creator",
+      "type": "object",
+      "required": [
+        "format",
+        "id",
+        "title",
+        "creator",
+        "type",
+        "profile"
+      ],
+      "properties": {
+        "$schema": {
+          "type": "string"
+        },
+        "format": {
+          "description": "Format version of this file.",
+          "const": 1,
+          "type": "number"
+        },
+        "id": {
+          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+          "maxLength": 80,
+          "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+          "type": "string"
+        },
+        "title": {
+          "minLength": 1,
+          "maxLength": 40,
+          "type": "string"
+        },
+        "creator": {
+          "pattern": "^[a-z0-9_-]+$",
+          "maxLength": 39,
+          "description": "GitHub handle, lowercase.",
+          "type": "string"
+        },
+        "description": {
+          "minLength": 1,
+          "maxLength": 240,
+          "type": "string"
+        },
+        "ai_tools": {
+          "maxItems": 8,
+          "description": "AI tools used to make this file or its art. Required when any were used.",
+          "type": "array",
+          "items": {
+            "minLength": 1,
+            "maxLength": 60,
+            "type": "string"
+          }
+        },
+        "items": {
+          "maxItems": 40,
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "rarity",
+              "sprite"
+            ],
+            "properties": {
+              "id": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              },
+              "name": {
+                "minLength": 1,
+                "maxLength": 40,
+                "type": "string"
+              },
+              "description": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string"
+              },
+              "kind": {
+                "anyOf": [
+                  {
+                    "const": "material",
+                    "type": "string"
+                  },
+                  {
+                    "const": "food",
+                    "type": "string"
+                  },
+                  {
+                    "const": "tool",
+                    "type": "string"
+                  },
+                  {
+                    "const": "fragment",
+                    "type": "string"
+                  },
+                  {
+                    "const": "treasure",
+                    "type": "string"
+                  }
+                ]
+              },
+              "rarity": {
+                "description": "Declared rarity. The check compares it with the rarity computed from the data.",
+                "anyOf": [
+                  {
+                    "const": "common",
+                    "type": "string"
+                  },
+                  {
+                    "const": "uncommon",
+                    "type": "string"
+                  },
+                  {
+                    "const": "rare",
+                    "type": "string"
+                  },
+                  {
+                    "const": "legendary",
+                    "type": "string"
+                  }
+                ]
+              },
+              "sprite": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
+                "maxLength": 120,
+                "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
+                "type": "string"
+              },
+              "food": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "satiety"
+                ],
+                "properties": {
+                  "satiety": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                    "type": "integer"
+                  }
+                }
+              },
+              "tool": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "kind",
+                  "tier",
+                  "uses"
+                ],
+                "properties": {
+                  "kind": {
+                    "anyOf": [
+                      {
+                        "const": "basket",
+                        "type": "string"
+                      },
+                      {
+                        "const": "trowel",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "tier": {
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Better tools work faster. The calculator clamps the total.",
+                    "type": "integer"
+                  },
+                  "uses": {
+                    "minimum": 1,
+                    "maximum": 1000,
+                    "description": "The tool wears out after this many uses.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "fragment": {
+                "additionalProperties": false,
+                "description": "A found scrap that teaches a recipe.",
+                "type": "object",
+                "required": [
+                  "unlocks"
+                ],
+                "properties": {
+                  "unlocks": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "type": {
+          "const": "creator",
+          "type": "string"
+        },
+        "profile": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "name": {
+              "minLength": 1,
+              "maxLength": 40,
+              "type": "string",
+              "description": "How the game names you on signs and in the credits."
+            },
+            "role": {
+              "minLength": 1,
+              "maxLength": 40,
+              "description": "A few words under your name, for example \"Main developer\".",
+              "type": "string"
+            },
+            "signature": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "text",
+                "style"
+              ],
+              "properties": {
+                "text": {
+                  "minLength": 1,
+                  "maxLength": 24,
+                  "description": "The words of your signature, shown over your signs without a click.",
+                  "type": "string"
+                },
+                "style": {
+                  "description": "\"carved\" (into stone), \"painted\" (on wood), \"ink\", \"gold\" (leaf) or \"moss\".",
+                  "anyOf": [
+                    {
+                      "const": "carved",
+                      "type": "string"
+                    },
+                    {
+                      "const": "painted",
+                      "type": "string"
+                    },
+                    {
+                      "const": "ink",
+                      "type": "string"
+                    },
+                    {
+                      "const": "gold",
+                      "type": "string"
+                    },
+                    {
+                      "const": "moss",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "glyph": {
+                  "description": "A small mark beside the words.",
+                  "anyOf": [
+                    {
+                      "const": "none",
+                      "type": "string"
+                    },
+                    {
+                      "const": "leaf",
+                      "type": "string"
+                    },
+                    {
+                      "const": "star",
+                      "type": "string"
+                    },
+                    {
+                      "const": "sun",
+                      "type": "string"
+                    },
+                    {
+                      "const": "flower",
+                      "type": "string"
+                    },
+                    {
+                      "const": "key",
+                      "type": "string"
+                    },
+                    {
+                      "const": "wave",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -3532,7 +3905,8 @@
             "satiety_drain_per_min",
             "day_length_ms",
             "bag_base",
-            "starting_gold_mg"
+            "starting_gold_mg",
+            "per_point"
           ],
           "properties": {
             "k_permille": {
@@ -3969,6 +4343,150 @@
                   "minimum": 0,
                   "description": "Largest change one decision may make.",
                   "type": "integer"
+                }
+              }
+            },
+            "per_point": {
+              "additionalProperties": false,
+              "description": "What one point in an attribute adds: bag places (carry), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina).",
+              "type": "object",
+              "required": [
+                "carry",
+                "senses",
+                "agility_pct",
+                "luck_permille",
+                "stamina"
+              ],
+              "properties": {
+                "carry": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  }
+                },
+                "senses": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  }
+                },
+                "agility_pct": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  }
+                },
+                "luck_permille": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  }
+                },
+                "stamina": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  }
                 }
               }
             }
@@ -4594,6 +5112,12 @@
                     "maxLength": 80,
                     "description": "Makes the prop a readable sign that names whoever filled this slot, or says it awaits restoration.",
                     "type": "string"
+                  },
+                  "note": {
+                    "minLength": 1,
+                    "maxLength": 240,
+                    "type": "string",
+                    "description": "A line shown when the player looks at this prop, for example an old inscription."
                   }
                 }
               }
