@@ -69,7 +69,7 @@ On a phone, A opened the cooking panel on pointerdown; the click the browser sen
 
 ## 2026-10-07 ⏸ System sans body font for mobile dialogue and reading readability
 
-`Pixelify Sans` remains for titles, buttons, numbers, and retro HUD elements. For body text—dialogue, panel bodies, item details, and creator guides—`--font-body` (system sans-serif) with generous line-height is used to prevent mobile reading fatigue on high-DPI screens. Model: antigravity.
+`Pixelify Sans` remains for titles, buttons, numbers, and retro HUD elements. For body text (dialogue, panel bodies, item details, and creator guides) `--font-body` (system sans-serif) with generous line-height is used to prevent mobile reading fatigue on high-DPI screens. Model: antigravity.
 
 ## 2026-10-07 ✅ Character select appearance toggle (Male / Female)
 
@@ -182,3 +182,28 @@ Code is the kernel package version (tags `v0.<stage>.<n>` on `main`), content is
 
 `HUB_GITHUB_TOKEN` (read-only) and the Upstash pair in the Vercel project; `VERCEL_DEPLOY_HOOK` as a repository secret; `GITHUB_TOKEN` from Actions. `.env.example` lists the names with no values; `.gitignore` already refuses `.env*`. Every consumer degrades without its secret (a build without the token still succeeds, the refresh step skips without the hook) so a missing secret is a missing section, never a red build.
 **Retry when:** a secret has to be shared with a creator's machine; it must not, so the design changes instead. Model: Claude Fable 5.1.
+
+## 2026-10-07 ✅ The rules of play are one page the owner holds, a check that cites it, and a protocol for collisions
+
+Three things in the preview broke the loop (a shelf that is a menu built as a camp, town quests that are counters, inscriptions that pay nothing) and nothing in the repository guarded against them: a developer's idea or an AI with a free hand fills a quest with the easiest thing that validates. Now `docs/design/GAME_RULES.md` holds five pillars, the hook ladder, rules G1-G16, the forbidden patterns and the review checklist; `tools/src/play.ts` in `pnpm check` tests G2, G4, G8 and G10 on core and extensions and prints the rule it cites; `AGENTS.md`, `CONTRIBUTING.md`, `WORKFLOW.md` and the handoff template send every agent, creator and session there. A request that collides with a rule is neither built nor bent: it goes to the owner in five plain Hebrew lines with a recommendation, and his word lands here the same day. The free tools surveyed in `docs/design/TOOLKIT.md` are design-time aids (Puzzlon charts, Twine prototypes, Machinations models); none was adopted into the build.
+**Retry when:** a rule proves wrong in a playtest; it changes here first, then on the page. Model: Claude Fable 5.1.
+
+## 2026-10-07 ⏸ The play rules warn until the core content is rewritten
+
+The `play` rules are warnings, not errors, because the shipped core content breaks them: an error would turn `develop` red before the owner has ruled on the fixes (GAME_RULES.md section 5, GRUNT P-1 to P-3). They become errors in the pull request that rewrites the content, by flipping `PLAY_LEVEL` in `tools/src/play.ts`.
+**Retry when:** P-3 merges. Model: Claude Fable 5.1.
+
+## 2026-10-07 ✅ The owner ruled on the five breaches, and added the variety rule
+
+Motty, the same evening, yes to all five rows of GAME_RULES.md section 5: the collection shelf stops being a build (P-1); three-fruits and herbs-for-pell become finds with a clue; a-coin-for-maru gets its catch; one riddle over the three ruin stones, and the other four inscriptions are cut until an arc names them; rewards that change play. His addition, in his words: collecting in the game must not be one style; like Skyrim, The Witcher and Fallout, different quests and their actions answer different player psychology. That became rules G17 and G18 and the palette of twelve quest types in GAME_RULES.md section 3, `quest.type` in P-2, and a G17 line in the check once the field exists.
+**Retry when:** a palette type has no quest after P-3; then the palette shrinks, not the rule. Model: Claude Fable 5.1.
+
+## 2026-10-07 ✅ Dialogue has rules of its own: every line does one job, one voice per character, the player pulls
+
+The owner asked whether language and talk were covered; they were only by the two-line box rule. Now GAME_RULES.md section 3 has G19-G23 (one job per line, a voice sheet per character, the player pulls with a first meeting of three boxes at most, plain words for all ages with the valley's own names, real talk choices), four proposed voice sheets (Maru, Pell, the narrator, signs) waiting for his word, and `pnpm check` counts boxes over the limits per character. Maru's eight-box first meeting is a known breach, fixed with P-3. English stays the only language until the owner decides on a language field.
+**Retry when:** the owner edits a voice sheet; the lines follow the sheet, never the other way round. Model: Claude Fable 5.1.
+
+## 2026-10-07 ✅ Sound, fairness and access have rules, and the page says what it does not cover
+
+The owner asked about sound and what else was missing. GAME_RULES.md section 3 gains G24-G27 for sound (every beat has a sound and every sound a beat, the rare find is heard, music is the clock, nothing important lives only in sound), G28 against dark patterns (the valley waits; no punishment for absence, nothing to pay for) and G29 for access (the basic tier of the Game Accessibility Guidelines), and a coverage table naming what lives elsewhere (FTUE, kernel rules, art rules, community loop) and what is not written yet (difficulty curve, a performance budget, a second language). These rules live in code, so the checklist and the e2e audio line cover them, not the content check.
+**Retry when:** the first play data arrives from the hub; the difficulty row then gets its page. Model: Claude Fable 5.1.

@@ -34,6 +34,7 @@ DECISIONS.md <date>, "<title>"  (or: PLATFORM.md section <n>)
 - Commit message: what and why; ends with `Co-Authored-By: <model> <noreply@anthropic.com>`.
 - Pull request into `develop`; the lead merges. Never push to `main` or `develop`.
 - Plain hyphen, never an em dash; no invisible direction marks; no hour estimates.
+- A step that touches play (quests, camps, props, NPC lines, rewards, timing, the opening) obeys `docs/design/GAME_RULES.md`; a collision stops and goes to the owner (its section 6).
 - No secrets in git or in chat. Nothing written outside the repository.
 - Ask first, in three lines (what, what if it goes wrong, how to undo), before
   anything that writes to GitHub outside the branch and its pull request.
