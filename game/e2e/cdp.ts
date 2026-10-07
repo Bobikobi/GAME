@@ -181,6 +181,9 @@ export class Page {
       mobile: viewport.mobile,
     });
     if (viewport.mobile) await this.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+    // E2E_CPU_SLOWDOWN=4 makes a fast machine render as slowly as CI does
+    const slowdown = Number(process.env.E2E_CPU_SLOWDOWN ?? 1);
+    if (slowdown > 1) await this.send('Emulation.setCPUThrottlingRate', { rate: slowdown });
   }
 
   async goto(url: string): Promise<void> {
