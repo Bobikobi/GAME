@@ -4,6 +4,7 @@
  * with touch only (d-pad, A button, taps), once on a desktop with the keyboard.
  *
  *   pnpm build && pnpm e2e [out-dir]
+ *   E2E_URL=https://<deployment> pnpm e2e    (play a deployed copy instead)
  *
  * Serves game/dist itself, writes screenshots to out-dir (default .scratch/e2e)
  * and exits non-zero on the first step that fails or on any page error.
@@ -483,9 +484,11 @@ const RUNS: [string, Viewport][] = [
 ];
 
 async function main(): Promise<void> {
-  if (!existsSync(join(DIST, 'index.html'))) throw new Error('no game/dist: run "pnpm build" first');
+  const remote = process.env.E2E_URL;
+  if (!remote && !existsSync(join(DIST, 'index.html'))) throw new Error('no game/dist: run "pnpm build" first');
   mkdirSync(OUT, { recursive: true });
-  const { server, url } = await serve();
+  const local = remote ? null : await serve();
+  const url = remote ?? local?.url ?? '';
   const browser = await Browser.launch();
   const only = process.env.E2E_ONLY;
   try {
@@ -497,7 +500,7 @@ async function main(): Promise<void> {
     }
   } finally {
     await browser.close();
-    server.close();
+    local?.server.close();
   }
   console.log(`screenshots in ${OUT}`);
 }
