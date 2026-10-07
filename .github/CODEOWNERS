@@ -1,0 +1,27 @@
+# Each area's owner is asked for review automatically. See docs/team/WORKFLOW.md.
+# Replace the owner of a line when a teammate takes that area over; a later line wins.
+
+*                       @Bobikobi
+
+# simulation and content format
+/kernel/                @Bobikobi
+/schema/                @Bobikobi
+/content/core/          @Bobikobi
+/content/values.lock.json @Bobikobi
+
+# client and look
+/game/                  @Bobikobi
+
+# tools, CI and the community loop
+/tools/                 @Bobikobi
+/.github/               @Bobikobi
+/vercel.json            @Bobikobi
+
+# creator-facing docs
+/docs/creators/         @Bobikobi
+/CONTRIBUTING.md        @Bobikobi
+
+# creators' own folders are reviewed by the community through the loop, not by a code owner
+/content/extensions/
+/content/kit/
+/content/kit/core/      @Bobikobi

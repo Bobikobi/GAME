@@ -21,6 +21,8 @@ Anyone can ask for something with the "Request for the valley" issue form. Other
 
 ## Changing the game
 
+If you are joining the core team, read [How the team works](docs/team/WORKFLOW.md) first: branches, worktrees, who owns what and how a release happens.
+
 - `kernel/` is the simulation. It must stay pure: no clocks, timers, randomness, floats or I/O. ESLint enforces this, and `kernel/test/invariants.test.ts` replays thousands of random actions to check it.
 - A change to any value anchor (`content/values.lock.json`) is a core maintainer decision: run `pnpm values` and say why in the pull request.
 - Write down a design choice, or an approach that did not work, in [DECISIONS.md](DECISIONS.md).
