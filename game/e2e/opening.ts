@@ -308,6 +308,9 @@ class Player {
     if (!(await this.page.eval<boolean>('!!(__game.ui.levelUpOpen || document.querySelector(".levelup-layer"))'))) return;
     await this.page.waitFor('!!document.querySelector(".levelup-layer")', 'the level-up window', 3000);
     await this.handleLevelUp();
+    // the page is busy for a moment after the window closes; a step held through that lag
+    // lasts longer than one tile and walks two (seen on CI)
+    await sleep(400);
   }
 
   /** Handles the level-up window if open: spends every point on the first open choice, then closes it. */
