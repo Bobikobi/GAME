@@ -1010,12 +1010,31 @@ textarea {
   gap: 6px;
 }
 
+/* name and pips on top, now -> next and any note under them, the + button at the side */
 .attr {
   display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  column-gap: 8px;
+  row-gap: 2px;
   align-items: center;
+  padding: 4px 0 6px;
+  border-bottom: 2px solid var(--paper2);
+  font-size: 15px;
+}
+
+.attr > .pips {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.attr > .muted {
+  grid-column: 1 / 3;
   font-size: 14px;
+}
+
+.attr > .btn {
+  grid-column: 3;
+  grid-row: 1 / span 2;
 }
 
 .btn.plus {
@@ -1095,6 +1114,16 @@ textarea {
 .md pre code {
   background: none;
   color: inherit;
+}
+
+/* the copy button over each code block */
+.md > .btn {
+  display: flex;
+  margin: 10px 0 0 auto;
+}
+
+.md > .btn + pre {
+  margin-top: 0;
 }
 
 .md blockquote {
