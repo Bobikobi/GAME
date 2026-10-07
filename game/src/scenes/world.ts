@@ -989,7 +989,7 @@ export class WorldScene extends Phaser.Scene {
     const role = profile?.role ? ` (${profile.role})` : '';
     lines.push(`Added by ${name}${role}.`);
     if (entry) {
-      lines.push(`${entry.points} creator points · about ${entry.hours} hours`);
+      lines.push(`${entry.points} creator points · ${entry.commits} commits`);
     }
     if (content.ai_tools?.length) {
       lines.push(`Made with: ${content.ai_tools.join(', ')}.`);
@@ -1003,7 +1003,7 @@ export class WorldScene extends Phaser.Scene {
         role: profile?.role,
         signature: profile?.signature,
         points: entry?.points,
-        hours: entry?.hours,
+        commits: entry?.commits,
         ai: content.ai_tools ?? [],
         mendedBy: content.kind === 'restore' && p?.restored.includes(content.id) ? p.name : undefined,
       },
@@ -1036,7 +1036,7 @@ export interface SignInfo {
     role?: string;
     signature?: { text: string; style: string; glyph?: string };
     points?: number;
-    hours?: number;
+    commits?: number;
     ai: string[];
     /** the player, when this place is one they mended */
     mendedBy?: string;

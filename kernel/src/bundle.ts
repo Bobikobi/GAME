@@ -86,14 +86,13 @@ export interface Credit {
   ai_tools: string[];
 }
 
-/** What the repository history says about one creator (spec C-1). Display only. */
 export interface BoardEntry {
   /** creator points: seniority and activity, not a currency */
   points: number;
   /** content records the creator has in the game now */
   records: number;
-  /** estimated hours of work, from commit sessions */
-  hours: number;
+  /** commits touching the creator's files */
+  commits: number;
 }
 
 export interface Bundle {
