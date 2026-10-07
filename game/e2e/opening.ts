@@ -60,6 +60,7 @@ for (const type of ['pointerdown', 'pointerup', 'pointercancel', 'touchstart', '
 }
 window.__e2e = (() => {
   const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  const KEY = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
   const g = () => window.__game;
   const inRect = (x, y, r) => x >= r.x && y >= r.y && x < r.x + r.w && y < r.y + r.h;
   return {
@@ -106,6 +107,29 @@ window.__e2e = (() => {
         }
       }
       return null;
+    },
+    /**
+     * Lets go of a held direction in the frame its step starts, or the player turns.
+     * Phaser asks for its next frame before this does, so this runs right after the
+     * update that started the step and lets go before the next one: one tile per
+     * press, however slow the frames are.
+     */
+    releaseOnStep(dir, touch) {
+      const s = g().session, w = g().world, facing = s.facing, t0 = performance.now();
+      const gen = (window.__e2eGen = (window.__e2eGen ?? 0) + 1);
+      window.__e2eStepped = false;
+      const look = () => {
+        if (window.__e2eGen !== gen) return;
+        if (w.move || s.facing !== facing) {
+          window.__e2eStepped = true;
+          if (touch) g().controls.setTouchDir(null);
+          else window.dispatchEvent(new KeyboardEvent('keyup', { code: KEY[dir] }));
+          return;
+        }
+        if (performance.now() - t0 < 1000) requestAnimationFrame(look);
+      };
+      requestAnimationFrame(look);
+      return true;
     },
     soundState() {
       return g().sound ? g().sound.state() : null;
@@ -195,26 +219,24 @@ class Player {
   async step(dir: Dir): Promise<void> {
     await this.settle();
     const before = await this.state();
-    await this.press(dir, before.facing);
-    // a slow frame (CI renders in software) can finish one step and start the next while the
-    // direction is still held, so a press may walk two tiles; walk back to the one tile wanted
+    await this.press(dir);
+    // a press should walk one tile; if it ever walks two, walk back to the one tile wanted
     const want: [number, number] = [before.pos[0] + VEC[dir][0], before.pos[1] + VEC[dir][1]];
     for (let i = 0; i < 3; i++) {
       const at = (await this.state()).pos;
       const over = (at[0] - want[0]) * VEC[dir][0] + (at[1] - want[1]) * VEC[dir][1];
       if (over <= 0) break;
-      await this.press(OPPOSITE[dir], dir);
+      await this.press(OPPOSITE[dir]);
     }
   }
 
-  private async press(dir: Dir, facing: Dir): Promise<void> {
+  private async press(dir: Dir): Promise<void> {
+    // letting go from here, a poll after the step started, can leave the direction held
+    // into a second step when frames are slow (CI renders in software), so the page lets go
+    await this.page.eval(`__e2e.releaseOnStep(${JSON.stringify(dir)}, ${this.touch})`);
     await this.holdDir(dir);
-    const end = Date.now() + 600;
-    while (Date.now() < end) {
-      const st = await this.state();
-      if (st.moving || (st.facing === dir && facing !== dir && !st.moving)) break;
-      await sleep(4);
-    }
+    // a press toward a wall the player already faces neither turns nor steps
+    await this.page.waitFor('window.__e2eStepped', 'the step to start', 600).catch(() => undefined);
     await this.releaseDir(dir);
     await this.page.waitFor('!__e2e.state().moving', 'the step to end', 3000);
   }
