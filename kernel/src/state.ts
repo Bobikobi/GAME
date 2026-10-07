@@ -6,7 +6,7 @@
 import type { Bundle, Verb } from './bundle';
 import { clamp, idiv, mulDiv } from './num';
 
-export const KERNEL_VERSION = '0.1.0';
+export const KERNEL_VERSION = '0.2.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['carry', 'senses', 'agility', 'luck', 'stamina'] as const;
@@ -24,6 +24,8 @@ export interface Player {
   name: string;
   /** '' until the player picks a starter */
   starter: string;
+  /** 0 for the starter's sprite, 1 for its sprite_alt (another look of the same character) */
+  look: number;
   at: [number, number];
   /** milli-gold */
   gold: number;
@@ -72,6 +74,7 @@ export function newState(bundle: Bundle, seed: number): State {
     player: {
       name: '',
       starter: '',
+      look: 0,
       at: [bundle.map.spawn.x, bundle.map.spawn.y],
       gold: 0,
       bag: {},
@@ -99,7 +102,7 @@ export function newState(bundle: Bundle, seed: number): State {
 // ------------------------------------------------------------ derived numbers
 
 export function satietyCap(bundle: Bundle, state: State): number {
-  return (bundle.params.satiety_cap + 10 * state.player.attrs.stamina) * 1000;
+  return (bundle.params.satiety_cap + bundle.params.per_point.stamina * state.player.attrs.stamina) * 1000;
 }
 
 /** Satiety at a tick: it drains with play time and stops at zero. */
@@ -116,7 +119,7 @@ export function bagUsed(state: State): number {
 }
 
 export function bagCapacity(bundle: Bundle, state: State): number {
-  let cap = bundle.params.bag_base + 5 * state.player.attrs.carry;
+  let cap = bundle.params.bag_base + bundle.params.per_point.carry * state.player.attrs.carry;
   for (const id of state.player.camp) cap += bundle.camps[id]?.bag_bonus ?? 0;
   return cap;
 }

@@ -4,20 +4,23 @@
  * top one gets the buttons, and while any is open the game clock stops.
  */
 import {
+  type GameEvent,
   type Grade,
   characterLevel,
   minuteOfDay,
   satietyAt,
   satietyCap,
   skillPoints,
-  techniqueValue,
 } from '@game/kernel';
 import { app } from '../app';
 import type { Button } from '../input';
 import type { Session } from '../session';
-import { activeQuests, clock, describe, gold, itemName, questSteps, readyToHandIn } from '../text';
+import { activeQuests, clock, describe, gold, itemName, questSteps, readyToHandIn, windowScalePct } from '../text';
 import { say, type Option } from './dialog';
 import { button, h, sprite } from './dom';
+import { feedback } from './feedback';
+import { type Minigame, pick, snap, strike, timing } from './games';
+import { openLevelUp } from './levelup';
 import {
   openBag,
   openCraft,
@@ -28,9 +31,13 @@ import {
   confirmBuild,
   confirmRestore,
 } from './panels';
-import { timing } from './timing';
 import { showTitle } from './title';
 import { mountTouch } from './touch';
+
+/** What the hands are doing, for the world's animation and sound. */
+export type WorkKind = 'timing' | 'strike' | 'pick' | 'snap' | 'dig';
+
+const GAMES: Record<'timing' | 'strike' | 'pick' | 'snap', Minigame> = { timing, strike, pick, snap };
 
 export interface Layer {
   el: HTMLElement;
@@ -50,6 +57,7 @@ export class UI {
   private titleOpen = false;
   private hudTimer = 0;
   private talkCount = new Map<string, number>();
+  private levelUpOpen = false;
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -135,7 +143,8 @@ export class UI {
         const d = describe(app.bundle, session.state, e);
         if (d) this.toast(d.text, d.tone, d.icon);
       }
-      this.storyBeats(events);
+      feedback(this.root, events);
+      void this.afterEvents(events);
     });
     session.on('change', () => this.renderHud());
     this.hud.hidden = false;
@@ -232,18 +241,32 @@ export class UI {
 
   // ------------------------------------------------------------ the story
 
+  /** The story beats of a batch first, then the level-up choice if a level brought a point. */
+  private async afterEvents(events: readonly GameEvent[]): Promise<void> {
+    await this.storyBeats(events);
+    const level = events.find((e) => e.e === 'level');
+    const s = app.session;
+    if (level && level.e === 'level' && s && skillPoints(app.bundle, s.state) > 0 && !this.levelUpOpen) {
+      this.levelUpOpen = true;
+      // let the jingle ring for a moment before the window opens
+      await new Promise((r) => window.setTimeout(r, 700));
+      await openLevelUp(this, level.profession);
+      this.levelUpOpen = false;
+    }
+  }
+
   /** A few words at the turning points of the opening, so nobody gets lost. */
-  private storyBeats(events: { e: string; quest?: string; state?: string; restore?: string; recipe?: string }[]): void {
+  private async storyBeats(events: readonly GameEvent[]): Promise<void> {
     const s = app.session;
     if (!s) return;
     for (const e of events) {
       if (e.e === 'restore' && e.restore === 'core/old-bridge') {
-        void say(this, null, [`The bridge holds. You scratch your name into the sign beside it: "Mended by ${s.state.player.name}".`]);
+        await say(this, null, [`The bridge holds. You scratch your name into the sign beside it: "Mended by ${s.state.player.name}".`]);
       }
       if (e.e === 'quest' && e.state === 'done' && e.quest === 'core/three-fruits') {
-        void say(this, 'Elder Maru', [
+        await say(this, 'Elder Maru', [
           'Thank you. Take these coins - your first.',
-          'Pell at the market sells a basket for the grove and a trowel for the ruins. You can afford one. Choose well.',
+          'Pell at the market sells a basket for the grove and a trowel for the ruins. Either one starts a new kind of work, and the other can wait. Choose what you want to do first.',
         ]);
       }
     }
@@ -257,11 +280,16 @@ export class UI {
     const npc = b.npcs[npcId];
     if (!s || !npc) return;
     const rep = s.state.player.rep[npcId] ?? 0;
-    const tier = rep >= 60 ? 'family' : rep >= 30 ? 'friend' : rep >= 10 ? 'acquaintance' : 'stranger';
-    const lines = npc.dialogue[tier] ?? npc.dialogue.stranger;
     const n = this.talkCount.get(npcId) ?? 0;
     this.talkCount.set(npcId, n + 1);
-    const line = lines[n % lines.length] ?? '...';
+
+    // First ever conversation and NPC has a 'first' monologue — show all lines.
+    const firstLines = n === 0 && rep === 0 ? (npc.dialogue.first ?? []) : [];
+
+    const tier = rep >= 60 ? 'family' : rep >= 30 ? 'friend' : rep >= 10 ? 'acquaintance' : 'stranger';
+    const tierLines = npc.dialogue[tier] ?? npc.dialogue.stranger;
+    const line = firstLines.length ? firstLines[firstLines.length - 1]! : (tierLines[n % tierLines.length] ?? '...');
+
     const options: Option[] = [];
     for (const [id, q] of Object.entries(b.quests).sort(([x], [y]) => x.localeCompare(y))) {
       if (q.giver !== npcId) continue;
@@ -274,11 +302,18 @@ export class UI {
     }
     if (npc.shop) options.push({ label: 'Trade', value: 'trade' });
     options.push({ label: 'Goodbye', value: 'bye' });
+
+    // If there are opening lines, walk through all but the last with no options,
+    // then show the last line with the usual menu.
+    for (const opening of firstLines.slice(0, -1)) {
+      await say(this, npc.name, [opening]);
+    }
     const choice = await say(this, npc.name, [line], options);
     if (!choice || choice === 'bye') return;
     if (choice === 'trade' && npc.shop) return openShop(this, npcId);
     if (choice.startsWith('quest:')) return this.questTalk(npcId, choice.slice(6));
   }
+
 
   private async questTalk(npcId: string, questId: string): Promise<void> {
     const s = app.session!;
@@ -314,7 +349,8 @@ export class UI {
     const r = b.resources[inst.source]!;
     const why = s.check({ t: 'gather', node: nodeId, grade: 3, at: s.pos });
     if (why) return this.toast(why, 'bad');
-    const grade = await this.play(`Gather ${itemName(b, r.output)}`);
+    const game = r.game ?? 'timing';
+    const grade = await this.play(GAMES[game], `Gather ${itemName(b, r.output)}`, nodeId, game, b.items[r.output]?.sprite ?? r.sprite);
     if (grade === null) return;
     const res = s.act({ t: 'gather', node: nodeId, grade, at: s.pos });
     if (!res.ok) this.toast(res.error, 'bad');
@@ -325,16 +361,21 @@ export class UI {
     if (!s) return;
     const why = s.check({ t: 'dig', spot: spotId, grade: 3, at: s.pos });
     if (why) return this.toast(why, 'bad');
-    const grade = await this.play('Dig');
+    const grade = await this.play(timing, 'Dig', spotId, 'dig');
     if (grade === null) return;
     const res = s.act({ t: 'dig', spot: spotId, grade, at: s.pos });
     if (!res.ok) this.toast(res.error, 'bad');
   }
 
-  private play(title: string): Promise<Grade | null> {
+  /** A minigame for one action; every beat swings the arm and makes its sound in the world. */
+  private play(game: Minigame, title: string, nodeId: string, kind: WorkKind, art?: string): Promise<Grade | null> {
     const s = app.session!;
-    const b = app.bundle;
-    return timing(this, { title, agility: s.state.player.attrs.agility, widenPct: techniqueValue(b, s.state, 'timing_window_pct') });
+    return game(this, {
+      title,
+      scalePct: windowScalePct(app.bundle, s.state),
+      sprite: art,
+      onBeat: (_i, grade) => app.world?.beat(nodeId, kind, grade),
+    });
   }
 
   craft(station: string): void {
@@ -363,6 +404,10 @@ export class UI {
     const options: Option[] = info.empty ? [{ label: 'Open the creator guide', value: 'guide' }, { label: 'Close', value: 'close' }] : [];
     const pick = await say(this, info.title, info.lines, options);
     if (pick === 'guide') openGuide(this);
+  }
+
+  note(text: string, title?: string): void {
+    void say(this, title ?? null, [text]);
   }
 }
 

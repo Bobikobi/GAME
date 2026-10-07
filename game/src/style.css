@@ -30,6 +30,7 @@
   --purple2: #9a5bb0;
   --px: 2px;
   --font: 'Pixelify Sans', ui-monospace, monospace;
+  --font-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   color-scheme: light;
 }
 
@@ -102,7 +103,6 @@ body {
 .frame,
 .dialog,
 .panel,
-.timing,
 .title-box,
 .toast,
 .prompt,
@@ -742,8 +742,11 @@ textarea {
 }
 
 .dialog-text {
-  margin: 4px 0 0;
-  min-height: 2.5em;
+  margin: 6px 0 0;
+  min-height: 2.6em;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.45;
 }
 
 .dialog-arrow {
@@ -1054,7 +1057,16 @@ textarea {
 
 .md p,
 .md li {
+  font-family: var(--font-body);
   font-size: 15px;
+  line-height: 1.45;
+}
+
+.detail p,
+.card p,
+.row .grow .muted {
+  font-family: var(--font-body);
+  line-height: 1.35;
 }
 
 .md code {
@@ -1091,28 +1103,13 @@ textarea {
 
 /* ------------------------------------------------------------ timing */
 
-.timing-layer {
-  place-items: end center;
-  padding-bottom: calc(max(10px, env(safe-area-inset-bottom)) + 60px);
-}
-
-.touch-on .timing-layer {
-  padding-bottom: calc(max(10px, env(safe-area-inset-bottom)) + 180px);
-}
-
-.timing {
-  width: min(92vw, 360px);
-  padding: 10px 14px;
-  text-align: center;
-}
-
-.timing-title {
-  margin-bottom: 8px;
+.timing-stage {
+  padding: 18px 0 8px;
 }
 
 .timing-bar {
   position: relative;
-  height: 24px;
+  height: 28px;
   background: #e9b8a8;
   border: 3px solid var(--ink);
   border-radius: 3px;
@@ -1137,41 +1134,46 @@ textarea {
   background: var(--green);
 }
 
+.zone.jackpot {
+  background: var(--gold);
+  box-shadow:
+    inset 2px 0 0 var(--yellow),
+    inset -2px 0 0 var(--yellow);
+}
+
 .marker {
   position: absolute;
   top: -2px;
   bottom: -2px;
-  width: 4px;
-  margin-left: -2px;
   background: var(--ink);
   box-shadow: 0 0 0 2px var(--paper);
 }
 
-.timing-result {
-  margin-top: 6px;
-  min-height: 1.3em;
-  font-size: 20px;
+.minigame-result.g4 {
+  color: var(--gold);
+  text-shadow: 0 2px 0 var(--ink);
 }
 
-.timing-result.g3 {
-  color: var(--green);
+.minigame.jackpot {
+  animation: minigame-jackpot 520ms ease-out;
 }
 
-.timing-result.g2 {
-  color: var(--green2);
-}
-
-.timing-result.g1 {
-  color: var(--wood);
-}
-
-.timing-result.g0 {
-  color: var(--red);
-}
-
-.timing-help {
-  font-size: 13px;
-  color: var(--grey);
+@keyframes minigame-jackpot {
+  0% {
+    box-shadow:
+      inset 0 0 0 2px var(--paper2),
+      0 0 0 0 var(--gold);
+  }
+  40% {
+    box-shadow:
+      inset 0 0 0 2px var(--yellow),
+      0 0 0 10px color-mix(in srgb, var(--gold) 60%, transparent);
+  }
+  100% {
+    box-shadow:
+      inset 0 0 0 2px var(--paper2),
+      0 0 0 18px transparent;
+  }
 }
 
 @media (max-width: 420px) {
@@ -1184,6 +1186,16 @@ textarea {
   }
   .dialog {
     font-size: 16px;
+    padding: 10px 14px 14px;
+  }
+  .dialog-text {
+    font-size: 15px;
+    line-height: 1.4;
+  }
+  .md p,
+  .md li {
+    font-size: 14px;
+    line-height: 1.45;
   }
 }
 

@@ -18,7 +18,7 @@ import guideText from '../../../docs/creators/README.md?raw';
 import { app } from '../app';
 import { GAME_TITLE, REPO_URL } from '../config';
 import { Session } from '../session';
-import { ATTRIBUTE_TEXT, gold, itemName, questSteps, seconds, stacks } from '../text';
+import { ATTRIBUTE_TEXT, gold, itemBenefit, itemName, questSteps, seconds, stacks } from '../text';
 import { say } from './dialog';
 import { button, h, sprite } from './dom';
 import { markdown } from './markdown';
@@ -106,7 +106,11 @@ export function openBag(ui: UI): void {
       }));
     }
     const facts: string[] = [];
-    if (item.tool) facts.push(`${item.tool.kind[0]!.toUpperCase()}${item.tool.kind.slice(1)}, tier ${item.tool.tier}. ${item.tool.uses - (s.state.player.wear[id] ?? 0)} uses left on this one.`);
+    if (item.tool) {
+      const usesLeft = item.tool.uses - (s.state.player.wear[id] ?? 0);
+      const speedBonus = item.tool.tier > 1 ? ` (+${15 * (item.tool.tier - 1)}% gathering speed)` : '';
+      facts.push(`${item.tool.kind[0]!.toUpperCase()}${item.tool.kind.slice(1)}, tier ${item.tool.tier}${speedBonus}. ${usesLeft} uses left.`);
+    }
     if (value !== undefined && item.kind !== 'tool') facts.push(`A trader pays ${gold(payFor(b.params, value))} gold.`);
     return h(
       'div',
@@ -278,7 +282,7 @@ export function openShop(ui: UI, npcId: string): void {
               'div',
               { class: 'row' },
               sprite(b, it?.sprite, 2),
-              h('div', { class: 'grow' }, h('b', null, it?.name ?? o.item), h('div', { class: 'muted' }, it?.description ?? '')),
+              h('div', { class: 'grow' }, h('b', null, it?.name ?? o.item), h('div', { class: 'muted' }, itemBenefit(b, o.item))),
               h('span', { class: 'price' }, gold(o.price_mg)),
               button('Buy', () => deal(() => s.act({ t: 'buy', npc: npcId, item: o.item, qty: 1, at: s.pos })), 'small', st.player.gold < o.price_mg || room < 1),
             );
@@ -421,11 +425,53 @@ function openControls(ui: UI): void {
   );
 }
 
+const AI_CREATOR_PROMPT = `I want to add a new content extension to Mistvale (a community-built 2D RPG).
+Guidelines:
+- Read docs/creators/README.md and templates/extension/.
+- Place files in content/extensions/<my-handle>/ (resources, recipes, items, npcs, quests).
+- Validate all IDs start with <my-handle>/ and conform to schema/json/*.
+- Values are calculated automatically via relaxation solver (no hardcoded prices).
+- Run \`pnpm check\` and ensure 0 errors.
+
+Please help me create a new extension.`;
+
 export function openGuide(ui: UI): void {
   const p = panel(ui, 'Creator guide', 'guide wide');
   const article = h('article', { class: 'md' });
   article.innerHTML = markdown(guideText);
-  p.body.replaceChildren(article, h('p', null, h('a', { href: `${REPO_URL}/blob/main/docs/creators/README.md`, target: '_blank', rel: 'noopener' }, 'Read it on GitHub')));
+
+  let copyTimer = 0;
+  const copyBtn = button('Copy prompt for AI', async () => {
+    try {
+      await navigator.clipboard.writeText(AI_CREATOR_PROMPT);
+      ui.toast('Copied AI prompt to clipboard!', 'good');
+      copyBtn.textContent = 'Copied!';
+      window.clearTimeout(copyTimer);
+      copyTimer = window.setTimeout(() => {
+        copyBtn.textContent = 'Copy prompt for AI';
+      }, 2000);
+    } catch {
+      ui.toast('Failed to copy to clipboard', 'bad');
+    }
+  }, 'small');
+
+  const welcome = h(
+    'div',
+    { class: 'card dev-welcome' },
+    h('b', null, 'Welcome, creators & developers!'),
+    h(
+      'p',
+      { class: 'muted' },
+      'Mistvale is built together by the community. Every bush, recipe, sign, and ruin is a declarative JSON file in the repo. Use this guide to add your own part of the world in 10 minutes—by hand or with your favorite AI tool.',
+    ),
+    h('div', { class: 'actions' }, copyBtn),
+  );
+
+  p.body.replaceChildren(
+    welcome,
+    article,
+    h('p', null, h('a', { href: `${REPO_URL}/blob/main/docs/creators/README.md`, target: '_blank', rel: 'noopener' }, 'Read it on GitHub')),
+  );
 }
 
 function openCredits(ui: UI): void {

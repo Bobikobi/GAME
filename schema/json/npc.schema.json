@@ -289,6 +289,48 @@
                 "maxLength": 240,
                 "type": "string"
               }
+            },
+            "first": {
+              "minItems": 1,
+              "maxItems": 8,
+              "description": "Said the first time the player talks to them, before anything else.",
+              "type": "array",
+              "items": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string"
+              }
+            }
+          }
+        },
+        "topics": {
+          "maxItems": 4,
+          "description": "Things the player can always ask about.",
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "ask",
+              "lines"
+            ],
+            "properties": {
+              "ask": {
+                "minLength": 1,
+                "maxLength": 40,
+                "description": "The question the player can pick, for example \"About the mist\".",
+                "type": "string"
+              },
+              "lines": {
+                "minItems": 1,
+                "maxItems": 6,
+                "type": "array",
+                "items": {
+                  "minLength": 1,
+                  "maxLength": 240,
+                  "type": "string"
+                }
+              }
             }
           }
         },

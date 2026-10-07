@@ -5,6 +5,7 @@
  */
 import type {
   Camp,
+  CreatorProfile,
   GameMap,
   ItemDef,
   Npc,
@@ -56,6 +57,8 @@ export interface Params {
   day_length_ms: number;
   bag_base: number;
   starting_gold_mg: number;
+  /** what one attribute point adds; see the params schema */
+  per_point: { carry: number; senses: number; agility_pct: number; luck_permille: number; stamina: number };
 }
 
 export interface SpriteInfo {
@@ -83,6 +86,16 @@ export interface Credit {
   ai_tools: string[];
 }
 
+/** What the repository history says about one creator (spec C-1). Display only. */
+export interface BoardEntry {
+  /** creator points: seniority and activity, not a currency */
+  points: number;
+  /** content records the creator has in the game now */
+  records: number;
+  /** estimated hours of work, from commit sessions */
+  hours: number;
+}
+
 export interface Bundle {
   format: 1;
   /** Hash of the canonical content: names the exact rules a save was made with. */
@@ -107,6 +120,10 @@ export interface Bundle {
   /** Which profession each verb trains. */
   verbs: { gather: string; dig: string; craft: string };
   credits: Credit[];
+  /** Creator profiles by handle. Display only, outside the tag: a new signature is not a new world. */
+  creators: Record<string, CreatorProfile>;
+  /** The creators board by handle, generated from git history by `pnpm board`. Display only, outside the tag. */
+  board: Record<string, BoardEntry>;
 }
 
 export type Verb = keyof Bundle['verbs'];

@@ -147,16 +147,15 @@ export interface WorldView {
 }
 
 /**
- * Can a player stand on (x, y)? Ground and props, resource nodes, NPCs and
- * built camp parts block; a restored passable thing (a bridge) opens its tiles.
+ * Can a player stand on (x, y)? Ground and props, NPCs and built camp parts
+ * block; a restored passable thing (a bridge) opens its tiles. Resource nodes
+ * do not: a gathered rock opens the way, and one that grows back under the
+ * player must never trap them. The game blocks a node only while it shows.
  */
 export function makeWalkable(bundle: Bundle): (x: number, y: number, view: WorldView) => boolean {
   const map = bundle.map;
   const solid = staticSolid(map);
   const blockers = new Set<number>();
-  for (const inst of Object.values(bundle.instances)) {
-    if (inst.kind === 'resource') blockers.add(inst.y * map.width + inst.x);
-  }
   for (const id of Object.keys(bundle.npcs)) {
     const t = npcTile(bundle, id);
     if (t) blockers.add(t[1] * map.width + t[0]);

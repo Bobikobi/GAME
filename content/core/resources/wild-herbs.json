@@ -24,6 +24,7 @@
     "sprite": "core/base-kit:props/herb_plant",
     "tool": "basket",
     "level": 1,
+    "game": "pick",
     "place": {
       "slot": "core/wild-herbs"
     }

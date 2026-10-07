@@ -89,7 +89,7 @@ describe('timing grade', () => {
     expect(node).toBeDefined();
     const [nodeId, instance] = node!;
     const yields: number[] = [];
-    for (const grade of [0, 1, 2, 3] as const) {
+    for (const grade of [0, 1, 2, 3, 4] as const) {
       let state = newState(bundle, 77);
       const started = step(bundle, state, { t: 'start', starter: 'core/forager', name: 'Grade' }, 0);
       expect(started.ok).toBe(true);
@@ -108,10 +108,13 @@ describe('timing grade', () => {
       yields.push(result.state.player.bag['core/stone'] ?? 0);
     }
 
-    expect(yields[0]).toBe(0);
+    // a miss is a gamble that brings home at most one unit
+    expect(yields[0]).toBeLessThanOrEqual(1);
     expect(yields[1]!).toBeGreaterThanOrEqual(yields[0]!);
     expect(yields[2]!).toBeGreaterThanOrEqual(yields[1]!);
     expect(yields[3]!).toBeGreaterThanOrEqual(yields[2]!);
+    // the jackpot pays in experience only
+    expect(yields[4]).toBe(yields[3]);
   });
 });
 
@@ -168,8 +171,8 @@ function plausibleAction(state: State, random: () => number): Action {
     const at = nearTile(state, { x: instance.x, y: instance.y, w: 1, h: 1 });
     if (!at) return fallback();
     return instance.kind === 'resource'
-      ? { t: 'gather', node: id, grade: Math.floor(random() * 4) as Grade, at }
-      : { t: 'dig', spot: id, grade: Math.floor(random() * 4) as Grade, at };
+      ? { t: 'gather', node: id, grade: Math.floor(random() * 5) as Grade, at }
+      : { t: 'dig', spot: id, grade: Math.floor(random() * 5) as Grade, at };
   }
   if (choice === 1) {
     const [id, restore] = pick(Object.entries(bundle.restores).sort(([a], [b]) => a.localeCompare(b)), random);

@@ -1,8 +1,28 @@
+# Welcome Developers and Creators
+
+Everything in Mistvale - every bush, recipe, quest, shop, and ruin - is an open JSON file in the game's repository. You build the world the same way the core team does: copy a template, tweak declarative fields, run `pnpm check`, and open a pull request. Once merged, the sign at that spot in the valley carries your name, creator points, and invested hours.
+
+### Quick Start with AI
+
+Copy and paste this prompt into your AI coding tool (Claude, Cursor, ChatGPT, Antigravity):
+
+```text
+I want to add a new content extension to Mistvale (a community-built 2D RPG).
+Repository guidelines:
+- Read docs/creators/README.md and templates/extension/.
+- Place files in content/extensions/<my-handle>/ (resources, recipes, items, npcs, or quests).
+- Validate all IDs start with <my-handle>/ and conform to schema/json/*.
+- Values and prices are calculated automatically via relaxation solver (no hardcoded prices).
+- Run `pnpm check` and ensure 0 errors.
+
+Please help me create a new extension.
+```
+
+---
+
 # Add a fruit in 10 minutes
 
-Everything in Mistvale - every bush, recipe, quest and ruin - is a small JSON file in the game's repository. You add to the world the same way the core team does: copy a template, change a few lines, run one check and open a pull request. Once it is merged, the sign at that spot in the valley carries your name.
-
-This guide adds the smallest useful thing: a fruit bush in an empty slot of the map.
+This guide walks through adding the smallest useful thing: a fruit bush in an empty slot of the map.
 
 ## What you need
 
