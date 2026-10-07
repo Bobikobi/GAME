@@ -159,6 +159,8 @@ class Player {
     return this.page.eval<number>(`__e2e.player().bag[${JSON.stringify(item)}] ?? 0`);
   }
 
+  private levelUpSeen = false;
+
   async snap(label: string): Promise<void> {
     this.shot++;
     await this.page.screenshot(join(OUT, `${this.name}-${String(this.shot).padStart(2, '0')}-${label}.png`));
@@ -311,6 +313,10 @@ class Player {
   /** Handles the level-up window if open: spends every point on the first open choice, then closes it. */
   async handleLevelUp(): Promise<boolean> {
     if (!(await this.page.eval<boolean>('!!document.querySelector(".levelup-layer")'))) return false;
+    if (!this.levelUpSeen) {
+      this.levelUpSeen = true;
+      await this.snap('levelup');
+    }
     for (let i = 0; i < 12; i++) {
       if (!(await this.page.eval<boolean>('!!document.querySelector(".levelup-layer")'))) return true;
       if (this.touch) {
@@ -351,6 +357,7 @@ class Player {
 
   async idle(what: string, timeoutMs = 20_000): Promise<void> {
     await this.page.waitFor('(() => { const s = __e2e.state(); return !s.busy && !s.moving; })()', what, timeoutMs);
+    await sleep(150); // the story beats run first, then the level-up flag goes up
     await this.settle();
     await this.page.waitFor('(() => { const s = __e2e.state(); return !s.busy && !s.blocking && !s.moving; })()', what, timeoutMs);
   }
@@ -426,19 +433,24 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
     const firstStone = stoneNodes.find((n) => n.ready);
     if (!firstStone) throw new Error('no ready river-stones node found');
     await me.walkTo({ x: firstStone.x, y: firstStone.y, w: 1, h: 1 }, firstStone.id);
-    const beforeGather = await me.state();
     await me.expectPrompt(/^Gather/, firstStone.id);
     await me.a();
     await me.solveMinigame();
     await me.idle(`gathering first ${firstStone.id}`);
-    // step onto the gathered node tile
-    await me.step(beforeGather.facing);
+    await me.settle();
+    // the rule itself: a gathered node no longer blocks its tile
+    await page.waitFor(`__game.world.canWalk(__game.session, ${firstStone.x}, ${firstStone.y})`, 'the gathered stone to open its tile', 5000);
+    // then walk onto it, from wherever the player stands now
+    const here = (await me.state()).pos;
+    const toward = (Object.keys(VEC) as Dir[]).find((d) => here[0] + VEC[d][0] === firstStone.x && here[1] + VEC[d][1] === firstStone.y);
+    if (!toward) throw new Error(`the player at [${here.join(', ')}] is not next to the stone at [${firstStone.x}, ${firstStone.y}]`);
+    await me.step(toward);
     const onNode = await me.state();
     if (onNode.pos[0] !== firstStone.x || onNode.pos[1] !== firstStone.y) {
-      throw new Error(`expected player to step onto node [${firstStone.x}, ${firstStone.y}], got [${onNode.pos.join(', ')}]`);
+      throw new Error(`expected the player to step onto the gathered stone at [${firstStone.x}, ${firstStone.y}], got [${onNode.pos.join(', ')}] facing ${onNode.facing}`);
     }
-    log(`verified: stepped onto gathered stone node at [${firstStone.x}, ${firstStone.y}]`);
-    await me.step(OPPOSITE[beforeGather.facing]);
+    log(`stepped onto the gathered stone at [${firstStone.x}, ${firstStone.y}]`);
+    await me.step(OPPOSITE[toward]);
 
     await me.gather('core/river-stones', 'core/stone', 3);
     log('gathered 3 stones');
