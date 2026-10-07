@@ -283,14 +283,20 @@ export class UI {
     const n = this.talkCount.get(npcId) ?? 0;
     this.talkCount.set(npcId, n + 1);
 
-    // First ever conversation and NPC has a 'first' monologue — show all lines.
-    const firstLines = n === 0 && rep === 0 ? (npc.dialogue.first ?? []) : [];
+    // Save this before opening dialogue, so a reload cannot replay the monologue.
+    const first = s.meet(npcId);
+    const firstLines = first && rep === 0 ? (npc.dialogue.first ?? []) : [];
 
     const tier = rep >= 60 ? 'family' : rep >= 30 ? 'friend' : rep >= 10 ? 'acquaintance' : 'stranger';
     const tierLines = npc.dialogue[tier] ?? npc.dialogue.stranger;
     const line = firstLines.length ? firstLines[firstLines.length - 1]! : (tierLines[n % tierLines.length] ?? '...');
 
     const options: Option[] = [];
+    if (!first) {
+      for (const [index, topic] of (npc.topics ?? []).entries()) {
+        options.push({ label: topic.ask, value: `topic:${index}` });
+      }
+    }
     for (const [id, q] of Object.entries(b.quests).sort(([x], [y]) => x.localeCompare(y))) {
       if (q.giver !== npcId) continue;
       const state = s.state.player.quests[id];
@@ -303,13 +309,13 @@ export class UI {
     if (npc.shop) options.push({ label: 'Trade', value: 'trade' });
     options.push({ label: 'Goodbye', value: 'bye' });
 
-    // If there are opening lines, walk through all but the last with no options,
-    // then show the last line with the usual menu.
-    for (const opening of firstLines.slice(0, -1)) {
-      await say(this, npc.name, [opening]);
-    }
-    const choice = await say(this, npc.name, [line], options);
+    const choice = await say(this, npc.name, firstLines.length ? firstLines : [line], options);
     if (!choice || choice === 'bye') return;
+    if (choice.startsWith('topic:')) {
+      const topic = npc.topics?.[Number(choice.slice(6))];
+      if (topic) await say(this, npc.name, topic.lines);
+      return;
+    }
     if (choice === 'trade' && npc.shop) return openShop(this, npcId);
     if (choice.startsWith('quest:')) return this.questTalk(npcId, choice.slice(6));
   }

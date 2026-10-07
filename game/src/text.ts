@@ -214,18 +214,27 @@ export function itemBenefit(b: Bundle, id: string): string {
     const tier = `Tier ${it.tool.tier} ${it.tool.kind}`;
     const uses = `${it.tool.uses} uses`;
     const speed = it.tool.tier > 1 ? ` · +${15 * (it.tool.tier - 1)}% gathering speed` : '';
-    const unlocks =
-      it.tool.kind === 'basket'
-        ? 'gathers bushes & herbs'
-        : it.tool.kind === 'trowel'
-          ? 'digs earth & ruin spots'
-          : `tool for ${it.tool.kind}`;
+    const resources = Object.values(b.resources)
+      .filter((resource) => resource.tool === it.tool?.kind)
+      .map((resource) => resource.title.toLowerCase())
+      .sort();
+    const digSites = it.tool.kind === 'trowel'
+      ? Object.values(b.treasures)
+          .filter((treasure) => treasure.tool === it.tool?.kind)
+          .map((treasure) => treasure.title.toLowerCase())
+          .sort()
+      : [];
+    const unlocks = [
+      resources.length ? `gathers ${resources.join(' & ')}` : '',
+      digSites.length ? `digs ${digSites.join(' & ')}` : '',
+    ].filter(Boolean).join(' · ') || `tool for ${it.tool.kind}`;
     return `${tier} · ${unlocks} · ${uses}${speed}`;
   }
   if (it.food) {
-    const sat = it.food.satiety / 1000;
-    const min = Math.round(it.food.satiety / b.params.satiety_drain_per_min);
-    return `+${sat} satiety · sustains ~${min} min of work`;
+    // food is in whole meter points; the kernel drains thousandths of a point per minute of work
+    const workMs = Math.round((it.food.satiety * 1000 * 60_000) / b.params.satiety_drain_per_min);
+    const lasts = workMs >= 60_000 ? `${Math.round(workMs / 60_000)} min` : `${Math.round(workMs / 1000)} s`;
+    return `+${it.food.satiety} food · about ${lasts} of work`;
   }
   if (it.fragment) {
     return `Unlocks recipe: ${b.recipes[it.fragment.unlocks]?.title ?? it.fragment.unlocks}`;
