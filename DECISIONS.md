@@ -1,9 +1,5 @@
 # Decisions
 
-## 2026-10-07 🔁 Continued by Antigravity (AGY / gemini) from claude-opus-5-5's feat/feedback-1
-
-Claude (claude-opus-5-5) built feat/games (strike/pick/snap minigames) and feat/sound (procedural music + ambience) and merged both into feat/feedback-1. Antigravity (AGY, Google Deepmind) is now continuing the same branch and feedback checklist (`.scratch/feedback-checklist.md`), items 3, 5, 6, 8, 12, 13, 15, 17, 18, 19, 21 still open. Model: antigravity (Claude Sonnet 4.6 Thinking).
-
 Design choices, and approaches that were tried and abandoned. Read this before proposing an approach. Status: ✅ chosen · ❌ failed · ⏸ superseded or postponed · 🔁 worth retrying.
 
 ## 2026-10-07 ✅ Phaser 4 for the client, without the two-engine trial
@@ -82,3 +78,28 @@ Added general appearance toggle in the title screen character selection passing 
 ## 2026-10-07 ⏸ Era themes and fine clothes postponed to town progression tiers
 
 Starters begin in patched rough clothes. Fine attire and era-specific visual themes are deferred to future milestones when town expansion tiers are unlocked. Model: antigravity.
+
+## 2026-10-07 🔁 Feedback round 1 continued by Antigravity after the Claude session ran out of credits
+
+Antigravity (desktop app, Gemini 3.8 Flash Medium according to its transcript) finished the open items it could in about 15 minutes of edits and committed everything, including the Claude session's uncommitted work, as efc24ac. Its Gemini quota ran out at 10:25 (reset about 2026-10-14). `pnpm verify` passed; the browser test (`pnpm e2e`) was not run and fails at the first minigame, and the new interface pieces have no CSS. The handoff for the next pass lists both.
+**Retry when:** another agent picks up the handoff in `.scratch/handoff/`. Model: claude-opus-5-5 (this entry), gemini-3.8-flash (the pass).
+
+## 2026-10-07 ✅ Harder minigames: a miss keeps 0 or 1, and a jackpot strip
+
+Elad asked for games that are harder but still simple: outside the zones the result is 0 or 1 at random, and a thin strip two marker-widths wide pays several times more. Grades are now 0-4. A miss keeps 1 unit with chance 50% + 10% per luck point (cap 90%). Grade 4 gives the same goods as perfect and 3x experience, so the rule that the grade only lowers goods below perfect still holds. Zones are narrower and widen 25% per agility point. Evidence: kernel/test/grades.test.ts and game/test/games/*.test.ts.
+**Retry when:** playtests show the first quarry is too hard on a phone; widen the strike windows first. Model: claude-opus-5-5.
+
+## 2026-10-07 ✅ A gathered node opens the way; a ready one blocks it
+
+Elad: when something is quarried, the way should open. The kernel's walkable() is unchanged. The client adds one rule on top of it: a resource node that is ready blocks its tile, and a gathered one lies flat and faded and can be walked over until it grows back (canWalk in game/src/scenes/world.ts). It stays out of the kernel because actions name the player's tile and the kernel does not path-find.
+**Retry when:** the server (stage 2a) validates movement; then the rule moves into the kernel. Model: claude-opus-5-5.
+
+## 2026-10-07 ✅ Skill points with effects you can feel, shown as now -> next
+
+Elad: the gaps between skill points were not meaningful. The per-point values grew to carry +10 places, senses +2 tiles, agility +25% zone width, luck +10% miss-keeps and +0.1 rare-find multiplier, stamina +20 food. The rare-find multiplier is capped by the character level, so early luck cannot buy a big spike. Every choice shows the real numbers, now -> next, from attributeEffects() in game/src/text.ts.
+**Retry when:** the gap between a beginner and a veteran leaves the range the spec sets (stage 3). Model: claude-opus-5-5.
+
+## 2026-10-07 ✅ Creator profiles and the creators board live outside the content tag
+
+A creator's profile (name, role, designed signature) is a content file of type `creator`. The board (spec C-1) is content/board.json, written by `pnpm board` from the git history and committed, because a deploy builds from a shallow clone. Neither changes the content tag, so a renamed signature or a new commit does not invalidate saves. Points: 10 per content record plus 1 per commit. Hours: commits less than 2 h apart are one session, plus 30 min per session - an estimate, about 2 h with today's 8 commits, and the sign has to say so.
+**Retry when:** accounts exist (stage 2a); then points and hours come from the server. Model: claude-opus-5-5.
