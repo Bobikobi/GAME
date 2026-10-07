@@ -202,3 +202,8 @@ Motty, the same evening, yes to all five rows of GAME_RULES.md section 5: the co
 
 The owner asked whether language and talk were covered; they were only by the two-line box rule. Now GAME_RULES.md section 3 has G19-G23 (one job per line, a voice sheet per character, the player pulls with a first meeting of three boxes at most, plain words for all ages with the valley's own names, real talk choices), four proposed voice sheets (Maru, Pell, the narrator, signs) waiting for his word, and `pnpm check` counts boxes over the limits per character. Maru's eight-box first meeting is a known breach, fixed with P-3. English stays the only language until the owner decides on a language field.
 **Retry when:** the owner edits a voice sheet; the lines follow the sheet, never the other way round. Model: Claude Fable 5.1.
+
+## 2026-10-07 ✅ Sound, fairness and access have rules, and the page says what it does not cover
+
+The owner asked about sound and what else was missing. GAME_RULES.md section 3 gains G24-G27 for sound (every beat has a sound and every sound a beat, the rare find is heard, music is the clock, nothing important lives only in sound), G28 against dark patterns (the valley waits; no punishment for absence, nothing to pay for) and G29 for access (the basic tier of the Game Accessibility Guidelines), and a coverage table naming what lives elsewhere (FTUE, kernel rules, art rules, community loop) and what is not written yet (difficulty curve, a performance budget, a second language). These rules live in code, so the checklist and the e2e audio line cover them, not the content check.
+**Retry when:** the first play data arrives from the hub; the difficulty row then gets its page. Model: Claude Fable 5.1.

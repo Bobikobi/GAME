@@ -23,6 +23,7 @@ preview. The tools below make each of those three faster.
 | [Why games are still full of fetch quests](https://malaysia.news.yahoo.com/why-wont-fetch-quests-die-234432459.html) | The premise is fine; the execution fails when there is nothing beyond the counter and the wrapper feels arbitrary. | Free article | The argument for G1 and G2 when someone asks "what is wrong with bring 3". |
 | [Celia Hodent](https://celiahodent.com), The Gamer's Brain | Usability and engage-ability as two pillars; feedback, clarity, forgiveness. Behind G13-G15. | Talks free; book paid | The feel rules and the review checklist. |
 | [awesome-game-design](https://github.com/Roobyx/awesome-game-design) | A curated list of design reading, examples and tools. | Free, GitHub | The place to look next before adding a framework here. |
+| [Game Accessibility Guidelines](https://gameaccessibilityguidelines.com) | A tiered checklist (basic, intermediate, advanced) of what makes a game playable by more people. | Free | G29 is its basic tier; the checklist for any change to text, colour, motion or controls. |
 
 ## B. Authoring riddles, dialogue and quest flow (open source)
 

@@ -228,6 +228,57 @@ waiting for the owner's word.
 | The narrator (the river text, toasts, the journal) | Second person, present tense, concrete nouns, one adjective at most. Says what is there, not what to feel. | Nothing; it is the valley speaking. | "You feel", "amazing", exclamation marks outside a level-up. | Proposed |
 | Signs and inscriptions | Fewest words. A fact and a hook. No "you". | To be read twice. | A full sentence where a fragment does. | Proposed |
 
+### Sound and music
+
+The game's sound is synthesized in `game/src/audio`: two songs (the valley
+by day, the night), three jingles (level, quest, found), day and night
+ambience with wildlife, short effects, and a mute preference that survives a
+reload. On a phone the browser unlocks audio on the first gesture; the opening
+already handles that and the e2e run checks it.
+
+- **G24 Every beat has a sound, every sound has a beat.** Each event the game
+  shows as a toast (a pickup, a full bag, gold, a level, a journal entry, a
+  recipe, a task opened or done, a place restored) has its own short effect,
+  and no effect plays without a visible cause on screen. Hit and miss in the
+  strike are two different sounds within a tenth of a second (G13).
+- **G25 The rare find is heard.** The found jingle plays only for a find the
+  player could not count on: a rare dig, a recipe scrap, a riddle solved. An
+  ordinary pickup gets the ordinary click. A jingle used for everything says
+  nothing.
+- **G26 Music is the clock, not a loop you notice.** The valley song by day,
+  the night song after dusk, a crossfade at the change; the ambience carries
+  the place (riverbank, grove, ruin). Music ducks under a jingle, silence is
+  allowed, and a song never restarts because a panel opened.
+- **G27 Nothing important lives only in sound.** Every beat has its visible
+  twin (G13), the mute control is one tap away and remembered, and on phones
+  haptics mirror the beats (FTUE gap 3). In stage 1 an extension brings no
+  sounds of its own: the kit's effects are the palette, like the colours.
+
+### Fairness and access
+
+- **G28 No dark patterns.** The valley waits. No punishment for being away,
+  no timer that runs out while the player sleeps, no fake scarcity, no "last
+  chance", nothing to pay for. A return is rewarded (the ladder's Day 2); an
+  absence is never punished.
+- **G29 Playable by more people.** Text at 16 px or more and dialogue at 18
+  (FTUE); colour is never the only signal (a glint has a shape, a tone has a
+  word); reduced motion is honoured by every effect; one hand is enough on a
+  phone; the strike window grows with agility so a slower hand still wins
+  (G15).
+
+### What this page covers, and what lives elsewhere
+
+| Topic | Where | State |
+|---|---|---|
+| The opening and onboarding | [FTUE_RESEARCH.md](../FTUE_RESEARCH.md) | Written; roadmap phases 2 and 3 open. |
+| Loop and hook, quests, riddles, reading, builds, choices, feel, session, variety, dialogue, sound, fairness, access | This page | Rules G1-G29. |
+| Economy and balance | The kernel rules R1-R11, `content/core/params.json`, `pnpm values` | Enforced by code. |
+| Art and sprites | [docs/creators/README.md](../creators/README.md) | Enforced by the kit check. |
+| Community: requests, votes, merges, conduct | [CONTRIBUTING.md](../../CONTRIBUTING.md), [docs/loop/README.md](../loop/README.md) | Live. |
+| Difficulty curve and pacing beyond the ladder | Not written | After P-3, with play data from the hub's usage section. |
+| Performance budget on a phone | Not written | Measure on a real device first (DECISIONS.md, the Phaser entry); then a number here. |
+| A second language | Not written | Open question for the owner (G22). |
+
 ## 4. Forbidden patterns
 
 Named so a review can point at one in two words.
@@ -317,10 +368,11 @@ names the rule and the pull request waits.
    G20)
 5. Does every new build change play, not open a panel? (G10)
 6. Is every new choice real, with both sides shown before choosing? (G12)
-7. Does every new action answer within a tenth of a second and land with a
-   beat? (G13)
+7. Does every new action answer within a tenth of a second, land with a beat,
+   and have both a visible and an audible twin? (G13, G24, G27)
 8. Is every text box two lines or fewer, and never during a timed action? (G14)
-9. Does a miss keep something? (G15)
+9. Does a miss keep something, and does the change hold with reduced motion
+   and without colour? (G15, G29)
 10. Did the owner play the preview, or did the reviewer play it for him and say
     so in the pull request?
 
@@ -342,7 +394,9 @@ the checklist above.
 | G14, G21 | A character's first meeting over three boxes, a standing over two, a topic over four; boxes over 80 characters, counted per character. | warning |
 
 When the `find` and `riddle` steps exist, G2 counts them as beats and G8 checks
-each note against the riddles that cite it.
+each note against the riddles that cite it. Sound (G24-G27), fairness (G28)
+and access (G29) live in code, not in content: the checklist covers them, and
+the e2e run prints the audio state line on every pull request.
 
 ## 9. Sources
 
@@ -363,5 +417,9 @@ each note against the riddles that cite it.
   of the palette.
 - Nicole Lazzaro, "Why We Play Games: Four Keys to More Emotion Without Story"
   (2004): hard fun, easy fun, serious fun, people fun.
+- Game Accessibility Guidelines (gameaccessibilityguidelines.com): the basic
+  tier behind G29.
+- Yu-kai Chou's Octalysis, the black-hat drives (scarcity, loss, avoidance):
+  what G28 refuses.
 
 The links and what each gives are in [TOOLKIT.md](TOOLKIT.md).
