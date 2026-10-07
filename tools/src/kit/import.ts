@@ -4,7 +4,7 @@ import { pathToFileURL } from 'node:url';
 import jpeg from 'jpeg-js';
 import { PNG } from 'pngjs';
 
-import { CORE_PALETTE, hexToRgb } from './palette.js';
+import { CORE_PALETTE, type Rgb, hexToRgb } from './palette.js';
 
 export interface ImportOptions {
   width: number;
@@ -13,6 +13,12 @@ export interface ImportOptions {
   anchor?: 'center' | 'bottom';
   palette: readonly string[];
   padding?: number;
+  /**
+   * Draw a one-pixel dark outline around each frame's silhouette (not under
+   * the feet). Shrinking a big drawing loses its thin outlines; a character a
+   * dozen pixels wide needs one back to read against the ground.
+   */
+  outline?: boolean;
 }
 
 export interface ImportResult {
@@ -515,7 +521,11 @@ function overlap(from: number, to: number, cellFrom: number, cellTo: number): nu
   return Math.max(0, Math.min(to, cellTo) - Math.max(from, cellFrom));
 }
 
-function scaleSprite(sprite: LogicalSprite, scale: number): LogicalSprite {
+/**
+ * Shrink by area vote. The vote counts palette colours, not exact source
+ * colours: a tunic drawn in five shades of tan must outvote one flat skin tone.
+ */
+function scaleSprite(sprite: LogicalSprite, scale: number, palette: readonly Rgb[]): LogicalSprite {
   if (scale >= 1) return sprite;
   const width = Math.max(1, Math.floor(sprite.width * scale));
   const height = Math.max(1, Math.floor(sprite.height * scale));
@@ -539,7 +549,7 @@ function scaleSprite(sprite: LogicalSprite, scale: number): LogicalSprite {
           if (cell.a === 0) {
             transparentWeight += weight;
           } else {
-            const key = `${cell.r},${cell.g},${cell.b}`;
+            const key = String(nearestPaletteIndex(cell.r, cell.g, cell.b, palette));
             const entry = weights.get(key);
             if (entry === undefined) weights.set(key, { weight, cell });
             else entry.weight += weight;
@@ -564,13 +574,14 @@ function validateOptions(options: ImportOptions): Required<Omit<ImportOptions, '
   const frames = options.frames ?? 1;
   const anchor = options.anchor ?? 'center';
   const padding = options.padding ?? 0;
+  const outline = options.outline ?? false;
   if (!Number.isInteger(options.width) || options.width <= 0) throw new Error('width must be a positive integer');
   if (!Number.isInteger(options.height) || options.height <= 0) throw new Error('height must be a positive integer');
   if (!Number.isInteger(frames) || frames <= 0) throw new Error('frames must be a positive integer');
   if (!Number.isInteger(padding) || padding < 0) throw new Error('padding must be a non-negative integer');
   if (options.width <= padding * 2 || options.height <= padding * 2) throw new Error('padding leaves no output area');
   if (options.palette.length === 0) throw new Error('palette must contain at least one color');
-  return { width: options.width, height: options.height, frames, anchor, padding };
+  return { width: options.width, height: options.height, frames, anchor, padding, outline };
 }
 
 export function importSprite(source: Buffer, options: ImportOptions): ImportResult {
@@ -591,13 +602,15 @@ export function importSprite(source: Buffer, options: ImportOptions): ImportResu
     detected.phaseY,
   ));
 
-  const availableWidth = settings.width - settings.padding * 2;
-  const availableHeight = settings.height - settings.padding * 2;
+  // an outline needs a pixel of room on each side and above, never below the feet
+  const ring = settings.outline ? 1 : 0;
+  const availableWidth = settings.width - settings.padding * 2 - ring * 2;
+  const availableHeight = settings.height - settings.padding * 2 - ring * (settings.anchor === 'bottom' ? 1 : 2);
   let scale = 1;
   for (const sprite of logicalSprites) {
     scale = Math.min(scale, availableWidth / sprite.width, availableHeight / sprite.height);
   }
-  const sprites = logicalSprites.map((sprite) => scaleSprite(sprite, scale));
+  const sprites = logicalSprites.map((sprite) => scaleSprite(sprite, scale, palette));
   const output = new PNG({ width: settings.width * settings.frames, height: settings.height });
   output.data.fill(0);
   const usedColors = new Set<string>();
@@ -624,6 +637,7 @@ export function importSprite(source: Buffer, options: ImportOptions): ImportResu
       }
     }
   }
+  if (settings.outline) drawOutline(output, settings.width, palette[0] ?? [0, 0, 0], usedColors);
 
   const first = logicalSprites[0];
   if (first === undefined) throw new Error('No foreground subject found');
@@ -635,10 +649,36 @@ export function importSprite(source: Buffer, options: ImportOptions): ImportResu
   };
 }
 
+/** Paint every empty pixel that touches a frame's silhouette. */
+function drawOutline(output: PNG, frameWidth: number, color: Rgb, usedColors: Set<string>): void {
+  const { width, height, data } = output;
+  const opaque = (x: number, y: number): boolean => data[(y * width + x) * 4 + 3] === 255;
+  const ring: number[] = [];
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      if (opaque(x, y)) continue;
+      const frameLeft = Math.floor(x / frameWidth) * frameWidth;
+      const touches =
+        (x > frameLeft && opaque(x - 1, y)) ||
+        (x < frameLeft + frameWidth - 1 && opaque(x + 1, y)) ||
+        (y < height - 1 && opaque(x, y + 1)) ||
+        (y > 0 && opaque(x, y - 1));
+      if (touches) ring.push(y * width + x);
+    }
+  }
+  for (const index of ring) {
+    data[index * 4] = color[0];
+    data[index * 4 + 1] = color[1];
+    data[index * 4 + 2] = color[2];
+    data[index * 4 + 3] = 255;
+  }
+  if (ring.length > 0) usedColors.add(`${color[0]},${color[1]},${color[2]}`);
+}
+
 function runCli(args: readonly string[]): void {
-  const [input, output, widthText, heightText, framesText, anchorText] = args;
+  const [input, output, widthText, heightText, framesText, anchorText, outlineText] = args;
   if (input === undefined || output === undefined || widthText === undefined || heightText === undefined) {
-    throw new Error('Usage: import.ts <in> <out.png> <width> <height> [frames] [anchor]');
+    throw new Error('Usage: import.ts <in> <out.png> <width> <height> [frames] [anchor] [outline]');
   }
   const anchor = anchorText === undefined ? undefined : anchorText;
   if (anchor !== undefined && anchor !== 'center' && anchor !== 'bottom') {
@@ -650,6 +690,7 @@ function runCli(args: readonly string[]): void {
     frames: framesText === undefined ? undefined : Number(framesText),
     anchor,
     palette: CORE_PALETTE,
+    outline: outlineText === 'outline',
   });
   writeFileSync(output, result.png);
   process.stdout.write(`${JSON.stringify({ grid: result.grid, logical: result.logical, colors: result.colors })}\n`);

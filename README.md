@@ -16,6 +16,8 @@
 
 Start with **[Add a fruit in 10 minutes](docs/creators/README.md)**, then read [CONTRIBUTING.md](CONTRIBUTING.md). Every pull request gets the same automatic check you can run yourself, and a preview of the game with your change.
 
+For custom character art, regular frames are 16x24. Work poses are 32x32 with two frames: tool raised, then tool down.
+
 ## How it is built
 
 | Folder | What it holds |

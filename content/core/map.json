@@ -278,66 +278,12 @@
       },
       {
         "sprite": "core/base-kit:props/sign",
-        "x": 8,
-        "y": 13,
-        "w": 1,
-        "h": 1,
-        "solid": true,
-        "sign": "core/river-stones"
-      },
-      {
-        "sprite": "core/base-kit:props/sign",
         "x": 12,
         "y": 16,
         "w": 1,
         "h": 1,
         "solid": true,
         "sign": "core/old-bridge"
-      },
-      {
-        "sprite": "core/base-kit:props/sign",
-        "x": 17,
-        "y": 19,
-        "w": 1,
-        "h": 1,
-        "solid": true,
-        "sign": "core/camp"
-      },
-      {
-        "sprite": "core/base-kit:props/sign",
-        "x": 17,
-        "y": 16,
-        "w": 1,
-        "h": 1,
-        "solid": true,
-        "sign": "core/berry-bushes"
-      },
-      {
-        "sprite": "core/base-kit:props/sign",
-        "x": 27,
-        "y": 19,
-        "w": 1,
-        "h": 1,
-        "solid": true,
-        "sign": "core/fallen-branches"
-      },
-      {
-        "sprite": "core/base-kit:props/sign",
-        "x": 19,
-        "y": 25,
-        "w": 1,
-        "h": 1,
-        "solid": true,
-        "sign": "core/wild-herbs"
-      },
-      {
-        "sprite": "core/base-kit:props/sign",
-        "x": 29,
-        "y": 26,
-        "w": 1,
-        "h": 1,
-        "solid": true,
-        "sign": "core/forest-mushrooms"
       },
       {
         "sprite": "core/base-kit:props/sign",
@@ -351,33 +297,6 @@
       {
         "sprite": "core/base-kit:props/sign",
         "x": 37,
-        "y": 11,
-        "w": 1,
-        "h": 1,
-        "solid": true,
-        "sign": "core/trader-stall"
-      },
-      {
-        "sprite": "core/base-kit:props/sign",
-        "x": 33,
-        "y": 22,
-        "w": 1,
-        "h": 1,
-        "solid": true,
-        "sign": "core/ruins-gate"
-      },
-      {
-        "sprite": "core/base-kit:props/sign",
-        "x": 40,
-        "y": 25,
-        "w": 1,
-        "h": 1,
-        "solid": true,
-        "sign": "core/ruins-deep"
-      },
-      {
-        "sprite": "core/base-kit:props/sign",
-        "x": 37,
         "y": 8,
         "w": 1,
         "h": 1,
@@ -385,49 +304,99 @@
         "sign": "core/town-edge"
       },
       {
-        "sprite": "core/base-kit:props/sign",
+        "sprite": "core/base-kit:props/standing_stone",
+        "x": 7,
+        "y": 15,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "note": "Old marks are carved into the stone: a bridge, a fire, a bell. Under them is a word, worn too smooth to read."
+      },
+      {
+        "sprite": "core/base-kit:props/broken_statue",
+        "x": 22,
+        "y": 8,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "note": "A statue of someone holding a lantern. The face is gone. Moss grows inside the lantern, and it almost glows."
+      },
+      {
+        "sprite": "core/base-kit:props/statue_head",
+        "x": 40,
+        "y": 9,
+        "w": 2,
+        "h": 1,
+        "solid": true,
+        "note": "A stone head as tall as you, half sunk in the grass. Its eyes are open, and they face the town."
+      },
+      {
+        "sprite": "core/base-kit:props/dead_tree",
+        "x": 30,
+        "y": 23,
+        "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_wall",
+        "x": 32,
+        "y": 27,
+        "w": 2,
+        "h": 1,
+        "solid": true,
+        "note": "Names are scratched into the wall, one under another. The last one is fresh."
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_arch",
+        "x": 36,
+        "y": 19,
+        "w": 2,
+        "h": 1,
+        "solid": true,
+        "note": "An arch with no wall around it. Cold air comes through it, though there is nothing on the other side."
+      },
+      {
+        "sprite": "core/base-kit:props/rubble",
         "x": 33,
-        "y": 12,
-        "w": 1,
-        "h": 1,
-        "solid": true,
-        "sign": "core/town-corner"
-      },
-      {
-        "sprite": "core/base-kit:props/sign",
-        "x": 34,
-        "y": 28,
-        "w": 1,
-        "h": 1,
-        "solid": true,
-        "sign": "core/ruins-hall"
-      },
-      {
-        "sprite": "core/base-kit:props/sign",
-        "x": 39,
-        "y": 20,
-        "w": 1,
-        "h": 1,
-        "solid": true,
-        "sign": "core/ruins-garden"
-      },
-      {
-        "sprite": "core/base-kit:props/sign",
-        "x": 8,
-        "y": 21,
-        "w": 1,
-        "h": 1,
-        "solid": true,
-        "sign": "core/west-glade"
-      },
-      {
-        "sprite": "core/base-kit:props/sign",
-        "x": 28,
         "y": 31,
+        "w": 2,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/totem",
+        "x": 18,
+        "y": 30,
         "w": 1,
         "h": 1,
         "solid": true,
-        "sign": "core/grove-clearing"
+        "note": "A carved post, taller than a door. Someone tied fresh grass to it. Recently."
+      },
+      {
+        "sprite": "core/base-kit:props/glow_mushrooms",
+        "x": 30,
+        "y": 29,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/glow_mushrooms",
+        "x": 17,
+        "y": 27,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/broken_statue",
+        "x": 44,
+        "y": 25,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "note": "Another statue with a lantern. This one faces the hills, where the mist comes from."
       }
     ],
     "spawn": {

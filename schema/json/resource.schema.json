@@ -280,6 +280,27 @@
           "description": "Foraging level required.",
           "type": "integer"
         },
+        "game": {
+          "description": "The minigame played when gathering: \"timing\" (stop a marker in the middle, the default), \"strike\" (three timed hammer strikes, for stone), \"pick\" (press only for the ripe ones, for plants) or \"snap\" (press fast, for wood).",
+          "anyOf": [
+            {
+              "const": "timing",
+              "type": "string"
+            },
+            {
+              "const": "strike",
+              "type": "string"
+            },
+            {
+              "const": "pick",
+              "type": "string"
+            },
+            {
+              "const": "snap",
+              "type": "string"
+            }
+          ]
+        },
         "hours": {
           "description": "Hours of the in-game day when it can be gathered, [from, to).",
           "type": "array",

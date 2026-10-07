@@ -1,8 +1,28 @@
+# Welcome Developers and Creators
+
+Everything in Mistvale - every bush, recipe, quest, shop, and ruin - is an open JSON file in the game's repository. You build the world the same way the core team does: copy a template, tweak declarative fields, run `pnpm check`, and open a pull request. Once merged, the sign at that spot in the valley carries your name, creator points, and invested hours.
+
+### Quick Start with AI
+
+Copy and paste this prompt into your AI coding tool (Claude, Cursor, ChatGPT, Antigravity):
+
+```text
+I want to add a new content extension to Mistvale (a community-built 2D RPG).
+Repository guidelines:
+- Read docs/creators/README.md and templates/extension/.
+- Place files in content/extensions/<my-handle>/ (resources, recipes, items, npcs, or quests).
+- Validate all IDs start with <my-handle>/ and conform to schema/json/*.
+- Values and prices are calculated automatically via relaxation solver (no hardcoded prices).
+- Run `pnpm check` and ensure 0 errors.
+
+Please help me create a new extension.
+```
+
+---
+
 # Add a fruit in 10 minutes
 
-Everything in Mistvale - every bush, recipe, quest and ruin - is a small JSON file in the game's repository. You add to the world the same way the core team does: copy a template, change a few lines, run one check and open a pull request. Once it is merged, the sign at that spot in the valley carries your name.
-
-This guide adds the smallest useful thing: a fruit bush in an empty slot of the map.
+This guide walks through adding the smallest useful thing: a fruit bush in an empty slot of the map.
 
 ## What you need
 
@@ -64,11 +84,48 @@ Run `pnpm dev` again and continue your game, or start a new one. Walk west from 
 
 Commit only your own folder, push it to your fork, and open a pull request. The same check runs on it automatically, and the pull request template lists what reviewers look at. A preview of the game with your change is built for the pull request; for a first pull request from a fork, a maintainer approves that build first.
 
+## Your creator profile
+
+Add `content/extensions/<your-handle>/profile.json` so signs and the Creators menu can introduce you. The profile has:
+
+- `name` - how the game names you.
+- `role` - optional short text under your name, such as "World builder".
+- `signature.text` - the words shown above your signs, up to 24 characters.
+- `signature.style` - `carved`, `painted`, `ink`, `gold` or `moss`.
+- `signature.glyph` - optional: `none`, `leaf`, `star`, `sun`, `flower`, `key` or `wave`.
+
+```json
+{
+  "$schema": "../../../schema/json/creator.schema.json",
+  "format": 1,
+  "type": "creator",
+  "id": "<your-handle>/profile",
+  "title": "Your name",
+  "creator": "<your-handle>",
+  "profile": {
+    "name": "Your name",
+    "role": "World builder",
+    "signature": { "text": "Your mark", "style": "painted", "glyph": "leaf" }
+  }
+}
+```
+
+## Creator points and hours
+
+The Creators menu shows points for accepted content and an estimate of invested hours based on commit sessions. `pnpm board` rebuilds `content/board.json` from the repository's Git history:
+
+```bash
+pnpm board
+```
+
+Run it from a full Git clone after commits exist. The generated board is committed by maintainers; do not edit it by hand.
+
 ## Your own art (optional)
 
 Sprites live in a kit: `content/kit/<your-handle>/kit.json` plus PNG files next to it.
 
 - Items and tiles are 16x16, character frames 16x24, props up to 64x64.
+- Character work poses are 32x32 with two frames: tool raised, then tool down.
 - Only the 32 colors of the core palette, and every pixel fully clear or fully solid.
 - AI images are welcome. Run any image through the importer and it snaps to the grid and the palette: `pnpm kit:import my-plum.png content/kit/<your-handle>/items/plum.png 16 16`.
 

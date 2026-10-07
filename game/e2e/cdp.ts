@@ -51,7 +51,7 @@ export class Browser {
       '--enable-unsafe-swiftshader',
       'about:blank',
     ];
-    if (process.env.CI) args.unshift('--no-sandbox');
+    if (process.env.CI || process.platform === 'linux') args.unshift('--no-sandbox', '--disable-setuid-sandbox');
     const proc = spawn(findChrome(), args, { stdio: ['ignore', 'ignore', 'pipe'] });
     const port = await new Promise<number>((resolve, reject) => {
       let seen = '';
@@ -181,6 +181,9 @@ export class Page {
       mobile: viewport.mobile,
     });
     if (viewport.mobile) await this.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+    // E2E_CPU_SLOWDOWN=4 makes a fast machine render as slowly as CI does
+    const slowdown = Number(process.env.E2E_CPU_SLOWDOWN ?? 1);
+    if (slowdown > 1) await this.send('Emulation.setCPUThrottlingRate', { rate: slowdown });
   }
 
   async goto(url: string): Promise<void> {

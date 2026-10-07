@@ -27,6 +27,7 @@
     "sprite": "core/base-kit:props/mushroom_patch",
     "tool": "basket",
     "level": 2,
+    "game": "pick",
     "hours": [
       18,
       10

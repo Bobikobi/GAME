@@ -4,8 +4,6 @@
  * kernel would refuse.
  */
 import {
-  ATTRIBUTES,
-  type Attribute,
   KERNEL_VERSION,
   bagCapacity,
   bagUsed,
@@ -16,9 +14,11 @@ import {
 } from '@game/kernel';
 import guideText from '../../../docs/creators/README.md?raw';
 import { app } from '../app';
+import { sound } from '../audio';
 import { GAME_TITLE, REPO_URL } from '../config';
+import type { SignInfo } from '../scenes/world';
 import { Session } from '../session';
-import { ATTRIBUTE_TEXT, gold, itemName, questSteps, seconds, stacks } from '../text';
+import { ATTRIBUTE_MAX, attributeEffects, gold, itemBenefit, itemName, questSteps, seconds, stacks } from '../text';
 import { say } from './dialog';
 import { button, h, sprite } from './dom';
 import { markdown } from './markdown';
@@ -106,7 +106,11 @@ export function openBag(ui: UI): void {
       }));
     }
     const facts: string[] = [];
-    if (item.tool) facts.push(`${item.tool.kind[0]!.toUpperCase()}${item.tool.kind.slice(1)}, tier ${item.tool.tier}. ${item.tool.uses - (s.state.player.wear[id] ?? 0)} uses left on this one.`);
+    if (item.tool) {
+      const usesLeft = item.tool.uses - (s.state.player.wear[id] ?? 0);
+      const speedBonus = item.tool.tier > 1 ? ` (+${15 * (item.tool.tier - 1)}% gathering speed)` : '';
+      facts.push(`${item.tool.kind[0]!.toUpperCase()}${item.tool.kind.slice(1)}, tier ${item.tool.tier}${speedBonus}. ${usesLeft} uses left.`);
+    }
     if (value !== undefined && item.kind !== 'tool') facts.push(`A trader pays ${gold(payFor(b.params, value))} gold.`);
     return h(
       'div',
@@ -203,6 +207,7 @@ export function openJournal(ui: UI, tab: JournalTab = 'tasks'): void {
   const skillsTab = (): HTMLElement => {
     const st = s.state;
     const points = skillPoints(b, st);
+    const effects = attributeEffects(b, st);
     return h(
       'div',
       null,
@@ -210,21 +215,25 @@ export function openJournal(ui: UI, tab: JournalTab = 'tasks'): void {
       h(
         'div',
         { class: 'attrs' },
-        ATTRIBUTES.map((a: Attribute) =>
-          h(
+        effects.map((fx) => {
+          const value = st.player.attrs[fx.attr];
+          const full = value >= ATTRIBUTE_MAX;
+          return h(
             'div',
             { class: 'attr' },
-            h('span', { class: 'attr-name' }, ATTRIBUTE_TEXT[a] ?? a),
-            h('span', { class: 'pips' }, Array.from({ length: 10 }, (_, i) => h('i', { class: i < st.player.attrs[a] ? 'on' : '' }))),
-            points > 0 && st.player.attrs[a] < 10
+            h('span', { class: 'attr-name' }, `${fx.name} - ${fx.what}`),
+            h('span', { class: 'pips' }, Array.from({ length: ATTRIBUTE_MAX }, (_, i) => h('i', { class: i < value ? 'on' : '' }))),
+            h('span', { class: 'muted' }, `${fx.now} -> ${full ? 'at its limit' : fx.next}`),
+            fx.note ? h('span', { class: 'muted' }, fx.note) : null,
+            points > 0 && !full
               ? button('+', () => {
-                  const r = s.act({ t: 'spend', attr: a });
+                  const r = s.act({ t: 'spend', attr: fx.attr });
                   if (!r.ok) ui.toast(r.error, 'bad');
                   render();
                 }, 'small plus')
               : null,
-          ),
-        ),
+          );
+        }),
       ),
       h('h3', null, 'Professions'),
       Object.entries(b.professions)
@@ -278,7 +287,7 @@ export function openShop(ui: UI, npcId: string): void {
               'div',
               { class: 'row' },
               sprite(b, it?.sprite, 2),
-              h('div', { class: 'grow' }, h('b', null, it?.name ?? o.item), h('div', { class: 'muted' }, it?.description ?? '')),
+              h('div', { class: 'grow' }, h('b', null, it?.name ?? o.item), h('div', { class: 'muted' }, itemBenefit(b, o.item))),
               h('span', { class: 'price' }, gold(o.price_mg)),
               button('Buy', () => deal(() => s.act({ t: 'buy', npc: npcId, item: o.item, qty: 1, at: s.pos })), 'small', st.player.gold < o.price_mg || room < 1),
             );
@@ -387,19 +396,27 @@ export function openMenu(ui: UI): void {
     p.close();
     fn();
   };
-  p.body.replaceChildren(
-    h(
-      'div',
-      { class: 'menu-list' },
-      button('Controls', go(() => openControls(ui))),
-      button('Creator guide', go(() => openGuide(ui))),
-      button('Credits', go(() => openCredits(ui))),
-      button('Report a problem', go(() => openReport(ui))),
-      button('About this demo', go(() => ui.aboutDemo())),
-      button('Start over', go(() => startOver(ui)), 'danger'),
-    ),
-    h('p', { class: 'muted version' }, `${GAME_TITLE} demo - content ${app.bundle.tag.slice(0, 8)} - kernel ${KERNEL_VERSION}`),
-  );
+  const render = () => {
+    p.body.replaceChildren(
+      h(
+        'div',
+        { class: 'menu-list' },
+        button(`Sound: ${sound.muted ? 'Off' : 'On'}`, () => {
+          sound.setMuted(!sound.muted);
+          render();
+        }),
+        button('Controls', go(() => openControls(ui))),
+        button('Creator guide', go(() => openGuide(ui))),
+        button('Creators', go(() => openCreators(ui))),
+        button('Credits', go(() => openCredits(ui))),
+        button('Report a problem', go(() => openReport(ui))),
+        button('About this demo', go(() => ui.aboutDemo())),
+        button('Start over', go(() => startOver(ui)), 'danger'),
+      ),
+      h('p', { class: 'muted version' }, `${GAME_TITLE} demo - content ${app.bundle.tag.slice(0, 8)} - kernel ${KERNEL_VERSION}`),
+    );
+  };
+  render();
 }
 
 function openControls(ui: UI): void {
@@ -421,11 +438,75 @@ function openControls(ui: UI): void {
   );
 }
 
+const AI_CREATOR_INSTRUCTIONS = `I want to add a new content extension to Mistvale (a community-built 2D RPG).
+Use the complete creator guide included below as your instructions. Help me choose a small addition, create the required files, and validate it with the commands in the guide.`;
+
 export function openGuide(ui: UI): void {
   const p = panel(ui, 'Creator guide', 'guide wide');
   const article = h('article', { class: 'md' });
   article.innerHTML = markdown(guideText);
-  p.body.replaceChildren(article, h('p', null, h('a', { href: `${REPO_URL}/blob/main/docs/creators/README.md`, target: '_blank', rel: 'noopener' }, 'Read it on GitHub')));
+
+  const copyText = async (text: string, copyBtn: HTMLButtonElement, copiedLabel: string) => {
+    const original = copyBtn.textContent ?? 'Copy';
+    try {
+      await navigator.clipboard.writeText(text);
+      ui.toast(copiedLabel, 'good');
+      copyBtn.textContent = 'Copied!';
+      window.setTimeout(() => {
+        copyBtn.textContent = original;
+      }, 2000);
+    } catch {
+      ui.toast('Failed to copy to clipboard', 'bad');
+    }
+  };
+
+  const copyBtn = button('Copy guide for AI', () => {
+    void copyText(`${AI_CREATOR_INSTRUCTIONS}\n\n--- COMPLETE CREATOR GUIDE ---\n\n${guideText}`, copyBtn, 'Copied the instructions and full guide!');
+  }, 'small');
+
+  for (const code of article.querySelectorAll('pre code')) {
+    const copyCode = button('Copy', () => {
+      void copyText(code.textContent ?? '', copyCode, 'Copied code block!');
+    }, 'small');
+    code.parentElement?.before(copyCode);
+  }
+
+  const welcome = h(
+    'div',
+    { class: 'card dev-welcome' },
+    h('b', null, 'Welcome, creators & developers!'),
+    h(
+      'p',
+      { class: 'muted' },
+      'Mistvale is built together by the community. Every bush, recipe, sign, and ruin is a declarative JSON file in the repo. Use this guide to add your own part of the world in 10 minutes - by hand or with your favorite AI tool.',
+    ),
+    h('div', { class: 'actions' }, copyBtn),
+  );
+
+  p.body.replaceChildren(
+    welcome,
+    article,
+    h('p', null, h('a', { href: `${REPO_URL}/blob/main/docs/creators/README.md`, target: '_blank', rel: 'noopener' }, 'Read it on GitHub')),
+  );
+}
+
+function openCreators(ui: UI): void {
+  const b = app.bundle;
+  const p = panel(ui, 'Creators', 'wide');
+  const creators = Object.entries(b.creators).sort(([a], [z]) => (a === 'core' ? -1 : z === 'core' ? 1 : a.localeCompare(z)));
+  p.body.replaceChildren(
+    h('p', { class: 'muted' }, 'Hours are estimates based on commit sessions.'),
+    ...creators.map(([handle, profile]) => {
+      const entry = b.board[handle];
+      return h(
+        'div',
+        { class: 'card' },
+        h('b', null, profile.name),
+        profile.role ? h('div', { class: 'muted' }, profile.role) : null,
+        h('div', null, `${entry?.points ?? 0} creator points - about ${entry?.hours ?? 0} hours`),
+      );
+    }),
+  );
 }
 
 function openCredits(ui: UI): void {
@@ -490,4 +571,28 @@ function startOver(ui: UI): void {
     Session.erase();
     location.reload();
   });
+}
+
+/** A filled sign: the creator's signature as it hangs over the sign, who they are and what they gave. */
+export function openSignCard(ui: UI, info: SignInfo): void {
+  const c = info.creator;
+  if (!c) return;
+  const p = panel(ui, info.title, 'sign-card');
+  const sig = c.signature;
+  const mark = h('div', { class: `signature sig-${sig?.style ?? 'ink'}` });
+  if (sig?.glyph && sig.glyph !== 'none') mark.append(h('i', { class: `glyph g-${sig.glyph}` }));
+  mark.append(sig?.text ?? c.name);
+  const stat = (value: string, label: string) => h('div', { class: 'sign-stat' }, h('b', null, value), h('span', null, label));
+  const hasBoard = c.points !== undefined || c.hours !== undefined;
+  const parts: (HTMLElement | null)[] = [
+    mark,
+    h('p', { class: 'sign-who' }, `Added by ${c.name}`, c.role ? h('small', null, c.role) : null),
+    hasBoard
+      ? h('div', { class: 'sign-stats' }, stat(String(c.points ?? 0), 'creator points'), stat(String(c.hours ?? 0), 'hours, estimated'))
+      : null,
+    hasBoard ? h('p', { class: 'sign-note' }, 'Hours are an estimate from commit sessions.') : null,
+    c.ai.length ? h('div', { class: 'sign-tools' }, h('p', { class: 'sign-note' }, 'Made with'), c.ai.map((t) => h('span', null, t))) : null,
+    c.mendedBy ? h('p', { class: 'sign-mended' }, `Mended by ${c.mendedBy}`) : null,
+  ];
+  p.body.replaceChildren(...parts.filter((x): x is HTMLElement => x !== null));
 }

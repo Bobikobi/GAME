@@ -269,6 +269,12 @@
           "maxLength": 120,
           "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
           "type": "string"
+        },
+        "sprite_alt": {
+          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
+          "maxLength": 120,
+          "description": "Another look of the same character (for example a woman instead of a man), offered by one toggle on the character screen. Same sprite sizes and directions as `sprite`.",
+          "type": "string"
         }
       }
     }

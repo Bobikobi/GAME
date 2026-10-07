@@ -7,7 +7,7 @@
   "creator": "core",
   "starter": {
     "name": "Forager",
-    "summary": "Quick hands and a big bag. At home where things grow.",
+    "summary": "Quick hands and a big bag. Wears patched clothes; fine attire is earned through valley achievements.",
     "attributes": {
       "carry": 2,
       "senses": 1,
@@ -15,6 +15,7 @@
       "luck": 0,
       "stamina": 1
     },
-    "sprite": "core/base-kit:chars/player_down"
+    "sprite": "core/base-kit:chars/player_down",
+    "sprite_alt": "core/base-kit:chars/woman_down"
   }
 }

@@ -18,6 +18,14 @@
       {
         "item": "core/berry",
         "price_mg": 5000
+      },
+      {
+        "item": "core/herb-tea",
+        "price_mg": 36000
+      },
+      {
+        "item": "core/berry-mash",
+        "price_mg": 42000
       }
     ],
     "buys": true

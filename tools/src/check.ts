@@ -9,6 +9,7 @@ import { PNG } from 'pngjs';
 import { type Bundle, computeValues, minChargeFor, rarityRank } from '@game/kernel';
 import { RARITIES, type ParamsBody } from '@game/schema';
 import { assemble, type Assembled } from './assemble';
+import { readBoard } from './board';
 import { CORE_PALETTE } from './kit/palette';
 import { LOCK_FILE, loadAll, toRepoPath, type Issue } from './load';
 
@@ -21,7 +22,7 @@ export interface CheckResult {
 /** `root` is the content folder; tests point it at a copy with extra files. */
 export function runCheck(root?: string): CheckResult {
   const { files, issues } = loadAll(root);
-  const assembled = assemble(files);
+  const assembled = assemble(files, root ? {} : readBoard());
   issues.push(...assembled.issues);
   const b = assembled.bundle;
   if (b) {
@@ -205,7 +206,12 @@ function checkKits(a: Assembled): Issue[] {
       if ((group === 'tiles' || group === 'items') && (s.w !== 16 || s.h !== 16)) {
         issues.push({ file: kitFile, where, message: `${group} are 16x16, this one is ${s.w}x${s.h}`, level: 'error' });
       }
-      if (group === 'chars' && (s.w !== 16 || s.h !== 24)) {
+      // a work pose is 32x32 so a raised tool fits; its feet stay on the same spot as the walk frames
+      const work = /_work_(down|left|up|right)$/.test(name);
+      if (group === 'chars' && work && (s.w !== 32 || s.h !== 32)) {
+        issues.push({ file: kitFile, where, message: `work poses are 32x32, this one is ${s.w}x${s.h}`, level: 'error' });
+      }
+      if (group === 'chars' && !work && (s.w !== 16 || s.h !== 24)) {
         issues.push({ file: kitFile, where, message: `character frames are 16x24, this one is ${s.w}x${s.h}`, level: 'error' });
       }
       const abs = join(kit.dir, s.file);

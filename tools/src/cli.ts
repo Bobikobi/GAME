@@ -5,10 +5,12 @@
  *   values   re-anchor content/values.lock.json (core maintainers only)
  *   bundle   build game/src/generated/bundle.json and copy the kits for the client
  *   credits  write CREDITS.md from the content (--verify: fail when it is stale)
+ *   board    write content/board.json, creator points and hours, from the git history
  */
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { canonical } from '@game/kernel';
+import { computeBoard, readCommits, writeBoard } from './board';
 import { formatIssues, runCheck } from './check';
 import { LOCK_FILE, REPO_ROOT } from './load';
 
@@ -60,6 +62,17 @@ switch (command) {
       cpSync(kit.dir, join(kitOut, kitId), { recursive: true, filter: (src) => !src.endsWith('.json') });
     }
     console.log(`bundle ${b.tag}: ${Object.keys(b.items).length} items, ${Object.keys(b.instances).length} placed nodes, ${Object.keys(b.sprites).length} sprites`);
+    break;
+  }
+  case 'board': {
+    const b = runCheck().assembled.bundle;
+    if (!b) {
+      console.error('The content does not assemble; run "pnpm check" first.');
+      process.exit(1);
+    }
+    const board = computeBoard(readCommits(), b.credits);
+    writeBoard(board);
+    for (const [who, e] of Object.entries(board)) console.log(`${who}: ${e.points} points, ${e.records} records, about ${e.hours} hours`);
     break;
   }
   case 'credits': {

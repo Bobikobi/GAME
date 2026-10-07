@@ -3,6 +3,7 @@ import * as Phaser from 'phaser';
 import type { Bundle } from '@game/kernel';
 import { app } from './app';
 import raw from './generated/bundle.json';
+import { sound } from './audio';
 import { Controls } from './input';
 import { BootScene } from './scenes/boot';
 import { WorldScene } from './scenes/world';
@@ -12,6 +13,7 @@ import './style.css';
 app.bundle = raw as unknown as Bundle;
 app.controls = new Controls();
 app.ui = new UI(document.getElementById('ui')!);
+app.sound = sound;
 app.controls.onButton((b) => app.ui.handle(b));
 
 new Phaser.Game({

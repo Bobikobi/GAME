@@ -1,0 +1,14 @@
+{
+  "$schema": "../../schema/json/creator.schema.json",
+  "format": 1,
+  "type": "creator",
+  "id": "core/profile",
+  "title": "Elad Saadon",
+  "creator": "core",
+  "description": "The core of the game: the valley, its rules and its first places.",
+  "profile": {
+    "name": "Elad Saadon",
+    "role": "Main developer",
+    "signature": { "text": "Elad", "style": "carved", "glyph": "sun" }
+  }
+}
