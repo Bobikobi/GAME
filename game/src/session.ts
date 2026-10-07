@@ -34,6 +34,8 @@ interface SaveFile {
   state: string;
   pos: [number, number];
   facing: Facing;
+  /** NPCs whose first conversation has already begun. Optional in old saves. */
+  met?: string[];
   /** the last actions, attached to bug reports */
   tail: LogEntry[];
 }
@@ -56,6 +58,7 @@ export class Session {
   tick = 0;
   pos: [number, number];
   facing: Facing = 'down';
+  readonly met = new Set<string>();
   tail: LogEntry[] = [];
   /** set when the save was made with other content and had to be adapted */
   adapted = false;
@@ -97,6 +100,9 @@ export class Session {
     }
     session.tick = Math.max(file.tick, state.tick, state.player.busyUntil);
     session.facing = file.facing;
+    if (Array.isArray(file.met)) {
+      for (const npcId of file.met) if (typeof npcId === 'string') session.met.add(npcId);
+    }
     session.tail = file.tail.slice(-TAIL);
     const walkable = makeWalkable(bundle);
     const [x, y] = file.pos;
@@ -123,6 +129,14 @@ export class Session {
 
   get paused(): boolean {
     return this.pauses > 0;
+  }
+
+  /** Remember an NPC before dialogue opens. Returns true only the first time. */
+  meet(npcId: string): boolean {
+    if (this.met.has(npcId)) return false;
+    this.met.add(npcId);
+    this.save();
+    return true;
   }
 
   pause(): void {
@@ -197,6 +211,7 @@ export class Session {
       state: serialize(this.state),
       pos: this.pos,
       facing: this.facing,
+      met: [...this.met].sort(),
       tail: this.tail,
     };
     try {

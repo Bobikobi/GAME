@@ -214,12 +214,20 @@ export function itemBenefit(b: Bundle, id: string): string {
     const tier = `Tier ${it.tool.tier} ${it.tool.kind}`;
     const uses = `${it.tool.uses} uses`;
     const speed = it.tool.tier > 1 ? ` · +${15 * (it.tool.tier - 1)}% gathering speed` : '';
-    const unlocks =
-      it.tool.kind === 'basket'
-        ? 'gathers bushes & herbs'
-        : it.tool.kind === 'trowel'
-          ? 'digs earth & ruin spots'
-          : `tool for ${it.tool.kind}`;
+    const resources = Object.values(b.resources)
+      .filter((resource) => resource.tool === it.tool?.kind)
+      .map((resource) => resource.title.toLowerCase())
+      .sort();
+    const digSites = it.tool.kind === 'trowel'
+      ? Object.values(b.treasures)
+          .filter((treasure) => treasure.tool === it.tool?.kind)
+          .map((treasure) => treasure.title.toLowerCase())
+          .sort()
+      : [];
+    const unlocks = [
+      resources.length ? `gathers ${resources.join(' & ')}` : '',
+      digSites.length ? `digs ${digSites.join(' & ')}` : '',
+    ].filter(Boolean).join(' · ') || `tool for ${it.tool.kind}`;
     return `${tier} · ${unlocks} · ${uses}${speed}`;
   }
   if (it.food) {
