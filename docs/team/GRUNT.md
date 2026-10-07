@@ -646,3 +646,135 @@ pnpm build && pnpm --filter web test && ls web/dist/hub/creators/
 ```
 
 Decision: PLATFORM.md section 6 (the last row).
+
+## P - the rules of play (after the owner's rulings in GAME_RULES.md section 5)
+
+Read [docs/design/GAME_RULES.md](../design/GAME_RULES.md) first. Each item
+below closes one row of its section 5. The order is fixed: P-1 needs no schema
+change, P-2 is the schema, P-3 is the content and flips the warnings to errors,
+P-4 is the session rung of the ladder. A collision with a rule stops the item
+and goes to the owner (section 6 there); it is never resolved in the branch.
+
+### P-1. The collection shelf stops being a build
+
+Goal: no build opens a panel (G10). `pnpm check` prints no G10 line for the
+core content, and the journal is reached by its Log button and the J key only.
+
+Files:
+- `content/core/camp/collection-shelf.json`: deleted.
+- `game/src/ui/ui.ts`: the branch that opens the journal when the camp's slot
+  is `shelf` goes; the `shelf` slot renders like any slot with nothing to
+  build (check how `panels.ts` draws an empty slot and keep that).
+- `content/values.lock.json`: run `pnpm values`; a camp is not an item, so the
+  anchors should not move. If they do, stop and say why in the pull request.
+- `tools/test/play.test.ts`: the shelf expectations move to a temporary
+  content root (copy `content/core`, add a camp with neither `provides` nor
+  `bag_bonus`, run `runCheck(root)` as `template.test.ts` does), so the G10
+  rule stays tested after the content goes.
+- `README.md`: "a camp with four places to build" becomes three, or names the
+  empty one as waiting.
+
+Proving command:
+```
+pnpm check | grep -c "G10," ; pnpm verify && pnpm e2e
+```
+The grep prints 0; verify and e2e are green.
+
+Decision: GAME_RULES.md section 5, row 1, after the owner's word.
+
+### P-2. The `find` and `riddle` steps, and ids on map props
+
+Goal: a quest can carry a beat that is not repeat-the-verb, and an inscription
+can be paid for by a riddle that cites it. Additive: an old file reads the
+same, so `FORMAT_VERSION` does not move.
+
+Files:
+- `schema/src/index.ts`: `QuestStep` gains
+  `{ kind: 'find', item: Id, clue: Text }` (a bring whose journal line is the
+  clue, not the count, until the item is in the bag) and
+  `{ kind: 'riddle', clue: Text, props: Id[] (1-4), answer: { kind: 'dig', treasure: Id } | { kind: 'visit', slot: Id, at: 'day' | 'night' } }`.
+  Map props gain an optional `id: Id`. Descriptions on every new field.
+- `schema/json/`: regenerated with `pnpm schemas`.
+- `tools/src/assemble.ts`: a riddle citing a prop id or treasure that does not
+  exist is an error; a `find` of an item that is not dig-only is an error
+  ("a find must be found, not gathered").
+- `kernel/`: `find` completes like `bring`; `riddle` completes when the
+  answer's dig or visit event happens, and only then. A test for each, and one
+  that a dig elsewhere does not complete it.
+- `game/src/ui/panels.ts`: the journal shows the clue for both kinds and never
+  the answer; the tracker shows the clue's first line.
+- `tools/src/play.ts`: `find` and `riddle` count as beats for G2; G8 becomes
+  per prop: a note prop with an id that no riddle cites is reported by id, a
+  note prop without an id stays in the count line.
+- `templates/extension/`: a quest example with a `find` step and a comment
+  line in the creators' guide on when to use it.
+- Tests: `schema/test` (both kinds validate; an unknown prop is refused),
+  kernel tests above, `tools/test/play.test.ts` with fixtures under
+  `tools/test/fixtures/play/`.
+
+Proving command:
+```
+pnpm schemas && pnpm check && pnpm verify
+```
+Green, and `pnpm check` prints one G8 line per note prop that no riddle cites.
+
+Decision: GAME_RULES.md section 5, rows 2 and 4; a DECISIONS.md entry "two
+step kinds, no format bump".
+
+### P-3. The town quests and the ruins riddle; warnings become errors
+
+Goal: the five rows of GAME_RULES.md section 5 are closed in the content, and
+`pnpm check` prints "0 errors, 0 warnings" on the core content.
+
+Files:
+- `content/core/quests/three-fruits.json`: a `find` of `core/berry` with
+  Maru's clue (where the bells rang); `content/core/npcs/elder.json` carries
+  the question in the giver's line (G1).
+- `content/core/quests/herbs-for-pell.json`: a `find` with Pell's clue (where
+  the mist is thin at noon); reward adds the herb stew recipe (G4).
+- `content/core/quests/a-coin-for-maru.json`: a `riddle` whose props are the
+  three ruin stones (the carved marks and the two lantern statues) and whose
+  answer is the dig under the statue that faces the hills; reward per the owner's ruling, inside the reward types the schema
+  has (items, recipes) unless P-2 added a place.
+- `content/core/map.json`: ids on the inscription props a riddle cites; each
+  note is at most two lines and reads as a clue (G8, G14). The four notes
+  that pay into no riddle stay only if the owner named the arc they seed;
+  otherwise they are removed.
+- `tools/src/play.ts`: `PLAY_LEVEL` becomes `'error'`; the test that pinned it
+  to `'warning'` flips.
+- `game/e2e/opening.ts`: one riddle solved end to end after the town.
+- The pull request carries a Puzzlon chart of the riddle (TOOLKIT.md section
+  B) and the owner's phone run of the two quests in Twine or in the preview.
+
+Proving command:
+```
+pnpm check && pnpm verify && pnpm e2e
+```
+`pnpm check` ends with "0 errors, 0 warnings. Everything passes."
+
+Decision: GAME_RULES.md section 5, rows 2-5, after the owner's word; closes
+the DECISIONS.md entry "The play rules warn until the core content is
+rewritten".
+
+### P-4. The day summary and the morning change
+
+Goal: a session ends on a mark and the next one opens on a change (G16, the
+last two rungs of the ladder, FTUE_RESEARCH.md gap 6).
+
+Files:
+- `kernel/`: the day clock emits a day-ended event with the day's counts
+  (found, built, learned, coins) if it does not already; a test.
+- `game/src/ui/panels.ts`: a day-summary panel from that event: three lines of
+  counts, one line naming the next open question from the journal, one
+  button. Two lines of text per box (G14).
+- `game/src/text.ts`: the morning toast from what respawned overnight ("The
+  grove grew back"), from the kernel's respawn data, no new content field.
+- `game/e2e/opening.ts`: runs to the first day end and reads the summary.
+
+Proving command:
+```
+pnpm verify && pnpm e2e
+```
+Green; the e2e log prints the summary's first line.
+
+Decision: GAME_RULES.md section 2, rows "Session end" and "Day 2".

@@ -12,6 +12,7 @@ There are two ways to help: add something to the valley (content), or improve th
 ### How a pull request is merged
 
 - The check is green, and the opening still plays in Chrome (CI does this too).
+- Quests, camps, inscriptions and dialogue follow [the rules of play](docs/design/GAME_RULES.md): `pnpm check` prints a `!` line for each rule it can test, and a reviewer answers the ten questions in its section 7.
 - Three reviewers approve, each going through the reviewer checklist in the pull request.
 - One extension per slot. When two proposals compete for the same request or slot, both stay open until the vote on the request decides.
 
@@ -26,6 +27,7 @@ If you are joining the core team, read [How the team works](docs/team/WORKFLOW.m
 - `kernel/` is the simulation. It must stay pure: no clocks, timers, randomness, floats or I/O. ESLint enforces this, and `kernel/test/invariants.test.ts` replays thousands of random actions to check it.
 - A change to any value anchor (`content/values.lock.json`) is a core maintainer decision: run `pnpm values` and say why in the pull request.
 - Write down a design choice, or an approach that did not work, in [DECISIONS.md](DECISIONS.md).
+- A change to play that collides with a rule in [docs/design/GAME_RULES.md](docs/design/GAME_RULES.md) goes to the owner before code is written (its section 6).
 - Before a pull request: `pnpm verify` and `pnpm e2e`.
 
 ## Conduct

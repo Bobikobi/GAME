@@ -69,7 +69,7 @@ On a phone, A opened the cooking panel on pointerdown; the click the browser sen
 
 ## 2026-10-07 ⏸ System sans body font for mobile dialogue and reading readability
 
-`Pixelify Sans` remains for titles, buttons, numbers, and retro HUD elements. For body text—dialogue, panel bodies, item details, and creator guides—`--font-body` (system sans-serif) with generous line-height is used to prevent mobile reading fatigue on high-DPI screens. Model: antigravity.
+`Pixelify Sans` remains for titles, buttons, numbers, and retro HUD elements. For body text (dialogue, panel bodies, item details, and creator guides) `--font-body` (system sans-serif) with generous line-height is used to prevent mobile reading fatigue on high-DPI screens. Model: antigravity.
 
 ## 2026-10-07 ✅ Character select appearance toggle (Male / Female)
 
@@ -182,3 +182,13 @@ Code is the kernel package version (tags `v0.<stage>.<n>` on `main`), content is
 
 `HUB_GITHUB_TOKEN` (read-only) and the Upstash pair in the Vercel project; `VERCEL_DEPLOY_HOOK` as a repository secret; `GITHUB_TOKEN` from Actions. `.env.example` lists the names with no values; `.gitignore` already refuses `.env*`. Every consumer degrades without its secret (a build without the token still succeeds, the refresh step skips without the hook) so a missing secret is a missing section, never a red build.
 **Retry when:** a secret has to be shared with a creator's machine; it must not, so the design changes instead. Model: Claude Fable 5.1.
+
+## 2026-10-07 ✅ The rules of play are one page the owner holds, a check that cites it, and a protocol for collisions
+
+Three things in the preview broke the loop (a shelf that is a menu built as a camp, town quests that are counters, inscriptions that pay nothing) and nothing in the repository guarded against them: a developer's idea or an AI with a free hand fills a quest with the easiest thing that validates. Now `docs/design/GAME_RULES.md` holds five pillars, the hook ladder, rules G1-G16, the forbidden patterns and the review checklist; `tools/src/play.ts` in `pnpm check` tests G2, G4, G8 and G10 on core and extensions and prints the rule it cites; `AGENTS.md`, `CONTRIBUTING.md`, `WORKFLOW.md` and the handoff template send every agent, creator and session there. A request that collides with a rule is neither built nor bent: it goes to the owner in five plain Hebrew lines with a recommendation, and his word lands here the same day. The free tools surveyed in `docs/design/TOOLKIT.md` are design-time aids (Puzzlon charts, Twine prototypes, Machinations models); none was adopted into the build.
+**Retry when:** a rule proves wrong in a playtest; it changes here first, then on the page. Model: Claude Fable 5.1.
+
+## 2026-10-07 ⏸ The play rules warn until the core content is rewritten
+
+The `play` rules are warnings, not errors, because the shipped core content breaks them: an error would turn `develop` red before the owner has ruled on the fixes (GAME_RULES.md section 5, GRUNT P-1 to P-3). They become errors in the pull request that rewrites the content, by flipping `PLAY_LEVEL` in `tools/src/play.ts`.
+**Retry when:** P-3 merges. Model: Claude Fable 5.1.

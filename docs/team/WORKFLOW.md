@@ -46,6 +46,7 @@ Each area has an owner, listed in [.github/CODEOWNERS](../../.github/CODEOWNERS)
 | Hub data | `tools/src/hub/`, `schema/src/hub.ts` | Every number computed from a named source; a missing source leaves its section empty. |
 | Design | `design/` | Palette colours only; the frame is the signature; a change comes with criteria. |
 | Team docs | `docs/team/` | Decisions land in `DECISIONS.md` the same day. |
+| Rules of play | `docs/design/GAME_RULES.md`, `tools/src/play.ts` | The owner's page. A request that collides with a rule stops and goes to him in plain words; a rule changes only by his word, written in `DECISIONS.md` the same day. |
 
 ## A pull request
 

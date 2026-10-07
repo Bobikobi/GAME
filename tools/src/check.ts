@@ -12,6 +12,7 @@ import { assemble, type Assembled } from './assemble';
 import { readBoard } from './board';
 import { CORE_PALETTE } from './kit/palette';
 import { LOCK_FILE, loadAll, toRepoPath, type Issue } from './load';
+import { checkPlay } from './play';
 
 export interface CheckResult {
   issues: Issue[];
@@ -31,6 +32,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkEconomy(b, assembled.origin));
     issues.push(...checkDrift(b));
     issues.push(...checkKits(assembled));
+    issues.push(...checkPlay(b, assembled.origin));
   }
   return { issues: dedupe(issues), files: files.length, assembled };
 }
