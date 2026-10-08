@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+    <meta name="theme-color" content="#1b1a2e" />
+    <meta name="robots" content="noindex" />
+    <meta name="description" content="A trial: the valley of the game as a 3D scene in the browser. Walk it, switch to night." />
+    <title>Mistvale - 3D trial</title>
+    <link rel="icon" type="image/png" href="./favicon.png" />
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #1b1a2e;
+        font-family: system-ui, sans-serif;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      #valley {
+        position: fixed;
+        inset: 0;
+        display: block;
+      }
+      #hud {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        color: #f5f4ef;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+      }
+      #hud .top {
+        position: absolute;
+        top: max(12px, env(safe-area-inset-top));
+        left: 16px;
+        right: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+      #hud h1 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+      }
+      #hud button {
+        pointer-events: auto;
+        font: inherit;
+        font-size: 15px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        background: rgba(27, 26, 46, 0.65);
+        color: #f5f4ef;
+        min-height: 40px;
+      }
+      #hud .hint {
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        bottom: max(18px, env(safe-area-inset-bottom));
+        text-align: center;
+        font-size: 14px;
+        opacity: 0.85;
+      }
+      #loading {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: #f5f4ef;
+        font-size: 16px;
+      }
+      #stick {
+        position: fixed;
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.35);
+        background: rgba(27, 26, 46, 0.35);
+        display: none;
+        pointer-events: none;
+        transform: translate(-50%, -50%);
+      }
+      #stick i {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: rgba(245, 244, 239, 0.8);
+        transform: translate(-50%, -50%);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="valley"></canvas>
+    <div id="hud">
+      <div class="top">
+        <h1>Mistvale valley, 3D trial</h1>
+        <button id="night" type="button">Night</button>
+      </div>
+      <div class="hint" id="hint">Drag anywhere to walk. Tap Night for the dangerous hour.</div>
+    </div>
+    <div id="stick"><i></i></div>
+    <div id="loading">Loading the valley</div>
+    <noscript>This trial needs JavaScript.</noscript>
+    <script type="module" src="./src/valley3d/main.ts"></script>
+  </body>
+</html>
