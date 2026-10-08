@@ -447,16 +447,16 @@ the checklist above.
 |---|---|---|
 | G2 | A quest outside the opening chain whose steps are all `bring` or `visit`, where no `bring` is a dig-only find. | warning |
 | G4 | A quest outside the opening chain that rewards gold and reputation only. | warning |
-| G8 | Map props with a `note` that nothing refers to (today nothing can; the `riddle` step and prop ids come with P-2). | warning, one line with the count |
+| G8 | A note prop with an id that no riddle cites, one line per prop; note props without an id, one line with the count. | warning |
 | G10 | A camp with neither a station nor a bag bonus. | warning |
-| G17 | Two consecutive quests of one type in a `requires` chain, or fewer than five types among the first ten quests. | needs `quest.type` (P-2) |
+| G17 | Two consecutive quests of one type in a `requires` chain, or fewer than five types among the first ten quests. | warning, once quests declare a `type` (P-3) |
 | G14, G21 | A character's first meeting over three boxes, a standing over two, a topic over four; boxes over 80 characters, counted per character. | warning |
 | G30 | A hunting hazard (predator, pit, trap, deep water) inside a safe area or with no window (`night`, `mist`); a bad fruit or herb needs none. | needs hazard props (P-5) |
 | G34 | A hazard with neither a bought nor a made answer in the content. | needs P-5 |
 | G36 | An expedition with two problems of one type in a row, or a hazard its window does not cover. | needs the `expedition` kind (P-6) |
 
-When the `find` and `riddle` steps exist, G2 counts them as beats and G8 checks
-each note against the riddles that cite it. Sound (G24-G27), fairness (G28),
+Since P-2 (8.10) G2 counts `find` and `riddle` steps as beats and G8 checks each
+note prop with an id against the riddles that cite it. Sound (G24-G27), fairness (G28),
 access (G29), the warning and the fall (G31-G33, G35, G37) live in code, not in
 content: the checklist covers them, and
 the e2e run prints the audio state line on every pull request.

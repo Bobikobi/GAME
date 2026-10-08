@@ -216,7 +216,7 @@ export class UI {
       h('div', { class: 'tracker-title' }, q.title, ids.length > 1 ? h('span', { class: 'more' }, ` +${ids.length - 1}`) : null),
       ...(ready
         ? [h('div', { class: 'tracker-step' }, `Bring it to ${giver}`)]
-        : steps.filter((st) => !st.done).slice(0, 2).map((st) => h('div', { class: 'tracker-step' }, st.text))),
+        : steps.filter((st) => !st.done).slice(0, 2).map((st) => h('div', { class: 'tracker-step' }, st.short ?? st.text))),
     );
   }
 

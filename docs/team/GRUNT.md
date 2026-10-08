@@ -690,6 +690,10 @@ Decision: GAME_RULES.md section 5, row 1, after the owner's word.
 
 ### P-2. The `find` and `riddle` steps, and ids on map props
 
+Status: built 8.10 in the pull request `feat/p2-find-riddle`, stacked on the danger
+docs; live when the owner merges. The fixtures live in the tests themselves, as
+`play.test.ts` already does.
+
 Goal: a quest can carry a beat that is not repeat-the-verb, and an inscription
 can be paid for by a riddle that cites it. Additive: an old file reads the
 same, so `FORMAT_VERSION` does not move.

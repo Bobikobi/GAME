@@ -46,6 +46,9 @@ export function feedback(root: HTMLElement, events: readonly GameEvent[]): void 
       case 'discover':
         add({ jingle: 'found' });
         break;
+      case 'riddle':
+        add({ jingle: 'found' });
+        break;
       case 'learn':
         add({ sfx: 'perfect', detune: 200 });
         break;
