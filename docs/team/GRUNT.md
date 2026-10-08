@@ -136,6 +136,10 @@ read by everything".
 
 ## M2 - the site
 
+Order since 8.10 (owner, DECISIONS.md): M2, then M3, then M4 once the repository
+is public, each item in its own pull request into `develop`; the owner keeps
+item 2 and the content.
+
 ### 4. The `web/` package, one build, the game at `/play/`
 
 Goal: `pnpm build` produces `web/dist` with the site at `/` and the game at
@@ -652,7 +656,9 @@ Decision: PLATFORM.md section 6 (the last row).
 Read [docs/design/GAME_RULES.md](../design/GAME_RULES.md) first. Each item
 below closes one row of its section 5. The order is fixed: P-1 needs no schema
 change, P-2 is the schema, P-3 is the content and flips the warnings to errors,
-P-4 is the session rung of the ladder. A collision with a rule stops the item
+P-4 is the session rung of the ladder; P-5 (health and danger) follows P-2 and
+P-6 (the expedition) follows P-3 and P-5, both added 8.10. A collision with a
+rule stops the item
 and goes to the owner (section 6 there); it is never resolved in the branch.
 
 ### P-1. The collection shelf stops being a build
@@ -792,3 +798,83 @@ pnpm verify && pnpm e2e
 Green; the e2e log prints the summary's first line.
 
 Decision: GAME_RULES.md section 2, rows "Session end" and "Day 2".
+
+### P-5. Health, danger and the fall
+
+Goal: the valley has a dangerous hour and a soft fall (G30-G35). The food bar
+is the health bar; a hazard takes health by a rule; at zero the player wakes at
+dawn at camp with the outing's finds waiting where they fell; nobody falls
+unwarned. After P-2.
+
+Files:
+- `schema/src/`: `food.satiety` becomes `food.heal`; a `hazard` prop kind on
+  map props (`kind`: `pit`, `trap`, `predator`, `bad_herb`, `deep_water`;
+  `window`: `night`, `mist`; `answer`: the item ids that counter it); a `safe`
+  flag on areas (the town, every camp); a shop or kit item may carry `heal`.
+- `content/core/params.json`: `satiety_cap` and `satiety_drain_per_min` become
+  `hp_cap` (grows with stamina as before) and `hp_low_pct` (below it, work slows
+  as the empty bar did). No drain by the clock (G28).
+- `kernel/src/state.ts`, `step.ts`, a new `hazards.ts`: `satiety` and
+  `satietyAt` become `hp` (milli-points, no lazy drain); a `stash` list
+  (position, items) for what a fall leaves; events `hurt` (hazard, amount,
+  answer used), `fall` (where, what was left), `wake` (dawn, camp or town house);
+  the outing's bag delta since the last safe area is the stash; the clock moves
+  to dawn on a fall; the hazard rules of G34 (predator: off a lit lantern, held
+  by thrown food, ended on a road tile; pit: a rope or damage; trap: visible by
+  day; bad herb: raw hurts, cooked heals; deep water: the river without its
+  bridge at night). Chance through the state's random stream (R1-R5).
+- `game/src/ui/ui.ts`: the meter reads health; `game/src/ui/panels.ts`: `Eat`
+  heals, a first-aid kit heals from the bag; `game/src/scenes/world.ts`: the
+  countdown to nightfall at the screen's edge outside a safe area (the first
+  levels: a banner too); the lantern lit and one warning box when the player
+  leaves a safe area after dark or dark arrives outside one (G31, G14); hazard
+  sprites shown by day, hidden or moving in the dark; the fall box; the dawn
+  wake; a map pin for the stash.
+- `content/core/shops/trader-shop.json`, recipes, the kit: the bought answers
+  (a first-aid kit, lantern oil, an antidote, a rope, dried meat) and the made
+  answers (a bandage from herbs, a torch from wood). Every hazard has one of
+  each (G34).
+- `tools/src/play.ts`: the G30 and G34 rows of GAME_RULES.md section 8 become
+  checks.
+- Tests: the same hazard is harmless by day and hurts at night; a fall leaves
+  the stash and moves the clock to dawn; the lantern keeps the predator off; a
+  replay reproduces a fall; no state change by the clock alone.
+
+Proving command:
+```
+pnpm verify && pnpm e2e
+```
+Green; the e2e run walks into the ruins at night without a lantern, falls,
+wakes at camp and picks the stash up the next night.
+
+Decision: DECISIONS.md 2026-10-08, the falling entry; GAME_RULES.md G30-G35.
+
+### P-6. The expedition container: the night ruins
+
+Goal: a place with a structure (G36-G37): entered under the bells' clock, three
+to five problems of different types with hazards among them, a climax, a reward
+that opens a place by day, a soft failure. After P-3 and P-5.
+
+Files:
+- `schema/src/`: an `expedition` content kind: `place`, `window` (the hours),
+  `chain` (quest ids, G17 across them), `climax`, `reward` (the slot that
+  opens), `on_miss` (`wait` is the default and the only value in stage 1).
+- `kernel/`: the window as a rule (at the last bell the mist walks the player
+  to the arch, no damage), the chain's progress kept across nights, the reward
+  applied at the climax.
+- `content/core/`: the first expedition, the night ruins: the discovery at the
+  arch, the three-stones riddle, the gamble at the hill-facing statue, the
+  lantern kept lit, the last bell. Written in P-3's style, after P-3.
+- `game/src/`: the bells as the clock on screen inside the place, the exit at
+  the last bell, the climax beat (G13, G25).
+- `tools/src/play.ts`: the G36 row of section 8 becomes a check.
+- Tests and e2e: enter, miss the last bell, return the next night, finish; the
+  reward opens the slot by day.
+
+Proving command:
+```
+pnpm verify && pnpm e2e
+```
+Green; the e2e log prints the climax line and the opened slot.
+
+Decision: DECISIONS.md 2026-10-08, the expedition entry; GAME_RULES.md G36-G37.
