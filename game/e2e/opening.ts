@@ -5,6 +5,7 @@
  *
  *   pnpm build && pnpm e2e [out-dir]
  *   E2E_URL=https://<deployment> pnpm e2e    (play a deployed copy instead)
+ *   E2E_VIDEO=<dir> pnpm e2e                (keep every frame, for a video of the run)
  *
  * Serves game/dist itself, writes screenshots to out-dir (default .scratch/e2e)
  * and exits non-zero on the first step that fails or on any page error.
@@ -435,6 +436,8 @@ class Player {
 
 async function play(browser: Browser, url: string, viewport: Viewport, name: string): Promise<void> {
   const page = await browser.newPage(viewport);
+  // E2E_VIDEO=<dir> keeps every frame of the run, for a video of the opening
+  if (process.env.E2E_VIDEO) await page.record(join(process.env.E2E_VIDEO, name));
   const me = new Player(page, viewport.mobile, name);
   const log = (msg: string) => console.log(`[${name}] ${msg}`);
   try {
