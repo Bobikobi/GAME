@@ -1,10 +1,11 @@
 /**
  * Just enough of the Chrome DevTools Protocol to play the game in a headless
- * Chrome: pages, keys, taps, script evaluation and screenshots. No browser
+ * Chrome: pages, keys, taps, script evaluation, screenshots and a frame
+ * recording. No browser
  * automation package, so nothing extra to install or keep up to date.
  */
 import { spawn, type ChildProcess } from 'node:child_process';
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -264,6 +265,24 @@ export class Page {
       `${selector} "${text}"`,
     );
     await this.tapAt(at.x, at.y);
+  }
+
+  /**
+   * Records the page as JPEG frames in `dir`, one file per screen change, with
+   * `frames.txt` listing the millisecond of each; a video tool stitches them.
+   */
+  async record(dir: string): Promise<void> {
+    mkdirSync(dir, { recursive: true });
+    const t0 = Date.now();
+    const times: string[] = [];
+    this.on('Page.screencastFrame', (p) => {
+      const file = `${String(times.length).padStart(5, '0')}.jpg`;
+      writeFileSync(join(dir, file), Buffer.from(p.data as string, 'base64'));
+      times.push(`${Date.now() - t0} ${file}`);
+      writeFileSync(join(dir, 'frames.txt'), `${times.join('\n')}\n`);
+      void this.send('Page.screencastFrameAck', { sessionId: p.sessionId });
+    });
+    await this.send('Page.startScreencast', { format: 'jpeg', quality: 80, everyNthFrame: 1 });
   }
 
   async screenshot(path: string): Promise<void> {
