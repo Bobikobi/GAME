@@ -221,6 +221,59 @@
           "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
           "type": "string"
         },
+        "type": {
+          "description": "The kind of question the quest asks: one of the twelve in docs/design/GAME_RULES.md section 3. Two quests of one type never follow each other in a chain (G17). Optional until the core content declares it (GRUNT P-3), then required.",
+          "anyOf": [
+            {
+              "const": "investigation",
+              "type": "string"
+            },
+            {
+              "const": "discovery",
+              "type": "string"
+            },
+            {
+              "const": "fetch_twist",
+              "type": "string"
+            },
+            {
+              "const": "dilemma",
+              "type": "string"
+            },
+            {
+              "const": "skill",
+              "type": "string"
+            },
+            {
+              "const": "collection",
+              "type": "string"
+            },
+            {
+              "const": "tending",
+              "type": "string"
+            },
+            {
+              "const": "riddle",
+              "type": "string"
+            },
+            {
+              "const": "mastery",
+              "type": "string"
+            },
+            {
+              "const": "gamble",
+              "type": "string"
+            },
+            {
+              "const": "persuasion",
+              "type": "string"
+            },
+            {
+              "const": "errand",
+              "type": "string"
+            }
+          ]
+        },
         "summary": {
           "minLength": 1,
           "maxLength": 240,
@@ -335,6 +388,129 @@
                     "maxLength": 80,
                     "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
                     "type": "string"
+                  }
+                }
+              },
+              {
+                "additionalProperties": false,
+                "description": "Bring one of an item that only digging gives. The journal shows the clue, not a count, until the item is in the bag.",
+                "type": "object",
+                "required": [
+                  "kind",
+                  "item",
+                  "clue"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "find",
+                    "type": "string"
+                  },
+                  "item": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "clue": {
+                    "minLength": 1,
+                    "maxLength": 240,
+                    "description": "What the journal shows for this step: something to notice or work out. Never the answer, never a count.",
+                    "type": "string"
+                  }
+                }
+              },
+              {
+                "additionalProperties": false,
+                "description": "A catch and a reveal (G6): the journal shows the clue, the world holds the answer.",
+                "type": "object",
+                "required": [
+                  "kind",
+                  "clue",
+                  "props",
+                  "answer"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "riddle",
+                    "type": "string"
+                  },
+                  "clue": {
+                    "minLength": 1,
+                    "maxLength": 240,
+                    "description": "What the journal shows for this step: something to notice or work out. Never the answer, never a count.",
+                    "type": "string"
+                  },
+                  "props": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Ids of the map props the riddle reads: the inscriptions it pays for (G8).",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "answer": {
+                    "description": "What solves the riddle. The kernel completes the step on that event and on nothing else.",
+                    "anyOf": [
+                      {
+                        "additionalProperties": false,
+                        "description": "Solved by digging at this dig spot, whatever comes up.",
+                        "type": "object",
+                        "required": [
+                          "kind",
+                          "treasure"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "const": "dig",
+                            "type": "string"
+                          },
+                          "treasure": {
+                            "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                            "maxLength": 80,
+                            "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                            "type": "string"
+                          }
+                        }
+                      },
+                      {
+                        "additionalProperties": false,
+                        "description": "Solved by standing in this slot by day (05:00 to 20:00) or by night.",
+                        "type": "object",
+                        "required": [
+                          "kind",
+                          "slot",
+                          "at"
+                        ],
+                        "properties": {
+                          "kind": {
+                            "const": "visit",
+                            "type": "string"
+                          },
+                          "slot": {
+                            "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                            "maxLength": 80,
+                            "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                            "type": "string"
+                          },
+                          "at": {
+                            "anyOf": [
+                              {
+                                "const": "day",
+                                "type": "string"
+                              },
+                              {
+                                "const": "night",
+                                "type": "string"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    ]
                   }
                 }
               }

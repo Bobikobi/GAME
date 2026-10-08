@@ -153,6 +153,7 @@ Then point your item at it: `"sprite": "<your-handle>/kit:items/plum"`.
 - Active times stay between 1000 and 15000 ms.
 - The rarity you declare is within one step of what the data implies. A fruit that grows anywhere at any hour is common; night-only, high-level or slow-to-regrow fruit is rarer.
 - Everything a recipe or quest asks for can be found somewhere in the world.
+- A `find` step names an item that only digging gives (never gathered, made or sold) and carries a clue; the journal shows the clue, not a count. A `riddle` step cites map props by id and names its answer, a dig spot or a place by day or by night; an id that is not on the map is refused. `templates/extension/quests/` has a find.
 - Your change may not move the value of anything that already exists by more than 10%. If it has to, a core maintainer re-anchors the values.
 - Every sprite exists, has the right size and uses the core palette.
 

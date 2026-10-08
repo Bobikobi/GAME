@@ -23,6 +23,7 @@ import {
   bagCapacity,
   bagUsed,
   hourOf,
+  isNight,
   powerCap,
   professionLevel,
   satietyAt,
@@ -62,6 +63,7 @@ export type GameEvent =
   | { e: 'discover'; item: string }
   | { e: 'learn'; recipe: string }
   | { e: 'quest'; quest: string; state: 'active' | 'done' }
+  | { e: 'riddle'; quest: string }
   | { e: 'restore'; restore: string }
   | { e: 'build'; camp: string }
   | { e: 'eat'; item: string; satiety: number }
@@ -282,6 +284,7 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
   busy(ctx, 'dig', ms);
   gainXp(ctx, 'dig', grade === 4 ? d.active_ms * JACKPOT_XP : d.active_ms);
   if (grade === 4) ctx.events.push({ e: 'jackpot', verb: 'dig' });
+  solveRiddles(ctx, { kind: 'dig', treasure: inst.source });
 }
 
 function craft(ctx: Ctx, recipeId: string, at: Tile): void {
@@ -427,10 +430,16 @@ export function questSatisfied(bundle: Bundle, state: State, questId: string): b
   if (!q) return false;
   const p = state.player;
   const bring: Record<string, number> = {};
-  for (const st of q.steps) {
+  for (const [i, st] of q.steps.entries()) {
     switch (st.kind) {
       case 'bring':
         bring[st.item] = (bring[st.item] ?? 0) + st.qty;
+        break;
+      case 'find':
+        bring[st.item] = (bring[st.item] ?? 0) + 1;
+        break;
+      case 'riddle':
+        if (!p.solved.includes(riddleKey(questId, i))) return false;
         break;
       case 'make':
         if ((p.made[st.recipe] ?? 0) < 1) return false;
@@ -459,7 +468,10 @@ function turnIn(ctx: Ctx, questId: string, at: Tile | undefined, explicit: boole
     if (!tile || !at) refuse('Bring it to whoever asked.');
     checkAt(ctx, at, { x: tile[0], y: tile[1], w: 1, h: 1 });
   }
-  for (const st of q.steps) if (st.kind === 'bring') removeItem(ctx, st.item, st.qty);
+  for (const st of q.steps) {
+    if (st.kind === 'bring') removeItem(ctx, st.item, st.qty);
+    if (st.kind === 'find') removeItem(ctx, st.item, 1);
+  }
   const reward = q.reward;
   if (q.giver && reward.rep > 0) s.player.rep[q.giver] = (s.player.rep[q.giver] ?? 0) + reward.rep;
   if (reward.gold_mg) {
@@ -502,9 +514,51 @@ function visit(ctx: Ctx, slotId: string, at: Tile): void {
   if (!slot) refuse('Unknown place.');
   if (!inRect(at[0], at[1], slot)) refuse('You are not there.');
   checkAt(ctx, at, slot);
+  solveRiddles(ctx, { kind: 'visit', slot: slotId, at: isNight(b, ctx.tick) ? 'night' : 'day' });
   if (s.player.visited.includes(slotId)) return;
   s.player.visited = [...s.player.visited, slotId].sort();
   ctx.events.push({ e: 'visit', slot: slotId });
+}
+
+/** The state key of a riddle step. */
+export function riddleKey(questId: string, step: number): string {
+  return `${questId}#${step}`;
+}
+
+type RiddleHit = { kind: 'dig'; treasure: string } | { kind: 'visit'; slot: string; at: 'day' | 'night' };
+
+/** A riddle completes on its answer's event and on nothing else (GRUNT P-2). */
+function solveRiddles(ctx: Ctx, got: RiddleHit): void {
+  const { b, s } = ctx;
+  for (const id of Object.keys(s.player.quests).sort()) {
+    if (s.player.quests[id] !== 'active') continue;
+    const q = b.quests[id];
+    if (!q) continue;
+    q.steps.forEach((st, i) => {
+      if (st.kind !== 'riddle') return;
+      const key = riddleKey(id, i);
+      if (s.player.solved.includes(key)) return;
+      const a = st.answer;
+      const hit =
+        (a.kind === 'dig' && got.kind === 'dig' && a.treasure === got.treasure) ||
+        (a.kind === 'visit' && got.kind === 'visit' && a.slot === got.slot && a.at === got.at);
+      if (!hit) return;
+      s.player.solved = [...s.player.solved, key].sort();
+      ctx.events.push({ e: 'riddle', quest: id });
+    });
+  }
+}
+
+/** Slots an open riddle answers by standing there: the client sends a visit on every entry, visited before or not. */
+export function riddleSlots(bundle: Bundle, state: State): Set<string> {
+  const out = new Set<string>();
+  for (const id of Object.keys(state.player.quests)) {
+    if (state.player.quests[id] !== 'active') continue;
+    bundle.quests[id]?.steps.forEach((st, i) => {
+      if (st.kind === 'riddle' && st.answer.kind === 'visit' && !state.player.solved.includes(riddleKey(id, i))) out.add(st.answer.slot);
+    });
+  }
+  return out;
 }
 
 function learn(ctx: Ctx, itemId: string): void {

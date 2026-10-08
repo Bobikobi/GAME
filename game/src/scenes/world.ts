@@ -17,6 +17,7 @@ import {
   makeWalkable,
   minuteOfDay,
   npcTile,
+  riddleSlots,
 } from '@game/kernel';
 import { app } from '../app';
 import { sound, type SfxId } from '../audio';
@@ -108,6 +109,8 @@ export class WorldScene extends Phaser.Scene {
   private refreshIn = 0;
   private prompt = '';
   private hinted = new Set<string>();
+  /** slots the player stands in now, so a riddle's slot is tried once per entry */
+  private inside = new Set<string>();
   private attractT = 0;
   private night = 0;
   private wasNight: boolean | undefined;
@@ -419,6 +422,7 @@ export class WorldScene extends Phaser.Scene {
     this.move = null;
     this.work = null;
     this.hinted.clear();
+    this.inside.clear();
     this.unbind = [
       session.on('busy', ({ ms }) => {
         this.busyFrom = session.tick;
@@ -614,9 +618,16 @@ export class WorldScene extends Phaser.Scene {
 
   private arrive(s: Session): void {
     const [x, y] = s.pos;
+    const riddles = riddleSlots(this.b, s.state);
     for (const slot of this.b.map.slots) {
-      if (!inRect(x, y, slot)) continue;
-      if (slot.kind === 'area' && !s.state.player.visited.includes(slot.id)) {
+      if (!inRect(x, y, slot)) {
+        this.inside.delete(slot.id);
+        continue;
+      }
+      const entered = !this.inside.has(slot.id);
+      this.inside.add(slot.id);
+      // an area counts once; a slot an open riddle names is tried on every entry, by day or by night (P-2)
+      if ((slot.kind === 'area' && !s.state.player.visited.includes(slot.id)) || (entered && riddles.has(slot.id))) {
         s.act({ t: 'visit', slot: slot.id, at: [x, y] });
       }
       if (slot.kind === 'ruin' && !this.hinted.has(slot.id)) {
@@ -644,7 +655,13 @@ export class WorldScene extends Phaser.Scene {
     }
     const isNight = this.night >= 0.5;
     if (isNight !== this.wasNight) {
+      const flipped = this.wasNight !== undefined;
       this.wasNight = isNight;
+      if (flipped) {
+        // a riddle answered by night or by day: the slot the player stands in is entered again at the flip
+        this.inside.clear();
+        this.arrive(s);
+      }
       sound.music(isNight ? 'night' : 'valley', 4000);
       sound.ambience(isNight ? 'night' : 'day');
       if (isNight) {

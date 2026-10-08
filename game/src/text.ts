@@ -10,6 +10,7 @@ import {
   missKeepBp,
   powerCap,
   questSatisfied,
+  riddleKey,
   rareFindPermille,
   satietyCap,
   techniqueValue,
@@ -100,13 +101,25 @@ export function stacks(b: Bundle, list: readonly { item: string; qty: number }[]
   return list.map((s) => `${s.qty} ${itemName(b, s.item)}`).join(', ');
 }
 
-/** One line per quest step, with a tick when it is done. */
-export function questSteps(b: Bundle, s: State, questId: string): { text: string; done: boolean }[] {
+/** The first sentence of a clue, for the tracker. */
+export function firstLine(text: string): string {
+  const line = text.split('\n')[0] ?? text;
+  return line.split(/(?<=[.!?])\s/)[0] ?? line;
+}
+
+/** One line per quest step, with a tick when it is done; `short` is what the tracker shows when the line is a clue. */
+export function questSteps(b: Bundle, s: State, questId: string): { text: string; done: boolean; short?: string }[] {
   const q = b.quests[questId];
   if (!q) return [];
   const p = s.player;
-  return q.steps.map((st) => {
+  return q.steps.map((st, i) => {
     switch (st.kind) {
+      case 'find': {
+        const done = (p.bag[st.item] ?? 0) >= 1;
+        return { text: done ? `${itemName(b, st.item)}: found` : st.clue, done, short: firstLine(st.clue) };
+      }
+      case 'riddle':
+        return { text: st.clue, done: p.solved.includes(riddleKey(questId, i)), short: firstLine(st.clue) };
       case 'bring': {
         const have = Math.min(st.qty, p.bag[st.item] ?? 0);
         return { text: `${itemName(b, st.item)} ${have}/${st.qty}`, done: have >= st.qty };
@@ -197,6 +210,8 @@ export function describe(b: Bundle, s: State, e: GameEvent): { text: string; ico
       return { text: `${e.attr[0]?.toUpperCase()}${e.attr.slice(1)} is now ${e.value}`, tone: 'good' };
     case 'jackpot':
       return { text: 'Jackpot! Three times the experience', tone: 'good' };
+    case 'riddle':
+      return { text: `That was it: ${b.quests[e.quest]?.title ?? e.quest}`, tone: 'good' };
     case 'visit': {
       const slot = findSlot(b.map, e.slot);
       return slot?.label ? { text: `You reached the ${slot.label}`, tone: 'info' } : undefined;
