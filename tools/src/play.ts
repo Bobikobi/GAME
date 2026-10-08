@@ -1,10 +1,11 @@
 /**
  * The play rules: what docs/design/GAME_RULES.md can test on content. Every
  * line cites its rule and the pattern's name so a creator can read why. They
- * are warnings until the core content is rewritten (GRUNT P-3); that pull
- * request flips PLAY_LEVEL to 'error'.
+ * are errors since the core content was rewritten to pass them (GRUNT P-3,
+ * 8.10): a breach stops the check, core and extensions alike.
  */
 import type { Bundle, QuestDef } from '@game/kernel';
+import { QUEST_TYPES } from '@game/schema';
 import type { Issue } from './load';
 
 export const RULES_PAGE = 'docs/design/GAME_RULES.md';
@@ -15,16 +16,42 @@ export const OPENING_QUESTS: ReadonlySet<string> = new Set(['core/fix-the-bridge
 /** About two lines of dialogue on a phone at the dialogue size (G14). */
 export const BOX_CHARS = 80;
 
-/** Flipped to 'error' in the pull request that fixes the core content (P-3). */
-export const PLAY_LEVEL: Issue['level'] = 'warning';
+/** Errors since the pull request that rewrote the core content (P-3, 8.10). */
+export const PLAY_LEVEL: Issue['level'] = 'error';
 
-/** Items that only digging gives: never gathered, made or sold. A `find` step must name one. */
+/** Items that only digging gives: never gathered, made or sold. */
 export function digOnlyItems(b: Bundle): Set<string> {
   const gathered = new Set(Object.values(b.resources).map((r) => r.output));
-  const made = new Set(Object.values(b.recipes).flatMap((c) => c.outputs.map((o) => o.item)));
-  const sold = new Set(Object.values(b.shops).flatMap((s) => s.sells.map((o) => o.item)));
+  const made = madeItems(b);
+  const sold = soldItems(b);
   const dug = Object.values(b.treasures).flatMap((t) => t.finds.map((f) => f.item));
   return new Set(dug.filter((item) => !gathered.has(item) && !made.has(item) && !sold.has(item)));
+}
+
+/**
+ * Items a `find` step may name: what only digging gives, and what exactly one
+ * timed plant gives (a resource with `hours`), as long as nothing makes or
+ * sells it. Bringing one, with a clue, is a find and not a counter (G2).
+ */
+export function findableItems(b: Bundle): Set<string> {
+  const out = digOnlyItems(b);
+  const made = madeItems(b);
+  const sold = soldItems(b);
+  const givers = new Map<string, number>();
+  for (const r of Object.values(b.resources)) givers.set(r.output, (givers.get(r.output) ?? 0) + 1);
+  for (const r of Object.values(b.resources)) {
+    if (r.hours === undefined || givers.get(r.output) !== 1 || made.has(r.output) || sold.has(r.output)) continue;
+    out.add(r.output);
+  }
+  return out;
+}
+
+function madeItems(b: Bundle): Set<string> {
+  return new Set(Object.values(b.recipes).flatMap((c) => c.outputs.map((o) => o.item)));
+}
+
+function soldItems(b: Bundle): Set<string> {
+  return new Set(Object.values(b.shops).flatMap((s) => s.sells.map((o) => o.item)));
 }
 
 /** The first quests a player meets: by the length of their requires chain, then by id. */
@@ -50,9 +77,9 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
   const at = (id: string) => origin[id] ?? 'content';
   const rule = (n: string, name: string) => `${RULES_PAGE} ${n}, "${name}"`;
 
-  // An item only digging gives: bringing it, with the spot's hint, is a find (G2). The find and riddle steps are beats by kind.
-  const digOnly = digOnlyItems(b);
-  const isFind = (item: string) => digOnly.has(item);
+  // A bring of something only digging or one timed plant gives is a find (G2). The find and riddle steps are beats by kind.
+  const findable = findableItems(b);
+  const isFind = (item: string) => findable.has(item);
 
   for (const q of Object.values(b.quests)) {
     if (OPENING_QUESTS.has(q.id)) continue;
@@ -144,9 +171,17 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
     });
   }
 
-  // G17: no two of one type in a row along the requires links; five types among the first ten quests.
+  // G17: every quest names its type; no two of one type in a row along the requires links; five types among the first ten quests.
   for (const q of Object.values(b.quests)) {
-    if (q.type === undefined) continue;
+    if (q.type === undefined) {
+      issues.push({
+        file: at(q.id),
+        where: 'quest.type',
+        message: `no type: name the question it asks, one of ${QUEST_TYPES.join(', ')} (${rule('G17', 'same again')})`,
+        level: PLAY_LEVEL,
+      });
+      continue;
+    }
     for (const r of q.requires ?? []) {
       if (b.quests[r]?.type !== q.type) continue;
       issues.push({

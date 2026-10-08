@@ -304,22 +304,24 @@
         "sign": "core/town-edge"
       },
       {
+        "id": "core/marked-stone",
         "sprite": "core/base-kit:props/standing_stone",
         "x": 7,
         "y": 15,
         "w": 1,
         "h": 1,
         "solid": true,
-        "note": "Old marks are carved into the stone: a bridge, a fire, a bell. Under them is a word, worn too smooth to read."
+        "note": "Bridge, fire, bell, cut in a row. Under the bell, a lantern facing the hills."
       },
       {
+        "id": "core/town-lantern",
         "sprite": "core/base-kit:props/broken_statue",
         "x": 22,
         "y": 8,
         "w": 1,
         "h": 1,
         "solid": true,
-        "note": "A statue of someone holding a lantern. The face is gone. Moss grows inside the lantern, and it almost glows."
+        "note": "A lantern statue, face gone, turned to the town. Paving stones at its feet."
       },
       {
         "sprite": "core/base-kit:props/statue_head",
@@ -327,8 +329,7 @@
         "y": 9,
         "w": 2,
         "h": 1,
-        "solid": true,
-        "note": "A stone head as tall as you, half sunk in the grass. Its eyes are open, and they face the town."
+        "solid": true
       },
       {
         "sprite": "core/base-kit:props/dead_tree",
@@ -344,8 +345,7 @@
         "y": 27,
         "w": 2,
         "h": 1,
-        "solid": true,
-        "note": "Names are scratched into the wall, one under another. The last one is fresh."
+        "solid": true
       },
       {
         "sprite": "core/base-kit:props/ruin_arch",
@@ -353,8 +353,7 @@
         "y": 19,
         "w": 2,
         "h": 1,
-        "solid": true,
-        "note": "An arch with no wall around it. Cold air comes through it, though there is nothing on the other side."
+        "solid": true
       },
       {
         "sprite": "core/base-kit:props/rubble",
@@ -370,8 +369,7 @@
         "y": 30,
         "w": 1,
         "h": 1,
-        "solid": true,
-        "note": "A carved post, taller than a door. Someone tied fresh grass to it. Recently."
+        "solid": true
       },
       {
         "sprite": "core/base-kit:props/glow_mushrooms",
@@ -390,13 +388,14 @@
         "solid": false
       },
       {
+        "id": "core/hill-lantern",
         "sprite": "core/base-kit:props/broken_statue",
         "x": 44,
         "y": 25,
         "w": 1,
         "h": 1,
         "solid": true,
-        "note": "Another statue with a lantern. This one faces the hills, where the mist comes from."
+        "note": "A lantern statue facing the hills, where the mist comes from. Soft earth below."
       }
     ],
     "spawn": {
@@ -572,6 +571,24 @@
         "h": 2,
         "tag": "grove",
         "label": "Clearing"
+      },
+      {
+        "id": "core/lantern-foot",
+        "kind": "ruin",
+        "x": 44,
+        "y": 26,
+        "w": 1,
+        "h": 1,
+        "tag": "ruin"
+      },
+      {
+        "id": "core/sun-bank",
+        "kind": "resource",
+        "x": 7,
+        "y": 3,
+        "w": 3,
+        "h": 3,
+        "tag": "meadow"
       }
     ]
   }

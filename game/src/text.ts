@@ -164,6 +164,16 @@ export function readyToHandIn(b: Bundle, s: State, questId: string): boolean {
   return s.player.quests[questId] === 'active' && questSatisfied(b, s, questId);
 }
 
+/** An active quest still waits on a riddle that a dig at another spot than `treasure` answers: this is the wrong place. */
+export function digRiddleOpen(b: Bundle, s: State, treasure: string): boolean {
+  return Object.keys(s.player.quests).some((id) => {
+    if (s.player.quests[id] !== 'active') return false;
+    return (b.quests[id]?.steps ?? []).some(
+      (st, i) => st.kind === 'riddle' && st.answer.kind === 'dig' && st.answer.treasure !== treasure && !s.player.solved.includes(riddleKey(id, i)),
+    );
+  });
+}
+
 export function hintDistance(b: Bundle, s: State): number {
   return 2 + b.params.per_point.senses * s.player.attrs.senses + (techniqueValue(b, s, 'second_hint') > 0 ? 2 : 0);
 }

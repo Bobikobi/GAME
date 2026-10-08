@@ -1,0 +1,36 @@
+{
+  "$schema": "../../../schema/json/resource.schema.json",
+  "format": 1,
+  "type": "resource",
+  "id": "core/sun-herbs",
+  "title": "Sun herbs",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/sunleaf",
+      "name": "Sunleaf",
+      "description": "Opens at midday, where the mist is thin.",
+      "kind": "material",
+      "rarity": "uncommon",
+      "sprite": "core/base-kit:items/herb"
+    }
+  ],
+  "node": {
+    "output": "core/sunleaf",
+    "yield": 2,
+    "active_ms": 3000,
+    "respawn_ms": 60000,
+    "count": 2,
+    "sprite": "core/base-kit:props/herb_plant",
+    "tool": "basket",
+    "level": 1,
+    "game": "pick",
+    "hours": [
+      11,
+      14
+    ],
+    "place": {
+      "slot": "core/sun-bank"
+    }
+  }
+}

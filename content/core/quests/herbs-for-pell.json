@@ -7,20 +7,24 @@
   "creator": "core",
   "quest": {
     "giver": "core/trader",
-    "summary": "Pell needs 4 wild herbs from the grove.",
+    "type": "discovery",
+    "summary": "Herbs sell well, and the best stand where the mist is thin at noon. Find me those. Not the common ones.",
     "requires": [
       "core/three-fruits"
     ],
     "steps": [
       {
-        "kind": "bring",
-        "item": "core/herb",
-        "qty": 4
+        "kind": "find",
+        "item": "core/sunleaf",
+        "clue": "Pell says the best herbs stand where the mist is thin at noon: the open bank up the river, past the stones. They open at midday only, and a basket picks them."
       }
     ],
     "reward": {
       "rep": 15,
-      "gold_mg": 15000
+      "gold_mg": 15000,
+      "recipes": [
+        "core/herb-stew"
+      ]
     }
   }
 }

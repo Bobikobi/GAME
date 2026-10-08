@@ -6,6 +6,7 @@
   "title": "A fire and a meal",
   "creator": "core",
   "quest": {
+    "type": "mastery",
     "summary": "Gather branches, build a campfire across the river, and cook berry mash.",
     "requires": [
       "core/fix-the-bridge"

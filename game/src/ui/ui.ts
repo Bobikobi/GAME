@@ -15,7 +15,7 @@ import {
 import { app } from '../app';
 import type { Button } from '../input';
 import type { Session } from '../session';
-import { activeQuests, clock, describe, gold, itemName, questSteps, readyToHandIn, windowScalePct } from '../text';
+import { activeQuests, clock, describe, digRiddleOpen, gold, itemName, questSteps, readyToHandIn, windowScalePct } from '../text';
 import { say, type Option } from './dialog';
 import { button, h, sprite } from './dom';
 import { feedback } from './feedback';
@@ -371,7 +371,12 @@ export class UI {
     const grade = await this.play(timing, 'Dig', spotId, 'dig');
     if (grade === null) return;
     const res = s.act({ t: 'dig', spot: spotId, grade, at: s.pos });
-    if (!res.ok) this.toast(res.error, 'bad');
+    if (!res.ok) return this.toast(res.error, 'bad');
+    // the catch (G6): while a riddle waits on a dig somewhere else, a dig here says so once the hands stop
+    if (!res.events.some((e) => e.e === 'riddle') && digRiddleOpen(app.bundle, s.state, app.bundle.instances[spotId]!.source)) {
+      const busy = res.events.find((e) => e.e === 'busy');
+      window.setTimeout(() => this.toast('Not here. Read the stones again.', 'info'), busy?.e === 'busy' ? busy.ms : 0);
+    }
   }
 
   /** A minigame for one action; every beat swings the arm and makes its sound in the world. */
@@ -392,7 +397,6 @@ export class UI {
   campInfo(campId: string): void {
     const c = app.bundle.camps[campId];
     if (!c) return;
-    if (c.slot === 'shelf') return openJournal(this, 'items');
     const extra = c.bag_bonus ? ` It gives your bag ${c.bag_bonus} more places.` : '';
     void say(this, null, [`Your ${c.title}.${extra}`]);
   }

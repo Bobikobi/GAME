@@ -1,7 +1,8 @@
 /**
  * The assembler refuses what the find and riddle steps cannot point at
  * (GRUNT P-2): a prop id that is not on the map, a dig spot or slot that does
- * not exist, a find of something gathered, and a prop id used twice.
+ * not exist, a find of something sold or grown in more than one place, and a
+ * prop id used twice.
  */
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -16,7 +17,7 @@ const file = (id: string, steps: unknown[]) => ({
   id,
   title: 'A test',
   creator: 'tester',
-  quest: { giver: 'core/trader', summary: 'For the test.', steps, reward: { rep: 1 } },
+  quest: { giver: 'core/trader', type: 'discovery', summary: 'For the test.', steps, reward: { rep: 1, recipes: ['core/herb-tea'] } },
 });
 
 describe('find and riddle references', () => {
@@ -26,13 +27,15 @@ describe('find and riddle references', () => {
   cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
   cpSync(join(CONTENT_DIR, 'kit'), join(root, 'kit'), { recursive: true });
 
-  // three props with a note: two share one id, the third has its own
+  // three props get a note: two share one id, the third has its own
   const mapPath = join(root, 'core', 'map.json');
   const map = JSON.parse(readFileSync(mapPath, 'utf8')) as { map: { props: Record<string, unknown>[] } };
-  const noted = map.map.props.map((p, i) => (p.note === undefined ? -1 : i)).filter((i) => i >= 0);
-  map.map.props[noted[0]!]!.id = 'core/stone-a';
-  map.map.props[noted[1]!]!.id = 'core/stone-a';
-  map.map.props[noted[2]!]!.id = 'core/stone-b';
+  const plain = map.map.props.map((p, i) => (p.note === undefined && p.id === undefined && p.sign === undefined ? i : -1)).filter((i) => i >= 0);
+  for (const [k, id] of ['core/stone-a', 'core/stone-a', 'core/stone-b'].entries()) {
+    const prop = map.map.props[plain[k]!]!;
+    prop.id = id;
+    prop.note = 'Marks are cut into it.';
+  }
   writeFileSync(mapPath, JSON.stringify(map, null, 2));
 
   const dir = join(root, 'extensions', 'tester', 'quests');
@@ -47,6 +50,7 @@ describe('find and riddle references', () => {
   );
   writeFileSync(join(dir, 'bad-find.json'), JSON.stringify(file('tester/bad-find', [{ kind: 'find', item: 'core/herb', clue: 'It grows in the grove.' }])));
   writeFileSync(join(dir, 'good-find.json'), JSON.stringify(file('tester/good-find', [{ kind: 'find', item: 'core/old-coin', clue: 'Under the gate stones.' }])));
+  writeFileSync(join(dir, 'timed-find.json'), JSON.stringify(file('tester/timed-find', [{ kind: 'find', item: 'core/sunleaf', clue: 'Where the mist is thin at noon.' }])));
 
   const result = runCheck(root);
   const errors = result.issues.filter((i) => i.level === 'error');
@@ -62,13 +66,14 @@ describe('find and riddle references', () => {
     expect(messages).toContainEqual('quest.steps.0.answer: no slot "core/nowhere"');
   });
 
-  it('refuses a find of something gathered, and accepts a find of a dig-only item', () => {
-    expect(messages).toContainEqual('quest.steps.0: "core/herb" is gathered, made or sold: a find must be found, not gathered');
+  it('refuses a find of something that grows anywhere, and accepts a dig-only item or a timed plant', () => {
+    expect(messages).toContainEqual('quest.steps.0: "core/herb" is sold, made or grows in more than one place: a find must be found, dug up or picked in one timed place');
     expect(errors.filter((i) => i.file.includes('good-find'))).toEqual([]);
+    expect(errors.filter((i) => i.file.includes('timed-find'))).toEqual([]);
   });
 
   it('refuses a prop id used twice', () => {
-    expect(messages).toContainEqual(`map.props.${noted[1]}.id: prop id "core/stone-a" is used twice`);
+    expect(messages).toContainEqual(`map.props.${plain[1]}.id: prop id "core/stone-a" is used twice`);
   });
 
   it('reports the cited note by nothing and the uncited one by id (G8)', () => {
