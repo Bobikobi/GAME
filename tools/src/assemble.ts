@@ -19,7 +19,7 @@ import {
 } from '@game/kernel';
 import { CORE_ONLY_TYPES, type CreatorProfile, type ParamsBody } from '@game/schema';
 import { toRepoPath, type Issue, type Loaded } from './load';
-import { digOnlyItems } from './play';
+import { findableItems } from './play';
 
 export interface Assembled {
   bundle: Bundle | undefined;
@@ -256,7 +256,7 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     if (n.shop && !b.shops[n.shop]) err(id, 'npc.shop', `no shop "${n.shop}"`);
   }
   for (const [id, s] of Object.entries(b.shops)) s.sells.forEach((o, i) => item(id, `shop.sells.${i}.item`, o.item));
-  const digOnly = digOnlyItems(b);
+  const findable = findableItems(b);
   const propIds = new Set(b.map.props.flatMap((p) => (p.id === undefined ? [] : [p.id])));
   for (const [id, q] of Object.entries(b.quests)) {
     if (q.giver && !b.npcs[q.giver]) err(id, 'quest.giver', `no npc "${q.giver}"`);
@@ -272,7 +272,7 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
       if (st.kind === 'visit' && !b.map.slots.some((s) => s.id === st.slot)) err(id, w, `no slot "${st.slot}"`);
       if (st.kind === 'find') {
         item(id, w, st.item);
-        if (b.items[st.item] && !digOnly.has(st.item)) err(id, w, `"${st.item}" is gathered, made or sold: a find must be found, not gathered`);
+        if (b.items[st.item] && !findable.has(st.item)) err(id, w, `"${st.item}" is sold, made or grows in more than one place: a find must be found, dug up or picked in one timed place`);
       }
       if (st.kind === 'riddle') {
         st.props.forEach((p, j) => {

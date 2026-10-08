@@ -14,23 +14,21 @@
     "shop": "core/trader-shop",
     "dialogue": {
       "first": [
-        "Ha, a new face! I am Pell. I left this valley years ago, but the roads led me back.",
-        "I sell a basket, a trowel and some food. And I buy what you find, at a fair price.",
-        "A basket opens the grove: herbs and mushrooms. A trowel opens the ruins: you dig for old things. One is enough to start."
+        "Ha, a new face! I am Pell. I left years ago; the roads brought me back.",
+        "A basket, a trowel, some food. And I buy what you find, at a fair price. Mostly.",
+        "The basket opens the grove, the trowel the ruins. One is enough to start."
       ],
       "stranger": [
-        "Baskets, trowels, food. And I buy what you find.",
-        "A traveller told me there are marks carved into a standing stone down by the river. Old ones.",
-        "They say bells ring in the deep ruins at night. Nobody is there to ring them."
+        "Baskets, trowels, food. I buy what you find.",
+        "They say bells ring in the deep ruins at night. I charge extra after dark."
       ],
       "acquaintance": [
-        "Herbs are selling well. The grove has plenty, if you have a basket.",
-        "Mushrooms grow thick in the grove to the south. Some of them glow after dark.",
-        "There is a glade to the west, past the old oak. The mist sits on it like a lid."
+        "Herbs sell well. The best stand where the mist is thin at noon.",
+        "A glade lies west, past the old oak. The mist sits on it like a lid."
       ],
       "friend": [
-        "Best customer this side of the river.",
-        "The garden behind the ruins was lovely once. Now it is all weeds and whispers."
+        "Best customer this side of the river. Also the only one.",
+        "The garden behind the ruins was lovely once. Dark berries grew there, they say."
       ]
     }
   }

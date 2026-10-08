@@ -12,8 +12,8 @@ beforeAll(() => {
 
 describe('tool benefits', () => {
   test('derives resource and dig-site lists from the bundle', () => {
-    expect(itemBenefit(bundle, 'core/basket')).toBe('Tier 1 basket · gathers forest mushrooms & wild herbs · 60 uses');
-    expect(itemBenefit(bundle, 'core/trowel')).toBe('Tier 1 trowel · digs deep ruins & gate rubble · 40 uses');
+    expect(itemBenefit(bundle, 'core/basket')).toBe('Tier 1 basket · gathers forest mushrooms & sun herbs & wild herbs · 60 uses');
+    expect(itemBenefit(bundle, 'core/trowel')).toBe('Tier 1 trowel · digs deep ruins & gate rubble & under the hill lantern · 40 uses');
 
     const withReeds: Bundle = {
       ...bundle,
@@ -22,7 +22,7 @@ describe('tool benefits', () => {
         'test/reeds': { ...bundle.resources['core/wild-herbs']!, id: 'test/reeds', title: 'Reeds' },
       },
     };
-    expect(itemBenefit(withReeds, 'core/basket')).toContain('gathers forest mushrooms & reeds & wild herbs');
+    expect(itemBenefit(withReeds, 'core/basket')).toContain('gathers forest mushrooms & reeds & sun herbs & wild herbs');
   });
 });
 

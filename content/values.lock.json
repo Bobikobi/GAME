@@ -2,18 +2,21 @@
   "format": 1,
   "note": "Value anchor (rule R11). Re-anchored only by core maintainers.",
   "values": {
+    "core/bellberry": 366,
     "core/berry": 500,
     "core/berry-mash": 4200,
     "core/branch": 600,
     "core/herb": 600,
     "core/herb-stew": 8040,
     "core/herb-tea": 3600,
+    "core/maru-coin": 3150,
     "core/mushroom": 770,
     "core/mushroom-skewer": 5340,
     "core/old-coin": 6300,
     "core/pottery-shard": 2520,
     "core/stew-scrap": 9450,
     "core/stone": 1000,
-    "core/stone-idol": 36800
+    "core/stone-idol": 36800,
+    "core/sunleaf": 660
   }
 }

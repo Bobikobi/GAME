@@ -85,8 +85,9 @@ and G10 are the ones `pnpm check` can test today (section 8).
   (`core/fix-the-bridge`, `core/first-fire`, `core/into-town`) may teach a
   verb by repetition. Every later quest has at least one beat that is not
   "do the verb N times": a find in a hinted place, a choice between two
-  answers, a riddle read from the world, a timing twist, a trade-off. A `bring`
-  of an item that only digging gives, with a hint, counts as a find.
+  answers, a riddle read from the world, a timing twist, a trade-off. A `find`
+  step is that beat: one of an item that only digging gives, or that one timed
+  plant gives, with a clue (P-2, P-3).
 - **G3 At most three steps visible at once.** The next step is revealed by the
   previous one; the journal shows the question, not the whole recipe.
 - **G4 A reward changes what the player can do.** A recipe, a tool, a place,
@@ -362,16 +363,17 @@ Named so a review can point at one in two words.
 
 Found by the owner playing the preview. He ruled on five the same evening and
 on the sixth row on 8.10 (the "decision" column); the GRUNT items P-1 to P-4
-carry the work.
+carry the work. Rows 1 to 6 are closed in the content since 8.10 (P-1 and P-3,
+one pull request); the "decision" column says how.
 
 | What | Rule | Proposed fix (recommended default) | Decision |
 |---|---|---|---|
-| `core/collection-shelf`: four branches and a shard build a shelf that opens the journal's items tab. | G10 | Remove the camp. The journal already has its Log button and the J key. The `shelf` slot stays empty with its sign until it has a real function (a trophy shelf whose placed finds change what NPCs say) or is dropped. | Yes (owner, 7.10). Remove the camp now; the slot's future is a separate question. |
-| `core/three-fruits`: bring 3 redberries. `core/herbs-for-pell`: bring 4 herbs. Both are the gather verb repeated. | G1, G2 | Rewrite each around one thing to notice. Berries: Maru says they grew thickest where the bells rang; one bush near the bell ruin gives the three in one strike at the right time of day. Herbs: Pell says the best herbs stand where the mist is thin at noon; the herb that counts only yields at midday. Both need the `find` step (P-2). | Yes (owner, 7.10) to both rewrites, with the `find` step. |
-| `core/a-coin-for-maru`: dig in the ruins for an old coin. | G2 (borderline) | It is already a find with a hint. Add the catch: the coin is under the statue that faces the hills, and the first dig elsewhere gives a shard and a hint. | Yes (owner, 7.10). Keep, add the catch with P-3. |
-| The seven inscriptions (the carved marks, two lantern statues, the stone head, the scratched names, the cold arch, the totem with fresh grass). Reading any of them changes nothing. | G8, G9 | One riddle ties the three ruin stones: the marks name the order the town was restored in; at night the lantern of the statue facing the hills glows and lights the tile to dig. The other four are seeds of a later arc (someone was here recently): each stays only if P-3 names the arc it pays into, otherwise it is cut until that arc exists. Needs the `riddle` step and prop ids (P-2), then the content (P-3). | Yes (owner, 7.10). One riddle across the three ruin stones; the other four are cut until an arc names them. |
-| `core/herbs-for-pell` and `core/a-coin-for-maru` reward gold and reputation only. | G4 | Herbs: Pell teaches herb stew. Coin: Maru opens the elder's house (a place). | Yes (owner, 7.10). As proposed. |
-| Maru's first meeting is eight boxes, most over two phone lines; Pell's standing lines run to three boxes. | G14, G21 | Maru: three boxes at the first meeting (who he is, what he wants, where to go); the rest moves behind the three topics that already exist. Every box within two phone lines. Pell: two boxes per standing. | Yes (owner, 8.10). With P-3. |
+| `core/collection-shelf`: four branches and a shard build a shelf that opens the journal's items tab. | G10 | Remove the camp. The journal already has its Log button and the J key. The `shelf` slot stays empty with its sign until it has a real function (a trophy shelf whose placed finds change what NPCs say) or is dropped. | Yes (owner, 7.10). Remove the camp now; the slot's future is a separate question. Done 8.10 (P-1): the camp is gone, the slot stays empty. |
+| `core/three-fruits`: bring 3 redberries. `core/herbs-for-pell`: bring 4 herbs. Both are the gather verb repeated. | G1, G2 | Rewrite each around one thing to notice. Berries: Maru says they grew thickest where the bells rang; one bush near the bell ruin gives the three in one strike at the right time of day. Herbs: Pell says the best herbs stand where the mist is thin at noon; the herb that counts only yields at midday. Both need the `find` step (P-2). | Yes (owner, 7.10) to both rewrites, with the `find` step. Done 8.10 (P-3): "Where the bells rang" finds a bellberry in the garden behind the ruins (05:00 to 20:00), "Herbs for Pell" a sunleaf on the sun bank up the river (11:00 to 14:00, with a basket). Both are new timed plants with items of their own, since a find of what the stall sells or what grows in three places is a counter with a clue on it. |
+| `core/a-coin-for-maru`: dig in the ruins for an old coin. | G2 (borderline) | It is already a find with a hint. Add the catch: the coin is under the statue that faces the hills, and the first dig elsewhere gives a shard and a hint. | Yes (owner, 7.10). Keep, add the catch with P-3. Done 8.10 (P-3): "The coin under the lantern", a riddle over the marked stone and the two lantern statues, answered by a dig under the hill lantern; a dig elsewhere while it is open gives what that spot gives and "Not here. Read the stones again." |
+| The seven inscriptions (the carved marks, two lantern statues, the stone head, the scratched names, the cold arch, the totem with fresh grass). Reading any of them changes nothing. | G8, G9 | One riddle ties the three ruin stones: the marks name the order the town was restored in; at night the lantern of the statue facing the hills glows and lights the tile to dig. The other four are seeds of a later arc (someone was here recently): each stays only if P-3 names the arc it pays into, otherwise it is cut until that arc exists. Needs the `riddle` step and prop ids (P-2), then the content (P-3). | Yes (owner, 7.10). One riddle across the three ruin stones; the other four are cut until an arc names them. Done 8.10 (P-3): the three carry ids and clues of two lines; the four notes are cut, the props stay. |
+| `core/herbs-for-pell` and `core/a-coin-for-maru` reward gold and reputation only. | G4 | Herbs: Pell teaches herb stew. Coin: Maru opens the elder's house (a place). | Yes (owner, 7.10). As proposed. Done 8.10 (P-3): herb stew for the herbs. The coin gives Maru's basket, the stand-in for a place: the schema has no place reward yet, and the quest needs a trowel, so the basket opens the grove to a player who chose the ruins first. |
+| Maru's first meeting is eight boxes, most over two phone lines; Pell's standing lines run to three boxes. | G14, G21 | Maru: three boxes at the first meeting (who he is, what he wants, where to go); the rest moves behind the three topics that already exist. Every box within two phone lines. Pell: two boxes per standing. | Yes (owner, 8.10). With P-3. Done 8.10: Maru three boxes, the rest behind his three topics; Pell two per standing; every box within 80 characters. |
 
 ## 6. When a request collides with a rule
 
@@ -438,24 +440,25 @@ names the rule and the pull request waits.
 ## 8. What the check enforces
 
 `pnpm check` runs the `play` rules (`tools/src/play.ts`) on every content
-file, core and extensions alike. On 2026-10-07 they are warnings (`!` lines),
-because the core content itself breaks them; they become errors in the same
-pull request that fixes the content (P-3). What a rule cannot test stays with
-the checklist above.
+file, core and extensions alike. They were warnings (`!` lines) on 2026-10-07,
+when the core content itself broke them; since P-3 (8.10) the core content
+passes and every line is an error that stops the check. What a rule cannot
+test stays with the checklist above.
 
 | Rule | What is tested | Today |
 |---|---|---|
-| G2 | A quest outside the opening chain whose steps are all `bring` or `visit`, where no `bring` is a dig-only find. | warning |
-| G4 | A quest outside the opening chain that rewards gold and reputation only. | warning |
-| G8 | A note prop with an id that no riddle cites, one line per prop; note props without an id, one line with the count. | warning |
-| G10 | A camp with neither a station nor a bag bonus. | warning |
-| G17 | Two consecutive quests of one type in a `requires` chain, or fewer than five types among the first ten quests. | warning, once quests declare a `type` (P-3) |
-| G14, G21 | A character's first meeting over three boxes, a standing over two, a topic over four; boxes over 80 characters, counted per character. | warning |
+| G2 | A quest outside the opening chain whose steps are all `bring` or `visit`, where no `bring` is of a findable item (only digging gives it, or one timed plant). | error |
+| G4 | A quest outside the opening chain that rewards gold and reputation only. | error |
+| G8 | A note prop with an id that no riddle cites, one line per prop; note props without an id, one line with the count. | error |
+| G10 | A camp with neither a station nor a bag bonus. | error |
+| G17 | A quest with no `type`; two consecutive quests of one type in a `requires` chain; fewer than five types among the first ten quests. | error |
+| G14, G21 | A character's first meeting over three boxes, a standing over two, a topic over four; boxes over 80 characters, counted per character. | error |
 | G30 | A hunting hazard (predator, pit, trap, deep water) inside a safe area or with no window (`night`, `mist`); a bad fruit or herb needs none. | needs hazard props (P-5) |
 | G34 | A hazard with neither a bought nor a made answer in the content. | needs P-5 |
 | G36 | An expedition with two problems of one type in a row, or a hazard its window does not cover. | needs the `expedition` kind (P-6) |
 
-Since P-2 (8.10) G2 counts `find` and `riddle` steps as beats and G8 checks each
+Since P-2 (8.10) G2 counts `find` and `riddle` steps as beats, a `find` may name what
+only digging gives or what one timed plant gives (P-3), and G8 checks each
 note prop with an id against the riddles that cite it. Sound (G24-G27), fairness (G28),
 access (G29), the warning and the fall (G31-G33, G35, G37) live in code, not in
 content: the checklist covers them, and

@@ -3,24 +3,44 @@
   "format": 1,
   "type": "quest",
   "id": "core/a-coin-for-maru",
-  "title": "An old coin",
+  "title": "The coin under the lantern",
   "creator": "core",
   "quest": {
     "giver": "core/elder",
-    "summary": "Elder Maru wants an old coin from the ruins to the south-east.",
+    "type": "riddle",
+    "summary": "I buried a coin under a lantern the day the bells first rang. Which lantern, I forget. Three stones remember.",
     "requires": [
       "core/three-fruits"
     ],
     "steps": [
       {
-        "kind": "bring",
-        "item": "core/old-coin",
-        "qty": 1
+        "kind": "riddle",
+        "clue": "Maru's coin lies under one of the two lantern statues. The marked stone by the river says which. Dig there.",
+        "props": [
+          "core/marked-stone",
+          "core/town-lantern",
+          "core/hill-lantern"
+        ],
+        "answer": {
+          "kind": "dig",
+          "treasure": "core/lantern-foot"
+        }
+      },
+      {
+        "kind": "find",
+        "item": "core/maru-coin",
+        "clue": "Maru's coin, from under the lantern the stone names."
       }
     ],
     "reward": {
       "rep": 20,
-      "gold_mg": 20000
+      "gold_mg": 20000,
+      "items": [
+        {
+          "item": "core/basket",
+          "qty": 1
+        }
+      ]
     }
   }
 }

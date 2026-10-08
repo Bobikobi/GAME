@@ -5,7 +5,7 @@
   "id": "your-handle/a-coin-for-the-road",
   "title": "A coin for the road",
   "creator": "your-handle",
-  "description": "A quest with a find step: the journal shows the clue, never a count. Use find when the thing comes only from digging.",
+  "description": "A quest with a find step: the journal shows the clue, never a count. Use find when the thing comes only from digging, or from one plant that opens at certain hours.",
   "quest": {
     "giver": "core/trader",
     "type": "discovery",

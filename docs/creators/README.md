@@ -64,7 +64,7 @@ Open `content/extensions/<your-handle>/resources/wild-plums.json`. Rename the fi
 - `node.respawn_ms` - how long before the same bush gives again. Waiting is never paid.
 - `node.count` - how many bushes grow in the slot, 1 to 12.
 - `node.hours` - optional. `[18, 6]` makes a fruit that only ripens at night.
-- `node.place.slot` - where it grows. Empty resource slots today: `core/west-glade` (by the meadow where you wake up) and `core/ruins-garden` (in the ruins). One extension per slot.
+- `node.place.slot` - where it grows. The empty resource slot today: `core/west-glade` (by the meadow where you wake up); the garden in the ruins grows the bell bushes since P-3. One extension per slot.
 
 You never set a price. The game works out every item's value from the effort it takes to get, and the trader pays from that. A rarer, slower fruit is worth more on its own.
 
@@ -153,7 +153,7 @@ Then point your item at it: `"sprite": "<your-handle>/kit:items/plum"`.
 - Active times stay between 1000 and 15000 ms.
 - The rarity you declare is within one step of what the data implies. A fruit that grows anywhere at any hour is common; night-only, high-level or slow-to-regrow fruit is rarer.
 - Everything a recipe or quest asks for can be found somewhere in the world.
-- A `find` step names an item that only digging gives (never gathered, made or sold) and carries a clue; the journal shows the clue, not a count. A `riddle` step cites map props by id and names its answer, a dig spot or a place by day or by night; an id that is not on the map is refused. `templates/extension/quests/` has a find.
+- A `find` step names an item that is found, not farmed: one that only digging gives, or that exactly one timed plant (a resource with `hours`) gives, never made or sold. It carries a clue; the journal shows the clue, not a count. A `riddle` step cites map props by id and names its answer, a dig spot or a place by day or by night; an id that is not on the map is refused. `templates/extension/quests/` has a find.
 - Your change may not move the value of anything that already exists by more than 10%. If it has to, a core maintainer re-anchors the values.
 - Every sprite exists, has the right size and uses the core palette.
 

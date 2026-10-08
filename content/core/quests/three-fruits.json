@@ -3,19 +3,20 @@
   "format": 1,
   "type": "quest",
   "id": "core/three-fruits",
-  "title": "Three redberries",
+  "title": "Where the bells rang",
   "creator": "core",
   "quest": {
     "giver": "core/elder",
-    "summary": "Elder Maru asks for 3 redberries.",
+    "type": "fetch_twist",
+    "summary": "Berries grew thickest where the bells rang, once. I would like to taste them again. Find them.",
     "requires": [
       "core/into-town"
     ],
     "steps": [
       {
-        "kind": "bring",
-        "item": "core/berry",
-        "qty": 3
+        "kind": "find",
+        "item": "core/bellberry",
+        "clue": "Maru's berries grew where the bells rang: the garden behind the ruins, south-east of town. Pick them by day; the mist takes them at dusk."
       }
     ],
     "reward": {

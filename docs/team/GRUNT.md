@@ -663,6 +663,9 @@ and goes to the owner (section 6 there); it is never resolved in the branch.
 
 ### P-1. The collection shelf stops being a build
 
+Status: built 8.10 in the pull request `feat/p3-content` together with P-3 (one
+content change, one proving run); live when the owner merges.
+
 Goal: no build opens a panel (G10). `pnpm check` prints no G10 line for the
 core content, and the journal is reached by its Log button and the J key only.
 
@@ -739,6 +742,15 @@ Decision: GAME_RULES.md section 5, rows 2 and 4; a DECISIONS.md entry "two
 step kinds, no format bump".
 
 ### P-3. The town quests and the ruins riddle; warnings become errors
+
+Status: built 8.10 in the pull request `feat/p3-content`, stacked on P-2; live
+when the owner merges. Two things differ from the file list below, both forced
+by the P-2 rule that a find is never of something sold or grown elsewhere: the
+berries and the herbs that count are new timed plants (`core/bell-bushes` in the
+garden behind the ruins, `core/sun-herbs` on a new sun bank up the river) with
+items of their own, and the coin is a new one-spot dig under the hill lantern
+(`core/lantern-foot`). The coin's reward is Maru's basket, the stand-in for the
+place the owner named until the schema has a place reward.
 
 Goal: the five rows of GAME_RULES.md section 5 are closed in the content, and
 `pnpm check` prints "0 errors, 0 warnings" on the core content.

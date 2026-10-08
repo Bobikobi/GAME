@@ -1,0 +1,39 @@
+{
+  "$schema": "../../../schema/json/resource.schema.json",
+  "format": 1,
+  "type": "resource",
+  "id": "core/bell-bushes",
+  "title": "Bell bushes",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/bellberry",
+      "name": "Bellberry",
+      "description": "Dark and sweet. Grows only where the bells rang.",
+      "kind": "food",
+      "rarity": "uncommon",
+      "sprite": "core/base-kit:items/berry",
+      "food": {
+        "satiety": 5
+      }
+    }
+  ],
+  "node": {
+    "output": "core/bellberry",
+    "yield": 3,
+    "active_ms": 2500,
+    "respawn_ms": 90000,
+    "count": 2,
+    "sprite": "core/base-kit:props/bush_berry",
+    "sprite_empty": "core/base-kit:props/bush_empty",
+    "level": 1,
+    "game": "pick",
+    "hours": [
+      5,
+      20
+    ],
+    "place": {
+      "slot": "core/ruins-garden"
+    }
+  }
+}
