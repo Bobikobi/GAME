@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../../schema/json/quest.schema.json",
+  "format": 1,
+  "type": "quest",
+  "id": "your-handle/a-coin-for-the-road",
+  "title": "A coin for the road",
+  "creator": "your-handle",
+  "description": "A quest with a find step: the journal shows the clue, never a count. Use find when the thing comes only from digging, or from one plant that opens at certain hours.",
+  "quest": {
+    "giver": "core/trader",
+    "type": "discovery",
+    "summary": "Pell wants an old coin for luck. Something about the gate rubble.",
+    "steps": [
+      {
+        "kind": "find",
+        "item": "core/old-coin",
+        "clue": "Old pottery lies under the gate stones. The coin is in the same rubble, Pell says, if the mist left it there."
+      }
+    ],
+    "reward": {
+      "rep": 5,
+      "items": [
+        {
+          "item": "your-handle/plum",
+          "qty": 3
+        }
+      ]
+    }
+  }
+}

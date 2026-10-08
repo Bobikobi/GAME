@@ -70,6 +70,10 @@ window.__e2e = (() => {
         prompt: p && !p.hidden ? p.textContent.slice(1).trim() : '' };
     },
     player() { return g().session.state.player; },
+    hour() {
+      const s = g().session, day = g().bundle.params.day_length_ms;
+      return Math.floor((((s.tick + Math.floor(day / 4)) % day) * 24) / day);
+    },
     slot(id) { return g().bundle.map.slots.find((s) => s.id === id); },
     nodes(source) {
       const s = g().session;
@@ -539,7 +543,7 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
     if ((await me.quest('core/into-town')) !== 'done') throw new Error('into-town is not done');
     log('reached the town');
 
-    // 7. bring three fruits
+    // 7. where the bells rang: the first find, a clue in the tracker instead of a count
     const elder = await page.eval<[number, number]>(`(() => { const s = __e2e.slot('core/elder-house'); return [s.x + 1, s.y + 1]; })()`);
     await me.walkTo({ x: elder[0], y: elder[1], w: 1, h: 1 }, 'Elder Maru');
     await me.expectPrompt(/^Talk to Elder Maru/, 'the elder');
@@ -548,7 +552,12 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
     await me.talkThrough('I will do it');
     await me.idle('accepting the task');
     if ((await me.quest('core/three-fruits')) !== 'active') throw new Error('three-fruits was not accepted');
-    await me.gather('core/berry-bushes', 'core/berry', 3);
+    const tracker = await page.eval<string>(`document.querySelector('.tracker')?.textContent ?? ''`);
+    if (/\d+\/\d+/.test(tracker)) throw new Error(`the tracker counts instead of hinting: "${tracker}"`);
+    const hour = await page.eval<number>('__e2e.hour()');
+    log(`game hour ${hour}:00 before the garden; the bell bushes open 5:00 to 20:00`);
+    if (hour < 5 || hour >= 20) throw new Error(`the bell bushes are closed at ${hour}:00: the run took too long to reach the garden`);
+    await me.gather('core/bell-bushes', 'core/bellberry', 1);
     await me.walkTo({ x: elder[0], y: elder[1], w: 1, h: 1 }, 'Elder Maru');
     await me.a();
     await me.talkThrough('Hand in');
@@ -558,7 +567,7 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
     const p = await page.eval<{ gold: number; recipes: string[] }>('__e2e.player()');
     if (p.gold < 30_000) throw new Error(`gold is ${p.gold} mg after the quest`);
     if (!p.recipes.includes('core/herb-tea')) throw new Error('the herb-tea recipe was not learned');
-    log(`handed in the fruits: ${p.gold} mg`);
+    log(`found the bellberry and handed it in: ${p.gold} mg`);
 
     // 8. the first coins buy a basket or a trowel
     const tool = viewport.mobile ? 'Trowel' : 'Basket';
@@ -587,6 +596,60 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
     if (!guide.includes('Add a fruit in 10 minutes')) throw new Error('the creator guide did not open');
     await me.snap('guide');
     log('opened the creator guide from the ruin');
+    await page.tap('.panel header button', 'Close');
+    await me.idle('closing the guide');
+
+    // 10. after the opening: the first riddle with the trowel (phone), the second find's clue with the basket (desktop)
+    if (viewport.mobile) {
+      await me.walkTo({ x: elder[0], y: elder[1], w: 1, h: 1 }, 'Elder Maru');
+      await me.a();
+      await me.talkThrough('Task:');
+      await me.talkThrough('I will do it');
+      await me.idle('accepting the riddle');
+      if ((await me.quest('core/a-coin-for-maru')) !== 'active') throw new Error('a-coin-for-maru was not accepted');
+      for (const id of ['core/marked-stone', 'core/town-lantern', 'core/hill-lantern']) {
+        const prop = await page.eval<Rect>(`(() => { const p = __game.bundle.map.props.find((x) => x.id === ${JSON.stringify(id)}); return { x: p.x, y: p.y, w: p.w, h: p.h }; })()`);
+        await me.walkTo(prop, id);
+        await me.expectPrompt(/^Look at/, id);
+        await me.a();
+        const read = await me.talkThrough();
+        await me.idle(`reading ${id}`);
+        if (read.length === 0) throw new Error(`nothing to read on ${id}`);
+      }
+      await me.snap('stones');
+      const spot = (await page.eval<{ id: string; x: number; y: number; ready: boolean }[]>('__e2e.nodes("core/lantern-foot")'))[0];
+      if (!spot) throw new Error('no dig spot under the hill lantern');
+      for (let tries = 0; tries < 3 && (await me.bag('core/maru-coin')) < 1; tries++) {
+        await page.waitFor('__e2e.nodes("core/lantern-foot")[0].ready', 'the spot under the lantern to be ready', 90_000);
+        await me.walkTo({ x: spot.x, y: spot.y, w: 1, h: 1 }, 'the spot under the hill lantern');
+        await me.expectPrompt(/^Dig here/, 'the spot under the hill lantern');
+        await me.a();
+        await me.solveMinigame();
+        await me.idle('digging under the lantern');
+      }
+      if ((await me.bag('core/maru-coin')) < 1) throw new Error('no coin after three digs under the hill lantern');
+      const solved = await page.eval<string[]>('__e2e.player().solved');
+      if (!solved.includes('core/a-coin-for-maru#0')) throw new Error(`the riddle is not solved: [${solved.join(', ')}]`);
+      await me.snap('riddle');
+      await me.walkTo({ x: elder[0], y: elder[1], w: 1, h: 1 }, 'Elder Maru');
+      await me.a();
+      await me.talkThrough('Hand in');
+      await me.talkThrough();
+      await me.idle('handing in the coin');
+      if ((await me.quest('core/a-coin-for-maru')) !== 'done') throw new Error('a-coin-for-maru is not done');
+      if ((await me.bag('core/basket')) < 1) throw new Error('no basket after the coin');
+      log('read the three stones, dug under the hill lantern, handed in the coin');
+    } else {
+      await me.walkTo({ x: trader[0], y: trader[1], w: 1, h: 1 }, 'Pell');
+      await me.a();
+      await me.talkThrough('Task:');
+      await me.talkThrough('I will do it');
+      await me.idle('accepting the herbs');
+      if ((await me.quest('core/herbs-for-pell')) !== 'active') throw new Error('herbs-for-pell was not accepted');
+      const clue = await page.eval<string>(`document.querySelector('.tracker')?.textContent ?? ''`);
+      if (!clue.includes('mist is thin at noon')) throw new Error(`the tracker does not show the clue: "${clue}"`);
+      log('accepted the herbs and saw the clue in the tracker');
+    }
 
     if (page.errors.length > 0) throw new Error(`page errors:\n${page.errors.join('\n')}`);
   } catch (err) {

@@ -1,0 +1,36 @@
+{
+  "$schema": "../../../schema/json/treasure.schema.json",
+  "format": 1,
+  "type": "treasure",
+  "id": "core/lantern-foot",
+  "title": "Under the hill lantern",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/maru-coin",
+      "name": "Maru's coin",
+      "description": "Buried the day the bells first rang. Worn smooth on one side.",
+      "kind": "treasure",
+      "rarity": "uncommon",
+      "sprite": "core/base-kit:items/old-coin"
+    }
+  ],
+  "dig": {
+    "hint": "Soft earth under the hill lantern.",
+    "active_ms": 5000,
+    "respawn_ms": 60000,
+    "count": 1,
+    "tool": "trowel",
+    "level": 1,
+    "finds": [
+      {
+        "item": "core/maru-coin",
+        "chance_pct": 100,
+        "share_pct": 100
+      }
+    ],
+    "place": {
+      "slot": "core/lantern-foot"
+    }
+  }
+}

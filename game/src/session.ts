@@ -92,6 +92,8 @@ export class Session {
     } catch {
       return undefined;
     }
+    // a save from before the riddle step (P-2, 8.10) has no solved list
+    (state.player as { solved?: string[] }).solved ??= [];
     const session = new Session(bundle, state);
     if (state.content !== bundle.tag) {
       // a new version of the world was published: keep what still exists

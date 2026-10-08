@@ -49,6 +49,8 @@ export interface Player {
   camp: string[];
   rep: Record<string, number>;
   quests: Record<string, 'active' | 'done'>;
+  /** riddle steps solved, "<quest id>#<step index>", sorted */
+  solved: string[];
 }
 
 export interface State {
@@ -93,6 +95,7 @@ export function newState(bundle: Bundle, seed: number): State {
       camp: [],
       rep: {},
       quests: {},
+      solved: [],
     },
     nodes: {},
     ledger: { minted: 0, burned: 0 },
@@ -171,6 +174,12 @@ export function hourOf(bundle: Bundle, tick: number): number {
   const day = bundle.params.day_length_ms;
   const t = (tick + idiv(day, 4)) % day;
   return idiv(t * 24, day);
+}
+
+/** Night for the rules: 20:00 to 05:00, the hours the client darkens fully and plays the night song. */
+export function isNight(bundle: Bundle, tick: number): boolean {
+  const hour = hourOf(bundle, tick);
+  return hour >= 20 || hour < 5;
 }
 
 /** Minutes past midnight, for the clock on screen. */

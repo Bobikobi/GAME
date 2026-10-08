@@ -25,6 +25,9 @@ export const Id = Type.String({
   description: 'Stable id "creator/name": lowercase letters, digits, "_" and "-". Never reused once merged.',
 });
 /** kit-id:frame, for example core/base-kit:items/berry */
+/** A map prop's name: the shape of an Id, so a quest riddle can cite it. */
+const PropId = Type.String({ pattern: ID_PATTERN, description: 'Names the prop so a quest riddle can cite it. Unique on the map.' });
+
 export const SpriteRef = Type.String({
   pattern: SPRITE_PATTERN,
   maxLength: 120,
@@ -224,17 +227,81 @@ export const ShopBody = Type.Object(
   { additionalProperties: false },
 );
 
+/** The palette of docs/design/GAME_RULES.md section 3: the kind of question a quest asks. */
+export const QUEST_TYPES = [
+  'investigation',
+  'discovery',
+  'fetch_twist',
+  'dilemma',
+  'skill',
+  'collection',
+  'tending',
+  'riddle',
+  'mastery',
+  'gamble',
+  'persuasion',
+  'errand',
+] as const;
+export const QuestType = Type.Union(
+  QUEST_TYPES.map((k) => Type.Literal(k)),
+  {
+    description:
+      'The kind of question the quest asks: one of the twelve in docs/design/GAME_RULES.md section 3. Two quests of one type never follow each other in a chain (G17). Optional in the schema so an old file still reads; the check refuses a quest without one since the core content declared it (GRUNT P-3, 8.10).',
+  },
+);
+
+const Clue = Type.String({
+  minLength: 1,
+  maxLength: 240,
+  description: 'What the journal shows for this step: something to notice or work out. Never the answer, never a count.',
+});
+
+export const RiddleAnswer = Type.Union(
+  [
+    Type.Object(
+      { kind: Type.Literal('dig'), treasure: Id },
+      { additionalProperties: false, description: 'Solved by digging at this dig spot, whatever comes up.' },
+    ),
+    Type.Object(
+      { kind: Type.Literal('visit'), slot: Id, at: Type.Union([Type.Literal('day'), Type.Literal('night')]) },
+      { additionalProperties: false, description: 'Solved by standing in this slot by day (05:00 to 20:00) or by night.' },
+    ),
+  ],
+  { description: 'What solves the riddle. The kernel completes the step on that event and on nothing else.' },
+);
+
 export const QuestStep = Type.Union([
   Type.Object({ kind: Type.Literal('bring'), item: Id, qty: Int(1, 99) }, { additionalProperties: false }),
   Type.Object({ kind: Type.Literal('make'), recipe: Id }, { additionalProperties: false }),
   Type.Object({ kind: Type.Literal('restore'), restore: Id }, { additionalProperties: false }),
   Type.Object({ kind: Type.Literal('build'), camp: Id }, { additionalProperties: false }),
   Type.Object({ kind: Type.Literal('visit'), slot: Id }, { additionalProperties: false }),
+  Type.Object(
+    { kind: Type.Literal('find'), item: Id, clue: Clue },
+    {
+      additionalProperties: false,
+      description: 'Bring one of an item that is found, not farmed: only digging gives it, or one timed plant (a resource with hours) that nothing else gives, makes or sells. The journal shows the clue, not a count, until the item is in the bag.',
+    },
+  ),
+  Type.Object(
+    {
+      kind: Type.Literal('riddle'),
+      clue: Clue,
+      props: Type.Array(Id, {
+        minItems: 1,
+        maxItems: 4,
+        description: 'Ids of the map props the riddle reads: the inscriptions it pays for (G8).',
+      }),
+      answer: RiddleAnswer,
+    },
+    { additionalProperties: false, description: 'A catch and a reveal (G6): the journal shows the clue, the world holds the answer.' },
+  ),
 ]);
 
 export const QuestBody = Type.Object(
   {
     giver: Type.Optional(Id),
+    type: Type.Optional(QuestType),
     summary: Text,
     steps: Type.Array(QuestStep, { minItems: 1, maxItems: 6 }),
     requires: Type.Optional(Type.Array(Id, { maxItems: 4 })),
@@ -422,6 +489,7 @@ export const MapBody = Type.Object(
     props: Type.Array(
       Type.Object(
         {
+          id: Type.Optional(PropId),
           sprite: SpriteRef,
           x: Int(0, 1023, 'Left tile of the footprint.'),
           y: Int(0, 1023, 'Top tile of the footprint.'),
@@ -534,6 +602,8 @@ export type RecipeFile = Static<typeof RecipeFile>;
 export type NpcFile = Static<typeof NpcFile>;
 export type QuestFile = Static<typeof QuestFile>;
 export type QuestStep = Static<typeof QuestStep>;
+export type QuestType = (typeof QUEST_TYPES)[number];
+export type RiddleAnswer = Static<typeof RiddleAnswer>;
 export type RestoreFile = Static<typeof RestoreFile>;
 export type CampFile = Static<typeof CampFile>;
 export type StarterFile = Static<typeof StarterFile>;

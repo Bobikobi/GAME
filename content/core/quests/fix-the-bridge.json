@@ -6,6 +6,7 @@
   "title": "Mend the bridge",
   "creator": "core",
   "quest": {
+    "type": "skill",
     "summary": "The bridge is broken. Gather 3 river stones and mend it.",
     "steps": [
       {

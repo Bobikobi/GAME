@@ -1,86 +1,149 @@
 /**
- * The play rules (docs/design/GAME_RULES.md section 8) on the real content:
- * the breaches the owner found on 2026-10-07 are reported, the opening chain
- * and the camps that change play are not, and nothing is an error yet.
+ * The play rules (docs/design/GAME_RULES.md section 8): the core content
+ * passes them with no line since P-3, and a fixture that breaks each one
+ * gets an error that cites the rule. The opening chain may repeat a verb.
  */
-import { beforeAll, describe, expect, it } from 'vitest';
-import type { Bundle } from '@game/kernel';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { runCheck } from '../src/check';
-import { OPENING_QUESTS, PLAY_LEVEL, RULES_PAGE, checkPlay } from '../src/play';
+import { CONTENT_DIR } from '../src/load';
+import { OPENING_QUESTS, PLAY_LEVEL, RULES_PAGE, checkPlay, findableItems } from '../src/play';
 
-let bundle: Bundle;
-let origin: Record<string, string>;
-let issues: ReturnType<typeof checkPlay>;
-let all: ReturnType<typeof runCheck>['issues'];
+describe('the core content', () => {
+  let result: ReturnType<typeof runCheck>;
 
-beforeAll(() => {
-  const r = runCheck();
-  if (!r.assembled.bundle) throw new Error('Content did not assemble into a bundle.');
-  bundle = r.assembled.bundle;
-  origin = r.assembled.origin;
-  all = r.issues;
-  issues = checkPlay(bundle, origin);
+  beforeAll(() => {
+    result = runCheck();
+    if (!result.assembled.bundle) throw new Error('Content did not assemble into a bundle.');
+  });
+
+  it('passes the play rules with no line, and pnpm check with 0 errors and 0 warnings', () => {
+    expect(checkPlay(result.assembled.bundle!, result.assembled.origin)).toEqual([]);
+    expect(result.issues).toEqual([]);
+  });
+
+  it('names a type on every quest, at least four of the palette, and never the same twice in a row', () => {
+    const quests = Object.values(result.assembled.bundle!.quests);
+    expect(quests.length).toBeGreaterThanOrEqual(6);
+    const types = new Set(quests.map((q) => q.type));
+    expect(types.has(undefined)).toBe(false);
+    expect(types.size).toBeGreaterThanOrEqual(4);
+  });
+
+  it('counts what only digging or one timed plant gives as findable, never what is sold or grows anywhere', () => {
+    const findable = findableItems(result.assembled.bundle!);
+    for (const id of ['core/maru-coin', 'core/old-coin', 'core/bellberry', 'core/sunleaf']) expect(findable.has(id), id).toBe(true);
+    for (const id of ['core/berry', 'core/herb', 'core/stone', 'core/herb-tea']) expect(findable.has(id), id).toBe(false);
+  });
 });
 
-const about = (id: string) => issues.filter((i) => i.file === origin[id]);
-const cites = (id: string, rule: string) => about(id).some((i) => i.message.includes(`${RULES_PAGE} ${rule},`));
+describe('the play rules on a fixture that breaks each one', () => {
+  const root = mkdtempSync(join(tmpdir(), 'mistvale-play-'));
+  afterAll(() => rmSync(root, { recursive: true, force: true }));
 
-describe('play rules', () => {
-  it('names the breaches found on 2026-10-07', () => {
-    expect(cites('core/collection-shelf', 'G10')).toBe(true);
-    expect(cites('core/three-fruits', 'G2')).toBe(true);
-    expect(cites('core/herbs-for-pell', 'G2')).toBe(true);
-    expect(cites('core/herbs-for-pell', 'G4')).toBe(true);
-    expect(issues.some((i) => i.where === 'map.props' && i.message.includes(`${RULES_PAGE} G8,`))).toBe(true);
+  cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
+  cpSync(join(CONTENT_DIR, 'kit'), join(root, 'kit'), { recursive: true });
+
+  // two inscriptions no riddle cites: one on a prop without an id, one on a prop with an id
+  const mapPath = join(root, 'core', 'map.json');
+  const map = JSON.parse(readFileSync(mapPath, 'utf8')) as { map: { props: Record<string, unknown>[] } };
+  const plain = map.map.props.filter((p) => p.note === undefined && p.id === undefined && p.sign === undefined);
+  plain[0]!.note = 'Someone tied fresh grass to it. Recently.';
+  plain[1]!.id = 'core/old-post';
+  plain[1]!.note = 'Names are scratched into it, one under another.';
+  writeFileSync(mapPath, JSON.stringify(map, null, 2));
+
+  const ext = join(root, 'extensions', 'tester');
+  const write = (dir: string, name: string, body: unknown) => {
+    mkdirSync(join(ext, dir), { recursive: true });
+    writeFileSync(join(ext, dir, `${name}.json`), JSON.stringify(body));
+  };
+  const quest = (id: string, body: Record<string, unknown>) => ({ format: 1, type: 'quest', id, title: id, creator: 'tester', quest: body });
+
+  // G10: a build that opens nothing
+  write('camp', 'shelf', {
+    format: 1,
+    type: 'camp',
+    id: 'tester/shelf',
+    title: 'A shelf',
+    creator: 'tester',
+    camp: { slot: 'shelf', inputs: [{ item: 'core/branch', qty: 4 }], active_ms: 5000, sprite: 'core/base-kit:props/shelf' },
+  });
+  // G2 and G4: a counter that pays gold only
+  write('quests', 'counter', quest('tester/counter', { giver: 'core/trader', type: 'errand', summary: 'Bring herbs.', steps: [{ kind: 'bring', item: 'core/herb', qty: 4 }], reward: { rep: 5, gold_mg: 1000 } }));
+  // G17: the same type right after, and no type at all
+  write('quests', 'again', quest('tester/again', { giver: 'core/trader', type: 'errand', summary: 'More herbs.', requires: ['tester/counter'], steps: [{ kind: 'find', item: 'core/old-coin', clue: 'Under the gate stones.' }], reward: { rep: 5, recipes: ['core/herb-tea'] } }));
+  write('quests', 'untyped', quest('tester/untyped', { giver: 'core/trader', summary: 'A coin.', steps: [{ kind: 'find', item: 'core/old-coin', clue: 'Under the gate stones.' }], reward: { rep: 5, recipes: ['core/herb-tea'] } }));
+  // G14 and G21: a long first meeting, three standing boxes, one box over two phone lines
+  write('npcs', 'talker', {
+    format: 1,
+    type: 'npc',
+    id: 'tester/talker',
+    title: 'A talker',
+    creator: 'tester',
+    npc: {
+      name: 'Tam',
+      sprite: 'core/base-kit:chars/trader',
+      place: { slot: 'core/town-corner' },
+      dialogue: {
+        first: ['One.', 'Two.', 'Three.', 'Four.'],
+        stranger: ['One.', 'Two.', 'Three.'],
+        friend: ['A box that runs on and on past the two lines a phone shows at the dialogue size, with nothing to stop it.'],
+      },
+    },
+  });
+
+  const result = runCheck(root);
+  const play = result.issues.filter((i) => i.message.includes(RULES_PAGE));
+  const about = (name: string) => play.filter((i) => i.file.endsWith(`${name}.json`));
+  const cites = (name: string, rule: string) => about(name).some((i) => i.message.includes(`${RULES_PAGE} ${rule},`));
+
+  it('reports every breach as an error that cites the rules page', () => {
+    expect(PLAY_LEVEL).toBe('error');
+    expect(play.length).toBeGreaterThan(0);
+    for (const i of play) expect(i.level).toBe('error');
+  });
+
+  it('G10: a build with no station and no bag bonus', () => {
+    expect(cites('shelf', 'G10')).toBe(true);
+  });
+
+  it('G2 and G4: a counter that pays gold only', () => {
+    expect(cites('counter', 'G2')).toBe(true);
+    expect(cites('counter', 'G4')).toBe(true);
+    expect(cites('again', 'G2')).toBe(false);
+    expect(cites('again', 'G4')).toBe(false);
+  });
+
+  it('G17: the same type twice in a row, and a quest with no type', () => {
+    const again = about('again').filter((i) => i.where === 'quest.type');
+    expect(again).toHaveLength(1);
+    expect(again[0]!.message).toContain('"tester/counter"');
+    const untyped = about('untyped').filter((i) => i.where === 'quest.type');
+    expect(untyped).toHaveLength(1);
+    expect(untyped[0]!.message).toContain('no type');
+    expect(untyped[0]!.message).toContain('errand');
+  });
+
+  it('G14 and G21: the long first meeting and the long box, counted per character', () => {
+    expect(cites('talker', 'G21')).toBe(true);
+    expect(cites('talker', 'G14')).toBe(true);
+    const lines = about('talker').filter((i) => i.where === 'npc.dialogue');
+    expect(lines).toHaveLength(2);
+    expect(lines.map((i) => i.message).join(' ')).toContain('first meeting 4 boxes');
+    expect(lines.map((i) => i.message).join(' ')).toContain('stranger 3 boxes');
+  });
+
+  it('G8: the uncited note by its id, the unnamed one in a count line', () => {
+    const g8 = play.filter((i) => i.message.includes(`${RULES_PAGE} G8,`));
+    expect(g8.map((i) => i.where)).toEqual(['map.props.core/old-post', 'map.props']);
+    expect(g8[1]!.message).toContain('1 inscription on props without an id');
   });
 
   it('lets the opening chain teach a verb by repetition', () => {
-    for (const id of OPENING_QUESTS) expect(about(id)).toEqual([]);
-  });
-
-  it('counts a dig-only item with a hint as a find (G2), and still wants a reward that changes play (G4)', () => {
-    expect(cites('core/a-coin-for-maru', 'G2')).toBe(false);
-    expect(cites('core/a-coin-for-maru', 'G4')).toBe(true);
-  });
-
-  it('accepts a camp that gives a station or capacity', () => {
-    expect(about('core/campfire')).toEqual([]);
-    expect(about('core/storage-chest')).toEqual([]);
-  });
-
-  it('cites the rules page on every line and warns until P-3', () => {
-    expect(issues.length).toBeGreaterThan(0);
-    for (const i of issues) {
-      expect(i.message).toContain(`${RULES_PAGE} G`);
-      expect(i.level).toBe(PLAY_LEVEL);
-    }
-    expect(PLAY_LEVEL).toBe('warning');
-  });
-
-  it('is silent about the shelf once it provides a station', () => {
-    const shelf = bundle.camps['core/collection-shelf'];
-    if (!shelf) throw new Error('core/collection-shelf is not in the bundle');
-    const fixed: Bundle = { ...bundle, camps: { ...bundle.camps, 'core/collection-shelf': { ...shelf, provides: 'fire' as const } } };
-    expect(checkPlay(fixed, origin).filter((i) => i.where === 'camp' && i.file === origin['core/collection-shelf'])).toEqual([]);
-  });
-
-  it('counts the long first meeting and the long boxes per character (G14, G21)', () => {
-    expect(cites('core/elder', 'G21')).toBe(true);
-    expect(cites('core/elder', 'G14')).toBe(true);
-    expect(cites('core/trader', 'G21')).toBe(true);
-    expect(about('core/elder').filter((i) => i.where === 'npc.dialogue')).toHaveLength(2);
-  });
-
-  it('is silent about a character who talks within the limits', () => {
-    const elder = bundle.npcs['core/elder'];
-    if (!elder) throw new Error('core/elder is not in the bundle');
-    const quiet = { ...elder, dialogue: { stranger: ['Stay near the fire after dark.'], first: ['I am Maru.', 'You mended the bridge. That is how it starts.'] }, topics: undefined };
-    const fixed: Bundle = { ...bundle, npcs: { ...bundle.npcs, 'core/elder': quiet } };
-    expect(checkPlay(fixed, origin).filter((i) => i.where === 'npc.dialogue' && i.file === origin['core/elder'])).toEqual([]);
-  });
-
-  it('reaches pnpm check', () => {
-    expect(all.some((i) => i.message.includes('G10, "menu in disguise"'))).toBe(true);
-    expect(all.filter((i) => i.level === 'error')).toEqual([]);
+    const origin = result.assembled.origin;
+    for (const id of OPENING_QUESTS) expect(play.filter((i) => i.file === origin[id])).toEqual([]);
   });
 });

@@ -89,10 +89,11 @@ describe('opening sequence', () => {
     );
     expect(planner.state.player.quests['core/three-fruits']).toBe('active');
 
-    const berriesBefore = planner.state.player.bag['core/berry'] ?? 0;
-    planner.gather(berries[1]![0]);
-    planner.gather(berries[2]![0]);
-    expect((planner.state.player.bag['core/berry'] ?? 0) - berriesBefore).toBeGreaterThanOrEqual(3);
+    // the find: one bellberry from the garden behind the ruins, open by day only
+    const bells = instancesOf(bundle, 'core/bell-bushes');
+    expect(bells).toHaveLength(2);
+    planner.gather(bells[0]![0]);
+    expect(planner.state.player.bag['core/bellberry']).toBeGreaterThanOrEqual(1);
     planner.actNear(
       { x: elder[0], y: elder[1], w: 1, h: 1 },
       (at) => ({ t: 'turnin', quest: 'core/three-fruits', at }),
@@ -101,6 +102,14 @@ describe('opening sequence', () => {
     expect(planner.state.player.gold).toBe(30_000);
     expect(planner.state.player.recipes).toContain('core/herb-tea');
     expect(planner.state.player.rep['core/elder']).toBeGreaterThan(0);
+
+    // the two places the next quests send the player to can be walked to
+    const sunBank = required(findSlot(bundle.map, 'core/sun-bank'), 'The sun bank is missing.');
+    expect(bfsNear(bundle, planner.state.player, planner.state.player.at, sunBank), 'The sun bank must be reachable.').toBeDefined();
+    const [lanternFoot] = instancesOf(bundle, 'core/lantern-foot');
+    expect(lanternFoot).toBeDefined();
+    const spot = { x: lanternFoot![1].x, y: lanternFoot![1].y, w: 1, h: 1 };
+    expect(bfsNear(bundle, planner.state.player, planner.state.player.at, spot), 'The spot under the hill lantern must be reachable.').toBeDefined();
 
     const shop = bundle.shops['core/trader-shop']!;
     const basket = shop.sells.find((offer) => offer.item === 'core/basket');
