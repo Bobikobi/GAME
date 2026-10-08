@@ -451,8 +451,8 @@ export const KitBody = Type.Object(
       Type.Object(
         {
           file: Type.String({ pattern: '^[a-z0-9_/-]+\\.png$', description: 'PNG next to this file.' }),
-          w: Int(8, 64, 'Frame width in pixels. tiles/ and items/ are 16, chars/ are 16.'),
-          h: Int(8, 64, 'Frame height in pixels. tiles/ and items/ are 16, chars/ are 24.'),
+          w: Int(8, 512, 'Frame width in pixels. tiles/ and items/ are 16, chars/ are 16.'),
+          h: Int(8, 512, 'Frame height in pixels. tiles/ and items/ are 16, chars/ are 24.'),
           frames: Type.Optional(Int(1, 16, 'Animation frames laid side by side. Default 1.')),
         },
         { additionalProperties: false },

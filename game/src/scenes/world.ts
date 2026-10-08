@@ -274,7 +274,7 @@ export class WorldScene extends Phaser.Scene {
       // a slow breath so people read as alive
       this.tweens.add({ targets: img, scaleY: 1.04, duration: 900 + (id.length % 5) * 120, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       this.npcAt.set(key(t[0], t[1]), id);
-      this.tops.set(key(t[0], t[1]), this.b.sprites[npc.sprite]?.h ?? 24);
+      this.tops.set(key(t[0], t[1]), this.b.sprites[npc.sprite]?.h ?? 96);
     }
   }
 
@@ -311,7 +311,7 @@ export class WorldScene extends Phaser.Scene {
     this.empty = emptySlots(this.b);
     for (const s of this.empty) {
       // two thin layers drifting against each other read as mist, not as clouds
-      for (const [alpha, offset] of [[0.55, 0], [0.45, 16]] as const) {
+      for (const [alpha, offset] of [[0.55, 0], [0.45, 64]] as const) {
         const fog = this.add.tileSprite(s.x * T, s.y * T, s.w * T, s.h * T, FOG_SPRITE).setOrigin(0).setDepth(DEPTH.fog).setAlpha(alpha);
         fog.setTilePosition(offset, offset);
         this.fogs.push(fog);
@@ -892,7 +892,7 @@ export class WorldScene extends Phaser.Scene {
       if (e.e !== 'gain') continue;
       const ref = this.b.items[e.item]?.sprite;
       if (!ref || !this.b.sprites[ref]) continue;
-      const img = this.add.image(this.player.x, this.player.y - 24, ref).setDepth(DEPTH.fx);
+      const img = this.add.image(this.player.x, this.player.y - 96, ref).setDepth(DEPTH.fx);
       this.tweens.add({ targets: img, y: img.y - 14, alpha: 0, delay: i * 120, duration: 900, onComplete: () => img.destroy() });
       i++;
     }
@@ -1033,7 +1033,7 @@ export class WorldScene extends Phaser.Scene {
     const w = this.scale.width;
     const h = this.scale.height;
     // about the 15 x 10 tiles of a handheld screen, never smaller than 2x
-    const zoom = Math.max(2, Math.min(6, Math.floor(Math.min(w / (15 * T), h / (10 * T)))));
+    const zoom = Math.max(0.5, Math.min(1.5, Math.min(w / (8 * T), h / (12 * T))));
     this.cameras.main.setZoom(zoom);
     this.shade.setSize(w, h);
   }

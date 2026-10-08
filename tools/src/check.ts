@@ -194,6 +194,7 @@ function checkDrift(b: Bundle): Issue[] {
 }
 
 /** V-1: every sprite exists, has the published size, and uses the core palette only. */
+const HD = true; // trial: painted art on a 64 px grid, no palette
 function checkKits(a: Assembled): Issue[] {
   const issues: Issue[] = [];
   const allowed = new Set(CORE_PALETTE.map((h) => h.toLowerCase()));
@@ -205,15 +206,15 @@ function checkKits(a: Assembled): Issue[] {
     for (const [name, s] of Object.entries(kit.sprites)) {
       const where = `kit.sprites.${name}`;
       const group = name.split('/')[0];
-      if ((group === 'tiles' || group === 'items') && (s.w !== 16 || s.h !== 16)) {
+      if ((group === 'tiles' || group === 'items') && (s.w !== 64 || s.h !== 64)) {
         issues.push({ file: kitFile, where, message: `${group} are 16x16, this one is ${s.w}x${s.h}`, level: 'error' });
       }
       // a work pose is 32x32 so a raised tool fits; its feet stay on the same spot as the walk frames
       const work = /_work_(down|left|up|right)$/.test(name);
-      if (group === 'chars' && work && (s.w !== 32 || s.h !== 32)) {
+      if (group === 'chars' && work && (s.w !== 128 || s.h !== 128)) {
         issues.push({ file: kitFile, where, message: `work poses are 32x32, this one is ${s.w}x${s.h}`, level: 'error' });
       }
-      if (group === 'chars' && !work && (s.w !== 16 || s.h !== 24)) {
+      if (group === 'chars' && !work && (s.w !== 64 || s.h !== 96)) {
         issues.push({ file: kitFile, where, message: `character frames are 16x24, this one is ${s.w}x${s.h}`, level: 'error' });
       }
       const abs = join(kit.dir, s.file);
@@ -245,8 +246,8 @@ function checkKits(a: Assembled): Issue[] {
         const hex = `#${[png.data[i]!, png.data[i + 1]!, png.data[i + 2]!].map((c) => c.toString(16).padStart(2, '0')).join('')}`;
         if (!allowed.has(hex)) bad.add(hex);
       }
-      if (soft > 0) issues.push({ file: `${kit.rel}/${s.file}`, where: '', message: `${soft} half-transparent pixels; use fully clear or fully solid`, level: 'error' });
-      if (bad.size > 0) {
+      if (soft > 0 && !HD) issues.push({ file: `${kit.rel}/${s.file}`, where: '', message: `${soft} half-transparent pixels; use fully clear or fully solid`, level: 'error' });
+      if (bad.size > 0 && !HD) {
         issues.push({
           file: `${kit.rel}/${s.file}`,
           where: '',

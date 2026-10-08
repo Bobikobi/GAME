@@ -4914,13 +4914,13 @@
                     },
                     "w": {
                       "minimum": 8,
-                      "maximum": 64,
+                      "maximum": 512,
                       "description": "Frame width in pixels. tiles/ and items/ are 16, chars/ are 16.",
                       "type": "integer"
                     },
                     "h": {
                       "minimum": 8,
-                      "maximum": 64,
+                      "maximum": 512,
                       "description": "Frame height in pixels. tiles/ and items/ are 16, chars/ are 24.",
                       "type": "integer"
                     },

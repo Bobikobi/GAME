@@ -48,348 +48,348 @@
     "sprites": {
       "chars/elder": {
         "file": "chars/elder.png",
-        "w": 16,
-        "h": 24
+        "w": 64,
+        "h": 96
       },
       "chars/player_down": {
         "file": "chars/player_down.png",
-        "w": 16,
-        "h": 24,
+        "w": 64,
+        "h": 96,
         "frames": 3
       },
       "chars/player_left": {
         "file": "chars/player_left.png",
-        "w": 16,
-        "h": 24,
+        "w": 64,
+        "h": 96,
         "frames": 3
       },
       "chars/player_up": {
         "file": "chars/player_up.png",
-        "w": 16,
-        "h": 24,
+        "w": 64,
+        "h": 96,
         "frames": 3
       },
       "chars/player_work_down": {
         "file": "chars/player_work_down.png",
-        "w": 32,
-        "h": 32,
+        "w": 128,
+        "h": 128,
         "frames": 2
       },
       "chars/player_work_left": {
         "file": "chars/player_work_left.png",
-        "w": 32,
-        "h": 32,
+        "w": 128,
+        "h": 128,
         "frames": 2
       },
       "chars/player_work_up": {
         "file": "chars/player_work_up.png",
-        "w": 32,
-        "h": 32,
+        "w": 128,
+        "h": 128,
         "frames": 2
       },
       "chars/trader": {
         "file": "chars/trader.png",
-        "w": 16,
-        "h": 24
+        "w": 64,
+        "h": 96
       },
       "chars/woman_down": {
         "file": "chars/woman_down.png",
-        "w": 16,
-        "h": 24,
+        "w": 64,
+        "h": 96,
         "frames": 3
       },
       "chars/woman_left": {
         "file": "chars/woman_left.png",
-        "w": 16,
-        "h": 24,
+        "w": 64,
+        "h": 96,
         "frames": 3
       },
       "chars/woman_up": {
         "file": "chars/woman_up.png",
-        "w": 16,
-        "h": 24,
+        "w": 64,
+        "h": 96,
         "frames": 3
       },
       "chars/woman_work_down": {
         "file": "chars/woman_work_down.png",
-        "w": 32,
-        "h": 32,
+        "w": 128,
+        "h": 128,
         "frames": 2
       },
       "items/basket": {
         "file": "items/basket.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "items/berry": {
         "file": "items/berry.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "items/berry-mash": {
         "file": "items/berry-mash.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "items/branch": {
         "file": "items/branch.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "items/herb": {
         "file": "items/herb.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "items/herb-stew": {
         "file": "items/herb-stew.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "items/herb-tea": {
         "file": "items/herb-tea.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "items/mushroom": {
         "file": "items/mushroom.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "items/mushroom-skewer": {
         "file": "items/mushroom-skewer.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "items/old-coin": {
         "file": "items/old-coin.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "items/pottery-shard": {
         "file": "items/pottery-shard.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "items/stew-scrap": {
         "file": "items/stew-scrap.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "items/stone": {
         "file": "items/stone.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "items/stone-idol": {
         "file": "items/stone-idol.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "items/trowel": {
         "file": "items/trowel.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "props/broken_statue": {
         "file": "props/broken_statue.png",
-        "w": 16,
-        "h": 32
+        "w": 64,
+        "h": 128
       },
       "props/bush_berry": {
         "file": "props/bush_berry.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "props/bush_empty": {
         "file": "props/bush_empty.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "props/campfire_lit": {
         "file": "props/campfire_lit.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "props/campfire_unlit": {
         "file": "props/campfire_unlit.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "props/chest": {
         "file": "props/chest.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "props/dead_tree": {
         "file": "props/dead_tree.png",
-        "w": 32,
-        "h": 32
+        "w": 128,
+        "h": 128
       },
       "props/dig_spot": {
         "file": "props/dig_spot.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "props/fallen_branches": {
         "file": "props/fallen_branches.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "props/flowers": {
         "file": "props/flowers.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "props/fog": {
         "file": "props/fog.png",
-        "w": 32,
-        "h": 32
+        "w": 128,
+        "h": 128
       },
       "props/glow_mushrooms": {
         "file": "props/glow_mushrooms.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "props/herb_plant": {
         "file": "props/herb_plant.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "props/house_small": {
         "file": "props/house_small.png",
-        "w": 48,
-        "h": 48
+        "w": 192,
+        "h": 192
       },
       "props/market_stall": {
         "file": "props/market_stall.png",
-        "w": 32,
-        "h": 32
+        "w": 128,
+        "h": 128
       },
       "props/mushroom_patch": {
         "file": "props/mushroom_patch.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "props/rock_stones": {
         "file": "props/rock_stones.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "props/rubble": {
         "file": "props/rubble.png",
-        "w": 32,
-        "h": 16
+        "w": 128,
+        "h": 64
       },
       "props/ruin_arch": {
         "file": "props/ruin_arch.png",
-        "w": 32,
-        "h": 32
+        "w": 128,
+        "h": 128
       },
       "props/ruin_pillar": {
         "file": "props/ruin_pillar.png",
-        "w": 16,
-        "h": 32
+        "w": 64,
+        "h": 128
       },
       "props/ruin_wall": {
         "file": "props/ruin_wall.png",
-        "w": 32,
-        "h": 32
+        "w": 128,
+        "h": 128
       },
       "props/shelf": {
         "file": "props/shelf.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "props/sign": {
         "file": "props/sign.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "props/standing_stone": {
         "file": "props/standing_stone.png",
-        "w": 16,
-        "h": 32
+        "w": 64,
+        "h": 128
       },
       "props/statue_head": {
         "file": "props/statue_head.png",
-        "w": 32,
-        "h": 32
+        "w": 128,
+        "h": 128
       },
       "props/totem": {
         "file": "props/totem.png",
-        "w": 16,
-        "h": 32
+        "w": 64,
+        "h": 128
       },
       "props/tree_oak": {
         "file": "props/tree_oak.png",
-        "w": 32,
-        "h": 32
+        "w": 128,
+        "h": 128
       },
       "props/well_old": {
         "file": "props/well_old.png",
-        "w": 32,
-        "h": 32
+        "w": 128,
+        "h": 128
       },
       "tiles/bridge": {
         "file": "tiles/bridge.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "tiles/bridge_broken": {
         "file": "tiles/bridge_broken.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "tiles/cobble": {
         "file": "tiles/cobble.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "tiles/forest": {
         "file": "tiles/forest.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "tiles/grass": {
         "file": "tiles/grass.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "tiles/grass_flowers": {
         "file": "tiles/grass_flowers.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "tiles/grove": {
         "file": "tiles/grove.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "tiles/path": {
         "file": "tiles/path.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "tiles/rubble": {
         "file": "tiles/rubble.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "tiles/ruin_floor": {
         "file": "tiles/ruin_floor.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "tiles/sand": {
         "file": "tiles/sand.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64
       },
       "tiles/water": {
         "file": "tiles/water.png",
-        "w": 16,
-        "h": 16,
+        "w": 64,
+        "h": 64,
         "frames": 2
       }
     }

@@ -19,8 +19,8 @@ app.controls.onButton((b) => app.ui.handle(b));
 new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',
-  pixelArt: true,
-  roundPixels: true,
+  pixelArt: false,
+  roundPixels: false,
   backgroundColor: '#1b1a2e',
   banner: false,
   scale: { mode: Phaser.Scale.RESIZE, width: window.innerWidth, height: window.innerHeight },

@@ -4,7 +4,7 @@ export const REPO_URL = 'https://github.com/Bobikobi/GAME';
 export const GAME_TITLE = 'Mistvale';
 export const SAVE_KEY = 'mistvale.save.1';
 /** Tile size in pixels. Every tile is 16x16 and every character frame 16x24. */
-export const T = 16;
+export const T = 64;
 /** Time to walk one tile. */
 export const STEP_MS = 190;
 /** Art that the kernel does not name but the client draws. */
