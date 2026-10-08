@@ -41,6 +41,12 @@ Each area has an owner, listed in [.github/CODEOWNERS](../../.github/CODEOWNERS)
 | Look | `game/src/style.css`, `game/src/scenes/world.ts` | Visual changes start with criteria the owner can see and measure. |
 | Tools and CI | `tools/`, `.github/` | CI must stay green on `develop`. |
 | Creator docs | `docs/creators/`, `CONTRIBUTING.md` | Written for someone who has never coded. |
+| Site | `web/` | Static by default; every page ships with its criteria (PLATFORM.md section 5.5). No hex outside `design/tokens.css`. |
+| Creator tools | `mcp/` | Read-only, no token, no GitHub. The package major equals the content format. |
+| Hub data | `tools/src/hub/`, `schema/src/hub.ts` | Every number computed from a named source; a missing source leaves its section empty. |
+| Design | `design/` | Palette colours only; the frame is the signature; a change comes with criteria. |
+| Team docs | `docs/team/` | Decisions land in `DECISIONS.md` the same day. |
+| Rules of play | `docs/design/GAME_RULES.md`, `tools/src/play.ts` | The owner's page. A request that collides with a rule stops and goes to him in plain words; a rule changes only by his word, written in `DECISIONS.md` the same day. |
 
 ## A pull request
 

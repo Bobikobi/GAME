@@ -1,19 +1,23 @@
 /**
- * Writes schema/json/<type>.schema.json from the TypeBox definitions, so
+ * Writes schema/json/<name>.schema.json from the TypeBox definitions, so
  * editors and AI tools can read the format without running any code.
- * `--verify` fails when the committed files are stale (run in CI).
+ * Two groups: the extension file types (SCHEMAS) and the published documents
+ * (DOCUMENT_SCHEMAS, today hub-data). `--verify` fails when the committed
+ * files are stale (run in CI).
  */
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SCHEMAS } from './index';
+import { DOCUMENT_SCHEMAS } from './hub';
 
 const outDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'json');
 const verify = process.argv.includes('--verify');
 const stale: string[] = [];
+const all = { ...SCHEMAS, ...DOCUMENT_SCHEMAS };
 
 mkdirSync(outDir, { recursive: true });
-for (const [name, schema] of Object.entries(SCHEMAS)) {
+for (const [name, schema] of Object.entries(all)) {
   const doc = {
     $schema: 'http://json-schema.org/draft-07/schema#',
     ...JSON.parse(JSON.stringify(schema)),
@@ -32,4 +36,4 @@ if (verify && stale.length > 0) {
   console.error(`Schema files are out of date. Run "pnpm schemas" and commit:\n  ${stale.join('\n  ')}`);
   process.exit(1);
 }
-console.log(verify ? 'schema files are current' : `wrote ${Object.keys(SCHEMAS).length} schema files to schema/json`);
+console.log(verify ? 'schema files are current' : `wrote ${Object.keys(all).length} schema files to schema/json`);

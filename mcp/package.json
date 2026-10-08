@@ -1,0 +1,13 @@
+{
+  "name": "@game/mcp",
+  "version": "1.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "description": "Tool definitions of the creator MCP server: read-only, against a local checkout. The major version follows the content format.",
+  "exports": { ".": "./src/index.ts", "./tools": "./src/tools.ts" },
+  "dependencies": {
+    "@game/schema": "workspace:*",
+    "@sinclair/typebox": "0.34.52"
+  }
+}

@@ -21,6 +21,14 @@
 /docs/creators/         @Bobikobi
 /CONTRIBUTING.md        @Bobikobi
 
+# site, creator tools, hub data, design, team docs (docs/team/PLATFORM.md section 9.1)
+/web/                   @Bobikobi
+/mcp/                   @Bobikobi
+/tools/src/hub/         @Bobikobi
+/schema/src/hub.ts      @Bobikobi
+/design/                @Bobikobi
+/docs/team/             @Bobikobi
+
 # creators' own folders are reviewed by the community through the loop, not by a code owner
 /content/extensions/
 /content/kit/

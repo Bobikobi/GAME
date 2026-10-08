@@ -128,6 +128,7 @@ Sprites live in a kit: `content/kit/<your-handle>/kit.json` plus PNG files next 
 - Character work poses are 32x32 with two frames: tool raised, then tool down.
 - Only the 32 colors of the core palette, and every pixel fully clear or fully solid.
 - AI images are welcome. Run any image through the importer and it snaps to the grid and the palette: `pnpm kit:import my-plum.png content/kit/<your-handle>/items/plum.png 16 16`.
+- Frames, sheets and a prompt-to-sprite path: the `um` tool of universal-modder (free sprite commands; the drawing recipes on your own fal.ai key). The recipe and its limits: [docs/design/ASSET_PATH.md](../design/ASSET_PATH.md) section 2. List it in `ai_tools` like any other tool.
 
 A kit file looks like this:
 
