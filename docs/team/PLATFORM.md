@@ -205,7 +205,7 @@ What S-1 needs: counts of visits and pickups per extension, where players stop
 in the opening, and short reports, so the creator data page (C-2) has something
 to show before accounts exist.
 
-Decision, pending Elad's yes (question 4 of the platform message): Astro server
+Decision (yes, 2026-10-08): Astro server
 endpoints in the same `web/` package, deployed as Vercel Functions, with
 Upstash Redis from the Vercel Marketplace (free tier) as the store.
 
@@ -219,8 +219,8 @@ Upstash Redis from the Vercel Marketplace (free tier) as the store.
   the client does not change.
 
 Rejected: the analytics vendor's custom events (reports do not fit, and the
-read side is a paid API), a self-hosted endpoint (a server to run now, and the
-CEOS server is not this project's).
+read side is a paid API), a self-hosted endpoint (a server to run now, and this
+project has none).
 
 ## 4. The creator tool surface
 
@@ -447,10 +447,10 @@ effort to run it. `docs/team/GRUNT.md` is a list of handoffs in that shape.
 | M2 site | 4 scaffold, build and `/play/`; 5 home; 6 title link; 7 hub; 8 api + llms.txt; 9 CI conditions | M | `pnpm verify` incl. the web build; the preview serves `/`, `/play/`, `/hub/`, `/api/hub-data.json`; the criteria of section 5.5 |
 | M3 hub pages | 10 loop; 11 boards; 12 rules; 13 docs; 14 hourly refresh | M | the preview's `/hub/loop/` numbers equal the fixture under the test; the hourly run fires the hook once on a change |
 | M4 MCP server | 15 server; 16 registration and snippet | M | `pnpm mcp` answers `rules` and `check` from a clone; the in-memory transport test |
-| M5 service | 17 S-1 endpoints; 18 client calls; 19 creator page | L (needs Elad's yes) | a visit counted on the preview appears in `usage` on the next build |
+| M5 service | 17 S-1 endpoints; 18 client calls; 19 creator page | L | a visit counted on the preview appears in `usage` on the next build |
 
 M1 and M2 can run in parallel in two worktrees; M3 waits for both; M4 waits
-for M1; M5 waits for M3 and the answer to question 4.
+for M1; M5 waits for M3 (question 4 was answered yes on 8.10).
 
 ## 11. Questions for Elad
 
@@ -463,6 +463,10 @@ Asked in the platform message, recommendation first, at most four:
    site URL carry it; a rename is free before accounts exist and costly after.
 3. Astro for `web/` (section 1).
 4. S-1 on Vercel Functions with Upstash Redis in the same project (section 3.5).
+
+Answered 2026-10-08, recorded in `DECISIONS.md` under that date: 1 yes, with the
+checklist before the switch; 2 the first community votes on the name, from the
+shortlist there; 3 yes; 4 yes.
 
 ## 12. What this plan does not do
 

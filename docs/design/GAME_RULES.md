@@ -211,22 +211,23 @@ characters.
   reads every line: no slang, no jokes about games, no brand names, no
   irony at the player's expense. The valley's words (the mist, the bells, the
   ruins, the hills, the grove) are the same in every mouth and on every sign.
-  English for now; a second language is a format decision (a language field
-  on content, never a copied folder) and an open question for the owner.
+  English only, the game and its files alike (owner, 8.10); a language field
+  on content, never a copied folder, is the format decision for a day that
+  may not come.
 - **G23 Talk choices are real.** Topics are a choice of what to learn, never
   a quiz with one right pick. When the player gets answers of their own
   (P-2 or later), at most three, each a different stance (ask, doubt, offer),
   and each pays something the others do not.
 
-The voice sheets. "Proposed" means written from the lines that exist today,
-waiting for the owner's word.
+The voice sheets, approved as written on 2026-10-08. The lines follow the
+sheet, never the other way round; a sheet changes only by the owner's word.
 
 | Voice | How they talk | What they want | Never | Status |
 |---|---|---|---|---|
-| Elder Maru | Slow. Short sentences. Speaks of "once" and of mending. Hints at the mist, does not explain it. Calls the player "you", never by name until friend. | The town back, one mended thing at a time. | Prices. Hurry. A straight answer about the bells. | Proposed |
-| Pell | Quick. Counts everything. Every subject becomes a trade or a rumour. Jokes about prices, not about people. | Customers, and the roads open again. | Sentiment. Lore of her own; she repeats what travellers say. | Proposed |
-| The narrator (the river text, toasts, the journal) | Second person, present tense, concrete nouns, one adjective at most. Says what is there, not what to feel. | Nothing; it is the valley speaking. | "You feel", "amazing", exclamation marks outside a level-up. | Proposed |
-| Signs and inscriptions | Fewest words. A fact and a hook. No "you". | To be read twice. | A full sentence where a fragment does. | Proposed |
+| Elder Maru | Slow. Short sentences. Speaks of "once" and of mending. Hints at the mist, does not explain it. Calls the player "you", never by name until friend. | The town back, one mended thing at a time. | Prices. Hurry. A straight answer about the bells. | Approved (8.10) |
+| Pell | Quick. Counts everything. Every subject becomes a trade or a rumour. Jokes about prices, not about people. | Customers, and the roads open again. | Sentiment. Lore of her own; she repeats what travellers say. | Approved (8.10) |
+| The narrator (the river text, toasts, the journal) | Second person, present tense, concrete nouns, one adjective at most. Says what is there, not what to feel. | Nothing; it is the valley speaking. | "You feel", "amazing", exclamation marks outside a level-up. | Approved (8.10) |
+| Signs and inscriptions | Fewest words. A fact and a hook. No "you". | To be read twice. | A full sentence where a fragment does. | Approved (8.10) |
 
 ### Sound and music
 
@@ -277,7 +278,7 @@ already handles that and the e2e run checks it.
 | Community: requests, votes, merges, conduct | [CONTRIBUTING.md](../../CONTRIBUTING.md), [docs/loop/README.md](../loop/README.md) | Live. |
 | Difficulty curve and pacing beyond the ladder | Not written | After P-3, with play data from the hub's usage section. |
 | Performance budget on a phone | Not written | Measure on a real device first (DECISIONS.md, the Phaser entry); then a number here. |
-| A second language | Not written | Open question for the owner (G22). |
+| A second language | Not written | No (owner, 8.10): English only, see G22. |
 
 ## 4. Forbidden patterns
 
@@ -301,8 +302,9 @@ Named so a review can point at one in two words.
 
 ## 5. Known breaches on 2026-10-07
 
-Found by the owner playing the preview. He ruled on all five the same evening
-(the "decision" column); the GRUNT items P-1 to P-4 carry the work.
+Found by the owner playing the preview. He ruled on five the same evening and
+on the sixth row on 8.10 (the "decision" column); the GRUNT items P-1 to P-4
+carry the work.
 
 | What | Rule | Proposed fix (recommended default) | Decision |
 |---|---|---|---|
@@ -311,7 +313,7 @@ Found by the owner playing the preview. He ruled on all five the same evening
 | `core/a-coin-for-maru`: dig in the ruins for an old coin. | G2 (borderline) | It is already a find with a hint. Add the catch: the coin is under the statue that faces the hills, and the first dig elsewhere gives a shard and a hint. | Yes (owner, 7.10). Keep, add the catch with P-3. |
 | The seven inscriptions (the carved marks, two lantern statues, the stone head, the scratched names, the cold arch, the totem with fresh grass). Reading any of them changes nothing. | G8, G9 | One riddle ties the three ruin stones: the marks name the order the town was restored in; at night the lantern of the statue facing the hills glows and lights the tile to dig. The other four are seeds of a later arc (someone was here recently): each stays only if P-3 names the arc it pays into, otherwise it is cut until that arc exists. Needs the `riddle` step and prop ids (P-2), then the content (P-3). | Yes (owner, 7.10). One riddle across the three ruin stones; the other four are cut until an arc names them. |
 | `core/herbs-for-pell` and `core/a-coin-for-maru` reward gold and reputation only. | G4 | Herbs: Pell teaches herb stew. Coin: Maru opens the elder's house (a place). | Yes (owner, 7.10). As proposed. |
-| Maru's first meeting is eight boxes, most over two phone lines; Pell's standing lines run to three boxes. | G14, G21 | Maru: three boxes at the first meeting (who he is, what he wants, where to go); the rest moves behind the three topics that already exist. Every box within two phone lines. Pell: two boxes per standing. | Owner's word; recommended yes, with P-3. |
+| Maru's first meeting is eight boxes, most over two phone lines; Pell's standing lines run to three boxes. | G14, G21 | Maru: three boxes at the first meeting (who he is, what he wants, where to go); the rest moves behind the three topics that already exist. Every box within two phone lines. Pell: two boxes per standing. | Yes (owner, 8.10). With P-3. |
 
 ## 6. When a request collides with a rule
 
@@ -325,20 +327,19 @@ a rule, moves a rung of the ladder, or sits in a grey zone:
 
 1. Do not build it, and do not change the rule to make it fit.
 2. Do everything else in the task that does not depend on it.
-3. Write to the owner, in plain Hebrew, five lines at most, in this shape:
+3. Write to the owner, in plain words, six lines at most, in this shape:
 
 ```
-לבעל המוצר, שאלת מוצר במשחק:
-מה ביקשו: <the request in one line, who asked>
-מה זה שובר: <rule number and its name in plain words, no jargon>
-מה השחקן ירגיש: <one line>
-ההמלצה שלי: <one line, with the alternative that keeps the rule>
-צריך ממך: כן / לא / אחרת
+To the product owner, a product question in the game:
+Asked: <the request in one line, who asked>
+Breaks: <rule number and its name in plain words, no jargon>
+The player would feel: <one line>
+My recommendation: <one line, with the alternative that keeps the rule>
+Needed from you: yes / no / other
 ```
 
-In English, for the record: who asked for what, which rule it meets and what
-that rule protects, what the player would feel, the recommendation with the
-alternative that keeps the rule, and the one word needed back.
+Those six lines are the whole message: no essay, no list of options, and one
+word back.
 
 4. Wait for the word. The answer is written in `DECISIONS.md` the same day; if
    a rule changed, this page changes in the same pull request.

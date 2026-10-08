@@ -3,18 +3,18 @@
 Date: 2026-10-06. Reviewed: the six kernel claims, read against product spec v4.5 (sections 10, 13, 15).
 Method: a small executable model (13 items, 14 activities, exact rational arithmetic) plus reasoning. Section 6 says which is which.
 
-## 1. סיכום
+## 1. Summary
 
-הגרעין נכון בבסיסו: סימולציה אחת, יחידה אחת (שנייה של שחקן), וערך שמחושב ולא מוצהר. אבל כפי שהוא כתוב היום, שלוש טענות בו לא מחזיקות. לכל אחת יש דוגמה מספרית שרצה במודל.
+The kernel is right at its base: one simulation, one unit (a second of a player's time), and a value that is computed, never declared. But as written today, three of its claims do not hold. Each has a numeric example that ran in the model.
 
-1. חישוב הערך משלם יותר מדי. פעולה שמניבה כמה פריטים (חפירה) מתמחרת כל פריט כאילו עלה את כל הזמן, וזמן המתנה נספר כעבודה. במודל שחקן הרוויח פי 3 עד פי 30 מהתקרה. התיקון: סופרים רק זמן פעיל, ומחלקים את העלות בין התוצרים.
-2. מדידת כוח על מסלול קבוע עיוורת. כישור דיג נמדד 0% ונתן פי 2 הכנסה. התיקון: תקרה קשיחה בתוך המחשבון, על כל פעולה בנפרד, במקום מדידה.
-3. מי שרואה את המזל מראש מנצל אותו (פי 3.6 במודל), ועקומת מחיר אחת בחנות נותנת זהב בלי לשחק. התיקון: ההגרלות נכנסות מבחוץ וסודיות בשרת, והחנות לעולם לא משלמת יותר ממה שהיא גובה.
+1. The value computation overpays. An action that yields several items (digging) prices every item as if it had cost the whole time, and waiting time counts as work. In the model a player earned 3 to 30 times the ceiling. The fix: count active time only, and split the cost between the outputs.
+2. Measuring power on a fixed route is blind. A fishing skill measured 0% and doubled income. The fix: a hard ceiling inside the calculator, per action, instead of a measurement.
+3. Whoever sees the luck ahead exploits it (3.6 times in the model), and one price curve in the shop hands out gold without play. The fix: the rolls come from outside and stay secret on the server, and the shop never pays more than it charges.
 
-מה לעשות לפני שורת הקוד הראשונה: לאמץ את 12 הכללים בסעיף 3. עכשיו הם עולים שדה בסכמה. אחרי שיש תוכן ושמירות הם עולים תמחור מחדש של כל המשחק.
-אחרי התיקונים יש הוכחה: שחקן לא יכול להרוויח יותר מקצב קבוע לשנייה של משחק, בכל תוכן שהקהילה תוסיף. מה שההוכחה לא מבטיחה: כמה זהב נכנס לעולם כולו כשיש הרבה חשבונות. לזה יש החלטה פתוחה בסעיף 5.
-תוספת אחרי משוב הבעלים, בסעיף 7: שכר שונה לעבודה קלה ולעבודה קשה, ומה לשמור כבר עכשיו כדי שבעתיד שחקנים יוכלו להחזיק מכרה, לבנות עיר עם חוקים משלה ולהילחם על שטח.
-החלטות הבעלים מ-6 באוקטובר, בסעיף 8: שרת וחשבונות כבר בשלב 2, ההתקדמות בהדגמה אינה עוברת לחשבון, פער שכר של פי 7 בערך בין ותיק בעבודה קשה למתחיל בעבודה קלה, בונוס קטן בחנות לדבר נדיר מתוך תקציב קבוע, וקוד לליבה גם ממפתחים מבחוץ. בעלות, כיבוש וערים נדחו: לא במפרט עכשיו, מחליטים כשיש קהילה.
+What to do before the first line of code: adopt the 12 rules of section 3. Now they cost a field in the schema. Once there is content and saves, they cost a repricing of the whole game.
+After the fixes there is a proof: a player cannot earn more than a fixed rate per second of play, whatever content the community adds. What the proof does not promise: how much gold enters the world as a whole when there are many accounts. Section 5 holds the open decision on that.
+Added after the owner's feedback, in section 7: different pay for easy work and hard work, and what to keep now so that players can one day own a mine, build a town with laws of its own and fight over land.
+The owner's decisions of 6 October, in section 8: a server and accounts already at stage 2, progress in the demo does not carry into an account, a pay gap of about 7 times between a veteran at hard work and a beginner at easy work, a small shop bonus for a rare thing out of a fixed budget, and code for the core from outside developers too. Ownership, conquest and towns are deferred: not in the spec now, decided when there is a community.
 
 ## 2. Verdicts and findings
 
