@@ -59,7 +59,8 @@ preview. The tools below make each of those three faster.
   and the hub's usage section waits for the stage-1 service (PLATFORM.md).
 - No design-document template from outside: the pillars are five lines in
   GAME_RULES.md and a template would add pages nobody reads.
-- No paid tool. Everything above has a free tier that covers this stage.
+- No paid tool. Everything above has a free tier that covers this stage; the
+  one pay-per-use piece, fal in section G, runs on the creator's own key.
 
 ## F. How to use the kit this month
 
@@ -72,4 +73,21 @@ preview. The tools below make each of those three faster.
 4. The `find` and `riddle` steps in the schema (P-2), then the content (P-3),
    then the `play` warnings become errors.
 5. From then on: every pull request that touches play answers the ten
-   questions, and a collision goes to the owner in five Hebrew lines.
+   questions, and a collision goes to the owner in six plain lines.
+6. The asset trial of ASSET_PATH.md section 2: Maru from a prompt, walk
+   frames through the importer, judged in the game on a phone.
+
+## G. Art, animation and sound: universal-modder as a sidecar (added 2026-10-08)
+
+| Part | What it gives | Cost | Where it fits, and where it does not |
+|---|---|---|---|
+| [universal-modder](https://github.com/rehan-remade/universal-modder), `um sprite` | An idle animation from one frame (bob, squash, wobble, flash), sheets and slicing, a nearest-neighbour fit into a frame, a snap to a reference sprite's palette, pixelation, a checkerboard preview. | MIT; Python, Pillow, numpy. | Upstream of `pnpm kit:import`, which stays the last word on size and palette. Fits every kit; proven on the elder sprite 8.10. |
+| `um fal` | A sprite with a transparent background from a prompt, the same character in a new pose (walk frames), pixelation, background removal, sound effects, music, voice lines; every generation logged with its seed. | MIT tool; fal.ai pay per use, on the creator's own key, never in the repository (gitleaks refuses it). | New characters, props, and the sounds rules G24-G27 ask for. Not a whole sheet from one prompt: grids come out uneven; one hero image, then edits. |
+| `um fal model3d`, `um fal rig`, `um render3d` | One picture to a textured 3D model, an auto-rig with walk, idle and die, frames rendered from the game's camera in 8 headings, consistent across the cast. | MIT tool; fal pay per use; Blender on one machine (a CPU does at 16x24). | Stage 2 of [ASSET_PATH.md](ASSET_PATH.md), when the cast outgrows hand consistency. Not now. |
+
+The rest of that repository (engine recon, reverse engineering, Windows
+automation, mashups, the mod hub) is for modding other people's games and is
+not used. Installed in its own virtual environment, never as the Claude Code
+plugin: a plugin puts eleven skills and the fal tools in every session's
+prompt. The path, the three stages and the recommendations for the owner:
+[ASSET_PATH.md](ASSET_PATH.md).
