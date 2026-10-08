@@ -801,25 +801,29 @@ Decision: GAME_RULES.md section 2, rows "Session end" and "Day 2".
 
 ### P-5. Health, danger and the fall
 
-Goal: the valley has a dangerous hour and a soft fall (G30-G35). The food bar
-is the health bar; a hazard takes health by a rule; at zero the player wakes at
-dawn at camp with the outing's finds waiting where they fell; nobody falls
+Goal: the valley has a dangerous hour and a fall that costs the outing (G30-G35).
+The food bar is the health bar; a hazard takes health by a rule; at zero the
+outing is lost and the player reappears in the last town; nobody falls
 unwarned. After P-2.
 
 Files:
 - `schema/src/`: `food.satiety` becomes `food.heal`; a `hazard` prop kind on
   map props (`kind`: `pit`, `trap`, `predator`, `bad_herb`, `deep_water`;
-  `window`: `night`, `mist`; `answer`: the item ids that counter it); a `safe`
+  `window`: `night`, `mist`, or `any` for `bad_herb` alone; `answer`: the item ids
+  that counter it); a `safe`
   flag on areas (the town, every camp); a shop or kit item may carry `heal`.
 - `content/core/params.json`: `satiety_cap` and `satiety_drain_per_min` become
   `hp_cap` (grows with stamina as before) and `hp_low_pct` (below it, work slows
   as the empty bar did). No drain by the clock (G28).
 - `kernel/src/state.ts`, `step.ts`, a new `hazards.ts`: `satiety` and
-  `satietyAt` become `hp` (milli-points, no lazy drain); a `stash` list
-  (position, items) for what a fall leaves; events `hurt` (hazard, amount,
-  answer used), `fall` (where, what was left), `wake` (dawn, camp or town house);
-  the outing's bag delta since the last safe area is the stash; the clock moves
-  to dawn on a fall; the hazard rules of G34 (predator: off a lit lantern, held
+  `satietyAt` become `hp` (milli-points, no lazy drain); an `outing` record
+  (the bag as it was when the player last left a safe area, the quests then in
+  progress with their steps, the last town); events `hurt` (hazard, amount,
+  answer used), `fall` (where, what was lost), `reappear` (the last town, a
+  random tile inside its bounds from the state's random stream); on a fall the
+  bag goes back to the outing's bag, every quest then in progress goes back to
+  its first step, the player stands in the last town, the clock does not move;
+  the hazard rules of G34 (predator: off a lit lantern, held
   by thrown food, ended on a road tile; pit: a rope or damage; trap: visible by
   day; bad herb: raw hurts, cooked heals; deep water: the river without its
   bridge at night). Chance through the state's random stream (R1-R5).
@@ -828,24 +832,27 @@ Files:
   countdown to nightfall at the screen's edge outside a safe area (the first
   levels: a banner too); the lantern lit and one warning box when the player
   leaves a safe area after dark or dark arrives outside one (G31, G14); hazard
-  sprites shown by day, hidden or moving in the dark; the fall box; the dawn
-  wake; a map pin for the stash.
+  sprites shown by day, hidden or moving in the dark; the fall (crosses for
+  eyes, the sprite sinks into the ground, one box) and the reappearance in
+  town; no pin, no journal line, nothing to go back to.
 - `content/core/shops/trader-shop.json`, recipes, the kit: the bought answers
   (a first-aid kit, lantern oil, an antidote, a rope, dried meat) and the made
   answers (a bandage from herbs, a torch from wood). Every hazard has one of
   each (G34).
 - `tools/src/play.ts`: the G30 and G34 rows of GAME_RULES.md section 8 become
   checks.
-- Tests: the same hazard is harmless by day and hurts at night; a fall leaves
-  the stash and moves the clock to dawn; the lantern keeps the predator off; a
-  replay reproduces a fall; no state change by the clock alone.
+- Tests: a hunting hazard is harmless by day and hurts at night; a bad fruit
+  hurts at noon; a fall drops the outing's finds, restarts the quests in
+  progress and reappears in the last town inside its bounds; the lantern keeps
+  the predator off; a replay reproduces a fall and its tile; no state change by
+  the clock alone.
 
 Proving command:
 ```
 pnpm verify && pnpm e2e
 ```
 Green; the e2e run walks into the ruins at night without a lantern, falls,
-wakes at camp and picks the stash up the next night.
+and reappears in town with the outing's basket gone and the quest at step one.
 
 Decision: DECISIONS.md 2026-10-08, the falling entry; GAME_RULES.md G30-G35.
 
