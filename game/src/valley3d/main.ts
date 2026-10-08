@@ -954,6 +954,7 @@ async function main(): Promise<void> {
         if (!(obj instanceof THREE.Mesh)) return;
         const mat = Array.isArray(obj.material) ? obj.material[0] : obj.material;
         const map = mat instanceof THREE.MeshStandardMaterial ? mat.map : null;
+        const image = map ? (map.image as { width?: number; height?: number } | null) : null;
         meshes.push({
           name: obj.name,
           type: obj.type,
@@ -961,7 +962,7 @@ async function main(): Promise<void> {
           bones: obj instanceof THREE.SkinnedMesh ? obj.skeleton.bones.length : 0,
           material: mat?.type,
           color: mat instanceof THREE.MeshStandardMaterial ? mat.color.getHexString() : null,
-          map: map ? `${map.image?.width ?? '?'}x${map.image?.height ?? '?'}` : null,
+          map: image ? `${image.width ?? '?'}x${image.height ?? '?'}` : null,
           vertices: obj.geometry.getAttribute('position')?.count ?? 0,
           uv: !!obj.geometry.getAttribute('uv'),
         });
@@ -1044,6 +1045,9 @@ async function main(): Promise<void> {
     camYaw = lerpAngle(camYaw, yaw, 1 - Math.exp(-dt * 2.5));
     target.set(pos.x - Math.sin(camYaw) * 4.6, pos.y + 2.2, pos.z - Math.cos(camYaw) * 4.6);
     target.y = Math.max(target.y, groundY(target.x, target.z) + 0.6);
+    // the camera stays out of the forest border, where the trees would sit on the lens
+    target.x = Math.min(W - 2.3, Math.max(2.3, target.x));
+    target.z = Math.min(H - 2.3, Math.max(2.3, target.z));
     if (first) camera.position.copy(target);
     else camera.position.lerp(target, 1 - Math.exp(-dt * 5));
     tmp.set(pos.x, pos.y + 1.1, pos.z);
