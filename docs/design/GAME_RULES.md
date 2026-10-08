@@ -267,12 +267,67 @@ already handles that and the e2e run checks it.
   phone; the strike window grows with agility so a slower hand still wins
   (G15).
 
+### Danger and falling
+
+Added 2026-10-08 on the owner's word (DECISIONS.md, that day's falling entry).
+The valley has no combat; its danger is the hour, and what the player eats.
+
+- **G30 The town and the camp are safe; the night and the mist hunt.** The town
+  and the player's camp are safe at every hour. Outside them the hazards that
+  hunt (the wolf, the hidden pit, the trap, deep water) act after dark (the
+  clock the world already keeps: dark from 21:00 to 04:00, fading over two
+  hours each side) and inside the mist; by day they show and can be walked
+  around: the trap is visible, the wolf sleeps, the pit is lit. What the player
+  picks or eats can hurt at any hour: a bad fruit takes health in daylight too,
+  and a player can fall at noon from it.
+- **G31 Nobody falls unwarned.** A countdown to nightfall sits at the screen's
+  edge while the player is outside a safe area (in the first levels, with a
+  banner too). Leaving a safe area after dark, or dark arriving outside one,
+  lights the lantern and opens one warning box (G14), once per night.
+- **G32 Health is the one bar.** The food bar becomes the health bar. Hazards
+  take health; food, a first-aid kit and a night's sleep at camp give it back;
+  low health slows work the way the empty bar did. Nothing drains it by the
+  clock (G28): there is no hunger timer, eating is how the player heals, and
+  cooking keeps its purpose.
+- **G33 A fall is clear, and it costs the outing.** At zero health the player
+  falls: crosses for eyes, the body sinks into the ground, one plain box says
+  what happened; no gravestone, nothing left in the world. The player reappears
+  in the town they were last in, on a random tile inside its bounds (before the
+  first town: where they started). What was gathered on that outing is lost,
+  and a quest that was in progress starts again from its first step; nothing
+  marks where the fall was. The bag from before the outing, the camp, the gold,
+  the levels and the quests already done are untouched. The cost is the lesson:
+  a bad fruit eaten on the way means the basket is gone and the walk is made
+  again.
+- **G34 A hazard is a rule, not a roll.** Each hazard acts by a rule the player
+  can learn, and each has one thing to buy and one thing to make that answers
+  it: the wolf keeps off a lit lantern, thrown food holds it, the road ends the
+  chase (lantern oil to buy; a torch from wood to make); the pit is where the
+  floor is broken (a rope); the trap shows by day (nothing to buy: look); the
+  herb is bad raw and safe cooked (an antidote; a bandage from herbs); deep
+  water is the river without its bridge at night. Chance, where a rule has it,
+  runs through the kernel's own random stream so the server at stage 2a can
+  replay it.
+- **G35 No fighting.** Predators are hazards, not enemies: light, food and feet
+  are the answers. Combat stays where the spec puts it (stage 8, or a community
+  vote).
+
+### Expeditions
+
+- **G36 An expedition is the valley's dungeon.** A place entered under a clock,
+  three to five problems of different types inside (G17) with hazards among
+  them, a climax, a reward that opens a place by day, and a soft failure: what
+  was not found waits for the next night, what was carried out stays; a fall
+  inside it is G33. The first is the night ruins under the bells.
+- **G37 An expedition is never the only road.** The valley by day goes on
+  without it; an expedition opens places sooner, never alone.
+
 ### What this page covers, and what lives elsewhere
 
 | Topic | Where | State |
 |---|---|---|
 | The opening and onboarding | [FTUE_RESEARCH.md](../FTUE_RESEARCH.md) | Written; roadmap phases 2 and 3 open. |
-| Loop and hook, quests, riddles, reading, builds, choices, feel, session, variety, dialogue, sound, fairness, access | This page | Rules G1-G29. |
+| Loop and hook, quests, riddles, reading, builds, choices, feel, session, variety, dialogue, sound, fairness, access, danger, expeditions | This page | Rules G1-G37. |
 | Economy and balance | The kernel rules R1-R11, `content/core/params.json`, `pnpm values` | Enforced by code. |
 | Art and sprites | [docs/creators/README.md](../creators/README.md) | Enforced by the kit check. |
 | Community: requests, votes, merges, conduct | [CONTRIBUTING.md](../../CONTRIBUTING.md), [docs/loop/README.md](../loop/README.md) | Live. |
@@ -298,6 +353,9 @@ Named so a review can point at one in two words.
 | Fake choice | One side greyed out, or both sides the same. | G12 |
 | Typed answer | A riddle solved in a text box. | G6 |
 | Same again | Two quests in a row of one type, or three items in a row got by the same motion. | G17, G18 |
+| Silent night | A fall with no countdown and no warning box before it. | G31 |
+| Breadcrumb | A fall that leaves a stash, a pin or a line saying where to go back to. | G33 |
+| Hunger clock | A bar that empties by the clock, awake or asleep. | G32, G28 |
 | Quiz talk | A topic list with one right pick, or a line that exists to explain. | G19, G23 |
 
 ## 5. Known breaches on 2026-10-07
@@ -389,14 +447,18 @@ the checklist above.
 |---|---|---|
 | G2 | A quest outside the opening chain whose steps are all `bring` or `visit`, where no `bring` is a dig-only find. | warning |
 | G4 | A quest outside the opening chain that rewards gold and reputation only. | warning |
-| G8 | Map props with a `note` that nothing refers to (today nothing can; the `riddle` step and prop ids come with P-2). | warning, one line with the count |
+| G8 | A note prop with an id that no riddle cites, one line per prop; note props without an id, one line with the count. | warning |
 | G10 | A camp with neither a station nor a bag bonus. | warning |
-| G17 | Two consecutive quests of one type in a `requires` chain, or fewer than five types among the first ten quests. | needs `quest.type` (P-2) |
+| G17 | Two consecutive quests of one type in a `requires` chain, or fewer than five types among the first ten quests. | warning, once quests declare a `type` (P-3) |
 | G14, G21 | A character's first meeting over three boxes, a standing over two, a topic over four; boxes over 80 characters, counted per character. | warning |
+| G30 | A hunting hazard (predator, pit, trap, deep water) inside a safe area or with no window (`night`, `mist`); a bad fruit or herb needs none. | needs hazard props (P-5) |
+| G34 | A hazard with neither a bought nor a made answer in the content. | needs P-5 |
+| G36 | An expedition with two problems of one type in a row, or a hazard its window does not cover. | needs the `expedition` kind (P-6) |
 
-When the `find` and `riddle` steps exist, G2 counts them as beats and G8 checks
-each note against the riddles that cite it. Sound (G24-G27), fairness (G28)
-and access (G29) live in code, not in content: the checklist covers them, and
+Since P-2 (8.10) G2 counts `find` and `riddle` steps as beats and G8 checks each
+note prop with an id against the riddles that cite it. Sound (G24-G27), fairness (G28),
+access (G29), the warning and the fall (G31-G33, G35, G37) live in code, not in
+content: the checklist covers them, and
 the e2e run prints the audio state line on every pull request.
 
 ## 9. Sources

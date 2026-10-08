@@ -4,7 +4,7 @@
  * and the camps that change play are not, and nothing is an error yet.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
-import type { Bundle } from '@game/kernel';
+import type { Bundle, QuestDef } from '@game/kernel';
 import { runCheck } from '../src/check';
 import { OPENING_QUESTS, PLAY_LEVEL, RULES_PAGE, checkPlay } from '../src/play';
 
@@ -77,6 +77,38 @@ describe('play rules', () => {
     const quiet = { ...elder, dialogue: { stranger: ['Stay near the fire after dark.'], first: ['I am Maru.', 'You mended the bridge. That is how it starts.'] }, topics: undefined };
     const fixed: Bundle = { ...bundle, npcs: { ...bundle.npcs, 'core/elder': quiet } };
     expect(checkPlay(fixed, origin).filter((i) => i.where === 'npc.dialogue' && i.file === origin['core/elder'])).toEqual([]);
+  });
+
+  it('reports each note prop with an id that no riddle cites, and the unnamed ones in one line (G8)', () => {
+    const props = bundle.map.props.map((p) => ({ ...p }));
+    const noted = props.filter((p) => p.note !== undefined);
+    noted[0]!.id = 'core/stone-a';
+    noted[1]!.id = 'core/stone-b';
+    const riddle: QuestDef = {
+      ...bundle.quests['core/herbs-for-pell']!,
+      id: 'test/riddle',
+      steps: [{ kind: 'riddle', clue: 'The marks name the order.', props: ['core/stone-a'], answer: { kind: 'dig', treasure: 'core/ruins-gate' } }],
+    };
+    const b: Bundle = { ...bundle, map: { ...bundle.map, props }, quests: { ...bundle.quests, 'test/riddle': riddle } };
+    const g8 = checkPlay(b, origin).filter((i) => i.message.includes(`${RULES_PAGE} G8,`));
+    expect(g8.map((i) => i.where)).toEqual(['map.props.core/stone-b', 'map.props']);
+    expect(g8[1]!.message).toContain(`${noted.length - 2} inscriptions`);
+  });
+
+  it('names two quests of one type in a row, and fewer than five types among the first ten (G17)', () => {
+    const base = bundle.quests['core/herbs-for-pell']!;
+    const q = (id: string, type: QuestDef['type'], requires: string[] = []): QuestDef => ({ ...base, id, title: id, type, requires });
+    const chain: Bundle = { ...bundle, quests: { ...bundle.quests, 'test/one': q('test/one', 'errand'), 'test/two': q('test/two', 'errand', ['test/one']) } };
+    const rows = checkPlay(chain, origin).filter((i) => i.where === 'quest.type');
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.message).toContain('"test/one"');
+    expect(rows[0]!.message).toContain(`${RULES_PAGE} G17,`);
+    const typed = Object.fromEntries(Object.values(bundle.quests).map((c) => [c.id, { ...c, type: 'errand' as const }]));
+    const more = Object.fromEntries(Array.from({ length: 10 }, (_, i) => [`test/q${i}`, q(`test/q${i}`, 'skill')]));
+    const few = checkPlay({ ...bundle, quests: { ...typed, ...more } }, origin).filter((i) => i.message.includes('among the first ten quests'));
+    expect(few).toHaveLength(1);
+    expect(few[0]!.message).toContain('2 types among the first ten quests');
+    expect(checkPlay(bundle, origin).filter((i) => i.where === 'quest.type')).toEqual([]);
   });
 
   it('reaches pnpm check', () => {

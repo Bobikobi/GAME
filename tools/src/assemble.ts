@@ -19,6 +19,7 @@ import {
 } from '@game/kernel';
 import { CORE_ONLY_TYPES, type CreatorProfile, type ParamsBody } from '@game/schema';
 import { toRepoPath, type Issue, type Loaded } from './load';
+import { digOnlyItems } from './play';
 
 export interface Assembled {
   bundle: Bundle | undefined;
@@ -255,6 +256,8 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     if (n.shop && !b.shops[n.shop]) err(id, 'npc.shop', `no shop "${n.shop}"`);
   }
   for (const [id, s] of Object.entries(b.shops)) s.sells.forEach((o, i) => item(id, `shop.sells.${i}.item`, o.item));
+  const digOnly = digOnlyItems(b);
+  const propIds = new Set(b.map.props.flatMap((p) => (p.id === undefined ? [] : [p.id])));
   for (const [id, q] of Object.entries(b.quests)) {
     if (q.giver && !b.npcs[q.giver]) err(id, 'quest.giver', `no npc "${q.giver}"`);
     (q.requires ?? []).forEach((r, i) => {
@@ -267,6 +270,18 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
       if (st.kind === 'restore' && !b.restores[st.restore]) err(id, w, `no restore "${st.restore}"`);
       if (st.kind === 'build' && !b.camps[st.camp]) err(id, w, `no camp part "${st.camp}"`);
       if (st.kind === 'visit' && !b.map.slots.some((s) => s.id === st.slot)) err(id, w, `no slot "${st.slot}"`);
+      if (st.kind === 'find') {
+        item(id, w, st.item);
+        if (b.items[st.item] && !digOnly.has(st.item)) err(id, w, `"${st.item}" is gathered, made or sold: a find must be found, not gathered`);
+      }
+      if (st.kind === 'riddle') {
+        st.props.forEach((p, j) => {
+          if (!propIds.has(p)) err(id, `${w}.props.${j}`, `no map prop with id "${p}"`);
+        });
+        const a = st.answer;
+        if (a.kind === 'dig' && !b.treasures[a.treasure]) err(id, `${w}.answer`, `no dig spot "${a.treasure}"`);
+        if (a.kind === 'visit' && !b.map.slots.some((s) => s.id === a.slot)) err(id, `${w}.answer`, `no slot "${a.slot}"`);
+      }
     });
     (q.reward.items ?? []).forEach((s, i) => item(id, `quest.reward.items.${i}`, s.item));
     (q.reward.recipes ?? []).forEach((rid, i) => {
@@ -313,10 +328,15 @@ function checkMap(b: Bundle, origin: Record<string, string>, issues: Issue[]): v
   for (const [ch, tile] of Object.entries(m.legend)) {
     if (!b.sprites[tile.sprite]) err(`map.legend.${ch}`, `no sprite "${tile.sprite}"`);
   }
+  const propIds = new Set<string>();
   m.props.forEach((p, i) => {
     if (!b.sprites[p.sprite]) err(`map.props.${i}`, `no sprite "${p.sprite}"`);
     if (p.x + p.w > m.width || p.y + p.h > m.height) err(`map.props.${i}`, 'reaches past the edge of the map');
     if (p.sign && !m.slots.some((s) => s.id === p.sign)) err(`map.props.${i}.sign`, `no slot "${p.sign}"`);
+    if (p.id !== undefined) {
+      if (propIds.has(p.id)) err(`map.props.${i}.id`, `prop id "${p.id}" is used twice`);
+      propIds.add(p.id);
+    }
   });
   const seen = new Set<string>();
   m.slots.forEach((s, i) => {

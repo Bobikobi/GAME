@@ -217,6 +217,10 @@ Upstash Redis from the Vercel Marketplace (free tier) as the store.
   the window.
 - Stage 2a inherits the endpoint contract and moves the keys into its own store;
   the client does not change.
+- Stage 2a is designed only when this service is live and has numbers, and runs
+  the same way: functions on the site's host with a managed database, no machine
+  to operate (owner, 8.10; DECISIONS.md). The spec's dedicated server waits for
+  stage 7, the first stage with a live connection per player.
 
 Rejected: the analytics vendor's custom events (reports do not fit, and the
 read side is a paid API), a self-hosted endpoint (a server to run now, and this
