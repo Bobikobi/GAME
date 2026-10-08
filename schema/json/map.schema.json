@@ -311,6 +311,11 @@
               "solid"
             ],
             "properties": {
+              "id": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "description": "Names the prop so a quest riddle can cite it. Unique on the map.",
+                "type": "string"
+              },
               "sprite": {
                 "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
                 "maxLength": 120,
