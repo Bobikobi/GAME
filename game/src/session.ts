@@ -12,6 +12,7 @@ import {
   type GameEvent,
   KERNEL_VERSION,
   type State,
+  fitWorn,
   makeWalkable,
   newState,
   serialize,
@@ -94,6 +95,11 @@ export class Session {
     }
     // a save from before the riddle step (P-2, 8.10) has no solved list
     (state.player as { solved?: string[] }).solved ??= [];
+    // a save from before kernel 0.3 wears nothing and has tried no craft
+    const worn = state.player as Partial<Pick<State['player'], 'worn' | 'looks' | 'tries'>>;
+    worn.worn ??= {};
+    worn.looks ??= {};
+    worn.tries ??= {};
     const session = new Session(bundle, state);
     if (state.content !== bundle.tag) {
       // a new version of the world was published: keep what still exists
@@ -257,10 +263,18 @@ function adapt(bundle: Bundle, state: State): boolean {
   p.xp = keepKeys(p.xp, bundle.professions);
   p.journal = p.journal.filter((id) => id in bundle.items);
   p.recipes = p.recipes.filter((id) => id in bundle.recipes);
+  // a recipe everyone starts with that came with this version is known at once
+  if (p.starter !== '') {
+    const fresh = Object.keys(bundle.recipes).filter((id) => bundle.recipes[id]!.known === 'start' && !p.recipes.includes(id));
+    if (fresh.length > 0) p.recipes = [...p.recipes, ...fresh].sort();
+  }
+  p.tries = keepKeys(p.tries, bundle.recipes);
   p.restored = p.restored.filter((id) => id in bundle.restores);
   p.camp = p.camp.filter((id) => id in bundle.camps);
   p.visited = p.visited.filter((id) => bundle.map.slots.some((s) => s.id === id));
   state.nodes = keepKeys(state.nodes, bundle.instances);
+  // a worn item that is gone, or no longer fits its place, comes off
+  fitWorn(bundle, state);
   state.content = bundle.tag;
   state.kernel = KERNEL_VERSION;
   return true;

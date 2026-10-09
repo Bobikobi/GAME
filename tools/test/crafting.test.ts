@@ -8,6 +8,7 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } f
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import type { CampFile, ParamsFile, ProfessionFile, ShopFile } from '@game/schema';
+import { missOutcome } from '@game/kernel';
 import { afterAll, describe, expect, it } from 'vitest';
 import { classFits } from '../src/assemble';
 import { type CheckResult, runCheck } from '../src/check';
@@ -68,6 +69,15 @@ const template = (name: string, body: object, title = name) => ({
   template: { station: 'fire', active_ms: 4000, level: 1, ...body },
 });
 const out = (name: string) => [{ item: `tester/${name}`, qty: 1, share_pct: 100 }];
+const camp = (name: string, body: object) => ({
+  ...envelope('camp', name),
+  camp: { slot: 'workshop', inputs: [{ item: 'core/branch', qty: 2 }], active_ms: 3000, sprite: 'core/base-kit:props/chest', ...body },
+});
+/** A craft profession of the core (professions are core files): cooking's file under another name. */
+function coreProfession(name: string, title: string, body: object): object {
+  const cooking = JSON.parse(readFileSync(join(CONTENT_DIR, 'core', 'professions', 'cooking.json'), 'utf8')) as ProfessionFile;
+  return { ...cooking, id: `core/${name}`, title, profession: { ...cooking.profession, name: title, techniques: [], ...body } };
+}
 /** A node in the one empty resource slot, giving `output`. */
 const node = (output: object, body: object = {}) => ({
   ...envelope('resource', 'nodes'),
@@ -123,7 +133,11 @@ describe('a world that uses the grammar', () => {
         ],
         outputs: out('dried-herbs'),
       }),
-      'templates/jam.json': template('jam', { inputs: [{ class: 'plant', family: 'sloe', min_tier: 1, qty: 3 }], outputs: out('sloe-jam') }),
+      'templates/jam.json': template('jam', {
+        inputs: [{ class: 'plant', family: 'sloe', min_tier: 1, qty: 3 }],
+        outputs: out('sloe-jam'),
+        miss: { keep_pct: 30 },
+      }),
       'recipes/rope.json': recipe('rope', { level: 3, inputs: [{ item: 'tester/dried-herbs', qty: 2 }], outputs: out('rope') }),
     },
     [
@@ -140,8 +154,8 @@ describe('a world that uses the grammar', () => {
 
   it('expands a template into one known recipe per fitting item, in id order', () => {
     const made = Object.values(b.recipes).filter((r) => r.template === 'tester/dry-herbs');
-    expect(made.map((r) => r.id)).toEqual(['tester/dry-herbs--core-herb', 'tester/dry-herbs--core-sunleaf']);
-    const herb = b.recipes['tester/dry-herbs--core-herb']!;
+    expect(made.map((r) => r.id)).toEqual(['tester/dry-herbs+core/herb', 'tester/dry-herbs+core/sunleaf']);
+    const herb = b.recipes['tester/dry-herbs+core/herb']!;
     expect(herb.title).toBe('Dried herbs (Wild herb)');
     expect(herb.known).toBe('start');
     expect(herb.inputs).toEqual([{ item: 'core/herb', qty: 2 }]);
@@ -150,8 +164,8 @@ describe('a world that uses the grammar', () => {
   });
 
   it('merges an item that fills a fixed input and a class input', () => {
-    expect(b.recipes['tester/herb-mix--core-herb']!.inputs).toEqual([{ item: 'core/herb', qty: 3 }]);
-    expect(b.recipes['tester/herb-mix--core-sunleaf']!.inputs).toEqual([
+    expect(b.recipes['tester/herb-mix+core/herb']!.inputs).toEqual([{ item: 'core/herb', qty: 3 }]);
+    expect(b.recipes['tester/herb-mix+core/sunleaf']!.inputs).toEqual([
       { item: 'core/herb', qty: 1 },
       { item: 'core/sunleaf', qty: 2 },
     ]);
@@ -159,12 +173,161 @@ describe('a world that uses the grammar', () => {
 
   it('a base class takes the items of a class declared under it', () => {
     expect(b.classes['tester/stone-fruit']?.base).toBe('plant');
-    expect(b.recipes['tester/jam--tester-sloe']?.inputs).toEqual([{ item: 'tester/sloe', qty: 3 }]);
+    expect(b.recipes['tester/jam+tester/sloe']?.inputs).toEqual([{ item: 'tester/sloe', qty: 3 }]);
+  });
+
+  it('names a template\'s recipes with "+", which no written id holds, so two never meet', () => {
+    const made = Object.values(b.recipes).filter((r) => r.template);
+    for (const r of made) expect(r.id).toMatch(/^[a-z0-9_-]+\/[a-z0-9_-]+(\+[a-z0-9_-]+\/[a-z0-9_-]+)+$/);
+    for (const r of Object.values(b.recipes).filter((r) => !r.template)) expect(r.id).not.toContain('+');
+  });
+
+  it('gives a template\'s recipes its miss', () => {
+    expect(b.recipes['tester/jam+tester/sloe']?.miss).toEqual({ keep_pct: 30 });
   });
 
   it('a tier-2 recipe passes at a tier-2 station and its work is weighed as hard', () => {
     // V(rope) = w * t / 1000 + 2 * V(dried herbs), with t = 4000 ms
     expect(b.values['tester/rope']! - 2 * b.values['tester/dried-herbs']!).toBe(b.params.effort_permille.hard * 4);
+  });
+});
+
+describe('a world that wears, misses and builds over a part', () => {
+  const garment = (name: string, wear: object, extra: object = {}) => item(name, { class: 'garment', wear, ...extra });
+  const result = world({
+    'items.json': items(
+      garment('cap', { slot: 'head', effects: [{ effect: 'gather_speed_pct', value: 5 }], set: 'tester/field' }),
+      garment('smock', {
+        slot: 'top',
+        effects: [
+          { effect: 'gather_speed_pct', value: 3 },
+          { effect: 'craft_speed_pct', value: 2 },
+        ],
+        set: 'tester/field',
+      }),
+      item('ring', { class: 'jewelry', wear: { slot: 'jewelry', effects: [{ effect: 'craft_chance_pct', value: 5 }] } }),
+      garment('crown', { slot: 'head', look: true }, { premium_later: true }),
+      item('plank', { class: 'wood', tier: 2 }),
+      item('shavings', { class: 'wood' }),
+    ),
+    'recipes/cap.json': recipe('cap', { inputs: [{ item: 'core/herb', qty: 2 }], outputs: out('cap') }),
+    'recipes/smock.json': recipe('smock', { inputs: [{ item: 'core/herb', qty: 3 }], outputs: out('smock') }),
+    'recipes/ring.json': recipe('ring', { inputs: [{ item: 'core/stone', qty: 2 }], outputs: out('ring') }),
+    'recipes/crown.json': recipe('crown', { inputs: [{ item: 'core/herb', qty: 4 }], outputs: out('crown') }),
+    'recipes/shavings.json': recipe('shavings', { station: 'workshop', inputs: [{ item: 'core/branch', qty: 1 }], outputs: out('shavings') }),
+    'recipes/plank.json': recipe('plank', {
+      station: 'workshop',
+      level: 3,
+      inputs: [{ item: 'core/branch', qty: 4 }],
+      outputs: out('plank'),
+      miss: { keep_pct: 25 },
+    }),
+    'camp/bench.json': camp('bench', { provides: 'workshop' }),
+    'camp/bench-2.json': camp('bench-2', { provides: 'workshop', tier: 2, upgrades: 'tester/bench' }),
+    'core/professions/carpentry.json': coreProfession('carpentry', 'Carpentry', { stations: ['workshop'], xp_levels: [4, 40, 150] }),
+  });
+  const b = result.assembled.bundle!;
+
+  it('passes the check', () => {
+    expect(errors(result)).toEqual([]);
+  });
+
+  it('gives each station its craft profession; the craft verb is the one at the fire', () => {
+    expect(b.stations).toEqual({ fire: 'core/cooking', workshop: 'core/carpentry' });
+    expect(b.verbs.craft).toBe('core/cooking');
+  });
+
+  it('keeps the miss: a quarter of the inputs and nothing else', () => {
+    expect(missOutcome(b, b.recipes['tester/plank']!)).toEqual({ keep: [{ item: 'core/branch', qty: 1 }] });
+  });
+});
+
+describe('worn items the check refuses', () => {
+  const garment = (name: string, wear: object, extra: object = {}) => item(name, { class: 'garment', wear, ...extra });
+  const result = world({
+    'items.json': items(
+      item('tunic', { class: 'garment' }),
+      item('belt', { class: 'garment', wear: { slot: 'jewelry' } }),
+      item('amulet', { class: 'jewelry', wear: { slot: 'head' } }),
+      garment('glove', { slot: 'hand' }),
+      item('pie', { class: 'meal', kind: 'food', food: { satiety: 3 }, wear: { slot: 'head' } }),
+      garment('veil', { slot: 'head', look: true, effects: [{ effect: 'rare_find_pct', value: 2 }], set: 'tester/veils' }),
+      garment('boots', {
+        slot: 'feet',
+        effects: [
+          { effect: 'gather_speed_pct', value: 9 },
+          { effect: 'gather_speed_pct', value: 1 },
+        ],
+      }),
+      garment('hat', { slot: 'head', set: 'tester/lonely' }),
+      garment('scarf', { slot: 'top', set: 'core/borrowed' }),
+      garment('hood', { slot: 'head', set: 'tester/crowd' }),
+      garment('helm', { slot: 'head', set: 'tester/crowd' }),
+      item('badge', { class: 'jewelry', wear: { slot: 'jewelry', effects: [{ effect: 'craft_chance_pct', value: 1 }] }, premium_later: true }),
+      item('pin', { premium_later: true }),
+      item('tiara', { class: 'jewelry', wear: { slot: 'jewelry', look: true }, premium_later: true }),
+    ),
+  });
+  const said = messages(result);
+
+  it('a garment or jewelry piece that is not worn, or worn in the wrong place', () => {
+    expect(said).toContain('a garment piece is worn: give it "wear" with its slot (G44)');
+    expect(said).toContain('the jewelry places take items of class "jewelry"');
+    expect(said).toContain('the head takes items of class "garment"');
+    expect(said).toContain('the hand holds a tool: an item of kind "tool"');
+    expect(said).toContain('a food is not worn');
+  });
+  it('a look with effects or a set', () => {
+    expect(said).toContain('a look shows and counts for nothing: it has no effects (G44)');
+    expect(said).toContain('a look belongs to no set');
+  });
+  it('an effect over the cap of its tier, or named twice', () => {
+    expect(said).toContain('a tier 1 piece gives at most 5% (wear_effect_max_pct), not 9% (G44)');
+    expect(said).toContain('gather_speed_pct is named twice: each effect once');
+  });
+  it('a set of one piece, of another creator, or that cannot be worn whole', () => {
+    expect(said).toContain('the set "tester/lonely" has one piece: a set has two at least');
+    expect(said).toContain('a set holds one creator\'s pieces: its id starts with "tester/"');
+    expect(said).toContain('the set "tester/crowd" cannot be worn whole: too many pieces for the head (G44)');
+  });
+  it('the premium marker anywhere but on an obtainable look with no effect', () => {
+    expect(said.filter((m) => m === 'only a look item with no effect may carry the premium marker (G39)')).toHaveLength(2);
+    expect(said.some((m) => m.startsWith('a look with the premium marker stays obtainable in the game'))).toBe(true);
+  });
+});
+
+describe('misses and camp upgrades the check refuses', () => {
+  const result = world({
+    'items.json': items(item('paste')),
+    // a cheaper road makes the same paste, so what the greedy recipe's miss keeps is worth more than a paste
+    'recipes/paste.json': recipe('paste', { inputs: [{ item: 'core/herb', qty: 1 }], outputs: out('paste') }),
+    'recipes/greedy.json': recipe('greedy', {
+      inputs: [{ item: 'core/herb', qty: 10 }],
+      outputs: out('paste'),
+      miss: { keep_pct: 90 },
+    }),
+    'camp/shed.json': camp('shed', { slot: 'storage', bag_bonus: 12, upgrades: 'core/campfire' }),
+    'camp/chest.json': camp('chest', { slot: 'storage', bag_bonus: 5, upgrades: 'core/storage-chest' }),
+    'camp/loop-a.json': camp('loop-a', { provides: 'workshop', upgrades: 'tester/loop-b' }),
+    'camp/loop-b.json': camp('loop-b', { provides: 'workshop', upgrades: 'tester/loop-a' }),
+    'camp/high.json': camp('high', { slot: 'shelf', bag_bonus: 2, tier: 2 }),
+    'camp/low.json': camp('low', { slot: 'shelf', bag_bonus: 2, upgrades: 'tester/high' }),
+    'camp/ghost.json': camp('ghost', { slot: 'shelf', bag_bonus: 2, upgrades: 'tester/none' }),
+  });
+  const said = messages(result);
+
+  it('a miss worth as much as a success, when a cheaper road makes the same thing', () => {
+    expect(said.some((m) => /^a miss leaves \d+ of value, no less than a success gives \(\d+\): a miss keeps a part \(G40\)$/.test(m))).toBe(true);
+  });
+  it('an upgrade in another slot, or that gives less than its base', () => {
+    expect(said).toContain('an upgrade stands in the slot of the part it replaces: core/campfire is in "fire", this one in "storage"');
+    expect(said).toContain('core/campfire provides a fire; an upgrade over it provides one too');
+    expect(said).toContain('an upgrade keeps at least the bag bonus of core/storage-chest (10)');
+    expect(said).toContain('an upgrade gives at least the tier of tester/high (2)');
+  });
+  it('upgrades that go round in a circle, or over a part that does not exist', () => {
+    expect(said).toContain('the upgrades go round in a circle: one part has to stand first');
+    expect(said).toContain('no camp part "tester/none"');
   });
 });
 
@@ -309,6 +472,8 @@ describe('core rules the check refuses', () => {
     [
       editCore<ParamsFile>('params.json', (d) => {
         d.params.tier_min_level = [2, 2];
+        d.params.craft_chance_bp = [8000, 9000];
+        d.params.wear_effect_max_pct = [8, 5];
       }),
       editCore<ProfessionFile>('professions/foraging.json', (d) => {
         d.profession.stations = ['workshop'];
@@ -327,5 +492,9 @@ describe('core rules the check refuses', () => {
   });
   it('one station worked by two professions', () => {
     expect(said.some((m) => /^the fire is already worked by core\/(carpentry|cooking)$/.test(m))).toBe(true);
+  });
+  it('a craft chance that rises with the tier, or a cap on worn effects that falls', () => {
+    expect(said).toContain('the craft chance never rises with the tier');
+    expect(said).toContain('the cap on a worn effect never falls with the tier');
   });
 });

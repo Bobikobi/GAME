@@ -61,6 +61,18 @@ export interface Params {
   tier_min_level: number[];
   /** the most recipes one recipe template may make */
   template_max_recipes: number;
+  /** the craft chance at exactly the recipe's level, in basis points, by recipe tier from tier 1 (the last entry holds above) */
+  craft_chance_bp: number[];
+  /** what each level above the recipe's level adds to the craft chance, in basis points */
+  craft_level_step_bp: number;
+  /** the largest part of the gap to a sure craft that luck closes, in permille */
+  craft_luck_max_permille: number;
+  /** part of each input a missed craft keeps when the recipe names none */
+  craft_miss_keep_pct: number;
+  /** the largest value of one worn effect, by item tier from tier 1 (the last entry holds above) */
+  wear_effect_max_pct: number[];
+  /** what a full set adds to its pieces' effects, in percent */
+  wear_set_bonus_pct: number;
   drift_budget_permille: number;
   satiety_cap: number;
   satiety_drain_per_min: number;
@@ -128,8 +140,10 @@ export interface Bundle {
   instances: Record<string, Instance>;
   /** V(item) in value-ms, computed by values.ts (rule R7), never declared. */
   values: Record<string, number>;
-  /** Which profession each verb trains. */
+  /** Which profession each verb trains; for craft, the one at the fire, since each station has its own (`stations`). */
   verbs: { gather: string; dig: string; craft: string };
+  /** The craft profession that works each station: a recipe that names no profession takes its station's. */
+  stations: Record<string, string>;
   credits: Credit[];
   /** Creator profiles by handle. Display only, outside the tag: a new signature is not a new world. */
   creators: Record<string, CreatorProfile>;
