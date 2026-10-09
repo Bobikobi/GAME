@@ -1811,7 +1811,7 @@
             },
             "miss": {
               "additionalProperties": false,
-              "description": "What a missed craft leaves (G40): part of the inputs, a lesser output, or both, worth less than a success. Left out: the default share of the inputs. When nothing else is left, one unit of the most valuable input comes back.",
+              "description": "What a missed craft leaves (G40): part of the inputs and nothing else, worth less than a success. Left out: the default share of the inputs. When the share leaves nothing, one unit of the most valuable input comes back.",
               "type": "object",
               "properties": {
                 "keep_pct": {
@@ -1819,27 +1819,6 @@
                   "maximum": 90,
                   "description": "Part of each input a miss keeps, rounded down, at most 90 percent. Left out: params.craft_miss_keep_pct.",
                   "type": "integer"
-                },
-                "output": {
-                  "additionalProperties": false,
-                  "type": "object",
-                  "required": [
-                    "item",
-                    "qty"
-                  ],
-                  "properties": {
-                    "item": {
-                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
-                      "maxLength": 80,
-                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
-                      "type": "string"
-                    },
-                    "qty": {
-                      "minimum": 1,
-                      "maximum": 999,
-                      "type": "integer"
-                    }
-                  }
                 }
               }
             },
@@ -2549,7 +2528,7 @@
             },
             "miss": {
               "additionalProperties": false,
-              "description": "What a missed craft leaves (G40): part of the inputs, a lesser output, or both, worth less than a success. Left out: the default share of the inputs. When nothing else is left, one unit of the most valuable input comes back.",
+              "description": "What a missed craft leaves (G40): part of the inputs and nothing else, worth less than a success. Left out: the default share of the inputs. When the share leaves nothing, one unit of the most valuable input comes back.",
               "type": "object",
               "properties": {
                 "keep_pct": {
@@ -2557,27 +2536,6 @@
                   "maximum": 90,
                   "description": "Part of each input a miss keeps, rounded down, at most 90 percent. Left out: params.craft_miss_keep_pct.",
                   "type": "integer"
-                },
-                "output": {
-                  "additionalProperties": false,
-                  "type": "object",
-                  "required": [
-                    "item",
-                    "qty"
-                  ],
-                  "properties": {
-                    "item": {
-                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
-                      "maxLength": 80,
-                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
-                      "type": "string"
-                    },
-                    "qty": {
-                      "minimum": 1,
-                      "maximum": 999,
-                      "type": "integer"
-                    }
-                  }
                 }
               }
             }

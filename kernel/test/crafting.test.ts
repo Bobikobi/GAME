@@ -37,7 +37,6 @@ beforeAll(() => {
   material('x/plank', 2, branch * 10);
   material('x/board', 2, branch * 8);
   material('x/frame', 2, branch * 30);
-  material('x/shavings', 1, branch);
   material('x/stool', 1, branch * 3);
   const recipe = (id: string, body: Partial<Bundle['recipes'][string]>) => {
     b.recipes[id] = { ...structuredClone(b.recipes['core/berry-mash']!), id, title: id, known: 'start', ...body };
@@ -48,7 +47,7 @@ beforeAll(() => {
     level: 3,
     inputs: [{ item: 'core/branch', qty: 3 }],
     outputs: out('x/board'),
-    miss: { keep_pct: 0, output: { item: 'x/shavings', qty: 1 } },
+    miss: { keep_pct: 70 },
   });
   recipe('x/frame', {
     level: 3,
@@ -225,10 +224,10 @@ describe('the craft chance', () => {
     expect(Math.abs(misses / 400 - (10_000 - chance) / 10_000)).toBeLessThan(0.06);
   });
 
-  test('a miss can leave a lesser output, and always leaves something', () => {
+  test('a miss keeps part of the inputs and makes nothing, and always leaves something', () => {
     expect(missOutcome(b, b.recipes['x/plank']!)).toEqual({ keep: [{ item: 'core/branch', qty: 2 }] });
-    expect(missOutcome(b, b.recipes['x/board']!)).toEqual({ keep: [{ item: 'core/branch', qty: 0 }], output: { item: 'x/shavings', qty: 1 } });
-    // nothing kept and no lesser output: one unit of the most valuable input comes back
+    expect(missOutcome(b, b.recipes['x/board']!)).toEqual({ keep: [{ item: 'core/branch', qty: 2 }] });
+    // the share keeps nothing: one unit of the most valuable input comes back
     expect(missOutcome(b, b.recipes['x/frame']!)).toEqual({
       keep: [
         { item: 'core/branch', qty: 0 },
@@ -236,9 +235,8 @@ describe('the craft chance', () => {
       ],
     });
     const board = craft(prepared(firstMiss('x/board')), 'x/board');
-    expect(board.state.player.bag['core/branch']).toBe(40 - 3);
-    expect(board.state.player.bag['x/shavings']).toBe(1);
-    expect(board.state.player.bag['x/board']).toBeUndefined();
+    expect(board.state.player.bag['core/branch']).toBe(40 - 3 + 2);
+    expect(Object.keys(board.state.player.bag).sort()).toEqual(['core/berry', 'core/branch', 'x/plank']);
     const frame = craft(prepared(firstMiss('x/frame')), 'x/frame');
     expect(frame.state.player.bag['core/branch']).toBe(40 - 2);
     expect(frame.state.player.bag['x/plank']).toBe(2);

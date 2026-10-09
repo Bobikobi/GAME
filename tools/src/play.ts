@@ -47,7 +47,7 @@ export function findableItems(b: Bundle): Set<string> {
 }
 
 function madeItems(b: Bundle): Set<string> {
-  return new Set(Object.values(b.recipes).flatMap((c) => [...c.outputs.map((o) => o.item), ...(c.miss?.output ? [c.miss.output.item] : [])]));
+  return new Set(Object.values(b.recipes).flatMap((c) => c.outputs.map((o) => o.item)));
 }
 
 function soldItems(b: Bundle): Set<string> {

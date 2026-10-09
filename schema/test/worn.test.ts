@@ -51,8 +51,12 @@ describe('worn items', () => {
 });
 
 describe('the miss', () => {
-  it('accepts a share of the inputs and a lesser output', () => {
-    expect(validateFile(recipe({ keep_pct: 25, output: { item: 'tester/shavings', qty: 1 } }))).toEqual([]);
+  it('accepts a share of the inputs', () => {
+    expect(validateFile(recipe({ keep_pct: 25 }))).toEqual([]);
+  });
+
+  it('refuses a miss that makes something: it only keeps part of the inputs', () => {
+    expect(validateFile(recipe({ keep_pct: 25, output: { item: 'tester/shavings', qty: 1 } }))).not.toEqual([]);
   });
 
   it('refuses a miss that keeps every input', () => {

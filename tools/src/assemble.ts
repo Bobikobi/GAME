@@ -376,7 +376,6 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
   for (const [id, c] of Object.entries(b.recipes)) {
     c.inputs.forEach((s, i) => item(id, `recipe.inputs.${i}.item`, s.item));
     c.outputs.forEach((s, i) => item(id, `recipe.outputs.${i}.item`, s.item));
-    if (c.miss?.output) item(id, 'recipe.miss.output.item', c.miss.output.item);
     if (c.profession && !b.professions[c.profession]) err(id, 'recipe.profession', `no profession "${c.profession}"`);
   }
   for (const [id, n] of Object.entries(b.npcs)) {

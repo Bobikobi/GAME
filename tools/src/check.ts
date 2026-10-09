@@ -293,16 +293,11 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
     const has = stationTier[c.station];
     if (has === undefined) err(file, `${w}.station`, named(`no camp part provides a ${c.station}`));
     else if (has < tier) err(file, `${w}.station`, named(`a tier ${tier} recipe needs a ${c.station} of tier ${tier}; the best camp part gives tier ${has}`));
-    // a miss keeps something and is worth less than a success (G40)
-    const lesser = c.miss?.output;
-    if (lesser && tierOf(lesser.item) > tier) {
-      err(file, `${w}.miss.output`, named(`a miss makes something lesser: ${lesser.item} is tier ${tierOf(lesser.item)}, above the recipe's tier ${tier} (G40)`));
-    }
-    const missed = missOutcome(b, c);
-    const left = worth(missed.keep) + worth(missed.output ? [missed.output] : []);
+    // a miss keeps part of the inputs, worth less than a success (G40)
+    const left = worth(missOutcome(b, c).keep);
     const success = worth(c.outputs);
     if (success > 0 && left >= success) {
-      err(file, `${w}.miss`, named(`a miss leaves ${left} of value, as much as a success gives (${success}): a miss keeps a part (G40)`));
+      err(file, `${w}.miss`, named(`a miss leaves ${left} of value, no less than a success gives (${success}): a miss keeps a part (G40)`));
     }
   }
 

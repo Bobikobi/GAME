@@ -146,23 +146,22 @@ export function craftChanceBp(bundle: Bundle, state: State, recipeId: string): n
 }
 
 /**
- * What a missed craft leaves (G40): `keep` is aligned with the recipe's
- * inputs, each its share rounded down, and `output` the recipe's lesser
- * output. When that would leave nothing, one unit of the most valuable input
- * comes back.
+ * What a missed craft leaves (G40): part of the inputs and nothing else.
+ * `keep` is aligned with the recipe's inputs, each its share rounded down.
+ * When that would leave nothing, one unit of the most valuable input comes
+ * back.
  */
-export function missOutcome(bundle: Bundle, recipe: RecipeDef): { keep: { item: string; qty: number }[]; output?: { item: string; qty: number } } {
+export function missOutcome(bundle: Bundle, recipe: RecipeDef): { keep: { item: string; qty: number }[] } {
   const pct = recipe.miss?.keep_pct ?? bundle.params.craft_miss_keep_pct;
   const keep = recipe.inputs.map((s) => ({ item: s.item, qty: mulDiv(s.qty, pct, 100) }));
-  const output = recipe.miss?.output;
-  if (!output && keep.every((k) => k.qty === 0)) {
+  if (keep.every((k) => k.qty === 0)) {
     let best = 0;
     recipe.inputs.forEach((s, i) => {
       if ((bundle.values[s.item] ?? 0) > (bundle.values[recipe.inputs[best]!.item] ?? 0)) best = i;
     });
     keep[best]!.qty = 1;
   }
-  return output ? { keep, output: { item: output.item, qty: output.qty } } : { keep };
+  return { keep };
 }
 
 class Refusal extends Error {}
@@ -385,7 +384,7 @@ function craft(ctx: Ctx, recipeId: string, at: Tile): void {
   const used = c.inputs.reduce((n, i) => n + i.qty, 0);
   const growth = Math.max(
     c.outputs.reduce((n, o) => n + o.qty, 0) - used,
-    miss.keep.reduce((n, k) => n + k.qty, 0) + (miss.output?.qty ?? 0) - used,
+    miss.keep.reduce((n, k) => n + k.qty, 0) - used,
   );
   if (growth > bagCapacity(b, s) - bagUsed(s)) refuse('Your bag is too full for what this makes.');
 
@@ -404,7 +403,6 @@ function craft(ctx: Ctx, recipeId: string, at: Tile): void {
       const lost = input.qty - (miss.keep[i]?.qty ?? 0);
       if (lost > 0) removeItem(ctx, input.item, lost);
     });
-    if (miss.output) addItem(ctx, miss.output.item, miss.output.qty);
   }
   busy(ctx, 'craft', ms);
   // effort is never wasted (pillar 5): a miss trains as much as a success

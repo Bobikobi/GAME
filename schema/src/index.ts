@@ -271,12 +271,11 @@ const RecipeProfession = {
 const RecipeMiss = Type.Object(
   {
     keep_pct: Type.Optional(Int(0, 90, 'Part of each input a miss keeps, rounded down, at most 90 percent. Left out: params.craft_miss_keep_pct.')),
-    output: Type.Optional(Stack),
   },
   {
     additionalProperties: false,
     description:
-      'What a missed craft leaves (G40): part of the inputs, a lesser output, or both, worth less than a success. Left out: the default share of the inputs. When nothing else is left, one unit of the most valuable input comes back.',
+      'What a missed craft leaves (G40): part of the inputs and nothing else, worth less than a success. Left out: the default share of the inputs. When the share leaves nothing, one unit of the most valuable input comes back.',
   },
 );
 

@@ -220,7 +220,7 @@ describe('a world that wears, misses and builds over a part', () => {
       level: 3,
       inputs: [{ item: 'core/branch', qty: 4 }],
       outputs: out('plank'),
-      miss: { keep_pct: 25, output: { item: 'tester/shavings', qty: 1 } },
+      miss: { keep_pct: 25 },
     }),
     'camp/bench.json': camp('bench', { provides: 'workshop' }),
     'camp/bench-2.json': camp('bench-2', { provides: 'workshop', tier: 2, upgrades: 'tester/bench' }),
@@ -237,11 +237,8 @@ describe('a world that wears, misses and builds over a part', () => {
     expect(b.verbs.craft).toBe('core/cooking');
   });
 
-  it('keeps the miss: a quarter of the inputs and the shavings', () => {
-    expect(missOutcome(b, b.recipes['tester/plank']!)).toEqual({
-      keep: [{ item: 'core/branch', qty: 1 }],
-      output: { item: 'tester/shavings', qty: 1 },
-    });
+  it('keeps the miss: a quarter of the inputs and nothing else', () => {
+    expect(missOutcome(b, b.recipes['tester/plank']!)).toEqual({ keep: [{ item: 'core/branch', qty: 1 }] });
   });
 });
 
@@ -301,16 +298,13 @@ describe('worn items the check refuses', () => {
 
 describe('misses and camp upgrades the check refuses', () => {
   const result = world({
-    'items.json': items(item('paste'), item('cord', { class: 'fibre', tier: 2 })),
+    'items.json': items(item('paste')),
+    // a cheaper road makes the same paste, so what the greedy recipe's miss keeps is worth more than a paste
+    'recipes/paste.json': recipe('paste', { inputs: [{ item: 'core/herb', qty: 1 }], outputs: out('paste') }),
     'recipes/greedy.json': recipe('greedy', {
-      inputs: [{ item: 'core/herb', qty: 2 }],
+      inputs: [{ item: 'core/herb', qty: 10 }],
       outputs: out('paste'),
-      miss: { output: { item: 'tester/paste', qty: 1 } },
-    }),
-    'recipes/upward.json': recipe('upward', {
-      inputs: [{ item: 'core/herb', qty: 1 }],
-      outputs: out('paste'),
-      miss: { keep_pct: 0, output: { item: 'tester/cord', qty: 1 } },
+      miss: { keep_pct: 90 },
     }),
     'camp/shed.json': camp('shed', { slot: 'storage', bag_bonus: 12, upgrades: 'core/campfire' }),
     'camp/chest.json': camp('chest', { slot: 'storage', bag_bonus: 5, upgrades: 'core/storage-chest' }),
@@ -322,9 +316,8 @@ describe('misses and camp upgrades the check refuses', () => {
   });
   const said = messages(result);
 
-  it('a miss worth as much as a success, or one that climbs a tier', () => {
-    expect(said.some((m) => /^a miss leaves \d+ of value, as much as a success gives \(\d+\): a miss keeps a part \(G40\)$/.test(m))).toBe(true);
-    expect(said).toContain('a miss makes something lesser: tester/cord is tier 2, above the recipe\'s tier 1 (G40)');
+  it('a miss worth as much as a success, when a cheaper road makes the same thing', () => {
+    expect(said.some((m) => /^a miss leaves \d+ of value, no less than a success gives \(\d+\): a miss keeps a part \(G40\)$/.test(m))).toBe(true);
   });
   it('an upgrade in another slot, or that gives less than its base', () => {
     expect(said).toContain('an upgrade stands in the slot of the part it replaces: core/campfire is in "fire", this one in "storage"');
