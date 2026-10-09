@@ -593,3 +593,23 @@ describe('core rules the check refuses', () => {
     expect(said).toContain('the cap on a worn effect never falls with the tier');
   });
 });
+
+describe('the made share the check refuses (CR-18)', () => {
+  const result = world({}, [
+    editCore<ParamsFile>('params.json', (d) => {
+      d.params.k_craft_permille = { value: 450, min: 300, max: 1000, step: 50 };
+      d.params.k_permille.max = 1000;
+    }),
+  ]);
+
+  it('a made good that sells for less than a raw one', () => {
+    expect(errors(result)).toContainEqual(expect.objectContaining({ where: 'params.k_craft_permille.value', message: 'a made good may not sell for less than a raw one (k_permille)' }));
+  });
+  it('a share that a vote could raise to what the shop charges', () => {
+    const where = errors(result)
+      .filter((i) => i.message.startsWith('the trader may never pay as much as the shop charges'))
+      .map((i) => i.where)
+      .sort();
+    expect(where).toEqual(['params.k_craft_permille.max', 'params.k_permille.max']);
+  });
+});

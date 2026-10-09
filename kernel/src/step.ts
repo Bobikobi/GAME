@@ -140,8 +140,10 @@ export function craftChanceBp(bundle: Bundle, state: State, recipeId: string): n
   const byTier = p.craft_chance_bp;
   const base = byTier[Math.min(recipeTier(bundle, c), byTier.length) - 1] ?? 10_000;
   const profession = recipeProfession(bundle, c);
-  const over = Math.max(0, professionLevel(bundle, state, profession) - c.level);
-  const skill = Math.min(10_000, base + over * p.craft_level_step_bp);
+  // no level wall (CR-17): each level over the recipe's adds a step and each missing level takes one off, down to nothing
+  const skill = clamp(base + (professionLevel(bundle, state, profession) - c.level) * p.craft_level_step_bp, 0, 10_000);
+  // a try at nothing runs and misses: luck closes part of a gap, it never opens one
+  if (skill === 0) return 0;
   return skill + mulDiv(10_000 - skill, craftLuckPermille(bundle, state, profession), 1000);
 }
 
@@ -384,8 +386,8 @@ function craft(ctx: Ctx, recipeId: string, at: Tile): void {
   const tile = spot(station);
   if (!tile) refuse('The camp is missing from the map.');
   checkAt(ctx, at, tile);
+  // no level wall (CR-17): below the recipe's level the chance falls, and only the station refuses
   const profession = recipeProfession(b, c);
-  if (professionLevel(b, s, profession) < c.level) refuse(`Needs ${b.professions[profession]?.name ?? 'crafting'} level ${c.level}.`);
   for (const input of c.inputs) {
     if ((s.player.bag[input.item] ?? 0) < input.qty) refuse(`You need ${input.qty} ${b.items[input.item]?.name ?? input.item}.`);
   }
@@ -487,7 +489,7 @@ function sell(ctx: Ctx, npcId: string, itemId: string, qty: number, at: Tile): v
 export function salePrice(bundle: Bundle, state: State, itemId: string, qty: number): number | undefined {
   const value = bundle.values[itemId];
   if (value === undefined || !bundle.items[itemId]) return undefined;
-  const each = payFor(bundle.params, value);
+  const each = payFor(bundle.params, value, bundle.made.includes(itemId));
   const uses = bundle.items[itemId]!.tool?.uses;
   const spent = state.player.wear[itemId] ?? 0;
   if (uses === undefined || spent < 1 || qty < (state.player.bag[itemId] ?? 0)) return each * qty;

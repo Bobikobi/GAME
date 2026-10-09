@@ -3,18 +3,7 @@
  * Every change goes through session.act(), so a menu can never do what the
  * kernel would refuse.
  */
-import {
-  type Bundle,
-  KERNEL_VERSION,
-  type RecipeDef,
-  bagCapacity,
-  bagUsed,
-  characterLevel,
-  professionLevel,
-  recipeProfession,
-  salePrice,
-  skillPoints,
-} from '@game/kernel';
+import { KERNEL_VERSION, bagCapacity, bagUsed, characterLevel, professionLevel, salePrice, skillPoints } from '@game/kernel';
 import guideText from '../../../docs/creators/README.md?raw';
 import { app } from '../app';
 import { sound } from '../audio';
@@ -58,11 +47,6 @@ function tabs(names: string[], active: string, onPick: (name: string) => void): 
 
 function need(have: number, qty: number): HTMLElement {
   return h('span', { class: have >= qty ? 'have' : 'lack' }, `${Math.min(have, qty)}/${qty}`);
-}
-
-/** The profession a recipe trains, for a line such as "cooking level 3". */
-function skillOf(b: Bundle, recipe: RecipeDef): string {
-  return (b.professions[recipeProfession(b, recipe)]?.name ?? 'crafting').toLowerCase();
 }
 
 // ------------------------------------------------------------------ bag
@@ -225,7 +209,7 @@ export function openJournal(ui: UI, tab: JournalTab = 'tasks'): void {
           'div',
           { class: 'card recipe' },
           sprite(b, b.items[r.outputs[0]?.item ?? '']?.sprite, 2),
-          h('div', null, h('b', null, r.title), h('div', { class: 'muted' }, `${stacks(b, r.inputs)} at the ${r.station}, ${seconds(r.active_ms)}${r.level > 1 ? `, ${skillOf(b, r)} level ${r.level}` : ''}`)),
+          h('div', null, h('b', null, r.title), h('div', { class: 'muted' }, `${stacks(b, r.inputs)} at the ${r.station}, ${seconds(r.active_ms)}`)),
         );
       }),
       hidden ? h('p', { class: 'muted' }, `${hidden} more recipe${hidden > 1 ? 's' : ''} to discover - from tasks and from scraps in the ruins.`) : null,
@@ -361,7 +345,7 @@ export function openCraft(ui: UI, station: string): void {
       ...known.map((id) => {
         const r = b.recipes[id]!;
         const out = r.outputs[0];
-        // a dry run gives the kernel's own reason, e.g. a level not reached yet
+        // a dry run gives the kernel's own reason, e.g. a station below the recipe's tier; never a level (CR-17)
         const why = s.check({ t: 'craft', recipe: id, at: s.pos });
         return h(
           'div',
@@ -372,7 +356,7 @@ export function openCraft(ui: UI, station: string): void {
             { class: 'grow' },
             h('b', null, r.title),
             needs(r.inputs),
-            h('div', { class: 'muted' }, `${seconds(r.active_ms)}${r.level > 1 ? ` - ${skillOf(b, r)} level ${r.level}` : ''}`),
+            h('div', { class: 'muted' }, seconds(r.active_ms)),
             why && haveAll(r.inputs) ? h('div', { class: 'lack' }, why) : null,
           ),
           button(fire ? 'Cook' : 'Make', () => {

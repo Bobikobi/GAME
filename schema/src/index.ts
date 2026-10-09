@@ -581,6 +581,11 @@ const Bounded = Type.Object(
 export const ParamsBody = Type.Object(
   {
     k_permille: Bounded,
+    k_craft_permille: {
+      ...Bounded,
+      description:
+        'What the trader pays for a made good, an item whose value comes from a recipe, per mille of r * V; k_permille holds for the rest. At least k_permille and always below 1000, so the trader never pays what the shop charges (DECISIONS.md, 2026-10-09: the crafting economy).',
+    },
     r_mg_per_value_ms: Bounded,
     t_min_ms: Bounded,
     max_action_ms: Bounded,

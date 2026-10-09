@@ -67,7 +67,7 @@ Open `content/extensions/<your-handle>/resources/wild-plums.json`. Rename the fi
 - `node.hours` - optional. `[18, 6]` makes a fruit that only ripens at night.
 - `node.place.slot` - where it grows. The empty resource slot today: `core/west-glade` (by the meadow where you wake up); the garden in the ruins grows the bell bushes since P-3. One extension per slot.
 
-You never set a price. The game works out every item's value from the effort it takes to get, and the trader pays from that. A rarer, slower fruit is worth more on its own.
+You never set a price. The game works out every item's value from the effort it takes to get, and the trader pays from that. A rarer, slower fruit is worth more on its own. The trader pays a share of the value: 75 percent for a thing someone made, an item whose value comes from a recipe (`k_craft_permille`), and 50 percent for anything else (`k_permille`). The shop charges at least the full value.
 
 ## 4. Check it (1 minute)
 
@@ -145,12 +145,12 @@ A material you gather comes from a resource, like the fruit above. `content/core
 - `station` - `fire` (cooking) or `workshop` (handcraft). The profession that works the station gates the recipe and is trained by it; name another craft profession in `profession` only if you need one.
 - `inputs` (1 to 6) and `outputs` (1 to 4); the outputs' `share_pct` adds up to 100.
 - The tier climbs one step at most: the blade may be tier 2 because its flakes are tier 1. A tier 3 output needs a tier 2 input.
-- `level` sits in the band of the recipe's tier (`tier_min_level` in the params, `[1, 3, 6]` today): tier 1 at level 1 or 2, tier 2 from 3 to 5, tier 3 from 6. The blade asks for handcraft level 3.
+- `level` sits in the band of the recipe's tier (`tier_min_level` in the params, `[1, 3, 6]` today): tier 1 at level 1 or 2, tier 2 from 3 to 5, tier 3 from 6. The blade asks for handcraft level 3. The level is where the recipe has its own chance, not a wall: a player below it may still try.
 - The station has to reach the tier: a tier 2 recipe needs a camp part that provides its station at tier 2 or higher. At the workshop that is the workbench (see [A camp part and its upgrade](#a-camp-part-and-its-upgrade)).
 - `known` - `start` if every player knows it, `found` if a dig or a quest teaches it.
 - `active_ms` - how long one try takes, 1000 to 15000 ms.
 
-From tier 2 a try can miss. At its own level a tier 2 recipe succeeds 80 times in 100 and a tier 3 recipe 65 (`craft_chance_bp`), and each level above the recipe's adds to the chance. A miss makes nothing and keeps half of each input, rounded down; when that would keep nothing, one unit of the most valuable input comes back. `miss.keep_pct` sets another share, up to 90 percent.
+From tier 2 a try can miss. At its own level a tier 2 recipe succeeds 80 times in 100 and a tier 3 recipe 65 (`craft_chance_bp`), and each level above the recipe's adds 5 percent to the chance (`craft_level_step_bp`). Each level below takes the same step off, down to nothing, so a tier 1 recipe tried below its level can miss too, and a try at nothing still runs and misses. The game never shows a chance, a word for the difficulty or the level a recipe wants: players learn it by trying. A miss makes nothing and keeps half of each input, rounded down; when that would keep nothing, one unit of the most valuable input comes back. `miss.keep_pct` sets another share, up to 90 percent.
 
 The check then asks one thing more: a try never loses value on average. Take the chance at the recipe's own level, before luck. The chance of a success times the value of the outputs, plus the chance of a miss times the value a miss keeps, has to reach the value of the inputs. When a miss keeps half the inputs' value, the recipe's own work has to be worth about 12.5 percent of its inputs at tier 2 and about 27 percent at tier 3. Rounding down keeps less (one unit of an input keeps none of it), and the bar climbs toward 25 and 54 percent: the core's stone trowel, which keeps one branch on a miss, needs its work to be worth about 52 percent of its inputs. If the check refuses, give the recipe more time or fewer inputs.
 
@@ -259,7 +259,7 @@ Then point your item at it: `"sprite": "<your-handle>/kit:items/plum"`.
 - Active times stay between 1000 and 15000 ms.
 - The rarity you declare is within one step of what the data implies. A fruit that grows anywhere at any hour is common; night-only, high-level or slow-to-regrow fruit is rarer.
 - Everything a recipe or quest asks for can be found somewhere in the world.
-- Every item has a `class` and a `tier`; the tier is open (1 to 3 today); a class of your own sits under a base class; no metal yet. A recipe climbs one tier at most, asks for a level inside its tier's band, has a profession that works its station and a camp part of its tier. From tier 3 up, nothing is sold. A recipe template stays within `template_max_recipes`. Together these make a long recipe a chain of short steps, each one behind its level and its station. See [Classes and tiers](#classes-and-tiers).
+- Every item has a `class` and a `tier`; the tier is open (1 to 3 today); a class of your own sits under a base class; no metal yet. A recipe climbs one tier at most, asks for a level inside its tier's band, has a profession that works its station and a camp part of its tier. From tier 3 up, nothing is sold. A recipe template stays within `template_max_recipes`. Together these make a long recipe a chain of short steps, each one behind its station and surest from its level up. See [Classes and tiers](#classes-and-tiers).
 - The rarity bonuses of the whole world stay inside the rarity budget (10% today): a rare node with many copies or a fast respawn uses more of it.
 - A garment or jewelry piece names where it is worn (`wear`), with at most two small effects under its tier's cap; a look (`wear.look`) has no effect, and only a look may carry `premium_later`, while staying obtainable in the game. A recipe's `miss` names the share of each input a miss keeps (up to 90 percent, half when left out); a miss makes nothing else and is worth less than a success.
 - A try never loses value on average: at the recipe's own level and before luck, the chance of a success times the value of the outputs, plus the chance of a miss times what a miss keeps, reaches the value of the inputs. A recipe that loses value would make crafting worth less than selling its materials. The fix is more time or fewer inputs; see [A recipe](#a-recipe).

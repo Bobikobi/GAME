@@ -346,13 +346,15 @@ day); the audit behind them is `docs/design/CRAFTING_AUDIT.md`.
   chance and luck only tilts it; a miss is never nothing (G15): it keeps part
   of the inputs and makes nothing else. The value table prices a recipe at
   perfect execution, and luck closes the gap to that output without passing
-  it (R9).
+  it (R9). A recipe's level is no wall: each missing level takes a step off
+  the chance, down to nothing, a try at nothing still runs and misses, and
+  the screen never shows the chance or the level a recipe wants.
 - **G41 Two ladders.** The tier says how advanced a thing is, the rarity how
   often it appears. A recipe climbs one tier at a time, at a station of its
   tier and at a level inside the tier's band. From tier 3 up a thing comes
   only from a gated source - a level gate (the node's, or the band of the
-  recipe that makes it), a slow respawn, a find table or a quest reward - and
-  no shop sells it.
+  recipe that makes it, below which its chance falls), a slow respawn, a find
+  table or a quest reward - and no shop sells it.
 - **G42 Rare is capacity and gates, never a timer.** How many nodes, how
   slowly they return, their hours, the level and the tool they ask, the find
   tables. Waiting is never paid (R6), no event timer or "last chance" makes a

@@ -72,6 +72,16 @@ function checkParams(file: { params?: ParamsBody } | undefined): Issue[] {
       issues.push({ file: 'content/core/params.json', where: `params.power_cap_permille.${i}`, message: 'the power cap may not fall with level', level: 'error' });
     }
   }
+  // R8 with made goods (CR-18): a made good sells for at least a raw one, and no vote lets the trader pay what the shop charges
+  const { k_permille: k, k_craft_permille: made } = file.params;
+  if (made.value < k.value) {
+    issues.push({ file: 'content/core/params.json', where: 'params.k_craft_permille.value', message: 'a made good may not sell for less than a raw one (k_permille)', level: 'error' });
+  }
+  for (const [name, bounds] of [['k_permille', k], ['k_craft_permille', made]] as const) {
+    if (bounds.max >= 1000) {
+      issues.push({ file: 'content/core/params.json', where: `params.${name}.max`, message: 'the trader may never pay as much as the shop charges: keep the share below 1000', level: 'error' });
+    }
+  }
   return issues;
 }
 
