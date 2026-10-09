@@ -3,10 +3,9 @@
 This page is the product owner's, like [GAME_RULES.md](GAME_RULES.md) beside
 it: the story of Openfold is told by what this page allows, and a line, a
 quest or an extension that breaks it goes to the owner first (GAME_RULES
-section 6). A part marked **approved** changes only by the owner's word,
-written the same day in [DECISIONS.md](../../DECISIONS.md). A part marked
-**proposed** is a recommendation that waits for that word; nothing proposed is
-built before it.
+section 6). Every part of it is approved (2026-10-10) and changes only by the
+owner's word, written the same day in [DECISIONS.md](../../DECISIONS.md). The
+work it asks for is section S of [GRUNT.md](../team/GRUNT.md).
 
 Why it exists (2026-10-10): the game has a frame (product spec v4.6, section
 7: a forgotten world restored, every extension a restoration) but no plot and
@@ -71,32 +70,33 @@ Since nothing is canon behind the curtain, nothing needs a secret file: the
 whole story bible lives in this public repository. The only spoiler is what
 waits in the next place.
 
-## 3. The beliefs (proposed, waits for the owner)
+## 3. The beliefs (approved, 2026-10-10)
 
-Three to start, each a different answer to "what is the mist". The names are
-working names.
+Three to start, each a different answer to "what is the mist". More can come,
+from the core or from a creator, by the owner's word; none of them is ever
+the right one.
 
 | Belief | The mist is | So you should | Held today by | A bone, read its way |
 |---|---|---|---|---|
 | The Menders | A forgetting that takes what nobody looks after. | Mend what is left, one thing at a time. | Maru | The bells ring before the mist comes: a warning. |
 | The Wakers | A sleep over ages greater than ours. | Wake the old things: light the lanterns, open the ruins. | Nobody yet; a traveller or a player. | The lanterns glow by themselves: something down there is still awake. |
-| The Keepers | A mercy that folded away what hurt. | Let sleeping things sleep; take only what you need. | Nobody yet. | The first returners dug deep and did not stay. |
+| The Keepers | A mercy that folded away what hurt. | Let sleeping things sleep; take only what you need. | Nobody yet. | Old things lie under the town: someone buried them on purpose. |
 
 Pell holds none of them and repeats all three as rumours, with a price on
 each; her voice sheet already says she has no lore of her own. A player never
 picks a belief from a menu: what they do leans one way or another (section 4).
 
-## 4. Karma: the valley remembers (proposed, waits for the owner)
+## 4. Karma: the valley remembers (approved, 2026-10-10)
 
-The owner asked whether there should be a good, evil or karma axis. The
-recommendation: no single good-evil meter.
+The owner asked whether there should be a good, evil or karma axis, and chose
+this shape: a lean toward each belief, and no single good-evil meter.
 
 - Fallout 3 kept one karma number, and players learned to game it (give water
   to a beggar, then do what you like); good and evil became a colour to pick.
   New Vegas leaned on standing with each faction instead, fame and infamy
   apart. Ultima IV hid eight virtues and showed them only through a seer, and
   the game is won by living them, not by reading a bar.
-- **The shape:** a hidden whole-number standing for each belief, kept by the
+- **The shape:** a hidden whole-number lean toward each belief, kept by the
   kernel and moved by the side a player takes in a `dilemma` quest and by some
   acts (lighting an old lantern leans Waker, leaving a find in the ground
   leans Keeper).
@@ -105,12 +105,13 @@ recommendation: no single good-evil meter.
   to someone who leaned their way.
 - **Kindness to other players is apart, and already counted:** the giving
   board.
-- **A world leans too.** The sum of its players' standings tilts which telling
-  is heard loudest in that world, never which one is true.
+- **A world leans too.** The sum of its players' leans tilts which telling
+  is heard loudest in that world, never which one is true. This waits for
+  shared worlds (stage 2); until then each player's own lean is the world's.
 - **G28 and G12 hold.** Nothing fades by the clock, no door closes for good,
   a lean can always be walked back, and both sides of a dilemma lead on.
 
-## 5. How it is built (proposed, waits for the owner)
+## 5. How it is built (approved, 2026-10-10)
 
 Games with a lot of reactive story text do not write branching trees. They
 write small pieces with conditions:
@@ -126,23 +127,27 @@ write small pieces with conditions:
 This fits the repository as it is: content is declarative JSON checked by a
 schema, so a line with conditions is one more field the check reads. The
 schema work, in order, each its own pull request and additive (the format
-version stays 1):
+version stays 1), is GRUNT section S:
 
-1. **Lines with conditions.** `when` on dialogue lines and topics (a quest
-   done, an item held, a place mended, a season, a standing) and a
-   `priority`. The most specific match is said. G21 needs this now, belief or
-   no belief: "a new topic appears when the world changed".
-2. **Quest lines on the quest.** `offer` and `done` lines in the quest file,
-   in place of the lines hardcoded in `game/src/ui/ui.ts`.
-3. **A `belief` content kind.** Its name, what it says of the mist, and its
-   readings of the bones. A character names the belief it holds, or none; a
-   lore line (whisper, echo, note, inscription) names its source.
-4. **Standing in the state**, moved by a `choice` step in a `dilemma` quest.
-   Kernel, integers.
-5. **Checks in `pnpm check`:** a glossary of the valley's names, with a
-   warning for an unknown capitalised name in a line (G22); an error for a
-   lore line with no source (S2); a belief needs at least two clues and every
-   clue two readings (S4).
+1. **Lines with conditions** (S-1). A `when` on a character's remarks and
+   topics (a quest done, an item held, a place mended, a camp part built, day
+   or night) and a `priority`. The most specific match is said once. G21
+   needs this whatever the beliefs: "a new topic appears when the world
+   changed".
+2. **Lines on the quest and the place** (S-2). `offer`, `waiting` and `done`
+   lines in the quest file and a `done` line on a restore, in place of the
+   lines hardcoded in `game/src/ui/ui.ts`.
+3. **A `belief` content kind** (S-3). Its name, what it says of the mist, and
+   its reading of each bone. A character names the belief it holds, or none.
+   Every line already has a speaker (a character, a sign, the narrator), so
+   S2 is kept by the shape of the content and S1 by the check below.
+4. **The lean in the state** (S-4), moved by a `choice` step in a `dilemma`
+   quest and read by a `when`. Kernel, integers.
+5. **Checks in `pnpm check`** (S-5): a glossary of the valley's names, with a
+   warning for an unknown capitalised name in a line (G22); a warning for a
+   narrator's line that tells the past ("long ago", "ancient", "the old
+   ones"), for a person to read (S1); an error for a bone that fewer than two
+   beliefs read (S4).
 
 The tools:
 
@@ -160,7 +165,7 @@ The tools:
   Where Winds Meet talked its AI characters out of their quests within weeks
   of launch).
 
-## 6. Three levels of story (proposed, waits for the owner)
+## 6. Three levels of story (approved, 2026-10-10)
 
 | Level | Told by | Length | Example |
 |---|---|---|---|
@@ -168,15 +173,14 @@ The tools:
 | A season | One arc across the valley | A season | Answers one question, opens one (S6) |
 | The folds | Nobody, in full | Open | Each community discovery opens a fold or a corner of one |
 
-## 7. Open, for the owner
+## 7. The owner's rulings (2026-10-10)
 
-1. The beliefs: how many to start, their names, what each says (proposed:
-   the three in section 3).
-2. Karma: yes or no; if yes, standing per belief or another shape.
-3. Which folds the core names first (proposed: none by name yet; the night
-   ruins under the bells hint at one).
-4. The order of the schema work (proposed: items 1 and 2 of section 5 first,
-   since G21 needs them whatever is decided on beliefs).
+1. The beliefs: the three in section 3, the Menders, the Wakers and the
+   Keepers.
+2. Karma: yes, as a hidden lean toward each belief (section 4).
+3. The core names no fold yet; the night ruins under the bells hint at one.
+4. The work starts with lines with conditions and lines on the quest (S-1 and
+   S-2), since G21 needs them whatever the beliefs.
 
 ## Sources
 
