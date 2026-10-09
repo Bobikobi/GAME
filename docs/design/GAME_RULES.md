@@ -367,11 +367,13 @@ day); the audit behind them is `docs/design/CRAFTING_AUDIT.md`.
 - **G42 Rare is capacity and gates, never a timer.** How many nodes, how slowly
   they return, their hours, the level and the tool they ask, the find tables.
   Waiting is never paid (R6), no event timer or "last chance" makes a thing
-  rare (G28), and the rarity bonuses of the whole world share one budget. One
-  written exception, the valley's holidays: they follow the real calendar and
-  come back every year, and what only a holiday gives is a look or a title,
-  bound to the character and never traded, so missing one costs a wait, never a
-  use (DECISIONS.md, the entry on the calendar).
+  rare (G28), and the rarity bonuses of the whole world share one budget. Two
+  written exceptions, both on the real calendar and both back every year
+  (DECISIONS.md, the entries on the calendar). The valley's holidays: what only
+  a holiday gives is a look or a title, bound to the character and never
+  traded. Things of one season of the year: each shares its class with a thing
+  found all year, so no recipe, quest step or tool waits for a season, and
+  missing one costs a wait, never a use.
 - **G43 A long recipe is a chain of short steps.** Intermediate things made at
   stations, one tier per station step, every action inside the action cap.
   The journal shows the question, not the whole chain (G3).

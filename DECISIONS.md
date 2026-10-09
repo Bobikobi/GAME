@@ -658,7 +658,21 @@ What other games do, as read for this answer. A day: Stardew Valley about 14 min
 - The date comes from the server once accounts exist. In the demo it comes from the device, where turning the clock gains nothing that lasts, since nothing from the demo passes to an account. The date enters the kernel as an input recorded with the actions, so a replay gives the same result.
 - Each season gives the expansions a general theme. The theme invites and never gates: an expansion off the theme still lands by the same rule, as the spec has it for open calls, where nobody is bound and nobody blocks.
 - The world deepens all the time: expansions land as often as the creators make them and they pass the check, several times a week as an aim. What lands stays (the entry on seasons above), and every change to the schema stays additive, so a saved game always loads.
-- Open, asked one at a time: whether a thing may exist in one season of the year only (asked next, since G42 bars rarity by a timer), which half of the globe the seasons follow, and how long a content season runs (the spec says a few weeks; most games run about three months).
+- Open, asked one at a time: whether a thing may exist in one season of the year only (answered the same day, the entry below), which half of the globe the seasons follow, and how long a content season runs (the spec says a few weeks; most games run about three months).
 
 **Closes:** the calendar, in part; GRUNT's open ends carry the building as CR-42.
 **Retry when:** players in the south or of another culture find the year strange, or creators cannot keep up with a season's theme. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ Some things come only in their season of the year, and the rest change in amount
+
+The question (9.10): with the real year, may a thing exist in one season of the year only, a fish found only in summer? Whoever missed the summer would wait nine months, and G42 bars rarity by a timer. The recommendation was that a season of the year changes how much, where and the look, and everything is found all year somewhere. The owner's word (9.10): a mix of the two. Some things change with the season, and of others there is simply less or more.
+
+- Two kinds of seasonal content. A thing of its season is found only in its season of the year and comes back every year. Of everything else a season changes the amount, the place or the look: more berries in summer, the fish in deeper water in winter.
+- A thing of its season always shares its class with a thing found all year (G45), so every recipe, quest step and tool that needs it takes the other too. A quest step asks for the class, never for the thing of a season. Missing a season costs a wait, never a use or a way forward.
+- What a thing of its season gives is variety, a journal and collection entry, and trade: its stock in the market drains out of season, so its price rises inside R8's band and a player who kept some can sell them then. The band bounds it, so no season makes a fortune.
+- Its rarity counts in the world's one rarity budget (G42), as any rare thing does.
+- G42 carries this as its second written exception, beside the holidays: both on the real calendar, both back every year.
+- How much of the world turns with the seasons is a matter for content: each season of the year should bring some things of its own, and most of the world only changes in amount.
+
+**Closes:** the first of the calendar's open questions; GRUNT's CR-42 now carries it.
+**Retry when:** players read a thing of its season as locked away, or a recipe or quest is found waiting for a season. Model: claude-opus-5-5.
