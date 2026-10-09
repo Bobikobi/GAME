@@ -46,7 +46,7 @@ export const Rarity = Type.Union(RARITIES.map((r) => Type.Literal(r)), {
   description: 'Declared rarity. The check compares it with the rarity computed from the data.',
 });
 
-export const TOOL_KINDS = ['basket', 'trowel'] as const;
+export const TOOL_KINDS = ['basket', 'trowel', 'axe'] as const;
 export const ToolKind = Type.Union(TOOL_KINDS.map((k) => Type.Literal(k)));
 
 export const STATIONS = ['fire', 'workshop'] as const;
@@ -225,8 +225,22 @@ export const ResourceBody = Type.Object(
     count: Int(1, 12, 'How many of these nodes the slot holds.'),
     sprite: SpriteRef,
     sprite_empty: Type.Optional(SpriteRef),
+    growth: Type.Optional(
+      Type.Array(SpriteRef, {
+        minItems: 1,
+        maxItems: 3,
+        description:
+          'Young stages of a node that grows back, from the youngest up (after `sprite_empty`, before `sprite`). The client shows the stage by how much of the respawn time has passed. Needs `sprite_empty`.',
+      }),
+    ),
+    solid: Type.Optional(
+      Type.Boolean({
+        description:
+          'The node blocks the way, ready or not, as a tree does: a stump stays in the way until the tree is grown again. Left out: the player walks through it.',
+      }),
+    ),
     tool: Type.Optional(ToolKind),
-    level: Int(1, 20, 'Foraging level required.'),
+    level: Int(1, 20, 'Level required, in the profession the node trains: felling when the tool is an axe, foraging otherwise.'),
     game: Type.Optional(
       Type.Union([Type.Literal('timing'), Type.Literal('strike'), Type.Literal('pick'), Type.Literal('snap')], {
         description: 'The minigame played when gathering: "timing" (stop a marker in the middle, the default), "strike" (three timed hammer strikes, for stone), "pick" (press only for the ripe ones, for plants) or "snap" (press fast, for wood).',
@@ -517,6 +531,12 @@ export const StarterBody = Type.Object(
         description: 'Another look of the same character (for example a woman instead of a man), offered by one toggle on the character screen. Same sprite sizes and directions as `sprite`.',
       }),
     ),
+    kit: Type.Optional(
+      Type.Array(Stack, {
+        maxItems: 6,
+        description: 'What the character carries on the first morning: the tools of its first task, put in the bag when the character is chosen.',
+      }),
+    ),
   },
   { additionalProperties: false },
 );
@@ -540,7 +560,7 @@ export const Effect = Type.Union(EFFECTS.map((k) => Type.Literal(k)), {
 export const ProfessionBody = Type.Object(
   {
     name: Name,
-    verb: Type.Union([Type.Literal('gather'), Type.Literal('dig'), Type.Literal('craft')]),
+    verb: Type.Union([Type.Literal('gather'), Type.Literal('fell'), Type.Literal('dig'), Type.Literal('craft')]),
     stations: Type.Optional(
       Type.Array(Station, {
         minItems: 1,

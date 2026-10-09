@@ -36,6 +36,21 @@
         "tier": 1,
         "uses": 40
       }
+    },
+    {
+      "id": "core/axe",
+      "name": "Axe",
+      "description": "For felling trees.",
+      "kind": "tool",
+      "rarity": "common",
+      "class": "tool",
+      "tier": 1,
+      "sprite": "core/base-kit:items/axe",
+      "tool": {
+        "kind": "axe",
+        "tier": 1,
+        "uses": 50
+      }
     }
   ]
 }

@@ -255,6 +255,10 @@
                       {
                         "const": "trowel",
                         "type": "string"
+                      },
+                      {
+                        "const": "axe",
+                        "type": "string"
                       }
                     ]
                   },
@@ -545,6 +549,22 @@
               "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
               "type": "string"
             },
+            "growth": {
+              "minItems": 1,
+              "maxItems": 3,
+              "description": "Young stages of a node that grows back, from the youngest up (after `sprite_empty`, before `sprite`). The client shows the stage by how much of the respawn time has passed. Needs `sprite_empty`.",
+              "type": "array",
+              "items": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
+                "maxLength": 120,
+                "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
+                "type": "string"
+              }
+            },
+            "solid": {
+              "description": "The node blocks the way, ready or not, as a tree does: a stump stays in the way until the tree is grown again. Left out: the player walks through it.",
+              "type": "boolean"
+            },
             "tool": {
               "anyOf": [
                 {
@@ -554,13 +574,17 @@
                 {
                   "const": "trowel",
                   "type": "string"
+                },
+                {
+                  "const": "axe",
+                  "type": "string"
                 }
               ]
             },
             "level": {
               "minimum": 1,
               "maximum": 20,
-              "description": "Foraging level required.",
+              "description": "Level required, in the profession the node trains: felling when the tool is an axe, foraging otherwise.",
               "type": "integer"
             },
             "game": {
@@ -877,6 +901,10 @@
                       {
                         "const": "trowel",
                         "type": "string"
+                      },
+                      {
+                        "const": "axe",
+                        "type": "string"
                       }
                     ]
                   },
@@ -1155,6 +1183,10 @@
                 },
                 {
                   "const": "trowel",
+                  "type": "string"
+                },
+                {
+                  "const": "axe",
                   "type": "string"
                 }
               ]
@@ -1472,6 +1504,10 @@
                       },
                       {
                         "const": "trowel",
+                        "type": "string"
+                      },
+                      {
+                        "const": "axe",
                         "type": "string"
                       }
                     ]
@@ -2092,6 +2128,10 @@
                       },
                       {
                         "const": "trowel",
+                        "type": "string"
+                      },
+                      {
+                        "const": "axe",
                         "type": "string"
                       }
                     ]
@@ -2797,6 +2837,10 @@
                       {
                         "const": "trowel",
                         "type": "string"
+                      },
+                      {
+                        "const": "axe",
+                        "type": "string"
                       }
                     ]
                   },
@@ -3422,6 +3466,10 @@
                       },
                       {
                         "const": "trowel",
+                        "type": "string"
+                      },
+                      {
+                        "const": "axe",
                         "type": "string"
                       }
                     ]
@@ -4291,6 +4339,10 @@
                       {
                         "const": "trowel",
                         "type": "string"
+                      },
+                      {
+                        "const": "axe",
+                        "type": "string"
                       }
                     ]
                   },
@@ -4863,6 +4915,10 @@
                       },
                       {
                         "const": "trowel",
+                        "type": "string"
+                      },
+                      {
+                        "const": "axe",
                         "type": "string"
                       }
                     ]
@@ -5453,6 +5509,10 @@
                       {
                         "const": "trowel",
                         "type": "string"
+                      },
+                      {
+                        "const": "axe",
+                        "type": "string"
                       }
                     ]
                   },
@@ -5756,6 +5816,32 @@
               "maxLength": 120,
               "description": "Another look of the same character (for example a woman instead of a man), offered by one toggle on the character screen. Same sprite sizes and directions as `sprite`.",
               "type": "string"
+            },
+            "kit": {
+              "maxItems": 6,
+              "description": "What the character carries on the first morning: the tools of its first task, put in the bag when the character is chosen.",
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "item",
+                  "qty"
+                ],
+                "properties": {
+                  "item": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "qty": {
+                    "minimum": 1,
+                    "maximum": 999,
+                    "type": "integer"
+                  }
+                }
+              }
             }
           }
         }
@@ -6012,6 +6098,10 @@
                       },
                       {
                         "const": "trowel",
+                        "type": "string"
+                      },
+                      {
+                        "const": "axe",
                         "type": "string"
                       }
                     ]
@@ -6502,6 +6592,10 @@
                       },
                       {
                         "const": "trowel",
+                        "type": "string"
+                      },
+                      {
+                        "const": "axe",
                         "type": "string"
                       }
                     ]
@@ -7088,6 +7182,10 @@
                       {
                         "const": "trowel",
                         "type": "string"
+                      },
+                      {
+                        "const": "axe",
+                        "type": "string"
                       }
                     ]
                   },
@@ -7618,6 +7716,10 @@
                       {
                         "const": "trowel",
                         "type": "string"
+                      },
+                      {
+                        "const": "axe",
+                        "type": "string"
                       }
                     ]
                   },
@@ -7871,6 +7973,10 @@
               "anyOf": [
                 {
                   "const": "gather",
+                  "type": "string"
+                },
+                {
+                  "const": "fell",
                   "type": "string"
                 },
                 {
@@ -8248,6 +8354,10 @@
                       },
                       {
                         "const": "trowel",
+                        "type": "string"
+                      },
+                      {
+                        "const": "axe",
                         "type": "string"
                       }
                     ]
@@ -9547,6 +9657,10 @@
                       {
                         "const": "trowel",
                         "type": "string"
+                      },
+                      {
+                        "const": "axe",
+                        "type": "string"
                       }
                     ]
                   },
@@ -10095,6 +10209,10 @@
                       },
                       {
                         "const": "trowel",
+                        "type": "string"
+                      },
+                      {
+                        "const": "axe",
                         "type": "string"
                       }
                     ]

@@ -151,6 +151,8 @@ export interface WorldView {
  * block; a restored passable thing (a bridge) opens its tiles. Resource nodes
  * do not: a gathered rock opens the way, and one that grows back under the
  * player must never trap them. The game blocks a node only while it shows.
+ * The exception is a solid node, a tree: it blocks grown or felled, so nobody
+ * ever stands where it grows back.
  */
 export function makeWalkable(bundle: Bundle): (x: number, y: number, view: WorldView) => boolean {
   const map = bundle.map;
@@ -159,6 +161,10 @@ export function makeWalkable(bundle: Bundle): (x: number, y: number, view: World
   for (const id of Object.keys(bundle.npcs)) {
     const t = npcTile(bundle, id);
     if (t) blockers.add(t[1] * map.width + t[0]);
+  }
+  // a solid node (a tree) stays in the way, grown or a stump: the player never stands on its tile
+  for (const inst of Object.values(bundle.instances)) {
+    if (inst.kind === 'resource' && bundle.resources[inst.source]?.solid === true) blockers.add(inst.y * map.width + inst.x);
   }
   const passable = Object.values(bundle.restores)
     .filter((r) => r.passable)

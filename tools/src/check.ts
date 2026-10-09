@@ -7,12 +7,14 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PNG } from 'pngjs';
 import { type Bundle, computeValues, minChargeFor, missOutcome, rarityBudget, rarityRank } from '@game/kernel';
-import { BASE_CLASSES, RARITIES, type ParamsBody } from '@game/schema';
+import { RARITIES, type ParamsBody } from '@game/schema';
 import { assemble, type Assembled } from './assemble';
 import { readBoard } from './board';
 import { CORE_PALETTE } from './kit/palette';
 import { LOCK_FILE, loadAll, toRepoPath, type Issue } from './load';
+import { baseOf } from './material';
 import { checkPlay } from './play';
+import { checkStarts } from './starts';
 
 export interface CheckResult {
   issues: Issue[];
@@ -35,6 +37,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkDrift(b));
     issues.push(...checkKits(assembled));
     issues.push(...checkPlay(b, assembled.origin));
+    issues.push(...checkStarts(b, assembled.origin));
   }
   return { issues: dedupe(issues), files: files.length, assembled };
 }
@@ -176,11 +179,6 @@ function checkEconomy(b: Bundle, origin: Record<string, string>): Issue[] {
 const PARAMS_FILE = 'content/core/params.json';
 /** From this tier up an item comes only from a gated source (DECISIONS.md, 2026-10-09). */
 const GATED_TIER = 3;
-
-/** The base class of a class: itself, or the base it was declared under. */
-function baseOf(b: Bundle, cls: string | undefined): string | undefined {
-  return cls === undefined ? undefined : (BASE_CLASSES as readonly string[]).includes(cls) ? cls : b.classes[cls]?.base;
-}
 
 /**
  * The material grammar and the two ladders (DECISIONS.md, 2026-10-09: the

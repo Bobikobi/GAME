@@ -180,6 +180,11 @@ export function verbLevel(bundle: Bundle, state: State, verb: Verb): number {
   return professionLevel(bundle, state, bundle.verbs[verb]);
 }
 
+/** The verb a node trains: a node worked with an axe is felled, any other is gathered. */
+export function nodeVerb(resource: { tool?: string }): Verb {
+  return resource.tool === 'axe' ? 'fell' : 'gather';
+}
+
 /** Character level: one more for every profession level gained. */
 export function characterLevel(bundle: Bundle, state: State): number {
   let level = 1;

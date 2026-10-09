@@ -253,6 +253,10 @@
                   {
                     "const": "trowel",
                     "type": "string"
+                  },
+                  {
+                    "const": "axe",
+                    "type": "string"
                   }
                 ]
               },
@@ -531,6 +535,10 @@
             },
             {
               "const": "trowel",
+              "type": "string"
+            },
+            {
+              "const": "axe",
               "type": "string"
             }
           ]
