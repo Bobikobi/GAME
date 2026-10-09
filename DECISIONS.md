@@ -413,3 +413,16 @@ Read as: an email address and the name the world shows, asked when the opening e
 **Opens for stage 2a:** a privacy text and the youngest age that may register, both before the first address is collected; a mail service for the notices; how the opening played before registering moves into the new account under server-decided saves.
 **Closes:** nothing.
 **Retry when:** stage 2a is designed. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ Absence costs the place and a fifth of its price, never what the player made
+
+The question (settlement plan S1b, 9.10): what a lapse and a packing cost, after the owner's word that absence in a shared town has a price. The owner's word (9.10): yes to the recommendation.
+
+- A building with no finished step for 14 days returns to the town, whether its builder is away or slow. The builder gets back every delivered item and 80% of the plot's price; the other 20% stays burned.
+- A house whose owner has not played for 45 days is packed. Its plot returns to the town with the same 80% of its price; the house and everything in it stay the owner's, to raise again on any free plot without redoing a step.
+- One mail comes before each: 3 days before for a building, 7 for a house.
+
+Final Fantasy XIV is the nearest precedent: 45 days without the owner's visit, mails before, and 80% of the plot's price back, but there the house is torn down. G28 in `docs/design/GAME_RULES.md` now states the exception, and `docs/design/SETTLEMENT.md` holds the parameters (`build_hold_days` 14, `house_absent_days` 45, `plot_refund_permille` 800, `notice_days` 3 and 7).
+
+**Closes:** S1 of the settlement plan, and the open part of the entry "In a shared town absence has a price, and a mail comes first".
+**Retry when:** the shared world of stage 4 is designed, or real absences show the numbers are wrong. Model: claude-opus-5-5.

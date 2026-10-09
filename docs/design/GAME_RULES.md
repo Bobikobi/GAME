@@ -266,7 +266,13 @@ already handles that and the e2e run checks it.
 - **G28 No dark patterns.** The valley waits. No punishment for being away,
   no timer that runs out while the player sleeps, no fake scarcity, no "last
   chance", nothing to pay for. A return is rewarded (the ladder's Day 2); an
-  absence is never punished.
+  absence is never punished. One written exception, for the shared world of
+  stage 4: a plot in a shared town is scarce, so a building with no finished
+  step for 14 days, or the house of an owner who has not played for 45 days,
+  goes back to the town. Every delivered item and 80% of the plot's price
+  come back, a finished house is packed and never destroyed, and one mail
+  comes first ([SETTLEMENT.md](SETTLEMENT.md) 3.2 and 3.8). Absence costs
+  the place, never what the player made.
 - **G29 Playable by more people.** Text at 16 px or more and dialogue at 18
   (FTUE); colour is never the only signal (a glint has a shape, a tone has a
   word); reduced motion is honoured by every effect; one hand is enough on a

@@ -12,6 +12,7 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 - Guarding a settlement is a quest players choose. A group quest is made for a group: alone, the chance is low. Later the valley's characters may join a group, only those fit for it (by default none) and at a fitting level; one below it falls and goes home.
 - With combat, later: a group holds a town or a fort, and a rival group signs up to attack it.
 - On absence (question S1): yes to a hold only in a shared town and to a clock between steps, but absence has a price. A builder who is slow between steps needs a rule, so does an owner who has not played for weeks, and a player about to lose a place hears of it by mail first. Registration is minimal and comes after the opening.
+- On what absence costs (question S1b): as recommended. A building with no finished step for 14 days returns to the town, the house of an owner who has not played for 45 days is packed, and one mail comes first. Absence costs the place and a fifth of its price, never what the player made.
 
 ## 2. What exists today and stays
 
@@ -36,10 +37,10 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 - Claiming: the first player whose first step on a free plot the server accepts holds it. The first step pays the plot's price in gold, which is burned, and makes the first delivery.
 - One plot in `building` per player at a time, and one house per player to start (a reading; a later stage may allow more, with an upkeep that grows with the number held).
 - Building is an ordered chain of steps. A step is a delivery to the plot or a quest from the palette (gather, find, riddle, tend and the rest). A finished step changes what stands on the plot: a frame, walls, a roof, a door. The builder leaves between steps, and nothing on the plot decays while it is held.
-- Lapse: when no step is finished for `build_hold_days` (14 to start), the plot returns to `free`. The clock runs whether the builder is away or plays without building, so a slow builder and an absent one meet the same rule (S1). The builder gets back every delivered item and `plot_refund_permille` of the price (question S1b) through the ledger with the reason `refund`; the rest of the price stays burned. The quests of the finished steps keep the rewards they paid.
+- Lapse: when no step is finished for `build_hold_days` (14 to start), the plot returns to `free`. The clock runs whether the builder is away or plays without building, so a slow builder and an absent one meet the same rule (S1). The builder gets back every delivered item and `plot_refund_permille` of the price (800, S1b) through the ledger with the reason `refund`; the rest of the price stays burned. The quests of the finished steps keep the rewards they paid.
 - A step fits in the hold (a reading): the checker refuses a step whose value is above `step_value_max_ms`, two hours of the reference player's effort to start, so a lapse comes from the builder's pace and never from the chain.
-- Packing (question S1b): when an owner has not played for `house_absent_days`, the house is packed. The plot returns to `free` with `plot_refund_permille` of its price; the house and everything in it stay the owner's, and the owner raises it again on any free plot by paying that plot's price, with no step to redo.
-- A lapse or a packing is announced first (3.8), and a player who comes back is told on screen what happened while away.
+- Packing (S1b): when an owner has not played for `house_absent_days` (45), the house is packed. The plot returns to `free` with `plot_refund_permille` of its price; the house and everything in it stay the owner's, and the owner raises it again on any free plot by paying that plot's price, with no step to redo.
+- A lapse or a packing is announced first, `notice_days` before (3 for a building, 7 for a house; 3.8), and a player who comes back is told on screen what happened while away.
 
 ### 3.3 Supply
 
@@ -48,9 +49,9 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 
 ### 3.4 A home without a house
 
-- The town is safe at every hour, so a player without a house sleeps on the street: safe, with none of what a house gives.
-- What a house gives (a reading): storage beyond the bag, a full night's rest where the street gives part of it, a home station, and from stage 4 a window for selling to other players.
-- The camp: question S2.
+- The town is safe at every hour, so a player without a house sleeps on the street: safe, and a night's sleep there gives health back as a night at camp does (question S2). A newcomer without a house is not punished for it.
+- What a house gives (a reading): storage and a home station inside the safe town, where the camp's chest and workshop stand outside it, and from stage 4 a window for selling to other players.
+- The camp: question S2. In a shared world each player's camp stays the player's own (a reading): it takes no plot, and no other player enters it.
 
 ### 3.5 Danger by area
 
@@ -80,10 +81,10 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 
 | Rule already written | What meets it | Proposal |
 |---|---|---|
-| G28: the valley waits; an absence is never punished | A held plot lapses, and a long-absent owner's house is packed | S1 (answered in part): a written exception for scarce shared places only; what it costs is S1b. G28's text gains the exception when S1b is answered |
+| G28: the valley waits; an absence is never punished | A held plot lapses, and a long-absent owner's house is packed | Answered (S1, S1b): a written exception for scarce shared places only, now in G28's own text. Absence costs the place and a fifth of its price, never what the player made |
 | G28: no "last chance"; the drives of loss and avoidance it refuses | A mail before a place returns to the town | Read as: a notice of a real date for a real place, once per hold; it sells nothing and offers nothing |
-| Pillar 5: effort is never wasted | A lapse loses the building's progress | S1b: every delivered item comes back, the finished steps' quests keep their rewards, and a finished house is packed, never destroyed |
-| 8.10: the camp is safe at every hour | "Outside the town is more dangerous"; the street | S2 |
+| Pillar 5: effort is never wasted | A lapse loses the building's progress | Answered (S1b): every delivered item comes back, the finished steps' quests keep their rewards, and a finished house is packed, never destroyed |
+| G30 (8.10): the town and the camp are safe at every hour, and a night's sleep at camp gives health back | "Outside the town is more dangerous", and the camp stands outside the town; the street | S2: the town stays safe and its street heals as the camp does; a camp outside the town is safe while its fire burns |
 | 6.10 (kernel review 7.2, D6): the world stays cooperative until there is a community | First come for plots; rival groups later | S4 |
 | G42: rare is capacity and gates, never a timer | Places open gradually | Read as: by work (mending, clearing quests), never by date |
 | The ruins as the community's slots | Houses in the town's existing buildings | Read as: two kinds of place; a slot stays a public place, a plot is a home |
@@ -97,9 +98,9 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 
 **S1. Absence in a shared town.** A held plot that lapses while its holder sleeps is the timer G28 forbids, and a lapse throws away progress (pillar 5). Answered in part (9.10): yes to a hold only in a shared town, as a written exception to G28, counted between steps, with scarcity answered by the plots that work opens (3.3). But absence has a price: a slow builder needs a rule, so does an owner who has not played for weeks, and a mail comes first (3.2, 3.8).
 
-**S1b. What absence costs** (asked 9.10). Recommended: a building with no finished step for 14 days returns to the town with every delivered item and 80% of the plot's price. A house whose owner has not played for 45 days is packed: its plot returns with the same 80%, and the house and its contents stay the owner's, to raise again on any free plot without redoing a step. One mail comes before each, 3 days before for a building and 7 for a house. Absence then costs the place and a fifth of its price, never what the player made. Final Fantasy XIV frees a house plot after 45 days without a visit by its owner and refunds 80% of the plot's price, but it tears the house down.
+**S1b. What absence costs.** Answered 9.10, as recommended: a building with no finished step for 14 days returns to the town with every delivered item and 80% of the plot's price. A house whose owner has not played for 45 days is packed: its plot returns with the same 80%, and the house and its contents stay the owner's, to raise again on any free plot without redoing a step. One mail comes before each, 3 days before for a building and 7 for a house. Absence then costs the place and a fifth of its price, never what the player made. Final Fantasy XIV frees a house plot after 45 days without a visit by its owner and refunds 80% of the plot's price, but it tears the house down.
 
-**S2. The camp and the street.** Today the camp is safe at every hour and holds a chest: it is already the home of a player without a house. Recommended: safety comes from the town or from a burning fire. The town is safe at every hour. Outside it a camp is safe only while its fire burns, and keeping it burning through a night is the task (the owner's campfire idea becomes the rule). Deeper areas eat more wood, and an area of level 0 needs almost none, so the camp of the opening stays as it is today. The street is the free and safe place in town; a house adds storage, a full rest and a window to sell from.
+**S2. The camp and the street** (asked 9.10). G30 keeps the town and the camp safe at every hour and gives health back for a night's sleep at camp; the owner's word that outside the town is more dangerous meets it, since the camp stands outside the town. Recommended: the town stays safe at every hour, and a player without a house sleeps on the street, safe, with health back as at camp. Outside the town a camp is safe only while its fire burns, and keeping it burning through a night with branches is the night task (the owner's campfire idea becomes the rule). The fire eats `wood_per_night` times the area's danger level `d`, so a camp at level 0, as the opening's is, needs no wood and plays as today. The fire matters only while the player is there at night: away, nothing happens to the camp or its chest. Its level shows, and G31's warning comes before it goes out.
 
 **S3. The internal difficulty scale.** Recommended: yes, one internal scale for areas, quests and recipes. Each step multiplies effort and danger by a fixed ratio (1.5 to start), while the hazards' frequency grows by one step per level. It never shows on screen.
 
