@@ -58,6 +58,7 @@ In every file of the new folder, replace `your-handle` with your handle. Everyth
 Open `content/extensions/<your-handle>/resources/wild-plums.json`. Rename the file and the ids if you grow something else. The fields worth changing:
 
 - `items[0].name` and `description` - what the player reads.
+- `items[0].class`, `family` and `tier` - what the fruit is: `plant`, family `plum`, tier 1. See [Classes and tiers](#classes-and-tiers).
 - `food.satiety` - how much one fruit fills, 1 to 100. A redberry gives 4, a cooked berry mash 15.
 - `node.yield` - fruit per pick with perfect timing, 1 to 20.
 - `node.active_ms` - how long one pick takes, from 1000 to 15000 ms.
@@ -83,6 +84,47 @@ Run `pnpm dev` again and continue your game, or start a new one. Walk west from 
 ## 6. Open a pull request (1 minute)
 
 Commit only your own folder, push it to your fork, and open a pull request. The same check runs on it automatically, and the pull request template lists what reviewers look at. A preview of the game with your change is built for the pull request; for a first pull request from a fork, a maintainer approves that build first.
+
+## Classes and tiers
+
+Every item names a `class` and a `tier`, so recipes can ask for a kind of material instead of one item, and the world can grow new materials without rewriting old recipes.
+
+- `class` - one of the base classes: `plant` (leaves, herbs, berries, fruit, roots, mushrooms), `wood`, `fibre` (reeds, grass, thread, cloth), `stone`, `clay` (clay, sand, pottery, brick), `mineral` (crystals, gems, salt, ore), `metal`, `animal` (feathers, wool, hide, bone), `meal` (cooked food), `tool`, `garment`, `jewelry`, `relic` (old things from the ruins). Metal waits for its discovery: until the world finds it, the check refuses metal items.
+- A class of your own sits under one base class. Declare it in `classes` at the top level of any of your files, next to `items`: `"classes": [{ "id": "<your-handle>/stone-fruit", "name": "Stone fruit", "base": "plant" }]`. Every rule for the base class holds for it, and a recipe that asks for `plant` takes it too.
+- `family` and `tags` - optional open words: `"family": "plum"`, `"tags": ["sweet", "night"]`.
+- `tier` - how advanced it is, from 1; a first material is tier 1, and a tool has the tier of its `tool`. The world has opened tiers 1 to 3 (`open_tiers` in the params). The tier is a different ladder from the rarity: the rarity says how often a thing appears, the tier how far up it is.
+
+Recipes climb one tier at a time. A recipe's tier is the highest tier among its outputs, and:
+
+- no output is more than one tier above the highest tier among the inputs;
+- its `level` sits inside the tier's band: tier 1 from level 1 to 2, tier 2 from 3 to 5, tier 3 from 6 (`tier_min_level` in the params);
+- a camp part provides its station at that tier or higher;
+- the profession that gates it is the one named in `profession`, or else the one that works its station (cooking works the fire).
+
+From tier 3 up, a thing comes only from a gated source: a node that needs the tier's level or respawns in 5 minutes or more, a dig spot, a quest reward or a recipe. No shop sells it.
+
+### Recipe templates
+
+A template asks for a class instead of an item. The check turns it into one recipe for every item that fits, so a herb added next month works in this recipe without anyone writing it again:
+
+```json
+{
+  "format": 1,
+  "type": "template",
+  "id": "<your-handle>/dried-herbs",
+  "title": "Dried herbs",
+  "creator": "<your-handle>",
+  "template": {
+    "station": "fire",
+    "active_ms": 4000,
+    "level": 1,
+    "inputs": [{ "class": "plant", "family": "herb", "min_tier": 1, "qty": 2 }],
+    "outputs": [{ "item": "<your-handle>/dried-herbs", "qty": 1, "share_pct": 100 }]
+  }
+}
+```
+
+Each recipe it makes is named after the template and the items it took, for example "Dried herbs (Sunleaf)", and every player knows it from the start. A template that fits more than `template_max_recipes` combinations (12 today) makes none, and the check says so: name a family, a narrower class or a higher `min_tier`. Because the check runs on the whole world, a new item from another creator can push a broad template over the limit, so keep templates narrow.
 
 ## Your creator profile
 
@@ -153,6 +195,8 @@ Then point your item at it: `"sprite": "<your-handle>/kit:items/plum"`.
 - Active times stay between 1000 and 15000 ms.
 - The rarity you declare is within one step of what the data implies. A fruit that grows anywhere at any hour is common; night-only, high-level or slow-to-regrow fruit is rarer.
 - Everything a recipe or quest asks for can be found somewhere in the world.
+- Every item has a `class` and a `tier`; the tier is open (1 to 3 today); a class of your own sits under a base class; no metal yet. A recipe climbs one tier at most, asks for a level inside its tier's band, has a profession that works its station and a camp part of its tier. From tier 3 up, nothing is sold. A recipe template stays within `template_max_recipes`. See [Classes and tiers](#classes-and-tiers).
+- The rarity bonuses of the whole world stay inside the rarity budget (10% today): a rare node with many copies or a fast respawn uses more of it.
 - A `find` step names an item that is found, not farmed: one that only digging gives, or that exactly one timed plant (a resource with `hours`) gives, never made or sold. It carries a clue; the journal shows the clue, not a count. A `riddle` step cites map props by id and names its answer, a dig spot or a place by day or by night; an id that is not on the map is refused. `templates/extension/quests/` has a find.
 - Your change may not move the value of anything that already exists by more than 10%. If it has to, a core maintainer re-anchors the values.
 - Every sprite exists, has the right size and uses the core palette.

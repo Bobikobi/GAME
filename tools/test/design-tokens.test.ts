@@ -12,14 +12,6 @@ import { REPO_ROOT } from '../src/load';
 const tokens = readFileSync(join(REPO_ROOT, 'design', 'tokens.css'), 'utf8');
 const style = readFileSync(join(REPO_ROOT, 'game', 'src', 'style.css'), 'utf8');
 
-/** `--name: #hex;` pairs of the first :root block of a sheet. */
-function colourTokens(css: string): Map<string, string> {
-  const root = /:root\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
-  const out = new Map<string, string>();
-  for (const m of root.matchAll(/--([a-z0-9-]+)\s*:\s*(#[0-9a-fA-F]{3,8})\s*;/g)) out.set(m[1]!, m[2]!.toLowerCase());
-  return out;
-}
-
 describe('design/tokens.css', () => {
   const palette = new Set(CORE_PALETTE.map((c) => c.toLowerCase()));
 
@@ -38,11 +30,10 @@ describe('design/tokens.css', () => {
     expect(tokens).toMatch(/--px:\s*2px;/);
   });
 
-  it('keeps every colour token of the game, with the same value', () => {
-    const shared = colourTokens(tokens);
-    const game = colourTokens(style);
-    expect(game.size).toBeGreaterThan(0);
-    for (const [name, hex] of game) expect(shared.get(name), `--${name}`).toBe(hex);
+  it('contains the import line and its :root block declares no hex', () => {
+    expect(style).toMatch(/@import\s+['"]\.\.\/\.\.\/design\/tokens\.css['"];/);
+    const root = /:root\s*\{([^}]*)\}/.exec(style)?.[1] ?? '';
+    expect(root).not.toMatch(/#[0-9a-fA-F]/);
   });
 
   it('keeps text at 15px or more and the pixel face first', () => {

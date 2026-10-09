@@ -79,6 +79,23 @@
       "max": 200,
       "step": 25
     },
+    "open_tiers": {
+      "value": 3,
+      "min": 1,
+      "max": 20,
+      "step": 1
+    },
+    "tier_min_level": [
+      1,
+      3,
+      6
+    ],
+    "template_max_recipes": {
+      "value": 12,
+      "min": 1,
+      "max": 64,
+      "step": 4
+    },
     "rarity_bonus_ms": {
       "common": 0,
       "uncommon": 150,

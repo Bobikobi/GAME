@@ -12,6 +12,8 @@
       "description": "Burns well.",
       "kind": "material",
       "rarity": "common",
+      "class": "wood",
+      "tier": 1,
       "sprite": "core/base-kit:items/branch"
     }
   ],

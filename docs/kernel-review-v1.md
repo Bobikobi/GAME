@@ -106,7 +106,7 @@ Check: schema. Ledger conservation: gold in the state equals mints minus burns. 
 **R7. The value table is a checked certificate.** Nobody declares V. For every activity and each of its outputs: `yield * V(out) <= share * (time + sum of quantity * V(in))`, with equality for at least one activity per item. Items must be reachable from input-free activities. V is stored as integers, rounded once.
 Check: CI recomputes V, verifies every inequality in exact integer arithmetic, verifies reachability, and solves the income problem on the merged content: the best mixed strategy of the reference player earns exactly k*r.
 
-**R8. Shop invariant.** For every item: the highest price the shop pays, over all stock levels, discounts and rounding, is at most k*r*V, and the lowest price it charges is at least k*r*V. Money is fixed point; pay rounds down, charge rounds up, per transaction. Prices between players are free.
+**R8. Shop invariant.** For every item: the highest price the shop pays, over all stock levels, discounts and rounding, is at most k*r*V, and the lowest price it charges is at least r*V. Money is fixed point; pay rounds down, charge rounds up, per transaction. Prices between players are free.
 Check: evaluate the pricing function on its full grid; run the exhaustive trade search of appendix A9 on it; any gain fails the build.
 
 **R9. Rate clamp in the one calculator.** A build can change the active time of any activity and the output of an activity that has no inputs. Nothing can change the output of an activity that has inputs. For each activity the combined rate multiplier is clamped to P(level).
@@ -139,7 +139,7 @@ Sketch. V(o) is at most its share of the cost in a; multiply by y, sum over the 
 This inequality is all that the bound below needs. That is why R7 checks an inequality on a stored table and does not trust a solver.
 
 **Theorem 3 (bounded gold).** Assume: Theorem 2 for the content; builds under R9 with cap P; the shop under R8; every gold source is an activity whose gold output is counted at 1/(k*r) seconds per unit; the player does not know a draw before choosing. Define wealth `W = gold + k*r * sum_i V(i) * n_i`. Then over any play, expected W grows by at most k*r*P per active second.
-Sketch. Activity with inputs, time t' >= t/P: W changes by k*r*(sum y*V(out) - sum q*V(in)) <= k*r*t <= k*r*P*t'. Input-free activity with y'/t' <= P*y/t: W changes by k*r*y'*V(out) <= k*r*P*t'. Selling to the shop at no more than k*r*V: W does not rise. Buying at no less than k*r*V: W does not rise. Transfers between players conserve gold.
+Sketch. Activity with inputs, time t' >= t/P: W changes by k*r*(sum y*V(out) - sum q*V(in)) <= k*r*t <= k*r*P*t'. Input-free activity with y'/t' <= P*y/t: W changes by k*r*y'*V(out) <= k*r*P*t'. Selling to the shop at no more than k*r*V: W does not rise. Buying at no less than r*V (R8), more than the k*r*V this step needs: W does not rise. Transfers between players conserve gold.
 Consequences. No sequence of trades and crafting yields gold without active time. Gold per active hour is at most 3600*k*r*P. With stopping rules the bound still holds in expectation.
 Limits. Per account. Nothing about total gold in the world, nothing about sinks.
 Run: under the hardened values the best mixed strategy earns exactly x1.000 at 1, 5 and 20 crystal nodes; the largest value gain per active second over all activities is exactly 1.
