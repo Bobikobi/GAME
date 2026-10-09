@@ -359,3 +359,19 @@ Everything cosmetic the client draws on top of the plain valley sits behind `RIC
 The owner saw the 9.10 gallery (sixteen panels and three short videos of the opening, at phone size) and approved it. That gallery is the style compass for the look of the valley from here: the work that follows on the look iterates inside it (sharper detail, more motion where it reads, light that stays on the palette) and opens no new direction; a change of direction is the owner's call again, from stills at phone size, before anything is built.
 
 **Retry when:** a device cannot hold the full-map ground canvases at four frames (then the groups become a quality level the client picks by measurement), or the owner wants the plain valley as a player choice. Model: Claude Fable 5.1.
+
+## 2026-10-09 ✅ No combat yet: a predator is escaped, and a group quest can be played alone with the valley's characters
+
+The question (a review of open product direction, 9.10): the owner spoke of buying and improving weapons, of a monster too strong for a player, and of guarding a settlement, while fighting stays out (G35) and the hazards entry of 8.10 answers a predator with a lit lantern, thrown food and the road. Does fighting come earlier, and if not, what do those words mean in a valley without combat? The owner's word (9.10):
+
+- No combat now. A stage in between, without fighting, is right, but not gear against a hazard: no "stronger lantern". A player escapes a predator by running back to town, and that run is hard and possible.
+- The night carries the danger through its work. An example to develop: a night by a campfire that must be kept burning with branches, with more layers on top so it stays interesting. It fits the tending beat of the night expedition (8.10).
+- Guarding a settlement is a quest that players choose to take together, never a duty that decays while nobody plays (G28).
+- Quests come from a large pool matched to the player's character and levels, each started by talking to a character in the world, as in Pokemon or Skyrim. Next to them stand fixed quests like the seasons of current games; how a season keeps clear of a "last chance" (G28, G42) is still open.
+- A group quest can be played alone or together. Grand Theft Auto offers solo and co-op; here, when no other player is there, the valley's characters fill the group.
+- Later, when combat comes: a group may take a quest to guard a town or a fort, and a rival group may sign up together to attack it. Both sides choose to play it, and nothing is taken from a player who is away, so the morning's entry on war, theft and robbery ("Crafting is optional") holds until then.
+
+How far "later" is: the spec sets no dates and moves from stage to stage on conditions. By its own estimate, stages 2a to 8 come to about 39 to 63 thousand lines, against about 20 thousand lines of TypeScript in the repository today, with a paid server from 2a, a payments provider at 6, a real-time server at 7 and a sandbox for creators' code at 8. A community vote may still open combat earlier (G35).
+
+**Closes:** nothing; weapons still wait for combat (CR-12).
+**Retry when:** the first night quest shows whether the run back to town is hard and possible, or a vote or stage 8 opens combat. Model: claude-opus-5-5.
