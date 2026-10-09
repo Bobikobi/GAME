@@ -124,7 +124,7 @@ A template asks for a class instead of an item. The check turns it into one reci
 }
 ```
 
-Each recipe it makes is named after the template and the items it took, for example "Dried herbs (Sunleaf)", and every player knows it from the start. A template that fits more than `template_max_recipes` combinations (12 today) makes none, and the check says so: name a family, a narrower class or a higher `min_tier`. Because the check runs on the whole world, a new item from another creator can push a broad template over the limit, so keep templates narrow.
+Each recipe it makes is named after the template and the items it took, for example "Dried herbs (Sunleaf)", with the id `<template id>+<item id>` (one item id per class input), and every player knows it from the start. A template that fits more than `template_max_recipes` combinations (12 today) makes none, and the check says so: name a family, a narrower class or a higher `min_tier`. Because the check runs on the whole world, a new item from another creator can push a broad template over the limit, so keep templates narrow.
 
 ## Your creator profile
 
@@ -197,6 +197,7 @@ Then point your item at it: `"sprite": "<your-handle>/kit:items/plum"`.
 - Everything a recipe or quest asks for can be found somewhere in the world.
 - Every item has a `class` and a `tier`; the tier is open (1 to 3 today); a class of your own sits under a base class; no metal yet. A recipe climbs one tier at most, asks for a level inside its tier's band, has a profession that works its station and a camp part of its tier. From tier 3 up, nothing is sold. A recipe template stays within `template_max_recipes`. See [Classes and tiers](#classes-and-tiers).
 - The rarity bonuses of the whole world stay inside the rarity budget (10% today): a rare node with many copies or a fast respawn uses more of it.
+- A garment or jewelry piece names where it is worn (`wear`), with at most two small effects under its tier's cap; a look (`wear.look`) has no effect, and only a look may carry `premium_later`, while staying obtainable in the game. A recipe's `miss` keeps a part and is worth less than a success.
 - A `find` step names an item that is found, not farmed: one that only digging gives, or that exactly one timed plant (a resource with `hours`) gives, never made or sold. It carries a clue; the journal shows the clue, not a count. A `riddle` step cites map props by id and names its answer, a dig spot or a place by day or by night; an id that is not on the map is refused. `templates/extension/quests/` has a find.
 - Your change may not move the value of anything that already exists by more than 10%. If it has to, a core maintainer re-anchors the values.
 - Every sprite exists, has the right size and uses the core palette.

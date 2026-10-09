@@ -89,6 +89,12 @@ export function flattenParams(p: ParamsBody): Params {
     open_tiers: p.open_tiers.value,
     tier_min_level: [...p.tier_min_level],
     template_max_recipes: p.template_max_recipes.value,
+    craft_chance_bp: [...p.craft_chance_bp],
+    craft_level_step_bp: p.craft_level_step_bp.value,
+    craft_luck_max_permille: p.craft_luck_max_permille.value,
+    craft_miss_keep_pct: p.craft_miss_keep_pct.value,
+    wear_effect_max_pct: [...p.wear_effect_max_pct],
+    wear_set_bonus_pct: p.wear_set_bonus_pct.value,
     drift_budget_permille: p.drift_budget_permille.value,
     satiety_cap: p.satiety_cap.value,
     satiety_drain_per_min: p.satiety_drain_per_min.value,
@@ -206,19 +212,28 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   }
 
   const r = records as unknown as Pick<Bundle, RecordKey>;
+  // one profession per gathering verb; the one craft verb has a profession per station family
+  // (DECISIONS.md, 2026-10-09), and the check reports a station worked twice
   const verbs = { gather: '', dig: '', craft: '' };
+  const stations: Record<string, string> = {};
+  const crafters: string[] = [];
   for (const id of Object.keys(r.professions).sort()) {
-    const v = r.professions[id]!.verb;
-    if (verbs[v]) err(origin[id]!, 'profession.verb', `"${v}" is already trained by ${verbs[v]}`);
-    else verbs[v] = id;
+    const pr = r.professions[id]!;
+    if (pr.verb === 'craft') {
+      crafters.push(id);
+      for (const station of pr.stations ?? []) stations[station] ??= id;
+    } else if (verbs[pr.verb]) err(origin[id]!, 'profession.verb', `"${pr.verb}" is already trained by ${verbs[pr.verb]}`);
+    else verbs[pr.verb] = id;
   }
+  // the craft verb's own profession is the one at the fire, where crafting starts
+  verbs.craft = stations.fire ?? crafters[0] ?? '';
   for (const v of Object.keys(verbs) as (keyof typeof verbs)[]) {
     if (!verbs[v]) err('content/core', '', `no profession trains "${v}"`);
   }
 
   expandTemplates(templates, { params, items, classes, recipes: r.recipes }, origin, issues);
 
-  const content = { params, items, classes, ...r, map, sprites, verbs, credits };
+  const content = { params, items, classes, ...r, map, sprites, verbs, stations, credits };
   const tag = hashText(canonical(content));
   const instances = layoutInstances(map, r.resources, r.treasures);
   const { values } = computeValues({ params, items, resources: r.resources, treasures: r.treasures, recipes: r.recipes });
@@ -285,7 +300,8 @@ function expandTemplates(
     for (const c of choices) combos = combos.flatMap((combo) => c.map((id) => [...combo, id]));
     for (const combo of combos) {
       const picked = combo.filter((_, i) => 'class' in t.inputs[i]!);
-      const id = `${t.id}--${picked.map((item) => item.replace('/', '-')).join('--')}`;
+      // "+" is outside the id alphabet, so no two templates or item lists can make the same id
+      const id = `${t.id}+${picked.join('+')}`;
       if (origin[id]) {
         err('template', `makes the recipe "${id}", an id already used by ${origin[id]}`);
         continue;
@@ -309,6 +325,7 @@ function expandTemplates(
         ...(t.profession ? { profession: t.profession } : {}),
         inputs,
         outputs: t.outputs.map((o) => ({ ...o })),
+        ...(t.miss ? { miss: structuredClone(t.miss) } : {}),
         known: 'start',
         template: t.id,
       };
@@ -359,6 +376,7 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
   for (const [id, c] of Object.entries(b.recipes)) {
     c.inputs.forEach((s, i) => item(id, `recipe.inputs.${i}.item`, s.item));
     c.outputs.forEach((s, i) => item(id, `recipe.outputs.${i}.item`, s.item));
+    if (c.miss?.output) item(id, 'recipe.miss.output.item', c.miss.output.item);
     if (c.profession && !b.professions[c.profession]) err(id, 'recipe.profession', `no profession "${c.profession}"`);
   }
   for (const [id, n] of Object.entries(b.npcs)) {
@@ -408,6 +426,7 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
   for (const [id, c] of Object.entries(b.camps)) {
     c.inputs.forEach((s, i) => item(id, `camp.inputs.${i}.item`, s.item));
     sprite(id, 'camp.sprite', c.sprite);
+    if (c.upgrades !== undefined && !b.camps[c.upgrades]) err(id, 'camp.upgrades', `no camp part "${c.upgrades}"`);
   }
   const totals = Object.entries(b.starters).map(([id, s]) => [id, Object.values(s.attributes).reduce((n, v) => n + v, 0)] as const);
   for (const [id, total] of totals) {

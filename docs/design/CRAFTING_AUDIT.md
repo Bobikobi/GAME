@@ -283,12 +283,20 @@ What it adds, as built:
 
 What changed from the first plan, and why: the tier is a number the core opens (D-CRAFT-2), not the four rarities; a template input may name a `family`, because a broad template (plant with plant) passes the bound today and breaks when another creator adds plants, and the check runs on the merged world; a recipe counts as a gated source for tier 3 and up through its level band, because every output has a level gate in the recipe itself; the G-rules moved from wave 3 into this wave so the checker's messages can cite them; one craft profession per station is enforced now so the default of D-CRAFT-3 is well defined before the kernel reads it in wave 2.
 
-### Wave 2: the kernel
+### Wave 2: the kernel (built on `feat/crafting-wave2`)
 
 - The craft gate reads `recipe.profession` (or the station's profession) and the station's tier; the assembler allows one profession per verb and station family (D-CRAFT-3).
 - The craft chance (D-CRAFT-7): a success chance from skill against the recipe's level, tilted by luck stones and the character's luck through R4 draws; a miss keeps something (part of the inputs or a lesser output); value at perfect execution, never above the certificate.
 - Worn items (D-CRAFT-6): the slots head, top, trousers or full outfit, feet, two jewelry, hand tool; effects from the closed list, bounded per tier; a set bonus; one calculator with the power cap; the look layer on the same slots and the `premium_later` marker allowed only on look items with no effect, which the check enforces (D-CRAFT-11, CR-9).
 - Invariant tests extended (replay, determinism, bag, ledger, the miss); `pnpm verify` and the opening e2e green.
+
+As built (the readings are in DECISIONS.md, 2026-10-09, "Crafting wave 2 as built"):
+
+- Schema: `wear` (slot, `look`, up to two effects from the worn list, `set`) and `premium_later` on an item; `miss` (`keep_pct` up to 90, a lesser `output`) on a recipe and a template; `upgrades` on a camp part; the effects `gather_speed_pct`, `dig_speed_pct` and `craft_chance_pct`; params `craft_chance_bp`, `craft_level_step_bp`, `craft_luck_max_permille`, `craft_miss_keep_pct`, `wear_effect_max_pct` and `wear_set_bonus_pct`.
+- Kernel 0.3.0: `recipeProfession`, `recipeTier`, `craftChanceBp`, `craftLuckPermille` and `missOutcome`; the craft refuses a station below the recipe's tier and a level of the recipe's own profession, draws once per try and keeps part on a miss; the `wear` and `unwear` actions and the `miss`, `wear` and `unwear` events; `effectValue` (techniques and worn pieces, one calculator, every rate still clamped under the power cap); `fitWorn` takes off what leaves the bag; `campBuilt` follows upgrades.
+- Assembler and checker: the bundle's `stations`; template recipe ids with "+"; `checkWear` for G39 and G44; the miss and the upgrade rules of G40 and G41.
+- Client: the miss, wear and unwear lines and the miss sound; an old save gains empty worn places and craft counters, and a new world version teaches its new start recipes.
+- Tests: kernel crafting (gate, chance, luck, miss, replay and ledger), worn items (places, layers, set, power cap, a random run that keeps every worn unit in the bag), worn and miss schema cases, the checker's passing world and every refusal, the save cases, and the invariant run with wear and unwear.
 
 ### Wave 3: seed content and creator docs
 
@@ -415,10 +423,8 @@ Mirrored in `docs/team/GRUNT.md`, section "Open ends". An item leaves the list w
 | CR-6 | Stale texts about the check: "!" lines, rules G1 to G16, kernel rules R1 to R11. | `docs/design/GAME_RULES.md:4`, `:76-77`, `:332`, `:382-383`; `AGENTS.md:9`; `CONTRIBUTING.md:15`; `docs/design/TOOLKIT.md:48-49` | one docs sweep |
 | CR-7 | Professions are core-only, against spec 8 line 248 and 11 line 475; held so by D-CRAFT-4 for now. | `schema/src/index.ts:575`, `tools/src/assemble.ts:136` | the stage that opens professions to extensions, with its own decision |
 | CR-8 | The shop never buys a tool; a crafted higher-tier tool has a value and no sell-back. | `kernel/src/step.ts:367` | D-CRAFT-10's content lands with a decision on sell-back |
-| CR-9 | The `premium_later` marker and the check that allows it only on look items with no effect. | schema, `tools/src/check.ts` | wave 2 |
 | CR-10 | Quest gates by profession or character level for the non-crafter's roads. | `schema/src/index.ts:307` | a quest may name a level, or DECISIONS.md says it never will |
 | CR-11 | Bag categories. | `game/src/ui/panels.ts` | wave 4 |
 | CR-12 | A weapon slot waits for G35 (stage 8 or a vote). | roadmap | that stage or vote |
 | CR-13 | Metal content waits for its discovery. | roadmap | a vote or an accepted proposal |
 | CR-14 | A broad template can pass its bound today and fail on a later merge when another creator adds fitting items; the guide says to keep templates narrow. | `tools/src/assemble.ts` (wave 1) | the first such failure is handled, or the fit is scoped per creator |
-| CR-15 | Between wave 1 and wave 2 the check enforces the station tier and the profession while the kernel still gates on cooking alone. | `kernel/src/step.ts:302` | wave 2 |

@@ -285,6 +285,110 @@
                 "type": "string"
               }
             }
+          },
+          "wear": {
+            "additionalProperties": false,
+            "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+            "type": "object",
+            "required": [
+              "slot"
+            ],
+            "properties": {
+              "slot": {
+                "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                "anyOf": [
+                  {
+                    "const": "head",
+                    "type": "string"
+                  },
+                  {
+                    "const": "top",
+                    "type": "string"
+                  },
+                  {
+                    "const": "legs",
+                    "type": "string"
+                  },
+                  {
+                    "const": "outfit",
+                    "type": "string"
+                  },
+                  {
+                    "const": "feet",
+                    "type": "string"
+                  },
+                  {
+                    "const": "jewelry",
+                    "type": "string"
+                  },
+                  {
+                    "const": "hand",
+                    "type": "string"
+                  }
+                ]
+              },
+              "look": {
+                "description": "A look: worn on the look layer over the work clothes. It shows and counts for nothing, so it has no effects and no set.",
+                "type": "boolean"
+              },
+              "effects": {
+                "minItems": 1,
+                "maxItems": 2,
+                "description": "Small bonuses while it is worn on the work layer. Two at most, each effect once.",
+                "type": "array",
+                "items": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "effect",
+                    "value"
+                  ],
+                  "properties": {
+                    "effect": {
+                      "description": "What a worn item helps: gathering, digging or crafting speed, the craft chance, or rare finds.",
+                      "anyOf": [
+                        {
+                          "const": "gather_speed_pct",
+                          "type": "string"
+                        },
+                        {
+                          "const": "dig_speed_pct",
+                          "type": "string"
+                        },
+                        {
+                          "const": "craft_speed_pct",
+                          "type": "string"
+                        },
+                        {
+                          "const": "craft_chance_pct",
+                          "type": "string"
+                        },
+                        {
+                          "const": "rare_find_pct",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "value": {
+                      "minimum": 1,
+                      "maximum": 100,
+                      "description": "Percent, at most the cap of the item's tier (params.wear_effect_max_pct).",
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              "set": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
+                "type": "string"
+              }
+            }
+          },
+          "premium_later": {
+            "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
+            "type": "boolean"
           }
         }
       }
@@ -481,6 +585,40 @@
                 "maximum": 100,
                 "description": "Part of the activity cost this output carries. Shares of one activity sum to 100.",
                 "type": "integer"
+              }
+            }
+          }
+        },
+        "miss": {
+          "additionalProperties": false,
+          "description": "What a missed craft leaves (G40): part of the inputs, a lesser output, or both, worth less than a success. Left out: the default share of the inputs. When nothing else is left, one unit of the most valuable input comes back.",
+          "type": "object",
+          "properties": {
+            "keep_pct": {
+              "minimum": 0,
+              "maximum": 90,
+              "description": "Part of each input a miss keeps, rounded down, at most 90 percent. Left out: params.craft_miss_keep_pct.",
+              "type": "integer"
+            },
+            "output": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "item",
+                "qty"
+              ],
+              "properties": {
+                "item": {
+                  "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                  "maxLength": 80,
+                  "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                  "type": "string"
+                },
+                "qty": {
+                  "minimum": 1,
+                  "maximum": 999,
+                  "type": "integer"
+                }
               }
             }
           }

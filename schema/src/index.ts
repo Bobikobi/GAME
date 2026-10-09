@@ -110,6 +110,46 @@ export const Output = Type.Object(
   { additionalProperties: false },
 );
 
+/** The slots an item names: jewelry takes either of two places on the character, an outfit takes the top and the legs. */
+export const WORN_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'jewelry', 'hand'] as const;
+export const WornSlot = Type.Union(WORN_SLOTS.map((k) => Type.Literal(k)), {
+  description: 'Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).',
+});
+
+/** The effects a worn item may carry: rates of work, never the output of a craft (rule R9). Every one is in EFFECTS too. */
+export const WORN_EFFECTS = ['gather_speed_pct', 'dig_speed_pct', 'craft_speed_pct', 'craft_chance_pct', 'rare_find_pct'] as const;
+export const WornEffect = Type.Union(WORN_EFFECTS.map((k) => Type.Literal(k)), {
+  description: 'What a worn item helps: gathering, digging or crafting speed, the craft chance, or rare finds.',
+});
+
+export const Wear = Type.Object(
+  {
+    slot: WornSlot,
+    look: Type.Optional(
+      Type.Boolean({
+        description: 'A look: worn on the look layer over the work clothes. It shows and counts for nothing, so it has no effects and no set.',
+      }),
+    ),
+    effects: Type.Optional(
+      Type.Array(
+        Type.Object(
+          { effect: WornEffect, value: Int(1, 100, 'Percent, at most the cap of the item\'s tier (params.wear_effect_max_pct).') },
+          { additionalProperties: false },
+        ),
+        { minItems: 1, maxItems: 2, description: 'Small bonuses while it is worn on the work layer. Two at most, each effect once.' },
+      ),
+    ),
+    set: Type.Optional({
+      ...Id,
+      description: 'A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.',
+    }),
+  },
+  {
+    additionalProperties: false,
+    description: 'Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.',
+  },
+);
+
 export const ItemDef = Type.Object(
   {
     id: Id,
@@ -144,6 +184,13 @@ export const ItemDef = Type.Object(
     ),
     fragment: Type.Optional(
       Type.Object({ unlocks: Id }, { additionalProperties: false, description: 'A found scrap that teaches a recipe.' }),
+    ),
+    wear: Type.Optional(Wear),
+    premium_later: Type.Optional(
+      Type.Boolean({
+        description:
+          'Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).',
+      }),
     ),
   },
   { additionalProperties: false },
@@ -221,6 +268,17 @@ const RecipeProfession = {
   ...Id,
   description: 'The profession that gates this recipe and that it trains. Left out: the profession that works its station.',
 };
+const RecipeMiss = Type.Object(
+  {
+    keep_pct: Type.Optional(Int(0, 90, 'Part of each input a miss keeps, rounded down, at most 90 percent. Left out: params.craft_miss_keep_pct.')),
+    output: Type.Optional(Stack),
+  },
+  {
+    additionalProperties: false,
+    description:
+      'What a missed craft leaves (G40): part of the inputs, a lesser output, or both, worth less than a success. Left out: the default share of the inputs. When nothing else is left, one unit of the most valuable input comes back.',
+  },
+);
 
 export const RecipeBody = Type.Object(
   {
@@ -230,6 +288,7 @@ export const RecipeBody = Type.Object(
     profession: Type.Optional(RecipeProfession),
     inputs: Type.Array(Stack, { minItems: 1, maxItems: 6 }),
     outputs: Type.Array(Output, { minItems: 1, maxItems: 4 }),
+    miss: Type.Optional(RecipeMiss),
     known: Type.Union([Type.Literal('start'), Type.Literal('found')], {
       description: '"start": every player knows it. "found": learned from a recipe scrap found by digging, or from a quest.',
     }),
@@ -262,6 +321,7 @@ export const TemplateBody = Type.Object(
       description: 'Items by id, or by class and lowest tier. At least one input names a class.',
     }),
     outputs: Type.Array(Output, { minItems: 1, maxItems: 4 }),
+    miss: Type.Optional(RecipeMiss),
   },
   {
     additionalProperties: false,
@@ -433,6 +493,11 @@ export const CampBody = Type.Object(
       Int(1, 20, 'Tier of the station this part provides, 1 when left out. A recipe needs a station of at least its own tier.'),
     ),
     bag_bonus: Type.Optional(Int(1, 40)),
+    upgrades: Type.Optional({
+      ...Id,
+      description:
+        'The camp part this one is built over, in the same slot: that part stands first, and this one replaces it. It gives at least what that part gave.',
+    }),
   },
   { additionalProperties: false },
 );
@@ -457,9 +522,20 @@ export const StarterBody = Type.Object(
   { additionalProperties: false },
 );
 
-export const EFFECTS = ['see_ripe', 'timing_window_pct', 'second_hint', 'rare_find_pct', 'craft_speed_pct', 'meal_fill_pct'] as const;
+export const EFFECTS = [
+  'see_ripe',
+  'timing_window_pct',
+  'second_hint',
+  'rare_find_pct',
+  'craft_speed_pct',
+  'meal_fill_pct',
+  'gather_speed_pct',
+  'dig_speed_pct',
+  'craft_chance_pct',
+] as const;
 export const Effect = Type.Union(EFFECTS.map((k) => Type.Literal(k)), {
-  description: 'What a technique does. A closed list: the kernel knows how to apply each one.',
+  description:
+    'What a technique does. A closed list: the kernel knows how to apply each one. A craft effect of a technique (craft_speed_pct, craft_chance_pct) helps the recipes of its own profession.',
 });
 
 export const ProfessionBody = Type.Object(
@@ -530,6 +606,35 @@ export const ParamsBody = Type.Object(
     template_max_recipes: {
       ...Bounded,
       description: 'The most recipes one recipe template may make.',
+    },
+    craft_chance_bp: Type.Array(Type.Integer({ minimum: 1000, maximum: 10_000 }), {
+      minItems: 1,
+      maxItems: 20,
+      description:
+        'The chance a craft succeeds at exactly its level, in basis points, by the recipe\'s tier from tier 1; the last entry holds for the tiers above it. Never rises with the tier; 10000 is a sure craft.',
+    }),
+    craft_level_step_bp: {
+      ...Bounded,
+      description: 'What each level of the recipe\'s profession above the recipe\'s level adds to the craft chance, in basis points.',
+    },
+    craft_luck_max_permille: {
+      ...Bounded,
+      description:
+        'The largest part of the gap to a sure craft that luck and luck items close, in permille: skill decides, luck tilts (G40).',
+    },
+    craft_miss_keep_pct: {
+      ...Bounded,
+      description: 'Part of each input a missed craft keeps when the recipe names no share, rounded down.',
+    },
+    wear_effect_max_pct: Type.Array(Type.Integer({ minimum: 0, maximum: 100 }), {
+      minItems: 1,
+      maxItems: 20,
+      description:
+        'The largest value of one effect on a worn item, by the item\'s tier from tier 1; the last entry holds for the tiers above it. Never falls with the tier.',
+    }),
+    wear_set_bonus_pct: {
+      ...Bounded,
+      description: 'How much a full set adds to the effects of its pieces, in percent of their sum, rounded down.',
     },
     rarity_bonus_ms: Type.Object(
       { common: Type.Integer(), uncommon: Type.Integer(), rare: Type.Integer(), legendary: Type.Integer() },
@@ -754,6 +859,9 @@ export type Shop = Static<typeof ShopBody>;
 export type Kit = Static<typeof KitBody>;
 export type GameMap = Static<typeof MapBody>;
 export type EffectName = (typeof EFFECTS)[number];
+export type WornEffectName = (typeof WORN_EFFECTS)[number];
+export type WornSlotName = (typeof WORN_SLOTS)[number];
+export type WearDef = Static<typeof Wear>;
 export type ToolKind = (typeof TOOL_KINDS)[number];
 export type StationKind = (typeof STATIONS)[number];
 export type RarityName = (typeof RARITIES)[number];

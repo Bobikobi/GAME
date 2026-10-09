@@ -82,6 +82,36 @@ describe('session persistence', () => {
     expect(restored?.met.size).toBe(0);
   });
 
+  test('loads a save from before worn things and craft tries', () => {
+    startedSession();
+    const save = JSON.parse(storage.getItem(SAVE_KEY)!) as { state: string };
+    const state = JSON.parse(save.state) as { player: Record<string, unknown> };
+    delete state.player.worn;
+    delete state.player.looks;
+    delete state.player.tries;
+    storage.setItem(SAVE_KEY, JSON.stringify({ ...save, state: JSON.stringify(state) }));
+
+    const restored = Session.restore(bundle);
+    expect(restored?.state.player.worn).toEqual({});
+    expect(restored?.state.player.looks).toEqual({});
+    expect(restored?.state.player.tries).toEqual({});
+  });
+
+  test('a new world version teaches its new start recipes and drops what is gone', () => {
+    const session = startedSession();
+    session.state.player.tries = { 'core/berry-mash': 2, 'x/gone': 1 };
+    session.state.player.worn = { head: 'x/gone-cap' };
+    session.save();
+    const recipes = { ...bundle.recipes, 'x/new': { ...bundle.recipes['core/berry-mash']!, id: 'x/new' } };
+    const next: Bundle = { ...bundle, tag: `${bundle.tag}-next`, recipes };
+
+    const restored = Session.restore(next);
+    expect(restored?.state.player.recipes).toContain('x/new');
+    expect(restored?.state.player.recipes).toEqual([...restored!.state.player.recipes].sort());
+    expect(restored?.state.player.tries).toEqual({ 'core/berry-mash': 2 });
+    expect(restored?.state.player.worn).toEqual({});
+  });
+
   test('plays the elder monologue once across a reload', async () => {
     app.session = startedSession();
     await talker().talk('core/elder');

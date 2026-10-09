@@ -6,7 +6,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PNG } from 'pngjs';
-import { type Bundle, computeValues, minChargeFor, rarityBudget, rarityRank } from '@game/kernel';
+import { type Bundle, computeValues, minChargeFor, missOutcome, rarityBudget, rarityRank } from '@game/kernel';
 import { BASE_CLASSES, RARITIES, type ParamsBody } from '@game/schema';
 import { assemble, type Assembled } from './assemble';
 import { readBoard } from './board';
@@ -31,6 +31,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkParams(paramsFile?.type === 'params' ? paramsFile : undefined));
     issues.push(...checkEconomy(b, assembled.origin));
     issues.push(...checkCrafting(b, assembled.origin));
+    issues.push(...checkWear(b));
     issues.push(...checkDrift(b));
     issues.push(...checkKits(assembled));
     issues.push(...checkPlay(b, assembled.origin));
@@ -176,6 +177,11 @@ const PARAMS_FILE = 'content/core/params.json';
 /** From this tier up an item comes only from a gated source (DECISIONS.md, 2026-10-09). */
 const GATED_TIER = 3;
 
+/** The base class of a class: itself, or the base it was declared under. */
+function baseOf(b: Bundle, cls: string | undefined): string | undefined {
+  return cls === undefined ? undefined : (BASE_CLASSES as readonly string[]).includes(cls) ? cls : b.classes[cls]?.base;
+}
+
 /**
  * The material grammar and the two ladders (DECISIONS.md, 2026-10-09: the
  * grammar, the ladders, one craft verb, metal): every item has a class and a
@@ -190,8 +196,7 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
   const at = (id: string) => origin[id] ?? b.items[id]?.file ?? 'content';
   const err = (file: string, where: string, message: string) => issues.push({ file, where, message, level: 'error' });
   const tierOf = (id: string) => b.items[id]?.tier ?? 1;
-  const baseOf = (cls: string | undefined) =>
-    cls === undefined ? undefined : (BASE_CLASSES as readonly string[]).includes(cls) ? cls : b.classes[cls]?.base;
+  const worth = (stacks: readonly { item: string; qty: number }[]) => stacks.reduce((n, s) => n + (b.values[s.item] ?? 0) * s.qty, 0);
 
   // the level bands: tier 1 starts at level 1, each next tier higher
   const starts = p.tier_min_level;
@@ -203,6 +208,15 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
     err(PARAMS_FILE, 'params.tier_min_level', `${starts.length} entries for ${p.open_tiers} open tiers: every open tier needs one`);
   }
   const band = (tier: number): [number, number] => [starts[tier - 1] ?? 1, (starts[tier] ?? 21) - 1];
+  // the craft chance never rises with the tier, and the cap on a worn effect never falls (G40, G44)
+  const chances = p.craft_chance_bp;
+  for (let i = 1; i < chances.length; i++) {
+    if (chances[i]! > chances[i - 1]!) err(PARAMS_FILE, `params.craft_chance_bp.${i}`, 'the craft chance never rises with the tier');
+  }
+  const wornCaps = p.wear_effect_max_pct;
+  for (let i = 1; i < wornCaps.length; i++) {
+    if (wornCaps[i]! < wornCaps[i - 1]!) err(PARAMS_FILE, `params.wear_effect_max_pct.${i}`, 'the cap on a worn effect never falls with the tier');
+  }
 
   for (const [id, it] of Object.entries(b.items)) {
     const where = `items.${id}`;
@@ -212,7 +226,7 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
     }
     if (it.tier > p.open_tiers) err(it.file, `${where}.tier`, `tier ${it.tier} is not open yet: the world has tiers 1 to ${p.open_tiers}`);
     if (it.tool && it.tier !== it.tool.tier) err(it.file, `${where}.tier`, `a tool has the tier of its "tool": ${it.tool.tier}`);
-    const base = baseOf(it.class);
+    const base = baseOf(b, it.class);
     if (base === undefined) continue;
     if (base === 'metal') err(it.file, `${where}.class`, 'metal waits for its discovery: no metal items yet (DECISIONS.md, 2026-10-09)');
     if (it.kind === 'tool' && base !== 'tool') err(it.file, `${where}.class`, 'a tool is of class "tool"');
@@ -240,6 +254,25 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
     if (c.provides) stationTier[c.provides] = Math.max(stationTier[c.provides] ?? 0, tier);
   }
 
+  // an upgrade stands in the slot of the part it replaces and gives at least what that part gave
+  for (const c of Object.values(b.camps)) {
+    const base = c.upgrades === undefined ? undefined : b.camps[c.upgrades];
+    if (!base) continue;
+    const file = at(c.id);
+    if (base.slot !== c.slot) err(file, 'camp.upgrades', `an upgrade stands in the slot of the part it replaces: ${base.id} is in "${base.slot}", this one in "${c.slot}"`);
+    if (base.provides !== undefined && c.provides !== base.provides) err(file, 'camp.upgrades', `${base.id} provides a ${base.provides}; an upgrade over it provides one too`);
+    if ((c.tier ?? 1) < (base.tier ?? 1)) err(file, 'camp.upgrades', `an upgrade gives at least the tier of ${base.id} (${base.tier ?? 1})`);
+    if ((c.bag_bonus ?? 0) < (base.bag_bonus ?? 0)) err(file, 'camp.upgrades', `an upgrade keeps at least the bag bonus of ${base.id} (${base.bag_bonus ?? 0})`);
+    let cur: string | undefined = c.upgrades;
+    for (let guard = 0; cur !== undefined && guard <= Object.keys(b.camps).length; guard++) {
+      if (cur === c.id) {
+        err(file, 'camp.upgrades', 'the upgrades go round in a circle: one part has to stand first');
+        break;
+      }
+      cur = b.camps[cur]?.upgrades;
+    }
+  }
+
   for (const [id, c] of Object.entries(b.recipes)) {
     const file = at(id);
     const w = c.template ? 'template' : 'recipe';
@@ -260,6 +293,17 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
     const has = stationTier[c.station];
     if (has === undefined) err(file, `${w}.station`, named(`no camp part provides a ${c.station}`));
     else if (has < tier) err(file, `${w}.station`, named(`a tier ${tier} recipe needs a ${c.station} of tier ${tier}; the best camp part gives tier ${has}`));
+    // a miss keeps something and is worth less than a success (G40)
+    const lesser = c.miss?.output;
+    if (lesser && tierOf(lesser.item) > tier) {
+      err(file, `${w}.miss.output`, named(`a miss makes something lesser: ${lesser.item} is tier ${tierOf(lesser.item)}, above the recipe's tier ${tier} (G40)`));
+    }
+    const missed = missOutcome(b, c);
+    const left = worth(missed.keep) + worth(missed.output ? [missed.output] : []);
+    const success = worth(c.outputs);
+    if (success > 0 && left >= success) {
+      err(file, `${w}.miss`, named(`a miss leaves ${left} of value, as much as a success gives (${success}): a miss keeps a part (G40)`));
+    }
   }
 
   // from GATED_TIER up: a level gate or a slow respawn on a node, never a shop
@@ -288,6 +332,82 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
       '',
       `the rarity bonuses of the world add ${pct(budget.used_ppm)}, over the budget of ${pct(budget.limit_ppm)}; the largest part, ${pct(largest.ppm)}, is this one. Fewer nodes, a slower respawn or a lower rarity bring it back.`,
     );
+  }
+  return issues;
+}
+
+/**
+ * Worn items and the premium marker (DECISIONS.md, 2026-10-09: the upgrade;
+ * crafting and money): a worn item fits its class and its place, a work piece
+ * carries small effects capped by its tier, a set can be worn whole, a look
+ * counts for nothing, and only a look with no effect carries the premium
+ * marker, while staying obtainable in the game (G39, G44).
+ */
+function checkWear(b: Bundle): Issue[] {
+  const issues: Issue[] = [];
+  const err = (file: string, where: string, message: string) => issues.push({ file, where, message, level: 'error' });
+  const caps = b.params.wear_effect_max_pct;
+  const sold = new Set(Object.values(b.shops).flatMap((s) => s.sells.map((o) => o.item)));
+  const rewarded = new Set(Object.values(b.quests).flatMap((q) => (q.reward.items ?? []).map((s) => s.item)));
+  const sets: Record<string, string[]> = {};
+  for (const [id, it] of Object.entries(b.items)) {
+    const where = `items.${id}`;
+    const base = baseOf(b, it.class);
+    const w = it.wear;
+    if (!w) {
+      if (base === 'garment' || base === 'jewelry') err(it.file, where, `a ${base} piece is worn: give it "wear" with its slot (G44)`);
+      if (it.premium_later) err(it.file, `${where}.premium_later`, 'only a look item with no effect may carry the premium marker (G39)');
+      continue;
+    }
+    if (it.kind === 'food' || it.kind === 'fragment') err(it.file, `${where}.wear`, `a ${it.kind} is not worn`);
+    if (w.slot === 'hand') {
+      if (it.kind !== 'tool') err(it.file, `${where}.wear.slot`, 'the hand holds a tool: an item of kind "tool"');
+    } else if (w.slot === 'jewelry') {
+      if (base !== 'jewelry') err(it.file, `${where}.wear.slot`, 'the jewelry places take items of class "jewelry"');
+    } else if (base !== 'garment') {
+      err(it.file, `${where}.wear.slot`, `the ${w.slot} takes items of class "garment"`);
+    }
+    if (w.look) {
+      if (w.effects) err(it.file, `${where}.wear.effects`, 'a look shows and counts for nothing: it has no effects (G44)');
+      if (w.set) err(it.file, `${where}.wear.set`, 'a look belongs to no set');
+      if (w.slot === 'hand') err(it.file, `${where}.wear.slot`, 'the hand holds a working tool, not a look');
+    }
+    const tier = it.tier ?? 1;
+    const cap = caps[Math.min(tier, caps.length) - 1] ?? 0;
+    const named = new Set<string>();
+    (w.effects ?? []).forEach((e, i) => {
+      if (named.has(e.effect)) err(it.file, `${where}.wear.effects.${i}`, `${e.effect} is named twice: each effect once`);
+      named.add(e.effect);
+      if (e.value > cap) err(it.file, `${where}.wear.effects.${i}.value`, `a tier ${tier} piece gives at most ${cap}% (wear_effect_max_pct), not ${e.value}% (G44)`);
+    });
+    if (w.set) {
+      if (!w.set.startsWith(`${it.creator}/`)) err(it.file, `${where}.wear.set`, `a set holds one creator's pieces: its id starts with "${it.creator}/"`);
+      if (!w.look) (sets[w.set] ??= []).push(id);
+    }
+    if (it.premium_later) {
+      if (!w.look || w.effects) err(it.file, `${where}.premium_later`, 'only a look item with no effect may carry the premium marker (G39)');
+      else if (b.values[id] === undefined && !sold.has(id) && !rewarded.has(id)) {
+        err(it.file, `${where}.premium_later`, 'a look with the premium marker stays obtainable in the game: a node, a dig spot, a recipe, a shop for gold or a quest gives it (G39)');
+      }
+    }
+  }
+  for (const [set, pieces] of Object.entries(sets).sort(([x], [y]) => (x < y ? -1 : 1))) {
+    const first = b.items[pieces[0]!]!;
+    const where = `items.${first.id}.wear.set`;
+    if (pieces.length < 2) {
+      err(first.file, where, `the set "${set}" has one piece: a set has two at least`);
+      continue;
+    }
+    const per: Record<string, number> = {};
+    for (const id of pieces) {
+      const slot = b.items[id]!.wear!.slot;
+      per[slot] = (per[slot] ?? 0) + 1;
+    }
+    const crowded = Object.keys(per)
+      .sort()
+      .filter((slot) => per[slot]! > (slot === 'jewelry' ? 2 : 1));
+    if (per.outfit && (per.top || per.legs)) crowded.push('outfit');
+    if (crowded.length > 0) err(first.file, where, `the set "${set}" cannot be worn whole: too many pieces for the ${crowded.join(', ')} (G44)`);
   }
   return issues;
 }
