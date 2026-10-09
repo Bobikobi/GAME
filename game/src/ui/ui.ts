@@ -21,6 +21,7 @@ import { say, type Option } from './dialog';
 import { button, h, sprite } from './dom';
 import { feedback } from './feedback';
 import { type Minigame, pick, snap, strike, timing } from './games';
+import { BEAT, buzz } from './haptics';
 import { openLevelUp } from './levelup';
 import {
   openBag,
@@ -435,7 +436,10 @@ export class UI {
       title,
       scalePct: windowScalePct(app.bundle, s.state),
       sprite: art,
-      onBeat: (_i, grade) => app.world?.beat(nodeId, kind, grade),
+      onBeat: (_i, grade) => {
+        buzz(BEAT[grade]);
+        app.world?.beat(nodeId, kind, grade);
+      },
     });
   }
 
