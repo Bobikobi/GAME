@@ -14,6 +14,7 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 - On absence (question S1): yes to a hold only in a shared town and to a clock between steps, but absence has a price. A builder who is slow between steps needs a rule, so does an owner who has not played for weeks, and a player about to lose a place hears of it by mail first. Registration is minimal and comes after the opening.
 - On what absence costs (question S1b): as recommended. A building with no finished step for 14 days returns to the town, the house of an owner who has not played for 45 days is packed, and one mail comes first. Absence costs the place and a fifth of its price, never what the player made.
 - On the camp (question S2): as recommended, and a camp outside the town is a tent the player buys first; to get through the night safely the player needs enough wood for it. Wood comes from felling trees, never from piles of twigs (DECISIONS.md, the entry on wood).
+- On the internal difficulty scale (question S3): as recommended. One internal scale, each step asking half again as much, and never on screen.
 
 ## 2. What exists today and stays
 
@@ -60,13 +61,15 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 ### 3.5 Danger by area
 
 - Every area of the map carries a danger level `d`, from 0 in the town upward, set in the content and checked by the checker against the area's distance from town and the levels its nodes ask.
-- The hunting hazards keep their hours (after dark, inside the mist, outside safe places). In an area of level `d`, the chance that one shows in a minute of night is `hazard_bp * d`, so they are more common the deeper the area; the health one takes is `hazard_hp` times `difficulty_ratio` to the power `d` (question S3).
+- The hunting hazards keep their hours (after dark, inside the mist, outside safe places). In an area of level `d`, the chance that one shows in a minute of night is `hazard_bp * d`, so they are more common the deeper the area; the health one takes is `hazard_hp` times `difficulty_ratio` to the power `d` (S3, answered 9.10).
 - The screen never shows `d` as a word or a number (the crafting economy entry of 9.10). The world shows it: thicker mist, tracks, bones, a sign at the area's edge.
 
-### 3.6 One internal difficulty scale (question S3)
+### 3.6 One internal difficulty scale (S3, answered 9.10)
 
-- One integer scale for areas (`d`), quests (the sum of their steps' difficulty, as the spec computes it) and recipes (their level). A player's level against the rating sets the chance: one step above is a stretch, two are very hard, three are close to impossible, for reasons the world shows.
-- Each step multiplies effort and danger by one `difficulty_ratio_permille` (1500 to start). The level thresholds already grow about that way.
+- One integer scale for areas (`d`), quests (the sum of their steps' difficulty, as the spec computes it) and recipes (their level).
+- Each step multiplies effort and the health a hazard takes by one `difficulty_ratio_permille` (1500 to start), about 3.4 times over three steps; how often a hazard shows grows by one `hazard_bp` per step (3.5). The level thresholds already grow about that way. The check holds content to the scale: what an area or a recipe asks grows by the ratio per step, within a band.
+- The scale sets effort and danger; it is not a chance curve. A recipe's chance stays as the crafting economy entry of 9.10 set it: each missing level takes `craft_level_step_bp` off, with no wall. A step above is hard because of what the world asks there, dearer inputs, a more dangerous road to them and hazards that hit harder, so one step above is a stretch, two are very hard and three are close to impossible, for reasons the world shows.
+- The scale never shows on screen as a word or a number (3.5).
 
 ### 3.7 Group quests
 
@@ -92,7 +95,7 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 | 6.10 (kernel review 7.2, D6): the world stays cooperative until there is a community | First come for plots; rival groups later | S4 |
 | G42: rare is capacity and gates, never a timer | Places open gradually | Read as: by work (mending, clearing quests), never by date |
 | The ruins as the community's slots | Houses in the town's existing buildings | Read as: two kinds of place; a slot stays a public place, a plot is a home |
-| 9.10: no difficulty word or number on screen | An internal difficulty rating | Consistent: the rating is internal, and the world shows it |
+| 9.10: no difficulty word or number on screen | An internal difficulty rating | Answered (S3): consistent; the rating is internal, and the world shows it |
 | 9.10: war, theft and robbery stay out | A rival group attacks a fort | Consistent: only with combat, both sides signed up, nothing taken from a player who is away |
 | Spec stage 4: houses and rent | Places bought with gold | Read as: a plot is bought once; letting a house to another player stays a stage-4 item |
 | Stages 2a and 3: each player in their own world | Scarce plots in a shared town | Read as: the own valley stays the player's; scarcity starts with the shared world |
@@ -106,7 +109,7 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 
 **S2. The camp and the street.** Answered 9.10, as recommended: the town stays safe at every hour and its street heals as the camp does; outside it a camp is safe while its fire burns, at `wood_per_night` times `d` a night and none at level 0. The owner added that a camp outside the town is a tent the player buys first, and that the player needs wood enough for the night (3.4).
 
-**S3. The internal difficulty scale.** Recommended: yes, one internal scale for areas, quests and recipes. Each step multiplies effort and danger by a fixed ratio (1.5 to start), while the hazards' frequency grows by one step per level. It never shows on screen.
+**S3. The internal difficulty scale.** Answered 9.10, as recommended: one internal scale for areas, quests and recipes. Each step multiplies effort and a hazard's harm by 1.5, the hazards' frequency grows by one step per level, and it never shows on screen. A recipe's chance keeps the crafting rule of a fixed step per missing level (3.6).
 
 **S4. Cooperative or competitive.** The 6.10 decision kept the world cooperative and put ownership and conquest back on the table only when there is a community; first come for plots and rival groups bring competition in. Recommended: competition only for places, and with combat, contests that both sides sign up for; a safe core where nothing can be taken. Reserve now, while each is one schema field, what the kernel review listed in 7.2: a controller on places, an area's danger and protection level, ledger reasons for price, refund and upkeep, and an upkeep that grows with holdings.
 
@@ -114,4 +117,4 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 
 ## 6. What can come before the shared world
 
-The parts that need no shared world can be built once their question is answered: danger by area and the internal scale (S3), the camp's fire and the tent (S2), group quests tried alone, and the town the player mends as the settlement, with houses that every player can build in their own valley. Plots, the race, the hold and the street wait for stage 4.
+The parts that need no shared world can be built once their question is answered: danger by area and the internal scale (S3, answered), the camp's fire and the tent (S2), group quests tried alone, and the town the player mends as the settlement, with houses that every player can build in their own valley. Plots, the race, the hold and the street wait for stage 4.

@@ -544,3 +544,18 @@ Readings, each open to the owner's word:
 
 **Closes:** C1; GRUNT's open ends carry the building as CR-37.
 **Retry when:** a playtest shows one start slower or richer than another. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ One internal difficulty scale: each step asks half again as much, and the screen never shows it
+
+The question (settlement plan S3, 9.10): the owner asked whether an internal difficulty rating is needed, and whether it should grow exponentially. The owner's word (9.10): yes to the recommendation.
+
+- One integer scale rates areas (their danger level `d`), quests (the sum of their steps' difficulty, as the spec computes it) and recipes (their level).
+- Each step multiplies effort and the health a hazard takes by `difficulty_ratio_permille`, 1500 to start: about 3.4 times over three steps. How often a hazard shows grows by one `hazard_bp` per step. The check holds content to the scale: what an area or a recipe asks grows by the ratio per step, within a band.
+- The scale is not a chance curve. A recipe's chance stays as the crafting economy entry set it: each missing level takes `craft_level_step_bp` off, with no wall. A step above is hard because of what the world asks there: dearer inputs, a more dangerous road to them, and hazards that hit harder.
+- The screen never shows the scale as a word or a number (the crafting economy entry). The world shows it: thicker mist, tracks, bones, a sign at an area's edge.
+- Nothing here needs the shared world, so it can be built with danger by area in the player's own valley.
+
+`docs/design/SETTLEMENT.md` 3.5 and 3.6 hold the rule.
+
+**Closes:** S3 of the settlement plan; GRUNT's open ends carry the building as CR-38.
+**Retry when:** a playtest shows a step too steep or too flat. Model: claude-opus-5-5.
