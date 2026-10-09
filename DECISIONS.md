@@ -701,3 +701,17 @@ The question (9.10): the spec makes a season a few weeks; Fortnite, Destiny, Sea
 
 **Closes:** the last of the calendar's open questions; GRUNT's CR-41 now carries it.
 **Retry when:** creators run out of a theme before its quarter ends, or players tire of one theme. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ The reference player executes perfectly, with nothing worn, no points spent and full health
+
+The question (kernel review D2, open since 6.10): who is the player the value table prices an hour of work for? The recommendation: perfect execution, no build, fed, so everyone else earns less than the reference for execution and never more, and a bot with perfect timing gains nothing over a skilled human. The owner's word (9.10): yes, but the food bar was replaced by health (G32).
+
+- The reference player hits every minigame perfectly, wears nothing, has spent no points, and is at full health. Low health slows work (G32), so a hurt player earns less, as a hungry one did.
+- Nothing drains health by the clock (G32), so the reference eats nothing per hour and food is no running cost of work. The review's V10, a food whose value depends on itself through the cost of an hour, does not arise.
+- For execution nobody earns more than the reference. Worn items and points add on top, inside the power cap (R9) and the ceiling of the effort weights (kernel review 7.1).
+- The kernel already works this way: a timing grade can only lower the goods below perfect play (`kernel/src/step.ts`).
+
+`docs/kernel-review-v1.md` section 5 marks D2 decided.
+
+**Closes:** D2 of the kernel review.
+**Retry when:** a playtest shows a player out-earning the reference on execution alone, which would be a fault in the value table. Model: claude-opus-5-5.

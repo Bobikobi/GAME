@@ -160,12 +160,13 @@ So check (a) cannot be surprised far from the new content, and removal can only 
 
 ## 5. Open decisions for the owners
 
-Status after the owners' round of 2026-10-06 (section 8): D1 and D3 are decided, D6 is deferred by decision. D2, D4 and D5 are still open.
+Status after the owners' round of 2026-10-06 (section 8): D1 and D3 are decided, D6 is deferred by decision. D2, D4 and D5 were still open; D2 was decided on 2026-10-09.
 
 **D1. Does waiting or rarity ever raise a shop price?** Recommended: no. The shop pays for active time only. Rarity is a limited supply and shows only in prices between players. The review continues under this default.
 Decided otherwise on 2026-10-06: both. A small shop bonus under a fixed budget, and most of the value in use. See 8.2.
 
 **D2. Who is the reference player?** Recommended: perfect execution, no build, fed. Everyone else earns less than the reference, never more, and bots gain nothing from perfect timing.
+Decided on 2026-10-09: yes, with full health in place of fed, since health replaced the food bar (G32). Nothing drains health by the clock, so the reference eats nothing per hour and V10 does not arise. See DECISIONS.md, the entry on the reference player.
 
 **D3. What carries over from browser saves when the server arrives?** Recommended: skills, journal and looks carry over inside the caps; gold and tradeable items do not, and each player receives a starter kit sized by witnessed play time. Start signing time stamps in the stage-1 service so that play time is provable.
 Decided on 2026-10-06: nothing carries over. Stage 1 is a demo and says so on screen from the first day; whoever played it receives a title and a cosmetic item with the account. No save import, no signed time stamps.
