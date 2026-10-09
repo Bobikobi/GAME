@@ -1,0 +1,49 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/reed-sandals",
+  "title": "Reed sandals",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/reed-sandals",
+      "name": "Reed sandals",
+      "description": "Light on the feet between the bushes.",
+      "kind": "material",
+      "rarity": "uncommon",
+      "class": "garment",
+      "tier": 2,
+      "sprite": "core/base-kit:items/branch",
+      "wear": {
+        "slot": "feet",
+        "effects": [
+          {
+            "effect": "gather_speed_pct",
+            "value": 5
+          }
+        ],
+        "set": "core/reed-walker"
+      }
+    }
+  ],
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 5000,
+    "level": 3,
+    "inputs": [
+      {
+        "item": "core/reed-cord",
+        "qty": 3
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/reed-sandals",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/reed-hat",
+  "title": "Reed hat",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/reed-hat",
+      "name": "Reed hat",
+      "description": "Keeps the sun off while you work.",
+      "kind": "material",
+      "rarity": "uncommon",
+      "class": "garment",
+      "tier": 2,
+      "sprite": "core/base-kit:items/basket",
+      "wear": {
+        "slot": "head",
+        "effects": [
+          {
+            "effect": "gather_speed_pct",
+            "value": 5
+          }
+        ],
+        "set": "core/reed-walker"
+      }
+    }
+  ],
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 6000,
+    "level": 4,
+    "inputs": [
+      {
+        "item": "core/dyed-cord",
+        "qty": 1
+      },
+      {
+        "item": "core/reed-cord",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/reed-hat",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start"
+  }
+}

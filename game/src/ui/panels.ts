@@ -1,15 +1,18 @@
 /**
- * The menus: bag, journal, shop, cooking, building, and the help pages.
+ * The menus: bag, journal, shop, cooking and making, building, and the help pages.
  * Every change goes through session.act(), so a menu can never do what the
  * kernel would refuse.
  */
 import {
+  type Bundle,
   KERNEL_VERSION,
+  type RecipeDef,
   bagCapacity,
   bagUsed,
   characterLevel,
-  payFor,
   professionLevel,
+  recipeProfession,
+  salePrice,
   skillPoints,
 } from '@game/kernel';
 import guideText from '../../../docs/creators/README.md?raw';
@@ -18,7 +21,7 @@ import { sound } from '../audio';
 import { GAME_TITLE, REPO_URL } from '../config';
 import type { SignInfo } from '../scenes/world';
 import { Session } from '../session';
-import { ATTRIBUTE_MAX, attributeEffects, gold, itemBenefit, itemName, questSteps, seconds, stacks } from '../text';
+import { ATTRIBUTE_MAX, attributeEffects, gold, itemBenefit, itemName, questSteps, seconds, sellable, stacks, stationUpgrades, wornAt } from '../text';
 import { say } from './dialog';
 import { button, h, sprite } from './dom';
 import { markdown } from './markdown';
@@ -57,6 +60,11 @@ function need(have: number, qty: number): HTMLElement {
   return h('span', { class: have >= qty ? 'have' : 'lack' }, `${Math.min(have, qty)}/${qty}`);
 }
 
+/** The profession a recipe trains, for a line such as "cooking level 3". */
+function skillOf(b: Bundle, recipe: RecipeDef): string {
+  return (b.professions[recipeProfession(b, recipe)]?.name ?? 'crafting').toLowerCase();
+}
+
 // ------------------------------------------------------------------ bag
 
 export function openBag(ui: UI): void {
@@ -88,7 +96,7 @@ export function openBag(ui: UI): void {
 
   const itemDetail = (id: string, after: () => void): HTMLElement => {
     const item = b.items[id]!;
-    const value = b.values[id];
+    const price = salePrice(b, s.state, id, 1);
     const actions: HTMLElement[] = [];
     if (item.food) {
       actions.push(button(`Eat (+${item.food.satiety})`, () => {
@@ -106,12 +114,32 @@ export function openBag(ui: UI): void {
       }));
     }
     const facts: string[] = [];
-    if (item.tool) {
-      const usesLeft = item.tool.uses - (s.state.player.wear[id] ?? 0);
-      const speedBonus = item.tool.tier > 1 ? ` (+${15 * (item.tool.tier - 1)}% gathering speed)` : '';
-      facts.push(`${item.tool.kind[0]!.toUpperCase()}${item.tool.kind.slice(1)}, tier ${item.tool.tier}${speedBonus}. ${usesLeft} uses left.`);
+    if (item.wear) {
+      // the kernel picks the place; a second ring can still go on while one is worn
+      const at = wornAt(b, s.state, id);
+      if (at) {
+        facts.push(at.look ? 'You wear it as your look.' : 'You are wearing it.');
+        actions.push(button('Take off', () => {
+          const r = s.act({ t: 'unwear', slot: at.slot, look: at.look });
+          if (!r.ok) ui.toast(r.error, 'bad');
+          after();
+        }));
+      }
+      if (!at || s.check({ t: 'wear', item: id }) === undefined) {
+        actions.push(button('Wear', () => {
+          const r = s.act({ t: 'wear', item: id });
+          if (!r.ok) ui.toast(r.error, 'bad');
+          after();
+        }));
+      }
     }
-    if (value !== undefined && item.kind !== 'tool') facts.push(`A trader pays ${gold(payFor(b.params, value))} gold.`);
+    if (item.tool) {
+      const uses = item.tool.uses;
+      const left = uses === undefined ? 'It lasts.' : `${uses - (s.state.player.wear[id] ?? 0)} uses left.`;
+      const speedBonus = item.tool.tier > 1 ? ` (+${15 * (item.tool.tier - 1)}% gathering speed)` : '';
+      facts.push(`${item.tool.kind[0]!.toUpperCase()}${item.tool.kind.slice(1)}, tier ${item.tool.tier}${speedBonus}. ${left}`);
+    }
+    if (price !== undefined) facts.push(`A trader pays ${gold(price)} gold.`);
     return h(
       'div',
       { class: 'detail' },
@@ -197,7 +225,7 @@ export function openJournal(ui: UI, tab: JournalTab = 'tasks'): void {
           'div',
           { class: 'card recipe' },
           sprite(b, b.items[r.outputs[0]?.item ?? '']?.sprite, 2),
-          h('div', null, h('b', null, r.title), h('div', { class: 'muted' }, `${stacks(b, r.inputs)} at the ${r.station}, ${seconds(r.active_ms)}${r.level > 1 ? `, cooking level ${r.level}` : ''}`)),
+          h('div', null, h('b', null, r.title), h('div', { class: 'muted' }, `${stacks(b, r.inputs)} at the ${r.station}, ${seconds(r.active_ms)}${r.level > 1 ? `, ${skillOf(b, r)} level ${r.level}` : ''}`)),
         );
       }),
       hidden ? h('p', { class: 'muted' }, `${hidden} more recipe${hidden > 1 ? 's' : ''} to discover - from tasks and from scraps in the ruins.`) : null,
@@ -292,21 +320,18 @@ export function openShop(ui: UI, npcId: string): void {
               button('Buy', () => deal(() => s.act({ t: 'buy', npc: npcId, item: o.item, qty: 1, at: s.pos })), 'small', st.player.gold < o.price_mg || room < 1),
             );
           })
-        : Object.keys(st.player.bag)
-            .filter((id) => b.items[id]?.kind !== 'tool' && b.values[id] !== undefined)
-            .sort((x, y) => itemName(b, x).localeCompare(itemName(b, y)))
-            .map((id) => {
-              const each = payFor(b.params, b.values[id]!);
-              const count = st.player.bag[id] ?? 0;
-              return h(
-                'div',
-                { class: 'row' },
-                sprite(b, b.items[id]?.sprite, 2),
-                h('div', { class: 'grow' }, h('b', null, `${itemName(b, id)} x${count}`), h('div', { class: 'muted' }, `${gold(each)} gold each`)),
-                button('Sell 1', () => deal(() => s.act({ t: 'sell', npc: npcId, item: id, qty: 1, at: s.pos })), 'small', each < 1),
-                count > 1 ? button('All', () => deal(() => s.act({ t: 'sell', npc: npcId, item: id, qty: Math.min(99, count), at: s.pos })), 'small', each < 1) : null,
-              );
-            });
+        : sellable(b, st).map(({ item: id, each }) => {
+            // the kernel's price: a worn tool that is the last unit sells for the uses it has left
+            const count = st.player.bag[id] ?? 0;
+            return h(
+              'div',
+              { class: 'row' },
+              sprite(b, b.items[id]?.sprite, 2),
+              h('div', { class: 'grow' }, h('b', null, `${itemName(b, id)} x${count}`), h('div', { class: 'muted' }, `${gold(each)} gold each`)),
+              button('Sell 1', () => deal(() => s.act({ t: 'sell', npc: npcId, item: id, qty: 1, at: s.pos })), 'small'),
+              count > 1 ? button('All', () => deal(() => s.act({ t: 'sell', npc: npcId, item: id, qty: Math.min(99, count), at: s.pos })), 'small') : null,
+            );
+          });
     p.body.replaceChildren(
       tabs(shop.buys ? ['buy', 'sell'] : ['buy'], current, (n) => ((current = n as 'buy' | 'sell'), render())),
       h('div', { class: 'wallet' }, h('i', { class: 'coin' }), `${gold(st.player.gold)} gold`, h('span', { class: 'muted' }, ` - ${room} free places in your bag`)),
@@ -316,16 +341,22 @@ export function openShop(ui: UI, npcId: string): void {
   render();
 }
 
-// ------------------------------------------------------------------ cooking
+// ------------------------------------------------------------------ cooking and making
 
 export function openCraft(ui: UI, station: string): void {
   const s = app.session;
   if (!s) return;
   const b = app.bundle;
-  const p = panel(ui, station === 'fire' ? 'Cook at the fire' : `The ${station}`, 'craft');
+  const fire = station === 'fire';
+  const p = panel(ui, fire ? 'Cook at the fire' : `The ${station}`, 'craft');
   const render = () => {
     const st = s.state;
     const known = st.player.recipes.filter((id) => b.recipes[id]?.station === station);
+    const needs = (inputs: readonly { item: string; qty: number }[]) =>
+      h('div', { class: 'needs' }, inputs.map((i) => h('span', null, `${itemName(b, i.item)} `, need(st.player.bag[i.item] ?? 0, i.qty))));
+    const haveAll = (inputs: readonly { item: string; qty: number }[]) => inputs.every((i) => (st.player.bag[i.item] ?? 0) >= i.qty);
+    // the next part for this station, built over the one standing here (the fire has none)
+    const upgrades = fire ? [] : stationUpgrades(b, st, station);
     p.body.replaceChildren(
       ...known.map((id) => {
         const r = b.recipes[id]!;
@@ -340,18 +371,46 @@ export function openCraft(ui: UI, station: string): void {
             'div',
             { class: 'grow' },
             h('b', null, r.title),
-            h('div', { class: 'needs' }, r.inputs.map((i) => h('span', null, `${itemName(b, i.item)} `, need(st.player.bag[i.item] ?? 0, i.qty)))),
-            h('div', { class: 'muted' }, `${seconds(r.active_ms)}${r.level > 1 ? ` - cooking level ${r.level}` : ''}`),
-            why && r.inputs.every((i) => (st.player.bag[i.item] ?? 0) >= i.qty) ? h('div', { class: 'lack' }, why) : null,
+            needs(r.inputs),
+            h('div', { class: 'muted' }, `${seconds(r.active_ms)}${r.level > 1 ? ` - ${skillOf(b, r)} level ${r.level}` : ''}`),
+            why && haveAll(r.inputs) ? h('div', { class: 'lack' }, why) : null,
           ),
-          button('Cook', () => {
+          button(fire ? 'Cook' : 'Make', () => {
             const res = s.act({ t: 'craft', recipe: id, at: s.pos });
             if (!res.ok) ui.toast(res.error, 'bad');
             else p.close();
           }, 'small', why !== undefined),
         );
       }),
-      known.length === 0 ? h('p', { class: 'muted' }, 'You know no recipes for this yet.') : h('p', { class: 'muted' }, 'Cooked food goes to your bag. Eat it from there.'),
+      ...upgrades.map((id) => {
+        const c = b.camps[id]!;
+        const why = s.check({ t: 'build', camp: id, at: s.pos });
+        return h(
+          'div',
+          { class: 'card recipe upgrade' },
+          sprite(b, c.sprite, 2),
+          h(
+            'div',
+            null,
+            h('b', null, `Upgrade to ${c.title}`),
+            needs(c.inputs),
+            h('div', { class: 'muted' }, `${seconds(c.active_ms)} - a ${station} of tier ${c.tier ?? 1}`),
+            why && haveAll(c.inputs) ? h('div', { class: 'lack' }, why) : null,
+            h(
+              'div',
+              { class: 'actions' },
+              button('Build', () => {
+                const res = s.act({ t: 'build', camp: id, at: s.pos });
+                if (!res.ok) ui.toast(res.error, 'bad');
+                else p.close();
+              }, 'small', why !== undefined),
+            ),
+          ),
+        );
+      }),
+      known.length === 0
+        ? h('p', { class: 'muted' }, 'You know no recipes for this yet.')
+        : h('p', { class: 'muted' }, fire ? 'Cooked food goes to your bag. Eat it from there.' : 'What you make goes to your bag.'),
     );
   };
   render();
@@ -366,7 +425,7 @@ export function confirmBuild(ui: UI, campId: string): void {
   if (!s || !c) return;
   const have = c.inputs.map((i) => `${i.qty} ${itemName(b, i.item)} (you have ${s.state.player.bag[i.item] ?? 0})`).join(', ');
   const ok = c.inputs.every((i) => (s.state.player.bag[i.item] ?? 0) >= i.qty);
-  const what = c.provides === 'fire' ? 'Somewhere to cook.' : c.bag_bonus ? `Your bag holds ${c.bag_bonus} more.` : 'A place for what you find.';
+  const what = c.provides === 'fire' ? 'Somewhere to cook.' : c.provides ? 'Somewhere to make things.' : c.bag_bonus ? `Your bag holds ${c.bag_bonus} more.` : 'A place for what you find.';
   void say(ui, c.title, [`${what} Needs ${have}.`], ok ? [{ label: 'Build it', value: 'yes' }, { label: 'Not now', value: 'no' }] : []).then((pick) => {
     if (pick !== 'yes') return;
     const r = s.act({ t: 'build', camp: campId, at: s.pos });

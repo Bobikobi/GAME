@@ -369,11 +369,21 @@ function craft(ctx: Ctx, recipeId: string, at: Tile): void {
     .filter((id) => s.player.camp.includes(id) && b.camps[id]!.provides === c.station);
   if (built.length === 0) refuse(c.station === 'fire' ? 'You need a campfire to cook.' : `You need a ${c.station}.`);
   const tier = recipeTier(b, c);
-  const station = built.find((id) => (b.camps[id]!.tier ?? 1) >= tier);
-  if (!station) refuse(`This needs a ${c.station} of tier ${tier}.`);
-  const tile = campTile(b, b.camps[station]!.slot);
+  const fit = built.filter((id) => (b.camps[id]!.tier ?? 1) >= tier);
+  if (fit.length === 0) refuse(`This needs a ${c.station} of tier ${tier}.`);
+  // two parts can work one station from different spots: the one the player stands at does the craft
+  const spot = (id: string): Rect | undefined => {
+    const t = campTile(b, b.camps[id]!.slot);
+    return t ? { x: t[0], y: t[1], w: 1, h: 1 } : undefined;
+  };
+  const station =
+    fit.find((id) => {
+      const r = spot(id);
+      return r !== undefined && Array.isArray(at) && near(at, r);
+    }) ?? fit[0]!;
+  const tile = spot(station);
   if (!tile) refuse('The camp is missing from the map.');
-  checkAt(ctx, at, { x: tile[0], y: tile[1], w: 1, h: 1 });
+  checkAt(ctx, at, tile);
   const profession = recipeProfession(b, c);
   if (professionLevel(b, s, profession) < c.level) refuse(`Needs ${b.professions[profession]?.name ?? 'crafting'} level ${c.level}.`);
   for (const input of c.inputs) {
@@ -457,15 +467,31 @@ function sell(ctx: Ctx, npcId: string, itemId: string, qty: number, at: Tile): v
   const shop = shopOf(ctx, npcId, at);
   if (!shop.buys) refuse('This trader does not buy anything.');
   if ((s.player.bag[itemId] ?? 0) < qty) refuse('You do not have that many.');
-  const value = b.values[itemId];
-  const item = b.items[itemId];
-  if (value === undefined || !item || item.kind === 'tool') refuse('The trader does not want that.');
-  const each = payFor(b.params, value);
-  if (each < 1) refuse('That is worth less than a coin.');
+  const total = salePrice(b, s, itemId, qty);
+  // a tool with no value (one the shop sells) is never bought back
+  if (total === undefined) refuse('The trader does not want that.');
+  if (total < 1) refuse('That is worth less than a coin.');
   removeItem(ctx, itemId, qty);
-  s.player.gold += each * qty;
-  s.ledger.minted += each * qty;
-  ctx.events.push({ e: 'gold', delta: each * qty });
+  s.player.gold += total;
+  s.ledger.minted += total;
+  ctx.events.push({ e: 'gold', delta: total });
+}
+
+/**
+ * What a trader pays for `qty` units of an item from this bag (rule R8), or
+ * undefined when nobody buys it. A tool sells for the share of its uses left
+ * (DECISIONS.md, 2026-10-09: the crafting economy): the unit in hand goes
+ * last, so only a sale of every unit sells it short, and a lasting tool
+ * loses nothing. The client shows this price; the sale pays it.
+ */
+export function salePrice(bundle: Bundle, state: State, itemId: string, qty: number): number | undefined {
+  const value = bundle.values[itemId];
+  if (value === undefined || !bundle.items[itemId]) return undefined;
+  const each = payFor(bundle.params, value);
+  const uses = bundle.items[itemId]!.tool?.uses;
+  const spent = state.player.wear[itemId] ?? 0;
+  if (uses === undefined || spent < 1 || qty < (state.player.bag[itemId] ?? 0)) return each * qty;
+  return each * (qty - 1) + mulDiv(each, Math.max(0, uses - spent), uses);
 }
 
 function restore(ctx: Ctx, restoreId: string, at: Tile): void {
@@ -779,7 +805,9 @@ function requireTool(ctx: Ctx, kind: string): string {
 
 function wearTool(ctx: Ctx, itemId: string): void {
   const { b, s } = ctx;
-  const uses = b.items[itemId]?.tool?.uses ?? 1;
+  const uses = b.items[itemId]?.tool?.uses;
+  // a tool with no uses lasts (DECISIONS.md, 2026-10-09: the crafting economy)
+  if (uses === undefined) return;
   const worn = (s.player.wear[itemId] ?? 0) + 1;
   if (worn >= uses) {
     removeItem(ctx, itemId, 1);
@@ -809,8 +837,11 @@ function removeItem(ctx: Ctx, itemId: string, qty: number): void {
   const bag = ctx.s.player.bag;
   const left = (bag[itemId] ?? 0) - qty;
   if (left < 0) refuse('You do not have enough.');
-  if (left === 0) delete bag[itemId];
-  else bag[itemId] = left;
+  if (left === 0) {
+    delete bag[itemId];
+    // the uses spent leave with the last unit
+    delete ctx.s.player.wear[itemId];
+  } else bag[itemId] = left;
   ctx.events.push({ e: 'spend', item: itemId, qty });
   // a worn unit that leaves the bag comes off
   for (const off of fitWorn(ctx.b, ctx.s, itemId)) ctx.events.push({ e: 'unwear', ...off });

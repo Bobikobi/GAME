@@ -358,7 +358,7 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     }
     if (it.fragment && !b.recipes[it.fragment.unlocks]) err(id, 'fragment.unlocks', `no recipe "${it.fragment.unlocks}"`);
     if (it.kind === 'food' && !it.food) err(id, 'food', 'a food item needs "food": { "satiety": n }');
-    if (it.kind === 'tool' && !it.tool) err(id, 'tool', 'a tool item needs "tool": { kind, tier, uses }');
+    if (it.kind === 'tool' && !it.tool) err(id, 'tool', 'a tool item needs "tool": { kind, tier }, and "uses" when it wears out');
     if (it.kind === 'fragment' && !it.fragment) err(id, 'fragment', 'a fragment item needs "fragment": { "unlocks": recipe id }');
   }
   for (const [id, res] of Object.entries(b.resources)) {

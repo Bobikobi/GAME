@@ -1,0 +1,47 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/fine-basket",
+  "title": "Fine basket",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/fine-basket",
+      "name": "Fine basket",
+      "description": "Woven on a mat base. It does not wear out.",
+      "kind": "tool",
+      "rarity": "uncommon",
+      "class": "tool",
+      "tier": 3,
+      "sprite": "core/base-kit:items/basket",
+      "tool": {
+        "kind": "basket",
+        "tier": 3
+      }
+    }
+  ],
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 12000,
+    "level": 7,
+    "inputs": [
+      {
+        "item": "core/woven-mat",
+        "qty": 1
+      },
+      {
+        "item": "core/reed-cord",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/fine-basket",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start"
+  }
+}
