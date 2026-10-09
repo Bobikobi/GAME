@@ -522,7 +522,25 @@ A character's own start, as the frame for the open question:
 - A start changes how a character begins, never what it can become. No profession is closed to any starter, and the spec's line holds: expansions add choice, not a stronger character.
 - The check keeps the starts fair: every starter's attribute points add up to one total (6 today, true in the content and not yet checked), every kit's value sits in one band, and every start reaches the first fire within one band of effort.
 
-Open: how far each character's start differs (question C1, asked the same day). Until it is answered, both starters share one start, and either way the axe comes before the first fire.
+How far each character's start differs (question C1): answered the same day; see the next entry. Either way the axe comes before the first fire.
 
 **Closes:** W1; GRUNT's open ends carry the building in CR-24.
-**Retry when:** the owner answers C1, or a playtest shows the first fire too slow to reach. Model: claude-opus-5-5.
+**Retry when:** a playtest shows the first fire too slow to reach. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ Each character begins its own way: a place to wake, a kit and a first task, meeting at the bridge and the first fire
+
+The question (C1): how far each character's start differs, now that the first fire is built from a felled tree (the entry above). The owner's word (9.10): yes to the recommendation, as each race in World of Warcraft starts in a zone of its own and meets the others later.
+
+- A starter carries its own start: a place to wake, a small kit in the bag, and a short first task that fits its strength. For the two starters of today, for example: the forager wakes with a basket and an axe and picks first; the explorer wakes with a trowel, and its first find is its own axe, dug from the ground.
+- Every start holds an axe before the first fire, and every start meets the shared road at the bridge and the first fire.
+- The check keeps the starts fair: every kit's value sits in one band, every starter's attribute points add up to one total, and every start reaches the first fire within one band of effort. No profession is closed to any starter.
+- A starter that a creator adds later brings its own start under the same checks; the spec names a starting character among the expansions.
+- As content: optional fields on the starter for the place to wake and the kit, and a quest that names the starter it opens for. All are additive, so the format stays 1. The opening chain names each starter's first task, and G2 and G4 apply after it.
+
+Readings, each open to the owner's word:
+- The kit is given once, at the start. A saved character keeps its bag and gets only the axe (the entry above).
+- A kit holds tier-1 things only, so no start hands out what G41 keeps behind a gate.
+- Each start has its own waking lines, in place of the one opening narration of today.
+
+**Closes:** C1; GRUNT's open ends carry the building as CR-37.
+**Retry when:** a playtest shows one start slower or richer than another. Model: claude-opus-5-5.
