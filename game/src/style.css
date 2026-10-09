@@ -1,3 +1,5 @@
+@import '../../design/tokens.css';
+
 /* Handheld-era UI drawn with the core palette (tools/src/kit/palette.ts). */
 @font-face {
   font-family: 'Pixelify Sans';
@@ -7,29 +9,6 @@
 }
 
 :root {
-  --ink: #1b1a2e;
-  --ink2: #3a3554;
-  --grey: #5d6177;
-  --grey2: #8f94a8;
-  --paper2: #c6cad6;
-  --paper: #f5f4ef;
-  --green: #2e6b3b;
-  --green2: #4c9a3f;
-  --green3: #84c450;
-  --green4: #c8e88a;
-  --wood: #6e4226;
-  --wood2: #9e6b3c;
-  --cream: #ebd3a2;
-  --blue: #275a99;
-  --blue2: #3f8fd1;
-  --sky: #7cc4ec;
-  --red: #a8302f;
-  --red2: #e2533f;
-  --gold: #eda83a;
-  --yellow: #f8de62;
-  --purple2: #9a5bb0;
-  --px: 2px;
-  --font: 'Pixelify Sans', ui-monospace, monospace;
   /* body text is the pixel face too; it reads well from 16px up */
   --font-body: var(--font);
   color-scheme: light;
