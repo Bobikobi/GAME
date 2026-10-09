@@ -418,5 +418,6 @@ Option B is built. The first day starts at noon (tick 0 is 12:00; one game hour 
 
 Along the way: the skewer recipe is declared uncommon, since a found recipe is one step rarer than its inputs (V-2); the kernel's version is 0.4.0, because the clock and the rules of a find changed.
 
-**Closes:** the build of the 2026-10-09 entry on option B.
-**Retry when:** the 3D client draws the arch and the night ruins, the hazards land (P-5) and the first night needs the town's safe edge, or play shows the first dark too early or too late. Model: Claude Opus 5.5.
+**Waits for:** the axe and felling (CR-24) and the starters' kits (CR-37). The owner's answers of 10.10, written in parallel with this build, put the recut after them and change three of its beats: the first fire comes from a felled tree, and the explorer's find by the senses is its own axe hidden by the bridge, in place of the dry log; the real choice at minutes 4-6 is whom to help first, Maru or Pell, in place of the stall; and a first-tier recipe is known from the start (CR-61), so the purse under the sign holds something else that is new to do. The recut then lands with the one-time save reset (CR-62), which also carries the noon start. The rules built here stay: the noon start, a dig spot with no tool, a find with no giver counted once found, and the place reward that opens the arch. The threshold is the entrance of the night ruins, which is safe: the player only looks in.
+**Closes:** the build of the 2026-10-09 entry on option B, once it lands.
+**Retry when:** CR-24 and CR-37 are on `develop`; the 3D client draws the arch and the night ruins; or play shows the first dark too early or too late. Model: Claude Opus 5.5.

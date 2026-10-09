@@ -1,6 +1,6 @@
 # The first ten minutes, recut: two options for the product owner's pick
 
-**Picked on 9.10: option B. Built on 10.10.** `DECISIONS.md` records the pick ("The opening recut: option B, toward the first dusk, closing on a night discovery"), that saves need no care until the server keeps them, and the build ("The opening recut B, as built: the arch opens as a place reward"), with what changed on the way. The rest of this page is the proposal as it stood before the pick.
+**Picked on 9.10: option B. Built on 10.10, to land after the axe and the starts.** `DECISIONS.md` records the pick ("The opening recut: option B, toward the first dusk, closing on a night discovery"), that saves need no care until the server keeps them, and the build ("The opening recut B, as built: the arch opens as a place reward"), with what changed on the way and what changes again once the axe (CR-24) and the starters' kits (CR-37) land. The rest of this page is the proposal as it stood before the pick.
 
 A one-page recut of the opening, as ordered on 9.10 (`DECISIONS.md`, "The owner added maze and stealth to the palette, and set the order of the variety work"). Nothing here is built yet. After the pick, the chosen beats become content. With option A they would ship together with the maze, the next item in that order.
 
