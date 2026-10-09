@@ -7,6 +7,7 @@ import {
   type GameEvent,
   type Grade,
   characterLevel,
+  isNight,
   minuteOfDay,
   satietyAt,
   satietyCap,
@@ -15,7 +16,7 @@ import {
 import { app } from '../app';
 import type { Button } from '../input';
 import type { Session } from '../session';
-import { activeQuests, clock, describe, digRiddleOpen, gold, itemName, questSteps, readyToHandIn, windowScalePct } from '../text';
+import { activeQuests, clock, describe, digRiddleOpen, gold, hudUnlocks, itemName, questSteps, readyToHandIn, windowScalePct } from '../text';
 import { say, type Option } from './dialog';
 import { button, h, sprite } from './dom';
 import { feedback } from './feedback';
@@ -47,6 +48,20 @@ export interface Layer {
   onClose?: () => void;
 }
 
+/** The HUD's live elements, built once; renderHud() patches their values. */
+interface HudParts {
+  meter: HTMLElement;
+  bar: HTMLElement;
+  num: HTMLElement;
+  goldText: Text;
+  clockChip: HTMLElement;
+  clockIcon: HTMLElement;
+  clockText: Text;
+  level: HTMLElement;
+  bag: HTMLButtonElement;
+  log: HTMLButtonElement;
+}
+
 export class UI {
   readonly root: HTMLElement;
   private hud: HTMLElement;
@@ -57,6 +72,8 @@ export class UI {
   private loadingEl: HTMLElement | undefined;
   private titleOpen = false;
   private hudTimer = 0;
+  private hudParts: HudParts | undefined;
+  private trackerKey = '';
   private talkCount = new Map<string, number>();
   private levelUpOpen = false;
 
@@ -163,60 +180,92 @@ export class UI {
     if (!s?.started) return;
     const b = app.bundle;
     const st = s.state;
+    const p = this.hudParts ?? (this.hudParts = this.buildHud());
     const cap = satietyCap(b, st);
     const sat = satietyAt(b, st, s.tick);
     const pct = Math.round((sat / cap) * 100);
     const points = skillPoints(b, st);
-    const minute = minuteOfDay(b, s.tick);
-    const day = minute >= 6 * 60 && minute < 19 * 60;
+    const night = isNight(b, s.tick);
+    const unlocked = hudUnlocks(st, points);
+    setClass(p.meter, sat === 0 ? 'meter empty' : pct < 25 ? 'meter low' : 'meter');
+    p.bar.style.width = `${pct}%`;
+    setText(p.num, String(Math.ceil(sat / 1000)));
+    setText(p.goldText, gold(st.player.gold));
+    setTitle(p.clockChip, night ? 'Night' : 'Day');
+    setClass(p.clockIcon, night ? 'moon' : 'sun');
+    setText(p.clockText, clock(minuteOfDay(b, s.tick)));
+    setClass(p.level, points > 0 ? 'chip glow' : 'chip');
+    setTitle(p.level, points > 0 ? 'A skill point to spend: open the journal' : 'Character level');
+    setText(p.level, `Lv ${characterLevel(b, st)}${points > 0 ? ' +' : ''}`);
+    p.bag.hidden = !unlocked.bag;
+    p.log.hidden = !unlocked.log;
+    this.renderTracker(s);
+  }
+
+  /** The HUD's elements, once; after that renderHud() patches what changed. */
+  private buildHud(): HudParts {
+    const bar = h('i');
+    const num = h('span', { class: 'meter-num' });
+    const meter = h(
+      'div',
+      { class: 'meter', title: 'Satiety: eat to refill. Empty means slower work.' },
+      h('span', { class: 'meter-label' }, 'Food'),
+      h('span', { class: 'meter-bar' }, bar),
+      num,
+    );
+    const goldText = document.createTextNode('');
+    const clockIcon = h('i', { class: 'sun' });
+    const clockText = document.createTextNode('');
+    const clockChip = h('span', { class: 'chip', title: 'Day' }, clockIcon, clockText);
+    const level = h('span', { class: 'chip', title: 'Character level' });
+    const bag = button('Bag', () => openBag(this), 'small');
+    const log = button('Log', () => openJournal(this), 'small');
     this.hud.replaceChildren(
       h(
         'div',
         { class: 'hud-left' },
-        h(
-          'div',
-          { class: `meter ${sat === 0 ? 'empty' : pct < 25 ? 'low' : ''}`, title: 'Satiety: eat to refill. Empty means slower work.' },
-          h('span', { class: 'meter-label' }, 'Food'),
-          h('span', { class: 'meter-bar' }, h('i', { style: `width:${pct}%` })),
-          h('span', { class: 'meter-num' }, String(Math.ceil(sat / 1000))),
-        ),
+        meter,
         h(
           'div',
           { class: 'hud-row' },
-          h('span', { class: 'chip gold', title: 'Gold' }, h('i', { class: 'coin' }), gold(st.player.gold)),
-          h('span', { class: 'chip', title: day ? 'Day' : 'Night' }, h('i', { class: day ? 'sun' : 'moon' }), clock(minute)),
-          h('span', { class: `chip ${points > 0 ? 'glow' : ''}`, title: points > 0 ? 'A skill point to spend: open the journal' : 'Character level' }, `Lv ${characterLevel(b, st)}${points > 0 ? ' +' : ''}`),
+          h('span', { class: 'chip gold', title: 'Gold' }, h('i', { class: 'coin' }), goldText),
+          clockChip,
+          level,
           h('button', { class: 'chip demo', type: 'button', onclick: () => this.aboutDemo() }, 'Demo'),
         ),
       ),
-      h(
-        'div',
-        { class: 'hud-right' },
-        button('Bag', () => openBag(this), 'small'),
-        button('Log', () => openJournal(this), 'small'),
-        button('Menu', () => openMenu(this), 'small'),
-      ),
+      h('div', { class: 'hud-right' }, bag, log, button('Menu', () => openMenu(this), 'small')),
     );
-    this.renderTracker(s);
+    return { meter, bar, num, goldText, clockChip, clockIcon, clockText, level, bag, log };
   }
 
   private renderTracker(s: Session): void {
     const b = app.bundle;
     const ids = activeQuests(b, s.state);
-    if (ids.length === 0) {
-      this.tracker.replaceChildren(h('div', { class: 'tracker-title' }, 'Explore the valley'));
-      return;
+    let title = 'Explore the valley';
+    let more = 0;
+    let lines: string[] = [];
+    const main = ids[0];
+    if (main) {
+      const q = b.quests[main]!;
+      const giver = q.giver ? b.npcs[q.giver]?.name : undefined;
+      title = q.title;
+      more = ids.length - 1;
+      lines =
+        readyToHandIn(b, s.state, main) && giver
+          ? [`Bring it to ${giver}`]
+          : questSteps(b, s.state, main)
+              .filter((st) => !st.done)
+              .slice(0, 2)
+              .map((st) => st.short ?? st.text);
     }
-    const main = ids[0]!;
-    const q = b.quests[main]!;
-    const steps = questSteps(b, s.state, main);
-    const giver = q.giver ? b.npcs[q.giver]?.name : undefined;
-    const ready = readyToHandIn(b, s.state, main) && giver;
+    // rebuilt only when its words change, not on every tick
+    const key = JSON.stringify([title, more, lines]);
+    if (key === this.trackerKey) return;
+    this.trackerKey = key;
     this.tracker.replaceChildren(
-      h('div', { class: 'tracker-title' }, q.title, ids.length > 1 ? h('span', { class: 'more' }, ` +${ids.length - 1}`) : null),
-      ...(ready
-        ? [h('div', { class: 'tracker-step' }, `Bring it to ${giver}`)]
-        : steps.filter((st) => !st.done).slice(0, 2).map((st) => h('div', { class: 'tracker-step' }, st.short ?? st.text))),
+      h('div', { class: 'tracker-title' }, title, more > 0 ? h('span', { class: 'more' }, ` +${more}`) : null),
+      ...lines.map((text) => h('div', { class: 'tracker-step' }, text)),
     );
   }
 
@@ -432,4 +481,16 @@ function rewardText(questId: string): string {
   for (const rc of r.recipes ?? []) parts.push(`the ${b.recipes[rc]?.title ?? rc} recipe`);
   if (r.rep) parts.push('their trust');
   return parts.join(', ') || 'their thanks';
+}
+
+function setText(node: Text | HTMLElement, text: string): void {
+  if (node.textContent !== text) node.textContent = text;
+}
+
+function setClass(el: HTMLElement, cls: string): void {
+  if (el.className !== cls) el.className = cls;
+}
+
+function setTitle(el: HTMLElement, title: string): void {
+  if (el.title !== title) el.title = title;
 }
