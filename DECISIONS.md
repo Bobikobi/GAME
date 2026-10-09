@@ -645,3 +645,20 @@ The question (9.10): the spec makes a season a few weeks with a seasonal discove
 
 **Closes:** the open line on seasons in the entry on combat and group quests; GRUNT's open ends carry the guard as CR-41.
 **Retry when:** the first season shows players who missed it feeling locked out, or a season adds nothing to explore. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ The valley's year is the real year, its days stay short, and each season gives the expansions a theme
+
+The question (9.10): do the seasons of the year and the holidays follow the real calendar or the valley's own? The recommendation was the valley's own, for three reasons: the game is for the whole world and the south has summer when the north has winter; a real holiday belongs to one culture, while G22 asks for the valley's own names; and a real holiday comes back only after a year, the wait G28 forbids. The owner's word (9.10): a real year, and the days can be half a real day or less. Besides the holidays, each season gives the expansions general themes, and the aim is a world that deepens all the time, maybe several times a week, as far as the community of creators allows.
+
+What other games do, as read for this answer. A day: Stardew Valley about 14 minutes, Minecraft 20, Terraria 24, Breath of the Wild 24, Valheim about 30, GTA V and Red Dead Redemption 2 48; Animal Crossing and World of Warcraft run on the real clock. A year: Stardew Valley keeps its own short year with its own festivals; Animal Crossing and Pokemon GO follow the real year and the player's half of the globe; World of Warcraft holds its festivals on real dates under its own names (Winter Veil, Hallow's End); Minecraft and Terraria, with short days, dress the world for Halloween and Christmas on the real dates, and Terraria also sells an item that calls a holiday night at any time. Content: Fortnite, Destiny, Sea of Thieves and Pokemon GO run themed seasons of about three months, Path of Exile a league every three to four months, and Old School RuneScape ships an update almost every week, after a players' poll for the big ones.
+
+- The valley's year is the real year: its seasons of the year turn with the real months, and its holidays fall on real dates.
+- The days stay short, as the owner allows: a day and its night are half a real day or less. Today `day_length_ms` is 20 minutes of play, inside the bounds of 10 to 40.
+- A holiday carries the valley's own name, as World of Warcraft does, so G22 holds and no player's holiday is left out. It comes back every year on its dates. What only a holiday gives is a look or a title, bound to the character and never traded, so no holiday makes a thing rare on the market. G42 carries this as its one written exception.
+- The date comes from the server once accounts exist. In the demo it comes from the device, where turning the clock gains nothing that lasts, since nothing from the demo passes to an account. The date enters the kernel as an input recorded with the actions, so a replay gives the same result.
+- Each season gives the expansions a general theme. The theme invites and never gates: an expansion off the theme still lands by the same rule, as the spec has it for open calls, where nobody is bound and nobody blocks.
+- The world deepens all the time: expansions land as often as the creators make them and they pass the check, several times a week as an aim. What lands stays (the entry on seasons above), and every change to the schema stays additive, so a saved game always loads.
+- Open, asked one at a time: whether a thing may exist in one season of the year only (asked next, since G42 bars rarity by a timer), which half of the globe the seasons follow, and how long a content season runs (the spec says a few weeks; most games run about three months).
+
+**Closes:** the calendar, in part; GRUNT's open ends carry the building as CR-42.
+**Retry when:** players in the south or of another culture find the year strange, or creators cannot keep up with a season's theme. Model: claude-opus-5-5.
