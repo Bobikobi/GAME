@@ -793,3 +793,16 @@ The question (A1, the rest after the entry on exploit loops): what happens to on
 
 **Closes:** A1; GRUNT's CR-26 now carries the rules.
 **Retry when:** programs are found playing faster than people can hear the cases, or real players are caught by the signs. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ In a shared world each player gathers their own yield, except in the areas between players
+
+The question (9.10): the spec limits resources at the world level once the market comes: a bush gives a fixed amount an hour however many players stand by it, and whoever comes first takes. The recommendation: each player gathers their own yield from every bush and tree in the towns and the wild, as Guild Wars 2 does, and nodes are shared only in the areas between players. The owner's word (9.10): yes.
+
+- Outside the areas between players, a node's state is kept per player: what one player gathers or fells, the next player still finds. A tree one player fells stands for the others, and grows back in its stages for the one who felled it (the entry on wood). Others still see the player at work.
+- Why: the entry on competition says players compete for places only, never for resources; first come would let a program playing around the clock strip the valley before anyone (the entry on programs that play), and a new player by the town would find nothing.
+- The brake on a flood stays the market: when everyone gathers fruit, the price of fruit falls (the free market of the crafting economy entry), the signal to turn to something else, as the spec wants. Capacity stays per account, as the kernel review's ceiling always was (R6, review 7.1).
+- In the areas between players nodes are shared and whoever comes first takes: part of the risk and the reward of an area a player chooses to enter (`docs/design/SETTLEMENT.md` 3.9).
+- This changes the spec's world-level limit on resources; the spec's market section follows in its next version.
+
+**Closes:** the question of shared nodes; GRUNT's open ends carry the building as CR-45.
+**Retry when:** a shared world feels empty because players never meet at the same bush, or the market fails to move players off a crowded activity. Model: claude-opus-5-5.
