@@ -749,3 +749,34 @@ Open, for the owner when magic is planned: whether and when magic comes; what a 
 
 **Closes:** nothing; it waits for a plan for magic.
 **Retry when:** magic or the ancient language is planned. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ The creators' pool comes from gold already spent and is split by active play
+
+The question (kernel review D5): what exactly does the creators' pool pay for, and where does its gold come from? The spec gives creators a weekly share by use from stage 4. The recommendation: the pool is never minted but taken from gold that left the world, split by active seconds with a cap per account-day, 60, 20 and 20 to the activity, the place and the quest, gear paid from its sale, and no gold for votes. The owner's word (9.10): yes.
+
+- The pool is never minted. Each week it is a fixed share (`creator_pool_permille`, a bounded parameter, R12) of the gold that left the world that week: prices paid to the settlement and the shop, and fees. A week with little spending pays little, and the pool adds no gold to the world.
+- The gold the pool takes no longer leaves the world, it moves to creators: the daily balance and the step of the trader's shares (the entry on gold entering a world) count it as moved, with the reason `royalty`, and count only the rest as burned.
+- It is split by active seconds in each creator's content, taken from the server's validated action logs (R10), at most 2 hours per account-day. An idle account plays no active seconds; many accounts meet the cap and the flags of the entry below.
+- Of what a piece of content earns, 60% goes to the creator of the activity, 20% to the creator of the place, and 20% to the creator of the quest that led there (R10's attribution table, bounded parameters).
+- A creator of gear is paid from its sale, not from the pool, since gear touches every action of its wearer (C3).
+- No gold for a poll vote (A19).
+- Creator points stay as they are. The points entry of 7.10 waited for D5: this entry is the pool's rule, and creators' rewards get their own document when stage 4 is planned.
+
+`docs/kernel-review-v1.md` section 5 marks D5 decided.
+
+**Closes:** D5 of the kernel review, and the wait of the points entry of 7.10; GRUNT's open ends carry the building as CR-44.
+**Retry when:** creators find the pool too small to matter, or one creator's accounts take a large share of it. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ An exploit loop costs its accounts and the gold it made
+
+The owner's word (9.10, with the answer on the creators' pool): every movement is in the system, so if a new account at once passes its starting capital on, or certain accounts show a fixed pattern and identical or too regular times, that is the sign of a loop exploiting the system: the accounts are blocked and lose the gold that was made. This answers part of A1 (the entry on bots).
+
+- The server's books hold every movement of gold and goods (the entry on gold entering a world), so a loop leaves a trail.
+- The signs of a loop: a new account that passes its starting gold or its first earnings on at once; the same run of actions again and again; times identical across accounts, or too regular for a person, since a person's timing varies and the server keeps every action's time and timing grade (K10); gold going round between the same accounts.
+- As a bank holds a new account, the starting gold and kit are bound to the account and cannot be passed on, and an account's first trades with other players open after it has played a while (`new_account_hold`, counted in active play, never in days, so no absence is punished, G28). The plainest loop is closed before it starts.
+- On suspicion the accounts are held: no trade and no transfer until it is decided.
+- A loop found: every account in it is blocked, and the gold and goods the loop made leave the world, written in the ledger with the reason `forfeit`. Forfeited gold is burned and never handed to anyone, so nobody gains by flagging another.
+- Open, asked next: whether a rule alone decides a block or a person decides after the hold, and whether a player may appeal.
+
+**Closes:** part of A1; GRUNT's CR-43 now carries it.
+**Retry when:** a real player is caught by a flag, or a loop runs unflagged. Model: claude-opus-5-5.
