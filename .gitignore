@@ -19,3 +19,5 @@ tools/.cache/
 *.key
 *.pfx
 client_secret*.json
+# fetched by game/tools/fetch-cell-assets.mjs (Poly Haven, CC0)
+game/public/3d/cell/
