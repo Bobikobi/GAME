@@ -12,6 +12,9 @@
       "description": "Dark and sweet. Grows only where the bells rang.",
       "kind": "food",
       "rarity": "uncommon",
+      "class": "plant",
+      "family": "berry",
+      "tier": 1,
       "sprite": "core/base-kit:items/berry",
       "food": {
         "satiety": 5

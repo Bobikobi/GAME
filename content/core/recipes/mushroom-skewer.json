@@ -12,6 +12,8 @@
       "description": "Smoky.",
       "kind": "food",
       "rarity": "common",
+      "class": "meal",
+      "tier": 1,
       "sprite": "core/base-kit:items/mushroom-skewer",
       "food": {
         "satiety": 25

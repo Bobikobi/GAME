@@ -901,3 +901,25 @@ pnpm verify && pnpm e2e
 Green; the e2e log prints the climax line and the opened slot.
 
 Decision: DECISIONS.md 2026-10-08, the expedition entry; GAME_RULES.md G36-G37.
+
+## Open ends
+
+What was approved, decided or found and is not finished. One row per item, in the shape of `docs/design/CRAFTING_AUDIT.md`, Appendix D: an id, what is open, where it lives, and the check that closes it. A row leaves the list when its "closes when" is true on `develop`; nothing is closed in conversation.
+
+| Id | What is open | Where | Closes when |
+|---|---|---|---|
+| CR-1 | The shop floor in the code is r * V; R8 writes k * r * V. One of the two is wrong. | `kernel/src/values.ts`, `docs/kernel-review-v1.md` | the owner's word is in DECISIONS.md and either the review or `minChargeFor` matches it |
+| CR-2 | A removed item is dropped from a save, not converted (R5). | `game/src/session.ts` | a conversion record exists in the schema and `adapt` applies it, before stage 2a saves |
+| CR-3 | R12 names min, max, step and cooldown per parameter; the params carry min, max and step, no cooldown, the check reads min and max only, and r is votable though "fixed for good". | `content/core/params.json`, `tools/src/check.ts` | the check reads the step and a cooldown, or the review is amended |
+| CR-4 | G3 has no check and no checklist question. | `docs/design/GAME_RULES.md`, `tools/src/play.ts` | a play rule counts visible steps, or section 8 records G3 as reviewed by hand |
+| CR-5 | Restores and camp parts carry `active_ms` outside the bounds check. | `tools/src/check.ts` | the `timed` list includes them |
+| CR-6 | Stale texts about the check: "!" lines, rules G1 to G16, kernel rules R1 to R11. | `docs/design/GAME_RULES.md`, `AGENTS.md`, `CONTRIBUTING.md`, `docs/design/TOOLKIT.md` | one docs sweep |
+| CR-7 | Professions are core-only, against spec 8 and 11; held so by the extension-reach decision for now. | `schema/src/index.ts`, `tools/src/assemble.ts` | the stage that opens professions to extensions, with its own decision |
+| CR-8 | The shop never buys a tool; a crafted higher-tier tool has a value and no sell-back. | `kernel/src/step.ts` | the workshop content lands with a decision on sell-back |
+| CR-9 | The `premium_later` marker and the check that allows it only on look items with no effect. | schema, `tools/src/check.ts` | crafting wave 2 |
+| CR-10 | Quest gates by profession or character level for the non-crafter's roads. | `schema/src/index.ts` | a quest may name a level, or DECISIONS.md says it never will |
+| CR-11 | Bag categories. | `game/src/ui/panels.ts` | crafting wave 4 |
+| CR-12 | A weapon slot waits for G35 (stage 8 or a vote). | roadmap | that stage or vote |
+| CR-13 | Metal content waits for its discovery. | roadmap | a vote or an accepted proposal |
+| CR-14 | A broad recipe template can pass its bound today and fail on a later merge when another creator adds fitting items; the guide says to keep templates narrow. | `tools/src/assemble.ts` | the first such failure is handled, or the fit is scoped per creator |
+| CR-15 | Between crafting wave 1 and wave 2 the check enforces the station tier and the profession while the kernel still gates on cooking alone. | `kernel/src/step.ts` | crafting wave 2 |

@@ -12,6 +12,9 @@
       "description": "Opens at midday, where the mist is thin.",
       "kind": "material",
       "rarity": "uncommon",
+      "class": "plant",
+      "family": "herb",
+      "tier": 1,
       "sprite": "core/base-kit:items/herb"
     }
   ],

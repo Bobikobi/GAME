@@ -65,6 +65,36 @@ export type Attribute = (typeof ATTRIBUTES)[number];
 
 export const REP_TIERS = ['stranger', 'acquaintance', 'friend', 'family'] as const;
 
+/**
+ * The material grammar (DECISIONS.md, 2026-10-09): every item names a class.
+ * The core owns these base classes; an extension declares a class of its own
+ * under one of them, and every rule written for the base class holds for it.
+ * "metal" waits for its discovery: the check refuses metal items until then.
+ */
+export const BASE_CLASSES = [
+  'plant',
+  'wood',
+  'fibre',
+  'stone',
+  'clay',
+  'mineral',
+  'metal',
+  'animal',
+  'meal',
+  'tool',
+  'garment',
+  'jewelry',
+  'relic',
+] as const;
+export const BaseClass = Type.Union(BASE_CLASSES.map((k) => Type.Literal(k)), {
+  description:
+    'plant (leaves, herbs, berries, fruit, roots, mushrooms), wood, fibre (reeds, grass, thread, cloth), stone, clay (clay, sand, pottery, brick), mineral (crystals, gems, salt, ore), metal (waits for its discovery), animal (feathers, wool, hide, bone), meal (cooked food), tool, garment (worn clothes), jewelry, relic (old things from the ruins).',
+});
+export const ItemClass = Type.Union([...BASE_CLASSES.map((k) => Type.Literal(k)), Id], {
+  description: 'A base class (plant, wood, fibre, ...) or the id of a class an extension declares under one of them.',
+});
+const Word = (description: string) => Type.String({ pattern: '^[a-z0-9_-]+$', maxLength: 24, description });
+
 // ---------------------------------------------------------------- shared parts
 
 export const Stack = Type.Object(
@@ -87,6 +117,14 @@ export const ItemDef = Type.Object(
     description: Type.Optional(Text),
     kind: Type.Union(ITEM_KINDS.map((k) => Type.Literal(k))),
     rarity: Rarity,
+    class: Type.Optional(ItemClass),
+    family: Type.Optional(Word('A group inside the class, for example "berry" for every berry. Open: any lowercase word.')),
+    tags: Type.Optional(
+      Type.Array(Word('A lowercase word.'), { maxItems: 8, uniqueItems: true, description: 'Open words that describe it, for example "sweet" or "night".' }),
+    ),
+    tier: Type.Optional(
+      Int(1, 20, 'How advanced it is, from 1. The rarity says how often it appears; the tier says how far up the ladder it is. A tool has the tier of its "tool".'),
+    ),
     sprite: SpriteRef,
     food: Type.Optional(
       Type.Object(
@@ -109,6 +147,19 @@ export const ItemDef = Type.Object(
     ),
   },
   { additionalProperties: false },
+);
+
+export const ClassDef = Type.Object(
+  {
+    id: Id,
+    name: Name,
+    base: BaseClass,
+    description: Type.Optional(Text),
+  },
+  {
+    additionalProperties: false,
+    description: 'A class of your own, declared under one base class. Every rule written for the base class holds for it.',
+  },
 );
 
 // ---------------------------------------------------------------- record bodies
@@ -165,11 +216,18 @@ export const TreasureBody = Type.Object(
   { additionalProperties: false },
 );
 
+const RecipeLevel = Int(1, 20, 'Level required in the profession that gates the recipe. It sits inside the level band of the recipe\'s tier.');
+const RecipeProfession = {
+  ...Id,
+  description: 'The profession that gates this recipe and that it trains. Left out: the profession that works its station.',
+};
+
 export const RecipeBody = Type.Object(
   {
     station: Station,
     active_ms: Ms('Time the player is busy making it once.'),
-    level: Int(1, 20, 'Cooking level required.'),
+    level: RecipeLevel,
+    profession: Type.Optional(RecipeProfession),
     inputs: Type.Array(Stack, { minItems: 1, maxItems: 6 }),
     outputs: Type.Array(Output, { minItems: 1, maxItems: 4 }),
     known: Type.Union([Type.Literal('start'), Type.Literal('found')], {
@@ -177,6 +235,39 @@ export const RecipeBody = Type.Object(
     }),
   },
   { additionalProperties: false },
+);
+
+export const ClassInput = Type.Object(
+  {
+    class: ItemClass,
+    family: Type.Optional(Word('Only items of this family.')),
+    min_tier: Int(1, 20, 'The lowest tier that fits.'),
+    qty: Int(1, 999),
+  },
+  {
+    additionalProperties: false,
+    description: 'Any item of this class (and family, when named) at this tier or above. A base class also takes every class declared under it.',
+  },
+);
+
+export const TemplateBody = Type.Object(
+  {
+    station: Station,
+    active_ms: Ms('Time the player is busy making it once.'),
+    level: RecipeLevel,
+    profession: Type.Optional(RecipeProfession),
+    inputs: Type.Array(Type.Union([Stack, ClassInput]), {
+      minItems: 1,
+      maxItems: 6,
+      description: 'Items by id, or by class and lowest tier. At least one input names a class.',
+    }),
+    outputs: Type.Array(Output, { minItems: 1, maxItems: 4 }),
+  },
+  {
+    additionalProperties: false,
+    description:
+      'A recipe template: the assembler turns it into one recipe for every combination of items that fit its class inputs, in a fixed order and never more than params.template_max_recipes. Every recipe it makes is known from the start.',
+  },
 );
 
 export const NpcBody = Type.Object(
@@ -338,6 +429,9 @@ export const CampBody = Type.Object(
     active_ms: Ms('Time the player is busy building it.'),
     sprite: SpriteRef,
     provides: Type.Optional(Station),
+    tier: Type.Optional(
+      Int(1, 20, 'Tier of the station this part provides, 1 when left out. A recipe needs a station of at least its own tier.'),
+    ),
     bag_bonus: Type.Optional(Int(1, 40)),
   },
   { additionalProperties: false },
@@ -372,6 +466,14 @@ export const ProfessionBody = Type.Object(
   {
     name: Name,
     verb: Type.Union([Type.Literal('gather'), Type.Literal('dig'), Type.Literal('craft')]),
+    stations: Type.Optional(
+      Type.Array(Station, {
+        minItems: 1,
+        maxItems: 4,
+        uniqueItems: true,
+        description: 'A craft profession only: the stations whose recipes it gates when a recipe names no profession. One profession per station.',
+      }),
+    ),
     xp_levels: Type.Array(Int(1, 10_000_000), {
       minItems: 1,
       maxItems: 20,
@@ -415,6 +517,20 @@ export const ParamsBody = Type.Object(
       description: 'P(level): the clamp on any rate multiplier, by character level (1-based).',
     }),
     rarity_budget_permille: Bounded,
+    open_tiers: {
+      ...Bounded,
+      description: 'The highest item tier the world has opened. A stage or a new town opens the next one.',
+    },
+    tier_min_level: Type.Array(Type.Integer({ minimum: 1, maximum: 20 }), {
+      minItems: 1,
+      maxItems: 20,
+      description:
+        'The lowest level of each tier, from tier 1. A recipe of tier t needs a level from entry t up to one below entry t + 1 (up to 20 for the last), and a node that gives tier 3 or above needs at least entry t, or a slow respawn. Starts at 1 and rises with every tier; one entry for every open tier at least.',
+    }),
+    template_max_recipes: {
+      ...Bounded,
+      description: 'The most recipes one recipe template may make.',
+    },
     rarity_bonus_ms: Type.Object(
       { common: Type.Integer(), uncommon: Type.Integer(), rare: Type.Integer(), legendary: Type.Integer() },
       { additionalProperties: false },
@@ -547,6 +663,7 @@ const envelope = {
     }),
   ),
   items: Type.Optional(Type.Array(ItemDef, { maxItems: 40 })),
+  classes: Type.Optional(Type.Array(ClassDef, { maxItems: 10, description: 'Classes of your own, each under one base class.' })),
 };
 
 function record<T extends string, K extends string, B extends TSchema>(type: T, key: K, body: B) {
@@ -557,6 +674,7 @@ function record<T extends string, K extends string, B extends TSchema>(type: T, 
 export const ResourceFile = record('resource', 'node', ResourceBody);
 export const TreasureFile = record('treasure', 'dig', TreasureBody);
 export const RecipeFile = record('recipe', 'recipe', RecipeBody);
+export const TemplateFile = record('template', 'template', TemplateBody);
 export const NpcFile = record('npc', 'npc', NpcBody);
 export const QuestFile = record('quest', 'quest', QuestBody);
 export const RestoreFile = record('restore', 'restore', RestoreBody);
@@ -571,13 +689,14 @@ export const ParamsFile = record('params', 'params', ParamsBody);
 export const KitFile = record('kit', 'kit', KitBody);
 export const MapFile = record('map', 'map', MapBody);
 
-export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'npc', 'quest', 'restore', 'camp', 'starter', 'items', 'creator'] as const;
+export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'restore', 'camp', 'starter', 'items', 'creator'] as const;
 export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map'] as const;
 
 export const ExtensionFile = Type.Union([
   ResourceFile,
   TreasureFile,
   RecipeFile,
+  TemplateFile,
   NpcFile,
   QuestFile,
   RestoreFile,
@@ -593,12 +712,16 @@ export const ExtensionFile = Type.Union([
 ]);
 
 export type ItemDef = Static<typeof ItemDef>;
+export type ClassDef = Static<typeof ClassDef>;
+export type ClassInput = Static<typeof ClassInput>;
+export type BaseClassName = (typeof BASE_CLASSES)[number];
 export type Stack = Static<typeof Stack>;
 export type Output = Static<typeof Output>;
 export type Find = Static<typeof Find>;
 export type ResourceFile = Static<typeof ResourceFile>;
 export type TreasureFile = Static<typeof TreasureFile>;
 export type RecipeFile = Static<typeof RecipeFile>;
+export type TemplateFile = Static<typeof TemplateFile>;
 export type NpcFile = Static<typeof NpcFile>;
 export type QuestFile = Static<typeof QuestFile>;
 export type QuestStep = Static<typeof QuestStep>;
@@ -620,6 +743,7 @@ export type ExtensionFile = Static<typeof ExtensionFile>;
 export type Resource = Static<typeof ResourceBody>;
 export type Treasure = Static<typeof TreasureBody>;
 export type Recipe = Static<typeof RecipeBody>;
+export type Template = Static<typeof TemplateBody>;
 export type Npc = Static<typeof NpcBody>;
 export type Quest = Static<typeof QuestBody>;
 export type Restore = Static<typeof RestoreBody>;
@@ -639,6 +763,7 @@ export const SCHEMAS = {
   resource: ResourceFile,
   treasure: TreasureFile,
   recipe: RecipeFile,
+  template: TemplateFile,
   npc: NpcFile,
   quest: QuestFile,
   restore: RestoreFile,

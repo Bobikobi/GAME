@@ -13,6 +13,8 @@
       "description": "For herbs and mushrooms. Opens foraging in the grove.",
       "kind": "tool",
       "rarity": "common",
+      "class": "tool",
+      "tier": 1,
       "sprite": "core/base-kit:items/basket",
       "tool": {
         "kind": "basket",
@@ -26,6 +28,8 @@
       "description": "For digging in the ruins.",
       "kind": "tool",
       "rarity": "common",
+      "class": "tool",
+      "tier": 1,
       "sprite": "core/base-kit:items/trowel",
       "tool": {
         "kind": "trowel",
