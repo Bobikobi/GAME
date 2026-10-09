@@ -283,12 +283,20 @@ What it adds, as built:
 
 What changed from the first plan, and why: the tier is a number the core opens (D-CRAFT-2), not the four rarities; a template input may name a `family`, because a broad template (plant with plant) passes the bound today and breaks when another creator adds plants, and the check runs on the merged world; a recipe counts as a gated source for tier 3 and up through its level band, because every output has a level gate in the recipe itself; the G-rules moved from wave 3 into this wave so the checker's messages can cite them; one craft profession per station is enforced now so the default of D-CRAFT-3 is well defined before the kernel reads it in wave 2.
 
-### Wave 2: the kernel
+### Wave 2: the kernel (built on `feat/crafting-wave2`)
 
 - The craft gate reads `recipe.profession` (or the station's profession) and the station's tier; the assembler allows one profession per verb and station family (D-CRAFT-3).
-- The craft chance (D-CRAFT-7): a success chance from skill against the recipe's level, tilted by luck stones and the character's luck through R4 draws; a miss keeps something (part of the inputs or a lesser output); value at perfect execution, never above the certificate.
+- The craft chance (D-CRAFT-7): a success chance from skill against the recipe's level, tilted by luck stones and the character's luck through R4 draws; a miss keeps part of the inputs and makes nothing else; value at perfect execution, never above the certificate.
 - Worn items (D-CRAFT-6): the slots head, top, trousers or full outfit, feet, two jewelry, hand tool; effects from the closed list, bounded per tier; a set bonus; one calculator with the power cap; the look layer on the same slots and the `premium_later` marker allowed only on look items with no effect, which the check enforces (D-CRAFT-11, CR-9).
 - Invariant tests extended (replay, determinism, bag, ledger, the miss); `pnpm verify` and the opening e2e green.
+
+As built (the readings are in DECISIONS.md, 2026-10-09, "Crafting wave 2 as built"):
+
+- Schema: `wear` (slot, `look`, up to two effects from the worn list, `set`) and `premium_later` on an item; `miss` (`keep_pct` up to 90) on a recipe and a template; `upgrades` on a camp part; the effects `gather_speed_pct`, `dig_speed_pct` and `craft_chance_pct`; params `craft_chance_bp`, `craft_level_step_bp`, `craft_luck_max_permille`, `craft_miss_keep_pct`, `wear_effect_max_pct` and `wear_set_bonus_pct`.
+- Kernel 0.3.0: `recipeProfession`, `recipeTier`, `craftChanceBp`, `craftLuckPermille` and `missOutcome`; the craft refuses a station below the recipe's tier and a level of the recipe's own profession, draws once per try and keeps part on a miss; the `wear` and `unwear` actions and the `miss`, `wear` and `unwear` events; `effectValue` (techniques and worn pieces, one calculator, every rate still clamped under the power cap); `fitWorn` takes off what leaves the bag; `campBuilt` follows upgrades.
+- Assembler and checker: the bundle's `stations`; template recipe ids with "+"; `checkWear` for G39 and G44; the miss and the upgrade rules of G40 and G41.
+- Client: the miss, wear and unwear lines and the miss sound; an old save gains empty worn places and craft counters, and a new world version teaches its new start recipes.
+- Tests: kernel crafting (gate, chance, luck, miss, replay and ledger), worn items (places, layers, set, power cap, a random run that keeps every worn unit in the bag), worn and miss schema cases, the checker's passing world and every refusal, the save cases, and the invariant run with wear and unwear.
 
 ### Wave 3: seed content and creator docs
 
@@ -300,6 +308,8 @@ What changed from the first plan, and why: the tier is a number the core opens (
 ### Wave 4: the client, inside the existing craft panel
 
 - Class and tier shown on an item and a recipe; the gate that blocks (which level, which station tier, which profession); the family row in the journal; the bag categories of D-CRAFT-6. No restyle.
+
+The owner's economy answers of 9.10 evening (DECISIONS.md, 2026-10-09, "The crafting economy") change waves 3 and 4 where they differ from the lines above: a craft is no longer refused for its level, so the gate that blocks is the station's tier alone, and the screen shows no chance, no word for the difficulty and no wanted level. The new work is in Appendix D, CR-16 to CR-23, with the decided CR-8.
 
 ## Appendix A. The starting notes, checked
 
@@ -398,7 +408,7 @@ Read for the two ladders (D-CRAFT-2), the slots (D-CRAFT-6) and the miss (D-CRAF
 
 | Game | The miss | What it teaches here | Source |
 |---|---|---|---|
-| The Legend of Zelda: Breath of the Wild | Incompatible ingredients cook into Dubious Food or Rock-Hard Food; both still restore a little health. | A miss keeps something (G15): the failed dish is a lesser output, not nothing. | [Cooking](https://zeldawiki.wiki/wiki/Cooking_in_Breath_of_the_Wild), [Rock-Hard Food](https://zeldawiki.wiki/wiki/Rock-Hard_Food), [Dubious Food](https://zelda-archive.fandom.com/wiki/Dubious_Food) |
+| The Legend of Zelda: Breath of the Wild | Incompatible ingredients cook into Dubious Food or Rock-Hard Food; both still restore a little health. | A miss keeps something (G15), not nothing. Mistvale keeps part of the inputs, not a lesser dish (DECISIONS.md, 2026-10-09, "The crafting economy"). | [Cooking](https://zeldawiki.wiki/wiki/Cooking_in_Breath_of_the_Wild), [Rock-Hard Food](https://zeldawiki.wiki/wiki/Rock-Hard_Food), [Dubious Food](https://zelda-archive.fandom.com/wiki/Dubious_Food) |
 | Final Fantasy XIV | A synthesis has progress, quality and durability; crafting stats decide the chance of a high-quality result; when durability runs out before progress is complete the synthesis fails and materials are lost. | Skill decides the chance and the grade; the loss of all materials on a miss is what pillar 5 and G15 rule out here. | [Crafting](https://ffxiv.consolegameswiki.com/wiki/Crafting), [Crafting basics](https://icy-veins.com/ffxiv/crafting-basics-in-ffxiv) |
 
 ## Appendix D. The open ends
@@ -414,11 +424,17 @@ Mirrored in `docs/team/GRUNT.md`, section "Open ends". An item leaves the list w
 | CR-5 | Restores and camp parts carry `active_ms` outside the bounds check. | `tools/src/check.ts:109-113` | the `timed` list includes them |
 | CR-6 | Stale texts about the check: "!" lines, rules G1 to G16, kernel rules R1 to R11. | `docs/design/GAME_RULES.md:4`, `:76-77`, `:332`, `:382-383`; `AGENTS.md:9`; `CONTRIBUTING.md:15`; `docs/design/TOOLKIT.md:48-49` | one docs sweep |
 | CR-7 | Professions are core-only, against spec 8 line 248 and 11 line 475; held so by D-CRAFT-4 for now. | `schema/src/index.ts:575`, `tools/src/assemble.ts:136` | the stage that opens professions to extensions, with its own decision |
-| CR-8 | The shop never buys a tool; a crafted higher-tier tool has a value and no sell-back. | `kernel/src/step.ts:367` | D-CRAFT-10's content lands with a decision on sell-back |
-| CR-9 | The `premium_later` marker and the check that allows it only on look items with no effect. | schema, `tools/src/check.ts` | wave 2 |
+| CR-8 | The shop never buys a tool; a crafted higher-tier tool has a value and no sell-back. Decided 9.10 (DECISIONS.md, "The crafting economy"): the trader buys a tool by the part of its uses left, and a tool may leave out `uses` and last. | `kernel/src/step.ts:367`, `schema/src/index.ts` | D-CRAFT-10's content lands with that sell-back and the optional `uses` |
 | CR-10 | Quest gates by profession or character level for the non-crafter's roads. | `schema/src/index.ts:307` | a quest may name a level, or DECISIONS.md says it never will |
 | CR-11 | Bag categories. | `game/src/ui/panels.ts` | wave 4 |
 | CR-12 | A weapon slot waits for G35 (stage 8 or a vote). | roadmap | that stage or vote |
 | CR-13 | Metal content waits for its discovery. | roadmap | a vote or an accepted proposal |
 | CR-14 | A broad template can pass its bound today and fail on a later merge when another creator adds fitting items; the guide says to keep templates narrow. | `tools/src/assemble.ts` (wave 1) | the first such failure is handled, or the fit is scoped per creator |
-| CR-15 | Between wave 1 and wave 2 the check enforces the station tier and the profession while the kernel still gates on cooking alone. | `kernel/src/step.ts:302` | wave 2 |
+| CR-16 | The average try: at its own level a tier-2 recipe uses 112.5 percent of its inputs for each success and a tier-3 recipe about 127; the value table prices only the success. | `tools/src/check.ts` | the check refuses a recipe whose average try at its own level loses value, p * V(out) + (1 - p) * V(kept) >= V(in), with a test |
+| CR-17 | The level wall: a recipe above the profession's level is refused. Decided 9.10: no wall, the chance falls by `craft_level_step_bp` per missing level down to nothing, fitting gear counts on the side of skill, and the screen shows no chance or difficulty. | `kernel/src/step.ts` | the kernel no longer refuses on level and a try at nothing runs and misses, with tests |
+| CR-18 | A made good sells for the raw share. Decided 9.10: the trader pays `k_craft_permille` (750) of r * V for an item whose value comes from a recipe. | `kernel/src/step.ts`, `content/core/params.json`, `docs/kernel-review-v1.md` | the param, the trader and R8 with Theorem 3 change together, with a test |
+| CR-19 | The trader pays one price whatever the supply. Decided 9.10: a free market, a stock per item that moves the trader's and the shop's prices inside R8's band and drains with game time. | `kernel/src/state.ts`, `kernel/src/step.ts` | the market stock and its prices exist with tests, and the trader shows today's price |
+| CR-20 | No upgrade recipe: an item and more materials that give the next tier of the same item, whose miss keeps the item whole. | `schema/src/index.ts`, `kernel/src/step.ts` | such a recipe exists and its miss keeps the item, with a test |
+| CR-21 | Worn effects are pluses only, so a set cannot trade one task for another. | `schema/src/index.ts`, `tools/src/check.ts` | a worn effect may carry a minus inside its tier's cap, with a check and a test |
+| CR-22 | Gold per hour of making is not reported, so the market's steps cannot be tuned from numbers. | the values report in `tools/src/` | the values report prints gold per hour of making per tier |
+| CR-23 | What gold is for: group quests and a settlement that players found, guard and feed together, meant as the main sink. | roadmap | its own plan, with a decision |

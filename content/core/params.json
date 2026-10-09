@@ -96,6 +96,40 @@
       "max": 64,
       "step": 4
     },
+    "craft_chance_bp": [
+      10000,
+      8000,
+      6500
+    ],
+    "craft_level_step_bp": {
+      "value": 500,
+      "min": 0,
+      "max": 2000,
+      "step": 100
+    },
+    "craft_luck_max_permille": {
+      "value": 500,
+      "min": 0,
+      "max": 800,
+      "step": 50
+    },
+    "craft_miss_keep_pct": {
+      "value": 50,
+      "min": 25,
+      "max": 90,
+      "step": 5
+    },
+    "wear_effect_max_pct": [
+      5,
+      8,
+      12
+    ],
+    "wear_set_bonus_pct": {
+      "value": 20,
+      "min": 0,
+      "max": 50,
+      "step": 5
+    },
     "rarity_bonus_ms": {
       "common": 0,
       "uncommon": 150,

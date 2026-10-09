@@ -6,12 +6,31 @@
 import type { Bundle, Verb } from './bundle';
 import { clamp, idiv, mulDiv } from './num';
 
-export const KERNEL_VERSION = '0.2.0';
+export const KERNEL_VERSION = '0.3.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['carry', 'senses', 'agility', 'luck', 'stamina'] as const;
 export type Attribute = (typeof ATTRIBUTES)[number];
 export const STATE_FORMAT = 1;
+
+/** Places on the character (DECISIONS.md, 2026-10-09: the upgrade). An outfit takes the top and the legs. */
+export const WEAR_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'jewelry1', 'jewelry2', 'hand'] as const;
+export type WearSlot = (typeof WEAR_SLOTS)[number];
+
+const SLOTS_OF: Record<string, readonly WearSlot[]> = {
+  head: ['head'],
+  top: ['top'],
+  legs: ['legs'],
+  outfit: ['outfit'],
+  feet: ['feet'],
+  jewelry: ['jewelry1', 'jewelry2'],
+  hand: ['hand'],
+};
+
+/** The places an item's wear slot fits: jewelry takes either of two. */
+export function slotsFor(slot: string): readonly WearSlot[] {
+  return SLOTS_OF[slot] ?? [];
+}
 
 export interface NodeState {
   /** tick from which the node can be used again */
@@ -51,6 +70,12 @@ export interface Player {
   quests: Record<string, 'active' | 'done'>;
   /** riddle steps solved, "<quest id>#<step index>", sorted */
   solved: string[];
+  /** the work clothes by place: their effects count. A worn item stays in the bag. */
+  worn: Partial<Record<WearSlot, string>>;
+  /** the look layer on the same places: shown, never counted */
+  looks: Partial<Record<WearSlot, string>>;
+  /** crafts tried per recipe: the draw counter of the craft chance (rule R4) */
+  tries: Record<string, number>;
 }
 
 export interface State {
@@ -96,6 +121,9 @@ export function newState(bundle: Bundle, seed: number): State {
       rep: {},
       quests: {},
       solved: [],
+      worn: {},
+      looks: {},
+      tries: {},
     },
     nodes: {},
     ledger: { minted: 0, burned: 0 },
@@ -119,6 +147,18 @@ export function bagUsed(state: State): number {
   let n = 0;
   for (const k of Object.keys(state.player.bag)) n += state.player.bag[k] ?? 0;
   return n;
+}
+
+/** Whether a camp part stands, itself or under an upgrade built over it. */
+export function campBuilt(bundle: Bundle, state: State, campId: string): boolean {
+  for (const id of state.player.camp) {
+    let cur: string | undefined = id;
+    for (let guard = 0; cur !== undefined && guard < 20; guard++) {
+      if (cur === campId) return true;
+      cur = bundle.camps[cur]?.upgrades;
+    }
+  }
+  return false;
 }
 
 export function bagCapacity(bundle: Bundle, state: State): number {
@@ -158,15 +198,94 @@ export function powerCap(bundle: Bundle, state: State): number {
   return caps[i] ?? 1000;
 }
 
-/** Sum of a technique effect the player has unlocked through profession levels. */
-export function techniqueValue(bundle: Bundle, state: State, effect: string): number {
+/** Sum of a technique effect the player has unlocked through profession levels; `only` counts one profession's. */
+export function techniqueValue(bundle: Bundle, state: State, effect: string, only?: string): number {
   let total = 0;
   for (const id of Object.keys(bundle.professions).sort()) {
+    if (only !== undefined && id !== only) continue;
     const prof = bundle.professions[id]!;
     const level = professionLevel(bundle, state, id);
     for (const t of prof.techniques) if (t.effect === effect && level >= t.level) total += Math.max(1, t.value);
   }
   return total;
+}
+
+const setCache = new WeakMap<Bundle, Record<string, string[]>>();
+
+/** The work pieces of each set, by set id, in id order. */
+export function setPieces(bundle: Bundle): Record<string, string[]> {
+  let sets = setCache.get(bundle);
+  if (!sets) {
+    sets = {};
+    for (const id of Object.keys(bundle.items).sort()) {
+      const w = bundle.items[id]!.wear;
+      if (w?.set && !w.look) (sets[w.set] ??= []).push(id);
+    }
+    setCache.set(bundle, sets);
+  }
+  return sets;
+}
+
+/** Whether every piece of a set is worn on the work layer. */
+export function setComplete(bundle: Bundle, state: State, set: string): boolean {
+  const pieces = setPieces(bundle)[set] ?? [];
+  const worn = Object.values(state.player.worn);
+  return pieces.length > 1 && pieces.every((id) => worn.includes(id));
+}
+
+/** Sum of an effect from the work clothes: each worn piece once, and a full set a little more (rounded down). */
+export function wornValue(bundle: Bundle, state: State, effect: string): number {
+  let total = 0;
+  const bySet: Record<string, number> = {};
+  for (const slot of WEAR_SLOTS) {
+    const id = state.player.worn[slot];
+    const w = id === undefined ? undefined : bundle.items[id]?.wear;
+    if (!w || w.look) continue;
+    for (const e of w.effects ?? []) {
+      if (e.effect !== effect) continue;
+      total += e.value;
+      if (w.set) bySet[w.set] = (bySet[w.set] ?? 0) + e.value;
+    }
+  }
+  for (const set of Object.keys(bySet).sort()) {
+    if (setComplete(bundle, state, set)) total += mulDiv(bySet[set]!, bundle.params.wear_set_bonus_pct, 100);
+  }
+  return total;
+}
+
+/**
+ * The one calculator (spec section 15): an effect from techniques and from the
+ * work clothes together. A craft effect passes the recipe's profession, so a
+ * technique helps the recipes of its own profession only. Every caller still
+ * clamps the rate it feeds under the power cap (rule R9).
+ */
+export function effectValue(bundle: Bundle, state: State, effect: string, profession?: string): number {
+  return techniqueValue(bundle, state, effect, profession) + wornValue(bundle, state, effect);
+}
+
+/**
+ * Worn items stay in the bag: take off every one the bag no longer holds
+ * enough units of, or that no longer fits its place. `only` looks at one item.
+ * Returns what came off, so the caller can tell the player.
+ */
+export function fitWorn(bundle: Bundle, state: State, only?: string): { item: string; slot: WearSlot; look: boolean }[] {
+  const p = state.player;
+  const off: { item: string; slot: WearSlot; look: boolean }[] = [];
+  for (const look of [false, true]) {
+    const layer = look ? p.looks : p.worn;
+    const count: Record<string, number> = {};
+    for (const slot of WEAR_SLOTS) {
+      const id = layer[slot];
+      if (id === undefined || (only !== undefined && id !== only)) continue;
+      const w = bundle.items[id]?.wear;
+      count[id] = (count[id] ?? 0) + 1;
+      if (!w || (w.look === true) !== look || !slotsFor(w.slot).includes(slot) || count[id] > (p.bag[id] ?? 0)) {
+        delete layer[slot];
+        off.push({ item: id, slot, look });
+      }
+    }
+  }
+  return off;
 }
 
 /** In-game hour 0..23. Tick 0 is 6:00 in the morning. */

@@ -60,6 +60,7 @@ export function feedback(root: HTMLElement, events: readonly GameEvent[]): void 
         add({ sfx: 'pluck', detune: -400 });
         break;
       case 'nothing':
+      case 'miss':
         add({ sfx: 'miss' });
         break;
       case 'tool_broke':

@@ -6,6 +6,7 @@ import {
   type State,
   bagCapacity,
   bagUsed,
+  campBuilt,
   campTile,
   findSlot,
   missKeepBp,
@@ -137,7 +138,7 @@ export function questSteps(b: Bundle, s: State, questId: string): { text: string
       }
       case 'build': {
         const c = b.camps[st.camp];
-        const done = p.camp.includes(st.camp);
+        const done = campBuilt(b, s, st.camp);
         const need = c?.inputs.map((i) => `${itemName(b, i.item)} ${Math.min(i.qty, p.bag[i.item] ?? 0)}/${i.qty}`).join(', ');
         return { text: done ? `Build a ${c?.title ?? st.camp}` : `${need} - then build a ${c?.title ?? st.camp}`, done };
       }
@@ -227,6 +228,12 @@ export function describe(b: Bundle, s: State, e: GameEvent): { text: string; ico
       return { text: `You ate ${itemName(b, e.item)}`, icon: b.items[e.item]?.sprite, tone: 'good' };
     case 'nothing':
       return { text: e.verb === 'dig' ? 'Nothing this time.' : 'Missed - nothing this time.', tone: 'bad' };
+    case 'miss':
+      return { text: `${b.recipes[e.recipe]?.title ?? e.recipe} did not come out this time - part of it is left`, tone: 'bad' };
+    case 'wear':
+      return { text: `You put on ${itemName(b, e.item)}`, icon: b.items[e.item]?.sprite, tone: 'info' };
+    case 'unwear':
+      return { text: `You took off ${itemName(b, e.item)}`, tone: 'info' };
     case 'tool_broke':
       return { text: `Your ${itemName(b, e.item)} broke`, tone: 'bad' };
     case 'attr':
