@@ -589,3 +589,15 @@ The question (settlement plan S5, 9.10): first come at the moment a plot opens f
 
 **Closes:** S5 of the settlement plan, in part; the rest waits for the shared town's design.
 **Retry when:** the shared town is designed. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ The free market comes right after crafting wave 4, one per world, and the demo tunes it
+
+The question (9.10): the crafting economy entry of the same day set a free market (CR-19), and the spec puts the market at stage 4, with prices fixed until then (the spec's economy section). When does it come? The recommendation was a market per world right after crafting wave 4, before stage 4. The owner's word (9.10): yes.
+
+- The market is the build right after crafting wave 4: a stock per item in each world, as the crafting economy entry reads it. It needs no server. In a player's own world that player alone moves the stock, and the world's demand drains it with game time, so a thousand stools lower the price for the one who made them, who sees it and decides whether to go on.
+- The demo tunes it. The spec already gives the demo period to tuning the economy's rules, since gold there lives in the browser and nothing from it passes to an account. The market's steps and floor are tuned there from the values report's gold per hour (CR-22), before anything is held on the server.
+- At stage 4 nothing new is invented: players who share a world share its market and its stock, and the character shops act as the market maker inside R8's band, as the spec has it.
+- This changes the spec's order: prices are no longer fixed until stage 4, they move by stock from the build after crafting wave 4. The spec's economy section follows in its next version.
+
+**Closes:** the timing of CR-19; GRUNT's row and the crafting audit's row now carry it.
+**Retry when:** the demo shows the price falling so fast that making stops paying, or a world's stock that never drains. Model: claude-opus-5-5.
