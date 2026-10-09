@@ -715,3 +715,37 @@ The question (kernel review D2, open since 6.10): who is the player the value ta
 
 **Closes:** D2 of the kernel review.
 **Retry when:** a playtest shows a player out-earning the reference on execution alone, which would be a fault in the value table. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ Gold entering a world with many accounts: a fixed base, one ledger, a daily cap, a small automatic step, and a server that keeps the books as a bank does
+
+The question (kernel review D4, to be decided before stage 4 by the review's 8.3): the ceiling on gold holds per account, so a thousand accounts, or one program playing around the clock, mint far more, and from stage 4 gold can move between accounts. The recommendation: r fixed for good, one ledger, a daily cap per account on what the trader pays, set above a long human day, and a small automatic step down of the trader's share when more gold enters than leaves two weeks running. The owner's word (9.10): yes, and the mechanisms need real enforcement, as money is protected in the real world; with a server that is possible.
+
+- r, the base of every price, is fixed for good, so prices never shift under the players.
+- One ledger records every coin that enters, leaves or moves, each with a reason from the closed list (CR-39). Only activity code mints (R6), and only the server writes the ledger.
+- A daily cap per account on what the trader pays: `trader_day_cap`, to start the reference player's pay for 8 active hours. A person does not reach it in a long day; a program playing around the clock does. It resets each day and never takes back what was earned, so it punishes no absence (G28).
+- When gold minted exceeds gold burned two weeks running, the trader's shares (`k_permille`, `k_craft_permille`) step down one small step, only inside the bounds the community voted (R12), and step back up the same way when the balance turns.
+- The free market brakes many sellers too: in a shared world, a thousand accounts selling one thing lower its price for all (the crafting economy entry).
+- The server enforces it as a bank keeps money. It alone changes gold. Every movement is written twice, who paid and who got, so the books always balance. Each day the sum of all balances is checked against all gold minted less all gold burned, and a gap holds trade between players until it is found. Patterns a bank would flag are flagged here: an account at the cap every day, gold flowing from many new accounts to one, trades again and again at the edge of R8's band. What happens to a flagged account, and how a player appeals, is the policy of A1, asked in turn.
+- In the demo none of this applies: gold lives in the browser, and nothing passes to an account.
+
+`docs/kernel-review-v1.md` section 5 marks D4 decided.
+
+**Closes:** D4 of the kernel review; GRUNT's open ends carry the building as CR-43.
+**Retry when:** the books show gold growing faster than the sinks for a month, or real players reach the daily cap. Model: claude-opus-5-5.
+
+## 2026-10-09 ⏸ If magic comes: scrolls and books carry it, and an ancient language is learned slowly
+
+The owner's word (9.10, raised unasked): if there is magic, scrolls and books should be its items, and maybe an ancient language that has to be translated little by little; how to make that fun is to be thought through together.
+
+What it meets already:
+- No magic exists in the game or the spec today, and no combat (G35). Magic would come as its own system with its own plan, as weapons will (CR-12).
+- A scroll fits the tool with uses, spent as it is read; a book fits the tool without uses, which lasts (the crafting economy entry). Whatever a spell does stays inside the power cap (R9) and never mints gold or items outside an activity (R6).
+- The ancient language is a puzzle inside the world, in an invented script, never a second language of the game: every line a player reads stays plain English (G22), and the script is drawn, not spoken.
+- It serves exploring, the players' common task: words are found on stones, in ruins and in books, and each word found lets a player read a little more, as the journal grows.
+
+A reading for the fun, from games that made it work: Heaven's Vault and Chants of Sennaar make deciphering the game itself, where a player guesses a word from where it stands and what is drawn beside it, and the guess holds when it fits again elsewhere; Tunic hides its own manual in a script the player slowly learns to read; Skyrim teaches its dragon words one wall at a time. A word known counts on the character, so a guide on the internet can tell a player what a scroll says, but only a character who found the words can use it.
+
+Open, for the owner when magic is planned: whether and when magic comes; what a spell may do without combat (light, growth, mending, finding); whether one language serves the whole world.
+
+**Closes:** nothing; it waits for a plan for magic.
+**Retry when:** magic or the ancient language is planned. Model: claude-opus-5-5.

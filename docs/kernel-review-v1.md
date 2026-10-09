@@ -160,7 +160,7 @@ So check (a) cannot be surprised far from the new content, and removal can only 
 
 ## 5. Open decisions for the owners
 
-Status after the owners' round of 2026-10-06 (section 8): D1 and D3 are decided, D6 is deferred by decision. D2, D4 and D5 were still open; D2 was decided on 2026-10-09.
+Status after the owners' round of 2026-10-06 (section 8): D1 and D3 are decided, D6 is deferred by decision. D2, D4 and D5 were still open; D2 and D4 were decided on 2026-10-09.
 
 **D1. Does waiting or rarity ever raise a shop price?** Recommended: no. The shop pays for active time only. Rarity is a limited supply and shows only in prices between players. The review continues under this default.
 Decided otherwise on 2026-10-06: both. A small shop bonus under a fixed budget, and most of the value in use. See 8.2.
@@ -172,6 +172,7 @@ Decided on 2026-10-09: yes, with full health in place of fed, since health repla
 Decided on 2026-10-06: nothing carries over. Stage 1 is a demo and says so on screen from the first day; whoever played it receives a title and a cosmetic item with the account. No save import, no signed time stamps.
 
 **D4. How is gold entering the world limited once there are many accounts?** Recommended: r is fixed for good; one ledger from stage 1; at stage 5 a daily cap on shop payouts per account and an automatic small adjustment of k, inside voted bounds, when minted gold exceeds burned gold two weeks running.
+Decided on 2026-10-09: yes, before stage 4 as 8.3 asks. The daily cap is set above a long human day, and the server enforces all of it as a bank keeps money: double entry, a daily balance of the books, and flags on the patterns a bank would flag. See DECISIONS.md, the entry on gold entering a world.
 
 **D5. What exactly does the creator pool pay for?** Recommended: active seconds from server logs, at most 2 hours per account-day; 60% to the activity's creator, 20% to the slot, 20% to the quest; equipment is paid from its sale, not from the pool; no gold for voting in polls.
 
