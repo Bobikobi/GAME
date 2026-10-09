@@ -4,6 +4,7 @@ import type { Bundle } from '@game/kernel';
 import { app } from './app';
 import raw from './generated/bundle.json';
 import { sound } from './audio';
+import { RICH } from './config';
 import { Controls } from './input';
 import { BootScene } from './scenes/boot';
 import { WorldScene } from './scenes/world';
@@ -32,7 +33,7 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('pagehide', () => app.session?.save());
 
-// test and support hook: ?debug exposes the running game to the console
+// test and support hook: ?debug exposes the running game to the console, with the ?rich= groups it drew
 if (new URLSearchParams(location.search).has('debug')) {
-  (window as unknown as { __game: typeof app }).__game = app;
+  (window as unknown as { __game: typeof app }).__game = Object.assign(app, { rich: RICH });
 }
