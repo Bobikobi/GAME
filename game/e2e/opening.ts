@@ -180,6 +180,11 @@ interface State {
   blocking: boolean;
   prompt: string;
 }
+interface Plan {
+  path: Dir[];
+  face: Dir;
+  goal: [number, number];
+}
 
 /** Thrown by snap() right after the screenshot E2E_UNTIL names: the run ends there, as a pass. */
 class Stop extends Error {}
@@ -241,8 +246,8 @@ class Player {
     else await this.page.press('Enter');
   }
 
-  /** One tile in a direction, or just a turn when the way is blocked. */
-  async step(dir: Dir): Promise<void> {
+  /** One tile in a direction, or just a turn when the way is blocked. True when the player moved. */
+  async step(dir: Dir): Promise<boolean> {
     await this.settle();
     const before = await this.state();
     const want: [number, number] = [before.pos[0] + VEC[dir][0], before.pos[1] + VEC[dir][1]];
@@ -263,6 +268,8 @@ class Player {
       if (over <= 0) break;
       await this.press(OPPOSITE[dir]);
     }
+    const after = (await this.state()).pos;
+    return after[0] !== before.pos[0] || after[1] !== before.pos[1];
   }
 
   private async press(dir: Dir): Promise<void> {
@@ -276,16 +283,33 @@ class Player {
     await this.page.waitFor('!__e2e.state().moving', 'the step to end', 3000);
   }
 
-  async walkTo(rect: Rect, what: string): Promise<void> {
-    const plan = await this.page.eval<{ path: Dir[]; face: Dir; goal: [number, number] } | null>(`__e2e.plan(${JSON.stringify(rect)})`);
+  private async planTo(rect: Rect, what: string): Promise<Plan> {
+    const plan = await this.page.eval<Plan | null>(`__e2e.plan(${JSON.stringify(rect)})`);
     if (!plan) throw new Error(`no way to reach ${what}`);
-    for (const d of plan.path) await this.step(d);
+    return plan;
+  }
+
+  /** Walks a planned path; false at the first step that does not move the player. */
+  private async follow(path: Dir[]): Promise<boolean> {
+    for (const d of path) if (!(await this.step(d))) return false;
+    return true;
+  }
+
+  async walkTo(rect: Rect, what: string): Promise<void> {
+    // a plan is the way as it stands when the walk starts: a bush or stone that grows back on it
+    // closes it (picked bell bushes return after 90 s, mid-walk when frames are slow), so a step
+    // that does not move the player plans again from where they stand, three times at most
+    let plan = await this.planTo(rect, what);
+    for (let again = 0; !(await this.follow(plan.path)) && again < 3; again++) plan = await this.planTo(rect, what);
     const at = await this.state();
     if (at.pos.join(',') !== plan.goal.join(',')) throw new Error(`walking to ${what} ended at ${at.pos.join(',')}, not ${plan.goal.join(',')}`);
     if (at.facing === plan.face) return;
     const v = VEC[plan.face];
     const open = (dx: number, dy: number) => this.page.eval<boolean>(`__game.world.canWalk(__game.session, ${at.pos[0] + dx}, ${at.pos[1] + dy})`);
-    if (!(await open(v[0], v[1]))) return this.step(plan.face); // blocked ahead: pressing toward it only turns
+    if (!(await open(v[0], v[1]))) {
+      await this.step(plan.face); // blocked ahead: pressing toward it only turns
+      return;
+    }
     if (!(await open(-v[0], -v[1]))) throw new Error(`cannot turn toward ${what} at ${at.pos.join(',')}`);
     // open ahead: back up one tile and step forward again, which leaves the player facing it
     await this.step(OPPOSITE[plan.face]);
