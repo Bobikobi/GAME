@@ -819,3 +819,43 @@ The question (9.10): G39 lets only a look with no effect carry the premium marke
 
 **Closes:** the question of bought looks; GRUNT's open ends carry the building as CR-46.
 **Retry when:** stage 6 opens payments, or players ask for a way to give a bought look to a friend. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ Players' words: notes in free text behind a good filter, and later chat in bubbles over the head, never private
+
+The question (9.10): the spec brings light presence with the market stage: the camps of others, tracks and notes. The recommendation was notes built from a fixed kit of phrases, as Dark Souls does, with no free text. The owner's word (9.10): notes in free text with good filtering; later maybe chat between players, but never private: bubbles floating over the head.
+
+- A note is free text a player leaves at a place in the world. A filter reads every note before anyone else sees it and refuses rude words, links and addresses, phone numbers, e-mail addresses and other personal details, and offers to trade for money. The same filter reads every line of chat.
+- Players mark a note as helpful, which keeps it up. A note reported by several players hides until a person reads it, as a person decides a block (the entry on exploit loops). A player may hide another player's notes and words from their own screen.
+- A player keeps a few notes standing at once (`notes_max`), and a note fades after a while unless players keep finding it helpful, so the world is not littered.
+- Chat, if it comes (the spec's live presence, stage 7), is words in a bubble over the speaker's head, seen by the players nearby for a few seconds: public and local. There are no private messages and no whispers; whatever a player says, others near could see. The game's own text stays for all ages (G22), and the players' words keep to the same.
+- A note or a line of chat is kept on the server only as long as a report may need it; the privacy text of stage 2a says how long.
+- Open, small: in which languages a note may be written, since the filter must read them; whether a group on a quest gets a channel of its own or talks in bubbles like everyone.
+
+**Closes:** notes and chat; GRUNT's open ends carry the building as CR-47.
+**Retry when:** the filter lets through what it should stop, or stops what players need to say. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ An account follows the age of similar games: 13, or the country's higher age
+
+The question (stage 2a, the account entry): the minimum age for an account. The owner's word (9.10): the standard of similar games.
+
+- An account needs the player to be 13 or older, as RuneScape and most online games with open chat ask, or the higher age of digital consent that the player's country sets, up to 16 in parts of the European Union.
+- A younger player plays the demo, which keeps nothing and asks for nothing.
+- The game's own text stays readable by a child of eight (G22): the content is for all ages, and the account has an age.
+
+**Closes:** the minimum age; GRUNT's open ends carry it into the stage 2a design as CR-49. The privacy text and the mail service stay for the stage 2a design.
+**Retry when:** parents ask for a child's account; Minecraft and Roblox offer one under a parent's control with limited chat. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ A player's shop: a sign over the player, and the shop stays open while they are away
+
+The owner's word (9.10, with the answer on notes): a shop to sell from. One walks up to a player, a shop sign shows, and one buys what the player put up for sale, even when the player is not connected. The spec already brings personal shops with the market (stage 4).
+
+- A player puts goods up for sale at a price each. The server holds them while they are listed, so nothing sells twice, and the player sees what sold when back.
+- Online, a sign over the player says the shop is open, and anyone may walk up and buy. Offline, the shop stays at the player's house or stall in a town, so the towns do not fill with sleeping players.
+- Prices stay inside R8's band, as every trade between players does, and gold reaches the seller through the ledger with the reason `price`.
+- Nothing bound is listed: a bought look, a holiday's look, the starting gold and kit (the entries on bought looks, on the calendar and on exploit loops). A new account's first sales wait for `new_account_hold`.
+- A shop that sells while its owner is away is the valley waiting for the player, never a punishment (G28). A house that goes back to the town after 45 days away returns its listed goods to the owner's store with the rest.
+- Listed goods count toward worth at the trader's pay, as all goods do (the boards entry).
+- Open, asked next: whether a sale pays a small fee that leaves the world, a gold sink like the tax RuneScape's Grand Exchange takes on each sale.
+
+**Closes:** the rule of player shops; GRUNT's open ends carry the building as CR-48.
+**Retry when:** towns crowd with shops, or buyers cannot find what is for sale. Model: claude-opus-5-5.
