@@ -8,7 +8,8 @@
   "description": "The core palette, terrain tiles, items, props and characters every extension builds from.",
   "ai_tools": [
     "Nano Banana (gemini-3.1-flash-image) via Antigravity",
-    "Codex: text-grid sprites in tools/src/kit/sketches.ts"
+    "Codex: text-grid sprites in tools/src/kit/sketches.ts",
+    "Claude Code: text-grid sprites and frames via a PIL script"
   ],
   "kit": {
     "palette": [
@@ -51,11 +52,35 @@
         "w": 16,
         "h": 24
       },
+      "chars/elder_blink": {
+        "file": "chars/elder_blink.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
       "chars/player_down": {
         "file": "chars/player_down.png",
         "w": 16,
         "h": 24,
         "frames": 3
+      },
+      "chars/player_idle_down": {
+        "file": "chars/player_idle_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/player_idle_left": {
+        "file": "chars/player_idle_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/player_idle_up": {
+        "file": "chars/player_idle_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
       },
       "chars/player_left": {
         "file": "chars/player_left.png",
@@ -92,11 +117,35 @@
         "w": 16,
         "h": 24
       },
+      "chars/trader_blink": {
+        "file": "chars/trader_blink.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
       "chars/woman_down": {
         "file": "chars/woman_down.png",
         "w": 16,
         "h": 24,
         "frames": 3
+      },
+      "chars/woman_idle_down": {
+        "file": "chars/woman_idle_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/woman_idle_left": {
+        "file": "chars/woman_idle_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/woman_idle_up": {
+        "file": "chars/woman_idle_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
       },
       "chars/woman_left": {
         "file": "chars/woman_left.png",
@@ -199,17 +248,20 @@
       "props/bush_berry": {
         "file": "props/bush_berry.png",
         "w": 16,
-        "h": 16
+        "h": 16,
+        "frames": 2
       },
       "props/bush_empty": {
         "file": "props/bush_empty.png",
         "w": 16,
-        "h": 16
+        "h": 16,
+        "frames": 2
       },
       "props/campfire_lit": {
         "file": "props/campfire_lit.png",
         "w": 16,
-        "h": 16
+        "h": 16,
+        "frames": 3
       },
       "props/campfire_unlit": {
         "file": "props/campfire_unlit.png",
@@ -224,7 +276,8 @@
       "props/dead_tree": {
         "file": "props/dead_tree.png",
         "w": 32,
-        "h": 32
+        "h": 32,
+        "frames": 2
       },
       "props/dig_spot": {
         "file": "props/dig_spot.png",
@@ -236,10 +289,27 @@
         "w": 16,
         "h": 16
       },
+      "props/fence": {
+        "file": "props/fence.png",
+        "w": 16,
+        "h": 16
+      },
+      "props/fence_post": {
+        "file": "props/fence_post.png",
+        "w": 16,
+        "h": 16
+      },
       "props/flowers": {
         "file": "props/flowers.png",
         "w": 16,
-        "h": 16
+        "h": 16,
+        "frames": 2
+      },
+      "props/flowers_white": {
+        "file": "props/flowers_white.png",
+        "w": 16,
+        "h": 16,
+        "frames": 2
       },
       "props/fog": {
         "file": "props/fog.png",
@@ -249,17 +319,30 @@
       "props/glow_mushrooms": {
         "file": "props/glow_mushrooms.png",
         "w": 16,
-        "h": 16
+        "h": 16,
+        "frames": 2
       },
       "props/herb_plant": {
         "file": "props/herb_plant.png",
         "w": 16,
-        "h": 16
+        "h": 16,
+        "frames": 2
       },
       "props/house_small": {
         "file": "props/house_small.png",
         "w": 48,
         "h": 48
+      },
+      "props/lantern_post": {
+        "file": "props/lantern_post.png",
+        "w": 16,
+        "h": 32,
+        "frames": 2
+      },
+      "props/log_fallen": {
+        "file": "props/log_fallen.png",
+        "w": 16,
+        "h": 16
       },
       "props/market_stall": {
         "file": "props/market_stall.png",
@@ -268,6 +351,27 @@
       },
       "props/mushroom_patch": {
         "file": "props/mushroom_patch.png",
+        "w": 16,
+        "h": 16
+      },
+      "props/mushrooms_small": {
+        "file": "props/mushrooms_small.png",
+        "w": 16,
+        "h": 16
+      },
+      "props/pebbles": {
+        "file": "props/pebbles.png",
+        "w": 16,
+        "h": 16
+      },
+      "props/reeds": {
+        "file": "props/reeds.png",
+        "w": 16,
+        "h": 16,
+        "frames": 2
+      },
+      "props/rock_small": {
+        "file": "props/rock_small.png",
         "w": 16,
         "h": 16
       },
@@ -316,6 +420,11 @@
         "w": 32,
         "h": 32
       },
+      "props/stump": {
+        "file": "props/stump.png",
+        "w": 16,
+        "h": 16
+      },
       "props/totem": {
         "file": "props/totem.png",
         "w": 16,
@@ -324,12 +433,33 @@
       "props/tree_oak": {
         "file": "props/tree_oak.png",
         "w": 32,
-        "h": 32
+        "h": 32,
+        "frames": 2
       },
       "props/well_old": {
         "file": "props/well_old.png",
         "w": 32,
         "h": 32
+      },
+      "tiles/bank_e": {
+        "file": "tiles/bank_e.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/bank_n": {
+        "file": "tiles/bank_n.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/bank_s": {
+        "file": "tiles/bank_s.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/bank_w": {
+        "file": "tiles/bank_w.png",
+        "w": 16,
+        "h": 16
       },
       "tiles/bridge": {
         "file": "tiles/bridge.png",
@@ -346,8 +476,48 @@
         "w": 16,
         "h": 16
       },
+      "tiles/cobble_1": {
+        "file": "tiles/cobble_1.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/cobble_2": {
+        "file": "tiles/cobble_2.png",
+        "w": 16,
+        "h": 16
+      },
       "tiles/forest": {
         "file": "tiles/forest.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/forest_1": {
+        "file": "tiles/forest_1.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/forest_2": {
+        "file": "tiles/forest_2.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/fringe_e": {
+        "file": "tiles/fringe_e.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/fringe_n": {
+        "file": "tiles/fringe_n.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/fringe_s": {
+        "file": "tiles/fringe_s.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/fringe_w": {
+        "file": "tiles/fringe_w.png",
         "w": 16,
         "h": 16
       },
@@ -356,18 +526,54 @@
         "w": 16,
         "h": 16
       },
+      "tiles/grass_1": {
+        "file": "tiles/grass_1.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/grass_2": {
+        "file": "tiles/grass_2.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/grass_3": {
+        "file": "tiles/grass_3.png",
+        "w": 16,
+        "h": 16
+      },
       "tiles/grass_flowers": {
         "file": "tiles/grass_flowers.png",
         "w": 16,
-        "h": 16
+        "h": 16,
+        "frames": 2
       },
       "tiles/grove": {
         "file": "tiles/grove.png",
         "w": 16,
         "h": 16
       },
+      "tiles/grove_1": {
+        "file": "tiles/grove_1.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/grove_2": {
+        "file": "tiles/grove_2.png",
+        "w": 16,
+        "h": 16
+      },
       "tiles/path": {
         "file": "tiles/path.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/path_1": {
+        "file": "tiles/path_1.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/path_2": {
+        "file": "tiles/path_2.png",
         "w": 16,
         "h": 16
       },
@@ -386,11 +592,41 @@
         "w": 16,
         "h": 16
       },
+      "tiles/sand_1": {
+        "file": "tiles/sand_1.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/sand_2": {
+        "file": "tiles/sand_2.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/shore_e": {
+        "file": "tiles/shore_e.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/shore_n": {
+        "file": "tiles/shore_n.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/shore_s": {
+        "file": "tiles/shore_s.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/shore_w": {
+        "file": "tiles/shore_w.png",
+        "w": 16,
+        "h": 16
+      },
       "tiles/water": {
         "file": "tiles/water.png",
         "w": 16,
         "h": 16,
-        "frames": 2
+        "frames": 4
       }
     }
   }
