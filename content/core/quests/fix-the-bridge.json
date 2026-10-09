@@ -7,7 +7,7 @@
   "creator": "core",
   "quest": {
     "type": "skill",
-    "summary": "The bridge is broken. Gather 3 river stones and mend it.",
+    "summary": "The bridge lost its keystone to the shallows. Strike it free when the ring meets the circle, then mend the bridge.",
     "steps": [
       {
         "kind": "restore",
@@ -15,7 +15,11 @@
       }
     ],
     "reward": {
-      "rep": 0
+      "rep": 0,
+      "gold_mg": 30000,
+      "recipes": [
+        "core/mushroom-skewer"
+      ]
     }
   }
 }

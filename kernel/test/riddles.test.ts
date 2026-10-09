@@ -1,6 +1,8 @@
 /**
  * The find and riddle steps (GRUNT P-2): a riddle completes on its answer's
- * event and on nothing else; a find is a bring of one that the hand-in takes.
+ * event and on nothing else. A find with a giver is a bring of one that the
+ * hand-in takes; a find with no giver counts once the item is in the journal.
+ * A place reward opens a restore that does not open by hand.
  */
 import { beforeAll, describe, expect, test } from 'vitest';
 
@@ -15,6 +17,7 @@ import {
   makeWalkable,
   near,
   newState,
+  npcTile,
   questSatisfied,
   riddleSlots,
   step,
@@ -85,10 +88,10 @@ function slotOf(bundle: Bundle, id: string): Rect {
   return slot;
 }
 
-/** The first tick at which the valley's hour is `hour`. */
+/** The first tick at which the valley's hour is `hour` (tick 0 is noon). */
 function tickAt(bundle: Bundle, hour: number): number {
   const day = bundle.params.day_length_ms;
-  const tick = Math.ceil((((hour - 6 + 24) % 24) * day) / 24) + 1;
+  const tick = Math.ceil((((hour - 12 + 24) % 24) * day) / 24) + 1;
   if (hourOf(bundle, tick) !== hour) throw new Error(`tick ${tick} is not hour ${hour}`);
   return tick;
 }
@@ -169,6 +172,12 @@ describe('a riddle answered by a place by night', () => {
 });
 
 describe('night for the rules', () => {
+  test('starts at noon, so the first dusk falls inside the first session', () => {
+    expect(hourOf(base, 0)).toBe(12);
+    expect(isNight(base, 0)).toBe(false);
+    expect(tickAt(base, 20)).toBeLessThan(base.params.day_length_ms / 2);
+  });
+
   test('runs from 20:00 to 05:00', () => {
     for (const h of [20, 23, 0, 4]) expect(isNight(base, tickAt(base, h))).toBe(true);
     for (const h of [5, 6, 12, 19]) expect(isNight(base, tickAt(base, h))).toBe(false);
@@ -177,17 +186,71 @@ describe('night for the rules', () => {
 
 describe('a find', () => {
   const coin = 'core/old-coin';
-  const find = () => withQuest(quest([{ kind: 'find', item: coin, clue: 'Old pottery lies under the gate stones; the coin is in the same rubble.' }]));
+  const find = (giver?: string) =>
+    withQuest({ ...quest([{ kind: 'find', item: coin, clue: 'Old pottery lies under the gate stones; the coin is in the same rubble.' }]), ...(giver ? { giver } : {}) });
 
-  test('is a bring of one that the hand-in takes', () => {
+  test('with no giver, counts once the item is in the journal, and takes nothing', () => {
     const b = find();
     const s = started(b);
-    expect(questSatisfied(b, s, 'test/q')).toBe(false);
     s.player.bag[coin] = 2;
+    expect(questSatisfied(b, s, 'test/q')).toBe(false);
+    // found once is found: sold or eaten since, it still counts
+    s.player.journal = [...s.player.journal, coin].sort();
+    delete s.player.bag[coin];
     expect(questSatisfied(b, s, 'test/q')).toBe(true);
+    s.player.bag[coin] = 2;
     const at = standNear(b, s, slotOf(b, GLADE), true);
     const r = act(b, s, { t: 'visit', slot: GLADE, at }, 0);
     expect(r.state.player.quests['test/q']).toBe('done');
+    expect(r.state.player.bag[coin]).toBe(2);
+  });
+
+  test('with a giver, is a bring of one that the hand-in takes', () => {
+    const b = find('core/elder');
+    const s = started(b);
+    s.player.quests['test/q'] = 'active';
+    s.player.journal = [...s.player.journal, coin].sort();
+    expect(questSatisfied(b, s, 'test/q')).toBe(false);
+    s.player.bag[coin] = 2;
+    expect(questSatisfied(b, s, 'test/q')).toBe(true);
+    const [x, y] = npcTile(b, 'core/elder')!;
+    const at = standNear(b, s, { x, y, w: 1, h: 1 });
+    const r = act(b, s, { t: 'turnin', quest: 'test/q', at }, 0);
+    expect(r.state.player.quests['test/q']).toBe('done');
     expect(r.state.player.bag[coin]).toBe(1);
+  });
+});
+
+describe('a place reward', () => {
+  const ARCH = 'core/arch-way';
+  const opener = () => withQuest({ ...quest([{ kind: 'visit', slot: GLADE }]), reward: { rep: 0, opens: [ARCH] } });
+
+  test('a restore with no inputs does not open by hand', () => {
+    const s = started(base);
+    const at = standNear(base, s, slotOf(base, ARCH));
+    const r = step(base, s, { t: 'restore', restore: ARCH, at }, 0);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toBe('This does not open by hand.');
+  });
+
+  test('opens its restore when the quest is done', () => {
+    const b = opener();
+    const s = started(b);
+    const at = standNear(b, s, slotOf(b, GLADE), true);
+    const r = act(b, s, { t: 'visit', slot: GLADE, at }, 0);
+    expect(r.state.player.quests['test/q']).toBe('done');
+    expect(r.state.player.restored).toContain(ARCH);
+    expect(r.events).toContainEqual({ e: 'restore', restore: ARCH });
+  });
+
+  test('a place already open stays open once, with no second event', () => {
+    const b = opener();
+    const s = started(b);
+    s.player.restored = [...s.player.restored, ARCH].sort();
+    const at = standNear(b, s, slotOf(b, GLADE), true);
+    const r = act(b, s, { t: 'visit', slot: GLADE, at }, 0);
+    expect(r.state.player.quests['test/q']).toBe('done');
+    expect(r.state.player.restored.filter((id) => id === ARCH)).toHaveLength(1);
+    expect(r.events.some((e) => e.e === 'restore')).toBe(false);
   });
 });

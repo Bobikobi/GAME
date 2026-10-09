@@ -329,10 +329,11 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
   const node = s.nodes[spotId] ?? { readyAt: 0, draws: 0 };
   if (ctx.tick < node.readyAt) refuse('This spot was dug up recently.');
   if (verbLevel(b, s, 'dig') < d.level) refuse(`Needs ${b.professions[b.verbs.dig]?.name ?? 'digging'} level ${d.level}.`);
-  const tool = requireTool(ctx, d.tool);
+  // a spot with no tool is picked up by hand: nothing to wear, no tool speed
+  const tool = d.tool ? requireTool(ctx, d.tool) : undefined;
   if (bagCapacity(b, s) - bagUsed(s) <= 0) refuse('Your bag is full.');
 
-  const ms = duration(ctx, d.active_ms, speedPermille(ctx, 150 * (toolTier(ctx, tool) - 1) + 10 * effectValue(b, s, 'dig_speed_pct')));
+  const ms = duration(ctx, d.active_ms, speedPermille(ctx, (tool ? 150 * (toolTier(ctx, tool) - 1) : 0) + 10 * effectValue(b, s, 'dig_speed_pct')));
   // luck and the rare-find technique raise only rare and legendary chances, inside the power cap
   const luck = rareFindPermille(b, s);
   const roll = drawBasisPoints(s.seed, spotId, node.draws);
@@ -350,7 +351,7 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
   }
   if (found) addItem(ctx, found, 1);
   else ctx.events.push({ e: 'nothing', verb: 'dig' });
-  wearTool(ctx, tool);
+  if (tool) wearTool(ctx, tool);
   node.readyAt = ctx.tick + ms + d.respawn_ms;
   s.nodes[spotId] = node;
   busy(ctx, 'dig', ms);
@@ -476,6 +477,8 @@ function restore(ctx: Ctx, restoreId: string, at: Tile): void {
   const slot = findSlot(b.map, r.place.slot);
   if (!slot) refuse('Its place is missing from the map.');
   checkAt(ctx, at, slot);
+  // a restore with no inputs opens only as a quest's reward (reward.opens)
+  if (r.inputs.length === 0) refuse('This does not open by hand.');
   for (const input of r.inputs) {
     if ((s.player.bag[input.item] ?? 0) < input.qty) refuse(`You need ${input.qty} ${b.items[input.item]?.name ?? input.item}.`);
   }
@@ -534,7 +537,10 @@ export function questSatisfied(bundle: Bundle, state: State, questId: string): b
         bring[st.item] = (bring[st.item] ?? 0) + st.qty;
         break;
       case 'find':
-        bring[st.item] = (bring[st.item] ?? 0) + 1;
+        // with no giver there is nobody to hand it to: found once is found
+        if (!q.giver) {
+          if (!p.journal.includes(st.item)) return false;
+        } else bring[st.item] = (bring[st.item] ?? 0) + 1;
         break;
       case 'riddle':
         if (!p.solved.includes(riddleKey(questId, i))) return false;
@@ -568,7 +574,7 @@ function turnIn(ctx: Ctx, questId: string, at: Tile | undefined, explicit: boole
   }
   for (const st of q.steps) {
     if (st.kind === 'bring') removeItem(ctx, st.item, st.qty);
-    if (st.kind === 'find') removeItem(ctx, st.item, 1);
+    if (st.kind === 'find' && q.giver) removeItem(ctx, st.item, 1);
   }
   const reward = q.reward;
   if (q.giver && reward.rep > 0) s.player.rep[q.giver] = (s.player.rep[q.giver] ?? 0) + reward.rep;
@@ -579,6 +585,11 @@ function turnIn(ctx: Ctx, questId: string, at: Tile | undefined, explicit: boole
   }
   for (const stack of reward.items ?? []) addItem(ctx, stack.item, stack.qty);
   for (const recipe of reward.recipes ?? []) learnRecipe(ctx, recipe);
+  for (const place of reward.opens ?? []) {
+    if (s.player.restored.includes(place)) continue;
+    s.player.restored = [...s.player.restored, place].sort();
+    ctx.events.push({ e: 'restore', restore: place });
+  }
   s.player.quests[questId] = 'done';
   ctx.events.push({ e: 'quest', quest: questId, state: 'done' });
 }

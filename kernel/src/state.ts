@@ -6,7 +6,7 @@
 import type { Bundle, Verb } from './bundle';
 import { clamp, idiv, mulDiv } from './num';
 
-export const KERNEL_VERSION = '0.3.0';
+export const KERNEL_VERSION = '0.4.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['carry', 'senses', 'agility', 'luck', 'stamina'] as const;
@@ -288,10 +288,13 @@ export function fitWorn(bundle: Bundle, state: State, only?: string): { item: st
   return off;
 }
 
-/** In-game hour 0..23. Tick 0 is 6:00 in the morning. */
+/**
+ * In-game hour 0..23. Tick 0 is noon, so the first dusk falls inside the
+ * first session (DECISIONS.md, 2026-10-10: the opening recut B as built).
+ */
 export function hourOf(bundle: Bundle, tick: number): number {
   const day = bundle.params.day_length_ms;
-  const t = (tick + idiv(day, 4)) % day;
+  const t = (tick + idiv(day, 2)) % day;
   return idiv(t * 24, day);
 }
 
@@ -304,7 +307,7 @@ export function isNight(bundle: Bundle, tick: number): boolean {
 /** Minutes past midnight, for the clock on screen. */
 export function minuteOfDay(bundle: Bundle, tick: number): number {
   const day = bundle.params.day_length_ms;
-  const t = (tick + idiv(day, 4)) % day;
+  const t = (tick + idiv(day, 2)) % day;
   return mulDiv(t, 24 * 60, day);
 }
 

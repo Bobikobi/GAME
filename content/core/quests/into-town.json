@@ -6,7 +6,7 @@
   "title": "Smoke over the town",
   "creator": "core",
   "quest": {
-    "type": "investigation",
+    "type": "discovery",
     "summary": "Someone lives in the town to the north-east. Follow the smoke to the town square.",
     "requires": [
       "core/first-fire"

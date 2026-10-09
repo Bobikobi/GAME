@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from 'vitest';
 
 import { type Bundle, newState } from '@game/kernel';
-import { hudUnlocks, itemBenefit } from '../src/text';
+import { describe as describeEvent, hudUnlocks, itemBenefit, questSteps, restoreHint, toolOpens } from '../src/text';
 import { loadBundle } from '../../tools/test/helpers/world';
 
 let bundle: Bundle;
@@ -12,7 +12,7 @@ beforeAll(() => {
 
 describe('tool benefits', () => {
   test('derives resource and dig-site lists from the bundle', () => {
-    expect(itemBenefit(bundle, 'core/basket')).toBe('Tier 1 basket · gathers forest mushrooms & sun herbs & wild herbs · 60 uses');
+    expect(itemBenefit(bundle, 'core/basket')).toBe('Tier 1 basket · gathers bell bushes & forest mushrooms & sun herbs & wild herbs · 60 uses');
     expect(itemBenefit(bundle, 'core/trowel')).toBe('Tier 1 trowel · digs deep ruins & gate rubble & under the hill lantern · 40 uses');
 
     const withReeds: Bundle = {
@@ -22,7 +22,49 @@ describe('tool benefits', () => {
         'test/reeds': { ...bundle.resources['core/wild-herbs']!, id: 'test/reeds', title: 'Reeds' },
       },
     };
-    expect(itemBenefit(withReeds, 'core/basket')).toContain('gathers forest mushrooms & reeds & sun herbs & wild herbs');
+    expect(itemBenefit(withReeds, 'core/basket')).toContain('gathers bell bushes & forest mushrooms & reeds & sun herbs & wild herbs');
+  });
+});
+
+describe('the opening recut B', () => {
+  /** A fresh state past the town: the bridge, the dry wood and the walk to town are done. */
+  const inTown = () => {
+    const s = newState(bundle, 1);
+    for (const id of ['core/fix-the-bridge', 'core/first-fire', 'core/into-town']) s.player.quests[id] = 'done';
+    return s;
+  };
+
+  test('the stall names the roads each tool opens, open or ready to take', () => {
+    const s = inTown();
+    expect(toolOpens(bundle, s, 'basket')).toEqual(['Where the bells rang']);
+    expect(toolOpens(bundle, s, 'trowel')).toEqual(['The coin under the lantern']);
+    s.player.quests['core/three-fruits'] = 'done';
+    expect(toolOpens(bundle, s, 'basket')).toEqual(['Herbs for Pell']);
+    s.player.quests['core/a-coin-for-maru'] = 'active';
+    expect(toolOpens(bundle, s, 'trowel')).toEqual(['The coin under the lantern']);
+    s.player.quests['core/a-coin-for-maru'] = 'done';
+    expect(toolOpens(bundle, s, 'trowel')).toEqual([]);
+  });
+
+  test('a find with no giver is found once it is in the journal, even after it is used up', () => {
+    const s = inTown();
+    s.player.quests['core/first-fire'] = 'active';
+    expect(questSteps(bundle, s, 'core/first-fire')[0]!.done).toBe(false);
+    // the fire's line does not count the log the find asks for
+    expect(questSteps(bundle, s, 'core/first-fire')[1]!.text).toBe('Then build a Campfire');
+    s.player.journal = ['core/dry-log'];
+    expect(questSteps(bundle, s, 'core/first-fire')[0]).toMatchObject({ done: true, text: 'Dry log: found' });
+  });
+
+  test('a way no hand opens points at the quest that opens it, and opens as a way', () => {
+    const s = inTown();
+    expect(restoreHint(bundle, s, 'core/arch-way')).toBe('It does not open by hand.');
+    s.player.quests['core/the-night-arch'] = 'active';
+    expect(restoreHint(bundle, s, 'core/arch-way')).toBe(
+      'It does not open by hand. The broken arch at the north edge of the ruins is choked with rubble. The stone beside it says when to come back.',
+    );
+    expect(describeEvent(bundle, s, { e: 'restore', restore: 'core/arch-way' }).text).toBe('Broken arch: the way is open');
+    expect(describeEvent(bundle, s, { e: 'restore', restore: 'core/old-bridge' }).text).toMatch(/ restored$/);
   });
 });
 

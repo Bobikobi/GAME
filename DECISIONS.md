@@ -403,3 +403,20 @@ The product owner picked option B of `docs/design/OPENING_RECUT.md` on 9.10; the
 
 The product owner's word (9.10): for now a change may move or reset a save without a conversion. Saves live in the player's browser, and no player's progress has to survive yet. They matter again when the server comes in and keeps them (roadmap stage 2a, accounts and server saves). The save-key carry-over in the rename's pull request (#43) stays, because it is small and done.
 **Retry when:** the server keeps saves (stage 2a), or the product owner reopens it. Model: Claude Opus 5.5.
+
+## 2026-10-10 ✅ The opening recut B, as built: the arch opens as a place reward
+
+Option B is built. The first day starts at noon (tick 0 is 12:00; one game hour is 50 seconds of play, and the clock stops while a menu or a dialogue is open), so dusk comes near minute six and the dark near minute seven. The beats:
+
+- **The taught strike.** The bridge waits on one keystone in the shallows. One strike, with the minigame window, gives the first level and mends the bridge. The keystone regrows in ten seconds, so a miss gets a second try at once. Under the sign hangs a purse: 30 gold, the price of one tool in town, and the mushroom skewer recipe, so the reward is not coins alone (G4).
+- **The find by the senses.** One dry log lies in the wet reeds below the bridge. It is a dig spot with no tool: it is picked up by hand, with no window and nothing worn. A find with no giver counts once the item has been in the bag, so the same quest can burn the log in the fire it builds.
+- **The real choice.** Pell's stall says what each tool opens: the basket, Maru's bells in the garden; the trowel, her coin under the lantern. Whichever road comes first pays for the other tool: the bells pay 30 gold, and the coin comes with a basket.
+- **The riddle at dusk.** From 19:00 to dawn, a prop that a riddle cites and that stands next to its answer lights it: the hill lantern glints over the tile to dig. By day the stones must be read.
+- **The night discovery.** Handing in the coin, Maru says the broken arch shows a way after dark. A new quest with no giver asks for a visit to the arch's mouth at night; the stone beside it reads "By day the rubble, by night the way". Done, it opens the way under the arch, and the way leads to the threshold of the night ruins, where a bell rings once far below and nothing more happens yet.
+
+**Why a place reward, not a path drawn only at night.** The decision of 9.10 left the choice to this build. A path that both clients draw only at night needs the 2D world scene and the 3D valley to draw a tile by the hour; both are outside this build, and the 3D client asked to leave the night path out for now. A path that the rules open and close by the hour also traps a player who stands on it at dawn, unless more rules move them. A place reward is one rule: a restore with no inputs, which never opens by hand, and a quest that opens it when it is done (`reward.opens`, schema-additive). Both clients already draw a restore before and after, and an open place stays open, like a mended bridge. The cost: after the first night the way stays open by day. The first visit still has to be made at night, and the threshold says so ("Not tonight. The way stays open.").
+
+Along the way: the skewer recipe is declared uncommon, since a found recipe is one step rarer than its inputs (V-2); the kernel's version is 0.4.0, because the clock and the rules of a find changed.
+
+**Closes:** the build of the 2026-10-09 entry on option B.
+**Retry when:** the 3D client draws the arch and the night ruins, the hazards land (P-5) and the first night needs the town's safe edge, or play shows the first dark too early or too late. Model: Claude Opus 5.5.

@@ -34,7 +34,7 @@ describe('the core content', () => {
 
   it('counts what only digging or one timed plant gives as findable, never what is sold or grows anywhere', () => {
     const findable = findableItems(result.assembled.bundle!);
-    for (const id of ['core/maru-coin', 'core/old-coin', 'core/bellberry', 'core/sunleaf']) expect(findable.has(id), id).toBe(true);
+    for (const id of ['core/maru-coin', 'core/old-coin', 'core/bellberry', 'core/sunleaf', 'core/dry-log']) expect(findable.has(id), id).toBe(true);
     for (const id of ['core/berry', 'core/herb', 'core/stone', 'core/herb-tea']) expect(findable.has(id), id).toBe(false);
   });
 });
@@ -73,6 +73,8 @@ describe('the play rules on a fixture that breaks each one', () => {
   });
   // G2 and G4: a counter that pays gold only
   write('quests', 'counter', quest('tester/counter', { giver: 'core/trader', type: 'errand', summary: 'Bring herbs.', steps: [{ kind: 'bring', item: 'core/herb', qty: 4 }], reward: { rep: 5, gold_mg: 1000 } }));
+  // G4: a place opened is something the player can newly do
+  write('quests', 'opener', quest('tester/opener', { giver: 'core/trader', type: 'discovery', summary: 'A way.', steps: [{ kind: 'find', item: 'core/old-coin', clue: 'Under the gate stones.' }], reward: { rep: 0, opens: ['core/arch-way'] } }));
   // G17: the same type right after, and no type at all
   write('quests', 'again', quest('tester/again', { giver: 'core/trader', type: 'errand', summary: 'More herbs.', requires: ['tester/counter'], steps: [{ kind: 'find', item: 'core/old-coin', clue: 'Under the gate stones.' }], reward: { rep: 5, recipes: ['core/herb-tea'] } }));
   write('quests', 'untyped', quest('tester/untyped', { giver: 'core/trader', summary: 'A coin.', steps: [{ kind: 'find', item: 'core/old-coin', clue: 'Under the gate stones.' }], reward: { rep: 5, recipes: ['core/herb-tea'] } }));
@@ -115,6 +117,7 @@ describe('the play rules on a fixture that breaks each one', () => {
     expect(cites('counter', 'G4')).toBe(true);
     expect(cites('again', 'G2')).toBe(false);
     expect(cites('again', 'G4')).toBe(false);
+    expect(cites('opener', 'G4')).toBe(false);
   });
 
   it('G17: the same type twice in a row, and a quest with no type', () => {

@@ -130,3 +130,21 @@ describe('session persistence', () => {
     );
   });
 });
+
+describe('the clock', () => {
+  test('redraws once when the game hour turns, not on every frame', () => {
+    const session = startedSession();
+    session.advance(16);
+    let changes = 0;
+    session.on('change', () => changes++);
+    // tick 0 is noon, and the next hour turns one twenty-fourth of a day later
+    const hour = bundle.params.day_length_ms / 24;
+    session.tick = hour - 10;
+    session.advance(5);
+    expect(changes).toBe(0);
+    session.advance(10);
+    expect(changes).toBe(1);
+    session.advance(16);
+    expect(changes).toBe(1);
+  });
+});

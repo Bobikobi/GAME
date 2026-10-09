@@ -10,7 +10,7 @@
     {
       "id": "core/basket",
       "name": "Basket",
-      "description": "For herbs and mushrooms. Opens foraging in the grove.",
+      "description": "For berries, herbs and mushrooms. Opens the garden behind the ruins and the grove.",
       "kind": "tool",
       "rarity": "common",
       "class": "tool",
@@ -25,7 +25,7 @@
     {
       "id": "core/trowel",
       "name": "Trowel",
-      "description": "For digging in the ruins.",
+      "description": "For digging in the ruins, and under a lantern.",
       "kind": "tool",
       "rarity": "common",
       "class": "tool",

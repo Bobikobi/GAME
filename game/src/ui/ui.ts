@@ -312,12 +312,31 @@ export class UI {
     if (!s) return;
     for (const e of events) {
       if (e.e === 'restore' && e.restore === 'core/old-bridge') {
-        await say(this, null, [`The bridge holds. You scratch your name into the sign beside it: "Mended by ${s.state.player.name}".`]);
+        await say(this, null, [
+          `The bridge holds. You scratch your name into the sign beside it: "Mended by ${s.state.player.name}".`,
+          'A purse hangs under the sign, left for whoever mends the bridge: thirty gold, the price of one tool in town, and a recipe scratched into the leather.',
+          'The sun is past noon. Dry wood for a fire, before dark.',
+        ]);
       }
       if (e.e === 'quest' && e.state === 'done' && e.quest === 'core/three-fruits') {
         await say(this, 'Elder Maru', [
-          'Thank you. Take these coins - your first.',
-          'Pell at the market sells a basket for the grove and a trowel for the ruins. Either one starts a new kind of work, and the other can wait. Choose what you want to do first.',
+          'Thank you. Take these coins, and my mother\'s way with tea.',
+          'The coins buy a trowel at Pell\'s stall, if the ruins call you. The stones by the river remember where I buried something.',
+        ]);
+      }
+      if (e.e === 'quest' && e.state === 'done' && e.quest === 'core/a-coin-for-maru') {
+        await say(this, 'Elder Maru', [
+          'My coin. Take this basket: the garden behind the ruins wants one.',
+          'They say the broken arch shows a way after dark. I never went to look.',
+        ]);
+      }
+      if (e.e === 'restore' && e.restore === 'core/arch-way') {
+        await say(this, null, ['The mist draws back from the broken arch. Where rubble lay by day, a way runs under it.']);
+      }
+      if (e.e === 'visit' && e.slot === 'core/night-threshold') {
+        await say(this, null, [
+          'Past the arch the ruins go on, darker and deeper than by day. Far below, a bell rings once.',
+          'Not tonight. The way stays open.',
         ]);
       }
     }
@@ -418,7 +437,9 @@ export class UI {
     if (!s) return;
     const why = s.check({ t: 'dig', spot: spotId, grade: 3, at: s.pos });
     if (why) return this.toast(why, 'bad');
-    const grade = await this.play(timing, 'Dig', spotId, 'dig');
+    // a spot with no tool is picked up by hand: no window (the opening recut B)
+    const byHand = !app.bundle.treasures[app.bundle.instances[spotId]?.source ?? '']?.tool;
+    const grade = byHand ? 3 : await this.play(timing, 'Dig', spotId, 'dig');
     if (grade === null) return;
     const res = s.act({ t: 'dig', spot: spotId, grade, at: s.pos });
     if (!res.ok) return this.toast(res.error, 'bad');

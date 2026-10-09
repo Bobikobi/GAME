@@ -495,7 +495,6 @@
         "active_ms",
         "respawn_ms",
         "count",
-        "tool",
         "level",
         "finds",
         "place"
@@ -524,6 +523,7 @@
           "type": "integer"
         },
         "tool": {
+          "description": "The tool the dig needs and wears. Left out: the find is picked up by hand, with no window and no tool worn.",
           "anyOf": [
             {
               "const": "basket",

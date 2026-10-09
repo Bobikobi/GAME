@@ -13,8 +13,8 @@
     "after": "core/base-kit:tiles/bridge",
     "inputs": [
       {
-        "item": "core/stone",
-        "qty": 3
+        "item": "core/keystone",
+        "qty": 1
       }
     ],
     "active_ms": 4000,

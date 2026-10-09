@@ -63,11 +63,11 @@ question (section 6).
 
 | Stage | The beat | The payoff | Never |
 |---|---|---|---|
-| 0:00-0:15 | The player moves and presses A at a river stone. | The strike minigame, a stone in the bag, the counter moves. | A lore screen, a naming wizard, more than one box of text. |
-| 0:15-1:00 | The first stone. | Level 1, the jingle, a skill point to spend now. | A level with nothing to spend. |
-| 1-5 min | The bridge mends, the fire is built, the first meal cooks. | A tile changes, a sign carries the player's name, a recipe works. | A build that only opens a panel. |
-| 5-10 min | The town: Maru's story, Pell's stall, the first choice. | The basket or the trowel: a real choice, both lead on. | A fetch with a counter and nothing to notice. |
-| 10-20 min | The first riddle: an inscription points to a dig. | A rare find, a recipe scrap, a place that opens. | A read with no payoff. |
+| 0:00-0:15 | The player moves and presses A at the bridge's keystone in the shallows. | The strike minigame, taught once; the keystone in the bag. | A lore screen, a naming wizard, more than one box of text. |
+| 0:15-1:00 | The first strike. | Level 1, the jingle, a skill point to spend now. | A level with nothing to spend. |
+| 1-5 min | The bridge mends; one dry log in the wet reeds, found by looking and picked up by hand; the fire is built. | A tile changes, a sign carries the player's name, a purse: the price of one tool and a recipe. | A build that only opens a panel. |
+| 5-8 min | The town: Maru's two tasks, Pell's stall, the first choice; at dusk, the riddle. | The basket or the trowel: a real choice, the stall says what each opens, and whichever road comes first pays for the other tool. From 19:00 the hill lantern lights the tile to dig. | A fetch with a counter and nothing to notice. |
+| 8-10 min | After dark, the broken arch at the edge of the ruins. | A way under the arch that rubble filled by day, to the threshold of the night ruins: a place that opens, the first sight of the expeditions (G36). | Something to fight or something that hunts (G35). |
 | Session end | A visible mark of the day. | The day summary: what was found, built, learned; one open door. | Stopping in the middle of nothing. |
 | Day 2 | Something changed overnight. | A respawned grove, a new line from an NPC, a bell at night. | The same valley as yesterday. |
 

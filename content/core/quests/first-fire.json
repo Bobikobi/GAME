@@ -3,22 +3,23 @@
   "format": 1,
   "type": "quest",
   "id": "core/first-fire",
-  "title": "A fire and a meal",
+  "title": "Dry wood",
   "creator": "core",
   "quest": {
-    "type": "mastery",
-    "summary": "Gather branches, build a campfire across the river, and cook berry mash.",
+    "type": "investigation",
+    "summary": "A fire needs dry wood, and the river soaked everything on this bank. Almost everything.",
     "requires": [
       "core/fix-the-bridge"
     ],
     "steps": [
       {
-        "kind": "build",
-        "camp": "core/campfire"
+        "kind": "find",
+        "item": "core/dry-log",
+        "clue": "One log in the wet reeds below the bridge stayed dry. Walk the bank and look closely."
       },
       {
-        "kind": "make",
-        "recipe": "core/berry-mash"
+        "kind": "build",
+        "camp": "core/campfire"
       }
     ],
     "reward": {

@@ -11,7 +11,7 @@
       "name": "Mushroom skewer",
       "description": "Smoky.",
       "kind": "food",
-      "rarity": "common",
+      "rarity": "uncommon",
       "class": "meal",
       "tier": 1,
       "sprite": "core/base-kit:items/mushroom-skewer",
@@ -41,6 +41,6 @@
         "share_pct": 100
       }
     ],
-    "known": "start"
+    "known": "found"
   }
 }

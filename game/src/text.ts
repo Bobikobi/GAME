@@ -114,10 +114,17 @@ export function questSteps(b: Bundle, s: State, questId: string): { text: string
   const q = b.quests[questId];
   if (!q) return [];
   const p = s.player;
+  // what a find step of the same quest asks for is never shown again as a count (the find shows its clue)
+  const finds = new Set(q.steps.flatMap((st) => (st.kind === 'find' ? [st.item] : [])));
+  const need = (inputs: readonly { item: string; qty: number }[], then: string): string => {
+    const counts = inputs.filter((i) => !finds.has(i.item)).map((i) => `${itemName(b, i.item)} ${Math.min(i.qty, p.bag[i.item] ?? 0)}/${i.qty}`);
+    return counts.length > 0 ? `${counts.join(', ')} - then ${then}` : `Then ${then}`;
+  };
   return q.steps.map((st, i) => {
     switch (st.kind) {
       case 'find': {
-        const done = (p.bag[st.item] ?? 0) >= 1;
+        // with no giver, found once is found (the kernel's questSatisfied)
+        const done = q.giver ? (p.bag[st.item] ?? 0) >= 1 : p.journal.includes(st.item);
         return { text: done ? `${itemName(b, st.item)}: found` : st.clue, done, short: firstLine(st.clue) };
       }
       case 'riddle':
@@ -133,14 +140,12 @@ export function questSteps(b: Bundle, s: State, questId: string): { text: string
       case 'restore': {
         const r = b.restores[st.restore];
         const done = p.restored.includes(st.restore);
-        const need = r?.inputs.map((i) => `${itemName(b, i.item)} ${Math.min(i.qty, p.bag[i.item] ?? 0)}/${i.qty}`).join(', ');
-        return { text: done ? `Mend the ${r?.title ?? st.restore}` : `${need} - then mend the ${r?.title ?? st.restore}`, done };
+        return { text: done ? `Mend the ${r?.title ?? st.restore}` : need(r?.inputs ?? [], `mend the ${r?.title ?? st.restore}`), done };
       }
       case 'build': {
         const c = b.camps[st.camp];
         const done = campBuilt(b, s, st.camp);
-        const need = c?.inputs.map((i) => `${itemName(b, i.item)} ${Math.min(i.qty, p.bag[i.item] ?? 0)}/${i.qty}`).join(', ');
-        return { text: done ? `Build a ${c?.title ?? st.camp}` : `${need} - then build a ${c?.title ?? st.camp}`, done };
+        return { text: done ? `Build a ${c?.title ?? st.camp}` : need(c?.inputs ?? [], `build a ${c?.title ?? st.camp}`), done };
       }
       case 'visit': {
         const slot = findSlot(b.map, st.slot);
@@ -149,6 +154,16 @@ export function questSteps(b: Bundle, s: State, questId: string): { text: string
     }
     return { text: '', done: false };
   });
+}
+
+/**
+ * What a restore with no inputs says when the player faces it: it opens only as
+ * a quest's reward, so the line points at that quest's next step while it is open.
+ */
+export function restoreHint(b: Bundle, s: State, restoreId: string): string {
+  const q = Object.values(b.quests).find((x) => (x.reward.opens ?? []).includes(restoreId));
+  const next = q && s.player.quests[q.id] === 'active' ? questSteps(b, s, q.id).find((st) => !st.done) : undefined;
+  return next ? `It does not open by hand. ${next.text}` : 'It does not open by hand.';
 }
 
 export function activeQuests(b: Bundle, s: State): string[] {
@@ -220,8 +235,12 @@ export function describe(b: Bundle, s: State, e: GameEvent): { text: string; ico
       return e.state === 'active'
         ? { text: `New task: ${b.quests[e.quest]?.title ?? e.quest}`, tone: 'info' }
         : { text: `Task done: ${b.quests[e.quest]?.title ?? e.quest}`, tone: 'good' };
-    case 'restore':
-      return { text: `${b.restores[e.restore]?.title ?? e.restore} restored`, tone: 'good' };
+    case 'restore': {
+      const r = b.restores[e.restore];
+      // a restore with no inputs is a place a quest opens, not one the player mended
+      if (r && r.inputs.length === 0) return { text: `${r.title}: the way is open`, tone: 'good' };
+      return { text: `${r?.title ?? e.restore} restored`, tone: 'good' };
+    }
     case 'build':
       return { text: `${b.camps[e.camp]?.title ?? e.camp} built`, tone: 'good' };
     case 'eat':
@@ -249,6 +268,32 @@ export function describe(b: Bundle, s: State, e: GameEvent): { text: string; ico
     default:
       return undefined;
   }
+}
+
+/**
+ * Titles of the quests a tool kind opens for this player: open or ready to take,
+ * with a step whose find or dig needs that tool. The stall shows them, so the
+ * choice of the first tool is a choice between known roads (G12).
+ */
+export function toolOpens(b: Bundle, s: State, kind: string): string[] {
+  const p = s.player;
+  const needs = new Set<string>();
+  for (const r of Object.values(b.resources)) if (r.tool === kind) needs.add(r.output);
+  for (const t of Object.values(b.treasures)) if (t.tool === kind) for (const f of t.finds) needs.add(f.item);
+  const digs = new Set(Object.values(b.treasures).filter((t) => t.tool === kind).map((t) => t.id));
+  return Object.values(b.quests)
+    .filter((q) => {
+      const state = p.quests[q.id];
+      if (state === 'done') return false;
+      if (state !== 'active' && !(q.requires ?? []).every((r) => p.quests[r] === 'done')) return false;
+      return q.steps.some(
+        (st) =>
+          (st.kind === 'find' && needs.has(st.item)) ||
+          (st.kind === 'riddle' && st.answer.kind === 'dig' && digs.has(st.answer.treasure)),
+      );
+    })
+    .map((q) => q.title)
+    .sort();
 }
 
 /** Concrete effect/benefit of an item: tool speed & durability, food satiety minutes, recipe learned, or description. */

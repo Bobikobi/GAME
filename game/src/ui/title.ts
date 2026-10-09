@@ -139,9 +139,9 @@ export function showTitle(ui: UI): Promise<void> {
 
 async function intro(ui: UI): Promise<void> {
   await say(ui, null, [
-    'You wake up in the tall grass beside a river.',
+    'You wake up in the tall grass beside a river. The sun stands high.',
     'Across the water, smoke rises over a town. The old bridge between is broken.',
-    'River stones lie on the bank nearby. Three should be enough to mend it.',
+    'Its keystone fell into the shallows by the bridge. Strike it free, and the bridge can be mended.',
   ]);
   const touch = matchMedia('(pointer: coarse)').matches;
   ui.toast(touch ? 'Walk with the pad. Press A next to things.' : 'Walk with the arrows or WASD. Press Space next to things.', 'info');

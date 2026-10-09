@@ -3,7 +3,7 @@
  * next place to go reads from the map itself (G28, onboarding research phase 2). Pure, so the
  * rule can be tested without a scene.
  */
-import { type Bundle, type State, campTile, findSlot, npcTile } from '@game/kernel';
+import { type Bundle, type Rect, type State, campTile, findSlot, hourOf, isNight, npcTile } from '@game/kernel';
 
 import { activeQuests, questSteps, readyToHandIn } from './text';
 
@@ -43,11 +43,40 @@ export function questTargets(b: Bundle, s: State, tick: number): Target[] {
     }
     case 'visit':
       return slotTarget(b, st.slot);
+    case 'riddle':
+      return litAnswer(b, s, tick, st);
     default:
       // a find is found by its clue (sparks over the bushes would answer it for the player),
-      // a riddle is the player's to solve, and a recipe is in the journal
+      // and a recipe is in the journal
       return [];
   }
+}
+
+type RiddleStep = Extract<Bundle['quests'][string]['steps'][number], { kind: 'riddle' }>;
+
+/**
+ * A riddle is the player's to solve by day. When its hour comes, a prop the riddle
+ * cites that stands next to the answer lights it, the way a lantern lights the
+ * ground below it: a dig answer from dusk (19:00) to dawn, a night visit at night.
+ */
+function litAnswer(b: Bundle, s: State, tick: number, st: RiddleStep): Target[] {
+  const props = b.map.props.filter((p) => p.id !== undefined && st.props.includes(p.id));
+  const lit = (r: Rect): boolean => props.some((p) => p.x <= r.x + r.w && r.x <= p.x + p.w && p.y <= r.y + r.h && r.y <= p.y + p.h);
+  const a = st.answer;
+  if (a.kind === 'dig') {
+    const hour = hourOf(b, tick);
+    if (hour < 19 && hour >= 5) return [];
+    const spots: Target[] = [];
+    for (const [id, inst] of Object.entries(b.instances)) {
+      if (inst.kind !== 'treasure' || inst.source !== a.treasure) continue;
+      if ((s.nodes[id]?.readyAt ?? 0) > tick || !lit({ x: inst.x, y: inst.y, w: 1, h: 1 })) continue;
+      spots.push({ x: inst.x, y: inst.y, h: 16 });
+    }
+    return nearest(s, spots);
+  }
+  if (a.at !== 'night' || !isNight(b, tick)) return [];
+  const slot = findSlot(b.map, a.slot);
+  return slot && lit(slot) ? slotTarget(b, a.slot) : [];
 }
 
 /** The resource nodes that give the item and can be worked now (a regrowing node is only ground). */

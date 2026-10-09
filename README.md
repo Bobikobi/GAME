@@ -7,7 +7,7 @@
 ## What is in the demo
 
 - Two starters, the Forager and the Explorer, with five attributes: carry (bag size), senses (how far you notice hidden things), agility (how forgiving the timing is), luck (rare finds) and stamina (how much food you can hold).
-- The opening: wake up, gather three stones with the timing minigame, mend the bridge, build a fire and cook, meet the town, find the berries the elder remembers, and spend your first coins on a basket or a trowel.
+- The opening: wake up at noon, strike the bridge's keystone free with the timing minigame, mend the bridge, find the one dry log for a fire, meet the town, and spend the purse from the bridge on a basket or a trowel: the basket picks the berries the elder remembers, the trowel digs up her coin under the lantern the stones name, which glows at dusk. After dark, a way opens under the broken arch.
 - Foraging, digging and cooking, each with levels and techniques; a camp with three places to build and a fourth waiting for a reason; a day and night clock.
 - Empty places in the mist, each waiting for a creator, with a link to the guide below.
 - Phones (touch pad and A/B buttons) and keyboards (arrows or WASD, Space).

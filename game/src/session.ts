@@ -13,6 +13,7 @@ import {
   KERNEL_VERSION,
   type State,
   fitWorn,
+  hourOf,
   makeWalkable,
   newState,
   serialize,
@@ -67,6 +68,8 @@ export class Session {
   private deferred: GameEvent[] = [];
   private listeners = new Map<keyof SessionEvents, Set<Listener>>();
   private sinceSave = 0;
+  /** the in-game hour of the last frame: when it turns, what depends on the hour redraws */
+  private hour = -1;
 
   private constructor(bundle: Bundle, state: State) {
     this.bundle = bundle;
@@ -179,6 +182,12 @@ export class Session {
       this.deferred = [];
       this.emit('events', events);
       this.emit('change', undefined);
+    }
+    // a glint at dusk, a plant that opens: the world redraws once an hour, not only after an action
+    const hour = hourOf(this.bundle, this.tick);
+    if (hour !== this.hour) {
+      if (this.hour >= 0) this.emit('change', undefined);
+      this.hour = hour;
     }
     this.sinceSave += dt;
     if (this.sinceSave > 5000) this.save();

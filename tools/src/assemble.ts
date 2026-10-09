@@ -415,8 +415,13 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     (q.reward.recipes ?? []).forEach((rid, i) => {
       if (!b.recipes[rid]) err(id, `quest.reward.recipes.${i}`, `no recipe "${rid}"`);
     });
+    (q.reward.opens ?? []).forEach((rid, i) => {
+      if (!b.restores[rid]) err(id, `quest.reward.opens.${i}`, `no restore "${rid}"`);
+    });
   }
+  const opened = new Set(Object.values(b.quests).flatMap((q) => q.reward.opens ?? []));
   for (const [id, r] of Object.entries(b.restores)) {
+    if (r.inputs.length === 0 && !opened.has(id)) err(id, 'restore.inputs', 'no inputs and no quest opens it: it could never open');
     r.inputs.forEach((s, i) => item(id, `restore.inputs.${i}.item`, s.item));
     sprite(id, 'restore.before', r.before);
     sprite(id, 'restore.after', r.after);
