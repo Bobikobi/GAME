@@ -393,3 +393,13 @@ The question: is crafting tied to the economy by its numbers, and what is still 
 
 **Closes:** nothing yet; the rows CR-16 to CR-23 and the decided CR-8 in GRUNT's open ends carry the work.
 **Retry when:** playtests show the market price falling so fast that making stops paying, one set that every task needs, or a try at nothing that players read as a bug; or the settlement plan changes what gold is for. Model: claude-fable-5-1 and claude-opus-5-5.
+
+## 2026-10-09 ✅ The opening recut: option B, toward the first dusk, closing on a night discovery
+
+The product owner picked option B of `docs/design/OPENING_RECUT.md` on 9.10; the doc had recommended A. The first ten minutes keep the beats both options share: the strike taught once on the bridge's keystone, the dry log found by the senses, the real choice at Pell's stall, and the riddle. The riddle comes at dusk, when the hill lantern glows and lights the tile to dig, and the opening closes after dark at the arch in the mist, whose path leads to the threshold of the night ruins: the first sight of the expedition (G36), with nothing to fight and nothing that hunts yet. For that, the first day starts at noon, which changes the kernel's clock (`hourOf`) and moves every save; the next entry says why that is fine for now. What the night visit opens, a path that both clients draw only at night or a place reward, is chosen in the build's pull request, which says why. The maze stays the next item of the variety work, now on its own. When the hazards land (P-5), the opening's first night stays at the town's safe edge.
+**Retry when:** the build lands, or play shows that the first dark comes too early or too late in the first session. Model: Claude Opus 5.5.
+
+## 2026-10-09 ✅ Saves need no care until the server keeps them
+
+The product owner's word (9.10): for now a change may move or reset a save without a conversion. Saves live in the player's browser, and no player's progress has to survive yet. They matter again when the server comes in and keeps them (roadmap stage 2a, accounts and server saves). The save-key carry-over in the rename's pull request (#43) stays, because it is small and done.
+**Retry when:** the server keeps saves (stage 2a), or the product owner reopens it. Model: Claude Opus 5.5.

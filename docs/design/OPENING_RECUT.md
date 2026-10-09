@@ -1,6 +1,8 @@
-# The first ten minutes, recut: two options for the owner's pick
+# The first ten minutes, recut: two options for the product owner's pick
 
-A one-page recut of the opening, as the owner ordered on 9.10 (`DECISIONS.md`, "The owner added maze and stealth to the palette, and set the order of the variety work"). Nothing here is built yet. After the pick, the chosen beats become content, and they ship together with the maze, the next item in that order.
+**Picked on 9.10: option B.** `DECISIONS.md` records the pick ("The opening recut: option B, toward the first dusk, closing on a night discovery") and that saves need no care until the server keeps them. The build follows in its own pull request.
+
+A one-page recut of the opening, as ordered on 9.10 (`DECISIONS.md`, "The owner added maze and stealth to the palette, and set the order of the variety work"). Nothing here is built yet. After the pick, the chosen beats become content. With option A they would ship together with the maze, the next item in that order.
 
 ## The brief
 
@@ -49,15 +51,15 @@ That is about nine windows. Four of the seven beats are "press A at a node". The
 
 **What it needs.** Everything A needs except the tangle, plus:
 
-- The first day starts at noon, so the dark (20:00) falls near minute seven. The kernel's clock counts tick 0 as 6:00 (`hourOf`), so this is a kernel change, and it moves the clock of every save.
+- The first day starts at noon, so the dark (20:00) falls near minute seven. The kernel's clock counts tick 0 as 6:00 (`hourOf`), so this is a kernel change, and it moves the clock of every save. Saves need no care until the server keeps them (`DECISIONS.md`, 9.10).
 - The night visit itself exists already: a riddle's answer can be a `visit` at night. What the visit opens does not exist yet. It needs either a path that both clients draw only at night, or a place reward, which the schema does not have yet.
 
 When the hazard system lands (P-5), the opening's first night has to stay at the town's safe edge.
 
-## Why A
+## Why A was recommended
 
 - A changes no kernel code.
-- It builds the maze, the next item in the owner's order, so the recut and the maze land as one piece of work.
+- It builds the maze, the next item in the order of the variety work, so the recut and the maze land as one piece of work.
 - It keeps the first night for the end of the first session, where the ladder already puts a mark of the day and a door left open.
 
 B tells the stronger story, but it moves the clock for every save and brings the night in before the hazards that make the night mean something. The night discovery fits better as that first session's ending, after P-5.
