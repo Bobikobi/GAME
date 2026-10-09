@@ -13,6 +13,9 @@
       "description": "Dark, juicy and a little tart.",
       "kind": "food",
       "rarity": "common",
+      "class": "plant",
+      "family": "plum",
+      "tier": 1,
       "sprite": "core/base-kit:items/berry",
       "food": {
         "satiety": 5
