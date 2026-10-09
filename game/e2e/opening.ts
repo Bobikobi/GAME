@@ -245,9 +245,18 @@ class Player {
   async step(dir: Dir): Promise<void> {
     await this.settle();
     const before = await this.state();
-    await this.press(dir);
-    // a press should walk one tile; if it ever walks two, walk back to the one tile wanted
     const want: [number, number] = [before.pos[0] + VEC[dir][0], before.pos[1] + VEC[dir][1]];
+    await this.press(dir);
+    // software rendering can drop a hold whole (no frame saw the key down): while the player
+    // has not moved and the tile ahead is open, press again, twice at most
+    for (let tries = 0; tries < 2; tries++) {
+      const at = (await this.state()).pos;
+      if (at[0] !== before.pos[0] || at[1] !== before.pos[1]) break;
+      const open = await this.page.eval<boolean>(`__game.world.canWalk(__game.session, ${want[0]}, ${want[1]})`);
+      if (!open) break;
+      await this.press(dir);
+    }
+    // a press should walk one tile; if it ever walks two, walk back to the one tile wanted
     for (let i = 0; i < 3; i++) {
       const at = (await this.state()).pos;
       const over = (at[0] - want[0]) * VEC[dir][0] + (at[1] - want[1]) * VEC[dir][1];
