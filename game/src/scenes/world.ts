@@ -3,6 +3,12 @@
  * tile by tile. Walking uses the kernel's own walkable() so the client never
  * lets a player stand where the kernel would refuse an action; on top of it,
  * a plant or stone that is ready blocks the way until it is gathered.
+ *
+ * Everything cosmetic on top of the plain valley sits behind RICH (config.ts):
+ * detail (tile variants, tone patches, canopies, edge strips, shadows), motion
+ * (frames, sway, ambient life, footstep dust, idles) and light (dusk, glows,
+ * dapple, mist, fades).
+ * With every group off the scene is the plain valley, object for object.
  */
 import * as Phaser from 'phaser';
 import {
@@ -21,15 +27,16 @@ import {
 } from '@game/kernel';
 import { app } from '../app';
 import { sound, type SfxId } from '../audio';
-import { DIG_SPOT_SPRITE, FOG_SPRITE, STEP_MS, T } from '../config';
+import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T } from '../config';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { emptySlots, slotContent } from '../places';
+import { canopyGroups, hash, remapTone, toneField, type Tone } from '../richground';
 import type { Session } from '../session';
 import { hintDistance, itemName } from '../text';
 import type { WorkKind } from '../ui/ui';
 
-const DEPTH = { ground: 0, restore: 1, flat: 2, dig: 3, mist: 8000, fog: 9000, motes: 9100, shade: 9500, glow: 9600, fx: 9800, marker: 9850 };
+const DEPTH = { ground: 0, restore: 1, flat: 2, shadow: 2.5, dig: 3, puff: 3.5, mist: 8000, fog: 9000, motes: 9100, shade: 9500, glow: 9600, fx: 9800, marker: 9850 };
 const NEIGHBOURS: readonly [number, number][] = [
   [0, -1], [1, 0], [0, 1], [-1, 0], [1, -1], [1, 1], [-1, 1], [-1, -1],
 ];
@@ -37,7 +44,32 @@ const NEIGHBOURS: readonly [number, number][] = [
 const SWING_MS = 520;
 /** Signatures show over signs this close to the player, in tiles. */
 const SIGN_REACH = 5;
-const PALETTE = { ink: 0x1b1a2e, cream: 0xebd3a2, paper: 0xf5f4ef, green3: 0x84c450, green4: 0xc8e88a, wood2: 0x9e6b3c, wood: 0x6e4226, yellow: 0xf8de62, red2: 0xe2533f, grey2: 0x8f94a8 };
+const PALETTE = {
+  ink: 0x1b1a2e,
+  cream: 0xebd3a2,
+  paper: 0xf5f4ef,
+  green2: 0x4c9a3f,
+  green3: 0x84c450,
+  green4: 0xc8e88a,
+  wood2: 0x9e6b3c,
+  wood: 0x6e4226,
+  yellow: 0xf8de62,
+  gold: 0xeda83a,
+  red2: 0xe2533f,
+  grey: 0x5d6177,
+  grey2: 0x8f94a8,
+};
+/** How dark the ground shadows are. */
+const SHADOW_ALPHA = 0.22;
+/** Props that lie on the ground and cast no shadow, by sprite name. */
+const FLAT = new Set([
+  'flowers', 'flowers_white', 'flowers_blue', 'glow_mushrooms', 'mushrooms_small', 'mushroom_patch', 'rubble', 'pebbles', 'fallen_branches',
+  'log_fallen', 'log_mossy', 'grass_tall', 'dig_spot', 'fog', 'reeds', 'herb_plant', 'fence', 'fence_post', 'campfire_lit', 'campfire_unlit',
+]);
+/** Where the smoke leaves house_small: the chimney top, in pixels of the 48x48 sprite (read from the art). */
+const CHIMNEY = { x: 37, y: 6 };
+/** Edge strips are named by the side of the tile they sit on. */
+const SIDES: readonly [string, number, number][] = [['n', 0, -1], ['e', 1, 0], ['s', 0, 1], ['w', -1, 0]];
 
 export interface Target {
   label: string;
@@ -67,27 +99,114 @@ interface Pinned {
   y: number;
 }
 
+type Standing = Phaser.GameObjects.Image | Phaser.GameObjects.Sprite;
+type Emitter = Phaser.GameObjects.Particles.ParticleEmitter;
+
+/** A sprite stepping through its frames on its own clock: sway, flicker, flames. */
+interface Cycle {
+  spr: Phaser.GameObjects.Sprite;
+  min: number;
+  max: number;
+  next: number;
+  frame: number;
+  active: boolean;
+}
+
+/** A character that closes its eyes now and then (frame 1 of its blink sheet). */
+interface Blink {
+  spr: Phaser.GameObjects.Sprite;
+  next: number;
+  until: number;
+}
+
+/** A soft light that comes up with the night and flickers. */
+interface Glow {
+  img: Phaser.GameObjects.Image;
+  phase: number;
+  lit: boolean;
+}
+
+/** An emitter that only runs while its patch of the valley is on screen. */
+interface Local {
+  emitter: Emitter;
+  rect: Phaser.Geom.Rectangle;
+}
+
+/** Random points over the tiles of one kind that the camera sees now. */
+class TileZone {
+  private inView: number[] = [];
+
+  constructor(private readonly tiles: readonly number[]) {}
+
+  get count(): number {
+    return this.inView.length / 2;
+  }
+
+  refresh(view: Phaser.Geom.Rectangle): void {
+    const x0 = Math.floor(view.x / T) - 1;
+    const x1 = Math.ceil(view.right / T) + 1;
+    const y0 = Math.floor(view.y / T) - 1;
+    const y1 = Math.ceil(view.bottom / T) + 1;
+    this.inView.length = 0;
+    for (let i = 0; i < this.tiles.length; i += 2) {
+      const x = this.tiles[i]!;
+      const y = this.tiles[i + 1]!;
+      if (x >= x0 && x <= x1 && y >= y0 && y <= y1) this.inView.push(x, y);
+    }
+  }
+
+  getRandomPoint(point: Phaser.Types.Math.Vector2Like): void {
+    const n = this.count;
+    if (n === 0) {
+      point.x = -T;
+      point.y = -T;
+      return;
+    }
+    const i = Math.floor(Math.random() * n) * 2;
+    point.x = this.inView[i]! * T + Math.random() * T;
+    point.y = this.inView[i + 1]! * T + Math.random() * T;
+  }
+}
+
 export class WorldScene extends Phaser.Scene {
   private b!: Bundle;
   private walkable!: ReturnType<typeof makeWalkable>;
   private session: Session | undefined;
   private unbind: (() => void)[] = [];
   private ground!: Phaser.GameObjects.Image;
+  private groundFrames = 2;
   private waterFrame = 0;
   private player!: Phaser.GameObjects.Sprite;
+  private playerShadow: Phaser.GameObjects.Image | undefined;
   private shade!: Phaser.GameObjects.Rectangle;
+  private dusk: Phaser.GameObjects.Rectangle | undefined;
   private bar!: Phaser.GameObjects.Graphics;
   private marker!: Phaser.GameObjects.Image;
   private mist!: Phaser.GameObjects.TileSprite;
-  private motes!: Phaser.GameObjects.Particles.ParticleEmitter;
-  private flies!: Phaser.GameObjects.Particles.ParticleEmitter;
-  private bursts = new Map<string, Phaser.GameObjects.Particles.ParticleEmitter>();
+  private motes!: Emitter;
+  private flies!: Emitter;
+  private butterflies: Emitter | undefined;
+  private leaves: Emitter | undefined;
+  private bursts = new Map<string, Emitter>();
+  private puffs = new Map<string, Emitter>();
   private vignette: Phaser.Filters.Vignette | undefined;
-  private nodes = new Map<string, Phaser.GameObjects.Image>();
+  private nodes = new Map<string, Phaser.GameObjects.Sprite>();
+  private nodeShadows = new Map<string, Phaser.GameObjects.Image>();
   private digs = new Map<string, Phaser.GameObjects.Image>();
   private restoreArt = new Map<string, Phaser.GameObjects.Image[]>();
-  private campArt = new Map<string, Phaser.GameObjects.Image>();
+  private campArt = new Map<string, Phaser.GameObjects.Sprite>();
+  private campCycles = new Map<string, Cycle>();
+  private campGlows = new Map<string, Glow>();
+  private embers = new Map<string, Emitter>();
   private fogs: Phaser.GameObjects.TileSprite[] = [];
+  private dapples: Phaser.GameObjects.TileSprite[] = [];
+  private cycles: Cycle[] = [];
+  private blinks: Blink[] = [];
+  private glows: Glow[] = [];
+  private locals: Local[] = [];
+  private viewRect = new Phaser.Geom.Rectangle(0, 0, T, T);
+  private meadowZone: TileZone | undefined;
+  private groveZone: TileZone | undefined;
   private signs = new Map<string, string>();
   private signSpots: SignSpot[] = [];
   private notes = new Map<string, { text: string; name: string; top: number }>();
@@ -107,6 +226,11 @@ export class WorldScene extends Phaser.Scene {
   private swingUntil = 0;
   private nextSwing = 0;
   private refreshIn = 0;
+  private zoneIn = 0;
+  private nextBird = 0;
+  private idleSince = 0;
+  private nextBlink = 0;
+  private blinkUntil = 0;
   private prompt = '';
   private hinted = new Set<string>();
   /** slots the player stands in now, so a riddle's slot is tried once per entry */
@@ -137,10 +261,16 @@ export class WorldScene extends Phaser.Scene {
     this.buildFog();
     this.buildSigns();
     this.buildAtmosphere();
+    if (RICH.light) this.buildDapple();
+    if (RICH.detail) this.playerShadow = this.shadow(0, 0, 1).setVisible(false);
     this.player = this.add.sprite(0, 0, this.playerFrame('down').key, 1).setOrigin(0.5, 1).setVisible(false);
     this.bar = this.add.graphics().setDepth(DEPTH.fx);
     this.marker = this.add.image(0, 0, 'fx-arrow').setOrigin(0.5, 1).setDepth(DEPTH.marker).setVisible(false);
     this.tweens.add({ targets: this.marker, displayOriginY: 7, duration: 380, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    if (RICH.light) {
+      // a warm wash under the blue shade: multiplied in, so it tints what is there instead of covering it
+      this.dusk = this.add.rectangle(0, 0, 10, 10, PALETTE.gold, 0).setOrigin(0).setScrollFactor(0).setDepth(DEPTH.shade - 1).setBlendMode(Phaser.BlendModes.MULTIPLY);
+    }
     this.shade = this.add.rectangle(0, 0, 10, 10, 0x172a52, 0).setOrigin(0).setScrollFactor(0).setDepth(DEPTH.shade);
     const cam = this.cameras.main;
     cam.setBounds(0, 0, this.b.map.width * T, this.b.map.height * T);
@@ -157,7 +287,7 @@ export class WorldScene extends Phaser.Scene {
 
   // ------------------------------------------------------------ building
 
-  /** Tiny pixel textures for dust, sparks, motes, eyes and the target arrow. */
+  /** Tiny pixel textures for dust, sparks, motes, eyes and the target arrow, and the soft ones the rich groups add. */
   private makeFx(): void {
     const g = this.add.graphics();
     const make = (key: string, w: number, hgt: number, draw: () => void) => {
@@ -194,24 +324,127 @@ export class WorldScene extends Phaser.Scene {
       px(PALETTE.ink, 4, 3);
       px(PALETTE.ink, 3, 4);
     });
+    if (RICH.detail) {
+      // a whole-pixel ellipse, 12x5: the ground shadow under anything that stands
+      make('fx-shadow', 12, 5, () => {
+        px(PALETTE.ink, 3, 0, 6);
+        px(PALETTE.ink, 1, 1, 10);
+        px(PALETTE.ink, 0, 2, 12);
+        px(PALETTE.ink, 1, 3, 10);
+        px(PALETTE.ink, 3, 4, 6);
+      });
+    }
+    if (RICH.motion) {
+      make('fx-puff', 2, 2, () => px(PALETTE.cream, 0, 0, 2, 2));
+      make('fx-grit', 2, 2, () => px(PALETTE.grey, 0, 0, 2, 2));
+      make('fx-smoke', 2, 2, () => {
+        px(PALETTE.grey2, 0, 0, 2, 2);
+        px(PALETTE.paper, 1, 0);
+      });
+      make('fx-butterfly', 2, 2, () => {
+        px(PALETTE.yellow, 0, 0);
+        px(PALETTE.paper, 1, 0);
+        px(PALETTE.paper, 0, 1);
+        px(PALETTE.yellow, 1, 1);
+      });
+      make('fx-leaf-fall', 1, 2, () => {
+        px(PALETTE.green2, 0, 0);
+        px(PALETTE.wood2, 0, 1);
+      });
+      // two wing poses of a bird seen from below, 3x2
+      make('fx-bird-0', 3, 2, () => {
+        px(PALETTE.ink, 0, 0);
+        px(PALETTE.ink, 2, 0);
+        px(PALETTE.ink, 1, 1);
+      });
+      make('fx-bird-1', 3, 2, () => {
+        px(PALETTE.ink, 1, 0);
+        px(PALETTE.ink, 0, 1);
+        px(PALETTE.ink, 2, 1);
+      });
+    }
+    if (RICH.light) {
+      // three whole-pixel discs on top of each other: a glow that is brightest at its heart
+      const disc = (r: number, color: number, alpha: number) => {
+        g.fillStyle(color, alpha);
+        for (let dy = -r; dy <= r; dy++) {
+          const half = Math.floor(Math.sqrt(r * r - dy * dy));
+          g.fillRect(12 - half, 12 + dy, 2 * half + 1, 1);
+        }
+      };
+      make('fx-glow', 25, 25, () => {
+        disc(12, PALETTE.gold, 0.1);
+        disc(8, PALETTE.gold, 0.16);
+        disc(5, PALETTE.yellow, 0.24);
+      });
+      // specks of light through the leaves, tiled over the groves
+      make('fx-dapple', 32, 32, () => {
+        for (const [x, y, w, hh] of [[3, 4, 2, 2], [12, 2, 3, 2], [22, 6, 2, 2], [6, 14, 3, 3], [18, 17, 2, 2], [27, 13, 2, 3], [2, 25, 2, 2], [13, 27, 3, 2], [24, 26, 2, 2], [29, 22, 2, 2]] as const) {
+          px(PALETTE.paper, x, y, w, hh);
+        }
+      });
+    }
     g.destroy();
+  }
+
+  /** A sprite the bundle names and the loader brought in. */
+  private has(ref: string): boolean {
+    return ref in this.b.sprites && this.textures.exists(ref);
   }
 
   private buildGround(): void {
     const m = this.b.map;
-    for (const frame of [0, 1]) {
+    const tiles = Object.values(m.legend);
+    const most = Math.max(1, ...tiles.map((t) => this.b.sprites[t.sprite]?.frames ?? 1));
+    // one full-map canvas per frame; the plain valley keeps its two
+    this.groundFrames = RICH.motion ? most : 2;
+    const variants = new Map<string, string[]>();
+    const at = (x: number, y: number) => m.legend[m.ground[y]?.[x] ?? ''];
+    // the meadow's shaded and sunlit patches, and the blocks of four forest tiles a canopy covers: both fixed by the map
+    const tones = RICH.detail ? toneField(m.width, m.height, (x, y) => at(x, y)?.tag === 'meadow') : undefined;
+    const forest = tiles.find((t) => baseName(t.sprite) === 'forest');
+    const canopies = RICH.detail && forest ? canopyGroups(m.width, m.height, (x, y) => at(x, y)?.sprite === forest.sprite) : [];
+    const canopyKit = forest ? kitOf(forest.sprite) : '';
+    if (RICH.detail) {
+      for (const t of tiles) variants.set(t.sprite, [1, 2, 3].map((i) => `${t.sprite}_${i}`).filter((ref) => this.has(ref)));
+    }
+    const meadow: number[] = [];
+    const grove: number[] = [];
+    for (let frame = 0; frame < this.groundFrames; frame++) {
       const tex = this.textures.createCanvas(`ground-${frame}`, m.width * T, m.height * T);
       if (!tex) continue;
       for (let y = 0; y < m.height; y++) {
         const row = m.ground[y] ?? '';
         for (let x = 0; x < m.width; x++) {
           const tile = m.legend[row[x] ?? ''];
-          const info = tile && this.b.sprites[tile.sprite];
-          if (!tile || !info) continue;
-          tex.drawFrame(tile.sprite, info.frames > 1 ? frame % info.frames : undefined, x * T, y * T, false);
+          if (!tile) continue;
+          const picks = variants.get(tile.sprite);
+          const h = hash(x, y);
+          // about two tiles in five take a variant, always the same one for the same tile
+          const sprite = picks && picks.length > 0 && h % 100 < 40 ? picks[Math.floor(h / 100) % picks.length]! : tile.sprite;
+          const info = this.b.sprites[sprite];
+          if (!info) continue;
+          // a shaded or sunlit meadow tile draws from a toned copy of its sprite
+          const tone = tones?.[y * m.width + x] ?? 0;
+          const key = tone === 1 || tone === 2 ? (this.toned(sprite, tone) ?? sprite) : sprite;
+          tex.drawFrame(key, info.frames > 1 ? frame % info.frames : undefined, x * T, y * T, false);
+          if (RICH.detail) this.drawEdges(tex, x, y, tile.sprite, tile.tag, frame);
+          if (frame === 0 && RICH.motion) {
+            if (tile.tag === 'meadow') meadow.push(x, y);
+            else if (tile.tag === 'grove') grove.push(x, y);
+          }
         }
       }
+      // one crown over each block of four forest tiles; the eyes still watch from the forest's edge
+      for (const c of canopies) {
+        const ref = `${canopyKit}props/canopy_${c.i + 1}`;
+        if (this.has(ref)) tex.drawFrame(ref, undefined, c.x * T, c.y * T, false);
+      }
       tex.refresh();
+    }
+    if (RICH.motion) {
+      this.meadowZone = new TileZone(meadow);
+      this.groveZone = new TileZone(grove);
     }
     this.ground = this.add.image(0, 0, 'ground-0').setOrigin(0).setDepth(DEPTH.ground);
     // eyes watch from the edge of the forest and from the rubble, never from open ground
@@ -228,8 +461,54 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Edge strips over a tile, one per side, read from the four neighbours: a bank
+   * where water meets land, a fringe of grass over a path, cobble, sand or ruin floor
+   * tile that touches meadow or grove, and a shore line where sand meets water. Each
+   * strip is a kit sprite named after the side it sits on; a missing one is simply not drawn.
+   */
+  private drawEdges(tex: Phaser.Textures.CanvasTexture, x: number, y: number, sprite: string, tag: string, frame: number): void {
+    const m = this.b.map;
+    const kit = kitOf(sprite);
+    const floor = tag === 'ruin' && baseName(sprite) === 'ruin_floor';
+    const kind = tag === 'water' ? 'bank' : tag === 'path' || tag === 'town' || tag === 'riverbank' || floor ? 'fringe' : undefined;
+    if (!kind) return;
+    for (const [side, dx, dy] of SIDES) {
+      const near = m.legend[m.ground[y + dy]?.[x + dx] ?? ''];
+      if (!near) continue;
+      let ref: string | undefined;
+      if (kind === 'bank' && near.tag !== 'water') ref = `${kit}tiles/bank_${side}`;
+      else if (kind === 'fringe' && (near.tag === 'meadow' || near.tag === 'grove')) ref = `${kit}tiles/fringe_${side}`;
+      else if (tag === 'riverbank' && near.tag === 'water') ref = `${kit}tiles/shore_${side}`;
+      if (!ref || !this.has(ref)) continue;
+      const frames = this.b.sprites[ref]?.frames ?? 1;
+      tex.drawFrame(ref, frames > 1 ? frame % frames : undefined, x * T, y * T, false);
+    }
+  }
+
+  /**
+   * A copy of a grass tile's frames remapped to one tone, kept as a canvas texture with
+   * the same frame layout and made once per sprite and tone. Nothing when the sprite is
+   * not loaded, so the tile falls back to its plain self.
+   */
+  private toned(ref: string, tone: Tone): string | undefined {
+    const key = `${ref}#tone${tone}`;
+    if (this.textures.exists(key)) return key;
+    const info = this.b.sprites[ref];
+    if (!info || !this.textures.exists(ref)) return undefined;
+    const tex = this.textures.createCanvas(key, info.w * info.frames, info.h);
+    if (!tex) return undefined;
+    for (let f = 0; f < info.frames; f++) tex.drawFrame(ref, info.frames > 1 ? f : undefined, f * info.w, 0, false);
+    const pixels = tex.getData(0, 0, tex.width, tex.height);
+    remapTone(pixels.data, tex.width, tone, info.w);
+    tex.putData(pixels, 0, 0);
+    tex.refresh();
+    if (info.frames > 1) for (let f = 0; f < info.frames; f++) tex.add(f, 0, f * info.w, 0, info.w, info.h);
+    return key;
+  }
+
   private flipWater(): void {
-    this.waterFrame = 1 - this.waterFrame;
+    this.waterFrame = (this.waterFrame + 1) % this.groundFrames;
     this.ground.setTexture(`ground-${this.waterFrame}`);
   }
 
@@ -238,8 +517,14 @@ export class WorldScene extends Phaser.Scene {
       const info = this.b.sprites[p.sprite];
       if (!info) continue;
       const bottom = (p.y + p.h) * T;
-      const img = this.add.image((p.x + p.w / 2) * T, bottom, p.sprite).setOrigin(0.5, 1);
+      const cx = (p.x + p.w / 2) * T;
+      const name = baseName(p.sprite);
+      const img = this.standing(p.sprite, cx, bottom, hash(p.x, p.y));
       img.setDepth(p.solid ? bottom : DEPTH.flat);
+      if (RICH.detail && !FLAT.has(name)) this.shadow(cx, bottom, p.w, p.solid ? DEPTH.shadow : DEPTH.flat - 0.5);
+      // the lamp head is the top 8 px of the post
+      if (RICH.light && name === 'lantern_post') this.glows.push(this.glow(cx, bottom - info.h + 4, true));
+      if (RICH.motion && name === 'house_small') this.smoke(cx - info.w / 2 + CHIMNEY.x, bottom - info.h + CHIMNEY.y, bottom + 1);
       for (let y = p.y; y < p.y + p.h; y++) {
         for (let x = p.x; x < p.x + p.w; x++) {
           if (p.sign) this.signs.set(key(x, y), p.sign);
@@ -250,6 +535,54 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * A thing at the centre-bottom of its footprint: a plain image, or, with motion on
+   * and frames in the kit, a sprite stepping through them - flames every 120 ms,
+   * a lantern flickering, everything else swaying on its own slow beat.
+   */
+  private standing(ref: string, cx: number, bottom: number, seed: number): Standing {
+    const frames = this.b.sprites[ref]?.frames ?? 1;
+    if (!RICH.motion || frames < 2) return this.add.image(cx, bottom, ref).setOrigin(0.5, 1);
+    const spr = this.add.sprite(cx, bottom, ref, 0).setOrigin(0.5, 1);
+    const name = baseName(ref);
+    if (name === 'lantern_post') this.cycles.push({ spr, min: 150, max: 250, next: 0, frame: 0, active: true });
+    else if (name.startsWith('campfire')) this.cycles.push({ spr, min: 120, max: 120, next: 0, frame: 0, active: true });
+    else this.cycles.push(this.sway(spr, seed));
+    return spr;
+  }
+
+  /** A slow 0/1 beat of 700-1100 ms, its phase and period set by where the thing stands. */
+  private sway(spr: Phaser.GameObjects.Sprite, seed: number): Cycle {
+    const period = 700 + (seed % 401);
+    return { spr, min: period, max: period, next: this.time.now + (seed % period), frame: 0, active: true };
+  }
+
+  /** The ground shadow under something standing at (cx, bottom), as wide as its footprint in tiles. */
+  private shadow(cx: number, bottom: number, tiles: number, depth = DEPTH.shadow): Phaser.GameObjects.Image {
+    return this.add.image(cx, bottom + 2, 'fx-shadow').setOrigin(0.5, 1).setAlpha(SHADOW_ALPHA).setDepth(depth).setScale(Math.max(1, Math.round(tiles)), 1);
+  }
+
+  private glow(x: number, y: number, lit: boolean): Glow {
+    const img = this.add.image(x, y, 'fx-glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.glow).setAlpha(0);
+    return { img, phase: Math.random() * Math.PI * 2, lit };
+  }
+
+  /** A thin thread of smoke rising from (x, y), only while that chimney is on screen. */
+  private smoke(x: number, y: number, depth: number): void {
+    const emitter = this.add
+      .particles(x, y, 'fx-smoke', {
+        speedY: { min: -7, max: -3 },
+        speedX: { min: 1, max: 3 },
+        lifespan: { min: 2500, max: 4000 },
+        alpha: { values: [0.7, 0.45, 0] },
+        frequency: 420,
+        maxAliveParticles: 10,
+        emitting: false,
+      })
+      .setDepth(depth);
+    this.locals.push({ emitter, rect: new Phaser.Geom.Rectangle(x - 16, y - 40, 48, 56) });
+  }
+
   private buildNodes(): void {
     for (const [id, inst] of Object.entries(this.b.instances)) {
       const cx = inst.x * T + T / 2;
@@ -257,7 +590,11 @@ export class WorldScene extends Phaser.Scene {
       if (inst.kind === 'resource') {
         const r = this.b.resources[inst.source];
         if (!r) continue;
-        this.nodes.set(id, this.add.image(cx, bottom, r.sprite).setOrigin(0.5, 1).setDepth(bottom));
+        const spr = this.add.sprite(cx, bottom, r.sprite).setOrigin(0.5, 1).setDepth(bottom);
+        this.nodes.set(id, spr);
+        const animated = [r.sprite, r.sprite_empty].some((ref) => ref && (this.b.sprites[ref]?.frames ?? 1) > 1);
+        if (RICH.motion && animated) this.cycles.push(this.sway(spr, hash(inst.x, inst.y)));
+        if (RICH.detail && !FLAT.has(baseName(r.sprite))) this.nodeShadows.set(id, this.shadow(cx, bottom, 1));
       } else {
         this.digs.set(id, this.add.image(cx, bottom, DIG_SPOT_SPRITE).setOrigin(0.5, 1).setDepth(DEPTH.dig).setAlpha(0));
       }
@@ -270,9 +607,21 @@ export class WorldScene extends Phaser.Scene {
       const t = npcTile(this.b, id);
       if (!t) continue;
       const bottom = (t[1] + 1) * T;
-      const img = this.add.image(t[0] * T + T / 2, bottom, npc.sprite).setOrigin(0.5, 1).setDepth(bottom);
+      const cx = t[0] * T + T / 2;
+      // a blink sheet (frame 0 = the plain sprite, frame 1 = eyes closed) replaces the image when it exists
+      const blinkRef = `${npc.sprite}_blink`;
+      let img: Standing;
+      if (RICH.motion && this.has(blinkRef) && (this.b.sprites[blinkRef]?.frames ?? 1) > 1) {
+        const spr = this.add.sprite(cx, bottom, blinkRef, 0);
+        this.blinks.push({ spr, next: this.time.now + 3000 + Math.random() * 3000, until: 0 });
+        img = spr;
+      } else {
+        img = this.add.image(cx, bottom, npc.sprite);
+      }
+      img.setOrigin(0.5, 1).setDepth(bottom);
       // a slow breath so people read as alive
       this.tweens.add({ targets: img, scaleY: 1.04, duration: 900 + (id.length % 5) * 120, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      if (RICH.detail) this.shadow(cx, bottom, 1);
       this.npcAt.set(key(t[0], t[1]), id);
       this.tops.set(key(t[0], t[1]), this.b.sprites[npc.sprite]?.h ?? 24);
     }
@@ -303,7 +652,36 @@ export class WorldScene extends Phaser.Scene {
       const t = campTile(this.b, c.slot);
       if (!t) continue;
       const bottom = (t[1] + 1) * T;
-      this.campArt.set(id, this.add.image(t[0] * T + T / 2, bottom, c.sprite).setOrigin(0.5, 1).setDepth(bottom).setAlpha(0));
+      const cx = t[0] * T + T / 2;
+      const spr = this.add.sprite(cx, bottom, c.sprite).setOrigin(0.5, 1).setDepth(bottom).setAlpha(0);
+      this.campArt.set(id, spr);
+      // flames step through their frames only while the fire is built; refresh() sets that
+      if (RICH.motion && (this.b.sprites[c.sprite]?.frames ?? 1) > 1) {
+        const cycle: Cycle = { spr, min: 120, max: 120, next: 0, frame: 0, active: false };
+        this.cycles.push(cycle);
+        this.campCycles.set(id, cycle);
+      }
+      if (c.slot !== 'fire') continue;
+      if (RICH.motion) {
+        const embers = this.add
+          .particles(cx, bottom - 10, 'fx-spark', {
+            speedY: { min: -14, max: -5 },
+            speedX: { min: -4, max: 4 },
+            lifespan: { min: 400, max: 800 },
+            alpha: { start: 1, end: 0 },
+            frequency: 110,
+            maxAliveParticles: 12,
+            blendMode: 'ADD',
+            emitting: false,
+          })
+          .setDepth(DEPTH.glow);
+        this.embers.set(id, embers);
+      }
+      if (RICH.light) {
+        const glow = this.glow(cx, bottom - 8, false);
+        this.glows.push(glow);
+        this.campGlows.set(id, glow);
+      }
     }
   }
 
@@ -315,6 +693,26 @@ export class WorldScene extends Phaser.Scene {
         const fog = this.add.tileSprite(s.x * T, s.y * T, s.w * T, s.h * T, FOG_SPRITE).setOrigin(0).setDepth(DEPTH.fog).setAlpha(alpha);
         fog.setTilePosition(offset, offset);
         this.fogs.push(fog);
+        if (RICH.light) {
+          this.tweens.add({ targets: fog, alpha: alpha + 0.12, duration: 3400 + offset * 40 + (s.x % 3) * 500, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+        }
+      }
+      if (RICH.light) {
+        // a few pale specks drifting through the mist, while the slot is on screen
+        const rect = new Phaser.Geom.Rectangle(s.x * T, s.y * T, s.w * T, s.h * T);
+        const emitter = this.add
+          .particles(0, 0, 'fx-mote', {
+            emitZone: { type: 'random', source: rect, quantity: 1 },
+            speedX: { min: 2, max: 5 },
+            speedY: { min: -1, max: 1 },
+            lifespan: { min: 3000, max: 6000 },
+            alpha: { values: [0, 0.5, 0] },
+            frequency: 260,
+            maxAliveParticles: 12,
+            emitting: false,
+          })
+          .setDepth(DEPTH.fog + 1);
+        this.locals.push({ emitter, rect });
       }
     }
   }
@@ -333,7 +731,10 @@ export class WorldScene extends Phaser.Scene {
       if (!content || content.creator === 'core' || covered.has(slot.id)) continue;
       const at = this.freeTileBeside(slot);
       if (!at) continue;
-      this.add.image(at[0] * T + T / 2, (at[1] + 1) * T, SIGN_SPRITE).setOrigin(0.5, 1).setDepth(DEPTH.flat);
+      const cx = at[0] * T + T / 2;
+      const bottom = (at[1] + 1) * T;
+      this.add.image(cx, bottom, SIGN_SPRITE).setOrigin(0.5, 1).setDepth(DEPTH.flat);
+      if (RICH.detail) this.shadow(cx, bottom, 1, DEPTH.flat - 0.5);
       this.signs.set(key(at[0], at[1]), slot.id);
       this.tops.set(key(at[0], at[1]), T);
       this.signSpots.push({ slot: slot.id, x: at[0] + 0.5, y: at[1], label: this.signatureEl(slot.id) });
@@ -370,12 +771,16 @@ export class WorldScene extends Phaser.Scene {
     return el;
   }
 
-  /** Mist over the whole valley, dust in the light, fireflies after dark. */
+  /**
+   * Mist over the whole valley, dust in the light, fireflies after dark. With
+   * motion on, every emitter works only inside the camera's view (refreshZones
+   * keeps the zones there) and butterflies, falling leaves and birds join in.
+   */
   private buildAtmosphere(): void {
     const w = this.b.map.width * T;
     const hgt = this.b.map.height * T;
     this.mist = this.add.tileSprite(0, 0, w, hgt, FOG_SPRITE).setOrigin(0).setDepth(DEPTH.mist).setAlpha(0.1).setTileScale(2);
-    const area = new Phaser.Geom.Rectangle(0, 0, w, hgt);
+    const area = RICH.motion ? this.viewRect : new Phaser.Geom.Rectangle(0, 0, w, hgt);
     this.motes = this.add
       .particles(0, 0, 'fx-mote', {
         emitZone: { type: 'random', source: area, quantity: 1 },
@@ -383,7 +788,8 @@ export class WorldScene extends Phaser.Scene {
         speedX: { min: -3, max: 3 },
         speedY: { min: -6, max: -2 },
         alpha: { values: [0, 0.65, 0] },
-        frequency: 70,
+        frequency: RICH.motion ? 400 : 70,
+        ...(RICH.motion ? { maxAliveParticles: 14 } : {}),
       })
       .setDepth(DEPTH.motes);
     this.flies = this.add
@@ -393,11 +799,52 @@ export class WorldScene extends Phaser.Scene {
         speedX: { min: -5, max: 5 },
         speedY: { min: -5, max: 5 },
         alpha: { values: [0, 1, 0.2, 1, 0] },
-        frequency: 120,
+        frequency: RICH.motion ? 600 : 120,
         blendMode: 'ADD',
         emitting: false,
+        ...(RICH.motion ? { maxAliveParticles: 8 } : {}),
       })
       .setDepth(DEPTH.glow);
+    if (!RICH.motion || !this.meadowZone || !this.groveZone) return;
+    this.butterflies = this.add
+      .particles(0, 0, 'fx-butterfly', {
+        emitZone: { type: 'random', source: this.meadowZone, quantity: 1 },
+        lifespan: { min: 4000, max: 7000 },
+        speedX: { min: -12, max: 12 },
+        speedY: { min: -8, max: 8 },
+        accelerationX: { min: -6, max: 6 },
+        accelerationY: { min: -5, max: 5 },
+        maxVelocityX: 16,
+        maxVelocityY: 12,
+        alpha: { values: [0, 1, 0.5, 1, 0.5, 1, 0] },
+        frequency: 900,
+        maxAliveParticles: 6,
+        emitting: false,
+      })
+      .setDepth(DEPTH.motes);
+    this.leaves = this.add
+      .particles(0, 0, 'fx-leaf-fall', {
+        emitZone: { type: 'random', source: this.groveZone, quantity: 1 },
+        lifespan: { min: 3000, max: 5000 },
+        speedX: { min: -5, max: 5 },
+        speedY: { min: 5, max: 11 },
+        accelerationX: { min: -4, max: 4 },
+        maxVelocityX: 8,
+        alpha: { values: [0, 1, 1, 0] },
+        frequency: 600,
+        maxAliveParticles: 10,
+        emitting: false,
+      })
+      .setDepth(DEPTH.motes);
+  }
+
+  /** Dappled light over the groves by day: one tiled layer of specks per rectangle of grove or forest tiles. */
+  private buildDapple(): void {
+    for (const r of groveRects(this.b.map)) {
+      const d = this.add.tileSprite(r.x, r.y, r.width, r.height, 'fx-dapple').setOrigin(0).setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.mist - 1).setAlpha(0.08);
+      d.setTilePosition(hash(r.x, r.y) % 32, hash(r.y, r.x) % 32);
+      this.dapples.push(d);
+    }
   }
 
   /** An old, worn picture: a little less colour, a dark frame that closes in at night. WebGL only. */
@@ -433,9 +880,14 @@ export class WorldScene extends Phaser.Scene {
       session.on('change', () => this.refresh()),
     ];
     this.player.setVisible(true);
+    this.playerShadow?.setVisible(true);
     this.placePlayer(session.pos[0], session.pos[1]);
     this.faceFrame();
+    this.idleSince = this.time.now;
+    this.blinkUntil = 0;
     this.cameras.main.startFollow(this.player, true);
+    // waking up: the valley comes out of the dark
+    if (RICH.light) this.cameras.main.fadeIn(600, 27, 26, 46);
     this.wasNight = undefined;
     this.refresh();
   }
@@ -443,25 +895,27 @@ export class WorldScene extends Phaser.Scene {
   private placePlayer(x: number, y: number): void {
     this.player.setPosition(x * T + T / 2, (y + 1) * T);
     this.player.setDepth((y + 1) * T + 1);
+    this.playerShadow?.setPosition(this.player.x, this.player.y + 2);
   }
 
   /** The starter's sprite for a direction, in the look the player picked. */
-  private playerFrame(dir: Dir, pose: 'walk' | 'work' = 'walk'): { key: string; flip: boolean } {
+  private playerFrame(dir: Dir, pose: 'walk' | 'work' | 'idle' = 'walk'): { key: string; flip: boolean } {
     const p = this.session?.state.player;
     const starter = p ? this.b.starters[p.starter] : undefined;
     const first = Object.values(this.b.starters)[0];
     const base = (p?.look === 1 && starter?.sprite_alt) || starter?.sprite || first?.sprite || '';
-    const stem = pose === 'work' ? base.replace(/_down$/, '_work_down') : base;
+    const stem = pose === 'walk' ? base : base.replace(/_down$/, `_${pose}_down`);
     const of = (d: string) => stem.replace(/_down$/, `_${d}`);
     const has = (k: string) => k in this.b.sprites;
-    if (pose === 'work' && !has(stem)) return { key: '', flip: false };
+    const none = { key: '', flip: false };
+    if (pose !== 'walk' && !has(stem)) return none;
     if (dir === 'down') return { key: stem, flip: false };
     if (dir === 'right' && !has(of('right'))) {
       if (has(of('left'))) return { key: of('left'), flip: true };
-      return pose === 'work' ? { key: '', flip: false } : { key: stem, flip: false };
+      return pose !== 'walk' ? none : { key: stem, flip: false };
     }
     if (has(of(dir))) return { key: of(dir), flip: false };
-    return pose === 'work' ? { key: '', flip: false } : { key: stem, flip: false };
+    return pose !== 'walk' ? none : { key: stem, flip: false };
   }
 
   private faceFrame(frame?: number): void {
@@ -504,6 +958,18 @@ export class WorldScene extends Phaser.Scene {
         img.setAlpha(0.3);
         this.tweens.add({ targets: img, alpha: 0.6, duration: 800, yoyo: true, repeat: -1 });
       }
+      const cycle = this.campCycles.get(id);
+      if (cycle) {
+        cycle.active = built;
+        if (!built && cycle.frame !== 0) {
+          cycle.frame = 0;
+          img.setFrame(0);
+        }
+      }
+      const embers = this.embers.get(id);
+      if (embers) this.setEmitting(embers, built);
+      const glow = this.campGlows.get(id);
+      if (glow) glow.lit = built;
     }
     this.refreshNodes();
   }
@@ -521,9 +987,13 @@ export class WorldScene extends Phaser.Scene {
       const ready = this.ready(s, id);
       const inHours = !r.hours || (r.hours[0] < r.hours[1] ? hour >= r.hours[0] && hour < r.hours[1] : hour >= r.hours[0] || hour < r.hours[1]);
       // a gathered node lies flat and faded: the way over it is open
-      if (!ready && r.sprite_empty) img.setTexture(r.sprite_empty).setAlpha(0.8).setDepth(DEPTH.flat);
-      else if (!ready) img.setTexture(r.sprite).setAlpha(0.3).setDepth(DEPTH.flat);
-      else img.setTexture(r.sprite).setAlpha(inHours ? 1 : 0.55).setDepth(img.y);
+      const want = !ready && r.sprite_empty ? r.sprite_empty : r.sprite;
+      // the texture is set only when it changes, so a frame the sway picked stays
+      if (img.texture.key !== want) img.setTexture(want);
+      if (!ready && r.sprite_empty) img.setAlpha(0.8).setDepth(DEPTH.flat);
+      else if (!ready) img.setAlpha(0.3).setDepth(DEPTH.flat);
+      else img.setAlpha(inHours ? 1 : 0.55).setDepth(img.y);
+      this.nodeShadows.get(id)?.setAlpha(ready ? SHADOW_ALPHA : 0);
     }
     const reach = hintDistance(this.b, s.state);
     for (const [id, img] of this.digs) {
@@ -540,6 +1010,7 @@ export class WorldScene extends Phaser.Scene {
     this.fogs.forEach((fog, i) => (fog.tilePositionX += delta * (i % 2 === 0 ? 0.006 : -0.004)));
     this.mist.tilePositionX += delta * 0.002;
     this.mist.tilePositionY += delta * 0.0008;
+    this.animate(time, delta);
     this.placePinned();
     const s = this.session;
     if (!s || !s.started) {
@@ -555,9 +1026,137 @@ export class WorldScene extends Phaser.Scene {
       this.showSignatures(s);
     }
     this.walk(s, delta);
+    if (RICH.motion) this.idle(s, time);
     this.drawBusy(s, time);
     this.updatePrompt(s);
     this.haunt(s, time);
+  }
+
+  /**
+   * Everything that moves by itself, on the wall clock so it goes on through menus:
+   * frames stepping, blinks, glow flicker, the dapple drifting, the emit zones
+   * following the camera, birds now and then. Empty lists cost nothing.
+   */
+  private animate(time: number, delta: number): void {
+    for (const c of this.cycles) {
+      if (!c.active || time < c.next) continue;
+      c.next = time + c.min + (c.max > c.min ? Math.random() * (c.max - c.min) : 0);
+      const frames = this.b.sprites[c.spr.texture.key]?.frames ?? 1;
+      if (frames < 2) continue;
+      c.frame = (c.frame + 1) % frames;
+      c.spr.setFrame(c.frame);
+    }
+    for (const b of this.blinks) {
+      if (b.until > 0) {
+        if (time >= b.until) {
+          b.until = 0;
+          b.spr.setFrame(0);
+        }
+      } else if (time >= b.next) {
+        b.until = time + 120;
+        b.next = time + 3000 + Math.random() * 3000;
+        b.spr.setFrame(1);
+      }
+    }
+    if (this.glows.length > 0) {
+      const level = 0.9 * this.night;
+      for (const g of this.glows) {
+        if (!g.lit || level <= 0) {
+          if (g.img.alpha !== 0) g.img.setAlpha(0);
+          continue;
+        }
+        const flicker = 0.5 + 0.5 * Math.sin(time / 173 + g.phase) * Math.sin(time / 419 + g.phase * 1.7);
+        g.img.setAlpha(level * (0.8 + 0.2 * flicker));
+      }
+    }
+    for (const d of this.dapples) {
+      d.tilePositionX += delta * 0.003;
+      d.tilePositionY += delta * 0.0015;
+    }
+    this.zoneIn -= delta;
+    if (this.zoneIn <= 0) {
+      this.zoneIn = 250;
+      this.refreshZones();
+    }
+    if (RICH.motion) this.flyBirds(time);
+  }
+
+  /** The emit zones follow the camera, and an emitter whose patch left the screen rests. */
+  private refreshZones(): void {
+    const view = this.cameras.main.worldView;
+    this.viewRect.setTo(view.x - 8, view.y - 8, view.width + 16, view.height + 16);
+    const day = this.night < 0.5;
+    if (this.meadowZone && this.butterflies) {
+      this.meadowZone.refresh(view);
+      this.setEmitting(this.butterflies, day && this.meadowZone.count > 0);
+    }
+    if (this.groveZone && this.leaves) {
+      this.groveZone.refresh(view);
+      this.setEmitting(this.leaves, this.groveZone.count > 0);
+    }
+    for (const l of this.locals) this.setEmitting(l.emitter, Phaser.Geom.Rectangle.Overlaps(l.rect, this.viewRect));
+  }
+
+  private setEmitting(emitter: Emitter, on: boolean): void {
+    if (emitter.emitting === on) return;
+    if (on) emitter.start();
+    else emitter.stop();
+  }
+
+  /** One or two birds cross the view by day, every 20-40 s. */
+  private flyBirds(time: number): void {
+    if (time < this.nextBird) return;
+    this.nextBird = time + 20_000 + Math.random() * 20_000;
+    if (this.night >= 0.5) return;
+    const view = this.cameras.main.worldView;
+    if (view.width < T) return;
+    const flock = Math.random() < 0.5 ? 2 : 1;
+    const ltr = Math.random() < 0.5;
+    const y = Math.round(view.y + view.height * (0.1 + Math.random() * 0.3));
+    for (let i = 0; i < flock; i++) this.bird(view, ltr, y + i * 3, i);
+  }
+
+  /** A 3x2 silhouette flapping straight across the view, one whole pixel at a time. */
+  private bird(view: Phaser.Geom.Rectangle, ltr: boolean, y: number, i: number): void {
+    const x0 = ltr ? view.x - 8 - i * 6 : view.right + 8 + i * 6;
+    const x1 = ltr ? view.right + 8 : view.x - 8;
+    const img = this.add.image(x0, y, 'fx-bird-0').setDepth(DEPTH.motes + 1).setFlipX(!ltr);
+    const flap = this.time.addEvent({ delay: 140, loop: true, callback: () => img.setTexture(img.texture.key === 'fx-bird-0' ? 'fx-bird-1' : 'fx-bird-0') });
+    this.tweens.addCounter({
+      from: 0,
+      to: 1,
+      duration: (Math.abs(x1 - x0) / 28) * 1000,
+      delay: i * 250,
+      onUpdate: (tw) => img.setX(Math.round(x0 + (x1 - x0) * (tw.getValue() ?? 0))),
+      onComplete: () => {
+        flap.remove();
+        img.destroy();
+      },
+    });
+  }
+
+  /** Standing still for 3 s, the player blinks every 3-5 s: frame 1 of the idle sheet for 120 ms. */
+  private idle(s: Session, time: number): void {
+    const still = !this.move && !s.busy && !this.work && this.swingUntil === 0;
+    if (!still) {
+      this.idleSince = time;
+      this.blinkUntil = 0;
+      return;
+    }
+    if (this.blinkUntil > 0) {
+      if (time >= this.blinkUntil) {
+        this.blinkUntil = 0;
+        this.faceFrame();
+      }
+      return;
+    }
+    if (time - this.idleSince < 3000 || time < this.nextBlink) return;
+    this.nextBlink = time + 3000 + Math.random() * 2000;
+    const { key: k, flip } = this.playerFrame(s.facing, 'idle');
+    if (!k || (this.b.sprites[k]?.frames ?? 1) < 2) return;
+    this.player.setTexture(k, 1);
+    this.player.setFlipX(flip);
+    this.blinkUntil = time + 120;
   }
 
   private attract(delta: number): void {
@@ -580,6 +1179,7 @@ export class WorldScene extends Phaser.Scene {
       const [tx, ty] = this.move.to;
       this.player.setPosition(Math.round((fx + (tx - fx) * k) * T + T / 2), Math.round((fy + (ty - fy) * k + 1) * T));
       this.player.setDepth(Math.round((Math.max(fy, ty) + 1) * T + 1));
+      this.playerShadow?.setPosition(this.player.x, this.player.y + 2);
       this.faceFrame(k < 0.5 ? (this.steps % 2 === 0 ? 0 : 2) : undefined);
       if (k < 1) return;
       const carry = this.move.t - STEP_MS;
@@ -605,8 +1205,31 @@ export class WorldScene extends Phaser.Scene {
     const to: [number, number] = [s.pos[0] + dx, s.pos[1] + dy];
     if (!this.canWalk(s, to[0], to[1])) return false;
     this.steps++;
+    if (RICH.motion) this.puffAt(s.pos[0], s.pos[1]);
     this.move = { from: [s.pos[0], s.pos[1]], to, t: carry };
     return true;
+  }
+
+  /** A little dust at the feet as a step starts, in the colour of the ground left behind. */
+  private puffAt(x: number, y: number): void {
+    const tag = this.b.map.legend[this.b.map.ground[y]?.[x] ?? '']?.tag;
+    const texture =
+      tag === 'path' || tag === 'riverbank' || tag === 'town' ? 'fx-puff' : tag === 'meadow' || tag === 'grove' ? 'fx-leaf' : tag === 'ruin' ? 'fx-grit' : undefined;
+    if (!texture) return;
+    let emitter = this.puffs.get(texture);
+    if (!emitter) {
+      emitter = this.add
+        .particles(0, 0, texture, {
+          lifespan: { min: 240, max: 400 },
+          speed: { min: 5, max: 12 },
+          angle: { min: 230, max: 310 },
+          alpha: { start: 1, end: 0 },
+          emitting: false,
+        })
+        .setDepth(DEPTH.puff);
+      this.puffs.set(texture, emitter);
+    }
+    emitter.explode(texture === 'fx-leaf' ? 1 : 2 + Math.floor(Math.random() * 2), this.player.x, this.player.y - 1);
   }
 
   /** The kernel's rule, and a plant or stone that is ready stands in the way. */
@@ -650,9 +1273,14 @@ export class WorldScene extends Phaser.Scene {
     this.shade.setFillStyle(0x172a52, 0.5 * this.night);
     this.mist.setAlpha(0.08 + 0.16 * this.night);
     if (this.vignette) {
-      this.vignette.strength = 0.3 + 0.3 * this.night;
+      this.vignette.strength = 0.3 + (RICH.light ? 0.45 : 0.3) * this.night;
       this.vignette.radius = 0.8 - 0.15 * this.night;
     }
+    if (this.dusk) {
+      // gold over the valley around 20:00 and again around 05:30; the kernel's hours are untouched
+      this.dusk.setFillStyle(PALETTE.gold, 0.4 * Math.max(warmth(m, 20), warmth(m, 5.5)));
+    }
+    for (const d of this.dapples) d.setAlpha(0.08 * (1 - this.night));
     const isNight = this.night >= 0.5;
     if (isNight !== this.wasNight) {
       const flipped = this.wasNight !== undefined;
@@ -1036,6 +1664,7 @@ export class WorldScene extends Phaser.Scene {
     const zoom = Math.max(2, Math.min(6, Math.floor(Math.min(w / (15 * T), h / (10 * T)))));
     this.cameras.main.setZoom(zoom);
     this.shade.setSize(w, h);
+    this.dusk?.setSize(w, h);
   }
 
   /** Where a tile is on the page, for UI that points at the world. */
@@ -1073,4 +1702,60 @@ function key(x: number, y: number): string {
 /** "core/base-kit:props/standing_stone" -> "standing stone" */
 function spriteName(ref: string): string {
   return (ref.split('/').pop() ?? ref).replace(/_/g, ' ');
+}
+
+/** "core/base-kit:props/standing_stone" -> "standing_stone" */
+function baseName(ref: string): string {
+  return ref.split('/').pop() ?? ref;
+}
+
+/** "core/base-kit:props/standing_stone" -> "core/base-kit:" */
+function kitOf(ref: string): string {
+  return ref.slice(0, ref.indexOf(':') + 1);
+}
+
+/** 1 within half an hour of the centre, falling to 0 over the next 45 minutes on either side. */
+function warmth(hour: number, centre: number): number {
+  return Math.max(0, Math.min(1, 1 - Math.max(0, Math.abs(hour - centre) - 0.5) / 0.75));
+}
+
+/**
+ * Rectangles covering the grove and forest tiles, in world pixels: each is grown right
+ * then down over tiles not yet covered, and only the roomy ones (six tiles or more,
+ * at most twenty) are kept - a few large patches are enough for a layer of light.
+ */
+function groveRects(map: Bundle['map']): Phaser.Geom.Rectangle[] {
+  const w = map.width;
+  const h = map.height;
+  const grove = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (map.legend[map.ground[y]?.[x] ?? '']?.tag === 'grove') grove[y * w + x] = 1;
+    }
+  }
+  const used = new Uint8Array(w * h);
+  const free = (x: number, y: number) => grove[y * w + x] === 1 && used[y * w + x] === 0;
+  const rects: Phaser.Geom.Rectangle[] = [];
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (!free(x, y)) continue;
+      let rw = 0;
+      while (x + rw < w && free(x + rw, y)) rw++;
+      let rh = 1;
+      while (y + rh < h) {
+        let whole = true;
+        for (let k = 0; k < rw; k++) {
+          if (!free(x + k, y + rh)) {
+            whole = false;
+            break;
+          }
+        }
+        if (!whole) break;
+        rh++;
+      }
+      for (let yy = y; yy < y + rh; yy++) for (let xx = x; xx < x + rw; xx++) used[yy * w + xx] = 1;
+      if (rw * rh >= 6) rects.push(new Phaser.Geom.Rectangle(x * T, y * T, rw * T, rh * T));
+    }
+  }
+  return rects.sort((a, b) => b.width * b.height - a.width * a.height).slice(0, 20);
 }
