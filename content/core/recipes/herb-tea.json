@@ -12,6 +12,8 @@
       "description": "The elder swears by it.",
       "kind": "food",
       "rarity": "common",
+      "class": "meal",
+      "tier": 1,
       "sprite": "core/base-kit:items/herb-tea",
       "food": {
         "satiety": 10

@@ -12,6 +12,9 @@
       "description": "Comes up in the cool hours, from evening to mid-morning.",
       "kind": "food",
       "rarity": "uncommon",
+      "class": "plant",
+      "family": "mushroom",
+      "tier": 1,
       "sprite": "core/base-kit:items/mushroom",
       "food": {
         "satiety": 3

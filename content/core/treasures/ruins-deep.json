@@ -12,6 +12,8 @@
       "description": "Small, heavy, and older than the town.",
       "kind": "treasure",
       "rarity": "rare",
+      "class": "relic",
+      "tier": 1,
       "sprite": "core/base-kit:items/stone-idol"
     }
   ],

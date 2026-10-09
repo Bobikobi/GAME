@@ -185,6 +185,11 @@ what it looks like in the valley.
 | `gamble` | Takes a known risk for a rare find. | "Lucky me." | Thrill, variable reward | Fallout's luck | A dig spot with one rare find in five; luck changes the odds. |
 | `persuasion` | Asks the right question or brings the right fact. | "I talked my way in." | Relatedness, autonomy | Fallout's speech checks; The Witcher 3's talks | The trade opens only after the player asks Pell about the mist. |
 | `errand` | Repeats a known task for a known pay. | "Easy coins." | Routine, easy fun | Skyrim's radiant quests; The Witcher 3's notice boards | Pell's standing order for herbs, marked as an errand, only after the main beat (G4). |
+| `maze` | Finds the way through a place whose shape is the question: dead ends, a landmark seen over the trees, a sign that tells the right turn. | "I found the way." | Competence, autonomy (the route is the player's own) | The Lost Woods in Zelda (the route is read from the world, a wrong turn sends you back); Tunic (paths hide in plain sight until a page shows them) | A tangle of forest beyond the ruins, drawn in the map alone: dead ends that cost a walk back, one landmark over the canopy, the moss side of the trunks for the player who looks; the step is a `visit` of the clearing at its heart, nothing new in the kernel. |
+| `stealth` | Passes a hazard unseen: learns its loop, waits for the window, takes the route it does not watch. | "It never saw me." | Thrill, competence | Breath of the Wild's Yiga hideout (a walked loop with a window to cross); Untitled Goose Game (being seen costs a retreat, never a life) | The wolf's round at night, over G30-G35: a loop the player learns by its eyes in the dark, reeds and shadow that hide the player, light and the road as the way out when it fails; seen means a chase and the walk back to the fire, never a fight (G35). Waits for the hazard system (P-5). |
+
+`maze` and `stealth` entered on 9.10 by the owner's word (DECISIONS.md); each
+joins `quest.type` with its first quest, and the schema's count follows.
 
 ### Dialogue and voice
 
@@ -323,12 +328,57 @@ The valley has no combat; its danger is the hour, and what the player eats.
 - **G37 An expedition is never the only road.** The valley by day goes on
   without it; an expedition opens places sooner, never alone.
 
+### Crafting
+
+The owner's words of 2026-10-09 (DECISIONS.md, the crafting entries of that
+day); the audit behind them is `docs/design/CRAFTING_AUDIT.md`.
+
+- **G38 Crafting is a road, not the road.** A player who never crafts
+  progresses by the roads already written: hard quests, treasure and digging,
+  riddles, mastery of the minigames, the expedition and reputation, fenced by
+  a profession or character level where a road needs it. War, theft and
+  robbery stay out (G35, G28).
+- **G39 Power is never sold.** No crafted ability, recipe, material or tool is
+  sold or gated for money or premium currency. Only a look item with no
+  effect may carry the premium marker, and it keeps a way to get it in the
+  game.
+- **G40 A craft can miss, and a miss keeps something.** Skill decides the
+  chance and luck only tilts it; a miss is never nothing (G15). The value
+  table prices a recipe at perfect execution, and luck closes the gap to that
+  output without passing it (R9).
+- **G41 Two ladders.** The tier says how advanced a thing is, the rarity how
+  often it appears. A recipe climbs one tier at a time, at a station of its
+  tier and at a level inside the tier's band. From tier 3 up a thing comes
+  only from a gated source - a level gate (the node's, or the band of the
+  recipe that makes it), a slow respawn, a find table or a quest reward - and
+  no shop sells it.
+- **G42 Rare is capacity and gates, never a timer.** How many nodes, how
+  slowly they return, their hours, the level and the tool they ask, the find
+  tables. Waiting is never paid (R6), no event timer or "last chance" makes a
+  thing rare (G28), and the rarity bonuses of the whole world share one
+  budget.
+- **G43 A long recipe is a chain of short steps.** Intermediate things made at
+  stations, one tier per station step, every action inside the action cap.
+  The journal shows the question, not the whole chain (G3).
+- **G44 Worn things help work, a little.** A hat, a top, trousers or one full
+  outfit, shoes, two pieces of jewelry and the tool in hand. Each gives a
+  small bonus to gathering or crafting from the closed list of effects, a full
+  set a little more, all through the one calculator under the level's power
+  cap; nothing raises the output of a craft (R9). A look layer sits on the
+  same slots, apart. A weapon waits for combat (G35).
+- **G45 New materials join old recipes.** Every item names a class and a
+  tier, and a recipe template asks for a class, so a new herb works in an old
+  recipe. Extensions add items, classes under a base class, recipes,
+  templates, resources, treasures, camps with an existing station and quests;
+  a new verb, station, profession, effect or parameter comes in a core
+  release. Metal waits for its discovery.
+
 ### What this page covers, and what lives elsewhere
 
 | Topic | Where | State |
 |---|---|---|
 | The opening and onboarding | [FTUE_RESEARCH.md](../FTUE_RESEARCH.md) | Written; roadmap phases 2 and 3 open. |
-| Loop and hook, quests, riddles, reading, builds, choices, feel, session, variety, dialogue, sound, fairness, access, danger, expeditions | This page | Rules G1-G37. |
+| Loop and hook, quests, riddles, reading, builds, choices, feel, session, variety, dialogue, sound, fairness, access, danger, expeditions, crafting | This page | Rules G1-G45. |
 | Economy and balance | The kernel rules R1-R11, `content/core/params.json`, `pnpm values` | Enforced by code. |
 | Art and sprites | [docs/creators/README.md](../creators/README.md) | Enforced by the kit check. |
 | Community: requests, votes, merges, conduct | [CONTRIBUTING.md](../../CONTRIBUTING.md), [docs/loop/README.md](../loop/README.md) | Live. |
@@ -456,6 +506,12 @@ test stays with the checklist above.
 | G30 | A hunting hazard (predator, pit, trap, deep water) inside a safe area or with no window (`night`, `mist`); a bad fruit or herb needs none. | needs hazard props (P-5) |
 | G34 | A hazard with neither a bought nor a made answer in the content. | needs P-5 |
 | G36 | An expedition with two problems of one type in a row, or a hazard its window does not cover. | needs the `expedition` kind (P-6) |
+| G41 | An item with no class or tier, or a tier the world has not opened; an output more than one tier above its highest input; a recipe level outside its tier's band; no camp part giving the recipe's station at its tier; no craft profession for the recipe; from tier 3 up, a node with neither the tier's level nor a slow respawn, or a shop that sells it. | error |
+| G42 | The rarity bonuses of the merged world over `rarity_budget_permille` (kernel review 8.2). | error |
+| G45 | A class that is neither a base class nor declared under one; a metal item or a class under metal; a recipe template that fits nothing, has no class input, or fits more than `template_max_recipes` combinations. | error |
+| G39 | The premium marker on anything but a look item with no effect. | needs the look layer |
+| G40 | A craft with no miss outcome, or a miss that keeps nothing. | needs the craft chance in the kernel |
+| G44 | A worn bonus outside the closed effects or over its cap. | needs worn items |
 
 Since P-2 (8.10) G2 counts `find` and `riddle` steps as beats, a `find` may name what
 only digging gives or what one timed plant gives (P-3), and G8 checks each

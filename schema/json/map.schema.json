@@ -127,6 +127,93 @@
               }
             ]
           },
+          "class": {
+            "description": "A base class (plant, wood, fibre, ...) or the id of a class an extension declares under one of them.",
+            "anyOf": [
+              {
+                "const": "plant",
+                "type": "string"
+              },
+              {
+                "const": "wood",
+                "type": "string"
+              },
+              {
+                "const": "fibre",
+                "type": "string"
+              },
+              {
+                "const": "stone",
+                "type": "string"
+              },
+              {
+                "const": "clay",
+                "type": "string"
+              },
+              {
+                "const": "mineral",
+                "type": "string"
+              },
+              {
+                "const": "metal",
+                "type": "string"
+              },
+              {
+                "const": "animal",
+                "type": "string"
+              },
+              {
+                "const": "meal",
+                "type": "string"
+              },
+              {
+                "const": "tool",
+                "type": "string"
+              },
+              {
+                "const": "garment",
+                "type": "string"
+              },
+              {
+                "const": "jewelry",
+                "type": "string"
+              },
+              {
+                "const": "relic",
+                "type": "string"
+              },
+              {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              }
+            ]
+          },
+          "family": {
+            "pattern": "^[a-z0-9_-]+$",
+            "maxLength": 24,
+            "description": "A group inside the class, for example \"berry\" for every berry. Open: any lowercase word.",
+            "type": "string"
+          },
+          "tags": {
+            "maxItems": 8,
+            "uniqueItems": true,
+            "description": "Open words that describe it, for example \"sweet\" or \"night\".",
+            "type": "array",
+            "items": {
+              "pattern": "^[a-z0-9_-]+$",
+              "maxLength": 24,
+              "description": "A lowercase word.",
+              "type": "string"
+            }
+          },
+          "tier": {
+            "minimum": 1,
+            "maximum": 20,
+            "description": "How advanced it is, from 1. The rarity says how often it appears; the tier says how far up the ladder it is. A tool has the tier of its \"tool\".",
+            "type": "integer"
+          },
           "sprite": {
             "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
             "maxLength": 120,
@@ -198,6 +285,96 @@
                 "type": "string"
               }
             }
+          }
+        }
+      }
+    },
+    "classes": {
+      "maxItems": 10,
+      "description": "Classes of your own, each under one base class.",
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "description": "A class of your own, declared under one base class. Every rule written for the base class holds for it.",
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "base"
+        ],
+        "properties": {
+          "id": {
+            "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+            "maxLength": 80,
+            "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+            "type": "string"
+          },
+          "name": {
+            "minLength": 1,
+            "maxLength": 40,
+            "type": "string"
+          },
+          "base": {
+            "description": "plant (leaves, herbs, berries, fruit, roots, mushrooms), wood, fibre (reeds, grass, thread, cloth), stone, clay (clay, sand, pottery, brick), mineral (crystals, gems, salt, ore), metal (waits for its discovery), animal (feathers, wool, hide, bone), meal (cooked food), tool, garment (worn clothes), jewelry, relic (old things from the ruins).",
+            "anyOf": [
+              {
+                "const": "plant",
+                "type": "string"
+              },
+              {
+                "const": "wood",
+                "type": "string"
+              },
+              {
+                "const": "fibre",
+                "type": "string"
+              },
+              {
+                "const": "stone",
+                "type": "string"
+              },
+              {
+                "const": "clay",
+                "type": "string"
+              },
+              {
+                "const": "mineral",
+                "type": "string"
+              },
+              {
+                "const": "metal",
+                "type": "string"
+              },
+              {
+                "const": "animal",
+                "type": "string"
+              },
+              {
+                "const": "meal",
+                "type": "string"
+              },
+              {
+                "const": "tool",
+                "type": "string"
+              },
+              {
+                "const": "garment",
+                "type": "string"
+              },
+              {
+                "const": "jewelry",
+                "type": "string"
+              },
+              {
+                "const": "relic",
+                "type": "string"
+              }
+            ]
+          },
+          "description": {
+            "minLength": 1,
+            "maxLength": 240,
+            "type": "string"
           }
         }
       }
