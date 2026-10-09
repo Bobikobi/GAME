@@ -401,7 +401,7 @@ The question (a review of open product direction, 9.10): the owner spoke of buyi
 - No combat now. A stage in between, without fighting, is right, but not gear against a hazard: no "stronger lantern". A player escapes a predator by running back to town, and that run is hard and possible.
 - The night carries the danger through its work. An example to develop: a night by a campfire that must be kept burning with branches, with more layers on top so it stays interesting. It fits the tending beat of the night expedition (8.10).
 - Guarding a settlement is a quest that players choose to take together, never a duty that decays while nobody plays (G28).
-- Quests come from a large pool matched to the player's character and levels, each started by talking to a character in the world, as in Pokemon or Skyrim. Next to them stand fixed quests like the seasons of current games; how a season keeps clear of a "last chance" (G28, G42) is still open.
+- Quests come from a large pool matched to the player's character and levels, each started by talking to a character in the world, as in Pokemon or Skyrim. Next to them stand fixed quests like the seasons of current games; how a season keeps clear of a "last chance" (G28, G42) was answered the same day: what a season adds stays (the entry on seasons below).
 - A group quest can be played alone or together, as Grand Theft Auto offers solo and co-op. Alone, the chance is low, since the quest is made for a group. Later the valley's characters may fill a group: only a character the content marks for it (by default none), at a level that fits the quest. A partner below that level falls and goes back to where it lives.
 - Later, when combat comes: a group may take a quest to guard a town or a fort, and a rival group may sign up together to attack it. Both sides choose to play it, and nothing is taken from a player who is away, so the morning's entry on war, theft and robbery ("Crafting is optional") holds until then.
 
@@ -632,3 +632,16 @@ The owner's word (9.10, with the answer on boards): the general task of the play
 
 **Closes:** no row; it sets what the next questions serve.
 **Retry when:** playtests show players settling in town and no longer going out. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ A season adds to the world, and what it adds stays
+
+The question (9.10): the spec makes a season a few weeks with a seasonal discovery, a seasonal collection challenge and a title that stays on the character, and opens the first one at stage 4. A discovery that vanished at the season's end would be the "last chance" G28 and G42 forbid, which the entry on combat and group quests left open the same day. The recommendation: a season opens a chapter that stays, and only the season's board closes. The owner's word (9.10): yes, and a season is not only an area: it may add quests, characters, quests in the world that already exists, even another cellar in a house, or the seasons of the year, holidays and the like.
+
+- A season adds content of any kind: an area, quests, characters, quests for the places and characters already in the world, a new part for a house such as a cellar, recipes, finds. What it adds stays in the world for good, and a player who comes later plays all of it.
+- Only the season's board closes at its end. Those who stood out in it keep a title with the season's name: honor with no use, and the one thing that cannot be had after the season, as a board's rank cannot. The spec's sponsor prizes ride on that board.
+- A season's content names the season that brought it, for the board's season filter and the journal, and never carries an end date. A new part for a house follows the house's own rules (`docs/design/SETTLEMENT.md`): built in steps, by choice, and never a duty.
+- The seasons of the year and the holidays are a question of their own (asked next): whether they follow the real calendar or the valley's own.
+- Seasons serve exploring, the players' common task (the entry above): each one leaves more of the world to find.
+
+**Closes:** the open line on seasons in the entry on combat and group quests; GRUNT's open ends carry the guard as CR-41.
+**Retry when:** the first season shows players who missed it feeling locked out, or a season adds nothing to explore. Model: claude-opus-5-5.
