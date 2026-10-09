@@ -11,6 +11,7 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 - A player without a property lives on the street, since outside the town is more dangerous: danger by area, more common where the area's level is higher. Is an internal difficulty rating needed, and should it be exponential?
 - Guarding a settlement is a quest players choose. A group quest is made for a group: alone, the chance is low. Later the valley's characters may join a group, only those fit for it (by default none) and at a fitting level; one below it falls and goes home.
 - With combat, later: a group holds a town or a fort, and a rival group signs up to attack it.
+- On absence (question S1): yes to a hold only in a shared town and to a clock between steps, but absence has a price. A builder who is slow between steps needs a rule, so does an owner who has not played for weeks, and a player about to lose a place hears of it by mail first. Registration is minimal and comes after the opening.
 
 ## 2. What exists today and stays
 
@@ -35,8 +36,10 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 - Claiming: the first player whose first step on a free plot the server accepts holds it. The first step pays the plot's price in gold, which is burned, and makes the first delivery.
 - One plot in `building` per player at a time, and one house per player to start (a reading; a later stage may allow more, with an upkeep that grows with the number held).
 - Building is an ordered chain of steps. A step is a delivery to the plot or a quest from the palette (gather, find, riddle, tend and the rest). A finished step changes what stands on the plot: a frame, walls, a roof, a door. The builder leaves between steps, and nothing on the plot decays while it is held.
-- Lapse (question S1): when no step is finished for `build_hold_days`, the plot returns to `free`, and the holder gets back `build_refund_pct` of the price and of each delivered item, rounded down as a craft miss is, through the ledger with the reason `refund`.
-- A finished house stays with its owner (question S1).
+- Lapse: when no step is finished for `build_hold_days` (14 to start), the plot returns to `free`. The clock runs whether the builder is away or plays without building, so a slow builder and an absent one meet the same rule (S1). The builder gets back every delivered item and `plot_refund_permille` of the price (question S1b) through the ledger with the reason `refund`; the rest of the price stays burned. The quests of the finished steps keep the rewards they paid.
+- A step fits in the hold (a reading): the checker refuses a step whose value is above `step_value_max_ms`, two hours of the reference player's effort to start, so a lapse comes from the builder's pace and never from the chain.
+- Packing (question S1b): when an owner has not played for `house_absent_days`, the house is packed. The plot returns to `free` with `plot_refund_permille` of its price; the house and everything in it stay the owner's, and the owner raises it again on any free plot by paying that plot's price, with no step to redo.
+- A lapse or a packing is announced first (3.8), and a player who comes back is told on screen what happened while away.
 
 ### 3.3 Supply
 
@@ -67,12 +70,19 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 - Guarding a town or a fort is a quest players choose. Nothing decays and nothing is lost when nobody takes it (G28).
 - With combat (stage 8 or a vote): a group may take a quest to hold a place, and a rival group may sign up to contest it. Both sides sign up, and nothing is taken from a player who is away.
 
+### 3.8 Notices and the account
+
+- Registration is minimal and comes after the opening (the owner, 9.10). Read as: an email address and the name the world shows, asked when the opening ends and never before play. Accounts begin at stage 2a; the stage-1 demo has none.
+- The game mails a player only when something the player holds in a shared town is about to return to the town: one mail per hold, `notice_days` before its end (3 for a building and 7 for a house, to start). The mail names what returns, what stays with the player, and the date.
+- A mail never asks the player back for anything else, never offers a reward and is never repeated. A player may turn the mails off; the screen then tells alone.
+
 ## 4. Where these meet the rules already written
 
 | Rule already written | What meets it | Proposal |
 |---|---|---|
-| G28: the valley waits; no timer runs out while the player sleeps | A held plot lapses while its holder is away | S1: only in a shared town, a long hold between steps, a full refund |
-| Pillar 5: effort is never wasted | A lapse loses the building's progress | S1: the price and the materials come back; the quests already paid their rewards |
+| G28: the valley waits; an absence is never punished | A held plot lapses, and a long-absent owner's house is packed | S1 (answered in part): a written exception for scarce shared places only; what it costs is S1b. G28's text gains the exception when S1b is answered |
+| G28: no "last chance"; the drives of loss and avoidance it refuses | A mail before a place returns to the town | Read as: a notice of a real date for a real place, once per hold; it sells nothing and offers nothing |
+| Pillar 5: effort is never wasted | A lapse loses the building's progress | S1b: every delivered item comes back, the finished steps' quests keep their rewards, and a finished house is packed, never destroyed |
 | 8.10: the camp is safe at every hour | "Outside the town is more dangerous"; the street | S2 |
 | 6.10 (kernel review 7.2, D6): the world stays cooperative until there is a community | First come for plots; rival groups later | S4 |
 | G42: rare is capacity and gates, never a timer | Places open gradually | Read as: by work (mending, clearing quests), never by date |
@@ -81,16 +91,21 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 | 9.10: war, theft and robbery stay out | A rival group attacks a fort | Consistent: only with combat, both sides signed up, nothing taken from a player who is away |
 | Spec stage 4: houses and rent | Places bought with gold | Read as: a plot is bought once; letting a house to another player stays a stage-4 item |
 | Stages 2a and 3: each player in their own world | Scarce plots in a shared town | Read as: the own valley stays the player's; scarcity starts with the shared world |
+| 6.10 (kernel review, D3): nothing carries from the stage-1 demo into an account | Registration after the opening | Consistent: accounts begin at stage 2a and the demo keeps none. How the opening played before registering moves into the new account belongs to stage 2a's design (server-decided saves) |
 
 ## 5. Open questions, in the order they are asked
 
-**S1. Absence in a shared town.** A held plot that lapses while its holder sleeps is the timer G28 forbids, and a lapse throws away progress (pillar 5). Recommended: the lapse exists only in a shared town, as a stated exception to G28 for scarce shared places. The hold counts the days between two finished steps (14 to start). A lapse returns the full price and every delivered item, so only the place is lost. A finished house is never taken for absence, and scarcity is answered by the plots that work opens (3.3).
+**S1. Absence in a shared town.** A held plot that lapses while its holder sleeps is the timer G28 forbids, and a lapse throws away progress (pillar 5). Answered in part (9.10): yes to a hold only in a shared town, as a written exception to G28, counted between steps, with scarcity answered by the plots that work opens (3.3). But absence has a price: a slow builder needs a rule, so does an owner who has not played for weeks, and a mail comes first (3.2, 3.8).
+
+**S1b. What absence costs** (asked 9.10). Recommended: a building with no finished step for 14 days returns to the town with every delivered item and 80% of the plot's price. A house whose owner has not played for 45 days is packed: its plot returns with the same 80%, and the house and its contents stay the owner's, to raise again on any free plot without redoing a step. One mail comes before each, 3 days before for a building and 7 for a house. Absence then costs the place and a fifth of its price, never what the player made. Final Fantasy XIV frees a house plot after 45 days without a visit by its owner and refunds 80% of the plot's price, but it tears the house down.
 
 **S2. The camp and the street.** Today the camp is safe at every hour and holds a chest: it is already the home of a player without a house. Recommended: safety comes from the town or from a burning fire. The town is safe at every hour. Outside it a camp is safe only while its fire burns, and keeping it burning through a night is the task (the owner's campfire idea becomes the rule). Deeper areas eat more wood, and an area of level 0 needs almost none, so the camp of the opening stays as it is today. The street is the free and safe place in town; a house adds storage, a full rest and a window to sell from.
 
 **S3. The internal difficulty scale.** Recommended: yes, one internal scale for areas, quests and recipes. Each step multiplies effort and danger by a fixed ratio (1.5 to start), while the hazards' frequency grows by one step per level. It never shows on screen.
 
 **S4. Cooperative or competitive.** The 6.10 decision kept the world cooperative and put ownership and conquest back on the table only when there is a community; first come for plots and rival groups bring competition in. Recommended: competition only for places, and with combat, contests that both sides sign up for; a safe core where nothing can be taken. Reserve now, while each is one schema field, what the kernel review listed in 7.2: a controller on places, an area's danger and protection level, ledger reasons for price, refund and upkeep, and an upkeep that grows with holdings.
+
+**S5. Who gets a plot that work opens.** First come at the moment a plot opens favours whoever is online then, and a script most of all. Recommended: the players of the clearing quest that opened it claim first, for 3 days; then first come.
 
 ## 6. What can come before the shared world
 

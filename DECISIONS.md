@@ -390,3 +390,26 @@ How these become rules, and where they meet rules already written (G28's "the va
 
 **Closes:** nothing yet.
 **Retry when:** the plan's questions are answered, or stage 4 brings a shared world state. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ In a shared town absence has a price, and a mail comes first
+
+The question (settlement plan S1, 9.10): a plot that lapses while its holder sleeps is the timer G28 forbids, and losing a building's progress meets pillar 5. The recommendation was a lapse only in a shared town, counted between steps, with the full price and every delivered item returned and a finished house never taken. The owner's word (9.10): almost. Yes to the exception for a shared town and to the clock between steps, but absence has a price:
+
+- A player about to lose a place gets an email first. Registration is minimal and comes after the opening (the next entry).
+- An owner who has not played for weeks needs a rule too.
+- So does a builder who takes a long time between steps.
+
+As rules in `docs/design/SETTLEMENT.md` (3.2 and 3.8): the clock between steps runs whether the builder is away or slow; an owner long away has the house packed; one mail per hold comes before it ends, and no mail asks the player back for anything else. What a lapse and a packing cost is question S1b, asked the same day; the recommendation is the place and a fifth of its price, never what the player made. G28's text in `docs/design/GAME_RULES.md` gains the exception when S1b is answered.
+
+**Closes:** nothing yet.
+**Retry when:** the owner answers S1b. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ An account asks for little, and only after the opening
+
+The owner's word (9.10), given with the answer on absence: registration is minimal, and it comes after the opening.
+
+Read as: an email address and the name the world shows, asked when the opening ends and never before play. Accounts begin at stage 2a; the stage-1 demo keeps none, and the 6.10 decision that nothing carries from the demo stands. The address serves the account and the notices of `docs/design/SETTLEMENT.md` 3.8, nothing else.
+
+**Opens for stage 2a:** a privacy text and the youngest age that may register, both before the first address is collected; a mail service for the notices; how the opening played before registering moves into the new account under server-decided saves.
+**Closes:** nothing.
+**Retry when:** stage 2a is designed. Model: claude-opus-5-5.
