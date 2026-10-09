@@ -12,6 +12,8 @@
       "description": "Smooth and heavy. Good for mending.",
       "kind": "material",
       "rarity": "common",
+      "class": "stone",
+      "tier": 1,
       "sprite": "core/base-kit:items/stone"
     }
   ],

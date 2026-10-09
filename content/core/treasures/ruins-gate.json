@@ -12,6 +12,9 @@
       "description": "Blue and white, from a bowl nobody remembers.",
       "kind": "material",
       "rarity": "common",
+      "class": "clay",
+      "family": "pottery",
+      "tier": 1,
       "sprite": "core/base-kit:items/pottery-shard"
     },
     {
@@ -20,6 +23,9 @@
       "description": "The face on it is worn away.",
       "kind": "treasure",
       "rarity": "uncommon",
+      "class": "relic",
+      "family": "coin",
+      "tier": 1,
       "sprite": "core/base-kit:items/old-coin"
     },
     {
@@ -28,6 +34,9 @@
       "description": "Half a recipe, in faded ink. Read it to learn it.",
       "kind": "fragment",
       "rarity": "uncommon",
+      "class": "relic",
+      "family": "scrap",
+      "tier": 1,
       "sprite": "core/base-kit:items/stew-scrap",
       "fragment": {
         "unlocks": "core/herb-stew"

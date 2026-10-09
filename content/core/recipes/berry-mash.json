@@ -12,6 +12,8 @@
       "description": "Warm and filling.",
       "kind": "food",
       "rarity": "common",
+      "class": "meal",
+      "tier": 1,
       "sprite": "core/base-kit:items/berry-mash",
       "food": {
         "satiety": 15

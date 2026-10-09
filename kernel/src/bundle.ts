@@ -5,6 +5,7 @@
  */
 import type {
   Camp,
+  ClassDef,
   CreatorProfile,
   GameMap,
   ItemDef,
@@ -30,9 +31,12 @@ export interface Meta {
 }
 
 export type ItemInfo = ItemDef & { creator: string; file: string };
+/** A class an extension declares under a base class (DECISIONS.md, 2026-10-09). */
+export type ClassInfo = ClassDef & { creator: string; file: string };
 export type ResourceDef = Meta & Resource;
 export type TreasureDef = Meta & Treasure;
-export type RecipeDef = Meta & Recipe;
+/** `template`: the recipe template the assembler expanded this recipe from. */
+export type RecipeDef = Meta & Recipe & { template?: string };
 export type NpcDef = Meta & Npc;
 export type QuestDef = Meta & Quest;
 export type RestoreDef = Meta & Restore;
@@ -51,6 +55,12 @@ export interface Params {
   power_cap_permille: number[];
   rarity_budget_permille: number;
   rarity_bonus_ms: Record<RarityName, number>;
+  /** the highest item tier the world has opened */
+  open_tiers: number;
+  /** the lowest level of each tier's band, from tier 1 */
+  tier_min_level: number[];
+  /** the most recipes one recipe template may make */
+  template_max_recipes: number;
   drift_budget_permille: number;
   satiety_cap: number;
   satiety_drain_per_min: number;
@@ -101,6 +111,8 @@ export interface Bundle {
   tag: string;
   params: Params;
   items: Record<string, ItemInfo>;
+  /** Classes declared by extensions, by id. The base classes are fixed in the schema. */
+  classes: Record<string, ClassInfo>;
   resources: Record<string, ResourceDef>;
   treasures: Record<string, TreasureDef>;
   recipes: Record<string, RecipeDef>;
