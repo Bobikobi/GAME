@@ -658,7 +658,7 @@ What other games do, as read for this answer. A day: Stardew Valley about 14 min
 - The date comes from the server once accounts exist. In the demo it comes from the device, where turning the clock gains nothing that lasts, since nothing from the demo passes to an account. The date enters the kernel as an input recorded with the actions, so a replay gives the same result.
 - Each season gives the expansions a general theme. The theme invites and never gates: an expansion off the theme still lands by the same rule, as the spec has it for open calls, where nobody is bound and nobody blocks.
 - The world deepens all the time: expansions land as often as the creators make them and they pass the check, several times a week as an aim. What lands stays (the entry on seasons above), and every change to the schema stays additive, so a saved game always loads.
-- Open, asked one at a time: whether a thing may exist in one season of the year only (answered the same day, the entry below), which half of the globe the seasons follow (answered the same day, the entry on the halves of the globe), and how long a content season runs (the spec says a few weeks; most games run about three months).
+- Open, asked one at a time: whether a thing may exist in one season of the year only (answered the same day, the entry below), which half of the globe the seasons follow (answered the same day, the entry on the halves of the globe), and how long a content season runs (the spec says a few weeks; most games run about three months; answered the same day, the entry on a season's length).
 
 **Closes:** the calendar, in part; GRUNT's open ends carry the building as CR-42.
 **Retry when:** players in the south or of another culture find the year strange, or creators cannot keep up with a season's theme. Model: claude-opus-5-5.
@@ -688,3 +688,16 @@ The question (9.10): with the real year, the south has summer while the north ha
 
 **Closes:** the second of the calendar's open questions; GRUNT's CR-42 now carries it.
 **Retry when:** a shared world's players split between the halves, or players find their valley's seasons wrong. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ A content season runs a quarter of the year under its theme's name
+
+The question (9.10): the spec makes a season a few weeks; Fortnite, Destiny, Sea of Thieves and Pokemon GO run about three months. The recommendation: three months, a quarter of the real year, named by its theme, the theme announced a month ahead, the season's board reset each quarter, and expansions landing every week inside it. The owner's word (9.10): yes.
+
+- A content season runs a quarter of the real year. Its name is its theme, never winter or summer, since the halves of the globe see opposite seasons (the entry on the halves of the globe).
+- Its theme is announced a month before it opens, so creators have time to build to it. This is the fixed date the spec gives creators to build around.
+- The season's board resets each quarter (the boards entry); what the season added stays (the entry on seasons).
+- Expansions keep landing every week inside a season, as often as creators finish them and they pass the check.
+- This changes the spec's "a few weeks". The spec's sponsor model rides on the season, now four a year.
+
+**Closes:** the last of the calendar's open questions; GRUNT's CR-41 now carries it.
+**Retry when:** creators run out of a theme before its quarter ends, or players tire of one theme. Model: claude-opus-5-5.
