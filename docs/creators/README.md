@@ -94,6 +94,8 @@ Every item names a `class` and a `tier`, so recipes can ask for a kind of materi
 - `family` and `tags` - optional open words: `"family": "plum"`, `"tags": ["sweet", "night"]`.
 - `tier` - how advanced it is, from 1; a first material is tier 1, and a tool has the tier of its `tool`. The world has opened tiers 1 to 3 (`open_tiers` in the params). The tier is a different ladder from the rarity: the rarity says how often a thing appears, the tier how far up it is.
 
+Players read these words too. The item detail shows the class, the family and the tier, for example "Plant (plum), tier 1"; the journal lists items under a heading per class, with a row per family; and a recipe shows the class and tier of what it makes. A base class shows as its word and a class of your own by its `name`, so name a family in a word a player would use.
+
 Recipes climb one tier at a time. A recipe's tier is the highest tier among its outputs, and:
 
 - no output is more than one tier above the highest tier among the inputs;

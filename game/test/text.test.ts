@@ -1,7 +1,19 @@
 import { beforeAll, describe, expect, test } from 'vitest';
 
 import { type Bundle, type State, mulDiv, newState, payFor, step } from '@game/kernel';
-import { hudUnlocks, itemBenefit, sellable, stationUpgrades, wornAt } from '../src/text';
+import {
+  bagGroups,
+  classLine,
+  className,
+  hudUnlocks,
+  itemBenefit,
+  journalGroups,
+  sellable,
+  stationGate,
+  stationText,
+  stationUpgrades,
+  wornAt,
+} from '../src/text';
 import { loadBundle } from '../../tools/test/helpers/world';
 
 let bundle: Bundle;
@@ -130,5 +142,125 @@ describe('station upgrades', () => {
     expect(stationUpgrades(bundle, s, 'workshop')).toEqual(['core/workshop']);
     s.player.camp = ['core/campfire', 'core/workshop'];
     expect(stationUpgrades(bundle, s, 'workshop')).toEqual([]);
+  });
+});
+
+describe('class and tier (crafting wave 4)', () => {
+  test('a base class by its word, a family in brackets, the tier after it', () => {
+    expect(classLine(bundle, 'core/berry')).toBe('Plant (berry), tier 1');
+    expect(classLine(bundle, 'core/woven-mat')).toBe('Fibre, tier 2');
+    expect(classLine(bundle, 'core/fine-basket')).toBe('Tool, tier 3');
+    expect(className(bundle, undefined)).toBe('Other');
+  });
+
+  test("an extension's own class reads by its name, and an item with no class shows its tier alone", () => {
+    const withDye: Bundle = {
+      ...bundle,
+      classes: { 'test/dye': { id: 'test/dye', name: 'Dye', base: 'plant', creator: 'test', file: 'test.json' } },
+      items: {
+        ...bundle.items,
+        'test/indigo': { ...bundle.items['core/berry']!, id: 'test/indigo', name: 'Indigo', class: 'test/dye', family: undefined, tier: 2 },
+        'test/plain': { ...bundle.items['core/stone']!, id: 'test/plain', name: 'Plain', class: undefined },
+      },
+    };
+    expect(classLine(withDye, 'test/indigo')).toBe('Dye, tier 2');
+    expect(classLine(withDye, 'test/plain')).toBe('Tier 1');
+    expect(journalGroups(withDye).map((g) => g.label)).toEqual(['Clay', 'Dye', 'Fibre', 'Garment', 'Jewelry', 'Meal', 'Other', 'Plant', 'Relic', 'Stone', 'Tool', 'Wood']);
+  });
+
+  test('where a recipe is made names the tier past the first', () => {
+    expect(stationText(bundle, bundle.recipes['core/herb-tea']!)).toBe('the fire');
+    expect(stationText(bundle, bundle.recipes['core/reed-cord']!)).toBe('the workshop');
+    expect(stationText(bundle, bundle.recipes['core/woven-mat']!)).toBe('a workshop of tier 2');
+    expect(stationText(bundle, bundle.recipes['core/fine-basket']!)).toBe('a workshop of tier 3');
+  });
+
+  test("the station's tier is the gate, and it names the part that fits", () => {
+    const s = newState(bundle, 1);
+    const gate = (recipe: string) => stationGate(bundle, s, bundle.recipes[recipe]!);
+    expect(gate('core/woven-mat')).toBeUndefined();
+    s.player.camp = ['core/campfire', 'core/work-stone'];
+    expect(gate('core/reed-cord')).toBeUndefined();
+    expect(gate('core/herb-tea')).toBeUndefined();
+    expect(gate('core/woven-mat')).toBe('Needs a workshop of tier 2: the workbench.');
+    expect(gate('core/fine-basket')).toBe('Needs a workshop of tier 3: the workshop.');
+    s.player.camp = ['core/campfire', 'core/workbench'];
+    expect(gate('core/woven-mat')).toBeUndefined();
+    expect(gate('core/fine-basket')).toBe('Needs a workshop of tier 3: the workshop.');
+    s.player.camp = ['core/campfire', 'core/workshop'];
+    expect(gate('core/fine-basket')).toBeUndefined();
+  });
+
+  test('the gate says what the kernel refuses', () => {
+    const r = step(bundle, newState(bundle, 1), { t: 'start', starter: 'core/forager', name: 'Maker' }, 0);
+    if (!r.ok) throw new Error(r.error);
+    const s = r.state;
+    s.player.camp = ['core/campfire', 'core/work-stone'];
+    s.player.recipes = [...s.player.recipes, 'core/woven-mat'];
+    s.player.bag['core/reed-cord'] = 3;
+    const recipe = bundle.recipes['core/woven-mat']!;
+    expect(stationGate(bundle, s, recipe)).toBe('Needs a workshop of tier 2: the workbench.');
+    const at: [number, number] = [0, 0];
+    const refused = step(bundle, s, { t: 'craft', recipe: 'core/woven-mat', at }, s.tick);
+    expect(refused.ok).toBe(false);
+    if (!refused.ok) expect(refused.error).toBe('This needs a workshop of tier 2.');
+  });
+});
+
+describe('bag categories (CR-11)', () => {
+  test('by kind in a fixed order, worn things apart, each sorted by name', () => {
+    const ids = [
+      'core/stone',
+      'core/berry',
+      'core/reed-hat',
+      'core/basket',
+      'core/old-coin',
+      'core/stew-scrap',
+      'core/lucky-charm',
+      'core/herb',
+      'core/stone-trowel',
+      'core/herb-tea',
+    ];
+    expect(bagGroups(bundle, ids)).toEqual([
+      { label: 'Food', ids: ['core/herb-tea', 'core/berry'] },
+      { label: 'Materials', ids: ['core/stone', 'core/herb'] },
+      { label: 'Tools', ids: ['core/basket', 'core/stone-trowel'] },
+      { label: 'To wear', ids: ['core/lucky-charm', 'core/reed-hat'] },
+      { label: 'Treasures', ids: ['core/old-coin'] },
+      { label: 'Recipe scraps', ids: ['core/stew-scrap'] },
+    ]);
+  });
+
+  test('an empty category is left out, a tool held in the hand stays a tool, and nothing is lost', () => {
+    expect(bagGroups(bundle, ['core/berry'])).toEqual([{ label: 'Food', ids: ['core/berry'] }]);
+    expect(bagGroups(bundle, [])).toEqual([]);
+    const withHand: Bundle = {
+      ...bundle,
+      items: { ...bundle.items, 'test/hammer': { ...bundle.items['core/trowel']!, id: 'test/hammer', name: 'Hammer', wear: { slot: 'hand' } } },
+    };
+    expect(bagGroups(withHand, ['test/hammer', 'test/gone'])).toEqual([
+      { label: 'Materials', ids: ['test/gone'] },
+      { label: 'Tools', ids: ['test/hammer'] },
+    ]);
+  });
+});
+
+describe('the journal by class and family (C12)', () => {
+  test('one group per class by name, the items of no family first, then a row per family', () => {
+    const groups = journalGroups(bundle);
+    expect(groups.map((g) => g.label)).toEqual(['Clay', 'Fibre', 'Garment', 'Jewelry', 'Meal', 'Plant', 'Relic', 'Stone', 'Tool', 'Wood']);
+    expect(groups.find((g) => g.label === 'Plant')!.rows).toEqual([
+      { family: 'berry', ids: ['core/bellberry', 'core/berry'] },
+      { family: 'herb', ids: ['core/sunleaf', 'core/herb'] },
+      { family: 'mushroom', ids: ['core/mushroom'] },
+    ]);
+    expect(groups.find((g) => g.label === 'Relic')!.rows).toEqual([
+      { ids: ['core/stone-idol'] },
+      { family: 'coin', ids: ['core/maru-coin', 'core/old-coin'] },
+      { family: 'scrap', ids: ['core/stew-scrap'] },
+    ]);
+    // every item is in exactly one row
+    const all = groups.flatMap((g) => g.rows.flatMap((r) => r.ids)).sort();
+    expect(all).toEqual(Object.keys(bundle.items).sort());
   });
 });

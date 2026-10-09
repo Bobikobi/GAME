@@ -421,3 +421,18 @@ The economy pull request builds two lines of "The crafting economy" above: the l
 
 **Closes:** CR-17 and CR-18 (crafting audit, Appendix D).
 **Retry when:** players read a try at nothing as a bug, the market (CR-19) moves the trader's price inside R8's band, or a decision on CR-31 changes the tier-3 numbers. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ Crafting wave 4 as built: the bag in categories, the journal by class, and the station as the one gate
+
+Wave 4 of the crafting audit (section 6) is the client, inside the panels that exist, with no restyle and no new style rule. It is stacked on wave 3 and the economy pull request, before they merge. Since the economy, the station's tier is the one gate that blocks a recipe, and the screen shows no chance, no word for the difficulty and no wanted level.
+
+- The bag in categories (D-CRAFT-6, CR-11): Food, Materials, Tools, To wear, Treasures and Recipe scraps, in that order, each under a heading and sorted by name; an empty category is left out. The category is the item's kind, except that a worn thing that is not a tool goes under To wear. A kind with no category yet shows with the materials, so nothing drops out of sight. Choosing an item brings its detail into view, since on a phone it can sit below the categories.
+- Class and tier on an item: the head of the item detail reads the class, the family in brackets and the tier, for example "Plant (berry), tier 1". A class of an extension's own reads by its name. A tool's line keeps its kind, its speed and its uses; its tier is in the head, and the check keeps that the tier of its tool.
+- Class and tier on a recipe: a journal card reads the class and tier of what it makes, then the inputs, where it is made and the time. Past the first tier the place names its tier: "at a workshop of tier 2". A craft row reads the class, the tier and the time.
+- The gate: a craft row whose station stands below the recipe's tier says so before the inputs are in the bag, and names the lowest camp part that fits: "Needs a workshop of tier 2: the workbench." The line is grey while inputs are missing and red when the station is all that stands in the way; any other refusal still shows only once the inputs are in. The rows run up the ladder: the first tier first, then each tier above, by title inside a tier.
+- The journal by class (C12): a heading per class, sorted by name, with the items of no family first and then a row per family ("Berry family"). An item not yet found stays "???" in its place, so a class shows how much of it is left to find.
+- The words are pure functions in `game/src/text.ts` (`bagGroups`, `classLine`, `journalGroups`, `stationText`, `stationGate`) with unit tests, one of which holds the gate's tier to the kernel's own refusal. The game does not load the schema at run time, so the classes come from the content: a class no item uses shows nowhere.
+- No kernel, schema, content or value change; the opening's e2e steps are unchanged.
+
+**Closes:** CR-11 (crafting audit, Appendix D) and the audit's C12.
+**Retry when:** players look for an item in the wrong category, one class fills more than a screen of the journal, or a station gains a tier that no camp part provides. Model: claude-opus-5-5.
