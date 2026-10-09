@@ -3,13 +3,14 @@
  *
  * The real map of the game (content/core/map.json) drawn as a small 3D scene:
  * painted ground, free CC0 models for the trees, stones and ruins, a character
- * that walks with a thumb or the arrow keys, a camera behind it, and a night.
+ * that walks with a thumb or the arrow keys, a camera high behind it the way the
+ * old online worlds show the land (zoom with the wheel, a pinch or +/-), and a night.
  * It is a trial of the look only: nothing here reads the rules, the save or
  * the kernel, and the page lives on its own at /3d.html.
  *
  * Under ?e2e the scene advances a fixed 1/30 s per frame, and window.__valley3d
  * lets game/e2e/valley3d.ts walk the character and take the same screenshots
- * on every machine. ?look=b picks the second character.
+ * on every machine. ?look=b picks the second character, ?zoom=<m> the start distance.
  */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -785,22 +786,30 @@ async function main(): Promise<void> {
   const scene = new THREE.Scene();
   const dayFog = new THREE.Color(0xcfe0f0);
   const nightFog = new THREE.Color(0x0e1530);
-  const fog = new THREE.FogExp2(dayFog.getHex(), 0.012);
+  const fog = new THREE.FogExp2(dayFog.getHex(), 0.009);
   scene.fog = fog;
   const background = new THREE.Color().copy(dayFog);
   scene.background = background;
 
-  const camera = new THREE.PerspectiveCamera(window.innerWidth < window.innerHeight ? 62 : 50, window.innerWidth / window.innerHeight, 0.1, 120);
+  // the camera sits high behind the character and looks down at the land, like the
+  // old online worlds; zoom is the distance to the character, PITCH the angle down
+  const portrait = () => window.innerWidth < window.innerHeight;
+  const camera = new THREE.PerspectiveCamera(portrait() ? 55 : 45, window.innerWidth / window.innerHeight, 0.1, 160);
+  const ZOOM_MIN = 4;
+  const ZOOM_MAX = 18;
+  const PITCH = 0.62;
+  const clampZoom = (z: number): number => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
+  let zoom = clampZoom(Number(PARAMS.get('zoom')) || 11);
 
   const hemi = new THREE.HemisphereLight(0xbfd9ff, 0x6b8f4a, 2.0);
   scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xfff1d6, 2.4);
   sun.castShadow = true;
   sun.shadow.mapSize.set(mobile ? 1024 : 2048, mobile ? 1024 : 2048);
-  sun.shadow.camera.left = -14;
-  sun.shadow.camera.right = 14;
-  sun.shadow.camera.top = 14;
-  sun.shadow.camera.bottom = -14;
+  sun.shadow.camera.left = -22;
+  sun.shadow.camera.right = 22;
+  sun.shadow.camera.top = 22;
+  sun.shadow.camera.bottom = -22;
   sun.shadow.camera.near = 1;
   sun.shadow.camera.far = 60;
   sun.shadow.bias = -0.0004;
@@ -813,6 +822,11 @@ async function main(): Promise<void> {
   const atlas = await buildAtlas();
   atlas.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   scene.add(buildGround(atlas));
+  const skirt = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ color: 0x2c4327, roughness: 1 }));
+  skirt.rotation.x = -Math.PI / 2;
+  skirt.position.set(W / 2, -0.7, H / 2);
+  skirt.receiveShadow = true;
+  scene.add(skirt);
   const waterTexture = await new THREE.TextureLoader().loadAsync('./3d/tiles/water.png');
   waterTexture.colorSpace = THREE.SRGBColorSpace;
   waterTexture.wrapS = THREE.RepeatWrapping;
@@ -845,15 +859,36 @@ async function main(): Promise<void> {
   let camYaw = yaw;
   let walking = false;
 
-  // input: a thumb anywhere, or the arrow keys / WASD; n for night
+  // input: a thumb anywhere, or the arrow keys / WASD; n for night;
+  // zoom with two fingers, the wheel, or + and -
   const stick = { x: 0, y: 0 };
   const keys = { x: 0, y: 0 };
   const held = new Set<string>();
   let stickId: number | null = null;
   const origin = { x: 0, y: 0 };
+  const pointers = new Map<number, { x: number; y: number }>();
+  let pinch: number | null = null;
+  const span = (): number => {
+    const [a, b] = [...pointers.values()];
+    return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0;
+  };
+  const dropStick = () => {
+    stickId = null;
+    stick.x = 0;
+    stick.y = 0;
+    if (stickEl) stickEl.style.display = 'none';
+    if (knob) knob.style.transform = 'translate(-50%, -50%)';
+  };
   document.addEventListener('pointerdown', (e) => {
-    if (stickId !== null) return;
     if (e.target instanceof Element && e.target.closest('button')) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 2) {
+      // a second finger: the thumb lets go and the two fingers zoom
+      dropStick();
+      pinch = span();
+      return;
+    }
+    if (pointers.size > 2 || stickId !== null) return;
     stickId = e.pointerId;
     origin.x = e.clientX;
     origin.y = e.clientY;
@@ -866,6 +901,17 @@ async function main(): Promise<void> {
     }
   });
   document.addEventListener('pointermove', (e) => {
+    const p = pointers.get(e.pointerId);
+    if (p) {
+      p.x = e.clientX;
+      p.y = e.clientY;
+      if (pinch !== null && pointers.size === 2) {
+        const now = span();
+        if (now > 0 && pinch > 0) zoom = clampZoom((zoom * pinch) / now);
+        pinch = now;
+        return;
+      }
+    }
     if (e.pointerId !== stickId) return;
     let dx = (e.clientX - origin.x) / 50;
     let dy = (e.clientY - origin.y) / 50;
@@ -879,21 +925,28 @@ async function main(): Promise<void> {
     if (knob) knob.style.transform = `translate(calc(-50% + ${dx * 36}px), calc(-50% + ${dy * 36}px))`;
   });
   const release = (e: PointerEvent) => {
-    if (e.pointerId !== stickId) return;
-    stickId = null;
-    stick.x = 0;
-    stick.y = 0;
-    if (stickEl) stickEl.style.display = 'none';
-    if (knob) knob.style.transform = 'translate(-50%, -50%)';
+    pointers.delete(e.pointerId);
+    if (pointers.size < 2) pinch = null;
+    if (e.pointerId === stickId) dropStick();
   };
   document.addEventListener('pointerup', release);
   document.addEventListener('pointercancel', release);
+  document.addEventListener(
+    'wheel',
+    (e) => {
+      zoom = clampZoom(zoom * (1 + e.deltaY * 0.0012));
+      e.preventDefault();
+    },
+    { passive: false },
+  );
   const readKeys = () => {
     keys.x = (held.has('ArrowRight') || held.has('KeyD') ? 1 : 0) - (held.has('ArrowLeft') || held.has('KeyA') ? 1 : 0);
     keys.y = (held.has('ArrowDown') || held.has('KeyS') ? 1 : 0) - (held.has('ArrowUp') || held.has('KeyW') ? 1 : 0);
   };
   document.addEventListener('keydown', (e) => {
     if (e.code === 'KeyN') setNight(!nightOn);
+    if (e.code === 'Equal' || e.code === 'NumpadAdd') zoom = clampZoom(zoom / 1.15);
+    if (e.code === 'Minus' || e.code === 'NumpadSubtract') zoom = clampZoom(zoom * 1.15);
     held.add(e.code);
     readKeys();
   });
@@ -924,7 +977,7 @@ async function main(): Promise<void> {
     sun.color.lerpColors(daySun, nightSun, mix);
     sun.intensity = THREE.MathUtils.lerp(2.4, 0.35, mix);
     fog.color.lerpColors(dayFog, nightFog, mix);
-    fog.density = THREE.MathUtils.lerp(0.012, 0.03, mix);
+    fog.density = THREE.MathUtils.lerp(0.009, 0.03, mix);
     background.copy(fog.color);
     lantern.intensity = 18 * mix;
     for (const g of glow) {
@@ -985,6 +1038,7 @@ async function main(): Promise<void> {
         idle: hero.idle ? { running: hero.idle.isRunning(), time: hero.idle.time, weight: hero.idle.getEffectiveWeight() } : null,
         walk: hero.walk ? { running: hero.walk.isRunning(), time: hero.walk.time, weight: hero.walk.getEffectiveWeight() } : null,
         mixerTime: hero.mixer.time,
+        zoom,
         meshes,
       };
     },
@@ -1041,16 +1095,20 @@ async function main(): Promise<void> {
     }
     hero.mixer.update(dt);
 
-    // the camera behind the character
+    // the camera high behind the character, the land in view
     camYaw = lerpAngle(camYaw, yaw, 1 - Math.exp(-dt * 2.5));
-    target.set(pos.x - Math.sin(camYaw) * 4.6, pos.y + 2.2, pos.z - Math.cos(camYaw) * 4.6);
+    const back = zoom * Math.cos(PITCH);
+    const up = zoom * Math.sin(PITCH);
+    target.set(pos.x - Math.sin(camYaw) * back, pos.y + up, pos.z - Math.cos(camYaw) * back);
     target.y = Math.max(target.y, groundY(target.x, target.z) + 0.6);
-    // the camera stays out of the forest border, where the trees would sit on the lens
-    target.x = Math.min(W - 2.3, Math.max(2.3, target.x));
-    target.z = Math.min(H - 2.3, Math.max(2.3, target.z));
+    if (up < 4.5) {
+      // zoomed in under the tree tops: stay out of the forest border, or a trunk sits on the lens
+      target.x = Math.min(W - 2.3, Math.max(2.3, target.x));
+      target.z = Math.min(H - 2.3, Math.max(2.3, target.z));
+    }
     if (first) camera.position.copy(target);
     else camera.position.lerp(target, 1 - Math.exp(-dt * 5));
-    tmp.set(pos.x, pos.y + 1.1, pos.z);
+    tmp.set(pos.x, pos.y + 1.0, pos.z);
     camera.lookAt(tmp);
     first = false;
 
@@ -1075,7 +1133,7 @@ async function main(): Promise<void> {
 
   function onResize(): void {
     camera.aspect = window.innerWidth / window.innerHeight;
-    camera.fov = window.innerWidth < window.innerHeight ? 62 : 50;
+    camera.fov = portrait() ? 55 : 45;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
   }
