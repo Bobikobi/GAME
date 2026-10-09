@@ -37,7 +37,7 @@ The kernel refuses an action unless `at` is walkable and within one tile of the 
 A workshop recipe that crafts the basket or the trowel gives them a computed value, and rule R8 (a shop never sells below that value) then clashed with the 30-gold price the opening is balanced around. The workshop place exists without a recipe.
 **Retry when:** the shop pricing rule or the tool value formula is revisited. Model: claude-opus-5-5.
 
-## 2026-10-07 ✅ Working title "Mistvale"
+## 2026-10-07 ⏸ Working title "Mistvale"
 
 The product name is undecided. "Mistvale" appears in the game, the page title and the save key `mistvale.save.1`; renaming later needs a new key or a save migration. Model: claude-opus-5-5.
 
@@ -213,7 +213,7 @@ The owner asked about sound and what else was missing. GAME_RULES.md section 3 g
 The four questions of PLATFORM.md section 11 (asked 7.10) got their answers on 8.10; the owner's merge of the pull request that carries this entry is his word on them. (1) The repository goes public, with care: no key or secret anywhere in the tree or the history, and no private name, host, address or path of anyone's machine. The checklist before the switch: a secret scan of the whole history with a real scanner (a grep over every commit on 8.10 found no key, no private key, no env file); a grep for private names and hosts (8.10: two stray mentions of a private server name in two docs, reworded in this pull request; the words remain in those files' history, and the owner decides whether to rewrite it before the switch - recommended no, a name is not a secret); `SECURITY.md` with a private report address; the P-1 rules page live; branch protection on `develop` and `main`. (2) The name is not decided; the first community votes on it, from the shortlist in the next entry. Until then the save key and the package names keep `mistvale`; the rename lands before the first public link. (3) Astro for `web/`: yes; GRUNT item 4 starts. (4) The stage-1 service on Vercel Functions with Upstash Redis: yes; items 17-19 wait for M3 only.
 **Retry when:** the vote picks a name; then the rename is one pull request (save key, package names, site URL). Model: Claude Fable 5.1.
 
-## 2026-10-08 ✅ Name shortlist for the community vote
+## 2026-10-08 ⏸ Name shortlist for the community vote
 
 Short, one word, easy to say, and made of the valley's own things (the mist, the bells, the hollows, the lanterns). Checked on 8.10 for an existing DNS record only: "free" means no record, not a registrar check, so the registrar has the last word. Free as `.com` and `.io`: Mistwend, Hollowbell, Lanternfog, Thistlefog, Ringvale, Mistlings. Free as `.io` only: Bellhollow, Foghollow, Mistbell, Hushvale, Greyvale, Bellmere, Fogbound, Mendvale, Hollowmist, Mistfolk. Taken as both: Mistvale, the working name. Recommended ballot: Mistwend, Hollowbell, Lanternfog, Ringvale, and Mistvale as "keep the name" with a `.game` or `.io` domain.
 **Retry when:** the community adds names; the ballot is the owner's. Model: Claude Fable 5.1.

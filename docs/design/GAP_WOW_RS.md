@@ -126,7 +126,8 @@ package around the game. All of it is written as mechanical work in
 Nothing in this table waits on a decision any more. The one thing that touches
 all of it is the name: the save key, the package names and the site URL carry
 it, and the vote should close before the first public link (DECISIONS.md 8.10,
-the shortlist).
+the shortlist). Settled on 9.10 without the vote: the name is Openfold
+(DECISIONS.md 9.10).
 
 ## 6. The order this page recommends
 
