@@ -819,14 +819,17 @@ Decision: GAME_RULES.md section 2, rows "Session end" and "Day 2".
 Goal: the valley has a dangerous hour and a fall that costs the outing (G30-G35).
 The food bar is the health bar; a hazard takes health by a rule; at zero the
 outing is lost and the player reappears in the last town; nobody falls
-unwarned. After P-2.
+unwarned. After P-2, and right after CR-24 and CR-37 (decided 10.10). The
+opening ends at the night ruins' entrance, which is a safe area; the danger
+starts one step inside.
 
 Files:
 - `schema/src/`: `food.satiety` becomes `food.heal`; a `hazard` prop kind on
   map props (`kind`: `pit`, `trap`, `predator`, `bad_herb`, `deep_water`;
-  `window`: `night`, `mist`, or `any` for `bad_herb` alone; `answer`: the item ids
-  that counter it); a `safe`
-  flag on areas (the town, every camp); a shop or kit item may carry `heal`.
+  `window`: `night`, `mist`, or `any` for `bad_herb` alone; no field names an item
+  as its answer, G34); a `safe`
+  flag on areas (the town, every camp, the night ruins' entrance); a shop or kit
+  item may carry `heal`.
 - `content/core/params.json`: `satiety_cap` and `satiety_drain_per_min` become
   `hp_cap` (grows with stamina as before) and `hp_low_pct` (below it, work slows
   as the empty bar did). No drain by the clock (G28).
@@ -838,10 +841,10 @@ Files:
   random tile inside its bounds from the state's random stream); on a fall the
   bag goes back to the outing's bag, every quest then in progress goes back to
   its first step, the player stands in the last town, the clock does not move;
-  the hazard rules of G34 (predator: off a lit lantern, held
-  by thrown food, ended on a road tile; pit: a rope or damage; trap: visible by
-  day; bad herb: raw hurts, cooked heals; deep water: the river without its
-  bridge at night). Chance through the state's random stream (R1-R5).
+  the hazard rules of G34 (predator: hunts after dark and
+  in the mist, the chase ends at a safe place; pit: damage where the floor is
+  broken, lit by day; trap: visible by day; bad herb: raw hurts, cooked heals;
+  deep water: the river without its bridge at night). Chance through the state's random stream (R1-R5).
 - `game/src/ui/ui.ts`: the meter reads health; `game/src/ui/panels.ts`: `Eat`
   heals, a first-aid kit heals from the bag; `game/src/scenes/world.ts`: the
   countdown to nightfall at the screen's edge outside a safe area (the first
@@ -850,24 +853,23 @@ Files:
   sprites shown by day, hidden or moving in the dark; the fall (crosses for
   eyes, the sprite sinks into the ground, one box) and the reappearance in
   town; no pin, no journal line, nothing to go back to.
-- `content/core/shops/trader-shop.json`, recipes, the kit: the bought answers
-  (a first-aid kit, lantern oil, an antidote, a rope, dried meat) and the made
-  answers (a bandage from herbs, a torch from wood). Every hazard has one of
-  each (G34).
+- `content/core/shops/trader-shop.json`, recipes, the kit: the healing things (a
+  first-aid kit to buy, a bandage from herbs to make). No thing answers a
+  hazard (G34, decided 10.10).
 - `tools/src/play.ts`: the G30 and G34 rows of GAME_RULES.md section 8 become
   checks.
 - Tests: a hunting hazard is harmless by day and hurts at night; a bad fruit
   hurts at noon; a fall drops the outing's finds, restarts the quests in
-  progress and reappears in the last town inside its bounds; the lantern keeps
-  the predator off; a replay reproduces a fall and its tile; no state change by
+  progress and reappears in the last town inside its bounds; reaching a safe
+  place ends the chase; a replay reproduces a fall and its tile; no state change by
   the clock alone.
 
 Proving command:
 ```
 pnpm verify && pnpm e2e
 ```
-Green; the e2e run walks into the ruins at night without a lantern, falls,
-and reappears in town with the outing's basket gone and the quest at step one.
+Green; the e2e run walks one step past the night ruins' entrance at night,
+falls, and reappears in town with the outing's basket gone and the quest at step one.
 
 Decision: DECISIONS.md 2026-10-08, the falling entry; GAME_RULES.md G30-G35.
 
@@ -884,9 +886,11 @@ Files:
 - `kernel/`: the window as a rule (at the last bell the mist walks the player
   to the arch, no damage), the chain's progress kept across nights, the reward
   applied at the climax.
-- `content/core/`: the first expedition, the night ruins: the discovery at the
-  arch, the three-stones riddle, the gamble at the hill-facing statue, the
-  lantern kept lit, the last bell. Written in P-3's style, after P-3.
+- `content/core/`: the first expedition, the night ruins, with an opening of its
+  own: the first ten minutes already use the arch and the three-stones riddle
+  and end at the entrance (decided 10.10). Its beats: the gamble at the
+  hill-facing statue, the lantern kept lit, the last bell. Written in P-3's
+  style, after P-3.
 - `game/src/`: the bells as the clock on screen inside the place, the exit at
   the last bell, the climax beat (G13, G25).
 - `tools/src/play.ts`: the G36 row of section 8 becomes a check.
@@ -907,7 +911,7 @@ What was approved, decided or found and is not finished. One row per item, in th
 
 | Id | What is open | Where | Closes when |
 |---|---|---|---|
-| CR-2 | A removed item is dropped from a save, not converted (R5). | `game/src/session.ts` | a conversion record exists in the schema and `adapt` applies it, before stage 2a saves |
+| CR-2 | A removed item is dropped from a save, not converted (R5). Decided 10.10: demo saves are dropped once when the new opening lands, with one short notice on the title screen; from then on every change only adds and a save always loads (CR-62). | `game/src/session.ts` | a conversion record exists in the schema and `adapt` applies it, before stage 2a saves |
 | CR-3 | R12 names min, max, step and cooldown per parameter; the params carry min, max and step, no cooldown, the check reads min and max only, and r is votable though "fixed for good". | `content/core/params.json`, `tools/src/check.ts` | the check reads the step and a cooldown, or the review is amended |
 | CR-4 | G3 has no check and no checklist question. | `docs/design/GAME_RULES.md`, `tools/src/play.ts` | a play rule counts visible steps, or section 8 records G3 as reviewed by hand |
 | CR-5 | Restores and camp parts carry `active_ms` outside the bounds check. | `tools/src/check.ts` | the `timed` list includes them |
@@ -926,15 +930,15 @@ What was approved, decided or found and is not finished. One row per item, in th
 | CR-20 | No upgrade recipe: an item and more materials that give the next tier of the same item, whose miss keeps the item whole. | `schema/src/index.ts`, `kernel/src/step.ts` | such a recipe exists and its miss keeps the item, with a test |
 | CR-21 | Worn effects are pluses only, so a set cannot trade one task for another. | `schema/src/index.ts`, `tools/src/check.ts` | a worn effect may carry a minus inside its tier's cap, with a check and a test |
 | CR-22 | Gold per hour of making is not reported, so the market's steps cannot be tuned from numbers. | the values report in `tools/src/` | the values report prints gold per hour of making per tier |
-| CR-24 | Wood comes from felling trees, the opening's first fire included (decided 9.10): the kernel has no axe, no tree can be felled, and wood still comes from fallen branches, the first fire's too. | `schema/src/index.ts` (tool kinds), `content/core/resources/`, `content/core/camp/`, `content/core/map.json`, `tools/src/play.ts` (the opening chain and its walk), the kernel's catch-up for a saved character, the client's drawing of trees, the opening's walk in `game/e2e/` | a tree type is felled with an axe and grows back in stages, no node gives wood without felling, and from every starter's start the first fire is built from a felled tree |
+| CR-24 | Wood comes from felling trees, the opening's first fire included (decided 9.10): the kernel has no axe, no tree can be felled, and wood still comes from fallen branches, the first fire's too. | `schema/src/index.ts` (tool kinds), `content/core/resources/`, `content/core/camp/`, `content/core/map.json`, `tools/src/play.ts` (the opening chain and its walk), the client's drawing of trees, the opening's walk in `game/e2e/` | a tree type is felled with an axe and grows back in stages, no node gives wood without felling, a dry branch is split from a log, and from every starter's start the first fire is built from a felled tree. Decided 10.10: no catch-up for a saved character, since demo saves reset once (CR-62); built first, before the crafting economy is tuned |
 | CR-25 | A camp outside the town is a tent, safe while its fire burns (decided 9.10): there is no tent, no wood per night and no fire level. | `schema/src/index.ts`, `kernel/src/`, `content/core/camp/` | a tent is bought and pitched, a night costs `wood_per_night` times `d`, and the opening's camp plays as before |
 | CR-26 | Bots, AI that plays for an absent player, and cheating: no rule beyond what the kernel review holds (named as a need 9.10; A1 answered 9.10). | the stage 2a design | the stage 2a design holds A1's rules: a program may advise and never act, the signs of a program at play, a first offense burns what it made and blocks two weeks, a second blocks for good, a farm is a loop (CR-43) |
-| CR-37 | Each character begins its own way (decided 9.10, C1): a starter holds attributes and a look only, every character wakes at the map's one spawn with an empty bag, and the opening chain is a fixed list. | `schema/src/index.ts` (the starter's place to wake and kit, a quest's starter), `kernel/src/step.ts` (start), `content/core/starters/`, `content/core/quests/`, `tools/src/check.ts` (the kit band, the attribute total, the effort band), `tools/src/play.ts` (the opening chain from content, a walk per starter), the opening's walk in `game/e2e/` | each starter wakes at its own place with its own kit and first task, every start holds an axe before the first fire, and the check refuses a kit outside the band, an attribute total that differs, or a start outside the effort band |
+| CR-37 | Each character begins its own way (decided 9.10, C1): a starter holds attributes and a look only, every character wakes at the map's one spawn with an empty bag, and the opening chain is a fixed list. Decided 10.10: three starters, the forager, the digger and the explorer, where the content has two. | `schema/src/index.ts` (the starter's place to wake and kit, a quest's starter), `kernel/src/step.ts` (start), `content/core/starters/`, `content/core/quests/`, `tools/src/check.ts` (the kit band, the attribute total, the effort band), `tools/src/play.ts` (the opening chain from content, a walk per starter), the opening's walk in `game/e2e/` | each starter wakes at its own place with its own kit and first task, every start holds an axe before the first fire (the forager wakes with it, the digger digs it up, the explorer finds it hidden by the bridge with its senses, and the explorer's senses have an animation of their own in place of the dig-site hint circle), and the check refuses a kit outside the band, an attribute total that differs, or a start outside the effort band |
 | CR-38 | One internal difficulty scale and danger by area (decided 9.10, S3): no area carries a danger level, and nothing rates areas, quests and recipes on one scale. | `schema/src/index.ts` (an area's `d`), `content/core/params.json` (`difficulty_ratio_permille`, `hazard_bp`, `hazard_hp`), `content/core/map.json`, `kernel/src/` (hazards by area), `tools/src/check.ts` (the scale's band per step) | every area outside the town carries `d`, a hazard's chance and harm follow `d` by the rule, and the check refuses an area or a recipe whose asks fall outside the scale's band |
 | CR-39 | Places and areas carry what competition will need (decided 9.10, S4): no place has a controller, no area a protection level, and the ledger counts gold minted and burned with no reason. | `schema/src/index.ts`, `kernel/src/state.ts` (the ledger), `content/core/map.json`, `tools/src/check.ts` | every place has a controller (default public), every area a protection level (safe or wild in the core), every movement of gold a reason from a closed list, and the check refuses an area between players while combat is closed |
 | CR-40 | Boards and the mark of the top (decided 9.10, Q4): no board exists, and nothing counts worth, quest points or exploration. | the stage 2a server (boards from server state only), `kernel/src/state.ts` (the ledger: given to the town, gifts), `content/core/params.json` (`marked_top`), the hazard system (road thieves, P-5) | the server ranks worth (gold, plus goods and places at the trader's pay today, plus what was given to the town; a gift counts to the giver), character level, each profession, quest points (each finished quest's difficulty once), collection, exploration and giving, with filters by season, world, starter and friends; the top `marked_top` of a world's worth board carry the mark, and road thieves come to them outside the towns more often by rank |
-| CR-41 | A season adds and nothing leaves (decided 9.10, Q5): content cannot name the season that brought it, and nothing stops content from carrying an end date. | `schema/src/index.ts`, `tools/src/check.ts` | content may name the season that brought it, and the check refuses an end date or a closing window on any content; only a season's board and its titles close; a season runs a quarter of the real year under its theme's name, with the theme announced a month ahead |
-| CR-42 | The valley's year is the real year (decided 9.10): the kernel knows the hour but no date, no season of the year and no holiday. | `kernel/src/state.ts` (the date as a recorded input), `schema/src/index.ts` (holidays as data: name, real dates, what they give), `tools/src/check.ts` | the season of the year and the holidays follow the real date given to the kernel as a recorded input, a holiday carries the valley's own name and comes back every year, the check refuses a holiday that gives anything but a look or a title bound to the character, and a node or find table names the seasons of a thing of its season or a rate per season of the year, while the check refuses a thing of one season without an all-year thing of its class and a quest step that names one; a valley takes its half of the globe from the time zone when the account opens, a shared world holds one half set when it opens, and a holiday tied to a season of the year falls six months later under a southern calendar |
+| CR-41 | A season adds and nothing leaves (decided 9.10, Q5): content cannot name the season that brought it, and nothing stops content from carrying an end date. | `schema/src/index.ts`, `tools/src/check.ts` | content may name the season that brought it, and the check refuses an end date or a closing window on any content; only a season's board and its titles close; a season runs on the months of a season of the year (a quarter) under its theme's name, with the theme announced a month ahead (decided 10.10: one season, not two) |
+| CR-42 | The valley's year is the real year (decided 9.10): the kernel knows the hour but no date, no season of the year and no holiday. | `kernel/src/state.ts` (the date as a recorded input), `schema/src/index.ts` (holidays as data: name, real dates, what they give), `tools/src/check.ts` | the season of the year and the holidays follow the real date given to the kernel as a recorded input, a holiday carries the valley's own name and comes back every year, what it gives is that year's only (decided 10.10: a look or a title marked with the year, G28's one last chance) and the check refuses a holiday that gives anything but a look or a title bound to the character and marked with the year, and a node or find table names the seasons of a thing of its season or a rate per season of the year, while the check refuses a thing of one season without an all-year thing of its class and a quest step that names one; a valley takes its half of the globe from the time zone when the account opens, a shared world holds one half set when it opens, and a holiday tied to a season of the year falls six months later under a southern calendar |
 | CR-43 | Gold entering a world (decided 9.10, D4): no daily cap on the trader's pay per account, no automatic step of the trader's shares, and no daily balance of the books. | `content/core/params.json` (`trader_day_cap`, the step of `k_permille` and `k_craft_permille`), `kernel/src/state.ts` (the ledger, double entry), the stage 2a server (the daily balance and the flags) | the trader pays an account at most `trader_day_cap` a day, the shares step by the rule inside their voted bounds, every movement of gold is written twice, the daily sum of balances equals gold minted less gold burned or trade between players holds, and the flags of the entry are raised; starting gold and kit are bound to the account, its first trades open after `new_account_hold` of active play, a suspected loop holds its accounts, a person reads the trail and decides the block, the player is told why in plain words and may appeal once to another person, and a loop found blocks its accounts and burns what it made with the reason `forfeit` |
 | CR-44 | The creators' pool (decided 9.10, D5): no rule moves gold to creators. | the stage 4 server (the weekly pool from the action logs), `kernel/src/state.ts` (the ledger, reason `royalty`), `content/core/params.json` (`creator_pool_permille`, the attribution shares) | each week a share of the gold that left the world is split by active seconds in each creator's content, at most 2 hours per account-day, 60, 20 and 20 to the activity, the place and the quest, gear is paid from its sale, and the ledger writes the pool as gold moved, never minted |
 | CR-45 | Nodes in a shared world (decided 9.10, Q7): nothing says whose a node's state is once players share a world. | the stage 4 server, `kernel/src/state.ts` (node state per account), `content/core/map.json` (an area's protection level, CR-39) | in a shared world a node's state, a felled tree's included, is kept per player outside the areas between players and shared inside them |
@@ -942,3 +946,6 @@ What was approved, decided or found and is not finished. One row per item, in th
 | CR-47 | Players' words (decided 9.10, Q9): no note, no chat, no filter. | the stage 4 server (notes), the stage 7 server (bubbles), `content/core/params.json` (`notes_max`) | a filter reads every note and line before others see it and refuses rude words, links, personal details and money offers; notes can be marked helpful, reported, hidden per player and fade; chat is bubbles over the head seen nearby, with no private channel |
 | CR-48 | Player shops (decided 9.10): a player cannot sell to another. | the stage 4 server (listings held by the server), `kernel/src/step.ts` (buy from a listing inside R8's band) | a player lists goods at a price, the server holds them, a sign shows over the player online and at the house or stall offline, bound items cannot be listed, and every sale is written to the ledger with the reason `price` |
 | CR-49 | The minimum age of an account (decided 9.10): not set. | the stage 2a design (sign-up) | sign-up asks for 13 or the country's higher age of digital consent, and a younger player is pointed to the demo |
+| CR-60 | A miss turns up something, never an empty hand (decided 10.10, G15): a miss keeps one unit half the time and otherwise nothing, and no node has a miss table. | `schema/src/index.ts` (a node's `miss` rows, each an item and a weight), `kernel/src/step.ts` (gather), `kernel/src/values.ts` (the rows count in the node's value and the rarity budget), `content/core/resources/`, `tools/src/check.ts` (G15) | every node has a miss table whose rows are things with a value, a miss draws a row through the kernel's random stream, the jackpot strip stays, and a creator adds a surprise by adding a row |
+| CR-61 | First-tier recipes are known from the start, higher tiers are dug up (decided 10.10): all eleven recipes of crafting wave 3 are `known: start`. | `content/core/recipes/`, the find tables of the ruins, `tools/src/check.ts` | every tier-2 and tier-3 recipe is `known: found` and sits in a find table or a dig reward, every tier-1 recipe stays `known: start`, and a test learns one by digging |
+| CR-62 | Demo saves reset once (decided 10.10): no save version marks the new opening. | `game/src/session.ts`, `schema/src/index.ts` (the save's format number), the title screen | the release that lands CR-24, CR-37 and the recut bumps the save version, a save of an older version is dropped with one notice on the title screen, and a test loads an older save and a current one |
