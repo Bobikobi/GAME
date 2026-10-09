@@ -500,7 +500,7 @@ The owner's word (9.10): the game needs protection against bots and against AI t
 
 What already stands against them: the kernel review recommends perfect execution as the reference player (D2), so a program with perfect timing earns no more per second than a perfect human; rolls come from the server, not from a seed the player holds (K3); a timing grade is the server's, not a claim (K10); boards rank only state the server has checked (7.10); the creator pool counts active seconds with a cap per account-day (R10). Anti-cheat follows the same line: the server decides, and the client only shows and asks.
 
-What a program still gains is hours: it can play all day, and in a shared world it reaches shared things first. What to do about that is question A1, asked in turn.
+What a program still gains is hours: it can play all day, and in a shared world it reaches shared things first. What to do about that is question A1, answered the same day: see the entries on exploit loops and on programs that play.
 
 **Closes:** nothing; GRUNT's open ends carry it as CR-26.
 **Retry when:** the owner answers A1, or stage 2a is designed. Model: claude-opus-5-5.
@@ -780,3 +780,16 @@ The owner's word (9.10, with the answer on the creators' pool): every movement i
 
 **Closes:** part of A1, with who decides a block; GRUNT's CR-43 now carries it.
 **Retry when:** a real player is caught by a flag, a loop runs unflagged, or the appeals outgrow the people who hear them. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ A program may advise a player, never play for one; a first offense costs what it made and two weeks, a second the account
+
+The question (A1, the rest after the entry on exploit loops): what happens to one account caught letting a program play for it, with no loop and no other accounts? The rule proposed with it, from the owner's word on AI that plays in a player's place: a program may advise, never act. The recommendation: the first time, what the program made is burned and the account is blocked for two weeks; the second time, for good; a farm of many accounts is a loop and is blocked for good at once. The owner's word (9.10): yes.
+
+- Every action in the game comes from a person's input. A player may ask an AI or a guide where to go or what to make, as one reads a guide on the internet; a program that presses, walks or plays the minigames in a player's place is forbidden, whether the player is there or away.
+- The first time an account is found letting a program play: what the program made is burned with the reason `forfeit`, and the account is blocked for two weeks. The second time, it is blocked for good. RuneScape gives a first offense a temporary ban and bans farms for good.
+- A farm of many accounts is an exploit loop and is blocked for good the first time (the entry on exploit loops).
+- Finding it follows the same path: the signs (a timing too regular for a person, the same run of actions again and again, a session no person plays), the rule holds, a person decides, and the player may appeal once to another person.
+- What a program could still gain is hours, and the hours are capped where they turn into gold: the trader's pay per day (`trader_day_cap`), the creators' pool per account-day, and plots drawn among the workers rather than taken first.
+
+**Closes:** A1; GRUNT's CR-26 now carries the rules.
+**Retry when:** programs are found playing faster than people can hear the cases, or real players are caught by the signs. Model: claude-opus-5-5.
