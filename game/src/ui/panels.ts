@@ -10,6 +10,7 @@ import {
   characterLevel,
   minuteOfDay,
   professionLevel,
+  recipeTier,
   salePrice,
   skillPoints,
 } from '@game/kernel';
@@ -28,7 +29,7 @@ import {
 } from '../feedback-payload';
 import type { SignInfo } from '../scenes/world';
 import { Session } from '../session';
-import { ATTRIBUTE_MAX, activeQuests, attributeEffects, clock, eatLabel, gold, itemBenefit, itemName, questSteps, restoreHint, seconds, sellable, stacks, stationUpgrades, toolOpens, wornAt } from '../text';
+import { ATTRIBUTE_MAX, activeQuests, attributeEffects, bagGroups, classLine, clock, eatLabel, gold, itemBenefit, itemName, journalGroups, questSteps, restoreHint, seconds, sellable, stacks, stationGate, stationText, stationUpgrades, toolOpens, wornAt } from '../text';
 import { say } from './dialog';
 import { button, h, sprite } from './dom';
 import { markdown } from './markdown';
@@ -78,22 +79,33 @@ export function openBag(ui: UI): void {
 
   const render = () => {
     const bag = s.state.player.bag;
-    const ids = Object.keys(bag).sort((x, y) => (b.items[x]?.kind ?? '').localeCompare(b.items[y]?.kind ?? '') || itemName(b, x).localeCompare(itemName(b, y)));
+    const ids = Object.keys(bag);
     if (selected && !bag[selected]) selected = undefined;
-    const grid = h(
-      'div',
-      { class: 'slots' },
-      ids.map((id) =>
-        h(
-          'button',
-          { class: `slot ${selected === id ? 'on' : ''} r-${b.items[id]?.rarity ?? 'common'}`, type: 'button', title: itemName(b, id), onclick: () => ((selected = id), render()) },
-          sprite(b, b.items[id]?.sprite, 2),
-          h('span', { class: 'count' }, String(bag[id])),
+    // the bag's categories by kind (D-CRAFT-6, CR-11): a heading and a grid each
+    const groups = bagGroups(b, ids).map((g) => [
+      h('h3', null, g.label),
+      h(
+        'div',
+        { class: 'slots' },
+        g.ids.map((id) =>
+          h(
+            'button',
+            { class: `slot ${selected === id ? 'on' : ''} r-${b.items[id]?.rarity ?? 'common'}`, type: 'button', title: itemName(b, id), onclick: () => pick(id) },
+            sprite(b, b.items[id]?.sprite, 2),
+            h('span', { class: 'count' }, String(bag[id])),
+          ),
         ),
       ),
-    );
+    ]);
     const detail = selected ? itemDetail(selected, render) : h('p', { class: 'muted' }, ids.length ? 'Pick something to look at it.' : 'Your bag is empty. Gather something!');
-    p.body.replaceChildren(h('div', { class: 'bag-head' }, `${bagUsed(s.state)} / ${bagCapacity(b, s.state)} places used`), grid, detail);
+    p.body.replaceChildren(h('div', { class: 'bag-head' }, `${bagUsed(s.state)} / ${bagCapacity(b, s.state)} places used`), ...groups.flat(), detail);
+    return detail;
+  };
+
+  // with the bag in categories the detail can sit below the fold on a phone: bring it into view
+  const pick = (id: string) => {
+    selected = id;
+    render().scrollIntoView({ block: 'nearest' });
   };
 
   const itemDetail = (id: string, after: () => void): HTMLElement => {
@@ -139,13 +151,19 @@ export function openBag(ui: UI): void {
       const uses = item.tool.uses;
       const left = uses === undefined ? 'It lasts.' : `${uses - (s.state.player.wear[id] ?? 0)} uses left.`;
       const speedBonus = item.tool.tier > 1 ? ` (+${15 * (item.tool.tier - 1)}% gathering speed)` : '';
-      facts.push(`${item.tool.kind[0]!.toUpperCase()}${item.tool.kind.slice(1)}, tier ${item.tool.tier}${speedBonus}. ${left}`);
+      // the tier is in the head with the class; the check keeps a tool's tier the tier of its "tool"
+      facts.push(`${item.tool.kind[0]!.toUpperCase()}${item.tool.kind.slice(1)}${speedBonus}. ${left}`);
     }
     if (price !== undefined) facts.push(`A trader pays ${gold(price)} gold.`);
     return h(
       'div',
       { class: 'detail' },
-      h('div', { class: 'detail-head' }, sprite(b, item.sprite, 3), h('div', null, h('b', null, item.name), h('div', { class: `rarity r-${item.rarity}` }, item.rarity))),
+      h(
+        'div',
+        { class: 'detail-head' },
+        sprite(b, item.sprite, 3),
+        h('div', null, h('b', null, item.name), h('div', { class: `rarity r-${item.rarity}` }, item.rarity), h('div', { class: 'muted' }, classLine(b, id))),
+      ),
       h('p', null, item.description),
       facts.map((f) => h('p', { class: 'muted' }, f)),
       h('p', { class: 'credit' }, item.creator === 'core' ? 'Added by the core team' : `Added by ${item.creator}`),
@@ -196,22 +214,25 @@ export function openJournal(ui: UI, tab: JournalTab = 'tasks'): void {
   };
 
   const itemsTab = (): HTMLElement => {
-    const ids = Object.keys(b.items).sort((x, y) => itemName(b, x).localeCompare(itemName(b, y)));
     const known = new Set(s.state.player.journal);
+    const entry = (id: string) => {
+      const it = b.items[id]!;
+      return known.has(id)
+        ? h('div', { class: 'entry' }, sprite(b, it.sprite, 2), h('div', null, h('b', null, it.name), h('div', { class: 'credit' }, it.creator === 'core' ? 'core team' : it.creator)))
+        : h('div', { class: 'entry unknown' }, h('span', { class: 'sprite qmark' }, '?'), h('div', null, h('b', null, '???')));
+    };
+    // by class, and inside a class a row per family (C12)
     return h(
       'div',
       null,
-      h('p', { class: 'muted' }, `${known.size} of ${ids.length} found. Every entry names who added it.`),
-      h(
-        'div',
-        { class: 'entries' },
-        ids.map((id) => {
-          const it = b.items[id]!;
-          return known.has(id)
-            ? h('div', { class: 'entry' }, sprite(b, it.sprite, 2), h('div', null, h('b', null, it.name), h('div', { class: 'credit' }, it.creator === 'core' ? 'core team' : it.creator)))
-            : h('div', { class: 'entry unknown' }, h('span', { class: 'sprite qmark' }, '?'), h('div', null, h('b', null, '???')));
-        }),
-      ),
+      h('p', { class: 'muted' }, `${known.size} of ${Object.keys(b.items).length} found. Every entry names who added it.`),
+      journalGroups(b).flatMap((g) => [
+        h('h3', null, g.label),
+        ...g.rows.flatMap((row) => [
+          row.family ? h('p', { class: 'muted' }, `${row.family[0]!.toUpperCase()}${row.family.slice(1)} family`) : null,
+          h('div', { class: 'entries' }, row.ids.map(entry)),
+        ]),
+      ]),
     );
   };
 
@@ -227,7 +248,14 @@ export function openJournal(ui: UI, tab: JournalTab = 'tasks'): void {
           'div',
           { class: 'card recipe' },
           sprite(b, b.items[r.outputs[0]?.item ?? '']?.sprite, 2),
-          h('div', null, h('b', null, r.title), h('div', { class: 'muted' }, `${stacks(b, r.inputs)} at the ${r.station}, ${seconds(r.active_ms)}`)),
+          h(
+            'div',
+            null,
+            h('b', null, r.title),
+            // the class and tier of what it makes, and the station it needs; never a level or a chance (CR-17)
+            h('div', { class: 'muted' }, classLine(b, r.outputs[0]?.item ?? '')),
+            h('div', { class: 'muted' }, `${stacks(b, r.inputs)} at ${stationText(b, r)}, ${seconds(r.active_ms)}`),
+          ),
         );
       }),
       hidden ? h('p', { class: 'muted' }, `${hidden} more recipe${hidden > 1 ? 's' : ''} to discover - from tasks and from scraps in the ruins.`) : null,
@@ -360,7 +388,10 @@ export function openCraft(ui: UI, station: string): void {
   const p = panel(ui, fire ? 'Cook at the fire' : `The ${station}`, 'craft');
   const render = () => {
     const st = s.state;
-    const known = st.player.recipes.filter((id) => b.recipes[id]?.station === station);
+    // up the ladder: what this station's tier makes first, then each tier above it
+    const known = st.player.recipes
+      .filter((id) => b.recipes[id]?.station === station)
+      .sort((x, y) => recipeTier(b, b.recipes[x]!) - recipeTier(b, b.recipes[y]!) || b.recipes[x]!.title.localeCompare(b.recipes[y]!.title));
     const needs = (inputs: readonly { item: string; qty: number }[]) =>
       h('div', { class: 'needs' }, inputs.map((i) => h('span', null, `${itemName(b, i.item)} `, need(st.player.bag[i.item] ?? 0, i.qty))));
     const haveAll = (inputs: readonly { item: string; qty: number }[]) => inputs.every((i) => (st.player.bag[i.item] ?? 0) >= i.qty);
@@ -370,8 +401,11 @@ export function openCraft(ui: UI, station: string): void {
       ...known.map((id) => {
         const r = b.recipes[id]!;
         const out = r.outputs[0];
-        // a dry run gives the kernel's own reason, e.g. a station below the recipe's tier; never a level (CR-17)
+        // a dry run gives the kernel's own reason; never a level (CR-17)
         const why = s.check({ t: 'craft', recipe: id, at: s.pos });
+        // the station's tier is the one gate: it shows before the inputs are in the bag, naming the part that fits,
+        // and turns red only when it is all that stands in the way
+        const gate = stationGate(b, st, r);
         return h(
           'div',
           { class: 'row' },
@@ -381,8 +415,8 @@ export function openCraft(ui: UI, station: string): void {
             { class: 'grow' },
             h('b', null, r.title),
             needs(r.inputs),
-            h('div', { class: 'muted' }, seconds(r.active_ms)),
-            why && haveAll(r.inputs) ? h('div', { class: 'lack' }, why) : null,
+            h('div', { class: 'muted' }, `${classLine(b, out?.item ?? '')} - ${seconds(r.active_ms)}`),
+            gate ? h('div', { class: haveAll(r.inputs) ? 'lack' : 'muted' }, gate) : why && haveAll(r.inputs) ? h('div', { class: 'lack' }, why) : null,
           ),
           button(fire ? 'Cook' : 'Make', () => {
             const res = s.act({ t: 'craft', recipe: id, at: s.pos });
