@@ -31,6 +31,7 @@ export function showTitle(ui: UI): Promise<void> {
             button('New game', () => (canContinue ? confirmNew() : choose()), canContinue ? '' : 'big'),
           ),
           h('p', { class: 'demo-note' }, 'Demo: your progress is saved in this browser only, and will not move to an account later.'),
+          h('a', { class: 'btn small site-link', href: '../' }, 'Site'),
         ),
       );
       (el.querySelector('button') as HTMLElement | null)?.focus();
