@@ -48,6 +48,8 @@ export type MapDef = Meta & GameMap;
 
 export interface Params {
   k_permille: number;
+  /** What the trader pays for a made good, per mille of r * V (CR-18); below 1000. */
+  k_craft_permille: number;
   r_mg_per_value_ms: number;
   t_min_ms: number;
   max_action_ms: number;
@@ -150,6 +152,8 @@ export interface Bundle {
   instances: Record<string, Instance>;
   /** V(item) in value-ms, computed by values.ts (rule R7), never declared. */
   values: Record<string, number>;
+  /** The items whose value comes from a recipe, sorted: the trader pays `k_craft_permille` for them (CR-18). */
+  made: string[];
   /** Which profession each verb trains; for craft, the one at the fire, since each station has its own (`stations`). */
   verbs: { gather: string; fell: string; dig: string; craft: string };
   /** The craft profession that works each station: a recipe that names no profession takes its station's. */

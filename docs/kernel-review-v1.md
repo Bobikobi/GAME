@@ -106,7 +106,7 @@ Check: schema. Ledger conservation: gold in the state equals mints minus burns. 
 **R7. The value table is a checked certificate.** Nobody declares V. For every activity and each of its outputs: `yield * V(out) <= share * (time + sum of quantity * V(in))`, with equality for at least one activity per item. Items must be reachable from input-free activities. V is stored as integers, rounded once.
 Check: CI recomputes V, verifies every inequality in exact integer arithmetic, verifies reachability, and solves the income problem on the merged content: the best mixed strategy of the reference player earns exactly k*r.
 
-**R8. Shop invariant.** For every item: the highest price the trader pays, over all stock levels, discounts and rounding, is at most k*r*V, and the lowest price the shop charges is at least r*V (at Pell's stall the shop sells and the trader buys, 2026-10-10). Money is fixed point; pay rounds down, charge rounds up, per transaction. Prices between players move inside a band (2026-10-10): no lower than what the trader pays for the item today and no higher than `trade_max_permille` of r*V; a trade outside it is refused, and an item with no V is never listed.
+**R8. Shop invariant.** For every item: the highest price the shop pays, over all stock levels, discounts and rounding, is at most k_i*r*V, and the lowest price it charges is at least r*V. The share k_i is the made share k_craft for an item whose value comes from a recipe and k for any other (section 8.6); both stay below 1 at every value a vote can reach. Money is fixed point; pay rounds down, charge rounds up, per transaction. Prices between players are free.
 Check: evaluate the pricing function on its full grid; run the exhaustive trade search of appendix A9 on it; any gain fails the build.
 
 **R9. Rate clamp in the one calculator.** A build can change the active time of any activity and the output of an activity that has no inputs. Nothing can change the output of an activity that has inputs. For each activity the combined rate multiplier is clamped to P(level).
@@ -118,7 +118,7 @@ Check: the shares of every action sum to its active seconds; the cap is applied 
 **R11. Drift budget against an anchor.** A merge or a parameter change may not move any existing V by more than X percent from the anchor table, in either direction. The anchor is re-set on a fixed schedule. Checks run on the merge result, one merge at a time.
 Check: CI diffs the recomputed table against the lock file; the repository uses a merge queue.
 
-**R12. Parameters are bounded data.** k, X, P(level), t_min, the maximum action length and the attribution table live in one file, each with a minimum, a maximum, a maximum step per decision and a cooldown. r is fixed for good. Every parameter change runs the checks of R7, R8 and R9.
+**R12. Parameters are bounded data.** k, the made share k_craft, X, P(level), t_min, the maximum action length and the attribution table live in one file, each with a minimum, a maximum, a maximum step per decision and a cooldown. r is fixed for good. Every parameter change runs the checks of R7, R8 and R9.
 Check: CI on the parameter file diff.
 
 ## 4. The math that survives
@@ -138,9 +138,9 @@ Run: iteration from the Knuth values and from zero reached the same vector; the 
 Sketch. V(o) is at most its share of the cost in a; multiply by y, sum over the outputs, the shares sum to 1.
 This inequality is all that the bound below needs. That is why R7 checks an inequality on a stored table and does not trust a solver.
 
-**Theorem 3 (bounded gold).** Assume: Theorem 2 for the content; builds under R9 with cap P; the shop under R8; every gold source is an activity whose gold output is counted at 1/(k*r) seconds per unit; the player does not know a draw before choosing. Define wealth `W = gold + k*r * sum_i V(i) * n_i`. Then over any play, expected W grows by at most k*r*P per active second.
-Sketch. Activity with inputs, time t' >= t/P: W changes by k*r*(sum y*V(out) - sum q*V(in)) <= k*r*t <= k*r*P*t'. Input-free activity with y'/t' <= P*y/t: W changes by k*r*y'*V(out) <= k*r*P*t'. Selling to the shop at no more than k*r*V: W does not rise. Buying at no less than r*V (R8), more than the k*r*V this step needs: W does not rise. Transfers between players conserve gold.
-Consequences. No sequence of trades and crafting yields gold without active time. Gold per active hour is at most 3600*k*r*P. With stopping rules the bound still holds in expectation.
+**Theorem 3 (bounded gold).** Let k_hi = max(k, k_craft), the larger of the two shares of R8 (k when there is no made share). Assume: Theorem 2 for the content; builds under R9 with cap P; the shop under R8; every gold source is an activity whose gold output is counted at 1/(k_hi*r) seconds per unit; the player does not know a draw before choosing. Define wealth `W = gold + k_hi*r * sum_i V(i) * n_i`. Then over any play, expected W grows by at most k_hi*r*P per active second.
+Sketch. Activity with inputs, time t' >= t/P: W changes by k_hi*r*(sum y*V(out) - sum q*V(in)) <= k_hi*r*t <= k_hi*r*P*t'. A craft that can miss keeps at most its inputs on a miss, so a miss never raises W and the expected change stays within the same bound. Input-free activity with y'/t' <= P*y/t: W changes by k_hi*r*y'*V(out) <= k_hi*r*P*t'. Selling to the shop at no more than k_i*r*V <= k_hi*r*V: W does not rise. Buying at no less than r*V (R8), more than the k_hi*r*V this step needs since k_hi < 1: W does not rise. Transfers between players conserve gold.
+Consequences. No sequence of trades and crafting yields gold without active time. Gold per active hour is at most 3600*k_hi*r*P. With stopping rules the bound still holds in expectation.
 Limits. Per account. Nothing about total gold in the world, nothing about sinks.
 Run: under the hardened values the best mixed strategy earns exactly x1.000 at 1, 5 and 20 crystal nodes; the largest value gain per active second over all activities is exactly 1.
 
@@ -274,7 +274,7 @@ Rare by supply: few nodes and a long respawn. Under D1 this earned nothing in th
 `sum over bonus-carrying activities of (nodes / respawn) * b <= beta`, with beta in the parameter file (proposed 0.10).
 A bonus on an activity with no declared capacity is refused. The check runs on the merge result (R11), because nodes added by a later extension raise the capacity.
 
-**Theorem 3 with a budget.** W grows by at most k*r*P*(1 + beta) per active second.
+**Theorem 3 with a budget.** W grows by at most k_hi*r*P*(1 + beta) per active second.
 Sketch. One execution of activity a adds at most w*t + b to the value held. The first part sums to at most the active time, as before. The second part is at most capacity times b per second, summed over activities at most beta, and the output multiplier on a source is held to P by the clamp of R9.
 
 Run E7, beta = 0.10, the crystal given the largest bonus the budget allows:
@@ -314,6 +314,12 @@ The hole to guard: a verb that creates items or gold outside an activity record.
 The quota is product policy and the kernel does not see it. One consequence does land here: the automatic check must run on the creator's machine in one command, with the same code as CI. An AI tool then fixes a submission before it is sent, and the quota is spent on human testing, which is the scarce part, and not on schema errors.
 
 Still open from the spec: gold for a poll vote (A19). D5 recommends none; decided on 2026-10-09: none.
+
+### 8.6 The made share (2026-10-09)
+
+The owner's word (DECISIONS.md, 2026-10-09: the crafting economy): making pays more than selling raw. The trader pays k_craft*r*V for an item whose value comes from a recipe, its cheapest source in the value table, and k*r*V for any other item. At launch k = 0.5 and k_craft = 0.75; a vote moves k_craft between 0.5 and 0.9.
+**What changes.** R8 bounds each item's pay by its own share, and Theorem 3 holds with k_hi = max(k, k_craft) in place of k: wealth counts what is held at the larger share, so turning raw goods into a made good adds no more than the recipe's own work, and a raw good sold at k only lowers W. The bound on gold per active second rises from k*r*P to k_hi*r*P, x1.5 at launch. That is the price of the decision: a player who makes things can earn up to the made share for every weighted second of the whole chain, gathering included, and a player who only gathers still earns k.
+**What must hold.** Buying in the shop must never pay for selling to the trader: the shop charges at least r*V and the trader pays at most k_hi*r*V, so the check keeps both shares below 1 at every value a vote can reach, and the made share at least k so a made good never sells for less than a raw one (`tools/src/check.ts`). One price curve would need k_hi * m_max <= m_min again (appendix A9); the stock prices of the market (CR-19) stay inside the same band.
 
 ## Appendix A. Counterexamples
 

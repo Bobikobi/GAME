@@ -117,12 +117,17 @@ describe('hud unlocks', () => {
 describe('the sell list', () => {
   test('prices one unit as the kernel does: a worn tool that is the last unit pays for the uses it has left', () => {
     const s = newState(bundle, 1);
-    s.player.bag = { 'core/basket': 1, 'core/flint-trowel': 1, 'core/stone-flakes': 3, 'core/stone-trowel': 1 };
+    s.player.bag = { 'core/basket': 1, 'core/flint-trowel': 1, 'core/reed': 2, 'core/stone-flakes': 3, 'core/stone-trowel': 1 };
     s.player.wear = { 'core/basket': 5, 'core/flint-trowel': 20 };
-    const each = (id: string) => payFor(bundle.params, bundle.values[id]!);
+    const each = (id: string) => payFor(bundle.params, bundle.values[id]!, bundle.made.includes(id));
+    // made goods pay the made share and the gathered reed the raw share (CR-18)
+    expect(bundle.made).toEqual(expect.arrayContaining(['core/flint-trowel', 'core/stone-flakes', 'core/stone-trowel']));
+    expect(each('core/reed')).toBe(payFor(bundle.params, bundle.values['core/reed']!));
+    expect(each('core/stone-flakes')).toBe(payFor(bundle.params, bundle.values['core/stone-flakes']!, true));
     // the shop basket has no value and is never bought back; the lasting trowel pays in full
     expect(sellable(bundle, s)).toEqual([
       { item: 'core/flint-trowel', each: mulDiv(each('core/flint-trowel'), 80 - 20, 80) },
+      { item: 'core/reed', each: each('core/reed') },
       { item: 'core/stone-flakes', each: each('core/stone-flakes') },
       { item: 'core/stone-trowel', each: each('core/stone-trowel') },
     ]);

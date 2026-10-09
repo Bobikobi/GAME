@@ -3,7 +3,8 @@
  * trader for its outputs, or on a miss for what it keeps, less what its
  * inputs would have sold for, over its active time. The try is priced at the
  * recipe's own level and before luck, the same average try the check holds
- * to (CR-16). Gathering is the line to compare with: the market's steps are
+ * to (CR-16), and each item at the trader's price for it: a made good at
+ * `k_craft_permille`, the rest at `k_permille` (CR-18). Gathering is the line to compare with: the market's steps are
  * tuned from these numbers, not guessed.
  */
 import { type Bundle, missOutcome, payFor, recipeTier } from '@game/kernel';
@@ -30,7 +31,7 @@ function row(what: MakingRow['what'], rates: number[]): MakingRow {
 
 export function makingReport(b: Bundle): MakingRow[] {
   const sale = (stacks: readonly { item: string; qty: number }[]) =>
-    stacks.reduce((n, s) => n + payFor(b.params, b.values[s.item] ?? 0) * s.qty, 0);
+    stacks.reduce((n, s) => n + payFor(b.params, b.values[s.item] ?? 0, b.made.includes(s.item)) * s.qty, 0);
   const chances = b.params.craft_chance_bp;
   const rows: MakingRow[] = [];
 
