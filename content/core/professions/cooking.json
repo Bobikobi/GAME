@@ -8,6 +8,9 @@
   "profession": {
     "name": "Cooking",
     "verb": "craft",
+    "stations": [
+      "fire"
+    ],
     "xp_levels": [
       4,
       40,

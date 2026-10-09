@@ -12,6 +12,8 @@
       "description": "An old recipe, found in the ruins.",
       "kind": "food",
       "rarity": "uncommon",
+      "class": "meal",
+      "tier": 1,
       "sprite": "core/base-kit:items/herb-stew",
       "food": {
         "satiety": 40

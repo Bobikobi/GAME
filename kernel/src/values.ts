@@ -11,11 +11,31 @@
  * Waiting (respawn) is never paid: it does not appear in the cost.
  */
 import type { Bundle, Params } from './bundle';
-import { idiv, mulDiv } from './num';
+import { idiv, mulDiv, mulDivUp } from './num';
+
+/** The effort tiers in order, lightest first; their weights live in the params file. */
+export const EFFORT_TIERS = ['easy', 'medium', 'craft', 'hard'] as const;
+export type EffortTier = (typeof EFFORT_TIERS)[number];
+
+/** The step each verb starts on: gathering easy, digging medium, crafting craft. */
+const VERB_EFFORT: Record<Activity['verb'], number> = { gather: 0, dig: 1, craft: 2 };
+
+/**
+ * Rule R6 with kernel review 8.1: an activity's effort tier is derived from
+ * the data, never declared. The verb gives the first step, and every item
+ * tier above 1 among what the activity gives moves it one step up, to hard
+ * at most. A tier-1 activity keeps the weight its verb always had.
+ */
+export function effortTier(verb: Activity['verb'], tier: number): EffortTier {
+  const step = Math.min(EFFORT_TIERS.length - 1, VERB_EFFORT[verb] + Math.max(0, tier - 1));
+  return EFFORT_TIERS[step]!;
+}
 
 export interface Activity {
   id: string;
   verb: 'gather' | 'dig' | 'craft';
+  /** derived effort tier; w is its weight */
+  effort: EffortTier;
   /** effort weight, permille */
   w: number;
   /** active time, ms */
@@ -25,6 +45,8 @@ export interface Activity {
   inputs: { item: string; qty: number }[];
   /** expected units per execution = num / den (a dig find is chance/100) */
   outputs: { item: string; num: number; den: number; share: number }[];
+  /** nodes and respawn of a source with a finite capacity; only such a source carries a rarity bonus */
+  capacity?: { count: number; respawn_ms: number };
 }
 
 export interface ValueIssue {
@@ -51,42 +73,53 @@ function rarityBonus(params: Params, rarity: keyof Params['rarity_bonus_ms'], w:
 export function activitiesOf(content: ContentForValues): Activity[] {
   const { params, items } = content;
   const rarityOf = (id: string) => items[id]?.rarity ?? 'common';
+  const tierOf = (ids: string[]) => Math.max(1, ...ids.map((id) => items[id]?.tier ?? 1));
   const out: Activity[] = [];
   for (const id of Object.keys(content.resources).sort()) {
     const r = content.resources[id]!;
-    const w = params.effort_permille.easy;
+    const effort = effortTier('gather', tierOf([r.output]));
+    const w = params.effort_permille[effort];
+    const capacity = r.respawn_ms > 0 ? { count: r.count, respawn_ms: r.respawn_ms } : undefined;
     out.push({
       id,
       verb: 'gather',
+      effort,
       w,
       t: r.active_ms,
-      b: rarityBonus(params, rarityOf(r.output), w, r.active_ms, r.respawn_ms > 0),
+      b: rarityBonus(params, rarityOf(r.output), w, r.active_ms, capacity !== undefined),
       inputs: [],
       outputs: [{ item: r.output, num: r.yield, den: 1, share: 100 }],
+      ...(capacity ? { capacity } : {}),
     });
   }
   for (const id of Object.keys(content.treasures).sort()) {
     const d = content.treasures[id]!;
-    const w = params.effort_permille.medium;
+    const effort = effortTier('dig', tierOf(d.finds.map((f) => f.item)));
+    const w = params.effort_permille[effort];
+    const capacity = d.respawn_ms > 0 ? { count: d.count, respawn_ms: d.respawn_ms } : undefined;
     const rarest = d.finds
       .map((f) => rarityOf(f.item))
       .sort((a, b) => rarityRank(b) - rarityRank(a))[0] ?? 'common';
     out.push({
       id,
       verb: 'dig',
+      effort,
       w,
       t: d.active_ms,
-      b: rarityBonus(params, rarest, w, d.active_ms, d.respawn_ms > 0),
+      b: rarityBonus(params, rarest, w, d.active_ms, capacity !== undefined),
       inputs: [],
       outputs: d.finds.map((f) => ({ item: f.item, num: f.chance_pct, den: 100, share: f.share_pct })),
+      ...(capacity ? { capacity } : {}),
     });
   }
   for (const id of Object.keys(content.recipes).sort()) {
     const c = content.recipes[id]!;
+    const effort = effortTier('craft', tierOf(c.outputs.map((o) => o.item)));
     out.push({
       id,
       verb: 'craft',
-      w: params.effort_permille.craft,
+      effort,
+      w: params.effort_permille[effort],
       t: c.active_ms,
       b: 0,
       inputs: c.inputs.map((s) => ({ item: s.item, qty: s.qty })),
@@ -94,6 +127,34 @@ export function activitiesOf(content: ContentForValues): Activity[] {
     });
   }
   return out;
+}
+
+export interface RarityBudget {
+  /** what the rarity bonuses add to the world's active time, in parts per million, rounded up */
+  used_ppm: number;
+  /** beta, the ceiling (`rarity_budget_permille`), in parts per million */
+  limit_ppm: number;
+  /** every activity that carries a bonus and its part, largest first */
+  parts: { id: string; ppm: number }[];
+}
+
+/**
+ * Kernel review 8.2, on the merged world: the sum over bonus-carrying
+ * activities of (nodes / respawn) * b stays at or under beta. Only a source
+ * with a finite capacity carries a bonus (`rarityBonus`), so a bonus with no
+ * capacity cannot occur. More nodes from a later extension raise the sum,
+ * which is why it is measured on the merge.
+ */
+export function rarityBudget(content: ContentForValues): RarityBudget {
+  const parts = activitiesOf(content)
+    .filter((a) => a.b > 0 && a.capacity)
+    .map((a) => ({ id: a.id, ppm: mulDivUp(a.capacity!.count * a.b, 1_000_000, a.capacity!.respawn_ms) }))
+    .sort((x, y) => y.ppm - x.ppm || (x.id < y.id ? -1 : 1));
+  return {
+    used_ppm: parts.reduce((n, p) => n + p.ppm, 0),
+    limit_ppm: content.params.rarity_budget_permille * 1000,
+    parts,
+  };
 }
 
 const RANKS = { common: 0, uncommon: 1, rare: 2, legendary: 3 } as const;

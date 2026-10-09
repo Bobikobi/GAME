@@ -391,6 +391,10 @@
                 "type": "string"
               },
               {
+                "const": "template",
+                "type": "string"
+              },
+              {
                 "const": "npc",
                 "type": "string"
               },

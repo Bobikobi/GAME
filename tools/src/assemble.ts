@@ -7,17 +7,20 @@ import { dirname } from 'node:path';
 import {
   type BoardEntry,
   type Bundle,
+  type ClassInfo,
   type Credit,
   type ItemInfo,
   type MapDef,
+  type Meta,
   type Params,
+  type RecipeDef,
   type SpriteInfo,
   canonical,
   computeValues,
   hashText,
   layoutInstances,
 } from '@game/kernel';
-import { CORE_ONLY_TYPES, type CreatorProfile, type ParamsBody } from '@game/schema';
+import { BASE_CLASSES, CORE_ONLY_TYPES, type CreatorProfile, type ParamsBody, type Template } from '@game/schema';
 import { toRepoPath, type Issue, type Loaded } from './load';
 import { findableItems } from './play';
 
@@ -47,6 +50,7 @@ const BODY_OF: Record<string, string> = {
   resource: 'node',
   treasure: 'dig',
   recipe: 'recipe',
+  template: 'template',
   npc: 'npc',
   quest: 'quest',
   restore: 'restore',
@@ -82,6 +86,9 @@ export function flattenParams(p: ParamsBody): Params {
     power_cap_permille: [...p.power_cap_permille],
     rarity_budget_permille: p.rarity_budget_permille.value,
     rarity_bonus_ms: { ...p.rarity_bonus_ms },
+    open_tiers: p.open_tiers.value,
+    tier_min_level: [...p.tier_min_level],
+    template_max_recipes: p.template_max_recipes.value,
     drift_budget_permille: p.drift_budget_permille.value,
     satiety_cap: p.satiety_cap.value,
     satiety_drain_per_min: p.satiety_drain_per_min.value,
@@ -104,6 +111,8 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
     issues.push({ file: typeof f === 'string' ? f : toRepoPath(f.abs), where, message, level: 'error' });
 
   const items: Record<string, ItemInfo> = {};
+  const classes: Record<string, ClassInfo> = {};
+  const templates: TemplateDef[] = [];
   const records: Record<RecordKey, Record<string, unknown>> = {
     resources: {},
     treasures: {},
@@ -149,6 +158,11 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
       if (items[item.id]) err(f, `items.${i}.id`, `item "${item.id}" is already defined in ${items[item.id]!.file}`);
       items[item.id] = { ...item, creator: d.creator, file };
     }
+    for (const [i, c] of (d.classes ?? []).entries()) {
+      if (!c.id.startsWith(`${d.creator}/`)) err(f, `classes.${i}.id`, `class ids start with "${d.creator}/"`);
+      if (classes[c.id]) err(f, `classes.${i}.id`, `class "${c.id}" is already defined in ${classes[c.id]!.file}`);
+      classes[c.id] = { ...c, creator: d.creator, file };
+    }
     if (d.type !== 'creator') credits.push({ id: d.id, type: d.type, title: d.title, creator: d.creator, file, ai_tools: d.ai_tools ?? [] });
 
     const body = (d as unknown as Record<string, unknown>)[BODY_OF[d.type] ?? ''];
@@ -156,6 +170,8 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
     const key = KEY_OF[d.type];
     if (key) {
       records[key][d.id] = { ...meta, ...(body as object) };
+    } else if (d.type === 'template') {
+      templates.push({ ...meta, ...d.template });
     } else if (d.type === 'creator') {
       if (d.id !== `${d.creator}/profile`) err(f, 'id', `a creator profile has the id "${d.creator}/profile"`);
       if (creators[d.creator]) err(f, '', `"${d.creator}" already has a profile`);
@@ -200,13 +216,104 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
     if (!verbs[v]) err('content/core', '', `no profession trains "${v}"`);
   }
 
-  const content = { params, items, ...r, map, sprites, verbs, credits };
+  expandTemplates(templates, { params, items, classes, recipes: r.recipes }, origin, issues);
+
+  const content = { params, items, classes, ...r, map, sprites, verbs, credits };
   const tag = hashText(canonical(content));
   const instances = layoutInstances(map, r.resources, r.treasures);
   const { values } = computeValues({ params, items, resources: r.resources, treasures: r.treasures, recipes: r.recipes });
   const bundle: Bundle = { format: 1, tag, ...content, instances, values, creators, board };
   checkReferences(bundle, origin, issues);
   return { bundle, issues, kits, origin };
+}
+
+type TemplateDef = Meta & Template;
+
+/**
+ * Whether an item of class `cls` fits an input that asks for class `want`.
+ * A base class takes its own items and every class declared under it; a
+ * declared class takes only its own items.
+ */
+export function classFits(classes: Record<string, ClassInfo>, cls: string | undefined, want: string): boolean {
+  if (cls === undefined) return false;
+  if (cls === want) return true;
+  return (BASE_CLASSES as readonly string[]).includes(want) && classes[cls]?.base === want;
+}
+
+/**
+ * Recipe templates (DECISIONS.md, 2026-10-09): each becomes one concrete
+ * recipe for every combination of items that fit its class inputs, in id
+ * order, so the kernel and the value table see concrete recipes only. A
+ * template that would make more than `template_max_recipes` makes none.
+ */
+function expandTemplates(
+  templates: TemplateDef[],
+  world: { params: Params; items: Record<string, ItemInfo>; classes: Record<string, ClassInfo>; recipes: Record<string, RecipeDef> },
+  origin: Record<string, string>,
+  issues: Issue[],
+): void {
+  const { params, items, classes, recipes } = world;
+  const ids = Object.keys(items).sort();
+  for (const t of [...templates].sort((x, y) => (x.id < y.id ? -1 : 1))) {
+    const err = (where: string, message: string) => issues.push({ file: t.file, where, message, level: 'error' });
+    if (!t.inputs.some((input) => 'class' in input)) {
+      err('template.inputs', 'no input names a class: write a recipe instead of a template');
+      continue;
+    }
+    const choices = t.inputs.map((input, i) => {
+      if (!('class' in input)) return [input.item];
+      const fit = ids.filter((id) => {
+        const it = items[id]!;
+        return classFits(classes, it.class, input.class) && (input.family === undefined || it.family === input.family) && (it.tier ?? 1) >= input.min_tier;
+      });
+      if (fit.length === 0) {
+        const family = input.family === undefined ? '' : ` and family "${input.family}"`;
+        err(`template.inputs.${i}`, `no item of class "${input.class}"${family} at tier ${input.min_tier} or above`);
+      }
+      return fit;
+    });
+    if (choices.some((c) => c.length === 0)) continue;
+    const count = choices.reduce((n, c) => n * c.length, 1);
+    if (count > params.template_max_recipes) {
+      err(
+        'template.inputs',
+        `fits ${count} combinations, more than template_max_recipes (${params.template_max_recipes}): name a family, a narrower class or a higher min_tier`,
+      );
+      continue;
+    }
+    let combos: string[][] = [[]];
+    for (const c of choices) combos = combos.flatMap((combo) => c.map((id) => [...combo, id]));
+    for (const combo of combos) {
+      const picked = combo.filter((_, i) => 'class' in t.inputs[i]!);
+      const id = `${t.id}--${picked.map((item) => item.replace('/', '-')).join('--')}`;
+      if (origin[id]) {
+        err('template', `makes the recipe "${id}", an id already used by ${origin[id]}`);
+        continue;
+      }
+      const inputs: { item: string; qty: number }[] = [];
+      combo.forEach((item, i) => {
+        const same = inputs.find((s) => s.item === item);
+        if (same) same.qty += t.inputs[i]!.qty;
+        else inputs.push({ item, qty: t.inputs[i]!.qty });
+      });
+      origin[id] = t.file;
+      recipes[id] = {
+        id,
+        creator: t.creator,
+        title: `${t.title} (${picked.map((item) => items[item]!.name).join(', ')})`,
+        file: t.file,
+        ...(t.ai_tools ? { ai_tools: t.ai_tools } : {}),
+        station: t.station,
+        active_ms: t.active_ms,
+        level: t.level,
+        ...(t.profession ? { profession: t.profession } : {}),
+        inputs,
+        outputs: t.outputs.map((o) => ({ ...o })),
+        known: 'start',
+        template: t.id,
+      };
+    }
+  }
 }
 
 function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issue[]): void {
@@ -229,6 +336,9 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
 
   for (const [id, it] of Object.entries(b.items)) {
     sprite(id, 'sprite', it.sprite);
+    if (it.class !== undefined && !(BASE_CLASSES as readonly string[]).includes(it.class) && !b.classes[it.class]) {
+      err(id, 'class', `no class "${it.class}": use a base class (${BASE_CLASSES.join(', ')}) or declare it under "classes"`);
+    }
     if (it.fragment && !b.recipes[it.fragment.unlocks]) err(id, 'fragment.unlocks', `no recipe "${it.fragment.unlocks}"`);
     if (it.kind === 'food' && !it.food) err(id, 'food', 'a food item needs "food": { "satiety": n }');
     if (it.kind === 'tool' && !it.tool) err(id, 'tool', 'a tool item needs "tool": { kind, tier, uses }');
@@ -249,6 +359,7 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
   for (const [id, c] of Object.entries(b.recipes)) {
     c.inputs.forEach((s, i) => item(id, `recipe.inputs.${i}.item`, s.item));
     c.outputs.forEach((s, i) => item(id, `recipe.outputs.${i}.item`, s.item));
+    if (c.profession && !b.professions[c.profession]) err(id, 'recipe.profession', `no profession "${c.profession}"`);
   }
   for (const [id, n] of Object.entries(b.npcs)) {
     sprite(id, 'npc.sprite', n.sprite);
