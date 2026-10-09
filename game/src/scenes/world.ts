@@ -5,8 +5,9 @@
  * a plant or stone that is ready blocks the way until it is gathered.
  *
  * Everything cosmetic on top of the plain valley sits behind RICH (config.ts):
- * detail (tile variants, edge strips, shadows), motion (frames, sway, ambient
- * life, footstep dust, idles) and light (dusk, glows, dapple, mist, fades).
+ * detail (tile variants, tone patches, canopies, edge strips, shadows), motion
+ * (frames, sway, ambient life, footstep dust, idles) and light (dusk, the warm
+ * day, glows, dapple, mist, fades).
  * With every group off the scene is the plain valley, object for object.
  */
 import * as Phaser from 'phaser';
@@ -26,10 +27,11 @@ import {
 } from '@game/kernel';
 import { app } from '../app';
 import { sound, type SfxId } from '../audio';
-import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T } from '../config';
+import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T, WARM } from '../config';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { emptySlots, slotContent } from '../places';
+import { canopyGroups, hash, remapTone, toneField, type Tone } from '../richground';
 import type { Session } from '../session';
 import { hintDistance, itemName } from '../text';
 import type { WorkKind } from '../ui/ui';
@@ -61,8 +63,8 @@ const PALETTE = {
 const SHADOW_ALPHA = 0.22;
 /** Props that lie on the ground and cast no shadow, by sprite name. */
 const FLAT = new Set([
-  'flowers', 'flowers_white', 'glow_mushrooms', 'mushrooms_small', 'mushroom_patch', 'rubble', 'pebbles', 'fallen_branches',
-  'log_fallen', 'dig_spot', 'fog', 'reeds', 'herb_plant', 'fence', 'fence_post', 'campfire_lit', 'campfire_unlit',
+  'flowers', 'flowers_white', 'flowers_blue', 'glow_mushrooms', 'mushrooms_small', 'mushroom_patch', 'rubble', 'pebbles', 'fallen_branches',
+  'log_fallen', 'log_mossy', 'grass_tall', 'dig_spot', 'fog', 'reeds', 'herb_plant', 'fence', 'fence_post', 'campfire_lit', 'campfire_unlit',
 ]);
 /** Where the smoke leaves house_small: the chimney top, in pixels of the 48x48 sprite (read from the art). */
 const CHIMNEY = { x: 37, y: 6 };
@@ -397,6 +399,12 @@ export class WorldScene extends Phaser.Scene {
     // one full-map canvas per frame; the plain valley keeps its two
     this.groundFrames = RICH.motion ? most : 2;
     const variants = new Map<string, string[]>();
+    const at = (x: number, y: number) => m.legend[m.ground[y]?.[x] ?? ''];
+    // the meadow's shaded and sunlit patches, and the blocks of four forest tiles a canopy covers: both fixed by the map
+    const tones = RICH.detail ? toneField(m.width, m.height, (x, y) => at(x, y)?.tag === 'meadow') : undefined;
+    const forest = tiles.find((t) => baseName(t.sprite) === 'forest');
+    const canopies = RICH.detail && forest ? canopyGroups(m.width, m.height, (x, y) => at(x, y)?.sprite === forest.sprite) : [];
+    const canopyKit = forest ? kitOf(forest.sprite) : '';
     if (RICH.detail) {
       for (const t of tiles) variants.set(t.sprite, [1, 2, 3].map((i) => `${t.sprite}_${i}`).filter((ref) => this.has(ref)));
     }
@@ -416,13 +424,21 @@ export class WorldScene extends Phaser.Scene {
           const sprite = picks && picks.length > 0 && h % 100 < 40 ? picks[Math.floor(h / 100) % picks.length]! : tile.sprite;
           const info = this.b.sprites[sprite];
           if (!info) continue;
-          tex.drawFrame(sprite, info.frames > 1 ? frame % info.frames : undefined, x * T, y * T, false);
+          // a shaded or sunlit meadow tile draws from a toned copy of its sprite
+          const tone = tones?.[y * m.width + x] ?? 0;
+          const key = tone === 1 || tone === 2 ? (this.toned(sprite, tone) ?? sprite) : sprite;
+          tex.drawFrame(key, info.frames > 1 ? frame % info.frames : undefined, x * T, y * T, false);
           if (RICH.detail) this.drawEdges(tex, x, y, tile.sprite, tile.tag, frame);
           if (frame === 0 && RICH.motion) {
             if (tile.tag === 'meadow') meadow.push(x, y);
             else if (tile.tag === 'grove') grove.push(x, y);
           }
         }
+      }
+      // one crown over each block of four forest tiles; the eyes still watch from the forest's edge
+      for (const c of canopies) {
+        const ref = `${canopyKit}props/canopy_${c.i + 1}`;
+        if (this.has(ref)) tex.drawFrame(ref, undefined, c.x * T, c.y * T, false);
       }
       tex.refresh();
     }
@@ -447,14 +463,15 @@ export class WorldScene extends Phaser.Scene {
 
   /**
    * Edge strips over a tile, one per side, read from the four neighbours: a bank
-   * where water meets land, a fringe of grass over a path, cobble or sand tile that
-   * touches meadow or grove, and a shore line where sand meets water. Each strip is
-   * a kit sprite named after the side it sits on; a missing one is simply not drawn.
+   * where water meets land, a fringe of grass over a path, cobble, sand or ruin floor
+   * tile that touches meadow or grove, and a shore line where sand meets water. Each
+   * strip is a kit sprite named after the side it sits on; a missing one is simply not drawn.
    */
   private drawEdges(tex: Phaser.Textures.CanvasTexture, x: number, y: number, sprite: string, tag: string, frame: number): void {
     const m = this.b.map;
-    const kit = sprite.slice(0, sprite.indexOf(':') + 1);
-    const kind = tag === 'water' ? 'bank' : tag === 'path' || tag === 'town' || tag === 'riverbank' ? 'fringe' : undefined;
+    const kit = kitOf(sprite);
+    const floor = tag === 'ruin' && baseName(sprite) === 'ruin_floor';
+    const kind = tag === 'water' ? 'bank' : tag === 'path' || tag === 'town' || tag === 'riverbank' || floor ? 'fringe' : undefined;
     if (!kind) return;
     for (const [side, dx, dy] of SIDES) {
       const near = m.legend[m.ground[y + dy]?.[x + dx] ?? ''];
@@ -467,6 +484,27 @@ export class WorldScene extends Phaser.Scene {
       const frames = this.b.sprites[ref]?.frames ?? 1;
       tex.drawFrame(ref, frames > 1 ? frame % frames : undefined, x * T, y * T, false);
     }
+  }
+
+  /**
+   * A copy of a grass tile's frames remapped to one tone, kept as a canvas texture with
+   * the same frame layout and made once per sprite and tone. Nothing when the sprite is
+   * not loaded, so the tile falls back to its plain self.
+   */
+  private toned(ref: string, tone: Tone): string | undefined {
+    const key = `${ref}#tone${tone}`;
+    if (this.textures.exists(key)) return key;
+    const info = this.b.sprites[ref];
+    if (!info || !this.textures.exists(ref)) return undefined;
+    const tex = this.textures.createCanvas(key, info.w * info.frames, info.h);
+    if (!tex) return undefined;
+    for (let f = 0; f < info.frames; f++) tex.drawFrame(ref, info.frames > 1 ? f : undefined, f * info.w, 0, false);
+    const pixels = tex.getData(0, 0, tex.width, tex.height);
+    remapTone(pixels.data, tex.width, tone, info.w);
+    tex.putData(pixels, 0, 0);
+    tex.refresh();
+    if (info.frames > 1) for (let f = 0; f < info.frames; f++) tex.add(f, 0, f * info.w, 0, info.w, info.h);
+    return key;
   }
 
   private flipWater(): void {
@@ -1239,8 +1277,9 @@ export class WorldScene extends Phaser.Scene {
       this.vignette.radius = 0.8 - 0.15 * this.night;
     }
     if (this.dusk) {
-      // gold over the valley around 20:00 and again around 05:30; the kernel's hours are untouched
-      this.dusk.setFillStyle(PALETTE.gold, 0.4 * Math.max(warmth(m, 20), warmth(m, 5.5)));
+      // gold over the valley around 20:00 and again around 05:30, and a faint wash through the day while WARM; the kernel's hours are untouched
+      const day = WARM ? 0.12 * (1 - this.night) : 0;
+      this.dusk.setFillStyle(PALETTE.gold, Math.max(0.4 * Math.max(warmth(m, 20), warmth(m, 5.5)), day));
     }
     for (const d of this.dapples) d.setAlpha(0.08 * (1 - this.night));
     const isNight = this.night >= 0.5;
@@ -1671,11 +1710,9 @@ function baseName(ref: string): string {
   return ref.split('/').pop() ?? ref;
 }
 
-/** A fixed, well-mixed number for a tile or prop position: the same tile always picks the same variant and phase. */
-function hash(x: number, y: number): number {
-  let h = (x * 374761393 + y * 668265263) >>> 0;
-  h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
-  return (h ^ (h >>> 16)) >>> 0;
+/** "core/base-kit:props/standing_stone" -> "core/base-kit:" */
+function kitOf(ref: string): string {
+  return ref.slice(0, ref.indexOf(':') + 1);
 }
 
 /** 1 within half an hour of the centre, falling to 0 over the next 45 minutes on either side. */

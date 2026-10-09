@@ -57,3 +57,15 @@ function richFromPage(): Rich {
 
 /** What this page draws. Read once at load; `?rich=none` is the plain valley. */
 export const RICH: Rich = richFromPage();
+
+/**
+ * The trial switch of the pixel-rich gallery: `?warm=0` turns off the faint gold
+ * wash the light group lays over the day, so the valley can be compared with and
+ * without it. Absent is on. Read once at load.
+ */
+function warmFromPage(): boolean {
+  if (typeof window === 'undefined') return true;
+  return new URLSearchParams(window.location.search).get('warm') !== '0';
+}
+
+export const WARM: boolean = warmFromPage();
