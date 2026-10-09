@@ -16,6 +16,7 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 - On the camp (question S2): as recommended, and a camp outside the town is a tent the player buys first; to get through the night safely the player needs enough wood for it. Wood comes from felling trees, never from piles of twigs (DECISIONS.md, the entry on wood).
 - On the internal difficulty scale (question S3): as recommended. One internal scale, each step asking half again as much, and never on screen.
 - On cooperation and competition (question S4): as recommended, and later there will be dangerous areas outside the towns where players face each other. Every form of upkeep offered was rejected.
+- On a plot that work opens (question S5): whoever signed up for the clearing and took part enters a draw. How it weighs may depend on the size of the area and the number of places, and the one who worked hardest may come first; the game does not turn only on buildings now, so the rest can wait.
 
 ## 2. What exists today and stays
 
@@ -49,6 +50,7 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 
 - A town gains plots only by work, never by date (G42): a mended street opens its houses, and a group quest at the edge of town (fell the trees, clear the stones, level the ground) turns its tiles into new plots for good.
 - A full town is a signal, not a wall: the clearing quest, or the next town, answers it.
+- A plot that work opens is drawn among those who did the work (S5, answered in part 9.10). A clearing quest names the plots it opens, and a participant is a player who signed up and finished at least one of its steps. The draw is the server's and gives each participant one plot at most, under the rule of one plot in `building` and one house per player. A plot won is held as a claimed one: the first step pays its price, and with no finished step for `build_hold_days` it returns to the town and is drawn again, among the participants first. Open until the shared town is designed: whether the chance grows with the share of the work, and how the draw follows the size of the area and the number of places.
 
 ### 3.4 A home without a house
 
@@ -124,7 +126,7 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 
 **S4. Cooperative or competitive.** Answered 9.10, as recommended: competition only for places, a safe core where nothing can be taken, and the fields reserved now. The owner added areas between players outside the towns, once combat comes, and rejected every form of upkeep (3.9).
 
-**S5. Who gets a plot that work opens.** First come at the moment a plot opens favours whoever is online then, and a script most of all. Recommended: the players of the clearing quest that opened it claim first, for 3 days; then first come.
+**S5. Who gets a plot that work opens.** First come at the moment a plot opens favours whoever is online then, and a script most of all. Answered in part 9.10: the plots a clearing opens are drawn among those who signed up for it and took part; whether the chance follows the work done, and how the draw follows the area and the number of places, wait for the shared town's design (3.3).
 
 ## 6. What can come before the shared world
 

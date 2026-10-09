@@ -575,3 +575,17 @@ The question (settlement plan S4, 9.10): the 6.10 decision kept the world cooper
 
 **Closes:** S4 of the settlement plan; GRUNT's open ends carry the reserved fields as CR-39.
 **Retry when:** in a shared world one player or group holds a large share of a town's places, or gold piles up with nothing to spend it on. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ A plot that work opens is drawn among those who did the work
+
+The question (settlement plan S5, 9.10): first come at the moment a plot opens favours whoever is online then, and a script most of all. The recommendation was three days of first claim for the players of the clearing quest, then a draw. The owner's word (9.10): whoever signed up for the clearing and took part enters the draw. How it weighs may depend on the size of the area and the number of places, and the one who worked hardest may come first; the game does not turn only on buildings now, so the rest can wait.
+
+- A clearing quest names the plots it opens. They are drawn among its participants: a player who signed up and finished at least one of its steps. Signing up without working is not taking part, so a script gains nothing by signing up.
+- The draw is the server's, as every roll is (kernel review K3), and gives each participant one plot at most, under the rule of one plot in building and one house per player.
+- A plot won is held as a claimed one: the first step pays its price, and with no finished step for 14 days it returns to the town (S1b) and is drawn again, among the participants first. The draw needs no clock of its own.
+- Open until the shared town is designed (stage 4): whether every participant has the same chance or the chance grows with the share of the work done, measured in active seconds as levels are, and how the draw follows the size of the area and the number of places. A reading: a chance that grows with the work, so the hardest worker is the most likely winner and never a certain one.
+
+`docs/design/SETTLEMENT.md` 3.3 holds the rule.
+
+**Closes:** S5 of the settlement plan, in part; the rest waits for the shared town's design.
+**Retry when:** the shared town is designed. Model: claude-opus-5-5.
