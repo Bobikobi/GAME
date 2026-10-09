@@ -5,6 +5,7 @@ import {
   type GameEvent,
   type State,
   bagCapacity,
+  bagUsed,
   campBuilt,
   campTile,
   findSlot,
@@ -163,6 +164,18 @@ function questOrder(b: Bundle, id: string): number {
 
 export function readyToHandIn(b: Bundle, s: State, questId: string): boolean {
   return s.player.quests[questId] === 'active' && questSatisfied(b, s, questId);
+}
+
+/**
+ * Which HUD buttons have earned their place (progressive disclosure, FTUE): the bag once
+ * something was picked up, the journal once the first restoration wrote its entry or a
+ * task was finished, and both as soon as a skill point waits to be spent there. Read
+ * from the state, so a reload shows the same buttons; the keys work from the start.
+ */
+export function hudUnlocks(s: State, points = 0): { bag: boolean; log: boolean } {
+  const p = s.player;
+  const log = p.journal.length > 0 || points > 0 || Object.values(p.quests).some((q) => q === 'done');
+  return { bag: log || bagUsed(s) > 0, log };
 }
 
 /** An active quest still waits on a riddle that a dig at another spot than `treasure` answers: this is the wrong place. */

@@ -13,8 +13,7 @@ PLATFORM.md section 5.5 as tests; `pnpm verify` green before the pull request;
 commit messages end with the `Co-Authored-By` line of the model that ran.
 
 Order: M1 (1-3) and M2 (4-9) can run in parallel in two worktrees. M3 (10-14)
-waits for both. M4 (15-16) waits for M1. M5 (17-19) waits for M3 and for
-Elad's yes to question 4 of the platform message.
+waits for both. M4 (15-16) waits for M1. M5 (17-19) waits for M3; question 4 was answered 2026-10-08 (DECISIONS.md).
 
 ## M1 - data
 
@@ -567,7 +566,7 @@ Prints the file and 1.
 Decision: DECISIONS.md 2026-10-07, "The creator MCP is read-only and runs on
 the creator's machine".
 
-## M5 - the stage-1 service (after Elad's yes to question 4)
+## M5 - the stage-1 service (question 4 answered 2026-10-08, see DECISIONS.md)
 
 ### 17. The endpoints
 
@@ -908,7 +907,6 @@ What was approved, decided or found and is not finished. One row per item, in th
 
 | Id | What is open | Where | Closes when |
 |---|---|---|---|
-| CR-1 | The shop floor in the code is r * V; R8 writes k * r * V. One of the two is wrong. | `kernel/src/values.ts`, `docs/kernel-review-v1.md` | the owner's word is in DECISIONS.md and either the review or `minChargeFor` matches it |
 | CR-2 | A removed item is dropped from a save, not converted (R5). | `game/src/session.ts` | a conversion record exists in the schema and `adapt` applies it, before stage 2a saves |
 | CR-3 | R12 names min, max, step and cooldown per parameter; the params carry min, max and step, no cooldown, the check reads min and max only, and r is votable though "fixed for good". | `content/core/params.json`, `tools/src/check.ts` | the check reads the step and a cooldown, or the review is amended |
 | CR-4 | G3 has no check and no checklist question. | `docs/design/GAME_RULES.md`, `tools/src/play.ts` | a play rule counts visible steps, or section 8 records G3 as reviewed by hand |
