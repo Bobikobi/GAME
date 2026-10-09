@@ -1,5 +1,5 @@
 /** Persistence tests cover both normal storage and privacy-mode failures. */
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
 import { LEGACY_SOUND_PREF_NAME, readMuted, SOUND_PREF_NAME, writeMuted } from '../../src/audio/storage';
 import type { SoundStorage } from '../../src/audio/storage';
@@ -37,6 +37,29 @@ describe('sound preference', () => {
     writeMuted(storage, true);
     expect(storage.getItem(SOUND_PREF_NAME)).toBe('{"muted":true}');
     expect(storage.getItem(LEGACY_SOUND_PREF_NAME)).toBeNull();
+  });
+
+  test('a setting under the new name wins over one left under the working title, which is never read', () => {
+    const storage = new FakeStorage();
+    storage.setItem(SOUND_PREF_NAME, '{"muted":false}');
+    storage.setItem(LEGACY_SOUND_PREF_NAME, '{"muted":true}');
+    const getItem = vi.spyOn(storage, 'getItem');
+
+    expect(readMuted(storage)).toBe(false);
+    expect(getItem).not.toHaveBeenCalledWith(LEGACY_SOUND_PREF_NAME);
+  });
+
+  test('keeps the setting saved under the working title when the new name cannot be written', () => {
+    const storage = new FakeStorage();
+    storage.setItem(LEGACY_SOUND_PREF_NAME, '{"muted":true}');
+    vi.spyOn(storage, 'setItem').mockImplementation(() => {
+      throw new Error('quota exceeded');
+    });
+
+    expect(() => writeMuted(storage, false)).not.toThrow();
+    expect(storage.getItem(LEGACY_SOUND_PREF_NAME)).toBe('{"muted":true}');
+    expect(storage.getItem(SOUND_PREF_NAME)).toBeNull();
+    expect(readMuted(storage)).toBe(true);
   });
 
   test('defaults to audible if storage throws', () => {
