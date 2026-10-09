@@ -268,6 +268,21 @@
         "w": 16,
         "h": 16
       },
+      "props/canopy_1": {
+        "file": "props/canopy_1.png",
+        "w": 32,
+        "h": 32
+      },
+      "props/canopy_2": {
+        "file": "props/canopy_2.png",
+        "w": 32,
+        "h": 32
+      },
+      "props/canopy_3": {
+        "file": "props/canopy_3.png",
+        "w": 32,
+        "h": 32
+      },
       "props/chest": {
         "file": "props/chest.png",
         "w": 16,
@@ -305,6 +320,12 @@
         "h": 16,
         "frames": 2
       },
+      "props/flowers_blue": {
+        "file": "props/flowers_blue.png",
+        "w": 16,
+        "h": 16,
+        "frames": 2
+      },
       "props/flowers_white": {
         "file": "props/flowers_white.png",
         "w": 16,
@@ -318,6 +339,12 @@
       },
       "props/glow_mushrooms": {
         "file": "props/glow_mushrooms.png",
+        "w": 16,
+        "h": 16,
+        "frames": 2
+      },
+      "props/grass_tall": {
+        "file": "props/grass_tall.png",
         "w": 16,
         "h": 16,
         "frames": 2
@@ -341,6 +368,11 @@
       },
       "props/log_fallen": {
         "file": "props/log_fallen.png",
+        "w": 16,
+        "h": 16
+      },
+      "props/log_mossy": {
+        "file": "props/log_mossy.png",
         "w": 16,
         "h": 16
       },
@@ -369,6 +401,11 @@
         "w": 16,
         "h": 16,
         "frames": 2
+      },
+      "props/rock_mossy": {
+        "file": "props/rock_mossy.png",
+        "w": 16,
+        "h": 16
       },
       "props/rock_small": {
         "file": "props/rock_small.png",
@@ -444,22 +481,26 @@
       "tiles/bank_e": {
         "file": "tiles/bank_e.png",
         "w": 16,
-        "h": 16
+        "h": 16,
+        "frames": 2
       },
       "tiles/bank_n": {
         "file": "tiles/bank_n.png",
         "w": 16,
-        "h": 16
+        "h": 16,
+        "frames": 2
       },
       "tiles/bank_s": {
         "file": "tiles/bank_s.png",
         "w": 16,
-        "h": 16
+        "h": 16,
+        "frames": 2
       },
       "tiles/bank_w": {
         "file": "tiles/bank_w.png",
         "w": 16,
-        "h": 16
+        "h": 16,
+        "frames": 2
       },
       "tiles/bridge": {
         "file": "tiles/bridge.png",
