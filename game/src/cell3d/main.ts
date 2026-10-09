@@ -12,8 +12,10 @@
  * Under ?e2e the scene advances a fixed 1/30 s per frame and window.__cell3d
  * drives it, so game/e2e/cell3d.ts takes the same screenshots on every
  * machine. ?look=wizard|matt|human picks the character (wolf-bright and
- * wolf-grim walk on four legs), ?zoom=<m> the start distance, ?post=0 turns
- * the bloom off.
+ * wolf-grim walk on four legs; the people made for this trial, digger-m and
+ * forager-m, keep the height they were made at and carry the props of their
+ * role on the sockets of their skeleton), ?props=hat,basket puts other props
+ * on (empty: none), ?zoom=<m> the start distance, ?post=0 turns the bloom off.
  */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -68,6 +70,8 @@ const RUN_SPEED = 3.4;
 const QUAD_HEIGHT = 0.95;
 const QUAD_SPEED = 1.1;
 const QUAD_RUN_SPEED = 2.8;
+/** what each role carries: game/public/3d/models/prop-<name>.glb, each on the socket its file names */
+const ROLE_PROPS: Record<string, string[]> = { digger: ['spade'], forager: ['basket'], explorer: ['hat'] };
 
 // ---------------------------------------------------------------- the land
 
@@ -387,7 +391,10 @@ async function loadCharacter(name: string): Promise<Hero> {
   root.traverse((obj) => {
     if (obj instanceof THREE.SkinnedMesh && obj.skeleton.bones.some((b) => /frontleg/i.test(b.name))) quad = true;
   });
-  const s = (quad ? QUAD_HEIGHT : CHAR_HEIGHT) / Math.max(size.y, 1e-6);
+  // a person made for this trial (game/tools/blender/person_rig.py) has prop sockets and already stands
+  // at the height it was made at; any other character is sized to CHAR_HEIGHT or QUAD_HEIGHT
+  const made = !!root.getObjectByName('socket_back') || !!root.getObjectByName('socket_head');
+  const s = made ? 1 : (quad ? QUAD_HEIGHT : CHAR_HEIGHT) / Math.max(size.y, 1e-6);
   root.scale.setScalar(s);
   root.position.y = -box.min.y * s;
   root.traverse((obj) => {
@@ -438,6 +445,48 @@ async function loadCharacter(name: string): Promise<Hero> {
   });
   progress();
   return { holder, mixer, idle, walk, run, quad, speed, runSpeed, eye: quad ? 0.6 : 1.0, clips: gltf.animations.map((c) => c.name) };
+}
+
+/**
+ * Puts each prop on the socket its file names (extras.socket on its node): the prop was modelled in the
+ * socket's frame, so it goes on as it is. What lies on the body (the basket's straps, the hat) comes in one
+ * copy per person it was fitted to, named by that person's look (extras.wearer): the copy made for this
+ * look stays, or the first one on anyone else. Returns what went on, as prop@socket (prop:wearer@socket for
+ * a fitted copy).
+ */
+async function attachProps(root: THREE.Object3D, names: string[], look: string): Promise<string[]> {
+  toLoad += names.length;
+  const on: string[] = [];
+  for (const name of names) {
+    const gltf = await gltfLoader.loadAsync(`./3d/models/prop-${name}.glb`);
+    progress();
+    const nodes: THREE.Object3D[] = [];
+    gltf.scene.traverse((obj) => {
+      nodes.push(obj);
+    });
+    const prop = nodes.find((obj) => typeof obj.userData['socket'] === 'string');
+    const socket = prop ? root.getObjectByName(String(prop.userData['socket'])) : undefined;
+    if (!prop || !socket) {
+      console.warn(`prop ${name}: this character has no socket for it`);
+      continue;
+    }
+    const copies = nodes.filter((obj) => typeof obj.userData['wearer'] === 'string');
+    const mine = copies.find((obj) => obj.userData['wearer'] === look) ?? copies[0];
+    for (const obj of copies) {
+      if (obj !== mine) obj.removeFromParent();
+    }
+    prop.traverse((obj) => {
+      if (!(obj instanceof THREE.Mesh)) return;
+      obj.castShadow = true;
+      obj.receiveShadow = true;
+      for (const m of Array.isArray(obj.material) ? obj.material : [obj.material]) {
+        if (m instanceof THREE.MeshStandardMaterial && m.map) m.map.anisotropy = 8;
+      }
+    });
+    socket.add(prop);
+    on.push(mine ? `${name}:${String(mine.userData['wearer'])}@${socket.name}` : `${name}@${socket.name}`);
+  }
+  return on;
 }
 
 function lerpAngle(a: number, b: number, t: number): number {
@@ -725,6 +774,12 @@ async function main(): Promise<void> {
   // the character
   const look = PARAMS.get('look') ?? 'wizard';
   const hero = await loadCharacter(`character-${look}`);
+  const wanted = PARAMS.get('props');
+  const props = await attachProps(
+    hero.holder,
+    wanted !== null ? wanted.split(',').filter(Boolean) : (ROLE_PROPS[look.split('-')[0] ?? ''] ?? []),
+    look,
+  );
   scene.add(hero.holder);
   const feetShadow = new THREE.Mesh(
     hero.quad ? new THREE.PlaneGeometry(0.7, 1.6) : new THREE.PlaneGeometry(0.9, 0.9),
@@ -903,6 +958,7 @@ async function main(): Promise<void> {
     pos: () => [Math.round(pos.x * 100) / 100, Math.round(pos.z * 100) / 100],
     debug: () => ({
       look,
+      props,
       clips: hero.clips,
       quad: hero.quad,
       gait,

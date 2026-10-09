@@ -265,7 +265,7 @@ Fronts with the head rulers, same looks and order:
 
 ## Licences
 
-### Meshy (`meshy-warrior`, `meshy-mage`, `wolf-bright`, `wolf-grim`)
+### Meshy (`meshy-warrior`, `meshy-mage`, `wolf-bright`, `wolf-grim`, `digger-m`, `forager-m`)
 
 [Meshy Terms of Use](https://www.meshy.ai/terms-of-use), section 3.2 (Last Updated September 19,
 2026):
@@ -395,6 +395,11 @@ not as stand-alone files, so they never go into this repository (details and lin
 |---|---|---|
 | `game/public/3d/models/character-meshy-warrior.glb` (added) | CC BY 4.0 | "Warrior, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: reduced from 191,496 to 60,000 triangles, clips renamed to Idle, Walk and Run, a 0.08 s extra clip removed" |
 | `game/public/3d/models/character-meshy-mage.glb` (added) | CC BY 4.0 | "Mage, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: reduced from 322,614 to 59,988 triangles; skeleton and skin weights added in Blender by transferring the warrior's Mixamo-named rig (game/tools/blender/rig_transfer.py); clips Idle, Walk and Run shared from the warrior" |
+| `game/public/3d/models/character-wolf-bright.glb` (added) | CC BY 4.0 | "Wolf, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: the colour, roughness and normal maps of the unrigged model put back on the rigged mesh (the same UV layout) and cut from 2048 to 1024 px; scaled to 0.9 m at the ears; Meshy's walk renamed Walk; Run made from the walk and Idle made from the standing pose in Blender (game/tools/blender/quad_pass.py)" |
+| `game/public/3d/models/character-wolf-grim.glb` (added) | CC BY 4.0 | "Wolf, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: the emission input removed (it repeated the colour map) and the colour map cut from 2048 to 1024 px; scaled to 0.9 m at the ears; Meshy's walk renamed Walk; Run made from the walk and Idle made from the standing pose in Blender (game/tools/blender/quad_pass.py)" |
+| `game/public/3d/models/character-digger-m.glb` (added) | CC BY 4.0 | "Digger, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: a knife at the belt removed; scaled to 1.78 m without the hood; skeleton and skin weights added in Blender by fitting the warrior's Mixamo-named rig to the body (game/tools/blender/person_rig.py); clips Idle, Walk and Run retargeted from the warrior; two empty prop sockets added; reduced from 100,354 to 50,000 triangles and the maps cut from 2048 to 1024 px" |
+| `game/public/3d/models/character-forager-m.glb` (added) | CC BY 4.0 | "Forager, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: scaled to 1.64 m; skeleton and skin weights added in Blender by fitting the warrior's Mixamo-named rig to the body (game/tools/blender/person_rig.py), with the belt end cut free where it touched the left hand; clips Idle, Walk and Run retargeted from the warrior; two empty prop sockets added; reduced from 84,584 to 50,000 triangles and the maps cut from 2048 to 1024 px" |
+| `game/public/3d/models/prop-spade.glb`, `prop-basket.glb`, `prop-hat.glb` (added) | made for this repository by `game/tools/blender/props.py`, every map drawn in code | none |
 | `game/public/3d/models/character-wizard.glb` | CC BY 3.0 | "Animated Wizard" by Quaternius, https://poly.pizza/m/kttbFvCl2C, CC BY 3.0 |
 | `game/public/3d/models/character-matt.glb` | CC0 | none |
 | The Quaternius looks (not added; use the 1024 px WebP builds of about 3 MB) | CC0 | none (optional: "Character parts and animations by Quaternius (CC0)"); check the QAL note above |
@@ -524,3 +529,51 @@ template, one free rig per account, and passed through `game/tools/blender/quad_
   wolf in it.
 - Limit: Run is a quickened walk, a fast trot rather than a gallop, because the free library has
   no other four-legged motion. A real gallop needs a paid motion or a hand-keyed cycle.
+
+## Addendum, 2026-10-09: the first two people, rigged here, carry their items
+
+The first two of the six people of the cast (style-compass.md, "The cast") are in the cell trial:
+the digger (`?look=digger-m`, an indigo hood with a short shoulder cape) and the forager
+(`?look=forager-m`, a rust-red neckerchief and a rope belt), both generated in Meshy (Meshy 6 Lite,
+free plan) without their items. The free plan rigs one character per account, so both were rigged
+here, and the items were made here as separate models:
+
+- `game/tools/blender/person_rig.py <rigged.glb> <static.glb> <out.glb>` fits the warrior's
+  skeleton to the drawn body instead of copying it as it stands, as `rig_transfer.py` does. It
+  measures both bodies on a voxel grid and traces each arm in 3-D, from the fingertip back to the
+  shoulder, for the wrist and the elbow; builds the figure's skeleton on those joints; binds it
+  with bone-heat weights on a watertight copy; keeps every vertex on the bones of its own part (an
+  arm or the rest of the body); cuts away the body's side where the draft fused a hand to it;
+  retargets Idle, Walk and Run with `groundSpeed`; and adds two empty sockets for props,
+  `socket_back` on the upper spine at the surface of the back and `socket_head` at the top of the
+  skull. The digger was scaled to 1.78 m without the hood and a knife at his belt was cut away;
+  the forager was scaled to 1.64 m and the end of his belt, fused to the left hand, was cut free.
+  Both were then reduced to 50,000 triangles with glTF Transform's simplify and their maps cut to
+  1024 px: 2.3 and 2.2 MB, 28 joints.
+- `game/tools/blender/props.py` builds the items, shapes and maps in code: an ash spade with a T
+  grip wrapped in indigo cloth, a wooden blade and an iron shoe, carried across the back with the
+  blade above the left shoulder (2,204 triangles, 188 KB); a plain-woven willow basket with a
+  rust-red lining folded over the rim and two leather straps over the shoulders and under the arms
+  (7,536 triangles, 328 KB); and the explorer's moss-green felt hat (4,608 triangles, 192 KB).
+  `--fit` fits an item to everyone who carries it: one spade and one basket serve the man and the
+  woman of a role, while what lies on the body, the straps and the hat, is fitted to each of them,
+  and the file holds one copy per person, named by the look in its node extras (`wearer`);
+  `--check` hangs an item on a person, with that person's copy, and measures, in the rest pose and
+  in every frame of every clip, how close it comes to the body and to the arms.
+- `game/src/cell3d/main.ts`: a person with sockets keeps the height it was made at (every other
+  character is still sized to 1.75 m) and carries the items of its role: the digger the spade, the
+  forager the basket, an explorer the hat, each with the copy fitted to that look (the first copy on
+  anyone else). `?props=hat,basket` puts other items on and `?props=` takes them off. Walk and Run
+  play at the rate that keeps the planted feet still: 1.12 and 0.75 of the clips' tempo for the
+  digger, 1.25 and 0.85 for the forager.
+- Clearance from `--check` (negative: inside): the spade stays at least 20 mm off the digger's
+  back in the rest pose and Idle and at least 46 mm off his arms in every clip; its grip end dips
+  up to 15 mm into the right hip in a few Run frames. The basket's straps sink up to 7 mm into the
+  chest in Idle and up to 88 mm under the arms in Walk and Run, where the arm covers them: they
+  are part of the rigid basket, not skinned to the body. The hat sits 3 mm into the forager's
+  forehead at the band, out of sight.
+- Result: both people stand, walk and run in the cell trial with their items on, at 1440x900 and
+  at 390x844, and the spade and the basket read at phone size.
+- Limits: the clips are the warrior's, so the two men move alike; the hat is fitted to the
+  forager's head until the explorers are made. The women and the explorers come next, and `--fit`
+  then fits the same three items to all six.
