@@ -345,9 +345,10 @@ day); the audit behind them is `docs/design/CRAFTING_AUDIT.md`.
 
 - **G38 Crafting is a road, not the road.** A player who never crafts
   progresses by the roads already written: hard quests, treasure and digging,
-  riddles, mastery of the minigames, the expedition and reputation, fenced by
-  a profession or character level where a road needs it. War, theft and
-  robbery stay out (G35, G28).
+  riddles, mastery of the minigames, the expedition and reputation, fenced by a
+  profession or character level where a road needs it. War, theft and robbery
+  stay out (G35, G28), except later in the areas between players that a player
+  chooses to enter, once combat comes ([SETTLEMENT.md](SETTLEMENT.md) 3.9).
 - **G39 Power is never sold.** No crafted ability, recipe, material or tool is
   sold or gated for money or premium currency. Only a look item with no
   effect may carry the premium marker, and it keeps a way to get it in the

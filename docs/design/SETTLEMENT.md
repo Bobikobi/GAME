@@ -15,6 +15,7 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 - On what absence costs (question S1b): as recommended. A building with no finished step for 14 days returns to the town, the house of an owner who has not played for 45 days is packed, and one mail comes first. Absence costs the place and a fifth of its price, never what the player made.
 - On the camp (question S2): as recommended, and a camp outside the town is a tent the player buys first; to get through the night safely the player needs enough wood for it. Wood comes from felling trees, never from piles of twigs (DECISIONS.md, the entry on wood).
 - On the internal difficulty scale (question S3): as recommended. One internal scale, each step asking half again as much, and never on screen.
+- On cooperation and competition (question S4): as recommended, and later there will be dangerous areas outside the towns where players face each other. Every form of upkeep offered was rejected.
 
 ## 2. What exists today and stays
 
@@ -37,7 +38,7 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 
 - A town lists its plots: places in existing buildings that can each hold one house. A plot is `free`, `building` (holder, the time of the last finished step, the steps done) or `built` (owner).
 - Claiming: the first player whose first step on a free plot the server accepts holds it. The first step pays the plot's price in gold, which is burned, and makes the first delivery.
-- One plot in `building` per player at a time, and one house per player to start (a reading; a later stage may allow more, with an upkeep that grows with the number held).
+- One plot in `building` per player at a time, and one house per player to start (a reading; a later stage may allow more, without upkeep, S4).
 - Building is an ordered chain of steps. A step is a delivery to the plot or a quest from the palette (gather, find, riddle, tend and the rest). A finished step changes what stands on the plot: a frame, walls, a roof, a door. The builder leaves between steps, and nothing on the plot decays while it is held.
 - Lapse: when no step is finished for `build_hold_days` (14 to start), the plot returns to `free`. The clock runs whether the builder is away or plays without building, so a slow builder and an absent one meet the same rule (S1). The builder gets back every delivered item and `plot_refund_permille` of the price (800, S1b) through the ledger with the reason `refund`; the rest of the price stays burned. The quests of the finished steps keep the rewards they paid.
 - A step fits in the hold (a reading): the checker refuses a step whose value is above `step_value_max_ms`, two hours of the reference player's effort to start, so a lapse comes from the builder's pace and never from the chain.
@@ -84,6 +85,16 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 - The game mails a player only when something the player holds in a shared town is about to return to the town: one mail per hold, `notice_days` before its end (3 for a building and 7 for a house, to start). The mail names what returns, what stays with the player, and the date.
 - A mail never asks the player back for anything else, never offers a reward and is never repeated. A player may turn the mails off; the screen then tells alone.
 
+### 3.9 Areas between players (S4, answered 9.10)
+
+- Players compete for places only: plots in a shared town (3.2) and, once combat comes (stage 8 or a vote, G35), areas between players.
+- An area between players lies far from the towns and high on the scale (3.6), so a new player does not walk in by chance; a sign at its edge warns before the first step in (G31). Entering is the consent, and whoever does not enter is never hurt there.
+- Towns, camps and houses are always safe, and nothing is taken from a player who is away.
+- Its nodes pay more for the risk: the effort weight counts the area's protection level (kernel review 7.2, item 4).
+- A player brought down by another player there falls by G33 and loses only what was gathered on that outing, which goes to the one who brought them down. Tools, worn items and what the player made stay theirs.
+- Reserved now, each one field with a default that changes nothing today: a `controller` on every place (default public), a protection level on every area (`safe`, `wild` or `contested`; the core holds only `safe` and `wild` until combat opens), and a reason on every movement of gold, from a closed list (`price`, `refund`, and later `spoils`, `tax`, `rent`, `toll`).
+- No upkeep. The settlement's prices are the gold sink, and the brakes on holding everything are written already: one plot in `building` and one house per player to start (3.2), absence returning places (3.2, S1b), plots opened by work (3.3), and in the areas between players, other players.
+
 ## 4. Where these meet the rules already written
 
 | Rule already written | What meets it | Proposal |
@@ -92,11 +103,11 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 | G28: no "last chance"; the drives of loss and avoidance it refuses | A mail before a place returns to the town | Read as: a notice of a real date for a real place, once per hold; it sells nothing and offers nothing |
 | Pillar 5: effort is never wasted | A lapse loses the building's progress | Answered (S1b): every delivered item comes back, the finished steps' quests keep their rewards, and a finished house is packed, never destroyed |
 | G30 (8.10): the town and the camp are safe at every hour, and a night's sleep at camp gives health back | "Outside the town is more dangerous", and the camp stands outside the town; the street | Answered (S2): the town stays safe and its street heals as the camp does; a camp outside the town is a tent, safe while its fire burns. G30 and G32 now say so |
-| 6.10 (kernel review 7.2, D6): the world stays cooperative until there is a community | First come for plots; rival groups later | S4 |
+| 6.10 (kernel review 7.2, D6): the world stays cooperative until there is a community | First come for plots; rival groups later | Answered (S4): competition only for places, and later in areas between players that a player chooses to enter (3.9) |
 | G42: rare is capacity and gates, never a timer | Places open gradually | Read as: by work (mending, clearing quests), never by date |
 | The ruins as the community's slots | Houses in the town's existing buildings | Read as: two kinds of place; a slot stays a public place, a plot is a home |
 | 9.10: no difficulty word or number on screen | An internal difficulty rating | Answered (S3): consistent; the rating is internal, and the world shows it |
-| 9.10: war, theft and robbery stay out | A rival group attacks a fort | Consistent: only with combat, both sides signed up, nothing taken from a player who is away |
+| 9.10: war, theft and robbery stay out | A rival group attacks a fort; areas between players | Answered (S4): they stay out except in areas between players once combat comes, both sides there by choice; a fall there gives the outing's finds to the one who caused it, and nothing is taken from a player who is away (3.9) |
 | Spec stage 4: houses and rent | Places bought with gold | Read as: a plot is bought once; letting a house to another player stays a stage-4 item |
 | Stages 2a and 3: each player in their own world | Scarce plots in a shared town | Read as: the own valley stays the player's; scarcity starts with the shared world |
 | 6.10 (kernel review, D3): nothing carries from the stage-1 demo into an account | Registration after the opening | Consistent: accounts begin at stage 2a and the demo keeps none. How the opening played before registering moves into the new account belongs to stage 2a's design (server-decided saves) |
@@ -111,10 +122,10 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 
 **S3. The internal difficulty scale.** Answered 9.10, as recommended: one internal scale for areas, quests and recipes. Each step multiplies effort and a hazard's harm by 1.5, the hazards' frequency grows by one step per level, and it never shows on screen. A recipe's chance keeps the crafting rule of a fixed step per missing level (3.6).
 
-**S4. Cooperative or competitive.** The 6.10 decision kept the world cooperative and put ownership and conquest back on the table only when there is a community; first come for plots and rival groups bring competition in. Recommended: competition only for places, and with combat, contests that both sides sign up for; a safe core where nothing can be taken. Reserve now, while each is one schema field, what the kernel review listed in 7.2: a controller on places, an area's danger and protection level, ledger reasons for price, refund and upkeep, and an upkeep that grows with holdings.
+**S4. Cooperative or competitive.** Answered 9.10, as recommended: competition only for places, a safe core where nothing can be taken, and the fields reserved now. The owner added areas between players outside the towns, once combat comes, and rejected every form of upkeep (3.9).
 
 **S5. Who gets a plot that work opens.** First come at the moment a plot opens favours whoever is online then, and a script most of all. Recommended: the players of the clearing quest that opened it claim first, for 3 days; then first come.
 
 ## 6. What can come before the shared world
 
-The parts that need no shared world can be built once their question is answered: danger by area and the internal scale (S3, answered), the camp's fire and the tent (S2), group quests tried alone, and the town the player mends as the settlement, with houses that every player can build in their own valley. Plots, the race, the hold and the street wait for stage 4.
+The parts that need no shared world can be built once their question is answered: danger by area and the internal scale (S3, answered), the camp's fire and the tent (S2), the fields reserved for competition (S4), group quests tried alone, and the town the player mends as the settlement, with houses that every player can build in their own valley. Plots, the race, the hold and the street wait for stage 4.

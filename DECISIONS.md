@@ -559,3 +559,19 @@ The question (settlement plan S3, 9.10): the owner asked whether an internal dif
 
 **Closes:** S3 of the settlement plan; GRUNT's open ends carry the building as CR-38.
 **Retry when:** a playtest shows a step too steep or too flat. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ Players compete only for places, and later in areas between players that a player chooses to enter; no upkeep
+
+The question (settlement plan S4, 9.10): the 6.10 decision kept the world cooperative and put ownership and conquest back on the table only when there is a community, and first come for plots and rival groups bring competition in. The owner's word (9.10): yes to the recommendation, and later there will also be dangerous areas outside the towns where players face each other. Of the ways to charge upkeep, the owner took none.
+
+- Players compete for places only: plots in a shared town and, once combat comes (stage 8 or a vote, G35), areas between players.
+- An area between players lies far from the towns and high on the difficulty scale, so a new player does not walk in by chance, and a sign at its edge warns first (G31). Entering is the consent; whoever does not enter is never hurt there. Towns, camps and houses are always safe, and nothing is taken from a player who is away. The area's nodes pay more for the risk (kernel review 7.2, item 4).
+- A player brought down by another player there falls by G33 and loses only what was gathered on that outing, which goes to the one who brought them down. Tools, worn items and what the player made stay theirs.
+- This narrows the morning's entry ("Crafting is optional"): war, theft and robbery stay out everywhere except those areas, and there only once combat comes. G38 now says so.
+- Reserved now, each one schema field with a default that changes nothing today (kernel review 7.2): a controller on every place, a protection level on every area (safe, wild, or between players, the last only once combat opens), and a reason from a closed list on every movement of gold (price, refund, and later spoils, tax, rent, toll).
+- No upkeep. The review proposed it as a gold sink and as a brake on one holder taking everything. The settlement's prices are the sink (the crafting economy entry), and the brakes are written already: one plot in building and one house per player to start, absence returning places (S1b), plots opened by work, and in the areas between players, other players. A charge by the clock would also be the timer G28 forbids.
+
+`docs/design/SETTLEMENT.md` 3.9 holds the rule.
+
+**Closes:** S4 of the settlement plan; GRUNT's open ends carry the reserved fields as CR-39.
+**Retry when:** in a shared world one player or group holds a large share of a town's places, or gold piles up with nothing to spend it on. Model: claude-opus-5-5.
