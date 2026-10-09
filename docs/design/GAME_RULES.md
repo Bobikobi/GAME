@@ -284,23 +284,27 @@ already handles that and the e2e run checks it.
 Added 2026-10-08 on the owner's word (DECISIONS.md, that day's falling entry).
 The valley has no combat; its danger is the hour, and what the player eats.
 
-- **G30 The town and the camp are safe; the night and the mist hunt.** The town
-  and the player's camp are safe at every hour. Outside them the hazards that
-  hunt (the wolf, the hidden pit, the trap, deep water) act after dark (the
-  clock the world already keeps: dark from 21:00 to 04:00, fading over two
-  hours each side) and inside the mist; by day they show and can be walked
-  around: the trap is visible, the wolf sleeps, the pit is lit. What the player
-  picks or eats can hurt at any hour: a bad fruit takes health in daylight too,
-  and a player can fall at noon from it.
+- **G30 The town and a burning camp are safe; the night and the mist hunt.**
+  The town is safe at every hour, and a camp is safe while its fire burns. The
+  fire eats wood through the night, more the deeper the area and none at danger
+  level 0, where the opening's camp stands. A camp anywhere else outside the
+  town is a tent the player buys and pitches, with wood enough for the night
+  ([SETTLEMENT.md](SETTLEMENT.md) S2). Outside these the hazards that hunt (the
+  wolf, the hidden pit, the trap, deep water) act after dark (the clock the
+  world already keeps: dark from 21:00 to 04:00, fading over two hours each
+  side) and inside the mist; by day they show and can be walked around: the
+  trap is visible, the wolf sleeps, the pit is lit. What the player picks or
+  eats can hurt at any hour: a bad fruit takes health in daylight too, and a
+  player can fall at noon from it.
 - **G31 Nobody falls unwarned.** A countdown to nightfall sits at the screen's
   edge while the player is outside a safe area (in the first levels, with a
   banner too). Leaving a safe area after dark, or dark arriving outside one,
   lights the lantern and opens one warning box (G14), once per night.
 - **G32 Health is the one bar.** The food bar becomes the health bar. Hazards
-  take health; food, a first-aid kit and a night's sleep at camp give it back;
-  low health slows work the way the empty bar did. Nothing drains it by the
-  clock (G28): there is no hunger timer, eating is how the player heals, and
-  cooking keeps its purpose.
+  take health; food, a first-aid kit and a night's sleep in town or at a
+  burning camp give it back; low health slows work the way the empty bar did.
+  Nothing drains it by the clock (G28): there is no hunger timer, eating is how
+  the player heals, and cooking keeps its purpose.
 - **G33 A fall is clear, and it costs the outing.** At zero health the player
   falls: crosses for eyes, the body sinks into the ground, one plain box says
   what happened; no gravestone, nothing left in the world. The player reappears

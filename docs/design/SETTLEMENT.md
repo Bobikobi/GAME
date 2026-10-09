@@ -13,6 +13,7 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 - With combat, later: a group holds a town or a fort, and a rival group signs up to attack it.
 - On absence (question S1): yes to a hold only in a shared town and to a clock between steps, but absence has a price. A builder who is slow between steps needs a rule, so does an owner who has not played for weeks, and a player about to lose a place hears of it by mail first. Registration is minimal and comes after the opening.
 - On what absence costs (question S1b): as recommended. A building with no finished step for 14 days returns to the town, the house of an owner who has not played for 45 days is packed, and one mail comes first. Absence costs the place and a fifth of its price, never what the player made.
+- On the camp (question S2): as recommended, and a camp outside the town is a tent the player buys first; to get through the night safely the player needs enough wood for it. Wood comes from felling trees, never from piles of twigs (DECISIONS.md, the entry on wood).
 
 ## 2. What exists today and stays
 
@@ -51,7 +52,10 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 
 - The town is safe at every hour, so a player without a house sleeps on the street: safe, and a night's sleep there gives health back as a night at camp does (question S2). A newcomer without a house is not punished for it.
 - What a house gives (a reading): storage and a home station inside the safe town, where the camp's chest and workshop stand outside it, and from stage 4 a window for selling to other players.
-- The camp: question S2. In a shared world each player's camp stays the player's own (a reading): it takes no plot, and no other player enters it.
+- The camp (S2, answered 9.10): a camp is safe while its fire burns. A night costs `wood_per_night` times the area's danger level `d` in wood, put on the fire before dark or through the night, and none at `d` 0: the opening's camp stands there, keeps its chest and workshop, and plays as today.
+- A camp anywhere else outside the town is a tent. The player buys it at the stall, pitches it on a free tile outside the town and off the paths, and packs it to move it. Readings: one tent stands at a time; it holds a fire and a bed, not the chest; it never wears out; and no tent burns less wood than another, since the owner ruled out gear against hazards.
+- The fire matters only while the player is there at night: away, nothing happens to the camp or its chest. Its level shows, and G31's warning comes before it goes out.
+- In a shared world each player's camp stays the player's own (a reading): it takes no plot, and no other player enters it. Every area outside a town is above level 0 there, so every camp costs wood and the street stays the free place to sleep.
 
 ### 3.5 Danger by area
 
@@ -84,7 +88,7 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 | G28: the valley waits; an absence is never punished | A held plot lapses, and a long-absent owner's house is packed | Answered (S1, S1b): a written exception for scarce shared places only, now in G28's own text. Absence costs the place and a fifth of its price, never what the player made |
 | G28: no "last chance"; the drives of loss and avoidance it refuses | A mail before a place returns to the town | Read as: a notice of a real date for a real place, once per hold; it sells nothing and offers nothing |
 | Pillar 5: effort is never wasted | A lapse loses the building's progress | Answered (S1b): every delivered item comes back, the finished steps' quests keep their rewards, and a finished house is packed, never destroyed |
-| G30 (8.10): the town and the camp are safe at every hour, and a night's sleep at camp gives health back | "Outside the town is more dangerous", and the camp stands outside the town; the street | S2: the town stays safe and its street heals as the camp does; a camp outside the town is safe while its fire burns |
+| G30 (8.10): the town and the camp are safe at every hour, and a night's sleep at camp gives health back | "Outside the town is more dangerous", and the camp stands outside the town; the street | Answered (S2): the town stays safe and its street heals as the camp does; a camp outside the town is a tent, safe while its fire burns. G30 and G32 now say so |
 | 6.10 (kernel review 7.2, D6): the world stays cooperative until there is a community | First come for plots; rival groups later | S4 |
 | G42: rare is capacity and gates, never a timer | Places open gradually | Read as: by work (mending, clearing quests), never by date |
 | The ruins as the community's slots | Houses in the town's existing buildings | Read as: two kinds of place; a slot stays a public place, a plot is a home |
@@ -100,7 +104,7 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 
 **S1b. What absence costs.** Answered 9.10, as recommended: a building with no finished step for 14 days returns to the town with every delivered item and 80% of the plot's price. A house whose owner has not played for 45 days is packed: its plot returns with the same 80%, and the house and its contents stay the owner's, to raise again on any free plot without redoing a step. One mail comes before each, 3 days before for a building and 7 for a house. Absence then costs the place and a fifth of its price, never what the player made. Final Fantasy XIV frees a house plot after 45 days without a visit by its owner and refunds 80% of the plot's price, but it tears the house down.
 
-**S2. The camp and the street** (asked 9.10). G30 keeps the town and the camp safe at every hour and gives health back for a night's sleep at camp; the owner's word that outside the town is more dangerous meets it, since the camp stands outside the town. Recommended: the town stays safe at every hour, and a player without a house sleeps on the street, safe, with health back as at camp. Outside the town a camp is safe only while its fire burns, and keeping it burning through a night with branches is the night task (the owner's campfire idea becomes the rule). The fire eats `wood_per_night` times the area's danger level `d`, so a camp at level 0, as the opening's is, needs no wood and plays as today. The fire matters only while the player is there at night: away, nothing happens to the camp or its chest. Its level shows, and G31's warning comes before it goes out.
+**S2. The camp and the street.** Answered 9.10, as recommended: the town stays safe at every hour and its street heals as the camp does; outside it a camp is safe while its fire burns, at `wood_per_night` times `d` a night and none at level 0. The owner added that a camp outside the town is a tent the player buys first, and that the player needs wood enough for the night (3.4).
 
 **S3. The internal difficulty scale.** Recommended: yes, one internal scale for areas, quests and recipes. Each step multiplies effort and danger by a fixed ratio (1.5 to start), while the hazards' frequency grows by one step per level. It never shows on screen.
 
@@ -110,4 +114,4 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 
 ## 6. What can come before the shared world
 
-The parts that need no shared world can be built once their question is answered: danger by area and the internal scale (S3), the camp's fire (S2), group quests tried alone, and the town the player mends as the settlement, with houses that every player can build in their own valley. Plots, the race, the hold and the street wait for stage 4.
+The parts that need no shared world can be built once their question is answered: danger by area and the internal scale (S3), the camp's fire and the tent (S2), group quests tried alone, and the town the player mends as the settlement, with houses that every player can build in their own valley. Plots, the race, the hold and the street wait for stage 4.

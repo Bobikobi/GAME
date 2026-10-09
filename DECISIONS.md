@@ -422,7 +422,7 @@ The question (a review of open product direction, 9.10): the crafting economy en
 
 How these become rules, and where they meet rules already written (G28's "the valley waits", pillar 5, the safe camp of 8.10, the cooperative world of 6.10, G42), is `docs/design/SETTLEMENT.md`. Its open questions go to the owner one at a time, and their answers land here.
 
-**Closes:** nothing yet.
+**Closes:** CR-23 in GRUNT's open ends: the settlement has its own plan, and decisions follow below.
 **Retry when:** the plan's questions are answered, or stage 4 brings a shared world state. Model: claude-opus-5-5.
 
 ## 2026-10-09 ✅ In a shared town absence has a price, and a mail comes first
@@ -460,3 +460,47 @@ Final Fantasy XIV is the nearest precedent: 45 days without the owner's visit, m
 
 **Closes:** S1 of the settlement plan, and the open part of the entry "In a shared town absence has a price, and a mail comes first".
 **Retry when:** the shared world of stage 4 is designed, or real absences show the numbers are wrong. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ A camp outside the town is a tent the player buys, safe while its fire burns
+
+The question (settlement plan S2, 9.10): G30 keeps the town and the camp safe at every hour, and the owner's word that outside the town is more dangerous meets it, since the camp stands outside the town. The owner's word (9.10): yes to the recommendation, and a camp outside the town is a tent the player buys first; to get through the night safely the player needs enough wood for it.
+
+- The town is safe at every hour. A player without a house sleeps on the street, safe, and the night gives health back as at camp.
+- A camp is safe while its fire burns. A night costs `wood_per_night` times the area's danger level `d` in wood, so the opening's camp, at level 0, costs none and plays as today.
+- A camp anywhere else outside the town is a tent, bought at the stall and pitched on a free tile off the paths. Readings: one tent stands at a time, it never wears out, and no tent burns less wood than another, since the owner ruled out gear against hazards.
+- The fire matters only while the player is there at night: away, nothing happens to the camp or its chest. The fire's level shows, and G31's warning comes before it goes out.
+- In a shared world every area outside a town is above level 0 (a reading), so every camp there costs wood and the street stays the free place to sleep.
+
+G30 and G32 in `docs/design/GAME_RULES.md` now say so, and `docs/design/SETTLEMENT.md` 3.4 holds the rule.
+
+**Closes:** S2 of the settlement plan; GRUNT's open ends carry the building as CR-25.
+**Retry when:** a playtest shows a night's wood too dear or too cheap for an area. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ Wood comes from felling trees: every tree gives wood by its type and grows back before it is felled again
+
+The owner's word (9.10): wood is not gathered from piles of twigs but by felling trees, so every tree is of use. A tree gives a number of logs by its type, takes a time to fell by its type, and grows back in a time by its type, shown as it grows; only a grown tree can be felled.
+
+As content, a tree is a gathering node much like a plant: `output` its log, `yield` the logs of its type, `active_ms` the felling time, `respawn_ms` the time to grow back, and `level` by type. Growing back is never paid (R6), so a log's value counts the felling only. The client draws the stage from the share of `respawn_ms` gone: a stump, a sapling, a young tree, a grown one. The wood chain of the crafting content starts from a log.
+
+Readings, each open to the owner's word:
+- Felling needs an axe, a new tool kind in the kernel's closed list, and it is a profession of its own, woodcutting, as digging is with its trowel.
+- A stump blocks its tile as the tree did, so felling never opens or closes a path; only a clearing quest (the settlement plan, 3.3) uproots a tree for good.
+- The trees inside a town are the town's and are not felled.
+- Small wood, a stick for a skewer or kindling, comes from splitting a log by a recipe.
+- In a shared world a tree is shared, and who fells it first joins the question on shared bushes (spec stage 4).
+
+Open: the opening's fallen branches (question W1, asked the same day). Until it is answered, the opening and `core/fallen-branches` stay as they are.
+
+**Closes:** nothing; GRUNT's open ends carry it as CR-24.
+**Retry when:** the owner answers W1, or the wood chain is built. Model: claude-opus-5-5.
+
+## 2026-10-09 ⏸ No bots, no AI that plays for a player, no cheating: the rules wait for accounts and the shared world
+
+The owner's word (9.10): the game needs protection against bots and against AI that plays in a player's place while the player is away, and anti-cheat once players share a world.
+
+What already stands against them: the kernel review recommends perfect execution as the reference player (D2), so a program with perfect timing earns no more per second than a perfect human; rolls come from the server, not from a seed the player holds (K3); a timing grade is the server's, not a claim (K10); boards rank only state the server has checked (7.10); the creator pool counts active seconds with a cap per account-day (R10). Anti-cheat follows the same line: the server decides, and the client only shows and asks.
+
+What a program still gains is hours: it can play all day, and in a shared world it reaches shared things first. What to do about that is question A1, asked in turn.
+
+**Closes:** nothing; GRUNT's open ends carry it as CR-26.
+**Retry when:** the owner answers A1, or stage 2a is designed. Model: claude-opus-5-5.
