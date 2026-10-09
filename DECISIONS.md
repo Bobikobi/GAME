@@ -489,10 +489,10 @@ Readings, each open to the owner's word:
 - Small wood, a stick for a skewer or kindling, comes from splitting a log by a recipe.
 - In a shared world a tree is shared, and who fells it first joins the question on shared bushes (spec stage 4).
 
-Open: the opening's fallen branches (question W1, asked the same day). Until it is answered, the opening and `core/fallen-branches` stay as they are.
+The opening's fallen branches (question W1): answered the same day. None stay, not even in the opening; see the entry on the first fire below.
 
 **Closes:** nothing; GRUNT's open ends carry it as CR-24.
-**Retry when:** the owner answers W1, or the wood chain is built. Model: claude-opus-5-5.
+**Retry when:** the wood chain is built. Model: claude-opus-5-5.
 
 ## 2026-10-09 ⏸ No bots, no AI that plays for a player, no cheating: the rules wait for accounts and the shared world
 
@@ -504,3 +504,25 @@ What a program still gains is hours: it can play all day, and in a shared world 
 
 **Closes:** nothing; GRUNT's open ends carry it as CR-26.
 **Retry when:** the owner answers A1, or stage 2a is designed. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ No fallen branches, not even in the opening: the first fire is built from a felled tree
+
+The question (W1): the wood entry above left the opening open, because its first fire comes before any axe. The recommendation was one storm-fallen tree by the river whose branches last until the first fire. The owner's word (9.10): no. Felling replaces the branches in the opening too, the start of the game changes to fit, and each character may begin in a different way.
+
+The rules:
+- No node gives wood without felling. `core/fallen-branches` leaves the world. The campfire, the storage chest and every recipe that asks for a dry branch ask for a log, or for what a log splits into (the wood entry's reading on small wood). The dry branch stays an item, split from a log, so a saved bag stays valid.
+- The player can fell before the first fire, so the axe comes first. The opening's camp stands by grown trees of the first tree type: woodcutting level 1, a felling time as short as the opening's other steps, and logs enough for the first fire. Every tree of a new valley starts grown.
+- The road of the opening stays: wake by the river, mend the bridge, cross, fell a tree, build the fire, cook, follow the smoke to town. Fire stays among the first things the world relearns, as the spec orders them.
+- No start ends at a wall. The check walks the opening from every starter's start, and refuses content where the axe comes after the first step that needs it, or where the opening asks for more wood than the trees grown at the start give within reach.
+- A saved character that began before the change and holds no axe gets one when the new version of the world loads, the way it learns new start recipes (the entry on crafting wave 2 as built). Without this, a player saved between the bridge and the fire could not go on.
+- The opening chain becomes content. Today it is a fixed list in `tools/src/play.ts`; a character's own first quest joins it, and G2 and G4 apply after it.
+
+A character's own start, as the frame for the open question:
+- A starter is creator content: the spec names a starting character among the expansions. A start is a starter's fields: a kit in the bag, a place to wake, and a first quest of its own that joins the shared road before the first fire.
+- A start changes how a character begins, never what it can become. No profession is closed to any starter, and the spec's line holds: expansions add choice, not a stronger character.
+- The check keeps the starts fair: every starter's attribute points add up to one total (6 today, true in the content and not yet checked), every kit's value sits in one band, and every start reaches the first fire within one band of effort.
+
+Open: how far each character's start differs (question C1, asked the same day). Until it is answered, both starters share one start, and either way the axe comes before the first fire.
+
+**Closes:** W1; GRUNT's open ends carry the building in CR-24.
+**Retry when:** the owner answers C1, or a playtest shows the first fire too slow to reach. Model: claude-opus-5-5.
