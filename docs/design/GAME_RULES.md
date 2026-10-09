@@ -349,9 +349,10 @@ day); the audit behind them is `docs/design/CRAFTING_AUDIT.md`.
   effect may carry the premium marker, and it keeps a way to get it in the
   game.
 - **G40 A craft can miss, and a miss keeps something.** Skill decides the
-  chance and luck only tilts it; a miss is never nothing (G15). The value
-  table prices a recipe at perfect execution, and luck closes the gap to that
-  output without passing it (R9).
+  chance and luck only tilts it; a miss is never nothing (G15): it keeps part
+  of the inputs and makes nothing else. The value table prices a recipe at
+  perfect execution, and luck closes the gap to that output without passing
+  it (R9).
 - **G41 Two ladders.** The tier says how advanced a thing is, the rarity how
   often it appears. A recipe climbs one tier at a time, at a station of its
   tier and at a level inside the tier's band. From tier 3 up a thing comes
@@ -515,9 +516,9 @@ test stays with the checklist above.
 | G41 | An item with no class or tier, or a tier the world has not opened; an output more than one tier above its highest input; a recipe level outside its tier's band; no camp part giving the recipe's station at its tier; no craft profession for the recipe; from tier 3 up, a node with neither the tier's level nor a slow respawn, or a shop that sells it. | error |
 | G42 | The rarity bonuses of the merged world over `rarity_budget_permille` (kernel review 8.2). | error |
 | G45 | A class that is neither a base class nor declared under one; a metal item or a class under metal; a recipe template that fits nothing, has no class input, or fits more than `template_max_recipes` combinations. | error |
-| G39 | The premium marker on anything but a look item with no effect. | needs the look layer |
-| G40 | A craft with no miss outcome, or a miss that keeps nothing. | needs the craft chance in the kernel |
-| G44 | A worn bonus outside the closed effects or over its cap. | needs worn items |
+| G39 | The premium marker on anything but a look item with no effect, or on a look that nothing in the game gives. | error |
+| G40 | A craft chance that rises with the tier; a miss worth as much as a success. The kernel keeps part of the inputs on every miss and makes nothing else. | error |
+| G44 | A garment or jewelry piece that is not worn, or worn outside its places; the hand for anything but a tool; an effect over its tier's cap or named twice; a look with effects or a set; a set of one piece, of another creator, or that cannot be worn whole; a cap on worn effects that falls with the tier. | error |
 
 Since P-2 (8.10) G2 counts `find` and `riddle` steps as beats, a `find` may name what
 only digging gives or what one timed plant gives (P-3), and G8 checks each

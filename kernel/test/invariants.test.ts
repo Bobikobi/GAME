@@ -9,6 +9,7 @@ import {
   type Grade,
   type Rect,
   type State,
+  WEAR_SLOTS,
   bagCapacity,
   bagUsed,
   campTile,
@@ -135,6 +136,13 @@ function checkedStep(state: State, action: Action, tick: number): State {
     invariant(Number.isInteger(count) && count > 0, 'bag contains a non-positive or fractional stack');
   }
   invariant(bagUsed(result.state) <= bagCapacity(bundle, result.state), 'bag exceeds capacity');
+  // a worn item stays in the bag: never more worn units than the bag holds
+  for (const layer of [result.state.player.worn, result.state.player.looks]) {
+    const worn: Record<string, number> = {};
+    for (const id of Object.values(layer)) worn[id] = (worn[id] ?? 0) + 1;
+    for (const [id, n] of Object.entries(worn)) invariant(n <= (result.state.player.bag[id] ?? 0), `${id} is worn but not in the bag`);
+  }
+  for (const n of Object.values(result.state.player.tries)) invariant(Number.isInteger(n) && n > 0, 'a craft counter is not a positive count');
   const satiety = satietyAt(bundle, result.state, result.state.tick);
   invariant(satiety >= 0 && satiety <= satietyCap(bundle, result.state), 'satiety is outside its bounds');
   invariant(result.state.tick === tick, 'accepted action did not store its tick');
@@ -165,7 +173,7 @@ function badAction(state: State, random: () => number): Action {
 
 function plausibleAction(state: State, random: () => number): Action {
   const fallback = (): Action => ({ t: 'spend', attr: pick([...KERNEL_ATTRIBUTES], random) });
-  const choice = Math.floor(random() * 11);
+  const choice = Math.floor(random() * 13);
   if (choice === 0) {
     const [id, instance] = pick(Object.entries(bundle.instances).sort(([a], [b]) => a.localeCompare(b)), random);
     const at = nearTile(state, { x: instance.x, y: instance.y, w: 1, h: 1 });
@@ -221,6 +229,11 @@ function plausibleAction(state: State, random: () => number): Action {
   }
   if (choice === 8) return { t: 'eat', item: pick(Object.keys(bundle.items).sort(), random) };
   if (choice === 9) return { t: 'learn', item: pick(Object.keys(bundle.items).sort(), random) };
+  if (choice === 10) {
+    const held = Object.keys(state.player.bag).sort();
+    return { t: 'wear', item: held.length > 0 ? pick(held, random) : pick(Object.keys(bundle.items).sort(), random) };
+  }
+  if (choice === 11) return { t: 'unwear', slot: pick(WEAR_SLOTS, random), look: random() < 0.5 };
   return fallback();
 }
 
