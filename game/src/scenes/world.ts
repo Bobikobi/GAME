@@ -33,6 +33,7 @@ import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { emptySlots, slotContent } from '../places';
 import { canopyGroups, hash, remapTone, toneField, type Tone } from '../richground';
 import type { Session } from '../session';
+import { questTargets } from '../targets';
 import { hintDistance, itemName } from '../text';
 import type { WorkKind } from '../ui/ui';
 
@@ -204,6 +205,9 @@ export class WorldScene extends Phaser.Scene {
   private blinks: Blink[] = [];
   private glows: Glow[] = [];
   private locals: Local[] = [];
+  /** sparks over the targets of the first open step of the main task; rebuilt by refresh() */
+  private glints: Local[] = [];
+  private glintKey = '';
   private viewRect = new Phaser.Geom.Rectangle(0, 0, T, T);
   private meadowZone: TileZone | undefined;
   private groveZone: TileZone | undefined;
@@ -972,10 +976,49 @@ export class WorldScene extends Phaser.Scene {
       if (glow) glow.lit = built;
     }
     this.refreshNodes();
+    if (RICH.motion) this.refreshGlints(s);
   }
 
   private ready(s: Session, id: string): boolean {
     return (s.state.nodes[id]?.readyAt ?? 0) <= s.tick;
+  }
+
+  /**
+   * A few yellow sparks rise over every target of the first open step of the main task (the
+   * nodes that give the item, the site to mend, the camp to build, the place to visit, the
+   * giver once the task is ready to hand in), so the next place to go reads from the map
+   * itself. Rebuilt only when the targets change; off with the rest of the motion group.
+   */
+  private refreshGlints(s: Session): void {
+    const targets = questTargets(this.b, s.state, s.tick);
+    const key = JSON.stringify(targets);
+    if (key === this.glintKey) return;
+    this.glintKey = key;
+    for (const g of this.glints) {
+      g.emitter.destroy();
+      const i = this.locals.indexOf(g);
+      if (i >= 0) this.locals.splice(i, 1);
+    }
+    this.glints = [];
+    for (const t of targets) {
+      const cx = Math.round((t.x + 0.5) * T);
+      const top = Math.round((t.y + 1) * T - t.h);
+      const emitter = this.add
+        .particles(cx, top, 'fx-spark', {
+          x: { min: -6, max: 6 },
+          y: { min: -2, max: 2 },
+          speedY: { min: -10, max: -5 },
+          speedX: { min: -2, max: 2 },
+          lifespan: { min: 600, max: 1000 },
+          frequency: 150,
+          maxAliveParticles: 6,
+          emitting: false,
+        })
+        .setDepth(DEPTH.fx);
+      const g: Local = { emitter, rect: new Phaser.Geom.Rectangle(cx - 12, top - 16, 24, 24 + t.h) };
+      this.glints.push(g);
+      this.locals.push(g);
+    }
   }
 
   private refreshNodes(): void {
