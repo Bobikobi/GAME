@@ -285,6 +285,110 @@
                 "type": "string"
               }
             }
+          },
+          "wear": {
+            "additionalProperties": false,
+            "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+            "type": "object",
+            "required": [
+              "slot"
+            ],
+            "properties": {
+              "slot": {
+                "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                "anyOf": [
+                  {
+                    "const": "head",
+                    "type": "string"
+                  },
+                  {
+                    "const": "top",
+                    "type": "string"
+                  },
+                  {
+                    "const": "legs",
+                    "type": "string"
+                  },
+                  {
+                    "const": "outfit",
+                    "type": "string"
+                  },
+                  {
+                    "const": "feet",
+                    "type": "string"
+                  },
+                  {
+                    "const": "jewelry",
+                    "type": "string"
+                  },
+                  {
+                    "const": "hand",
+                    "type": "string"
+                  }
+                ]
+              },
+              "look": {
+                "description": "A look: worn on the look layer over the work clothes. It shows and counts for nothing, so it has no effects and no set.",
+                "type": "boolean"
+              },
+              "effects": {
+                "minItems": 1,
+                "maxItems": 2,
+                "description": "Small bonuses while it is worn on the work layer. Two at most, each effect once.",
+                "type": "array",
+                "items": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "effect",
+                    "value"
+                  ],
+                  "properties": {
+                    "effect": {
+                      "description": "What a worn item helps: gathering, digging or crafting speed, the craft chance, or rare finds.",
+                      "anyOf": [
+                        {
+                          "const": "gather_speed_pct",
+                          "type": "string"
+                        },
+                        {
+                          "const": "dig_speed_pct",
+                          "type": "string"
+                        },
+                        {
+                          "const": "craft_speed_pct",
+                          "type": "string"
+                        },
+                        {
+                          "const": "craft_chance_pct",
+                          "type": "string"
+                        },
+                        {
+                          "const": "rare_find_pct",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "value": {
+                      "minimum": 1,
+                      "maximum": 100,
+                      "description": "Percent, at most the cap of the item's tier (params.wear_effect_max_pct).",
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              "set": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
+                "type": "string"
+              }
+            }
+          },
+          "premium_later": {
+            "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
+            "type": "boolean"
           }
         }
       }
@@ -397,6 +501,12 @@
         "open_tiers",
         "tier_min_level",
         "template_max_recipes",
+        "craft_chance_bp",
+        "craft_level_step_bp",
+        "craft_luck_max_permille",
+        "craft_miss_keep_pct",
+        "wear_effect_max_pct",
+        "wear_set_bonus_pct",
         "rarity_bonus_ms",
         "drift_budget_permille",
         "satiety_cap",
@@ -728,6 +838,136 @@
             }
           },
           "description": "The most recipes one recipe template may make."
+        },
+        "craft_chance_bp": {
+          "minItems": 1,
+          "maxItems": 20,
+          "description": "The chance a craft succeeds at exactly its level, in basis points, by the recipe's tier from tier 1; the last entry holds for the tiers above it. Never rises with the tier; 10000 is a sure craft.",
+          "type": "array",
+          "items": {
+            "minimum": 1000,
+            "maximum": 10000,
+            "type": "integer"
+          }
+        },
+        "craft_level_step_bp": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "value",
+            "min",
+            "max",
+            "step"
+          ],
+          "properties": {
+            "value": {
+              "type": "integer"
+            },
+            "min": {
+              "type": "integer"
+            },
+            "max": {
+              "type": "integer"
+            },
+            "step": {
+              "minimum": 0,
+              "description": "Largest change one decision may make.",
+              "type": "integer"
+            }
+          },
+          "description": "What each level of the recipe's profession above the recipe's level adds to the craft chance, in basis points."
+        },
+        "craft_luck_max_permille": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "value",
+            "min",
+            "max",
+            "step"
+          ],
+          "properties": {
+            "value": {
+              "type": "integer"
+            },
+            "min": {
+              "type": "integer"
+            },
+            "max": {
+              "type": "integer"
+            },
+            "step": {
+              "minimum": 0,
+              "description": "Largest change one decision may make.",
+              "type": "integer"
+            }
+          },
+          "description": "The largest part of the gap to a sure craft that luck and luck items close, in permille: skill decides, luck tilts (G40)."
+        },
+        "craft_miss_keep_pct": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "value",
+            "min",
+            "max",
+            "step"
+          ],
+          "properties": {
+            "value": {
+              "type": "integer"
+            },
+            "min": {
+              "type": "integer"
+            },
+            "max": {
+              "type": "integer"
+            },
+            "step": {
+              "minimum": 0,
+              "description": "Largest change one decision may make.",
+              "type": "integer"
+            }
+          },
+          "description": "Part of each input a missed craft keeps when the recipe names no share, rounded down."
+        },
+        "wear_effect_max_pct": {
+          "minItems": 1,
+          "maxItems": 20,
+          "description": "The largest value of one effect on a worn item, by the item's tier from tier 1; the last entry holds for the tiers above it. Never falls with the tier.",
+          "type": "array",
+          "items": {
+            "minimum": 0,
+            "maximum": 100,
+            "type": "integer"
+          }
+        },
+        "wear_set_bonus_pct": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "value",
+            "min",
+            "max",
+            "step"
+          ],
+          "properties": {
+            "value": {
+              "type": "integer"
+            },
+            "min": {
+              "type": "integer"
+            },
+            "max": {
+              "type": "integer"
+            },
+            "step": {
+              "minimum": 0,
+              "description": "Largest change one decision may make.",
+              "type": "integer"
+            }
+          },
+          "description": "How much a full set adds to the effects of its pieces, in percent of their sum, rounded down."
         },
         "rarity_bonus_ms": {
           "additionalProperties": false,
