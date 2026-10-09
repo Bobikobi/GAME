@@ -601,3 +601,34 @@ The question (9.10): the crafting economy entry of the same day set a free marke
 
 **Closes:** the timing of CR-19; GRUNT's row and the crafting audit's row now carry it.
 **Retry when:** the demo shows the price falling so fast that making stops paying, or a world's stock that never drains. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ The boards rank worth, levels, quests, collection, exploration and giving; the top is honored and hunted
+
+The question (9.10): the spec opens verified boards at stage 2a (wealth, collection and profession levels, counted on the server only), and the kernel review leaves room for becoming the richest player. If the wealth board counts the gold a player holds, every coin given to the town or spent on a tool lowers the player on it, so the board would reward hoarding, against the owner's word that the settlement is where gold mainly goes. The recommendation was to count gold earned and add a board for what was given to the town. The owner's word (9.10): the boards can carry filters, levels and quest points among them; the count is the player's worth, so an asset whose price rose or a good deal raises it; and first place should bring honor and also a risk that grows with the rank, from other players and from the world. Asked whether that risk stays on the outing and in the places the player chose to enter, or reaches the house and the store too: the first. A top player who stops playing needs no rule; the others pass them.
+
+What other games do, as read for this answer: RuneScape ranks each skill and the total level, with boards for activities and filters by mode, and no wealth board; World of Warcraft has no official wealth board and ranks by season, with filters by realm, region and class; Albion Online ranks fame by field, weekly and monthly; Path of Exile and Diablo open a board per season, filtered by class. Few large games show an official wealth board, since one draws bots and trading for real money. For risk at the top: Sea of Thieves marks a top-grade ship on every map, Warzone and The Division mark a player who took a contract for a while, EVE Online lets players put a bounty on another; the risk always follows something the player chose to carry or a place they chose to enter. Ultima Online let the rich be hunted everywhere, players left, and in 2000 it opened a world without fights between players.
+
+- Boards: worth, character level, each profession, quest points, collection, exploration, and what was given to the town. All are counted on the server only (spec, verified boards; kernel review: boards from server state only), so none exists in the demo.
+- Filters: this season or all time, world, the starter a player began with, and friends. A season's board counts what grew in that season; how seasons work is the next question (Q5).
+- Worth is the gold a player holds, plus their goods and places at what the trader pays for them today, plus what they gave to the town at its value that day. An asset whose price rose raises it, a good deal raises it, and giving to the town never lowers it. A place no one can sell yet counts at the price paid for it.
+- The price comes from the trader, never from the last deal between players: two friends trading at a puffed-up price would raise both. Raising the trader's pay means draining the stock, and that costs more than it adds (the free market of the crafting economy entry).
+- If gifts between players come, a gift counts to the one who gave it, never to the one who got it, so a group cannot pile its wealth on one name to put it first.
+- Quest points are the sum of the difficulty of the quests a player finished, each quest counted once, as the spec already computes a quest's difficulty. Exploration counts the places, areas and secrets a player found, each once per world.
+- The top places of the worth board among a world's players carry a mark (`marked_top`, 10 to start). In towns it is honor only. In the areas between players it is seen from afar and shows on the map of every player there, and whoever brings a marked player down takes the outing's finds, as for anyone, and gains honor on a hunters board (`docs/design/SETTLEMENT.md` 3.9).
+- The world hunts the top too: outside the towns, road thieves come to a marked player more often the higher the rank. A thief is a hazard, not an enemy (G35): it acts by a rule the player can learn and has one thing to buy and one to make that answer it (G34), and it takes health like any hazard (G32), so the worst is the outing (G33).
+- The house, the camp, the store and what the player made stay safe, and nothing is taken from a player who is away (G28).
+
+**Closes:** the boards' count and their risk at the top; GRUNT's open ends carry the building as CR-40.
+**Retry when:** the top of a board is held by bots or by one group's funnel, or marked players stop leaving the towns. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ The players' common task is to explore the world
+
+The owner's word (9.10, with the answer on boards): the general task of the players is to explore the world. With the evening's word that the game does not turn only on buildings now, this orders what comes next.
+
+- Crafting, the market and the settlement serve exploring: roads and means, not the goal (G38 already says crafting is a road, not the road).
+- Exploring pays: the best pay sits far out and high on the difficulty scale (`docs/design/SETTLEMENT.md` 3.6, kernel review 7.2 item 4), and the top of the worth board stays on top by going out (the boards entry above).
+- The exploration board ranks the places, areas and secrets a player found.
+- The world must not run out: a new area comes as an expansion, as the spec already has it. A season's discovery that vanished at the season's end would be the "last chance" G28 forbids, so how seasons add to the world is the next question (Q5).
+
+**Closes:** no row; it sets what the next questions serve.
+**Retry when:** playtests show players settling in town and no longer going out. Model: claude-opus-5-5.
