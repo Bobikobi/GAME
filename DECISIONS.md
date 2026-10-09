@@ -360,7 +360,7 @@ The owner saw the 9.10 gallery (sixteen panels and three short videos of the ope
 
 **Retry when:** a device cannot hold the full-map ground canvases at four frames (then the groups become a quality level the client picks by measurement), or the owner wants the plain valley as a player choice. Model: Claude Fable 5.1.
 
-## 2026-10-09 ✅ No combat yet: a predator is escaped, and a group quest can be played alone with the valley's characters
+## 2026-10-09 ✅ No combat yet: a predator is escaped, and a group quest is made for a group
 
 The question (a review of open product direction, 9.10): the owner spoke of buying and improving weapons, of a monster too strong for a player, and of guarding a settlement, while fighting stays out (G35) and the hazards entry of 8.10 answers a predator with a lit lantern, thrown food and the road. Does fighting come earlier, and if not, what do those words mean in a valley without combat? The owner's word (9.10):
 
@@ -368,10 +368,25 @@ The question (a review of open product direction, 9.10): the owner spoke of buyi
 - The night carries the danger through its work. An example to develop: a night by a campfire that must be kept burning with branches, with more layers on top so it stays interesting. It fits the tending beat of the night expedition (8.10).
 - Guarding a settlement is a quest that players choose to take together, never a duty that decays while nobody plays (G28).
 - Quests come from a large pool matched to the player's character and levels, each started by talking to a character in the world, as in Pokemon or Skyrim. Next to them stand fixed quests like the seasons of current games; how a season keeps clear of a "last chance" (G28, G42) is still open.
-- A group quest can be played alone or together. Grand Theft Auto offers solo and co-op; here, when no other player is there, the valley's characters fill the group.
+- A group quest can be played alone or together, as Grand Theft Auto offers solo and co-op. Alone, the chance is low, since the quest is made for a group. Later the valley's characters may fill a group: only a character the content marks for it (by default none), at a level that fits the quest. A partner below that level falls and goes back to where it lives.
 - Later, when combat comes: a group may take a quest to guard a town or a fort, and a rival group may sign up together to attack it. Both sides choose to play it, and nothing is taken from a player who is away, so the morning's entry on war, theft and robbery ("Crafting is optional") holds until then.
 
 How far "later" is: the spec sets no dates and moves from stage to stage on conditions. By its own estimate, stages 2a to 8 come to about 39 to 63 thousand lines, against about 20 thousand lines of TypeScript in the repository today, with a paid server from 2a, a payments provider at 6, a real-time server at 7 and a sandbox for creators' code at 8. A community vote may still open combat earlier (G35).
 
 **Closes:** nothing; weapons still wait for combat (CR-12).
 **Retry when:** the first night quest shows whether the run back to town is hard and possible, or a vote or stage 8 opens combat. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ The settlement starts as the town the player mends; in a shared town, houses are built step by step on scarce plots
+
+The question (a review of open product direction, 9.10): the crafting economy entry of the same day names the settlement as the main sink of gold and goods, yet no stage of the roadmap holds it, and the spec postpones ownership, conquest and cities until there is a community. The owner's word (9.10):
+
+- In principle yes: in the player's own valley the settlement is the town the player mends.
+- When players share a world, not every player can build the same thing. Players settle the town's existing buildings, and whoever comes first with the resources starts building. A house is a chain of quests and resources: the builder stops, goes to do a quest, and each finished quest moves the house on.
+- A builder has a time limit. Missing it loses the process: the builder starts over, the place goes free for another player, and the builder gets a refund by the game's rules. The world must therefore keep room for players to build.
+- A town can run short. Its places open for sale gradually, perhaps through group quests too (clearing trees at the edge of town to prepare the ground).
+- A player without a property lives on the street, since outside the town is more dangerous: danger by area of the map, more common where the area's level is higher. The owner asks whether an internal difficulty rating is needed and whether it should be exponential.
+
+How these become rules, and where they meet rules already written (G28's "the valley waits", pillar 5, the safe camp of 8.10, the cooperative world of 6.10, G42), is `docs/design/SETTLEMENT.md`. Its open questions go to the owner one at a time, and their answers land here.
+
+**Closes:** nothing yet.
+**Retry when:** the plan's questions are answered, or stage 4 brings a shared world state. Model: claude-opus-5-5.
