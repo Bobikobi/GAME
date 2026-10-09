@@ -658,7 +658,7 @@ What other games do, as read for this answer. A day: Stardew Valley about 14 min
 - The date comes from the server once accounts exist. In the demo it comes from the device, where turning the clock gains nothing that lasts, since nothing from the demo passes to an account. The date enters the kernel as an input recorded with the actions, so a replay gives the same result.
 - Each season gives the expansions a general theme. The theme invites and never gates: an expansion off the theme still lands by the same rule, as the spec has it for open calls, where nobody is bound and nobody blocks.
 - The world deepens all the time: expansions land as often as the creators make them and they pass the check, several times a week as an aim. What lands stays (the entry on seasons above), and every change to the schema stays additive, so a saved game always loads.
-- Open, asked one at a time: whether a thing may exist in one season of the year only (answered the same day, the entry below), which half of the globe the seasons follow, and how long a content season runs (the spec says a few weeks; most games run about three months).
+- Open, asked one at a time: whether a thing may exist in one season of the year only (answered the same day, the entry below), which half of the globe the seasons follow (answered the same day, the entry on the halves of the globe), and how long a content season runs (the spec says a few weeks; most games run about three months).
 
 **Closes:** the calendar, in part; GRUNT's open ends carry the building as CR-42.
 **Retry when:** players in the south or of another culture find the year strange, or creators cannot keep up with a season's theme. Model: claude-opus-5-5.
@@ -676,3 +676,15 @@ The question (9.10): with the real year, may a thing exist in one season of the 
 
 **Closes:** the first of the calendar's open questions; GRUNT's CR-42 now carries it.
 **Retry when:** players read a thing of its season as locked away, or a recipe or quest is found waiting for a season. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ The half of the globe follows the audience
+
+The question (9.10): with the real year, the south has summer while the north has winter, and in a shared world everyone must see one season, or two players at one lake would see different fish. The recommendation was one northern calendar for all, as World of Warcraft and most games do, and a world for the south once there are many worlds. The owner's word (9.10): as fits the audience that joins.
+
+- A player's own valley follows the player. Its half of the globe comes from the device's time zone when the account opens and then stays, as Animal Crossing sets a hemisphere once when an island is made. No location is asked for or kept: a time zone is enough to tell the half.
+- A shared world holds one calendar, set when it opens, by the half where most of the players it opens for live, counted from time zones in aggregate and never kept per player. When enough players from the other half join, a world opens for them.
+- A holiday tied to a season of the year, a winter festival, falls in that season of the world's own calendar, so under a southern calendar it comes six months later. A holiday tied to no season keeps its date everywhere.
+- If things from a valley reach a shared world's market, a thing of its season from a valley of the other half sells like any thing out of season, inside R8's band. A false time zone when the account opens gains no more than a player of the other half has anyway.
+
+**Closes:** the second of the calendar's open questions; GRUNT's CR-42 now carries it.
+**Retry when:** a shared world's players split between the halves, or players find their valley's seasons wrong. Model: claude-opus-5-5.
