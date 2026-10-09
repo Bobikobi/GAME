@@ -1860,7 +1860,21 @@ textarea {
   .dialog-arrow,
   .burst,
   .choice.spent,
-  .signature.on {
+  .signature.on,
+  .minigame.jackpot,
+  .banner,
+  .purse-float,
+  .whisper {
     animation: none;
+  }
+
+  /* what an animation would have revealed stands still for its moment instead */
+  .whisper {
+    opacity: 0.9;
+    filter: none;
+  }
+
+  .toast {
+    transition: none;
   }
 }
