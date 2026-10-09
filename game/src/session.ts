@@ -17,7 +17,7 @@ import {
   serialize,
   step,
 } from '@game/kernel';
-import { SAVE_KEY } from './config';
+import { LEGACY_SAVE_KEY, SAVE_KEY } from './config';
 
 export type Facing = 'down' | 'up' | 'left' | 'right';
 export interface LogEntry {
@@ -116,6 +116,7 @@ export class Session {
   static erase(): void {
     try {
       localStorage.removeItem(SAVE_KEY);
+      localStorage.removeItem(LEGACY_SAVE_KEY);
     } catch {
       // storage may be blocked; nothing to erase then
     }
@@ -218,6 +219,7 @@ export class Session {
     };
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(file));
+      localStorage.removeItem(LEGACY_SAVE_KEY);
     } catch {
       // private mode or full storage: the game still plays, it just will not resume
     }
@@ -226,7 +228,7 @@ export class Session {
 
 function readSave(): SaveFile | undefined {
   try {
-    const text = localStorage.getItem(SAVE_KEY);
+    const text = localStorage.getItem(SAVE_KEY) ?? localStorage.getItem(LEGACY_SAVE_KEY);
     if (!text) return undefined;
     const file = JSON.parse(text) as SaveFile;
     return file.v === 1 && typeof file.state === 'string' ? file : undefined;

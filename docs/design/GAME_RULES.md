@@ -1,4 +1,4 @@
-# Game rules: what keeps Mistvale fun
+# Game rules: what keeps Openfold fun
 
 This page is the product owner's. Developers, creators and AI agents
 follow it the way `kernel/` follows its rules R1-R11: a request that breaks a

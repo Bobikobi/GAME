@@ -1,7 +1,7 @@
 /** Persistence tests cover both normal storage and privacy-mode failures. */
 import { describe, expect, test } from 'vitest';
 
-import { readMuted, SOUND_PREF_NAME, writeMuted } from '../../src/audio/storage';
+import { LEGACY_SOUND_PREF_NAME, readMuted, SOUND_PREF_NAME, writeMuted } from '../../src/audio/storage';
 import type { SoundStorage } from '../../src/audio/storage';
 
 class FakeStorage implements SoundStorage {
@@ -14,6 +14,10 @@ class FakeStorage implements SoundStorage {
   setItem(key: string, value: string): void {
     this.values.set(key, value);
   }
+
+  removeItem(key: string): void {
+    this.values.delete(key);
+  }
 }
 
 describe('sound preference', () => {
@@ -24,6 +28,15 @@ describe('sound preference', () => {
     expect(readMuted(storage)).toBe(true);
     writeMuted(storage, false);
     expect(readMuted(storage)).toBe(false);
+  });
+
+  test('keeps a setting saved under the working title and moves it on the next write', () => {
+    const storage = new FakeStorage();
+    storage.setItem(LEGACY_SOUND_PREF_NAME, '{"muted":true}');
+    expect(readMuted(storage)).toBe(true);
+    writeMuted(storage, true);
+    expect(storage.getItem(SOUND_PREF_NAME)).toBe('{"muted":true}');
+    expect(storage.getItem(LEGACY_SOUND_PREF_NAME)).toBeNull();
   });
 
   test('defaults to audible if storage throws', () => {

@@ -2,7 +2,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vi
 
 import type { Bundle } from '@game/kernel';
 import { app } from '../src/app';
-import { SAVE_KEY } from '../src/config';
+import { LEGACY_SAVE_KEY, SAVE_KEY } from '../src/config';
 import { Session } from '../src/session';
 import { say } from '../src/ui/dialog';
 import { UI } from '../src/ui/ui';
@@ -80,6 +80,22 @@ describe('session persistence', () => {
     const restored = Session.restore(bundle);
     expect(restored).toBeDefined();
     expect(restored?.met.size).toBe(0);
+  });
+
+  test('carries a save made under the working title over to the new key', () => {
+    startedSession();
+    storage.setItem(LEGACY_SAVE_KEY, storage.getItem(SAVE_KEY)!);
+    storage.removeItem(SAVE_KEY);
+
+    const restored = Session.restore(bundle);
+    expect(restored?.started).toBe(true);
+    restored!.save();
+    expect(storage.getItem(SAVE_KEY)).not.toBeNull();
+    expect(storage.getItem(LEGACY_SAVE_KEY)).toBeNull();
+
+    storage.setItem(LEGACY_SAVE_KEY, storage.getItem(SAVE_KEY)!);
+    Session.erase();
+    expect(storage.length).toBe(0);
   });
 
   test('plays the elder monologue once across a reload', async () => {
