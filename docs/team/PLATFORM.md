@@ -13,7 +13,8 @@ Sizes are by complexity and risk (S, M, L), never by hours.
 
 One repository, one Vercel project, one build. `web/` is a static Astro site:
 the home page, the developer hub, the docs and the `/api/` folder. The game
-stays in `game/` and is copied into the site's output at `/play/`. Everything
+stays in `game/` and is copied into the site's output at `/play/`; a 3D view
+of the same game is a second, optional door at `/play3d/`. Everything
 the hub shows comes from one JSON document, `hub-data`, built by a tool from
 sources that already exist (git history, content files, GitHub, Vercel) and
 validated against a schema in `schema/`. Creators' AI tools talk to the project
@@ -30,6 +31,7 @@ do.
 |---|---|---|---|
 | Home, hub, docs, API folder | `web/` (new, `@game/web`) | Astro, static output, plain `.astro` + CSS | `/`, `/hub/`, `/docs/`, `/api/` |
 | The game | `game/` (exists) | Vite + Phaser | `/play/` |
+| The game in 3D, the second door | `game/` trial pages today (`3d.html`, `cell.html`) | Vite + Three.js | `/play3d/` (an optional build step) |
 | Hub data builder | `tools/src/hub/` (new) | tsx, reuses `tools/src/loop/github.ts`, `board.ts`, `load.ts` | writes `web/public/api/hub-data.json` |
 | Document schema | `schema/src/hub.ts` (this branch) | TypeBox, emitted to `schema/json/hub-data.schema.json` | `/api/schema/` |
 | Creator tools | `mcp/` (this branch: definitions; GRUNT: the server) | TypeBox types, later `@modelcontextprotocol/sdk`, stdio | the creator's machine |
@@ -63,6 +65,17 @@ are fixed in GRUNT item 4: the font in `game/src/style.css` and the landing's
 The build becomes: bundle, build the game, build the site, copy `game/dist`
 into `web/dist/play/`. `vercel.json` points `outputDirectory` at `web/dist`.
 The `/assets/` cache header moves to `/play/assets/` and `/_astro/`.
+
+### The 3D door at `/play3d/`
+
+The 3D version is a second door to the same game (`DECISIONS.md`, 2026-10-09):
+the home page shows two buttons, `/play/` for the classic game and `/play3d/`
+for the 3D one, and the player chooses. Both run the same kernel, content and
+save format, and read the map from `content/core/map.json`. The build gains
+one optional step after the game: build the 3D client and copy its output into
+`web/dist/play3d/`. When that step fails the build still ships, and the site
+hides the 3D button. Today the 3D client is the trial pages in `game/`
+(`3d.html`, `cell.html`), not yet wired to the kernel; the door opens when it is.
 
 ### What happens to `feat/landing-page`
 
