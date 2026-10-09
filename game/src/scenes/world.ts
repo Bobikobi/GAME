@@ -6,8 +6,8 @@
  *
  * Everything cosmetic on top of the plain valley sits behind RICH (config.ts):
  * detail (tile variants, tone patches, canopies, edge strips, shadows), motion
- * (frames, sway, ambient life, footstep dust, idles) and light (dusk, the warm
- * day, glows, dapple, mist, fades).
+ * (frames, sway, ambient life, footstep dust, idles) and light (dusk, glows,
+ * dapple, mist, fades).
  * With every group off the scene is the plain valley, object for object.
  */
 import * as Phaser from 'phaser';
@@ -27,7 +27,7 @@ import {
 } from '@game/kernel';
 import { app } from '../app';
 import { sound, type SfxId } from '../audio';
-import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T, WARM } from '../config';
+import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T } from '../config';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { emptySlots, slotContent } from '../places';
@@ -1277,9 +1277,8 @@ export class WorldScene extends Phaser.Scene {
       this.vignette.radius = 0.8 - 0.15 * this.night;
     }
     if (this.dusk) {
-      // gold over the valley around 20:00 and again around 05:30, and a faint wash through the day while WARM; the kernel's hours are untouched
-      const day = WARM ? 0.12 * (1 - this.night) : 0;
-      this.dusk.setFillStyle(PALETTE.gold, Math.max(0.4 * Math.max(warmth(m, 20), warmth(m, 5.5)), day));
+      // gold over the valley around 20:00 and again around 05:30; the kernel's hours are untouched
+      this.dusk.setFillStyle(PALETTE.gold, 0.4 * Math.max(warmth(m, 20), warmth(m, 5.5)));
     }
     for (const d of this.dapples) d.setAlpha(0.08 * (1 - this.night));
     const isNight = this.night >= 0.5;
