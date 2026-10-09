@@ -6,6 +6,9 @@
  *   pnpm build && pnpm e2e [out-dir]
  *   E2E_URL=https://<deployment> pnpm e2e    (play a deployed copy instead)
  *   E2E_VIDEO=<dir> pnpm e2e                (keep every frame, for a video of the run)
+ *   E2E_QUERY=rich=none pnpm e2e            (extra query parameters for the game to read)
+ *   E2E_UNTIL=bridge pnpm e2e               (stop right after that screenshot, as a pass)
+ *   E2E_UNTIL=camp E2E_HOUR=21 pnpm e2e     (and move the game clock before that last shot)
  *
  * Serves game/dist itself, writes screenshots to out-dir (default .scratch/e2e)
  * and exits non-zero on the first step that fails or on any page error.
@@ -74,6 +77,13 @@ window.__e2e = (() => {
     hour() {
       const s = g().session, day = g().bundle.params.day_length_ms;
       return Math.floor((((s.tick + Math.floor(day / 4)) % day) * 24) / day);
+    },
+    /** Moves the game clock forward to that hour of the day, for a dusk or night screenshot. */
+    setHour(h) {
+      const s = g().session, day = g().bundle.params.day_length_ms, q = Math.floor(day / 4);
+      let t = s.tick - ((s.tick + q) % day) + Math.round((h / 24) * day);
+      if (t < s.tick) t += day;
+      s.tick = t;
     },
     slot(id) { return g().bundle.map.slots.find((s) => s.id === id); },
     nodes(source) {
@@ -171,6 +181,9 @@ interface State {
   prompt: string;
 }
 
+/** Thrown by snap() right after the screenshot E2E_UNTIL names: the run ends there, as a pass. */
+class Stop extends Error {}
+
 /** One player, on one device. */
 class Player {
   private shot = 0;
@@ -192,7 +205,15 @@ class Player {
 
   async snap(label: string): Promise<void> {
     this.shot++;
+    const last = process.env.E2E_UNTIL === label;
+    if (last && process.env.E2E_HOUR) {
+      // E2E_HOUR=<h> with E2E_UNTIL: the clock moves before the last screenshot (dusk, night)
+      await this.page.eval(`__e2e.setHour(${Number(process.env.E2E_HOUR)})`);
+      await sleep(900);
+    }
     await this.page.screenshot(join(OUT, `${this.name}-${String(this.shot).padStart(2, '0')}-${label}.png`));
+    // E2E_UNTIL=<label> ends the run right after that screenshot, as a pass
+    if (last) throw new Stop(label);
   }
 
   private async padCenter(): Promise<[number, number]> {
@@ -441,7 +462,9 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
   const me = new Player(page, viewport.mobile, name);
   const log = (msg: string) => console.log(`[${name}] ${msg}`);
   try {
-    await page.goto(`${url}?debug`);
+    // E2E_QUERY=a=1&b=2 rides behind ?debug: the static server drops the query, the game reads it
+    const extra = process.env.E2E_QUERY ? `&${process.env.E2E_QUERY}` : '';
+    await page.goto(`${url}?debug${extra}`);
     await page.waitFor(`!!document.querySelector('.title-screen button')`, 'the title screen', 30_000);
     await page.eval(IN_PAGE);
     await me.snap('title');
@@ -656,6 +679,10 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
 
     if (page.errors.length > 0) throw new Error(`page errors:\n${page.errors.join('\n')}`);
   } catch (err) {
+    if (err instanceof Stop) {
+      log(`stopped after the "${err.message}" screenshot (E2E_UNTIL)`);
+      return;
+    }
     await me.snap('failed').catch(() => undefined);
     const where = await page
       .eval<string>(`(() => {
