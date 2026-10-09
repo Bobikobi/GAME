@@ -350,9 +350,12 @@ day); the audit behind them is `docs/design/CRAFTING_AUDIT.md`.
   stay out (G35, G28), except later in the areas between players that a player
   chooses to enter, once combat comes ([SETTLEMENT.md](SETTLEMENT.md) 3.9).
 - **G39 Power is never sold.** No crafted ability, recipe, material or tool is
-  sold or gated for money or premium currency. Only a look item with no
-  effect may carry the premium marker, and it keeps a way to get it in the
-  game.
+  sold or gated for money or premium currency. Only a look item with no effect
+  may carry the premium marker, and it keeps a way to get it in the game. A
+  look bought with money or premium currency is bound to the account: never
+  traded, never sold to the trader, so money never turns into gold. The same
+  look found in the game trades like any item (DECISIONS.md, the entry on
+  bought looks).
 - **G40 A craft can miss, and a miss keeps something.** Skill decides the
   chance and luck only tilts it; a miss is never nothing (G15): it keeps part
   of the inputs and makes nothing else. The value table prices a recipe at

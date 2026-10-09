@@ -806,3 +806,16 @@ The question (9.10): the spec limits resources at the world level once the marke
 
 **Closes:** the question of shared nodes; GRUNT's open ends carry the building as CR-45.
 **Retry when:** a shared world feels empty because players never meet at the same bush, or the market fails to move players off a crowded activity. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ A look bought with money is bound to the account; the same look found in the game trades
+
+The question (9.10): G39 lets only a look with no effect carry the premium marker, and the spec sells premium currency one way only, money to currency and never back. May a look bought that way be traded? The recommendation: no, it is bound to the account, and the same look found in the game trades like any item. The owner's word (9.10): yes.
+
+- A look bought with money or premium currency is bound to the account: it is never traded between players and never sold to the trader.
+- The same look found in the game, as treasure or a reward, trades like any item, inside R8's band.
+- Why: a bought look that trades is a road from money to gold. A player buys it with money, sells it to another for gold, and gold buys tools, so money would buy power by a side door, which G39 forbids. Path of Exile keeps bought looks off its trade for the same reason; Guild Wars 2 and the World of Warcraft token open that road on purpose.
+- A bound look counts nothing toward worth on the boards, since the trader does not buy it (the boards entry). A holiday's look is bound to the character in the same way (G42).
+- G39 now says so.
+
+**Closes:** the question of bought looks; GRUNT's open ends carry the building as CR-46.
+**Retry when:** stage 6 opens payments, or players ask for a way to give a bought look to a friend. Model: claude-opus-5-5.
