@@ -776,7 +776,7 @@ The owner's word (9.10, with the answer on the creators' pool): every movement i
 - As a bank holds a new account, the starting gold and kit are bound to the account and cannot be passed on, and an account's first trades with other players open after it has played a while (`new_account_hold`, counted in active play, never in days, so no absence is punished, G28). The plainest loop is closed before it starts.
 - On suspicion the accounts are held: no trade and no transfer until it is decided.
 - A loop found: every account in it is blocked, and the gold and goods the loop made leave the world, written in the ledger with the reason `forfeit`. Forfeited gold is burned and never handed to anyone, so nobody gains by flagging another.
-- Open, asked next: whether a rule alone decides a block or a person decides after the hold, and whether a player may appeal.
+- Who decides (asked the same day; the owner's word, 9.10: yes to the recommendation): the rule holds the accounts at once, and a person reads the trail and decides the block. The player is told why in plain words and may appeal once, to another person. Until it is decided nothing is taken. Banks freeze by rule and review by hand; RuneScape finds bots by rule, bans them in waves, and hears appeals.
 
-**Closes:** part of A1; GRUNT's CR-43 now carries it.
-**Retry when:** a real player is caught by a flag, or a loop runs unflagged. Model: claude-opus-5-5.
+**Closes:** part of A1, with who decides a block; GRUNT's CR-43 now carries it.
+**Retry when:** a real player is caught by a flag, a loop runs unflagged, or the appeals outgrow the people who hear them. Model: claude-opus-5-5.
