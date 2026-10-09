@@ -396,6 +396,326 @@
         "h": 1,
         "solid": true,
         "note": "A lantern statue facing the hills, where the mist comes from. Soft earth below."
+      },
+      {
+        "sprite": "core/base-kit:props/reeds",
+        "x": 12,
+        "y": 5,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/reeds",
+        "x": 12,
+        "y": 10,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/reeds",
+        "x": 12,
+        "y": 24,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/reeds",
+        "x": 12,
+        "y": 30,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/reeds",
+        "x": 16,
+        "y": 7,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/reeds",
+        "x": 16,
+        "y": 12,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/reeds",
+        "x": 16,
+        "y": 21,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/reeds",
+        "x": 16,
+        "y": 27,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 10,
+        "y": 12,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/rock_small",
+        "x": 9,
+        "y": 20,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 11,
+        "y": 21,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/rock_small",
+        "x": 33,
+        "y": 21,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 38,
+        "y": 21,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/rock_small",
+        "x": 34,
+        "y": 27,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 38,
+        "y": 32,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/stump",
+        "x": 24,
+        "y": 25,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/log_fallen",
+        "x": 28,
+        "y": 25,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/stump",
+        "x": 22,
+        "y": 30,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/log_fallen",
+        "x": 21,
+        "y": 31,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/mushrooms_small",
+        "x": 2,
+        "y": 24,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/mushrooms_small",
+        "x": 7,
+        "y": 29,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/mushrooms_small",
+        "x": 29,
+        "y": 26,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/mushrooms_small",
+        "x": 21,
+        "y": 32,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/mushrooms_small",
+        "x": 8,
+        "y": 33,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/mushrooms_small",
+        "x": 45,
+        "y": 33,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/flowers_white",
+        "x": 4,
+        "y": 11,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/flowers_white",
+        "x": 7,
+        "y": 7,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/flowers_white",
+        "x": 24,
+        "y": 16,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/flowers_white",
+        "x": 30,
+        "y": 16,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/flowers_white",
+        "x": 41,
+        "y": 17,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/flowers_white",
+        "x": 5,
+        "y": 27,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/lantern_post",
+        "x": 25,
+        "y": 8,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/lantern_post",
+        "x": 30,
+        "y": 7,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/lantern_post",
+        "x": 16,
+        "y": 16,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/fence",
+        "x": 21,
+        "y": 6,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/fence_post",
+        "x": 22,
+        "y": 6,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/fence",
+        "x": 34,
+        "y": 6,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/fence_post",
+        "x": 35,
+        "y": 6,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/fence",
+        "x": 23,
+        "y": 12,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/fence_post",
+        "x": 24,
+        "y": 12,
+        "w": 1,
+        "h": 1,
+        "solid": false
       }
     ],
     "spawn": {
