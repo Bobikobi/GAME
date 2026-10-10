@@ -5,6 +5,8 @@ import {
   type GameEvent,
   type State,
   bagCapacity,
+  bagUsed,
+  campBuilt,
   campTile,
   findSlot,
   missKeepBp,
@@ -18,6 +20,11 @@ import {
 
 export function itemName(b: Bundle, id: string): string {
   return b.items[id]?.name ?? id;
+}
+
+/** The verb on a node's prompt and its minigame: a tree is felled, anything else gathered. */
+export function nodeAction(b: Bundle, r: Bundle['resources'][string]): string {
+  return r.tool === 'axe' ? 'Fell tree' : `Gather ${itemName(b, r.output)}`;
 }
 
 /** milli-gold as gold, at most two decimals: 2500 -> "2.5" */
@@ -136,7 +143,7 @@ export function questSteps(b: Bundle, s: State, questId: string): { text: string
       }
       case 'build': {
         const c = b.camps[st.camp];
-        const done = p.camp.includes(st.camp);
+        const done = campBuilt(b, s, st.camp);
         const need = c?.inputs.map((i) => `${itemName(b, i.item)} ${Math.min(i.qty, p.bag[i.item] ?? 0)}/${i.qty}`).join(', ');
         return { text: done ? `Build a ${c?.title ?? st.camp}` : `${need} - then build a ${c?.title ?? st.camp}`, done };
       }
@@ -162,6 +169,18 @@ function questOrder(b: Bundle, id: string): number {
 
 export function readyToHandIn(b: Bundle, s: State, questId: string): boolean {
   return s.player.quests[questId] === 'active' && questSatisfied(b, s, questId);
+}
+
+/**
+ * Which HUD buttons have earned their place (progressive disclosure, FTUE): the bag once
+ * something was picked up, the journal once the first restoration wrote its entry or a
+ * task was finished, and both as soon as a skill point waits to be spent there. Read
+ * from the state, so a reload shows the same buttons; the keys work from the start.
+ */
+export function hudUnlocks(s: State, points = 0): { bag: boolean; log: boolean } {
+  const p = s.player;
+  const log = p.journal.length > 0 || points > 0 || Object.values(p.quests).some((q) => q === 'done');
+  return { bag: log || bagUsed(s) > 0, log };
 }
 
 /** An active quest still waits on a riddle that a dig at another spot than `treasure` answers: this is the wrong place. */
@@ -214,6 +233,12 @@ export function describe(b: Bundle, s: State, e: GameEvent): { text: string; ico
       return { text: `You ate ${itemName(b, e.item)}`, icon: b.items[e.item]?.sprite, tone: 'good' };
     case 'nothing':
       return { text: e.verb === 'dig' ? 'Nothing this time.' : 'Missed - nothing this time.', tone: 'bad' };
+    case 'miss':
+      return { text: `${b.recipes[e.recipe]?.title ?? e.recipe} did not come out this time - part of it is left`, tone: 'bad' };
+    case 'wear':
+      return { text: `You put on ${itemName(b, e.item)}`, icon: b.items[e.item]?.sprite, tone: 'info' };
+    case 'unwear':
+      return { text: `You took off ${itemName(b, e.item)}`, tone: 'info' };
     case 'tool_broke':
       return { text: `Your ${itemName(b, e.item)} broke`, tone: 'bad' };
     case 'attr':
@@ -250,7 +275,7 @@ export function itemBenefit(b: Bundle, id: string): string {
           .sort()
       : [];
     const unlocks = [
-      resources.length ? `gathers ${resources.join(' & ')}` : '',
+      resources.length ? `${it.tool.kind === 'axe' ? 'fells' : 'gathers'} ${resources.join(' & ')}` : '',
       digSites.length ? `digs ${digSites.join(' & ')}` : '',
     ].filter(Boolean).join(' · ') || `tool for ${it.tool.kind}`;
     return `${tier} · ${unlocks} · ${uses}${speed}`;

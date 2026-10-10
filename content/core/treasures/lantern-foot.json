@@ -12,6 +12,9 @@
       "description": "Buried the day the bells first rang. Worn smooth on one side.",
       "kind": "treasure",
       "rarity": "uncommon",
+      "class": "relic",
+      "family": "coin",
+      "tier": 1,
       "sprite": "core/base-kit:items/old-coin"
     }
   ],

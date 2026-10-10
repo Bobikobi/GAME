@@ -127,6 +127,93 @@
               }
             ]
           },
+          "class": {
+            "description": "A base class (plant, wood, fibre, ...) or the id of a class an extension declares under one of them.",
+            "anyOf": [
+              {
+                "const": "plant",
+                "type": "string"
+              },
+              {
+                "const": "wood",
+                "type": "string"
+              },
+              {
+                "const": "fibre",
+                "type": "string"
+              },
+              {
+                "const": "stone",
+                "type": "string"
+              },
+              {
+                "const": "clay",
+                "type": "string"
+              },
+              {
+                "const": "mineral",
+                "type": "string"
+              },
+              {
+                "const": "metal",
+                "type": "string"
+              },
+              {
+                "const": "animal",
+                "type": "string"
+              },
+              {
+                "const": "meal",
+                "type": "string"
+              },
+              {
+                "const": "tool",
+                "type": "string"
+              },
+              {
+                "const": "garment",
+                "type": "string"
+              },
+              {
+                "const": "jewelry",
+                "type": "string"
+              },
+              {
+                "const": "relic",
+                "type": "string"
+              },
+              {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              }
+            ]
+          },
+          "family": {
+            "pattern": "^[a-z0-9_-]+$",
+            "maxLength": 24,
+            "description": "A group inside the class, for example \"berry\" for every berry. Open: any lowercase word.",
+            "type": "string"
+          },
+          "tags": {
+            "maxItems": 8,
+            "uniqueItems": true,
+            "description": "Open words that describe it, for example \"sweet\" or \"night\".",
+            "type": "array",
+            "items": {
+              "pattern": "^[a-z0-9_-]+$",
+              "maxLength": 24,
+              "description": "A lowercase word.",
+              "type": "string"
+            }
+          },
+          "tier": {
+            "minimum": 1,
+            "maximum": 20,
+            "description": "How advanced it is, from 1. The rarity says how often it appears; the tier says how far up the ladder it is. A tool has the tier of its \"tool\".",
+            "type": "integer"
+          },
           "sprite": {
             "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
             "maxLength": 120,
@@ -166,6 +253,10 @@
                   {
                     "const": "trowel",
                     "type": "string"
+                  },
+                  {
+                    "const": "axe",
+                    "type": "string"
                   }
                 ]
               },
@@ -198,6 +289,200 @@
                 "type": "string"
               }
             }
+          },
+          "wear": {
+            "additionalProperties": false,
+            "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+            "type": "object",
+            "required": [
+              "slot"
+            ],
+            "properties": {
+              "slot": {
+                "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                "anyOf": [
+                  {
+                    "const": "head",
+                    "type": "string"
+                  },
+                  {
+                    "const": "top",
+                    "type": "string"
+                  },
+                  {
+                    "const": "legs",
+                    "type": "string"
+                  },
+                  {
+                    "const": "outfit",
+                    "type": "string"
+                  },
+                  {
+                    "const": "feet",
+                    "type": "string"
+                  },
+                  {
+                    "const": "jewelry",
+                    "type": "string"
+                  },
+                  {
+                    "const": "hand",
+                    "type": "string"
+                  }
+                ]
+              },
+              "look": {
+                "description": "A look: worn on the look layer over the work clothes. It shows and counts for nothing, so it has no effects and no set.",
+                "type": "boolean"
+              },
+              "effects": {
+                "minItems": 1,
+                "maxItems": 2,
+                "description": "Small bonuses while it is worn on the work layer. Two at most, each effect once.",
+                "type": "array",
+                "items": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "effect",
+                    "value"
+                  ],
+                  "properties": {
+                    "effect": {
+                      "description": "What a worn item helps: gathering, digging or crafting speed, the craft chance, or rare finds.",
+                      "anyOf": [
+                        {
+                          "const": "gather_speed_pct",
+                          "type": "string"
+                        },
+                        {
+                          "const": "dig_speed_pct",
+                          "type": "string"
+                        },
+                        {
+                          "const": "craft_speed_pct",
+                          "type": "string"
+                        },
+                        {
+                          "const": "craft_chance_pct",
+                          "type": "string"
+                        },
+                        {
+                          "const": "rare_find_pct",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "value": {
+                      "minimum": 1,
+                      "maximum": 100,
+                      "description": "Percent, at most the cap of the item's tier (params.wear_effect_max_pct).",
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              "set": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
+                "type": "string"
+              }
+            }
+          },
+          "premium_later": {
+            "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "classes": {
+      "maxItems": 10,
+      "description": "Classes of your own, each under one base class.",
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "description": "A class of your own, declared under one base class. Every rule written for the base class holds for it.",
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "base"
+        ],
+        "properties": {
+          "id": {
+            "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+            "maxLength": 80,
+            "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+            "type": "string"
+          },
+          "name": {
+            "minLength": 1,
+            "maxLength": 40,
+            "type": "string"
+          },
+          "base": {
+            "description": "plant (leaves, herbs, berries, fruit, roots, mushrooms), wood, fibre (reeds, grass, thread, cloth), stone, clay (clay, sand, pottery, brick), mineral (crystals, gems, salt, ore), metal (waits for its discovery), animal (feathers, wool, hide, bone), meal (cooked food), tool, garment (worn clothes), jewelry, relic (old things from the ruins).",
+            "anyOf": [
+              {
+                "const": "plant",
+                "type": "string"
+              },
+              {
+                "const": "wood",
+                "type": "string"
+              },
+              {
+                "const": "fibre",
+                "type": "string"
+              },
+              {
+                "const": "stone",
+                "type": "string"
+              },
+              {
+                "const": "clay",
+                "type": "string"
+              },
+              {
+                "const": "mineral",
+                "type": "string"
+              },
+              {
+                "const": "metal",
+                "type": "string"
+              },
+              {
+                "const": "animal",
+                "type": "string"
+              },
+              {
+                "const": "meal",
+                "type": "string"
+              },
+              {
+                "const": "tool",
+                "type": "string"
+              },
+              {
+                "const": "garment",
+                "type": "string"
+              },
+              {
+                "const": "jewelry",
+                "type": "string"
+              },
+              {
+                "const": "relic",
+                "type": "string"
+              }
+            ]
+          },
+          "description": {
+            "minLength": 1,
+            "maxLength": 240,
+            "type": "string"
           }
         }
       }
@@ -303,9 +588,146 @@
             }
           }
         },
+        "remarks": {
+          "maxItems": 16,
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "description": "A standing line that waits for a change in the world and is said once, in place of the standing line. Of the remarks that hold, the highest priority wins, then the one whose condition names the most, then the first in the file.",
+            "type": "object",
+            "required": [
+              "when",
+              "say"
+            ],
+            "properties": {
+              "when": {
+                "additionalProperties": false,
+                "minProperties": 1,
+                "description": "Holds when every condition it names holds.",
+                "type": "object",
+                "properties": {
+                  "done": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Quests the player has finished.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "active": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Quests the player is on now.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "not_done": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Quests the player has not finished yet, on them or not.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "restored": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Places the player has mended.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "built": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Camp parts that stand, themselves or under an upgrade.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "has": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Items with at least one in the bag.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "visited": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Map slots the player has stood in.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "time": {
+                    "description": "By day (05:00 to 20:00) or by night.",
+                    "anyOf": [
+                      {
+                        "const": "day",
+                        "type": "string"
+                      },
+                      {
+                        "const": "night",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                }
+              },
+              "say": {
+                "minItems": 1,
+                "maxItems": 2,
+                "description": "One box, two at most (G21).",
+                "type": "array",
+                "items": {
+                  "minLength": 1,
+                  "maxLength": 240,
+                  "type": "string"
+                }
+              },
+              "priority": {
+                "minimum": 0,
+                "maximum": 9,
+                "description": "Higher is said first when more than one remark holds. Left out, 0.",
+                "type": "integer"
+              }
+            }
+          }
+        },
         "topics": {
-          "maxItems": 4,
-          "description": "Things the player can always ask about.",
+          "maxItems": 8,
+          "description": "Things the player can ask about: always, or once the topic's `when` holds (G21). The menu shows four at most, the ones not yet asked first.",
           "type": "array",
           "items": {
             "additionalProperties": false,
@@ -329,6 +751,111 @@
                   "minLength": 1,
                   "maxLength": 240,
                   "type": "string"
+                }
+              },
+              "when": {
+                "additionalProperties": false,
+                "minProperties": 1,
+                "description": "Holds when every condition it names holds.",
+                "type": "object",
+                "properties": {
+                  "done": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Quests the player has finished.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "active": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Quests the player is on now.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "not_done": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Quests the player has not finished yet, on them or not.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "restored": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Places the player has mended.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "built": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Camp parts that stand, themselves or under an upgrade.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "has": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Items with at least one in the bag.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "visited": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Map slots the player has stood in.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "time": {
+                    "description": "By day (05:00 to 20:00) or by night.",
+                    "anyOf": [
+                      {
+                        "const": "day",
+                        "type": "string"
+                      },
+                      {
+                        "const": "night",
+                        "type": "string"
+                      }
+                    ]
+                  }
                 }
               }
             }

@@ -1,0 +1,4 @@
+# Every stream appends its decisions at the end of DECISIONS.md. Merge both sides instead of
+# stopping on a conflict (docs/team/PARALLEL.md). GitHub's own merge button ignores this line,
+# so merge origin/develop into your branch on your machine before the pull request lands.
+DECISIONS.md merge=union

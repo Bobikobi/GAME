@@ -6,6 +6,7 @@
 import { app } from '../app';
 import type { Dir } from '../input';
 import { h } from './dom';
+import { TAP, buzz } from './haptics';
 
 export function mountTouch(root: HTMLElement): void {
   const pad = h('div', { class: 'pad', 'aria-label': 'Direction pad' }, h('i', { class: 'up' }), h('i', { class: 'right' }), h('i', { class: 'down' }), h('i', { class: 'left' }));
@@ -51,6 +52,7 @@ export function mountTouch(root: HTMLElement): void {
     btn.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       btn.classList.add('down');
+      buzz(TAP);
       app.controls.press(name);
       window.setTimeout(() => btn.classList.remove('down'), 120);
     });

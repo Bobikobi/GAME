@@ -12,12 +12,13 @@ import {
   type GameEvent,
   KERNEL_VERSION,
   type State,
+  fitWorn,
   makeWalkable,
   newState,
   serialize,
   step,
 } from '@game/kernel';
-import { SAVE_KEY } from './config';
+import { LEGACY_SAVE_KEY, SAVE_KEY } from './config';
 
 export type Facing = 'down' | 'up' | 'left' | 'right';
 export interface LogEntry {
@@ -36,6 +37,8 @@ interface SaveFile {
   facing: Facing;
   /** NPCs whose first conversation has already begun. Optional in old saves. */
   met?: string[];
+  /** Remarks said and topics asked: "<npc>#<index>" and "<npc>?<index>" (GRUNT S-1). Optional in old saves. */
+  heard?: string[];
   /** the last actions, attached to bug reports */
   tail: LogEntry[];
 }
@@ -59,6 +62,7 @@ export class Session {
   pos: [number, number];
   facing: Facing = 'down';
   readonly met = new Set<string>();
+  readonly heard = new Set<string>();
   tail: LogEntry[] = [];
   /** set when the save was made with other content and had to be adapted */
   adapted = false;
@@ -94,6 +98,11 @@ export class Session {
     }
     // a save from before the riddle step (P-2, 8.10) has no solved list
     (state.player as { solved?: string[] }).solved ??= [];
+    // a save from before kernel 0.3 wears nothing and has tried no craft
+    const worn = state.player as Partial<Pick<State['player'], 'worn' | 'looks' | 'tries'>>;
+    worn.worn ??= {};
+    worn.looks ??= {};
+    worn.tries ??= {};
     const session = new Session(bundle, state);
     if (state.content !== bundle.tag) {
       // a new version of the world was published: keep what still exists
@@ -104,6 +113,9 @@ export class Session {
     session.facing = file.facing;
     if (Array.isArray(file.met)) {
       for (const npcId of file.met) if (typeof npcId === 'string') session.met.add(npcId);
+    }
+    if (Array.isArray(file.heard)) {
+      for (const key of file.heard) if (typeof key === 'string') session.heard.add(key);
     }
     session.tail = file.tail.slice(-TAIL);
     const walkable = makeWalkable(bundle);
@@ -116,6 +128,7 @@ export class Session {
   static erase(): void {
     try {
       localStorage.removeItem(SAVE_KEY);
+      localStorage.removeItem(LEGACY_SAVE_KEY);
     } catch {
       // storage may be blocked; nothing to erase then
     }
@@ -139,6 +152,13 @@ export class Session {
     this.met.add(npcId);
     this.save();
     return true;
+  }
+
+  /** Remember a remark said or a topic asked, so it steps back next time. */
+  hear(key: string): void {
+    if (this.heard.has(key)) return;
+    this.heard.add(key);
+    this.save();
   }
 
   pause(): void {
@@ -214,10 +234,12 @@ export class Session {
       pos: this.pos,
       facing: this.facing,
       met: [...this.met].sort(),
+      heard: [...this.heard].sort(),
       tail: this.tail,
     };
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(file));
+      localStorage.removeItem(LEGACY_SAVE_KEY);
     } catch {
       // private mode or full storage: the game still plays, it just will not resume
     }
@@ -226,7 +248,7 @@ export class Session {
 
 function readSave(): SaveFile | undefined {
   try {
-    const text = localStorage.getItem(SAVE_KEY);
+    const text = localStorage.getItem(SAVE_KEY) ?? localStorage.getItem(LEGACY_SAVE_KEY);
     if (!text) return undefined;
     const file = JSON.parse(text) as SaveFile;
     return file.v === 1 && typeof file.state === 'string' ? file : undefined;
@@ -255,10 +277,26 @@ function adapt(bundle: Bundle, state: State): boolean {
   p.xp = keepKeys(p.xp, bundle.professions);
   p.journal = p.journal.filter((id) => id in bundle.items);
   p.recipes = p.recipes.filter((id) => id in bundle.recipes);
+  // a recipe everyone starts with that came with this version is known at once
+  if (p.starter !== '') {
+    const fresh = Object.keys(bundle.recipes).filter((id) => bundle.recipes[id]!.known === 'start' && !p.recipes.includes(id));
+    if (fresh.length > 0) p.recipes = [...p.recipes, ...fresh].sort();
+  }
+  // a start whose kit came with this version: a save that holds none of a kit item gets it once
+  if (p.starter !== '') {
+    for (const stack of bundle.starters[p.starter]!.kit ?? []) {
+      if ((p.bag[stack.item] ?? 0) > 0) continue;
+      p.bag[stack.item] = stack.qty;
+      if (!p.journal.includes(stack.item)) p.journal = [...p.journal, stack.item].sort();
+    }
+  }
+  p.tries = keepKeys(p.tries, bundle.recipes);
   p.restored = p.restored.filter((id) => id in bundle.restores);
   p.camp = p.camp.filter((id) => id in bundle.camps);
   p.visited = p.visited.filter((id) => bundle.map.slots.some((s) => s.id === id));
   state.nodes = keepKeys(state.nodes, bundle.instances);
+  // a worn item that is gone, or no longer fits its place, comes off
+  fitWorn(bundle, state);
   state.content = bundle.tag;
   state.kernel = KERNEL_VERSION;
   return true;

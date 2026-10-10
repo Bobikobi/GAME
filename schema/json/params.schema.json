@@ -127,6 +127,93 @@
               }
             ]
           },
+          "class": {
+            "description": "A base class (plant, wood, fibre, ...) or the id of a class an extension declares under one of them.",
+            "anyOf": [
+              {
+                "const": "plant",
+                "type": "string"
+              },
+              {
+                "const": "wood",
+                "type": "string"
+              },
+              {
+                "const": "fibre",
+                "type": "string"
+              },
+              {
+                "const": "stone",
+                "type": "string"
+              },
+              {
+                "const": "clay",
+                "type": "string"
+              },
+              {
+                "const": "mineral",
+                "type": "string"
+              },
+              {
+                "const": "metal",
+                "type": "string"
+              },
+              {
+                "const": "animal",
+                "type": "string"
+              },
+              {
+                "const": "meal",
+                "type": "string"
+              },
+              {
+                "const": "tool",
+                "type": "string"
+              },
+              {
+                "const": "garment",
+                "type": "string"
+              },
+              {
+                "const": "jewelry",
+                "type": "string"
+              },
+              {
+                "const": "relic",
+                "type": "string"
+              },
+              {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              }
+            ]
+          },
+          "family": {
+            "pattern": "^[a-z0-9_-]+$",
+            "maxLength": 24,
+            "description": "A group inside the class, for example \"berry\" for every berry. Open: any lowercase word.",
+            "type": "string"
+          },
+          "tags": {
+            "maxItems": 8,
+            "uniqueItems": true,
+            "description": "Open words that describe it, for example \"sweet\" or \"night\".",
+            "type": "array",
+            "items": {
+              "pattern": "^[a-z0-9_-]+$",
+              "maxLength": 24,
+              "description": "A lowercase word.",
+              "type": "string"
+            }
+          },
+          "tier": {
+            "minimum": 1,
+            "maximum": 20,
+            "description": "How advanced it is, from 1. The rarity says how often it appears; the tier says how far up the ladder it is. A tool has the tier of its \"tool\".",
+            "type": "integer"
+          },
           "sprite": {
             "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
             "maxLength": 120,
@@ -166,6 +253,10 @@
                   {
                     "const": "trowel",
                     "type": "string"
+                  },
+                  {
+                    "const": "axe",
+                    "type": "string"
                   }
                 ]
               },
@@ -198,6 +289,200 @@
                 "type": "string"
               }
             }
+          },
+          "wear": {
+            "additionalProperties": false,
+            "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+            "type": "object",
+            "required": [
+              "slot"
+            ],
+            "properties": {
+              "slot": {
+                "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                "anyOf": [
+                  {
+                    "const": "head",
+                    "type": "string"
+                  },
+                  {
+                    "const": "top",
+                    "type": "string"
+                  },
+                  {
+                    "const": "legs",
+                    "type": "string"
+                  },
+                  {
+                    "const": "outfit",
+                    "type": "string"
+                  },
+                  {
+                    "const": "feet",
+                    "type": "string"
+                  },
+                  {
+                    "const": "jewelry",
+                    "type": "string"
+                  },
+                  {
+                    "const": "hand",
+                    "type": "string"
+                  }
+                ]
+              },
+              "look": {
+                "description": "A look: worn on the look layer over the work clothes. It shows and counts for nothing, so it has no effects and no set.",
+                "type": "boolean"
+              },
+              "effects": {
+                "minItems": 1,
+                "maxItems": 2,
+                "description": "Small bonuses while it is worn on the work layer. Two at most, each effect once.",
+                "type": "array",
+                "items": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "effect",
+                    "value"
+                  ],
+                  "properties": {
+                    "effect": {
+                      "description": "What a worn item helps: gathering, digging or crafting speed, the craft chance, or rare finds.",
+                      "anyOf": [
+                        {
+                          "const": "gather_speed_pct",
+                          "type": "string"
+                        },
+                        {
+                          "const": "dig_speed_pct",
+                          "type": "string"
+                        },
+                        {
+                          "const": "craft_speed_pct",
+                          "type": "string"
+                        },
+                        {
+                          "const": "craft_chance_pct",
+                          "type": "string"
+                        },
+                        {
+                          "const": "rare_find_pct",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "value": {
+                      "minimum": 1,
+                      "maximum": 100,
+                      "description": "Percent, at most the cap of the item's tier (params.wear_effect_max_pct).",
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              "set": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
+                "type": "string"
+              }
+            }
+          },
+          "premium_later": {
+            "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "classes": {
+      "maxItems": 10,
+      "description": "Classes of your own, each under one base class.",
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "description": "A class of your own, declared under one base class. Every rule written for the base class holds for it.",
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "base"
+        ],
+        "properties": {
+          "id": {
+            "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+            "maxLength": 80,
+            "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+            "type": "string"
+          },
+          "name": {
+            "minLength": 1,
+            "maxLength": 40,
+            "type": "string"
+          },
+          "base": {
+            "description": "plant (leaves, herbs, berries, fruit, roots, mushrooms), wood, fibre (reeds, grass, thread, cloth), stone, clay (clay, sand, pottery, brick), mineral (crystals, gems, salt, ore), metal (waits for its discovery), animal (feathers, wool, hide, bone), meal (cooked food), tool, garment (worn clothes), jewelry, relic (old things from the ruins).",
+            "anyOf": [
+              {
+                "const": "plant",
+                "type": "string"
+              },
+              {
+                "const": "wood",
+                "type": "string"
+              },
+              {
+                "const": "fibre",
+                "type": "string"
+              },
+              {
+                "const": "stone",
+                "type": "string"
+              },
+              {
+                "const": "clay",
+                "type": "string"
+              },
+              {
+                "const": "mineral",
+                "type": "string"
+              },
+              {
+                "const": "metal",
+                "type": "string"
+              },
+              {
+                "const": "animal",
+                "type": "string"
+              },
+              {
+                "const": "meal",
+                "type": "string"
+              },
+              {
+                "const": "tool",
+                "type": "string"
+              },
+              {
+                "const": "garment",
+                "type": "string"
+              },
+              {
+                "const": "jewelry",
+                "type": "string"
+              },
+              {
+                "const": "relic",
+                "type": "string"
+              }
+            ]
+          },
+          "description": {
+            "minLength": 1,
+            "maxLength": 240,
+            "type": "string"
           }
         }
       }
@@ -217,6 +502,15 @@
         "effort_permille",
         "power_cap_permille",
         "rarity_budget_permille",
+        "open_tiers",
+        "tier_min_level",
+        "template_max_recipes",
+        "craft_chance_bp",
+        "craft_level_step_bp",
+        "craft_luck_max_permille",
+        "craft_miss_keep_pct",
+        "wear_effect_max_pct",
+        "wear_set_bonus_pct",
         "rarity_bonus_ms",
         "drift_budget_permille",
         "satiety_cap",
@@ -483,6 +777,201 @@
               "type": "integer"
             }
           }
+        },
+        "open_tiers": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "value",
+            "min",
+            "max",
+            "step"
+          ],
+          "properties": {
+            "value": {
+              "type": "integer"
+            },
+            "min": {
+              "type": "integer"
+            },
+            "max": {
+              "type": "integer"
+            },
+            "step": {
+              "minimum": 0,
+              "description": "Largest change one decision may make.",
+              "type": "integer"
+            }
+          },
+          "description": "The highest item tier the world has opened. A stage or a new town opens the next one."
+        },
+        "tier_min_level": {
+          "minItems": 1,
+          "maxItems": 20,
+          "description": "The lowest level of each tier, from tier 1. A recipe of tier t needs a level from entry t up to one below entry t + 1 (up to 20 for the last), and a node that gives tier 3 or above needs at least entry t, or a slow respawn. Starts at 1 and rises with every tier; one entry for every open tier at least.",
+          "type": "array",
+          "items": {
+            "minimum": 1,
+            "maximum": 20,
+            "type": "integer"
+          }
+        },
+        "template_max_recipes": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "value",
+            "min",
+            "max",
+            "step"
+          ],
+          "properties": {
+            "value": {
+              "type": "integer"
+            },
+            "min": {
+              "type": "integer"
+            },
+            "max": {
+              "type": "integer"
+            },
+            "step": {
+              "minimum": 0,
+              "description": "Largest change one decision may make.",
+              "type": "integer"
+            }
+          },
+          "description": "The most recipes one recipe template may make."
+        },
+        "craft_chance_bp": {
+          "minItems": 1,
+          "maxItems": 20,
+          "description": "The chance a craft succeeds at exactly its level, in basis points, by the recipe's tier from tier 1; the last entry holds for the tiers above it. Never rises with the tier; 10000 is a sure craft.",
+          "type": "array",
+          "items": {
+            "minimum": 1000,
+            "maximum": 10000,
+            "type": "integer"
+          }
+        },
+        "craft_level_step_bp": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "value",
+            "min",
+            "max",
+            "step"
+          ],
+          "properties": {
+            "value": {
+              "type": "integer"
+            },
+            "min": {
+              "type": "integer"
+            },
+            "max": {
+              "type": "integer"
+            },
+            "step": {
+              "minimum": 0,
+              "description": "Largest change one decision may make.",
+              "type": "integer"
+            }
+          },
+          "description": "What each level of the recipe's profession above the recipe's level adds to the craft chance, in basis points."
+        },
+        "craft_luck_max_permille": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "value",
+            "min",
+            "max",
+            "step"
+          ],
+          "properties": {
+            "value": {
+              "type": "integer"
+            },
+            "min": {
+              "type": "integer"
+            },
+            "max": {
+              "type": "integer"
+            },
+            "step": {
+              "minimum": 0,
+              "description": "Largest change one decision may make.",
+              "type": "integer"
+            }
+          },
+          "description": "The largest part of the gap to a sure craft that luck and luck items close, in permille: skill decides, luck tilts (G40)."
+        },
+        "craft_miss_keep_pct": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "value",
+            "min",
+            "max",
+            "step"
+          ],
+          "properties": {
+            "value": {
+              "type": "integer"
+            },
+            "min": {
+              "type": "integer"
+            },
+            "max": {
+              "type": "integer"
+            },
+            "step": {
+              "minimum": 0,
+              "description": "Largest change one decision may make.",
+              "type": "integer"
+            }
+          },
+          "description": "Part of each input a missed craft keeps when the recipe names no share, rounded down."
+        },
+        "wear_effect_max_pct": {
+          "minItems": 1,
+          "maxItems": 20,
+          "description": "The largest value of one effect on a worn item, by the item's tier from tier 1; the last entry holds for the tiers above it. Never falls with the tier.",
+          "type": "array",
+          "items": {
+            "minimum": 0,
+            "maximum": 100,
+            "type": "integer"
+          }
+        },
+        "wear_set_bonus_pct": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "value",
+            "min",
+            "max",
+            "step"
+          ],
+          "properties": {
+            "value": {
+              "type": "integer"
+            },
+            "min": {
+              "type": "integer"
+            },
+            "max": {
+              "type": "integer"
+            },
+            "step": {
+              "minimum": 0,
+              "description": "Largest change one decision may make.",
+              "type": "integer"
+            }
+          },
+          "description": "How much a full set adds to the effects of its pieces, in percent of their sum, rounded down."
         },
         "rarity_bonus_ms": {
           "additionalProperties": false,

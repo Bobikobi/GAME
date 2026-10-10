@@ -5,6 +5,7 @@
  */
 import type {
   Camp,
+  ClassDef,
   CreatorProfile,
   GameMap,
   ItemDef,
@@ -30,9 +31,12 @@ export interface Meta {
 }
 
 export type ItemInfo = ItemDef & { creator: string; file: string };
+/** A class an extension declares under a base class (DECISIONS.md, 2026-10-09). */
+export type ClassInfo = ClassDef & { creator: string; file: string };
 export type ResourceDef = Meta & Resource;
 export type TreasureDef = Meta & Treasure;
-export type RecipeDef = Meta & Recipe;
+/** `template`: the recipe template the assembler expanded this recipe from. */
+export type RecipeDef = Meta & Recipe & { template?: string };
 export type NpcDef = Meta & Npc;
 export type QuestDef = Meta & Quest;
 export type RestoreDef = Meta & Restore;
@@ -51,6 +55,24 @@ export interface Params {
   power_cap_permille: number[];
   rarity_budget_permille: number;
   rarity_bonus_ms: Record<RarityName, number>;
+  /** the highest item tier the world has opened */
+  open_tiers: number;
+  /** the lowest level of each tier's band, from tier 1 */
+  tier_min_level: number[];
+  /** the most recipes one recipe template may make */
+  template_max_recipes: number;
+  /** the craft chance at exactly the recipe's level, in basis points, by recipe tier from tier 1 (the last entry holds above) */
+  craft_chance_bp: number[];
+  /** what each level above the recipe's level adds to the craft chance, in basis points */
+  craft_level_step_bp: number;
+  /** the largest part of the gap to a sure craft that luck closes, in permille */
+  craft_luck_max_permille: number;
+  /** part of each input a missed craft keeps when the recipe names none */
+  craft_miss_keep_pct: number;
+  /** the largest value of one worn effect, by item tier from tier 1 (the last entry holds above) */
+  wear_effect_max_pct: number[];
+  /** what a full set adds to its pieces' effects, in percent */
+  wear_set_bonus_pct: number;
   drift_budget_permille: number;
   satiety_cap: number;
   satiety_drain_per_min: number;
@@ -101,6 +123,8 @@ export interface Bundle {
   tag: string;
   params: Params;
   items: Record<string, ItemInfo>;
+  /** Classes declared by extensions, by id. The base classes are fixed in the schema. */
+  classes: Record<string, ClassInfo>;
   resources: Record<string, ResourceDef>;
   treasures: Record<string, TreasureDef>;
   recipes: Record<string, RecipeDef>;
@@ -116,8 +140,10 @@ export interface Bundle {
   instances: Record<string, Instance>;
   /** V(item) in value-ms, computed by values.ts (rule R7), never declared. */
   values: Record<string, number>;
-  /** Which profession each verb trains. */
-  verbs: { gather: string; dig: string; craft: string };
+  /** Which profession each verb trains; for craft, the one at the fire, since each station has its own (`stations`). */
+  verbs: { gather: string; fell: string; dig: string; craft: string };
+  /** The craft profession that works each station: a recipe that names no profession takes its station's. */
+  stations: Record<string, string>;
   credits: Credit[];
   /** Creator profiles by handle. Display only, outside the tag: a new signature is not a new world. */
   creators: Record<string, CreatorProfile>;

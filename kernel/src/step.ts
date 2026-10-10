@@ -11,8 +11,12 @@
  * assumes. Grade 4, the jackpot, is a thin strip inside "perfect": the same
  * goods, three times the experience. Experience is not part of item values,
  * so the jackpot speeds up levels and nothing else.
+ *
+ * A craft can miss (G40): skill against the recipe's level sets the chance,
+ * luck only tilts it, and a miss keeps something. The value table prices a
+ * recipe at perfect execution, and nothing lifts a craft above it (R9).
  */
-import type { Bundle, Verb } from './bundle';
+import type { Bundle, RecipeDef, Verb } from './bundle';
 import { canonical } from './canon';
 import { clamp, idivUp, mulDiv, mulDivUp } from './num';
 import { drawBasisPoints } from './rng';
@@ -20,16 +24,22 @@ import {
   ATTRIBUTES,
   type Attribute,
   type State,
+  WEAR_SLOTS,
+  type WearSlot,
   bagCapacity,
   bagUsed,
+  campBuilt,
+  effectValue,
+  fitWorn,
   hourOf,
   isNight,
+  nodeVerb,
   powerCap,
   professionLevel,
   satietyAt,
   satietyCap,
   skillPoints,
-  techniqueValue,
+  slotsFor,
   verbLevel,
 } from './state';
 import { rarityRank, payFor } from './values';
@@ -52,7 +62,9 @@ export type Action =
   | { t: 'turnin'; quest: string; at: Tile }
   | { t: 'visit'; slot: string; at: Tile }
   | { t: 'learn'; item: string }
-  | { t: 'spend'; attr: Attribute };
+  | { t: 'spend'; attr: Attribute }
+  | { t: 'wear'; item: string; slot?: WearSlot }
+  | { t: 'unwear'; slot: WearSlot; look?: boolean };
 
 export type GameEvent =
   | { e: 'gain'; item: string; qty: number }
@@ -72,7 +84,10 @@ export type GameEvent =
   | { e: 'jackpot'; verb: string }
   | { e: 'tool_broke'; item: string }
   | { e: 'visit'; slot: string }
-  | { e: 'attr'; attr: Attribute; value: number };
+  | { e: 'attr'; attr: Attribute; value: number }
+  | { e: 'miss'; recipe: string }
+  | { e: 'wear'; item: string; slot: WearSlot; look: boolean }
+  | { e: 'unwear'; item: string; slot: WearSlot; look: boolean };
 
 export type StepResult = { ok: true; state: State; events: GameEvent[] } | { ok: false; error: string };
 
@@ -90,10 +105,64 @@ export function missKeepBp(bundle: Bundle, state: State): number {
   return Math.min(MISS_KEEP_MAX_BP, MISS_KEEP_BP + 10 * bundle.params.per_point.luck_permille * state.player.attrs.luck);
 }
 
-/** The multiplier on rare and legendary dig chances, in permille: luck and techniques, inside the power cap. */
+/** The multiplier on rare and legendary dig chances, in permille: luck, techniques and worn items, inside the power cap. */
 export function rareFindPermille(bundle: Bundle, state: State): number {
-  const raw = 1000 + bundle.params.per_point.luck_permille * state.player.attrs.luck + 10 * techniqueValue(bundle, state, 'rare_find_pct');
+  const raw = 1000 + bundle.params.per_point.luck_permille * state.player.attrs.luck + 10 * effectValue(bundle, state, 'rare_find_pct');
   return clamp(raw, 1000, powerCap(bundle, state));
+}
+
+/** The profession that gates a recipe and that it trains: its own, else its station's (DECISIONS.md, 2026-10-09). */
+export function recipeProfession(bundle: Bundle, recipe: RecipeDef): string {
+  return recipe.profession ?? bundle.stations[recipe.station] ?? bundle.verbs.craft;
+}
+
+/** A recipe's tier: the highest tier among its outputs. It needs a station of that tier. */
+export function recipeTier(bundle: Bundle, recipe: RecipeDef): number {
+  return Math.max(1, ...recipe.outputs.map((o) => bundle.items[o.item]?.tier ?? 1));
+}
+
+/**
+ * How much of the gap to a sure craft luck closes, in permille: the
+ * character's luck and the craft-chance effect (a luck stone is a worn piece
+ * that carries it), inside the power cap and never past
+ * craft_luck_max_permille. Luck tilts; it never decides.
+ */
+export function craftLuckPermille(bundle: Bundle, state: State, profession: string): number {
+  const raw =
+    1000 + bundle.params.per_point.luck_permille * state.player.attrs.luck + 10 * effectValue(bundle, state, 'craft_chance_pct', profession);
+  return Math.min(bundle.params.craft_luck_max_permille, clamp(raw, 1000, powerCap(bundle, state)) - 1000);
+}
+
+/** The chance a craft succeeds now, in basis points (G40): skill against the recipe's level, then luck closes part of the gap. */
+export function craftChanceBp(bundle: Bundle, state: State, recipeId: string): number {
+  const c = bundle.recipes[recipeId];
+  if (!c) return 0;
+  const p = bundle.params;
+  const byTier = p.craft_chance_bp;
+  const base = byTier[Math.min(recipeTier(bundle, c), byTier.length) - 1] ?? 10_000;
+  const profession = recipeProfession(bundle, c);
+  const over = Math.max(0, professionLevel(bundle, state, profession) - c.level);
+  const skill = Math.min(10_000, base + over * p.craft_level_step_bp);
+  return skill + mulDiv(10_000 - skill, craftLuckPermille(bundle, state, profession), 1000);
+}
+
+/**
+ * What a missed craft leaves (G40): part of the inputs and nothing else.
+ * `keep` is aligned with the recipe's inputs, each its share rounded down.
+ * When that would leave nothing, one unit of the most valuable input comes
+ * back.
+ */
+export function missOutcome(bundle: Bundle, recipe: RecipeDef): { keep: { item: string; qty: number }[] } {
+  const pct = recipe.miss?.keep_pct ?? bundle.params.craft_miss_keep_pct;
+  const keep = recipe.inputs.map((s) => ({ item: s.item, qty: mulDiv(s.qty, pct, 100) }));
+  if (keep.every((k) => k.qty === 0)) {
+    let best = 0;
+    recipe.inputs.forEach((s, i) => {
+      if ((bundle.values[s.item] ?? 0) > (bundle.values[recipe.inputs[best]!.item] ?? 0)) best = i;
+    });
+    keep[best]!.qty = 1;
+  }
+  return { keep };
 }
 
 class Refusal extends Error {}
@@ -188,6 +257,10 @@ function apply(ctx: Ctx, a: Action): void {
       return learn(ctx, a.item);
     case 'spend':
       return spend(ctx, a.attr);
+    case 'wear':
+      return wear(ctx, a.item, a.slot);
+    case 'unwear':
+      return unwear(ctx, a.slot, a.look === true);
     default:
       refuse('Unknown action.');
   }
@@ -213,6 +286,7 @@ function start(ctx: Ctx, starterId: string, name: string, look: number): void {
   s.player.recipes = Object.keys(b.recipes)
     .filter((id) => b.recipes[id]!.known === 'start')
     .sort();
+  for (const stack of starter.kit ?? []) addItem(ctx, stack.item, stack.qty);
 }
 
 function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
@@ -227,11 +301,12 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   if (r.hours && !inHours(hourOf(b, ctx.tick), r.hours)) {
     refuse(`It can only be gathered between ${r.hours[0]}:00 and ${r.hours[1]}:00.`);
   }
-  if (verbLevel(b, s, 'gather') < r.level) refuse(`Needs ${b.professions[b.verbs.gather]?.name ?? 'gathering'} level ${r.level}.`);
+  const verb = nodeVerb(r);
+  if (verbLevel(b, s, verb) < r.level) refuse(`Needs ${b.professions[b.verbs[verb]]?.name ?? 'gathering'} level ${r.level}.`);
   const tool = r.tool ? requireTool(ctx, r.tool) : undefined;
   if (bagCapacity(b, s) - bagUsed(s) <= 0) refuse('Your bag is full.');
 
-  const ms = duration(ctx, r.active_ms, speedPermille(ctx, tool ? 150 * (toolTier(ctx, tool) - 1) : 0));
+  const ms = duration(ctx, r.active_ms, speedPermille(ctx, (tool ? 150 * (toolTier(ctx, tool) - 1) : 0) + 10 * effectValue(b, s, 'gather_speed_pct')));
   let qty = gradeYield(r.yield, grade);
   if (grade === 0) {
     if (drawBasisPoints(s.seed, nodeId, node.draws) < missKeepBp(b, s)) qty = 1;
@@ -243,7 +318,7 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   node.readyAt = ctx.tick + ms + r.respawn_ms;
   s.nodes[nodeId] = node;
   busy(ctx, 'gather', ms);
-  gainXp(ctx, 'gather', grade === 4 ? r.active_ms * JACKPOT_XP : r.active_ms);
+  gainXp(ctx, verb, grade === 4 ? r.active_ms * JACKPOT_XP : r.active_ms);
   if (grade === 4) ctx.events.push({ e: 'jackpot', verb: 'gather' });
 }
 
@@ -260,7 +335,7 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
   const tool = requireTool(ctx, d.tool);
   if (bagCapacity(b, s) - bagUsed(s) <= 0) refuse('Your bag is full.');
 
-  const ms = duration(ctx, d.active_ms, speedPermille(ctx, 150 * (toolTier(ctx, tool) - 1)));
+  const ms = duration(ctx, d.active_ms, speedPermille(ctx, 150 * (toolTier(ctx, tool) - 1) + 10 * effectValue(b, s, 'dig_speed_pct')));
   // luck and the rare-find technique raise only rare and legendary chances, inside the power cap
   const luck = rareFindPermille(b, s);
   const roll = drawBasisPoints(s.seed, spotId, node.draws);
@@ -292,26 +367,49 @@ function craft(ctx: Ctx, recipeId: string, at: Tile): void {
   const c = b.recipes[recipeId];
   if (!c) refuse('Unknown recipe.');
   if (!s.player.recipes.includes(recipeId)) refuse('You do not know this recipe yet.');
-  const station = Object.keys(b.camps)
+  const built = Object.keys(b.camps)
     .sort()
-    .find((id) => s.player.camp.includes(id) && b.camps[id]!.provides === c.station);
-  if (!station) refuse(c.station === 'fire' ? 'You need a campfire to cook.' : `You need a ${c.station}.`);
+    .filter((id) => s.player.camp.includes(id) && b.camps[id]!.provides === c.station);
+  if (built.length === 0) refuse(c.station === 'fire' ? 'You need a campfire to cook.' : `You need a ${c.station}.`);
+  const tier = recipeTier(b, c);
+  const station = built.find((id) => (b.camps[id]!.tier ?? 1) >= tier);
+  if (!station) refuse(`This needs a ${c.station} of tier ${tier}.`);
   const tile = campTile(b, b.camps[station]!.slot);
   if (!tile) refuse('The camp is missing from the map.');
   checkAt(ctx, at, { x: tile[0], y: tile[1], w: 1, h: 1 });
-  if (verbLevel(b, s, 'craft') < c.level) refuse(`Needs ${b.professions[b.verbs.craft]?.name ?? 'crafting'} level ${c.level}.`);
+  const profession = recipeProfession(b, c);
+  if (professionLevel(b, s, profession) < c.level) refuse(`Needs ${b.professions[profession]?.name ?? 'crafting'} level ${c.level}.`);
   for (const input of c.inputs) {
     if ((s.player.bag[input.item] ?? 0) < input.qty) refuse(`You need ${input.qty} ${b.items[input.item]?.name ?? input.item}.`);
   }
-  const growth = c.outputs.reduce((n, o) => n + o.qty, 0) - c.inputs.reduce((n, i) => n + i.qty, 0);
+  // the bag must hold what either outcome leaves
+  const miss = missOutcome(b, c);
+  const used = c.inputs.reduce((n, i) => n + i.qty, 0);
+  const growth = Math.max(
+    c.outputs.reduce((n, o) => n + o.qty, 0) - used,
+    miss.keep.reduce((n, k) => n + k.qty, 0) - used,
+  );
   if (growth > bagCapacity(b, s) - bagUsed(s)) refuse('Your bag is too full for what this makes.');
 
-  const ms = duration(ctx, c.active_ms, speedPermille(ctx, 10 * techniqueValue(b, s, 'craft_speed_pct')));
-  for (const input of c.inputs) removeItem(ctx, input.item, input.qty);
-  for (const out of c.outputs) addItem(ctx, out.item, out.qty);
-  s.player.made[recipeId] = (s.player.made[recipeId] ?? 0) + 1;
+  const ms = duration(ctx, c.active_ms, speedPermille(ctx, 10 * effectValue(b, s, 'craft_speed_pct', profession)));
+  // one draw per try of this recipe (rule R4); a sure craft takes its turn of the counter too
+  const chance = craftChanceBp(b, s, recipeId);
+  const tries = s.player.tries[recipeId] ?? 0;
+  s.player.tries[recipeId] = tries + 1;
+  if (chance >= 10_000 || drawBasisPoints(s.seed, `craft:${recipeId}`, tries) < chance) {
+    for (const input of c.inputs) removeItem(ctx, input.item, input.qty);
+    for (const out of c.outputs) addItem(ctx, out.item, out.qty);
+    s.player.made[recipeId] = (s.player.made[recipeId] ?? 0) + 1;
+  } else {
+    ctx.events.push({ e: 'miss', recipe: recipeId });
+    c.inputs.forEach((input, i) => {
+      const lost = input.qty - (miss.keep[i]?.qty ?? 0);
+      if (lost > 0) removeItem(ctx, input.item, lost);
+    });
+  }
   busy(ctx, 'craft', ms);
-  gainXp(ctx, 'craft', c.active_ms);
+  // effort is never wasted (pillar 5): a miss trains as much as a success
+  gainProfessionXp(ctx, profession, c.active_ms);
 }
 
 function eat(ctx: Ctx, itemId: string): void {
@@ -321,7 +419,7 @@ function eat(ctx: Ctx, itemId: string): void {
   if ((s.player.bag[itemId] ?? 0) < 1) refuse('You do not have that.');
   const cap = satietyCap(b, s);
   if (s.player.satiety >= cap) refuse('You are full.');
-  const fill = mulDiv(item.food.satiety * 1000, 100 + techniqueValue(b, s, 'meal_fill_pct'), 100);
+  const fill = mulDiv(item.food.satiety * 1000, 100 + effectValue(b, s, 'meal_fill_pct'), 100);
   removeItem(ctx, itemId, 1);
   s.player.satiety = Math.min(cap, s.player.satiety + fill);
   ctx.events.push({ e: 'eat', item: itemId, satiety: s.player.satiety });
@@ -395,8 +493,11 @@ function build(ctx: Ctx, campId: string, at: Tile): void {
   const { b, s } = ctx;
   const camp = b.camps[campId];
   if (!camp) refuse('Unknown camp part.');
-  if (s.player.camp.includes(campId)) refuse('It is already built.');
-  if (s.player.camp.some((id) => b.camps[id]?.slot === camp.slot)) refuse('Something already stands there.');
+  if (campBuilt(b, s, campId)) refuse('It is already built.');
+  // an upgrade is built over the part it names, which must stand, and replaces it
+  const base = camp.upgrades;
+  if (base !== undefined && !s.player.camp.includes(base)) refuse(`Build the ${b.camps[base]?.title ?? base} first.`);
+  if (s.player.camp.some((id) => id !== base && b.camps[id]?.slot === camp.slot)) refuse('Something already stands there.');
   const tile = campTile(b, camp.slot);
   if (!tile) refuse('The camp is missing from the map.');
   checkAt(ctx, at, { x: tile[0], y: tile[1], w: 1, h: 1 });
@@ -407,7 +508,7 @@ function build(ctx: Ctx, campId: string, at: Tile): void {
   }
   const ms = duration(ctx, camp.active_ms, 1000);
   for (const input of camp.inputs) removeItem(ctx, input.item, input.qty);
-  s.player.camp = [...s.player.camp, campId].sort();
+  s.player.camp = [...s.player.camp.filter((id) => id !== base), campId].sort();
   ctx.events.push({ e: 'build', camp: campId });
   busy(ctx, 'build', ms);
 }
@@ -448,7 +549,7 @@ export function questSatisfied(bundle: Bundle, state: State, questId: string): b
         if (!p.restored.includes(st.restore)) return false;
         break;
       case 'build':
-        if (!p.camp.includes(st.camp)) return false;
+        if (!campBuilt(bundle, state, st.camp)) return false;
         break;
       case 'visit':
         if (!p.visited.includes(st.slot)) return false;
@@ -571,6 +672,46 @@ function learn(ctx: Ctx, itemId: string): void {
   learnRecipe(ctx, item.fragment.unlocks);
 }
 
+/**
+ * Put on a worn item (DECISIONS.md, 2026-10-09: the upgrade). It stays in the
+ * bag; a look goes on the look layer, anything else on the work layer. An
+ * outfit takes the top and the legs off, and a top or trousers the outfit.
+ */
+function wear(ctx: Ctx, itemId: string, slot: WearSlot | undefined): void {
+  const { b, s } = ctx;
+  const w = b.items[itemId]?.wear;
+  if (!w) refuse('That is not something to wear.');
+  const have = s.player.bag[itemId] ?? 0;
+  if (have < 1) refuse('You do not have that.');
+  const look = w.look === true;
+  const layer = look ? s.player.looks : s.player.worn;
+  const fits = slotsFor(w.slot);
+  if (slot !== undefined && !fits.includes(slot)) refuse('It does not go there.');
+  const target = slot ?? fits.find((k) => layer[k] === undefined) ?? fits[0];
+  if (target === undefined) refuse('It does not go there.');
+  if (layer[target] === itemId) refuse('You are already wearing that.');
+  const elsewhere = WEAR_SLOTS.filter((k) => k !== target && layer[k] === itemId).length;
+  if (elsewhere + 1 > have) refuse('You are already wearing every one you have.');
+  const clears: WearSlot[] = target === 'outfit' ? ['top', 'legs'] : target === 'top' || target === 'legs' ? ['outfit'] : [];
+  for (const k of [target, ...clears]) {
+    const old = layer[k];
+    if (old === undefined) continue;
+    delete layer[k];
+    ctx.events.push({ e: 'unwear', item: old, slot: k, look });
+  }
+  layer[target] = itemId;
+  ctx.events.push({ e: 'wear', item: itemId, slot: target, look });
+}
+
+function unwear(ctx: Ctx, slot: WearSlot, look: boolean): void {
+  if (!(WEAR_SLOTS as readonly string[]).includes(slot)) refuse('Nothing is worn there.');
+  const layer = look ? ctx.s.player.looks : ctx.s.player.worn;
+  const id = layer[slot];
+  if (id === undefined) refuse('Nothing is worn there.');
+  delete layer[slot];
+  ctx.events.push({ e: 'unwear', item: id, slot, look });
+}
+
 function spend(ctx: Ctx, attr: Attribute): void {
   const { b, s } = ctx;
   if (!ATTRIBUTES.includes(attr)) refuse('Unknown attribute.');
@@ -635,7 +776,7 @@ function requireTool(ctx: Ctx, kind: string): string {
     if (!tool || tool.kind !== kind || (s.player.bag[id] ?? 0) < 1) continue;
     if (!best || tool.tier > toolTier(ctx, best)) best = id;
   }
-  if (!best) refuse(`You need a ${kind} for this.`);
+  if (!best) refuse(`You need ${/^[aeiou]/.test(kind) ? 'an' : 'a'} ${kind} for this.`);
   return best;
 }
 
@@ -674,6 +815,8 @@ function removeItem(ctx: Ctx, itemId: string, qty: number): void {
   if (left === 0) delete bag[itemId];
   else bag[itemId] = left;
   ctx.events.push({ e: 'spend', item: itemId, qty });
+  // a worn unit that leaves the bag comes off
+  for (const off of fitWorn(ctx.b, ctx.s, itemId)) ctx.events.push({ e: 'unwear', ...off });
 }
 
 function learnRecipe(ctx: Ctx, recipeId: string): void {
@@ -684,8 +827,11 @@ function learnRecipe(ctx: Ctx, recipeId: string): void {
 }
 
 function gainXp(ctx: Ctx, verb: Verb, ms: number): void {
+  gainProfessionXp(ctx, ctx.b.verbs[verb], ms);
+}
+
+function gainProfessionXp(ctx: Ctx, id: string, ms: number): void {
   const { b, s } = ctx;
-  const id = b.verbs[verb];
   const before = professionLevel(b, s, id);
   s.player.xp[id] = (s.player.xp[id] ?? 0) + ms;
   const after = professionLevel(b, s, id);

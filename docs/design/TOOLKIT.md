@@ -2,7 +2,7 @@
 
 A survey made on 2026-10-07 for the owner's question: which free tools and
 repositories help keep the basic rules of play that top-tier games keep. One
-line per tool on what it gives, what it costs, and where it fits Mistvale. The
+line per tool on what it gives, what it costs, and where it fits Openfold. The
 rules themselves are in [GAME_RULES.md](GAME_RULES.md).
 
 The short answer: no tool keeps game rules for you. What keeps them is a page

@@ -14,6 +14,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Cooking (profession) - `content/core/professions/cooking.json`
 - Digging (profession) - `content/core/professions/digging.json`
 - Foraging (profession) - `content/core/professions/foraging.json`
+- Woodcutting (profession) - `content/core/professions/woodcutting.json`
 - The coin under the lantern (quest) - `content/core/quests/a-coin-for-maru.json`
 - A fire and a meal (quest) - `content/core/quests/first-fire.json`
 - Mend the bridge (quest) - `content/core/quests/fix-the-bridge.json`
@@ -24,10 +25,11 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Herb stew (recipe) - `content/core/recipes/herb-stew.json`
 - Herb tea (recipe) - `content/core/recipes/herb-tea.json`
 - Mushroom skewer (recipe) - `content/core/recipes/mushroom-skewer.json`
+- Split a log (recipe) - `content/core/recipes/split-log.json`
 - Bell bushes (resource) - `content/core/resources/bell-bushes.json`
 - Redberry bushes (resource) - `content/core/resources/berry-bushes.json`
-- Fallen branches (resource) - `content/core/resources/fallen-branches.json`
 - Forest mushrooms (resource) - `content/core/resources/forest-mushrooms.json`
+- Oak trees (resource) - `content/core/resources/oak-trees.json`
 - River stones (resource) - `content/core/resources/river-stones.json`
 - Sun herbs (resource) - `content/core/resources/sun-herbs.json`
 - Wild herbs (resource) - `content/core/resources/wild-herbs.json`
@@ -40,7 +42,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Gate rubble (treasure) - `content/core/treasures/ruins-gate.json`
 - Base kit (kit) - `content/kit/core/kit.json`
 
-AI tools: Codex: text-grid sprites in tools/src/kit/sketches.ts; Nano Banana (gemini-3.1-flash-image) via Antigravity.
+AI tools: Claude Code: text-grid sprites and frames via a PIL script; Codex: text-grid sprites in tools/src/kit/sketches.ts; Nano Banana (gemini-3.1-flash-image) via Antigravity.
 
 ## Libraries and fonts
 

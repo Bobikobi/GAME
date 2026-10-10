@@ -21,7 +21,7 @@ const file = (id: string, steps: unknown[]) => ({
 });
 
 describe('find and riddle references', () => {
-  const root = mkdtempSync(join(tmpdir(), 'mistvale-steps-'));
+  const root = mkdtempSync(join(tmpdir(), 'openfold-steps-'));
   afterAll(() => rmSync(root, { recursive: true, force: true }));
 
   cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });

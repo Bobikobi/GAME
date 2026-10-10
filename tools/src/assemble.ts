@@ -7,17 +7,20 @@ import { dirname } from 'node:path';
 import {
   type BoardEntry,
   type Bundle,
+  type ClassInfo,
   type Credit,
   type ItemInfo,
   type MapDef,
+  type Meta,
   type Params,
+  type RecipeDef,
   type SpriteInfo,
   canonical,
   computeValues,
   hashText,
   layoutInstances,
 } from '@game/kernel';
-import { CORE_ONLY_TYPES, type CreatorProfile, type ParamsBody } from '@game/schema';
+import { BASE_CLASSES, CORE_ONLY_TYPES, type CreatorProfile, type ParamsBody, type Template, type WhenDef } from '@game/schema';
 import { toRepoPath, type Issue, type Loaded } from './load';
 import { findableItems } from './play';
 
@@ -47,6 +50,7 @@ const BODY_OF: Record<string, string> = {
   resource: 'node',
   treasure: 'dig',
   recipe: 'recipe',
+  template: 'template',
   npc: 'npc',
   quest: 'quest',
   restore: 'restore',
@@ -82,6 +86,15 @@ export function flattenParams(p: ParamsBody): Params {
     power_cap_permille: [...p.power_cap_permille],
     rarity_budget_permille: p.rarity_budget_permille.value,
     rarity_bonus_ms: { ...p.rarity_bonus_ms },
+    open_tiers: p.open_tiers.value,
+    tier_min_level: [...p.tier_min_level],
+    template_max_recipes: p.template_max_recipes.value,
+    craft_chance_bp: [...p.craft_chance_bp],
+    craft_level_step_bp: p.craft_level_step_bp.value,
+    craft_luck_max_permille: p.craft_luck_max_permille.value,
+    craft_miss_keep_pct: p.craft_miss_keep_pct.value,
+    wear_effect_max_pct: [...p.wear_effect_max_pct],
+    wear_set_bonus_pct: p.wear_set_bonus_pct.value,
     drift_budget_permille: p.drift_budget_permille.value,
     satiety_cap: p.satiety_cap.value,
     satiety_drain_per_min: p.satiety_drain_per_min.value,
@@ -104,6 +117,8 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
     issues.push({ file: typeof f === 'string' ? f : toRepoPath(f.abs), where, message, level: 'error' });
 
   const items: Record<string, ItemInfo> = {};
+  const classes: Record<string, ClassInfo> = {};
+  const templates: TemplateDef[] = [];
   const records: Record<RecordKey, Record<string, unknown>> = {
     resources: {},
     treasures: {},
@@ -149,6 +164,11 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
       if (items[item.id]) err(f, `items.${i}.id`, `item "${item.id}" is already defined in ${items[item.id]!.file}`);
       items[item.id] = { ...item, creator: d.creator, file };
     }
+    for (const [i, c] of (d.classes ?? []).entries()) {
+      if (!c.id.startsWith(`${d.creator}/`)) err(f, `classes.${i}.id`, `class ids start with "${d.creator}/"`);
+      if (classes[c.id]) err(f, `classes.${i}.id`, `class "${c.id}" is already defined in ${classes[c.id]!.file}`);
+      classes[c.id] = { ...c, creator: d.creator, file };
+    }
     if (d.type !== 'creator') credits.push({ id: d.id, type: d.type, title: d.title, creator: d.creator, file, ai_tools: d.ai_tools ?? [] });
 
     const body = (d as unknown as Record<string, unknown>)[BODY_OF[d.type] ?? ''];
@@ -156,6 +176,8 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
     const key = KEY_OF[d.type];
     if (key) {
       records[key][d.id] = { ...meta, ...(body as object) };
+    } else if (d.type === 'template') {
+      templates.push({ ...meta, ...d.template });
     } else if (d.type === 'creator') {
       if (d.id !== `${d.creator}/profile`) err(f, 'id', `a creator profile has the id "${d.creator}/profile"`);
       if (creators[d.creator]) err(f, '', `"${d.creator}" already has a profile`);
@@ -190,23 +212,125 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   }
 
   const r = records as unknown as Pick<Bundle, RecordKey>;
-  const verbs = { gather: '', dig: '', craft: '' };
+  // one profession per gathering verb; the one craft verb has a profession per station family
+  // (DECISIONS.md, 2026-10-09), and the check reports a station worked twice
+  const verbs = { gather: '', fell: '', dig: '', craft: '' };
+  const stations: Record<string, string> = {};
+  const crafters: string[] = [];
   for (const id of Object.keys(r.professions).sort()) {
-    const v = r.professions[id]!.verb;
-    if (verbs[v]) err(origin[id]!, 'profession.verb', `"${v}" is already trained by ${verbs[v]}`);
-    else verbs[v] = id;
+    const pr = r.professions[id]!;
+    if (pr.verb === 'craft') {
+      crafters.push(id);
+      for (const station of pr.stations ?? []) stations[station] ??= id;
+    } else if (verbs[pr.verb]) err(origin[id]!, 'profession.verb', `"${pr.verb}" is already trained by ${verbs[pr.verb]}`);
+    else verbs[pr.verb] = id;
   }
+  // the craft verb's own profession is the one at the fire, where crafting starts
+  verbs.craft = stations.fire ?? crafters[0] ?? '';
   for (const v of Object.keys(verbs) as (keyof typeof verbs)[]) {
     if (!verbs[v]) err('content/core', '', `no profession trains "${v}"`);
   }
 
-  const content = { params, items, ...r, map, sprites, verbs, credits };
+  expandTemplates(templates, { params, items, classes, recipes: r.recipes }, origin, issues);
+
+  const content = { params, items, classes, ...r, map, sprites, verbs, stations, credits };
   const tag = hashText(canonical(content));
   const instances = layoutInstances(map, r.resources, r.treasures);
   const { values } = computeValues({ params, items, resources: r.resources, treasures: r.treasures, recipes: r.recipes });
   const bundle: Bundle = { format: 1, tag, ...content, instances, values, creators, board };
   checkReferences(bundle, origin, issues);
   return { bundle, issues, kits, origin };
+}
+
+type TemplateDef = Meta & Template;
+
+/**
+ * Whether an item of class `cls` fits an input that asks for class `want`.
+ * A base class takes its own items and every class declared under it; a
+ * declared class takes only its own items.
+ */
+export function classFits(classes: Record<string, ClassInfo>, cls: string | undefined, want: string): boolean {
+  if (cls === undefined) return false;
+  if (cls === want) return true;
+  return (BASE_CLASSES as readonly string[]).includes(want) && classes[cls]?.base === want;
+}
+
+/**
+ * Recipe templates (DECISIONS.md, 2026-10-09): each becomes one concrete
+ * recipe for every combination of items that fit its class inputs, in id
+ * order, so the kernel and the value table see concrete recipes only. A
+ * template that would make more than `template_max_recipes` makes none.
+ */
+function expandTemplates(
+  templates: TemplateDef[],
+  world: { params: Params; items: Record<string, ItemInfo>; classes: Record<string, ClassInfo>; recipes: Record<string, RecipeDef> },
+  origin: Record<string, string>,
+  issues: Issue[],
+): void {
+  const { params, items, classes, recipes } = world;
+  const ids = Object.keys(items).sort();
+  for (const t of [...templates].sort((x, y) => (x.id < y.id ? -1 : 1))) {
+    const err = (where: string, message: string) => issues.push({ file: t.file, where, message, level: 'error' });
+    if (!t.inputs.some((input) => 'class' in input)) {
+      err('template.inputs', 'no input names a class: write a recipe instead of a template');
+      continue;
+    }
+    const choices = t.inputs.map((input, i) => {
+      if (!('class' in input)) return [input.item];
+      const fit = ids.filter((id) => {
+        const it = items[id]!;
+        return classFits(classes, it.class, input.class) && (input.family === undefined || it.family === input.family) && (it.tier ?? 1) >= input.min_tier;
+      });
+      if (fit.length === 0) {
+        const family = input.family === undefined ? '' : ` and family "${input.family}"`;
+        err(`template.inputs.${i}`, `no item of class "${input.class}"${family} at tier ${input.min_tier} or above`);
+      }
+      return fit;
+    });
+    if (choices.some((c) => c.length === 0)) continue;
+    const count = choices.reduce((n, c) => n * c.length, 1);
+    if (count > params.template_max_recipes) {
+      err(
+        'template.inputs',
+        `fits ${count} combinations, more than template_max_recipes (${params.template_max_recipes}): name a family, a narrower class or a higher min_tier`,
+      );
+      continue;
+    }
+    let combos: string[][] = [[]];
+    for (const c of choices) combos = combos.flatMap((combo) => c.map((id) => [...combo, id]));
+    for (const combo of combos) {
+      const picked = combo.filter((_, i) => 'class' in t.inputs[i]!);
+      // "+" is outside the id alphabet, so no two templates or item lists can make the same id
+      const id = `${t.id}+${picked.join('+')}`;
+      if (origin[id]) {
+        err('template', `makes the recipe "${id}", an id already used by ${origin[id]}`);
+        continue;
+      }
+      const inputs: { item: string; qty: number }[] = [];
+      combo.forEach((item, i) => {
+        const same = inputs.find((s) => s.item === item);
+        if (same) same.qty += t.inputs[i]!.qty;
+        else inputs.push({ item, qty: t.inputs[i]!.qty });
+      });
+      origin[id] = t.file;
+      recipes[id] = {
+        id,
+        creator: t.creator,
+        title: `${t.title} (${picked.map((item) => items[item]!.name).join(', ')})`,
+        file: t.file,
+        ...(t.ai_tools ? { ai_tools: t.ai_tools } : {}),
+        station: t.station,
+        active_ms: t.active_ms,
+        level: t.level,
+        ...(t.profession ? { profession: t.profession } : {}),
+        inputs,
+        outputs: t.outputs.map((o) => ({ ...o })),
+        ...(t.miss ? { miss: structuredClone(t.miss) } : {}),
+        known: 'start',
+        template: t.id,
+      };
+    }
+  }
 }
 
 function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issue[]): void {
@@ -229,6 +353,9 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
 
   for (const [id, it] of Object.entries(b.items)) {
     sprite(id, 'sprite', it.sprite);
+    if (it.class !== undefined && !(BASE_CLASSES as readonly string[]).includes(it.class) && !b.classes[it.class]) {
+      err(id, 'class', `no class "${it.class}": use a base class (${BASE_CLASSES.join(', ')}) or declare it under "classes"`);
+    }
     if (it.fragment && !b.recipes[it.fragment.unlocks]) err(id, 'fragment.unlocks', `no recipe "${it.fragment.unlocks}"`);
     if (it.kind === 'food' && !it.food) err(id, 'food', 'a food item needs "food": { "satiety": n }');
     if (it.kind === 'tool' && !it.tool) err(id, 'tool', 'a tool item needs "tool": { kind, tier, uses }');
@@ -238,6 +365,8 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     item(id, 'node.output', res.output);
     sprite(id, 'node.sprite', res.sprite);
     if (res.sprite_empty) sprite(id, 'node.sprite_empty', res.sprite_empty);
+    res.growth?.forEach((g, i) => sprite(id, `node.growth.${i}`, g));
+    if (res.growth && !res.sprite_empty) err(id, 'node.growth', 'growth stages come after "sprite_empty": name the stump or the bare ground first');
     place(id, 'resource', res.place.slot);
   }
   for (const [id, t] of Object.entries(b.treasures)) {
@@ -249,11 +378,35 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
   for (const [id, c] of Object.entries(b.recipes)) {
     c.inputs.forEach((s, i) => item(id, `recipe.inputs.${i}.item`, s.item));
     c.outputs.forEach((s, i) => item(id, `recipe.outputs.${i}.item`, s.item));
+    if (c.profession && !b.professions[c.profession]) err(id, 'recipe.profession', `no profession "${c.profession}"`);
   }
+  // a line that waits for the world names only things that exist (GRUNT S-1)
+  const when = (owner: string, where: string, w: WhenDef) => {
+    const named: [keyof WhenDef, string, (ref: string) => boolean][] = [
+      ['done', 'quest', (r) => !!b.quests[r]],
+      ['active', 'quest', (r) => !!b.quests[r]],
+      ['not_done', 'quest', (r) => !!b.quests[r]],
+      ['restored', 'restore', (r) => !!b.restores[r]],
+      ['built', 'camp part', (r) => !!b.camps[r]],
+      ['has', 'item', (r) => !!b.items[r]],
+      ['visited', 'slot', (r) => b.map.slots.some((sl) => sl.id === r)],
+    ];
+    for (const [key, kind, exists] of named) {
+      const refs = w[key];
+      if (!Array.isArray(refs)) continue;
+      refs.forEach((r, i) => {
+        if (!exists(r)) err(owner, `${where}.${key}.${i}`, `no ${kind} "${r}"`);
+      });
+    }
+  };
   for (const [id, n] of Object.entries(b.npcs)) {
     sprite(id, 'npc.sprite', n.sprite);
     place(id, 'npc', n.place.slot);
     if (n.shop && !b.shops[n.shop]) err(id, 'npc.shop', `no shop "${n.shop}"`);
+    (n.remarks ?? []).forEach((r, i) => when(id, `npc.remarks.${i}.when`, r.when));
+    (n.topics ?? []).forEach((t, i) => {
+      if (t.when) when(id, `npc.topics.${i}.when`, t.when);
+    });
   }
   for (const [id, s] of Object.entries(b.shops)) s.sells.forEach((o, i) => item(id, `shop.sells.${i}.item`, o.item));
   const findable = findableItems(b);
@@ -297,12 +450,14 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
   for (const [id, c] of Object.entries(b.camps)) {
     c.inputs.forEach((s, i) => item(id, `camp.inputs.${i}.item`, s.item));
     sprite(id, 'camp.sprite', c.sprite);
+    if (c.upgrades !== undefined && !b.camps[c.upgrades]) err(id, 'camp.upgrades', `no camp part "${c.upgrades}"`);
   }
   const totals = Object.entries(b.starters).map(([id, s]) => [id, Object.values(s.attributes).reduce((n, v) => n + v, 0)] as const);
   for (const [id, total] of totals) {
     sprite(id, 'starter.sprite', b.starters[id]!.sprite);
     const alt = b.starters[id]!.sprite_alt;
     if (alt) sprite(id, 'starter.sprite_alt', alt);
+    b.starters[id]!.kit?.forEach((k, i) => item(id, `starter.kit.${i}.item`, k.item));
     if (total !== STARTER_POINTS) err(id, 'starter.attributes', `attributes add up to ${total}; every starter has exactly ${STARTER_POINTS}`);
   }
   for (const [slotId, owners] of Object.entries(slotFill)) {

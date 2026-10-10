@@ -13,8 +13,7 @@ PLATFORM.md section 5.5 as tests; `pnpm verify` green before the pull request;
 commit messages end with the `Co-Authored-By` line of the model that ran.
 
 Order: M1 (1-3) and M2 (4-9) can run in parallel in two worktrees. M3 (10-14)
-waits for both. M4 (15-16) waits for M1. M5 (17-19) waits for M3 and for
-Elad's yes to question 4 of the platform message.
+waits for both. M4 (15-16) waits for M1. M5 (17-19) waits for M3; question 4 was answered 2026-10-08 (DECISIONS.md).
 
 ## M1 - data
 
@@ -303,8 +302,8 @@ Files:
 - `web/src/pages/api/index.astro`: a list: `hub-data.json` (format, `built_at`),
   each `schema/<name>.schema.json` with its `$id`, each as a link; one line
   on the stage-2 plan (same paths, served by the server).
-- `web/public/llms.txt`: H1 with the product name (use the game's title until
-  question 2 is answered), one sentence, then sections `## Guide`,
+- `web/public/llms.txt`: H1 with the product name, Openfold (question 2,
+  settled on 9.10 in `DECISIONS.md`), one sentence, then sections `## Guide`,
   `## Schemas`, `## Data`, `## MCP`, `## Rules`, each a list of links with a
   short description, per llmstxt.org.
 - `web/test/api.test.ts`: every link in the built `api/index.html` resolves to
@@ -548,8 +547,8 @@ a step, and the hub shows the one-line setup.
 
 Files:
 - `.mcp.json` (repository root): `{"mcpServers": {"<name>": {"command": "pnpm",
-  "args": ["-s", "mcp"]}}}` with the product name from question 2 (until
-  answered, `valley`).
+  "args": ["-s", "mcp"]}}}` with the product name from question 2,
+  `openfold`.
 - `.cursor/mcp.json`: the same shape.
 - `docs/creators/README.md`: a section "Your AI tool and the project" with the
   two lines for a tool that does not read `.mcp.json` (`claude mcp add` and the
@@ -567,7 +566,7 @@ Prints the file and 1.
 Decision: DECISIONS.md 2026-10-07, "The creator MCP is read-only and runs on
 the creator's machine".
 
-## M5 - the stage-1 service (after Elad's yes to question 4)
+## M5 - the stage-1 service (question 4 answered 2026-10-08, see DECISIONS.md)
 
 ### 17. The endpoints
 
@@ -901,3 +900,208 @@ pnpm verify && pnpm e2e
 Green; the e2e log prints the climax line and the opened slot.
 
 Decision: DECISIONS.md 2026-10-08, the expedition entry; GAME_RULES.md G36-G37.
+
+## S - the story (after the owner's rulings in STORY.md, 2026-10-10)
+
+Read [docs/design/STORY.md](../design/STORY.md) first: the folds, rules S1-S6,
+the three beliefs and the lean. The order is fixed: S-1 and S-2 need no belief
+and go first, since G21 needs them anyway; S-3 is the belief kind, S-4 the lean
+and the choice, S-5 the checks, S-6 the first story content. Every item is
+additive, so `FORMAT_VERSION` does not move. A line that breaks a voice sheet
+or a rule of STORY.md stops the item and goes to the owner.
+
+### S-1. Lines with conditions
+
+Status: built 10.10 together with S-2 in the pull request `feat/story-lines`; live when the owner merges.
+
+Goal: a character notices that the world changed. A remark waits for its
+condition, is said once, and the most specific one wins (salience); a topic
+can wait for the world too (G21).
+
+Files:
+- `schema/src/index.ts`: a `When` object, every field optional, all must hold,
+  at least one given: `done`, `active`, `not_done` (quest ids), `restored`
+  (restore ids), `built` (camp ids), `has` (item ids, one in the bag),
+  `visited` (slot ids), each 1-4 ids; `time`: `day` or `night`. `NpcBody`
+  gains `remarks` (at most 16): `{ when, say: Text[1-2], priority?: 0-9 }`.
+  A topic gains an optional `when`; topics go to at most 8, of which the menu
+  shows four.
+- `kernel/src/story.ts` (new, exported): `holds(bundle, state, when)`,
+  `weight(when)` (the number of ids and conditions it names) and
+  `pickRemark(bundle, state, npcId, heard)`: of the remarks that hold and are
+  not in `heard`, the highest priority, then the highest weight, then the
+  first in the file. Pure; it reads the state and changes nothing.
+- `tools/src/assemble.ts`: an id in a `when` that names nothing is an error.
+- `tools/src/play.ts`: a remark is a standing line (two boxes at most, G21);
+  remark boxes count for G14.
+- `game/src/session.ts`: the save gains `heard?: string[]`
+  (`<npc>#<index>` for a remark, `<npc>?<index>` for a topic asked), next to
+  `met`.
+- `game/src/ui/ui.ts` (`talk`): after the first meeting, the picked remark is
+  said in place of the standing line and marked heard; the topic menu shows
+  the topics whose `when` holds, the ones not yet asked first, four at most.
+- `content/core/npcs/`: a remark or two per character that proves it, on the
+  voice sheets.
+- Tests: `kernel/test/story.test.ts` (each field of `When`; priority beats
+  weight, weight beats order; a heard remark steps back), the schema
+  refusing an empty `when`, `tools/test/play.test.ts` for a three-box remark.
+
+Proving command:
+```
+pnpm schemas && pnpm verify
+```
+
+Decision: DECISIONS.md 2026-10-10, the folds entry; STORY.md section 5.
+
+### S-2. Lines on the quest and the place
+
+Status: built 10.10 together with S-1 in the pull request `feat/story-lines`; live when the owner merges.
+
+Goal: no story line is hardcoded in the client. The giver's offer, the line
+while the player is on it and the thanks live in the quest file; the
+narrator's line when a place is mended lives in the restore file.
+
+Files:
+- `schema/src/index.ts`: `QuestBody` gains `talk?: { offer?: Text[1-3],
+  waiting?: Text[1-2], done?: Text[1-3] }`; `RestoreBody` gains
+  `done?: Text[1-2]`, the narrator's words. `{name}` in a line is the
+  player's name.
+- `game/src/ui/ui.ts`: `questTalk` says `offer` (else the summary) before the
+  reward, `waiting` (else the summary) before what is still needed;
+  `storyBeats` says a quest's `done` in its giver's voice and a restore's
+  `done` in the narrator's, and holds no line of its own.
+- `content/core/quests/three-fruits.json` and
+  `content/core/restores/old-bridge.json`: the two lines that `storyBeats`
+  held, cut to boxes of 80 characters (G14).
+- `tools/src/play.ts`: `offer` and `done` three boxes at most, `waiting` two,
+  every box counted for G14.
+- Tests: the play rules on a four-box offer; the e2e opening still reads the
+  bridge line.
+
+Proving command:
+```
+pnpm schemas && pnpm verify && pnpm e2e
+```
+
+Decision: as S-1.
+
+### S-3. Beliefs as content
+
+Goal: the three beliefs of STORY.md section 3 are files a creator can read and
+cite, and a character names the one it holds.
+
+Files:
+- `schema/src/`: a `belief` content kind: `name`, `mist` (what it says the
+  mist is), `asks` (what it says to do), `readings` (2-8 of
+  `{ bone: Word, text: Text }`). The bones are words, the same in every file
+  (S3); the glossary of S-5 lists them. `NpcBody` gains `belief?: Id`.
+- `tools/src/load.ts`, `tools/src/assemble.ts`: the kind loads like the
+  others; an unknown belief on a character is an error.
+- `content/core/beliefs/`: `menders.json`, `wakers.json`, `keepers.json`,
+  each reading at least two of the bones of S3.
+- `content/core/npcs/elder.json`: `"belief": "core/menders"`. Pell holds none.
+- `templates/extension/` and `docs/creators/README.md`: a belief example and
+  one paragraph on S1-S6.
+
+Proving command:
+```
+pnpm schemas && pnpm verify
+```
+
+Decision: STORY.md sections 3 and 7.
+
+### S-4. The lean and the choice
+
+Goal: what a player does leans toward a belief, the kernel keeps it, and the
+world shows it; no number ever reaches the screen.
+
+Files:
+- `kernel/src/state.ts`: `player.lean: Record<string, number>`, whole numbers,
+  clamped to a parameter range; nothing changes it by the clock (G28).
+- `schema/src/index.ts`: a `choice` step for `dilemma` quests: `ask` (Text) and
+  2-3 options `{ say: Text up to 40, lean: { belief: Id, by: -10..10 }[] }`;
+  `When` gains `lean: { belief, min }`. A dilemma quest has exactly one
+  choice step, and every option leads on (G12).
+- `kernel/src/step.ts`: a `choose` action that completes the step and applies
+  the option's lean; a test that a replay gives the same lean.
+- `game/src/ui/`: the options in the giver's dialogue; nothing that shows a
+  lean.
+- `tools/src/play.ts`: a dilemma without a choice step, or an option that
+  leans nowhere, is an error (G12).
+- The world's lean (the sum of a shared world) waits for stage 2.
+
+Proving command:
+```
+pnpm schemas && pnpm verify
+```
+
+Decision: STORY.md section 4.
+
+### S-5. The story checks
+
+Goal: what STORY.md and G22 can test on content is tested.
+
+Files:
+- `content/core/glossary.json` (a new `glossary` kind, extensions may add
+  their own, prefixed): the valley's names and the bones.
+- `tools/src/play.ts` (or `tools/src/story.ts`): a capitalised word in a line
+  that is not at the start of a sentence and not in a glossary, a character's
+  name or a title is a warning (G22); a narrator's line (a journal summary, a
+  clue, a restore's `done`) with "long ago", "ancient", "the old ones" or "in
+  the old days" is a warning for a person to read (S1); a bone that fewer
+  than two beliefs read is an error (S4).
+- Tests in `tools/test/play.test.ts` for each.
+
+Proving command:
+```
+pnpm check
+```
+Prints no S line for the core content.
+
+Decision: STORY.md section 5.
+
+### S-6. The first story
+
+Goal: the beliefs are heard in play. After S-3 and S-4.
+
+Files:
+- `content/core/npcs/trader.json`: a topic "Rumours" in Pell's voice that sells
+  all three tellings; a remark that tells first the one the player leans to.
+- `content/core/npcs/elder.json`: Maru's Mender lines behind a `when`.
+- `content/core/quests/`: the first `dilemma` quest, from Maru or Pell (a new
+  character waits for the owner to approve a voice sheet, G20).
+- The opening's text from the recut (DECISIONS.md, option B) when it lands.
+
+Proving command:
+```
+pnpm verify && pnpm e2e
+```
+
+Decision: STORY.md section 7.
+
+## Open ends
+
+What was approved, decided or found and is not finished. One row per item, in the shape of `docs/design/CRAFTING_AUDIT.md`, Appendix D: an id, what is open, where it lives, and the check that closes it. A row leaves the list when its "closes when" is true on `develop`; nothing is closed in conversation.
+
+| Id | What is open | Where | Closes when |
+|---|---|---|---|
+| CR-2 | A removed item is dropped from a save, not converted (R5). | `game/src/session.ts` | a conversion record exists in the schema and `adapt` applies it, before stage 2a saves |
+| CR-3 | R12 names min, max, step and cooldown per parameter; the params carry min, max and step, no cooldown, the check reads min and max only, and r is votable though "fixed for good". | `content/core/params.json`, `tools/src/check.ts` | the check reads the step and a cooldown, or the review is amended |
+| CR-4 | G3 has no check and no checklist question. | `docs/design/GAME_RULES.md`, `tools/src/play.ts` | a play rule counts visible steps, or section 8 records G3 as reviewed by hand |
+| CR-5 | Restores and camp parts carry `active_ms` outside the bounds check. | `tools/src/check.ts` | the `timed` list includes them |
+| CR-6 | Stale texts about the check: "!" lines, rules G1 to G16, kernel rules R1 to R11. | `docs/design/GAME_RULES.md`, `AGENTS.md`, `CONTRIBUTING.md`, `docs/design/TOOLKIT.md` | one docs sweep |
+| CR-7 | Professions are core-only, against spec 8 and 11; held so by the extension-reach decision for now. | `schema/src/index.ts`, `tools/src/assemble.ts` | the stage that opens professions to extensions, with its own decision |
+| CR-8 | The shop never buys a tool; a crafted higher-tier tool has a value and no sell-back. Decided 9.10 (DECISIONS.md, "The crafting economy"): the trader buys a tool by the part of its uses left, and a tool may leave out `uses` and last. | `kernel/src/step.ts`, `schema/src/index.ts` | the workshop content lands with that sell-back and the optional `uses` |
+| CR-10 | Quest gates by profession or character level for the non-crafter's roads. | `schema/src/index.ts` | a quest may name a level, or DECISIONS.md says it never will |
+| CR-11 | Bag categories. | `game/src/ui/panels.ts` | crafting wave 4 |
+| CR-12 | A weapon slot waits for G35 (stage 8 or a vote). | roadmap | that stage or vote |
+| CR-13 | Metal content waits for its discovery. | roadmap | a vote or an accepted proposal |
+| CR-14 | A broad recipe template can pass its bound today and fail on a later merge when another creator adds fitting items; the guide says to keep templates narrow. | `tools/src/assemble.ts` | the first such failure is handled, or the fit is scoped per creator |
+| CR-16 | The average try: at its own level a tier-2 recipe uses 112.5 percent of its inputs for each success and a tier-3 recipe about 127; the value table prices only the success. | `tools/src/check.ts` | the check refuses a recipe whose average try at its own level loses value, p * V(out) + (1 - p) * V(kept) >= V(in), with a test |
+| CR-17 | The level wall: a recipe above the profession's level is refused. Decided 9.10: no wall, the chance falls by `craft_level_step_bp` per missing level down to nothing, fitting gear counts on the side of skill, and the screen shows no chance or difficulty. | `kernel/src/step.ts` | the kernel no longer refuses on level and a try at nothing runs and misses, with tests |
+| CR-18 | A made good sells for the raw share. Decided 9.10: the trader pays `k_craft_permille` (750) of r * V for an item whose value comes from a recipe. | `kernel/src/step.ts`, `content/core/params.json`, `docs/kernel-review-v1.md` | the param, the trader and R8 with Theorem 3 change together, with a test |
+| CR-19 | The trader pays one price whatever the supply. Decided 9.10: a free market, a stock per item that moves the trader's and the shop's prices inside R8's band and drains with game time. | `kernel/src/state.ts`, `kernel/src/step.ts` | the market stock and its prices exist with tests, and the trader shows today's price |
+| CR-20 | No upgrade recipe: an item and more materials that give the next tier of the same item, whose miss keeps the item whole. | `schema/src/index.ts`, `kernel/src/step.ts` | such a recipe exists and its miss keeps the item, with a test |
+| CR-21 | Worn effects are pluses only, so a set cannot trade one task for another. | `schema/src/index.ts`, `tools/src/check.ts` | a worn effect may carry a minus inside its tier's cap, with a check and a test |
+| CR-22 | Gold per hour of making is not reported, so the market's steps cannot be tuned from numbers. | the values report in `tools/src/` | the values report prints gold per hour of making per tier |
+| CR-23 | What gold is for: group quests and a settlement that players found, guard and feed together, meant as the main sink. | roadmap | its own plan, with a decision |
