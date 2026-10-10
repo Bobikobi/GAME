@@ -1,0 +1,238 @@
+/*
+ * The developer area (docs/team/GRUNT.md, items 7 and 11) in the home page's look: the display face signs (headings,
+ * handles, numbers), the reading face explains; steps and boards are ledgers on paper, separated by rules, not
+ * boxed. Code sits on stone; on stone, the quiet colour is ink2 (grey falls under 4.5:1 there). Tokens only.
+ */
+.kicker {
+  margin-bottom: var(--s-2);
+  color: var(--green);
+  font-weight: 700;
+}
+.hub-head {
+  padding-top: var(--s-6);
+}
+.hub-head h1 {
+  max-width: 16em;
+}
+.earn {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s-2) var(--s-6);
+  margin-top: var(--s-6);
+  color: var(--ink2);
+}
+.earn b {
+  margin-right: var(--s-1);
+  font-family: var(--font-display);
+  font-weight: var(--w-display);
+  font-size: 28px;
+  line-height: 32px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.earn .go {
+  color: var(--ink);
+  font-size: var(--text-s);
+}
+
+/* section titles: a 4px rule of ink over the heading, as the home page's board */
+.hub h2 {
+  padding-top: var(--s-3);
+  border-top: 4px solid var(--ink);
+  font-size: 24px;
+  line-height: 28px;
+}
+.hub h3 {
+  font-size: 20px;
+  line-height: 24px;
+}
+.hub-main {
+  display: grid;
+  gap: var(--s-12);
+  margin-top: var(--s-12);
+}
+
+/* the steps: a numbered ledger, the number in the display face */
+.steps {
+  counter-reset: step;
+  list-style: none;
+  padding: 0;
+  margin-top: var(--s-2);
+}
+.steps > li {
+  counter-increment: step;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  column-gap: var(--s-3);
+  padding: var(--s-4) 0 var(--s-6);
+  border-bottom: var(--px) solid var(--paper2);
+}
+.steps > li::before {
+  content: counter(step);
+  grid-row: 1 / span 9;
+  font-family: var(--font-display);
+  font-weight: var(--w-display);
+  font-size: 28px;
+  line-height: 28px;
+  color: var(--green);
+}
+.steps > li > * {
+  grid-column: 2;
+}
+.steps p {
+  margin-top: var(--s-2);
+  color: var(--ink2);
+  max-width: 60ch;
+}
+.steps h3 .tag {
+  margin-left: var(--s-1);
+}
+.acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+.btn.sm {
+  min-height: 44px;
+  padding: 0 var(--s-3);
+  font-size: var(--text-s);
+}
+.code {
+  margin: var(--s-3) 0 0;
+  padding: var(--s-3) var(--s-4);
+  background: var(--paper2);
+  color: var(--ink);
+  font: 400 var(--text-s) / 22px ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.code .dim {
+  color: var(--ink2);
+}
+
+/* the side: the builders teaser and this week */
+.side {
+  display: grid;
+  gap: var(--s-8);
+  align-content: start;
+}
+.ledger {
+  list-style: none;
+  padding: 0;
+  margin-top: var(--s-2);
+}
+.ledger li {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: baseline;
+  column-gap: var(--s-3);
+  padding: var(--s-3) 0;
+  border-bottom: var(--px) solid var(--paper2);
+}
+.ledger .rank {
+  font-weight: 700;
+  color: var(--grey);
+  font-variant-numeric: tabular-nums;
+}
+.ledger li:first-child .rank {
+  color: var(--ink);
+}
+.ledger .who {
+  font-family: var(--font-display);
+  font-weight: var(--w-display2);
+  font-size: 20px;
+  line-height: 24px;
+  overflow-wrap: anywhere;
+}
+.ledger .pts {
+  font-family: var(--font-display);
+  font-weight: var(--w-display);
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+}
+.ledger .pts small {
+  font: 400 var(--text-s) / 1 var(--font-reading);
+  color: var(--grey);
+}
+.formula {
+  margin: var(--s-3) 0 var(--s-1);
+  color: var(--grey);
+  font-size: var(--text-s);
+  line-height: 22px;
+  font-variant-numeric: tabular-nums;
+}
+.teaser .go,
+.rules .go {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.week p {
+  margin-top: var(--s-3);
+  color: var(--ink2);
+}
+.week small {
+  display: block;
+  color: var(--grey);
+  font-size: var(--text-s);
+}
+
+/* tools and rules */
+.sect {
+  margin-top: var(--s-12);
+}
+.tools {
+  display: grid;
+  gap: var(--s-8);
+  margin-top: var(--s-4);
+}
+.tools p {
+  margin-top: var(--s-2);
+  color: var(--ink2);
+}
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: var(--px);
+  margin-top: var(--s-3);
+  padding: 0;
+  list-style: none;
+}
+.swatches li {
+  aspect-ratio: 1;
+}
+.rules {
+  margin-top: var(--s-2);
+  padding: 0;
+  list-style: none;
+  color: var(--ink2);
+}
+.rules li {
+  padding: var(--s-1) 0;
+  border-bottom: var(--px) solid var(--paper2);
+}
+.rules .go {
+  color: var(--ink);
+}
+
+@media (min-width: 1024px) {
+  .hub-head {
+    padding-top: var(--s-8);
+  }
+  .earn b {
+    font-size: 40px;
+    line-height: 44px;
+  }
+  .hub-main {
+    grid-template-columns: minmax(0, 1fr) 360px;
+    column-gap: var(--s-12);
+  }
+  .tools {
+    grid-template-columns: 1fr 1fr;
+    column-gap: var(--s-12);
+  }
+  .swatches {
+    grid-template-columns: repeat(16, minmax(0, 1fr));
+  }
+}

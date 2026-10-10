@@ -7,8 +7,10 @@ import {
   type GameEvent,
   type Grade,
   characterLevel,
+  holds,
   isNight,
   minuteOfDay,
+  pickRemark,
   satietyAt,
   satietyCap,
   skillPoints,
@@ -306,19 +308,20 @@ export class UI {
     }
   }
 
-  /** A few words at the turning points of the opening, so nobody gets lost. */
+  /** The content's words when a place is mended or a quest handed in (GRUNT S-2): the narrator, then the giver. */
   private async storyBeats(events: readonly GameEvent[]): Promise<void> {
     const s = app.session;
+    const b = app.bundle;
     if (!s) return;
     for (const e of events) {
-      if (e.e === 'restore' && e.restore === 'core/old-bridge') {
-        await say(this, null, [`The bridge holds. You scratch your name into the sign beside it: "Mended by ${s.state.player.name}".`]);
+      if (e.e === 'restore') {
+        const done = b.restores[e.restore]?.done;
+        if (done) await say(this, null, named(done));
       }
-      if (e.e === 'quest' && e.state === 'done' && e.quest === 'core/three-fruits') {
-        await say(this, 'Elder Maru', [
-          'Thank you. Take these coins - your first.',
-          'Pell at the market sells a basket for the grove and a trowel for the ruins. Either one starts a new kind of work, and the other can wait. Choose what you want to do first.',
-        ]);
+      if (e.e === 'quest' && e.state === 'done') {
+        const q = b.quests[e.quest];
+        const giver = q?.giver ? b.npcs[q.giver] : undefined;
+        if (q?.talk?.done) await say(this, giver?.name ?? null, named(q.talk.done));
       }
     }
   }
@@ -340,13 +343,23 @@ export class UI {
 
     const tier = rep >= 60 ? 'family' : rep >= 30 ? 'friend' : rep >= 10 ? 'acquaintance' : 'stranger';
     const tierLines = npc.dialogue[tier] ?? npc.dialogue.stranger;
-    const line = firstLines.length ? firstLines[firstLines.length - 1]! : (tierLines[n % tierLines.length] ?? '...');
+    // a remark the world has earned is said once, in place of the standing line (GRUNT S-1)
+    const remark = first ? undefined : pickRemark(b, s.state, npcId, s.heard, s.tick);
+    if (remark) s.hear(remark.key);
+    const lines = firstLines.length
+      ? firstLines
+      : remark
+        ? named(remark.say)
+        : [tierLines[n % tierLines.length] ?? '...'];
 
     const options: Option[] = [];
     if (!first) {
-      for (const [index, topic] of (npc.topics ?? []).entries()) {
-        options.push({ label: topic.ask, value: `topic:${index}` });
-      }
+      // the topics the world has opened, the ones not yet asked first, four at most
+      const open = (npc.topics ?? [])
+        .map((topic, index) => ({ topic, index, asked: s.heard.has(`${npcId}?${index}`) }))
+        .filter(({ topic }) => !topic.when || holds(b, s.state, topic.when, s.tick));
+      open.sort((x, y) => Number(x.asked) - Number(y.asked) || x.index - y.index);
+      for (const { topic, index } of open.slice(0, 4)) options.push({ label: topic.ask, value: `topic:${index}` });
     }
     for (const [id, q] of Object.entries(b.quests).sort(([x], [y]) => x.localeCompare(y))) {
       if (q.giver !== npcId) continue;
@@ -360,11 +373,15 @@ export class UI {
     if (npc.shop) options.push({ label: 'Trade', value: 'trade' });
     options.push({ label: 'Goodbye', value: 'bye' });
 
-    const choice = await say(this, npc.name, firstLines.length ? firstLines : [line], options);
+    const choice = await say(this, npc.name, lines, options);
     if (!choice || choice === 'bye') return;
     if (choice.startsWith('topic:')) {
-      const topic = npc.topics?.[Number(choice.slice(6))];
-      if (topic) await say(this, npc.name, topic.lines);
+      const index = Number(choice.slice(6));
+      const topic = npc.topics?.[index];
+      if (topic) {
+        s.hear(`${npcId}?${index}`);
+        await say(this, npc.name, named(topic.lines));
+      }
       return;
     }
     if (choice === 'trade' && npc.shop) return openShop(this, npcId);
@@ -380,7 +397,7 @@ export class UI {
     const state = s.state.player.quests[questId];
     const rewards = rewardText(questId);
     if (!state) {
-      const pick = await say(this, npc.name, [q.summary, `Reward: ${rewards}.`], [
+      const pick = await say(this, npc.name, [...named(q.talk?.offer ?? [q.summary]), `Reward: ${rewards}.`], [
         { label: 'I will do it', value: 'yes' },
         { label: 'Not now', value: 'no' },
       ]);
@@ -395,7 +412,7 @@ export class UI {
       return;
     }
     const left = questSteps(b, s.state, questId).filter((st) => !st.done).map((st) => st.text);
-    await say(this, npc.name, [q.summary, `Still needed: ${left.join('; ')}.`]);
+    await say(this, npc.name, [...named(q.talk?.waiting ?? [q.summary]), `Still needed: ${left.join('; ')}.`]);
   }
 
   async gather(nodeId: string): Promise<void> {
@@ -474,6 +491,12 @@ export class UI {
   note(text: string, title?: string): void {
     void say(this, title ?? null, [text]);
   }
+}
+
+/** A content line with the player's name where it says "{name}". */
+function named(lines: readonly string[]): string[] {
+  const name = app.session?.state.player.name ?? '';
+  return lines.map((line) => line.replaceAll('{name}', name));
 }
 
 function rewardText(questId: string): string {

@@ -5,5 +5,6 @@ export * from './num';
 export * from './rng';
 export * from './state';
 export * from './step';
+export * from './story';
 export * from './values';
 export * from './world';
