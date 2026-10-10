@@ -44,6 +44,7 @@ The product name is undecided. "Mistvale" appears in the game, the page title an
 ## 2026-10-07 ✅ Grid movement, and the clock stops while a window is open
 
 Tile-by-tile steps (190 ms each) match the handheld look and keep every position an integer tile for the kernel. Game time pauses while any dialogue, menu or minigame is open, and one frame never advances more than 250 ms, so a background tab never fast-forwards the world. Model: claude-opus-5-5.
+**Superseded in part (10.10):** from stage 7 a world's hour stops for no window, and a minigame only keeps the hazards from striking (the entries on the shared world and on the game read as one line).
 
 ## 2026-10-07 ✅ Signs are map props that point at a slot
 
@@ -231,6 +232,7 @@ The art had no tool for a new sprite or a walk cycle; a creator drew by hand or 
 ## 2026-10-08 ✅ The valley has a dangerous hour: health replaces the food bar, the night and the mist hunt, a fall is clear and costs the outing
 
 The comparison with World of Warcraft and RuneScape (`docs/design/GAP_WOW_RS.md`) found no dangerous place in the valley: nothing happens in the ruins at night that cannot happen at noon, and no player can name "the thing I am doing" the way a dungeon names it. The owner's word (8.10): danger comes in, without combat. Falls, deep water, a hunter's trap, a bad herb and predators (a wolf) are hazards that act by rules, not enemies; a lit lantern, thrown food and the road are the answers to a predator, and combat stays at stage 8 or a vote. The hazards that hunt act only after dark or inside the mist, outside the town and the player's camp, which are safe at every hour, and by day they show and can be walked around; what the player picks or eats (a bad fruit) hurts at any hour, so a fall at noon is possible. The food bar becomes the health bar: hazards take health; food, a first-aid kit from the stall and a night's sleep give it back; nothing drains it by the clock (the hunger timer is gone; G28). Nobody falls unwarned: a countdown to nightfall at the screen's edge while outside a safe area (with a banner in the first levels), and one warning box with the lantern lit when the player leaves a safe area after dark or dark arrives outside one. At zero health the player falls: crosses for eyes, the body sinks into the ground, one plain box, no gravestone and nothing left in the world; the player reappears in the town they were last in, on a random tile inside its bounds; what was gathered on that outing is lost, a quest in progress starts again from its first step, and nothing says where the fall was (the owner's correction the same evening, replacing a softer first draft that left the finds at the spot with a pin: the cost is the lesson); the bag from before the outing, the camp, the gold, the levels and the finished quests are untouched. The concept gains a row at the stall: every hazard has one thing to buy (a first-aid kit, lantern oil, an antidote, a rope, dried meat) and one thing to make (a bandage from herbs, a torch from wood). Rules G30-G35; the work is GRUNT P-5, after P-2.
+**Superseded in part (10.10):** a hazard is escaped, never answered by an item (the entry on a hazard escaped), and the hunger timer stays until P-5 (the entry on the hunger clock). After a fall each item keeps the smaller of its counts at the outing's start and at the fall, and a quest goes back to the step it stood at when the outing began, not to its first step (the entry on the world and its clocks). A safe place is the town, any ground at danger level 0 and a camp whose fire burns, an outing runs from leaving one to reaching one again, and the lantern lit with the warning is a sign that keeps nothing off (the entry on the game read as one line).
 **Retry when:** the first expedition's play data shows the fall rate (a fall more than once a night for most players means the hazards are too dense; none in a week means they are decoration). Model: Claude Fable 5.1.
 
 ## 2026-10-08 ✅ The expedition is the valley's dungeon; the night ruins first
@@ -355,6 +357,7 @@ The owner's word (9.10), after approving the richer valley's gallery: the play i
 
 The question (register CR-1, crafting audit finding C14): R8 in `docs/kernel-review-v1.md` put the lowest price a shop may charge at k * r * V, while the code has charged at least r * V from the start (`minChargeFor` in `kernel/src/values.ts`, which `pnpm check` applies to every line a shop sells in `tools/src/check.ts`) and pays at most k * r * V, rounded down (`payFor`); the toy economy sells at r * V too (`docs/kernel-toy/toy_econ.py`). One of the two was wrong. The owner's word (9.10): R8's text follows the code. A shop pays at most k * r * V and charges at least r * V. The spread between the two is what keeps the shop from being a value pump: a round trip through the shop loses at least (1 - k) of the value, so a stock curve, a discount or a rounding slip added later has that margin to absorb before the shop could ever pay out, while at a floor of k * r * V a round trip breaks exactly even and any such slip pays. The review's own shop-curve result says the same (section 4, appendix A9): one price curve is safe only when k * m_max <= m_min, two curves need no condition. With k bounded at 700 permille (`content/core/params.json`), the floor stays above the buy price at every k a vote can reach, and Theorem 3 needs only a charge of at least k * r * V, so the full-value floor keeps it with room to spare. In plain play terms, buying a thing costs 1/k times the work of making it at the reference income, so the shop is a convenience and never the better road. No price in play changes: the check already enforces this floor, every core shop passes it, and the 30-gold tools stay (Q10 above). The crafting audit (`docs/design/CRAFTING_AUDIT.md`) keeps its wording: it is a dated snapshot at `4ee9433`.
 **Closes:** register CR-1 (`docs/team/GRUNT.md`, Open ends).
+**Superseded in part (10.10):** the paying side is called the trader and the charging side the shop (the entry on the game read as one line): the trader pays at most k * r * V, and the shop charges at least r * V.
 **Retry when:** a pricing model wants to sell below the full value (a sale or a discount curve); then R8, `minChargeFor` and Theorem 3 change together, in one decision. Model: claude-opus-5-5.
 
 ## 2026-10-09 (done) The name is Openfold, confirmed by the owner - the shortlist vote is superseded
@@ -408,6 +411,660 @@ The registrar check in the entry above found that OpenFold is also the name of a
 
 The question (owner, 10.10): is there a plot, and how is a story told in a game meant for many players at once? Measured on develop: six quests with about 200 words, two speaking characters with about 380, about 800 words of story in all, a frame in the spec (a forgotten world restored) and no plot. A survey of Pokemon, Skyrim, Fallout and The Witcher 3 found one hero learning their past in each, which a shared world cannot have; Skyrim's books that contradict each other, Pokemon's legends told differently in each region and Fallout's world told through its places can carry over. The owner approved the frame of folds with three changes: no limit on the number of folds, since nobody knows where the game will go; several beliefs and no answer that is always right, as in Pokemon and Skyrim; and perhaps a good, evil or karma axis. The same evening the owner approved the rest as proposed: three beliefs to start (the Menders, Maru's; the Wakers; the Keepers), Pell holding none and selling all three as rumours; karma yes, as a hidden lean toward each belief that the world shows and no screen counts, in place of one good-evil meter (Fallout 3's single number was gamed; New Vegas's factions and Ultima IV's hidden virtues were not); no fold named by the core yet; and the work in GRUNT section S, starting with lines with conditions (storylets and salience) and lines on the quest. Written as [docs/design/STORY.md](docs/design/STORY.md), rules S1-S6. Because there is no hidden canon, the whole story bible lives in the public repository. The runtime stays the project's JSON; Twine or Inky only for drafts; no wiki service and no NPC that chats through a language model.
 **Retry when:** players read the beliefs as a menu to pick from rather than something their acts lean toward, a hidden lean reads as a bug ("why does Maru greet me like that?"), or a season needs a fact the bones (S3) cannot carry. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ No combat yet: a predator is escaped, and a group quest is made for a group
+
+The question (a review of open product direction, 9.10): the owner spoke of buying and improving weapons, of a monster too strong for a player, and of guarding a settlement, while fighting stays out (G35) and the hazards entry of 8.10 answers a predator with a lit lantern, thrown food and the road. Does fighting come earlier, and if not, what do those words mean in a valley without combat? The owner's word (9.10):
+
+- No combat now. A stage in between, without fighting, is right, but not gear against a hazard: no "stronger lantern". A player escapes a predator by running back to town, and that run is hard and possible.
+- The night carries the danger through its work. An example to develop: a night by a campfire that must be kept burning with branches, with more layers on top so it stays interesting. It fits the tending beat of the night expedition (8.10).
+- Guarding a settlement is a quest that players choose to take together, never a duty that decays while nobody plays (G28).
+- Quests come from a large pool matched to the player's character and levels, each started by talking to a character in the world, as in Pokemon or Skyrim. Next to them stand fixed quests like the seasons of current games; how a season keeps clear of a "last chance" (G28, G42) was answered the same day: what a season adds stays (the entry on seasons below).
+- A group quest can be played alone or together, as Grand Theft Auto offers solo and co-op. Alone, the chance is low, since the quest is made for a group. Later the valley's characters may fill a group: only a character the content marks for it (by default none), at a level that fits the quest. A partner below that level falls and goes back to where it lives.
+- Later, when combat comes: a group may take a quest to guard a town or a fort, and a rival group may sign up together to attack it. Both sides choose to play it, and nothing is taken from a player who is away, so the morning's entry on war, theft and robbery ("Crafting is optional") holds until then.
+
+How far "later" is: the spec sets no dates and moves from stage to stage on conditions. By its own estimate, stages 2a to 8 come to about 39 to 63 thousand lines, against about 20 thousand lines of TypeScript in the repository today, with a paid server from 2a, a payments provider at 6, a real-time server at 7 and a sandbox for creators' code at 8. A community vote may still open combat earlier (G35).
+
+**Closes:** nothing; weapons still wait for combat (CR-12).
+**Retry when:** the first night quest shows whether the run back to town is hard and possible, or a vote or stage 8 opens combat. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ The settlement starts as the town the player mends; in a shared town, houses are built step by step on scarce plots
+
+The question (a review of open product direction, 9.10): the crafting economy entry of the same day names the settlement as the main sink of gold and goods, yet no stage of the roadmap holds it, and the spec postpones ownership, conquest and cities until there is a community. The owner's word (9.10):
+
+- In principle yes: in the player's own valley the settlement is the town the player mends.
+- When players share a world, not every player can build the same thing. Players settle the town's existing buildings, and whoever comes first with the resources starts building. A house is a chain of quests and resources: the builder stops, goes to do a quest, and each finished quest moves the house on.
+- A builder has a time limit. Missing it loses the process: the builder starts over, the place goes free for another player, and the builder gets a refund by the game's rules. The world must therefore keep room for players to build.
+- A town can run short. Its places open for sale gradually, perhaps through group quests too (clearing trees at the edge of town to prepare the ground).
+- A player without a property lives on the street, since outside the town is more dangerous: danger by area of the map, more common where the area's level is higher. The owner asks whether an internal difficulty rating is needed and whether it should be exponential.
+
+How these become rules, and where they meet rules already written (G28's "the valley waits", pillar 5, the safe camp of 8.10, the cooperative world of 6.10, G42), is `docs/design/SETTLEMENT.md`. Its open questions go to the owner one at a time, and their answers land here.
+
+**Closes:** CR-23 in GRUNT's open ends: the settlement has its own plan, and decisions follow below.
+**Superseded in part (10.10):** player houses and plots are paused (the entry on houses and plots paused); the town the player mends, the street, the camp and danger by area stand.
+**Retry when:** the plan's questions are answered, or stage 4 brings a shared world state. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ In a shared town absence has a price, and a mail comes first
+
+The question (settlement plan S1, 9.10): a plot that lapses while its holder sleeps is the timer G28 forbids, and losing a building's progress meets pillar 5. The recommendation was a lapse only in a shared town, counted between steps, with the full price and every delivered item returned and a finished house never taken. The owner's word (9.10): almost. Yes to the exception for a shared town and to the clock between steps, but absence has a price:
+
+- A player about to lose a place gets an email first. Registration is minimal and comes after the opening (the next entry).
+- An owner who has not played for weeks needs a rule too.
+- So does a builder who takes a long time between steps.
+
+As rules in `docs/design/SETTLEMENT.md` (3.2 and 3.8): the clock between steps runs whether the builder is away or slow; an owner long away has the house packed; one mail per hold comes before it ends, and no mail asks the player back for anything else. What a lapse and a packing cost is question S1b, asked the same day; the recommendation is the place and a fifth of its price, never what the player made. G28's text in `docs/design/GAME_RULES.md` gains the exception when S1b is answered.
+
+**Closes:** nothing yet.
+**Superseded in part (10.10):** paused with player houses and plots (the entry on houses and plots paused).
+**Retry when:** the owner answers S1b. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ An account asks for little, and only after the opening
+
+The owner's word (9.10), given with the answer on absence: registration is minimal, and it comes after the opening.
+
+Read as: an email address and the name the world shows, asked when the opening ends and never before play. Accounts begin at stage 2a; the stage-1 demo keeps none, and the 6.10 decision that nothing carries from the demo stands. The address serves the account and the notices of `docs/design/SETTLEMENT.md` 3.8, nothing else.
+
+**Opens for stage 2a:** a privacy text and the youngest age that may register, both before the first address is collected; a mail service for the notices; how the opening played before registering moves into the new account under server-decided saves.
+**Closes:** nothing.
+**Superseded in part (10.10):** the name the world shows is the one given in the opening, offered again at sign-up, read by the filter then and unique in the world joined (the entry on the game read as one line).
+**Retry when:** stage 2a is designed. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ Absence costs the place and a fifth of its price, never what the player made
+
+The question (settlement plan S1b, 9.10): what a lapse and a packing cost, after the owner's word that absence in a shared town has a price. The owner's word (9.10): yes to the recommendation.
+
+- A building with no finished step for 14 days returns to the town, whether its builder is away or slow. The builder gets back every delivered item and 80% of the plot's price; the other 20% stays burned.
+- A house whose owner has not played for 45 days is packed. Its plot returns to the town with the same 80% of its price; the house and everything in it stay the owner's, to raise again on any free plot without redoing a step.
+- One mail comes before each: 3 days before for a building, 7 for a house.
+
+Final Fantasy XIV is the nearest precedent: 45 days without the owner's visit, mails before, and 80% of the plot's price back, but there the house is torn down. G28 in `docs/design/GAME_RULES.md` now states the exception, and `docs/design/SETTLEMENT.md` holds the parameters (`build_hold_days` 14, `house_absent_days` 45, `plot_refund_permille` 800, `notice_days` 3 and 7).
+
+**Closes:** S1 of the settlement plan, and the open part of the entry "In a shared town absence has a price, and a mail comes first".
+**Superseded in part (10.10):** a freed plot is now drawn (the entry on the shared world), so a packed house is raised only on a plot its owner wins, as that plot's first step, with no step redone (the entry on the game read as one line).
+**Superseded in part (10.10):** paused with player houses and plots (the entry on houses and plots paused).
+**Retry when:** the shared world of stage 4 is designed, or real absences show the numbers are wrong. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ A camp outside the town is a tent the player buys, safe while its fire burns
+
+The question (settlement plan S2, 9.10): G30 keeps the town and the camp safe at every hour, and the owner's word that outside the town is more dangerous meets it, since the camp stands outside the town. The owner's word (9.10): yes to the recommendation, and a camp outside the town is a tent the player buys first; to get through the night safely the player needs enough wood for it.
+
+- The town is safe at every hour. A player without a house sleeps on the street, safe, and the night gives health back as at camp.
+- A camp is safe while its fire burns. A night costs `wood_per_night` times the area's danger level `d` in wood, so the opening's camp, at level 0, costs none and plays as today.
+- A camp anywhere else outside the town is a tent, bought at the stall and pitched on a free tile off the paths. Readings: one tent stands at a time, it never wears out, and no tent burns less wood than another, since the owner ruled out gear against hazards.
+- The fire matters only while the player is there at night: away, nothing happens to the camp or its chest. The fire's level shows, and G31's warning comes before it goes out.
+- In a shared world every area outside a town is above level 0 (a reading), so every camp there costs wood and the street stays the free place to sleep.
+
+G30 and G32 in `docs/design/GAME_RULES.md` now say so, and `docs/design/SETTLEMENT.md` 3.4 holds the rule.
+
+**Closes:** S2 of the settlement plan; GRUNT's open ends carry the building as CR-25.
+**Superseded in part (10.10):** in a shared world the opening's ground stays at level 0, as the town's edge, and so does the night ruins' entrance, where no wood is burned and no tent is pitched; by day a camp's fire burns for nothing; and from stage 7 a fire keeps the hunting hazards off anyone in its light (the entry on the game read as one line).
+**Superseded in part (10.10):** another player stays at a camp only as a guest, at the price its owner sets and with its owner's approval, and is safe and rests there while its fire burns; without a deal another's camp is no safe place (the owner's answers of 10.10 afternoon, and the entry on the five holes of the one line).
+**Retry when:** a playtest shows a night's wood too dear or too cheap for an area. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ Wood comes from felling trees: every tree gives wood by its type and grows back before it is felled again
+
+The owner's word (9.10): wood is not gathered from piles of twigs but by felling trees, so every tree is of use. A tree gives a number of logs by its type, takes a time to fell by its type, and grows back in a time by its type, shown as it grows; only a grown tree can be felled.
+
+As content, a tree is a gathering node much like a plant: `output` its log, `yield` the logs of its type, `active_ms` the felling time, `respawn_ms` the time to grow back, and `level` by type. Growing back is never paid (R6), so a log's value counts the felling only. The client draws the stage from the share of `respawn_ms` gone: a stump, a sapling, a young tree, a grown one. The wood chain of the crafting content starts from a log.
+
+Readings, each open to the owner's word:
+- Felling needs an axe, a new tool kind in the kernel's closed list, and it is a profession of its own, woodcutting, as digging is with its trowel.
+- A stump blocks its tile as the tree did, so felling never opens or closes a path; only a clearing quest (the settlement plan, 3.3) uproots a tree for good.
+- The trees inside a town are the town's and are not felled.
+- Small wood, a stick for a skewer or kindling, comes from splitting a log by a recipe.
+- In a shared world a tree is shared, and who fells it first joins the question on shared bushes (spec stage 4). Answered 9.10: each player fells their own (the entry on each player's own yield). In the areas between players a tree stands on one chop timer that every swing there spends, and each swing's wood goes to its swinger (the entry on the shared world, 10.10).
+
+The opening's fallen branches (question W1): answered the same day. None stay, not even in the opening; see the entry on the first fire below.
+
+**Closes:** nothing; GRUNT's open ends carry it as CR-24.
+**Retry when:** the wood chain is built. Model: claude-opus-5-5.
+
+## 2026-10-09 ⏸ No bots, no AI that plays for a player, no cheating: the rules wait for accounts and the shared world
+
+The owner's word (9.10): the game needs protection against bots and against AI that plays in a player's place while the player is away, and anti-cheat once players share a world.
+
+What already stands against them: the kernel review recommends perfect execution as the reference player (D2), so a program with perfect timing earns no more per second than a perfect human; rolls come from the server, not from a seed the player holds (K3); a timing grade is the server's, not a claim (K10); boards rank only state the server has checked (7.10); the creator pool counts active seconds with a cap per account-day (R10). Anti-cheat follows the same line: the server decides, and the client only shows and asks.
+
+What a program still gains is hours: it can play all day, and in a shared world it reaches shared things first. What to do about that is question A1, answered the same day: see the entries on exploit loops and on programs that play.
+
+**Closes:** nothing; GRUNT's open ends carry it as CR-26.
+**Retry when:** the owner answers A1, or stage 2a is designed. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ No fallen branches, not even in the opening: the first fire is built from a felled tree
+
+The question (W1): the wood entry above left the opening open, because its first fire comes before any axe. The recommendation was one storm-fallen tree by the river whose branches last until the first fire. The owner's word (9.10): no. Felling replaces the branches in the opening too, the start of the game changes to fit, and each character may begin in a different way.
+
+The rules:
+- No node gives wood without felling. `core/fallen-branches` leaves the world. The campfire, the storage chest and every recipe that asks for a dry branch ask for a log, or for what a log splits into (the wood entry's reading on small wood). The dry branch stays an item, split from a log, so a saved bag stays valid.
+- The player can fell before the first fire, so the axe comes first. The opening's camp stands by grown trees of the first tree type: woodcutting level 1, a felling time as short as the opening's other steps, and logs enough for the first fire. Every tree of a new valley starts grown.
+- The road of the opening stays: wake by the river, mend the bridge, cross, fell a tree, build the fire, cook, follow the smoke to town. Fire stays among the first things the world relearns, as the spec orders them.
+- No start ends at a wall. The check walks the opening from every starter's start, and refuses content where the axe comes after the first step that needs it, or where the opening asks for more wood than the trees grown at the start give within reach.
+- A saved character that began before the change and holds no axe gets one when the new version of the world loads, the way it learns new start recipes (the entry on crafting wave 2 as built). Without this, a player saved between the bridge and the fire could not go on.
+- The opening chain becomes content. Today it is a fixed list in `tools/src/play.ts`; a character's own first quest joins it, and G2 and G4 apply after it.
+
+A character's own start, as the frame for the open question:
+- A starter is creator content: the spec names a starting character among the expansions. A start is a starter's fields: a kit in the bag, a place to wake, and a first quest of its own that joins the shared road before the first fire.
+- A start changes how a character begins, never what it can become. No profession is closed to any starter, and the spec's line holds: expansions add choice, not a stronger character.
+- The check keeps the starts fair: every starter's attribute points add up to one total (6 today, true in the content and not yet checked), every kit's value sits in one band, and every start reaches the first fire within one band of effort.
+
+How far each character's start differs (question C1): answered the same day; see the next entry. Either way the axe comes before the first fire.
+
+**Closes:** W1; GRUNT's open ends carry the building in CR-24.
+**Retry when:** a playtest shows the first fire too slow to reach. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ Each character begins its own way: a place to wake, a kit and a first task, meeting at the bridge and the first fire
+
+The question (C1): how far each character's start differs, now that the first fire is built from a felled tree (the entry above). The owner's word (9.10): yes to the recommendation, as each race in World of Warcraft starts in a zone of its own and meets the others later.
+
+- A starter carries its own start: a place to wake, a small kit in the bag, and a short first task that fits its strength. For the two starters of today, for example: the forager wakes with a basket and an axe and picks first; the explorer wakes with a trowel, and its first find is its own axe, dug from the ground.
+- Every start holds an axe before the first fire, and every start meets the shared road at the bridge and the first fire.
+- The check keeps the starts fair: every kit's value sits in one band, every starter's attribute points add up to one total, and every start reaches the first fire within one band of effort. No profession is closed to any starter.
+- A starter that a creator adds later brings its own start under the same checks; the spec names a starting character among the expansions.
+- As content: optional fields on the starter for the place to wake and the kit, and a quest that names the starter it opens for. All are additive, so the format stays 1. The opening chain names each starter's first task, and G2 and G4 apply after it.
+
+Readings, each open to the owner's word:
+- The kit is given once, at the start. A saved character keeps its bag and gets only the axe (the entry above).
+- A kit holds tier-1 things only, so no start hands out what G41 keeps behind a gate.
+- Each start has its own waking lines, in place of the one opening narration of today.
+
+**Closes:** C1; GRUNT's open ends carry the building as CR-37.
+**Retry when:** a playtest shows one start slower or richer than another. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ One internal difficulty scale: each step asks half again as much, and the screen never shows it
+
+The question (settlement plan S3, 9.10): the owner asked whether an internal difficulty rating is needed, and whether it should grow exponentially. The owner's word (9.10): yes to the recommendation.
+
+- One integer scale rates areas (their danger level `d`), quests (the sum of their steps' difficulty, as the spec computes it) and recipes (their level).
+- Each step multiplies effort and the health a hazard takes by `difficulty_ratio_permille`, 1500 to start: about 3.4 times over three steps. How often a hazard shows grows by one `hazard_bp` per step. The check holds content to the scale: what an area or a recipe asks grows by the ratio per step, within a band.
+- The scale is not a chance curve. A recipe's chance stays as the crafting economy entry set it: each missing level takes `craft_level_step_bp` off, with no wall. A step above is hard because of what the world asks there: dearer inputs, a more dangerous road to them, and hazards that hit harder.
+- The screen never shows the scale as a word or a number (the crafting economy entry). The world shows it: thicker mist, tracks, bones, a sign at an area's edge.
+- Nothing here needs the shared world, so it can be built with danger by area in the player's own valley.
+
+`docs/design/SETTLEMENT.md` 3.5 and 3.6 hold the rule.
+
+**Closes:** S3 of the settlement plan; GRUNT's open ends carry the building as CR-38.
+**Retry when:** a playtest shows a step too steep or too flat. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ Players compete only for places, and later in areas between players that a player chooses to enter; no upkeep
+
+The question (settlement plan S4, 9.10): the 6.10 decision kept the world cooperative and put ownership and conquest back on the table only when there is a community, and first come for plots and rival groups bring competition in. The owner's word (9.10): yes to the recommendation, and later there will also be dangerous areas outside the towns where players face each other. Of the ways to charge upkeep, the owner took none.
+
+- Players compete for places only: plots in a shared town and, once combat comes (stage 8 or a vote, G35), areas between players.
+- An area between players lies far from the towns and high on the difficulty scale, so a new player does not walk in by chance, and a sign at its edge warns first (G31). Entering is the consent; whoever does not enter is never hurt there. Towns, camps and houses are always safe, and nothing is taken from a player who is away. The area's nodes pay more for the risk (kernel review 7.2, item 4).
+- A player brought down by another player there falls by G33 and loses only what was gathered on that outing, which goes to the one who brought them down. Tools, worn items and what the player made stay theirs.
+- This narrows the morning's entry ("Crafting is optional"): war, theft and robbery stay out everywhere except those areas, and there only once combat comes. G38 now says so.
+- Reserved now, each one schema field with a default that changes nothing today (kernel review 7.2): a controller on every place, a protection level on every area (safe, wild, or between players, the last only once combat opens), and a reason from a closed list on every movement of gold (price, refund, and later spoils, tax, rent, toll).
+- No upkeep. The review proposed it as a gold sink and as a brake on one holder taking everything. The settlement's prices are the sink (the crafting economy entry), and the brakes are written already: one plot in building and one house per player to start, absence returning places (S1b), plots opened by work, and in the areas between players, other players. A charge by the clock would also be the timer G28 forbids.
+
+`docs/design/SETTLEMENT.md` 3.9 holds the rule.
+
+**Closes:** S4 of the settlement plan; GRUNT's open ends carry the reserved fields as CR-39.
+**Superseded in part (10.10):** "always safe" means that no player harms another there; from a hazard, a camp is safe while its fire burns. The protection level is `safe` at danger level 0, `wild` above it, and `contested` only for an area between players once combat opens (the entry on the game read as one line).
+**Superseded in part (10.10):** the plots of a shared town are paused with houses (the entry on houses and plots paused); the areas between players stand.
+**Retry when:** in a shared world one player or group holds a large share of a town's places, or gold piles up with nothing to spend it on. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ A plot that work opens is drawn among those who did the work
+
+The question (settlement plan S5, 9.10): first come at the moment a plot opens favours whoever is online then, and a script most of all. The recommendation was three days of first claim for the players of the clearing quest, then a draw. The owner's word (9.10): whoever signed up for the clearing and took part enters the draw. How it weighs may depend on the size of the area and the number of places, and the one who worked hardest may come first; the game does not turn only on buildings now, so the rest can wait.
+
+- A clearing quest names the plots it opens. They are drawn among its participants: a player who signed up and finished at least one of its steps. Signing up without working is not taking part, so a script gains nothing by signing up.
+- The draw is the server's, as every roll is (kernel review K3), and gives each participant one plot at most, under the rule of one plot in building and one house per player.
+- A plot won is held as a claimed one: the first step pays its price, and with no finished step for 14 days it returns to the town (S1b) and is drawn again, among the participants first. The draw needs no clock of its own.
+- Open until the shared town is designed (stage 4): whether every participant has the same chance or the chance grows with the share of the work done, measured in active seconds as levels are, and how the draw follows the size of the area and the number of places. A reading: a chance that grows with the work, so the hardest worker is the most likely winner and never a certain one.
+
+`docs/design/SETTLEMENT.md` 3.3 holds the rule.
+
+**Closes:** S5 of the settlement plan, in part; the rest waits for the shared town's design.
+**Superseded in part (10.10):** a won plot's first step comes within `plot_signup_days`, as for a freed plot, and the plot then holds `build_hold_days` between steps (the entry on the game read as one line).
+**Superseded in part (10.10):** paused with player houses and plots (the entry on houses and plots paused).
+**Retry when:** the shared town is designed. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ The free market comes right after crafting wave 4, one per world, and the demo tunes it
+
+The question (9.10): the crafting economy entry of the same day set a free market (CR-19), and the spec puts the market at stage 4, with prices fixed until then (the spec's economy section). When does it come? The recommendation was a market per world right after crafting wave 4, before stage 4. The owner's word (9.10): yes.
+
+- The market is the build right after crafting wave 4: a stock per item in each world, as the crafting economy entry reads it. It needs no server. In a player's own world that player alone moves the stock, and the world's demand drains it with game time, so a thousand stools lower the price for the one who made them, who sees it and decides whether to go on.
+- The demo tunes it. The spec already gives the demo period to tuning the economy's rules, since gold there lives in the browser and nothing from it passes to an account. The market's steps and floor are tuned there from the values report's gold per hour (CR-22), before anything is held on the server.
+- At stage 4 nothing new is invented: players who share a world share its market and its stock, and the character shops act as the market maker inside R8's band, as the spec has it.
+- This changes the spec's order: prices are no longer fixed until stage 4, they move by stock from the build after crafting wave 4. The spec's economy section follows in its next version.
+
+**Closes:** the timing of CR-19; GRUNT's row and the crafting audit's row now carry it.
+**Retry when:** the demo shows the price falling so fast that making stops paying, or a world's stock that never drains. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ The boards rank worth, levels, quests, collection, exploration and giving; the top is honored and hunted
+
+The question (9.10): the spec opens verified boards at stage 2a (wealth, collection and profession levels, counted on the server only), and the kernel review leaves room for becoming the richest player. If the wealth board counts the gold a player holds, every coin given to the town or spent on a tool lowers the player on it, so the board would reward hoarding, against the owner's word that the settlement is where gold mainly goes. The recommendation was to count gold earned and add a board for what was given to the town. The owner's word (9.10): the boards can carry filters, levels and quest points among them; the count is the player's worth, so an asset whose price rose or a good deal raises it; and first place should bring honor and also a risk that grows with the rank, from other players and from the world. Asked whether that risk stays on the outing and in the places the player chose to enter, or reaches the house and the store too: the first. A top player who stops playing needs no rule; the others pass them.
+
+What other games do, as read for this answer: RuneScape ranks each skill and the total level, with boards for activities and filters by mode, and no wealth board; World of Warcraft has no official wealth board and ranks by season, with filters by realm, region and class; Albion Online ranks fame by field, weekly and monthly; Path of Exile and Diablo open a board per season, filtered by class. Few large games show an official wealth board, since one draws bots and trading for real money. For risk at the top: Sea of Thieves marks a top-grade ship on every map, Warzone and The Division mark a player who took a contract for a while, EVE Online lets players put a bounty on another; the risk always follows something the player chose to carry or a place they chose to enter. Ultima Online let the rich be hunted everywhere, players left, and in 2000 it opened a world without fights between players.
+
+- Boards: worth, character level, each profession, quest points, collection, exploration, and what was given to the town. All are counted on the server only (spec, verified boards; kernel review: boards from server state only), so none exists in the demo.
+- Filters: this season or all time, world, the starter a player began with, and friends. A season's board counts what grew in that season; how seasons work is the next question (Q5).
+- Worth is the gold a player holds, plus their goods and places at what the trader pays for them today, plus what they gave to the town at its value that day. An asset whose price rose raises it, a good deal raises it, and giving to the town never lowers it. A place no one can sell yet counts at the price paid for it.
+- The price comes from the trader, never from the last deal between players: two friends trading at a puffed-up price would raise both. Raising the trader's pay means draining the stock, and that costs more than it adds (the free market of the crafting economy entry).
+- If gifts between players come, a gift counts to the one who gave it, never to the one who got it, so a group cannot pile its wealth on one name to put it first.
+- Quest points are the sum of the difficulty of the quests a player finished, each quest counted once, as the spec already computes a quest's difficulty. Exploration counts the places, areas and secrets a player found, each once per world.
+- The top places of the worth board among a world's players carry a mark (`marked_top`, 10 to start). In towns it is honor only. In the areas between players it is seen from afar and shows on the map of every player there, and whoever brings a marked player down takes the outing's finds, as for anyone, and gains honor on a hunters board (`docs/design/SETTLEMENT.md` 3.9).
+- The world hunts the top too: outside the towns, road thieves come to a marked player more often the higher the rank. A thief is a hazard, not an enemy (G35): it acts by a rule the player can learn and has one thing to buy and one to make that answer it (G34), and it takes health like any hazard (G32), so the worst is the outing (G33).
+- The house, the camp, the store and what the player made stay safe, and nothing is taken from a player who is away (G28).
+
+**Closes:** the boards' count and their risk at the top; GRUNT's open ends carry the building as CR-40.
+**Superseded in part (10.10):** road thieves wait for weapons, and no item answers a hazard (the entry on a hazard escaped). The hunters' board's rules for when combat comes are in the entry on the shared world.
+**Superseded in part (10.10):** worth counts no places while player houses and plots are paused (the entry on houses and plots paused).
+**Retry when:** the top of a board is held by bots or by one group's funnel, or marked players stop leaving the towns. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ The players' common task is to explore the world
+
+The owner's word (9.10, with the answer on boards): the general task of the players is to explore the world. With the evening's word that the game does not turn only on buildings now, this orders what comes next.
+
+- Crafting, the market and the settlement serve exploring: roads and means, not the goal (G38 already says crafting is a road, not the road).
+- Exploring pays: the best pay sits far out and high on the difficulty scale (`docs/design/SETTLEMENT.md` 3.6, kernel review 7.2 item 4), and the top of the worth board stays on top by going out (the boards entry above).
+- The exploration board ranks the places, areas and secrets a player found.
+- The world must not run out: a new area comes as an expansion, as the spec already has it. A season's discovery that vanished at the season's end would be the "last chance" G28 forbids, so how seasons add to the world is the next question (Q5).
+
+**Closes:** no row; it sets what the next questions serve.
+**Retry when:** playtests show players settling in town and no longer going out. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ A season adds to the world, and what it adds stays
+
+The question (9.10): the spec makes a season a few weeks with a seasonal discovery, a seasonal collection challenge and a title that stays on the character, and opens the first one at stage 4. A discovery that vanished at the season's end would be the "last chance" G28 and G42 forbid, which the entry on combat and group quests left open the same day. The recommendation: a season opens a chapter that stays, and only the season's board closes. The owner's word (9.10): yes, and a season is not only an area: it may add quests, characters, quests in the world that already exists, even another cellar in a house, or the seasons of the year, holidays and the like.
+
+- A season adds content of any kind: an area, quests, characters, quests for the places and characters already in the world, a new part for a house such as a cellar, recipes, finds. What it adds stays in the world for good, and a player who comes later plays all of it.
+- Only the season's board closes at its end. Those who stood out in it keep a title with the season's name: honor with no use, and the one thing that cannot be had after the season, as a board's rank cannot. The spec's sponsor prizes ride on that board.
+- A season's content names the season that brought it, for the board's season filter and the journal, and never carries an end date. A new part for a house follows the house's own rules (`docs/design/SETTLEMENT.md`): built in steps, by choice, and never a duty.
+- The seasons of the year and the holidays are a question of their own (asked next): whether they follow the real calendar or the valley's own.
+- Seasons serve exploring, the players' common task (the entry above): each one leaves more of the world to find.
+
+**Closes:** the open line on seasons in the entry on combat and group quests; GRUNT's open ends carry the guard as CR-41.
+**Superseded in part (10.10):** a new part for a house waits with houses, paused since 10.10 (the entry on houses and plots paused).
+**Retry when:** the first season shows players who missed it feeling locked out, or a season adds nothing to explore. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ The valley's year is the real year, its days stay short, and each season gives the expansions a theme
+
+The question (9.10): do the seasons of the year and the holidays follow the real calendar or the valley's own? The recommendation was the valley's own, for three reasons: the game is for the whole world and the south has summer when the north has winter; a real holiday belongs to one culture, while G22 asks for the valley's own names; and a real holiday comes back only after a year, the wait G28 forbids. The owner's word (9.10): a real year, and the days can be half a real day or less. Besides the holidays, each season gives the expansions general themes, and the aim is a world that deepens all the time, maybe several times a week, as far as the community of creators allows.
+
+What other games do, as read for this answer. A day: Stardew Valley about 14 minutes, Minecraft 20, Terraria 24, Breath of the Wild 24, Valheim about 30, GTA V and Red Dead Redemption 2 48; Animal Crossing and World of Warcraft run on the real clock. A year: Stardew Valley keeps its own short year with its own festivals; Animal Crossing and Pokemon GO follow the real year and the player's half of the globe; World of Warcraft holds its festivals on real dates under its own names (Winter Veil, Hallow's End); Minecraft and Terraria, with short days, dress the world for Halloween and Christmas on the real dates, and Terraria also sells an item that calls a holiday night at any time. Content: Fortnite, Destiny, Sea of Thieves and Pokemon GO run themed seasons of about three months, Path of Exile a league every three to four months, and Old School RuneScape ships an update almost every week, after a players' poll for the big ones.
+
+- The valley's year is the real year: its seasons of the year turn with the real months, and its holidays fall on real dates.
+- The days stay short, as the owner allows: a day and its night are half a real day or less. Today `day_length_ms` is 20 minutes of play, inside the bounds of 10 to 40.
+- A holiday carries the valley's own name, as World of Warcraft does, so G22 holds and no player's holiday is left out. It comes back every year on its dates. What only a holiday gives is a look or a title, bound to the character and never traded, so no holiday makes a thing rare on the market. G42 carries this as its one written exception.
+- The date comes from the server once accounts exist. In the demo it comes from the device, where turning the clock gains nothing that lasts, since nothing from the demo passes to an account. The date enters the kernel as an input recorded with the actions, so a replay gives the same result.
+- Each season gives the expansions a general theme. The theme invites and never gates: an expansion off the theme still lands by the same rule, as the spec has it for open calls, where nobody is bound and nobody blocks.
+- The world deepens all the time: expansions land as often as the creators make them and they pass the check, several times a week as an aim. What lands stays (the entry on seasons above), and every change to the schema stays additive, so a saved game always loads.
+- Open, asked one at a time: whether a thing may exist in one season of the year only (answered the same day, the entry below), which half of the globe the seasons follow (answered the same day, the entry on the halves of the globe), and how long a content season runs (the spec says a few weeks; most games run about three months; answered the same day, the entry on a season's length).
+
+**Closes:** the calendar, in part; GRUNT's open ends carry the building as CR-42.
+**Superseded in part (10.10):** a holiday's reward is that year's only (the entry on a content season), and a holiday lasts at least 14 days and is earned in one session (the entry on the world and its clocks). Demo saves reset once when the new opening lands, and from then on a save always loads (the entry on saves, among the ten answers; the entry on the game read as one line).
+**Retry when:** players in the south or of another culture find the year strange, or creators cannot keep up with a season's theme. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ Some things come only in their season of the year, and the rest change in amount
+
+The question (9.10): with the real year, may a thing exist in one season of the year only, a fish found only in summer? Whoever missed the summer would wait nine months, and G42 bars rarity by a timer. The recommendation was that a season of the year changes how much, where and the look, and everything is found all year somewhere. The owner's word (9.10): a mix of the two. Some things change with the season, and of others there is simply less or more.
+
+- Two kinds of seasonal content. A thing of its season is found only in its season of the year and comes back every year. Of everything else a season changes the amount, the place or the look: more berries in summer, the fish in deeper water in winter.
+- A thing of its season always shares its class with a thing found all year (G45), so every recipe, quest step and tool that needs it takes the other too. A quest step asks for the class, never for the thing of a season. Missing a season costs a wait, never a use or a way forward.
+- What a thing of its season gives is variety, a journal and collection entry, and trade: its stock in the market drains out of season, so its price rises inside R8's band and a player who kept some can sell them then. The band bounds it, so no season makes a fortune.
+- Its rarity counts in the world's one rarity budget (G42), as any rare thing does.
+- G42 carries this as its second written exception, beside the holidays: both on the real calendar, both back every year.
+- How much of the world turns with the seasons is a matter for content: each season of the year should bring some things of its own, and most of the world only changes in amount.
+
+**Closes:** the first of the calendar's open questions; GRUNT's CR-42 now carries it.
+**Retry when:** players read a thing of its season as locked away, or a recipe or quest is found waiting for a season. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ The half of the globe follows the audience
+
+The question (9.10): with the real year, the south has summer while the north has winter, and in a shared world everyone must see one season, or two players at one lake would see different fish. The recommendation was one northern calendar for all, as World of Warcraft and most games do, and a world for the south once there are many worlds. The owner's word (9.10): as fits the audience that joins.
+
+- A player's own valley follows the player. Its half of the globe comes from the device's time zone when the account opens and then stays, as Animal Crossing sets a hemisphere once when an island is made. No location is asked for or kept: a time zone is enough to tell the half.
+- A shared world holds one calendar, set when it opens, by the half where most of the players it opens for live, counted from time zones in aggregate and never kept per player. When enough players from the other half join, a world opens for them.
+- A holiday tied to a season of the year, a winter festival, falls in that season of the world's own calendar, so under a southern calendar it comes six months later. A holiday tied to no season keeps its date everywhere.
+- If things from a valley reach a shared world's market, a thing of its season from a valley of the other half sells like any thing out of season, inside R8's band. A false time zone when the account opens gains no more than a player of the other half has anyway.
+
+**Closes:** the second of the calendar's open questions; GRUNT's CR-42 now carries it.
+**Retry when:** a shared world's players split between the halves, or players find their valley's seasons wrong. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ A content season runs a quarter of the year under its theme's name
+
+The question (9.10): the spec makes a season a few weeks; Fortnite, Destiny, Sea of Thieves and Pokemon GO run about three months. The recommendation: three months, a quarter of the real year, named by its theme, the theme announced a month ahead, the season's board reset each quarter, and expansions landing every week inside it. The owner's word (9.10): yes.
+
+- A content season runs a quarter of the real year. Its name is its theme, never winter or summer, since the halves of the globe see opposite seasons (the entry on the halves of the globe).
+- Its theme is announced a month before it opens, so creators have time to build to it. This is the fixed date the spec gives creators to build around.
+- The season's board resets each quarter (the boards entry); what the season added stays (the entry on seasons).
+- Expansions keep landing every week inside a season, as often as creators finish them and they pass the check.
+- This changes the spec's "a few weeks". The spec's sponsor model rides on the season, now four a year.
+
+**Closes:** the last of the calendar's open questions; GRUNT's CR-41 now carries it.
+**Retry when:** creators run out of a theme before its quarter ends, or players tire of one theme. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ The reference player executes perfectly, with nothing worn, no points spent and full health
+
+The question (kernel review D2, open since 6.10): who is the player the value table prices an hour of work for? The recommendation: perfect execution, no build, fed, so everyone else earns less than the reference for execution and never more, and a bot with perfect timing gains nothing over a skilled human. The owner's word (9.10): yes, but the food bar was replaced by health (G32).
+
+- The reference player hits every minigame perfectly, wears nothing, has spent no points, and is at full health. Low health slows work (G32), so a hurt player earns less, as a hungry one did.
+- Nothing drains health by the clock (G32), so the reference eats nothing per hour and food is no running cost of work. The review's V10, a food whose value depends on itself through the cost of an hour, does not arise.
+- For execution nobody earns more than the reference. Worn items and points add on top, inside the power cap (R9) and the ceiling of the effort weights (kernel review 7.1).
+- The kernel already works this way: a timing grade can only lower the goods below perfect play (`kernel/src/step.ts`).
+
+`docs/kernel-review-v1.md` section 5 marks D2 decided.
+
+**Closes:** D2 of the kernel review.
+**Superseded in part (10.10):** until P-5 the kernel still drains satiety (the entry on the hunger clock), so until then the reference player is fed and food stays outside V; from P-5 the reference is at full health, as above.
+**Retry when:** a playtest shows a player out-earning the reference on execution alone, which would be a fault in the value table. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ Gold entering a world with many accounts: a fixed base, one ledger, a daily cap, a small automatic step, and a server that keeps the books as a bank does
+
+The question (kernel review D4, to be decided before stage 4 by the review's 8.3): the ceiling on gold holds per account, so a thousand accounts, or one program playing around the clock, mint far more, and from stage 4 gold can move between accounts. The recommendation: r fixed for good, one ledger, a daily cap per account on what the trader pays, set above a long human day, and a small automatic step down of the trader's share when more gold enters than leaves two weeks running. The owner's word (9.10): yes, and the mechanisms need real enforcement, as money is protected in the real world; with a server that is possible.
+
+- r, the base of every price, is fixed for good, so prices never shift under the players.
+- One ledger records every coin that enters, leaves or moves, each with a reason from the closed list (CR-39). Only activity code mints (R6), and only the server writes the ledger.
+- A daily cap per account on what the trader pays: `trader_day_cap`, to start the reference player's pay for 8 active hours. A person does not reach it in a long day; a program playing around the clock does. It resets each day and never takes back what was earned, so it punishes no absence (G28).
+- When gold minted exceeds gold burned two weeks running, the trader's shares (`k_permille`, `k_craft_permille`) step down one small step, only inside the bounds the community voted (R12), and step back up the same way when the balance turns.
+- The free market brakes many sellers too: in a shared world, a thousand accounts selling one thing lower its price for all (the crafting economy entry).
+- The server enforces it as a bank keeps money. It alone changes gold. Every movement is written twice, who paid and who got, so the books always balance. Each day the sum of all balances is checked against all gold minted less all gold burned, and a gap holds trade between players until it is found. Patterns a bank would flag are flagged here: an account at the cap every day, gold flowing from many new accounts to one, trades again and again at the edge of R8's band. What happens to a flagged account, and how a player appeals, is the policy of A1, asked in turn.
+- In the demo none of this applies: gold lives in the browser, and nothing passes to an account.
+
+`docs/kernel-review-v1.md` section 5 marks D4 decided.
+
+**Closes:** D4 of the kernel review; GRUNT's open ends carry the building as CR-43.
+**Superseded in part (10.10):** the daily cap is 8 active hours at the kernel's ceiling for the account's level, not at the reference player's pay, and it resets at 00:00 UTC. The step is counted per shared world from stage 4, on burns net of refunds, and never climbs above where it started. The range of r in `content/core/params.json` closes to its value (the entry on prices and gold).
+**Retry when:** the books show gold growing faster than the sinks for a month, or real players reach the daily cap. Model: claude-opus-5-5.
+
+## 2026-10-09 ⏸ If magic comes: scrolls and books carry it, and an ancient language is learned slowly
+
+The owner's word (9.10, raised unasked): if there is magic, scrolls and books should be its items, and maybe an ancient language that has to be translated little by little; how to make that fun is to be thought through together.
+
+What it meets already:
+- No magic exists in the game or the spec today, and no combat (G35). Magic would come as its own system with its own plan, as weapons will (CR-12).
+- A scroll fits the tool with uses, spent as it is read; a book fits the tool without uses, which lasts (the crafting economy entry). Whatever a spell does stays inside the power cap (R9) and never mints gold or items outside an activity (R6).
+- The ancient language is a puzzle inside the world, in an invented script, never a second language of the game: every line a player reads stays plain English (G22), and the script is drawn, not spoken.
+- It serves exploring, the players' common task: words are found on stones, in ruins and in books, and each word found lets a player read a little more, as the journal grows.
+
+A reading for the fun, from games that made it work: Heaven's Vault and Chants of Sennaar make deciphering the game itself, where a player guesses a word from where it stands and what is drawn beside it, and the guess holds when it fits again elsewhere; Tunic hides its own manual in a script the player slowly learns to read; Skyrim teaches its dragon words one wall at a time. A word known counts on the character, so a guide on the internet can tell a player what a scroll says, but only a character who found the words can use it.
+
+Open, for the owner when magic is planned: whether and when magic comes; what a spell may do without combat (light, growth, mending, finding); whether one language serves the whole world.
+
+**Closes:** nothing; it waits for a plan for magic.
+**Retry when:** magic or the ancient language is planned. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ The creators' pool comes from gold already spent and is split by active play
+
+The question (kernel review D5): what exactly does the creators' pool pay for, and where does its gold come from? The spec gives creators a weekly share by use from stage 4. The recommendation: the pool is never minted but taken from gold that left the world, split by active seconds with a cap per account-day, 60, 20 and 20 to the activity, the place and the quest, gear paid from its sale, and no gold for votes. The owner's word (9.10): yes.
+
+- The pool is never minted. Each week it is a fixed share (`creator_pool_permille`, a bounded parameter, R12) of the gold that left the world that week: prices paid to the settlement and the shop, and fees. A week with little spending pays little, and the pool adds no gold to the world.
+- The gold the pool takes no longer leaves the world, it moves to creators: the daily balance and the step of the trader's shares (the entry on gold entering a world) count it as moved, with the reason `royalty`, and count only the rest as burned.
+- It is split by active seconds in each creator's content, taken from the server's validated action logs (R10), at most 2 hours per account-day. An idle account plays no active seconds; many accounts meet the cap and the flags of the entry below.
+- Of what a piece of content earns, 60% goes to the creator of the activity, 20% to the creator of the place, and 20% to the creator of the quest that led there (R10's attribution table, bounded parameters).
+- A creator of gear is paid from its sale, not from the pool, since gear touches every action of its wearer (C3).
+- No gold for a poll vote (A19).
+- Creator points stay as they are. The points entry of 7.10 waited for D5: this entry is the pool's rule, and creators' rewards get their own document when stage 4 is planned.
+
+`docs/kernel-review-v1.md` section 5 marks D5 decided.
+
+**Closes:** D5 of the kernel review, and the wait of the points entry of 7.10; GRUNT's open ends carry the building as CR-44.
+**Retry when:** creators find the pool too small to matter, or one creator's accounts take a large share of it. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ An exploit loop costs its accounts and the gold it made
+
+The owner's word (9.10, with the answer on the creators' pool): every movement is in the system, so if a new account at once passes its starting capital on, or certain accounts show a fixed pattern and identical or too regular times, that is the sign of a loop exploiting the system: the accounts are blocked and lose the gold that was made. This answers part of A1 (the entry on bots).
+
+- The server's books hold every movement of gold and goods (the entry on gold entering a world), so a loop leaves a trail.
+- The signs of a loop: a new account that passes its starting gold or its first earnings on at once; the same run of actions again and again; times identical across accounts, or too regular for a person, since a person's timing varies and the server keeps every action's time and timing grade (K10); gold going round between the same accounts.
+- As a bank holds a new account, the starting gold and kit are bound to the account and cannot be passed on, and an account's first trades with other players open after it has played a while (`new_account_hold`, counted in active play, never in days, so no absence is punished, G28). The plainest loop is closed before it starts.
+- On suspicion the accounts are held: no trade and no transfer until it is decided.
+- A loop found: every account in it is blocked, and the gold and goods the loop made leave the world, written in the ledger with the reason `forfeit`. Forfeited gold is burned and never handed to anyone, so nobody gains by flagging another.
+- Who decides (asked the same day; the owner's word, 9.10: yes to the recommendation): the rule holds the accounts at once, and a person reads the trail and decides the block. The player is told why in plain words and may appeal once, to another person. Until it is decided nothing is taken. Banks freeze by rule and review by hand; RuneScape finds bots by rule, bans them in waves, and hears appeals.
+
+**Closes:** part of A1, with who decides a block; GRUNT's CR-43 now carries it.
+**Retry when:** a real player is caught by a flag, a loop runs unflagged, or the appeals outgrow the people who hear them. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ A program may advise a player, never play for one; a first offense costs what it made and two weeks, a second the account
+
+The question (A1, the rest after the entry on exploit loops): what happens to one account caught letting a program play for it, with no loop and no other accounts? The rule proposed with it, from the owner's word on AI that plays in a player's place: a program may advise, never act. The recommendation: the first time, what the program made is burned and the account is blocked for two weeks; the second time, for good; a farm of many accounts is a loop and is blocked for good at once. The owner's word (9.10): yes.
+
+- Every action in the game comes from a person's input. A player may ask an AI or a guide where to go or what to make, as one reads a guide on the internet; a program that presses, walks or plays the minigames in a player's place is forbidden, whether the player is there or away.
+- The first time an account is found letting a program play: what the program made is burned with the reason `forfeit`, and the account is blocked for two weeks. The second time, it is blocked for good. RuneScape gives a first offense a temporary ban and bans farms for good.
+- A farm of many accounts is an exploit loop and is blocked for good the first time (the entry on exploit loops).
+- Finding it follows the same path: the signs (a timing too regular for a person, the same run of actions again and again, a session no person plays), the rule holds, a person decides, and the player may appeal once to another person.
+- What a program could still gain is hours, and the hours are capped where they turn into gold: the trader's pay per day (`trader_day_cap`), the creators' pool per account-day, and plots drawn among the workers rather than taken first.
+
+**Closes:** A1; GRUNT's CR-26 now carries the rules.
+**Retry when:** programs are found playing faster than people can hear the cases, or real players are caught by the signs. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ In a shared world each player gathers their own yield, except in the areas between players
+
+The question (9.10): the spec limits resources at the world level once the market comes: a bush gives a fixed amount an hour however many players stand by it, and whoever comes first takes. The recommendation: each player gathers their own yield from every bush and tree in the towns and the wild, as Guild Wars 2 does, and nodes are shared only in the areas between players. The owner's word (9.10): yes.
+
+- Outside the areas between players, a node's state is kept per player: what one player gathers or fells, the next player still finds. A tree one player fells stands for the others, and grows back in its stages for the one who felled it (the entry on wood). Others still see the player at work.
+- Why: the entry on competition says players compete for places only, never for resources; first come would let a program playing around the clock strip the valley before anyone (the entry on programs that play), and a new player by the town would find nothing.
+- The brake on a flood stays the market: when everyone gathers fruit, the price of fruit falls (the free market of the crafting economy entry), the signal to turn to something else, as the spec wants. Capacity stays per account, as the kernel review's ceiling always was (R6, review 7.1).
+- In the areas between players nodes are shared and whoever comes first takes: part of the risk and the reward of an area a player chooses to enter (`docs/design/SETTLEMENT.md` 3.9).
+- This changes the spec's world-level limit on resources; the spec's market section follows in its next version.
+
+**Closes:** the question of shared nodes; GRUNT's open ends carry the building as CR-45.
+**Retry when:** a shared world feels empty because players never meet at the same bush, or the market fails to move players off a crowded activity. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ A look bought with money is bound to the account; the same look found in the game trades
+
+The question (9.10): G39 lets only a look with no effect carry the premium marker, and the spec sells premium currency one way only, money to currency and never back. May a look bought that way be traded? The recommendation: no, it is bound to the account, and the same look found in the game trades like any item. The owner's word (9.10): yes.
+
+- A look bought with money or premium currency is bound to the account: it is never traded between players and never sold to the trader.
+- The same look found in the game, as treasure or a reward, trades like any item, inside R8's band.
+- Why: a bought look that trades is a road from money to gold. A player buys it with money, sells it to another for gold, and gold buys tools, so money would buy power by a side door, which G39 forbids. Path of Exile keeps bought looks off its trade for the same reason; Guild Wars 2 and the World of Warcraft token open that road on purpose.
+- A bound look counts nothing toward worth on the boards, since the trader does not buy it (the boards entry). A holiday's look is bound to the character in the same way (G42).
+- G39 now says so.
+
+**Closes:** the question of bought looks; GRUNT's open ends carry the building as CR-46.
+**Retry when:** stage 6 opens payments, or players ask for a way to give a bought look to a friend. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ Players' words: notes in free text behind a good filter, and later chat in bubbles over the head, never private
+
+The question (9.10): the spec brings light presence with the market stage: the camps of others, tracks and notes. The recommendation was notes built from a fixed kit of phrases, as Dark Souls does, with no free text. The owner's word (9.10): notes in free text with good filtering; later maybe chat between players, but never private: bubbles floating over the head.
+
+- A note is free text a player leaves at a place in the world. A filter reads every note before anyone else sees it and refuses rude words, links and addresses, phone numbers, e-mail addresses and other personal details, and offers to trade for money. The same filter reads every line of chat.
+- Players mark a note as helpful, which keeps it up. A note reported by several players hides until a person reads it, as a person decides a block (the entry on exploit loops). A player may hide another player's notes and words from their own screen.
+- A player keeps a few notes standing at once (`notes_max`), and a note fades after a while unless players keep finding it helpful, so the world is not littered.
+- Chat, if it comes (the spec's live presence, stage 7), is words in a bubble over the speaker's head, seen by the players nearby for a few seconds: public and local. There are no private messages and no whispers; whatever a player says, others near could see. The game's own text stays for all ages (G22), and the players' words keep to the same.
+- A note or a line of chat is kept on the server only as long as a report may need it; the privacy text of stage 2a says how long.
+- The languages of notes were answered next (see the entry on the languages of notes). The group's channel was closed by the sweep of 10.10 (the entry on the shared world): a closed set of signals seen by the group alone, never free text.
+
+**Closes:** notes and chat; GRUNT's open ends carry the building as CR-47.
+**Retry when:** the filter lets through what it should stop, or stops what players need to say. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ An account follows the age of similar games: 13, or the country's higher age
+
+The question (stage 2a, the account entry): the minimum age for an account. The owner's word (9.10): the standard of similar games.
+
+- An account needs the player to be 13 or older, as RuneScape and most online games with open chat ask, or the higher age of digital consent that the player's country sets, up to 16 in parts of the European Union.
+- A younger player plays the demo, which keeps nothing and asks for nothing.
+- The game's own text stays readable by a child of eight (G22): the content is for all ages, and the account has an age.
+
+**Closes:** the minimum age; GRUNT's open ends carry it into the stage 2a design as CR-49. The privacy text and the mail service stay for the stage 2a design.
+**Superseded in part (10.10):** "the content is for all ages" now holds for the words (G22). The look aims at ESRB E10+ and PEGI 12, and the younger player of the demo is one between the rating's age and the account's (the entry on menace with a limit).
+**Retry when:** parents ask for a child's account; Minecraft and Roblox offer one under a parent's control with limited chat. Model: claude-opus-5-5.
+
+## 2026-10-09 ✅ A player's shop: a sign over the player, and the shop stays open while they are away
+
+The owner's word (9.10, with the answer on notes): a shop to sell from. One walks up to a player, a shop sign shows, and one buys what the player put up for sale, even when the player is not connected. The spec already brings personal shops with the market (stage 4).
+
+- A player puts goods up for sale at a price each. The server holds them while they are listed, so nothing sells twice, and the player sees what sold when back.
+- Online, a sign over the player says the shop is open, and anyone may walk up and buy. Offline, the shop stays at the player's house, or on the town's market board for a player with no house (the entry on the shared world), so the towns do not fill with sleeping players.
+- Prices stay inside R8's band, as every trade between players does, and gold reaches the seller through the ledger with the reason `price`.
+- Nothing bound is listed: a bought look, a holiday's look, the starting gold and kit (the entries on bought looks, on the calendar and on exploit loops). A new account's first sales wait for `new_account_hold`.
+- A shop that sells while its owner is away is the valley waiting for the player, never a punishment (G28). A house that goes back to the town after 45 days away returns its listed goods to the owner's store with the rest.
+- Listed goods count toward worth at the trader's pay, as all goods do (the boards entry).
+- The sale fee (asked next; the owner's word, 10.10: yes): see the entry on the sale fee.
+
+**Closes:** the rule of player shops; GRUNT's open ends carry the building as CR-48.
+**Superseded in part (10.10):** until stage 7, where players see each other, a player's shop has only the forms it has while its owner is away, at the house or on the market board, whether or not its owner plays; the sign over the player comes with stage 7 (the entry on the game read as one line).
+**Superseded in part (10.10):** while houses are paused, a player's shop sells on the town's market board (the entry on houses and plots paused).
+**Retry when:** towns crowd with shops, or buyers cannot find what is for sale. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ A sale between players burns a small fee, paid by the seller
+
+The question (10.10, after the entry on a player's shop): should a sale in a player's shop pay a small fee that leaves the world? The recommendation: yes, about 2 percent of each sale, burned, as RuneScape's Grand Exchange takes a tax on each sale, kept as a bounded parameter that the demo tunes. The owner's word (10.10): yes.
+
+- Every sale between players pays `sale_fee_permille` of its price (20 to start, bounded 10 to 50, R12). The buyer pays the listed price, and the fee comes out of what reaches the seller. The seller sees both numbers when listing.
+- The fee is burned. The ledger writes it with the reason `tax` (`docs/design/SETTLEMENT.md` 3.9), so it counts among the gold that left the world, from which the creators' pool takes its share (the D5 entry).
+- It is counted on each sale in milli-gold and rounded up, as R8 rounds every charge, so a cheap sale pays a little and selling one unit at a time does not escape it (amended 10.10 by the sweep; the first text rounded down to whole gold).
+- Listing, changing a price and taking goods back are free, and goods never sold pay nothing. Goods that go back to the store with a returned house pay nothing (G28).
+- The fee follows the gold, whatever the deal is called. Today a shop is the only way gold passes between players. If trades or gifts of gold between players come, they pay the same fee, so a sale cannot pass as two gifts. If gifts of goods come, a gift pays the fee on what the trader pays for the goods that day (amended 10.10 by the sweep; the first text let goods given for no gold pay nothing).
+- Selling to the trader pays no fee, since the trader already pays less than the shop asks for the same item.
+- Why: the fee takes gold out where it gathers, so more trade means more gold leaving. It also costs something on every round of gold moved in circles between accounts, beside the signs of a loop (the entry on exploit loops).
+
+**Closes:** the sale fee; GRUNT's open ends carry the building as CR-50.
+**Retry when:** sellers leave the shops because the fee eats their margin, or gold still piles up with the fee at its top bound. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ Notes and chat are written only in the languages the game is offered in
+
+The question (10.10, after the entry on players' words): in which languages may a note be written, since the filter must read every one? The recommendation: only in the languages the game itself is offered in, English today, and each player sees the notes in their own language. The owner's word (10.10): yes.
+
+- A note or a line of chat is accepted only in a language the game is offered in. Today that is English.
+- A new language of the game brings its filter with it, and only then may players write in it.
+- Each player sees the notes and words written in the language they play in, so the world does not fill with text they cannot read.
+- Why: a note in a language the filter cannot read is a way around it, for rude words and personal details alike. A filtering service for every language costs money and reads small languages poorly.
+
+**Closes:** the languages of notes; GRUNT's CR-47 now carries it.
+**Retry when:** the game is offered in a second language, or players ask to write in one it is not offered in. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ A sweep for holes in the design, closed by default from the games already read
+
+The question (10.10, after the answer on the languages of notes): the owner asked not to be asked the small questions one at a time any more. The owner's word (10.10): look for every hole in the design and the idea, close each one by the games already discussed, write a report of every hole closed, and the owner writes back where a change is wanted. Four reads ran over the rules, the decisions, the settlement plan, the kernel review, the open ends and the open pull requests: the economy, the shared world and its people, the world and its time, and the documents against each other. Each hole is closed by default with the game it follows, in the four entries below. A change from the owner comes as an entry of its own and supersedes the line it names.
+
+- The economy: the entry on prices and gold.
+- The shared world, accounts and safety: the entry on the shared world.
+- The world, the fall and time: the entry on the world and its clocks.
+- The documents against each other: the entry on which text wins.
+
+**Closes:** the holes listed in the four entries below; GRUNT's open ends carry the building as CR-51 to CR-59 and CR-70 to CR-87, and CR-10 and CR-14 are decided.
+**Retry when:** the owner changes one of them, or a playtest shows one closed the wrong way. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ Prices and gold: a band between players, two funds that never meet, and every mint and burn bounded
+
+The question (10.10, the sweep): where could gold pass between accounts, appear from nothing, or escape a fee? The owner's word (10.10): close each hole by default from the games already read.
+
+- **A band on prices between players.** A listing's price sits between what the trader pays for the item today and `trade_max_permille` (1500, bounded 1200 to 2000, R12) of `r*V`; a worn tool's band shrinks with its uses left, as the trader's pay does. A trade outside the band is refused, so gold cannot pass between accounts as an inflated or a giveaway price. An item with no V cannot be listed. Like RuneScape's Grand Exchange of 2007 to 2011, which held each trade inside a band around a guide price. The kernel review's R8 and its verdict 3c change with it.
+- **Two funds that never meet.** The spec's creators' fund, 40% of net income, pays money; the pool of D5 pays gold. Both split by active seconds, and neither ever turns into the other. A royalty, for an extension, a rent or gear, is cut from gold already leaving a player (a price, a fee, a rent) with the reason `royalty`, and is never minted; only the rest reaches the pool. Gold never becomes money and money never becomes gold (G39). Roblox's exchange of its currency for money is the road refused: it makes play a job and invites trade for money.
+- **The premium currency.** Bought with money only. It is never bought with gold, never traded, given, listed or turned into gold, everything it buys is bound to the account, and it counts on no board (G39). Like the points of Path of Exile.
+- **One person, one account in a world.** One account per person in each shared world, said at sign-up. One person's accounts never trade, give or pool with each other; a pair found doing so is an exploit loop (the entry on exploit loops). Selling gold, goods, places or an account for money is a loop for both sides. Input sent to two accounts at once is a program playing (the entry on programs that play). Two accounts played by hand in different worlds are allowed. Accounts found to be one person's count as one for every limit. Like RuneScape's rules on real-world trading, and World of Warcraft's ban on sending one input to several characters.
+- **The trader's daily cap.** `trader_day_cap` is 8 active hours at the highest pay the kernel allows at the account's level (Theorem 3 of the kernel review, with the most that worn things and points can add), so no person reaches it by play, however well geared, while a program playing around the clock does. It resets at 00:00 UTC on the server's clock. Like RuneScape's daily reset. This changes the entry on gold entering a world, which pinned it to the reference player.
+- **The refund is the one mint that is not activity.** The plot refund (`plot_refund_permille`) is the one written mint outside R6, tied to the burn it returns and never above it. The pool and the step of the trader's shares count burns net of refunds; a week whose net burn is not above zero pays no pool. R6 gains this one exception.
+- **The pool and the trader's share bound each other.** The check keeps the top bound of `creator_pool_permille` plus the top bound of `k_craft_permille` below 1000, so buying from the shop and selling back to the trader never pays a creator more than the round trip lost. The active seconds of an account under `new_account_hold` count for no creator.
+- **The sale fee is counted in milli-gold and rounded up**, as R8 rounds every charge, so a cheap sale pays a little and selling one unit at a time does not escape it. This amends the entry on the sale fee, which rounded down to whole gold.
+- **A gift of goods pays the fee too, when gifts come.** It pays on what the trader pays for the goods that day, from the giver. Gifts open only once both accounts are past `new_account_hold`, a bound item is never given, and the ledger writes a gift with the reason `gift`. Like RuneScape's trade limits of 2007 to 2011. This amends the entry on the sale fee, where goods given for nothing paid nothing.
+- **Starting gold and the kit are bound.** The starting gold is a bound balance beside the purse, spent first and only at the shop, the trainers and the settlement, never paid to a player or listed. The kit's items are bound to the character, never listed, sold or counted in worth. The kit's band is measured at the shop's price, or at V where no shop sells the item. So a new account is never a source of gold or goods for another. Like World of Warcraft's Starter Edition, whose accounts could not trade.
+- **A miss table has a ceiling.** The check refuses a miss table whose expected value per miss reaches `miss_value_max_permille` (500) of the hit's output value, so missing on purpose never pays (the entry on a missed gather).
+- **The market's stock has edges.** The stock starts where both prices sit at base. The shop's price rises at most to `shop_max_permille` (1500) of `r*V`. In a shared world the stock drains on the server's hour while anyone in that world plays. An item with no V keeps a fixed price outside the market and is never listed.
+- **The step of the trader's shares.** It is counted per shared world, from stage 4 only, on burns net of refunds. It steps back up one step when burns exceed mints two weeks running, and never climbs above where it started.
+- **The ledger's reasons.** Mints carry `pay` (the trader's), `reward` (a quest's) and `find`; movements add `gift`, `donation` (a gift to the town), `escrow` and `closed` (an account closed) to the closed list of SETTLEMENT 3.9. A gift to the town counts in worth at that day's trader pay, fixed when given.
+- **r is fixed.** The entry on gold entering a world fixed r for good, but `content/core/params.json` still gives `r_mg_per_value_ms` a range for a vote. The range closes to its value, and the check refuses a range on r.
+
+**Closes:** the economy's holes of the sweep; GRUNT's CR-51 to CR-59 carry the building, and CR-50 is amended.
+**Superseded in part (10.10):** the plot refund is paused with plots (the entry on houses and plots paused).
+**Retry when:** the values tool or the books show gold piling up or draining faster than the step can follow, or an honest trade is refused by the band. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ The shared world: whose progress, one world per character, one hour for all, and people kept safe
+
+The question (10.10, the sweep): where did two players, a closed account or a word between players meet no rule? The owner's word (10.10): close each hole by default from the games already read.
+
+- **Progress is each player's own.** In a shared world the opening, restores, riddles and quests stand per player, as nodes do (the entry on each player's own yield). Shared are only plots, houses, stalls and listings, notes, tents, the market and the nodes of the areas between players. A street whose restoring opens plots is a group restore, once per town, and its sign names everyone who helped. Like World of Warcraft's phasing.
+- **One shared world at a time per character.** One bag and one purse per character. A character is in at most one shared world, and once it joins, its own valley trades through that world's market. A move between worlds is free once a content season, and the house is packed on the terms of 45 days (S1b). One house and one entry in a draw count per character across worlds, and so does a holiday's reward. Like World of Warcraft's realm transfer, and RuneScape's one Grand Exchange.
+- **One hour for all.** Through stage 4 each player's valley keeps its own clock, paused by a window as it is today, and the shared market drains on the server's hour. From stage 7, where players see each other, a world has one hour for everyone that no window pauses, and a player's own nodes and camp fire count that hour too. A player who quits outside a safe area stays for a short countdown (`logout_countdown_s`, bounded), then leaves, and comes back at the same spot; in a safe area they leave at once. No hazard strikes during a minigame. Like World of Warcraft's twenty seconds outside an inn, and Dark Souls, which never pauses.
+- **A tree between players.** In the areas between players, where nodes are shared, a tree stands on one chop timer that every swing there spends, and each swing's wood goes to its swinger, so two players at one tree both gain and the tree falls once. Like RuneScape's Forestry of 2023.
+- **Closing an account.** Inside the game, with 30 days to change one's mind; signing in undoes it. The places return to the town; listings, goods and gold are burned with the reason `closed`, counted for no pool and no step; notes vanish; the name becomes "a traveller"; the ledger keeps its rows under a number. An account found to be under age is closed at once. Sign-up asks the birth date on a neutral screen and keeps only whether the age passed, and the country. Notes and chat are kept 30 days after they fade unless a report holds them, action logs 90 days and then as daily totals, and the ledger for good without a name. Like the app stores' rules, Apple's from 2022 and Google Play's from 2024, which ask for deletion inside the app.
+- **Words have a ladder.** A word the filter missed and a person caught is hidden, with a warning that quotes it; the next costs a week without notes or chat; the next turns words off for good. Threats, sexual words or personal details are blocked by a person at once. One appeal, to another person. Moderation starts with the first stage where one player's words reach another, with two named people on the team. A report counts once per account past `new_account_hold`, and a reporter often overruled loses the power to hide by report. Like RuneScape's mutes.
+- **The filter reads every name.** It reads every text a player sets that others see: the name, a world's name, a shop's and a house's words, a listing's note. It refuses the names of the valley's characters and of the team, and words like admin, moderator or the game's name. A name is unique in its world, and a person may replace a bad one. The demo shows no player's text. Like World of Warcraft's forced rename.
+- **A block.** It hides that player's words and tracks and refuses their invites and friendship; from stage 7 the two are drawn faint and nameless to each other. A shop still sells to both. Nobody sees whether another is online or when they last played, except mutual friends, and a shop's sign may be off while its owner plays. Like World of Warcraft's ignore list.
+- **Friends and groups.** Friendship is mutual and a refusal is silent. A friend online shows their town and may be invited to a group; there are no messages. A group talks in a closed set of signals (here, come, wait, help, found it, done) seen by the group alone, never free text, beside the bubbles everyone sees. Each member meets the quest's gates, the chance counts the members who acted in the current step, each member who finished a step gets its full reward once and never a split, and one who leaves keeps the steps paid. A house's building step is never a group quest. Like Journey's chime and the signals of Apex Legends.
+- **A hold has an end.** A hold for review lasts at most `hold_max_days` (7), then lifts while the case stays open. While an account is held or blocked, its settlement clocks stop, its shop shows closed and no notice mail goes. "Played", for the 45 days, means one accepted action. What a loop forfeits comes only from the loop's own accounts, never from an honest buyer. A block for good returns its places at once, burns what it held with the reason `forfeit`, counted for no pool, and takes its listings down.
+- **A freed plot is drawn.** A plot freed by a lapse or a packing opens for sign-up for `plot_signup_days` (3), then is drawn among those who signed up, past `new_account_hold`, one entry per account. With no sign-up it goes to the first who signs up. The winner's first step pays the price as before, and a winner who makes none within `plot_signup_days` loses it to a new draw. An owner of a packed house enters the draw like anyone, and the new plots of a clearing keep their own draw (S5). Like Final Fantasy XIV's housing lottery of 2022. SETTLEMENT 3.2 changes with it, where the first to step on a free plot held it.
+- **Nobody blocks a way.** Players pass through each other. A placed thing, a tent, a note or a stall, never stands within `place_clear_tiles` of a path, a door, a bridge, a plot, a sign, a riddle, a dig, a node or another tent, and another's tent is walked through. A crowd beyond a handful is drawn faint. Like RuneScape and World of Warcraft, where players pass through each other.
+- **The hunters' board, for when combat comes.** A hunter gets honor for a marked player once a day; never between friends, a group or one person's accounts, and only when the fall dropped finds. Finds pass by a fall only between accounts past `new_account_hold`, and falls traded back and forth are a loop's sign. Like World of Warcraft's diminishing honor.
+- **One store.** The camp's storage chest and what a house adds are one store, reached from every town and tied to no plot. A packed house's contents and returned listings go there and may run over its size; nothing is ever dropped, and a store over its size takes in nothing new until there is room. A packed house waits as a deed. A player with no house sells offline from the town's market board, one list of such players' goods in each town: free, with no tile, no hold and no lapse. Like RuneScape's bank and Albion Online's market in each city.
+- **Trade is safe by its shape.** A listing shows the item as the bag does. A buy carries the price the buyer saw and is refused if it changed. The game never asks for a password, and the filter refuses words that ask for one. An account is never shared or sold. A theft shown within 14 days is taken back through the ledger from the accounts on its trail, while a buyer who paid a listed price keeps what was bought. Like RuneScape, which never asks for a password.
+
+**Closes:** the shared world's holes of the sweep, and the open line of the entry on players' words (the group's channel); GRUNT's CR-70 to CR-76 carry the building.
+**Superseded in part (10.10):** "through stage 4" reads "until stage 7": every valley keeps its own hour until players see each other, the shared worlds of stages 4 to 6 included; and "stalls" and "a stall" are no thing a player places: a player's shop sells at the house or on the market board, and the stall is Pell's (the entry on the game read as one line).
+**Superseded in part (10.10):** the draw for freed plots, a house's words and the places a closing returns are paused with houses and plots (the entry on houses and plots paused).
+**Retry when:** a shared world's first season shows crowding, a draw that new players never win, or a word the ladder handled too hard or too soft. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ The world and its clocks: what a fall keeps, three clocks, sleep, scraps and menace without gore
+
+The question (10.10, the sweep): where did the world, the fall and time leave a road open or a player stuck? The owner's word (10.10): close each hole by default from the games already read.
+
+- **A fall gains nothing.** After a fall each item keeps the smaller of its count when the outing began and its count at the fall, and a tool keeps the fewer uses. Nothing found on the outing stays, and nothing spent or given on it comes back, so falling and repeating never pays. Like Dark Souls.
+- **A fall takes back only the outing's steps.** Each quest goes back to the step it stood at when the outing began, as P-5 already records; a quest begun on the lost outing starts again from its first step; in a group quest only the fallen player's steps of this outing go back. The worst is the outing (G33). Like World of Warcraft, which keeps a quest's objectives. This reads the hazards entry's "a quest in progress starts again from its first step" for the outing's own quests only.
+- **Places count when brought home.** A place found counts once the player reaches a safe area with it; until then it is pencilled in, and a fall erases it. Like Elite Dangerous, where findings not yet sold die with the ship.
+- **Health after a fall.** The player reappears with `fall_health_permille` of full health (bounded), never zero.
+- **Sleep.** In a player's own valley, sleeping in a town or at a burning camp after 20:00 moves the clock to 05:00, restores health and burns the night's wood at once. It pays no active time (R6), and the rarity budget counts a day as its waking hours only. In a shared world nobody skips the night, and resting by a fire restores health over one game hour. Like Minecraft's beds, which skip the night only when nobody else is awake.
+- **No way back is ever closed.** The axe, the basket and the trowel are always for sale at the stall. The check walks a character with no tools, no gold and an empty bag in a town back to each tool, through an activity that needs no tool. A find that comes once, lost to a fall, goes back to its spot. Like Stardew Valley, whose shop always sells the basic tools.
+- **A full bag.** A gather or a craft starts only when its output has room. A quest's reward that does not fit waits with its giver. What comes back to a player (a lapse, a packed house, a listing taken down) goes to the store (the entry on the shared world). Like World of Warcraft, which refuses a turn-in to full bags and returns mail to the sender.
+- **Recipe scraps.** A scrap dug up is a bag item until read; reading teaches the recipe and uses the scrap up. A dig draws only among recipes neither known nor carried, and with none left it gives an ordinary find. An unread scrap is lost on a fall like any find, and may be sold or given at its dig's value; a read recipe stays for good. Like Stardew Valley's lost books.
+- **Nothing shortens a wait.** No skill node, worn effect, camp part or spell shortens a respawn, a growth or any wait, and the check refuses one. The spec's skill effect "shortening wait time" is dropped, and a magic of growth, when it comes, is held to this. Waits are capacity and never paid for (R6), and the rarity budget counts on them (G42).
+- **Three clocks.** The game hour runs night, the windows of hours, respawns, the wood burned per night, the market's drain, a companion's next day and the morning toast. The real calendar runs seasons, holidays, content seasons, the holds of 14 and 45 days, notices, the fading of notes, "two weeks running" and the daily caps, which reset at 00:00 UTC. Active play runs `new_account_hold`, the pool's seconds and levels. Every parameter of time names its clock. Like RuneScape's daily reset at 00:00 UTC.
+- **A holiday's bounds.** A holiday lasts at least 14 real days. Its look or title can be earned within one ordinary session inside them, and nothing asks a return on several days. Its dates follow the world's calendar at 00:00 UTC. In the demo a holiday only dresses the valley, since a demo save is not an account. Like World of Warcraft's Hallow's End, about two weeks long. This fits the answer that a holiday's reward is that year's only.
+- **Quest points.** Only quests with a fixed id count, once per player across worlds. Errands drawn from a pool and repeatable quests count nothing. Points weigh the work part of a quest's difficulty only and are never shown before the quest is finished. Exploration counts once per player across worlds on a board across worlds, and per world on a world's board. Like RuneScape's quest points.
+- **Menace without gore.** Menace comes from shape, sound and the dark only: no blood, no wound and no body, and a predator is never drawn biting. The text says the player fell, never that they died or were killed. The fall keeps its look from the hazards entry, crosses for eyes and a sinking into the ground. The aim is PEGI 7 and ESRB E10+. Like Stardew Valley, where the player passes out and wakes at the clinic. G46 carries it, and the spec's open line on the content limit is answered.
+- **The digger's six points.** The third starter takes stamina 2, luck 2, carry 1, senses 1 and agility 0. The forager leans to carry and agility and the explorer to senses and luck, so the digger leans to the long work of digging and to its finds, and the total stays 6 (C1). Like Path of Exile, whose classes start at different points of one tree. CR-37 carries it with the digger's file.
+- **A quest names a level for matching only.** A quest may carry a level band, used only to offer it to players near it. Outside the band it can still be taken and is harder, and the game never says a level is too low, as it shows no difficulty (the entry on difficulty, 9.10). Like Skyrim's radiant quests. CR-10 is decided.
+- **A template's family is declared.** A recipe template fits core items, its own creator's items, and items whose file names the template's family on purpose. The merge check refuses the pull request that joins an item to a family it did not name, never the old template. Like Minecraft's tags. CR-14 is decided.
+- **The demo's stamp outlives the reset.** "Played the demo since" and its date live outside the save, so the reset of saves (the entry on saves) does not take the demo's title away (D3).
+- **The opening is walked on the clock.** The opening check walks every order of helping, with each starter's kit, on the game's clock from the starting hour, and refuses a road that waits on an hour window the start misses.
+
+**Closes:** the holes of the world and time of the sweep, and GRUNT's CR-10 and CR-14; CR-77 to CR-86 carry the building.
+**Superseded in part (10.10):** blood, a wound and a fallen body may show within a limit, visual only, and the aim is ESRB E10+ and PEGI 12 (the entry on menace with a limit). Sleep still skips the night in a shared world until stage 7, and from stage 7 nobody skips it (the entry on the game read as one line).
+**Superseded in part (10.10):** the market's drain runs on the valley's hour in a player's own world and on the server's hour in a shared world until stage 7 (the entry on the game read as one line); a packed house waits with houses (the entry on houses and plots paused).
+**Retry when:** players fall and repeat for gain, or players who played in a holiday's days miss its look. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ Which text wins, and the lines that lagged brought in line
+
+The question (10.10, the sweep): the documents disagreed in places, so a builder could follow a line the owner has since changed. The owner's word (10.10): close it by default.
+
+- **Which text wins.** Where they differ, this file, `docs/design/GAME_RULES.md` and the kernel review win over the spec (`docs/spec/product-spec-v4.6.html`). The spec stays as it is until its next version, v4.7, which comes with a list of what changed. Its lines that lag, numbered as of 10.10: no clock while away (158); satiety (78, 325, 389); every recipe dug (261); two starters (310, 385, 703); a season of a few weeks (286, 376); the average player (540); a limit on resources for the whole world (576, 704); a dedicated server at stage 2 (674, 701); the open content limit (838); gold for poll votes (845); D2, D4 and D5 open (849); a skill effect that shortens a wait; a bonus never lost (116).
+- **Brought in line in this change.** `docs/design/GAME_RULES.md`: the kernel rules are R1-R12; the skill row's miss and the stealth row's way out; the row on the difficulty curve; question 9 of the checklist and a new question 11; G39; G46. The kernel review: R6, R8 and verdict 3c; D6, decided in part on 9.10 by S4; the protection levels `safe`, `wild` and `contested`, as SETTLEMENT 3.9 names them; D2's line until P-5. `docs/design/SETTLEMENT.md`: 3.2 and 3.9. `docs/design/CRAFTING_AUDIT.md`: row 20, answered by `content/core/params.json` and S3. `docs/team/PLATFORM.md`: D5 has its formula, and the money fund stays apart. In this file: the supersede lines of the entries on hazards, on boards, on the real year, on the reference player and on gold entering a world, and the answer to the wood entry's shared tree.
+- **For the branch of the ten answers of 10.10, on its merge.** GRUNT's CR-40 still names road thieves under the hazard system (P-5), and P-5 still writes `hurt` with the answer used; both follow the entry on a hazard escaped.
+
+**Closes:** the drift between the documents found by the sweep; GRUNT's CR-87 carries the spec's next version.
+**Retry when:** a builder follows a lagging line again. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ Menace with a limit: blood, a wound and a fallen body may show, never for display, and the aim moves to PEGI 12
+
+The question (10.10, after the sweep): the sweep closed the spec's open content limit as menace without gore (the entry on the world and its clocks): no blood, no wound and no body, aimed at PEGI 7 and ESRB E10+. The owner's word (10.10): blood, wounds and bodies may show, with a limit. It is not censorship, only no abuse put on display, and it is visual: it does not touch the system or the game itself.
+
+- **What may show.** Blood, a wound and a fallen body, as part of how the world shows danger without a word or a number (the entry on difficulty, 9.10): a trail of blood where a hurt animal went, what a predator left at the edge of its woods, bones by a ruin, a predator drawn as it strikes.
+- **The limit.** Nothing lingers, nothing is shown close up, no gore is there for its own sake, and no suffering is played for show: no screen, camera or sound dwells on pain. Blood and a wound show small and brief, at the sprite's own size.
+- **A person never bleeds at the moment of harm.** A hazard that hits the player or a character of the valley shows the hit and the health it takes, never blood or a wound. A wound on a person shows only afterwards, as a bandage or a torn sleeve. A fallen person keeps the fall's look (crosses for eyes, a sinking into the ground), and nothing stays where they fell (G33). This is where PEGI puts the line between 12 and 16: at 12 there is no sight of blood or injuries during violence towards people, while an injury or a dead body may be seen if it is not too gory. Like Stardew Valley, whose ESRB rating counts small splashes of blood from defeated creatures and none from people.
+- **Visual only.** It changes no rule, number or state. What a hazard takes, the fall and its cost (G33), the warnings (G31) and the run back to a safe place (G34) stay as they are. The text still says the player fell, never that they died or were killed, because the player wakes again in town: "fell" is the true word for what happens, not a softer one.
+- **The aim moves to ESRB E10+ and PEGI 12.** Mild blood fits ESRB E10+. PEGI 7 allows only unrealistic violence that does no apparent harm, so blood moves the PEGI aim from 7 to 12. Checked against the account (the entry on the account's age, 9.10): 13, or a country's higher age of up to 16, sits above both ratings, so every account holder is inside the aim. Checked against the demo: the demo is the same valley with the same look, so the younger player it is for is one between the rating's age and the account's, 10 to 12 by the ESRB, 12 by PEGI, and up to 15 where a country asks 16. The words stay readable by a child of eight (G22), since plain words serve every reader. Like Stardew Valley, rated E10+ by the ESRB, with mild blood among its reasons, and 12 by PEGI: the label tells a parent the age, and the game does not ask for it.
+
+**Supersedes:** "Menace without gore" in the entry on the world and its clocks, and "the content is for all ages" in the entry on the account's age, which now holds for the words. G46, the review checklist's question 11, the pull request template's "for all ages" and the conduct line of `CONTRIBUTING.md` change with it; GRUNT's CR-83 carries the building.
+**Retry when:** a store's rating comes back above ESRB E10+ or PEGI 12, or players read a mark of blood as a promise of combat. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ The game read as one line: one safe place, one outing, one mist, a name for each thing and a clock for each time
+
+The question (10.10, after the sweep and the ten answers): the holes were closed one area at a time, so does the game now read as one clear line of human logic? The owner's word (10.10): walk it as a player, close the small holes by default, each from a game already discussed, and bring to the owner only a question of direction. The walk followed the player's road: the first ten minutes with each of the three starters, the first night and a fall, crafting and the trader, the market and the shop, a house and a plot, the shared world from stage 4, and the world players see at stage 7. At each step it asked four questions: can the player read the rule from the world, with no word or number for difficulty (the entry on difficulty, 9.10); do two rules meet as a bug or a contradiction; is each thing called by one name everywhere; and does each time say which clock it runs on. What the first ten minutes showed went to the opening's own branch. The rest is closed below, and no direction the owner set changes.
+
+- **One safe place.** A safe place is the town, any ground at danger level 0, and a camp whose fire burns; by day a camp's fire burns for nothing, and only the night costs wood (S2). "Safe place" and "safe area" name this one thing, and every rule that asks for one reads it: G31's countdown and warning, the end of an outing, the run of G34, sleep (in a town or at a burning camp), leaving the game at once (the entry on the shared world) and a place counted once brought home. Level 0 holds the opening's ground and the night ruins' entrance (the entry on that entrance, among the ten answers), so both are safe at every hour. In a safe place nothing hunts and no player harms another; what the player eats can still hurt (G30). P-5's `safe` flag is read from the level and the fire, never set by hand. An area's protection level is read from the level alone: `safe` at level 0, `wild` above it, and `contested` only for an area between players once combat opens; a camp's fire makes the camp safe and changes no area's level. "Towns, camps and houses are always safe" (S4) means that no player harms another there; from a hazard, a camp is safe while its fire burns. Like World of Warcraft, whose inns and capital cities let a player leave at once and whose zones are marked sanctuary or contested.
+- **One outing.** An outing runs from leaving a safe place to reaching one again, or to a fall. A fall takes that outing's finds, the quest steps taken on it and the places found on it, and nothing spent on it comes back (G33; the entry on the world and its clocks). Like Elite Dangerous, where a trip runs from station to station and what is not yet sold dies with the ship.
+- **One mist.** The kernel keeps the mist, area by area and hour by hour as the content sets it. The client draws what the kernel keeps, in the plain look and the rich one alike (the rich look only makes it breathe), and the hazards' `mist` window reads the same mist. It thickens with the danger level, and where the story draws it back as places are restored, it draws back for the hazards too. Inside it the hunting hazards act by day at the area's own rate (SETTLEMENT 3.5), so at level 0 the mist is only a look. At an expedition's last bell it walks the player out (P-6). Like Minecraft, where the light level the player sees is the rule that spawns monsters.
+- **Dusk, dark and dawn.** On the game hour, dusk is 19:00 to 20:00, when the valley's old lanterns glow (STORY.md S3); dark is 20:00 to 05:00, the kernel's night; dawn is 05:00. "Nightfall" is 20:00, "at night", "after dark" and "after 20:00" mean from 20:00 to 05:00, and "until dark" means until 20:00. Like Minecraft, whose night falls at the same tick every day.
+- **The ladder's clocks.** The ladder's minutes are minutes at the screen. Its Day 2 and its "overnight" are the valley's: the morning after the first night, slept or played through, opened by the morning toast (P-4). Away, the valley waits at the hour it was left (G28), so a return opens there, at night if it was left at night; only the real calendar moves meanwhile. The day summary (G16) is the natural place to stop. Like Stardew Valley, whose second day is the morning after the first night, however long the player was away.
+- **Sleep, stage by stage.** Until stage 7 every valley keeps its own hour, in the shared worlds of stages 4 to 6 too, while the shared market drains on the server's hour; sleeping in a town or at a burning camp at night moves that valley to 05:00. From stage 7, where players see each other, nobody skips the night: resting by a fire restores health over one game hour, leaving the game outside a safe place waits `logout_countdown_s`, and no hazard strikes during a minigame. Like Minecraft's beds, which skip the night only when every player in the world sleeps.
+- **Every time names its clock.** On the real calendar, by the server's clock: `build_hold_days`, `house_absent_days`, `notice_days`, `plot_signup_days` and `hold_max_days`; the 30 days of a closing; the 14 days in which a theft can be shown; a week without words; how long notes and logs are kept; a move between worlds once a content season; and the time of a building's last finished step, kept as a real date. In real seconds while connected: `logout_countdown_s`. In active play: `new_account_hold`. On the server's hour, a game hour of the same length that the server counts for a shared world while anyone in it plays: the shared market's drain until stage 7, where it becomes the world's one hour (the entries on prices and gold and on the shared world). On the game hour: the windows of hours, "once per night", a companion's next day, and the rest that the entry on the world and its clocks lists. Like Old School RuneScape, whose farming grows in real minutes, whose daily reset is at 00:00 UTC, and whose actions run in game ticks.
+- **One name for each side of trade.** Pell's stall has two sides, as its two tabs show: the shop sells at the shop's price (`shop_*`), and the trader buys at the trader's pay (`trader_*`, `k_*`). A player's shop is always called a player's shop. The market is a world's stock, which moves both prices; the market board is a town's list of the goods of players with no house. Like World of Warcraft, whose vendors buy and sell at their own prices while the auction house holds the players' listings.
+- **A player's shop before stage 7.** Until players see each other, a player's shop has only the forms it has while its owner is away, at the house or on the market board, whether or not its owner plays; the sign over the player comes with stage 7. Like Final Fantasy XIV, whose market board sells for players who are not there.
+- **One store, opened at a chest.** The one store (the entry on the shared world) opens at any of its chests: the opening's camp's, one in each town, and a house's. A tent has none. Like RuneScape's bank, one bank opened at any booth.
+- **One unit for limits.** In a shared world an account plays one character, so a limit written per player, per account or per character counts one and the same unit there. The limits on a person stay as written: one account per person in each world, and accounts found to be one person's count as one. Like Old School RuneScape, where an account is one character.
+- **One name for the player.** The name given in the opening is the name the world shows: sign-up offers it again, the filter reads it then, and it must be unique in the world joined, or the player picks another. In the demo it stays the player's own, seen by nobody else. Like Pokemon, where the name given at the start is the one the whole game uses.
+- **The opening's ground in a shared world.** It stays at level 0, as the town's edge, and so does the night ruins' entrance: no wood is burned and no tent is pitched on either, and every camp beyond them costs wood. This reads the camp entry's "every area outside a town is above level 0" (S2). Like Stardew Valley, where the town is safe and danger starts in the mines.
+- **Won plots and packed houses.** Every plot won, whether freed or opened by a clearing, takes its first step within `plot_signup_days` and then holds `build_hold_days` between steps, so a won plot has one rule whichever way it opened. A packed house is raised only on a plot its owner wins, as that plot's first step, and no step is redone. Like Final Fantasy XIV, whose lottery winner has a few days to claim the plot before it goes back to the next lottery.
+- **The world seen at stage 7.** A burning fire keeps the hunting hazards off anyone in its light, while the camp's bed, its workshop and the store open for its owner alone: another player may stand in a camp's light but never uses the camp (SETTLEMENT 3.4). Seeing a player shows that they are there; no list or sign tells anyone who is online, except between mutual friends (the entry on the shared world). Like Minecraft, where light stops monsters from spawning for every player near it.
+- **The lantern is a sign, not a shield.** Leaving a safe place after dark, or dark arriving outside one, lights the player's lantern with the one warning box (G31). The lantern says the night has begun around the player; its light keeps nothing off, and only a safe place does (G34 as the ten answers write it: no gear answers a hazard). The night ruins' "lantern kept lit" (P-6) is light to see by, never a shield. Like Terraria, where a torch in the hand lights the way and keeps nothing off, while a town with its people keeps the spawns down.
+- **Open with the owner.** Whether the first tier known from the start (CR-61, among the ten answers) covers the recipes the first quests give, the herb stew among them, is asked through the opening's branch; no default is taken here.
+- **Brought in line in this change.** `docs/design/GAME_RULES.md`: the ladder's clocks and its Day 2 row; G30's safe places; G31's lantern; G33's outing. `docs/design/SETTLEMENT.md`: section 2 (what is safe); 3.1 (the clock of every count of days); 3.2 (packing); 3.3 (a won plot's first step); 3.4 (the store's chests, the opening's ground and the night ruins' entrance); 3.5 (the hazards' minute); 3.8 (the name); 3.9 (safe from players, the hunters' board, the protection levels); S1b's answer. The kernel review: 7.2's items 2 and 4, and D6 (no upkeep). GRUNT: P-4's goal, CR-48 (a player's shop) and CR-59 (the clocks). In this file: the supersede lines of the entries on hazards, on the account, on absence, on the camp, on the competition for places, on drawn plots, on the real year, on a player's shop, on the shared world and on the world and its clocks.
+- **For the branch of the ten answers of 10.10, on its merge.** P-5's `safe` flag reads the level and the fire (the town and all ground at level 0, the night ruins' entrance with it, and a camp while its fire burns), not "every camp". P-5's "every quest then in progress goes back to its first step", its test's "restarts the quests in progress" and its e2e's "the quest at step one" follow the entry on the world and its clocks: each quest goes back to the step it stood at when the outing began. P-6's "the lantern kept lit" is light to see by (above). P-5's "bag goes back to the outing's bag" follows the same entry: each item keeps the smaller of its count when the outing began and at the fall, so a fall gains nothing. The branch's G34 names the safe places as the town or a camp whose fire burns; it reads a safe place (G30). The two lines named in the entry on which text wins still stand.
+
+**Closes:** the holes of the walk, with "safe place" and "safe area" as one thing; GRUNT's CR-88 to CR-93 carry the building.
+**Superseded in part (10.10):** by the entry on the five holes of the one line. G31's countdown runs to nightfall or the mist's coming, and the lantern lights for the mist too. From stage 7 another player's fire keeps the hunting hazards off only a guest with a deal, and its light marks how far the camp reaches. Won plots and packed houses are paused, the store opens at the opening camp's chest and one in each town, and a player's shop sells on the market board. CR-61 is answered: a recipe a quest gives stays that quest's reward. The precedents read more exactly: Minecraft's light stops most monsters from spawning; its beds skip the night, by default, only when every player sleeps; Old School RuneScape keeps each character's progress and limits on its own; and Stardew Valley's town is safe while, on the standard farm, danger starts in the mines.
+**Retry when:** a player reads a rule the other way from what the world shows, or a builder finds two lines that still disagree. Model: claude-opus-5-5.
 
 ## 2026-10-10 ✅ Parallel work is anchored by rules, a stream map and a computed picture, not by a status page
 
@@ -486,3 +1143,20 @@ The owner answered nine open questions on 10.10 in the afternoon, one at a time,
 
 Also noted by the owner: the skill descriptions at the start are not as simple as in other games, and raising a skill or a level does not weigh as much as it should. This goes to the opening's stream as a finding.
 **Retry when:** players read the camp price as a toll that blocks play (then a free first night), the plot odds read as unfair, or the 3D version's cost outruns the community's interest. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ The five holes of the one line closed by the owner's answers, houses paused, and the check finished
+
+The question (10.10): the entry on the game read as one line left five small holes open, and its check stopped after one of its three readers. The owner answered the holes in the afternoon (the owner's answers of 10.10 afternoon, pull request #57), settled one more point of the camp in the evening, and paused player houses and plots (the entry on houses and plots paused, pull request #61). This entry writes the answers into the rules, finishes the check, and brings the text in line. It closes the holes as the owner answered them; no default is taken where an answer exists.
+
+- **Warnings (the owner's answer 3).** The countdown at the screen's edge runs to nightfall or to the mist's coming into the player's area, whichever is first, as the kernel keeps the mist (one mist). Entering the mist, the mist arriving, leaving a safe place after dark, or dark arriving outside one lights the lantern with the one warning box, at most once per night. A burning camp warns its owner and its guests before its fire goes out (SETTLEMENT 3.4). G31 says so; GRUNT's CR-94 carries the building.
+- **When a valley's day ends (the owner's answer 4).** When the player sleeps, or at 05:00 of the game hour when the night is played through. The day-ended event and the day summary (G16, P-4) come then, before the morning toast, and the summary waits until the player stands in a safe place. From stage 7, where nobody skips the night, every day ends at 05:00 of the world's hour. Like Stardew Valley, whose day ends in bed or by passing out at 2 AM. G16 and P-4 say so; CR-96 carries it.
+- **Another player's lit camp (the owner's answer 5, and the evening's word).** Any lit camp is safe, and a guest pays: the camp's owner sets the price of a stay, even a simple one, and a stay is a deal the owner approves. Asked in the evening whether a fire's light keeps the hunting hazards off anyone in it, the owner chose: the safety itself is what a guest buys. Without a deal another player's camp is no safe place, at any stage, and the fire's light only marks how far the camp reaches. A camp burns only while its owner keeps the fire (SETTLEMENT 3.4), so the one who approves is there. A price in gold moves through the ledger with the reason `rent`, already reserved (a reading). This reverses "the world seen at stage 7" in the entry on the game read as one line, and SETTLEMENT 3.4's reading that no other player uses a camp.
+- **Rest (follows from the answer 5).** Rest restores health in a town, at one's own burning camp, and at another's as a guest with a deal, and nowhere else: before stage 7 by a night's sleep (G32), from stage 7 over one game hour. How far a camp reaches is a parameter, `fire_light_tiles`, set with the tent (CR-25). G32 and SETTLEMENT 3.4 say so; CR-95 carries the deal, the rest and the reach.
+- **Plot draws (the owner's answer 6, then paused).** The draw weighted toward newcomers is paused with houses and plots the same day (pull request #61). Asked what happens when a player who holds a house wins a plot, the owner answered that houses stay a question mark until the shared world is in the field, and the core does not need them. So who may sign up and what a won plot is before its first step close as paused, and the answer 6 is the starting point if houses come back.
+- **Houses and plots paused, in this branch's text.** SETTLEMENT carries a paused note at its head and on 3.2, 3.3, S1, S1b and S5; what a house gives (3.4) is paused; the one store opens at the opening camp's chest and one in each town; a player's shop sells on the town's market board; the kernel review's plot refund is paused with plots. GRUNT's CR-71 and CR-92 keep their rows with the plots marked paused, and CR-48, CR-58 and CR-91 lose the house. G28's written exception for plots and houses changes on the branch of the ten answers, which edits G28. The town's buildings with one job each are #61's to write.
+- **CR-61 answered (the owner's answer 7).** A recipe a quest gives stays that quest's reward: the tier-1 recipes known from the start do not include it, the herb stew and the herb tea of the first helps among them. The open question in the entry on the game read as one line is closed.
+- **Every count of days or weeks names its clock.** The ones the check found unnamed run on the real calendar by the server's clock: the creators' pool's account-day and week, the two weeks of a first block, the hunters' honor once a day, and the daily balance of the books. A day starts at 00:00 UTC, as the daily caps do, and a week at 00:00 UTC on Wednesday. Like RuneScape, whose daily reset is at 00:00 UTC and whose weekly reset is on Wednesday.
+- **The check, finished.** Two readers walked the entry again: one for every definition against the living text, one for its precedents, the house rules and the references. Fixed here: the camp's fire matters by day too, since a burning camp is safe from the mist (SETTLEMENT 3.4); R8 in the kernel review calls the paying side the trader, as the one line names it; the world's hour stops for a window only until stage 7; the shared market drains on the server's hour until stage 7, while a player's own market drains on its valley's hour; four precedents read more exactly. Refuted on reading: the supersede lines placed after "**Closes:**" (that is the house order), a game named without a discussion elsewhere (every one is discussed), and CR-61's missing row (it lands with the ten answers). Routed, with nothing edited in another lane's files: G34's and P-5's gear and lantern, and CRAFTING_AUDIT's summary of G34, follow the ten answers' G34 on that branch; chapter 1's mist drawn by the client alone, and the receding mist's circle always clear around the character, against one mist (the story lane); STORY.md's "shared worlds (stage 2)", which are stage 4.
+
+**Closes:** the five holes left open by the entry on the game read as one line, and its check; GRUNT's CR-94 to CR-96 carry the building.
+**Retry when:** a guest's price reads as a toll that blocks a run to safety, a warning comes so often that players stop reading it, or houses come back. Model: claude-opus-5-5.
