@@ -829,7 +829,7 @@ The question (9.10): the spec brings light presence with the market stage: the c
 - A player keeps a few notes standing at once (`notes_max`), and a note fades after a while unless players keep finding it helpful, so the world is not littered.
 - Chat, if it comes (the spec's live presence, stage 7), is words in a bubble over the speaker's head, seen by the players nearby for a few seconds: public and local. There are no private messages and no whispers; whatever a player says, others near could see. The game's own text stays for all ages (G22), and the players' words keep to the same.
 - A note or a line of chat is kept on the server only as long as a report may need it; the privacy text of stage 2a says how long.
-- Open, small: in which languages a note may be written, since the filter must read them; whether a group on a quest gets a channel of its own or talks in bubbles like everyone.
+- The languages of notes were answered next (see the entry on the languages of notes). Still open, small: whether a group on a quest gets a channel of its own or talks in bubbles like everyone.
 
 **Closes:** notes and chat; GRUNT's open ends carry the building as CR-47.
 **Retry when:** the filter lets through what it should stop, or stops what players need to say. Model: claude-opus-5-5.
@@ -874,3 +874,15 @@ The question (10.10, after the entry on a player's shop): should a sale in a pla
 
 **Closes:** the sale fee; GRUNT's open ends carry the building as CR-50.
 **Retry when:** sellers leave the shops because the fee eats their margin, or gold still piles up with the fee at its top bound. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ Notes and chat are written only in the languages the game is offered in
+
+The question (10.10, after the entry on players' words): in which languages may a note be written, since the filter must read every one? The recommendation: only in the languages the game itself is offered in, English today, and each player sees the notes in their own language. The owner's word (10.10): yes.
+
+- A note or a line of chat is accepted only in a language the game is offered in. Today that is English.
+- A new language of the game brings its filter with it, and only then may players write in it.
+- Each player sees the notes and words written in the language they play in, so the world does not fill with text they cannot read.
+- Why: a note in a language the filter cannot read is a way around it, for rude words and personal details alike. A filtering service for every language costs money and reads small languages poorly.
+
+**Closes:** the languages of notes; GRUNT's CR-47 now carries it.
+**Retry when:** the game is offered in a second language, or players ask to write in one it is not offered in. Model: claude-opus-5-5.
