@@ -33,6 +33,7 @@ import {
   fitWorn,
   hourOf,
   isNight,
+  nodeVerb,
   powerCap,
   professionLevel,
   satietyAt,
@@ -287,6 +288,13 @@ function start(ctx: Ctx, starterId: string, name: string, look: number): void {
   s.player.recipes = Object.keys(b.recipes)
     .filter((id) => b.recipes[id]!.known === 'start')
     .sort();
+  if (starter.wake) s.player.at = [starter.wake.x, starter.wake.y];
+  for (const stack of starter.kit ?? []) addItem(ctx, stack.item, stack.qty);
+  // a kit piece worn for its work goes on from the first morning
+  for (const stack of starter.kit ?? []) {
+    const w = b.items[stack.item]?.wear;
+    if (w && w.look !== true && (s.player.bag[stack.item] ?? 0) > 0) wear(ctx, stack.item, undefined);
+  }
 }
 
 function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
@@ -301,7 +309,8 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   if (r.hours && !inHours(hourOf(b, ctx.tick), r.hours)) {
     refuse(`It can only be gathered between ${r.hours[0]}:00 and ${r.hours[1]}:00.`);
   }
-  if (verbLevel(b, s, 'gather') < r.level) refuse(`Needs ${b.professions[b.verbs.gather]?.name ?? 'gathering'} level ${r.level}.`);
+  const verb = nodeVerb(r);
+  if (verbLevel(b, s, verb) < r.level) refuse(`Needs ${b.professions[b.verbs[verb]]?.name ?? 'gathering'} level ${r.level}.`);
   const tool = r.tool ? requireTool(ctx, r.tool) : undefined;
   if (bagCapacity(b, s) - bagUsed(s) <= 0) refuse('Your bag is full.');
 
@@ -317,7 +326,7 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   node.readyAt = ctx.tick + ms + r.respawn_ms;
   s.nodes[nodeId] = node;
   busy(ctx, 'gather', ms);
-  gainXp(ctx, 'gather', grade === 4 ? r.active_ms * JACKPOT_XP : r.active_ms);
+  gainXp(ctx, verb, grade === 4 ? r.active_ms * JACKPOT_XP : r.active_ms);
   if (grade === 4) ctx.events.push({ e: 'jackpot', verb: 'gather' });
 }
 
@@ -326,22 +335,26 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
   const inst = b.instances[spotId];
   if (!inst || inst.kind !== 'treasure') refuse('There is nothing to dig here.');
   const d = b.treasures[inst.source]!;
+  if (d.starter !== undefined && d.starter !== s.player.starter) refuse('There is nothing to dig here.');
   checkAt(ctx, at, { x: inst.x, y: inst.y, w: 1, h: 1 });
   checkGrade(grade);
   const node = s.nodes[spotId] ?? { readyAt: 0, draws: 0 };
+  if (!spotOpen(b, s, spotId)) refuse('There is nothing more here.');
   if (ctx.tick < node.readyAt) refuse('This spot was dug up recently.');
   if (verbLevel(b, s, 'dig') < d.level) refuse(`Needs ${b.professions[b.verbs.dig]?.name ?? 'digging'} level ${d.level}.`);
-  const tool = requireTool(ctx, d.tool);
+  // a find picked up by hand asks for no tool and wears none
+  const tool = d.tool ? requireTool(ctx, d.tool) : undefined;
   if (bagCapacity(b, s) - bagUsed(s) <= 0) refuse('Your bag is full.');
 
-  const ms = duration(ctx, d.active_ms, speedPermille(ctx, 150 * (toolTier(ctx, tool) - 1) + 10 * effectValue(b, s, 'dig_speed_pct')));
+  const ms = duration(ctx, d.active_ms, speedPermille(ctx, (tool ? 150 * (toolTier(ctx, tool) - 1) : 0) + 10 * effectValue(b, s, 'dig_speed_pct')));
   // luck and the rare-find technique raise only rare and legendary chances, inside the power cap
   const luck = rareFindPermille(b, s);
   const roll = drawBasisPoints(s.seed, spotId, node.draws);
   node.draws += 1;
   let edge = 0;
-  let found: string | undefined;
-  for (const f of d.finds) {
+  // a start's own spot always gives its one find, whatever the timing: no start ends at a wall
+  let found: string | undefined = d.starter !== undefined ? d.finds[0]?.item : undefined;
+  for (const f of found ? [] : d.finds) {
     let bp = mulDiv(f.chance_pct * 100, GRADE_PCT[grade], 100);
     if (rarityRank(b.items[f.item]?.rarity ?? 'common') >= 2) bp = mulDiv(bp, luck, 1000);
     edge = Math.min(10_000, edge + bp);
@@ -352,7 +365,7 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
   }
   if (found) addItem(ctx, found, 1);
   else ctx.events.push({ e: 'nothing', verb: 'dig' });
-  wearTool(ctx, tool);
+  if (tool) wearTool(ctx, tool);
   node.readyAt = ctx.tick + ms + d.respawn_ms;
   s.nodes[spotId] = node;
   busy(ctx, 'dig', ms);
@@ -541,7 +554,7 @@ function build(ctx: Ctx, campId: string, at: Tile): void {
 function accept(ctx: Ctx, questId: string, at: Tile): void {
   const { b, s } = ctx;
   const q = b.quests[questId];
-  if (!q?.giver) refuse('Nobody offers that task.');
+  if (!q?.giver || !offeredTo(q, s)) refuse('Nobody offers that task.');
   if (s.player.quests[questId]) refuse('You already took that task.');
   if (!(q.requires ?? []).every((r) => s.player.quests[r] === 'done')) refuse('Not yet.');
   const tile = npcTile(b, q.giver);
@@ -594,7 +607,8 @@ function turnIn(ctx: Ctx, questId: string, at: Tile | undefined, explicit: boole
     if (!tile || !at) refuse('Bring it to whoever asked.');
     checkAt(ctx, at, { x: tile[0], y: tile[1], w: 1, h: 1 });
   }
-  for (const st of q.steps) {
+  // a task nobody gave is handed to nobody: what it asked for stays in the bag
+  for (const st of q.giver ? q.steps : []) {
     if (st.kind === 'bring') removeItem(ctx, st.item, st.qty);
     if (st.kind === 'find') removeItem(ctx, st.item, 1);
   }
@@ -611,6 +625,24 @@ function turnIn(ctx: Ctx, questId: string, at: Tile | undefined, explicit: boole
   ctx.events.push({ e: 'quest', quest: questId, state: 'done' });
 }
 
+/** A quest that names a starter is offered to a character of that starter only. */
+export function offeredTo(q: { starter?: string }, s: State): boolean {
+  return q.starter === undefined || q.starter === s.player.starter;
+}
+
+/**
+ * Whether this character can dig the spot at all: a start's own spot is there
+ * only for its starter, and only until it gave its find. A spot that grows
+ * back is open again later; the clock is checked apart.
+ */
+export function spotOpen(bundle: Bundle, state: State, spotId: string): boolean {
+  const inst = bundle.instances[spotId];
+  const d = inst?.kind === 'treasure' ? bundle.treasures[inst.source] : undefined;
+  if (!d) return false;
+  if (d.starter === undefined) return true;
+  return d.starter === state.player.starter && (state.nodes[spotId]?.draws ?? 0) === 0;
+}
+
 /** Quests with no giver start by themselves and finish by themselves. */
 function autoQuests(ctx: Ctx): void {
   const { b, s } = ctx;
@@ -619,7 +651,7 @@ function autoQuests(ctx: Ctx): void {
     let moved = false;
     for (const id of Object.keys(b.quests).sort()) {
       const q = b.quests[id]!;
-      if (q.giver) continue;
+      if (q.giver || !offeredTo(q, s)) continue;
       const state = s.player.quests[id];
       if (!state && (q.requires ?? []).every((r) => s.player.quests[r] === 'done')) {
         s.player.quests[id] = 'active';
@@ -801,7 +833,7 @@ function requireTool(ctx: Ctx, kind: string): string {
     if (!tool || tool.kind !== kind || (s.player.bag[id] ?? 0) < 1) continue;
     if (!best || tool.tier > toolTier(ctx, best)) best = id;
   }
-  if (!best) refuse(`You need a ${kind} for this.`);
+  if (!best) refuse(`You need ${/^[aeiou]/.test(kind) ? 'an' : 'a'} ${kind} for this.`);
   return best;
 }
 

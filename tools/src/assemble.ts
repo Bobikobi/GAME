@@ -20,9 +20,9 @@ import {
   hashText,
   layoutInstances,
 } from '@game/kernel';
-import { BASE_CLASSES, CORE_ONLY_TYPES, type CreatorProfile, type ParamsBody, type Template } from '@game/schema';
+import { BASE_CLASSES, CORE_ONLY_TYPES, type CreatorProfile, type ParamsBody, type Template, type WhenDef } from '@game/schema';
 import { toRepoPath, type Issue, type Loaded } from './load';
-import { findableItems } from './play';
+import { findableItems, startFinds } from './play';
 
 export interface Assembled {
   bundle: Bundle | undefined;
@@ -215,7 +215,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   const r = records as unknown as Pick<Bundle, RecordKey>;
   // one profession per gathering verb; the one craft verb has a profession per station family
   // (DECISIONS.md, 2026-10-09), and the check reports a station worked twice
-  const verbs = { gather: '', dig: '', craft: '' };
+  const verbs = { gather: '', fell: '', dig: '', craft: '' };
   const stations: Record<string, string> = {};
   const crafters: string[] = [];
   for (const id of Object.keys(r.professions).sort()) {
@@ -366,12 +366,15 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     item(id, 'node.output', res.output);
     sprite(id, 'node.sprite', res.sprite);
     if (res.sprite_empty) sprite(id, 'node.sprite_empty', res.sprite_empty);
+    res.growth?.forEach((g, i) => sprite(id, `node.growth.${i}`, g));
+    if (res.growth && !res.sprite_empty) err(id, 'node.growth', 'growth stages come after "sprite_empty": name the stump or the bare ground first');
     place(id, 'resource', res.place.slot);
   }
   for (const [id, t] of Object.entries(b.treasures)) {
     t.finds.forEach((f, i) => item(id, `dig.finds.${i}.item`, f.item));
     const chance = t.finds.reduce((n, f) => n + f.chance_pct, 0);
     if (chance > 100) err(id, 'dig.finds', `chances add up to ${chance}%, at most 100%`);
+    if (t.starter !== undefined && !b.starters[t.starter]) err(id, 'dig.starter', `no starter "${t.starter}"`);
     place(id, 'treasure', t.place.slot);
   }
   for (const [id, c] of Object.entries(b.recipes)) {
@@ -379,16 +382,41 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     c.outputs.forEach((s, i) => item(id, `recipe.outputs.${i}.item`, s.item));
     if (c.profession && !b.professions[c.profession]) err(id, 'recipe.profession', `no profession "${c.profession}"`);
   }
+  // a line that waits for the world names only things that exist (GRUNT S-1)
+  const when = (owner: string, where: string, w: WhenDef) => {
+    const named: [keyof WhenDef, string, (ref: string) => boolean][] = [
+      ['done', 'quest', (r) => !!b.quests[r]],
+      ['active', 'quest', (r) => !!b.quests[r]],
+      ['not_done', 'quest', (r) => !!b.quests[r]],
+      ['restored', 'restore', (r) => !!b.restores[r]],
+      ['built', 'camp part', (r) => !!b.camps[r]],
+      ['has', 'item', (r) => !!b.items[r]],
+      ['visited', 'slot', (r) => b.map.slots.some((sl) => sl.id === r)],
+    ];
+    for (const [key, kind, exists] of named) {
+      const refs = w[key];
+      if (!Array.isArray(refs)) continue;
+      refs.forEach((r, i) => {
+        if (!exists(r)) err(owner, `${where}.${key}.${i}`, `no ${kind} "${r}"`);
+      });
+    }
+  };
   for (const [id, n] of Object.entries(b.npcs)) {
     sprite(id, 'npc.sprite', n.sprite);
     place(id, 'npc', n.place.slot);
     if (n.shop && !b.shops[n.shop]) err(id, 'npc.shop', `no shop "${n.shop}"`);
+    (n.remarks ?? []).forEach((r, i) => when(id, `npc.remarks.${i}.when`, r.when));
+    (n.topics ?? []).forEach((t, i) => {
+      if (t.when) when(id, `npc.topics.${i}.when`, t.when);
+    });
   }
   for (const [id, s] of Object.entries(b.shops)) s.sells.forEach((o, i) => item(id, `shop.sells.${i}.item`, o.item));
   const findable = findableItems(b);
   const propIds = new Set(b.map.props.flatMap((p) => (p.id === undefined ? [] : [p.id])));
   for (const [id, q] of Object.entries(b.quests)) {
     if (q.giver && !b.npcs[q.giver]) err(id, 'quest.giver', `no npc "${q.giver}"`);
+    if (q.starter !== undefined && !b.starters[q.starter]) err(id, 'quest.starter', `no starter "${q.starter}"`);
+    const gifts = q.starter === undefined ? new Set<string>() : startFinds(b, q.starter);
     (q.requires ?? []).forEach((r, i) => {
       if (!b.quests[r]) err(id, `quest.requires.${i}`, `no quest "${r}"`);
     });
@@ -401,7 +429,10 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
       if (st.kind === 'visit' && !b.map.slots.some((s) => s.id === st.slot)) err(id, w, `no slot "${st.slot}"`);
       if (st.kind === 'find') {
         item(id, w, st.item);
-        if (b.items[st.item] && !findable.has(st.item)) err(id, w, `"${st.item}" is sold, made or grows in more than one place: a find must be found, dug up or picked in one timed place`);
+        // a start's own first task may find the gift of its own spot
+        if (b.items[st.item] && !findable.has(st.item) && !gifts.has(st.item)) {
+          err(id, w, `"${st.item}" is sold, made or grows in more than one place: a find must be found, dug up or picked in one timed place`);
+        }
       }
       if (st.kind === 'riddle') {
         st.props.forEach((p, j) => {
@@ -433,6 +464,7 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     sprite(id, 'starter.sprite', b.starters[id]!.sprite);
     const alt = b.starters[id]!.sprite_alt;
     if (alt) sprite(id, 'starter.sprite_alt', alt);
+    b.starters[id]!.kit?.forEach((k, i) => item(id, `starter.kit.${i}.item`, k.item));
     if (total !== STARTER_POINTS) err(id, 'starter.attributes', `attributes add up to ${total}; every starter has exactly ${STARTER_POINTS}`);
   }
   for (const [slotId, owners] of Object.entries(slotFill)) {

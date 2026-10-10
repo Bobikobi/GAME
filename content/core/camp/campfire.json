@@ -9,8 +9,8 @@
     "slot": "fire",
     "inputs": [
       {
-        "item": "core/branch",
-        "qty": 3
+        "item": "core/log",
+        "qty": 2
       }
     ],
     "active_ms": 3000,

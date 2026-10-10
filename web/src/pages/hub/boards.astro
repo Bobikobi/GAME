@@ -1,0 +1,179 @@
+---
+// The boards (docs/team/GRUNT.md, item 11): the builders and the reviewers, with the weights they were computed
+// with. Time spent is never published; the players board waits for accounts.
+import Site from '../../layouts/Site.astro';
+import '../../styles/hub.css';
+import '../../styles/signature.css';
+import { builders, reviewers, weights } from '../../data/boards';
+import { repoFile } from '../../data/site';
+---
+
+<Site
+  title="Boards - Openfold"
+  description="Who builds the valley: every builder's points, records and commits, and the reviewers, with the weights the points are computed with."
+  section="boards"
+>
+  <div class="hub boards">
+    <header class="wrap hub-head">
+      <p class="kicker">Developer area</p>
+      <h1>Boards</h1>
+      <p class="lead">Points come from the repository's history: the records a builder added and the commits that were merged.</p>
+    </header>
+
+    <section class="wrap sect" aria-labelledby="builders-h">
+      <h2 id="builders-h">Builders</h2>
+      <table class="board-table">
+        <thead>
+          <tr>
+            <th scope="col"><span class="vh">Rank</span></th>
+            <th scope="col">Builder</th>
+            <th scope="col" class="num">Points</th>
+            <th scope="col" class="num">Records</th>
+            <th scope="col" class="num">Commits</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            builders.map((b, i) => (
+              <tr>
+                <td class="rank">{i + 1}</td>
+                <td>
+                  <div class="builder">
+                    {b.signature && (
+                      <span class={`signature sig-${b.signature.style}`}>
+                        {b.signature.glyph && b.signature.glyph !== 'none' && <i class={`glyph g-${b.signature.glyph}`} aria-hidden="true" />}
+                        {b.signature.text}
+                      </span>
+                    )}
+                    <a class="go handle" href={b.url}>
+                      {b.handle}
+                    </a>
+                  </div>
+                </td>
+                <td class="num pts">{b.points}</td>
+                <td class="num">{b.records}</td>
+                <td class="num">{b.commits}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </section>
+
+    <section class="wrap sect" aria-labelledby="reviewers-h">
+      <h2 id="reviewers-h">Reviewers</h2>
+      {
+        reviewers.length ? (
+          <table class="board-table">
+            <thead>
+              <tr>
+                <th scope="col">
+                  <span class="vh">Rank</span>
+                </th>
+                <th scope="col">Reviewer</th>
+                <th scope="col" class="num">Approvals</th>
+                <th scope="col" class="num">Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reviewers.map((r, i) => (
+                <tr>
+                  <td class="rank">{i + 1}</td>
+                  <td>
+                    <a class="go handle" href={r.url}>
+                      {r.handle}
+                    </a>
+                  </td>
+                  <td class="num">{r.approvals}</td>
+                  <td class="num pts">{r.points}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p class="empty">Approvals are counted from GitHub when the site's data build runs; until then this board is empty.</p>
+        )
+      }
+    </section>
+
+    <section class="wrap sect" aria-labelledby="how-h">
+      <h2 id="how-h">How points are counted</h2>
+      <p class="formula big">
+        points = {weights.per_record} x records + {weights.per_commit} x commits; reviewer points = {weights.per_approval} x approvals
+      </p>
+      <p class="formula">
+        The weights are set in <a class="go" href={repoFile('.github/points.json')}>.github/points.json</a>.
+      </p>
+    </section>
+
+    <section class="wrap sect" aria-labelledby="players-h">
+      <h2 id="players-h">Players</h2>
+      <p class="empty">The players board opens with accounts.</p>
+    </section>
+  </div>
+</Site>
+
+<style>
+  .board-table {
+    width: 100%;
+    margin-top: var(--s-2);
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+  .board-table th {
+    padding: var(--s-2) var(--s-2) var(--s-2) 0;
+    border-bottom: var(--px) solid var(--ink);
+    color: var(--grey);
+    font-size: var(--text-s);
+    font-weight: 700;
+    text-align: left;
+  }
+  .board-table td {
+    padding: var(--s-3) var(--s-2) var(--s-3) 0;
+    border-bottom: var(--px) solid var(--paper2);
+    vertical-align: middle;
+  }
+  .board-table .num {
+    text-align: right;
+  }
+  .board-table th:last-child,
+  .board-table td:last-child {
+    padding-right: 0;
+  }
+  .board-table .rank {
+    width: 32px;
+    font-weight: 700;
+    color: var(--grey);
+  }
+  .board-table tbody tr:first-child .rank {
+    color: var(--ink);
+  }
+  .builder {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-1) var(--s-3);
+  }
+  .handle {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-family: var(--font-display);
+    font-weight: var(--w-display2);
+    font-size: 20px;
+  }
+  .pts {
+    font-family: var(--font-display);
+    font-weight: var(--w-display);
+    font-size: 20px;
+  }
+  .empty {
+    margin-top: var(--s-3);
+    color: var(--ink2);
+  }
+  .formula.big {
+    margin-top: var(--s-3);
+    color: var(--ink);
+    font-size: var(--text-m);
+  }
+</style>

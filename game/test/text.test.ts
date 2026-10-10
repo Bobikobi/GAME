@@ -8,6 +8,7 @@ import {
   hudUnlocks,
   itemBenefit,
   journalGroups,
+  nodeAction,
   sellable,
   stationGate,
   stationText,
@@ -41,6 +42,20 @@ describe('tool benefits', () => {
     expect(itemBenefit(bundle, 'core/fine-basket')).toBe('Tier 3 basket · gathers forest mushrooms & sun herbs & wild herbs · lasts · +30% gathering speed');
     expect(itemBenefit(bundle, 'core/stone-trowel')).toBe('Tier 3 trowel · digs deep ruins & gate rubble & under the hill lantern · lasts · +30% gathering speed');
     expect(itemBenefit(bundle, 'core/flint-trowel')).toContain(' · 80 uses · ');
+  });
+});
+
+describe('what a node asks of the player', () => {
+  test('a tree is felled and everything else is gathered', () => {
+    expect(nodeAction(bundle, bundle.resources['core/oak-trees']!)).toBe('Fell tree');
+    for (const r of Object.values(bundle.resources).filter((x) => x.tool !== 'axe')) {
+      expect(nodeAction(bundle, r), r.id).toMatch(/^Gather /);
+    }
+    expect(nodeAction(bundle, bundle.resources['core/berry-bushes']!)).toBe('Gather Redberry');
+  });
+
+  test('the axe says it fells, and what', () => {
+    expect(itemBenefit(bundle, 'core/axe')).toBe('Tier 1 axe · fells oak trees · 50 uses');
   });
 });
 
