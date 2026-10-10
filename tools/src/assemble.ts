@@ -22,7 +22,7 @@ import {
 } from '@game/kernel';
 import { BASE_CLASSES, CORE_ONLY_TYPES, type CreatorProfile, type ParamsBody, type Template, type WhenDef } from '@game/schema';
 import { toRepoPath, type Issue, type Loaded } from './load';
-import { findableItems } from './play';
+import { findableItems, startFinds } from './play';
 
 export interface Assembled {
   bundle: Bundle | undefined;
@@ -373,6 +373,7 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     t.finds.forEach((f, i) => item(id, `dig.finds.${i}.item`, f.item));
     const chance = t.finds.reduce((n, f) => n + f.chance_pct, 0);
     if (chance > 100) err(id, 'dig.finds', `chances add up to ${chance}%, at most 100%`);
+    if (t.starter !== undefined && !b.starters[t.starter]) err(id, 'dig.starter', `no starter "${t.starter}"`);
     place(id, 'treasure', t.place.slot);
   }
   for (const [id, c] of Object.entries(b.recipes)) {
@@ -413,6 +414,8 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
   const propIds = new Set(b.map.props.flatMap((p) => (p.id === undefined ? [] : [p.id])));
   for (const [id, q] of Object.entries(b.quests)) {
     if (q.giver && !b.npcs[q.giver]) err(id, 'quest.giver', `no npc "${q.giver}"`);
+    if (q.starter !== undefined && !b.starters[q.starter]) err(id, 'quest.starter', `no starter "${q.starter}"`);
+    const gifts = q.starter === undefined ? new Set<string>() : startFinds(b, q.starter);
     (q.requires ?? []).forEach((r, i) => {
       if (!b.quests[r]) err(id, `quest.requires.${i}`, `no quest "${r}"`);
     });
@@ -425,7 +428,10 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
       if (st.kind === 'visit' && !b.map.slots.some((s) => s.id === st.slot)) err(id, w, `no slot "${st.slot}"`);
       if (st.kind === 'find') {
         item(id, w, st.item);
-        if (b.items[st.item] && !findable.has(st.item)) err(id, w, `"${st.item}" is sold, made or grows in more than one place: a find must be found, dug up or picked in one timed place`);
+        // a start's own first task may find the gift of its own spot
+        if (b.items[st.item] && !findable.has(st.item) && !gifts.has(st.item)) {
+          err(id, w, `"${st.item}" is sold, made or grows in more than one place: a find must be found, dug up or picked in one timed place`);
+        }
       }
       if (st.kind === 'riddle') {
         st.props.forEach((p, j) => {

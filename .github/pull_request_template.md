@@ -16,7 +16,7 @@
 An extension merges with three approvals and a green check. Before you approve, confirm each point:
 
 - [ ] **It plays.** I opened the preview, found it, and it does what the description says.
-- [ ] **It fits.** Names, text and art suit the valley: cosy, for all ages, handheld-era pixel art.
+- [ ] **It fits.** Names, text and art suit the valley: cosy, plain words for every age, menace within its limit (GAME_RULES.md G22 and G46), handheld-era pixel art.
 - [ ] **It is fair.** Nothing is much better than what exists for the same effort, and the rarity feels right.
 - [ ] **It is clean.** No copied art or text, and no ads, links or personal data in the content.
 - [ ] **It is credited.** The creator and every AI tool used are named.

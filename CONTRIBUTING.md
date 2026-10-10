@@ -12,7 +12,7 @@ There are two ways to help: add something to the valley (content), or improve th
 ### How a pull request is merged
 
 - The check is green, and the opening still plays in Chrome (CI does this too).
-- Quests, camps, inscriptions and dialogue follow [the rules of play](docs/design/GAME_RULES.md): `pnpm check` prints a `!` line for each rule it can test, and a reviewer answers the ten questions in its section 7.
+- Quests, camps, inscriptions and dialogue follow [the rules of play](docs/design/GAME_RULES.md): `pnpm check` prints a `!` line for each rule it can test, and a reviewer answers the checklist in its section 7.
 - Three reviewers approve, each going through the reviewer checklist in the pull request.
 - One extension per slot. When two proposals compete for the same request or slot, both stay open until the vote on the request decides.
 
@@ -32,4 +32,4 @@ If you are joining the core team, read [How the team works](docs/team/WORKFLOW.m
 
 ## Conduct
 
-Be kind, assume good intent, and keep the valley a place for all ages. Reviewers may close anything that is not.
+Be kind, assume good intent, and keep the valley's words fit for every age and its menace within its limit ([GAME_RULES.md](docs/design/GAME_RULES.md) G22 and G46). Reviewers may close anything that is not.
