@@ -192,7 +192,7 @@ The craft panel (`game/src/ui/panels.ts:321-356`) lists the known recipes of the
 | 15 | The lists of what the game can do are core code, closed and documented; base, attributes, equipment, nodes and meal enter one function that returns the values after the caps. | 681, 683 |
 | 16 | Stage 3 brings the four-slot camp, the tree with the one calculator and caps, and the effort tiers; stage 6 brings premium currency and look items; combat sits at stage 8. | 703, 706, 708 |
 | 17 | "Power is not sold" is a fixed commitment; the revenue split (40% to the creators' fund) is protected. | 765, 762 |
-| 20 | Open: the power cap at the top level (direction x3), the computed-difficulty formula, the effort and rarity numbers (0.4, 0.6, 0.8, 1.0 and a 10% budget). | 830, 834, 844 |
+| 20 | Answered: the power cap at the top level (x3), the effort numbers (0.4, 0.6, 0.8, 1.0) and the 10% rarity budget live in `content/core/params.json`; the computed difficulty is the one internal scale (`docs/design/SETTLEMENT.md` 3.6, S3, 9.10). | 830, 834, 844 |
 
 ### 2.4 Decisions on record (DECISIONS.md)
 

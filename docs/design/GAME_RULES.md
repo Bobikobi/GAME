@@ -1,7 +1,7 @@
 # Game rules: what keeps Mistvale fun
 
 This page is the product owner's. Developers, creators and AI agents
-follow it the way `kernel/` follows its rules R1-R11: a request that breaks a
+follow it the way `kernel/` follows its rules R1-R12: a request that breaks a
 rule is not built quietly and the rule is not bent quietly. Section 6 says what
 happens instead. A rule changes only by the owner's word, written the same day
 in [DECISIONS.md](../../DECISIONS.md).
@@ -177,7 +177,7 @@ what it looks like in the valley.
 | `discovery` | Goes where nothing sends them and finds a place. | "I found it myself." | Autonomy, wonder | Skyrim's far peaks and cave mouths | A place in the mist that opens when you stand at the arch at night. |
 | `fetch_twist` | Brings a thing that is not where it should be, or that someone else wants too. | "So that is where it was." | Competence, surprise | Fallout's "simple" deliveries | The berries grow only where the bells rang (three-fruits after P-3). |
 | `dilemma` | Chooses between two answers with no right one; both lead on. | "That was my call." | Autonomy, meaning | The Witcher 3's choices; Fallout's water chip | Give the old coin to Maru, or trade it with Pell; the valley remembers either. |
-| `skill` | Beats a timing or precision challenge with a harder window. | "Nailed it." | Competence, hard fun | Skyrim's lockpicking; Fallout's VATS | A rare node whose strike window is half the usual; a miss still keeps half. |
+| `skill` | Beats a timing or precision challenge with a harder window. | "Nailed it." | Competence, hard fun | Skyrim's lockpicking; Fallout's VATS | A rare node whose strike window is half the usual; a miss turns up something from the node's miss table (G15). |
 | `collection` | Completes a set shown in one place. | "One more." | Completion, ownership | Skyrim's Stones of Barenziah; Fallout's bobbleheads | A set of treasures on a shelf that NPCs notice when it is full (the shelf's future, section 5 row 1). |
 | `tending` | Keeps something alive or safe over time. | "They needed me." | Relatedness, care | Companions in Skyrim; animals in Stardew Valley | Keep the fire lit through one night; a sapling watered three mornings. |
 | `riddle` | Reads clues in the world and answers with an action. | "Aha." | Insight, hard fun | Skyrim's pillar puzzles; The Witcher 3's riddles | The three ruin stones and the dig under the hill-facing statue. |
@@ -186,7 +186,7 @@ what it looks like in the valley.
 | `persuasion` | Asks the right question or brings the right fact. | "I talked my way in." | Relatedness, autonomy | Fallout's speech checks; The Witcher 3's talks | The trade opens only after the player asks Pell about the mist. |
 | `errand` | Repeats a known task for a known pay. | "Easy coins." | Routine, easy fun | Skyrim's radiant quests; The Witcher 3's notice boards | Pell's standing order for herbs, marked as an errand, only after the main beat (G4). |
 | `maze` | Finds the way through a place whose shape is the question: dead ends, a landmark seen over the trees, a sign that tells the right turn. | "I found the way." | Competence, autonomy (the route is the player's own) | The Lost Woods in Zelda (the route is read from the world, a wrong turn sends you back); Tunic (paths hide in plain sight until a page shows them) | A tangle of forest beyond the ruins, drawn in the map alone: dead ends that cost a walk back, one landmark over the canopy, the moss side of the trunks for the player who looks; the step is a `visit` of the clearing at its heart, nothing new in the kernel. |
-| `stealth` | Passes a hazard unseen: learns its loop, waits for the window, takes the route it does not watch. | "It never saw me." | Thrill, competence | Breath of the Wild's Yiga hideout (a walked loop with a window to cross); Untitled Goose Game (being seen costs a retreat, never a life) | The wolf's round at night, over G30-G35: a loop the player learns by its eyes in the dark, reeds and shadow that hide the player, light and the road as the way out when it fails; seen means a chase and the walk back to the fire, never a fight (G35). Waits for the hazard system (P-5). |
+| `stealth` | Passes a hazard unseen: learns its loop, waits for the window, takes the route it does not watch. | "It never saw me." | Thrill, competence | Breath of the Wild's Yiga hideout (a walked loop with a window to cross); Untitled Goose Game (being seen costs a retreat, never a life) | The wolf's round at night, over G30-G35: a loop the player learns by its eyes in the dark, reeds and shadow that hide the player, running back to a safe place as the way out when it fails; seen means a chase and the walk back to the fire, never a fight (G35). Waits for the hazard system (P-5). |
 
 `maze` and `stealth` entered on 9.10 by the owner's word (DECISIONS.md); each
 joins `quest.type` with its first quest, and the schema's count follows.
@@ -355,7 +355,10 @@ day); the audit behind them is `docs/design/CRAFTING_AUDIT.md`.
   look bought with money or premium currency is bound to the account: never
   traded, never sold to the trader, so money never turns into gold. The same
   look found in the game trades like any item (DECISIONS.md, the entry on
-  bought looks).
+  bought looks). Premium currency is bought with money only, and is never
+  bought with gold, traded, given or turned into gold; it counts on no board.
+  Gold never turns into money either: the creators' money fund and the gold
+  pool of D5 stay apart (DECISIONS.md, the entry on prices and gold).
 - **G40 A craft can miss, and a miss keeps something.** Skill decides the
   chance and luck only tilts it; a miss is never nothing (G15): it keeps part
   of the inputs and makes nothing else. The value table prices a recipe at
@@ -393,16 +396,26 @@ day); the audit behind them is `docs/design/CRAFTING_AUDIT.md`.
   a new verb, station, profession, effect or parameter comes in a core
   release. Metal waits for its discovery.
 
+### Menace
+
+Added 2026-10-10 by the sweep for holes (DECISIONS.md).
+
+- **G46 Menace without gore.** Danger shows through shape, sound and the dark
+  only: no blood, no wound and no body, and a predator is never drawn biting.
+  The text says the player fell, never that they died or were killed, and the
+  fall keeps its look (crosses for eyes, a sinking into the ground). The aim is
+  PEGI 7 and ESRB E10+ (DECISIONS.md, the entry on the world and its clocks).
+
 ### What this page covers, and what lives elsewhere
 
 | Topic | Where | State |
 |---|---|---|
 | The opening and onboarding | [FTUE_RESEARCH.md](../FTUE_RESEARCH.md) | Written; roadmap phases 2 and 3 open. |
-| Loop and hook, quests, riddles, reading, builds, choices, feel, session, variety, dialogue, sound, fairness, access, danger, expeditions, crafting | This page | Rules G1-G45. |
-| Economy and balance | The kernel rules R1-R11, `content/core/params.json`, `pnpm values` | Enforced by code. |
+| Loop and hook, quests, riddles, reading, builds, choices, feel, session, variety, dialogue, sound, fairness, access, danger, expeditions, crafting, menace | This page | Rules G1-G46. |
+| Economy and balance | The kernel rules R1-R12, `content/core/params.json`, `pnpm values` | Enforced by code. |
 | Art and sprites | [docs/creators/README.md](../creators/README.md) | Enforced by the kit check. |
 | Community: requests, votes, merges, conduct | [CONTRIBUTING.md](../../CONTRIBUTING.md), [docs/loop/README.md](../loop/README.md) | Live. |
-| Difficulty curve and pacing beyond the ladder | Not written | After P-3, with play data from the hub's usage section. |
+| Difficulty curve and pacing beyond the ladder | [SETTLEMENT.md](SETTLEMENT.md) 3.6, one internal difficulty scale (S3, 9.10) | The scale is written; the pacing waits for play data from the hub's usage section, after P-3. |
 | Performance budget on a phone | Not written | Measure on a real device first (DECISIONS.md, the Phaser entry); then a number here. |
 | A second language | Not written | No (owner, 8.10): English only, see G22. |
 
@@ -502,10 +515,12 @@ names the rule and the pull request waits.
 7. Does every new action answer within a tenth of a second, land with a beat,
    and have both a visible and an audible twin? (G13, G24, G27)
 8. Is every text box two lines or fewer, and never during a timed action? (G14)
-9. Does a miss keep something, and does the change hold with reduced motion
+9. Does a miss turn up something, and does the change hold with reduced motion
    and without colour? (G15, G29)
 10. Did the owner play the preview, or did the reviewer play it for him and say
     so in the pull request?
+11. Does danger show only by shape, sound and the dark, and does the text say
+    the player fell, never died? (G46)
 
 ## 8. What the check enforces
 

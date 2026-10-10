@@ -375,9 +375,12 @@ a vote, a file).
   a merged proposal, by someone other than the author, computed by the builder
   from GitHub into `reviewers`. A review that did not count (stale head, author)
   earns nothing.
-- Nothing is called credits until D5 has a formula. `CREDITS.md` stays
-  attribution. The hub's rules page states: the fund is 40% of net income, the
-  formula is open, there is no income yet.
+- D5 has its formula (decided 2026-10-09): a pool of gold taken from gold
+  already spent and split by active seconds (GRUNT's CR-44). The money fund,
+  40% of net income, is a separate split paid in money, and the two never
+  convert. Nothing is called credits until stage 4's creators' document;
+  `CREDITS.md` stays attribution, and the hub's rules page says there is no
+  income yet.
 - Gold and player boards only from stage 2a, when the server verifies them. The
   boards page says so in one line and shows no number.
 - `weekly_pool` (1000) is present and `weekly_pool_active: false` until `usage`

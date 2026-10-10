@@ -14,7 +14,7 @@ The kernel is right at its base: one simulation, one unit (a second of a player'
 What to do before the first line of code: adopt the 12 rules of section 3. Now they cost a field in the schema. Once there is content and saves, they cost a repricing of the whole game.
 After the fixes there is a proof: a player cannot earn more than a fixed rate per second of play, whatever content the community adds. What the proof does not promise: how much gold enters the world as a whole when there are many accounts. Section 5 holds the open decision on that.
 Added after the owner's feedback, in section 7: different pay for easy work and hard work, and what to keep now so that players can one day own a mine, build a town with laws of its own and fight over land.
-The owner's decisions of 6 October, in section 8: a server and accounts already at stage 2, progress in the demo does not carry into an account, a pay gap of about 7 times between a veteran at hard work and a beginner at easy work, a small shop bonus for a rare thing out of a fixed budget, and code for the core from outside developers too. Ownership, conquest and towns are deferred: not in the spec now, decided when there is a community.
+The owner's decisions of 6 October, in section 8: a server and accounts already at stage 2, progress in the demo does not carry into an account, a pay gap of about 7 times between a veteran at hard work and a beginner at easy work, a small shop bonus for a rare thing out of a fixed budget, and code for the core from outside developers too. Ownership, conquest and towns are deferred: not in the spec now, decided when there is a community. (Since 2026-10-09 towns, plots and houses are written in `docs/design/SETTLEMENT.md`, and D6 is decided in part; conquest still waits for combat.)
 
 ## 2. Verdicts and findings
 
@@ -26,7 +26,7 @@ The owner's decisions of 6 October, in section 8: a server and accounts already 
 | 2. V is the cheapest way to obtain, computed in Knuth/Dijkstra order | Does not hold as written. Three independent failures (order of computation, joint outputs, waiting). Holds after R6-R7 under a changed definition; then V exists and is unique (Theorem 1). |
 | 3a. An extension may not lower a value by more than a fixed percentage | Holds after R11. As written it is defeated by small steps. |
 | 3b. No profitable buy-craft-sell loop, gold per hour bounded | Does not hold as written. Holds after R6-R9 as Theorem 3: per account, per active second. It says nothing about the world total or about sinks. |
-| 3c. Market band derives from V | Holds for shop quotes under R8. A band on player-to-player prices is not needed for the bound and is not recommended. |
+| 3c. Market band derives from V | Holds for shop quotes under R8. A band on player-to-player prices is not needed for the bound. It was first not recommended; on 2026-10-10 R8 gained one, so gold cannot pass between accounts through a price. |
 | 4. Power is seconds saved on a fixed benchmark; cap checked on the whole build | Does not hold. Replaced by R9, which needs no benchmark and no enumeration of builds (Theorem 4). |
 | 5. Creator reward is the share of player-seconds | Does not hold before the server or against idle accounts. R10 bounds the damage; it is a rule, not a proof of fairness. |
 | 6a. CI check is a headless simulated player | Holds. Needs only same-build repeatability (R1-R4). |
@@ -100,13 +100,13 @@ Check: add an unrelated entity; the outcomes of existing entities are unchanged.
 **R5. Pinned versions, forward only.** A save or replay names the kernel build and the content tag. Saves move forward through migrations. A rollback is a new tag. Replays run on their own build, and every tagged build stays deployed. A removed item converts to something whose value is not higher.
 Check: a corpus of golden saves runs the migration chain on every pull request: no unknown ids, wealth after is at most wealth before. CI rejects a conversion with V(target) * quantity > V(removed).
 
-**R6. One activity format for every source.** Nodes, recipes, drop tables, quest rewards, treasure, starter kits and conversions are all activity records: active time between t_min and a maximum action length, inputs, expected outputs at perfect execution, and for several outputs a split in whole percent that sums to 100. Waits and respawns are capacity and never count as time. Gold changes only through one ledger: mint, burn, transfer, each with a reason.
+**R6. One activity format for every source.** Nodes, recipes, drop tables, quest rewards, treasure, starter kits and conversions are all activity records: active time between t_min and a maximum action length, inputs, expected outputs at perfect execution, and for several outputs a split in whole percent that sums to 100. Waits and respawns are capacity and never count as time. Gold changes only through one ledger: mint, burn, transfer, each with a reason. One written exception (2026-10-10): the plot refund (`docs/design/SETTLEMENT.md` 3.2) mints back part of the burn it is tied to, never more than that burn.
 Check: schema. Ledger conservation: gold in the state equals mints minus burns. Only activity code may call mint.
 
 **R7. The value table is a checked certificate.** Nobody declares V. For every activity and each of its outputs: `yield * V(out) <= share * (time + sum of quantity * V(in))`, with equality for at least one activity per item. Items must be reachable from input-free activities. V is stored as integers, rounded once.
 Check: CI recomputes V, verifies every inequality in exact integer arithmetic, verifies reachability, and solves the income problem on the merged content: the best mixed strategy of the reference player earns exactly k*r.
 
-**R8. Shop invariant.** For every item: the highest price the shop pays, over all stock levels, discounts and rounding, is at most k*r*V, and the lowest price it charges is at least r*V. Money is fixed point; pay rounds down, charge rounds up, per transaction. Prices between players are free.
+**R8. Shop invariant.** For every item: the highest price the shop pays, over all stock levels, discounts and rounding, is at most k*r*V, and the lowest price it charges is at least r*V. Money is fixed point; pay rounds down, charge rounds up, per transaction. Prices between players move inside a band (2026-10-10): no lower than what the shop pays for the item today and no higher than `trade_max_permille` of r*V; a trade outside it is refused, and an item with no V is never listed.
 Check: evaluate the pricing function on its full grid; run the exhaustive trade search of appendix A9 on it; any gain fails the build.
 
 **R9. Rate clamp in the one calculator.** A build can change the active time of any activity and the output of an activity that has no inputs. Nothing can change the output of an activity that has inputs. For each activity the combined rate multiplier is clamped to P(level).
@@ -160,13 +160,13 @@ So check (a) cannot be surprised far from the new content, and removal can only 
 
 ## 5. Open decisions for the owners
 
-Status after the owners' round of 2026-10-06 (section 8): D1 and D3 are decided, D6 is deferred by decision. D2, D4 and D5 were still open; D2, D4 and D5 were decided on 2026-10-09.
+Status after the owners' round of 2026-10-06 (section 8): D1 and D3 are decided, D6 is deferred by decision. D2, D4 and D5 were still open; D2, D4 and D5 were decided on 2026-10-09. D6 was then decided in part on 2026-10-09 (S4 of `docs/design/SETTLEMENT.md`): three fields are reserved now.
 
 **D1. Does waiting or rarity ever raise a shop price?** Recommended: no. The shop pays for active time only. Rarity is a limited supply and shows only in prices between players. The review continues under this default.
 Decided otherwise on 2026-10-06: both. A small shop bonus under a fixed budget, and most of the value in use. See 8.2.
 
 **D2. Who is the reference player?** Recommended: perfect execution, no build, fed. Everyone else earns less than the reference, never more, and bots gain nothing from perfect timing.
-Decided on 2026-10-09: yes, with full health in place of fed, since health replaced the food bar (G32). Nothing drains health by the clock, so the reference eats nothing per hour and V10 does not arise. See DECISIONS.md, the entry on the reference player.
+Decided on 2026-10-09: yes, with full health in place of fed, since health replaced the food bar (G32). Nothing drains health by the clock, so the reference eats nothing per hour and V10 does not arise. See DECISIONS.md, the entry on the reference player. Until P-5 the kernel still drains satiety (DECISIONS.md, the entry on the hunger clock, 2026-10-10), so until then the reference is fed and food stays outside V.
 
 **D3. What carries over from browser saves when the server arrives?** Recommended: skills, journal and looks carry over inside the caps; gold and tradeable items do not, and each player receives a starter kit sized by witnessed play time. Start signing time stamps in the stage-1 service so that play time is provable.
 Decided on 2026-10-06: nothing carries over. Stage 1 is a demo and says so on screen from the first day; whoever played it receives a title and a cosmetic item with the account. No save import, no signed time stamps.
@@ -234,7 +234,7 @@ The vision: a player who finds a cave can take control of it, others can try to 
 
 **What to reserve now, while each is one field in a schema:**
 1. Every world entity has a `controller` (default: public) and an `access` rule from a closed list.
-2. Every zone has a `ruleset` record: protection level (safe, contested, lawless), tax rate and who receives it, who may change it. Core zones are fixed as safe.
+2. Every zone has a `ruleset` record: protection level (`safe`, `wild` or `contested`, as `docs/design/SETTLEMENT.md` 3.9 names them), tax rate and who receives it, who may change it. Core zones are fixed as safe.
 3. Ledger transfers carry a reason from a closed list that already includes tax, rent, toll and seizure.
 4. The effort weight of 7.1 includes zone risk: safe zones pay below the ceiling, lawless zones at the ceiling.
 5. Holdings carry upkeep that grows with the number held, and upkeep is burned. This is the sink that finding G8 lacked, and the brake on one group holding everything.
@@ -242,7 +242,7 @@ The vision: a player who finds a cave can take control of it, others can try to 
 **Risks.** Players who lose what they built leave: keep a safe core where nothing can be taken. One strong group takes every cave: upkeep that grows with holdings. It needs a live server and many players: not before stage 8. City rules are chosen from a closed menu, as data; they are never code.
 
 **D6 for the owners.** Is the long-term game a cooperative restoration world, or a competitive player-run economy with safe and lawless zones? Recommended: both, split by zone, and reserve the fields above at stage 1.
-Decided on 2026-10-06: not in the spec for now. The world stays cooperative and the question returns when there is a community. The five reserved fields are therefore not a requirement. If the direction is taken later they arrive through a save migration (R5), which costs more than a schema field today but is possible.
+Decided on 2026-10-06: not in the spec for now. The world stays cooperative and the question returns when there is a community. The five reserved fields are therefore not a requirement. If the direction is taken later they arrive through a save migration (R5), which costs more than a schema field today but is possible. Decided in part on 2026-10-09 (S4): three fields are reserved now after all (`docs/design/SETTLEMENT.md` 3.9).
 
 ## 8. Owner decisions of 2026-10-06 and what they change
 
@@ -256,7 +256,7 @@ Two rounds of four questions. Spec v4.6 carries the product side; this section c
 | 4 | An outside developer who wants a new capability in the game itself | Submits core code; the team reviews and merges | See 8.4 |
 | 5 | What carries over from stage 1 when accounts arrive | Nothing. Stage 1 is a demo; a title and a cosmetic item for whoever played it | D3 closed. Finding S1 no longer applies |
 | 6 | What is built right after the server | Specialization, then the market | Stage numbers change. See 8.3 |
-| 7 | Ownership, conquest, cities with their own rules, lawless zones | Not in the spec now; decided again when there is a community | D6 deferred. 7.2 stays on record only |
+| 7 | Ownership, conquest, cities with their own rules, lawless zones | Not in the spec now; decided again when there is a community | D6 deferred, then decided in part on 2026-10-09 (S4): three fields reserved. 7.2 stays on record |
 | 8 | Hundreds of AI-made submissions a day against three human testers | A quota of open submissions that grows with accepted extensions; later a full creator progression inside the game | See 8.5 |
 
 ### 8.1 Effort weight, adopted
