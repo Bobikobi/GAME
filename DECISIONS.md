@@ -44,6 +44,7 @@ The product name is undecided. "Mistvale" appears in the game, the page title an
 ## 2026-10-07 ✅ Grid movement, and the clock stops while a window is open
 
 Tile-by-tile steps (190 ms each) match the handheld look and keep every position an integer tile for the kernel. Game time pauses while any dialogue, menu or minigame is open, and one frame never advances more than 250 ms, so a background tab never fast-forwards the world. Model: claude-opus-5-5.
+**Superseded in part (10.10):** from stage 7 a world's hour stops for no window, and a minigame only keeps the hazards from striking (the entries on the shared world and on the game read as one line).
 
 ## 2026-10-07 ✅ Signs are map props that point at a slot
 
@@ -356,6 +357,7 @@ The owner's word (9.10), after approving the richer valley's gallery: the play i
 
 The question (register CR-1, crafting audit finding C14): R8 in `docs/kernel-review-v1.md` put the lowest price a shop may charge at k * r * V, while the code has charged at least r * V from the start (`minChargeFor` in `kernel/src/values.ts`, which `pnpm check` applies to every line a shop sells in `tools/src/check.ts`) and pays at most k * r * V, rounded down (`payFor`); the toy economy sells at r * V too (`docs/kernel-toy/toy_econ.py`). One of the two was wrong. The owner's word (9.10): R8's text follows the code. A shop pays at most k * r * V and charges at least r * V. The spread between the two is what keeps the shop from being a value pump: a round trip through the shop loses at least (1 - k) of the value, so a stock curve, a discount or a rounding slip added later has that margin to absorb before the shop could ever pay out, while at a floor of k * r * V a round trip breaks exactly even and any such slip pays. The review's own shop-curve result says the same (section 4, appendix A9): one price curve is safe only when k * m_max <= m_min, two curves need no condition. With k bounded at 700 permille (`content/core/params.json`), the floor stays above the buy price at every k a vote can reach, and Theorem 3 needs only a charge of at least k * r * V, so the full-value floor keeps it with room to spare. In plain play terms, buying a thing costs 1/k times the work of making it at the reference income, so the shop is a convenience and never the better road. No price in play changes: the check already enforces this floor, every core shop passes it, and the 30-gold tools stay (Q10 above). The crafting audit (`docs/design/CRAFTING_AUDIT.md`) keeps its wording: it is a dated snapshot at `4ee9433`.
 **Closes:** register CR-1 (`docs/team/GRUNT.md`, Open ends).
+**Superseded in part (10.10):** the paying side is called the trader and the charging side the shop (the entry on the game read as one line): the trader pays at most k * r * V, and the shop charges at least r * V.
 **Retry when:** a pricing model wants to sell below the full value (a sale or a discount curve); then R8, `minChargeFor` and Theorem 3 change together, in one decision. Model: claude-opus-5-5.
 
 ## 2026-10-09 (done) The name is Openfold, confirmed by the owner - the shortlist vote is superseded
@@ -439,6 +441,7 @@ The question (a review of open product direction, 9.10): the crafting economy en
 How these become rules, and where they meet rules already written (G28's "the valley waits", pillar 5, the safe camp of 8.10, the cooperative world of 6.10, G42), is `docs/design/SETTLEMENT.md`. Its open questions go to the owner one at a time, and their answers land here.
 
 **Closes:** CR-23 in GRUNT's open ends: the settlement has its own plan, and decisions follow below.
+**Superseded in part (10.10):** player houses and plots are paused (the entry on houses and plots paused); the town the player mends, the street, the camp and danger by area stand.
 **Retry when:** the plan's questions are answered, or stage 4 brings a shared world state. Model: claude-opus-5-5.
 
 ## 2026-10-09 ✅ In a shared town absence has a price, and a mail comes first
@@ -452,6 +455,7 @@ The question (settlement plan S1, 9.10): a plot that lapses while its holder sle
 As rules in `docs/design/SETTLEMENT.md` (3.2 and 3.8): the clock between steps runs whether the builder is away or slow; an owner long away has the house packed; one mail per hold comes before it ends, and no mail asks the player back for anything else. What a lapse and a packing cost is question S1b, asked the same day; the recommendation is the place and a fifth of its price, never what the player made. G28's text in `docs/design/GAME_RULES.md` gains the exception when S1b is answered.
 
 **Closes:** nothing yet.
+**Superseded in part (10.10):** paused with player houses and plots (the entry on houses and plots paused).
 **Retry when:** the owner answers S1b. Model: claude-opus-5-5.
 
 ## 2026-10-09 ✅ An account asks for little, and only after the opening
@@ -477,6 +481,7 @@ Final Fantasy XIV is the nearest precedent: 45 days without the owner's visit, m
 
 **Closes:** S1 of the settlement plan, and the open part of the entry "In a shared town absence has a price, and a mail comes first".
 **Superseded in part (10.10):** a freed plot is now drawn (the entry on the shared world), so a packed house is raised only on a plot its owner wins, as that plot's first step, with no step redone (the entry on the game read as one line).
+**Superseded in part (10.10):** paused with player houses and plots (the entry on houses and plots paused).
 **Retry when:** the shared world of stage 4 is designed, or real absences show the numbers are wrong. Model: claude-opus-5-5.
 
 ## 2026-10-09 ✅ A camp outside the town is a tent the player buys, safe while its fire burns
@@ -493,6 +498,7 @@ G30 and G32 in `docs/design/GAME_RULES.md` now say so, and `docs/design/SETTLEME
 
 **Closes:** S2 of the settlement plan; GRUNT's open ends carry the building as CR-25.
 **Superseded in part (10.10):** in a shared world the opening's ground stays at level 0, as the town's edge, and so does the night ruins' entrance, where no wood is burned and no tent is pitched; by day a camp's fire burns for nothing; and from stage 7 a fire keeps the hunting hazards off anyone in its light (the entry on the game read as one line).
+**Superseded in part (10.10):** another player stays at a camp only as a guest, at the price its owner sets and with its owner's approval, and is safe and rests there while its fire burns; without a deal another's camp is no safe place (the owner's answers of 10.10 afternoon, and the entry on the five holes of the one line).
 **Retry when:** a playtest shows a night's wood too dear or too cheap for an area. Model: claude-opus-5-5.
 
 ## 2026-10-09 ✅ Wood comes from felling trees: every tree gives wood by its type and grows back before it is felled again
@@ -594,6 +600,7 @@ The question (settlement plan S4, 9.10): the 6.10 decision kept the world cooper
 
 **Closes:** S4 of the settlement plan; GRUNT's open ends carry the reserved fields as CR-39.
 **Superseded in part (10.10):** "always safe" means that no player harms another there; from a hazard, a camp is safe while its fire burns. The protection level is `safe` at danger level 0, `wild` above it, and `contested` only for an area between players once combat opens (the entry on the game read as one line).
+**Superseded in part (10.10):** the plots of a shared town are paused with houses (the entry on houses and plots paused); the areas between players stand.
 **Retry when:** in a shared world one player or group holds a large share of a town's places, or gold piles up with nothing to spend it on. Model: claude-opus-5-5.
 
 ## 2026-10-09 ✅ A plot that work opens is drawn among those who did the work
@@ -609,6 +616,7 @@ The question (settlement plan S5, 9.10): first come at the moment a plot opens f
 
 **Closes:** S5 of the settlement plan, in part; the rest waits for the shared town's design.
 **Superseded in part (10.10):** a won plot's first step comes within `plot_signup_days`, as for a freed plot, and the plot then holds `build_hold_days` between steps (the entry on the game read as one line).
+**Superseded in part (10.10):** paused with player houses and plots (the entry on houses and plots paused).
 **Retry when:** the shared town is designed. Model: claude-opus-5-5.
 
 ## 2026-10-09 ✅ The free market comes right after crafting wave 4, one per world, and the demo tunes it
@@ -641,6 +649,7 @@ What other games do, as read for this answer: RuneScape ranks each skill and the
 
 **Closes:** the boards' count and their risk at the top; GRUNT's open ends carry the building as CR-40.
 **Superseded in part (10.10):** road thieves wait for weapons, and no item answers a hazard (the entry on a hazard escaped). The hunters' board's rules for when combat comes are in the entry on the shared world.
+**Superseded in part (10.10):** worth counts no places while player houses and plots are paused (the entry on houses and plots paused).
 **Retry when:** the top of a board is held by bots or by one group's funnel, or marked players stop leaving the towns. Model: claude-opus-5-5.
 
 ## 2026-10-09 ✅ The players' common task is to explore the world
@@ -666,6 +675,7 @@ The question (9.10): the spec makes a season a few weeks with a seasonal discove
 - Seasons serve exploring, the players' common task (the entry above): each one leaves more of the world to find.
 
 **Closes:** the open line on seasons in the entry on combat and group quests; GRUNT's open ends carry the guard as CR-41.
+**Superseded in part (10.10):** a new part for a house waits with houses, paused since 10.10 (the entry on houses and plots paused).
 **Retry when:** the first season shows players who missed it feeling locked out, or a season adds nothing to explore. Model: claude-opus-5-5.
 
 ## 2026-10-09 ✅ The valley's year is the real year, its days stay short, and each season gives the expansions a theme
@@ -885,6 +895,7 @@ The owner's word (9.10, with the answer on notes): a shop to sell from. One walk
 
 **Closes:** the rule of player shops; GRUNT's open ends carry the building as CR-48.
 **Superseded in part (10.10):** until stage 7, where players see each other, a player's shop has only the forms it has while its owner is away, at the house or on the market board, whether or not its owner plays; the sign over the player comes with stage 7 (the entry on the game read as one line).
+**Superseded in part (10.10):** while houses are paused, a player's shop sells on the town's market board (the entry on houses and plots paused).
 **Retry when:** towns crowd with shops, or buyers cannot find what is for sale. Model: claude-opus-5-5.
 
 ## 2026-10-10 ✅ A sale between players burns a small fee, paid by the seller
@@ -947,6 +958,7 @@ The question (10.10, the sweep): where could gold pass between accounts, appear 
 - **r is fixed.** The entry on gold entering a world fixed r for good, but `content/core/params.json` still gives `r_mg_per_value_ms` a range for a vote. The range closes to its value, and the check refuses a range on r.
 
 **Closes:** the economy's holes of the sweep; GRUNT's CR-51 to CR-59 carry the building, and CR-50 is amended.
+**Superseded in part (10.10):** the plot refund is paused with plots (the entry on houses and plots paused).
 **Retry when:** the values tool or the books show gold piling up or draining faster than the step can follow, or an honest trade is refused by the band. Model: claude-opus-5-5.
 
 ## 2026-10-10 ✅ The shared world: whose progress, one world per character, one hour for all, and people kept safe
@@ -971,6 +983,7 @@ The question (10.10, the sweep): where did two players, a closed account or a wo
 
 **Closes:** the shared world's holes of the sweep, and the open line of the entry on players' words (the group's channel); GRUNT's CR-70 to CR-76 carry the building.
 **Superseded in part (10.10):** "through stage 4" reads "until stage 7": every valley keeps its own hour until players see each other, the shared worlds of stages 4 to 6 included; and "stalls" and "a stall" are no thing a player places: a player's shop sells at the house or on the market board, and the stall is Pell's (the entry on the game read as one line).
+**Superseded in part (10.10):** the draw for freed plots, a house's words and the places a closing returns are paused with houses and plots (the entry on houses and plots paused).
 **Retry when:** a shared world's first season shows crowding, a draw that new players never win, or a word the ladder handled too hard or too soft. Model: claude-opus-5-5.
 
 ## 2026-10-10 ✅ The world and its clocks: what a fall keeps, three clocks, sleep, scraps and menace without gore
@@ -998,6 +1011,7 @@ The question (10.10, the sweep): where did the world, the fall and time leave a 
 
 **Closes:** the holes of the world and time of the sweep, and GRUNT's CR-10 and CR-14; CR-77 to CR-86 carry the building.
 **Superseded in part (10.10):** blood, a wound and a fallen body may show within a limit, visual only, and the aim is ESRB E10+ and PEGI 12 (the entry on menace with a limit). Sleep still skips the night in a shared world until stage 7, and from stage 7 nobody skips it (the entry on the game read as one line).
+**Superseded in part (10.10):** the market's drain runs on the valley's hour in a player's own world and on the server's hour in a shared world until stage 7 (the entry on the game read as one line); a packed house waits with houses (the entry on houses and plots paused).
 **Retry when:** players fall and repeat for gain, or players who played in a holiday's days miss its look. Model: claude-opus-5-5.
 
 ## 2026-10-10 ✅ Which text wins, and the lines that lagged brought in line
@@ -1049,6 +1063,7 @@ The question (10.10, after the sweep and the ten answers): the holes were closed
 - **For the branch of the ten answers of 10.10, on its merge.** P-5's `safe` flag reads the level and the fire (the town and all ground at level 0, the night ruins' entrance with it, and a camp while its fire burns), not "every camp". P-5's "every quest then in progress goes back to its first step", its test's "restarts the quests in progress" and its e2e's "the quest at step one" follow the entry on the world and its clocks: each quest goes back to the step it stood at when the outing began. P-6's "the lantern kept lit" is light to see by (above). P-5's "bag goes back to the outing's bag" follows the same entry: each item keeps the smaller of its count when the outing began and at the fall, so a fall gains nothing. The branch's G34 names the safe places as the town or a camp whose fire burns; it reads a safe place (G30). The two lines named in the entry on which text wins still stand.
 
 **Closes:** the holes of the walk, with "safe place" and "safe area" as one thing; GRUNT's CR-88 to CR-93 carry the building.
+**Superseded in part (10.10):** by the entry on the five holes of the one line. G31's countdown runs to nightfall or the mist's coming, and the lantern lights for the mist too. From stage 7 another player's fire keeps the hunting hazards off only a guest with a deal, and its light marks how far the camp reaches. Won plots and packed houses are paused, the store opens at the opening camp's chest and one in each town, and a player's shop sells on the market board. CR-61 is answered: a recipe a quest gives stays that quest's reward. The precedents read more exactly: Minecraft's light stops most monsters from spawning; its beds skip the night, by default, only when every player sleeps; Old School RuneScape keeps each character's progress and limits on its own; and Stardew Valley's town is safe while, on the standard farm, danger starts in the mines.
 **Retry when:** a player reads a rule the other way from what the world shows, or a builder finds two lines that still disagree. Model: claude-opus-5-5.
 
 ## 2026-10-10 ✅ Parallel work is anchored by rules, a stream map and a computed picture, not by a status page
@@ -1117,3 +1132,20 @@ The owner answered nine open questions on 10.10 in the afternoon, one at a time,
 
 Also noted by the owner: the skill descriptions at the start are not as simple as in other games, and raising a skill or a level does not weigh as much as it should. This goes to the opening's stream as a finding.
 **Retry when:** players read the camp price as a toll that blocks play (then a free first night), the plot odds read as unfair, or the 3D version's cost outruns the community's interest. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ The five holes of the one line closed by the owner's answers, houses paused, and the check finished
+
+The question (10.10): the entry on the game read as one line left five small holes open, and its check stopped after one of its three readers. The owner answered the holes in the afternoon (the owner's answers of 10.10 afternoon, pull request #57), settled one more point of the camp in the evening, and paused player houses and plots (the entry on houses and plots paused, pull request #61). This entry writes the answers into the rules, finishes the check, and brings the text in line. It closes the holes as the owner answered them; no default is taken where an answer exists.
+
+- **Warnings (the owner's answer 3).** The countdown at the screen's edge runs to nightfall or to the mist's coming into the player's area, whichever is first, as the kernel keeps the mist (one mist). Entering the mist, the mist arriving, leaving a safe place after dark, or dark arriving outside one lights the lantern with the one warning box, at most once per night. A burning camp warns its owner and its guests before its fire goes out (SETTLEMENT 3.4). G31 says so; GRUNT's CR-94 carries the building.
+- **When a valley's day ends (the owner's answer 4).** When the player sleeps, or at 05:00 of the game hour when the night is played through. The day-ended event and the day summary (G16, P-4) come then, before the morning toast, and the summary waits until the player stands in a safe place. From stage 7, where nobody skips the night, every day ends at 05:00 of the world's hour. Like Stardew Valley, whose day ends in bed or by passing out at 2 AM. G16 and P-4 say so; CR-96 carries it.
+- **Another player's lit camp (the owner's answer 5, and the evening's word).** Any lit camp is safe, and a guest pays: the camp's owner sets the price of a stay, even a simple one, and a stay is a deal the owner approves. Asked in the evening whether a fire's light keeps the hunting hazards off anyone in it, the owner chose: the safety itself is what a guest buys. Without a deal another player's camp is no safe place, at any stage, and the fire's light only marks how far the camp reaches. A camp burns only while its owner keeps the fire (SETTLEMENT 3.4), so the one who approves is there. A price in gold moves through the ledger with the reason `rent`, already reserved (a reading). This reverses "the world seen at stage 7" in the entry on the game read as one line, and SETTLEMENT 3.4's reading that no other player uses a camp.
+- **Rest (follows from the answer 5).** Rest restores health in a town, at one's own burning camp, and at another's as a guest with a deal, and nowhere else: before stage 7 by a night's sleep (G32), from stage 7 over one game hour. How far a camp reaches is a parameter, `fire_light_tiles`, set with the tent (CR-25). G32 and SETTLEMENT 3.4 say so; CR-95 carries the deal, the rest and the reach.
+- **Plot draws (the owner's answer 6, then paused).** The draw weighted toward newcomers is paused with houses and plots the same day (pull request #61). Asked what happens when a player who holds a house wins a plot, the owner answered that houses stay a question mark until the shared world is in the field, and the core does not need them. So who may sign up and what a won plot is before its first step close as paused, and the answer 6 is the starting point if houses come back.
+- **Houses and plots paused, in this branch's text.** SETTLEMENT carries a paused note at its head and on 3.2, 3.3, S1, S1b and S5; what a house gives (3.4) is paused; the one store opens at the opening camp's chest and one in each town; a player's shop sells on the town's market board; the kernel review's plot refund is paused with plots. GRUNT's CR-71 and CR-92 keep their rows with the plots marked paused, and CR-48, CR-58 and CR-91 lose the house. G28's written exception for plots and houses changes on the branch of the ten answers, which edits G28. The town's buildings with one job each are #61's to write.
+- **CR-61 answered (the owner's answer 7).** A recipe a quest gives stays that quest's reward: the tier-1 recipes known from the start do not include it, the herb stew and the herb tea of the first helps among them. The open question in the entry on the game read as one line is closed.
+- **Every count of days or weeks names its clock.** The ones the check found unnamed run on the real calendar by the server's clock: the creators' pool's account-day and week, the two weeks of a first block, the hunters' honor once a day, and the daily balance of the books. A day starts at 00:00 UTC, as the daily caps do, and a week at 00:00 UTC on Wednesday. Like RuneScape, whose daily reset is at 00:00 UTC and whose weekly reset is on Wednesday.
+- **The check, finished.** Two readers walked the entry again: one for every definition against the living text, one for its precedents, the house rules and the references. Fixed here: the camp's fire matters by day too, since a burning camp is safe from the mist (SETTLEMENT 3.4); R8 in the kernel review calls the paying side the trader, as the one line names it; the world's hour stops for a window only until stage 7; the shared market drains on the server's hour until stage 7, while a player's own market drains on its valley's hour; four precedents read more exactly. Refuted on reading: the supersede lines placed after "**Closes:**" (that is the house order), a game named without a discussion elsewhere (every one is discussed), and CR-61's missing row (it lands with the ten answers). Routed, with nothing edited in another lane's files: G34's and P-5's gear and lantern, and CRAFTING_AUDIT's summary of G34, follow the ten answers' G34 on that branch; chapter 1's mist drawn by the client alone, and the receding mist's circle always clear around the character, against one mist (the story lane); STORY.md's "shared worlds (stage 2)", which are stage 4.
+
+**Closes:** the five holes left open by the entry on the game read as one line, and its check; GRUNT's CR-94 to CR-96 carry the building.
+**Retry when:** a guest's price reads as a toll that blocks a run to safety, a warning comes so often that players stop reading it, or houses come back. Model: claude-opus-5-5.

@@ -144,6 +144,9 @@ and G10 are the ones `pnpm check` can test today (section 8).
 
 - **G16 A session ends on a mark and leaves a door.** The day summary says
   what was found, built and learned, and names one thing waiting for tomorrow.
+  A valley's day ends when the player sleeps, or at 05:00 when the night is
+  played through; the summary comes then, before the morning toast, and waits
+  until the player stands in a safe place (G30; DECISIONS.md, 10.10).
 
 ### Variety
 
@@ -287,7 +290,8 @@ The valley has no combat; its danger is the hour, and what the player eats.
 
 - **G30 The town and a burning camp are safe; the night and the mist hunt.**
   The town and all ground at danger level 0 are safe at every hour, and a camp
-  is safe while its fire burns: any of these is a safe place, or a safe area,
+  is safe while its fire burns, another player's only for a guest whose stay
+  its owner approved: any of these is a safe place, or a safe area,
   the one thing every rule below means (DECISIONS.md, 10.10). The fire eats
   wood through the night, more the deeper the area and none at danger level 0,
   where the opening's camp stands. A camp anywhere else outside the
@@ -299,15 +303,17 @@ The valley has no combat; its danger is the hour, and what the player eats.
   trap is visible, the wolf sleeps, the pit is lit. What the player picks or
   eats can hurt at any hour: a bad fruit takes health in daylight too, and a
   player can fall at noon from it.
-- **G31 Nobody falls unwarned.** A countdown to nightfall sits at the screen's
-  edge while the player is outside a safe area (in the first levels, with a
-  banner too). Leaving a safe area after dark, or dark arriving outside one,
-  lights the player's lantern and opens one warning box (G14), once per night.
+- **G31 Nobody falls unwarned.** A countdown to nightfall or to the mist's
+  coming, whichever is first, sits at the screen's edge while the player is
+  outside a safe area (in the first levels, with a banner too). Entering the
+  mist, the mist arriving, leaving a safe area after dark, or dark arriving
+  outside one lights the player's lantern and opens one warning box (G14),
+  once per night. A burning camp warns before its fire goes out.
   The lantern is the sign that the night has begun, not a shield: its light
   keeps nothing off, and only a safe place does (G30, G34).
 - **G32 Health is the one bar.** The food bar becomes the health bar. Hazards
-  take health; food, a first-aid kit and a night's sleep in town or at a
-  burning camp give it back; low health slows work the way the empty bar did.
+  take health; food, a first-aid kit and a night's sleep in town, at one's own
+  burning camp or at another's as a guest with a deal give it back; low health slows work the way the empty bar did.
   Nothing drains it by the clock (G28): there is no hunger timer, eating is how
   the player heals, and cooking keeps its purpose.
 - **G33 A fall is clear, and it costs the outing.** At zero health the player
