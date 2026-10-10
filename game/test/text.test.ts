@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from 'vitest';
 
 import { type Bundle, newState } from '@game/kernel';
-import { hudUnlocks, itemBenefit } from '../src/text';
+import { hudUnlocks, itemBenefit, nodeAction } from '../src/text';
 import { loadBundle } from '../../tools/test/helpers/world';
 
 let bundle: Bundle;
@@ -23,6 +23,20 @@ describe('tool benefits', () => {
       },
     };
     expect(itemBenefit(withReeds, 'core/basket')).toContain('gathers forest mushrooms & reeds & sun herbs & wild herbs');
+  });
+});
+
+describe('what a node asks of the player', () => {
+  test('a tree is felled and everything else is gathered', () => {
+    expect(nodeAction(bundle, bundle.resources['core/oak-trees']!)).toBe('Fell tree');
+    for (const r of Object.values(bundle.resources).filter((x) => x.tool !== 'axe')) {
+      expect(nodeAction(bundle, r), r.id).toMatch(/^Gather /);
+    }
+    expect(nodeAction(bundle, bundle.resources['core/berry-bushes']!)).toBe('Gather Redberry');
+  });
+
+  test('the axe says it fells, and what', () => {
+    expect(itemBenefit(bundle, 'core/axe')).toBe('Tier 1 axe · fells oak trees · 50 uses');
   });
 });
 

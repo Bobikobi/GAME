@@ -473,7 +473,8 @@ class Player {
       for (const n of ready) {
         if ((await this.bag(item)) >= want) return;
         await this.walkTo({ x: n.x, y: n.y, w: 1, h: 1 }, n.id);
-        await this.expectPrompt(/^(Gather|Fell)/, n.id);
+        // a tree is felled, anything else gathered: the prompt must say which
+        await this.expectPrompt(source === 'core/oak-trees' ? /^Fell tree/ : /^Gather /, n.id);
         await this.a();
         await this.solveMinigame();
         await this.idle(`gathering ${n.id}`);
