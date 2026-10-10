@@ -475,3 +475,7 @@ The owner answered nine open questions on 10.10 in the afternoon, one at a time,
 
 Also noted by the owner: the skill descriptions at the start are not as simple as in other games, and raising a skill or a level does not weigh as much as it should. This goes to the opening's stream as a finding.
 **Retry when:** players read the camp price as a toll that blocks play (then a free first night), the plot odds read as unfair, or the 3D version's cost outruns the community's interest. Model: claude-opus-5-5.
+
+## 2026-10-10 ⏸ Player houses and plots are paused; the town serves the player through buildings with one job each
+The owner stopped the planning of player houses and plot draws: the design spread out and did not feel right. The game goes on without a house, as many games do. The town is the safe place, and its buildings each do one job: the workshop (crafting), a shop for food and medicine, a shop for tools and weapons, a shop for clothing. A building is entered by walking to its door, and its inside is one menu in a pop-up window, so the map stays readable and each job has a place without a new screen per building. Answer 6 of the entry above (the weighted plot draw) is paused with this entry; the camp deals (answer 5) stand, since a camp is not a house. Open quests or text that promise a house or a plot are cut or reworded in their own pull request.
+**Retry when:** players ask for a place of their own after the town buildings ship, or multiplayer needs a personal store the town cannot give. Model: claude-opus-5-5.
