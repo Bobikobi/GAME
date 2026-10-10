@@ -1,4 +1,4 @@
-<!-- Explains the GitHub automation that runs Mistvale's community loop. -->
+<!-- Explains the GitHub automation that runs Openfold's community loop. -->
 # The community loop
 
 The community loop turns supported requests into open calls, checks content proposals against the published merge rule, runs votes when ready proposals compete, and posts a weekly record. It reports whether a proposal is ready, but it never merges one. A maintainer still presses the merge button.

@@ -302,8 +302,8 @@ Files:
 - `web/src/pages/api/index.astro`: a list: `hub-data.json` (format, `built_at`),
   each `schema/<name>.schema.json` with its `$id`, each as a link; one line
   on the stage-2 plan (same paths, served by the server).
-- `web/public/llms.txt`: H1 with the product name (use the game's title until
-  question 2 is answered), one sentence, then sections `## Guide`,
+- `web/public/llms.txt`: H1 with the product name, Openfold (question 2,
+  settled on 9.10 in `DECISIONS.md`), one sentence, then sections `## Guide`,
   `## Schemas`, `## Data`, `## MCP`, `## Rules`, each a list of links with a
   short description, per llmstxt.org.
 - `web/test/api.test.ts`: every link in the built `api/index.html` resolves to
@@ -547,8 +547,8 @@ a step, and the hub shows the one-line setup.
 
 Files:
 - `.mcp.json` (repository root): `{"mcpServers": {"<name>": {"command": "pnpm",
-  "args": ["-s", "mcp"]}}}` with the product name from question 2 (until
-  answered, `valley`).
+  "args": ["-s", "mcp"]}}}` with the product name from question 2,
+  `openfold`.
 - `.cursor/mcp.json`: the same shape.
 - `docs/creators/README.md`: a section "Your AI tool and the project" with the
   two lines for a tool that does not read `.mcp.json` (`claude mcp add` and the
@@ -900,6 +900,180 @@ pnpm verify && pnpm e2e
 Green; the e2e log prints the climax line and the opened slot.
 
 Decision: DECISIONS.md 2026-10-08, the expedition entry; GAME_RULES.md G36-G37.
+
+## S - the story (after the owner's rulings in STORY.md, 2026-10-10)
+
+Read [docs/design/STORY.md](../design/STORY.md) first: the folds, rules S1-S6,
+the three beliefs and the lean. The order is fixed: S-1 and S-2 need no belief
+and go first, since G21 needs them anyway; S-3 is the belief kind, S-4 the lean
+and the choice, S-5 the checks, S-6 the first story content. Every item is
+additive, so `FORMAT_VERSION` does not move. A line that breaks a voice sheet
+or a rule of STORY.md stops the item and goes to the owner.
+
+### S-1. Lines with conditions
+
+Goal: a character notices that the world changed. A remark waits for its
+condition, is said once, and the most specific one wins (salience); a topic
+can wait for the world too (G21).
+
+Files:
+- `schema/src/index.ts`: a `When` object, every field optional, all must hold,
+  at least one given: `done`, `active`, `not_done` (quest ids), `restored`
+  (restore ids), `built` (camp ids), `has` (item ids, one in the bag),
+  `visited` (slot ids), each 1-4 ids; `time`: `day` or `night`. `NpcBody`
+  gains `remarks` (at most 16): `{ when, say: Text[1-2], priority?: 0-9 }`.
+  A topic gains an optional `when`; topics go to at most 8, of which the menu
+  shows four.
+- `kernel/src/story.ts` (new, exported): `holds(bundle, state, when)`,
+  `weight(when)` (the number of ids and conditions it names) and
+  `pickRemark(bundle, state, npcId, heard)`: of the remarks that hold and are
+  not in `heard`, the highest priority, then the highest weight, then the
+  first in the file. Pure; it reads the state and changes nothing.
+- `tools/src/assemble.ts`: an id in a `when` that names nothing is an error.
+- `tools/src/play.ts`: a remark is a standing line (two boxes at most, G21);
+  remark boxes count for G14.
+- `game/src/session.ts`: the save gains `heard?: string[]`
+  (`<npc>#<index>` for a remark, `<npc>?<index>` for a topic asked), next to
+  `met`.
+- `game/src/ui/ui.ts` (`talk`): after the first meeting, the picked remark is
+  said in place of the standing line and marked heard; the topic menu shows
+  the topics whose `when` holds, the ones not yet asked first, four at most.
+- `content/core/npcs/`: a remark or two per character that proves it, on the
+  voice sheets.
+- Tests: `kernel/test/story.test.ts` (each field of `When`; priority beats
+  weight, weight beats order; a heard remark steps back), the schema
+  refusing an empty `when`, `tools/test/play.test.ts` for a three-box remark.
+
+Proving command:
+```
+pnpm schemas && pnpm verify
+```
+
+Decision: DECISIONS.md 2026-10-10, the folds entry; STORY.md section 5.
+
+### S-2. Lines on the quest and the place
+
+Goal: no story line is hardcoded in the client. The giver's offer, the line
+while the player is on it and the thanks live in the quest file; the
+narrator's line when a place is mended lives in the restore file.
+
+Files:
+- `schema/src/index.ts`: `QuestBody` gains `talk?: { offer?: Text[1-3],
+  waiting?: Text[1-2], done?: Text[1-3] }`; `RestoreBody` gains
+  `done?: Text[1-2]`, the narrator's words. `{name}` in a line is the
+  player's name.
+- `game/src/ui/ui.ts`: `questTalk` says `offer` (else the summary) before the
+  reward, `waiting` (else the summary) before what is still needed;
+  `storyBeats` says a quest's `done` in its giver's voice and a restore's
+  `done` in the narrator's, and holds no line of its own.
+- `content/core/quests/three-fruits.json` and
+  `content/core/restores/old-bridge.json`: the two lines that `storyBeats`
+  held, cut to boxes of 80 characters (G14).
+- `tools/src/play.ts`: `offer` and `done` three boxes at most, `waiting` two,
+  every box counted for G14.
+- Tests: the play rules on a four-box offer; the e2e opening still reads the
+  bridge line.
+
+Proving command:
+```
+pnpm schemas && pnpm verify && pnpm e2e
+```
+
+Decision: as S-1.
+
+### S-3. Beliefs as content
+
+Goal: the three beliefs of STORY.md section 3 are files a creator can read and
+cite, and a character names the one it holds.
+
+Files:
+- `schema/src/`: a `belief` content kind: `name`, `mist` (what it says the
+  mist is), `asks` (what it says to do), `readings` (2-8 of
+  `{ bone: Word, text: Text }`). The bones are words, the same in every file
+  (S3); the glossary of S-5 lists them. `NpcBody` gains `belief?: Id`.
+- `tools/src/load.ts`, `tools/src/assemble.ts`: the kind loads like the
+  others; an unknown belief on a character is an error.
+- `content/core/beliefs/`: `menders.json`, `wakers.json`, `keepers.json`,
+  each reading at least two of the bones of S3.
+- `content/core/npcs/elder.json`: `"belief": "core/menders"`. Pell holds none.
+- `templates/extension/` and `docs/creators/README.md`: a belief example and
+  one paragraph on S1-S6.
+
+Proving command:
+```
+pnpm schemas && pnpm verify
+```
+
+Decision: STORY.md sections 3 and 7.
+
+### S-4. The lean and the choice
+
+Goal: what a player does leans toward a belief, the kernel keeps it, and the
+world shows it; no number ever reaches the screen.
+
+Files:
+- `kernel/src/state.ts`: `player.lean: Record<string, number>`, whole numbers,
+  clamped to a parameter range; nothing changes it by the clock (G28).
+- `schema/src/index.ts`: a `choice` step for `dilemma` quests: `ask` (Text) and
+  2-3 options `{ say: Text up to 40, lean: { belief: Id, by: -10..10 }[] }`;
+  `When` gains `lean: { belief, min }`. A dilemma quest has exactly one
+  choice step, and every option leads on (G12).
+- `kernel/src/step.ts`: a `choose` action that completes the step and applies
+  the option's lean; a test that a replay gives the same lean.
+- `game/src/ui/`: the options in the giver's dialogue; nothing that shows a
+  lean.
+- `tools/src/play.ts`: a dilemma without a choice step, or an option that
+  leans nowhere, is an error (G12).
+- The world's lean (the sum of a shared world) waits for stage 2.
+
+Proving command:
+```
+pnpm schemas && pnpm verify
+```
+
+Decision: STORY.md section 4.
+
+### S-5. The story checks
+
+Goal: what STORY.md and G22 can test on content is tested.
+
+Files:
+- `content/core/glossary.json` (a new `glossary` kind, extensions may add
+  their own, prefixed): the valley's names and the bones.
+- `tools/src/play.ts` (or `tools/src/story.ts`): a capitalised word in a line
+  that is not at the start of a sentence and not in a glossary, a character's
+  name or a title is a warning (G22); a narrator's line (a journal summary, a
+  clue, a restore's `done`) with "long ago", "ancient", "the old ones" or "in
+  the old days" is a warning for a person to read (S1); a bone that fewer
+  than two beliefs read is an error (S4).
+- Tests in `tools/test/play.test.ts` for each.
+
+Proving command:
+```
+pnpm check
+```
+Prints no S line for the core content.
+
+Decision: STORY.md section 5.
+
+### S-6. The first story
+
+Goal: the beliefs are heard in play. After S-3 and S-4.
+
+Files:
+- `content/core/npcs/trader.json`: a topic "Rumours" in Pell's voice that sells
+  all three tellings; a remark that tells first the one the player leans to.
+- `content/core/npcs/elder.json`: Maru's Mender lines behind a `when`.
+- `content/core/quests/`: the first `dilemma` quest, from Maru or Pell (a new
+  character waits for the owner to approve a voice sheet, G20).
+- The opening's text from the recut (DECISIONS.md, option B) when it lands.
+
+Proving command:
+```
+pnpm verify && pnpm e2e
+```
+
+Decision: STORY.md section 7.
 
 ## Open ends
 

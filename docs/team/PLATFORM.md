@@ -256,8 +256,8 @@ creator opens the pull request. A later `scaffold` tool may write inside
 
 The server runs on the creator's machine against the checkout, registered by a
 `.mcp.json` at the repository root (and `.cursor/mcp.json`), so a clone has it
-without installing anything. Publishing to npm waits for the product name and a
-public repository.
+without installing anything. Publishing to npm waits for a public repository;
+the product name, Openfold, is settled (`DECISIONS.md`, 2026-10-09).
 
 ### 4.2 API
 
@@ -470,7 +470,9 @@ Asked in the platform message, recommendation first, at most four:
 
 Answered 2026-10-08, recorded in `DECISIONS.md` under that date: 1 yes, with the
 checklist before the switch; 2 the first community votes on the name, from the
-shortlist there; 3 yes; 4 yes.
+shortlist there; 3 yes; 4 yes. Question 2 then closed without the vote: the owner
+confirmed Openfold on 2026-10-09, and the product owner kept it after the
+registrar check (`DECISIONS.md`, both under that date).
 
 ## 12. What this plan does not do
 
