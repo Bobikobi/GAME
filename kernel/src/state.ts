@@ -4,7 +4,7 @@
  * stable and a save is just that text.
  */
 import type { Bundle, Verb } from './bundle';
-import { clamp, idiv, mulDiv } from './num';
+import { clamp, idiv, idivUp, mulDiv } from './num';
 
 export const KERNEL_VERSION = '0.3.0';
 
@@ -39,6 +39,29 @@ export interface NodeState {
   draws: number;
 }
 
+/**
+ * What one outing has brought in so far (G33): the player's account of a walk
+ * from the last safe place. A fall takes back exactly this and nothing else.
+ */
+export interface Outing {
+  /** items the world gave on this outing and the bag still holds, by item; spending uses these first */
+  gained: Record<string, number>;
+  /** riddle steps solved on this outing, "<quest id>#<step index>" */
+  solved: string[];
+  /** places first visited on this outing */
+  visited: string[];
+}
+
+/** A hunt in progress: the predator that has the player's scent. It bites by the clock until a safe place or dawn. */
+export interface Chase {
+  /** id of the predator prop */
+  hazard: string;
+  /** tick the hunt began */
+  since: number;
+  /** bites already taken */
+  bites: number;
+}
+
 export interface Player {
   name: string;
   /** '' until the player picks a starter */
@@ -51,7 +74,10 @@ export interface Player {
   bag: Record<string, number>;
   /** uses already taken from the tool unit in hand, per tool item */
   wear: Record<string, number>;
-  /** milli-points, as of tick satietyAt */
+  /**
+   * The health bar, in milli-points, as of tick satietyAt. It began as a food bar that a hunger drain empties by the clock;
+   * hazards take from it too (DECISIONS.md, 2026-10-10), and the name waits for the rename.
+   */
   satiety: number;
   satietyAt: number;
   busyUntil: number;
@@ -76,6 +102,16 @@ export interface Player {
   looks: Partial<Record<WearSlot, string>>;
   /** crafts tried per recipe: the draw counter of the craft chance (rule R4) */
   tries: Record<string, number>;
+  /** the town square the player was last in: where a fall wakes them. '' before the first town. */
+  town: string;
+  /** null while the player stands somewhere safe; else the account of this walk out (G33) */
+  outing: Outing | null;
+  /** the hunt the player is in, if any */
+  chase: Chase | null;
+  /** falls so far: the draw counter of the tile they wake on (rule R4) */
+  falls: number;
+  /** tick of the last arrival: a position report, or an action at a tile */
+  movedAt: number;
 }
 
 export interface State {
@@ -124,6 +160,11 @@ export function newState(bundle: Bundle, seed: number): State {
       worn: {},
       looks: {},
       tries: {},
+      town: '',
+      outing: null,
+      chase: null,
+      falls: 0,
+      movedAt: 0,
     },
     nodes: {},
     ledger: { minted: 0, burned: 0 },
@@ -304,6 +345,31 @@ export function hourOf(bundle: Bundle, tick: number): number {
 export function isNight(bundle: Bundle, tick: number): boolean {
   const hour = hourOf(bundle, tick);
   return hour >= 20 || hour < 5;
+}
+
+/** Where a tick falls in its day: 0 at midnight (tick 0 is 6:00, a quarter of the way in). */
+function phaseOf(bundle: Bundle, tick: number): number {
+  const day = bundle.params.day_length_ms;
+  return (tick + idiv(day, 4)) % day;
+}
+
+/** The first tick from `tick` on that is night (the tick itself when it already is): when the dark arrives. */
+export function nightFalls(bundle: Bundle, tick: number): number {
+  const day = bundle.params.day_length_ms;
+  const phase = phaseOf(bundle, tick);
+  const dawn = idivUp(5 * day, 24);
+  const dusk = idivUp(20 * day, 24);
+  return phase >= dawn && phase < dusk ? tick + (dusk - phase) : tick;
+}
+
+/** The first tick from `tick` on that is not night (the tick itself when it already is not): when the dark ends. */
+export function nightEnds(bundle: Bundle, tick: number): number {
+  const day = bundle.params.day_length_ms;
+  const phase = phaseOf(bundle, tick);
+  const dawn = idivUp(5 * day, 24);
+  const dusk = idivUp(20 * day, 24);
+  if (phase >= dusk) return tick + (day - phase) + dawn;
+  return phase < dawn ? tick + (dawn - phase) : tick;
 }
 
 /** Minutes past midnight, for the clock on screen. */

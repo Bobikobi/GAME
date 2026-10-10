@@ -173,7 +173,7 @@ function badAction(state: State, random: () => number): Action {
 
 function plausibleAction(state: State, random: () => number): Action {
   const fallback = (): Action => ({ t: 'spend', attr: pick([...KERNEL_ATTRIBUTES], random) });
-  const choice = Math.floor(random() * 13);
+  const choice = Math.floor(random() * 14);
   if (choice === 0) {
     const [id, instance] = pick(Object.entries(bundle.instances).sort(([a], [b]) => a.localeCompare(b)), random);
     const at = nearTile(state, { x: instance.x, y: instance.y, w: 1, h: 1 });
@@ -234,6 +234,11 @@ function plausibleAction(state: State, random: () => number): Action {
     return { t: 'wear', item: held.length > 0 ? pick(held, random) : pick(Object.keys(bundle.items).sort(), random) };
   }
   if (choice === 11) return { t: 'unwear', slot: pick(WEAR_SLOTS, random), look: random() < 0.5 };
+  if (choice === 12) {
+    // a position report: a step to a neighbouring tile, which the world may refuse
+    const [x, y] = state.player.at;
+    return { t: 'move', at: [x + Math.floor(random() * 3) - 1, y + Math.floor(random() * 3) - 1] };
+  }
   return fallback();
 }
 
