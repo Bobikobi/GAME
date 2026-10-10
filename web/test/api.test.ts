@@ -49,10 +49,9 @@ describe('llms.txt', () => {
     expect(llms).toContain('(/api/hub-data.json)');
   });
 
-  it('has the five sections, and each site link but the data document resolves', () => {
+  it('has the five sections, and each site link resolves', () => {
     for (const section of ['Guide', 'Schemas', 'Data', 'MCP', 'Rules']) expect(llms).toContain(`\n## ${section}\n`);
     const site = [...llms.matchAll(/\]\((\/[^)]*)\)/g)].map((m) => m[1]!);
-    // hub-data.json is written by the data build (item 3), which the site build does not run yet
-    for (const href of site.filter((h) => h !== '/api/hub-data.json')) expect(existsSync(servedFrom(href)), href).toBe(true);
+    for (const href of site) expect(existsSync(servedFrom(href)), href).toBe(true);
   });
 });
