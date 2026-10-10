@@ -18,3 +18,4 @@ Learned on the first three days of building, each line from a real cost.
 - Before a proving run, grep the tests for every string the change renamed or rewrote and fix all the expectations in one pass. Then run the single test file, then `pnpm verify`, then `pnpm e2e` last.
 - CI retries the opening e2e once and keeps the screenshots of the failed attempt (issue #25). A run that passed on your machine is not proven again when CI flakes; rerun the job.
 - Fetching assets from a provider: read its index or API first, check the size before downloading, and keep a cap per model. Raw photoscans run to hundreds of megabytes and a browser cannot carry them.
+- Read [docs/design/STORY.md](docs/design/STORY.md) before writing lore, a line about the past, a new character or an extension's setting. The narrator never states the past, and every claim about it has a speaker (S1-S6 there).
