@@ -6,7 +6,7 @@ import Copy from '../../components/Copy.astro';
 import '../../styles/hub.css';
 import { CORE_PALETTE } from '../../../../tools/src/kit/palette';
 import { TOOLS } from '../../../../mcp/src/tools';
-import { builders, weights, week } from '../../data/boards';
+import { builders, githubRead, weights, week } from '../../data/boards';
 import { prompt } from '../../data/prompt';
 import { dateTime, repoFile, repoTree } from '../../data/site';
 
@@ -118,7 +118,11 @@ const swatches = CORE_PALETTE.map((hex, i) => `.swatches li:nth-child(${i + 1}) 
                 <small>Posted {dateTime(week.posted_at)} UTC</small>
               </p>
             ) : (
-              <p>No summary yet. The weekly summary arrives with the data build of the site.</p>
+              <p>
+                {githubRead
+                  ? 'No summary yet. The loop posts one on GitHub every Monday morning.'
+                  : 'This build could not read GitHub, so the weekly summary is not shown here.'}
+              </p>
             )
           }
         </section>
