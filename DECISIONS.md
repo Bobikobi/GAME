@@ -550,8 +550,8 @@ A character's own start, as the frame for the open question:
 
 How far each character's start differs (question C1): answered the same day; see the next entry. Either way the axe comes before the first fire.
 
-**Superseded in part (10.10):** the catch-up of an axe for a saved character is dropped, since demo saves reset once (the entry on saves).
 **Closes:** W1; GRUNT's open ends carry the building in CR-24.
+**Superseded in part (10.10):** the catch-up of an axe for a saved character is dropped, since demo saves reset once (the entry on saves).
 **Retry when:** a playtest shows the first fire too slow to reach. Model: claude-opus-5-5.
 
 ## 2026-10-09 ✅ Each character begins its own way: a place to wake, a kit and a first task, meeting at the bridge and the first fire
@@ -569,8 +569,8 @@ Readings, each open to the owner's word:
 - A kit holds tier-1 things only, so no start hands out what G41 keeps behind a gate.
 - Each start has its own waking lines, in place of the one opening narration of today.
 
-**Superseded in part (10.10):** three starters, not two, and the digger digs its axe where the explorer did (the entry on three starters).
 **Closes:** C1; GRUNT's open ends carry the building as CR-37.
+**Superseded in part (10.10):** three starters, not two, and the digger digs its axe where the explorer did (the entry on three starters).
 **Retry when:** a playtest shows one start slower or richer than another. Model: claude-opus-5-5.
 
 ## 2026-10-09 ✅ One internal difficulty scale: each step asks half again as much, and the screen never shows it
@@ -950,6 +950,7 @@ G15 said a miss keeps something; the kernel and "Harder minigames" (7.10) keep 0
 
 The owner said on 9.10 that no gear answers a hazard and a predator is escaped by running back to town; G34 and P-5 still listed lantern oil, a torch, a rope and an antidote as answers and the road as the chase's end; the boards entry added road thieves answered by an item. The owner's word (10.10): only escape. A hunting hazard is escaped by running back to a safe place (the town, or a camp whose fire burns, G30); a waiting hazard is avoided by knowing its rule (the trap shows by day, the pit is where the floor is broken, the bad herb is safe cooked, the river has no bridge at night). No item bought or made answers a hazard. Healing is not an answer: food, a first-aid kit and a night's sleep still give health back (G32). Road thieves come later in the game, when there are weapons (CR-12), so "the top is hunted" in the boards entry waits with them.
 
+**Superseded in part (10.10):** a safe place is G30's one safe place: the town, all ground at danger level 0 and a camp whose fire burns, another player's only for a guest with a deal (the entries on the game read as one line and on the five holes of the one line).
 **Retry when:** combat opens (stage 8 or a vote). Model: claude-opus-5-5.
 
 ## 2026-10-10 ✅ First-tier recipes are known from the start; higher tiers are dug up
@@ -976,6 +977,7 @@ All three keep C1's checks: one attribute total (6), one band of kit value, one 
 "Season" meant two things: a content season of a quarter with its board and titles, and a season of the real year. The owner's word (10.10): one season. A content season runs on exactly the months of a season of the year (March to May, June to August, September to November, December to February), and keeps its theme's name, since the halves of the globe see opposite seasons (the entry on a season's length holds). For holidays the owner chose "one time" (the option that breaks the rule of no last chance) and said to fix the rule to fit: a holiday still falls on its real dates every year, but what it gives is that year's only, a look or a title marked with the year, bound to the character and never traded. Whoever misses it does not get it later; the next year's holiday gives its own. This is the game's one "last chance", and it costs a look or a title, never a use, a recipe, a tool or a way forward. G28 now carries it as its second written exception, and G42 names it. G30's hours also follow the kernel's (dark from 20:00 to 05:00), a correction with no owner question, since the code is what the player sees.
 
 **Supersedes:** "It comes back every year on its dates" for what a holiday gives, and the "no last chance" of G28 for holidays only (the entry on the real year); GRUNT's CR-41 and CR-42 carry the building.
+**Superseded in part (10.10):** the exception for plots and houses is paused with them (the entry on houses and plots paused), so the holidays are G28's one written exception while it lasts.
 **Retry when:** players who missed a holiday feel locked out or pressed to log in on its dates. Model: claude-opus-5-5.
 
 ## 2026-10-10 ✅ A sale between players burns a small fee, paid by the seller

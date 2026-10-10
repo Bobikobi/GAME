@@ -276,19 +276,16 @@ already handles that and the e2e run checks it.
 - **G28 No dark patterns.** The valley waits. No punishment for being away,
   no timer that runs out while the player sleeps, no fake scarcity, no "last
   chance", nothing to pay for. A return is rewarded (the ladder's Day 2); an
-  absence is never punished. One written exception, for the shared world of
-  stage 4: a plot in a shared town is scarce, so a building with no finished
-  step for 14 days, or the house of an owner who has not played for 45 days,
-  goes back to the town. Every delivered item and 80% of the plot's price
-  come back, a finished house is packed and never destroyed, and one mail
-  comes first ([SETTLEMENT.md](SETTLEMENT.md) 3.2 and 3.8). Absence costs
-  the place, never what the player made. A second written exception, for the
-  valley's holidays: a holiday falls on its real dates every year, and what it
+  absence is never punished. One written exception, for the valley's
+  holidays: a holiday falls on its real dates every year, and what it
   gives is that year's only, a look or a title marked with the year, bound to
   the character and never traded. A player who misses it does not get it
   later; the next year's holiday gives its own. This is the one "last chance"
   the game has, and it costs a look or a title, never a use, a recipe, a tool
-  or a way forward (G42; DECISIONS.md, 10.10).
+  or a way forward (G42; DECISIONS.md, 10.10). The exception for scarce
+  plots and houses in a shared town ([SETTLEMENT.md](SETTLEMENT.md) 3.2) is
+  paused with player houses and plots, and comes back only with them
+  (DECISIONS.md, 10.10).
 - **G29 Playable by more people.** Text at 16 px or more and dialogue at 18
   (FTUE); colour is never the only signal (a glint has a shape, a tone has a
   word); reduced motion is honoured by every effect; one hand is enough on a
@@ -325,7 +322,8 @@ The valley has no combat; its danger is the hour, and what the player eats.
   keeps nothing off, and only a safe place does (G30, G34).
 - **G32 Health is the one bar.** The food bar becomes the health bar. Hazards
   take health; food, a first-aid kit and a night's sleep in town, at one's own
-  burning camp or at another's as a guest with a deal give it back; low health slows work the way the empty bar did.
+  burning camp or at another's as a guest with a deal give it back; low health
+  slows work the way the empty bar did.
   Nothing drains it by the clock (G28): there is no hunger timer, eating is how
   the player heals, and cooking keeps its purpose. Until P-5 builds this the
   food bar still drains by the clock (`satiety_drain_per_min`); the rule holds
@@ -348,7 +346,8 @@ The valley has no combat; its danger is the hour, and what the player eats.
   Each hazard acts by a rule the player can learn, and no thing bought or made
   answers it (DECISIONS.md, 9.10 and 10.10). A hunting hazard (the wolf, the
   hidden pit, the trap, deep water at night) is escaped by running back to a
-  safe place, the town or a camp whose fire burns (G30), and the run is hard
+  safe place (G30: the town, all ground at danger level 0, or a camp whose fire
+  burns), and the run is hard
   and possible; the rest are avoided by knowing the rule: the trap shows by
   day, the pit is where the floor is broken, the herb is bad raw and safe
   cooked, deep water is the river without its bridge at night. Food, a
