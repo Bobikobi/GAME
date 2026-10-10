@@ -1,10 +1,10 @@
 /**
- * `tsx tools/src/site/copy-play.ts`, the last step of `pnpm build` (docs/team/GRUNT.md, item 4): the game's build
- * becomes the site's /play/, and a 3D build, when there is one, becomes /play3d/ (play3d.ts). The home page's 3D
- * loop (web/media/) ships only when the page shows the 3D door. Each target is emptied first, so nothing stale
- * survives a rebuild.
+ * `tsx tools/src/site/copy-play.ts`, the last step of `pnpm build` (docs/team/GRUNT.md, items 4 and 8): the game's
+ * build becomes the site's /play/, and a 3D build, when there is one, becomes /play3d/ (play3d.ts). The home page's
+ * 3D loop (web/media/) ships only when the page shows the 3D door. The JSON schemas are published at /api/schema/.
+ * Each target is emptied first, so nothing stale survives a rebuild.
  */
-import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { REPO_ROOT } from '../load';
 import { has3dBuild, PLAY3D_OUT, show3dDoor } from './play3d';
@@ -12,10 +12,14 @@ import { has3dBuild, PLAY3D_OUT, show3dDoor } from './play3d';
 const site = join(REPO_ROOT, 'web/dist');
 if (!existsSync(join(site, 'index.html'))) throw new Error('no web/dist: run the site build first');
 
-function copy(from: string, to: string): void {
+function copy(from: string, to: string, filter?: (name: string) => boolean): void {
   rmSync(to, { recursive: true, force: true });
   mkdirSync(to, { recursive: true });
-  cpSync(from, to, { recursive: true });
+  if (!filter) {
+    cpSync(from, to, { recursive: true });
+    return;
+  }
+  for (const name of readdirSync(from).filter(filter)) cpSync(join(from, name), join(to, name));
 }
 
 const game = join(REPO_ROOT, 'game/dist');
@@ -36,3 +40,6 @@ if (show3dDoor(REPO_ROOT)) {
 } else {
   rmSync(join(site, 'media'), { recursive: true, force: true });
 }
+
+copy(join(REPO_ROOT, 'schema/json'), join(site, 'api/schema'), (name) => name.endsWith('.schema.json'));
+console.log('copied schema/json to web/dist/api/schema/');
