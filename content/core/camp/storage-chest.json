@@ -9,8 +9,8 @@
     "slot": "storage",
     "inputs": [
       {
-        "item": "core/branch",
-        "qty": 6
+        "item": "core/log",
+        "qty": 3
       },
       {
         "item": "core/stone",

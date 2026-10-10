@@ -24,12 +24,13 @@ const expected: readonly ExpectedSprite[] = [
   { category: 'tiles', name: 'water', width: 32, height: 16, frameWidth: 16 },
   ...[
     'herb', 'herb-tea', 'berry-mash', 'herb-stew', 'mushroom-skewer', 'pottery-shard',
-    'old-coin', 'stone-idol', 'stew-scrap', 'basket', 'trowel',
+    'old-coin', 'stone-idol', 'stew-scrap', 'basket', 'trowel', 'log', 'axe',
   ].map((name) => ({ category: 'items' as const, name, width: 16, height: 16, frameWidth: 16 })),
-  ...['herb_plant', 'bush_empty', 'campfire_unlit', 'sign', 'dig_spot', 'chest', 'shelf']
+  ...['herb_plant', 'bush_empty', 'campfire_unlit', 'sign', 'dig_spot', 'chest', 'shelf', 'sapling']
     .map((name) => ({ category: 'props' as const, name, width: 16, height: 16, frameWidth: 16 })),
   { category: 'props', name: 'market_stall', width: 32, height: 32, frameWidth: 32 },
   { category: 'props', name: 'ruin_pillar', width: 16, height: 32, frameWidth: 16 },
+  { category: 'props', name: 'young_tree', width: 16, height: 24, frameWidth: 16 },
   { category: 'props', name: 'fog', width: 32, height: 32, frameWidth: 32 },
   { category: 'chars', name: 'player_down', width: 48, height: 24, frameWidth: 16 },
   { category: 'chars', name: 'player_up', width: 48, height: 24, frameWidth: 16 },

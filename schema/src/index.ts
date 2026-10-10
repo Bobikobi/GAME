@@ -46,7 +46,7 @@ export const Rarity = Type.Union(RARITIES.map((r) => Type.Literal(r)), {
   description: 'Declared rarity. The check compares it with the rarity computed from the data.',
 });
 
-export const TOOL_KINDS = ['basket', 'trowel'] as const;
+export const TOOL_KINDS = ['basket', 'trowel', 'axe'] as const;
 export const ToolKind = Type.Union(TOOL_KINDS.map((k) => Type.Literal(k)));
 
 export const STATIONS = ['fire', 'workshop'] as const;
@@ -225,8 +225,22 @@ export const ResourceBody = Type.Object(
     count: Int(1, 12, 'How many of these nodes the slot holds.'),
     sprite: SpriteRef,
     sprite_empty: Type.Optional(SpriteRef),
+    growth: Type.Optional(
+      Type.Array(SpriteRef, {
+        minItems: 1,
+        maxItems: 3,
+        description:
+          'Young stages of a node that grows back, from the youngest up (after `sprite_empty`, before `sprite`). The client shows the stage by how much of the respawn time has passed. Needs `sprite_empty`.',
+      }),
+    ),
+    solid: Type.Optional(
+      Type.Boolean({
+        description:
+          'The node blocks the way, ready or not, as a tree does: a stump stays in the way until the tree is grown again. Left out: the player walks through it.',
+      }),
+    ),
     tool: Type.Optional(ToolKind),
-    level: Int(1, 20, 'Foraging level required.'),
+    level: Int(1, 20, 'Level required, in the profession the node trains: felling when the tool is an axe, foraging otherwise.'),
     game: Type.Optional(
       Type.Union([Type.Literal('timing'), Type.Literal('strike'), Type.Literal('pick'), Type.Literal('snap')], {
         description: 'The minigame played when gathering: "timing" (stop a marker in the middle, the default), "strike" (three timed hammer strikes, for stone), "pick" (press only for the ripe ones, for plants) or "snap" (press fast, for wood).',
@@ -329,6 +343,42 @@ export const TemplateBody = Type.Object(
   },
 );
 
+const Ids = (description: string) => Type.Array(Id, { minItems: 1, maxItems: 4, description });
+
+/**
+ * A condition on the world, for a line that waits for it (docs/design/STORY.md
+ * section 5: storylets and salience). Every field given must hold. The more a
+ * condition names, the more specific it is, and the more specific line wins.
+ */
+export const When = Type.Object(
+  {
+    done: Type.Optional(Ids('Quests the player has finished.')),
+    active: Type.Optional(Ids('Quests the player is on now.')),
+    not_done: Type.Optional(Ids('Quests the player has not finished yet, on them or not.')),
+    restored: Type.Optional(Ids('Places the player has mended.')),
+    built: Type.Optional(Ids('Camp parts that stand, themselves or under an upgrade.')),
+    has: Type.Optional(Ids('Items with at least one in the bag.')),
+    visited: Type.Optional(Ids('Map slots the player has stood in.')),
+    time: Type.Optional(
+      Type.Union([Type.Literal('day'), Type.Literal('night')], { description: 'By day (05:00 to 20:00) or by night.' }),
+    ),
+  },
+  { additionalProperties: false, minProperties: 1, description: 'Holds when every condition it names holds.' },
+);
+
+export const Remark = Type.Object(
+  {
+    when: When,
+    say: Type.Array(Text, { minItems: 1, maxItems: 2, description: 'One box, two at most (G21).' }),
+    priority: Type.Optional(Int(0, 9, 'Higher is said first when more than one remark holds. Left out, 0.')),
+  },
+  {
+    additionalProperties: false,
+    description:
+      'A standing line that waits for a change in the world and is said once, in place of the standing line. Of the remarks that hold, the highest priority wins, then the one whose condition names the most, then the first in the file.',
+  },
+);
+
 export const NpcBody = Type.Object(
   {
     name: Name,
@@ -346,16 +396,22 @@ export const NpcBody = Type.Object(
       },
       { additionalProperties: false },
     ),
+    remarks: Type.Optional(Type.Array(Remark, { maxItems: 16 })),
     topics: Type.Optional(
       Type.Array(
         Type.Object(
           {
             ask: Type.String({ minLength: 1, maxLength: 40, description: 'The question the player can pick, for example "About the mist".' }),
             lines: Type.Array(Text, { minItems: 1, maxItems: 6 }),
+            when: Type.Optional(When),
           },
           { additionalProperties: false },
         ),
-        { maxItems: 4, description: 'Things the player can always ask about.' },
+        {
+          maxItems: 8,
+          description:
+            'Things the player can ask about: always, or once the topic\'s `when` holds (G21). The menu shows four at most, the ones not yet asked first.',
+        },
       ),
     ),
     shop: Type.Optional(Id),
@@ -455,6 +511,21 @@ export const QuestBody = Type.Object(
     summary: Text,
     steps: Type.Array(QuestStep, { minItems: 1, maxItems: 6 }),
     requires: Type.Optional(Type.Array(Id, { maxItems: 4 })),
+    talk: Type.Optional(
+      Type.Object(
+        {
+          offer: Type.Optional(Type.Array(Text, { minItems: 1, maxItems: 3, description: 'The giver asks. Left out, the summary.' })),
+          waiting: Type.Optional(
+            Type.Array(Text, { minItems: 1, maxItems: 2, description: 'The giver, while the player is on it. Left out, the summary.' }),
+          ),
+          done: Type.Optional(Type.Array(Text, { minItems: 1, maxItems: 3, description: 'The giver, when the player hands it in.' })),
+        },
+        {
+          additionalProperties: false,
+          description: 'What the giver says, in the giver\'s voice. "{name}" in a line is the player\'s name.',
+        },
+      ),
+    ),
     reward: Type.Object(
       {
         rep: Int(0, 100, 'Reputation with the giver. Never traded, so it can be generous.'),
@@ -477,6 +548,13 @@ export const RestoreBody = Type.Object(
     active_ms: Ms('Time the player is busy restoring it.'),
     passable: Type.Boolean({ description: 'Whether the restored thing can be walked over (a bridge).' }),
     sign: Type.Optional(Name),
+    done: Type.Optional(
+      Type.Array(Text, {
+        minItems: 1,
+        maxItems: 2,
+        description: 'The narrator, when the place is mended: what is there now, never what was (STORY.md S1). "{name}" is the player\'s name.',
+      }),
+    ),
   },
   { additionalProperties: false },
 );
@@ -517,6 +595,12 @@ export const StarterBody = Type.Object(
         description: 'Another look of the same character (for example a woman instead of a man), offered by one toggle on the character screen. Same sprite sizes and directions as `sprite`.',
       }),
     ),
+    kit: Type.Optional(
+      Type.Array(Stack, {
+        maxItems: 6,
+        description: 'What the character carries on the first morning: the tools of its first task, put in the bag when the character is chosen.',
+      }),
+    ),
   },
   { additionalProperties: false },
 );
@@ -540,7 +624,7 @@ export const Effect = Type.Union(EFFECTS.map((k) => Type.Literal(k)), {
 export const ProfessionBody = Type.Object(
   {
     name: Name,
-    verb: Type.Union([Type.Literal('gather'), Type.Literal('dig'), Type.Literal('craft')]),
+    verb: Type.Union([Type.Literal('gather'), Type.Literal('fell'), Type.Literal('dig'), Type.Literal('craft')]),
     stations: Type.Optional(
       Type.Array(Station, {
         minItems: 1,
@@ -849,6 +933,8 @@ export type Treasure = Static<typeof TreasureBody>;
 export type Recipe = Static<typeof RecipeBody>;
 export type Template = Static<typeof TemplateBody>;
 export type Npc = Static<typeof NpcBody>;
+export type WhenDef = Static<typeof When>;
+export type RemarkDef = Static<typeof Remark>;
 export type Quest = Static<typeof QuestBody>;
 export type Restore = Static<typeof RestoreBody>;
 export type Camp = Static<typeof CampBody>;

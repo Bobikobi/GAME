@@ -914,6 +914,8 @@ or a rule of STORY.md stops the item and goes to the owner.
 
 ### S-1. Lines with conditions
 
+Status: built 10.10 together with S-2 in the pull request `feat/story-lines`; live when the owner merges.
+
 Goal: a character notices that the world changed. A remark waits for its
 condition, is said once, and the most specific one wins (salience); a topic
 can wait for the world too (G21).
@@ -954,6 +956,8 @@ pnpm schemas && pnpm verify
 Decision: DECISIONS.md 2026-10-10, the folds entry; STORY.md section 5.
 
 ### S-2. Lines on the quest and the place
+
+Status: built 10.10 together with S-1 in the pull request `feat/story-lines`; live when the owner merges.
 
 Goal: no story line is hardcoded in the client. The giver's offer, the line
 while the player is on it and the thanks live in the quest file; the

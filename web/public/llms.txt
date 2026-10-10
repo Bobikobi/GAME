@@ -1,0 +1,33 @@
+# Openfold
+
+> A free pixel-art game in the browser whose places, quests and items are data records that builders add to an open repository; a record that passes `pnpm check` and is merged enters the game with its builder's signature.
+
+Paths starting with / are on this site. Content goes in content/extensions/<your-handle>/; the core content in content/core/ is the project's own.
+
+## Guide
+
+- [Add a fruit in 10 minutes](https://github.com/Bobikobi/GAME/blob/develop/docs/creators/README.md): the creator guide - run the game, copy the template, check, open a pull request; profiles, signatures and points
+- [The template](https://github.com/Bobikobi/GAME/tree/develop/templates/extension): a working extension (a fruit bush and a quest) to copy and rename
+- [Developer area](/hub/): where to start, the tools and the boards
+
+## Schemas
+
+- [Schema list](/api/#schemas): one JSON Schema per record type, the files `pnpm check` validates against
+- [Quest schema](/api/schema/quest.schema.json): a quest and its steps
+- [Resource schema](/api/schema/resource.schema.json): something to gather, such as a fruit bush
+- [Extension schema](/api/schema/extension.schema.json): any one file of a builder's folder, whatever its type
+
+## Data
+
+- [hub-data.json](/api/hub-data.json): the boards, the requests and this week in one document, format in [hub-data.schema.json](/api/schema/hub-data.schema.json); published once the data build is part of the site
+- [Boards](/hub/boards/): builders and reviewers with the weights their points are computed with
+
+## MCP
+
+- [Tool definitions](https://github.com/Bobikobi/GAME/tree/develop/mcp): the read-only tools of the creator MCP server (schema, check, slots, requests, template, value, preview, guide, rules); the server that serves them lands with the next release
+
+## Rules
+
+- [How to contribute](https://github.com/Bobikobi/GAME/blob/develop/CONTRIBUTING.md): how a pull request is reviewed and merged
+- [Code licence](https://github.com/Bobikobi/GAME/blob/develop/LICENSE): AGPL-3.0
+- [Content licence](https://github.com/Bobikobi/GAME/blob/develop/content/LICENSE): CC BY-SA 4.0, for every record and sprite

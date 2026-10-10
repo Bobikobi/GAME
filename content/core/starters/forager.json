@@ -16,6 +16,12 @@
       "stamina": 1
     },
     "sprite": "core/base-kit:chars/player_down",
-    "sprite_alt": "core/base-kit:chars/woman_down"
+    "sprite_alt": "core/base-kit:chars/woman_down",
+    "kit": [
+      {
+        "item": "core/axe",
+        "qty": 1
+      }
+    ]
   }
 }

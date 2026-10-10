@@ -82,6 +82,29 @@ describe('session persistence', () => {
     expect(restored?.met.size).toBe(0);
   });
 
+  test('a save from before the kit existed is given the start\'s axe once, and the next visit leaves it alone', () => {
+    startedSession();
+    const file = JSON.parse(storage.getItem(SAVE_KEY)!) as { state: string };
+    const old = JSON.parse(file.state) as { content: string; player: { bag: Record<string, number>; journal: string[] } };
+    delete old.player.bag['core/axe'];
+    old.player.journal = old.player.journal.filter((id) => id !== 'core/axe');
+    old.content = 'an-older-world';
+    file.state = JSON.stringify(old);
+    storage.setItem(SAVE_KEY, JSON.stringify(file));
+
+    const restored = Session.restore(bundle)!;
+    expect(restored.adapted).toBe(true);
+    expect(restored.state.player.bag['core/axe']).toBe(1);
+    expect(restored.state.player.journal).toContain('core/axe');
+
+    // the world is current now: an axe the player no longer holds is not handed out again
+    delete restored.state.player.bag['core/axe'];
+    restored.save();
+    const again = Session.restore(bundle)!;
+    expect(again.adapted).toBe(false);
+    expect(again.state.player.bag['core/axe']).toBeUndefined();
+  });
+
   test('carries a save made under the working title over to the new key', () => {
     startedSession();
     storage.setItem(LEGACY_SAVE_KEY, storage.getItem(SAVE_KEY)!);
@@ -172,8 +195,26 @@ describe('session persistence', () => {
 
     expect(vi.mocked(say)).toHaveBeenCalledTimes(2);
     expect(vi.mocked(say).mock.calls[1]?.[2]).toHaveLength(1);
-    expect(vi.mocked(say).mock.calls[1]?.[3]?.map((option) => option.label)).toEqual(
-      expect.arrayContaining(bundle.npcs['core/elder']!.topics!.map((topic) => topic.ask)),
-    );
+    const topics = bundle.npcs['core/elder']!.topics!;
+    const labels = vi.mocked(say).mock.calls[1]?.[3]?.map((option) => option.label);
+    expect(labels).toEqual(expect.arrayContaining(topics.filter((t) => !t.when).map((t) => t.ask)));
+    for (const t of topics.filter((t) => t.when)) expect(labels).not.toContain(t.ask);
+  });
+
+  test('says a remark the world earned once, across a reload, and opens the topic that waited (GRUNT S-1)', async () => {
+    app.session = startedSession();
+    app.session.meet('core/elder');
+    app.session.state.player.quests['core/a-coin-for-maru'] = 'done';
+    const elder = bundle.npcs['core/elder']!;
+    const remark = elder.remarks!.find((r) => r.when.done?.includes('core/a-coin-for-maru'))!;
+    const waited = elder.topics!.find((t) => t.when?.done?.includes('core/a-coin-for-maru'))!;
+
+    await talker().talk('core/elder');
+    expect(vi.mocked(say).mock.calls[0]?.[2]).toEqual(remark.say);
+    expect(vi.mocked(say).mock.calls[0]?.[3]?.map((option) => option.label)).toContain(waited.ask);
+
+    app.session = Session.restore(bundle)!;
+    await talker().talk('core/elder');
+    expect(vi.mocked(say).mock.calls[1]?.[2]).not.toEqual(remark.say);
   });
 });
