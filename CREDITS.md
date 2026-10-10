@@ -20,6 +20,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Mend the bridge (quest) - `content/core/quests/fix-the-bridge.json`
 - Herbs for Pell (quest) - `content/core/quests/herbs-for-pell.json`
 - Smoke over the town (quest) - `content/core/quests/into-town.json`
+- The tangle past the ruins (quest) - `content/core/quests/the-tangle.json`
 - Where the bells rang (quest) - `content/core/quests/three-fruits.json`
 - Berry mash (recipe) - `content/core/recipes/berry-mash.json`
 - Herb stew (recipe) - `content/core/recipes/herb-stew.json`

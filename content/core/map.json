@@ -8,7 +8,7 @@
   "description": "The first region: a river, a town, a grove and the ruins.",
   "map": {
     "width": 48,
-    "height": 36,
+    "height": 49,
     "legend": {
       ".": {
         "sprite": "core/base-kit:tiles/grass",
@@ -96,7 +96,20 @@
       "TTTTTTT....._~~~_TTTT\"\"\"\"\"\"\"\"\"\".%############.TT",
       "TTTTTTT....._~~~_TTTT\"\"\"\"\"\"\"TTTT#%#########%%.TT",
       "TTTTTTT....,_~~~_TTTT\"\"\"TTT\"TTTT..,...........TT",
-      "TTTTTTTTTTTTT~~~TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+      "TTTTTTTTTTTTT~~~TTTTTTTTTTTTTTTTTTTTTTT\"TTTTTTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"T\"\"\"\"\"T\"\"\"\"\"\"\"T\"T\"\"\"T\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"T\"T\"T\"TTT\"T\"T\"T\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"T\"T\"T\"T\"T\"\"\"T\"\"\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"TTTTT\"TTT\"TTT\"TTT\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"\"\"T\"T\"T\"\"\"T\"T\"\"\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"T\"T\"T\"T\"TTTTTTT\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"T\"\"\"\"\"\"\"\"\"\"\"T\"\"\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"TTT\"TTT\"TTT\"T\"T\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"T\"\"\"T\"T\"\"\"T\"T\"T\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"TTT\"T\"T\"T\"T\"T\"T\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"\"\"T\"T\"T\"T\"T\"\"\"T\"T\"T\"T\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"\"\"T\"TTT\"T\"TTT\"T\"T\"T\"T\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"\"\"T\"\"\"\"\"\"\"T\"\"\"T\"T\"\"\"T\"TTTT",
       "TTTTTTTTTTTTT~~~TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
     ],
     "props": [
@@ -1284,6 +1297,78 @@
         "w": 1,
         "h": 1,
         "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/rock_mossy",
+        "x": 40,
+        "y": 35,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/rock_mossy",
+        "x": 24,
+        "y": 35,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/rock_mossy",
+        "x": 43,
+        "y": 38,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/rock_mossy",
+        "x": 42,
+        "y": 41,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/rock_mossy",
+        "x": 31,
+        "y": 42,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/rock_mossy",
+        "x": 31,
+        "y": 44,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/rock_mossy",
+        "x": 28,
+        "y": 47,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/dead_tree",
+        "x": 22,
+        "y": 47,
+        "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/glow_mushrooms",
+        "x": 21,
+        "y": 47,
+        "w": 1,
+        "h": 1,
+        "solid": false
       }
     ],
     "spawn": {
@@ -1399,6 +1484,16 @@
         "w": 5,
         "h": 5,
         "tag": "ruin"
+      },
+      {
+        "id": "core/tangle-heart",
+        "kind": "area",
+        "x": 21,
+        "y": 45,
+        "w": 3,
+        "h": 2,
+        "tag": "grove",
+        "label": "Heart of the tangle"
       },
       {
         "id": "core/town-edge",
