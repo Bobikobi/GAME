@@ -15,6 +15,7 @@ import {
   riddleKey,
   rareFindPermille,
   satietyCap,
+  senseReach,
   techniqueValue,
 } from '@game/kernel';
 
@@ -194,7 +195,7 @@ export function digRiddleOpen(b: Bundle, s: State, treasure: string): boolean {
 }
 
 export function hintDistance(b: Bundle, s: State): number {
-  return 2 + b.params.per_point.senses * s.player.attrs.senses + (techniqueValue(b, s, 'second_hint') > 0 ? 2 : 0);
+  return senseReach(b, s.player.attrs.senses) + (techniqueValue(b, s, 'second_hint') > 0 ? 2 : 0);
 }
 
 export function campSpotOf(b: Bundle, campId: string): [number, number] | undefined {
@@ -264,13 +265,14 @@ export function itemBenefit(b: Bundle, id: string): string {
     const tier = `Tier ${it.tool.tier} ${it.tool.kind}`;
     const uses = `${it.tool.uses} uses`;
     const speed = it.tool.tier > 1 ? ` · +${15 * (it.tool.tier - 1)}% gathering speed` : '';
-    const resources = Object.values(b.resources)
+    // two patches of the same plant read as one; a start's own spot is no dig site of the trowel's
+    const resources = [...new Set(Object.values(b.resources)
       .filter((resource) => resource.tool === it.tool?.kind)
-      .map((resource) => resource.title.toLowerCase())
+      .map((resource) => resource.title.toLowerCase()))]
       .sort();
     const digSites = it.tool.kind === 'trowel'
       ? Object.values(b.treasures)
-          .filter((treasure) => treasure.tool === it.tool?.kind)
+          .filter((treasure) => treasure.tool === it.tool?.kind && treasure.starter === undefined)
           .map((treasure) => treasure.title.toLowerCase())
           .sort()
       : [];

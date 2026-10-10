@@ -531,6 +531,13 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
     if (typeof audio.unlocked !== 'boolean') throw new Error(`invalid audio unlock state: ${audio.unlocked}`);
     log(`audio state verified: song=${audio.song}, unlocked=${audio.unlocked}`);
 
+    // 2b. each start its own first task: the forager picks herbs on the west bank
+    if (viewport.mobile) {
+      await me.gather('core/bank-herbs', 'core/herb', 2);
+      if ((await me.quest('core/first-pickings')) !== 'done') throw new Error('first-pickings is not done');
+      log('picked 2 herbs on the west bank');
+    }
+
     // 3. three stones, the first minigame
     // verify: after a stone node is gathered, the player can step onto its tile
     const stoneNodes = await page.eval<{ id: string; x: number; y: number; ready: boolean }[]>('__e2e.nodes("core/river-stones")');
@@ -558,6 +565,20 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
 
     await me.gather('core/river-stones', 'core/stone', 3);
     log('gathered 3 stones');
+
+    // 3b. the explorer's senses lead to an axe in the grass by the bridge, picked up by hand
+    if (!viewport.mobile) {
+      const [glint] = await page.eval<{ id: string; x: number; y: number }[]>('__e2e.nodes("core/bridge-glint")');
+      if (!glint) throw new Error('no glint by the bridge');
+      await me.walkTo({ x: glint.x, y: glint.y, w: 1, h: 1 }, 'the glint by the bridge');
+      await me.expectPrompt(/^Pick up/, 'the glint by the bridge');
+      await me.snap('senses');
+      await me.a();
+      await me.idle('picking up the axe');
+      if ((await me.bag('core/axe')) !== 1) throw new Error('no axe after the glint by the bridge');
+      if ((await me.quest('core/glint-by-the-bridge')) !== 'done') throw new Error('glint-by-the-bridge is not done');
+      log('picked up the axe by the bridge');
+    }
 
     // 4. mend the bridge: the first restoration, level, journal entry and a sign with my name
     const bridge = await page.eval<Rect>(`__e2e.slot('core/old-bridge')`);

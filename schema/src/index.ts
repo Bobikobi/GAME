@@ -46,7 +46,8 @@ export const Rarity = Type.Union(RARITIES.map((r) => Type.Literal(r)), {
   description: 'Declared rarity. The check compares it with the rarity computed from the data.',
 });
 
-export const TOOL_KINDS = ['basket', 'trowel', 'axe'] as const;
+/** A staff is worn in the hand for what it helps; no work asks for one. */
+export const TOOL_KINDS = ['basket', 'trowel', 'axe', 'staff'] as const;
 export const ToolKind = Type.Union(TOOL_KINDS.map((k) => Type.Literal(k)));
 
 export const STATIONS = ['fire', 'workshop'] as const;
@@ -269,10 +270,18 @@ export const TreasureBody = Type.Object(
     active_ms: Ms('Time the player is busy digging once.'),
     respawn_ms: Ms('Time before the spot can be dug again.'),
     count: Int(1, 8),
-    tool: ToolKind,
+    tool: Type.Optional({
+      ...ToolKind,
+      description: 'The tool the dig asks for and wears. Left out: the find is picked up by hand, with no timing window and no tool worn.',
+    }),
     level: Int(1, 20, 'Digging level required.'),
     finds: Type.Array(Find, { minItems: 1, maxItems: 8 }),
     place: Place,
+    starter: Type.Optional({
+      ...Id,
+      description:
+        "A start's own spot: only a character of this starter sees it and digs it, once, and it always gives its one find. A gift of the start, so it prices nothing (it is no source in the value table).",
+    }),
   },
   { additionalProperties: false },
 );
@@ -507,6 +516,10 @@ export const QuestStep = Type.Union([
 export const QuestBody = Type.Object(
   {
     giver: Type.Optional(Id),
+    starter: Type.Optional({
+      ...Id,
+      description: "Offered to a character of this starter only: a start's own first task. Left out: every character.",
+    }),
     type: Type.Optional(QuestType),
     summary: Text,
     steps: Type.Array(QuestStep, { minItems: 1, maxItems: 6 }),
@@ -598,7 +611,21 @@ export const StarterBody = Type.Object(
     kit: Type.Optional(
       Type.Array(Stack, {
         maxItems: 6,
-        description: 'What the character carries on the first morning: the tools of its first task, put in the bag when the character is chosen.',
+        description:
+          'What the character carries on the first morning: the tools of its first task, put in the bag when the character is chosen. A piece with a working "wear" slot is worn from the start.',
+      }),
+    ),
+    wake: Type.Optional(
+      Type.Object(
+        { x: Int(0, 1023), y: Int(0, 1023) },
+        { additionalProperties: false, description: "The tile the character wakes on. Left out: the map's spawn." },
+      ),
+    ),
+    intro: Type.Optional(
+      Type.Array(Text, {
+        minItems: 1,
+        maxItems: 4,
+        description: "What the narrator says as the character wakes, one box a line. Left out: the game's own waking lines.",
       }),
     ),
   },

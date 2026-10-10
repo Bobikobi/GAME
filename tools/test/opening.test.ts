@@ -30,18 +30,21 @@ beforeAll(() => {
 
 describe('opening sequence', () => {
   test.each([
-    ['core/forager', 'core/basket'],
-    ['core/explorer', 'core/trowel'],
-  ])('%s can finish the opening', (starter, tool) => {
+    ['core/forager', 'core/first-pickings', 'core/bank-herbs', 'core/trowel'],
+    ['core/digger', 'core/buried-axe', 'core/slid-bank', 'core/basket'],
+    ['core/explorer', 'core/glint-by-the-bridge', 'core/bridge-glint', 'core/basket'],
+  ])('%s can finish the opening', (starter, first, own, tool) => {
     const planner = new Planner(bundle, 2026);
 
     planner.act({ t: 'start', starter, name: 'Tester' }, 0);
     expect(planner.state.player.starter).toBe(starter);
     expect(planner.state.player.name).toBe('Tester');
     expect(planner.state.tick).toBe(0);
+    const spawn: Tile = [bundle.map.spawn.x, bundle.map.spawn.y];
+    const wake = bundle.starters[starter]!.wake;
+    expect(planner.state.player.at).toEqual(wake ? [wake.x, wake.y] : spawn);
 
     const fire = required(campTile(bundle, 'fire'), 'The map has no fire spot.');
-    const spawn: Tile = [bundle.map.spawn.x, bundle.map.spawn.y];
     expect(bfsToTile(bundle, planner.state.player, spawn, fire)).toBeUndefined();
 
     const stones = instancesOf(bundle, 'core/river-stones');
@@ -51,12 +54,19 @@ describe('opening sequence', () => {
     expect(stoneEvents.flat()).toContainEqual({ e: 'level', profession: 'core/foraging', level: 2 });
     expect(planner.state.player.bag['core/stone']).toBe(3);
 
+    // its own first task on its own road: herbs on the west bank, or the axe on a spot of its own
+    expect(planner.state.player.quests[first]).toBe('active');
+    const [place] = instancesOf(bundle, own);
+    if (place![1].kind === 'resource') planner.gather(place![0]);
+    else planner.dig(place![0]);
+    expect(planner.state.player.quests[first]).toBe('done');
+
     const bridge = required(findSlot(bundle.map, 'core/old-bridge'), 'The bridge slot is missing.');
     planner.actNear(bridge, (at) => ({ t: 'restore', restore: 'core/old-bridge', at }));
     expect(planner.state.player.quests['core/fix-the-bridge']).toBe('done');
     expect(bfsToTile(bundle, planner.state.player, spawn, fire)).toBeDefined();
 
-    // the axe comes with the character; one grown oak gives the logs of the first fire
+    // the axe came with the character or was found; one grown oak gives the logs of the first fire
     expect(planner.state.player.bag['core/axe']).toBe(1);
     const trees = instancesOf(bundle, 'core/oak-trees');
     expect(trees.length).toBeGreaterThanOrEqual(2);
@@ -205,6 +215,12 @@ class Planner {
       (at) => ({ t: 'gather', node, grade: 3, at }),
       tick,
     );
+  }
+
+  dig(spot: string): GameEvent[] {
+    const instance = required(this.bundle.instances[spot], `Unknown dig spot ${spot}.`);
+    expect(instance.kind).toBe('treasure');
+    return this.actNear({ x: instance.x, y: instance.y, w: 1, h: 1 }, (at) => ({ t: 'dig', spot, grade: 3, at }));
   }
 
   visit(slot: Rect & { id: string }): GameEvent[] {
