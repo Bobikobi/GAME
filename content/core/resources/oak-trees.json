@@ -34,7 +34,17 @@
     "level": 1,
     "game": "snap",
     "place": {
-      "slot": "core/camp-oaks"
+      "slot": "core/camp-oaks",
+      "scatter": [
+        "core/lone-oak-1",
+        "core/lone-oak-2",
+        "core/lone-oak-3",
+        "core/lone-oak-4",
+        "core/lone-oak-5",
+        "core/lone-oak-6",
+        "core/lone-oak-7",
+        "core/lone-oak-8"
+      ]
     }
   }
 }

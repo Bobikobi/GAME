@@ -629,7 +629,7 @@
             },
             "place": {
               "additionalProperties": false,
-              "description": "An empty slot from the ruins map. Only one extension is active per slot.",
+              "description": "An empty resource slot of the map (`count` nodes inside it), and optionally single-node slots scattered over the map.",
               "type": "object",
               "required": [
                 "slot"
@@ -640,6 +640,18 @@
                   "maxLength": 80,
                   "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
                   "type": "string"
+                },
+                "scatter": {
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "description": "More resource slots that each hold exactly one of these nodes, on the slot's first tile: a tree or a log standing where the map already shows one.",
+                  "type": "array",
+                  "items": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  }
                 }
               }
             }

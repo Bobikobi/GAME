@@ -368,6 +368,7 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     res.growth?.forEach((g, i) => sprite(id, `node.growth.${i}`, g));
     if (res.growth && !res.sprite_empty) err(id, 'node.growth', 'growth stages come after "sprite_empty": name the stump or the bare ground first');
     place(id, 'resource', res.place.slot);
+    for (const extra of res.place.scatter ?? []) place(id, 'resource', extra);
   }
   for (const [id, t] of Object.entries(b.treasures)) {
     t.finds.forEach((f, i) => item(id, `dig.finds.${i}.item`, f.item));

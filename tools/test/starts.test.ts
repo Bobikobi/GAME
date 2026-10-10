@@ -88,6 +88,6 @@ describe('a fixture that breaks each rule', () => {
   it('an opening that asks for more logs than the trees give', () => {
     const lines = text('the opening asks for 99 of core/log');
     expect(lines).toHaveLength(1);
-    expect(lines[0]!.message).toContain('give 12');
+    expect(lines[0]!.message).toContain('give 13');
   });
 });

@@ -475,3 +475,11 @@ The owner answered nine open questions on 10.10 in the afternoon, one at a time,
 
 Also noted by the owner: the skill descriptions at the start are not as simple as in other games, and raising a skill or a level does not weigh as much as it should. This goes to the opening's stream as a finding.
 **Retry when:** players read the camp price as a toll that blocks play (then a free first night), the plot odds read as unfair, or the 3D version's cost outruns the community's interest. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ No dead props: a sprite that looks workable must be workable, and `pnpm check` lists the ones that lie
+
+The owner played the demo and found trees that look choppable but cannot be chopped, and a lying log that cannot be taken. Measured on develop: 8 `tree_oak` props, 2 `stump` props and 4 `log_fallen` props were scenery wearing the look of a node.
+- Rule, in `pnpm check` (`tools/src/deadprops.ts`): a map prop may not wear a sprite that a resource node (grown, empty or young), a restoration or a camp part wears.
+- Built: the 8 oaks are now nodes of `core/oak-trees` (new `place.scatter`: extra single-node slots, `core/lone-oak-1..8`), the 4 lying logs are nodes of the new `core/fallen-logs` (1 log, axe, 2000 ms, 180000 ms to regrow, so wood still comes only from an axe node), the 2 stumps are gone, the mossy logs became mossy rocks. `dead_tree` stays scenery: it reads as dead.
+- Evidence: check 0 errors, 3 new tests, verify green. The opening's log floor now counts 13 (12 from the camp oaks, 1 from the log).
+**Retry when:** the owner wants logs taken by hand (then the wood rule in `tools/src/starts.ts` changes first). Model: claude-sonnet-5-5.
