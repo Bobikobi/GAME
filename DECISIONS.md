@@ -1102,3 +1102,18 @@ The look, chosen from phone stills ([frame](docs/design/frames/2026-10-10-recedi
 
 The build touches the three starters (CR-37) and the opening recut (pull request #50); both are told before anyone builds. Today `start` takes and checks the name (1-16 letters, digits, spaces, `_` or `-`, in `kernel/src/step.ts`) and the title screen asks for it; carving the name at the bridge means `start` accepts an empty name and a later action sets it.
 **Retry when:** players on a phone cannot find their way inside the pocket (then the circle grows before the colour lightens), the dither shimmers while walking (then the pattern is anchored to the world, not the screen), or the name stone needs a filter that is not ready when accounts arrive. Model: claude-opus-5-5.
+## 2026-10-10 ✅ The owner's answers of 10.10 afternoon: lasting starter identities, phased progress, camp deals, weighted plot draws
+
+The owner answered nine open questions on 10.10 in the afternoon, one at a time, after the integration pass found them unanswered in the docs or in sessions that stopped mid-question.
+1. **The three starters differ for the whole game, not only the first minutes.** Each keeps a lasting edge (the forager finds more when gathering, the digger more in the ground, the explorer more rare finds) and abilities the others cannot reach; when weapons come, each plays a different style. CR-37 builds only the opening part; the lasting edge and the abilities need a design entry before any build.
+2. **Multiplayer progress is phased, and the mist hides the gap.** A player who has not mended the bridge sees it broken and the far bank in mist; a friend who crossed walks into the mist and is gone from view. They meet once both have mended it. Shared building starts at stage 7.
+3. **Warnings (G31):** count down to nightfall or to the mist's coming, whichever comes first; entering the mist, or the mist arriving, lights the lantern with one warning box, once per night; a burning camp warns before its fire goes out.
+4. **A valley's day ends** when the player sleeps, or at 05:00 when the night is played through; the day summary waits until the player is in a safe place (like Stardew Valley).
+5. **Any lit camp is safe, but a guest pays.** A camp's owner sets the price of a stay, even a simple one, and a stay is a deal the owner approves. This reverses the default proposed on 10.10 (a camp safe for its owner alone).
+6. **Plot draws favour newcomers by odds, not tickets.** Everyone may sign up; the draw computes each player's chance in advance (higher for a player with no house or plot), and the sign-up shows that percentage.
+7. **A recipe given by a quest stays that quest's reward** (CR-61): tier-1 recipes known from the start do not include it.
+8. **The hub shows "Your card", levels and badges as "coming soon" boxes** until accounts exist, with no sample numbers.
+9. **The 3D trial ships to production as a parallel version** behind its own button on the home page, on the same data, built alongside the 2D game; if the community prefers it, it gets the investment. The 64 px painted trial and the rich-pixel trial are archived with a tag.
+
+Also noted by the owner: the skill descriptions at the start are not as simple as in other games, and raising a skill or a level does not weigh as much as it should. This goes to the opening's stream as a finding.
+**Retry when:** players read the camp price as a toll that blocks play (then a free first night), the plot odds read as unfair, or the 3D version's cost outruns the community's interest. Model: claude-opus-5-5.
