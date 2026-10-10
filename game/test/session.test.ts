@@ -82,6 +82,29 @@ describe('session persistence', () => {
     expect(restored?.met.size).toBe(0);
   });
 
+  test('a save from before the kit existed is given the start\'s axe once, and the next visit leaves it alone', () => {
+    startedSession();
+    const file = JSON.parse(storage.getItem(SAVE_KEY)!) as { state: string };
+    const old = JSON.parse(file.state) as { content: string; player: { bag: Record<string, number>; journal: string[] } };
+    delete old.player.bag['core/axe'];
+    old.player.journal = old.player.journal.filter((id) => id !== 'core/axe');
+    old.content = 'an-older-world';
+    file.state = JSON.stringify(old);
+    storage.setItem(SAVE_KEY, JSON.stringify(file));
+
+    const restored = Session.restore(bundle)!;
+    expect(restored.adapted).toBe(true);
+    expect(restored.state.player.bag['core/axe']).toBe(1);
+    expect(restored.state.player.journal).toContain('core/axe');
+
+    // the world is current now: an axe the player no longer holds is not handed out again
+    delete restored.state.player.bag['core/axe'];
+    restored.save();
+    const again = Session.restore(bundle)!;
+    expect(again.adapted).toBe(false);
+    expect(again.state.player.bag['core/axe']).toBeUndefined();
+  });
+
   test('carries a save made under the working title over to the new key', () => {
     startedSession();
     storage.setItem(LEGACY_SAVE_KEY, storage.getItem(SAVE_KEY)!);
