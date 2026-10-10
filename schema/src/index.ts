@@ -257,7 +257,7 @@ export const ResourceBody = Type.Object(
           Type.Array(Id, {
             minItems: 1,
             uniqueItems: true,
-            description: 'More resource slots that each hold exactly one of these nodes, on the slot\'s first tile: a tree or a log standing where the map already shows one.',
+            description: 'More resource slots that each hold exactly one of these nodes: a tree or a log standing where the map already shows one. They add supply only: `count`, the value and the opening\'s log floor follow the main slot.',
           }),
         ),
       },

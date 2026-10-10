@@ -37,5 +37,16 @@ export function checkDeadProps(b: Bundle, origin: Record<string, string>): Issue
       level: 'error',
     });
   });
+  // a scatter slot that finds no open tile would leave the prop gone and nothing in its place
+  for (const [id, r] of Object.entries(b.resources)) {
+    for (const slotId of r.place.scatter ?? []) {
+      const slot = b.map.slots.find((s) => s.id === slotId);
+      if (!slot) continue;
+      const has = Object.values(b.instances).some(
+        (n) => n.source === id && n.x >= slot.x && n.x < slot.x + slot.w && n.y >= slot.y && n.y < slot.y + slot.h,
+      );
+      if (!has) issues.push({ file, where: `map.slots.${slotId}`, message: `"${slotId}" is a scatter slot of "${id}" but holds no node: it needs one open tile that is not a path or a solid prop`, level: 'error' });
+    }
+  }
   return issues;
 }

@@ -32,4 +32,13 @@ describe('dead props', () => {
     b.map.props = [...b.map.props, { sprite: 'core/base-kit:props/dead_tree', x: 1, y: 1, w: 1, h: 1, solid: true }];
     expect(checkDeadProps(b, {})).toEqual([]);
   });
+
+  it('a scatter slot with no node is named', () => {
+    const b = structuredClone(base);
+    const slot = b.map.slots.find((s) => s.id === 'core/lone-oak-1')!;
+    for (const [k, n] of Object.entries(b.instances)) if (n.x === slot.x && n.y === slot.y) delete b.instances[k];
+    const issues = checkDeadProps(b, {});
+    expect(issues).toHaveLength(1);
+    expect(issues[0]!.message).toContain('core/lone-oak-1');
+  });
 });
