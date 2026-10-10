@@ -16,7 +16,7 @@ import {
 import { app } from '../app';
 import type { Button } from '../input';
 import type { Session } from '../session';
-import { activeQuests, clock, describe, digRiddleOpen, gold, hudUnlocks, itemName, questSteps, readyToHandIn, windowScalePct } from '../text';
+import { activeQuests, clock, describe, digRiddleOpen, gold, hudUnlocks, itemName, nodeAction, questSteps, readyToHandIn, windowScalePct } from '../text';
 import { say, type Option } from './dialog';
 import { button, h, sprite } from './dom';
 import { feedback } from './feedback';
@@ -407,7 +407,7 @@ export class UI {
     const why = s.check({ t: 'gather', node: nodeId, grade: 3, at: s.pos });
     if (why) return this.toast(why, 'bad');
     const game = r.game ?? 'timing';
-    const grade = await this.play(GAMES[game], `Gather ${itemName(b, r.output)}`, nodeId, game, b.items[r.output]?.sprite ?? r.sprite);
+    const grade = await this.play(GAMES[game], nodeAction(b, r), nodeId, game, b.items[r.output]?.sprite ?? r.sprite);
     if (grade === null) return;
     const res = s.act({ t: 'gather', node: nodeId, grade, at: s.pos });
     if (!res.ok) this.toast(res.error, 'bad');

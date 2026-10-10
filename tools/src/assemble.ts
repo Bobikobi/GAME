@@ -214,7 +214,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   const r = records as unknown as Pick<Bundle, RecordKey>;
   // one profession per gathering verb; the one craft verb has a profession per station family
   // (DECISIONS.md, 2026-10-09), and the check reports a station worked twice
-  const verbs = { gather: '', dig: '', craft: '' };
+  const verbs = { gather: '', fell: '', dig: '', craft: '' };
   const stations: Record<string, string> = {};
   const crafters: string[] = [];
   for (const id of Object.keys(r.professions).sort()) {
@@ -365,6 +365,8 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     item(id, 'node.output', res.output);
     sprite(id, 'node.sprite', res.sprite);
     if (res.sprite_empty) sprite(id, 'node.sprite_empty', res.sprite_empty);
+    res.growth?.forEach((g, i) => sprite(id, `node.growth.${i}`, g));
+    if (res.growth && !res.sprite_empty) err(id, 'node.growth', 'growth stages come after "sprite_empty": name the stump or the bare ground first');
     place(id, 'resource', res.place.slot);
   }
   for (const [id, t] of Object.entries(b.treasures)) {
@@ -432,6 +434,7 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     sprite(id, 'starter.sprite', b.starters[id]!.sprite);
     const alt = b.starters[id]!.sprite_alt;
     if (alt) sprite(id, 'starter.sprite_alt', alt);
+    b.starters[id]!.kit?.forEach((k, i) => item(id, `starter.kit.${i}.item`, k.item));
     if (total !== STARTER_POINTS) err(id, 'starter.attributes', `attributes add up to ${total}; every starter has exactly ${STARTER_POINTS}`);
   }
   for (const [slotId, owners] of Object.entries(slotFill)) {

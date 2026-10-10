@@ -22,6 +22,11 @@ export function itemName(b: Bundle, id: string): string {
   return b.items[id]?.name ?? id;
 }
 
+/** The verb on a node's prompt and its minigame: a tree is felled, anything else gathered. */
+export function nodeAction(b: Bundle, r: Bundle['resources'][string]): string {
+  return r.tool === 'axe' ? 'Fell tree' : `Gather ${itemName(b, r.output)}`;
+}
+
 /** milli-gold as gold, at most two decimals: 2500 -> "2.5" */
 export function gold(mg: number): string {
   const cents = Math.floor(mg / 10);
@@ -270,7 +275,7 @@ export function itemBenefit(b: Bundle, id: string): string {
           .sort()
       : [];
     const unlocks = [
-      resources.length ? `gathers ${resources.join(' & ')}` : '',
+      resources.length ? `${it.tool.kind === 'axe' ? 'fells' : 'gathers'} ${resources.join(' & ')}` : '',
       digSites.length ? `digs ${digSites.join(' & ')}` : '',
     ].filter(Boolean).join(' · ') || `tool for ${it.tool.kind}`;
     return `${tier} · ${unlocks} · ${uses}${speed}`;

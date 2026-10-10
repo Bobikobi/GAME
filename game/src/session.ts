@@ -268,6 +268,14 @@ function adapt(bundle: Bundle, state: State): boolean {
     const fresh = Object.keys(bundle.recipes).filter((id) => bundle.recipes[id]!.known === 'start' && !p.recipes.includes(id));
     if (fresh.length > 0) p.recipes = [...p.recipes, ...fresh].sort();
   }
+  // a start whose kit came with this version: a save that holds none of a kit item gets it once
+  if (p.starter !== '') {
+    for (const stack of bundle.starters[p.starter]!.kit ?? []) {
+      if ((p.bag[stack.item] ?? 0) > 0) continue;
+      p.bag[stack.item] = stack.qty;
+      if (!p.journal.includes(stack.item)) p.journal = [...p.journal, stack.item].sort();
+    }
+  }
   p.tries = keepKeys(p.tries, bundle.recipes);
   p.restored = p.restored.filter((id) => id in bundle.restores);
   p.camp = p.camp.filter((id) => id in bundle.camps);

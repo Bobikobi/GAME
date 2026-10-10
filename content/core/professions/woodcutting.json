@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../schema/json/profession.schema.json",
+  "format": 1,
+  "type": "profession",
+  "id": "core/woodcutting",
+  "title": "Woodcutting",
+  "creator": "core",
+  "profession": {
+    "name": "Woodcutting",
+    "verb": "fell",
+    "xp_levels": [
+      20,
+      80,
+      200,
+      420,
+      820,
+      1500,
+      2600,
+      4000
+    ],
+    "techniques": []
+  }
+}
