@@ -812,6 +812,46 @@
             "type": "string"
           }
         },
+        "talk": {
+          "additionalProperties": false,
+          "description": "What the giver says, in the giver's voice. \"{name}\" in a line is the player's name.",
+          "type": "object",
+          "properties": {
+            "offer": {
+              "minItems": 1,
+              "maxItems": 3,
+              "description": "The giver asks. Left out, the summary.",
+              "type": "array",
+              "items": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string"
+              }
+            },
+            "waiting": {
+              "minItems": 1,
+              "maxItems": 2,
+              "description": "The giver, while the player is on it. Left out, the summary.",
+              "type": "array",
+              "items": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string"
+              }
+            },
+            "done": {
+              "minItems": 1,
+              "maxItems": 3,
+              "description": "The giver, when the player hands it in.",
+              "type": "array",
+              "items": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string"
+              }
+            }
+          }
+        },
         "reward": {
           "additionalProperties": false,
           "type": "object",
