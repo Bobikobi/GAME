@@ -61,7 +61,7 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 - The camp (S2, answered 9.10): a camp is safe while its fire burns. A night costs `wood_per_night` times the area's danger level `d` in wood, put on the fire before dark or through the night, and none at `d` 0: the opening's camp stands there, keeps its chest and workshop, and plays as today.
 - A camp anywhere else outside the town is a tent. The player buys it at the stall, pitches it on a free tile outside the town and off the paths, and packs it to move it. Readings: one tent stands at a time; it holds a fire and a bed, not the chest; it never wears out; and no tent burns less wood than another, since the owner ruled out gear against hazards.
 - The fire matters only while the player is there at night: away, nothing happens to the camp or its chest. Its level shows, and G31's warning comes before it goes out.
-- In a shared world each player's camp stays the player's own (a reading): it takes no plot, and no other player uses it. Every area outside a town is above level 0 there, except the opening's ground, which stays at level 0 as the town's edge: no wood is burned and no tent is pitched there. So every camp beyond the opening's costs wood, and the street stays free to sleep on (10.10).
+- In a shared world each player's camp stays the player's own (a reading): it takes no plot, and no other player uses it. Every area outside a town is above level 0 there, except the opening's ground, which stays at level 0 as the town's edge, and the night ruins' entrance, which stays at level 0 too: no wood is burned and no tent is pitched on either. So every camp beyond the opening's costs wood, and the street stays free to sleep on (10.10).
 
 ### 3.5 Danger by area
 
