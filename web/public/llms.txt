@@ -8,6 +8,7 @@ Paths starting with / are on this site. Content goes in content/extensions/<your
 
 - [Add a fruit in 10 minutes](https://github.com/Bobikobi/GAME/blob/develop/docs/creators/README.md): the creator guide - run the game, copy the template, check, open a pull request; profiles, signatures and points
 - [The template](https://github.com/Bobikobi/GAME/tree/develop/templates/extension): a working extension (a fruit bush and a quest) to copy and rename
+- [Developer area](/hub/): where to start, the tools and the boards
 
 ## Schemas
 

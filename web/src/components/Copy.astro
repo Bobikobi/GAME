@@ -1,0 +1,39 @@
+---
+// The site's one island (docs/team/GRUNT.md, item 7): a button that copies the text of the <pre> it names. The
+// <pre> is there without JavaScript; the button appears only when the script runs and the clipboard exists.
+interface Props {
+  /** the id of the <pre> to copy */
+  target: string;
+  label: string;
+}
+const { target, label } = Astro.props;
+---
+
+<button class="btn sm" type="button" data-copy={target} hidden>{label}</button>
+<span class="vh" role="status" data-copied={target}></span>
+
+<script>
+  for (const button of document.querySelectorAll<HTMLButtonElement>('button[data-copy]')) {
+    const id = button.dataset['copy'] ?? '';
+    const source = document.getElementById(id);
+    const status = document.querySelector<HTMLElement>(`[data-copied="${id}"]`);
+    if (!source || !navigator.clipboard) continue;
+    const label = button.textContent;
+    button.hidden = false;
+    button.addEventListener('click', () => {
+      navigator.clipboard.writeText(source.textContent ?? '').then(
+        () => {
+          button.textContent = 'Copied';
+          if (status) status.textContent = 'Copied to the clipboard.';
+        },
+        () => {
+          button.textContent = 'Select it to copy';
+        },
+      );
+      setTimeout(() => {
+        button.textContent = label;
+        if (status) status.textContent = '';
+      }, 2000);
+    });
+  }
+</script>

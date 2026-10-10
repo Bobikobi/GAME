@@ -1,8 +1,13 @@
 // @ts-check
 // The site (docs/team/GRUNT.md, item 4): static pages, every URL a folder with a trailing slash.
+import process from 'node:process';
 import { defineConfig } from 'astro/config';
 
+// the production address, when Vercel builds the site; the AI prompt on /hub/ names llms.txt by it
+const host = process.env['VERCEL_PROJECT_PRODUCTION_URL'];
+
 export default defineConfig({
+  ...(host ? { site: `https://${host}` } : {}),
   output: 'static',
   trailingSlash: 'always',
   build: { format: 'directory' },
