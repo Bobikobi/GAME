@@ -33,6 +33,7 @@ import {
   fitWorn,
   hourOf,
   isNight,
+  nodeVerb,
   powerCap,
   professionLevel,
   satietyAt,
@@ -285,6 +286,7 @@ function start(ctx: Ctx, starterId: string, name: string, look: number): void {
   s.player.recipes = Object.keys(b.recipes)
     .filter((id) => b.recipes[id]!.known === 'start')
     .sort();
+  for (const stack of starter.kit ?? []) addItem(ctx, stack.item, stack.qty);
 }
 
 function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
@@ -299,7 +301,8 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   if (r.hours && !inHours(hourOf(b, ctx.tick), r.hours)) {
     refuse(`It can only be gathered between ${r.hours[0]}:00 and ${r.hours[1]}:00.`);
   }
-  if (verbLevel(b, s, 'gather') < r.level) refuse(`Needs ${b.professions[b.verbs.gather]?.name ?? 'gathering'} level ${r.level}.`);
+  const verb = nodeVerb(r);
+  if (verbLevel(b, s, verb) < r.level) refuse(`Needs ${b.professions[b.verbs[verb]]?.name ?? 'gathering'} level ${r.level}.`);
   const tool = r.tool ? requireTool(ctx, r.tool) : undefined;
   if (bagCapacity(b, s) - bagUsed(s) <= 0) refuse('Your bag is full.');
 
@@ -315,7 +318,7 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   node.readyAt = ctx.tick + ms + r.respawn_ms;
   s.nodes[nodeId] = node;
   busy(ctx, 'gather', ms);
-  gainXp(ctx, 'gather', grade === 4 ? r.active_ms * JACKPOT_XP : r.active_ms);
+  gainXp(ctx, verb, grade === 4 ? r.active_ms * JACKPOT_XP : r.active_ms);
   if (grade === 4) ctx.events.push({ e: 'jackpot', verb: 'gather' });
 }
 
@@ -773,7 +776,7 @@ function requireTool(ctx: Ctx, kind: string): string {
     if (!tool || tool.kind !== kind || (s.player.bag[id] ?? 0) < 1) continue;
     if (!best || tool.tier > toolTier(ctx, best)) best = id;
   }
-  if (!best) refuse(`You need a ${kind} for this.`);
+  if (!best) refuse(`You need ${/^[aeiou]/.test(kind) ? 'an' : 'a'} ${kind} for this.`);
   return best;
 }
 

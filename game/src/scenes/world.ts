@@ -34,7 +34,8 @@ import { emptySlots, slotContent } from '../places';
 import { canopyGroups, hash, remapTone, toneField, type Tone } from '../richground';
 import type { Session } from '../session';
 import { questTargets } from '../targets';
-import { hintDistance, itemName } from '../text';
+import { nodeLook } from '../growth';
+import { hintDistance, nodeAction } from '../text';
 import type { WorkKind } from '../ui/ui';
 
 const DEPTH = { ground: 0, restore: 1, flat: 2, shadow: 2.5, dig: 3, puff: 3.5, mist: 8000, fog: 9000, motes: 9100, shade: 9500, glow: 9600, fx: 9800, marker: 9850 };
@@ -598,7 +599,9 @@ export class WorldScene extends Phaser.Scene {
         this.nodes.set(id, spr);
         const animated = [r.sprite, r.sprite_empty].some((ref) => ref && (this.b.sprites[ref]?.frames ?? 1) > 1);
         if (RICH.motion && animated) this.cycles.push(this.sway(spr, hash(inst.x, inst.y)));
-        if (RICH.detail && !FLAT.has(baseName(r.sprite))) this.nodeShadows.set(id, this.shadow(cx, bottom, 1));
+        if (RICH.detail && !FLAT.has(baseName(r.sprite))) {
+          this.nodeShadows.set(id, this.shadow(cx, bottom, Math.round((this.b.sprites[r.sprite]?.w ?? T) / T)));
+        }
       } else {
         this.digs.set(id, this.add.image(cx, bottom, DIG_SPOT_SPRITE).setOrigin(0.5, 1).setDepth(DEPTH.dig).setAlpha(0));
       }
@@ -1029,13 +1032,12 @@ export class WorldScene extends Phaser.Scene {
       const r = this.b.resources[this.b.instances[id]!.source]!;
       const ready = this.ready(s, id);
       const inHours = !r.hours || (r.hours[0] < r.hours[1] ? hour >= r.hours[0] && hour < r.hours[1] : hour >= r.hours[0] || hour < r.hours[1]);
-      // a gathered node lies flat and faded: the way over it is open
-      const want = !ready && r.sprite_empty ? r.sprite_empty : r.sprite;
+      // a gathered node lies flat and faded, the way over it open; a tree is a stump, a sapling and a young tree on its way back, upright
+      const look = nodeLook(r, (s.state.nodes[id]?.readyAt ?? 0) - s.tick);
       // the texture is set only when it changes, so a frame the sway picked stays
-      if (img.texture.key !== want) img.setTexture(want);
-      if (!ready && r.sprite_empty) img.setAlpha(0.8).setDepth(DEPTH.flat);
-      else if (!ready) img.setAlpha(0.3).setDepth(DEPTH.flat);
-      else img.setAlpha(inHours ? 1 : 0.55).setDepth(img.y);
+      if (img.texture.key !== look.sprite) img.setTexture(look.sprite);
+      if (look.flat) img.setAlpha(look.alpha).setDepth(DEPTH.flat);
+      else img.setAlpha(ready && !inHours ? 0.55 : look.alpha).setDepth(img.y);
       this.nodeShadows.get(id)?.setAlpha(ready ? SHADOW_ALPHA : 0);
     }
     const reach = hintDistance(this.b, s.state);
@@ -1619,7 +1621,7 @@ export class WorldScene extends Phaser.Scene {
         const r = b.resources[inst.source]!;
         // a gathered node is only ground until it grows back
         if (this.ready(s, nodeId)) {
-          return { label: `Gather ${itemName(b, r.output)}`, run: () => app.ui.gather(nodeId), tile, top: this.b.sprites[r.sprite]?.h ?? T };
+          return { label: nodeAction(b, r), run: () => app.ui.gather(nodeId), tile, top: this.b.sprites[r.sprite]?.h ?? T };
         }
       } else {
         const img = this.digs.get(nodeId);

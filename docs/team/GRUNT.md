@@ -302,8 +302,8 @@ Files:
 - `web/src/pages/api/index.astro`: a list: `hub-data.json` (format, `built_at`),
   each `schema/<name>.schema.json` with its `$id`, each as a link; one line
   on the stage-2 plan (same paths, served by the server).
-- `web/public/llms.txt`: H1 with the product name (use the game's title until
-  question 2 is answered), one sentence, then sections `## Guide`,
+- `web/public/llms.txt`: H1 with the product name, Openfold (question 2,
+  settled on 9.10 in `DECISIONS.md`), one sentence, then sections `## Guide`,
   `## Schemas`, `## Data`, `## MCP`, `## Rules`, each a list of links with a
   short description, per llmstxt.org.
 - `web/test/api.test.ts`: every link in the built `api/index.html` resolves to
@@ -547,8 +547,8 @@ a step, and the hub shows the one-line setup.
 
 Files:
 - `.mcp.json` (repository root): `{"mcpServers": {"<name>": {"command": "pnpm",
-  "args": ["-s", "mcp"]}}}` with the product name from question 2 (until
-  answered, `valley`).
+  "args": ["-s", "mcp"]}}}` with the product name from question 2,
+  `openfold`.
 - `.cursor/mcp.json`: the same shape.
 - `docs/creators/README.md`: a section "Your AI tool and the project" with the
   two lines for a tool that does not read `.mcp.json` (`claude mcp add` and the
@@ -794,7 +794,12 @@ rewritten".
 ### P-4. The day summary and the morning change
 
 Goal: a session ends on a mark and the next one opens on a change (G16, the
-last two rungs of the ladder, FTUE_RESEARCH.md gap 6).
+last two rungs of the ladder, FTUE_RESEARCH.md gap 6). The change is the
+valley's: the morning after a night slept or played through, on the game hour.
+A return after time away opens at the hour the valley was left (G28). The day
+ends when the player sleeps, or at 05:00 when the night is played through; the
+summary comes then, before the morning toast, and waits until the player stands
+in a safe place (CR-96).
 
 Files:
 - `kernel/`: the day clock emits a day-ended event with the day's counts
@@ -905,6 +910,184 @@ Green; the e2e log prints the climax line and the opened slot.
 
 Decision: DECISIONS.md 2026-10-08, the expedition entry; GAME_RULES.md G36-G37.
 
+## S - the story (after the owner's rulings in STORY.md, 2026-10-10)
+
+Read [docs/design/STORY.md](../design/STORY.md) first: the folds, rules S1-S6,
+the three beliefs and the lean. The order is fixed: S-1 and S-2 need no belief
+and go first, since G21 needs them anyway; S-3 is the belief kind, S-4 the lean
+and the choice, S-5 the checks, S-6 the first story content. Every item is
+additive, so `FORMAT_VERSION` does not move. A line that breaks a voice sheet
+or a rule of STORY.md stops the item and goes to the owner.
+
+### S-1. Lines with conditions
+
+Status: built 10.10 together with S-2 in the pull request `feat/story-lines`; live when the owner merges.
+
+Goal: a character notices that the world changed. A remark waits for its
+condition, is said once, and the most specific one wins (salience); a topic
+can wait for the world too (G21).
+
+Files:
+- `schema/src/index.ts`: a `When` object, every field optional, all must hold,
+  at least one given: `done`, `active`, `not_done` (quest ids), `restored`
+  (restore ids), `built` (camp ids), `has` (item ids, one in the bag),
+  `visited` (slot ids), each 1-4 ids; `time`: `day` or `night`. `NpcBody`
+  gains `remarks` (at most 16): `{ when, say: Text[1-2], priority?: 0-9 }`.
+  A topic gains an optional `when`; topics go to at most 8, of which the menu
+  shows four.
+- `kernel/src/story.ts` (new, exported): `holds(bundle, state, when)`,
+  `weight(when)` (the number of ids and conditions it names) and
+  `pickRemark(bundle, state, npcId, heard)`: of the remarks that hold and are
+  not in `heard`, the highest priority, then the highest weight, then the
+  first in the file. Pure; it reads the state and changes nothing.
+- `tools/src/assemble.ts`: an id in a `when` that names nothing is an error.
+- `tools/src/play.ts`: a remark is a standing line (two boxes at most, G21);
+  remark boxes count for G14.
+- `game/src/session.ts`: the save gains `heard?: string[]`
+  (`<npc>#<index>` for a remark, `<npc>?<index>` for a topic asked), next to
+  `met`.
+- `game/src/ui/ui.ts` (`talk`): after the first meeting, the picked remark is
+  said in place of the standing line and marked heard; the topic menu shows
+  the topics whose `when` holds, the ones not yet asked first, four at most.
+- `content/core/npcs/`: a remark or two per character that proves it, on the
+  voice sheets.
+- Tests: `kernel/test/story.test.ts` (each field of `When`; priority beats
+  weight, weight beats order; a heard remark steps back), the schema
+  refusing an empty `when`, `tools/test/play.test.ts` for a three-box remark.
+
+Proving command:
+```
+pnpm schemas && pnpm verify
+```
+
+Decision: DECISIONS.md 2026-10-10, the folds entry; STORY.md section 5.
+
+### S-2. Lines on the quest and the place
+
+Status: built 10.10 together with S-1 in the pull request `feat/story-lines`; live when the owner merges.
+
+Goal: no story line is hardcoded in the client. The giver's offer, the line
+while the player is on it and the thanks live in the quest file; the
+narrator's line when a place is mended lives in the restore file.
+
+Files:
+- `schema/src/index.ts`: `QuestBody` gains `talk?: { offer?: Text[1-3],
+  waiting?: Text[1-2], done?: Text[1-3] }`; `RestoreBody` gains
+  `done?: Text[1-2]`, the narrator's words. `{name}` in a line is the
+  player's name.
+- `game/src/ui/ui.ts`: `questTalk` says `offer` (else the summary) before the
+  reward, `waiting` (else the summary) before what is still needed;
+  `storyBeats` says a quest's `done` in its giver's voice and a restore's
+  `done` in the narrator's, and holds no line of its own.
+- `content/core/quests/three-fruits.json` and
+  `content/core/restores/old-bridge.json`: the two lines that `storyBeats`
+  held, cut to boxes of 80 characters (G14).
+- `tools/src/play.ts`: `offer` and `done` three boxes at most, `waiting` two,
+  every box counted for G14.
+- Tests: the play rules on a four-box offer; the e2e opening still reads the
+  bridge line.
+
+Proving command:
+```
+pnpm schemas && pnpm verify && pnpm e2e
+```
+
+Decision: as S-1.
+
+### S-3. Beliefs as content
+
+Goal: the three beliefs of STORY.md section 3 are files a creator can read and
+cite, and a character names the one it holds.
+
+Files:
+- `schema/src/`: a `belief` content kind: `name`, `mist` (what it says the
+  mist is), `asks` (what it says to do), `readings` (2-8 of
+  `{ bone: Word, text: Text }`). The bones are words, the same in every file
+  (S3); the glossary of S-5 lists them. `NpcBody` gains `belief?: Id`.
+- `tools/src/load.ts`, `tools/src/assemble.ts`: the kind loads like the
+  others; an unknown belief on a character is an error.
+- `content/core/beliefs/`: `menders.json`, `wakers.json`, `keepers.json`,
+  each reading at least two of the bones of S3.
+- `content/core/npcs/elder.json`: `"belief": "core/menders"`. Pell holds none.
+- `templates/extension/` and `docs/creators/README.md`: a belief example and
+  one paragraph on S1-S6.
+
+Proving command:
+```
+pnpm schemas && pnpm verify
+```
+
+Decision: STORY.md sections 3 and 7.
+
+### S-4. The lean and the choice
+
+Goal: what a player does leans toward a belief, the kernel keeps it, and the
+world shows it; no number ever reaches the screen.
+
+Files:
+- `kernel/src/state.ts`: `player.lean: Record<string, number>`, whole numbers,
+  clamped to a parameter range; nothing changes it by the clock (G28).
+- `schema/src/index.ts`: a `choice` step for `dilemma` quests: `ask` (Text) and
+  2-3 options `{ say: Text up to 40, lean: { belief: Id, by: -10..10 }[] }`;
+  `When` gains `lean: { belief, min }`. A dilemma quest has exactly one
+  choice step, and every option leads on (G12).
+- `kernel/src/step.ts`: a `choose` action that completes the step and applies
+  the option's lean; a test that a replay gives the same lean.
+- `game/src/ui/`: the options in the giver's dialogue; nothing that shows a
+  lean.
+- `tools/src/play.ts`: a dilemma without a choice step, or an option that
+  leans nowhere, is an error (G12).
+- The world's lean (the sum of a shared world) waits for stage 2.
+
+Proving command:
+```
+pnpm schemas && pnpm verify
+```
+
+Decision: STORY.md section 4.
+
+### S-5. The story checks
+
+Goal: what STORY.md and G22 can test on content is tested.
+
+Files:
+- `content/core/glossary.json` (a new `glossary` kind, extensions may add
+  their own, prefixed): the valley's names and the bones.
+- `tools/src/play.ts` (or `tools/src/story.ts`): a capitalised word in a line
+  that is not at the start of a sentence and not in a glossary, a character's
+  name or a title is a warning (G22); a narrator's line (a journal summary, a
+  clue, a restore's `done`) with "long ago", "ancient", "the old ones" or "in
+  the old days" is a warning for a person to read (S1); a bone that fewer
+  than two beliefs read is an error (S4).
+- Tests in `tools/test/play.test.ts` for each.
+
+Proving command:
+```
+pnpm check
+```
+Prints no S line for the core content.
+
+Decision: STORY.md section 5.
+
+### S-6. The first story
+
+Goal: the beliefs are heard in play. After S-3 and S-4.
+
+Files:
+- `content/core/npcs/trader.json`: a topic "Rumours" in Pell's voice that sells
+  all three tellings; a remark that tells first the one the player leans to.
+- `content/core/npcs/elder.json`: Maru's Mender lines behind a `when`.
+- `content/core/quests/`: the first `dilemma` quest, from Maru or Pell (a new
+  character waits for the owner to approve a voice sheet, G20).
+- The opening's text from the recut (DECISIONS.md, option B) when it lands.
+
+Proving command:
+```
+pnpm verify && pnpm e2e
+```
+
+Decision: STORY.md section 7.
+
 ## Open ends
 
 What was approved, decided or found and is not finished. One row per item, in the shape of `docs/design/CRAFTING_AUDIT.md`, Appendix D: an id, what is open, where it lives, and the check that closes it. A row leaves the list when its "closes when" is true on `develop`; nothing is closed in conversation.
@@ -918,11 +1101,11 @@ What was approved, decided or found and is not finished. One row per item, in th
 | CR-6 | Stale texts about the check: "!" lines, rules G1 to G16, kernel rules R1 to R11. | `docs/design/GAME_RULES.md`, `AGENTS.md`, `CONTRIBUTING.md`, `docs/design/TOOLKIT.md` | one docs sweep |
 | CR-7 | Professions are core-only, against spec 8 and 11; held so by the extension-reach decision for now. | `schema/src/index.ts`, `tools/src/assemble.ts` | the stage that opens professions to extensions, with its own decision |
 | CR-8 | The shop never buys a tool; a crafted higher-tier tool has a value and no sell-back. Decided 9.10 (DECISIONS.md, "The crafting economy"): the trader buys a tool by the part of its uses left, and a tool may leave out `uses` and last. | `kernel/src/step.ts`, `schema/src/index.ts` | the workshop content lands with that sell-back and the optional `uses` |
-| CR-10 | Quest gates by profession or character level for the non-crafter's roads. | `schema/src/index.ts` | a quest may name a level, or DECISIONS.md says it never will |
+| CR-10 | Quest gates by profession or character level for the non-crafter's roads; decided 10.10 (the sweep): a quest carries a level band for matching only, never a gate, and the game never says a level is too low. | `schema/src/index.ts` | a quest may name a level band used only to offer it, and a quest outside a player's band can still be taken |
 | CR-11 | Bag categories. | `game/src/ui/panels.ts` | crafting wave 4 |
 | CR-12 | A weapon slot waits for G35 (stage 8 or a vote). | roadmap | that stage or vote |
 | CR-13 | Metal content waits for its discovery. | roadmap | a vote or an accepted proposal |
-| CR-14 | A broad recipe template can pass its bound today and fail on a later merge when another creator adds fitting items; the guide says to keep templates narrow. | `tools/src/assemble.ts` | the first such failure is handled, or the fit is scoped per creator |
+| CR-14 | A broad recipe template can pass its bound today and fail on a later merge when another creator adds fitting items; the guide says to keep templates narrow. Decided 10.10 (the sweep): a template fits core items, its own creator's items and items that name its family on purpose. | `tools/src/assemble.ts` | a template fits only core items, its creator's items and items naming its family, and the merge check refuses the joining pull request, never the old template |
 | CR-16 | The average try: at its own level a tier-2 recipe uses 112.5 percent of its inputs for each success and a tier-3 recipe about 127; the value table prices only the success. | `tools/src/check.ts` | the check refuses a recipe whose average try at its own level loses value, p * V(out) + (1 - p) * V(kept) >= V(in), with a test |
 | CR-17 | The level wall: a recipe above the profession's level is refused. Decided 9.10: no wall, the chance falls by `craft_level_step_bp` per missing level down to nothing, fitting gear counts on the side of skill, and the screen shows no chance or difficulty. | `kernel/src/step.ts` | the kernel no longer refuses on level and a try at nothing runs and misses, with tests |
 | CR-18 | A made good sells for the raw share. Decided 9.10: the trader pays `k_craft_permille` (750) of r * V for an item whose value comes from a recipe. | `kernel/src/step.ts`, `content/core/params.json`, `docs/kernel-review-v1.md` | the param, the trader and R8 with Theorem 3 change together, with a test |
@@ -943,9 +1126,46 @@ What was approved, decided or found and is not finished. One row per item, in th
 | CR-44 | The creators' pool (decided 9.10, D5): no rule moves gold to creators. | the stage 4 server (the weekly pool from the action logs), `kernel/src/state.ts` (the ledger, reason `royalty`), `content/core/params.json` (`creator_pool_permille`, the attribution shares) | each week a share of the gold that left the world is split by active seconds in each creator's content, at most 2 hours per account-day, 60, 20 and 20 to the activity, the place and the quest, gear is paid from its sale, and the ledger writes the pool as gold moved, never minted |
 | CR-45 | Nodes in a shared world (decided 9.10, Q7): nothing says whose a node's state is once players share a world. | the stage 4 server, `kernel/src/state.ts` (node state per account), `content/core/map.json` (an area's protection level, CR-39) | in a shared world a node's state, a felled tree's included, is kept per player outside the areas between players and shared inside them |
 | CR-46 | Bought looks (decided 9.10, Q6): no item knows whether it was bought or found. | `schema/src/index.ts` (a bound flag on an owned look), `kernel/src/step.ts` (trade and sell refuse it), the stage 6 payments | a look bought with money or premium currency is bound to the account and every trade or sale of it is refused, while the same look found in the game trades |
-| CR-47 | Players' words (decided 9.10, Q9): no note, no chat, no filter. | the stage 4 server (notes), the stage 7 server (bubbles), `content/core/params.json` (`notes_max`) | a filter reads every note and line before others see it and refuses rude words, links, personal details and money offers; notes can be marked helpful, reported, hidden per player and fade; chat is bubbles over the head seen nearby, with no private channel |
-| CR-48 | Player shops (decided 9.10): a player cannot sell to another. | the stage 4 server (listings held by the server), `kernel/src/step.ts` (buy from a listing inside R8's band) | a player lists goods at a price, the server holds them, a sign shows over the player online and at the house or stall offline, bound items cannot be listed, and every sale is written to the ledger with the reason `price` |
+| CR-47 | Players' words (decided 9.10, Q9): no note, no chat, no filter. | the stage 4 server (notes), the stage 7 server (bubbles), `content/core/params.json` (`notes_max`) | a filter reads every note and line before others see it and refuses rude words, links, personal details and money offers; notes can be marked helpful, reported, hidden per player and fade; chat is bubbles over the head seen nearby, with no private channel; notes and chat are accepted only in the game's languages, and each player sees those in their own |
+| CR-48 | Player shops (decided 9.10): a player cannot sell to another. | the stage 4 server (listings held by the server), `kernel/src/step.ts` (buy from a listing inside R8's band) | a player lists goods at a price, the server holds them, the shop sells on the town's market board (at the owner's house too, if houses come back; they are paused since 10.10), from stage 7 a sign over the player shows it open too (CR-91), bound items cannot be listed, and every sale is written to the ledger with the reason `price` |
 | CR-49 | The minimum age of an account (decided 9.10): not set. | the stage 2a design (sign-up) | sign-up asks for 13 or the country's higher age of digital consent, and a younger player is pointed to the demo |
+| CR-50 | The sale fee (decided 10.10): a sale between players pays nothing. | `content/core/params.json` (`sale_fee_permille`, bounded), `kernel/src/step.ts` (a sale burns the fee) | every sale between players burns `sale_fee_permille` of its price from the seller's side, counted in milli-gold and rounded up (amended 10.10), with the reason `tax`, and listing, changing a price and taking goods back stay free |
+| CR-51 | Prices between players (decided 10.10, the sweep): there is no band, and R8 called them free. | `kernel/src/step.ts` (a listing and a buy inside the band), `content/core/params.json` (`trade_max_permille`, `shop_max_permille`, bounded) | a listing's price below the trader's pay today or above `trade_max_permille` of `r*V` is refused, a worn tool's band follows its uses left, an item with no V cannot be listed, and the shop's price stops at `shop_max_permille` of `r*V` |
+| CR-52 | Two funds and the premium currency (decided 10.10, the sweep): nothing keeps money and gold apart. | the stage 4 server (the pool and royalties), the stage 6 payments | royalties are cut from gold already leaving, with the reason `royalty`, and never minted; the money fund and the gold pool never convert; premium currency is bought with money only, is never traded, given or turned into gold, buys only bound things and counts on no board |
+| CR-53 | One person, one account in a world (decided 10.10, the sweep): nothing counts accounts per person. | the stage 2a design (sign-up says it), the stage 4 server (loops, inputs) | one person's accounts trading in a world are an exploit loop, trade for money is a loop for both sides, input sent to two accounts at once is flagged as a program, and accounts found to be one person's count as one for every limit |
+| CR-54 | Bounds on the flow of gold (decided 10.10, the sweep): the daily cap follows the reference player, refunds count as nothing, the pool and the trader's share can add up to a pump, the step is not per world, and r keeps a range. | `content/core/params.json` (`trader_day_cap`, `creator_pool_permille`, `k_craft_permille`, `r_mg_per_value_ms`), the stage 4 server (the books) | the daily cap is 8 active hours at the kernel's ceiling for the account's level and resets at 00:00 UTC; the pool and the step count burns net of refunds; the check refuses top bounds of `creator_pool_permille` and `k_craft_permille` that reach 1000 together; accounts under `new_account_hold` give no creator seconds; the step is per shared world and never above its start; `r_mg_per_value_ms` has its min and max at its value |
+| CR-55 | Starting gold and the kit (decided 10.10, the sweep): starting gold is ordinary gold, and kit items trade. | `kernel/src/state.ts` (a bound balance), `schema/src/index.ts` (bound kit items), `pnpm check` (the kit's band) | starting gold is a bound balance spent first and only at the shop, the trainers and the settlement; kit items are bound to the character; the kit's band is measured at the shop's price, or at V where no shop sells the item |
+| CR-56 | The miss table's ceiling (decided 10.10, the sweep): a miss table could pay more per miss than missing costs. | `content/core/params.json` (`miss_value_max_permille`, 500), `pnpm check` | the check refuses a miss table whose expected value per miss reaches `miss_value_max_permille` of the hit's output value |
+| CR-57 | The ledger's reasons (decided 10.10, the sweep): mints and some movements have no reason in the closed list. | `kernel/src/state.ts` (the ledger), `docs/design/SETTLEMENT.md` 3.9 | the closed list carries `pay`, `reward` and `find` for mints and `gift`, `donation`, `escrow` and `closed` for movements, and a gift to the town counts in worth at that day's trader pay |
+| CR-58 | The store, a full bag and selling offline (decided 10.10, the sweep): nothing says where returns go, what a full bag does, or where a player with no house sells offline. | `kernel/src/step.ts` (an action needs room for its output), the stage 4 server (the store, the town's market board) | a gather or a craft does not start without room for its output, a reward that does not fit waits with its giver, returns go to the one store and may run over it, and a player sells offline from the town's market board (houses are paused since 10.10) |
+| CR-59 | The clocks (decided 10.10, the sweep): nothing says which clock a parameter of time runs on, and a shared world cannot pause for one player. | `content/core/params.json` (each parameter of time names its clock), the stage 7 server (one hour for all, `logout_countdown_s`) | every parameter of time names its clock (CR-93); daily caps reset at 00:00 UTC; from stage 7 a world's hour pauses for no window, a quit outside a safe area waits `logout_countdown_s`, and no hazard strikes during a minigame |
 | CR-60 | A miss turns up something, never an empty hand (decided 10.10, G15): a miss keeps one unit half the time and otherwise nothing, and no node has a miss table. | `schema/src/index.ts` (a node's `miss` rows, each an item and a weight), `kernel/src/step.ts` (gather), `kernel/src/values.ts` (the rows count in the node's value and the rarity budget), `content/core/resources/`, `tools/src/check.ts` (G15) | every node has a miss table whose rows are things with a value, a miss draws a row through the kernel's random stream, the jackpot strip stays, and a creator adds a surprise by adding a row |
 | CR-61 | First-tier recipes are known from the start, higher tiers are dug up (decided 10.10): all eleven recipes of crafting wave 3 are `known: start`. | `content/core/recipes/`, the find tables of the ruins, `tools/src/check.ts` | every tier-2 and tier-3 recipe is `known: found` and sits in a find table or a dig reward, every tier-1 recipe stays `known: start`, and a test learns one by digging |
 | CR-62 | Demo saves reset once (decided 10.10): no save version marks the new opening. | `game/src/session.ts`, `schema/src/index.ts` (the save's format number), the title screen | the release that lands CR-24, CR-37 and the recut bumps the save version, a save of an older version is dropped with one notice on the title screen, and a test loads an older save and a current one |
+| CR-70 | Progress in a shared world (decided 10.10, the sweep): nothing says what is shared, and a character could be in several worlds. | the stage 4 server | the opening, restores, riddles and quests are kept per player; a street that opens plots is a group restore once per town whose sign names its helpers; a tree between players stands on one chop timer; a character is in one shared world at a time, trades through its market, moves free once a content season, and counts its house, its draw entry and a holiday's reward across worlds |
+| CR-71 | Freed plots, holds and blocks (decided 10.10, the sweep; the plots are paused with houses since 10.10, the holds and blocks stand): a freed plot goes to the first comer, and a hold has no end. | the stage 4 server, `docs/design/SETTLEMENT.md` 3.2, `content/core/params.json` (`plot_signup_days`, `hold_max_days`) | a freed plot is drawn after `plot_signup_days` of sign-up; a hold lifts after `hold_max_days`; the settlement clocks stop under a hold or a block; a forfeit takes only from the loop's own accounts; a block for good returns places at once and burns holdings with the reason `forfeit` |
+| CR-72 | Closing an account, age and keeping data (decided 10.10, the sweep): none is written. | the stage 2a design (sign-up, closing), the stage 4 server | an account closes inside the game after 30 days, its gold and goods burned with the reason `closed` and its name "a traveller"; an account under age closes at once; sign-up keeps only whether the age passed and the country; notes and chat are kept 30 days after fading, action logs 90 days, the ledger without a name |
+| CR-73 | Words between players (decided 10.10, the sweep): no ladder, no moderators, no rule for names or blocks. | the stage 4 server, the team | a caught word follows the ladder (hidden with a warning, a week without words, off for good; threats, sexual words or personal details blocked by a person; one appeal); two named people moderate from the first stage where players see each other's words; the filter reads every name and text a player sets; a block hides words and tracks and refuses invites |
+| CR-74 | Friends, groups and space (decided 10.10, the sweep): no friends, no group signals, and players could block a way. | the stage 4 and stage 7 servers, `kernel/src/step.ts` (placing) | friendship is mutual with a silent refusal; a group talks in a closed set of signals; each finisher of a group step gets its full reward; players pass through each other; a placed thing keeps `place_clear_tiles` from paths, doors, bridges, plots, signs, riddles, digs, nodes and tents |
+| CR-75 | The hunters' board (decided 10.10, the sweep): honor could be farmed between friends. | the combat server (stage 8 or a vote) | honor counts once per marked player per hunter per day, never between friends, a group or one person's accounts, and only when the fall dropped finds |
+| CR-76 | Trade safety (decided 10.10, the sweep): a price could change under a buyer, and a theft cannot be undone. | the stage 4 server (listings, the ledger) | a buy carries the price seen and is refused if it changed, the filter refuses words that ask for a password, and a theft shown within 14 days is taken back from the accounts on its trail while a buyer at the listed price keeps the goods |
+| CR-77 | The fall's books, health and sleep (decided 10.10, the sweep): the bag from before the outing could return what was spent, and nothing restores the night. | `kernel/src/step.ts` and `kernel/src/state.ts` (with P-5), `content/core/params.json` (`fall_health_permille`) | after a fall each item keeps the smaller of its two counts and a tool the fewer uses; each quest goes back to its step at the outing's start; places count once brought to a safe area; the player reappears with `fall_health_permille` of health; sleep in the own valley moves the clock to 05:00 and restores health; a test that falls and repeats gains nothing |
+| CR-78 | No way back is closed (decided 10.10, the sweep): a player with no tools and no gold could have no road back. | `content/core/shops/` (the stall), `pnpm check` (a walk from an empty character) | the stall always sells the axe, the basket and the trowel, the check walks an empty character in a town back to each tool by an activity that needs none, and a find that comes once returns to its spot after a fall |
+| CR-79 | Recipe scraps (decided 10.10, the sweep): a dug-up recipe is not an item. | `schema/src/index.ts`, `kernel/src/step.ts` | a scrap is a bag item until read, reading teaches its recipe and uses it up, a dig draws only among recipes neither known nor carried, and an unread scrap is lost on a fall and sells at its dig's value |
+| CR-80 | Waits never shorten (decided 10.10, the sweep): the spec has a skill effect that shortens a wait. | `schema/src/index.ts` (the closed list of effects), `pnpm check` | no effect, skill node, camp part or spell in the closed lists shortens a respawn, a growth or a wait, and the check refuses one |
+| CR-81 | Holiday bounds (decided 10.10, the sweep): a holiday has no bound on its length or its effort. | `content/core/` (the calendar), `pnpm check` | a holiday lasts at least 14 days, its reward is earned in one ordinary session inside them and asks no return on several days, its dates start at 00:00 UTC, and the demo gives nothing marked with a year |
+| CR-82 | Quest points and exploration (decided 10.10, the sweep): what counts is loose. | the stage 2a server (boards) | only quests with a fixed id count, once per player across worlds, by the work part of difficulty; errands and repeatable quests count nothing; exploration counts once across worlds, and once per world on a world's board |
+| CR-83 | Menace with a limit (decided 10.10 by the sweep, changed the same day on the owner's word, G46): the spec leaves the content limit open, and the first answer barred all blood. | `docs/design/GAME_RULES.md` G46, the guides for art and text (`docs/creators/README.md`), a store's rating questionnaire | the guides for art and text carry G46 (blood, a wound or a fallen body small, brief and never for show, none on a person at the moment of harm, no rule or number changed), the review checklist's question 11 is asked on every pull request that adds a hazard, a strike or a fall's look, and a store listing answers its rating questionnaire for ESRB E10+ and PEGI 12 |
+| CR-84 | The digger's six points (decided 10.10, the sweep): the third starter has no split. | `content/core/starters/` (the digger's file, with CR-37) | the digger's attributes are stamina 2, luck 2, carry 1, senses 1 and agility 0 |
+| CR-85 | The demo's stamp (decided 10.10, the sweep): the reset of saves would take the demo's title away. | `game/src/` (a stamp kept outside the save) | a "played the demo since" stamp with its date survives the reset of saves, and the title of D3 reads it |
+| CR-86 | The opening on the clock (decided 10.10, the sweep): a road of the opening could wait on an hour window. | `pnpm check` (the opening walk) | the check walks every order of helping, with each starter's kit, on the clock from the starting hour, and refuses a road that waits on a window the start misses |
+| CR-87 | The spec lags (decided 10.10, the sweep): v4.6 still carries lines the decisions changed. | `docs/spec/` | v4.7 lands with a list of what changed, built from the DECISIONS.md entry on which text wins |
+| CR-88 | One safe place (decided 10.10, the game read as one line): P-5's `safe` flag is set by hand on the town and every camp, while a camp is safe only while its fire burns and ground at level 0 has no reading of its own. | `schema/src/index.ts`, `kernel/src/hazards.ts` (with P-5), `pnpm check` | the `safe` flag is read from the danger level and a camp's fire (all ground at level 0, and a camp while its fire burns), and the protection level from the danger level alone (`safe` at level 0, `wild` above 0, `contested` only for an area between players once combat opens); an outing ends at any safe place; the check refuses a hunting hazard on ground at level 0; in a shared world the opening's ground and the night ruins' entrance stay at level 0 with no tent on them; and the lantern of G31 changes no state |
+| CR-89 | One mist (decided 10.10, the game read as one line): the mist the client draws, the mist the story draws back and the mist the hazards read could be three things. | `kernel/` (with P-5), `game/src/` (the drawing), `pnpm check` | the kernel keeps the mist by area and hour as the content sets it, the client draws only what the kernel keeps, in the plain look and the rich one, the `mist` window reads the same mist, and a hunting hazard inside it acts by day at its area's rate, none at level 0 |
+| CR-90 | One unit and one name (decided 10.10, the game read as one line): limits are written per player, per account and per character, and the player's name is asked twice. | the stage 2a sign-up, the stage 4 server | an account plays one character in a shared world and every limit counts that unit, and sign-up offers the name given in the opening, read by the filter then and unique in the world joined |
+| CR-91 | The world seen at stage 7 (decided 10.10, the game read as one line): the shop's sign, the night, rest and a fire's light were written before players see each other. | the stage 4 and stage 7 servers, `game/src/` | until stage 7 a player's shop sells only on the market board and sleep skips the night in every valley; from stage 7 the sign over a player shows, nobody skips the night, rest restores health over one game hour, `logout_countdown_s` applies outside a safe place, no hazard strikes during a minigame, a camp's fire keeps the hunting hazards off its owner and a guest with a deal, and its light marks how far the camp reaches (CR-95), and no list or sign shows who is online except to mutual friends |
+| CR-92 | Won plots, packed houses and the store's chests (decided 10.10, the game read as one line; the plots and houses are paused since 10.10, the store's chests stand): a won plot's first step had two deadlines, a packed house could be raised "on any free plot" that a draw now gives, and the one store had no place to open. | the stage 4 server (plots, the store), `content/core/` (a chest in each town) | every won plot takes its first step within `plot_signup_days` and then holds `build_hold_days` between steps, a packed house is raised only on a plot its owner wins, as that plot's first step, and the store opens at the opening camp's chest, at one chest in each town (and at a house's, if houses come back), never at a tent |
+| CR-93 | Every time names its clock (decided 10.10, the game read as one line): a parameter of time does not say whether it counts game hours, real days or active play. | `content/core/params.json`, `schema/src/index.ts` (the parameters' schema), `pnpm check` | every parameter of time names its clock (the game hour, the server's hour, the real calendar, real seconds while connected, or active play) and its unit, and the check refuses one that does not |
+| CR-94 | Warnings before the dark and the mist (decided 10.10, the owner's answers of the afternoon): G31 counts down only to nightfall and warns only for the dark, and a camp's fire goes out without a word. | `kernel/` (the mist's coming as the kernel keeps it, with P-5), `game/src/` (the countdown, the lantern and the box), `content/core/params.json` (`fire_warn_min`, on the game hour) | outside a safe place the countdown runs to nightfall or to the mist's coming into the player's area, whichever is first; entering the mist, the mist arriving, leaving a safe place after dark or dark arriving outside one lights the lantern with the one warning box, at most once per night; and a burning camp warns its owner and its guests `fire_warn_min` game minutes before its fire goes out |
+| CR-95 | Camp deals, rest and a fire's reach (decided 10.10, the owner's answers of the afternoon and evening): a camp is its owner's alone, and nothing says where rest restores health besides the town and one's own fire. | the stage 4 server (the deal, held like a listing), `kernel/src/state.ts` (the ledger, reason `rent`), `content/core/params.json` (`fire_light_tiles`), `kernel/` (the `safe` reading, CR-88) | a camp's owner sets the price of a stay, a passer-by asks, the owner approves, the price moves with the reason `rent`, and the guest is safe and rests at that camp while its fire burns; without a deal another player's camp is no safe place; the camp reaches `fire_light_tiles` around its fire; rest restores health in a town, at one's own burning camp and as a guest with a deal, and nowhere else |
+| CR-96 | When a valley's day ends (decided 10.10, the owner's answers of the afternoon): no text says it. | `kernel/` (the day-ended event, P-4), `game/src/ui/panels.ts` (the day summary) | the day ends when the player sleeps, or at 05:00 of the game hour when the night is played through; the day-ended event and the day summary come then, before the morning toast, and the summary waits until the player stands in a safe place |

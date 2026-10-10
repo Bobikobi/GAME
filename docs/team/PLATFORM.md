@@ -256,8 +256,8 @@ creator opens the pull request. A later `scaffold` tool may write inside
 
 The server runs on the creator's machine against the checkout, registered by a
 `.mcp.json` at the repository root (and `.cursor/mcp.json`), so a clone has it
-without installing anything. Publishing to npm waits for the product name and a
-public repository.
+without installing anything. Publishing to npm waits for a public repository;
+the product name, Openfold, is settled (`DECISIONS.md`, 2026-10-09).
 
 ### 4.2 API
 
@@ -278,47 +278,62 @@ pastes the site URL.
 ### 5.1 The token sheet
 
 `design/tokens.css` holds the game's 21 colour tokens (same names, same values,
-all from the 32-colour core palette), the pixel unit, two faces, a type scale,
-spacing steps and the frame. `tools/test/design-tokens.test.ts` fails on any
+all from the 32-colour core palette), the pixel unit, three faces (the game's
+pixel face, the site's display and reading faces), a type scale, spacing steps
+and the frame. `tools/test/design-tokens.test.ts` fails on any
 hex outside the palette, on rgba, gradients or a radius, and when the game's
 own `:root` copy drifts from the sheet. GRUNT item 2 makes `game/src/style.css`
 import the sheet; until then the test keeps the copies equal.
 
 ### 5.2 Type
 
-Pixelify Sans for display: headings, numbers, the wordmark, buttons, and the
-whole game (DECISIONS.md, pixel font everywhere). The site's reading text is
-Atkinson Hyperlegible (OFL, self-hosted woff2): a face made for legibility
-that does not look like every other site's Inter, and whose round forms sit
-beside pixel art without fighting it. Rejected: Inter and the system stack
-(generic), a serif (the default of templated sites). Body 17px, nothing read
-below 15px, measure 64ch.
+The game keeps Pixelify Sans everywhere inside it (DECISIONS.md, pixel font
+everywhere); the site does not wear it (DECISIONS.md 2026-10-10, "The site
+leaves the pixel face and the shadow frame"). Platypi is the site's display
+face, for what is signed or counted: the wordmark, headings, door names,
+builder handles, points. Atkinson Hyperlegible Next is its reading face, for
+everything that explains or is pressed: body, nav, buttons, tabs, tags, ranks.
+Both OFL, self-hosted woff2 in `web/public/fonts/`. The pixel face appears on
+the site only where the game's own marks do: the builders' signatures on the
+boards page. Rejected: a pixel face across the site (a costume), Inter and the
+system stack (generic), a serif body (the editorial template). Body 17px,
+nothing read below 15px, measure 64ch.
 
 ### 5.3 The signature element
 
-The pixel frame: a 2px ink border with a hard 4px offset shadow, no radius, no
-blur. Cards, buttons, inputs and the hero image all wear it. One accent per
-page, drawn from the game: green for play, gold for the boards, wood for the
-rules. Icons are core-kit sprites at 2x inline and 4x as section marks,
-`image-rendering: pixelated`. The hero is the game's own art.
+A living window into the valley (DECISIONS.md 2026-10-10): the home page's
+classic door draws the core kit as CSS sprites at a whole-number scale, plays
+the opening's first quest once (the bridge mended, the builder's plate rising
+on its post) and then only idles. The 2px ink frame, no radius, stays on the
+two doors and outlined buttons only; the hard offset shadow is retired and
+`--frame-shadow` is gone from the sheet. One accent, green, means go. Sprites
+are drawn at whole-number scales, `image-rendering: pixelated`; the art is the
+game's own.
 
 ### 5.4 The site uses a named subset
 
 `paper`, `paper2`, `ink`, `ink2`, `grey`, `green`, `green3`, `gold`, `cream`,
 and no hex of its own: a `web/` test scans `web/src` for hex and fails on any
-(GRUNT item 4). Rejected on purpose: a second accent, rgba scrims, gradients,
-rounded cards, an icon font, animated counters.
+(GRUNT item 4). Two more tokens, each kept to one stylesheet: wood for the
+builder's plate in the window, and the signature colours (`red`, `yellow`,
+`green4`, `gold` on `wood` or `ink`) in `web/src/styles/signature.css`.
+Rejected on purpose: a second accent, rgba scrims, gradients, rounded cards, an
+icon font. Animated counters are allowed since 2026-10-10: they count up once,
+with the true number in the DOM.
 
 ### 5.5 Measurable criteria per page
 
 Each page ships with these; a page that misses one is not done.
 
 Home `/`:
-1. At 390x844 the first screen shows the wordmark, one sentence, and the two
-   buttons Play and Build the valley, nothing else above the fold.
+1. At 390x844 the first screen shows the wordmark, the headline and lead, the
+   classic door with Play, the 3D door with Enter when it ships, and the
+   board's title and tabs (restated 2026-10-10).
 2. `grep -c "<script" web/dist/index.html` prints 0.
 3. Every colour in the page's CSS is a palette hex (the subset test).
-4. Transfer under 300KB including `hero-sm.webp`, measured in the build output.
+4. Transfer under 300KB including the fonts, the scene sprites, the 3D loop
+   and its poster, measured in the build output (`web/test/home.test.ts`;
+   125KB without the 3D door, 281KB with it, on 2026-10-10).
 5. Body text contrast at least 4.5:1 against `--paper` (ink on paper is 15:1).
 
 Hub `/hub/` and `/hub/loop/`:
@@ -326,8 +341,9 @@ Hub `/hub/` and `/hub/loop/`:
 2. The loop section contains no `<button>` and no `<form>`: the hub shows, GitHub
    casts.
 3. `built_at` is visible in the footer in the DD.MM.YY HH:MM form.
-4. The numbers rendered equal the numbers in the fixture when the page is built
-   from it (a `web/` test).
+4. The numbers rendered equal `content/board.json`'s while the site is built
+   without the hub-data document, and the document's once it is (a `web/`
+   test). The fixture's sample numbers never reach a page (2026-10-10).
 5. The one island is the copy button for the AI prompt; the prompt is readable
    without JavaScript.
 
@@ -375,9 +391,12 @@ a vote, a file).
   a merged proposal, by someone other than the author, computed by the builder
   from GitHub into `reviewers`. A review that did not count (stale head, author)
   earns nothing.
-- Nothing is called credits until D5 has a formula. `CREDITS.md` stays
-  attribution. The hub's rules page states: the fund is 40% of net income, the
-  formula is open, there is no income yet.
+- D5 has its formula (decided 2026-10-09): a pool of gold taken from gold
+  already spent and split by active seconds (GRUNT's CR-44). The money fund,
+  40% of net income, is a separate split paid in money, and the two never
+  convert. Nothing is called credits until stage 4's creators' document;
+  `CREDITS.md` stays attribution, and the hub's rules page says there is no
+  income yet.
 - Gold and player boards only from stage 2a, when the server verifies them. The
   boards page says so in one line and shows no number.
 - `weekly_pool` (1000) is present and `weekly_pool_active: false` until `usage`
@@ -470,7 +489,9 @@ Asked in the platform message, recommendation first, at most four:
 
 Answered 2026-10-08, recorded in `DECISIONS.md` under that date: 1 yes, with the
 checklist before the switch; 2 the first community votes on the name, from the
-shortlist there; 3 yes; 4 yes.
+shortlist there; 3 yes; 4 yes. Question 2 then closed without the vote: the owner
+confirmed Openfold on 2026-10-09, and the product owner kept it after the
+registrar check (`DECISIONS.md`, both under that date).
 
 ## 12. What this plan does not do
 

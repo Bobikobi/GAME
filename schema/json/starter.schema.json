@@ -253,6 +253,10 @@
                   {
                     "const": "trowel",
                     "type": "string"
+                  },
+                  {
+                    "const": "axe",
+                    "type": "string"
                   }
                 ]
               },
@@ -556,6 +560,32 @@
           "maxLength": 120,
           "description": "Another look of the same character (for example a woman instead of a man), offered by one toggle on the character screen. Same sprite sizes and directions as `sprite`.",
           "type": "string"
+        },
+        "kit": {
+          "maxItems": 6,
+          "description": "What the character carries on the first morning: the tools of its first task, put in the bag when the character is chosen.",
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "item",
+              "qty"
+            ],
+            "properties": {
+              "item": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              },
+              "qty": {
+                "minimum": 1,
+                "maximum": 999,
+                "type": "integer"
+              }
+            }
+          }
         }
       }
     }
