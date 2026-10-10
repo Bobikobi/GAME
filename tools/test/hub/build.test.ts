@@ -1,5 +1,5 @@
 /** `pnpm hub:data` (docs/team/GRUNT.md, item 3): the document from the checkout and an in-memory GitHub. */
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -27,7 +27,8 @@ describe('buildHubData', () => {
   it('takes the board from content/board.json and the records from the content', async () => {
     const doc = await buildHubData({ client: null, now: NOW, previews: false, repository: REPO });
     const core = doc.creators.find((c) => c.handle === 'core')!;
-    expect(core.records).toBe(doc.extensions.filter((e) => e.creator === 'core').length);
+    const board = JSON.parse(readFileSync(join(import.meta.dirname, '../../../content/board.json'), 'utf8')) as { board: Record<string, { records: number }> };
+    expect(core.records).toBe(board.board['core']!.records);
     expect(core.points).toBe(doc.parameters.points.per_record * core.records + doc.parameters.points.per_commit * core.commits);
     expect(doc.sources.git.commits).toBe(core.commits);
     expect(doc.slots.find((s) => s.id === 'core/old-bridge')?.filled_by).toBe('core/old-bridge');
