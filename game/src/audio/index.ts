@@ -1,4 +1,4 @@
-/** Lazy, self-contained sound system for Mistvale's music, ambience, and cues. */
+/** Lazy, self-contained sound system for Openfold's music, ambience, and cues. */
 import { AmbiencePlayer } from './ambience';
 import type { AmbienceKind } from './ambience';
 import { MusicPlayer, renderSong } from './player';
