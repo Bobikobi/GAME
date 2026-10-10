@@ -750,8 +750,8 @@ garden behind the ruins, `core/sun-herbs` on a new sun bank up the river) with
 items of their own, and the coin is a new one-spot dig under the hill lantern
 (`core/lantern-foot`). The coin's reward is Maru's basket, the stand-in for the
 place the owner named until the schema has a place reward. The opening recut B
-(10.10) added the place reward (`reward.opens`): the coin still gives the basket,
-and the quest after it, the arch at night, opens a place.
+(10.10) added the place reward (`reward.opens`): the coin now gives gold and the
+herb tea recipe, and the quest after it, the arch at night, opens a place.
 
 Goal: the five rows of GAME_RULES.md section 5 are closed in the content, and
 `pnpm check` prints "0 errors, 0 warnings" on the core content.

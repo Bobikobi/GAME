@@ -3,7 +3,7 @@
  * next place to go reads from the map itself (G28, onboarding research phase 2). Pure, so the
  * rule can be tested without a scene.
  */
-import { type Bundle, type Rect, type State, campTile, findSlot, hourOf, isNight, npcTile } from '@game/kernel';
+import { type Bundle, type Rect, type State, campTile, findSlot, hourOf, isNight, npcTile, spotOpen } from '@game/kernel';
 
 import { activeQuests, questSteps, readyToHandIn } from './text';
 
@@ -69,7 +69,7 @@ function litAnswer(b: Bundle, s: State, tick: number, st: RiddleStep): Target[] 
     const spots: Target[] = [];
     for (const [id, inst] of Object.entries(b.instances)) {
       if (inst.kind !== 'treasure' || inst.source !== a.treasure) continue;
-      if ((s.nodes[id]?.readyAt ?? 0) > tick || !lit({ x: inst.x, y: inst.y, w: 1, h: 1 })) continue;
+      if (!spotOpen(b, s, id) || (s.nodes[id]?.readyAt ?? 0) > tick || !lit({ x: inst.x, y: inst.y, w: 1, h: 1 })) continue;
       spots.push({ x: inst.x, y: inst.y, h: 16 });
     }
     return nearest(s, spots);

@@ -2,7 +2,7 @@
 import { app } from '../app';
 import { GAME_TITLE } from '../config';
 import { Session } from '../session';
-import { ATTRIBUTE_TEXT } from '../text';
+import { ATTRIBUTE_LABEL, ATTRIBUTE_TEXT } from '../text';
 import { say } from './dialog';
 import { button, h, sprite } from './dom';
 import type { UI } from './ui';
@@ -93,7 +93,7 @@ export function showTitle(ui: UI): Promise<void> {
                 'div',
                 { class: 'mini-attrs' },
                 Object.entries(st.attributes).map(([a, v]) =>
-                  h('div', { title: ATTRIBUTE_TEXT[a] ?? a }, h('span', null, a), h('span', { class: 'pips' }, Array.from({ length: 3 }, (_, i) => h('i', { class: i < v ? 'on' : '' })))),
+                  h('div', { title: ATTRIBUTE_TEXT[a] ?? a }, h('span', null, ATTRIBUTE_LABEL[a] ?? a), h('span', { class: 'pips' }, Array.from({ length: 3 }, (_, i) => h('i', { class: i < v ? 'on' : '' })))),
                 ),
               ),
             );

@@ -521,6 +521,7 @@ function rewardText(questId: string): string {
   // what this start gets: a reward its kit already holds is swapped for one it lacks
   for (const it of r.items ?? []) parts.push(`${it.qty} ${itemName(b, rewardItem(b, starter, it))}`);
   for (const rc of r.recipes ?? []) parts.push(`the ${b.recipes[rc]?.title ?? rc} recipe`);
+  for (const o of r.opens ?? []) parts.push(`a way through the ${b.restores[o]?.title ?? o}`);
   if (r.rep) parts.push('their trust');
   return parts.join(', ') || 'their thanks';
 }

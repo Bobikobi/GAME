@@ -49,12 +49,21 @@ export function clock(minuteOfDay: number): string {
   return `${hh}:${String(mm).padStart(2, '0')}`;
 }
 
+/** One plain word or two per attribute, as the start cards show it (the owner's finding of 10.10: as simple as other games). */
+export const ATTRIBUTE_LABEL: Record<string, string> = {
+  carry: 'Bag space',
+  senses: 'Keen eyes',
+  agility: 'Steady hands',
+  luck: 'Luck',
+  stamina: 'Stamina',
+};
+
 export const ATTRIBUTE_TEXT: Record<string, string> = {
-  carry: 'Carry - room in your bag',
-  senses: 'Senses - spot dig sites from farther away',
-  agility: 'Agility - wider zones in every minigame',
-  luck: 'Luck - a miss keeps something more often, and rarer finds',
-  stamina: 'Stamina - a bigger food meter, so you eat less often',
+  carry: 'Bag space: carry more',
+  senses: 'Keen eyes: see hidden finds from farther away',
+  agility: 'Steady hands: easier timing in every minigame',
+  luck: 'Luck: a miss keeps something more often, and rare finds come more',
+  stamina: 'Stamina: eat less often',
 };
 
 /** The most points one attribute can take (the kernel refuses more). */
@@ -85,13 +94,13 @@ export function attributeEffects(b: Bundle, s: State): AttributeEffect[] {
   const luckNext = plus('luck');
   const capped = rareFindPermille(b, luckNext) === rareFindPermille(b, s) && rareFindPermille(b, s) >= powerCap(b, s);
   return [
-    { attr: 'carry', name: 'Carry', what: 'Bag', now: `${bagCapacity(b, s)} places`, next: `${bagCapacity(b, plus('carry'))} places` },
-    { attr: 'senses', name: 'Senses', what: 'See dig sites', now: `${hintDistance(b, s)} tiles away`, next: `${hintDistance(b, plus('senses'))} tiles away` },
-    { attr: 'agility', name: 'Agility', what: 'Minigame zones', now: `${windowScalePct(b, s)}% wide`, next: `${windowScalePct(b, plus('agility'))}% wide` },
+    { attr: 'carry', name: 'Bag space', what: 'Your bag holds', now: `${bagCapacity(b, s)}`, next: `${bagCapacity(b, plus('carry'))} things` },
+    { attr: 'senses', name: 'Keen eyes', what: 'You see hidden finds from', now: `${hintDistance(b, s)}`, next: `${hintDistance(b, plus('senses'))} steps away` },
+    { attr: 'agility', name: 'Steady hands', what: 'The good zone in a minigame is', now: `${windowScalePct(b, s)}%`, next: `${windowScalePct(b, plus('agility'))}% wide` },
     {
       attr: 'luck',
       name: 'Luck',
-      what: 'A miss still keeps 1',
+      what: 'A miss still gives you 1',
       now: `${pct(missKeepBp(b, s))} of the time`,
       next: `${pct(missKeepBp(b, luckNext))} of the time`,
       note: `Rare finds ${times(rareFindPermille(b, s))} -> ${times(rareFindPermille(b, luckNext))}${capped ? ' (held by your level: level up to raise it)' : ''}`,
@@ -99,9 +108,9 @@ export function attributeEffects(b: Bundle, s: State): AttributeEffect[] {
     {
       attr: 'stamina',
       name: 'Stamina',
-      what: 'Food meter',
-      now: `${satietyCap(b, s) / 1000} (${minutes(s)} min of work)`,
-      next: `${satietyCap(b, plus('stamina')) / 1000} (${minutes(plus('stamina'))} min)`,
+      what: 'You work before you must eat for',
+      now: `${minutes(s)}`,
+      next: `${minutes(plus('stamina'))} minutes`,
     },
   ];
 }

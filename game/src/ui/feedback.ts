@@ -35,7 +35,7 @@ export function feedback(root: HTMLElement, events: readonly GameEvent[]): void 
         break;
       case 'level':
         add({ jingle: 'level' });
-        banner(root, 'Level up!', 'level');
+        banner(root, `${app.bundle.professions[e.profession]?.name ?? 'Level'} ${e.level}!`, 'level');
         break;
       case 'attr':
         add({ sfx: 'perfect' });
@@ -91,7 +91,7 @@ export function feedback(root: HTMLElement, events: readonly GameEvent[]): void 
 export function banner(root: HTMLElement, text: string, kind: 'level' | 'jackpot' | 'point'): void {
   const el = h('div', { class: `banner ${kind}` }, h('span', null, text), h('i', { class: 'burst' }));
   root.append(el);
-  window.setTimeout(() => el.remove(), 1600);
+  window.setTimeout(() => el.remove(), kind === 'level' ? 2400 : 1600);
 }
 
 function purse(): DOMRect | undefined {

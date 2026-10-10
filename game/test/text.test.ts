@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from 'vitest';
 
 import { type Bundle, newState } from '@game/kernel';
-import { describe as describeEvent, hudUnlocks, itemBenefit, nodeAction, questSteps, restoreHint, toolOpens } from '../src/text';
+import { ATTRIBUTE_LABEL, attributeEffects, describe as describeEvent, hudUnlocks, itemBenefit, nodeAction, questSteps, restoreHint, toolOpens } from '../src/text';
 import { loadBundle } from '../../tools/test/helpers/world';
 
 let bundle: Bundle;
@@ -105,5 +105,16 @@ describe('hud unlocks', () => {
     t.player.quests['core/mend-the-bridge'] = 'done';
     expect(hudUnlocks(t)).toEqual({ bag: true, log: true });
     expect(hudUnlocks(newState(bundle, 1), 1)).toEqual({ bag: true, log: true });
+  });
+});
+
+describe('skills in plain words (the owner, 10.10)', () => {
+  test('the start cards name every attribute in plain words, and a level-up reads as one sentence', () => {
+    expect(Object.keys(ATTRIBUTE_LABEL).sort()).toEqual(['agility', 'carry', 'luck', 'senses', 'stamina']);
+    const s = newState(bundle, 1);
+    const carry = attributeEffects(bundle, s).find((fx) => fx.attr === 'carry')!;
+    expect(`${carry.what} ${carry.now} -> ${carry.next}`).toMatch(/^Your bag holds \d+ -> \d+ things$/);
+    const stamina = attributeEffects(bundle, s).find((fx) => fx.attr === 'stamina')!;
+    expect(stamina.next).toMatch(/^\d+ minutes$/);
   });
 });
