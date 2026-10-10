@@ -1,13 +1,13 @@
 # Welcome Developers and Creators
 
-Everything in Mistvale - every bush, recipe, quest, shop, and ruin - is an open JSON file in the game's repository. You build the world the same way the core team does: copy a template, tweak declarative fields, run `pnpm check`, and open a pull request. Once merged, the sign at that spot in the valley carries your name, creator points, and invested hours.
+Everything in Openfold - every bush, recipe, quest, shop, and ruin - is an open JSON file in the game's repository. You build the world the same way the core team does: copy a template, tweak declarative fields, run `pnpm check`, and open a pull request. Once merged, the sign at that spot in the valley carries your name, creator points, and invested hours.
 
 ### Quick Start with AI
 
 Copy and paste this prompt into your AI coding tool (Claude, Cursor, ChatGPT, Antigravity):
 
 ```text
-I want to add a new content extension to Mistvale (a community-built 2D RPG).
+I want to add a new content extension to Openfold (a community-built 2D RPG).
 Repository guidelines:
 - Read docs/creators/README.md and templates/extension/.
 - Place files in content/extensions/<my-handle>/ (resources, recipes, items, npcs, or quests).
