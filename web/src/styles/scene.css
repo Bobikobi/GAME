@@ -1,0 +1,334 @@
+/*
+ * The classic door's living window: the river crossing from the game's opening, drawn from the core kit by
+ * tools/src/site/scene.ts. The world is 512x144 game pixels, scaled by a whole number (--k) and cropped by its
+ * window; the camera point (--cx, --cy) sits at the window's centre left to right and at its top. The window
+ * shows six tiles of height at every scale. The oak and the lantern stand across the top edge and rise one tile
+ * above it.
+ *
+ * No script. Once, after load, the player walks in, mends the broken plank in four hammer beats, the builder's
+ * plate rises and the player crosses to it; after that the valley idles for good (water, fire, the elder's
+ * blink, the oak, the lantern). Without motion (prefers-reduced-motion) the window is that end frame.
+ */
+.scene {
+  --k: 2;
+  --cx: 248px;
+  --cy: 18px;
+  position: relative;
+  height: calc(96px * var(--k));
+  /* the clip reaches one tile above the window, for the oak and the lantern */
+  clip-path: inset(calc(-16px * var(--k) - var(--px)) 0 0 0);
+  background: var(--green);
+}
+.scene .world {
+  position: absolute;
+  /* snapped, so an odd window width never puts the art on half pixels */
+  left: round(down, 50%, 1px);
+  top: 0;
+  width: 512px;
+  height: 144px;
+  transform-origin: 0 0;
+  transform: scale(var(--k)) translate(calc(-1 * var(--cx)), calc(-1 * var(--cy)));
+}
+.scene .world,
+.scene .world * {
+  image-rendering: pixelated;
+}
+.scene .world > i,
+.scene .world b {
+  position: absolute;
+  display: block;
+  background-repeat: no-repeat;
+}
+/* the ground stops at the window's top edge; only the live sprites may cross it */
+.scene .ground {
+  inset: 0;
+  background: url('/scene/ground.png') 0 0 / 2048px 144px;
+  clip-path: inset(var(--cy) 0 0 0);
+}
+.scene .fire {
+  left: 176px;
+  top: 64px;
+  width: 16px;
+  height: 16px;
+  background: url('/scene/campfire_lit.png') 0 0 / 48px 16px;
+}
+.scene .elder {
+  left: 199px;
+  top: 57px;
+  width: 16px;
+  height: 24px;
+  background: url('/scene/elder_blink.png') 0 0 / 32px 24px;
+}
+.scene .oak {
+  left: 166px;
+  top: 2px;
+  width: 32px;
+  height: 32px;
+  background: url('/scene/tree_oak.png') 0 0 / 64px 32px;
+}
+.scene .lantern {
+  left: 306px;
+  top: 2px;
+  width: 16px;
+  height: 32px;
+  background: url('/scene/lantern_post.png') 0 0 / 32px 32px;
+}
+.scene .plank {
+  left: 256px;
+  top: 80px;
+  width: 16px;
+  height: 16px;
+  background: url('/scene/bridge.png');
+}
+/* the builder's plate: timber one tile tall on a post at the far end of the bridge, real text, one art pixel =
+   --k px. It rises when the last plank lands; the board beside the window lists the same handle. */
+.scene .sig {
+  position: absolute;
+  z-index: 1;
+  left: calc(round(down, 50%, 1px) + (266px - var(--cx)) * var(--k));
+  top: calc((48px - var(--cy)) * var(--k));
+  height: calc(16px * var(--k));
+  padding: 0 calc(4px * var(--k));
+  border: calc(1px * var(--k)) solid var(--ink);
+  background: var(--wood);
+  color: var(--paper);
+  font-family: var(--font-display);
+  font-weight: var(--w-display2);
+  font-size: calc(8px * var(--k));
+  line-height: calc(14px * var(--k));
+  white-space: nowrap;
+}
+/* two nails */
+.scene .sig::before {
+  content: '';
+  position: absolute;
+  left: calc(1px * var(--k));
+  right: calc(1px * var(--k));
+  top: calc(6px * var(--k));
+  height: calc(1px * var(--k));
+  border-inline: calc(1px * var(--k)) solid var(--cream);
+}
+/* the post, down to the path's edge */
+.scene .sig::after {
+  content: '';
+  position: absolute;
+  left: calc(5px * var(--k));
+  top: 100%;
+  width: calc(2px * var(--k));
+  height: calc(16px * var(--k));
+  background: var(--ink);
+}
+/* the player: the trip moves .p; walking and working face right (the sheets face left), idle faces you */
+.scene .p {
+  left: 0;
+  top: 72px;
+  width: 16px;
+  height: 24px;
+  transform: translateX(288px);
+}
+.scene .p .walk,
+.scene .p .work {
+  transform: scaleX(-1);
+  opacity: 0;
+}
+.scene .p .walk {
+  inset: 0;
+  background: url('/scene/player_left.png') -16px 0 / 48px 24px;
+}
+.scene .p .work {
+  left: -6px;
+  top: -8px;
+  width: 32px;
+  height: 32px;
+  background: url('/scene/player_work_left.png') 0 0 / 64px 32px;
+}
+.scene .p .idle {
+  inset: 0;
+  background: url('/scene/player_idle_down.png') 0 0 / 32px 24px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* the valley idles for good */
+  .scene .ground {
+    animation: of-water 1.2s steps(4) infinite;
+  }
+  .scene .fire {
+    animation: of-fire 0.45s steps(3) infinite;
+  }
+  .scene .elder {
+    animation: of-blink 4.4s step-end infinite;
+  }
+  .scene .oak {
+    animation: of-sway 1.2s steps(2) infinite;
+  }
+  .scene .lantern {
+    animation: of-flicker 0.9s steps(2) infinite;
+  }
+  .scene .p .idle {
+    animation:
+      of-breathe 1.2s steps(2) 0.6s infinite,
+      of-idling 12s step-end 0.6s both;
+  }
+  /* the quest plays once: walk in 0-30%, hammer 30-62.5% (a plank group lands every other beat from 33.3%),
+     watch the plate rise, cross the mended bridge 65-71%, then idle beside the plate */
+  .scene .p {
+    animation: of-trip 12s 0.6s both;
+  }
+  .scene .p .walk {
+    animation:
+      of-step 0.5s step-end 0.6s infinite,
+      of-walking 12s step-end 0.6s both;
+  }
+  .scene .p .work {
+    animation:
+      of-hit 0.5s steps(2) 0.6s infinite,
+      of-working 12s step-end 0.6s both;
+  }
+  .scene .plank {
+    animation: of-mend 12s 0.6s both;
+  }
+  .scene .sig {
+    animation: of-sign 12s 0.6s both;
+  }
+}
+@keyframes of-water {
+  to {
+    background-position-x: -2048px;
+  }
+}
+@keyframes of-fire {
+  to {
+    background-position-x: -48px;
+  }
+}
+@keyframes of-sway {
+  to {
+    background-position-x: -64px;
+  }
+}
+@keyframes of-flicker {
+  to {
+    background-position-x: -32px;
+  }
+}
+@keyframes of-breathe {
+  to {
+    background-position-x: -32px;
+  }
+}
+@keyframes of-hit {
+  to {
+    background-position-x: -64px;
+  }
+}
+@keyframes of-blink {
+  0% {
+    background-position-x: 0;
+  }
+  93% {
+    background-position-x: -16px;
+  }
+  96% {
+    background-position-x: 0;
+  }
+}
+/* one art pixel per step: from just outside the widest window (112) in to the bridge head, then 52 px across */
+@keyframes of-trip {
+  0% {
+    transform: translateX(112px);
+    animation-timing-function: steps(124, end);
+  }
+  30% {
+    transform: translateX(236px);
+  }
+  65% {
+    transform: translateX(236px);
+    animation-timing-function: steps(52, end);
+  }
+  71%,
+  100% {
+    transform: translateX(288px);
+  }
+}
+/* A, stand, B, stand */
+@keyframes of-step {
+  0% {
+    background-position-x: 0;
+  }
+  25% {
+    background-position-x: -16px;
+  }
+  50% {
+    background-position-x: -32px;
+  }
+  75% {
+    background-position-x: -16px;
+  }
+}
+@keyframes of-walking {
+  0% {
+    opacity: 1;
+  }
+  30% {
+    opacity: 0;
+  }
+  65% {
+    opacity: 1;
+  }
+  71% {
+    opacity: 0;
+  }
+}
+@keyframes of-working {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  62.5% {
+    opacity: 0;
+  }
+}
+@keyframes of-idling {
+  0% {
+    opacity: 0;
+  }
+  62.5% {
+    opacity: 1;
+  }
+  65% {
+    opacity: 0;
+  }
+  71% {
+    opacity: 1;
+  }
+}
+/* the mended plank comes in four groups, left to right, on the hammer's down frames (4.0, 5.0, 6.0, 7.0 s) */
+@keyframes of-mend {
+  0% {
+    clip-path: inset(0 100% 0 0);
+  }
+  33.333% {
+    clip-path: inset(0 100% 0 0);
+    animation-timing-function: steps(4, jump-start);
+  }
+  66.667%,
+  100% {
+    clip-path: inset(0 0 0 0);
+  }
+}
+/* the plate rises from its post in four steps, bottom up, after the last plank (7.5 s), as the planks did */
+@keyframes of-sign {
+  0% {
+    clip-path: inset(100% 0 calc(-16px * var(--k)) 0);
+  }
+  62.5% {
+    clip-path: inset(100% 0 calc(-16px * var(--k)) 0);
+    animation-timing-function: steps(4, end);
+  }
+  65%,
+  100% {
+    clip-path: inset(0 0 calc(-16px * var(--k)) 0);
+  }
+}

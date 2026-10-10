@@ -18,11 +18,17 @@ import {
   salePrice,
   satietyCap,
   slotsFor,
+  senseReach,
   techniqueValue,
 } from '@game/kernel';
 
 export function itemName(b: Bundle, id: string): string {
   return b.items[id]?.name ?? id;
+}
+
+/** The verb on a node's prompt and its minigame: a tree is felled, anything else gathered. */
+export function nodeAction(b: Bundle, r: Bundle['resources'][string]): string {
+  return r.tool === 'axe' ? 'Fell tree' : `Gather ${itemName(b, r.output)}`;
 }
 
 /** milli-gold as gold, at most two decimals: 2500 -> "2.5" */
@@ -192,7 +198,7 @@ export function digRiddleOpen(b: Bundle, s: State, treasure: string): boolean {
 }
 
 export function hintDistance(b: Bundle, s: State): number {
-  return 2 + b.params.per_point.senses * s.player.attrs.senses + (techniqueValue(b, s, 'second_hint') > 0 ? 2 : 0);
+  return senseReach(b, s.player.attrs.senses) + (techniqueValue(b, s, 'second_hint') > 0 ? 2 : 0);
 }
 
 export function campSpotOf(b: Bundle, campId: string): [number, number] | undefined {
@@ -292,18 +298,19 @@ export function itemBenefit(b: Bundle, id: string): string {
     // a tool with no uses never wears out
     const uses = it.tool.uses === undefined ? 'lasts' : `${it.tool.uses} uses`;
     const speed = it.tool.tier > 1 ? ` · +${15 * (it.tool.tier - 1)}% gathering speed` : '';
-    const resources = Object.values(b.resources)
+    // two patches of the same plant read as one; a start's own spot is no dig site of the trowel's
+    const resources = [...new Set(Object.values(b.resources)
       .filter((resource) => resource.tool === it.tool?.kind)
-      .map((resource) => resource.title.toLowerCase())
+      .map((resource) => resource.title.toLowerCase()))]
       .sort();
     const digSites = it.tool.kind === 'trowel'
       ? Object.values(b.treasures)
-          .filter((treasure) => treasure.tool === it.tool?.kind)
+          .filter((treasure) => treasure.tool === it.tool?.kind && treasure.starter === undefined)
           .map((treasure) => treasure.title.toLowerCase())
           .sort()
       : [];
     const unlocks = [
-      resources.length ? `gathers ${resources.join(' & ')}` : '',
+      resources.length ? `${it.tool.kind === 'axe' ? 'fells' : 'gathers'} ${resources.join(' & ')}` : '',
       digSites.length ? `digs ${digSites.join(' & ')}` : '',
     ].filter(Boolean).join(' · ') || `tool for ${it.tool.kind}`;
     return `${tier} · ${unlocks} · ${uses}${speed}`;

@@ -36,9 +36,10 @@ describe('design/tokens.css', () => {
     expect(root).not.toMatch(/#[0-9a-fA-F]/);
   });
 
-  it('keeps text at 15px or more and the pixel face first', () => {
+  it('keeps text at 15px or more, the pixel face for the game and the two faces of the site', () => {
     for (const m of tokens.matchAll(/--text-[a-z0-9]+:\s*(\d+)px/g)) expect(Number(m[1])).toBeGreaterThanOrEqual(15);
     expect(tokens).toMatch(/--font:\s*'Pixelify Sans'/);
-    expect(tokens).toMatch(/--font-reading:\s*'Atkinson Hyperlegible'/);
+    expect(tokens).toMatch(/--font-display:\s*'Platypi'/);
+    expect(tokens).toMatch(/--font-reading:\s*'Atkinson Hyperlegible Next'/);
   });
 });

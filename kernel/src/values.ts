@@ -96,6 +96,8 @@ export function activitiesOf(content: ContentForValues): Activity[] {
   }
   for (const id of Object.keys(content.treasures).sort()) {
     const d = content.treasures[id]!;
+    // a start's own spot gives once, to one character: a gift of the start, no source of value
+    if (d.starter !== undefined) continue;
     const effort = effortTier('dig', tierOf(d.finds.map((f) => f.item)));
     const w = params.effort_permille[effort];
     const capacity = d.respawn_ms > 0 ? { count: d.count, respawn_ms: d.respawn_ms } : undefined;
