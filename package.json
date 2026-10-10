@@ -23,6 +23,7 @@
     "credits": "tsx tools/src/cli.ts credits",
     "board": "tsx tools/src/cli.ts board",
     "loop": "tsx tools/src/loop/cli.ts",
+    "streams": "tsx tools/src/streams/cli.ts",
     "verify": "pnpm schemas --verify && pnpm check && pnpm bundle && pnpm lint && pnpm typecheck && pnpm test && pnpm --filter game build"
   },
   "devDependencies": {
