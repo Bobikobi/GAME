@@ -273,6 +273,16 @@ describe('a predator', () => {
     expect(after.player.chase).toBeNull();
   });
 
+  test('does not bite at the first tick of day, even when a bite was due exactly then', () => {
+    const b = world([wolf(8, 22)]);
+    let s = place(begin(b), at, DAWN - 2500);
+    s.player.chase = { hazard: 'test/wolf', since: DAWN - 2500, bites: 0 };
+    const cap = satietyCap(b, s);
+    s = move(b, s, at, DAWN).state;
+    expect(s.player.satiety).toBe(cap);
+    expect(s.player.chase).toBeNull();
+  });
+
   test('forgets a predator the world no longer has', () => {
     const b = world([]);
     let s = move(b, place(begin(b), at, NIGHT), at, NIGHT).state;

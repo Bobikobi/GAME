@@ -129,7 +129,8 @@ export function reappearTile(
   walkable: (x: number, y: number, view: WorldView) => boolean,
 ): Tile {
   const p = state.player;
-  const spawn: Tile = [bundle.map.spawn.x, bundle.map.spawn.y];
+  const wake = bundle.starters[p.starter]?.wake ?? bundle.map.spawn;
+  const spawn: Tile = [wake.x, wake.y];
   const slot = p.town === '' ? undefined : findSlot(bundle.map, p.town);
   if (!slot) return spawn;
   const tiles: Tile[] = [];
