@@ -124,7 +124,7 @@ describe('what the vocabularies and the shipped content say', () => {
 
   test('play is unchanged: health is the old satiety, it empties by the clock, and empty is not a fall', () => {
     const b = structuredClone(base);
-    let s = begin(b);
+    const s = begin(b);
     const cap = satietyCap(b, s);
     expect(s.player.satiety).toBe(cap);
     const tenMin = 600_000;
@@ -133,11 +133,11 @@ describe('what the vocabularies and the shipped content say', () => {
     expect(r.state.player.satiety).toBe(cap - Math.floor((tenMin * b.params.satiety_drain_per_min) / 60_000));
     // an hour later it is empty: the work is slower, and nobody falls from hunger
     const hour = 3_600_000;
-    s = move(b, r.state, [6, 19], hour);
-    expect(kinds(s.events)).toEqual([]);
-    expect(s.state.player.satiety).toBe(0);
-    expect(s.state.player.falls).toBe(0);
-    expect(satietyAt(b, s.state, hour)).toBe(0);
+    const later = move(b, r.state, [6, 19], hour);
+    expect(kinds(later.events)).toEqual([]);
+    expect(later.state.player.satiety).toBe(0);
+    expect(later.state.player.falls).toBe(0);
+    expect(satietyAt(b, later.state, hour)).toBe(0);
   });
 });
 

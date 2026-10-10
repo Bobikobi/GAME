@@ -103,6 +103,13 @@ export class Session {
     worn.worn ??= {};
     worn.looks ??= {};
     worn.tries ??= {};
+    // a save from before health and hazards (P-5) has no town, outing, chase or fall count
+    const danger = state.player as Partial<Pick<State['player'], 'town' | 'outing' | 'chase' | 'falls' | 'movedAt'>>;
+    danger.town ??= '';
+    danger.outing ??= null;
+    danger.chase ??= null;
+    danger.falls ??= 0;
+    danger.movedAt ??= state.tick;
     const session = new Session(bundle, state);
     if (state.content !== bundle.tag) {
       // a new version of the world was published: keep what still exists
@@ -294,6 +301,9 @@ function adapt(bundle: Bundle, state: State): boolean {
   p.restored = p.restored.filter((id) => id in bundle.restores);
   p.camp = p.camp.filter((id) => id in bundle.camps);
   p.visited = p.visited.filter((id) => bundle.map.slots.some((s) => s.id === id));
+  // a world that changed may have moved the hazards and the safe ground: nothing carries over
+  p.outing = null;
+  p.chase = null;
   state.nodes = keepKeys(state.nodes, bundle.instances);
   // a worn item that is gone, or no longer fits its place, comes off
   fitWorn(bundle, state);
