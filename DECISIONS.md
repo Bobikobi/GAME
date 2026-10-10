@@ -863,6 +863,7 @@ The question (stage 2a, the account entry): the minimum age for an account. The 
 - The game's own text stays readable by a child of eight (G22): the content is for all ages, and the account has an age.
 
 **Closes:** the minimum age; GRUNT's open ends carry it into the stage 2a design as CR-49. The privacy text and the mail service stay for the stage 2a design.
+**Superseded in part (10.10):** "the content is for all ages" now holds for the words (G22). The look aims at ESRB E10+ and PEGI 12, and the younger player of the demo is one between the rating's age and the account's (the entry on menace with a limit).
 **Retry when:** parents ask for a child's account; Minecraft and Roblox offer one under a parent's control with limited chat. Model: claude-opus-5-5.
 
 ## 2026-10-09 ✅ A player's shop: a sign over the player, and the shop stays open while they are away
@@ -989,6 +990,7 @@ The question (10.10, the sweep): where did the world, the fall and time leave a 
 - **The opening is walked on the clock.** The opening check walks every order of helping, with each starter's kit, on the game's clock from the starting hour, and refuses a road that waits on an hour window the start misses.
 
 **Closes:** the holes of the world and time of the sweep, and GRUNT's CR-10 and CR-14; CR-77 to CR-86 carry the building.
+**Superseded in part (10.10):** blood, a wound and a fallen body may show within a limit, visual only, and the aim is ESRB E10+ and PEGI 12 (the entry on menace with a limit).
 **Retry when:** players fall and repeat for gain, or players who played in a holiday's days miss its look. Model: claude-opus-5-5.
 
 ## 2026-10-10 ✅ Which text wins, and the lines that lagged brought in line
@@ -1001,3 +1003,16 @@ The question (10.10, the sweep): the documents disagreed in places, so a builder
 
 **Closes:** the drift between the documents found by the sweep; GRUNT's CR-87 carries the spec's next version.
 **Retry when:** a builder follows a lagging line again. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ Menace with a limit: blood, a wound and a fallen body may show, never for display, and the aim moves to PEGI 12
+
+The question (10.10, after the sweep): the sweep closed the spec's open content limit as menace without gore (the entry on the world and its clocks): no blood, no wound and no body, aimed at PEGI 7 and ESRB E10+. The owner's word (10.10): blood, wounds and bodies may show, with a limit. It is not censorship, only no abuse put on display, and it is visual: it does not touch the system or the game itself.
+
+- **What may show.** Blood, a wound and a fallen body, as part of how the world shows danger without a word or a number (the entry on difficulty, 9.10): a trail of blood where a hurt animal went, what a predator left at the edge of its woods, bones by a ruin, a predator drawn as it strikes.
+- **The limit.** Nothing lingers, nothing is shown close up, no gore is there for its own sake, and no suffering is played for show: no screen, camera or sound dwells on pain. Blood and a wound show small and brief, at the sprite's own size.
+- **A person never bleeds at the moment of harm.** A hazard that hits the player or a character of the valley shows the hit and the health it takes, never blood or a wound. A wound on a person shows only afterwards, as a bandage or a torn sleeve. A fallen person keeps the fall's look (crosses for eyes, a sinking into the ground), and nothing stays where they fell (G33). This is where PEGI puts the line between 12 and 16: at 12 there is no sight of blood or injuries during violence towards people, while an injury or a dead body may be seen if it is not too gory. Like Stardew Valley, whose ESRB rating counts small splashes of blood from defeated creatures and none from people.
+- **Visual only.** It changes no rule, number or state. What a hazard takes, the fall and its cost (G33), the warnings (G31) and the run back to a safe place (G34) stay as they are. The text still says the player fell, never that they died or were killed, because the player wakes again in town: "fell" is the true word for what happens, not a softer one.
+- **The aim moves to ESRB E10+ and PEGI 12.** Mild blood fits ESRB E10+. PEGI 7 allows only unrealistic violence that does no apparent harm, so blood moves the PEGI aim from 7 to 12. Checked against the account (the entry on the account's age, 9.10): 13, or a country's higher age of up to 16, sits above both ratings, so every account holder is inside the aim. Checked against the demo: the demo is the same valley with the same look, so the younger player it is for is one between the rating's age and the account's, 10 to 12 by the ESRB, 12 by PEGI, and up to 15 where a country asks 16. The words stay readable by a child of eight (G22), since plain words serve every reader. Like Stardew Valley, rated E10+ by the ESRB, with mild blood among its reasons, and 12 by PEGI: the label tells a parent the age, and the game does not ask for it.
+
+**Supersedes:** "Menace without gore" in the entry on the world and its clocks, and "the content is for all ages" in the entry on the account's age, which now holds for the words. G46, the review checklist's question 11, the pull request template's "for all ages" and the conduct line of `CONTRIBUTING.md` change with it; GRUNT's CR-83 carries the building.
+**Retry when:** a store's rating comes back above ESRB E10+ or PEGI 12, or players read a mark of blood as a promise of combat. Model: claude-opus-5-5.

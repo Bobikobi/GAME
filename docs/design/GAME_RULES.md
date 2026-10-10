@@ -398,13 +398,20 @@ day); the audit behind them is `docs/design/CRAFTING_AUDIT.md`.
 
 ### Menace
 
-Added 2026-10-10 by the sweep for holes (DECISIONS.md).
+Added 2026-10-10 by the sweep for holes, and changed the same day on the
+owner's word (DECISIONS.md, the entry on menace with a limit).
 
-- **G46 Menace without gore.** Danger shows through shape, sound and the dark
-  only: no blood, no wound and no body, and a predator is never drawn biting.
-  The text says the player fell, never that they died or were killed, and the
-  fall keeps its look (crosses for eyes, a sinking into the ground). The aim is
-  PEGI 7 and ESRB E10+ (DECISIONS.md, the entry on the world and its clocks).
+- **G46 Menace with a limit.** Danger shows through shape, sound and the dark,
+  and blood, a wound and a fallen body may show too, within a limit: nothing
+  lingers, nothing is shown close up, no gore is there for its own sake, and no
+  suffering is played for show. Blood and a wound show small and brief, at the
+  sprite's own size. A person, the player or a character of the valley, never
+  bleeds or shows a wound at the moment of harm: the hit shows the health it
+  takes, and a wound on a person shows only afterwards, as a bandage or a torn
+  sleeve. A fall keeps its look (crosses for eyes, a sinking into the ground,
+  G33). It is visual only and changes no rule, number or state. The text says
+  the player fell, never that they died or were killed, since the player wakes
+  again in town. The aim is ESRB E10+ and PEGI 12.
 
 ### What this page covers, and what lives elsewhere
 
@@ -501,7 +508,7 @@ build pay less.
 
 ## 7. The review checklist
 
-For every pull request that touches play. Ten questions, yes or no; a "no"
+For every pull request that touches play. Eleven questions, yes or no; a "no"
 names the rule and the pull request waits.
 
 1. Does every new or changed quest ask a question the player can state? (G1)
@@ -519,8 +526,9 @@ names the rule and the pull request waits.
    and without colour? (G15, G29)
 10. Did the owner play the preview, or did the reviewer play it for him and say
     so in the pull request?
-11. Does danger show only by shape, sound and the dark, and does the text say
-    the player fell, never died? (G46)
+11. Does any blood, wound or fallen body stay small, brief and never there
+    for show, with none on a person at the moment of harm, does it change no
+    rule or number, and does the text say the player fell, never died? (G46)
 
 ## 8. What the check enforces
 
