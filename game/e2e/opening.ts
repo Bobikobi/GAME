@@ -473,7 +473,7 @@ class Player {
       for (const n of ready) {
         if ((await this.bag(item)) >= want) return;
         await this.walkTo({ x: n.x, y: n.y, w: 1, h: 1 }, n.id);
-        await this.expectPrompt(/^Gather/, n.id);
+        await this.expectPrompt(/^(Gather|Fell)/, n.id);
         await this.a();
         await this.solveMinigame();
         await this.idle(`gathering ${n.id}`);
@@ -575,7 +575,7 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
     log('mended the bridge');
 
     // 5. a fire and the first meal
-    await me.gather('core/fallen-branches', 'core/branch', 3);
+    await me.gather('core/oak-trees', 'core/log', 2);
     const fire = await page.eval<[number, number]>(`(() => { const c = __e2e.slot('core/camp'); return [c.x + 2, c.y + 2]; })()`);
     await me.walkTo({ x: fire[0], y: fire[1], w: 1, h: 1 }, 'the fire spot');
     await me.expectPrompt(/^Build: Campfire/, 'the fire spot');
