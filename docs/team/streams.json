@@ -1,55 +1,54 @@
 {
-  "note": "One line per stream of work: what it advances in the original plan, its branches, and the session that holds it. Edited only when a stream starts, ends or changes hands; the live picture (pull requests, CI, conflicts, order) is computed by `pnpm streams`, never written here. owner stays null until Elad names the session (docs/team/PARALLEL.md).",
+  "note": "One line per stream of work: what it advances in the original plan, its branches, and who holds it. Edited only when a stream starts, ends or changes hands; the live picture (pull requests, CI, conflicts, order) is computed by `pnpm streams`, never written here. owner names the role of the session that holds the stream (session names change when the editor reloads); the integration session assigns it (docs/team/PARALLEL.md).",
   "streams": [
     {
-      "id": "axe-and-starts",
-      "title": "Trees are felled with an axe; three starters",
-      "plan": ["spec G-3 (third starter, stage 3)", "spec G-13 (the opening)", "GRUNT CR-24, CR-37"],
-      "branches": ["feat/axe-and-starts", "feat/three-starts"],
-      "owner": null
-    },
-    {
-      "id": "story",
-      "title": "The story told in folds: lines, beliefs, the first story",
-      "plan": ["GRUNT S-1 to S-6", "docs/design/STORY.md"],
-      "branches": ["feat/story-lines", "docs/mist-hook"],
-      "owner": null
+      "id": "health-and-starts",
+      "title": "Health and hazards (P-5), then the three starters (CR-37)",
+      "plan": ["spec G-3 (third starter, stage 3)", "GRUNT P-5, CR-37", "GAME_RULES G30-G35"],
+      "branches": ["feat/health-hazards", "feat/three-starts"],
+      "owner": "the health-and-hazards session"
     },
     {
       "id": "opening-recut",
-      "title": "The first ten minutes, recut (option B)",
+      "title": "The first ten minutes, recut (option B), with the one-time save reset (CR-62)",
       "plan": ["spec G-13 (the opening)", "docs/FTUE_RESEARCH.md"],
-      "branches": ["docs/opening-recut", "feat/opening-recut-b"],
-      "owner": null
+      "branches": ["feat/opening-recut-b"],
+      "owner": "the opening-and-crafting session"
     },
     {
       "id": "crafting",
       "title": "Crafting: the workshop, the economy, the bag in categories",
       "plan": ["outside the original plan (added 9.10)", "touches spec G-6, G-12, G-15", "docs/design/CRAFTING_AUDIT.md"],
       "branches": ["feat/crafting-wave3", "feat/crafting-economy", "feat/crafting-wave4"],
-      "owner": null
+      "owner": "the opening-and-crafting session, after the opening"
+    },
+    {
+      "id": "variety",
+      "title": "New kinds of play: the first maze, then stealth over the hazards",
+      "plan": ["GAME_RULES section 3 (maze, stealth)", "DECISIONS 2026-10-09 maze and stealth"],
+      "branches": ["feat/first-maze"],
+      "owner": "a builder run by the integration session"
     },
     {
       "id": "site",
-      "title": "The site package, the hub and the creator tools",
-      "plan": ["PLATFORM.md", "GRUNT M1 to M5, item 4 first"],
-      "branches": ["feat/site-home"],
-      "owner": null
+      "title": "The site: real hub data, rules and docs pages, the MCP snippet, coming-soon boxes, the 3D door",
+      "plan": ["PLATFORM.md", "GRUNT 3, 12, 13, 16"],
+      "branches": [],
+      "owner": "the site session"
     },
     {
       "id": "owner-answers",
-      "title": "The owner's answers written into the decisions",
+      "title": "The owner's answers written into the decisions and the rules",
       "plan": ["DECISIONS.md", "docs/design/GAME_RULES.md", "GRUNT CR-60 to CR-62"],
-      "branches": ["docs/owner-answers-2026-10-10", "docs/answers-2026-10-09"],
-      "owner": null
+      "branches": ["docs/answers-2026-10-09", "docs/owner-answers-2026-10-10", "docs/owner-answers-2026-10-10-pm", "docs/chapter-1-answers"],
+      "owner": "the docs session; the integration session for the 10.10 afternoon answers"
     },
     {
-      "id": "trials",
-      "title": "Direction trials, shelved until the owner picks a frame",
-      "plan": ["DECISIONS.md, the art direction"],
-      "branches": ["trial/3d", "trial/hd2d", "trial/pixel-rich"],
-      "owner": null,
-      "parked": true
+      "id": "parallel-3d",
+      "title": "The 3D version, a parallel version behind its own button on the same data",
+      "plan": ["DECISIONS 2026-10-10 owner's answers of the afternoon, item 9"],
+      "branches": ["trial/3d"],
+      "owner": null
     }
   ]
 }
