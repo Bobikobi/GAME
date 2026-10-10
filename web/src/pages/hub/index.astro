@@ -1,0 +1,155 @@
+---
+// The developer area (docs/team/GRUNT.md, item 7, with the structure the owner approved on 2026-10-10): how to
+// start, the tools, the boards, this week and the rules. The copy button is the site's one script.
+import Site from '../../layouts/Site.astro';
+import Copy from '../../components/Copy.astro';
+import '../../styles/hub.css';
+import { CORE_PALETTE } from '../../../../tools/src/kit/palette';
+import { TOOLS } from '../../../../mcp/src/tools';
+import { builders, weights, week } from '../../data/boards';
+import { prompt } from '../../data/prompt';
+import { dateTime, repoFile, repoTree } from '../../data/site';
+
+const tools = Object.keys(TOOLS);
+const top = builders.slice(0, 5);
+// the palette is the data on show here, so its colours are written by the page, not by the stylesheet
+const swatches = CORE_PALETTE.map((hex, i) => `.swatches li:nth-child(${i + 1}) { background: ${hex}; }`).join('\n');
+---
+
+<Site
+  title="Developer area - Openfold"
+  description="Add places, quests and items to Openfold from your editor or with your AI: the template, the prompt, the MCP tools, the data and the boards."
+  section="developers"
+>
+  <Fragment slot="head"><style is:inline set:html={swatches} /></Fragment>
+
+  <div class="hub">
+    <header class="wrap hub-head">
+      <p class="kicker">Developer area</p>
+      <h1>Connect your tools, build the valley, climb the board</h1>
+      <p class="lead">
+        Every place, quest and item in the game is a data record in the repository. Add yours from your editor or with
+        your AI. When it is merged, it enters the game with your signature and earns points.
+      </p>
+      <p class="earn">
+        <span><b>+{weights.per_record}</b> a record</span>
+        <span><b>+{weights.per_commit}</b> a commit</span>
+        <span><b>+{weights.per_approval}</b> a review</span>
+        <a class="go" href={repoFile('.github/points.json')}>Set in .github/points.json</a>
+      </p>
+    </header>
+
+    <div class="wrap hub-main">
+      <section class="start" aria-labelledby="start-h">
+        <h2 id="start-h">Start here</h2>
+        <ol class="steps">
+          <li>
+            <h3>Copy the template</h3>
+            <p>
+              One folder per builder, under content/extensions/your-handle/. The template is a working extension, a
+              fruit bush and a quest, ready to copy and rename.
+            </p>
+            <p class="acts">
+              <a class="btn sm" href={repoTree('templates/extension')}>The template</a>
+              <a class="btn sm" href={repoFile('docs/creators/README.md')}>Add a fruit in 10 minutes</a>
+            </p>
+          </li>
+          <li>
+            <h3>Give your AI the map</h3>
+            <p>Paste this into Claude, Cursor or any assistant. It reads llms.txt, then the guide.</p>
+            <pre class="code" id="prompt">{prompt(Astro.site)}</pre>
+            <p class="acts"><Copy target="prompt" label="Copy the prompt" /></p>
+          </li>
+          <li>
+            <h3>Add the MCP server <span class="tag">read-only</span></h3>
+            <p>
+              {tools.length} tools that answer from your checkout: {tools.join(', ')}. They write nothing and need no
+              token. The server that serves them lands with the next release.
+            </p>
+            <p class="acts"><a class="btn sm" href={repoTree('mcp')}>The tool definitions</a></p>
+          </li>
+          <li>
+            <h3>Read the data</h3>
+            <p>The API is plain files: the hub-data document (the requests, the boards, this week) and one JSON schema per record type.</p>
+            <p class="acts">
+              <a class="btn sm" href="/api/">/api/</a>
+              <a class="btn sm" href="/api/#schemas">Schemas</a>
+            </p>
+          </li>
+          <li>
+            <h3>Check, then open a pull request</h3>
+            <p>The same check runs in CI on every pull request. Points land when it is merged.</p>
+            <pre class="code"><span class="dim">$</span> pnpm check
+<span class="dim">Everything passes.</span></pre>
+          </li>
+        </ol>
+      </section>
+
+      <div class="side">
+        <section class="teaser" aria-labelledby="boards-h">
+          <h2 id="boards-h">Builders</h2>
+          <ol class="ledger">
+            {
+              top.map((b, i) => (
+                <li>
+                  <span class="rank">{i + 1}</span>
+                  <b class="who">{b.handle}</b>
+                  <span class="pts">
+                    {b.points} <small>points</small>
+                  </span>
+                </li>
+              ))
+            }
+          </ol>
+          <p class="formula">
+            points = {weights.per_record} x records + {weights.per_commit} x commits
+          </p>
+          <a class="go" href="/hub/boards/">All boards</a>
+        </section>
+
+        <section class="week" aria-labelledby="week-h">
+          <h2 id="week-h">This week</h2>
+          {
+            week ? (
+              <p>
+                <a class="go" href={week.url}>
+                  Summary of week {week.week}
+                </a>
+                <small>Posted {dateTime(week.posted_at)} UTC</small>
+              </p>
+            ) : (
+              <p>No summary yet. The weekly summary arrives with the data build of the site.</p>
+            )
+          }
+        </section>
+      </div>
+    </div>
+
+    <section class="wrap sect" aria-labelledby="tools-h">
+      <h2 id="tools-h">Tools</h2>
+      <div class="tools">
+        <div>
+          <h3>The kit importer</h3>
+          <p>Turns a PNG or JPEG into kit art in the core palette, cut into frames.</p>
+          <pre class="code"><span class="dim">$</span> pnpm kit:import</pre>
+        </div>
+        <div>
+          <h3>The core palette</h3>
+          <p>{CORE_PALETTE.length} colours. Every sprite in the game is drawn in them, and so is this site.</p>
+          <ul class="swatches" aria-label={`The ${CORE_PALETTE.length} colours of the core palette`}>
+            {CORE_PALETTE.map((hex) => <li title={hex}><span class="vh">{hex}</span></li>)}
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap sect" aria-labelledby="rules-h">
+      <h2 id="rules-h">Rules</h2>
+      <ul class="rules">
+        <li><a class="go" href={repoFile('CONTRIBUTING.md')}>How to contribute</a> - how a pull request is reviewed and merged.</li>
+        <li><a class="go" href={repoFile('LICENSE')}>The code licence</a> - AGPL-3.0.</li>
+        <li><a class="go" href={repoFile('content/LICENSE')}>The content licence</a> - CC BY-SA 4.0, for every record and sprite.</li>
+      </ul>
+    </section>
+  </div>
+</Site>

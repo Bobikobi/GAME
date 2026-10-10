@@ -575,6 +575,17 @@
           "minLength": 1,
           "maxLength": 40,
           "type": "string"
+        },
+        "done": {
+          "minItems": 1,
+          "maxItems": 2,
+          "description": "The narrator, when the place is mended: what is there now, never what was (STORY.md S1). \"{name}\" is the player's name.",
+          "type": "array",
+          "items": {
+            "minLength": 1,
+            "maxLength": 240,
+            "type": "string"
+          }
         }
       }
     }

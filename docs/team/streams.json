@@ -1,0 +1,55 @@
+{
+  "note": "One line per stream of work: what it advances in the original plan, its branches, and the session that holds it. Edited only when a stream starts, ends or changes hands; the live picture (pull requests, CI, conflicts, order) is computed by `pnpm streams`, never written here. owner stays null until Elad names the session (docs/team/PARALLEL.md).",
+  "streams": [
+    {
+      "id": "axe-and-starts",
+      "title": "Trees are felled with an axe; three starters",
+      "plan": ["spec G-3 (third starter, stage 3)", "spec G-13 (the opening)", "GRUNT CR-24, CR-37"],
+      "branches": ["feat/axe-and-starts", "feat/three-starts"],
+      "owner": null
+    },
+    {
+      "id": "story",
+      "title": "The story told in folds: lines, beliefs, the first story",
+      "plan": ["GRUNT S-1 to S-6", "docs/design/STORY.md"],
+      "branches": ["feat/story-lines", "docs/mist-hook"],
+      "owner": null
+    },
+    {
+      "id": "opening-recut",
+      "title": "The first ten minutes, recut (option B)",
+      "plan": ["spec G-13 (the opening)", "docs/FTUE_RESEARCH.md"],
+      "branches": ["docs/opening-recut", "feat/opening-recut-b"],
+      "owner": null
+    },
+    {
+      "id": "crafting",
+      "title": "Crafting: the workshop, the economy, the bag in categories",
+      "plan": ["outside the original plan (added 9.10)", "touches spec G-6, G-12, G-15", "docs/design/CRAFTING_AUDIT.md"],
+      "branches": ["feat/crafting-wave3", "feat/crafting-economy", "feat/crafting-wave4"],
+      "owner": null
+    },
+    {
+      "id": "site",
+      "title": "The site package, the hub and the creator tools",
+      "plan": ["PLATFORM.md", "GRUNT M1 to M5, item 4 first"],
+      "branches": ["feat/site-home"],
+      "owner": null
+    },
+    {
+      "id": "owner-answers",
+      "title": "The owner's answers written into the decisions",
+      "plan": ["DECISIONS.md", "docs/design/GAME_RULES.md", "GRUNT CR-60 to CR-62"],
+      "branches": ["docs/owner-answers-2026-10-10", "docs/answers-2026-10-09"],
+      "owner": null
+    },
+    {
+      "id": "trials",
+      "title": "Direction trials, shelved until the owner picks a frame",
+      "plan": ["DECISIONS.md, the art direction"],
+      "branches": ["trial/3d", "trial/hd2d", "trial/pixel-rich"],
+      "owner": null,
+      "parked": true
+    }
+  ]
+}

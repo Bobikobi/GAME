@@ -1,0 +1,74 @@
+/*
+ * A builder's signature as the game draws it over their work (game/src/ui/panels.ts, game/src/style.css): the
+ * words in the pixel face, five styles, a glyph beside the words; without the game's shadow and notch. These are
+ * the only places the site uses red, yellow and the light moss green: they belong to the signature.
+ */
+/* the game ships the face at /play/fonts/; the boards page borrows it rather than carry a second copy */
+@font-face {
+  font-family: 'Pixelify Sans';
+  src: url('/play/fonts/pixelify-sans-latin.woff2') format('woff2');
+  font-display: swap;
+}
+.signature {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  padding: 1px 0.5em 2px;
+  border: var(--frame);
+  font-family: var(--font);
+  font-size: 18px;
+  line-height: 24px;
+  white-space: nowrap;
+}
+.sig-carved {
+  color: var(--cream);
+  background: var(--wood);
+}
+.sig-painted {
+  color: var(--red);
+  background: var(--paper);
+  border-color: var(--red);
+}
+.sig-ink {
+  color: var(--ink);
+  background: var(--paper);
+  font-style: italic;
+}
+.sig-gold {
+  color: var(--yellow);
+  background: var(--ink);
+  border-color: var(--gold);
+}
+.sig-moss {
+  color: var(--green4);
+  background: var(--green);
+}
+
+/* the glyphs are 8x8 pixel masks, so they take the colour of the words beside them */
+.glyph {
+  display: inline-block;
+  flex: none;
+  width: 0.85em;
+  height: 0.85em;
+  background: currentColor;
+  -webkit-mask: var(--g) center / contain no-repeat;
+  mask: var(--g) center / contain no-repeat;
+}
+.g-leaf {
+  --g: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath d='M4 0h3v1h1v3h-1v2h-1v1h-2v1h-3v-1h1v-1h-1v-3h1v-1h1v-1h1z'/%3E%3C/svg%3E");
+}
+.g-star {
+  --g: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath d='M3 0h2v2h3v2h-1v1h1v3h-2v-1h-2v1h-2v-3h1v-1h-1v-2h3z'/%3E%3C/svg%3E");
+}
+.g-sun {
+  --g: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath d='M3 0h2v1h-2zM0 3h1v2h-1zM7 3h1v2h-1zM3 7h2v1h-2zM1 1h1v1h-1zM6 1h1v1h-1zM1 6h1v1h-1zM6 6h1v1h-1zM3 2h2v1h1v2h-1v1h-2v-1h-1v-2h1z'/%3E%3C/svg%3E");
+}
+.g-flower {
+  --g: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath d='M3 0h2v2h-2zM0 3h2v2h-2zM6 3h2v2h-2zM3 6h2v2h-2zM3 3h2v2h-2zM1 1h1v1h-1zM6 1h1v1h-1zM1 6h1v1h-1zM6 6h1v1h-1z'/%3E%3C/svg%3E");
+}
+.g-key {
+  --g: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath d='M0 1h3v1h1v1h4v2h-1v1h-1v-1h-1v1h-1v-1h-1v1h-1v1h-2zM1 2v2h1v-2z' fill-rule='evenodd'/%3E%3C/svg%3E");
+}
+.g-wave {
+  --g: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath d='M0 2h2v1h1v1h2v-1h1v-1h2v2h-1v1h-1v1h-2v-1h-1v-1h-1v-1h-1v1h-1z'/%3E%3C/svg%3E");
+}
