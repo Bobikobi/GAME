@@ -3,20 +3,15 @@
   "format": 1,
   "type": "quest",
   "id": "core/first-fire",
-  "title": "Dry wood",
+  "title": "A fire before dark",
   "creator": "core",
   "quest": {
-    "type": "investigation",
-    "summary": "A fire needs dry wood, and the river soaked everything on this bank. Almost everything.",
+    "type": "mastery",
+    "summary": "The sun is past noon. Fell a tree for logs and build a campfire across the river before dark.",
     "requires": [
       "core/fix-the-bridge"
     ],
     "steps": [
-      {
-        "kind": "find",
-        "item": "core/dry-log",
-        "clue": "One log in the wet reeds below the bridge stayed dry. Walk the bank and look closely."
-      },
       {
         "kind": "build",
         "camp": "core/campfire"

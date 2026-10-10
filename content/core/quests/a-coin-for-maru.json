@@ -35,11 +35,8 @@
     "reward": {
       "rep": 20,
       "gold_mg": 20000,
-      "items": [
-        {
-          "item": "core/basket",
-          "qty": 1
-        }
+      "recipes": [
+        "core/herb-tea"
       ]
     }
   }

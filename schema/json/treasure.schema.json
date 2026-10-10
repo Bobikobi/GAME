@@ -253,6 +253,14 @@
                   {
                     "const": "trowel",
                     "type": "string"
+                  },
+                  {
+                    "const": "axe",
+                    "type": "string"
+                  },
+                  {
+                    "const": "staff",
+                    "type": "string"
                   }
                 ]
               },
@@ -523,7 +531,6 @@
           "type": "integer"
         },
         "tool": {
-          "description": "The tool the dig needs and wears. Left out: the find is picked up by hand, with no window and no tool worn.",
           "anyOf": [
             {
               "const": "basket",
@@ -532,8 +539,17 @@
             {
               "const": "trowel",
               "type": "string"
+            },
+            {
+              "const": "axe",
+              "type": "string"
+            },
+            {
+              "const": "staff",
+              "type": "string"
             }
-          ]
+          ],
+          "description": "The tool the dig asks for and wears. Left out: the find is picked up by hand, with no timing window and no tool worn."
         },
         "level": {
           "minimum": 1,
@@ -590,6 +606,12 @@
               "type": "string"
             }
           }
+        },
+        "starter": {
+          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+          "maxLength": 80,
+          "description": "A start's own spot: only a character of this starter sees it and digs it, once, and it always gives its one find. A gift of the start, so it prices nothing (it is no source in the value table).",
+          "type": "string"
         }
       }
     }

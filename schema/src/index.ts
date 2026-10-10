@@ -46,7 +46,8 @@ export const Rarity = Type.Union(RARITIES.map((r) => Type.Literal(r)), {
   description: 'Declared rarity. The check compares it with the rarity computed from the data.',
 });
 
-export const TOOL_KINDS = ['basket', 'trowel'] as const;
+/** A staff is worn in the hand for what it helps; no work asks for one. */
+export const TOOL_KINDS = ['basket', 'trowel', 'axe', 'staff'] as const;
 export const ToolKind = Type.Union(TOOL_KINDS.map((k) => Type.Literal(k)));
 
 export const STATIONS = ['fire', 'workshop'] as const;
@@ -99,6 +100,21 @@ const Word = (description: string) => Type.String({ pattern: '^[a-z0-9_-]+$', ma
 
 export const Stack = Type.Object(
   { item: Id, qty: Int(1, 999) },
+  { additionalProperties: false },
+);
+/**
+ * An item a quest gives. A start whose kit already holds it gets `instead`
+ * (DECISIONS.md, 2026-10-10: whom to help first), so no reward repeats a kit.
+ */
+export const RewardStack = Type.Object(
+  {
+    item: Id,
+    qty: Int(1, 999),
+    instead: Type.Optional({
+      ...Id,
+      description: 'What a start whose kit holds the item gets in its place: something that kit lacks.',
+    }),
+  },
   { additionalProperties: false },
 );
 export const Output = Type.Object(
@@ -225,8 +241,22 @@ export const ResourceBody = Type.Object(
     count: Int(1, 12, 'How many of these nodes the slot holds.'),
     sprite: SpriteRef,
     sprite_empty: Type.Optional(SpriteRef),
+    growth: Type.Optional(
+      Type.Array(SpriteRef, {
+        minItems: 1,
+        maxItems: 3,
+        description:
+          'Young stages of a node that grows back, from the youngest up (after `sprite_empty`, before `sprite`). The client shows the stage by how much of the respawn time has passed. Needs `sprite_empty`.',
+      }),
+    ),
+    solid: Type.Optional(
+      Type.Boolean({
+        description:
+          'The node blocks the way, ready or not, as a tree does: a stump stays in the way until the tree is grown again. Left out: the player walks through it.',
+      }),
+    ),
     tool: Type.Optional(ToolKind),
-    level: Int(1, 20, 'Foraging level required.'),
+    level: Int(1, 20, 'Level required, in the profession the node trains: felling when the tool is an axe, foraging otherwise.'),
     game: Type.Optional(
       Type.Union([Type.Literal('timing'), Type.Literal('strike'), Type.Literal('pick'), Type.Literal('snap')], {
         description: 'The minigame played when gathering: "timing" (stop a marker in the middle, the default), "strike" (three timed hammer strikes, for stone), "pick" (press only for the ripe ones, for plants) or "snap" (press fast, for wood).',
@@ -255,14 +285,18 @@ export const TreasureBody = Type.Object(
     active_ms: Ms('Time the player is busy digging once.'),
     respawn_ms: Ms('Time before the spot can be dug again.'),
     count: Int(1, 8),
-    tool: Type.Optional(
-      Type.Union(TOOL_KINDS.map((k) => Type.Literal(k)), {
-        description: 'The tool the dig needs and wears. Left out: the find is picked up by hand, with no window and no tool worn.',
-      }),
-    ),
+    tool: Type.Optional({
+      ...ToolKind,
+      description: 'The tool the dig asks for and wears. Left out: the find is picked up by hand, with no timing window and no tool worn.',
+    }),
     level: Int(1, 20, 'Digging level required.'),
     finds: Type.Array(Find, { minItems: 1, maxItems: 8 }),
     place: Place,
+    starter: Type.Optional({
+      ...Id,
+      description:
+        "A start's own spot: only a character of this starter sees it and digs it, once, and it always gives its one find. A gift of the start, so it prices nothing (it is no source in the value table).",
+    }),
   },
   { additionalProperties: false },
 );
@@ -455,6 +489,10 @@ export const QuestStep = Type.Union([
 export const QuestBody = Type.Object(
   {
     giver: Type.Optional(Id),
+    starter: Type.Optional({
+      ...Id,
+      description: "Offered to a character of this starter only: a start's own first task. Left out: every character.",
+    }),
     type: Type.Optional(QuestType),
     summary: Text,
     steps: Type.Array(QuestStep, { minItems: 1, maxItems: 6 }),
@@ -463,7 +501,7 @@ export const QuestBody = Type.Object(
       {
         rep: Int(0, 100, 'Reputation with the giver. Never traded, so it can be generous.'),
         gold_mg: Type.Optional(Int(1, 10_000_000)),
-        items: Type.Optional(Type.Array(Stack, { maxItems: 4 })),
+        items: Type.Optional(Type.Array(RewardStack, { maxItems: 4 })),
         recipes: Type.Optional(Type.Array(Id, { maxItems: 4 })),
         opens: Type.Optional(
           Type.Array(Id, {
@@ -530,6 +568,26 @@ export const StarterBody = Type.Object(
         description: 'Another look of the same character (for example a woman instead of a man), offered by one toggle on the character screen. Same sprite sizes and directions as `sprite`.',
       }),
     ),
+    kit: Type.Optional(
+      Type.Array(Stack, {
+        maxItems: 6,
+        description:
+          'What the character carries on the first morning: the tools of its first task, put in the bag when the character is chosen. A piece with a working "wear" slot is worn from the start.',
+      }),
+    ),
+    wake: Type.Optional(
+      Type.Object(
+        { x: Int(0, 1023), y: Int(0, 1023) },
+        { additionalProperties: false, description: "The tile the character wakes on. Left out: the map's spawn." },
+      ),
+    ),
+    intro: Type.Optional(
+      Type.Array(Text, {
+        minItems: 1,
+        maxItems: 4,
+        description: "What the narrator says as the character wakes, one box a line. Left out: the game's own waking lines.",
+      }),
+    ),
   },
   { additionalProperties: false },
 );
@@ -553,7 +611,7 @@ export const Effect = Type.Union(EFFECTS.map((k) => Type.Literal(k)), {
 export const ProfessionBody = Type.Object(
   {
     name: Name,
-    verb: Type.Union([Type.Literal('gather'), Type.Literal('dig'), Type.Literal('craft')]),
+    verb: Type.Union([Type.Literal('gather'), Type.Literal('fell'), Type.Literal('dig'), Type.Literal('craft')]),
     stations: Type.Optional(
       Type.Array(Station, {
         minItems: 1,

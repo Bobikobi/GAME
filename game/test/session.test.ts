@@ -3,7 +3,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vi
 import type { Bundle } from '@game/kernel';
 import { app } from '../src/app';
 import { LEGACY_SAVE_KEY, SAVE_KEY } from '../src/config';
-import { Session } from '../src/session';
+import { DEMO_SINCE_KEY, Session } from '../src/session';
 import { say } from '../src/ui/dialog';
 import { UI } from '../src/ui/ui';
 import { loadBundle } from '../../tools/test/helpers/world';
@@ -82,6 +82,29 @@ describe('session persistence', () => {
     expect(restored?.met.size).toBe(0);
   });
 
+  test('a save from before the kit existed is given the start\'s axe once, and the next visit leaves it alone', () => {
+    startedSession();
+    const file = JSON.parse(storage.getItem(SAVE_KEY)!) as { state: string };
+    const old = JSON.parse(file.state) as { content: string; player: { bag: Record<string, number>; journal: string[] } };
+    delete old.player.bag['core/axe'];
+    old.player.journal = old.player.journal.filter((id) => id !== 'core/axe');
+    old.content = 'an-older-world';
+    file.state = JSON.stringify(old);
+    storage.setItem(SAVE_KEY, JSON.stringify(file));
+
+    const restored = Session.restore(bundle)!;
+    expect(restored.adapted).toBe(true);
+    expect(restored.state.player.bag['core/axe']).toBe(1);
+    expect(restored.state.player.journal).toContain('core/axe');
+
+    // the world is current now: an axe the player no longer holds is not handed out again
+    delete restored.state.player.bag['core/axe'];
+    restored.save();
+    const again = Session.restore(bundle)!;
+    expect(again.adapted).toBe(false);
+    expect(again.state.player.bag['core/axe']).toBeUndefined();
+  });
+
   test('carries a save made under the working title over to the new key', () => {
     startedSession();
     storage.setItem(LEGACY_SAVE_KEY, storage.getItem(SAVE_KEY)!);
@@ -95,7 +118,9 @@ describe('session persistence', () => {
 
     storage.setItem(LEGACY_SAVE_KEY, storage.getItem(SAVE_KEY)!);
     Session.erase();
-    expect(storage.length).toBe(0);
+    // only the demo's date is left
+    expect(storage.length).toBe(1);
+    expect(storage.getItem(DEMO_SINCE_KEY)).not.toBeNull();
   });
 
   test('a save under the new key wins over one left under the working title, which is never read', () => {
@@ -157,6 +182,42 @@ describe('session persistence', () => {
     expect(restored?.state.player.recipes).toEqual([...restored!.state.player.recipes].sort());
     expect(restored?.state.player.tries).toEqual({ 'core/berry-mash': 2 });
     expect(restored?.state.player.worn).toEqual({});
+  });
+
+  test('a save from before the new opening is dropped once, under either key, and the demo date is kept', () => {
+    for (const key of [SAVE_KEY, LEGACY_SAVE_KEY]) {
+      startedSession();
+      const file = JSON.parse(storage.getItem(SAVE_KEY)!) as { v: number };
+      storage.clear();
+      storage.setItem(key, JSON.stringify({ ...file, v: 1 }));
+
+      expect(Session.hasSave()).toBe(false);
+      expect(Session.dropOld()).toBe(true);
+      expect(storage.getItem(SAVE_KEY)).toBeNull();
+      expect(storage.getItem(LEGACY_SAVE_KEY)).toBeNull();
+      expect(Session.demoSince()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      // the notice comes once: there is nothing left to drop
+      expect(Session.dropOld()).toBe(false);
+    }
+  });
+
+  test('a current save, an unreadable one and no save at all are left alone', () => {
+    expect(Session.dropOld()).toBe(false);
+    startedSession();
+    expect(Session.dropOld()).toBe(false);
+    expect(Session.restore(bundle)?.started).toBe(true);
+    storage.setItem(SAVE_KEY, 'not a save');
+    expect(Session.dropOld()).toBe(false);
+    expect(storage.getItem(SAVE_KEY)).toBe('not a save');
+  });
+
+  test('the demo date is written once and outlives a new game and an erase', () => {
+    expect(Session.demoSince()).toBeUndefined();
+    storage.setItem(DEMO_SINCE_KEY, '2026-10-01');
+    startedSession();
+    Session.erase();
+    startedSession('Again');
+    expect(Session.demoSince()).toBe('2026-10-01');
   });
 
   test('plays the elder monologue once across a reload', async () => {

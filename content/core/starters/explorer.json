@@ -7,7 +7,7 @@
   "creator": "core",
   "starter": {
     "name": "Explorer",
-    "summary": "Sharp senses and good luck. Wears patched clothes; fine attire is earned through valley achievements.",
+    "summary": "Sharp senses and good luck. Wakes with a walking staff. Wears patched clothes; fine attire is earned through valley achievements.",
     "attributes": {
       "carry": 0,
       "senses": 2,
@@ -16,6 +16,21 @@
       "stamina": 1
     },
     "sprite": "core/base-kit:chars/player_down",
-    "sprite_alt": "core/base-kit:chars/woman_down"
+    "sprite_alt": "core/base-kit:chars/woman_down",
+    "kit": [
+      {
+        "item": "core/walking-staff",
+        "qty": 1
+      }
+    ],
+    "wake": {
+      "x": 7,
+      "y": 6
+    },
+    "intro": [
+      "You wake on the high ground north of the river at noon, a staff in your hand.",
+      "Your senses are sharp. Walk, and they lead you to what others pass by.",
+      "Make for the broken bridge: its keystone lies in the shallows."
+    ]
   }
 }

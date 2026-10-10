@@ -7,7 +7,7 @@
   "creator": "core",
   "starter": {
     "name": "Forager",
-    "summary": "Quick hands and a big bag. Wears patched clothes; fine attire is earned through valley achievements.",
+    "summary": "Quick hands and a big bag. Wakes with a basket and an axe. Wears patched clothes; fine attire is earned through valley achievements.",
     "attributes": {
       "carry": 2,
       "senses": 1,
@@ -16,6 +16,21 @@
       "stamina": 1
     },
     "sprite": "core/base-kit:chars/player_down",
-    "sprite_alt": "core/base-kit:chars/woman_down"
+    "sprite_alt": "core/base-kit:chars/woman_down",
+    "kit": [
+      {
+        "item": "core/basket",
+        "qty": 1
+      },
+      {
+        "item": "core/axe",
+        "qty": 1
+      }
+    ],
+    "intro": [
+      "You wake by the river at noon, a basket on your arm and an axe at your belt.",
+      "Herbs grow on the bank to the west. Pick a few while the sun is high.",
+      "The bridge east lost its keystone to the shallows. The valley lies beyond."
+    ]
   }
 }

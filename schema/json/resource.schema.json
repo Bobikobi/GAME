@@ -253,6 +253,14 @@
                   {
                     "const": "trowel",
                     "type": "string"
+                  },
+                  {
+                    "const": "axe",
+                    "type": "string"
+                  },
+                  {
+                    "const": "staff",
+                    "type": "string"
                   }
                 ]
               },
@@ -543,6 +551,22 @@
           "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
           "type": "string"
         },
+        "growth": {
+          "minItems": 1,
+          "maxItems": 3,
+          "description": "Young stages of a node that grows back, from the youngest up (after `sprite_empty`, before `sprite`). The client shows the stage by how much of the respawn time has passed. Needs `sprite_empty`.",
+          "type": "array",
+          "items": {
+            "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
+            "maxLength": 120,
+            "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
+            "type": "string"
+          }
+        },
+        "solid": {
+          "description": "The node blocks the way, ready or not, as a tree does: a stump stays in the way until the tree is grown again. Left out: the player walks through it.",
+          "type": "boolean"
+        },
         "tool": {
           "anyOf": [
             {
@@ -552,13 +576,21 @@
             {
               "const": "trowel",
               "type": "string"
+            },
+            {
+              "const": "axe",
+              "type": "string"
+            },
+            {
+              "const": "staff",
+              "type": "string"
             }
           ]
         },
         "level": {
           "minimum": 1,
           "maximum": 20,
-          "description": "Foraging level required.",
+          "description": "Level required, in the profession the node trains: felling when the tool is an axe, foraging otherwise.",
           "type": "integer"
         },
         "game": {

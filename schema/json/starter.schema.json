@@ -253,6 +253,14 @@
                   {
                     "const": "trowel",
                     "type": "string"
+                  },
+                  {
+                    "const": "axe",
+                    "type": "string"
+                  },
+                  {
+                    "const": "staff",
+                    "type": "string"
                   }
                 ]
               },
@@ -556,6 +564,64 @@
           "maxLength": 120,
           "description": "Another look of the same character (for example a woman instead of a man), offered by one toggle on the character screen. Same sprite sizes and directions as `sprite`.",
           "type": "string"
+        },
+        "kit": {
+          "maxItems": 6,
+          "description": "What the character carries on the first morning: the tools of its first task, put in the bag when the character is chosen. A piece with a working \"wear\" slot is worn from the start.",
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "item",
+              "qty"
+            ],
+            "properties": {
+              "item": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              },
+              "qty": {
+                "minimum": 1,
+                "maximum": 999,
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "wake": {
+          "additionalProperties": false,
+          "description": "The tile the character wakes on. Left out: the map's spawn.",
+          "type": "object",
+          "required": [
+            "x",
+            "y"
+          ],
+          "properties": {
+            "x": {
+              "minimum": 0,
+              "maximum": 1023,
+              "type": "integer"
+            },
+            "y": {
+              "minimum": 0,
+              "maximum": 1023,
+              "type": "integer"
+            }
+          }
+        },
+        "intro": {
+          "minItems": 1,
+          "maxItems": 4,
+          "description": "What the narrator says as the character wakes, one box a line. Left out: the game's own waking lines.",
+          "type": "array",
+          "items": {
+            "minLength": 1,
+            "maxLength": 240,
+            "type": "string"
+          }
         }
       }
     }

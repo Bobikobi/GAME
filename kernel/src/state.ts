@@ -161,6 +161,11 @@ export function campBuilt(bundle: Bundle, state: State, campId: string): boolean
   return false;
 }
 
+/** How far, in tiles, a character with these senses sees a hidden place: a dig spot, or a find lying in the grass. */
+export function senseReach(bundle: Bundle, senses: number): number {
+  return 2 + bundle.params.per_point.senses * senses;
+}
+
 export function bagCapacity(bundle: Bundle, state: State): number {
   let cap = bundle.params.bag_base + bundle.params.per_point.carry * state.player.attrs.carry;
   for (const id of state.player.camp) cap += bundle.camps[id]?.bag_bonus ?? 0;
@@ -178,6 +183,11 @@ export function professionLevel(bundle: Bundle, state: State, professionId: stri
 
 export function verbLevel(bundle: Bundle, state: State, verb: Verb): number {
   return professionLevel(bundle, state, bundle.verbs[verb]);
+}
+
+/** The verb a node trains: a node worked with an axe is felled, any other is gathered. */
+export function nodeVerb(resource: { tool?: string }): Verb {
+  return resource.tool === 'axe' ? 'fell' : 'gather';
 }
 
 /** Character level: one more for every profession level gained. */

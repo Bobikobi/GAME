@@ -141,7 +141,7 @@ export interface Bundle {
   /** V(item) in value-ms, computed by values.ts (rule R7), never declared. */
   values: Record<string, number>;
   /** Which profession each verb trains; for craft, the one at the fire, since each station has its own (`stations`). */
-  verbs: { gather: string; dig: string; craft: string };
+  verbs: { gather: string; fell: string; dig: string; craft: string };
   /** The craft profession that works each station: a recipe that names no profession takes its station's. */
   stations: Record<string, string>;
   credits: Credit[];

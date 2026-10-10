@@ -34,7 +34,7 @@ describe('the core content', () => {
 
   it('counts what only digging or one timed plant gives as findable, never what is sold or grows anywhere', () => {
     const findable = findableItems(result.assembled.bundle!);
-    for (const id of ['core/maru-coin', 'core/old-coin', 'core/bellberry', 'core/sunleaf', 'core/dry-log']) expect(findable.has(id), id).toBe(true);
+    for (const id of ['core/maru-coin', 'core/old-coin', 'core/bellberry', 'core/sunleaf']) expect(findable.has(id), id).toBe(true);
     for (const id of ['core/berry', 'core/herb', 'core/stone', 'core/herb-tea']) expect(findable.has(id), id).toBe(false);
   });
 });

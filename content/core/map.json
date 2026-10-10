@@ -1353,15 +1353,6 @@
         "tag": "riverbank"
       },
       {
-        "id": "core/wet-reeds",
-        "kind": "ruin",
-        "x": 16,
-        "y": 22,
-        "w": 2,
-        "h": 6,
-        "tag": "riverbank"
-      },
-      {
         "id": "core/arch-mouth",
         "kind": "area",
         "x": 36,
@@ -1408,7 +1399,7 @@
         "tag": "meadow"
       },
       {
-        "id": "core/fallen-branches",
+        "id": "core/camp-oaks",
         "kind": "resource",
         "x": 23,
         "y": 19,
@@ -1548,6 +1539,33 @@
         "w": 1,
         "h": 1,
         "tag": "ruin"
+      },
+      {
+        "id": "core/bank-herbs",
+        "kind": "resource",
+        "x": 4,
+        "y": 19,
+        "w": 2,
+        "h": 2,
+        "tag": "meadow"
+      },
+      {
+        "id": "core/slid-bank",
+        "kind": "ruin",
+        "x": 11,
+        "y": 25,
+        "w": 1,
+        "h": 1,
+        "tag": "riverbank"
+      },
+      {
+        "id": "core/bridge-glint",
+        "kind": "ruin",
+        "x": 11,
+        "y": 19,
+        "w": 1,
+        "h": 1,
+        "tag": "riverbank"
       },
       {
         "id": "core/sun-bank",

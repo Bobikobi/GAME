@@ -9,8 +9,8 @@
     "slot": "fire",
     "inputs": [
       {
-        "item": "core/dry-log",
-        "qty": 1
+        "item": "core/log",
+        "qty": 2
       }
     ],
     "active_ms": 3000,

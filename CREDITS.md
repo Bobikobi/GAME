@@ -38,7 +38,6 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Pell's stall (shop) - `content/core/shops/trader-shop.json`
 - Explorer (starter) - `content/core/starters/explorer.json`
 - Forager (starter) - `content/core/starters/forager.json`
-- Dry log (treasure) - `content/core/treasures/dry-log.json`
 - Under the hill lantern (treasure) - `content/core/treasures/lantern-foot.json`
 - Deep ruins (treasure) - `content/core/treasures/ruins-deep.json`
 - Gate rubble (treasure) - `content/core/treasures/ruins-gate.json`

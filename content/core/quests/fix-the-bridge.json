@@ -16,10 +16,7 @@
     ],
     "reward": {
       "rep": 0,
-      "gold_mg": 30000,
-      "recipes": [
-        "core/mushroom-skewer"
-      ]
+      "gold_mg": 30000
     }
   }
 }

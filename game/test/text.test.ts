@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from 'vitest';
 
 import { type Bundle, newState } from '@game/kernel';
-import { describe as describeEvent, hudUnlocks, itemBenefit, questSteps, restoreHint, toolOpens } from '../src/text';
+import { describe as describeEvent, hudUnlocks, itemBenefit, nodeAction, questSteps, restoreHint, toolOpens } from '../src/text';
 import { loadBundle } from '../../tools/test/helpers/world';
 
 let bundle: Bundle;
@@ -27,7 +27,7 @@ describe('tool benefits', () => {
 });
 
 describe('the opening recut B', () => {
-  /** A fresh state past the town: the bridge, the dry wood and the walk to town are done. */
+  /** A fresh state past the town: the bridge, the fire and the walk to town are done. */
   const inTown = () => {
     const s = newState(bundle, 1);
     for (const id of ['core/fix-the-bridge', 'core/first-fire', 'core/into-town']) s.player.quests[id] = 'done';
@@ -36,7 +36,9 @@ describe('the opening recut B', () => {
 
   test('the stall names the roads each tool opens, open or ready to take', () => {
     const s = inTown();
-    expect(toolOpens(bundle, s, 'basket')).toEqual(['Where the bells rang']);
+    // whom to help first is the player's: both neighbours' roads are open at once
+    expect(toolOpens(bundle, s, 'basket')).toEqual(['Herbs for Pell', 'Where the bells rang']);
+    // a start's own task is not a road for anyone else
     expect(toolOpens(bundle, s, 'trowel')).toEqual(['The coin under the lantern']);
     s.player.quests['core/three-fruits'] = 'done';
     expect(toolOpens(bundle, s, 'basket')).toEqual(['Herbs for Pell']);
@@ -47,13 +49,12 @@ describe('the opening recut B', () => {
   });
 
   test('a find with no giver is found once it is in the journal, even after it is used up', () => {
-    const s = inTown();
-    s.player.quests['core/first-fire'] = 'active';
-    expect(questSteps(bundle, s, 'core/first-fire')[0]!.done).toBe(false);
-    // the fire's line does not count the log the find asks for
-    expect(questSteps(bundle, s, 'core/first-fire')[1]!.text).toBe('Then build a Campfire');
-    s.player.journal = ['core/dry-log'];
-    expect(questSteps(bundle, s, 'core/first-fire')[0]).toMatchObject({ done: true, text: 'Dry log: found' });
+    const s = newState(bundle, 1);
+    s.player.starter = 'core/explorer';
+    s.player.quests['core/glint-by-the-bridge'] = 'active';
+    expect(questSteps(bundle, s, 'core/glint-by-the-bridge')[0]!.done).toBe(false);
+    s.player.journal = ['core/axe'];
+    expect(questSteps(bundle, s, 'core/glint-by-the-bridge')[0]).toMatchObject({ done: true, text: 'Axe: found' });
   });
 
   test('a way no hand opens points at the quest that opens it, and opens as a way', () => {
@@ -65,6 +66,20 @@ describe('the opening recut B', () => {
     );
     expect(describeEvent(bundle, s, { e: 'restore', restore: 'core/arch-way' }).text).toBe('Broken arch: the way is open');
     expect(describeEvent(bundle, s, { e: 'restore', restore: 'core/old-bridge' }).text).toMatch(/ restored$/);
+  });
+});
+
+describe('what a node asks of the player', () => {
+  test('a tree is felled and everything else is gathered', () => {
+    expect(nodeAction(bundle, bundle.resources['core/oak-trees']!)).toBe('Fell tree');
+    for (const r of Object.values(bundle.resources).filter((x) => x.tool !== 'axe')) {
+      expect(nodeAction(bundle, r), r.id).toMatch(/^Gather /);
+    }
+    expect(nodeAction(bundle, bundle.resources['core/berry-bushes']!)).toBe('Gather Redberry');
+  });
+
+  test('the axe says it fells, and what', () => {
+    expect(itemBenefit(bundle, 'core/axe')).toBe('Tier 1 axe · fells oak trees · 50 uses');
   });
 });
 

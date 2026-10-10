@@ -253,6 +253,14 @@
                   {
                     "const": "trowel",
                     "type": "string"
+                  },
+                  {
+                    "const": "axe",
+                    "type": "string"
+                  },
+                  {
+                    "const": "staff",
+                    "type": "string"
                   }
                 ]
               },
@@ -500,6 +508,12 @@
           "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
           "maxLength": 80,
           "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+          "type": "string"
+        },
+        "starter": {
+          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+          "maxLength": 80,
+          "description": "Offered to a character of this starter only: a start's own first task. Left out: every character.",
           "type": "string"
         },
         "type": {
@@ -847,6 +861,12 @@
                     "minimum": 1,
                     "maximum": 999,
                     "type": "integer"
+                  },
+                  "instead": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "What a start whose kit holds the item gets in its place: something that kit lacks.",
+                    "type": "string"
                   }
                 }
               }

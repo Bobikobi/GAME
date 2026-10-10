@@ -240,6 +240,16 @@
         "w": 16,
         "h": 16
       },
+      "items/log": {
+        "file": "items/log.png",
+        "w": 16,
+        "h": 16
+      },
+      "items/axe": {
+        "file": "items/axe.png",
+        "w": 16,
+        "h": 16
+      },
       "props/broken_statue": {
         "file": "props/broken_statue.png",
         "w": 16,
@@ -287,6 +297,16 @@
         "file": "props/chest.png",
         "w": 16,
         "h": 16
+      },
+      "props/sapling": {
+        "file": "props/sapling.png",
+        "w": 16,
+        "h": 16
+      },
+      "props/young_tree": {
+        "file": "props/young_tree.png",
+        "w": 16,
+        "h": 24
       },
       "props/dead_tree": {
         "file": "props/dead_tree.png",

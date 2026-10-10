@@ -9,6 +9,7 @@ import {
   characterLevel,
   isNight,
   minuteOfDay,
+  rewardItem,
   satietyAt,
   satietyCap,
   skillPoints,
@@ -16,7 +17,7 @@ import {
 import { app } from '../app';
 import type { Button } from '../input';
 import type { Session } from '../session';
-import { activeQuests, clock, describe, digRiddleOpen, gold, hudUnlocks, itemName, questSteps, readyToHandIn, windowScalePct } from '../text';
+import { activeQuests, clock, describe, digRiddleOpen, gold, hudUnlocks, itemName, nodeAction, questSteps, readyToHandIn, windowScalePct } from '../text';
 import { say, type Option } from './dialog';
 import { button, h, sprite } from './dom';
 import { feedback } from './feedback';
@@ -314,19 +315,26 @@ export class UI {
       if (e.e === 'restore' && e.restore === 'core/old-bridge') {
         await say(this, null, [
           `The bridge holds. You scratch your name into the sign beside it: "Mended by ${s.state.player.name}".`,
-          'A purse hangs under the sign, left for whoever mends the bridge: thirty gold, the price of one tool in town, and a recipe scratched into the leather.',
-          'The sun is past noon. Dry wood for a fire, before dark.',
+          'A purse hangs under the sign, left for whoever mends the bridge: thirty gold, the price of one tool in town.',
+          'The sun is past noon. Fell a tree for a fire, before dark.',
+        ]);
+      }
+      if (e.e === 'quest' && e.state === 'done' && e.quest === 'core/into-town') {
+        // the real choice of the opening: whom to help first (DECISIONS.md, 2026-10-10)
+        await say(this, null, [
+          'Two neighbours could use a hand: Elder Maru by his house, and Pell at her stall.',
+          'Each says what the help is worth. Whom you help first is yours to choose.',
         ]);
       }
       if (e.e === 'quest' && e.state === 'done' && e.quest === 'core/three-fruits') {
         await say(this, 'Elder Maru', [
-          'Thank you. Take these coins, and my mother\'s way with tea.',
-          'The coins buy a trowel at Pell\'s stall, if the ruins call you. The stones by the river remember where I buried something.',
+          `Thank you. Take my old ${giftName('core/three-fruits')}: it is more use to you now than to me.`,
+          'The stones by the river remember where I buried something.',
         ]);
       }
       if (e.e === 'quest' && e.state === 'done' && e.quest === 'core/a-coin-for-maru') {
         await say(this, 'Elder Maru', [
-          'My coin. Take this basket: the garden behind the ruins wants one.',
+          'My coin, home at last. Take my mother\'s way with tea.',
           'They say the broken arch shows a way after dark. I never went to look.',
         ]);
       }
@@ -426,7 +434,7 @@ export class UI {
     const why = s.check({ t: 'gather', node: nodeId, grade: 3, at: s.pos });
     if (why) return this.toast(why, 'bad');
     const game = r.game ?? 'timing';
-    const grade = await this.play(GAMES[game], `Gather ${itemName(b, r.output)}`, nodeId, game, b.items[r.output]?.sprite ?? r.sprite);
+    const grade = await this.play(GAMES[game], nodeAction(b, r), nodeId, game, b.items[r.output]?.sprite ?? r.sprite);
     if (grade === null) return;
     const res = s.act({ t: 'gather', node: nodeId, grade, at: s.pos });
     if (!res.ok) this.toast(res.error, 'bad');
@@ -437,7 +445,7 @@ export class UI {
     if (!s) return;
     const why = s.check({ t: 'dig', spot: spotId, grade: 3, at: s.pos });
     if (why) return this.toast(why, 'bad');
-    // a spot with no tool is picked up by hand: no window (the opening recut B)
+    // a find picked up by hand has no timing window
     const byHand = !app.bundle.treasures[app.bundle.instances[spotId]?.source ?? '']?.tool;
     const grade = byHand ? 3 : await this.play(timing, 'Dig', spotId, 'dig');
     if (grade === null) return;
@@ -497,12 +505,21 @@ export class UI {
   }
 }
 
+/** The name of the first item a quest gives this start, after the kit swap. */
+function giftName(questId: string): string {
+  const b = app.bundle;
+  const stack = b.quests[questId]?.reward.items?.[0];
+  return stack ? itemName(b, rewardItem(b, app.session?.state.player.starter ?? '', stack)).toLowerCase() : 'thanks';
+}
+
 function rewardText(questId: string): string {
   const b = app.bundle;
   const r = b.quests[questId]!.reward;
+  const starter = app.session?.state.player.starter ?? '';
   const parts: string[] = [];
   if (r.gold_mg) parts.push(`${gold(r.gold_mg)} gold`);
-  for (const it of r.items ?? []) parts.push(`${it.qty} ${itemName(b, it.item)}`);
+  // what this start gets: a reward its kit already holds is swapped for one it lacks
+  for (const it of r.items ?? []) parts.push(`${it.qty} ${itemName(b, rewardItem(b, starter, it))}`);
   for (const rc of r.recipes ?? []) parts.push(`the ${b.recipes[rc]?.title ?? rc} recipe`);
   if (r.rep) parts.push('their trust');
   return parts.join(', ') || 'their thanks';

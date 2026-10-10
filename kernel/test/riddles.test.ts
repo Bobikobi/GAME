@@ -2,6 +2,7 @@
  * The find and riddle steps (GRUNT P-2): a riddle completes on its answer's
  * event and on nothing else. A find with a giver is a bring of one that the
  * hand-in takes; a find with no giver counts once the item is in the journal.
+ * A task nobody gave keeps in the bag what it asked to bring or find.
  * A place reward opens a restore that does not open by hand.
  */
 import { beforeAll, describe, expect, test } from 'vitest';
@@ -218,6 +219,16 @@ describe('a find', () => {
     const r = act(b, s, { t: 'turnin', quest: 'test/q', at }, 0);
     expect(r.state.player.quests['test/q']).toBe('done');
     expect(r.state.player.bag[coin]).toBe(1);
+  });
+
+  test('a bring nobody gave keeps what it asked for in the bag', () => {
+    const b = withQuest(quest([{ kind: 'bring', item: coin, qty: 2 }]));
+    const s = started(b);
+    s.player.bag[coin] = 2;
+    const at = standNear(b, s, slotOf(b, GLADE), true);
+    const r = act(b, s, { t: 'visit', slot: GLADE, at }, 0);
+    expect(r.state.player.quests['test/q']).toBe('done');
+    expect(r.state.player.bag[coin]).toBe(2);
   });
 });
 

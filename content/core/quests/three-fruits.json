@@ -21,9 +21,12 @@
     ],
     "reward": {
       "rep": 10,
-      "gold_mg": 30000,
-      "recipes": [
-        "core/herb-tea"
+      "items": [
+        {
+          "item": "core/trowel",
+          "qty": 1,
+          "instead": "core/walking-staff"
+        }
       ]
     }
   }

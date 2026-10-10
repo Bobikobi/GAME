@@ -253,6 +253,14 @@
                   {
                     "const": "trowel",
                     "type": "string"
+                  },
+                  {
+                    "const": "axe",
+                    "type": "string"
+                  },
+                  {
+                    "const": "staff",
+                    "type": "string"
                   }
                 ]
               },
@@ -506,6 +514,10 @@
           "anyOf": [
             {
               "const": "gather",
+              "type": "string"
+            },
+            {
+              "const": "fell",
               "type": "string"
             },
             {
