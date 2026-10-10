@@ -51,6 +51,9 @@ export function previewOf(comments: Comment[]): string | undefined {
   return host ? `${host}/play/` : undefined;
 }
 
+/** A record id as the schema writes it (`Id` in schema/src/index.ts); the loop accepts looser slot names. */
+const isId = (s: string): boolean => s.length <= 80 && /^[a-z0-9_-]+\/[a-z0-9_-]+$/.test(s);
+
 const repo = (repository: string, suffix: string): string => `/repos/${repository}${suffix}`;
 const hasLabel = (issue: Issue, name: string): boolean => issue.labels.some((l) => l.name === name);
 
@@ -71,10 +74,10 @@ async function proposals(options: RunOptions, voteIssues: Issue[]): Promise<HubP
       number: p.number,
       title: cut(p.pr.title, 200),
       url: p.pr.html_url,
-      author: handle(p.pr.user.login),
+      author: handle(p.pr.user?.login ?? 'ghost'),
       state: 'open',
-      slots: p.slots,
-      ...(p.request !== undefined ? { answers: p.request } : {}),
+      slots: p.slots.filter(isId),
+      ...(p.request !== undefined && p.request >= 1 ? { answers: p.request } : {}),
       merge_rule: mergeState(p),
       checks: p.evaluation.rules.map((r) => ({ rule: cut(r.name, 240), state: r.state, detail: cut(r.text, 240) })),
       approvals: p.evaluation.approvalCount,
@@ -98,7 +101,7 @@ async function requests(options: RunOptions, open: HubProposal[]): Promise<HubRe
       number: issue.number,
       title: cut(issue.title, 200),
       url: issue.html_url,
-      author: handle(issue.user.login),
+      author: handle(issue.user?.login ?? 'ghost'),
       kind: requestKind(issue.body),
       support: backing,
       open_call: openCall,
@@ -115,7 +118,10 @@ async function votes(options: RunOptions, issues: ClosedIssue[]): Promise<HubVot
   for (const issue of issues) {
     const marker = parseVoteMarker(issue.body);
     if (!marker) continue;
+    const closes = new Date(marker.closes);
+    if (Number.isNaN(closes.getTime()) || !/^\d{4}-/.test(closes.toISOString())) continue;
     const counted = await readVote(options, issue, accounts);
+    counted.options = counted.options.filter((o) => o.key.length <= 80);
     if (counted.options.length === 0) continue;
     const total = counted.options.reduce((sum, o) => sum + o.votes, 0);
     const lead = Math.max(0, ...counted.options.map((o) => o.votes));
@@ -128,7 +134,7 @@ async function votes(options: RunOptions, issues: ClosedIssue[]): Promise<HubVot
       kind: marker.kind === 'proposals' ? 'proposal' : 'discovery',
       state,
       opened_at: issue.created_at,
-      closes_at: new Date(marker.closes).toISOString(),
+      closes_at: closes.toISOString(),
       options: counted.options.map((o) => ({
         key: o.key,
         title: cut(o.label, 200),
@@ -149,7 +155,7 @@ async function reviewers(options: RunOptions, perApproval: number): Promise<HubR
   const approvals = new Map<string, number>();
   for (const pr of closed.filter((p) => p.merged_at && hasLabel(p, 'proposal'))) {
     const reviews = await options.client.list<Review>(repo(options.repository, `/pulls/${pr.number}/reviews?per_page=100`));
-    const author = pr.user.login.toLowerCase();
+    const author = pr.user?.login.toLowerCase() ?? 'ghost';
     const who = new Set(
       reviews
         .filter((r) => r.state === 'APPROVED' && r.user && r.commit_id === pr.head.sha && r.user.login.toLowerCase() !== author)

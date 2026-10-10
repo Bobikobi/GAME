@@ -89,6 +89,24 @@ describe('buildHubData', () => {
   });
 });
 
+describe('buildHubData with GitHub data that does not fit', () => {
+  it('publishes the document without the GitHub sections, and says why', async () => {
+    const lines: string[] = [];
+    const odd = new FakeGitHub();
+    const list = odd.list.bind(odd);
+    odd.list = async <T,>(path: string): Promise<T[]> => {
+      const rows = await list<T>(path);
+      // a date GitHub would never send, standing in for anything the schema refuses
+      return path.includes('labels=request') ? (rows.map((r) => ({ ...r, created_at: 'yesterday' })) as T[]) : rows;
+    };
+    const doc = await buildHubData({ client: odd, now: NOW, previews: true, repository: REPO, log: (l) => lines.push(l) });
+    expect(validateHubData(doc)).toEqual([]);
+    expect(doc.sources.github).toBeNull();
+    expect(doc.requests).toEqual([]);
+    expect(lines.join('\n')).toContain('/requests/0/created_at');
+  });
+});
+
 describe('head', () => {
   it('names the commit from the host when the files come without their history', () => {
     const dir = mkdtempSync(join(tmpdir(), 'hub-'));

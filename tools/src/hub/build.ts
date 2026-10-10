@@ -6,7 +6,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { FORMAT_VERSION } from '@game/schema';
-import { HUB_FORMAT, type HubData } from '@game/schema/hub';
+import { HUB_FORMAT, validateHubData, type HubData } from '@game/schema/hub';
 import { readPoints } from '../board';
 import { runCheck } from '../check';
 import { loadConfig } from '../loop/config';
@@ -72,12 +72,12 @@ export async function buildHubData(options: HubBuildOptions): Promise<HubData> {
 
   // core counts every commit (tools/src/board.ts), so its count is the history the board was computed from
   const commits = bundle.board['core']?.commits ?? 0;
-  return {
+  const compose = (gh: GitHubSections, at: string | null): HubData => ({
     format: HUB_FORMAT,
     built_at: options.now.toISOString(),
     source: {
       repository,
-      ref: options.ref ?? commit.branch,
+      ref: (options.ref ?? commit.branch).slice(0, 120),
       sha: commit.sha,
       content_tag: bundle.tag,
       kernel_version: kernel.version,
@@ -85,18 +85,25 @@ export async function buildHubData(options: HubBuildOptions): Promise<HubData> {
     },
     sources: {
       git: { commits, newest_at: commit.at },
-      github: fetched ? { fetched_at: fetched } : null,
-      vercel: fetched && options.previews ? { fetched_at: fetched } : null,
+      github: at ? { fetched_at: at } : null,
+      vercel: at && options.previews ? { fetched_at: at } : null,
       usage: null,
     },
     ...contentSections(bundle, check.assembled.kits, points, repository, addedTimes(root)),
-    reviewers: github.reviewers,
-    requests: github.requests,
-    proposals: github.proposals,
-    votes: github.votes,
-    summary: github.summary,
+    reviewers: gh.reviewers,
+    requests: gh.requests,
+    proposals: gh.proposals,
+    votes: gh.votes,
+    summary: gh.summary,
     parameters: parameters(root, loop, points),
     players: null,
     usage: null,
-  };
+  });
+  const doc = compose(github, fetched);
+  if (fetched === null) return doc;
+  // what people write on GitHub is not ours to vouch for: a document it would break is published without it
+  const issues = validateHubData(doc);
+  if (issues.length === 0) return doc;
+  log(`warning: what GitHub returned does not fit the document, so its sections are left out: ${issues.map((i) => `${i.path} ${i.message}`).join('; ')}`);
+  return compose(EMPTY, null);
 }
