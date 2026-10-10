@@ -88,7 +88,7 @@ One object, one plain fact.
 ## How the three starters differ here
 
 The owner asked (10.10) what sets the three apart, since all of them mend the
-bridge. His answer is recorded in DECISIONS.md ("The owner's answers of 10.10
+bridge. The answer is recorded in DECISIONS.md ("The owner's answers of 10.10
 afternoon", item 1): they differ for the whole game, each with a lasting edge
 (the forager finds more when gathering, the digger more in the ground, the
 explorer more rare finds) and abilities the others cannot reach. In this
