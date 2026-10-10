@@ -8,6 +8,7 @@ import {
   bagCapacity,
   bagUsed,
   characterLevel,
+  minuteOfDay,
   payFor,
   professionLevel,
   skillPoints,
@@ -15,10 +16,19 @@ import {
 import guideText from '../../../docs/creators/README.md?raw';
 import { app } from '../app';
 import { sound } from '../audio';
-import { GAME_TITLE, REPO_URL } from '../config';
+import { GAME_TITLE, REPO_URL, REVIEW_KEY } from '../config';
+import {
+  type FeedbackContext,
+  type FeedbackPayload,
+  FEEDBACK_TEXT_MAX,
+  buildFeedbackPayload,
+  failureMessage,
+  isEmptyFeedback,
+  sendFeedback,
+} from '../feedback-payload';
 import type { SignInfo } from '../scenes/world';
 import { Session } from '../session';
-import { ATTRIBUTE_MAX, attributeEffects, gold, itemBenefit, itemName, questSteps, seconds, stacks } from '../text';
+import { ATTRIBUTE_MAX, activeQuests, attributeEffects, clock, gold, itemBenefit, itemName, questSteps, seconds, stacks } from '../text';
 import { say } from './dialog';
 import { button, h, sprite } from './dom';
 import { markdown } from './markdown';
@@ -409,6 +419,7 @@ export function openMenu(ui: UI): void {
         button('Creator guide', go(() => openGuide(ui))),
         button('Creators', go(() => openCreators(ui))),
         button('Credits', go(() => openCredits(ui))),
+        button('Send feedback', go(() => openFeedback(ui))),
         button('Report a problem', go(() => openReport(ui))),
         button('About this demo', go(() => ui.aboutDemo())),
         button('Start over', go(() => startOver(ui)), 'danger'),
@@ -417,6 +428,174 @@ export function openMenu(ui: UI): void {
     );
   };
   render();
+}
+
+// ------------------------------------------------------------------ feedback
+
+/** Where the player is, from the game alone: no name, address or account. */
+export function feedbackContext(): FeedbackContext {
+  const s = app.session;
+  const b = app.bundle;
+  const at = s?.pos ?? [b.map.spawn.x, b.map.spawn.y];
+  return {
+    map: b.map.id,
+    tile: [Math.round(at[0]), Math.round(at[1])],
+    quest: s ? (activeQuests(b, s.state)[0] ?? null) : null,
+    hour: s ? clock(minuteOfDay(b, s.tick)) : '0:00',
+    build: `content ${b.tag.slice(0, 8)} kernel ${KERNEL_VERSION}`,
+  };
+}
+
+/** Sends a payload; on failure shows why and returns false so the caller keeps the text. */
+async function deliver(payload: FeedbackPayload, note: HTMLElement): Promise<boolean> {
+  const r = await sendFeedback(payload);
+  if (r.ok) return true;
+  note.textContent = failureMessage(r.reason);
+  return false;
+}
+
+export function openFeedback(ui: UI): void {
+  const p = panel(ui, 'Feedback', 'report');
+  const text = h('textarea', { rows: 5, maxlength: FEEDBACK_TEXT_MAX, placeholder: 'What do you think? What was good, what was not?' });
+  const note = h('p', { class: 'error', role: 'status' });
+  let busy = false;
+  const send = button('Send', () => {
+    if (busy) return;
+    const payload = buildFeedbackPayload('feedback', text.value, feedbackContext());
+    if (isEmptyFeedback(payload)) {
+      note.textContent = 'Write something first.';
+      return;
+    }
+    busy = true;
+    send.disabled = true;
+    note.textContent = '';
+    void deliver(payload, note).then((ok) => {
+      busy = false;
+      send.disabled = false;
+      if (!ok) return;
+      p.close();
+      ui.toast('Thank you. Your message was sent.', 'good');
+    });
+  });
+  p.body.replaceChildren(
+    h('p', null, 'Tell us what you think. Your message carries where you are in the game and the version, nothing about you.'),
+    text,
+    note,
+    h('div', { class: 'actions' }, send),
+  );
+  text.focus();
+}
+
+const LIKED = ['The story', 'The look', 'The music', 'Exploring', 'Gathering and crafting', 'The people'];
+const CONFUSED = ['What to do next', 'The controls', 'The menus', 'Where to go', 'How things work'];
+
+/** Has the player already answered, or skipped, the development review in this save? */
+export function reviewAsked(): boolean {
+  try {
+    return localStorage.getItem(REVIEW_KEY) !== null;
+  } catch {
+    return false;
+  }
+}
+
+function markReviewAsked(): void {
+  try {
+    localStorage.setItem(REVIEW_KEY, '1');
+  } catch {
+    // storage may be blocked; the review may then be offered again
+  }
+}
+
+/**
+ * The one-time development review: 1-5, what felt best, what confused you,
+ * one line. Skippable; asked once per save (the flag is cleared by Start over).
+ * Resolves when the pop-up closes. Does nothing if it was already asked.
+ */
+export function openOpeningReview(ui: UI): Promise<void> {
+  if (reviewAsked()) return Promise.resolve();
+  return new Promise<void>((resolve) => {
+    const p = panel(ui, 'How is the game so far?', 'report');
+    let rating = 0;
+    const liked = new Set<string>();
+    const confused = new Set<string>();
+    const note = h('p', { class: 'error', role: 'status' });
+    const text = h('input', { type: 'text', maxlength: 200, placeholder: 'One line, if you like', class: 'review-line' });
+    const chips = (title: string, names: string[], into: Set<string>) =>
+      h(
+        'div',
+        null,
+        h('h3', null, title),
+        h(
+          'nav',
+          { class: 'tabs' },
+          names.map((n) => {
+            const b = button(n, () => {
+              if (into.has(n)) into.delete(n);
+              else into.add(n);
+              b.className = into.has(n) ? 'btn tab on' : 'btn tab';
+            }, 'tab');
+            return b;
+          }),
+        ),
+      );
+    const stars = h('nav', { class: 'tabs' });
+    const drawStars = () =>
+      stars.replaceChildren(
+        ...[1, 2, 3, 4, 5].map((n) =>
+          button(String(n), () => {
+            rating = n;
+            drawStars();
+          }, n === rating ? 'tab on' : 'tab'),
+        ),
+      );
+    drawStars();
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      markReviewAsked();
+      resolve();
+    };
+    const send = button('Send', () => {
+      const payload = buildFeedbackPayload('review', text.value, feedbackContext(), {
+        ...(rating ? { rating } : {}),
+        liked: [...liked],
+        confused: [...confused],
+      });
+      if (isEmptyFeedback(payload)) {
+        note.textContent = 'Pick something, or skip.';
+        return;
+      }
+      send.disabled = true;
+      void deliver(payload, note).then((ok) => {
+        send.disabled = false;
+        if (!ok) return; // the choices stay on screen; Skip still closes it
+        finish();
+        p.close();
+        ui.toast('Thank you. Your answer was sent.', 'good');
+      });
+    });
+    const skip = button('Skip', () => {
+      finish();
+      p.close();
+    }, 'small');
+    p.body.replaceChildren(
+      h('p', null, 'A few quick questions, once. Nothing about you is sent.'),
+      h('h3', null, 'How was it?'),
+      stars,
+      chips('What felt best?', LIKED, liked),
+      chips('What confused you?', CONFUSED, confused),
+      text,
+      note,
+      h('div', { class: 'actions' }, send, skip),
+    );
+    // closing with the Close button or a click outside counts as a skip
+    p.layer.el.addEventListener('click', () => {
+      if (!p.layer.el.isConnected) finish();
+    });
+    const closeBtn = p.layer.el.querySelector('.close');
+    closeBtn?.addEventListener('click', () => finish());
+  });
 }
 
 function openControls(ui: UI): void {

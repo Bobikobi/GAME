@@ -18,7 +18,7 @@ import {
   serialize,
   step,
 } from '@game/kernel';
-import { LEGACY_SAVE_KEY, SAVE_KEY } from './config';
+import { LEGACY_SAVE_KEY, REVIEW_KEY, SAVE_KEY } from './config';
 
 export type Facing = 'down' | 'up' | 'left' | 'right';
 export interface LogEntry {
@@ -129,6 +129,7 @@ export class Session {
     try {
       localStorage.removeItem(SAVE_KEY);
       localStorage.removeItem(LEGACY_SAVE_KEY);
+      localStorage.removeItem(REVIEW_KEY);
     } catch {
       // storage may be blocked; nothing to erase then
     }
