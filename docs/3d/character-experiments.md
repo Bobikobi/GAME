@@ -265,7 +265,7 @@ Fronts with the head rulers, same looks and order:
 
 ## Licences
 
-### Meshy (`meshy-warrior`, `meshy-mage`, `wolf-bright`, `wolf-grim`, `digger-m`, `forager-m`)
+### Meshy (`meshy-warrior`, `meshy-mage`, `wolf-bright`, `wolf-grim`, `digger-m`, `digger-f`, `forager-m`, `forager-f`, `explorer-m`, `explorer-f`)
 
 [Meshy Terms of Use](https://www.meshy.ai/terms-of-use), section 3.2 (Last Updated September 19,
 2026):
@@ -399,6 +399,10 @@ not as stand-alone files, so they never go into this repository (details and lin
 | `game/public/3d/models/character-wolf-grim.glb` (added) | CC BY 4.0 | "Wolf, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: the emission input removed (it repeated the colour map) and the colour map cut from 2048 to 1024 px; scaled to 0.9 m at the ears; Meshy's walk renamed Walk; Run made from the walk and Idle made from the standing pose in Blender (game/tools/blender/quad_pass.py)" |
 | `game/public/3d/models/character-digger-m.glb` (added) | CC BY 4.0 | "Digger, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: a knife at the belt removed; scaled to 1.78 m without the hood; skeleton and skin weights added in Blender by fitting the warrior's Mixamo-named rig to the body (game/tools/blender/person_rig.py); clips Idle, Walk and Run retargeted from the warrior; two empty prop sockets added; reduced from 100,354 to 50,000 triangles and the maps cut from 2048 to 1024 px" |
 | `game/public/3d/models/character-forager-m.glb` (added) | CC BY 4.0 | "Forager, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: scaled to 1.64 m; skeleton and skin weights added in Blender by fitting the warrior's Mixamo-named rig to the body (game/tools/blender/person_rig.py), with the belt end cut free where it touched the left hand; clips Idle, Walk and Run retargeted from the warrior; two empty prop sockets added; reduced from 84,584 to 50,000 triangles and the maps cut from 2048 to 1024 px" |
+| `game/public/3d/models/character-digger-f.glb` (added) | CC BY 4.0 | "Digger, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: scaled to 1.68 m without the hood; skeleton and skin weights added in Blender by fitting the warrior's Mixamo-named rig to the body (game/tools/blender/person_rig.py) on arm joints measured by hand, with the arms cut free where they touched the body; clips Idle, Walk and Run retargeted from the warrior; two empty prop sockets added; reduced from 113,712 to 50,000 triangles and the maps cut from 2048 to 1024 px" |
+| `game/public/3d/models/character-forager-f.glb` (added) | CC BY 4.0 | "Forager, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: scaled to 1.56 m; skeleton and skin weights added in Blender by fitting the warrior's Mixamo-named rig to the body (game/tools/blender/person_rig.py) on arm joints measured by hand, with the arms cut free where they touched the body; clips Idle, Walk and Run retargeted from the warrior; two empty prop sockets added; reduced from 88,512 to 50,000 triangles and the maps cut from 2048 to 1024 px" |
+| `game/public/3d/models/character-explorer-m.glb` (added) | CC BY 4.0 | "Explorer, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: scaled to 1.86 m; skeleton and skin weights added in Blender by fitting the warrior's Mixamo-named rig to the body (game/tools/blender/person_rig.py) on arm joints measured by hand, with the arms cut free where they touched the body; clips Idle, Walk and Run retargeted from the warrior; two empty prop sockets added; reduced from 138,130 to 50,000 triangles and the maps cut from 2048 to 1024 px" |
+| `game/public/3d/models/character-explorer-f.glb` (added) | CC BY 4.0 | "Explorer, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: scaled to 1.74 m; skeleton and skin weights added in Blender by fitting the warrior's Mixamo-named rig to the body (game/tools/blender/person_rig.py) on arm joints measured by hand, with the arms cut free where they touched the body; clips Idle, Walk and Run retargeted from the warrior; two empty prop sockets added; reduced from 91,754 to 50,000 triangles and the maps cut from 2048 to 1024 px" |
 | `game/public/3d/models/prop-spade.glb`, `prop-basket.glb`, `prop-hat.glb` (added) | made for this repository by `game/tools/blender/props.py`, every map drawn in code | none |
 | `game/public/3d/models/character-wizard.glb` | CC BY 3.0 | "Animated Wizard" by Quaternius, https://poly.pizza/m/kttbFvCl2C, CC BY 3.0 |
 | `game/public/3d/models/character-matt.glb` | CC0 | none |
@@ -577,3 +581,48 @@ here, and the items were made here as separate models:
 - Limits: the clips are the warrior's, so the two men move alike; the hat is fitted to the
   forager's head until the explorers are made. The women and the explorers come next, and `--fit`
   then fits the same three items to all six.
+
+## Addendum, 2026-10-10: the other four people
+
+The rest of the cast is in the cell trial: the digger and the forager as women (`?look=digger-f`, in a
+short indigo hood that ends at the neck; `?look=forager-f`, with long braids, a rust-red
+neckerchief and a rope belt) and the explorer as a man and as a woman (`?look=explorer-m`,
+`?look=explorer-f`, bare-headed under the hat they carry, with a tall leather backpack and a
+moss-green blanket roll), all generated in Meshy (Meshy 6 Lite, free plan) without their items and
+rigged here like the first two.
+
+- The drafts: the rig cannot free an arm drawn against the body, because the inside of that arm was
+  never drawn. The first drafts of both women fused the arms to the dress, the digger's also under
+  a shoulder cape. Meshy's pose control (A-pose) is a paid feature, so the pose was asked for in
+  words: arms held straight, 45 degrees away from the body with a clear gap, open empty hands, the
+  braid down the back, the hood ending at the neck. The later drafts hold their arms apart.
+- `person_rig.py --joints FILE`: the tracker finds an arm that hangs, not one held out to the side
+  or pressed on a hem, so the arms of all four were measured by hand, on horizontal slices of the
+  grounded mesh, and given as a JSON file with the shoulder, elbow, wrist and fingertip of each
+  side. Measuring them on front and side renders put the forager's arms 7 cm off, because the
+  semi-transparent dress shows the far arm through it; the slices are exact. For a given arm, the
+  body below the middle of the upper arm drops the upper-arm weight, and from there up to a quarter
+  of the upper arm below the shoulder that weight passes over to the collarbone, so a bare armpit
+  stretches over that band instead of over one row of faces. That cut the faces shared by an arm
+  and the body from 94 to 27 on the forager, from 96 to 9 on the explorer woman and from 142 to 24
+  on the digger woman, and took away a sheet that spanned the forager's bare armpit in Run.
+- Heights: the digger woman 1.68 m without the hood, the forager woman 1.56 m, the explorer man
+  1.86 m and the explorer woman 1.74 m. Each was reduced to 50,000 triangles and its maps cut to
+  1024 px: 2.35, 2.3, 2.45 and 2.24 MB, 28 joints, Idle, Walk and Run, and both sockets.
+- `props.py --fit` now fits the three items to all six: one spade for both diggers, one basket for
+  both foragers with the straps fitted to each (9,624 triangles, 374 KB), and the hat fitted to each
+  explorer (two copies of 4,608 triangles, 299 KB). The hat no longer has a copy for the forager.
+- Clearance from `--check` on the new wearers (negative: inside): the spade stays at least 24 mm off
+  the digger woman's back at rest and in Idle and 13 mm in Walk, and at least 36 mm off her arms in
+  every clip; its grip end dips up to 12 mm into the right hip in a few Run frames, as on the man.
+  The basket's straps, rigid like the man's, sink up to 6 mm into the forager woman at rest, 22 mm
+  in Idle and 31 mm in Run where they pass over the front of the shoulders, and up to 18 mm into
+  her arms; the man's numbers are unchanged. At its closest point the hat sits 1.2 mm off the
+  explorer man's head and 0.3 mm off the woman's in the rest pose; in a few Run frames the man's
+  blanket roll reaches 8 mm into the back of the brim.
+- Walk and Run play at 1.19 and 0.84 of the clips' tempo for the digger woman, 1.29 and 0.90 for
+  the forager woman, 1.10 and 0.79 for the explorer man and 1.18 and 0.86 for the explorer woman.
+- Result: all six people stand, walk and run in the cell trial with their items on, at 1440x900
+  and at 390x844.
+- Limits: the clips are still the warrior's, so all six move alike, and the women's dresses are
+  skinned between the legs (`--skirt`), not simulated.

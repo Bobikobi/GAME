@@ -12,9 +12,10 @@
  * Under ?e2e the scene advances a fixed 1/30 s per frame and window.__cell3d
  * drives it, so game/e2e/cell3d.ts takes the same screenshots on every
  * machine. ?look=wizard|matt|human picks the character (wolf-bright and
- * wolf-grim walk on four legs; the people made for this trial, digger-m and
- * forager-m, keep the height they were made at and carry the props of their
- * role on the sockets of their skeleton), ?props=hat,basket puts other props
+ * wolf-grim walk on four legs; the people made for this trial, digger-m,
+ * digger-f, forager-m, forager-f, explorer-m and explorer-f, keep the height
+ * they were made at and carry the props of their role on the sockets of
+ * their skeleton), ?props=hat,basket puts other props
  * on (empty: none), ?zoom=<m> the start distance, ?post=0 turns the bloom off.
  */
 import * as THREE from 'three';

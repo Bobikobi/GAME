@@ -17,6 +17,14 @@ Run:  blender -b -P person_rig.py -- <rigged.glb> <static.glb> <out.glb> [option
                   ones (half the turn in the forearm, all of it in the hand). Leave it out for arms that
                   hang like the rigged ones; the arms DIAG line shows how far the palms are turned
                   ("width_turn", up to a half turn either way)
+  --joints FILE   arm joints measured by hand where the tracker cannot find them (an arm held out to the
+                  side, a hand pressed on a hem or under a cape): a JSON object {"Left": {"shoulder": [x, y, z],
+                  "elbow": [..], "wrist": [..], "tip": [..], "r_arm": metres, "reach": 2.5}, "Right": {..}} in
+                  the figure's metres (after grounding, centring and --height; axes as --cut). Each side it names
+                  replaces the tracker's joints for that arm; the arms DIAG line says "given" and how deep inside
+                  the body each joint sits. "reach" (optional, in units of r_arm, default 2.5): away from
+                  the shoulder, a vertex farther than this from the arm's line is the body's, whatever it touches
+                  (a dress the draft fused to a hanging arm)
   --probe PREFIX  also write PREFIX-joints.json and front and side renders of the rest pose and of
                   every clip (PREFIX-rest-front.png, PREFIX-<clip>-<frame>-front.png, ...)
 
@@ -40,7 +48,10 @@ measured. The static file supplies the mesh (a textured draft, origin anywhere, 
    of its own part, an arm or the rest of the body, found over the figure's own surface, so what
    touches an arm in the copy (a hem, a belt end, the back) does not move with it. Where the draft
    itself fused a forearm or a hand to the body, the body's side of that touch is cut away and both
-   holes are closed.
+   holes are closed. For an arm given by --joints, the body below the middle of its upper arm (a
+   cape, a hem, a strap) drops the upper-arm weight, and from there up to a quarter of the upper
+   arm below the shoulder that weight passes over to the collarbone, so a bare armpit stretches
+   over that band and not over one row of faces.
 5. Retarget every clip: each bone copies the world rotation of the rigged bone of the same name, the
    hips also its position (scaled to the body), baked to keys. Walk and Run get extras.groundSpeed,
    the speed of a planted foot in metres per second.
@@ -59,6 +70,7 @@ import bpy
 import numpy as np
 from mathutils import Matrix, Vector
 from mathutils.bvhtree import BVHTree
+from mathutils.kdtree import KDTree
 
 argv = sys.argv[sys.argv.index("--") + 1:]
 RIGGED, STATIC, OUT = argv[0], argv[1], argv[2]
@@ -73,6 +85,7 @@ TEX = opt("--tex", 1024, int)
 HEADWEAR = opt("--headwear", 0.0)
 HEIGHT = opt("--height", 0.0)  # body height in metres without the headwear (0 = keep the draft's size)
 PROBE = opt("--probe", None, str)
+JOINTS = opt("--joints", None, str)
 SKIRT = "--skirt" in argv
 PALMS = opt("--palms", None, str)
 assert PALMS in (None, "up", "down", "forward", "back", "in", "out"), "--palms: up, down, forward, back, in or out"
@@ -713,17 +726,24 @@ if HEIGHT:  # Meshy drafts all come out 1.897 m tall; the role's build sets the 
     diag("scaled to body height", HEIGHT, "factor", round(k, 4))
 
 
-def close_holes(bm):
-    """Close every open loop of edges with a fan of triangles around its centre. Each triangle takes the map
-    coordinates of its rim edge (the centre corner sits halfway along it), so the patch repeats the colours
-    around the hole instead of a random spot of the map. Returns the number of loops closed."""
+def close_holes(bm, side=None):
+    """Close every open loop of edges. Returns the number of loops closed.
+    Without side: a fan of triangles around the loop's centre. Each triangle takes the map coordinates of its rim
+    edge (the centre corner sits halfway along it), so the patch repeats the colours around the hole instead of a
+    random spot of the map.
+    With side (an int layer of bm.verts, each vertex's part): no new vertices. A loop that runs through more than
+    one part is closed part by part: each run of one part is stitched across itself, then the ends of the runs are
+    stitched together, so only those last triangles join two parts that move apart (where the arm meets the body
+    at the shoulder). Stitching zips the two sides of a long, bent hole towards each other along the shorter
+    diagonal, so the patch follows the hole instead of fanning across it. Each patch takes one spot of the map from
+    its own rim (the corner nearest the rim's median), one flat colour instead of streaks."""
     uv = bm.loops.layers.uv.active
     start = {}  # rim half-edges a -> b, in the direction the face beside them runs
     for e in bm.edges:
         if e.is_boundary:
             lp = e.link_loops[0]
             start.setdefault(lp.vert, []).append(lp)
-    closed = 0
+    rings = []
     while start:
         a0 = next(iter(start))
         ring, a = [], a0
@@ -735,7 +755,52 @@ def close_holes(bm):
             a = lp.link_loop_next.vert
             if a is a0:
                 break
-        if len(ring) < 3:
+        if len(ring) >= 3:
+            rings.append(ring)
+
+    def stitch(lps):  # the polygon of these rim corners, in rim order, zipped from both ends
+        vs = [lp.vert for lp in lps]
+        if uv is not None:
+            us = np.array([lp[uv].uv[:] for lp in lps])
+            u = us[int(np.argmin(((us - np.median(us, axis=0)) ** 2).sum(1)))]
+        i, j = 0, len(vs) - 1
+        while j - i > 1:
+            if (vs[i + 1].co - vs[j].co).length < (vs[i].co - vs[j - 1].co).length:
+                tri, i = (vs[j], vs[i + 1], vs[i]), i + 1
+            else:
+                tri, j = (vs[j], vs[j - 1], vs[i]), j - 1
+            try:
+                f = bm.faces.new(tri)
+            except ValueError:
+                continue
+            f.material_index, f.smooth = lps[0].face.material_index, lps[0].face.smooth
+            if uv is not None:
+                for fl in f.loops:
+                    fl[uv].uv = u
+
+    closed = 0
+    for ring in rings:
+        if side is not None:
+            lab = [lp.vert[side] for lp in ring]
+            if len(set(lab)) == 1:  # one part: start at the far end of the loop
+                c = sum((lp.vert.co for lp in ring), Vector()) / len(ring)
+                k = max(range(len(ring)), key=lambda t: (ring[t].vert.co - c).length)
+                stitch(ring[k:] + ring[:k])
+            else:
+                k = next(t for t in range(len(ring)) if lab[t] != lab[t - 1])
+                ring, lab = ring[k:] + ring[:k], lab[k:] + lab[:k]
+                ends, run = [], [ring[0]]
+                for lp, lb, prev in zip(ring[1:] + [None], lab[1:] + [None], lab):
+                    if lb == prev:
+                        run.append(lp)
+                        continue
+                    if len(run) >= 3:
+                        stitch(run)
+                    ends.extend(run if len(run) <= 2 else [run[0], run[-1]])
+                    run = [lp]
+                if len(ends) >= 3:
+                    stitch(ends)
+            closed += 1
             continue
         c = bm.verts.new(sum((lp.vert.co for lp in ring), Vector()) / len(ring))
         for lp in ring:
@@ -751,7 +816,6 @@ def close_holes(bm):
                     fl[uv].uv = ub if fl.vert is nxt.vert else ua if fl.vert is lp.vert else (ua + ub) / 2
         closed += 1
     return closed
-
 
 if CUTS:
     bm = bmesh.new()
@@ -814,6 +878,27 @@ diag("arm tracker on the rigged body, metres from its joints",
 f_reach = arm_reach(B, S_HEAD["Spine1"].z * sz, S_HEAD["Hips"].z * sz)
 fits = {pre: fit_arm(B, f_reach, side, height, S_HEAD[pre + "Arm"].z * sz, share, (L_up + L_fo + L_ha) * sz * 1.15)
         for side, pre in ((1, "Left"), (-1, "Right"))}
+if JOINTS:
+    with open(JOINTS) as fh:
+        given = json.load(fh)
+    occ_d = np.zeros(B.occ.shape, np.int32)  # cells from the outside, to say how deep a given joint sits
+    shell, n = B.occ.copy(), 0
+    while shell.any() and n < 40:
+        n += 1
+        occ_d[shell] = n
+        shell = erode(shell)
+    for side, pre in ((1, "Left"), (-1, "Right")):
+        if pre in given:
+            gj = given[pre]
+            fits[pre] = dict({j: np.array(gj[j], float) for j in ("shoulder", "elbow", "wrist", "tip")},
+                             info=dict(how="given", r_arm=float(gj.get("r_arm", 0.02 * height)),
+                                       reach=float(gj.get("reach", 2.5))))
+            depth = {}
+            for j in ("shoulder", "elbow", "wrist", "tip"):
+                ijk = B.idx(fits[pre][j])
+                ok = all(0 <= a < b for a, b in zip(ijk, B.occ.shape))
+                depth[j] = round(float(occ_d[ijk]) * B.cell, 3) if ok else None
+            diag("arm joints given", pre, "depth inside the body, metres (0 = outside)", depth)
 hands = {pre: hand_frame(B, f_reach, f["wrist"], f["tip"]) for pre, f in fits.items() if f is not None}
 s_hands = {pre: hand_frame(SRC, s_reach, f["wrist"], f["tip"]) for pre, f in s_fits.items() if f is not None}
 del s_reach, f_reach
@@ -939,7 +1024,9 @@ for side, pre in ((1, "Left"), (-1, "Right")):
     if f is not None:
         sh, elbow, wrist, tip = (Vector(tuple(float(x) for x in f[j])) for j in ("shoulder", "elbow", "wrist", "tip"))
         L = (elbow - sh).length + (wrist - elbow).length + (tip - wrist).length
-        if not 0.7 <= L / L_rig <= 1.4:
+        if how == "given":
+            pass
+        elif not 0.7 <= L / L_rig <= 1.4:
             how, f = "scaled (measured arm %.2f of the rigged one)" % (L / L_rig), None
         elif not 0.6 <= abs(sh.x) / max(abs(sh0.x), 1e-6) <= 1.5:
             how, f = "scaled (measured shoulder out of range %.3f)" % sh.x, None
@@ -1065,17 +1152,47 @@ for vv in fig.data.vertices:
         if g.group in col:
             wm[vv.index, col[g.group]] = g.weight
 k_of = {short(n): k for k, n in enumerate(names)}
+GIVEN = [pre for pre in ("Left", "Right") if arms[pre]["how"] == "given"]
 near = {}  # arm bone -> vertex distance to it in units of its own thickness
 for pre in ("Left", "Right"):
     for b in CHAIN:
         k = k_of[pre + b]
         r_b = float(np.median(dist[wm[:, k] > 0.5, k])) if (wm[:, k] > 0.5).any() else 0.04 * height
+        if pre in GIVEN:  # the measured thickness: bone heat leaks into a cape or a hem pressed on the arm
+            r_b = arms[pre]["r_arm"]
+            if b == "Hand":  # a spread thumb sits far from the hand's line
+                r_b = max(r_b, 0.3 * (arms[pre]["tip"] - arms[pre]["wrist"]).length)
         near[pre + b] = dist[:, k] / max(r_b, 0.01 * height)
 side_near = {pre: np.min([near[pre + b] for b in CHAIN], axis=0) for pre in ("Left", "Right")}
 part = np.full(nv, -1)  # 0 body, 1 left arm, 2 right arm
 part[np.minimum(side_near["Left"], side_near["Right"]) > 2.5] = 0
-part[side_near["Left"] <= 1.0] = 1
-part[(side_near["Right"] <= 1.0) & (side_near["Right"] < side_near["Left"])] = 2
+facing = {pre: np.zeros(nv, bool) for pre in ("Left", "Right")}
+if GIVEN:
+    # a surface near a given arm that faces it (a hem, a cape or a pocket pressed on the arm) is the body's: its
+    # normal points at the arm's line, where the arm's own surface points away from it. Not between the fingers.
+    nrm = np.zeros(nv * 3)
+    fig.data.vertex_normals.foreach_get("vector", nrm)
+    nrm = nrm.reshape(-1, 3) @ np.array(fig.matrix_world.to_3x3()).T
+    nrm /= np.maximum(np.linalg.norm(nrm, axis=1, keepdims=True), 1e-12)
+    for pre in GIVEN:
+        ks = [k_of[pre + b] for b in CHAIN]
+        kn = np.array(ks)[np.argmin([near[pre + b] for b in CHAIN], axis=0)]  # the nearest bone of this arm
+        rad = co - (H_[kn] + tt[np.arange(nv), kn][:, None] * D_[kn])
+        out = (rad * nrm).sum(1) / np.maximum(np.linalg.norm(rad, axis=1), 1e-9)
+        sn = side_near[pre]
+        facing[pre] = (sn <= 2.5) & (out < -0.2) & ((kn != k_of[pre + "Hand"]) | (sn > 1.0))
+        part[facing[pre]] = 0
+    diag("given arms: vertices facing them, made the body's", {pre: int(facing[pre].sum()) for pre in GIVEN})
+    beyond = {}
+    for pre in GIVEN:  # a hem or a pocket the draft fused along a hanging arm sticks out of the arm's thickness
+        a = arms[pre]
+        away = np.linalg.norm(co - np.array(a["shoulder"]), axis=1) > 0.5 * (a["elbow"] - a["shoulder"]).length
+        sel = away & (side_near[pre] > a["reach"]) & (side_near[pre] <= side_near["Right" if pre == "Left" else "Left"])
+        part[sel] = 0
+        beyond[pre] = (a["reach"], int(sel.sum()))
+    diag("given arms: reach (in r_arm) and the vertices beyond it, made the body's", beyond)
+part[(side_near["Left"] <= 1.0) & ~facing["Left"]] = 1
+part[(side_near["Right"] <= 1.0) & (side_near["Right"] < side_near["Left"]) & ~facing["Right"]] = 2
 _, node = np.unique(np.round(co / 1e-5).astype(np.int64), axis=0, return_inverse=True)
 node = node.ravel()
 nn = int(node.max()) + 1
@@ -1103,27 +1220,142 @@ while heap:
         if lab[j] < 0 and d0 + w < best[j]:
             best[j] = d0 + w
             heapq.heappush(heap, (d0 + w, int(j), p))
+if GIVEN:
+    # a piece of the body joined to the rest of the body only through an arm (a thumb, a cuff) is that arm's
+    islands, moved_isl = np.full(nn, -1), 0
+    for i0 in np.flatnonzero(lab == 0):
+        if islands[i0] >= 0:
+            continue
+        islands[i0] = i0
+        comp, stack, touch_arm = [i0], [i0], set()
+        while stack:
+            i = stack.pop()
+            for j in eb_[start[i]:start[i + 1]]:
+                if lab[j] == 0 and islands[j] < 0:
+                    islands[j] = i0
+                    comp.append(j)
+                    stack.append(j)
+                elif lab[j] > 0:
+                    touch_arm.add(int(lab[j]))
+        if len(comp) < 0.05 * nn and len(touch_arm) == 1:
+            p = touch_arm.pop()
+            if ("Left", "Right")[p - 1] in GIVEN:
+                lab[comp] = p
+                moved_isl += len(comp)
+    diag("body pieces inside a given arm moved to it: nodes", moved_isl)
 part = lab[node]
 drop = {0: [k_of[pre + b] for pre in ("Left", "Right") for b in ("ForeArm", "Hand")],
         1: [k_of["Right" + b] for b in CHAIN] + [k_of[pre + b] for pre in ("Left", "Right") for b in LEGS],
         2: [k_of["Left" + b] for b in CHAIN] + [k_of[pre + b] for pre in ("Left", "Right") for b in LEGS]}
 moved = {0: 0, 1: 0, 2: 0}
+pending = {}  # given arms: vertex -> bones it may not keep, weighted below as its nearest neighbour of its part
+
+
+def reweight(vi, w):
+    w = w / w.sum()
+    for n in [fig.vertex_groups[g.group].name for g in fig.data.vertices[vi].groups]:
+        if n in col_of:
+            fig.vertex_groups[n].remove([int(vi)])
+    for k in np.flatnonzero(w > 0.01):
+        fig.vertex_groups[names[k]].add([int(vi)], float(w[k]), "REPLACE")
+
+
+def nearest_bone(vi, ks):
+    dd = dist[vi].copy()
+    dd[ks] = np.inf
+    w = np.zeros(len(names))
+    w[int(dd.argmin())] = 1.0
+    return w
+
+
+col_of = {n: k for k, n in enumerate(names)}
 for p, ks in drop.items():
     sel = np.flatnonzero((part == p) & (wm[:, ks].max(axis=1) > 0.01))
     for vi in sel:
         w = wm[vi].copy()
         w[ks] = 0.0
-        if w.sum() < 0.05:  # nothing of its own part: the nearest bone it may keep
-            dd = dist[vi].copy()
-            dd[ks] = np.inf
-            w[:] = 0.0
-            w[int(dd.argmin())] = 1.0
-        w /= w.sum()
-        for k in np.flatnonzero(wm[vi] > 0):
-            fig.vertex_groups[names[k]].remove([int(vi)])
-        for k in np.flatnonzero(w > 0.01):
-            fig.vertex_groups[names[k]].add([int(vi)], float(w[k]), "REPLACE")
         moved[p] += 1
+        if w.sum() < 0.05:  # nothing of its own part
+            if GIVEN:
+                pending[int(vi)] = list(ks)
+                continue
+            w = nearest_bone(vi, ks)  # the nearest bone it may keep
+        reweight(vi, w)
+for pre in GIVEN:  # the body below the middle of a given upper arm (a cape, a hem, a strap) does not follow it
+    a = arms[pre]
+    L_up = (a["elbow"] - a["shoulder"]).length
+    z_cut, z_full = a["shoulder"].z - 0.5 * L_up, a["shoulder"].z - 0.25 * L_up
+    ka = k_of[pre + "Arm"]
+    sel = np.flatnonzero((part == 0) & (co[:, 2] < z_cut) & (wm[:, ka] > 0.01))
+    for vi in sel:
+        ex = drop[0] + [ka]
+        w = wm[vi].copy()
+        w[ex] = 0.0
+        if int(vi) in pending or w.sum() < 0.05:
+            pending[int(vi)] = sorted(set(pending.get(int(vi), [])) | set(ex))
+            continue
+        reweight(vi, w)
+    # and above it the body's share of the upper arm grows from none to all of it a quarter of the upper arm below
+    # the shoulder (the rest goes to the collarbone), so a bare armpit stretches over that band instead of over the
+    # one row of faces at the cut
+    fade = np.flatnonzero((part == 0) & (co[:, 2] >= z_cut) & (co[:, 2] < z_full) & (wm[:, ka] > 0.01))
+    for vi in fade:
+        if int(vi) in pending:
+            continue
+        w = wm[vi].copy()
+        w[drop[0]] = 0.0
+        moved_w = w[ka] * (z_full - co[vi, 2]) / (z_full - z_cut)  # to the collarbone, which carries the arm
+        w[ka] -= moved_w
+        w[k_of[pre + "Shoulder"]] += moved_w
+        if w.sum() >= 0.05:
+            reweight(vi, w)
+    diag("given arm", pre, "upper arm weight taken from the body below z", round(z_cut, 3), "vertices", len(sel),
+         "faded up to z", round(z_full, 3), "vertices", len(fade))
+for p, pre in ((1, "Left"), (2, "Right")):
+    # a given arm away from its shoulder moves with its own bones only: where the draft fused it to a dress, bone
+    # heat gave its inner side the hips and the spine, and those corners would stay behind when it swings
+    if pre not in GIVEN:
+        continue
+    a = arms[pre]
+    ks = [k_of[pre + b] for b in CHAIN]
+    away = np.linalg.norm(co - np.array(a["shoulder"]), axis=1) > 0.5 * (a["elbow"] - a["shoulder"]).length
+    sel = np.flatnonzero((part == p) & away)
+    for vi in sel:
+        pending.pop(int(vi), None)
+        w = np.zeros(len(names))
+        w[ks] = wm[vi, ks]
+        if w.sum() < 0.05:
+            w[ks[int(np.argmin(dist[vi, ks]))]] = 1.0
+        reweight(vi, w)
+    diag("given arm", pre, "away from the shoulder, on its own bones only: vertices", len(sel))
+if pending:
+    # a vertex left with nothing of its own part (a dress the draft fused to an arm, which bone heat gave only the
+    # forearm) takes the weights of the nearest vertex of its part that kept some, so it blends into the cloth
+    # around it instead of jumping to whichever bone is nearest (an upper arm, for a dress at the wrist)
+    filled = 0
+    for p in (0, 1, 2):
+        vs = [vi for vi in pending if part[vi] == p]
+        good = np.flatnonzero(part == p)
+        good = good[~np.isin(good, list(pending))]
+        if not vs:
+            continue
+        kd = KDTree(len(good))
+        for i in good:
+            kd.insert(Vector(co[i]), int(i))
+        kd.balance()
+        for vi in vs:
+            w = np.zeros(len(names))
+            if len(good):
+                for g in fig.data.vertices[kd.find(Vector(co[vi]))[1]].groups:
+                    n = fig.vertex_groups[g.group].name
+                    if n in col_of:
+                        w[col_of[n]] = g.weight
+            w[pending[vi]] = 0.0
+            if w.sum() < 0.05:
+                w = nearest_bone(vi, pending[vi])
+            reweight(vi, w)
+            filled += 1
+    diag("given arms: vertices with nothing of their own part, weighted as their nearest neighbour", filled)
 diag("weights kept to each vertex's own part: vertices body / left arm / right arm",
      [int((part == p).sum()) for p in (0, 1, 2)], "unreached", int((part < 0).sum()),
      "re-weighted", [moved[p] for p in (0, 1, 2)])
@@ -1199,6 +1431,13 @@ gone_nodes = []
 for t in range(n_touch):
     sel = touch == t
     pre = "Left" if lab[n_arm[sel][0]] == 1 else "Right"
+    if pre in GIVEN:  # a measured arm: every crossing edge away from the shoulder is a touch, whatever it holds
+        a = arms[pre]
+        far = np.linalg.norm(mid[sel] - np.array(a["shoulder"]), axis=1) > 0.5 * (a["elbow"] - a["shoulder"]).length
+        gone_nodes.extend(np.unique(n_body[sel][far]).tolist())
+        diag("arm touch", pre, "edges", int(sel.sum()), "centre", tuple(round(float(x), 3) for x in mid[sel].mean(0)),
+             "given arm: cut away %d, kept at the shoulder %d" % (int(far.sum()), int((~far).sum())))
+        continue
     lower = np.median(wm[rep[n_arm[sel]]][:, [k_of[pre + "ForeArm"], k_of[pre + "Hand"]]].sum(axis=1))
     cut = lower > 0.5
     if cut:
@@ -1210,11 +1449,17 @@ if gone_nodes:
     bm = bmesh.new()
     bm.from_mesh(fig.data)
     bm.verts.ensure_lookup_table()
+    side = bm.verts.layers.int.new("part") if GIVEN else None
+    if side is not None:  # a given arm's holes are closed part by part (see close_holes)
+        for vv in bm.verts:
+            vv[side] = int(part[vv.index])
     bmesh.ops.delete(bm, geom=[bm.verts[int(i)] for i in gone], context="VERTS")
     nv0 = len(bm.verts)
     bmesh.ops.remove_doubles(bm, verts=list(bm.verts), dist=1e-5)
     nv1 = len(bm.verts)
-    rings = close_holes(bm)
+    rings = close_holes(bm, side)
+    if side is not None:
+        bm.verts.layers.int.remove(side)
     dl = bm.verts.layers.deform.verify()
     for vv in bm.verts:  # the centre of each closing fan: the mean weights of its rim
         if not vv[dl].keys():
