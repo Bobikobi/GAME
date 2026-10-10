@@ -208,6 +208,8 @@ export class Session {
     const r = step(this.bundle, this.state, action, this.tick);
     if (!r.ok) return r;
     this.state = r.state;
+    // each start wakes at its own place
+    if (action.t === 'start') this.pos = [r.state.player.at[0], r.state.player.at[1]];
     this.tail.push({ a: action, tick: this.tick });
     if (this.tail.length > TAIL) this.tail.splice(0, this.tail.length - TAIL);
     const busy = r.events.find((e) => e.e === 'busy');

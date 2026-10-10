@@ -161,6 +161,11 @@ export function campBuilt(bundle: Bundle, state: State, campId: string): boolean
   return false;
 }
 
+/** How far, in tiles, a character with these senses sees a hidden place: a dig spot, or a find lying in the grass. */
+export function senseReach(bundle: Bundle, senses: number): number {
+  return 2 + bundle.params.per_point.senses * senses;
+}
+
 export function bagCapacity(bundle: Bundle, state: State): number {
   let cap = bundle.params.bag_base + bundle.params.per_point.carry * state.player.attrs.carry;
   for (const id of state.player.camp) cap += bundle.camps[id]?.bag_bonus ?? 0;
