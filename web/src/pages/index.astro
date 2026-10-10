@@ -1,11 +1,169 @@
 ---
+// The home page (docs/team/GRUNT.md, item 5, with the structure the owner approved on 2026-10-10, DECISIONS.md):
+// the headline, the doors into the game, the builders board, and the way in for developers. No script.
 import Site from '../layouts/Site.astro';
+import '../styles/scene.css';
+import '../styles/home.css';
+import { repoTree } from '../data/site';
+import { bridgeBuilder, builders, count, door3d, earn, signature } from '../data/home';
+
+const ROWS = 5;
+const top = builders.slice(0, ROWS);
+const open = Array.from({ length: Math.max(0, ROWS - top.length) }, (_, i) => top.length + i + 1);
+// each tally counts up to the board's number (home.css); the page writes the numbers, never the markup
+const tally = top.map((b, i) => `.rows li:nth-child(${i + 1}) .count { --to: ${b.points}; }`).join('\n');
+const signs = bridgeBuilder ? `, and the builder ${bridgeBuilder} signs it` : '';
 ---
 
-<Site title="Openfold - a valley the players rebuild together" description="A free pixel-art browser game that the community builds and runs.">
-  <section class="wrap">
-    <h1>A valley the players rebuild together</h1>
-    <p class="lead">The home page lands in the next commit.</p>
-    <p><a class="btn primary" href="/play/">Play</a></p>
-  </section>
+<Site
+  title="Openfold - a valley the players rebuild together"
+  description="A free pixel-art game in your browser. Wake by the river, mend the old bridge and bring the valley back; every place and quest in it was added by a builder."
+  section="home"
+>
+  <Fragment slot="head"><style is:inline set:html={tally} /></Fragment>
+
+  <div class="home">
+    <section class="wrap hero" aria-labelledby="play-h">
+      <div class="hero-text">
+        <h1 id="play-h">A valley the players rebuild together</h1>
+        <p class="lead">
+          Wake up by the river, mend the old bridge and bring the valley back. Every place and quest in it was added by a
+          builder.
+        </p>
+      </div>
+
+      <div class="doors">
+        <section class="door classic" aria-labelledby="classic-h">
+          <input class="still" type="checkbox" id="still" />
+          <div class="scene" role="img" aria-label={`The river crossing from the game: a player mends the broken bridge by the elder's campfire${signs}.`}>
+            <div class="world" aria-hidden="true">
+              <i class="ground"></i><i class="fire"></i><i class="elder"></i><i class="plank"></i><i class="p"
+                ><b class="walk"></b><b class="work"></b><b class="idle"></b></i
+              ><i class="oak"></i><i class="lantern"></i>
+            </div>
+            {bridgeBuilder && <b class="sig" aria-hidden="true">{bridgeBuilder}</b>}
+          </div>
+          <label class="pause" for="still"
+            ><span class="vh"><span class="off">Pause the motion</span><span class="on">Play the motion</span></span></label
+          >
+          <div class="door-foot">
+            <div class="door-text">
+              <h2 class="door-name" id="classic-h">Classic</h2>
+              <p class="door-note">The pixel valley, free in your browser. Your progress stays on this device.</p>
+            </div>
+            <a class="btn primary stretch" href="/play/">Play</a>
+          </div>
+        </section>
+
+        {
+          door3d && (
+            <section class="door d3" aria-labelledby="d3-h">
+              <div class="loop">
+                <video autoplay muted loop playsinline poster="/media/camp-poster.jpg" aria-hidden="true" tabindex="-1">
+                  <source media="(prefers-reduced-motion: no-preference)" src="/media/camp-loop.mp4" type="video/mp4" />
+                </video>
+                <img class="still-img" src="/media/camp-poster.jpg" alt="" width="320" height="180" />
+              </div>
+              <div class="door-text">
+                <h2 class="door-name" id="d3-h">
+                  The valley in 3D <span class="tag">trial</span>
+                </h2>
+                <p class="door-note">Walk the camp by the stream.</p>
+              </div>
+              <a class="btn stretch" href="/play3d/">Enter</a>
+            </section>
+          )
+        }
+      </div>
+
+      <aside class="board" id="board" aria-labelledby="board-h">
+        <header class="board-head">
+          <h2 id="board-h">Leaderboard</h2>
+          <ul class="tabs" aria-label="Boards">
+            <li class="tab off">Players <span class="tag">soon</span></li>
+            <li class="tab on" aria-current="true">Builders</li>
+          </ul>
+        </header>
+        <ol class="rows">
+          {
+            top.map((b, i) => (
+              <li>
+                <span class="rank">{i + 1}</span>
+                <span class="who">
+                  <b>{b.handle}</b>
+                  <small>
+                    {count(b.records, 'record', 'records')}, {count(b.commits, 'commit', 'commits')}
+                  </small>
+                </span>
+                <span class="pts">
+                  <span class="count">
+                    <span class="vh">{b.points}</span>
+                  </span>
+                  <small>points</small>
+                </span>
+              </li>
+            ))
+          }
+          {
+            open.map((rank, i) => (
+              <li class="open">
+                <span class="rank">{rank}</span>
+                <span class="who">
+                  <b>Open</b>
+                  {i === 0 && <small>The next builder signs this line.</small>}
+                </span>
+                <span class="pts" />
+              </li>
+            ))
+          }
+        </ol>
+        <footer class="board-foot">
+          <p>The players board opens with accounts.</p>
+          <a href="/hub/boards/">All boards</a>
+        </footer>
+      </aside>
+    </section>
+
+    <section class="dev" aria-labelledby="dev-h">
+      <div class="wrap dev-grid">
+        <div class="dev-intro">
+          <h2 id="dev-h">Build the valley with your AI</h2>
+          <p>
+            Places, quests and items are data. Write them in your editor or with your AI; when a record enters the game
+            it carries your signature and earns points.
+          </p>
+          <a class="btn primary" href="/hub/">Developer area</a>
+        </div>
+        <dl class="links">
+          <div>
+            <dt><a href={repoTree('mcp')}>MCP server</a></dt>
+            <dd>Nine read-only tools for your AI: schemas, checks, templates. The server lands with the next release.</dd>
+          </div>
+          <div>
+            <dt><a href="/api/">API and schemas</a></dt>
+            <dd>hub-data.json and the JSON schemas, as plain files.</dd>
+          </div>
+          <div>
+            <dt><a href="/llms.txt">llms.txt</a></dt>
+            <dd>One file that tells an AI tool where everything is.</dd>
+          </div>
+          <div>
+            <dt><a href={repoTree('templates/extension')}>The template</a></dt>
+            <dd>Copy it into your own folder, fill it in, open a pull request.</dd>
+          </div>
+        </dl>
+        <div class="dev-earn">
+          <p class="earn">
+            <span><b>+{earn.record}</b> a record</span>
+            <span><b>+{earn.commit}</b> a commit</span>
+            <span><b>+{earn.review}</b> a review</span>
+          </p>
+          <p class="then">
+            Your signature in the game: {signature.styles} styles, {signature.marks} marks.
+            <b class="plate" aria-hidden="true">your-handle</b>
+          </p>
+        </div>
+      </div>
+    </section>
+  </div>
 </Site>

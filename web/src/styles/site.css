@@ -244,6 +244,7 @@ h1 {
   align-items: center;
 }
 .foot .build {
+  display: block;
   font-variant-numeric: tabular-nums;
 }
 
