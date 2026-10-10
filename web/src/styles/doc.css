@@ -1,0 +1,126 @@
+/*
+ * The guide pages (docs/team/GRUNT.md, item 13): markdown in the site's two faces, one reading column; a contents
+ * list beside it from 1024px, above it below. Code sits on paper2, as on the hub. Tokens only.
+ */
+.doc-grid {
+  display: grid;
+  gap: var(--s-6);
+  padding-top: var(--s-6);
+}
+@media (min-width: 1024px) {
+  .doc-grid {
+    grid-template-columns: 15rem minmax(0, 1fr);
+    gap: var(--s-12);
+  }
+  .doc-toc {
+    position: sticky;
+    top: var(--s-6);
+    align-self: start;
+    max-height: calc(100vh - 2 * var(--s-6));
+    overflow-y: auto;
+  }
+}
+/* on a phone the list would fill the first screen: only the parts of the page, the sections follow in the text */
+@media (max-width: 1023px) {
+  .doc-toc .d2 {
+    display: none;
+  }
+}
+.doc-toc ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.doc-toc li {
+  border-bottom: var(--px) solid var(--paper2);
+}
+.doc-toc a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.doc-toc a:hover {
+  text-decoration: underline;
+}
+.doc-toc .d1 a {
+  font-weight: 700;
+}
+.prose {
+  min-width: 0;
+  max-width: 44em;
+}
+.prose > * + * {
+  margin-top: var(--s-3);
+}
+.doc .prose h1 {
+  margin-top: var(--s-12);
+}
+.doc .prose h1:first-child {
+  margin-top: 0;
+}
+.doc .prose h2 {
+  margin-top: var(--s-12);
+}
+.doc .prose h3 {
+  margin-top: var(--s-6);
+}
+.prose h1,
+.prose h2,
+.prose h3 {
+  scroll-margin-top: var(--s-6);
+}
+.prose ul,
+.prose ol {
+  padding-left: var(--s-6);
+}
+.prose li + li {
+  margin-top: var(--s-1);
+}
+.prose a {
+  color: var(--ink);
+}
+.prose pre {
+  overflow-x: auto;
+  padding: var(--s-3);
+  background: var(--paper2) !important;
+  color: var(--ink);
+  font-size: var(--text-s);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+/* the highlighter colours its tokens for a dark ground; on paper the code is ink */
+.prose pre,
+.prose pre * {
+  color: var(--ink) !important;
+}
+.prose pre code {
+  background: none;
+}
+.prose :not(pre) > code {
+  overflow-wrap: anywhere;
+}
+.prose hr {
+  border: 0;
+  border-top: var(--px) solid var(--paper2);
+}
+.prose table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+.prose th,
+.prose td {
+  padding: var(--s-2) var(--s-3) var(--s-2) 0;
+  border-bottom: var(--px) solid var(--paper2);
+  text-align: left;
+  vertical-align: top;
+}
+.doc-source {
+  margin-top: var(--s-12) !important;
+  padding-top: var(--s-3);
+  border-top: var(--px) solid var(--paper2);
+  color: var(--ink2);
+  font-size: var(--text-s);
+}

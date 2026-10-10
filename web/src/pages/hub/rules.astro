@@ -1,0 +1,101 @@
+---
+// The rules (docs/team/GRUNT.md, item 12; spec P-1): the loop's numbers, the points, the value anchors, the licences
+// and conduct, on one public page. Every number is read from its source file (web/src/data/rules.ts).
+import Site from '../../layouts/Site.astro';
+import '../../styles/hub.css';
+import '../../styles/ledger.css';
+import { conduct, driftBudget, loop, points, values } from '../../data/rules';
+import { repoFile } from '../../data/site';
+---
+
+<Site
+  title="Rules - Openfold"
+  description="The rules of Openfold in one place: the numbers of the community loop, how points are counted, the value of every item, the licences and conduct."
+  section="developers"
+>
+  <div class="hub">
+    <header class="wrap hub-head">
+      <p class="kicker">Developer area</p>
+      <h1>Rules</h1>
+      <p class="lead">
+        Every number here is read from the file the game and the loop use, so a change to a rule is a visible pull
+        request.
+      </p>
+    </header>
+
+    <section class="wrap sect" aria-labelledby="loop-h">
+      <h2 id="loop-h">The loop</h2>
+      <p class="prose-note">
+        How a request becomes an open call, how a proposal is merged and how a vote is decided. Set in{' '}
+        <a class="go" href={repoFile('.github/loop.json')}>.github/loop.json</a>, explained in{' '}
+        <a class="go" href={repoFile('docs/loop/README.md')}>the loop's README</a>.
+      </p>
+      <table class="ledger-table stack">
+        <thead>
+          <tr><th scope="col">Parameter</th><th scope="col" class="num">Value</th><th scope="col">What it does</th></tr>
+        </thead>
+        <tbody>
+          {loop.map((r) => (
+            <tr><td><code>{r.key}</code></td><td class:list={['num', 'val', { words: !/^[0-9.]+$|^(true|false)$/.test(r.value) }]}>{r.value}</td><td>{r.says}</td></tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="wrap sect" aria-labelledby="points-h">
+      <h2 id="points-h">Points</h2>
+      <p class="prose-note">
+        Set in <a class="go" href={repoFile('.github/points.json')}>.github/points.json</a>. Points measure what a
+        builder added; time spent is never published.
+      </p>
+      <table class="ledger-table stack">
+        <thead>
+          <tr><th scope="col">Parameter</th><th scope="col" class="num">Value</th><th scope="col">What it does</th></tr>
+        </thead>
+        <tbody>
+          {points.map((r) => (
+            <tr><td><code>{r.key}</code></td><td class:list={['num', 'val', { words: !/^[0-9.]+$|^(true|false)$/.test(r.value) }]}>{r.value}</td><td>{r.says}</td></tr>
+          ))}
+        </tbody>
+      </table>
+      <p class="prose-note">Nothing is called credits until the fund has a formula; the fund is 40% of net income; there is no income yet.</p>
+    </section>
+
+    <section class="wrap sect" aria-labelledby="values-h">
+      <h2 id="values-h">Values</h2>
+      <p class="prose-note">
+        The anchored value of every item (rule R11), from{' '}
+        <a class="go" href={repoFile('content/values.lock.json')}>content/values.lock.json</a>. Prices follow from
+        them; nothing is priced by hand. A change to content may move a value by at most {driftBudget / 10}% from its
+        anchor before <code>pnpm check</code> stops it.
+      </p>
+      <table class="ledger-table">
+        <thead>
+          <tr><th scope="col">Item</th><th scope="col" class="num">Value</th></tr>
+        </thead>
+        <tbody>
+          {values.map((v) => (
+            <tr><td><code>{v.id}</code></td><td class="num val">{v.value}</td></tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="wrap sect" aria-labelledby="licences-h">
+      <h2 id="licences-h">Licences</h2>
+      <ul class="rules">
+        <li><a class="go" href={repoFile('LICENSE')}>Code</a> - AGPL-3.0-only.</li>
+        <li><a class="go" href={repoFile('content/LICENSE')}>Content</a> - CC BY-SA 4.0, for every record and sprite.</li>
+        <li><a class="go" href={repoFile('web/public/fonts')}>Fonts</a> - SIL Open Font License 1.1, each with its OFL.txt.</li>
+      </ul>
+    </section>
+
+    <section class="wrap sect" aria-labelledby="conduct-h">
+      <h2 id="conduct-h">Conduct</h2>
+      {conduct.map((p) => <p class="prose-note">{p}</p>)}
+      <p class="prose-note">
+        How a pull request is reviewed and merged: <a class="go" href={repoFile('CONTRIBUTING.md')}>CONTRIBUTING.md</a>.
+      </p>
+    </section>
+  </div>
+</Site>

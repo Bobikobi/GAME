@@ -26,19 +26,19 @@ export function dateTime(iso: string): string {
   return `${two(d.getUTCDate())}.${two(d.getUTCMonth() + 1)}.${two(d.getUTCFullYear() % 100)} ${two(d.getUTCHours())}:${two(d.getUTCMinutes())}`;
 }
 
-export type Section = 'home' | 'boards' | 'developers';
+export type Section = 'home' | 'boards' | 'developers' | 'docs';
 
 /** The header's links; `section` marks the page a link leads to, for aria-current. */
 export const NAV: readonly { label: string; href: string; section?: Section }[] = [
   { label: 'Play', href: '/play/' },
   { label: 'Leaderboard', href: '/hub/boards/', section: 'boards' },
   { label: 'Developers', href: '/hub/', section: 'developers' },
-  { label: 'Guide', href: repoFile('docs/creators/README.md') },
+  { label: 'Guide', href: '/docs/', section: 'docs' },
   { label: 'GitHub', href: REPO },
 ];
 
 export const FOOT: readonly { label: string; href: string }[] = [
-  { label: 'Rules', href: repoFile('CONTRIBUTING.md') },
+  { label: 'Rules', href: '/hub/rules/' },
   { label: 'Licence', href: repoFile('LICENSE') },
   { label: 'GitHub', href: REPO },
 ];
