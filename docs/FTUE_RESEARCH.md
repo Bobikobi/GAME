@@ -1,4 +1,4 @@
-# Research: Mobile Game Onboarding (FTUE) & Mistvale Gap Analysis
+# Research: Mobile Game Onboarding (FTUE) & Openfold Gap Analysis
 
 ## 1. Executive Summary
 
@@ -8,7 +8,7 @@ First-Time User Experience (FTUE) on mobile devices determines whether a player 
 - The goal is not immediately visible or understood within the viewport.
 - Rewards and progression mechanics do not provide instant positive reinforcement within the first 60 seconds.
 
-This document reviews established FTUE standards from leading mobile and handheld cozy/adventure RPGs (*Animal Crossing: Pocket Camp*, *Stardew Valley Mobile*, *A Short Hike*, *Sky: Children of the Light*) and audits Mistvale's current opening against those benchmarks.
+This document reviews established FTUE standards from leading mobile and handheld cozy/adventure RPGs (*Animal Crossing: Pocket Camp*, *Stardew Valley Mobile*, *A Short Hike*, *Sky: Children of the Light*) and audits Openfold's current opening against those benchmarks.
 
 ---
 
@@ -36,9 +36,9 @@ This document reviews established FTUE standards from leading mobile and handhel
 
 ---
 
-## 3. Mistvale Current FTUE Walkthrough
+## 3. Openfold Current FTUE Walkthrough
 
-Mistvale's opening flow today:
+Openfold's opening flow today:
 1. **Title & Character Select**:
    - Player picks between Forager and Explorer.
    - Gender/look toggle (Male / Female appearance).
@@ -55,7 +55,7 @@ Mistvale's opening flow today:
    - Gather 3 stones total -> walk to Old Bridge -> press A to mend the bridge.
    - Bridge restores visually and sign updates to *"Mended by <Player>"*.
 5. **Town Entry**:
-   - Cross the river into Mistvale town.
+   - Cross the river into the town.
    - Elder Maru is positioned outside his house.
    - Talking to Elder Maru triggers town backstory, the mystery of the mist and night bells, and directions to Pell's market stall and the ruins.
 6. **Market & Economy**:
@@ -63,7 +63,7 @@ Mistvale's opening flow today:
 
 ---
 
-## 4. Identified Gaps in Mistvale
+## 4. Identified Gaps in Openfold
 
 | Dimension | Current State | Gap / Issue | Recommended Solution |
 | :--- | :--- | :--- | :--- |
