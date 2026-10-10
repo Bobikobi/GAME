@@ -481,7 +481,7 @@ function openControls(ui: UI): void {
   );
 }
 
-const AI_CREATOR_INSTRUCTIONS = `I want to add a new content extension to Mistvale (a community-built 2D RPG).
+const AI_CREATOR_INSTRUCTIONS = `I want to add a new content extension to Openfold (a community-built 2D RPG).
 Use the complete creator guide included below as your instructions. Help me choose a small addition, create the required files, and validate it with the commands in the guide.`;
 
 export function openGuide(ui: UI): void {
@@ -521,7 +521,7 @@ export function openGuide(ui: UI): void {
     h(
       'p',
       { class: 'muted' },
-      'Mistvale is built together by the community. Every bush, recipe, sign, and ruin is a declarative JSON file in the repo. Use this guide to add your own part of the world in 10 minutes - by hand or with your favorite AI tool.',
+      'Openfold is built together by the community. Every bush, recipe, sign, and ruin is a declarative JSON file in the repo. Use this guide to add your own part of the world in 10 minutes - by hand or with your favorite AI tool.',
     ),
     h('div', { class: 'actions' }, copyBtn),
   );

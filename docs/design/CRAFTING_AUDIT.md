@@ -429,7 +429,7 @@ Read for the two ladders (D-CRAFT-2), the slots (D-CRAFT-6) and the miss (D-CRAF
 
 | Game | The miss | What it teaches here | Source |
 |---|---|---|---|
-| The Legend of Zelda: Breath of the Wild | Incompatible ingredients cook into Dubious Food or Rock-Hard Food; both still restore a little health. | A miss keeps something (G15), not nothing. Mistvale keeps part of the inputs, not a lesser dish (DECISIONS.md, 2026-10-09, "The crafting economy"). | [Cooking](https://zeldawiki.wiki/wiki/Cooking_in_Breath_of_the_Wild), [Rock-Hard Food](https://zeldawiki.wiki/wiki/Rock-Hard_Food), [Dubious Food](https://zelda-archive.fandom.com/wiki/Dubious_Food) |
+| The Legend of Zelda: Breath of the Wild | Incompatible ingredients cook into Dubious Food or Rock-Hard Food; both still restore a little health. | A miss keeps something (G15), not nothing. Openfold keeps part of the inputs, not a lesser dish (DECISIONS.md, 2026-10-09, "The crafting economy"). | [Cooking](https://zeldawiki.wiki/wiki/Cooking_in_Breath_of_the_Wild), [Rock-Hard Food](https://zeldawiki.wiki/wiki/Rock-Hard_Food), [Dubious Food](https://zelda-archive.fandom.com/wiki/Dubious_Food) |
 | Final Fantasy XIV | A synthesis has progress, quality and durability; crafting stats decide the chance of a high-quality result; when durability runs out before progress is complete the synthesis fails and materials are lost. | Skill decides the chance and the grade; the loss of all materials on a miss is what pillar 5 and G15 rule out here. | [Crafting](https://ffxiv.consolegameswiki.com/wiki/Crafting), [Crafting basics](https://icy-veins.com/ffxiv/crafting-basics-in-ffxiv) |
 
 ## Appendix D. The open ends

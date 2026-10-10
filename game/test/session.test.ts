@@ -2,7 +2,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vi
 
 import type { Bundle } from '@game/kernel';
 import { app } from '../src/app';
-import { SAVE_KEY } from '../src/config';
+import { LEGACY_SAVE_KEY, SAVE_KEY } from '../src/config';
 import { Session } from '../src/session';
 import { say } from '../src/ui/dialog';
 import { UI } from '../src/ui/ui';
@@ -57,9 +57,9 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function startedSession(): Session {
+function startedSession(name = 'Tester'): Session {
   const session = Session.fresh(bundle);
-  const result = session.act({ t: 'start', starter: 'core/forager', name: 'Tester' });
+  const result = session.act({ t: 'start', starter: 'core/forager', name });
   expect(result.ok).toBe(true);
   return session;
 }
@@ -80,6 +80,53 @@ describe('session persistence', () => {
     const restored = Session.restore(bundle);
     expect(restored).toBeDefined();
     expect(restored?.met.size).toBe(0);
+  });
+
+  test('carries a save made under the working title over to the new key', () => {
+    startedSession();
+    storage.setItem(LEGACY_SAVE_KEY, storage.getItem(SAVE_KEY)!);
+    storage.removeItem(SAVE_KEY);
+
+    const restored = Session.restore(bundle);
+    expect(restored?.started).toBe(true);
+    restored!.save();
+    expect(storage.getItem(SAVE_KEY)).not.toBeNull();
+    expect(storage.getItem(LEGACY_SAVE_KEY)).toBeNull();
+
+    storage.setItem(LEGACY_SAVE_KEY, storage.getItem(SAVE_KEY)!);
+    Session.erase();
+    expect(storage.length).toBe(0);
+  });
+
+  test('a save under the new key wins over one left under the working title, which is never read', () => {
+    // both keys hold a game when the page closed between writing the new key and removing the old one
+    startedSession('Older');
+    const older = storage.getItem(SAVE_KEY)!;
+    startedSession('Newer');
+    storage.setItem(LEGACY_SAVE_KEY, older);
+    const getItem = vi.spyOn(storage, 'getItem');
+
+    expect(Session.hasSave()).toBe(true);
+    expect(getItem).not.toHaveBeenCalledWith(LEGACY_SAVE_KEY);
+    expect(Session.restore(bundle)?.state.player.name).toBe('Newer');
+    expect(getItem).toHaveBeenCalledWith(SAVE_KEY);
+    expect(getItem).not.toHaveBeenCalledWith(LEGACY_SAVE_KEY);
+  });
+
+  test('keeps the save made under the working title when the new key cannot be written', () => {
+    startedSession();
+    const old = storage.getItem(SAVE_KEY)!;
+    storage.clear();
+    storage.setItem(LEGACY_SAVE_KEY, old);
+    const restored = Session.restore(bundle)!;
+    vi.spyOn(storage, 'setItem').mockImplementation(() => {
+      throw new Error('quota exceeded');
+    });
+
+    expect(() => restored.save()).not.toThrow();
+    expect(storage.getItem(LEGACY_SAVE_KEY)).toBe(old);
+    expect(storage.getItem(SAVE_KEY)).toBeNull();
+    expect(Session.restore(bundle)?.state.player.name).toBe('Tester');
   });
 
   test('loads a save from before worn things and craft tries', () => {
