@@ -1,9 +1,11 @@
 # Chapter 1: the mist draws back
 
-A draft for the owner, written against [STORY.md](../STORY.md) (rules S1-S6)
-and the hook chosen on 2026-10-10 (DECISIONS.md, "The hook is the receding
-mist"). Nothing here is built. After the owner's word on each beat, the
-beats are played as a Twine draft on a phone, then become content.
+Written against [STORY.md](../STORY.md) (rules S1-S6) and the hook chosen
+on 2026-10-10 (DECISIONS.md, "The hook is the receding mist"). **Approved by
+the owner on 2026-10-10** ("approves all"): the beats, the waking lines, the
+dilemma with three answers, and written names on the stone. Nothing here is
+built yet. Next the beats are played as a Twine draft on a phone, then become
+content.
 
 ## The question
 
@@ -61,9 +63,9 @@ off." "The mist draws back." Every line about the past has a speaker:
 | Names on the stone, older than anyone | Others mended before us. | They woke something, and it took them. | They dug too deep, and the mist took them back. |
 | The lantern glows at dusk on its own | It keeps watch for us. | Something down there is still awake. | It marks a place to leave alone. |
 
-## The waking lines (waiting for the owner)
+## The waking lines (approved, 2026-10-10)
 
-One object, one plain fact. The idea is approved; this wording is not yet.
+One object, one plain fact.
 
 - Forager: "You wake with a basket on your arm. It isn't yours. It fits you perfectly."
 - Digger: "Your trowel hits something. An axe, buried. Its handle fits your hand."
@@ -83,9 +85,35 @@ One object, one plain fact. The idea is approved; this wording is not yet.
   the rope in the ruins hall as a restore. The dilemma waits for the lean and
   the choice step (S-4).
 
-## Open for the owner
+## How the three starters differ here
 
-1. The waking lines above.
-2. The dilemma of beat 9: three answers (ring, still, leave), or two.
-3. The names already on the stone: a few written names of the first ones, or
-   only worn marks nobody can read.
+The owner asked (10.10) what sets the three apart, since all of them mend the
+bridge. His answer is recorded in DECISIONS.md ("The owner's answers of 10.10
+afternoon", item 1): they differ for the whole game, each with a lasting edge
+(the forager finds more when gathering, the digger more in the ground, the
+explorer more rare finds) and abilities the others cannot reach. In this
+chapter it shows in each beat, not only at the waking (a proposal, for the
+design entry that item asks for):
+
+| Beat | Forager | Digger | Explorer |
+|---|---|---|---|
+| 1 Waking | Picks its first berries in its pocket | Digs up its axe | Finds its axe by the senses |
+| 3 The dry log | Sees which wood is dry at a glance | Finds it under the mud | Sees it glint from further off |
+| 4 Pell's stall | Already has the basket: buys the trowel, or saves | Already has the trowel: buys the basket, or saves | Has neither: picks one, as today |
+| 5 The coin | Finds a second herb by the lantern | Digs the tile in one strike | The lantern's glint shows before dusk |
+| 9 The bell | Each starter has one line of its own in the hall | | |
+
+## Many players (stage 2)
+
+Recorded in the same entry, item 2: progress is each player's own, and the
+mist hides the gap. A player who has not mended the bridge sees it broken and
+the far bank in mist; a friend who crossed walks into the mist and is gone
+from view. They meet once both have mended it.
+
+## The owner's answers (2026-10-10)
+
+1. The waking lines: approved as written above.
+2. The dilemma of beat 9: three answers (ring, tie it still, leave it).
+3. The stone: a few written names of the first ones who came back, worn,
+   above the empty line; with accounts in stage 2, real players' names
+   follow, behind a word filter.
