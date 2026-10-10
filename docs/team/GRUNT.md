@@ -302,8 +302,8 @@ Files:
 - `web/src/pages/api/index.astro`: a list: `hub-data.json` (format, `built_at`),
   each `schema/<name>.schema.json` with its `$id`, each as a link; one line
   on the stage-2 plan (same paths, served by the server).
-- `web/public/llms.txt`: H1 with the product name (use the game's title until
-  question 2 is answered), one sentence, then sections `## Guide`,
+- `web/public/llms.txt`: H1 with the product name, Openfold (question 2,
+  settled on 9.10 in `DECISIONS.md`), one sentence, then sections `## Guide`,
   `## Schemas`, `## Data`, `## MCP`, `## Rules`, each a list of links with a
   short description, per llmstxt.org.
 - `web/test/api.test.ts`: every link in the built `api/index.html` resolves to
@@ -547,8 +547,8 @@ a step, and the hub shows the one-line setup.
 
 Files:
 - `.mcp.json` (repository root): `{"mcpServers": {"<name>": {"command": "pnpm",
-  "args": ["-s", "mcp"]}}}` with the product name from question 2 (until
-  answered, `valley`).
+  "args": ["-s", "mcp"]}}}` with the product name from question 2,
+  `openfold`.
 - `.cursor/mcp.json`: the same shape.
 - `docs/creators/README.md`: a section "Your AI tool and the project" with the
   two lines for a tool that does not read `.mcp.json` (`claude mcp add` and the
