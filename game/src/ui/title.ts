@@ -113,7 +113,7 @@ export function showTitle(ui: UI): Promise<void> {
         }
         done();
         ui.begin(session);
-        void intro(ui);
+        void intro(ui, b.starters[picked]?.intro);
       };
       nameInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') start();
@@ -137,8 +137,9 @@ export function showTitle(ui: UI): Promise<void> {
   });
 }
 
-async function intro(ui: UI): Promise<void> {
-  await say(ui, null, [
+/** What the narrator says as the character wakes: the start's own lines, or the game's. */
+async function intro(ui: UI, lines: string[] | undefined): Promise<void> {
+  await say(ui, null, lines ?? [
     'You wake up in the tall grass beside a river.',
     'Across the water, smoke rises over a town. The old bridge between is broken.',
     'River stones lie on the bank nearby. Three should be enough to mend it.',

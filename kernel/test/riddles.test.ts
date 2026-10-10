@@ -1,6 +1,7 @@
 /**
  * The find and riddle steps (GRUNT P-2): a riddle completes on its answer's
- * event and on nothing else; a find is a bring of one that the hand-in takes.
+ * event and on nothing else; a find is a bring of one that the hand-in takes,
+ * and a task nobody gave keeps what it found in the bag.
  */
 import { beforeAll, describe, expect, test } from 'vitest';
 
@@ -15,6 +16,7 @@ import {
   makeWalkable,
   near,
   newState,
+  npcTile,
   questSatisfied,
   riddleSlots,
   step,
@@ -177,17 +179,29 @@ describe('night for the rules', () => {
 
 describe('a find', () => {
   const coin = 'core/old-coin';
-  const find = () => withQuest(quest([{ kind: 'find', item: coin, clue: 'Old pottery lies under the gate stones; the coin is in the same rubble.' }]));
+  const steps: QuestDef['steps'] = [{ kind: 'find', item: coin, clue: 'Old pottery lies under the gate stones; the coin is in the same rubble.' }];
 
   test('is a bring of one that the hand-in takes', () => {
-    const b = find();
+    const b = withQuest({ ...quest(steps), giver: 'core/elder' });
     const s = started(b);
-    expect(questSatisfied(b, s, 'test/q')).toBe(false);
+    const tile = npcTile(b, 'core/elder')!;
+    const at = standNear(b, s, { x: tile[0], y: tile[1], w: 1, h: 1 });
+    let r = act(b, s, { t: 'accept', quest: 'test/q', at }, 0);
+    expect(questSatisfied(b, r.state, 'test/q')).toBe(false);
+    r.state.player.bag[coin] = 2;
+    expect(questSatisfied(b, r.state, 'test/q')).toBe(true);
+    r = act(b, r.state, { t: 'turnin', quest: 'test/q', at }, 0);
+    expect(r.state.player.quests['test/q']).toBe('done');
+    expect(r.state.player.bag[coin]).toBe(1);
+  });
+
+  test('handed to nobody stays in the bag', () => {
+    const b = withQuest(quest(steps));
+    const s = started(b);
     s.player.bag[coin] = 2;
-    expect(questSatisfied(b, s, 'test/q')).toBe(true);
     const at = standNear(b, s, slotOf(b, GLADE), true);
     const r = act(b, s, { t: 'visit', slot: GLADE, at }, 0);
     expect(r.state.player.quests['test/q']).toBe('done');
-    expect(r.state.player.bag[coin]).toBe(1);
+    expect(r.state.player.bag[coin]).toBe(2);
   });
 });

@@ -1470,6 +1470,33 @@
         "tag": "ruin"
       },
       {
+        "id": "core/bank-herbs",
+        "kind": "resource",
+        "x": 4,
+        "y": 19,
+        "w": 2,
+        "h": 2,
+        "tag": "meadow"
+      },
+      {
+        "id": "core/slid-bank",
+        "kind": "ruin",
+        "x": 11,
+        "y": 25,
+        "w": 1,
+        "h": 1,
+        "tag": "riverbank"
+      },
+      {
+        "id": "core/bridge-glint",
+        "kind": "ruin",
+        "x": 11,
+        "y": 19,
+        "w": 1,
+        "h": 1,
+        "tag": "riverbank"
+      },
+      {
         "id": "core/sun-bank",
         "kind": "resource",
         "x": 7,
