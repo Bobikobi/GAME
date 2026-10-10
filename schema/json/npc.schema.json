@@ -584,9 +584,146 @@
             }
           }
         },
+        "remarks": {
+          "maxItems": 16,
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "description": "A standing line that waits for a change in the world and is said once, in place of the standing line. Of the remarks that hold, the highest priority wins, then the one whose condition names the most, then the first in the file.",
+            "type": "object",
+            "required": [
+              "when",
+              "say"
+            ],
+            "properties": {
+              "when": {
+                "additionalProperties": false,
+                "minProperties": 1,
+                "description": "Holds when every condition it names holds.",
+                "type": "object",
+                "properties": {
+                  "done": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Quests the player has finished.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "active": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Quests the player is on now.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "not_done": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Quests the player has not finished yet, on them or not.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "restored": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Places the player has mended.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "built": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Camp parts that stand, themselves or under an upgrade.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "has": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Items with at least one in the bag.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "visited": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Map slots the player has stood in.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "time": {
+                    "description": "By day (05:00 to 20:00) or by night.",
+                    "anyOf": [
+                      {
+                        "const": "day",
+                        "type": "string"
+                      },
+                      {
+                        "const": "night",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                }
+              },
+              "say": {
+                "minItems": 1,
+                "maxItems": 2,
+                "description": "One box, two at most (G21).",
+                "type": "array",
+                "items": {
+                  "minLength": 1,
+                  "maxLength": 240,
+                  "type": "string"
+                }
+              },
+              "priority": {
+                "minimum": 0,
+                "maximum": 9,
+                "description": "Higher is said first when more than one remark holds. Left out, 0.",
+                "type": "integer"
+              }
+            }
+          }
+        },
         "topics": {
-          "maxItems": 4,
-          "description": "Things the player can always ask about.",
+          "maxItems": 8,
+          "description": "Things the player can ask about: always, or once the topic's `when` holds (G21). The menu shows four at most, the ones not yet asked first.",
           "type": "array",
           "items": {
             "additionalProperties": false,
@@ -610,6 +747,111 @@
                   "minLength": 1,
                   "maxLength": 240,
                   "type": "string"
+                }
+              },
+              "when": {
+                "additionalProperties": false,
+                "minProperties": 1,
+                "description": "Holds when every condition it names holds.",
+                "type": "object",
+                "properties": {
+                  "done": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Quests the player has finished.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "active": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Quests the player is on now.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "not_done": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Quests the player has not finished yet, on them or not.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "restored": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Places the player has mended.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "built": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Camp parts that stand, themselves or under an upgrade.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "has": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Items with at least one in the bag.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "visited": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Map slots the player has stood in.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "time": {
+                    "description": "By day (05:00 to 20:00) or by night.",
+                    "anyOf": [
+                      {
+                        "const": "day",
+                        "type": "string"
+                      },
+                      {
+                        "const": "night",
+                        "type": "string"
+                      }
+                    ]
+                  }
                 }
               }
             }

@@ -20,7 +20,7 @@ import {
   hashText,
   layoutInstances,
 } from '@game/kernel';
-import { BASE_CLASSES, CORE_ONLY_TYPES, type CreatorProfile, type ParamsBody, type Template } from '@game/schema';
+import { BASE_CLASSES, CORE_ONLY_TYPES, type CreatorProfile, type ParamsBody, type Template, type WhenDef } from '@game/schema';
 import { toRepoPath, type Issue, type Loaded } from './load';
 import { findableItems } from './play';
 
@@ -378,10 +378,33 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     c.outputs.forEach((s, i) => item(id, `recipe.outputs.${i}.item`, s.item));
     if (c.profession && !b.professions[c.profession]) err(id, 'recipe.profession', `no profession "${c.profession}"`);
   }
+  // a line that waits for the world names only things that exist (GRUNT S-1)
+  const when = (owner: string, where: string, w: WhenDef) => {
+    const named: [keyof WhenDef, string, (ref: string) => boolean][] = [
+      ['done', 'quest', (r) => !!b.quests[r]],
+      ['active', 'quest', (r) => !!b.quests[r]],
+      ['not_done', 'quest', (r) => !!b.quests[r]],
+      ['restored', 'restore', (r) => !!b.restores[r]],
+      ['built', 'camp part', (r) => !!b.camps[r]],
+      ['has', 'item', (r) => !!b.items[r]],
+      ['visited', 'slot', (r) => b.map.slots.some((sl) => sl.id === r)],
+    ];
+    for (const [key, kind, exists] of named) {
+      const refs = w[key];
+      if (!Array.isArray(refs)) continue;
+      refs.forEach((r, i) => {
+        if (!exists(r)) err(owner, `${where}.${key}.${i}`, `no ${kind} "${r}"`);
+      });
+    }
+  };
   for (const [id, n] of Object.entries(b.npcs)) {
     sprite(id, 'npc.sprite', n.sprite);
     place(id, 'npc', n.place.slot);
     if (n.shop && !b.shops[n.shop]) err(id, 'npc.shop', `no shop "${n.shop}"`);
+    (n.remarks ?? []).forEach((r, i) => when(id, `npc.remarks.${i}.when`, r.when));
+    (n.topics ?? []).forEach((t, i) => {
+      if (t.when) when(id, `npc.topics.${i}.when`, t.when);
+    });
   }
   for (const [id, s] of Object.entries(b.shops)) s.sells.forEach((o, i) => item(id, `shop.sells.${i}.item`, o.item));
   const findable = findableItems(b);

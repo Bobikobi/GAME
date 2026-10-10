@@ -32,6 +32,18 @@
         "This valley is yours as much as mine now."
       ]
     },
+    "remarks": [
+      {
+        "when": {
+          "done": [
+            "core/a-coin-for-maru"
+          ]
+        },
+        "say": [
+          "You read the stones as I did once. Not many can."
+        ]
+      }
+    ],
     "topics": [
       {
         "ask": "About the mist",
@@ -55,6 +67,18 @@
           "A market, a well with sweet water, a garden behind every second house.",
           "Most of it is under the weeds now. Roofs gone. Paths lost.",
           "Every place someone mends comes back out of the mist. Start small."
+        ]
+      },
+      {
+        "ask": "About the lanterns",
+        "when": {
+          "done": [
+            "core/a-coin-for-maru"
+          ]
+        },
+        "lines": [
+          "They light at dusk. Nobody fills them. Nobody ever did, that I saw.",
+          "I think they watch the hills, where the mist comes from."
         ]
       }
     ]
