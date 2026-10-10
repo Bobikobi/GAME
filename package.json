@@ -13,7 +13,7 @@
     "bundle": "tsx tools/src/cli.ts bundle",
     "schemas": "tsx schema/src/emit.ts",
     "dev": "pnpm bundle && pnpm --filter game dev",
-    "build": "pnpm bundle && pnpm --filter game build",
+    "build": "pnpm bundle && pnpm --filter game build && pnpm site",
     "test": "vitest run",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -24,7 +24,8 @@
     "board": "tsx tools/src/cli.ts board",
     "loop": "tsx tools/src/loop/cli.ts",
     "streams": "tsx tools/src/streams/cli.ts",
-    "verify": "pnpm schemas --verify && pnpm check && pnpm bundle && pnpm lint && pnpm typecheck && pnpm test && pnpm --filter game build"
+    "verify": "pnpm schemas --verify && pnpm check && pnpm bundle && pnpm lint && pnpm typecheck && pnpm test && pnpm --filter game build && pnpm site && pnpm --filter web test",
+    "site": "tsx tools/src/site/build-3d.ts && tsx tools/src/site/scene.ts && pnpm --filter web build && tsx tools/src/site/copy-play.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
