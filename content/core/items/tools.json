@@ -51,6 +51,30 @@
         "tier": 1,
         "uses": 50
       }
+    },
+    {
+      "id": "core/walking-staff",
+      "name": "Walking staff",
+      "description": "Worn in the hand on the road. Sharp eyes find a little more.",
+      "kind": "tool",
+      "rarity": "common",
+      "class": "tool",
+      "tier": 1,
+      "sprite": "core/base-kit:items/branch",
+      "tool": {
+        "kind": "staff",
+        "tier": 1,
+        "uses": 100
+      },
+      "wear": {
+        "slot": "hand",
+        "effects": [
+          {
+            "effect": "rare_find_pct",
+            "value": 5
+          }
+        ]
+      }
     }
   ]
 }

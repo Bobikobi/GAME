@@ -53,6 +53,8 @@ beforeAll(() => {
 function started(bag: Record<string, number>, seed = 1): State {
   const r = step(b, newState(b, seed), { t: 'start', starter: 'core/forager', name: 'Wearer' }, 0);
   if (!r.ok) throw new Error(r.error);
+  // the kit's basket goes on at the start; these tests put on what they test
+  r.state.player.worn = {};
   r.state.player.attrs.carry = 100;
   r.state.player.restored = ['core/old-bridge'];
   Object.assign(r.state.player.bag, bag);

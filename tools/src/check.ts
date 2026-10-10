@@ -92,6 +92,7 @@ function computedRarity(b: Bundle, itemId: string, visiting: Set<string> = new S
     best = best === undefined ? r : Math.min(best, r);
   };
   for (const t of Object.values(b.treasures)) {
+    if (t.starter !== undefined) continue; // a start's own find is a gift, not how the item is obtained
     for (const f of t.finds) {
       if (f.item !== itemId) continue;
       take(f.chance_pct >= 30 ? 0 : f.chance_pct >= 10 ? 1 : f.chance_pct >= 3 ? 2 : 3);
