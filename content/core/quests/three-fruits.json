@@ -19,6 +19,12 @@
         "clue": "Maru's berries grew where the bells rang: the garden behind the ruins, south-east of town. A basket picks them, by day; the mist takes them at dusk."
       }
     ],
+    "talk": {
+      "done": [
+        "Thank you. Take a tool of mine: it is more use to you now than to me.",
+        "The stones by the river remember where I buried something."
+      ]
+    },
     "reward": {
       "rep": 10,
       "items": [

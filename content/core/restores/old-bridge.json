@@ -19,6 +19,10 @@
     ],
     "active_ms": 4000,
     "passable": true,
-    "sign": "Bridge"
+    "sign": "Bridge",
+    "done": [
+      "The bridge holds. You scratch \"Mended by {name}\" into its sign.",
+      "Under it hangs a purse: thirty gold, a tool's price. Fell a tree before dark."
+    ]
   }
 }

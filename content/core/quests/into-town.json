@@ -17,6 +17,12 @@
         "slot": "core/town-square"
       }
     ],
+    "talk": {
+      "done": [
+        "Two neighbours could use a hand: Elder Maru by his house, and Pell at her stall.",
+        "Each says what the help is worth. Whom you help first is yours to choose."
+      ]
+    },
     "reward": {
       "rep": 0
     }

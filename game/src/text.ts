@@ -96,19 +96,19 @@ export function attributeEffects(b: Bundle, s: State): AttributeEffect[] {
   return [
     { attr: 'carry', name: 'Bag space', what: 'Your bag holds', now: `${bagCapacity(b, s)}`, next: `${bagCapacity(b, plus('carry'))} things` },
     { attr: 'senses', name: 'Keen eyes', what: 'You see hidden finds from', now: `${hintDistance(b, s)}`, next: `${hintDistance(b, plus('senses'))} steps away` },
-    { attr: 'agility', name: 'Steady hands', what: 'The good zone in a minigame is', now: `${windowScalePct(b, s)}%`, next: `${windowScalePct(b, plus('agility'))}% wide` },
+    { attr: 'agility', name: 'Steady hands', what: 'The good zone in a minigame', now: `${windowScalePct(b, s)}%`, next: `${windowScalePct(b, plus('agility'))}% wide` },
     {
       attr: 'luck',
       name: 'Luck',
       what: 'A miss still gives you 1',
-      now: `${pct(missKeepBp(b, s))} of the time`,
-      next: `${pct(missKeepBp(b, luckNext))} of the time`,
+      now: `${pct(missKeepBp(b, s))}`,
+      next: `${pct(missKeepBp(b, luckNext))} of misses`,
       note: `Rare finds ${times(rareFindPermille(b, s))} -> ${times(rareFindPermille(b, luckNext))}${capped ? ' (held by your level: level up to raise it)' : ''}`,
     },
     {
       attr: 'stamina',
       name: 'Stamina',
-      what: 'You work before you must eat for',
+      what: 'Work before you must eat',
       now: `${minutes(s)}`,
       next: `${minutes(plus('stamina'))} minutes`,
     },

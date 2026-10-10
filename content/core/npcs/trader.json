@@ -30,6 +30,18 @@
         "Best customer this side of the river. Also the only one.",
         "The garden behind the ruins was lovely once. Dark berries grew there, they say."
       ]
-    }
+    },
+    "remarks": [
+      {
+        "when": {
+          "done": [
+            "core/herbs-for-pell"
+          ]
+        },
+        "say": [
+          "Sunleaf sells. I knew you had an eye. Or luck. Luck sells too."
+        ]
+      }
+    ]
   }
 }

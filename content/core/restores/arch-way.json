@@ -13,6 +13,9 @@
     "after": "core/base-kit:tiles/ruin_floor",
     "inputs": [],
     "active_ms": 1000,
-    "passable": true
+    "passable": true,
+    "done": [
+      "The mist draws back from the broken arch. A way runs under it now."
+    ]
   }
 }

@@ -233,9 +233,27 @@ describe('session persistence', () => {
 
     expect(vi.mocked(say)).toHaveBeenCalledTimes(2);
     expect(vi.mocked(say).mock.calls[1]?.[2]).toHaveLength(1);
-    expect(vi.mocked(say).mock.calls[1]?.[3]?.map((option) => option.label)).toEqual(
-      expect.arrayContaining(bundle.npcs['core/elder']!.topics!.map((topic) => topic.ask)),
-    );
+    const topics = bundle.npcs['core/elder']!.topics!;
+    const labels = vi.mocked(say).mock.calls[1]?.[3]?.map((option) => option.label);
+    expect(labels).toEqual(expect.arrayContaining(topics.filter((t) => !t.when).map((t) => t.ask)));
+    for (const t of topics.filter((t) => t.when)) expect(labels).not.toContain(t.ask);
+  });
+
+  test('says a remark the world earned once, across a reload, and opens the topic that waited (GRUNT S-1)', async () => {
+    app.session = startedSession();
+    app.session.meet('core/elder');
+    app.session.state.player.quests['core/a-coin-for-maru'] = 'done';
+    const elder = bundle.npcs['core/elder']!;
+    const remark = elder.remarks!.find((r) => r.when.done?.includes('core/a-coin-for-maru'))!;
+    const waited = elder.topics!.find((t) => t.when?.done?.includes('core/a-coin-for-maru'))!;
+
+    await talker().talk('core/elder');
+    expect(vi.mocked(say).mock.calls[0]?.[2]).toEqual(remark.say);
+    expect(vi.mocked(say).mock.calls[0]?.[3]?.map((option) => option.label)).toContain(waited.ask);
+
+    app.session = Session.restore(bundle)!;
+    await talker().talk('core/elder');
+    expect(vi.mocked(say).mock.calls[1]?.[2]).not.toEqual(remark.say);
   });
 });
 

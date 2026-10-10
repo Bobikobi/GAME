@@ -1,0 +1,142 @@
+---
+// The API folder (docs/team/GRUNT.md, item 8): the files the site publishes for tools, each with its format. They
+// are plain files; stage 2 serves the same paths from the server.
+import Site from '../../layouts/Site.astro';
+import '../../styles/hub.css';
+import { dateTime, fromFixture, hub, repoFile } from '../../data/site';
+
+interface Schema {
+  $id: string;
+}
+// copied to /api/schema/ by tools/src/site/copy-play.ts, the last step of the site build
+const found = import.meta.glob<Schema>('../../../../schema/json/*.schema.json', { eager: true, import: 'default' });
+const schemas = Object.entries(found)
+  .map(([path, schema]) => ({ file: path.split('/').pop()!, id: schema.$id }))
+  .sort((a, b) => a.file.localeCompare(b.file));
+---
+
+<Site
+  title="API - Openfold"
+  description="The files Openfold publishes for tools: the hub-data document and one JSON schema per record type."
+>
+  <div class="hub">
+    <header class="wrap hub-head">
+      <p class="kicker">Developer area</p>
+      <h1>API</h1>
+      <p class="lead">
+        Plain JSON files, rebuilt with the site. Nothing to sign up for and no token: fetch them. In stage 2 the server
+        serves the same paths, so a tool written against them keeps working.
+      </p>
+    </header>
+
+    <section class="wrap sect" aria-labelledby="data-h">
+      <h2 id="data-h">Data</h2>
+      <dl class="files">
+        <dt>hub-data.json</dt>
+        {
+          fromFixture ? (
+            <dd>
+              <p>
+                The boards, the requests and this week, in one document. It is not in this build: the data build that
+                writes it (<code>pnpm hub:data</code>) is not part of the site yet.
+                Its format is <a href="/api/schema/hub-data.schema.json">hub-data.schema.json</a>.
+              </p>
+            </dd>
+          ) : (
+            <dd>
+              <a class="go file" href="/api/hub-data.json">
+                /api/hub-data.json
+              </a>
+              <p>
+                Format {hub.format}, built {dateTime(hub.built_at)} UTC. The boards, the requests and this week, in one
+                document.
+              </p>
+            </dd>
+          )
+        }
+      </dl>
+    </section>
+
+    <section class="wrap sect" id="schemas" aria-labelledby="schemas-h">
+      <h2 id="schemas-h">Schemas</h2>
+      <p class="intro">
+        One JSON Schema per record type, the same files <code>pnpm check</code> validates against
+        (<a href={repoFile('schema/json')}>schema/json</a> in the repository). Each is listed with its <code>$id</code>.
+      </p>
+      <ul class="schemas">
+        {
+          schemas.map((s) => (
+            <li>
+              <a class="go file" href={`/api/schema/${s.file}`}>
+                {s.file}
+              </a>
+              <code>{s.id}</code>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+  </div>
+</Site>
+
+<style>
+  .intro {
+    margin-top: var(--s-3);
+    max-width: 60ch;
+    color: var(--ink2);
+  }
+  .files {
+    margin-top: var(--s-2);
+  }
+  .files dt {
+    padding-top: var(--s-3);
+    font-family: var(--font-display);
+    font-weight: var(--w-display2);
+    font-size: 20px;
+    line-height: 28px;
+  }
+  .files dd {
+    padding: var(--s-1) 0 var(--s-4);
+    border-bottom: var(--px) solid var(--paper2);
+    color: var(--ink2);
+  }
+  .files dd p {
+    max-width: 60ch;
+  }
+  .file {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-family: var(--font-display);
+    font-weight: var(--w-display2);
+    font-size: 20px;
+  }
+  .schemas {
+    display: grid;
+    margin-top: var(--s-3);
+    padding: 0;
+    list-style: none;
+  }
+  .schemas li {
+    display: grid;
+    padding: var(--s-1) 0 var(--s-3);
+    border-bottom: var(--px) solid var(--paper2);
+  }
+  .schemas .file {
+    justify-self: start;
+  }
+  .hub code {
+    font: 400 var(--text-s) / 22px ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    color: var(--ink2);
+    overflow-wrap: anywhere;
+  }
+  /* on a desktop each schema is one row, its name beside its $id */
+  @media (min-width: 1024px) {
+    .schemas li {
+      grid-template-columns: 280px minmax(0, 1fr);
+      align-items: center;
+      column-gap: var(--s-6);
+      padding: 0;
+    }
+  }
+</style>

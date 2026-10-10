@@ -32,6 +32,12 @@
         "clue": "Maru's coin, from under the lantern the stone names."
       }
     ],
+    "talk": {
+      "done": [
+        "My coin, home at last. Take my mother's way with tea.",
+        "They say the broken arch shows a way after dark. I never went to look."
+      ]
+    },
     "reward": {
       "rep": 20,
       "gold_mg": 20000,

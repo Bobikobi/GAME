@@ -704,7 +704,7 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       await me.talkThrough('Hand in');
       const thanks = await me.talkThrough();
       await me.idle('the thanks');
-      if (!thanks.some((l) => l.includes('trowel'))) throw new Error(`the elder never gives his trowel: ${thanks.join(' / ')}`);
+      if (!thanks.some((l) => l.includes('a tool of mine'))) throw new Error(`the elder never gives a tool of his: ${thanks.join(' / ')}`);
       if ((await me.bag('core/trowel')) < 1) throw new Error('no trowel from Maru');
       log('handed in the bellberry: Maru gave his old trowel');
       await me.walkTo({ x: elder[0], y: elder[1], w: 1, h: 1 }, 'Elder Maru');
@@ -773,7 +773,7 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       await me.step((await me.state()).facing);
       const opened = await me.talkThrough();
       await me.idle('the arch opening');
-      if (!opened.some((l) => l.includes('a way runs under it'))) throw new Error(`no word of the way under the arch: ${opened.join(' / ')}`);
+      if (!opened.some((l) => l.includes('way runs under it'))) throw new Error(`no word of the way under the arch: ${opened.join(' / ')}`);
       if ((await me.quest('core/the-night-arch')) !== 'done') throw new Error('the-night-arch is not done');
       const restored = await page.eval<string[]>('__e2e.player().restored');
       if (!restored.includes('core/arch-way')) throw new Error(`the arch way did not open: [${restored.join(', ')}]`);

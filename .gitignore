@@ -8,6 +8,12 @@ coverage/
 game/src/generated/
 # copied from content/kit by pnpm bundle
 game/public/kit/
+# the site: Astro's generated types, the hub-data document (pnpm hub:data), the scene drawn from the kit
+web/.astro/
+web/public/api/
+web/public/scene/
+# the 3D client's build, when there is one (tools/src/site/play3d.ts)
+game/dist-3d/
 # written by the kit importer tests
 tools/test/fixtures/kit/out/
 tools/.cache/

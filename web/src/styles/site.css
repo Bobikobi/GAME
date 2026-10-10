@@ -1,0 +1,288 @@
+@import '../../../design/tokens.css';
+
+/*
+ * The site's shared rules (docs/team/GRUNT.md, item 4; DECISIONS.md, 2026-10-10). Tokens only: no hex here or
+ * anywhere in web/src. No shadows, no radius, no gradients, no rgba. The display face signs (the wordmark,
+ * headings, names, handles, numbers); the reading face explains and is pressed (body, nav, buttons, tabs, tags).
+ * Motion is opt-in: a page animates only inside prefers-reduced-motion: no-preference.
+ */
+@font-face {
+  font-family: 'Platypi';
+  font-style: normal;
+  font-weight: 300 800;
+  font-display: swap;
+  src: url('/fonts/platypi/platypi-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Atkinson Hyperlegible Next';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('/fonts/atkinson-hyperlegible-next/atkinson-hyperlegible-next-latin.woff2') format('woff2');
+}
+
+:root {
+  /* the display face at two weights: 800 for the wordmark, page titles and counts, 700 for names */
+  --w-display: 800;
+  --w-display2: 700;
+  --track-h1: -0.012em;
+  --track-mark: -0.01em;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 var(--text-m) / 26px var(--font-reading);
+  font-variant-ligatures: none;
+}
+h1,
+h2,
+h3,
+p,
+dl,
+dd,
+ol,
+ul {
+  margin: 0;
+}
+a {
+  color: inherit;
+}
+:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+.vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.skip {
+  position: absolute;
+  left: var(--s-4);
+  top: calc(-1 * var(--s-12));
+  z-index: 3;
+  padding: var(--s-2) var(--s-3);
+  background: var(--ink);
+  color: var(--paper);
+}
+.skip:focus {
+  top: var(--s-2);
+}
+.wrap {
+  max-width: calc(var(--column) + 2 * var(--s-4));
+  margin: 0 auto;
+  padding: 0 var(--s-4);
+}
+
+/* the display face: one recipe, sizes per role */
+.wordmark,
+h1,
+h2,
+h3,
+.display {
+  font-family: var(--font-display);
+  font-weight: var(--w-display2);
+}
+.wordmark,
+h1 {
+  font-weight: var(--w-display);
+}
+h1 {
+  font-size: 34px;
+  line-height: 36px;
+  letter-spacing: var(--track-h1);
+  text-wrap: balance;
+}
+.lead {
+  margin-top: var(--s-3);
+  color: var(--ink2);
+  max-width: 36em;
+  text-wrap: pretty;
+}
+
+/* buttons: 44px, a 2px line, the fill changes on hover, a one-unit press; no transitions */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--s-4);
+  border: var(--frame);
+  background: var(--paper);
+  color: var(--ink);
+  font: 700 var(--text-m) / 1 var(--font-reading);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.btn:hover {
+  background: var(--paper2);
+}
+.btn:active {
+  transform: translateY(var(--px));
+}
+.btn.primary {
+  background: var(--green);
+  border-color: var(--green);
+  color: var(--paper);
+}
+.btn.primary:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+/* a label, not a chip: stone fill, no line */
+.tag {
+  display: inline-block;
+  padding: 0 var(--s-2);
+  background: var(--paper2);
+  color: var(--ink);
+  font: 700 var(--text-s) / 24px var(--font-reading);
+  vertical-align: 0.2em;
+}
+/* a link that reads as a link: a 2px underline that turns green and thick on hover */
+.go {
+  font-weight: 700;
+  text-decoration-thickness: var(--px);
+  text-underline-offset: 6px;
+}
+.go:hover {
+  text-decoration-color: var(--green);
+  text-decoration-thickness: 4px;
+}
+
+/* the top bar; on a phone the nav folds into a disclosure, no script */
+.bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+}
+.wordmark {
+  font-size: 24px;
+  line-height: 28px;
+  letter-spacing: var(--track-mark);
+  text-decoration: none;
+}
+.nav {
+  display: none;
+}
+.menu > summary {
+  min-width: 76px;
+  list-style: none;
+}
+.menu > summary::-webkit-details-marker {
+  display: none;
+}
+.menu[open] > summary {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+.menu-list {
+  position: absolute;
+  z-index: 4;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 0 var(--s-4);
+  padding: var(--s-2) 0;
+  list-style: none;
+  border: var(--frame);
+  background: var(--paper);
+}
+.menu-list a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--s-4);
+  text-decoration: none;
+}
+.menu-list a[aria-current='page'] {
+  font-weight: 700;
+  text-decoration: underline 4px var(--green);
+  text-underline-offset: 8px;
+}
+
+/* the footer: what was built, from which commit, when */
+.foot {
+  margin-top: var(--s-12);
+  padding: var(--s-6) 0 var(--s-8);
+  font-size: var(--text-s);
+  line-height: 22px;
+  color: var(--grey);
+}
+.foot .wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3) var(--s-6);
+  justify-content: space-between;
+}
+.foot nav {
+  display: flex;
+  gap: var(--s-4);
+}
+.foot nav a {
+  color: var(--ink);
+  font-size: var(--text-m);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.foot .build {
+  display: block;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 1024px) {
+  .bar {
+    height: 72px;
+  }
+  .wordmark {
+    font-size: 28px;
+    line-height: 32px;
+  }
+  .menu {
+    display: none;
+  }
+  .nav {
+    display: flex;
+    gap: var(--s-8);
+  }
+  .nav a {
+    font: 400 var(--text-m) / 44px var(--font-reading);
+    text-decoration: none;
+  }
+  .nav a:hover {
+    text-decoration: underline var(--px);
+    text-underline-offset: 8px;
+  }
+  .nav a[aria-current='page'] {
+    font-weight: 700;
+    text-decoration: underline 4px var(--green);
+    text-underline-offset: 8px;
+  }
+  h1 {
+    font-size: 56px;
+    line-height: 58px;
+  }
+  .lead {
+    font-size: 20px;
+    line-height: 30px;
+    max-width: 640px;
+  }
+}

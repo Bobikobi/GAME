@@ -97,6 +97,31 @@ describe('the play rules on a fixture that breaks each one', () => {
     },
   });
 
+  // GRUNT S-1 and S-2: five topics open at once, a remark that waits for a quest nobody wrote, a thanks too long once a name is in it
+  write('npcs', 'teller', {
+    format: 1,
+    type: 'npc',
+    id: 'tester/teller',
+    title: 'A teller',
+    creator: 'tester',
+    npc: {
+      name: 'Tib',
+      sprite: 'core/base-kit:chars/trader',
+      place: { slot: 'core/town-corner' },
+      dialogue: { stranger: ['Hello.'] },
+      remarks: [{ when: { done: ['tester/nowhere'] }, say: ['You did it.'] }],
+      topics: ['A', 'B', 'C', 'D', 'E'].map((ask) => ({ ask, lines: ['Yes.'] })),
+    },
+  });
+  write('quests', 'thanks', quest('tester/thanks', {
+    giver: 'core/trader',
+    type: 'discovery',
+    summary: 'A coin.',
+    steps: [{ kind: 'find', item: 'core/old-coin', clue: 'Under the gate stones.' }],
+    talk: { done: ['Thank you, {name}. The whole market will hear of this coin by the morning.'] },
+    reward: { rep: 5, recipes: ['core/herb-tea'] },
+  }));
+
   const result = runCheck(root);
   const play = result.issues.filter((i) => i.message.includes(RULES_PAGE));
   const about = (name: string) => play.filter((i) => i.file.endsWith(`${name}.json`));
@@ -137,6 +162,20 @@ describe('the play rules on a fixture that breaks each one', () => {
     expect(lines).toHaveLength(2);
     expect(lines.map((i) => i.message).join(' ')).toContain('first meeting 4 boxes');
     expect(lines.map((i) => i.message).join(' ')).toContain('stranger 3 boxes');
+  });
+
+  it('S-1: more than four open topics, and a remark that waits for nothing that exists', () => {
+    expect(cites('teller', 'G21')).toBe(true);
+    expect(about('teller').map((i) => i.message).join(' ')).toContain('5 topics with no `when`');
+    const missing = result.issues.filter((i) => i.where === 'npc.remarks.0.when.done.0');
+    expect(missing).toHaveLength(1);
+    expect(missing[0]!.message).toContain('no quest "tester/nowhere"');
+  });
+
+  it('S-2: a quest line counted with the longest name in it', () => {
+    const long = about('thanks').filter((i) => i.where === 'quest.talk.done');
+    expect(long).toHaveLength(1);
+    expect(long[0]!.message).toContain(`${RULES_PAGE} G14,`);
   });
 
   it('G8: the uncited note by its id, the unnamed one in a count line', () => {
