@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../schema/json/quest.schema.json",
+  "format": 1,
+  "type": "quest",
+  "id": "core/buried-axe",
+  "title": "The slid bank",
+  "creator": "core",
+  "quest": {
+    "starter": "core/digger",
+    "type": "discovery",
+    "summary": "The bank slid in the night, south of the bridge. Dig in the turned earth with your trowel.",
+    "steps": [
+      {
+        "kind": "find",
+        "item": "core/axe",
+        "clue": "The turned earth lies south of the bridge, on the near bank. Your trowel opens it."
+      }
+    ],
+    "reward": {
+      "rep": 0
+    }
+  }
+}

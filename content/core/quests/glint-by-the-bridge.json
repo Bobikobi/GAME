@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../schema/json/quest.schema.json",
+  "format": 1,
+  "type": "quest",
+  "id": "core/glint-by-the-bridge",
+  "title": "A glint by the bridge",
+  "creator": "core",
+  "quest": {
+    "starter": "core/explorer",
+    "type": "investigation",
+    "summary": "Something catches the light by the broken bridge. Walk there; your senses will lead you.",
+    "steps": [
+      {
+        "kind": "find",
+        "item": "core/axe",
+        "clue": "It lies in the grass on the near side of the bridge. Pick it up by hand."
+      }
+    ],
+    "reward": {
+      "rep": 0
+    }
+  }
+}

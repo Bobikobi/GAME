@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../schema/json/treasure.schema.json",
+  "format": 1,
+  "type": "treasure",
+  "id": "core/slid-bank",
+  "title": "The slid bank",
+  "creator": "core",
+  "dig": {
+    "hint": "The earth is turned where the bank slid in the night.",
+    "active_ms": 3000,
+    "respawn_ms": 60000,
+    "count": 1,
+    "tool": "trowel",
+    "level": 1,
+    "finds": [
+      {
+        "item": "core/axe",
+        "chance_pct": 100,
+        "share_pct": 100
+      }
+    ],
+    "place": {
+      "slot": "core/slid-bank"
+    },
+    "starter": "core/digger"
+  }
+}

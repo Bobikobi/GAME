@@ -1,0 +1,26 @@
+{
+  "$schema": "../../../schema/json/treasure.schema.json",
+  "format": 1,
+  "type": "treasure",
+  "id": "core/bridge-glint",
+  "title": "A glint by the bridge",
+  "creator": "core",
+  "dig": {
+    "hint": "Something catches the light in the grass by the bridge.",
+    "active_ms": 1000,
+    "respawn_ms": 60000,
+    "count": 1,
+    "level": 1,
+    "finds": [
+      {
+        "item": "core/axe",
+        "chance_pct": 100,
+        "share_pct": 100
+      }
+    ],
+    "place": {
+      "slot": "core/bridge-glint"
+    },
+    "starter": "core/explorer"
+  }
+}

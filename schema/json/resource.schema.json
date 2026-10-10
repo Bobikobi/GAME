@@ -263,6 +263,10 @@
                   {
                     "const": "axe",
                     "type": "string"
+                  },
+                  {
+                    "const": "staff",
+                    "type": "string"
                   }
                 ]
               },
@@ -581,6 +585,10 @@
             },
             {
               "const": "axe",
+              "type": "string"
+            },
+            {
+              "const": "staff",
               "type": "string"
             }
           ]
