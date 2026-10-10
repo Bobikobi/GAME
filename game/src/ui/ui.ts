@@ -418,7 +418,9 @@ export class UI {
     if (!s) return;
     const why = s.check({ t: 'dig', spot: spotId, grade: 3, at: s.pos });
     if (why) return this.toast(why, 'bad');
-    const grade = await this.play(timing, 'Dig', spotId, 'dig');
+    // a find picked up by hand has no timing window
+    const byHand = !app.bundle.treasures[app.bundle.instances[spotId]!.source]?.tool;
+    const grade = byHand ? 3 : await this.play(timing, 'Dig', spotId, 'dig');
     if (grade === null) return;
     const res = s.act({ t: 'dig', spot: spotId, grade, at: s.pos });
     if (!res.ok) return this.toast(res.error, 'bad');

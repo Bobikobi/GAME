@@ -193,9 +193,17 @@ Then point your item at it: `"sprite": "<your-handle>/kit:items/plum"`.
 
 ## Tools and the first morning
 
-A tool is an item with a `tool` block: its `kind` (`basket`, `trowel` or `axe`), a `tier` and the `uses` it has before it wears out. Tools have no value of their own, so a shop prices them: Pell sells all three.
+A tool is an item with a `tool` block: its `kind` (`basket`, `trowel`, `axe` or `staff`), a `tier` and the `uses` it has before it wears out. Tools have no value of their own, so a shop prices them: Pell sells all four. A staff asks for no work: it is worn in the hand for what its `wear` block helps.
 
-A starting character may carry a `kit`, a list of up to six `{ "item", "qty" }` stacks that go into the bag when the character is chosen. The kit holds the tool of the character's first task, so no start ends at a wall. Today both starters carry an axe, because the first fire is built from a felled oak: the check refuses a start that holds none, an axe that no shop sells (a worn-out axe must be buyable again), and an opening that asks for more logs than the oaks of a new valley give.
+Each starting character begins its own way and meets the others at the bridge and the first fire:
+
+- `kit`: up to six `{ "item", "qty" }` stacks that go into the bag when the character is chosen, tier 1 only. A piece with a working `wear` slot is worn from the start.
+- `wake`: `{ "x", "y" }`, the tile the character wakes on. Left out, it wakes at the map's spawn.
+- `intro`: one to four lines the narrator says as the character wakes.
+- A quest with `"starter": "<id>"` is offered to that start only: its own first task. A task with no giver is handed to nobody, so what it asked for stays in the bag.
+- A dig spot with `"starter": "<id>"` is that start's own spot: only that character sees it and digs it, once, and it always gives its one find. Leave out the spot's `tool` and the find is picked up by hand, with no timing window, and the character's senses lead to it with a trail of glints.
+
+The check keeps the starts fair. Every start holds an axe before the first fire, in its kit or on a spot of its own, because the first fire is built from a felled oak; a shop sells an axe, so a worn-out one can be bought again; and the opening never asks for more logs than the oaks of a new valley give. Every starter's attributes add up to one total. The kits, with each start's own finds, are worth about the same (within 25 percent of the poorest), and every start reaches the bridge with its axe in about the same time (within 50 percent of the fastest). A start's own spot gives one find at 100 percent, needs only a tool its kit holds, and lies within the start's senses on its road to the bridge, on a tile where x + y is even.
 
 ## What the check enforces
 

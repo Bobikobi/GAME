@@ -20,6 +20,10 @@
         "price_mg": 30000
       },
       {
+        "item": "core/walking-staff",
+        "price_mg": 30000
+      },
+      {
         "item": "core/berry",
         "price_mg": 5000
       },

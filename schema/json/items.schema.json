@@ -255,6 +255,10 @@
                   {
                     "const": "axe",
                     "type": "string"
+                  },
+                  {
+                    "const": "staff",
+                    "type": "string"
                   }
                 ]
               },

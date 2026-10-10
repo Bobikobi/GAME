@@ -223,7 +223,7 @@ body {
 }
 
 .title-box.wide {
-  max-width: 620px;
+  max-width: 760px;
 }
 
 .logo {
@@ -263,7 +263,7 @@ body {
 
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 10px;
   margin: 10px 0;
 }

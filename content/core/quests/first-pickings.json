@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../schema/json/quest.schema.json",
+  "format": 1,
+  "type": "quest",
+  "id": "core/first-pickings",
+  "title": "First pickings",
+  "creator": "core",
+  "quest": {
+    "starter": "core/forager",
+    "type": "skill",
+    "summary": "Pick two herbs on the west bank with your basket. A forager starts the day with something in the bag.",
+    "steps": [
+      {
+        "kind": "bring",
+        "item": "core/herb",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "rep": 0
+    }
+  }
+}
