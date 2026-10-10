@@ -37,6 +37,8 @@ interface SaveFile {
   facing: Facing;
   /** NPCs whose first conversation has already begun. Optional in old saves. */
   met?: string[];
+  /** Remarks said and topics asked: "<npc>#<index>" and "<npc>?<index>" (GRUNT S-1). Optional in old saves. */
+  heard?: string[];
   /** the last actions, attached to bug reports */
   tail: LogEntry[];
 }
@@ -60,6 +62,7 @@ export class Session {
   pos: [number, number];
   facing: Facing = 'down';
   readonly met = new Set<string>();
+  readonly heard = new Set<string>();
   tail: LogEntry[] = [];
   /** set when the save was made with other content and had to be adapted */
   adapted = false;
@@ -111,6 +114,9 @@ export class Session {
     if (Array.isArray(file.met)) {
       for (const npcId of file.met) if (typeof npcId === 'string') session.met.add(npcId);
     }
+    if (Array.isArray(file.heard)) {
+      for (const key of file.heard) if (typeof key === 'string') session.heard.add(key);
+    }
     session.tail = file.tail.slice(-TAIL);
     const walkable = makeWalkable(bundle);
     const [x, y] = file.pos;
@@ -146,6 +152,13 @@ export class Session {
     this.met.add(npcId);
     this.save();
     return true;
+  }
+
+  /** Remember a remark said or a topic asked, so it steps back next time. */
+  hear(key: string): void {
+    if (this.heard.has(key)) return;
+    this.heard.add(key);
+    this.save();
   }
 
   pause(): void {
@@ -195,6 +208,8 @@ export class Session {
     const r = step(this.bundle, this.state, action, this.tick);
     if (!r.ok) return r;
     this.state = r.state;
+    // each start wakes at its own place
+    if (action.t === 'start') this.pos = [r.state.player.at[0], r.state.player.at[1]];
     this.tail.push({ a: action, tick: this.tick });
     if (this.tail.length > TAIL) this.tail.splice(0, this.tail.length - TAIL);
     const busy = r.events.find((e) => e.e === 'busy');
@@ -221,6 +236,7 @@ export class Session {
       pos: this.pos,
       facing: this.facing,
       met: [...this.met].sort(),
+      heard: [...this.heard].sort(),
       tail: this.tail,
     };
     try {
@@ -267,6 +283,14 @@ function adapt(bundle: Bundle, state: State): boolean {
   if (p.starter !== '') {
     const fresh = Object.keys(bundle.recipes).filter((id) => bundle.recipes[id]!.known === 'start' && !p.recipes.includes(id));
     if (fresh.length > 0) p.recipes = [...p.recipes, ...fresh].sort();
+  }
+  // a start whose kit came with this version: a save that holds none of a kit item gets it once
+  if (p.starter !== '') {
+    for (const stack of bundle.starters[p.starter]!.kit ?? []) {
+      if ((p.bag[stack.item] ?? 0) > 0) continue;
+      p.bag[stack.item] = stack.qty;
+      if (!p.journal.includes(stack.item)) p.journal = [...p.journal, stack.item].sort();
+    }
   }
   p.tries = keepKeys(p.tries, bundle.recipes);
   p.restored = p.restored.filter((id) => id in bundle.restores);

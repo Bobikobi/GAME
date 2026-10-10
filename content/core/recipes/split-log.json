@@ -1,0 +1,39 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/split-log",
+  "title": "Split a log",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/branch",
+      "name": "Dry branch",
+      "description": "Burns well.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "wood",
+      "tier": 1,
+      "sprite": "core/base-kit:items/branch"
+    }
+  ],
+  "recipe": {
+    "station": "fire",
+    "active_ms": 1000,
+    "level": 1,
+    "inputs": [
+      {
+        "item": "core/log",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/branch",
+        "qty": 2,
+        "share_pct": 100
+      }
+    ],
+    "known": "start"
+  }
+}

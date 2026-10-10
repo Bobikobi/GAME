@@ -7,12 +7,15 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PNG } from 'pngjs';
 import { type Bundle, computeValues, minChargeFor, missOutcome, rarityBudget, rarityRank } from '@game/kernel';
-import { BASE_CLASSES, RARITIES, type ParamsBody } from '@game/schema';
+import { RARITIES, type ParamsBody } from '@game/schema';
 import { assemble, type Assembled } from './assemble';
 import { readBoard } from './board';
 import { CORE_PALETTE } from './kit/palette';
 import { LOCK_FILE, loadAll, toRepoPath, type Issue } from './load';
+import { baseOf } from './material';
 import { checkPlay } from './play';
+import { checkReach } from './reach';
+import { checkStarts } from './starts';
 
 export interface CheckResult {
   issues: Issue[];
@@ -35,6 +38,8 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkDrift(b));
     issues.push(...checkKits(assembled));
     issues.push(...checkPlay(b, assembled.origin));
+    issues.push(...checkStarts(b, assembled.origin));
+    issues.push(...checkReach(b, assembled.origin));
   }
   return { issues: dedupe(issues), files: files.length, assembled };
 }
@@ -87,6 +92,7 @@ function computedRarity(b: Bundle, itemId: string, visiting: Set<string> = new S
     best = best === undefined ? r : Math.min(best, r);
   };
   for (const t of Object.values(b.treasures)) {
+    if (t.starter !== undefined) continue; // a start's own find is a gift, not how the item is obtained
     for (const f of t.finds) {
       if (f.item !== itemId) continue;
       take(f.chance_pct >= 30 ? 0 : f.chance_pct >= 10 ? 1 : f.chance_pct >= 3 ? 2 : 3);
@@ -176,11 +182,6 @@ function checkEconomy(b: Bundle, origin: Record<string, string>): Issue[] {
 const PARAMS_FILE = 'content/core/params.json';
 /** From this tier up an item comes only from a gated source (DECISIONS.md, 2026-10-09). */
 const GATED_TIER = 3;
-
-/** The base class of a class: itself, or the base it was declared under. */
-function baseOf(b: Bundle, cls: string | undefined): string | undefined {
-  return cls === undefined ? undefined : (BASE_CLASSES as readonly string[]).includes(cls) ? cls : b.classes[cls]?.base;
-}
 
 /**
  * The material grammar and the two ladders (DECISIONS.md, 2026-10-09: the

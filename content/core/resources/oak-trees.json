@@ -1,0 +1,40 @@
+{
+  "$schema": "../../../schema/json/resource.schema.json",
+  "format": 1,
+  "type": "resource",
+  "id": "core/oak-trees",
+  "title": "Oak trees",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/log",
+      "name": "Log",
+      "description": "Cut from an oak. Burns, builds and splits into branches.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "wood",
+      "tier": 1,
+      "sprite": "core/base-kit:items/log"
+    }
+  ],
+  "node": {
+    "output": "core/log",
+    "yield": 3,
+    "active_ms": 3000,
+    "respawn_ms": 120000,
+    "count": 4,
+    "sprite": "core/base-kit:props/tree_oak",
+    "sprite_empty": "core/base-kit:props/stump",
+    "growth": [
+      "core/base-kit:props/sapling",
+      "core/base-kit:props/young_tree"
+    ],
+    "solid": true,
+    "tool": "axe",
+    "level": 1,
+    "game": "snap",
+    "place": {
+      "slot": "core/camp-oaks"
+    }
+  }
+}

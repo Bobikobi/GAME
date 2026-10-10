@@ -13,8 +13,25 @@ export const RULES_PAGE = 'docs/design/GAME_RULES.md';
 /** The opening chain teaches each verb by repetition; G2 and G4 apply after it. */
 export const OPENING_QUESTS: ReadonlySet<string> = new Set(['core/fix-the-bridge', 'core/first-fire', 'core/into-town']);
 
+/**
+ * The opening as the content names it: the shared chain, and each start's own
+ * first task, a quest that names its starter (DECISIONS.md, 2026-10-09: each
+ * character begins its own way, and the opening chain names each first task).
+ */
+export function openingQuests(b: Bundle): Set<string> {
+  return new Set([...OPENING_QUESTS, ...Object.values(b.quests).flatMap((q) => (q.starter === undefined ? [] : [q.id]))]);
+}
+
+/** What a start's own spots give: a gift of the start, which its own first task may name as a find. */
+export function startFinds(b: Bundle, starter: string): Set<string> {
+  return new Set(Object.values(b.treasures).flatMap((t) => (t.starter === starter ? t.finds.map((f) => f.item) : [])));
+}
+
 /** About two lines of dialogue on a phone at the dialogue size (G14). */
 export const BOX_CHARS = 80;
+
+/** The longest name a player can type, for a line that says it. */
+export const NAME_CHARS = 16;
 
 /** Errors since the pull request that rewrote the core content (P-3, 8.10). */
 export const PLAY_LEVEL: Issue['level'] = 'error';
@@ -24,7 +41,8 @@ export function digOnlyItems(b: Bundle): Set<string> {
   const gathered = new Set(Object.values(b.resources).map((r) => r.output));
   const made = madeItems(b);
   const sold = soldItems(b);
-  const dug = Object.values(b.treasures).flatMap((t) => t.finds.map((f) => f.item));
+  // a start's own spot is a gift, not a source
+  const dug = Object.values(b.treasures).flatMap((t) => (t.starter === undefined ? t.finds.map((f) => f.item) : []));
   return new Set(dug.filter((item) => !gathered.has(item) && !made.has(item) && !sold.has(item)));
 }
 
@@ -81,8 +99,9 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
   const findable = findableItems(b);
   const isFind = (item: string) => findable.has(item);
 
+  const opening = openingQuests(b);
   for (const q of Object.values(b.quests)) {
-    if (OPENING_QUESTS.has(q.id)) continue;
+    if (opening.has(q.id)) continue;
     const counter = q.steps.every((s) => s.kind === 'visit' || (s.kind === 'bring' && !isFind(s.item)));
     if (counter) {
       issues.push({
@@ -124,6 +143,8 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
       if (lines !== undefined && lines.length > 2) over.push(`${standing} ${lines.length} boxes (2 at most)`);
     }
     for (const t of n.topics ?? []) if (t.lines.length > 4) over.push(`topic "${t.ask}" ${t.lines.length} boxes (4 at most)`);
+    const open = (n.topics ?? []).filter((t) => t.when === undefined).length;
+    if (open > 4) over.push(`${open} topics with no \`when\` (the menu shows 4)`);
     if (over.length > 0) {
       issues.push({
         file: at(n.id),
@@ -132,13 +153,41 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
         level: PLAY_LEVEL,
       });
     }
-    const boxes = [d.first ?? [], d.stranger, d.acquaintance ?? [], d.friend ?? [], d.family ?? [], ...(n.topics ?? []).map((t) => t.lines)].flat();
+    const boxes = [
+      d.first ?? [],
+      d.stranger,
+      d.acquaintance ?? [],
+      d.friend ?? [],
+      d.family ?? [],
+      ...(n.remarks ?? []).map((r) => r.say),
+      ...(n.topics ?? []).map((t) => t.lines),
+    ].flat();
     const long = boxes.filter((line) => line.length > BOX_CHARS).length;
     if (long > 0) {
       issues.push({
         file: at(n.id),
         where: 'npc.dialogue',
         message: `${long} of ${boxes.length} boxes over ${BOX_CHARS} characters, about two phone lines (${rule('G14', 'lore wall')})`,
+        level: PLAY_LEVEL,
+      });
+    }
+  }
+
+  // G14: the lines on a quest and a place are boxes like any other (GRUNT S-2); the schema caps how many.
+  const lined: [string, string, readonly string[]][] = [
+    ...Object.values(b.quests).flatMap((q) =>
+      (['offer', 'waiting', 'done'] as const).map((k): [string, string, readonly string[]] => [q.id, `quest.talk.${k}`, q.talk?.[k] ?? []]),
+    ),
+    ...Object.values(b.restores).map((r): [string, string, readonly string[]] => [r.id, 'restore.done', r.done ?? []]),
+  ];
+  for (const [id, where, lines] of lined) {
+    // "{name}" becomes the player's name, up to a name's 16 characters
+    const long = lines.filter((line) => line.replaceAll('{name}', 'x'.repeat(NAME_CHARS)).length > BOX_CHARS).length;
+    if (long > 0) {
+      issues.push({
+        file: at(id),
+        where,
+        message: `${long} of ${lines.length} boxes over ${BOX_CHARS} characters, about two phone lines (${rule('G14', 'lore wall')})`,
         level: PLAY_LEVEL,
       });
     }
