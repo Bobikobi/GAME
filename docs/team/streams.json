@@ -32,8 +32,8 @@
     {
       "id": "site",
       "title": "The site: real hub data, rules and docs pages, the MCP snippet, coming-soon boxes, the 3D door",
-      "plan": ["PLATFORM.md", "GRUNT 3, 12, 13, 16"],
-      "branches": [],
+      "plan": ["PLATFORM.md", "GRUNT 3, 12, 13, 15, 16", "then the walk animation and the sound pass in the game"],
+      "branches": ["feat/site-hub-data", "feat/site-rules-docs", "feat/site-mcp", "feat/site-coming-soon"],
       "owner": "the site session"
     },
     {
