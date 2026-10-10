@@ -234,15 +234,15 @@ The vision: a player who finds a cave can take control of it, others can try to 
 
 **What to reserve now, while each is one field in a schema:**
 1. Every world entity has a `controller` (default: public) and an `access` rule from a closed list.
-2. Every zone has a `ruleset` record: protection level (`safe`, `wild` or `contested`, as `docs/design/SETTLEMENT.md` 3.9 names them), tax rate and who receives it, who may change it. Core zones are fixed as safe.
+2. Every zone has a `ruleset` record: protection level (`safe`, `wild` or `contested`, as `docs/design/SETTLEMENT.md` 3.9 names them), tax rate and who receives it, who may change it. Outside the areas between players a zone is never `contested`: it is `safe` at danger level 0 and `wild` above it, read from the level (DECISIONS.md, 2026-10-10, the game read as one line).
 3. Ledger transfers carry a reason from a closed list that already includes tax, rent, toll and seizure.
-4. The effort weight of 7.1 includes zone risk: safe zones pay below the ceiling, lawless zones at the ceiling.
+4. The effort weight of 7.1 includes zone risk: `safe` zones pay below the ceiling, `contested` zones at the ceiling.
 5. Holdings carry upkeep that grows with the number held, and upkeep is burned. This is the sink that finding G8 lacked, and the brake on one group holding everything.
 
 **Risks.** Players who lose what they built leave: keep a safe core where nothing can be taken. One strong group takes every cave: upkeep that grows with holdings. It needs a live server and many players: not before stage 8. City rules are chosen from a closed menu, as data; they are never code.
 
 **D6 for the owners.** Is the long-term game a cooperative restoration world, or a competitive player-run economy with safe and lawless zones? Recommended: both, split by zone, and reserve the fields above at stage 1.
-Decided on 2026-10-06: not in the spec for now. The world stays cooperative and the question returns when there is a community. The five reserved fields are therefore not a requirement. If the direction is taken later they arrive through a save migration (R5), which costs more than a schema field today but is possible. Decided in part on 2026-10-09 (S4): three fields are reserved now after all (`docs/design/SETTLEMENT.md` 3.9).
+Decided on 2026-10-06: not in the spec for now. The world stays cooperative and the question returns when there is a community. The five reserved fields are therefore not a requirement. If the direction is taken later they arrive through a save migration (R5), which costs more than a schema field today but is possible. Decided in part on 2026-10-09 (S4): three fields are reserved now after all (`docs/design/SETTLEMENT.md` 3.9), and item 5 is not taken: there is no upkeep.
 
 ## 8. Owner decisions of 2026-10-06 and what they change
 

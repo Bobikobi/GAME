@@ -59,7 +59,8 @@ sound, a name and where it went. The next goal is visible before the glow fades.
 
 The ladder below says what must happen at each stage of a player's life in the
 valley. A change that removes a rung, or moves its payoff later, is a product
-question (section 6).
+question (section 6). Its minutes are minutes at the screen, and its Day 2 is
+the valley's, never the calendar's.
 
 | Stage | The beat | The payoff | Never |
 |---|---|---|---|
@@ -69,7 +70,7 @@ question (section 6).
 | 5-10 min | The town: Maru's story, Pell's stall, the first choice. | The basket or the trowel: a real choice, both lead on. | A fetch with a counter and nothing to notice. |
 | 10-20 min | The first riddle: an inscription points to a dig. | A rare find, a recipe scrap, a place that opens. | A read with no payoff. |
 | Session end | A visible mark of the day. | The day summary: what was found, built, learned; one open door. | Stopping in the middle of nothing. |
-| Day 2 | Something changed overnight. | A respawned grove, a new line from an NPC, a bell at night. | The same valley as yesterday. |
+| Day 2 | The morning after the first night, slept or played through: something changed overnight. Away, the valley waits at the hour it was left (G28). | The morning toast, a respawned grove, a new line from an NPC, a bell at night. | The same valley as yesterday. |
 
 ## 3. The rules
 
@@ -285,9 +286,11 @@ Added 2026-10-08 on the owner's word (DECISIONS.md, that day's falling entry).
 The valley has no combat; its danger is the hour, and what the player eats.
 
 - **G30 The town and a burning camp are safe; the night and the mist hunt.**
-  The town is safe at every hour, and a camp is safe while its fire burns. The
-  fire eats wood through the night, more the deeper the area and none at danger
-  level 0, where the opening's camp stands. A camp anywhere else outside the
+  The town and all ground at danger level 0 are safe at every hour, and a camp
+  is safe while its fire burns: any of these is a safe place, or a safe area,
+  the one thing every rule below means (DECISIONS.md, 10.10). The fire eats
+  wood through the night, more the deeper the area and none at danger level 0,
+  where the opening's camp stands. A camp anywhere else outside the
   town is a tent the player buys and pitches, with wood enough for the night
   ([SETTLEMENT.md](SETTLEMENT.md) S2). Outside these the hazards that hunt (the
   wolf, the hidden pit, the trap, deep water) act after dark (the clock the
@@ -299,7 +302,9 @@ The valley has no combat; its danger is the hour, and what the player eats.
 - **G31 Nobody falls unwarned.** A countdown to nightfall sits at the screen's
   edge while the player is outside a safe area (in the first levels, with a
   banner too). Leaving a safe area after dark, or dark arriving outside one,
-  lights the lantern and opens one warning box (G14), once per night.
+  lights the player's lantern and opens one warning box (G14), once per night.
+  The lantern is the sign that the night has begun, not a shield: its light
+  keeps nothing off, and only a safe place does (G30, G34).
 - **G32 Health is the one bar.** The food bar becomes the health bar. Hazards
   take health; food, a first-aid kit and a night's sleep in town or at a
   burning camp give it back; low health slows work the way the empty bar did.
@@ -309,10 +314,13 @@ The valley has no combat; its danger is the hour, and what the player eats.
   falls: crosses for eyes, the body sinks into the ground, one plain box says
   what happened; no gravestone, nothing left in the world. The player reappears
   in the town they were last in, on a random tile inside its bounds (before the
-  first town: where they started). What was gathered on that outing is lost,
-  and a quest that was in progress starts again from its first step; nothing
-  marks where the fall was. The bag from before the outing, the camp, the gold,
-  the levels and the quests already done are untouched. The cost is the lesson:
+  first town: where they started). An outing runs from leaving a safe place
+  (G30) to reaching one again, or to a fall. What was gathered on that outing
+  is lost, nothing spent on it comes back, each quest goes back to the step it
+  stood at when the outing began, and a place found on it counts only once
+  brought home; nothing marks where the fall was. The bag from before the
+  outing, the camp, the gold, the levels and the quests already done are
+  untouched. The cost is the lesson:
   a bad fruit eaten on the way means the basket is gone and the walk is made
   again.
 - **G34 A hazard is a rule, not a roll.** Each hazard acts by a rule the player

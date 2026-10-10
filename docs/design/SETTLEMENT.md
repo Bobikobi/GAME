@@ -20,7 +20,7 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 
 ## 2. What exists today and stays
 
-- The town and the camp are safe at every hour. The hazards that hunt act after dark or inside the mist, outside them; a night's sleep gives health back; a fall sends the player to the last town and loses the outing's finds (DECISIONS.md 8.10, rules G30 to G35).
+- A safe place is the town, any ground at danger level 0 (the opening's camp stands on it) and a camp whose fire burns (3.4): nothing hunts there and no player harms another. The hazards that hunt act after dark or inside the mist, outside safe places; a night's sleep gives health back; a fall sends the player to the last town and loses the outing's finds (DECISIONS.md 8.10 and 10.10, rules G30 to G35).
 - The camp is a fixed place on the map with a fire and a chest, and the crafting waves add a workshop. The opening's first fire starts it.
 - A place opens when it is mended: the bridge is a restore step.
 - The map holds 18 slots for the community: a slot is a ruin until someone restores it (`GAP_WOW_RS.md`, section 2).
@@ -34,6 +34,7 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 
 - In the player's own valley (today, and at stages 2a and 3, where each player has a world of their own), every place is the player's: no race, no hold, no lapse. The town the player mends is the settlement.
 - In a shared town (from stage 4, when players share a world state) places are scarce, and 3.2 to 3.4 apply.
+- Every count of days in this plan (`build_hold_days`, `house_absent_days`, `notice_days`, `plot_signup_days`, `hold_max_days`) runs on the real calendar, by the server's clock, and the time of a building's last finished step is kept as a real date. The valley's own game days never count toward them (DECISIONS.md, the entry on the game read as one line, 10.10).
 
 ### 3.2 Plots and houses
 
@@ -43,29 +44,29 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 - Building is an ordered chain of steps. A step is a delivery to the plot or a quest from the palette (gather, find, riddle, tend and the rest). A finished step changes what stands on the plot: a frame, walls, a roof, a door. The builder leaves between steps, and nothing on the plot decays while it is held.
 - Lapse: when no step is finished for `build_hold_days` (14 to start), the plot returns to `free`. The clock runs whether the builder is away or plays without building, so a slow builder and an absent one meet the same rule (S1). This clock and the clock of packing stop only while the account is held for review or blocked (DECISIONS.md, the entry on the shared world, 10.10). The builder gets back every delivered item and `plot_refund_permille` of the price (800, S1b) through the ledger with the reason `refund`; the rest of the price stays burned. The quests of the finished steps keep the rewards they paid.
 - A step fits in the hold (a reading): the checker refuses a step whose value is above `step_value_max_ms`, two hours of the reference player's effort to start, so a lapse comes from the builder's pace and never from the chain.
-- Packing (S1b): when an owner has not played for `house_absent_days` (45), the house is packed. The plot returns to `free` with `plot_refund_permille` of its price; the house and everything in it stay the owner's, and the owner raises it again on any free plot by paying that plot's price, with no step to redo.
+- Packing (S1b): when an owner has not played for `house_absent_days` (45), the house is packed. The plot returns to `free` with `plot_refund_permille` of its price; the house and everything in it stay the owner's, and the owner raises it again on a plot they win (the draw above, or the first sign-up when nobody signs up), as that plot's first step: it pays that plot's price, and no step is redone (10.10).
 - A lapse or a packing is announced first, `notice_days` before (3 for a building, 7 for a house; 3.8), and a player who comes back is told on screen what happened while away.
 
 ### 3.3 Supply
 
 - A town gains plots only by work, never by date (G42): a mended street opens its houses, and a group quest at the edge of town (fell the trees, clear the stones, level the ground) turns its tiles into new plots for good.
 - A full town is a signal, not a wall: the clearing quest, or the next town, answers it.
-- A plot that work opens is drawn among those who did the work (S5, answered in part 9.10). A clearing quest names the plots it opens, and a participant is a player who signed up and finished at least one of its steps. The draw is the server's and gives each participant one plot at most, under the rule of one plot in `building` and one house per player. A plot won is held as a claimed one: the first step pays its price, and with no finished step for `build_hold_days` it returns to the town and is drawn again, among the participants first. Open until the shared town is designed: whether the chance grows with the share of the work, and how the draw follows the size of the area and the number of places.
+- A plot that work opens is drawn among those who did the work (S5, answered in part 9.10). A clearing quest names the plots it opens, and a participant is a player who signed up and finished at least one of its steps. The draw is the server's and gives each participant one plot at most, under the rule of one plot in `building` and one house per player. A plot won is held as a claimed one: its first step pays its price and comes within `plot_signup_days`, as for a freed plot (3.2), and after it the plot holds `build_hold_days` between steps; a plot that lapses either way is drawn again, among the participants first (10.10). Open until the shared town is designed: whether the chance grows with the share of the work, and how the draw follows the size of the area and the number of places.
 
 ### 3.4 A home without a house
 
 - The town is safe at every hour, so a player without a house sleeps on the street: safe, and a night's sleep there gives health back as a night at camp does (question S2). A newcomer without a house is not punished for it.
 - What a house gives (a reading): storage and a home station inside the safe town, where the camp's chest and workshop stand outside it, and from stage 4 a window for selling to other players.
-- One store (10.10): the camp's chest and a house's storage are one store, reached from every town and tied to no plot. Returns go there and may run over its size, and nothing is dropped. A player with no house sells offline from the town's market board (DECISIONS.md, the entry on the shared world).
+- One store (10.10): the camp's chest and a house's storage are one store, tied to no plot. It opens at any of its chests: the opening's camp's, one in each town, and a house's; a tent has none. Returns go there and may run over its size, and nothing is dropped. A player with no house sells offline from the town's market board (DECISIONS.md, the entry on the shared world).
 - The camp (S2, answered 9.10): a camp is safe while its fire burns. A night costs `wood_per_night` times the area's danger level `d` in wood, put on the fire before dark or through the night, and none at `d` 0: the opening's camp stands there, keeps its chest and workshop, and plays as today.
 - A camp anywhere else outside the town is a tent. The player buys it at the stall, pitches it on a free tile outside the town and off the paths, and packs it to move it. Readings: one tent stands at a time; it holds a fire and a bed, not the chest; it never wears out; and no tent burns less wood than another, since the owner ruled out gear against hazards.
 - The fire matters only while the player is there at night: away, nothing happens to the camp or its chest. Its level shows, and G31's warning comes before it goes out.
-- In a shared world each player's camp stays the player's own (a reading): it takes no plot, and no other player enters it. Every area outside a town is above level 0 there, so every camp costs wood and the street stays the free place to sleep.
+- In a shared world each player's camp stays the player's own (a reading): it takes no plot, and no other player uses it. Every area outside a town is above level 0 there, except the opening's ground, which stays at level 0 as the town's edge: no wood is burned and no tent is pitched there. So every camp beyond the opening's costs wood, and the street stays free to sleep on (10.10).
 
 ### 3.5 Danger by area
 
 - Every area of the map carries a danger level `d`, from 0 in the town upward, set in the content and checked by the checker against the area's distance from town and the levels its nodes ask.
-- The hunting hazards keep their hours (after dark, inside the mist, outside safe places). In an area of level `d`, the chance that one shows in a minute of night is `hazard_bp * d`, so they are more common the deeper the area; the health one takes is `hazard_hp` times `difficulty_ratio` to the power `d` (S3, answered 9.10).
+- The hunting hazards keep their hours (after dark, inside the mist, outside safe places). In an area of level `d`, the chance that one shows in a game minute after dark or inside the mist is `hazard_bp * d`, so they are more common the deeper the area and none shows at level 0; the health one takes is `hazard_hp` times `difficulty_ratio` to the power `d` (S3, answered 9.10).
 - The screen never shows `d` as a word or a number (the crafting economy entry of 9.10). The world shows it: thicker mist, tracks, bones, a sign at the area's edge.
 
 ### 3.6 One internal difficulty scale (S3, answered 9.10)
@@ -84,7 +85,7 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 
 ### 3.8 Notices and the account
 
-- Registration is minimal and comes after the opening (the owner, 9.10). Read as: an email address and the name the world shows, asked when the opening ends and never before play. Accounts begin at stage 2a; the stage-1 demo has none.
+- Registration is minimal and comes after the opening (the owner, 9.10). Read as: an email address and the name the world shows, asked when the opening ends and never before play. The name is the one given in the opening, offered again here; the filter reads it then, and it must be unique in the world joined (10.10). Accounts begin at stage 2a; the stage-1 demo has none.
 - The game mails a player only when something the player holds in a shared town is about to return to the town: one mail per hold, `notice_days` before its end (3 for a building and 7 for a house, to start). The mail names what returns, what stays with the player, and the date.
 - A mail never asks the player back for anything else, never offers a reward and is never repeated. A player may turn the mails off; the screen then tells alone.
 
@@ -92,12 +93,12 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 
 - Players compete for places only: plots in a shared town (3.2) and, once combat comes (stage 8 or a vote, G35), areas between players.
 - An area between players lies far from the towns and high on the scale (3.6), so a new player does not walk in by chance; a sign at its edge warns before the first step in (G31). Entering is the consent, and whoever does not enter is never hurt there.
-- Towns, camps and houses are always safe, and nothing is taken from a player who is away.
+- No player harms another in a town, a camp or a house, at any hour, and nothing is taken from a player who is away; from a hazard, a camp is safe while its fire burns (3.4, 10.10).
 - Its nodes pay more for the risk: the effort weight counts the area's protection level (kernel review 7.2, item 4).
 - Its nodes are shared: what one player takes there, the next does not find. Everywhere else each player gathers their own yield from every node (Q7, answered 9.10).
 - A player brought down by another player there falls by G33 and loses only what was gathered on that outing, which goes to the one who brought them down. Tools, worn items and what the player made stay theirs.
-- The top of the worth board carries a mark (Q4, answered 9.10). Here the mark is seen from afar and shows on the map of every player in the area, and whoever brings a marked player down also gains honor on the hunters board. In towns the mark is honor only. Nothing more is taken from a marked player than from anyone: the outing's finds, here, and nothing at home or while away.
-- Reserved now, each one field with a default that changes nothing today: a `controller` on every place (default public), a protection level on every area (`safe`, `wild` or `contested`; the core holds only `safe` and `wild` until combat opens), and a reason on every movement of gold, from a closed list (`price`, `refund`, and later `spoils`, `tax`, `rent`, `toll`, `royalty`, `forfeit`, `gift`, `donation`, `escrow`, `closed`; the mints carry `pay`, `reward` and `find`, 10.10).
+- The top of the worth board carries a mark (Q4, answered 9.10). Here the mark is seen from afar and shows on the map of every player in the area, and whoever brings a marked player down also gains honor on the hunters' board. In towns the mark is honor only. Nothing more is taken from a marked player than from anyone: the outing's finds, here, and nothing at home or while away.
+- Reserved now, each one field with a default that changes nothing today: a `controller` on every place (default public), a protection level on every area (`safe` at danger level 0 and `wild` above it, read from the level; `contested` only for an area between players, once combat opens; 10.10), and a reason on every movement of gold, from a closed list (`price`, `refund`, and later `spoils`, `tax`, `rent`, `toll`, `royalty`, `forfeit`, `gift`, `donation`, `escrow`, `closed`; the mints carry `pay`, `reward` and `find`, 10.10).
 - No upkeep. The settlement's prices are the gold sink, and the brakes on holding everything are written already: one plot in `building` and one house per player to start (3.2), absence returning places (3.2, S1b), plots opened by work (3.3), and in the areas between players, other players.
 
 ## 4. Where these meet the rules already written
@@ -121,7 +122,7 @@ Status: a plan, nothing built. It turns the owner's words of 9.10 (DECISIONS.md,
 
 **S1. Absence in a shared town.** A held plot that lapses while its holder sleeps is the timer G28 forbids, and a lapse throws away progress (pillar 5). Answered in part (9.10): yes to a hold only in a shared town, as a written exception to G28, counted between steps, with scarcity answered by the plots that work opens (3.3). But absence has a price: a slow builder needs a rule, so does an owner who has not played for weeks, and a mail comes first (3.2, 3.8).
 
-**S1b. What absence costs.** Answered 9.10, as recommended: a building with no finished step for 14 days returns to the town with every delivered item and 80% of the plot's price. A house whose owner has not played for 45 days is packed: its plot returns with the same 80%, and the house and its contents stay the owner's, to raise again on any free plot without redoing a step. One mail comes before each, 3 days before for a building and 7 for a house. Absence then costs the place and a fifth of its price, never what the player made. Final Fantasy XIV frees a house plot after 45 days without a visit by its owner and refunds 80% of the plot's price, but it tears the house down.
+**S1b. What absence costs.** Answered 9.10, as recommended: a building with no finished step for 14 days returns to the town with every delivered item and 80% of the plot's price. A house whose owner has not played for 45 days is packed: its plot returns with the same 80%, and the house and its contents stay the owner's, to raise again on any free plot without redoing a step (since 10.10, on a plot the owner wins, 3.2). One mail comes before each, 3 days before for a building and 7 for a house. Absence then costs the place and a fifth of its price, never what the player made. Final Fantasy XIV frees a house plot after 45 days without a visit by its owner and refunds 80% of the plot's price, but it tears the house down.
 
 **S2. The camp and the street.** Answered 9.10, as recommended: the town stays safe at every hour and its street heals as the camp does; outside it a camp is safe while its fire burns, at `wood_per_night` times `d` a night and none at level 0. The owner added that a camp outside the town is a tent the player buys first, and that the player needs wood enough for the night (3.4).
 
