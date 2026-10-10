@@ -4,8 +4,9 @@
  * One rule: every colour here is one of the 32 colours of the core palette
  * (tools/src/kit/palette.ts), so a page and a sprite are made of the same
  * paint. tools/test/design-tokens.test.ts fails on any other hex. No rgba, no
- * gradients, no radius: the look is the 2px pixel frame with a hard 4px
- * shadow, from the game.
+ * gradients, no radius. The game wears the 2px pixel frame; the site puts the
+ * frame, without a shadow, on its two doors and outlined buttons only
+ * (DECISIONS.md, 2026-10-10).
  *
  * The game keeps its own copy of the colour tokens in game/src/style.css until
  * the import lands (docs/team/GRUNT.md, item 2); the test keeps the copies
@@ -46,9 +47,11 @@
   /* the pixel unit: borders, offsets and sprite scaling are whole multiples of it */
   --px: 2px;
 
-  /* faces: the pixel face for display, numbers and the game; the reading face for site body text only */
+  /* faces: the pixel face for the game; on the site, a display face for what is signed or counted and a
+     reading face for what explains or is pressed (DECISIONS.md, 2026-10-10) */
   --font: 'Pixelify Sans', ui-monospace, monospace;
-  --font-reading: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  --font-display: 'Platypi', Georgia, serif;
+  --font-reading: 'Atkinson Hyperlegible Next', system-ui, sans-serif;
 
   /* type scale, whole pixels; nothing a person reads is below --text-s */
   --text-s: 15px;
@@ -69,9 +72,8 @@
   --s-8: 32px;
   --s-12: 48px;
 
-  /* the signature element: a 2px frame with a hard offset shadow, never rounded */
+  /* the frame: 2px of ink, never rounded, no shadow */
   --frame: var(--px) solid var(--ink);
-  --frame-shadow: var(--s-1) var(--s-1) 0 var(--ink);
   --radius: 0;
 
   /* the one site layout number: content column */
