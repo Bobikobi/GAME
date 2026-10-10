@@ -855,7 +855,22 @@ The owner's word (9.10, with the answer on notes): a shop to sell from. One walk
 - Nothing bound is listed: a bought look, a holiday's look, the starting gold and kit (the entries on bought looks, on the calendar and on exploit loops). A new account's first sales wait for `new_account_hold`.
 - A shop that sells while its owner is away is the valley waiting for the player, never a punishment (G28). A house that goes back to the town after 45 days away returns its listed goods to the owner's store with the rest.
 - Listed goods count toward worth at the trader's pay, as all goods do (the boards entry).
-- Open, asked next: whether a sale pays a small fee that leaves the world, a gold sink like the tax RuneScape's Grand Exchange takes on each sale.
+- The sale fee (asked next; the owner's word, 10.10: yes): see the entry on the sale fee.
 
 **Closes:** the rule of player shops; GRUNT's open ends carry the building as CR-48.
 **Retry when:** towns crowd with shops, or buyers cannot find what is for sale. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ A sale between players burns a small fee, paid by the seller
+
+The question (10.10, after the entry on a player's shop): should a sale in a player's shop pay a small fee that leaves the world? The recommendation: yes, about 2 percent of each sale, burned, as RuneScape's Grand Exchange takes a tax on each sale, kept as a bounded parameter that the demo tunes. The owner's word (10.10): yes.
+
+- Every sale between players pays `sale_fee_permille` of its price (20 to start, bounded 10 to 50, R12). The buyer pays the listed price, and the fee comes out of what reaches the seller. The seller sees both numbers when listing.
+- The fee is burned. The ledger writes it with the reason `tax` (`docs/design/SETTLEMENT.md` 3.9), so it counts among the gold that left the world, from which the creators' pool takes its share (the D5 entry).
+- It is counted on each sale and rounded down to whole gold, so a very cheap sale pays nothing. Such a sale is mostly a new player's.
+- Listing, changing a price and taking goods back are free, and goods never sold pay nothing. Goods that go back to the store with a returned house pay nothing (G28).
+- The fee follows the gold, whatever the deal is called. Today a shop is the only way gold passes between players. If trades or gifts of gold between players come, they pay the same fee, so a sale cannot pass as two gifts. Goods given for no gold pay nothing.
+- Selling to the trader pays no fee, since the trader already pays less than the shop asks for the same item.
+- Why: the fee takes gold out where it gathers, so more trade means more gold leaving. It also costs something on every round of gold moved in circles between accounts, beside the signs of a loop (the entry on exploit loops).
+
+**Closes:** the sale fee; GRUNT's open ends carry the building as CR-50.
+**Retry when:** sellers leave the shops because the fee eats their margin, or gold still piles up with the fee at its top bound. Model: claude-opus-5-5.
