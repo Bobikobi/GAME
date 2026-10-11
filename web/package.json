@@ -11,7 +11,9 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@astrojs/vercel": "11.0.12",
     "@game/schema": "workspace:*",
+    "@upstash/redis": "1.39.0",
     "astro": "7.3.8"
   },
   "devDependencies": {
