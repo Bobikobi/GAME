@@ -1,0 +1,41 @@
+---
+// The creator guide (docs/team/GRUNT.md, item 13): one page per markdown file of docs/creators/, rendered from the
+// file itself; README.md is /docs/. Headings carry ids, so every section can be linked.
+import { getCollection } from 'astro:content';
+import Site from '../../layouts/Site.astro';
+import '../../styles/hub.css';
+import '../../styles/doc.css';
+import { repoFile } from '../../data/site';
+import { safeHtml, siteLinks } from '../../data/doc-links';
+
+export async function getStaticPaths() {
+  const pages = await getCollection('creators');
+  return pages.map((page) => ({ params: { slug: page.id === 'readme' ? undefined : page.id }, props: { page } }));
+}
+
+const { page } = Astro.props;
+const html = siteLinks(safeHtml(page.rendered?.html ?? ''));
+const headings = page.rendered?.metadata?.headings ?? [];
+const title = headings.find((h) => h.depth === 1)?.text ?? 'Guide';
+const file = `docs/creators/${page.id === 'readme' ? 'README' : page.id}.md`;
+const contents = headings.filter((h) => h.depth === 1 || h.depth === 2);
+---
+
+<Site title={`${title} - Openfold`} description="The creator guide: run the game, copy the template, check your files and open a pull request." section="docs">
+  <div class="hub doc">
+    <div class="wrap doc-grid">
+      <nav class="doc-toc" aria-labelledby="toc-h">
+        <p class="kicker" id="toc-h">On this page</p>
+        <ol>
+          {contents.map((h) => <li class={`d${h.depth}`}><a href={`#${h.slug}`}>{h.text}</a></li>)}
+        </ol>
+      </nav>
+      <article class="prose">
+        <Fragment set:html={html} />
+        <p class="doc-source">
+          This page is <a class="go" href={repoFile(file)}>{file}</a> in the repository; a change there changes it here.
+        </p>
+      </article>
+    </div>
+  </div>
+</Site>
