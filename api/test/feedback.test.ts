@@ -23,6 +23,15 @@ describe('POST /api/feedback', () => {
     expect(f).not.toHaveBeenCalled();
   });
 
+  test('without its own token it uses the hub token, and its own token wins when both are set', async () => {
+    const f = github();
+    expect((await handle(post(good), { HUB_GITHUB_TOKEN: 'hub-1' }, asFetch(f))).status).toBe(200);
+    expect((((f.mock.calls[0] as unknown as [string, RequestInit])[1]).headers as Record<string, string>)['authorization']).toBe('Bearer hub-1');
+    resetRateLimit();
+    await handle(post(good), { FEEDBACK_GITHUB_TOKEN: 'own-1', HUB_GITHUB_TOKEN: 'hub-1' }, asFetch(f));
+    expect((((f.mock.calls[1] as unknown as [string, RequestInit])[1]).headers as Record<string, string>)['authorization']).toBe('Bearer own-1');
+  });
+
   test('with the token it opens one labelled issue with the context as a table', async () => {
     const f = github();
     const res = await handle(post(good), { FEEDBACK_GITHUB_TOKEN: 'tok-123' }, asFetch(f));

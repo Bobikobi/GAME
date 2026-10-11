@@ -1,8 +1,9 @@
 /**
  * The logic of POST /api/feedback (the route is api/feedback.ts): a message
  * sent inside the game becomes a GitHub issue in Bobikobi/GAME labelled
- * `feedback`. Needs FEEDBACK_GITHUB_TOKEN (a token that may create issues in
- * that repo); without it the answer is 503 and the game keeps the player's
+ * `feedback`. Needs FEEDBACK_GITHUB_TOKEN, else HUB_GITHUB_TOKEN when the owner
+ * gave the hub's token Issues write (a token that may create issues in that
+ * repo); without either the answer is 503 and the game keeps the player's
  * text. The token is never logged or echoed. Files starting with an underscore
  * are not routes on Vercel.
  */
@@ -120,7 +121,7 @@ export function issueFrom(p: Parsed): { title: string; body: string; labels: str
 
 export async function handle(request: Request, env: Record<string, string | undefined>, doFetch: typeof fetch = fetch, now = Date.now()): Promise<Response> {
   if (request.method !== 'POST') return json(405, { error: 'method' });
-  const token = env['FEEDBACK_GITHUB_TOKEN'];
+  const token = env['FEEDBACK_GITHUB_TOKEN'] || env['HUB_GITHUB_TOKEN'];
   if (!token) return json(503, { error: 'unavailable' });
   const ip = (request.headers.get('x-forwarded-for') ?? 'unknown').split(',')[0]!.trim();
   if (limited(ip, now)) return json(429, { error: 'rate' });
