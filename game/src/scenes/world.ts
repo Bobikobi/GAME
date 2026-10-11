@@ -1223,6 +1223,7 @@ export class WorldScene extends Phaser.Scene {
 
   /** Standing still for 3 s, the player blinks every 3-5 s: frame 1 of the idle sheet for 120 ms. */
   private idle(s: Session, time: number): void {
+    if (this.falling) return;
     const still = !this.move && !s.busy && !this.work && this.swingUntil === 0;
     if (!still) {
       this.idleSince = time;
@@ -1644,6 +1645,8 @@ export class WorldScene extends Phaser.Scene {
     this.move = null;
     this.work = null;
     this.swingUntil = 0;
+    // the fall ends any work: nothing may put the standing frame back while the body sinks
+    this.busyMs = 0;
     this.placePlayer(from[0], from[1]);
     const { key: k, flip } = this.playerFrame('down');
     this.player.setTexture(k, (this.b.sprites[k]?.frames ?? 1) >= 3 ? 1 : 0).setFlipX(flip);

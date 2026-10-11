@@ -355,10 +355,11 @@ describe('position reports (P-5b)', () => {
     if (fall?.e === 'fall') expect(session.pos).toEqual(fall.at);
   });
 
-  test('says nothing while the game is paused', () => {
+  test('a step that lands while a menu is open is still heard', () => {
     const { session, pit } = withPit();
     session.pause();
     session.report(pit);
-    expect(session.state.player.at).not.toEqual(pit);
+    expect(session.state.player.at).toEqual(pit);
   });
+
 });

@@ -275,7 +275,8 @@ export class Session {
    * shown like any other event.
    */
   report(at: readonly [number, number], again = false): void {
-    if (!this.started || this.paused) return;
+    // a step that was under way when a menu opened still lands: the kernel hears of every tile
+    if (!this.started) return;
     const p = this.state.player;
     if (!again && p.at[0] === at[0] && p.at[1] === at[1]) return;
     const r = step(this.bundle, this.state, { t: 'move', at: [at[0], at[1]] }, this.tick);
