@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from 'vitest';
 
 import { type Bundle, type State, mulDiv, newState, payFor, step } from '@game/kernel';
-import { ATTRIBUTE_LABEL, attributeEffects, describe as describeEvent, hudUnlocks, itemBenefit, nodeAction, questSteps, restoreHint, sellable, stationUpgrades, toolOpens, wornAt } from '../src/text';
+import { ATTRIBUTE_LABEL, attributeEffects, describe as describeEvent, eatLabel, hudUnlocks, itemBenefit, lanternNight, nightCountdown, nodeAction, questSteps, restoreHint, sellable, stationUpgrades, toolOpens, wornAt } from '../src/text';
 import { loadBundle } from '../../tools/test/helpers/world';
 
 let bundle: Bundle;
@@ -90,9 +90,67 @@ describe('what a node asks of the player', () => {
 });
 
 describe('food benefits', () => {
-  test('speak in food meter points and minutes of work', () => {
-    expect(itemBenefit(bundle, 'core/berry')).toBe('+4 food · about 34 s of work');
-    expect(itemBenefit(bundle, 'core/berry-mash')).toBe('+15 food · about 2 min of work');
+  test('speak in health points and, while hunger drains, minutes of work', () => {
+    expect(itemBenefit(bundle, 'core/berry')).toBe('+4 health · about 34 s of work');
+    expect(itemBenefit(bundle, 'core/berry-mash')).toBe('+15 health · about 2 min of work');
+  });
+
+  test('with no hunger clock nothing divides by it, and a food that hurts says so on its Eat button', () => {
+    const b = structuredClone(bundle);
+    b.params.satiety_drain_per_min = 0;
+    expect(itemBenefit(b, 'core/berry')).toBe('+4 health');
+    const stamina = attributeEffects(b, newState(b, 1)).find((fx) => fx.attr === 'stamina')!;
+    expect(stamina.next).toMatch(/^\d+ points$/);
+
+    b.items['core/berry'] = { ...b.items['core/berry']!, food: { satiety: 2, hurt: 10 } };
+    expect(itemBenefit(b, 'core/berry')).toBe('+2 health · hurts: -10 health');
+    expect(eatLabel(b, 'core/berry')).toBe('Eat (+2, -10)');
+    b.items['core/berry'] = { ...b.items['core/berry']!, food: { satiety: 0, hurt: 10 } };
+    expect(eatLabel(b, 'core/berry')).toBe('Eat (-10)');
+    expect(eatLabel(bundle, 'core/berry')).toBe('Eat (+4)');
+  });
+});
+
+describe('the night (G31)', () => {
+  /** A world with one wolf far from anything, so the shipped valley can be asked about the dark. */
+  function hunted(): Bundle {
+    const b = structuredClone(bundle);
+    b.map.props = [...b.map.props, { id: 'test/wolf', sprite: 'core/base-kit:props/hazard_wolf', x: 0, y: 0, w: 1, h: 1, solid: false, hazard: { kind: 'predator', window: ['night'] } }];
+    return b;
+  }
+  const town = (b: Bundle): [number, number] => {
+    const slot = b.map.slots.find((sl) => sl.kind === 'area' && sl.tag === 'town')!;
+    return [slot.x + Math.floor(slot.w / 2), slot.y + Math.floor(slot.h / 2)];
+  };
+
+  test('counts down to dark outside a safe place, only in a world with hazards', () => {
+    const b = hunted();
+    const s = newState(b, 1);
+    const out: [number, number] = [b.map.spawn.x, b.map.spawn.y];
+    // tick 0 is noon and dark falls at 20:00, 400000 ticks later
+    expect(nightCountdown(b, s, out, 0)).toEqual({ text: 'Dark in 6:40', soon: false });
+    expect(nightCountdown(b, s, out, 345_000)).toEqual({ text: 'Dark in 0:55', soon: true });
+    expect(nightCountdown(b, s, out, 500_000)).toBeUndefined();
+    expect(nightCountdown(b, s, town(b), 0)).toBeUndefined();
+    expect(nightCountdown(bundle, newState(bundle, 1), out, 0)).toBeUndefined();
+  });
+
+  test('the lantern warning belongs to one night, outside a safe place', () => {
+    const b = hunted();
+    const s = newState(b, 1);
+    const out: [number, number] = [b.map.spawn.x, b.map.spawn.y];
+    expect(lanternNight(b, s, out, 100_000)).toBeUndefined();
+    expect(lanternNight(b, s, out, 500_000)).toBe(850_000);
+    expect(lanternNight(b, s, out, 800_000)).toBe(850_000);
+    expect(lanternNight(b, s, out, 1_700_000)).toBe(2_050_000);
+    expect(lanternNight(b, s, town(b), 500_000)).toBeUndefined();
+    expect(lanternNight(bundle, newState(bundle, 1), out, 500_000)).toBeUndefined();
+  });
+
+  test('a hurt says what did it', () => {
+    const s = newState(bundle, 1);
+    expect(describeEvent(bundle, s, { e: 'hurt', by: 'predator', id: 'x/wolf', hp: 1 })).toEqual({ text: 'Bitten! Run for a safe place', tone: 'bad' });
+    expect(describeEvent(bundle, s, { e: 'hurt', by: 'food', hp: 1 })?.tone).toBe('bad');
   });
 });
 

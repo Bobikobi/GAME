@@ -136,6 +136,14 @@ describe('walking away from work', () => {
     expect(s.cancelWork()).toBe(false);
     expect(s.state.player.bag['core/log']).toBeGreaterThanOrEqual(3);
   });
+
+  test('a hunt heard during the work changes the world under it, so it can no longer be taken back', () => {
+    const { s, node, at } = fellingSession();
+    s.act({ t: 'gather', node, grade: 3, at });
+    s.report(at, true);
+    expect(s.busy).toBe(true);
+    expect(s.cancelWork()).toBe(false);
+  });
 });
 
 describe('blows', () => {
