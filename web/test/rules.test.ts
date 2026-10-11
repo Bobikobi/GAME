@@ -40,6 +40,8 @@ describe('the rules page', () => {
     const conduct = html.match(/<section[^>]*aria-labelledby="conduct-h".*?<\/section>/s)?.[0] ?? '';
     const source = readFileSync(join(ROOT, 'CONTRIBUTING.md'), 'utf8').split('\n## Conduct\n')[1]!.split('\n## ')[0]!;
     const first = source.trim().split(/\n\s*\n/)[0]!.replace(/\s+/g, ' ').slice(0, 60);
-    expect(conduct.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ')).toContain(first);
+    const shown = conduct.replace(/<[^>]+>/g, ' ').replace(/&#39;/g, "'").replace(/\s+/g, ' ');
+    expect(shown).toContain(first.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').slice(0, 40));
+    expect(shown, 'a markdown link left raw').not.toMatch(/\]\(/);
   });
 });

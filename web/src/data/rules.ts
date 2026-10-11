@@ -59,5 +59,23 @@ export const values: { id: string; value: number }[] = Object.entries(lock.value
 /** How far a value may move from its anchor before `pnpm check` stops it, in per mille. */
 export const driftBudget: number = (params.params as { drift_budget_permille: { value: number } }).drift_budget_permille.value;
 
+/** A paragraph of one of the repository's markdown files as plain parts: text, and links to its files on GitHub. */
+export type Part = { text: string; href?: string };
+
+export function parts(paragraph: string): Part[] {
+  const out: Part[] = [];
+  let at = 0;
+  for (const m of paragraph.matchAll(/\[([^\]]+)\]\(([^)\s]+)\)/g)) {
+    if (m.index > at) out.push({ text: paragraph.slice(at, m.index) });
+    const target = m[2]!;
+    out.push({ text: m[1]!, href: /^https?:/.test(target) ? target : `https://github.com/Bobikobi/GAME/blob/develop/${target.replace(/^\.?\//, '')}` });
+    at = m.index + m[0].length;
+  }
+  if (at < paragraph.length) out.push({ text: paragraph.slice(at) });
+  return out;
+}
+
 /** The Conduct section of CONTRIBUTING.md, as its paragraphs. */
-export const conduct: string[] = section(contributing, 'Conduct').split(/\n\s*\n/).map((p) => p.replace(/\s+/g, ' ').trim());
+export const conduct: Part[][] = section(contributing, 'Conduct')
+  .split(/\n\s*\n/)
+  .map((p) => parts(p.replace(/\s+/g, ' ').trim()));

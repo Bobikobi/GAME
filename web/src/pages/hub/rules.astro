@@ -92,7 +92,7 @@ import { repoFile, repoTree } from '../../data/site';
 
     <section class="wrap sect" aria-labelledby="conduct-h">
       <h2 id="conduct-h">Conduct</h2>
-      {conduct.map((p) => <p class="prose-note">{p}</p>)}
+      {conduct.map((p) => <p class="prose-note">{p.map((part) => (part.href ? <a class="go" href={part.href}>{part.text}</a> : part.text))}</p>)}
       <p class="prose-note">
         How a pull request is reviewed and merged: <a class="go" href={repoFile('CONTRIBUTING.md')}>CONTRIBUTING.md</a>.
       </p>
