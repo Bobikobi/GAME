@@ -3,11 +3,11 @@
   "format": 1,
   "type": "quest",
   "id": "core/first-fire",
-  "title": "A fire and a meal",
+  "title": "A fire before dark",
   "creator": "core",
   "quest": {
     "type": "mastery",
-    "summary": "Fell a tree, build a campfire across the river, and cook berry mash.",
+    "summary": "The sun is past noon. Fell a tree for logs and build a campfire across the river before dark.",
     "requires": [
       "core/fix-the-bridge"
     ],
@@ -15,10 +15,6 @@
       {
         "kind": "build",
         "camp": "core/campfire"
-      },
-      {
-        "kind": "make",
-        "recipe": "core/berry-mash"
       }
     ],
     "reward": {

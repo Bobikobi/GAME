@@ -2,11 +2,12 @@
  * The three starts (DECISIONS.md, 2026-10-10): each character wakes at its own
  * place with its own kit, a kit piece worn for its work goes on from the first
  * morning, a start's own first task is offered to it alone, and a start's own
- * spot shows to it alone, gives its one find every time, and only once.
+ * spot shows to it alone, gives its one find every time, and only once. A
+ * reward its kit already holds comes as something the kit lacks.
  */
 import { beforeAll, describe, expect, test } from 'vitest';
 
-import { type Bundle, type State, type StepResult, newState, spotOpen, step } from '@game/kernel';
+import { type Bundle, type State, type StepResult, newState, npcTile, rewardItem, spotOpen, step } from '@game/kernel';
 
 import { type Tile, bfsNear, loadBundle } from '../../tools/test/helpers/world.js';
 
@@ -91,5 +92,31 @@ describe("a start's own spot", () => {
     expect(r.state.player.bag).toEqual({ 'core/walking-staff': 1, 'core/axe': 1 });
     expect(r.state.player.wear).toEqual({});
     expect(r.state.player.quests['core/glint-by-the-bridge']).toBe('done');
+  });
+});
+
+describe('a reward item', () => {
+  const stack = { item: 'core/trowel', instead: 'core/walking-staff' };
+
+  test('comes as its swap to a start whose kit holds it, and as itself to every other', () => {
+    expect(rewardItem(b, 'core/digger', stack)).toBe('core/walking-staff');
+    expect(rewardItem(b, 'core/forager', stack)).toBe('core/trowel');
+    expect(rewardItem(b, 'core/explorer', stack)).toBe('core/trowel');
+    expect(rewardItem(b, 'core/digger', { item: 'core/trowel' })).toBe('core/trowel');
+  });
+
+  test("Maru's bells give the digger a walking staff in place of a second trowel", () => {
+    const s = started('core/digger');
+    // past the bridge and into town, with the bells picked
+    s.player.restored = ['core/old-bridge'];
+    for (const id of ['core/fix-the-bridge', 'core/first-fire', 'core/into-town']) s.player.quests[id] = 'done';
+    s.player.quests['core/three-fruits'] = 'active';
+    s.player.bag['core/bellberry'] = 1;
+    const [x, y] = npcTile(b, 'core/elder')!;
+    const at: Tile = bfsNear(b, s.player, s.player.at, { x, y, w: 1, h: 1 })!.at(-1)!;
+    const r = step(b, s, { t: 'turnin', quest: 'core/three-fruits', at }, 0);
+    if (!r.ok) throw new Error(r.error);
+    expect(r.state.player.bag['core/trowel']).toBe(1);
+    expect(r.state.player.bag['core/walking-staff']).toBe(1);
   });
 });

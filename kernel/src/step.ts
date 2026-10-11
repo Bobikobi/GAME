@@ -489,6 +489,8 @@ function restore(ctx: Ctx, restoreId: string, at: Tile): void {
   const slot = findSlot(b.map, r.place.slot);
   if (!slot) refuse('Its place is missing from the map.');
   checkAt(ctx, at, slot);
+  // a restore with no inputs opens only as a quest's reward (reward.opens)
+  if (r.inputs.length === 0) refuse('This does not open by hand.');
   for (const input of r.inputs) {
     if ((s.player.bag[input.item] ?? 0) < input.qty) refuse(`You need ${input.qty} ${b.items[input.item]?.name ?? input.item}.`);
   }
@@ -536,6 +538,15 @@ function accept(ctx: Ctx, questId: string, at: Tile): void {
   ctx.events.push({ e: 'quest', quest: questId, state: 'active' });
 }
 
+/**
+ * The item a reward gives this start: what the reward names, or its `instead`
+ * when the start's kit already holds it (DECISIONS.md, 2026-10-10: whom to help first).
+ */
+export function rewardItem(bundle: Bundle, starter: string, stack: { item: string; instead?: string }): string {
+  const kit = bundle.starters[starter]?.kit ?? [];
+  return stack.instead !== undefined && kit.some((k) => k.item === stack.item) ? stack.instead : stack.item;
+}
+
 export function questSatisfied(bundle: Bundle, state: State, questId: string): boolean {
   const q = bundle.quests[questId];
   if (!q) return false;
@@ -547,7 +558,10 @@ export function questSatisfied(bundle: Bundle, state: State, questId: string): b
         bring[st.item] = (bring[st.item] ?? 0) + st.qty;
         break;
       case 'find':
-        bring[st.item] = (bring[st.item] ?? 0) + 1;
+        // with no giver there is nobody to hand it to: found once is found
+        if (!q.giver) {
+          if (!p.journal.includes(st.item)) return false;
+        } else bring[st.item] = (bring[st.item] ?? 0) + 1;
         break;
       case 'riddle':
         if (!p.solved.includes(riddleKey(questId, i))) return false;
@@ -591,8 +605,13 @@ function turnIn(ctx: Ctx, questId: string, at: Tile | undefined, explicit: boole
     s.ledger.minted += reward.gold_mg;
     ctx.events.push({ e: 'gold', delta: reward.gold_mg });
   }
-  for (const stack of reward.items ?? []) addItem(ctx, stack.item, stack.qty);
+  for (const stack of reward.items ?? []) addItem(ctx, rewardItem(b, s.player.starter, stack), stack.qty);
   for (const recipe of reward.recipes ?? []) learnRecipe(ctx, recipe);
+  for (const place of reward.opens ?? []) {
+    if (s.player.restored.includes(place)) continue;
+    s.player.restored = [...s.player.restored, place].sort();
+    ctx.events.push({ e: 'restore', restore: place });
+  }
   s.player.quests[questId] = 'done';
   ctx.events.push({ e: 'quest', quest: questId, state: 'done' });
 }

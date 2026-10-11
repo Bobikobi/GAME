@@ -53,7 +53,7 @@ export function openLevelUp(ui: UI, profession?: string): Promise<void> {
         return row;
       });
       body.replaceChildren(
-        h('h2', null, points > 0 ? 'Level up!' : 'Point placed'),
+        h('h2', null, points > 0 ? `Level ${characterLevel(b, st)}!` : 'Point placed'),
         h(
           'p',
           { class: 'levelup-sub' },

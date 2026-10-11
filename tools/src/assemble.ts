@@ -442,12 +442,28 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
         if (a.kind === 'visit' && !b.map.slots.some((s) => s.id === a.slot)) err(id, `${w}.answer`, `no slot "${a.slot}"`);
       }
     });
-    (q.reward.items ?? []).forEach((s, i) => item(id, `quest.reward.items.${i}`, s.item));
+    (q.reward.items ?? []).forEach((s, i) => {
+      const w = `quest.reward.items.${i}`;
+      item(id, w, s.item);
+      if (s.instead !== undefined) item(id, `${w}.instead`, s.instead);
+      // no reward repeats a kit: a start whose kit holds the item gets `instead`, which that kit lacks
+      for (const [sid, st] of Object.entries(b.starters)) {
+        const kit = (st.kit ?? []).map((k) => k.item);
+        if (!kit.includes(s.item)) continue;
+        if (s.instead === undefined) err(id, w, `the kit of "${sid}" holds "${s.item}": name an item for it in "instead"`);
+        else if (kit.includes(s.instead)) err(id, `${w}.instead`, `the kit of "${sid}" holds "${s.instead}" too`);
+      }
+    });
     (q.reward.recipes ?? []).forEach((rid, i) => {
       if (!b.recipes[rid]) err(id, `quest.reward.recipes.${i}`, `no recipe "${rid}"`);
     });
+    (q.reward.opens ?? []).forEach((rid, i) => {
+      if (!b.restores[rid]) err(id, `quest.reward.opens.${i}`, `no restore "${rid}"`);
+    });
   }
+  const opened = new Set(Object.values(b.quests).flatMap((q) => q.reward.opens ?? []));
   for (const [id, r] of Object.entries(b.restores)) {
+    if (r.inputs.length === 0 && !opened.has(id)) err(id, 'restore.inputs', 'no inputs and no quest opens it: it could never open');
     r.inputs.forEach((s, i) => item(id, `restore.inputs.${i}.item`, s.item));
     sprite(id, 'restore.before', r.before);
     sprite(id, 'restore.after', r.after);

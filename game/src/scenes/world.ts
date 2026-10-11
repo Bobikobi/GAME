@@ -1649,7 +1649,9 @@ export class WorldScene extends Phaser.Scene {
     }
     for (const [id, r] of Object.entries(b.restores)) {
       const slot = findSlot(b.map, r.place.slot);
-      if (slot && inRect(x, y, slot) && !p.restored.includes(id)) return { label: `Mend the ${r.title}`, run: () => app.ui.restore(id), tile, top: T };
+      if (!slot || !inRect(x, y, slot) || p.restored.includes(id)) continue;
+      // a restore with no inputs opens only as a quest's reward: nothing to mend by hand
+      return { label: r.inputs.length === 0 ? `Look at the ${r.title}` : `Mend the ${r.title}`, run: () => app.ui.restore(id), tile, top: T };
     }
     const sign = this.signs.get(k);
     if (sign) return { label: 'Read the sign', run: () => app.ui.sign(sign), tile, top };
