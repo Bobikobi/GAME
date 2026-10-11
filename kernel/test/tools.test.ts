@@ -1,8 +1,8 @@
 /**
  * Tools and stations of the workshop (DECISIONS.md, 2026-10-09: the crafting
  * economy): a tool with no uses lasts, a tool sells for the share of its uses
- * left, and of two parts that work one station the one the player stands at
- * does the craft.
+ * left, a made good sells for the made share (CR-18), and of two parts that
+ * work one station the one the player stands at does the craft.
  */
 import { beforeAll, describe, expect, test } from 'vitest';
 
@@ -14,6 +14,8 @@ import {
   type State,
   type StepResult,
   campTile,
+  computeValues,
+  minChargeFor,
   mulDiv,
   near,
   newState,
@@ -122,10 +124,12 @@ describe('selling tools', () => {
   }
 
   const basket = 'core/reed-basket';
-  const each = () => payFor(b.params, b.values[basket]!);
+  // a made tool: the trader pays the made share for it (CR-18)
+  const each = () => payFor(b.params, b.values[basket]!, true);
   const uses = () => b.items[basket]!.tool!.uses!;
 
   test('fresh units pay their value each', () => {
+    expect(b.made).toContain(basket);
     expect(each()).toBeGreaterThan(0);
     const { state, pay } = sold(started({ [basket]: 3 }), basket, 3);
     expect(pay).toBe(3 * each());
@@ -158,7 +162,7 @@ describe('selling tools', () => {
   test('a lasting tool pays in full after any use', () => {
     const used = gatherHerbs(started({ 'core/fine-basket': 2 }), 5).state;
     const { pay } = sold(used, 'core/fine-basket', 2);
-    expect(pay).toBe(2 * payFor(b.params, b.values['core/fine-basket']!));
+    expect(pay).toBe(2 * payFor(b.params, b.values['core/fine-basket']!, true));
   });
 
   test('a shop tool has no value and is never bought back', () => {
@@ -170,6 +174,55 @@ describe('selling tools', () => {
         ok: false,
         error: 'The trader does not want that.',
       });
+    }
+  });
+});
+
+describe('made goods (CR-18)', () => {
+  test('an item is made when its value comes from a recipe, and the list is sorted', () => {
+    const { made, cheapest } = computeValues(b);
+    expect(made).toEqual(b.made);
+    expect(made).toEqual([...made].sort());
+    expect(made).toContain('core/reed-cord');
+    expect(made).not.toContain('core/reed');
+    for (const id of Object.keys(b.values)) expect(made.includes(id)).toBe(b.recipes[cheapest[id]!] !== undefined);
+  });
+
+  test('a recipe that makes an item at a higher cost than gathering does not make it a made good', () => {
+    const recipes = {
+      ...b.recipes,
+      'x/reed-again': {
+        ...structuredClone(b.recipes['core/reed-cord']!),
+        id: 'x/reed-again',
+        inputs: [{ item: 'core/branch', qty: 1 }],
+        outputs: [{ item: 'core/reed', qty: 1, share_pct: 100 }],
+      },
+    };
+    const table = computeValues({ ...b, recipes });
+    expect(table.values['core/reed']).toBe(b.values['core/reed']);
+    expect(table.made).not.toContain('core/reed');
+  });
+
+  test('the trader pays the made share for a made good and the raw share for the rest', () => {
+    const p = b.params;
+    expect(p.k_craft_permille).toBeGreaterThan(p.k_permille);
+    const cord = 'core/reed-cord';
+    const reed = 'core/reed';
+    expect(payFor(p, b.values[cord]!, true)).toBe(mulDiv(p.k_craft_permille * p.r_mg_per_value_ms, b.values[cord]!, 1000));
+    expect(payFor(p, b.values[reed]!)).toBe(mulDiv(p.k_permille * p.r_mg_per_value_ms, b.values[reed]!, 1000));
+    const s = started({ [cord]: 2, [reed]: 3 });
+    expect(salePrice(b, s, cord, 2)).toBe(2 * payFor(p, b.values[cord]!, true));
+    expect(salePrice(b, s, reed, 3)).toBe(3 * payFor(p, b.values[reed]!));
+    const one = ok(s, { t: 'sell', npc: trader, item: cord, qty: 2, at: beside(s, npcTile(b, trader)!) });
+    expect(one.state.player.gold - s.player.gold).toBe(2 * payFor(p, b.values[cord]!, true));
+    const two = ok(one.state, { t: 'sell', npc: trader, item: reed, qty: 3, at: beside(one.state, npcTile(b, trader)!) });
+    expect(two.state.player.gold - one.state.player.gold).toBe(3 * payFor(p, b.values[reed]!));
+    expect(two.state.ledger.minted - s.ledger.minted).toBe(two.state.player.gold - s.player.gold);
+  });
+
+  test('the trader never pays as much as the shop charges, for any valued item', () => {
+    for (const [id, v] of Object.entries(b.values)) {
+      expect(payFor(b.params, v, b.made.includes(id))).toBeLessThan(minChargeFor(b.params, v));
     }
   });
 });
