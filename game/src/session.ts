@@ -78,6 +78,8 @@ export class Session {
   adapted = false;
   private pauses = 0;
   private deferred: GameEvent[] = [];
+  /** the state and log from before the action that keeps the player busy now, so work walked away from can be taken back */
+  private undo: { state: State; tail: LogEntry[] } | null = null;
   private listeners = new Map<keyof SessionEvents, Set<Listener>>();
   private sinceSave = 0;
   /** the in-game hour of the last frame: when it turns, what depends on the hour redraws */
@@ -282,6 +284,8 @@ export class Session {
     const r = step(this.bundle, this.state, { t: 'move', at: [at[0], at[1]] }, this.tick);
     if (!r.ok) return;
     this.state = r.state;
+    // a hunt heard during work changes the world under it: that work can no longer be taken back
+    this.undo = null;
     if (r.events.length === 0) return;
     this.wake(r.events);
     this.emit('events', r.events);
@@ -292,7 +296,9 @@ export class Session {
   act(action: Action): { ok: true; events: GameEvent[] } | { ok: false; error: string } {
     const r = step(this.bundle, this.state, action, this.tick);
     if (!r.ok) return r;
+    const before = { state: this.state, tail: this.tail.slice() };
     this.state = r.state;
+    this.undo = null;
     this.wake(r.events);
     // each start wakes at its own place
     if (action.t === 'start') {
@@ -303,6 +309,7 @@ export class Session {
     if (this.tail.length > TAIL) this.tail.splice(0, this.tail.length - TAIL);
     const busy = r.events.find((e) => e.e === 'busy');
     if (busy && busy.e === 'busy') {
+      this.undo = before;
       this.deferred.push(...r.events.filter((e) => e.e !== 'busy'));
       this.emit('busy', { verb: busy.verb, ms: busy.ms });
     } else {
@@ -316,7 +323,27 @@ export class Session {
   /** A fall moves the player to the town they were last in: the walk goes on from there. */
   private wake(events: readonly GameEvent[]): void {
     const fall = events.find((e) => e.e === 'fall');
-    if (fall?.e === 'fall') this.pos = [fall.at[0], fall.at[1]];
+    if (fall?.e !== 'fall') return;
+    this.pos = [fall.at[0], fall.at[1]];
+    // what the work under way would have announced went with the outing
+    this.deferred = [];
+    this.undo = null;
+  }
+
+  /**
+   * The player walked away from work that was still going: the action that started it never
+   * happened (no yield, no xp, no wear on the tool, the node still ready). False when nothing
+   * is under way. The state is a plain value that `step` copies, so the old one is whole.
+   */
+  cancelWork(): boolean {
+    if (!this.busy || !this.undo) return false;
+    this.state = this.undo.state;
+    this.tail = this.undo.tail;
+    this.deferred = [];
+    this.undo = null;
+    this.emit('change', undefined);
+    this.save();
+    return true;
   }
 
   save(): void {
