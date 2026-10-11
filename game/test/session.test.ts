@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 
-import type { Bundle } from '@game/kernel';
+import { type Bundle, type GameEvent, isSafe, makeWalkable } from '@game/kernel';
 import { app } from '../src/app';
 import { LEGACY_SAVE_KEY, SAVE_KEY } from '../src/config';
 import { DEMO_SINCE_KEY, Session } from '../src/session';
@@ -286,5 +286,79 @@ describe('the clock', () => {
     expect(changes).toBe(1);
     session.advance(16);
     expect(changes).toBe(1);
+  });
+});
+
+describe('position reports (P-5b)', () => {
+  /** 21:20, inside the night (tick 0 is noon). */
+  const NIGHT = 500_000;
+
+  /** The bundle with a pit on a tile beside the forager's wake, outside the safe ground, and no hunger clock. */
+  function withPit(): { b: Bundle; session: Session; pit: [number, number] } {
+    const b = structuredClone(bundle);
+    b.params.satiety_drain_per_min = 0;
+    const probe = Session.fresh(b);
+    probe.act({ t: 'start', starter: 'core/forager', name: 'Tester' });
+    const walkable = makeWalkable(b);
+    const [x, y] = probe.state.player.at;
+    const pit = ([[1, 0], [-1, 0], [0, 1], [0, -1]] as const)
+      .map(([dx, dy]): [number, number] => [x + dx, y + dy])
+      .find(([px, py]) => walkable(px, py, probe.state.player) && !isSafe(b, probe.state, [px, py]))!;
+    expect(pit).toBeDefined();
+    b.map.props = [...b.map.props, { id: 'test/pit', sprite: 'core/base-kit:props/hazard_pit', x: pit[0], y: pit[1], w: 1, h: 1, solid: false, hazard: { kind: 'pit', window: ['night'] } }];
+    app.bundle = b;
+    const session = Session.fresh(b);
+    session.act({ t: 'start', starter: 'core/forager', name: 'Tester' });
+    session.tick = NIGHT;
+    return { b, session, pit };
+  }
+
+  afterEach(() => {
+    app.bundle = bundle;
+  });
+
+  test('goes only when the tile changes, and a refused one changes nothing', () => {
+    const session = startedSession();
+    session.tick = 1000;
+    const [x, y] = session.state.player.at;
+    const before = session.state;
+    session.report([x, y]);
+    expect(session.state).toBe(before);
+    session.report([x + 40, y]);
+    expect(session.state).toBe(before);
+    const walkable = makeWalkable(bundle);
+    const next = ([[1, 0], [-1, 0], [0, 1], [0, -1]] as const).map(([dx, dy]): [number, number] => [x + dx, y + dy]).find(([a, c]) => walkable(a, c, before.player))!;
+    session.report(next);
+    expect(session.state.player.at).toEqual(next);
+    expect(session.state.player.movedAt).toBe(1000);
+  });
+
+  test('a hazard it walks into hurts, and a fall wakes the player elsewhere and moves the walk there', () => {
+    const { session, pit } = withPit();
+    const seen: GameEvent[] = [];
+    session.on('events', (events) => seen.push(...events));
+    const wake: [number, number] = [session.pos[0], session.pos[1]];
+    session.report(pit);
+    expect(seen.map((e) => e.e)).toEqual(['hurt']);
+
+    // step back off it, put the health at the edge, and step on again: the pit takes the rest
+    session.tick += 2000;
+    session.report(wake);
+    expect(session.state.player.at).toEqual(wake);
+    session.state.player.satiety = 1;
+    session.state.player.satietyAt = session.tick;
+    seen.length = 0;
+    session.tick += 2000;
+    session.report(pit);
+    const fall = seen.find((e) => e.e === 'fall');
+    expect(fall).toBeDefined();
+    if (fall?.e === 'fall') expect(session.pos).toEqual(fall.at);
+  });
+
+  test('says nothing while the game is paused', () => {
+    const { session, pit } = withPit();
+    session.pause();
+    session.report(pit);
+    expect(session.state.player.at).not.toEqual(pit);
   });
 });

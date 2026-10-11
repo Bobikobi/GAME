@@ -7,6 +7,7 @@ import {
   type GameEvent,
   type Grade,
   characterLevel,
+  findSlot,
   holds,
   isNight,
   minuteOfDay,
@@ -19,7 +20,21 @@ import {
 import { app } from '../app';
 import type { Button } from '../input';
 import type { Session } from '../session';
-import { activeQuests, clock, describe, digRiddleOpen, gold, hudUnlocks, itemName, nodeAction, questSteps, readyToHandIn, windowScalePct } from '../text';
+import {
+  activeQuests,
+  clock,
+  describe,
+  digRiddleOpen,
+  gold,
+  hudUnlocks,
+  itemName,
+  lanternNight,
+  nightCountdown,
+  nodeAction,
+  questSteps,
+  readyToHandIn,
+  windowScalePct,
+} from '../text';
 import { say, type Option } from './dialog';
 import { button, h, sprite } from './dom';
 import { feedback } from './feedback';
@@ -63,6 +78,9 @@ interface HudParts {
   clockChip: HTMLElement;
   clockIcon: HTMLElement;
   clockText: Text;
+  /** the countdown to dark (G31), shown only outside a safe place in a world with hazards */
+  dark: HTMLElement;
+  darkText: Text;
   level: HTMLElement;
   bag: HTMLButtonElement;
   log: HTMLButtonElement;
@@ -82,6 +100,8 @@ export class UI {
   private trackerKey = '';
   private talkCount = new Map<string, number>();
   private levelUpOpen = false;
+  /** the night (its end tick) whose lantern warning was shown, so it opens once per night */
+  private warnedNight: number | undefined;
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -200,6 +220,13 @@ export class UI {
     setTitle(p.clockChip, night ? 'Night' : 'Day');
     setClass(p.clockIcon, night ? 'moon' : 'sun');
     setText(p.clockText, clock(minuteOfDay(b, s.tick)));
+    const dark = nightCountdown(b, st, s.pos, s.tick);
+    p.dark.hidden = !dark;
+    if (dark) {
+      setClass(p.dark, dark.soon ? 'chip dark soon' : 'chip dark');
+      setText(p.darkText, dark.text);
+    }
+    this.warnAtNight(s);
     setClass(p.level, points > 0 ? 'chip glow' : 'chip');
     setTitle(p.level, points > 0 ? 'A skill point to spend: open the journal' : 'Character level');
     setText(p.level, `Lv ${characterLevel(b, st)}${points > 0 ? ' +' : ''}`);
@@ -214,8 +241,8 @@ export class UI {
     const num = h('span', { class: 'meter-num' });
     const meter = h(
       'div',
-      { class: 'meter', title: 'Satiety: eat to refill. Empty means slower work.' },
-      h('span', { class: 'meter-label' }, 'Food'),
+      { class: 'meter', title: 'Health: hazards and bad food take it, food gives it back. Empty means slower work.' },
+      h('span', { class: 'meter-label' }, 'Health'),
       h('span', { class: 'meter-bar' }, bar),
       num,
     );
@@ -223,6 +250,8 @@ export class UI {
     const clockIcon = h('i', { class: 'sun' });
     const clockText = document.createTextNode('');
     const clockChip = h('span', { class: 'chip', title: 'Day' }, clockIcon, clockText);
+    const darkText = document.createTextNode('');
+    const dark = h('span', { class: 'chip dark', title: 'Dark falls: be in town or by a burning camp', hidden: true }, h('i', { class: 'moon' }), darkText);
     const level = h('span', { class: 'chip', title: 'Character level' });
     const bag = button('Bag', () => openBag(this), 'small');
     const log = button('Log', () => openJournal(this), 'small');
@@ -237,13 +266,30 @@ export class UI {
           { class: 'hud-row' },
           h('span', { class: 'chip gold', title: 'Gold' }, h('i', { class: 'coin' }), goldText),
           clockChip,
+          dark,
           level,
           h('button', { class: 'chip demo', type: 'button', onclick: () => this.aboutDemo() }, 'Demo'),
         ),
       ),
       h('div', { class: 'hud-right' }, feedbackBtn, bag, log, button('Menu', () => openMenu(this), 'small')),
     );
-    return { meter, bar, num, goldText, clockChip, clockIcon, clockText, level, bag, log };
+    return { meter, bar, num, goldText, clockChip, clockIcon, clockText, dark, darkText, level, bag, log };
+  }
+
+  /**
+   * Dark outside a safe place lights the lantern and opens one warning box,
+   * once a night (G31): the player left safety after dark, or dark came while
+   * they were out. The lantern is a sign that the night began, not a shield.
+   */
+  private warnAtNight(s: Session): void {
+    const night = lanternNight(app.bundle, s.state, s.pos, s.tick);
+    if (night === undefined || night === this.warnedNight || this.blocking || s.paused) return;
+    this.warnedNight = night;
+    app.world?.lightLantern();
+    void say(this, null, [
+      'Dark. Your lantern is lit - but its light keeps nothing away.',
+      'Out here the night hunts. The town and a burning camp are safe; go back to one, or keep your eyes open.',
+    ]);
   }
 
   private renderTracker(s: Session): void {
@@ -327,6 +373,8 @@ export class UI {
         const giver = q?.giver ? b.npcs[q.giver] : undefined;
         if (q?.talk?.done) await say(this, giver?.name ?? null, named(q.talk.done));
       }
+      // a fall is one plain box (G33): what happened and what it cost, never where it was
+      if (e.e === 'fall') await say(this, null, fallLines(b, s.state.player.town, e.lost));
       // the threshold of the night ruins is a place, not a mend or a task: the opening's last words
       if (e.e === 'visit' && e.slot === 'core/night-threshold') {
         await say(this, null, [
@@ -525,6 +573,18 @@ function rewardText(questId: string): string {
   for (const o of r.opens ?? []) parts.push(`a way through the ${b.restores[o]?.title ?? o}`);
   if (r.rep) parts.push('their trust');
   return parts.join(', ') || 'their thanks';
+}
+
+/** The box after a fall (G33): the dark, where the player woke, and what the outing's basket held. */
+export function fallLines(b: typeof app.bundle, town: string, lost: readonly { item: string; qty: number }[]): string[] {
+  const label = findSlot(b.map, town)?.label;
+  const lines = ['Everything went dark.', `You wake ${label ? `in the ${label.toLowerCase()}` : 'where you started'}, whole again.`];
+  lines.push(
+    lost.length > 0
+      ? `What you gathered out there is gone: ${lost.map((l) => `${l.qty} ${itemName(b, l.item)}`).join(', ')}.`
+      : 'You had gathered nothing out there, so nothing is lost.',
+  );
+  return lines;
 }
 
 function setText(node: Text | HTMLElement, text: string): void {

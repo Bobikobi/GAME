@@ -267,10 +267,32 @@ export class Session {
     return r.ok ? undefined : r.error;
   }
 
+  /**
+   * Tell the kernel which tile the player stands on (DECISIONS.md, 2026-10-10:
+   * health and hazards). Silent: it goes only when the tile changed, or with
+   * `again` while a hunt runs so its bites land on a player standing still; a
+   * refusal is dropped and walking goes on. What it brings (a hurt, a fall) is
+   * shown like any other event.
+   */
+  report(at: readonly [number, number], again = false): void {
+    if (!this.started || this.paused) return;
+    const p = this.state.player;
+    if (!again && p.at[0] === at[0] && p.at[1] === at[1]) return;
+    const r = step(this.bundle, this.state, { t: 'move', at: [at[0], at[1]] }, this.tick);
+    if (!r.ok) return;
+    this.state = r.state;
+    if (r.events.length === 0) return;
+    this.wake(r.events);
+    this.emit('events', r.events);
+    this.emit('change', undefined);
+    this.save();
+  }
+
   act(action: Action): { ok: true; events: GameEvent[] } | { ok: false; error: string } {
     const r = step(this.bundle, this.state, action, this.tick);
     if (!r.ok) return r;
     this.state = r.state;
+    this.wake(r.events);
     // each start wakes at its own place
     if (action.t === 'start') {
       this.pos = [r.state.player.at[0], r.state.player.at[1]];
@@ -288,6 +310,12 @@ export class Session {
     }
     this.save();
     return { ok: true, events: r.events };
+  }
+
+  /** A fall moves the player to the town they were last in: the walk goes on from there. */
+  private wake(events: readonly GameEvent[]): void {
+    const fall = events.find((e) => e.e === 'fall');
+    if (fall?.e === 'fall') this.pos = [fall.at[0], fall.at[1]];
   }
 
   save(): void {

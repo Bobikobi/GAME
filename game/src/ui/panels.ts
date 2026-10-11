@@ -31,7 +31,7 @@ import {
 } from '../feedback-payload';
 import type { SignInfo } from '../scenes/world';
 import { Session } from '../session';
-import { ATTRIBUTE_MAX, activeQuests, attributeEffects, clock, gold, itemBenefit, itemName, questSteps, restoreHint, seconds, sellable, stacks, stationUpgrades, toolOpens, wornAt } from '../text';
+import { ATTRIBUTE_MAX, activeQuests, attributeEffects, clock, eatLabel, gold, itemBenefit, itemName, questSteps, restoreHint, seconds, sellable, stacks, stationUpgrades, toolOpens, wornAt } from '../text';
 import { say } from './dialog';
 import { button, h, sprite } from './dom';
 import { markdown } from './markdown';
@@ -109,7 +109,7 @@ export function openBag(ui: UI): void {
     const price = salePrice(b, s.state, id, 1);
     const actions: HTMLElement[] = [];
     if (item.food) {
-      actions.push(button(`Eat (+${item.food.satiety})`, () => {
+      actions.push(button(eatLabel(b, id), () => {
         const r = s.act({ t: 'eat', item: id });
         if (!r.ok) ui.toast(r.error, 'bad');
         after();

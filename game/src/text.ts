@@ -10,7 +10,12 @@ import {
   campBuilt,
   campTile,
   findSlot,
+  hazardsOf,
+  isNight,
+  isSafe,
   missKeepBp,
+  nightEnds,
+  nightFalls,
   offeredTo,
   powerCap,
   questSatisfied,
@@ -91,7 +96,9 @@ export interface AttributeEffect {
 /** What one more point in each attribute really changes, as numbers. */
 export function attributeEffects(b: Bundle, s: State): AttributeEffect[] {
   const plus = (a: Attribute): State => ({ ...s, player: { ...s.player, attrs: { ...s.player.attrs, [a]: s.player.attrs[a] + 1 } } });
-  const minutes = (st: State) => Math.floor(satietyCap(b, st) / b.params.satiety_drain_per_min);
+  // with no hunger clock (G32) a point of stamina is health, not minutes of work
+  const drain = b.params.satiety_drain_per_min;
+  const minutes = (st: State) => Math.floor(satietyCap(b, st) / (drain > 0 ? drain : 1000));
   const pct = (bp: number) => `${Math.round(bp / 100)}%`;
   const times = (permille: number) => `x${(permille / 1000).toFixed(2).replace(/0$/, '')}`;
   const luckNext = plus('luck');
@@ -111,9 +118,9 @@ export function attributeEffects(b: Bundle, s: State): AttributeEffect[] {
     {
       attr: 'stamina',
       name: 'Stamina',
-      what: 'Work before you must eat',
+      what: drain > 0 ? 'Work before you must eat' : 'Your health holds',
       now: `${minutes(s)}`,
-      next: `${minutes(plus('stamina'))} minutes`,
+      next: `${minutes(plus('stamina'))} ${drain > 0 ? 'minutes' : 'points'}`,
     },
   ];
 }
@@ -261,6 +268,46 @@ export function stationUpgrades(b: Bundle, s: State, station: string): string[] 
 }
 
 /** A short sentence for each event a player should notice. */
+/** What a hurt says, by what did it (the kernel's hazard kinds, and food). */
+const HURT_TEXT: Readonly<Record<string, string>> = {
+  predator: 'Bitten! Run for a safe place',
+  pit: 'The floor gave way under you',
+  trap: 'A trap snapped shut on your foot',
+  deep_water: 'The deep water dragged at you',
+  food: 'That did not agree with you',
+};
+
+/** The Eat button's label: what a food gives, and what it takes when it hurts. */
+export function eatLabel(b: Bundle, id: string): string {
+  const food = b.items[id]?.food;
+  if (!food) return 'Eat';
+  const parts = [food.satiety > 0 ? `+${food.satiety}` : '', food.hurt ? `-${food.hurt}` : ''].filter(Boolean);
+  return parts.length > 0 ? `Eat (${parts.join(', ')})` : 'Eat';
+}
+
+/**
+ * The countdown at the screen's edge (G31): while the player stands outside a
+ * safe place by day in a world that has hazards, how long until dark, in the
+ * game's own time. Undefined on safe ground, after dark, and in a world where
+ * nothing hunts. The mist's coming joins it with the mist (GRUNT P-6).
+ */
+export function nightCountdown(b: Bundle, s: State, at: readonly [number, number], tick: number): { text: string; soon: boolean } | undefined {
+  if (hazardsOf(b).length === 0 || isNight(b, tick) || isSafe(b, s, [at[0], at[1]])) return undefined;
+  const ms = nightFalls(b, tick) - tick;
+  const sec = Math.ceil(ms / 1000);
+  return { text: `Dark in ${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`, soon: ms <= 60_000 };
+}
+
+/**
+ * Which night the lantern warning belongs to (G31): the tick that night ends,
+ * while it is dark and the player stands outside a safe place in a world that
+ * has hazards; undefined otherwise. The warning opens once for each value.
+ */
+export function lanternNight(b: Bundle, s: State, at: readonly [number, number], tick: number): number | undefined {
+  if (hazardsOf(b).length === 0 || !isNight(b, tick) || isSafe(b, s, [at[0], at[1]])) return undefined;
+  return nightEnds(b, tick);
+}
+
 export function describe(b: Bundle, s: State, e: GameEvent): { text: string; icon?: string; tone?: 'good' | 'bad' | 'info' } | undefined {
   switch (e.e) {
     case 'gain':
@@ -292,7 +339,9 @@ export function describe(b: Bundle, s: State, e: GameEvent): { text: string; ico
     case 'build':
       return { text: `${b.camps[e.camp]?.title ?? e.camp} built`, tone: 'good' };
     case 'eat':
-      return { text: `You ate ${itemName(b, e.item)}`, icon: b.items[e.item]?.sprite, tone: 'good' };
+      return { text: `You ate ${itemName(b, e.item)}`, icon: b.items[e.item]?.sprite, tone: b.items[e.item]?.food?.hurt ? 'info' : 'good' };
+    case 'hurt':
+      return { text: HURT_TEXT[e.by] ?? 'That hurt', tone: 'bad' };
     case 'nothing':
       return { text: e.verb === 'dig' ? 'Nothing this time.' : 'Missed - nothing this time.', tone: 'bad' };
     case 'miss':
@@ -344,7 +393,7 @@ export function toolOpens(b: Bundle, s: State, kind: string): string[] {
     .sort();
 }
 
-/** Concrete effect/benefit of an item: tool speed & durability, food satiety minutes, recipe learned, or description. */
+/** Concrete effect/benefit of an item: tool speed & durability, the health a food gives or takes, recipe learned, or description. */
 export function itemBenefit(b: Bundle, id: string): string {
   const it = b.items[id];
   if (!it) return '';
@@ -371,10 +420,16 @@ export function itemBenefit(b: Bundle, id: string): string {
     return `${tier} · ${unlocks} · ${uses}${speed}`;
   }
   if (it.food) {
-    // food is in whole meter points; the kernel drains thousandths of a point per minute of work
-    const workMs = Math.round((it.food.satiety * 1000 * 60_000) / b.params.satiety_drain_per_min);
-    const lasts = workMs >= 60_000 ? `${Math.round(workMs / 60_000)} min` : `${Math.round(workMs / 1000)} s`;
-    return `+${it.food.satiety} food · about ${lasts} of work`;
+    // food is in whole points of health; while a hunger clock runs it drains thousandths of a point a minute
+    const parts: string[] = [];
+    const drain = b.params.satiety_drain_per_min;
+    if (it.food.satiety > 0) parts.push(`+${it.food.satiety} health`);
+    if (it.food.hurt) parts.push(`hurts: -${it.food.hurt} health`);
+    if (it.food.satiety > 0 && drain > 0) {
+      const workMs = Math.round((it.food.satiety * 1000 * 60_000) / drain);
+      parts.push(`about ${workMs >= 60_000 ? `${Math.round(workMs / 60_000)} min` : `${Math.round(workMs / 1000)} s`} of work`);
+    }
+    return parts.join(' · ');
   }
   if (it.fragment) {
     return `Unlocks recipe: ${b.recipes[it.fragment.unlocks]?.title ?? it.fragment.unlocks}`;
