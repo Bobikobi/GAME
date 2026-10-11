@@ -10,6 +10,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {
+  type Action,
   type Bundle,
   type Grade,
   type Slot,
@@ -17,6 +18,7 @@ import {
   findSlot,
   hourOf,
   inRect,
+  isNight,
   makeWalkable,
   minuteOfDay,
   npcTile,
@@ -35,7 +37,8 @@ import { createScenery, groundY, modelOf, standalone, walkY, type MapData, type 
 import type { Session } from '../session';
 import { questTargets } from '../targets';
 import { nodeLook } from '../growth';
-import { hintDistance, nodeAction } from '../text';
+import { hintDistance, lanternNight, nodeAction } from '../text';
+import { beatAt, blowsDue, resourceKind, treasureKind, type AutoKind } from '../work';
 import type { WorkKind } from '../ui/ui';
 
 const NEIGHBOURS: readonly [number, number][] = [
@@ -76,6 +79,8 @@ interface NodeView {
   art: THREE.Object3D | null;
   sprite: string;
   alpha: number;
+  /** counts the redraws, so a slow load of an old stage never lands over a newer one */
+  gen: number;
 }
 
 function key(x: number, y: number): string {
@@ -92,6 +97,25 @@ function lerpAngle(a: number, b: number, t: number): number {
   if (d > Math.PI) d -= Math.PI * 2;
   if (d < -Math.PI) d += Math.PI * 2;
   return a + d * t;
+}
+
+/** Frees what a drawn thing owns: its own materials and the textures and geometry made for it, never the shared models. */
+function dispose(obj: THREE.Object3D): void {
+  obj.traverse((o) => {
+    if (!(o instanceof THREE.Mesh || o instanceof THREE.Sprite)) return;
+    if (o instanceof THREE.Mesh && o.geometry.userData.own) o.geometry.dispose();
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    for (const m of mats) {
+      const map = (m as THREE.MeshBasicMaterial).map;
+      if (map?.userData.own) map.dispose();
+      m.dispose();
+    }
+  });
+}
+
+function clearGroup(g: THREE.Group): void {
+  for (const c of g.children) dispose(c);
+  g.clear();
 }
 
 function setAlpha(obj: THREE.Object3D, alpha: number): void {
@@ -152,6 +176,13 @@ export class World3D implements WorldView {
   private swingUntil = 0;
   private nextSwing = 0;
   private refreshIn = 0;
+  private auto: { node: string; kind: AutoKind; start: number; ms: number; hits: number; facing: Dir; underfoot: boolean; onDone?: () => void } | null = null;
+  private readonly held = new Set<string>();
+  private lanternFor: number | undefined;
+  private chaseReport = 0;
+  private fell = false;
+  private wasNight: boolean | undefined;
+  private readonly hazards: { kind: string; art: THREE.Object3D; frames: number }[] = [];
   private prompt = '';
   private hinted = new Set<string>();
   /** slots the player stands in now, so a riddle's slot is tried once per entry */
@@ -259,14 +290,17 @@ export class World3D implements WorldView {
     if (!base || !info) return undefined;
     const t = base.clone();
     t.needsUpdate = true;
+    t.userData.own = true;
     if (info.frames > 1) {
       t.repeat.set(1 / info.frames, 1);
       t.offset.set(0, 0);
     }
     const tiles = [info.w / 16, info.h / 16] as const;
     if (flat) {
+      const geometry = new THREE.PlaneGeometry(tiles[0], tiles[1]);
+      geometry.userData.own = true;
       const mesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(tiles[0], tiles[1]),
+        geometry,
         new THREE.MeshBasicMaterial({ map: t, transparent: true, alphaTest: 0.05, depthWrite: false }),
       );
       mesh.rotation.x = -Math.PI / 2;
@@ -300,12 +334,20 @@ export class World3D implements WorldView {
         }
       }
       if (p.sign) this.signSpots.push({ slot: p.sign, x: p.x + p.w / 2, y: p.y, label: this.signatureEl(p.sign) });
+      // a hazard is drawn from its own sprite: a pit lies flat, a wolf stands
+      if (p.hazard) {
+        const art = await this.picture(p.sprite, p.hazard.kind !== 'predator', p.x + p.w / 2, p.y + p.h / 2 + (p.hazard.kind === 'predator' ? 0.4 : 0));
+        if (art) {
+          this.scene.add(art);
+          this.hazards.push({ kind: p.hazard.kind, art, frames: info.frames });
+        }
+      }
     }
 
     // nodes and finds
     for (const [id, inst] of Object.entries(b.instances)) {
       this.nodeAt.set(key(inst.x, inst.y), id);
-      this.nodes.set(id, { art: null, sprite: '', alpha: -1 });
+      this.nodes.set(id, { art: null, sprite: '', alpha: -1, gen: 0 });
     }
 
     // people
@@ -436,6 +478,9 @@ export class World3D implements WorldView {
     this.session = session;
     this.move = null;
     this.work = null;
+    this.auto = null;
+    this.held.clear();
+    this.lanternFor = undefined;
     this.hinted.clear();
     this.inside.clear();
     this.unbind = [
@@ -445,6 +490,15 @@ export class World3D implements WorldView {
         this.nextSwing = 0;
       }),
       session.on('change', () => void this.refresh()),
+      // a fall takes the player to town: the walk and the work are over, the place they stand in is new
+      session.on('events', (events) => {
+        if (!events.some((e) => e.e === 'fall')) return;
+        this.fell = true;
+        this.move = null;
+        if (this.auto) this.endWork(this.auto);
+        this.inside.clear();
+        this.first = true;
+      }),
     ];
     this.pos.set(session.pos[0] + 0.5, 0, session.pos[1] + 0.5);
     this.pos.y = walkY(this.pos.x, this.pos.z);
@@ -481,7 +535,7 @@ export class World3D implements WorldView {
       const done = p.restored.includes(id);
       if (this.restoreShown.get(id) === done) continue;
       this.restoreShown.set(id, done);
-      art.clear();
+      clearGroup(art);
       await this.drawRestore(id, art, done);
     }
     for (const [id, c] of this.campArt) {
@@ -490,7 +544,7 @@ export class World3D implements WorldView {
       if (c.built === built && c.taken === taken && c.art.children.length > 0) continue;
       c.built = built;
       c.taken = taken;
-      c.art.clear();
+      clearGroup(c.art);
       await this.drawCamp(id, c.art, built, taken);
     }
     await this.refreshNodes();
@@ -558,6 +612,8 @@ export class World3D implements WorldView {
     if (!s) return;
     const hour = hourOf(this.b, s.tick);
     for (const [id, view] of this.nodes) {
+      // work under way keeps what it works on as it is until it ends
+      if (this.held.has(id)) continue;
       const inst = this.b.instances[id]!;
       if (inst.kind !== 'resource') {
         await this.refreshDig(id, view, s);
@@ -569,25 +625,25 @@ export class World3D implements WorldView {
       const look = nodeLook(r, (s.state.nodes[id]?.readyAt ?? 0) - s.tick);
       const alpha = look.flat ? look.alpha : ready && !inHours ? 0.55 : look.alpha;
       if (view.sprite !== look.sprite) {
-        if (view.art) this.scene.remove(view.art);
+        const gen = ++view.gen;
+        if (view.art) {
+          this.scene.remove(view.art);
+          dispose(view.art);
+        }
         view.sprite = look.sprite;
         view.alpha = -1;
         view.art = null;
         const x = inst.x + 0.5;
         const z = inst.y + 0.5;
         const m = look.flat ? undefined : nodeModel(look.sprite);
-        if (m) {
-          const g = standalone(await modelOf(m.model), x, z, m.height, pickLook(inst.x, inst.y) * Math.PI * 2);
-          view.art = g;
-        } else {
-          view.art = (await this.picture(look.sprite, look.flat, x, z)) ?? null;
-        }
-        // the stage changed again while this one was loading: let the later pass draw it
-        if (view.sprite !== look.sprite) {
-          if (view.art) view.art = null;
+        const art = m ? standalone(await modelOf(m.model), x, z, m.height, pickLook(inst.x, inst.y) * Math.PI * 2) : ((await this.picture(look.sprite, look.flat, x, z)) ?? null);
+        // the stage changed again while this one was loading: the later draw owns the node
+        if (view.gen !== gen) {
+          if (art) dispose(art);
           continue;
         }
-        if (view.art) this.scene.add(view.art);
+        view.art = art;
+        if (art) this.scene.add(art);
       }
       if (view.art && view.alpha !== alpha) {
         view.alpha = alpha;
@@ -694,7 +750,13 @@ export class World3D implements WorldView {
       this.showSignatures(s);
     }
     this.walk(s, delta);
+    // a hunt bites by the clock: while one runs, a player standing still reports again twice a second
+    if (s.state.player.chase && !this.move && s.tick - this.chaseReport >= 500) {
+      this.chaseReport = s.tick;
+      s.report(s.pos, true);
+    }
     this.shade(s, dt);
+    this.workTick(s);
     this.drawBusy(s);
     this.updatePrompt(s);
     this.placeHero(s, dt);
@@ -728,6 +790,10 @@ export class World3D implements WorldView {
       const carry = this.move.t - STEP_MS;
       s.pos = [tx, ty];
       this.move = null;
+      this.fell = false;
+      // the kernel hears of each new tile; a hazard there may hurt, and a fall ends the walk
+      s.report(s.pos);
+      if (this.fell) return;
       this.arrive(s);
       this.tryStep(s, carry);
       return;
@@ -785,9 +851,47 @@ export class World3D implements WorldView {
   private shade(s: Session, dt: number): void {
     const m = minuteOfDay(this.b, s.tick) / 60;
     const night = m >= 21 || m < 4 ? 1 : m >= 19 ? (m - 19) / 2 : m < 6 ? (6 - m) / 2 : 0;
+    const dark = night >= 0.5;
+    if (dark !== this.wasNight) {
+      const flipped = this.wasNight !== undefined;
+      this.wasNight = dark;
+      // a riddle answered by night or by day: the slot the player stands in is entered again at the flip
+      if (flipped) {
+        this.inside.clear();
+        this.arrive(s);
+      }
+      sound.music(dark ? 'night' : 'valley', 4000);
+      sound.ambience(dark ? 'night' : 'day');
+    }
+    this.showHazards(s);
+    this.placeLantern(s);
     if (Math.abs(night - this.nightMix) < 0.002) return;
     this.nightMix += (night - this.nightMix) * Math.min(1, dt * 2.5);
     this.scenery.setNight(this.nightMix);
+  }
+
+  /** By day a hazard shows and can be walked around: the wolf sleeps, the pit lies plain. At night the wolf is awake and the pit is lost in the dark. The hour is the kernel's. */
+  private showHazards(s: Session): void {
+    const night = isNight(this.b, s.tick);
+    for (const h of this.hazards) {
+      if (h.kind === 'predator') {
+        const map = (h.art as THREE.Sprite).material.map;
+        if (map && h.frames > 1) map.offset.x = (night ? 1 : 0) / h.frames;
+      } else h.art.visible = !night;
+    }
+  }
+
+  /** Light the lantern for this night (G31): the UI calls it with the warning box. */
+  lightLantern(): void {
+    const s = this.session;
+    if (s) this.lanternFor = lanternNight(this.b, s.state, s.pos, s.tick);
+  }
+
+  /** The lantern burns around the player while they are out in the night it was lit for; in town, by a camp or by day it is out. */
+  private placeLantern(s: Session): void {
+    const lit = this.lanternFor !== undefined && lanternNight(this.b, s.state, s.pos, s.tick) === this.lanternFor;
+    const flicker = 0.5 + 0.5 * Math.sin(this.time * 5.8) * Math.sin(this.time * 2.4);
+    this.scenery.lantern.intensity = lit ? 14 + 4 * flicker : 0;
   }
 
   private placeHero(s: Session, dt: number): void {
@@ -903,6 +1007,97 @@ export class World3D implements WorldView {
         this.impact(this.work.node, this.work.kind);
       }
     }
+  }
+
+  /**
+   * One press starts the work (DECISIONS.md, 2026-10-11): the kernel takes the action now and keeps the player busy for as
+   * long as it lasts, and the blows are shown on the thing. A step away takes the action back (Session.cancelWork).
+   */
+  startWork(nodeId: string, onDone?: () => void): void {
+    const s = this.session;
+    const inst = this.b.instances[nodeId];
+    if (!s || !inst || this.auto) return;
+    const kind = inst.kind === 'resource' ? resourceKind(this.b.resources[inst.source]!) : treasureKind(this.b.treasures[inst.source]!);
+    if (!kind) return;
+    const action: Action = inst.kind === 'resource' ? { t: 'gather', node: nodeId, grade: 3, at: s.pos } : { t: 'dig', spot: nodeId, grade: 3, at: s.pos };
+    const res = s.act(action);
+    if (!res.ok) return app.ui.toast(res.error, 'bad');
+    const busy = res.events.find((e) => e.e === 'busy');
+    if (!busy || busy.e !== 'busy') return;
+    this.faceNode(s, nodeId);
+    const underfoot = inst.x === s.pos[0] && inst.y === s.pos[1];
+    // a dig that solved a riddle says nothing of the catch (G6)
+    const solved = res.events.some((e) => e.e === 'riddle');
+    this.auto = { node: nodeId, kind, start: s.tick, ms: busy.ms, hits: 0, facing: s.facing, underfoot, onDone: solved ? undefined : onDone };
+    this.held.add(nodeId);
+  }
+
+  /** Drops the work under way, if any, before a panel reads the state. */
+  dropWork(): void {
+    const s = this.session;
+    if (s && this.auto) this.stopWork(s, this.auto);
+  }
+
+  private workTick(s: Session): void {
+    const w = this.auto;
+    if (!w) return;
+    const elapsed = s.tick - w.start;
+    // the end comes first: a level-up window opening as the work ends must not undo it
+    if (elapsed >= w.ms) return this.finishWork(w);
+    const dir = app.controls.direction();
+    if (s.paused || app.ui.blocking || (dir !== null && (w.underfoot || dir !== w.facing))) return this.stopWork(s, w);
+    const beat = beatAt(elapsed, w.ms);
+    if (blowsDue(beat) > w.hits) {
+      w.hits = blowsDue(beat);
+      this.blow(w, beat.progress);
+    }
+  }
+
+  /** Walked away, or something opened: the work is dropped as if it had not begun. */
+  private stopWork(s: Session, w: NonNullable<World3D['auto']>): void {
+    this.endWork(w);
+    s.cancelWork();
+  }
+
+  private endWork(w: NonNullable<World3D['auto']>): void {
+    this.auto = null;
+    this.busyMs = 0;
+    this.held.delete(w.node);
+    const art = this.nodes.get(w.node)?.art;
+    if (art) {
+      art.position.x = this.b.instances[w.node]!.x + 0.5;
+      art.rotation.z = 0;
+    }
+  }
+
+  private finishWork(w: NonNullable<World3D['auto']>): void {
+    this.endWork(w);
+    void this.refreshNodes();
+    if (w.kind === 'fell') {
+      sound.sfx('crack', { gain: 0.9 });
+      setTimeout(() => sound.sfx('thud'), 450);
+    }
+    w.onDone?.();
+  }
+
+  /** One blow: the thing sounds and shakes; a tree leans a little more each time. */
+  private blow(w: NonNullable<World3D['auto']>, progress: number): void {
+    const inst = this.b.instances[w.node];
+    if (!inst) return;
+    const at = this.screenOf(inst.x, inst.y);
+    const pan = Math.max(-0.8, Math.min(0.8, (at.x / Math.max(1, window.innerWidth) - 0.5) * 1.2));
+    if (w.kind === 'fell') {
+      sound.sfx('thud', { pan });
+      if (progress > 0.5) sound.sfx('crack', { pan, gain: 0.25 + 0.5 * progress });
+    } else sound.sfx(w.kind === 'mine' ? 'strike' : 'dig', { pan });
+    const art = this.nodes.get(w.node)?.art;
+    if (!art) return;
+    const x0 = inst.x + 0.5;
+    art.position.x = x0 + (w.kind === 'dig' ? 0 : progress > 0.6 ? 0.08 : 0.04);
+    if (w.kind === 'fell') art.rotation.z = (w.facing === 'left' ? 1 : w.facing === 'right' ? -1 : 0) * progress * 0.08;
+    setTimeout(() => {
+      if (this.nodes.get(w.node)?.art === art) art.position.x = x0;
+    }, 70);
   }
 
   // ------------------------------------------------------------ interaction

@@ -61,6 +61,8 @@ const ARROW: Record<Dir, string> = { up: 'ArrowUp', down: 'ArrowDown', left: 'Ar
 const PAD_OFFSET: Record<Dir, [number, number]> = { up: [0, -48], down: [0, 48], left: [-48, 0], right: [48, 0] };
 const VEC: Record<Dir, [number, number]> = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 
+const same = (a: Record<string, number>, b: Record<string, number>): boolean => JSON.stringify(Object.entries(a).sort()) === JSON.stringify(Object.entries(b).sort());
+
 interface Saved {
   starter: string;
   name: string;
@@ -316,6 +318,7 @@ async function run(browser: Browser, base: string, viewport: Viewport, name: str
     })()`);
     if (!target) throw new Error('no node to gather without a tool');
     const had = await page.eval<number>(`window.__game.session.state.player.bag[${JSON.stringify(target.item)}] ?? 0`);
+    const bagBefore = await page.eval<number>(`Object.values(window.__game.session.state.player.bag).reduce((a, n) => a + n, 0)`);
     await me.walkTo({ x: target.x, y: target.y, w: 1, h: 1 }, target.id);
     const st = await page.waitFor<{ prompt: string }>(`(() => { const p = document.querySelector('.prompt'); return p && !p.hidden && p.textContent.trim().length > 1 ? { prompt: p.textContent.slice(1).trim() } : null; })()`, 'a prompt at the node', 4000);
     check(/^(Gather|Pick|Fell|Dig|Strike|Snap)/i.test(st.prompt), `the prompt names the work: "${st.prompt}"`);
@@ -324,8 +327,34 @@ async function run(browser: Browser, base: string, viewport: Viewport, name: str
     await me.solveMinigame();
     await page.waitFor('!window.__game.session.busy && !window.__game.ui.blocking', 'the work to end', 20_000);
     const got = await page.eval<number>(`window.__game.session.state.player.bag[${JSON.stringify(target.item)}] ?? 0`);
-    check(got >= had, `the work ran under the kernel (${target.item}: ${had} -> ${got})`);
+    // a missed try turns up something else, never nothing: the bag as a whole must have grown
+    const total = await page.eval<number>(`Object.values(window.__game.session.state.player.bag).reduce((a, n) => a + n, 0)`);
+    check(total > bagBefore, `the work ran under the kernel (${total - bagBefore} item(s) gained; ${target.item}: ${had} -> ${got})`);
     await me.snap('gathered3d');
+
+    // 4b. work that runs by itself after one press: a start that carries an axe fells the nearest tree
+    const tree = await page.eval<{ id: string; x: number; y: number; item: string } | null>(`(() => {
+      const g = window.__game, s = g.session, b = g.bundle;
+      if (!(s.state.player.bag['core/axe'] > 0)) return null;
+      const near = (i) => Math.abs(i.x - s.pos[0]) + Math.abs(i.y - s.pos[1]);
+      const nodes = Object.entries(b.instances)
+        .filter(([id, i]) => i.kind === 'resource' && b.resources[i.source].tool === 'axe' && (s.state.nodes[id]?.readyAt ?? 0) <= s.tick)
+        .sort((x, y) => near(x[1]) - near(y[1]));
+      const n = nodes[0];
+      return n ? { id: n[0], x: n[1].x, y: n[1].y, item: b.resources[n[1].source].output } : null;
+    })()`);
+    if (tree) {
+      const wood = await page.eval<number>(`window.__game.session.state.player.bag[${JSON.stringify(tree.item)}] ?? 0`);
+      await me.walkTo({ x: tree.x, y: tree.y, w: 1, h: 1 }, tree.id);
+      await page.waitFor(`(() => { const p = document.querySelector('.prompt'); return p && !p.hidden && p.textContent.trim().length > 1; })()`, 'a prompt at the tree', 4000);
+      await me.a();
+      await page.waitFor('window.__game.session.busy', 'the felling to begin', 8000);
+      check(true, 'one press starts the felling and the player is busy');
+      await page.waitFor('!window.__game.session.busy', 'the felling to end', 30_000);
+      const wood2 = await page.eval<number>(`window.__game.session.state.player.bag[${JSON.stringify(tree.item)}] ?? 0`);
+      check(wood2 > wood, `the felling ran by itself (${tree.item}: ${wood} -> ${wood2})`);
+      await me.snap('felled3d');
+    } else console.log(`[${me.name}] no axe or no ready tree: felling not exercised`);
 
     // 5. back to the classic door with what was done
     const done3d = await me.save();
@@ -335,7 +364,7 @@ async function run(browser: Browser, base: string, viewport: Viewport, name: str
     await page.tap('.title-screen button', 'Continue');
     await page.waitFor('!!window.__game.session && window.__game.session.started', 'the classic game to load the save');
     const back = await me.save();
-    check(!!back && back.pos.join() === done3d.pos.join() && back.name === made.name && back.starter === made.starter && back.look === made.look, 'the 3D game saved to the same place: /play/ loads it and back');
+    check(!!back && same(back.bag, done3d.bag) && back.pos.join() === done3d.pos.join() && back.name === made.name && back.starter === made.starter && back.look === made.look, `the 3D game saved to the same place: /play/ loads it and back (${JSON.stringify(done3d.bag)} / ${JSON.stringify(back?.bag)})`);
     await me.snap('back2d');
 
     if (page.errors.length > 0) throw new Error(`page errors: ${page.errors.join(' | ')}`);

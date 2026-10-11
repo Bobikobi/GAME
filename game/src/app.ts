@@ -13,6 +13,9 @@ export interface WorldView {
   beat(nodeId: string, kind: WorkKind, grade: Grade): void;
   signText(slotId: string): SignInfo;
   screenOf(x: number, y: number): { x: number; y: number };
+  startWork(nodeId: string, onDone?: () => void): void;
+  dropWork(): void;
+  lightLantern(): void;
 }
 
 export interface App {

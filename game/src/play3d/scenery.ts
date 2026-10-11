@@ -798,7 +798,6 @@ export async function createScenery(map: MapData, places: Places, renderer: THRE
     fog.color.lerpColors(DAY_FOG, NIGHT_FOG, mix);
     fog.density = THREE.MathUtils.lerp(0.009, 0.03, mix);
     background.copy(fog.color);
-    lantern.intensity = 18 * mix;
     for (const g of glow) {
       for (const child of g.children) {
         if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
