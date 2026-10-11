@@ -326,11 +326,19 @@ What "The crafting economy" decided for the level wall (CR-17) and the made shar
 - Client: no level line on a recipe in the journal or the craft panel.
 - Docs: R8 and Theorem 3 of the kernel review hold with the larger of the two shares (section 8.6); G40 and G41 of the rules page; the creator guide; CR-17 and CR-18 leave the open ends and CR-32 (gear that fits the task, on the side of skill) joins them.
 
-### Wave 4: the client, inside the existing craft panel
+### Wave 4: the client, inside the existing craft panel (built on `feat/crafting-wave4`)
 
 - Class and tier shown on an item and a recipe; the gate that blocks (which level, which station tier, which profession); the family row in the journal; the bag categories of D-CRAFT-6. No restyle.
 
-The owner's economy answers of 9.10 evening (DECISIONS.md, 2026-10-09, "The crafting economy") change waves 3 and 4 where they differ from the lines above: a craft is no longer refused for its level, so the gate that blocks is the station's tier alone, and the screen shows no chance, no word for the difficulty and no wanted level. The new work is in Appendix D, CR-16 to CR-23, with the decided CR-8; wave 3 closed CR-8, CR-16 and CR-22, and the economy pull request CR-17 and CR-18.
+As built, after the economy answers below (the readings are in DECISIONS.md, 2026-10-09, "Crafting wave 4 as built"):
+
+- The bag in categories (D-CRAFT-6, CR-11): Food, Materials, Tools, To wear, Treasures and Recipe scraps, each under a heading and sorted by name. The category is the item's kind, and a worn thing that is not a tool goes under To wear.
+- Class and tier: the item detail's head reads them, for example "Plant (berry), tier 1"; a journal recipe card reads the class and tier of what it makes and where it is made, with the station's tier past the first.
+- The gate: a craft row whose station stands below the recipe's tier names the part that fits, before the inputs are in the bag; grey while inputs are missing, red when the station is all that stands in the way. The rows run up the ladder, tier by tier.
+- The journal by class (C12): a heading per class, the items of no family first, then a row per family.
+- The words are pure functions in `game/src/text.ts` with unit tests. No kernel, schema, content or value change, and no new style rule.
+
+The owner's economy answers of 9.10 evening (DECISIONS.md, 2026-10-09, "The crafting economy") change waves 3 and 4 where they differ from the lines above: a craft is no longer refused for its level, so the gate that blocks is the station's tier alone, and the screen shows no chance, no word for the difficulty and no wanted level. The new work is in Appendix D, CR-16 to CR-23, with the decided CR-8; wave 3 closed CR-8, CR-16 and CR-22, the economy pull request CR-17 and CR-18, and wave 4 CR-11 with the audit's C12.
 
 ## Appendix A. The starting notes, checked
 
@@ -446,7 +454,6 @@ Mirrored in `docs/team/GRUNT.md`, section "Open ends". An item leaves the list w
 | CR-6 | Stale texts about the check: "!" lines, rules G1 to G16, kernel rules R1 to R11. | `docs/design/GAME_RULES.md:4`, `:76-77`, `:332`, `:382-383`; `AGENTS.md:9`; `CONTRIBUTING.md:15`; `docs/design/TOOLKIT.md:48-49` | one docs sweep |
 | CR-7 | Professions are core-only, against spec 8 line 248 and 11 line 475; held so by D-CRAFT-4 for now. | `schema/src/index.ts:575`, `tools/src/assemble.ts:136` | the stage that opens professions to extensions, with its own decision |
 | CR-10 | Quest gates by profession or character level for the non-crafter's roads. | `schema/src/index.ts:307` | a quest may name a level, or DECISIONS.md says it never will |
-| CR-11 | Bag categories. | `game/src/ui/panels.ts` | wave 4 |
 | CR-12 | A weapon slot waits for G35 (stage 8 or a vote). | roadmap | that stage or vote |
 | CR-13 | Metal content waits for its discovery. | roadmap | a vote or an accepted proposal |
 | CR-14 | A broad template can pass its bound today and fail on a later merge when another creator adds fitting items; the guide says to keep templates narrow. | `tools/src/assemble.ts` (wave 1) | the first such failure is handled, or the fit is scoped per creator |
