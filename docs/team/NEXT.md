@@ -216,3 +216,16 @@ Read GRUNT items 17-19 and DECISIONS 2026-10-07 "The stage-1 service runs as Ver
 - Upstash Redis comes from the Vercel Marketplace (free tier) in the existing project. Provisioning it and setting its two environment names on Vercel is a production change: ask the owner first, in three lines. Until then the tests run on the fake store and `usage` stays null.
 - Add Vercel Web Analytics for page views (owner, 11.10): `@vercel/analytics` pinned, one component in the site layout and one call in the game's page. Turning it on in the Vercel dashboard is the owner's, at the release. It does not replace the in-game counts.
 - Measurable: item 17's curl prints 204 on a preview with the env names; item 18's client tests and e2e green; item 19's page lists the fixture's numbers; `pnpm verify` green.
+
+## 11. Night light: dark around, a sharp light, no mist on the character
+
+The owner, 11.10, on production v0.1.2: at night the mist is drawn over the character itself, so the character blurs and the game looks as if its quality dropped. Wanted: darkness around, the light around the character sharper, and no mist on the character. This is polish inside the agreed look (the night, the lantern's light and the mist stay), so no stills round; a before and after capture goes to the owner.
+
+- Read `game/src/scenes/world.ts`: the valley-wide mist (`DEPTH.mist`), the slot fogs (`DEPTH.fog`), the shade and the lantern glow, and the WebGL vignette ("an old, worn picture").
+- The player, and what the player holds, draw above the mist and the fog; the mist still covers the ground, the props and the other figures.
+- At night the dark outside the lantern's light is deeper, and the light's edge is short and clear instead of a long soft fade.
+- Measurable, at 390x844 and 1440x900, by day and at night, with headless Chrome on its own port, closed by PID:
+  - the pixels in the player's box equal the same frame drawn with the mist, the fog and the vignette off (mean absolute difference at most 2 of 255 per channel);
+  - at night the mean luminance of a ring outside the light is at most 40% of the mean inside it;
+  - at night the light's edge falls from 90% to 10% of the inside level within 12 px at 390 wide;
+  - `pnpm verify` and `pnpm e2e` green.
