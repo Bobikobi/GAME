@@ -469,7 +469,8 @@ function eat(ctx: Ctx, itemId: string): void {
   // only a food that does nothing but good can be too much; a bad fruit is eaten full or not
   const hurts = item.food.hurt ?? 0;
   if (hurts === 0 && s.player.satiety >= cap) refuse('You are full.');
-  const fill = mulDiv(item.food.satiety * 1000, 100 + effectValue(b, s, 'meal_fill_pct'), 100);
+  // a hearty eater gets more from a meal, not from a bandage
+  const fill = mulDiv(item.food.satiety * 1000, 100 + (item.kind === 'food' ? effectValue(b, s, 'meal_fill_pct') : 0), 100);
   removeItem(ctx, itemId, 1);
   s.player.satiety = Math.min(cap, s.player.satiety + fill);
   ctx.events.push({ e: 'eat', item: itemId, satiety: s.player.satiety });

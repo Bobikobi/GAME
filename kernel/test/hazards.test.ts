@@ -51,10 +51,10 @@ function prop(id: string, x: number, y: number, hazard: Prop['hazard'], solid = 
 const wolf = (x: number, y: number, reach = 3): Prop => prop('test/wolf', x, y, { kind: 'predator', window: ['night'], reach });
 const pit = (x: number, y: number): Prop => prop('test/pit', x, y, { kind: 'pit', window: ['night'] });
 
-/** The bundle with hazards added and no hunger drain, so the numbers under test are the hazards'. */
+/** The bundle with only these hazards (the shipped ones taken out) and no hunger drain, so the numbers under test are the hazards'. */
 function world(props: Prop[], tweak?: (b: Bundle) => void): Bundle {
   const b = structuredClone(base);
-  b.map.props = [...b.map.props, ...props];
+  b.map.props = [...b.map.props.filter((p) => !p.hazard), ...props];
   b.params.satiety_drain_per_min = 0;
   tweak?.(b);
   return b;
@@ -118,13 +118,62 @@ describe('what the vocabularies and the shipped content say', () => {
     expect([...HAZARD_KINDS]).toEqual([...SCHEMA_HAZARD_KINDS]);
   });
 
-  test('the shipped valley has no hazard yet, so nothing in it can hurt', () => {
-    expect(hazardsOf(base)).toEqual([]);
-    expect(base.map.slots.some((s) => s.safe === true)).toBe(false);
+  test('the shipped valley hunts only in the night ruins, one step past their safe threshold (P-5c)', () => {
+    expect(hazardsOf(base).map((h) => [h.id, h.kind]).sort()).toEqual([
+      ['core/doorstep-pit', 'pit'],
+      ['core/ruins-wolf', 'predator'],
+    ]);
+    expect(base.map.slots.filter((s) => s.safe === true).map((s) => s.id)).toEqual(['core/night-threshold']);
   });
 
-  test('play is unchanged: health is the old satiety, it empties by the clock, and empty is not a fall', () => {
+  test("the opening's night walk to the arch and its threshold stays out of the wolf's reach", () => {
+    const wolf = hazardsOf(base).find((h) => h.id === 'core/ruins-wolf')!;
+    const slot = (id: string) => base.map.slots.find((sl) => sl.id === id)!;
+    const stone = base.map.props.find((p) => p.id === 'core/arch-stone')!;
+    const route = [slot('core/arch-mouth'), slot('core/arch-way'), slot('core/night-threshold'), stone];
+    // a diagonal step counts one, as the wolf's reach does
+    const r0 = wolf.rect;
+    const distanceTo = ([x, y]: Tile): number => Math.max(r0.x - x, 0, x - (r0.x + r0.w - 1), r0.y - y, y - (r0.y + r0.h - 1));
+    for (const r of route) {
+      for (let y = r.y - 1; y <= r.y + r.h; y++) {
+        for (let x = r.x - 1; x <= r.x + r.w; x++) {
+          if (y > 20) continue;
+          expect(distanceTo([x, y]), `${x},${y}`).toBeGreaterThan(wolf.reach);
+        }
+      }
+    }
+  });
+
+  test('one step past the threshold at night: the pit, then the wolf, then a fall that takes nothing it did not bring', () => {
+    const s0 = begin(base);
+    const s = place(s0, [36, 20], NIGHT);
+    s.player.restored = [...s.player.restored, 'core/arch-way'];
+    const bag = { ...s.player.bag };
+    const inside = move(base, s, [36, 21], NIGHT + 190);
+    expect(kinds(inside.events)).toEqual(['hurt']);
+    let state = inside.state;
+    let fell: GameEvent | undefined;
+    for (let t = NIGHT + 190 + 500; t <= NIGHT + 190 + 10_000 && !fell; t += 500) {
+      const r = move(base, state, [36, 21], t);
+      state = r.state;
+      fell = r.events.find((e) => e.e === 'fall');
+    }
+    expect(fell).toMatchObject({ e: 'fall', from: [36, 21], lost: [] });
+    expect(state.player.bag).toEqual(bag);
+    expect(state.player.satiety).toBe(satietyCap(base, state));
+  });
+
+  test('the shipped valley drains nothing by the clock (G32): an hour away, health is where it was', () => {
+    const s = begin(base);
+    const cap = satietyCap(base, s);
+    const r = move(base, s, [6, 18], 3_600_000);
+    expect(r.state.player.satiety).toBe(cap);
+    expect(satietyAt(base, r.state, 7_200_000)).toBe(cap);
+  });
+
+  test('a world that still drains: health is the old satiety, it empties by the clock, and empty is not a fall', () => {
     const b = structuredClone(base);
+    b.params.satiety_drain_per_min = 7000;
     const s = begin(b);
     const cap = satietyCap(b, s);
     expect(s.player.satiety).toBe(cap);
@@ -499,7 +548,9 @@ describe('low health', () => {
   };
 
   test('slows work by half at or below hp_low_pct of the bar, and 0 means only when empty', () => {
-    const plain = world([]);
+    const plain = world([], (b) => {
+      b.params.hp_low_pct = 0;
+    });
     const cap = satietyCap(plain, begin(plain));
     const normal = busyMs(plain, cap);
     expect(busyMs(plain, 1)).toBe(normal);
@@ -511,6 +562,26 @@ describe('low health', () => {
     expect(busyMs(careful, line + 1)).toBe(normal);
     expect(busyMs(careful, line)).toBe(Math.ceil((normal * 3) / 2));
     expect(busyMs(careful, 5)).toBe(Math.ceil((normal * 3) / 2));
+  });
+});
+
+describe('healing (P-5c)', () => {
+  test('a bandage and a first-aid kit heal their own number; a hearty eater gets more only from a meal', () => {
+    const b = world([], (w) => {
+      // the Hearty technique from the first level, so the start can use it
+      for (const t of w.professions['core/cooking']!.techniques) if (t.effect === 'meal_fill_pct') t.level = 1;
+    });
+    const s = begin(b);
+    s.player.satiety = 10_000;
+    s.player.bag['core/bandage'] = 1;
+    s.player.bag['core/first-aid-kit'] = 1;
+    s.player.bag['core/herb-tea'] = 1;
+    const bandaged = ok(b, s, { t: 'eat', item: 'core/bandage' }, 100).state;
+    expect(bandaged.player.satiety).toBe(30_000);
+    const kit = ok(b, bandaged, { t: 'eat', item: 'core/first-aid-kit' }, 200).state;
+    expect(kit.player.satiety).toBe(80_000);
+    const tea = ok(b, kit, { t: 'eat', item: 'core/herb-tea' }, 300).state;
+    expect(tea.player.satiety).toBe(92_500);
   });
 });
 

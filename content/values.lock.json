@@ -2,6 +2,7 @@
   "format": 1,
   "note": "Value anchor (rule R11). Re-anchored only by core maintainers.",
   "values": {
+    "core/bandage": 7000,
     "core/bellberry": 366,
     "core/berry": 500,
     "core/berry-mash": 4200,

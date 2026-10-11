@@ -53,10 +53,12 @@ P-5c, the content, a second pull request after P-5b:
 3. Hunger drains to 0 (param minimum 0), and only once hazards exist.
 4. Raise `hp_low_pct`.
 5. Add the GAME_RULES G30 and G34 rows.
-6. An e2e: at night, step one tile past the ruins' entrance, fall, and reappear in town with the basket gone and the quest back at step one.
+6. An e2e: at night, step one tile past the ruins' entrance, fall, and reappear in town with nothing lost. The safe threshold has just closed the outing, so the bag, the basket and the quests stay whole (DECISIONS 2026-10-10: a fall takes back only what the outing brought); a fall that takes the outing's finds is proven in the kernel tests until P-6 opens another way in.
 7. Rename `satiety` to `hp` last, in its own commit, after crafting has landed.
 
 Known wart, in DECISIONS: a quest that completed by itself during an outing keeps its reward after a fall. Mist hazards wait for P-6.
+
+Left after P-5c (11.10): item 7, the rename of `satiety` to `hp`, waits for crafting wave 4 (#48) to land, then goes in as its own pull request. P-5b also left the mist's half of the countdown and the lantern for P-6, and the warning before a camp fire goes out for the tent (CR-25).
 
 After P-5, in order:
 - CR-60 miss tables;
