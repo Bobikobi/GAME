@@ -228,9 +228,15 @@
             ],
             "properties": {
               "satiety": {
+                "minimum": 0,
+                "maximum": 100,
+                "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                "type": "integer"
+              },
+              "hurt": {
                 "minimum": 1,
                 "maximum": 100,
-                "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
                 "type": "integer"
               }
             }
@@ -901,12 +907,29 @@
                     "minimum": 1,
                     "maximum": 999,
                     "type": "integer"
+                  },
+                  "instead": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "What a start whose kit holds the item gets in its place: something that kit lacks.",
+                    "type": "string"
                   }
                 }
               }
             },
             "recipes": {
               "maxItems": 4,
+              "type": "array",
+              "items": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              }
+            },
+            "opens": {
+              "maxItems": 2,
+              "description": "Ids of restores the quest opens when it is done: a place reward, the way a restore opens by hand.",
               "type": "array",
               "items": {
                 "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",

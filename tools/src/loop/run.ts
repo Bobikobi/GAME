@@ -5,7 +5,7 @@ import type { LoopConfig } from './config';
 import type { LoopClient } from './github';
 import { evaluateMerge, quotaAllowed, quotaOverflow, type MergeEvaluation, type RuleResult } from './merge';
 import { answeredRequest, collectSlots, competingGroups, competitionRule, groupKey, groupTitle, type ProposalIdentity } from './proposals';
-import { requestBoardUrl, requestsToOpen } from './requests';
+import { requestBoardUrl, requestsToOpen, support } from './requests';
 import { isoWeek, renderSummary, type SummaryData } from './summary';
 import type { Account, ChangedFile, CheckRun, Comment, Issue, PullRequest, Reaction, Review } from './types';
 import {
@@ -45,7 +45,7 @@ export interface RunOptions {
   stepSummary?: string;
 }
 
-interface ProposalState extends ProposalIdentity {
+export interface ProposalState extends ProposalIdentity {
   pr: PullRequest;
   files: string[];
   checks: CheckRun[];
@@ -84,7 +84,7 @@ export async function runProposals(options: RunOptions): Promise<ProposalState[]
   return states;
 }
 
-async function applyCompetition(options: RunOptions, states: ProposalState[], voteIssues: Issue[], writeLabels: boolean): Promise<void> {
+export async function applyCompetition(options: RunOptions, states: ProposalState[], voteIssues: Issue[], writeLabels: boolean): Promise<void> {
   for (const group of competingGroups(states)) {
     const key = groupKey(group);
     const vote = voteIssues.find((item) => parseVoteMarker(item.body)?.group === key);
@@ -222,7 +222,7 @@ export async function runAll(options: RunOptions): Promise<void> {
   await runVotes(options);
 }
 
-async function collectProposals(options: RunOptions, addProposalLabels = true): Promise<ProposalState[]> {
+export async function collectProposals(options: RunOptions, addProposalLabels = true): Promise<ProposalState[]> {
   const pulls = await options.client.list<PullRequest>(repoPath(options, '/pulls?state=open&per_page=100'));
   const raw: Omit<ProposalState, 'evaluation'>[] = [];
   for (const pr of pulls.filter((item) => !item.draft)) {
@@ -359,7 +359,7 @@ async function updateVote(options: RunOptions, issue: Issue, accounts: Map<strin
   await options.client.write('PATCH', repoPath(options, `/issues/${issue.number}`), { state: 'closed', state_reason: 'completed', body });
 }
 
-async function readVote(options: RunOptions, issue: Issue, users: Map<string, AccountDate>): Promise<{ options: CountedOption[]; display: string }> {
+export async function readVote(options: RunOptions, issue: Issue, users: Map<string, AccountDate>): Promise<{ options: CountedOption[]; display: string }> {
   const comments = await options.client.list<Comment>(repoPath(options, `/issues/${issue.number}/comments?per_page=100`));
   const voteOptions: VoteOption[] = [];
   for (const comment of comments) {
@@ -450,7 +450,7 @@ function link(issue: Issue): { number: number; title: string; url: string } {
 }
 
 function summaryRequest(issue: Issue) {
-  return { ...link(issue), support: issue.reactions?.['+1'] ?? 0 };
+  return { ...link(issue), support: support(issue) };
 }
 
 function summaryProposal(item: ProposalState) {

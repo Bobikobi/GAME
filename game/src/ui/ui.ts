@@ -11,6 +11,7 @@ import {
   isNight,
   minuteOfDay,
   pickRemark,
+  rewardItem,
   satietyAt,
   satietyCap,
   skillPoints,
@@ -35,6 +36,8 @@ import {
   openSignCard,
   confirmBuild,
   confirmRestore,
+  openFeedback,
+  openOpeningReview,
 } from './panels';
 import { showTitle } from './title';
 import { mountTouch } from './touch';
@@ -223,6 +226,7 @@ export class UI {
     const level = h('span', { class: 'chip', title: 'Character level' });
     const bag = button('Bag', () => openBag(this), 'small');
     const log = button('Log', () => openJournal(this), 'small');
+    const feedbackBtn = button('Feedback', () => openFeedback(this), 'small');
     this.hud.replaceChildren(
       h(
         'div',
@@ -237,7 +241,7 @@ export class UI {
           h('button', { class: 'chip demo', type: 'button', onclick: () => this.aboutDemo() }, 'Demo'),
         ),
       ),
-      h('div', { class: 'hud-right' }, bag, log, button('Menu', () => openMenu(this), 'small')),
+      h('div', { class: 'hud-right' }, feedbackBtn, bag, log, button('Menu', () => openMenu(this), 'small')),
     );
     return { meter, bar, num, goldText, clockChip, clockIcon, clockText, level, bag, log };
   }
@@ -322,6 +326,14 @@ export class UI {
         const q = b.quests[e.quest];
         const giver = q?.giver ? b.npcs[q.giver] : undefined;
         if (q?.talk?.done) await say(this, giver?.name ?? null, named(q.talk.done));
+      }
+      // the threshold of the night ruins is a place, not a mend or a task: the opening's last words
+      if (e.e === 'visit' && e.slot === 'core/night-threshold') {
+        await say(this, null, [
+          'Past the arch the ruins go on, darker and deeper than by day. Far below, a bell rings once.',
+          'Not tonight. The way stays open.',
+        ]);
+        void openOpeningReview(this);
       }
     }
   }
@@ -436,7 +448,7 @@ export class UI {
     const why = s.check({ t: 'dig', spot: spotId, grade: 3, at: s.pos });
     if (why) return this.toast(why, 'bad');
     // a find picked up by hand has no timing window
-    const byHand = !app.bundle.treasures[app.bundle.instances[spotId]!.source]?.tool;
+    const byHand = !app.bundle.treasures[app.bundle.instances[spotId]?.source ?? '']?.tool;
     const grade = byHand ? 3 : await this.play(timing, 'Dig', spotId, 'dig');
     if (grade === null) return;
     const res = s.act({ t: 'dig', spot: spotId, grade, at: s.pos });
@@ -504,10 +516,13 @@ function named(lines: readonly string[]): string[] {
 function rewardText(questId: string): string {
   const b = app.bundle;
   const r = b.quests[questId]!.reward;
+  const starter = app.session?.state.player.starter ?? '';
   const parts: string[] = [];
   if (r.gold_mg) parts.push(`${gold(r.gold_mg)} gold`);
-  for (const it of r.items ?? []) parts.push(`${it.qty} ${itemName(b, it.item)}`);
+  // what this start gets: a reward its kit already holds is swapped for one it lacks
+  for (const it of r.items ?? []) parts.push(`${it.qty} ${itemName(b, rewardItem(b, starter, it))}`);
   for (const rc of r.recipes ?? []) parts.push(`the ${b.recipes[rc]?.title ?? rc} recipe`);
+  for (const o of r.opens ?? []) parts.push(`a way through the ${b.restores[o]?.title ?? o}`);
   if (r.rep) parts.push('their trust');
   return parts.join(', ') || 'their thanks';
 }

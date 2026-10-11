@@ -4,7 +4,7 @@
 import Site from '../../layouts/Site.astro';
 import '../../styles/hub.css';
 import '../../styles/signature.css';
-import { builders, reviewers, weights } from '../../data/boards';
+import { builders, githubRead, reviewers, weights } from '../../data/boards';
 import { repoFile } from '../../data/site';
 ---
 
@@ -91,7 +91,11 @@ import { repoFile } from '../../data/site';
             </tbody>
           </table>
         ) : (
-          <p class="empty">Approvals are counted from GitHub when the site's data build runs; until then this board is empty.</p>
+          <p class="empty">
+            {githubRead
+              ? 'No approval has counted yet: a reviewer earns points when a proposal they approved is merged.'
+              : 'This build could not read GitHub, so the approvals are not counted here.'}
+          </p>
         )
       }
     </section>

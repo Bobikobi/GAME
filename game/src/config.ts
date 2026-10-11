@@ -3,6 +3,8 @@ export const REPO_URL = 'https://github.com/Bobikobi/GAME';
 /** The game's name (DECISIONS.md, 9.10). */
 export const GAME_TITLE = 'Openfold';
 export const SAVE_KEY = 'openfold.save.1';
+/** Set once the one-time development review was answered or skipped; cleared with the save. */
+export const REVIEW_KEY = 'openfold.review.1';
 /** Where saves lived under the working title: read while SAVE_KEY is empty, removed at the next save. */
 export const LEGACY_SAVE_KEY = 'mistvale.save.1';
 /** Tile size in pixels. Every tile is 16x16 and every character frame 16x24. */

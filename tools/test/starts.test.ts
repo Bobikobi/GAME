@@ -1,6 +1,6 @@
 /**
- * Wood and the starts (DECISIONS.md, 2026-10-10): the core content passes with
- * no line, and a fixture that breaks each rule gets an error that names it.
+ * Wood, the starts and the rewards they get (DECISIONS.md, 2026-10-10): the core
+ * content passes with no line, and a fixture that breaks each rule gets an error that names it.
  */
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -64,6 +64,13 @@ describe('a fixture that breaks each rule', () => {
     j.starter!.wake = { x: 0, y: 0 };
     j.starter!.kit = [{ item: 'core/trowel', qty: 1 }, { item: 'core/basket', qty: 1 }];
     (j.starter!.attributes as unknown as Record<string, number>).stamina = 3;
+  });
+  // a reward a kit repeats: Pell's herbs give a basket two kits hold, and the digger, whose kit holds Maru's trowel, gets a basket it holds too
+  edit('quests/herbs-for-pell.json', (j) => {
+    (j.quest!.reward as Record<string, unknown>).items = [{ item: 'core/basket', qty: 1 }];
+  });
+  edit('quests/three-fruits.json', (j) => {
+    (j.quest!.reward as { items: { instead: string }[] }).items[0]!.instead = 'core/basket';
   });
   // twigs from the ground: wood with no axe
   const ext = join(root, 'extensions', 'tester', 'resources');
@@ -146,6 +153,19 @@ describe('a fixture that breaks each rule', () => {
     const lines = text('this start holds no axe');
     expect(lines).toHaveLength(1);
     expect(lines[0]!.file).toContain('forager.json');
+  });
+
+  it('a reward item a kit already holds, with nothing named in its place', () => {
+    const lines = text('name an item for it in "instead"');
+    expect(lines).toHaveLength(2);
+    expect(lines.every((l) => l.file.includes('herbs-for-pell.json'))).toBe(true);
+  });
+
+  it('an item in place of a reward that the same kit holds too', () => {
+    const lines = text('holds "core/basket" too');
+    expect(lines).toHaveLength(1);
+    expect(lines[0]!.file).toContain('three-fruits.json');
+    expect(lines[0]!.message).toContain('core/digger');
   });
 
   it('a tree and no shop that sells an axe', () => {

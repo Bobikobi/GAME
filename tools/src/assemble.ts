@@ -99,6 +99,19 @@ export function flattenParams(p: ParamsBody): Params {
     satiety_cap: p.satiety_cap.value,
     satiety_drain_per_min: p.satiety_drain_per_min.value,
     day_length_ms: p.day_length_ms.value,
+    walk_step_ms: p.walk_step_ms.value,
+    hp_low_pct: p.hp_low_pct.value,
+    hazard: {
+      predator: {
+        reach: p.hazard.predator.reach.value,
+        catch_ms: p.hazard.predator.catch_ms.value,
+        bite_ms: p.hazard.predator.bite_ms.value,
+        bite_pct: p.hazard.predator.bite_pct.value,
+      },
+      pit: { harm_pct: p.hazard.pit.harm_pct.value },
+      trap: { harm_pct: p.hazard.trap.harm_pct.value },
+      deep_water: { harm_pct: p.hazard.deep_water.harm_pct.value },
+    },
     bag_base: p.bag_base.value,
     starting_gold_mg: p.starting_gold_mg.value,
     per_point: {
@@ -358,6 +371,7 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     }
     if (it.fragment && !b.recipes[it.fragment.unlocks]) err(id, 'fragment.unlocks', `no recipe "${it.fragment.unlocks}"`);
     if (it.kind === 'food' && !it.food) err(id, 'food', 'a food item needs "food": { "satiety": n }');
+    if (it.food && it.food.satiety === 0 && it.food.hurt === undefined) err(id, 'food', 'a food feeds ("satiety" above 0) or hurts ("hurt"): this one does neither');
     if (it.kind === 'tool' && !it.tool) err(id, 'tool', 'a tool item needs "tool": { kind, tier, uses }');
     if (it.kind === 'fragment' && !it.fragment) err(id, 'fragment', 'a fragment item needs "fragment": { "unlocks": recipe id }');
   }
@@ -443,12 +457,28 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
         if (a.kind === 'visit' && !b.map.slots.some((s) => s.id === a.slot)) err(id, `${w}.answer`, `no slot "${a.slot}"`);
       }
     });
-    (q.reward.items ?? []).forEach((s, i) => item(id, `quest.reward.items.${i}`, s.item));
+    (q.reward.items ?? []).forEach((s, i) => {
+      const w = `quest.reward.items.${i}`;
+      item(id, w, s.item);
+      if (s.instead !== undefined) item(id, `${w}.instead`, s.instead);
+      // no reward repeats a kit: a start whose kit holds the item gets `instead`, which that kit lacks
+      for (const [sid, st] of Object.entries(b.starters)) {
+        const kit = (st.kit ?? []).map((k) => k.item);
+        if (!kit.includes(s.item)) continue;
+        if (s.instead === undefined) err(id, w, `the kit of "${sid}" holds "${s.item}": name an item for it in "instead"`);
+        else if (kit.includes(s.instead)) err(id, `${w}.instead`, `the kit of "${sid}" holds "${s.instead}" too`);
+      }
+    });
     (q.reward.recipes ?? []).forEach((rid, i) => {
       if (!b.recipes[rid]) err(id, `quest.reward.recipes.${i}`, `no recipe "${rid}"`);
     });
+    (q.reward.opens ?? []).forEach((rid, i) => {
+      if (!b.restores[rid]) err(id, `quest.reward.opens.${i}`, `no restore "${rid}"`);
+    });
   }
+  const opened = new Set(Object.values(b.quests).flatMap((q) => q.reward.opens ?? []));
   for (const [id, r] of Object.entries(b.restores)) {
+    if (r.inputs.length === 0 && !opened.has(id)) err(id, 'restore.inputs', 'no inputs and no quest opens it: it could never open');
     r.inputs.forEach((s, i) => item(id, `restore.inputs.${i}.item`, s.item));
     sprite(id, 'restore.before', r.before);
     sprite(id, 'restore.after', r.after);

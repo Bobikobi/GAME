@@ -1,5 +1,6 @@
 export * from './bundle';
 export * from './canon';
+export * from './danger';
 export * from './num';
 export * from './rng';
 export * from './state';

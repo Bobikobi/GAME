@@ -1,9 +1,10 @@
 /// <reference types="astro/client" />
 /**
- * The boards every page draws from (docs/team/GRUNT.md, items 5, 7 and 11). With a built hub-data document they
- * come from it. Without one (`pnpm hub:data`, item 3, does not exist yet) the builders come from the repository
- * itself: content/board.json, written by `pnpm board`, and each builder's profile. The fixture's sample builders
- * never reach a page; the footer's "(fixture)" covers the build line only.
+ * The boards every page draws from (docs/team/GRUNT.md, items 5, 7 and 11). The site build writes the hub-data
+ * document first (`pnpm hub:data`, item 3), and the boards come from it. A page built without it (`astro dev` on a
+ * fresh clone) takes the builders from the repository itself: content/board.json, written by `pnpm board`, and each
+ * builder's profile. The fixture's sample builders never reach a page; the footer's "(fixture)" covers the build
+ * line only.
  */
 import board from '../../../content/board.json';
 import pointsFile from '../../../.github/points.json';
@@ -62,11 +63,14 @@ export const builders: Builder[] = (fromFixture ? fromRepository() : (hub.creato
   (a, b) => b.points - a.points || a.handle.localeCompare(b.handle),
 );
 
-/** Reviewers are counted by the server; until the hub-data document is built there are none to show. */
-export const reviewers: Reviewer[] = fromFixture ? [] : [...(hub.reviewers as Reviewer[])].sort((a, b) => b.points - a.points);
+/** True when the document read GitHub: the reviewers and this week are real, even when they are empty. */
+export const githubRead = !fromFixture && hub.sources.github !== null;
+
+/** Reviewers are counted from GitHub by the data build; without it there are none to show. */
+export const reviewers: Reviewer[] = githubRead ? [...(hub.reviewers as Reviewer[])].sort((a, b) => b.points - a.points) : [];
 
 /** The weights the boards are computed with: the built document's, else the file it copies them from. */
 export const weights = fromFixture ? pointsFile : hub.parameters.points;
 
 /** This week's summary, when there is a real one. */
-export const week = fromFixture ? null : hub.summary;
+export const week = githubRead ? hub.summary : null;

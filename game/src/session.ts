@@ -13,12 +13,22 @@ import {
   KERNEL_VERSION,
   type State,
   fitWorn,
+  hourOf,
   makeWalkable,
   newState,
   serialize,
   step,
 } from '@game/kernel';
-import { LEGACY_SAVE_KEY, SAVE_KEY } from './config';
+import { LEGACY_SAVE_KEY, REVIEW_KEY, SAVE_KEY } from './config';
+
+/**
+ * The save file's version. 2 came with the new opening (the axe, the three
+ * starts and the recut): an older save is dropped once, with one notice on the
+ * title screen, and from then on a save always loads (DECISIONS.md, 2026-10-10).
+ */
+const SAVE_VERSION = 2;
+/** The date this browser first played the demo: kept outside the save, so no reset or new game clears it (CR-85). */
+export const DEMO_SINCE_KEY = 'openfold.demo-since';
 
 export type Facing = 'down' | 'up' | 'left' | 'right';
 export interface LogEntry {
@@ -27,7 +37,7 @@ export interface LogEntry {
 }
 
 interface SaveFile {
-  v: 1;
+  v: typeof SAVE_VERSION;
   kernel: string;
   content: string;
   tick: number;
@@ -70,6 +80,8 @@ export class Session {
   private deferred: GameEvent[] = [];
   private listeners = new Map<keyof SessionEvents, Set<Listener>>();
   private sinceSave = 0;
+  /** the in-game hour of the last frame: when it turns, what depends on the hour redraws */
+  private hour = -1;
 
   private constructor(bundle: Bundle, state: State) {
     this.bundle = bundle;
@@ -85,6 +97,42 @@ export class Session {
 
   static hasSave(): boolean {
     return readSave() !== undefined;
+  }
+
+  /**
+   * Drop a save of an older version, once: the new opening does not fit it
+   * (DECISIONS.md, 2026-10-10: saves reset once). The demo's date is stamped
+   * first, so the reset never takes it away. True when a save was dropped.
+   */
+  static dropOld(): boolean {
+    try {
+      const text = localStorage.getItem(SAVE_KEY) ?? localStorage.getItem(LEGACY_SAVE_KEY);
+      if (!text) return false;
+      let v: unknown;
+      try {
+        v = (JSON.parse(text) as { v?: unknown } | null)?.v;
+      } catch {
+        v = undefined;
+      }
+      // only a save that names an older version: an unreadable one is left as it was
+      if (typeof v !== 'number' || v >= SAVE_VERSION) return false;
+      stampDemo();
+      localStorage.removeItem(SAVE_KEY);
+      localStorage.removeItem(LEGACY_SAVE_KEY);
+      return true;
+    } catch {
+      // storage may be blocked; there is no save to drop then
+      return false;
+    }
+  }
+
+  /** The date this browser first played the demo (YYYY-MM-DD), if it did. */
+  static demoSince(): string | undefined {
+    try {
+      return localStorage.getItem(DEMO_SINCE_KEY) ?? undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   static restore(bundle: Bundle): Session | undefined {
@@ -103,7 +151,15 @@ export class Session {
     worn.worn ??= {};
     worn.looks ??= {};
     worn.tries ??= {};
+    // a save from before health and hazards (P-5) has no town, outing, chase or fall count
+    const danger = state.player as Partial<Pick<State['player'], 'town' | 'outing' | 'chase' | 'falls' | 'movedAt'>>;
+    danger.town ??= '';
+    danger.outing ??= null;
+    danger.chase ??= null;
+    danger.falls ??= 0;
+    danger.movedAt ??= state.tick;
     const session = new Session(bundle, state);
+    stampDemo();
     if (state.content !== bundle.tag) {
       // a new version of the world was published: keep what still exists
       if (!adapt(bundle, state)) return undefined;
@@ -129,6 +185,7 @@ export class Session {
     try {
       localStorage.removeItem(SAVE_KEY);
       localStorage.removeItem(LEGACY_SAVE_KEY);
+      localStorage.removeItem(REVIEW_KEY);
     } catch {
       // storage may be blocked; nothing to erase then
     }
@@ -194,6 +251,12 @@ export class Session {
       this.emit('events', events);
       this.emit('change', undefined);
     }
+    // a glint at dusk, a plant that opens: the world redraws once an hour, not only after an action
+    const hour = hourOf(this.bundle, this.tick);
+    if (hour !== this.hour) {
+      if (this.hour >= 0) this.emit('change', undefined);
+      this.hour = hour;
+    }
     this.sinceSave += dt;
     if (this.sinceSave > 5000) this.save();
   }
@@ -209,7 +272,10 @@ export class Session {
     if (!r.ok) return r;
     this.state = r.state;
     // each start wakes at its own place
-    if (action.t === 'start') this.pos = [r.state.player.at[0], r.state.player.at[1]];
+    if (action.t === 'start') {
+      this.pos = [r.state.player.at[0], r.state.player.at[1]];
+      stampDemo();
+    }
     this.tail.push({ a: action, tick: this.tick });
     if (this.tail.length > TAIL) this.tail.splice(0, this.tail.length - TAIL);
     const busy = r.events.find((e) => e.e === 'busy');
@@ -228,7 +294,7 @@ export class Session {
     this.sinceSave = 0;
     if (!this.started) return;
     const file: SaveFile = {
-      v: 1,
+      v: SAVE_VERSION,
       kernel: KERNEL_VERSION,
       content: this.bundle.tag,
       tick: this.tick,
@@ -248,12 +314,21 @@ export class Session {
   }
 }
 
+/** Stamp the demo's first day, once: never cleared, so a later title for its players can read it. */
+function stampDemo(): void {
+  try {
+    if (localStorage.getItem(DEMO_SINCE_KEY) === null) localStorage.setItem(DEMO_SINCE_KEY, new Date().toISOString().slice(0, 10));
+  } catch {
+    // private mode or full storage: no stamp, and the game still plays
+  }
+}
+
 function readSave(): SaveFile | undefined {
   try {
     const text = localStorage.getItem(SAVE_KEY) ?? localStorage.getItem(LEGACY_SAVE_KEY);
     if (!text) return undefined;
     const file = JSON.parse(text) as SaveFile;
-    return file.v === 1 && typeof file.state === 'string' ? file : undefined;
+    return file.v === SAVE_VERSION && typeof file.state === 'string' ? file : undefined;
   } catch {
     return undefined;
   }
@@ -296,6 +371,9 @@ function adapt(bundle: Bundle, state: State): boolean {
   p.restored = p.restored.filter((id) => id in bundle.restores);
   p.camp = p.camp.filter((id) => id in bundle.camps);
   p.visited = p.visited.filter((id) => bundle.map.slots.some((s) => s.id === id));
+  // a world that changed may have moved the hazards and the safe ground: nothing carries over
+  p.outing = null;
+  p.chase = null;
   state.nodes = keepKeys(state.nodes, bundle.instances);
   // a worn item that is gone, or no longer fits its place, comes off
   fitWorn(bundle, state);

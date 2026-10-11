@@ -58,6 +58,11 @@ export const ITEM_KINDS = ['material', 'food', 'tool', 'fragment', 'treasure'] a
 export const SLOT_KINDS = ['resource', 'ruin', 'npc', 'building', 'restore', 'camp', 'area'] as const;
 export const SlotKind = Type.Union(SLOT_KINDS.map((k) => Type.Literal(k)));
 
+/** What a hazard is (G30, G34): a hunter that chases, or a place that hurts when stepped on. */
+export const HAZARD_KINDS = ['predator', 'pit', 'trap', 'deep_water'] as const;
+/** When a hazard acts. "mist" joins with the expedition (GRUNT P-6), which defines the mist. */
+export const HAZARD_WINDOWS = ['night'] as const;
+
 export const TILE_TAGS = ['grove', 'meadow', 'riverbank', 'ruin', 'town', 'water', 'path', 'interior'] as const;
 export const TileTag = Type.Union(TILE_TAGS.map((k) => Type.Literal(k)));
 
@@ -100,6 +105,21 @@ const Word = (description: string) => Type.String({ pattern: '^[a-z0-9_-]+$', ma
 
 export const Stack = Type.Object(
   { item: Id, qty: Int(1, 999) },
+  { additionalProperties: false },
+);
+/**
+ * An item a quest gives. A start whose kit already holds it gets `instead`
+ * (DECISIONS.md, 2026-10-10: whom to help first), so no reward repeats a kit.
+ */
+export const RewardStack = Type.Object(
+  {
+    item: Id,
+    qty: Int(1, 999),
+    instead: Type.Optional({
+      ...Id,
+      description: 'What a start whose kit holds the item gets in its place: something that kit lacks.',
+    }),
+  },
   { additionalProperties: false },
 );
 export const Output = Type.Object(
@@ -169,7 +189,10 @@ export const ItemDef = Type.Object(
     sprite: SpriteRef,
     food: Type.Optional(
       Type.Object(
-        { satiety: Int(1, 100, 'Satiety points restored when eaten (the meter holds 100 at the start).') },
+        {
+          satiety: Int(0, 100, 'Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.'),
+          hurt: Type.Optional(Int(1, 100, 'Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).')),
+        },
         { additionalProperties: false },
       ),
     ),
@@ -555,8 +578,14 @@ export const QuestBody = Type.Object(
       {
         rep: Int(0, 100, 'Reputation with the giver. Never traded, so it can be generous.'),
         gold_mg: Type.Optional(Int(1, 10_000_000)),
-        items: Type.Optional(Type.Array(Stack, { maxItems: 4 })),
+        items: Type.Optional(Type.Array(RewardStack, { maxItems: 4 })),
         recipes: Type.Optional(Type.Array(Id, { maxItems: 4 })),
+        opens: Type.Optional(
+          Type.Array(Id, {
+            maxItems: 2,
+            description: 'Ids of restores the quest opens when it is done: a place reward, the way a restore opens by hand.',
+          }),
+        ),
       },
       { additionalProperties: false },
     ),
@@ -569,7 +598,10 @@ export const RestoreBody = Type.Object(
     place: Place,
     before: SpriteRef,
     after: SpriteRef,
-    inputs: Type.Array(Stack, { minItems: 1, maxItems: 6 }),
+    inputs: Type.Array(Stack, {
+      maxItems: 6,
+      description: 'What the player brings to restore it. Empty: it does not open by hand, only as a quest\'s reward.opens.',
+    }),
     active_ms: Ms('Time the player is busy restoring it.'),
     passable: Type.Boolean({ description: 'Whether the restored thing can be walked over (a bridge).' }),
     sign: Type.Optional(Name),
@@ -766,6 +798,31 @@ export const ParamsBody = Type.Object(
     satiety_cap: Bounded,
     satiety_drain_per_min: Bounded,
     day_length_ms: Bounded,
+    walk_step_ms: {
+      ...Bounded,
+      description: 'Milliseconds the player takes to walk one tile. The client walks at this pace; the kernel checks a position report against it (DECISIONS.md, 2026-10-10: health and hazards).',
+    },
+    hp_low_pct: {
+      ...Bounded,
+      description: 'Work takes half as long again while health is at or below this share of its cap, in percent. 0 slows it only when health is empty (G32).',
+    },
+    hazard: Type.Object(
+      {
+        predator: Type.Object(
+          {
+            reach: { ...Bounded, description: 'Tiles from its footprint within which a predator notices the player, unless the prop says otherwise.' },
+            catch_ms: { ...Bounded, description: 'From the start of a chase to the first bite.' },
+            bite_ms: { ...Bounded, description: 'Between one bite and the next.' },
+            bite_pct: { ...Bounded, description: 'What one bite takes, in percent of the health cap.' },
+          },
+          { additionalProperties: false },
+        ),
+        pit: Type.Object({ harm_pct: { ...Bounded, description: 'What stepping into a pit takes, in percent of the health cap.' } }, { additionalProperties: false }),
+        trap: Type.Object({ harm_pct: { ...Bounded, description: 'What stepping on a trap takes, in percent of the health cap.' } }, { additionalProperties: false }),
+        deep_water: Type.Object({ harm_pct: { ...Bounded, description: 'What stepping into deep water takes, in percent of the health cap.' } }, { additionalProperties: false }),
+      },
+      { additionalProperties: false, description: 'How hard each kind of hazard hits (G30, G34). A hazard is a rule, not a roll.' },
+    ),
     bag_base: Bounded,
     starting_gold_mg: Bounded,
     per_point: Type.Object(
@@ -816,6 +873,12 @@ const Slot = Type.Object(
     h: Int(1, 64),
     tag: Type.Optional(TileTag),
     label: Type.Optional(Name),
+    safe: Type.Optional(
+      Type.Boolean({
+        description:
+          'A safe area (G30): no hazard acts inside it at any hour, a chase ends when the player stands in it, and what the player carries in is theirs. The cobbles of the town and the camp once a part stands are safe without this.',
+      }),
+    ),
   },
   { additionalProperties: false },
 );
@@ -841,6 +904,22 @@ export const MapBody = Type.Object(
           solid: Type.Boolean(),
           sign: Type.Optional({ ...Id, description: 'Makes the prop a readable sign that names whoever filled this slot, or says it awaits restoration.' }),
           note: Type.Optional({ ...Text, description: 'A line shown when the player looks at this prop, for example an old inscription.' }),
+          hazard: Type.Optional(
+            Type.Object(
+              {
+                kind: Type.Union(HAZARD_KINDS.map((k) => Type.Literal(k)), {
+                  description: 'A predator hunts the player in its reach and bites until the player stands somewhere safe; a pit, a trap or deep water hurts once each time the player steps onto its footprint.',
+                }),
+                window: Type.Array(Type.Union(HAZARD_WINDOWS.map((k) => Type.Literal(k))), {
+                  minItems: 1,
+                  uniqueItems: true,
+                  description: 'When it acts (G30). Outside its window it is harmless and shows.',
+                }),
+                reach: Type.Optional(Int(1, 12, 'A predator only: how many tiles from its footprint it notices the player. The params hold the default.')),
+              },
+              { additionalProperties: false, description: 'Makes the prop a hazard (G30-G35). It needs an id.' },
+            ),
+          ),
         },
         { additionalProperties: false },
       ),
