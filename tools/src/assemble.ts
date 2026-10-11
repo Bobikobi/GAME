@@ -99,6 +99,19 @@ export function flattenParams(p: ParamsBody): Params {
     satiety_cap: p.satiety_cap.value,
     satiety_drain_per_min: p.satiety_drain_per_min.value,
     day_length_ms: p.day_length_ms.value,
+    walk_step_ms: p.walk_step_ms.value,
+    hp_low_pct: p.hp_low_pct.value,
+    hazard: {
+      predator: {
+        reach: p.hazard.predator.reach.value,
+        catch_ms: p.hazard.predator.catch_ms.value,
+        bite_ms: p.hazard.predator.bite_ms.value,
+        bite_pct: p.hazard.predator.bite_pct.value,
+      },
+      pit: { harm_pct: p.hazard.pit.harm_pct.value },
+      trap: { harm_pct: p.hazard.trap.harm_pct.value },
+      deep_water: { harm_pct: p.hazard.deep_water.harm_pct.value },
+    },
     bag_base: p.bag_base.value,
     starting_gold_mg: p.starting_gold_mg.value,
     per_point: {
@@ -358,6 +371,7 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     }
     if (it.fragment && !b.recipes[it.fragment.unlocks]) err(id, 'fragment.unlocks', `no recipe "${it.fragment.unlocks}"`);
     if (it.kind === 'food' && !it.food) err(id, 'food', 'a food item needs "food": { "satiety": n }');
+    if (it.food && it.food.satiety === 0 && it.food.hurt === undefined) err(id, 'food', 'a food feeds ("satiety" above 0) or hurts ("hurt"): this one does neither');
     if (it.kind === 'tool' && !it.tool) err(id, 'tool', 'a tool item needs "tool": { kind, tier, uses }');
     if (it.kind === 'fragment' && !it.fragment) err(id, 'fragment', 'a fragment item needs "fragment": { "unlocks": recipe id }');
   }

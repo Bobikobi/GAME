@@ -169,6 +169,20 @@ describe('session persistence', () => {
     expect(restored?.state.player.tries).toEqual({});
   });
 
+  test('loads a save from before health and hazards', () => {
+    startedSession();
+    const save = JSON.parse(storage.getItem(SAVE_KEY)!) as { state: string };
+    const state = JSON.parse(save.state) as { player: Record<string, unknown> };
+    for (const k of ['town', 'outing', 'chase', 'falls', 'movedAt']) delete state.player[k];
+    storage.setItem(SAVE_KEY, JSON.stringify({ ...save, state: JSON.stringify(state) }));
+
+    const restored = Session.restore(bundle)!;
+    const p = restored.state.player;
+    expect([p.town, p.outing, p.chase, p.falls]).toEqual(['', null, null, 0]);
+    expect(p.movedAt).toBe(restored.state.tick);
+    expect(restored.act({ t: 'move', at: [p.at[0], p.at[1]] }).ok).toBe(true);
+  });
+
   test('a new world version teaches its new start recipes and drops what is gone', () => {
     const session = startedSession();
     session.state.player.tries = { 'core/berry-mash': 2, 'x/gone': 1 };

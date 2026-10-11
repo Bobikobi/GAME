@@ -13,6 +13,7 @@ import { readBoard } from './board';
 import { CORE_PALETTE } from './kit/palette';
 import { LOCK_FILE, loadAll, toRepoPath, type Issue } from './load';
 import { baseOf } from './material';
+import { checkHazards } from './hazards';
 import { checkPlay } from './play';
 import { checkReach } from './reach';
 import { checkStarts } from './starts';
@@ -40,6 +41,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkPlay(b, assembled.origin));
     issues.push(...checkStarts(b, assembled.origin));
     issues.push(...checkReach(b, assembled.origin));
+    issues.push(...checkHazards(b, assembled.origin));
   }
   return { issues: dedupe(issues), files: files.length, assembled };
 }
