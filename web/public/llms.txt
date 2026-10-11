@@ -6,7 +6,7 @@ Paths starting with / are on this site. Content goes in content/extensions/<your
 
 ## Guide
 
-- [Add a fruit in 10 minutes](https://github.com/Bobikobi/GAME/blob/develop/docs/creators/README.md): the creator guide - run the game, copy the template, check, open a pull request; profiles, signatures and points
+- [Add a fruit in 10 minutes](/docs/): the creator guide - run the game, copy the template, check, open a pull request; profiles, signatures and points
 - [The template](https://github.com/Bobikobi/GAME/tree/develop/templates/extension): a working extension (a fruit bush and a quest) to copy and rename
 - [Developer area](/hub/): where to start, the tools and the boards
 
@@ -19,15 +19,16 @@ Paths starting with / are on this site. Content goes in content/extensions/<your
 
 ## Data
 
-- [hub-data.json](/api/hub-data.json): the boards, the requests and this week in one document, format in [hub-data.schema.json](/api/schema/hub-data.schema.json); published once the data build is part of the site
+- [hub-data.json](/api/hub-data.json): the boards, the requests and this week in one document, format in [hub-data.schema.json](/api/schema/hub-data.schema.json), rebuilt with the site
 - [Boards](/hub/boards/): builders and reviewers with the weights their points are computed with
 
 ## MCP
 
-- [Tool definitions](https://github.com/Bobikobi/GAME/tree/develop/mcp): the read-only tools of the creator MCP server (schema, check, slots, requests, template, value, preview, guide, rules); the server that serves them lands with the next release
+- [Your AI tool and the project](/docs/#your-ai-tool-and-the-project): the read-only MCP server in the repository (schema, check, slots, requests, template, value, preview, guide, rules); Claude Code and Cursor find it through .mcp.json, any other tool runs `claude mcp add openfold -- pnpm -s mcp` in the checkout
 
 ## Rules
 
+- [Rules](/hub/rules/): the loop's numbers, how points are counted, the value of every item, the licences and conduct
 - [How to contribute](https://github.com/Bobikobi/GAME/blob/develop/CONTRIBUTING.md): how a pull request is reviewed and merged
 - [Code licence](https://github.com/Bobikobi/GAME/blob/develop/LICENSE): AGPL-3.0
 - [Content licence](https://github.com/Bobikobi/GAME/blob/develop/content/LICENSE): CC BY-SA 4.0, for every record and sprite

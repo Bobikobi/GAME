@@ -141,7 +141,7 @@ The craft panel (`game/src/ui/panels.ts:321-356`) lists the known recipes of the
 | G18 | Getting an item is not one motion; across a chain, the way varies. | `:163-167` |
 | G28 | No dark patterns: no punishment for being away, no timer that runs out while the player sleeps, no fake scarcity, nothing to pay for. | `:261-264` |
 | G32 | Health is the one bar; eating is how the player heals, and cooking keeps its purpose. | `:288-292` |
-| G34 | Each hazard has one thing to buy and one thing to make that answers it. | `:303-311` |
+| G34 | Each hazard has one thing to buy and one thing to make that answers it (as of the audit; since 10.10 no thing bought or made answers a hazard, and the answer is a run to a safe place). | `:303-311` |
 | G35 | No fighting; combat stays at stage 8 or a community vote. | `:312-314` |
 | G36, G37 | An expedition is the valley's dungeon and never the only road. | `:318-324` |
 | Section 6 | A request that breaks a rule is not built and the rule is not bent; six lines to the owner; the answer in DECISIONS.md the same day. An agent decides alone numbers inside the ranges of `params.json`; never a new step kind, a reward type, a rung of the ladder. | `:385-417` |
@@ -192,7 +192,7 @@ The craft panel (`game/src/ui/panels.ts:321-356`) lists the known recipes of the
 | 15 | The lists of what the game can do are core code, closed and documented; base, attributes, equipment, nodes and meal enter one function that returns the values after the caps. | 681, 683 |
 | 16 | Stage 3 brings the four-slot camp, the tree with the one calculator and caps, and the effort tiers; stage 6 brings premium currency and look items; combat sits at stage 8. | 703, 706, 708 |
 | 17 | "Power is not sold" is a fixed commitment; the revenue split (40% to the creators' fund) is protected. | 765, 762 |
-| 20 | Open: the power cap at the top level (direction x3), the computed-difficulty formula, the effort and rarity numbers (0.4, 0.6, 0.8, 1.0 and a 10% budget). | 830, 834, 844 |
+| 20 | Answered: the power cap at the top level (x3), the effort numbers (0.4, 0.6, 0.8, 1.0) and the 10% rarity budget live in `content/core/params.json`; the computed difficulty is the one internal scale (`docs/design/SETTLEMENT.md` 3.6, S3, 9.10). | 830, 834, 844 |
 
 ### 2.4 Decisions on record (DECISIONS.md)
 
@@ -298,18 +298,28 @@ As built (the readings are in DECISIONS.md, 2026-10-09, "Crafting wave 2 as buil
 - Client: the miss, wear and unwear lines and the miss sound; an old save gains empty worn places and craft counters, and a new world version teaches its new start recipes.
 - Tests: kernel crafting (gate, chance, luck, miss, replay and ledger), worn items (places, layers, set, power cap, a random run that keeps every worn unit in the bag), worn and miss schema cases, the checker's passing world and every refusal, the save cases, and the invariant run with wear and unwear.
 
-### Wave 3: seed content and creator docs
+### Wave 3: seed content and creator docs (built on `feat/crafting-wave3`)
 
 - Two or three chains that climb tier 1 to 2 to 3 through a station each, inside the period before metal: wood, stone, fibre and clay (D-CRAFT-5, D-CRAFT-8); one template among them.
 - The workshop camp part (tier 1, and a tier-2 part) and the first higher-tier tools that no shop sells (D-CRAFT-10); the first garments and jewelry as worn items.
 - `docs/creators/README.md`: adding a material, a recipe, a template, a worn item; what the check refuses and why (the parts wave 1 did not write).
 - `docs/team/GRUNT.md` rows for what stays open (Appendix D).
 
+As built (the readings are in DECISIONS.md, 2026-10-09, "Crafting wave 3 as built"):
+
+- Schema: `tool.uses` is optional; left out, the tool lasts. Additive, and FORMAT_VERSION stays 1.
+- Kernel 0.4.0: `salePrice` is what the trader pays for a stack, and `sell` pays it: an item with no value is never bought, a tool sells by the share of its uses left with the unit in use sold last, and a lasting tool sells in full (CR-8). A tool with no `uses` never wears; the uses spent leave the bag with the last unit. Of the built parts that provide a recipe's station at its tier, the one the player stands at does the craft, else the first.
+- Checker and values report: `checkCrafting` refuses a recipe or template whose average try at its own level, before luck, loses value, with the chance from `craft_chance_bp` (CR-16); `tools/src/making.ts` gives `pnpm values` its gold an hour of making per tier beside gathering (CR-22). The first reading is in DECISIONS.md and CR-31.
+- Content: the reed bank (map slot `core/reed-bank`, reed of class fibre at tier 1); the handcraft profession at the workshop (Steady hands at level 2, Sure hands at level 4); the work stone, the workbench and the workshop in the `workshop` slot, tiers 1 to 3 by upgrades, so the tier-3 recipes have a station; eleven recipes in the stone and reed chains (two at tier 1, seven at tier 2, two at tier 3) and the template `core/dye-cord` (two recipes); the tier-2 tools wear out (80 and 120 uses) and the tier-3 tools last; the reed hat and the reed sandals (the set `core/reed-walker`) and the lucky charm as work clothes, never protection against a hazard; thirteen new values in `values.lock.json` and no old one moved; kit icons reused (CR-30), `content/kit` unchanged. The two chains are stone and fibre; the plan's wood and clay chains are not in this wave.
+- Client (this wave's plan): the lasting-tool text, Wear and Take off in the item detail, made tools in the sell list at the kernel's price, Make at the workshop, and an upgrade row in the craft panel. The map scene is protected in this wave; its gaps are CR-27 to CR-29.
+- Tests (this wave's plan): the average-try refusal (CR-16), the values report, the tool sale and the lasting tool, the station part the player stands at, and the dye template's expansion.
+- Docs: "Crafting, step by step" and the crafting refusals in "What the check enforces" in `docs/creators/README.md`; CR-8, CR-16 and CR-22 leave the open ends and CR-27 to CR-31 join them, here and in GRUNT.
+
 ### Wave 4: the client, inside the existing craft panel
 
 - Class and tier shown on an item and a recipe; the gate that blocks (which level, which station tier, which profession); the family row in the journal; the bag categories of D-CRAFT-6. No restyle.
 
-The owner's economy answers of 9.10 evening (DECISIONS.md, 2026-10-09, "The crafting economy") change waves 3 and 4 where they differ from the lines above: a craft is no longer refused for its level, so the gate that blocks is the station's tier alone, and the screen shows no chance, no word for the difficulty and no wanted level. The new work is in Appendix D, CR-16 to CR-23, with the decided CR-8.
+The owner's economy answers of 9.10 evening (DECISIONS.md, 2026-10-09, "The crafting economy") change waves 3 and 4 where they differ from the lines above: a craft is no longer refused for its level, so the gate that blocks is the station's tier alone, and the screen shows no chance, no word for the difficulty and no wanted level. The new work is in Appendix D, CR-16 to CR-23, with the decided CR-8; wave 3 closed CR-8, CR-16 and CR-22.
 
 ## Appendix A. The starting notes, checked
 
@@ -424,17 +434,19 @@ Mirrored in `docs/team/GRUNT.md`, section "Open ends". An item leaves the list w
 | CR-5 | Restores and camp parts carry `active_ms` outside the bounds check. | `tools/src/check.ts:109-113` | the `timed` list includes them |
 | CR-6 | Stale texts about the check: "!" lines, rules G1 to G16, kernel rules R1 to R11. | `docs/design/GAME_RULES.md:4`, `:76-77`, `:332`, `:382-383`; `AGENTS.md:9`; `CONTRIBUTING.md:15`; `docs/design/TOOLKIT.md:48-49` | one docs sweep |
 | CR-7 | Professions are core-only, against spec 8 line 248 and 11 line 475; held so by D-CRAFT-4 for now. | `schema/src/index.ts:575`, `tools/src/assemble.ts:136` | the stage that opens professions to extensions, with its own decision |
-| CR-8 | The shop never buys a tool; a crafted higher-tier tool has a value and no sell-back. Decided 9.10 (DECISIONS.md, "The crafting economy"): the trader buys a tool by the part of its uses left, and a tool may leave out `uses` and last. | `kernel/src/step.ts:367`, `schema/src/index.ts` | D-CRAFT-10's content lands with that sell-back and the optional `uses` |
 | CR-10 | Quest gates by profession or character level for the non-crafter's roads. | `schema/src/index.ts:307` | a quest may name a level, or DECISIONS.md says it never will |
 | CR-11 | Bag categories. | `game/src/ui/panels.ts` | wave 4 |
 | CR-12 | A weapon slot waits for G35 (stage 8 or a vote). | roadmap | that stage or vote |
 | CR-13 | Metal content waits for its discovery. | roadmap | a vote or an accepted proposal |
 | CR-14 | A broad template can pass its bound today and fail on a later merge when another creator adds fitting items; the guide says to keep templates narrow. | `tools/src/assemble.ts` (wave 1) | the first such failure is handled, or the fit is scoped per creator |
-| CR-16 | The average try: at its own level a tier-2 recipe uses 112.5 percent of its inputs for each success and a tier-3 recipe about 127; the value table prices only the success. | `tools/src/check.ts` | the check refuses a recipe whose average try at its own level loses value, p * V(out) + (1 - p) * V(kept) >= V(in), with a test |
 | CR-17 | The level wall: a recipe above the profession's level is refused. Decided 9.10: no wall, the chance falls by `craft_level_step_bp` per missing level down to nothing, fitting gear counts on the side of skill, and the screen shows no chance or difficulty. | `kernel/src/step.ts` | the kernel no longer refuses on level and a try at nothing runs and misses, with tests |
 | CR-18 | A made good sells for the raw share. Decided 9.10: the trader pays `k_craft_permille` (750) of r * V for an item whose value comes from a recipe. | `kernel/src/step.ts`, `content/core/params.json`, `docs/kernel-review-v1.md` | the param, the trader and R8 with Theorem 3 change together, with a test |
-| CR-19 | The trader pays one price whatever the supply. Decided 9.10: a free market, a stock per item that moves the trader's and the shop's prices inside R8's band and drains with game time. | `kernel/src/state.ts`, `kernel/src/step.ts` | the market stock and its prices exist with tests, and the trader shows today's price |
+| CR-19 | The trader pays one price whatever the supply. Decided 9.10: a free market, a stock per item that moves the trader's and the shop's prices inside R8's band and drains with game time. Timing decided 9.10: the build right after crafting wave 4, one market per world, tuned in the demo; at stage 4 the players of a world share it. | `kernel/src/state.ts`, `kernel/src/step.ts` | the market stock and its prices exist with tests, and the trader shows today's price |
 | CR-20 | No upgrade recipe: an item and more materials that give the next tier of the same item, whose miss keeps the item whole. | `schema/src/index.ts`, `kernel/src/step.ts` | such a recipe exists and its miss keeps the item, with a test |
 | CR-21 | Worn effects are pluses only, so a set cannot trade one task for another. | `schema/src/index.ts`, `tools/src/check.ts` | a worn effect may carry a minus inside its tier's cap, with a check and a test |
-| CR-22 | Gold per hour of making is not reported, so the market's steps cannot be tuned from numbers. | the values report in `tools/src/` | the values report prints gold per hour of making per tier |
 | CR-23 | What gold is for: group quests and a settlement that players found, guard and feed together, meant as the main sink. | roadmap | its own plan, with a decision |
+| CR-27 | An empty camp slot draws every unbuilt part as a pulsing ghost, so the three workshop parts (work stone, workbench, workshop) overlap at one spot. The map scene was protected in wave 3. | `game/src/scenes/world.ts:955-964` | an unbuilt part that has `upgrades` is not drawn |
+| CR-28 | Every built station is labelled "Cook at the <title>", so the workshop reads "Cook at the Work stone". | `game/src/scenes/world.ts:1633` | only the fire says cook, and the other stations say make |
+| CR-29 | The map offers "Build:" only for the first part of an empty slot, never an upgrade; the craft panel's upgrade row covers it for now. | `game/src/scenes/world.ts:1629-1639` | the map offers the upgrade too |
+| CR-30 | The thirteen items of wave 3 reuse kit icons: reed as the herb, reed cord and the sandals as the branch, dyed cord as the berry, the woven mat, both baskets and the hat as the basket, flakes as the stone, the blade as the pottery shard, both trowels as the trowel, the charm as the stone idol; the three workshop parts stand as the mossy rock, the stump and the shelf. | `content/core/recipes/`, `content/core/camp/`, `content/core/resources/reed-bank.json`, `content/core/templates/dye-cord.json` | the asset sidecar draws them |
+| CR-31 | The values report puts tier-3 making at 1410.0 to 2040.0 gold an hour (median 1725.0), against 14400.0 at tier 1, 7480.8 to 11520.0 at tier 2 and 7200.0 to 7920.0 for gathering: the miss risk and the long times the average try asks for. | `tools/src/making.ts`, `content/core/recipes/` | the economy pull request with CR-18 answers it from the report |

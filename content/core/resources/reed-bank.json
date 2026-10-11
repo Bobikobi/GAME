@@ -1,0 +1,33 @@
+{
+  "$schema": "../../../schema/json/resource.schema.json",
+  "format": 1,
+  "type": "resource",
+  "id": "core/reed-bank",
+  "title": "Reed bank",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/reed",
+      "name": "Reed",
+      "description": "Tall and tough. It bends a long way before it breaks.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "fibre",
+      "tier": 1,
+      "sprite": "core/base-kit:items/herb"
+    }
+  ],
+  "node": {
+    "output": "core/reed",
+    "yield": 2,
+    "active_ms": 2500,
+    "respawn_ms": 30000,
+    "count": 3,
+    "sprite": "core/base-kit:props/reeds",
+    "level": 1,
+    "game": "snap",
+    "place": {
+      "slot": "core/reed-bank"
+    }
+  }
+}

@@ -228,9 +228,15 @@
             ],
             "properties": {
               "satiety": {
+                "minimum": 0,
+                "maximum": 100,
+                "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                "type": "integer"
+              },
+              "hurt": {
                 "minimum": 1,
                 "maximum": 100,
-                "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
                 "type": "integer"
               }
             }
@@ -240,8 +246,7 @@
             "type": "object",
             "required": [
               "kind",
-              "tier",
-              "uses"
+              "tier"
             ],
             "properties": {
               "kind": {
@@ -257,6 +262,10 @@
                   {
                     "const": "axe",
                     "type": "string"
+                  },
+                  {
+                    "const": "staff",
+                    "type": "string"
                   }
                 ]
               },
@@ -269,7 +278,7 @@
               "uses": {
                 "minimum": 1,
                 "maximum": 1000,
-                "description": "The tool wears out after this many uses.",
+                "description": "The tool wears out after this many uses. Left out, the tool lasts (DECISIONS.md, 2026-10-09: the crafting economy).",
                 "type": "integer"
               }
             }
@@ -563,7 +572,7 @@
         },
         "kit": {
           "maxItems": 6,
-          "description": "What the character carries on the first morning: the tools of its first task, put in the bag when the character is chosen.",
+          "description": "What the character carries on the first morning: the tools of its first task, put in the bag when the character is chosen. A piece with a working \"wear\" slot is worn from the start.",
           "type": "array",
           "items": {
             "additionalProperties": false,
@@ -585,6 +594,38 @@
                 "type": "integer"
               }
             }
+          }
+        },
+        "wake": {
+          "additionalProperties": false,
+          "description": "The tile the character wakes on. Left out: the map's spawn.",
+          "type": "object",
+          "required": [
+            "x",
+            "y"
+          ],
+          "properties": {
+            "x": {
+              "minimum": 0,
+              "maximum": 1023,
+              "type": "integer"
+            },
+            "y": {
+              "minimum": 0,
+              "maximum": 1023,
+              "type": "integer"
+            }
+          }
+        },
+        "intro": {
+          "minItems": 1,
+          "maxItems": 4,
+          "description": "What the narrator says as the character wakes, one box a line. Left out: the game's own waking lines.",
+          "type": "array",
+          "items": {
+            "minLength": 1,
+            "maxLength": 240,
+            "type": "string"
           }
         }
       }

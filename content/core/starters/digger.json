@@ -1,0 +1,36 @@
+{
+  "$schema": "../../../schema/json/starter.schema.json",
+  "format": 1,
+  "type": "starter",
+  "id": "core/digger",
+  "title": "Digger",
+  "creator": "core",
+  "starter": {
+    "name": "Digger",
+    "summary": "Strong arms, a long day and a lucky hand. Wakes with a trowel. Wears patched clothes; fine attire is earned through valley achievements.",
+    "attributes": {
+      "carry": 1,
+      "senses": 1,
+      "agility": 0,
+      "luck": 2,
+      "stamina": 2
+    },
+    "sprite": "core/base-kit:chars/player_down",
+    "sprite_alt": "core/base-kit:chars/woman_down",
+    "kit": [
+      {
+        "item": "core/trowel",
+        "qty": 1
+      }
+    ],
+    "wake": {
+      "x": 9,
+      "y": 23
+    },
+    "intro": [
+      "You wake south of the broken bridge at noon, a trowel in your hand.",
+      "The bank slid in the night. Something hard lies in the turned earth.",
+      "Dig it out, then make for the bridge: its keystone lies in the shallows."
+    ]
+  }
+}

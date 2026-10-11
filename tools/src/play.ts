@@ -13,6 +13,20 @@ export const RULES_PAGE = 'docs/design/GAME_RULES.md';
 /** The opening chain teaches each verb by repetition; G2 and G4 apply after it. */
 export const OPENING_QUESTS: ReadonlySet<string> = new Set(['core/fix-the-bridge', 'core/first-fire', 'core/into-town']);
 
+/**
+ * The opening as the content names it: the shared chain, and each start's own
+ * first task, a quest that names its starter (DECISIONS.md, 2026-10-09: each
+ * character begins its own way, and the opening chain names each first task).
+ */
+export function openingQuests(b: Bundle): Set<string> {
+  return new Set([...OPENING_QUESTS, ...Object.values(b.quests).flatMap((q) => (q.starter === undefined ? [] : [q.id]))]);
+}
+
+/** What a start's own spots give: a gift of the start, which its own first task may name as a find. */
+export function startFinds(b: Bundle, starter: string): Set<string> {
+  return new Set(Object.values(b.treasures).flatMap((t) => (t.starter === starter ? t.finds.map((f) => f.item) : [])));
+}
+
 /** About two lines of dialogue on a phone at the dialogue size (G14). */
 export const BOX_CHARS = 80;
 
@@ -27,7 +41,8 @@ export function digOnlyItems(b: Bundle): Set<string> {
   const gathered = new Set(Object.values(b.resources).map((r) => r.output));
   const made = madeItems(b);
   const sold = soldItems(b);
-  const dug = Object.values(b.treasures).flatMap((t) => t.finds.map((f) => f.item));
+  // a start's own spot is a gift, not a source
+  const dug = Object.values(b.treasures).flatMap((t) => (t.starter === undefined ? t.finds.map((f) => f.item) : []));
   return new Set(dug.filter((item) => !gathered.has(item) && !made.has(item) && !sold.has(item)));
 }
 
@@ -75,6 +90,15 @@ export function firstQuests(b: Bundle, n: number): QuestDef[] {
     .slice(0, n);
 }
 
+/**
+ * A maze asks with its shape and is answered by the route (GAME_RULES.md
+ * section 3): its quest is a visit of the place at its heart, and the walk
+ * through the dead ends is the beat that G2 asks for.
+ */
+export function isMazeVisit(q: QuestDef): boolean {
+  return q.type === 'maze' && q.steps.length > 0 && q.steps.every((s) => s.kind === 'visit');
+}
+
 export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
   const issues: Issue[] = [];
   const at = (id: string) => origin[id] ?? 'content';
@@ -84,10 +108,11 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
   const findable = findableItems(b);
   const isFind = (item: string) => findable.has(item);
 
+  const opening = openingQuests(b);
   for (const q of Object.values(b.quests)) {
-    if (OPENING_QUESTS.has(q.id)) continue;
+    if (opening.has(q.id)) continue;
     const counter = q.steps.every((s) => s.kind === 'visit' || (s.kind === 'bring' && !isFind(s.item)));
-    if (counter) {
+    if (counter && !isMazeVisit(q)) {
       issues.push({
         file: at(q.id),
         where: 'quest.steps',
@@ -96,7 +121,8 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
       });
     }
     const r = q.reward;
-    if ((r.items?.length ?? 0) + (r.recipes?.length ?? 0) === 0) {
+    // items, recipes and places opened are all something the player can newly do
+    if ((r.items?.length ?? 0) + (r.recipes?.length ?? 0) + (r.opens?.length ?? 0) === 0) {
       issues.push({
         file: at(q.id),
         where: 'quest.reward',
@@ -202,6 +228,21 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
       message: `${unnamed} inscription${unnamed === 1 ? '' : 's'} on props without an id, so no riddle can cite ${unnamed === 1 ? 'it' : 'them'} (${rule('G8', 'free read')}); give the prop an id and a riddle, or cut the note`,
       level: PLAY_LEVEL,
     });
+  }
+
+  // A maze is answered by standing at its heart, and the client sends a visit only for an area (or a riddle's place).
+  for (const q of Object.values(b.quests)) {
+    if (q.type !== 'maze') continue;
+    const hearts = q.steps.flatMap((st) => (st.kind === 'visit' ? [st.slot] : []));
+    const wrong = hearts.filter((id) => b.map.slots.find((sl) => sl.id === id)?.kind !== 'area');
+    if (hearts.length === 0 || wrong.length > 0) {
+      issues.push({
+        file: at(q.id),
+        where: 'quest.steps',
+        message: `a maze is answered by a visit of the area at its heart${wrong.length > 0 ? `; not an area: ${wrong.join(', ')}` : ''} (${RULES_PAGE} section 3, maze)`,
+        level: PLAY_LEVEL,
+      });
+    }
   }
 
   // G17: every quest names its type; no two of one type in a row along the requires links; five types among the first ten quests.

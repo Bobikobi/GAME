@@ -1,0 +1,40 @@
+{
+  "$schema": "../../../schema/json/quest.schema.json",
+  "format": 1,
+  "type": "quest",
+  "id": "core/the-tangle",
+  "title": "The tangle past the ruins",
+  "creator": "core",
+  "quest": {
+    "giver": "core/elder",
+    "type": "maze",
+    "summary": "My mother said a clearing hides in the tangle south of the ruins, by a dead tree. Find the way in.",
+    "requires": [
+      "core/a-coin-for-maru"
+    ],
+    "steps": [
+      {
+        "kind": "visit",
+        "slot": "core/tangle-heart"
+      }
+    ],
+    "talk": {
+      "offer": [
+        "South of the ruins the trees grew into a knot. A gap in it, past the hall.",
+        "Mother said a clearing hides in it, by a dead tree. Mind the moss, she said."
+      ],
+      "done": [
+        "So the moss still points the way. Take this idol. It was hers."
+      ]
+    },
+    "reward": {
+      "rep": 15,
+      "items": [
+        {
+          "item": "core/stone-idol",
+          "qty": 1
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../schema/json/camp.schema.json",
+  "format": 1,
+  "type": "camp",
+  "id": "core/work-stone",
+  "title": "Work stone",
+  "creator": "core",
+  "camp": {
+    "slot": "workshop",
+    "inputs": [
+      {
+        "item": "core/stone",
+        "qty": 4
+      }
+    ],
+    "active_ms": 4000,
+    "sprite": "core/base-kit:props/rock_stones",
+    "provides": "workshop",
+    "tier": 1
+  }
+}

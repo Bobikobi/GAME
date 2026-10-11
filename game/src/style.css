@@ -223,7 +223,7 @@ body {
 }
 
 .title-box.wide {
-  max-width: 620px;
+  max-width: 760px;
 }
 
 .logo {
@@ -263,7 +263,7 @@ body {
 
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 10px;
   margin: 10px 0;
 }
@@ -458,6 +458,15 @@ textarea {
 
 .chip.glow {
   background: var(--yellow);
+}
+
+/* the countdown to dark (G31): plain while there is time, warm in the last minute */
+.chip.dark {
+  font-variant-numeric: tabular-nums;
+}
+
+.chip.dark.soon {
+  background: var(--gold);
 }
 
 .chip.demo {
@@ -1257,7 +1266,7 @@ textarea {
 
 .levelup-body h2 {
   margin: 0;
-  font-size: 28px;
+  font-size: 40px;
   text-align: center;
   color: var(--green);
   text-shadow:
@@ -1354,6 +1363,7 @@ textarea {
 
 .choice-change {
   grid-area: change;
+  font-size: 20px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1456,6 +1466,16 @@ textarea {
     inset 0 0 0 2px var(--ink2),
     0 4px 0 rgba(27, 26, 46, 0.5);
   text-shadow: 3px 3px 0 var(--wood);
+}
+
+/* a level is the biggest moment of the minute, so its word is the biggest and stays longest */
+.banner.level {
+  animation-duration: 2.4s;
+}
+
+.banner.level span {
+  font-size: 48px;
+  padding: 8px 24px;
 }
 
 .banner.jackpot span {
@@ -1812,8 +1832,9 @@ textarea {
 }
 
 @media (max-width: 420px) {
+  /* "Health" is two letters longer than "Food" was: the bar gives them up, so the number stays in view */
   .meter-bar {
-    width: 64px;
+    width: 48px;
   }
   .hud-right .btn.small {
     padding: 2px 6px;

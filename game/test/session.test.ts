@@ -1,9 +1,9 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 
-import type { Bundle } from '@game/kernel';
+import { type Bundle, type GameEvent, isSafe, makeWalkable } from '@game/kernel';
 import { app } from '../src/app';
 import { LEGACY_SAVE_KEY, SAVE_KEY } from '../src/config';
-import { Session } from '../src/session';
+import { DEMO_SINCE_KEY, Session } from '../src/session';
 import { say } from '../src/ui/dialog';
 import { UI } from '../src/ui/ui';
 import { loadBundle } from '../../tools/test/helpers/world';
@@ -118,7 +118,9 @@ describe('session persistence', () => {
 
     storage.setItem(LEGACY_SAVE_KEY, storage.getItem(SAVE_KEY)!);
     Session.erase();
-    expect(storage.length).toBe(0);
+    // only the demo's date is left
+    expect(storage.length).toBe(1);
+    expect(storage.getItem(DEMO_SINCE_KEY)).not.toBeNull();
   });
 
   test('a save under the new key wins over one left under the working title, which is never read', () => {
@@ -167,6 +169,20 @@ describe('session persistence', () => {
     expect(restored?.state.player.tries).toEqual({});
   });
 
+  test('loads a save from before health and hazards', () => {
+    startedSession();
+    const save = JSON.parse(storage.getItem(SAVE_KEY)!) as { state: string };
+    const state = JSON.parse(save.state) as { player: Record<string, unknown> };
+    for (const k of ['town', 'outing', 'chase', 'falls', 'movedAt']) delete state.player[k];
+    storage.setItem(SAVE_KEY, JSON.stringify({ ...save, state: JSON.stringify(state) }));
+
+    const restored = Session.restore(bundle)!;
+    const p = restored.state.player;
+    expect([p.town, p.outing, p.chase, p.falls]).toEqual(['', null, null, 0]);
+    expect(p.movedAt).toBe(restored.state.tick);
+    expect(restored.act({ t: 'move', at: [p.at[0], p.at[1]] }).ok).toBe(true);
+  });
+
   test('a new world version teaches its new start recipes and drops what is gone', () => {
     const session = startedSession();
     session.state.player.tries = { 'core/berry-mash': 2, 'x/gone': 1 };
@@ -180,6 +196,42 @@ describe('session persistence', () => {
     expect(restored?.state.player.recipes).toEqual([...restored!.state.player.recipes].sort());
     expect(restored?.state.player.tries).toEqual({ 'core/berry-mash': 2 });
     expect(restored?.state.player.worn).toEqual({});
+  });
+
+  test('a save from before the new opening is dropped once, under either key, and the demo date is kept', () => {
+    for (const key of [SAVE_KEY, LEGACY_SAVE_KEY]) {
+      startedSession();
+      const file = JSON.parse(storage.getItem(SAVE_KEY)!) as { v: number };
+      storage.clear();
+      storage.setItem(key, JSON.stringify({ ...file, v: 1 }));
+
+      expect(Session.hasSave()).toBe(false);
+      expect(Session.dropOld()).toBe(true);
+      expect(storage.getItem(SAVE_KEY)).toBeNull();
+      expect(storage.getItem(LEGACY_SAVE_KEY)).toBeNull();
+      expect(Session.demoSince()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      // the notice comes once: there is nothing left to drop
+      expect(Session.dropOld()).toBe(false);
+    }
+  });
+
+  test('a current save, an unreadable one and no save at all are left alone', () => {
+    expect(Session.dropOld()).toBe(false);
+    startedSession();
+    expect(Session.dropOld()).toBe(false);
+    expect(Session.restore(bundle)?.started).toBe(true);
+    storage.setItem(SAVE_KEY, 'not a save');
+    expect(Session.dropOld()).toBe(false);
+    expect(storage.getItem(SAVE_KEY)).toBe('not a save');
+  });
+
+  test('the demo date is written once and outlives a new game and an erase', () => {
+    expect(Session.demoSince()).toBeUndefined();
+    storage.setItem(DEMO_SINCE_KEY, '2026-10-01');
+    startedSession();
+    Session.erase();
+    startedSession('Again');
+    expect(Session.demoSince()).toBe('2026-10-01');
   });
 
   test('plays the elder monologue once across a reload', async () => {
@@ -217,4 +269,97 @@ describe('session persistence', () => {
     await talker().talk('core/elder');
     expect(vi.mocked(say).mock.calls[1]?.[2]).not.toEqual(remark.say);
   });
+});
+
+describe('the clock', () => {
+  test('redraws once when the game hour turns, not on every frame', () => {
+    const session = startedSession();
+    session.advance(16);
+    let changes = 0;
+    session.on('change', () => changes++);
+    // tick 0 is noon, and the next hour turns one twenty-fourth of a day later
+    const hour = bundle.params.day_length_ms / 24;
+    session.tick = hour - 10;
+    session.advance(5);
+    expect(changes).toBe(0);
+    session.advance(10);
+    expect(changes).toBe(1);
+    session.advance(16);
+    expect(changes).toBe(1);
+  });
+});
+
+describe('position reports (P-5b)', () => {
+  /** 21:20, inside the night (tick 0 is noon). */
+  const NIGHT = 500_000;
+
+  /** The bundle with a pit on a tile beside the forager's wake, outside the safe ground, and no hunger clock. */
+  function withPit(): { b: Bundle; session: Session; pit: [number, number] } {
+    const b = structuredClone(bundle);
+    b.params.satiety_drain_per_min = 0;
+    const probe = Session.fresh(b);
+    probe.act({ t: 'start', starter: 'core/forager', name: 'Tester' });
+    const walkable = makeWalkable(b);
+    const [x, y] = probe.state.player.at;
+    const pit = ([[1, 0], [-1, 0], [0, 1], [0, -1]] as const)
+      .map(([dx, dy]): [number, number] => [x + dx, y + dy])
+      .find(([px, py]) => walkable(px, py, probe.state.player) && !isSafe(b, probe.state, [px, py]))!;
+    expect(pit).toBeDefined();
+    b.map.props = [...b.map.props, { id: 'test/pit', sprite: 'core/base-kit:props/hazard_pit', x: pit[0], y: pit[1], w: 1, h: 1, solid: false, hazard: { kind: 'pit', window: ['night'] } }];
+    app.bundle = b;
+    const session = Session.fresh(b);
+    session.act({ t: 'start', starter: 'core/forager', name: 'Tester' });
+    session.tick = NIGHT;
+    return { b, session, pit };
+  }
+
+  afterEach(() => {
+    app.bundle = bundle;
+  });
+
+  test('goes only when the tile changes, and a refused one changes nothing', () => {
+    const session = startedSession();
+    session.tick = 1000;
+    const [x, y] = session.state.player.at;
+    const before = session.state;
+    session.report([x, y]);
+    expect(session.state).toBe(before);
+    session.report([x + 40, y]);
+    expect(session.state).toBe(before);
+    const walkable = makeWalkable(bundle);
+    const next = ([[1, 0], [-1, 0], [0, 1], [0, -1]] as const).map(([dx, dy]): [number, number] => [x + dx, y + dy]).find(([a, c]) => walkable(a, c, before.player))!;
+    session.report(next);
+    expect(session.state.player.at).toEqual(next);
+    expect(session.state.player.movedAt).toBe(1000);
+  });
+
+  test('a hazard it walks into hurts, and a fall wakes the player elsewhere and moves the walk there', () => {
+    const { session, pit } = withPit();
+    const seen: GameEvent[] = [];
+    session.on('events', (events) => seen.push(...events));
+    const wake: [number, number] = [session.pos[0], session.pos[1]];
+    session.report(pit);
+    expect(seen.map((e) => e.e)).toEqual(['hurt']);
+
+    // step back off it, put the health at the edge, and step on again: the pit takes the rest
+    session.tick += 2000;
+    session.report(wake);
+    expect(session.state.player.at).toEqual(wake);
+    session.state.player.satiety = 1;
+    session.state.player.satietyAt = session.tick;
+    seen.length = 0;
+    session.tick += 2000;
+    session.report(pit);
+    const fall = seen.find((e) => e.e === 'fall');
+    expect(fall).toBeDefined();
+    if (fall?.e === 'fall') expect(session.pos).toEqual(fall.at);
+  });
+
+  test('a step that lands while a menu is open is still heard', () => {
+    const { session, pit } = withPit();
+    session.pause();
+    session.report(pit);
+    expect(session.state.player.at).toEqual(pit);
+  });
+
 });

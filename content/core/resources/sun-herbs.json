@@ -9,7 +9,7 @@
     {
       "id": "core/sunleaf",
       "name": "Sunleaf",
-      "description": "Opens at midday, where the mist is thin.",
+      "description": "Opens from noon until dark, where the mist is thin.",
       "kind": "material",
       "rarity": "uncommon",
       "class": "plant",
@@ -29,8 +29,8 @@
     "level": 1,
     "game": "pick",
     "hours": [
-      11,
-      14
+      12,
+      20
     ],
     "place": {
       "slot": "core/sun-bank"

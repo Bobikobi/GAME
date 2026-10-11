@@ -12,6 +12,7 @@
  */
 import * as Phaser from 'phaser';
 import {
+  type Action,
   type Bundle,
   type GameEvent,
   type Grade,
@@ -20,10 +21,12 @@ import {
   findSlot,
   hourOf,
   inRect,
+  isNight,
   makeWalkable,
   minuteOfDay,
   npcTile,
   riddleSlots,
+  spotOpen,
 } from '@game/kernel';
 import { app } from '../app';
 import { sound, type SfxId } from '../audio';
@@ -33,10 +36,13 @@ import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { emptySlots, slotContent } from '../places';
 import { canopyGroups, hash, remapTone, toneField, type Tone } from '../richground';
 import type { Session } from '../session';
+import { soundscape } from '../soundscape';
+import { SensesFind } from '../senses';
 import { questTargets } from '../targets';
 import { nodeLook } from '../growth';
-import { hintDistance, nodeAction } from '../text';
+import { hintDistance, lanternNight, nodeAction } from '../text';
 import type { WorkKind } from '../ui/ui';
+import { type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, treasureKind } from '../work';
 
 const DEPTH = { ground: 0, restore: 1, flat: 2, shadow: 2.5, dig: 3, puff: 3.5, mist: 8000, fog: 9000, motes: 9100, shade: 9500, glow: 9600, fx: 9800, marker: 9850 };
 const NEIGHBOURS: readonly [number, number][] = [
@@ -85,6 +91,21 @@ interface Move {
   from: [number, number];
   to: [number, number];
   t: number;
+}
+
+/** Work that runs by itself after one press: a tree being felled, a spot being dug (game/src/work.ts). */
+interface Auto {
+  node: string;
+  kind: AutoKind;
+  start: number;
+  ms: number;
+  /** blows landed so far */
+  hits: number;
+  /** the way the player faces the thing; a different direction held is a step away */
+  facing: Dir;
+  /** the thing is on the player's own tile, so any direction held is a step away */
+  underfoot: boolean;
+  onDone?: () => void;
 }
 
 interface SignSpot {
@@ -229,6 +250,9 @@ export class WorldScene extends Phaser.Scene {
   private busyMs = 0;
   private work: { node: string; kind: WorkKind } | null = null;
   private swingUntil = 0;
+  private auto: Auto | null = null;
+  /** nodes whose look the work keeps: a tree stays a tree until it falls */
+  private held = new Set<string>();
   private nextSwing = 0;
   private refreshIn = 0;
   private zoneIn = 0;
@@ -245,6 +269,15 @@ export class WorldScene extends Phaser.Scene {
   private wasNight: boolean | undefined;
   private nextEyes = 0;
   private nextWhisper = 0;
+  /** the hazard props (G30-G35): a wolf asleep by day and awake at night, a pit or a trap that shows only by day */
+  private hazards: { spr: Phaser.GameObjects.Sprite; kind: string }[] = [];
+  /** the lantern's light around the player, and the night it was lit for (G31) */
+  private lantern: Phaser.GameObjects.Image | undefined;
+  private lanternFor: number | undefined;
+  /** while the fall plays: no walking, and the player's sprite belongs to the animation */
+  private falling = false;
+  /** the tick of the last report while a hunt runs, so a player standing still is still bitten on time */
+  private chaseReport = 0;
 
   constructor() {
     super('world');
@@ -316,6 +349,14 @@ export class WorldScene extends Phaser.Scene {
       px(PALETTE.red2, 0, 0);
       px(PALETTE.red2, 3, 0);
     });
+    // a pale X for each eye of a fallen player (G33): it has to read on a face in the dark
+    make('fx-cross', 3, 3, () => {
+      px(PALETTE.paper, 0, 0);
+      px(PALETTE.paper, 2, 0);
+      px(PALETTE.paper, 1, 1);
+      px(PALETTE.paper, 0, 2);
+      px(PALETTE.paper, 2, 2);
+    });
     make('fx-arrow', 7, 5, () => {
       px(PALETTE.ink, 0, 0, 7);
       px(PALETTE.ink, 0, 1);
@@ -368,20 +409,21 @@ export class WorldScene extends Phaser.Scene {
         px(PALETTE.ink, 2, 1);
       });
     }
+    // three whole-pixel discs on top of each other: a glow that is brightest at its heart; the lantern
+    // is a sign of the night (G31), so it is drawn in the plain valley too
+    const disc = (r: number, color: number, alpha: number) => {
+      g.fillStyle(color, alpha);
+      for (let dy = -r; dy <= r; dy++) {
+        const half = Math.floor(Math.sqrt(r * r - dy * dy));
+        g.fillRect(12 - half, 12 + dy, 2 * half + 1, 1);
+      }
+    };
+    make('fx-glow', 25, 25, () => {
+      disc(12, PALETTE.gold, 0.1);
+      disc(8, PALETTE.gold, 0.16);
+      disc(5, PALETTE.yellow, 0.24);
+    });
     if (RICH.light) {
-      // three whole-pixel discs on top of each other: a glow that is brightest at its heart
-      const disc = (r: number, color: number, alpha: number) => {
-        g.fillStyle(color, alpha);
-        for (let dy = -r; dy <= r; dy++) {
-          const half = Math.floor(Math.sqrt(r * r - dy * dy));
-          g.fillRect(12 - half, 12 + dy, 2 * half + 1, 1);
-        }
-      };
-      make('fx-glow', 25, 25, () => {
-        disc(12, PALETTE.gold, 0.1);
-        disc(8, PALETTE.gold, 0.16);
-        disc(5, PALETTE.yellow, 0.24);
-      });
       // specks of light through the leaves, tiled over the groves
       make('fx-dapple', 32, 32, () => {
         for (const [x, y, w, hh] of [[3, 4, 2, 2], [12, 2, 3, 2], [22, 6, 2, 2], [6, 14, 3, 3], [18, 17, 2, 2], [27, 13, 2, 3], [2, 25, 2, 2], [13, 27, 3, 2], [24, 26, 2, 2], [29, 22, 2, 2]] as const) {
@@ -524,6 +566,12 @@ export class WorldScene extends Phaser.Scene {
       const bottom = (p.y + p.h) * T;
       const cx = (p.x + p.w / 2) * T;
       const name = baseName(p.sprite);
+      if (p.hazard) {
+        // a hazard steps through no cycle: its frame and its showing follow the hour (shadeFor)
+        const spr = this.add.sprite(cx, bottom, p.sprite, 0).setOrigin(0.5, 1).setDepth(p.solid ? bottom : DEPTH.flat);
+        this.hazards.push({ spr, kind: p.hazard.kind });
+        continue;
+      }
       const img = this.standing(p.sprite, cx, bottom, hash(p.x, p.y));
       img.setDepth(p.solid ? bottom : DEPTH.flat);
       if (RICH.detail && !FLAT.has(name)) this.shadow(cx, bottom, p.w, p.solid ? DEPTH.shadow : DEPTH.flat - 0.5);
@@ -603,7 +651,12 @@ export class WorldScene extends Phaser.Scene {
           this.nodeShadows.set(id, this.shadow(cx, bottom, Math.round((this.b.sprites[r.sprite]?.w ?? T) / T)));
         }
       } else {
-        this.digs.set(id, this.add.image(cx, bottom, DIG_SPOT_SPRITE).setOrigin(0.5, 1).setDepth(DEPTH.dig).setAlpha(0));
+        const t = this.b.treasures[inst.source];
+        // a find picked up by hand lies half-buried, and the senses lead to it
+        const look = t && !t.tool
+          ? new SensesFind(this, cx, bottom, this.b.items[t.finds[0]!.item]?.sprite ?? DIG_SPOT_SPRITE, DEPTH.dig, () => this.player, RICH.motion).find
+          : this.add.image(cx, bottom, DIG_SPOT_SPRITE).setOrigin(0.5, 1).setDepth(DEPTH.dig);
+        this.digs.set(id, look.setAlpha(0));
       }
       this.nodeAt.set(key(inst.x, inst.y), id);
     }
@@ -875,6 +928,10 @@ export class WorldScene extends Phaser.Scene {
     this.session = session;
     this.move = null;
     this.work = null;
+    this.auto = null;
+    this.held.clear();
+    this.falling = false;
+    this.lanternFor = undefined;
     this.hinted.clear();
     this.inside.clear();
     this.unbind = [
@@ -906,7 +963,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** The starter's sprite for a direction, in the look the player picked. */
-  private playerFrame(dir: Dir, pose: 'walk' | 'work' | 'idle' = 'walk'): { key: string; flip: boolean } {
+  private playerFrame(dir: Dir, pose = 'walk'): { key: string; flip: boolean } {
     const p = this.session?.state.player;
     const starter = p ? this.b.starters[p.starter] : undefined;
     const first = Object.values(this.b.starters)[0];
@@ -939,7 +996,13 @@ export class WorldScene extends Phaser.Scene {
   private workFrame(down: boolean): void {
     const s = this.session;
     if (!s) return;
-    const { key: k, flip } = this.playerFrame(s.facing, 'work');
+    // a tool has its own swing when the art has one, the axe swing otherwise
+    let found = { key: '', flip: false };
+    for (const pose of this.auto ? POSES[this.auto.kind] : ['work']) {
+      found = this.playerFrame(s.facing, pose);
+      if (found.key) break;
+    }
+    const { key: k, flip } = found;
     if (!k) return this.faceFrame(down ? 0 : 2);
     this.player.setTexture(k, down ? 1 : 0);
     this.player.setFlipX(flip);
@@ -1029,6 +1092,7 @@ export class WorldScene extends Phaser.Scene {
     if (!s) return;
     const hour = hourOf(this.b, s.tick);
     for (const [id, img] of this.nodes) {
+      if (this.held.has(id)) continue;
       const r = this.b.resources[this.b.instances[id]!.source]!;
       const ready = this.ready(s, id);
       const inHours = !r.hours || (r.hours[0] < r.hours[1] ? hour >= r.hours[0] && hour < r.hours[1] : hour >= r.hours[0] || hour < r.hours[1]);
@@ -1042,9 +1106,11 @@ export class WorldScene extends Phaser.Scene {
     }
     const reach = hintDistance(this.b, s.state);
     for (const [id, img] of this.digs) {
+      if (this.held.has(id)) continue;
       const inst = this.b.instances[id]!;
       const d = Math.max(Math.abs(inst.x - s.pos[0]), Math.abs(inst.y - s.pos[1]));
-      const want = d > reach ? 0 : this.ready(s, id) ? 1 : 0.3;
+      // a start's own spot shows to that start alone, until it is dug
+      const want = d > reach || !spotOpen(this.b, s.state, id) ? 0 : this.ready(s, id) ? 1 : 0.3;
       img.setAlpha(img.alpha + (want - img.alpha) * 0.5);
     }
   }
@@ -1069,9 +1135,17 @@ export class WorldScene extends Phaser.Scene {
       this.refreshNodes();
       this.shadeFor(s);
       this.showSignatures(s);
+      this.hearPlace(s);
     }
     this.walk(s, delta);
+    // a hunt bites by the clock: while one runs, a player standing still reports again twice a second
+    if (s.state.player.chase && !this.move && !this.falling && s.tick - this.chaseReport >= 500) {
+      this.chaseReport = s.tick;
+      s.report(s.pos, true);
+    }
+    this.placeLantern(s);
     if (RICH.motion) this.idle(s, time);
+    this.workTick(s);
     this.drawBusy(s, time);
     this.updatePrompt(s);
     this.haunt(s, time);
@@ -1182,7 +1256,8 @@ export class WorldScene extends Phaser.Scene {
 
   /** Standing still for 3 s, the player blinks every 3-5 s: frame 1 of the idle sheet for 120 ms. */
   private idle(s: Session, time: number): void {
-    const still = !this.move && !s.busy && !this.work && this.swingUntil === 0;
+    if (this.falling) return;
+    const still = !this.move && !s.busy && !this.work && !this.auto && this.swingUntil === 0;
     if (!still) {
       this.idleSince = time;
       this.blinkUntil = 0;
@@ -1217,6 +1292,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private walk(s: Session, delta: number): void {
+    if (this.falling) return;
     if (this.move) {
       this.move.t += delta;
       const k = Math.min(1, this.move.t / STEP_MS);
@@ -1225,11 +1301,14 @@ export class WorldScene extends Phaser.Scene {
       this.player.setPosition(Math.round((fx + (tx - fx) * k) * T + T / 2), Math.round((fy + (ty - fy) * k + 1) * T));
       this.player.setDepth(Math.round((Math.max(fy, ty) + 1) * T + 1));
       this.playerShadow?.setPosition(this.player.x, this.player.y + 2);
-      this.faceFrame(k < 0.5 ? (this.steps % 2 === 0 ? 0 : 2) : undefined);
+      this.faceFrame(strideFrame(k, this.steps, this.b.sprites[this.playerFrame(s.facing).key]?.frames ?? 1));
       if (k < 1) return;
       const carry = this.move.t - STEP_MS;
       s.pos = [tx, ty];
       this.move = null;
+      // the kernel hears of each new tile; a hazard there may hurt, and a fall ends the walk
+      s.report(s.pos);
+      if (this.falling) return;
       this.arrive(s);
       if (!this.tryStep(s, carry)) this.faceFrame();
       return;
@@ -1299,7 +1378,7 @@ export class WorldScene extends Phaser.Scene {
         s.act({ t: 'visit', slot: slot.id, at: [x, y] });
       }
       if (slot.kind === 'ruin' && !this.hinted.has(slot.id)) {
-        const t = Object.values(this.b.treasures).find((d) => d.place.slot === slot.id);
+        const t = Object.values(this.b.treasures).find((d) => d.place.slot === slot.id && (d.starter ?? s.state.player.starter) === s.state.player.starter);
         if (t) {
           this.hinted.add(slot.id);
           app.ui.toast(`Hint: ${t.hint}`, 'info');
@@ -1310,6 +1389,12 @@ export class WorldScene extends Phaser.Scene {
   }
 
   // ------------------------------------------------------------ day, night and the things in the dark
+
+  /** The campfire, the stream and the ruins sound as loud as the player is near them (soundscape.ts). */
+  private hearPlace(s: Session): void {
+    const scape = soundscape(this.b, s.state, s.tick, this.player.x / T, this.player.y / T - 0.5);
+    for (const id of ['fire', 'stream', 'dread'] as const) sound.bed(id, scape[id].level, scape[id].pan);
+  }
 
   private shadeFor(s: Session): void {
     const m = minuteOfDay(this.b, s.tick) / 60;
@@ -1326,6 +1411,7 @@ export class WorldScene extends Phaser.Scene {
       this.dusk.setFillStyle(PALETTE.gold, 0.4 * Math.max(warmth(m, 20), warmth(m, 5.5)));
     }
     for (const d of this.dapples) d.setAlpha(0.08 * (1 - this.night));
+    this.showHazards(s);
     const isNight = this.night >= 0.5;
     if (isNight !== this.wasNight) {
       const flipped = this.wasNight !== undefined;
@@ -1518,6 +1604,7 @@ export class WorldScene extends Phaser.Scene {
 
   private drawBusy(s: Session, time: number): void {
     this.bar.clear();
+    if (this.auto) return;
     if (!s.busy) {
       if (this.busyMs > 0) {
         this.busyMs = 0;
@@ -1548,11 +1635,266 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  // ------------------------------------------------------------ danger
+
+  /**
+   * By day a hazard shows and can be walked around: the wolf sleeps, the trap
+   * and the pit are plain to see. At night the wolf is awake and the pit and
+   * the trap are lost in the dark (G30). The hour is the kernel's, not the shade's.
+   */
+  private showHazards(s: Session): void {
+    const night = isNight(this.b, s.tick);
+    for (const { spr, kind } of this.hazards) {
+      if (kind === 'predator') {
+        const frame = night && spr.texture.frameTotal > 2 ? 1 : 0;
+        if (Number(spr.frame.name) !== frame) spr.setFrame(frame);
+      } else {
+        spr.setAlpha(night ? 0.12 : 1);
+      }
+    }
+  }
+
+  /** Light the lantern for this night (G31): the UI calls it with the warning box. */
+  lightLantern(): void {
+    const s = this.session;
+    if (!s) return;
+    this.lanternFor = lanternNight(this.b, s.state, s.pos, s.tick);
+    this.lantern ??= this.add.image(0, 0, 'fx-glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.glow).setScale(2);
+  }
+
+  /** The lantern burns around the player while they are out in the night it was lit for; in town or by day it is out. */
+  private placeLantern(s: Session): void {
+    if (!this.lantern) return;
+    const lit = !this.falling && this.lanternFor !== undefined && lanternNight(this.b, s.state, s.pos, s.tick) === this.lanternFor;
+    this.lantern.setVisible(lit);
+    if (lit) {
+      const flicker = 0.5 + 0.5 * Math.sin(this.time.now / 173) * Math.sin(this.time.now / 419);
+      this.lantern.setPosition(this.player.x, this.player.y - 10).setAlpha(0.85 + 0.15 * flicker);
+    }
+  }
+
+  /**
+   * A fall (G33): crosses for eyes, the body sinks into the ground, and the
+   * player wakes in town. The box that says what happened is the UI's; nothing
+   * is left where it was.
+   */
+  private fallDown(from: readonly [number, number], to: readonly [number, number]): void {
+    const s = this.session;
+    if (!s) return;
+    this.falling = true;
+    // work under way is not taken back: it is simply over (the session drops its undo)
+    if (this.auto) this.endWork(this.auto);
+    this.move = null;
+    this.work = null;
+    this.swingUntil = 0;
+    // the fall ends any work: nothing may put the standing frame back while the body sinks
+    this.busyMs = 0;
+    this.placePlayer(from[0], from[1]);
+    const { key: k, flip } = this.playerFrame('down');
+    this.player.setTexture(k, (this.b.sprites[k]?.frames ?? 1) >= 3 ? 1 : 0).setFlipX(flip);
+    // the eyes of a 16x24 body sit on its sixth row, three pixels apart
+    const top = this.player.y - this.player.height;
+    const eyes = [-3, 2].map((dx) => this.add.image(this.player.x + dx, top + 6, 'fx-cross').setOrigin(0.5).setDepth(this.player.depth + 0.5));
+    const baseY = this.player.y;
+    const height = this.player.height;
+    this.tweens.addCounter({
+      from: 0,
+      to: 1,
+      delay: 500,
+      duration: 1100,
+      ease: 'Sine.in',
+      onUpdate: (tw) => {
+        const k = tw.getValue() ?? 0;
+        const sunk = Math.round(k * height);
+        // the part below the ground line is cut away as the body goes down
+        this.player.setY(baseY + sunk).setCrop(0, 0, this.player.width, height - sunk);
+        this.playerShadow?.setAlpha(SHADOW_ALPHA * (1 - k));
+        for (const eye of eyes) eye.setY(top + 6 + sunk).setVisible(sunk < 6);
+      },
+      onComplete: () => {
+        for (const eye of eyes) eye.destroy();
+        this.cameras.main.fadeOut(300, 27, 26, 46);
+        this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+          this.player.setCrop();
+          this.playerShadow?.setAlpha(SHADOW_ALPHA);
+          s.facing = 'down';
+          this.placePlayer(to[0], to[1]);
+          this.faceFrame();
+          this.inside.clear();
+          this.falling = false;
+          this.cameras.main.fadeIn(700, 27, 26, 46);
+        });
+      },
+    });
+  }
+
+  // ------------------------------------------------------------ work that runs by itself
+
+  /**
+   * One press starts the work (DECISIONS.md, 2026-10-11): the kernel takes the action now and keeps
+   * the player busy for as long as it lasts, and the swings, chips and the thing's own shaking show
+   * it. A step away takes the action back (Session.cancelWork), so nothing was yielded.
+   */
+  startWork(nodeId: string, onDone?: () => void): void {
+    const s = this.session;
+    const inst = this.b.instances[nodeId];
+    if (!s || !inst || this.auto) return;
+    const kind = inst.kind === 'resource' ? resourceKind(this.b.resources[inst.source]!) : treasureKind(this.b.treasures[inst.source]!);
+    if (!kind) return;
+    const action: Action = inst.kind === 'resource' ? { t: 'gather', node: nodeId, grade: 3, at: s.pos } : { t: 'dig', spot: nodeId, grade: 3, at: s.pos };
+    const res = s.act(action);
+    if (!res.ok) return app.ui.toast(res.error, 'bad');
+    const busy = res.events.find((e) => e.e === 'busy');
+    if (!busy || busy.e !== 'busy') return;
+    this.faceNode(s, nodeId);
+    // a dig spot under the feet has no side to face: every direction is a step away from it
+    const underfoot = inst.x === s.pos[0] && inst.y === s.pos[1];
+    // a dig that solved a riddle says nothing of the catch (G6)
+    const solved = res.events.some((e) => e.e === 'riddle');
+    this.auto = { node: nodeId, kind, start: s.tick, ms: busy.ms, hits: 0, facing: s.facing, underfoot, onDone: solved ? undefined : onDone };
+    this.held.add(nodeId);
+    this.workFrame(false);
+  }
+
+  /** Drops the work under way, if any, before a panel reads the state. */
+  dropWork(): void {
+    const s = this.session;
+    if (s && this.auto) this.stopWork(s, this.auto);
+  }
+
+  /** Whether work started by one press is under way. */
+  get working(): boolean {
+    return this.auto !== null;
+  }
+
+  private workTick(s: Session): void {
+    const w = this.auto;
+    if (!w) return;
+    const elapsed = s.tick - w.start;
+    // the end comes first: a level-up window opening as the work ends must not undo it
+    if (elapsed >= w.ms) return this.finishWork(s, w);
+    const dir = app.controls.direction();
+    if (s.paused || app.ui.blocking || (dir !== null && (w.underfoot || dir !== w.facing))) return this.stopWork(s, w);
+    const beat = beatAt(elapsed, w.ms);
+    this.workFrame(beat.down);
+    if (blowsDue(beat) > w.hits) {
+      w.hits = blowsDue(beat);
+      this.blow(w, beat.progress);
+    }
+  }
+
+  /** Walked away, or something opened: the work is dropped as if it had not begun. */
+  private stopWork(s: Session, w: Auto): void {
+    this.endWork(w);
+    s.cancelWork();
+    this.faceFrame();
+  }
+
+  private endWork(w: Auto): void {
+    this.auto = null;
+    this.busyMs = 0;
+    this.held.delete(w.node);
+    const img = this.nodes.get(w.node) ?? this.digs.get(w.node);
+    if (img) {
+      this.tweens.killTweensOf(img);
+      img.setAngle(0).setScale(1);
+      img.x = (this.b.instances[w.node]!.x + 0.5) * T;
+    }
+  }
+
+  private finishWork(s: Session, w: Auto): void {
+    const img = this.nodes.get(w.node);
+    // the tree that falls is a copy of the standing one, so the stump can be there under it at once
+    const ghost = w.kind === 'fell' && img ? this.add.sprite(img.x, img.y, img.texture.key, img.frame.name).setOrigin(0.5, 1).setDepth(img.depth + 1).setAngle(img.angle) : undefined;
+    this.endWork(w);
+    this.refreshNodes();
+    this.faceFrame();
+    if (ghost) this.fall(ghost, w.facing, w.node);
+    else this.burst(w.kind === 'dig' ? 'fx-dirt' : 'fx-dust', (this.b.instances[w.node]!.x + 0.5) * T, (this.b.instances[w.node]!.y + 0.6) * T, 8);
+    w.onDone?.();
+  }
+
+  /** One blow: the arm lands, the thing sounds, shakes and throws bits; a tree leans a little more each time. */
+  private blow(w: Auto, progress: number): void {
+    const inst = this.b.instances[w.node];
+    if (!inst) return;
+    const x = inst.x * T + T / 2;
+    const y = inst.y * T + T * 0.6;
+    const at = this.worldToPage(x, y);
+    const pan = Math.max(-0.8, Math.min(0.8, (at.x / Math.max(1, this.scale.width) - 0.5) * 1.2));
+    const img = this.nodes.get(w.node) ?? this.digs.get(w.node);
+    if (w.kind === 'fell') {
+      sound.sfx('thud', { pan });
+      // the wood starts to give: a crack under the blows past the middle
+      if (progress > 0.5) sound.sfx('crack', { pan, gain: 0.25 + 0.5 * progress });
+      this.burst('fx-chip', x, y, 6);
+      if (progress > 0.4 && img) this.burst('fx-leaf', x, y - img.height * 0.6, 2 + Math.round(progress * 4));
+    } else if (w.kind === 'mine') {
+      sound.sfx('strike', { pan });
+      this.burst('fx-dust', x, y, 5);
+      this.burst('fx-spark', x, y - 4, 3);
+    } else {
+      sound.sfx('dig', { pan });
+      this.burst('fx-dirt', x, y, 6);
+    }
+    if (!img) return;
+    this.tweens.killTweensOf(img);
+    const x0 = x;
+    img.x = x0;
+    // the shake grows with the work: one pixel at first, two near the end
+    const shake = w.kind === 'dig' ? 0 : progress > 0.6 ? 2 : 1;
+    const lean = w.kind === 'fell' && (w.facing === 'left' || w.facing === 'right') ? (w.facing === 'left' ? -1 : 1) * progress * 3 : 0;
+    this.tweens.add({ targets: img, x: x0 + shake, scaleY: w.kind === 'dig' ? 0.92 : 1, angle: lean, duration: 50, yoyo: true, repeat: 1, onComplete: () => img.setX(x0).setScale(1).setAngle(lean) });
+  }
+
+  /** The tree goes over, away from the one who cut it, and lies there a moment before it fades. */
+  private fall(ghost: Phaser.GameObjects.Sprite, dir: Dir, id: string): void {
+    const inst = this.b.instances[id]!;
+    const x = (inst.x + 0.5) * T;
+    const y = (inst.y + 0.9) * T;
+    sound.sfx('crack', { gain: 0.9 });
+    const land = (): void => {
+      sound.sfx('thud', { gain: 1 });
+      this.burst('fx-leaf', ghost.x + (dir === 'left' ? -14 : dir === 'right' ? 14 : 0), y - 4, 10);
+      this.burst('fx-dust', x, y, 6);
+      this.cameras.main.shake(140, 0.003);
+      this.tweens.add({ targets: ghost, alpha: 0, delay: 400, duration: 350, onComplete: () => ghost.destroy() });
+    };
+    if (dir === 'left' || dir === 'right') {
+      const sign = dir === 'left' ? -1 : 1;
+      this.tweens.add({
+        targets: ghost,
+        angle: sign * 88,
+        duration: 520,
+        ease: 'Quad.easeIn',
+        onComplete: () => {
+          land();
+          this.tweens.add({ targets: ghost, angle: sign * 83, duration: 70, yoyo: true });
+        },
+      });
+    } else {
+      // away from the player or toward them, a tree cannot lie on the screen: it shortens into the ground
+      this.tweens.add({
+        targets: ghost,
+        scaleY: 0.18,
+        y: dir === 'down' ? ghost.y + 5 : ghost.y,
+        duration: 520,
+        ease: 'Quad.easeIn',
+        onComplete: land,
+      });
+    }
+  }
+
   /** A little lift of every new item over the player's head, and a cloud when something is built. */
   private celebrate(events: GameEvent[]): void {
-    this.faceFrame();
+    if (!this.falling) this.faceFrame();
     let i = 0;
     for (const e of events) {
+      if (e.e === 'hurt') {
+        this.cameras.main.flash(180, 168, 48, 47);
+        this.cameras.main.shake(140, 0.005);
+      }
+      if (e.e === 'fall') this.fallDown(e.from, e.at);
       if (e.e === 'restore' || e.e === 'build') {
         const slot = e.e === 'restore' ? findSlot(this.b.map, this.b.restores[e.restore]?.place.slot ?? '') : undefined;
         const camp = e.e === 'build' ? campTile(this.b, this.b.camps[e.camp]?.slot ?? 'fire') : undefined;
@@ -1625,7 +1967,7 @@ export class WorldScene extends Phaser.Scene {
         }
       } else {
         const img = this.digs.get(nodeId);
-        if (img && img.alpha > 0.2) return { label: 'Dig here', run: () => app.ui.dig(nodeId), tile, top: T };
+        if (img && img.alpha > 0.2) return { label: b.treasures[inst.source]?.tool ? 'Dig here' : 'Pick up', run: () => app.ui.dig(nodeId), tile, top: T };
       }
     }
     for (const [id, c] of Object.entries(b.camps)) {
@@ -1641,7 +1983,9 @@ export class WorldScene extends Phaser.Scene {
     }
     for (const [id, r] of Object.entries(b.restores)) {
       const slot = findSlot(b.map, r.place.slot);
-      if (slot && inRect(x, y, slot) && !p.restored.includes(id)) return { label: `Mend the ${r.title}`, run: () => app.ui.restore(id), tile, top: T };
+      if (!slot || !inRect(x, y, slot) || p.restored.includes(id)) continue;
+      // a restore with no inputs opens only as a quest's reward: nothing to mend by hand
+      return { label: r.inputs.length === 0 ? `Look at the ${r.title}` : `Mend the ${r.title}`, run: () => app.ui.restore(id), tile, top: T };
     }
     const sign = this.signs.get(k);
     if (sign) return { label: 'Read the sign', run: () => app.ui.sign(sign), tile, top };

@@ -228,9 +228,15 @@
             ],
             "properties": {
               "satiety": {
+                "minimum": 0,
+                "maximum": 100,
+                "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                "type": "integer"
+              },
+              "hurt": {
                 "minimum": 1,
                 "maximum": 100,
-                "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
                 "type": "integer"
               }
             }
@@ -240,8 +246,7 @@
             "type": "object",
             "required": [
               "kind",
-              "tier",
-              "uses"
+              "tier"
             ],
             "properties": {
               "kind": {
@@ -257,6 +262,10 @@
                   {
                     "const": "axe",
                     "type": "string"
+                  },
+                  {
+                    "const": "staff",
+                    "type": "string"
                   }
                 ]
               },
@@ -269,7 +278,7 @@
               "uses": {
                 "minimum": 1,
                 "maximum": 1000,
-                "description": "The tool wears out after this many uses.",
+                "description": "The tool wears out after this many uses. Left out, the tool lasts (DECISIONS.md, 2026-10-09: the crafting economy).",
                 "type": "integer"
               }
             }

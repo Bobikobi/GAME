@@ -3,6 +3,9 @@
  * A (or a tap) finishes the line, then turns the page; options appear after
  * the last line. Resolves with the picked option's value, or null.
  */
+import { app } from '../app';
+import { sound } from '../audio';
+import { voicePitch } from '../audio/spatial';
 import { button, h } from './dom';
 import type { Layer, UI } from './ui';
 
@@ -12,6 +15,8 @@ export interface Option {
 }
 
 const CHARS_PER_SECOND = 70;
+/** one gibberish syllable per this many typed characters */
+const VOICE_EVERY = 4;
 
 export function say(ui: UI, speaker: string | null, lines: string[], options: Option[] = []): Promise<string | null> {
   return new Promise((resolve) => {
@@ -25,10 +30,14 @@ export function say(ui: UI, speaker: string | null, lines: string[], options: Op
     let shown = 0;
     let timer = 0;
     let done = false;
+    // only a named person of the valley has a voice; a sign, a place or the narrator is silent
+    const voiced = speaker !== null && Object.values(app.bundle.npcs).some((n) => n.name === speaker);
+    const pitch = voiced ? voicePitch(speaker ?? '') : 0;
 
     const finish = (value: string | null) => {
       if (done) return;
       done = true;
+      sound.sfx('click', { detune: 0 });
       window.clearInterval(timer);
       ui.pop(layer);
       resolve(value);
@@ -41,8 +50,12 @@ export function say(ui: UI, speaker: string | null, lines: string[], options: Op
       arrow.hidden = true;
       window.clearInterval(timer);
       timer = window.setInterval(() => {
+        const before = shown;
         shown = Math.min(line.length, shown + 2);
         textEl.textContent = line.slice(0, shown);
+        if (voiced && Math.floor(shown / VOICE_EVERY) > Math.floor(before / VOICE_EVERY) && /\S/.test(line[shown - 1] ?? ' ')) {
+          sound.sfx('voice', { detune: pitch + ((shown * 37) % 5) * 20 - 40, gain: 0.8 });
+        }
         if (shown >= line.length) lineEnd();
       }, 2000 / CHARS_PER_SECOND);
     };
@@ -66,8 +79,12 @@ export function say(ui: UI, speaker: string | null, lines: string[], options: Op
     };
 
     const next = () => {
-      if (typing()) return lineEnd();
+      if (typing()) {
+        sound.sfx('click', { detune: 0 });
+        return lineEnd();
+      }
       if (index < lines.length - 1) {
+        sound.sfx('click', { detune: 0 });
         index++;
         return showLine();
       }

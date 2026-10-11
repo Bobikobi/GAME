@@ -13,7 +13,9 @@ import { readBoard } from './board';
 import { CORE_PALETTE } from './kit/palette';
 import { LOCK_FILE, loadAll, toRepoPath, type Issue } from './load';
 import { baseOf } from './material';
+import { checkHazards } from './hazards';
 import { checkPlay } from './play';
+import { checkDeadProps } from './deadprops';
 import { checkReach } from './reach';
 import { checkStarts } from './starts';
 
@@ -40,6 +42,8 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkPlay(b, assembled.origin));
     issues.push(...checkStarts(b, assembled.origin));
     issues.push(...checkReach(b, assembled.origin));
+    issues.push(...checkDeadProps(b, assembled.origin));
+    issues.push(...checkHazards(b, assembled.origin));
   }
   return { issues: dedupe(issues), files: files.length, assembled };
 }
@@ -92,6 +96,7 @@ function computedRarity(b: Bundle, itemId: string, visiting: Set<string> = new S
     best = best === undefined ? r : Math.min(best, r);
   };
   for (const t of Object.values(b.treasures)) {
+    if (t.starter !== undefined) continue; // a start's own find is a gift, not how the item is obtained
     for (const f of t.finds) {
       if (f.item !== itemId) continue;
       take(f.chance_pct >= 30 ? 0 : f.chance_pct >= 10 ? 1 : f.chance_pct >= 3 ? 2 : 3);
@@ -132,7 +137,7 @@ function checkEconomy(b: Bundle, origin: Record<string, string>): Issue[] {
 
   // R7 reachability: everything asked for must be obtainable somewhere
   const sold = new Set(Object.values(b.shops).flatMap((s) => s.sells.map((o) => o.item)));
-  const rewarded = new Set(Object.values(b.quests).flatMap((q) => (q.reward.items ?? []).map((s) => s.item)));
+  const rewarded = new Set(Object.values(b.quests).flatMap((q) => (q.reward.items ?? []).flatMap((s) => (s.instead ? [s.item, s.instead] : [s.item]))));
   const obtainable = (id: string) => b.values[id] !== undefined || sold.has(id) || rewarded.has(id);
   const needs: [string, string, string][] = [
     ...Object.values(b.recipes).flatMap((c) => c.inputs.map((s, i) => [c.id, `recipe.inputs.${i}`, s.item] as [string, string, string])),
@@ -299,6 +304,20 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
     if (success > 0 && left >= success) {
       err(file, `${w}.miss`, named(`a miss leaves ${left} of value, no less than a success gives (${success}): a miss keeps a part (G40)`));
     }
+    // a try pays back its inputs on average, at the recipe's own level and before luck (CR-16):
+    // chance * V(outputs) + (1 - chance) * V(kept on a miss) >= V(inputs)
+    const chance = chances[Math.min(tier, chances.length) - 1] ?? 10_000;
+    const spent = worth(c.inputs);
+    if (chance * success + (10_000 - chance) * left < 10_000 * spent) {
+      const average = Math.floor((chance * success + (10_000 - chance) * left) / 10_000);
+      err(
+        file,
+        `${w}.outputs`,
+        named(
+          `a try gives ${average} of value on average for ${spent} of inputs: a craft never loses value on average; give it more time or fewer inputs (DECISIONS.md, 2026-10-09: the crafting economy)`,
+        ),
+      );
+    }
   }
 
   // from GATED_TIER up: a level gate or a slow respawn on a node, never a shop
@@ -343,7 +362,7 @@ function checkWear(b: Bundle): Issue[] {
   const err = (file: string, where: string, message: string) => issues.push({ file, where, message, level: 'error' });
   const caps = b.params.wear_effect_max_pct;
   const sold = new Set(Object.values(b.shops).flatMap((s) => s.sells.map((o) => o.item)));
-  const rewarded = new Set(Object.values(b.quests).flatMap((q) => (q.reward.items ?? []).map((s) => s.item)));
+  const rewarded = new Set(Object.values(b.quests).flatMap((q) => (q.reward.items ?? []).flatMap((s) => (s.instead ? [s.item, s.instead] : [s.item]))));
   const sets: Record<string, string[]> = {};
   for (const [id, it] of Object.entries(b.items)) {
     const where = `items.${id}`;

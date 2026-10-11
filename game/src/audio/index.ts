@@ -1,5 +1,7 @@
 /** Lazy, self-contained sound system for Openfold's music, ambience, and cues. */
 import { AmbiencePlayer } from './ambience';
+import { BED_IDS, BedPlayer } from './beds';
+import type { BedId } from './beds';
 import type { AmbienceKind } from './ambience';
 import { MusicPlayer, renderSong } from './player';
 import { jingles, songs } from './songs';
@@ -11,6 +13,7 @@ import type { SoundStorage } from './storage';
 export type SongId = 'valley' | 'night';
 export type JingleId = 'level' | 'quest' | 'found';
 export type { SfxId } from './sfx';
+export type { BedId } from './beds';
 
 export interface SoundState {
   unlocked: boolean;
@@ -19,6 +22,11 @@ export interface SoundState {
   ambience: AmbienceKind | null;
   sfxCount: number;
   lastSfx: string | null;
+  /** how many of each effect were asked for, and how many of those actually sounded (not muted, not locked) */
+  asked: Record<string, number>;
+  counts: Record<string, number>;
+  /** each position bed's level, 0 to 1, as the player's place asks for it */
+  beds: Record<BedId, number>;
 }
 
 interface AudioGraph {
@@ -28,6 +36,8 @@ interface AudioGraph {
   ambience: GainNode;
   player: MusicPlayer;
   ambiencePlayer: AmbiencePlayer;
+  beds: BedPlayer;
+  analyser: AnalyserNode;
 }
 
 export interface SoundApi {
@@ -37,6 +47,10 @@ export interface SoundApi {
   jingle(id: JingleId): void;
   sfx(id: SfxId, opts?: SfxOptions): void;
   ambience(kind: AmbienceKind | null): void;
+  /** Sets a position bed (campfire, stream, ruins) to a level 0..1 and a stereo pan -1..1. */
+  bed(id: BedId, level: number, pan?: number): void;
+  /** The loudness (RMS, 0..1) of what is leaving the speakers right now; 0 when muted or locked. */
+  level(): number;
   readonly muted: boolean;
   setMuted(muted: boolean): void;
   state(): SoundState;
@@ -55,6 +69,13 @@ let appliedSong: SongId | null = null;
 let requestedAmbience: AmbienceKind | null = null;
 let appliedAmbience: AmbienceKind | null = null;
 let playedCount = 0;
+const asked: Record<string, number> = {};
+const played: Record<string, number> = {};
+const bedRequests: Record<BedId, { level: number; pan: number }> = {
+  fire: { level: 0, pan: 0 },
+  stream: { level: 0, pan: 0 },
+  dread: { level: 0, pan: 0 },
+};
 let lastPlayed: string | null = null;
 const unlockTargets = new WeakSet<EventTarget>();
 
@@ -100,7 +121,10 @@ function ensureGraph(): AudioGraph {
   music.connect(master);
   effects.connect(master);
   ambience.connect(master);
+  const analyser = audio.createAnalyser();
+  analyser.fftSize = 2048;
   master.connect(compressor).connect(audio.destination);
+  compressor.connect(analyser);
   graph = {
     master,
     music,
@@ -108,6 +132,8 @@ function ensureGraph(): AudioGraph {
     ambience,
     player: new MusicPlayer(audio, music, effects),
     ambiencePlayer: new AmbiencePlayer(audio, ambience),
+    beds: new BedPlayer(audio, ambience),
+    analyser,
   };
   installVisibility();
   return graph;
@@ -136,6 +162,7 @@ function syncRequests(): void {
     audio.ambiencePlayer.play(requestedAmbience);
     appliedAmbience = requestedAmbience;
   }
+  for (const id of BED_IDS) audio.beds.set(id, bedRequests[id].level, bedRequests[id].pan);
 }
 
 function unlock(): void {
@@ -180,13 +207,30 @@ function jingle(id: JingleId): void {
 
 function sfx(id: SfxId, options: SfxOptions = {}): void {
   loadPreference();
+  asked[id] = (asked[id] ?? 0) + 1;
   if (!context || context.state !== 'running' || isMuted || !graph) return;
   playSfx(context, graph.effects, id, context.currentTime, {
     ...options,
     detune: options.detune ?? Math.random() * 80 - 40,
   });
   playedCount += 1;
+  played[id] = (played[id] ?? 0) + 1;
   lastPlayed = id;
+}
+
+function bed(id: BedId, level: number, pan = 0): void {
+  loadPreference();
+  bedRequests[id] = { level: Math.max(0, Math.min(1, level)), pan };
+  if (graph && context?.state === 'running') graph.beds.set(id, bedRequests[id].level, pan);
+}
+
+function level(): number {
+  if (!context || context.state !== 'running' || !graph) return 0;
+  const samples = new Float32Array(graph.analyser.fftSize);
+  graph.analyser.getFloatTimeDomainData(samples);
+  let sum = 0;
+  for (const sample of samples) sum += sample * sample;
+  return Math.sqrt(sum / samples.length);
 }
 
 function ambience(kind: AmbienceKind | null): void {
@@ -216,6 +260,9 @@ function state(): SoundState {
     ambience: requestedAmbience,
     sfxCount: playedCount,
     lastSfx: lastPlayed,
+    asked: { ...asked },
+    counts: { ...played },
+    beds: { fire: bedRequests.fire.level, stream: bedRequests.stream.level, dread: bedRequests.dread.level },
   };
 }
 
@@ -256,6 +303,8 @@ export const sound: SoundApi = {
   jingle,
   sfx,
   ambience,
+  bed,
+  level,
   get muted() {
     loadPreference();
     return isMuted;

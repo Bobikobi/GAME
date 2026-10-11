@@ -1,0 +1,39 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/reed-cord",
+  "title": "Reed cord",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/reed-cord",
+      "name": "Reed cord",
+      "description": "Two reeds, twisted tight.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "fibre",
+      "tier": 1,
+      "sprite": "core/base-kit:items/branch"
+    }
+  ],
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 3000,
+    "level": 1,
+    "inputs": [
+      {
+        "item": "core/reed",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/reed-cord",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start"
+  }
+}

@@ -24,8 +24,10 @@
     "board": "tsx tools/src/cli.ts board",
     "loop": "tsx tools/src/loop/cli.ts",
     "streams": "tsx tools/src/streams/cli.ts",
+    "hub:data": "tsx tools/src/hub/cli.ts",
+    "mcp": "tsx mcp/src/server.ts",
     "verify": "pnpm schemas --verify && pnpm check && pnpm bundle && pnpm lint && pnpm typecheck && pnpm test && pnpm --filter game build && pnpm site && pnpm --filter web test",
-    "site": "tsx tools/src/site/build-3d.ts && tsx tools/src/site/scene.ts && pnpm --filter web build && tsx tools/src/site/copy-play.ts"
+    "site": "tsx tools/src/site/build-3d.ts && tsx tools/src/site/scene.ts && tsx tools/src/hub/cli.ts && pnpm --filter web build && tsx tools/src/site/copy-play.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

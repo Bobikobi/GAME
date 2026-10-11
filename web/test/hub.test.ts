@@ -44,4 +44,29 @@ describe('the developer area', () => {
     expect(swatches.match(/<li/g)).toHaveLength(CORE_PALETTE.length);
     for (const hex of CORE_PALETTE) expect(html).toContain(`background: ${hex};`);
   });
+
+  it('shows the one line that adds the MCP server, and the repository registers it', () => {
+    expect(html.match(/claude mcp add openfold -- pnpm -s mcp/g)).toHaveLength(1);
+    for (const file of ['.mcp.json', '.cursor/mcp.json']) {
+      const config = JSON.parse(readFileSync(join(ROOT, file), 'utf8')) as { mcpServers: Record<string, { command: string; args: string[] }> };
+      expect(config.mcpServers['openfold'], file).toEqual({ command: 'pnpm', args: ['-s', 'mcp'] });
+    }
+  });
+});
+
+describe('the coming-soon boxes', () => {
+  for (const [page, file] of [['hub', 'hub/index.html'], ['home', 'index.html']] as const) {
+    it(`show Your card, Levels and Badges on the ${page} with no digit inside`, () => {
+      const text = readFileSync(join(DIST, file), 'utf8');
+      const boxes = text.match(/<ul class="soon-boxes".*?<\/ul>/s)?.[0] ?? '';
+      expect(boxes.match(/class="soon-box"/g)).toHaveLength(3);
+      for (const name of ['Your card', 'Levels', 'Badges']) expect(boxes).toContain(name);
+      expect(boxes.replace(/<[^>]*>/g, '')).not.toMatch(/\d/);
+    });
+  }
+
+  it('the home page has the 3D door when a 3D build exists, and never links to a missing page', () => {
+    const home = readFileSync(join(DIST, 'index.html'), 'utf8');
+    expect(home.includes('href="/play3d/"')).toBe(existsSync(join(DIST, 'play3d/index.html')));
+  });
 });
