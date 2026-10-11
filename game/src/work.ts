@@ -62,6 +62,11 @@ export function beatAt(elapsed: number, ms: number): Beat {
   return { index, down: within >= WIND_UP, progress: ms > 0 ? clamped / ms : 1 };
 }
 
+/** How many blows have fallen by now: the arm coming down counts its own, and a beat the frames jumped over still does. */
+export function blowsDue(beat: Beat): number {
+  return beat.down ? beat.index + 1 : beat.index;
+}
+
 /** The share of a step spent on a leg frame; the rest of it, the feet are together. */
 export const STRIDE = 0.7;
 

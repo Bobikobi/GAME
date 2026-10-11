@@ -93,11 +93,17 @@ export class UI {
     this.loadingEl = h('div', { class: 'loading' }, h('div', { class: 'loading-title' }, 'Loading the valley'), h('div', { class: 'loading-bar' }, h('i')));
     root.append(h('div', { class: 'top' }, this.hud, this.tracker, this.toasts), this.promptEl, this.loadingEl);
     mountTouch(root);
-    this.tracker.addEventListener('click', () => openJournal(this, 'tasks'));
+    this.tracker.addEventListener('click', () => this.panel(() => openJournal(this, 'tasks')));
   }
 
   get blocking(): boolean {
     return this.layers.length > 0 || this.titleOpen;
+  }
+
+  /** Opens a panel that reads the state: work under way is taken back first, so it never shows what will not stay. */
+  private panel(open: () => void): void {
+    app.world?.dropWork();
+    open();
   }
 
   // ------------------------------------------------------------ layers
@@ -135,9 +141,9 @@ export class UI {
     const s = app.session;
     if (!s?.started) return true;
     if (b === 'a') app.world?.interact();
-    else if (b === 'bag') openBag(this);
-    else if (b === 'journal') openJournal(this);
-    else if (b === 'menu') openMenu(this);
+    else if (b === 'bag') this.panel(() => openBag(this));
+    else if (b === 'journal') this.panel(() => openJournal(this));
+    else if (b === 'menu') this.panel(() => openMenu(this));
     return true;
   }
 
@@ -225,8 +231,8 @@ export class UI {
     const clockText = document.createTextNode('');
     const clockChip = h('span', { class: 'chip', title: 'Day' }, clockIcon, clockText);
     const level = h('span', { class: 'chip', title: 'Character level' });
-    const bag = button('Bag', () => openBag(this), 'small');
-    const log = button('Log', () => openJournal(this), 'small');
+    const bag = button('Bag', () => this.panel(() => openBag(this)), 'small');
+    const log = button('Log', () => this.panel(() => openJournal(this)), 'small');
     const feedbackBtn = button('Feedback', () => openFeedback(this), 'small');
     this.hud.replaceChildren(
       h(
@@ -242,7 +248,7 @@ export class UI {
           h('button', { class: 'chip demo', type: 'button', onclick: () => this.aboutDemo() }, 'Demo'),
         ),
       ),
-      h('div', { class: 'hud-right' }, feedbackBtn, bag, log, button('Menu', () => openMenu(this), 'small')),
+      h('div', { class: 'hud-right' }, feedbackBtn, bag, log, button('Menu', () => this.panel(() => openMenu(this)), 'small')),
     );
     return { meter, bar, num, goldText, clockChip, clockIcon, clockText, level, bag, log };
   }

@@ -2,7 +2,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vi
 
 import type { Bundle } from '@game/kernel';
 import { Session } from '../src/session';
-import { STRIDE, SWING_MS, WIND_UP, autoKind, beatAt, resourceKind, strideFrame, swingsFor, treasureKind } from '../src/work';
+import { STRIDE, SWING_MS, WIND_UP, autoKind, beatAt, blowsDue, resourceKind, strideFrame, swingsFor, treasureKind } from '../src/work';
 import { loadBundle } from '../../tools/test/helpers/world';
 
 describe('which work runs by itself', () => {
@@ -135,5 +135,20 @@ describe('walking away from work', () => {
     expect(s.busy).toBe(false);
     expect(s.cancelWork()).toBe(false);
     expect(s.state.player.bag['core/log']).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe('blows', () => {
+  test('every swing blows once even when frames skip over its down-phase', () => {
+    const ms = 3000;
+    const { count } = swingsFor(ms);
+    // a 250 ms frame cap samples only the starts of the swings' wind-ups
+    let hits = 0;
+    for (let t = 0; t <= ms; t += 250) hits = Math.max(hits, blowsDue(beatAt(t, ms)));
+    expect(hits).toBeGreaterThanOrEqual(count - 1);
+    // a smooth run lands exactly as many blows as swings by the end
+    let smooth = 0;
+    for (let t = 0; t <= ms; t += 16) smooth = Math.max(smooth, blowsDue(beatAt(t, ms)));
+    expect(smooth).toBe(count);
   });
 });

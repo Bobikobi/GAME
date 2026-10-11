@@ -40,7 +40,7 @@ import { questTargets } from '../targets';
 import { nodeLook } from '../growth';
 import { hintDistance, nodeAction } from '../text';
 import type { WorkKind } from '../ui/ui';
-import { type AutoKind, POSES, beatAt, resourceKind, strideFrame, treasureKind } from '../work';
+import { type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, treasureKind } from '../work';
 
 const DEPTH = { ground: 0, restore: 1, flat: 2, shadow: 2.5, dig: 3, puff: 3.5, mist: 8000, fog: 9000, motes: 9100, shade: 9500, glow: 9600, fx: 9800, marker: 9850 };
 const NEIGHBOURS: readonly [number, number][] = [
@@ -101,6 +101,8 @@ interface Auto {
   hits: number;
   /** the way the player faces the thing; a different direction held is a step away */
   facing: Dir;
+  /** the thing is on the player's own tile, so any direction held is a step away */
+  underfoot: boolean;
   onDone?: () => void;
 }
 
@@ -1605,9 +1607,19 @@ export class WorldScene extends Phaser.Scene {
     const busy = res.events.find((e) => e.e === 'busy');
     if (!busy || busy.e !== 'busy') return;
     this.faceNode(s, nodeId);
-    this.auto = { node: nodeId, kind, start: s.tick, ms: busy.ms, hits: 0, facing: s.facing, onDone };
+    // a dig spot under the feet has no side to face: every direction is a step away from it
+    const underfoot = inst.x === s.pos[0] && inst.y === s.pos[1];
+    // a dig that solved a riddle says nothing of the catch (G6)
+    const solved = res.events.some((e) => e.e === 'riddle');
+    this.auto = { node: nodeId, kind, start: s.tick, ms: busy.ms, hits: 0, facing: s.facing, underfoot, onDone: solved ? undefined : onDone };
     this.held.add(nodeId);
     this.workFrame(false);
+  }
+
+  /** Drops the work under way, if any, before a panel reads the state. */
+  dropWork(): void {
+    const s = this.session;
+    if (s && this.auto) this.stopWork(s, this.auto);
   }
 
   /** Whether work started by one press is under way. */
@@ -1622,11 +1634,11 @@ export class WorldScene extends Phaser.Scene {
     // the end comes first: a level-up window opening as the work ends must not undo it
     if (elapsed >= w.ms) return this.finishWork(s, w);
     const dir = app.controls.direction();
-    if (s.paused || app.ui.blocking || (dir !== null && dir !== w.facing)) return this.stopWork(s, w);
+    if (s.paused || app.ui.blocking || (dir !== null && (w.underfoot || dir !== w.facing))) return this.stopWork(s, w);
     const beat = beatAt(elapsed, w.ms);
     this.workFrame(beat.down);
-    if (beat.down && beat.index >= w.hits) {
-      w.hits = beat.index + 1;
+    if (blowsDue(beat) > w.hits) {
+      w.hits = blowsDue(beat);
       this.blow(w, beat.progress);
     }
   }
