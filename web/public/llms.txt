@@ -19,7 +19,7 @@ Paths starting with / are on this site. Content goes in content/extensions/<your
 
 ## Data
 
-- [hub-data.json](/api/hub-data.json): the boards, the requests and this week in one document, format in [hub-data.schema.json](/api/schema/hub-data.schema.json); published once the data build is part of the site
+- [hub-data.json](/api/hub-data.json): the boards, the requests and this week in one document, format in [hub-data.schema.json](/api/schema/hub-data.schema.json), rebuilt with the site
 - [Boards](/hub/boards/): builders and reviewers with the weights their points are computed with
 
 ## MCP

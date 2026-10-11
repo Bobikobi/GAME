@@ -4391,12 +4391,29 @@
                         "minimum": 1,
                         "maximum": 999,
                         "type": "integer"
+                      },
+                      "instead": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "What a start whose kit holds the item gets in its place: something that kit lacks.",
+                        "type": "string"
                       }
                     }
                   }
                 },
                 "recipes": {
                   "maxItems": 4,
+                  "type": "array",
+                  "items": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  }
+                },
+                "opens": {
+                  "maxItems": 2,
+                  "description": "Ids of restores the quest opens when it is done: a place reward, the way a restore opens by hand.",
                   "type": "array",
                   "items": {
                     "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
@@ -4948,8 +4965,8 @@
               "type": "string"
             },
             "inputs": {
-              "minItems": 1,
               "maxItems": 6,
+              "description": "What the player brings to restore it. Empty: it does not open by hand, only as a quest's reward.opens.",
               "type": "array",
               "items": {
                 "additionalProperties": false,

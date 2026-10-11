@@ -3,7 +3,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vi
 import type { Bundle } from '@game/kernel';
 import { app } from '../src/app';
 import { LEGACY_SAVE_KEY, SAVE_KEY } from '../src/config';
-import { Session } from '../src/session';
+import { DEMO_SINCE_KEY, Session } from '../src/session';
 import { say } from '../src/ui/dialog';
 import { UI } from '../src/ui/ui';
 import { loadBundle } from '../../tools/test/helpers/world';
@@ -118,7 +118,9 @@ describe('session persistence', () => {
 
     storage.setItem(LEGACY_SAVE_KEY, storage.getItem(SAVE_KEY)!);
     Session.erase();
-    expect(storage.length).toBe(0);
+    // only the demo's date is left
+    expect(storage.length).toBe(1);
+    expect(storage.getItem(DEMO_SINCE_KEY)).not.toBeNull();
   });
 
   test('a save under the new key wins over one left under the working title, which is never read', () => {
@@ -182,6 +184,42 @@ describe('session persistence', () => {
     expect(restored?.state.player.worn).toEqual({});
   });
 
+  test('a save from before the new opening is dropped once, under either key, and the demo date is kept', () => {
+    for (const key of [SAVE_KEY, LEGACY_SAVE_KEY]) {
+      startedSession();
+      const file = JSON.parse(storage.getItem(SAVE_KEY)!) as { v: number };
+      storage.clear();
+      storage.setItem(key, JSON.stringify({ ...file, v: 1 }));
+
+      expect(Session.hasSave()).toBe(false);
+      expect(Session.dropOld()).toBe(true);
+      expect(storage.getItem(SAVE_KEY)).toBeNull();
+      expect(storage.getItem(LEGACY_SAVE_KEY)).toBeNull();
+      expect(Session.demoSince()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      // the notice comes once: there is nothing left to drop
+      expect(Session.dropOld()).toBe(false);
+    }
+  });
+
+  test('a current save, an unreadable one and no save at all are left alone', () => {
+    expect(Session.dropOld()).toBe(false);
+    startedSession();
+    expect(Session.dropOld()).toBe(false);
+    expect(Session.restore(bundle)?.started).toBe(true);
+    storage.setItem(SAVE_KEY, 'not a save');
+    expect(Session.dropOld()).toBe(false);
+    expect(storage.getItem(SAVE_KEY)).toBe('not a save');
+  });
+
+  test('the demo date is written once and outlives a new game and an erase', () => {
+    expect(Session.demoSince()).toBeUndefined();
+    storage.setItem(DEMO_SINCE_KEY, '2026-10-01');
+    startedSession();
+    Session.erase();
+    startedSession('Again');
+    expect(Session.demoSince()).toBe('2026-10-01');
+  });
+
   test('plays the elder monologue once across a reload', async () => {
     app.session = startedSession();
     await talker().talk('core/elder');
@@ -216,5 +254,23 @@ describe('session persistence', () => {
     app.session = Session.restore(bundle)!;
     await talker().talk('core/elder');
     expect(vi.mocked(say).mock.calls[1]?.[2]).not.toEqual(remark.say);
+  });
+});
+
+describe('the clock', () => {
+  test('redraws once when the game hour turns, not on every frame', () => {
+    const session = startedSession();
+    session.advance(16);
+    let changes = 0;
+    session.on('change', () => changes++);
+    // tick 0 is noon, and the next hour turns one twenty-fourth of a day later
+    const hour = bundle.params.day_length_ms / 24;
+    session.tick = hour - 10;
+    session.advance(5);
+    expect(changes).toBe(0);
+    session.advance(10);
+    expect(changes).toBe(1);
+    session.advance(16);
+    expect(changes).toBe(1);
   });
 });
