@@ -173,6 +173,15 @@ window.__e2e = (() => {
     soundState() {
       return g().sound ? g().sound.state() : null;
     },
+    soundLevel() {
+      return g().sound.level();
+    },
+    setMuted(muted) {
+      g().sound.setMuted(muted);
+    },
+    sfx(id) {
+      g().sound.sfx(id);
+    },
     dialog() {
       const d = document.querySelector('.dialog');
       if (!d) return null;
@@ -204,6 +213,14 @@ interface State {
   blocking: boolean;
   prompt: string;
 }
+interface SoundSnap {
+  unlocked: boolean;
+  muted: boolean;
+  asked: Record<string, number>;
+  counts: Record<string, number>;
+  beds: Record<string, number>;
+}
+
 interface Plan {
   path: Dir[];
   face: Dir;
@@ -216,6 +233,8 @@ class Stop extends Error {}
 /** One player, on one device. */
 class Player {
   private shot = 0;
+  /** how many A presses talkThrough made while a dialogue was open */
+  talkPresses = 0;
   constructor(
     readonly page: Page,
     readonly touch: boolean,
@@ -224,6 +243,21 @@ class Player {
 
   state(): Promise<State> {
     return this.page.eval<State>('__e2e.state()');
+  }
+
+  sound(): Promise<SoundSnap> {
+    return this.page.eval<SoundSnap>('__e2e.soundState()');
+  }
+
+  /** Waits (the beds follow the player every quarter second) until a bed's level meets a test, and returns all levels. */
+  async bedWhen(bed: 'fire' | 'stream' | 'dread', test: (level: number) => boolean, what: string): Promise<Record<string, number>> {
+    const end = Date.now() + 8000;
+    for (;;) {
+      const { beds } = await this.sound();
+      if (test(beds[bed] ?? 0)) return beds;
+      if (Date.now() > end) throw new Error(`timed out waiting for ${what}: beds ${JSON.stringify(beds)}`);
+      await sleep(100);
+    }
   }
 
   bag(item: string): Promise<number> {
@@ -381,6 +415,7 @@ class Player {
         await sleep(120);
         return seen;
       }
+      this.talkPresses++;
       await this.a();
       await sleep(90);
     }
@@ -570,8 +605,14 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
     await page.tap('.title-screen button', 'Wake up');
 
     // 2. wake up by the broken bridge
+    const clicks0 = (await me.sound()).asked.click ?? 0;
     const intro = await me.talkThrough();
     if (!intro.some((l) => l.includes('bridge'))) throw new Error('the intro never mentions the bridge');
+    // 4b criterion: the click plays exactly once per advance of the dialogue
+    const clicks = ((await me.sound()).asked.click ?? 0) - clicks0;
+    if (clicks !== me.talkPresses) throw new Error(`${me.talkPresses} presses of A on the intro made ${clicks} clicks, not one each`);
+    log(`dialogue click: ${clicks} clicks for ${me.talkPresses} advances`);
+    const atBridge = await me.bedWhen('stream', (l) => l > 0.3, 'the stream heard from the riverbank where the player wakes');
     await me.snap('wake');
     log('woke up by the river');
 
@@ -732,6 +773,30 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
     await me.snap('camp');
     log('felled a tree and built a fire');
 
+    // 5b. sound by place (4b): the fire is loudest beside it, the output is real, and the mute silences it all
+    const atFire = await me.bedWhen('fire', (l) => l > 0.9, 'the crackle beside the fire');
+    const heardAtFire = await me.sound();
+    log(`beds beside the fire: ${JSON.stringify(atFire)}`);
+    if (heardAtFire.unlocked) {
+      const heard = await page.waitFor<number>(`(() => { const l = __e2e.soundLevel(); return l > 0.0005 ? l : 0; })()`, 'sound leaving the speakers beside the fire', 6000);
+      const before = (await me.sound()).counts.click ?? 0;
+      await page.eval('__e2e.setMuted(true)');
+      await sleep(400);
+      const quiet = await page.eval<number>('__e2e.soundLevel()');
+      await page.eval(`__e2e.sfx('click')`);
+      const after = await me.sound();
+      if (quiet > 0.0001) throw new Error(`muted, but the output is still ${quiet}`);
+      if ((after.counts.click ?? 0) !== before) throw new Error('a click sounded while muted');
+      await page.eval('__e2e.setMuted(false)');
+      log(`mute: output ${heard.toFixed(4)} unmuted, ${quiet.toFixed(6)} muted, no effect sounded while muted`);
+    } else {
+      log('audio context is not running here: output level and mute measured on the state only');
+      await page.eval('__e2e.setMuted(true)');
+      await page.eval(`__e2e.sfx('click')`);
+      if (((await me.sound()).counts.click ?? 0) !== 0) throw new Error('a click sounded while muted');
+      await page.eval('__e2e.setMuted(false)');
+    }
+
     // 6. the town: the creators' signs, and the real choice of the opening, whom to help first
     // the walk stops beside the square and one step enters it, since the word in town stops the walk
     const square = await page.eval<Rect>(`__e2e.slot('core/town-square')`);
@@ -742,6 +807,11 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
     if ((await me.quest('core/into-town')) !== 'done') throw new Error('into-town is not done');
     if (!town.some((l) => l.includes('Whom you help first'))) throw new Error(`no word of whom to help first: ${town.join(' / ')}`);
     log('reached the town: Maru and Pell could use a hand');
+    // 4b criterion: each source is quieter the farther you stand from it
+    const inTown = await me.bedWhen('fire', (l) => l === 0, 'the fire out of earshot in town');
+    if (!(atFire.fire! > inTown.fire!)) throw new Error('the fire is not quieter in town');
+    await me.bedWhen('stream', (l) => l < atBridge.stream!, 'the stream quieter than at the bridge');
+    log(`beds in town: ${JSON.stringify(inTown)}; fire ${atFire.fire} -> ${inTown.fire}`);
 
     // 7. whom to help first: the phone helps Maru (his bells, for his old trowel), the desktop helps Pell (her herbs, for a recipe and coin)
     const elder = await page.eval<[number, number]>(`(() => { const s = __e2e.slot('core/elder-house'); return [s.x + 1, s.y + 1]; })()`);

@@ -4,7 +4,7 @@ import { noiseBuffer, playPulse } from './synth';
 export type SfxId =
   | 'strike' | 'crack' | 'snap' | 'tug' | 'rustle' | 'pluck' | 'dig' | 'thud'
   | 'hammer' | 'sizzle' | 'coin' | 'pickup' | 'ui' | 'back' | 'miss' | 'good'
-  | 'perfect' | 'step' | 'whisper' | 'bell';
+  | 'perfect' | 'step' | 'whisper' | 'bell' | 'click' | 'voice';
 
 export interface SfxOptions {
   pan?: number;
@@ -48,7 +48,22 @@ export function playSfx(
     case 'step': return noiseBurst(context, output, when, 0.02, 'bandpass', 1_200, 0.3);
     case 'whisper': return whisper(context, output, when);
     case 'bell': return bell(context, output, when, detune);
+    case 'click': return click(context, output, when);
+    case 'voice': return playVoice(context, output, when, detune);
   }
+}
+
+/** The dialogue's page-turn: a soft tick, always the same pitch, so a row of them reads as one steady beat. */
+function click(context: BaseAudioContext, out: AudioNode, at: number): number {
+  noiseBurst(context, out, at, 0.014, 'bandpass', 1_900, 0.22);
+  tone(context, out, at, 0.03, 880, 0.12, 'sine', 0);
+  return 0.04;
+}
+
+/** One syllable of a speaker's gibberish: a short, round pulse; `detune` carries the speaker's pitch. */
+function playVoice(context: BaseAudioContext, out: AudioNode, at: number, detune: number): number {
+  playPulse(context, out, 330, at, 0.05, { gain: 0.1, duty: 0.5, detune });
+  return 0.09;
 }
 
 function strike(context: BaseAudioContext, out: AudioNode, at: number, detune: number): number {
