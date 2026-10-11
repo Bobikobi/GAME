@@ -3,7 +3,7 @@
   "format": 1,
   "type": "shop",
   "id": "core/trader-shop",
-  "title": "Pell's stall",
+  "title": "Pell's shop",
   "creator": "core",
   "shop": {
     "sells": [
@@ -36,6 +36,7 @@
         "price_mg": 42000
       }
     ],
-    "buys": true
+    "buys": true,
+    "interior": "food"
   }
 }

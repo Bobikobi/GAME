@@ -9,7 +9,8 @@
   "ai_tools": [
     "Nano Banana (gemini-3.1-flash-image) via Antigravity",
     "Codex: text-grid sprites in tools/src/kit/sketches.ts",
-    "Claude Code: text-grid sprites and frames via a PIL script"
+    "Claude Code: text-grid sprites and frames via a PIL script",
+    "Claude Code: shop interiors in tools/src/kit/interiors.ts"
   ],
   "kit": {
     "palette": [
@@ -688,6 +689,119 @@
         "w": 16,
         "h": 16,
         "frames": 4
+      },
+      "tiles/planks": {
+        "file": "tiles/planks.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/planks_1": {
+        "file": "tiles/planks_1.png",
+        "w": 16,
+        "h": 16
+      },
+      "tiles/planks_2": {
+        "file": "tiles/planks_2.png",
+        "w": 16,
+        "h": 16
+      },
+      "props/room_wall": {
+        "file": "props/room_wall.png",
+        "w": 16,
+        "h": 48
+      },
+      "props/room_wall_1": {
+        "file": "props/room_wall_1.png",
+        "w": 16,
+        "h": 48
+      },
+      "props/hearth": {
+        "file": "props/hearth.png",
+        "w": 64,
+        "h": 43,
+        "frames": 3
+      },
+      "props/shop_window": {
+        "file": "props/shop_window.png",
+        "w": 22,
+        "h": 20,
+        "frames": 2
+      },
+      "props/jar_shelf": {
+        "file": "props/jar_shelf.png",
+        "w": 22,
+        "h": 26
+      },
+      "props/counter_left": {
+        "file": "props/counter_left.png",
+        "w": 16,
+        "h": 18
+      },
+      "props/counter": {
+        "file": "props/counter.png",
+        "w": 16,
+        "h": 18
+      },
+      "props/counter_right": {
+        "file": "props/counter_right.png",
+        "w": 16,
+        "h": 18
+      },
+      "props/scale": {
+        "file": "props/scale.png",
+        "w": 11,
+        "h": 10
+      },
+      "props/shop_cat": {
+        "file": "props/shop_cat.png",
+        "w": 14,
+        "h": 9,
+        "frames": 3
+      },
+      "props/runner_top": {
+        "file": "props/runner_top.png",
+        "w": 24,
+        "h": 16
+      },
+      "props/runner": {
+        "file": "props/runner.png",
+        "w": 24,
+        "h": 16
+      },
+      "props/runner_end": {
+        "file": "props/runner_end.png",
+        "w": 24,
+        "h": 16
+      },
+      "props/door_mat": {
+        "file": "props/door_mat.png",
+        "w": 16,
+        "h": 8
+      },
+      "props/pear_barrel": {
+        "file": "props/pear_barrel.png",
+        "w": 14,
+        "h": 17
+      },
+      "props/mushroom_crate": {
+        "file": "props/mushroom_crate.png",
+        "w": 18,
+        "h": 16
+      },
+      "props/flour_sack": {
+        "file": "props/flour_sack.png",
+        "w": 13,
+        "h": 15
+      },
+      "props/potted_herb": {
+        "file": "props/potted_herb.png",
+        "w": 12,
+        "h": 13
+      },
+      "props/shop_sign_food": {
+        "file": "props/shop_sign_food.png",
+        "w": 16,
+        "h": 16
       }
     }
   }

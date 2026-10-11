@@ -277,7 +277,7 @@ export function openShop(ui: UI, npcId: string): void {
   const npc = b.npcs[npcId];
   const shop = npc?.shop ? b.shops[npc.shop] : undefined;
   if (!s || !npc || !shop) return;
-  const p = panel(ui, `${npc.name}'s stall`, 'shop');
+  const p = panel(ui, shop.title, 'shop');
   let current: 'buy' | 'sell' = 'buy';
 
   const deal = (action: () => { ok: boolean; error?: string }) => {

@@ -67,12 +67,19 @@ window.__e2e = (() => {
   const KEY = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
   const g = () => window.__game;
   const inRect = (x, y, r) => x >= r.x && y >= r.y && x < r.x + r.w && y < r.y + r.h;
+  // inside a shop the room scene walks the player on its own grid; the session waits on the doorstep
+  const walker = () => {
+    const s = g().session, w = g().world, r = w.room;
+    return r ? { pos: r.pos, facing: r.facing, move: r.move, open: (x, y) => r.canWalk(x, y) }
+      : { pos: s.pos, facing: s.facing, move: w.move, open: (x, y) => w.canWalk(s, x, y) };
+  };
   return {
     state() {
-      const s = g().session, w = g().world, p = document.querySelector('.prompt');
-      return { pos: [...s.pos], facing: s.facing, busy: s.busy, moving: !!w.move, blocking: g().ui.blocking,
-        prompt: p && !p.hidden ? p.textContent.slice(1).trim() : '' };
+      const s = g().session, w = g().world, me = walker(), p = document.querySelector('.prompt');
+      return { pos: [...me.pos], facing: me.facing, busy: s.busy, moving: !!me.move || !!w.entering || !!w.room?.leaving, blocking: g().ui.blocking,
+        inside: !!w.room && !w.room.leaving, prompt: p && !p.hidden ? p.textContent.slice(1).trim() : '' };
     },
+    open(x, y) { return walker().open(x, y); },
     player() { return g().session.state.player; },
     hour() {
       // tick 0 is noon (the kernel's hourOf)
@@ -97,7 +104,7 @@ window.__e2e = (() => {
     },
     /** Shortest walk to a tile from which a tile of rect is the one in front. */
     plan(rect) {
-      const s = g().session, w = g().world;
+      const me = walker(), s = { pos: me.pos }, w = { canWalk: (_, x, y) => me.open(x, y) };
       const goals = new Map();
       for (let x = rect.x; x < rect.x + rect.w; x++) for (let y = rect.y; y < rect.y + rect.h; y++) {
         for (const [d, [dx, dy]] of Object.entries(DIRS)) {
@@ -134,12 +141,14 @@ window.__e2e = (() => {
      * press, however slow the frames are.
      */
     releaseOnStep(dir, touch) {
-      const s = g().session, w = g().world, facing = s.facing, t0 = performance.now();
+      const s = g().session, w = g().world, r = w.room, facing = r ? r.facing : s.facing, t0 = performance.now();
       const gen = (window.__e2eGen = (window.__e2eGen ?? 0) + 1);
       window.__e2eStepped = false;
+      // a step through a door counts as a step: let go before the other side reads the key
+      const stepped = () => (r ? r.move || r.leaving || r.facing !== facing : w.move || w.entering || w.room || s.facing !== facing);
       const look = () => {
         if (window.__e2eGen !== gen) return;
-        if (w.move || s.facing !== facing) {
+        if (stepped()) {
           window.__e2eStepped = true;
           if (touch) g().controls.setTouchDir(null);
           else window.dispatchEvent(new KeyboardEvent('keyup', { code: KEY[dir] }));
@@ -183,6 +192,7 @@ interface State {
   moving: boolean;
   blocking: boolean;
   prompt: string;
+  inside: boolean;
 }
 interface Plan {
   path: Dir[];
@@ -259,12 +269,16 @@ class Player {
     // software rendering can drop a hold whole (no frame saw the key down): while the player
     // has not moved and the tile ahead is open, press again, twice at most
     for (let tries = 0; tries < 2; tries++) {
-      const at = (await this.state()).pos;
+      const now = await this.state();
+      if (now.inside !== before.inside || now.moving) break;
+      const at = now.pos;
       if (at[0] !== before.pos[0] || at[1] !== before.pos[1]) break;
-      const open = await this.page.eval<boolean>(`__game.world.canWalk(__game.session, ${want[0]}, ${want[1]})`);
+      const open = await this.page.eval<boolean>(`__e2e.open(${want[0]}, ${want[1]})`);
       if (!open) break;
       await this.press(dir);
     }
+    // through a door the other side has its own tiles: nothing to compare
+    if ((await this.state()).inside !== before.inside) return true;
     // a press should walk one tile; if it ever walks two, walk back to the one tile wanted
     for (let i = 0; i < 3; i++) {
       const at = (await this.state()).pos;
@@ -309,7 +323,7 @@ class Player {
     if (at.pos.join(',') !== plan.goal.join(',')) throw new Error(`walking to ${what} ended at ${at.pos.join(',')}, not ${plan.goal.join(',')}`);
     if (at.facing === plan.face) return;
     const v = VEC[plan.face];
-    const open = (dx: number, dy: number) => this.page.eval<boolean>(`__game.world.canWalk(__game.session, ${at.pos[0] + dx}, ${at.pos[1] + dy})`);
+    const open = (dx: number, dy: number) => this.page.eval<boolean>(`__e2e.open(${at.pos[0] + dx}, ${at.pos[1] + dy})`);
     if (!(await open(v[0], v[1]))) {
       await this.step(plan.face); // blocked ahead: pressing toward it only turns
       return;
@@ -318,6 +332,37 @@ class Player {
     // open ahead: back up one tile and step forward again, which leaves the player facing it
     await this.step(OPPOSITE[plan.face]);
     await this.step(plan.face);
+  }
+
+  /**
+   * Into a shop through its door, from the step in front of it: walking up into the
+   * door, or the A button on the "Enter" prompt. Then up the runner to the counter.
+   */
+  async enterShop(door: [number, number], how: 'walk' | 'a'): Promise<void> {
+    // onto the tile below the step, then up onto the step: the player stands on it facing the door
+    const step: [number, number] = [door[0], door[1] + 1];
+    await this.walkTo({ x: step[0], y: step[1] + 1, w: 1, h: 1 }, 'the way to the shop');
+    await this.step((await this.state()).facing);
+    await this.step('up');
+    const at = (await this.state()).pos;
+    if (at.join(',') !== step.join(',')) throw new Error(`the shop step is ${step.join(',')}, but the walk ended at ${at.join(',')}`);
+    if (how === 'a') {
+      await this.expectPrompt(/^Enter /, 'the shop door');
+      await this.a();
+    } else await this.step('up');
+    await this.page.waitFor('__e2e.state().inside && !__e2e.state().moving', 'the room to open', 3000);
+    await sleep(300); // the room fades in
+    // the counter is the whole row in front of the keeper: walk to the middle of it
+    await this.walkTo({ x: 3, y: 4, w: 1, h: 1 }, 'the counter');
+  }
+
+  /** Back down the runner and out through the door, which puts the valley back. */
+  async leaveShop(): Promise<void> {
+    await this.walkTo({ x: 3, y: 9, w: 1, h: 1 }, 'the door');
+    // walkTo may already have turned toward the door, which is the step out
+    if ((await this.state()).inside) await this.step('down');
+    await this.page.waitFor('!__e2e.state().inside', 'the valley to come back', 3000);
+    await this.idle('leaving the shop');
   }
 
   async expectPrompt(pattern: RegExp, what: string): Promise<void> {
@@ -635,14 +680,17 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
 
     // 7. whom to help first: the phone helps Maru (his bells, for his old trowel), the desktop helps Pell (her herbs, for a recipe and coin)
     const elder = await page.eval<[number, number]>(`(() => { const s = __e2e.slot('core/elder-house'); return [s.x + 1, s.y + 1]; })()`);
-    const trader = await page.eval<[number, number]>(`(() => { const s = __e2e.slot('core/trader-stall'); return [s.x + 1, s.y]; })()`);
+    // Pell trades inside her shop: her place on the map is its door (the shop interior, 2026-10-11)
+    const trader = await page.eval<[number, number]>(`(() => { const s = __e2e.slot('core/trader-stall'); return [s.x, s.y]; })()`);
     const first = viewport.mobile ? 'Where the bells rang' : 'Herbs for Pell';
     if (viewport.mobile) {
       await me.walkTo({ x: elder[0], y: elder[1], w: 1, h: 1 }, 'Elder Maru');
       await me.expectPrompt(/^Talk to Elder Maru/, 'the elder');
     } else {
-      await me.walkTo({ x: trader[0], y: trader[1], w: 1, h: 1 }, 'Pell');
-      await me.expectPrompt(/^Talk to Pell/, 'the trader');
+      // the desktop walks in through the door, and the scene changes to the room
+      await me.enterShop(trader, 'walk');
+      await me.snap('shop-inside');
+      await me.expectPrompt(/^Talk to Pell/, 'the trader across the counter');
     }
     await me.a();
     await me.talkThrough(`Task: ${first}`);
@@ -655,11 +703,11 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
     if (!viewport.mobile && !tracker.includes('mist is thin at noon')) throw new Error(`the tracker does not show the clue: "${tracker}"`);
     log(`helps ${viewport.mobile ? 'Maru' : 'Pell'} first: ${first}`);
 
-    // 8. the desktop spends the bridge's purse on a basket, and the stall says what it opens (G12)
+    // 8. the desktop spends the bridge's purse on a basket across Pell's counter, and the shop says what it opens (G12)
     let paid = 0;
     if (!viewport.mobile) {
-      await me.walkTo({ x: trader[0], y: trader[1], w: 1, h: 1 }, 'Pell');
-      await me.expectPrompt(/^Talk to Pell/, 'the trader');
+      if (!(await me.state()).inside) throw new Error('the task was taken outside the shop');
+      await me.expectPrompt(/^Talk to Pell/, 'the trader across the counter');
       await me.a();
       await me.talkThrough('Trade');
       await page.waitFor(`!!document.querySelector('.panel .row')`, 'the shop');
@@ -668,7 +716,7 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       );
       // both neighbours' roads, since whom to help first is the player's
       for (const road of ['Herbs for Pell', 'Where the bells rang']) {
-        if (!opens.includes(road)) throw new Error(`the stall does not say the basket opens "${road}": "${opens}"`);
+        if (!opens.includes(road)) throw new Error(`the shop does not say the basket opens "${road}": "${opens}"`);
       }
       await me.snap('shop');
       await me.tapInRow('Basket', 'Buy');
@@ -676,7 +724,10 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       await page.tap('.panel header button', 'Close');
       await me.idle('closing the shop');
       paid = await page.eval<number>('__e2e.player().gold');
-      log(`bought a basket: ${opens}`);
+      await me.leaveShop();
+      const out = await me.state();
+      if (out.pos.join(',') !== `${trader[0]},${trader[1] + 1}` || out.facing !== 'down') throw new Error(`out of the shop at ${out.pos.join(',')} facing ${out.facing}, not on its step facing out`);
+      log(`bought a basket inside Pell's shop and walked out: ${opens}`);
     }
 
     // 9. a ruin in the mist at the edge of town, waiting for a creator
@@ -801,11 +852,14 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       log(`game hour ${hour}:00 before the sun bank; sunleaf opens 12:00 to 20:00`);
       if (hour < 12 || hour >= 20) throw new Error(`the sunleaf is closed at ${hour}:00: the run took too long to reach the bank`);
       await me.gather('core/sun-herbs', 'core/sunleaf', 1);
-      await me.walkTo({ x: trader[0], y: trader[1], w: 1, h: 1 }, 'Pell');
+      // in again, by the A button on the door this time
+      await me.enterShop(trader, 'a');
+      await me.expectPrompt(/^Talk to Pell/, 'the trader across the counter');
       await me.a();
       await me.talkThrough('Hand in');
       await me.talkThrough();
       await me.idle('handing in the herbs');
+      await me.leaveShop();
       if ((await me.quest('core/herbs-for-pell')) !== 'done') throw new Error('herbs-for-pell is not done');
       const p = await page.eval<{ gold: number; recipes: string[] }>('__e2e.player()');
       if (p.gold !== paid + 30_000) throw new Error(`gold is ${p.gold} mg after the herbs, not ${paid + 30_000}`);

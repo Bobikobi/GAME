@@ -33,6 +33,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Wild herbs (resource) - `content/core/resources/bank-herbs.json`
 - Bell bushes (resource) - `content/core/resources/bell-bushes.json`
 - Redberry bushes (resource) - `content/core/resources/berry-bushes.json`
+- Fallen logs (resource) - `content/core/resources/fallen-logs.json`
 - Forest mushrooms (resource) - `content/core/resources/forest-mushrooms.json`
 - Keystone (resource) - `content/core/resources/keystone.json`
 - Oak trees (resource) - `content/core/resources/oak-trees.json`
@@ -41,7 +42,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Wild herbs (resource) - `content/core/resources/wild-herbs.json`
 - Broken arch (restore) - `content/core/restores/arch-way.json`
 - Old bridge (restore) - `content/core/restores/old-bridge.json`
-- Pell's stall (shop) - `content/core/shops/trader-shop.json`
+- Pell's shop (shop) - `content/core/shops/trader-shop.json`
 - Digger (starter) - `content/core/starters/digger.json`
 - Explorer (starter) - `content/core/starters/explorer.json`
 - Forager (starter) - `content/core/starters/forager.json`
@@ -52,7 +53,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - The slid bank (treasure) - `content/core/treasures/slid-bank.json`
 - Base kit (kit) - `content/kit/core/kit.json`
 
-AI tools: Claude Code: text-grid sprites and frames via a PIL script; Codex: text-grid sprites in tools/src/kit/sketches.ts; Nano Banana (gemini-3.1-flash-image) via Antigravity.
+AI tools: Claude Code: shop interiors in tools/src/kit/interiors.ts; Claude Code: text-grid sprites and frames via a PIL script; Codex: text-grid sprites in tools/src/kit/sketches.ts; Nano Banana (gemini-3.1-flash-image) via Antigravity.
 
 ## Libraries and fonts
 

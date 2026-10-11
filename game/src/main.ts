@@ -7,6 +7,7 @@ import { sound } from './audio';
 import { RICH } from './config';
 import { Controls } from './input';
 import { BootScene } from './scenes/boot';
+import { RoomScene } from './scenes/room';
 import { WorldScene } from './scenes/world';
 import { UI } from './ui/ui';
 import './style.css';
@@ -25,7 +26,7 @@ new Phaser.Game({
   backgroundColor: '#1b1a2e',
   banner: false,
   scale: { mode: Phaser.Scale.RESIZE, width: window.innerWidth, height: window.innerHeight },
-  scene: [BootScene, WorldScene],
+  scene: [BootScene, WorldScene, RoomScene],
 });
 
 document.addEventListener('visibilitychange', () => {

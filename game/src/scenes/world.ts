@@ -39,6 +39,7 @@ import { questTargets } from '../targets';
 import { nodeLook } from '../growth';
 import { hintDistance, nodeAction } from '../text';
 import type { WorkKind } from '../ui/ui';
+import { ROOM, doorsOf, type RoomScene } from './room';
 
 const DEPTH = { ground: 0, restore: 1, flat: 2, shadow: 2.5, dig: 3, puff: 3.5, mist: 8000, fog: 9000, motes: 9100, shade: 9500, glow: 9600, fx: 9800, marker: 9850 };
 const NEIGHBOURS: readonly [number, number][] = [
@@ -219,6 +220,10 @@ export class WorldScene extends Phaser.Scene {
   private notes = new Map<string, { text: string; name: string; top: number }>();
   private tops = new Map<string, number>();
   private npcAt = new Map<string, string>();
+  /** the keepers who trade inside, by the door tile that leads to them */
+  private doors = new Map<string, string>();
+  /** the shop the player is inside, while they are */
+  room: RoomScene | undefined;
   private nodeAt = new Map<string, string>();
   private empty: Slot[] = [];
   private eyeSpots: [number, number][] = [];
@@ -244,6 +249,9 @@ export class WorldScene extends Phaser.Scene {
   private inside = new Set<string>();
   private attractT = 0;
   private night = 0;
+  private entering = false;
+  /** the direction held out through a door: it walks nobody until it is let go */
+  private held: Dir | null = null;
   private wasNight: boolean | undefined;
   private nextEyes = 0;
   private nextWhisper = 0;
@@ -617,9 +625,15 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private buildNpcs(): void {
+    this.doors = doorsOf(this.b, (id) => npcTile(this.b, id));
     for (const [id, npc] of Object.entries(this.b.npcs)) {
       const t = npcTile(this.b, id);
       if (!t) continue;
+      // a keeper with a shop to walk into stands inside it; their place is the door
+      if (this.doors.get(key(t[0], t[1])) === id) {
+        this.tops.set(key(t[0], t[1]), 20);
+        continue;
+      }
       const bottom = (t[1] + 1) * T;
       const cx = t[0] * T + T / 2;
       // a blink sheet (frame 0 = the plain sprite, frame 1 = eyes closed) replaces the image when it exists
@@ -879,6 +893,10 @@ export class WorldScene extends Phaser.Scene {
   /** Show this session's world. Called for a new game and for a loaded one. */
   bind(session: Session): void {
     for (const off of this.unbind) off();
+    if (this.room) {
+      this.scene.stop(ROOM);
+      this.outside();
+    }
     this.session = session;
     this.move = null;
     this.work = null;
@@ -913,7 +931,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** The starter's sprite for a direction, in the look the player picked. */
-  private playerFrame(dir: Dir, pose: 'walk' | 'work' | 'idle' = 'walk'): { key: string; flip: boolean } {
+  playerFrame(dir: Dir, pose: 'walk' | 'work' | 'idle' = 'walk'): { key: string; flip: boolean } {
     const p = this.session?.state.player;
     const starter = p ? this.b.starters[p.starter] : undefined;
     const first = Object.values(this.b.starters)[0];
@@ -1078,6 +1096,8 @@ export class WorldScene extends Phaser.Scene {
       this.shadeFor(s);
       this.showSignatures(s);
     }
+    // inside a shop the valley's clock runs on here, and the room does the walking
+    if (this.room) return;
     this.walk(s, delta);
     if (RICH.motion) this.idle(s, time);
     this.drawBusy(s, time);
@@ -1221,7 +1241,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private canControl(s: Session): boolean {
-    return !s.paused && !s.busy && !app.ui.blocking;
+    return !this.entering && !s.paused && !s.busy && !app.ui.blocking;
   }
 
   private walk(s: Session, delta: number): void {
@@ -1249,13 +1269,19 @@ export class WorldScene extends Phaser.Scene {
   private tryStep(s: Session, carry: number): boolean {
     if (!this.canControl(s)) return false;
     const dir = app.controls.direction();
-    if (!dir) return false;
+    if (dir !== this.held) this.held = null;
+    if (!dir || dir === this.held) return false;
     if (s.facing !== dir) {
       s.facing = dir;
       this.faceFrame();
     }
     const [dx, dy] = DIRS[dir];
     const to: [number, number] = [s.pos[0] + dx, s.pos[1] + dy];
+    const door = dir === 'up' ? this.doors.get(key(to[0], to[1])) : undefined;
+    if (door) {
+      this.enter(door);
+      return false;
+    }
     if (!this.canWalk(s, to[0], to[1])) return false;
     this.steps++;
     if (RICH.motion) this.puffAt(s.pos[0], s.pos[1]);
@@ -1594,9 +1620,52 @@ export class WorldScene extends Phaser.Scene {
 
   /** The A button: act on what the player faces, stands on, or stands next to. */
   interact(): void {
+    if (this.room) return this.room.interact();
     const s = this.session;
     if (!s || this.move || !this.canControl(s)) return;
     this.target(s)?.run();
+  }
+
+  /** Walk in through a shop's door: the room opens over the valley, which waits behind with its clock running. */
+  private enter(npcId: string): void {
+    const s = this.session;
+    if (!s || this.room) return;
+    this.move = null;
+    this.prompt = '';
+    app.ui.setPrompt('');
+    this.marker.setVisible(false);
+    this.bar.clear();
+    sound.sfx('step');
+    this.entering = true;
+    const go = () => {
+      this.entering = false;
+      this.cameras.main.setVisible(false);
+      this.labels.style.visibility = 'hidden';
+      this.scene.launch(ROOM, { npc: npcId, onLeave: () => this.outside() });
+      this.room = this.scene.get(ROOM) as RoomScene;
+    };
+    if (RICH.light) {
+      this.cameras.main.fadeOut(200, 27, 26, 46);
+      this.cameras.main.once('camerafadeoutcomplete', go);
+    } else go();
+  }
+
+  /** Back on the doorstep, facing out. */
+  private outside(): void {
+    this.room = undefined;
+    this.held = app.controls.direction();
+    const s = this.session;
+    const cam = this.cameras.main;
+    cam.setVisible(true);
+    this.labels.style.visibility = '';
+    if (s) {
+      s.facing = 'down';
+      this.placePlayer(s.pos[0], s.pos[1]);
+      this.faceFrame();
+      this.idleSince = this.time.now;
+    }
+    if (RICH.light) cam.fadeIn(260, 27, 26, 46);
+    else cam.resetFX();
   }
 
   private target(s: Session): Target | undefined {
@@ -1620,6 +1689,13 @@ export class WorldScene extends Phaser.Scene {
     const k = key(x, y);
     const tile: [number, number] = [x, y];
     const top = this.tops.get(k) ?? T;
+    const door = this.doors.get(k);
+    if (door) {
+      // the door is used from the step in front of it, facing in
+      if (s.pos[0] !== x || s.pos[1] !== y + 1 || s.facing !== 'up') return undefined;
+      const shop = b.shops[b.npcs[door]?.shop ?? ''];
+      return { label: `Enter ${shop?.title ?? 'the shop'}`, run: () => this.enter(door), tile, top };
+    }
     const npc = this.npcAt.get(k);
     if (npc) return { label: `Talk to ${b.npcs[npc]?.name ?? npc}`, run: () => app.ui.talk(npc), tile, top };
     const nodeId = this.nodeAt.get(k);
@@ -1720,6 +1796,11 @@ export class WorldScene extends Phaser.Scene {
     this.cameras.main.setZoom(zoom);
     this.shade.setSize(w, h);
     this.dusk?.setSize(w, h);
+  }
+
+  /** How dark the valley is now: 0 by day, 1 at night. */
+  get darkness(): number {
+    return this.night;
   }
 
   /** Where a tile is on the page, for UI that points at the world. */
