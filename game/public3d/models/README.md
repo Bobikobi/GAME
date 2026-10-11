@@ -1,4 +1,4 @@
-# Models of the 3D trial
+# Models of the 3D door (`/play3d/`)
 
 Every file here is CC0 (public domain) from [Kenney](https://kenney.nl):
 
@@ -10,21 +10,9 @@ Every file here is CC0 (public domain) from [Kenney](https://kenney.nl):
 Kenney asks for no attribution; the credit is here because the valley names everything it uses.
 The tiles in `../tiles` are the painted textures of the HD trial, made for this repository.
 
-## The cell trial (`game/cell.html`)
-
-Its models, ground textures and skies come from [Poly Haven](https://polyhaven.com) (CC0). They
-are fetched into `../cell/` by `game/tools/fetch-cell-assets.mjs`, which also thins the
-photoscanned meshes to a size a browser can carry; git ignores that folder. The characters
-`character-wizard.glb` and `character-matt.glb` are by [Quaternius](https://quaternius.com),
-taken from Poly Pizza, and they carry two different licences. `character-wizard.glb` is
-byte-identical to "Animated Wizard" (https://poly.pizza/m/kttbFvCl2C), licensed "Creative Commons
-Attribution" ([CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)), so attribution is
-required: "Animated Wizard by Quaternius, CC BY 3.0". `character-matt.glb` is "Characters Matt"
-(https://poly.pizza/m/66kQ4dBBC7), licensed "Public Domain (CC0)", so no attribution is required.
-
 ## Character experiments (`docs/3d/character-experiments.md`)
 
-These files are neither from Kenney nor CC0, so the opening line of this README does not cover them or the two Poly Pizza characters above (its `character-*` entry means the two Mini Characters,
+These files are neither from Kenney nor CC0, so the opening line of this README does not cover them (its `character-*` entry means the two Mini Characters,
 `character-female-a.glb` and `character-male-a.glb`). Each loads in the cell trial by the part of
 its name after `character-`, for example `?look=meshy-warrior` or `?look=wolf-grim`; the two wolves
 walk on four legs.
