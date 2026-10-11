@@ -96,6 +96,8 @@ Steps:
    - A real dialogue race is fixed in the client, not in the test.
 2. When green, mark #45 ready, land it, then do #46 the same way (merge `develop`, regenerate, verify, e2e), then #48.
 
+3. After #48: the workshop moves into the town (DECISIONS 2026-10-11 "The workshop is a large stall in the town"). A stall larger than today's shelf, placed in the town, opened by a quest, with a working animation of its own (built with section 4c). Recipes, tiers and tools stay as wave 3 built them. Measurable: no workshop station outside the town on the map; the stall refuses work until its quest is done; `pnpm verify` and `pnpm e2e` green.
+
 ## 3. The site: the MCP server, then the coming-soon boxes
 
 Read DECISIONS 2026-10-08 "Stage 2a" and the 2026-10-10 site entries.
@@ -138,6 +140,8 @@ b) Sound, branch `feat/sound-pass`, all under the existing mute:
 - stream water by position near the river.
 
 Measurable: each source's volume falls with distance; the click plays exactly once per advance; mute silences all of it.
+
+c) After (a) and (b) land, branch `feat/every-action`: one animation for each action the player takes (gather, pick, dig, fell, mine, craft at the workshop stall, cook, eat, drink, talk, pay, pitch a camp, sleep), inside the pixel look, so no stills. In the same pull request, a quest given in talk is offered in the giver's words and the "New task:" line goes (`game/src/text.ts`); the journal records the quest quietly. Measurable: every action in the list shows its own frames in a capture; no "New task" string in `game/src`; `pnpm verify` and `pnpm e2e` green.
 
 ## 5. The shops you walk into
 
