@@ -595,9 +595,9 @@ Files:
 
 Proving command:
 ```
-pnpm --filter web test && curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "content-type: application/json" -d '{"id":"core/berry"}' https://<preview>/api/s1/visit
+pnpm --filter web test && curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "content-type: application/json" -d '{"id":"core/berry"}' https://<preview>/api/s1/visit/
 ```
-Tests green; the curl prints 204 on a preview that has the two env names.
+Tests green; the curl prints 204 on a preview that has the two env names. The URL ends with a slash, like every URL of the site (`trailingSlash: 'always'`; without it the host answers a redirect).
 
 Decision: DECISIONS.md 2026-10-07, "The stage-1 service runs as Vercel
 Functions with Upstash Redis in the same project".

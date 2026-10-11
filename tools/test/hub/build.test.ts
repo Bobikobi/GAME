@@ -4,9 +4,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { validateHubData } from '@game/schema/hub';
+import { s1Keys, s1Window } from '@game/schema/s1';
 import { buildHubData } from '../../src/hub/build';
 import { head } from '../../src/hub/content';
 import { requestKind } from '../../src/hub/github';
+import type { UsageReader } from '../../src/hub/usage';
 import type { LoopClient } from '../../src/loop/github';
 import type { Comment, Issue, PullRequest, Review } from '../../src/loop/types';
 import { config } from '../loop/helpers';
@@ -229,3 +231,31 @@ class FakeGitHub implements LoopClient {
     throw new Error(`The hub must not write: ${method} ${path}`);
   }
 }
+
+describe('buildHubData usage (docs/team/GRUNT.md, item 17)', () => {
+  const week = s1Window(NOW);
+  const fake = (): UsageReader => ({
+    counts: async (keys) => keys.map((k) => ({ [s1Keys.visits(week, 'core/old-bridge')]: 40, [s1Keys.pickups(week, 'core/old-bridge')]: 31, [s1Keys.stops(week, 'core/fix-the-bridge')]: 7 })[k] ?? null),
+    members: async (key) => (key === s1Keys.steps(week) ? ['core/fix-the-bridge', 'bad step'] : []),
+    lengths: async (keys) => keys.map((k) => (k === s1Keys.reports('core/old-bridge') ? 2 : 0)),
+  });
+
+  it('leaves usage null without a reader', async () => {
+    const doc = await buildHubData({ client: null, now: NOW, previews: false, repository: REPO });
+    expect([doc.usage, doc.sources.usage]).toEqual([null, null]);
+  });
+
+  it('fills usage and its source from the counters, and drops a step that is not a step', async () => {
+    const doc = await buildHubData({ client: null, now: NOW, previews: false, repository: REPO, usage: fake() });
+    expect(validateHubData(doc)).toEqual([]);
+    expect(doc.sources.usage).toEqual({ fetched_at: NOW.toISOString(), window_days: 28 });
+    expect(doc.usage?.extensions['core/old-bridge']).toEqual({ visits: 40, pickups: 31, reports: 2 });
+    expect(doc.usage?.stops).toEqual([{ step: 'core/fix-the-bridge', players: 7 }]);
+  });
+
+  it('keeps usage null when the counters cannot be read', async () => {
+    const broken: UsageReader = { counts: async () => Promise.reject(new Error('down')), members: async () => [], lengths: async () => [] };
+    const doc = await buildHubData({ client: null, now: NOW, previews: false, repository: REPO, usage: broken, log: () => {} });
+    expect(doc.usage).toBeNull();
+  });
+});

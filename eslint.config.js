@@ -58,7 +58,7 @@ const BANNED_MATH = [
 
 export default defineConfig(
   {
-    ignores: ['**/dist/**', '**/node_modules/**', 'game/src/generated/**', 'game/public/**', 'docs/**', 'coverage/**', '.scratch/**', 'web/.astro/**'],
+    ignores: ['**/dist/**', '**/node_modules/**', 'game/src/generated/**', 'game/public/**', 'docs/**', 'coverage/**', '.scratch/**', 'web/.astro/**', '**/.vercel/**'],
   },
   js.configs.recommended,
   tseslint.configs.recommended,

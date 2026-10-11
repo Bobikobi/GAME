@@ -14,6 +14,7 @@ import type { LoopClient } from '../loop/github';
 import { REPO_ROOT } from '../load';
 import { addedTimes, contentSections, head, parameters } from './content';
 import { githubSections, type GitHubSections } from './github';
+import { readUsage, type UsageReader } from './usage';
 
 export const DEFAULT_REPOSITORY = 'Bobikobi/GAME';
 
@@ -25,6 +26,8 @@ export interface HubBuildOptions {
   now: Date;
   /** read the preview links Vercel's bot leaves on proposals */
   previews: boolean;
+  /** the stage-1 counters, read-only; null leaves `usage` null */
+  usage?: UsageReader | null;
   /** "owner/name"; defaults to the build's own repository */
   repository?: string;
   /** the branch or tag the document names; defaults to the checkout's */
@@ -72,6 +75,15 @@ export async function buildHubData(options: HubBuildOptions): Promise<HubData> {
 
   // core counts every commit (tools/src/board.ts), so its count is the history the board was computed from
   const commits = bundle.board['core']?.commits ?? 0;
+  const content = contentSections(bundle, check.assembled.kits, points, repository, addedTimes(root));
+  let usage: Awaited<ReturnType<typeof readUsage>> | null = null;
+  if (options.usage) {
+    try {
+      usage = await readUsage(options.usage, content.extensions.map((e) => e.id), options.now);
+    } catch (error) {
+      log(`warning: the stage-1 counters could not be read, so usage is empty: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
   const compose = (gh: GitHubSections, at: string | null): HubData => ({
     format: HUB_FORMAT,
     built_at: options.now.toISOString(),
@@ -87,9 +99,9 @@ export async function buildHubData(options: HubBuildOptions): Promise<HubData> {
       git: { commits, newest_at: commit.at },
       github: at ? { fetched_at: at } : null,
       vercel: at && options.previews ? { fetched_at: at } : null,
-      usage: null,
+      usage: usage ? { fetched_at: options.now.toISOString(), window_days: usage.window_days } : null,
     },
-    ...contentSections(bundle, check.assembled.kits, points, repository, addedTimes(root)),
+    ...content,
     reviewers: gh.reviewers,
     requests: gh.requests,
     proposals: gh.proposals,
@@ -97,7 +109,7 @@ export async function buildHubData(options: HubBuildOptions): Promise<HubData> {
     summary: gh.summary,
     parameters: parameters(root, loop, points),
     players: null,
-    usage: null,
+    usage: usage?.usage ?? null,
   });
   const doc = compose(github, fetched);
   if (fetched === null) return doc;
