@@ -1,0 +1,33 @@
+---
+// Your card, Levels and Badges as coming-soon boxes (owner, 2026-10-10, issue #57): no sample numbers, because every
+// number on a page equals content/board.json. The words carry no digit; a test holds that.
+import '../styles/soon.css';
+
+interface Props {
+  heading: string;
+  id: string;
+}
+const { heading, id } = Astro.props;
+const boxes = [
+  { name: 'Your card', note: 'Your name, your signature and what you did in the valley, on one card.' },
+  { name: 'Levels', note: 'How far a player has come, kept on the player board.' },
+  { name: 'Badges', note: 'Marks for the things a player does together with others.' },
+];
+---
+
+<section class="wrap soon" aria-labelledby={id}>
+  <h2 id={id}>{heading}</h2>
+  <ul class="soon-boxes">
+    {
+      boxes.map((b) => (
+        <li class="soon-box">
+          <h3>
+            {b.name} <span class="tag">coming soon</span>
+          </h3>
+          <p>{b.note}</p>
+        </li>
+      ))
+    }
+  </ul>
+  <p class="soon-foot">They open with accounts.</p>
+</section>
