@@ -19,7 +19,7 @@ function contentPath(path: string): string | undefined {
 /** Every item id a draft names, at any depth. */
 function named(data: unknown, items: Record<string, unknown>, out: Set<string>): void {
   if (typeof data === 'string') {
-    if (data in items) out.add(data);
+    if (Object.hasOwn(items, data)) out.add(data);
   } else if (Array.isArray(data)) data.forEach((d) => named(d, items, out));
   else if (typeof data === 'object' && data !== null) Object.values(data).forEach((d) => named(d, items, out));
 }
@@ -33,7 +33,9 @@ export function value(ctx: Context, input: ToolInput<'value'>): Answer<ToolOutpu
   });
   const tmp = mkdtempSync(join(tmpdir(), 'openfold-value-'));
   try {
-    cpSync(join(ctx.root, 'content'), join(tmp, 'content'), { recursive: true });
+    // links are followed into plain copies, so a draft can never be written through one; the generated files are not content
+    cpSync(join(ctx.root, 'content'), join(tmp, 'content'), { recursive: true, dereference: true });
+    for (const generated of ['values.lock.json', 'board.json']) rmSync(join(tmp, 'content', generated), { force: true });
     for (const d of drafts) {
       mkdirSync(dirname(join(tmp, d.path)), { recursive: true });
       writeFileSync(join(tmp, d.path), `${JSON.stringify(d.data, null, 2)}\n`);

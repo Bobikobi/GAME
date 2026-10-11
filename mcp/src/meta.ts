@@ -17,9 +17,9 @@ export function contentTag(): string {
   return tag;
 }
 
-/** Set by a fresh assembly (`check`, `value` on the checkout), so the next answer names it. */
+/** Set by a fresh assembly (`check`), so the next answer names it; undefined means it did not assemble. */
 export function setContentTag(next: string | undefined): void {
-  if (next) tag = next;
+  tag = next ?? 'unassembled';
 }
 
 export function meta(root: string): Meta {

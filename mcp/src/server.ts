@@ -8,6 +8,7 @@
  * checked against the tool's input schema and every answer against its output schema; an answer that does not fit
  * is an error with the issues, never a guess.
  */
+import { pathToFileURL } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema, type CallToolResult } from '@modelcontextprotocol/sdk/types.js';
@@ -59,7 +60,7 @@ export function createServer(root: string = REPO_ROOT): McpServer {
 }
 
 // `pnpm mcp`: serve on stdin and stdout; anything else goes to stderr, so the protocol stream stays clean
-if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   console.log = (...args: unknown[]) => console.error(...args);
   await createServer().connect(new StdioServerTransport());
 }

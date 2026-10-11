@@ -88,6 +88,18 @@ describe('the MCP server', () => {
     expect((r.result['issues'] as { message: string }[])[0]?.message).toMatch(/under content/);
   });
 
+  it('the generated files are not checked as content', async () => {
+    const file = (await call('template', { type: 'resource', handle: 'tester', name: 'sloes' })).result['files'] as { path: string; content: string }[];
+    const r = await call('value', { drafts: [{ path: file[0]!.path, data: JSON.parse(file[0]!.content) }] });
+    const files = (r.result['issues'] as { file: string }[]).map((i) => i.file);
+    expect(files.filter((f) => /board\.json|values\.lock\.json/.test(f))).toEqual([]);
+  });
+
+  it('a path-scoped check names a file that does not exist', async () => {
+    const r = await call('check', { paths: ['content/core/nope.json'] });
+    expect(r.result['ok']).toBe(false);
+  });
+
   it('answers the guide with the anchors the site gives its headings', async () => {
     const r = await call('guide');
     expect(r.error, r.text).toBe(false);
