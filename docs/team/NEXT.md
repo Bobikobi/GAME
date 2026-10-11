@@ -112,7 +112,7 @@ a) #69 `feat/site-mcp` (daf2bd5), GRUNT 15 and 16: built, `pnpm verify` exit 0 (
 
 b) The coming-soon boxes, branch `feat/site-coming-soon`. Owner's answers are in issue #57.
 - On the hub and home, "Your card", Levels and Badges become coming-soon boxes with no sample numbers: every number on a page equals `content/board.json`.
-- The 3D version ships as a parallel version, with its own button on the home page. `trial/3d` (#24) is not merged; the button points at its preview or waits. Ask the owner which, in one line.
+- The 3D version ships as a parallel version, with its own button on the home page (owner, 11.10, DECISIONS "The 3D version is a second door"). The button starts the 3D game at `/play3d/` and hides while `/play3d/` is not in the build; section 8 puts it there.
 - Measurable: no digit inside a coming-soon box; the home page has the 3D button; captures at 390x844 and 1440x900 with headless Chrome on its own port, closed by PID; `pnpm verify` green.
 
 ## 4. Game feel: walk, swing, auto-work, sound
@@ -171,3 +171,27 @@ Stealth over the hazards comes after P-5c.
 A docs pull request: chapter 1 approved, and how the three starters differ in it.
 1. Merge `develop` into it and check it against `docs/design/STORY.md` S1-S6.
 2. Ask the owner one question if anything there contradicts a later decision, then land it.
+
+## 8. The 3D door at /play3d/
+
+Read DECISIONS 2026-10-11 "The 3D version is a second door" and, on `trial/3d` (#24), `docs/3d/meshy-notes.md` and `game/public/3d/models/README.md`. The 3D game moves at its own pace and never holds the classic game back.
+
+a) Land the door, branch `feat/play3d` off `develop`:
+- Bring the valley and the cell scene from `trial/3d` (125 commits behind `develop` on 11.10) onto a fresh branch; take generated files from `develop` and regenerate them.
+- The web build serves the 3D game at `/play3d/`; the 3D build step is optional, and when it fails the classic game still ships.
+- The 3D game runs the same kernel and content bundle and reads and writes the same save key and format as `/play/`: walk, the opening's quests, gather, save.
+- Measurable: a character made at `/play/` loads at `/play3d/` and back; `/play3d/` loads at 390x844 and 1440x900 (captures with headless Chrome on its own port, closed by PID); the home button shows only when `/play3d/` is built; `pnpm verify` and `pnpm e2e` green.
+
+b) The rest of the cast, after (a): Elder Maru, Pell and the cook.
+- Meshy drafts on the four trial accounts (Chrome profiles on ports 9341-9343 and 9333; the daily check-in already claims the bonus credits). Use credits only on drafts; download nothing before the owner picks.
+- A look is a direction: two or three phone-size stills per character to the owner, opened in his browser, never an artifact link. The pick goes into DECISIONS with its frame.
+- Then download the pick once, rig and reduce it in the local Blender pipeline, as the six role models were.
+
+## 9. The maze peek and the hint ladder
+
+Read DECISIONS 2026-10-11 "Maze difficulty is a ladder of four tiers" (PR #71). After #71 lands.
+
+- At a maze's entrance the camera shows the whole maze from above for 3 seconds, then returns to the player.
+- A maze names its tier in content (schema additive, `FORMAT_VERSION` stays 1). Tier 1: the peek with a very faint route line and the landmarks. Tier 2: the peek, and only the landmarks glow for a moment. Tier 3: the shape alone. Tier 4: no peek; waits for P-5c and stealth.
+- The tangle is tier 1.
+- Measurable: the peek lasts 3 seconds and fits the whole maze on screen at 390x844 and 1440x900; the line shows at tier 1 only; `pnpm verify` and `pnpm e2e` green.
