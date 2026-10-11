@@ -304,6 +304,20 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
     if (success > 0 && left >= success) {
       err(file, `${w}.miss`, named(`a miss leaves ${left} of value, no less than a success gives (${success}): a miss keeps a part (G40)`));
     }
+    // a try pays back its inputs on average, at the recipe's own level and before luck (CR-16):
+    // chance * V(outputs) + (1 - chance) * V(kept on a miss) >= V(inputs)
+    const chance = chances[Math.min(tier, chances.length) - 1] ?? 10_000;
+    const spent = worth(c.inputs);
+    if (chance * success + (10_000 - chance) * left < 10_000 * spent) {
+      const average = Math.floor((chance * success + (10_000 - chance) * left) / 10_000);
+      err(
+        file,
+        `${w}.outputs`,
+        named(
+          `a try gives ${average} of value on average for ${spent} of inputs: a craft never loses value on average; give it more time or fewer inputs (DECISIONS.md, 2026-10-09: the crafting economy)`,
+        ),
+      );
+    }
   }
 
   // from GATED_TIER up: a level gate or a slow respawn on a node, never a shop

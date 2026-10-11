@@ -1,0 +1,43 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/stone-blade",
+  "title": "Stone blade",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/stone-blade",
+      "name": "Stone blade",
+      "description": "A long flake, ground to an edge and bound to a grip.",
+      "kind": "material",
+      "rarity": "uncommon",
+      "class": "stone",
+      "tier": 2,
+      "sprite": "core/base-kit:items/pottery-shard"
+    }
+  ],
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 5000,
+    "level": 3,
+    "inputs": [
+      {
+        "item": "core/stone-flakes",
+        "qty": 2
+      },
+      {
+        "item": "core/branch",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/stone-blade",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start"
+  }
+}

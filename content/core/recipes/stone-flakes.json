@@ -1,0 +1,39 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/stone-flakes",
+  "title": "Stone flakes",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/stone-flakes",
+      "name": "Stone flakes",
+      "description": "Knapped from a river stone. Sharp on one side.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "stone",
+      "tier": 1,
+      "sprite": "core/base-kit:items/stone"
+    }
+  ],
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 3000,
+    "level": 1,
+    "inputs": [
+      {
+        "item": "core/stone",
+        "qty": 2
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/stone-flakes",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start"
+  }
+}

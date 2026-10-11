@@ -129,6 +129,70 @@ A template asks for a class instead of an item. The check turns it into one reci
 
 Each recipe it makes is named after the template and the items it took, for example "Dried herbs (Sunleaf)", with the id `<template id>+<item id>` (one item id per class input), and every player knows it from the start. A template that fits more than `template_max_recipes` combinations (12 today) makes none, and the check says so: name a family, a narrower class or a higher `min_tier`. Because the check runs on the whole world, a new item from another creator can push a broad template over the limit, so keep templates narrow.
 
+## Crafting, step by step
+
+Start from the core file that comes closest and copy it into your folder. Set `creator` to your handle and start the file's own ids with it; the items it asks for keep their ids. Run `pnpm check` after each step: it names the field to fix.
+
+### A material
+
+A material you gather comes from a resource, like the fruit above. `content/core/resources/reed-bank.json` is one: a reed of class `fibre` at tier 1, up to two a pick, from three clumps in the meadow.
+
+- `kind` is `material`. Give it a `class`, a `tier` and, if you like, a `family` (see [Classes and tiers](#classes-and-tiers)).
+- A first material is tier 1. From tier 3 up, its node asks for the tier's level in `node.level` (6 today) or comes back after `node.respawn_ms` of 300000 (5 minutes) or more.
+- You never set its value. The game works it out from the effort, as for the fruit.
+
+### A recipe
+
+`content/core/recipes/stone-blade.json` makes a stone blade from two stone flakes and a branch at the workshop. A recipe file holds the new item in `items` and the recipe in `recipe`:
+
+- `station` - `fire` (cooking) or `workshop` (handcraft). The profession that works the station gates the recipe and is trained by it; name another craft profession in `profession` only if you need one.
+- `inputs` (1 to 6) and `outputs` (1 to 4); the outputs' `share_pct` adds up to 100.
+- The tier climbs one step at most: the blade may be tier 2 because its flakes are tier 1. A tier 3 output needs a tier 2 input.
+- `level` sits in the band of the recipe's tier (`tier_min_level` in the params, `[1, 3, 6]` today): tier 1 at level 1 or 2, tier 2 from 3 to 5, tier 3 from 6. The blade asks for handcraft level 3.
+- The station has to reach the tier: a tier 2 recipe needs a camp part that provides its station at tier 2 or higher. At the workshop that is the workbench (see [A camp part and its upgrade](#a-camp-part-and-its-upgrade)).
+- `known` - `start` if every player knows it, `found` if a dig or a quest teaches it.
+- `active_ms` - how long one try takes, 1000 to 15000 ms.
+
+From tier 2 a try can miss. At its own level a tier 2 recipe succeeds 80 times in 100 and a tier 3 recipe 65 (`craft_chance_bp`), and each level above the recipe's adds to the chance. A miss makes nothing and keeps half of each input, rounded down; when that would keep nothing, one unit of the most valuable input comes back. `miss.keep_pct` sets another share, up to 90 percent.
+
+The check then asks one thing more: a try never loses value on average. Take the chance at the recipe's own level, before luck. The chance of a success times the value of the outputs, plus the chance of a miss times the value a miss keeps, has to reach the value of the inputs. When a miss keeps half the inputs' value, the recipe's own work has to be worth about 12.5 percent of its inputs at tier 2 and about 27 percent at tier 3. Rounding down keeps less (one unit of an input keeps none of it), and the bar climbs toward 25 and 54 percent: the core's stone trowel, which keeps one branch on a miss, needs its work to be worth about 52 percent of its inputs. If the check refuses, give the recipe more time or fewer inputs.
+
+### A template
+
+`content/core/templates/dye-cord.json` is the core's template: two berries of one kind, tier 1 or higher, and a reed cord make a dyed cord at the workshop. Today it makes two recipes, one with bellberries and one with redberries, and a berry you add makes another. Every recipe it makes follows the rules above. The fields are in [Recipe templates](#recipe-templates).
+
+### A worn item
+
+`content/core/recipes/reed-hat.json` makes a hat you wear while you gather. An item you wear has `wear`:
+
+- `wear.slot` - `head`, `top`, `legs`, `outfit` (the top and the legs at once), `feet`, `jewelry` (two places) or `hand`. A piece of class `garment` goes on the head, top, legs, outfit or feet, a piece of class `jewelry` in a jewelry place, and the hand holds a tool.
+- `wear.effects` - one or two small bonuses from a closed list: `gather_speed_pct`, `dig_speed_pct`, `craft_speed_pct`, `craft_chance_pct` and `rare_find_pct`. Each is a percent, each effect once, at most the cap of the item's tier (`wear_effect_max_pct`, `[5, 8, 12]` today: 5 at tier 1, 8 at tier 2, 12 at tier 3). The reed hat is tier 2 and gives 5.
+- `wear.set` - optional: an id of your own that two or more of your pieces name, and that fits on the character at once (one piece per place, two jewelry pieces at most). Worn whole, a set's effects grow by `wear_set_bonus_pct` (20 percent today). The reed hat and the reed sandals make the set `core/reed-walker`.
+- `wear.look` - a look shows and counts for nothing: no effects and no set.
+
+Worn items are work clothes. They help the work and never protect you from a hazard; no effect on the list does that. A worn item stays in your bag and comes off when it leaves.
+
+### A tool
+
+`content/core/recipes/flint-trowel.json` makes a trowel that wears out, and `stone-trowel.json` one that lasts. A tool is an item of kind `tool` and class `tool`, with `tool`:
+
+- `tool.kind` - `basket` or `trowel`, the kinds the world uses today.
+- `tool.tier` - the same as the item's `tier`. Each tier above 1 adds 15 percent to the speed of the work, and the best tool of its kind in your bag does it.
+- `tool.uses` - optional: the tool breaks after this many uses. Leave it out and the tool lasts. The core's tier 2 tools wear out and its tier 3 tools last.
+
+The trader buys a made tool for its share of the value. A tool you have been using sells last: only when you sell every unit you hold does it pay just for the share of its uses left. A lasting tool always sells in full. The shop's basket and trowel have no value, and the trader never buys them back.
+
+### A camp part and its upgrade
+
+`content/core/camp/workbench.json` is the workshop's second step. A camp file names:
+
+- `slot` - its place in the camp: `fire`, `storage`, `workshop` or `shelf`. One part stands in a slot at a time.
+- `provides` and `tier` - the station it works (`fire` or `workshop`) and at which tier, 1 when left out. A recipe runs at a built part that provides its station at the recipe's tier or higher; when two do, the one you stand next to does the craft.
+- `inputs` and `active_ms` - what building it takes; `bag_bonus` - optional extra places in the bag.
+- `upgrades` - optional: the part it is built over. That part has to stand first, and the new one replaces it. An upgrade stays in the same slot, provides the same station, and keeps at least the tier and the bag bonus of the part it replaces.
+
+The core's workshop climbs that way: the work stone (tier 1, four stones), the workbench over it (tier 2) and the workshop over the workbench (tier 3).
+
 ## Your creator profile
 
 Add `content/extensions/<your-handle>/profile.json` so signs and the Creators menu can introduce you. The profile has:
@@ -213,9 +277,14 @@ The check keeps the starts fair. Every start holds an axe before the first fire,
 - The rarity you declare is within one step of what the data implies. A fruit that grows anywhere at any hour is common; night-only, high-level or slow-to-regrow fruit is rarer.
 - Everything a recipe or quest asks for can be found somewhere in the world.
 - Wood comes only from felling a tree: a node that gives an item of class `wood` needs `"tool": "axe"`, and digging never gives wood. A tree stands in the way (`solid`) without cutting any place of the map off from where the player wakes up.
-- Every item has a `class` and a `tier`; the tier is open (1 to 3 today); a class of your own sits under a base class; no metal yet. A recipe climbs one tier at most, asks for a level inside its tier's band, has a profession that works its station and a camp part of its tier. From tier 3 up, nothing is sold. A recipe template stays within `template_max_recipes`. See [Classes and tiers](#classes-and-tiers).
+- Every item has a `class` and a `tier`; the tier is open (1 to 3 today); a class of your own sits under a base class; no metal yet. A recipe climbs one tier at most, asks for a level inside its tier's band, has a profession that works its station and a camp part of its tier. From tier 3 up, nothing is sold. A recipe template stays within `template_max_recipes`. Together these make a long recipe a chain of short steps, each one behind its level and its station. See [Classes and tiers](#classes-and-tiers).
 - The rarity bonuses of the whole world stay inside the rarity budget (10% today): a rare node with many copies or a fast respawn uses more of it.
 - A garment or jewelry piece names where it is worn (`wear`), with at most two small effects under its tier's cap; a look (`wear.look`) has no effect, and only a look may carry `premium_later`, while staying obtainable in the game. A recipe's `miss` names the share of each input a miss keeps (up to 90 percent, half when left out); a miss makes nothing else and is worth less than a success.
+- A try never loses value on average: at the recipe's own level and before luck, the chance of a success times the value of the outputs, plus the chance of a miss times what a miss keeps, reaches the value of the inputs. A recipe that loses value would make crafting worth less than selling its materials. The fix is more time or fewer inputs; see [A recipe](#a-recipe).
+- A tool is of class `tool` and has the tier of its `tool`; only a tool is of class `tool`, and a `meal` is always food. A class means the same thing in every recipe that asks for it.
+- A worn piece fits its place: a garment on the head, top, legs, outfit or feet, jewelry in a jewelry place, a tool in the hand. It names each effect once. A set belongs to one creator, has two pieces or more and fits on the character at once, because a set that cannot be worn whole promises a bonus nobody gets.
+- A camp part's tier is open (1 to 3 today). An upgrade stands in the slot of the part it replaces, provides the same station, keeps at least its tier and its bag bonus, and the upgrades never go round in a circle: building up never takes away what you had.
+- A recipe never asks for a level its profession does not reach.
 - A `find` step names an item that is found, not farmed: one that only digging gives, or that exactly one timed plant (a resource with `hours`) gives, never made or sold. It carries a clue; the journal shows the clue, not a count. With a giver, the hand-in takes one; with no giver, the step counts once the item has been in the bag, so a later step may use it up. A `riddle` step cites map props by id and names its answer, a dig spot or a place by day or by night; an id that is not on the map is refused. `templates/extension/quests/` has a find.
 - A dig spot may leave out `tool`: its find is then picked up by hand, with no minigame and nothing worn. A restore may have no `inputs`: it then never opens by hand, and a quest opens it as its reward (`reward.opens`, a place reward, up to two restores). The check refuses an `opens` that names no restore, and a restore with no inputs that no quest opens.
 - No reward repeats a kit. A quest's reward item that a starter's kit already holds names `instead`: an item that kit lacks, which a character of that start gets in its place. The check refuses a reward item a kit holds with no `instead`, and an `instead` that the same kit holds too.
