@@ -526,7 +526,7 @@ function markReviewAsked(): void {
 export function openOpeningReview(ui: UI): Promise<void> {
   if (reviewAsked()) return Promise.resolve();
   return new Promise<void>((resolve) => {
-    const p = panel(ui, 'How is the game so far?', 'report');
+    const p = panel(ui, 'How is the game so far?', 'report review');
     let rating = 0;
     const liked = new Set<string>();
     const confused = new Set<string>();
