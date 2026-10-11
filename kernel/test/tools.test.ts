@@ -45,6 +45,8 @@ function started(bag: Record<string, number>, bundle = b): State {
   if (!r.ok) throw new Error(r.error);
   r.state.player.attrs.carry = 100;
   r.state.player.restored = ['core/old-bridge'];
+  // the bridge's quest pays on its own once the bridge stands; done here so a sale pays only the sale
+  r.state.player.quests['core/fix-the-bridge'] = 'done';
   Object.assign(r.state.player.bag, bag);
   return r.state;
 }

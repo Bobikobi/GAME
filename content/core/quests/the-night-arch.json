@@ -1,0 +1,35 @@
+{
+  "$schema": "../../../schema/json/quest.schema.json",
+  "format": 1,
+  "type": "quest",
+  "id": "core/the-night-arch",
+  "title": "The arch at night",
+  "creator": "core",
+  "quest": {
+    "type": "discovery",
+    "summary": "Rubble fills the broken arch at the north edge of the ruins. Maru heard it shows a way after dark.",
+    "requires": [
+      "core/a-coin-for-maru"
+    ],
+    "steps": [
+      {
+        "kind": "riddle",
+        "clue": "The broken arch at the north edge of the ruins is choked with rubble. The stone beside it says when to come back.",
+        "props": [
+          "core/arch-stone"
+        ],
+        "answer": {
+          "kind": "visit",
+          "slot": "core/arch-mouth",
+          "at": "night"
+        }
+      }
+    ],
+    "reward": {
+      "rep": 0,
+      "opens": [
+        "core/arch-way"
+      ]
+    }
+  }
+}

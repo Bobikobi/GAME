@@ -21,12 +21,13 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Woodcutting (profession) - `content/core/professions/woodcutting.json`
 - The coin under the lantern (quest) - `content/core/quests/a-coin-for-maru.json`
 - The slid bank (quest) - `content/core/quests/buried-axe.json`
-- A fire and a meal (quest) - `content/core/quests/first-fire.json`
+- A fire before dark (quest) - `content/core/quests/first-fire.json`
 - First pickings (quest) - `content/core/quests/first-pickings.json`
 - Mend the bridge (quest) - `content/core/quests/fix-the-bridge.json`
 - A glint by the bridge (quest) - `content/core/quests/glint-by-the-bridge.json`
 - Herbs for Pell (quest) - `content/core/quests/herbs-for-pell.json`
 - Smoke over the town (quest) - `content/core/quests/into-town.json`
+- The arch at night (quest) - `content/core/quests/the-night-arch.json`
 - Where the bells rang (quest) - `content/core/quests/three-fruits.json`
 - Berry mash (recipe) - `content/core/recipes/berry-mash.json`
 - Fine basket (recipe) - `content/core/recipes/fine-basket.json`
@@ -48,11 +49,13 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Bell bushes (resource) - `content/core/resources/bell-bushes.json`
 - Redberry bushes (resource) - `content/core/resources/berry-bushes.json`
 - Forest mushrooms (resource) - `content/core/resources/forest-mushrooms.json`
+- Keystone (resource) - `content/core/resources/keystone.json`
 - Oak trees (resource) - `content/core/resources/oak-trees.json`
 - Reed bank (resource) - `content/core/resources/reed-bank.json`
 - River stones (resource) - `content/core/resources/river-stones.json`
 - Sun herbs (resource) - `content/core/resources/sun-herbs.json`
 - Wild herbs (resource) - `content/core/resources/wild-herbs.json`
+- Broken arch (restore) - `content/core/restores/arch-way.json`
 - Old bridge (restore) - `content/core/restores/old-bridge.json`
 - Pell's stall (shop) - `content/core/shops/trader-shop.json`
 - Digger (starter) - `content/core/starters/digger.json`

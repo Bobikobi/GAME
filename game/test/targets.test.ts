@@ -72,13 +72,34 @@ describe('quest targets', () => {
     expect(questTargets(b, s, s.tick)).toEqual([]);
   });
 
-  test('a find is found by its clue and a riddle by the player: nothing is marked', () => {
+  test('a find is found by its clue and a riddle by the player by day: nothing is marked', () => {
     const ids = [...firstStepOf('find'), ...firstStepOf('riddle')];
     expect(ids.length).toBeGreaterThan(0);
     for (const id of ids) {
       const s = withQuest(bundle, id);
       expect(questTargets(bundle, s, s.tick)).toEqual([]);
     }
+  });
+
+  test('when its hour comes, a prop the riddle cites lights the answer beside it', () => {
+    const day = bundle.params.day_length_ms;
+    // tick 0 is noon
+    const at = (hour: number) => Math.ceil((((hour - 12 + 24) % 24) * day) / 24) + 1;
+
+    // a dig answer from dusk to dawn, while the spot is ready
+    const coin = withQuest(bundle, 'core/a-coin-for-maru');
+    const [spotId, spot] = Object.entries(bundle.instances).find(([, i]) => i.source === 'core/lantern-foot')!;
+    expect(questTargets(bundle, coin, at(18))).toEqual([]);
+    expect(questTargets(bundle, coin, at(19))).toEqual([{ x: spot.x, y: spot.y, h: 16 }]);
+    expect(questTargets(bundle, coin, at(4))).toEqual([{ x: spot.x, y: spot.y, h: 16 }]);
+    expect(questTargets(bundle, coin, at(5))).toEqual([]);
+    coin.nodes[spotId] = { readyAt: at(23), draws: 0 };
+    expect(questTargets(bundle, coin, at(19))).toEqual([]);
+
+    // a night visit at night only
+    const arch = withQuest(bundle, 'core/the-night-arch');
+    expect(questTargets(bundle, arch, at(19))).toEqual([]);
+    expect(questTargets(bundle, arch, at(21))).toEqual([slotCentre(bundle, 'core/arch-mouth')]);
   });
 
   test('the camp to build, the site to mend and the place to visit are marked', () => {

@@ -82,8 +82,8 @@
       "TT.:::::::::_~~~_:::::::::::::::::::::......,.TT",
       "TT....,..____~~~_............,.......:........TT",
       "TT.......____~~~_...............%%##########%.TT",
-      "TT.......____~~~_.....,.........############%,TT",
-      "TT.....,.____~~~_.............,.#############.TT",
+      "TT.......____~~~_.....,.........###%##%#####%,TT",
+      "TT.....,.____~~~_.............,.####%%#######.TT",
       "TT.........._~~~_...............#############.TT",
       "TT.........._~~~_......,........#############.TT",
       "TT......,..._~~~_..............,#############.TT",
@@ -354,6 +354,16 @@
         "w": 2,
         "h": 1,
         "solid": true
+      },
+      {
+        "id": "core/arch-stone",
+        "sprite": "core/base-kit:props/standing_stone",
+        "x": 38,
+        "y": 18,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "note": "Cut deep: \"By day the rubble, by night the way.\""
       },
       {
         "sprite": "core/base-kit:props/rubble",
@@ -854,6 +864,30 @@
         "solid": false
       },
       {
+        "sprite": "core/base-kit:props/reeds",
+        "x": 16,
+        "y": 22,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/reeds",
+        "x": 16,
+        "y": 23,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/reeds",
+        "x": 16,
+        "y": 25,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
         "sprite": "core/base-kit:props/pebbles",
         "x": 18,
         "y": 2,
@@ -1308,6 +1342,43 @@
         "w": 3,
         "h": 1,
         "label": "Old bridge"
+      },
+      {
+        "id": "core/keystone",
+        "kind": "resource",
+        "x": 12,
+        "y": 18,
+        "w": 1,
+        "h": 1,
+        "tag": "riverbank"
+      },
+      {
+        "id": "core/arch-mouth",
+        "kind": "area",
+        "x": 36,
+        "y": 18,
+        "w": 2,
+        "h": 1,
+        "tag": "ruin"
+      },
+      {
+        "id": "core/arch-way",
+        "kind": "restore",
+        "x": 36,
+        "y": 19,
+        "w": 2,
+        "h": 1,
+        "tag": "ruin"
+      },
+      {
+        "id": "core/night-threshold",
+        "kind": "area",
+        "x": 36,
+        "y": 20,
+        "w": 2,
+        "h": 1,
+        "tag": "ruin",
+        "label": "Threshold of the night ruins"
       },
       {
         "id": "core/camp",

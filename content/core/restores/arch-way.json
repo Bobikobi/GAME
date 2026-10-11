@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../schema/json/restore.schema.json",
+  "format": 1,
+  "type": "restore",
+  "id": "core/arch-way",
+  "title": "Broken arch",
+  "creator": "core",
+  "restore": {
+    "place": {
+      "slot": "core/arch-way"
+    },
+    "before": "core/base-kit:tiles/rubble",
+    "after": "core/base-kit:tiles/ruin_floor",
+    "inputs": [],
+    "active_ms": 1000,
+    "passable": true,
+    "done": [
+      "The mist draws back from the broken arch. A way runs under it now."
+    ]
+  }
+}

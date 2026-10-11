@@ -21,7 +21,7 @@ import { sound } from '../audio';
 import { GAME_TITLE, REPO_URL } from '../config';
 import type { SignInfo } from '../scenes/world';
 import { Session } from '../session';
-import { ATTRIBUTE_MAX, attributeEffects, gold, itemBenefit, itemName, questSteps, seconds, sellable, stacks, stationUpgrades, wornAt } from '../text';
+import { ATTRIBUTE_MAX, attributeEffects, gold, itemBenefit, itemName, questSteps, restoreHint, seconds, sellable, stacks, stationUpgrades, toolOpens, wornAt } from '../text';
 import { say } from './dialog';
 import { button, h, sprite } from './dom';
 import { markdown } from './markdown';
@@ -311,11 +311,18 @@ export function openShop(ui: UI, npcId: string): void {
       current === 'buy'
         ? shop.sells.map((o) => {
             const it = b.items[o.item];
+            const opens = it?.tool ? toolOpens(b, st, it.tool.kind) : [];
             return h(
               'div',
               { class: 'row' },
               sprite(b, it?.sprite, 2),
-              h('div', { class: 'grow' }, h('b', null, it?.name ?? o.item), h('div', { class: 'muted' }, itemBenefit(b, o.item))),
+              h(
+                'div',
+                { class: 'grow' },
+                h('b', null, it?.name ?? o.item),
+                h('div', { class: 'muted' }, itemBenefit(b, o.item)),
+                opens.length ? h('div', { class: 'muted', 'data-opens': '' }, `Opens: ${opens.join(', ')}`) : null,
+              ),
               h('span', { class: 'price' }, gold(o.price_mg)),
               button('Buy', () => deal(() => s.act({ t: 'buy', npc: npcId, item: o.item, qty: 1, at: s.pos })), 'small', st.player.gold < o.price_mg || room < 1),
             );
@@ -438,6 +445,11 @@ export function confirmRestore(ui: UI, restoreId: string): void {
   const b = app.bundle;
   const r = b.restores[restoreId];
   if (!s || !r) return;
+  if (r.inputs.length === 0) {
+    // nothing to bring: it opens only as a quest's reward
+    void say(ui, r.title, [restoreHint(b, s.state, restoreId)], []);
+    return;
+  }
   const have = r.inputs.map((i) => `${i.qty} ${itemName(b, i.item)} (you have ${s.state.player.bag[i.item] ?? 0})`).join(', ');
   const ok = r.inputs.every((i) => (s.state.player.bag[i.item] ?? 0) >= i.qty);
   void say(ui, r.title, [`It is broken. Mending it takes ${have}.`], ok ? [{ label: 'Mend it', value: 'yes' }, { label: 'Not now', value: 'no' }] : []).then((pick) => {

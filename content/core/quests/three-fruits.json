@@ -16,21 +16,23 @@
       {
         "kind": "find",
         "item": "core/bellberry",
-        "clue": "Maru's berries grew where the bells rang: the garden behind the ruins, south-east of town. Pick them by day; the mist takes them at dusk."
+        "clue": "Maru's berries grew where the bells rang: the garden behind the ruins, south-east of town. A basket picks them, by day; the mist takes them at dusk."
       }
     ],
     "talk": {
       "done": [
-        "Thank you. Take these coins - your first.",
-        "Pell sells a basket for the grove and a trowel for the ruins.",
-        "Either one starts new work. Choose which comes first."
+        "Thank you. Take a tool of mine: it is more use to you now than to me.",
+        "The stones by the river remember where I buried something."
       ]
     },
     "reward": {
       "rep": 10,
-      "gold_mg": 30000,
-      "recipes": [
-        "core/herb-tea"
+      "items": [
+        {
+          "item": "core/trowel",
+          "qty": 1,
+          "instead": "core/walking-staff"
+        }
       ]
     }
   }
