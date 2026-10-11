@@ -58,6 +58,8 @@ export interface ValueTable {
   values: Record<string, number>;
   /** the activity that sets each item's value */
   cheapest: Record<string, string>;
+  /** the items whose cheapest source is a recipe, sorted: made goods (CR-18) */
+  made: string[];
   issues: ValueIssue[];
 }
 
@@ -184,6 +186,7 @@ export function computeValues(content: ContentForValues): ValueTable {
   const activities = activitiesOf(content);
   const values: Record<string, number> = {};
   const cheapest: Record<string, string> = {};
+  const verbOf: Record<string, Activity['verb']> = {};
   const issues: ValueIssue[] = [];
 
   // Cheapest-source relaxation. Costs are positive, so values only fall and
@@ -202,6 +205,7 @@ export function computeValues(content: ContentForValues): ValueTable {
         if (current === undefined || v < current) {
           values[out.item] = v;
           cheapest[out.item] = a.id;
+          verbOf[out.item] = a.verb;
           changed = true;
         }
       }
@@ -229,12 +233,17 @@ export function computeValues(content: ContentForValues): ValueTable {
       if (v < 1) issues.push({ source: a.id, message: `${out.item} carries too little of the cost to have a value` });
     }
   }
-  return { values, cheapest, issues };
+  const made = Object.keys(verbOf).filter((id) => verbOf[id] === 'craft').sort();
+  return { values, cheapest, made, issues };
 }
 
-/** What a shop pays for one unit (rule R8): rounded down. */
-export function payFor(params: Params, value: number): number {
-  return mulDiv(params.k_permille * params.r_mg_per_value_ms, value, 1000);
+/**
+ * What a shop pays for one unit (rule R8): rounded down. A made good, one
+ * whose value comes from a recipe, pays `k_craft_permille` of r * V and
+ * anything else `k_permille` (DECISIONS.md, 2026-10-09: the crafting economy).
+ */
+export function payFor(params: Params, value: number, made = false): number {
+  return mulDiv((made ? params.k_craft_permille : params.k_permille) * params.r_mg_per_value_ms, value, 1000);
 }
 
 /** The lowest a shop may charge for one unit of a valued item: rounded up. */

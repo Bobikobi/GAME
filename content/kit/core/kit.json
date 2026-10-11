@@ -370,6 +370,22 @@
         "h": 16,
         "frames": 2
       },
+      "props/hazard_pit": {
+        "file": "props/hazard_pit.png",
+        "w": 16,
+        "h": 16
+      },
+      "props/hazard_trap": {
+        "file": "props/hazard_trap.png",
+        "w": 16,
+        "h": 16
+      },
+      "props/hazard_wolf": {
+        "file": "props/hazard_wolf.png",
+        "w": 16,
+        "h": 16,
+        "frames": 2
+      },
       "props/herb_plant": {
         "file": "props/herb_plant.png",
         "w": 16,
@@ -800,6 +816,16 @@
       },
       "props/shop_sign_food": {
         "file": "props/shop_sign_food.png",
+        "w": 16,
+        "h": 16
+      },
+      "items/bandage": {
+        "file": "items/bandage.png",
+        "w": 16,
+        "h": 16
+      },
+      "items/first-aid-kit": {
+        "file": "items/first-aid-kit.png",
         "w": 16,
         "h": 16
       }

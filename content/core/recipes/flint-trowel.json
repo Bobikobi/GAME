@@ -1,0 +1,48 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/flint-trowel",
+  "title": "Flint trowel",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/flint-trowel",
+      "name": "Flint trowel",
+      "description": "Digs faster than the trader's trowel, and wears out too.",
+      "kind": "tool",
+      "rarity": "uncommon",
+      "class": "tool",
+      "tier": 2,
+      "sprite": "core/base-kit:items/trowel",
+      "tool": {
+        "kind": "trowel",
+        "tier": 2,
+        "uses": 80
+      }
+    }
+  ],
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 4000,
+    "level": 3,
+    "inputs": [
+      {
+        "item": "core/stone-flakes",
+        "qty": 2
+      },
+      {
+        "item": "core/branch",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/flint-trowel",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start"
+  }
+}

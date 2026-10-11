@@ -460,6 +460,15 @@ textarea {
   background: var(--yellow);
 }
 
+/* the countdown to dark (G31): plain while there is time, warm in the last minute */
+.chip.dark {
+  font-variant-numeric: tabular-nums;
+}
+
+.chip.dark.soon {
+  background: var(--gold);
+}
+
 .chip.demo {
   background: var(--sky);
   cursor: pointer;
@@ -1823,8 +1832,9 @@ textarea {
 }
 
 @media (max-width: 420px) {
+  /* "Health" is two letters longer than "Food" was: the bar gives them up, so the number stays in view */
   .meter-bar {
-    width: 64px;
+    width: 48px;
   }
   .hud-right .btn.small {
     padding: 2px 6px;

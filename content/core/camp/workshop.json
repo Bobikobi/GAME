@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../schema/json/camp.schema.json",
+  "format": 1,
+  "type": "camp",
+  "id": "core/workshop",
+  "title": "Workshop",
+  "creator": "core",
+  "camp": {
+    "slot": "workshop",
+    "inputs": [
+      {
+        "item": "core/woven-mat",
+        "qty": 2
+      },
+      {
+        "item": "core/stone-blade",
+        "qty": 1
+      },
+      {
+        "item": "core/branch",
+        "qty": 6
+      }
+    ],
+    "active_ms": 12000,
+    "sprite": "core/base-kit:props/shelf",
+    "provides": "workshop",
+    "tier": 3,
+    "upgrades": "core/workbench"
+  }
+}

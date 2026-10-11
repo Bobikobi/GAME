@@ -81,6 +81,16 @@ function checkParams(file: { params?: ParamsBody } | undefined): Issue[] {
       issues.push({ file: 'content/core/params.json', where: `params.power_cap_permille.${i}`, message: 'the power cap may not fall with level', level: 'error' });
     }
   }
+  // R8 with made goods (CR-18): a made good sells for at least a raw one, and no vote lets the trader pay what the shop charges
+  const { k_permille: k, k_craft_permille: made } = file.params;
+  if (made.value < k.value) {
+    issues.push({ file: 'content/core/params.json', where: 'params.k_craft_permille.value', message: 'a made good may not sell for less than a raw one (k_permille)', level: 'error' });
+  }
+  for (const [name, bounds] of [['k_permille', k], ['k_craft_permille', made]] as const) {
+    if (bounds.max >= 1000) {
+      issues.push({ file: 'content/core/params.json', where: `params.${name}.max`, message: 'the trader may never pay as much as the shop charges: keep the share below 1000', level: 'error' });
+    }
+  }
   return issues;
 }
 
@@ -303,6 +313,20 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
     const success = worth(c.outputs);
     if (success > 0 && left >= success) {
       err(file, `${w}.miss`, named(`a miss leaves ${left} of value, no less than a success gives (${success}): a miss keeps a part (G40)`));
+    }
+    // a try pays back its inputs on average, at the recipe's own level and before luck (CR-16):
+    // chance * V(outputs) + (1 - chance) * V(kept on a miss) >= V(inputs)
+    const chance = chances[Math.min(tier, chances.length) - 1] ?? 10_000;
+    const spent = worth(c.inputs);
+    if (chance * success + (10_000 - chance) * left < 10_000 * spent) {
+      const average = Math.floor((chance * success + (10_000 - chance) * left) / 10_000);
+      err(
+        file,
+        `${w}.outputs`,
+        named(
+          `a try gives ${average} of value on average for ${spent} of inputs: a craft never loses value on average; give it more time or fewer inputs (DECISIONS.md, 2026-10-09: the crafting economy)`,
+        ),
+      );
     }
   }
 

@@ -2,7 +2,7 @@
  * pnpm check | values | bundle
  *
  *   check    validate every content file (schema, references, economy, sprites)
- *   values   re-anchor content/values.lock.json (core maintainers only)
+ *   values   re-anchor content/values.lock.json (core maintainers only) and print gold per hour of making
  *   bundle   build game/src/generated/bundle.json and copy the kits for the client
  *   credits  write CREDITS.md from the content (--verify: fail when it is stale)
  *   board    write content/board.json, creator points and commits, from the git history
@@ -13,6 +13,7 @@ import { canonical } from '@game/kernel';
 import { computeBoard, readCommits, readPoints, writeBoard } from './board';
 import { formatIssues, runCheck } from './check';
 import { LOCK_FILE, REPO_ROOT } from './load';
+import { formatMaking, makingReport } from './making';
 
 const [command, ...args] = process.argv.slice(2);
 const json = args.includes('--json');
@@ -40,6 +41,7 @@ switch (command) {
     const sorted = Object.fromEntries(Object.keys(b.values).sort().map((k) => [k, b.values[k]]));
     writeFileSync(LOCK_FILE, `${JSON.stringify({ format: 1, note: 'Value anchor (rule R11). Re-anchored only by core maintainers.', values: sorted }, null, 2)}\n`);
     console.log(`anchored ${Object.keys(sorted).length} values in content/values.lock.json`);
+    console.log(`\ngold per hour of making, an average try at the recipe's own level (CR-22):\n${formatMaking(makingReport(b))}`);
     break;
   }
   case 'bundle': {

@@ -66,6 +66,12 @@ export function feedback(root: HTMLElement, events: readonly GameEvent[]): void 
       case 'tool_broke':
         add({ sfx: 'crack' });
         break;
+      case 'hurt':
+        add({ sfx: 'thud', detune: -300 });
+        break;
+      case 'fall':
+        add({ sfx: 'bell', detune: -1200 });
+        break;
       case 'bag_full':
         add({ sfx: 'back' });
         break;

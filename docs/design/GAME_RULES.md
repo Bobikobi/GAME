@@ -325,10 +325,10 @@ The valley has no combat; its danger is the hour, and what the player eats.
   burning camp or at another's as a guest with a deal give it back; low health
   slows work the way the empty bar did.
   Nothing drains it by the clock (G28): there is no hunger timer, eating is how
-  the player heals, and cooking keeps its purpose. Until P-5 builds this the
-  food bar still drains by the clock (`satiety_drain_per_min`); the rule holds
-  from P-5, which comes right after the axe and the starts (DECISIONS.md,
-  10.10).
+  the player heals, and cooking keeps its purpose. Since P-5c (11.10) the
+  core content sets `satiety_drain_per_min` to 0, in the same change that
+  brought the first hazards; the field takes the name hp with the rename
+  (DECISIONS.md, 10.10 and 11.10).
 - **G33 A fall is clear, and it costs the outing.** At zero health the player
   falls: crosses for eyes, the body sinks into the ground, one plain box says
   what happened; no gravestone, nothing left in the world. The player reappears
@@ -395,13 +395,15 @@ day); the audit behind them is `docs/design/CRAFTING_AUDIT.md`.
   chance and luck only tilts it; a miss is never nothing (G15): it keeps part
   of the inputs and makes nothing else. The value table prices a recipe at
   perfect execution, and luck closes the gap to that output without passing
-  it (R9).
+  it (R9). A recipe's level is no wall: each missing level takes a step off
+  the chance, down to nothing, a try at nothing still runs and misses, and
+  the screen never shows the chance or the level a recipe wants.
 - **G41 Two ladders.** The tier says how advanced a thing is, the rarity how
   often it appears. A recipe climbs one tier at a time, at a station of its
   tier and at a level inside the tier's band. From tier 3 up a thing comes
   only from a gated source - a level gate (the node's, or the band of the
-  recipe that makes it), a slow respawn, a find table or a quest reward - and
-  no shop sells it.
+  recipe that makes it, below which its chance falls), a slow respawn, a find
+  table or a quest reward - and no shop sells it.
 - **G42 Rare is capacity and gates, never a timer.** How many nodes, how slowly
   they return, their hours, the level and the tool they ask, the find tables.
   Waiting is never paid (R6), no event timer or "last chance" makes a thing
@@ -479,7 +481,7 @@ Named so a review can point at one in two words.
 | Same again | Two quests in a row of one type, or three items in a row got by the same motion. | G17, G18 |
 | Silent night | A fall with no countdown and no warning box before it. | G31 |
 | Breadcrumb | A fall that leaves a stash, a pin or a line saying where to go back to. | G33 |
-| Hunger clock | A bar that empties by the clock, awake or asleep (the kernel still drains it until P-5). | G32, G28 |
+| Hunger clock | A bar that empties by the clock, awake or asleep (the drain is 0 since P-5c). | G32, G28 |
 | Gear answer | A thing bought or made as the answer to a hazard: oil, a torch, a rope, an antidote. | G34 |
 | Empty miss | A missed strike that gives nothing at all. | G15 |
 | Quiz talk | A topic list with one right pick, or a line that exists to explain. | G19, G23 |
@@ -581,9 +583,9 @@ test stays with the checklist above.
 | G10 | A camp with neither a station nor a bag bonus. | error |
 | G17 | A quest with no `type`; two consecutive quests of one type in a `requires` chain; fewer than five types among the first ten quests. | error |
 | G14, G21 | A character's first meeting over three boxes, a standing over two, a topic over four; boxes over 80 characters, counted per character. | error |
-| G30 | A hunting hazard (predator, pit, trap, deep water) inside a safe area or with no window (`night`, `mist`); a bad fruit or herb needs none. | needs hazard props (P-5) |
+| G30 | A hazard prop (predator, pit, trap, deep water) with no id or touching safe ground (the town's cobbles, a slot marked `safe`, the first camp slot); a pit, trap or deep water that is solid, or any but a predator with a reach. The schema refuses a hazard with no window (`night`; `mist` comes with P-6); a bad fruit or herb needs none. | error |
 | G15 | A node with no miss table, or a miss row that is not a thing with a value. | needs the miss tables (CR-60) |
-| G34 | A hazard whose content names an item as its answer, or a hunting hazard in an area with no safe place on the map. | needs P-5 |
+| G34 | A predator with a walkable tile in its reach from which no road leads to a safe place, or from which the run to the nearest one costs a whole fall in bites. No field of the schema can name an item as a hazard's answer. | error |
 | G36 | An expedition with two problems of one type in a row, or a hazard its window does not cover. | needs the `expedition` kind (P-6) |
 | G41 | An item with no class or tier, or a tier the world has not opened; an output more than one tier above its highest input; a recipe level outside its tier's band; no camp part giving the recipe's station at its tier; no craft profession for the recipe; from tier 3 up, a node with neither the tier's level nor a slow respawn, or a shop that sells it. | error |
 | G42 | The rarity bonuses of the merged world over `rarity_budget_permille` (kernel review 8.2). | error |

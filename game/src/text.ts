@@ -3,19 +3,29 @@ import {
   type Attribute,
   type Bundle,
   type GameEvent,
+  type RecipeDef,
   type State,
+  type WearSlot,
   bagCapacity,
   bagUsed,
   campBuilt,
   campTile,
   findSlot,
+  hazardsOf,
+  isNight,
+  isSafe,
   missKeepBp,
+  nightEnds,
+  nightFalls,
   offeredTo,
   powerCap,
   questSatisfied,
+  recipeTier,
   riddleKey,
   rareFindPermille,
+  salePrice,
   satietyCap,
+  slotsFor,
   senseReach,
   techniqueValue,
 } from '@game/kernel';
@@ -88,7 +98,9 @@ export interface AttributeEffect {
 /** What one more point in each attribute really changes, as numbers. */
 export function attributeEffects(b: Bundle, s: State): AttributeEffect[] {
   const plus = (a: Attribute): State => ({ ...s, player: { ...s.player, attrs: { ...s.player.attrs, [a]: s.player.attrs[a] + 1 } } });
-  const minutes = (st: State) => Math.floor(satietyCap(b, st) / b.params.satiety_drain_per_min);
+  // with no hunger clock (G32) a point of stamina is health, not minutes of work
+  const drain = b.params.satiety_drain_per_min;
+  const minutes = (st: State) => Math.floor(satietyCap(b, st) / (drain > 0 ? drain : 1000));
   const pct = (bp: number) => `${Math.round(bp / 100)}%`;
   const times = (permille: number) => `x${(permille / 1000).toFixed(2).replace(/0$/, '')}`;
   const luckNext = plus('luck');
@@ -108,9 +120,9 @@ export function attributeEffects(b: Bundle, s: State): AttributeEffect[] {
     {
       attr: 'stamina',
       name: 'Stamina',
-      what: 'Work before you must eat',
+      what: drain > 0 ? 'Work before you must eat' : 'Your health holds',
       now: `${minutes(s)}`,
-      next: `${minutes(plus('stamina'))} minutes`,
+      next: `${minutes(plus('stamina'))} ${drain > 0 ? 'minutes' : 'points'}`,
     },
   ];
 }
@@ -228,7 +240,158 @@ export function campSpotOf(b: Bundle, campId: string): [number, number] | undefi
   return c ? campTile(b, c.slot) : undefined;
 }
 
+/** What a trader buys from the bag, by name, at the kernel's price for one unit: a worn tool that is the last unit pays less, and what pays nothing stays out. */
+export function sellable(b: Bundle, s: State): { item: string; each: number }[] {
+  return Object.keys(s.player.bag)
+    .map((item) => ({ item, each: salePrice(b, s, item, 1) ?? 0 }))
+    .filter((row) => row.each >= 1)
+    .sort((x, y) => itemName(b, x.item).localeCompare(itemName(b, y.item)));
+}
+
+/** Where an item is worn now, on the layer it goes on (looks apart from work clothes), or undefined. */
+export function wornAt(b: Bundle, s: State, itemId: string): { slot: WearSlot; look: boolean } | undefined {
+  const w = b.items[itemId]?.wear;
+  if (!w) return undefined;
+  const look = w.look === true;
+  const layer = look ? s.player.looks : s.player.worn;
+  const slot = slotsFor(w.slot).find((k) => layer[k] === itemId);
+  return slot === undefined ? undefined : { slot, look };
+}
+
+/** The camp parts built over a standing part that provides this station: its next step up. */
+export function stationUpgrades(b: Bundle, s: State, station: string): string[] {
+  const standing = s.player.camp.filter((id) => b.camps[id]?.provides === station);
+  return Object.keys(b.camps)
+    .filter((id) => {
+      const base = b.camps[id]!.upgrades;
+      return base !== undefined && standing.includes(base);
+    })
+    .sort();
+}
+
+/** A class as a player reads it: a base class by its word, an extension's own class by its name. */
+export function className(b: Bundle, cls: string | undefined): string {
+  if (!cls) return 'Other';
+  return b.classes[cls]?.name ?? `${cls[0]!.toUpperCase()}${cls.slice(1)}`;
+}
+
+/** An item's class, family and tier in one line, for example "Plant (berry), tier 1". */
+export function classLine(b: Bundle, id: string): string {
+  const it = b.items[id];
+  const tier = it?.tier ?? 1;
+  if (!it?.class) return `Tier ${tier}`;
+  return `${className(b, it.class)}${it.family ? ` (${it.family})` : ''}, tier ${tier}`;
+}
+
+/** The bag's categories (D-CRAFT-6), in the order it shows them. */
+const BAG_GROUPS = [
+  ['food', 'Food'],
+  ['material', 'Materials'],
+  ['tool', 'Tools'],
+  ['wear', 'To wear'],
+  ['treasure', 'Treasures'],
+  ['fragment', 'Recipe scraps'],
+] as const;
+
+/** The bag by kind, each category sorted by name; a worn thing that is not a tool goes under "To wear", and an empty category is left out. */
+export function bagGroups(b: Bundle, ids: readonly string[]): { label: string; ids: string[] }[] {
+  const keys: readonly string[] = BAG_GROUPS.map(([key]) => key);
+  const keyOf = (id: string): string => {
+    const it = b.items[id];
+    const key = it && it.kind !== 'tool' && it.wear ? 'wear' : (it?.kind ?? 'material');
+    // a kind the bag has no category for yet still shows, with the materials
+    return keys.includes(key) ? key : 'material';
+  };
+  return BAG_GROUPS.map(([key, label]) => ({
+    label,
+    ids: ids.filter((id) => keyOf(id) === key).sort((x, y) => itemName(b, x).localeCompare(itemName(b, y))),
+  })).filter((g) => g.ids.length > 0);
+}
+
+/** The journal's items by class (C12): one group per class, by name, each with a row for the items of no family first and then a row per family. */
+export function journalGroups(b: Bundle): { label: string; rows: { family?: string; ids: string[] }[] }[] {
+  const byName = (x: string, y: string) => itemName(b, x).localeCompare(itemName(b, y));
+  const groups = new Map<string, string[]>();
+  for (const id of Object.keys(b.items)) {
+    const label = className(b, b.items[id]!.class);
+    groups.set(label, [...(groups.get(label) ?? []), id]);
+  }
+  return [...groups.entries()]
+    .sort(([x], [y]) => x.localeCompare(y))
+    .map(([label, ids]) => ({
+      label,
+      rows: [...new Set(ids.map((id) => b.items[id]!.family ?? ''))].sort().map((family) => ({
+        ...(family ? { family } : {}),
+        ids: ids.filter((id) => (b.items[id]!.family ?? '') === family).sort(byName),
+      })),
+    }));
+}
+
+/** Where a recipe is made: "the workshop", or "a workshop of tier 2" past the first tier. */
+export function stationText(b: Bundle, recipe: RecipeDef): string {
+  const tier = recipeTier(b, recipe);
+  return tier > 1 ? `a ${recipe.station} of tier ${tier}` : `the ${recipe.station}`;
+}
+
+/**
+ * The gate that blocks a recipe, the only one since CR-17: every part built
+ * for its station is below the recipe's tier. Names the lowest part that
+ * fits. Undefined when a built part fits, or when none is built yet.
+ */
+export function stationGate(b: Bundle, s: State, recipe: RecipeDef): string | undefined {
+  const tier = recipeTier(b, recipe);
+  const tierOf = (id: string) => b.camps[id]!.tier ?? 1;
+  const parts = Object.keys(b.camps).filter((id) => b.camps[id]!.provides === recipe.station);
+  const built = parts.filter((id) => s.player.camp.includes(id));
+  if (built.length === 0 || built.some((id) => tierOf(id) >= tier)) return undefined;
+  const next = parts.filter((id) => tierOf(id) >= tier).sort((x, y) => tierOf(x) - tierOf(y) || x.localeCompare(y))[0];
+  return `Needs a ${recipe.station} of tier ${tier}${next ? `: the ${b.camps[next]!.title.toLowerCase()}` : ''}.`;
+}
+
 /** A short sentence for each event a player should notice. */
+/** What a hurt says, by what did it (the kernel's hazard kinds, and food). */
+const HURT_TEXT: Readonly<Record<string, string>> = {
+  predator: 'Bitten! Run for a safe place',
+  pit: 'The floor gave way under you',
+  trap: 'A trap snapped shut on your foot',
+  deep_water: 'The deep water dragged at you',
+  food: 'That did not agree with you',
+};
+
+/** The Eat button's label: what a food gives, and what it takes when it hurts. */
+export function eatLabel(b: Bundle, id: string): string {
+  const item = b.items[id];
+  const food = item?.food;
+  // a bandage or a first-aid kit heals the same way, but nobody eats it
+  const verb = item && item.kind !== 'food' ? 'Use' : 'Eat';
+  if (!food) return verb;
+  const parts = [food.satiety > 0 ? `+${food.satiety}` : '', food.hurt ? `-${food.hurt}` : ''].filter(Boolean);
+  return parts.length > 0 ? `${verb} (${parts.join(', ')})` : verb;
+}
+
+/**
+ * The countdown at the screen's edge (G31): while the player stands outside a
+ * safe place by day in a world that has hazards, how long until dark, in the
+ * game's own time. Undefined on safe ground, after dark, and in a world where
+ * nothing hunts. The mist's coming joins it with the mist (GRUNT P-6).
+ */
+export function nightCountdown(b: Bundle, s: State, at: readonly [number, number], tick: number): { text: string; soon: boolean } | undefined {
+  if (hazardsOf(b).length === 0 || isNight(b, tick) || isSafe(b, s, [at[0], at[1]])) return undefined;
+  const ms = nightFalls(b, tick) - tick;
+  const sec = Math.ceil(ms / 1000);
+  return { text: `Dark in ${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`, soon: ms <= 60_000 };
+}
+
+/**
+ * Which night the lantern warning belongs to (G31): the tick that night ends,
+ * while it is dark and the player stands outside a safe place in a world that
+ * has hazards; undefined otherwise. The warning opens once for each value.
+ */
+export function lanternNight(b: Bundle, s: State, at: readonly [number, number], tick: number): number | undefined {
+  if (hazardsOf(b).length === 0 || !isNight(b, tick) || isSafe(b, s, [at[0], at[1]])) return undefined;
+  return nightEnds(b, tick);
+}
+
 export function describe(b: Bundle, s: State, e: GameEvent): { text: string; icon?: string; tone?: 'good' | 'bad' | 'info' } | undefined {
   switch (e.e) {
     case 'gain':
@@ -260,7 +423,9 @@ export function describe(b: Bundle, s: State, e: GameEvent): { text: string; ico
     case 'build':
       return { text: `${b.camps[e.camp]?.title ?? e.camp} built`, tone: 'good' };
     case 'eat':
-      return { text: `You ate ${itemName(b, e.item)}`, icon: b.items[e.item]?.sprite, tone: 'good' };
+      return { text: `${b.items[e.item]?.kind === 'food' ? 'You ate' : 'You used'} ${itemName(b, e.item)}`, icon: b.items[e.item]?.sprite, tone: b.items[e.item]?.food?.hurt ? 'info' : 'good' };
+    case 'hurt':
+      return { text: HURT_TEXT[e.by] ?? 'That hurt', tone: 'bad' };
     case 'nothing':
       return { text: e.verb === 'dig' ? 'Nothing this time.' : 'Missed - nothing this time.', tone: 'bad' };
     case 'miss':
@@ -312,13 +477,14 @@ export function toolOpens(b: Bundle, s: State, kind: string): string[] {
     .sort();
 }
 
-/** Concrete effect/benefit of an item: tool speed & durability, food satiety minutes, recipe learned, or description. */
+/** Concrete effect/benefit of an item: tool speed & durability, the health a food gives or takes, recipe learned, or description. */
 export function itemBenefit(b: Bundle, id: string): string {
   const it = b.items[id];
   if (!it) return '';
   if (it.tool) {
     const tier = `Tier ${it.tool.tier} ${it.tool.kind}`;
-    const uses = `${it.tool.uses} uses`;
+    // a tool with no uses never wears out
+    const uses = it.tool.uses === undefined ? 'lasts' : `${it.tool.uses} uses`;
     const speed = it.tool.tier > 1 ? ` · +${15 * (it.tool.tier - 1)}% gathering speed` : '';
     // two patches of the same plant read as one; a start's own spot is no dig site of the trowel's
     const resources = [...new Set(Object.values(b.resources)
@@ -338,10 +504,16 @@ export function itemBenefit(b: Bundle, id: string): string {
     return `${tier} · ${unlocks} · ${uses}${speed}`;
   }
   if (it.food) {
-    // food is in whole meter points; the kernel drains thousandths of a point per minute of work
-    const workMs = Math.round((it.food.satiety * 1000 * 60_000) / b.params.satiety_drain_per_min);
-    const lasts = workMs >= 60_000 ? `${Math.round(workMs / 60_000)} min` : `${Math.round(workMs / 1000)} s`;
-    return `+${it.food.satiety} food · about ${lasts} of work`;
+    // food is in whole points of health; while a hunger clock runs it drains thousandths of a point a minute
+    const parts: string[] = [];
+    const drain = b.params.satiety_drain_per_min;
+    if (it.food.satiety > 0) parts.push(`+${it.food.satiety} health`);
+    if (it.food.hurt) parts.push(`hurts: -${it.food.hurt} health`);
+    if (it.food.satiety > 0 && drain > 0) {
+      const workMs = Math.round((it.food.satiety * 1000 * 60_000) / drain);
+      parts.push(`about ${workMs >= 60_000 ? `${Math.round(workMs / 60_000)} min` : `${Math.round(workMs / 1000)} s`} of work`);
+    }
+    return parts.join(' · ');
   }
   if (it.fragment) {
     return `Unlocks recipe: ${b.recipes[it.fragment.unlocks]?.title ?? it.fragment.unlocks}`;

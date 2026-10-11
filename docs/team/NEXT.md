@@ -12,7 +12,9 @@ Written 2026-10-11 when the first round of sessions closed. Each section is the 
   - Long output (verify, e2e, logs, `gh run view`) goes to a file, and only the tail or the failure lines are shown.
   - Read files by range or by grep.
   - Run the single test file first, `pnpm verify` once before the push, and e2e last, only before ready.
-  - Second opinions go to Codex (`codex exec --sandbox read-only "..."`) or Gemini (`ask-agy`), and their claims are checked against the build before anything changes.
+  - Codex is the default worker and the session is the escalation (owner, 11.10; skill `gpt-consult`). A task goes to Codex unless it needs judgment, needs context only the session holds, or has no command that proves it: `codex exec --sandbox workspace-write -c sandbox_workspace_write.network_access=true "<goal> <files> <proof command>"` in the worktree, the session leaves those files alone meanwhile and re-runs the proof itself. Typical: test-expectation sweeps, tests from a spec, regenerating, e2e expectation updates, rebases onto `develop`.
+  - Before ready, a bug-only review of the diff from Codex (`codex exec --sandbox read-only --skip-git-repo-check "..." < /dev/null`) and Gemini (`ask-agy`; an empty answer is a blocked tool, not a reply), each claim checked against the build. Web lookups go to `ask-agy`.
+  - The pull request body names what went to Codex or Gemini and how many corrections it needed.
   - Keep `STATE.md` in the session scratchpad, updated at each step.
 - Generated files (`schema/json`, `content/values.lock.json`, `CREDITS.md`, `content/board.json`) are taken from `develop` and regenerated (`pnpm schemas`, `pnpm values`, `pnpm credits`, `pnpm board`), never merged by hand. GitHub ignores the union merge of `DECISIONS.md`: resolve it locally and keep both sides.
 - Toolchain: node 24 from nvm on the PATH, then `pnpm install --frozen-lockfile` in each new worktree.
@@ -51,10 +53,12 @@ P-5c, the content, a second pull request after P-5b:
 3. Hunger drains to 0 (param minimum 0), and only once hazards exist.
 4. Raise `hp_low_pct`.
 5. Add the GAME_RULES G30 and G34 rows.
-6. An e2e: at night, step one tile past the ruins' entrance, fall, and reappear in town with the basket gone and the quest back at step one.
+6. An e2e: at night, step one tile past the ruins' entrance, fall, and reappear in town with nothing lost. The safe threshold has just closed the outing, so the bag, the basket and the quests stay whole (DECISIONS 2026-10-10: a fall takes back only what the outing brought); a fall that takes the outing's finds is proven in the kernel tests until P-6 opens another way in.
 7. Rename `satiety` to `hp` last, in its own commit, after crafting has landed.
 
 Known wart, in DECISIONS: a quest that completed by itself during an outing keeps its reward after a fall. Mist hazards wait for P-6.
+
+Left after P-5c (11.10): item 7, the rename of `satiety` to `hp`, waits for crafting wave 4 (#48) to land, then goes in as its own pull request. P-5b also left the mist's half of the countdown and the lantern for P-6, and the warning before a camp fire goes out for the tent (CR-25).
 
 After P-5, in order:
 - CR-60 miss tables;
@@ -94,6 +98,8 @@ Steps:
    - A real dialogue race is fixed in the client, not in the test.
 2. When green, mark #45 ready, land it, then do #46 the same way (merge `develop`, regenerate, verify, e2e), then #48.
 
+3. After #48: the workshop moves into the town (DECISIONS 2026-10-11 "The workshop is a large stall in the town"). A stall larger than today's shelf, placed in the town, opened by a quest, with a working animation of its own (built with section 4c). Recipes, tiers and tools stay as wave 3 built them. Measurable: no workshop station outside the town on the map; the stall refuses work until its quest is done; `pnpm verify` and `pnpm e2e` green.
+
 ## 3. The site: the MCP server, then the coming-soon boxes
 
 Read DECISIONS 2026-10-08 "Stage 2a" and the 2026-10-10 site entries.
@@ -112,7 +118,7 @@ a) #69 `feat/site-mcp` (daf2bd5), GRUNT 15 and 16: built, `pnpm verify` exit 0 (
 
 b) The coming-soon boxes, branch `feat/site-coming-soon`. Owner's answers are in issue #57.
 - On the hub and home, "Your card", Levels and Badges become coming-soon boxes with no sample numbers: every number on a page equals `content/board.json`.
-- The 3D version ships as a parallel version, with its own button on the home page. `trial/3d` (#24) is not merged; the button points at its preview or waits. Ask the owner which, in one line.
+- The 3D version ships as a parallel version, with its own button on the home page (owner, 11.10, DECISIONS "The 3D version is a second door"). The button starts the 3D game at `/play3d/` and hides while `/play3d/` is not in the build; section 8 puts it there.
 - Measurable: no digit inside a coming-soon box; the home page has the 3D button; captures at 390x844 and 1440x900 with headless Chrome on its own port, closed by PID; `pnpm verify` green.
 
 ## 4. Game feel: walk, swing, auto-work, sound
@@ -136,6 +142,10 @@ b) Sound, branch `feat/sound-pass`, all under the existing mute:
 - stream water by position near the river.
 
 Measurable: each source's volume falls with distance; the click plays exactly once per advance; mute silences all of it.
+
+d) Before (c), branch `feat/starter-looks`: the three starters look different in the game. Today the forager, the digger and the explorer all draw `chars/player_*` (or `woman_*` with the look toggle), so the choice of starter is invisible after the title screen. The look is already decided: DECISIONS 2026-10-09 "Each player role reads at a glance: one big item, one colour, its own build" (the Explorer tall and lean with a wide-brimmed hat and a tall backpack with a blanket roll; the Forager short and slight with a large wicker basket and the rust red on a neckerchief and the basket lining, no head wrap; the Digger broad and heavy-set with a spade across the back and a cap; a man base plus a woman option each; the same patched base clothes). The 3D cast on `trial/3d` already follows it. So this is building an agreed direction, not a new one: no stills round. Draw walk, idle and work in four directions for each role and both looks, inside the pixel look, and give each starter's JSON its own `sprite` and `sprite_alt`. It runs before (c) so the every-action frames are drawn once per role. Measurable: in one capture the three starters stand side by side and are told apart at phone size by item, colour and build; no starter names `chars/player_*`; `pnpm verify` and `pnpm e2e` green.
+
+c) After (a), (b) and (d) land, branch `feat/every-action`: one animation for each action the player takes (gather, pick, dig, fell, mine, craft at the workshop stall, cook, eat, drink, talk, pay, pitch a camp, sleep), inside the pixel look, so no stills. In the same pull request, a quest given in talk is offered in the giver's words and the "New task:" line goes (`game/src/text.ts`); the journal records the quest quietly. Measurable: every action in the list shows its own frames in a capture; no "New task" string in `game/src`; `pnpm verify` and `pnpm e2e` green.
 
 ## 5. The shops you walk into
 
@@ -171,3 +181,38 @@ Stealth over the hazards comes after P-5c.
 A docs pull request: chapter 1 approved, and how the three starters differ in it.
 1. Merge `develop` into it and check it against `docs/design/STORY.md` S1-S6.
 2. Ask the owner one question if anything there contradicts a later decision, then land it.
+
+## 8. The 3D door at /play3d/
+
+Read DECISIONS 2026-10-11 "The 3D version is a second door" and, on `trial/3d` (#24), `docs/3d/meshy-notes.md` and `game/public/3d/models/README.md`. The 3D game moves at its own pace and never holds the classic game back.
+
+a) Land the door, branch `feat/play3d` off `develop`:
+- Bring the valley and the cell scene from `trial/3d` (125 commits behind `develop` on 11.10) onto a fresh branch; take generated files from `develop` and regenerate them.
+- The web build serves the 3D game at `/play3d/`; the 3D build step is optional, and when it fails the classic game still ships.
+- The 3D game runs the same kernel and content bundle and reads and writes the same save key and format as `/play/`: walk, the opening's quests, gather, save.
+- Measurable: a character made at `/play/` loads at `/play3d/` and back; `/play3d/` loads at 390x844 and 1440x900 (captures with headless Chrome on its own port, closed by PID); the home button shows only when `/play3d/` is built; `pnpm verify` and `pnpm e2e` green.
+
+b) The rest of the cast, after (a): Elder Maru, Pell and the cook.
+- Meshy drafts on the four trial accounts (Chrome profiles on ports 9341-9343 and 9333; the daily check-in already claims the bonus credits). Use credits only on drafts; download nothing before the owner picks.
+- A look is a direction: two or three phone-size stills per character to the owner, opened in his browser, never an artifact link. The pick goes into DECISIONS with its frame.
+- Then download the pick once, rig and reduce it in the local Blender pipeline, as the six role models were.
+
+c) A daily routine while this stream runs (owner, 11.10), before section 9: each day, on all four Meshy accounts, do the site's daily tasks that earn credits (the check-in timer only loads the workspace), and spend what they ask for on work the game needs: the cast drafts of (b) first, then props the 3D valley lacks. Log credits earned and spent per account in `docs/3d/meshy-notes.md`.
+
+## 9. The maze peek and the hint ladder
+
+Read DECISIONS 2026-10-11 "Maze difficulty is a ladder of four tiers" (PR #71). After #71 lands.
+
+- At a maze's entrance the camera shows the whole maze from above for 3 seconds, then returns to the player.
+- A maze names its tier in content (schema additive, `FORMAT_VERSION` stays 1). Tier 1: the peek with a very faint route line and the landmarks. Tier 2: the peek, and only the landmarks glow for a moment. Tier 3: the shape alone. Tier 4: no peek; waits for P-5c and stealth.
+- The tangle is tier 1.
+- Measurable: the peek lasts 3 seconds and fits the whole maze on screen at 390x844 and 1440x900; the line shows at tier 1 only; `pnpm verify` and `pnpm e2e` green.
+
+## 10. The stage-1 service (M5: GRUNT 17, 18, 19)
+
+Read GRUNT items 17-19 and DECISIONS 2026-10-07 "The stage-1 service runs as Vercel Functions with Upstash Redis" and 2026-10-08 "Stage 2a after the stage-1 service". This stream is the road to the server: stage 2a is designed once its numbers are in.
+
+- One pull request per GRUNT item, in order 17, 18, 19, each with the item's proving command.
+- Upstash Redis comes from the Vercel Marketplace (free tier) in the existing project. Provisioning it and setting its two environment names on Vercel is a production change: ask the owner first, in three lines. Until then the tests run on the fake store and `usage` stays null.
+- Add Vercel Web Analytics for page views (owner, 11.10): `@vercel/analytics` pinned, one component in the site layout and one call in the game's page. Turning it on in the Vercel dashboard is the owner's, at the release. It does not replace the in-game counts.
+- Measurable: item 17's curl prints 204 on a preview with the env names; item 18's client tests and e2e green; item 19's page lists the fixture's numbers; `pnpm verify` green.

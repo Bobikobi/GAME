@@ -13,6 +13,12 @@
       "max": 700,
       "step": 50
     },
+    "k_craft_permille": {
+      "value": 750,
+      "min": 500,
+      "max": 900,
+      "step": 50
+    },
     "r_mg_per_value_ms": {
       "value": 10,
       "min": 5,
@@ -149,8 +155,8 @@
       "step": 10
     },
     "satiety_drain_per_min": {
-      "value": 7000,
-      "min": 2000,
+      "value": 0,
+      "min": 0,
       "max": 15000,
       "step": 500
     },
@@ -167,7 +173,7 @@
       "step": 10
     },
     "hp_low_pct": {
-      "value": 0,
+      "value": 25,
       "min": 0,
       "max": 50,
       "step": 5

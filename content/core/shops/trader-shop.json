@@ -34,6 +34,10 @@
       {
         "item": "core/berry-mash",
         "price_mg": 42000
+      },
+      {
+        "item": "core/first-aid-kit",
+        "price_mg": 60000
       }
     ],
     "buys": true,

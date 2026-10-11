@@ -8,7 +8,7 @@
   "description": "The first region: a river, a town, a grove and the ruins.",
   "map": {
     "width": 48,
-    "height": 36,
+    "height": 49,
     "legend": {
       ".": {
         "sprite": "core/base-kit:tiles/grass",
@@ -83,8 +83,8 @@
       "TT....,..____~~~_............,.......:........TT",
       "TT.......____~~~_...............%%##########%.TT",
       "TT.......____~~~_.....,.........###%##%#####%,TT",
-      "TT.....,.____~~~_.............,.####%%#######.TT",
-      "TT.........._~~~_...............#############.TT",
+      "TT.....,.____~~~_.............,.###%#%#######.TT",
+      "TT.........._~~~_...............####%########.TT",
       "TT.........._~~~_......,........#############.TT",
       "TT......,..._~~~_..............,#############.TT",
       "TT.........._~~~_\"\"\"\"\"\"\"\"\"\"\"\"\"\".######%%#####.TT",
@@ -96,7 +96,20 @@
       "TTTTTTT....._~~~_TTTT\"\"\"\"\"\"\"\"\"\".%############.TT",
       "TTTTTTT....._~~~_TTTT\"\"\"\"\"\"\"TTTT#%#########%%.TT",
       "TTTTTTT....,_~~~_TTTT\"\"\"TTT\"TTTT..,...........TT",
-      "TTTTTTTTTTTTT~~~TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+      "TTTTTTTTTTTTT~~~TTTTTTTTTTTTTTTTTTTTTTT\"TTTTTTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"T\"\"\"\"\"T\"\"\"\"\"\"\"T\"T\"\"\"T\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"T\"T\"T\"TTT\"T\"T\"T\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"T\"T\"T\"T\"T\"\"\"T\"\"\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"TTTTT\"TTT\"TTT\"TTT\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"\"\"T\"T\"T\"\"\"T\"T\"\"\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"T\"T\"T\"T\"TTTTTTT\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"T\"\"\"\"\"\"\"\"\"\"\"T\"\"\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"TTT\"TTT\"TTT\"T\"T\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"T\"\"\"T\"T\"\"\"T\"T\"T\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"TTT\"T\"T\"T\"T\"T\"T\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"\"\"T\"T\"T\"T\"T\"\"\"T\"T\"T\"T\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"\"\"T\"TTT\"T\"TTT\"T\"T\"T\"T\"TTTT",
+      "TTTTTTTTTTTTT~~~TTTTT\"\"\"T\"\"\"\"\"\"\"T\"\"\"T\"T\"\"\"T\"TTTT",
       "TTTTTTTTTTTTT~~~TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
     ],
     "props": [
@@ -310,6 +323,36 @@
         "note": "Cut deep: \"By day the rubble, by night the way.\""
       },
       {
+        "id": "core/doorstep-pit",
+        "sprite": "core/base-kit:props/hazard_pit",
+        "x": 36,
+        "y": 21,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "hazard": {
+          "kind": "pit",
+          "window": [
+            "night"
+          ]
+        }
+      },
+      {
+        "id": "core/ruins-wolf",
+        "sprite": "core/base-kit:props/hazard_wolf",
+        "x": 36,
+        "y": 25,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "hazard": {
+          "kind": "predator",
+          "window": [
+            "night"
+          ]
+        }
+      },
+      {
         "sprite": "core/base-kit:props/rubble",
         "x": 33,
         "y": 31,
@@ -352,7 +395,7 @@
         "note": "A lantern statue facing the hills, where the mist comes from. Soft earth below."
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 5,
         "w": 1,
@@ -360,7 +403,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 10,
         "w": 1,
@@ -368,7 +411,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 24,
         "w": 1,
@@ -376,7 +419,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 30,
         "w": 1,
@@ -384,7 +427,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 16,
         "y": 7,
         "w": 1,
@@ -392,7 +435,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 16,
         "y": 12,
         "w": 1,
@@ -400,7 +443,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 16,
         "y": 21,
         "w": 1,
@@ -408,7 +451,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 16,
         "y": 27,
         "w": 1,
@@ -640,7 +683,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 31,
         "w": 1,
@@ -648,7 +691,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 32,
         "w": 1,
@@ -656,7 +699,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 16,
         "y": 13,
         "w": 1,
@@ -664,7 +707,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 16,
         "y": 15,
         "w": 1,
@@ -672,7 +715,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 16,
         "y": 11,
         "w": 1,
@@ -680,7 +723,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 16,
         "y": 14,
         "w": 1,
@@ -688,7 +731,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 16,
         "y": 20,
         "w": 1,
@@ -696,7 +739,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 7,
         "w": 1,
@@ -704,7 +747,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 9,
         "w": 1,
@@ -712,7 +755,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 6,
         "w": 1,
@@ -720,7 +763,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 16,
         "y": 31,
         "w": 1,
@@ -728,7 +771,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 16,
         "y": 30,
         "w": 1,
@@ -736,7 +779,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 16,
         "y": 32,
         "w": 1,
@@ -744,7 +787,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 29,
         "w": 1,
@@ -752,7 +795,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 27,
         "w": 1,
@@ -760,7 +803,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 28,
         "w": 1,
@@ -768,7 +811,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 16,
         "y": 26,
         "w": 1,
@@ -776,7 +819,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 16,
         "y": 22,
         "w": 1,
@@ -784,7 +827,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 16,
         "y": 23,
         "w": 1,
@@ -792,7 +835,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 16,
         "y": 25,
         "w": 1,
@@ -1214,6 +1257,78 @@
         "w": 1,
         "h": 1,
         "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/rock_mossy",
+        "x": 40,
+        "y": 35,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/rock_mossy",
+        "x": 24,
+        "y": 35,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/rock_mossy",
+        "x": 43,
+        "y": 38,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/rock_mossy",
+        "x": 42,
+        "y": 41,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/rock_mossy",
+        "x": 31,
+        "y": 42,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/rock_mossy",
+        "x": 31,
+        "y": 44,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/rock_mossy",
+        "x": 28,
+        "y": 47,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/dead_tree",
+        "x": 22,
+        "y": 47,
+        "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/glow_mushrooms",
+        "x": 21,
+        "y": 47,
+        "w": 1,
+        "h": 1,
+        "solid": false
       }
     ],
     "spawn": {
@@ -1274,7 +1389,8 @@
         "w": 2,
         "h": 1,
         "tag": "ruin",
-        "label": "Threshold of the night ruins"
+        "label": "Threshold of the night ruins",
+        "safe": true
       },
       {
         "id": "core/camp",
@@ -1367,6 +1483,16 @@
         "w": 5,
         "h": 5,
         "tag": "ruin"
+      },
+      {
+        "id": "core/tangle-heart",
+        "kind": "area",
+        "x": 21,
+        "y": 45,
+        "w": 3,
+        "h": 2,
+        "tag": "grove",
+        "label": "Heart of the tangle"
       },
       {
         "id": "core/town-edge",
@@ -1472,6 +1598,16 @@
         "w": 3,
         "h": 3,
         "tag": "meadow"
+      },
+      {
+        "id": "core/reed-bank",
+        "kind": "resource",
+        "x": 9,
+        "y": 26,
+        "w": 3,
+        "h": 5,
+        "tag": "meadow",
+        "label": "Reed bank"
       },
       {
         "id": "core/lone-oak-1",

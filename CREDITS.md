@@ -6,6 +6,10 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 
 - Campfire (camp) - `content/core/camp/campfire.json`
 - Storage chest (camp) - `content/core/camp/storage-chest.json`
+- Work stone (camp) - `content/core/camp/work-stone.json`
+- Workbench (camp) - `content/core/camp/workbench.json`
+- Workshop (camp) - `content/core/camp/workshop.json`
+- Healing (items) - `content/core/items/healing.json`
 - Tools (items) - `content/core/items/tools.json`
 - The valley (map) - `content/core/map.json`
 - Elder Maru (npc) - `content/core/npcs/elder.json`
@@ -14,6 +18,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Cooking (profession) - `content/core/professions/cooking.json`
 - Digging (profession) - `content/core/professions/digging.json`
 - Foraging (profession) - `content/core/professions/foraging.json`
+- Handcraft (profession) - `content/core/professions/handcraft.json`
 - Woodcutting (profession) - `content/core/professions/woodcutting.json`
 - The coin under the lantern (quest) - `content/core/quests/a-coin-for-maru.json`
 - The slid bank (quest) - `content/core/quests/buried-axe.json`
@@ -24,12 +29,25 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Herbs for Pell (quest) - `content/core/quests/herbs-for-pell.json`
 - Smoke over the town (quest) - `content/core/quests/into-town.json`
 - The arch at night (quest) - `content/core/quests/the-night-arch.json`
+- The tangle past the ruins (quest) - `content/core/quests/the-tangle.json`
 - Where the bells rang (quest) - `content/core/quests/three-fruits.json`
+- Bandage (recipe) - `content/core/recipes/bandage.json`
 - Berry mash (recipe) - `content/core/recipes/berry-mash.json`
+- Fine basket (recipe) - `content/core/recipes/fine-basket.json`
+- Flint trowel (recipe) - `content/core/recipes/flint-trowel.json`
 - Herb stew (recipe) - `content/core/recipes/herb-stew.json`
 - Herb tea (recipe) - `content/core/recipes/herb-tea.json`
+- Lucky charm (recipe) - `content/core/recipes/lucky-charm.json`
 - Mushroom skewer (recipe) - `content/core/recipes/mushroom-skewer.json`
+- Reed basket (recipe) - `content/core/recipes/reed-basket.json`
+- Reed cord (recipe) - `content/core/recipes/reed-cord.json`
+- Reed hat (recipe) - `content/core/recipes/reed-hat.json`
+- Reed sandals (recipe) - `content/core/recipes/reed-sandals.json`
 - Split a log (recipe) - `content/core/recipes/split-log.json`
+- Stone blade (recipe) - `content/core/recipes/stone-blade.json`
+- Stone flakes (recipe) - `content/core/recipes/stone-flakes.json`
+- Stone trowel (recipe) - `content/core/recipes/stone-trowel.json`
+- Woven mat (recipe) - `content/core/recipes/woven-mat.json`
 - Wild herbs (resource) - `content/core/resources/bank-herbs.json`
 - Bell bushes (resource) - `content/core/resources/bell-bushes.json`
 - Redberry bushes (resource) - `content/core/resources/berry-bushes.json`
@@ -37,6 +55,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Forest mushrooms (resource) - `content/core/resources/forest-mushrooms.json`
 - Keystone (resource) - `content/core/resources/keystone.json`
 - Oak trees (resource) - `content/core/resources/oak-trees.json`
+- Reed bank (resource) - `content/core/resources/reed-bank.json`
 - River stones (resource) - `content/core/resources/river-stones.json`
 - Sun herbs (resource) - `content/core/resources/sun-herbs.json`
 - Wild herbs (resource) - `content/core/resources/wild-herbs.json`
@@ -46,6 +65,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Digger (starter) - `content/core/starters/digger.json`
 - Explorer (starter) - `content/core/starters/explorer.json`
 - Forager (starter) - `content/core/starters/forager.json`
+- Dyed cord (template) - `content/core/templates/dye-cord.json`
 - A glint by the bridge (treasure) - `content/core/treasures/bridge-glint.json`
 - Under the hill lantern (treasure) - `content/core/treasures/lantern-foot.json`
 - Deep ruins (treasure) - `content/core/treasures/ruins-deep.json`
