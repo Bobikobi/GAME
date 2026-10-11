@@ -24,6 +24,7 @@ import {
   minuteOfDay,
   npcTile,
   riddleSlots,
+  spotOpen,
 } from '@game/kernel';
 import { app } from '../app';
 import { sound, type SfxId } from '../audio';
@@ -33,6 +34,7 @@ import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { emptySlots, slotContent } from '../places';
 import { canopyGroups, hash, remapTone, toneField, type Tone } from '../richground';
 import type { Session } from '../session';
+import { SensesFind } from '../senses';
 import { questTargets } from '../targets';
 import { nodeLook } from '../growth';
 import { hintDistance, nodeAction } from '../text';
@@ -603,7 +605,12 @@ export class WorldScene extends Phaser.Scene {
           this.nodeShadows.set(id, this.shadow(cx, bottom, Math.round((this.b.sprites[r.sprite]?.w ?? T) / T)));
         }
       } else {
-        this.digs.set(id, this.add.image(cx, bottom, DIG_SPOT_SPRITE).setOrigin(0.5, 1).setDepth(DEPTH.dig).setAlpha(0));
+        const t = this.b.treasures[inst.source];
+        // a find picked up by hand lies half-buried, and the senses lead to it
+        const look = t && !t.tool
+          ? new SensesFind(this, cx, bottom, this.b.items[t.finds[0]!.item]?.sprite ?? DIG_SPOT_SPRITE, DEPTH.dig, () => this.player, RICH.motion).find
+          : this.add.image(cx, bottom, DIG_SPOT_SPRITE).setOrigin(0.5, 1).setDepth(DEPTH.dig);
+        this.digs.set(id, look.setAlpha(0));
       }
       this.nodeAt.set(key(inst.x, inst.y), id);
     }
@@ -1044,7 +1051,8 @@ export class WorldScene extends Phaser.Scene {
     for (const [id, img] of this.digs) {
       const inst = this.b.instances[id]!;
       const d = Math.max(Math.abs(inst.x - s.pos[0]), Math.abs(inst.y - s.pos[1]));
-      const want = d > reach ? 0 : this.ready(s, id) ? 1 : 0.3;
+      // a start's own spot shows to that start alone, until it is dug
+      const want = d > reach || !spotOpen(this.b, s.state, id) ? 0 : this.ready(s, id) ? 1 : 0.3;
       img.setAlpha(img.alpha + (want - img.alpha) * 0.5);
     }
   }
@@ -1299,7 +1307,7 @@ export class WorldScene extends Phaser.Scene {
         s.act({ t: 'visit', slot: slot.id, at: [x, y] });
       }
       if (slot.kind === 'ruin' && !this.hinted.has(slot.id)) {
-        const t = Object.values(this.b.treasures).find((d) => d.place.slot === slot.id);
+        const t = Object.values(this.b.treasures).find((d) => d.place.slot === slot.id && (d.starter ?? s.state.player.starter) === s.state.player.starter);
         if (t) {
           this.hinted.add(slot.id);
           app.ui.toast(`Hint: ${t.hint}`, 'info');
@@ -1625,7 +1633,7 @@ export class WorldScene extends Phaser.Scene {
         }
       } else {
         const img = this.digs.get(nodeId);
-        if (img && img.alpha > 0.2) return { label: 'Dig here', run: () => app.ui.dig(nodeId), tile, top: T };
+        if (img && img.alpha > 0.2) return { label: b.treasures[inst.source]?.tool ? 'Dig here' : 'Pick up', run: () => app.ui.dig(nodeId), tile, top: T };
       }
     }
     for (const [id, c] of Object.entries(b.camps)) {
@@ -1641,7 +1649,9 @@ export class WorldScene extends Phaser.Scene {
     }
     for (const [id, r] of Object.entries(b.restores)) {
       const slot = findSlot(b.map, r.place.slot);
-      if (slot && inRect(x, y, slot) && !p.restored.includes(id)) return { label: `Mend the ${r.title}`, run: () => app.ui.restore(id), tile, top: T };
+      if (!slot || !inRect(x, y, slot) || p.restored.includes(id)) continue;
+      // a restore with no inputs opens only as a quest's reward: nothing to mend by hand
+      return { label: r.inputs.length === 0 ? `Look at the ${r.title}` : `Mend the ${r.title}`, run: () => app.ui.restore(id), tile, top: T };
     }
     const sign = this.signs.get(k);
     if (sign) return { label: 'Read the sign', run: () => app.ui.sign(sign), tile, top };

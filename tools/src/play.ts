@@ -13,6 +13,20 @@ export const RULES_PAGE = 'docs/design/GAME_RULES.md';
 /** The opening chain teaches each verb by repetition; G2 and G4 apply after it. */
 export const OPENING_QUESTS: ReadonlySet<string> = new Set(['core/fix-the-bridge', 'core/first-fire', 'core/into-town']);
 
+/**
+ * The opening as the content names it: the shared chain, and each start's own
+ * first task, a quest that names its starter (DECISIONS.md, 2026-10-09: each
+ * character begins its own way, and the opening chain names each first task).
+ */
+export function openingQuests(b: Bundle): Set<string> {
+  return new Set([...OPENING_QUESTS, ...Object.values(b.quests).flatMap((q) => (q.starter === undefined ? [] : [q.id]))]);
+}
+
+/** What a start's own spots give: a gift of the start, which its own first task may name as a find. */
+export function startFinds(b: Bundle, starter: string): Set<string> {
+  return new Set(Object.values(b.treasures).flatMap((t) => (t.starter === starter ? t.finds.map((f) => f.item) : [])));
+}
+
 /** About two lines of dialogue on a phone at the dialogue size (G14). */
 export const BOX_CHARS = 80;
 
@@ -27,7 +41,8 @@ export function digOnlyItems(b: Bundle): Set<string> {
   const gathered = new Set(Object.values(b.resources).map((r) => r.output));
   const made = madeItems(b);
   const sold = soldItems(b);
-  const dug = Object.values(b.treasures).flatMap((t) => t.finds.map((f) => f.item));
+  // a start's own spot is a gift, not a source
+  const dug = Object.values(b.treasures).flatMap((t) => (t.starter === undefined ? t.finds.map((f) => f.item) : []));
   return new Set(dug.filter((item) => !gathered.has(item) && !made.has(item) && !sold.has(item)));
 }
 
@@ -84,8 +99,9 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
   const findable = findableItems(b);
   const isFind = (item: string) => findable.has(item);
 
+  const opening = openingQuests(b);
   for (const q of Object.values(b.quests)) {
-    if (OPENING_QUESTS.has(q.id)) continue;
+    if (opening.has(q.id)) continue;
     const counter = q.steps.every((s) => s.kind === 'visit' || (s.kind === 'bring' && !isFind(s.item)));
     if (counter) {
       issues.push({
@@ -96,7 +112,8 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
       });
     }
     const r = q.reward;
-    if ((r.items?.length ?? 0) + (r.recipes?.length ?? 0) === 0) {
+    // items, recipes and places opened are all something the player can newly do
+    if ((r.items?.length ?? 0) + (r.recipes?.length ?? 0) + (r.opens?.length ?? 0) === 0) {
       issues.push({
         file: at(q.id),
         where: 'quest.reward',

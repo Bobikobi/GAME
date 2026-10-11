@@ -228,9 +228,15 @@
             ],
             "properties": {
               "satiety": {
+                "minimum": 0,
+                "maximum": 100,
+                "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                "type": "integer"
+              },
+              "hurt": {
                 "minimum": 1,
                 "maximum": 100,
-                "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
                 "type": "integer"
               }
             }
@@ -256,6 +262,10 @@
                   },
                   {
                     "const": "axe",
+                    "type": "string"
+                  },
+                  {
+                    "const": "staff",
                     "type": "string"
                   }
                 ]
@@ -645,6 +655,54 @@
                 "maxLength": 240,
                 "type": "string",
                 "description": "A line shown when the player looks at this prop, for example an old inscription."
+              },
+              "hazard": {
+                "additionalProperties": false,
+                "description": "Makes the prop a hazard (G30-G35). It needs an id.",
+                "type": "object",
+                "required": [
+                  "kind",
+                  "window"
+                ],
+                "properties": {
+                  "kind": {
+                    "description": "A predator hunts the player in its reach and bites until the player stands somewhere safe; a pit, a trap or deep water hurts once each time the player steps onto its footprint.",
+                    "anyOf": [
+                      {
+                        "const": "predator",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pit",
+                        "type": "string"
+                      },
+                      {
+                        "const": "trap",
+                        "type": "string"
+                      },
+                      {
+                        "const": "deep_water",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "window": {
+                    "minItems": 1,
+                    "uniqueItems": true,
+                    "description": "When it acts (G30). Outside its window it is harmless and shows.",
+                    "type": "array",
+                    "items": {
+                      "const": "night",
+                      "type": "string"
+                    }
+                  },
+                  "reach": {
+                    "minimum": 1,
+                    "maximum": 12,
+                    "description": "A predator only: how many tiles from its footprint it notices the player. The params hold the default.",
+                    "type": "integer"
+                  }
+                }
               }
             }
           }
@@ -781,6 +839,10 @@
                 "minLength": 1,
                 "maxLength": 40,
                 "type": "string"
+              },
+              "safe": {
+                "description": "A safe area (G30): no hazard acts inside it at any hour, a chase ends when the player stands in it, and what the player carries in is theirs. The cobbles of the town and the camp once a part stands are safe without this.",
+                "type": "boolean"
               }
             }
           }

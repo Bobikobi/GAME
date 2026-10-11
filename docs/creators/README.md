@@ -193,9 +193,17 @@ Then point your item at it: `"sprite": "<your-handle>/kit:items/plum"`.
 
 ## Tools and the first morning
 
-A tool is an item with a `tool` block: its `kind` (`basket`, `trowel` or `axe`), a `tier` and the `uses` it has before it wears out. Tools have no value of their own, so a shop prices them: Pell sells all three.
+A tool is an item with a `tool` block: its `kind` (`basket`, `trowel`, `axe` or `staff`), a `tier` and the `uses` it has before it wears out. Tools have no value of their own, so a shop prices them: Pell sells all four. A staff asks for no work: it is worn in the hand for what its `wear` block helps.
 
-A starting character may carry a `kit`, a list of up to six `{ "item", "qty" }` stacks that go into the bag when the character is chosen. The kit holds the tool of the character's first task, so no start ends at a wall. Today both starters carry an axe, because the first fire is built from a felled oak: the check refuses a start that holds none, an axe that no shop sells (a worn-out axe must be buyable again), and an opening that asks for more logs than the oaks of a new valley give.
+Each starting character begins its own way and meets the others at the bridge and the first fire:
+
+- `kit`: up to six `{ "item", "qty" }` stacks that go into the bag when the character is chosen, tier 1 only. A piece with a working `wear` slot is worn from the start.
+- `wake`: `{ "x", "y" }`, the tile the character wakes on. Left out, it wakes at the map's spawn.
+- `intro`: one to four lines the narrator says as the character wakes.
+- A quest with `"starter": "<id>"` is offered to that start only: its own first task. A task with no giver is handed to nobody, so what it asked for stays in the bag.
+- A dig spot with `"starter": "<id>"` is that start's own spot: only that character sees it and digs it, once, and it always gives its one find. Leave out the spot's `tool` and the find is picked up by hand, with no timing window, and the character's senses lead to it with a trail of glints.
+
+The check keeps the starts fair. Every start holds an axe before the first fire, in its kit or on a spot of its own, because the first fire is built from a felled oak; a shop sells an axe, so a worn-out one can be bought again; and the opening never asks for more logs than the oaks of a new valley give. Every starter's attributes add up to one total. The kits, with each start's own finds, are worth about the same (within 25 percent of the poorest), and every start reaches the bridge with its axe in about the same time (within 50 percent of the fastest). A start's own spot gives one find at 100 percent, needs only a tool its kit holds, and lies within the start's senses on its road to the bridge, on a tile where x + y is even.
 
 ## What the check enforces
 
@@ -208,7 +216,9 @@ A starting character may carry a `kit`, a list of up to six `{ "item", "qty" }` 
 - Every item has a `class` and a `tier`; the tier is open (1 to 3 today); a class of your own sits under a base class; no metal yet. A recipe climbs one tier at most, asks for a level inside its tier's band, has a profession that works its station and a camp part of its tier. From tier 3 up, nothing is sold. A recipe template stays within `template_max_recipes`. See [Classes and tiers](#classes-and-tiers).
 - The rarity bonuses of the whole world stay inside the rarity budget (10% today): a rare node with many copies or a fast respawn uses more of it.
 - A garment or jewelry piece names where it is worn (`wear`), with at most two small effects under its tier's cap; a look (`wear.look`) has no effect, and only a look may carry `premium_later`, while staying obtainable in the game. A recipe's `miss` names the share of each input a miss keeps (up to 90 percent, half when left out); a miss makes nothing else and is worth less than a success.
-- A `find` step names an item that is found, not farmed: one that only digging gives, or that exactly one timed plant (a resource with `hours`) gives, never made or sold. It carries a clue; the journal shows the clue, not a count. A `riddle` step cites map props by id and names its answer, a dig spot or a place by day or by night; an id that is not on the map is refused. `templates/extension/quests/` has a find.
+- A `find` step names an item that is found, not farmed: one that only digging gives, or that exactly one timed plant (a resource with `hours`) gives, never made or sold. It carries a clue; the journal shows the clue, not a count. With a giver, the hand-in takes one; with no giver, the step counts once the item has been in the bag, so a later step may use it up. A `riddle` step cites map props by id and names its answer, a dig spot or a place by day or by night; an id that is not on the map is refused. `templates/extension/quests/` has a find.
+- A dig spot may leave out `tool`: its find is then picked up by hand, with no minigame and nothing worn. A restore may have no `inputs`: it then never opens by hand, and a quest opens it as its reward (`reward.opens`, a place reward, up to two restores). The check refuses an `opens` that names no restore, and a restore with no inputs that no quest opens.
+- No reward repeats a kit. A quest's reward item that a starter's kit already holds names `instead`: an item that kit lacks, which a character of that start gets in its place. The check refuses a reward item a kit holds with no `instead`, and an `instead` that the same kit holds too.
 - Your change may not move the value of anything that already exists by more than 10%. If it has to, a core maintainer re-anchors the values.
 - Every sprite exists, has the right size and uses the core palette.
 

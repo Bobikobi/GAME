@@ -230,9 +230,15 @@
                 ],
                 "properties": {
                   "satiety": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                    "type": "integer"
+                  },
+                  "hurt": {
                     "minimum": 1,
                     "maximum": 100,
-                    "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                    "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
                     "type": "integer"
                   }
                 }
@@ -258,6 +264,10 @@
                       },
                       {
                         "const": "axe",
+                        "type": "string"
+                      },
+                      {
+                        "const": "staff",
                         "type": "string"
                       }
                     ]
@@ -578,6 +588,10 @@
                 {
                   "const": "axe",
                   "type": "string"
+                },
+                {
+                  "const": "staff",
+                  "type": "string"
                 }
               ]
             },
@@ -629,7 +643,7 @@
             },
             "place": {
               "additionalProperties": false,
-              "description": "An empty slot from the ruins map. Only one extension is active per slot.",
+              "description": "An empty resource slot of the map (`count` nodes inside it), and optionally single-node slots scattered over the map.",
               "type": "object",
               "required": [
                 "slot"
@@ -640,6 +654,18 @@
                   "maxLength": 80,
                   "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
                   "type": "string"
+                },
+                "scatter": {
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "description": "More resource slots that each hold exactly one of these nodes: a tree or a log standing where the map already shows one. They add supply only: `count`, the value and the opening's log floor follow the main slot.",
+                  "type": "array",
+                  "items": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  }
                 }
               }
             }
@@ -876,9 +902,15 @@
                 ],
                 "properties": {
                   "satiety": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                    "type": "integer"
+                  },
+                  "hurt": {
                     "minimum": 1,
                     "maximum": 100,
-                    "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                    "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
                     "type": "integer"
                   }
                 }
@@ -904,6 +936,10 @@
                       },
                       {
                         "const": "axe",
+                        "type": "string"
+                      },
+                      {
+                        "const": "staff",
                         "type": "string"
                       }
                     ]
@@ -1147,7 +1183,6 @@
             "active_ms",
             "respawn_ms",
             "count",
-            "tool",
             "level",
             "finds",
             "place"
@@ -1188,8 +1223,13 @@
                 {
                   "const": "axe",
                   "type": "string"
+                },
+                {
+                  "const": "staff",
+                  "type": "string"
                 }
-              ]
+              ],
+              "description": "The tool the dig asks for and wears. Left out: the find is picked up by hand, with no timing window and no tool worn."
             },
             "level": {
               "minimum": 1,
@@ -1246,6 +1286,12 @@
                   "type": "string"
                 }
               }
+            },
+            "starter": {
+              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+              "maxLength": 80,
+              "description": "A start's own spot: only a character of this starter sees it and digs it, once, and it always gives its one find. A gift of the start, so it prices nothing (it is no source in the value table).",
+              "type": "string"
             }
           }
         }
@@ -1480,9 +1526,15 @@
                 ],
                 "properties": {
                   "satiety": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                    "type": "integer"
+                  },
+                  "hurt": {
                     "minimum": 1,
                     "maximum": 100,
-                    "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                    "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
                     "type": "integer"
                   }
                 }
@@ -1508,6 +1560,10 @@
                       },
                       {
                         "const": "axe",
+                        "type": "string"
+                      },
+                      {
+                        "const": "staff",
                         "type": "string"
                       }
                     ]
@@ -2104,9 +2160,15 @@
                 ],
                 "properties": {
                   "satiety": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                    "type": "integer"
+                  },
+                  "hurt": {
                     "minimum": 1,
                     "maximum": 100,
-                    "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                    "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
                     "type": "integer"
                   }
                 }
@@ -2132,6 +2194,10 @@
                       },
                       {
                         "const": "axe",
+                        "type": "string"
+                      },
+                      {
+                        "const": "staff",
                         "type": "string"
                       }
                     ]
@@ -2812,9 +2878,15 @@
                 ],
                 "properties": {
                   "satiety": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                    "type": "integer"
+                  },
+                  "hurt": {
                     "minimum": 1,
                     "maximum": 100,
-                    "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                    "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
                     "type": "integer"
                   }
                 }
@@ -2840,6 +2912,10 @@
                       },
                       {
                         "const": "axe",
+                        "type": "string"
+                      },
+                      {
+                        "const": "staff",
                         "type": "string"
                       }
                     ]
@@ -3684,9 +3760,15 @@
                 ],
                 "properties": {
                   "satiety": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                    "type": "integer"
+                  },
+                  "hurt": {
                     "minimum": 1,
                     "maximum": 100,
-                    "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                    "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
                     "type": "integer"
                   }
                 }
@@ -3712,6 +3794,10 @@
                       },
                       {
                         "const": "axe",
+                        "type": "string"
+                      },
+                      {
+                        "const": "staff",
                         "type": "string"
                       }
                     ]
@@ -3960,6 +4046,12 @@
               "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
               "maxLength": 80,
               "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+              "type": "string"
+            },
+            "starter": {
+              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+              "maxLength": 80,
+              "description": "Offered to a character of this starter only: a start's own first task. Left out: every character.",
               "type": "string"
             },
             "type": {
@@ -4347,12 +4439,29 @@
                         "minimum": 1,
                         "maximum": 999,
                         "type": "integer"
+                      },
+                      "instead": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "What a start whose kit holds the item gets in its place: something that kit lacks.",
+                        "type": "string"
                       }
                     }
                   }
                 },
                 "recipes": {
                   "maxItems": 4,
+                  "type": "array",
+                  "items": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  }
+                },
+                "opens": {
+                  "maxItems": 2,
+                  "description": "Ids of restores the quest opens when it is done: a place reward, the way a restore opens by hand.",
                   "type": "array",
                   "items": {
                     "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
@@ -4596,9 +4705,15 @@
                 ],
                 "properties": {
                   "satiety": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                    "type": "integer"
+                  },
+                  "hurt": {
                     "minimum": 1,
                     "maximum": 100,
-                    "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                    "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
                     "type": "integer"
                   }
                 }
@@ -4624,6 +4739,10 @@
                       },
                       {
                         "const": "axe",
+                        "type": "string"
+                      },
+                      {
+                        "const": "staff",
                         "type": "string"
                       }
                     ]
@@ -4900,8 +5019,8 @@
               "type": "string"
             },
             "inputs": {
-              "minItems": 1,
               "maxItems": 6,
+              "description": "What the player brings to restore it. Empty: it does not open by hand, only as a quest's reward.opens.",
               "type": "array",
               "items": {
                 "additionalProperties": false,
@@ -5184,9 +5303,15 @@
                 ],
                 "properties": {
                   "satiety": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                    "type": "integer"
+                  },
+                  "hurt": {
                     "minimum": 1,
                     "maximum": 100,
-                    "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                    "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
                     "type": "integer"
                   }
                 }
@@ -5212,6 +5337,10 @@
                       },
                       {
                         "const": "axe",
+                        "type": "string"
+                      },
+                      {
+                        "const": "staff",
                         "type": "string"
                       }
                     ]
@@ -5777,9 +5906,15 @@
                 ],
                 "properties": {
                   "satiety": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                    "type": "integer"
+                  },
+                  "hurt": {
                     "minimum": 1,
                     "maximum": 100,
-                    "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                    "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
                     "type": "integer"
                   }
                 }
@@ -5805,6 +5940,10 @@
                       },
                       {
                         "const": "axe",
+                        "type": "string"
+                      },
+                      {
+                        "const": "staff",
                         "type": "string"
                       }
                     ]
@@ -6112,7 +6251,7 @@
             },
             "kit": {
               "maxItems": 6,
-              "description": "What the character carries on the first morning: the tools of its first task, put in the bag when the character is chosen.",
+              "description": "What the character carries on the first morning: the tools of its first task, put in the bag when the character is chosen. A piece with a working \"wear\" slot is worn from the start.",
               "type": "array",
               "items": {
                 "additionalProperties": false,
@@ -6134,6 +6273,38 @@
                     "type": "integer"
                   }
                 }
+              }
+            },
+            "wake": {
+              "additionalProperties": false,
+              "description": "The tile the character wakes on. Left out: the map's spawn.",
+              "type": "object",
+              "required": [
+                "x",
+                "y"
+              ],
+              "properties": {
+                "x": {
+                  "minimum": 0,
+                  "maximum": 1023,
+                  "type": "integer"
+                },
+                "y": {
+                  "minimum": 0,
+                  "maximum": 1023,
+                  "type": "integer"
+                }
+              }
+            },
+            "intro": {
+              "minItems": 1,
+              "maxItems": 4,
+              "description": "What the narrator says as the character wakes, one box a line. Left out: the game's own waking lines.",
+              "type": "array",
+              "items": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string"
               }
             }
           }
@@ -6367,9 +6538,15 @@
                 ],
                 "properties": {
                   "satiety": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                    "type": "integer"
+                  },
+                  "hurt": {
                     "minimum": 1,
                     "maximum": 100,
-                    "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                    "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
                     "type": "integer"
                   }
                 }
@@ -6395,6 +6572,10 @@
                       },
                       {
                         "const": "axe",
+                        "type": "string"
+                      },
+                      {
+                        "const": "staff",
                         "type": "string"
                       }
                     ]
@@ -6861,9 +7042,15 @@
                 ],
                 "properties": {
                   "satiety": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                    "type": "integer"
+                  },
+                  "hurt": {
                     "minimum": 1,
                     "maximum": 100,
-                    "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                    "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
                     "type": "integer"
                   }
                 }
@@ -6889,6 +7076,10 @@
                       },
                       {
                         "const": "axe",
+                        "type": "string"
+                      },
+                      {
+                        "const": "staff",
                         "type": "string"
                       }
                     ]
@@ -7450,9 +7641,15 @@
                 ],
                 "properties": {
                   "satiety": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                    "type": "integer"
+                  },
+                  "hurt": {
                     "minimum": 1,
                     "maximum": 100,
-                    "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                    "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
                     "type": "integer"
                   }
                 }
@@ -7478,6 +7675,10 @@
                       },
                       {
                         "const": "axe",
+                        "type": "string"
+                      },
+                      {
+                        "const": "staff",
                         "type": "string"
                       }
                     ]
@@ -7984,9 +8185,15 @@
                 ],
                 "properties": {
                   "satiety": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                    "type": "integer"
+                  },
+                  "hurt": {
                     "minimum": 1,
                     "maximum": 100,
-                    "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                    "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
                     "type": "integer"
                   }
                 }
@@ -8012,6 +8219,10 @@
                       },
                       {
                         "const": "axe",
+                        "type": "string"
+                      },
+                      {
+                        "const": "staff",
                         "type": "string"
                       }
                     ]
@@ -8623,9 +8834,15 @@
                 ],
                 "properties": {
                   "satiety": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                    "type": "integer"
+                  },
+                  "hurt": {
                     "minimum": 1,
                     "maximum": 100,
-                    "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                    "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
                     "type": "integer"
                   }
                 }
@@ -8651,6 +8868,10 @@
                       },
                       {
                         "const": "axe",
+                        "type": "string"
+                      },
+                      {
+                        "const": "staff",
                         "type": "string"
                       }
                     ]
@@ -8911,6 +9132,9 @@
             "satiety_cap",
             "satiety_drain_per_min",
             "day_length_ms",
+            "walk_step_ms",
+            "hp_low_pct",
+            "hazard",
             "bag_base",
             "starting_gold_mg",
             "per_point"
@@ -9496,6 +9720,301 @@
                 }
               }
             },
+            "walk_step_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Milliseconds the player takes to walk one tile. The client walks at this pace; the kernel checks a position report against it (DECISIONS.md, 2026-10-10: health and hazards)."
+            },
+            "hp_low_pct": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Work takes half as long again while health is at or below this share of its cap, in percent. 0 slows it only when health is empty (G32)."
+            },
+            "hazard": {
+              "additionalProperties": false,
+              "description": "How hard each kind of hazard hits (G30, G34). A hazard is a rule, not a roll.",
+              "type": "object",
+              "required": [
+                "predator",
+                "pit",
+                "trap",
+                "deep_water"
+              ],
+              "properties": {
+                "predator": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "reach",
+                    "catch_ms",
+                    "bite_ms",
+                    "bite_pct"
+                  ],
+                  "properties": {
+                    "reach": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "Tiles from its footprint within which a predator notices the player, unless the prop says otherwise."
+                    },
+                    "catch_ms": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "From the start of a chase to the first bite."
+                    },
+                    "bite_ms": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "Between one bite and the next."
+                    },
+                    "bite_pct": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "What one bite takes, in percent of the health cap."
+                    }
+                  }
+                },
+                "pit": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "harm_pct"
+                  ],
+                  "properties": {
+                    "harm_pct": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "What stepping into a pit takes, in percent of the health cap."
+                    }
+                  }
+                },
+                "trap": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "harm_pct"
+                  ],
+                  "properties": {
+                    "harm_pct": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "What stepping on a trap takes, in percent of the health cap."
+                    }
+                  }
+                },
+                "deep_water": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "harm_pct"
+                  ],
+                  "properties": {
+                    "harm_pct": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "What stepping into deep water takes, in percent of the health cap."
+                    }
+                  }
+                }
+              }
+            },
             "bag_base": {
               "additionalProperties": false,
               "type": "object",
@@ -9925,9 +10444,15 @@
                 ],
                 "properties": {
                   "satiety": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                    "type": "integer"
+                  },
+                  "hurt": {
                     "minimum": 1,
                     "maximum": 100,
-                    "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                    "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
                     "type": "integer"
                   }
                 }
@@ -9953,6 +10478,10 @@
                       },
                       {
                         "const": "axe",
+                        "type": "string"
+                      },
+                      {
+                        "const": "staff",
                         "type": "string"
                       }
                     ]
@@ -10478,9 +11007,15 @@
                 ],
                 "properties": {
                   "satiety": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                    "type": "integer"
+                  },
+                  "hurt": {
                     "minimum": 1,
                     "maximum": 100,
-                    "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                    "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
                     "type": "integer"
                   }
                 }
@@ -10506,6 +11041,10 @@
                       },
                       {
                         "const": "axe",
+                        "type": "string"
+                      },
+                      {
+                        "const": "staff",
                         "type": "string"
                       }
                     ]
@@ -10895,6 +11434,54 @@
                     "maxLength": 240,
                     "type": "string",
                     "description": "A line shown when the player looks at this prop, for example an old inscription."
+                  },
+                  "hazard": {
+                    "additionalProperties": false,
+                    "description": "Makes the prop a hazard (G30-G35). It needs an id.",
+                    "type": "object",
+                    "required": [
+                      "kind",
+                      "window"
+                    ],
+                    "properties": {
+                      "kind": {
+                        "description": "A predator hunts the player in its reach and bites until the player stands somewhere safe; a pit, a trap or deep water hurts once each time the player steps onto its footprint.",
+                        "anyOf": [
+                          {
+                            "const": "predator",
+                            "type": "string"
+                          },
+                          {
+                            "const": "pit",
+                            "type": "string"
+                          },
+                          {
+                            "const": "trap",
+                            "type": "string"
+                          },
+                          {
+                            "const": "deep_water",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "window": {
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "description": "When it acts (G30). Outside its window it is harmless and shows.",
+                        "type": "array",
+                        "items": {
+                          "const": "night",
+                          "type": "string"
+                        }
+                      },
+                      "reach": {
+                        "minimum": 1,
+                        "maximum": 12,
+                        "description": "A predator only: how many tiles from its footprint it notices the player. The params hold the default.",
+                        "type": "integer"
+                      }
+                    }
                   }
                 }
               }
@@ -11031,6 +11618,10 @@
                     "minLength": 1,
                     "maxLength": 40,
                     "type": "string"
+                  },
+                  "safe": {
+                    "description": "A safe area (G30): no hazard acts inside it at any hour, a chase ends when the player stands in it, and what the player carries in is theirs. The cobbles of the town and the camp once a part stands are safe without this.",
+                    "type": "boolean"
                   }
                 }
               }

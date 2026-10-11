@@ -6,7 +6,7 @@ Paths starting with / are on this site. Content goes in content/extensions/<your
 
 ## Guide
 
-- [Add a fruit in 10 minutes](https://github.com/Bobikobi/GAME/blob/develop/docs/creators/README.md): the creator guide - run the game, copy the template, check, open a pull request; profiles, signatures and points
+- [Add a fruit in 10 minutes](/docs/): the creator guide - run the game, copy the template, check, open a pull request; profiles, signatures and points
 - [The template](https://github.com/Bobikobi/GAME/tree/develop/templates/extension): a working extension (a fruit bush and a quest) to copy and rename
 - [Developer area](/hub/): where to start, the tools and the boards
 
@@ -19,7 +19,7 @@ Paths starting with / are on this site. Content goes in content/extensions/<your
 
 ## Data
 
-- [hub-data.json](/api/hub-data.json): the boards, the requests and this week in one document, format in [hub-data.schema.json](/api/schema/hub-data.schema.json); published once the data build is part of the site
+- [hub-data.json](/api/hub-data.json): the boards, the requests and this week in one document, format in [hub-data.schema.json](/api/schema/hub-data.schema.json), rebuilt with the site
 - [Boards](/hub/boards/): builders and reviewers with the weights their points are computed with
 
 ## MCP
@@ -28,6 +28,7 @@ Paths starting with / are on this site. Content goes in content/extensions/<your
 
 ## Rules
 
+- [Rules](/hub/rules/): the loop's numbers, how points are counted, the value of every item, the licences and conduct
 - [How to contribute](https://github.com/Bobikobi/GAME/blob/develop/CONTRIBUTING.md): how a pull request is reviewed and merged
 - [Code licence](https://github.com/Bobikobi/GAME/blob/develop/LICENSE): AGPL-3.0
 - [Content licence](https://github.com/Bobikobi/GAME/blob/develop/content/LICENSE): CC BY-SA 4.0, for every record and sprite

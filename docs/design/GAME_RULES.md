@@ -1,7 +1,7 @@
 # Game rules: what keeps Openfold fun
 
 This page is the product owner's. Developers, creators and AI agents
-follow it the way `kernel/` follows its rules R1-R11: a request that breaks a
+follow it the way `kernel/` follows its rules R1-R12: a request that breaks a
 rule is not built quietly and the rule is not bent quietly. Section 6 says what
 happens instead. A rule changes only by the owner's word, written the same day
 in [DECISIONS.md](../../DECISIONS.md).
@@ -42,8 +42,8 @@ pillar higher on this list wins. A feature that serves none of them is cut.
 4. **The world is the interface.** World objects carry play: they change what
    the player can do or where they can go. Menus carry information and live in
    buttons. Nothing is built in the world in order to open a menu.
-5. **Effort is never wasted.** A miss keeps something, a wrong answer teaches,
-   a walk has a find on the way.
+5. **Effort is never wasted.** A miss turns up something, a wrong answer
+   teaches, a walk has a find on the way.
 
 ## 2. The loop and the hook ladder
 
@@ -59,17 +59,18 @@ sound, a name and where it went. The next goal is visible before the glow fades.
 
 The ladder below says what must happen at each stage of a player's life in the
 valley. A change that removes a rung, or moves its payoff later, is a product
-question (section 6).
+question (section 6). Its minutes are minutes at the screen, and its Day 2 is
+the valley's, never the calendar's.
 
 | Stage | The beat | The payoff | Never |
 |---|---|---|---|
-| 0:00-0:15 | The player moves and presses A at a river stone. | The strike minigame, a stone in the bag, the counter moves. | A lore screen, a naming wizard, more than one box of text. |
-| 0:15-1:00 | The first stone. | Level 1, the jingle, a skill point to spend now. | A level with nothing to spend. |
-| 1-5 min | The bridge mends, the fire is built, the first meal cooks. | A tile changes, a sign carries the player's name, a recipe works. | A build that only opens a panel. |
-| 5-10 min | The town: Maru's story, Pell's stall, the first choice. | The basket or the trowel: a real choice, both lead on. | A fetch with a counter and nothing to notice. |
-| 10-20 min | The first riddle: an inscription points to a dig. | A rare find, a recipe scrap, a place that opens. | A read with no payoff. |
+| 0:00-0:15 | Each start wakes at its own place and does its own first task: the forager picks herbs on the west bank, the digger digs its axe out of the slid bank, the explorer follows its senses to its axe in the grass by the bridge. | Something in the bag at once, found the start's own way. | A lore screen, a naming wizard, more than one box of text. |
+| 0:15-1:00 | The first strike, at the bridge's keystone in the shallows. | The strike minigame, taught once; level 1, the jingle, a skill point to spend now. | A level with nothing to spend. |
+| 1-5 min | The bridge mends; a tree is felled with the axe each start holds or finds; the fire is built. | A tile changes, a sign carries the player's name, a purse: the price of one tool, in gold only. | A build that only opens a panel. |
+| 5-8 min | The town: whom to help first, Maru or Pell; then Maru's coin; at dusk, the riddle. | A real choice: Maru pays with his old trowel, Pell with a recipe and coin, and the stall says what each tool opens. Both plants are open from noon until dark, so neither order waits. From 19:00 the hill lantern lights the tile to dig. | A fetch with a counter and nothing to notice. |
+| 8-10 min | After dark, the broken arch at the edge of the ruins. | A way under the arch that rubble filled by day, to the threshold of the night ruins: a place that opens, the first sight of the expeditions (G36). | Something to fight or something that hunts (G35). |
 | Session end | A visible mark of the day. | The day summary: what was found, built, learned; one open door. | Stopping in the middle of nothing. |
-| Day 2 | Something changed overnight. | A respawned grove, a new line from an NPC, a bell at night. | The same valley as yesterday. |
+| Day 2 | The morning after the first night, slept or played through: something changed overnight. Away, the valley waits at the hour it was left (G28). | The morning toast, a respawned grove, a new line from an NPC, a bell at night. | The same valley as yesterday. |
 
 ## 3. The rules
 
@@ -125,9 +126,10 @@ and G10 are the ones `pnpm check` can test today (section 8).
 ### Choices
 
 - **G12 A choice is real.** Neither side is strictly better, both lead on, and
-  the game shows the difference before the choice (the basket or the trowel is
-  the model). A choice with one side greyed out, or two sides that play the
-  same, is cut.
+  the game shows the difference before the choice (whom to help first is the
+  model: each neighbour says what its errand gives, the two rewards differ in
+  kind, and the other errand waits; DECISIONS.md, 10.10). A choice with one
+  side greyed out, or two sides that play the same, is cut.
 
 ### Feel
 
@@ -136,13 +138,21 @@ and G10 are the ones `pnpm check` can test today (section 8).
   where it went.
 - **G14 Two lines, one box.** At most two lines per box, one box per beat, no
   box in the middle of a timed action.
-- **G15 A miss keeps something.** Today a missed strike keeps the stone half
-  the time; it never keeps nothing. Three misses in a row show a hint.
+- **G15 A miss turns up something, never an empty hand.** A missed strike
+  gives something other than the node's item, from the node's own miss table:
+  a bruised fruit, grit, now and then a rare find, now and then only a thorn.
+  Every row of a table is a thing with a value. The jackpot strip stays the
+  reward for precision. Three misses in a row show a hint. A creator adds a
+  surprise by adding a row (DECISIONS.md, 10.10). Until the kernel reads the
+  tables (CR-60) a miss keeps one unit half the time.
 
 ### Session
 
 - **G16 A session ends on a mark and leaves a door.** The day summary says
   what was found, built and learned, and names one thing waiting for tomorrow.
+  A valley's day ends when the player sleeps, or at 05:00 when the night is
+  played through; the summary comes then, before the morning toast, and waits
+  until the player stands in a safe place (G30; DECISIONS.md, 10.10).
 
 ### Variety
 
@@ -177,7 +187,7 @@ what it looks like in the valley.
 | `discovery` | Goes where nothing sends them and finds a place. | "I found it myself." | Autonomy, wonder | Skyrim's far peaks and cave mouths | A place in the mist that opens when you stand at the arch at night. |
 | `fetch_twist` | Brings a thing that is not where it should be, or that someone else wants too. | "So that is where it was." | Competence, surprise | Fallout's "simple" deliveries | The berries grow only where the bells rang (three-fruits after P-3). |
 | `dilemma` | Chooses between two answers with no right one; both lead on. | "That was my call." | Autonomy, meaning | The Witcher 3's choices; Fallout's water chip | Give the old coin to Maru, or trade it with Pell; the valley remembers either. |
-| `skill` | Beats a timing or precision challenge with a harder window. | "Nailed it." | Competence, hard fun | Skyrim's lockpicking; Fallout's VATS | A rare node whose strike window is half the usual; a miss still keeps half. |
+| `skill` | Beats a timing or precision challenge with a harder window. | "Nailed it." | Competence, hard fun | Skyrim's lockpicking; Fallout's VATS | A rare node whose strike window is half the usual; a miss turns up something from the node's miss table (G15). |
 | `collection` | Completes a set shown in one place. | "One more." | Completion, ownership | Skyrim's Stones of Barenziah; Fallout's bobbleheads | A set of treasures on a shelf that NPCs notice when it is full (the shelf's future, section 5 row 1). |
 | `tending` | Keeps something alive or safe over time. | "They needed me." | Relatedness, care | Companions in Skyrim; animals in Stardew Valley | Keep the fire lit through one night; a sapling watered three mornings. |
 | `riddle` | Reads clues in the world and answers with an action. | "Aha." | Insight, hard fun | Skyrim's pillar puzzles; The Witcher 3's riddles | The three ruin stones and the dig under the hill-facing statue. |
@@ -186,7 +196,7 @@ what it looks like in the valley.
 | `persuasion` | Asks the right question or brings the right fact. | "I talked my way in." | Relatedness, autonomy | Fallout's speech checks; The Witcher 3's talks | The trade opens only after the player asks Pell about the mist. |
 | `errand` | Repeats a known task for a known pay. | "Easy coins." | Routine, easy fun | Skyrim's radiant quests; The Witcher 3's notice boards | Pell's standing order for herbs, marked as an errand, only after the main beat (G4). |
 | `maze` | Finds the way through a place whose shape is the question: dead ends, a landmark seen over the trees, a sign that tells the right turn. | "I found the way." | Competence, autonomy (the route is the player's own) | The Lost Woods in Zelda (the route is read from the world, a wrong turn sends you back); Tunic (paths hide in plain sight until a page shows them) | A tangle of forest beyond the ruins, drawn in the map alone: dead ends that cost a walk back, one landmark over the canopy, the moss side of the trunks for the player who looks; the step is a `visit` of the clearing at its heart, nothing new in the kernel. |
-| `stealth` | Passes a hazard unseen: learns its loop, waits for the window, takes the route it does not watch. | "It never saw me." | Thrill, competence | Breath of the Wild's Yiga hideout (a walked loop with a window to cross); Untitled Goose Game (being seen costs a retreat, never a life) | The wolf's round at night, over G30-G35: a loop the player learns by its eyes in the dark, reeds and shadow that hide the player, light and the road as the way out when it fails; seen means a chase and the walk back to the fire, never a fight (G35). Waits for the hazard system (P-5). |
+| `stealth` | Passes a hazard unseen: learns its loop, waits for the window, takes the route it does not watch. | "It never saw me." | Thrill, competence | Breath of the Wild's Yiga hideout (a walked loop with a window to cross); Untitled Goose Game (being seen costs a retreat, never a life) | The wolf's round at night, over G30-G35: a loop the player learns by its eyes in the dark, reeds and shadow that hide the player, running back to a safe place as the way out when it fails; seen means a chase and the walk back to the fire, never a fight (G35). Waits for the hazard system (P-5). |
 
 `maze` and `stealth` entered on 9.10 by the owner's word (DECISIONS.md); each
 joins `quest.type` with its first quest, and the schema's count follows.
@@ -266,7 +276,16 @@ already handles that and the e2e run checks it.
 - **G28 No dark patterns.** The valley waits. No punishment for being away,
   no timer that runs out while the player sleeps, no fake scarcity, no "last
   chance", nothing to pay for. A return is rewarded (the ladder's Day 2); an
-  absence is never punished.
+  absence is never punished. One written exception, for the valley's
+  holidays: a holiday falls on its real dates every year, and what it
+  gives is that year's only, a look or a title marked with the year, bound to
+  the character and never traded. A player who misses it does not get it
+  later; the next year's holiday gives its own. This is the one "last chance"
+  the game has, and it costs a look or a title, never a use, a recipe, a tool
+  or a way forward (G42; DECISIONS.md, 10.10). The exception for scarce
+  plots and houses in a shared town ([SETTLEMENT.md](SETTLEMENT.md) 3.2) is
+  paused with player houses and plots, and comes back only with them
+  (DECISIONS.md, 10.10).
 - **G29 Playable by more people.** Text at 16 px or more and dialogue at 18
   (FTUE); colour is never the only signal (a glint has a shape, a tone has a
   word); reduced motion is honoured by every effect; one hand is enough on a
@@ -278,45 +297,68 @@ already handles that and the e2e run checks it.
 Added 2026-10-08 on the owner's word (DECISIONS.md, that day's falling entry).
 The valley has no combat; its danger is the hour, and what the player eats.
 
-- **G30 The town and the camp are safe; the night and the mist hunt.** The town
-  and the player's camp are safe at every hour. Outside them the hazards that
-  hunt (the wolf, the hidden pit, the trap, deep water) act after dark (the
-  clock the world already keeps: dark from 21:00 to 04:00, fading over two
-  hours each side) and inside the mist; by day they show and can be walked
-  around: the trap is visible, the wolf sleeps, the pit is lit. What the player
-  picks or eats can hurt at any hour: a bad fruit takes health in daylight too,
-  and a player can fall at noon from it.
-- **G31 Nobody falls unwarned.** A countdown to nightfall sits at the screen's
-  edge while the player is outside a safe area (in the first levels, with a
-  banner too). Leaving a safe area after dark, or dark arriving outside one,
-  lights the lantern and opens one warning box (G14), once per night.
+- **G30 The town and a burning camp are safe; the night and the mist hunt.**
+  The town and all ground at danger level 0 are safe at every hour, and a camp
+  is safe while its fire burns, another player's only for a guest whose stay
+  its owner approved: any of these is a safe place, or a safe area,
+  the one thing every rule below means (DECISIONS.md, 10.10). The fire eats
+  wood through the night, more the deeper the area and none at danger level 0,
+  where the opening's camp stands. A camp anywhere else outside the
+  town is a tent the player buys and pitches, with wood enough for the night
+  ([SETTLEMENT.md](SETTLEMENT.md) S2). Outside these the hazards that hunt (the
+  wolf, the hidden pit, the trap, deep water) act after dark (the clock the
+  world already keeps: dark from 20:00 to 05:00, with the dusk ramp drawn
+  around it) and inside the mist; by day they show and can be walked around: the
+  trap is visible, the wolf sleeps, the pit is lit. What the player picks or
+  eats can hurt at any hour: a bad fruit takes health in daylight too, and a
+  player can fall at noon from it.
+- **G31 Nobody falls unwarned.** A countdown to nightfall or to the mist's
+  coming, whichever is first, sits at the screen's edge while the player is
+  outside a safe area (in the first levels, with a banner too). Entering the
+  mist, the mist arriving, leaving a safe area after dark, or dark arriving
+  outside one lights the player's lantern and opens one warning box (G14),
+  once per night. A burning camp warns before its fire goes out.
+  The lantern is the sign that the night has begun, not a shield: its light
+  keeps nothing off, and only a safe place does (G30, G34).
 - **G32 Health is the one bar.** The food bar becomes the health bar. Hazards
-  take health; food, a first-aid kit and a night's sleep at camp give it back;
-  low health slows work the way the empty bar did. Nothing drains it by the
-  clock (G28): there is no hunger timer, eating is how the player heals, and
-  cooking keeps its purpose.
+  take health; food, a first-aid kit and a night's sleep in town, at one's own
+  burning camp or at another's as a guest with a deal give it back; low health
+  slows work the way the empty bar did.
+  Nothing drains it by the clock (G28): there is no hunger timer, eating is how
+  the player heals, and cooking keeps its purpose. Until P-5 builds this the
+  food bar still drains by the clock (`satiety_drain_per_min`); the rule holds
+  from P-5, which comes right after the axe and the starts (DECISIONS.md,
+  10.10).
 - **G33 A fall is clear, and it costs the outing.** At zero health the player
   falls: crosses for eyes, the body sinks into the ground, one plain box says
   what happened; no gravestone, nothing left in the world. The player reappears
   in the town they were last in, on a random tile inside its bounds (before the
-  first town: where they started). What was gathered on that outing is lost,
-  and a quest that was in progress starts again from its first step; nothing
-  marks where the fall was. The bag from before the outing, the camp, the gold,
-  the levels and the quests already done are untouched. The cost is the lesson:
+  first town: where they started). An outing runs from leaving a safe place
+  (G30) to reaching one again, or to a fall. What was gathered on that outing
+  is lost, nothing spent on it comes back, each quest goes back to the step it
+  stood at when the outing began, and a place found on it counts only once
+  brought home; nothing marks where the fall was. The bag from before the
+  outing, the camp, the gold, the levels and the quests already done are
+  untouched. The cost is the lesson:
   a bad fruit eaten on the way means the basket is gone and the walk is made
   again.
-- **G34 A hazard is a rule, not a roll.** Each hazard acts by a rule the player
-  can learn, and each has one thing to buy and one thing to make that answers
-  it: the wolf keeps off a lit lantern, thrown food holds it, the road ends the
-  chase (lantern oil to buy; a torch from wood to make); the pit is where the
-  floor is broken (a rope); the trap shows by day (nothing to buy: look); the
-  herb is bad raw and safe cooked (an antidote; a bandage from herbs); deep
-  water is the river without its bridge at night. Chance, where a rule has it,
-  runs through the kernel's own random stream so the server at stage 2a can
-  replay it.
-- **G35 No fighting.** Predators are hazards, not enemies: light, food and feet
-  are the answers. Combat stays where the spec puts it (stage 8, or a community
-  vote).
+- **G34 A hazard is a rule, not a roll, and the answer is a run, never gear.**
+  Each hazard acts by a rule the player can learn, and no thing bought or made
+  answers it (DECISIONS.md, 9.10 and 10.10). A hunting hazard (the wolf, the
+  hidden pit, the trap, deep water at night) is escaped by running back to a
+  safe place (G30: the town, all ground at danger level 0, or a camp whose fire
+  burns), and the run is hard
+  and possible; the rest are avoided by knowing the rule: the trap shows by
+  day, the pit is where the floor is broken, the herb is bad raw and safe
+  cooked, deep water is the river without its bridge at night. Food, a
+  first-aid kit and a bandage give health back (G32); they heal, they do not
+  answer a hazard. Chance, where a rule has it, runs through the kernel's own
+  random stream so the server at stage 2a can replay it. Road thieves wait for
+  weapons (G35).
+- **G35 No fighting.** Predators are hazards, not enemies: the answer is to run
+  back to a safe place, never gear. Combat stays where the spec puts it (stage
+  8, or a community vote), and the road thieves of the boards entry wait for
+  it.
 
 ### Expeditions
 
@@ -335,13 +377,20 @@ day); the audit behind them is `docs/design/CRAFTING_AUDIT.md`.
 
 - **G38 Crafting is a road, not the road.** A player who never crafts
   progresses by the roads already written: hard quests, treasure and digging,
-  riddles, mastery of the minigames, the expedition and reputation, fenced by
-  a profession or character level where a road needs it. War, theft and
-  robbery stay out (G35, G28).
+  riddles, mastery of the minigames, the expedition and reputation, fenced by a
+  profession or character level where a road needs it. War, theft and robbery
+  stay out (G35, G28), except later in the areas between players that a player
+  chooses to enter, once combat comes ([SETTLEMENT.md](SETTLEMENT.md) 3.9).
 - **G39 Power is never sold.** No crafted ability, recipe, material or tool is
-  sold or gated for money or premium currency. Only a look item with no
-  effect may carry the premium marker, and it keeps a way to get it in the
-  game.
+  sold or gated for money or premium currency. Only a look item with no effect
+  may carry the premium marker, and it keeps a way to get it in the game. A
+  look bought with money or premium currency is bound to the account: never
+  traded, never sold to the trader, so money never turns into gold. The same
+  look found in the game trades like any item (DECISIONS.md, the entry on
+  bought looks). Premium currency is bought with money only, and is never
+  bought with gold, traded, given or turned into gold; it counts on no board.
+  Gold never turns into money either: the creators' money fund and the gold
+  pool of D5 stay apart (DECISIONS.md, the entry on prices and gold).
 - **G40 A craft can miss, and a miss keeps something.** Skill decides the
   chance and luck only tilts it; a miss is never nothing (G15): it keeps part
   of the inputs and makes nothing else. The value table prices a recipe at
@@ -353,11 +402,17 @@ day); the audit behind them is `docs/design/CRAFTING_AUDIT.md`.
   only from a gated source - a level gate (the node's, or the band of the
   recipe that makes it), a slow respawn, a find table or a quest reward - and
   no shop sells it.
-- **G42 Rare is capacity and gates, never a timer.** How many nodes, how
-  slowly they return, their hours, the level and the tool they ask, the find
-  tables. Waiting is never paid (R6), no event timer or "last chance" makes a
-  thing rare (G28), and the rarity bonuses of the whole world share one
-  budget.
+- **G42 Rare is capacity and gates, never a timer.** How many nodes, how slowly
+  they return, their hours, the level and the tool they ask, the find tables.
+  Waiting is never paid (R6), no event timer or "last chance" makes a thing
+  rare (G28), and the rarity bonuses of the whole world share one budget. Two
+  written exceptions, both on the real calendar (DECISIONS.md, the entries on
+  the calendar). The valley's holidays: what only a holiday gives is a look or
+  a title marked with the year, that year's only, bound to the character and
+  never traded; the holiday comes back every year and gives its own that year
+  (G28). Things of one season of the year, back every year: each shares its
+  class with a thing found all year, so no recipe, quest step or tool waits
+  for a season, and missing one costs a wait, never a use.
 - **G43 A long recipe is a chain of short steps.** Intermediate things made at
   stations, one tier per station step, every action inside the action cap.
   The journal shows the question, not the whole chain (G3).
@@ -374,16 +429,33 @@ day); the audit behind them is `docs/design/CRAFTING_AUDIT.md`.
   a new verb, station, profession, effect or parameter comes in a core
   release. Metal waits for its discovery.
 
+### Menace
+
+Added 2026-10-10 by the sweep for holes, and changed the same day on the
+owner's word (DECISIONS.md, the entry on menace with a limit).
+
+- **G46 Menace with a limit.** Danger shows through shape, sound and the dark,
+  and blood, a wound and a fallen body may show too, within a limit: nothing
+  lingers, nothing is shown close up, no gore is there for its own sake, and no
+  suffering is played for show. Blood and a wound show small and brief, at the
+  sprite's own size. A person, the player or a character of the valley, never
+  bleeds or shows a wound at the moment of harm: the hit shows the health it
+  takes, and a wound on a person shows only afterwards, as a bandage or a torn
+  sleeve. A fall keeps its look (crosses for eyes, a sinking into the ground,
+  G33). It is visual only and changes no rule, number or state. The text says
+  the player fell, never that they died or were killed, since the player wakes
+  again in town. The aim is ESRB E10+ and PEGI 12.
+
 ### What this page covers, and what lives elsewhere
 
 | Topic | Where | State |
 |---|---|---|
 | The opening and onboarding | [FTUE_RESEARCH.md](../FTUE_RESEARCH.md) | Written; roadmap phases 2 and 3 open. |
-| Loop and hook, quests, riddles, reading, builds, choices, feel, session, variety, dialogue, sound, fairness, access, danger, expeditions, crafting | This page | Rules G1-G45. |
-| Economy and balance | The kernel rules R1-R11, `content/core/params.json`, `pnpm values` | Enforced by code. |
+| Loop and hook, quests, riddles, reading, builds, choices, feel, session, variety, dialogue, sound, fairness, access, danger, expeditions, crafting, menace | This page | Rules G1-G46. |
+| Economy and balance | The kernel rules R1-R12, `content/core/params.json`, `pnpm values` | Enforced by code. |
 | Art and sprites | [docs/creators/README.md](../creators/README.md) | Enforced by the kit check. |
 | Community: requests, votes, merges, conduct | [CONTRIBUTING.md](../../CONTRIBUTING.md), [docs/loop/README.md](../loop/README.md) | Live. |
-| Difficulty curve and pacing beyond the ladder | Not written | After P-3, with play data from the hub's usage section. |
+| Difficulty curve and pacing beyond the ladder | [SETTLEMENT.md](SETTLEMENT.md) 3.6, one internal difficulty scale (S3, 9.10) | The scale is written; the pacing waits for play data from the hub's usage section, after P-3. |
 | Performance budget on a phone | Not written | Measure on a real device first (DECISIONS.md, the Phaser entry); then a number here. |
 | A second language | Not written | No (owner, 8.10): English only, see G22. |
 
@@ -407,7 +479,9 @@ Named so a review can point at one in two words.
 | Same again | Two quests in a row of one type, or three items in a row got by the same motion. | G17, G18 |
 | Silent night | A fall with no countdown and no warning box before it. | G31 |
 | Breadcrumb | A fall that leaves a stash, a pin or a line saying where to go back to. | G33 |
-| Hunger clock | A bar that empties by the clock, awake or asleep. | G32, G28 |
+| Hunger clock | A bar that empties by the clock, awake or asleep (the kernel still drains it until P-5). | G32, G28 |
+| Gear answer | A thing bought or made as the answer to a hazard: oil, a torch, a rope, an antidote. | G34 |
+| Empty miss | A missed strike that gives nothing at all. | G15 |
 | Quiz talk | A topic list with one right pick, or a line that exists to explain. | G19, G23 |
 
 ## 5. Known breaches on 2026-10-07
@@ -469,7 +543,7 @@ build pay less.
 
 ## 7. The review checklist
 
-For every pull request that touches play. Ten questions, yes or no; a "no"
+For every pull request that touches play. Eleven questions, yes or no; a "no"
 names the rule and the pull request waits.
 
 1. Does every new or changed quest ask a question the player can state? (G1)
@@ -483,10 +557,13 @@ names the rule and the pull request waits.
 7. Does every new action answer within a tenth of a second, land with a beat,
    and have both a visible and an audible twin? (G13, G24, G27)
 8. Is every text box two lines or fewer, and never during a timed action? (G14)
-9. Does a miss keep something, and does the change hold with reduced motion
+9. Does a miss turn up something, and does the change hold with reduced motion
    and without colour? (G15, G29)
 10. Did the owner play the preview, or did the reviewer play it for him and say
     so in the pull request?
+11. Does any blood, wound or fallen body stay small, brief and never there
+    for show, with none on a person at the moment of harm, does it change no
+    rule or number, and does the text say the player fell, never died? (G46)
 
 ## 8. What the check enforces
 
@@ -505,7 +582,8 @@ test stays with the checklist above.
 | G17 | A quest with no `type`; two consecutive quests of one type in a `requires` chain; fewer than five types among the first ten quests. | error |
 | G14, G21 | A character's first meeting over three boxes, a standing over two, a topic over four; boxes over 80 characters, counted per character. | error |
 | G30 | A hunting hazard (predator, pit, trap, deep water) inside a safe area or with no window (`night`, `mist`); a bad fruit or herb needs none. | needs hazard props (P-5) |
-| G34 | A hazard with neither a bought nor a made answer in the content. | needs P-5 |
+| G15 | A node with no miss table, or a miss row that is not a thing with a value. | needs the miss tables (CR-60) |
+| G34 | A hazard whose content names an item as its answer, or a hunting hazard in an area with no safe place on the map. | needs P-5 |
 | G36 | An expedition with two problems of one type in a row, or a hazard its window does not cover. | needs the `expedition` kind (P-6) |
 | G41 | An item with no class or tier, or a tier the world has not opened; an output more than one tier above its highest input; a recipe level outside its tier's band; no camp part giving the recipe's station at its tier; no craft profession for the recipe; from tier 3 up, a node with neither the tier's level nor a slow respawn, or a shop that sells it. | error |
 | G42 | The rarity bonuses of the merged world over `rarity_budget_permille` (kernel review 8.2). | error |

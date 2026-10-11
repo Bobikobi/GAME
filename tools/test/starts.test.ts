@@ -1,6 +1,6 @@
 /**
- * Wood and the first starts (DECISIONS.md, 2026-10-10): the core content passes
- * with no line, and a fixture that breaks each rule gets an error that names it.
+ * Wood, the starts and the rewards they get (DECISIONS.md, 2026-10-10): the core
+ * content passes with no line, and a fixture that breaks each rule gets an error that names it.
  */
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -10,12 +10,15 @@ import { runCheck } from '../src/check';
 import { CONTENT_DIR } from '../src/load';
 
 describe('the core content', () => {
-  it('passes with no line: trees give the wood, every start holds an axe, Pell sells another', () => {
+  it('passes with no line: trees give the wood, every start holds or finds an axe, Pell sells another', () => {
     const result = runCheck();
     expect(result.issues).toEqual([]);
     const b = result.assembled.bundle!;
     expect(b.resources['core/oak-trees']!.tool).toBe('axe');
-    expect(Object.values(b.starters).every((s) => (s.kit ?? []).some((k) => b.items[k.item]?.tool?.kind === 'axe'))).toBe(true);
+    expect(Object.keys(b.starters).sort()).toEqual(['core/digger', 'core/explorer', 'core/forager']);
+    const axe = (item: string) => b.items[item]?.tool?.kind === 'axe';
+    const found = (id: string) => Object.values(b.treasures).some((t) => t.starter === id && t.finds.some((f) => axe(f.item)));
+    expect(Object.values(b.starters).every((s) => (s.kit ?? []).some((k) => axe(k.item)) || found(s.id))).toBe(true);
   });
 });
 
@@ -33,13 +36,41 @@ describe('a fixture that breaks each rule', () => {
   };
   // a start with no axe, no shop that sells one, and a fire that asks for more logs than the valley's trees give
   edit('starters/forager.json', (j) => {
-    delete j.starter!.kit;
+    j.starter!.kit = [{ item: 'core/basket', qty: 1 }];
   });
   edit('shops/trader-shop.json', (j) => {
     j.shop!.sells = (j.shop!.sells as { item: string }[]).filter((o) => o.item !== 'core/axe');
   });
   edit('camp/campfire.json', (j) => {
     j.camp!.inputs = [{ item: 'core/log', qty: 99 }];
+  });
+  // a start's own spot that can miss, one that asks for a tool its start lacks and lies off its road,
+  // and a start that wakes in the forest with a kit twice the others' and a point more (no shop sells an axe, so a found axe prices nothing)
+  edit('treasures/slid-bank.json', (j) => {
+    (j.dig!.finds as { chance_pct: number }[])[0]!.chance_pct = 50;
+  });
+  edit('treasures/bridge-glint.json', (j) => {
+    j.dig!.tool = 'trowel';
+  });
+  // a dig that asks for a staff
+  edit('treasures/ruins-gate.json', (j) => {
+    j.dig!.tool = 'staff';
+  });
+  edit('map.json', (j) => {
+    const slot = (j.map!.slots as { id: string; x: number; y: number }[]).find((sl) => sl.id === 'core/bridge-glint')!;
+    [slot.x, slot.y] = [8, 32];
+  });
+  edit('starters/digger.json', (j) => {
+    j.starter!.wake = { x: 0, y: 0 };
+    j.starter!.kit = [{ item: 'core/trowel', qty: 1 }, { item: 'core/basket', qty: 1 }];
+    (j.starter!.attributes as unknown as Record<string, number>).stamina = 3;
+  });
+  // a reward a kit repeats: Pell's herbs give a basket two kits hold, and the digger, whose kit holds Maru's trowel, gets a basket it holds too
+  edit('quests/herbs-for-pell.json', (j) => {
+    (j.quest!.reward as Record<string, unknown>).items = [{ item: 'core/basket', qty: 1 }];
+  });
+  edit('quests/three-fruits.json', (j) => {
+    (j.quest!.reward as { items: { instead: string }[] }).items[0]!.instead = 'core/basket';
   });
   // twigs from the ground: wood with no axe
   const ext = join(root, 'extensions', 'tester', 'resources');
@@ -75,10 +106,66 @@ describe('a fixture that breaks each rule', () => {
     expect(lines[0]!.file).toContain('twigs.json');
   });
 
+  it("a start's own spot that can miss", () => {
+    const lines = text('gives its one find every time');
+    expect(lines).toHaveLength(1);
+    expect(lines[0]!.file).toContain('slid-bank.json');
+  });
+
+  it("a start's own spot that asks for a tool the start does not wake with", () => {
+    const lines = text('does not wake with one');
+    expect(lines).toHaveLength(1);
+    expect(lines[0]!.file).toContain('bridge-glint.json');
+  });
+
+  it("a start's own spot out of its senses on the road to the bridge", () => {
+    const lines = text('is out of the senses of "core/explorer"');
+    expect(lines).toHaveLength(1);
+    expect(lines[0]!.file).toContain('bridge-glint.json');
+  });
+
+  it('a start that wakes where nobody can stand', () => {
+    const lines = text('is not a tile to stand on');
+    expect(lines).toHaveLength(1);
+    expect(lines[0]!.file).toContain('digger.json');
+  });
+
+  it('a start worth more than one band over the poorest', () => {
+    const lines = text('over the poorest start (30000 mg)');
+    expect(lines).toHaveLength(1);
+    expect(lines[0]!.file).toContain('digger.json');
+  });
+
+  it('a start whose attributes add up to more than the others', () => {
+    const lines = text('one attribute total');
+    expect(lines).toHaveLength(1);
+    expect(lines[0]!.file).toContain('digger.json');
+    expect(lines[0]!.message).toContain('add up to 7');
+  });
+
+  it('a dig that asks for a staff', () => {
+    const lines = text('no work asks for a staff');
+    expect(lines).toHaveLength(1);
+    expect(lines[0]!.file).toContain('ruins-gate.json');
+  });
+
   it('a start with no axe in its kit', () => {
     const lines = text('this start holds no axe');
     expect(lines).toHaveLength(1);
     expect(lines[0]!.file).toContain('forager.json');
+  });
+
+  it('a reward item a kit already holds, with nothing named in its place', () => {
+    const lines = text('name an item for it in "instead"');
+    expect(lines).toHaveLength(2);
+    expect(lines.every((l) => l.file.includes('herbs-for-pell.json'))).toBe(true);
+  });
+
+  it('an item in place of a reward that the same kit holds too', () => {
+    const lines = text('holds "core/basket" too');
+    expect(lines).toHaveLength(1);
+    expect(lines[0]!.file).toContain('three-fruits.json');
+    expect(lines[0]!.message).toContain('core/digger');
   });
 
   it('a tree and no shop that sells an axe', () => {
@@ -88,6 +175,6 @@ describe('a fixture that breaks each rule', () => {
   it('an opening that asks for more logs than the trees give', () => {
     const lines = text('the opening asks for 99 of core/log');
     expect(lines).toHaveLength(1);
-    expect(lines[0]!.message).toContain('give 12');
+    expect(lines[0]!.message).toContain('give 13');
   });
 });

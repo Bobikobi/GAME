@@ -87,6 +87,8 @@ function prepared(seed: number, edit: (s: State) => void = () => {}): State {
   s.player.attrs.carry = 100;
   s.player.attrs.luck = 0;
   s.player.restored = ['core/old-bridge'];
+  // the bridge's quest pays gold; closed here, so a craft never settles it and moves the ledger
+  s.player.quests['core/fix-the-bridge'] = 'done';
   s.player.bag = { 'core/branch': 40, 'core/berry': 20, 'x/plank': 2 };
   s.player.camp = ['x/hearth'];
   s.player.xp['core/cooking'] = xpFor('core/cooking', 3);
