@@ -1168,3 +1168,7 @@ The question (10.10): the entry on the game read as one line left five small hol
 
 **Closes:** the five holes left open by the entry on the game read as one line, and its check; GRUNT's CR-94 to CR-96 carry the building.
 **Retry when:** a guest's price reads as a toll that blocks a run to safety, a warning comes so often that players stop reading it, or houses come back. Model: claude-opus-5-5.
+
+## 2026-10-11 ✅ Felling and digging run by themselves after one press, and the work is shown on the body and the tree
+The owner asked that one press on a tree starts the felling: the character swings on its own and stops when the tree falls, with no pop-up and no bar. This is how RuneScape and phone farming games (Hay Day) do it, where Stardew Valley and Animal Crossing take one press per swing; one press suits a phone. Each swing plays an axe animation on the character, throws chips and a sound, and the tree shakes and cracks so the progress is read on the tree itself; moving away cancels the work, and the tree falls with its own animation. Digging and mining follow the same pattern with their own tool. The swing, dig and walk cycles are drawn with the character in the agreed pixel style and land with the walk animation.
+**Retry when:** players lose track of how long a fell takes (then a small crack count on the tree), or a press by mistake starts work too often (then a hold to start). Model: claude-opus-5-5.
