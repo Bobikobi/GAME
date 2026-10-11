@@ -44,4 +44,12 @@ describe('the developer area', () => {
     expect(swatches.match(/<li/g)).toHaveLength(CORE_PALETTE.length);
     for (const hex of CORE_PALETTE) expect(html).toContain(`background: ${hex};`);
   });
+
+  it('shows the one line that adds the MCP server, and the repository registers it', () => {
+    expect(html.match(/claude mcp add openfold -- pnpm -s mcp/g)).toHaveLength(1);
+    for (const file of ['.mcp.json', '.cursor/mcp.json']) {
+      const config = JSON.parse(readFileSync(join(ROOT, file), 'utf8')) as { mcpServers: Record<string, { command: string; args: string[] }> };
+      expect(config.mcpServers['openfold'], file).toEqual({ command: 'pnpm', args: ['-s', 'mcp'] });
+    }
+  });
 });

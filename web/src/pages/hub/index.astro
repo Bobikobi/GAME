@@ -64,9 +64,11 @@ const swatches = CORE_PALETTE.map((hex, i) => `.swatches li:nth-child(${i + 1}) 
             <h3>Add the MCP server <span class="tag">read-only</span></h3>
             <p>
               {tools.length} tools that answer from your checkout: {tools.join(', ')}. They write nothing and need no
-              token. The server that serves them lands with the next release.
+              token. Claude Code and Cursor find it in a clone through <code>.mcp.json</code>; for any other tool, run
+              this once in the checkout:
             </p>
-            <p class="acts"><a class="btn sm" href={repoTree('mcp')}>The tool definitions</a></p>
+            <pre class="code" id="mcp">claude mcp add openfold -- pnpm -s mcp</pre>
+            <p class="acts"><a class="btn sm" href="/docs/#your-ai-tool-and-the-project">What the tools answer</a></p>
           </li>
           <li>
             <h3>Read the data</h3>

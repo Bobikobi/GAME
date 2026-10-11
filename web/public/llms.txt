@@ -24,7 +24,7 @@ Paths starting with / are on this site. Content goes in content/extensions/<your
 
 ## MCP
 
-- [Tool definitions](https://github.com/Bobikobi/GAME/tree/develop/mcp): the read-only tools of the creator MCP server (schema, check, slots, requests, template, value, preview, guide, rules); the server that serves them lands with the next release
+- [Your AI tool and the project](/docs/#your-ai-tool-and-the-project): the read-only MCP server in the repository (schema, check, slots, requests, template, value, preview, guide, rules); Claude Code and Cursor find it through .mcp.json, any other tool runs `claude mcp add openfold -- pnpm -s mcp` in the checkout
 
 ## Rules
 
