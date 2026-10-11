@@ -11,6 +11,7 @@ What players notice
 - Health and danger: a countdown to dark, a lantern box, hurt and fall animations; a fall takes back what the outing brought.
 - The first maze, the tangle south of the ruins, a quest from the elder.
 - The workshop: a work stone, a workbench and a workshop, two chains (stone and reed), tools that wear out and tools that last, reed clothes and a lucky charm.
+- Sound under the mute: a soft click on each line of talk, voices pitched per speaker, night and ruin beds, a fire that crackles louder as you come near, and the stream by the river.
 - A feedback button inside the game, and a short review after the opening.
 
 What creators notice
