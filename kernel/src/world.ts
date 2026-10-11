@@ -82,14 +82,18 @@ export function layoutInstances(
   const solid = staticSolid(map);
   const used = new Set<number>();
   const instances: Record<string, Instance> = {};
-  const sources: { id: string; kind: Instance['kind']; slot: string; count: number }[] = [
+  const sources: { id: string; kind: Instance['kind']; slot: string; count: number; scattered?: boolean }[] = [
     ...Object.keys(resources)
       .sort()
-      .map((id) => ({ id, kind: 'resource' as const, slot: resources[id]!.place.slot, count: resources[id]!.count })),
+      .flatMap((id) => [
+        { id, kind: 'resource' as const, slot: resources[id]!.place.slot, count: resources[id]!.count },
+        ...(resources[id]!.place.scatter ?? []).map((slot) => ({ id, kind: 'resource' as const, slot, count: 1, scattered: true })),
+      ]),
     ...Object.keys(treasures)
       .sort()
       .map((id) => ({ id, kind: 'treasure' as const, slot: treasures[id]!.place.slot, count: treasures[id]!.count })),
   ];
+  const made: Record<string, number> = {};
   for (const source of sources) {
     const slot = findSlot(map, source.slot);
     if (!slot) continue;
@@ -97,7 +101,7 @@ export function layoutInstances(
     for (let y = slot.y; y < slot.y + slot.h; y++) {
       for (let x = slot.x; x < slot.x + slot.w; x++) {
         const i = y * map.width + x;
-        if ((x + y) % 2 === 0 && !solid[i] && !used.has(i) && tagAt(map, x, y) !== 'path') candidates.push([x, y]);
+        if ((source.scattered || (x + y) % 2 === 0) && !solid[i] && !used.has(i) && tagAt(map, x, y) !== 'path') candidates.push([x, y]);
       }
     }
     const [cx, cy] = [slot.x * 2 + slot.w - 1, slot.y * 2 + slot.h - 1]; // doubled center, stays integral
@@ -120,7 +124,8 @@ export function layoutInstances(
       const [x, y] = candidates[best]!;
       chosen.push([x, y]);
       used.add(y * map.width + x);
-      instances[`${source.id}#${k}`] = { source: source.id, kind: source.kind, x, y };
+      const n2 = (made[source.id] = (made[source.id] ?? 0) + 1) - 1;
+      instances[`${source.id}#${n2}`] = { source: source.id, kind: source.kind, x, y };
     }
   }
   return instances;
