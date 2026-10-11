@@ -6,8 +6,8 @@ A free pixel-art browser game that its players build and run together. You wake 
 
 ## What is in the demo
 
-- Two starters, the Forager and the Explorer, with five attributes: carry (bag size), senses (how far you notice hidden things), agility (how forgiving the timing is), luck (rare finds) and stamina (how much food you can hold).
-- The opening: wake up, gather three stones with the timing minigame, mend the bridge, build a fire and cook, meet the town, find the berries the elder remembers, and spend your first coins on a basket or a trowel.
+- Three starters, the Forager, the Digger and the Explorer, each waking at its own place with its own kit and its own first task, with five attributes: carry (bag size), senses (how far you notice hidden things), agility (how forgiving the timing is), luck (rare finds) and stamina (how much food you can hold).
+- The opening: wake up at noon, strike the bridge's keystone free with the timing minigame, mend the bridge for a purse of gold, fell a tree for the first fire, meet the town, and choose whom to help first: Elder Maru's berries, which he pays for with his old trowel, or Pell's herbs, which she pays for with a recipe and coin. The trowel then digs up Maru's coin under the lantern the stones name, which glows at dusk. After dark, a way opens under the broken arch.
 - Foraging, digging and cooking, each with levels and techniques; a camp with three places to build and a fourth waiting for a reason; a day and night clock.
 - Empty places in the mist, each waiting for a creator, with a link to the guide below.
 - Phones (touch pad and A/B buttons) and keyboards (arrows or WASD, Space).

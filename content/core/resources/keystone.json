@@ -1,0 +1,33 @@
+{
+  "$schema": "../../../schema/json/resource.schema.json",
+  "format": 1,
+  "type": "resource",
+  "id": "core/keystone",
+  "title": "Keystone",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/keystone",
+      "name": "Keystone",
+      "description": "The wedge at the top of the bridge's arch. It fell into the shallows long ago.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "stone",
+      "tier": 1,
+      "sprite": "core/base-kit:items/stone"
+    }
+  ],
+  "node": {
+    "output": "core/keystone",
+    "yield": 1,
+    "active_ms": 2500,
+    "respawn_ms": 10000,
+    "count": 1,
+    "sprite": "core/base-kit:props/rock_small",
+    "level": 1,
+    "game": "strike",
+    "place": {
+      "slot": "core/keystone"
+    }
+  }
+}

@@ -2,7 +2,8 @@
  * The assembler refuses what the find and riddle steps cannot point at
  * (GRUNT P-2): a prop id that is not on the map, a dig spot or slot that does
  * not exist, a find of something sold or grown in more than one place, and a
- * prop id used twice.
+ * prop id used twice. A place reward (reward.opens) must name a restore, and a
+ * restore with no inputs must be opened by some quest.
  */
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -80,5 +81,28 @@ describe('find and riddle references', () => {
     const g8 = result.issues.filter((i) => i.message.includes('G8,'));
     expect(g8.some((i) => i.where === 'map.props.core/stone-a')).toBe(true);
     expect(g8.some((i) => i.where === 'map.props.core/stone-b')).toBe(false);
+  });
+});
+
+describe('place rewards', () => {
+  const root = mkdtempSync(join(tmpdir(), 'mistvale-opens-'));
+  afterAll(() => rmSync(root, { recursive: true, force: true }));
+
+  cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
+  cpSync(join(CONTENT_DIR, 'kit'), join(root, 'kit'), { recursive: true });
+  const read = () => runCheck(root).issues.filter((i) => i.level === 'error').map((i) => `${i.where}: ${i.message}`);
+
+  it('accepts the core arch, opened by the night arch quest', () => {
+    expect(read()).toEqual([]);
+  });
+
+  it('refuses an opens that names no restore, and a restore with no inputs that nothing opens', () => {
+    const questPath = join(root, 'core', 'quests', 'the-night-arch.json');
+    const quest = JSON.parse(readFileSync(questPath, 'utf8')) as { quest: { reward: { opens?: string[] } } };
+    quest.quest.reward.opens = ['core/nowhere'];
+    writeFileSync(questPath, JSON.stringify(quest, null, 2));
+    const messages = read();
+    expect(messages).toContainEqual('quest.reward.opens.0: no restore "core/nowhere"');
+    expect(messages).toContainEqual('restore.inputs: no inputs and no quest opens it: it could never open');
   });
 });

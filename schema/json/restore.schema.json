@@ -536,8 +536,8 @@
           "type": "string"
         },
         "inputs": {
-          "minItems": 1,
           "maxItems": 6,
+          "description": "What the player brings to restore it. Empty: it does not open by hand, only as a quest's reward.opens.",
           "type": "array",
           "items": {
             "additionalProperties": false,

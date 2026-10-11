@@ -102,6 +102,21 @@ export const Stack = Type.Object(
   { item: Id, qty: Int(1, 999) },
   { additionalProperties: false },
 );
+/**
+ * An item a quest gives. A start whose kit already holds it gets `instead`
+ * (DECISIONS.md, 2026-10-10: whom to help first), so no reward repeats a kit.
+ */
+export const RewardStack = Type.Object(
+  {
+    item: Id,
+    qty: Int(1, 999),
+    instead: Type.Optional({
+      ...Id,
+      description: 'What a start whose kit holds the item gets in its place: something that kit lacks.',
+    }),
+  },
+  { additionalProperties: false },
+);
 export const Output = Type.Object(
   {
     item: Id,
@@ -543,8 +558,14 @@ export const QuestBody = Type.Object(
       {
         rep: Int(0, 100, 'Reputation with the giver. Never traded, so it can be generous.'),
         gold_mg: Type.Optional(Int(1, 10_000_000)),
-        items: Type.Optional(Type.Array(Stack, { maxItems: 4 })),
+        items: Type.Optional(Type.Array(RewardStack, { maxItems: 4 })),
         recipes: Type.Optional(Type.Array(Id, { maxItems: 4 })),
+        opens: Type.Optional(
+          Type.Array(Id, {
+            maxItems: 2,
+            description: 'Ids of restores the quest opens when it is done: a place reward, the way a restore opens by hand.',
+          }),
+        ),
       },
       { additionalProperties: false },
     ),
@@ -557,7 +578,10 @@ export const RestoreBody = Type.Object(
     place: Place,
     before: SpriteRef,
     after: SpriteRef,
-    inputs: Type.Array(Stack, { minItems: 1, maxItems: 6 }),
+    inputs: Type.Array(Stack, {
+      maxItems: 6,
+      description: 'What the player brings to restore it. Empty: it does not open by hand, only as a quest\'s reward.opens.',
+    }),
     active_ms: Ms('Time the player is busy restoring it.'),
     passable: Type.Boolean({ description: 'Whether the restored thing can be walked over (a bridge).' }),
     sign: Type.Optional(Name),

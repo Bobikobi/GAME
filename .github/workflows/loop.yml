@@ -3,7 +3,8 @@ name: Community loop
 
 on:
   schedule:
-    - cron: '23 * * * *'
+    # every six hours, not every hour: the pull request and review events already wake it
+    - cron: '23 */6 * * *'
     - cron: '7 7 * * 1'
   workflow_dispatch:
     inputs:

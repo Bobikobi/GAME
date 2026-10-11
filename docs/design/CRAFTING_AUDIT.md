@@ -141,7 +141,7 @@ The craft panel (`game/src/ui/panels.ts:321-356`) lists the known recipes of the
 | G18 | Getting an item is not one motion; across a chain, the way varies. | `:163-167` |
 | G28 | No dark patterns: no punishment for being away, no timer that runs out while the player sleeps, no fake scarcity, nothing to pay for. | `:261-264` |
 | G32 | Health is the one bar; eating is how the player heals, and cooking keeps its purpose. | `:288-292` |
-| G34 | Each hazard has one thing to buy and one thing to make that answers it. | `:303-311` |
+| G34 | Each hazard has one thing to buy and one thing to make that answers it (as of the audit; since 10.10 no thing bought or made answers a hazard, and the answer is a run to a safe place). | `:303-311` |
 | G35 | No fighting; combat stays at stage 8 or a community vote. | `:312-314` |
 | G36, G37 | An expedition is the valley's dungeon and never the only road. | `:318-324` |
 | Section 6 | A request that breaks a rule is not built and the rule is not bent; six lines to the owner; the answer in DECISIONS.md the same day. An agent decides alone numbers inside the ranges of `params.json`; never a new step kind, a reward type, a rung of the ladder. | `:385-417` |
