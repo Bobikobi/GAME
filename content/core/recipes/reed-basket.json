@@ -1,0 +1,48 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/reed-basket",
+  "title": "Reed basket",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/reed-basket",
+      "name": "Reed basket",
+      "description": "Faster than the trader's basket, and wears out too.",
+      "kind": "tool",
+      "rarity": "uncommon",
+      "class": "tool",
+      "tier": 2,
+      "sprite": "core/base-kit:items/basket",
+      "tool": {
+        "kind": "basket",
+        "tier": 2,
+        "uses": 120
+      }
+    }
+  ],
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 5000,
+    "level": 3,
+    "inputs": [
+      {
+        "item": "core/reed-cord",
+        "qty": 2
+      },
+      {
+        "item": "core/branch",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/reed-basket",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "$schema": "../../../schema/json/template.schema.json",
+  "format": 1,
+  "type": "template",
+  "id": "core/dye-cord",
+  "title": "Dyed cord",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/dyed-cord",
+      "name": "Dyed cord",
+      "description": "Reed cord steeped in crushed berries.",
+      "kind": "material",
+      "rarity": "uncommon",
+      "class": "fibre",
+      "tier": 2,
+      "sprite": "core/base-kit:items/berry"
+    }
+  ],
+  "template": {
+    "station": "workshop",
+    "active_ms": 4000,
+    "level": 3,
+    "inputs": [
+      {
+        "class": "plant",
+        "family": "berry",
+        "min_tier": 1,
+        "qty": 2
+      },
+      {
+        "item": "core/reed-cord",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/dyed-cord",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ]
+  }
+}

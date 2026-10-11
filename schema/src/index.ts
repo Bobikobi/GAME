@@ -201,7 +201,9 @@ export const ItemDef = Type.Object(
         {
           kind: ToolKind,
           tier: Int(1, 5, 'Better tools work faster. The calculator clamps the total.'),
-          uses: Int(1, 1000, 'The tool wears out after this many uses.'),
+          uses: Type.Optional(
+            Int(1, 1000, 'The tool wears out after this many uses. Left out, the tool lasts (DECISIONS.md, 2026-10-09: the crafting economy).'),
+          ),
         },
         { additionalProperties: false },
       ),
@@ -491,12 +493,13 @@ export const QUEST_TYPES = [
   'gamble',
   'persuasion',
   'errand',
+  'maze',
 ] as const;
 export const QuestType = Type.Union(
   QUEST_TYPES.map((k) => Type.Literal(k)),
   {
     description:
-      'The kind of question the quest asks: one of the twelve in docs/design/GAME_RULES.md section 3. Two quests of one type never follow each other in a chain (G17). Optional in the schema so an old file still reads; the check refuses a quest without one since the core content declared it (GRUNT P-3, 8.10).',
+      'The kind of question the quest asks: one of the thirteen in docs/design/GAME_RULES.md section 3. Two quests of one type never follow each other in a chain (G17). Optional in the schema so an old file still reads; the check refuses a quest without one since the core content declared it (GRUNT P-3, 8.10).',
   },
 );
 

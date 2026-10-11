@@ -246,8 +246,7 @@
             "type": "object",
             "required": [
               "kind",
-              "tier",
-              "uses"
+              "tier"
             ],
             "properties": {
               "kind": {
@@ -279,7 +278,7 @@
               "uses": {
                 "minimum": 1,
                 "maximum": 1000,
-                "description": "The tool wears out after this many uses.",
+                "description": "The tool wears out after this many uses. Left out, the tool lasts (DECISIONS.md, 2026-10-09: the crafting economy).",
                 "type": "integer"
               }
             }

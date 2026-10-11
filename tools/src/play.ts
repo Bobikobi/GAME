@@ -90,6 +90,15 @@ export function firstQuests(b: Bundle, n: number): QuestDef[] {
     .slice(0, n);
 }
 
+/**
+ * A maze asks with its shape and is answered by the route (GAME_RULES.md
+ * section 3): its quest is a visit of the place at its heart, and the walk
+ * through the dead ends is the beat that G2 asks for.
+ */
+export function isMazeVisit(q: QuestDef): boolean {
+  return q.type === 'maze' && q.steps.length > 0 && q.steps.every((s) => s.kind === 'visit');
+}
+
 export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
   const issues: Issue[] = [];
   const at = (id: string) => origin[id] ?? 'content';
@@ -103,7 +112,7 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
   for (const q of Object.values(b.quests)) {
     if (opening.has(q.id)) continue;
     const counter = q.steps.every((s) => s.kind === 'visit' || (s.kind === 'bring' && !isFind(s.item)));
-    if (counter) {
+    if (counter && !isMazeVisit(q)) {
       issues.push({
         file: at(q.id),
         where: 'quest.steps',
@@ -219,6 +228,21 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
       message: `${unnamed} inscription${unnamed === 1 ? '' : 's'} on props without an id, so no riddle can cite ${unnamed === 1 ? 'it' : 'them'} (${rule('G8', 'free read')}); give the prop an id and a riddle, or cut the note`,
       level: PLAY_LEVEL,
     });
+  }
+
+  // A maze is answered by standing at its heart, and the client sends a visit only for an area (or a riddle's place).
+  for (const q of Object.values(b.quests)) {
+    if (q.type !== 'maze') continue;
+    const hearts = q.steps.flatMap((st) => (st.kind === 'visit' ? [st.slot] : []));
+    const wrong = hearts.filter((id) => b.map.slots.find((sl) => sl.id === id)?.kind !== 'area');
+    if (hearts.length === 0 || wrong.length > 0) {
+      issues.push({
+        file: at(q.id),
+        where: 'quest.steps',
+        message: `a maze is answered by a visit of the area at its heart${wrong.length > 0 ? `; not an area: ${wrong.join(', ')}` : ''} (${RULES_PAGE} section 3, maze)`,
+        level: PLAY_LEVEL,
+      });
+    }
   }
 
   // G17: every quest names its type; no two of one type in a row along the requires links; five types among the first ten quests.

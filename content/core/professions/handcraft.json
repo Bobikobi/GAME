@@ -1,0 +1,41 @@
+{
+  "$schema": "../../../schema/json/profession.schema.json",
+  "format": 1,
+  "type": "profession",
+  "id": "core/handcraft",
+  "title": "Handcraft",
+  "creator": "core",
+  "profession": {
+    "name": "Handcraft",
+    "verb": "craft",
+    "stations": [
+      "workshop"
+    ],
+    "xp_levels": [
+      4,
+      40,
+      150,
+      360,
+      720,
+      1400,
+      2400,
+      3800
+    ],
+    "techniques": [
+      {
+        "level": 2,
+        "name": "Steady hands",
+        "effect": "craft_speed_pct",
+        "value": 25,
+        "text": "Handcraft is 25% faster."
+      },
+      {
+        "level": 4,
+        "name": "Sure hands",
+        "effect": "craft_chance_pct",
+        "value": 10,
+        "text": "Handcraft misses less often."
+      }
+    ]
+  }
+}

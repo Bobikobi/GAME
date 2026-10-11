@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../schema/json/camp.schema.json",
+  "format": 1,
+  "type": "camp",
+  "id": "core/workbench",
+  "title": "Workbench",
+  "creator": "core",
+  "camp": {
+    "slot": "workshop",
+    "inputs": [
+      {
+        "item": "core/stone-flakes",
+        "qty": 2
+      },
+      {
+        "item": "core/reed-cord",
+        "qty": 2
+      },
+      {
+        "item": "core/branch",
+        "qty": 4
+      }
+    ],
+    "active_ms": 8000,
+    "sprite": "core/base-kit:props/stump",
+    "provides": "workshop",
+    "tier": 2,
+    "upgrades": "core/work-stone"
+  }
+}
