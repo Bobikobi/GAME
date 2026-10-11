@@ -1,7 +1,7 @@
 /**
  * Gold per hour of making (CR-22): the report `pnpm values` prints, a row for
  * gathering and one for each tier of recipes, in milli-gold per hour of
- * active time.
+ * active time, each item at the trader's price for it (CR-18).
  */
 import { type Bundle, payFor } from '@game/kernel';
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -33,16 +33,20 @@ describe('makingReport', () => {
     }
   });
 
-  it('prices a tier-1 craft by hand, and every tier-1 craft at the same rate', () => {
-    const pay = (item: string) => payFor(b.params, b.values[item]!);
-    // a tier-1 craft never misses: two reeds become a cord in 3000 ms
+  it('prices a tier-1 craft by hand: the cord at the made share, the reeds at the raw share', () => {
+    const pay = (item: string) => payFor(b.params, b.values[item]!, b.made.includes(item));
+    expect(b.made).toContain('core/reed-cord');
+    expect(b.made).not.toContain('core/reed');
+    // a tier-1 craft at its level never misses: two reeds become a cord in 3000 ms
     const cord = b.recipes['core/reed-cord']!;
     expect(cord.active_ms).toBe(3000);
-    const rate = ((pay('core/reed-cord') - 2 * pay('core/reed')) * 3_600_000) / 3000;
-    expect(Number.isInteger(rate)).toBe(true);
-    // its output is worth the craft work over its inputs, so the rate is the craft weight's pay per hour
-    expect(rate).toBe((b.params.k_permille * b.params.r_mg_per_value_ms * b.params.effort_permille.craft * 3600) / 1000);
-    expect(rows.find((r) => r.what === 1)).toMatchObject({ low: rate, median: rate, high: rate });
+    const rate = Math.floor(((pay('core/reed-cord') - 2 * pay('core/reed')) * 3_600_000) / 3000);
+    const tier1 = rows.find((r) => r.what === 1)!;
+    expect(rate).toBeGreaterThanOrEqual(tier1.low);
+    expect(rate).toBeLessThanOrEqual(tier1.high);
+    // the made share pays for the craft work and lifts the reeds that went in, so making beats the craft weight's raw pay
+    const raw = (b.params.k_permille * b.params.r_mg_per_value_ms * b.params.effort_permille.craft * 3600) / 1000;
+    expect(rate).toBeGreaterThan(raw);
   });
 
   it('prices gathering by hand: what a node yields sells for, over its active time', () => {
