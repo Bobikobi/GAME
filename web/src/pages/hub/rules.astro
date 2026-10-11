@@ -5,7 +5,7 @@ import Site from '../../layouts/Site.astro';
 import '../../styles/hub.css';
 import '../../styles/ledger.css';
 import { conduct, driftBudget, loop, points, values } from '../../data/rules';
-import { repoFile } from '../../data/site';
+import { repoFile, repoTree } from '../../data/site';
 ---
 
 <Site
@@ -86,7 +86,7 @@ import { repoFile } from '../../data/site';
       <ul class="rules">
         <li><a class="go" href={repoFile('LICENSE')}>Code</a> - AGPL-3.0-only.</li>
         <li><a class="go" href={repoFile('content/LICENSE')}>Content</a> - CC BY-SA 4.0, for every record and sprite.</li>
-        <li><a class="go" href={repoFile('web/public/fonts')}>Fonts</a> - SIL Open Font License 1.1, each with its OFL.txt.</li>
+        <li><a class="go" href={repoTree('web/public/fonts')}>Fonts</a> - SIL Open Font License 1.1, each with its OFL.txt.</li>
       </ul>
     </section>
 

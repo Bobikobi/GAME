@@ -12,8 +12,12 @@ describe('the rules page', () => {
   it('shows every key of the loop and the points files, each with its value', () => {
     const loop = json('.github/loop.json');
     const keys = Object.entries(loop).flatMap(([k, v]) => (typeof v === 'object' && v !== null && !Array.isArray(v) ? Object.keys(v).map((n) => `${k}.${n}`) : [k]));
-    for (const key of [...keys, ...Object.keys(json('.github/points.json'))]) expect(html, key).toContain(`<code>${key}</code>`);
-    expect(text).toContain(`per_record ${json('.github/points.json')['per_record']}`);
+    const flat = (o: Record<string, unknown>, key: string): unknown => key.split('.').reduce<unknown>((v, k) => (v as Record<string, unknown>)[k], o);
+    const shown = (v: unknown): string => (Array.isArray(v) ? v.join(', ') : String(v));
+    const points = json('.github/points.json');
+    for (const [file, key] of [...keys.map((k) => [loop, k] as const), ...Object.keys(points).map((k) => [points, k] as const)]) {
+      expect(html, key).toMatch(new RegExp(`<code>${key.replace(/\./g, '\\.')}</code></td><td[^>]*>${shown(flat(file, key))}</td>`));
+    }
   });
 
   it('gives every loop key a sentence from the loop README', () => {
@@ -24,7 +28,7 @@ describe('the rules page', () => {
 
   it('lists the value of every anchored item', () => {
     const values = (json('content/values.lock.json')['values'] ?? {}) as Record<string, number>;
-    for (const id of Object.keys(values)) expect(html, id).toContain(`<code>${id}</code>`);
+    for (const [id, value] of Object.entries(values)) expect(text, id).toContain(`${id} ${value}`);
   });
 
   it('says "credits" only in the sentence about the fund', () => {
@@ -33,6 +37,9 @@ describe('the rules page', () => {
   });
 
   it('carries the conduct section of CONTRIBUTING.md', () => {
-    expect(html).toContain('id="conduct-h"');
+    const conduct = html.match(/<section[^>]*aria-labelledby="conduct-h".*?<\/section>/s)?.[0] ?? '';
+    const source = readFileSync(join(ROOT, 'CONTRIBUTING.md'), 'utf8').split('\n## Conduct\n')[1]!.split('\n## ')[0]!;
+    const first = source.trim().split(/\n\s*\n/)[0]!.replace(/\s+/g, ' ').slice(0, 60);
+    expect(conduct.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ')).toContain(first);
   });
 });

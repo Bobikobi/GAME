@@ -23,12 +23,18 @@ describe('the guide', () => {
 
   it('sends no relative link off the site: each is a page here or a file on GitHub', () => {
     const article = html.match(/<article class="prose">(.*?)<\/article>/s)?.[1] ?? '';
+    expect(article.match(/href="/g)?.length ?? 0).toBeGreaterThan(0);
     for (const [, href] of article.matchAll(/href="([^"]+)"/g)) {
       if (/^(https?:|mailto:|#)/.test(href!)) continue;
       expect(href, href).toMatch(/^\//);
       const path = href!.split('#')[0]!.replace(/^\//, '');
       expect(existsSync(path.endsWith('/') || path === '' ? join(DIST, path, 'index.html') : join(DIST, path)), href).toBe(true);
     }
+  });
+
+  it('shows a placeholder such as <your-handle> as typed', () => {
+    expect(html).not.toMatch(/<your-handle/);
+    expect(html).toContain('&lt;your-handle&gt;');
   });
 
   it('is linked from the menu and the developer area', () => {

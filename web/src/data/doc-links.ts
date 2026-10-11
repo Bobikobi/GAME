@@ -31,3 +31,23 @@ export function siteLinks(html: string, from: string = GUIDE): string {
       return `${a}${out.startsWith(REPO) ? out.replace('/blob/', '/raw/') : out}${z}`;
     });
 }
+
+/** The elements markdown renders to; anything else in the text is a placeholder such as <your-handle>, shown as typed. */
+const ELEMENTS = new Set(
+  'a b blockquote br code del details em h1 h2 h3 h4 h5 h6 hr i img input kbd li ol p pre s span strong sub summary sup table tbody td tfoot th thead tr ul'.split(' '),
+);
+
+/**
+ * The rendered guide made safe to insert as it is: a tag outside ELEMENTS is written out as text, and no element
+ * keeps an event handler or a script address. The guide is the repository's own text; this keeps a placeholder
+ * visible and a slip in a pull request harmless.
+ */
+export function safeHtml(html: string): string {
+  return html.replace(/<(\/?)([a-zA-Z][\w-]*)([^>]*)>/g, (tag: string, close: string, name: string, attrs: string) => {
+    if (!ELEMENTS.has(name.toLowerCase())) return tag.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const clean = attrs
+      .replace(/\s(on[a-z]+)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+      .replace(/(\s(?:href|src)\s*=\s*")\s*javascript:[^"]*"/gi, '$1#"');
+    return `<${close}${name}${clean}>`;
+  });
+}

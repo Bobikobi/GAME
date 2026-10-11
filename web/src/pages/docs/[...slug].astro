@@ -6,7 +6,7 @@ import Site from '../../layouts/Site.astro';
 import '../../styles/hub.css';
 import '../../styles/doc.css';
 import { repoFile } from '../../data/site';
-import { siteLinks } from '../../data/doc-links';
+import { safeHtml, siteLinks } from '../../data/doc-links';
 
 export async function getStaticPaths() {
   const pages = await getCollection('creators');
@@ -14,7 +14,7 @@ export async function getStaticPaths() {
 }
 
 const { page } = Astro.props;
-const html = siteLinks(page.rendered?.html ?? '');
+const html = siteLinks(safeHtml(page.rendered?.html ?? ''));
 const headings = page.rendered?.metadata?.headings ?? [];
 const title = headings.find((h) => h.depth === 1)?.text ?? 'Guide';
 const file = `docs/creators/${page.id === 'readme' ? 'README' : page.id}.md`;
