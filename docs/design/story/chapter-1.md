@@ -28,9 +28,9 @@ and lays the hook over it. Days 2 and later are new.
 |---|---|---|---|---|
 | 1 | Minute 0 | Wakes in a clear pocket inside dark mist. One waking line for each starter (below). The starter's own first task: the forager picks, the digger digs up its axe, the explorer finds its axe by the senses. | the starter's own | The task pushes the pocket out a little. |
 | 2 | Minutes 0-2 | The keystone strike mends the bridge. The "Mended by" sign is the returners' stone: the camera glides down the names to the last empty line, and the player carves theirs. | `skill` | Draws back from the bridge, the pockets join, one bell rings far off. |
-| 3 | Minutes 2-4 | The dry log in the wet reeds, found by the senses. The fire. Maru comes to the smoke. | `investigation` | - |
-| 4 | Minutes 4-6 | Pell's stall: the basket or the trowel, and the first rumour of why the mist moved. | the choice (G12) | - |
-| 5 | Minutes 6-8 | The three stones name the hill lantern; at dusk it glows and lights the tile to dig. The old coin. | `riddle` | - |
+| 3 | Minutes 2-4 | A fire before dark, built of two logs from a felled oak (every start already holds an axe). Maru comes to the smoke. | `investigation` | - |
+| 4 | Minutes 4-6 | Whom to help first: Maru's bells (pays his old trowel) or Pell's herbs (pays 30 gold and the herb stew recipe). The other waits. Pell tells the first rumour of why the mist moved when she pays for the herbs, or at her stall later if Maru came first. | the choice (DECISIONS 2026-10-10, "whom to help first") | - |
+| 5 | Minutes 6-8 | The three stones name the hill lantern; at dusk it glows and lights the tile to dig. Maru's old coin, by the trowel's road. | `riddle` | - |
 | 6 | Minutes 8-10 | After dark, the arch shows a path to the threshold of the night ruins. Inside, a bell swings. Nobody is there. The session ends here. | `discovery` | - |
 | 7 | Day 2 | Asks Pell the right question about the bell, and gets the three tellings (one for each belief). | `persuasion` | - |
 | 8 | Day 2-3 | Maru's lanterns: keep the one by the ruins lit through one night, so the path stays open. | `tending` | - |
@@ -49,7 +49,7 @@ off." "The mist draws back." Every line about the past has a speaker:
 |---|---|---|
 | Maru, beat 3 | "The mist pulled back. I saw it from the square. It does that, when someone mends." | Menders |
 | Maru, day 2 | "The bells rang the day the first ones came back. I was small. I remember the sound, not the hands." | Menders |
-| Pell, beat 4 | "Why did the mist move? Three answers, one coin each. The first is free: you mended something." | none |
+| Pell, beat 4, on paying for the herbs | "Why did the mist move? Three answers, one coin each. The first is free: you mended something." | none |
 | Pell, the Wakers' telling | "Some say the bell is a waking call. Ring it enough and what sleeps down there gets up." | Wakers |
 | Pell, the Keepers' telling | "Some say the bell is a warning. It rings when we dig where we should not." | Keepers |
 | The returners' stone | Names, worn, one under another. The last line is empty. | - |
@@ -98,8 +98,8 @@ design entry that item asks for):
 | Beat | Forager | Digger | Explorer |
 |---|---|---|---|
 | 1 Waking | Picks its first berries in its pocket | Digs up its axe | Finds its axe by the senses |
-| 3 The dry log | Sees which wood is dry at a glance | Finds it under the mud | Sees it glint from further off |
-| 4 Pell's stall | Already has the basket: buys the trowel, or saves | Already has the trowel: buys the basket, or saves | Has neither: picks one, as today |
+| 3 The fire | Fells its oak with the axe from its kit | Fells its oak with the axe it dug up | Fells its oak with the axe it found |
+| 4 Whom to help first | Already has the basket: Maru's trowel is new to it | Already has a trowel: Maru's bells pay a walking staff in its place | Has no basket: spends the purse on one at Pell's stall, or helps Maru first |
 | 5 The coin | Finds a second herb by the lantern | Digs the tile in one strike | The lantern's glint shows before dusk |
 | 9 The bell | Each starter has one line of its own in the hall | | |
 
@@ -109,6 +109,16 @@ Recorded in the same entry, item 2: progress is each player's own, and the
 mist hides the gap. A player who has not mended the bridge sees it broken and
 the far bank in mist; a friend who crossed walks into the mist and is gone
 from view. They meet once both have mended it.
+
+## Checked against later decisions (2026-10-11)
+
+Beats 3 and 4 and the starter table followed the opening before the recut on
+the axe and the starts (DECISIONS 2026-10-10, "The recut B on the axe and the
+starts"): the dry log and Pell's stall are gone, replaced by the fire from a
+felled tree and whom to help first. Rewritten above; the owner chose on
+2026-10-11 that Pell's first rumour comes when she pays for the herbs. The
+lines were checked against S1-S6: every claim about the past has a speaker and
+the narrator's lines say only what is there now.
 
 ## The owner's answers (2026-10-10)
 
