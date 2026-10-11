@@ -1,0 +1,24 @@
+{
+  "$schema": "../../../schema/json/items.schema.json",
+  "format": 1,
+  "type": "items",
+  "id": "core/healing",
+  "title": "Healing",
+  "creator": "core",
+  "description": "What Pell sells to give health back. It heals; no thing answers a hazard (G34).",
+  "items": [
+    {
+      "id": "core/first-aid-kit",
+      "name": "First-aid kit",
+      "description": "Clean cloth, salve and a steady hand's worth of care.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "fibre",
+      "tier": 1,
+      "sprite": "core/base-kit:items/first-aid-kit",
+      "food": {
+        "satiety": 50
+      }
+    }
+  ]
+}

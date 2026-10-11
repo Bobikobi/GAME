@@ -947,6 +947,11 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       if (await page.eval<boolean>(`!!__e2e.plan(${JSON.stringify(threshold)})`)) throw new Error('the night ruins are open before the arch');
       const dark = await page.eval<number>('__e2e.hour()');
       if (dark >= 5 && dark < 20) await page.eval('__e2e.setHour(21)');
+      // dark finds the player outside a safe place: the lantern is lit, with its one box a night (G31)
+      await page.waitFor('!!__e2e.dialog()', 'the lantern warning', 5000);
+      const lantern = await me.talkThrough();
+      await me.idle('the lantern warning');
+      if (!lantern.some((l) => l.includes('lantern is lit'))) throw new Error(`no lantern warning at dark: ${lantern.join(' / ')}`);
       const lit = { x: mouth.x + Math.floor(mouth.w / 2), y: mouth.y + mouth.h - 1 };
       await page.waitFor(`__e2e.glint(${lit.x}, ${lit.y})`, 'the arch to show its way at night', 5000);
       await me.snap('arch');
@@ -976,6 +981,28 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       if (!visited.includes('core/night-threshold')) throw new Error('the threshold was not reached');
       await me.snap('threshold');
       log(`walked under the arch at ${await page.eval<number>('__e2e.hour()')}:00 and reached the threshold of the night ruins`);
+
+      // 12. the threshold is safe and the night hunts one step past it (P-5c): the pit, then the wolf, then a fall.
+      // The safe threshold has just closed the outing, so the fall takes nothing back: the bag and the quests stay.
+      const kept = await page.eval<string>('JSON.stringify({ bag: __e2e.player().bag, quests: __e2e.player().quests })');
+      if ((await me.state()).pos[0] !== 36) await me.step('left');
+      if (!(await me.step('down'))) throw new Error('no step past the threshold');
+      await page.waitFor('__e2e.player().falls > 0', 'the fall in the night ruins', 15_000);
+      await page.waitFor('!!__e2e.dialog()', 'the fall box', 5000);
+      const fell = await me.talkThrough();
+      await me.idle('the fall');
+      await page.waitFor('!__game.world.falling', 'the wake in town', 5000);
+      const calls = await page.eval<string>(`document.querySelector('.toasts')?.textContent ?? ''`);
+      if (calls.includes('Run for a safe place')) throw new Error(`a call to run still shows after the fall: "${calls}"`);
+      if (!fell.some((l) => l.includes('Everything went dark'))) throw new Error(`no fall box: ${fell.join(' / ')}`);
+      if (!fell.some((l) => l.includes('nothing is lost'))) throw new Error(`the fall box names a loss after a safe threshold: ${fell.join(' / ')}`);
+      const woke = (await me.state()).pos;
+      const cobble = await page.eval<boolean>(`__game.bundle.map.ground[${woke[1]}][${woke[0]}] === '='`);
+      if (!cobble) throw new Error(`woke at (${woke[0]}, ${woke[1]}), not in town`);
+      if ((await page.eval<string>('JSON.stringify({ bag: __e2e.player().bag, quests: __e2e.player().quests })')) !== kept) throw new Error('the fall changed the bag or the quests');
+      if ((await me.bag('core/basket')) !== 1) throw new Error('the basket went with the fall');
+      await me.snap('fall');
+      log(`stepped past the threshold at night, fell, and woke in town at (${woke[0]}, ${woke[1]}) with the bag whole`);
     } else {
       const hour = await page.eval<number>('__e2e.hour()');
       log(`game hour ${hour}:00 before the sun bank; sunleaf opens 12:00 to 20:00`);

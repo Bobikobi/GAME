@@ -360,10 +360,13 @@ const HURT_TEXT: Readonly<Record<string, string>> = {
 
 /** The Eat button's label: what a food gives, and what it takes when it hurts. */
 export function eatLabel(b: Bundle, id: string): string {
-  const food = b.items[id]?.food;
-  if (!food) return 'Eat';
+  const item = b.items[id];
+  const food = item?.food;
+  // a bandage or a first-aid kit heals the same way, but nobody eats it
+  const verb = item && item.kind !== 'food' ? 'Use' : 'Eat';
+  if (!food) return verb;
   const parts = [food.satiety > 0 ? `+${food.satiety}` : '', food.hurt ? `-${food.hurt}` : ''].filter(Boolean);
-  return parts.length > 0 ? `Eat (${parts.join(', ')})` : 'Eat';
+  return parts.length > 0 ? `${verb} (${parts.join(', ')})` : verb;
 }
 
 /**
@@ -420,7 +423,7 @@ export function describe(b: Bundle, s: State, e: GameEvent): { text: string; ico
     case 'build':
       return { text: `${b.camps[e.camp]?.title ?? e.camp} built`, tone: 'good' };
     case 'eat':
-      return { text: `You ate ${itemName(b, e.item)}`, icon: b.items[e.item]?.sprite, tone: b.items[e.item]?.food?.hurt ? 'info' : 'good' };
+      return { text: `${b.items[e.item]?.kind === 'food' ? 'You ate' : 'You used'} ${itemName(b, e.item)}`, icon: b.items[e.item]?.sprite, tone: b.items[e.item]?.food?.hurt ? 'info' : 'good' };
     case 'hurt':
       return { text: HURT_TEXT[e.by] ?? 'That hurt', tone: 'bad' };
     case 'nothing':

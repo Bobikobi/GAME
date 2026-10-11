@@ -53,10 +53,12 @@ P-5c, the content, a second pull request after P-5b:
 3. Hunger drains to 0 (param minimum 0), and only once hazards exist.
 4. Raise `hp_low_pct`.
 5. Add the GAME_RULES G30 and G34 rows.
-6. An e2e: at night, step one tile past the ruins' entrance, fall, and reappear in town with the basket gone and the quest back at step one.
+6. An e2e: at night, step one tile past the ruins' entrance, fall, and reappear in town with nothing lost. The safe threshold has just closed the outing, so the bag, the basket and the quests stay whole (DECISIONS 2026-10-10: a fall takes back only what the outing brought); a fall that takes the outing's finds is proven in the kernel tests until P-6 opens another way in.
 7. Rename `satiety` to `hp` last, in its own commit, after crafting has landed.
 
 Known wart, in DECISIONS: a quest that completed by itself during an outing keeps its reward after a fall. Mist hazards wait for P-6.
+
+Left after P-5c (11.10): item 7, the rename of `satiety` to `hp`, waits for crafting wave 4 (#48) to land, then goes in as its own pull request. P-5b also left the mist's half of the countdown and the lantern for P-6, and the warning before a camp fire goes out for the tent (CR-25).
 
 After P-5, in order:
 - CR-60 miss tables;
@@ -141,7 +143,9 @@ b) Sound, branch `feat/sound-pass`, all under the existing mute:
 
 Measurable: each source's volume falls with distance; the click plays exactly once per advance; mute silences all of it.
 
-c) After (a) and (b) land, branch `feat/every-action`: one animation for each action the player takes (gather, pick, dig, fell, mine, craft at the workshop stall, cook, eat, drink, talk, pay, pitch a camp, sleep), inside the pixel look, so no stills. In the same pull request, a quest given in talk is offered in the giver's words and the "New task:" line goes (`game/src/text.ts`); the journal records the quest quietly. Measurable: every action in the list shows its own frames in a capture; no "New task" string in `game/src`; `pnpm verify` and `pnpm e2e` green.
+d) Before (c), branch `feat/starter-looks`: the three starters look different in the game. Today the forager, the digger and the explorer all draw `chars/player_*` (or `woman_*` with the look toggle), so the choice of starter is invisible after the title screen; the 3D cast already tells them apart. A character's look is a direction, so the trial starts with three still images at phone size for the owner, each testing one named difference (for example: one body with a colour and the starter's kit carried, such as the forager's basket and the digger's spade; a distinct head and outline per starter; the pixel cast drawn after the 3D cast). The owner picks one, the pick goes into DECISIONS with its frame, and only then are the frames drawn for walk, idle and work in four directions, for both looks. It runs before (c) so the every-action frames are drawn once per starter, not redrawn. Measurable: in one capture the three starters stand side by side and differ at phone size; each starter's JSON names its own sprite; `pnpm verify` and `pnpm e2e` green.
+
+c) After (a), (b) and (d) land, branch `feat/every-action`: one animation for each action the player takes (gather, pick, dig, fell, mine, craft at the workshop stall, cook, eat, drink, talk, pay, pitch a camp, sleep), inside the pixel look, so no stills. In the same pull request, a quest given in talk is offered in the giver's words and the "New task:" line goes (`game/src/text.ts`); the journal records the quest quietly. Measurable: every action in the list shows its own frames in a capture; no "New task" string in `game/src`; `pnpm verify` and `pnpm e2e` green.
 
 ## 5. The shops you walk into
 
