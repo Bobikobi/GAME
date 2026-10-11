@@ -714,6 +714,330 @@
         "file": "items/first-aid-kit.png",
         "w": 16,
         "h": 16
+      },
+      "chars/explorer_down": {
+        "file": "chars/explorer_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_idle_down": {
+        "file": "chars/explorer_idle_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_work_down": {
+        "file": "chars/explorer_work_down.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      "chars/explorer_left": {
+        "file": "chars/explorer_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_idle_left": {
+        "file": "chars/explorer_idle_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_work_left": {
+        "file": "chars/explorer_work_left.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      "chars/explorer_up": {
+        "file": "chars/explorer_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_idle_up": {
+        "file": "chars/explorer_idle_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_work_up": {
+        "file": "chars/explorer_work_up.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      "chars/explorer_w_down": {
+        "file": "chars/explorer_w_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_w_idle_down": {
+        "file": "chars/explorer_w_idle_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_w_work_down": {
+        "file": "chars/explorer_w_work_down.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      "chars/explorer_w_left": {
+        "file": "chars/explorer_w_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_w_idle_left": {
+        "file": "chars/explorer_w_idle_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_w_work_left": {
+        "file": "chars/explorer_w_work_left.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      "chars/explorer_w_up": {
+        "file": "chars/explorer_w_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_w_idle_up": {
+        "file": "chars/explorer_w_idle_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_w_work_up": {
+        "file": "chars/explorer_w_work_up.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      "chars/forager_down": {
+        "file": "chars/forager_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_idle_down": {
+        "file": "chars/forager_idle_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_work_down": {
+        "file": "chars/forager_work_down.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      "chars/forager_left": {
+        "file": "chars/forager_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_idle_left": {
+        "file": "chars/forager_idle_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_work_left": {
+        "file": "chars/forager_work_left.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      "chars/forager_up": {
+        "file": "chars/forager_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_idle_up": {
+        "file": "chars/forager_idle_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_work_up": {
+        "file": "chars/forager_work_up.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      "chars/forager_w_down": {
+        "file": "chars/forager_w_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_w_idle_down": {
+        "file": "chars/forager_w_idle_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_w_work_down": {
+        "file": "chars/forager_w_work_down.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      "chars/forager_w_left": {
+        "file": "chars/forager_w_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_w_idle_left": {
+        "file": "chars/forager_w_idle_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_w_work_left": {
+        "file": "chars/forager_w_work_left.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      "chars/forager_w_up": {
+        "file": "chars/forager_w_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_w_idle_up": {
+        "file": "chars/forager_w_idle_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_w_work_up": {
+        "file": "chars/forager_w_work_up.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      "chars/digger_down": {
+        "file": "chars/digger_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_idle_down": {
+        "file": "chars/digger_idle_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_work_down": {
+        "file": "chars/digger_work_down.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      "chars/digger_left": {
+        "file": "chars/digger_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_idle_left": {
+        "file": "chars/digger_idle_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_work_left": {
+        "file": "chars/digger_work_left.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      "chars/digger_up": {
+        "file": "chars/digger_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_idle_up": {
+        "file": "chars/digger_idle_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_work_up": {
+        "file": "chars/digger_work_up.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      "chars/digger_w_down": {
+        "file": "chars/digger_w_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_w_idle_down": {
+        "file": "chars/digger_w_idle_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_w_work_down": {
+        "file": "chars/digger_w_work_down.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      "chars/digger_w_left": {
+        "file": "chars/digger_w_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_w_idle_left": {
+        "file": "chars/digger_w_idle_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_w_work_left": {
+        "file": "chars/digger_w_work_left.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      "chars/digger_w_up": {
+        "file": "chars/digger_w_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_w_idle_up": {
+        "file": "chars/digger_w_idle_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_w_work_up": {
+        "file": "chars/digger_w_work_up.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
       }
     }
   }
