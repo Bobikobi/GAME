@@ -28,6 +28,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Herbs for Pell (quest) - `content/core/quests/herbs-for-pell.json`
 - Smoke over the town (quest) - `content/core/quests/into-town.json`
 - The arch at night (quest) - `content/core/quests/the-night-arch.json`
+- The tangle past the ruins (quest) - `content/core/quests/the-tangle.json`
 - Where the bells rang (quest) - `content/core/quests/three-fruits.json`
 - Berry mash (recipe) - `content/core/recipes/berry-mash.json`
 - Fine basket (recipe) - `content/core/recipes/fine-basket.json`

@@ -295,6 +295,34 @@ The check keeps the starts fair. Every start holds an axe before the first fire,
 
 Using them is fine, and so is saying so. List every tool you used for the file or its art in `ai_tools`. The game credits them on the sign and in Menu > Credits.
 
+## Your AI tool and the project
+
+The repository carries an MCP server: nine tools your AI tool can ask while you build. They answer from your checkout, write nothing, need no token and never talk to GitHub. Claude Code and Cursor find it on their own through `.mcp.json` and `.cursor/mcp.json` once you open the folder. For a tool that does not read those files, add it once from the checkout:
+
+```sh
+claude mcp add openfold -- pnpm -s mcp
+```
+
+Codex reads TOML, in `~/.codex/config.toml`; start Codex from the checkout:
+
+```toml
+[mcp_servers.openfold]
+command = "pnpm"
+args = ["-s", "mcp"]
+```
+
+What the tools answer:
+
+- `schema`: the JSON schema of one record type, or the list of types.
+- `check`: the same check CI runs, on the whole checkout or on your files only.
+- `slots`: every slot of the map, filled or waiting for a creator.
+- `requests`: what players asked for, with their support and the open calls.
+- `template`: a starting file for one record type, with your handle and name filled in. It is returned, not written.
+- `value`: the value the game computes for your draft files, against the anchored values and the drift budget.
+- `preview`: the state of one proposal: its preview link, the merge checklist, approvals and competitors.
+- `guide`: this guide, with its sections.
+- `rules`: the numbers the loop and the boards run on, the licence, and the lines the project never crosses.
+
 ## License
 
 Content you contribute is published under CC BY-SA 4.0 (see `content/LICENSE`), and code under the AGPL-3.0. Opening a pull request means you agree to that.
