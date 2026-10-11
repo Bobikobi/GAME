@@ -43,7 +43,7 @@ describe('quest steps', () => {
   it('accept every palette type and refuse one outside it', () => {
     for (const type of QUEST_TYPES) expect(validateFile(quest([find], { type }))).toEqual([]);
     expect(validateFile(quest([find], { type: 'kill' }))).not.toEqual([]);
-    expect(QUEST_TYPES).toHaveLength(12);
+    expect(QUEST_TYPES).toHaveLength(13);
   });
 
   it('accept a map prop with an id and refuse an id in the wrong shape', () => {

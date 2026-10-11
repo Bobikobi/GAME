@@ -4,10 +4,18 @@
   "private": true,
   "license": "AGPL-3.0-only",
   "type": "module",
-  "description": "Tool definitions of the creator MCP server: read-only, against a local checkout. The major version follows the content format.",
-  "exports": { ".": "./src/index.ts", "./tools": "./src/tools.ts" },
+  "description": "The creator MCP server: read-only, against a local checkout, over stdio. The major version follows the content format.",
+  "scripts": {
+    "start": "tsx src/server.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./tools": "./src/tools.ts"
+  },
   "dependencies": {
     "@game/schema": "workspace:*",
+    "@game/tools": "workspace:*",
+    "@modelcontextprotocol/sdk": "1.32.1",
     "@sinclair/typebox": "0.34.52"
   }
 }
