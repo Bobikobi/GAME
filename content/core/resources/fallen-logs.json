@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../schema/json/resource.schema.json",
+  "format": 1,
+  "type": "resource",
+  "id": "core/fallen-logs",
+  "title": "Fallen logs",
+  "creator": "core",
+  "node": {
+    "output": "core/log",
+    "yield": 1,
+    "active_ms": 2000,
+    "respawn_ms": 180000,
+    "count": 1,
+    "sprite": "core/base-kit:props/log_fallen",
+    "tool": "axe",
+    "level": 1,
+    "game": "snap",
+    "place": {
+      "slot": "core/fallen-logs",
+      "scatter": [
+        "core/lone-log-1",
+        "core/lone-log-2",
+        "core/lone-log-3"
+      ]
+    }
+  }
+}

@@ -273,7 +273,19 @@ export const ResourceBody = Type.Object(
     hours: Type.Optional(
       Type.Tuple([Int(0, 23), Int(1, 24)], { description: 'Hours of the in-game day when it can be gathered, [from, to).' }),
     ),
-    place: Place,
+    place: Type.Object(
+      {
+        slot: Id,
+        scatter: Type.Optional(
+          Type.Array(Id, {
+            minItems: 1,
+            uniqueItems: true,
+            description: 'More resource slots that each hold exactly one of these nodes: a tree or a log standing where the map already shows one. They add supply only: `count`, the value and the opening\'s log floor follow the main slot.',
+          }),
+        ),
+      },
+      { additionalProperties: false, description: 'An empty resource slot of the map (`count` nodes inside it), and optionally single-node slots scattered over the map.' },
+    ),
   },
   { additionalProperties: false },
 );
