@@ -21,6 +21,7 @@ import {
   findSlot,
   hourOf,
   inRect,
+  isNight,
   makeWalkable,
   minuteOfDay,
   npcTile,
@@ -39,7 +40,7 @@ import { soundscape } from '../soundscape';
 import { SensesFind } from '../senses';
 import { questTargets } from '../targets';
 import { nodeLook } from '../growth';
-import { hintDistance, nodeAction } from '../text';
+import { hintDistance, lanternNight, nodeAction } from '../text';
 import type { WorkKind } from '../ui/ui';
 import { type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, treasureKind } from '../work';
 
@@ -268,6 +269,15 @@ export class WorldScene extends Phaser.Scene {
   private wasNight: boolean | undefined;
   private nextEyes = 0;
   private nextWhisper = 0;
+  /** the hazard props (G30-G35): a wolf asleep by day and awake at night, a pit or a trap that shows only by day */
+  private hazards: { spr: Phaser.GameObjects.Sprite; kind: string }[] = [];
+  /** the lantern's light around the player, and the night it was lit for (G31) */
+  private lantern: Phaser.GameObjects.Image | undefined;
+  private lanternFor: number | undefined;
+  /** while the fall plays: no walking, and the player's sprite belongs to the animation */
+  private falling = false;
+  /** the tick of the last report while a hunt runs, so a player standing still is still bitten on time */
+  private chaseReport = 0;
 
   constructor() {
     super('world');
@@ -339,6 +349,14 @@ export class WorldScene extends Phaser.Scene {
       px(PALETTE.red2, 0, 0);
       px(PALETTE.red2, 3, 0);
     });
+    // a pale X for each eye of a fallen player (G33): it has to read on a face in the dark
+    make('fx-cross', 3, 3, () => {
+      px(PALETTE.paper, 0, 0);
+      px(PALETTE.paper, 2, 0);
+      px(PALETTE.paper, 1, 1);
+      px(PALETTE.paper, 0, 2);
+      px(PALETTE.paper, 2, 2);
+    });
     make('fx-arrow', 7, 5, () => {
       px(PALETTE.ink, 0, 0, 7);
       px(PALETTE.ink, 0, 1);
@@ -391,20 +409,21 @@ export class WorldScene extends Phaser.Scene {
         px(PALETTE.ink, 2, 1);
       });
     }
+    // three whole-pixel discs on top of each other: a glow that is brightest at its heart; the lantern
+    // is a sign of the night (G31), so it is drawn in the plain valley too
+    const disc = (r: number, color: number, alpha: number) => {
+      g.fillStyle(color, alpha);
+      for (let dy = -r; dy <= r; dy++) {
+        const half = Math.floor(Math.sqrt(r * r - dy * dy));
+        g.fillRect(12 - half, 12 + dy, 2 * half + 1, 1);
+      }
+    };
+    make('fx-glow', 25, 25, () => {
+      disc(12, PALETTE.gold, 0.1);
+      disc(8, PALETTE.gold, 0.16);
+      disc(5, PALETTE.yellow, 0.24);
+    });
     if (RICH.light) {
-      // three whole-pixel discs on top of each other: a glow that is brightest at its heart
-      const disc = (r: number, color: number, alpha: number) => {
-        g.fillStyle(color, alpha);
-        for (let dy = -r; dy <= r; dy++) {
-          const half = Math.floor(Math.sqrt(r * r - dy * dy));
-          g.fillRect(12 - half, 12 + dy, 2 * half + 1, 1);
-        }
-      };
-      make('fx-glow', 25, 25, () => {
-        disc(12, PALETTE.gold, 0.1);
-        disc(8, PALETTE.gold, 0.16);
-        disc(5, PALETTE.yellow, 0.24);
-      });
       // specks of light through the leaves, tiled over the groves
       make('fx-dapple', 32, 32, () => {
         for (const [x, y, w, hh] of [[3, 4, 2, 2], [12, 2, 3, 2], [22, 6, 2, 2], [6, 14, 3, 3], [18, 17, 2, 2], [27, 13, 2, 3], [2, 25, 2, 2], [13, 27, 3, 2], [24, 26, 2, 2], [29, 22, 2, 2]] as const) {
@@ -547,6 +566,12 @@ export class WorldScene extends Phaser.Scene {
       const bottom = (p.y + p.h) * T;
       const cx = (p.x + p.w / 2) * T;
       const name = baseName(p.sprite);
+      if (p.hazard) {
+        // a hazard steps through no cycle: its frame and its showing follow the hour (shadeFor)
+        const spr = this.add.sprite(cx, bottom, p.sprite, 0).setOrigin(0.5, 1).setDepth(p.solid ? bottom : DEPTH.flat);
+        this.hazards.push({ spr, kind: p.hazard.kind });
+        continue;
+      }
       const img = this.standing(p.sprite, cx, bottom, hash(p.x, p.y));
       img.setDepth(p.solid ? bottom : DEPTH.flat);
       if (RICH.detail && !FLAT.has(name)) this.shadow(cx, bottom, p.w, p.solid ? DEPTH.shadow : DEPTH.flat - 0.5);
@@ -905,6 +930,8 @@ export class WorldScene extends Phaser.Scene {
     this.work = null;
     this.auto = null;
     this.held.clear();
+    this.falling = false;
+    this.lanternFor = undefined;
     this.hinted.clear();
     this.inside.clear();
     this.unbind = [
@@ -1111,6 +1138,12 @@ export class WorldScene extends Phaser.Scene {
       this.hearPlace(s);
     }
     this.walk(s, delta);
+    // a hunt bites by the clock: while one runs, a player standing still reports again twice a second
+    if (s.state.player.chase && !this.move && !this.falling && s.tick - this.chaseReport >= 500) {
+      this.chaseReport = s.tick;
+      s.report(s.pos, true);
+    }
+    this.placeLantern(s);
     if (RICH.motion) this.idle(s, time);
     this.workTick(s);
     this.drawBusy(s, time);
@@ -1223,6 +1256,7 @@ export class WorldScene extends Phaser.Scene {
 
   /** Standing still for 3 s, the player blinks every 3-5 s: frame 1 of the idle sheet for 120 ms. */
   private idle(s: Session, time: number): void {
+    if (this.falling) return;
     const still = !this.move && !s.busy && !this.work && !this.auto && this.swingUntil === 0;
     if (!still) {
       this.idleSince = time;
@@ -1258,6 +1292,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private walk(s: Session, delta: number): void {
+    if (this.falling) return;
     if (this.move) {
       this.move.t += delta;
       const k = Math.min(1, this.move.t / STEP_MS);
@@ -1271,6 +1306,9 @@ export class WorldScene extends Phaser.Scene {
       const carry = this.move.t - STEP_MS;
       s.pos = [tx, ty];
       this.move = null;
+      // the kernel hears of each new tile; a hazard there may hurt, and a fall ends the walk
+      s.report(s.pos);
+      if (this.falling) return;
       this.arrive(s);
       if (!this.tryStep(s, carry)) this.faceFrame();
       return;
@@ -1373,6 +1411,7 @@ export class WorldScene extends Phaser.Scene {
       this.dusk.setFillStyle(PALETTE.gold, 0.4 * Math.max(warmth(m, 20), warmth(m, 5.5)));
     }
     for (const d of this.dapples) d.setAlpha(0.08 * (1 - this.night));
+    this.showHazards(s);
     const isNight = this.night >= 0.5;
     if (isNight !== this.wasNight) {
       const flipped = this.wasNight !== undefined;
@@ -1596,6 +1635,99 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  // ------------------------------------------------------------ danger
+
+  /**
+   * By day a hazard shows and can be walked around: the wolf sleeps, the trap
+   * and the pit are plain to see. At night the wolf is awake and the pit and
+   * the trap are lost in the dark (G30). The hour is the kernel's, not the shade's.
+   */
+  private showHazards(s: Session): void {
+    const night = isNight(this.b, s.tick);
+    for (const { spr, kind } of this.hazards) {
+      if (kind === 'predator') {
+        const frame = night && spr.texture.frameTotal > 2 ? 1 : 0;
+        if (Number(spr.frame.name) !== frame) spr.setFrame(frame);
+      } else {
+        spr.setAlpha(night ? 0.12 : 1);
+      }
+    }
+  }
+
+  /** Light the lantern for this night (G31): the UI calls it with the warning box. */
+  lightLantern(): void {
+    const s = this.session;
+    if (!s) return;
+    this.lanternFor = lanternNight(this.b, s.state, s.pos, s.tick);
+    this.lantern ??= this.add.image(0, 0, 'fx-glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.glow).setScale(2);
+  }
+
+  /** The lantern burns around the player while they are out in the night it was lit for; in town or by day it is out. */
+  private placeLantern(s: Session): void {
+    if (!this.lantern) return;
+    const lit = !this.falling && this.lanternFor !== undefined && lanternNight(this.b, s.state, s.pos, s.tick) === this.lanternFor;
+    this.lantern.setVisible(lit);
+    if (lit) {
+      const flicker = 0.5 + 0.5 * Math.sin(this.time.now / 173) * Math.sin(this.time.now / 419);
+      this.lantern.setPosition(this.player.x, this.player.y - 10).setAlpha(0.85 + 0.15 * flicker);
+    }
+  }
+
+  /**
+   * A fall (G33): crosses for eyes, the body sinks into the ground, and the
+   * player wakes in town. The box that says what happened is the UI's; nothing
+   * is left where it was.
+   */
+  private fallDown(from: readonly [number, number], to: readonly [number, number]): void {
+    const s = this.session;
+    if (!s) return;
+    this.falling = true;
+    // work under way is not taken back: it is simply over (the session drops its undo)
+    if (this.auto) this.endWork(this.auto);
+    this.move = null;
+    this.work = null;
+    this.swingUntil = 0;
+    // the fall ends any work: nothing may put the standing frame back while the body sinks
+    this.busyMs = 0;
+    this.placePlayer(from[0], from[1]);
+    const { key: k, flip } = this.playerFrame('down');
+    this.player.setTexture(k, (this.b.sprites[k]?.frames ?? 1) >= 3 ? 1 : 0).setFlipX(flip);
+    // the eyes of a 16x24 body sit on its sixth row, three pixels apart
+    const top = this.player.y - this.player.height;
+    const eyes = [-3, 2].map((dx) => this.add.image(this.player.x + dx, top + 6, 'fx-cross').setOrigin(0.5).setDepth(this.player.depth + 0.5));
+    const baseY = this.player.y;
+    const height = this.player.height;
+    this.tweens.addCounter({
+      from: 0,
+      to: 1,
+      delay: 500,
+      duration: 1100,
+      ease: 'Sine.in',
+      onUpdate: (tw) => {
+        const k = tw.getValue() ?? 0;
+        const sunk = Math.round(k * height);
+        // the part below the ground line is cut away as the body goes down
+        this.player.setY(baseY + sunk).setCrop(0, 0, this.player.width, height - sunk);
+        this.playerShadow?.setAlpha(SHADOW_ALPHA * (1 - k));
+        for (const eye of eyes) eye.setY(top + 6 + sunk).setVisible(sunk < 6);
+      },
+      onComplete: () => {
+        for (const eye of eyes) eye.destroy();
+        this.cameras.main.fadeOut(300, 27, 26, 46);
+        this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+          this.player.setCrop();
+          this.playerShadow?.setAlpha(SHADOW_ALPHA);
+          s.facing = 'down';
+          this.placePlayer(to[0], to[1]);
+          this.faceFrame();
+          this.inside.clear();
+          this.falling = false;
+          this.cameras.main.fadeIn(700, 27, 26, 46);
+        });
+      },
+    });
+  }
+
   // ------------------------------------------------------------ work that runs by itself
 
   /**
@@ -1755,9 +1887,14 @@ export class WorldScene extends Phaser.Scene {
 
   /** A little lift of every new item over the player's head, and a cloud when something is built. */
   private celebrate(events: GameEvent[]): void {
-    this.faceFrame();
+    if (!this.falling) this.faceFrame();
     let i = 0;
     for (const e of events) {
+      if (e.e === 'hurt') {
+        this.cameras.main.flash(180, 168, 48, 47);
+        this.cameras.main.shake(140, 0.005);
+      }
+      if (e.e === 'fall') this.fallDown(e.from, e.at);
       if (e.e === 'restore' || e.e === 'build') {
         const slot = e.e === 'restore' ? findSlot(this.b.map, this.b.restores[e.restore]?.place.slot ?? '') : undefined;
         const camp = e.e === 'build' ? campTile(this.b, this.b.camps[e.camp]?.slot ?? 'fire') : undefined;
