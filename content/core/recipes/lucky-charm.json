@@ -1,0 +1,52 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/lucky-charm",
+  "title": "Lucky charm",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/lucky-charm",
+      "name": "Lucky charm",
+      "description": "A sharp flake on a dyed cord. Hands work a little surer with it on.",
+      "kind": "material",
+      "rarity": "uncommon",
+      "class": "jewelry",
+      "tier": 2,
+      "sprite": "core/base-kit:items/stone-idol",
+      "wear": {
+        "slot": "jewelry",
+        "effects": [
+          {
+            "effect": "craft_chance_pct",
+            "value": 5
+          }
+        ]
+      }
+    }
+  ],
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 5000,
+    "level": 4,
+    "inputs": [
+      {
+        "item": "core/stone-flakes",
+        "qty": 1
+      },
+      {
+        "item": "core/dyed-cord",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/lucky-charm",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start"
+  }
+}

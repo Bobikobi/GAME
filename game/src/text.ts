@@ -4,6 +4,7 @@ import {
   type Bundle,
   type GameEvent,
   type State,
+  type WearSlot,
   bagCapacity,
   bagUsed,
   campBuilt,
@@ -15,7 +16,9 @@ import {
   questSatisfied,
   riddleKey,
   rareFindPermille,
+  salePrice,
   satietyCap,
+  slotsFor,
   senseReach,
   techniqueValue,
 } from '@game/kernel';
@@ -228,6 +231,35 @@ export function campSpotOf(b: Bundle, campId: string): [number, number] | undefi
   return c ? campTile(b, c.slot) : undefined;
 }
 
+/** What a trader buys from the bag, by name, at the kernel's price for one unit: a worn tool that is the last unit pays less, and what pays nothing stays out. */
+export function sellable(b: Bundle, s: State): { item: string; each: number }[] {
+  return Object.keys(s.player.bag)
+    .map((item) => ({ item, each: salePrice(b, s, item, 1) ?? 0 }))
+    .filter((row) => row.each >= 1)
+    .sort((x, y) => itemName(b, x.item).localeCompare(itemName(b, y.item)));
+}
+
+/** Where an item is worn now, on the layer it goes on (looks apart from work clothes), or undefined. */
+export function wornAt(b: Bundle, s: State, itemId: string): { slot: WearSlot; look: boolean } | undefined {
+  const w = b.items[itemId]?.wear;
+  if (!w) return undefined;
+  const look = w.look === true;
+  const layer = look ? s.player.looks : s.player.worn;
+  const slot = slotsFor(w.slot).find((k) => layer[k] === itemId);
+  return slot === undefined ? undefined : { slot, look };
+}
+
+/** The camp parts built over a standing part that provides this station: its next step up. */
+export function stationUpgrades(b: Bundle, s: State, station: string): string[] {
+  const standing = s.player.camp.filter((id) => b.camps[id]?.provides === station);
+  return Object.keys(b.camps)
+    .filter((id) => {
+      const base = b.camps[id]!.upgrades;
+      return base !== undefined && standing.includes(base);
+    })
+    .sort();
+}
+
 /** A short sentence for each event a player should notice. */
 export function describe(b: Bundle, s: State, e: GameEvent): { text: string; icon?: string; tone?: 'good' | 'bad' | 'info' } | undefined {
   switch (e.e) {
@@ -318,7 +350,8 @@ export function itemBenefit(b: Bundle, id: string): string {
   if (!it) return '';
   if (it.tool) {
     const tier = `Tier ${it.tool.tier} ${it.tool.kind}`;
-    const uses = `${it.tool.uses} uses`;
+    // a tool with no uses never wears out
+    const uses = it.tool.uses === undefined ? 'lasts' : `${it.tool.uses} uses`;
     const speed = it.tool.tier > 1 ? ` · +${15 * (it.tool.tier - 1)}% gathering speed` : '';
     // two patches of the same plant read as one; a start's own spot is no dig site of the trowel's
     const resources = [...new Set(Object.values(b.resources)

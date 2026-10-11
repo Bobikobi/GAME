@@ -201,7 +201,9 @@ export const ItemDef = Type.Object(
         {
           kind: ToolKind,
           tier: Int(1, 5, 'Better tools work faster. The calculator clamps the total.'),
-          uses: Int(1, 1000, 'The tool wears out after this many uses.'),
+          uses: Type.Optional(
+            Int(1, 1000, 'The tool wears out after this many uses. Left out, the tool lasts (DECISIONS.md, 2026-10-09: the crafting economy).'),
+          ),
         },
         { additionalProperties: false },
       ),

@@ -5,7 +5,7 @@
   "id": "core/tools",
   "title": "Tools",
   "creator": "core",
-  "description": "Tools are sold by Pell and never bought back.",
+  "description": "The first tools, sold by Pell, who never buys them back. A tool made at the workshop sells for the uses it has left.",
   "items": [
     {
       "id": "core/basket",

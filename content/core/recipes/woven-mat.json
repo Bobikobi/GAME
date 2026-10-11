@@ -1,0 +1,39 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/woven-mat",
+  "title": "Woven mat",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/woven-mat",
+      "name": "Woven mat",
+      "description": "Cord over cord, flat and firm.",
+      "kind": "material",
+      "rarity": "uncommon",
+      "class": "fibre",
+      "tier": 2,
+      "sprite": "core/base-kit:items/basket"
+    }
+  ],
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 6000,
+    "level": 3,
+    "inputs": [
+      {
+        "item": "core/reed-cord",
+        "qty": 3
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/woven-mat",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start"
+  }
+}
