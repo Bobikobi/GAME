@@ -269,12 +269,14 @@ const explorer: Role = {
 };
 
 const BASKET_FRONT: string[] = [
-  '..0mnnnnnm0..',
-  '.0ecececece0.',
-  '0ececececece0',
+  '..000000000..',
+  '.0mnnnnnnnm0.',
+  '.0mmmmmmmmm0.',
+  '0eceececeece0',
   '0cececececec0',
-  '0ececececece0',
-  '.0ecececece0.',
+  '0eceececeece0',
+  '0cececececec0',
+  '.0eceececec0.',
   '..0ccccccc0..',
 ];
 
@@ -283,7 +285,8 @@ const forager: Role = {
   build: { cutRows: [15, 13, 11, 9], cutCols: [0, 3], dupCols: [] },
   items: {
     down: [
-      { anchor: 'torso', layer: 'back', dy: -4, grid: BASKET_FRONT },
+      { anchor: 'torso', layer: 'back', dy: -9, grid: BASKET_FRONT },
+      { anchor: 'torso', layer: 'front', dy: 0, grid: ['.cc.....cc.', '..cc...cc..', '...c...c...'] },
       { anchor: 'torso', layer: 'front', dy: -1, grid: ['0mnnnm0', '.0mnm0.', '..0m0..'] },
     ],
     left: [
