@@ -2,6 +2,23 @@
 
 One note per tag on `main`, newest first (docs/team/PLATFORM.md section 2).
 
+## v0.1.2 - 2026-10-11
+
+What players notice
+- Crafting has no level wall: a recipe above your level can always be tried, at a lower chance; only a missing or too-small station refuses.
+- A made good sells to the trader for 75 percent of its value; everything else still pays 50.
+- The bag is sorted into Food, Materials, Tools, To wear, Treasures and Recipe scraps; items and recipes show their class and tier; the journal groups items by class and family.
+- A craft row names the station it needs ("Needs a workshop of tier 2: the workbench").
+- The night ruins are dangerous one step past their safe threshold: a pit and a wolf that hunts at night. The opening's own night walk stays out of reach.
+- Hunger no longer drains health; health falls only to hazards and bad food, and work slows below a quarter of the bar.
+- Two things heal: a first-aid kit at Pell's and a bandage from the workshop.
+
+What creators notice
+- A new parameter, `k_craft_permille` (750, votable from 500 to 900), sets what the trader pays for made goods; the check refuses a share that would let the trader pay what the shop charges.
+
+What changed underneath
+- kernel 0.1.2 (simulation 0.5.0); saves from v0.1.1 load unchanged.
+
 ## v0.1.1 - 2026-10-11
 
 What players notice
