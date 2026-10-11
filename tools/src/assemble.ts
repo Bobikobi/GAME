@@ -74,6 +74,7 @@ const SLOT_KINDS_FOR: Record<string, string[]> = {
 export function flattenParams(p: ParamsBody): Params {
   return {
     k_permille: p.k_permille.value,
+    k_craft_permille: p.k_craft_permille.value,
     r_mg_per_value_ms: p.r_mg_per_value_ms.value,
     t_min_ms: p.t_min_ms.value,
     max_action_ms: p.max_action_ms.value,
@@ -249,8 +250,8 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   const content = { params, items, classes, ...r, map, sprites, verbs, stations, credits };
   const tag = hashText(canonical(content));
   const instances = layoutInstances(map, r.resources, r.treasures);
-  const { values } = computeValues({ params, items, resources: r.resources, treasures: r.treasures, recipes: r.recipes });
-  const bundle: Bundle = { format: 1, tag, ...content, instances, values, creators, board };
+  const { values, made } = computeValues({ params, items, resources: r.resources, treasures: r.treasures, recipes: r.recipes });
+  const bundle: Bundle = { format: 1, tag, ...content, instances, values, made, creators, board };
   checkReferences(bundle, origin, issues);
   return { bundle, issues, kits, origin };
 }

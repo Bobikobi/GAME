@@ -190,7 +190,11 @@ export class UI {
     app.session = session;
     app.world?.bind(session);
     session.on('events', (events) => {
+      // a fall says it all in its one box: the calls to run from a hunt that has ended come down
+      const fell = events.some((e) => e.e === 'fall');
+      if (fell) this.toasts.replaceChildren();
       for (const e of events) {
+        if (fell && e.e === 'hurt') continue;
         const d = describe(app.bundle, session.state, e);
         if (d) this.toast(d.text, d.tone, d.icon);
       }

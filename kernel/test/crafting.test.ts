@@ -1,7 +1,9 @@
 /**
  * The craft gate and the craft chance (G40; DECISIONS.md, 2026-10-09): a
- * recipe asks its own profession and a station of its tier, skill decides the
- * chance and luck tilts it, and a miss keeps part of what went in.
+ * recipe asks a station of its tier and trains its own profession, skill
+ * decides the chance and luck tilts it, and a miss keeps part of what went in.
+ * There is no level wall (CR-17): below the recipe's level the chance falls
+ * a step a level, down to nothing, and a try at nothing runs and misses.
  */
 import { beforeAll, describe, expect, test } from 'vitest';
 
@@ -59,6 +61,8 @@ beforeAll(() => {
     miss: { keep_pct: 0 },
   });
   recipe('x/stool', { station: 'workshop', level: 2, inputs: [{ item: 'core/branch', qty: 2 }], outputs: out('x/stool') });
+  // far above any level the hearth's cook reaches: every try is a try at nothing
+  recipe('x/far', { level: 20, inputs: [{ item: 'core/branch', qty: 4 }], outputs: out('x/plank') });
   const fire = b.camps['core/campfire']!;
   b.camps['x/hearth'] = { ...structuredClone(fire), id: 'x/hearth', title: 'Hearth', tier: 2, upgrades: 'core/campfire' };
   b.camps['x/bench'] = { ...structuredClone(fire), id: 'x/bench', title: 'Bench', slot: 'workshop', provides: 'workshop' };
@@ -136,13 +140,16 @@ describe('the craft gate', () => {
     expect(tryCraft(prepared(1), 'x/stool')).toEqual({ ok: false, error: 'You need a workshop.' });
   });
 
-  test('a recipe asks the level of its own profession, trains it, and takes only its techniques', () => {
+  test('a recipe reads the level of its own profession, trains it, and takes only its techniques', () => {
     const s = prepared(1, (s) => {
       s.player.camp = ['x/bench', 'x/hearth'];
       s.player.xp['core/cooking'] = xpFor('core/cooking');
     });
-    expect(tryCraft(s, 'x/stool')).toEqual({ ok: false, error: 'Needs Carpentry level 2.' });
+    // a master cook is a carpenter of level 1: the level-2 stool is a step short of a sure craft, and the kernel still lets them try
+    expect(craftChanceBp(b, s, 'x/stool')).toBe(10_000 - b.params.craft_level_step_bp);
+    expect(tryCraft(s, 'x/stool').ok).toBe(true);
     s.player.xp['x/carpentry'] = xpFor('x/carpentry', 2);
+    expect(craftChanceBp(b, s, 'x/stool')).toBe(10_000);
     const r = craft(s, 'x/stool');
     const stool = b.recipes['x/stool']!;
     expect(r.state.player.xp['x/carpentry']).toBe(xpFor('x/carpentry', 2) + stool.active_ms);
@@ -156,7 +163,7 @@ describe('the craft gate', () => {
 });
 
 describe('the craft chance', () => {
-  test('a tier-1 craft never misses', () => {
+  test('a tier-1 craft at its level never misses', () => {
     for (let seed = 1; seed <= 200; seed++) {
       const s = prepared(seed, (s) => {
         s.player.camp = ['core/campfire'];
@@ -181,6 +188,25 @@ describe('the craft chance', () => {
     expect(at(3)).toBe(b.params.craft_chance_bp[1]);
     expect(at(4) - at(3)).toBe(b.params.craft_level_step_bp);
     expect(at(9)).toBe(10_000);
+  });
+
+  test('below its level a recipe loses a step of chance for each missing level, down to nothing', () => {
+    const at = (level: number, recipe = 'x/plank') =>
+      craftChanceBp(
+        b,
+        prepared(1, (s) => {
+          s.player.xp['core/cooking'] = xpFor('core/cooking', level);
+        }),
+        recipe,
+      );
+    const base = b.params.craft_chance_bp[1]!;
+    const step = b.params.craft_level_step_bp;
+    expect(b.recipes['x/plank']!.level).toBe(3);
+    expect(at(2)).toBe(base - step);
+    expect(at(1)).toBe(base - 2 * step);
+    // seventeen levels short of the far recipe: more steps than the chance has
+    expect(base - 17 * step).toBeLessThan(0);
+    expect(at(3, 'x/far')).toBe(0);
   });
 
   test('luck closes part of the gap, inside the power cap, and never all of it', () => {
@@ -224,6 +250,27 @@ describe('the craft chance', () => {
     expect(gains.size).toBe(1);
     expect(misses).toBeGreaterThan(0);
     expect(Math.abs(misses / 400 - (10_000 - chance) / 10_000)).toBeLessThan(0.06);
+  });
+
+  test('a try at nothing runs and misses every time, keeps its share and trains as much; luck never opens it', () => {
+    const luckiest = prepared(1, (s) => {
+      s.player.attrs.luck = 10;
+      s.player.xp['core/foraging'] = xpFor('core/foraging');
+      s.player.xp['core/digging'] = xpFor('core/digging');
+    });
+    expect(craftLuckPermille(b, luckiest, 'core/cooking')).toBe(b.params.craft_luck_max_permille);
+    expect(craftChanceBp(b, luckiest, 'x/far')).toBe(0);
+    const far = b.recipes['x/far']!;
+    for (let seed = 1; seed <= 50; seed++) {
+      const s = prepared(seed);
+      const r = craft(s, 'x/far');
+      expect(missed(r)).toBe(true);
+      expect(r.state.player.bag['core/branch']).toBe(40 - 4 + 2);
+      expect(r.state.player.bag['x/plank']).toBe(2);
+      expect(r.state.player.made['x/far']).toBeUndefined();
+      expect(r.state.player.tries['x/far']).toBe(1);
+      expect(r.state.player.xp['core/cooking']! - s.player.xp['core/cooking']!).toBe(far.active_ms);
+    }
   });
 
   test('a miss keeps part of the inputs and makes nothing, and always leaves something', () => {

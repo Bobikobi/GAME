@@ -3,6 +3,7 @@ import {
   type Attribute,
   type Bundle,
   type GameEvent,
+  type RecipeDef,
   type State,
   type WearSlot,
   bagCapacity,
@@ -19,6 +20,7 @@ import {
   offeredTo,
   powerCap,
   questSatisfied,
+  recipeTier,
   riddleKey,
   rareFindPermille,
   salePrice,
@@ -267,6 +269,85 @@ export function stationUpgrades(b: Bundle, s: State, station: string): string[] 
     .sort();
 }
 
+/** A class as a player reads it: a base class by its word, an extension's own class by its name. */
+export function className(b: Bundle, cls: string | undefined): string {
+  if (!cls) return 'Other';
+  return b.classes[cls]?.name ?? `${cls[0]!.toUpperCase()}${cls.slice(1)}`;
+}
+
+/** An item's class, family and tier in one line, for example "Plant (berry), tier 1". */
+export function classLine(b: Bundle, id: string): string {
+  const it = b.items[id];
+  const tier = it?.tier ?? 1;
+  if (!it?.class) return `Tier ${tier}`;
+  return `${className(b, it.class)}${it.family ? ` (${it.family})` : ''}, tier ${tier}`;
+}
+
+/** The bag's categories (D-CRAFT-6), in the order it shows them. */
+const BAG_GROUPS = [
+  ['food', 'Food'],
+  ['material', 'Materials'],
+  ['tool', 'Tools'],
+  ['wear', 'To wear'],
+  ['treasure', 'Treasures'],
+  ['fragment', 'Recipe scraps'],
+] as const;
+
+/** The bag by kind, each category sorted by name; a worn thing that is not a tool goes under "To wear", and an empty category is left out. */
+export function bagGroups(b: Bundle, ids: readonly string[]): { label: string; ids: string[] }[] {
+  const keys: readonly string[] = BAG_GROUPS.map(([key]) => key);
+  const keyOf = (id: string): string => {
+    const it = b.items[id];
+    const key = it && it.kind !== 'tool' && it.wear ? 'wear' : (it?.kind ?? 'material');
+    // a kind the bag has no category for yet still shows, with the materials
+    return keys.includes(key) ? key : 'material';
+  };
+  return BAG_GROUPS.map(([key, label]) => ({
+    label,
+    ids: ids.filter((id) => keyOf(id) === key).sort((x, y) => itemName(b, x).localeCompare(itemName(b, y))),
+  })).filter((g) => g.ids.length > 0);
+}
+
+/** The journal's items by class (C12): one group per class, by name, each with a row for the items of no family first and then a row per family. */
+export function journalGroups(b: Bundle): { label: string; rows: { family?: string; ids: string[] }[] }[] {
+  const byName = (x: string, y: string) => itemName(b, x).localeCompare(itemName(b, y));
+  const groups = new Map<string, string[]>();
+  for (const id of Object.keys(b.items)) {
+    const label = className(b, b.items[id]!.class);
+    groups.set(label, [...(groups.get(label) ?? []), id]);
+  }
+  return [...groups.entries()]
+    .sort(([x], [y]) => x.localeCompare(y))
+    .map(([label, ids]) => ({
+      label,
+      rows: [...new Set(ids.map((id) => b.items[id]!.family ?? ''))].sort().map((family) => ({
+        ...(family ? { family } : {}),
+        ids: ids.filter((id) => (b.items[id]!.family ?? '') === family).sort(byName),
+      })),
+    }));
+}
+
+/** Where a recipe is made: "the workshop", or "a workshop of tier 2" past the first tier. */
+export function stationText(b: Bundle, recipe: RecipeDef): string {
+  const tier = recipeTier(b, recipe);
+  return tier > 1 ? `a ${recipe.station} of tier ${tier}` : `the ${recipe.station}`;
+}
+
+/**
+ * The gate that blocks a recipe, the only one since CR-17: every part built
+ * for its station is below the recipe's tier. Names the lowest part that
+ * fits. Undefined when a built part fits, or when none is built yet.
+ */
+export function stationGate(b: Bundle, s: State, recipe: RecipeDef): string | undefined {
+  const tier = recipeTier(b, recipe);
+  const tierOf = (id: string) => b.camps[id]!.tier ?? 1;
+  const parts = Object.keys(b.camps).filter((id) => b.camps[id]!.provides === recipe.station);
+  const built = parts.filter((id) => s.player.camp.includes(id));
+  if (built.length === 0 || built.some((id) => tierOf(id) >= tier)) return undefined;
+  const next = parts.filter((id) => tierOf(id) >= tier).sort((x, y) => tierOf(x) - tierOf(y) || x.localeCompare(y))[0];
+  return `Needs a ${recipe.station} of tier ${tier}${next ? `: the ${b.camps[next]!.title.toLowerCase()}` : ''}.`;
+}
+
 /** A short sentence for each event a player should notice. */
 /** What a hurt says, by what did it (the kernel's hazard kinds, and food). */
 const HURT_TEXT: Readonly<Record<string, string>> = {
@@ -279,10 +360,13 @@ const HURT_TEXT: Readonly<Record<string, string>> = {
 
 /** The Eat button's label: what a food gives, and what it takes when it hurts. */
 export function eatLabel(b: Bundle, id: string): string {
-  const food = b.items[id]?.food;
-  if (!food) return 'Eat';
+  const item = b.items[id];
+  const food = item?.food;
+  // a bandage or a first-aid kit heals the same way, but nobody eats it
+  const verb = item && item.kind !== 'food' ? 'Use' : 'Eat';
+  if (!food) return verb;
   const parts = [food.satiety > 0 ? `+${food.satiety}` : '', food.hurt ? `-${food.hurt}` : ''].filter(Boolean);
-  return parts.length > 0 ? `Eat (${parts.join(', ')})` : 'Eat';
+  return parts.length > 0 ? `${verb} (${parts.join(', ')})` : verb;
 }
 
 /**
@@ -339,7 +423,7 @@ export function describe(b: Bundle, s: State, e: GameEvent): { text: string; ico
     case 'build':
       return { text: `${b.camps[e.camp]?.title ?? e.camp} built`, tone: 'good' };
     case 'eat':
-      return { text: `You ate ${itemName(b, e.item)}`, icon: b.items[e.item]?.sprite, tone: b.items[e.item]?.food?.hurt ? 'info' : 'good' };
+      return { text: `${b.items[e.item]?.kind === 'food' ? 'You ate' : 'You used'} ${itemName(b, e.item)}`, icon: b.items[e.item]?.sprite, tone: b.items[e.item]?.food?.hurt ? 'info' : 'good' };
     case 'hurt':
       return { text: HURT_TEXT[e.by] ?? 'That hurt', tone: 'bad' };
     case 'nothing':

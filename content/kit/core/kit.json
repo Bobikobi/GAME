@@ -704,6 +704,16 @@
         "w": 16,
         "h": 16,
         "frames": 4
+      },
+      "items/bandage": {
+        "file": "items/bandage.png",
+        "w": 16,
+        "h": 16
+      },
+      "items/first-aid-kit": {
+        "file": "items/first-aid-kit.png",
+        "w": 16,
+        "h": 16
       }
     }
   }
