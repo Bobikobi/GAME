@@ -34,6 +34,7 @@ import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { emptySlots, slotContent } from '../places';
 import { canopyGroups, hash, remapTone, toneField, type Tone } from '../richground';
 import type { Session } from '../session';
+import { soundscape } from '../soundscape';
 import { SensesFind } from '../senses';
 import { questTargets } from '../targets';
 import { nodeLook } from '../growth';
@@ -1077,6 +1078,7 @@ export class WorldScene extends Phaser.Scene {
       this.refreshNodes();
       this.shadeFor(s);
       this.showSignatures(s);
+      this.hearPlace(s);
     }
     this.walk(s, delta);
     if (RICH.motion) this.idle(s, time);
@@ -1318,6 +1320,12 @@ export class WorldScene extends Phaser.Scene {
   }
 
   // ------------------------------------------------------------ day, night and the things in the dark
+
+  /** The campfire, the stream and the ruins sound as loud as the player is near them (soundscape.ts). */
+  private hearPlace(s: Session): void {
+    const scape = soundscape(this.b, s.state, s.tick, this.player.x / T, this.player.y / T - 0.5);
+    for (const id of ['fire', 'stream', 'dread'] as const) sound.bed(id, scape[id].level, scape[id].pan);
+  }
 
   private shadeFor(s: Session): void {
     const m = minuteOfDay(this.b, s.tick) / 60;
