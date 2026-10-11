@@ -199,3 +199,12 @@ Read DECISIONS 2026-10-11 "Maze difficulty is a ladder of four tiers" (PR #71). 
 - A maze names its tier in content (schema additive, `FORMAT_VERSION` stays 1). Tier 1: the peek with a very faint route line and the landmarks. Tier 2: the peek, and only the landmarks glow for a moment. Tier 3: the shape alone. Tier 4: no peek; waits for P-5c and stealth.
 - The tangle is tier 1.
 - Measurable: the peek lasts 3 seconds and fits the whole maze on screen at 390x844 and 1440x900; the line shows at tier 1 only; `pnpm verify` and `pnpm e2e` green.
+
+## 10. The stage-1 service (M5: GRUNT 17, 18, 19)
+
+Read GRUNT items 17-19 and DECISIONS 2026-10-07 "The stage-1 service runs as Vercel Functions with Upstash Redis" and 2026-10-08 "Stage 2a after the stage-1 service". This stream is the road to the server: stage 2a is designed once its numbers are in.
+
+- One pull request per GRUNT item, in order 17, 18, 19, each with the item's proving command.
+- Upstash Redis comes from the Vercel Marketplace (free tier) in the existing project. Provisioning it and setting its two environment names on Vercel is a production change: ask the owner first, in three lines. Until then the tests run on the fake store and `usage` stays null.
+- Add Vercel Web Analytics for page views (owner, 11.10): `@vercel/analytics` pinned, one component in the site layout and one call in the game's page. Turning it on in the Vercel dashboard is the owner's, at the release. It does not replace the in-game counts.
+- Measurable: item 17's curl prints 204 on a preview with the env names; item 18's client tests and e2e green; item 19's page lists the fixture's numbers; `pnpm verify` green.
