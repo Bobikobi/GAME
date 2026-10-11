@@ -1,9 +1,12 @@
 name: CI
 
 on:
+  # a change to prose only (docs, DECISIONS, README) runs no build: Actions minutes are limited
   pull_request:
+    paths-ignore: ['**.md', 'docs/**']
   push:
     branches: [main, develop]
+    paths-ignore: ['**.md', 'docs/**']
 
 permissions:
   contents: read
