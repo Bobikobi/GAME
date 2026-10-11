@@ -91,8 +91,12 @@ describe('what a node asks of the player', () => {
 
 describe('food benefits', () => {
   test('speak in health points and, while hunger drains, minutes of work', () => {
-    expect(itemBenefit(bundle, 'core/berry')).toBe('+4 health · about 34 s of work');
-    expect(itemBenefit(bundle, 'core/berry-mash')).toBe('+15 health · about 2 min of work');
+    // the shipped valley drains nothing since P-5c; a world that still does says how long a food lasts
+    expect(itemBenefit(bundle, 'core/berry')).toBe('+4 health');
+    const b = structuredClone(bundle);
+    b.params.satiety_drain_per_min = 7000;
+    expect(itemBenefit(b, 'core/berry')).toBe('+4 health · about 34 s of work');
+    expect(itemBenefit(b, 'core/berry-mash')).toBe('+15 health · about 2 min of work');
   });
 
   test('with no hunger clock nothing divides by it, and a food that hurts says so on its Eat button', () => {
@@ -108,6 +112,10 @@ describe('food benefits', () => {
     b.items['core/berry'] = { ...b.items['core/berry']!, food: { satiety: 0, hurt: 10 } };
     expect(eatLabel(b, 'core/berry')).toBe('Eat (-10)');
     expect(eatLabel(bundle, 'core/berry')).toBe('Eat (+4)');
+    // what heals without being food is used, not eaten
+    expect(eatLabel(bundle, 'core/bandage')).toBe('Use (+20)');
+    expect(eatLabel(bundle, 'core/first-aid-kit')).toBe('Use (+50)');
+    expect(describeEvent(bundle, newState(bundle, 1), { e: 'eat', item: 'core/bandage', satiety: 50_000 })!.text).toBe('You used Bandage');
   });
 });
 
@@ -116,6 +124,12 @@ describe('the night (G31)', () => {
   function hunted(): Bundle {
     const b = structuredClone(bundle);
     b.map.props = [...b.map.props, { id: 'test/wolf', sprite: 'core/base-kit:props/hazard_wolf', x: 0, y: 0, w: 1, h: 1, solid: false, hazard: { kind: 'predator', window: ['night'] } }];
+    return b;
+  }
+  /** The valley with every hazard taken out: nothing there hunts. */
+  function calm(): Bundle {
+    const b = structuredClone(bundle);
+    b.map.props = b.map.props.filter((p) => !p.hazard);
     return b;
   }
   const town = (b: Bundle): [number, number] => {
@@ -132,7 +146,7 @@ describe('the night (G31)', () => {
     expect(nightCountdown(b, s, out, 345_000)).toEqual({ text: 'Dark in 0:55', soon: true });
     expect(nightCountdown(b, s, out, 500_000)).toBeUndefined();
     expect(nightCountdown(b, s, town(b), 0)).toBeUndefined();
-    expect(nightCountdown(bundle, newState(bundle, 1), out, 0)).toBeUndefined();
+    expect(nightCountdown(calm(), newState(calm(), 1), out, 0)).toBeUndefined();
   });
 
   test('the lantern warning belongs to one night, outside a safe place', () => {
@@ -144,7 +158,7 @@ describe('the night (G31)', () => {
     expect(lanternNight(b, s, out, 800_000)).toBe(850_000);
     expect(lanternNight(b, s, out, 1_700_000)).toBe(2_050_000);
     expect(lanternNight(b, s, town(b), 500_000)).toBeUndefined();
-    expect(lanternNight(bundle, newState(bundle, 1), out, 500_000)).toBeUndefined();
+    expect(lanternNight(calm(), newState(calm(), 1), out, 500_000)).toBeUndefined();
   });
 
   test('a hurt says what did it', () => {
@@ -255,6 +269,9 @@ describe('skills in plain words (the owner, 10.10)', () => {
     const carry = attributeEffects(bundle, s).find((fx) => fx.attr === 'carry')!;
     expect(`${carry.what} ${carry.now} -> ${carry.next}`).toMatch(/^Your bag holds \d+ -> \d+ things$/);
     const stamina = attributeEffects(bundle, s).find((fx) => fx.attr === 'stamina')!;
-    expect(stamina.next).toMatch(/^\d+ minutes$/);
+    expect(stamina.next).toMatch(/^\d+ points$/);
+    const draining = structuredClone(bundle);
+    draining.params.satiety_drain_per_min = 7000;
+    expect(attributeEffects(draining, s).find((fx) => fx.attr === 'stamina')!.next).toMatch(/^\d+ minutes$/);
   });
 });

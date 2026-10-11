@@ -9,6 +9,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Work stone (camp) - `content/core/camp/work-stone.json`
 - Workbench (camp) - `content/core/camp/workbench.json`
 - Workshop (camp) - `content/core/camp/workshop.json`
+- Healing (items) - `content/core/items/healing.json`
 - Tools (items) - `content/core/items/tools.json`
 - The valley (map) - `content/core/map.json`
 - Elder Maru (npc) - `content/core/npcs/elder.json`
@@ -30,6 +31,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - The arch at night (quest) - `content/core/quests/the-night-arch.json`
 - The tangle past the ruins (quest) - `content/core/quests/the-tangle.json`
 - Where the bells rang (quest) - `content/core/quests/three-fruits.json`
+- Bandage (recipe) - `content/core/recipes/bandage.json`
 - Berry mash (recipe) - `content/core/recipes/berry-mash.json`
 - Fine basket (recipe) - `content/core/recipes/fine-basket.json`
 - Flint trowel (recipe) - `content/core/recipes/flint-trowel.json`

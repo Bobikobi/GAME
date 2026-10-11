@@ -1,0 +1,46 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/bandage",
+  "title": "Bandage",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/bandage",
+      "name": "Bandage",
+      "description": "Herbs bound in reed cord. It heals; it keeps nothing away.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "fibre",
+      "tier": 1,
+      "sprite": "core/base-kit:items/bandage",
+      "food": {
+        "satiety": 20
+      }
+    }
+  ],
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 3000,
+    "level": 1,
+    "inputs": [
+      {
+        "item": "core/herb",
+        "qty": 2
+      },
+      {
+        "item": "core/reed-cord",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/bandage",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start"
+  }
+}
