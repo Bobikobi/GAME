@@ -263,7 +263,7 @@ function openingLog(): { a: Action; tick: number }[] {
   };
   append({ t: 'start', starter: 'core/forager', name: 'Replay' }, 0);
   const stones = Object.entries(bundle.instances)
-    .filter(([, instance]) => instance.source === 'core/river-stones')
+    .filter(([, instance]) => instance.source === 'core/keystone')
     .sort(([a], [b]) => a.localeCompare(b));
   for (const [node, instance] of stones) {
     const at = nearTile(state, { x: instance.x, y: instance.y, w: 1, h: 1 });

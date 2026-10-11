@@ -2,13 +2,15 @@
 import { app } from '../app';
 import { GAME_TITLE } from '../config';
 import { Session } from '../session';
-import { ATTRIBUTE_TEXT } from '../text';
+import { ATTRIBUTE_LABEL, ATTRIBUTE_TEXT } from '../text';
 import { say } from './dialog';
 import { button, h, sprite } from './dom';
 import type { UI } from './ui';
 
 export function showTitle(ui: UI): Promise<void> {
   return new Promise((resolve) => {
+    // a save from before the new opening is dropped once, and said so once (CR-62)
+    let dropped = Session.dropOld();
     const el = h('div', { class: 'title-screen' });
     ui.root.append(el);
     const done = () => {
@@ -30,10 +32,12 @@ export function showTitle(ui: UI): Promise<void> {
             canContinue ? button('Continue', () => resume(), 'big') : null,
             button('New game', () => (canContinue ? confirmNew() : choose()), canContinue ? '' : 'big'),
           ),
+          dropped ? h('p', { class: 'demo-note', 'data-save-reset': '' }, 'The valley has a new opening, so the game saved in this browser starts over. Thank you for playing the demo early.') : null,
           h('p', { class: 'demo-note' }, 'Demo: your progress is saved in this browser only, and will not move to an account later.'),
           h('a', { class: 'btn small site-link', href: '../' }, 'Site'),
         ),
       );
+      dropped = false;
       (el.querySelector('button') as HTMLElement | null)?.focus();
     };
 
@@ -89,7 +93,7 @@ export function showTitle(ui: UI): Promise<void> {
                 'div',
                 { class: 'mini-attrs' },
                 Object.entries(st.attributes).map(([a, v]) =>
-                  h('div', { title: ATTRIBUTE_TEXT[a] ?? a }, h('span', null, a), h('span', { class: 'pips' }, Array.from({ length: 3 }, (_, i) => h('i', { class: i < v ? 'on' : '' })))),
+                  h('div', { title: ATTRIBUTE_TEXT[a] ?? a }, h('span', null, ATTRIBUTE_LABEL[a] ?? a), h('span', { class: 'pips' }, Array.from({ length: 3 }, (_, i) => h('i', { class: i < v ? 'on' : '' })))),
                 ),
               ),
             );
@@ -140,9 +144,9 @@ export function showTitle(ui: UI): Promise<void> {
 /** What the narrator says as the character wakes: the start's own lines, or the game's. */
 async function intro(ui: UI, lines: string[] | undefined): Promise<void> {
   await say(ui, null, lines ?? [
-    'You wake up in the tall grass beside a river.',
+    'You wake up in the tall grass beside a river. The sun stands high.',
     'Across the water, smoke rises over a town. The old bridge between is broken.',
-    'River stones lie on the bank nearby. Three should be enough to mend it.',
+    'Its keystone fell into the shallows by the bridge. Strike it free, and the bridge can be mended.',
   ]);
   const touch = matchMedia('(pointer: coarse)').matches;
   ui.toast(touch ? 'Walk with the pad. Press A next to things.' : 'Walk with the arrows or WASD. Press Space next to things.', 'info');

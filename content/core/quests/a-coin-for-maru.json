@@ -10,7 +10,7 @@
     "type": "riddle",
     "summary": "I buried a coin under a lantern the day the bells first rang. Which lantern, I forget. Three stones remember.",
     "requires": [
-      "core/three-fruits"
+      "core/into-town"
     ],
     "steps": [
       {
@@ -32,14 +32,17 @@
         "clue": "Maru's coin, from under the lantern the stone names."
       }
     ],
+    "talk": {
+      "done": [
+        "My coin, home at last. Take my mother's way with tea.",
+        "They say the broken arch shows a way after dark. I never went to look."
+      ]
+    },
     "reward": {
       "rep": 20,
       "gold_mg": 20000,
-      "items": [
-        {
-          "item": "core/basket",
-          "qty": 1
-        }
+      "recipes": [
+        "core/herb-tea"
       ]
     }
   }

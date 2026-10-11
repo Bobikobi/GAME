@@ -112,7 +112,8 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
       });
     }
     const r = q.reward;
-    if ((r.items?.length ?? 0) + (r.recipes?.length ?? 0) === 0) {
+    // items, recipes and places opened are all something the player can newly do
+    if ((r.items?.length ?? 0) + (r.recipes?.length ?? 0) + (r.opens?.length ?? 0) === 0) {
       issues.push({
         file: at(q.id),
         where: 'quest.reward',

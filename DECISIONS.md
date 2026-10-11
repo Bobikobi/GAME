@@ -88,6 +88,7 @@ Antigravity (desktop app, Gemini 3.8 Flash Medium according to its transcript) f
 ## 2026-10-07 ✅ Harder minigames: a miss keeps 0 or 1, and a jackpot strip
 
 Elad asked for games that are harder but still simple: outside the zones the result is 0 or 1 at random, and a thin strip two marker-widths wide pays several times more. Grades are now 0-4. A miss keeps 1 unit with chance 50% + 10% per luck point (cap 90%). Grade 4 gives the same goods as perfect and 3x experience, so the rule that the grade only lowers goods below perfect still holds. Zones are narrower and widen 25% per agility point. Evidence: kernel/test/grades.test.ts and game/test/games/*.test.ts.
+**Superseded in part (10.10):** a miss no longer keeps 0 or 1 of the node's item; it turns up something from the node's miss table (the entry on a missed gather). The jackpot strip stays.
 **Retry when:** playtests show the first quarry is too hard on a phone; widen the strike windows first. Model: claude-opus-5-5.
 
 ## 2026-10-07 ✅ A gathered node opens the way; a ready one blocks it
@@ -551,6 +552,7 @@ A character's own start, as the frame for the open question:
 How far each character's start differs (question C1): answered the same day; see the next entry. Either way the axe comes before the first fire.
 
 **Closes:** W1; GRUNT's open ends carry the building in CR-24.
+**Superseded in part (10.10):** the catch-up of an axe for a saved character is dropped, since demo saves reset once (the entry on saves).
 **Retry when:** a playtest shows the first fire too slow to reach. Model: claude-opus-5-5.
 
 ## 2026-10-09 ✅ Each character begins its own way: a place to wake, a kit and a first task, meeting at the bridge and the first fire
@@ -569,6 +571,7 @@ Readings, each open to the owner's word:
 - Each start has its own waking lines, in place of the one opening narration of today.
 
 **Closes:** C1; GRUNT's open ends carry the building as CR-37.
+**Superseded in part (10.10):** three starters, not two, and the digger digs its axe where the explorer did (the entry on three starters).
 **Retry when:** a playtest shows one start slower or richer than another. Model: claude-opus-5-5.
 
 ## 2026-10-09 ✅ One internal difficulty scale: each step asks half again as much, and the screen never shows it
@@ -899,6 +902,85 @@ The owner's word (9.10, with the answer on notes): a shop to sell from. One walk
 **Superseded in part (10.10):** while houses are paused, a player's shop sells on the town's market board (the entry on houses and plots paused).
 **Retry when:** towns crowd with shops, or buyers cannot find what is for sale. Model: claude-opus-5-5.
 
+## 2026-10-10 ✅ Ten owner answers that close the contradictions between the 9.10 sessions
+
+The question (10.10): several sessions wrote decisions on 9.10 in parallel, and a read of all branches found twelve contradictions between them (the opening recut against W1 and C1, saves, the hunger clock, the night ruins, the miss, the hazards, starting recipes, the starters, the seasons). The owner answered one question at a time, three options each, on 10.10. Each answer below is final and supersedes what it names.
+
+**Closes:** the contradictions of 9.10; the entries below hold each answer.
+**Retry when:** a playtest contradicts one of them. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ The opening's real choice is whom to help first
+
+Under C1 every character wakes with its own tool, so the choice at Pell's stall between the basket and the trowel no longer chooses anything. The owner's word (10.10): the real choice at minutes 4-6 is whom to help first. Two neighbours ask for help: Maru (the bellberry behind the ruins) and Pell (the herbs on the bank). Each says before the choice what it gives, the two rewards differ in kind, and the other one waits for later. Both quests exist today (`three-fruits`, a `fetch_twist`, and `herbs-for-pell`, a `discovery`), so G17 holds whichever comes first. This replaces the stall beat of the opening recut (option B) and G12's model. A reward a starter already holds in its kit (the basket of `a-coin-for-maru` for the forager) is swapped for one it lacks; how is the recut's to write. The recut's build is its own pull request, after CR-24 and CR-37.
+
+**Retry when:** a playtest shows players do not read the two offers as different. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ Saves reset once when the new opening lands, and from then on a save always loads
+
+The opening recut (option B) said saves need no care until the server keeps them; the entry on the real year said every schema change stays additive so a saved game always loads; W1 gave an axe to an old save. The owner's word (10.10): one reset. When the new opening lands (CR-24, CR-37, the recut), demo saves are dropped once, with one short notice on the title screen. From then on every change only adds, and a save always loads. Demo saves live in the browser only and never pass to an account, so the reset costs a few minutes of play. The recut's noon start may move `hourOf` at that reset. W1's catch-up (an axe for a saved character with none) is no longer needed.
+
+**Supersedes:** "Saves need no care until the server keeps them" (the opening recut branch) and W1's line on saved characters. GRUNT's CR-62 and CR-2 carry the building.
+**Retry when:** the demo holds players with long saves before the reset ships. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ The axe and the starts come first; the crafting economy is tuned once, after them
+
+The crafting work (waves 3 and 4, the economy) tunes prices on a world where a branch lies on the ground for free; W1 removes that node. The owner's word (10.10): the axe, felling (CR-24) and the starters' kits (CR-37) are built first. The crafting work keeps what it made and waits; its numbers (CR-31's gold per hour, the market's steps) are tuned once, on the world with felling.
+
+**Retry when:** CR-24 and CR-37 are on `develop`. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ The hunger clock stays until P-5, and P-5 comes right after the axe
+
+G32 and the forbidden patterns bar a bar that drains by the clock, while the kernel still drains satiety (`satiety_drain_per_min`, full to empty in about fifteen minutes, then work at 1.5 times the time). The owner's word (10.10): the drain stays for now, G32 says it waits for P-5, and P-5 (health, hazards, the fall) is built right after the axe and the starts. Turning the drain off first would leave food with no purpose until then.
+
+**Retry when:** P-5 lands. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ The opening ends at the entrance of the night ruins, and the entrance is safe
+
+The recut (option B) closes minute ten at the threshold of the night ruins; P-5's test walks into them at night and falls; P-6 opens the first expedition with the same arch and riddle the opening uses. The owner's word (10.10): the opening ends at the entrance and the player only looks in. The entrance is a safe area (danger 0) and the danger starts one step inside. P-6's first expedition gets a new opening of its own, and the arch and the three-stones riddle stay the opening's.
+
+**Retry when:** a playtest shows players step inside on the first night anyway and fall. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ A missed gather turns up something else, never nothing
+
+G15 said a miss keeps something; the kernel and "Harder minigames" (7.10) keep 0 or 1 at random, so half the misses leave nothing. The owner found the options "keep 1" and "0 or 1" predictable; other games read for the answer: RuneScape makes a miss cost time only, Stardew Valley raises quality with precision and drops a treasure chest now and then, Animal Crossing's shaken tree drops furniture or a wasps' nest. The owner's word (10.10): a surprise. A miss turns up something other than the node's item, from the node's own miss table in its content file: a bruised fruit good for a mash, grit for a path, now and then a rare find, now and then only a thorn. Never an empty hand. The jackpot strip stays the reward for precision. A creator adds surprises by adding rows, with no code. Rare things on a miss table count in the world's one rarity budget (G42), and every item on it has a value from the solver.
+
+**Supersedes:** the miss half of "Harder minigames: a miss keeps 0 or 1" (7.10); the jackpot strip stays. GRUNT's open ends carry the building as CR-60.
+**Retry when:** players start missing on purpose for the miss table. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ A hazard is escaped, never answered by an item; road thieves wait for weapons
+
+The owner said on 9.10 that no gear answers a hazard and a predator is escaped by running back to town; G34 and P-5 still listed lantern oil, a torch, a rope and an antidote as answers and the road as the chase's end; the boards entry added road thieves answered by an item. The owner's word (10.10): only escape. A hunting hazard is escaped by running back to a safe place (the town, or a camp whose fire burns, G30); a waiting hazard is avoided by knowing its rule (the trap shows by day, the pit is where the floor is broken, the bad herb is safe cooked, the river has no bridge at night). No item bought or made answers a hazard. Healing is not an answer: food, a first-aid kit and a night's sleep still give health back (G32). Road thieves come later in the game, when there are weapons (CR-12), so "the top is hunted" in the boards entry waits with them.
+
+**Superseded in part (10.10):** a safe place is G30's one safe place: the town, all ground at danger level 0 and a camp whose fire burns, another player's only for a guest with a deal (the entries on the game read as one line and on the five holes of the one line).
+**Retry when:** combat opens (stage 8 or a vote). Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ First-tier recipes are known from the start; higher tiers are dug up
+
+Crafting wave 3 gave all eleven of its recipes `known: start`, while the spec makes a recipe lost knowledge that someone digs up. The owner's word (10.10): a tier-1 recipe is known from the start so there is always something to make, and a tier-2 or tier-3 recipe is found by digging in the ruins, which gives digging a strong reason and each new recipe a moment of discovery. GRUNT's open ends carry it as CR-61.
+
+**Retry when:** a playtest shows the forager or the explorer stuck at tier 1 for want of digging. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ Three starters now: the forager, the digger and the explorer, who finds
+
+The art entry names three roles (explorer, forager, digger) and the 3D trial rigged the digger, while the content and C1 knew two. The owner's word (10.10): three now. Each wakes with its own kit and gets its axe its own way before the first fire (C1):
+
+- The forager wakes with a basket and an axe, and picks first.
+- The digger wakes with a trowel, and its first find is its own axe, dug from the ground (C1's explorer start moves here).
+- The explorer wakes with a walking staff and sharp senses: it sees hidden places from further away, and finds its axe hidden by the bridge. The find by the senses at minutes 2-4 of the opening is its beat. It uses the hint the game already draws for a dig site, widened by senses.
+- The explorer's senses get an animation of their own, fitted to the explorer, in place of the generic hint circle (the owner's word, 10.10). The owner judges it on the preview.
+
+All three keep C1's checks: one attribute total (6), one band of kit value, one band of effort to the first fire. GRUNT's CR-37 carries the building.
+
+**Retry when:** a playtest shows one start slower or richer than the others. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ A content season runs on the quarter of a season of the year; a holiday's reward is that year's only
+
+"Season" meant two things: a content season of a quarter with its board and titles, and a season of the real year. The owner's word (10.10): one season. A content season runs on exactly the months of a season of the year (March to May, June to August, September to November, December to February), and keeps its theme's name, since the halves of the globe see opposite seasons (the entry on a season's length holds). For holidays the owner chose "one time" (the option that breaks the rule of no last chance) and said to fix the rule to fit: a holiday still falls on its real dates every year, but what it gives is that year's only, a look or a title marked with the year, bound to the character and never traded. Whoever misses it does not get it later; the next year's holiday gives its own. This is the game's one "last chance", and it costs a look or a title, never a use, a recipe, a tool or a way forward. G28 now carries it as its second written exception, and G42 names it. G30's hours also follow the kernel's (dark from 20:00 to 05:00), a correction with no owner question, since the code is what the player sees.
+
+**Supersedes:** "It comes back every year on its dates" for what a holiday gives, and the "no last chance" of G28 for holidays only (the entry on the real year); GRUNT's CR-41 and CR-42 carry the building.
+**Superseded in part (10.10):** the exception for plots and houses is paused with them (the entry on houses and plots paused), so the holidays are G28's one written exception while it lasts.
+**Retry when:** players who missed a holiday feel locked out or pressed to log in on its dates. Model: claude-opus-5-5.
+
 ## 2026-10-10 ✅ A sale between players burns a small fee, paid by the seller
 
 The question (10.10, after the entry on a player's shop): should a sale in a player's shop pay a small fee that leaves the world? The recommendation: yes, about 2 percent of each sale, burned, as RuneScape's Grand Exchange takes a tax on each sale, kept as a bounded parameter that the demo tunes. The owner's word (10.10): yes.
@@ -1071,6 +1153,7 @@ The question (10.10, after the sweep and the ten answers): the holes were closed
 
 Five sessions, three of them in another app, built at once with no single view: nothing recorded which branch belongs to which stream, five branches changed the same kernel, schema and values files, `feat/three-starts` sat inside another branch with no live owner, and the team page "the lead decides the order" had nothing to decide from. A hand-written status page was rejected: it is stale at the next merge and is itself a file every session touches. Anchored instead, all rebuildable from the repository: [docs/team/PARALLEL.md](docs/team/PARALLEL.md) (shared-file rules, merge order, the stacked-branch rule, the conflict recipe), `docs/team/streams.json` (hand-held, edited only when a stream starts or ends, owner `null` until the owner names it), `pnpm streams` (computed from refs and GitHub, never committed; conflicts found with `git merge-tree`, stacks collapsed), `DECISIONS.md merge=union` in `.gitattributes` (tested on a scratch repository: both entries kept, `git merge-tree` honours it, GitHub's merge button does not), and the repo skill `/integrator` for the session the owner talks to. Merging stays with the owner; delegating it is a decision to write here.
 **Retry when:** the report names a collision nobody settles for a week, or two sessions still change a shared file without a small first pull request; the next step is a CI check that compares a pull request's files with the other open streams. Model: claude-sonnet-5-5.
+
 ## 2026-10-10 ✅ The axe and the felled tree: wood comes only from felling, and a start may carry a kit
 
 - What. A tree is a gathering node worked with a new tool kind, the axe. Gathering it is felling: a new verb `fell` and a profession of its own, `core/woodcutting` (xp ladder 20, 80, 200, 420, 820, 1500, 2600, 4000; no techniques, since techniques are summed across professions and a Woodcutting bonus would reach every other work). A node may be `solid`, so a tree blocks its tile grown or as a stump (a gathered rock still opens the way), and may carry up to three `growth` sprites that show while it grows back (`growthSprite` in `game/src/growth.ts`, a pure function of the share of the respawn that has passed). A starter gets an optional `kit` that goes into the bag when the character is chosen; the field is additive, so no save format moves.
@@ -1099,6 +1182,49 @@ The product owner picked option B of `docs/design/OPENING_RECUT.md` on 9.10; the
 
 The product owner's word (9.10): for now a change may move or reset a save without a conversion. Saves live in the player's browser, and no player's progress has to survive yet. They matter again when the server comes in and keeps them (roadmap stage 2a, accounts and server saves). The save-key carry-over in the rename's pull request (#43) stays, because it is small and done.
 **Retry when:** the server keeps saves (stage 2a), or the product owner reopens it. Model: Claude Opus 5.5.
+
+## 2026-10-10 ✅ The opening recut B, as built: the arch opens as a place reward
+
+Option B is built. The first day starts at noon (tick 0 is 12:00; one game hour is 50 seconds of play, and the clock stops while a menu or a dialogue is open), so dusk comes near minute six and the dark near minute seven. The beats:
+
+- **The taught strike.** The bridge waits on one keystone in the shallows. One strike, with the minigame window, gives the first level and mends the bridge. The keystone regrows in ten seconds, so a miss gets a second try at once. Under the sign hangs a purse: 30 gold, the price of one tool in town, and the mushroom skewer recipe, so the reward is not coins alone (G4).
+- **The find by the senses.** One dry log lies in the wet reeds below the bridge. It is a dig spot with no tool: it is picked up by hand, with no window and nothing worn. A find with no giver counts once the item has been in the bag, so the same quest can burn the log in the fire it builds.
+- **The real choice.** Pell's stall says what each tool opens: the basket, Maru's bells in the garden; the trowel, his coin under the lantern. Whichever road comes first pays for the other tool: the bells pay 30 gold, and the coin comes with a basket.
+- **The riddle at dusk.** From 19:00 to dawn, a prop that a riddle cites and that stands next to its answer lights it: the hill lantern glints over the tile to dig. By day the stones must be read.
+- **The night discovery.** Handing in the coin, Maru says the broken arch shows a way after dark. A new quest with no giver asks for a visit to the arch's mouth at night; the stone beside it reads "By day the rubble, by night the way". Done, it opens the way under the arch, and the way leads to the threshold of the night ruins, where a bell rings once far below and nothing more happens yet.
+
+**Why a place reward, not a path drawn only at night.** The decision of 9.10 left the choice to this build. A path that both clients draw only at night needs the 2D world scene and the 3D valley to draw a tile by the hour; both are outside this build, and the 3D client asked to leave the night path out for now. A path that the rules open and close by the hour also traps a player who stands on it at dawn, unless more rules move them. A place reward is one rule: a restore with no inputs, which never opens by hand, and a quest that opens it when it is done (`reward.opens`, schema-additive). Both clients already draw a restore before and after, and an open place stays open, like a mended bridge. The cost: after the first night the way stays open by day. The first visit still has to be made at night, and the threshold says so ("Not tonight. The way stays open.").
+
+Along the way: the skewer recipe is declared uncommon, since a found recipe is one step rarer than its inputs (V-2); the kernel's version is 0.4.0, because the clock and the rules of a find changed.
+
+**Waits for:** the axe and felling (CR-24) and the starters' kits (CR-37). The owner's answers of 10.10, written in parallel with this build, put the recut after them and change three of its beats: the first fire comes from a felled tree, and the explorer's find by the senses is its own axe hidden by the bridge, in place of the dry log; the real choice at minutes 4-6 is whom to help first, Maru or Pell, in place of the stall; and a first-tier recipe is known from the start (CR-61), so the purse under the sign holds something else that is new to do. The recut then lands with the one-time save reset (CR-62), which also carries the noon start. The rules built here stay: the noon start, a dig spot with no tool, a find with no giver counted once found, and the place reward that opens the arch. The threshold is the entrance of the night ruins, which is safe: the player only looks in.
+**Closes:** the build of the 2026-10-09 entry on option B, once it lands.
+**Retry when:** CR-24 and CR-37 are on `develop`; the 3D client draws the arch and the night ruins; or play shows the first dark too early or too late. Model: Claude Opus 5.5.
+
+## 2026-10-10 ✅ The recut B on the axe and the starts: a fire from a felled tree, whom to help first, and one save reset
+
+The question (10.10): the owner's answers of 10.10 put the recut after the axe (CR-24) and the three starts (CR-37), and changed three of its beats. The recut is reworked on top of both:
+
+- **A fire from a felled tree.** The dry log, its spot in the wet reeds and the `core/wet-reeds` slot are gone. `core/first-fire`, now "A fire before dark", asks only for a campfire, built of 2 logs from an oak, with no meal, as option B has it. Every start holds an axe by then: the forager's kit, the digger's slid bank, and the explorer's glint by the bridge, which is now the find by the senses.
+- **The purse holds gold only.** 30 gold under the sign, the price of one tool in town, and nothing else (the owner's word, 10.10). The mushroom skewer goes back to common and known from the start, so the previous entry's note on its rarity no longer applies.
+- **Whom to help first, in place of the stall.** Arriving in town says it in two lines: Maru by his house and Pell at her stall could use a hand, and whom to help first is the player's. Both are open as soon as the town is reached. Maru's bells (`core/three-fruits`) pay with his old trowel. Pell's herbs (`core/herbs-for-pell`, which no longer wait for the bells) pay 30 gold and the herb stew recipe, the reward approved on 7.10. Both plants are picked with a basket, so a start that woke without one spends the purse on it at the stall, which still says what each tool opens. Maru's coin follows by the trowel's road and pays 20 gold and the herb tea recipe; then comes the night arch, as before.
+- **One save reset (CR-62).** The save file is version 2. A save of an older version is dropped once, and the title screen says so once; a save that cannot be read is left as it was. The date a browser first played the demo is kept outside the save (`openfold.demo-since`, CR-85), written at the reset or the first new game and never cleared, so a later title for the demo's players can read it.
+- **Schema, additive, format 1.** A reward item may name `instead`: what a start whose kit holds the item gets in its place (`rewardItem` in the kernel). The check refuses a reward item that a kit holds with no `instead`, and an `instead` that the same kit holds too. The kernel stays at 0.4.0, which this recut already brings.
+
+Holes closed by default (the owner's word of 10.10 on small questions), each with the game it follows:
+
+- **Each neighbour pays in what they have, and the first help is worth one tool either way.** Maru gives his old trowel; Pell gives a recipe and 30 gold, the price of a tool at her stall (was 15 gold). Like Willy in Stardew Valley, who hands the player his old bamboo pole.
+- **No reward repeats a kit.** The digger, whose kit holds a trowel, gets a walking staff for Maru's bells. Like World of Warcraft's quest rewards, which since Legion fit the item to the character's class and specialization. The swap reads the kit, not the bag, so the check can prove it before anyone plays; a start that bought a tool may still get a second one, and keeps it, since no trader buys tools.
+- **Neither help waits on a window.** The sunleaf opens from noon until dark (12:00 to 20:00, was 11:00 to 14:00), so Pell's herbs are open whichever help comes first, and so are Maru's bells (5:00 to 20:00). Like A Short Hike, where the island's helpers can be helped in any order. The headless walk proves it for every start and both orders (CR-86): each help's plant is open when the player gets there, with two game hours to spare for the walk.
+- **Pell's herbs are an investigation.** They now follow the walk into town, which is a discovery, so they can no longer be one (G17): Pell's clue names the place, and the player reads the river to find the bank where the mist is thin. Like the contracts of The Witcher 3, the palette's example.
+- **Maru's coin gives no basket.** Both helps are picked with a basket, so by the coin every start holds one and a basket would only repeat. The herb tea recipe moves from the bells to the coin, so neither of Maru's rewards is coins alone (G4).
+
+The tier-1 recipes that the helps give, Pell's stew and Maru's tea, stay those quests' rewards: the owner answered CR-61 on 10.10 in the afternoon, and a recipe a quest gives is not among the tier-1 recipes known from the start.
+
+The tests: the headless walk runs each start with each first help, from noon to the threshold of the night ruins. The browser walk: the phone's forager helps Maru first, gets his trowel, digs his coin at dusk, and is paid gold and the herb tea, with no second basket; the desktop's explorer helps Pell first, buys a basket with the purse and hands in the sunleaf.
+**Closes:** the "Waits for" of the entry above, and GRUNT CR-62 with this recut.
+**Retry when:** play shows that players do not see the choice in town, that one help is always taken first, or that the reset notice confuses. Model: claude-opus-5-5. Branch `feat/opening-recut-b`.
+
 ## 2026-10-10 ✅ The site leaves the pixel face and the shadow frame: a living window from the game is its one signature
 
 Supersedes the site half of "One token sheet and the pixel frame tie the site to the game" (7.10); the game keeps Pixelify Sans inside its canvas and HUD. The product owner rejected the round-1 home page look (the structure and the builders board stayed approved): a pixel face scaled across a whole site reads as a costume, and the 2px frame with a hard 4px shadow on every card, button, chip and image is a stock kit where nothing stands out. Round 2 was judged on three phone stills that differed only in the type pair, plus one desktop still each and a clip of the motion.
@@ -1155,6 +1281,13 @@ The owner answered nine open questions on 10.10 in the afternoon, one at a time,
 Also noted by the owner: the skill descriptions at the start are not as simple as in other games, and raising a skill or a level does not weigh as much as it should. This goes to the opening's stream as a finding.
 **Retry when:** players read the camp price as a toll that blocks play (then a free first night), the plot odds read as unfair, or the 3D version's cost outruns the community's interest. Model: claude-opus-5-5.
 
+## 2026-10-10 ⏸ Player houses and plots are paused; the town serves the player through shops you walk into
+The owner stopped the planning of player houses and plot draws: the design spread out and did not feel right. The game goes on without a house, as many games do, and nothing about a house or a plot is bought for now. The town is the safe place, and its buildings each do one job: the workshop (crafting) and several shops, how many is still open (food and medicine, tools and weapons, clothing are the first ideas). A shop is entered as in Pokemon: the player walks through the door into an interior scene with a counter and a shopkeeper behind it, and the trade happens by talking to the shopkeeper. Each interior is dressed in the theme of what it sells, so a player reads the shop at a glance. The owner rejected a pop-up menu at the door. The first interior is a direction: two or three stills at phone size go to the owner before it is built. Answer 6 of the entry above (the weighted plot draw) is paused with this entry; the camp deals (answer 5) stand, since a camp is not a house. Open quests or text that promise a house or a plot are cut or reworded in their own pull request.
+**Retry when:** players ask for a place of their own after the town shops ship, or multiplayer needs a personal store the town cannot give. Model: claude-opus-5-5.
+
+## 2026-10-10 ✅ Feedback from inside the game: a button for every player, and a short review after the opening
+The owner wants feedback all the time, from the field. Every build of the game, not only a developer mode, carries a feedback button; pressing it opens a pop-up with a text box and Send. The send carries the context on its own (where the player stands, the open quest, the hour of the valley, the build) so one sentence is enough. After the opening (the first dusk of the recut), a pop-up asks once for a short development review: a few quick choices and one free line, skippable, never asked again in that save. A send reaches the team as a GitHub issue with the label `feedback`, through a small function on the site with a token that can only open issues; no name, address or account is collected. A developer who plays can turn the same text into a request for their own AI helper later; that is phase 2 and waits for phase 1 to prove useful.
+**Retry when:** the issue list fills with noise (then a triage label and a daily digest), or accounts arrive (then a send may carry the player's handle by choice). Model: claude-opus-5-5.
 ## 2026-10-10 ✅ The five holes of the one line closed by the owner's answers, houses paused, and the check finished
 
 The question (10.10): the entry on the game read as one line left five small holes open, and its check stopped after one of its three readers. The owner answered the holes in the afternoon (the owner's answers of 10.10 afternoon, pull request #57), settled one more point of the camp in the evening, and paused player houses and plots (the entry on houses and plots paused, pull request #61). This entry writes the answers into the rules, finishes the check, and brings the text in line. It closes the holes as the owner answered them; no default is taken where an answer exists.
@@ -1171,3 +1304,11 @@ The question (10.10): the entry on the game read as one line left five small hol
 
 **Closes:** the five holes left open by the entry on the game read as one line, and its check; GRUNT's CR-94 to CR-96 carry the building.
 **Retry when:** a guest's price reads as a toll that blocks a run to safety, a warning comes so often that players stop reading it, or houses come back. Model: claude-opus-5-5.
+
+## 2026-10-11 ✅ Felling and digging run by themselves after one press, and the work is shown on the body and the tree
+The owner asked that one press on a tree starts the felling: the character swings on its own and stops when the tree falls, with no pop-up and no bar. This is how RuneScape and phone farming games (Hay Day) do it, where Stardew Valley and Animal Crossing take one press per swing; one press suits a phone. Each swing plays an axe animation on the character, throws chips and a sound, and the tree shakes and cracks so the progress is read on the tree itself; moving away cancels the work, and the tree falls with its own animation. Digging and mining follow the same pattern with their own tool. The swing, dig and walk cycles are drawn with the character in the agreed pixel style and land with the walk animation.
+**Retry when:** players lose track of how long a fell takes (then a small crack count on the tree), or a press by mistake starts work too often (then a hold to start). Model: claude-opus-5-5.
+
+## 2026-10-11 ✅ The shop interior: warm planks, a runner to the counter, the trade shown on the back wall
+Three phone-size stills of the food and medicine shop went to the owner (`docs/design/frames/2026-10-11-shop-interior-compare.png`): A, flagstone and timber with the counter centred; B, a checkered floor and wallpaper with the counter at the side and tables to walk between; C, worn planks, a woven runner from the door to the counter, and a brick chimney around a lit stove. The owner approved them with C as the pick (`docs/design/frames/2026-10-11-shop-interior.png`), after asking in round 1 for floors and walls that differ by shop. The compass for every shop: one room, the door at the bottom, a runner that leads the eye to the counter and the shopkeeper behind it, and the back wall that shows the trade (the stove for food; an anvil, a loom and so on for the others), each shop with its own floor and wall materials, window light, shadows and small life (a cat, a scale, hanging herbs). Known polish: C's stove is too large for its wall, the light patches are faint, the sacks and crates are quick props. The stills reuse kit sprites and props drawn in the kit palette; nothing is in the game yet.
+**Retry when:** a shop's goods do not read at phone size, or the walk-in costs too much loading on a phone (then a lighter interior). Model: claude-opus-5-5.

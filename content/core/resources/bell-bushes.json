@@ -29,6 +29,7 @@
     "count": 2,
     "sprite": "core/base-kit:props/bush_berry",
     "sprite_empty": "core/base-kit:props/bush_empty",
+    "tool": "basket",
     "level": 1,
     "game": "pick",
     "hours": [
