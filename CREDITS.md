@@ -48,6 +48,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Wild herbs (resource) - `content/core/resources/bank-herbs.json`
 - Bell bushes (resource) - `content/core/resources/bell-bushes.json`
 - Redberry bushes (resource) - `content/core/resources/berry-bushes.json`
+- Fallen logs (resource) - `content/core/resources/fallen-logs.json`
 - Forest mushrooms (resource) - `content/core/resources/forest-mushrooms.json`
 - Keystone (resource) - `content/core/resources/keystone.json`
 - Oak trees (resource) - `content/core/resources/oak-trees.json`

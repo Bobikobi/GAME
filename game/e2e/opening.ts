@@ -787,6 +787,9 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       await me.walkTo(threshold, 'the threshold of the night ruins');
       await me.step((await me.state()).facing);
       const below = await me.talkThrough();
+      // the one-time development review follows the last words; skip it, as a player may
+      await page.waitFor(`!!document.querySelector('.panel.review')`, 'the development review', 5000);
+      await page.eval(`[...document.querySelectorAll('.panel.review .btn')].find((b) => b.textContent === 'Skip').click()`);
       await me.idle('the threshold');
       if (!below.some((l) => l.includes('Not tonight'))) throw new Error(`no door left open at the threshold: ${below.join(' / ')}`);
       const visited = await page.eval<string[]>('__e2e.player().visited');

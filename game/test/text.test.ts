@@ -85,7 +85,7 @@ describe('what a node asks of the player', () => {
   });
 
   test('the axe says it fells, and what', () => {
-    expect(itemBenefit(bundle, 'core/axe')).toBe('Tier 1 axe · fells oak trees · 50 uses');
+    expect(itemBenefit(bundle, 'core/axe')).toBe('Tier 1 axe · fells fallen logs & oak trees · 50 uses');
   });
 });
 

@@ -77,6 +77,16 @@ export interface Params {
   satiety_cap: number;
   satiety_drain_per_min: number;
   day_length_ms: number;
+  /** milliseconds to walk one tile; the client's pace and the bound on a position report */
+  walk_step_ms: number;
+  /** work slows while health is at or below this share of its cap, in percent (0: only when empty) */
+  hp_low_pct: number;
+  hazard: {
+    predator: { reach: number; catch_ms: number; bite_ms: number; bite_pct: number };
+    pit: { harm_pct: number };
+    trap: { harm_pct: number };
+    deep_water: { harm_pct: number };
+  };
   bag_base: number;
   starting_gold_mg: number;
   /** what one attribute point adds; see the params schema */

@@ -18,7 +18,8 @@
  */
 import type { Bundle, RecipeDef, Verb } from './bundle';
 import { canonical } from './canon';
-import { clamp, idivUp, mulDiv, mulDivUp } from './num';
+import { bitesAfter, distanceTo, harmOf, hazardsOf, isSafe, isTownTile, reappearTile, townAt, windowOpen, windowShuts } from './danger';
+import { clamp, idiv, idivUp, mulDiv, mulDivUp } from './num';
 import { drawBasisPoints } from './rng';
 import {
   ATTRIBUTES,
@@ -64,7 +65,8 @@ export type Action =
   | { t: 'learn'; item: string }
   | { t: 'spend'; attr: Attribute }
   | { t: 'wear'; item: string; slot?: WearSlot }
-  | { t: 'unwear'; slot: WearSlot; look?: boolean };
+  | { t: 'unwear'; slot: WearSlot; look?: boolean }
+  | { t: 'move'; at: Tile };
 
 export type GameEvent =
   | { e: 'gain'; item: string; qty: number }
@@ -87,7 +89,11 @@ export type GameEvent =
   | { e: 'attr'; attr: Attribute; value: number }
   | { e: 'miss'; recipe: string }
   | { e: 'wear'; item: string; slot: WearSlot; look: boolean }
-  | { e: 'unwear'; item: string; slot: WearSlot; look: boolean };
+  | { e: 'unwear'; item: string; slot: WearSlot; look: boolean }
+  /** health went down: `by` is a hazard kind or "food"; `id` the hazard prop; `hp` what is left, in milli-points */
+  | { e: 'hurt'; by: string; id?: string; hp: number }
+  /** health reached zero (G33): the player fell at `from`, lost `lost` (what the outing brought), and woke at `at` */
+  | { e: 'fall'; from: Tile; at: Tile; lost: { item: string; qty: number }[] };
 
 export type StepResult = { ok: true; state: State; events: GameEvent[] } | { ok: false; error: string };
 
@@ -185,12 +191,14 @@ interface Ctx {
   s: State;
   tick: number;
   events: GameEvent[];
+  /** something took health in this step: only then can zero health be a fall (G33) */
+  hurt: boolean;
 }
 
 export function step(bundle: Bundle, state: State, action: Action, tick: number): StepResult {
   if (!Number.isSafeInteger(tick) || tick < state.tick) return { ok: false, error: 'Time cannot run backwards.' };
   if (state.content !== bundle.tag) return { ok: false, error: 'This save belongs to different game content.' };
-  const ctx: Ctx = { b: bundle, s: structuredClone(state), tick, events: [] };
+  const ctx: Ctx = { b: bundle, s: structuredClone(state), tick, events: [], hurt: false };
   try {
     apply(ctx, action);
     autoQuests(ctx);
@@ -226,10 +234,29 @@ function apply(ctx: Ctx, a: Action): void {
   const { s } = ctx;
   if (a.t === 'start') return start(ctx, a.starter, a.name, a.look ?? 0);
   if (s.player.starter === '') refuse('Pick a character first.');
-  if (ctx.tick < s.player.busyUntil) refuse('You are still busy.');
+  // a position report is not work: it goes through while the player is busy
+  if (a.t !== 'move' && ctx.tick < s.player.busyUntil) refuse('You are still busy.');
   // satiety is kept lazily: bring it up to now before anything reads it
   s.player.satiety = satietyAt(ctx.b, s, ctx.tick);
   s.player.satietyAt = ctx.tick;
+  if (a.t === 'move') return moveTo(ctx, a.at);
+  // wherever the action is made, the world acts on the player first; a fall ends the step and the action does not happen
+  if (arrive(ctx, tileOf(a, s.player.at))) return;
+  perform(ctx, a);
+  // a camp part built under their feet makes this tile safe: the hunt and the outing end with it
+  if (isSafe(ctx.b, s, s.player.at)) {
+    s.player.chase = null;
+    s.player.outing = null;
+  }
+  fallIfDown(ctx);
+}
+
+/** The tile an action says the player stands on, else the tile they were last on. */
+function tileOf(a: Action, last: Tile): Tile {
+  return 'at' in a && Array.isArray(a.at) && a.at.length === 2 && Number.isSafeInteger(a.at[0]) && Number.isSafeInteger(a.at[1]) ? a.at : last;
+}
+
+function perform(ctx: Ctx, a: Action): void {
   switch (a.t) {
     case 'gather':
       return gather(ctx, a.node, a.grade, a.at);
@@ -283,6 +310,7 @@ function start(ctx: Ctx, starterId: string, name: string, look: number): void {
   if (b.params.starting_gold_mg > 0) s.ledger.minted += b.params.starting_gold_mg;
   s.player.satiety = satietyCap(b, s);
   s.player.satietyAt = ctx.tick;
+  s.player.movedAt = ctx.tick;
   s.player.recipes = Object.keys(b.recipes)
     .filter((id) => b.recipes[id]!.known === 'start')
     .sort();
@@ -318,7 +346,7 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
     if (drawBasisPoints(s.seed, nodeId, node.draws) < missKeepBp(b, s)) qty = 1;
     node.draws += 1;
   }
-  if (qty > 0) addItem(ctx, r.output, qty);
+  if (qty > 0) take(ctx, r.output, qty);
   else ctx.events.push({ e: 'nothing', verb: 'gather' });
   if (tool) wearTool(ctx, tool);
   node.readyAt = ctx.tick + ms + r.respawn_ms;
@@ -361,7 +389,7 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
       break;
     }
   }
-  if (found) addItem(ctx, found, 1);
+  if (found) take(ctx, found, 1);
   else ctx.events.push({ e: 'nothing', verb: 'dig' });
   if (tool) wearTool(ctx, tool);
   node.readyAt = ctx.tick + ms + d.respawn_ms;
@@ -438,11 +466,14 @@ function eat(ctx: Ctx, itemId: string): void {
   if (!item?.food) refuse('That is not something to eat.');
   if ((s.player.bag[itemId] ?? 0) < 1) refuse('You do not have that.');
   const cap = satietyCap(b, s);
-  if (s.player.satiety >= cap) refuse('You are full.');
+  // only a food that does nothing but good can be too much; a bad fruit is eaten full or not
+  const hurts = item.food.hurt ?? 0;
+  if (hurts === 0 && s.player.satiety >= cap) refuse('You are full.');
   const fill = mulDiv(item.food.satiety * 1000, 100 + effectValue(b, s, 'meal_fill_pct'), 100);
   removeItem(ctx, itemId, 1);
   s.player.satiety = Math.min(cap, s.player.satiety + fill);
   ctx.events.push({ e: 'eat', item: itemId, satiety: s.player.satiety });
+  if (hurts > 0) hurt(ctx, hurts * 1000, 'food');
 }
 
 function shopOf(ctx: Ctx, npcId: string, at: Tile) {
@@ -692,6 +723,7 @@ function visit(ctx: Ctx, slotId: string, at: Tile): void {
   solveRiddles(ctx, { kind: 'visit', slot: slotId, at: isNight(b, ctx.tick) ? 'night' : 'day' });
   if (s.player.visited.includes(slotId)) return;
   s.player.visited = [...s.player.visited, slotId].sort();
+  s.player.outing?.visited.push(slotId);
   ctx.events.push({ e: 'visit', slot: slotId });
 }
 
@@ -719,6 +751,7 @@ function solveRiddles(ctx: Ctx, got: RiddleHit): void {
         (a.kind === 'visit' && got.kind === 'visit' && a.slot === got.slot && a.at === got.at);
       if (!hit) return;
       s.player.solved = [...s.player.solved, key].sort();
+      s.player.outing?.solved.push(key);
       ctx.events.push({ e: 'riddle', quest: id });
     });
   }
@@ -796,6 +829,128 @@ function spend(ctx: Ctx, attr: Attribute): void {
   ctx.events.push({ e: 'attr', attr, value: s.player.attrs[attr] });
 }
 
+// ------------------------------------------------------------------ danger
+
+/** A position report (DECISIONS.md, 2026-10-10): the tile the player stands on now. It is the one place travel is checked. */
+function moveTo(ctx: Ctx, at: Tile): void {
+  const { b, s } = ctx;
+  if (!Array.isArray(at) || at.length !== 2 || !Number.isSafeInteger(at[0]) || !Number.isSafeInteger(at[1])) refuse('Where are you?');
+  if (!walkableFor(b)(at[0], at[1], s.player)) refuse('You cannot stand there.');
+  const p = s.player;
+  const reach = 2 + idiv(ctx.tick - p.movedAt, b.params.walk_step_ms);
+  if (Math.max(Math.abs(at[0] - p.at[0]), Math.abs(at[1] - p.at[1])) > reach) refuse('That is further than a walk goes in that time.');
+  arrive(ctx, at);
+}
+
+/**
+ * The player stands on `at` at this tick, and the world acts on that (G30-G33):
+ * a hunt in progress bites for the time that has passed, a safe tile ends the
+ * hunt and the outing, a hazard that wakes under their feet hurts, and at zero
+ * health they fall. Returns true when they fell: that step does nothing else.
+ */
+function arrive(ctx: Ctx, at: Tile): boolean {
+  const { b, s, tick } = ctx;
+  const p = s.player;
+  const before = p.at;
+  chaseBites(ctx);
+  // a bite that took the last of the health lands where the player stood, before they reach any safe tile
+  if (fallIfDown(ctx)) return true;
+  p.at = [at[0], at[1]];
+  p.movedAt = tick;
+  if (isSafe(b, s, at)) {
+    p.chase = null;
+    p.outing = null;
+    if (isTownTile(b, at)) p.town = townAt(b, at) || p.town;
+  } else {
+    p.outing ??= { gained: {}, solved: [], visited: [] };
+    strike(ctx, before, at);
+  }
+  return fallIfDown(ctx);
+}
+
+/** What wakes where the player stands now: a pit, a trap or deep water they stepped onto, a predator that has noticed them. */
+function strike(ctx: Ctx, before: Tile, at: Tile): void {
+  const { b, s, tick } = ctx;
+  const cap = satietyCap(b, s);
+  for (const h of hazardsOf(b)) {
+    if (!windowOpen(b, h, tick)) continue;
+    if (h.kind === 'predator') {
+      if (s.player.chase === null && distanceTo(at, h.rect) <= h.reach) s.player.chase = { hazard: h.id, since: tick, bites: 0 };
+    } else if (inRect(at[0], at[1], h.rect) && !inRect(before[0], before[1], h.rect)) {
+      hurt(ctx, harmOf(b, cap, h.kind), h.kind, h.id);
+    }
+  }
+}
+
+/** A hunt bites by the clock, not by the reports: the bites due since it began, up to the end of the night it began in. */
+function chaseBites(ctx: Ctx): void {
+  const { b, s, tick } = ctx;
+  const chase = s.player.chase;
+  if (chase === null) return;
+  const h = hazardsOf(b).find((x) => x.id === chase.hazard);
+  if (!h) {
+    s.player.chase = null;
+    return;
+  }
+  const shut = windowShuts(b, h, chase.since);
+  // the night's last tick is the one before `shut`, which is the first tick of day
+  const due = bitesAfter(b, Math.min(tick, shut - 1) - chase.since);
+  if (due > chase.bites) {
+    hurt(ctx, (due - chase.bites) * harmOf(b, satietyCap(b, s), 'predator'), 'predator', h.id);
+    chase.bites = due;
+  }
+  if (tick >= shut) s.player.chase = null;
+}
+
+function hurt(ctx: Ctx, amount: number, by: string, id?: string): void {
+  const p = ctx.s.player;
+  p.satiety = Math.max(0, p.satiety - amount);
+  ctx.hurt = true;
+  ctx.events.push(id === undefined ? { e: 'hurt', by, hp: p.satiety } : { e: 'hurt', by, id, hp: p.satiety });
+}
+
+/** Zero health after something took health is a fall (G33). Hunger alone never is. Returns whether the player fell. */
+function fallIfDown(ctx: Ctx): boolean {
+  if (!ctx.hurt || ctx.s.player.satiety > 0) return false;
+  fall(ctx);
+  return true;
+}
+
+/**
+ * A fall is clear, and it costs the outing (G33): what the outing brought is
+ * gone from the bag, and the riddles it solved and the places it first saw are
+ * undone, so a quest it advanced starts again from where it stood before. Gold,
+ * levels, the camp, what was made and mended, and what was spent are untouched.
+ * The player wakes whole in the town they were last in, and nothing marks where.
+ */
+function fall(ctx: Ctx): void {
+  const { b, s } = ctx;
+  const p = s.player;
+  const from: Tile = [p.at[0], p.at[1]];
+  const lost: { item: string; qty: number }[] = [];
+  const outing = p.outing;
+  if (outing) {
+    for (const item of Object.keys(outing.gained).sort()) {
+      const qty = Math.min(outing.gained[item] ?? 0, p.bag[item] ?? 0);
+      if (qty < 1) continue;
+      removeItem(ctx, item, qty, true);
+      lost.push({ item, qty });
+    }
+    p.solved = p.solved.filter((key) => !outing.solved.includes(key));
+    p.visited = p.visited.filter((slot) => !outing.visited.includes(slot));
+  }
+  const at = reappearTile(b, s, walkableFor(b));
+  p.falls += 1;
+  p.at = at;
+  p.movedAt = ctx.tick;
+  p.busyUntil = ctx.tick;
+  p.satiety = satietyCap(b, s);
+  p.satietyAt = ctx.tick;
+  p.chase = null;
+  p.outing = null;
+  ctx.events.push({ e: 'fall', from, at, lost });
+}
+
 // ------------------------------------------------------------------ helpers
 
 function checkGrade(grade: number): void {
@@ -829,7 +984,8 @@ function speedPermille(ctx: Ctx, bonusPermille: number): number {
 
 function duration(ctx: Ctx, baseMs: number, speed: number): number {
   let ms = Math.max(ctx.b.params.t_min_ms, mulDivUp(baseMs, 1000, speed));
-  if (ctx.s.player.satiety === 0) ms = idivUp(ms * 3, 2);
+  // low health slows work (G32): at or below hp_low_pct of the bar, and 0 means only when it is empty
+  if (ctx.s.player.satiety * 100 <= satietyCap(ctx.b, ctx.s) * ctx.b.params.hp_low_pct) ms = idivUp(ms * 3, 2);
   return ms;
 }
 
@@ -869,7 +1025,8 @@ function wearTool(ctx: Ctx, itemId: string): void {
   }
 }
 
-function addItem(ctx: Ctx, itemId: string, qty: number): void {
+/** Put something into the bag; returns how many fit. */
+function addItem(ctx: Ctx, itemId: string, qty: number): number {
   const { b, s } = ctx;
   const room = Math.max(0, bagCapacity(b, s) - bagUsed(s));
   const kept = Math.min(qty, room);
@@ -882,9 +1039,17 @@ function addItem(ctx: Ctx, itemId: string, qty: number): void {
     }
   }
   if (kept < qty) ctx.events.push({ e: 'bag_full', item: itemId, qty: qty - kept });
+  return kept;
 }
 
-function removeItem(ctx: Ctx, itemId: string, qty: number): void {
+/** What the world gives (gathering, digging): into the bag, and onto the outing's account when the player is out (G33). */
+function take(ctx: Ctx, itemId: string, qty: number): void {
+  const kept = addItem(ctx, itemId, qty);
+  const outing = ctx.s.player.outing;
+  if (outing && kept > 0) outing.gained[itemId] = (outing.gained[itemId] ?? 0) + kept;
+}
+
+function removeItem(ctx: Ctx, itemId: string, qty: number, quiet = false): void {
   const bag = ctx.s.player.bag;
   const left = (bag[itemId] ?? 0) - qty;
   if (left < 0) refuse('You do not have enough.');
@@ -893,7 +1058,14 @@ function removeItem(ctx: Ctx, itemId: string, qty: number): void {
     // the uses spent leave with the last unit
     delete ctx.s.player.wear[itemId];
   } else bag[itemId] = left;
-  ctx.events.push({ e: 'spend', item: itemId, qty });
+  // what is spent comes out of the outing's finds first, so a fall never takes back more than is left of them
+  const outing = ctx.s.player.outing;
+  const gained = outing?.gained[itemId];
+  if (outing && gained !== undefined) {
+    if (gained > qty) outing.gained[itemId] = gained - qty;
+    else delete outing.gained[itemId];
+  }
+  if (!quiet) ctx.events.push({ e: 'spend', item: itemId, qty });
   // a worn unit that leaves the bag comes off
   for (const off of fitWorn(ctx.b, ctx.s, itemId)) ctx.events.push({ e: 'unwear', ...off });
 }

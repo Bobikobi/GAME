@@ -1,0 +1,71 @@
+/*
+ * A table of parameters on paper (the rules page): the name in code, the number in the display face, the sentence in
+ * the reading face; rules between rows, no boxes, as the boards. Below 600px a row stacks: name and number on one
+ * line, the sentence under them. Tokens only.
+ */
+.ledger-table {
+  width: 100%;
+  margin-top: var(--s-2);
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.ledger-table th {
+  padding: var(--s-2) var(--s-3) var(--s-2) 0;
+  border-bottom: var(--px) solid var(--ink);
+  color: var(--grey);
+  font-size: var(--text-s);
+  font-weight: 700;
+  text-align: left;
+}
+.ledger-table td {
+  padding: var(--s-3) var(--s-3) var(--s-3) 0;
+  border-bottom: var(--px) solid var(--paper2);
+  vertical-align: baseline;
+}
+.ledger-table td:last-child,
+.ledger-table th:last-child {
+  padding-right: 0;
+}
+.ledger-table code {
+  overflow-wrap: anywhere;
+}
+.ledger-table .val {
+  font-family: var(--font-display);
+  font-weight: var(--w-display);
+  font-size: 20px;
+  white-space: nowrap;
+}
+.ledger-table .val.words {
+  font-family: var(--font-reading);
+  font-size: var(--text-s);
+  font-weight: 700;
+  white-space: normal;
+}
+.ledger-table .num {
+  text-align: right;
+}
+@media (max-width: 599px) {
+  .ledger-table.stack thead {
+    display: none;
+  }
+  .ledger-table.stack tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--s-1) var(--s-3);
+    padding: var(--s-3) 0;
+    border-bottom: var(--px) solid var(--paper2);
+  }
+  .ledger-table.stack td {
+    padding: 0;
+    border: 0;
+  }
+  .ledger-table.stack td:last-child {
+    grid-column: 1 / -1;
+    color: var(--ink2);
+  }
+}
+.prose-note {
+  margin-top: var(--s-3);
+  max-width: 40em;
+  color: var(--ink2);
+}

@@ -396,6 +396,8 @@ describe('items the check refuses', () => {
         item('rock', { class: 'tool' }),
         item('pick', { kind: 'tool', class: 'tool', tier: 2, tool: { kind: 'trowel', tier: 1, uses: 10 } }),
         item('gruel', { class: 'meal' }),
+        item('husk', { class: 'meal', kind: 'food', food: { satiety: 0 } }),
+        item('bane', { class: 'meal', kind: 'food', food: { satiety: 0, hurt: 10 } }),
         item('star', { class: 'mineral', tier: 4 }),
       ),
       classes: [{ id: 'tester/ingot', name: 'Ingot', base: 'metal' }],
@@ -422,6 +424,9 @@ describe('items the check refuses', () => {
   });
   it('a meal that is not food', () => {
     expect(said).toContain('a meal is eaten: class "meal" is for items of kind "food"');
+  });
+  it('a food that neither feeds nor hurts, while one that hurts passes', () => {
+    expect(said.filter((m) => m.includes('this one does neither'))).toHaveLength(1);
   });
   it('a tier the world has not opened', () => {
     expect(said).toContain('tier 4 is not open yet: the world has tiers 1 to 3');

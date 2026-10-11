@@ -14,7 +14,7 @@
       }
     ],
     "active_ms": 4000,
-    "sprite": "core/base-kit:props/rock_mossy",
+    "sprite": "core/base-kit:props/rock_stones",
     "provides": "workshop",
     "tier": 1
   }

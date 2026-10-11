@@ -19,7 +19,7 @@ import {
   serialize,
   step,
 } from '@game/kernel';
-import { LEGACY_SAVE_KEY, SAVE_KEY } from './config';
+import { LEGACY_SAVE_KEY, REVIEW_KEY, SAVE_KEY } from './config';
 
 /**
  * The save file's version. 2 came with the new opening (the axe, the three
@@ -151,6 +151,13 @@ export class Session {
     worn.worn ??= {};
     worn.looks ??= {};
     worn.tries ??= {};
+    // a save from before health and hazards (P-5) has no town, outing, chase or fall count
+    const danger = state.player as Partial<Pick<State['player'], 'town' | 'outing' | 'chase' | 'falls' | 'movedAt'>>;
+    danger.town ??= '';
+    danger.outing ??= null;
+    danger.chase ??= null;
+    danger.falls ??= 0;
+    danger.movedAt ??= state.tick;
     const session = new Session(bundle, state);
     stampDemo();
     if (state.content !== bundle.tag) {
@@ -178,6 +185,7 @@ export class Session {
     try {
       localStorage.removeItem(SAVE_KEY);
       localStorage.removeItem(LEGACY_SAVE_KEY);
+      localStorage.removeItem(REVIEW_KEY);
     } catch {
       // storage may be blocked; nothing to erase then
     }
@@ -363,6 +371,9 @@ function adapt(bundle: Bundle, state: State): boolean {
   p.restored = p.restored.filter((id) => id in bundle.restores);
   p.camp = p.camp.filter((id) => id in bundle.camps);
   p.visited = p.visited.filter((id) => bundle.map.slots.some((s) => s.id === id));
+  // a world that changed may have moved the hazards and the safe ground: nothing carries over
+  p.outing = null;
+  p.chase = null;
   state.nodes = keepKeys(state.nodes, bundle.instances);
   // a worn item that is gone, or no longer fits its place, comes off
   fitWorn(bundle, state);

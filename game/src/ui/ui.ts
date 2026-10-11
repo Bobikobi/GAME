@@ -36,6 +36,8 @@ import {
   openSignCard,
   confirmBuild,
   confirmRestore,
+  openFeedback,
+  openOpeningReview,
 } from './panels';
 import { showTitle } from './title';
 import { mountTouch } from './touch';
@@ -224,6 +226,7 @@ export class UI {
     const level = h('span', { class: 'chip', title: 'Character level' });
     const bag = button('Bag', () => openBag(this), 'small');
     const log = button('Log', () => openJournal(this), 'small');
+    const feedbackBtn = button('Feedback', () => openFeedback(this), 'small');
     this.hud.replaceChildren(
       h(
         'div',
@@ -238,7 +241,7 @@ export class UI {
           h('button', { class: 'chip demo', type: 'button', onclick: () => this.aboutDemo() }, 'Demo'),
         ),
       ),
-      h('div', { class: 'hud-right' }, bag, log, button('Menu', () => openMenu(this), 'small')),
+      h('div', { class: 'hud-right' }, feedbackBtn, bag, log, button('Menu', () => openMenu(this), 'small')),
     );
     return { meter, bar, num, goldText, clockChip, clockIcon, clockText, level, bag, log };
   }
@@ -330,6 +333,7 @@ export class UI {
           'Past the arch the ruins go on, darker and deeper than by day. Far below, a bell rings once.',
           'Not tonight. The way stays open.',
         ]);
+        void openOpeningReview(this);
       }
     }
   }

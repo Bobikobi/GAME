@@ -228,9 +228,15 @@
             ],
             "properties": {
               "satiety": {
+                "minimum": 0,
+                "maximum": 100,
+                "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                "type": "integer"
+              },
+              "hurt": {
                 "minimum": 1,
                 "maximum": 100,
-                "description": "Satiety points restored when eaten (the meter holds 100 at the start).",
+                "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
                 "type": "integer"
               }
             }
@@ -634,7 +640,7 @@
         },
         "place": {
           "additionalProperties": false,
-          "description": "An empty slot from the ruins map. Only one extension is active per slot.",
+          "description": "An empty resource slot of the map (`count` nodes inside it), and optionally single-node slots scattered over the map.",
           "type": "object",
           "required": [
             "slot"
@@ -645,6 +651,18 @@
               "maxLength": 80,
               "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
               "type": "string"
+            },
+            "scatter": {
+              "minItems": 1,
+              "uniqueItems": true,
+              "description": "More resource slots that each hold exactly one of these nodes: a tree or a log standing where the map already shows one. They add supply only: `count`, the value and the opening's log floor follow the main slot.",
+              "type": "array",
+              "items": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              }
             }
           }
         }
