@@ -2,6 +2,7 @@
 // The home page (docs/team/GRUNT.md, item 5, with the structure the owner approved on 2026-10-10, DECISIONS.md):
 // the headline, the doors into the game, the builders board, and the way in for developers. No script.
 import Site from '../layouts/Site.astro';
+import ComingSoon from '../components/ComingSoon.astro';
 import '../styles/scene.css';
 import '../styles/home.css';
 import { repoTree } from '../data/site';
@@ -123,6 +124,8 @@ const signs = bridgeBuilder ? `, and the builder ${bridgeBuilder} signs it` : ''
         </footer>
       </aside>
     </section>
+
+    <ComingSoon heading="Your progress" id="soon-h" />
 
     <section class="dev" aria-labelledby="dev-h">
       <div class="wrap dev-grid">
