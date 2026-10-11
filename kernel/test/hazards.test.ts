@@ -32,10 +32,11 @@ import { loadBundle, mulberry32 } from '../../tools/test/helpers/world.js';
 type Tile = [number, number];
 type Prop = Bundle['map']['props'][number];
 
-/** 21:20, a third of the way into the night (night runs 700000 to 1150000 of a 1200000 day). */
-const NIGHT = 800_000;
-const DAWN = 1_150_000;
-const NOON = 300_000;
+/** 21:20, a third of the way into the night (tick 0 is noon; night runs 400000 to 850000 of a 1200000 day). */
+const NIGHT = 500_000;
+const DAWN = 850_000;
+const NOON = 100_000;
+const DUSK = 400_000;
 
 let base: Bundle;
 
@@ -107,7 +108,7 @@ describe('the night', () => {
         expect(isNight(b, falls - 1)).toBe(falls === t ? isNight(b, t - 1) : false);
       }
     }
-    expect(nightFalls(b, NOON)).toBe(700_000);
+    expect(nightFalls(b, NOON)).toBe(DUSK);
     expect(nightEnds(b, NIGHT)).toBe(DAWN);
   });
 });

@@ -355,10 +355,10 @@ export function isNight(bundle: Bundle, tick: number): boolean {
   return hour >= 20 || hour < 5;
 }
 
-/** Where a tick falls in its day: 0 at midnight (tick 0 is 6:00, a quarter of the way in). */
+/** Where a tick falls in its day: 0 at midnight (tick 0 is noon, half way in; same start as hourOf). */
 function phaseOf(bundle: Bundle, tick: number): number {
   const day = bundle.params.day_length_ms;
-  return (tick + idiv(day, 4)) % day;
+  return (tick + idiv(day, 2)) % day;
 }
 
 /** The first tick from `tick` on that is night (the tick itself when it already is): when the dark arrives. */
