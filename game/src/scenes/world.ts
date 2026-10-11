@@ -12,6 +12,7 @@
  */
 import * as Phaser from 'phaser';
 import {
+  type Action,
   type Bundle,
   type GameEvent,
   type Grade,
@@ -39,6 +40,7 @@ import { questTargets } from '../targets';
 import { nodeLook } from '../growth';
 import { hintDistance, nodeAction } from '../text';
 import type { WorkKind } from '../ui/ui';
+import { type AutoKind, POSES, beatAt, resourceKind, strideFrame, treasureKind } from '../work';
 
 const DEPTH = { ground: 0, restore: 1, flat: 2, shadow: 2.5, dig: 3, puff: 3.5, mist: 8000, fog: 9000, motes: 9100, shade: 9500, glow: 9600, fx: 9800, marker: 9850 };
 const NEIGHBOURS: readonly [number, number][] = [
@@ -87,6 +89,19 @@ interface Move {
   from: [number, number];
   to: [number, number];
   t: number;
+}
+
+/** Work that runs by itself after one press: a tree being felled, a spot being dug (game/src/work.ts). */
+interface Auto {
+  node: string;
+  kind: AutoKind;
+  start: number;
+  ms: number;
+  /** blows landed so far */
+  hits: number;
+  /** the way the player faces the thing; a different direction held is a step away */
+  facing: Dir;
+  onDone?: () => void;
 }
 
 interface SignSpot {
@@ -231,6 +246,9 @@ export class WorldScene extends Phaser.Scene {
   private busyMs = 0;
   private work: { node: string; kind: WorkKind } | null = null;
   private swingUntil = 0;
+  private auto: Auto | null = null;
+  /** nodes whose look the work keeps: a tree stays a tree until it falls */
+  private held = new Set<string>();
   private nextSwing = 0;
   private refreshIn = 0;
   private zoneIn = 0;
@@ -882,6 +900,8 @@ export class WorldScene extends Phaser.Scene {
     this.session = session;
     this.move = null;
     this.work = null;
+    this.auto = null;
+    this.held.clear();
     this.hinted.clear();
     this.inside.clear();
     this.unbind = [
@@ -913,7 +933,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** The starter's sprite for a direction, in the look the player picked. */
-  private playerFrame(dir: Dir, pose: 'walk' | 'work' | 'idle' = 'walk'): { key: string; flip: boolean } {
+  private playerFrame(dir: Dir, pose = 'walk'): { key: string; flip: boolean } {
     const p = this.session?.state.player;
     const starter = p ? this.b.starters[p.starter] : undefined;
     const first = Object.values(this.b.starters)[0];
@@ -946,7 +966,13 @@ export class WorldScene extends Phaser.Scene {
   private workFrame(down: boolean): void {
     const s = this.session;
     if (!s) return;
-    const { key: k, flip } = this.playerFrame(s.facing, 'work');
+    // a tool has its own swing when the art has one, the axe swing otherwise
+    let found = { key: '', flip: false };
+    for (const pose of this.auto ? POSES[this.auto.kind] : ['work']) {
+      found = this.playerFrame(s.facing, pose);
+      if (found.key) break;
+    }
+    const { key: k, flip } = found;
     if (!k) return this.faceFrame(down ? 0 : 2);
     this.player.setTexture(k, down ? 1 : 0);
     this.player.setFlipX(flip);
@@ -1036,6 +1062,7 @@ export class WorldScene extends Phaser.Scene {
     if (!s) return;
     const hour = hourOf(this.b, s.tick);
     for (const [id, img] of this.nodes) {
+      if (this.held.has(id)) continue;
       const r = this.b.resources[this.b.instances[id]!.source]!;
       const ready = this.ready(s, id);
       const inHours = !r.hours || (r.hours[0] < r.hours[1] ? hour >= r.hours[0] && hour < r.hours[1] : hour >= r.hours[0] || hour < r.hours[1]);
@@ -1049,6 +1076,7 @@ export class WorldScene extends Phaser.Scene {
     }
     const reach = hintDistance(this.b, s.state);
     for (const [id, img] of this.digs) {
+      if (this.held.has(id)) continue;
       const inst = this.b.instances[id]!;
       const d = Math.max(Math.abs(inst.x - s.pos[0]), Math.abs(inst.y - s.pos[1]));
       // a start's own spot shows to that start alone, until it is dug
@@ -1080,6 +1108,7 @@ export class WorldScene extends Phaser.Scene {
     }
     this.walk(s, delta);
     if (RICH.motion) this.idle(s, time);
+    this.workTick(s);
     this.drawBusy(s, time);
     this.updatePrompt(s);
     this.haunt(s, time);
@@ -1190,7 +1219,7 @@ export class WorldScene extends Phaser.Scene {
 
   /** Standing still for 3 s, the player blinks every 3-5 s: frame 1 of the idle sheet for 120 ms. */
   private idle(s: Session, time: number): void {
-    const still = !this.move && !s.busy && !this.work && this.swingUntil === 0;
+    const still = !this.move && !s.busy && !this.work && !this.auto && this.swingUntil === 0;
     if (!still) {
       this.idleSince = time;
       this.blinkUntil = 0;
@@ -1233,7 +1262,7 @@ export class WorldScene extends Phaser.Scene {
       this.player.setPosition(Math.round((fx + (tx - fx) * k) * T + T / 2), Math.round((fy + (ty - fy) * k + 1) * T));
       this.player.setDepth(Math.round((Math.max(fy, ty) + 1) * T + 1));
       this.playerShadow?.setPosition(this.player.x, this.player.y + 2);
-      this.faceFrame(k < 0.5 ? (this.steps % 2 === 0 ? 0 : 2) : undefined);
+      this.faceFrame(strideFrame(k, this.steps, this.b.sprites[this.playerFrame(s.facing).key]?.frames ?? 1));
       if (k < 1) return;
       const carry = this.move.t - STEP_MS;
       s.pos = [tx, ty];
@@ -1526,6 +1555,7 @@ export class WorldScene extends Phaser.Scene {
 
   private drawBusy(s: Session, time: number): void {
     this.bar.clear();
+    if (this.auto) return;
     if (!s.busy) {
       if (this.busyMs > 0) {
         this.busyMs = 0;
@@ -1553,6 +1583,153 @@ export class WorldScene extends Phaser.Scene {
     if (time >= this.nextSwing && down) {
       this.nextSwing = time + SWING_MS * 0.9;
       this.impact(this.work.node, this.work.kind);
+    }
+  }
+
+  // ------------------------------------------------------------ work that runs by itself
+
+  /**
+   * One press starts the work (DECISIONS.md, 2026-10-11): the kernel takes the action now and keeps
+   * the player busy for as long as it lasts, and the swings, chips and the thing's own shaking show
+   * it. A step away takes the action back (Session.cancelWork), so nothing was yielded.
+   */
+  startWork(nodeId: string, onDone?: () => void): void {
+    const s = this.session;
+    const inst = this.b.instances[nodeId];
+    if (!s || !inst || this.auto) return;
+    const kind = inst.kind === 'resource' ? resourceKind(this.b.resources[inst.source]!) : treasureKind(this.b.treasures[inst.source]!);
+    if (!kind) return;
+    const action: Action = inst.kind === 'resource' ? { t: 'gather', node: nodeId, grade: 3, at: s.pos } : { t: 'dig', spot: nodeId, grade: 3, at: s.pos };
+    const res = s.act(action);
+    if (!res.ok) return app.ui.toast(res.error, 'bad');
+    const busy = res.events.find((e) => e.e === 'busy');
+    if (!busy || busy.e !== 'busy') return;
+    this.faceNode(s, nodeId);
+    this.auto = { node: nodeId, kind, start: s.tick, ms: busy.ms, hits: 0, facing: s.facing, onDone };
+    this.held.add(nodeId);
+    this.workFrame(false);
+  }
+
+  /** Whether work started by one press is under way. */
+  get working(): boolean {
+    return this.auto !== null;
+  }
+
+  private workTick(s: Session): void {
+    const w = this.auto;
+    if (!w) return;
+    const elapsed = s.tick - w.start;
+    // the end comes first: a level-up window opening as the work ends must not undo it
+    if (elapsed >= w.ms) return this.finishWork(s, w);
+    const dir = app.controls.direction();
+    if (s.paused || app.ui.blocking || (dir !== null && dir !== w.facing)) return this.stopWork(s, w);
+    const beat = beatAt(elapsed, w.ms);
+    this.workFrame(beat.down);
+    if (beat.down && beat.index >= w.hits) {
+      w.hits = beat.index + 1;
+      this.blow(w, beat.progress);
+    }
+  }
+
+  /** Walked away, or something opened: the work is dropped as if it had not begun. */
+  private stopWork(s: Session, w: Auto): void {
+    this.endWork(w);
+    s.cancelWork();
+    this.faceFrame();
+  }
+
+  private endWork(w: Auto): void {
+    this.auto = null;
+    this.busyMs = 0;
+    this.held.delete(w.node);
+    const img = this.nodes.get(w.node) ?? this.digs.get(w.node);
+    if (img) {
+      this.tweens.killTweensOf(img);
+      img.setAngle(0).setScale(1);
+      img.x = (this.b.instances[w.node]!.x + 0.5) * T;
+    }
+  }
+
+  private finishWork(s: Session, w: Auto): void {
+    const img = this.nodes.get(w.node);
+    // the tree that falls is a copy of the standing one, so the stump can be there under it at once
+    const ghost = w.kind === 'fell' && img ? this.add.sprite(img.x, img.y, img.texture.key, img.frame.name).setOrigin(0.5, 1).setDepth(img.depth + 1).setAngle(img.angle) : undefined;
+    this.endWork(w);
+    this.refreshNodes();
+    this.faceFrame();
+    if (ghost) this.fall(ghost, w.facing, w.node);
+    else this.burst(w.kind === 'dig' ? 'fx-dirt' : 'fx-dust', (this.b.instances[w.node]!.x + 0.5) * T, (this.b.instances[w.node]!.y + 0.6) * T, 8);
+    w.onDone?.();
+  }
+
+  /** One blow: the arm lands, the thing sounds, shakes and throws bits; a tree leans a little more each time. */
+  private blow(w: Auto, progress: number): void {
+    const inst = this.b.instances[w.node];
+    if (!inst) return;
+    const x = inst.x * T + T / 2;
+    const y = inst.y * T + T * 0.6;
+    const at = this.worldToPage(x, y);
+    const pan = Math.max(-0.8, Math.min(0.8, (at.x / Math.max(1, this.scale.width) - 0.5) * 1.2));
+    const img = this.nodes.get(w.node) ?? this.digs.get(w.node);
+    if (w.kind === 'fell') {
+      sound.sfx('thud', { pan });
+      // the wood starts to give: a crack under the blows past the middle
+      if (progress > 0.5) sound.sfx('crack', { pan, gain: 0.25 + 0.5 * progress });
+      this.burst('fx-chip', x, y, 6);
+      if (progress > 0.4 && img) this.burst('fx-leaf', x, y - img.height * 0.6, 2 + Math.round(progress * 4));
+    } else if (w.kind === 'mine') {
+      sound.sfx('strike', { pan });
+      this.burst('fx-dust', x, y, 5);
+      this.burst('fx-spark', x, y - 4, 3);
+    } else {
+      sound.sfx('dig', { pan });
+      this.burst('fx-dirt', x, y, 6);
+    }
+    if (!img) return;
+    this.tweens.killTweensOf(img);
+    const x0 = x;
+    img.x = x0;
+    // the shake grows with the work: one pixel at first, two near the end
+    const shake = w.kind === 'dig' ? 0 : progress > 0.6 ? 2 : 1;
+    const lean = w.kind === 'fell' && (w.facing === 'left' || w.facing === 'right') ? (w.facing === 'left' ? -1 : 1) * progress * 3 : 0;
+    this.tweens.add({ targets: img, x: x0 + shake, scaleY: w.kind === 'dig' ? 0.92 : 1, angle: lean, duration: 50, yoyo: true, repeat: 1, onComplete: () => img.setX(x0).setScale(1).setAngle(lean) });
+  }
+
+  /** The tree goes over, away from the one who cut it, and lies there a moment before it fades. */
+  private fall(ghost: Phaser.GameObjects.Sprite, dir: Dir, id: string): void {
+    const inst = this.b.instances[id]!;
+    const x = (inst.x + 0.5) * T;
+    const y = (inst.y + 0.9) * T;
+    sound.sfx('crack', { gain: 0.9 });
+    const land = (): void => {
+      sound.sfx('thud', { gain: 1 });
+      this.burst('fx-leaf', ghost.x + (dir === 'left' ? -14 : dir === 'right' ? 14 : 0), y - 4, 10);
+      this.burst('fx-dust', x, y, 6);
+      this.cameras.main.shake(140, 0.003);
+      this.tweens.add({ targets: ghost, alpha: 0, delay: 400, duration: 350, onComplete: () => ghost.destroy() });
+    };
+    if (dir === 'left' || dir === 'right') {
+      const sign = dir === 'left' ? -1 : 1;
+      this.tweens.add({
+        targets: ghost,
+        angle: sign * 88,
+        duration: 520,
+        ease: 'Quad.easeIn',
+        onComplete: () => {
+          land();
+          this.tweens.add({ targets: ghost, angle: sign * 83, duration: 70, yoyo: true });
+        },
+      });
+    } else {
+      // away from the player or toward them, a tree cannot lie on the screen: it shortens into the ground
+      this.tweens.add({
+        targets: ghost,
+        scaleY: 0.18,
+        y: dir === 'down' ? ghost.y + 5 : ghost.y,
+        duration: 520,
+        ease: 'Quad.easeIn',
+        onComplete: land,
+      });
     }
   }
 
