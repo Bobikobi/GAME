@@ -150,6 +150,26 @@ window.__e2e = (() => {
       requestAnimationFrame(look);
       return true;
     },
+    /** What the player's sprite shows: the sheet, the frame, whether it is mirrored, and whether a step is under way. */
+    look() {
+      const w = g().world, p = w.player;
+      return { key: p.texture.key, frame: Number(p.frame.name), flip: p.flipX, moving: !!w.move };
+    },
+    /** Starts or stops writing down what the player's sprite shows at every frame. */
+    watchLook(on) {
+      window.__lookGen = (window.__lookGen ?? 0) + 1;
+      const gen = window.__lookGen;
+      if (!on) return window.__looks ?? [];
+      window.__looks = [];
+      const tick = () => {
+        if (window.__lookGen !== gen) return;
+        window.__looks.push(this.look());
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+      return [];
+    },
+    working() { return g().world.working; },
     soundState() {
       return g().sound ? g().sound.state() : null;
     },
@@ -402,6 +422,32 @@ class Player {
     throw new Error(`the dialogue never ended: ${seen.join(' / ')}`);
   }
 
+  /** One step in a direction while writing down the sprite at every frame: the sheet must be that direction's, mirrored for right, and the legs must change. */
+  async walkLook(dir: Dir): Promise<string> {
+    const stem = dir === 'right' ? 'left' : dir;
+    await this.page.eval('__e2e.watchLook(true)');
+    const moved = await this.step(dir);
+    const looks = await this.page.eval<{ key: string; frame: number; flip: boolean; moving: boolean }[]>('__e2e.watchLook(false)');
+    if (!moved) return `${dir}: blocked`;
+    const striding = looks.filter((l) => l.moving);
+    if (striding.length === 0) throw new Error(`no frame was drawn while stepping ${dir}`);
+    for (const l of striding) {
+      if (!l.key.endsWith(`_${stem}`) && !(dir === 'down' && /_down$|player$|woman$/.test(l.key))) throw new Error(`stepping ${dir} drew ${l.key}`);
+      if (l.flip !== (dir === 'right')) throw new Error(`stepping ${dir} drew flip=${l.flip}`);
+    }
+    const frames = new Set(striding.map((l) => l.frame));
+    // a leg frame (0 or 2) shows during the step; the feet-together frame (1) is where it lands
+    if (![...frames].some((f) => f !== 1)) throw new Error(`stepping ${dir} never lifted a leg: frames ${[...frames].join(',')}`);
+    return `${dir}: ${striding[0]!.key.split('/').pop()}${dir === 'right' ? ' mirrored' : ''}, frames ${[...frames].sort().join('/')}`;
+  }
+
+  /** The work started by one press: no pop-up, no bar, the hands busy, and the node still standing. */
+  async expectWorking(what: string): Promise<void> {
+    await this.page.waitFor('__e2e.working()', `${what} to start by itself`, 3000);
+    const pop = await this.page.eval<boolean>('!!document.querySelector(".minigame-layer, .minigame")');
+    if (pop) throw new Error(`${what} opened a minigame`);
+  }
+
   /** Solves any minigame (timing, strike, pick, snap) by waiting for data-cue="now". */
   async solveMinigame(): Promise<void> {
     const start = Date.now();
@@ -515,7 +561,8 @@ class Player {
         // a tree is felled, anything else gathered: the prompt must say which
         await this.expectPrompt(source === 'core/oak-trees' ? /^Fell tree/ : /^Gather /, n.id);
         await this.a();
-        await this.solveMinigame();
+        if (source === 'core/oak-trees') await this.expectWorking(`felling ${n.id}`);
+        else await this.solveMinigame();
         await this.idle(`gathering ${n.id}`);
       }
     }
@@ -649,6 +696,69 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
     if (purse.recipes.length !== known) throw new Error('the purse under the sign taught a recipe: it holds gold only');
     await me.snap('bridge');
     log('mended the bridge: 30000 mg in the purse');
+
+    // 4b. game feel: the four walks, one press fells a tree on its own, and a step away stops the work
+    const walks: string[] = [];
+    const room = await me.state();
+    // a tile whose four neighbours are all open, so each direction can be walked and walked back
+    const clear = await page.eval<[number, number] | null>(`(() => {
+      const w = __game.world, s = __game.session, m = __game.bundle.map;
+      let best = null, bestD = 1e9;
+      for (let y = 1; y < m.height - 1; y++) for (let x = 1; x < m.width - 1; x++) {
+        if (![[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].every(([dx, dy]) => w.canWalk(s, x + dx, y + dy))) continue;
+        const d = Math.abs(x - ${room.pos[0]}) + Math.abs(y - ${room.pos[1]});
+        if (d < bestD) { bestD = d; best = [x, y]; }
+      }
+      return best;
+    })()`);
+    if (!clear) throw new Error('no open ground to show the four walks on');
+    await me.walkTo({ x: clear[0], y: clear[1], w: 1, h: 1 }, 'open ground for the walk cycles');
+    await me.step((await me.state()).facing); // the walk stops beside it, one step more stands on it
+    const stood = (await me.state()).pos;
+    if (stood.join(',') !== clear.join(',')) throw new Error(`wanted to stand on ${clear.join(',')} for the walks, stand on ${stood.join(',')}`);
+    for (const d of ['left', 'right', 'up', 'down'] as Dir[]) {
+      walks.push(await me.walkLook(d));
+      await me.snap(`walk-${d}`);
+    }
+    log(`walk cycles: ${walks.join(' | ')}`);
+    if (walks.some((w) => w.endsWith('blocked'))) throw new Error(`not all four walks could be drawn from ${room.pos.join(',')}: ${walks.join(' | ')}`);
+    await me.snap('walk');
+    const oaks = await page.eval<{ id: string; x: number; y: number; ready: boolean }[]>('__e2e.nodes("core/oak-trees")');
+    const oak = oaks.find((n) => n.ready);
+    if (!oak) throw new Error('no ready oak');
+    const logs0 = await me.bag('core/log');
+    await me.walkTo({ x: oak.x, y: oak.y, w: 1, h: 1 }, oak.id);
+    await me.expectPrompt(/^Fell tree/, oak.id);
+    await me.a();
+    await me.expectWorking('the first swings');
+    await sleep(1100);
+    await me.snap('swing');
+    // a step away: the work stops, nothing was cut, the tree stands ready
+    const facing = (await me.state()).facing;
+    const away = [OPPOSITE[facing], ...(Object.keys(VEC) as Dir[]).filter((d) => d !== facing && d !== OPPOSITE[facing])];
+    let left = false;
+    for (const d of away) {
+      const here = (await me.state()).pos;
+      const open = await page.eval<boolean>(`__game.world.canWalk(__game.session, ${here[0] + VEC[d][0]}, ${here[1] + VEC[d][1]})`);
+      if (open && (await me.step(d))) {
+        left = true;
+        break;
+      }
+    }
+    if (!left) throw new Error('no free tile to step away to from the tree');
+    if (await page.eval<boolean>('__e2e.working()')) throw new Error('the work went on after a step away');
+    if ((await me.bag('core/log')) !== logs0) throw new Error('a step away still cut logs');
+    if (!(await page.eval<{ id: string; ready: boolean }[]>('__e2e.nodes("core/oak-trees")')).find((n) => n.ready && n.id === oak.id)) throw new Error('the tree is not ready after a step away');
+    log('a step away stopped the felling: no logs, the tree still standing');
+    // one press, no further input: the tree comes down and its logs are in the bag
+    await me.walkTo({ x: oak.x, y: oak.y, w: 1, h: 1 }, oak.id);
+    await me.expectPrompt(/^Fell tree/, oak.id);
+    await me.a();
+    await me.expectWorking('the felling');
+    await page.waitFor(`__e2e.player().bag['core/log'] >= ${logs0 + 3}`, 'the tree to fall by itself', 15_000);
+    await me.idle('the felling');
+    if ((await me.bag('core/log')) !== logs0 + 3) throw new Error(`one tree gave ${(await me.bag('core/log')) - logs0} logs, not 3`);
+    log('one press felled the tree by itself: 3 logs, no pop-up');
 
     // 5. a fire before dark, from a felled tree
     await me.gather('core/oak-trees', 'core/log', 2);
@@ -806,7 +916,7 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
         await me.expectPrompt(/^Dig here/, 'the spot under the hill lantern');
         if (tries === 0) await me.snap('dusk');
         await me.a();
-        await me.solveMinigame();
+        await me.expectWorking('digging under the lantern');
         await me.idle('digging under the lantern');
       }
       if ((await me.bag('core/maru-coin')) < 1) throw new Error('no coin after three digs under the hill lantern');
