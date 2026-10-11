@@ -187,6 +187,8 @@ b) The rest of the cast, after (a): Elder Maru, Pell and the cook.
 - A look is a direction: two or three phone-size stills per character to the owner, opened in his browser, never an artifact link. The pick goes into DECISIONS with its frame.
 - Then download the pick once, rig and reduce it in the local Blender pipeline, as the six role models were.
 
+c) A daily routine while this stream runs (owner, 11.10), before section 9: each day, on all four Meshy accounts, do the site's daily tasks that earn credits (the check-in timer only loads the workspace), and spend what they ask for on work the game needs: the cast drafts of (b) first, then props the 3D valley lacks. Log credits earned and spent per account in `docs/3d/meshy-notes.md`.
+
 ## 9. The maze peek and the hint ladder
 
 Read DECISIONS 2026-10-11 "Maze difficulty is a ladder of four tiers" (PR #71). After #71 lands.
