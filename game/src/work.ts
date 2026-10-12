@@ -80,3 +80,37 @@ export function strideFrame(k: number, step: number, frames: number): number {
   if (k >= STRIDE) return 1;
   return step % 2 === 0 ? 0 : 2;
 }
+
+/** The body poses of the other things a player does (NEXT 4c), each a sheet `<look>_<pose>_<direction>` beside the walk and work sheets. */
+export type PoseKind = 'gather' | 'lift' | 'dig' | 'craft' | 'cook' | 'eat' | 'drink' | 'pay' | 'talk' | 'camp' | 'sleep';
+
+export const POSE_KINDS: readonly PoseKind[] = ['gather', 'lift', 'dig', 'craft', 'cook', 'eat', 'drink', 'pay', 'talk', 'camp', 'sleep'];
+
+/** How long a pose of one action lasts; 0 is held until the thing is over (a talk, a sleep). */
+export const POSE_MS: Readonly<Record<PoseKind, number>> = { gather: 900, lift: 900, dig: 900, craft: 1400, cook: 1600, eat: 1100, drink: 1100, pay: 900, talk: 0, camp: 1400, sleep: 0 };
+
+/** Poses that play through once and stay on their last frame; the others go round. */
+const ONCE: ReadonlySet<PoseKind> = new Set(['lift', 'camp', 'eat', 'drink', 'pay']);
+
+/** One frame of a pose lasts about this long. */
+export const POSE_FRAME_MS = 280;
+
+/** The frame of a pose `elapsed` ms in. */
+export function poseFrame(kind: PoseKind, elapsed: number, frames: number): number {
+  const step = Math.floor(Math.max(0, elapsed) / (kind === 'sleep' ? POSE_FRAME_MS * 3 : POSE_FRAME_MS));
+  return ONCE.has(kind) ? Math.min(frames - 1, step) : step % Math.max(1, frames);
+}
+
+/** What the player does with a food: a cup is drunk, anything else eaten. */
+export function eatPose(itemId: string): 'eat' | 'drink' {
+  return /(^|[/_-])(tea|water|juice|milk|brew|cider|broth)([_-]|$)/.test(itemId) ? 'drink' : 'eat';
+}
+
+/** The pose sheets a minigame's beats swing with, the axe swing last. */
+export const GAME_POSES: Readonly<Record<'timing' | 'strike' | 'pick' | 'snap' | 'dig', readonly string[]>> = {
+  timing: ['work'],
+  strike: ['work'],
+  pick: ['gather', 'work'],
+  snap: ['gather', 'work'],
+  dig: ['dig', 'work'],
+};

@@ -13,7 +13,7 @@
  * Serves game/dist itself, writes screenshots to out-dir (default .scratch/e2e)
  * and exits non-zero on the first step that fails or on any page error.
  */
-import { createReadStream, existsSync, mkdirSync, statSync } from 'node:fs';
+import { createReadStream, existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -441,6 +441,51 @@ class Player {
     return `${dir}: ${striding[0]!.key.split('/').pop()}${dir === 'right' ? ' mirrored' : ''}, frames ${[...frames].sort().join('/')}`;
   }
 
+  /**
+   * Every action of NEXT 4c on the body: the pose of each plays and shows its own sheet,
+   * and a pose of more than one frame shows more than one. Writes a strip of the frames.
+   */
+  async posesLook(): Promise<string> {
+    const r = await this.page.eval<{ kinds: Record<string, { key: string; frames: string[] }>; strip: string }>(`(async () => {
+      const g = window.__game, w = g.world;
+      const wait = (ms) => new Promise((ok) => setTimeout(ok, ms));
+      const kinds = {};
+      const cells = [];
+      for (const k of ['gather', 'lift', 'dig', 'craft', 'cook', 'eat', 'drink', 'pay', 'talk', 'camp', 'sleep']) {
+        w.playPose(k, 0);
+        const frames = new Set();
+        let key = '';
+        for (let i = 0; i < (k === 'sleep' ? 8 : 9); i++) {
+          await wait(k === 'sleep' ? 260 : 130);
+          key = w.player.texture.key;
+          const name = String(w.player.frame.name);
+          if (!frames.has(name)) cells.push({ key, name });
+          frames.add(name);
+        }
+        kinds[k] = { key, frames: [...frames] };
+        w.stopPose();
+      }
+      const S = 3, cv = document.createElement('canvas');
+      cv.width = cells.length * 34 * S; cv.height = 34 * S;
+      const c = cv.getContext('2d'); c.imageSmoothingEnabled = false;
+      cells.forEach((cell, i) => {
+        const tex = w.textures.get(cell.key), fr = tex.get(cell.name);
+        c.drawImage(tex.getSourceImage(), fr.cutX, fr.cutY, fr.cutWidth, fr.cutHeight, i * 34 * S, (34 - fr.cutHeight) * S, fr.cutWidth * S, fr.cutHeight * S);
+      });
+      return { kinds, strip: cv.toDataURL('image/png') };
+    })()`);
+    writeFileSync(join(OUT, `${this.name}-poses.png`), Buffer.from(r.strip.split(',')[1]!, 'base64'));
+    const out: string[] = [];
+    for (const [k, v] of Object.entries(r.kinds)) {
+      if (!v.key.includes(`_${k}_`)) throw new Error(`the ${k} pose drew ${v.key}`);
+      if (v.frames.length < 2) throw new Error(`the ${k} pose showed one frame only`);
+      out.push(`${k} ${v.frames.length}`);
+    }
+    const keys = new Set(Object.values(r.kinds).map((v) => v.key));
+    if (keys.size !== Object.keys(r.kinds).length) throw new Error('two actions drew the same sheet');
+    return out.join(', ');
+  }
+
   /** The work started by one press: no pop-up, no bar, the hands busy, and the node still standing. */
   async expectWorking(what: string): Promise<void> {
     await this.page.waitFor('__e2e.working()', `${what} to start by itself`, 3000);
@@ -721,6 +766,7 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       await me.snap(`walk-${d}`);
     }
     log(`walk cycles: ${walks.join(' | ')}`);
+    if (viewport.mobile) log(`action poses, frames seen: ${await me.posesLook()}`);
     if (walks.some((w) => w.endsWith('blocked'))) throw new Error(`not all four walks could be drawn from ${room.pos.join(',')}: ${walks.join(' | ')}`);
     await me.snap('walk');
     const oaks = await page.eval<{ id: string; x: number; y: number; ready: boolean }[]>('__e2e.nodes("core/oak-trees")');

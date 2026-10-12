@@ -444,19 +444,26 @@ export class UI {
     if (npc.shop) options.push({ label: 'Trade', value: 'trade' });
     options.push({ label: 'Goodbye', value: 'bye' });
 
-    const choice = await say(this, npc.name, lines, options);
-    if (!choice || choice === 'bye') return;
-    if (choice.startsWith('topic:')) {
-      const index = Number(choice.slice(6));
-      const topic = npc.topics?.[index];
-      if (topic) {
-        s.hear(`${npcId}?${index}`);
-        await say(this, npc.name, named(topic.lines));
+    // the body talks while the words are on the screen
+    const stop = app.world?.holdPose('talk', npcId);
+    try {
+      const choice = await say(this, npc.name, lines, options);
+      if (!choice || choice === 'bye') return;
+      if (choice.startsWith('topic:')) {
+        const index = Number(choice.slice(6));
+        const topic = npc.topics?.[index];
+        if (topic) {
+          s.hear(`${npcId}?${index}`);
+          await say(this, npc.name, named(topic.lines));
+        }
+        return;
       }
-      return;
+      if (choice === 'trade' && npc.shop) return openShop(this, npcId);
+      if (choice.startsWith('quest:')) return this.questTalk(npcId, choice.slice(6));
+
+    } finally {
+      stop?.();
     }
-    if (choice === 'trade' && npc.shop) return openShop(this, npcId);
-    if (choice.startsWith('quest:')) return this.questTalk(npcId, choice.slice(6));
   }
 
 

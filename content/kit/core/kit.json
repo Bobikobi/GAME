@@ -715,6 +715,378 @@
         "w": 16,
         "h": 16
       },
+      "chars/player_gather_down": {
+        "file": "chars/player_gather_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/player_gather_left": {
+        "file": "chars/player_gather_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/player_gather_up": {
+        "file": "chars/player_gather_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/player_lift_down": {
+        "file": "chars/player_lift_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/player_lift_left": {
+        "file": "chars/player_lift_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/player_lift_up": {
+        "file": "chars/player_lift_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/player_dig_down": {
+        "file": "chars/player_dig_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/player_dig_left": {
+        "file": "chars/player_dig_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/player_dig_up": {
+        "file": "chars/player_dig_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/player_craft_down": {
+        "file": "chars/player_craft_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/player_craft_left": {
+        "file": "chars/player_craft_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/player_craft_up": {
+        "file": "chars/player_craft_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/player_cook_down": {
+        "file": "chars/player_cook_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/player_cook_left": {
+        "file": "chars/player_cook_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/player_cook_up": {
+        "file": "chars/player_cook_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/player_eat_down": {
+        "file": "chars/player_eat_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/player_eat_left": {
+        "file": "chars/player_eat_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/player_eat_up": {
+        "file": "chars/player_eat_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/player_drink_down": {
+        "file": "chars/player_drink_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/player_drink_left": {
+        "file": "chars/player_drink_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/player_drink_up": {
+        "file": "chars/player_drink_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/player_pay_down": {
+        "file": "chars/player_pay_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/player_pay_left": {
+        "file": "chars/player_pay_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/player_pay_up": {
+        "file": "chars/player_pay_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/player_talk_down": {
+        "file": "chars/player_talk_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/player_talk_left": {
+        "file": "chars/player_talk_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/player_talk_up": {
+        "file": "chars/player_talk_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/player_camp_down": {
+        "file": "chars/player_camp_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/player_camp_left": {
+        "file": "chars/player_camp_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/player_camp_up": {
+        "file": "chars/player_camp_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/player_sleep_down": {
+        "file": "chars/player_sleep_down.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      "chars/woman_gather_down": {
+        "file": "chars/woman_gather_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/woman_gather_left": {
+        "file": "chars/woman_gather_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/woman_gather_up": {
+        "file": "chars/woman_gather_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/woman_lift_down": {
+        "file": "chars/woman_lift_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/woman_lift_left": {
+        "file": "chars/woman_lift_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/woman_lift_up": {
+        "file": "chars/woman_lift_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/woman_dig_down": {
+        "file": "chars/woman_dig_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/woman_dig_left": {
+        "file": "chars/woman_dig_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/woman_dig_up": {
+        "file": "chars/woman_dig_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/woman_craft_down": {
+        "file": "chars/woman_craft_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/woman_craft_left": {
+        "file": "chars/woman_craft_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/woman_craft_up": {
+        "file": "chars/woman_craft_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/woman_cook_down": {
+        "file": "chars/woman_cook_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/woman_cook_left": {
+        "file": "chars/woman_cook_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/woman_cook_up": {
+        "file": "chars/woman_cook_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/woman_eat_down": {
+        "file": "chars/woman_eat_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/woman_eat_left": {
+        "file": "chars/woman_eat_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/woman_eat_up": {
+        "file": "chars/woman_eat_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/woman_drink_down": {
+        "file": "chars/woman_drink_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/woman_drink_left": {
+        "file": "chars/woman_drink_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/woman_drink_up": {
+        "file": "chars/woman_drink_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/woman_pay_down": {
+        "file": "chars/woman_pay_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/woman_pay_left": {
+        "file": "chars/woman_pay_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/woman_pay_up": {
+        "file": "chars/woman_pay_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/woman_talk_down": {
+        "file": "chars/woman_talk_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/woman_talk_left": {
+        "file": "chars/woman_talk_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/woman_talk_up": {
+        "file": "chars/woman_talk_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/woman_camp_down": {
+        "file": "chars/woman_camp_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/woman_camp_left": {
+        "file": "chars/woman_camp_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/woman_camp_up": {
+        "file": "chars/woman_camp_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/woman_sleep_down": {
+        "file": "chars/woman_sleep_down.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
       "chars/explorer_down": {
         "file": "chars/explorer_down.png",
         "w": 16,
@@ -765,6 +1137,192 @@
       },
       "chars/explorer_work_up": {
         "file": "chars/explorer_work_up.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      "chars/explorer_gather_down": {
+        "file": "chars/explorer_gather_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_gather_left": {
+        "file": "chars/explorer_gather_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_gather_up": {
+        "file": "chars/explorer_gather_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_lift_down": {
+        "file": "chars/explorer_lift_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_lift_left": {
+        "file": "chars/explorer_lift_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_lift_up": {
+        "file": "chars/explorer_lift_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_dig_down": {
+        "file": "chars/explorer_dig_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_dig_left": {
+        "file": "chars/explorer_dig_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_dig_up": {
+        "file": "chars/explorer_dig_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_craft_down": {
+        "file": "chars/explorer_craft_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_craft_left": {
+        "file": "chars/explorer_craft_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_craft_up": {
+        "file": "chars/explorer_craft_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_cook_down": {
+        "file": "chars/explorer_cook_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_cook_left": {
+        "file": "chars/explorer_cook_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_cook_up": {
+        "file": "chars/explorer_cook_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_eat_down": {
+        "file": "chars/explorer_eat_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_eat_left": {
+        "file": "chars/explorer_eat_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_eat_up": {
+        "file": "chars/explorer_eat_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_drink_down": {
+        "file": "chars/explorer_drink_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_drink_left": {
+        "file": "chars/explorer_drink_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_drink_up": {
+        "file": "chars/explorer_drink_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_pay_down": {
+        "file": "chars/explorer_pay_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_pay_left": {
+        "file": "chars/explorer_pay_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_pay_up": {
+        "file": "chars/explorer_pay_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_talk_down": {
+        "file": "chars/explorer_talk_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_talk_left": {
+        "file": "chars/explorer_talk_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_talk_up": {
+        "file": "chars/explorer_talk_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_camp_down": {
+        "file": "chars/explorer_camp_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_camp_left": {
+        "file": "chars/explorer_camp_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_camp_up": {
+        "file": "chars/explorer_camp_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_sleep_down": {
+        "file": "chars/explorer_sleep_down.png",
         "w": 32,
         "h": 32,
         "frames": 2
@@ -823,6 +1381,192 @@
         "h": 32,
         "frames": 2
       },
+      "chars/explorer_w_gather_down": {
+        "file": "chars/explorer_w_gather_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_w_gather_left": {
+        "file": "chars/explorer_w_gather_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_w_gather_up": {
+        "file": "chars/explorer_w_gather_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_w_lift_down": {
+        "file": "chars/explorer_w_lift_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_w_lift_left": {
+        "file": "chars/explorer_w_lift_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_w_lift_up": {
+        "file": "chars/explorer_w_lift_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_w_dig_down": {
+        "file": "chars/explorer_w_dig_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_w_dig_left": {
+        "file": "chars/explorer_w_dig_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_w_dig_up": {
+        "file": "chars/explorer_w_dig_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_w_craft_down": {
+        "file": "chars/explorer_w_craft_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_w_craft_left": {
+        "file": "chars/explorer_w_craft_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_w_craft_up": {
+        "file": "chars/explorer_w_craft_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_w_cook_down": {
+        "file": "chars/explorer_w_cook_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_w_cook_left": {
+        "file": "chars/explorer_w_cook_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_w_cook_up": {
+        "file": "chars/explorer_w_cook_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_w_eat_down": {
+        "file": "chars/explorer_w_eat_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_w_eat_left": {
+        "file": "chars/explorer_w_eat_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_w_eat_up": {
+        "file": "chars/explorer_w_eat_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_w_drink_down": {
+        "file": "chars/explorer_w_drink_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_w_drink_left": {
+        "file": "chars/explorer_w_drink_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_w_drink_up": {
+        "file": "chars/explorer_w_drink_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_w_pay_down": {
+        "file": "chars/explorer_w_pay_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_w_pay_left": {
+        "file": "chars/explorer_w_pay_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_w_pay_up": {
+        "file": "chars/explorer_w_pay_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_w_talk_down": {
+        "file": "chars/explorer_w_talk_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_w_talk_left": {
+        "file": "chars/explorer_w_talk_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_w_talk_up": {
+        "file": "chars/explorer_w_talk_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/explorer_w_camp_down": {
+        "file": "chars/explorer_w_camp_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_w_camp_left": {
+        "file": "chars/explorer_w_camp_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_w_camp_up": {
+        "file": "chars/explorer_w_camp_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/explorer_w_sleep_down": {
+        "file": "chars/explorer_w_sleep_down.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
       "chars/forager_down": {
         "file": "chars/forager_down.png",
         "w": 16,
@@ -873,6 +1617,192 @@
       },
       "chars/forager_work_up": {
         "file": "chars/forager_work_up.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      "chars/forager_gather_down": {
+        "file": "chars/forager_gather_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_gather_left": {
+        "file": "chars/forager_gather_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_gather_up": {
+        "file": "chars/forager_gather_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_lift_down": {
+        "file": "chars/forager_lift_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_lift_left": {
+        "file": "chars/forager_lift_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_lift_up": {
+        "file": "chars/forager_lift_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_dig_down": {
+        "file": "chars/forager_dig_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_dig_left": {
+        "file": "chars/forager_dig_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_dig_up": {
+        "file": "chars/forager_dig_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_craft_down": {
+        "file": "chars/forager_craft_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_craft_left": {
+        "file": "chars/forager_craft_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_craft_up": {
+        "file": "chars/forager_craft_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_cook_down": {
+        "file": "chars/forager_cook_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_cook_left": {
+        "file": "chars/forager_cook_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_cook_up": {
+        "file": "chars/forager_cook_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_eat_down": {
+        "file": "chars/forager_eat_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_eat_left": {
+        "file": "chars/forager_eat_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_eat_up": {
+        "file": "chars/forager_eat_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_drink_down": {
+        "file": "chars/forager_drink_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_drink_left": {
+        "file": "chars/forager_drink_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_drink_up": {
+        "file": "chars/forager_drink_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_pay_down": {
+        "file": "chars/forager_pay_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_pay_left": {
+        "file": "chars/forager_pay_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_pay_up": {
+        "file": "chars/forager_pay_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_talk_down": {
+        "file": "chars/forager_talk_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_talk_left": {
+        "file": "chars/forager_talk_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_talk_up": {
+        "file": "chars/forager_talk_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_camp_down": {
+        "file": "chars/forager_camp_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_camp_left": {
+        "file": "chars/forager_camp_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_camp_up": {
+        "file": "chars/forager_camp_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_sleep_down": {
+        "file": "chars/forager_sleep_down.png",
         "w": 32,
         "h": 32,
         "frames": 2
@@ -931,6 +1861,192 @@
         "h": 32,
         "frames": 2
       },
+      "chars/forager_w_gather_down": {
+        "file": "chars/forager_w_gather_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_w_gather_left": {
+        "file": "chars/forager_w_gather_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_w_gather_up": {
+        "file": "chars/forager_w_gather_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_w_lift_down": {
+        "file": "chars/forager_w_lift_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_w_lift_left": {
+        "file": "chars/forager_w_lift_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_w_lift_up": {
+        "file": "chars/forager_w_lift_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_w_dig_down": {
+        "file": "chars/forager_w_dig_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_w_dig_left": {
+        "file": "chars/forager_w_dig_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_w_dig_up": {
+        "file": "chars/forager_w_dig_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_w_craft_down": {
+        "file": "chars/forager_w_craft_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_w_craft_left": {
+        "file": "chars/forager_w_craft_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_w_craft_up": {
+        "file": "chars/forager_w_craft_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_w_cook_down": {
+        "file": "chars/forager_w_cook_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_w_cook_left": {
+        "file": "chars/forager_w_cook_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_w_cook_up": {
+        "file": "chars/forager_w_cook_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_w_eat_down": {
+        "file": "chars/forager_w_eat_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_w_eat_left": {
+        "file": "chars/forager_w_eat_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_w_eat_up": {
+        "file": "chars/forager_w_eat_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_w_drink_down": {
+        "file": "chars/forager_w_drink_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_w_drink_left": {
+        "file": "chars/forager_w_drink_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_w_drink_up": {
+        "file": "chars/forager_w_drink_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_w_pay_down": {
+        "file": "chars/forager_w_pay_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_w_pay_left": {
+        "file": "chars/forager_w_pay_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_w_pay_up": {
+        "file": "chars/forager_w_pay_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_w_talk_down": {
+        "file": "chars/forager_w_talk_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_w_talk_left": {
+        "file": "chars/forager_w_talk_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_w_talk_up": {
+        "file": "chars/forager_w_talk_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/forager_w_camp_down": {
+        "file": "chars/forager_w_camp_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_w_camp_left": {
+        "file": "chars/forager_w_camp_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_w_camp_up": {
+        "file": "chars/forager_w_camp_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/forager_w_sleep_down": {
+        "file": "chars/forager_w_sleep_down.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
       "chars/digger_down": {
         "file": "chars/digger_down.png",
         "w": 16,
@@ -985,6 +2101,192 @@
         "h": 32,
         "frames": 2
       },
+      "chars/digger_gather_down": {
+        "file": "chars/digger_gather_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_gather_left": {
+        "file": "chars/digger_gather_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_gather_up": {
+        "file": "chars/digger_gather_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_lift_down": {
+        "file": "chars/digger_lift_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_lift_left": {
+        "file": "chars/digger_lift_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_lift_up": {
+        "file": "chars/digger_lift_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_dig_down": {
+        "file": "chars/digger_dig_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_dig_left": {
+        "file": "chars/digger_dig_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_dig_up": {
+        "file": "chars/digger_dig_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_craft_down": {
+        "file": "chars/digger_craft_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_craft_left": {
+        "file": "chars/digger_craft_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_craft_up": {
+        "file": "chars/digger_craft_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_cook_down": {
+        "file": "chars/digger_cook_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_cook_left": {
+        "file": "chars/digger_cook_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_cook_up": {
+        "file": "chars/digger_cook_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_eat_down": {
+        "file": "chars/digger_eat_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_eat_left": {
+        "file": "chars/digger_eat_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_eat_up": {
+        "file": "chars/digger_eat_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_drink_down": {
+        "file": "chars/digger_drink_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_drink_left": {
+        "file": "chars/digger_drink_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_drink_up": {
+        "file": "chars/digger_drink_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_pay_down": {
+        "file": "chars/digger_pay_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_pay_left": {
+        "file": "chars/digger_pay_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_pay_up": {
+        "file": "chars/digger_pay_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_talk_down": {
+        "file": "chars/digger_talk_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_talk_left": {
+        "file": "chars/digger_talk_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_talk_up": {
+        "file": "chars/digger_talk_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_camp_down": {
+        "file": "chars/digger_camp_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_camp_left": {
+        "file": "chars/digger_camp_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_camp_up": {
+        "file": "chars/digger_camp_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_sleep_down": {
+        "file": "chars/digger_sleep_down.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
       "chars/digger_w_down": {
         "file": "chars/digger_w_down.png",
         "w": 16,
@@ -1035,6 +2337,192 @@
       },
       "chars/digger_w_work_up": {
         "file": "chars/digger_w_work_up.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      "chars/digger_w_gather_down": {
+        "file": "chars/digger_w_gather_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_w_gather_left": {
+        "file": "chars/digger_w_gather_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_w_gather_up": {
+        "file": "chars/digger_w_gather_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_w_lift_down": {
+        "file": "chars/digger_w_lift_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_w_lift_left": {
+        "file": "chars/digger_w_lift_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_w_lift_up": {
+        "file": "chars/digger_w_lift_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_w_dig_down": {
+        "file": "chars/digger_w_dig_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_w_dig_left": {
+        "file": "chars/digger_w_dig_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_w_dig_up": {
+        "file": "chars/digger_w_dig_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_w_craft_down": {
+        "file": "chars/digger_w_craft_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_w_craft_left": {
+        "file": "chars/digger_w_craft_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_w_craft_up": {
+        "file": "chars/digger_w_craft_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_w_cook_down": {
+        "file": "chars/digger_w_cook_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_w_cook_left": {
+        "file": "chars/digger_w_cook_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_w_cook_up": {
+        "file": "chars/digger_w_cook_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_w_eat_down": {
+        "file": "chars/digger_w_eat_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_w_eat_left": {
+        "file": "chars/digger_w_eat_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_w_eat_up": {
+        "file": "chars/digger_w_eat_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_w_drink_down": {
+        "file": "chars/digger_w_drink_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_w_drink_left": {
+        "file": "chars/digger_w_drink_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_w_drink_up": {
+        "file": "chars/digger_w_drink_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_w_pay_down": {
+        "file": "chars/digger_w_pay_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_w_pay_left": {
+        "file": "chars/digger_w_pay_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_w_pay_up": {
+        "file": "chars/digger_w_pay_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_w_talk_down": {
+        "file": "chars/digger_w_talk_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_w_talk_left": {
+        "file": "chars/digger_w_talk_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_w_talk_up": {
+        "file": "chars/digger_w_talk_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 3
+      },
+      "chars/digger_w_camp_down": {
+        "file": "chars/digger_w_camp_down.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_w_camp_left": {
+        "file": "chars/digger_w_camp_left.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_w_camp_up": {
+        "file": "chars/digger_w_camp_up.png",
+        "w": 16,
+        "h": 24,
+        "frames": 2
+      },
+      "chars/digger_w_sleep_down": {
+        "file": "chars/digger_w_sleep_down.png",
         "w": 32,
         "h": 32,
         "frames": 2

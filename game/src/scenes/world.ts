@@ -42,7 +42,7 @@ import { questTargets } from '../targets';
 import { nodeLook } from '../growth';
 import { hintDistance, lanternNight, nodeAction } from '../text';
 import type { WorkKind } from '../ui/ui';
-import { type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, treasureKind } from '../work';
+import { type AutoKind, GAME_POSES, POSES, POSE_MS, type PoseKind, beatAt, blowsDue, eatPose, poseFrame, resourceKind, strideFrame, treasureKind } from '../work';
 
 const DEPTH = { ground: 0, restore: 1, flat: 2, shadow: 2.5, dig: 3, puff: 3.5, mist: 8000, fog: 9000, motes: 9100, shade: 9500, glow: 9600, fx: 9800, marker: 9850 };
 const NEIGHBOURS: readonly [number, number][] = [
@@ -941,6 +941,7 @@ export class WorldScene extends Phaser.Scene {
         this.nextSwing = 0;
       }),
       session.on('events', (events) => this.celebrate(events)),
+      session.on('acted', ({ action, events }) => this.actedPose(action, events)),
       session.on('change', () => this.refresh()),
     ];
     this.player.setVisible(true);
@@ -973,6 +974,8 @@ export class WorldScene extends Phaser.Scene {
     const has = (k: string) => k in this.b.sprites;
     const none = { key: '', flip: false };
     if (pose !== 'walk' && !has(stem)) return none;
+    // a body lying down has one view
+    if (pose === 'sleep') return { key: stem, flip: false };
     if (dir === 'down') return { key: stem, flip: false };
     if (dir === 'right' && !has(of('right'))) {
       if (has(of('left'))) return { key: of('left'), flip: true };
@@ -998,7 +1001,7 @@ export class WorldScene extends Phaser.Scene {
     if (!s) return;
     // a tool has its own swing when the art has one, the axe swing otherwise
     let found = { key: '', flip: false };
-    for (const pose of this.auto ? POSES[this.auto.kind] : ['work']) {
+    for (const pose of this.auto ? POSES[this.auto.kind] : this.work ? GAME_POSES[this.work.kind] : ['work']) {
       found = this.playerFrame(s.facing, pose);
       if (found.key) break;
     }
@@ -1147,6 +1150,7 @@ export class WorldScene extends Phaser.Scene {
     if (RICH.motion) this.idle(s, time);
     this.workTick(s);
     this.drawBusy(s, time);
+    this.poseTick(s, time);
     this.updatePrompt(s);
     this.haunt(s, time);
   }
@@ -1257,7 +1261,7 @@ export class WorldScene extends Phaser.Scene {
   /** Standing still for 3 s, the player blinks every 3-5 s: frame 1 of the idle sheet for 120 ms. */
   private idle(s: Session, time: number): void {
     if (this.falling) return;
-    const still = !this.move && !s.busy && !this.work && !this.auto && this.swingUntil === 0;
+    const still = !this.move && !s.busy && !this.work && !this.auto && !this.actPose && this.swingUntil === 0;
     if (!still) {
       this.idleSince = time;
       this.blinkUntil = 0;
@@ -1537,6 +1541,96 @@ export class WorldScene extends Phaser.Scene {
       const d = Math.max(Math.abs(spot.x - 0.5 - s.pos[0]), Math.abs(spot.y - s.pos[1]));
       spot.label.classList.toggle('on', !blocked && d <= SIGN_REACH);
     }
+  }
+
+  // ------------------------------------------------------------ poses
+
+  /** A body pose under way: the player does something that is not a walk or a swing. `until` 0 holds it until it is released. */
+  private actPose: { kind: PoseKind; start: number; until: number } | null = null;
+
+  /** Plays one pose for `ms` (0 holds it until stopPose); the player keeps their facing. A step cancels it. */
+  playPose(kind: PoseKind, ms: number = POSE_MS[kind]): void {
+    if (this.falling || this.auto || this.work) return;
+    const now = this.time.now;
+    this.actPose = { kind, start: now, until: ms > 0 ? now + ms : 0 };
+  }
+
+  stopPose(): void {
+    if (!this.actPose) return;
+    this.actPose = null;
+    this.faceFrame();
+  }
+
+  /** The pose held while a thing goes on (a talk), turned toward the tile or the person; the way back is the function it returns. */
+  holdPose(kind: PoseKind, npcId?: string): () => void {
+    const s = this.session;
+    if (s && npcId) for (const [k, id] of this.npcAt) if (id === npcId) this.faceTile(s, k);
+    this.playPose(kind, 0);
+    return () => {
+      if (this.actPose?.kind === kind && this.actPose.until === 0) this.stopPose();
+    };
+  }
+
+  private faceTile(s: Session, k: string): void {
+    const [tx, ty] = k.split(',').map(Number) as [number, number];
+    const dx = tx - s.pos[0];
+    const dy = ty - s.pos[1];
+    if (dx === 0 && dy === 0) return;
+    s.facing = Math.abs(dx) >= Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : dy > 0 ? 'down' : 'up';
+    this.faceFrame();
+  }
+
+  /** What an action the player took shows on the body. */
+  private actedPose(a: Action, events: GameEvent[]): void {
+    const busy = events.find((e) => e.e === 'busy');
+    const ms = busy?.e === 'busy' ? busy.ms : 0;
+    switch (a.t) {
+      case 'craft': {
+        const station = this.b.recipes[a.recipe]?.station;
+        const cooks = Object.values(this.b.camps).some((c) => c.provides !== undefined && c.provides === station);
+        this.playPose(cooks ? 'cook' : 'craft', Math.max(ms, POSE_MS[cooks ? 'cook' : 'craft']));
+        break;
+      }
+      case 'eat':
+        this.playPose(eatPose(a.item));
+        break;
+      case 'buy':
+      case 'sell':
+        this.playPose('pay');
+        break;
+      case 'build':
+        this.playPose('camp');
+        break;
+      case 'dig': {
+        const treasure = this.b.treasures[this.b.instances[a.spot]?.source ?? ''];
+        // a find picked up by hand: the body goes down for it
+        if (treasure && !treasure.tool) this.playPose('lift');
+        break;
+      }
+      default:
+    }
+  }
+
+  private poseTick(s: Session, time: number): void {
+    const p = this.actPose;
+    if (!p) return;
+    if (this.move || this.falling || this.auto || this.work || s.busy && !['craft', 'cook'].includes(p.kind)) {
+      this.actPose = null;
+      return;
+    }
+    if (p.until > 0 && time >= p.until) {
+      this.actPose = null;
+      this.faceFrame();
+      return;
+    }
+    const { key, flip } = this.playerFrame(s.facing, p.kind);
+    if (!key) {
+      this.actPose = null;
+      return;
+    }
+    const frames = this.b.sprites[key]?.frames ?? 1;
+    this.player.setTexture(key, poseFrame(p.kind, time - p.start, frames));
+    this.player.setFlipX(flip);
   }
 
   // ------------------------------------------------------------ working

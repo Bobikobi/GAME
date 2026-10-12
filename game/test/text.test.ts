@@ -119,6 +119,15 @@ describe('food benefits', () => {
   });
 });
 
+describe('a quest offered in talk', () => {
+  test('is not announced as a new task, and the end of it is', () => {
+    const [id, q] = Object.entries(bundle.quests)[0]!;
+    const s = newState(bundle, 1);
+    expect(describeEvent(bundle, s, { e: 'quest', quest: id, state: 'active' })).toBeUndefined();
+    expect(describeEvent(bundle, s, { e: 'quest', quest: id, state: 'done' })?.text).toBe(`Task done: ${q.title}`);
+  });
+});
+
 describe('the night (G31)', () => {
   /** A world with one wolf far from anything, so the shipped valley can be asked about the dark. */
   function hunted(): Bundle {

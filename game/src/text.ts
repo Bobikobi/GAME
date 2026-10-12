@@ -411,9 +411,8 @@ export function describe(b: Bundle, s: State, e: GameEvent): { text: string; ico
     case 'learn':
       return { text: `New recipe: ${b.recipes[e.recipe]?.title ?? e.recipe}`, tone: 'good' };
     case 'quest':
-      return e.state === 'active'
-        ? { text: `New task: ${b.quests[e.quest]?.title ?? e.quest}`, tone: 'info' }
-        : { text: `Task done: ${b.quests[e.quest]?.title ?? e.quest}`, tone: 'good' };
+      // a quest is offered in the giver's words and the journal records it quietly: only the end is announced
+      return e.state === 'active' ? undefined : { text: `Task done: ${b.quests[e.quest]?.title ?? e.quest}`, tone: 'good' };
     case 'restore': {
       const r = b.restores[e.restore];
       // a restore with no inputs is a place a quest opens, not one the player mended

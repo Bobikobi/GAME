@@ -59,6 +59,8 @@ export interface SessionEvents {
   busy: { verb: string; ms: number };
   /** what an action produced, shown once the player is free again */
   events: GameEvent[];
+  /** an action went through: what the body does while it lasts (events carries the kernel's answer) */
+  acted: { action: Action; events: GameEvent[] };
   /** the state changed: redraw what depends on it */
   change: undefined;
 }
@@ -305,6 +307,7 @@ export class Session {
       this.pos = [r.state.player.at[0], r.state.player.at[1]];
       stampDemo();
     }
+    this.emit('acted', { action, events: r.events });
     this.tail.push({ a: action, tick: this.tick });
     if (this.tail.length > TAIL) this.tail.splice(0, this.tail.length - TAIL);
     const busy = r.events.find((e) => e.e === 'busy');

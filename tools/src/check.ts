@@ -476,8 +476,8 @@ function checkKits(a: Assembled): Issue[] {
       if ((group === 'tiles' || group === 'items') && (s.w !== 16 || s.h !== 16)) {
         issues.push({ file: kitFile, where, message: `${group} are 16x16, this one is ${s.w}x${s.h}`, level: 'error' });
       }
-      // a work pose is 32x32 so a raised tool fits; its feet stay on the same spot as the walk frames
-      const work = /_work_(down|left|up|right)$/.test(name);
+      // a work pose (and a lying one) is 32x32 so a raised tool fits; its feet stay on the same spot as the walk frames
+      const work = /_(work|sleep)_(down|left|up|right)$/.test(name);
       if (group === 'chars' && work && (s.w !== 32 || s.h !== 32)) {
         issues.push({ file: kitFile, where, message: `work poses are 32x32, this one is ${s.w}x${s.h}`, level: 'error' });
       }

@@ -20,9 +20,10 @@ import { fileURLToPath } from 'node:url';
 
 import { PNG } from 'pngjs';
 
+import { POSES, makeBaseActions } from './actions.js';
 import { CORE_PALETTE, hexToRgb } from './palette.js';
 
-const KIT = join(dirname(fileURLToPath(import.meta.url)), '../../../content/kit/core');
+export const KIT = join(dirname(fileURLToPath(import.meta.url)), '../../../content/kit/core');
 // palette letters: 0-9 then a-v, in the order of CORE_PALETTE
 const LETTERS = '0123456789abcdefghijklmnopqrstuv';
 const RGB = CORE_PALETTE.map(hexToRgb);
@@ -30,13 +31,13 @@ const RGB = CORE_PALETTE.map(hexToRgb);
 const HAIR = [11, 21]; // b, l
 const TUNIC = 13; // d
 
-interface Frame {
+export interface Frame {
   w: number;
   h: number;
   px: number[]; // palette index, -1 clear
 }
 
-function readSheet(file: string, fw: number, fh: number): Frame[] {
+export function readSheet(file: string, fw: number, fh: number): Frame[] {
   const png = PNG.sync.read(readFileSync(join(KIT, 'chars', file)));
   const frames: Frame[] = [];
   for (let f = 0; f < png.width / fw; f++) {
@@ -55,7 +56,7 @@ function readSheet(file: string, fw: number, fh: number): Frame[] {
   return frames;
 }
 
-function writeSheet(file: string, frames: Frame[]): void {
+export function writeSheet(file: string, frames: Frame[]): void {
   const { w, h } = frames[0]!;
   const png = new PNG({ width: w * frames.length, height: h });
   png.data.fill(0);
@@ -75,7 +76,7 @@ function writeSheet(file: string, frames: Frame[]): void {
   writeFileSync(join(KIT, 'chars', file), PNG.sync.write(png));
 }
 
-interface Build {
+export interface Build {
   /** rows to take out, counted up from the feet */
   cutRows: number[];
   /** columns to take out, counted from the frame centre (0 is the column right of centre) */
@@ -84,13 +85,13 @@ interface Build {
   dupCols: number[];
 }
 
-interface Built {
+export interface Built {
   frame: Frame;
   mapX: (x: number) => number;
   mapY: (y: number) => number;
 }
 
-function build(fr: Frame, b: Build): Built {
+export function build(fr: Frame, b: Build): Built {
   const { w, h } = fr;
   let feet = h - 1;
   while (feet > 0 && fr.px.slice(feet * w, feet * w + w).every((v) => v < 0)) feet--;
@@ -127,24 +128,26 @@ function build(fr: Frame, b: Build): Built {
   };
 }
 
-interface Item {
+export interface Item {
   anchor: 'head' | 'torso';
   layer: 'back' | 'front';
   /** row of the first grid line, counted from the anchor row */
   dy: number;
   /** column of the grid's middle, counted from the anchor column */
   dx?: number;
+  /** dx is the grid's first column, not its middle */
+  edge?: boolean;
   grid: string[];
 }
 
-interface Anchors {
+export interface Anchors {
   hairRow: number;
   headX: number;
   torsoRow: number;
   torsoX: number;
 }
 
-function anchors(fr: Frame): Anchors {
+export function anchors(fr: Frame): Anchors {
   const { w, h, px } = fr;
   let hairRow = 0;
   find: for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (HAIR.includes(px[y * w + x]!)) { hairRow = y; break find; }
@@ -164,13 +167,13 @@ function anchors(fr: Frame): Anchors {
   return { hairRow, headX, torsoRow, torsoX: tn ? Math.round(tx / tn) : headX };
 }
 
-function lay(fr: Frame, items: Item[], at?: Anchors): Frame {
+export function lay(fr: Frame, items: Item[], at?: Anchors): Frame {
   const a = at ?? anchors(fr);
   const out: Frame = { ...fr, px: [...fr.px] };
   const draw = (item: Item, onlyClear: boolean) => {
     const ax = item.anchor === 'head' ? a.headX : a.torsoX;
     const ay = item.anchor === 'head' ? a.hairRow : a.torsoRow;
-    const mid = Math.floor(item.grid[0]!.length / 2);
+    const mid = item.edge ? 0 : Math.floor(item.grid[0]!.length / 2);
     item.grid.forEach((row, gy) => {
       for (let gx = 0; gx < row.length; gx++) {
         const ch = row[gx]!;
@@ -179,6 +182,8 @@ function lay(fr: Frame, items: Item[], at?: Anchors): Frame {
         const y = ay + item.dy + gy;
         if (x < 0 || y < 0 || x >= fr.w || y >= fr.h) continue;
         if (onlyClear && out.px[y * fr.w + x]! >= 0) continue;
+        // x clears skin: an arm the pose moves somewhere else
+        if (ch === 'x') { if (out.px[y * fr.w + x] === 28 || out.px[y * fr.w + x] === 29) out.px[y * fr.w + x] = -1; continue; }
         out.px[y * fr.w + x] = LETTERS.indexOf(ch);
       }
     });
@@ -188,7 +193,7 @@ function lay(fr: Frame, items: Item[], at?: Anchors): Frame {
   return out;
 }
 
-type View = 'down' | 'left' | 'up';
+export type View = 'down' | 'left' | 'up';
 
 interface Role {
   id: string;
@@ -392,6 +397,8 @@ const WORK_AT: Record<View, Anchors[]> = {
 };
 
 export const ROLES: Role[] = [explorer, forager, digger];
+/** The blanket of a sleeper in each role's colour: the two purples of the base sheet are swapped for its dark and middle tones. */
+const BLANKET: Record<string, [number, number]> = { explorer: [7, 8], forager: [22, 23], digger: [17, 18] };
 
 interface SheetPlan {
   suffix: string;
@@ -413,9 +420,16 @@ for (const view of ['down', 'left', 'up'] as View[]) {
 
 export function makeAll(): string[] {
   const names: string[] = [];
+  const sheets = [...SHEETS];
+  for (const pose of POSES) {
+    for (const view of ['down', 'left', 'up'] as View[]) {
+      if (!pose.directional && view !== 'down') continue;
+      sheets.push({ suffix: `${pose.name}_${view}`, fw: 16, fh: 24, view, man: `player_${pose.name}_${view}.png`, woman: `woman_${pose.name}_${view}.png` });
+    }
+  }
   for (const role of ROLES) {
     for (const look of ['man', 'woman'] as const) {
-      for (const s of SHEETS) {
+      for (const s of sheets) {
         const frames = readSheet(look === 'man' ? s.man : s.woman, s.fw, s.fh).map((fr, i) => {
           const built = build(fr, role.build);
           const base = s.suffix.startsWith('work_') ? WORK_AT[s.view][i] : undefined;
@@ -432,17 +446,24 @@ export function makeAll(): string[] {
         writeSheet(`${name}.png`, frames);
         names.push(`${name}|${s.fw}|${s.fh}|${frames.length}`);
       }
+      // a sleeper has no hat or basket on: only the blanket takes the role's colour
+      const [dark, mid] = BLANKET[role.id]!;
+      const stem = look === 'man' ? role.id : `${role.id}_w`;
+      const sleep = readSheet(`${look === 'man' ? 'player' : 'woman'}_sleep_down.png`, 32, 32).map((fr) => ({ ...fr, px: fr.px.map((v) => (v === 30 ? dark : v === 31 ? mid : v)) }));
+      writeSheet(`${stem}_sleep_down.png`, sleep);
+      names.push(`${stem}_sleep_down|32|32|${sleep.length}`);
     }
   }
   return names;
 }
 
 function main(): void {
-  const made = makeAll();
+  const base = makeBaseActions();
+  const made = [...base, ...makeAll()];
   const file = join(KIT, 'kit.json');
   const kit = JSON.parse(readFileSync(file, 'utf8')) as { kit: { sprites: Record<string, { file: string; w: number; h: number; frames?: number }> } };
   // a renamed or dropped sheet leaves nothing behind
-  for (const key of Object.keys(kit.kit.sprites)) if (ROLES.some((r) => key.startsWith(`chars/${r.id}_`))) delete kit.kit.sprites[key];
+  for (const key of Object.keys(kit.kit.sprites)) if (ROLES.some((r) => key.startsWith(`chars/${r.id}_`)) || /^chars\/(player|woman)_(gather|lift|dig|craft|cook|eat|drink|pay|talk|camp|sleep)_/.test(key)) delete kit.kit.sprites[key];
   for (const m of made) {
     const [name, w, h, frames] = m.split('|') as [string, string, string, string];
     kit.kit.sprites[`chars/${name}`] = { file: `chars/${name}.png`, w: Number(w), h: Number(h), frames: Number(frames) };
