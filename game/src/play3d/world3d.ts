@@ -33,7 +33,8 @@ import { ECHOES, pickOf } from '../lore';
 import { emptySlots, slotContent } from '../places';
 import type { SignInfo } from '../scenes/world';
 import { nodeModel, npcLook, pickLook } from './art';
-import { createScenery, groundY, modelOf, standalone, walkY, type MapData, type Places, type Scenery } from './scenery';
+import { FrameProbe, liteUrl } from './lite';
+import { createScenery, groundY, modelOf, standalone, walkY, WATER_Y, type MapData, type Places, type Scenery } from './scenery';
 import type { Session } from '../session';
 import { questTargets } from '../targets';
 import { nodeLook } from '../growth';
@@ -113,6 +114,24 @@ function dispose(obj: THREE.Object3D): void {
   });
 }
 
+/** The built fire's flame: two tongues that light themselves, so the fire reads as lit by day as well as by night. */
+function flameOf(): THREE.Group {
+  const flame = new THREE.Group();
+  flame.name = 'flame';
+  const tongues: [radius: number, height: number, color: number, opacity: number][] = [
+    [0.17, 0.46, 0xff7a2a, 0.85],
+    [0.09, 0.3, 0xffe08a, 0.95],
+  ];
+  for (const [radius, height, color, opacity] of tongues) {
+    const geometry = new THREE.ConeGeometry(radius, height, 7);
+    geometry.userData.own = true;
+    const tongue = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color, transparent: true, opacity }));
+    tongue.position.y = height / 2;
+    flame.add(tongue);
+  }
+  return flame;
+}
+
 function clearGroup(g: THREE.Group): void {
   for (const c of g.children) dispose(c);
   g.clear();
@@ -134,6 +153,8 @@ export class World3D implements WorldView {
   private readonly b: Bundle;
   private readonly walkable: ReturnType<typeof makeWalkable>;
   private readonly renderer: THREE.WebGLRenderer;
+  /** drawing without shadows or smoothing, asked for by `?lite` or chosen by the frame probe */
+  private readonly lite: boolean;
   private readonly camera: THREE.PerspectiveCamera;
   private readonly scenery: Scenery;
   private readonly scene: THREE.Scene;
@@ -190,8 +211,9 @@ export class World3D implements WorldView {
   private nightMix = 0;
   private attractT = 0;
 
-  private constructor(b: Bundle, renderer: THREE.WebGLRenderer, scenery: Scenery) {
+  private constructor(b: Bundle, renderer: THREE.WebGLRenderer, scenery: Scenery, lite: boolean) {
     this.b = b;
+    this.lite = lite;
     this.walkable = makeWalkable(b);
     this.renderer = renderer;
     this.scenery = scenery;
@@ -237,7 +259,7 @@ export class World3D implements WorldView {
     for (const list of [b.resources, b.treasures]) for (const d of Object.values(list)) hosts.add(d.place.slot);
     const places: Places = { hosts, fogged: new Set(emptySlots(b).map((s) => s.id)) };
     const scenery = await createScenery(b.map as unknown as MapData, places, renderer, mobile);
-    const world = new World3D(b, renderer, scenery);
+    const world = new World3D(b, renderer, scenery, lite);
     await world.build();
     window.addEventListener('resize', () => world.resize());
     canvas.addEventListener(
@@ -572,7 +594,10 @@ export class World3D implements WorldView {
       for (let y = slot.y; y < slot.y + slot.h; y++) {
         for (let x = slot.x; x < slot.x + slot.w; x++) {
           const flat = await this.picture(ref, true, x + 0.5, y + 0.5);
-          if (flat) art.add(flat);
+          if (!flat) continue;
+          // a picture on a water tile (the broken bridge) lies on the surface, not on the lowered river bed under it
+          if (groundY(x + 0.5, y + 0.5) < WATER_Y) flat.position.y = WATER_Y + 0.02;
+          art.add(flat);
         }
       }
     } else {
@@ -591,9 +616,11 @@ export class World3D implements WorldView {
       const l = standalone(logs, 0, 0, 0.4, 0.3);
       for (const g of [a, l]) g.position.set(0, 0, 0);
       l.position.y = 0.02;
+      const flame = flameOf();
+      flame.position.y = 0.18;
       const light = new THREE.PointLight(0xffa24a, 6, 8, 2);
       light.position.set(0, 0.8, 0);
-      art.add(a, l, light);
+      art.add(a, l, flame, light);
       return;
     }
     const pic = await this.picture(c.sprite, false, 0, 0);
@@ -722,9 +749,16 @@ export class World3D implements WorldView {
   /** Runs forever: one frame of the world on the wall clock. */
   start(): void {
     let last = performance.now();
+    // the first frames tell whether this machine needs the lighter draw; `?lite` skips the question
+    const probe = this.lite ? undefined : new FrameProbe();
     const frame = (now: number) => {
-      const dt = Math.min(now - last, 100);
+      const raw = now - last;
+      const dt = Math.min(raw, 100);
       last = now;
+      if (probe && !probe.done) {
+        probe.add(raw);
+        if (probe.done && probe.slow && this.goLite()) return;
+      }
       this.update(dt);
       this.renderer.render(this.scene, this.camera);
       requestAnimationFrame(frame);
@@ -732,11 +766,36 @@ export class World3D implements WorldView {
     requestAnimationFrame(frame);
   }
 
+  /**
+   * A machine that cannot keep up gets the lighter draw. On the title the page simply reopens with `?lite` (the
+   * save is on disk, nothing is lost) and this loop ends; once the player is in, the renderer drops to one pixel
+   * per pixel instead and the loop goes on.
+   */
+  private goLite(): boolean {
+    console.info('[3d] slow frames: switching to the lighter draw');
+    if (!this.session?.started) {
+      location.replace(liteUrl(location.href));
+      return true;
+    }
+    this.renderer.setPixelRatio(1);
+    return false;
+  }
+
+  /** the built fire breathes: its flame sways a little every frame */
+  private flicker(): void {
+    const k = 1 + 0.08 * Math.sin(this.time * 19) + 0.05 * Math.sin(this.time * 7.3);
+    for (const c of this.campArt.values()) {
+      const flame = c.art.getObjectByName('flame');
+      if (flame) flame.scale.set(1 / Math.sqrt(k), k, 1 / Math.sqrt(k));
+    }
+  }
+
   private update(delta: number): void {
     const dt = delta / 1000;
     this.time += dt;
     this.scenery.tick(dt, this.time);
     for (const m of this.mixers) m.update(dt);
+    this.flicker();
     const s = this.session;
     if (!s || !s.started) {
       this.attract(dt);
