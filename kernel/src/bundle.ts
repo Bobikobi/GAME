@@ -84,7 +84,7 @@ export interface Params {
   /** work slows while health is at or below this share of its cap, in percent (0: only when empty) */
   hp_low_pct: number;
   hazard: {
-    predator: { reach: number; catch_ms: number; bite_ms: number; bite_pct: number };
+    predator: { reach: number; pace_ms: number; eyes: number; catch_ms: number; bite_ms: number; bite_pct: number };
     pit: { harm_pct: number };
     trap: { harm_pct: number };
     deep_water: { harm_pct: number };
