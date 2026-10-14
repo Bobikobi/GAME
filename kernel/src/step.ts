@@ -29,15 +29,14 @@ import {
   type WearSlot,
   bagCapacity,
   bagUsed,
+  burnsAsWood,
   campBuilt,
   effectValue,
   fitWorn,
   fireBurns,
   hourOf,
   isNight,
-  lastDusk,
   nextLogAt,
-  nightEnds,
   nodeVerb,
   powerCap,
   professionLevel,
@@ -45,6 +44,7 @@ import {
   satietyCap,
   skillPoints,
   slotsFor,
+  tendHolds,
   verbLevel,
 } from './state';
 import { rarityRank, payFor } from './values';
@@ -494,11 +494,7 @@ function feed(ctx: Ctx, fireId: string, itemId: string, at: Tile): void {
   const prop = b.map.props.find((p) => p.id === fireId && p.fire === true);
   if (!prop) refuse('There is no fire there.');
   checkAt(ctx, at, prop);
-  const item = b.items[itemId];
-  // a base class takes every class an extension declares under it
-  const cls = item?.class;
-  const wood = cls === 'wood' || (cls !== undefined && b.classes[cls]?.base === 'wood');
-  if (!wood) refuse('That is not wood.');
+  if (!burnsAsWood(b, itemId)) refuse('That is not wood.');
   if ((s.player.bag[itemId] ?? 0) < 1) refuse('You do not have any.');
   // a log goes in whole or not at all: a fire with less than a log's room under its cap refuses it
   if (nextLogAt(b, s, fireId, tick) > tick) refuse('The fire is already full.');
@@ -671,12 +667,9 @@ export function questSatisfied(bundle: Bundle, state: State, questId: string): b
       case 'visit':
         if (!p.visited.includes(st.slot)) return false;
         break;
-      case 'tend': {
-        const dusk = lastDusk(bundle, state.tick);
-        const fire = p.fires?.[st.fire];
-        if (!fire || fire.lit > dusk || fire.until < nightEnds(bundle, dusk)) return false;
+      case 'tend':
+        if (!tendHolds(bundle, state, st.fire, state.tick)) return false;
         break;
-      }
     }
   }
   return Object.keys(bring).every((item) => (p.bag[item] ?? 0) >= (bring[item] ?? 0));
