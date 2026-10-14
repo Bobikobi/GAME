@@ -643,6 +643,10 @@
               "solid": {
                 "type": "boolean"
               },
+              "cover": {
+                "description": "Hides a player standing on this non-solid prop from a predator's eyes, but never from an adjacent predator.",
+                "type": "boolean"
+              },
               "sign": {
                 "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
                 "maxLength": 80,
@@ -699,6 +703,42 @@
                     "minimum": 1,
                     "maximum": 12,
                     "description": "A predator only: how many tiles from its footprint it notices the player. The params hold the default.",
+                    "type": "integer"
+                  },
+                  "round": {
+                    "minItems": 4,
+                    "maxItems": 64,
+                    "description": "A predator only: the closed, four-adjacent loop of tiles it walks after dark. The first tile is inside its prop footprint.",
+                    "type": "array",
+                    "items": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "minimum": 0,
+                          "maximum": 1023,
+                          "type": "integer"
+                        },
+                        {
+                          "minimum": 0,
+                          "maximum": 1023,
+                          "type": "integer"
+                        }
+                      ],
+                      "additionalItems": false,
+                      "minItems": 2,
+                      "maxItems": 2
+                    }
+                  },
+                  "pace_ms": {
+                    "minimum": 100,
+                    "maximum": 10000,
+                    "description": "A predator on a round only: game milliseconds per tile. The params hold the default.",
+                    "type": "integer"
+                  },
+                  "eyes": {
+                    "minimum": 1,
+                    "maximum": 12,
+                    "description": "A predator on a round only: how many tiles ahead it sees. The params hold the default.",
                     "type": "integer"
                   }
                 }

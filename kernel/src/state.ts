@@ -6,7 +6,7 @@
 import type { Bundle, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
 
-export const KERNEL_VERSION = '0.5.0';
+export const KERNEL_VERSION = '0.6.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['carry', 'senses', 'agility', 'luck', 'stamina'] as const;
@@ -368,6 +368,15 @@ export function nightFalls(bundle: Bundle, tick: number): number {
   const dawn = idivUp(5 * day, 24);
   const dusk = idivUp(20 * day, 24);
   return phase >= dawn && phase < dusk ? tick + (dusk - phase) : tick;
+}
+
+/** The most recent dusk at or before `tick`: this night's dusk after dark, and the previous night's by day. */
+export function lastDusk(bundle: Bundle, tick: number): number {
+  const day = bundle.params.day_length_ms;
+  const half = idiv(day, 2);
+  const dusk = idivUp(20 * day, 24);
+  const cycle = idiv(tick + half - dusk, day);
+  return cycle * day + dusk - half;
 }
 
 /** The first tick from `tick` on that is not night (the tick itself when it already is not): when the dark ends. */

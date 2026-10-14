@@ -18,7 +18,7 @@
  */
 import type { Bundle, RecipeDef, Verb } from './bundle';
 import { canonical } from './canon';
-import { bitesAfter, distanceTo, harmOf, hazardsOf, isSafe, isTownTile, reappearTile, townAt, windowOpen, windowShuts } from './danger';
+import { bitesAfter, distanceTo, harmOf, hazardsOf, isSafe, isTownTile, reappearTile, sees, townAt, windowOpen, windowShuts } from './danger';
 import { clamp, idiv, idivUp, mulDiv, mulDivUp } from './num';
 import { drawBasisPoints } from './rng';
 import {
@@ -878,7 +878,8 @@ function strike(ctx: Ctx, before: Tile, at: Tile): void {
   for (const h of hazardsOf(b)) {
     if (!windowOpen(b, h, tick)) continue;
     if (h.kind === 'predator') {
-      if (s.player.chase === null && distanceTo(at, h.rect) <= h.reach) s.player.chase = { hazard: h.id, since: tick, bites: 0 };
+      const noticed = h.round ? sees(b, h, tick, at) : distanceTo(at, h.rect) <= h.reach;
+      if (s.player.chase === null && noticed) s.player.chase = { hazard: h.id, since: tick, bites: 0 };
     } else if (inRect(at[0], at[1], h.rect) && !inRect(before[0], before[1], h.rect)) {
       hurt(ctx, harmOf(b, cap, h.kind), h.kind, h.id);
     }

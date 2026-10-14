@@ -15,8 +15,8 @@
       "luck": 2,
       "stamina": 2
     },
-    "sprite": "core/base-kit:chars/player_down",
-    "sprite_alt": "core/base-kit:chars/woman_down",
+    "sprite": "core/base-kit:chars/digger_down",
+    "sprite_alt": "core/base-kit:chars/digger_w_down",
     "kit": [
       {
         "item": "core/trowel",
