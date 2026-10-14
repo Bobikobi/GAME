@@ -701,6 +701,27 @@
               },
               {
                 "additionalProperties": false,
+                "description": "Keep this fire burning without a gap from dusk through dawn.",
+                "type": "object",
+                "required": [
+                  "kind",
+                  "fire"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "tend",
+                    "type": "string"
+                  },
+                  "fire": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  }
+                }
+              },
+              {
+                "additionalProperties": false,
                 "description": "Bring one of an item that is found, not farmed: only digging gives it, or one timed plant (a resource with hours) that nothing else gives, makes or sells. The journal shows the clue, not a count, until the item is in the bag.",
                 "type": "object",
                 "required": [

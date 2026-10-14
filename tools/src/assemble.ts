@@ -102,6 +102,11 @@ export function flattenParams(p: ParamsBody): Params {
     day_length_ms: p.day_length_ms.value,
     walk_step_ms: p.walk_step_ms.value,
     hp_low_pct: p.hp_low_pct.value,
+    fire: {
+      cap: p.fire.cap.value,
+      log_ms: p.fire.log_ms.value,
+      warn_min: p.fire.warn_min.value,
+    },
     hazard: {
       predator: {
         reach: p.hazard.predator.reach.value,

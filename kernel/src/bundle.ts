@@ -83,6 +83,7 @@ export interface Params {
   walk_step_ms: number;
   /** work slows while health is at or below this share of its cap, in percent (0: only when empty) */
   hp_low_pct: number;
+  fire: { cap: number; log_ms: number; warn_min: number };
   hazard: {
     predator: { reach: number; pace_ms: number; eyes: number; catch_ms: number; bite_ms: number; bite_pct: number };
     pit: { harm_pct: number };
