@@ -370,6 +370,16 @@ export function fireBurns(state: State, id: string, tick: number): boolean {
   return (state.player.fires?.[id]?.until ?? 0) > tick;
 }
 
+/**
+ * The first tick from `tick` on at which a fire takes another log whole: at once while it is
+ * out or a whole log still fits under its cap (`fire.cap` logs ahead of the tick), else once
+ * enough of its wood has burned down. A log goes in whole or not at all, so no feed wastes wood.
+ */
+export function nextLogAt(bundle: Bundle, state: State, id: string, tick: number): number {
+  const until = state.player.fires?.[id]?.until ?? tick;
+  return Math.max(tick, until - (bundle.params.fire.cap - 1) * bundle.params.fire.log_ms);
+}
+
 /** Where a tick falls in its day: 0 at midnight (tick 0 is noon, half way in; same start as hourOf). */
 function phaseOf(bundle: Bundle, tick: number): number {
   const day = bundle.params.day_length_ms;

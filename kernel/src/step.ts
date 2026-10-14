@@ -36,6 +36,7 @@ import {
   hourOf,
   isNight,
   lastDusk,
+  nextLogAt,
   nightEnds,
   nodeVerb,
   powerCap,
@@ -499,12 +500,12 @@ function feed(ctx: Ctx, fireId: string, itemId: string, at: Tile): void {
   const wood = cls === 'wood' || (cls !== undefined && b.classes[cls]?.base === 'wood');
   if (!wood) refuse('That is not wood.');
   if ((s.player.bag[itemId] ?? 0) < 1) refuse('You do not have any.');
-  const horizon = tick + b.params.fire.cap * b.params.fire.log_ms;
+  // a log goes in whole or not at all: a fire with less than a log's room under its cap refuses it
+  if (nextLogAt(b, s, fireId, tick) > tick) refuse('The fire is already full.');
   const burning = fireBurns(s, fireId, tick);
   const current = s.player.fires[fireId];
-  if (burning && current!.until >= horizon) refuse('The fire is already full.');
   const next = burning
-    ? { lit: current!.lit, until: Math.min(current!.until + b.params.fire.log_ms, horizon) }
+    ? { lit: current!.lit, until: current!.until + b.params.fire.log_ms }
     : { lit: tick, until: tick + b.params.fire.log_ms };
   removeItem(ctx, itemId, 1);
   s.player.fires[fireId] = next;
