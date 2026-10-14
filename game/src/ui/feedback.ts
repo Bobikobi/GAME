@@ -59,6 +59,9 @@ export function feedback(root: HTMLElement, events: readonly GameEvent[]): void 
       case 'eat':
         add({ sfx: 'pluck', detune: -400 });
         break;
+      case 'fire':
+        add({ sfx: 'sizzle', detune: -200 });
+        break;
       case 'nothing':
       case 'miss':
         add({ sfx: 'miss' });

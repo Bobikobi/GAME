@@ -205,7 +205,7 @@ export function openJournal(ui: UI, tab: JournalTab = 'tasks'): void {
           h('b', null, q.title),
           q.giver ? h('div', { class: 'muted' }, `For ${b.npcs[q.giver]?.name ?? q.giver}`) : null,
           h('p', null, q.summary),
-          h('ul', { class: 'steps' }, questSteps(b, s.state, id).map((st) => h('li', { class: st.done ? 'done' : '' }, st.text))),
+          h('ul', { class: 'steps' }, questSteps(b, s.state, id, s.tick).map((st) => h('li', { class: st.done ? 'done' : '' }, st.text))),
         );
       }),
       done.length ? h('h3', null, 'Done') : null,

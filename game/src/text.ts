@@ -14,6 +14,7 @@ import {
   hazardsOf,
   isNight,
   isSafe,
+  minuteOfDay,
   missKeepBp,
   nightEnds,
   nightFalls,
@@ -29,6 +30,7 @@ import {
   senseReach,
   techniqueValue,
 } from '@game/kernel';
+import { fireName, tendLine } from './fires';
 
 export function itemName(b: Bundle, id: string): string {
   return b.items[id]?.name ?? id;
@@ -137,8 +139,11 @@ export function firstLine(text: string): string {
   return line.split(/(?<=[.!?])\s/)[0] ?? line;
 }
 
-/** One line per quest step, with a tick when it is done; `short` is what the tracker shows when the line is a clue. */
-export function questSteps(b: Bundle, s: State, questId: string): { text: string; done: boolean; short?: string }[] {
+/**
+ * One line per quest step, with a tick when it is done; `short` is what the tracker shows when the line is a clue.
+ * `tick` is the live game tick (the session's), which a tend step reads; it defaults to the state's own.
+ */
+export function questSteps(b: Bundle, s: State, questId: string, tick = s.tick): { text: string; done: boolean; short?: string }[] {
   const q = b.quests[questId];
   if (!q) return [];
   const p = s.player;
@@ -179,6 +184,8 @@ export function questSteps(b: Bundle, s: State, questId: string): { text: string
         const slot = findSlot(b.map, st.slot);
         return { text: `Go to the ${slot?.label ?? st.slot}`, done: p.visited.includes(st.slot) };
       }
+      case 'tend':
+        return tendLine(b, s, st.fire, tick);
     }
     return { text: '', done: false };
   });
@@ -205,8 +212,9 @@ function questOrder(b: Bundle, id: string): number {
   return b.quests[id]?.giver ? 1 : 0;
 }
 
-export function readyToHandIn(b: Bundle, s: State, questId: string): boolean {
-  return s.player.quests[questId] === 'active' && questSatisfied(b, s, questId);
+/** Whether the giver takes the quest now; `tick` is the live game tick (a tend step reads the clock), the state's own by default. */
+export function readyToHandIn(b: Bundle, s: State, questId: string, tick = s.tick): boolean {
+  return s.player.quests[questId] === 'active' && questSatisfied(b, tick === s.tick ? s : { ...s, tick }, questId);
 }
 
 /**
@@ -422,6 +430,10 @@ export function describe(b: Bundle, s: State, e: GameEvent): { text: string; ico
     }
     case 'build':
       return { text: `${b.camps[e.camp]?.title ?? e.camp} built`, tone: 'good' };
+    case 'fire': {
+      const name = fireName(e.id);
+      return { text: `The ${name} burns until ${clock(minuteOfDay(b, e.until))}.`, tone: 'good' };
+    }
     case 'eat':
       return { text: `${b.items[e.item]?.kind === 'food' ? 'You ate' : 'You used'} ${itemName(b, e.item)}`, icon: b.items[e.item]?.sprite, tone: b.items[e.item]?.food?.hurt ? 'info' : 'good' };
     case 'hurt':

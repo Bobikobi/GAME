@@ -273,6 +273,16 @@
         "note": "A lantern statue, face gone, turned to the town. Paving stones at its feet."
       },
       {
+        "id": "core/elder-hearth",
+        "sprite": "core/base-kit:props/campfire_unlit",
+        "x": 29,
+        "y": 6,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "fire": true
+      },
+      {
         "sprite": "core/base-kit:props/statue_head",
         "x": 40,
         "y": 9,
