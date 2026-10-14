@@ -28,6 +28,9 @@ export function checkDeadProps(b: Bundle, origin: Record<string, string>): Issue
   const file = origin[b.map.id] ?? 'content';
   const issues: Issue[] = [];
   b.map.props.forEach((p, i) => {
+    // Cover is a usable world rule rather than dead scenery: standing in it
+    // changes whether a predator can see the player (G47).
+    if (p.cover === true) return;
     const owner = usable.get(p.sprite);
     if (owner === undefined) return;
     issues.push({

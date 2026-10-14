@@ -118,8 +118,9 @@ describe('what the vocabularies and the shipped content say', () => {
     expect([...HAZARD_KINDS]).toEqual([...SCHEMA_HAZARD_KINDS]);
   });
 
-  test('the shipped valley hunts only in the night ruins, one step past their safe threshold (P-5c)', () => {
+  test('the shipped valley has the night-ruins hazards and the bank wolf', () => {
     expect(hazardsOf(base).map((h) => [h.id, h.kind]).sort()).toEqual([
+      ['core/bank-wolf', 'predator'],
       ['core/doorstep-pit', 'pit'],
       ['core/ruins-wolf', 'predator'],
     ]);
