@@ -9,6 +9,7 @@ import {
   type Tile,
   fireBurns,
   newState,
+  nextLogAt,
   questSatisfied,
   replay,
   serialize,
@@ -104,6 +105,38 @@ describe('feeding a fire', () => {
     const full = step(b, state, { t: 'feed', fire: FIRE, item: WOOD, at: AT }, 0);
     expect(full).toEqual({ ok: false, error: 'The fire is already full.' });
     expect(state.player.bag[WOOD]).toBe(1);
+  });
+
+  test('a log that would not burn whole is refused, and goes in once a log has burned down', () => {
+    const b = world();
+    const { cap, log_ms } = b.params.fire;
+    let state = begin(b, { [WOOD]: cap + 1 });
+    for (let i = 0; i < cap; i++) state = feed(b, state, 0).state;
+    // a tick, or all but a tick of a log, after the cap: less than a log's room, so the log stays
+    for (const tick of [1, log_ms - 1]) {
+      expect(nextLogAt(b, state, FIRE, tick)).toBe(log_ms);
+      const early = step(b, state, { t: 'feed', fire: FIRE, item: WOOD, at: AT }, tick);
+      expect(early).toEqual({ ok: false, error: 'The fire is already full.' });
+    }
+    expect(state.player.bag[WOOD]).toBe(1);
+    expect(state.player.fires[FIRE]).toEqual({ lit: 0, until: cap * log_ms });
+
+    const fed = feed(b, state, log_ms);
+    expect(fed.state.player.fires[FIRE]).toEqual({ lit: 0, until: (cap + 1) * log_ms });
+    expect(fed.state.player.bag[WOOD]).toBeUndefined();
+  });
+
+  test('the next log fits at once while the fire is out or has room, never before the tick asked', () => {
+    const b = world();
+    const { cap, log_ms } = b.params.fire;
+    const cold = begin(b, { [WOOD]: cap });
+    expect(nextLogAt(b, cold, FIRE, 123)).toBe(123);
+    let state = feed(b, cold, 0).state;
+    expect(nextLogAt(b, state, FIRE, 0)).toBe(0);
+    for (let i = 1; i < cap; i++) state = feed(b, state, 0).state;
+    expect(nextLogAt(b, state, FIRE, 0)).toBe(log_ms);
+    // burnt out, a new burn takes its first log at once
+    expect(nextLogAt(b, state, FIRE, cap * log_ms + 5)).toBe(cap * log_ms + 5);
   });
 
   test('the fire goes out exactly at until and a later feed begins a new burn', () => {

@@ -371,7 +371,9 @@ The valley has no combat; its danger is the hour, and what the player eats.
   (DECISIONS.md, the entry on the three frames).
 - **G48 A fire is kept by hand.** A fire holds a few logs and burns them on
   the game hour, only while the player is in the valley; feeding it by hand
-  lights it or adds a log, nothing bought or made makes it burn longer, and
+  lights it or adds a log, a whole one or none (a fire with no room left for
+  a whole log refuses it and the log stays in the bag: effort is never
+  wasted), nothing bought or made makes it burn longer, and
   it warns before it goes out (G31), and a prop may read by a fire (`lit_by`), its words shown only while it burns. A night kept by a fire is a night at the
   screen: nothing keeps a fire while the player is away (G28). Added
   2026-10-13 (the same entry).
