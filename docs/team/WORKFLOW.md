@@ -85,6 +85,8 @@ To roll back, promote the previous production deployment in Vercel, then revert 
 
 Nothing secret goes into git, not even in a private repository: no `.env`, keys or tokens. They live with their owner, and the deploy reads them from Vercel's environment settings. If one is committed by mistake, treat it as exposed: rotate it first, then clean up.
 
+CI scans every pull request, and the full history of `develop` and `main`, with gitleaks (`.github/workflows/secrets.yml`). A hit names the commit, the file and the rule, redacted; a red run is a stop: rotate the secret and remove it, then continue.
+
 ## AI agents
 
 Agents follow this page like everyone else. A task handed to an agent names one goal, the exact files it may touch, and the command that proves it worked. The commit says which model did the work, in a `Co-Authored-By` line.
