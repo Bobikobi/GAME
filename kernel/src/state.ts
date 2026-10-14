@@ -6,7 +6,7 @@
 import type { Bundle, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
 
-export const KERNEL_VERSION = '0.6.0';
+export const KERNEL_VERSION = '0.7.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['carry', 'senses', 'agility', 'luck', 'stamina'] as const;
@@ -62,6 +62,13 @@ export interface Chase {
   bites: number;
 }
 
+export interface FireState {
+  /** tick at which this uninterrupted burn began */
+  lit: number;
+  /** first tick at which the fire no longer burns */
+  until: number;
+}
+
 export interface Player {
   name: string;
   /** '' until the player picks a starter */
@@ -108,6 +115,8 @@ export interface Player {
   outing: Outing | null;
   /** the hunt the player is in, if any */
   chase: Chase | null;
+  /** tended fires by map prop id */
+  fires: Record<string, FireState>;
   /** falls so far: the draw counter of the tile they wake on (rule R4) */
   falls: number;
   /** tick of the last arrival: a position report, or an action at a tile */
@@ -163,6 +172,7 @@ export function newState(bundle: Bundle, seed: number): State {
       town: '',
       outing: null,
       chase: null,
+      fires: {},
       falls: 0,
       movedAt: 0,
     },
@@ -353,6 +363,11 @@ export function hourOf(bundle: Bundle, tick: number): number {
 export function isNight(bundle: Bundle, tick: number): boolean {
   const hour = hourOf(bundle, tick);
   return hour >= 20 || hour < 5;
+}
+
+/** Whether a tended fire still burns at this game tick. */
+export function fireBurns(state: State, id: string, tick: number): boolean {
+  return (state.player.fires?.[id]?.until ?? 0) > tick;
 }
 
 /** Where a tick falls in its day: 0 at midnight (tick 0 is noon, half way in; same start as hourOf). */

@@ -230,6 +230,39 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
     });
   }
 
+  // G48: a fire is a named prop kept by hand; tend steps and fire-lit reads point only to one.
+  const fireRule = rule('G48', 'A fire is kept by hand');
+  const fires = new Set(b.map.props.flatMap((p) => (p.fire === true && p.id !== undefined ? [p.id] : [])));
+  b.map.props.forEach((p, i) => {
+    if (p.fire === true && p.id === undefined) {
+      issues.push({
+        file: at(b.map.id),
+        where: `map.props.${i}.fire`,
+        message: `a fire needs an id so the player and a tending quest can keep it (${fireRule})`,
+        level: PLAY_LEVEL,
+      });
+    }
+    if (p.lit_by !== undefined && !fires.has(p.lit_by)) {
+      issues.push({
+        file: at(b.map.id),
+        where: `map.props.${i}.lit_by`,
+        message: `"${p.lit_by}" is not a fire prop (${fireRule})`,
+        level: PLAY_LEVEL,
+      });
+    }
+  });
+  for (const q of Object.values(b.quests)) {
+    q.steps.forEach((step, i) => {
+      if (step.kind !== 'tend' || fires.has(step.fire)) return;
+      issues.push({
+        file: at(q.id),
+        where: `quest.steps.${i}.fire`,
+        message: `"${step.fire}" is not a fire prop (${fireRule})`,
+        level: PLAY_LEVEL,
+      });
+    });
+  }
+
   // A maze is answered by standing at its heart, and the client sends a visit only for an area (or a riddle's place).
   for (const q of Object.values(b.quests)) {
     if (q.type !== 'maze') continue;

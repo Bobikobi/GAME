@@ -32,8 +32,11 @@ import {
   campBuilt,
   effectValue,
   fitWorn,
+  fireBurns,
   hourOf,
   isNight,
+  lastDusk,
+  nightEnds,
   nodeVerb,
   powerCap,
   professionLevel,
@@ -55,6 +58,7 @@ export type Action =
   | { t: 'dig'; spot: string; grade: Grade; at: Tile }
   | { t: 'craft'; recipe: string; at: Tile }
   | { t: 'eat'; item: string }
+  | { t: 'feed'; fire: string; item: string; at: Tile }
   | { t: 'buy'; npc: string; item: string; qty: number; at: Tile }
   | { t: 'sell'; npc: string; item: string; qty: number; at: Tile }
   | { t: 'restore'; restore: string; at: Tile }
@@ -81,6 +85,7 @@ export type GameEvent =
   | { e: 'restore'; restore: string }
   | { e: 'build'; camp: string }
   | { e: 'eat'; item: string; satiety: number }
+  | { e: 'fire'; id: string; until: number }
   | { e: 'busy'; verb: string; ms: number }
   | { e: 'nothing'; verb: string }
   | { e: 'jackpot'; verb: string }
@@ -201,10 +206,12 @@ export function step(bundle: Bundle, state: State, action: Action, tick: number)
   if (!Number.isSafeInteger(tick) || tick < state.tick) return { ok: false, error: 'Time cannot run backwards.' };
   if (state.content !== bundle.tag) return { ok: false, error: 'This save belongs to different game content.' };
   const ctx: Ctx = { b: bundle, s: structuredClone(state), tick, events: [], hurt: false };
+  // Quest reads use the state's clock; advance the clone before an explicit or automatic turn-in reads it.
+  ctx.s.tick = tick;
+  ctx.s.player.fires ??= {};
   try {
     apply(ctx, action);
     autoQuests(ctx);
-    ctx.s.tick = tick;
     return { ok: true, state: ctx.s, events: ctx.events };
   } catch (err) {
     if (err instanceof Refusal) return { ok: false, error: err.message };
@@ -268,6 +275,8 @@ function perform(ctx: Ctx, a: Action): void {
       return craft(ctx, a.recipe, a.at);
     case 'eat':
       return eat(ctx, a.item);
+    case 'feed':
+      return feed(ctx, a.fire, a.item, a.at);
     case 'buy':
       return buy(ctx, a.npc, a.item, a.qty, a.at);
     case 'sell':
@@ -479,6 +488,29 @@ function eat(ctx: Ctx, itemId: string): void {
   if (hurts > 0) hurt(ctx, hurts * 1000, 'food');
 }
 
+function feed(ctx: Ctx, fireId: string, itemId: string, at: Tile): void {
+  const { b, s, tick } = ctx;
+  const prop = b.map.props.find((p) => p.id === fireId && p.fire === true);
+  if (!prop) refuse('There is no fire there.');
+  checkAt(ctx, at, prop);
+  const item = b.items[itemId];
+  // a base class takes every class an extension declares under it
+  const cls = item?.class;
+  const wood = cls === 'wood' || (cls !== undefined && b.classes[cls]?.base === 'wood');
+  if (!wood) refuse('That is not wood.');
+  if ((s.player.bag[itemId] ?? 0) < 1) refuse('You do not have any.');
+  const horizon = tick + b.params.fire.cap * b.params.fire.log_ms;
+  const burning = fireBurns(s, fireId, tick);
+  const current = s.player.fires[fireId];
+  if (burning && current!.until >= horizon) refuse('The fire is already full.');
+  const next = burning
+    ? { lit: current!.lit, until: Math.min(current!.until + b.params.fire.log_ms, horizon) }
+    : { lit: tick, until: tick + b.params.fire.log_ms };
+  removeItem(ctx, itemId, 1);
+  s.player.fires[fireId] = next;
+  ctx.events.push({ e: 'fire', id: fireId, until: next.until });
+}
+
 function shopOf(ctx: Ctx, npcId: string, at: Tile) {
   const { b } = ctx;
   const npc = b.npcs[npcId];
@@ -638,6 +670,12 @@ export function questSatisfied(bundle: Bundle, state: State, questId: string): b
       case 'visit':
         if (!p.visited.includes(st.slot)) return false;
         break;
+      case 'tend': {
+        const dusk = lastDusk(bundle, state.tick);
+        const fire = p.fires?.[st.fire];
+        if (!fire || fire.lit > dusk || fire.until < nightEnds(bundle, dusk)) return false;
+        break;
+      }
     }
   }
   return Object.keys(bring).every((item) => (p.bag[item] ?? 0) >= (bring[item] ?? 0));
