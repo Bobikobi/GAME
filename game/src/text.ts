@@ -195,9 +195,9 @@ export function questSteps(b: Bundle, s: State, questId: string, tick = s.tick):
  * What a restore with no inputs says when the player faces it: it opens only as
  * a quest's reward, so the line points at that quest's next step while it is open.
  */
-export function restoreHint(b: Bundle, s: State, restoreId: string): string {
+export function restoreHint(b: Bundle, s: State, restoreId: string, tick = s.tick): string {
   const q = Object.values(b.quests).find((x) => (x.reward.opens ?? []).includes(restoreId));
-  const next = q && s.player.quests[q.id] === 'active' ? questSteps(b, s, q.id).find((st) => !st.done) : undefined;
+  const next = q && s.player.quests[q.id] === 'active' ? questSteps(b, s, q.id, tick).find((st) => !st.done) : undefined;
   return next ? `It does not open by hand. ${next.text}` : 'It does not open by hand.';
 }
 

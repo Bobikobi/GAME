@@ -2,7 +2,7 @@
 import { beforeAll, describe, expect, test } from 'vitest';
 
 import { type Bundle, type State, newState, questSatisfied } from '@game/kernel';
-import { TOO_DARK, fireLow, fireName, fireWarnKey, fireWarning, logsToDawn, readable, tendMet, warnTicks, woodToFeed } from '../src/fires';
+import { TOO_DARK, fireLow, fireName, fireWarnKey, fireWarning, logsToDawn, nextLogClock, readable, warnTicks, woodToFeed } from '../src/fires';
 import { describe as describeEvent, questSteps, readyToHandIn } from '../src/text';
 import { loadBundle } from '../../tools/test/helpers/world';
 
@@ -88,6 +88,9 @@ describe('the journal line of a tend step', () => {
     expect(line(late, H19 + 1)!.text).toBe(
       'Keep the elder hearth burning until dawn - fed to reach dawn: 2 more logs, the next at 21:01',
     );
+    // the Feed refusal names the same time, and none once a log fits
+    expect(nextLogClock(bundle, full, HEARTH, H19 + 1)).toBe('21:00');
+    expect(nextLogClock(bundle, full, HEARTH, H21)).toBeUndefined();
     // one log short at 22:00, while five hours of wood are left: it fits at 23:00
     expect(line(withFire({ lit: H19, until: DAWN - 100_000 }), H21 + 50_000)!.text).toBe(
       'Keep the elder hearth burning until dawn - fed to reach dawn: 1 more log, the next at 23:00',
@@ -106,7 +109,7 @@ describe('the journal line of a tend step', () => {
     const s = withFire({ lit: H19, until: DAWN });
     expect(line(s, DUSK + 1)).toEqual({ text: 'Keep the elder hearth burning until dawn', done: true });
     for (const tick of [H19, DUSK, DUSK + 1, H21, DAWN, DAWN + 1]) {
-      expect(tendMet(bundle, s, HEARTH, tick)).toBe(questSatisfied(bundle, { ...s, tick }, QUEST));
+      expect(line(s, tick)!.done).toBe(questSatisfied(bundle, { ...s, tick }, QUEST));
     }
     // the state's own tick lags behind the live one: the giver reads the live tick
     s.tick = H19;

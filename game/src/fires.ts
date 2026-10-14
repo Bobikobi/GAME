@@ -6,6 +6,7 @@
 import {
   type Bundle,
   type State,
+  burnsAsWood,
   fireBurns,
   idiv,
   idivUp,
@@ -15,6 +16,7 @@ import {
   nextLogAt,
   nightEnds,
   nightFalls,
+  tendHolds,
 } from '@game/kernel';
 
 type Prop = Bundle['map']['props'][number];
@@ -24,17 +26,11 @@ export function fireName(id: string): string {
   return id.slice(id.indexOf('/') + 1).replaceAll('-', ' ');
 }
 
-/** Whether an item burns in a fire: class wood, or a class an extension declares under wood (the kernel's own test). */
-export function isWood(b: Bundle, itemId: string): boolean {
-  const cls = b.items[itemId]?.class;
-  return cls === 'wood' || (cls !== undefined && b.classes[cls]?.base === 'wood');
-}
-
 /** The wood a Feed sends: a log when the bag holds one, else the first wood item in the bag; undefined with no wood. */
 export function woodToFeed(b: Bundle, s: State): string | undefined {
   const bag = s.player.bag;
-  if ((bag['core/log'] ?? 0) > 0 && isWood(b, 'core/log')) return 'core/log';
-  return Object.keys(bag).find((id) => (bag[id] ?? 0) > 0 && isWood(b, id));
+  if ((bag['core/log'] ?? 0) > 0 && burnsAsWood(b, 'core/log')) return 'core/log';
+  return Object.keys(bag).find((id) => (bag[id] ?? 0) > 0 && burnsAsWood(b, id));
 }
 
 /** The game ticks of `fire.warn_min` game minutes: how long before a fire goes out its warning opens and its flame dims. */
@@ -88,13 +84,6 @@ export function fireWarning(
   return undefined;
 }
 
-/** Whether a vigil holds now: the kernel's `tend` test, read at the given tick. */
-export function tendMet(b: Bundle, s: State, id: string, tick: number): boolean {
-  const fire = s.player.fires?.[id];
-  const dusk = lastDusk(b, tick);
-  return fire !== undefined && fire.lit <= dusk && fire.until >= nightEnds(b, dusk);
-}
-
 /**
  * The logs a fire still needs to burn until the dawn of the night it keeps: the night
  * under way, or by day the one that comes next. 0 when its wood already reaches dawn.
@@ -120,6 +109,12 @@ function clockFrom(b: Bundle, tick: number): string {
   return `${Math.floor(from / 60)}:${String(from % 60).padStart(2, '0')}`;
 }
 
+/** The clock time from which a fire too full for a whole log takes the next one ("21:00"); undefined while one fits now. */
+export function nextLogClock(b: Bundle, s: State, id: string, tick: number): string | undefined {
+  const next = nextLogAt(b, s, id, tick);
+  return next > tick ? clockFrom(b, next) : undefined;
+}
+
 /**
  * The journal line of a tend step: "Keep the <name> burning until dawn", and while the
  * vigil does not hold, what it still needs - lighting before dusk when the fire is out
@@ -128,13 +123,13 @@ function clockFrom(b: Bundle, tick: number): string {
  */
 export function tendLine(b: Bundle, s: State, id: string, tick: number): { text: string; done: boolean } {
   const text = `Keep the ${fireName(id)} burning until dawn`;
-  if (tendMet(b, s, id, tick)) return { text, done: true };
+  if (tendHolds(b, s, id, tick)) return { text, done: true };
   const fire = s.player.fires?.[id];
   if (fire === undefined || !fireBurns(s, id, tick) || fire.lit > vigilDusk(b, tick)) return { text: `${text} - light it before dusk`, done: false };
   const n = logsToDawn(b, s, id, tick);
   if (n === 0) return { text, done: false };
-  const next = nextLogAt(b, s, id, tick);
-  const when = next > tick ? `, the next at ${clockFrom(b, next)}` : '';
+  const at = nextLogClock(b, s, id, tick);
+  const when = at === undefined ? '' : `, the next at ${at}`;
   return { text: `${text} - fed to reach dawn: ${n} more ${n === 1 ? 'log' : 'logs'}${when}`, done: false };
 }
 

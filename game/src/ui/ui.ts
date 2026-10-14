@@ -19,7 +19,7 @@ import {
 } from '@game/kernel';
 import { app } from '../app';
 import type { Button } from '../input';
-import { fireWarning, woodToFeed } from '../fires';
+import { fireWarning, nextLogClock, woodToFeed } from '../fires';
 import type { Session } from '../session';
 import {
   activeQuests,
@@ -593,7 +593,10 @@ export class UI {
     const item = woodToFeed(app.bundle, s.state);
     if (!item) return this.toast('You have no wood.', 'bad');
     const r = s.act({ t: 'feed', fire: fireId, item, at: s.pos });
-    if (!r.ok) this.toast(r.error, 'bad');
+    if (r.ok) return;
+    // a fire too full for a whole log refuses it: say when one fits, as the journal does
+    const at = nextLogClock(app.bundle, s.state, fireId, s.tick);
+    this.toast(at === undefined ? r.error : `${r.error} A log fits at ${at}.`, 'bad');
   }
 
   async sign(slotId: string): Promise<void> {

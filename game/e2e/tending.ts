@@ -234,6 +234,9 @@ class Tender {
     );
     if (result === 'full' && (await this.logs()) !== logs) throw new Error('a full fire still took a log');
     if (result === 'full' && (await this.fire())?.until !== before?.until) throw new Error('a full fire still changed its burn');
+    if (result === 'full' && !/A log fits at \d+:\d\d\./.test(await this.page.eval<string>('__tend.toasts()'))) {
+      throw new Error('the full toast does not say when a log fits');
+    }
     if (result === 'full') await this.page.waitFor(`!__tend.toasts().includes('already full')`, 'the full toast to fade', 8000);
     return result as 'fed' | 'full';
   }

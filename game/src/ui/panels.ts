@@ -483,7 +483,7 @@ export function confirmRestore(ui: UI, restoreId: string): void {
   if (!s || !r) return;
   if (r.inputs.length === 0) {
     // nothing to bring: it opens only as a quest's reward
-    void say(ui, r.title, [restoreHint(b, s.state, restoreId)], []);
+    void say(ui, r.title, [restoreHint(b, s.state, restoreId, s.tick)], []);
     return;
   }
   const have = r.inputs.map((i) => `${i.qty} ${itemName(b, i.item)} (you have ${s.state.player.bag[i.item] ?? 0})`).join(', ');
