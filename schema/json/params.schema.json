@@ -1211,6 +1211,8 @@
               "type": "object",
               "required": [
                 "reach",
+                "pace_ms",
+                "eyes",
                 "catch_ms",
                 "bite_ms",
                 "bite_pct"
@@ -1242,6 +1244,60 @@
                     }
                   },
                   "description": "Tiles from its footprint within which a predator notices the player, unless the prop says otherwise."
+                },
+                "pace_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game milliseconds a predator on a round takes to walk one tile."
+                },
+                "eyes": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Tiles ahead watched by a predator on a round."
                 },
                 "catch_ms": {
                   "additionalProperties": false,

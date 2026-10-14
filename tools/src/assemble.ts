@@ -105,6 +105,8 @@ export function flattenParams(p: ParamsBody): Params {
     hazard: {
       predator: {
         reach: p.hazard.predator.reach.value,
+        pace_ms: p.hazard.predator.pace_ms.value,
+        eyes: p.hazard.predator.eyes.value,
         catch_ms: p.hazard.predator.catch_ms.value,
         bite_ms: p.hazard.predator.bite_ms.value,
         bite_pct: p.hazard.predator.bite_pct.value,

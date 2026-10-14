@@ -494,12 +494,13 @@ export const QUEST_TYPES = [
   'persuasion',
   'errand',
   'maze',
+  'stealth',
 ] as const;
 export const QuestType = Type.Union(
   QUEST_TYPES.map((k) => Type.Literal(k)),
   {
     description:
-      'The kind of question the quest asks: one of the thirteen in docs/design/GAME_RULES.md section 3. Two quests of one type never follow each other in a chain (G17). Optional in the schema so an old file still reads; the check refuses a quest without one since the core content declared it (GRUNT P-3, 8.10).',
+      'The kind of question the quest asks: one of the fourteen in docs/design/GAME_RULES.md section 3. Two quests of one type never follow each other in a chain (G17). Optional in the schema so an old file still reads; the check refuses a quest without one since the core content declared it (GRUNT P-3, 8.10).',
   },
 );
 
@@ -819,6 +820,8 @@ export const ParamsBody = Type.Object(
         predator: Type.Object(
           {
             reach: { ...Bounded, description: 'Tiles from its footprint within which a predator notices the player, unless the prop says otherwise.' },
+            pace_ms: { ...Bounded, description: 'Game milliseconds a predator on a round takes to walk one tile.' },
+            eyes: { ...Bounded, description: 'Tiles ahead watched by a predator on a round.' },
             catch_ms: { ...Bounded, description: 'From the start of a chase to the first bite.' },
             bite_ms: { ...Bounded, description: 'Between one bite and the next.' },
             bite_pct: { ...Bounded, description: 'What one bite takes, in percent of the health cap.' },
@@ -910,6 +913,11 @@ export const MapBody = Type.Object(
           w: Int(1, 8, 'Footprint width in tiles. The sprite is drawn bottom-centered on it.'),
           h: Int(1, 8, 'Footprint height in tiles.'),
           solid: Type.Boolean(),
+          cover: Type.Optional(
+            Type.Boolean({
+              description: 'Hides a player standing on this non-solid prop from a predator\'s eyes, but never from an adjacent predator.',
+            }),
+          ),
           sign: Type.Optional({ ...Id, description: 'Makes the prop a readable sign that names whoever filled this slot, or says it awaits restoration.' }),
           note: Type.Optional({ ...Text, description: 'A line shown when the player looks at this prop, for example an old inscription.' }),
           hazard: Type.Optional(
@@ -924,6 +932,15 @@ export const MapBody = Type.Object(
                   description: 'When it acts (G30). Outside its window it is harmless and shows.',
                 }),
                 reach: Type.Optional(Int(1, 12, 'A predator only: how many tiles from its footprint it notices the player. The params hold the default.')),
+                round: Type.Optional(
+                  Type.Array(Type.Tuple([Int(0, 1023), Int(0, 1023)]), {
+                    minItems: 4,
+                    maxItems: 64,
+                    description: 'A predator only: the closed, four-adjacent loop of tiles it walks after dark. The first tile is inside its prop footprint.',
+                  }),
+                ),
+                pace_ms: Type.Optional(Int(100, 10_000, 'A predator on a round only: game milliseconds per tile. The params hold the default.')),
+                eyes: Type.Optional(Int(1, 12, 'A predator on a round only: how many tiles ahead it sees. The params hold the default.')),
               },
               { additionalProperties: false, description: 'Makes the prop a hazard (G30-G35). It needs an id.' },
             ),

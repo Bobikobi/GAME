@@ -186,6 +186,18 @@
           "max": 8,
           "step": 1
         },
+        "pace_ms": {
+          "value": 600,
+          "min": 100,
+          "max": 10000,
+          "step": 100
+        },
+        "eyes": {
+          "value": 5,
+          "min": 1,
+          "max": 12,
+          "step": 1
+        },
         "catch_ms": {
           "value": 2500,
           "min": 1000,
