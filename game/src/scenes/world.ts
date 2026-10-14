@@ -16,17 +16,25 @@ import {
   type Bundle,
   type GameEvent,
   type Grade,
+  type Hazard,
   type Slot,
   campTile,
+  coverAt,
   findSlot,
+  hazardsOf,
+  headingOf,
   hourOf,
   inRect,
   isNight,
+  lastDusk,
   makeWalkable,
   minuteOfDay,
   npcTile,
+  predatorAt,
   riddleSlots,
+  sees,
   spotOpen,
+  windowOpen,
 } from '@game/kernel';
 import { app } from '../app';
 import { sound, type SfxId } from '../audio';
@@ -270,7 +278,10 @@ export class WorldScene extends Phaser.Scene {
   private nextEyes = 0;
   private nextWhisper = 0;
   /** the hazard props (G30-G35): a wolf asleep by day and awake at night, a pit or a trap that shows only by day */
-  private hazards: { spr: Phaser.GameObjects.Sprite; kind: string }[] = [];
+  private hazards: { spr: Phaser.GameObjects.Sprite; kind: string; rule?: Hazard; eyes?: Phaser.GameObjects.Image }[] = [];
+  /** whether each walking predator saw the standing tile last frame, for a single report on the false-to-true edge */
+  private predatorSaw = new Map<string, boolean>();
+  private sightReportTick = -1;
   /** the lantern's light around the player, and the night it was lit for (G31) */
   private lantern: Phaser.GameObjects.Image | undefined;
   private lanternFor: number | undefined;
@@ -569,7 +580,11 @@ export class WorldScene extends Phaser.Scene {
       if (p.hazard) {
         // a hazard steps through no cycle: its frame and its showing follow the hour (shadeFor)
         const spr = this.add.sprite(cx, bottom, p.sprite, 0).setOrigin(0.5, 1).setDepth(p.solid ? bottom : DEPTH.flat);
-        this.hazards.push({ spr, kind: p.hazard.kind });
+        const rule = p.id === undefined ? undefined : hazardsOf(this.b).find((h) => h.id === p.id);
+        const eyes = rule?.round
+          ? this.add.image(cx, bottom - info.h / 2, 'fx-eye').setOrigin(0.5).setDepth(DEPTH.glow).setBlendMode(Phaser.BlendModes.ADD).setVisible(false)
+          : undefined;
+        this.hazards.push({ spr, kind: p.hazard.kind, rule, eyes });
         continue;
       }
       const img = this.standing(p.sprite, cx, bottom, hash(p.x, p.y));
@@ -931,6 +946,8 @@ export class WorldScene extends Phaser.Scene {
     this.auto = null;
     this.held.clear();
     this.falling = false;
+    this.predatorSaw.clear();
+    this.sightReportTick = -1;
     this.lanternFor = undefined;
     this.hinted.clear();
     this.inside.clear();
@@ -1129,6 +1146,7 @@ export class WorldScene extends Phaser.Scene {
       return;
     }
     s.advance(delta);
+    this.placePredators(s);
     this.refreshIn -= delta;
     if (this.refreshIn <= 0) {
       this.refreshIn = 250;
@@ -1138,6 +1156,8 @@ export class WorldScene extends Phaser.Scene {
       this.hearPlace(s);
     }
     this.walk(s, delta);
+    this.dimInCover(s);
+    this.reportPredatorSight(s);
     // a hunt bites by the clock: while one runs, a player standing still reports again twice a second
     if (s.state.player.chase && !this.move && !this.falling && s.tick - this.chaseReport >= 500) {
       this.chaseReport = s.tick;
@@ -1644,14 +1664,81 @@ export class WorldScene extends Phaser.Scene {
    */
   private showHazards(s: Session): void {
     const night = isNight(this.b, s.tick);
-    for (const { spr, kind } of this.hazards) {
+    for (const { spr, kind, rule, eyes } of this.hazards) {
       if (kind === 'predator') {
         const frame = night && spr.texture.frameTotal > 2 ? 1 : 0;
         if (Number(spr.frame.name) !== frame) spr.setFrame(frame);
+        eyes?.setVisible(rule !== undefined && windowOpen(this.b, rule, s.tick));
       } else {
         spr.setAlpha(night ? 0.12 : 1);
       }
     }
+  }
+
+  /**
+   * Draw a walking predator only from the kernel's clock and round. Between
+   * two rule tiles the sprite is linearly placed by that same pace, so it
+   * reaches each kernel position exactly on the tick that position changes.
+   */
+  private placePredators(s: Session): void {
+    for (const { spr, rule, eyes } of this.hazards) {
+      if (!rule?.round) continue;
+      const [tx, ty] = predatorAt(this.b, rule, s.tick);
+      const awake = windowOpen(this.b, rule, s.tick);
+      const elapsed = awake ? s.tick - lastDusk(this.b, s.tick) : 0;
+      const phase = awake ? (elapsed % rule.pace) / rule.pace : 0;
+      const [nx, ny] = awake ? predatorAt(this.b, rule, s.tick + rule.pace) : [tx, ty];
+      const x = tx + (nx - tx) * phase;
+      const y = ty + (ny - ty) * phase;
+      const bottom = (y + 1) * T;
+      spr.setPosition(Math.round((x + 0.5) * T), Math.round(bottom)).setDepth(Math.round(bottom));
+      if (!eyes) continue;
+      const [hx, hy] = headingOf(this.b, rule, s.tick);
+      const faceY = spr.y - spr.displayHeight * 0.55;
+      eyes
+        .setPosition(Math.round(spr.x + hx * 4), Math.round(faceY + hy * 3))
+        .setAngle(hx === 0 ? 0 : 90)
+        .setAlpha(awake ? 0.75 + 0.2 * Math.sin(s.tick / 113) : 0)
+        .setVisible(awake);
+    }
+  }
+
+  /** Reeds and tall grass marked as cover soften the player, then release them at the next tile. */
+  private dimInCover(s: Session): void {
+    const at = this.falling ? s.state.player.at : s.pos;
+    this.player.setAlpha(!this.falling && coverAt(this.b, at) ? 0.72 : 1);
+  }
+
+  /**
+   * The kernel strikes only on a move report. When moving eyes first acquire a
+   * player who is standing still, report that tile once; a chase then owns all
+   * later reports until it ends.
+   */
+  private reportPredatorSight(s: Session): void {
+    for (const { rule } of this.hazards) {
+      if (!rule?.round) continue;
+      const watched = windowOpen(this.b, rule, s.tick) && sees(this.b, rule, s.tick, s.pos);
+      const before = this.predatorSaw.get(rule.id) ?? false;
+      const blocked = app.ui.blocking || this.falling || this.move !== null || s.state.player.chase !== null;
+      if (watched && !before && !blocked && this.sightReportTick !== s.tick) {
+        this.sightReportTick = s.tick;
+        s.report(s.pos, true);
+        // If that report began a chase, its standing-bite cadence starts on
+        // the next tick change rather than reporting this same tick twice.
+        this.chaseReport = s.tick;
+      }
+      // A blocked UI does not consume the edge: closing it while still seen
+      // must let the predator notice the standing player.
+      this.predatorSaw.set(rule.id, blocked && s.state.player.chase === null ? false : watched);
+    }
+  }
+
+  /** Deterministic predator state for the browser proof harness. */
+  predator(id: string, at?: [number, number]): { at: [number, number]; heading: [number, number]; seesPlayer: boolean } | undefined {
+    const s = this.session;
+    const rule = this.hazards.find((h) => h.rule?.id === id)?.rule;
+    if (!s || !rule?.round) return undefined;
+    return { at: predatorAt(this.b, rule, s.tick), heading: headingOf(this.b, rule, s.tick), seesPlayer: sees(this.b, rule, s.tick, at ?? s.pos) };
   }
 
   /** Light the lantern for this night (G31): the UI calls it with the warning box. */

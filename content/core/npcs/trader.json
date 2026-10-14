@@ -41,6 +41,16 @@
         "say": [
           "Sunleaf sells. I knew you had an eye. Or luck. Luck sells too."
         ]
+      },
+      {
+        "when": {
+          "done": [
+            "core/the-south-bank"
+          ]
+        },
+        "say": [
+          "Moonreed sells dear. A customer need not know what watched you pick it."
+        ]
       }
     ]
   }

@@ -33,6 +33,12 @@ describe('dead props', () => {
     expect(checkDeadProps(b, {})).toEqual([]);
   });
 
+  it('cover may use the readable look of the plant that hides the player', () => {
+    const b = structuredClone(base);
+    b.map.props = [...b.map.props, { sprite: 'core/base-kit:props/reeds', x: 1, y: 1, w: 1, h: 1, solid: false, cover: true }];
+    expect(checkDeadProps(b, {})).toEqual([]);
+  });
+
   it('a scatter slot with no node is named', () => {
     const b = structuredClone(base);
     const slot = b.map.slots.find((s) => s.id === 'core/lone-oak-1')!;
