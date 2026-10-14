@@ -374,9 +374,10 @@ The valley has no combat; its danger is the hour, and what the player eats.
   lights it or adds a log, a whole one or none (a fire with no room left for
   a whole log refuses it and the log stays in the bag: effort is never
   wasted), nothing bought or made makes it burn longer, and
-  it warns before it goes out (G31), and a prop may read by a fire (`lit_by`), its words shown only while it burns. A night kept by a fire is a night at the
+  it warns before it goes out (G31), never before a log fits, and a prop may read by a fire (`lit_by`), its words shown only while it burns. A night kept by a fire is a night at the
   screen: nothing keeps a fire while the player is away (G28). Added
-  2026-10-13 (the same entry).
+  2026-10-13 (the same entry); a log goes in whole since 2026-10-14
+  (DECISIONS.md, the entry on the full fire).
 
 ### Expeditions
 
@@ -613,7 +614,7 @@ test stays with the checklist above.
 | G34 | A predator with a walkable tile in its reach from which no road leads to a safe place, or from which the run to the nearest one costs a whole fall in bites. No field of the schema can name an item as a hazard's answer. | error |
 | G36 | An expedition whose chain repeats a type or counts fewer than three or more than five, with no hazard inside its place, with a bell outside the night, a quest of its chain with a giver, an exit that is not safe ground, or a climax slot outside its place. | error since the `expedition` kind (NEXT 14a) |
 | G47 | A stealth quest whose target (the find's slot or the visit's slot) lies outside the watch of a predator's round; a round that is not a closed loop of adjacent tiles on walkable ground (its own den counted as ground), or that touches safe ground; a round with no cover prop inside its watch. G34's run to safety walks from every tile a round watches. | error since the round (NEXT 12a) |
-| G48 | A `tend` step on a prop that is not a fire; a fire prop with no id; `lit_by` naming a prop that is not a fire. | error since the fire (NEXT 13a) |
+| G48 | A `tend` step on a prop that is not a fire; a fire prop with no id; `lit_by` naming a prop that is not a fire; fire params whose warning opens before a log fits (`warn_min` over `cap - 1` logs of burn). | error since the fire (NEXT 13a) |
 | G41 | An item with no class or tier, or a tier the world has not opened; an output more than one tier above its highest input; a recipe level outside its tier's band; no camp part giving the recipe's station at its tier; no craft profession for the recipe; from tier 3 up, a node with neither the tier's level nor a slow respawn, or a shop that sells it. | error |
 | G42 | The rarity bonuses of the merged world over `rarity_budget_permille` (kernel review 8.2). | error |
 | G45 | A class that is neither a base class nor declared under one; a metal item or a class under metal; a recipe template that fits nothing, has no class input, or fits more than `template_max_recipes` combinations. | error |

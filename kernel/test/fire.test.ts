@@ -7,6 +7,7 @@ import {
   type GameEvent,
   type State,
   type Tile,
+  burnsAsWood,
   fireBurns,
   newState,
   nextLogAt,
@@ -14,6 +15,7 @@ import {
   replay,
   serialize,
   step,
+  tendHolds,
 } from '@game/kernel';
 import { loadBundle } from '../../tools/test/helpers/world.js';
 
@@ -225,5 +227,24 @@ describe('a dusk-to-dawn vigil', () => {
     state.tick = DAWN;
     expect(state.player.fires[FIRE]!.until).toBeGreaterThanOrEqual(DAWN);
     expect(questSatisfied(b, state, QUEST)).toBe(false);
+  });
+});
+
+describe('the tests the client shares', () => {
+  test('burnsAsWood answers as feed does', () => {
+    const b = world();
+    expect([WOOD, KINDLING, STONE, 'test/nothing'].map((id) => burnsAsWood(b, id))).toEqual([true, true, false, false]);
+  });
+
+  test('tendHolds answers as the tend step of questSatisfied, at every tick around a night', () => {
+    const b = world();
+    const state = begin(b);
+    const fires = [undefined, { lit: DUSK - 1, until: DAWN }, { lit: DUSK, until: DAWN + 1 }, { lit: DUSK + 1, until: DAWN }, { lit: DUSK - 1, until: DAWN - 1 }];
+    for (const fire of fires) {
+      state.player.fires = fire === undefined ? {} : { [FIRE]: fire };
+      for (const tick of [DUSK - 1, DUSK, DUSK + 1, DAWN - 1, DAWN, DAWN + 1]) {
+        expect(tendHolds(b, state, FIRE, tick)).toBe(questSatisfied(b, { ...state, tick }, QUEST));
+      }
+    }
   });
 });

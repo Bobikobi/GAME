@@ -181,7 +181,7 @@
     "fire": {
       "cap": {
         "value": 3,
-        "min": 1,
+        "min": 2,
         "max": 8,
         "step": 1
       },

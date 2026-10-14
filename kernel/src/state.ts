@@ -370,6 +370,19 @@ export function fireBurns(state: State, id: string, tick: number): boolean {
   return (state.player.fires?.[id]?.until ?? 0) > tick;
 }
 
+/** Whether an item feeds a fire: its class is wood, or a class an extension declares under wood. */
+export function burnsAsWood(bundle: Bundle, itemId: string): boolean {
+  const cls = bundle.items[itemId]?.class;
+  return cls === 'wood' || (cls !== undefined && bundle.classes[cls]?.base === 'wood');
+}
+
+/** Whether a fire keeps a `tend` step's vigil at this tick: lit by the last dusk at or before it, and fed to that night's dawn. */
+export function tendHolds(bundle: Bundle, state: State, id: string, tick: number): boolean {
+  const fire = state.player.fires?.[id];
+  const dusk = lastDusk(bundle, tick);
+  return fire !== undefined && fire.lit <= dusk && fire.until >= nightEnds(bundle, dusk);
+}
+
 /**
  * The first tick from `tick` on at which a fire takes another log whole: at once while it is
  * out or a whole log still fits under its cap (`fire.cap` logs ahead of the tick), else once
