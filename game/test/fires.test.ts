@@ -71,9 +71,31 @@ describe('the journal line of a tend step', () => {
 
   test('counts the logs to dawn once it burns, from 19:00 through the night', () => {
     expect(line(withFire({ lit: H19, until: H21 }), H19)!.text).toBe('Keep the elder hearth burning until dawn - fed to reach dawn: 4 more logs');
-    expect(line(withFire({ lit: H19, until: DAWN - 100_000 }), DUSK + 1)!.text).toBe('Keep the elder hearth burning until dawn - fed to reach dawn: 1 more log');
+    // at midnight three hours of wood are left, so a log fits now and the line only counts
+    expect(line(withFire({ lit: H19, until: DAWN - 100_000 }), DAWN - 250_000)!.text).toBe('Keep the elder hearth burning until dawn - fed to reach dawn: 1 more log');
     // half a log short still needs a whole one
-    expect(logsToDawn(bundle, withFire({ lit: H19, until: DAWN - 50_000 }), HEARTH, DUSK + 1)).toBe(1);
+    expect(logsToDawn(bundle, withFire({ lit: H19, until: DAWN - 50_000 }), HEARTH, DAWN - 250_000)).toBe(1);
+  });
+
+  test('says when the next log fits while the fire is too full for one', () => {
+    // lit at 19:00 with three logs it burns to 01:00, and takes a fourth once one has burned: at 21:00
+    const full = withFire({ lit: H19, until: H19 + 3 * bundle.params.fire.log_ms });
+    expect(line(full, H19 + 1)!.text).toBe(
+      'Keep the elder hearth burning until dawn - fed to reach dawn: 2 more logs, the next at 21:00',
+    );
+    // a tick later the 21:00 minute has already begun when the log fits, so the line says 21:01
+    const late = withFire({ lit: H19, until: H19 + 3 * bundle.params.fire.log_ms + 1 });
+    expect(line(late, H19 + 1)!.text).toBe(
+      'Keep the elder hearth burning until dawn - fed to reach dawn: 2 more logs, the next at 21:01',
+    );
+    // one log short at 22:00, while five hours of wood are left: it fits at 23:00
+    expect(line(withFire({ lit: H19, until: DAWN - 100_000 }), H21 + 50_000)!.text).toBe(
+      'Keep the elder hearth burning until dawn - fed to reach dawn: 1 more log, the next at 23:00',
+    );
+    // a log that fits inside the last minute before midnight is promised for the first minute after it
+    expect(line(withFire({ lit: H19, until: 799_500 }), H21 + 100_001)!.text).toBe(
+      'Keep the elder hearth burning until dawn - fed to reach dawn: 1 more log, the next at 0:00',
+    );
   });
 
   test('a fire first lit after dark began cannot keep this night', () => {

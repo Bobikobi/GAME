@@ -124,11 +124,6 @@ window.__tend = (() => {
     fire() { return g().session.state.player.fires[HEARTH] ?? null; },
     look() { return g().world.fireLook(HEARTH) ?? null; },
     logs() { return g().session.state.player.bag[${JSON.stringify(LOG)}] ?? 0; },
-    /** Whether a whole log still fits under the fire's cap (fire.cap logs ahead of the tick). */
-    roomForLog() {
-      const s = g().session, f = s.state.player.fires[HEARTH], c = g().bundle.params.fire;
-      return !f || f.until <= s.tick || s.tick + c.cap * c.log_ms - f.until >= c.log_ms;
-    },
     tracker() { return [...document.querySelectorAll('.tracker-step')].map((e) => e.textContent).join(' | '); },
     prompt() { const p = document.querySelector('.prompt'); return p && !p.hidden ? p.textContent : ''; },
     toasts() { return [...document.querySelectorAll('.toast')].map((e) => e.textContent).join(' | '); },
@@ -238,18 +233,19 @@ class Tender {
       5000,
     );
     if (result === 'full' && (await this.logs()) !== logs) throw new Error('a full fire still took a log');
+    if (result === 'full' && (await this.fire())?.until !== before?.until) throw new Error('a full fire still changed its burn');
     if (result === 'full') await this.page.waitFor(`!__tend.toasts().includes('already full')`, 'the full toast to fade', 8000);
     return result as 'fed' | 'full';
   }
 
-  /** Feed while the journal asks for logs and a whole log still fits under the cap. */
-  async feedAsAsked(): Promise<number> {
+  /** Feed while the journal asks for logs, as a player would; `full` when the hearth refused a log that would not burn whole. */
+  async feedAsAsked(): Promise<{ fed: number; full: boolean }> {
     let fed = 0;
-    while ((await this.logsNeeded()) > 0 && (await this.page.eval<boolean>('__tend.roomForLog()'))) {
-      if ((await this.feed()) === 'full') break;
+    while ((await this.logsNeeded()) > 0) {
+      if ((await this.feed()) === 'full') return { fed, full: true };
       fed++;
     }
-    return fed;
+    return { fed, full: false };
   }
 
   async handleLevelUp(): Promise<void> {
@@ -314,11 +310,17 @@ async function run(page: Page, url: string): Promise<void> {
   await page.waitFor('__tend.look() && __tend.look().burning', 'the flame to show while it burns', 5000);
   const lit = (await me.fire())!.lit;
   await page.waitFor(`__tend.tracker().includes('fed to reach dawn: 4 more logs')`, 'the journal to count four logs to dawn', 5000);
-  // the cap holds three logs ahead of the clock: two more fit, and each takes one log from the bag
+  // the cap holds three logs ahead of the clock: two more fit, each takes one log from the bag,
+  // and the next press, still asked for by the journal, is refused with the log kept
   const first = await me.feedAsAsked();
-  if (first !== 2) throw new Error(`fed ${first} more logs before the cap, not 2`);
+  if (first.fed !== 2) throw new Error(`fed ${first.fed} more logs before the cap, not 2`);
+  if (!first.full) throw new Error('the hearth at its cap was never refused a log');
   if ((await me.logs()) !== 7) throw new Error(`the bag holds ${await me.logs()} logs after three feeds, not 7`);
-  await page.waitFor(`__tend.tracker().includes('fed to reach dawn: 2 more logs')`, 'the journal to ask for two more logs', 5000);
+  await page.waitFor(
+    `/fed to reach dawn: 2 more logs, the next at 21:\\d\\d/.test(__tend.tracker())`,
+    'the journal to ask for two more logs and say when the next fits',
+    5000,
+  );
   await me.snap('lit-before-dusk');
 
   // the first log of the night burns down: at 00:40 the embers run low and the warning opens once
@@ -328,7 +330,7 @@ async function run(page: Page, url: string): Promise<void> {
   await me.snap('running-low');
   await me.clearPlainDialog();
   const night = await me.feedAsAsked();
-  if (night !== 2) throw new Error(`fed ${night} logs to reach dawn after midnight, not 2`);
+  if (night.fed !== 2 || night.full) throw new Error(`fed ${night.fed} logs to reach dawn after midnight (full: ${night.full}), not 2`);
   if ((await me.fire())!.lit !== lit) throw new Error('a top-up started a new burn');
   await page.waitFor(`__tend.tracker().includes('Bring it to Elder Maru')`, 'the vigil to hold with wood to dawn', 5000);
   await page.waitFor('__tend.look().alpha === 1', 'the flame to come back up', 5000);

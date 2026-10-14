@@ -687,7 +687,7 @@ export class WorldScene extends Phaser.Scene {
    */
   private buildFire(id: string, p: { w: number; solid: boolean; sprite: string }, cx: number, bottom: number): void {
     const spr = this.add.sprite(cx, bottom, p.sprite, 0).setOrigin(0.5, 1).setDepth(p.solid ? bottom : DEPTH.flat);
-    if (RICH.detail) this.shadow(cx, bottom, p.w, p.solid ? DEPTH.shadow : DEPTH.flat - 0.5);
+    if (RICH.detail && !FLAT.has(baseName(p.sprite))) this.shadow(cx, bottom, p.w, p.solid ? DEPTH.shadow : DEPTH.flat - 0.5);
     let cycle: Cycle | undefined;
     if (RICH.motion) {
       cycle = { spr, min: FLAME_MS, max: FLAME_MS, next: 0, frame: 0, active: false };

@@ -3,7 +3,19 @@
  * player feeds by hand. Pure: every answer comes from the bundle, the state and
  * the game tick the caller passes, never from a clock of the client's own.
  */
-import { type Bundle, type State, fireBurns, idiv, idivUp, isNight, lastDusk, nightEnds, nightFalls } from '@game/kernel';
+import {
+  type Bundle,
+  type State,
+  fireBurns,
+  idiv,
+  idivUp,
+  isNight,
+  lastDusk,
+  minuteOfDay,
+  nextLogAt,
+  nightEnds,
+  nightFalls,
+} from '@game/kernel';
 
 type Prop = Bundle['map']['props'][number];
 
@@ -99,9 +111,20 @@ function vigilDusk(b: Bundle, tick: number): number {
 }
 
 /**
+ * The game clock of the first minute that starts at or after `tick` ("21:00"), so a time the
+ * player may act from is never shown early. text.ts's clock, kept here: text.ts imports this file.
+ */
+function clockFrom(b: Bundle, tick: number): string {
+  const m = minuteOfDay(b, tick);
+  const from = minuteOfDay(b, tick - 1) === m ? (m + 1) % (24 * 60) : m;
+  return `${Math.floor(from / 60)}:${String(from % 60).padStart(2, '0')}`;
+}
+
+/**
  * The journal line of a tend step: "Keep the <name> burning until dawn", and while the
  * vigil does not hold, what it still needs - lighting before dusk when the fire is out
- * or was lit after dark began, else the logs that carry it to dawn.
+ * or was lit after dark began, else the logs that carry it to dawn, and while the fire
+ * is too full for a whole log, the time the next one fits (the kernel refuses it before).
  */
 export function tendLine(b: Bundle, s: State, id: string, tick: number): { text: string; done: boolean } {
   const text = `Keep the ${fireName(id)} burning until dawn`;
@@ -109,7 +132,10 @@ export function tendLine(b: Bundle, s: State, id: string, tick: number): { text:
   const fire = s.player.fires?.[id];
   if (fire === undefined || !fireBurns(s, id, tick) || fire.lit > vigilDusk(b, tick)) return { text: `${text} - light it before dusk`, done: false };
   const n = logsToDawn(b, s, id, tick);
-  return { text: n > 0 ? `${text} - fed to reach dawn: ${n} more ${n === 1 ? 'log' : 'logs'}` : text, done: false };
+  if (n === 0) return { text, done: false };
+  const next = nextLogAt(b, s, id, tick);
+  const when = next > tick ? `, the next at ${clockFrom(b, next)}` : '';
+  return { text: `${text} - fed to reach dawn: ${n} more ${n === 1 ? 'log' : 'logs'}${when}`, done: false };
 }
 
 /** Whether a prop's note and sign can be read now: always, unless it is lit by a fire that does not burn (`lit_by`). */
