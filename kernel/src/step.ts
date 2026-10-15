@@ -260,10 +260,13 @@ function apply(ctx: Ctx, a: Action): void {
   s.player.satiety = satietyAt(ctx.b, s, ctx.tick);
   s.player.satietyAt = ctx.tick;
   if (a.t === 'move') return moveTo(ctx, a.at);
+  // past an expedition's last bell the mist walks the player out first: the action is not made, and its tile is not read (G49)
+  if (ctx.walkOut !== undefined) {
+    arrive(ctx, s.player.at);
+    return;
+  }
   // wherever the action is made, the world acts on the player first; a fall ends the step and the action does not happen
   if (arrive(ctx, tileOf(a, s.player.at))) return;
-  // past an expedition's last bell the mist walks the player out first: the action is not made (G49)
-  if (ctx.walkOut !== undefined) return;
   perform(ctx, a);
   // a camp part built under their feet makes this tile safe: the hunt and the outing end with it
   if (isSafe(ctx.b, s, s.player.at)) {

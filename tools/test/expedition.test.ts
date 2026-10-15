@@ -234,6 +234,31 @@ describe('expedition rules', () => {
     expect(messages(shut)).toContain(`no walkable tile of "${PLACE}" touches its exit "${EXIT}"`);
   });
 
+  it('refuses a back door a passable restore opens once mended, unless the expedition\'s own reward opens it', () => {
+    const b = good();
+    const gap = walls(base).find((r) => !inRect(r.x, r.y, RECT))!;
+    const door = 'test/back-door';
+    b.map.slots = [...b.map.slots, { id: door, kind: 'restore', x: gap.x, y: gap.y, w: 1, h: 1 }];
+    b.restores[door] = { ...structuredClone(b.restores['core/old-bridge']!), id: door, place: { slot: door }, passable: true };
+    expect(messages(b)).toContain(`"${PLACE}" can be walked into from (${gap.x},${gap.y}), not only from its exit "${EXIT}", by day or once the valley's restores are mended`);
+
+    b.expeditions[EXPEDITION]!.reward.opens = [...(b.expeditions[EXPEDITION]!.reward.opens ?? []), door];
+    expect(messages(b)).not.toContain('can be walked into');
+  });
+
+  it('refuses an exit whose corner, where the walk-out sets the player, cannot be stood on', () => {
+    const b = good();
+    const exit = b.map.slots.find((slot) => slot.id === EXIT)!;
+    b.map.props.push({ sprite: WALL, x: exit.x, y: exit.y, w: 1, h: 1, solid: true });
+    expect(messages(b)).toContain(`the walk-out sets the player on (${exit.x},${exit.y}), the corner of "${EXIT}", and no one can stand there`);
+  });
+
+  it('refuses a chain quest that opens a restore outside the place', () => {
+    const b = good();
+    b.quests[QUESTS[1]]!.reward.opens = ['core/old-bridge'];
+    expect(messages(b)).toContain(`quest "${QUESTS[1]}" opens "core/old-bridge", outside "${PLACE}"`);
+  });
+
   it('refuses a find in the chain whose item is found only outside the place, and accepts it once it grows inside', () => {
     const b = good();
     // a resource none of whose nodes stands inside the place
@@ -303,6 +328,18 @@ describe('an expedition is never the only road (G37)', () => {
     // a find asks for it as much as a bring
     b.quests[day]!.steps = [{ kind: 'find', item: SHARD, clue: 'A shard of the bell lies where it fell.' }];
     expect(messages(b, 'G37')).toContain(`only an expedition gives "${SHARD}": a quest of the day would wait on the expedition`);
+  });
+
+  it('refuses a quest of the day that requires a quest of the chain, and counts nothing it gives as a road by day', () => {
+    const b = good();
+    const day = 'test/day-after';
+    b.items[SHARD] = { ...structuredClone(b.items['core/stone']!), id: SHARD };
+    b.restores['test/stair'] = { ...structuredClone(b.restores['core/old-bridge']!), id: 'test/stair', inputs: [{ item: SHARD, qty: 2 }] };
+    b.expeditions[EXPEDITION]!.reward.items = [{ item: SHARD, qty: 1 }];
+    b.quests[day] = { ...structuredClone(b.quests['core/the-night-arch']!), id: day, requires: [QUESTS[2]], reward: { rep: 0, items: [{ item: SHARD, qty: 1 }] } };
+    const said = messages(b, 'G37');
+    expect(said).toContain(`"${QUESTS[2]}" is a quest of an expedition's chain: a quest of the day would wait on the expedition`);
+    expect(said).toContain(`only an expedition gives "${SHARD}"`);
   });
 
   it('refuses a place that opens by no hand when only the expedition opens it, until a quest of the day opens it too', () => {

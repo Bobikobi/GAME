@@ -423,6 +423,14 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
           }
         }
       }
+      if (place) {
+        for (const opened of q.reward.opens ?? []) {
+          const slot = findSlot(b.map, b.restores[opened]?.place.slot ?? '');
+          if (slot && !contains(place, slot)) {
+            complain(`expedition.chain.${i}`, `quest "${id}" opens "${opened}", outside "${x.place}": a chain opens doors inside its place; the valley's is the expedition's reward`);
+          }
+        }
+      }
       if (q.giver !== undefined) complain(`expedition.chain.${i}`, `quest "${id}" has a giver; expedition quests are giver-less`);
       if (q.type === undefined) complain(`expedition.chain.${i}`, `quest "${id}" has no type`);
       else if (types.has(q.type)) complain(`expedition.chain.${i}`, `quest type "${q.type}" is repeated in the chain`);
@@ -450,23 +458,42 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
     if (place && exit) {
       // the place is entered from its exit and nowhere else, on the map as it stands by day before anything is mended
       const walkable = makeWalkable(b);
-      const view = { restored: [] as string[], camp: [] as string[] };
+      const byDay = { restored: [] as string[], camp: [] as string[] };
+      // the valley as it ends up: every passable restore mended but the place's own doors and what its reward opens
+      const own = new Set(x.reward.opens ?? []);
+      const mended = {
+        restored: Object.values(b.restores)
+          .filter((r) => r.passable && !own.has(r.id))
+          .filter((r) => {
+            const slot = findSlot(b.map, r.place.slot);
+            return slot !== undefined && !contains(place, slot);
+          })
+          .map((r) => r.id),
+        camp: [] as string[],
+      };
       const ways = new Map<string, boolean>();
-      for (let y = place.y; y < place.y + place.h; y++) {
-        for (let x2 = place.x; x2 < place.x + place.w; x2++) {
-          if (!walkable(x2, y, view)) continue;
-          for (const [dx, dy] of STEPS) {
-            const [nx, ny] = [x2 + dx, y + dy];
-            if (inRect(nx, ny, place) || !walkable(nx, ny, view)) continue;
-            ways.set(`${nx},${ny}`, inRect(nx, ny, exit));
+      const touched = new Set<string>();
+      for (const view of [byDay, mended]) {
+        for (let y = place.y; y < place.y + place.h; y++) {
+          for (let x2 = place.x; x2 < place.x + place.w; x2++) {
+            if (!walkable(x2, y, view)) continue;
+            for (const [dx, dy] of STEPS) {
+              const [nx, ny] = [x2 + dx, y + dy];
+              if (inRect(nx, ny, place) || !walkable(nx, ny, view)) continue;
+              ways.set(`${nx},${ny}`, inRect(nx, ny, exit));
+              if (view === byDay && inRect(nx, ny, exit)) touched.add(`${nx},${ny}`);
+            }
           }
         }
       }
+      if (!walkable(exit.x, exit.y, byDay)) {
+        complain('expedition.exit', `the walk-out sets the player on (${exit.x},${exit.y}), the corner of "${x.exit}", and no one can stand there`);
+      }
       const others = [...ways].filter(([, fromExit]) => !fromExit).map(([tile]) => `(${tile})`);
       if (others.length > 0) {
-        complain('expedition.place', `"${x.place}" can be walked into from ${others.join(', ')}, not only from its exit "${x.exit}": one way in`);
+        complain('expedition.place', `"${x.place}" can be walked into from ${others.join(', ')}, not only from its exit "${x.exit}", by day or once the valley's restores are mended: one way in`);
       }
-      if (![...ways.values()].some(Boolean)) {
+      if (touched.size === 0) {
         complain('expedition.exit', `no walkable tile of "${x.place}" touches its exit "${x.exit}" before dusk: the way in is open by day`);
       }
     }
@@ -494,7 +521,30 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
   // G37: an expedition opens places sooner, never alone. What its reward or a quest of its chain gives is no road by day:
   // a restore that needs it by hand needs it from somewhere else too, unless a quest outside every chain opens the place.
   const chained = new Set(Object.values(b.expeditions).flatMap((x) => x.chain));
-  const dayQuests = Object.values(b.quests).filter((q) => !chained.has(q.id));
+  // a quest that waits on a chain quest, however far down its requires, is the night's too
+  const night = new Set(chained);
+  for (let grew = true; grew; ) {
+    grew = false;
+    for (const q of Object.values(b.quests)) {
+      if (!night.has(q.id) && (q.requires ?? []).some((r) => night.has(r))) {
+        night.add(q.id);
+        grew = true;
+      }
+    }
+  }
+  for (const q of Object.values(b.quests)) {
+    if (chained.has(q.id)) continue;
+    (q.requires ?? []).forEach((r, i) => {
+      if (!chained.has(r)) return;
+      issues.push({
+        file: at(q.id),
+        where: `quest.requires.${i}`,
+        message: `"${r}" is a quest of an expedition's chain: a quest of the day would wait on the expedition (${roadRule})`,
+        level: PLAY_LEVEL,
+      });
+    });
+  }
+  const dayQuests = Object.values(b.quests).filter((q) => !night.has(q.id));
   const byDay = rewardItems(dayQuests.map((q) => q.reward));
   const byNight = rewardItems([...Object.values(b.expeditions).map((x) => x.reward), ...Object.values(b.quests).filter((q) => chained.has(q.id)).map((q) => q.reward)]);
   const openedByDay = new Set(dayQuests.flatMap((q) => q.reward.opens ?? []));

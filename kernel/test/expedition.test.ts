@@ -454,6 +454,20 @@ describe('a report after the last bell is read as the world stood at that bell',
     expect(late.state.player.outing).toBeNull();
   });
 
+  test('after the bell the action\'s own tile is not read: work claimed on a far town tile moves nothing', () => {
+    const b = world();
+    const state = hunted(b, LAST - 3000, LAST - 2000);
+    const town = state.player.town;
+    const square = b.map.slots.find((slot) => slot.id === 'core/town-square')!;
+    const far: [number, number] = [square.x, square.y];
+    const late = step(b, state, { t: 'gather', node: 'nowhere', grade: 'good', at: far } as unknown as Action, LAST + 1000);
+    if (!late.ok) throw new Error(late.error);
+    const exit = b.map.slots.find((slot) => slot.id === EXIT)!;
+    expect(events(late.events, 'walked_out')).toEqual([{ e: 'walked_out', expedition: EXPEDITION }]);
+    expect(late.state.player.at).toEqual([exit.x, exit.y]);
+    expect(late.state.player.town).toBe(town);
+  });
+
   test('a riddle answered after the bell is not solved: the player is walked out instead', () => {
     const b = world();
     let state = move(b, placed(begin(b), SPOT_TILE, DUSK + 1), DUSK + 1, SPOT_TILE).state;
