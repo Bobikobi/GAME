@@ -30,6 +30,7 @@ import {
   SlotKind,
   type SchemaIssue,
 } from './index';
+import { S1_SCHEMAS } from './s1';
 
 /** Bumped when a document written for the old format would be read differently. */
 export const HUB_FORMAT = 1;
@@ -375,6 +376,7 @@ export type RequestKindName = (typeof REQUEST_KINDS)[number];
 /** Documents that are not extension files but are published with the same discipline (emitted to schema/json/, validated before they are served). */
 export const DOCUMENT_SCHEMAS = {
   'hub-data': HubData,
+  ...S1_SCHEMAS,
 } as const;
 
 /**
