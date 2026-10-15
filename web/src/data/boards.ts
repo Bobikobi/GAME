@@ -24,6 +24,8 @@ export interface Builder {
   points: number;
   records: number;
   commits: number;
+  /** ids of the records the creator has in the game now (GRUNT item 19); empty in the fixture fallback below */
+  extensions: string[];
   /** the builder's folder on GitHub */
   url: string;
 }
@@ -54,6 +56,7 @@ const fromRepository = (): Builder[] =>
       ...(profile?.role ? { role: profile.role } : {}),
       ...(profile?.signature ? { signature: profile.signature } : {}),
       ...counts,
+      extensions: [],
       url: repoTree(handle === 'core' ? 'content/core' : `content/extensions/${handle}`),
     };
   });
