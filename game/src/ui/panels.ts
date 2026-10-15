@@ -30,6 +30,7 @@ import {
 import type { SignInfo } from '../scenes/world';
 import { Session } from '../session';
 import { ATTRIBUTE_MAX, activeQuests, attributeEffects, bagGroups, classLine, clock, eatLabel, gold, itemBenefit, itemName, journalGroups, questSteps, restoreHint, seconds, sellable, stacks, stationGate, stationText, stationUpgrades, toolOpens, wornAt } from '../text';
+import { s1, s1Available } from '../net/s1';
 import { say } from './dialog';
 import { button, h, sprite } from './dom';
 import { markdown } from './markdown';
@@ -867,6 +868,27 @@ export function openSignCard(ui: UI, info: SignInfo): void {
       : null,
     c.ai.length ? h('div', { class: 'sign-tools' }, h('p', { class: 'sign-note' }, 'Made with'), c.ai.map((t) => h('span', null, t))) : null,
     c.mendedBy ? h('p', { class: 'sign-mended' }, `Mended by ${c.mendedBy}`) : null,
+    info.record && s1Available() ? reportLine(info.record) : null,
   ];
   p.body.replaceChildren(...parts.filter((x): x is HTMLElement => x !== null));
+}
+
+/** One short note per record per browser, sent to the stage-1 service (GRUNT 18); nothing about the player goes with it. */
+function reportLine(id: string): HTMLElement {
+  const box = h('div', { class: 'sign-report' });
+  const done = () => box.replaceChildren(h('p', { class: 'sign-note' }, 'Thanks, your note was sent.'));
+  if (s1.reported(id)) {
+    box.replaceChildren(h('p', { class: 'sign-note' }, 'You sent a note about this.'));
+    return box;
+  }
+  const open = () => {
+    const text = h('textarea', { rows: 3, maxlength: 240, placeholder: 'What is wrong or could be better here?' });
+    box.replaceChildren(
+      text,
+      h('div', { class: 'actions' }, button('Send', () => (s1.report(id, text.value) ? done() : text.focus()))),
+    );
+    text.focus();
+  };
+  box.replaceChildren(h('div', { class: 'actions' }, button('Report', open)));
+  return box;
 }

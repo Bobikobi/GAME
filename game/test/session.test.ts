@@ -3,6 +3,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vi
 import { type Bundle, type GameEvent, isSafe, makeWalkable } from '@game/kernel';
 import { app } from '../src/app';
 import { LEGACY_SAVE_KEY, SAVE_KEY } from '../src/config';
+import { s1Use } from '../src/net/s1';
 import { DEMO_SINCE_KEY, Session } from '../src/session';
 import { say } from '../src/ui/dialog';
 import { UI } from '../src/ui/ui';
@@ -382,4 +383,27 @@ describe('position reports (P-5b)', () => {
     expect(session.state.player.at).toEqual(pit);
   });
 
+});
+
+describe('the stage-1 service hears of play (GRUNT 18)', () => {
+  const calls: [string, unknown][] = [];
+  beforeEach(() => {
+    calls.length = 0;
+    s1Use((path, body) => void calls.push([path, body]));
+  });
+  afterEach(() => s1Use(() => {}));
+
+  test('a visit to a filled place, a gather from a node and a quest step are each reported once', () => {
+    const session = startedSession();
+    calls.length = 0;
+    const slot = bundle.map.slots.find((sl) => bundle.resources[Object.values(bundle.resources).find((r) => r.place.slot === sl.id)?.id ?? '']);
+    const node = Object.entries(bundle.instances).find(([, i]) => i.kind === 'resource')!;
+    const tell = (a: unknown, e: GameEvent[]) => (session as unknown as { tell(a: unknown, e: GameEvent[]): void }).tell(a, e);
+    tell({ t: 'visit', slot: slot!.id }, [{ e: 'visit', slot: slot!.id }]);
+    tell({ t: 'visit', slot: slot!.id }, [{ e: 'visit', slot: slot!.id }]);
+    tell({ t: 'gather', node: node[0] }, []);
+    tell({ t: 'accept', quest: 'core/fix-the-bridge' }, [{ e: 'quest', quest: 'core/fix-the-bridge', state: 'active' }, { e: 'quest', quest: 'core/fix-the-bridge', state: 'done' }]);
+    expect(calls.map(([p]) => p)).toEqual(['visit', 'pickup', 'stop']);
+    expect(calls[2]![1]).toEqual({ step: 'core/fix-the-bridge:done' });
+  });
 });

@@ -1,0 +1,134 @@
+---
+// A creator's own page (docs/team/GRUNT.md, item 19): their records with visits, pickups and reports from
+// sources.usage. Usage opens with the stage-1 service (item 17); until then the records show with no counts.
+import Site from '../../../layouts/Site.astro';
+import '../../../styles/hub.css';
+import '../../../styles/signature.css';
+import { builders, type Builder } from '../../../data/boards';
+import { creatorRecords } from '../../../data/creator-usage';
+import { dateTime, hub } from '../../../data/site';
+
+export function getStaticPaths() {
+  return builders.map((b) => ({ params: { handle: b.handle }, props: { builder: b } }));
+}
+
+interface Props {
+  builder: Builder;
+}
+const { builder } = Astro.props as Props;
+const usage = hub.usage;
+const records = creatorRecords(builder, hub);
+---
+
+<Site title={`${builder.name} - Openfold`} description={`${builder.name}'s records in Openfold, with their points, commits and usage.`} section="boards">
+  <div class="hub creator">
+    <header class="wrap hub-head">
+      <p class="kicker">Developer area</p>
+      <h1>
+        {builder.signature ? (
+          <span class={`signature sig-${builder.signature.style}`}>
+            {builder.signature.glyph && builder.signature.glyph !== 'none' && <i class={`glyph g-${builder.signature.glyph}`} aria-hidden="true" />}
+            {builder.signature.text}
+          </span>
+        ) : (
+          builder.name
+        )}
+      </h1>
+      <p class="lead">
+        <a class="go" href={builder.url}>
+          {builder.handle}
+        </a>
+        {' - '}
+        {builder.points} points, {builder.records} records, {builder.commits} commits.
+      </p>
+    </header>
+
+    <section class="wrap sect" aria-labelledby="records-h">
+      <h2 id="records-h">Records</h2>
+      {
+        usage ? (
+          <p class="lead">
+            Visits, pickups and reports from {dateTime(usage.since)} to {dateTime(usage.until)}.
+          </p>
+        ) : (
+          <p class="empty">Usage opens with the stage-1 service.</p>
+        )
+      }
+      <table class="usage-table">
+        <thead>
+          <tr>
+            <th scope="col">Record</th>
+            {usage && (
+              <>
+                <th scope="col" class="num">
+                  Visits
+                </th>
+                <th scope="col" class="num">
+                  Pickups
+                </th>
+                <th scope="col" class="num">
+                  Reports
+                </th>
+              </>
+            )}
+          </tr>
+        </thead>
+        <tbody>
+          {records.map((r) => (
+            <tr>
+              <td>
+                {r.url ? (
+                  <a class="go" href={r.url}>
+                    {r.title}
+                  </a>
+                ) : (
+                  r.title
+                )}
+              </td>
+              {usage && (
+                <>
+                  <td class="num">{r.visits}</td>
+                  <td class="num">{r.pickups}</td>
+                  <td class="num">{r.reports}</td>
+                </>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  </div>
+</Site>
+
+<style>
+  .usage-table {
+    width: 100%;
+    margin-top: var(--s-3);
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+  .usage-table th {
+    padding: var(--s-2) var(--s-2) var(--s-2) 0;
+    border-bottom: var(--px) solid var(--ink);
+    color: var(--grey);
+    font-size: var(--text-s);
+    font-weight: 700;
+    text-align: left;
+  }
+  .usage-table td {
+    padding: var(--s-3) var(--s-2) var(--s-3) 0;
+    border-bottom: var(--px) solid var(--paper2);
+    vertical-align: middle;
+  }
+  .usage-table .num {
+    text-align: right;
+  }
+  .usage-table th:last-child,
+  .usage-table td:last-child {
+    padding-right: 0;
+  }
+  .empty {
+    margin-top: var(--s-3);
+    color: var(--ink2);
+  }
+</style>

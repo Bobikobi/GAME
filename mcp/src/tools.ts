@@ -15,7 +15,7 @@
  */
 import { Type, type Static, type TSchema } from '@sinclair/typebox';
 import { CREATOR_TYPES, FORMAT_VERSION, Id, SlotKind } from '@game/schema';
-import { HubParameters, HubProposal, HubRequest, HubSlot, RECORD_TYPES, RequestKind } from '@game/schema/hub';
+import { DOCUMENT_SCHEMAS, HubParameters, HubProposal, HubRequest, HubSlot, RECORD_TYPES, RequestKind } from '@game/schema/hub';
 
 /** Bump the major together with FORMAT_VERSION; minor for a new tool or field; patch for a fix. */
 export const MCP_VERSION = '1.0.0';
@@ -47,7 +47,7 @@ export const Issue = Type.Object(
   { additionalProperties: false, description: 'One line of `pnpm check`.' },
 );
 
-const DocumentType = Type.Union([...RECORD_TYPES.map((t) => Type.Literal(t)), Type.Literal('hub-data')]);
+const DocumentType = Type.Union([...RECORD_TYPES.map((t) => Type.Literal(t)), ...Object.keys(DOCUMENT_SCHEMAS).map((t) => Type.Literal(t))]);
 const CreatorType = Type.Union(CREATOR_TYPES.map((t) => Type.Literal(t)));
 
 export interface ToolDef<I extends TSchema, O extends TSchema> {

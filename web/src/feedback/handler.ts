@@ -1,5 +1,5 @@
 /**
- * The logic of POST /api/feedback (the route is api/feedback.ts): a message
+ * The logic of POST /api/feedback (the route is web/src/pages/api/feedback.ts): a message
  * sent inside the game becomes a GitHub issue in Bobikobi/GAME labelled
  * `feedback`. Needs FEEDBACK_GITHUB_TOKEN, else HUB_GITHUB_TOKEN when the owner
  * gave the hub's token Issues write (a token that may create issues in that

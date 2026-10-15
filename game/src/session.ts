@@ -20,6 +20,8 @@ import {
   step,
 } from '@game/kernel';
 import { LEGACY_SAVE_KEY, REVIEW_KEY, SAVE_KEY } from './config';
+import { s1 } from './net/s1';
+import { slotContent } from './places';
 
 /**
  * The save file's version. 2 came with the new opening (the axe, the three
@@ -80,6 +82,8 @@ export class Session {
   private deferred: GameEvent[] = [];
   /** the state and log from before the action that keeps the player busy now, so work walked away from can be taken back */
   private undo: { state: State; tail: LogEntry[] } | null = null;
+  /** the record of a gather under way: counted as a pickup when the work lands, dropped when it is walked away from */
+  private pickup: string | null = null;
   private listeners = new Map<keyof SessionEvents, Set<Listener>>();
   private sinceSave = 0;
   /** the in-game hour of the last frame: when it turns, what depends on the hour redraws */
@@ -256,6 +260,7 @@ export class Session {
     if (this.deferred.length > 0 && !this.busy) {
       const events = this.deferred;
       this.deferred = [];
+      this.landPickup();
       this.emit('events', events);
       this.emit('change', undefined);
     }
@@ -313,6 +318,7 @@ export class Session {
     }
     this.tail.push({ a: action, tick: this.tick });
     if (this.tail.length > TAIL) this.tail.splice(0, this.tail.length - TAIL);
+    this.tell(action, r.events);
     const busy = r.events.find((e) => e.e === 'busy');
     if (busy && busy.e === 'busy') {
       this.undo = before;
@@ -326,6 +332,28 @@ export class Session {
     return { ok: true, events: r.events };
   }
 
+  /** The stage-1 service hears of what the action did (GRUNT 18); it never changes what happens. */
+  private tell(action: Action, events: readonly GameEvent[]): void {
+    for (const e of events) {
+      if (e.e === 'visit') {
+        const record = slotContent(this.bundle, e.slot);
+        if (record) s1.visit(record.id);
+      } else if (e.e === 'quest') {
+        s1.stop(e.state === 'done' ? `${e.quest}:done` : e.quest);
+      }
+    }
+    if (action.t === 'gather') {
+      const node = this.bundle.instances[action.node];
+      this.pickup = node?.kind === 'resource' ? node.source : null;
+      if (!events.some((e) => e.e === 'busy')) this.landPickup();
+    }
+  }
+
+  private landPickup(): void {
+    if (this.pickup) s1.pickup(this.pickup);
+    this.pickup = null;
+  }
+
   /** A fall moves the player to the town they were last in: the walk goes on from there. */
   private wake(events: readonly GameEvent[]): void {
     const fall = events.find((e) => e.e === 'fall');
@@ -333,6 +361,7 @@ export class Session {
     this.pos = [fall.at[0], fall.at[1]];
     // what the work under way would have announced went with the outing
     this.deferred = [];
+    this.pickup = null;
     this.undo = null;
   }
 
@@ -346,6 +375,7 @@ export class Session {
     this.state = this.undo.state;
     this.tail = this.undo.tail;
     this.deferred = [];
+    this.pickup = null;
     this.undo = null;
     this.emit('change', undefined);
     this.save();

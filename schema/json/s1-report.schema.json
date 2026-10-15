@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "description": "Body of POST /api/s1/report.",
+  "type": "object",
+  "required": [
+    "id",
+    "text"
+  ],
+  "properties": {
+    "id": {
+      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+      "maxLength": 80,
+      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+      "type": "string"
+    },
+    "text": {
+      "minLength": 1,
+      "maxLength": 240,
+      "description": "A short note on the record. Kept as typed, so it is never shown unreviewed.",
+      "type": "string"
+    }
+  },
+  "$id": "https://github.com/Bobikobi/GAME/schema/json/s1-report.schema.json"
+}
