@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { handle, issueFrom, parse, resetRateLimit } from '../_feedback';
+import { handle, issueFrom, parse, resetRateLimit } from '../src/feedback/handler';
 
 const good = {
   kind: 'feedback',

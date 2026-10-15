@@ -1,8 +1,8 @@
 // POST /api/feedback: an Astro server route, so the build's one Build Output carries every function.
-// A file under the root api/ folder made Vercel deploy the static folder and the api/ functions only,
-// dropping the Astro functions (the /api/s1/ routes). The work stays in api/_feedback.ts.
+// Any file under a root api/ folder makes Vercel deploy the static folder and api/ alone and drop the
+// Astro functions (the /api/s1/ routes answered 404), so the repository keeps no root api/ folder.
 import type { APIRoute } from 'astro';
-import { handle, json } from '../../../../api/_feedback';
+import { handle, json } from '../../feedback/handler';
 
 export const prerender = false;
 
