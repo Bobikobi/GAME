@@ -1416,3 +1416,8 @@ The product owner's word (13.10): build the next three steps of the variety orde
 
 Why this order: the expedition is made of the first two, the round and the fire, so each lands small and proven before the container needs it. Rules G47-G49; the specs are NEXT.md sections 12-14; the stealth, fire and expedition rows join GAME_RULES section 8.
 **Retry when:** the first playtest shows the wolf's window too wide or too narrow (tune `pace_ms` and `eyes`, never the rule), a night kept at the screen reads as a chore (then the fire's cap and `log_ms`, or how long a night is), or the expedition's players stop at a beat the journal shows. Model: Claude Fable 5.1.
+
+## 2026-10-15 ✅ The home page carries the Web Analytics script, its only script
+
+Criterion 2 of PLATFORM.md 5.5 kept the home page free of scripts. Without the analytics script on it, a visitor who lands on the home page and leaves is never counted, so the site cannot say how many people came, where from, or how many of them went on to play. The script is Vercel's own, deferred, about 1KB and sets no cookie; the home page now carries it and nothing else, and the two home tests allow exactly that pair.
+**Retry when:** the home page's first paint or its transfer budget (criterion 4) suffers, or the project drops Vercel Web Analytics. Model: claude-opus-5-5.
