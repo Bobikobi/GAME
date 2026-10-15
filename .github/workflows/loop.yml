@@ -3,8 +3,8 @@ name: Community loop
 
 on:
   schedule:
-    # every six hours, not every hour: the pull request and review events already wake it
-    - cron: '23 */6 * * *'
+    # hourly: the repository is public, so Actions minutes are free, and the hub-data refresh below runs on it
+    - cron: '23 * * * *'
     - cron: '7 7 * * 1'
   workflow_dispatch:
     inputs:
@@ -48,6 +48,9 @@ jobs:
       issues: write
       pull-requests: write
       statuses: write
+    # only whether the deploy hook exists, so the refresh step shows as skipped until the owner adds it
+    env:
+      HUB_REFRESH: ${{ secrets.VERCEL_DEPLOY_HOOK != '' && 'on' || 'off' }}
     steps:
       # SECURITY: pull_request_target checks out the default branch, never the PR head, and no PR code is run.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -75,6 +78,35 @@ jobs:
             pnpm loop "$COMMAND"
           else
             pnpm loop proposals
+          fi
+      # The hourly refresh (docs/team/GRUNT.md item 14, PLATFORM.md 3.4): rebuild hub-data as a production build
+      # would, compare it with the deployed one, and fire the Vercel deploy hook only when the data differs.
+      # The read-only Redis token gives the same usage counts production has; without it every run would differ.
+      - name: Refresh hub-data
+        if: ${{ !cancelled() && env.HUB_REFRESH == 'on' && ((github.event_name == 'schedule' && github.event.schedule == '23 * * * *') || (github.event_name == 'workflow_dispatch' && inputs.command == 'all')) }}
+        env:
+          HUB_GITHUB_TOKEN: ${{ github.token }}
+          KV_REST_API_URL: ${{ secrets.KV_REST_API_URL }}
+          KV_REST_API_READ_ONLY_TOKEN: ${{ secrets.KV_REST_API_READ_ONLY_TOKEN }}
+          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+          DEPLOYED: https://theopenfold.vercel.app/api/hub-data.json
+        run: |
+          if [ -z "$KV_REST_API_URL" ] || [ -z "$KV_REST_API_READ_ONLY_TOKEN" ]; then
+            echo "::warning::hub-data not compared: the KV_REST_API_URL and KV_REST_API_READ_ONLY_TOKEN secrets are missing"
+            exit 0
+          fi
+          pnpm hub:data --out "$RUNNER_TEMP/hub-built.json"
+          if curl -fsS --retry 2 -o "$RUNNER_TEMP/hub-deployed.json" "$DEPLOYED"; then
+            status=0
+            pnpm --silent hub:same "$RUNNER_TEMP/hub-built.json" "$RUNNER_TEMP/hub-deployed.json" || status=$?
+            [ "$status" -le 1 ] || exit "$status"
+          else
+            echo "hub-data changed: the deployed document could not be read"
+            status=1
+          fi
+          if [ "$status" -eq 1 ]; then
+            curl -fsS -X POST -o /dev/null "$VERCEL_DEPLOY_HOOK"
+            echo "deploy hook fired"
           fi
 
   credits:
