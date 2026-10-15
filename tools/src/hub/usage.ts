@@ -1,6 +1,6 @@
 /**
  * The `usage` section of hub-data (docs/team/GRUNT.md, item 17): the stage-1 service's counters, read with the
- * two Upstash environment names. Without them `usage` and `sources.usage` stay null, and a section whose source
+ * Upstash environment names (or the read-only token). Without them `usage` and `sources.usage` stay null, and a section whose source
  * is missing is never guessed. The keys are the ones the endpoints write (schema/src/s1.ts).
  */
 import { Redis } from '@upstash/redis';
@@ -20,9 +20,11 @@ export interface UsageReader {
 }
 
 export function upstashReader(env: NodeJS.ProcessEnv = process.env): UsageReader | null {
-  // the Vercel Marketplace integration names the pair KV_REST_API_*; a database linked by hand, UPSTASH_REDIS_REST_*
-  const url = env['UPSTASH_REDIS_REST_URL'] ?? env['KV_REST_API_URL'];
-  const token = env['UPSTASH_REDIS_REST_TOKEN'] ?? env['KV_REST_API_TOKEN'];
+  // the Vercel Marketplace integration names the pair KV_REST_API_*; a database linked by hand, UPSTASH_REDIS_REST_*.
+  // Reading needs no write right: the hourly loop run holds only the read-only token (GRUNT item 14). An empty
+  // value counts as missing, since a workflow passes an unset secret as ''
+  const url = env['UPSTASH_REDIS_REST_URL'] || env['KV_REST_API_URL'];
+  const token = env['UPSTASH_REDIS_REST_TOKEN'] || env['KV_REST_API_TOKEN'] || env['KV_REST_API_READ_ONLY_TOKEN'];
   if (!url || !token) return null;
   const redis = new Redis({ url, token });
   return {
