@@ -16,9 +16,10 @@
  * luck only tilts it, and a miss keeps something. The value table prices a
  * recipe at perfect execution, and nothing lifts a craft above it (R9).
  */
-import type { Bundle, RecipeDef, Verb } from './bundle';
+import type { Bundle, QuestDef, RecipeDef, Verb } from './bundle';
 import { canonical } from './canon';
 import { bitesAfter, distanceTo, harmOf, hazardsOf, isSafe, isTownTile, reappearTile, sees, townAt, windowOpen, windowShuts } from './danger';
+import { bellTicks, inside as insideExpedition, lastBellAt, visitNight, windowOpen as expeditionWindowOpen } from './expedition';
 import { clamp, idiv, idivUp, mulDiv, mulDivUp } from './num';
 import { drawBasisPoints } from './rng';
 import {
@@ -98,7 +99,10 @@ export type GameEvent =
   /** health went down: `by` is a hazard kind or "food"; `id` the hazard prop; `hp` what is left, in milli-points */
   | { e: 'hurt'; by: string; id?: string; hp: number }
   /** health reached zero (G33): the player fell at `from`, lost `lost` (what the outing brought), and woke at `at` */
-  | { e: 'fall'; from: Tile; at: Tile; lost: { item: string; qty: number }[] };
+  | { e: 'fall'; from: Tile; at: Tile; lost: { item: string; qty: number }[] }
+  | { e: 'bell'; expedition: string; n: number }
+  | { e: 'walked_out'; expedition: string }
+  | { e: 'climax'; expedition: string };
 
 export type StepResult = { ok: true; state: State; events: GameEvent[] } | { ok: false; error: string };
 
@@ -200,18 +204,25 @@ interface Ctx {
   events: GameEvent[];
   /** something took health in this step: only then can zero health be a fall (G33) */
   hurt: boolean;
+  /** the player fell in this step (G33) */
+  fell: boolean;
+  /** the expedition visit whose last bell rang since the step before, and that bell: the world acts on the player as it stood at that bell (G49) */
+  walkOut?: { expedition: string; bell: number };
 }
 
 export function step(bundle: Bundle, state: State, action: Action, tick: number): StepResult {
   if (!Number.isSafeInteger(tick) || tick < state.tick) return { ok: false, error: 'Time cannot run backwards.' };
   if (state.content !== bundle.tag) return { ok: false, error: 'This save belongs to different game content.' };
-  const ctx: Ctx = { b: bundle, s: structuredClone(state), tick, events: [], hurt: false };
+  const ctx: Ctx = { b: bundle, s: structuredClone(state), tick, events: [], hurt: false, fell: false };
   // Quest reads use the state's clock; advance the clone before an explicit or automatic turn-in reads it.
   ctx.s.tick = tick;
   ctx.s.player.fires ??= {};
+  ctx.s.player.expeditions ??= {};
   try {
+    ctx.walkOut = walkOutDue(ctx);
     apply(ctx, action);
     autoQuests(ctx);
+    expeditions(ctx);
     return { ok: true, state: ctx.s, events: ctx.events };
   } catch (err) {
     if (err instanceof Refusal) return { ok: false, error: err.message };
@@ -251,6 +262,8 @@ function apply(ctx: Ctx, a: Action): void {
   if (a.t === 'move') return moveTo(ctx, a.at);
   // wherever the action is made, the world acts on the player first; a fall ends the step and the action does not happen
   if (arrive(ctx, tileOf(a, s.player.at))) return;
+  // past an expedition's last bell the mist walks the player out first: the action is not made (G49)
+  if (ctx.walkOut !== undefined) return;
   perform(ctx, a);
   // a camp part built under their feet makes this tile safe: the hunt and the outing end with it
   if (isSafe(ctx.b, s, s.player.at)) {
@@ -703,6 +716,14 @@ function turnIn(ctx: Ctx, questId: string, at: Tile | undefined, explicit: boole
     s.ledger.minted += reward.gold_mg;
     ctx.events.push({ e: 'gold', delta: reward.gold_mg });
   }
+  applyReward(ctx, reward);
+  s.player.quests[questId] = 'done';
+  ctx.events.push({ e: 'quest', quest: questId, state: 'done' });
+}
+
+/** The non-currency part shared by quest and expedition rewards. */
+function applyReward(ctx: Ctx, reward: Pick<QuestDef['reward'], 'items' | 'recipes' | 'opens'>): void {
+  const { b, s } = ctx;
   for (const stack of reward.items ?? []) addItem(ctx, rewardItem(b, s.player.starter, stack), stack.qty);
   for (const recipe of reward.recipes ?? []) learnRecipe(ctx, recipe);
   for (const place of reward.opens ?? []) {
@@ -710,8 +731,6 @@ function turnIn(ctx: Ctx, questId: string, at: Tile | undefined, explicit: boole
     s.player.restored = [...s.player.restored, place].sort();
     ctx.events.push({ e: 'restore', restore: place });
   }
-  s.player.quests[questId] = 'done';
-  ctx.events.push({ e: 'quest', quest: questId, state: 'done' });
 }
 
 /** A quest that names a starter is offered to a character of that starter only. */
@@ -742,7 +761,10 @@ function autoQuests(ctx: Ctx): void {
       const q = b.quests[id]!;
       if (q.giver || !offeredTo(q, s)) continue;
       const state = s.player.quests[id];
-      if (!state && (q.requires ?? []).every((r) => s.player.quests[r] === 'done')) {
+      const chains = Object.values(b.expeditions).filter((x) => x.chain.includes(id));
+      const chainOpen =
+        chains.length === 0 || chains.some((x) => insideExpedition(b, s, x) && expeditionWindowOpen(b, x, ctx.tick));
+      if (!state && chainOpen && (q.requires ?? []).every((r) => s.player.quests[r] === 'done')) {
         s.player.quests[id] = 'active';
         ctx.events.push({ e: 'quest', quest: id, state: 'active' });
         moved = true;
@@ -752,6 +774,87 @@ function autoQuests(ctx: Ctx): void {
       }
     }
     if (!moved) return;
+  }
+}
+
+/**
+ * The visit whose last bell rang since the step before, found before the action
+ * runs: the player stood inside at the end of that step (`entered` is set) and
+ * the last bell of the visit's night has rung. Every new tile is reported, so
+ * the player stood there when the bell rang, and the mist walked them out then
+ * (G49), wherever this action is made: inside the place or a step beyond it.
+ * The world acts on the player as they stood at that bell (a hunt bites for the
+ * time up to it only, nothing wakes under the tile reported after it), and
+ * `expeditions` sets them on the exit. Of two such visits the earlier bell ends
+ * both.
+ */
+function walkOutDue(ctx: Ctx): { expedition: string; bell: number } | undefined {
+  const { b, s, tick } = ctx;
+  let due: { expedition: string; bell: number } | undefined;
+  for (const x of Object.values(b.expeditions)) {
+    const entered = s.player.expeditions[x.id]?.entered;
+    if (entered === undefined) continue;
+    const bell = lastBellAt(b, x, visitNight(b, x, entered));
+    if (tick >= bell && (due === undefined || bell < due.bell)) due = { expedition: x.id, bell };
+  }
+  return due;
+}
+
+/** Bells, soft failure and the once-only climax, after quests have advanced for this action. */
+function expeditions(ctx: Ctx): void {
+  const { b, s, tick } = ctx;
+  // The visit whose last bell has rung walks out first, wherever the action was made.
+  // After a fall in this step the player wakes in town instead, and the visit just ends.
+  const ending = ctx.fell || ctx.walkOut === undefined ? undefined : b.expeditions[ctx.walkOut.expedition];
+  const others = Object.values(b.expeditions).filter((x) => x !== ending);
+  for (const x of ending === undefined ? others : [ending, ...others]) {
+    let progress = s.player.expeditions[x.id];
+    if (x !== ending && !insideExpedition(b, s, x)) {
+      if (progress) {
+        delete progress.entered;
+        progress.rung = 0;
+      }
+      continue;
+    }
+
+    progress ??= s.player.expeditions[x.id] = { climax: false, rung: 0 };
+    progress.entered ??= tick;
+    // A visit counts the bells of one night: its own until that night's last bell, else the coming one.
+    // Bells that rang before the visit began are counted as rung and never reported.
+    const bells = bellTicks(b, x, visitNight(b, x, progress.entered));
+    const entered = progress.entered;
+    const rungNow = bells.filter((bell) => bell <= tick).length;
+    progress.rung = Math.max(progress.rung, bells.filter((bell) => bell <= entered).length);
+    for (let n = progress.rung + 1; n <= rungNow; n++) {
+      ctx.events.push({ e: 'bell', expedition: x.id, n });
+      progress.rung = n;
+    }
+
+    // At or after that night's last bell, however late the next action comes and wherever it is made, the player is walked out.
+    if (tick >= bells[bells.length - 1]!) {
+      const exit = findSlot(b.map, x.exit);
+      if (exit) s.player.at = [exit.x, exit.y];
+      s.player.movedAt = tick;
+      s.player.chase = null;
+      s.player.outing = null;
+      ctx.events.push({ e: 'walked_out', expedition: x.id });
+      delete progress.entered;
+      progress.rung = 0;
+      continue;
+    }
+
+    const climax = findSlot(b.map, x.climax.slot);
+    if (
+      !progress.climax &&
+      expeditionWindowOpen(b, x, tick) &&
+      climax !== undefined &&
+      inRect(s.player.at[0], s.player.at[1], climax) &&
+      x.chain.every((id) => s.player.quests[id] === 'done')
+    ) {
+      progress.climax = true;
+      ctx.events.push({ e: 'climax', expedition: x.id });
+      applyReward(ctx, x.reward);
+    }
   }
 }
 
@@ -904,7 +1007,8 @@ function arrive(ctx: Ctx, at: Tile): boolean {
     if (isTownTile(b, at)) p.town = townAt(b, at) || p.town;
   } else {
     p.outing ??= { gained: {}, solved: [], visited: [] };
-    strike(ctx, before, at);
+    // past an expedition's last bell the mist walks the player out: nothing wakes under this tile (G49)
+    if (ctx.walkOut === undefined) strike(ctx, before, at);
   }
   return fallIfDown(ctx);
 }
@@ -935,8 +1039,8 @@ function chaseBites(ctx: Ctx): void {
     return;
   }
   const shut = windowShuts(b, h, chase.since);
-  // the night's last tick is the one before `shut`, which is the first tick of day
-  const due = bitesAfter(b, Math.min(tick, shut - 1) - chase.since);
+  // the night's last tick is the one before `shut`, which is the first tick of day; a walk-out stops the clock at its bell (G49)
+  const due = bitesAfter(b, Math.min(tick, shut - 1, ctx.walkOut?.bell ?? tick) - chase.since);
   if (due > chase.bites) {
     hurt(ctx, (due - chase.bites) * harmOf(b, satietyCap(b, s), 'predator'), 'predator', h.id);
     chase.bites = due;
@@ -990,6 +1094,7 @@ function fall(ctx: Ctx): void {
   p.satietyAt = ctx.tick;
   p.chase = null;
   p.outing = null;
+  ctx.fell = true;
   ctx.events.push({ e: 'fall', from, at, lost });
 }
 

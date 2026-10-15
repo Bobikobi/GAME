@@ -4,7 +4,8 @@
  * and the arithmetic of a chase. Pure functions of the bundle and the state;
  * step.ts does the changing.
  */
-import type { Bundle } from './bundle';
+import type { Bundle, ExpeditionDef } from './bundle';
+import { windowOpen as expeditionWindowOpen } from './expedition';
 import { idiv, mulDiv } from './num';
 import { draw } from './rng';
 import { type State, isNight, lastDusk, nightEnds } from './state';
@@ -111,9 +112,12 @@ export function sees(bundle: Bundle, hazard: Hazard, tick: number, at: Tile): bo
   return ahead >= 1 && ahead <= hazard.eyes && 2 * side <= ahead;
 }
 
-/** Whether the hazard acts at this tick. Outside its window it is harmless. */
-export function windowOpen(bundle: Bundle, hazard: Hazard, tick: number): boolean {
-  return hazard.window.includes('night') && isNight(bundle, tick);
+/** Whether a hazard acts or an expedition is open at this tick. */
+export function windowOpen(bundle: Bundle, timed: Hazard, tick: number): boolean;
+export function windowOpen(bundle: Bundle, timed: ExpeditionDef, tick: number): boolean;
+export function windowOpen(bundle: Bundle, timed: Hazard | ExpeditionDef, tick: number): boolean {
+  if (!Array.isArray(timed.window)) return expeditionWindowOpen(bundle, timed as ExpeditionDef, tick);
+  return timed.window.includes('night') && isNight(bundle, tick);
 }
 
 /** The first tick from `tick` on at which the hazard's window is shut (the tick itself when it already is). */

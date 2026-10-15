@@ -193,6 +193,16 @@ describe('session persistence', () => {
     expect(Session.restore(bundle)?.state.player.fires).toEqual({});
   });
 
+  test('loads a save from before expeditions', () => {
+    startedSession();
+    const save = JSON.parse(storage.getItem(SAVE_KEY)!) as { state: string };
+    const state = JSON.parse(save.state) as { player: Record<string, unknown> };
+    delete state.player.expeditions;
+    storage.setItem(SAVE_KEY, JSON.stringify({ ...save, state: JSON.stringify(state) }));
+
+    expect(Session.restore(bundle)?.state.player.expeditions).toEqual({});
+  });
+
   test('a new world version teaches its new start recipes and drops what is gone', () => {
     const session = startedSession();
     session.state.player.tries = { 'core/berry-mash': 2, 'x/gone': 1 };
