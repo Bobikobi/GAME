@@ -451,7 +451,7 @@ package exists (GRUNT item 4).
 | `GITHUB_TOKEN` | provided by Actions | the loop |
 | `HUB_GITHUB_TOKEN` | Vercel project env (read-only token) | `pnpm hub:data` in Vercel builds |
 | `VERCEL_DEPLOY_HOOK` | repository secret | the hourly refresh |
-| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Vercel project env, set by the Marketplace integration | the S-1 functions |
+| `KV_REST_API_URL`, `KV_REST_API_TOKEN` (or `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`) | Vercel project env, set by the Marketplace integration (the `KV_` names) | the S-1 functions |
 
 The repository holds `.env.example` with names only. Nothing else, ever.
 
