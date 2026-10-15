@@ -531,6 +531,10 @@ export const QuestStep = Type.Union([
   Type.Object({ kind: Type.Literal('build'), camp: Id }, { additionalProperties: false }),
   Type.Object({ kind: Type.Literal('visit'), slot: Id }, { additionalProperties: false }),
   Type.Object(
+    { kind: Type.Literal('tend'), fire: Id },
+    { additionalProperties: false, description: 'Keep this fire burning without a gap from dusk through dawn.' },
+  ),
+  Type.Object(
     { kind: Type.Literal('find'), item: Id, clue: Clue },
     {
       additionalProperties: false,
@@ -815,6 +819,14 @@ export const ParamsBody = Type.Object(
       ...Bounded,
       description: 'Work takes half as long again while health is at or below this share of its cap, in percent. 0 slows it only when health is empty (G32).',
     },
+    fire: Type.Object(
+      {
+        cap: { ...Bounded, description: 'Most logs of burn time a fire may hold ahead of the game tick.' },
+        log_ms: { ...Bounded, description: 'Game milliseconds one wood item adds to a fire.' },
+        warn_min: { ...Bounded, description: 'Game minutes before a burning fire goes out when its warning is shown.' },
+      },
+      { additionalProperties: false, description: 'A tended fire uses the game tick, which pauses while the player is away.' },
+    ),
     hazard: Type.Object(
       {
         predator: Type.Object(
@@ -918,6 +930,11 @@ export const MapBody = Type.Object(
               description: 'Hides a player standing on this non-solid prop from a predator\'s eyes, but never from an adjacent predator.',
             }),
           ),
+          fire: Type.Optional(Type.Literal(true, { description: 'A fire the player may feed by hand. It needs an id.' })),
+          lit_by: Type.Optional({
+            ...Id,
+            description: 'Id of the fire prop while whose fire burns this prop\'s note and sign may be read.',
+          }),
           sign: Type.Optional({ ...Id, description: 'Makes the prop a readable sign that names whoever filled this slot, or says it awaits restoration.' }),
           note: Type.Optional({ ...Text, description: 'A line shown when the player looks at this prop, for example an old inscription.' }),
           hazard: Type.Optional(

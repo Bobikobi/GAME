@@ -4228,6 +4228,27 @@
                   },
                   {
                     "additionalProperties": false,
+                    "description": "Keep this fire burning without a gap from dusk through dawn.",
+                    "type": "object",
+                    "required": [
+                      "kind",
+                      "fire"
+                    ],
+                    "properties": {
+                      "kind": {
+                        "const": "tend",
+                        "type": "string"
+                      },
+                      "fire": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "additionalProperties": false,
                     "description": "Bring one of an item that is found, not farmed: only digging gives it, or one timed plant (a resource with hours) that nothing else gives, makes or sells. The journal shows the clue, not a count, until the item is in the bag.",
                     "type": "object",
                     "required": [
@@ -9129,6 +9150,7 @@
             "day_length_ms",
             "walk_step_ms",
             "hp_low_pct",
+            "fire",
             "hazard",
             "bag_base",
             "starting_gold_mg",
@@ -9795,6 +9817,99 @@
                 }
               },
               "description": "Work takes half as long again while health is at or below this share of its cap, in percent. 0 slows it only when health is empty (G32)."
+            },
+            "fire": {
+              "additionalProperties": false,
+              "description": "A tended fire uses the game tick, which pauses while the player is away.",
+              "type": "object",
+              "required": [
+                "cap",
+                "log_ms",
+                "warn_min"
+              ],
+              "properties": {
+                "cap": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Most logs of burn time a fire may hold ahead of the game tick."
+                },
+                "log_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game milliseconds one wood item adds to a fire."
+                },
+                "warn_min": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game minutes before a burning fire goes out when its warning is shown."
+                }
+              }
             },
             "hazard": {
               "additionalProperties": false,
@@ -11502,6 +11617,17 @@
                   "cover": {
                     "description": "Hides a player standing on this non-solid prop from a predator's eyes, but never from an adjacent predator.",
                     "type": "boolean"
+                  },
+                  "fire": {
+                    "description": "A fire the player may feed by hand. It needs an id.",
+                    "const": true,
+                    "type": "boolean"
+                  },
+                  "lit_by": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Id of the fire prop while whose fire burns this prop's note and sign may be read.",
+                    "type": "string"
                   },
                   "sign": {
                     "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",

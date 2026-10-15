@@ -647,6 +647,17 @@
                 "description": "Hides a player standing on this non-solid prop from a predator's eyes, but never from an adjacent predator.",
                 "type": "boolean"
               },
+              "fire": {
+                "description": "A fire the player may feed by hand. It needs an id.",
+                "const": true,
+                "type": "boolean"
+              },
+              "lit_by": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Id of the fire prop while whose fire burns this prop's note and sign may be read.",
+                "type": "string"
+              },
               "sign": {
                 "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
                 "maxLength": 80,

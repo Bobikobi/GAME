@@ -53,6 +53,9 @@ import type { WorkKind } from '../ui/ui';
 import { type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, treasureKind } from '../work';
 
 const DEPTH = { ground: 0, restore: 1, flat: 2, shadow: 2.5, dig: 3, puff: 3.5, mist: 8000, fog: 9000, motes: 9100, shade: 9500, glow: 9600, fx: 9800, marker: 9850 };
+/** the lantern's pool of light at night, in world px: clear inside, a short edge in whole-pixel steps, the dark outside */
+const LIGHT = { r: 34, edge: 2, dark: 0.7, tint: 0xf0dcc0 };
+const HOLE = 2 * (LIGHT.r + LIGHT.edge + 1);
 const NEIGHBOURS: readonly [number, number][] = [
   [0, -1], [1, 0], [0, 1], [-1, 0], [1, -1], [1, 1], [-1, 1], [-1, -1],
 ];
@@ -214,13 +217,24 @@ export class WorldScene extends Phaser.Scene {
   private bar!: Phaser.GameObjects.Graphics;
   private marker!: Phaser.GameObjects.Image;
   private mist!: Phaser.GameObjects.TileSprite;
+  /** the mist and the fogs as one layer; the player is cut out of it and of the dark frame (WebGL) */
+  private veil!: Phaser.GameObjects.Container;
+  /** the player's shape in the stencil that keeps the haze and the frame off the player, a copy of every frame */
+  private cutout: Phaser.GameObjects.Sprite | undefined;
+  /** where the cut ends while no lantern burns; with the lantern lit it runs on through the night and the glow */
+  private uncut: Phaser.GameObjects.Stencil | undefined;
+  /** the night outside the lantern's light, around a hole the size of the light */
+  private dark!: Phaser.GameObjects.Container;
   private motes!: Emitter;
   private flies!: Emitter;
   private butterflies: Emitter | undefined;
   private leaves: Emitter | undefined;
   private bursts = new Map<string, Emitter>();
   private puffs = new Map<string, Emitter>();
-  private vignette: Phaser.Filters.Vignette | undefined;
+  /** the old picture's dark frame, drawn under the cut-out instead of as a filter over everything (WebGL) */
+  private vignette: Phaser.GameObjects.Image | undefined;
+  private frameLook = { strength: 0.3, radius: 0.8 };
+  private frameKey = '';
   private nodes = new Map<string, Phaser.GameObjects.Sprite>();
   private nodeShadows = new Map<string, Phaser.GameObjects.Image>();
   private digs = new Map<string, Phaser.GameObjects.Image>();
@@ -230,6 +244,7 @@ export class WorldScene extends Phaser.Scene {
   private campGlows = new Map<string, Glow>();
   private embers = new Map<string, Emitter>();
   private fogs: Phaser.GameObjects.TileSprite[] = [];
+  private fogMotes: Emitter[] = [];
   private dapples: Phaser.GameObjects.TileSprite[] = [];
   private cycles: Cycle[] = [];
   private blinks: Blink[] = [];
@@ -313,6 +328,10 @@ export class WorldScene extends Phaser.Scene {
     if (RICH.light) this.buildDapple();
     if (RICH.detail) this.playerShadow = this.shadow(0, 0, 1).setVisible(false);
     this.player = this.add.sprite(0, 0, this.playerFrame('down').key, 1).setOrigin(0.5, 1).setVisible(false);
+    // the haze is one layer over the valley; addFilters cuts the player out of it, so the mist covers the
+    // ground, the props and the other figures but never the player or what the player holds
+    this.events.on(Phaser.Scenes.Events.POST_UPDATE, () => this.cutPlayer());
+    this.veil = this.add.container(0, 0, [this.mist, ...this.fogs, ...this.fogMotes]).setDepth(DEPTH.mist);
     this.bar = this.add.graphics().setDepth(DEPTH.fx);
     this.marker = this.add.image(0, 0, 'fx-arrow').setOrigin(0.5, 1).setDepth(DEPTH.marker).setVisible(false);
     this.tweens.add({ targets: this.marker, displayOriginY: 7, duration: 380, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
@@ -321,6 +340,22 @@ export class WorldScene extends Phaser.Scene {
       this.dusk = this.add.rectangle(0, 0, 10, 10, PALETTE.gold, 0).setOrigin(0).setScrollFactor(0).setDepth(DEPTH.shade - 1).setBlendMode(Phaser.BlendModes.MULTIPLY);
     }
     this.shade = this.add.rectangle(0, 0, 10, 10, 0x172a52, 0).setOrigin(0).setScrollFactor(0).setDepth(DEPTH.shade);
+    // the night outside the lantern's light: the hole is the light, the dark reaches past any screen
+    const far = 2048;
+    const h = HOLE / 2;
+    // multiplied in, so what lies out there keeps its colour and only goes dim
+    const multiply = Phaser.BlendModes.MULTIPLY;
+    const ink = (x: number, y: number, w: number, hh: number) => this.add.rectangle(x, y, w, hh, PALETTE.ink).setOrigin(0).setBlendMode(multiply);
+    this.dark = this.add
+      .container(0, 0, [
+        this.add.image(0, 0, 'fx-dark').setBlendMode(multiply),
+        ink(-far, -far, 2 * far, far - h),
+        ink(-far, h, 2 * far, far - h),
+        ink(-far, -h, far - h, HOLE),
+        ink(h, -h, far - h, HOLE),
+      ])
+      .setDepth(DEPTH.shade + 10)
+      .setVisible(false);
     const cam = this.cameras.main;
     cam.setBounds(0, 0, this.b.map.width * T, this.b.map.height * T);
     cam.setRoundPixels(true);
@@ -433,6 +468,16 @@ export class WorldScene extends Phaser.Scene {
       disc(12, PALETTE.gold, 0.1);
       disc(8, PALETTE.gold, 0.16);
       disc(5, PALETTE.yellow, 0.24);
+    });
+    // the dark around the lantern's light: clear inside, then an edge of two whole-pixel steps, opaque at the border
+    make('fx-dark', HOLE, HOLE, () => {
+      const c = HOLE / 2;
+      for (let y = 0; y < HOLE; y++) {
+        for (let x = 0; x < HOLE; x++) {
+          const step = Math.floor(Math.hypot(x + 0.5 - c, y + 0.5 - c) - LIGHT.r) + 1;
+          if (step > 0) g.fillStyle(PALETTE.ink, Math.min(1, step / (LIGHT.edge + 1))).fillRect(x, y, 1, 1);
+        }
+      }
     });
     if (RICH.light) {
       // specks of light through the leaves, tiled over the groves
@@ -787,6 +832,7 @@ export class WorldScene extends Phaser.Scene {
             emitting: false,
           })
           .setDepth(DEPTH.fog + 1);
+        this.fogMotes.push(emitter);
         this.locals.push({ emitter, rect });
       }
     }
@@ -928,11 +974,64 @@ export class WorldScene extends Phaser.Scene {
     try {
       const cm = cam.filters.external.addColorMatrix();
       cm.colorMatrix.saturate(-0.16).contrast(0.07, true);
-      this.vignette = cam.filters.external.addVignette(0.5, 0.5, 0.8, 0.3, PALETTE.ink);
     } catch {
       // a renderer without filters still plays; it only looks newer
-      this.vignette = undefined;
+      return;
     }
+    // the player is cut out of the haze and the frame: a stencil of the player's shape goes down before the
+    // mist, and is cleared once the frame is drawn. A filter on the haze layer would do it too, but a filtered
+    // see-through layer comes out brighter than it is
+    this.cutout = new Phaser.GameObjects.Sprite(this, 0, 0, this.player.texture.key).setOrigin(0.5, 1).setVisible(false);
+    this.add.stencil(0, 0, [this.cutout], { stencilAlphaStrategy: 0.5 }).setDepth(DEPTH.mist - 0.5);
+    this.vignette = this.add.image(0, 0, '__DEFAULT').setScrollFactor(0).setDepth(DEPTH.fog + 2);
+    this.uncut = this.add.stencil(0, 0, [], { stencilLayerMode: 'clear' }).setDepth(DEPTH.fog + 3);
+    this.add.stencil(0, 0, [], { stencilLayerMode: 'clear' }).setDepth(DEPTH.glow + 1);
+  }
+
+  /** The stencil's copy of the player takes the player's frame, place, flip and crop, every frame. */
+  private cutPlayer(): void {
+    const c = this.cutout;
+    if (!c) return;
+    const p = this.player;
+    c.setVisible(p.visible).setTexture(p.texture.key, p.frame.name).setPosition(p.x, p.y).setFlipX(p.flipX).setAngle(p.angle);
+  }
+
+  /**
+   * The dark frame closing in from the edges: the Vignette filter's curve (a sine of the distance from the
+   * middle, toward ink), drawn at a quarter of the screen and smoothed up. Redrawn only when it changes.
+   */
+  private drawFrame(): void {
+    const img = this.vignette;
+    if (!img) return;
+    const { strength, radius } = this.frameLook;
+    const w = Math.max(8, Math.ceil(this.scale.width / 4));
+    const h = Math.max(8, Math.ceil(this.scale.height / 4));
+    const key = `${w}x${h}:${strength.toFixed(2)}:${radius.toFixed(2)}`;
+    if (key === this.frameKey) return;
+    this.frameKey = key;
+    let tex = this.textures.exists('fx-frame') ? (this.textures.get('fx-frame') as Phaser.Textures.CanvasTexture) : undefined;
+    if (!tex) {
+      tex = this.textures.createCanvas('fx-frame', w, h) ?? undefined;
+      if (!tex) return;
+      tex.setFilter(Phaser.Textures.FilterMode.LINEAR);
+    } else if (tex.width !== w || tex.height !== h) tex.setSize(w, h);
+    const ctx = tex.getContext();
+    const data = ctx.createImageData(w, h);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const d = Math.hypot((x + 0.5) / w - 0.5, (y + 0.5) / h - 0.5);
+        const i = 4 * (y * w + x);
+        data.data[i] = (PALETTE.ink >> 16) & 255;
+        data.data[i + 1] = (PALETTE.ink >> 8) & 255;
+        data.data[i + 2] = PALETTE.ink & 255;
+        data.data[i + 3] = Math.round(255 * (d <= radius ? Math.max(0, Math.sin((d / radius) * 3.14 * strength)) : 1));
+      }
+    }
+    ctx.putImageData(data, 0, 0);
+    tex.refresh();
+    const zoom = this.cameras.main.zoom;
+    // a fixed layer is still zoomed about the middle of the screen, so it is sized down by the zoom
+    img.setTexture('fx-frame').setPosition(this.scale.width / 2, this.scale.height / 2).setDisplaySize(this.scale.width / zoom, this.scale.height / zoom);
   }
 
   // ------------------------------------------------------------ session
@@ -1422,10 +1521,8 @@ export class WorldScene extends Phaser.Scene {
     this.night = m >= 21 || m < 4 ? 1 : m >= 19 ? (m - 19) / 2 : m < 6 ? (6 - m) / 2 : 0;
     this.shade.setFillStyle(0x172a52, 0.5 * this.night);
     this.mist.setAlpha(0.08 + 0.16 * this.night);
-    if (this.vignette) {
-      this.vignette.strength = 0.3 + (RICH.light ? 0.45 : 0.3) * this.night;
-      this.vignette.radius = 0.8 - 0.15 * this.night;
-    }
+    this.frameLook = { strength: 0.3 + (RICH.light ? 0.45 : 0.3) * this.night, radius: 0.8 - 0.15 * this.night };
+    this.drawFrame();
     if (this.dusk) {
       // gold over the valley around 20:00 and again around 05:30; the kernel's hours are untouched
       this.dusk.setFillStyle(PALETTE.gold, 0.4 * Math.max(warmth(m, 20), warmth(m, 5.5)));
@@ -1745,9 +1842,18 @@ export class WorldScene extends Phaser.Scene {
     if (!this.lantern) return;
     const lit = !this.falling && this.lanternFor !== undefined && lanternNight(this.b, s.state, s.pos, s.tick) === this.lanternFor;
     this.lantern.setVisible(lit);
+    this.dark.setVisible(lit);
+    if (this.cutout) {
+      // the lantern lights the one who holds it: no night, no dark and no glow wash over the player, only its warmth
+      this.uncut?.setVisible(!lit);
+      if (lit) this.player.setTint(LIGHT.tint);
+      else this.player.clearTint();
+    }
     if (lit) {
       const flicker = 0.5 + 0.5 * Math.sin(this.time.now / 173) * Math.sin(this.time.now / 419);
       this.lantern.setPosition(this.player.x, this.player.y - 10).setAlpha(0.85 + 0.15 * flicker);
+      // whole pixels, so the edge of the light stays one clean step
+      this.dark.setPosition(Math.round(this.player.x), Math.round(this.player.y - 10)).setAlpha(LIGHT.dark * this.night);
     }
   }
 
@@ -1786,6 +1892,7 @@ export class WorldScene extends Phaser.Scene {
         const sunk = Math.round(k * height);
         // the part below the ground line is cut away as the body goes down
         this.player.setY(baseY + sunk).setCrop(0, 0, this.player.width, height - sunk);
+        this.cutout?.setCrop(0, 0, this.player.width, height - sunk);
         this.playerShadow?.setAlpha(SHADOW_ALPHA * (1 - k));
         for (const eye of eyes) eye.setY(top + 6 + sunk).setVisible(sunk < 6);
       },
@@ -1794,6 +1901,7 @@ export class WorldScene extends Phaser.Scene {
         this.cameras.main.fadeOut(300, 27, 26, 46);
         this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
           this.player.setCrop();
+          this.cutout?.setCrop();
           this.playerShadow?.setAlpha(SHADOW_ALPHA);
           s.facing = 'down';
           this.placePlayer(to[0], to[1]);
@@ -2110,6 +2218,7 @@ export class WorldScene extends Phaser.Scene {
       title: content.title,
       lines,
       empty: false,
+      record: content.id,
       creator: {
         name,
         role: profile?.role,
@@ -2132,6 +2241,8 @@ export class WorldScene extends Phaser.Scene {
     this.cameras.main.setZoom(zoom);
     this.shade.setSize(w, h);
     this.dusk?.setSize(w, h);
+    this.frameKey = '';
+    this.drawFrame();
   }
 
   /** Where a tile is on the page, for UI that points at the world. */
@@ -2144,6 +2255,8 @@ export interface SignInfo {
   title: string;
   lines: string[];
   empty: boolean;
+  /** the id of the record that fills the place */
+  record?: string;
   creator?: {
     name: string;
     role?: string;

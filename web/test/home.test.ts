@@ -4,6 +4,10 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+/** The page without the Vercel Web Analytics pair (its queue stub and its loader), the only scripts the home page may carry. */
+const withoutAnalytics = (page: string): string =>
+  page.replace(/<script>\s*window\.va =[\s\S]*?<\/script>/, '').replace('<script defer src="/_vercel/insights/script.js"></script>', '');
+
 const ROOT = join(import.meta.dirname, '../..');
 const DIST = join(ROOT, 'web/dist');
 const html = readFileSync(join(DIST, 'index.html'), 'utf8');
@@ -15,8 +19,9 @@ const size = (path: string): number => statSync(join(DIST, path)).size;
 const files = (dir: string): string[] => (existsSync(join(DIST, dir)) ? readdirSync(join(DIST, dir)).map((f) => `${dir}/${f}`) : []);
 
 describe('the home page', () => {
-  it('has no script and no inline style attribute', () => {
-    expect(html).not.toContain('<script');
+  it('has no script but Vercel Web Analytics, and no inline style attribute', () => {
+    expect(html).toContain('<script defer src="/_vercel/insights/script.js"></script>');
+    expect(withoutAnalytics(html)).not.toContain('<script');
     expect(html).not.toMatch(/\sstyle="/);
   });
 
