@@ -20,8 +20,9 @@ export interface UsageReader {
 }
 
 export function upstashReader(env: NodeJS.ProcessEnv = process.env): UsageReader | null {
-  const url = env['UPSTASH_REDIS_REST_URL'];
-  const token = env['UPSTASH_REDIS_REST_TOKEN'];
+  // the Vercel Marketplace integration names the pair KV_REST_API_*; a database linked by hand, UPSTASH_REDIS_REST_*
+  const url = env['UPSTASH_REDIS_REST_URL'] ?? env['KV_REST_API_URL'];
+  const token = env['UPSTASH_REDIS_REST_TOKEN'] ?? env['KV_REST_API_TOKEN'];
   if (!url || !token) return null;
   const redis = new Redis({ url, token });
   return {
