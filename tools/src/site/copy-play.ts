@@ -43,3 +43,12 @@ if (show3dDoor(REPO_ROOT)) {
 
 copy(join(REPO_ROOT, 'schema/json'), join(site, 'api/schema'), (name) => name.endsWith('.schema.json'));
 console.log('copied schema/json to web/dist/api/schema/');
+
+// The Vercel adapter (GRUNT item 17) copied the static pages into the Build Output before the game and the schemas
+// were added to web/dist: refresh that copy, and put the whole output where Vercel looks for it, at the repository root.
+const output = join(REPO_ROOT, 'web/.vercel/output');
+if (existsSync(join(output, 'config.json'))) {
+  copy(site, join(output, 'static'));
+  copy(output, join(REPO_ROOT, '.vercel/output'));
+  console.log('copied web/dist to the Build Output static folder, and the Build Output to .vercel/output/');
+}

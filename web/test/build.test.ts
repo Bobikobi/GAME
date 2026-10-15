@@ -4,6 +4,10 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+/** The page without the Vercel Web Analytics pair (its queue stub and its loader), the only scripts the home page may carry. */
+const withoutAnalytics = (page: string): string =>
+  page.replace(/<script>\s*window\.va =[\s\S]*?<\/script>/, '').replace('<script defer src="/_vercel/insights/script.js"></script>', '');
+
 const DIST = join(import.meta.dirname, '../dist');
 
 describe('the build output', () => {
@@ -15,8 +19,8 @@ describe('the build output', () => {
     expect(existsSync(join(DIST, 'play/index.html'))).toBe(true);
   });
 
-  it('puts no script on the home page', () => {
-    expect(readFileSync(join(DIST, 'index.html'), 'utf8')).not.toContain('<script');
+  it('puts no script on the home page but Vercel Web Analytics', () => {
+    expect(withoutAnalytics(readFileSync(join(DIST, 'index.html'), 'utf8'))).not.toContain('<script');
   });
 
   it('ships the two faces with their licences', () => {

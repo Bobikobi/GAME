@@ -1,9 +1,10 @@
 name: CI
 
 on:
-  # a change to prose only (docs, DECISIONS, README) runs no build: Actions minutes are limited
+  # every pull request runs the job, docs-only included: "Check, test, build and play" is a required
+  # check on main and develop, and a path filter here would leave it "Expected" and block the merge
+  # (docs/team/PLATFORM.md 9.2). A push of prose only still runs no build.
   pull_request:
-    paths-ignore: ['**.md', 'docs/**']
   push:
     branches: [main, develop]
     paths-ignore: ['**.md', 'docs/**']

@@ -6,7 +6,7 @@
 import type { Bundle, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
 
-export const KERNEL_VERSION = '0.5.0';
+export const KERNEL_VERSION = '0.7.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['carry', 'senses', 'agility', 'luck', 'stamina'] as const;
@@ -62,6 +62,13 @@ export interface Chase {
   bites: number;
 }
 
+export interface FireState {
+  /** tick at which this uninterrupted burn began */
+  lit: number;
+  /** first tick at which the fire no longer burns */
+  until: number;
+}
+
 export interface Player {
   name: string;
   /** '' until the player picks a starter */
@@ -108,6 +115,8 @@ export interface Player {
   outing: Outing | null;
   /** the hunt the player is in, if any */
   chase: Chase | null;
+  /** tended fires by map prop id */
+  fires: Record<string, FireState>;
   /** falls so far: the draw counter of the tile they wake on (rule R4) */
   falls: number;
   /** tick of the last arrival: a position report, or an action at a tile */
@@ -163,6 +172,7 @@ export function newState(bundle: Bundle, seed: number): State {
       town: '',
       outing: null,
       chase: null,
+      fires: {},
       falls: 0,
       movedAt: 0,
     },
@@ -355,6 +365,11 @@ export function isNight(bundle: Bundle, tick: number): boolean {
   return hour >= 20 || hour < 5;
 }
 
+/** Whether a tended fire still burns at this game tick. */
+export function fireBurns(state: State, id: string, tick: number): boolean {
+  return (state.player.fires?.[id]?.until ?? 0) > tick;
+}
+
 /** Where a tick falls in its day: 0 at midnight (tick 0 is noon, half way in; same start as hourOf). */
 function phaseOf(bundle: Bundle, tick: number): number {
   const day = bundle.params.day_length_ms;
@@ -368,6 +383,15 @@ export function nightFalls(bundle: Bundle, tick: number): number {
   const dawn = idivUp(5 * day, 24);
   const dusk = idivUp(20 * day, 24);
   return phase >= dawn && phase < dusk ? tick + (dusk - phase) : tick;
+}
+
+/** The most recent dusk at or before `tick`: this night's dusk after dark, and the previous night's by day. */
+export function lastDusk(bundle: Bundle, tick: number): number {
+  const day = bundle.params.day_length_ms;
+  const half = idiv(day, 2);
+  const dusk = idivUp(20 * day, 24);
+  const cycle = idiv(tick + half - dusk, day);
+  return cycle * day + dusk - half;
 }
 
 /** The first tick from `tick` on that is not night (the tick itself when it already is not): when the dark ends. */

@@ -174,7 +174,7 @@ Steps:
 2. Keep the schema additive, with `FORMAT_VERSION` staying 1.
 3. Verify and land.
 
-Stealth over the hazards comes after P-5c.
+Stealth over the hazards is section 12.
 
 ## 7. Story chapter 1 (#58)
 
@@ -216,3 +216,69 @@ Read GRUNT items 17-19 and DECISIONS 2026-10-07 "The stage-1 service runs as Ver
 - Upstash Redis comes from the Vercel Marketplace (free tier) in the existing project. Provisioning it and setting its two environment names on Vercel is a production change: ask the owner first, in three lines. Until then the tests run on the fake store and `usage` stays null.
 - Add Vercel Web Analytics for page views (owner, 11.10): `@vercel/analytics` pinned, one component in the site layout and one call in the game's page. Turning it on in the Vercel dashboard is the owner's, at the release. It does not replace the in-game counts.
 - Measurable: item 17's curl prints 204 on a preview with the env names; item 18's client tests and e2e green; item 19's page lists the fixture's numbers; `pnpm verify` green.
+
+## 11. Night light: dark around, a sharp light, no mist on the character
+
+The owner, 11.10, on production v0.1.2: at night the mist is drawn over the character itself, so the character blurs and the game looks as if its quality dropped. Wanted: darkness around, the light around the character sharper, and no mist on the character. This is polish inside the agreed look (the night, the lantern's light and the mist stay), so no stills round; a before and after capture goes to the owner.
+
+- Read `game/src/scenes/world.ts`: the valley-wide mist (`DEPTH.mist`), the slot fogs (`DEPTH.fog`), the shade and the lantern glow, and the WebGL vignette ("an old, worn picture").
+- The player, and what the player holds, draw above the mist and the fog; the mist still covers the ground, the props and the other figures.
+- At night the dark outside the lantern's light is deeper, and the light's edge is short and clear instead of a long soft fade.
+- Measurable, at 390x844 and 1440x900, by day and at night, with headless Chrome on its own port, closed by PID:
+  - the pixels in the player's box equal the same frame drawn with the mist, the fog and the vignette off (mean absolute difference at most 2 of 255 per channel);
+  - at night the mean luminance of a ring outside the light is at most 40% of the mean inside it;
+  - at night the light's edge falls from 90% to 10% of the inside level within 12 px at 390 wide;
+  - `pnpm verify` and `pnpm e2e` green.
+
+## 12. Stealth over the hazards: the wolf's round and the south bank
+
+Read DECISIONS 2026-10-13 "The frames of stealth, tending and the first expedition", GAME_RULES G30-G35 and G47, and the `stealth` row of section 3 first. Two pull requests; (b) is built on (a) and lands after it (PARALLEL.md, stacked branches).
+
+a) The kernel, branch `feat/stealth-kernel`:
+- Schema, additive, `FORMAT_VERSION` stays 1: `stealth` joins `QUEST_TYPES`; a map prop may carry `cover: true` (non-solid only); a predator's `hazard` may carry `round` (4 to 64 tiles, a closed loop: each tile adjacent to the next on a row or a column, the last to the first, the first tile inside the prop's footprint, every tile walkable with the predator's own footprint counted as walkable), `pace_ms` and `eyes` (optional, else the params); params `hazard.predator.pace_ms` (600) and `hazard.predator.eyes` (5), on the game tick.
+- `kernel/src/danger.ts`: `predatorAt(bundle, hazard, tick)` is the round's first tile while the window is shut, else `round[idiv(tick - lastDusk(bundle, tick), pace) % round.length]`, with `lastDusk` a new helper beside `nightFalls`: the most recent dusk at or before the tick; its heading is the step to the next tile; `sees(bundle, hazard, tick, at)` (cover read from the map): one tile away or less is seen whatever the cover; on cover, unseen; else seen when `at` lies 1 to `eyes` tiles ahead along the heading and at most half that far to the side (`2 * side <= ahead`). A predator without a round keeps `distanceTo(at, rect) <= reach`.
+- `kernel/src/step.ts` `strike`: a predator with a round starts the chase when it sees the reported tile. Nothing else moves: the chase, its bites and its end at a safe tile or at dawn stay as P-5 built them.
+- `tools/src/hazards.ts`: the G47 rows of GAME_RULES section 8 (the loop's shape, no safe ground under it, cover inside its watch, a stealth quest's target inside a watch); G34's run to safety walks from every tile any round watches.
+- Tests (`kernel/test/stealth.test.ts`, `tools/test/stealth.test.ts`): the wolf sleeps on its den by day and walks the loop after dark at its pace; a replay gives the same place; seen in the cone, unseen on cover, seen when adjacent on cover; the check refuses an open loop, a loop over safe ground, a stealth quest with no round and a round with no cover.
+- Measurable: `pnpm verify` green; `KERNEL_VERSION` 0.6.0.
+
+b) The client and the content, branch `feat/stealth`, on (a):
+- `game/src/scenes/world.ts`: a hazard with a round walks it after dark (a tween tile to tile at the kernel's pace, placed from `predatorAt` so the drawing never drifts from the rule), with two eyes that glow in the dark facing its heading; by day it sleeps on its den. Cover props draw as the reeds or grass they are, and the player's sprite dims a little while standing on cover. No cone is drawn (G47: the window is learned by the eyes).
+- Content: a wolf `core/bank-wolf` on the meadow west of the river with a round of about twenty tiles between the glade and the bank; a reed thicket (`cover` props) along the water between the round and the river; a resource `core/moon-reeds` (output `core/moonreed`, `hours` [20, 24), no tool, on a new slot at the bank's south end, inside the round's watch); the quest `core/the-south-bank`: giver Pell, type `stealth`, requires `core/herbs-for-pell`, one `find` step with its clue, rep, gold and a first-aid kit (`core/first-aid-kit`, for the bites: G4) as the reward, offer and done lines in Pell's voice (rumours with a price, STORY.md).
+- GAME_RULES: the stealth row's "waits for the hazard system" clause goes; the G47 row of section 8 reads "error".
+- E2E (`game/e2e/stealth.ts`, added to `pnpm e2e`): after dark, wait on cover until the eyes turn away, cross to the reeds and pick the moonreed with no chase; then step into the cone, see the chase start and end at the camp. Under the lock.
+- Measurable: in one capture after dark the wolf stands elsewhere than its den; `pnpm verify` and `pnpm e2e` green.
+
+## 13. Tending: a fire kept by hand, and Maru's hearth
+
+Read DECISIONS 2026-10-13, GAME_RULES G48 and G31, the `tending` row of section 3, SETTLEMENT.md 3.4 and GRUNT CR-25, CR-88 and CR-94 first. Two pull requests, after section 12.
+
+a) The kernel, branch `feat/tending-kernel`:
+- Schema, additive: a map prop may carry `fire: true` (it needs an id) or `lit_by` (a fire prop's id: its note and sign read only while that fire burns); params `fire.cap` (3 logs), `fire.log_ms` (100000, one log's burn, two game hours) and `fire.warn_min` (30 game minutes; CR-94's `fire_warn_min`, grouped under `fire` beside the cap and the burn), on the game tick; a quest step `{kind:'tend', fire: Id}`; the action `{t:'feed', fire: Id, item: Id, at}`.
+- `kernel/src/state.ts`: `player.fires: Record<Id, {lit: tick, until: tick}>` (restore defaults `{}`); `fireBurns(state, id, tick)` is `until > tick`.
+- `kernel/src/step.ts` `feed`: the player stands within one tile of the prop, the item's class is wood (the kernel reads the class from the bundle; anything else is refused), one is removed; a fire that is out lights with `lit = tick` and `until = tick + log_ms`; a burning one adds `log_ms` up to `tick + cap * log_ms` and keeps its `lit`; event `{e:'fire', id, until}`. `questSatisfied` for `tend`: `lit <= lastDusk(tick)` and `until >= nightEnds(lastDusk(tick))`, the dusk being the most recent at or before the state's tick. The fire's clock is the game tick, so away nothing burns; no sleep exists yet, and when it comes it burns the night's wood at once and ends the vigil (DECISIONS, the world and its clocks).
+- `tools/src/play.ts`: the G48 rows.
+- Tests (`kernel/test/fire.test.ts`): feeding lights and tops up to the cap and no further; the fire goes out on time; a vigil holds from dusk to dawn and fails on a gap, however short; a replay agrees. `KERNEL_VERSION` 0.7.0.
+
+b) The client and the content, branch `feat/tending`, on (a):
+- Client: a Feed button beside a fire prop while the player holds wood (where Build sits), the flame drawn only while the fire burns and the embers fading as it runs down, the warning `fire.warn_min` game minutes before it goes out (G31, once per burn), the journal line for `tend` ("Keep the hearth burning until dawn", then what it still needs), a prop with `lit_by` showing its note and sign only while that fire burns, and the fire's state surviving a reload.
+- Content: a hearth prop `core/elder-hearth` beside Maru's house; the quest `core/the-long-night`: giver Maru, type `tending`, requires `core/a-coin-for-maru`, one `tend` step, offer and done lines in Maru's voice (a Mender: mend what is left), rep, gold and the bandage recipe (`core/bandage`, a Mender's: G4), and a remark afterwards.
+- E2E (`game/e2e/tending.ts`): light the hearth before dusk, feed it through the night with the clock moved, see the warning once, see the step met at dawn and turn it in to Maru; a second pass lets it go out and sees the step unmet.
+- Measurable: wood leaves the bag per feed; the flame shows only while lit; `pnpm verify` and `pnpm e2e` green.
+
+## 14. The first expedition: the night ruins (P-6)
+
+Read DECISIONS 2026-10-08 (the expedition), 2026-10-10 (the entrance is safe; "one mist"), 2026-10-13 (the frames), GAME_RULES G36, G37 and G49, and GRUNT P-6 first. Two pull requests, after sections 12 and 13: the container, then the ruins.
+
+a) The container, branch `feat/expedition-kernel`:
+- Schema, additive: a content kind `expedition` with `place` (an area slot), `window` (`{ bells }`: 2 to 6 hours on the game clock, all at night, in the order they ring; the first bell opens the window, the last walks out), `exit` (a safe slot), `chain` (3 to 5 quest ids, each with no giver and `requires` the one before), `climax` (`{ slot }` inside the place), `reward` (`opens`, `items`; no `rep`, there is no giver) and `on_miss: 'wait'`. `expedition` is not a quest type. `tools/src/assemble.ts` and `kernel/src/bundle.ts` carry it.
+- `kernel/src/state.ts`: `player.expeditions: Record<Id, { climax: boolean, entered?: number, rung: number }>` (`entered` the tick of the first action or report inside the place on this visit, cleared by one outside; `rung` the bells reported since it); `kernel/src/expedition.ts`: `inside(bundle, state)`, `bellsRung(bundle, x, tick)`, `lastBellAt(bundle, x, tick)`.
+- `kernel/src/step.ts`: on every action and report inside the place, each bell that rang after `entered` and is not yet counted in `rung` emits `{e:'bell', expedition, n}` (a bell rung while the player was outside is never reported); at or after the last bell the player is set on the exit tile, the outing closes there and `{e:'walked_out', expedition}` is emitted, no damage; a quest of the chain auto-activates only while the player stands inside the place inside the window (`autoQuests`), and its progress is kept like any quest's; the climax: standing on the climax slot inside the window with every quest of the chain done, once, emits `{e:'climax', expedition}` and applies the reward.
+- `tools/src/play.ts`: the G36 row of section 8 becomes a check, and the G4 check counts a quest of a chain as rewarded by its expedition.
+- Tests (`kernel/test/expedition.test.ts`, `tools/test/expedition.test.ts`): bells by the clock, the walk-out with the bag whole, a chain quest not starting by day or outside, progress kept across two nights, the climax once. `KERNEL_VERSION` 0.8.0.
+
+b) The ruins, branch `feat/night-ruins`, on (a):
+- Content: `core/night-ruins` (the expedition: an area slot over the ruins, bells at 20, 23, 2 and 4, exit `core/night-threshold`, the chain and the climax); `core/ruins-wolf` gets a round through the yard between the gate and the hall, with cover props among the pillars; the four quests, in this order of `requires`: `core/the-hall-at-night` (stealth: find `core/glowcap`, a mushroom in the hall with `hours` [20, 24); its reward opens `core/deep-way`, rubble with no inputs as the arch-way is), `core/what-the-deep-keeps` (gamble: a dig spot `core/bell-pit` in a pocket of the deep ruins behind that rubble, so the chain alone reaches it, with `core/bell-shard` one in five; its reward two logs, dry wood for the brazier), `core/the-brazier` (tending: `core/hall-brazier`, fed to reach dawn before the last bell), `core/the-hall-reads` (riddle: the hall's inscription with a Waker's and a Mender's reading of one line, STORY.md S2 and S4, answer: visit `core/bell-alcove` at night; the inscription prop carries `lit_by: core/hall-brazier`); the climax slot `core/bell-foot`; the reward opens `core/hall-stair`, a restore the player can also shore by hand with six logs by day (G37: the expedition is the sooner road, never the only one), and the stair's cellar `core/hall-cellar` is a dig spot by day whose find hints at a fold (a clockwork scrap, STORY.md section 1). Maru gets a topic about the bells. The arch and the three-stones riddle stay as they are.
+- Client: the bells as the clock on screen while inside (a chip with the bells rung and the next bell's hour), the walk-out beat (the mist thickens, the screen fades, the player stands at the threshold with one box), the climax beat (the stair opens with its sound, G13, G25), and the inscription read by `lit_by` (section 13b).
+- E2E (`game/e2e/expedition.ts`): enter after dark, miss the last bell and be walked out with the bag whole, return the next night, finish the four and reach the climax, dig the cellar by day.
+- Measurable: the e2e log prints the climax line and the opened slot (P-6); `pnpm verify` and `pnpm e2e` green.

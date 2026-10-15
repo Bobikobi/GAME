@@ -7,7 +7,7 @@
 import type { Bundle } from './bundle';
 import { idiv, mulDiv } from './num';
 import { draw } from './rng';
-import { type State, isNight, nightEnds } from './state';
+import { type State, isNight, lastDusk, nightEnds } from './state';
 import type { Tile } from './step';
 import { type Rect, type WorldView, findSlot, inRect, tagAt } from './world';
 
@@ -24,6 +24,12 @@ export interface Hazard {
   rect: Rect;
   /** a predator's reach, in tiles from its footprint */
   reach: number;
+  /** the closed loop a predator walks after dark */
+  round?: readonly Tile[];
+  /** game milliseconds per tile of the round */
+  pace: number;
+  /** tiles ahead watched from the round */
+  eyes: number;
 }
 
 const hazardCache = new WeakMap<Bundle, readonly Hazard[]>();
@@ -41,6 +47,9 @@ export function hazardsOf(bundle: Bundle): readonly Hazard[] {
               window: p.hazard.window,
               rect: { x: p.x, y: p.y, w: p.w, h: p.h },
               reach: p.hazard.reach ?? bundle.params.hazard.predator.reach,
+              ...(p.hazard.round === undefined ? {} : { round: p.hazard.round.map(([x, y]) => [x, y] as Tile) }),
+              pace: p.hazard.pace_ms ?? bundle.params.hazard.predator.pace_ms,
+              eyes: p.hazard.eyes ?? bundle.params.hazard.predator.eyes,
             },
           ]
         : [],
@@ -48,6 +57,58 @@ export function hazardsOf(bundle: Bundle): readonly Hazard[] {
     hazardCache.set(bundle, list);
   }
   return list;
+}
+
+const coverCache = new WeakMap<Bundle, ReadonlySet<string>>();
+
+const tileKey = ([x, y]: Tile): string => `${x},${y}`;
+
+/** Whether a tile carries non-solid cover from a predator's eyes. */
+export function coverAt(bundle: Bundle, at: Tile): boolean {
+  let covered = coverCache.get(bundle);
+  if (!covered) {
+    const found = new Set<string>();
+    for (const p of bundle.map.props) {
+      if (p.cover !== true) continue;
+      for (let y = p.y; y < p.y + p.h; y++) {
+        for (let x = p.x; x < p.x + p.w; x++) found.add(tileKey([x, y]));
+      }
+    }
+    covered = found;
+    coverCache.set(bundle, covered);
+  }
+  return covered.has(tileKey(at));
+}
+
+/** Where a predator stands: on its den while asleep, or on its deterministic round after dark. */
+export function predatorAt(bundle: Bundle, hazard: Hazard, tick: number): Tile {
+  if (!hazard.round) return [hazard.rect.x, hazard.rect.y];
+  if (!windowOpen(bundle, hazard, tick)) return [hazard.round[0]![0], hazard.round[0]![1]];
+  const index = idiv(tick - lastDusk(bundle, tick), hazard.pace) % hazard.round.length;
+  const [x, y] = hazard.round[index]!;
+  return [x, y];
+}
+
+/** The four-way unit step from a predator's current round tile to its next one. */
+export function headingOf(bundle: Bundle, hazard: Hazard, tick: number): Tile {
+  if (!hazard.round || !windowOpen(bundle, hazard, tick)) return [0, 0];
+  const index = idiv(tick - lastDusk(bundle, tick), hazard.pace) % hazard.round.length;
+  const here = hazard.round[index]!;
+  const next = hazard.round[(index + 1) % hazard.round.length]!;
+  return [Math.sign(next[0] - here[0]), Math.sign(next[1] - here[1])];
+}
+
+/** Whether a predator on its round sees a tile in its forward cone. Adjacent tiles are too close for cover. */
+export function sees(bundle: Bundle, hazard: Hazard, tick: number, at: Tile): boolean {
+  const pos = predatorAt(bundle, hazard, tick);
+  const dx = at[0] - pos[0];
+  const dy = at[1] - pos[1];
+  if (Math.max(Math.abs(dx), Math.abs(dy)) <= 1) return true;
+  if (coverAt(bundle, at)) return false;
+  const [hx, hy] = headingOf(bundle, hazard, tick);
+  const ahead = hx === 0 ? dy * hy : dx * hx;
+  const side = Math.abs(hx === 0 ? dx : dy);
+  return ahead >= 1 && ahead <= hazard.eyes && 2 * side <= ahead;
 }
 
 /** Whether the hazard acts at this tick. Outside its window it is harmless. */

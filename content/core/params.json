@@ -178,12 +178,44 @@
       "max": 50,
       "step": 5
     },
+    "fire": {
+      "cap": {
+        "value": 3,
+        "min": 1,
+        "max": 8,
+        "step": 1
+      },
+      "log_ms": {
+        "value": 100000,
+        "min": 20000,
+        "max": 400000,
+        "step": 10000
+      },
+      "warn_min": {
+        "value": 30,
+        "min": 5,
+        "max": 120,
+        "step": 5
+      }
+    },
     "hazard": {
       "predator": {
         "reach": {
           "value": 4,
           "min": 2,
           "max": 8,
+          "step": 1
+        },
+        "pace_ms": {
+          "value": 600,
+          "min": 100,
+          "max": 10000,
+          "step": 100
+        },
+        "eyes": {
+          "value": 5,
+          "min": 1,
+          "max": 12,
           "step": 1
         },
         "catch_ms": {

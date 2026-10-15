@@ -4049,7 +4049,7 @@
               "type": "string"
             },
             "type": {
-              "description": "The kind of question the quest asks: one of the thirteen in docs/design/GAME_RULES.md section 3. Two quests of one type never follow each other in a chain (G17). Optional in the schema so an old file still reads; the check refuses a quest without one since the core content declared it (GRUNT P-3, 8.10).",
+              "description": "The kind of question the quest asks: one of the fourteen in docs/design/GAME_RULES.md section 3. Two quests of one type never follow each other in a chain (G17). Optional in the schema so an old file still reads; the check refuses a quest without one since the core content declared it (GRUNT P-3, 8.10).",
               "anyOf": [
                 {
                   "const": "investigation",
@@ -4101,6 +4101,10 @@
                 },
                 {
                   "const": "maze",
+                  "type": "string"
+                },
+                {
+                  "const": "stealth",
                   "type": "string"
                 }
               ]
@@ -4215,6 +4219,27 @@
                         "type": "string"
                       },
                       "slot": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "additionalProperties": false,
+                    "description": "Keep this fire burning without a gap from dusk through dawn.",
+                    "type": "object",
+                    "required": [
+                      "kind",
+                      "fire"
+                    ],
+                    "properties": {
+                      "kind": {
+                        "const": "tend",
+                        "type": "string"
+                      },
+                      "fire": {
                         "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
                         "maxLength": 80,
                         "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
@@ -9125,6 +9150,7 @@
             "day_length_ms",
             "walk_step_ms",
             "hp_low_pct",
+            "fire",
             "hazard",
             "bag_base",
             "starting_gold_mg",
@@ -9792,6 +9818,99 @@
               },
               "description": "Work takes half as long again while health is at or below this share of its cap, in percent. 0 slows it only when health is empty (G32)."
             },
+            "fire": {
+              "additionalProperties": false,
+              "description": "A tended fire uses the game tick, which pauses while the player is away.",
+              "type": "object",
+              "required": [
+                "cap",
+                "log_ms",
+                "warn_min"
+              ],
+              "properties": {
+                "cap": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Most logs of burn time a fire may hold ahead of the game tick."
+                },
+                "log_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game milliseconds one wood item adds to a fire."
+                },
+                "warn_min": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game minutes before a burning fire goes out when its warning is shown."
+                }
+              }
+            },
             "hazard": {
               "additionalProperties": false,
               "description": "How hard each kind of hazard hits (G30, G34). A hazard is a rule, not a roll.",
@@ -9808,6 +9927,8 @@
                   "type": "object",
                   "required": [
                     "reach",
+                    "pace_ms",
+                    "eyes",
                     "catch_ms",
                     "bite_ms",
                     "bite_pct"
@@ -9839,6 +9960,60 @@
                         }
                       },
                       "description": "Tiles from its footprint within which a predator notices the player, unless the prop says otherwise."
+                    },
+                    "pace_ms": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "Game milliseconds a predator on a round takes to walk one tile."
+                    },
+                    "eyes": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      },
+                      "description": "Tiles ahead watched by a predator on a round."
                     },
                     "catch_ms": {
                       "additionalProperties": false,
@@ -11439,6 +11614,21 @@
                   "solid": {
                     "type": "boolean"
                   },
+                  "cover": {
+                    "description": "Hides a player standing on this non-solid prop from a predator's eyes, but never from an adjacent predator.",
+                    "type": "boolean"
+                  },
+                  "fire": {
+                    "description": "A fire the player may feed by hand. It needs an id.",
+                    "const": true,
+                    "type": "boolean"
+                  },
+                  "lit_by": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Id of the fire prop while whose fire burns this prop's note and sign may be read.",
+                    "type": "string"
+                  },
                   "sign": {
                     "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
                     "maxLength": 80,
@@ -11495,6 +11685,42 @@
                         "minimum": 1,
                         "maximum": 12,
                         "description": "A predator only: how many tiles from its footprint it notices the player. The params hold the default.",
+                        "type": "integer"
+                      },
+                      "round": {
+                        "minItems": 4,
+                        "maxItems": 64,
+                        "description": "A predator only: the closed, four-adjacent loop of tiles it walks after dark. The first tile is inside its prop footprint.",
+                        "type": "array",
+                        "items": {
+                          "type": "array",
+                          "items": [
+                            {
+                              "minimum": 0,
+                              "maximum": 1023,
+                              "type": "integer"
+                            },
+                            {
+                              "minimum": 0,
+                              "maximum": 1023,
+                              "type": "integer"
+                            }
+                          ],
+                          "additionalItems": false,
+                          "minItems": 2,
+                          "maxItems": 2
+                        }
+                      },
+                      "pace_ms": {
+                        "minimum": 100,
+                        "maximum": 10000,
+                        "description": "A predator on a round only: game milliseconds per tile. The params hold the default.",
+                        "type": "integer"
+                      },
+                      "eyes": {
+                        "minimum": 1,
+                        "maximum": 12,
+                        "description": "A predator on a round only: how many tiles ahead it sees. The params hold the default.",
                         "type": "integer"
                       }
                     }

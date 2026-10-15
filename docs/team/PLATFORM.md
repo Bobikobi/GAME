@@ -329,7 +329,8 @@ Home `/`:
 1. At 390x844 the first screen shows the wordmark, the headline and lead, the
    classic door with Play, the 3D door with Enter when it ships, and the
    board's title and tabs (restated 2026-10-10).
-2. `grep -c "<script" web/dist/index.html` prints 0.
+2. No script but Vercel Web Analytics: `grep -c "<script" web/dist/index.html`
+   prints 2, the analytics loader and its queue stub (2026-10-15, DECISIONS.md).
 3. Every colour in the page's CSS is a palette hex (the subset test).
 4. Transfer under 300KB including the fonts, the scene sprites, the 3D loop
    and its poster, measured in the build output (`web/test/home.test.ts`;
@@ -451,11 +452,28 @@ package exists (GRUNT item 4).
 | `GITHUB_TOKEN` | provided by Actions | the loop |
 | `HUB_GITHUB_TOKEN` | Vercel project env (read-only token) | `pnpm hub:data` in Vercel builds |
 | `VERCEL_DEPLOY_HOOK` | repository secret | the hourly refresh |
-| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Vercel project env, set by the Marketplace integration | the S-1 functions |
+| `KV_REST_API_URL`, `KV_REST_API_TOKEN` (or `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`) | Vercel project env, set by the Marketplace integration (the `KV_` names) | the S-1 functions |
 
 The repository holds `.env.example` with names only. Nothing else, ever.
 
-### 9.4 Handoffs
+### 9.4 Connected services
+
+What is wired to the live site today, and where to look. Values never go in
+the repository; this list is names and places only.
+
+| Service | Where | What it does | Set up |
+|---|---|---|---|
+| Vercel project `mistvale` | the Vercel team that owns this repository | builds and serves the site, `/play/` and the `/api/s1/*` functions | Git integration on this repository |
+| Upstash Redis `upstash-kv-amber-zebra` | Vercel project > Storage (Vercel Marketplace, Upstash, Free plan: 500K commands a month, region `iad1`) | the S-1 store: counters, stops and reports | linked to the Production and Preview environments; the integration sets `KV_REST_API_URL`, `KV_REST_API_TOKEN`, `KV_REST_API_READ_ONLY_TOKEN`, `KV_URL`, `REDIS_URL` (the code reads the first two) |
+| Vercel Web Analytics | Vercel project > Analytics | page views, visitors, referrers, countries and devices for the site and the game | enabled in the project; the snippet loading `/_vercel/insights/script.js` sits in `web/src/layouts/Site.astro` (every page, the home page included, section 5.5) and `game/index.html` |
+| Stage-1 usage | `hub-data.json` > `usage`, the creator pages `/hub/creators/<handle>/` | per-record visits, pickups and reports, where players stop in the opening | `pnpm hub:data` reads Redis when the `KV_` pair is in the environment; without it `usage` stays `null` |
+
+Rename the database or move the region in the Upstash console; the env names
+do not change. A database linked by hand (outside the Marketplace) exposes
+`UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`; the code accepts those
+too.
+
+### 9.5 Handoffs
 
 `docs/team/HANDOFF_TEMPLATE.md` (this branch): one goal in a sentence, the
 exact files, the proving command, the decision it implements, the model and
@@ -499,5 +517,6 @@ registrar check (`DECISIONS.md`, both under that date).
   GRUNT.
 - No accounts, no player boards, no gold boards, no credits formula: all wait on
   stage 2a and D5.
-- No second Vercel project, no GitHub Pages, no CMS, no analytics vendor.
+- No second Vercel project, no GitHub Pages, no CMS, no third-party analytics
+  vendor (Vercel Web Analytics is the host's own, section 9.4).
 - No hour estimates anywhere.

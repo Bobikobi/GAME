@@ -2,6 +2,31 @@
 
 One note per tag on `main`, newest first (docs/team/PLATFORM.md section 2).
 
+## v0.1.4 - 2026-10-15
+
+What players notice
+- At night the mist no longer blurs your character, and a lit lantern throws a sharp pool of light into the dark around you.
+
+What creators notice
+- Every creator has a page on the site, `/hub/creators/<handle>/`, that lists their records with visits, pickups and reports.
+- The game counts when a record is visited or picked up, where players stop in the opening, and one short report per record per browser. It uses no cookie and no identity. The counts reach the creator pages each time the site is deployed.
+- New in the format, kernel half only (the client halves follow): a predator's `round`, `pace_ms` and `eyes`, and `cover` on props (check G47); fires kept by hand, with the `feed` action, the `tend` quest step and `lit_by` (check G48). New params: `hazard.predator.pace_ms`, `hazard.predator.eyes`, `fire.cap`, `fire.log_ms` and `fire.warn_min`.
+
+What changed underneath
+- kernel 0.1.4 (simulation 0.7.0). Saves from v0.1.3 load unchanged, with no fires burning.
+- The site's server routes (`/api/feedback`, `/api/s1/`) are Astro functions. The stage-1 store is Upstash Redis from the Vercel Marketplace (PLATFORM.md 9.4).
+- The repository is public, and CI runs on every pull request.
+
+## v0.1.3 - 2026-10-13
+
+What players notice
+- A second door on the home page: the valley in 3D, marked as a trial. The same game and the same save: a character made at Play continues in 3D and back.
+- The three starters have their own pixel look.
+
+What changed underneath
+- The 3D door is built by `build:3d` and shipped at /play3d/ only when that build succeeds; the classic game never waits for it. A machine that cannot keep up gets the lighter draw by itself.
+- No kernel change; saves from v0.1.2 load unchanged.
+
 ## v0.1.2 - 2026-10-11
 
 What players notice

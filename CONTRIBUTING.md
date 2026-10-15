@@ -1,6 +1,6 @@
 # Contributing
 
-There are two ways to help: add something to the valley (content), or improve the game itself (code). Most people start with content.
+Welcome. Openfold is built by the people who play it, and a first contribution is worth more than a perfect one: reviewers help you get it over the line. There are two ways to help: add something to the valley (content), or improve the game itself (code). Most people start with content. Where the game is going, and where help is most welcome now, is in [ROADMAP.md](ROADMAP.md).
 
 ## Adding content
 
