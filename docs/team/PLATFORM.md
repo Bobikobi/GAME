@@ -200,7 +200,10 @@ schema as `null`, so no page is touched when they fill.
   usage counters with Redis's read-only token, so it builds the same `usage`
   production has. Three repository secrets: `VERCEL_DEPLOY_HOOK`,
   `KV_REST_API_URL`, `KV_REST_API_READ_ONLY_TOKEN`; without the hook the step
-  is skipped, without the other two it warns and compares nothing. Between runs
+  is skipped, without the other two it warns and compares nothing. It runs as
+  its own job (concurrency group `hub-refresh`), and does not fire the hook
+  while `main`'s newest commit changes only `CREDITS.md` (Vercel's ignored
+  build step would cancel it). Between runs
   the hub is at most an hour behind GitHub and the counters, which the footer
   says with `built_at`.
 
