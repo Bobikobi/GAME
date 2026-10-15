@@ -16,5 +16,6 @@ export default defineConfig({
   build: { format: 'directory', client: './', server: '../.vercel/server' },
   devToolbar: { enabled: false },
   // the pages read repository files at build time: the token sheet, the board, the points, the hub-data fixture
-  vite: { server: { fs: { allow: ['..'] } } },
+  // @upstash/redis is bundled into the function: left external, its own dependency (uncrypto) is not traced into the deployment and the /api/s1/ routes fail with a 500
+  vite: { server: { fs: { allow: ['..'] } }, ssr: { noExternal: ['@upstash/redis'] } },
 });

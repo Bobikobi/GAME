@@ -22,14 +22,21 @@ const current = (s?: Section) => (s && s === section ? 'page' : undefined);
     <meta name="description" content={description} />
     <title>{title}</title>
     <link rel="icon" type="image/png" href="/play/favicon.png" />
-    <script>
-      window.va =
-        window.va ||
-        function () {
-          (window.vaq = window.vaq || []).push(arguments);
-        };
-    </script>
-    <script defer src="/_vercel/insights/script.js"></script>
+    {
+      // Vercel Web Analytics on every page but the home page, which ships no script (PLATFORM.md 5.5, criterion 2)
+      Astro.url.pathname !== '/' && (
+        <>
+          <script is:inline>
+            window.va =
+              window.va ||
+              function () {
+                (window.vaq = window.vaq || []).push(arguments);
+              };
+          </script>
+          <script is:inline defer src="/_vercel/insights/script.js" />
+        </>
+      )
+    }
     <link rel="preload" href="/fonts/platypi/platypi-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/atkinson-hyperlegible-next/atkinson-hyperlegible-next-latin.woff2" as="font" type="font/woff2" crossorigin />
     <slot name="head" />

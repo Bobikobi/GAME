@@ -4,5 +4,5 @@
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["node"]
   },
-  "include": ["kernel/src", "kernel/test", "schema/src", "schema/test", "tools/src", "tools/test", "mcp/src", "mcp/test", "game/src", "game/e2e", "api", "web/src/data", "web/src/s1", "web/test", "web/vitest.config.ts", "*.config.ts"]
+  "include": ["kernel/src", "kernel/test", "schema/src", "schema/test", "tools/src", "tools/test", "mcp/src", "mcp/test", "game/src", "game/e2e", "web/src/data", "web/src/feedback", "web/src/s1", "web/test", "web/vitest.config.ts", "*.config.ts"]
 }
