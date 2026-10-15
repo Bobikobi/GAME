@@ -56,6 +56,12 @@ interface Predator {
   heading: [number, number];
   seesPlayer: boolean;
 }
+interface Health {
+  hp: number;
+  falls: number;
+  movedAt: number;
+  since: number | null;
+}
 
 const KEY: Record<Dir, string> = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
 
@@ -76,16 +82,25 @@ window.__stealth = (() => {
       s.tick = t;
     },
     prepare() {
-      const s = g().session;
+      const s = g().session, params = g().bundle.params;
       s.state.player.quests['core/herbs-for-pell'] = 'done';
       s.state.player.camp = ['core/campfire'];
       if (!s.state.player.restored.includes('core/old-bridge')) s.state.player.restored.push('core/old-bridge');
-      s.state.player.satiety = 100000;
+      // Health far above anything the chase leg can bite away, so the run home
+      // never races a fall (satietyAt never clamps it to the cap; eating would).
+      const cap = (params.satiety_cap + params.per_point.stamina * s.state.player.attrs.stamina) * 1000;
+      s.state.player.satiety = 10 * cap;
+      s.state.player.satietyAt = s.tick;
       s.met.add('core/trader');
       s.pos = [34, 11];
       s.state.player.at = [34, 11];
       s.facing = 'right';
       g().world.bind(s);
+      return { cap, bite: Math.floor((cap * params.hazard.predator.bite_pct) / 100), drain: params.satiety_drain_per_min };
+    },
+    health() {
+      const p = g().session.state.player;
+      return { hp: p.satiety, falls: p.falls, movedAt: p.movedAt, since: p.chase ? p.chase.since : null };
     },
     moveTo(x, y) {
       const s = g().session;
@@ -249,7 +264,7 @@ async function run(page: Page, url: string): Promise<void> {
   await me.clearPlainDialog();
 
   // The earlier quest and camp are setup; the stealth quest itself is accepted through Pell.
-  await page.eval('__stealth.prepare()');
+  const health = await page.eval<{ cap: number; bite: number; drain: number }>('__stealth.prepare()');
   await page.eval(`void __game.ui.talk('core/trader')`);
   await me.choose('Task: The south bank');
   await me.choose('I will do it');
@@ -258,18 +273,17 @@ async function run(page: Page, url: string): Promise<void> {
 
   // Begin the night from the built camp, then take the covered bank road.
   await page.eval('__stealth.moveTo(18, 22); __stealth.setHour(21)');
-  await me.walkTo(12, 33, 'the reed cover');
+  await me.walkTo(12, 33, 'the grass cover');
   const covered = await page.eval<boolean>(`__game.bundle.map.props.some((p) => p.cover === true && 12 >= p.x && 12 < p.x + p.w && 33 >= p.y && 33 < p.y + p.h)`);
   if (!covered) throw new Error('the waiting tile is not cover');
   if (await page.eval<boolean>('!!__game.session.state.player.chase')) throw new Error('the wolf began a chase on the covered approach');
 
   // Wait for the wolf on the west edge, looking north: its eyes face away
   // from the one-tile crossing to the moonreed.
-  const away = await page.waitFor<Predator>(`(() => {
+  await page.waitFor<Predator>(`(() => {
     const p = __stealth.predator();
     return p && p.at[0] === 8 && p.at[1] === 30 && p.heading[0] === 0 && p.heading[1] === -1 ? p : null;
   })()`, 'the wolf eyes to face away', 20_000);
-  if (away.at[0] === 8 && away.at[1] === 24) throw new Error('the wolf is still on its den after dark');
   await me.snap('eyes-away');
 
   await me.step('left');
@@ -293,15 +307,38 @@ async function run(page: Page, url: string): Promise<void> {
     const debug = await page.eval(`(() => { const s = __game.session; return { tick: s.tick, paused: s.paused, state: __stealth.state(), wolf: __stealth.predator(), target: __stealth.predator([11, 32]), chase: s.state.player.chase }; })()`);
     throw new Error(`${error instanceof Error ? error.message : error}: ${JSON.stringify(debug)}`);
   });
+  const before = await page.eval<Health>('__stealth.health()');
   await me.step('left');
   await me.step('up');
   await page.waitFor('!!__game.session.state.player.chase', 'the wolf chase to start', 3000);
+  const chased = await page.eval<Health>('__stealth.health()');
+  const chasedAt = Date.now();
   await me.snap('chase');
 
   await me.walkTo(18, 22, 'the safe camp');
+  const wallMs = Date.now() - chasedAt;
   if (await page.eval<boolean>('!!__game.session.state.player.chase')) throw new Error('the chase did not end in the camp');
+  const home = await page.eval<Health>('__stealth.health()');
+  console.log(
+    `stealth chase: camp reached ${home.movedAt - (chased.since ?? home.movedAt)} game ms after the chase began (${wallMs} ms wall), ` +
+      `health ${before.hp} -> ${home.hp} (a bite takes ${health.bite}, the cap is ${health.cap}, the drain is ${health.drain} a minute)`,
+  );
+  if (home.falls !== before.falls) throw new Error(`the chase ended in a fall: falls ${before.falls} -> ${home.falls}`);
+  if (before.hp - home.hp < health.bite) throw new Error(`the chase never bit: health ${before.hp} -> ${home.hp}`);
   await me.snap('camp-safe');
   if (page.errors.length > 0) throw new Error(`page errors:\n${page.errors.join('\n')}`);
+}
+
+async function play(browser: Browser, url: string): Promise<void> {
+  const page = await browser.newPage({ width: 390, height: 844, mobile: true });
+  try {
+    await run(page, url);
+  } catch (error) {
+    await page.screenshot(join(OUT, 'stealth-failed.png')).catch(() => undefined);
+    throw error;
+  } finally {
+    page.close();
+  }
 }
 
 async function main(): Promise<void> {
@@ -309,16 +346,14 @@ async function main(): Promise<void> {
   if (!remote && !existsSync(join(DIST, 'index.html'))) throw new Error('no game/dist: run "pnpm build" first');
   mkdirSync(OUT, { recursive: true });
   const local = remote ? null : await serve();
-  const browser = await Browser.launch();
-  const page = await browser.newPage({ width: 390, height: 844, mobile: true });
   try {
-    await run(page, remote ?? local?.url ?? '');
-  } catch (error) {
-    await page.screenshot(join(OUT, 'stealth-failed.png')).catch(() => undefined);
-    throw error;
+    const browser = await Browser.launch();
+    try {
+      await play(browser, remote ?? local?.url ?? '');
+    } finally {
+      await browser.close();
+    }
   } finally {
-    page.close();
-    await browser.close();
     local?.server.close();
   }
   console.log(`stealth screenshots in ${OUT}`);

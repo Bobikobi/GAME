@@ -26,7 +26,6 @@ import {
   hourOf,
   inRect,
   isNight,
-  lastDusk,
   makeWalkable,
   minuteOfDay,
   npcTile,
@@ -44,6 +43,7 @@ import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { emptySlots, slotContent } from '../places';
 import { canopyGroups, hash, remapTone, toneField, type Tone } from '../richground';
 import type { Session } from '../session';
+import { predatorSpriteAt } from '../predator';
 import { soundscape } from '../soundscape';
 import { SensesFind } from '../senses';
 import { questTargets } from '../targets';
@@ -1675,21 +1675,12 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  /**
-   * Draw a walking predator only from the kernel's clock and round. Between
-   * two rule tiles the sprite is linearly placed by that same pace, so it
-   * reaches each kernel position exactly on the tick that position changes.
-   */
+  /** Draw a walking predator only from the kernel's clock and round (`predatorSpriteAt`). */
   private placePredators(s: Session): void {
     for (const { spr, rule, eyes } of this.hazards) {
       if (!rule?.round) continue;
-      const [tx, ty] = predatorAt(this.b, rule, s.tick);
       const awake = windowOpen(this.b, rule, s.tick);
-      const elapsed = awake ? s.tick - lastDusk(this.b, s.tick) : 0;
-      const phase = awake ? (elapsed % rule.pace) / rule.pace : 0;
-      const [nx, ny] = awake ? predatorAt(this.b, rule, s.tick + rule.pace) : [tx, ty];
-      const x = tx + (nx - tx) * phase;
-      const y = ty + (ny - ty) * phase;
+      const [x, y] = predatorSpriteAt(this.b, rule, s.tick);
       const bottom = (y + 1) * T;
       spr.setPosition(Math.round((x + 0.5) * T), Math.round(bottom)).setDepth(Math.round(bottom));
       if (!eyes) continue;

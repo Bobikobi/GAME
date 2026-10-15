@@ -440,7 +440,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 24,
         "w": 1,
@@ -449,7 +449,7 @@
         "cover": true
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 30,
         "w": 1,
@@ -714,7 +714,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 31,
         "w": 1,
@@ -723,7 +723,7 @@
         "cover": true
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 32,
         "w": 1,
@@ -820,7 +820,7 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 29,
         "w": 1,
@@ -829,7 +829,7 @@
         "cover": true
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 27,
         "w": 1,
@@ -838,7 +838,7 @@
         "cover": true
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 28,
         "w": 1,
@@ -847,7 +847,7 @@
         "cover": true
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 26,
         "w": 1,
@@ -856,7 +856,7 @@
         "cover": true
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 25,
         "w": 1,
@@ -865,7 +865,7 @@
         "cover": true
       },
       {
-        "sprite": "core/base-kit:props/reeds",
+        "sprite": "core/base-kit:props/grass_tall",
         "x": 12,
         "y": 33,
         "w": 1,
