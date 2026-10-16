@@ -346,6 +346,28 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
     }
   }
 
+  // The maze block names the frame the peek shows (DECISIONS 2026-10-11, the ladder): a maze's own, around its heart.
+  for (const q of Object.values(b.quests)) {
+    if (!q.maze) continue;
+    const complain = (where: string, message: string) =>
+      issues.push({ file: at(q.id), where: `quest.maze${where}`, message: `${message} (${RULES_PAGE} section 3, maze)`, level: PLAY_LEVEL });
+    if (q.type !== 'maze') complain('', `only a maze quest names a maze; this one is "${q.type ?? 'untyped'}"`);
+    const frame = findSlot(b.map, q.maze.area);
+    if (!frame || frame.kind !== 'area') {
+      complain('.area', `"${q.maze.area}" is not an area slot`);
+      continue;
+    }
+    const outside = q.steps.flatMap((st) => (st.kind === 'visit' ? [st.slot] : [])).filter((id) => {
+      const heart = findSlot(b.map, id);
+      return !heart || !inRect(heart.x, heart.y, frame) || !inRect(heart.x + heart.w - 1, heart.y + heart.h - 1, frame);
+    });
+    if (outside.length > 0) complain('.area', `the heart lies outside the frame "${frame.id}": ${outside.join(', ')}`);
+    const mark = q.maze.landmark;
+    if (mark && !b.map.props.some((p) => p.sprite === mark && inRect(p.x, p.y, frame))) {
+      complain('.landmark', `no prop inside "${frame.id}" is drawn with "${mark}"`);
+    }
+  }
+
   // G17: every quest names its type; no two of one type in a row along the requires links; five types among the first ten quests.
   for (const q of Object.values(b.quests)) {
     if (q.type === undefined) {

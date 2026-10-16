@@ -35,6 +35,11 @@
           "qty": 1
         }
       ]
+    },
+    "maze": {
+      "tier": 1,
+      "area": "core/tangle",
+      "landmark": "core/base-kit:props/rock_mossy"
     }
   }
 }
