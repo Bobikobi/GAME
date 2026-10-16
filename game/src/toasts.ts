@@ -1,0 +1,151 @@
+/**
+ * The rules of the toasts, kept apart from the page so they can be tested.
+ *
+ * The task lines of one action read as one toast. At most two toasts stand on
+ * the screen; a third waits its turn and is never dropped, since every toast is
+ * the twin of something the player did or must do now (G24). While one waits,
+ * the oldest on screen leaves early, once it has stood long enough to be read.
+ * While a dialogue box is open nothing new goes up and the ones up stand still:
+ * on a phone the box covers the toasts, and no line should go by under it.
+ */
+import type { Bundle, GameEvent, State } from '@game/kernel';
+import { describe } from './text';
+
+export type Tone = 'good' | 'bad' | 'info';
+
+/** One toast as the player reads it: one line, or the task lines of one action. */
+export interface Toast {
+  lines: string[];
+  tone: Tone;
+  icon?: string;
+}
+
+/** A described event; `task` marks a task line: a task done, or a new one. */
+export interface Line {
+  text: string;
+  tone?: Tone;
+  icon?: string;
+  task?: 'done' | 'active';
+}
+
+/**
+ * How the toasts keep time, in ms: at most `max` stand at once, a fading one
+ * too; each stands for `life` and takes `fade` to go; one that another waits
+ * for leaves after `least`.
+ */
+export const TOASTS = { max: 2, life: 2800, fade: 500, least: 1200 } as const;
+
+/** The toasts of one batch of events. A fall says it all in its one box: the calls to run from the hunt that ended stay down. */
+export function eventToasts(b: Bundle, s: State, events: readonly GameEvent[]): Toast[] {
+  const fell = events.some((e) => e.e === 'fall');
+  const lines: Line[] = [];
+  for (const e of events) {
+    if (fell && e.e === 'hurt') continue;
+    const d = describe(b, s, e);
+    if (d) lines.push(e.e === 'quest' ? { ...d, task: e.state } : d);
+  }
+  return mergeTasks(lines);
+}
+
+/**
+ * Two task lines or more from one action ("Task done" and "New task" from one
+ * build or hand-in) become one toast where the first of them stood: the done
+ * lines first, then the new ones, green when a task was done.
+ */
+export function mergeTasks(lines: readonly Line[]): Toast[] {
+  const one = (l: Line): Toast => ({ lines: [l.text], tone: l.tone ?? 'info', ...(l.icon ? { icon: l.icon } : {}) });
+  const tasks = lines.filter((l) => l.task);
+  if (tasks.length < 2) return lines.map(one);
+  const merged: Toast = {
+    lines: [...tasks.filter((l) => l.task === 'done'), ...tasks.filter((l) => l.task === 'active')].map((l) => l.text),
+    tone: tasks.some((l) => l.task === 'done') ? 'good' : 'info',
+  };
+  return lines.flatMap((l) => (!l.task ? [one(l)] : l === tasks[0] ? [merged] : []));
+}
+
+/** What the page does at one moment: toasts to put up, to start fading and to take down, and when to look again. */
+export interface BandStep<T> {
+  show: T[];
+  fade: T[];
+  remove: T[];
+  /** the time of the next change; none while nothing is up or the band is held */
+  next?: number;
+}
+
+interface Up<T> {
+  item: T;
+  /** when it went up */
+  at: number;
+  /** when it began to fade */
+  out?: number;
+}
+
+/** The toasts on screen and in line, by a clock the page passes in. */
+export class ToastBand<T> {
+  private line: T[] = [];
+  private up: Up<T>[] = [];
+  /** when a box began to hold the band */
+  private heldAt: number | undefined;
+
+  /** A toast joins the line; run() puts it up once a place is free. */
+  add(item: T): void {
+    this.line.push(item);
+  }
+
+  /** Takes everything down at once, the line too; returns what was on screen. */
+  clear(): T[] {
+    const items = this.up.map((u) => u.item);
+    this.up = [];
+    this.line = [];
+    this.heldAt = undefined;
+    return items;
+  }
+
+  /** Brings the band to `now`. While `held`, nothing changes and the clocks of the toasts up stand still. */
+  run(now: number, held: boolean): BandStep<T> {
+    const step: BandStep<T> = { show: [], fade: [], remove: [] };
+    if (held) {
+      this.heldAt ??= now;
+      return step;
+    }
+    if (this.heldAt !== undefined) {
+      const stood = now - this.heldAt;
+      for (const u of this.up) {
+        u.at += stood;
+        if (u.out !== undefined) u.out += stood;
+      }
+      this.heldAt = undefined;
+    }
+    this.up = this.up.filter((u) => {
+      const gone = u.out !== undefined && now >= u.out + TOASTS.fade;
+      if (gone) step.remove.push(u.item);
+      return !gone;
+    });
+    while (this.line.length > 0 && this.up.length < TOASTS.max) {
+      const item = this.line.shift()!;
+      this.up.push({ item, at: now });
+      step.show.push(item);
+    }
+    const hurried = this.hurried();
+    for (const u of this.up) {
+      if (u.out === undefined && now >= this.due(u, hurried)) {
+        u.out = now;
+        step.fade.push(u.item);
+      }
+    }
+    const after = this.hurried();
+    const times = this.up.map((u) => (u.out !== undefined ? u.out + TOASTS.fade : this.due(u, after)));
+    if (times.length > 0) step.next = Math.max(now, Math.min(...times));
+    return step;
+  }
+
+  /** The one that leaves early: the oldest up and not fading, while another waits and none is fading yet. */
+  private hurried(): Up<T> | undefined {
+    if (this.line.length === 0 || this.up.some((u) => u.out !== undefined)) return undefined;
+    return this.up[0];
+  }
+
+  private due(u: Up<T>, hurried: Up<T> | undefined): number {
+    return u.at + (u === hurried ? TOASTS.least : TOASTS.life);
+  }
+}

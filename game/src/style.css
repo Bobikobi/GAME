@@ -368,7 +368,7 @@ textarea {
 
 /* ------------------------------------------------------------ HUD */
 
-/* HUD, quest tracker and toasts stack in one column, so they never overlap */
+/* HUD, quest tracker and toasts stack in one column, so they never overlap (a phone puts the toasts low: see its rules at the end) */
 .top {
   position: absolute;
   top: max(8px, env(safe-area-inset-top));
@@ -452,7 +452,7 @@ textarea {
   gap: 5px;
   padding: 1px 7px;
   font: inherit;
-  font-size: 14px;
+  font-size: 16px;
   min-height: 26px;
 }
 
@@ -494,10 +494,11 @@ textarea {
   background: var(--gold);
 }
 
+/* as wide in letters as it was at 14px, so a step breaks where it did */
 .tracker {
-  max-width: min(320px, 100%);
+  max-width: min(23em, 100%);
   padding: 5px 9px;
-  font-size: 14px;
+  font-size: 16px;
   cursor: pointer;
 }
 
@@ -531,11 +532,16 @@ textarea {
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  font-size: 15px;
+  font-size: 16px;
   transition:
     opacity 0.4s,
     transform 0.4s;
   animation: pop 0.18s ease-out;
+}
+
+/* the task lines of one action share a toast, one line each */
+.toast-text {
+  white-space: pre-line;
 }
 
 .toast.good {
@@ -1852,6 +1858,23 @@ textarea {
   .md li {
     font-size: 16px;
     line-height: 1.4;
+  }
+  /* the toasts sit low, just above the action prompt (its lift, its 36px and a gap): clear of
+     the player in the middle and of the HUD on top; a dialogue box holds them while it is open */
+  .toasts {
+    position: fixed;
+    left: max(8px, env(safe-area-inset-left));
+    right: max(8px, env(safe-area-inset-right));
+    bottom: calc(max(8px, env(safe-area-inset-bottom)) + 14px + 44px);
+    width: auto;
+  }
+  .touch-on .toasts {
+    bottom: calc(max(8px, env(safe-area-inset-bottom)) + 168px + 44px);
+  }
+  /* where the camera stops at the foot of the map the player stands that low: they go up (ui.ts) */
+  .toasts.up {
+    position: static;
+    width: min(100%, 420px);
   }
 }
 
