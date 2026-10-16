@@ -105,6 +105,7 @@ export function say(ui: UI, speaker: string | null, lines: string[], options: Op
     });
     const layer: Layer = {
       el,
+      holdsToasts: true,
       onButton: (b) => {
         if (b === 'a') next();
         else if (b === 'up') moveFocus(-1);
