@@ -1,0 +1,45 @@
+{
+  "$schema": "../../../schema/json/quest.schema.json",
+  "format": 1,
+  "type": "quest",
+  "id": "core/the-south-bank",
+  "title": "The south bank",
+  "creator": "core",
+  "quest": {
+    "giver": "core/trader",
+    "type": "stealth",
+    "summary": "Travellers pay well for moonreed. The wolf charges more. Bring me one from the south bank after dark.",
+    "requires": [
+      "core/herbs-for-pell"
+    ],
+    "steps": [
+      {
+        "kind": "find",
+        "item": "core/moonreed",
+        "clue": "Pell says moonreed opens after dark on the south bank. The wolf watches the open meadow; tall grass hides you from its eyes, never from its nose."
+      }
+    ],
+    "reward": {
+      "rep": 15,
+      "gold_mg": 30000,
+      "items": [
+        {
+          "item": "core/first-aid-kit",
+          "qty": 1
+        }
+      ]
+    },
+    "talk": {
+      "offer": [
+        "A traveller bought moonreed here once. South bank, after dark.",
+        "A wolf walks that bank. Tall grass hides you from its eyes, not its nose."
+      ],
+      "waiting": [
+        "Moonreed opens after dark. Watch the wolf's eyes, not its teeth."
+      ],
+      "done": [
+        "Moonreed, and no bite marks. That is worth the full price."
+      ]
+    }
+  }
+}
