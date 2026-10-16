@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, test } from 'vitest';
 
 import { type Bundle, campTile, newState } from '@game/kernel';
 import { falloff, panFor, voicePitch } from '../src/audio/spatial';
-import { DREAD_RANGE, FIRE_RANGE, STREAM_RANGE, soundscape } from '../src/soundscape';
+import { CRACKLE_RANGE, DREAD_RANGE, FIRE_RANGE, STREAM_RANGE, soundscape } from '../src/soundscape';
 import { loadBundle } from '../../tools/test/helpers/world';
 
 describe('falloff', () => {
@@ -97,5 +97,33 @@ describe('soundscape', () => {
     const square = b.map.slots.find((s) => s.id === 'core/town-square')!;
     expect(soundscape(b, state, night, square.x + 1, square.y + 1).dread.level).toBe(0);
     expect(DREAD_RANGE[1]).toBeGreaterThan(DREAD_RANGE[0]);
+  });
+
+  test('a burning fire crackles within six tiles of it, louder nearer, and is silent once out (6b)', () => {
+    const hearth = b.map.props.find((p) => p.id === 'core/elder-hearth')!;
+    const [cx, cy] = [hearth.x + hearth.w / 2, hearth.y + hearth.h / 2];
+    const state = newState(b, 1);
+    // never lit: silent beside it
+    expect(soundscape(b, state, 0, cx, cy).crackle.level).toBe(0);
+    state.player.fires['core/elder-hearth'] = { lit: 0, until: 100_000 };
+    expect(soundscape(b, state, 0, cx, cy).crackle.level).toBe(1);
+    expect(soundscape(b, state, 0, cx + 1, cy).crackle.level).toBe(1);
+    let last = 2;
+    for (let d = 0; d <= CRACKLE_RANGE[1] + 2; d += 0.5) {
+      const level = soundscape(b, state, 50_000, cx + d, cy).crackle.level;
+      expect(level).toBeLessThanOrEqual(last);
+      last = level;
+    }
+    const mid = soundscape(b, state, 0, cx + 3, cy).crackle;
+    expect(mid.level).toBeGreaterThan(0);
+    expect(mid.level).toBeLessThan(1);
+    // the fire on the left is heard on the left
+    expect(mid.pan).toBeLessThan(0);
+    expect(soundscape(b, state, 0, cx, cy + 6).crackle.level).toBe(0);
+    expect(soundscape(b, state, 0, cx - 7, cy).crackle.level).toBe(0);
+    // out at its until: silent beside it
+    expect(soundscape(b, state, 99_999, cx, cy).crackle.level).toBe(1);
+    expect(soundscape(b, state, 100_000, cx, cy).crackle.level).toBe(0);
+    expect(CRACKLE_RANGE).toEqual([1.5, 6]);
   });
 });

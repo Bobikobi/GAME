@@ -392,6 +392,8 @@ export class WorldScene extends Phaser.Scene {
     this.time.addEvent({ delay: 480, loop: true, callback: () => this.flipWater() });
     sound.installUnlock();
     sound.music('valley', 1500);
+    // the crackle holds its nodes only while heard: none outlives the world
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => sound.crackle(0));
     app.world = this;
     app.ui.worldReady();
   }
@@ -1327,6 +1329,7 @@ export class WorldScene extends Phaser.Scene {
     this.placePinned();
     const s = this.session;
     if (!s || !s.started) {
+      sound.crackle(0);
       this.attract(delta);
       return;
     }
@@ -1596,10 +1599,11 @@ export class WorldScene extends Phaser.Scene {
 
   // ------------------------------------------------------------ day, night and the things in the dark
 
-  /** The campfire, the stream and the ruins sound as loud as the player is near them (soundscape.ts). */
+  /** The campfire, the stream, the ruins and a burning fire sound as loud as the player is near them (soundscape.ts). */
   private hearPlace(s: Session): void {
     const scape = soundscape(this.b, s.state, s.tick, this.player.x / T, this.player.y / T - 0.5);
     for (const id of ['fire', 'stream', 'dread'] as const) sound.bed(id, scape[id].level, scape[id].pan);
+    sound.crackle(scape.crackle.level, scape.crackle.pan);
   }
 
   private shadeFor(s: Session): void {
