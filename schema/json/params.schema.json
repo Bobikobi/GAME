@@ -1309,7 +1309,8 @@
                 "eyes",
                 "catch_ms",
                 "bite_ms",
-                "bite_pct"
+                "bite_pct",
+                "refill_bp"
               ],
               "properties": {
                 "reach": {
@@ -1473,6 +1474,33 @@
                     }
                   },
                   "description": "What one bite takes, in percent of the health cap."
+                },
+                "refill_bp": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "How high a hunt outrun to a safe place lifts health, in basis points of the health cap: it gives back what its bites took, up to this share. It never lowers health."
                 }
               }
             },

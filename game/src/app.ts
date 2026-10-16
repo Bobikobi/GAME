@@ -16,6 +16,8 @@ export interface WorldView {
   startWork(nodeId: string, onDone?: () => void): void;
   dropWork(): void;
   lightLantern(): void;
+  /** whether a rectangle of tiles is on the screen now; a view without it is read by distance */
+  sees?(r: { x: number; y: number; w: number; h: number }): boolean;
 }
 
 export interface App {
