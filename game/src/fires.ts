@@ -120,6 +120,7 @@ export function nextLogClock(b: Bundle, s: State, id: string, tick: number): str
  * vigil does not hold, what it still needs - lighting before dusk when the fire is out
  * or was lit after dark began, else the logs that carry it to dawn, and while the fire
  * is too full for a whole log, the time the next one fits (the kernel refuses it before).
+ * A fire with wood to dawn still waits for it: the vigil holds only once dawn has come.
  */
 export function tendLine(b: Bundle, s: State, id: string, tick: number): { text: string; done: boolean } {
   const text = `Keep the ${fireName(id)} burning until dawn`;
@@ -127,7 +128,7 @@ export function tendLine(b: Bundle, s: State, id: string, tick: number): { text:
   const fire = s.player.fires?.[id];
   if (fire === undefined || !fireBurns(s, id, tick) || fire.lit > vigilDusk(b, tick)) return { text: `${text} - light it before dusk`, done: false };
   const n = logsToDawn(b, s, id, tick);
-  if (n === 0) return { text, done: false };
+  if (n === 0) return { text: `${text} - it has the wood: wait for dawn`, done: false };
   const at = nextLogClock(b, s, id, tick);
   const when = at === undefined ? '' : `, the next at ${at}`;
   return { text: `${text} - fed to reach dawn: ${n} more ${n === 1 ? 'log' : 'logs'}${when}`, done: false };

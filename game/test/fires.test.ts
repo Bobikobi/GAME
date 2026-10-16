@@ -105,15 +105,23 @@ describe('the journal line of a tend step', () => {
     expect(line(withFire({ lit: DUSK + 10_000, until: DAWN }), DUSK + 20_000)!.text).toBe('Keep the elder hearth burning until dawn - light it before dusk');
   });
 
-  test('is met once the wood reaches dawn, and agrees with the kernel', () => {
+  test('waits for dawn once the wood reaches it, is met at dawn until the next dusk, and agrees with the kernel', () => {
     const s = withFire({ lit: H19, until: DAWN });
-    expect(line(s, DUSK + 1)).toEqual({ text: 'Keep the elder hearth burning until dawn', done: true });
-    for (const tick of [H19, DUSK, DUSK + 1, H21, DAWN, DAWN + 1]) {
+    const waiting = { text: 'Keep the elder hearth burning until dawn - it has the wood: wait for dawn', done: false };
+    expect(line(s, DUSK + 1)).toEqual(waiting);
+    expect(line(s, DAWN - 1)).toEqual(waiting);
+    expect(line(s, DAWN)).toEqual({ text: 'Keep the elder hearth burning until dawn', done: true });
+    // met through the day; the next dusk asks for a new night
+    const nextDusk = DUSK + bundle.params.day_length_ms;
+    expect(line(s, nextDusk - 1)!.done).toBe(true);
+    expect(line(s, nextDusk)).toEqual({ text: 'Keep the elder hearth burning until dawn - light it before dusk', done: false });
+    for (const tick of [H19, DUSK, DUSK + 1, H21, DAWN - 1, DAWN, DAWN + 1, nextDusk - 1, nextDusk]) {
       expect(line(s, tick)!.done).toBe(questSatisfied(bundle, { ...s, tick }, QUEST));
     }
-    // the state's own tick lags behind the live one: the giver reads the live tick
+    // the state's own tick lags behind the live one: the giver reads the live tick, and only from dawn
     s.tick = H19;
     expect(readyToHandIn(bundle, s, QUEST)).toBe(false);
+    expect(readyToHandIn(bundle, s, QUEST, DAWN - 1)).toBe(false);
     expect(readyToHandIn(bundle, s, QUEST, DAWN)).toBe(true);
   });
 });

@@ -6,7 +6,7 @@
 import type { Bundle, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
 
-export const KERNEL_VERSION = '0.9.0';
+export const KERNEL_VERSION = '0.10.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['carry', 'senses', 'agility', 'luck', 'stamina'] as const;
@@ -390,11 +390,17 @@ export function burnsAsWood(bundle: Bundle, itemId: string): boolean {
   return cls === 'wood' || (cls !== undefined && bundle.classes[cls]?.base === 'wood');
 }
 
-/** Whether a fire keeps a `tend` step's vigil at this tick: lit by the last dusk at or before it, and fed to that night's dawn. */
+/**
+ * Whether a fire has kept a `tend` step's vigil at this tick: the night of the last dusk at or
+ * before it is over (the tick is at or after that night's dawn), and the fire was lit by that dusk
+ * and burned without a gap to that dawn. Before dawn it does not hold, however much wood the fire
+ * has; by day it holds until the next dusk (DECISIONS.md, 2026-10-16: the vigil closes at dawn).
+ */
 export function tendHolds(bundle: Bundle, state: State, id: string, tick: number): boolean {
   const fire = state.player.fires?.[id];
   const dusk = lastDusk(bundle, tick);
-  return fire !== undefined && fire.lit <= dusk && fire.until >= nightEnds(bundle, dusk);
+  const dawn = nightEnds(bundle, dusk);
+  return fire !== undefined && tick >= dawn && fire.lit <= dusk && fire.until >= dawn;
 }
 
 /**
