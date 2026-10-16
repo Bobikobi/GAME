@@ -6,7 +6,7 @@
 import type { Bundle, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
 
-export const KERNEL_VERSION = '0.8.0';
+export const KERNEL_VERSION = '0.9.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['carry', 'senses', 'agility', 'luck', 'stamina'] as const;
@@ -123,6 +123,8 @@ export interface Player {
   outing: Outing | null;
   /** the hunt the player is in, if any */
   chase: Chase | null;
+  /** quests that were open when a predator bit the player, sorted: the giver's line at the hand-in may say so */
+  bitten: string[];
   /** tended fires by map prop id */
   fires: Record<string, FireState>;
   /** Expedition progress by expedition id. Chain quests persist separately in `quests`. */
@@ -182,6 +184,7 @@ export function newState(bundle: Bundle, seed: number): State {
       town: '',
       outing: null,
       chase: null,
+      bitten: [],
       fires: {},
       expeditions: {},
       falls: 0,

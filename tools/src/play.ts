@@ -254,7 +254,7 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
   // G14: the lines on a quest and a place are boxes like any other (GRUNT S-2); the schema caps how many.
   const lined: [string, string, readonly string[]][] = [
     ...Object.values(b.quests).flatMap((q) =>
-      (['offer', 'waiting', 'done'] as const).map((k): [string, string, readonly string[]] => [q.id, `quest.talk.${k}`, q.talk?.[k] ?? []]),
+      (['offer', 'waiting', 'done', 'done_bitten'] as const).map((k): [string, string, readonly string[]] => [q.id, `quest.talk.${k}`, q.talk?.[k] ?? []]),
     ),
     ...Object.values(b.restores).map((r): [string, string, readonly string[]] => [r.id, 'restore.done', r.done ?? []]),
   ];

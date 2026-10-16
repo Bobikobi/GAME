@@ -88,6 +88,8 @@ export type GameEvent =
   | { e: 'build'; camp: string }
   | { e: 'eat'; item: string; satiety: number }
   | { e: 'fire'; id: string; until: number }
+  /** a fire a `tend` step of an open quest keeps went out: once per burn, at the first step at or after its `until` */
+  | { e: 'fire_out'; id: string }
   | { e: 'busy'; verb: string; ms: number }
   | { e: 'nothing'; verb: string }
   | { e: 'jackpot'; verb: string }
@@ -101,6 +103,10 @@ export type GameEvent =
   | { e: 'hurt'; by: string; id?: string; hp: number }
   /** health reached zero (G33): the player fell at `from`, lost `lost` (what the outing brought), and woke at `at` */
   | { e: 'fall'; from: Tile; at: Tile; lost: { item: string; qty: number }[] }
+  /** a predator noticed the player and a hunt began: once, at the step that starts it; `id` is the predator prop */
+  | { e: 'seen'; id: string }
+  /** a hunt ended because the player reached a safe place (G30), not at dawn or in a fall; `bitten` when it bit at least once */
+  | { e: 'safe'; id: string; bitten: boolean }
   | { e: 'bell'; expedition: string; n: number }
   | { e: 'walked_out'; expedition: string }
   | { e: 'climax'; expedition: string };
@@ -219,8 +225,10 @@ export function step(bundle: Bundle, state: State, action: Action, tick: number)
   ctx.s.tick = tick;
   ctx.s.player.fires ??= {};
   ctx.s.player.expeditions ??= {};
+  ctx.s.player.bitten ??= [];
   try {
     ctx.walkOut = walkOutDue(ctx);
+    firesOut(ctx, state.tick);
     apply(ctx, action);
     autoQuests(ctx);
     expeditions(ctx);
@@ -270,10 +278,7 @@ function apply(ctx: Ctx, a: Action): void {
   if (arrive(ctx, tileOf(a, s.player.at))) return;
   perform(ctx, a);
   // a camp part built under their feet makes this tile safe: the hunt and the outing end with it
-  if (isSafe(ctx.b, s, s.player.at)) {
-    s.player.chase = null;
-    s.player.outing = null;
-  }
+  if (isSafe(ctx.b, s, s.player.at)) reachSafety(ctx);
   fallIfDown(ctx);
 }
 
@@ -522,6 +527,27 @@ function feed(ctx: Ctx, fireId: string, itemId: string, at: Tile): void {
   removeItem(ctx, itemId, 1);
   s.player.fires[fireId] = next;
   ctx.events.push({ e: 'fire', id: fireId, until: next.until });
+}
+
+/**
+ * A fire that a `tend` step of an open quest keeps, and that went out after the step before this
+ * one (`since`) and at or before this one, is told before the action: at the first step at or after
+ * the moment, as a bell is. Each `until` falls in one gap between two steps, so a burn is told
+ * once, and a fire that went out before the step before is not told again (in a save from before
+ * 0.9 it is never told). The clock and the fire ledger decide, so a replay tells the same (R4).
+ * A fire no open quest keeps is not told: no rule asks for it yet.
+ */
+function firesOut(ctx: Ctx, since: number): void {
+  const { b, s, tick } = ctx;
+  const kept = new Set<string>();
+  for (const id of Object.keys(s.player.quests)) {
+    if (s.player.quests[id] !== 'active') continue;
+    for (const st of b.quests[id]?.steps ?? []) if (st.kind === 'tend') kept.add(st.fire);
+  }
+  for (const id of [...kept].sort()) {
+    const until = s.player.fires[id]?.until;
+    if (until !== undefined && since < until && until <= tick) ctx.events.push({ e: 'fire_out', id });
+  }
 }
 
 function shopOf(ctx: Ctx, npcId: string, at: Tile) {
@@ -999,8 +1025,7 @@ function arrive(ctx: Ctx, at: Tile): boolean {
   p.at = [at[0], at[1]];
   p.movedAt = tick;
   if (isSafe(b, s, at)) {
-    p.chase = null;
-    p.outing = null;
+    reachSafety(ctx);
     if (isTownTile(b, at)) p.town = townAt(b, at) || p.town;
   } else {
     p.outing ??= { gained: {}, solved: [], visited: [] };
@@ -1018,7 +1043,10 @@ function strike(ctx: Ctx, before: Tile, at: Tile): void {
     if (!windowOpen(b, h, tick)) continue;
     if (h.kind === 'predator') {
       const noticed = h.round ? sees(b, h, tick, at) : distanceTo(at, h.rect) <= h.reach;
-      if (s.player.chase === null && noticed) s.player.chase = { hazard: h.id, since: tick, bites: 0 };
+      if (s.player.chase === null && noticed) {
+        s.player.chase = { hazard: h.id, since: tick, bites: 0 };
+        ctx.events.push({ e: 'seen', id: h.id });
+      }
     } else if (inRect(at[0], at[1], h.rect) && !inRect(before[0], before[1], h.rect)) {
       hurt(ctx, harmOf(b, cap, h.kind), h.kind, h.id);
     }
@@ -1041,8 +1069,33 @@ function chaseBites(ctx: Ctx): void {
   if (due > chase.bites) {
     hurt(ctx, (due - chase.bites) * harmOf(b, satietyCap(b, s), 'predator'), 'predator', h.id);
     chase.bites = due;
+    markBitten(ctx);
   }
   if (tick >= shut) s.player.chase = null;
+}
+
+/** A bite marks every quest open when it lands, for good: the giver's line at the hand-in may say so (`talk.done_bitten`). */
+function markBitten(ctx: Ctx): void {
+  const p = ctx.s.player;
+  const open = Object.keys(p.quests).filter((id) => p.quests[id] === 'active' && !p.bitten.includes(id));
+  if (open.length > 0) p.bitten = [...p.bitten, ...open].sort();
+}
+
+/**
+ * The player stands somewhere safe (G30): the outing is over, and a hunt ends here. A hunt outrun
+ * leaves at least `refill_bp` of the health cap (G32) and never takes health away. A hunt that
+ * ended before (at dawn, in a fall, at a walk-out, or with its predator gone) is over already:
+ * nothing is told and nothing given.
+ */
+function reachSafety(ctx: Ctx): void {
+  const { b, s } = ctx;
+  const p = s.player;
+  const chase = p.chase;
+  p.chase = null;
+  p.outing = null;
+  if (chase === null) return;
+  p.satiety = Math.max(p.satiety, mulDiv(satietyCap(b, s), b.params.hazard.predator.refill_bp, 10_000));
+  ctx.events.push({ e: 'safe', id: chase.hazard, bitten: chase.bites > 0 });
 }
 
 function hurt(ctx: Ctx, amount: number, by: string, id?: string): void {

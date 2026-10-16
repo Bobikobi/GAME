@@ -54,3 +54,13 @@ export function pickRemark(
   });
   return best && { key: best.key, say: best.say };
 }
+
+/**
+ * What a quest's giver says at the hand-in: `talk.done_bitten` when a predator bit the player while
+ * the quest was open and the content wrote that line, else `talk.done`; undefined when it has neither.
+ */
+export function doneLines(bundle: Bundle, state: State, questId: string): readonly string[] | undefined {
+  const talk = bundle.quests[questId]?.talk;
+  if (talk?.done_bitten && state.player.bitten?.includes(questId)) return talk.done_bitten;
+  return talk?.done;
+}
