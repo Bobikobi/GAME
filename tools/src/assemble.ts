@@ -33,13 +33,14 @@ export interface Assembled {
   origin: Record<string, string>;
 }
 
-type RecordKey = 'resources' | 'treasures' | 'recipes' | 'npcs' | 'quests' | 'restores' | 'camps' | 'starters' | 'professions' | 'shops';
+type RecordKey = 'resources' | 'treasures' | 'recipes' | 'npcs' | 'quests' | 'expeditions' | 'restores' | 'camps' | 'starters' | 'professions' | 'shops';
 const KEY_OF: Record<string, RecordKey | undefined> = {
   resource: 'resources',
   treasure: 'treasures',
   recipe: 'recipes',
   npc: 'npcs',
   quest: 'quests',
+  expedition: 'expeditions',
   restore: 'restores',
   camp: 'camps',
   starter: 'starters',
@@ -53,6 +54,7 @@ const BODY_OF: Record<string, string> = {
   template: 'template',
   npc: 'npc',
   quest: 'quest',
+  expedition: 'expedition',
   restore: 'restore',
   camp: 'camp',
   starter: 'starter',
@@ -146,6 +148,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
     recipes: {},
     npcs: {},
     quests: {},
+    expeditions: {},
     restores: {},
     camps: {},
     starters: {},
@@ -484,7 +487,32 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
       if (!b.restores[rid]) err(id, `quest.reward.opens.${i}`, `no restore "${rid}"`);
     });
   }
-  const opened = new Set(Object.values(b.quests).flatMap((q) => q.reward.opens ?? []));
+  for (const [id, x] of Object.entries(b.expeditions)) {
+    if (!b.map.slots.some((s) => s.id === x.place)) err(id, 'expedition.place', `no slot "${x.place}"`);
+    if (!b.map.slots.some((s) => s.id === x.exit)) err(id, 'expedition.exit', `no slot "${x.exit}"`);
+    if (!b.map.slots.some((s) => s.id === x.climax.slot)) err(id, 'expedition.climax.slot', `no slot "${x.climax.slot}"`);
+    x.chain.forEach((qid, i) => {
+      if (!b.quests[qid]) err(id, `expedition.chain.${i}`, `no quest "${qid}"`);
+    });
+    (x.reward.items ?? []).forEach((s, i) => {
+      const w = `expedition.reward.items.${i}`;
+      item(id, w, s.item);
+      if (s.instead !== undefined) item(id, `${w}.instead`, s.instead);
+      for (const [sid, st] of Object.entries(b.starters)) {
+        const kit = (st.kit ?? []).map((k) => k.item);
+        if (!kit.includes(s.item)) continue;
+        if (s.instead === undefined) err(id, w, `the kit of "${sid}" holds "${s.item}": name an item for it in "instead"`);
+        else if (kit.includes(s.instead)) err(id, `${w}.instead`, `the kit of "${sid}" holds "${s.instead}" too`);
+      }
+    });
+    (x.reward.opens ?? []).forEach((rid, i) => {
+      if (!b.restores[rid]) err(id, `expedition.reward.opens.${i}`, `no restore "${rid}"`);
+    });
+  }
+  const opened = new Set([
+    ...Object.values(b.quests).flatMap((q) => q.reward.opens ?? []),
+    ...Object.values(b.expeditions).flatMap((x) => x.reward.opens ?? []),
+  ]);
   for (const [id, r] of Object.entries(b.restores)) {
     if (r.inputs.length === 0 && !opened.has(id)) err(id, 'restore.inputs', 'no inputs and no quest opens it: it could never open');
     r.inputs.forEach((s, i) => item(id, `restore.inputs.${i}.item`, s.item));

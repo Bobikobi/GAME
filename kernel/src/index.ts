@@ -1,6 +1,7 @@
 export * from './bundle';
 export * from './canon';
 export * from './danger';
+export { bellTicks, bellsRung, inside, lastBellAt, visitNight, windowOpen as expeditionWindowOpen } from './expedition';
 export * from './num';
 export * from './rng';
 export * from './state';

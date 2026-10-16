@@ -6,7 +6,7 @@
 import type { Bundle, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
 
-export const KERNEL_VERSION = '0.7.0';
+export const KERNEL_VERSION = '0.8.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['carry', 'senses', 'agility', 'luck', 'stamina'] as const;
@@ -69,6 +69,14 @@ export interface FireState {
   until: number;
 }
 
+export interface ExpeditionState {
+  climax: boolean;
+  /** Tick of the first action or report inside the place on this visit. */
+  entered?: number;
+  /** Bells accounted for on this visit; bells before entry are never reported. */
+  rung: number;
+}
+
 export interface Player {
   name: string;
   /** '' until the player picks a starter */
@@ -117,6 +125,8 @@ export interface Player {
   chase: Chase | null;
   /** tended fires by map prop id */
   fires: Record<string, FireState>;
+  /** Expedition progress by expedition id. Chain quests persist separately in `quests`. */
+  expeditions: Record<string, ExpeditionState>;
   /** falls so far: the draw counter of the tile they wake on (rule R4) */
   falls: number;
   /** tick of the last arrival: a position report, or an action at a tile */
@@ -173,6 +183,7 @@ export function newState(bundle: Bundle, seed: number): State {
       outing: null,
       chase: null,
       fires: {},
+      expeditions: {},
       falls: 0,
       movedAt: 0,
     },

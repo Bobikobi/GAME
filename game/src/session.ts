@@ -167,6 +167,9 @@ export class Session {
     // a save from before tending (P-13a) has no fire ledger
     const tending = state.player as Partial<Pick<State['player'], 'fires'>>;
     tending.fires ??= {};
+    // a save from before expeditions (P-14a) has no expedition progress
+    const expedition = state.player as Partial<Pick<State['player'], 'expeditions'>>;
+    expedition.expeditions ??= {};
     const session = new Session(bundle, state);
     stampDemo();
     if (state.content !== bundle.tag) {
