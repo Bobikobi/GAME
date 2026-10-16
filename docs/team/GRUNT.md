@@ -472,12 +472,20 @@ Files:
 - `.github/workflows/loop.yml`: after the hourly `loop all` step, a step that
   runs `pnpm hub:data --out /tmp/hub-data.json` with `HUB_GITHUB_TOKEN:
   ${{ secrets.GITHUB_TOKEN }}`, fetches `https://<production host>/api/hub-data.json`,
-  compares the two with `tools/src/hub/same.ts` (equal when every section but
-  `built_at` and `sources.*.fetched_at` is equal), and when different runs
+  compares the two with `tools/src/hub/same.ts` (`pnpm hub:same`; equal when
+  every section but `built_at`, `sources.*.fetched_at` and `usage.since` /
+  `usage.until` is equal), and when different runs
   `curl -fsS -X POST "$VERCEL_DEPLOY_HOOK"`. The hook URL is the repository
   secret `VERCEL_DEPLOY_HOOK` (the lead creates the hook in the Vercel project
   for `main` and adds the secret; the item's pull request says so and does
   nothing until it exists: the step is skipped when the secret is empty).
+  The schedule is hourly (`23 * * * *`; the repository is public, so Actions
+  minutes are free).
+- As built (15.10): the run reads the usage counters too, with the repository
+  secrets `KV_REST_API_URL` and `KV_REST_API_READ_ONLY_TOKEN` (`usage.ts`
+  accepts the read-only token), so its `usage` matches production's; without
+  them every run would read `changed`, so the step warns and compares nothing.
+  DECISIONS.md 2026-10-15, "The hourly refresh reads the counters".
 - `tools/src/hub/same.ts` with `tools/test/hub/same.test.ts`: two documents
   that differ only in times are the same; a changed support count is not.
 
@@ -595,9 +603,9 @@ Files:
 
 Proving command:
 ```
-pnpm --filter web test && curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "content-type: application/json" -d '{"id":"core/berry"}' https://<preview>/api/s1/visit
+pnpm --filter web test && curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "content-type: application/json" -d '{"id":"core/berry"}' https://<preview>/api/s1/visit/
 ```
-Tests green; the curl prints 204 on a preview that has the two env names.
+Tests green; the curl prints 204 on a preview that has the two env names. The URL ends with a slash, like every URL of the site (`trailingSlash: 'always'`; without it the host answers a redirect).
 
 Decision: DECISIONS.md 2026-10-07, "The stage-1 service runs as Vercel
 Functions with Upstash Redis in the same project".

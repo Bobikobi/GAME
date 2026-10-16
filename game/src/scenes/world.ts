@@ -2140,6 +2140,7 @@ export class WorldScene extends Phaser.Scene {
       title: content.title,
       lines,
       empty: false,
+      record: content.id,
       creator: {
         name,
         role: profile?.role,
@@ -2176,6 +2177,8 @@ export interface SignInfo {
   title: string;
   lines: string[];
   empty: boolean;
+  /** the id of the record that fills the place */
+  record?: string;
   creator?: {
     name: string;
     role?: string;
