@@ -2,7 +2,21 @@
 import { beforeAll, describe, expect, test } from 'vitest';
 
 import { type Bundle, type FireState, type State, newState, questSatisfied } from '@game/kernel';
-import { TOO_DARK, fireLow, fireName, fireWarnKey, fireWarning, logsToDawn, nextLogClock, readable, wantsWood, warnTicks, woodToFeed } from '../src/fires';
+import {
+  TOO_DARK,
+  feedTooLate,
+  fireLow,
+  fireName,
+  fireWarnKey,
+  fireWarning,
+  logsToDawn,
+  nextLogClock,
+  nightLost,
+  readable,
+  wantsWood,
+  warnTicks,
+  woodToFeed,
+} from '../src/fires';
 import { describe as describeEvent, questSteps, readyToHandIn } from '../src/text';
 import { loadBundle } from '../../tools/test/helpers/world';
 
@@ -65,8 +79,10 @@ describe('the journal line of a tend step', () => {
 
   test('asks to light it before dusk while it is out', () => {
     expect(line(withFire(), H19)).toEqual({ text: 'Keep the elder hearth burning until dawn - light it before dusk', done: false });
-    // burnt out at 21:00
-    expect(line(withFire({ lit: H19, until: H21 }), H21 + 1)!.text).toBe('Keep the elder hearth burning until dawn - light it before dusk');
+    // burnt out at 21:00, in the night it was keeping: that night is lost, and the line says so
+    expect(line(withFire({ lit: H19, until: H21 }), H21 + 1)!.text).toBe(
+      'Keep the elder hearth burning until dawn - it went out, tonight is lost: light it before dusk',
+    );
   });
 
   test('counts the logs to dawn once it burns, from 19:00 through the night', () => {
@@ -102,7 +118,9 @@ describe('the journal line of a tend step', () => {
   });
 
   test('a fire first lit after dark began cannot keep this night', () => {
-    expect(line(withFire({ lit: DUSK + 10_000, until: DAWN }), DUSK + 20_000)!.text).toBe('Keep the elder hearth burning until dawn - light it before dusk');
+    expect(line(withFire({ lit: DUSK + 10_000, until: DAWN }), DUSK + 20_000)!.text).toBe(
+      'Keep the elder hearth burning until dawn - tonight is lost: light it before dusk',
+    );
   });
 
   test('waits for dawn once the wood reaches it, is met at dawn until the next dusk, and agrees with the kernel', () => {
@@ -140,19 +158,17 @@ describe('the running-low warning', () => {
     expect(fireWarnKey(bundle, withFire({ lit: H21 + 5, until: H21 + 100_005 }), HEARTH, H21 + 90_000)).toBe(`${HEARTH}@${H21 + 5}`);
   });
 
-  test('once per burn, only for a fire a tend step keeps, only where the player sees it', () => {
+  test('once per burn, only for a fire a tend step keeps, wherever the player stands', () => {
     const at = H21 - 10_000;
     const s = withFire({ lit: H19, until: H21 });
-    const seen = () => true;
-    expect(fireWarning(bundle, s, at, new Set(), seen)).toEqual({ key: `${HEARTH}@${H19}`, id: HEARTH, name: 'elder hearth' });
-    expect(fireWarning(bundle, s, at, new Set([`${HEARTH}@${H19}`]), seen)).toBeUndefined();
-    expect(fireWarning(bundle, s, at, new Set(), () => false)).toBeUndefined();
-    expect(fireWarning(bundle, withFire({ lit: H19, until: H21 }, 'done'), at, new Set(), seen)).toBeUndefined();
-    expect(fireWarning(bundle, withFire({ lit: H19, until: H21 }, 'none'), at, new Set(), seen)).toBeUndefined();
+    // nothing about the screen goes in: a fire off screen warns as one on it does (6b)
+    expect(fireWarning(bundle, s, at, new Set())).toEqual({ key: `${HEARTH}@${H19}`, id: HEARTH, name: 'elder hearth' });
+    expect(fireWarning(bundle, s, at, new Set([`${HEARTH}@${H19}`]))).toBeUndefined();
+    expect(fireWarning(bundle, withFire({ lit: H19, until: H21 }, 'done'), at, new Set())).toBeUndefined();
+    expect(fireWarning(bundle, withFire({ lit: H19, until: H21 }, 'none'), at, new Set())).toBeUndefined();
   });
 
   test('opens only while the fire wants wood for its night: never once its wood reaches dawn, nor after the night is kept', () => {
-    const seen = () => true;
     const { log_ms } = bundle.params.fire;
     // the journal's night (three logs at 19:00, one at 21:00, one at 23:00) has wood to exactly 05:00:
     // low from 04:30, while the journal waits for dawn, and no box asks for wood
@@ -161,22 +177,22 @@ describe('the running-low warning', () => {
       expect(fireLow(bundle, toDawn, HEARTH, tick)).toBe(true);
       expect(questSteps(bundle, toDawn, QUEST, tick)[0]!.text).toBe('Keep the elder hearth burning until dawn - it has the wood: wait for dawn');
       expect(wantsWood(bundle, toDawn, HEARTH, tick)).toBe(false);
-      expect(fireWarning(bundle, toDawn, tick, new Set(), seen)).toBeUndefined();
+      expect(fireWarning(bundle, toDawn, tick, new Set())).toBeUndefined();
     }
     // three logs at 19:00 alone run out at 01:00: from 00:30 the box opens while the journal asks for two more
     const short = withFire({ lit: H19, until: H19 + 3 * log_ms });
     expect(questSteps(bundle, short, QUEST, 625_000)[0]!.text).toBe('Keep the elder hearth burning until dawn - fed to reach dawn: 2 more logs');
-    expect(fireWarning(bundle, short, 625_000, new Set(), seen)).toEqual({ key: `${HEARTH}@${H19}`, id: HEARTH, name: 'elder hearth' });
+    expect(fireWarning(bundle, short, 625_000, new Set())).toEqual({ key: `${HEARTH}@${H19}`, id: HEARTH, name: 'elder hearth' });
     // lit again at 06:00 after the night it kept: low at 07:30 with the step met, so nothing is asked
     const relit = withFire({ lit: DAWN + 50_000, until: DAWN + 50_000 + log_ms, kept: DAWN });
     expect(fireLow(bundle, relit, HEARTH, DAWN + 125_000)).toBe(true);
     expect(questSteps(bundle, relit, QUEST, DAWN + 125_000)[0]).toEqual({ text: 'Keep the elder hearth burning until dawn', done: true });
-    expect(fireWarning(bundle, relit, DAWN + 125_000, new Set(), seen)).toBeUndefined();
+    expect(fireWarning(bundle, relit, DAWN + 125_000, new Set())).toBeUndefined();
     // lit after dark began: that night is lost, and the journal asks for a fire before the next dusk, not for wood
-    expect(fireWarning(bundle, withFire({ lit: DUSK + 10_000, until: DUSK + 10_000 + log_ms }), DUSK + 100_000, new Set(), seen)).toBeUndefined();
+    expect(fireWarning(bundle, withFire({ lit: DUSK + 10_000, until: DUSK + 10_000 + log_ms }), DUSK + 100_000, new Set())).toBeUndefined();
     // by day a burn that would go out before the coming night is still warned of: a log keeps it for that night
     const noon = bundle.params.day_length_ms;
-    expect(fireWarning(bundle, withFire({ lit: noon, until: noon + 2 * log_ms }), noon + 2 * log_ms - 25_000, new Set(), seen)).toEqual({
+    expect(fireWarning(bundle, withFire({ lit: noon, until: noon + 2 * log_ms }), noon + 2 * log_ms - 25_000, new Set())).toEqual({
       key: `${HEARTH}@${noon}`,
       id: HEARTH,
       name: 'elder hearth',
@@ -210,5 +226,79 @@ describe('a prop lit by a fire', () => {
     expect(readable(s, HEARTH, H21 - 1)).toBe(true);
     expect(readable(s, HEARTH, H21)).toBe(false);
     expect(TOO_DARK).toBe('Too dark to read.');
+  });
+});
+
+describe('a night lost (6b)', () => {
+  const KEEP = 'Keep the elder hearth burning until dawn';
+  const NEXT_DUSK = DUSK + 1_200_000;
+  const line = (s: State, tick: number) => questSteps(bundle, s, QUEST, tick)[0]!.text;
+  const at = (s: State, tick: number): State => ({ ...s, tick });
+
+  test('a fire out in the night it kept: the journal says the night is lost through that night and the day, and the next dusk starts clean', () => {
+    const s = withFire({ lit: H19, until: H21 });
+    expect(nightLost(bundle, s, HEARTH, H21 - 1)).toBeUndefined();
+    for (const tick of [H21, H21 + 1, DAWN - 1]) {
+      expect(nightLost(bundle, s, HEARTH, tick)).toBe('out');
+      expect(line(s, tick)).toBe(`${KEEP} - it went out, tonight is lost: light it before dusk`);
+    }
+    for (const tick of [DAWN, DAWN + 25_000, NEXT_DUSK - 1]) {
+      expect(nightLost(bundle, s, HEARTH, tick)).toBe('past');
+      expect(line(s, tick)).toBe(`${KEEP} - it went out in the night: light it before dusk`);
+    }
+    expect(nightLost(bundle, s, HEARTH, NEXT_DUSK)).toBeUndefined();
+    expect(line(s, NEXT_DUSK)).toBe(`${KEEP} - light it before dusk`);
+  });
+
+  test('nothing is lost by a fire out before dusk, a night kept, or a fire lit again by day', () => {
+    // lit at 17:00, out at 19:00: no night was under way, and none is told lost
+    const early = withFire({ lit: H19 - 100_000, until: H19 });
+    expect(nightLost(bundle, early, HEARTH, H21)).toBeUndefined();
+    expect(line(early, H21)).toBe(`${KEEP} - light it before dusk`);
+    // wood to dawn exactly: the night was kept, though the fire goes out at dawn
+    expect(nightLost(bundle, withFire({ lit: H19, until: DAWN }), HEARTH, DAWN)).toBeUndefined();
+    // out in the night, then lit again at 06:00: the day's line counts logs for the coming night
+    const relit = withFire({ lit: DAWN + 50_000, until: DAWN + 150_000 });
+    expect(nightLost(bundle, relit, HEARTH, DAWN + 60_000)).toBeUndefined();
+    expect(line(relit, DAWN + 60_000)).toMatch(/fed to reach dawn/);
+  });
+
+  test('a fire lit after dark began is late for its night: the feed is told plainly, never cheered', () => {
+    const late = withFire({ lit: DUSK + 10_000, until: DUSK + 110_000 });
+    expect(nightLost(bundle, late, HEARTH, DUSK + 10_000)).toBe('late');
+    expect(feedTooLate(bundle, late, HEARTH, DUSK + 10_000)).toBe(true);
+    expect(describeEvent(bundle, at(late, DUSK + 10_000), { e: 'fire', id: HEARTH, until: DUSK + 110_000 })).toEqual({
+      text: 'The elder hearth burns, but tonight is lost.',
+      tone: 'info',
+    });
+    // lit again at 21:10 after it went out at 21:00: just as late
+    const relit = withFire({ lit: H21 + 10_000, until: H21 + 110_000 });
+    expect(feedTooLate(bundle, relit, HEARTH, H21 + 10_000)).toBe(true);
+    expect(describeEvent(bundle, at(relit, H21 + 10_000), { e: 'fire', id: HEARTH, until: H21 + 110_000 })!.tone).toBe('info');
+  });
+
+  test('a feed that can still keep a night, a feed by day, and a fire no task keeps are cheered as before', () => {
+    // a log at 21:00 on a fire lit by its dusk
+    const kept = withFire({ lit: H19, until: H21 + 100_000 });
+    expect(feedTooLate(bundle, kept, HEARTH, H21)).toBe(false);
+    expect(describeEvent(bundle, at(kept, H21), { e: 'fire', id: HEARTH, until: H21 + 100_000 })).toEqual({
+      text: 'The elder hearth burns until 23:00.',
+      tone: 'good',
+    });
+    // lit by day after a lost night: the try for the next night
+    const noon = bundle.params.day_length_ms;
+    const day = withFire({ lit: noon, until: noon + 100_000 });
+    expect(feedTooLate(bundle, day, HEARTH, noon)).toBe(false);
+    expect(describeEvent(bundle, at(day, noon), { e: 'fire', id: HEARTH, until: noon + 100_000 })!.tone).toBe('good');
+    // lit after dark with the task done: no night of a task was lost
+    const free = withFire({ lit: DUSK + 10_000, until: DUSK + 110_000 }, 'done');
+    expect(feedTooLate(bundle, free, HEARTH, DUSK + 10_000)).toBe(false);
+    expect(describeEvent(bundle, at(free, DUSK + 10_000), { e: 'fire', id: HEARTH, until: DUSK + 110_000 })!.tone).toBe('good');
+  });
+
+  test('the fire_out the kernel tells reads as a bad line with the retry in words, and no clock', () => {
+    const told = describeEvent(bundle, withFire({ lit: H19, until: H21 }), { e: 'fire_out', id: HEARTH });
+    expect(told).toEqual({ text: 'The elder hearth went out - tonight is lost. Try again before the next dusk.', tone: 'bad' });
+    expect(told!.text).not.toMatch(/\d:\d\d/);
   });
 });

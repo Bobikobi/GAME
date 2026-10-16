@@ -218,3 +218,28 @@ describe('the band: two toasts at most, the rest in line', () => {
     expect(band.run(10, false)).toEqual({ show: [], fade: [], remove: [] });
   });
 });
+
+describe('a fire out (6b)', () => {
+  test('the kernel tells it once, in the first step past its end, and it reads as one urgent bad toast', () => {
+    let s = newState(bundle, 1);
+    const go = (a: Action, tick: number): GameEvent[] => {
+      const r = step(bundle, s, a, tick);
+      if (!r.ok) throw new Error(r.error);
+      s = r.state;
+      return r.events;
+    };
+    go({ t: 'start', starter: 'core/forager', name: 'Tess' }, 0);
+    // the long night under way: the elder hearth lit at 19:00 with wood to 21:00
+    s.player.quests['core/the-long-night'] = 'active';
+    s.player.fires['core/elder-hearth'] = { lit: 350_000, until: 450_000 };
+    const here: Action = { t: 'move', at: [s.player.at[0], s.player.at[1]] };
+    expect(go(here, 449_000)).toEqual([]);
+    const events = go(here, 450_001);
+    expect(events).toEqual([{ e: 'fire_out', id: 'core/elder-hearth' }]);
+    const toasts = eventToasts(bundle, s, events);
+    expect(toasts).toEqual([{ lines: ['The elder hearth went out - tonight is lost. Try again before the next dusk.'], tone: 'bad' }]);
+    expect(urgent(toasts[0]!)).toBe(true);
+    // told once: the steps after it say nothing of it
+    expect(go(here, 460_000)).toEqual([]);
+  });
+});

@@ -62,9 +62,6 @@ import { mountTouch } from './touch';
 /** What the hands are doing, for the world's animation and sound. */
 export type WorkKind = 'timing' | 'strike' | 'pick' | 'snap' | 'dig';
 
-/** How near a fire must be, in tiles, to be seen in a view that does not report its screen. */
-const SEE_TILES = 6;
-
 const GAMES: Record<'timing' | 'strike' | 'pick' | 'snap', Minigame> = { timing, strike, pick, snap };
 
 export interface Layer {
@@ -330,16 +327,13 @@ export class UI {
 
   /**
    * A fire a tend step keeps warns before it goes out (G31): one box, once per burn, in
-   * its last `fire.warn_min` game minutes, while the player can see it and no box is open,
-   * and only while it still needs wood for the night it keeps (`wantsWood`).
+   * its last `fire.warn_min` game minutes, wherever the player stands (the night is theirs to
+   * keep, on screen or not) while no box is open, and only while it still needs wood for the
+   * night it keeps (`wantsWood`).
    */
   private warnFireLow(s: Session): void {
     if (this.blocking || s.paused) return;
-    const world = app.world;
-    // on the same screen; a view that cannot say is read as a few tiles away
-    const sees = (p: { x: number; y: number; w: number; h: number }) =>
-      world?.sees ? world.sees(p) : Math.max(Math.abs(p.x - s.pos[0]), Math.abs(p.y - s.pos[1])) <= SEE_TILES;
-    const w = fireWarning(app.bundle, s.state, s.tick, this.warnedFires, sees);
+    const w = fireWarning(app.bundle, s.state, s.tick, this.warnedFires);
     if (!w) return;
     this.warnedFires.add(w.key);
     void say(this, null, [`The ${w.name} is burning low.`, 'Wood keeps it: feed it before it goes out.']);

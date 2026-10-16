@@ -41,7 +41,7 @@ import { sound, type SfxId } from '../audio';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T } from '../config';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
-import { TOO_DARK, fireLow, fireName, readable, woodToFeed } from '../fires';
+import { TOO_DARK, feedTooLate, fireLow, fireName, readable, woodToFeed } from '../fires';
 import { emptySlots, slotContent } from '../places';
 import { canopyGroups, hash, remapTone, toneField, type Tone } from '../richground';
 import type { Session } from '../session';
@@ -2181,7 +2181,9 @@ export class WorldScene extends Phaser.Scene {
       }
       if (e.e === 'fire') {
         const f = this.fires.get(e.id);
-        if (f) this.burst('fx-spark', f.spr.x, f.spr.y - 8, 10);
+        const s = this.session;
+        // lit after its night was lost: no sparks of cheer
+        if (f && !(s && feedTooLate(this.b, s.state, e.id, s.state.tick))) this.burst('fx-spark', f.spr.x, f.spr.y - 8, 10);
       }
       if (e.e !== 'gain') continue;
       const ref = this.b.items[e.item]?.sprite;

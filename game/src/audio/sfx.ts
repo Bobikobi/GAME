@@ -2,7 +2,7 @@
 import { noiseBuffer, playPulse } from './synth';
 
 export type SfxId =
-  | 'strike' | 'crack' | 'snap' | 'tug' | 'rustle' | 'pluck' | 'dig' | 'thud'
+  | 'strike' | 'crack' | 'snap' | 'tug' | 'rustle' | 'pluck' | 'dig' | 'thud' | 'douse'
   | 'hammer' | 'sizzle' | 'coin' | 'pickup' | 'ui' | 'back' | 'miss' | 'good'
   | 'perfect' | 'step' | 'whisper' | 'bell' | 'click' | 'voice';
 
@@ -38,6 +38,7 @@ export function playSfx(
     case 'thud': return thud(context, output, when, detune);
     case 'hammer': return hammer(context, output, when, detune);
     case 'sizzle': return sizzle(context, output, when);
+    case 'douse': return douse(context, output, when);
     case 'coin': return coin(context, output, when, detune);
     case 'pickup': return arpeggio(context, output, when, [659.25, 830.61, 987.77], 0.04, detune);
     case 'ui': return pulseBlip(context, output, when, 1_046.5, 0.03, detune);
@@ -208,6 +209,25 @@ function sizzle(context: BaseAudioContext, out: AudioNode, at: number): number {
   filter.connect(gain).connect(out);
   noiseSource(context, filter, at, 0.5);
   return 0.5;
+}
+
+/** A fire going out: a hiss that sinks and thins over a soft low drop. */
+function douse(context: BaseAudioContext, out: AudioNode, at: number): number {
+  const filter = context.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.Q.value = 0.9;
+  filter.frequency.setValueAtTime(2_600, at);
+  filter.frequency.exponentialRampToValueAtTime(350, at + 0.8);
+  filter.connect(decay(context, out, at, 0.85, 0.32));
+  noiseSource(context, filter, at, 0.85);
+  const low = context.createOscillator();
+  low.type = 'sine';
+  low.frequency.setValueAtTime(140, at);
+  low.frequency.exponentialRampToValueAtTime(60, at + 0.35);
+  low.connect(decay(context, out, at, 0.35, 0.3));
+  low.start(at);
+  low.stop(at + 0.35);
+  return 0.85;
 }
 
 function coin(context: BaseAudioContext, out: AudioNode, at: number, detune: number): number {

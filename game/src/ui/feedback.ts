@@ -6,6 +6,7 @@
 import type { GameEvent } from '@game/kernel';
 import { app } from '../app';
 import { sound, type JingleId, type SfxId } from '../audio';
+import { feedTooLate } from '../fires';
 import { gold } from '../text';
 import { h } from './dom';
 
@@ -59,8 +60,14 @@ export function feedback(root: HTMLElement, events: readonly GameEvent[]): void 
       case 'eat':
         add({ sfx: 'pluck', detune: -400 });
         break;
-      case 'fire':
-        add({ sfx: 'sizzle', detune: -200 });
+      case 'fire': {
+        // lit after its night was lost: no cheer, the line says it plainly
+        const s = app.session;
+        if (!s || !feedTooLate(app.bundle, s.state, e.id, s.state.tick)) add({ sfx: 'sizzle', detune: -200 });
+        break;
+      }
+      case 'fire_out':
+        add({ sfx: 'douse' });
         break;
       case 'nothing':
       case 'miss':
