@@ -35,7 +35,7 @@ import {
   readyToHandIn,
   windowScalePct,
 } from '../text';
-import { type Toast, type Tone, ToastBand, eventToasts } from '../toasts';
+import { type Toast, type Tone, ToastBand, eventToasts, readTime, urgent } from '../toasts';
 import { resourceKind, treasureKind } from '../work';
 import { say, type Option } from './dialog';
 import { button, h, sprite } from './dom';
@@ -72,6 +72,8 @@ export interface Layer {
   /** return true when the layer used the button */
   onButton?: (b: Button) => boolean;
   onClose?: () => void;
+  /** a dialogue box: where it covers the toasts (a phone's low band) they wait while it is open */
+  holdsToasts?: boolean;
 }
 
 /** The HUD's live elements, built once; renderHud() patches their values. */
@@ -142,6 +144,8 @@ export class UI {
     this.root.append(layer.el);
     app.session?.pause();
     this.setPrompt('');
+    // the hold starts as the box opens: a toast already up keeps the rest of its time for after it
+    if (layer.holdsToasts) this.runBand();
   }
 
   pop(layer: Layer): void {
@@ -206,7 +210,7 @@ export class UI {
       for (const t of eventToasts(app.bundle, session.state, events)) this.queueToast(t);
       feedback(this.root, events);
       void this.afterEvents(events);
-      // after the story beats begin: a box they opened holds this batch's toasts until it closes
+      // after the story beats begin: on a phone a box they opened holds this batch's toasts until it closes
       this.runBand();
     });
     session.on('change', () => this.renderHud());
@@ -262,7 +266,9 @@ export class UI {
    */
   private placeToasts(s: Session): void {
     const feet = app.world?.screenOf(s.pos[0], s.pos[1] + 1).y;
-    this.toasts.classList.toggle('up', feet !== undefined && feet > window.innerHeight * 0.6);
+    // up past 60% of the height, back down above 55%: a step to and fro on one row does not toss them
+    const up = this.toasts.classList.contains('up');
+    this.toasts.classList.toggle('up', feet !== undefined && feet > window.innerHeight * (up ? 0.55 : 0.6));
   }
 
   /** The HUD's elements, once; after that renderHud() patches what changed. */
@@ -378,16 +384,17 @@ export class UI {
     this.runBand();
   }
 
-  /** A toast joins the line (toasts.ts): two at most stand at once, and none is dropped. */
+  /** A toast joins the line (toasts.ts): two at most stand at once, a bad one goes ahead, and none is dropped. */
   private queueToast(t: Toast): void {
-    this.band.add(h('div', { class: `toast ${t.tone}` }, t.icon ? sprite(app.bundle, t.icon, 1) : null, h('span', { class: 'toast-text' }, t.lines.join('\n'))));
+    const el = h('div', { class: `toast ${t.tone}` }, t.icon ? sprite(app.bundle, t.icon, 1) : null, h('span', { class: 'toast-text' }, t.lines.join('\n')));
+    this.band.add(el, { urgent: urgent(t), read: readTime(t) });
   }
 
   /** Puts toasts up, fades them and takes them down as the band says, then waits for its next change. */
   private runBand(): void {
     window.clearTimeout(this.bandTimer);
     const now = performance.now();
-    const step = this.band.run(now, this.boxOpen());
+    const step = this.band.run(now, this.held());
     for (const el of step.remove) el.remove();
     for (const el of step.show) this.toasts.append(el);
     for (const el of step.fade) el.classList.add('out');
@@ -400,9 +407,9 @@ export class UI {
     this.bandTimer = window.setTimeout(() => this.runBand(), 0);
   }
 
-  /** A dialogue box stands where the toasts do on a phone: while one is open, they wait. */
-  private boxOpen(): boolean {
-    return this.layers.some((l) => l.el.classList.contains('dialog-layer'));
+  /** A dialogue box covers the toasts where they sit low (a phone, style.css): while one is open there, they wait. */
+  private held(): boolean {
+    return this.layers.some((l) => l.holdsToasts) && getComputedStyle(this.toasts).position === 'fixed';
   }
 
   private clearToasts(): void {
