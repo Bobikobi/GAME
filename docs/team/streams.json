@@ -26,7 +26,7 @@
       "id": "variety",
       "title": "New kinds of play: the first maze, then stealth over the hazards, tending and the first expedition",
       "plan": ["GAME_RULES section 3 (maze, stealth, tending), G47-G49", "DECISIONS 2026-10-09 maze and stealth, 2026-10-13 the three frames", "NEXT 12-14, GRUNT P-6"],
-      "branches": ["feat/first-maze", "docs/variety-frames", "feat/stealth-kernel", "feat/stealth", "feat/tending-kernel", "fix/fire-whole-log", "feat/tending", "feat/expedition-kernel", "feat/night-ruins"],
+      "branches": ["feat/first-maze", "docs/variety-frames", "feat/stealth-kernel", "feat/stealth", "feat/tending-kernel", "fix/fire-whole-log", "feat/tending", "feat/expedition-kernel", "docs/next14-plan-fixes", "feat/night-ruins"],
       "owner": "the variety session"
     },
     {
