@@ -126,6 +126,8 @@ describe('a predator round', () => {
     const b = world([wolf()]);
     const start = move(b, place(begin(b), [11, 22], DUSK), [11, 22], DUSK);
     expect(start.state.player.chase).toEqual({ hazard: 'test/wolf', since: DUSK, bites: 0 });
+    // a round predator's eyes tell the hunt begun like any other
+    expect(start.events).toContainEqual({ e: 'seen', id: 'test/wolf' });
     const bitten = move(b, start.state, [11, 22], DUSK + b.params.hazard.predator.catch_ms);
     expect(bitten.state.player.chase).toEqual({ hazard: 'test/wolf', since: DUSK, bites: 1 });
     const cap = satietyCap(b, start.state);

@@ -170,6 +170,9 @@ export class Session {
     // a save from before expeditions (P-14a) has no expedition progress
     const expedition = state.player as Partial<Pick<State['player'], 'expeditions'>>;
     expedition.expeditions ??= {};
+    // a save from before kernel 0.9 holds no record of bites
+    const bites = state.player as Partial<Pick<State['player'], 'bitten'>>;
+    bites.bitten ??= [];
     const session = new Session(bundle, state);
     stampDemo();
     if (state.content !== bundle.tag) {

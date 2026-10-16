@@ -39,6 +39,9 @@
       ],
       "done": [
         "Moonreed, and no bite marks. That is worth the full price."
+      ],
+      "done_bitten": [
+        "Moonreed, and bite marks. The wolf took its cut. I still pay in full."
       ]
     }
   }

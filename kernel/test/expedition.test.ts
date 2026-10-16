@@ -350,6 +350,8 @@ describe('a report after the last bell is read as the world stood at that bell',
     expect(events(out.events, 'hurt')).toEqual([]);
     expect(events(out.events, 'fall')).toEqual([]);
     expect(events(out.events, 'walked_out')).toEqual([{ e: 'walked_out', expedition: EXPEDITION }]);
+    // the mist ended the hunt, not the run: it is not told safe, and the exit gives no health back
+    expect(events(out.events, 'safe')).toEqual([]);
     expect(out.state.player.at).toEqual([exit.x, exit.y]);
     expect(out.state.player.satiety).toBe(health);
     expect(out.state.player.bag[REWARD_ITEM]).toBe(3);
@@ -406,6 +408,27 @@ describe('a report after the last bell is read as the world stood at that bell',
     expect(out.state.player.chase).toBeNull();
     expect(out.state.player.outing).toBeNull();
     expect(out.state.player.expeditions[EXPEDITION]?.entered).toBeUndefined();
+  });
+
+  test('a safe tile reported after the bell is not reached: the hunt is not told safe and gives nothing back', () => {
+    const b = world();
+    // safe ground one step beyond the place: the player stood inside at the bell, so they never reached it
+    b.map.slots = [...b.map.slots, { id: 'test/ledge', kind: 'area', x: BEYOND[0], y: BEYOND[1], w: 1, h: 1, safe: true }];
+    const state = hunted(b, LAST - 3000, LAST - 3000, EDGE);
+    const bite = harmOf(b, satietyCap(b, state), 'predator');
+    state.player.satiety = 2 * bite;
+    // one bite falls due before the bell
+    state.player.chase = { hazard: WOLF, since: LAST - 3000, bites: 0 };
+    const open = Object.keys(state.player.quests).filter((id) => state.player.quests[id] === 'active').sort();
+    const out = move(b, state, LAST + 1000, BEYOND);
+    expect(events(out.events, 'hurt')).toEqual([{ e: 'hurt', by: 'predator', id: WOLF, hp: bite }]);
+    expect(events(out.events, 'safe')).toEqual([]);
+    expect(events(out.events, 'walked_out')).toEqual([{ e: 'walked_out', expedition: EXPEDITION }]);
+    expect(out.state.player.satiety).toBe(bite);
+    expect(out.state.player.chase).toBeNull();
+    expect(out.state.player.outing).toBeNull();
+    // the walk-out brings the outing home, and the bite with it
+    expect(out.state.player.bitten).toEqual(open);
   });
 
   test('the first step out after the bell closes the outing at the exit, and a pit on that tile does not strike', () => {

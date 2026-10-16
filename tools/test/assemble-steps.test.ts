@@ -3,7 +3,8 @@
  * (GRUNT P-2): a prop id that is not on the map, a dig spot or slot that does
  * not exist, a find of something sold or grown in more than one place, and a
  * prop id used twice. A place reward (reward.opens) must name a restore, and a
- * restore with no inputs must be opened by some quest.
+ * restore with no inputs must be opened by some quest. A giver's line for a
+ * bitten hand-in (talk.done_bitten) needs the plain line (talk.done) too.
  */
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -104,5 +105,32 @@ describe('place rewards', () => {
     const messages = read();
     expect(messages).toContainEqual('quest.reward.opens.0: no restore "core/nowhere"');
     expect(messages).toContainEqual('restore.inputs: no inputs and no quest opens it: it could never open');
+  });
+});
+
+describe('hand-in lines', () => {
+  const root = mkdtempSync(join(tmpdir(), 'mistvale-talk-'));
+  afterAll(() => rmSync(root, { recursive: true, force: true }));
+
+  cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
+  cpSync(join(CONTENT_DIR, 'kit'), join(root, 'kit'), { recursive: true });
+  const dir = join(root, 'extensions', 'tester', 'quests');
+  mkdirSync(dir, { recursive: true });
+  const talking = (id: string, item: string, talk: Record<string, string[]>) => {
+    const f = file(id, [{ kind: 'find', item, clue: 'Where it was left.' }]);
+    return { ...f, quest: { ...f.quest, talk } };
+  };
+  writeFileSync(join(dir, 'bitten-only.json'), JSON.stringify(talking('tester/bitten-only', 'core/old-coin', { done_bitten: ['Bite marks. I pay all the same.'] })));
+  writeFileSync(
+    join(dir, 'both-lines.json'),
+    JSON.stringify(talking('tester/both-lines', 'core/sunleaf', { done: ['Thank you.'], done_bitten: ['Bite marks. I pay all the same.'] })),
+  );
+  const errors = runCheck(root).issues.filter((i) => i.level === 'error');
+
+  it('refuses a line for a bitten hand-in without the plain one, and accepts the two together', () => {
+    expect(errors.filter((i) => i.file.includes('bitten-only')).map((i) => `${i.where}: ${i.message}`)).toEqual([
+      'quest.talk.done_bitten: a line for a bitten hand-in needs the plain "done" line too: without it a hand-in with no bite says nothing',
+    ]);
+    expect(errors.filter((i) => i.file.includes('both-lines'))).toEqual([]);
   });
 });
