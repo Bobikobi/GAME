@@ -151,7 +151,7 @@ describe('what the vocabularies and the shipped content say', () => {
     s.player.restored = [...s.player.restored, 'core/arch-way'];
     const bag = { ...s.player.bag };
     const inside = move(base, s, [36, 21], NIGHT + 190);
-    expect(kinds(inside.events)).toEqual(['hurt']);
+    expect(kinds(inside.events)).toEqual(['hurt', 'seen']);
     let state = inside.state;
     let fell: GameEvent | undefined;
     for (let t = NIGHT + 190 + 500; t <= NIGHT + 190 + 10_000 && !fell; t += 500) {

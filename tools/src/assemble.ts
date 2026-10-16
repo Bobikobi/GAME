@@ -117,6 +117,7 @@ export function flattenParams(p: ParamsBody): Params {
         catch_ms: p.hazard.predator.catch_ms.value,
         bite_ms: p.hazard.predator.bite_ms.value,
         bite_pct: p.hazard.predator.bite_pct.value,
+        refill_bp: p.hazard.predator.refill_bp.value,
       },
       pit: { harm_pct: p.hazard.pit.harm_pct.value },
       trap: { harm_pct: p.hazard.trap.harm_pct.value },

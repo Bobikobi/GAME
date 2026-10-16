@@ -323,7 +323,10 @@ The valley has no combat; its danger is the hour, and what the player eats.
 - **G32 Health is the one bar.** The food bar becomes the health bar. Hazards
   take health; food, a first-aid kit and a night's sleep in town, at one's own
   burning camp or at another's as a guest with a deal give it back; low health
-  slows work the way the empty bar did.
+  slows work the way the empty bar did. A hunt outrun to a safe place leaves at
+  least three quarters of the bar (`hazard.predator.refill_bp`) and never takes
+  any; a hunt that ends at dawn, in a fall or at the last bell gives nothing
+  back (DECISIONS.md, 16.10).
   Nothing drains it by the clock (G28): there is no hunger timer, eating is how
   the player heals, and cooking keeps its purpose. Since P-5c (11.10) the
   core content sets `satiety_drain_per_min` to 0, in the same change that

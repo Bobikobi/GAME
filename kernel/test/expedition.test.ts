@@ -350,6 +350,8 @@ describe('a report after the last bell is read as the world stood at that bell',
     expect(events(out.events, 'hurt')).toEqual([]);
     expect(events(out.events, 'fall')).toEqual([]);
     expect(events(out.events, 'walked_out')).toEqual([{ e: 'walked_out', expedition: EXPEDITION }]);
+    // the mist ended the hunt, not the run: it is not told safe, and the exit gives no health back
+    expect(events(out.events, 'safe')).toEqual([]);
     expect(out.state.player.at).toEqual([exit.x, exit.y]);
     expect(out.state.player.satiety).toBe(health);
     expect(out.state.player.bag[REWARD_ITEM]).toBe(3);

@@ -575,6 +575,13 @@ export const QuestBody = Type.Object(
             Type.Array(Text, { minItems: 1, maxItems: 2, description: 'The giver, while the player is on it. Left out, the summary.' }),
           ),
           done: Type.Optional(Type.Array(Text, { minItems: 1, maxItems: 3, description: 'The giver, when the player hands it in.' })),
+          done_bitten: Type.Optional(
+            Type.Array(Text, {
+              minItems: 1,
+              maxItems: 3,
+              description: 'The giver, at the hand-in, when a predator bit the player while the task was open. Left out, done.',
+            }),
+          ),
         },
         {
           additionalProperties: false,
@@ -868,6 +875,10 @@ export const ParamsBody = Type.Object(
             catch_ms: { ...Bounded, description: 'From the start of a chase to the first bite.' },
             bite_ms: { ...Bounded, description: 'Between one bite and the next.' },
             bite_pct: { ...Bounded, description: 'What one bite takes, in percent of the health cap.' },
+            refill_bp: {
+              ...Bounded,
+              description: 'The least health a hunt outrun to a safe place leaves, in basis points of the health cap. It never lowers health.',
+            },
           },
           { additionalProperties: false },
         ),

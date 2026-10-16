@@ -204,6 +204,18 @@ describe('session persistence', () => {
     expect(Session.restore(bundle)?.state.player.expeditions).toEqual({});
   });
 
+  test('loads a save from before the record of bites', () => {
+    startedSession();
+    const save = JSON.parse(storage.getItem(SAVE_KEY)!) as { state: string };
+    const state = JSON.parse(save.state) as { player: Record<string, unknown> };
+    delete state.player.bitten;
+    storage.setItem(SAVE_KEY, JSON.stringify({ ...save, state: JSON.stringify(state) }));
+
+    const restored = Session.restore(bundle)!;
+    expect(restored.state.player.bitten).toEqual([]);
+    expect(restored.act({ t: 'move', at: [restored.state.player.at[0], restored.state.player.at[1]] }).ok).toBe(true);
+  });
+
   test('a new world version teaches its new start recipes and drops what is gone', () => {
     const session = startedSession();
     session.state.player.tries = { 'core/berry-mash': 2, 'x/gone': 1 };
