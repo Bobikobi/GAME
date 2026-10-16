@@ -57,7 +57,8 @@ export function pickRemark(
 
 /**
  * What a quest's giver says at the hand-in: `talk.done_bitten` when a predator bit the player while
- * the quest was open and the content wrote that line, else `talk.done`; undefined when it has neither.
+ * the quest was open, on an outing that came home (`player.bitten`), and the content wrote that line,
+ * else `talk.done`; undefined when it has neither.
  */
 export function doneLines(bundle: Bundle, state: State, questId: string): readonly string[] | undefined {
   const talk = bundle.quests[questId]?.talk;

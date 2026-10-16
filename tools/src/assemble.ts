@@ -442,6 +442,7 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
   for (const [id, q] of Object.entries(b.quests)) {
     if (q.giver && !b.npcs[q.giver]) err(id, 'quest.giver', `no npc "${q.giver}"`);
     if (q.starter !== undefined && !b.starters[q.starter]) err(id, 'quest.starter', `no starter "${q.starter}"`);
+    if (q.talk?.done_bitten && !q.talk.done) err(id, 'quest.talk.done_bitten', 'a line for a bitten hand-in needs the plain "done" line too: without it a hand-in with no bite says nothing');
     const gifts = q.starter === undefined ? new Set<string>() : startFinds(b, q.starter);
     (q.requires ?? []).forEach((r, i) => {
       if (!b.quests[r]) err(id, `quest.requires.${i}`, `no quest "${r}"`);

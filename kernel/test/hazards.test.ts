@@ -13,6 +13,7 @@ import {
   HAZARD_KINDS,
   type State,
   bitesAfter,
+  harmOf,
   hazardsOf,
   isNight,
   isSafe,
@@ -162,6 +163,15 @@ describe('what the vocabularies and the shipped content say', () => {
     expect(fell).toMatchObject({ e: 'fall', from: [36, 21], lost: [] });
     expect(state.player.bag).toEqual(bag);
     expect(state.player.satiety).toBe(satietyCap(base, state));
+  });
+
+  test('a pit that takes the last of the health is a fall, and no hunt begins over it: nothing is told seen', () => {
+    const s = place(begin(base), [36, 20], NIGHT);
+    s.player.restored = [...s.player.restored, 'core/arch-way'];
+    s.player.satiety = harmOf(base, satietyCap(base, s), 'pit');
+    const r = move(base, s, [36, 21], NIGHT + 190);
+    expect(kinds(r.events)).toEqual(['hurt', 'fall']);
+    expect(r.state.player.chase).toBeNull();
   });
 
   test('the shipped valley drains nothing by the clock (G32): an hour away, health is where it was', () => {
