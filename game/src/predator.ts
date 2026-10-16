@@ -149,9 +149,31 @@ export function firstStep(from: Spot, goal: Spot, near: number, walk: (x: number
 }
 
 /**
+ * The two tiles a walking predator's sprite is between on its round at `tick`: the one it left
+ * and the one it walks to. Undefined while it stands on a whole tile.
+ */
+export function roundStep(b: Bundle, rule: Hazard, tick: number): { from: [number, number]; to: [number, number] } | undefined {
+  const [x, y] = predatorSpriteAt(b, rule, tick);
+  if (Number.isInteger(x) && Number.isInteger(y)) return undefined;
+  const into = (tick - lastDusk(b, tick)) % rule.pace;
+  return { from: predatorAt(b, rule, tick), to: predatorAt(b, rule, tick - into + rule.pace) };
+}
+
+/**
+ * A run begun where the round draws the wolf. Caught between two tiles, it walks on to the one
+ * nearer the player, the one ahead on a tie, so it never steps back only to come on again.
+ */
+function startRun(b: Bundle, rule: Hazard, tick: number, round: Spot, goal: Spot): Run {
+  const step = roundStep(b, rule, tick);
+  const far = (t: Spot) => Math.abs(t[0] - goal[0]) + Math.abs(t[1] - goal[1]);
+  const to = step && (far(step.to) <= far(step.from) ? step.to : step.from);
+  return { at: [round[0], round[1]], ...(to ? { to } : {}), tick, home: false };
+}
+
+/**
  * Moves a run on to `tick` at `msPerTile`: straight to the tile it walks to, then one tile at a
  * time where `next` leads, until the time is spent or `next` has nowhere to go; then it waits. A
- * run drawn between two tiles first settles on the nearer one.
+ * run drawn between two tiles with no tile to walk to first settles on the nearer one.
  */
 export function runOn(run: Run, tick: number, msPerTile: number, next: (at: Spot) => [number, number] | undefined): Run {
   let budget = Math.max(0, tick - run.tick) / msPerTile;
@@ -215,7 +237,7 @@ export function wolfDrawn(
   const chase = s.player.chase;
   if (chase !== null && chase.hazard === rule.id) {
     const goal = s.player.at;
-    const run: Run = last ? { ...last, home: false } : { at: [round[0], round[1]], tick, home: false };
+    const run: Run = last ? { ...last, home: false } : startRun(b, rule, tick, round, goal);
     const from = Math.max(run.tick, chase.since + SEEN.hold);
     const next = tick > from ? runOn({ ...run, tick: from }, tick, rule.pace, (t) => firstStep(t, goal, 1, walk)) : { ...run, tick };
     return { at: next.at, heading: runHeading(next, goal), run: next };

@@ -44,6 +44,7 @@ import {
   huntGround,
   huntSong,
   predatorSpriteAt,
+  roundStep,
   songFade,
   wolfDrawn,
 } from '../src/predator';
@@ -325,6 +326,40 @@ describe('the wolf drawn on a hunt', () => {
     }
     expect(back).toBeDefined();
     expect(back! - end).toBeLessThanOrEqual(3 * wolf.pace);
+  });
+
+  test('seen between two tiles of its round, it walks on to the one nearer the player, never back and then on again', () => {
+    // just short of halfway from (11, 25) to (11, 26): the tile it left is the nearer, the player is ahead
+    const ahead = t0 + Math.floor(wolf.pace / 2) - 1;
+    expect(roundStep(base, wolf, ahead)).toEqual({ from: [11, 25], to: [11, 26] });
+    expect(roundStep(base, wolf, t0)).toBeUndefined();
+    // past halfway, with the player adjacent behind it: the tile it left is the nearer to them too
+    const behind = t0 + Math.floor((wolf.pace * 7) / 10);
+    const BEHIND: Tile = [11, 24];
+    const cases: { tick: number; player: Tile; ran: string[]; end: Spot; way: 1 | -1 }[] = [
+      { tick: ahead, player: PLAYER, ran: ['11,26', '11,27', '11,28', '11,29'], end: [11, 29], way: 1 },
+      { tick: behind, player: BEHIND, ran: ['11,25'], end: [11, 25], way: -1 },
+    ];
+    for (const c of cases) {
+      expect(sees(base, wolf, c.tick, c.player)).toBe(true);
+      const chased = move(base, place(begin(base), c.player, c.tick), c.player, c.tick);
+      expect(chased.state.player.chase).toMatchObject({ hazard: BANK_WOLF, since: c.tick });
+      const walk = huntGround(base, chased.state, makeWalkable(base));
+      let run: Run | undefined;
+      let prev: Spot | undefined;
+      const ran: string[] = [];
+      for (let tick = c.tick; tick <= c.tick + 4000; tick += FRAME) {
+        const drawn = wolfDrawn(base, wolf, chased.state, tick, run, walk);
+        run = drawn.run;
+        // along the meadow edge only, and only ever toward the player
+        expect(drawn.at[0]).toBe(11);
+        if (prev) expect((drawn.at[1] - prev[1]) * c.way).toBeGreaterThanOrEqual(0);
+        addStep(ran, run);
+        prev = drawn.at;
+      }
+      expect(ran).toEqual(c.ran);
+      expect(prev).toEqual(c.end);
+    }
   });
 
   test("another predator's hunt leaves the bank wolf on its round, and none is drawn off it without a hunt", () => {
