@@ -13,6 +13,7 @@ import { validateHubData } from '@game/schema/hub';
 import { REPO_ROOT } from '../load';
 import { GitHubClient } from '../loop/github';
 import { buildHubData, buildTarget } from './build';
+import { upstashReader } from './usage';
 
 const args = process.argv.slice(2);
 const flag = (name: string): string | undefined => {
@@ -39,6 +40,7 @@ async function main(): Promise<number> {
       client: token ? new GitHubClient(token, true) : null,
       now: new Date(),
       previews: true,
+      usage: upstashReader(),
       ...target,
     });
   }
