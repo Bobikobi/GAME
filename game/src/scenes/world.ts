@@ -21,6 +21,7 @@ import {
   campTile,
   coverAt,
   findSlot,
+  fireBurns,
   hazardsOf,
   headingOf,
   hourOf,
@@ -40,6 +41,7 @@ import { sound, type SfxId } from '../audio';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T } from '../config';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
+import { TOO_DARK, fireLow, fireName, readable, woodToFeed } from '../fires';
 import { emptySlots, slotContent } from '../places';
 import { canopyGroups, hash, remapTone, toneField, type Tone } from '../richground';
 import type { Session } from '../session';
@@ -124,7 +126,28 @@ interface SignSpot {
   x: number;
   y: number;
   label: HTMLElement;
+  /** the fire whose light this sign reads by, if any (`lit_by`) */
+  litBy?: string;
 }
+
+/** A tended fire on the map (NEXT 13): its flame and glow follow the kernel's burn, never a clock of the client's. */
+interface Fire {
+  spr: Phaser.GameObjects.Sprite;
+  /** the flame frames, stepping only while it burns (with motion on) */
+  cycle: Cycle | undefined;
+  glow: Glow | undefined;
+  /** the prop's own sprite, shown while the fire is out, and the burning one */
+  unlit: string;
+  lit: string;
+}
+
+/** The burning look of a fire prop, from the base kit. */
+const FIRE_LIT_SPRITE = 'core/base-kit:props/campfire_lit';
+/** A flame's frame time, and the slower one of embers running down in a burn's last minutes. */
+const FLAME_MS = 120;
+const EMBER_MS = 260;
+/** How strongly the embers show in a burn's last minutes. */
+const EMBER_ALPHA = 0.6;
 
 /** A page element pinned to a point of the world, moved with the camera. */
 interface Pinned {
@@ -259,6 +282,10 @@ export class WorldScene extends Phaser.Scene {
   private signs = new Map<string, string>();
   private signSpots: SignSpot[] = [];
   private notes = new Map<string, { text: string; name: string; top: number }>();
+  /** tended fires by prop id, the fire on each of their tiles, and the fire each fire-lit tile reads by */
+  private fires = new Map<string, Fire>();
+  private fireAt = new Map<string, string>();
+  private litBy = new Map<string, string>();
   private tops = new Map<string, number>();
   private npcAt = new Map<string, string>();
   private nodeAt = new Map<string, string>();
@@ -632,20 +659,78 @@ export class WorldScene extends Phaser.Scene {
         this.hazards.push({ spr, kind: p.hazard.kind, rule, eyes });
         continue;
       }
-      const img = this.standing(p.sprite, cx, bottom, hash(p.x, p.y));
-      img.setDepth(p.solid ? bottom : DEPTH.flat);
-      if (RICH.detail && !FLAT.has(name)) this.shadow(cx, bottom, p.w, p.solid ? DEPTH.shadow : DEPTH.flat - 0.5);
-      // the lamp head is the top 8 px of the post
-      if (RICH.light && name === 'lantern_post') this.glows.push(this.glow(cx, bottom - info.h + 4, true));
-      if (RICH.motion && name === 'house_small') this.smoke(cx - info.w / 2 + CHIMNEY.x, bottom - info.h + CHIMNEY.y, bottom + 1);
+      if (p.fire === true && p.id !== undefined) {
+        this.buildFire(p.id, p, cx, bottom);
+      } else {
+        const img = this.standing(p.sprite, cx, bottom, hash(p.x, p.y));
+        img.setDepth(p.solid ? bottom : DEPTH.flat);
+        if (RICH.detail && !FLAT.has(name)) this.shadow(cx, bottom, p.w, p.solid ? DEPTH.shadow : DEPTH.flat - 0.5);
+        // the lamp head is the top 8 px of the post
+        if (RICH.light && name === 'lantern_post') this.glows.push(this.glow(cx, bottom - info.h + 4, true));
+        if (RICH.motion && name === 'house_small') this.smoke(cx - info.w / 2 + CHIMNEY.x, bottom - info.h + CHIMNEY.y, bottom + 1);
+      }
       for (let y = p.y; y < p.y + p.h; y++) {
         for (let x = p.x; x < p.x + p.w; x++) {
           if (p.sign) this.signs.set(key(x, y), p.sign);
           if (p.note) this.notes.set(key(x, y), { text: p.note, name: spriteName(p.sprite), top: info.h });
+          if (p.lit_by) this.litBy.set(key(x, y), p.lit_by);
+          if (p.fire === true && p.id !== undefined) this.fireAt.set(key(x, y), p.id);
           this.tops.set(key(x, y), info.h);
         }
       }
     }
+  }
+
+  /**
+   * A fire the player feeds by hand: always a sprite, so refreshFires() can swap the cold
+   * hearth for the burning one; its flames and glow wait for the kernel's burn.
+   */
+  private buildFire(id: string, p: { w: number; solid: boolean; sprite: string }, cx: number, bottom: number): void {
+    const spr = this.add.sprite(cx, bottom, p.sprite, 0).setOrigin(0.5, 1).setDepth(p.solid ? bottom : DEPTH.flat);
+    if (RICH.detail && !FLAT.has(baseName(p.sprite))) this.shadow(cx, bottom, p.w, p.solid ? DEPTH.shadow : DEPTH.flat - 0.5);
+    let cycle: Cycle | undefined;
+    if (RICH.motion) {
+      cycle = { spr, min: FLAME_MS, max: FLAME_MS, next: 0, frame: 0, active: false };
+      this.cycles.push(cycle);
+    }
+    let glow: Glow | undefined;
+    if (RICH.light) {
+      glow = this.glow(cx, bottom - 8, false);
+      this.glows.push(glow);
+    }
+    this.fires.set(id, { spr, cycle, glow, unlit: p.sprite, lit: this.has(FIRE_LIT_SPRITE) ? FIRE_LIT_SPRITE : p.sprite });
+  }
+
+  /** Flames only while the kernel says the fire burns; in a burn's last minutes the embers dim and slow. */
+  private refreshFires(s: Session): void {
+    for (const [id, f] of this.fires) {
+      const burns = fireBurns(s.state, id, s.tick);
+      const low = burns && fireLow(this.b, s.state, id, s.tick);
+      const look = burns ? f.lit : f.unlit;
+      if (f.spr.texture.key !== look) {
+        f.spr.setTexture(look, 0);
+        if (f.cycle) f.cycle.frame = 0;
+      }
+      if (f.cycle) {
+        f.cycle.active = burns;
+        f.cycle.min = f.cycle.max = low ? EMBER_MS : FLAME_MS;
+      }
+      const alpha = low ? EMBER_ALPHA : 1;
+      if (f.spr.alpha !== alpha) f.spr.setAlpha(alpha);
+      if (f.glow) f.glow.lit = burns;
+    }
+  }
+
+  /** How a fire is drawn now, for a test: its sprite, whether that is the burning one, and how strongly it shows. */
+  fireLook(id: string): { sprite: string; burning: boolean; alpha: number } | undefined {
+    const f = this.fires.get(id);
+    return f && { sprite: f.spr.texture.key, burning: f.spr.texture.key === f.lit && f.lit !== f.unlit, alpha: f.spr.alpha };
+  }
+
+  /** Whether a rectangle of tiles is on the screen now. */
+  sees(r: { x: number; y: number; w: number; h: number }): boolean {
+    const v = this.cameras.main.worldView;
+    return r.x * T < v.right && (r.x + r.w) * T > v.x && r.y * T < v.bottom && (r.y + r.h) * T > v.y;
   }
 
   /**
@@ -845,7 +930,7 @@ export class WorldScene extends Phaser.Scene {
   private buildSigns(): void {
     const covered = new Set(this.signs.values());
     for (const p of this.b.map.props) {
-      if (p.sign) this.signSpots.push({ slot: p.sign, x: p.x + p.w / 2, y: p.y, label: this.signatureEl(p.sign) });
+      if (p.sign) this.signSpots.push({ slot: p.sign, x: p.x + p.w / 2, y: p.y, label: this.signatureEl(p.sign), litBy: p.lit_by });
     }
     for (const slot of this.b.map.slots) {
       const content = slotContent(this.b, slot.id);
@@ -1158,6 +1243,7 @@ export class WorldScene extends Phaser.Scene {
       if (glow) glow.lit = built;
     }
     this.refreshNodes();
+    this.refreshFires(s);
     if (RICH.motion) this.refreshGlints(s);
   }
 
@@ -1250,6 +1336,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.refreshIn <= 0) {
       this.refreshIn = 250;
       this.refreshNodes();
+      this.refreshFires(s);
       this.shadeFor(s);
       this.showSignatures(s);
       this.hearPlace(s);
@@ -1652,7 +1739,9 @@ export class WorldScene extends Phaser.Scene {
     const blocked = app.ui.blocking;
     for (const spot of this.signSpots) {
       const d = Math.max(Math.abs(spot.x - 0.5 - s.pos[0]), Math.abs(spot.y - s.pos[1]));
-      spot.label.classList.toggle('on', !blocked && d <= SIGN_REACH);
+      // a sign read by a fire's light shows its signature only while that fire burns
+      const dark = spot.litBy !== undefined && !readable(s.state, spot.litBy, s.tick);
+      spot.label.classList.toggle('on', !blocked && !dark && d <= SIGN_REACH);
     }
   }
 
@@ -2090,6 +2179,10 @@ export class WorldScene extends Phaser.Scene {
         this.burst('fx-spark', cx, cy - 6, 12);
         this.cameras.main.shake(160, 0.004);
       }
+      if (e.e === 'fire') {
+        const f = this.fires.get(e.id);
+        if (f) this.burst('fx-spark', f.spr.x, f.spr.y - 8, 10);
+      }
       if (e.e !== 'gain') continue;
       const ref = this.b.items[e.item]?.sprite;
       if (!ref || !this.b.sprites[ref]) continue;
@@ -2173,10 +2266,15 @@ export class WorldScene extends Phaser.Scene {
       // a restore with no inputs opens only as a quest's reward: nothing to mend by hand
       return { label: r.inputs.length === 0 ? `Look at the ${r.title}` : `Mend the ${r.title}`, run: () => app.ui.restore(id), tile, top: T };
     }
+    // a fire takes wood from beside it, where Build and Mend are offered
+    const fire = this.fireAt.get(k);
+    if (fire && woodToFeed(b, s.state)) return { label: `Feed the ${fireName(fire)}`, run: () => app.ui.feed(fire), tile, top };
+    // a prop lit by a fire reads only while that fire burns (lit_by)
+    const lit = () => readable(s.state, this.litBy.get(k), s.tick);
     const sign = this.signs.get(k);
-    if (sign) return { label: 'Read the sign', run: () => app.ui.sign(sign), tile, top };
+    if (sign) return { label: 'Read the sign', run: () => (lit() ? app.ui.sign(sign) : app.ui.note(TOO_DARK)), tile, top };
     const note = this.notes.get(k);
-    if (note) return { label: `Look at the ${note.name}`, run: () => app.ui.note(note.text), tile, top: note.top };
+    if (note) return { label: `Look at the ${note.name}`, run: () => app.ui.note(lit() ? note.text : TOO_DARK), tile, top: note.top };
     const fog = this.empty.find((slot) => inRect(x, y, slot));
     if (fog && x === s.pos[0] + DIRS[s.facing][0] && y === s.pos[1] + DIRS[s.facing][1]) {
       return { label: `Look at the ${fog.label ?? 'mist'}`, run: () => app.ui.sign(fog.id), tile, top: T };

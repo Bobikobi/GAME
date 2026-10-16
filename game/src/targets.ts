@@ -22,11 +22,11 @@ export function questTargets(b: Bundle, s: State, tick: number): Target[] {
   const main = activeQuests(b, s)[0];
   if (!main) return [];
   const q = b.quests[main]!;
-  if (readyToHandIn(b, s, main) && q.giver) {
+  if (readyToHandIn(b, s, main, tick) && q.giver) {
     const t = npcTile(b, q.giver);
     return t ? [{ x: t[0], y: t[1], h: b.sprites[b.npcs[q.giver]?.sprite ?? '']?.h ?? 24 }] : [];
   }
-  const i = questSteps(b, s, main).findIndex((st) => !st.done);
+  const i = questSteps(b, s, main, tick).findIndex((st) => !st.done);
   const st = i >= 0 ? q.steps[i] : undefined;
   if (!st) return [];
   switch (st.kind) {
@@ -45,6 +45,11 @@ export function questTargets(b: Bundle, s: State, tick: number): Target[] {
       return slotTarget(b, st.slot);
     case 'riddle':
       return litAnswer(b, s, tick, st);
+    case 'tend': {
+      // the fire to keep: its own prop, wherever the map puts it
+      const p = b.map.props.find((prop) => prop.fire === true && prop.id === st.fire);
+      return p ? [{ x: p.x, y: p.y + p.h - 1, h: b.sprites[p.sprite]?.h ?? 16 }] : [];
+    }
     default:
       // a find is found by its clue (sparks over the bushes would answer it for the player),
       // and a recipe is in the journal
