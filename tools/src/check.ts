@@ -6,7 +6,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PNG } from 'pngjs';
-import { type Bundle, computeValues, minChargeFor, missOutcome, rarityBudget, rarityRank } from '@game/kernel';
+import { type Bundle, computeValues, idiv, minChargeFor, missOutcome, rarityBudget, rarityRank } from '@game/kernel';
 import { RARITIES, type ParamsBody } from '@game/schema';
 import { assemble, type Assembled } from './assemble';
 import { readBoard } from './board';
@@ -90,6 +90,12 @@ function checkParams(file: { params?: ParamsBody } | undefined): Issue[] {
     if (bounds.max >= 1000) {
       issues.push({ file: 'content/core/params.json', where: `params.${name}.max`, message: 'the trader may never pay as much as the shop charges: keep the share below 1000', level: 'error' });
     }
+  }
+  // G48 with whole logs: a burning fire takes a log only once cap - 1 logs of burn or less are left, so its
+  // warning opens inside that window or it asks for a log the fire refuses (and a cap of one never takes one)
+  const { cap, log_ms: logMs, warn_min: warnMin } = file.params.fire;
+  if (idiv(warnMin.value * file.params.day_length_ms.value, 24 * 60) > (cap.value - 1) * logMs.value) {
+    issues.push({ file: 'content/core/params.json', where: 'params.fire', message: 'the fire would warn before it takes a log: keep warn_min within cap - 1 logs of burn (G48)', level: 'error' });
   }
   return issues;
 }
