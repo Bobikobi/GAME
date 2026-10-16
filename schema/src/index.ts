@@ -579,7 +579,7 @@ export const QuestBody = Type.Object(
             Type.Array(Text, {
               minItems: 1,
               maxItems: 3,
-              description: 'The giver, at the hand-in, when a predator bit the player while the task was open. Left out, done.',
+              description: 'The giver, at the hand-in, when a predator bit the player while the task was open, on an outing that came home. Left out, done.',
             }),
           ),
         },
@@ -877,7 +877,8 @@ export const ParamsBody = Type.Object(
             bite_pct: { ...Bounded, description: 'What one bite takes, in percent of the health cap.' },
             refill_bp: {
               ...Bounded,
-              description: 'The least health a hunt outrun to a safe place leaves, in basis points of the health cap. It never lowers health.',
+              description:
+                'How high a hunt outrun to a safe place lifts health, in basis points of the health cap: it gives back what its bites took, up to this share. It never lowers health.',
             },
           },
           { additionalProperties: false },

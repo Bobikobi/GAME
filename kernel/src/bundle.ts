@@ -87,7 +87,7 @@ export interface Params {
   hp_low_pct: number;
   fire: { cap: number; log_ms: number; warn_min: number };
   hazard: {
-    /** refill_bp: the least health a hunt outrun to a safe place leaves, in basis points of the cap */
+    /** refill_bp: how high a hunt outrun to a safe place lifts health, in basis points of the cap: what its bites took comes back, up to this share */
     predator: { reach: number; pace_ms: number; eyes: number; catch_ms: number; bite_ms: number; bite_pct: number; refill_bp: number };
     pit: { harm_pct: number };
     trap: { harm_pct: number };

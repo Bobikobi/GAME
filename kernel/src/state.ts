@@ -50,6 +50,8 @@ export interface Outing {
   solved: string[];
   /** places first visited on this outing */
   visited: string[];
+  /** quests open when a predator bit on this outing, sorted: they join `Player.bitten` when it ends safe, and a fall drops them */
+  bitten?: string[];
 }
 
 /** A hunt in progress: the predator that has the player's scent. It bites by the clock until a safe place or dawn. */
@@ -123,7 +125,7 @@ export interface Player {
   outing: Outing | null;
   /** the hunt the player is in, if any */
   chase: Chase | null;
-  /** quests that were open when a predator bit the player, sorted: the giver's line at the hand-in may say so */
+  /** quests that were open when a predator bit the player on an outing that came home (not in a fall), sorted: the giver's line at the hand-in may say so */
   bitten: string[];
   /** tended fires by map prop id */
   fires: Record<string, FireState>;
