@@ -1,10 +1,11 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { type Bundle, type GameEvent, isSafe, makeWalkable } from '@game/kernel';
+import { type Bundle, type GameEvent, type Tile, isSafe, makeWalkable, npcTile } from '@game/kernel';
 import { app } from '../src/app';
 import { LEGACY_SAVE_KEY, SAVE_KEY } from '../src/config';
 import { s1Use } from '../src/net/s1';
 import { DEMO_SINCE_KEY, Session } from '../src/session';
+import { questSteps, readyToHandIn } from '../src/text';
 import { say } from '../src/ui/dialog';
 import { UI } from '../src/ui/ui';
 import { loadBundle } from '../../tools/test/helpers/world';
@@ -202,6 +203,51 @@ describe('session persistence', () => {
     storage.setItem(SAVE_KEY, JSON.stringify({ ...save, state: JSON.stringify(state) }));
 
     expect(Session.restore(bundle)?.state.player.expeditions).toEqual({});
+  });
+
+  test('loads a save from before the record of bites', () => {
+    startedSession();
+    const save = JSON.parse(storage.getItem(SAVE_KEY)!) as { state: string };
+    const state = JSON.parse(save.state) as { player: Record<string, unknown> };
+    delete state.player.bitten;
+    storage.setItem(SAVE_KEY, JSON.stringify({ ...save, state: JSON.stringify(state) }));
+
+    const restored = Session.restore(bundle)!;
+    expect(restored.state.player.bitten).toEqual([]);
+    expect(restored.act({ t: 'move', at: [restored.state.player.at[0], restored.state.player.at[1]] }).ok).toBe(true);
+  });
+
+  test('a save from kernel 0.9 in the middle of a vigil waits for dawn, and the giver takes it from 05:00', () => {
+    const quest = 'core/the-long-night';
+    const hearth = 'core/elder-hearth';
+    const session = startedSession();
+    // lit at 19:00 with wood to 05:00 exactly, saved at 23:00 by a kernel that met the step as soon as the wood reached dawn
+    session.state.player.quests[quest] = 'active';
+    session.state.player.fires[hearth] = { lit: 350_000, until: 850_000 };
+    session.tick = 550_000;
+    session.save();
+    const file = JSON.parse(storage.getItem(SAVE_KEY)!) as { kernel: string; state: string };
+    const old = JSON.parse(file.state) as { kernel: string };
+    old.kernel = '0.9.0';
+    storage.setItem(SAVE_KEY, JSON.stringify({ ...file, kernel: '0.9.0', state: JSON.stringify(old) }));
+
+    const restored = Session.restore(bundle)!;
+    expect(restored.tick).toBe(550_000);
+    expect(restored.state.player.fires[hearth]).toEqual({ lit: 350_000, until: 850_000 });
+    expect(readyToHandIn(bundle, restored.state, quest, restored.tick)).toBe(false);
+    expect(questSteps(bundle, restored.state, quest, restored.tick)).toEqual([
+      { text: 'Keep the elder hearth burning until dawn - it has the wood: wait for dawn', done: false },
+    ]);
+    // beside the elder, the hand-in is refused at 23:00 and taken at 05:00
+    const elder = npcTile(bundle, bundle.quests[quest]!.giver!)!;
+    const walkable = makeWalkable(bundle);
+    const beside = [-1, 0, 1].flatMap((dy) => [-1, 0, 1].map((dx): Tile => [elder[0] + dx, elder[1] + dy]));
+    const at = beside.find(([x, y]) => (x !== elder[0] || y !== elder[1]) && walkable(x, y, restored.state.player))!;
+    expect(restored.act({ t: 'turnin', quest, at })).toEqual({ ok: false, error: 'That task is not finished yet.' });
+    restored.tick = 850_000;
+    expect(readyToHandIn(bundle, restored.state, quest, restored.tick)).toBe(true);
+    expect(restored.act({ t: 'turnin', quest, at }).ok).toBe(true);
+    expect(restored.state.player.quests[quest]).toBe('done');
   });
 
   test('a new world version teaches its new start recipes and drops what is gone', () => {

@@ -1,8 +1,8 @@
 /** Tending in the client (NEXT 13b): the words and the once-per-burn warning read only the kernel's state and tick. */
 import { beforeAll, describe, expect, test } from 'vitest';
 
-import { type Bundle, type State, newState, questSatisfied } from '@game/kernel';
-import { TOO_DARK, fireLow, fireName, fireWarnKey, fireWarning, logsToDawn, nextLogClock, readable, warnTicks, woodToFeed } from '../src/fires';
+import { type Bundle, type FireState, type State, newState, questSatisfied } from '@game/kernel';
+import { TOO_DARK, fireLow, fireName, fireWarnKey, fireWarning, logsToDawn, nextLogClock, readable, wantsWood, warnTicks, woodToFeed } from '../src/fires';
 import { describe as describeEvent, questSteps, readyToHandIn } from '../src/text';
 import { loadBundle } from '../../tools/test/helpers/world';
 
@@ -20,7 +20,7 @@ beforeAll(() => {
   bundle = loadBundle();
 });
 
-function withFire(fire?: { lit: number; until: number }, quest: 'active' | 'done' | 'none' = 'active'): State {
+function withFire(fire?: FireState, quest: 'active' | 'done' | 'none' = 'active'): State {
   const s = newState(bundle, 1);
   if (quest !== 'none') s.player.quests[QUEST] = quest;
   if (fire) s.player.fires[HEARTH] = fire;
@@ -105,15 +105,23 @@ describe('the journal line of a tend step', () => {
     expect(line(withFire({ lit: DUSK + 10_000, until: DAWN }), DUSK + 20_000)!.text).toBe('Keep the elder hearth burning until dawn - light it before dusk');
   });
 
-  test('is met once the wood reaches dawn, and agrees with the kernel', () => {
+  test('waits for dawn once the wood reaches it, is met at dawn until the next dusk, and agrees with the kernel', () => {
     const s = withFire({ lit: H19, until: DAWN });
-    expect(line(s, DUSK + 1)).toEqual({ text: 'Keep the elder hearth burning until dawn', done: true });
-    for (const tick of [H19, DUSK, DUSK + 1, H21, DAWN, DAWN + 1]) {
+    const waiting = { text: 'Keep the elder hearth burning until dawn - it has the wood: wait for dawn', done: false };
+    expect(line(s, DUSK + 1)).toEqual(waiting);
+    expect(line(s, DAWN - 1)).toEqual(waiting);
+    expect(line(s, DAWN)).toEqual({ text: 'Keep the elder hearth burning until dawn', done: true });
+    // met through the day; the next dusk asks for a new night
+    const nextDusk = DUSK + bundle.params.day_length_ms;
+    expect(line(s, nextDusk - 1)!.done).toBe(true);
+    expect(line(s, nextDusk)).toEqual({ text: 'Keep the elder hearth burning until dawn - light it before dusk', done: false });
+    for (const tick of [H19, DUSK, DUSK + 1, H21, DAWN - 1, DAWN, DAWN + 1, nextDusk - 1, nextDusk]) {
       expect(line(s, tick)!.done).toBe(questSatisfied(bundle, { ...s, tick }, QUEST));
     }
-    // the state's own tick lags behind the live one: the giver reads the live tick
+    // the state's own tick lags behind the live one: the giver reads the live tick, and only from dawn
     s.tick = H19;
     expect(readyToHandIn(bundle, s, QUEST)).toBe(false);
+    expect(readyToHandIn(bundle, s, QUEST, DAWN - 1)).toBe(false);
     expect(readyToHandIn(bundle, s, QUEST, DAWN)).toBe(true);
   });
 });
@@ -141,6 +149,57 @@ describe('the running-low warning', () => {
     expect(fireWarning(bundle, s, at, new Set(), () => false)).toBeUndefined();
     expect(fireWarning(bundle, withFire({ lit: H19, until: H21 }, 'done'), at, new Set(), seen)).toBeUndefined();
     expect(fireWarning(bundle, withFire({ lit: H19, until: H21 }, 'none'), at, new Set(), seen)).toBeUndefined();
+  });
+
+  test('opens only while the fire wants wood for its night: never once its wood reaches dawn, nor after the night is kept', () => {
+    const seen = () => true;
+    const { log_ms } = bundle.params.fire;
+    // the journal's night (three logs at 19:00, one at 21:00, one at 23:00) has wood to exactly 05:00:
+    // low from 04:30, while the journal waits for dawn, and no box asks for wood
+    const toDawn = withFire({ lit: H19, until: DAWN });
+    for (const tick of [DAWN - 25_000, DAWN - 1]) {
+      expect(fireLow(bundle, toDawn, HEARTH, tick)).toBe(true);
+      expect(questSteps(bundle, toDawn, QUEST, tick)[0]!.text).toBe('Keep the elder hearth burning until dawn - it has the wood: wait for dawn');
+      expect(wantsWood(bundle, toDawn, HEARTH, tick)).toBe(false);
+      expect(fireWarning(bundle, toDawn, tick, new Set(), seen)).toBeUndefined();
+    }
+    // three logs at 19:00 alone run out at 01:00: from 00:30 the box opens while the journal asks for two more
+    const short = withFire({ lit: H19, until: H19 + 3 * log_ms });
+    expect(questSteps(bundle, short, QUEST, 625_000)[0]!.text).toBe('Keep the elder hearth burning until dawn - fed to reach dawn: 2 more logs');
+    expect(fireWarning(bundle, short, 625_000, new Set(), seen)).toEqual({ key: `${HEARTH}@${H19}`, id: HEARTH, name: 'elder hearth' });
+    // lit again at 06:00 after the night it kept: low at 07:30 with the step met, so nothing is asked
+    const relit = withFire({ lit: DAWN + 50_000, until: DAWN + 50_000 + log_ms, kept: DAWN });
+    expect(fireLow(bundle, relit, HEARTH, DAWN + 125_000)).toBe(true);
+    expect(questSteps(bundle, relit, QUEST, DAWN + 125_000)[0]).toEqual({ text: 'Keep the elder hearth burning until dawn', done: true });
+    expect(fireWarning(bundle, relit, DAWN + 125_000, new Set(), seen)).toBeUndefined();
+    // lit after dark began: that night is lost, and the journal asks for a fire before the next dusk, not for wood
+    expect(fireWarning(bundle, withFire({ lit: DUSK + 10_000, until: DUSK + 10_000 + log_ms }), DUSK + 100_000, new Set(), seen)).toBeUndefined();
+    // by day a burn that would go out before the coming night is still warned of: a log keeps it for that night
+    const noon = bundle.params.day_length_ms;
+    expect(fireWarning(bundle, withFire({ lit: noon, until: noon + 2 * log_ms }), noon + 2 * log_ms - 25_000, new Set(), seen)).toEqual({
+      key: `${HEARTH}@${noon}`,
+      id: HEARTH,
+      name: 'elder hearth',
+    });
+  });
+
+  test('wants wood exactly when the journal counts logs', () => {
+    const { log_ms } = bundle.params.fire;
+    const noon = bundle.params.day_length_ms;
+    const fires: (FireState | undefined)[] = [
+      undefined,
+      { lit: H19, until: H21 },
+      { lit: H19, until: DAWN },
+      { lit: DUSK + 10_000, until: DAWN },
+      { lit: DAWN + 50_000, until: DAWN + 50_000 + log_ms, kept: DAWN },
+      { lit: noon, until: noon + 2 * log_ms },
+    ];
+    for (const fire of fires) {
+      const s = withFire(fire);
+      for (const tick of [H19, DUSK, H21, DAWN - 25_000, DAWN, DAWN + 125_000, noon + 2 * log_ms - 25_000]) {
+        expect(wantsWood(bundle, s, HEARTH, tick)).toBe(/fed to reach dawn/.test(questSteps(bundle, s, QUEST, tick)[0]!.text));
+      }
+    }
   });
 });
 
