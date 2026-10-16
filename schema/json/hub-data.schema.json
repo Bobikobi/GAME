@@ -403,6 +403,10 @@
                 "type": "string"
               },
               {
+                "const": "expedition",
+                "type": "string"
+              },
+              {
                 "const": "restore",
                 "type": "string"
               },

@@ -601,6 +601,37 @@ export const QuestBody = Type.Object(
   { additionalProperties: false },
 );
 
+export const ExpeditionBody = Type.Object(
+  {
+    place: Id,
+    window: Type.Object(
+      {
+        bells: Type.Array(Type.Union([Int(20, 23), Int(0, 4)]), {
+          minItems: 2,
+          maxItems: 6,
+          description: 'Night hours in the order they ring: every 20..23 hour before every 0..4 hour.',
+        }),
+      },
+      { additionalProperties: false },
+    ),
+    exit: Id,
+    chain: Type.Array(Id, { minItems: 3, maxItems: 5 }),
+    climax: Type.Object({ slot: Id }, { additionalProperties: false }),
+    reward: Type.Object(
+      {
+        opens: Type.Optional(Type.Array(Id, { maxItems: 2 })),
+        items: Type.Optional(Type.Array(RewardStack, { maxItems: 4 })),
+      },
+      { additionalProperties: false },
+    ),
+    on_miss: Type.Literal('wait'),
+  },
+  {
+    additionalProperties: false,
+    description: 'A place entered under a clock: its giver-less quest chain persists, and a missed window waits for another night (G36).',
+  },
+);
+
 export const RestoreBody = Type.Object(
   {
     place: Place,
@@ -1025,6 +1056,7 @@ export const RecipeFile = record('recipe', 'recipe', RecipeBody);
 export const TemplateFile = record('template', 'template', TemplateBody);
 export const NpcFile = record('npc', 'npc', NpcBody);
 export const QuestFile = record('quest', 'quest', QuestBody);
+export const ExpeditionFile = record('expedition', 'expedition', ExpeditionBody);
 export const RestoreFile = record('restore', 'restore', RestoreBody);
 export const CampFile = record('camp', 'camp', CampBody);
 export const StarterFile = record('starter', 'starter', StarterBody);
@@ -1037,7 +1069,7 @@ export const ParamsFile = record('params', 'params', ParamsBody);
 export const KitFile = record('kit', 'kit', KitBody);
 export const MapFile = record('map', 'map', MapBody);
 
-export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'restore', 'camp', 'starter', 'items', 'creator'] as const;
+export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'expedition', 'restore', 'camp', 'starter', 'items', 'creator'] as const;
 export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map'] as const;
 
 export const ExtensionFile = Type.Union([
@@ -1047,6 +1079,7 @@ export const ExtensionFile = Type.Union([
   TemplateFile,
   NpcFile,
   QuestFile,
+  ExpeditionFile,
   RestoreFile,
   CampFile,
   StarterFile,
@@ -1072,6 +1105,7 @@ export type RecipeFile = Static<typeof RecipeFile>;
 export type TemplateFile = Static<typeof TemplateFile>;
 export type NpcFile = Static<typeof NpcFile>;
 export type QuestFile = Static<typeof QuestFile>;
+export type ExpeditionFile = Static<typeof ExpeditionFile>;
 export type QuestStep = Static<typeof QuestStep>;
 export type QuestType = (typeof QUEST_TYPES)[number];
 export type RiddleAnswer = Static<typeof RiddleAnswer>;
@@ -1096,6 +1130,7 @@ export type Npc = Static<typeof NpcBody>;
 export type WhenDef = Static<typeof When>;
 export type RemarkDef = Static<typeof Remark>;
 export type Quest = Static<typeof QuestBody>;
+export type Expedition = Static<typeof ExpeditionBody>;
 export type Restore = Static<typeof RestoreBody>;
 export type Camp = Static<typeof CampBody>;
 export type Starter = Static<typeof StarterBody>;
@@ -1119,6 +1154,7 @@ export const SCHEMAS = {
   template: TemplateFile,
   npc: NpcFile,
   quest: QuestFile,
+  expedition: ExpeditionFile,
   restore: RestoreFile,
   camp: CampFile,
   starter: StarterFile,

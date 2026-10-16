@@ -7,6 +7,7 @@ import type {
   Camp,
   ClassDef,
   CreatorProfile,
+  Expedition,
   GameMap,
   ItemDef,
   Npc,
@@ -39,6 +40,7 @@ export type TreasureDef = Meta & Treasure;
 export type RecipeDef = Meta & Recipe & { template?: string };
 export type NpcDef = Meta & Npc;
 export type QuestDef = Meta & Quest;
+export type ExpeditionDef = Meta & Expedition;
 export type RestoreDef = Meta & Restore;
 export type CampDef = Meta & Camp;
 export type StarterDef = Meta & Starter;
@@ -143,6 +145,7 @@ export interface Bundle {
   recipes: Record<string, RecipeDef>;
   npcs: Record<string, NpcDef>;
   quests: Record<string, QuestDef>;
+  expeditions: Record<string, ExpeditionDef>;
   restores: Record<string, RestoreDef>;
   camps: Record<string, CampDef>;
   starters: Record<string, StarterDef>;
