@@ -10,7 +10,7 @@ import type { SfxId, SfxOptions } from './sfx';
 import { readMuted, writeMuted } from './storage';
 import type { SoundStorage } from './storage';
 
-export type SongId = 'valley' | 'night';
+export type SongId = 'valley' | 'night' | 'chase';
 export type JingleId = 'level' | 'quest' | 'found';
 export type { SfxId } from './sfx';
 export type { BedId } from './beds';
