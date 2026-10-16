@@ -65,7 +65,9 @@ export function tendedFires(b: Bundle, s: State): Set<string> {
 
 /**
  * The fire warning to open now (G31), if any: a fire an active tend step names, in the
- * last minutes of a burn not yet warned of, that the player can see (`sees`, the screen).
+ * last minutes of a burn not yet warned of, that the player can see (`sees`, the screen),
+ * while that fire still wants wood for the night it keeps (`wantsWood`). A burn whose wood
+ * reaches dawn goes out at dawn with the night kept, so it is not warned of.
  */
 export function fireWarning(
   b: Bundle,
@@ -78,10 +80,26 @@ export function fireWarning(
   for (const p of b.map.props) {
     if (p.fire !== true || p.id === undefined || !tended.has(p.id)) continue;
     const key = fireWarnKey(b, s, p.id, tick);
-    if (key === undefined || warned.has(key) || !sees(p)) continue;
+    if (key === undefined || warned.has(key) || !wantsWood(b, s, p.id, tick) || !sees(p)) continue;
     return { key, id: p.id, name: fireName(p.id) };
   }
   return undefined;
+}
+
+/**
+ * Whether a tend step's fire still wants wood for the night it keeps: its vigil does not hold,
+ * it burns, it was lit by that night's dusk, and its wood falls short of that dawn. Only then
+ * does the journal count logs (`tendLine`) and the running-low warning open (`fireWarning`).
+ */
+export function wantsWood(b: Bundle, s: State, id: string, tick: number): boolean {
+  const fire = s.player.fires?.[id];
+  return (
+    fire !== undefined &&
+    !tendHolds(b, s, id, tick) &&
+    fireBurns(s, id, tick) &&
+    fire.lit <= vigilDusk(b, tick) &&
+    logsToDawn(b, s, id, tick) > 0
+  );
 }
 
 /**
@@ -120,6 +138,7 @@ export function nextLogClock(b: Bundle, s: State, id: string, tick: number): str
  * vigil does not hold, what it still needs - lighting before dusk when the fire is out
  * or was lit after dark began, else the logs that carry it to dawn, and while the fire
  * is too full for a whole log, the time the next one fits (the kernel refuses it before).
+ * A fire with wood to dawn still waits for it: the vigil holds only once dawn has come.
  */
 export function tendLine(b: Bundle, s: State, id: string, tick: number): { text: string; done: boolean } {
   const text = `Keep the ${fireName(id)} burning until dawn`;
@@ -127,7 +146,7 @@ export function tendLine(b: Bundle, s: State, id: string, tick: number): { text:
   const fire = s.player.fires?.[id];
   if (fire === undefined || !fireBurns(s, id, tick) || fire.lit > vigilDusk(b, tick)) return { text: `${text} - light it before dusk`, done: false };
   const n = logsToDawn(b, s, id, tick);
-  if (n === 0) return { text, done: false };
+  if (n === 0) return { text: `${text} - it has the wood: wait for dawn`, done: false };
   const at = nextLogClock(b, s, id, tick);
   const when = at === undefined ? '' : `, the next at ${at}`;
   return { text: `${text} - fed to reach dawn: ${n} more ${n === 1 ? 'log' : 'logs'}${when}`, done: false };

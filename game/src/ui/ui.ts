@@ -312,7 +312,8 @@ export class UI {
 
   /**
    * A fire a tend step keeps warns before it goes out (G31): one box, once per burn, in
-   * its last `fire.warn_min` game minutes, while the player can see it and no box is open.
+   * its last `fire.warn_min` game minutes, while the player can see it and no box is open,
+   * and only while it still needs wood for the night it keeps (`wantsWood`).
    */
   private warnFireLow(s: Session): void {
     if (this.blocking || s.paused) return;
