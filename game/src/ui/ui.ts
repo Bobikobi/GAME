@@ -19,6 +19,7 @@ import {
 } from '@game/kernel';
 import { app } from '../app';
 import type { Button } from '../input';
+import { fireWarning, nextLogClock, woodToFeed } from '../fires';
 import type { Session } from '../session';
 import {
   activeQuests,
@@ -60,6 +61,9 @@ import { mountTouch } from './touch';
 
 /** What the hands are doing, for the world's animation and sound. */
 export type WorkKind = 'timing' | 'strike' | 'pick' | 'snap' | 'dig';
+
+/** How near a fire must be, in tiles, to be seen in a view that does not report its screen. */
+const SEE_TILES = 6;
 
 const GAMES: Record<'timing' | 'strike' | 'pick' | 'snap', Minigame> = { timing, strike, pick, snap };
 
@@ -103,6 +107,8 @@ export class UI {
   private levelUpOpen = false;
   /** the night (its end tick) whose lantern warning was shown, so it opens once per night */
   private warnedNight: number | undefined;
+  /** the burns (fire and lit tick) whose running-low warning was shown, so it opens once per burn */
+  private warnedFires = new Set<string>();
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -238,6 +244,7 @@ export class UI {
       setText(p.darkText, dark.text);
     }
     this.warnAtNight(s);
+    this.warnFireLow(s);
     setClass(p.level, points > 0 ? 'chip glow' : 'chip');
     setTitle(p.level, points > 0 ? 'A skill point to spend: open the journal' : 'Character level');
     setText(p.level, `Lv ${characterLevel(b, st)}${points > 0 ? ' +' : ''}`);
@@ -303,6 +310,22 @@ export class UI {
     ]);
   }
 
+  /**
+   * A fire a tend step keeps warns before it goes out (G31): one box, once per burn, in
+   * its last `fire.warn_min` game minutes, while the player can see it and no box is open.
+   */
+  private warnFireLow(s: Session): void {
+    if (this.blocking || s.paused) return;
+    const world = app.world;
+    // on the same screen; a view that cannot say is read as a few tiles away
+    const sees = (p: { x: number; y: number; w: number; h: number }) =>
+      world?.sees ? world.sees(p) : Math.max(Math.abs(p.x - s.pos[0]), Math.abs(p.y - s.pos[1])) <= SEE_TILES;
+    const w = fireWarning(app.bundle, s.state, s.tick, this.warnedFires, sees);
+    if (!w) return;
+    this.warnedFires.add(w.key);
+    void say(this, null, [`The ${w.name} is burning low.`, 'Wood keeps it: feed it before it goes out.']);
+  }
+
   private renderTracker(s: Session): void {
     const b = app.bundle;
     const ids = activeQuests(b, s.state);
@@ -316,9 +339,9 @@ export class UI {
       title = q.title;
       more = ids.length - 1;
       lines =
-        readyToHandIn(b, s.state, main) && giver
+        readyToHandIn(b, s.state, main, s.tick) && giver
           ? [`Bring it to ${giver}`]
-          : questSteps(b, s.state, main)
+          : questSteps(b, s.state, main, s.tick)
               .filter((st) => !st.done)
               .slice(0, 2)
               .map((st) => st.short ?? st.text);
@@ -436,7 +459,7 @@ export class UI {
       if (q.giver !== npcId) continue;
       const state = s.state.player.quests[id];
       if (state === 'active') {
-        options.push({ label: readyToHandIn(b, s.state, id) ? `Hand in: ${q.title}` : `About: ${q.title}`, value: `quest:${id}` });
+        options.push({ label: readyToHandIn(b, s.state, id, s.tick) ? `Hand in: ${q.title}` : `About: ${q.title}`, value: `quest:${id}` });
       } else if (!state && (q.requires ?? []).every((r) => s.state.player.quests[r] === 'done')) {
         options.push({ label: `Task: ${q.title}`, value: `quest:${id}` });
       }
@@ -477,12 +500,12 @@ export class UI {
       if (!r.ok) this.toast(r.error, 'bad');
       return;
     }
-    if (readyToHandIn(b, s.state, questId)) {
+    if (readyToHandIn(b, s.state, questId, s.tick)) {
       const r = s.act({ t: 'turnin', quest: questId, at: s.pos });
       if (!r.ok) this.toast(r.error, 'bad');
       return;
     }
-    const left = questSteps(b, s.state, questId).filter((st) => !st.done).map((st) => st.text);
+    const left = questSteps(b, s.state, questId, s.tick).filter((st) => !st.done).map((st) => st.text);
     await say(this, npc.name, [...named(q.talk?.waiting ?? [q.summary]), `Still needed: ${left.join('; ')}.`]);
   }
 
@@ -561,6 +584,19 @@ export class UI {
 
   restore(restoreId: string): void {
     confirmRestore(this, restoreId);
+  }
+
+  /** Feed a fire one piece of wood: a log first when the bag holds one; a refusal shows like any other. */
+  feed(fireId: string): void {
+    const s = app.session;
+    if (!s) return;
+    const item = woodToFeed(app.bundle, s.state);
+    if (!item) return this.toast('You have no wood.', 'bad');
+    const r = s.act({ t: 'feed', fire: fireId, item, at: s.pos });
+    if (r.ok) return;
+    // a fire too full for a whole log refuses it: say when one fits, as the journal does
+    const at = nextLogClock(app.bundle, s.state, fireId, s.tick);
+    this.toast(at === undefined ? r.error : `${r.error} A log fits at ${at}.`, 'bad');
   }
 
   async sign(slotId: string): Promise<void> {

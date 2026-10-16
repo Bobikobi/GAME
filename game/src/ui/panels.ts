@@ -206,7 +206,7 @@ export function openJournal(ui: UI, tab: JournalTab = 'tasks'): void {
           h('b', null, q.title),
           q.giver ? h('div', { class: 'muted' }, `For ${b.npcs[q.giver]?.name ?? q.giver}`) : null,
           h('p', null, q.summary),
-          h('ul', { class: 'steps' }, questSteps(b, s.state, id).map((st) => h('li', { class: st.done ? 'done' : '' }, st.text))),
+          h('ul', { class: 'steps' }, questSteps(b, s.state, id, s.tick).map((st) => h('li', { class: st.done ? 'done' : '' }, st.text))),
         );
       }),
       done.length ? h('h3', null, 'Done') : null,
@@ -484,7 +484,7 @@ export function confirmRestore(ui: UI, restoreId: string): void {
   if (!s || !r) return;
   if (r.inputs.length === 0) {
     // nothing to bring: it opens only as a quest's reward
-    void say(ui, r.title, [restoreHint(b, s.state, restoreId)], []);
+    void say(ui, r.title, [restoreHint(b, s.state, restoreId, s.tick)], []);
     return;
   }
   const have = r.inputs.map((i) => `${i.qty} ${itemName(b, i.item)} (you have ${s.state.player.bag[i.item] ?? 0})`).join(', ');
