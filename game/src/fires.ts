@@ -65,7 +65,9 @@ export function tendedFires(b: Bundle, s: State): Set<string> {
 
 /**
  * The fire warning to open now (G31), if any: a fire an active tend step names, in the
- * last minutes of a burn not yet warned of, that the player can see (`sees`, the screen).
+ * last minutes of a burn not yet warned of, that the player can see (`sees`, the screen),
+ * while that fire still wants wood for the night it keeps (`wantsWood`). A burn whose wood
+ * reaches dawn goes out at dawn with the night kept, so it is not warned of.
  */
 export function fireWarning(
   b: Bundle,
@@ -78,10 +80,26 @@ export function fireWarning(
   for (const p of b.map.props) {
     if (p.fire !== true || p.id === undefined || !tended.has(p.id)) continue;
     const key = fireWarnKey(b, s, p.id, tick);
-    if (key === undefined || warned.has(key) || !sees(p)) continue;
+    if (key === undefined || warned.has(key) || !wantsWood(b, s, p.id, tick) || !sees(p)) continue;
     return { key, id: p.id, name: fireName(p.id) };
   }
   return undefined;
+}
+
+/**
+ * Whether a tend step's fire still wants wood for the night it keeps: its vigil does not hold,
+ * it burns, it was lit by that night's dusk, and its wood falls short of that dawn. Only then
+ * does the journal count logs (`tendLine`) and the running-low warning open (`fireWarning`).
+ */
+export function wantsWood(b: Bundle, s: State, id: string, tick: number): boolean {
+  const fire = s.player.fires?.[id];
+  return (
+    fire !== undefined &&
+    !tendHolds(b, s, id, tick) &&
+    fireBurns(s, id, tick) &&
+    fire.lit <= vigilDusk(b, tick) &&
+    logsToDawn(b, s, id, tick) > 0
+  );
 }
 
 /**

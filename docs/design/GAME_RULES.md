@@ -379,11 +379,12 @@ The valley has no combat; its danger is the hour, and what the player eats.
   lights it or adds a log, a whole one or none (a fire with no room left for
   a whole log refuses it and the log stays in the bag: effort is never
   wasted), nothing bought or made makes it burn longer, and
-  it warns before it goes out (G31), never before a log fits, and a prop may read by a fire (`lit_by`), its words shown only while it burns. A night kept by a fire is a night at the
+  it warns before it goes out (G31) only while it still needs wood for the night it keeps, so never once its wood reaches that dawn, and never before a log fits, and a prop may read by a fire (`lit_by`), its words shown only while it burns. A night kept by a fire is a night at the
   screen: nothing keeps a fire while the player is away (G28). A night is
   kept only once it is over: a `tend` step is met at that night's dawn, by a
   fire lit by its dusk that burned without a gap to dawn, never earlier
-  however much wood it holds, and it stays met until the next dusk. Added
+  however much wood it holds, and it stays met until the next dusk, even if
+  the fire is lit again by day. Added
   2026-10-13 (the same entry); a log goes in whole since 2026-10-14
   (DECISIONS.md, the entry on the full fire); the vigil closes at dawn since
   2026-10-16 (the entry on the vigil at dawn).

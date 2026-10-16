@@ -69,6 +69,12 @@ export interface FireState {
   lit: number;
   /** first tick at which the fire no longer burns */
   until: number;
+  /**
+   * The dawn of a night an earlier burn kept, when the fire was lit again by day while that vigil
+   * held: a new burn does not undo a night already kept, so the vigil still holds until the next
+   * dusk. Absent otherwise, and in saves from before kernel 0.10 (DECISIONS.md, 2026-10-16).
+   */
+  kept?: number;
 }
 
 export interface ExpeditionState {
@@ -395,14 +401,15 @@ export function burnsAsWood(bundle: Bundle, itemId: string): boolean {
 /**
  * Whether a fire has kept a `tend` step's vigil at this tick: the night of the last dusk at or
  * before it is over (the tick is at or after that night's dawn), and the fire was lit by that dusk
- * and burned without a gap to that dawn. Before dawn it does not hold, however much wood the fire
- * has; by day it holds until the next dusk (DECISIONS.md, 2026-10-16: the vigil closes at dawn).
+ * and burned without a gap to that dawn, or kept that night before it was lit again by day (`kept`).
+ * Before dawn it does not hold, however much wood the fire has; by day it holds until the next dusk,
+ * relit or not (DECISIONS.md, 2026-10-16: the vigil closes at dawn).
  */
 export function tendHolds(bundle: Bundle, state: State, id: string, tick: number): boolean {
   const fire = state.player.fires?.[id];
   const dusk = lastDusk(bundle, tick);
   const dawn = nightEnds(bundle, dusk);
-  return fire !== undefined && tick >= dawn && fire.lit <= dusk && fire.until >= dawn;
+  return fire !== undefined && tick >= dawn && (fire.kept === dawn || (fire.lit <= dusk && fire.until >= dawn));
 }
 
 /**

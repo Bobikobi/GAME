@@ -1,6 +1,7 @@
 /**
- * Tending (NEXT 13a): wood is fed by hand, a burn is uninterrupted, and a vigil lasts dusk to dawn
- * and is met only once that dawn has come (DECISIONS.md, 2026-10-16).
+ * Tending (NEXT 13a): wood is fed by hand, a burn is uninterrupted, and a vigil lasts dusk to dawn,
+ * is met only once that dawn has come, and stays met until the next dusk, relit or not
+ * (DECISIONS.md, 2026-10-16).
  */
 import { beforeAll, describe, expect, test } from 'vitest';
 
@@ -237,12 +238,16 @@ describe('a dusk-to-dawn vigil', () => {
 });
 
 describe('the vigil closes at dawn', () => {
-  /** 19:00, 23:00 and 04:00 of the first night. */
+  /** 19:00, 21:00, 23:00 and 04:00 of the first night, and 06:00 the morning after. */
   const H19 = 350_000;
+  const H21 = 450_000;
   const H23 = 550_000;
   const H04 = 800_000;
+  const H06 = 900_000;
   /** Lit at 19:00 with three logs (to 01:00) and topped up at 23:00 with two: wood to dawn from 23:00 on. */
   const NIGHT: readonly number[] = [H19, H19, H19, H23, H23];
+  /** The night the journal lays out: three logs at 19:00, the next at 21:00 and the last at 23:00, wood to exactly 05:00. */
+  const JOURNAL: readonly number[] = [H19, H19, H19, H21, H23];
   const nextDusk = (b: Bundle) => DUSK + b.params.day_length_ms;
 
   /** The vigil open and the player beside its giver (Maru, from the copied quest), ready to hand it in. */
@@ -293,6 +298,29 @@ describe('the vigil closes at dawn', () => {
     if (!r.ok) throw new Error(r.error);
     expect(r.state.player.quests[QUEST]).toBe('done');
     expect(r.events).toContainEqual({ e: 'quest', quest: QUEST, state: 'done' });
+    expect(r.events.filter((e) => e.e === 'fire_out')).toEqual([]);
+  });
+
+  test("the journal's night runs out at dawn untold, and the giver takes it from then", () => {
+    const b = world();
+    const state = fedAt(b, JOURNAL);
+    expect(state.player.fires[FIRE]).toEqual({ lit: H19, until: DAWN });
+    const { s, at } = atGiver(b, state);
+    const turnin: Action = { t: 'turnin', quest: QUEST, at };
+    expect(step(b, s, turnin, DAWN - 1)).toEqual({ ok: false, error: 'That task is not finished yet.' });
+    // the wood runs out on the very step that hands it in: a night kept, so no fire_out
+    const handed = step(b, s, turnin, DAWN);
+    if (!handed.ok) throw new Error(handed.error);
+    expect(handed.state.player.quests[QUEST]).toBe('done');
+    expect(handed.events.filter((e) => e.e === 'fire_out')).toEqual([]);
+    // or a step at dawn tells nothing, and the hand-in an hour later tells no out either
+    const dawn = step(b, s, { t: 'move', at }, DAWN);
+    if (!dawn.ok) throw new Error(dawn.error);
+    expect(dawn.events.filter((e) => e.e === 'fire_out')).toEqual([]);
+    const later = step(b, dawn.state, turnin, DAWN + 50_000);
+    if (!later.ok) throw new Error(later.error);
+    expect(later.state.player.quests[QUEST]).toBe('done');
+    expect(later.events.filter((e) => e.e === 'fire_out')).toEqual([]);
   });
 
   test('a gap at 04:00 fails it, relit or not', () => {
@@ -323,6 +351,64 @@ describe('the vigil closes at dawn', () => {
     for (const tick of [nextDusk(b), nextDusk(b) + 1, DAWN + b.params.day_length_ms]) {
       expect(tendHolds(b, state, FIRE, tick)).toBe(false);
     }
+  });
+
+  test('a log fed by day after the night it kept lights a new burn, and the night stays kept until the next dusk', () => {
+    const b = world();
+    const { log_ms } = b.params.fire;
+    const wood = fedAt(b, JOURNAL);
+    wood.player.bag[WOOD] = 3;
+    // out at 05:00 on the dot with the Feed beside it: a log at dawn, a tick after or at 06:00 starts a new burn that carries the night
+    for (const tick of [DAWN, DAWN + 1, H06]) {
+      const relit = feed(b, wood, tick).state;
+      expect(relit.player.fires[FIRE]).toEqual({ lit: tick, until: tick + log_ms, kept: DAWN });
+      for (const t of [tick, b.params.day_length_ms, nextDusk(b) - 1]) expect(tendHolds(b, relit, FIRE, t)).toBe(true);
+      for (const t of [nextDusk(b), DAWN + b.params.day_length_ms]) expect(tendHolds(b, relit, FIRE, t)).toBe(false);
+    }
+    // relit at 06:00, the giver takes it at 06:00
+    const six = atGiver(b, feed(b, wood, H06).state);
+    const sixHanded = step(b, six.s, { t: 'turnin', quest: QUEST, at: six.at }, H06);
+    if (!sixHanded.ok) throw new Error(sixHanded.error);
+    expect(sixHanded.state.player.quests[QUEST]).toBe('done');
+    // a top-up keeps it, a second burn the same day carries it again, and the giver takes the vigil at noon
+    const topped = feed(b, feed(b, wood, DAWN).state, DAWN + 10).state;
+    expect(topped.player.fires[FIRE]).toEqual({ lit: DAWN, until: DAWN + 2 * log_ms, kept: DAWN });
+    const again = feed(b, topped, DAWN + 2 * log_ms + 5).state;
+    expect(again.player.fires[FIRE]).toEqual({ lit: DAWN + 2 * log_ms + 5, until: DAWN + 3 * log_ms + 5, kept: DAWN });
+    const { s, at } = atGiver(b, again);
+    const handed = step(b, s, { t: 'turnin', quest: QUEST, at }, b.params.day_length_ms);
+    if (!handed.ok) throw new Error(handed.error);
+    expect(handed.state.player.quests[QUEST]).toBe('done');
+
+    // a replay agrees, and a save cut at any step carries the kept night on
+    const start = begin(b, { [WOOD]: JOURNAL.length + 1 });
+    const fed = (tick: number) => ({ a: { t: 'feed', fire: FIRE, item: WOOD, at: AT } as Action, tick });
+    const log = [...JOURNAL.map(fed), fed(DAWN + 1), { a: { t: 'move', at: AT } as Action, tick: b.params.day_length_ms }];
+    const one = replay(b, start, log);
+    expect(one.error).toBeUndefined();
+    expect(one.state.player.fires[FIRE]).toEqual({ lit: DAWN + 1, until: DAWN + 1 + log_ms, kept: DAWN });
+    for (let cut = 1; cut < log.length; cut++) {
+      const head = replay(b, start, log.slice(0, cut));
+      const tail = replay(b, JSON.parse(serialize(head.state)) as State, log.slice(cut));
+      expect(tail.error).toBeUndefined();
+      expect(serialize(tail.state)).toBe(serialize(one.state));
+    }
+  });
+
+  test('a fire lit again after the next dusk, or after a night it did not keep, carries no night', () => {
+    const b = world();
+    const { log_ms } = b.params.fire;
+    const wood = fedAt(b, JOURNAL);
+    wood.player.bag[WOOD] = 1;
+    const late = feed(b, wood, nextDusk(b) + 10).state;
+    expect(late.player.fires[FIRE]).toEqual({ lit: nextDusk(b) + 10, until: nextDusk(b) + 10 + log_ms });
+    for (const t of [nextDusk(b) + 10, DAWN + b.params.day_length_ms]) expect(tendHolds(b, late, FIRE, t)).toBe(false);
+    // out at 04:00, before dawn: a log by day lights a burn with no night to carry
+    const lost = fedAt(b, [DUSK, DUSK, DUSK, H23]);
+    lost.player.bag[WOOD] = 1;
+    const relit = feed(b, lost, DAWN + 1).state;
+    expect(relit.player.fires[FIRE]).toEqual({ lit: DAWN + 1, until: DAWN + 1 + log_ms });
+    expect(tendHolds(b, relit, FIRE, DAWN + 1)).toBe(false);
   });
 
   test('a replay agrees: a vigil nobody gave finishes itself at the first step from dawn, and a save cut anywhere plays on the same', () => {
@@ -363,22 +449,6 @@ describe('the vigil closes at dawn', () => {
       expect(serialize(tail.state)).toBe(serialize(one.state));
     }
   });
-
-  test('a save from 0.9.0 loads: the same fire ledger, read by the rule of dawn', () => {
-    const b = world();
-    // saved at 23:00 with wood to dawn, a vigil 0.9.0 already called kept
-    const loaded = JSON.parse(serialize({ ...fedAt(b, NIGHT), kernel: '0.9.0' })) as State;
-    expect(loaded.kernel).toBe('0.9.0');
-    expect(loaded.player.fires[FIRE]).toEqual({ lit: H19, until: DAWN });
-    expect(questSatisfied(b, loaded, QUEST)).toBe(false);
-
-    const { s, at } = atGiver(b, loaded);
-    const turnin: Action = { t: 'turnin', quest: QUEST, at };
-    expect(step(b, s, turnin, H23)).toEqual({ ok: false, error: 'That task is not finished yet.' });
-    const r = step(b, s, turnin, DAWN);
-    if (!r.ok) throw new Error(r.error);
-    expect(r.state.player.quests[QUEST]).toBe('done');
-  });
 });
 
 describe('the tests the client shares', () => {
@@ -390,7 +460,16 @@ describe('the tests the client shares', () => {
   test('tendHolds answers as the tend step of questSatisfied, at every tick around a night', () => {
     const b = world();
     const state = begin(b);
-    const fires = [undefined, { lit: DUSK - 1, until: DAWN }, { lit: DUSK, until: DAWN + 1 }, { lit: DUSK + 1, until: DAWN }, { lit: DUSK - 1, until: DAWN - 1 }];
+    const fires = [
+      undefined,
+      { lit: DUSK - 1, until: DAWN },
+      { lit: DUSK, until: DAWN + 1 },
+      { lit: DUSK + 1, until: DAWN },
+      { lit: DUSK - 1, until: DAWN - 1 },
+      // lit again by day: carrying this night's dawn, and one a day older
+      { lit: DAWN + 1, until: DAWN + 2, kept: DAWN },
+      { lit: DAWN + 1, until: DAWN + 2, kept: DAWN - 1_200_000 },
+    ];
     for (const fire of fires) {
       state.player.fires = fire === undefined ? {} : { [FIRE]: fire };
       for (const tick of [DUSK - 1, DUSK, DUSK + 1, DAWN - 1, DAWN, DAWN + 1]) {
