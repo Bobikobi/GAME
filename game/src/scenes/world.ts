@@ -284,6 +284,8 @@ export class WorldScene extends Phaser.Scene {
   private notes = new Map<string, { text: string; name: string; top: number }>();
   /** tended fires by prop id, the fire on each of their tiles, and the fire each fire-lit tile reads by */
   private fires = new Map<string, Fire>();
+  /** people beside a fire prop: a copy of each for the stencil, so that fire's light keeps the night's haze off them while it burns */
+  private fireSide: { img: Standing; cut: Phaser.GameObjects.Image; fire: string }[] = [];
   private fireAt = new Map<string, string>();
   private litBy = new Map<string, string>();
   private tops = new Map<string, number>();
@@ -721,6 +723,14 @@ export class WorldScene extends Phaser.Scene {
       if (f.spr.alpha !== alpha) f.spr.setAlpha(alpha);
       if (f.glow) f.glow.lit = burns;
     }
+    // beside a fire burning at night: in its light, cut out of the haze and the frame like the player, and warm
+    for (const n of this.fireSide) {
+      const lit = this.night > 0 && fireBurns(s.state, n.fire, s.tick);
+      if (n.cut.visible === lit) continue;
+      n.cut.setVisible(lit);
+      if (lit) n.img.setTint(LIGHT.tint);
+      else n.img.clearTint();
+    }
   }
 
   /** How a fire is drawn now, for a test: its sprite, whether that is the burning one, and how strongly it shows. */
@@ -826,8 +836,11 @@ export class WorldScene extends Phaser.Scene {
         img = this.add.image(cx, bottom, npc.sprite);
       }
       img.setOrigin(0.5, 1).setDepth(bottom);
+      const fire = this.b.map.props.find((p) => p.fire === true && p.id !== undefined && Math.max(Math.abs(p.x - t[0]), Math.abs(p.y - t[1])) <= 2);
+      const cut = fire?.id === undefined ? undefined : new Phaser.GameObjects.Image(this, cx, bottom, img.texture.key, img.frame.name).setOrigin(0.5, 1).setVisible(false);
+      if (cut && fire?.id !== undefined) this.fireSide.push({ img, cut, fire: fire.id });
       // a slow breath so people read as alive
-      this.tweens.add({ targets: img, scaleY: 1.04, duration: 900 + (id.length % 5) * 120, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      this.tweens.add({ targets: cut ? [img, cut] : img, scaleY: 1.04, duration: 900 + (id.length % 5) * 120, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       if (RICH.detail) this.shadow(cx, bottom, 1);
       this.npcAt.set(key(t[0], t[1]), id);
       this.tops.set(key(t[0], t[1]), this.b.sprites[npc.sprite]?.h ?? 24);
@@ -1069,7 +1082,7 @@ export class WorldScene extends Phaser.Scene {
     // mist, and is cleared once the frame is drawn. A filter on the haze layer would do it too, but a filtered
     // see-through layer comes out brighter than it is
     this.cutout = new Phaser.GameObjects.Sprite(this, 0, 0, this.player.texture.key).setOrigin(0.5, 1).setVisible(false);
-    this.add.stencil(0, 0, [this.cutout], { stencilAlphaStrategy: 0.5 }).setDepth(DEPTH.mist - 0.5);
+    this.add.stencil(0, 0, [this.cutout, ...this.fireSide.map((f) => f.cut)], { stencilAlphaStrategy: 0.5 }).setDepth(DEPTH.mist - 0.5);
     this.vignette = this.add.image(0, 0, '__DEFAULT').setScrollFactor(0).setDepth(DEPTH.fog + 2);
     this.uncut = this.add.stencil(0, 0, [], { stencilLayerMode: 'clear' }).setDepth(DEPTH.fog + 3);
     this.add.stencil(0, 0, [], { stencilLayerMode: 'clear' }).setDepth(DEPTH.glow + 1);
