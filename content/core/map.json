@@ -1567,6 +1567,15 @@
         "label": "Heart of the tangle"
       },
       {
+        "id": "core/tangle",
+        "kind": "area",
+        "x": 20,
+        "y": 34,
+        "w": 25,
+        "h": 15,
+        "tag": "grove"
+      },
+      {
         "id": "core/town-edge",
         "kind": "building",
         "x": 36,

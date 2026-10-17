@@ -66,4 +66,17 @@ describe('quest steps', () => {
     expect(validateFile(map('core/stone-a'))).toEqual([]);
     expect(validateFile(map('Stone A'))).not.toEqual([]);
   });
+
+  it('accept a maze block on every rung of the ladder, and refuse a rung off it, a frame that is no id, or a stray key', () => {
+    const visit = { kind: 'visit', slot: 'core/tangle-heart' };
+    const maze = (block: Record<string, unknown>) => quest([visit], { type: 'maze', maze: block });
+    for (const tier of [1, 2, 3, 4]) expect(validateFile(maze({ tier, area: 'core/tangle' }))).toEqual([]);
+    expect(validateFile(maze({ tier: 1, area: 'core/tangle', landmark: 'core/base-kit:props/rock_mossy' }))).toEqual([]);
+    expect(validateFile(quest([visit], { type: 'maze' }))).toEqual([]);
+    expect(validateFile(maze({ tier: 0, area: 'core/tangle' }))).not.toEqual([]);
+    expect(validateFile(maze({ tier: 5, area: 'core/tangle' }))).not.toEqual([]);
+    expect(validateFile(maze({ tier: 1 }))).not.toEqual([]);
+    expect(validateFile(maze({ tier: 1, area: 'The tangle' }))).not.toEqual([]);
+    expect(validateFile(maze({ tier: 1, area: 'core/tangle', line: true }))).not.toEqual([]);
+  });
 });
