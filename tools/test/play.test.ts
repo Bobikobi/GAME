@@ -118,7 +118,10 @@ describe('the play rules on a fixture that breaks each one', () => {
     type: 'discovery',
     summary: 'A coin.',
     steps: [{ kind: 'find', item: 'core/old-coin', clue: 'Under the gate stones.' }],
-    talk: { done: ['Thank you, {name}. The whole market will hear of this coin by the morning.'] },
+    talk: {
+      done: ['Thank you, {name}. The whole market will hear of this coin by the morning.'],
+      done_bitten: ['Bitten, {name}? The whole market will hear of that wolf by the morning.'],
+    },
     reward: { rep: 5, recipes: ['core/herb-tea'] },
   }));
 
@@ -172,10 +175,12 @@ describe('the play rules on a fixture that breaks each one', () => {
     expect(missing[0]!.message).toContain('no quest "tester/nowhere"');
   });
 
-  it('S-2: a quest line counted with the longest name in it', () => {
-    const long = about('thanks').filter((i) => i.where === 'quest.talk.done');
-    expect(long).toHaveLength(1);
-    expect(long[0]!.message).toContain(`${RULES_PAGE} G14,`);
+  it('S-2: a quest line counted with the longest name in it, the line for a bitten hand-in too', () => {
+    for (const where of ['quest.talk.done', 'quest.talk.done_bitten']) {
+      const long = about('thanks').filter((i) => i.where === where);
+      expect(long, where).toHaveLength(1);
+      expect(long[0]!.message).toContain(`${RULES_PAGE} G14,`);
+    }
   });
 
   it('G8: the uncited note by its id, the unnamed one in a count line', () => {

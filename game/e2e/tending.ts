@@ -335,7 +335,8 @@ async function run(page: Page, url: string): Promise<void> {
   const night = await me.feedAsAsked();
   if (night.fed !== 2 || night.full) throw new Error(`fed ${night.fed} logs to reach dawn after midnight (full: ${night.full}), not 2`);
   if ((await me.fire())!.lit !== lit) throw new Error('a top-up started a new burn');
-  await page.waitFor(`__tend.tracker().includes('Bring it to Elder Maru')`, 'the vigil to hold with wood to dawn', 5000);
+  await page.waitFor(`__tend.tracker().includes('it has the wood: wait for dawn')`, 'the journal to wait for dawn with wood to reach it', 5000);
+  if ((await me.tracker()).includes('Bring it to')) throw new Error('the vigil was met before dawn');
   await page.waitFor('__tend.look().alpha === 1', 'the flame to come back up', 5000);
 
   // running low again before dawn is the same burn: no second box
