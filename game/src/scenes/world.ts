@@ -41,7 +41,7 @@ import { sound, type SfxId, type SongId } from '../audio';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T } from '../config';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
-import { TOO_DARK, fireLow, fireName, readable, woodToFeed } from '../fires';
+import { TOO_DARK, feedTooLate, fireLow, fireName, readable, woodToFeed } from '../fires';
 import { emptySlots, slotContent } from '../places';
 import { canopyGroups, hash, remapTone, toneField, type Tone } from '../richground';
 import type { Session } from '../session';
@@ -286,6 +286,8 @@ export class WorldScene extends Phaser.Scene {
   private notes = new Map<string, { text: string; name: string; top: number }>();
   /** tended fires by prop id, the fire on each of their tiles, and the fire each fire-lit tile reads by */
   private fires = new Map<string, Fire>();
+  /** people beside a fire prop: a copy of each for the stencil, so that fire's light keeps the night's haze off them while it burns */
+  private fireSide: { img: Standing; cut: Phaser.GameObjects.Image; fire: string }[] = [];
   private fireAt = new Map<string, string>();
   private litBy = new Map<string, string>();
   private tops = new Map<string, number>();
@@ -416,6 +418,8 @@ export class WorldScene extends Phaser.Scene {
     this.time.addEvent({ delay: 480, loop: true, callback: () => this.flipWater() });
     sound.installUnlock();
     sound.music('valley', 1500);
+    // the crackle holds its nodes only while heard: none outlives the world
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => sound.crackle(0));
     app.world = this;
     app.ui.worldReady();
   }
@@ -771,6 +775,14 @@ export class WorldScene extends Phaser.Scene {
       if (f.spr.alpha !== alpha) f.spr.setAlpha(alpha);
       if (f.glow) f.glow.lit = burns;
     }
+    // beside a fire burning at night: in its light, cut out of the haze and the frame like the player, and warm
+    for (const n of this.fireSide) {
+      const lit = this.night > 0 && fireBurns(s.state, n.fire, s.tick);
+      if (n.cut.visible === lit) continue;
+      n.cut.setVisible(lit);
+      if (lit) n.img.setTint(LIGHT.tint);
+      else n.img.clearTint();
+    }
   }
 
   /** How a fire is drawn now, for a test: its sprite, whether that is the burning one, and how strongly it shows. */
@@ -876,8 +888,11 @@ export class WorldScene extends Phaser.Scene {
         img = this.add.image(cx, bottom, npc.sprite);
       }
       img.setOrigin(0.5, 1).setDepth(bottom);
+      const fire = this.b.map.props.find((p) => p.fire === true && p.id !== undefined && Math.max(Math.abs(p.x - t[0]), Math.abs(p.y - t[1])) <= 2);
+      const cut = fire?.id === undefined ? undefined : new Phaser.GameObjects.Image(this, cx, bottom, img.texture.key, img.frame.name).setOrigin(0.5, 1).setVisible(false);
+      if (cut && fire?.id !== undefined) this.fireSide.push({ img, cut, fire: fire.id });
       // a slow breath so people read as alive
-      this.tweens.add({ targets: img, scaleY: 1.04, duration: 900 + (id.length % 5) * 120, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      this.tweens.add({ targets: cut ? [img, cut] : img, scaleY: 1.04, duration: 900 + (id.length % 5) * 120, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       if (RICH.detail) this.shadow(cx, bottom, 1);
       this.npcAt.set(key(t[0], t[1]), id);
       this.tops.set(key(t[0], t[1]), this.b.sprites[npc.sprite]?.h ?? 24);
@@ -1119,7 +1134,7 @@ export class WorldScene extends Phaser.Scene {
     // mist, and is cleared once the frame is drawn. A filter on the haze layer would do it too, but a filtered
     // see-through layer comes out brighter than it is
     this.cutout = new Phaser.GameObjects.Sprite(this, 0, 0, this.player.texture.key).setOrigin(0.5, 1).setVisible(false);
-    this.add.stencil(0, 0, [this.cutout], { stencilAlphaStrategy: 0.5 }).setDepth(DEPTH.mist - 0.5);
+    this.add.stencil(0, 0, [this.cutout, ...this.fireSide.map((f) => f.cut)], { stencilAlphaStrategy: 0.5 }).setDepth(DEPTH.mist - 0.5);
     this.vignette = this.add.image(0, 0, '__DEFAULT').setScrollFactor(0).setDepth(DEPTH.fog + 2);
     this.uncut = this.add.stencil(0, 0, [], { stencilLayerMode: 'clear' }).setDepth(DEPTH.fog + 3);
     this.add.stencil(0, 0, [], { stencilLayerMode: 'clear' }).setDepth(DEPTH.glow + 1);
@@ -1384,6 +1399,7 @@ export class WorldScene extends Phaser.Scene {
     this.placePinned();
     const s = this.session;
     if (!s || !s.started) {
+      sound.crackle(0);
       this.attract(delta);
       return;
     }
@@ -1665,10 +1681,11 @@ export class WorldScene extends Phaser.Scene {
 
   // ------------------------------------------------------------ day, night and the things in the dark
 
-  /** The campfire, the stream and the ruins sound as loud as the player is near them (soundscape.ts). */
+  /** The campfire, the stream, the ruins and a burning fire sound as loud as the player is near them (soundscape.ts). */
   private hearPlace(s: Session): void {
     const scape = soundscape(this.b, s.state, s.tick, this.player.x / T, this.player.y / T - 0.5);
     for (const id of ['fire', 'stream', 'dread'] as const) sound.bed(id, scape[id].level, scape[id].pan);
+    sound.crackle(scape.crackle.level, scape.crackle.pan);
   }
 
   private shadeFor(s: Session): void {
@@ -2289,7 +2306,9 @@ export class WorldScene extends Phaser.Scene {
       }
       if (e.e === 'fire') {
         const f = this.fires.get(e.id);
-        if (f) this.burst('fx-spark', f.spr.x, f.spr.y - 8, 10);
+        const s = this.session;
+        // lit after its night was lost: no sparks of cheer
+        if (f && !(s && feedTooLate(this.b, s.state, e.id, s.state.tick))) this.burst('fx-spark', f.spr.x, f.spr.y - 8, 10);
       }
       if (e.e !== 'gain') continue;
       const ref = this.b.items[e.item]?.sprite;

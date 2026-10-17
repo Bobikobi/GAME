@@ -30,7 +30,7 @@ import {
   senseReach,
   techniqueValue,
 } from '@game/kernel';
-import { fireName, tendLine } from './fires';
+import { feedTooLate, fireName, tendLine } from './fires';
 
 export function itemName(b: Bundle, id: string): string {
   return b.items[id]?.name ?? id;
@@ -432,8 +432,12 @@ export function describe(b: Bundle, s: State, e: GameEvent): { text: string; ico
       return { text: `${b.camps[e.camp]?.title ?? e.camp} built`, tone: 'good' };
     case 'fire': {
       const name = fireName(e.id);
+      // lit after the night it keeps was lost: plain, not cheered
+      if (feedTooLate(b, s, e.id, s.tick)) return { text: `The ${name} burns, but tonight is lost.`, tone: 'info' };
       return { text: `The ${name} burns until ${clock(minuteOfDay(b, e.until))}.`, tone: 'good' };
     }
+    case 'fire_out':
+      return { text: `The ${fireName(e.id)} went out - tonight is lost. Try again before the next dusk.`, tone: 'bad' };
     case 'eat':
       return { text: `${b.items[e.item]?.kind === 'food' ? 'You ate' : 'You used'} ${itemName(b, e.item)}`, icon: b.items[e.item]?.sprite, tone: b.items[e.item]?.food?.hurt ? 'info' : 'good' };
     case 'hurt':

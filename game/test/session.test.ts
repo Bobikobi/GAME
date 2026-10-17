@@ -431,6 +431,105 @@ describe('position reports (P-5b)', () => {
 
 });
 
+describe('a fire that goes out while the player stands still (6b)', () => {
+  const QUEST = 'core/the-long-night';
+  const HEARTH = 'core/elder-hearth';
+  /** 19:00 and 21:00 of the first evening: tick 0 is noon and a game hour is 50 000 ms. */
+  const H19 = 350_000;
+  const H21 = 450_000;
+
+  /** A session keeping the elder hearth, lit at 19:00 with wood to 21:00, whose last step was a moment before it runs out; and the fire_out events it shows. */
+  function keeping(quest: 'active' | 'done' = 'active'): { session: Session; outs: GameEvent[] } {
+    const session = startedSession();
+    session.state.player.quests[QUEST] = quest;
+    session.state.player.fires[HEARTH] = { lit: H19, until: H21 };
+    session.tick = H21 - 100;
+    session.report(session.pos, true);
+    expect(session.state.tick).toBe(H21 - 100);
+    const outs: GameEvent[] = [];
+    session.on('events', (events) => outs.push(...events.filter((e) => e.e === 'fire_out')));
+    return { session, outs };
+  }
+
+  function listen(session: Session): GameEvent[] {
+    const outs: GameEvent[] = [];
+    session.on('events', (events) => outs.push(...events.filter((e) => e.e === 'fire_out')));
+    return outs;
+  }
+
+  test('is told once, at the first frame past its end, and saved with the step that told it', () => {
+    const { session, outs } = keeping();
+    session.advance(50);
+    expect(outs).toEqual([]);
+    session.advance(100);
+    expect(outs).toEqual([{ e: 'fire_out', id: HEARTH }]);
+    for (let i = 0; i < 8; i++) session.advance(250);
+    expect(outs).toHaveLength(1);
+    const file = JSON.parse(storage.getItem(SAVE_KEY)!) as { state: string };
+    expect((JSON.parse(file.state) as { tick: number }).tick).toBe(H21 + 50);
+  });
+
+  test('a reload after it was told never tells it again', () => {
+    const { session, outs } = keeping();
+    session.advance(150);
+    expect(outs).toHaveLength(1);
+    const restored = Session.restore(bundle)!;
+    const again = listen(restored);
+    const report = vi.spyOn(restored, 'report');
+    for (let i = 0; i < 8; i++) restored.advance(250);
+    // the saved state stands past the end: there is nothing to ask the kernel, and its next step tells nothing of it
+    expect(report).not.toHaveBeenCalled();
+    restored.report(restored.pos, true);
+    expect(again).toEqual([]);
+  });
+
+  test('a reload of a save from before the end tells it once, when the end comes', () => {
+    const { session } = keeping();
+    session.save();
+    const restored = Session.restore(bundle)!;
+    const outs = listen(restored);
+    restored.advance(50);
+    expect(outs).toEqual([]);
+    restored.advance(100);
+    expect(outs).toEqual([{ e: 'fire_out', id: HEARTH }]);
+    restored.advance(250);
+    expect(outs).toHaveLength(1);
+  });
+
+  test('a fire no open task keeps is asked about once, and nothing is told', () => {
+    const { session, outs } = keeping('done');
+    const report = vi.spyOn(session, 'report');
+    for (let i = 0; i < 8; i++) session.advance(250);
+    expect(report).toHaveBeenCalledTimes(1);
+    expect(outs).toEqual([]);
+  });
+
+  test('a step the kernel refuses is not asked again every frame: the next step tells it', () => {
+    const { session, outs } = keeping();
+    const report = vi.spyOn(session, 'report');
+    const here = session.pos;
+    // off the map, where the kernel refuses the step
+    session.pos = [-1, -1];
+    for (let i = 0; i < 8; i++) session.advance(250);
+    expect(report).toHaveBeenCalledTimes(1);
+    expect(outs).toEqual([]);
+    session.pos = here;
+    session.report(here, true);
+    expect(outs).toEqual([{ e: 'fire_out', id: HEARTH }]);
+  });
+
+  test('work under way holds it, and it is told once the work is done', () => {
+    const { session, outs } = keeping();
+    session.state.player.busyUntil = H21 + 1000;
+    session.advance(250);
+    expect(session.busy).toBe(true);
+    expect(outs).toEqual([]);
+    for (let i = 0; i < 4; i++) session.advance(250);
+    expect(session.busy).toBe(false);
+    expect(outs).toEqual([{ e: 'fire_out', id: HEARTH }]);
+  });
+});
+
 describe('the stage-1 service hears of play (GRUNT 18)', () => {
   const calls: [string, unknown][] = [];
   beforeEach(() => {

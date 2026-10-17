@@ -1,20 +1,24 @@
 /**
- * What the player's place sounds like (NEXT.md 4b): how loud the campfire, the stream and the
- * dread of the ruins are from where they stand. Pure, from the bundle, the state and a position
- * in tiles; the world scene reads it every quarter second and hands the levels to the sound bus.
+ * What the player's place sounds like (NEXT.md 4b): how loud the campfire, the stream, the
+ * dread of the ruins and the crackle of a burning fire are from where they stand. Pure, from
+ * the bundle, the state and a position in tiles; the world scene reads it every quarter second
+ * and hands the levels to the sound bus.
  */
-import { type Bundle, type State, campTile, hazardsOf, isNight, isSafe, tagAt, windowOpen } from '@game/kernel';
+import { type Bundle, type State, campTile, fireBurns, hazardsOf, isNight, isSafe, tagAt, windowOpen } from '@game/kernel';
 import { falloff, panFor } from './audio/spatial';
 
 /** [near, far] in tiles: full volume inside near, silent beyond far. */
 export const FIRE_RANGE = [1.5, 12] as const;
 export const STREAM_RANGE = [3, 12] as const;
 export const DREAD_RANGE = [0, 6] as const;
+/** A burning fire crackles within six tiles of it, louder nearer, and not at all once it is out. */
+export const CRACKLE_RANGE = [1.5, 6] as const;
 
 export interface Scape {
   fire: { level: number; pan: number };
   stream: { level: number; pan: number };
   dread: { level: number; pan: number };
+  crackle: { level: number; pan: number };
 }
 
 interface Spot {
@@ -53,10 +57,10 @@ function nearest(spots: readonly Spot[], x: number, y: number): { distance: numb
   return { distance: best, spot: at };
 }
 
-/** The player's position (x, y in tiles, fractions allowed, the tile's centre at +0.5) to the three bed levels. */
+/** The player's position (x, y in tiles, fractions allowed, the tile's centre at +0.5) to the bed levels. */
 export function soundscape(b: Bundle, state: State, tick: number, x: number, y: number): Scape {
   const none = { level: 0, pan: 0 };
-  const scape: Scape = { fire: none, stream: none, dread: none };
+  const scape: Scape = { fire: none, stream: none, dread: none, crackle: none };
 
   // the campfire sounds only once it is built
   const fireBuilt = Object.entries(b.camps).some(([id, c]) => c.slot === 'fire' && state.player.camp.includes(id));
@@ -87,6 +91,14 @@ export function soundscape(b: Bundle, state: State, tick: number, x: number, y: 
     }
     const dusk = isNight(b, tick) ? 1 : 0.5;
     scape.dread = { level: falloff(near, DREAD_RANGE[0], DREAD_RANGE[1]) * dusk, pan: 0 };
+  }
+
+  // a fire prop crackles while the kernel says it burns, and silent once out: the nearest is heard
+  for (const p of b.map.props) {
+    if (p.fire !== true || p.id === undefined || !fireBurns(state, p.id, tick)) continue;
+    const [cx, cy] = [p.x + p.w / 2, p.y + p.h / 2];
+    const level = falloff(Math.hypot(cx - x, cy - y), CRACKLE_RANGE[0], CRACKLE_RANGE[1]);
+    if (level > scape.crackle.level) scape.crackle = { level, pan: panFor(cx - x, CRACKLE_RANGE[1]) };
   }
   return scape;
 }

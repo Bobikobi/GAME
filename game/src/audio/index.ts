@@ -1,6 +1,7 @@
 /** Lazy, self-contained sound system for Openfold's music, ambience, and cues. */
 import { AmbiencePlayer } from './ambience';
 import { BED_IDS, BedPlayer } from './beds';
+import { Crackle } from './crackle';
 import type { BedId } from './beds';
 import type { AmbienceKind } from './ambience';
 import { MusicPlayer, renderSong } from './player';
@@ -27,6 +28,8 @@ export interface SoundState {
   counts: Record<string, number>;
   /** each position bed's level, 0 to 1, as the player's place asks for it */
   beds: Record<BedId, number>;
+  /** the crackle of the burning fire the player stands near, 0 to 1 */
+  crackle: number;
 }
 
 interface AudioGraph {
@@ -37,6 +40,7 @@ interface AudioGraph {
   player: MusicPlayer;
   ambiencePlayer: AmbiencePlayer;
   beds: BedPlayer;
+  crackle: Crackle;
   analyser: AnalyserNode;
 }
 
@@ -49,6 +53,8 @@ export interface SoundApi {
   ambience(kind: AmbienceKind | null): void;
   /** Sets a position bed (campfire, stream, ruins) to a level 0..1 and a stereo pan -1..1. */
   bed(id: BedId, level: number, pan?: number): void;
+  /** Sets a burning fire's crackle to a level 0..1 and a pan -1..1; at 0 it stops and holds no node. */
+  crackle(level: number, pan?: number): void;
   /** The loudness (RMS, 0..1) of what is leaving the speakers right now; 0 when muted or locked. */
   level(): number;
   readonly muted: boolean;
@@ -76,6 +82,7 @@ const bedRequests: Record<BedId, { level: number; pan: number }> = {
   stream: { level: 0, pan: 0 },
   dread: { level: 0, pan: 0 },
 };
+let crackleRequest = { level: 0, pan: 0 };
 let lastPlayed: string | null = null;
 const unlockTargets = new WeakSet<EventTarget>();
 
@@ -133,6 +140,7 @@ function ensureGraph(): AudioGraph {
     player: new MusicPlayer(audio, music, effects),
     ambiencePlayer: new AmbiencePlayer(audio, ambience),
     beds: new BedPlayer(audio, ambience),
+    crackle: new Crackle(audio, ambience),
     analyser,
   };
   installVisibility();
@@ -163,6 +171,7 @@ function syncRequests(): void {
     appliedAmbience = requestedAmbience;
   }
   for (const id of BED_IDS) audio.beds.set(id, bedRequests[id].level, bedRequests[id].pan);
+  audio.crackle.set(crackleRequest.level, crackleRequest.pan);
 }
 
 function unlock(): void {
@@ -224,6 +233,12 @@ function bed(id: BedId, level: number, pan = 0): void {
   if (graph && context?.state === 'running') graph.beds.set(id, bedRequests[id].level, pan);
 }
 
+function crackle(level: number, pan = 0): void {
+  loadPreference();
+  crackleRequest = { level: Math.max(0, Math.min(1, level)), pan };
+  if (graph && context?.state === 'running') graph.crackle.set(crackleRequest.level, pan);
+}
+
 function level(): number {
   if (!context || context.state !== 'running' || !graph) return 0;
   const samples = new Float32Array(graph.analyser.fftSize);
@@ -263,6 +278,7 @@ function state(): SoundState {
     asked: { ...asked },
     counts: { ...played },
     beds: { fire: bedRequests.fire.level, stream: bedRequests.stream.level, dread: bedRequests.dread.level },
+    crackle: crackleRequest.level,
   };
 }
 
@@ -304,6 +320,7 @@ export const sound: SoundApi = {
   sfx,
   ambience,
   bed,
+  crackle,
   level,
   get muted() {
     loadPreference();

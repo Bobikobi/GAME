@@ -19,8 +19,6 @@ import {
   tendHolds,
 } from '@game/kernel';
 
-type Prop = Bundle['map']['props'][number];
-
 /** A fire's name as the player reads it: its id after the namespace, hyphens as spaces ("core/elder-hearth" is "elder hearth"). */
 export function fireName(id: string): string {
   return id.slice(id.indexOf('/') + 1).replaceAll('-', ' ');
@@ -65,22 +63,22 @@ export function tendedFires(b: Bundle, s: State): Set<string> {
 
 /**
  * The fire warning to open now (G31), if any: a fire an active tend step names, in the
- * last minutes of a burn not yet warned of, that the player can see (`sees`, the screen),
- * while that fire still wants wood for the night it keeps (`wantsWood`). A burn whose wood
- * reaches dawn goes out at dawn with the night kept, so it is not warned of.
+ * last minutes of a burn not yet warned of, while that fire still wants wood for the night
+ * it keeps (`wantsWood`), wherever the player stands: the night is theirs to keep, so the
+ * screen does not decide. A burn whose wood reaches dawn goes out at dawn with the night
+ * kept, so it is not warned of.
  */
 export function fireWarning(
   b: Bundle,
   s: State,
   tick: number,
   warned: ReadonlySet<string>,
-  sees: (prop: Prop) => boolean,
 ): { key: string; id: string; name: string } | undefined {
   const tended = tendedFires(b, s);
   for (const p of b.map.props) {
     if (p.fire !== true || p.id === undefined || !tended.has(p.id)) continue;
     const key = fireWarnKey(b, s, p.id, tick);
-    if (key === undefined || warned.has(key) || !wantsWood(b, s, p.id, tick) || !sees(p)) continue;
+    if (key === undefined || warned.has(key) || !wantsWood(b, s, p.id, tick)) continue;
     return { key, id: p.id, name: fireName(p.id) };
   }
   return undefined;
@@ -134,15 +132,41 @@ export function nextLogClock(b: Bundle, s: State, id: string, tick: number): str
 }
 
 /**
+ * How the night of a fire is lost, if it is: `out` in the night when the fire that burned
+ * at its dusk has gone out (the kernel tells that `fire_out`), `late` while a fire lit after
+ * that dusk burns (it cannot keep the night), and `past` by day after a night the fire went
+ * out in, until the next dusk. Undefined while the night can still be kept, once it was
+ * kept, and from the next dusk on, which starts clean.
+ */
+export function nightLost(b: Bundle, s: State, id: string, tick: number): 'out' | 'late' | 'past' | undefined {
+  const fire = s.player.fires?.[id];
+  const dusk = lastDusk(b, tick);
+  if (fire === undefined || fire.until < dusk || tendHolds(b, s, id, tick)) return undefined;
+  if (!isNight(b, tick)) return fire.until < nightEnds(b, dusk) ? 'past' : undefined;
+  if (fire.until <= tick) return 'out';
+  return fire.lit > dusk ? 'late' : undefined;
+}
+
+/** Whether a feed of a kept fire lit it, or fed it, after its night was lost: that is answered plainly, never cheered. */
+export function feedTooLate(b: Bundle, s: State, id: string, tick: number): boolean {
+  return tendedFires(b, s).has(id) && nightLost(b, s, id, tick) === 'late';
+}
+
+const LOST = { out: 'it went out, tonight is lost', late: 'tonight is lost', past: 'it went out in the night' } as const;
+
+/**
  * The journal line of a tend step: "Keep the <name> burning until dawn", and while the
  * vigil does not hold, what it still needs - lighting before dusk when the fire is out
- * or was lit after dark began, else the logs that carry it to dawn, and while the fire
- * is too full for a whole log, the time the next one fits (the kernel refuses it before).
- * A fire with wood to dawn still waits for it: the vigil holds only once dawn has come.
+ * or was lit after dark began (saying so while its night is lost, `nightLost`), else the
+ * logs that carry it to dawn, and while the fire is too full for a whole log, the time the
+ * next one fits (the kernel refuses it before). A fire with wood to dawn still waits for
+ * it: the vigil holds only once dawn has come.
  */
 export function tendLine(b: Bundle, s: State, id: string, tick: number): { text: string; done: boolean } {
   const text = `Keep the ${fireName(id)} burning until dawn`;
   if (tendHolds(b, s, id, tick)) return { text, done: true };
+  const lost = nightLost(b, s, id, tick);
+  if (lost !== undefined) return { text: `${text} - ${LOST[lost]}: light it before dusk`, done: false };
   const fire = s.player.fires?.[id];
   if (fire === undefined || !fireBurns(s, id, tick) || fire.lit > vigilDusk(b, tick)) return { text: `${text} - light it before dusk`, done: false };
   const n = logsToDawn(b, s, id, tick);
