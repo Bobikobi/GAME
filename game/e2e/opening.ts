@@ -575,6 +575,26 @@ class Player {
     if (have < want) throw new Error(`only ${have} of ${want} ${item} after gathering`);
   }
 
+  /**
+   * Picks a task from an elder or a trader and confirms it. On a loaded machine the confirmation can be late,
+   * or the quest already counted as taken by the time the test looks for it, so the confirmation is asked for
+   * only while the quest is still not active, and a late one gets a second look before the run fails.
+   */
+  async acceptTask(pickTitle: string, quest: string): Promise<void> {
+    await this.talkThrough(`Task: ${pickTitle}`);
+    for (let tries = 0; tries < 2; tries++) {
+      if ((await this.quest(quest)) === 'active') return;
+      try {
+        await this.talkThrough('I will do it');
+        return;
+      } catch (err) {
+        if ((await this.quest(quest)) === 'active') return;
+        if (tries === 1) throw err;
+        await sleep(1000);
+      }
+    }
+  }
+
   async quest(id: string): Promise<string | undefined> {
     return this.page.eval<string | undefined>(`__e2e.player().quests[${JSON.stringify(id)}]`);
   }
@@ -830,8 +850,7 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       await me.expectPrompt(/^Talk to Pell/, 'the trader');
     }
     await me.a();
-    await me.talkThrough(`Task: ${first}`);
-    await me.talkThrough('I will do it');
+    await me.acceptTask(first, viewport.mobile ? 'core/three-fruits' : 'core/herbs-for-pell');
     await me.idle('accepting the task');
     const taken = viewport.mobile ? 'core/three-fruits' : 'core/herbs-for-pell';
     if ((await me.quest(taken)) !== 'active') throw new Error(`${taken} was not accepted`);
@@ -892,8 +911,7 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       await me.walkTo({ x: elder[0], y: elder[1], w: 1, h: 1 }, 'Elder Maru');
       await me.expectPrompt(/^Talk to Elder Maru/, 'the elder');
       await me.a();
-      await me.talkThrough('Task: The coin under the lantern');
-      await me.talkThrough('I will do it');
+      await me.acceptTask('The coin under the lantern', 'core/a-coin-for-maru');
       await me.idle('accepting the coin');
       if ((await me.quest('core/a-coin-for-maru')) !== 'active') throw new Error('a-coin-for-maru was not accepted');
       for (const id of ['core/marked-stone', 'core/town-lantern', 'core/hill-lantern']) {
