@@ -604,6 +604,16 @@ export const QuestBody = Type.Object(
       },
       { additionalProperties: false },
     ),
+    maze: Type.Optional(
+      Type.Object(
+        {
+          tier: Int(1, 4, 'The rung of help at the entrance: 1 a peek from above with a faint line of the route and the landmarks, 2 the peek with the landmarks lit a moment, 3 the peek of the shape alone, 4 no peek.'),
+          area: { ...Id, description: 'The map area that frames the whole maze: stepping into it from outside is the entrance, and the peek fits it on the screen.' },
+          landmark: Type.Optional({ ...SpriteRef, description: 'The sprite of the props inside the area that mark the way; tiers 1 and 2 light them in the peek.' }),
+        },
+        { additionalProperties: false, description: 'A maze quest only: where its shape is drawn and how much the entrance shows of it (DECISIONS 2026-10-11).' },
+      ),
+    ),
   },
   { additionalProperties: false },
 );

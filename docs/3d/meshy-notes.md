@@ -136,3 +136,29 @@ action, text to motion 10 (prime) or 3 (swift). Pro and above only.
 - https://toolradar.com/tools/meshy/pricing (Studio figures, third party)
 - https://sorceress.games/blog/mesh-meshy-ai-image-to-3d-textured-glb and
   https://framia.converge.ai/blog/meshy-ai-review (community assessments)
+
+## Credits log (the daily routine of NEXT 8c)
+
+One row per account and day: what the day earned, what it spent, and on which draft. The
+app's own balance is the truth; the numbers here are what the page showed at the time.
+
+| Date | Account | Earned | Spent | On |
+|---|---|---|---|---|
+| 2026-10-13 | 9341 | 40 (onboarding: community like, image to 3D) | 30 | Elder Maru: sprite-to-3D test (10, voxel, unusable), text-to-3D Meshy 6 Lite (10), texture (10); rigged as a humanoid, free. Balance 250 at the end. |
+| 2026-10-13 | 9342 | 60 (onboarding: community like, image to 3D, animate) | 30 | Pell: sprite-to-3D test (10, voxel, unusable), text-to-3D Meshy 6 Lite (10), texture (10); rigged, free, with the default walk and run. Balance 230. |
+| 2026-10-13 | 9343 | 60 (onboarding: community like, image to 3D, animate) | 40 | Market stall from its sprite (10) and its texture (10); the cook, a man, text-to-3D Meshy 6 Lite (10) and texture (10); rigged, free. Balance 200. |
+| 2026-10-13 | 9333 | 90 (onboarding: community like, image to 3D, animate; day 1 of the check-in cycle, 30, unlocked by the first generation) | 40 | Old well from its sprite (10) and its texture (10); the cook, a woman, text-to-3D Meshy 6 Lite (10) and texture (10); rigged, free. Balance 150. |
+
+What the day taught, for the next days:
+
+- The onboarding card on these accounts holds four tasks of 20, not five: Image to 3D,
+  Support Community Creators (one like on the community page is enough), Animate Model
+  (a free humanoid rig on an A-pose draft is enough), Try Texture Editing.
+- Try Texture Editing cannot be finished on Free: the brush edit applies, but Save to Model
+  opens the upgrade page. It stays open on all four accounts (4 x 20) until a paid month.
+- Image to 3D from a 16 x 24 pixel sprite gives a voxel blob for a character; from a 32 x 32
+  prop sprite it gives a usable blocky draft (the stall and the well). Characters come from
+  the text prompts of the cast sheet.
+- A fresh account is locked until its first generation; the first generation credited day 1
+  of the check-in cycle at once.
+- The Share menu offers "Post to community +50". Not used: it publishes the draft.
