@@ -864,20 +864,17 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       log(`bought a basket: ${opens}`);
     }
 
-    // 9. a ruin in the mist at the edge of town, waiting for a creator
+    // 9. a ruin in the mist at the edge of town, waiting for a creator (no way into the developers' pages from the game: DECISIONS 2026-10-11)
     const ruin = await page.eval<Rect>(`__e2e.slot('core/town-edge')`);
     await me.walkTo(ruin, 'the ruined house');
     await me.expectPrompt(/^(Look at|Read the sign)/, 'the ruined house');
     await me.snap('ruin');
     await me.a();
-    const sign = await me.talkThrough('Open the creator guide');
+    const sign = await me.talkThrough();
     if (!sign.some((l) => l.includes('Awaiting restoration'))) throw new Error(`the ruin does not await restoration: ${sign.join(' / ')}`);
-    const guide = await page.waitFor<string>(`document.querySelector('.panel .md')?.textContent ?? ''`, 'the creator guide');
-    if (!guide.includes('Add a fruit in 10 minutes')) throw new Error('the creator guide did not open');
-    await me.snap('guide');
-    log('opened the creator guide from the ruin');
-    await page.tap('.panel header button', 'Close');
-    await me.idle('closing the guide');
+    if (await page.eval<boolean>(`!!document.querySelector('.dialog-options button')`)) throw new Error('the ruin sign offers an option');
+    await me.snap('ruin-sign');
+    log('read the ruin sign: it awaits restoration, with no guide');
 
     // 10. Maru's bells, then his coin by the trowel's road toward the first night (phone); Pell's herbs (desktop)
     if (viewport.mobile) {
