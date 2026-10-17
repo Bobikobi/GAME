@@ -7,6 +7,7 @@ import {
   type GameEvent,
   type Grade,
   characterLevel,
+  doneLines,
   findSlot,
   holds,
   isNight,
@@ -46,7 +47,6 @@ import { openLevelUp } from './levelup';
 import {
   openBag,
   openCraft,
-  openGuide,
   openJournal,
   openMenu,
   openShop,
@@ -448,7 +448,9 @@ export class UI {
       if (e.e === 'quest' && e.state === 'done') {
         const q = b.quests[e.quest];
         const giver = q?.giver ? b.npcs[q.giver] : undefined;
-        if (q?.talk?.done) await say(this, giver?.name ?? null, named(q.talk.done));
+        // a quest a predator bit the player on has the giver's other line, when the content wrote one
+        const done = doneLines(b, s.state, e.quest);
+        if (done) await say(this, giver?.name ?? null, named(done));
       }
       // a fall is one plain box (G33): what happened and what it cost, never where it was
       if (e.e === 'fall') await say(this, null, fallLines(b, s.state.player.town, e.lost));
@@ -646,9 +648,7 @@ export class UI {
     const info = app.world?.signText(slotId);
     if (!info) return;
     if (info.creator) return openSignCard(this, info);
-    const options: Option[] = info.empty ? [{ label: 'Open the creator guide', value: 'guide' }, { label: 'Close', value: 'close' }] : [];
-    const pick = await say(this, info.title, info.lines, options);
-    if (pick === 'guide') openGuide(this);
+    await say(this, info.title, info.lines);
   }
 
   note(text: string, title?: string): void {

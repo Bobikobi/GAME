@@ -82,6 +82,12 @@ export function feedback(root: HTMLElement, events: readonly GameEvent[]): void 
       case 'fall':
         add({ sfx: 'bell', detune: -1200 });
         break;
+      case 'seen':
+        add({ sfx: 'growl' });
+        break;
+      case 'safe':
+        add({ sfx: 'safe' });
+        break;
       case 'bag_full':
         add({ sfx: 'back' });
         break;

@@ -442,6 +442,10 @@ export function describe(b: Bundle, s: State, e: GameEvent): { text: string; ico
       return { text: `${b.items[e.item]?.kind === 'food' ? 'You ate' : 'You used'} ${itemName(b, e.item)}`, icon: b.items[e.item]?.sprite, tone: b.items[e.item]?.food?.hurt ? 'info' : 'good' };
     case 'hurt':
       return { text: HURT_TEXT[e.by] ?? 'That hurt', tone: 'bad' };
+    case 'seen':
+      return { text: 'Seen! Run for a safe place', tone: 'bad' };
+    case 'safe':
+      return { text: 'Safe.', tone: 'good' };
     case 'nothing':
       return { text: e.verb === 'dig' ? 'Nothing this time.' : 'Missed - nothing this time.', tone: 'bad' };
     case 'miss':

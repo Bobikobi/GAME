@@ -459,7 +459,7 @@ package exists (GRUNT item 4).
 |---|---|---|
 | `GITHUB_TOKEN` | provided by Actions | the loop |
 | `HUB_GITHUB_TOKEN` | Vercel project env (read-only token) | `pnpm hub:data` in Vercel builds |
-| `VERCEL_DEPLOY_HOOK` | repository secret | the hourly refresh |
+| `VERCEL_DEPLOY_HOOK` | repository secret: the address from the Vercel project's Settings > Git > Deploy Hooks (it starts with `https://api.vercel.com/`; the refresh refuses anything else), set with `gh secret set VERCEL_DEPLOY_HOOK --repo Bobikobi/GAME`, pasting the value at the prompt | the hourly refresh |
 | `KV_REST_API_URL`, `KV_REST_API_READ_ONLY_TOKEN` | repository secrets (read-only: nothing can be written with the token) | the hourly refresh reads the usage counters |
 | `KV_REST_API_URL`, `KV_REST_API_TOKEN` (or `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`) | Vercel project env, set by the Marketplace integration (the `KV_` names) | the S-1 functions |
 
