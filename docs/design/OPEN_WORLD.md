@@ -2,6 +2,8 @@
 
 Status: this is a draft for the owner, under the request rule in GAME_RULES.md section 6 (532-571). Nothing here is built. Every claim was checked read-only against `origin/develop` @ 2719343. That commit is three merges after ace1e33, the base of the four reader reports: #118, #106 and #119. The draft was then rebased to `origin/develop` @ dac7bdf, which adds #120 (Maru's hearth and the long night), and every cite into a file #120 changed was checked again there. Line numbers are at dac7bdf.
 
+**Owner direction, 17.10.2026: the world has no end** (DECISIONS.md, 2026-10-17). Generated ground from one seed surrounds the hand-made valley, danger by distance replaces doors, authored places are stamped in, the community grows the world, and it opens ring by ring. G50's 1024-tile cap, the grid edge (G54) and crossings as the only way on (G55, G58) are to be rewritten to match; the edge lip of D1 waits. Until that rewrite, read the sections below through that entry.
+
 **Owner decision, 16.10.2026: D3 is decided, option 3.** The valley becomes the first region of a named land, and each region carries its own small story (OSRS kingdoms, WoW zones); G7 and G22 become "the region's". STORY 35 and 38 and the ladder's frame (GAME_RULES.md:61-63) are rewritten to match, in a docs change the owner reviews. Everything below that assumed option 1 (a fold giving back the valley's own land) follows option 3; ground past the valley's edge is open, so the work gated on D3 can start.
 
 Short names: `s` = `schema/src/index.ts`; `dec` = `DECISIONS.md`; `spec` = `docs/spec/product-spec-v4.6.html`; `NEXT` = `docs/team/NEXT.md`; `WORKFLOW` = `docs/team/WORKFLOW.md`. SETTLEMENT, STORY, GRUNT and kernel-review are the design docs of those names, cited by line.
