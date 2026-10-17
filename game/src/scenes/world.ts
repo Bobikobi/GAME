@@ -37,7 +37,7 @@ import {
   windowOpen,
 } from '@game/kernel';
 import { app } from '../app';
-import { sound, type SfxId } from '../audio';
+import { sound, type SfxId, type SongId } from '../audio';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T } from '../config';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
@@ -45,7 +45,7 @@ import { TOO_DARK, fireLow, fireName, readable, woodToFeed } from '../fires';
 import { emptySlots, slotContent } from '../places';
 import { canopyGroups, hash, remapTone, toneField, type Tone } from '../richground';
 import type { Session } from '../session';
-import { predatorSpriteAt } from '../predator';
+import { type Run, WOLF_EYES, bangAt, flareAt, glowPixels, huntGround, huntSong, songFade, wolfDrawn } from '../predator';
 import { soundscape } from '../soundscape';
 import { SensesFind } from '../senses';
 import { questTargets } from '../targets';
@@ -324,8 +324,19 @@ export class WorldScene extends Phaser.Scene {
   private wasNight: boolean | undefined;
   private nextEyes = 0;
   private nextWhisper = 0;
-  /** the hazard props (G30-G35): a wolf asleep by day and awake at night, a pit or a trap that shows only by day */
-  private hazards: { spr: Phaser.GameObjects.Sprite; kind: string; rule?: Hazard; eyes?: Phaser.GameObjects.Image }[] = [];
+  /**
+   * the hazard props (G30-G35): a wolf asleep by day and awake at night, a pit or a trap that shows only by day;
+   * a walking wolf's eyes, their glow and their flare, and its run while it hunts
+   */
+  private hazards: {
+    spr: Phaser.GameObjects.Sprite;
+    kind: string;
+    rule?: Hazard;
+    eyes?: Phaser.GameObjects.Image;
+    halo?: Phaser.GameObjects.Image;
+    flare?: Phaser.GameObjects.Image;
+    run?: Run;
+  }[] = [];
   /** whether each walking predator saw the standing tile last frame, for a single report on the false-to-true edge */
   private predatorSaw = new Map<string, boolean>();
   private sightReportTick = -1;
@@ -336,6 +347,12 @@ export class WorldScene extends Phaser.Scene {
   private falling = false;
   /** the tick of the last report while a hunt runs, so a player standing still is still bitten on time */
   private chaseReport = 0;
+  /** the "!" over a predator that has just seen the player */
+  private bang!: Phaser.GameObjects.Image;
+  /** the ground a drawn wolf runs on, and the mends and camp it was worked out for */
+  private wolfGround: { key: string; walk: (x: number, y: number) => boolean } | undefined;
+  /** the song asked for last */
+  private song: SongId | undefined;
 
   constructor() {
     super('world');
@@ -368,6 +385,7 @@ export class WorldScene extends Phaser.Scene {
     this.bar = this.add.graphics().setDepth(DEPTH.fx);
     this.marker = this.add.image(0, 0, 'fx-arrow').setOrigin(0.5, 1).setDepth(DEPTH.marker).setVisible(false);
     this.tweens.add({ targets: this.marker, displayOriginY: 7, duration: 380, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    this.bang = this.add.image(0, 0, 'fx-bang').setOrigin(0.5, 1).setDepth(DEPTH.fx).setVisible(false);
     if (RICH.light) {
       // a warm wash under the blue shade: multiplied in, so it tints what is there instead of covering it
       this.dusk = this.add.rectangle(0, 0, 10, 10, PALETTE.gold, 0).setOrigin(0).setScrollFactor(0).setDepth(DEPTH.shade - 1).setBlendMode(Phaser.BlendModes.MULTIPLY);
@@ -427,6 +445,31 @@ export class WorldScene extends Phaser.Scene {
     make('fx-eye', 4, 1, () => {
       px(PALETTE.red2, 0, 0);
       px(PALETTE.red2, 3, 0);
+    });
+    // the bank wolf's eyes (WOLF_EYES): the pair, its steady glow, and the flare as it sees the player
+    const { red, size, gap } = WOLF_EYES;
+    make('fx-wolf-eyes', 2 * size + gap, size, () => {
+      px(red, 0, 0, size, size);
+      px(red, size + gap, 0, size, size);
+    });
+    for (const [tex, rings] of [['fx-wolf-halo', WOLF_EYES.halo], ['fx-wolf-flare', WOLF_EYES.flare]] as const) {
+      const glow = glowPixels(rings);
+      make(tex, glow.w, glow.h, () => {
+        for (const p of glow.px) g.fillStyle(red, p.a).fillRect(p.x, p.y, 1, 1);
+      });
+    }
+    // the "!" over a predator that has just seen the player: paper in a dark outline, so it reads by night and by day
+    make('fx-bang', 4, 10, () => {
+      px(PALETTE.ink, 1, 0, 2);
+      px(PALETTE.ink, 0, 1, 1, 4);
+      px(PALETTE.paper, 1, 1, 2, 4);
+      px(PALETTE.ink, 3, 1, 1, 4);
+      px(PALETTE.ink, 1, 5, 2);
+      px(PALETTE.ink, 1, 7, 2);
+      px(PALETTE.ink, 0, 8);
+      px(PALETTE.paper, 1, 8, 2);
+      px(PALETTE.ink, 3, 8);
+      px(PALETTE.ink, 1, 9, 2);
     });
     // a pale X for each eye of a fallen player (G33): it has to read on a face in the dark
     make('fx-cross', 3, 3, () => {
@@ -659,10 +702,13 @@ export class WorldScene extends Phaser.Scene {
         // a hazard steps through no cycle: its frame and its showing follow the hour (shadeFor)
         const spr = this.add.sprite(cx, bottom, p.sprite, 0).setOrigin(0.5, 1).setDepth(p.solid ? bottom : DEPTH.flat);
         const rule = p.id === undefined ? undefined : hazardsOf(this.b).find((h) => h.id === p.id);
-        const eyes = rule?.round
-          ? this.add.image(cx, bottom - info.h / 2, 'fx-eye').setOrigin(0.5).setDepth(DEPTH.glow).setBlendMode(Phaser.BlendModes.ADD).setVisible(false)
-          : undefined;
-        this.hazards.push({ spr, kind: p.hazard.kind, rule, eyes });
+        // a walking wolf shows only its eyes at night: the pair over its glow, and the flare as it sees the player
+        const glow = (tex: string, depth: number) =>
+          this.add.image(cx, bottom - info.h / 2, tex).setOrigin(0.5).setDepth(depth).setBlendMode(Phaser.BlendModes.ADD).setVisible(false);
+        const eyes = rule?.round ? this.add.image(cx, bottom - info.h / 2, 'fx-wolf-eyes').setOrigin(0.5).setDepth(DEPTH.glow).setVisible(false) : undefined;
+        const halo = rule?.round ? glow('fx-wolf-halo', DEPTH.glow - 0.5) : undefined;
+        const flare = rule?.round ? glow('fx-wolf-flare', DEPTH.glow - 0.25) : undefined;
+        this.hazards.push({ spr, kind: p.hazard.kind, rule, eyes, halo, flare });
         continue;
       }
       if (p.fire === true && p.id !== undefined) {
@@ -1138,6 +1184,9 @@ export class WorldScene extends Phaser.Scene {
     this.falling = false;
     this.predatorSaw.clear();
     this.sightReportTick = -1;
+    for (const h of this.hazards) h.run = undefined;
+    this.wolfGround = undefined;
+    this.song = undefined;
     this.lanternFor = undefined;
     this.hinted.clear();
     this.inside.clear();
@@ -1357,6 +1406,7 @@ export class WorldScene extends Phaser.Scene {
       this.chaseReport = s.tick;
       s.report(s.pos, true);
     }
+    this.playSong(s);
     this.placeLantern(s);
     if (RICH.motion) this.idle(s, time);
     this.workTick(s);
@@ -1644,7 +1694,6 @@ export class WorldScene extends Phaser.Scene {
         this.inside.clear();
         this.arrive(s);
       }
-      sound.music(isNight ? 'night' : 'valley', 4000);
       sound.ambience(isNight ? 'night' : 'day');
       if (isNight) {
         this.flies.start();
@@ -1869,34 +1918,72 @@ export class WorldScene extends Phaser.Scene {
    */
   private showHazards(s: Session): void {
     const night = isNight(this.b, s.tick);
-    for (const { spr, kind, rule, eyes } of this.hazards) {
+    for (const { spr, kind, rule, eyes, halo } of this.hazards) {
       if (kind === 'predator') {
         const frame = night && spr.texture.frameTotal > 2 ? 1 : 0;
         if (Number(spr.frame.name) !== frame) spr.setFrame(frame);
-        eyes?.setVisible(rule !== undefined && windowOpen(this.b, rule, s.tick));
+        const awake = rule !== undefined && windowOpen(this.b, rule, s.tick);
+        eyes?.setVisible(awake);
+        halo?.setVisible(awake);
       } else {
         spr.setAlpha(night ? 0.12 : 1);
       }
     }
   }
 
-  /** Draw a walking predator only from the kernel's clock and round (`predatorSpriteAt`). */
+  /**
+   * Draw a walking predator from the kernel's clock and round, and while the kernel's hunt names
+   * it, running after the player and then back to its round (`wolfDrawn`): drawn only, as the kernel
+   * keeps it on its round and bites by its own clock. The moment a predator sees the player a "!"
+   * stands over it, and a walking wolf's eyes flare (`SEEN`).
+   */
   private placePredators(s: Session): void {
-    for (const { spr, rule, eyes } of this.hazards) {
+    const chase = s.state.player.chase;
+    const since = chase ? s.tick - chase.since : -1;
+    let alarmed: Phaser.GameObjects.Sprite | undefined;
+    for (const h of this.hazards) {
+      const { spr, rule, eyes, halo, flare } = h;
+      const hunting = chase !== null && chase.hazard === rule?.id;
+      if (hunting && bangAt(since)) alarmed = spr;
       if (!rule?.round) continue;
       const awake = windowOpen(this.b, rule, s.tick);
-      const [x, y] = predatorSpriteAt(this.b, rule, s.tick);
+      const drawn = wolfDrawn(this.b, rule, s.state, s.tick, h.run, this.huntWalk(s));
+      h.run = drawn.run;
+      const [x, y] = drawn.at;
+      const [hx, hy] = drawn.heading;
       const bottom = (y + 1) * T;
       spr.setPosition(Math.round((x + 0.5) * T), Math.round(bottom)).setDepth(Math.round(bottom));
       if (!eyes) continue;
-      const [hx, hy] = headingOf(this.b, rule, s.tick);
       const faceY = spr.y - spr.displayHeight * 0.55;
-      eyes
-        .setPosition(Math.round(spr.x + hx * 4), Math.round(faceY + hy * 3))
-        .setAngle(hx === 0 ? 0 : 90)
-        .setAlpha(awake ? 0.75 + 0.2 * Math.sin(s.tick / 113) : 0)
-        .setVisible(awake);
+      // steady at full strength while awake (the owner's pick): no pulse, no blink
+      eyes.setPosition(Math.round(spr.x + hx * 4), Math.round(faceY + hy * 3)).setAngle(hx === 0 ? 0 : 90).setVisible(awake);
+      halo?.setPosition(eyes.x, eyes.y).setAngle(eyes.angle).setVisible(awake);
+      const flared = awake && hunting ? flareAt(since) : 0;
+      flare?.setPosition(eyes.x, eyes.y).setAngle(eyes.angle).setAlpha(flared).setVisible(flared > 0);
     }
+    this.bang.setVisible(alarmed !== undefined);
+    if (alarmed) this.bang.setPosition(Math.round(alarmed.x), Math.round(alarmed.y - alarmed.displayHeight - 2));
+  }
+
+  /** The ground a drawn wolf runs on (`huntGround`), worked out again only when a mend or the camp changes it. */
+  private huntWalk(s: Session): (x: number, y: number) => boolean {
+    const p = s.state.player;
+    const key = `${p.restored.join()}|${p.camp.join()}`;
+    if (this.wolfGround?.key !== key) this.wolfGround = { key, walk: huntGround(this.b, s.state, this.walkable) };
+    return this.wolfGround.walk;
+  }
+
+  /**
+   * The music follows the hunt and the hour (`huntSong`): the hunt's own the moment the kernel's
+   * hunt begins, and back when it ends, however it ends. The hour is the shade's, so the song waits
+   * for the shade's first look at this session's hour.
+   */
+  private playSong(s: Session): void {
+    if (this.wasNight === undefined) return;
+    const song = huntSong(s.state.player.chase !== null, this.wasNight);
+    if (song === this.song) return;
+    sound.music(song, songFade(this.song, song));
+    this.song = song;
   }
 
   /** Reeds and tall grass marked as cover soften the player, then release them at the next tile. */
@@ -2189,6 +2276,8 @@ export class WorldScene extends Phaser.Scene {
         this.cameras.main.shake(140, 0.005);
       }
       if (e.e === 'fall') this.fallDown(e.from, e.at);
+      // seen: a short jolt, left out when the player asked for reduced motion (RICH.motion)
+      if (e.e === 'seen' && RICH.motion) this.cameras.main.shake(180, 0.004);
       if (e.e === 'restore' || e.e === 'build') {
         const slot = e.e === 'restore' ? findSlot(this.b.map, this.b.restores[e.restore]?.place.slot ?? '') : undefined;
         const camp = e.e === 'build' ? campTile(this.b, this.b.camps[e.camp]?.slot ?? 'fire') : undefined;

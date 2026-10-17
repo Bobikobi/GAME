@@ -7,6 +7,7 @@ import {
   type GameEvent,
   type Grade,
   characterLevel,
+  doneLines,
   findSlot,
   holds,
   isNight,
@@ -453,7 +454,9 @@ export class UI {
       if (e.e === 'quest' && e.state === 'done') {
         const q = b.quests[e.quest];
         const giver = q?.giver ? b.npcs[q.giver] : undefined;
-        if (q?.talk?.done) await say(this, giver?.name ?? null, named(q.talk.done));
+        // a quest a predator bit the player on has the giver's other line, when the content wrote one
+        const done = doneLines(b, s.state, e.quest);
+        if (done) await say(this, giver?.name ?? null, named(done));
       }
       // a fall is one plain box (G33): what happened and what it cost, never where it was
       if (e.e === 'fall') await say(this, null, fallLines(b, s.state.player.town, e.lost));
