@@ -389,7 +389,7 @@ class Player {
     for (let i = 0; i < 80; i++) {
       let d = await this.page.eval<{ text: string; options: string[] } | null>('__e2e.dialog()');
       if (!d) {
-        for (let wait = 0; !d && wait < 4; wait++) {
+        for (let wait = 0; !d && wait < 20; wait++) {
           await sleep(150);
           d = await this.page.eval<{ text: string; options: string[] } | null>('__e2e.dialog()');
         }
@@ -409,12 +409,17 @@ class Player {
         }
         if (this.touch) await this.page.tap('.dialog-options button', d.options[want]);
         else {
+          await this.page
+            .waitFor('!!(document.activeElement && document.querySelector(".dialog-options")?.contains(document.activeElement))', 'option focus', 3000)
+            .catch(() => undefined);
           for (let k = 0; k < want; k++) await this.page.press('ArrowDown');
           await this.page.press('Enter');
         }
-        await sleep(120);
+        await sleep(300);
         return seen;
       }
+      const fresh = await this.page.eval<{ text: string; options: string[] } | null>('__e2e.dialog()');
+      if (fresh && fresh.options.length > 0) continue;
       this.talkPresses++;
       await this.a();
       await sleep(90);
