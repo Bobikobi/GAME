@@ -14,7 +14,6 @@ import {
   salePrice,
   skillPoints,
 } from '@game/kernel';
-import guideText from '../../../docs/creators/README.md?raw';
 import { app } from '../app';
 import { sound } from '../audio';
 import { GAME_TITLE, REPO_URL, REVIEW_KEY } from '../config';
@@ -33,7 +32,6 @@ import { ATTRIBUTE_MAX, activeQuests, attributeEffects, bagGroups, classLine, cl
 import { s1, s1Available } from '../net/s1';
 import { say } from './dialog';
 import { button, h, sprite } from './dom';
-import { markdown } from './markdown';
 import type { Layer, UI } from './ui';
 
 interface Panel {
@@ -514,7 +512,6 @@ export function openMenu(ui: UI): void {
           render();
         }),
         button('Controls', go(() => openControls(ui))),
-        button('Creator guide', go(() => openGuide(ui))),
         button('Creators', go(() => openCreators(ui))),
         button('Credits', go(() => openCredits(ui))),
         button('Send feedback', go(() => openFeedback(ui))),
@@ -712,58 +709,6 @@ function openControls(ui: UI): void {
       ].map(([k, v]) => h('tr', null, h('th', null, k), h('td', null, v))),
     ),
     h('p', { class: 'muted' }, 'Stand next to something and press A. The bar shows what A will do.'),
-  );
-}
-
-const AI_CREATOR_INSTRUCTIONS = `I want to add a new content extension to Openfold (a community-built 2D RPG).
-Use the complete creator guide included below as your instructions. Help me choose a small addition, create the required files, and validate it with the commands in the guide.`;
-
-export function openGuide(ui: UI): void {
-  const p = panel(ui, 'Creator guide', 'guide wide');
-  const article = h('article', { class: 'md' });
-  article.innerHTML = markdown(guideText);
-
-  const copyText = async (text: string, copyBtn: HTMLButtonElement, copiedLabel: string) => {
-    const original = copyBtn.textContent ?? 'Copy';
-    try {
-      await navigator.clipboard.writeText(text);
-      ui.toast(copiedLabel, 'good');
-      copyBtn.textContent = 'Copied!';
-      window.setTimeout(() => {
-        copyBtn.textContent = original;
-      }, 2000);
-    } catch {
-      ui.toast('Failed to copy to clipboard', 'bad');
-    }
-  };
-
-  const copyBtn = button('Copy guide for AI', () => {
-    void copyText(`${AI_CREATOR_INSTRUCTIONS}\n\n--- COMPLETE CREATOR GUIDE ---\n\n${guideText}`, copyBtn, 'Copied the instructions and full guide!');
-  }, 'small');
-
-  for (const code of article.querySelectorAll('pre code')) {
-    const copyCode = button('Copy', () => {
-      void copyText(code.textContent ?? '', copyCode, 'Copied code block!');
-    }, 'small');
-    code.parentElement?.before(copyCode);
-  }
-
-  const welcome = h(
-    'div',
-    { class: 'card dev-welcome' },
-    h('b', null, 'Welcome, creators & developers!'),
-    h(
-      'p',
-      { class: 'muted' },
-      'Openfold is built together by the community. Every bush, recipe, sign, and ruin is a declarative JSON file in the repo. Use this guide to add your own part of the world in 10 minutes - by hand or with your favorite AI tool.',
-    ),
-    h('div', { class: 'actions' }, copyBtn),
-  );
-
-  p.body.replaceChildren(
-    welcome,
-    article,
-    h('p', null, h('a', { href: `${REPO_URL}/blob/main/docs/creators/README.md`, target: '_blank', rel: 'noopener' }, 'Read it on GitHub')),
   );
 }
 
