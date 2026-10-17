@@ -12,7 +12,7 @@ import { PEEK_MS, fitFrame, type Peek } from '../peek';
 
 const INK = 0x1b1a2e;
 /** the route: paper white, very faint, about 3 px wide on any screen */
-const LINE = { color: 0xf5f4ef, alpha: 0.3, px: 3 };
+const LINE = { color: 0xf5f4ef, alpha: 0.22, px: 3 };
 const GLOW = 0xffe28c;
 /** the fade in and out at either end of the three seconds */
 const FADE_MS = 350;
