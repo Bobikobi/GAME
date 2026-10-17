@@ -79,7 +79,7 @@ Added to the shared layout, from the page's own title and description, so no pag
 - Open Graph: `og:type`, `og:site_name`, `og:title`, `og:description`, `og:url`, `og:image` (when a card exists, below) and the Twitter card tags;
 - `robots` is left at its default (indexable); the two `/api/` write routes are excluded in `robots.txt`.
 
-**Card image.** A card is a look, so it is not decided here: one still is proposed in the pull request (`docs/team/seo/card-proposal.png`, 1200x630, a frame of the game). The tags point at `/og/card.png` only when that file exists in `web/public/og/`; the owner's yes is a move of that file. Until then pages carry the tags without an image, which is valid.
+**Card image.** The owner picked the bridge frame on 17.10, with one change: no player name on it (a public image carries no real person's name). It is `web/public/og/card.png` (1200x630: the frame beside the name and one line), cut from `docs/design/frames/2026-10-17-share-card-bridge.png`, which was captured with the HUD and the bridge's signature hidden. Every page carries `og:image` and `twitter:image`; the tags point at `/og/card.png` when that file exists.
 
 ## 5. Structured data (JSON-LD)
 
