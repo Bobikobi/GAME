@@ -8,8 +8,20 @@ interface Props {
   title: string;
   description: string;
   section?: Section;
+  /** structured data for this page, besides the site's own; each object is one JSON-LD block (docs/team/SEO_GEO.md) */
+  jsonld?: object[];
 }
-const { title, description, section } = Astro.props;
+const { title, description, section, jsonld = [] } = Astro.props;
+const site = Astro.site ?? new URL('https://theopenfold.vercel.app');
+const canonical = new URL(Astro.url.pathname, site).href;
+// a card is a look the owner picks: the tags point at it only when the file is in web/public/og/
+const card = Object.keys(import.meta.glob('../../public/og/card.png')).length > 0 ? new URL('/og/card.png', site).href : undefined;
+const data = [
+  { '@context': 'https://schema.org', '@type': 'WebSite', name: 'Openfold', url: new URL('/', site).href, description: 'A free pixel-art browser game that its players build together.', inLanguage: 'en' },
+  ...jsonld,
+];
+// "</" inside a JSON-LD block must not close it
+const block = (o: object) => JSON.stringify(o).replaceAll('<', '\\u003c');
 const { source, built_at } = hub;
 const current = (s?: Section) => (s && s === section ? 'page' : undefined);
 ---
@@ -21,6 +33,20 @@ const current = (s?: Section) => (s && s === section ? 'page' : undefined);
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <title>{title}</title>
+    <link rel="canonical" href={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Openfold" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content={card ? 'summary_large_image' : 'summary'} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    {card && <meta property="og:image" content={card} />}
+    {card && <meta property="og:image:width" content="1200" />}
+    {card && <meta property="og:image:height" content="630" />}
+    {card && <meta name="twitter:image" content={card} />}
+    {data.map((o) => <script type="application/ld+json" set:html={block(o)} />)}
     <link rel="icon" type="image/png" href="/play/favicon.png" />
     <!-- Vercel Web Analytics on every page, the home page included: the one script the home page carries (PLATFORM.md 5.5, criterion 2) -->
     <script is:inline>

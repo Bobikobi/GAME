@@ -5,7 +5,7 @@ import { getCollection } from 'astro:content';
 import Site from '../../layouts/Site.astro';
 import '../../styles/hub.css';
 import '../../styles/doc.css';
-import { repoFile } from '../../data/site';
+import { CODE_LD, repoFile } from '../../data/site';
 import { safeHtml, siteLinks } from '../../data/doc-links';
 
 export async function getStaticPaths() {
@@ -21,7 +21,7 @@ const file = `docs/creators/${page.id === 'readme' ? 'README' : page.id}.md`;
 const contents = headings.filter((h) => h.depth === 1 || h.depth === 2);
 ---
 
-<Site title={`${title} - Openfold`} description="The creator guide: run the game, copy the template, check your files and open a pull request." section="docs">
+<Site title={`${title} - Openfold`} description="The creator guide: run the game, copy the template, check your files and open a pull request." section="docs" jsonld={[CODE_LD]}>
   <div class="hub doc">
     <div class="wrap doc-grid">
       <nav class="doc-toc" aria-labelledby="toc-h">
