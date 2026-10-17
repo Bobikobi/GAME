@@ -50,6 +50,8 @@ import { soundscape } from '../soundscape';
 import { SensesFind } from '../senses';
 import { questTargets } from '../targets';
 import { nodeLook } from '../growth';
+import { peekOnStep, type Tile } from '../peek';
+import { MazePeek } from './peek';
 import { hintDistance, lanternNight, nodeAction } from '../text';
 import type { WorkKind } from '../ui/ui';
 import { type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, treasureKind } from '../work';
@@ -314,6 +316,9 @@ export class WorldScene extends Phaser.Scene {
   private hinted = new Set<string>();
   /** slots the player stands in now, so a riddle's slot is tried once per entry */
   private inside = new Set<string>();
+  /** the peek at a maze's entrance, and the tile the player last arrived on, to tell a step in from outside */
+  private peek!: MazePeek;
+  private lastAt: Tile | undefined;
   private attractT = 0;
   private night = 0;
   private wasNight: boolean | undefined;
@@ -342,6 +347,7 @@ export class WorldScene extends Phaser.Scene {
     this.labels = document.createElement('div');
     this.labels.className = 'world-labels';
     app.ui.root.prepend(this.labels);
+    this.peek = new MazePeek(this, DEPTH.mist - 1, this.labels);
     this.makeFx();
     this.buildGround();
     this.buildProps();
@@ -1135,6 +1141,8 @@ export class WorldScene extends Phaser.Scene {
     this.lanternFor = undefined;
     this.hinted.clear();
     this.inside.clear();
+    this.peek.end();
+    this.lastAt = [...session.pos];
     this.unbind = [
       session.on('busy', ({ ms }) => {
         this.busyFrom = session.tick;
@@ -1494,7 +1502,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private canControl(s: Session): boolean {
-    return !s.paused && !s.busy && !app.ui.blocking;
+    return !s.paused && !s.busy && !app.ui.blocking && !this.peek.active;
   }
 
   private walk(s: Session, delta: number): void {
@@ -1591,7 +1599,18 @@ export class WorldScene extends Phaser.Scene {
         }
       }
     }
+    this.enterMaze(s);
     this.refreshNodes();
+  }
+
+  /** A step into a maze from outside shows it from above first (NEXT 9); never while a hunt runs. */
+  private enterMaze(s: Session): void {
+    const from = this.lastAt;
+    this.lastAt = [...s.pos];
+    if (!from || s.state.player.chase) return;
+    const p = s.state.player;
+    const peek = peekOnStep(this.b, (q) => p.quests[q] === 'done', (x, y) => this.walkable(x, y, p), from, s.pos);
+    if (peek) this.peek.show(peek);
   }
 
   // ------------------------------------------------------------ day, night and the things in the dark
