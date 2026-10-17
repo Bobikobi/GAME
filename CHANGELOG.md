@@ -2,6 +2,25 @@
 
 One note per tag on `main`, newest first (docs/team/PLATFORM.md section 2).
 
+## v0.1.5 - 2026-10-17
+
+What players notice
+- A bank wolf walks its round after dark on the west meadow, its two eyes glowing toward where it heads; tall grass along the water hides you from it. Pell has a new errand on the south bank, for moonreed that grows there from 20:00 to midnight, and he now has a line for a player the wolf has bitten.
+- Maru's hearth beside her house can be kept burning by hand with the Feed button. Her quest "the long night" asks you to keep it alight until dawn; the journal says when a log still fits and when dawn is yet to come, and a vigil that comes up short at dawn says so.
+- A fire takes a log whole or not at all, so a log is never wasted on a full fire; a hunt you outrun gives back most of what its bites took.
+- Pop-ups come two at a time and sit low on a phone, above the action prompt; the quest tracker, the chips and the pop-ups are bigger (16px).
+- The ruin sign no longer offers the creator guide, and the menu no longer has a "Creator guide" button: the developers' pages are reached from the home page only.
+
+What creators notice
+- New in the format, all additive (format version stays 1): an `expedition` content kind (a place, the bells of its night window, a safe exit, a chain of 3 to 5 quests and one climax; the checks are G36), `quest.maze` with `tier` 1 to 4, the `area` that frames the maze and an optional `landmark`, and a new bounded param `hazard.predator.refill_bp` (7500, from 5000 to 10000) for what an outrun hunt gives back. The creator guide documents the maze block.
+- The kernel now tells a creator's client when a hunt begins (`seen`), when it ends in a safe place (`safe`) and when a vigil fire goes out (`fire_out`), and exports `nextLogAt`, `burnsAsWood` and `tendHolds` so a client asks the kernel instead of keeping a copy of its rules. `fire.cap` has a minimum of 2, and the check refuses a fire whose warning would open before a log fits.
+- Search engines and AI readers find the project: every page has a canonical link, Open Graph and structured data, the site serves `/sitemap.xml`, `/robots.txt` and `/llms-full.txt` (the README, the contributing guide, the roadmap and the creator guide in one file), and the plan with the steps that wait for the owner's yes is in `docs/team/SEO_GEO.md`.
+
+What changed underneath
+- kernel 0.1.5 (simulation 0.10.0). Saves from v0.1.4 load unchanged; a `tend` step is now met only at or after its night's dawn (05:00).
+- The hub refreshes hourly: production gets fresh hub-data, usage counts included, and nothing is deployed when nothing changed (`pnpm hub:same`).
+- The opening e2e waits for dialogue and focus before picking an option, and covers the ruin sign without a guide.
+
 ## v0.1.4 - 2026-10-15
 
 What players notice
