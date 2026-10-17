@@ -5118,6 +5118,17 @@
                   "maxLength": 80,
                   "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
                   "type": "string"
+                },
+                "lines": {
+                  "minItems": 1,
+                  "maxItems": 3,
+                  "description": "The narrator's boxes at the climax, the same whether the reward opens a way or the player opened it by hand.",
+                  "type": "array",
+                  "items": {
+                    "minLength": 1,
+                    "maxLength": 240,
+                    "type": "string"
+                  }
                 }
               }
             },

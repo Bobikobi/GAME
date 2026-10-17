@@ -633,7 +633,19 @@ export const ExpeditionBody = Type.Object(
     ),
     exit: Id,
     chain: Type.Array(Id, { minItems: 3, maxItems: 5 }),
-    climax: Type.Object({ slot: Id }, { additionalProperties: false }),
+    climax: Type.Object(
+      {
+        slot: Id,
+        lines: Type.Optional(
+          Type.Array(Text, {
+            minItems: 1,
+            maxItems: 3,
+            description: 'The narrator\'s boxes at the climax, the same whether the reward opens a way or the player opened it by hand.',
+          }),
+        ),
+      },
+      { additionalProperties: false },
+    ),
     reward: Type.Object(
       {
         opens: Type.Optional(Type.Array(Id, { maxItems: 2 })),
