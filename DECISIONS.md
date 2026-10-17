@@ -49,6 +49,7 @@ Tile-by-tile steps (190 ms each) match the handheld look and keep every position
 ## 2026-10-07 ✅ Signs are map props that point at a slot
 
 A sign names whoever filled its slot ("Added by ..."), reads "Mended by <player>" at a restored bridge, or says the place awaits restoration and offers the creator guide. `pnpm check` fails a sign that points at a missing slot. Model: claude-opus-5-5.
+**Superseded in part (11.10):** the sign of a place awaiting restoration no longer offers the creator guide (the entry on no way from inside the game to the developers' pages).
 
 ## 2026-10-07 ✅ The kernel refuses to build under the player's feet
 
@@ -1471,3 +1472,8 @@ The tracker still follows its rule (the tasks that need nobody first, then by id
 
 `game/e2e/hud.ts` (in `pnpm e2e`, before `play3d.ts`) proves it in a browser at 390x844 and at 1440x900: the mend's toasts wait for its story box on a phone and stand beside it on a desktop, two at a time and none dropped, the two task lines in one toast; a bite goes up ahead of a pickup's calm lines; every toast goes up clear of the player and of the action prompt (on a phone, below the player's feet); and on a phone the chips take the whole width under the meter and the buttons.
 **Retry when:** a playtest misses a toast (the line moves too slowly, or a box held it too long), a phone about 640px tall puts two toasts on the player, a toast hides the bank wolf's approach, or the kernel records when a task opened (then the tracker shows the newest). Model: claude-opus-5-5.
+
+## 2026-10-11 ✅ No way from inside the game to the developers' pages: the home page holds it
+
+The owner's word (11.10, recorded 16.10 by the manager session): "there is no need at all for a referral to the developers' page; it is on the home page." Today the game sends a player there twice: the menu's "Creator guide" button (`openGuide`, `game/src/ui/panels.ts`) and the ruin at the town's edge, whose sign offers "Open the creator guide" (`sign` in `game/src/ui/ui.ts`, step 9 of `game/e2e/opening.ts`), both from the entry on signs (2026-10-07). Both go. The ruin's sign still says the place awaits restoration, with no option. A reading, open to the owner's word: the menu's "Creators" and "Credits" stay, since they name who made what and send nobody anywhere. GRUNT's open ends carry the building as CR-107.
+**Retry when:** the hub's numbers show that most creators arrived from inside the game before the change, or the developer area (CR-101) asks for a way in from the game. Model: claude-opus-5-5.

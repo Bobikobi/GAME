@@ -103,7 +103,7 @@ describe('the tangle', () => {
     expect(checkPlay(bundle, {}).filter((i) => i.message.includes('maze'))).toEqual([]);
   });
 
-  it('names tier 1 and a frame that holds the heart, the mouth and the mossy rocks, entered from the meadow north of it', () => {
+  it('names tier 1 and a frame that holds the heart, the mouth and the mossy rocks, entered from open ground north of it', () => {
     const maze = bundle.quests[QUEST]!.maze!;
     expect(maze.tier).toBe(1);
     const frame = findSlot(bundle.map, maze.area)!;

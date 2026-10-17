@@ -363,6 +363,7 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
     });
     if (outside.length > 0) complain('.area', `the heart lies outside the frame "${frame.id}": ${outside.join(', ')}`);
     const mark = q.maze.landmark;
+    if (!mark && q.maze.tier <= 2) complain('.landmark', `tier ${q.maze.tier} lights the landmarks, so the maze names them`);
     if (mark && !b.map.props.some((p) => p.sprite === mark && inRect(p.x, p.y, frame))) {
       complain('.landmark', `no prop inside "${frame.id}" is drawn with "${mark}"`);
     }
