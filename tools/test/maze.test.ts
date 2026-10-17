@@ -7,7 +7,7 @@
  * opening and never right after another maze (G17).
  */
 import { beforeAll, describe, expect, it } from 'vitest';
-import { type Bundle, findSlot, inRect, makeWalkable } from '@game/kernel';
+import { type Bundle, type QuestDef, findSlot, inRect, makeWalkable } from '@game/kernel';
 import { runCheck } from '../src/check';
 import { OPENING_QUESTS, checkPlay, isMazeVisit } from '../src/play';
 
@@ -101,6 +101,31 @@ describe('the tangle', () => {
       expect(bundle.quests[r]?.type, r).not.toBe('maze');
     }
     expect(checkPlay(bundle, {}).filter((i) => i.message.includes('maze'))).toEqual([]);
+  });
+
+  it('names tier 1 and a frame that holds the heart, the mouth and the mossy rocks, entered from open ground north of it', () => {
+    const maze = bundle.quests[QUEST]!.maze!;
+    expect(maze.tier).toBe(1);
+    const frame = findSlot(bundle.map, maze.area)!;
+    expect(frame.kind).toBe('area');
+    const heart = findSlot(bundle.map, HEART)!;
+    expect(inRect(heart.x, heart.y, frame) && inRect(heart.x + heart.w - 1, heart.y + heart.h - 1, frame)).toBe(true);
+    expect(inRect(MOUTH[0], MOUTH[1], frame)).toBe(true);
+    expect(inRect(MOUTH[0], MOUTH[1] - 1, frame)).toBe(false);
+    expect(walk(MOUTH[0], MOUTH[1] - 1)).toBe(true);
+    const rocks = bundle.map.props.filter((p) => p.sprite === maze.landmark && inRect(p.x, p.y, frame));
+    expect(rocks.length).toBeGreaterThanOrEqual(5);
+    expect(checkPlay(bundle, {}).filter((i) => i.where.startsWith('quest.maze'))).toEqual([]);
+  });
+
+  it('refuses a maze block on another type, a frame that is not an area or misses the heart, and a landmark drawn nowhere in it', () => {
+    const q = bundle.quests[QUEST]!;
+    const withMaze = (patch: Partial<QuestDef>): Bundle => ({ ...bundle, quests: { ...bundle.quests, [QUEST]: { ...q, ...patch } } });
+    const said = (b: Bundle) => checkPlay(b, {}).filter((i) => i.where.startsWith('quest.maze')).map((i) => i.message).join('\n');
+    expect(said(withMaze({ type: 'discovery' }))).toContain('only a maze quest names a maze');
+    expect(said(withMaze({ maze: { ...q.maze!, area: 'core/ruins-deep' } }))).toContain('is not an area slot');
+    expect(said(withMaze({ maze: { ...q.maze!, area: 'core/town-square' } }))).toContain('the heart lies outside the frame');
+    expect(said(withMaze({ maze: { ...q.maze!, landmark: 'core/base-kit:props/standing_stone' } }))).toContain('no prop inside');
   });
 
   it('a maze quest whose visit is not an area is refused, and a plain visit quest of another type is still a counter', () => {

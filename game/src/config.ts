@@ -1,4 +1,4 @@
-/** Where the project lives. Bug reports and the creator guide link here. */
+/** Where the project lives. Bug reports link here. */
 export const REPO_URL = 'https://github.com/Bobikobi/GAME';
 /** The game's name (DECISIONS.md, 9.10). */
 export const GAME_TITLE = 'Openfold';
