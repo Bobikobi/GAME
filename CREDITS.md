@@ -28,7 +28,9 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - A glint by the bridge (quest) - `content/core/quests/glint-by-the-bridge.json`
 - Herbs for Pell (quest) - `content/core/quests/herbs-for-pell.json`
 - Smoke over the town (quest) - `content/core/quests/into-town.json`
+- The long night (quest) - `content/core/quests/the-long-night.json`
 - The arch at night (quest) - `content/core/quests/the-night-arch.json`
+- The south bank (quest) - `content/core/quests/the-south-bank.json`
 - The tangle past the ruins (quest) - `content/core/quests/the-tangle.json`
 - Where the bells rang (quest) - `content/core/quests/three-fruits.json`
 - Bandage (recipe) - `content/core/recipes/bandage.json`
@@ -54,6 +56,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Fallen logs (resource) - `content/core/resources/fallen-logs.json`
 - Forest mushrooms (resource) - `content/core/resources/forest-mushrooms.json`
 - Keystone (resource) - `content/core/resources/keystone.json`
+- Moon reeds (resource) - `content/core/resources/moon-reeds.json`
 - Oak trees (resource) - `content/core/resources/oak-trees.json`
 - Reed bank (resource) - `content/core/resources/reed-bank.json`
 - River stones (resource) - `content/core/resources/river-stones.json`
