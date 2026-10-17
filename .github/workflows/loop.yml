@@ -137,7 +137,15 @@ jobs:
             echo "::warning::hub-data not deployed: main's newest commit changes only CREDITS.md, so Vercel's ignored build step would cancel the hook build; the next commit to main deploys it"
             exit 0
           fi
-          curl -fsS -X POST -o /dev/null "$VERCEL_DEPLOY_HOOK"
+          # a value that is not a Vercel hook address fails here, at once, without printing any of it
+          case "$VERCEL_DEPLOY_HOOK" in
+            https://api.vercel.com/*) ;;
+            *)
+              echo "::error::The VERCEL_DEPLOY_HOOK secret is not a Vercel deploy hook address (it must start with https://api.vercel.com/). Copy the address from the Vercel project's Settings > Git > Deploy Hooks, then run: gh secret set VERCEL_DEPLOY_HOOK --repo Bobikobi/GAME - and paste the value at the prompt."
+              exit 1
+              ;;
+          esac
+          curl -fsS --max-time 30 -X POST -o /dev/null "$VERCEL_DEPLOY_HOOK"
           echo "deploy hook fired"
 
   credits:
