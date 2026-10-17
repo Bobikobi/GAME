@@ -5,7 +5,7 @@ import Site from '../layouts/Site.astro';
 import ComingSoon from '../components/ComingSoon.astro';
 import '../styles/scene.css';
 import '../styles/home.css';
-import { repoTree } from '../data/site';
+import { GAME_LD, repoTree } from '../data/site';
 import { bridgeBuilder, builders, count, door3d, earn, signature } from '../data/home';
 
 const ROWS = 5;
@@ -20,6 +20,7 @@ const signs = bridgeBuilder ? `, and the builder ${bridgeBuilder} signs it` : ''
   title="Openfold - a valley the players rebuild together"
   description="A free pixel-art game in your browser. Wake by the river, mend the old bridge and bring the valley back; every place and quest in it was added by a builder."
   section="home"
+  jsonld={[{ ...GAME_LD, url: Astro.site ? new URL('/', Astro.site).href : '/' }]}
 >
   <Fragment slot="head"><style is:inline set:html={tally} /></Fragment>
 

@@ -4,9 +4,9 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-/** The page without the Vercel Web Analytics pair (its queue stub and its loader), the only scripts the home page may carry. */
+/** The page without the Vercel Web Analytics pair (its queue stub and its loader), the only scripts the home page may carry; a JSON-LD block is data, not script, and is removed too. */
 const withoutAnalytics = (page: string): string =>
-  page.replace(/<script>\s*window\.va =[\s\S]*?<\/script>/, '').replace('<script defer src="/_vercel/insights/script.js"></script>', '');
+  page.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/g, '').replace(/<script>\s*window\.va =[\s\S]*?<\/script>/, '').replace('<script defer src="/_vercel/insights/script.js"></script>', '');
 
 const ROOT = join(import.meta.dirname, '../..');
 const DIST = join(ROOT, 'web/dist');

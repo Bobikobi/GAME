@@ -42,3 +42,33 @@ export const FOOT: readonly { label: string; href: string }[] = [
   { label: 'Licence', href: repoFile('LICENSE') },
   { label: 'GitHub', href: REPO },
 ];
+
+/** The page's structured data (docs/team/SEO_GEO.md section 5): only what the site holds today. */
+export const GAME_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'VideoGame',
+  name: 'Openfold',
+  description: 'A free pixel-art game in the browser: wake by the river, mend the old bridge and bring the valley back. Every place and quest in it was added by a builder.',
+  url: '/',
+  genre: ['Role-playing', 'Pixel art', 'Community-built'],
+  applicationCategory: 'Game',
+  operatingSystem: 'Any (web browser)',
+  playMode: 'SinglePlayer',
+  gamePlatform: 'Web browser',
+  inLanguage: 'en',
+  isAccessibleForFree: true,
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  license: repoFile('content/LICENSE'),
+  codeRepository: REPO,
+};
+
+export const CODE_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareSourceCode',
+  name: 'Openfold',
+  description: 'The Openfold game: a deterministic TypeScript simulation, a JSON Schema format for game content, and the tools that check it.',
+  codeRepository: REPO,
+  programmingLanguage: 'TypeScript',
+  runtimePlatform: 'Node.js',
+  license: repoFile('LICENSE'),
+};
