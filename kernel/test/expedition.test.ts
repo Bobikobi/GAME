@@ -280,6 +280,53 @@ describe('the expedition chain and climax', () => {
     kept(secondNight);
   });
 
+  test('a tend step kept through the night inside is met at the first step from dawn, outside, and the next quest waits for the next window', () => {
+    const b = world();
+    const HOUR = 50_000;
+    const DAWN = DUSK + 9 * HOUR;
+    const WOOD = 'core/log';
+    // the second quest keeps a fire inside the place (DECISIONS.md, 2026-10-16: the vigil closes at dawn)
+    const BRAZIER = 'test/brazier';
+    const brazier: Prop = { id: BRAZIER, sprite: 'core/base-kit:props/standing_stone', x: 9, y: 7, w: 1, h: 1, solid: true, fire: true };
+    b.map.props = [...b.map.props, brazier];
+    b.quests[QUESTS[1]] = { ...b.quests[QUESTS[1]]!, type: 'tending', steps: [{ kind: 'tend', fire: BRAZIER }] };
+    const feed = (s: State, tick: number): State => {
+      const r = step(b, s, { t: 'feed', fire: BRAZIER, item: WOOD, at: INSIDE }, tick);
+      if (!r.ok) throw new Error(r.error);
+      return r.state;
+    };
+    let state = placed(begin(b), INSIDE, DUSK - HOUR);
+    state.player.quests[QUESTS[0]] = 'done';
+    state.player.bag[WOOD] = 5;
+    // lit at 19:00 with three logs, before the window opens; the quest starts inside at the 21:00 log, and the 23:00 log carries the wood to 05:00
+    for (const tick of [DUSK - HOUR, DUSK - HOUR, DUSK - HOUR]) state = feed(state, tick);
+    expect(state.player.quests[QUESTS[1]]).toBeUndefined();
+    for (const tick of [DUSK + HOUR, DUSK + 3 * HOUR]) state = feed(state, tick);
+    expect(state.player.quests[QUESTS[1]]).toBe('active');
+    expect(state.player.fires[BRAZIER]).toEqual({ lit: DUSK - HOUR, until: DAWN });
+
+    // the last bell walks the player out with the vigil still open, and no step before dawn meets it
+    const out = move(b, state, LAST);
+    expect(events(out.events, 'walked_out')).toEqual([{ e: 'walked_out', expedition: EXPEDITION }]);
+    const exit = b.map.slots.find((slot) => slot.id === EXIT)!;
+    const outside: [number, number] = [exit.x, exit.y];
+    const early = move(b, out.state, DAWN - 1, outside);
+    expect(early.state.player.quests[QUESTS[1]]).toBe('active');
+
+    // the first step from 05:00 finishes it outside the place, with no fire told out; the next quest does not start there
+    const dawn = move(b, early.state, DAWN, outside);
+    expect(events(dawn.events, 'quest')).toEqual([{ e: 'quest', quest: QUESTS[1], state: 'done' }]);
+    expect(events(dawn.events, 'fire_out')).toEqual([]);
+    expect(dawn.state.player.quests[QUESTS[2]]).toBeUndefined();
+
+    // inside by day it still waits; inside in the next window it starts
+    const noon = move(b, placed(dawn.state, INSIDE, b.params.day_length_ms), b.params.day_length_ms).state;
+    expect(noon.player.quests[QUESTS[2]]).toBeUndefined();
+    const nextDusk = DUSK + b.params.day_length_ms;
+    const next = move(b, placed(noon, INSIDE, nextDusk + 1), nextDusk + 1).state;
+    expect(next.player.quests[QUESTS[2]]).toBe('active');
+  });
+
   test('emits the climax once and applies its reward once', () => {
     const b = world();
     const state = placed(begin(b), INSIDE, DUSK + 1);

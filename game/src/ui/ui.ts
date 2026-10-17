@@ -47,7 +47,6 @@ import { openLevelUp } from './levelup';
 import {
   openBag,
   openCraft,
-  openGuide,
   openJournal,
   openMenu,
   openShop,
@@ -331,7 +330,8 @@ export class UI {
 
   /**
    * A fire a tend step keeps warns before it goes out (G31): one box, once per burn, in
-   * its last `fire.warn_min` game minutes, while the player can see it and no box is open.
+   * its last `fire.warn_min` game minutes, while the player can see it and no box is open,
+   * and only while it still needs wood for the night it keeps (`wantsWood`).
    */
   private warnFireLow(s: Session): void {
     if (this.blocking || s.paused) return;
@@ -654,9 +654,7 @@ export class UI {
     const info = app.world?.signText(slotId);
     if (!info) return;
     if (info.creator) return openSignCard(this, info);
-    const options: Option[] = info.empty ? [{ label: 'Open the creator guide', value: 'guide' }, { label: 'Close', value: 'close' }] : [];
-    const pick = await say(this, info.title, info.lines, options);
-    if (pick === 'guide') openGuide(this);
+    await say(this, info.title, info.lines);
   }
 
   note(text: string, title?: string): void {

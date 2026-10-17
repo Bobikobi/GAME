@@ -25,6 +25,7 @@ import { drawBasisPoints } from './rng';
 import {
   ATTRIBUTES,
   type Attribute,
+  type FireState,
   type State,
   WEAR_SLOTS,
   type WearSlot,
@@ -523,9 +524,11 @@ function feed(ctx: Ctx, fireId: string, itemId: string, at: Tile): void {
   if (nextLogAt(b, s, fireId, tick) > tick) refuse('The fire is already full.');
   const burning = fireBurns(s, fireId, tick);
   const current = s.player.fires[fireId];
-  const next = burning
-    ? { lit: current!.lit, until: current!.until + b.params.fire.log_ms }
+  const next: FireState = burning
+    ? { ...current!, until: current!.until + b.params.fire.log_ms }
     : { lit: tick, until: tick + b.params.fire.log_ms };
+  // lit again by day after a night it kept: the new burn carries that night's dawn, so the vigil still holds until the next dusk
+  if (!burning && tendHolds(b, s, fireId, tick)) next.kept = nightEnds(b, lastDusk(b, tick));
   removeItem(ctx, itemId, 1);
   s.player.fires[fireId] = next;
   ctx.events.push({ e: 'fire', id: fireId, until: next.until });

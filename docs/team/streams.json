@@ -26,7 +26,7 @@
       "id": "variety",
       "title": "New kinds of play: the first maze, then stealth over the hazards, tending and the first expedition",
       "plan": ["GAME_RULES section 3 (maze, stealth, tending), G47-G49", "DECISIONS 2026-10-09 maze and stealth, 2026-10-13 the three frames", "NEXT 12-14, GRUNT P-6"],
-      "branches": ["feat/first-maze", "docs/variety-frames", "feat/stealth-kernel", "feat/stealth", "feat/tending-kernel", "fix/fire-whole-log", "feat/tending", "feat/expedition-kernel", "feat/night-ruins"],
+      "branches": ["feat/first-maze", "docs/variety-frames", "feat/stealth-kernel", "feat/stealth", "feat/tending-kernel", "fix/fire-whole-log", "feat/tending", "feat/expedition-kernel", "feat/kernel-events", "feat/vigil-dawn", "docs/next14-plan-fixes", "feat/night-ruins", "feat/hud-6c", "docs/wolf-eyes-frames", "feat/tending-cues", "feat/stealth-cues", "feat/threat-telegraph"],
       "owner": "the variety session"
     },
     {
@@ -40,14 +40,14 @@
       "id": "owner-answers",
       "title": "The owner's answers written into the decisions and the rules",
       "plan": ["DECISIONS.md", "docs/design/GAME_RULES.md", "GRUNT CR-60 to CR-62"],
-      "branches": ["docs/answers-2026-10-09", "docs/owner-answers-2026-10-10", "docs/owner-answers-2026-10-10-pm", "docs/chapter-1-answers"],
+      "branches": ["docs/answers-2026-10-09", "docs/owner-answers-2026-10-10", "docs/owner-answers-2026-10-10-pm", "docs/chapter-1-answers", "docs/owner-ideas-2026-10-11"],
       "owner": "the docs session; the integration session for the 10.10 afternoon answers"
     },
     {
       "id": "parallel-3d",
       "title": "The 3D version, a parallel version behind its own button on the same data",
       "plan": ["DECISIONS 2026-10-10 owner's answers of the afternoon, item 9"],
-      "branches": ["trial/3d"],
+      "branches": ["trial/3d", "docs/meshy-log-2026-10-13-dev"],
       "owner": null
     }
   ]
