@@ -8,6 +8,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page } from './cdp';
+import { solveMinigame } from './minigame';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(GAME_DIR, 'dist');
@@ -219,14 +220,7 @@ class StealthPlayer {
   }
 
   async solveMinigame(): Promise<void> {
-    await this.page.waitFor('!!document.querySelector(".minigame[data-game]")', 'the moonreed minigame', 5000);
-    const end = Date.now() + 20_000;
-    while (Date.now() < end && (await this.page.eval<boolean>('!!document.querySelector(".minigame[data-game]")'))) {
-      const cue = await this.page.eval<boolean>('document.querySelector(".minigame[data-game]")?.getAttribute("data-cue") === "now"');
-      if (cue) await this.page.press('Enter');
-      await sleep(40);
-    }
-    await this.page.waitFor('!document.querySelector(".minigame-layer")', 'the moonreed minigame to close', 5000);
+    await solveMinigame(this.page, true, 'the moonreed minigame');
     await this.page.waitFor('!__stealth.state().busy && !__stealth.state().blocking', 'the moonreed gather to finish', 10_000);
   }
 

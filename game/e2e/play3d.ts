@@ -14,6 +14,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page, type Viewport } from './cdp';
+import { solveMinigame } from './minigame';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ROOTS: Record<string, string> = { '/play/': join(GAME_DIR, 'dist'), '/play3d/': join(GAME_DIR, 'dist-3d') };
@@ -212,22 +213,8 @@ class Door {
   }
 
   async solveMinigame(): Promise<void> {
-    const start = Date.now();
-    await this.page.waitFor('!!document.querySelector(".minigame[data-game]")', 'minigame to open', 5000);
-    while (Date.now() - start < 30_000) {
-      if (!(await this.page.eval<boolean>('!!document.querySelector(".minigame[data-game]")'))) break;
-      const cue = await this.page
-        .waitFor<string>(`(() => { const m = document.querySelector('.minigame[data-game]'); return !m ? 'closed' : m.getAttribute('data-cue') === 'now' ? 'now' : ''; })()`, 'the cue', 10_000)
-        .catch(() => 'closed');
-      if (cue === 'closed') break;
-      if (this.touch) {
-        await this.page.eval(`(() => { const l = document.querySelector('.minigame-layer'); if (l) l.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true })); })()`);
-      } else {
-        await this.page.press('Enter');
-      }
-      await sleep(80);
-    }
-    await this.page.waitFor('!document.querySelector(".minigame-layer")', 'minigame layer to close', 5000).catch(() => undefined);
+    const shown = await solveMinigame(this.page, this.touch);
+    console.log(`[${this.name}] minigame: ${shown.join(' / ')}`);
   }
 
   /** The A button: Enter on a keyboard, the round A on a phone. */
