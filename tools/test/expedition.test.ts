@@ -20,7 +20,7 @@ const CLIMAX = 'test/climax';
 const STONE = 'test/hall-stone';
 const QUESTS = ['test/one', 'test/two', 'test/three'] as const;
 /** The place on the core map: the ruins south of the night threshold, its exit. */
-const RECT = { x: 35, y: 21, w: 4, h: 5 };
+const RECT = { x: 34, y: 21, w: 5, h: 4 };
 const EXIT = 'core/night-threshold';
 const WALL = 'core/base-kit:props/rock_mossy';
 
@@ -42,7 +42,17 @@ let base: Bundle;
  */
 function walls(b: Bundle): Prop[] {
   const walkable = makeWalkable({ ...b, map: { ...b.map, ground: openDoorstep(b.map.ground) } });
-  const view = { restored: [] as string[], camp: [] as string[] };
+  // the valley as it ends up, as the check reads it: every passable restore outside the place mended, a wall standing in front of each
+  const view = {
+    restored: Object.values(b.restores)
+      .filter((r) => r.passable)
+      .filter((r) => {
+        const slot = findSlot(b.map, r.place.slot);
+        return slot !== undefined && !(inRect(slot.x, slot.y, RECT) && inRect(slot.x + slot.w - 1, slot.y + slot.h - 1, RECT));
+      })
+      .map((r) => r.id),
+    camp: [] as string[],
+  };
   const exit = findSlot(b.map, EXIT)!;
   const steps = (x: number, y: number) => [[x, y - 1], [x + 1, y], [x, y + 1], [x - 1, y]] as const;
   // the part of the place the exit leads into, walking four ways
@@ -59,7 +69,14 @@ function walls(b: Bundle): Prop[] {
   const rock = (x: number, y: number) => rocks.set(`${x},${y}`, { sprite: WALL, x, y, w: 1, h: 1, solid: true });
   for (let y = RECT.y; y < RECT.y + RECT.h; y++) {
     for (let x = RECT.x; x < RECT.x + RECT.w; x++) {
-      if (!walkable(x, y, view)) continue;
+      // a pillar in the place is no door, but the ground behind it is not left open to the hunt
+      if (!walkable(x, y, view)) {
+        if (b.map.legend[b.map.ground[y]?.[x] ?? '']?.solid !== false) continue;
+        for (const [nx, ny] of steps(x, y)) {
+          if (!inRect(nx, ny, RECT) && !inRect(nx, ny, exit) && walkable(nx, ny, view)) rock(nx, ny);
+        }
+        continue;
+      }
       if (!room.has(`${x},${y}`)) {
         rock(x, y);
         continue;
@@ -374,7 +391,7 @@ describe('what an expedition gives, in the content check', () => {
   const mapPath = join(root, 'core', 'map.json');
   const map = JSON.parse(readFileSync(mapPath, 'utf8')) as { map: { ground: string[]; slots: object[]; props: object[] } };
   map.map.ground = openDoorstep(map.map.ground);
-  map.map.slots.push({ id: 'core/test-hall', kind: 'area', x: 35, y: 21, w: 4, h: 5 }, { id: 'core/test-altar', kind: 'ruin', x: 37, y: 24, w: 1, h: 1 });
+  map.map.slots.push({ id: 'core/test-hall', kind: 'area', ...RECT }, { id: 'core/test-altar', kind: 'ruin', x: 37, y: 24, w: 1, h: 1 });
   map.map.props.push(...walls(runCheck().assembled.bundle!), {
     id: 'core/test-hall-stone',
     sprite: 'core/base-kit:props/standing_stone',
@@ -484,7 +501,8 @@ describe('what an expedition gives, in the content check', () => {
     const g37 = errors.filter((i) => i.message.includes(`${RULES_PAGE} G37,`));
     expect(g37.map((i) => [i.file.endsWith('edge-house.json'), i.where])).toEqual([[true, 'restore.inputs.0']]);
     expect(g37[0]!.message).toContain('only an expedition gives "tester/bell-shard"');
-    const others = errors.filter((i) => !g37.includes(i) && i.where !== 'items.tester/lost-veil.premium_later');
+    // the fixture's rocks wall its small hall off from the yard where the shipped wolf walks, so the wolf's run home is cut: not what this tests
+    const others = errors.filter((i) => !g37.includes(i) && i.where !== 'items.tester/lost-veil.premium_later' && !i.message.includes('"core/ruins-wolf"'));
     expect(others).toEqual([]);
   });
 });

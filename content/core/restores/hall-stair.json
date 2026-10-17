@@ -1,0 +1,26 @@
+{
+  "$schema": "../../../schema/json/restore.schema.json",
+  "format": 1,
+  "type": "restore",
+  "id": "core/hall-stair",
+  "title": "Hall stair",
+  "creator": "core",
+  "restore": {
+    "place": {
+      "slot": "core/hall-stair"
+    },
+    "before": "core/base-kit:tiles/rubble",
+    "after": "core/base-kit:tiles/ruin_floor",
+    "inputs": [
+      {
+        "item": "core/log",
+        "qty": 6
+      }
+    ],
+    "active_ms": 4000,
+    "passable": true,
+    "done": [
+      "Six logs brace the broken stair, and it holds. Cold air comes up from below."
+    ]
+  }
+}

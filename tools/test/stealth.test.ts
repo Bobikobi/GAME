@@ -42,7 +42,8 @@ function cover(x = 10, y = 22): Prop {
 
 function withProps(props: Prop[]): Bundle {
   const b = structuredClone(base);
-  b.map.props = [...b.map.props.filter((p) => p.cover !== true), ...props];
+  // the bank's covers go and these tests build a round of their own; the night ruins keep theirs (x 30 and up)
+  b.map.props = [...b.map.props.filter((p) => p.cover !== true || p.x >= 30), ...props];
   return b;
 }
 

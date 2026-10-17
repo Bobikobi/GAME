@@ -1,0 +1,58 @@
+{
+  "$schema": "../../../schema/json/expedition.schema.json",
+  "format": 1,
+  "type": "expedition",
+  "id": "core/night-ruins",
+  "title": "The night ruins",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/bell-token",
+      "name": "Bell token",
+      "description": "Small and cold. It hums when the bells ring.",
+      "kind": "treasure",
+      "rarity": "rare",
+      "class": "relic",
+      "family": "bell",
+      "tier": 1,
+      "sprite": "core/base-kit:items/old-coin"
+    }
+  ],
+  "expedition": {
+    "place": "core/night-ruins",
+    "window": {
+      "bells": [
+        20,
+        23,
+        2,
+        4
+      ]
+    },
+    "exit": "core/night-threshold",
+    "chain": [
+      "core/the-hall-at-night",
+      "core/what-the-deep-keeps",
+      "core/the-brazier",
+      "core/the-hall-reads"
+    ],
+    "climax": {
+      "slot": "core/bell-foot",
+      "lines": [
+        "All four bells ring together, and nobody is there to ring them.",
+        "The hall holds still. Below it, a stair waits to be walked."
+      ]
+    },
+    "reward": {
+      "opens": [
+        "core/hall-stair"
+      ],
+      "items": [
+        {
+          "item": "core/bell-token",
+          "qty": 1
+        }
+      ]
+    },
+    "on_miss": "wait"
+  }
+}

@@ -24,9 +24,12 @@ import {
   replay,
   satietyAt,
   satietyCap,
+  sees,
   serialize,
   step,
 } from '@game/kernel';
+
+import { watchOf } from '../../tools/src/hazards.js';
 
 import { loadBundle, mulberry32 } from '../../tools/test/helpers/world.js';
 
@@ -128,39 +131,65 @@ describe('what the vocabularies and the shipped content say', () => {
     expect(base.map.slots.filter((s) => s.safe === true).map((s) => s.id)).toEqual(['core/night-threshold']);
   });
 
-  test("the opening's night walk to the arch and its threshold stays out of the wolf's reach", () => {
+  test("the opening's night walk to the arch and its threshold is never in the wolf's round, its watch or its eyes", () => {
     const wolf = hazardsOf(base).find((h) => h.id === 'core/ruins-wolf')!;
+    expect(wolf.round).toBeDefined();
+    const watched = new Set(watchOf(base, wolf).map(([x, y]) => `${x},${y}`));
     const slot = (id: string) => base.map.slots.find((sl) => sl.id === id)!;
     const stone = base.map.props.find((p) => p.id === 'core/arch-stone')!;
     const route = [slot('core/arch-mouth'), slot('core/arch-way'), slot('core/night-threshold'), stone];
-    // a diagonal step counts one, as the wolf's reach does
-    const r0 = wolf.rect;
-    const distanceTo = ([x, y]: Tile): number => Math.max(r0.x - x, 0, x - (r0.x + r0.w - 1), r0.y - y, y - (r0.y + r0.h - 1));
+    // a round heading north from y 26 sees no higher than y 21: the walk lies at y 20 and above
+    const walk: Tile[] = [];
     for (const r of route) {
       for (let y = r.y - 1; y <= r.y + r.h; y++) {
-        for (let x = r.x - 1; x <= r.x + r.w; x++) {
-          if (y > 20) continue;
-          expect(distanceTo([x, y]), `${x},${y}`).toBeGreaterThan(wolf.reach);
-        }
+        for (let x = r.x - 1; x <= r.x + r.w; x++) if (y <= 20) walk.push([x, y]);
       }
+    }
+    for (const [x, y] of walk) expect(watched.has(`${x},${y}`), `${x},${y} is in the watch`).toBe(false);
+    // and no tick of the night sees it: every step of the round, in every heading it takes
+    const cycle = wolf.round!.length * wolf.pace;
+    for (let tick = DUSK; tick < DUSK + 2 * cycle; tick += wolf.pace) {
+      for (const at of walk) expect(sees(base, wolf, tick, at), `${at} seen at ${tick}`).toBe(false);
     }
   });
 
-  test('one step past the threshold at night: the pit, then the wolf, then a fall that takes nothing it did not bring', () => {
+  test("the wolf's round lies between the gate and the hall, and the road in from the threshold is not on it", () => {
+    const wolf = hazardsOf(base).find((h) => h.id === 'core/ruins-wolf')!;
+    for (const [x, y] of wolf.round!) {
+      expect(y, `${x},${y}`).toBeGreaterThanOrEqual(26);
+      expect(y, `${x},${y}`).toBeLessThanOrEqual(27);
+    }
+  });
+
+  test('one step past the threshold at night: the toll, then deeper in the round finds the player, then a fall that takes nothing it did not bring', () => {
     const s0 = begin(base);
     const s = place(s0, [36, 20], NIGHT);
     s.player.restored = [...s.player.restored, 'core/arch-way'];
     const bag = { ...s.player.bag };
+    // the doorstep's pit is the night's toll: 30% of the bar, and the round's eyes do not reach it
     const inside = move(base, s, [36, 21], NIGHT + 190);
-    expect(kinds(inside.events)).toEqual(['hurt', 'seen']);
+    expect(kinds(inside.events)).toEqual(['hurt']);
+    expect(inside.events[0]).toMatchObject({ e: 'hurt', by: 'pit' });
+    // down the yard to the strip the wolf walks
     let state = inside.state;
+    let t = NIGHT + 190;
+    const told: string[] = [];
     let fell: GameEvent | undefined;
-    for (let t = NIGHT + 190 + 500; t <= NIGHT + 190 + 10_000 && !fell; t += 500) {
-      const r = move(base, state, [36, 21], t);
+    for (const y of [22, 23, 24, 25]) {
+      t += 190;
+      const r = move(base, state, [36, y], t);
       state = r.state;
+      told.push(...kinds(r.events));
+    }
+    for (t += 500; t <= NIGHT + 190 + 40_000 && !fell; t += 500) {
+      const r = move(base, state, [36, 25], t);
+      state = r.state;
+      told.push(...kinds(r.events));
       fell = r.events.find((e) => e.e === 'fall');
     }
-    expect(fell).toMatchObject({ e: 'fall', from: [36, 21], lost: [] });
+    expect(told.indexOf('seen')).toBeGreaterThanOrEqual(0);
+    expect(told.indexOf('seen')).toBeLessThan(told.indexOf('fall'));
+    expect(fell).toMatchObject({ e: 'fall', lost: [] });
     expect(state.player.bag).toEqual(bag);
     expect(state.player.satiety).toBe(satietyCap(base, state));
   });

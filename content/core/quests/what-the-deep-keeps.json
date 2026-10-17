@@ -1,0 +1,31 @@
+{
+  "$schema": "../../../schema/json/quest.schema.json",
+  "format": 1,
+  "type": "quest",
+  "id": "core/what-the-deep-keeps",
+  "title": "What the deep keeps",
+  "creator": "core",
+  "quest": {
+    "type": "gamble",
+    "summary": "Behind the hall the rubble gave way. The ground there rings.",
+    "requires": [
+      "core/the-hall-at-night"
+    ],
+    "steps": [
+      {
+        "kind": "find",
+        "item": "core/bell-shard",
+        "clue": "The ground behind the hall rings when you step on it. A piece of a bell lies among the potsherds. Dig, and take what comes."
+      }
+    ],
+    "reward": {
+      "rep": 0,
+      "items": [
+        {
+          "item": "core/log",
+          "qty": 2
+        }
+      ]
+    }
+  }
+}

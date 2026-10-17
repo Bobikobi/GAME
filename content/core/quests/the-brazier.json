@@ -1,0 +1,24 @@
+{
+  "$schema": "../../../schema/json/quest.schema.json",
+  "format": 1,
+  "type": "quest",
+  "id": "core/the-brazier",
+  "title": "The brazier",
+  "creator": "core",
+  "quest": {
+    "type": "tending",
+    "summary": "A cold brazier stands in the hall. A fire lit before dusk and fed through the night would stand until dawn.",
+    "requires": [
+      "core/what-the-deep-keeps"
+    ],
+    "steps": [
+      {
+        "kind": "tend",
+        "fire": "core/hall-brazier"
+      }
+    ],
+    "reward": {
+      "rep": 0
+    }
+  }
+}

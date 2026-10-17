@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../schema/json/quest.schema.json",
+  "format": 1,
+  "type": "quest",
+  "id": "core/the-hall-reads",
+  "title": "The hall reads",
+  "creator": "core",
+  "quest": {
+    "type": "investigation",
+    "summary": "Words are cut over the hearth-stone. They read by firelight and by no other light.",
+    "requires": [
+      "core/the-brazier"
+    ],
+    "steps": [
+      {
+        "kind": "riddle",
+        "clue": "The words over the hearth-stone name the foot of the bell. They only read by the brazier's light.",
+        "props": [
+          "core/hall-inscription"
+        ],
+        "answer": {
+          "kind": "visit",
+          "slot": "core/bell-alcove",
+          "at": "night"
+        }
+      }
+    ],
+    "reward": {
+      "rep": 0
+    }
+  }
+}

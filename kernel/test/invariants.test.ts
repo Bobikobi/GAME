@@ -283,7 +283,7 @@ function digState(seed: number): State {
   const state = result.state;
   state.player.bag['core/trowel'] = 3;
   state.player.attrs.carry = 100;
-  state.player.restored = ['core/old-bridge'];
+  state.player.restored = ['core/old-bridge', 'core/arch-way'];
   return state;
 }
 

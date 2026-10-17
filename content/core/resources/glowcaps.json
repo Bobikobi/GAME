@@ -1,0 +1,38 @@
+{
+  "$schema": "../../../schema/json/resource.schema.json",
+  "format": 1,
+  "type": "resource",
+  "id": "core/glowcaps",
+  "title": "Glowcaps",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/glowcap",
+      "name": "Glowcap",
+      "description": "A pale cap that gives off a little light. It wilts in the first grey of morning.",
+      "kind": "material",
+      "rarity": "uncommon",
+      "class": "plant",
+      "family": "glowcap",
+      "tier": 1,
+      "sprite": "core/base-kit:items/mushroom"
+    }
+  ],
+  "node": {
+    "output": "core/glowcap",
+    "yield": 1,
+    "active_ms": 2500,
+    "respawn_ms": 60000,
+    "count": 1,
+    "sprite": "core/base-kit:props/mushroom_patch",
+    "level": 1,
+    "hours": [
+      20,
+      4
+    ],
+    "game": "snap",
+    "place": {
+      "slot": "core/hall-glowcaps"
+    }
+  }
+}

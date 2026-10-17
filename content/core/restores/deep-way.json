@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../schema/json/restore.schema.json",
+  "format": 1,
+  "type": "restore",
+  "id": "core/deep-way",
+  "title": "Rubble behind the hall",
+  "creator": "core",
+  "restore": {
+    "place": {
+      "slot": "core/deep-way"
+    },
+    "before": "core/base-kit:tiles/rubble",
+    "after": "core/base-kit:tiles/ruin_floor",
+    "inputs": [],
+    "active_ms": 1000,
+    "passable": true,
+    "done": [
+      "The rubble behind the hall slides aside. A narrow way runs into the corner."
+    ]
+  }
+}

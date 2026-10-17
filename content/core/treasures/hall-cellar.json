@@ -1,0 +1,44 @@
+{
+  "$schema": "../../../schema/json/treasure.schema.json",
+  "format": 1,
+  "type": "treasure",
+  "id": "core/hall-cellar",
+  "title": "Hall cellar",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/clockwork-scrap",
+      "name": "Clockwork scrap",
+      "description": "A brass wheel with fine teeth, finer than anything made in the valley now.",
+      "kind": "treasure",
+      "rarity": "rare",
+      "class": "relic",
+      "family": "clockwork",
+      "tier": 1,
+      "sprite": "core/base-kit:items/stew-scrap"
+    }
+  ],
+  "dig": {
+    "hint": "Cold air comes up from the cellar floor.",
+    "active_ms": 6000,
+    "respawn_ms": 240000,
+    "count": 2,
+    "tool": "trowel",
+    "level": 1,
+    "finds": [
+      {
+        "item": "core/clockwork-scrap",
+        "chance_pct": 20,
+        "share_pct": 60
+      },
+      {
+        "item": "core/pottery-shard",
+        "chance_pct": 40,
+        "share_pct": 40
+      }
+    ],
+    "place": {
+      "slot": "core/hall-cellar"
+    }
+  }
+}

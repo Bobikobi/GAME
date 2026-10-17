@@ -90,6 +90,18 @@
           "They light at dusk. Nobody fills them. Nobody ever did, that I saw.",
           "I think they watch the hills, where the mist comes from."
         ]
+      },
+      {
+        "ask": "About the hall's fire",
+        "when": {
+          "done": [
+            "core/the-night-arch"
+          ]
+        },
+        "lines": [
+          "The hall had a fire once. They lit it before the dark, never in it.",
+          "It took a night's wood. Someone always stayed to feed it."
+        ]
       }
     ]
   }

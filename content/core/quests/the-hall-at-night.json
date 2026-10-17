@@ -1,0 +1,25 @@
+{
+  "$schema": "../../../schema/json/quest.schema.json",
+  "format": 1,
+  "type": "quest",
+  "id": "core/the-hall-at-night",
+  "title": "The hall at night",
+  "creator": "core",
+  "quest": {
+    "type": "stealth",
+    "summary": "Pale caps open in the collapsed hall after dark. A wolf walks the yard in front of it.",
+    "steps": [
+      {
+        "kind": "find",
+        "item": "core/glowcap",
+        "clue": "Pale caps open in the hall after dark. The wolf walks the yard before it: wait for its back, and keep to the weeds."
+      }
+    ],
+    "reward": {
+      "rep": 0,
+      "opens": [
+        "core/deep-way"
+      ]
+    }
+  }
+}

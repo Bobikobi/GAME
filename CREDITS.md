@@ -9,6 +9,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Work stone (camp) - `content/core/camp/work-stone.json`
 - Workbench (camp) - `content/core/camp/workbench.json`
 - Workshop (camp) - `content/core/camp/workshop.json`
+- The night ruins (expedition) - `content/core/expeditions/night-ruins.json`
 - Healing (items) - `content/core/items/healing.json`
 - Tools (items) - `content/core/items/tools.json`
 - The valley (map) - `content/core/map.json`
@@ -28,9 +29,15 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - A glint by the bridge (quest) - `content/core/quests/glint-by-the-bridge.json`
 - Herbs for Pell (quest) - `content/core/quests/herbs-for-pell.json`
 - Smoke over the town (quest) - `content/core/quests/into-town.json`
+- The brazier (quest) - `content/core/quests/the-brazier.json`
+- The hall at night (quest) - `content/core/quests/the-hall-at-night.json`
+- The hall reads (quest) - `content/core/quests/the-hall-reads.json`
+- The long night (quest) - `content/core/quests/the-long-night.json`
 - The arch at night (quest) - `content/core/quests/the-night-arch.json`
+- The south bank (quest) - `content/core/quests/the-south-bank.json`
 - The tangle past the ruins (quest) - `content/core/quests/the-tangle.json`
 - Where the bells rang (quest) - `content/core/quests/three-fruits.json`
+- What the deep keeps (quest) - `content/core/quests/what-the-deep-keeps.json`
 - Bandage (recipe) - `content/core/recipes/bandage.json`
 - Berry mash (recipe) - `content/core/recipes/berry-mash.json`
 - Fine basket (recipe) - `content/core/recipes/fine-basket.json`
@@ -53,20 +60,26 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Redberry bushes (resource) - `content/core/resources/berry-bushes.json`
 - Fallen logs (resource) - `content/core/resources/fallen-logs.json`
 - Forest mushrooms (resource) - `content/core/resources/forest-mushrooms.json`
+- Glowcaps (resource) - `content/core/resources/glowcaps.json`
 - Keystone (resource) - `content/core/resources/keystone.json`
+- Moon reeds (resource) - `content/core/resources/moon-reeds.json`
 - Oak trees (resource) - `content/core/resources/oak-trees.json`
 - Reed bank (resource) - `content/core/resources/reed-bank.json`
 - River stones (resource) - `content/core/resources/river-stones.json`
 - Sun herbs (resource) - `content/core/resources/sun-herbs.json`
 - Wild herbs (resource) - `content/core/resources/wild-herbs.json`
 - Broken arch (restore) - `content/core/restores/arch-way.json`
+- Rubble behind the hall (restore) - `content/core/restores/deep-way.json`
+- Hall stair (restore) - `content/core/restores/hall-stair.json`
 - Old bridge (restore) - `content/core/restores/old-bridge.json`
 - Pell's stall (shop) - `content/core/shops/trader-shop.json`
 - Digger (starter) - `content/core/starters/digger.json`
 - Explorer (starter) - `content/core/starters/explorer.json`
 - Forager (starter) - `content/core/starters/forager.json`
 - Dyed cord (template) - `content/core/templates/dye-cord.json`
+- Bell pit (treasure) - `content/core/treasures/bell-pit.json`
 - A glint by the bridge (treasure) - `content/core/treasures/bridge-glint.json`
+- Hall cellar (treasure) - `content/core/treasures/hall-cellar.json`
 - Under the hill lantern (treasure) - `content/core/treasures/lantern-foot.json`
 - Deep ruins (treasure) - `content/core/treasures/ruins-deep.json`
 - Gate rubble (treasure) - `content/core/treasures/ruins-gate.json`
