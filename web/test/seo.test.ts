@@ -66,15 +66,17 @@ describe('the head of a page', () => {
     expect(meta(html, 'twitter:card')).toMatch(/^summary/);
   });
 
-  it('points og:image at a card that exists, or at none', () => {
+  it('points og:image and twitter:image at the card on every page, and the card exists at 1200x630', () => {
     for (const [, file] of PAGES) {
-      const image = meta(read(file), 'og:image');
-      if (image === undefined) continue;
-      expect(image.startsWith(`${ORIGIN}/`)).toBe(true);
-      expect(existsSync(join(DIST, image.slice(ORIGIN.length))), image).toBe(true);
+      const html = read(file);
+      const image = meta(html, 'og:image');
+      expect(image, file).toBe(`${ORIGIN}/og/card.png`);
+      expect(meta(html, 'twitter:image'), file).toBe(image);
+      expect(meta(html, 'twitter:card'), file).toBe('summary_large_image');
     }
-    const card = join(import.meta.dirname, '../public/og/card.png');
-    expect(meta(read('index.html'), 'og:image') !== undefined).toBe(existsSync(card));
+    const card = readFileSync(join(DIST, 'og/card.png'));
+    expect(card.readUInt32BE(16)).toBe(1200);
+    expect(card.readUInt32BE(20)).toBe(630);
   });
 });
 
