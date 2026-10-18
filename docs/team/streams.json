@@ -47,8 +47,8 @@
       "id": "parallel-3d",
       "title": "The 3D version, a parallel version behind its own button on the same data",
       "plan": ["DECISIONS 2026-10-10 owner's answers of the afternoon, item 9"],
-      "branches": ["trial/3d", "docs/meshy-log-2026-10-13-dev"],
-      "owner": null
+      "branches": ["trial/3d", "docs/meshy-log-2026-10-13-dev", "docs/next-3d-credits", "docs/3d-gap"],
+      "owner": "the 3D session"
     },
     {
       "id": "art",
