@@ -400,6 +400,15 @@ f) **The waking lines and one box** (`feat/hook-waking`). One box of two lines p
 - Measurable at the end of f): criteria 1 to 10 of OPENING_REVIEW section 5, each by a test or a capture; in the timed run of each starter no stretch passes 90 s of play clock between the wake and the threshold, the wait before the dark included (criterion 8).
 - For the owner on a real phone, from the release preview: the mist's shade and density, the dither's shimmer while walking, the bell's loudness, whether the smoke reads as a compass, and a human playthrough's timing (OPENING_REVIEW section 8).
 
+Notes for e and f from the session that built c and d (18.10; line numbers as of #172, grep before trusting them):
+- "Mended by" lives in: `game/src/ui/panels.ts:815` (the sign panel's `sign-mended` line, fed by `mendedBy` in `world.ts` near 2477 and 2498); `world.ts` near 2498 and `game/src/play3d/world3d.ts` near 1283 push `Mended by ${p.name}.` into the sign lines; `content/core/restores/old-bridge.json` lines 25-26 (the `done` text, the purse line being the one that moves to the stone); `game/e2e/opening.ts:693` asserts `Mended by Tess` and `game/test/text.test.ts:179` pushes a `Mended by Test` journal line. `game/e2e/opening.ts:617` counts the clicks for advances: that is f, not e.
+- The mend's moment is `celebrate()` in `world.ts`, on the `restore` event. The far bell is queued there (`farBellDue`, `FAR_BELL.delayMs` 1500); the carve comes after the bell and the clearing, not before.
+- The kernel applies a mend when its 4 s of work start, so the mist clears about 2 s in, before the `restore` event: anything that follows the mend keys on the event, not on the save. The clearing is around the slot's middle tile; the pure helpers are `game/src/hookbridge.ts`, tested in `game/test/hookbridge.test.ts`.
+- A new worktree needs `pnpm install --frozen-lockfile` and `pnpm bundle` before `pnpm typecheck` (`game/src/generated/bundle.json` is missing until then).
+- The forager has no `wake` in its JSON: tests use `starter.wake ?? b.map.spawn`.
+- The e2e lock had seven sessions queued on 18.10 (about 50 minutes to a turn): start it early, in the background; `fuser -v /tmp/game-e2e.lock` shows the queue.
+- Keep the Codex review: it found a real defect in both c and d.
+
 ## 17. The opening's quest logic: the gaps of the review that are not the hook
 
 Stage 1 of the order (DECISIONS 2026-10-17, "The order from here": the opening's renewal is logic and a hook). The owner asked on 18.10 for these to land now, beside the hook build (DECISIONS 2026-10-18, "The opening's quest logic is built beside the hook"). Read first: `docs/design/OPENING_REVIEW.md` sections 3 and 4.4 (the gaps are numbered G1 to G10 there; they are not the rules of the same numbers); `docs/design/GAME_RULES.md` pillars 1 to 3, the ladder (section 2), G1, G4, G12, G14, G17, G18, G59 and section 6; `docs/design/STORY.md` S1 to S6; DECISIONS 2026-10-10 "No dead props". The stream is `opening-logic` in `streams.json`.
