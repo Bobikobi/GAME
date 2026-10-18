@@ -1,7 +1,7 @@
 /**
  * Redraw kit sprites with an image model and bring them back onto the kit's grid.
  *
- * DECISIONS 2026-10-18 "The art moves to 32 px per tile". A spec names each sprite: the stock
+ * DECISIONS 2026-10-18 "The art moves to 64 px per tile". A spec names each sprite: the stock
  * sprite it redraws, what it is, the grid, and the detail to spell out. The prompt's house style
  * lives here, so the spec is the only thing that changes between waves.
  *
@@ -37,8 +37,8 @@ import { CORE_PALETTE, type Rgb, hexToRgb } from './palette.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
-/** The largest grid a spec may ask for: a 128x128 prop at 32 px per tile. */
-const MAX_SIDE = 128;
+/** The largest grid a spec may ask for: a 384x384 prop, six tiles a side at 64 px per tile (STYLE.md section 1). */
+const MAX_SIDE = 384;
 
 export interface GenEntry {
   /** The result's file stem, lowercase like every kit file. */

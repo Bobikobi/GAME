@@ -34,7 +34,7 @@ describe('the spec', () => {
   test.each([
     [{ ...elder, name: 'Elder' }, /lowercase/],
     [{ ...elder, width: 0 }, /width/],
-    [{ ...elder, height: 129 }, /height/],
+    [{ ...elder, height: 385 }, /height/],
     [{ ...elder, width: 31.5 }, /width/],
     [{ ...elder, kind: 'wall' }, /kind/],
     [{ ...elder, what: ' ' }, /what/],
