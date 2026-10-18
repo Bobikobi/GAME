@@ -23,11 +23,12 @@ export function chunkRange(view: { x: number; y: number; right: number; bottom: 
   const side = CHUNK * unit;
   const lastX = Math.ceil(tilesW / CHUNK) - 1;
   const lastY = Math.ceil(tilesH / CHUNK) - 1;
+  const clamp = (v: number, last: number) => Math.max(0, Math.min(last, v));
   return {
-    x0: Math.max(0, Math.floor(view.x / side) - ring),
-    y0: Math.max(0, Math.floor(view.y / side) - ring),
-    x1: Math.min(lastX, Math.floor(view.right / side) + ring),
-    y1: Math.min(lastY, Math.floor(view.bottom / side) + ring),
+    x0: clamp(Math.floor(view.x / side) - ring, lastX),
+    y0: clamp(Math.floor(view.y / side) - ring, lastY),
+    x1: clamp(Math.floor(view.right / side) + ring, lastX),
+    y1: clamp(Math.floor(view.bottom / side) + ring, lastY),
   };
 }
 
