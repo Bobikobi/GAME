@@ -134,3 +134,25 @@ describe('hand-in lines', () => {
     expect(errors.filter((i) => i.file.includes('both-lines'))).toEqual([]);
   });
 });
+
+describe('a node that opens after a quest', () => {
+  const root = mkdtempSync(join(tmpdir(), 'mistvale-opens-after-'));
+  afterAll(() => rmSync(root, { recursive: true, force: true }));
+
+  cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
+  cpSync(join(CONTENT_DIR, 'kit'), join(root, 'kit'), { recursive: true });
+  const path = join(root, 'core', 'resources', 'keystone.json');
+  const read = () => runCheck(root).issues.filter((i) => i.level === 'error').map((i) => `${i.where}: ${i.message}`);
+  const gate = (id: string) => {
+    const f = JSON.parse(readFileSync(path, 'utf8')) as { node: { opens_after?: string } };
+    f.node.opens_after = id;
+    writeFileSync(path, JSON.stringify(f, null, 2));
+  };
+
+  it('accepts a quest that exists and refuses an id that is not a quest', () => {
+    gate('core/fix-the-bridge');
+    expect(read()).toEqual([]);
+    gate('core/nowhere');
+    expect(read()).toContainEqual('node.opens_after: no quest "core/nowhere"');
+  });
+});

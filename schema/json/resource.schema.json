@@ -572,6 +572,12 @@
           "description": "The node blocks the way, ready or not, as a tree does: a stump stays in the way until the tree is grown again. Left out: the player walks through it.",
           "type": "boolean"
         },
+        "opens_after": {
+          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+          "maxLength": 80,
+          "description": "A quest id. The node cannot be struck by a character who was offered that quest and has not finished it; a character who was never offered it strikes the node as usual. The refusal says one short line and costs nothing.",
+          "type": "string"
+        },
         "tool": {
           "anyOf": [
             {
