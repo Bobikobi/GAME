@@ -1550,6 +1550,18 @@ How dark the night goes is shown as N1 to N3 (50, 68 and 85% night blue, frames 
 When: the build lands with or after the engine step of the art at 32 (NEXT 15), since both touch the shadow and the shade in `game/src/scenes/world.ts`. Creators do nothing: every shadow is computed from the sprite's alpha.
 **Retry when:** the sheared shadows read as noise on a phone at twelve tiles across, a mid phone cannot hold its frame budget with a silhouette baked per frame and per hour, or the owner prefers B or A once he sees C in the live game. Model: claude-opus-5-5.
 
+## 2026-10-18 ✅ The hook's stills: the glint, the close stop, the mist drawn back 13 tiles
+
+The stills of the opening review's section 7 (frames `docs/design/frames/2026-10-17-hook-*`, note `2026-10-17-hook-stills.md`, #146) went to the owner with one recommendation per set. On 18.10 he answered, through the art session: "מאשר הכל כעת רק ביצוע" (I approve everything, now only execution). Picked:
+1. **The pocket at wake.** The explorer gets a glint: a mote of light at the edge of the clear circle, toward the glint (frame `hook-1-explorer-cue`). The forager's and the digger's pockets are as drawn.
+2. **The stone.** The close stop, the camera at zoom 3 on the stone (`hook-2-stop-close`). The carve is a beat of the moment that replaces no input (`hook-2-carved`).
+3. **The bridge.** The mist draws back 13 tiles. While its chimney is off screen, the town's smoke is a marker at the edge of the view (`hook-3-day-edge`), dimmer at night (`hook-3-night-edge`). This takes the review's correction of the 10.10 radius, from 7 to 13.
+The build is NEXT section 16, six pull requests from B2 to the waking lines. Two details the stills did not show belong to the builder to propose and to the owner to judge on the preview, without a new round of questions:
+- the wording of the default for a player who does not type a name;
+- the smallest change that makes the explorer's glint a question answered before the keystone (G10), with no prop or wake tile moved.
+The zoom-3 stop is a held zoom of its own, and section 15 (even zooms) settles it when it lands.
+**Retry when:** the zoom-3 stop reads as a cut on a phone, the explorer still takes the keystone first with the glint cue in the timed run, or a human playthrough shows the town still feels far after the 13-tile clearing. Model: claude-opus-5-5.
+
 ## 2026-10-18 ✅ The night: darker than N3 out in the wild, the town lit by its own lights
 
 The owner, shown N1 to N3 (50, 68 and 85% night blue, frames `2026-10-18-night-*`): "darker than N3; street lighting and the houses' light will light the town, but in nature it has to be scary and dark". So the night is one darkness over the whole screen, deeper than N3, starting at 92%, and every light cuts a pool in it in two hard steps. The town reads lit because it is full of lights: street lamps (`lantern_post`) and the lit windows of the buildings the player uses. Out in the wild there is only the player's own light (DECISIONS 2026-10-12), a burning fire and the wolf's eyes. The final level is the owner's to judge in the live game and is not measured here.

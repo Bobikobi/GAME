@@ -56,6 +56,13 @@
       "plan": ["DECISIONS 2026-10-18 the art moves to 32 px per tile, shadows C, the night, height T2, the six depth cues", "docs/design/ASSET_PATH.md", "docs/design/STYLE.md"],
       "branches": ["docs/art-32", "feat/kit-gen", "docs/next-art-32", "docs/style-spec", "docs/night-height-picks"],
       "owner": "the art session"
+    },
+    {
+      "id": "hook",
+      "title": "The opening's hook: the receding mist, the bridge's moment, the returners' stone",
+      "plan": ["DECISIONS 2026-10-10 the hook is the receding mist", "DECISIONS 2026-10-17 the opening's renewal", "DECISIONS 2026-10-18 the hook's stills", "docs/design/OPENING_REVIEW.md", "docs/team/NEXT.md section 16"],
+      "branches": ["docs/hook-build", "feat/hook-mist", "feat/hook-schema", "feat/hook-pockets", "feat/hook-bridge", "feat/hook-stone", "feat/hook-waking"],
+      "owner": "the hook session"
     }
   ]
 }
