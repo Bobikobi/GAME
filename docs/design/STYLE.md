@@ -3,17 +3,18 @@
 The look in one place, for creators and for every session that draws or renders the world. The pipeline (how art is made and imported) is in [ASSET_PATH.md](ASSET_PATH.md), and the file layout is in [docs/creators/README.md](../creators/README.md).
 
 **Where it stands (2026-10-18)**
-- Decided:
-  - 32 px per tile (DECISIONS 2026-10-18).
-  - Shadows C, the body's own shadow plus light on the body (DECISIONS 2026-10-18).
-  - The night goes darker.
+- Decided (all DECISIONS 2026-10-18):
+  - 32 px per tile.
+  - Shadows C, the body's own shadow plus light on the body.
+  - The night: darker than N3 out in the wild, with the town lit by its lights. The final level is the owner's call in the live game.
+  - Height as levels with rock faces (T2).
+  - All six depth cues of section 7.
 - Waiting for the owner:
-  - how dark the night is (`night-N1` to `N3`);
-  - height as rock faces or soft slopes (`terrain-T2` or `T3`);
-  - the final look of each new ground, as stills at the ground wave.
+  - the final look of each new ground, as stills at the ground wave;
+  - the walking rule between levels, through GAME_RULES section 6 when stage 3 opens.
 - When it lands:
   - Nothing in the game changes before the engine step (docs/team/NEXT.md section 15).
-  - Shadows and the night come with or after that step.
+  - The shadows, the night with the town's lights, and depth cues 1 to 5 come with or after that step, in one window of `game/src/scenes/world.ts`.
   - Grounds and height come with the open world's first ring ([OPEN_WORLD.md](OPEN_WORLD.md)).
 
 A section marked *proposal* is the art session's recommendation, not yet the owner's pick.
@@ -84,13 +85,22 @@ The engine draws the edges between grounds, so a new ground ships only its fill 
 
 Every number above is whole art pixels at one alpha, so the build is checked by stills at fixed hours against this table. Creators do nothing: every shadow comes from the sprite's alpha.
 
-## 5. The night
+## 5. The night (decided)
 
-- Darker than today (the owner, 18.10). Today the full night multiplies the screen by `#172a52` at 50%. The level, 50%, 68% or 85%, waits for the owner's pick.
-- A light cuts a hard pool in two steps: no tint inside, half the tint in a ring around it.
-- The player stays readable at every level, inside their own light (DECISIONS 2026-10-12).
+The owner, 18.10: "darker than N3; street lighting and the houses' light will light the town, but in nature it has to be scary and dark".
 
-## 6. Height (*proposal*; faces or slopes waits for the owner)
+- **One darkness over the whole screen**, deeper than N3. Today the full night multiplies the screen by `#172a52` at 50%, and N3 is 85%. The build starts at 92%, and the owner sets the final level in the live game.
+- **Every light cuts a pool** in that darkness, in two hard steps: no tint inside, half the tint in a ring around it.
+- **The town reads lit because it is full of lights:**
+  - street lamps (the `lantern_post` prop), enough that every walkable town tile is within 3 tiles of a light (on 18.10, 19 of the 175 are not);
+  - lit windows on the buildings the player uses: the shops and the stall.
+  - The three small houses stay dark while player houses are paused (DECISIONS 2026-10-10: houses paused, no dead props). Their windows light up when houses return.
+- **Out in the wild there is only:** the player's own light (DECISIONS 2026-10-12), a burning fire, and the wolf's eyes. The player's pool and the wolf's eyes keep today's size and brightness, so the dark is frightening and still readable.
+- **A building's lit windows** ship as a second image of the same size that holds only the window pixels in the fire ramp. The game draws it over the building from dusk to dawn, with a pool in front of it.
+
+## 6. Height (decided: T2; the walking rule waits for stage 3)
+
+The owner, 18.10: "T2 fits".
 
 - **The layer.** A height layer beside the ground layer: one digit, 0 to 9, per tile, written in the map as rows like the ground. Integers only.
 - **The face.** One level is 16 art px of face, half a tile. A thing standing on a level draws 16 px higher per level.
@@ -99,23 +109,26 @@ Every number above is whole art pixels at one alpha, so the build is checked by 
   - A light lip of 1 to 2 px runs along the top edge: white with drips under snow, `#84c450` under meadow, `#c6cad6` under rock.
   - A dark line of 2 px runs along the foot, and the face casts a shadow (section 4).
   - Where a top stands over a lower neighbour to the west or east, it gets a 1 px dark rim.
-- **T3, slopes:** the drop is drawn in the upper ground. The crest is one step lighter, the upper half one step darker and the lower half two. It casts half the shadow.
+- **Not picked, T3, slopes:** the drop drawn in the upper ground, two steps darker, with no face. It barely shows at phone size.
 - **Height limit:** one step shows at most 3 levels (48 px). Higher than that is a mountain band, which cannot be walked.
-- **Walking.** Between levels only by steps or a ramp, a tile flagged as one. Stepping off a face is refused, like a solid tile. That is a kernel rule, so it goes to the owner first ([GAME_RULES.md](GAME_RULES.md) section 6) before it is built.
+- **Walking** (*proposal*). Between levels only by steps or a ramp, a tile flagged as one. Stepping off a face is refused, like a solid tile. That is a kernel rule, so it goes to the owner first ([GAME_RULES.md](GAME_RULES.md) section 6) before it is built.
 - **Both clients.** The 3D client already lifts its ground with noise (`game/src/play3d/scenery.ts`, the corner heights). With a height layer, both clients read the same data.
 
-## 7. More depth, cheapest first (*proposal*)
+## 7. More depth, cheapest first (decided: all six)
+
+The owner, 18.10: "I want 1-6 too".
 
 | Cue | What it looks like | What it touches |
 |---|---|---|
-| Reflections | A thing standing by water shows in it, flipped, in `#275a99` at 35%. The reflection is cut at the shore and wobbles 1 px sideways as the water moves | the client |
-| Into the grass | In tall grass or shallow water, the bottom 8 to 12 px of a character are hidden behind blades or a waterline. Today's 72% fade (`dimInCover`) gives way to this, and the kernel's cover is unchanged | the client |
-| Cloud shadows | Large shapes of `#1b1a2e` at 12%, in whole pixels, drifting slowly over the ground by day | the client |
-| Footprints | In sand and snow, fading after 20 s | the client |
-| A shadow that stays down | When a body bobs or a dropped thing arcs, its shadow stays on the ground and grows as the thing lands | the client |
-| Height | Section 6 | the map, the kernel, both clients |
+| 1. Reflections | A thing standing by water shows in it, flipped, in `#275a99` at 35%. The reflection is cut at the shore and wobbles 1 px sideways as the water moves | the client |
+| 2. Into the grass | In tall grass or shallow water, the bottom 8 to 12 px of a character are hidden behind blades or a waterline. Today's 72% fade (`dimInCover`) gives way to this, and the kernel's cover is unchanged | the client |
+| 3. Cloud shadows | Large shapes of `#1b1a2e` at 12%, in whole pixels, drifting slowly over the ground by day | the client |
+| 4. Footprints | In sand and snow, fading after 20 s | the client |
+| 5. A shadow that stays down | When a body bobs or a dropped thing arcs, its shadow stays on the ground and grows as the thing lands | the client |
+| 6. Height | Section 6 | the map, the kernel, both clients |
 
-The first two give the most depth for the least work. Each gets one still before it is built, and once it is agreed its details are polish.
+- **When:** cues 1 to 5 are built with the night, in the same window, and judged in the live game. They need no stills of their own: they are details inside the light direction already picked, so they are polish. Footprints come in sand with them and in snow when snow arrives. Height comes with stage 3.
+- **Stealth:** "into the grass" keeps the signal today's fade gives, so a player in cover still shows as in cover. The proof is the covered bank road in `game/e2e/stealth.ts`, which passes unchanged in meaning. The variety stream, which built the stealth cues, hears of the change before it is built.
 
 ## 8. Users change the world
 
