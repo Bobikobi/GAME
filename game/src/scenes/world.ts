@@ -477,11 +477,10 @@ export class WorldScene extends Phaser.Scene {
       px(PALETTE.ink, 2, 2, 10, 5);
       px(PALETTE.ink, 3, 7, 8);
     });
-    make('fx-paw', 5, 5, () => {
-      px(PALETTE.wood, 0, 0);
-      px(PALETTE.wood, 2, 0);
-      px(PALETTE.wood, 4, 0);
-      px(PALETTE.wood, 1, 2, 3, 3);
+    make('fx-paw', 7, 6, () => {
+      for (const x of [0, 2, 4, 6]) px(PALETTE.ink, x, x === 0 || x === 6 ? 1 : 0, 1, 2);
+      px(PALETTE.ink, 2, 2, 3);
+      px(PALETTE.ink, 1, 3, 5, 3);
     });
     make('fx-wolf-eyes', 2 * size + gap, size, () => {
       px(red, 0, 0, size, size);
@@ -754,7 +753,7 @@ export class WorldScene extends Phaser.Scene {
             // a foot to each side of the path, the toes toward where the wolf was going
             const x = Math.round((paw.at[0] + 0.5) * T - hy * 3 * paw.side);
             const y = Math.round((paw.at[1] + 0.5) * T + hx * 3 * paw.side);
-            marks.push(this.add.image(x, y, 'fx-paw').setDepth(DEPTH.flat + 0.2).setAngle(hx === 0 ? (hy > 0 ? 180 : 0) : hx > 0 ? 90 : -90));
+            marks.push(this.add.image(x, y, 'fx-paw').setDepth(DEPTH.flat + 0.2).setAlpha(0.7).setAngle(hx === 0 ? (hy > 0 ? 180 : 0) : hx > 0 ? 90 : -90));
           }
         }
         this.hazards.push({ spr, kind: p.hazard.kind, rule, eyes, halo, flare, marks });
