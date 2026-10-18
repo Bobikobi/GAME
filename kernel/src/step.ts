@@ -382,6 +382,7 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   const r = b.resources[inst.source]!;
   checkAt(ctx, at, { x: inst.x, y: inst.y, w: 1, h: 1 });
   checkGrade(grade);
+  if (nodeLocked(b, s, r)) refuse('Something else catches the light first.');
   const node = s.nodes[nodeId] ?? { readyAt: 0, draws: 0 };
   if (ctx.tick < node.readyAt) refuse('It has not grown back yet.');
   if (r.hours && !inHours(hourOf(b, ctx.tick), r.hours)) {
@@ -787,6 +788,15 @@ function applyReward(ctx: Ctx, reward: Pick<QuestDef['reward'], 'items' | 'recip
 /** A quest that names a starter is offered to a character of that starter only. */
 export function offeredTo(q: { starter?: string }, s: State): boolean {
   return q.starter === undefined || q.starter === s.player.starter;
+}
+
+/**
+ * A node with `opens_after` waits for that quest, but only for a character the
+ * quest is offered to: another start strikes it as ever.
+ */
+export function nodeLocked(bundle: Bundle, state: State, node: { opens_after?: string }): boolean {
+  const q = node.opens_after === undefined ? undefined : bundle.quests[node.opens_after];
+  return q !== undefined && offeredTo(q, state) && state.player.quests[q.id] !== 'done';
 }
 
 /**

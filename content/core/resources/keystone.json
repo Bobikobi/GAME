@@ -26,6 +26,7 @@
     "sprite": "core/base-kit:props/rock_small",
     "level": 1,
     "game": "strike",
+    "opens_after": "core/glint-by-the-bridge",
     "place": {
       "slot": "core/keystone"
     }
