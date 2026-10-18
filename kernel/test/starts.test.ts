@@ -120,3 +120,36 @@ describe('a reward item', () => {
     expect(r.state.player.bag['core/walking-staff']).toBe(1);
   });
 });
+
+describe('the keystone waits for the glint (opens_after)', () => {
+  const key = (): string => spotOf('core/keystone');
+  function strike(s: State): StepResult {
+    const inst = b.instances[key()]!;
+    const at: Tile = bfsNear(b, s.player, s.player.at, { x: inst.x, y: inst.y, w: 1, h: 1 })!.at(-1)!;
+    return step(b, s, { t: 'gather', node: key(), grade: 3, at }, Math.max(s.tick, s.player.busyUntil));
+  }
+
+  test('the explorer is refused with one short line that changes nothing, until the glint is picked up', () => {
+    const s = started('core/explorer');
+    const refused = strike(s);
+    expect(refused).toEqual({ ok: false, error: 'Something else catches the light first.' });
+    expect(refused.ok ? 0 : refused.error.length).toBeLessThanOrEqual(80);
+    expect(s.player.busyUntil).toBe(0);
+    expect(s.player.bag['core/keystone']).toBeUndefined();
+
+    const picked = dig(s, spotOf('core/bridge-glint'));
+    if (!picked.ok) throw new Error(picked.error);
+    expect(picked.state.player.quests['core/glint-by-the-bridge']).toBe('done');
+    const after = strike(picked.state);
+    expect(after.ok).toBe(true);
+    expect(after.ok && after.state.player.bag['core/keystone']).toBe(1);
+  });
+
+  test('the forager and the digger strike it at once, as before', () => {
+    for (const starter of ['core/forager', 'core/digger']) {
+      const r = strike(started(starter));
+      expect(r.ok, starter).toBe(true);
+      expect(r.ok && r.state.player.bag['core/keystone'], starter).toBe(1);
+    }
+  });
+});
