@@ -65,6 +65,11 @@ describe('a fixture that breaks each rule', () => {
     j.starter!.kit = [{ item: 'core/trowel', qty: 1 }, { item: 'core/basket', qty: 1 }];
     (j.starter!.attributes as unknown as Record<string, number>).stamina = 3;
   });
+  // a pocket that shrinks when the first task is done
+  edit('starters/explorer.json', (j) => {
+    j.starter!.pocket = 9;
+    j.starter!.pocket_grown = 6;
+  });
   // a reward a kit repeats: Pell's herbs give a basket two kits hold, and the digger, whose kit holds Maru's trowel, gets a basket it holds too
   edit('quests/herbs-for-pell.json', (j) => {
     (j.quest!.reward as Record<string, unknown>).items = [{ item: 'core/basket', qty: 1 }];
@@ -128,6 +133,12 @@ describe('a fixture that breaks each rule', () => {
     const lines = text('is not a tile to stand on');
     expect(lines).toHaveLength(1);
     expect(lines[0]!.file).toContain('digger.json');
+  });
+
+  it('a pocket that is smaller once the first task is done', () => {
+    const lines = text('is smaller than the pocket (9)');
+    expect(lines).toHaveLength(1);
+    expect(lines[0]!.file).toContain('explorer.json');
   });
 
   it('a start worth more than one band over the poorest', () => {

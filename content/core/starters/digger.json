@@ -27,6 +27,8 @@
       "x": 9,
       "y": 23
     },
+    "pocket": 5,
+    "pocket_grown": 7,
     "intro": [
       "You wake south of the broken bridge at noon, a trowel in your hand.",
       "The bank slid in the night. Something hard lies in the turned earth.",

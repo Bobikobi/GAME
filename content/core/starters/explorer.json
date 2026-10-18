@@ -27,6 +27,8 @@
       "x": 7,
       "y": 6
     },
+    "pocket": 5,
+    "pocket_grown": 7,
     "intro": [
       "You wake on the high ground north of the river at noon, a staff in your hand.",
       "Your senses are sharp. Walk, and they lead you to what others pass by.",

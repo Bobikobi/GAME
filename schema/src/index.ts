@@ -673,6 +673,9 @@ export const RestoreBody = Type.Object(
     active_ms: Ms('Time the player is busy restoring it.'),
     passable: Type.Boolean({ description: 'Whether the restored thing can be walked over (a bridge).' }),
     sign: Type.Optional(Name),
+    mist: Type.Optional(
+      Int(1, 64, "Tiles around the place that the mist leaves clear once it is mended (B2, NEXT 16). Left out: the mend clears none. The kernel does not read it; the client draws it."),
+    ),
     done: Type.Optional(
       Type.Array(Text, {
         minItems: 1,
@@ -732,6 +735,12 @@ export const StarterBody = Type.Object(
         { x: Int(0, 1023), y: Int(0, 1023) },
         { additionalProperties: false, description: "The tile the character wakes on. Left out: the map's spawn." },
       ),
+    ),
+    pocket: Type.Optional(
+      Int(1, 32, "Tiles of the mist's clear pocket around the wake tile (B2, NEXT 16). Left out: 5. The kernel does not read it; the client draws it."),
+    ),
+    pocket_grown: Type.Optional(
+      Int(1, 32, "Tiles of that pocket once the character's first task is done. Left out: 7. Never less than `pocket`."),
     ),
     intro: Type.Optional(
       Type.Array(Text, {
