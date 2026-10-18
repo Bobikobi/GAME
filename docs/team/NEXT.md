@@ -210,7 +210,8 @@ e) One game, two doors (owner, 18.10): every rule and every development decided 
 - The night (STYLE 5): darker than N3 out in the wild, the town lit by its own lights.
 - Height (STYLE 6, T2): the same levels and rock faces from the same data, when stage 3 brings them.
 - The six depth cues (STYLE 7): reflections in water, sinking into grass (the cover signal kept), cloud shadows, footprints, a shadow that stays on the ground, height; and the wind as the plants' sway.
-- Measurable: each item shows in a 390x844 capture of `/play3d/` beside the same place in the classic game, and the proportions are measured in world units, not by eye. A rule that will not carry across, or costs too much for a phone, goes to the owner through the manager with options; it is never dropped quietly.
+- Measurable: each item shows in a 390x844 capture of `/play3d/` beside the same place in the classic game, and the proportions are measured in world units, not by eye. A rule that will not carry across goes to the owner through the manager with options; it is never dropped quietly.
+- The 3D game need not run on a phone (owner, 18.10): the phone is the pixel game's. Where a phone's limits (memory, triangles, frame rate) block a rule or a model, the 3D game gives up the phone, not the rule, and is measured at 1440x900 only; say so in the pull request.
 
 ## 9. The maze peek and the hint ladder
 
