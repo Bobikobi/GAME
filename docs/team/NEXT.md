@@ -204,7 +204,7 @@ d) Spend and download (owner, 18.10: more credits may not come, so none is left 
 - Not without the owner's yes: posting a draft to the Meshy community (+50, it publishes the draft), connecting a Discord account (+100), a paid month.
 - Log each day's credits earned and spent per account in `docs/3d/meshy-notes.md`.
 
-e) One game, two doors (owner, 18.10): every rule and every development decided for the game holds in `/play3d/` too, in 3D's own means; only what is truly 2D (pixels, a sprite sheet) has no twin. First on the list, after the cast of (c) and (d):
+e) One game, two doors (owner, 18.10): every rule and every development decided for the game holds in `/play3d/` too, in 3D's own means; only what is truly 2D (pixels, a sprite sheet) has no twin. The pixel game gets the effort first and the 3D game follows: a twin is built after its original lands in the classic game, and never takes a builder from the pixel game's work. First on the list, after the cast of (c) and (d):
 - The proportions of STYLE.md section 1b, measured in world units against a character's height: a grown tree at least 3, a small house 3, a street lamp 2, a bush half. The six role models set the height of 1.
 - Light and shadow (STYLE 4, C): the sun's shadows exist; add the body's own shade and the light on it.
 - The night (STYLE 5): darker than N3 out in the wild, the town lit by its own lights.
