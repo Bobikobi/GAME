@@ -1692,6 +1692,7 @@ The 18.10 style decisions (proportions, shadows C, the darker night, height T2, 
 How: AGENTS.md (a line for every builder), STYLE.md (the standard holds for both doors), NEXT 8 e (the first list to carry across after the cast, measured in world units and in 390x844 captures beside the classic game).
 The owner added: the 3D game need not run on a phone if the phone brings too many blocks. The phone is the pixel game's, and a phone limit that blocks a rule makes the 3D game desktop-only, not the rule smaller.
 **Retry when:** the 3D game is wanted on phones after all. Then each phone limit goes to the owner with options. Model: claude-opus-5-5.
+
 ## 2026-10-18 ✅ Search the Meshy community before generating, and keep finds for later needs
 
 The 3D plan (NEXT 8) spent credits on everything the gap lacks, and never looked at the models other users have already made on Meshy. The owner, 18.10: search their work before making anything; he had seen a horse there, which the game will surely need later.
