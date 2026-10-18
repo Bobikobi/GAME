@@ -1642,6 +1642,7 @@ How: NEXT 17, a stream of its own (`opening-logic`). G10 takes the proposal of #
 **Retry when:** the explorer's timed run still takes the keystone first, or a playtest reads the keystone's refusal as a wall. Model: claude-opus-5-5.
 
 ## 2026-10-18 ✅ The tending vigil runs as a state test too, with nothing moved out of the scenes
+
 The second port of e2e checks to state tests (DECISIONS 2026-10-18 "The stealth beat runs as a state test"). `game/test/tending-flow.test.ts` plays both passes of `game/e2e/tending.ts` on the real map with no browser: the vigil from before dusk to dawn handed in for the bandage recipe (the cap of three logs, the running-low box once per burn, the journal's count of logs and when the next fits, a top-up that is not a new burn), and a second character whose fire survives a reload and then goes out, so the vigil stays unmet.
 - Unlike the stealth port, no logic had to leave a scene: the journal line, the warning and the toast lines are already pure in `fires.ts` and `text.ts`. The test sends the Feed press the way `ui.feed` does and runs the HUD's warning check (`fireWarning` with a warned set) each beat.
 - It does not cover: the dialogue boxes (the quest is accepted and handed in by its kernel action), the Feed button on screen and the flame sprite's alpha (`fireLook`, the one assertion that reads a sprite), and the toasts' timing.
