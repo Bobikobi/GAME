@@ -2562,7 +2562,7 @@ export class WorldScene extends Phaser.Scene {
       };
     }
     const lines: string[] = [];
-    const stone = content.kind === 'restore' && p ? stoneView(content.id, p.restored, p.name) : undefined;
+    const stone = content.kind === 'restore' && p ? stoneView(b.restores[content.id], p.restored, p.name) : undefined;
     if (content.kind === 'restore' && p?.restored.includes(content.id) && !stone) lines.push(`Mended by ${p.name}.`);
     const profile = b.creators[content.creator];
     const entry = b.board[content.creator];

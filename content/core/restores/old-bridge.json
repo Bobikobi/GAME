@@ -21,6 +21,11 @@
     "passable": true,
     "sign": "Bridge",
     "mist": 14,
+    "stone": {
+      "names": ["Odile", "Bram", "Sunniva", "Hale", "Ketil", "Ivo"],
+      "default_name": "Wanderer",
+      "purse": ["Thirty gold hang below the names, a tool's price.", "Take them."]
+    },
     "done": [
       "The bridge holds. A stone stands beside it, cut with six names."
     ]
