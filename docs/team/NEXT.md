@@ -465,7 +465,7 @@ h) **Provisioning and cutover** (docs plus the owner's gates; the builder prepar
    5. The OAuth apps' redirect addresses and the mail sender.
    6. The cutover: a build whose client points at the new host, behind a flag, tried by the owner on the preview first.
 
-- Before every proving run (AGENTS.md): grep the tests for every string the change renamed, fix them in one pass, then the single test file, then `pnpm verify`, then `pnpm e2e` last, all under `~/.claude/tools/heavy.sh`.
+- Before every proving run (AGENTS.md): grep the tests for every string the change renamed, fix them in one pass, then the single test file, then `pnpm verify`, and push: CI runs the opening e2e. A local e2e only to debug a red run, under `~/.claude/tools/heavy.sh`.
 - Measurable at the end:
   - Replaying any account's action log from its start state reproduces the stored state byte for byte, for the three starters' scripted runs.
   - Every forged request in a's table is refused and leaves the state row unchanged.
@@ -509,7 +509,7 @@ g) **The checks** (`feat/ring-checks`, in `tools/`; each prints a `!` line and f
 h) **Creators and the first ring's seed** (`feat/ring-creators`). The creator guide (`docs/creators/README.md`) gains the ground: how a creator edits a chunk file or adds a stamp by pull request in the ring and later regions, under their handle prefix; the creators board and the guide are regenerated, never edited by hand; the opening stays out of reach (a check refuses a creator's change inside the valley's reserved area). One worked example in `docs/creators/`.
 i) **The look pass** (`feat/ring-look`, polish inside the agreed direction, no asking): the ground waves of section 15 on the new grounds, the rock faces' lips and foot lines (STYLE section 6), the smoke, and the path rule applied to the authored paths.
 
-- Before every proving run (AGENTS.md): grep the tests for every string the change renamed, fix them in one pass, then the single test file, then `pnpm check`, then `pnpm verify`, then `pnpm e2e` last, all under `~/.claude/tools/heavy.sh`.
+- Before every proving run (AGENTS.md): grep the tests for every string the change renamed, fix them in one pass, then the single test file, then `pnpm check`, then `pnpm verify`, and push: CI runs the opening e2e. A local e2e only to debug a red run, under `~/.claude/tools/heavy.sh`.
 - Measurable at the end:
   - The same world seed gives byte-identical chunk files on two machines and in two orders of generation.
   - From the wake tile the walk to the first bridge takes the steps the re-anchored lock says; from the first bridge the view shows no tile of the other two starters' areas, and the nearest of them is at least twice today's distance (as `starts.ts` measures it).
