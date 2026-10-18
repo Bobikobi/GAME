@@ -238,6 +238,7 @@ Sprites live in a kit: `content/kit/<your-handle>/kit.json` plus PNG files next 
 - Items and tiles are 16x16, character frames 16x24, props up to 64x64.
 - Character work poses are 32x32 with two frames: tool raised, then tool down.
 - Only the 32 colors of the core palette, and every pixel fully clear or fully solid.
+- How the world looks (grounds, light and shadow, height) and the move to 32 px per tile: [docs/design/STYLE.md](../design/STYLE.md). Never draw a shadow into a sprite; the game casts it.
 - AI images are welcome. Run any image through the importer and it snaps to the grid and the palette: `pnpm kit:import my-plum.png content/kit/<your-handle>/items/plum.png 16 16`.
 - Frames, sheets and a prompt-to-sprite path: the `um` tool of universal-modder (free sprite commands; the drawing recipes on your own fal.ai key). The recipe and its limits: [docs/design/ASSET_PATH.md](../design/ASSET_PATH.md) section 2. List it in `ai_tools` like any other tool.
 

@@ -53,8 +53,8 @@
     {
       "id": "art-32",
       "title": "The art at 32 px per tile: the generation pipeline, the engine step, the redraw waves",
-      "plan": ["DECISIONS 2026-10-18 the art moves to 32 px per tile", "docs/design/ASSET_PATH.md"],
-      "branches": ["docs/art-32", "feat/kit-gen", "docs/next-art-32"],
+      "plan": ["DECISIONS 2026-10-18 the art moves to 32 px per tile, shadows C", "docs/design/ASSET_PATH.md", "docs/design/STYLE.md"],
+      "branches": ["docs/art-32", "feat/kit-gen", "docs/next-art-32", "docs/style-spec"],
       "owner": "the art session"
     }
   ]
