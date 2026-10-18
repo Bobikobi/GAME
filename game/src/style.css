@@ -1844,6 +1844,29 @@ body {
   border: 2px dashed var(--green);
 }
 
+.stone {
+  margin: 0;
+  padding: 8px 10px;
+  list-style: none;
+  text-align: center;
+  color: var(--ink);
+  background: var(--sky);
+  border: 2px solid var(--ink);
+}
+
+.stone li {
+  padding: 2px 0;
+}
+
+.stone .carved {
+  color: var(--green);
+  border-top: 2px dashed var(--green);
+}
+
+.stone .blank {
+  border-top: 2px dashed var(--ink);
+}
+
 @media (max-width: 420px) {
   /* "Health" is two letters longer than "Food" was: the bar gives them up, so the number stays in view */
   .meter-bar {

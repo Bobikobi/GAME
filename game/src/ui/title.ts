@@ -67,7 +67,7 @@ export function showTitle(ui: UI): Promise<void> {
       const starters = Object.entries(b.starters).sort(([x], [y]) => x.localeCompare(y));
       let picked = starters[0]?.[0] ?? '';
       let look = 0;
-      const nameInput = h('input', { class: 'name', maxlength: 16, placeholder: 'Your name', autocomplete: 'off', spellcheck: 'false' });
+      const nameInput = h('input', { class: 'name', maxlength: 16, placeholder: 'Your name (or carve it later)', autocomplete: 'off', spellcheck: 'false' });
       const error = h('p', { class: 'error' });
       const cards = h('div', { class: 'cards' });
       const lookToggle = h('div', { class: 'tabs look-toggle' });
@@ -103,7 +103,8 @@ export function showTitle(ui: UI): Promise<void> {
       drawCards();
       const start = () => {
         const name = nameInput.value.trim();
-        if (!/^[A-Za-z0-9 _-]{1,16}$/.test(name)) {
+        // a blank name is allowed: it is carved at the bridge's stone
+        if (name !== '' && !/^[A-Za-z0-9 _-]{1,16}$/.test(name)) {
           error.textContent = 'A name is 1 to 16 letters, digits, spaces, "_" or "-".';
           nameInput.focus();
           return;
