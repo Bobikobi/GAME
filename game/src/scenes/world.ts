@@ -40,7 +40,7 @@ import { app } from '../app';
 import { sound, type SfxId, type SongId } from '../audio';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T } from '../config';
 import { type Clear, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../mist';
-import { FOG_FEATHER, FOG_TILE, fogPixels } from '../fog';
+import { FOG_ATLAS, FOG_ATLAS_W, FOG_FEATHER, FOG_OFFSETS, FOG_TILE, fogPixels } from '../fog';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { TOO_DARK, feedTooLate, fireLow, fireName, readable, woodToFeed } from '../fires';
@@ -964,41 +964,61 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /**
-   * One slot's fog, baked once: the fog tile (shifted by `offset`) over the slot and FOG_FEATHER px past it,
-   * cut to a rounded shape whose edge thins out through a 4x4 ordered dither, the way the night hole's edge
-   * steps. Returns the texture key, or nothing when the kit has no fog tile.
+   * The fog of every empty slot, baked once into one texture (so the fog draws in one batch, not one per
+   * slot): for each slot and each of its two layers, the fog tile (shifted by `offset`) over the slot and
+   * FOG_FEATHER px past it, cut to a rounded shape whose edge thins out through a 4x4 ordered dither, the
+   * way the night hole's edge steps. A frame of the texture is named `<slot id>:<offset>`. False when the
+   * kit has no fog tile.
    */
-  private fogPatch(s: Slot, offset: number): string | undefined {
-    const key = `fx-slotfog:${s.id}:${offset}`;
-    if (this.textures.exists(key)) return key;
-    if (!this.textures.exists(FOG_SPRITE)) return undefined;
+  private bakeFog(): boolean {
+    if (this.textures.exists(FOG_ATLAS)) return true;
+    if (!this.textures.exists(FOG_SPRITE)) return false;
     const src = this.textures.get(FOG_SPRITE).getSourceImage() as CanvasImageSource;
     const tile = document.createElement('canvas');
     tile.width = tile.height = FOG_TILE;
     const tc = tile.getContext('2d');
-    if (!tc) return undefined;
+    if (!tc) return false;
     tc.drawImage(src, 0, 0, FOG_TILE, FOG_TILE);
     const px = tc.getImageData(0, 0, FOG_TILE, FOG_TILE).data;
-    const w = s.w * T + 2 * FOG_FEATHER;
-    const h = s.h * T + 2 * FOG_FEATHER;
-    const tex = this.textures.createCanvas(key, w, h);
-    if (!tex) return undefined;
+    // shelf-pack the patches, a row at a time
+    const patches: { name: string; x: number; y: number; w: number; h: number; data: Uint8ClampedArray<ArrayBuffer> }[] = [];
+    let x = 0;
+    let y = 0;
+    let rowH = 0;
+    for (const s of this.empty) {
+      for (const offset of FOG_OFFSETS) {
+        const w = s.w * T + 2 * FOG_FEATHER;
+        const h = s.h * T + 2 * FOG_FEATHER;
+        if (x + w > FOG_ATLAS_W) {
+          x = 0;
+          y += rowH;
+          rowH = 0;
+        }
+        patches.push({ name: `${s.id}:${offset}`, x, y, w, h, data: fogPixels(px, s.w * T, s.h * T, offset) });
+        x += w;
+        rowH = Math.max(rowH, h);
+      }
+    }
+    const tex = this.textures.createCanvas(FOG_ATLAS, FOG_ATLAS_W, Math.max(1, y + rowH));
+    if (!tex) return false;
     const ctx = tex.getContext();
-    const out = new ImageData(fogPixels(px, s.w * T, s.h * T, offset), w, h);
-    ctx.putImageData(out, 0, 0);
+    for (const q of patches) {
+      ctx.putImageData(new ImageData(q.data, q.w, q.h), q.x, q.y);
+      tex.add(q.name, 0, q.x, q.y, q.w, q.h);
+    }
     tex.refresh();
-    return key;
+    return true;
   }
 
   private buildFog(): void {
     this.empty = emptySlots(this.b);
+    const baked = this.bakeFog();
     for (const s of this.empty) {
       // two thin layers swaying against each other read as mist, not as clouds; each is baked with a soft,
       // dithered edge, so a slot's fog is a patch of mist and not a rectangle of the tile
-      for (const [alpha, offset] of [[0.55, 0], [0.45, 16]] as const) {
-        const key = this.fogPatch(s, offset);
-        if (!key) continue;
-        const fog = this.add.image(s.x * T - FOG_FEATHER, s.y * T - FOG_FEATHER, key).setOrigin(0).setDepth(DEPTH.fog).setAlpha(alpha);
+      for (const [alpha, offset] of [[0.55, FOG_OFFSETS[0]], [0.45, FOG_OFFSETS[1]]] as const) {
+        if (!baked) continue;
+        const fog = this.add.image(s.x * T - FOG_FEATHER, s.y * T - FOG_FEATHER, FOG_ATLAS, `${s.id}:${offset}`).setOrigin(0).setDepth(DEPTH.fog).setAlpha(alpha);
         fog.setData('home', fog.x);
         this.fogs.push(fog);
         if (RICH.light) {
@@ -1427,7 +1447,14 @@ export class WorldScene extends Phaser.Scene {
   // ------------------------------------------------------------ frame loop
 
   override update(time: number, delta: number): void {
-    this.fogs.forEach((fog, i) => (fog.x = (fog.getData('home') as number) + Math.sin(time * 0.0004 + i) * (i % 2 === 0 ? 3 : -3)));
+    // a slot's fog sways only while it is in view: off screen it is neither moved nor drawn
+    const view = this.cameras.main.worldView;
+    this.fogs.forEach((fog, i) => {
+      const home = fog.getData('home') as number;
+      const seen = home + fog.width + 3 > view.x && home - 3 < view.right && fog.y + fog.height > view.y && fog.y < view.bottom;
+      fog.setVisible(seen);
+      if (seen) fog.x = home + Math.sin(time * 0.0004 + i) * (i % 2 === 0 ? 3 : -3);
+    });
     this.animate(time, delta);
     this.placePinned();
     const s = this.session;

@@ -6,6 +6,10 @@
 
 /** How far a slot's fog reaches past the slot, and how far inside its edge it starts to thin, in px. */
 export const FOG_FEATHER = 8;
+/** The texture the scene bakes every slot's fog into, its width in px, and the shifts of a slot's two layers. */
+export const FOG_ATLAS = 'fx-slotfog';
+export const FOG_ATLAS_W = 2048;
+export const FOG_OFFSETS = [0, 16] as const;
 /** The fog tile's side in px. */
 export const FOG_TILE = 32;
 
