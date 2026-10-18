@@ -47,14 +47,14 @@
       "id": "parallel-3d",
       "title": "The 3D version, a parallel version behind its own button on the same data",
       "plan": ["DECISIONS 2026-10-10 owner's answers of the afternoon, item 9"],
-      "branches": ["trial/3d", "docs/meshy-log-2026-10-13-dev"],
-      "owner": null
+      "branches": ["trial/3d", "docs/meshy-log-2026-10-13-dev", "docs/next-3d-credits", "docs/3d-gap"],
+      "owner": "the 3D session"
     },
     {
       "id": "art",
       "title": "The art at 64 px per tile: the generation pipeline, the engine step, the redraw waves with proportions",
       "plan": ["DECISIONS 2026-10-18 the art moves to 64 px per tile, shadows C, the night, height T2, the six depth cues", "docs/team/NEXT.md section 15", "docs/design/ASSET_PATH.md", "docs/design/STYLE.md"],
-      "branches": ["docs/art-32", "feat/kit-gen", "docs/next-art-32", "docs/style-spec", "docs/night-height-picks", "feat/kit-gen-grid", "docs/art-64", "feat/kit-scatter", "docs/art-redraw-plan", "feat/art-density"],
+      "branches": ["docs/art-32", "feat/kit-gen", "docs/next-art-32", "docs/style-spec", "docs/night-height-picks", "feat/kit-gen-grid", "docs/art-64", "feat/kit-scatter", "docs/art-redraw-plan", "feat/art-density", "docs/wheel-zoom", "feat/wheel-zoom"],
       "owner": "the art session"
     },
     {
@@ -68,7 +68,7 @@
       "id": "state-tests",
       "title": "A text view of the state, and e2e checks moved to state tests, starting with stealth",
       "plan": ["DECISIONS 2026-10-18 a character-grid look is kept for later", "docs/design/ASCII.md section 4"],
-      "branches": ["docs/ascii-idea", "test/stealth-state", "test/stealth-e2e-route"],
+      "branches": ["docs/ascii-idea", "test/stealth-state", "test/stealth-e2e-route", "test/tending-state"],
       "owner": "the state-tests session"
     },
     {

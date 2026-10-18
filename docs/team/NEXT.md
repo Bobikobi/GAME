@@ -6,12 +6,12 @@ Written 2026-10-11 when the first round of sessions closed. Each section is the 
 
 - Branch off `origin/develop`, worktree under `<repo>.worktrees/<branch-with-dashes>`, one pull request into `develop` per item. Never stack on another branch.
 - No integration session runs now. Each session lands its own pull request: squash merge into `develop` after local proof, and the owner approves the merge at the permission prompt. Nothing goes to `main`; a release is the owner's call.
-- GitHub Actions is out of minutes until the monthly reset (November 1). Red CI that never started is expected; the proof is local and is written in the pull request body: `pnpm verify` exit 0, plus `pnpm e2e` exit 0 when `game/` changed.
-- One e2e on the machine at a time: `flock /tmp/game-e2e.lock pnpm e2e > <file> 2>&1`. Two at once starve the machine and time out.
+- CI proves a pull request: `pnpm verify` and the opening e2e on a phone and a desktop screen, with one retry, on every pull request into `develop` or `main` (the repository is public, so Actions costs nothing), and the landing waits for it green. The local proof before a push is `pnpm verify` exit 0, written in the pull request body; "`pnpm e2e` green" in a measurable means green in CI (owner's manager, 18.10).
+- An e2e runs on the machine only to debug a red CI run or a new e2e file, the single file and one at a time: `flock /tmp/game-e2e.lock pnpm e2e > <file> 2>&1`. Two at once starve the machine and time out.
 - Saving tokens:
   - Long output (verify, e2e, logs, `gh run view`) goes to a file, and only the tail or the failure lines are shown.
   - Read files by range or by grep.
-  - Run the single test file first, `pnpm verify` once before the push, and e2e last, only before ready.
+  - Run the single test file first and `pnpm verify` once before the push; the e2e runs in CI.
   - Codex is the default worker and the session is the escalation (owner, 11.10; skill `gpt-consult`). A task goes to Codex unless it needs judgment, needs context only the session holds, or has no command that proves it: `codex exec --sandbox workspace-write -c sandbox_workspace_write.network_access=true "<goal> <files> <proof command>"` in the worktree, the session leaves those files alone meanwhile and re-runs the proof itself. Typical: test-expectation sweeps, tests from a spec, regenerating, e2e expectation updates, rebases onto `develop`.
   - Before ready, a bug-only review of the diff from Codex (`codex exec --sandbox read-only --skip-git-repo-check "..." < /dev/null`) and Gemini (`ask-agy`; an empty answer is a blocked tool, not a reply), each claim checked against the build. Web lookups go to `ask-agy`.
   - The pull request body names what went to Codex or Gemini and how many corrections it needed.
@@ -184,20 +184,25 @@ A docs pull request: chapter 1 approved, and how the three starters differ in it
 
 ## 8. The 3D door at /play3d/
 
-Read DECISIONS 2026-10-11 "The 3D version is a second door" and, on `trial/3d` (#24), `docs/3d/meshy-notes.md` and `game/public/3d/models/README.md`. The 3D game moves at its own pace and never holds the classic game back.
+Read DECISIONS 2026-10-11 "The 3D version is a second door" and "The 3D door lands", 2026-10-18 "The Meshy credits are spent, not saved", `docs/3d/meshy-notes.md` (plans, costs, the credits log), `docs/3d/style-compass.md` and `game/public3d/models/README.md`. The 3D game moves at its own pace and never holds the classic game back.
 
-a) Land the door, branch `feat/play3d` off `develop`:
-- Bring the valley and the cell scene from `trial/3d` (125 commits behind `develop` on 11.10) onto a fresh branch; take generated files from `develop` and regenerate them.
-- The web build serves the 3D game at `/play3d/`; the 3D build step is optional, and when it fails the classic game still ships.
-- The 3D game runs the same kernel and content bundle and reads and writes the same save key and format as `/play/`: walk, the opening's quests, gather, save.
-- Measurable: a character made at `/play/` loads at `/play3d/` and back; `/play3d/` loads at 390x844 and 1440x900 (captures with headless Chrome on its own port, closed by PID); the home button shows only when `/play3d/` is built; `pnpm verify` and `pnpm e2e` green.
+a) Landed 11.10: `/play3d/` runs the classic game's kernel, bundle and save under a three.js world. `game/src/play3d/art.ts` names the model for a sprite or a person; anything without an entry is drawn as the bundle's flat picture, or as a Kenney mini character for a person.
 
-b) The rest of the cast, after (a): Elder Maru, Pell and the cook.
-- Meshy drafts on the four trial accounts (Chrome profiles on ports 9341-9343 and 9333; the daily check-in already claims the bonus credits). Use credits only on drafts; download nothing before the owner picks.
-- A look is a direction: two or three phone-size stills per character to the owner, opened in his browser, never an artifact link. The pick goes into DECISIONS with its frame.
-- Then download the pick once, rig and reduce it in the local Blender pipeline, as the six role models were.
+b) First the gap and the budget, before any credit is spent (owner, 18.10):
+- The gap: everything the valley shows without a model of its own, read from the bundle, `art.ts` and `scenery.ts`: the people (Maru and the trader stand in as Kenney minis; Pell, the cook and the others have nothing), the nodes and props drawn flat, camps, mended places, buildings, the ruins. One table in `docs/3d/gap.md`: the thing, where a player meets it, how it is drawn now, the route (a person from the cast sheet's text, a prop from its sprite), its credits and its one download.
+- The budget, read in the app on each of the four accounts: credits now; how many are the month's own (they reset on the 1st with no rollover, and burn first); the check-in credits and when they expire (about a month after they were earned); downloads left this month. Add the next month: 100 per account on the 1st, and a new check-in cycle if Meshy opens one.
+- When the gap is larger than the budget (it will be), the owner chooses: two or three options, each with what it leaves undone, and the session's recommendation, in one message. Nothing is generated before his answer.
 
-c) A daily routine while this stream runs (owner, 11.10), before section 9: each day, on all four Meshy accounts, do the site's daily tasks that earn credits (the check-in timer only loads the workspace), and spend what they ask for on work the game needs: the cast drafts of (b) first, then props the 3D valley lacks. Log credits earned and spent per account in `docs/3d/meshy-notes.md`.
+c) The looks are a direction. Before a cast is generated in a look, phone-size stills of the drafts of 13.10 (Elder Maru, Pell, the cook as a man and as a woman, the market stall, the old well; which account holds which is in the credits log) go to the owner, opened in his browser, never an artifact link. The pick goes into DECISIONS with its frame, and the rest of the cast follows it without asking again.
+
+d) Spend and download (owner, 18.10: more credits may not come, so none is left to expire):
+- Each day on all four accounts (Chrome profiles on ports 9341-9343 and 9333): first the site's tasks that earn credits, the check-in and any task that neither publishes nor connects an account; then spend, the credits that expire soonest first, in the order the owner picked in (b).
+- Generate on Meshy 6 Lite only, the one model a Free account may download; a textured draft is 20 credits, rigging is free.
+- Download only what the owner picked, once per model, with every clip added first. Downloads are capped per account per month (10, one more on check-in day 5): what does not fit this month waits for the next, since a generated model stays in its account.
+- Then rig and reduce it in the local Blender pipeline (`game/tools/blender/`), add its attribution line to the models README (CC BY 4.0, generated with Meshy), name it in `art.ts`; one pull request per batch.
+- Measurable for each batch: every new model loads at `/play3d/` at 390x844 and 1440x900 (captures with headless Chrome on its own port, closed by PID); a person is at most 50,000 triangles with 1024 px maps, as the six role models; `pnpm verify` and `pnpm e2e` green.
+- Not without the owner's yes: posting a draft to the Meshy community (+50, it publishes the draft), connecting a Discord account (+100), a paid month.
+- Log each day's credits earned and spent per account in `docs/3d/meshy-notes.md`.
 
 ## 9. The maze peek and the hint ladder
 
@@ -332,6 +337,7 @@ The camera's rule: k = max(1, floor(S / (9 x 64))), where S is the canvas's shor
    - One helper makes every kit image and sprite the scenes create (31 `add.image` and `add.sprite` in `game/src/scenes/world.ts`, 3 in `game/src/senses.ts`, 1 in `game/src/scenes/peek.ts`) and gives it the base scale `1 / density`. The scale writes (8 in `world.ts`, 1 in `senses.ts`: `setScale` and scale tweens) become relative to that base, so a sway or a squash never quadruples a density-4 sprite. Mirroring by `flipX` stays.
    - The camera (`fit()`, `world.ts:2444`, today `Math.max(2, Math.min(6, Math.floor(Math.min(w / (15 * T), h / (10 * T)))))` in CSS pixels) sets the zoom to 4k by the rule above, on the device-pixel canvas. The peek's fitted zoom (`scenes/peek.ts`) stays fractional, an overview as today.
    - The hook's close stop on the stone (section 16 e, built at zoom 3 where the world was at 2) is settled here: it holds k' = max(k + 1, round(1.5 k)), so 3 on a 2K phone, and the stone's art stays whole.
+   - The mouse wheel (GRUNT CR-109) is not in this pull request. It lands right after it as `feat/wheel-zoom`: whole steps from the default k up to k + 2 and back, never out past the default.
    - The baked ground (`world.ts:598`, `createCanvas('ground-' + frame, m.width * T, m.height * T)`, two frames or more): while every ground tile is at density 1 it bakes as today. Once one is at density 4 the ground bakes at 4x, a density-1 tile drawn at 4x with smoothing off and a density-4 tile at 1x, and shows at a quarter scale. The 48x49 valley is then 3072x3136 per frame, about 38 MB each, so the bake goes per chunk of 16x16 tiles (1024x1024): only the chunks in view and one ring around them are kept, built as the camera moves. The open world's generated ground needs the same chunks.
    - `game/src/richground.ts` (`remapTone(data, width, tone, frameWidth)`) works per art pixel; a test runs it on a 64-wide frame. The scatter of ground motifs (STYLE.md section 3) is not in this step; it comes with the ground wave.
 5. **Docs, at this step and not before:** `docs/creators/README.md:238` (both grids: a new sprite is drawn at 64 with `density: 4`, and 16 is still accepted), `docs/design/ASSET_PATH.md:14`, `docs/team/INTRO_HE.md:101`, `docs/team/SEO_GEO.md:50` and the schema's descriptions; grep `docs/`, `templates/` and `web/` for `16x16`, `16x24` and `32x32` once more before the push.
@@ -398,6 +404,15 @@ f) **The waking lines and one box** (`feat/hook-waking`). One box of two lines p
 - Before every proving run (AGENTS.md): grep the tests for every string the change renamed, fix them in one pass, then the single test file, then `pnpm verify`, then `pnpm e2e` last, under heavy.sh.
 - Measurable at the end of f): criteria 1 to 10 of OPENING_REVIEW section 5, each by a test or a capture; in the timed run of each starter no stretch passes 90 s of play clock between the wake and the threshold, the wait before the dark included (criterion 8).
 - For the owner on a real phone, from the release preview: the mist's shade and density, the dither's shimmer while walking, the bell's loudness, whether the smoke reads as a compass, and a human playthrough's timing (OPENING_REVIEW section 8).
+
+Notes for e and f from the session that built c and d (18.10; line numbers as of #172, grep before trusting them):
+- "Mended by" lives in: `game/src/ui/panels.ts:815` (the sign panel's `sign-mended` line, fed by `mendedBy` in `world.ts` near 2477 and 2498); `world.ts` near 2498 and `game/src/play3d/world3d.ts` near 1283 push `Mended by ${p.name}.` into the sign lines; `content/core/restores/old-bridge.json` lines 25-26 (the `done` text, the purse line being the one that moves to the stone); `game/e2e/opening.ts:693` asserts `Mended by Tess` and `game/test/text.test.ts:179` pushes a `Mended by Test` journal line. `game/e2e/opening.ts:617` counts the clicks for advances: that is f, not e.
+- The mend's moment is `celebrate()` in `world.ts`, on the `restore` event. The far bell is queued there (`farBellDue`, `FAR_BELL.delayMs` 1500); the carve comes after the bell and the clearing, not before.
+- The kernel applies a mend when its 4 s of work start, so the mist clears about 2 s in, before the `restore` event: anything that follows the mend keys on the event, not on the save. The clearing is around the slot's middle tile; the pure helpers are `game/src/hookbridge.ts`, tested in `game/test/hookbridge.test.ts`.
+- A new worktree needs `pnpm install --frozen-lockfile` and `pnpm bundle` before `pnpm typecheck` (`game/src/generated/bundle.json` is missing until then).
+- The forager has no `wake` in its JSON: tests use `starter.wake ?? b.map.spawn`.
+- The e2e lock had seven sessions queued on 18.10 (about 50 minutes to a turn): start it early, in the background; `fuser -v /tmp/game-e2e.lock` shows the queue.
+- Keep the Codex review: it found a real defect in both c and d.
 
 ## 17. The opening's quest logic: the gaps of the review that are not the hook
 

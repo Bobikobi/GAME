@@ -1,0 +1,26 @@
+{
+  "note": "The ground at 64 px per tile by the motif-scatter route (DECISIONS 2026-10-18, the retry of the text-grid route): Codex draws only the small motifs of docs/design/STYLE.md section 3 as grids, and tools/src/kit/scatter.ts scatters them by a seeded hash across tile edges and bakes the variants as wrapping tiles. One motif at a time: pnpm kit:gen tools/kit-gen/ground-64.json --only meadow_tuft; the whole ground: --only meadow; bake again with no Codex call: --only meadow --reimport. Output in .scratch/kit-gen/ground-64/, nothing goes into content/.",
+  "entries": [
+    {
+      "name": "meadow", "ref": "tiles/grass", "kind": "tile", "route": "scatter", "width": 64, "height": 64, "what": "meadow grass ground",
+      "base": "c", "variants": 4, "cell": 16, "chance": 0.85,
+      "speckles": [{ "letter": "b", "per_tile": 30 }, { "letter": "e", "per_tile": 12 }],
+      "motifs": [
+        { "name": "tuft", "weight": 6, "width": 9, "height": 11, "what": "a tuft of grass", "detail": "3 to 5 blades 6 to 11 pixels tall, leaning a little different ways, in the two lighter greens #84c450 and #c8e88a, over a darker root of #2e6b3b at the bottom" },
+        { "name": "clover", "weight": 2, "width": 7, "height": 6, "what": "a small clover of three round leaves", "detail": "leaves of #84c450 with a lit top of #c8e88a and a dark #1f3d2b pixel between them" },
+        { "name": "leaf", "weight": 1, "width": 6, "height": 5, "what": "a single fallen leaf lying on the grass", "detail": "a body of #9e6b3c with one light edge of #c99a5e and a dark vein of #6e4226" },
+        { "name": "flower", "weight": 1.5, "width": 7, "height": 8, "what": "a small wildflower", "detail": "a stem of #2e6b3b with one leaf, and a head of 5 to 9 pixels, white #f5f4ef with a yellow #f8de62 middle" }
+      ]
+    },
+    {
+      "name": "sand", "ref": "tiles/sand", "kind": "tile", "route": "scatter", "width": 64, "height": 64, "what": "sand ground",
+      "base": "y", "variants": 4, "cell": 16, "chance": 0.6,
+      "speckles": [{ "letter": "x", "per_tile": 24 }],
+      "motifs": [
+        { "name": "ripple", "weight": 6, "width": 10, "height": 3, "what": "a short wind ripple in the sand", "detail": "a dash of 6 to 10 pixels in #c99a5e, broken once, with a lighter #f5f4ef pixel on its crest" },
+        { "name": "pebble", "weight": 2, "width": 6, "height": 5, "what": "a pebble lying in the sand", "detail": "a body of #9e6b3c with a lit top of #c99a5e and a dark underside of #6e4226" },
+        { "name": "glint", "weight": 0.4, "width": 3, "height": 3, "what": "a glint of light on the sand", "detail": "a plus of 5 pixels of #f5f4ef with a #ebd3a2 middle" }
+      ]
+    }
+  ]
+}
