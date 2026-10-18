@@ -27,6 +27,8 @@
         "qty": 1
       }
     ],
+    "pocket": 5,
+    "pocket_grown": 7,
     "intro": [
       "You wake by the river at noon, a basket on your arm and an axe at your belt.",
       "Herbs grow on the bank to the west. Pick a few while the sun is high.",

@@ -40,6 +40,7 @@ import { questTargets } from '../targets';
 import { nodeLook } from '../growth';
 import { hintDistance, lanternNight, nodeAction } from '../text';
 import { beatAt, blowsDue, resourceKind, treasureKind, type AutoKind } from '../work';
+import { StandingReports, canEnter, landStep } from '../walking';
 import type { WorkKind } from '../ui/ui';
 
 const NEIGHBOURS: readonly [number, number][] = [
@@ -200,7 +201,8 @@ export class World3D implements WorldView {
   private auto: { node: string; kind: AutoKind; start: number; ms: number; hits: number; facing: Dir; underfoot: boolean; onDone?: () => void } | null = null;
   private readonly held = new Set<string>();
   private lanternFor: number | undefined;
-  private chaseReport = 0;
+  /** the reports a player standing still owes the kernel while a hunt runs; the 3D door has no walking predators to watch with */
+  private readonly stillReports = new StandingReports();
   private fell = false;
   private wasNight: boolean | undefined;
   private readonly hazards: { kind: string; art: THREE.Object3D; frames: number }[] = [];
@@ -809,11 +811,7 @@ export class World3D implements WorldView {
       this.showSignatures(s);
     }
     this.walk(s, delta);
-    // a hunt bites by the clock: while one runs, a player standing still reports again twice a second
-    if (s.state.player.chase && !this.move && s.tick - this.chaseReport >= 500) {
-      this.chaseReport = s.tick;
-      s.report(s.pos, true);
-    }
+    this.stillReports.frame(this.b, s, [], !this.move, app.ui.blocking);
     this.shade(s, dt);
     this.workTick(s);
     this.drawBusy(s);
@@ -847,11 +845,10 @@ export class World3D implements WorldView {
       this.pos.z = fy + (ty - fy) * k + 0.5;
       if (k < 1) return;
       const carry = this.move.t - STEP_MS;
-      s.pos = [tx, ty];
       this.move = null;
       this.fell = false;
       // the kernel hears of each new tile; a hazard there may hurt, and a fall ends the walk
-      s.report(s.pos);
+      landStep(s, [tx, ty]);
       if (this.fell) return;
       this.arrive(s);
       this.tryStep(s, carry);
@@ -874,11 +871,9 @@ export class World3D implements WorldView {
     return true;
   }
 
-  /** The kernel's rule, and a plant or stone that is ready stands in the way. */
+  /** The kernel's rule, and a plant or stone that is ready stands in the way (walking.ts). */
   canWalk(s: Session, x: number, y: number): boolean {
-    if (!this.walkable(x, y, s.state.player)) return false;
-    const node = this.nodeAt.get(key(x, y));
-    return !(node && this.b.instances[node]?.kind === 'resource' && this.ready(s, node));
+    return canEnter(this.b, this.walkable, this.nodeAt, s, x, y);
   }
 
   private arrive(s: Session): void {

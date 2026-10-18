@@ -126,6 +126,7 @@ export function checkStarts(b: Bundle, origin: Record<string, string>): Issue[] 
   for (const s of Object.values(b.starters)) {
     const [x, y] = startOf(s);
     if (s.wake && !walkable(x, y, { restored: [], camp: [] })) err(at(s.id), 'starter.wake', `[${x}, ${y}] is not a tile to stand on: off the map, solid, or taken`);
+    if ((s.pocket_grown ?? 7) < (s.pocket ?? 5)) err(at(s.id), 'starter.pocket_grown', `the pocket grown (${s.pocket_grown ?? 7} tiles) is smaller than the pocket (${s.pocket ?? 5}): the first task pushes the mist back, never in`);
   }
 
   // the kits are worth about the same, counting what each start finds on its own spots

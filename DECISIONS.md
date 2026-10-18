@@ -1596,6 +1596,26 @@ Offered six cues of depth, cheapest first (STYLE.md section 7), the owner answer
 Cues 1 to 5 touch only the client. They are details inside the light direction already picked (shadows C), so they get no stills of their own: they are built with the night, in the same window, and judged in the live game, and their details are polish. Footprints come in sand with them and in snow when snow arrives; height comes with stage 3. Cue 2 replaces today's 72% fade in cover (`dimInCover`) and keeps its stealth signal: the covered bank road in `game/e2e/stealth.ts` passes unchanged in meaning, and the variety stream, which built the stealth cues, hears of it before it is built.
 **Retry when:** a cue costs a mid phone its frame budget (then it goes behind RICH like the other cosmetics), or a cue hides something a rule needs the player to see. Model: claude-opus-5-5.
 
+## 2026-10-18 ✅ The stealth beat runs as a state test, on the walk's own rules moved out of the scenes
+
+The first trial of moving e2e checks to state tests (DECISIONS 2026-10-18 "A character-grid look is kept for later"). `game/test/stealth-flow.test.ts` plays the south-bank beat of `game/e2e/stealth.ts` on the real map with no browser: the `Session`, the kernel, and the walk's rules, frame by frame at the scene's step pace. To let it run the scene's own code, the step that lands, the tile a step may enter and the reports of a player standing still moved from `world.ts` and `world3d.ts` into `game/src/walking.ts`, with no change in behaviour. `game/src/textview.ts` prints a moment as characters; a failure prints every beat so far.
+Measured on 18.10:
+- the flow takes about 50 ms and its file about 1.3 s, most of it the content check that builds the bundle; the stealth e2e takes 47 s on CI;
+- three planted bugs: the kernel ignoring cover, a hunt that does not end in the camp, and the scene skipping the step's report. A straight port of the e2e's beats caught only the second. Two beats the e2e leaves to its timing caught the other two: a wolf pass waited out in the cover, and a check that the kernel heard every step. The third bug was caught by no other test (full suite run with it planted);
+- the e2e's walk to the cover takes the meadow beside it, the wolf's own column. In the simulation that walk passes only when each step carries 50 to 200 ms of extra wait, and is seen at 0 ms and at 300 ms or more. The state test takes the covered bank instead.
+The e2e stays as it is for now. A browser still proves the dialogue with Pell, the moonreed minigame, the keys and touch, and what is drawn.
+**Retry when:** a scene grows walk logic outside `walking.ts` again, or the e2e is slimmed: then each beat it drops has its line in a state test first. Model: claude-opus-5-5.
+
+## 2026-10-18 🔁 A character-grid look is kept for later
+
+The owner asked whether an ASCII or coloured character-grid renderer, fed by an automatic conversion of the pixel art, would make the game simpler. It would not now, and the owner asked to keep the idea for a later switch or addition. The numbers are in [docs/design/ASCII.md](docs/design/ASCII.md):
+- the e2e is about 93% of CI time (about 11 min of 12 on 17.10), and its minutes are play time, since the game clock runs in real time;
+- Canvas instead of WebGL saved 3-5% of e2e wall time on this laptop;
+- a Canvas 2D character grid drew slower than the game does today in headless Chrome (43-156 ms a frame against 20-32 ms);
+- the 2D scene and the 3D door already share 222 identical lines and have drifted (no predator rounds, cover or tended fires in 3D), so a third renderer would be a third copy.
+Taken instead, with the owner's approval: a text view of the state for tests and agents, and e2e checks moved to state tests, starting with stealth.
+**Retry when:** the owner wants the look as a style (stills first, it is a direction), a terminal or agent client must play, the scene flow has been moved into pure modules for another reason, or the e2e runs on a real GPU so drawing becomes the cost. Model: claude-opus-5-5.
+
 ## 2026-10-18 🔁 Ground tiles as a text grid: the grid is exact and the seam holds, but a tile repeats in rows
 
 The retry that the 🔁 entry above names. `tools/kit-gen/ground-32.json` (12 tiles: meadow, sand, rock, water, three variants each, from STYLE.md section 3) runs a tile with `"route": "grid"`: Codex writes 32 lines of 32 palette letters into a text file, no image model, and `tools/src/kit/gengrid.ts` parses it, renders it and measures the seam across the wrap.
