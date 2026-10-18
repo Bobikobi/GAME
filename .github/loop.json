@@ -1,6 +1,6 @@
 {
   "open_call_votes": 5,
-  "approvals_to_merge": 3,
+  "approvals_to_merge": 1,
   "required_checks": ["Check, test, build and play"],
   "approvals_must_match_head": true,
   "quota": { "new_creator": 1, "per_accepted": 1, "cap": 5 },

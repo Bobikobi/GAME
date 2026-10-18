@@ -1704,6 +1704,11 @@ The 3D plan (NEXT 8) spent credits on everything the gap lacks, and never looked
 How: NEXT 8 d. For each thing in the gap, the community comes first. A find costs a download and no credits. It is taken only when its own page allows use in a public game with attribution, it fits the picked look, and it stays under the triangle and map caps. It is listed in `docs/3d/gap.md` with its link, author and licence. Finds for later needs go under "Found for later", and the month's spare downloads go to them.
 **Retry when:** the community's licences turn out not to allow use in a game, or the finds rarely fit the look. Then generating is the only route again. Model: claude-opus-5-5.
 
+## 2026-10-18 ✅ One approval, the owner's, until five creators have had an extension merged
+
+The merge rule asked three approvals on the current head (`.github/loop.json`, `approvals_to_merge: 3`). The first outside extension, #185 (3u2t, wild plums), showed "0 of 3 approvals" with no community yet to give them: the rule could not be met by anyone. The owner, 18.10, took the recommendation: one approval until the valley has five creators with a merged extension, then three again. Most open projects start this way, one maintainer approving until a community exists.
+How: `approvals_to_merge: 1`; the pull request template, CONTRIBUTING.md and ROADMAP.md say so. The loop counts any reviewer but the author, and it never merges by itself, so the maintainer who merges does so only after the owner has approved on GitHub.
+**Retry when:** five creators (handles other than the core team) have an extension merged into develop: set it back to 3 and drop the "until five creators" lines. Model: claude-opus-5-5. Link: #185.
 ## 2026-10-18 ✅ The 2D world keeps the wall clock, not Phaser's delta
 
 The hud e2e's desktop pass timed out on every pull request from 18.10 17:00 UTC (`timed out waiting for the story of the mended bridge`, run 39147952528). Cause: `WorldScene.update` advanced the game with Phaser's `delta`, which is not real time. For 120 frames after the game starts or the page regains focus Phaser holds it to 16.7 ms (`fps.panicMax`), and a frame over 200 ms counts as an older, shorter one. A 1440x900 desktop under CI's software GL draws about 9 frames a second, so the world crawled; during the hold the clock moved 153 ms per wall second.
