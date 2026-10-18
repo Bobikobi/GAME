@@ -6,12 +6,12 @@ Written 2026-10-11 when the first round of sessions closed. Each section is the 
 
 - Branch off `origin/develop`, worktree under `<repo>.worktrees/<branch-with-dashes>`, one pull request into `develop` per item. Never stack on another branch.
 - No integration session runs now. Each session lands its own pull request: squash merge into `develop` after local proof, and the owner approves the merge at the permission prompt. Nothing goes to `main`; a release is the owner's call.
-- GitHub Actions is out of minutes until the monthly reset (November 1). Red CI that never started is expected; the proof is local and is written in the pull request body: `pnpm verify` exit 0, plus `pnpm e2e` exit 0 when `game/` changed.
-- One e2e on the machine at a time: `flock /tmp/game-e2e.lock pnpm e2e > <file> 2>&1`. Two at once starve the machine and time out.
+- CI proves a pull request: `pnpm verify` and the opening e2e on a phone and a desktop screen, with one retry, on every pull request into `develop` or `main` (the repository is public, so Actions costs nothing), and the landing waits for it green. The local proof before a push is `pnpm verify` exit 0, written in the pull request body; "`pnpm e2e` green" in a measurable means green in CI (owner's manager, 18.10).
+- An e2e runs on the machine only to debug a red CI run or a new e2e file, the single file and one at a time: `flock /tmp/game-e2e.lock pnpm e2e > <file> 2>&1`. Two at once starve the machine and time out.
 - Saving tokens:
   - Long output (verify, e2e, logs, `gh run view`) goes to a file, and only the tail or the failure lines are shown.
   - Read files by range or by grep.
-  - Run the single test file first, `pnpm verify` once before the push, and e2e last, only before ready.
+  - Run the single test file first and `pnpm verify` once before the push; the e2e runs in CI.
   - Codex is the default worker and the session is the escalation (owner, 11.10; skill `gpt-consult`). A task goes to Codex unless it needs judgment, needs context only the session holds, or has no command that proves it: `codex exec --sandbox workspace-write -c sandbox_workspace_write.network_access=true "<goal> <files> <proof command>"` in the worktree, the session leaves those files alone meanwhile and re-runs the proof itself. Typical: test-expectation sweeps, tests from a spec, regenerating, e2e expectation updates, rebases onto `develop`.
   - Before ready, a bug-only review of the diff from Codex (`codex exec --sandbox read-only --skip-git-repo-check "..." < /dev/null`) and Gemini (`ask-agy`; an empty answer is a blocked tool, not a reply), each claim checked against the build. Web lookups go to `ask-agy`.
   - The pull request body names what went to Codex or Gemini and how many corrections it needed.
