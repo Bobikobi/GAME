@@ -59,6 +59,7 @@ import { hintDistance, lanternNight, nodeAction } from '../text';
 import type { WorkKind } from '../ui/ui';
 import { type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, treasureKind } from '../work';
 import { StandingReports, canEnter, landStep } from '../walking';
+import { cameraZoom, pixelRatio } from '../view';
 
 /** px from the view's edge that the smoke marker keeps, so its column fits above the base. */
 const SMOKE_INSET = 30;
@@ -1221,8 +1222,9 @@ export class WorldScene extends Phaser.Scene {
     const img = this.vignette;
     if (!img) return;
     const { strength, radius } = this.frameLook;
-    const w = Math.max(8, Math.ceil(this.scale.width / 4));
-    const h = Math.max(8, Math.ceil(this.scale.height / 4));
+    // a quarter of the screen in CSS pixels, so the work does not grow with the device's density
+    const w = Math.max(8, Math.ceil(this.scale.width / (4 * pixelRatio())));
+    const h = Math.max(8, Math.ceil(this.scale.height / (4 * pixelRatio())));
     const key = `${w}x${h}:${strength.toFixed(2)}:${radius.toFixed(2)}`;
     if (key === this.frameKey) return;
     this.frameKey = key;
@@ -1939,7 +1941,9 @@ export class WorldScene extends Phaser.Scene {
 
   private worldToPage(x: number, y: number): { x: number; y: number } {
     const cam = this.cameras.main;
-    return { x: (x - cam.worldView.x) * cam.zoom, y: (y - cam.worldView.y) * cam.zoom };
+    // the page is laid out in CSS pixels, the canvas is in the device's
+    const k = cam.zoom / pixelRatio();
+    return { x: (x - cam.worldView.x) * k, y: (y - cam.worldView.y) * k };
   }
 
   /** Shows a page element over a world point for a while. */
@@ -2005,7 +2009,7 @@ export class WorldScene extends Phaser.Scene {
     const x = inst.x * T + T / 2;
     const y = inst.y * T + T * 0.6;
     const at = this.worldToPage(x, y);
-    const pan = Math.max(-0.8, Math.min(0.8, (at.x / Math.max(1, this.scale.width) - 0.5) * 1.2));
+    const pan = Math.max(-0.8, Math.min(0.8, (at.x / Math.max(1, this.scale.width / pixelRatio()) - 0.5) * 1.2));
     sound.sfx(WORK_SOUND[kind], { pan, gain: grade === 0 ? 0.6 : 1 });
     if (grade === 0) sound.sfx('miss', { pan, gain: 0.5 });
     if (grade === 4) sound.sfx('perfect', { pan });
@@ -2341,7 +2345,7 @@ export class WorldScene extends Phaser.Scene {
     const x = inst.x * T + T / 2;
     const y = inst.y * T + T * 0.6;
     const at = this.worldToPage(x, y);
-    const pan = Math.max(-0.8, Math.min(0.8, (at.x / Math.max(1, this.scale.width) - 0.5) * 1.2));
+    const pan = Math.max(-0.8, Math.min(0.8, (at.x / Math.max(1, this.scale.width / pixelRatio()) - 0.5) * 1.2));
     const img = this.nodes.get(w.node) ?? this.digs.get(w.node);
     if (w.kind === 'fell') {
       sound.sfx('thud', { pan });
@@ -2587,9 +2591,8 @@ export class WorldScene extends Phaser.Scene {
   private fit(): void {
     const w = this.scale.width;
     const h = this.scale.height;
-    // about the 15 x 10 tiles of a handheld screen, never smaller than 2x
-    const zoom = Math.max(2, Math.min(6, Math.floor(Math.min(w / (15 * T), h / (10 * T)))));
-    this.cameras.main.setZoom(zoom);
+    // 4k canvas pixels per unit, k whole (view.ts): the short side shows at least 9 tiles of 64 art pixels
+    this.cameras.main.setZoom(cameraZoom(Math.min(w, h)));
     this.shade.setSize(w, h);
     this.dusk?.setSize(w, h);
     this.frameKey = '';

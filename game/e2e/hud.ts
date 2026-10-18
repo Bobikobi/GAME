@@ -250,7 +250,7 @@ async function main(): Promise<void> {
   const browser = await Browser.launch();
   try {
     for (const [name, viewport] of [
-      ['phone', { width: 390, height: 844, mobile: true }],
+      ['phone', { width: 390, height: 844, mobile: true, scale: 3 }],
       ['desktop', { width: 1440, height: 900, mobile: false }],
     ] as [string, Viewport][]) {
       const page = await browser.newPage(viewport);

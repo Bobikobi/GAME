@@ -337,7 +337,7 @@ async function run(page: Page, url: string): Promise<void> {
 }
 
 async function play(browser: Browser, url: string): Promise<void> {
-  const page = await browser.newPage({ width: 390, height: 844, mobile: true });
+  const page = await browser.newPage({ width: 390, height: 844, mobile: true, scale: 3 });
   try {
     await run(page, url);
   } catch (error) {

@@ -1045,7 +1045,7 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
 }
 
 const RUNS: [string, Viewport][] = [
-  ['phone', { width: 390, height: 844, mobile: true }],
+  ['phone', { width: 390, height: 844, mobile: true, scale: 3 }],
   ['desktop', { width: 1280, height: 800, mobile: false }],
 ];
 
