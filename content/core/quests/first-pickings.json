@@ -7,8 +7,8 @@
   "creator": "core",
   "quest": {
     "starter": "core/forager",
-    "type": "skill",
-    "summary": "Pick two herbs on the west bank with your basket. A forager starts the day with something in the bag.",
+    "type": "discovery",
+    "summary": "Something on the west bank fits your basket. Walk the bank and see what it will take.",
     "steps": [
       {
         "kind": "bring",
