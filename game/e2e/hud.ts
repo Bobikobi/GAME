@@ -203,8 +203,12 @@ async function run(page: Page, url: string, phone: boolean): Promise<void> {
   await page.waitFor('__hud.toasts() === 0', 'the toasts of the opening to leave', 20_000);
   await page.eval('__hud.reset()');
   await page.press('Enter');
+  await page.eval(`(() => { window.__fr = { n: 0, worst: 0, last: performance.now() }; const f = (t) => { const d = t - window.__fr.last; window.__fr.last = t; window.__fr.n++; if (d > window.__fr.worst) window.__fr.worst = d; requestAnimationFrame(f); }; requestAnimationFrame(f); true })()`);
+  const tick0 = await page.eval<number>('__game.session.tick');
+  const t0 = Date.now();
   await choose(page, 'Mend it');
   await page.waitFor(`!!__hud.dialog() && __hud.dialog().text.includes('The bridge holds')`, 'the story of the mended bridge', 15_000);
+  console.log(`MEASURE ${phone ? 'phone' : 'desktop'} wall ${Date.now() - t0} ms, game ${(await page.eval<number>('__game.session.tick')) - tick0} ticks, frames ${JSON.stringify(await page.eval('window.__fr'))}`);
   // the box stays open while each of its lines is typed and read: long enough for the toasts to show if they would
   await readThrough(page, 'the story of the bridge');
   const box = await page.eval<Seen>('__hud.seen()');

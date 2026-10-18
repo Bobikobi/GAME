@@ -252,6 +252,8 @@ export class WorldScene extends Phaser.Scene {
   /** the radius each clear place is drawn at: it moves toward what the save says, 2 tiles a second */
   private mistShown = new Map<string, number>();
   private mistReady = false;
+  /** the time of the last frame the world's clock was advanced at */
+  private lastFrame = 0;
   /** the town's chimney tops in world px, and the one column of single puffs that stands for the town's smoke (NEXT 16 d) */
   private chimneys: { x: number; y: number }[] = [];
   private smokeMark: Phaser.GameObjects.Image[] = [];
@@ -1414,8 +1416,12 @@ export class WorldScene extends Phaser.Scene {
       this.attract(delta);
       return;
     }
-    s.advance(delta);
-    const clears = this.drawMist(s, delta);
+    // the world's clock follows the wall clock, not Phaser's smoothed delta: on a slow renderer (a desktop view under
+    // software GL, ~10 fps) the smoothed delta ran the world at under half speed, so a 4 s mend took 8 to 11 s
+    const real = this.lastFrame > 0 ? Math.min(250, Math.max(0, time - this.lastFrame)) : delta;
+    this.lastFrame = time;
+    s.advance(real);
+    const clears = this.drawMist(s, real);
     this.placeMote(s, clears, time);
     this.placeSmoke(s, clears, time);
     this.placePredators(s);

@@ -118,12 +118,36 @@ export function mistPixels(clears: readonly Clear[], width: number, height: numb
   const w = width * tile;
   const h = height * tile;
   const out = new Uint8ClampedArray(new ArrayBuffer(w * h * 4));
+  // the same density as mistDensity, with what a column or a row shares worked out once: a mend redraws this layer
+  // many times a second, and the plain per-pixel form (a hypot per clear per pixel) starved the frame loop on CI
+  const n = clears.length;
+  const cx = clears.map((c) => c.x + 0.5);
+  const cy = clears.map((c) => c.y + 0.5);
+  const cr = clears.map((c) => c.r);
+  const colBorder = new Float64Array(w);
+  const dxSq = new Float64Array(w * n);
+  for (let x = 0; x < w; x++) {
+    const tx = (x + 0.5) / tile;
+    colBorder[x] = Math.min(tx, width - tx);
+    for (let k = 0; k < n; k++) dxSq[x * n + k] = (tx - cx[k]!) * (tx - cx[k]!);
+  }
   for (let y = 0; y < h; y++) {
+    const ty = (y + 0.5) / tile;
+    const rowBorder = Math.min(ty, height - ty);
+    const dySq = cy.map((c) => (ty - c) * (ty - c));
     for (let x = 0; x < w; x++) {
-      const d = mistDensity(clears, width, height, (x + 0.5) / tile, (y + 0.5) / tile);
+      const toBorder = Math.min(colBorder[x]!, rowBorder);
+      let d: number;
+      if (toBorder <= MIST.band) d = 1;
+      else {
+        let near = Infinity;
+        for (let k = 0; k < n; k++) near = Math.min(near, Math.sqrt(dxSq[x * n + k]! + dySq[k]!) - cr[k]!);
+        if (near <= 0) continue;
+        d = Math.max(Math.min(1, near / MIST.ramp), Math.max(0, 1 - (toBorder - MIST.band) / MIST.edgeRamp));
+      }
       if (d <= (BAYER[(y & 3) * 4 + (x & 3)]! + 0.5) / 16) continue;
-      const n = cellNoise(x >> 3, y >> 3);
-      const rgb = n < 0.16 ? MIST_RGB.light : n > 0.84 ? MIST_RGB.shade : MIST_RGB.base;
+      const cell = cellNoise(x >> 3, y >> 3);
+      const rgb = cell < 0.16 ? MIST_RGB.light : cell > 0.84 ? MIST_RGB.shade : MIST_RGB.base;
       const i = 4 * (y * w + x);
       out[i] = rgb[0];
       out[i + 1] = rgb[1];

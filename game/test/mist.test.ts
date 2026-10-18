@@ -248,3 +248,34 @@ describe('the bridge draws the mist back (criterion 4)', () => {
     expect(mistClears(b, started('core/forager'))).toHaveLength(1);
   });
 });
+
+describe('the raster is fast and is the same as the density says', () => {
+  const clears: Clear[] = [
+    { x: 6, y: 17, r: 5 },
+    { x: 14, y: 17, r: 9.25, rate: MIST_MEND_PER_S },
+  ];
+
+  test('every pixel is the density passed through the dither', () => {
+    const width = 48;
+    const height = 49;
+    const px = mistPixels(clears, width, height, T);
+    const w = width * T;
+    let wrong = 0;
+    for (let y = 0; y < height * T; y += 3) {
+      for (let x = 0; x < w; x += 3) {
+        const d = mistDensity(clears, width, height, (x + 0.5) / T, (y + 0.5) / T);
+        const bayer = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5][(y & 3) * 4 + (x & 3)]!;
+        const mist = d > (bayer + 0.5) / 16;
+        if ((px[4 * (y * w + x) + 3] === 255) !== mist) wrong++;
+      }
+    }
+    expect(wrong).toBe(0);
+  });
+
+  test('a whole-map raster takes a fraction of a frame budget a mend can afford 28 times a second', () => {
+    mistPixels(clears, 48, 49, T);
+    const t = performance.now();
+    for (let i = 0; i < 5; i++) mistPixels(clears, 48, 49, T);
+    expect((performance.now() - t) / 5).toBeLessThan(25);
+  });
+});
