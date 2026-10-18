@@ -16,6 +16,9 @@
  * at `<name>.png`, and `gallery.html` shows the latest of each
  * beside its reference, both at their size on a 3x phone.
  *
+ * A tile with `"route": "grid"` is not drawn at all: Codex writes it as rows of palette letters at exactly
+ * the asked size (`gengrid.ts`), so the grid is exact and the importer measures the seam instead of voting.
+ *
  * Nothing is written into `content/`: a result goes into the kit by hand, in a wave. `--dry` writes
  * the references and the prompts only; `--reimport` imports the last raw images again without
  * calling Codex. Each image costs one to two minutes and 14k to 37k Codex tokens (measured
@@ -28,6 +31,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { PNG } from 'pngjs';
 
+import { colourCount, gridPrompt, parseGrid, pngToGrid, renderGrid, seamWarnings } from './gengrid.js';
 import { importSprite, nearestPaletteIndex } from './import.js';
 import { CORE_PALETTE, type Rgb, hexToRgb } from './palette.js';
 
@@ -47,6 +51,8 @@ export interface GenEntry {
   height: number;
   /** A `tile` fills its square edge to edge and repeats; a `sprite` stands on transparency. */
   kind?: 'sprite' | 'tile';
+  /** How a tile is drawn: `image` (the default) through image generation, `grid` as a text grid of palette letters, exact by construction. */
+  route?: 'image' | 'grid';
   anchor?: 'center' | 'bottom';
   /** The detail to spell out. The model draws as many pixels as it is given things to draw. */
   detail?: string;
@@ -64,6 +70,7 @@ export interface ManifestLine {
   ref: string;
   refSize: [number, number];
   kind: 'sprite' | 'tile';
+  route?: 'image' | 'grid';
   width: number;
   height: number;
   prompt: string;
@@ -98,6 +105,8 @@ export function parseSpec(text: string): GenEntry[] {
       }
     }
     if (entry.kind !== undefined && entry.kind !== 'sprite' && entry.kind !== 'tile') throw new Error(`${where}.kind must be sprite or tile`);
+    if (entry.route !== undefined && entry.route !== 'image' && entry.route !== 'grid') throw new Error(`${where}.route must be image or grid`);
+    if (entry.route === 'grid' && entry.kind !== 'tile') throw new Error(`${where}.route grid is for tiles: set kind to tile`);
     if (entry.anchor !== undefined && entry.anchor !== 'center' && entry.anchor !== 'bottom') throw new Error(`${where}.anchor must be center or bottom`);
     if (entry.detail !== undefined && typeof entry.detail !== 'string') throw new Error(`${where}.detail must be text`);
     return entry as GenEntry;
@@ -361,6 +370,11 @@ export function parseArgs(args: readonly string[]): Options {
   };
 }
 
+/** The kit's own tile as letters, so a grid prompt shows the style it continues. */
+function referenceGrid(reference: Raster): readonly string[] | null {
+  return reference.width === reference.height && reference.width <= 32 ? pngToGrid(reference) : null;
+}
+
 function codexVersion(): string {
   const run = spawnSync('codex', ['--version'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
   return run.status === 0 ? run.stdout.trim() : 'unknown';
@@ -373,10 +387,11 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
   writeFileSync(refPath, PNG.sync.write(enlargeOnMagenta(reference)));
   writeFileSync(join(options.out, 'ref', `${entry.name}-1x.png`), PNG.sync.write(reference));
   const file = `${entry.name}.png`;
+  const grid = entry.route === 'grid';
   const at = new Date().toISOString();
   const line: ManifestLine = {
     name: entry.name, spec: options.spec.replace(`${ROOT}/`, ''), ref: entry.ref, refSize: [reference.width, reference.height],
-    kind, width: entry.width, height: entry.height, prompt: buildPrompt(entry, reference, file), codex: null,
+    kind, route: entry.route ?? 'image', width: entry.width, height: entry.height, prompt: entry.route === 'grid' ? gridPrompt({ what: entry.what, width: entry.width, height: entry.height, detail: entry.detail, reference: referenceGrid(reference), file: `${entry.name}.txt` }) : buildPrompt(entry, reference, file), codex: null,
     raw: null, out: null, grid: null, logical: null, colors: null, warnings: [], error: null, at,
   };
   if (options.dry) return line;
@@ -399,7 +414,8 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
     const logPath = join(options.out, 'log', `${entry.name}-${stamp}.txt`);
     const since = Date.now();
     // the prompt goes before -i: -i takes every path that follows it
-    const run = spawnSync('codex', ['exec', '--sandbox', 'workspace-write', '--skip-git-repo-check', line.prompt, '-i', refPath], {
+    // a text grid is written, not drawn: no picture goes in and no image tool is needed
+    const run = spawnSync('codex', ['exec', '--sandbox', 'workspace-write', '--skip-git-repo-check', line.prompt, ...(grid ? [] : ['-i', refPath])], {
       cwd: workdir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
       timeout: options.timeoutSeconds * 1000, maxBuffer: 64 * 1024 * 1024,
     });
@@ -409,12 +425,12 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
       version, exit: run.status, seconds: Math.round((Date.now() - since) / 1000),
       tokens: parseTokens(log), log: logPath.replace(`${options.out}/`, ''),
     };
-    const saved = findOutput(workdir, file, log, since);
+    const saved = findOutput(workdir, grid ? `${entry.name}.txt` : file, log, since);
     if (saved === null) {
       line.error = run.error === undefined ? 'Codex saved no image' : `Codex did not finish: ${run.error.message}`;
       return line;
     }
-    line.raw = `raw/${entry.name}-${stamp}.png`;
+    line.raw = `raw/${entry.name}-${stamp}.${grid ? 'txt' : 'png'}`;
     writeFileSync(join(options.out, line.raw), readFileSync(saved));
   }
 
@@ -423,7 +439,13 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
     // each import keeps its own file, so every manifest line points at what it made
     const own = `out/${entry.name}-${at.replace(/[:.]/g, '-')}.png`;
     const outPath = join(options.out, own);
-    if (kind === 'tile') {
+    if (grid) {
+      const rows = parseGrid(readFileSync(join(options.out, line.raw ?? ''), 'utf8'), entry.width, entry.height);
+      writeFileSync(outPath, PNG.sync.write(renderGrid(rows)));
+      line.logical = [entry.width, entry.height];
+      line.colors = colourCount(rows);
+      line.warnings.push(...seamWarnings(rows));
+    } else if (kind === 'tile') {
       const result = importTile(raw, entry.width, entry.height);
       writeFileSync(outPath, result.png);
       line.logical = result.logical;
@@ -478,7 +500,7 @@ export function galleryHtml(lines: readonly ManifestLine[]): string {
       line.codex === null ? null : `${line.codex.seconds} s, ${line.codex.tokens ?? '?'} tokens`,
     ].filter((fact) => fact !== null).join(' · ');
     const warnings = line.warnings.map((w) => `<p class="warn">${escapeHtml(w)}</p>`).join('');
-    const raw = line.raw === null ? '' : `<a href="${line.raw}"><img class="raw" src="${line.raw}" alt="raw"></a>`;
+    const raw = line.raw === null ? '' : line.raw.endsWith('.txt') ? `<a href="${line.raw}">letters</a>` : `<a href="${line.raw}"><img class="raw" src="${line.raw}" alt="raw"></a>`;
     return `<section><h2>${escapeHtml(line.name)}</h2><p>${escapeHtml(facts)}</p>${warnings}<div class="row">${refImg}${result}${raw}</div></section>`;
   });
   return `<!doctype html>

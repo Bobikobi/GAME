@@ -39,6 +39,7 @@ import {
 import { app } from '../app';
 import { sound, type SfxId, type SongId } from '../audio';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T } from '../config';
+import { mistClears, mistPixels } from '../mist';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { TOO_DARK, feedTooLate, fireLow, fireName, readable, woodToFeed } from '../fires';
@@ -242,7 +243,9 @@ export class WorldScene extends Phaser.Scene {
   private dusk: Phaser.GameObjects.Rectangle | undefined;
   private bar!: Phaser.GameObjects.Graphics;
   private marker!: Phaser.GameObjects.Image;
-  private mist!: Phaser.GameObjects.TileSprite;
+  /** B2's mist: the whole map as one image of dots, redrawn only when the places it leaves clear change */
+  private mist!: Phaser.GameObjects.Image;
+  private mistKey = '';
   /** the mist and the fogs as one layer; the player is cut out of it and of the dark frame (WebGL) */
   private veil!: Phaser.GameObjects.Container;
   /** the player's shape in the stencil that keeps the haze and the frame off the player, a copy of every frame */
@@ -1050,7 +1053,7 @@ export class WorldScene extends Phaser.Scene {
   private buildAtmosphere(): void {
     const w = this.b.map.width * T;
     const hgt = this.b.map.height * T;
-    this.mist = this.add.tileSprite(0, 0, w, hgt, FOG_SPRITE).setOrigin(0).setDepth(DEPTH.mist).setAlpha(0.1).setTileScale(2);
+    this.mist = this.add.image(0, 0, '__DEFAULT').setOrigin(0).setDepth(DEPTH.mist).setVisible(false);
     const area = RICH.motion ? this.viewRect : new Phaser.Geom.Rectangle(0, 0, w, hgt);
     this.motes = this.add
       .particles(0, 0, 'fx-mote', {
@@ -1390,8 +1393,6 @@ export class WorldScene extends Phaser.Scene {
 
   override update(time: number, delta: number): void {
     this.fogs.forEach((fog, i) => (fog.tilePositionX += delta * (i % 2 === 0 ? 0.006 : -0.004)));
-    this.mist.tilePositionX += delta * 0.002;
-    this.mist.tilePositionY += delta * 0.0008;
     this.animate(time, delta);
     this.placePinned();
     const s = this.session;
@@ -1677,12 +1678,29 @@ export class WorldScene extends Phaser.Scene {
     sound.crackle(scape.crackle.level, scape.crackle.pan);
   }
 
+  /** Draws B2's mist for the places the save leaves clear (src/mist.ts); a new texture only when they change. */
+  private drawMist(s: Session): void {
+    const clears = mistClears(this.b, s.state);
+    const key = JSON.stringify(clears);
+    if (key === this.mistKey) return;
+    this.mistKey = key;
+    const { width, height } = this.b.map;
+    const name = 'fx-mist';
+    const tex = this.textures.exists(name) ? (this.textures.get(name) as Phaser.Textures.CanvasTexture) : this.textures.createCanvas(name, width * T, height * T);
+    if (!tex) return;
+    tex.setFilter(Phaser.Textures.FilterMode.NEAREST);
+    const ctx = tex.getContext();
+    ctx.putImageData(new ImageData(mistPixels(clears, width, height, T), width * T, height * T), 0, 0);
+    tex.refresh();
+    this.mist.setTexture(name).setVisible(true);
+  }
+
   private shadeFor(s: Session): void {
     const m = minuteOfDay(this.b, s.tick) / 60;
     // dark from 21:00 to 4:00, fading over two hours on each side
     this.night = m >= 21 || m < 4 ? 1 : m >= 19 ? (m - 19) / 2 : m < 6 ? (6 - m) / 2 : 0;
     this.shade.setFillStyle(0x172a52, 0.5 * this.night);
-    this.mist.setAlpha(0.08 + 0.16 * this.night);
+    this.drawMist(s);
     this.frameLook = { strength: 0.3 + (RICH.light ? 0.45 : 0.3) * this.night, radius: 0.8 - 0.15 * this.night };
     this.drawFrame();
     if (this.dusk) {
