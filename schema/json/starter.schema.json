@@ -617,6 +617,18 @@
             }
           }
         },
+        "pocket": {
+          "minimum": 1,
+          "maximum": 32,
+          "description": "Tiles of the mist's clear pocket around the wake tile (B2, NEXT 16). Left out: 5. The kernel does not read it; the client draws it.",
+          "type": "integer"
+        },
+        "pocket_grown": {
+          "minimum": 1,
+          "maximum": 32,
+          "description": "Tiles of that pocket once the character's first task is done. Left out: 7. Never less than `pocket`.",
+          "type": "integer"
+        },
         "intro": {
           "minItems": 1,
           "maxItems": 4,
