@@ -207,8 +207,8 @@ describe('the south bank, played without a browser (game/e2e/stealth.ts)', () =>
     me.check(s.state.player.quests[QUEST] === 'active', 'the south-bank quest is not active');
 
     // the night from the built camp to the head of the bank road; once the wolf turns west along the far
-    // edge, down the covered bank (x 12) to the waiting tile. The e2e's shortest walk takes the meadow
-    // beside it, the wolf's own column, and passes or not by the pace of its steps.
+    // edge, down the covered bank (x 12) to the waiting tile, as the e2e goes. The shortest walk takes
+    // the meadow beside it, the wolf's own column, and passes or not by the pace of its steps.
     me.place(18, 22);
     me.setHour(21);
     me.walkTo(12, 19, 'the head of the bank road');
