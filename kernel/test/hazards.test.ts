@@ -13,6 +13,7 @@ import {
   HAZARD_KINDS,
   type State,
   bitesAfter,
+  harmOf,
   hazardsOf,
   isNight,
   isSafe,
@@ -118,8 +119,9 @@ describe('what the vocabularies and the shipped content say', () => {
     expect([...HAZARD_KINDS]).toEqual([...SCHEMA_HAZARD_KINDS]);
   });
 
-  test('the shipped valley hunts only in the night ruins, one step past their safe threshold (P-5c)', () => {
+  test('the shipped valley has the night-ruins hazards and the bank wolf', () => {
     expect(hazardsOf(base).map((h) => [h.id, h.kind]).sort()).toEqual([
+      ['core/bank-wolf', 'predator'],
       ['core/doorstep-pit', 'pit'],
       ['core/ruins-wolf', 'predator'],
     ]);
@@ -150,7 +152,7 @@ describe('what the vocabularies and the shipped content say', () => {
     s.player.restored = [...s.player.restored, 'core/arch-way'];
     const bag = { ...s.player.bag };
     const inside = move(base, s, [36, 21], NIGHT + 190);
-    expect(kinds(inside.events)).toEqual(['hurt']);
+    expect(kinds(inside.events)).toEqual(['hurt', 'seen']);
     let state = inside.state;
     let fell: GameEvent | undefined;
     for (let t = NIGHT + 190 + 500; t <= NIGHT + 190 + 10_000 && !fell; t += 500) {
@@ -161,6 +163,15 @@ describe('what the vocabularies and the shipped content say', () => {
     expect(fell).toMatchObject({ e: 'fall', from: [36, 21], lost: [] });
     expect(state.player.bag).toEqual(bag);
     expect(state.player.satiety).toBe(satietyCap(base, state));
+  });
+
+  test('a pit that takes the last of the health is a fall, and no hunt begins over it: nothing is told seen', () => {
+    const s = place(begin(base), [36, 20], NIGHT);
+    s.player.restored = [...s.player.restored, 'core/arch-way'];
+    s.player.satiety = harmOf(base, satietyCap(base, s), 'pit');
+    const r = move(base, s, [36, 21], NIGHT + 190);
+    expect(kinds(r.events)).toEqual(['hurt', 'fall']);
+    expect(r.state.player.chase).toBeNull();
   });
 
   test('the shipped valley drains nothing by the clock (G32): an hour away, health is where it was', () => {

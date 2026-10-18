@@ -33,13 +33,14 @@ export interface Assembled {
   origin: Record<string, string>;
 }
 
-type RecordKey = 'resources' | 'treasures' | 'recipes' | 'npcs' | 'quests' | 'restores' | 'camps' | 'starters' | 'professions' | 'shops';
+type RecordKey = 'resources' | 'treasures' | 'recipes' | 'npcs' | 'quests' | 'expeditions' | 'restores' | 'camps' | 'starters' | 'professions' | 'shops';
 const KEY_OF: Record<string, RecordKey | undefined> = {
   resource: 'resources',
   treasure: 'treasures',
   recipe: 'recipes',
   npc: 'npcs',
   quest: 'quests',
+  expedition: 'expeditions',
   restore: 'restores',
   camp: 'camps',
   starter: 'starters',
@@ -53,6 +54,7 @@ const BODY_OF: Record<string, string> = {
   template: 'template',
   npc: 'npc',
   quest: 'quest',
+  expedition: 'expedition',
   restore: 'restore',
   camp: 'camp',
   starter: 'starter',
@@ -115,6 +117,7 @@ export function flattenParams(p: ParamsBody): Params {
         catch_ms: p.hazard.predator.catch_ms.value,
         bite_ms: p.hazard.predator.bite_ms.value,
         bite_pct: p.hazard.predator.bite_pct.value,
+        refill_bp: p.hazard.predator.refill_bp.value,
       },
       pit: { harm_pct: p.hazard.pit.harm_pct.value },
       trap: { harm_pct: p.hazard.trap.harm_pct.value },
@@ -146,6 +149,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
     recipes: {},
     npcs: {},
     quests: {},
+    expeditions: {},
     restores: {},
     camps: {},
     starters: {},
@@ -438,6 +442,7 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
   for (const [id, q] of Object.entries(b.quests)) {
     if (q.giver && !b.npcs[q.giver]) err(id, 'quest.giver', `no npc "${q.giver}"`);
     if (q.starter !== undefined && !b.starters[q.starter]) err(id, 'quest.starter', `no starter "${q.starter}"`);
+    if (q.talk?.done_bitten && !q.talk.done) err(id, 'quest.talk.done_bitten', 'a line for a bitten hand-in needs the plain "done" line too: without it a hand-in with no bite says nothing');
     const gifts = q.starter === undefined ? new Set<string>() : startFinds(b, q.starter);
     (q.requires ?? []).forEach((r, i) => {
       if (!b.quests[r]) err(id, `quest.requires.${i}`, `no quest "${r}"`);
@@ -484,7 +489,32 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
       if (!b.restores[rid]) err(id, `quest.reward.opens.${i}`, `no restore "${rid}"`);
     });
   }
-  const opened = new Set(Object.values(b.quests).flatMap((q) => q.reward.opens ?? []));
+  for (const [id, x] of Object.entries(b.expeditions)) {
+    if (!b.map.slots.some((s) => s.id === x.place)) err(id, 'expedition.place', `no slot "${x.place}"`);
+    if (!b.map.slots.some((s) => s.id === x.exit)) err(id, 'expedition.exit', `no slot "${x.exit}"`);
+    if (!b.map.slots.some((s) => s.id === x.climax.slot)) err(id, 'expedition.climax.slot', `no slot "${x.climax.slot}"`);
+    x.chain.forEach((qid, i) => {
+      if (!b.quests[qid]) err(id, `expedition.chain.${i}`, `no quest "${qid}"`);
+    });
+    (x.reward.items ?? []).forEach((s, i) => {
+      const w = `expedition.reward.items.${i}`;
+      item(id, w, s.item);
+      if (s.instead !== undefined) item(id, `${w}.instead`, s.instead);
+      for (const [sid, st] of Object.entries(b.starters)) {
+        const kit = (st.kit ?? []).map((k) => k.item);
+        if (!kit.includes(s.item)) continue;
+        if (s.instead === undefined) err(id, w, `the kit of "${sid}" holds "${s.item}": name an item for it in "instead"`);
+        else if (kit.includes(s.instead)) err(id, `${w}.instead`, `the kit of "${sid}" holds "${s.instead}" too`);
+      }
+    });
+    (x.reward.opens ?? []).forEach((rid, i) => {
+      if (!b.restores[rid]) err(id, `expedition.reward.opens.${i}`, `no restore "${rid}"`);
+    });
+  }
+  const opened = new Set([
+    ...Object.values(b.quests).flatMap((q) => q.reward.opens ?? []),
+    ...Object.values(b.expeditions).flatMap((x) => x.reward.opens ?? []),
+  ]);
   for (const [id, r] of Object.entries(b.restores)) {
     if (r.inputs.length === 0 && !opened.has(id)) err(id, 'restore.inputs', 'no inputs and no quest opens it: it could never open');
     r.inputs.forEach((s, i) => item(id, `restore.inputs.${i}.item`, s.item));

@@ -17,7 +17,7 @@ interface Sketch {
   frames: readonly Grid[];
 }
 
-const PALETTE_LEGEND: Readonly<Record<string, number>> = {
+export const PALETTE_LEGEND: Readonly<Record<string, number>> = {
   o: 0, d: 1, g: 2, G: 3, H: 4, W: 5,
   a: 6, b: 7, c: 8, e: 9, f: 10,
   u: 11, v: 12, w: 13, x: 14, y: 15,

@@ -6,7 +6,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PNG } from 'pngjs';
-import { type Bundle, computeValues, minChargeFor, missOutcome, rarityBudget, rarityRank } from '@game/kernel';
+import { type Bundle, computeValues, idiv, minChargeFor, missOutcome, rarityBudget, rarityRank } from '@game/kernel';
 import { RARITIES, type ParamsBody } from '@game/schema';
 import { assemble, type Assembled } from './assemble';
 import { readBoard } from './board';
@@ -14,7 +14,7 @@ import { CORE_PALETTE } from './kit/palette';
 import { LOCK_FILE, loadAll, toRepoPath, type Issue } from './load';
 import { baseOf } from './material';
 import { checkHazards } from './hazards';
-import { checkPlay } from './play';
+import { checkPlay, rewardItems } from './play';
 import { checkDeadProps } from './deadprops';
 import { checkReach } from './reach';
 import { checkStarts } from './starts';
@@ -91,6 +91,12 @@ function checkParams(file: { params?: ParamsBody } | undefined): Issue[] {
       issues.push({ file: 'content/core/params.json', where: `params.${name}.max`, message: 'the trader may never pay as much as the shop charges: keep the share below 1000', level: 'error' });
     }
   }
+  // G48 with whole logs: a burning fire takes a log only once cap - 1 logs of burn or less are left, so its
+  // warning opens inside that window or it asks for a log the fire refuses (and a cap of one never takes one)
+  const { cap, log_ms: logMs, warn_min: warnMin } = file.params.fire;
+  if (idiv(warnMin.value * file.params.day_length_ms.value, 24 * 60) > (cap.value - 1) * logMs.value) {
+    issues.push({ file: 'content/core/params.json', where: 'params.fire', message: 'the fire would warn before it takes a log: keep warn_min within cap - 1 logs of burn (G48)', level: 'error' });
+  }
   return issues;
 }
 
@@ -145,9 +151,9 @@ function checkEconomy(b: Bundle, origin: Record<string, string>): Issue[] {
   const table = computeValues(b);
   for (const v of table.issues) issues.push({ file: at(v.source), where: '', message: v.message, level: 'error' });
 
-  // R7 reachability: everything asked for must be obtainable somewhere
+  // R7 reachability: everything asked for must be obtainable somewhere; a quest's or an expedition's reward gives its item and its `instead`
   const sold = new Set(Object.values(b.shops).flatMap((s) => s.sells.map((o) => o.item)));
-  const rewarded = new Set(Object.values(b.quests).flatMap((q) => (q.reward.items ?? []).flatMap((s) => (s.instead ? [s.item, s.instead] : [s.item]))));
+  const rewarded = rewardItems([...Object.values(b.quests), ...Object.values(b.expeditions)].map((x) => x.reward));
   const obtainable = (id: string) => b.values[id] !== undefined || sold.has(id) || rewarded.has(id);
   const needs: [string, string, string][] = [
     ...Object.values(b.recipes).flatMap((c) => c.inputs.map((s, i) => [c.id, `recipe.inputs.${i}`, s.item] as [string, string, string])),
@@ -372,7 +378,7 @@ function checkWear(b: Bundle): Issue[] {
   const err = (file: string, where: string, message: string) => issues.push({ file, where, message, level: 'error' });
   const caps = b.params.wear_effect_max_pct;
   const sold = new Set(Object.values(b.shops).flatMap((s) => s.sells.map((o) => o.item)));
-  const rewarded = new Set(Object.values(b.quests).flatMap((q) => (q.reward.items ?? []).flatMap((s) => (s.instead ? [s.item, s.instead] : [s.item]))));
+  const rewarded = rewardItems([...Object.values(b.quests), ...Object.values(b.expeditions)].map((x) => x.reward));
   const sets: Record<string, string[]> = {};
   for (const [id, it] of Object.entries(b.items)) {
     const where = `items.${id}`;
@@ -411,7 +417,7 @@ function checkWear(b: Bundle): Issue[] {
     if (it.premium_later) {
       if (!w.look || w.effects) err(it.file, `${where}.premium_later`, 'only a look item with no effect may carry the premium marker (G39)');
       else if (b.values[id] === undefined && !sold.has(id) && !rewarded.has(id)) {
-        err(it.file, `${where}.premium_later`, 'a look with the premium marker stays obtainable in the game: a node, a dig spot, a recipe, a shop for gold or a quest gives it (G39)');
+        err(it.file, `${where}.premium_later`, 'a look with the premium marker stays obtainable in the game: a node, a dig spot, a recipe, a shop for gold, a quest or an expedition gives it (G39)');
       }
     }
   }

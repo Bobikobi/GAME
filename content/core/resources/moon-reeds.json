@@ -1,0 +1,34 @@
+{
+  "$schema": "../../../schema/json/resource.schema.json",
+  "format": 1,
+  "type": "resource",
+  "id": "core/moon-reeds",
+  "title": "Moon reeds",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/moonreed",
+      "name": "Moonreed",
+      "description": "A pale reed that opens under the night sky.",
+      "kind": "material",
+      "rarity": "uncommon",
+      "class": "fibre",
+      "tier": 1,
+      "sprite": "core/base-kit:items/herb"
+    }
+  ],
+  "node": {
+    "output": "core/moonreed",
+    "yield": 1,
+    "active_ms": 2500,
+    "respawn_ms": 60000,
+    "count": 1,
+    "sprite": "core/base-kit:props/reeds",
+    "level": 1,
+    "hours": [20, 24],
+    "game": "snap",
+    "place": {
+      "slot": "core/moon-bank"
+    }
+  }
+}

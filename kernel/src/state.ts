@@ -6,7 +6,7 @@
 import type { Bundle, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
 
-export const KERNEL_VERSION = '0.7.0';
+export const KERNEL_VERSION = '0.10.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['carry', 'senses', 'agility', 'luck', 'stamina'] as const;
@@ -50,6 +50,8 @@ export interface Outing {
   solved: string[];
   /** places first visited on this outing */
   visited: string[];
+  /** quests open when a predator bit on this outing, sorted: they join `Player.bitten` when it ends safe, and a fall drops them */
+  bitten?: string[];
 }
 
 /** A hunt in progress: the predator that has the player's scent. It bites by the clock until a safe place or dawn. */
@@ -67,6 +69,20 @@ export interface FireState {
   lit: number;
   /** first tick at which the fire no longer burns */
   until: number;
+  /**
+   * The dawn of a night an earlier burn kept, when the fire was lit again by day while that vigil
+   * held: a new burn does not undo a night already kept, so the vigil still holds until the next
+   * dusk. Absent otherwise, and in saves from before kernel 0.10 (DECISIONS.md, 2026-10-16).
+   */
+  kept?: number;
+}
+
+export interface ExpeditionState {
+  climax: boolean;
+  /** Tick of the first action or report inside the place on this visit. */
+  entered?: number;
+  /** Bells accounted for on this visit; bells before entry are never reported. */
+  rung: number;
 }
 
 export interface Player {
@@ -115,8 +131,12 @@ export interface Player {
   outing: Outing | null;
   /** the hunt the player is in, if any */
   chase: Chase | null;
+  /** quests that were open when a predator bit the player on an outing that came home (not in a fall), sorted: the giver's line at the hand-in may say so */
+  bitten: string[];
   /** tended fires by map prop id */
   fires: Record<string, FireState>;
+  /** Expedition progress by expedition id. Chain quests persist separately in `quests`. */
+  expeditions: Record<string, ExpeditionState>;
   /** falls so far: the draw counter of the tile they wake on (rule R4) */
   falls: number;
   /** tick of the last arrival: a position report, or an action at a tile */
@@ -172,7 +192,9 @@ export function newState(bundle: Bundle, seed: number): State {
       town: '',
       outing: null,
       chase: null,
+      bitten: [],
       fires: {},
+      expeditions: {},
       falls: 0,
       movedAt: 0,
     },
@@ -368,6 +390,36 @@ export function isNight(bundle: Bundle, tick: number): boolean {
 /** Whether a tended fire still burns at this game tick. */
 export function fireBurns(state: State, id: string, tick: number): boolean {
   return (state.player.fires?.[id]?.until ?? 0) > tick;
+}
+
+/** Whether an item feeds a fire: its class is wood, or a class an extension declares under wood. */
+export function burnsAsWood(bundle: Bundle, itemId: string): boolean {
+  const cls = bundle.items[itemId]?.class;
+  return cls === 'wood' || (cls !== undefined && bundle.classes[cls]?.base === 'wood');
+}
+
+/**
+ * Whether a fire has kept a `tend` step's vigil at this tick: the night of the last dusk at or
+ * before it is over (the tick is at or after that night's dawn), and the fire was lit by that dusk
+ * and burned without a gap to that dawn, or kept that night before it was lit again by day (`kept`).
+ * Before dawn it does not hold, however much wood the fire has; by day it holds until the next dusk,
+ * relit or not (DECISIONS.md, 2026-10-16: the vigil closes at dawn).
+ */
+export function tendHolds(bundle: Bundle, state: State, id: string, tick: number): boolean {
+  const fire = state.player.fires?.[id];
+  const dusk = lastDusk(bundle, tick);
+  const dawn = nightEnds(bundle, dusk);
+  return fire !== undefined && tick >= dawn && (fire.kept === dawn || (fire.lit <= dusk && fire.until >= dawn));
+}
+
+/**
+ * The first tick from `tick` on at which a fire takes another log whole: at once while it is
+ * out or a whole log still fits under its cap (`fire.cap` logs ahead of the tick), else once
+ * enough of its wood has burned down. A log goes in whole or not at all, so no feed wastes wood.
+ */
+export function nextLogAt(bundle: Bundle, state: State, id: string, tick: number): number {
+  const until = state.player.fires?.[id]?.until ?? tick;
+  return Math.max(tick, until - (bundle.params.fire.cap - 1) * bundle.params.fire.log_ms);
 }
 
 /** Where a tick falls in its day: 0 at midnight (tick 0 is noon, half way in; same start as hourOf). */

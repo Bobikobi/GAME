@@ -18,6 +18,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page, type Viewport } from './cdp';
+import { solveMinigame } from './minigame';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(GAME_DIR, 'dist');
@@ -389,7 +390,7 @@ class Player {
     for (let i = 0; i < 80; i++) {
       let d = await this.page.eval<{ text: string; options: string[] } | null>('__e2e.dialog()');
       if (!d) {
-        for (let wait = 0; !d && wait < 4; wait++) {
+        for (let wait = 0; !d && wait < 20; wait++) {
           await sleep(150);
           d = await this.page.eval<{ text: string; options: string[] } | null>('__e2e.dialog()');
         }
@@ -409,12 +410,17 @@ class Player {
         }
         if (this.touch) await this.page.tap('.dialog-options button', d.options[want]);
         else {
+          await this.page
+            .waitFor('!!(document.activeElement && document.querySelector(".dialog-options")?.contains(document.activeElement))', 'option focus', 3000)
+            .catch(() => undefined);
           for (let k = 0; k < want; k++) await this.page.press('ArrowDown');
           await this.page.press('Enter');
         }
-        await sleep(120);
+        await sleep(300);
         return seen;
       }
+      const fresh = await this.page.eval<{ text: string; options: string[] } | null>('__e2e.dialog()');
+      if (fresh && fresh.options.length > 0) continue;
       this.talkPresses++;
       await this.a();
       await sleep(90);
@@ -425,20 +431,26 @@ class Player {
   /** One step in a direction while writing down the sprite at every frame: the sheet must be that direction's, mirrored for right, and the legs must change. */
   async walkLook(dir: Dir): Promise<string> {
     const stem = dir === 'right' ? 'left' : dir;
-    await this.page.eval('__e2e.watchLook(true)');
-    const moved = await this.step(dir);
-    const looks = await this.page.eval<{ key: string; frame: number; flip: boolean; moving: boolean }[]>('__e2e.watchLook(false)');
-    if (!moved) return `${dir}: blocked`;
-    const striding = looks.filter((l) => l.moving);
-    if (striding.length === 0) throw new Error(`no frame was drawn while stepping ${dir}`);
-    for (const l of striding) {
-      if (!l.key.endsWith(`_${stem}`) && !(dir === 'down' && /_down$|player$|woman$/.test(l.key))) throw new Error(`stepping ${dir} drew ${l.key}`);
-      if (l.flip !== (dir === 'right')) throw new Error(`stepping ${dir} drew flip=${l.flip}`);
+    const back = ({ up: 'down', down: 'up', left: 'right', right: 'left' } as Record<Dir, Dir>)[dir];
+    // A slow runner draws a 190 ms step in one or two frames, and the one it draws can be the landing (frame 1):
+    // too few samples say nothing about the legs. Step back and try again before calling it a failure.
+    for (let attempt = 1; ; attempt++) {
+      await this.page.eval('__e2e.watchLook(true)');
+      const moved = await this.step(dir);
+      const looks = await this.page.eval<{ key: string; frame: number; flip: boolean; moving: boolean }[]>('__e2e.watchLook(false)');
+      if (!moved) return `${dir}: blocked`;
+      const striding = looks.filter((l) => l.moving);
+      if (striding.length === 0) throw new Error(`no frame was drawn while stepping ${dir}`);
+      for (const l of striding) {
+        if (!l.key.endsWith(`_${stem}`) && !(dir === 'down' && /_down$|player$|woman$/.test(l.key))) throw new Error(`stepping ${dir} drew ${l.key}`);
+        if (l.flip !== (dir === 'right')) throw new Error(`stepping ${dir} drew flip=${l.flip}`);
+      }
+      const frames = new Set(striding.map((l) => l.frame));
+      // a leg frame (0 or 2) shows during the step; the feet-together frame (1) is where it lands
+      if ([...frames].some((f) => f !== 1)) return `${dir}: ${striding[0]!.key.split('/').pop()}${dir === 'right' ? ' mirrored' : ''}, frames ${[...frames].sort().join('/')}`;
+      if (striding.length >= 4 || attempt >= 4) throw new Error(`stepping ${dir} never lifted a leg: frames ${[...frames].join(',')} in ${striding.length} drawn`);
+      await this.step(back);
     }
-    const frames = new Set(striding.map((l) => l.frame));
-    // a leg frame (0 or 2) shows during the step; the feet-together frame (1) is where it lands
-    if (![...frames].some((f) => f !== 1)) throw new Error(`stepping ${dir} never lifted a leg: frames ${[...frames].join(',')}`);
-    return `${dir}: ${striding[0]!.key.split('/').pop()}${dir === 'right' ? ' mirrored' : ''}, frames ${[...frames].sort().join('/')}`;
   }
 
   /** The work started by one press: no pop-up, no bar, the hands busy, and the node still standing. */
@@ -450,36 +462,7 @@ class Player {
 
   /** Solves any minigame (timing, strike, pick, snap) by waiting for data-cue="now". */
   async solveMinigame(): Promise<void> {
-    const start = Date.now();
-    await this.page.waitFor('!!document.querySelector(".minigame[data-game]")', 'minigame to open', 5000);
-    while (Date.now() - start < 30_000) {
-      const open = await this.page.eval<boolean>('!!document.querySelector(".minigame[data-game]")');
-      if (!open) break;
-
-      const cue = await this.page.waitFor<string>(
-        `(() => {
-          const m = document.querySelector('.minigame[data-game]');
-          if (!m) return 'closed';
-          return m.getAttribute('data-cue') === 'now' ? 'now' : '';
-        })()`,
-        'data-cue="now"',
-        10_000,
-      ).catch(() => 'closed');
-
-      if (cue === 'closed') break;
-      if (cue === 'now') {
-        if (this.touch) {
-          await this.page.eval(`(() => {
-            const l = document.querySelector('.minigame-layer');
-            if (l) l.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
-          })()`);
-        } else {
-          await this.page.press('Enter');
-        }
-        await sleep(80);
-      }
-    }
-    await this.page.waitFor('!document.querySelector(".minigame-layer")', 'minigame layer to close', 5000).catch(() => undefined);
+    await solveMinigame(this.page, this.touch);
   }
 
   /** A level brought a point: the window opens about 0.7 s after the jingle. Handle it before doing anything else. */
@@ -568,6 +551,26 @@ class Player {
     }
     const have = await this.bag(item);
     if (have < want) throw new Error(`only ${have} of ${want} ${item} after gathering`);
+  }
+
+  /**
+   * Picks a task from an elder or a trader and confirms it. On a loaded machine the confirmation can be late,
+   * or the quest already counted as taken by the time the test looks for it, so the confirmation is asked for
+   * only while the quest is still not active, and a late one gets a second look before the run fails.
+   */
+  async acceptTask(pickTitle: string, quest: string): Promise<void> {
+    await this.talkThrough(`Task: ${pickTitle}`);
+    for (let tries = 0; tries < 2; tries++) {
+      if ((await this.quest(quest)) === 'active') return;
+      try {
+        await this.talkThrough('I will do it');
+        return;
+      } catch (err) {
+        if ((await this.quest(quest)) === 'active') return;
+        if (tries === 1) throw err;
+        await sleep(1000);
+      }
+    }
   }
 
   async quest(id: string): Promise<string | undefined> {
@@ -825,8 +828,7 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       await me.expectPrompt(/^Talk to Pell/, 'the trader');
     }
     await me.a();
-    await me.talkThrough(`Task: ${first}`);
-    await me.talkThrough('I will do it');
+    await me.acceptTask(first, viewport.mobile ? 'core/three-fruits' : 'core/herbs-for-pell');
     await me.idle('accepting the task');
     const taken = viewport.mobile ? 'core/three-fruits' : 'core/herbs-for-pell';
     if ((await me.quest(taken)) !== 'active') throw new Error(`${taken} was not accepted`);
@@ -859,20 +861,17 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       log(`bought a basket: ${opens}`);
     }
 
-    // 9. a ruin in the mist at the edge of town, waiting for a creator
+    // 9. a ruin in the mist at the edge of town, waiting for a creator (no way into the developers' pages from the game: DECISIONS 2026-10-11)
     const ruin = await page.eval<Rect>(`__e2e.slot('core/town-edge')`);
     await me.walkTo(ruin, 'the ruined house');
     await me.expectPrompt(/^(Look at|Read the sign)/, 'the ruined house');
     await me.snap('ruin');
     await me.a();
-    const sign = await me.talkThrough('Open the creator guide');
+    const sign = await me.talkThrough();
     if (!sign.some((l) => l.includes('Awaiting restoration'))) throw new Error(`the ruin does not await restoration: ${sign.join(' / ')}`);
-    const guide = await page.waitFor<string>(`document.querySelector('.panel .md')?.textContent ?? ''`, 'the creator guide');
-    if (!guide.includes('Add a fruit in 10 minutes')) throw new Error('the creator guide did not open');
-    await me.snap('guide');
-    log('opened the creator guide from the ruin');
-    await page.tap('.panel header button', 'Close');
-    await me.idle('closing the guide');
+    if (await page.eval<boolean>(`!!document.querySelector('.dialog-options button')`)) throw new Error('the ruin sign offers an option');
+    await me.snap('ruin-sign');
+    log('read the ruin sign: it awaits restoration, with no guide');
 
     // 10. Maru's bells, then his coin by the trowel's road toward the first night (phone); Pell's herbs (desktop)
     if (viewport.mobile) {
@@ -890,8 +889,7 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       await me.walkTo({ x: elder[0], y: elder[1], w: 1, h: 1 }, 'Elder Maru');
       await me.expectPrompt(/^Talk to Elder Maru/, 'the elder');
       await me.a();
-      await me.talkThrough('Task: The coin under the lantern');
-      await me.talkThrough('I will do it');
+      await me.acceptTask('The coin under the lantern', 'core/a-coin-for-maru');
       await me.idle('accepting the coin');
       if ((await me.quest('core/a-coin-for-maru')) !== 'active') throw new Error('a-coin-for-maru was not accepted');
       for (const id of ['core/marked-stone', 'core/town-lantern', 'core/hill-lantern']) {

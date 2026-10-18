@@ -4,11 +4,19 @@
  * are errors since the core content was rewritten to pass them (GRUNT P-3,
  * 8.10): a breach stops the check, core and extensions alike.
  */
-import type { Bundle, QuestDef } from '@game/kernel';
+import { campTile, findSlot, inRect, isSafeGround, makeWalkable, type Bundle, type QuestDef } from '@game/kernel';
 import { QUEST_TYPES } from '@game/schema';
 import type { Issue } from './load';
 
 export const RULES_PAGE = 'docs/design/GAME_RULES.md';
+
+/** The player walks four ways. */
+const STEPS: readonly (readonly [number, number])[] = [
+  [0, -1],
+  [1, 0],
+  [0, 1],
+  [-1, 0],
+];
 
 /** The opening chain teaches each verb by repetition; G2 and G4 apply after it. */
 export const OPENING_QUESTS: ReadonlySet<string> = new Set(['core/fix-the-bridge', 'core/first-fire', 'core/into-town']);
@@ -72,6 +80,61 @@ function soldItems(b: Bundle): Set<string> {
   return new Set(Object.values(b.shops).flatMap((s) => s.sells.map((o) => o.item)));
 }
 
+/**
+ * The items these rewards give, quests' and expeditions' alike: each stack's
+ * item, and its `instead`, which a start whose kit holds the item gets.
+ */
+export function rewardItems(rewards: readonly { items?: readonly { item: string; instead?: string }[] }[]): Set<string> {
+  return new Set(rewards.flatMap((r) => (r.items ?? []).flatMap((s) => (s.instead === undefined ? [s.item] : [s.item, s.instead]))));
+}
+
+/**
+ * Where a quest step is on the map, for the kinds of step that name a place: a visit's slot, a restore's slot, a build's camp
+ * tile, a riddle's props and its answer (the slot to stand in, or the dig spot's slot), and a tend step's fire.
+ * A find step is not here: its item may grow in many places, so `findPlaces` lists them and one inside is enough.
+ */
+function stepPlaces(b: Bundle, st: QuestDef['steps'][number]): { ref: string; x: number; y: number; w: number; h: number }[] {
+  const slotOf = (ref: string, id: string | undefined) => {
+    const slot = id === undefined ? undefined : findSlot(b.map, id);
+    return slot ? [{ ref, x: slot.x, y: slot.y, w: slot.w, h: slot.h }] : [];
+  };
+  const propOf = (id: string) => {
+    const p = b.map.props.find((prop) => prop.id === id);
+    return p ? [{ ref: id, x: p.x, y: p.y, w: p.w, h: p.h }] : [];
+  };
+  switch (st.kind) {
+    case 'visit':
+      return slotOf(st.slot, st.slot);
+    case 'restore':
+      return slotOf(st.restore, b.restores[st.restore]?.place.slot);
+    case 'build': {
+      const c = b.camps[st.camp];
+      const tile = c && campTile(b, c.slot);
+      return tile ? [{ ref: st.camp, x: tile[0], y: tile[1], w: 1, h: 1 }] : [];
+    }
+    case 'riddle': {
+      const a = st.answer;
+      const answer = a.kind === 'visit' ? slotOf(a.slot, a.slot) : slotOf(a.treasure, b.treasures[a.treasure]?.place.slot);
+      return [...st.props.flatMap(propOf), ...answer];
+    }
+    case 'tend':
+      return propOf(st.fire);
+    default:
+      return [];
+  }
+}
+
+/** Where an item can be found on the map: every node of a resource that yields it and every dig spot that holds it. */
+function findPlaces(b: Bundle, item: string): { x: number; y: number; w: number; h: number }[] {
+  return Object.values(b.instances).flatMap((inst) => {
+    const gives =
+      inst.kind === 'resource'
+        ? b.resources[inst.source]?.output === item
+        : (b.treasures[inst.source]?.finds ?? []).some((f) => f.item === item);
+    return gives ? [{ x: inst.x, y: inst.y, w: 1, h: 1 }] : [];
+  });
+}
+
 /** The first quests a player meets: by the length of their requires chain, then by id. */
 export function firstQuests(b: Bundle, n: number): QuestDef[] {
   const depth = new Map<string, number>();
@@ -109,6 +172,11 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
   const isFind = (item: string) => findable.has(item);
 
   const opening = openingQuests(b);
+  const expeditionRewarded = new Set(
+    Object.values(b.expeditions).flatMap((x) =>
+      (x.reward.items?.length ?? 0) + (x.reward.opens?.length ?? 0) > 0 ? x.chain : [],
+    ),
+  );
   for (const q of Object.values(b.quests)) {
     if (opening.has(q.id)) continue;
     const counter = q.steps.every((s) => s.kind === 'visit' || (s.kind === 'bring' && !isFind(s.item)));
@@ -122,7 +190,7 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
     }
     const r = q.reward;
     // items, recipes and places opened are all something the player can newly do
-    if ((r.items?.length ?? 0) + (r.recipes?.length ?? 0) + (r.opens?.length ?? 0) === 0) {
+    if ((r.items?.length ?? 0) + (r.recipes?.length ?? 0) + (r.opens?.length ?? 0) === 0 && !expeditionRewarded.has(q.id)) {
       issues.push({
         file: at(q.id),
         where: 'quest.reward',
@@ -186,7 +254,7 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
   // G14: the lines on a quest and a place are boxes like any other (GRUNT S-2); the schema caps how many.
   const lined: [string, string, readonly string[]][] = [
     ...Object.values(b.quests).flatMap((q) =>
-      (['offer', 'waiting', 'done'] as const).map((k): [string, string, readonly string[]] => [q.id, `quest.talk.${k}`, q.talk?.[k] ?? []]),
+      (['offer', 'waiting', 'done', 'done_bitten'] as const).map((k): [string, string, readonly string[]] => [q.id, `quest.talk.${k}`, q.talk?.[k] ?? []]),
     ),
     ...Object.values(b.restores).map((r): [string, string, readonly string[]] => [r.id, 'restore.done', r.done ?? []]),
   ];
@@ -278,6 +346,29 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
     }
   }
 
+  // The maze block names the frame the peek shows (DECISIONS 2026-10-11, the ladder): a maze's own, around its heart.
+  for (const q of Object.values(b.quests)) {
+    if (!q.maze) continue;
+    const complain = (where: string, message: string) =>
+      issues.push({ file: at(q.id), where: `quest.maze${where}`, message: `${message} (${RULES_PAGE} section 3, maze)`, level: PLAY_LEVEL });
+    if (q.type !== 'maze') complain('', `only a maze quest names a maze; this one is "${q.type ?? 'untyped'}"`);
+    const frame = findSlot(b.map, q.maze.area);
+    if (!frame || frame.kind !== 'area') {
+      complain('.area', `"${q.maze.area}" is not an area slot`);
+      continue;
+    }
+    const outside = q.steps.flatMap((st) => (st.kind === 'visit' ? [st.slot] : [])).filter((id) => {
+      const heart = findSlot(b.map, id);
+      return !heart || !inRect(heart.x, heart.y, frame) || !inRect(heart.x + heart.w - 1, heart.y + heart.h - 1, frame);
+    });
+    if (outside.length > 0) complain('.area', `the heart lies outside the frame "${frame.id}": ${outside.join(', ')}`);
+    const mark = q.maze.landmark;
+    if (!mark && q.maze.tier <= 2) complain('.landmark', `tier ${q.maze.tier} lights the landmarks, so the maze names them`);
+    if (mark && !b.map.props.some((p) => p.sprite === mark && inRect(p.x, p.y, frame))) {
+      complain('.landmark', `no prop inside "${frame.id}" is drawn with "${mark}"`);
+    }
+  }
+
   // G17: every quest names its type; no two of one type in a row along the requires links; five types among the first ten quests.
   for (const q of Object.values(b.quests)) {
     if (q.type === undefined) {
@@ -311,6 +402,210 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
         level: PLAY_LEVEL,
       });
     }
+  }
+
+  // G36: one clocked place contains a varied, giver-less chain of its own with its problems inside, danger, a climax and a safe way out.
+  // G37: a quest in a chain begins only inside the place at night, so the chain takes no quest of the opening or of another creator.
+  const expeditionRule = rule('G36', "An expedition is the valley's dungeon");
+  const roadRule = rule('G37', 'An expedition is never the only road');
+  const contains = (outer: { x: number; y: number; w: number; h: number }, inner: { x: number; y: number; w: number; h: number }) =>
+    inRect(inner.x, inner.y, outer) && inRect(inner.x + inner.w - 1, inner.y + inner.h - 1, outer);
+  for (const x of Object.values(b.expeditions)) {
+    const complain = (where: string, message: string, cites = expeditionRule) =>
+      issues.push({ file: at(x.id), where, message: `${message} (${cites})`, level: PLAY_LEVEL });
+    const place = findSlot(b.map, x.place);
+    if (!place || place.kind !== 'area') {
+      complain('expedition.place', `"${x.place}" is not an area slot`);
+    }
+    if (x.chain.length < 3 || x.chain.length > 5) {
+      complain('expedition.chain', `the chain has ${x.chain.length} quests; it needs 3 to 5`);
+    }
+    const owner = x.id.slice(0, x.id.indexOf('/') + 1);
+    const types = new Set<string>();
+    x.chain.forEach((id, i) => {
+      const q = b.quests[id];
+      if (!q) {
+        complain(`expedition.chain.${i}`, `no quest "${id}" exists`);
+        return;
+      }
+      if (!id.startsWith(owner)) {
+        complain(`expedition.chain.${i}`, `quest "${id}" is not under "${owner}": a chain holds its creator's own quests, since a quest in a chain begins only inside the place at night`, roadRule);
+      }
+      if (opening.has(id)) complain(`expedition.chain.${i}`, `quest "${id}" is part of the opening: in a chain it would begin only inside the place at night`, roadRule);
+      const shared = Object.values(b.expeditions).filter((other) => other.id !== x.id && other.chain.includes(id));
+      if (shared.length > 0) {
+        complain(`expedition.chain.${i}`, `quest "${id}" is also in the chain of ${shared.map((other) => `"${other.id}"`).join(', ')}: a chain belongs to one place`);
+      }
+      if (place) {
+        for (const st of q.steps) {
+          for (const spot of stepPlaces(b, st)) {
+            if (!contains(place, spot)) complain(`expedition.chain.${i}`, `quest "${id}" has a ${st.kind} step at "${spot.ref}", outside "${x.place}": the chain's problems are inside its place`);
+          }
+          if (st.kind === 'find' && !findPlaces(b, st.item).some((spot) => contains(place, spot))) {
+            complain(`expedition.chain.${i}`, `quest "${id}" has a find step for "${st.item}", which nothing inside "${x.place}" gives: the chain's problems are inside its place`);
+          }
+        }
+      }
+      if (place) {
+        for (const opened of q.reward.opens ?? []) {
+          const slot = findSlot(b.map, b.restores[opened]?.place.slot ?? '');
+          if (slot && !contains(place, slot)) {
+            complain(`expedition.chain.${i}`, `quest "${id}" opens "${opened}", outside "${x.place}": a chain opens doors inside its place; the valley's is the expedition's reward`);
+          }
+        }
+      }
+      if (q.giver !== undefined) complain(`expedition.chain.${i}`, `quest "${id}" has a giver; expedition quests are giver-less`);
+      if (q.type === undefined) complain(`expedition.chain.${i}`, `quest "${id}" has no type`);
+      else if (types.has(q.type)) complain(`expedition.chain.${i}`, `quest type "${q.type}" is repeated in the chain`);
+      else types.add(q.type);
+      const requires = q.requires ?? [];
+      if (i === 0) {
+        const within = requires.filter((required) => x.chain.includes(required));
+        if (within.length > 0) complain(`expedition.chain.${i}`, `the first quest requires a quest inside its own chain: ${within.join(', ')}`);
+      } else if (requires.length !== 1 || requires[0] !== x.chain[i - 1]) {
+        complain(`expedition.chain.${i}`, `quest "${id}" must require exactly ["${x.chain[i - 1]}"]`);
+      }
+    });
+
+    const exit = findSlot(b.map, x.exit);
+    if (!exit) complain('expedition.exit', `no exit slot "${x.exit}" exists`);
+    else {
+      // the camp's ground is safe only once a part of the camp stands, which no content can promise
+      let safe = true;
+      for (let y = exit.y; y < exit.y + exit.h; y++) {
+        for (let x2 = exit.x; x2 < exit.x + exit.w; x2++) safe &&= isSafeGround(b, [x2, y], false);
+      }
+      if (!safe) complain('expedition.exit', `exit slot "${x.exit}" is not safe ground`);
+    }
+
+    if (place && exit) {
+      // the place is entered from its exit and nowhere else, on the map as it stands by day before anything is mended
+      const walkable = makeWalkable(b);
+      const byDay = { restored: [] as string[], camp: [] as string[] };
+      // the valley as it ends up: every passable restore mended but the place's own doors and what its reward opens
+      const own = new Set(x.reward.opens ?? []);
+      const mended = {
+        restored: Object.values(b.restores)
+          .filter((r) => r.passable && !own.has(r.id))
+          .filter((r) => {
+            const slot = findSlot(b.map, r.place.slot);
+            return slot !== undefined && !contains(place, slot);
+          })
+          .map((r) => r.id),
+        camp: [] as string[],
+      };
+      const ways = new Map<string, boolean>();
+      const touched = new Set<string>();
+      for (const view of [byDay, mended]) {
+        for (let y = place.y; y < place.y + place.h; y++) {
+          for (let x2 = place.x; x2 < place.x + place.w; x2++) {
+            if (!walkable(x2, y, view)) continue;
+            for (const [dx, dy] of STEPS) {
+              const [nx, ny] = [x2 + dx, y + dy];
+              if (inRect(nx, ny, place) || !walkable(nx, ny, view)) continue;
+              ways.set(`${nx},${ny}`, inRect(nx, ny, exit));
+              if (view === byDay && inRect(nx, ny, exit)) touched.add(`${nx},${ny}`);
+            }
+          }
+        }
+      }
+      if (!walkable(exit.x, exit.y, byDay)) {
+        complain('expedition.exit', `the walk-out sets the player on (${exit.x},${exit.y}), the corner of "${x.exit}", and no one can stand there`);
+      }
+      const others = [...ways].filter(([, fromExit]) => !fromExit).map(([tile]) => `(${tile})`);
+      if (others.length > 0) {
+        complain('expedition.place', `"${x.place}" can be walked into from ${others.join(', ')}, not only from its exit "${x.exit}", by day or once the valley's restores are mended: one way in`);
+      }
+      if (touched.size === 0) {
+        complain('expedition.exit', `no walkable tile of "${x.place}" touches its exit "${x.exit}" before dusk: the way in is open by day`);
+      }
+    }
+
+    const climax = findSlot(b.map, x.climax.slot);
+    if (!place || !climax || !contains(place, climax)) {
+      complain('expedition.climax.slot', `climax slot "${x.climax.slot}" is not inside "${x.place}"`);
+    }
+    if (place && !b.map.props.some((p) => p.hazard !== undefined && contains(place, p))) {
+      complain('expedition.place', `place "${x.place}" contains no hazard prop`);
+    }
+
+    let previous = -1;
+    x.window.bells.forEach((hour, i) => {
+      const order = hour >= 20 && hour <= 23 ? hour - 20 : hour >= 0 && hour <= 4 ? hour + 4 : -1;
+      if (!Number.isInteger(hour) || order < 0) complain(`expedition.window.bells.${i}`, `bell hour ${hour} is not a night hour`);
+      else if (order <= previous) complain(`expedition.window.bells.${i}`, `bell hour ${hour} is out of ring order`);
+      previous = order;
+    });
+    (x.reward.opens ?? []).forEach((id, i) => {
+      if (!b.restores[id]) complain(`expedition.reward.opens.${i}`, `"${id}" is not a restore`);
+    });
+  }
+
+  // G37: an expedition opens places sooner, never alone. What its reward or a quest of its chain gives is no road by day:
+  // a restore that needs it by hand needs it from somewhere else too, unless a quest outside every chain opens the place.
+  const chained = new Set(Object.values(b.expeditions).flatMap((x) => x.chain));
+  // a quest that waits on a chain quest, however far down its requires, is the night's too
+  const night = new Set(chained);
+  for (let grew = true; grew; ) {
+    grew = false;
+    for (const q of Object.values(b.quests)) {
+      if (!night.has(q.id) && (q.requires ?? []).some((r) => night.has(r))) {
+        night.add(q.id);
+        grew = true;
+      }
+    }
+  }
+  for (const q of Object.values(b.quests)) {
+    if (chained.has(q.id)) continue;
+    (q.requires ?? []).forEach((r, i) => {
+      if (!chained.has(r)) return;
+      issues.push({
+        file: at(q.id),
+        where: `quest.requires.${i}`,
+        message: `"${r}" is a quest of an expedition's chain: a quest of the day would wait on the expedition (${roadRule})`,
+        level: PLAY_LEVEL,
+      });
+    });
+  }
+  const dayQuests = Object.values(b.quests).filter((q) => !night.has(q.id));
+  const byDay = rewardItems(dayQuests.map((q) => q.reward));
+  const byNight = rewardItems([...Object.values(b.expeditions).map((x) => x.reward), ...Object.values(b.quests).filter((q) => chained.has(q.id)).map((q) => q.reward)]);
+  const openedByDay = new Set(dayQuests.flatMap((q) => q.reward.opens ?? []));
+  // what a chain quest opens is a door inside the place (the chain alone reaches it); what the expeditions reward opens is the valleys
+  const openedByNight = new Set(Object.values(b.expeditions).flatMap((x) => x.reward.opens ?? []));
+  const sold = soldItems(b);
+  const nightOnly = (item: string) => byNight.has(item) && b.values[item] === undefined && !sold.has(item) && !byDay.has(item);
+  for (const q of dayQuests) {
+    q.steps.forEach((st, i) => {
+      if ((st.kind !== 'bring' && st.kind !== 'find') || !nightOnly(st.item)) return;
+      issues.push({
+        file: at(q.id),
+        where: `quest.steps.${i}`,
+        message: `only an expedition gives "${st.item}": a quest of the day would wait on the expedition (${roadRule})`,
+        level: PLAY_LEVEL,
+      });
+    });
+  }
+  for (const r of Object.values(b.restores)) {
+    if (openedByDay.has(r.id)) continue;
+    // a restore with no inputs opens only as a reward: named by an expedition's reward alone, the night is its only road
+    if (r.inputs.length === 0 && openedByNight.has(r.id)) {
+      issues.push({
+        file: at(r.id),
+        where: 'restore.inputs',
+        message: `only an expedition opens "${r.id}": it opens by no hand and no quest of the day names it (${roadRule})`,
+        level: PLAY_LEVEL,
+      });
+    }
+    r.inputs.forEach((s, i) => {
+      if (!nightOnly(s.item)) return;
+      issues.push({
+        file: at(r.id),
+        where: `restore.inputs.${i}`,
+        message: `only an expedition gives "${s.item}": the place would open through the expedition alone (${roadRule})`,
+        level: PLAY_LEVEL,
+      });
+    });
   }
 
   return issues;

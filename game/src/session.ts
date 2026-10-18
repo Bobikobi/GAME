@@ -86,6 +86,8 @@ export class Session {
   private pickup: string | null = null;
   private listeners = new Map<keyof SessionEvents, Set<Listener>>();
   private sinceSave = 0;
+  /** the tick up to which burns that ran out were asked about (`tellOuts`) */
+  private outSeen = 0;
   /** the in-game hour of the last frame: when it turns, what depends on the hour redraws */
   private hour = -1;
 
@@ -167,6 +169,12 @@ export class Session {
     // a save from before tending (P-13a) has no fire ledger
     const tending = state.player as Partial<Pick<State['player'], 'fires'>>;
     tending.fires ??= {};
+    // a save from before expeditions (P-14a) has no expedition progress
+    const expedition = state.player as Partial<Pick<State['player'], 'expeditions'>>;
+    expedition.expeditions ??= {};
+    // a save from before kernel 0.9 holds no record of bites
+    const bites = state.player as Partial<Pick<State['player'], 'bitten'>>;
+    bites.bitten ??= [];
     const session = new Session(bundle, state);
     stampDemo();
     if (state.content !== bundle.tag) {
@@ -261,6 +269,7 @@ export class Session {
       this.emit('events', events);
       this.emit('change', undefined);
     }
+    this.tellOuts();
     // a glint at dusk, a plant that opens: the world redraws once an hour, not only after an action
     const hour = hourOf(this.bundle, this.tick);
     if (hour !== this.hour) {
@@ -269,6 +278,26 @@ export class Session {
     }
     this.sinceSave += dt;
     if (this.sinceSave > 5000) this.save();
+  }
+
+  /**
+   * A fire can go out while the player stands still, and the kernel tells that (`fire_out`)
+   * only with a step: so once a burn's end has passed since the last step, the tile is
+   * reported again and the kernel decides what to tell. It tells each end once, in the step
+   * that first passes it, and `report` saves that step with it, so a reload never tells it
+   * again. Asked once per end: a report the kernel refuses is not repeated every frame (the
+   * next step tells it then), and none goes while work is under way, which stays undoable.
+   */
+  private tellOuts(): void {
+    if (this.busy) return;
+    const since = Math.max(this.state.tick, this.outSeen);
+    this.outSeen = this.tick;
+    for (const fire of Object.values(this.state.player.fires ?? {})) {
+      if (fire.until > since && fire.until <= this.tick) {
+        this.report(this.pos, true);
+        return;
+      }
+    }
   }
 
   /** Ask the kernel without changing anything: would this action be accepted? */
@@ -280,9 +309,9 @@ export class Session {
   /**
    * Tell the kernel which tile the player stands on (DECISIONS.md, 2026-10-10:
    * health and hazards). Silent: it goes only when the tile changed, or with
-   * `again` while a hunt runs so its bites land on a player standing still; a
-   * refusal is dropped and walking goes on. What it brings (a hurt, a fall) is
-   * shown like any other event.
+   * `again` while a hunt runs so its bites land on a player standing still, or
+   * once a burn has run out (`tellOuts`); a refusal is dropped and walking goes
+   * on. What it brings (a hurt, a fall, a fire out) is shown like any other event.
    */
   report(at: readonly [number, number], again = false): void {
     // a step that was under way when a menu opened still lands: the kernel hears of every tile

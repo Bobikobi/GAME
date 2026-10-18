@@ -1,0 +1,42 @@
+{
+  "$schema": "../../../schema/json/quest.schema.json",
+  "format": 1,
+  "type": "quest",
+  "id": "core/the-long-night",
+  "title": "The long night",
+  "creator": "core",
+  "quest": {
+    "giver": "core/elder",
+    "type": "tending",
+    "summary": "My hearth went cold the year the bells began. Does a fire kept by hand hold through one whole night?",
+    "requires": [
+      "core/a-coin-for-maru"
+    ],
+    "steps": [
+      {
+        "kind": "tend",
+        "fire": "core/elder-hearth"
+      }
+    ],
+    "talk": {
+      "offer": [
+        "This hearth by my door was kept every night, once. Then it was not.",
+        "Light it before dusk. Feed it until dawn. What is looked after stays."
+      ],
+      "waiting": [
+        "Before dusk, light it. Then wood, all night, until the sky goes grey."
+      ],
+      "done": [
+        "It held, the whole night. What is looked after is not forgotten.",
+        "Take this. Herbs and cord, the way we bound a hurt once."
+      ]
+    },
+    "reward": {
+      "rep": 15,
+      "gold_mg": 20000,
+      "recipes": [
+        "core/bandage"
+      ]
+    }
+  }
+}

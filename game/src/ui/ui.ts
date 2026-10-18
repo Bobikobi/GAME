@@ -7,6 +7,7 @@ import {
   type GameEvent,
   type Grade,
   characterLevel,
+  doneLines,
   findSlot,
   holds,
   isNight,
@@ -19,11 +20,11 @@ import {
 } from '@game/kernel';
 import { app } from '../app';
 import type { Button } from '../input';
+import { fireWarning, nextLogClock, woodToFeed } from '../fires';
 import type { Session } from '../session';
 import {
   activeQuests,
   clock,
-  describe,
   digRiddleOpen,
   gold,
   hudUnlocks,
@@ -35,6 +36,7 @@ import {
   readyToHandIn,
   windowScalePct,
 } from '../text';
+import { type Toast, type Tone, ToastBand, eventToasts, readTime, urgent } from '../toasts';
 import { resourceKind, treasureKind } from '../work';
 import { say, type Option } from './dialog';
 import { button, h, sprite } from './dom';
@@ -45,7 +47,6 @@ import { openLevelUp } from './levelup';
 import {
   openBag,
   openCraft,
-  openGuide,
   openJournal,
   openMenu,
   openShop,
@@ -68,6 +69,8 @@ export interface Layer {
   /** return true when the layer used the button */
   onButton?: (b: Button) => boolean;
   onClose?: () => void;
+  /** a dialogue box: where it covers the toasts (a phone's low band) they wait while it is open */
+  holdsToasts?: boolean;
 }
 
 /** The HUD's live elements, built once; renderHud() patches their values. */
@@ -92,6 +95,9 @@ export class UI {
   private hud: HTMLElement;
   private tracker: HTMLElement;
   private toasts: HTMLElement;
+  /** the toasts up and in line (two at most up); its one timer brings it to its next change */
+  private band = new ToastBand<HTMLElement>();
+  private bandTimer = 0;
   private promptEl: HTMLElement;
   private layers: Layer[] = [];
   private loadingEl: HTMLElement | undefined;
@@ -103,6 +109,8 @@ export class UI {
   private levelUpOpen = false;
   /** the night (its end tick) whose lantern warning was shown, so it opens once per night */
   private warnedNight: number | undefined;
+  /** the burns (fire and lit tick) whose running-low warning was shown, so it opens once per burn */
+  private warnedFires = new Set<string>();
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -133,6 +141,8 @@ export class UI {
     this.root.append(layer.el);
     app.session?.pause();
     this.setPrompt('');
+    // the hold starts as the box opens: a toast already up keeps the rest of its time for after it
+    if (layer.holdsToasts) this.runBand();
   }
 
   pop(layer: Layer): void {
@@ -143,6 +153,8 @@ export class UI {
     app.session?.resume();
     layer.onClose?.();
     this.renderHud();
+    // toasts held by a box go up once it closes, unless the next box of the same beat opens at once
+    this.runBandSoon();
   }
 
   closeAll(): void {
@@ -191,15 +203,12 @@ export class UI {
     app.world?.bind(session);
     session.on('events', (events) => {
       // a fall says it all in its one box: the calls to run from a hunt that has ended come down
-      const fell = events.some((e) => e.e === 'fall');
-      if (fell) this.toasts.replaceChildren();
-      for (const e of events) {
-        if (fell && e.e === 'hurt') continue;
-        const d = describe(app.bundle, session.state, e);
-        if (d) this.toast(d.text, d.tone, d.icon);
-      }
+      if (events.some((e) => e.e === 'fall')) this.clearToasts();
+      for (const t of eventToasts(app.bundle, session.state, events)) this.queueToast(t);
       feedback(this.root, events);
       void this.afterEvents(events);
+      // after the story beats begin: on a phone a box they opened holds this batch's toasts until it closes
+      this.runBand();
     });
     session.on('change', () => this.renderHud());
     this.hud.hidden = false;
@@ -238,12 +247,25 @@ export class UI {
       setText(p.darkText, dark.text);
     }
     this.warnAtNight(s);
+    this.warnFireLow(s);
     setClass(p.level, points > 0 ? 'chip glow' : 'chip');
     setTitle(p.level, points > 0 ? 'A skill point to spend: open the journal' : 'Character level');
     setText(p.level, `Lv ${characterLevel(b, st)}${points > 0 ? ' +' : ''}`);
     p.bag.hidden = !unlocked.bag;
     p.log.hidden = !unlocked.log;
     this.renderTracker(s);
+    this.placeToasts(s);
+  }
+
+  /**
+   * On a phone the toasts sit low, above the action prompt (style.css). Where the camera stops
+   * at the foot of the map the player can stand that low too, and there they go up under the tracker.
+   */
+  private placeToasts(s: Session): void {
+    const feet = app.world?.screenOf(s.pos[0], s.pos[1] + 1).y;
+    // up past 60% of the height, back down above 55%: a step to and fro on one row does not toss them
+    const up = this.toasts.classList.contains('up');
+    this.toasts.classList.toggle('up', feet !== undefined && feet > window.innerHeight * (up ? 0.55 : 0.6));
   }
 
   /** The HUD's elements, once; after that renderHud() patches what changed. */
@@ -303,6 +325,20 @@ export class UI {
     ]);
   }
 
+  /**
+   * A fire a tend step keeps warns before it goes out (G31): one box, once per burn, in
+   * its last `fire.warn_min` game minutes, wherever the player stands (the night is theirs to
+   * keep, on screen or not) while no box is open, and only while it still needs wood for the
+   * night it keeps (`wantsWood`).
+   */
+  private warnFireLow(s: Session): void {
+    if (this.blocking || s.paused) return;
+    const w = fireWarning(app.bundle, s.state, s.tick, this.warnedFires);
+    if (!w) return;
+    this.warnedFires.add(w.key);
+    void say(this, null, [`The ${w.name} is burning low.`, 'Wood keeps it: feed it before it goes out.']);
+  }
+
   private renderTracker(s: Session): void {
     const b = app.bundle;
     const ids = activeQuests(b, s.state);
@@ -316,9 +352,9 @@ export class UI {
       title = q.title;
       more = ids.length - 1;
       lines =
-        readyToHandIn(b, s.state, main) && giver
+        readyToHandIn(b, s.state, main, s.tick) && giver
           ? [`Bring it to ${giver}`]
-          : questSteps(b, s.state, main)
+          : questSteps(b, s.state, main, s.tick)
               .filter((st) => !st.done)
               .slice(0, 2)
               .map((st) => st.short ?? st.text);
@@ -338,12 +374,42 @@ export class UI {
     this.promptEl.replaceChildren(h('b', null, 'A'), ' ', label);
   }
 
-  toast(text: string, tone: 'good' | 'bad' | 'info' = 'info', icon?: string): void {
-    const el = h('div', { class: `toast ${tone}` }, icon ? sprite(app.bundle, icon, 1) : null, h('span', null, text));
-    this.toasts.append(el);
-    while (this.toasts.children.length > 4) this.toasts.firstElementChild?.remove();
-    window.setTimeout(() => el.classList.add('out'), 2800);
-    window.setTimeout(() => el.remove(), 3300);
+  toast(text: string, tone: Tone = 'info', icon?: string): void {
+    this.queueToast({ lines: [text], tone, ...(icon ? { icon } : {}) });
+    this.runBand();
+  }
+
+  /** A toast joins the line (toasts.ts): two at most stand at once, a bad one goes ahead, and none is dropped. */
+  private queueToast(t: Toast): void {
+    const el = h('div', { class: `toast ${t.tone}` }, t.icon ? sprite(app.bundle, t.icon, 1) : null, h('span', { class: 'toast-text' }, t.lines.join('\n')));
+    this.band.add(el, { urgent: urgent(t), read: readTime(t) });
+  }
+
+  /** Puts toasts up, fades them and takes them down as the band says, then waits for its next change. */
+  private runBand(): void {
+    window.clearTimeout(this.bandTimer);
+    const now = performance.now();
+    const step = this.band.run(now, this.held());
+    for (const el of step.remove) el.remove();
+    for (const el of step.show) this.toasts.append(el);
+    for (const el of step.fade) el.classList.add('out');
+    if (step.next !== undefined) this.bandTimer = window.setTimeout(() => this.runBand(), step.next - now);
+  }
+
+  /** The band at the end of this turn, once every box this turn opens is open. */
+  private runBandSoon(): void {
+    window.clearTimeout(this.bandTimer);
+    this.bandTimer = window.setTimeout(() => this.runBand(), 0);
+  }
+
+  /** A dialogue box covers the toasts where they sit low (a phone, style.css): while one is open there, they wait. */
+  private held(): boolean {
+    return this.layers.some((l) => l.holdsToasts) && getComputedStyle(this.toasts).position === 'fixed';
+  }
+
+  private clearToasts(): void {
+    this.band.clear();
+    this.toasts.replaceChildren();
   }
 
   aboutDemo(): void {
@@ -382,7 +448,9 @@ export class UI {
       if (e.e === 'quest' && e.state === 'done') {
         const q = b.quests[e.quest];
         const giver = q?.giver ? b.npcs[q.giver] : undefined;
-        if (q?.talk?.done) await say(this, giver?.name ?? null, named(q.talk.done));
+        // a quest a predator bit the player on has the giver's other line, when the content wrote one
+        const done = doneLines(b, s.state, e.quest);
+        if (done) await say(this, giver?.name ?? null, named(done));
       }
       // a fall is one plain box (G33): what happened and what it cost, never where it was
       if (e.e === 'fall') await say(this, null, fallLines(b, s.state.player.town, e.lost));
@@ -436,7 +504,7 @@ export class UI {
       if (q.giver !== npcId) continue;
       const state = s.state.player.quests[id];
       if (state === 'active') {
-        options.push({ label: readyToHandIn(b, s.state, id) ? `Hand in: ${q.title}` : `About: ${q.title}`, value: `quest:${id}` });
+        options.push({ label: readyToHandIn(b, s.state, id, s.tick) ? `Hand in: ${q.title}` : `About: ${q.title}`, value: `quest:${id}` });
       } else if (!state && (q.requires ?? []).every((r) => s.state.player.quests[r] === 'done')) {
         options.push({ label: `Task: ${q.title}`, value: `quest:${id}` });
       }
@@ -477,12 +545,12 @@ export class UI {
       if (!r.ok) this.toast(r.error, 'bad');
       return;
     }
-    if (readyToHandIn(b, s.state, questId)) {
+    if (readyToHandIn(b, s.state, questId, s.tick)) {
       const r = s.act({ t: 'turnin', quest: questId, at: s.pos });
       if (!r.ok) this.toast(r.error, 'bad');
       return;
     }
-    const left = questSteps(b, s.state, questId).filter((st) => !st.done).map((st) => st.text);
+    const left = questSteps(b, s.state, questId, s.tick).filter((st) => !st.done).map((st) => st.text);
     await say(this, npc.name, [...named(q.talk?.waiting ?? [q.summary]), `Still needed: ${left.join('; ')}.`]);
   }
 
@@ -563,13 +631,24 @@ export class UI {
     confirmRestore(this, restoreId);
   }
 
+  /** Feed a fire one piece of wood: a log first when the bag holds one; a refusal shows like any other. */
+  feed(fireId: string): void {
+    const s = app.session;
+    if (!s) return;
+    const item = woodToFeed(app.bundle, s.state);
+    if (!item) return this.toast('You have no wood.', 'bad');
+    const r = s.act({ t: 'feed', fire: fireId, item, at: s.pos });
+    if (r.ok) return;
+    // a fire too full for a whole log refuses it: say when one fits, as the journal does
+    const at = nextLogClock(app.bundle, s.state, fireId, s.tick);
+    this.toast(at === undefined ? r.error : `${r.error} A log fits at ${at}.`, 'bad');
+  }
+
   async sign(slotId: string): Promise<void> {
     const info = app.world?.signText(slotId);
     if (!info) return;
     if (info.creator) return openSignCard(this, info);
-    const options: Option[] = info.empty ? [{ label: 'Open the creator guide', value: 'guide' }, { label: 'Close', value: 'close' }] : [];
-    const pick = await say(this, info.title, info.lines, options);
-    if (pick === 'guide') openGuide(this);
+    await say(this, info.title, info.lines);
   }
 
   note(text: string, title?: string): void {

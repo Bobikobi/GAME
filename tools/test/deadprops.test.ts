@@ -33,6 +33,20 @@ describe('dead props', () => {
     expect(checkDeadProps(b, {})).toEqual([]);
   });
 
+  it('cover wearing the look of a node is named like any other prop', () => {
+    const b = structuredClone(base);
+    b.map.props = [...b.map.props, { sprite: 'core/base-kit:props/reeds', x: 1, y: 1, w: 1, h: 1, solid: false, cover: true }];
+    const issues = checkDeadProps(b, {});
+    expect(issues).toHaveLength(1);
+    expect(issues[0]!.message).toContain('core/base-kit:props/reeds');
+  });
+
+  it('cover wearing a scenery look passes', () => {
+    const b = structuredClone(base);
+    b.map.props = [...b.map.props, { sprite: 'core/base-kit:props/grass_tall', x: 1, y: 1, w: 1, h: 1, solid: false, cover: true }];
+    expect(checkDeadProps(b, {})).toEqual([]);
+  });
+
   it('a scatter slot with no node is named', () => {
     const b = structuredClone(base);
     const slot = b.map.slots.find((s) => s.id === 'core/lone-oak-1')!;

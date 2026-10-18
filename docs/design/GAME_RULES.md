@@ -196,7 +196,7 @@ what it looks like in the valley.
 | `persuasion` | Asks the right question or brings the right fact. | "I talked my way in." | Relatedness, autonomy | Fallout's speech checks; The Witcher 3's talks | The trade opens only after the player asks Pell about the mist. |
 | `errand` | Repeats a known task for a known pay. | "Easy coins." | Routine, easy fun | Skyrim's radiant quests; The Witcher 3's notice boards | Pell's standing order for herbs, marked as an errand, only after the main beat (G4). |
 | `maze` | Finds the way through a place whose shape is the question: dead ends, a landmark seen over the trees, a sign that tells the right turn. | "I found the way." | Competence, autonomy (the route is the player's own) | The Lost Woods in Zelda (the route is read from the world, a wrong turn sends you back); Tunic (paths hide in plain sight until a page shows them) | A tangle of forest beyond the ruins, drawn in the map alone: dead ends that cost a walk back, one landmark over the canopy, the moss side of the trunks for the player who looks; the step is a `visit` of the clearing at its heart, nothing new in the kernel. |
-| `stealth` | Passes a hazard unseen: learns its loop, waits for the window, takes the route it does not watch. | "It never saw me." | Thrill, competence | Breath of the Wild's Yiga hideout (a walked loop with a window to cross); Untitled Goose Game (being seen costs a retreat, never a life) | The wolf's round at night, over G30-G35: a loop the player learns by its eyes in the dark, reeds and shadow that hide the player, running back to a safe place as the way out when it fails; seen means a chase and the walk back to the fire, never a fight (G35). Waits for the hazard system (P-5). |
+| `stealth` | Passes a hazard unseen: learns its loop, waits for the window, takes the route it does not watch. | "It never saw me." | Thrill, competence | Breath of the Wild's Yiga hideout (a walked loop with a window to cross); Untitled Goose Game (being seen costs a retreat, never a life) | The wolf's round at night, over G30-G35: a loop the player learns by its eyes in the dark, reeds and shadow that hide the player, running back to a safe place as the way out when it fails; seen means a chase and the walk back to the fire, never a fight (G35). |
 
 `maze` and `stealth` entered on 9.10 by the owner's word (DECISIONS.md); each
 joins `quest.type` with its first quest, and the schema's count follows.
@@ -323,7 +323,12 @@ The valley has no combat; its danger is the hour, and what the player eats.
 - **G32 Health is the one bar.** The food bar becomes the health bar. Hazards
   take health; food, a first-aid kit and a night's sleep in town, at one's own
   burning camp or at another's as a guest with a deal give it back; low health
-  slows work the way the empty bar did.
+  slows work the way the empty bar did. A hunt outrun to a safe place gives
+  back what its bites took, up to a share of the bar
+  (`hazard.predator.refill_bp`, three quarters in the core); it never takes
+  any, and health lost before the hunt is food's to give back. A hunt that
+  ends at dawn, in a fall or at the last bell gives nothing back (DECISIONS.md,
+  16.10).
   Nothing drains it by the clock (G28): there is no hunger timer, eating is how
   the player heals, and cooking keeps its purpose. Since P-5c (11.10) the
   core content sets `satiety_drain_per_min` to 0, in the same change that
@@ -371,10 +376,18 @@ The valley has no combat; its danger is the hour, and what the player eats.
   (DECISIONS.md, the entry on the three frames).
 - **G48 A fire is kept by hand.** A fire holds a few logs and burns them on
   the game hour, only while the player is in the valley; feeding it by hand
-  lights it or adds a log, nothing bought or made makes it burn longer, and
-  it warns before it goes out (G31), and a prop may read by a fire (`lit_by`), its words shown only while it burns. A night kept by a fire is a night at the
-  screen: nothing keeps a fire while the player is away (G28). Added
-  2026-10-13 (the same entry).
+  lights it or adds a log, a whole one or none (a fire with no room left for
+  a whole log refuses it and the log stays in the bag: effort is never
+  wasted), nothing bought or made makes it burn longer, and
+  it warns before it goes out (G31) only while it still needs wood for the night it keeps, so never once its wood reaches that dawn, and never before a log fits, and a prop may read by a fire (`lit_by`), its words shown only while it burns. A night kept by a fire is a night at the
+  screen: nothing keeps a fire while the player is away (G28). A night is
+  kept only once it is over: a `tend` step is met at that night's dawn, by a
+  fire lit by its dusk that burned without a gap to dawn, never earlier
+  however much wood it holds, and it stays met until the next dusk, even if
+  the fire is lit again by day. Added
+  2026-10-13 (the same entry); a log goes in whole since 2026-10-14
+  (DECISIONS.md, the entry on the full fire); the vigil closes at dawn since
+  2026-10-16 (the entry on the vigil at dawn).
 
 ### Expeditions
 
@@ -390,8 +403,9 @@ The valley has no combat; its danger is the hour, and what the player eats.
   clock on screen; at the last bell the mist walks the player to the exit
   with no damage, and the outing closes there. What the chain gained stays,
   the climax is reached once, and a quest of the chain begins only inside the
-  place inside its window. Added 2026-10-13 (DECISIONS.md, the entry on the
-  three frames).
+  place inside its window. An action other than a move made after the last
+  bell is not made: the walk-out comes first. Added 2026-10-13 (DECISIONS.md,
+  the entry on the three frames).
 
 ### Crafting
 
@@ -568,7 +582,7 @@ build pay less.
 
 ## 7. The review checklist
 
-For every pull request that touches play. Eleven questions, yes or no; a "no"
+For every pull request that touches play. Twelve questions, yes or no; a "no"
 names the rule and the pull request waits.
 
 1. Does every new or changed quest ask a question the player can state? (G1)
@@ -589,6 +603,9 @@ names the rule and the pull request waits.
 11. Does any blood, wound or fallen body stay small, brief and never there
     for show, with none on a person at the moment of harm, does it change no
     rule or number, and does the text say the player fell, never died? (G46)
+12. Does the valley by day still go on without every expedition: does each
+    item, place and quest it touches have a road by day as well, and is its
+    place entered one way, through its exit? (G36, G37)
 
 ## 8. What the check enforces
 
@@ -609,9 +626,10 @@ test stays with the checklist above.
 | G30 | A hazard prop (predator, pit, trap, deep water) with no id or touching safe ground (the town's cobbles, a slot marked `safe`, the first camp slot); a pit, trap or deep water that is solid, or any but a predator with a reach. The schema refuses a hazard with no window (`night`; `mist` comes with P-6); a bad fruit or herb needs none. | error |
 | G15 | A node with no miss table, or a miss row that is not a thing with a value. | needs the miss tables (CR-60) |
 | G34 | A predator with a walkable tile in its reach from which no road leads to a safe place, or from which the run to the nearest one costs a whole fall in bites. No field of the schema can name an item as a hazard's answer. | error |
-| G36 | An expedition whose chain repeats a type or counts fewer than three or more than five, with no hazard inside its place, with a bell outside the night, a quest of its chain with a giver, an exit that is not safe ground, or a climax slot outside its place. | error since the `expedition` kind (NEXT 14a) |
+| G36 | An expedition whose place is not an area slot, whose chain repeats a type, has a quest with no type, counts fewer than three or more than five or does not run each quest on the one before, with no hazard inside its place, with a bell outside the night or out of ring order, a quest of its chain with a giver or in another expedition's chain or opening a restore outside the place, a reward that opens something that is not a restore, a step of its chain outside its place (a visit's slot, a restore, a build, a riddle's props or its answer, a tend step's fire) or a find in it whose item nothing inside the place gives, an exit that is not safe ground (the camp's ground is not: no part of it may stand yet), a place that can be walked into from anywhere but its exit (on the map by day, and once every passable restore of the valley is mended) or whose exit leads into none of it by day, an exit whose corner tile, where the walk-out sets the player, cannot be stood on, or a climax slot outside its place. | error since the `expedition` kind (NEXT 14a) |
+| G37 | A quest of the opening or of another creator in an expedition's chain; a restore whose input only an expedition gives (its reward or a quest of its chain), or a restore that opens by no hand and only an expedition's reward names, unless a quest outside every chain opens the place; a quest outside every chain that requires a quest of a chain, or that brings or finds what only an expedition gives. | error since the `expedition` kind (NEXT 14a) |
 | G47 | A stealth quest whose target (the find's slot or the visit's slot) lies outside the watch of a predator's round; a round that is not a closed loop of adjacent tiles on walkable ground (its own den counted as ground), or that touches safe ground; a round with no cover prop inside its watch. G34's run to safety walks from every tile a round watches. | error since the round (NEXT 12a) |
-| G48 | A `tend` step on a prop that is not a fire; a fire prop with no id; `lit_by` naming a prop that is not a fire. | error since the fire (NEXT 13a) |
+| G48 | A `tend` step on a prop that is not a fire; a fire prop with no id; `lit_by` naming a prop that is not a fire; fire params whose warning opens before a log fits (`warn_min` over `cap - 1` logs of burn). | error since the fire (NEXT 13a) |
 | G41 | An item with no class or tier, or a tier the world has not opened; an output more than one tier above its highest input; a recipe level outside its tier's band; no camp part giving the recipe's station at its tier; no craft profession for the recipe; from tier 3 up, a node with neither the tier's level nor a slow respawn, or a shop that sells it. | error |
 | G42 | The rarity bonuses of the merged world over `rarity_budget_permille` (kernel review 8.2). | error |
 | G45 | A class that is neither a base class nor declared under one; a metal item or a class under metal; a recipe template that fits nothing, has no class input, or fits more than `template_max_recipes` combinations. | error |
@@ -622,7 +640,7 @@ test stays with the checklist above.
 Since P-2 (8.10) G2 counts `find` and `riddle` steps as beats, a `find` may name what
 only digging gives or what one timed plant gives (P-3), and G8 checks each
 note prop with an id against the riddles that cite it. Sound (G24-G27), fairness (G28),
-access (G29), the warning and the fall (G31-G33, G35, G37) live in code, not in
+access (G29), the warning and the fall (G31-G33, G35) and the rest of G37 live in code, not in
 content: the checklist covers them, and
 the e2e run prints the audio state line on every pull request.
 

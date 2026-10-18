@@ -575,6 +575,13 @@ export const QuestBody = Type.Object(
             Type.Array(Text, { minItems: 1, maxItems: 2, description: 'The giver, while the player is on it. Left out, the summary.' }),
           ),
           done: Type.Optional(Type.Array(Text, { minItems: 1, maxItems: 3, description: 'The giver, when the player hands it in.' })),
+          done_bitten: Type.Optional(
+            Type.Array(Text, {
+              minItems: 1,
+              maxItems: 3,
+              description: 'The giver, at the hand-in, when a predator bit the player while the task was open, on an outing that came home. Left out, done.',
+            }),
+          ),
         },
         {
           additionalProperties: false,
@@ -597,8 +604,61 @@ export const QuestBody = Type.Object(
       },
       { additionalProperties: false },
     ),
+    maze: Type.Optional(
+      Type.Object(
+        {
+          tier: Int(1, 4, 'The rung of help at the entrance: 1 a peek from above with a faint line of the route and the landmarks, 2 the peek with the landmarks lit a moment, 3 the peek of the shape alone, 4 no peek.'),
+          area: { ...Id, description: 'The map area that frames the whole maze: stepping into it from outside is the entrance, and the peek fits it on the screen.' },
+          landmark: Type.Optional({ ...SpriteRef, description: 'The sprite of the props inside the area that mark the way; tiers 1 and 2 light them in the peek.' }),
+        },
+        { additionalProperties: false, description: 'A maze quest only: where its shape is drawn and how much the entrance shows of it (DECISIONS 2026-10-11).' },
+      ),
+    ),
   },
   { additionalProperties: false },
+);
+
+export const ExpeditionBody = Type.Object(
+  {
+    place: Id,
+    window: Type.Object(
+      {
+        bells: Type.Array(Type.Union([Int(20, 23), Int(0, 4)]), {
+          minItems: 2,
+          maxItems: 6,
+          description: 'Night hours in the order they ring: every 20..23 hour before every 0..4 hour.',
+        }),
+      },
+      { additionalProperties: false },
+    ),
+    exit: Id,
+    chain: Type.Array(Id, { minItems: 3, maxItems: 5 }),
+    climax: Type.Object(
+      {
+        slot: Id,
+        lines: Type.Optional(
+          Type.Array(Text, {
+            minItems: 1,
+            maxItems: 3,
+            description: 'The narrator\'s boxes at the climax, the same whether the reward opens a way or the player opened it by hand.',
+          }),
+        ),
+      },
+      { additionalProperties: false },
+    ),
+    reward: Type.Object(
+      {
+        opens: Type.Optional(Type.Array(Id, { maxItems: 2 })),
+        items: Type.Optional(Type.Array(RewardStack, { maxItems: 4 })),
+      },
+      { additionalProperties: false },
+    ),
+    on_miss: Type.Literal('wait'),
+  },
+  {
+    additionalProperties: false,
+    description: 'A place entered under a clock: its giver-less quest chain persists, and a missed window waits for another night (G36).',
+  },
 );
 
 export const RestoreBody = Type.Object(
@@ -837,6 +897,11 @@ export const ParamsBody = Type.Object(
             catch_ms: { ...Bounded, description: 'From the start of a chase to the first bite.' },
             bite_ms: { ...Bounded, description: 'Between one bite and the next.' },
             bite_pct: { ...Bounded, description: 'What one bite takes, in percent of the health cap.' },
+            refill_bp: {
+              ...Bounded,
+              description:
+                'How high a hunt outrun to a safe place lifts health, in basis points of the health cap: it gives back what its bites took, up to this share. It never lowers health.',
+            },
           },
           { additionalProperties: false },
         ),
@@ -1025,6 +1090,7 @@ export const RecipeFile = record('recipe', 'recipe', RecipeBody);
 export const TemplateFile = record('template', 'template', TemplateBody);
 export const NpcFile = record('npc', 'npc', NpcBody);
 export const QuestFile = record('quest', 'quest', QuestBody);
+export const ExpeditionFile = record('expedition', 'expedition', ExpeditionBody);
 export const RestoreFile = record('restore', 'restore', RestoreBody);
 export const CampFile = record('camp', 'camp', CampBody);
 export const StarterFile = record('starter', 'starter', StarterBody);
@@ -1037,7 +1103,7 @@ export const ParamsFile = record('params', 'params', ParamsBody);
 export const KitFile = record('kit', 'kit', KitBody);
 export const MapFile = record('map', 'map', MapBody);
 
-export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'restore', 'camp', 'starter', 'items', 'creator'] as const;
+export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'expedition', 'restore', 'camp', 'starter', 'items', 'creator'] as const;
 export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map'] as const;
 
 export const ExtensionFile = Type.Union([
@@ -1047,6 +1113,7 @@ export const ExtensionFile = Type.Union([
   TemplateFile,
   NpcFile,
   QuestFile,
+  ExpeditionFile,
   RestoreFile,
   CampFile,
   StarterFile,
@@ -1072,6 +1139,7 @@ export type RecipeFile = Static<typeof RecipeFile>;
 export type TemplateFile = Static<typeof TemplateFile>;
 export type NpcFile = Static<typeof NpcFile>;
 export type QuestFile = Static<typeof QuestFile>;
+export type ExpeditionFile = Static<typeof ExpeditionFile>;
 export type QuestStep = Static<typeof QuestStep>;
 export type QuestType = (typeof QUEST_TYPES)[number];
 export type RiddleAnswer = Static<typeof RiddleAnswer>;
@@ -1096,6 +1164,7 @@ export type Npc = Static<typeof NpcBody>;
 export type WhenDef = Static<typeof When>;
 export type RemarkDef = Static<typeof Remark>;
 export type Quest = Static<typeof QuestBody>;
+export type Expedition = Static<typeof ExpeditionBody>;
 export type Restore = Static<typeof RestoreBody>;
 export type Camp = Static<typeof CampBody>;
 export type Starter = Static<typeof StarterBody>;
@@ -1119,6 +1188,7 @@ export const SCHEMAS = {
   template: TemplateFile,
   npc: NpcFile,
   quest: QuestFile,
+  expedition: ExpeditionFile,
   restore: RestoreFile,
   camp: CampFile,
   starter: StarterFile,

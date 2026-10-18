@@ -81,3 +81,31 @@ describe('lines on the quest and the place', () => {
     expect(validateFile(restore(['1', '2', '3']))).not.toEqual([]);
   });
 });
+
+describe('lines at an expedition\'s climax', () => {
+  const expedition = (climax: unknown) => ({
+    format: FORMAT_VERSION,
+    type: 'expedition',
+    id: 'tester/x',
+    title: 'A test',
+    creator: 'tester',
+    expedition: {
+      place: 'core/ruins-gate',
+      window: { bells: [20, 23, 2, 4] },
+      exit: 'core/night-threshold',
+      chain: ['tester/a', 'tester/b', 'tester/c'],
+      climax,
+      reward: { opens: ['core/arch-way'] },
+      on_miss: 'wait',
+    },
+  });
+
+  it('accept a climax with no lines or with one to three, and refuse none, four or a field of another name', () => {
+    expect(validateFile(expedition({ slot: 'core/ruins-hall' }))).toEqual([]);
+    expect(validateFile(expedition({ slot: 'core/ruins-hall', lines: ['One box.'] }))).toEqual([]);
+    expect(validateFile(expedition({ slot: 'core/ruins-hall', lines: ['1', '2', '3'] }))).toEqual([]);
+    expect(validateFile(expedition({ slot: 'core/ruins-hall', lines: [] }))).not.toEqual([]);
+    expect(validateFile(expedition({ slot: 'core/ruins-hall', lines: ['1', '2', '3', '4'] }))).not.toEqual([]);
+    expect(validateFile(expedition({ slot: 'core/ruins-hall', say: ['x'] }))).not.toEqual([]);
+  });
+});

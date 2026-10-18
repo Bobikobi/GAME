@@ -42,6 +42,16 @@
         "say": [
           "You read the stones as I did once. Not many can."
         ]
+      },
+      {
+        "when": {
+          "done": [
+            "core/the-long-night"
+          ]
+        },
+        "say": [
+          "My hearth remembers your night. So does the mist, I think."
+        ]
       }
     ],
     "topics": [

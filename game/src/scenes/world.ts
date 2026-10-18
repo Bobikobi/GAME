@@ -16,30 +16,43 @@ import {
   type Bundle,
   type GameEvent,
   type Grade,
+  type Hazard,
   type Slot,
   campTile,
+  coverAt,
   findSlot,
+  fireBurns,
+  hazardsOf,
+  headingOf,
   hourOf,
   inRect,
   isNight,
   makeWalkable,
   minuteOfDay,
   npcTile,
+  predatorAt,
   riddleSlots,
+  sees,
   spotOpen,
+  windowOpen,
 } from '@game/kernel';
 import { app } from '../app';
-import { sound, type SfxId } from '../audio';
+import { sound, type SfxId, type SongId } from '../audio';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T } from '../config';
+import { FOG_ATLAS, FOG_ATLAS_W, FOG_FEATHER, FOG_OFFSETS, FOG_TILE, fogPixels } from '../fog';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
+import { TOO_DARK, feedTooLate, fireLow, fireName, readable, woodToFeed } from '../fires';
 import { emptySlots, slotContent } from '../places';
 import { canopyGroups, hash, remapTone, toneField, type Tone } from '../richground';
 import type { Session } from '../session';
+import { type Run, WOLF_EYES, bangAt, flareAt, glowPixels, huntGround, huntSong, songFade, wolfDrawn } from '../predator';
 import { soundscape } from '../soundscape';
 import { SensesFind } from '../senses';
 import { questTargets } from '../targets';
 import { nodeLook } from '../growth';
+import { peekOnStep, type Tile } from '../peek';
+import { MazePeek } from './peek';
 import { hintDistance, lanternNight, nodeAction } from '../text';
 import type { WorkKind } from '../ui/ui';
 import { type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, treasureKind } from '../work';
@@ -116,7 +129,28 @@ interface SignSpot {
   x: number;
   y: number;
   label: HTMLElement;
+  /** the fire whose light this sign reads by, if any (`lit_by`) */
+  litBy?: string;
 }
+
+/** A tended fire on the map (NEXT 13): its flame and glow follow the kernel's burn, never a clock of the client's. */
+interface Fire {
+  spr: Phaser.GameObjects.Sprite;
+  /** the flame frames, stepping only while it burns (with motion on) */
+  cycle: Cycle | undefined;
+  glow: Glow | undefined;
+  /** the prop's own sprite, shown while the fire is out, and the burning one */
+  unlit: string;
+  lit: string;
+}
+
+/** The burning look of a fire prop, from the base kit. */
+const FIRE_LIT_SPRITE = 'core/base-kit:props/campfire_lit';
+/** A flame's frame time, and the slower one of embers running down in a burn's last minutes. */
+const FLAME_MS = 120;
+const EMBER_MS = 260;
+/** How strongly the embers show in a burn's last minutes. */
+const EMBER_ALPHA = 0.6;
 
 /** A page element pinned to a point of the world, moved with the camera. */
 interface Pinned {
@@ -235,7 +269,7 @@ export class WorldScene extends Phaser.Scene {
   private campCycles = new Map<string, Cycle>();
   private campGlows = new Map<string, Glow>();
   private embers = new Map<string, Emitter>();
-  private fogs: Phaser.GameObjects.TileSprite[] = [];
+  private fogs: Phaser.GameObjects.Image[] = [];
   private fogMotes: Emitter[] = [];
   private dapples: Phaser.GameObjects.TileSprite[] = [];
   private cycles: Cycle[] = [];
@@ -251,6 +285,12 @@ export class WorldScene extends Phaser.Scene {
   private signs = new Map<string, string>();
   private signSpots: SignSpot[] = [];
   private notes = new Map<string, { text: string; name: string; top: number }>();
+  /** tended fires by prop id, the fire on each of their tiles, and the fire each fire-lit tile reads by */
+  private fires = new Map<string, Fire>();
+  /** people beside a fire prop: a copy of each for the stencil, so that fire's light keeps the night's haze off them while it burns */
+  private fireSide: { img: Standing; cut: Phaser.GameObjects.Image; fire: string }[] = [];
+  private fireAt = new Map<string, string>();
+  private litBy = new Map<string, string>();
   private tops = new Map<string, number>();
   private npcAt = new Map<string, string>();
   private nodeAt = new Map<string, string>();
@@ -279,13 +319,30 @@ export class WorldScene extends Phaser.Scene {
   private hinted = new Set<string>();
   /** slots the player stands in now, so a riddle's slot is tried once per entry */
   private inside = new Set<string>();
+  /** the peek at a maze's entrance, and the tile the player last arrived on, to tell a step in from outside */
+  private peek!: MazePeek;
+  private lastAt: Tile | undefined;
   private attractT = 0;
   private night = 0;
   private wasNight: boolean | undefined;
   private nextEyes = 0;
   private nextWhisper = 0;
-  /** the hazard props (G30-G35): a wolf asleep by day and awake at night, a pit or a trap that shows only by day */
-  private hazards: { spr: Phaser.GameObjects.Sprite; kind: string }[] = [];
+  /**
+   * the hazard props (G30-G35): a wolf asleep by day and awake at night, a pit or a trap that shows only by day;
+   * a walking wolf's eyes, their glow and their flare, and its run while it hunts
+   */
+  private hazards: {
+    spr: Phaser.GameObjects.Sprite;
+    kind: string;
+    rule?: Hazard;
+    eyes?: Phaser.GameObjects.Image;
+    halo?: Phaser.GameObjects.Image;
+    flare?: Phaser.GameObjects.Image;
+    run?: Run;
+  }[] = [];
+  /** whether each walking predator saw the standing tile last frame, for a single report on the false-to-true edge */
+  private predatorSaw = new Map<string, boolean>();
+  private sightReportTick = -1;
   /** the lantern's light around the player, and the night it was lit for (G31) */
   private lantern: Phaser.GameObjects.Image | undefined;
   private lanternFor: number | undefined;
@@ -293,6 +350,12 @@ export class WorldScene extends Phaser.Scene {
   private falling = false;
   /** the tick of the last report while a hunt runs, so a player standing still is still bitten on time */
   private chaseReport = 0;
+  /** the "!" over a predator that has just seen the player */
+  private bang!: Phaser.GameObjects.Image;
+  /** the ground a drawn wolf runs on, and the mends and camp it was worked out for */
+  private wolfGround: { key: string; walk: (x: number, y: number) => boolean } | undefined;
+  /** the song asked for last */
+  private song: SongId | undefined;
 
   constructor() {
     super('world');
@@ -304,6 +367,7 @@ export class WorldScene extends Phaser.Scene {
     this.labels = document.createElement('div');
     this.labels.className = 'world-labels';
     app.ui.root.prepend(this.labels);
+    this.peek = new MazePeek(this, DEPTH.mist - 1, this.labels);
     this.makeFx();
     this.buildGround();
     this.buildProps();
@@ -324,6 +388,7 @@ export class WorldScene extends Phaser.Scene {
     this.bar = this.add.graphics().setDepth(DEPTH.fx);
     this.marker = this.add.image(0, 0, 'fx-arrow').setOrigin(0.5, 1).setDepth(DEPTH.marker).setVisible(false);
     this.tweens.add({ targets: this.marker, displayOriginY: 7, duration: 380, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    this.bang = this.add.image(0, 0, 'fx-bang').setOrigin(0.5, 1).setDepth(DEPTH.fx).setVisible(false);
     if (RICH.light) {
       // a warm wash under the blue shade: multiplied in, so it tints what is there instead of covering it
       this.dusk = this.add.rectangle(0, 0, 10, 10, PALETTE.gold, 0).setOrigin(0).setScrollFactor(0).setDepth(DEPTH.shade - 1).setBlendMode(Phaser.BlendModes.MULTIPLY);
@@ -354,6 +419,8 @@ export class WorldScene extends Phaser.Scene {
     this.time.addEvent({ delay: 480, loop: true, callback: () => this.flipWater() });
     sound.installUnlock();
     sound.music('valley', 1500);
+    // the crackle holds its nodes only while heard: none outlives the world
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => sound.crackle(0));
     app.world = this;
     app.ui.worldReady();
   }
@@ -383,6 +450,31 @@ export class WorldScene extends Phaser.Scene {
     make('fx-eye', 4, 1, () => {
       px(PALETTE.red2, 0, 0);
       px(PALETTE.red2, 3, 0);
+    });
+    // the bank wolf's eyes (WOLF_EYES): the pair, its steady glow, and the flare as it sees the player
+    const { red, size, gap } = WOLF_EYES;
+    make('fx-wolf-eyes', 2 * size + gap, size, () => {
+      px(red, 0, 0, size, size);
+      px(red, size + gap, 0, size, size);
+    });
+    for (const [tex, rings] of [['fx-wolf-halo', WOLF_EYES.halo], ['fx-wolf-flare', WOLF_EYES.flare]] as const) {
+      const glow = glowPixels(rings);
+      make(tex, glow.w, glow.h, () => {
+        for (const p of glow.px) g.fillStyle(red, p.a).fillRect(p.x, p.y, 1, 1);
+      });
+    }
+    // the "!" over a predator that has just seen the player: paper in a dark outline, so it reads by night and by day
+    make('fx-bang', 4, 10, () => {
+      px(PALETTE.ink, 1, 0, 2);
+      px(PALETTE.ink, 0, 1, 1, 4);
+      px(PALETTE.paper, 1, 1, 2, 4);
+      px(PALETTE.ink, 3, 1, 1, 4);
+      px(PALETTE.ink, 1, 5, 2);
+      px(PALETTE.ink, 1, 7, 2);
+      px(PALETTE.ink, 0, 8);
+      px(PALETTE.paper, 1, 8, 2);
+      px(PALETTE.ink, 3, 8);
+      px(PALETTE.ink, 1, 9, 2);
     });
     // a pale X for each eye of a fallen player (G33): it has to read on a face in the dark
     make('fx-cross', 3, 3, () => {
@@ -614,23 +706,96 @@ export class WorldScene extends Phaser.Scene {
       if (p.hazard) {
         // a hazard steps through no cycle: its frame and its showing follow the hour (shadeFor)
         const spr = this.add.sprite(cx, bottom, p.sprite, 0).setOrigin(0.5, 1).setDepth(p.solid ? bottom : DEPTH.flat);
-        this.hazards.push({ spr, kind: p.hazard.kind });
+        const rule = p.id === undefined ? undefined : hazardsOf(this.b).find((h) => h.id === p.id);
+        // a walking wolf shows only its eyes at night: the pair over its glow, and the flare as it sees the player
+        const glow = (tex: string, depth: number) =>
+          this.add.image(cx, bottom - info.h / 2, tex).setOrigin(0.5).setDepth(depth).setBlendMode(Phaser.BlendModes.ADD).setVisible(false);
+        const eyes = rule?.round ? this.add.image(cx, bottom - info.h / 2, 'fx-wolf-eyes').setOrigin(0.5).setDepth(DEPTH.glow).setVisible(false) : undefined;
+        const halo = rule?.round ? glow('fx-wolf-halo', DEPTH.glow - 0.5) : undefined;
+        const flare = rule?.round ? glow('fx-wolf-flare', DEPTH.glow - 0.25) : undefined;
+        this.hazards.push({ spr, kind: p.hazard.kind, rule, eyes, halo, flare });
         continue;
       }
-      const img = this.standing(p.sprite, cx, bottom, hash(p.x, p.y));
-      img.setDepth(p.solid ? bottom : DEPTH.flat);
-      if (RICH.detail && !FLAT.has(name)) this.shadow(cx, bottom, p.w, p.solid ? DEPTH.shadow : DEPTH.flat - 0.5);
-      // the lamp head is the top 8 px of the post
-      if (RICH.light && name === 'lantern_post') this.glows.push(this.glow(cx, bottom - info.h + 4, true));
-      if (RICH.motion && name === 'house_small') this.smoke(cx - info.w / 2 + CHIMNEY.x, bottom - info.h + CHIMNEY.y, bottom + 1);
+      if (p.fire === true && p.id !== undefined) {
+        this.buildFire(p.id, p, cx, bottom);
+      } else {
+        const img = this.standing(p.sprite, cx, bottom, hash(p.x, p.y));
+        img.setDepth(p.solid ? bottom : DEPTH.flat);
+        if (RICH.detail && !FLAT.has(name)) this.shadow(cx, bottom, p.w, p.solid ? DEPTH.shadow : DEPTH.flat - 0.5);
+        // the lamp head is the top 8 px of the post
+        if (RICH.light && name === 'lantern_post') this.glows.push(this.glow(cx, bottom - info.h + 4, true));
+        if (RICH.motion && name === 'house_small') this.smoke(cx - info.w / 2 + CHIMNEY.x, bottom - info.h + CHIMNEY.y, bottom + 1);
+      }
       for (let y = p.y; y < p.y + p.h; y++) {
         for (let x = p.x; x < p.x + p.w; x++) {
           if (p.sign) this.signs.set(key(x, y), p.sign);
           if (p.note) this.notes.set(key(x, y), { text: p.note, name: spriteName(p.sprite), top: info.h });
+          if (p.lit_by) this.litBy.set(key(x, y), p.lit_by);
+          if (p.fire === true && p.id !== undefined) this.fireAt.set(key(x, y), p.id);
           this.tops.set(key(x, y), info.h);
         }
       }
     }
+  }
+
+  /**
+   * A fire the player feeds by hand: always a sprite, so refreshFires() can swap the cold
+   * hearth for the burning one; its flames and glow wait for the kernel's burn.
+   */
+  private buildFire(id: string, p: { w: number; solid: boolean; sprite: string }, cx: number, bottom: number): void {
+    const spr = this.add.sprite(cx, bottom, p.sprite, 0).setOrigin(0.5, 1).setDepth(p.solid ? bottom : DEPTH.flat);
+    if (RICH.detail && !FLAT.has(baseName(p.sprite))) this.shadow(cx, bottom, p.w, p.solid ? DEPTH.shadow : DEPTH.flat - 0.5);
+    let cycle: Cycle | undefined;
+    if (RICH.motion) {
+      cycle = { spr, min: FLAME_MS, max: FLAME_MS, next: 0, frame: 0, active: false };
+      this.cycles.push(cycle);
+    }
+    let glow: Glow | undefined;
+    if (RICH.light) {
+      glow = this.glow(cx, bottom - 8, false);
+      this.glows.push(glow);
+    }
+    this.fires.set(id, { spr, cycle, glow, unlit: p.sprite, lit: this.has(FIRE_LIT_SPRITE) ? FIRE_LIT_SPRITE : p.sprite });
+  }
+
+  /** Flames only while the kernel says the fire burns; in a burn's last minutes the embers dim and slow. */
+  private refreshFires(s: Session): void {
+    for (const [id, f] of this.fires) {
+      const burns = fireBurns(s.state, id, s.tick);
+      const low = burns && fireLow(this.b, s.state, id, s.tick);
+      const look = burns ? f.lit : f.unlit;
+      if (f.spr.texture.key !== look) {
+        f.spr.setTexture(look, 0);
+        if (f.cycle) f.cycle.frame = 0;
+      }
+      if (f.cycle) {
+        f.cycle.active = burns;
+        f.cycle.min = f.cycle.max = low ? EMBER_MS : FLAME_MS;
+      }
+      const alpha = low ? EMBER_ALPHA : 1;
+      if (f.spr.alpha !== alpha) f.spr.setAlpha(alpha);
+      if (f.glow) f.glow.lit = burns;
+    }
+    // beside a fire burning at night: in its light, cut out of the haze and the frame like the player, and warm
+    for (const n of this.fireSide) {
+      const lit = this.night > 0 && fireBurns(s.state, n.fire, s.tick);
+      if (n.cut.visible === lit) continue;
+      n.cut.setVisible(lit);
+      if (lit) n.img.setTint(LIGHT.tint);
+      else n.img.clearTint();
+    }
+  }
+
+  /** How a fire is drawn now, for a test: its sprite, whether that is the burning one, and how strongly it shows. */
+  fireLook(id: string): { sprite: string; burning: boolean; alpha: number } | undefined {
+    const f = this.fires.get(id);
+    return f && { sprite: f.spr.texture.key, burning: f.spr.texture.key === f.lit && f.lit !== f.unlit, alpha: f.spr.alpha };
+  }
+
+  /** Whether a rectangle of tiles is on the screen now. */
+  sees(r: { x: number; y: number; w: number; h: number }): boolean {
+    const v = this.cameras.main.worldView;
+    return r.x * T < v.right && (r.x + r.w) * T > v.x && r.y * T < v.bottom && (r.y + r.h) * T > v.y;
   }
 
   /**
@@ -724,8 +889,11 @@ export class WorldScene extends Phaser.Scene {
         img = this.add.image(cx, bottom, npc.sprite);
       }
       img.setOrigin(0.5, 1).setDepth(bottom);
+      const fire = this.b.map.props.find((p) => p.fire === true && p.id !== undefined && Math.max(Math.abs(p.x - t[0]), Math.abs(p.y - t[1])) <= 2);
+      const cut = fire?.id === undefined ? undefined : new Phaser.GameObjects.Image(this, cx, bottom, img.texture.key, img.frame.name).setOrigin(0.5, 1).setVisible(false);
+      if (cut && fire?.id !== undefined) this.fireSide.push({ img, cut, fire: fire.id });
       // a slow breath so people read as alive
-      this.tweens.add({ targets: img, scaleY: 1.04, duration: 900 + (id.length % 5) * 120, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      this.tweens.add({ targets: cut ? [img, cut] : img, scaleY: 1.04, duration: 900 + (id.length % 5) * 120, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       if (RICH.detail) this.shadow(cx, bottom, 1);
       this.npcAt.set(key(t[0], t[1]), id);
       this.tops.set(key(t[0], t[1]), this.b.sprites[npc.sprite]?.h ?? 24);
@@ -790,13 +958,63 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * The fog of every empty slot, baked once into one texture (so the fog draws in one batch, not one per
+   * slot): for each slot and each of its two layers, the fog tile (shifted by `offset`) over the slot and
+   * FOG_FEATHER px past it, cut to a rounded shape whose edge thins out through a 4x4 ordered dither, the
+   * way the night hole's edge steps. A frame of the texture is named `<slot id>:<offset>`. False when the
+   * kit has no fog tile.
+   */
+  private bakeFog(): boolean {
+    if (this.textures.exists(FOG_ATLAS)) return true;
+    if (!this.textures.exists(FOG_SPRITE)) return false;
+    const src = this.textures.get(FOG_SPRITE).getSourceImage() as CanvasImageSource;
+    const tile = document.createElement('canvas');
+    tile.width = tile.height = FOG_TILE;
+    const tc = tile.getContext('2d');
+    if (!tc) return false;
+    tc.drawImage(src, 0, 0, FOG_TILE, FOG_TILE);
+    const px = tc.getImageData(0, 0, FOG_TILE, FOG_TILE).data;
+    // shelf-pack the patches, a row at a time
+    const patches: { name: string; x: number; y: number; w: number; h: number; data: Uint8ClampedArray<ArrayBuffer> }[] = [];
+    let x = 0;
+    let y = 0;
+    let rowH = 0;
+    for (const s of this.empty) {
+      for (const offset of FOG_OFFSETS) {
+        const w = s.w * T + 2 * FOG_FEATHER;
+        const h = s.h * T + 2 * FOG_FEATHER;
+        if (x + w > FOG_ATLAS_W) {
+          x = 0;
+          y += rowH;
+          rowH = 0;
+        }
+        patches.push({ name: `${s.id}:${offset}`, x, y, w, h, data: fogPixels(px, s.w * T, s.h * T, offset) });
+        x += w;
+        rowH = Math.max(rowH, h);
+      }
+    }
+    const tex = this.textures.createCanvas(FOG_ATLAS, FOG_ATLAS_W, Math.max(1, y + rowH));
+    if (!tex) return false;
+    const ctx = tex.getContext();
+    for (const q of patches) {
+      ctx.putImageData(new ImageData(q.data, q.w, q.h), q.x, q.y);
+      tex.add(q.name, 0, q.x, q.y, q.w, q.h);
+    }
+    tex.refresh();
+    return true;
+  }
+
   private buildFog(): void {
     this.empty = emptySlots(this.b);
+    const baked = this.bakeFog();
     for (const s of this.empty) {
-      // two thin layers drifting against each other read as mist, not as clouds
-      for (const [alpha, offset] of [[0.55, 0], [0.45, 16]] as const) {
-        const fog = this.add.tileSprite(s.x * T, s.y * T, s.w * T, s.h * T, FOG_SPRITE).setOrigin(0).setDepth(DEPTH.fog).setAlpha(alpha);
-        fog.setTilePosition(offset, offset);
+      // two thin layers swaying against each other read as mist, not as clouds; each is baked with a soft,
+      // dithered edge, so a slot's fog is a patch of mist and not a rectangle of the tile
+      for (const [alpha, offset] of [[0.55, FOG_OFFSETS[0]], [0.45, FOG_OFFSETS[1]]] as const) {
+        if (!baked) continue;
+        const fog = this.add.image(s.x * T - FOG_FEATHER, s.y * T - FOG_FEATHER, FOG_ATLAS, `${s.id}:${offset}`).setOrigin(0).setDepth(DEPTH.fog).setAlpha(alpha);
+        fog.setData('home', fog.x);
         this.fogs.push(fog);
         if (RICH.light) {
           this.tweens.add({ targets: fog, alpha: alpha + 0.12, duration: 3400 + offset * 40 + (s.x % 3) * 500, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
@@ -830,7 +1048,7 @@ export class WorldScene extends Phaser.Scene {
   private buildSigns(): void {
     const covered = new Set(this.signs.values());
     for (const p of this.b.map.props) {
-      if (p.sign) this.signSpots.push({ slot: p.sign, x: p.x + p.w / 2, y: p.y, label: this.signatureEl(p.sign) });
+      if (p.sign) this.signSpots.push({ slot: p.sign, x: p.x + p.w / 2, y: p.y, label: this.signatureEl(p.sign), litBy: p.lit_by });
     }
     for (const slot of this.b.map.slots) {
       const content = slotContent(this.b, slot.id);
@@ -967,7 +1185,7 @@ export class WorldScene extends Phaser.Scene {
     // mist, and is cleared once the frame is drawn. A filter on the haze layer would do it too, but a filtered
     // see-through layer comes out brighter than it is
     this.cutout = new Phaser.GameObjects.Sprite(this, 0, 0, this.player.texture.key).setOrigin(0.5, 1).setVisible(false);
-    this.add.stencil(0, 0, [this.cutout], { stencilAlphaStrategy: 0.5 }).setDepth(DEPTH.mist - 0.5);
+    this.add.stencil(0, 0, [this.cutout, ...this.fireSide.map((f) => f.cut)], { stencilAlphaStrategy: 0.5 }).setDepth(DEPTH.mist - 0.5);
     this.vignette = this.add.image(0, 0, '__DEFAULT').setScrollFactor(0).setDepth(DEPTH.fog + 2);
     this.uncut = this.add.stencil(0, 0, [], { stencilLayerMode: 'clear' }).setDepth(DEPTH.fog + 3);
     this.add.stencil(0, 0, [], { stencilLayerMode: 'clear' }).setDepth(DEPTH.glow + 1);
@@ -1030,9 +1248,16 @@ export class WorldScene extends Phaser.Scene {
     this.auto = null;
     this.held.clear();
     this.falling = false;
+    this.predatorSaw.clear();
+    this.sightReportTick = -1;
+    for (const h of this.hazards) h.run = undefined;
+    this.wolfGround = undefined;
+    this.song = undefined;
     this.lanternFor = undefined;
     this.hinted.clear();
     this.inside.clear();
+    this.peek.end();
+    this.lastAt = [...session.pos];
     this.unbind = [
       session.on('busy', ({ ms }) => {
         this.busyFrom = session.tick;
@@ -1141,6 +1366,7 @@ export class WorldScene extends Phaser.Scene {
       if (glow) glow.lit = built;
     }
     this.refreshNodes();
+    this.refreshFires(s);
     if (RICH.motion) this.refreshGlints(s);
   }
 
@@ -1217,31 +1443,44 @@ export class WorldScene extends Phaser.Scene {
   // ------------------------------------------------------------ frame loop
 
   override update(time: number, delta: number): void {
-    this.fogs.forEach((fog, i) => (fog.tilePositionX += delta * (i % 2 === 0 ? 0.006 : -0.004)));
+    // a slot's fog sways only while it is in view: off screen it is neither moved nor drawn
+    const view = this.cameras.main.worldView;
+    this.fogs.forEach((fog, i) => {
+      const home = fog.getData('home') as number;
+      const seen = home + fog.width + 3 > view.x && home - 3 < view.right && fog.y + fog.height > view.y && fog.y < view.bottom;
+      fog.setVisible(seen);
+      if (seen) fog.x = home + Math.sin(time * 0.0004 + i) * (i % 2 === 0 ? 3 : -3);
+    });
     this.mist.tilePositionX += delta * 0.002;
     this.mist.tilePositionY += delta * 0.0008;
     this.animate(time, delta);
     this.placePinned();
     const s = this.session;
     if (!s || !s.started) {
+      sound.crackle(0);
       this.attract(delta);
       return;
     }
     s.advance(delta);
+    this.placePredators(s);
     this.refreshIn -= delta;
     if (this.refreshIn <= 0) {
       this.refreshIn = 250;
       this.refreshNodes();
+      this.refreshFires(s);
       this.shadeFor(s);
       this.showSignatures(s);
       this.hearPlace(s);
     }
     this.walk(s, delta);
+    this.dimInCover(s);
+    this.reportPredatorSight(s);
     // a hunt bites by the clock: while one runs, a player standing still reports again twice a second
     if (s.state.player.chase && !this.move && !this.falling && s.tick - this.chaseReport >= 500) {
       this.chaseReport = s.tick;
       s.report(s.pos, true);
     }
+    this.playSong(s);
     this.placeLantern(s);
     if (RICH.motion) this.idle(s, time);
     this.workTick(s);
@@ -1387,7 +1626,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private canControl(s: Session): boolean {
-    return !s.paused && !s.busy && !app.ui.blocking;
+    return !s.paused && !s.busy && !app.ui.blocking && !this.peek.active;
   }
 
   private walk(s: Session, delta: number): void {
@@ -1484,15 +1723,27 @@ export class WorldScene extends Phaser.Scene {
         }
       }
     }
+    this.enterMaze(s);
     this.refreshNodes();
+  }
+
+  /** A step into a maze from outside shows it from above first (NEXT 9); never while a hunt runs. */
+  private enterMaze(s: Session): void {
+    const from = this.lastAt;
+    this.lastAt = [...s.pos];
+    if (!from || s.state.player.chase) return;
+    const p = s.state.player;
+    const peek = peekOnStep(this.b, (q) => p.quests[q] === 'done', (x, y) => this.walkable(x, y, p), from, s.pos);
+    if (peek) this.peek.show(peek);
   }
 
   // ------------------------------------------------------------ day, night and the things in the dark
 
-  /** The campfire, the stream and the ruins sound as loud as the player is near them (soundscape.ts). */
+  /** The campfire, the stream, the ruins and a burning fire sound as loud as the player is near them (soundscape.ts). */
   private hearPlace(s: Session): void {
     const scape = soundscape(this.b, s.state, s.tick, this.player.x / T, this.player.y / T - 0.5);
     for (const id of ['fire', 'stream', 'dread'] as const) sound.bed(id, scape[id].level, scape[id].pan);
+    sound.crackle(scape.crackle.level, scape.crackle.pan);
   }
 
   private shadeFor(s: Session): void {
@@ -1518,7 +1769,6 @@ export class WorldScene extends Phaser.Scene {
         this.inside.clear();
         this.arrive(s);
       }
-      sound.music(isNight ? 'night' : 'valley', 4000);
       sound.ambience(isNight ? 'night' : 'day');
       if (isNight) {
         this.flies.start();
@@ -1632,7 +1882,9 @@ export class WorldScene extends Phaser.Scene {
     const blocked = app.ui.blocking;
     for (const spot of this.signSpots) {
       const d = Math.max(Math.abs(spot.x - 0.5 - s.pos[0]), Math.abs(spot.y - s.pos[1]));
-      spot.label.classList.toggle('on', !blocked && d <= SIGN_REACH);
+      // a sign read by a fire's light shows its signature only while that fire burns
+      const dark = spot.litBy !== undefined && !readable(s.state, spot.litBy, s.tick);
+      spot.label.classList.toggle('on', !blocked && !dark && d <= SIGN_REACH);
     }
   }
 
@@ -1741,14 +1993,110 @@ export class WorldScene extends Phaser.Scene {
    */
   private showHazards(s: Session): void {
     const night = isNight(this.b, s.tick);
-    for (const { spr, kind } of this.hazards) {
+    for (const { spr, kind, rule, eyes, halo } of this.hazards) {
       if (kind === 'predator') {
         const frame = night && spr.texture.frameTotal > 2 ? 1 : 0;
         if (Number(spr.frame.name) !== frame) spr.setFrame(frame);
+        const awake = rule !== undefined && windowOpen(this.b, rule, s.tick);
+        eyes?.setVisible(awake);
+        halo?.setVisible(awake);
       } else {
         spr.setAlpha(night ? 0.12 : 1);
       }
     }
+  }
+
+  /**
+   * Draw a walking predator from the kernel's clock and round, and while the kernel's hunt names
+   * it, running after the player and then back to its round (`wolfDrawn`): drawn only, as the kernel
+   * keeps it on its round and bites by its own clock. The moment a predator sees the player a "!"
+   * stands over it, and a walking wolf's eyes flare (`SEEN`).
+   */
+  private placePredators(s: Session): void {
+    const chase = s.state.player.chase;
+    const since = chase ? s.tick - chase.since : -1;
+    let alarmed: Phaser.GameObjects.Sprite | undefined;
+    for (const h of this.hazards) {
+      const { spr, rule, eyes, halo, flare } = h;
+      const hunting = chase !== null && chase.hazard === rule?.id;
+      if (hunting && bangAt(since)) alarmed = spr;
+      if (!rule?.round) continue;
+      const awake = windowOpen(this.b, rule, s.tick);
+      const drawn = wolfDrawn(this.b, rule, s.state, s.tick, h.run, this.huntWalk(s));
+      h.run = drawn.run;
+      const [x, y] = drawn.at;
+      const [hx, hy] = drawn.heading;
+      const bottom = (y + 1) * T;
+      spr.setPosition(Math.round((x + 0.5) * T), Math.round(bottom)).setDepth(Math.round(bottom));
+      if (!eyes) continue;
+      const faceY = spr.y - spr.displayHeight * 0.55;
+      // steady at full strength while awake (the owner's pick): no pulse, no blink
+      eyes.setPosition(Math.round(spr.x + hx * 4), Math.round(faceY + hy * 3)).setAngle(hx === 0 ? 0 : 90).setVisible(awake);
+      halo?.setPosition(eyes.x, eyes.y).setAngle(eyes.angle).setVisible(awake);
+      const flared = awake && hunting ? flareAt(since) : 0;
+      flare?.setPosition(eyes.x, eyes.y).setAngle(eyes.angle).setAlpha(flared).setVisible(flared > 0);
+    }
+    this.bang.setVisible(alarmed !== undefined);
+    if (alarmed) this.bang.setPosition(Math.round(alarmed.x), Math.round(alarmed.y - alarmed.displayHeight - 2));
+  }
+
+  /** The ground a drawn wolf runs on (`huntGround`), worked out again only when a mend or the camp changes it. */
+  private huntWalk(s: Session): (x: number, y: number) => boolean {
+    const p = s.state.player;
+    const key = `${p.restored.join()}|${p.camp.join()}`;
+    if (this.wolfGround?.key !== key) this.wolfGround = { key, walk: huntGround(this.b, s.state, this.walkable) };
+    return this.wolfGround.walk;
+  }
+
+  /**
+   * The music follows the hunt and the hour (`huntSong`): the hunt's own the moment the kernel's
+   * hunt begins, and back when it ends, however it ends. The hour is the shade's, so the song waits
+   * for the shade's first look at this session's hour.
+   */
+  private playSong(s: Session): void {
+    if (this.wasNight === undefined) return;
+    const song = huntSong(s.state.player.chase !== null, this.wasNight);
+    if (song === this.song) return;
+    sound.music(song, songFade(this.song, song));
+    this.song = song;
+  }
+
+  /** Reeds and tall grass marked as cover soften the player, then release them at the next tile. */
+  private dimInCover(s: Session): void {
+    const at = this.falling ? s.state.player.at : s.pos;
+    this.player.setAlpha(!this.falling && coverAt(this.b, at) ? 0.72 : 1);
+  }
+
+  /**
+   * The kernel strikes only on a move report. When moving eyes first acquire a
+   * player who is standing still, report that tile once; a chase then owns all
+   * later reports until it ends.
+   */
+  private reportPredatorSight(s: Session): void {
+    for (const { rule } of this.hazards) {
+      if (!rule?.round) continue;
+      const watched = windowOpen(this.b, rule, s.tick) && sees(this.b, rule, s.tick, s.pos);
+      const before = this.predatorSaw.get(rule.id) ?? false;
+      const blocked = app.ui.blocking || this.falling || this.move !== null || s.state.player.chase !== null;
+      if (watched && !before && !blocked && this.sightReportTick !== s.tick) {
+        this.sightReportTick = s.tick;
+        s.report(s.pos, true);
+        // If that report began a chase, its standing-bite cadence starts on
+        // the next tick change rather than reporting this same tick twice.
+        this.chaseReport = s.tick;
+      }
+      // A blocked UI does not consume the edge: closing it while still seen
+      // must let the predator notice the standing player.
+      this.predatorSaw.set(rule.id, blocked && s.state.player.chase === null ? false : watched);
+    }
+  }
+
+  /** Deterministic predator state for the browser proof harness. */
+  predator(id: string, at?: [number, number]): { at: [number, number]; heading: [number, number]; seesPlayer: boolean } | undefined {
+    const s = this.session;
+    const rule = this.hazards.find((h) => h.rule?.id === id)?.rule;
+    if (!s || !rule?.round) return undefined;
+    return { at: predatorAt(this.b, rule, s.tick), heading: headingOf(this.b, rule, s.tick), seesPlayer: sees(this.b, rule, s.tick, at ?? s.pos) };
   }
 
   /** Light the lantern for this night (G31): the UI calls it with the warning box. */
@@ -2003,6 +2351,8 @@ export class WorldScene extends Phaser.Scene {
         this.cameras.main.shake(140, 0.005);
       }
       if (e.e === 'fall') this.fallDown(e.from, e.at);
+      // seen: a short jolt, left out when the player asked for reduced motion (RICH.motion)
+      if (e.e === 'seen' && RICH.motion) this.cameras.main.shake(180, 0.004);
       if (e.e === 'restore' || e.e === 'build') {
         const slot = e.e === 'restore' ? findSlot(this.b.map, this.b.restores[e.restore]?.place.slot ?? '') : undefined;
         const camp = e.e === 'build' ? campTile(this.b, this.b.camps[e.camp]?.slot ?? 'fire') : undefined;
@@ -2011,6 +2361,12 @@ export class WorldScene extends Phaser.Scene {
         this.burst('fx-dust', cx, cy, 18);
         this.burst('fx-spark', cx, cy - 6, 12);
         this.cameras.main.shake(160, 0.004);
+      }
+      if (e.e === 'fire') {
+        const f = this.fires.get(e.id);
+        const s = this.session;
+        // lit after its night was lost: no sparks of cheer
+        if (f && !(s && feedTooLate(this.b, s.state, e.id, s.state.tick))) this.burst('fx-spark', f.spr.x, f.spr.y - 8, 10);
       }
       if (e.e !== 'gain') continue;
       const ref = this.b.items[e.item]?.sprite;
@@ -2095,10 +2451,15 @@ export class WorldScene extends Phaser.Scene {
       // a restore with no inputs opens only as a quest's reward: nothing to mend by hand
       return { label: r.inputs.length === 0 ? `Look at the ${r.title}` : `Mend the ${r.title}`, run: () => app.ui.restore(id), tile, top: T };
     }
+    // a fire takes wood from beside it, where Build and Mend are offered
+    const fire = this.fireAt.get(k);
+    if (fire && woodToFeed(b, s.state)) return { label: `Feed the ${fireName(fire)}`, run: () => app.ui.feed(fire), tile, top };
+    // a prop lit by a fire reads only while that fire burns (lit_by)
+    const lit = () => readable(s.state, this.litBy.get(k), s.tick);
     const sign = this.signs.get(k);
-    if (sign) return { label: 'Read the sign', run: () => app.ui.sign(sign), tile, top };
+    if (sign) return { label: 'Read the sign', run: () => (lit() ? app.ui.sign(sign) : app.ui.note(TOO_DARK)), tile, top };
     const note = this.notes.get(k);
-    if (note) return { label: `Look at the ${note.name}`, run: () => app.ui.note(note.text), tile, top: note.top };
+    if (note) return { label: `Look at the ${note.name}`, run: () => app.ui.note(lit() ? note.text : TOO_DARK), tile, top: note.top };
     const fog = this.empty.find((slot) => inRect(x, y, slot));
     if (fog && x === s.pos[0] + DIRS[s.facing][0] && y === s.pos[1] + DIRS[s.facing][1]) {
       return { label: `Look at the ${fog.label ?? 'mist'}`, run: () => app.ui.sign(fog.id), tile, top: T };

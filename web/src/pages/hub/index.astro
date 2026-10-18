@@ -9,7 +9,7 @@ import { CORE_PALETTE } from '../../../../tools/src/kit/palette';
 import { TOOLS } from '../../../../mcp/src/tools';
 import { builders, githubRead, weights, week } from '../../data/boards';
 import { prompt } from '../../data/prompt';
-import { dateTime, repoFile, repoTree } from '../../data/site';
+import { CODE_LD, dateTime, repoFile, repoTree } from '../../data/site';
 
 const tools = Object.keys(TOOLS);
 const top = builders.slice(0, 5);
@@ -18,9 +18,10 @@ const swatches = CORE_PALETTE.map((hex, i) => `.swatches li:nth-child(${i + 1}) 
 ---
 
 <Site
-  title="Developer area - Openfold"
+  title="Build with Openfold: add game content as JSON, with or without AI - Openfold"
   description="Add places, quests and items to Openfold from your editor or with your AI: the template, the prompt, the MCP tools, the data and the boards."
   section="developers"
+  jsonld={[CODE_LD]}
 >
   <Fragment slot="head"><style is:inline set:html={swatches} /></Fragment>
 

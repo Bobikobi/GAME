@@ -2,9 +2,9 @@
 import { noiseBuffer, playPulse } from './synth';
 
 export type SfxId =
-  | 'strike' | 'crack' | 'snap' | 'tug' | 'rustle' | 'pluck' | 'dig' | 'thud'
+  | 'strike' | 'crack' | 'snap' | 'tug' | 'rustle' | 'pluck' | 'dig' | 'thud' | 'douse'
   | 'hammer' | 'sizzle' | 'coin' | 'pickup' | 'ui' | 'back' | 'miss' | 'good'
-  | 'perfect' | 'step' | 'whisper' | 'bell' | 'click' | 'voice';
+  | 'perfect' | 'step' | 'whisper' | 'bell' | 'click' | 'voice' | 'growl' | 'safe';
 
 export interface SfxOptions {
   pan?: number;
@@ -38,6 +38,7 @@ export function playSfx(
     case 'thud': return thud(context, output, when, detune);
     case 'hammer': return hammer(context, output, when, detune);
     case 'sizzle': return sizzle(context, output, when);
+    case 'douse': return douse(context, output, when);
     case 'coin': return coin(context, output, when, detune);
     case 'pickup': return arpeggio(context, output, when, [659.25, 830.61, 987.77], 0.04, detune);
     case 'ui': return pulseBlip(context, output, when, 1_046.5, 0.03, detune);
@@ -50,7 +51,52 @@ export function playSfx(
     case 'bell': return bell(context, output, when, detune);
     case 'click': return click(context, output, when);
     case 'voice': return playVoice(context, output, when, detune);
+    case 'growl': return growl(context, output, when, detune);
+    case 'safe': return safe(context, output, when, detune);
   }
+}
+
+/** A predator has seen the player: a low growl that rises and sinks, rasping, over a breath of noise. */
+function growl(context: BaseAudioContext, out: AudioNode, at: number, detune: number): number {
+  const length = 0.75;
+  const filter = context.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = 520;
+  filter.Q.value = 3;
+  // the rasp: the growl's loudness shaken thirty times a second, between a fifth and the whole of it
+  const rasp = context.createGain();
+  rasp.gain.value = 0.6;
+  const shake = context.createOscillator();
+  const depth = context.createGain();
+  shake.type = 'square';
+  shake.frequency.value = 30;
+  depth.gain.value = 0.4;
+  shake.connect(depth).connect(rasp.gain);
+  const envelope = context.createGain();
+  envelope.gain.setValueAtTime(0, at);
+  envelope.gain.linearRampToValueAtTime(0.55, at + 0.08);
+  envelope.gain.setValueAtTime(0.55, at + 0.45);
+  envelope.gain.linearRampToValueAtTime(0, at + length);
+  const voice = context.createOscillator();
+  voice.type = 'sawtooth';
+  voice.detune.value = detune;
+  voice.frequency.setValueAtTime(72, at);
+  voice.frequency.linearRampToValueAtTime(94, at + 0.25);
+  voice.frequency.linearRampToValueAtTime(60, at + length);
+  voice.connect(filter).connect(rasp).connect(envelope).connect(out);
+  voice.start(at);
+  shake.start(at);
+  voice.stop(at + length);
+  shake.stop(at + length);
+  noiseBurst(context, out, at, 0.55, 'bandpass', 380, 0.12);
+  return length;
+}
+
+/** Safe ground after a hunt: two soft notes going up, a breath out. */
+function safe(context: BaseAudioContext, out: AudioNode, at: number, detune: number): number {
+  tone(context, out, at, 0.25, 392, 0.2, 'triangle', detune);
+  tone(context, out, at + 0.14, 0.45, 587.33, 0.2, 'triangle', detune);
+  return 0.59;
 }
 
 /** The dialogue's page-turn: a soft tick, always the same pitch, so a row of them reads as one steady beat. */
@@ -208,6 +254,25 @@ function sizzle(context: BaseAudioContext, out: AudioNode, at: number): number {
   filter.connect(gain).connect(out);
   noiseSource(context, filter, at, 0.5);
   return 0.5;
+}
+
+/** A fire going out: a hiss that sinks and thins over a soft low drop. */
+function douse(context: BaseAudioContext, out: AudioNode, at: number): number {
+  const filter = context.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.Q.value = 0.9;
+  filter.frequency.setValueAtTime(2_600, at);
+  filter.frequency.exponentialRampToValueAtTime(350, at + 0.8);
+  filter.connect(decay(context, out, at, 0.85, 0.32));
+  noiseSource(context, filter, at, 0.85);
+  const low = context.createOscillator();
+  low.type = 'sine';
+  low.frequency.setValueAtTime(140, at);
+  low.frequency.exponentialRampToValueAtTime(60, at + 0.35);
+  low.connect(decay(context, out, at, 0.35, 0.3));
+  low.start(at);
+  low.stop(at + 0.35);
+  return 0.85;
 }
 
 function coin(context: BaseAudioContext, out: AudioNode, at: number, detune: number): number {

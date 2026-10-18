@@ -1,0 +1,8 @@
+# docs/team/SEO_GEO.md section 6: everything is open to readers and crawlers, including AI ones;
+# the two write routes return nothing to read.
+User-agent: *
+Allow: /
+Disallow: /api/feedback
+Disallow: /api/s1/
+
+Sitemap: https://theopenfold.vercel.app/sitemap.xml

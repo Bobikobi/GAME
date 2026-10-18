@@ -87,7 +87,25 @@ export const songs = {
       drums: { kind: 'noise', gain: 0 },
     },
   },
-} satisfies Record<'valley' | 'night', Song>;
+  // a hunt: a short loop in E with the flat second, the bass driving under a call that keeps coming back
+  chase: {
+    bpm: 132,
+    bars: 4,
+    loop: true,
+    channels: {
+      lead: 'B4:2 -:2 C5:2 -:2 B4:2 -:2 E5:4 | D5:2 C5:2 B4:2 A4:2 B4:8 | B4:2 -:2 C5:2 -:2 B4:2 -:2 F5:4 | E5:2 D5:2 C5:2 D5:2 B4:6 -:2',
+      harmony: '-:2 E4:2 -:2 E4:2 -:2 F4:2 -:2 E4:2 | -:2 E4:2 -:2 E4:2 -:2 F4:2 -:2 E4:2 | -:2 E4:2 -:2 E4:2 -:2 G4:2 -:2 F4:2 | -:2 E4:2 -:2 E4:2 -:2 G4:2 -:2 F4:2',
+      bass: new Array<string>(4).fill('E2:2 E2:2 F2:2 E2:2 E2:2 E2:2 G2:2 F2:2').join(' | '),
+      drums: new Array<string>(4).fill('o:2 x:2 x:2 x:2 o:2 x:2 o:2 x:2').join(' | '),
+    },
+    voices: {
+      lead: { kind: 'pulse', duty: 0.25, gain: 0.16 },
+      harmony: { kind: 'pulse', duty: 0.125, gain: 0.06 },
+      bass: { kind: 'wave', gain: 0.26 },
+      drums: { kind: 'noise', gain: 0.06 },
+    },
+  },
+} satisfies Record<'valley' | 'night' | 'chase', Song>;
 
 const jingleVoices = {
   lead: { kind: 'pulse', duty: 0.25, gain: 0.24 },
