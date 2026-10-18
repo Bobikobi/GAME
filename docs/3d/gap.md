@@ -128,3 +128,48 @@ existing scene with the three ground materials swapped, so they cost no Meshy cr
    clash with Kenney low poly described above. Does not help the ground, since Meshy cannot tile one.
 
 What each leaves undone is the same in every option: levels (stage 3 data), the endless edge (stage 3) and every place still empty in the map.
+
+## Community search (NEXT 8 d, 18.10 evening)
+
+Searched meshy.ai/search on the four accounts (read-only; nothing downloaded, nothing published, no cookies or storage read).
+Every model page shows its licence, author, triangle count and a texture preview; the filter used was "CC0" or "CC BY" and at most 500,000 triangles.
+Of about 40 queries, nearly everything a user posted on Free is **CC0**, which asks for no attribution at all (better than the CC BY 4.0 of our own Free-plan
+generations). Condition (3) holds only after a reduction to 50,000 triangles and 1024 px maps in Blender, the same pass as the role models.
+Condition (2), the look, is **not decided**: Elad has not picked it (8c), so every find below is a candidate, not a taken model, and none is taken before the stills.
+Meshy answered "403 Forbidden" for a few minutes after about 150 page loads from one machine; the sweep is slowed to stay under that, and the ruined-house and well
+pages were not read before it blocked, so they are marked "not read".
+The CC0 label is the uploader's; a model made from a copyrighted picture can carry it wrongly. Each take gets one look at the preview and the page before download.
+
+| Gap item | Found | Triangles | Author | Licence | Fit and what it saves |
+|---|---|---|---|---|---|
+| Workbench | [An old oak workbench](https://www.meshy.ai/3d-models/An-old-oak-workbench-0197e698-8f98-7094-9c77-e29f6ab042f7) | 50,384 | corranvh | CC0 | Plain pale oak, reads as a bench in any look, already at the cap. Saves 20 credits |
+| Storage chest | [Old weathered wooden chest](https://www.meshy.ai/3d-models/Create-a-high-detailed-resolution-3D-model-of-an-old-weathered-wooden-chest-with-metal-fittings-Rectangular-shape-reinforced-with-metal-bands-and-corner-protectors-Distressed-rustic-texture-with-various-shades-of-brown-and-gray-Supported-by-four-sturdy-legs-High-accuracy-in-texture-and-details-emphasizing-antique-vintage-style-Ultrarealistic-highly-detailed-ChristmasAdventure-0193baff-a960-7116-897c-ff2ab3be38a6) | 163,273 | nathi.mashabane | CC0 | Banded wood, needs a reduction to a third; realistic. Saves 20 |
+| Small house (3) | [Medieval Cottage](https://www.meshy.ai/3d-models/Medieval-Cottage-01995cca-1230-7dbd-8792-842d2a79d56b) | 104,290 | Philemo | CC0 | Half-timber, tiled roof; reduce to 50,000; fits a realistic look, not a painted one. Saves 20 |
+| Lantern post (3) | [Lamp post](https://www.meshy.ai/3d-models/Lamp-post-019d72b8-3643-707d-85cf-490b46ed480f) | 18,957 | kennethjanoplo1 | CC0 | Iron post, tiny already; the games' lantern is wooden, so a repaint may be wanted. Saves 20 |
+| Bookshelf (shelf prop) | [Bookshelf](https://www.meshy.ai/3d-models/Bookshelf-Maze-0198d988-f2f7-731c-9246-b932669c332d) | 10,000 | not read | CC0 | Plain pale shelf; fits only an untextured or flat look. Saves 20 |
+| Market stall | none that fits | | | | The two CC0 stalls found are a cartoon "BUY" stall and a red-striped one; our own draft (9343) is closer. Saves 0 |
+| Cliff modules | none that fits | | | | Meshy has single rocks and mossy mounds, no modular face with straight top and base edges. Generate, or build the face in code from the height layer. Saves 0 |
+| Totem | none that fits | | | | The totems are Native-style poles, toys or animals; the valley's totem is a ruin piece. Generate. Saves 0 |
+| Campfire (unlit), stone well, ruined house | none read | | | | Not read before the 403; search again tomorrow |
+| Elder Maru | [Elderly Wizard with Monocle](https://www.meshy.ai/3d-models/Elderly-Wizard-with-Monocle-019bdcc7-c190-70ac-9d7f-7e3de3a0ca30) | 99,832 | d_griffiths13 | CC0 | Cartoon wizard, T-pose, unrigged; rig by `rig_transfer.py`. Our own Maru draft is already made (rigged, paid), so this saves nothing now; it is a second look to show Elad |
+| Pell | [Tea Merchant](https://www.meshy.ai/3d-models/Tea-Merchant-0198d7c1-fe2c-73e0-b9f1-3f1a607c021c) | 35,800 | gtarcan | CC0 | Realistic, standing, unrigged; same note as Maru. A second look only |
+| Cook (woman) | none | | | | Search found a hearth, no cook |
+
+The tally against the plan of option 2: five items could come from the community (workbench, chest, house, lantern, shelf), about 100 credits, and each costs a download that a
+generation would have cost anyway. The four people drafts exist. So the community cuts option 2 from about 520 credits to about 420, and leaves the larger saving, the credits, to the
+banked path anyway. It changes nothing in the order: the look is picked first.
+
+### Found for later (the month's spare downloads)
+
+Same filter, same caveats. All CC0 unless noted.
+
+| For | Found | Triangles | Author | Note |
+|---|---|---|---|---|
+| Horse | [Horse](https://www.meshy.ai/3d-models/Horse-019cab6b-b5bc-798e-9de9-d13f86488e64) | 52,507 | see page | Grey, standing, textured. Elad saw a horse; this and [Horse](https://www.meshy.ai/3d-models/Horse-019bda50-cbe9-7c0c-9267-a9a565d8a924) (47,468, brown, mid-stride pose) are the two plain ones. Unrigged |
+| Fox | [Fox](https://www.meshy.ai/3d-models/Fox-01942ed4-a3c5-77f3-b022-ce4772340f43) | 10,224 | PICKTURA | Standing, textured |
+| Sheep | [Aiko's Sheep](https://www.meshy.ai/3d-models/Aikos-Sheep-01992f17-38e1-7114-9cf6-c8ef455eff06) | 11,186 | ZZproZZ | A round cartoon sheep; [Lone Sheep](https://www.meshy.ai/3d-models/Lone-Sheep-01987a04-7a24-7be3-99b6-613aa4ce5573) (9,802) is more natural |
+| Donkey | [donkey](https://www.meshy.ai/3d-models/donkey-019b6c8d-0eda-7c7f-be62-1968da65b85f) | 23,795 | see page | Textured |
+| Smithy for the workshop | [Victorian shop](https://www.meshy.ai/3d-models/Victorian-butcher-shop-dark-wooden-frame-gothic-storefront-p) page, not a fit | 99,941 | | A house, not a workshop: shown only as the nearest result |
+| Deer, crow, rabbit | none in the filter | | | Deer found nothing; the rabbit and crow results carried no licence badge |
+
+Animals need a four-legged rig; the free auto-rig on these accounts is one per account (see the notes above), so a find is a mesh to rig in Blender (`quad_pass.py`).
