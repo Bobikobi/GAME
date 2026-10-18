@@ -60,7 +60,8 @@ The owner, 18.10, on the walk video where an oak stood barely taller than Pell: 
 - **The map does not move.** A trunk, a door or a post stands on the tile it stands on today, and the solid tiles stay as they are (G59). A bigger drawing grows upward and over its neighbours, never into a new solid tile.
 - **See-through.** A thing that draws over the player (a canopy, a roof, a tall prop the player walks behind) shows the player through it: a fade of the part in front or a silhouette, the builder's choice. A bigger prop never hides the player or a thing a task points at.
 - **Measured at each wave:** on the opening's first frame and at the bridge, no wake tile, pickup or prop a task names is covered by another sprite's solid pixels over more than half its area, after the see-through rule.
-- **The numbers** are the art session's table. The owner sees them once, on the first wave's phone still; his correction goes into this table, and from then on it is the compass.
+- **The numbers** are the art session's starting point, and the owner judges them by eye (18.10: "only by eye will I know"). He sees them once, on the first wave's phone still; his correction goes into this table, and from then on it is the compass.
+- **Bigger is open.** The table is a floor for each kind and the size of its common one. Above it a creator is free: a giant tree, a castle, a colossus (the owner, 18.10). Such a thing keeps the rules above (the map does not move, see-through, nothing a task names hidden). One sprite stays within the schema's 384 x 384, six tiles a side at 64; a larger thing is built from pieces, or the cap is raised in its own pull request.
 
 ## 2. Pixels and colour
 
