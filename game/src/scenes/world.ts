@@ -48,7 +48,8 @@ import { TOO_DARK, feedTooLate, fireLow, fireName, readable, woodToFeed } from '
 import { emptySlots, slotContent } from '../places';
 import { canopyGroups, hash, remapTone, toneField, type Tone } from '../richground';
 import { LONGEST_FRAME_MS, type Session } from '../session';
-import { type Run, WOLF_EYES, bangAt, flareAt, glowPixels, huntGround, huntSong, songFade, wolfDrawn } from '../predator';
+import { type Run, WOLF_EYES, bangAt, denMarks, flareAt, glowPixels, huntGround, huntSong, songFade, wolfDrawn, wolfDrawnAt } from '../predator';
+import { SUCCESS_LIGHT, joltOf } from '../jolt';
 import { soundscape } from '../soundscape';
 import { SensesFind, makeTextures as makeSensesTextures } from '../senses';
 import { questTargets } from '../targets';
@@ -354,6 +355,8 @@ export class WorldScene extends Phaser.Scene {
     halo?: Phaser.GameObjects.Image;
     flare?: Phaser.GameObjects.Image;
     run?: Run;
+    /** what stays of a predator by day: its den mouth and the prints along its round */
+    marks?: Phaser.GameObjects.Image[];
   }[] = [];
   /** the reports a player standing still owes the kernel while a predator watches or a hunt runs */
   private readonly stillReports = new StandingReports();
@@ -465,6 +468,21 @@ export class WorldScene extends Phaser.Scene {
     });
     // the bank wolf's eyes (WOLF_EYES): the pair, its steady glow, and the flare as it sees the player
     const { red, size, gap } = WOLF_EYES;
+    // what stays of the wolf by day: the mouth of its den, and a paw print (pad and three toes) along its round
+    make('fx-den', 14, 9, () => {
+      px(PALETTE.wood, 2, 0, 10);
+      px(PALETTE.wood, 0, 1, 14, 6);
+      px(PALETTE.wood, 2, 7, 10);
+      px(PALETTE.ink, 3, 1, 8, 1);
+      px(PALETTE.ink, 2, 2, 10, 5);
+      px(PALETTE.ink, 3, 7, 8);
+    });
+    make('fx-paw', 5, 5, () => {
+      px(PALETTE.wood, 0, 0);
+      px(PALETTE.wood, 2, 0);
+      px(PALETTE.wood, 4, 0);
+      px(PALETTE.wood, 1, 2, 3, 3);
+    });
     make('fx-wolf-eyes', 2 * size + gap, size, () => {
       px(red, 0, 0, size, size);
       px(red, size + gap, 0, size, size);
@@ -726,7 +744,20 @@ export class WorldScene extends Phaser.Scene {
         const eyes = rule?.round ? this.add.image(cx, bottom - info.h / 2, 'fx-wolf-eyes').setOrigin(0.5).setDepth(DEPTH.glow).setVisible(false) : undefined;
         const halo = rule?.round ? glow('fx-wolf-halo', DEPTH.glow - 0.5) : undefined;
         const flare = rule?.round ? glow('fx-wolf-flare', DEPTH.glow - 0.25) : undefined;
-        this.hazards.push({ spr, kind: p.hazard.kind, rule, eyes, halo, flare });
+        // its den and its tracks stay by day (denMarks): flat on the ground under everything that walks
+        const marks: Phaser.GameObjects.Image[] = [];
+        if (rule && p.hazard.kind === 'predator') {
+          const { den, paws } = denMarks(rule);
+          marks.push(this.add.image((den[0] + 0.5) * T, (den[1] + 0.75) * T, 'fx-den').setDepth(DEPTH.flat + 0.2));
+          for (const paw of paws) {
+            const [hx, hy] = paw.heading;
+            // a foot to each side of the path, the toes toward where the wolf was going
+            const x = Math.round((paw.at[0] + 0.5) * T - hy * 3 * paw.side);
+            const y = Math.round((paw.at[1] + 0.5) * T + hx * 3 * paw.side);
+            marks.push(this.add.image(x, y, 'fx-paw').setDepth(DEPTH.flat + 0.2).setAngle(hx === 0 ? (hy > 0 ? 180 : 0) : hx > 0 ? 90 : -90));
+          }
+        }
+        this.hazards.push({ spr, kind: p.hazard.kind, rule, eyes, halo, flare, marks });
         continue;
       }
       if (p.fire === true && p.id !== undefined) {
@@ -2085,17 +2116,26 @@ export class WorldScene extends Phaser.Scene {
    */
   private showHazards(s: Session): void {
     const night = isNight(this.b, s.tick);
-    for (const { spr, kind, rule, eyes, halo } of this.hazards) {
+    for (const h of this.hazards) {
+      const { spr, kind, rule, eyes, halo } = h;
       if (kind === 'predator') {
         const frame = night && spr.texture.frameTotal > 2 ? 1 : 0;
         if (Number(spr.frame.name) !== frame) spr.setFrame(frame);
         const awake = rule !== undefined && windowOpen(this.b, rule, s.tick);
+        spr.setVisible(this.wolfShown(h, s));
         eyes?.setVisible(awake);
         halo?.setVisible(awake);
       } else {
         spr.setAlpha(night ? 0.12 : 1);
       }
     }
+  }
+
+  /** Whether a predator is drawn now: by day it is away and only its den and tracks show (`wolfDrawnAt`). */
+  private wolfShown(h: { rule?: Hazard; run?: Run }, s: Session): boolean {
+    const chase = s.state.player.chase;
+    const awake = h.rule !== undefined && windowOpen(this.b, h.rule, s.tick);
+    return wolfDrawnAt(awake, chase !== null && chase.hazard === h.rule?.id, h.run !== undefined);
   }
 
   /**
@@ -2119,7 +2159,7 @@ export class WorldScene extends Phaser.Scene {
       const [x, y] = drawn.at;
       const [hx, hy] = drawn.heading;
       const bottom = (y + 1) * T;
-      spr.setPosition(Math.round((x + 0.5) * T), Math.round(bottom)).setDepth(Math.round(bottom));
+      spr.setPosition(Math.round((x + 0.5) * T), Math.round(bottom)).setDepth(Math.round(bottom)).setVisible(this.wolfShown(h, s));
       if (!eyes) continue;
       const faceY = spr.y - spr.displayHeight * 0.55;
       // steady at full strength while awake (the owner's pick): no pulse, no blink
@@ -2409,18 +2449,30 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /** A soft light on the thing just made: it rises, holds and fades within `SUCCESS_LIGHT_MS`, then is gone. */
+  private successLight(x: number, y: number): void {
+    const img = this.add.image(x, y, 'fx-glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.fx).setAlpha(0).setScale(2);
+    this.tweens.chain({
+      targets: img,
+      tweens: [
+        { alpha: SUCCESS_LIGHT.alpha, duration: SUCCESS_LIGHT.rise },
+        { alpha: SUCCESS_LIGHT.alpha, duration: SUCCESS_LIGHT.hold },
+        { alpha: 0, duration: SUCCESS_LIGHT.fade },
+      ],
+      onComplete: () => img.destroy(),
+    });
+  }
+
   /** A little lift of every new item over the player's head, and a cloud when something is built. */
   private celebrate(events: GameEvent[]): void {
     if (!this.falling) this.faceFrame();
     let i = 0;
     for (const e of events) {
-      if (e.e === 'hurt') {
-        this.cameras.main.flash(180, 168, 48, 47);
-        this.cameras.main.shake(140, 0.005);
-      }
+      // the jolt and the flash belong to danger (joltOf); a success moves no camera and flashes nothing
+      const jolt = joltOf(e, RICH.motion);
+      if (jolt?.flash) this.cameras.main.flash(jolt.flash.ms, ...jolt.flash.rgb);
+      if (jolt?.shake) this.cameras.main.shake(jolt.shake.ms, jolt.shake.intensity);
       if (e.e === 'fall') this.fallDown(e.from, e.at);
-      // seen: a short jolt, left out when the player asked for reduced motion (RICH.motion)
-      if (e.e === 'seen' && RICH.motion) this.cameras.main.shake(180, 0.004);
       if (e.e === 'restore' || e.e === 'build') {
         const slot = e.e === 'restore' ? findSlot(this.b.map, this.b.restores[e.restore]?.place.slot ?? '') : undefined;
         const camp = e.e === 'build' ? campTile(this.b, this.b.camps[e.camp]?.slot ?? 'fire') : undefined;
@@ -2428,7 +2480,7 @@ export class WorldScene extends Phaser.Scene {
         const cy = slot ? (slot.y + slot.h / 2) * T : camp ? camp[1] * T + T / 2 : this.player.y;
         this.burst('fx-dust', cx, cy, 18);
         this.burst('fx-spark', cx, cy - 6, 12);
-        this.cameras.main.shake(160, 0.004);
+        this.successLight(cx, cy);
       }
       // the far bell, once: after the first mend a save has ever had, never before it and never on a reload
       if (e.e === 'restore' && this.session && farBellDue(this.session.state.player.restored, e.restore)) {
