@@ -178,7 +178,7 @@ Algorithm, move check (stage 2a):
   - Cold and heat would be hazard kinds outside the closed list (s:62).
   - G34 answers a hazard with a run, never gear (GAME_RULES.md:345-347; check row 618; "Gear answer", 512; dec 508).
 
-**G59. Growth never moves the opening.**
+**G59. Growth never moves the opening.** *(One exception, the owner, 18.10: the core team may reshape the valley and improve the opening once, when the first ring is built, NEXT.md section 19; GAME_RULES section 6 holds its scope. The world lock is re-anchored at the end with the owner's yes, and G59 holds whole after.)*
 - The opening rungs are tied to places (GAME_RULES.md:61-73), and an agent never moves a rung (570).
 - The opening check (tools/src/starts.ts) gets new work. Today it only compares starts within an effort band (182-247). It will:
   - measure each opening leg's length in steps, 4-way;
@@ -446,7 +446,7 @@ A river wider than 4 tiles waits for this call (G54).
 
 **Owner's word, 18.10.2026** (to the art session, asking for the style spec): "users will be able to change existing areas, even completely." It widens the 17.10 answer (DECISIONS 2026-10-17, "the world has no end": creators grow the world, in a frame set when that stage comes) from new ground to ground that already exists. It leaves two things open. They are asked when stage 3 opens, before any frame is written:
 - Who "users" are: creators, through pull requests as today, or players inside the game. Players changing ground touches the paused houses and plots (DECISIONS 2026-10-10).
-- Whether the hand-made valley is among the areas that may change. G59 and the 17.10 entry keep it hand-made at the centre, with the opening fixed.
+- Whether the hand-made valley is among the areas that may change. G59 and the 17.10 entry keep it hand-made at the centre; the 18.10 exception lets the core team reshape it once for the first ring, and the owner's frame for it is picked at NEXT.md section 19 step 0.
 Nothing is built on it until then. Its art side (grounds and height carried as data) is in the style spec, `docs/design/STYLE.md` section 8.
 
 **D3. May a fold bring new ground past the valley's edge?** Decided 16.10.2026 by the owner: option 3.
