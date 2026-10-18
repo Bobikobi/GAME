@@ -10,6 +10,8 @@ export interface SfxOptions {
   pan?: number;
   gain?: number;
   detune?: number;
+  /** A low-pass cutoff in Hz: the sound as heard from far off. */
+  lowpass?: number;
 }
 
 /** Build and start one effect, returning its audible duration in seconds. */
@@ -24,7 +26,14 @@ export function playSfx(
   const panner = context.createStereoPanner();
   output.gain.value = Math.max(0, Math.min(1, options.gain ?? 1)) * (id === 'step' ? 0.15 : 1);
   panner.pan.value = Math.max(-1, Math.min(1, options.pan ?? 0));
-  output.connect(panner).connect(destination);
+  if (options.lowpass !== undefined) {
+    const filter = context.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = options.lowpass;
+    output.connect(filter).connect(panner).connect(destination);
+  } else {
+    output.connect(panner).connect(destination);
+  }
   const detune = options.detune ?? 0;
 
   switch (id) {
