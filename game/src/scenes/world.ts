@@ -56,6 +56,7 @@ import { MazePeek } from './peek';
 import { hintDistance, lanternNight, nodeAction } from '../text';
 import type { WorkKind } from '../ui/ui';
 import { type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, treasureKind } from '../work';
+import { StandingReports, canEnter, landStep } from '../walking';
 
 const DEPTH = { ground: 0, restore: 1, flat: 2, shadow: 2.5, dig: 3, puff: 3.5, mist: 8000, fog: 9000, motes: 9100, shade: 9500, glow: 9600, fx: 9800, marker: 9850 };
 /** the lantern's pool of light at night, in world px: clear inside, a short edge in whole-pixel steps, the dark outside */
@@ -342,16 +343,13 @@ export class WorldScene extends Phaser.Scene {
     flare?: Phaser.GameObjects.Image;
     run?: Run;
   }[] = [];
-  /** whether each walking predator saw the standing tile last frame, for a single report on the false-to-true edge */
-  private predatorSaw = new Map<string, boolean>();
-  private sightReportTick = -1;
+  /** the reports a player standing still owes the kernel while a predator watches or a hunt runs */
+  private readonly stillReports = new StandingReports();
   /** the lantern's light around the player, and the night it was lit for (G31) */
   private lantern: Phaser.GameObjects.Image | undefined;
   private lanternFor: number | undefined;
   /** while the fall plays: no walking, and the player's sprite belongs to the animation */
   private falling = false;
-  /** the tick of the last report while a hunt runs, so a player standing still is still bitten on time */
-  private chaseReport = 0;
   /** the "!" over a predator that has just seen the player */
   private bang!: Phaser.GameObjects.Image;
   /** the ground a drawn wolf runs on, and the mends and camp it was worked out for */
@@ -1200,8 +1198,7 @@ export class WorldScene extends Phaser.Scene {
     this.auto = null;
     this.held.clear();
     this.falling = false;
-    this.predatorSaw.clear();
-    this.sightReportTick = -1;
+    this.stillReports.reset();
     for (const h of this.hazards) h.run = undefined;
     this.wolfGround = undefined;
     this.song = undefined;
@@ -1417,12 +1414,7 @@ export class WorldScene extends Phaser.Scene {
     }
     this.walk(s, delta);
     this.dimInCover(s);
-    this.reportPredatorSight(s);
-    // a hunt bites by the clock: while one runs, a player standing still reports again twice a second
-    if (s.state.player.chase && !this.move && !this.falling && s.tick - this.chaseReport >= 500) {
-      this.chaseReport = s.tick;
-      s.report(s.pos, true);
-    }
+    this.stillReports.frame(this.b, s, this.hazards, !this.move && !this.falling, app.ui.blocking);
     this.playSong(s);
     this.placeLantern(s);
     if (RICH.motion) this.idle(s, time);
@@ -1585,10 +1577,9 @@ export class WorldScene extends Phaser.Scene {
       this.faceFrame(strideFrame(k, this.steps, this.b.sprites[this.playerFrame(s.facing).key]?.frames ?? 1));
       if (k < 1) return;
       const carry = this.move.t - STEP_MS;
-      s.pos = [tx, ty];
       this.move = null;
       // the kernel hears of each new tile; a hazard there may hurt, and a fall ends the walk
-      s.report(s.pos);
+      landStep(s, [tx, ty]);
       if (this.falling) return;
       this.arrive(s);
       if (!this.tryStep(s, carry)) this.faceFrame();
@@ -1637,11 +1628,9 @@ export class WorldScene extends Phaser.Scene {
     emitter.explode(texture === 'fx-leaf' ? 1 : 2 + Math.floor(Math.random() * 2), this.player.x, this.player.y - 1);
   }
 
-  /** The kernel's rule, and a plant or stone that is ready stands in the way. */
+  /** The kernel's rule, and a plant or stone that is ready stands in the way (walking.ts). */
   canWalk(s: Session, x: number, y: number): boolean {
-    if (!this.walkable(x, y, s.state.player)) return false;
-    const node = this.nodeAt.get(key(x, y));
-    return !(node && this.b.instances[node]?.kind === 'resource' && this.ready(s, node));
+    return canEnter(this.b, this.walkable, this.nodeAt, s, x, y);
   }
 
   private arrive(s: Session): void {
@@ -2025,30 +2014,6 @@ export class WorldScene extends Phaser.Scene {
   private dimInCover(s: Session): void {
     const at = this.falling ? s.state.player.at : s.pos;
     this.player.setAlpha(!this.falling && coverAt(this.b, at) ? 0.72 : 1);
-  }
-
-  /**
-   * The kernel strikes only on a move report. When moving eyes first acquire a
-   * player who is standing still, report that tile once; a chase then owns all
-   * later reports until it ends.
-   */
-  private reportPredatorSight(s: Session): void {
-    for (const { rule } of this.hazards) {
-      if (!rule?.round) continue;
-      const watched = windowOpen(this.b, rule, s.tick) && sees(this.b, rule, s.tick, s.pos);
-      const before = this.predatorSaw.get(rule.id) ?? false;
-      const blocked = app.ui.blocking || this.falling || this.move !== null || s.state.player.chase !== null;
-      if (watched && !before && !blocked && this.sightReportTick !== s.tick) {
-        this.sightReportTick = s.tick;
-        s.report(s.pos, true);
-        // If that report began a chase, its standing-bite cadence starts on
-        // the next tick change rather than reporting this same tick twice.
-        this.chaseReport = s.tick;
-      }
-      // A blocked UI does not consume the edge: closing it while still seen
-      // must let the predator notice the standing player.
-      this.predatorSaw.set(rule.id, blocked && s.state.player.chase === null ? false : watched);
-    }
   }
 
   /** Deterministic predator state for the browser proof harness. */
