@@ -45,6 +45,7 @@ The product name is undecided. "Mistvale" appears in the game, the page title an
 
 Tile-by-tile steps (190 ms each) match the handheld look and keep every position an integer tile for the kernel. Game time pauses while any dialogue, menu or minigame is open, and one frame never advances more than 250 ms, so a background tab never fast-forwards the world. Model: claude-opus-5-5.
 **Superseded in part (10.10):** from stage 7 a world's hour stops for no window, and a minigame only keeps the hazards from striking (the entries on the shared world and on the game read as one line).
+**Superseded in part (18.10):** the walk becomes free, in 8 directions, while the world and the kernel stay on tiles (the entry on free movement below).
 
 ## 2026-10-07 ✅ Signs are map props that point at a slot
 
@@ -1698,3 +1699,22 @@ The hud e2e's desktop pass timed out on every pull request from 18.10 17:00 UTC 
 Evidence, from choosing "Mend it" to the story box (the mend is 4 s of game time): before, the desktop took 8.4 s at normal speed, 10.3 s at CPU slowdown 4 and 25.6 s at slowdown 8, where the phone took 23.0 s. After, on `game.loop.rawDelta` capped at 250 ms (Session's own cap, now `LONGEST_FRAME_MS`): 4.3, 4.4 and 5.5 s, the phone 5.1 s. The walk, the mist's draw-back and the 250 ms refresh follow the same clock, as the 3D door already does; Phaser's own tweens and particles still run on its delta.
 The check stays: it is the only test that sees the world fall behind the wall clock on a slow screen, which a player on a slow phone or laptop feels too. The opening e2e reaches the bridge after the hold is over and gives the mend 20 s. A timeout there now prints how far the game's clock moved against the wall's. game-ab found the cause first; its faster mist raster (2x, with a test that it draws the same pixels) is kept under tag `attempt/2026-10-hud-desktop-game-ab`, not needed for this fix.
 **Retry when:** a timeout line shows the clock behind the wall again, or Phaser's tweens crawl on a slow screen: then `fps.panicMax: 0` in the game config. Not proven: why it began failing on 18.10 (likely a change that brought the bridge earlier into the hold, or slower frames). Model: claude-opus-5-5.
+
+## 2026-10-18 ✅ The compass for depth and for characters: Dimraeth's depth in an open world, Drakantos's characters and animation
+
+The owner, 18.10: Dimraeth is the depth and complexity Openfold aims for, but in an open world. He named its skills, the opening of its bag, its monsters, and free movement instead of a fixed feel. Drakantos is the aim for character design and animation. The distance, system by system, is in [docs/design/GAP_DIMRAETH_DRAKANTOS.md](docs/design/GAP_DIMRAETH_DRAKANTOS.md). In concept Openfold already points where Dimraeth stands on eight of twelve rows. It is apart on active skills, and opposite on movement and on monsters you fight. In what is built, the distance is large on every row but writing.
+What this decides: the two games are the measure when a depth or a look is weighed, and free movement is taken (the next entry).
+What it does not decide:
+- Combat. G35 stands until the owner picks; the page's section 3 recommends combat only in the wild (d of 1 and up) and in expeditions, designed before #187's protocol is built and built after free movement and the server.
+- The look. Drakantos's proportion (a head about 40% of the height) and colour craft (local-colour outlines, hue-shifted ramps past the 32 colours) go to the owner as three stills of Pell before wave b of NEXT 15. Wave b is not drawn before the pick.
+**Retry when:** the owner names another measure, or a played build shows that a row of the page reads wrong. Model: claude-opus-5-5.
+
+## 2026-10-18 ✅ Free movement replaces the tile-by-tile walk; the world and the kernel stay on tiles
+
+The owner, 18.10: "free movement, not a fixed feel". The walk until now: 4 directions, a tile per 190 ms, the phone pad in four sectors (the 2026-10-07 entry). Taken, Stardew Valley's model, which is the industry's for a tile world:
+- The body moves at pixel precision in 8 directions, analog on the phone's stick, and collides with tile boxes through a small body box.
+- An action works on the tile the player faces.
+- The client reports a tile whenever the feet cross into a new one, as it already reports its tile (P-5b). The kernel, the predators' eyes and bites, the danger level and the server's batch check of moves (G56, #187) keep the tile as their unit, so the kernel stays integer.
+- Both doors walk by the same rules (`game/src/walking.ts`).
+Order: after #191 (the 64 px engine step, the same `world.ts` window) and hook e and f. Before NEXT 19 c (the ring's walk rules) and NEXT 18 c (the client over the wire), which are built on the walk. The feel numbers (speed, acceleration, the stick's dead zone) are polish, judged by the owner on a preview; the speed starts at today's tile per 190 ms.
+**Retry when:** the server's move check refuses honest free walks at tile reports, or players on a phone miss the tile they mean to act on. Model: claude-opus-5-5.
