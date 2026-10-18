@@ -1561,6 +1561,7 @@ The build is NEXT section 16, six pull requests from B2 to the waking lines. Two
 - the smallest change that makes the explorer's glint a question answered before the keystone (G10), with no prop or wake tile moved.
 The zoom-3 stop is a held zoom of its own, and section 15 (even zooms) settles it when it lands.
 **Retry when:** the zoom-3 stop reads as a cut on a phone, the explorer still takes the keystone first with the glint cue in the timed run, or a human playthrough shows the town still feels far after the 13-tile clearing. Model: claude-opus-5-5.
+
 ## 2026-10-18 ✅ The night: darker than N3 out in the wild, the town lit by its own lights
 
 The owner, shown N1 to N3 (50, 68 and 85% night blue, frames `2026-10-18-night-*`): "darker than N3; street lighting and the houses' light will light the town, but in nature it has to be scary and dark". So the night is one darkness over the whole screen, deeper than N3, starting at 92%, and every light cuts a pool in it in two hard steps. The town reads lit because it is full of lights: street lamps (`lantern_post`) and the lit windows of the buildings the player uses. Out in the wild there is only the player's own light (DECISIONS 2026-10-12), a burning fire and the wolf's eyes. The final level is the owner's to judge in the live game and is not measured here.
