@@ -63,6 +63,13 @@
       "plan": ["DECISIONS 2026-10-10 the hook is the receding mist", "DECISIONS 2026-10-17 the opening's renewal", "DECISIONS 2026-10-18 the hook's stills", "docs/design/OPENING_REVIEW.md", "docs/team/NEXT.md section 16"],
       "branches": ["docs/hook-build", "feat/hook-mist", "feat/hook-schema", "feat/hook-pockets", "feat/hook-bridge", "feat/hook-stone", "feat/hook-waking"],
       "owner": "the hook session"
+    },
+    {
+      "id": "state-tests",
+      "title": "A text view of the state, and e2e checks moved to state tests, starting with stealth",
+      "plan": ["DECISIONS 2026-10-18 a character-grid look is kept for later", "docs/design/ASCII.md section 4"],
+      "branches": ["docs/ascii-idea", "test/stealth-state"],
+      "owner": "the state-tests session"
     }
   ]
 }
