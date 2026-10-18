@@ -39,7 +39,7 @@ import {
 import { type Toast, type Tone, ToastBand, eventToasts, readTime, urgent } from '../toasts';
 import { resourceKind, treasureKind } from '../work';
 import { say, type Option } from './dialog';
-import { STONE_PURSE, STONE_RESTORE, STONE_SPEAKER } from '../stone';
+import { STONE_RESTORE, STONE_SPEAKER } from '../stone';
 import { carveName } from './carve';
 import { button, h, sprite } from './dom';
 import { feedback } from './feedback';
@@ -660,15 +660,16 @@ export class UI {
    */
   private async stoneBeat(restoreId: string, pay = true): Promise<void> {
     const s = app.session;
-    const slot = app.bundle.restores[restoreId]?.place.slot;
-    if (!s || !slot || this.stoneOpen) return;
+    const def = app.bundle.restores[restoreId];
+    const slot = def?.place.slot;
+    if (!s || !slot || !def.stone || this.stoneOpen) return;
     this.stoneOpen = true;
     const glide = app.world?.stoneStop?.(slot);
     try {
-      if (pay) await say(this, STONE_SPEAKER, STONE_PURSE);
+      if (pay) await say(this, STONE_SPEAKER, def.stone.purse);
       await glide;
       if (s.state.player.name === '') {
-        const r = s.act({ t: 'carve', name: await carveName(this) });
+        const r = s.act({ t: 'carve', name: await carveName(this, def.stone.default_name) });
         if (!r.ok) this.toast(r.error, 'bad');
       }
       await say(this, null, [`You cut ${s.state.player.name} into the last line.`]);
