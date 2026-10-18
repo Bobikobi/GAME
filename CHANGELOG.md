@@ -12,6 +12,7 @@ What players notice
 - Stepping into a maze's frame shows the whole maze from above for three seconds. How much it shows depends on the maze: the tangle south of the ruins shows a faint route line and its landmarks.
 - A fire takes a log whole or not at all, so a log is never wasted on a full fire; a hunt you outrun gives back most of what its bites took.
 - Pop-ups come two at a time and sit low on a phone, above the action prompt; the quest tracker, the chips and the pop-ups are bigger (16px).
+- The mist over an empty building plot is a soft patch with a feathered edge, no longer a pale square.
 - The ruin sign no longer offers the creator guide, and the menu no longer has a "Creator guide" button: the developers' pages are reached from the home page only.
 
 What creators notice
