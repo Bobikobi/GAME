@@ -49,3 +49,12 @@ export function pickLook(x: number, y: number): number {
   h = Math.imul(h ^ (h >>> 13), 1274126177);
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
+
+/** The wolves of the bank: one model for the hazard's sprite, how tall it stands in metres and which way it faces. */
+const WOLVES: Record<string, { model: string; height: number; turn: number }> = {
+  hazard_wolf: { model: 'character-wolf-grim', height: 0.9, turn: Math.PI },
+};
+
+export function wolfModel(spriteRef: string): { model: string; height: number; turn: number } | undefined {
+  return WOLVES[baseName(spriteRef)];
+}
