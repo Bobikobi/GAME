@@ -384,6 +384,7 @@ describe('the journal by class and family (C12)', () => {
       { family: 'berry', ids: ['core/bellberry', 'core/berry'] },
       { family: 'herb', ids: ['core/sunleaf', 'core/herb'] },
       { family: 'mushroom', ids: ['core/mushroom'] },
+      { family: 'plum', ids: ['3u2t/plum'] },
     ]);
     expect(groups.find((g) => g.label === 'Relic')!.rows).toEqual([
       { ids: ['core/stone-idol'] },

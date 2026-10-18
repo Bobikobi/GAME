@@ -1,0 +1,38 @@
+{
+  "$schema": "../../../../schema/json/resource.schema.json",
+  "format": 1,
+  "type": "resource",
+  "id": "3u2t/wild-plums",
+  "title": "Wild plum bushes",
+  "creator": "3u2t",
+  "description": "Low bushes heavy with dark plums, in the quiet glade west of the river.",
+  "items": [
+    {
+      "id": "3u2t/plum",
+      "name": "Wild plum",
+      "description": "Dark, juicy and a little tart.",
+      "kind": "food",
+      "rarity": "common",
+      "class": "plant",
+      "family": "plum",
+      "tier": 1,
+      "sprite": "core/base-kit:items/berry",
+      "food": {
+        "satiety": 5
+      }
+    }
+  ],
+  "node": {
+    "output": "3u2t/plum",
+    "yield": 2,
+    "active_ms": 3000,
+    "respawn_ms": 60000,
+    "count": 4,
+    "sprite": "core/base-kit:props/bush_berry",
+    "sprite_empty": "core/base-kit:props/bush_empty",
+    "level": 1,
+    "place": {
+      "slot": "core/west-glade"
+    }
+  }
+}

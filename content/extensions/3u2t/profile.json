@@ -1,0 +1,14 @@
+{
+  "$schema": "../../../schema/json/creator.schema.json",
+  "format": 1,
+  "type": "creator",
+  "id": "3u2t/profile",
+  "title": "3u2t",
+  "creator": "3u2t",
+  "description": "World builder, starting with plums in the quiet glade.",
+  "profile": {
+    "name": "3u2t",
+    "role": "World builder",
+    "signature": { "text": "3u2t", "style": "carved", "glyph": "leaf" }
+  }
+}
