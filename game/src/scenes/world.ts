@@ -47,7 +47,7 @@ import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { TOO_DARK, feedTooLate, fireLow, fireName, readable, woodToFeed } from '../fires';
 import { emptySlots, slotContent } from '../places';
 import { canopyGroups, hash, remapTone, toneField, type Tone } from '../richground';
-import type { Session } from '../session';
+import { LONGEST_FRAME_MS, type Session } from '../session';
 import { type Run, WOLF_EYES, bangAt, flareAt, glowPixels, huntGround, huntSong, songFade, wolfDrawn } from '../predator';
 import { soundscape } from '../soundscape';
 import { SensesFind, makeTextures as makeSensesTextures } from '../senses';
@@ -1472,12 +1472,16 @@ export class WorldScene extends Phaser.Scene {
       this.attract(delta);
       return;
     }
-    s.advance(delta);
-    const clears = this.drawMist(s, delta);
+    // the world keeps the wall clock, as the 3D door does. Phaser's delta is not it: for 120 frames after the game starts
+    // or the page regains focus it is held to 16.7 ms, and a frame over 200 ms counts as an older, shorter one. A desktop
+    // view under software GL draws ~9 frames a second, so the world crawled at a sixth of its speed (DECISIONS.md, 2026-10-18)
+    const real = Math.min(LONGEST_FRAME_MS, this.game.loop.rawDelta);
+    s.advance(real);
+    const clears = this.drawMist(s, real);
     this.placeMote(s, clears, time);
     this.placeSmoke(s, clears, time);
     this.placePredators(s);
-    this.refreshIn -= delta;
+    this.refreshIn -= real;
     if (this.refreshIn <= 0) {
       this.refreshIn = 250;
       this.refreshNodes();
@@ -1486,7 +1490,7 @@ export class WorldScene extends Phaser.Scene {
       this.showSignatures(s);
       this.hearPlace(s);
     }
-    this.walk(s, delta);
+    this.walk(s, real);
     this.dimInCover(s);
     this.stillReports.frame(this.b, s, this.hazards, !this.move && !this.falling, app.ui.blocking);
     this.playSong(s);
