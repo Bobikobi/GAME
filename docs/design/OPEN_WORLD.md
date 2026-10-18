@@ -444,6 +444,11 @@ A river wider than 4 tiles waits for this call (G54).
 2. No: creators fill and request slots, and all ground stays with the core. Why not first: every region then waits on the core's drawing, and creators' areas stay inside ground drawn for them.
 3. Region files open to creators as soon as stitching lands. Why not: roads, borders and crossings would leave the hand that keeps the base tone before the new checks have met real content.
 
+**Owner's word, 18.10.2026** (to the art session, asking for the style spec): "users will be able to change existing areas, even completely." It widens the 17.10 answer (DECISIONS 2026-10-17, "the world has no end": creators grow the world, in a frame set when that stage comes) from new ground to ground that already exists. It leaves two things open. They are asked when stage 3 opens, before any frame is written:
+- Who "users" are: creators, through pull requests as today, or players inside the game. Players changing ground touches the paused houses and plots (DECISIONS 2026-10-10).
+- Whether the hand-made valley is among the areas that may change. G59 and the 17.10 entry keep it hand-made at the centre, with the opening fixed.
+Nothing is built on it until then. Its art side (grounds and height carried as data) is in the style spec, `docs/design/STYLE.md` section 8.
+
 **D3. May a fold bring new ground past the valley's edge?** Decided 16.10.2026 by the owner: option 3.
 - The frame is written and stays: "The valley is the hero" (STORY 35), and "An extension is a fold, or a corner of one" (STORY 38).
 - A fold is "one age of the valley that the mist folded away" (STORY 19-21): an age, not a place.
