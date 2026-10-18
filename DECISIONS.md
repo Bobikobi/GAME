@@ -1698,3 +1698,16 @@ The hud e2e's desktop pass timed out on every pull request from 18.10 17:00 UTC 
 Evidence, from choosing "Mend it" to the story box (the mend is 4 s of game time): before, the desktop took 8.4 s at normal speed, 10.3 s at CPU slowdown 4 and 25.6 s at slowdown 8, where the phone took 23.0 s. After, on `game.loop.rawDelta` capped at 250 ms (Session's own cap, now `LONGEST_FRAME_MS`): 4.3, 4.4 and 5.5 s, the phone 5.1 s. The walk, the mist's draw-back and the 250 ms refresh follow the same clock, as the 3D door already does; Phaser's own tweens and particles still run on its delta.
 The check stays: it is the only test that sees the world fall behind the wall clock on a slow screen, which a player on a slow phone or laptop feels too. The opening e2e reaches the bridge after the hold is over and gives the mend 20 s. A timeout there now prints how far the game's clock moved against the wall's. game-ab found the cause first; its faster mist raster (2x, with a test that it draws the same pixels) is kept under tag `attempt/2026-10-hud-desktop-game-ab`, not needed for this fix.
 **Retry when:** a timeout line shows the clock behind the wall again, or Phaser's tweens crawl on a slow screen: then `fps.panicMax: 0` in the game config. Not proven: why it began failing on 18.10 (likely a change that brought the bridge earlier into the hold, or slower frames). Model: claude-opus-5-5.
+
+## 2026-10-18 ✅ A success never shakes the screen: the jolt and the flash belong to danger
+
+The owner, 18.10, after playing: the screen's shake and flash at a task's end or a success "are not really flattering". In `celebrate()` every restore and build shook the camera, the same jolt a bite gives, so a success and a wound felt alike. Cosy games (Stardew Valley, Animal Crossing) keep the shake for impacts and harm and mark a success with sound and light on the thing made.
+How: NEXT 20 a. A success keeps its jingle and gets a soft light of at most 1 s on what was made; `hurt` keeps the red flash and the shake, `seen` its jolt, a tree landing its small shake.
+**Retry when:** a success feels too quiet on the preview; then add light or sound, never a camera jolt. Model: claude-opus-5-5.
+
+## 2026-10-18 ✅ By day the wolf is away and its den stays
+
+The owner, 18.10: the wolf asleep by day "does nothing", and it should vanish entirely by day. G30 said "by day they show and can be walked around: the trap is visible, the wolf sleeps, the pit is lit", so the request went to him first with the rule quoted (GAME_RULES section 6): its purpose is that a player learns by day where the danger lives. He took the recommendation that keeps that purpose: the wolf is away by day and its den mouth and the tracks along its round stay drawn, and at dusk it comes out of the den. Many games mark where a monster comes from while it is not there.
+How: G30's text changes; NEXT 20 b builds it in the client only. The kernel keeps the wolf's place by day on the den tile, so the hunts, G34 and G47 are unchanged. The 3D door hides the model by day too (one game, two doors).
+**Retry when:** players are surprised at night by a wolf they never saw by day; then the den needs a stronger mark, not the sleeping wolf back. Model: claude-opus-5-5.
+
