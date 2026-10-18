@@ -1605,3 +1605,11 @@ The owner asked whether an ASCII or coloured character-grid renderer, fed by an 
 - the 2D scene and the 3D door already share 222 identical lines and have drifted (no predator rounds, cover or tended fires in 3D), so a third renderer would be a third copy.
 Taken instead, with the owner's approval: a text view of the state for tests and agents, and e2e checks moved to state tests, starting with stealth.
 **Retry when:** the owner wants the look as a style (stills first, it is a direction), a terminal or agent client must play, the scene flow has been moved into pure modules for another reason, or the e2e runs on a real GPU so drawing becomes the cost. Model: claude-opus-5-5.
+## 2026-10-18 🔁 Ground tiles as a text grid: the grid is exact and the seam holds, but a tile repeats in rows
+
+The retry that the 🔁 entry above names. `tools/kit-gen/ground-32.json` (12 tiles: meadow, sand, rock, water, three variants each, from STYLE.md section 3) runs a tile with `"route": "grid"`: Codex writes 32 lines of 32 palette letters into a text file, no image model, and `tools/src/kit/gengrid.ts` parses it, renders it and measures the seam across the wrap.
+Result of four runs (meadow twice, sand, rock), 60 to 190 s and 10k to 26k Codex tokens each:
+- Exact, as a grid must be: meadow 32x32 in 3 colours, sand 32x32 in 4, both with no seam warning. One failure was refused, not imported: rock came back with a row of 31 letters.
+- Not good enough as it stands. Tiled 3x3, the meadow's tufts sit in rows (the second run, given the tuft's shape, repeats the same row of tufts four times across the tile) and the sand's ripples run in a few straight lines. A model that writes letters lays them out by counting, so scatter comes out as a pattern. The rock came out as a grid of four slabs, a strong but rigid design.
+- Whether the water and the other variants do better is not tried: the budget of the day is for the next task.
+**Retry when:** the model draws only a few small motifs as grids (a tuft, a pebble, a ripple dash, a slab corner) and the script scatters them with a seeded random placement and measures the seam, so the layout is the script's and the shape is the model's; or a newer image model keeps the grid (the other route of the entry above). Model: claude-opus-5-5. Branch `feat/kit-gen-grid`.
