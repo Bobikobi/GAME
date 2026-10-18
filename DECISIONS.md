@@ -1605,6 +1605,7 @@ The owner asked whether an ASCII or coloured character-grid renderer, fed by an 
 - the 2D scene and the 3D door already share 222 identical lines and have drifted (no predator rounds, cover or tended fires in 3D), so a third renderer would be a third copy.
 Taken instead, with the owner's approval: a text view of the state for tests and agents, and e2e checks moved to state tests, starting with stealth.
 **Retry when:** the owner wants the look as a style (stills first, it is a direction), a terminal or agent client must play, the scene flow has been moved into pure modules for another reason, or the e2e runs on a real GPU so drawing becomes the cost. Model: claude-opus-5-5.
+
 ## 2026-10-18 🔁 Ground tiles as a text grid: the grid is exact and the seam holds, but a tile repeats in rows
 
 The retry that the 🔁 entry above names. `tools/kit-gen/ground-32.json` (12 tiles: meadow, sand, rock, water, three variants each, from STYLE.md section 3) runs a tile with `"route": "grid"`: Codex writes 32 lines of 32 palette letters into a text file, no image model, and `tools/src/kit/gengrid.ts` parses it, renders it and measures the seam across the wrap.
