@@ -32,7 +32,7 @@ import { DIRS, type Dir } from '../input';
 import { ECHOES, pickOf } from '../lore';
 import { emptySlots, slotContent } from '../places';
 import type { SignInfo } from '../scenes/world';
-import { nodeModel, npcLook, pickLook } from './art';
+import { nodeModel, npcLook, pickLook, wolfModel } from './art';
 import { FrameProbe, liteUrl } from './lite';
 import { createScenery, groundY, modelOf, standalone, walkY, WATER_Y, type MapData, type Places, type Scenery } from './scenery';
 import type { Session } from '../session';
@@ -205,7 +205,7 @@ export class World3D implements WorldView {
   private readonly stillReports = new StandingReports();
   private fell = false;
   private wasNight: boolean | undefined;
-  private readonly hazards: { kind: string; art: THREE.Object3D; frames: number }[] = [];
+  private readonly hazards: { kind: string; art: THREE.Object3D; frames: number; wolf?: THREE.AnimationAction }[] = [];
   private prompt = '';
   private hinted = new Set<string>();
   /** slots the player stands in now, so a riddle's slot is tried once per entry */
@@ -360,10 +360,11 @@ export class World3D implements WorldView {
       if (p.sign) this.signSpots.push({ slot: p.sign, x: p.x + p.w / 2, y: p.y, label: this.signatureEl(p.sign) });
       // a hazard is drawn from its own sprite: a pit lies flat, a wolf stands
       if (p.hazard) {
-        const art = await this.picture(p.sprite, p.hazard.kind !== 'predator', p.x + p.w / 2, p.y + p.h / 2 + (p.hazard.kind === 'predator' ? 0.4 : 0));
+        const wolf = p.hazard.kind === 'predator' ? await this.wolf(p.sprite, p.x + p.w / 2, p.y + p.h / 2 + 0.4) : undefined;
+        const art = wolf?.holder ?? (await this.picture(p.sprite, p.hazard.kind !== 'predator', p.x + p.w / 2, p.y + p.h / 2 + (p.hazard.kind === 'predator' ? 0.4 : 0)));
         if (art) {
           this.scene.add(art);
-          this.hazards.push({ kind: p.hazard.kind, art, frames: info.frames });
+          this.hazards.push({ kind: p.hazard.kind, art, frames: info.frames, wolf: wolf?.idle ?? undefined });
         }
       }
     }
@@ -435,7 +436,21 @@ export class World3D implements WorldView {
     return this.picture(sprite, false, x, z);
   }
 
-  private async character(name: string): Promise<Hero> {
+  /** A wolf of the bank: its own model when the sprite has one (art.ts), else the sprite. It sleeps by day and stirs at night. */
+  private async wolf(sprite: string, x: number, z: number): Promise<Hero | undefined> {
+    const m = wolfModel(sprite);
+    if (!m) return undefined;
+    try {
+      const h = await this.character(m.model, m.height);
+      h.holder.position.set(x, groundY(x, z), z);
+      h.holder.rotation.y = m.turn;
+      return h;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private async character(name: string, height = CHAR_HEIGHT): Promise<Hero> {
     const gltf = await this.loader.loadAsync(`./models/${name}.glb`);
     const root = gltf.scene;
     root.traverse((obj) => {
@@ -447,7 +462,7 @@ export class World3D implements WorldView {
     const box = new THREE.Box3().setFromObject(root);
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
-    const s = CHAR_HEIGHT / Math.max(size.y, 1e-6);
+    const s = height / Math.max(size.y, 1e-6);
     root.scale.setScalar(s);
     root.position.set(-center.x * s, -box.min.y * s, -center.z * s);
     const holder = new THREE.Group();
@@ -928,7 +943,9 @@ export class World3D implements WorldView {
   private showHazards(s: Session): void {
     const night = isNight(this.b, s.tick);
     for (const h of this.hazards) {
-      if (h.kind === 'predator') {
+      if (h.kind === 'predator' && h.wolf) {
+        h.wolf.paused = !night;
+      } else if (h.kind === 'predator') {
         const map = (h.art as THREE.Sprite).material.map;
         if (map && h.frames > 1) map.offset.x = (night ? 1 : 0) / h.frames;
       } else h.art.visible = !night;
