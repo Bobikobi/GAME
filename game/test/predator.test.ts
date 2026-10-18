@@ -2,7 +2,7 @@
 import { beforeAll, describe, expect, test } from 'vitest';
 
 import { type Bundle, type Hazard, hazardsOf, nightEnds, nightFalls, predatorAt, windowOpen } from '@game/kernel';
-import { predatorSpriteAt } from '../src/predator';
+import { denMarks, predatorSpriteAt, wolfDrawnAt } from '../src/predator';
 import { loadBundle } from '../../tools/test/helpers/world';
 
 const STEP = 5;
@@ -59,5 +59,39 @@ describe('predatorSpriteAt', () => {
       const t = dusk + k * wolf.pace;
       expect(predatorSpriteAt(b, wolf, t)).toEqual(predatorAt(b, wolf, t));
     }
+  });
+});
+
+describe('the wolf by day', () => {
+  const b = loadBundle();
+  const rules = hazardsOf(b).filter((h) => h.kind === 'predator');
+
+  test('both wolves are away by day and out at night, and a hunt or a run home keeps one drawn', () => {
+    expect(rules.map((r) => r.id).sort()).toEqual(['core/bank-wolf', 'core/ruins-wolf']);
+    const noon = 0;
+    const night = nightFalls(b, 0) + 1000;
+    for (const r of rules) {
+      expect(wolfDrawnAt(windowOpen(b, r, noon), false, false)).toBe(false);
+      expect(wolfDrawnAt(windowOpen(b, r, night), false, false)).toBe(true);
+      expect(wolfDrawnAt(false, true, false)).toBe(true);
+      expect(wolfDrawnAt(false, false, true)).toBe(true);
+    }
+  });
+
+  test('at dusk it first stands on its den tile, which is where the kernel kept it by day', () => {
+    for (const r of rules) {
+      const dusk = nightFalls(b, 0);
+      expect(predatorAt(b, r, dusk - 1)).toEqual(denMarks(r).den);
+      expect(predatorAt(b, r, dusk)).toEqual(denMarks(r).den);
+    }
+  });
+
+  test('the den is the first tile of the round, and the tracks lie along the rest of it', () => {
+    const wolf = rules.find((r) => r.id === 'core/bank-wolf')!;
+    const { den, paws } = denMarks(wolf);
+    expect(den).toEqual(wolf.round![0]);
+    expect(paws.length).toBeGreaterThan(0);
+    for (const p of paws) expect(wolf.round!.some((t) => t[0] === p.at[0] && t[1] === p.at[1])).toBe(true);
+    expect(denMarks(rules.find((r) => !r.round)!).paws).toEqual([]);
   });
 });
