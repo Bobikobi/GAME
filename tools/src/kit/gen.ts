@@ -1,7 +1,7 @@
 /**
  * Redraw kit sprites with an image model and bring them back onto the kit's grid.
  *
- * DECISIONS 2026-10-18 "The art moves to 32 px per tile". A spec names each sprite: the stock
+ * DECISIONS 2026-10-18 "The art moves to 64 px per tile". A spec names each sprite: the stock
  * sprite it redraws, what it is, the grid, and the detail to spell out. The prompt's house style
  * lives here, so the spec is the only thing that changes between waves.
  *
@@ -19,6 +19,12 @@
  * A tile with `"route": "grid"` is not drawn at all: Codex writes it as rows of palette letters at exactly
  * the asked size (`gengrid.ts`), so the grid is exact and the importer measures the seam instead of voting.
  *
+ * A tile with `"route": "scatter"` is a ground: Codex writes only its small motifs (a tuft, a pebble, a ripple
+ * dash) as grids, one call each, and `scatter.ts` places them with a seeded hash across tile edges and
+ * bakes the variants as wrapping tiles, then measures the seam, the colours, the rows and the repeats.
+ * `--only meadow_tuft` redraws one motif and keeps the others; `--reimport` bakes again from the last
+ * motifs with no Codex call.
+ *
  * Nothing is written into `content/`: a result goes into the kit by hand, in a wave. `--dry` writes
  * the references and the prompts only; `--reimport` imports the last raw images again without
  * calling Codex. Each image costs one to two minutes and 14k to 37k Codex tokens (measured
@@ -34,13 +40,16 @@ import { PNG } from 'pngjs';
 import { colourCount, gridPrompt, parseGrid, pngToGrid, renderGrid, seamWarnings } from './gengrid.js';
 import { importSprite, nearestPaletteIndex } from './import.js';
 import { CORE_PALETTE, type Rgb, hexToRgb } from './palette.js';
+import {
+  type Motif, type ScatterEntry, motifPrompt, motifWarnings, parseMotif, renderMotif, scatterProblem, scatterTile, tileWarnings, variantsOf,
+} from './scatter.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
-/** The largest grid a spec may ask for: a 128x128 prop at 32 px per tile. */
-const MAX_SIDE = 128;
+/** The largest grid a spec may ask for: a 384x384 prop, six tiles a side at 64 px per tile (STYLE.md section 1). */
+const MAX_SIDE = 384;
 
-export interface GenEntry {
+export interface GenEntry extends ScatterEntry {
   /** The result's file stem, lowercase like every kit file. */
   name: string;
   /** A core kit sprite id (`chars/elder`; a sheet gives its first frame) or a PNG path from the repo root. */
@@ -51,8 +60,8 @@ export interface GenEntry {
   height: number;
   /** A `tile` fills its square edge to edge and repeats; a `sprite` stands on transparency. */
   kind?: 'sprite' | 'tile';
-  /** How a tile is drawn: `image` (the default) through image generation, `grid` as a text grid of palette letters, exact by construction. */
-  route?: 'image' | 'grid';
+  /** How a tile is drawn: `image` (the default) through image generation, `grid` as a text grid of palette letters, `scatter` as small motifs a script scatters. */
+  route?: 'image' | 'grid' | 'scatter';
   anchor?: 'center' | 'bottom';
   /** The detail to spell out. The model draws as many pixels as it is given things to draw. */
   detail?: string;
@@ -70,7 +79,7 @@ export interface ManifestLine {
   ref: string;
   refSize: [number, number];
   kind: 'sprite' | 'tile';
-  route?: 'image' | 'grid';
+  route?: 'image' | 'grid' | 'scatter' | 'motif';
   width: number;
   height: number;
   prompt: string;
@@ -83,6 +92,9 @@ export interface ManifestLine {
   warnings: string[];
   error: string | null;
   at: string;
+  /** A scatter tile: the seed it was placed from and the raw motif files it was made of. */
+  seed?: string;
+  motifs?: string[];
 }
 
 export function parseSpec(text: string): GenEntry[] {
@@ -105,8 +117,12 @@ export function parseSpec(text: string): GenEntry[] {
       }
     }
     if (entry.kind !== undefined && entry.kind !== 'sprite' && entry.kind !== 'tile') throw new Error(`${where}.kind must be sprite or tile`);
-    if (entry.route !== undefined && entry.route !== 'image' && entry.route !== 'grid') throw new Error(`${where}.route must be image or grid`);
-    if (entry.route === 'grid' && entry.kind !== 'tile') throw new Error(`${where}.route grid is for tiles: set kind to tile`);
+    if (entry.route !== undefined && entry.route !== 'image' && entry.route !== 'grid' && entry.route !== 'scatter') throw new Error(`${where}.route must be image, grid or scatter`);
+    if ((entry.route === 'grid' || entry.route === 'scatter') && entry.kind !== 'tile') throw new Error(`${where}.route ${entry.route} is for tiles: set kind to tile`);
+    if (entry.route === 'scatter') {
+      const problem = scatterProblem(entry as GenEntry);
+      if (problem !== null) throw new Error(`${where}: ${problem}`);
+    }
     if (entry.anchor !== undefined && entry.anchor !== 'center' && entry.anchor !== 'bottom') throw new Error(`${where}.anchor must be center or bottom`);
     if (entry.detail !== undefined && typeof entry.detail !== 'string') throw new Error(`${where}.detail must be text`);
     return entry as GenEntry;
@@ -380,6 +396,29 @@ function codexVersion(): string {
   return run.status === 0 ? run.stdout.trim() : 'unknown';
 }
 
+/** Run Codex once in the work folder and find the file it wrote. The prompt goes before -i: -i takes every path that follows it. */
+function askCodex(
+  options: Options, version: string, name: string, stamp: string, prompt: string, images: readonly string[], expect: string,
+): { codex: NonNullable<ManifestLine['codex']>; saved: string | null; error: string } {
+  const workdir = join(options.out, 'work');
+  const logPath = join(options.out, 'log', `${name}-${stamp}.txt`);
+  const since = Date.now();
+  const run = spawnSync('codex', ['exec', '--sandbox', 'workspace-write', '--skip-git-repo-check', prompt, ...images], {
+    cwd: workdir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+    timeout: options.timeoutSeconds * 1000, maxBuffer: 64 * 1024 * 1024,
+  });
+  const log = `${run.stdout ?? ''}${run.stderr ?? ''}`;
+  writeFileSync(logPath, log);
+  return {
+    codex: {
+      version, exit: run.status, seconds: Math.round((Date.now() - since) / 1000),
+      tokens: parseTokens(log), log: logPath.replace(`${options.out}/`, ''),
+    },
+    saved: findOutput(workdir, expect, log, since),
+    error: run.error === undefined ? 'Codex saved no image' : `Codex did not finish: ${run.error.message}`,
+  };
+}
+
 function generateOne(entry: GenEntry, options: Options, version: string, earlier: readonly ManifestLine[]): ManifestLine {
   const kind = entry.kind ?? 'sprite';
   const reference = loadReference(entry.ref);
@@ -410,24 +449,12 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
     Object.assign(line, { prompt: last.prompt, codex: last.codex, raw: last.raw });
   } else {
     const stamp = at.replace(/[:.]/g, '-');
-    const workdir = join(options.out, 'work');
-    const logPath = join(options.out, 'log', `${entry.name}-${stamp}.txt`);
-    const since = Date.now();
-    // the prompt goes before -i: -i takes every path that follows it
     // a text grid is written, not drawn: no picture goes in and no image tool is needed
-    const run = spawnSync('codex', ['exec', '--sandbox', 'workspace-write', '--skip-git-repo-check', line.prompt, ...(grid ? [] : ['-i', refPath])], {
-      cwd: workdir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
-      timeout: options.timeoutSeconds * 1000, maxBuffer: 64 * 1024 * 1024,
-    });
-    const log = `${run.stdout ?? ''}${run.stderr ?? ''}`;
-    writeFileSync(logPath, log);
-    line.codex = {
-      version, exit: run.status, seconds: Math.round((Date.now() - since) / 1000),
-      tokens: parseTokens(log), log: logPath.replace(`${options.out}/`, ''),
-    };
-    const saved = findOutput(workdir, grid ? `${entry.name}.txt` : file, log, since);
+    const asked = askCodex(options, version, entry.name, stamp, line.prompt, grid ? [] : ['-i', refPath], grid ? `${entry.name}.txt` : file);
+    line.codex = asked.codex;
+    const saved = asked.saved;
     if (saved === null) {
-      line.error = run.error === undefined ? 'Codex saved no image' : `Codex did not finish: ${run.error.message}`;
+      line.error = asked.error;
       return line;
     }
     line.raw = `raw/${entry.name}-${stamp}.${grid ? 'txt' : 'png'}`;
@@ -467,6 +494,95 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
     line.error = `import: ${(error as Error).message}`;
   }
   return line;
+}
+
+/** Does `--only` name this entry, or one of a scatter entry's motifs (`meadow_tuft`)? */
+export function entryMatches(entry: GenEntry, only: ReadonlySet<string> | null): boolean {
+  if (only === null || only.has(entry.name)) return true;
+  return (entry.motifs ?? []).some((m) => only.has(`${entry.name}_${m.name}`));
+}
+
+/** The frame of the measure in STYLE.md section 3: a 1440x3120 phone at 64 px per tile. */
+const PHONE_FRAME = { x: 23, y: 49 };
+
+/**
+ * A scatter ground: one manifest line per motif (drawn by Codex, or kept from the last run), then one per
+ * baked variant. The variants cost no Codex time, so a seed or a spec change is a `--reimport`.
+ */
+function generateScatter(entry: GenEntry, options: Options, version: string, earlier: readonly ManifestLine[]): ManifestLine[] {
+  const reference = loadReference(entry.ref);
+  writeFileSync(join(options.out, 'ref', `${entry.name}-1x.png`), PNG.sync.write(reference));
+  const at = new Date().toISOString();
+  const stamp = at.replace(/[:.]/g, '-');
+  const base = entry.base ?? 'c';
+  const lines: ManifestLine[] = [];
+  const motifs: Motif[] = [];
+  const sources: string[] = [];
+  const blank = (name: string, kind: 'sprite' | 'tile', route: 'motif' | 'scatter', width: number, height: number, prompt: string): ManifestLine => ({
+    name, spec: options.spec.replace(`${ROOT}/`, ''), ref: entry.ref, refSize: [reference.width, reference.height],
+    kind, route, width, height, prompt, codex: null, raw: null, out: null, grid: null, logical: null, colors: null,
+    warnings: [], error: null, at,
+  });
+  for (const m of entry.motifs ?? []) {
+    const name = `${entry.name}_${m.name}`;
+    const line = blank(name, 'sprite', 'motif', m.width, m.height, motifPrompt({ what: m.what, width: m.width, height: m.height, detail: m.detail, base, file: `${name}.txt` }));
+    lines.push(line);
+    if (options.dry) continue;
+    const redraw = !options.reimport && (options.only === null || options.only.has(entry.name) || options.only.has(name));
+    if (redraw) {
+      const asked = askCodex(options, version, name, stamp, line.prompt, [], `${name}.txt`);
+      line.codex = asked.codex;
+      if (asked.saved === null) {
+        line.error = asked.error;
+        continue;
+      }
+      line.raw = `raw/${name}-${stamp}.txt`;
+      writeFileSync(join(options.out, line.raw), readFileSync(asked.saved));
+    } else {
+      const last = [...earlier].reverse().find((l) => l.name === name && l.out !== null && l.raw !== null);
+      if (last === undefined) {
+        line.error = 'No earlier motif to bake from: draw it first';
+        continue;
+      }
+      Object.assign(line, { prompt: last.prompt, codex: last.codex, raw: last.raw });
+    }
+    try {
+      const grid = parseMotif(readFileSync(join(options.out, line.raw ?? ''), 'utf8'), m.width, m.height);
+      const own = `out/${name}-${stamp}.png`;
+      writeFileSync(join(options.out, own), PNG.sync.write(renderMotif(grid)));
+      writeFileSync(join(options.out, `${name}.png`), readFileSync(join(options.out, own)));
+      line.out = own;
+      line.logical = [m.width, m.height];
+      line.colors = new Set([...grid.join('')].filter((ch) => ch !== '.')).size;
+      line.warnings.push(...motifWarnings(grid));
+      motifs.push({ name: m.name, weight: m.weight ?? 1, grid });
+      sources.push(line.raw ?? '');
+    } catch (error) {
+      line.error = `import: ${(error as Error).message}`;
+    }
+  }
+  if (options.dry || motifs.length !== (entry.motifs ?? []).length) return lines;
+
+  const ground = {
+    base, cell: entry.cell ?? 16, chance: entry.chance ?? 0.85, speckles: entry.speckles ?? [], tile: entry.width, motifs, seed: entry.name,
+  };
+  const variants = entry.variants ?? 4;
+  const throws = variantsOf(ground, variants);
+  const grids = throws.map(scatterTile);
+  const warnings = tileWarnings(ground, variants, PHONE_FRAME);
+  grids.forEach((grid, i) => {
+    const name = `${entry.name}_${i + 1}`;
+    const line = blank(name, 'tile', 'scatter', entry.width, entry.height, `scattered from ${sources.join(', ')}`);
+    const own = `out/${name}-${stamp}.png`;
+    writeFileSync(join(options.out, own), PNG.sync.write(renderGrid(grid)));
+    writeFileSync(join(options.out, `${name}.png`), readFileSync(join(options.out, own)));
+    Object.assign(line, {
+      out: own, logical: [entry.width, entry.height], colors: colourCount(grid), seed: throws[i]?.seed, motifs: sources,
+      warnings: i === 0 ? warnings : [],
+    });
+    lines.push(line);
+  });
+  return lines;
 }
 
 function readManifest(path: string): ManifestLine[] {
@@ -520,7 +636,7 @@ ${rows.join('\n')}
 
 function runCli(args: readonly string[]): void {
   const options = parseArgs(args);
-  const entries = parseSpec(readFileSync(options.spec, 'utf8')).filter((e) => options.only === null || options.only.has(e.name));
+  const entries = parseSpec(readFileSync(options.spec, 'utf8')).filter((e) => entryMatches(e, options.only));
   if (entries.length === 0) throw new Error('No spec entry matches --only');
   for (const dir of ['', 'ref', 'raw', 'log', 'work', 'out']) mkdirSync(join(options.out, dir), { recursive: true });
   const version = options.dry || options.reimport ? 'none' : codexVersion();
@@ -528,11 +644,12 @@ function runCli(args: readonly string[]): void {
   const earlier = readManifest(manifestPath);
   let failed = 0;
   for (const entry of entries) {
-    const line = generateOne(entry, options, version, earlier);
-    if (!options.dry) appendFileSync(manifestPath, `${JSON.stringify(line)}\n`);
-    if (line.error !== null) failed += 1;
-    const said = options.dry ? line.prompt : line.error ?? [line.out, ...line.warnings].join(' - ');
-    process.stdout.write(`${entry.name}: ${said}\n`);
+    for (const line of entry.route === 'scatter' ? generateScatter(entry, options, version, earlier) : [generateOne(entry, options, version, earlier)]) {
+      if (!options.dry) appendFileSync(manifestPath, `${JSON.stringify(line)}\n`);
+      if (line.error !== null) failed += 1;
+      const said = options.dry ? line.prompt : line.error ?? [line.out, ...line.warnings].join(' - ');
+      process.stdout.write(`${line.name}: ${said}\n`);
+    }
   }
   if (!options.dry) {
     writeFileSync(join(options.out, 'gallery.html'), galleryHtml(readManifest(manifestPath)));

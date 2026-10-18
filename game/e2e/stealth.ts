@@ -110,6 +110,9 @@ window.__stealth = (() => {
       g().world.bind(s);
     },
     predator(at) { return g().world.predator('core/bank-wolf', at); },
+    cover(x, y) {
+      return g().bundle.map.props.some((p) => p.cover === true && x >= p.x && x < p.x + p.w && y >= p.y && y < p.y + p.h);
+    },
     node() {
       return Object.entries(g().bundle.instances).filter(([, n]) => n.source === 'core/moon-reeds')
         .map(([id, n]) => ({ id, x: n.x, y: n.y }))[0];
@@ -265,11 +268,21 @@ async function run(page: Page, url: string): Promise<void> {
   await page.waitFor(`__game.session.state.player.quests['core/the-south-bank'] === 'active'`, 'Pell to give the south-bank quest');
   await page.waitFor('!__game.ui.blocking', 'Pell dialogue to close');
 
-  // Begin the night from the built camp, then take the covered bank road.
+  // Begin the night from the built camp at the head of the bank road. Once the
+  // wolf turns west along the far edge, take the covered bank road (x 12) down
+  // to the waiting tile. The shortest walk goes down the meadow beside it, the
+  // wolf's own column, and passed or not by the pace of the steps.
   await page.eval('__stealth.moveTo(18, 22); __stealth.setHour(21)');
-  await me.walkTo(12, 33, 'the grass cover');
-  const covered = await page.eval<boolean>(`__game.bundle.map.props.some((p) => p.cover === true && 12 >= p.x && 12 < p.x + p.w && 33 >= p.y && 33 < p.y + p.h)`);
-  if (!covered) throw new Error('the waiting tile is not cover');
+  await me.walkTo(12, 19, 'the head of the bank road');
+  await page.waitFor(`(() => {
+    const p = __stealth.predator();
+    return !!p && p.at[1] === 31 && p.heading[0] === -1;
+  })()`, 'the wolf to turn west along the far edge', 20_000);
+  for (let y = 20; y <= 33; y++) {
+    await me.step('down');
+    if (y >= 24 && y < 33 && !(await page.eval<boolean>(`__stealth.cover(12, ${y})`))) throw new Error(`the bank road is not cover at 12,${y}`);
+  }
+  if (!(await page.eval<boolean>('__stealth.cover(12, 33)'))) throw new Error('the waiting tile is not cover');
   if (await page.eval<boolean>('!!__game.session.state.player.chase')) throw new Error('the wolf began a chase on the covered approach');
 
   // Wait for the wolf on the west edge, looking north: its eyes face away

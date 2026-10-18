@@ -32,7 +32,8 @@ import { DIRS, type Dir } from '../input';
 import { ECHOES, pickOf } from '../lore';
 import { emptySlots, slotContent } from '../places';
 import type { SignInfo } from '../scenes/world';
-import { nodeModel, npcLook, pickLook } from './art';
+import { nodeModel, npcLook, pickLook, wolfModel } from './art';
+import { WOLF_EYES } from '../predator';
 import { FrameProbe, liteUrl } from './lite';
 import { createScenery, groundY, modelOf, standalone, walkY, WATER_Y, type MapData, type Places, type Scenery } from './scenery';
 import type { Session } from '../session';
@@ -40,6 +41,7 @@ import { questTargets } from '../targets';
 import { nodeLook } from '../growth';
 import { hintDistance, lanternNight, nodeAction } from '../text';
 import { beatAt, blowsDue, resourceKind, treasureKind, type AutoKind } from '../work';
+import { StandingReports, canEnter, landStep } from '../walking';
 import type { WorkKind } from '../ui/ui';
 
 const NEIGHBOURS: readonly [number, number][] = [
@@ -73,6 +75,43 @@ interface Hero {
   mixer: THREE.AnimationMixer;
   idle: THREE.AnimationAction | null;
   walk: THREE.AnimationAction | null;
+}
+
+/**
+ * Two red points at the wolf's head. The head is the end of the long horizontal axis where the highest points of the
+ * model lie (the ears stand above the tail), found from the model itself so a new wolf needs no number.
+ */
+function wolfEyes(body: THREE.Object3D, height: number): THREE.Group {
+  body.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(body);
+  const size = box.getSize(new THREE.Vector3());
+  const centre = box.getCenter(new THREE.Vector3());
+  const alongX = size.x > size.z;
+  const high: number[] = [];
+  const v = new THREE.Vector3();
+  body.traverse((o) => {
+    if (!(o instanceof THREE.Mesh)) return;
+    const pos = o.geometry.getAttribute('position');
+    for (let i = 0; i < pos.count; i += 4) {
+      v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld);
+      if (v.y > box.min.y + size.y * 0.8) high.push(alongX ? v.x : v.z);
+    }
+  });
+  const mean = high.length ? high.reduce((a, n) => a + n, 0) / high.length : centre[alongX ? 'x' : 'z'];
+  const sign = mean >= centre[alongX ? 'x' : 'z'] ? 1 : -1;
+  const reach = (alongX ? size.x : size.z) / 2;
+  const group = new THREE.Group();
+  const glow = new THREE.MeshBasicMaterial({ color: WOLF_EYES.red, transparent: true, opacity: 0.25, depthWrite: false });
+  const core = new THREE.MeshBasicMaterial({ color: WOLF_EYES.red });
+  for (const side of [-1, 1]) {
+    const eye = new THREE.Group();
+    eye.add(new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 6), core), new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), glow));
+    const lateral = side * 0.06;
+    const along = sign * reach * 0.92;
+    eye.position.set(centre.x + (alongX ? along : lateral), box.min.y + height * 0.8, centre.z + (alongX ? lateral : along));
+    group.add(eye);
+  }
+  return group;
 }
 
 /** What stands on a node's tile: the thing now showing, and what it was made from, so it is rebuilt only when the stage changes. */
@@ -200,10 +239,11 @@ export class World3D implements WorldView {
   private auto: { node: string; kind: AutoKind; start: number; ms: number; hits: number; facing: Dir; underfoot: boolean; onDone?: () => void } | null = null;
   private readonly held = new Set<string>();
   private lanternFor: number | undefined;
-  private chaseReport = 0;
+  /** the reports a player standing still owes the kernel while a hunt runs; the 3D door has no walking predators to watch with */
+  private readonly stillReports = new StandingReports();
   private fell = false;
   private wasNight: boolean | undefined;
-  private readonly hazards: { kind: string; art: THREE.Object3D; frames: number }[] = [];
+  private readonly hazards: { kind: string; art: THREE.Object3D; frames: number; wolf?: { idle: THREE.AnimationAction | null; body: THREE.Object3D; eyes: THREE.Object3D } }[] = [];
   private prompt = '';
   private hinted = new Set<string>();
   /** slots the player stands in now, so a riddle's slot is tried once per entry */
@@ -358,10 +398,11 @@ export class World3D implements WorldView {
       if (p.sign) this.signSpots.push({ slot: p.sign, x: p.x + p.w / 2, y: p.y, label: this.signatureEl(p.sign) });
       // a hazard is drawn from its own sprite: a pit lies flat, a wolf stands
       if (p.hazard) {
-        const art = await this.picture(p.sprite, p.hazard.kind !== 'predator', p.x + p.w / 2, p.y + p.h / 2 + (p.hazard.kind === 'predator' ? 0.4 : 0));
+        const wolf = p.hazard.kind === 'predator' ? await this.wolf(p.sprite, p.x + p.w / 2, p.y + p.h / 2 + 0.4) : undefined;
+        const art = wolf?.holder ?? (await this.picture(p.sprite, p.hazard.kind !== 'predator', p.x + p.w / 2, p.y + p.h / 2 + (p.hazard.kind === 'predator' ? 0.4 : 0)));
         if (art) {
           this.scene.add(art);
-          this.hazards.push({ kind: p.hazard.kind, art, frames: info.frames });
+          this.hazards.push({ kind: p.hazard.kind, art, frames: info.frames, wolf: wolf ? { idle: wolf.idle, body: wolf.body, eyes: wolf.eyes } : undefined });
         }
       }
     }
@@ -433,7 +474,25 @@ export class World3D implements WorldView {
     return this.picture(sprite, false, x, z);
   }
 
-  private async character(name: string): Promise<Hero> {
+  /** A wolf of the bank: its own model when the sprite has one (art.ts), else the sprite. By day it sleeps; at night only its eyes show, red and steady (DECISIONS 2026-10-16). */
+  private async wolf(sprite: string, x: number, z: number): Promise<(Hero & { body: THREE.Object3D; eyes: THREE.Object3D }) | undefined> {
+    const m = wolfModel(sprite);
+    if (!m) return undefined;
+    try {
+      const h = await this.character(m.model, m.height);
+      const body = h.holder.children[0]!;
+      const eyes = wolfEyes(body, m.height); // measured while the holder is still at the origin, facing the model's own way
+      eyes.visible = false;
+      h.holder.add(eyes);
+      h.holder.position.set(x, groundY(x, z), z);
+      h.holder.rotation.y = m.turn;
+      return { ...h, body, eyes };
+    } catch {
+      return undefined;
+    }
+  }
+
+  private async character(name: string, height = CHAR_HEIGHT): Promise<Hero> {
     const gltf = await this.loader.loadAsync(`./models/${name}.glb`);
     const root = gltf.scene;
     root.traverse((obj) => {
@@ -445,7 +504,7 @@ export class World3D implements WorldView {
     const box = new THREE.Box3().setFromObject(root);
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
-    const s = CHAR_HEIGHT / Math.max(size.y, 1e-6);
+    const s = height / Math.max(size.y, 1e-6);
     root.scale.setScalar(s);
     root.position.set(-center.x * s, -box.min.y * s, -center.z * s);
     const holder = new THREE.Group();
@@ -809,11 +868,7 @@ export class World3D implements WorldView {
       this.showSignatures(s);
     }
     this.walk(s, delta);
-    // a hunt bites by the clock: while one runs, a player standing still reports again twice a second
-    if (s.state.player.chase && !this.move && s.tick - this.chaseReport >= 500) {
-      this.chaseReport = s.tick;
-      s.report(s.pos, true);
-    }
+    this.stillReports.frame(this.b, s, [], !this.move, app.ui.blocking);
     this.shade(s, dt);
     this.workTick(s);
     this.drawBusy(s);
@@ -847,11 +902,10 @@ export class World3D implements WorldView {
       this.pos.z = fy + (ty - fy) * k + 0.5;
       if (k < 1) return;
       const carry = this.move.t - STEP_MS;
-      s.pos = [tx, ty];
       this.move = null;
       this.fell = false;
       // the kernel hears of each new tile; a hazard there may hurt, and a fall ends the walk
-      s.report(s.pos);
+      landStep(s, [tx, ty]);
       if (this.fell) return;
       this.arrive(s);
       this.tryStep(s, carry);
@@ -874,11 +928,9 @@ export class World3D implements WorldView {
     return true;
   }
 
-  /** The kernel's rule, and a plant or stone that is ready stands in the way. */
+  /** The kernel's rule, and a plant or stone that is ready stands in the way (walking.ts). */
   canWalk(s: Session, x: number, y: number): boolean {
-    if (!this.walkable(x, y, s.state.player)) return false;
-    const node = this.nodeAt.get(key(x, y));
-    return !(node && this.b.instances[node]?.kind === 'resource' && this.ready(s, node));
+    return canEnter(this.b, this.walkable, this.nodeAt, s, x, y);
   }
 
   private arrive(s: Session): void {
@@ -933,7 +985,11 @@ export class World3D implements WorldView {
   private showHazards(s: Session): void {
     const night = isNight(this.b, s.tick);
     for (const h of this.hazards) {
-      if (h.kind === 'predator') {
+      if (h.kind === 'predator' && h.wolf) {
+        if (h.wolf.idle) h.wolf.idle.paused = !night;
+        h.wolf.body.visible = !night;
+        h.wolf.eyes.visible = night;
+      } else if (h.kind === 'predator') {
         const map = (h.art as THREE.Sprite).material.map;
         if (map && h.frames > 1) map.offset.x = (night ? 1 : 0) / h.frames;
       } else h.art.visible = !night;

@@ -581,6 +581,50 @@
           "maxLength": 40,
           "type": "string"
         },
+        "mist": {
+          "minimum": 1,
+          "maximum": 64,
+          "description": "Tiles around the place that the mist leaves clear once it is mended (B2, NEXT 16). Left out: the mend clears none. The kernel does not read it; the client draws it.",
+          "type": "integer"
+        },
+        "stone": {
+          "additionalProperties": false,
+          "description": "The mended place is a returners' stone (NEXT 16 e): the written names above a line the player carves. Left out: the place keeps the plain \"Mended by\" sign.",
+          "type": "object",
+          "required": [
+            "names",
+            "default_name",
+            "purse"
+          ],
+          "properties": {
+            "names": {
+              "minItems": 6,
+              "maxItems": 12,
+              "description": "Names cut by earlier hands, one word each, top to bottom. Written content: the stone is the speaker of every line on it (STORY.md S2).",
+              "type": "array",
+              "items": {
+                "pattern": "^\\S{1,16}$",
+                "type": "string"
+              }
+            },
+            "default_name": {
+              "pattern": "^[A-Za-z0-9 _-]{1,16}$",
+              "description": "The name cut for a player who types none. The kernel's name rule: 1 to 16 letters, digits, spaces, \"_\" or \"-\".",
+              "type": "string"
+            },
+            "purse": {
+              "minItems": 1,
+              "maxItems": 2,
+              "description": "What the stone says after the mend, in its own voice: never who left the purse or when (STORY.md S1, S2).",
+              "type": "array",
+              "items": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string"
+              }
+            }
+          }
+        },
         "done": {
           "minItems": 1,
           "maxItems": 2,

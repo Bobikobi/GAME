@@ -31,6 +31,8 @@ import { slotContent } from './places';
 const SAVE_VERSION = 2;
 /** The date this browser first played the demo: kept outside the save, so no reset or new game clears it (CR-85). */
 export const DEMO_SINCE_KEY = 'openfold.demo-since';
+/** The most a frame moves the world: a long frame (tab switch, debugger) never fast-forwards it. */
+export const LONGEST_FRAME_MS = 250;
 
 export type Facing = 'down' | 'up' | 'left' | 'right';
 export interface LogEntry {
@@ -260,8 +262,7 @@ export class Session {
   /** Called every frame with real elapsed ms. */
   advance(dt: number): void {
     if (!this.started || this.paused) return;
-    // a long frame (tab switch, debugger) never fast-forwards the world
-    this.tick += Math.max(0, Math.min(250, Math.round(dt)));
+    this.tick += Math.max(0, Math.min(LONGEST_FRAME_MS, Math.round(dt)));
     if (this.deferred.length > 0 && !this.busy) {
       const events = this.deferred;
       this.deferred = [];

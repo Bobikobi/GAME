@@ -265,6 +265,11 @@ export const ResourceBody = Type.Object(
           'The node blocks the way, ready or not, as a tree does: a stump stays in the way until the tree is grown again. Left out: the player walks through it.',
       }),
     ),
+    opens_after: Type.Optional({
+      ...Id,
+      description:
+        'A quest id. The node cannot be struck by a character who was offered that quest and has not finished it; a character who was never offered it strikes the node as usual. The refusal says one short line and costs nothing.',
+    }),
     tool: Type.Optional(ToolKind),
     level: Int(1, 20, 'Level required, in the profession the node trains: felling when the tool is an axe, foraging otherwise.'),
     game: Type.Optional(
@@ -673,6 +678,33 @@ export const RestoreBody = Type.Object(
     active_ms: Ms('Time the player is busy restoring it.'),
     passable: Type.Boolean({ description: 'Whether the restored thing can be walked over (a bridge).' }),
     sign: Type.Optional(Name),
+    mist: Type.Optional(
+      Int(1, 64, "Tiles around the place that the mist leaves clear once it is mended (B2, NEXT 16). Left out: the mend clears none. The kernel does not read it; the client draws it."),
+    ),
+    stone: Type.Optional(
+      Type.Object(
+        {
+          names: Type.Array(Type.String({ pattern: '^\\S{1,16}$' }), {
+            minItems: 6,
+            maxItems: 12,
+            description: 'Names cut by earlier hands, one word each, top to bottom. Written content: the stone is the speaker of every line on it (STORY.md S2).',
+          }),
+          default_name: Type.String({
+            pattern: '^[A-Za-z0-9 _-]{1,16}$',
+            description: 'The name cut for a player who types none. The kernel\'s name rule: 1 to 16 letters, digits, spaces, "_" or "-".',
+          }),
+          purse: Type.Array(Text, {
+            minItems: 1,
+            maxItems: 2,
+            description: 'What the stone says after the mend, in its own voice: never who left the purse or when (STORY.md S1, S2).',
+          }),
+        },
+        {
+          additionalProperties: false,
+          description: 'The mended place is a returners\' stone (NEXT 16 e): the written names above a line the player carves. Left out: the place keeps the plain "Mended by" sign.',
+        },
+      ),
+    ),
     done: Type.Optional(
       Type.Array(Text, {
         minItems: 1,
@@ -732,6 +764,12 @@ export const StarterBody = Type.Object(
         { x: Int(0, 1023), y: Int(0, 1023) },
         { additionalProperties: false, description: "The tile the character wakes on. Left out: the map's spawn." },
       ),
+    ),
+    pocket: Type.Optional(
+      Int(1, 32, "Tiles of the mist's clear pocket around the wake tile (B2, NEXT 16). Left out: 5. The kernel does not read it; the client draws it."),
+    ),
+    pocket_grown: Type.Optional(
+      Int(1, 32, "Tiles of that pocket once the character's first task is done. Left out: 7. Never less than `pocket`."),
     ),
     intro: Type.Optional(
       Type.Array(Text, {
