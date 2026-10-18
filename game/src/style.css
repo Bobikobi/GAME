@@ -629,6 +629,8 @@ body {
   height: 50px;
   background: rgba(58, 53, 84, 0.78);
   border: 3px solid var(--ink);
+  /* the pad is the mist's own colour and sinks into it: a light outline keeps it findable */
+  box-shadow: 0 0 0 2px #cfd3e6;
 }
 
 .pad::after {
