@@ -1596,6 +1596,16 @@ Offered six cues of depth, cheapest first (STYLE.md section 7), the owner answer
 Cues 1 to 5 touch only the client. They are details inside the light direction already picked (shadows C), so they get no stills of their own: they are built with the night, in the same window, and judged in the live game, and their details are polish. Footprints come in sand with them and in snow when snow arrives; height comes with stage 3. Cue 2 replaces today's 72% fade in cover (`dimInCover`) and keeps its stealth signal: the covered bank road in `game/e2e/stealth.ts` passes unchanged in meaning, and the variety stream, which built the stealth cues, hears of it before it is built.
 **Retry when:** a cue costs a mid phone its frame budget (then it goes behind RICH like the other cosmetics), or a cue hides something a rule needs the player to see. Model: claude-opus-5-5.
 
+## 2026-10-18 🔁 A character-grid look is kept for later
+
+The owner asked whether an ASCII or coloured character-grid renderer, fed by an automatic conversion of the pixel art, would make the game simpler. It would not now, and the owner asked to keep the idea for a later switch or addition. The numbers are in [docs/design/ASCII.md](docs/design/ASCII.md):
+- the e2e is about 93% of CI time (about 11 min of 12 on 17.10), and its minutes are play time, since the game clock runs in real time;
+- Canvas instead of WebGL saved 3-5% of e2e wall time on this laptop;
+- a Canvas 2D character grid drew slower than the game does today in headless Chrome (43-156 ms a frame against 20-32 ms);
+- the 2D scene and the 3D door already share 222 identical lines and have drifted (no predator rounds, cover or tended fires in 3D), so a third renderer would be a third copy.
+Taken instead, with the owner's approval: a text view of the state for tests and agents, and e2e checks moved to state tests, starting with stealth.
+**Retry when:** the owner wants the look as a style (stills first, it is a direction), a terminal or agent client must play, the scene flow has been moved into pure modules for another reason, or the e2e runs on a real GPU so drawing becomes the cost. Model: claude-opus-5-5.
+
 ## 2026-10-18 🔁 Ground tiles as a text grid: the grid is exact and the seam holds, but a tile repeats in rows
 
 The retry that the 🔁 entry above names. `tools/kit-gen/ground-32.json` (12 tiles: meadow, sand, rock, water, three variants each, from STYLE.md section 3) runs a tile with `"route": "grid"`: Codex writes 32 lines of 32 palette letters into a text file, no image model, and `tools/src/kit/gengrid.ts` parses it, renders it and measures the seam across the wrap.
