@@ -680,7 +680,7 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       log('picked up the axe by the bridge');
     }
 
-    // 4. mend the bridge: the first restoration, level, journal entry and a sign with my name
+    // 4. mend the bridge: the first restoration, level, journal entry and the stone with my name
     const known = (await page.eval<{ recipes: string[] }>('__e2e.player()')).recipes.length;
     const bridge = await page.eval<Rect>(`__e2e.slot('core/old-bridge')`);
     await me.walkTo(bridge, 'the broken bridge');
@@ -690,13 +690,13 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
     await me.done('mending the bridge');
     const mended = await me.talkThrough();
     await me.idle('the bridge story');
-    if (!mended.some((l) => l.includes('Mended by Tess'))) throw new Error(`no "Mended by Tess" after the bridge: ${mended.join(' / ')}`);
+    if (!mended.some((l) => l.includes('You cut Tess into the last line'))) throw new Error(`no cut name "Tess" after the bridge: ${mended.join(' / ')}`);
     if ((await me.quest('core/fix-the-bridge')) !== 'done') throw new Error('fix-the-bridge is not done');
     const journal = await page.eval<number>('__e2e.player().journal.length');
     if (journal < 1) throw new Error('no journal entry after the bridge');
     const purse = await page.eval<{ gold: number; recipes: string[] }>('__e2e.player()');
     if (purse.gold !== 30_000) throw new Error(`the bridge paid ${purse.gold} mg, not the price of one tool`);
-    if (purse.recipes.length !== known) throw new Error('the purse under the sign taught a recipe: it holds gold only');
+    if (purse.recipes.length !== known) throw new Error('the purse under the stone taught a recipe: it holds gold only');
     await me.snap('bridge');
     log('mended the bridge: 30000 mg in the purse');
 
