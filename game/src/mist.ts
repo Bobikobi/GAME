@@ -26,10 +26,54 @@ export const MIST_RGB = { base: [0x3a, 0x35, 0x54], light: [0x5d, 0x61, 0x77], s
 /** The ordered 4x4 dither: a pixel is mist where the density is above its cell's threshold. */
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5] as const;
 
-/** The mist's clear places for a save: the starter's wake, clear for 5 tiles. */
+/** B2's defaults for what content leaves out (schema: starter.pocket, starter.pocket_grown). */
+const POCKET = MIST.clear;
+const POCKET_GROWN = 7;
+
+/** Whether the character's own first task is done: a quest offered to their start alone, closed (NEXT 16 c). */
+export function firstTaskDone(b: Bundle, s: State): boolean {
+  return Object.entries(b.quests).some(([id, q]) => q.starter === s.player.starter && s.player.quests[id] === 'done');
+}
+
+/**
+ * The mist's clear places for a save, a pure function of it (so a reload keeps them): the starter's wake,
+ * clear for `pocket` tiles and for `pocket_grown` once the first task is done.
+ */
 export function mistClears(b: Bundle, s: State): Clear[] {
-  const wake = b.starters[s.player.starter]?.wake ?? b.map.spawn;
-  return [{ x: wake.x, y: wake.y, r: MIST.clear }];
+  const starter = b.starters[s.player.starter];
+  const wake = starter?.wake ?? b.map.spawn;
+  const r = firstTaskDone(b, s) ? (starter?.pocket_grown ?? POCKET_GROWN) : (starter?.pocket ?? POCKET);
+  return [{ x: wake.x, y: wake.y, r }];
+}
+
+/** How fast a clear place opens when the save changes it: 2 tiles a second, so the first task's 5 to 7 takes 1 s. */
+export const MIST_TILES_PER_S = 2;
+/** The radius is rasterised in steps of this many tiles, so a growing pocket costs one raster per step. */
+export const MIST_STEP = 0.25;
+
+/** One frame of a clear place's radius moving from what is drawn toward what the save says. */
+export function mistRadius(shown: number, target: number, dtMs: number): number {
+  const move = (MIST_TILES_PER_S * dtMs) / 1000;
+  if (Math.abs(target - shown) <= move) return target;
+  return shown + Math.sign(target - shown) * move;
+}
+
+/** A radius as it is rasterised: rounded to `MIST_STEP`, so a frame that moves it less than a step draws nothing new. */
+export function mistStep(r: number): number {
+  return Math.round(r / MIST_STEP) * MIST_STEP;
+}
+
+/**
+ * Where the explorer's mote of light stands (NEXT 16 c, the picked frame hook-1-explorer-cue): on the line from the
+ * character to the find, `reach` tiles out (the pocket's edge when they stand at the wake), or on the find itself
+ * once it is nearer than that. Tiles, a tile's centre at +0.5.
+ */
+export function moteAt(from: readonly [number, number], find: readonly [number, number], reach: number): { x: number; y: number } {
+  const dx = find[0] - from[0];
+  const dy = find[1] - from[1];
+  const d = Math.hypot(dx, dy);
+  if (d <= reach) return { x: find[0] + 0.5, y: find[1] + 0.5 };
+  return { x: from[0] + 0.5 + (dx / d) * reach, y: from[1] + 0.5 + (dy / d) * reach };
 }
 
 /** The mist's density at a point (tiles, a tile's own corner at its whole number): 0 clear to 1 solid. */

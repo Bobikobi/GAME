@@ -21,7 +21,7 @@ const SHOWN = 0.7;
 /** A find this faint has no trail. */
 const SHOWS = 0.2;
 
-function makeTextures(scene: Phaser.Scene): void {
+export function makeTextures(scene: Phaser.Scene): void {
   if (scene.textures.exists('senses-glow')) return;
   const g = scene.add.graphics();
   // a soft ellipse, 31x19, brighter toward the middle
