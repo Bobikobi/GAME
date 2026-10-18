@@ -59,6 +59,7 @@ export type Grade = 0 | 1 | 2 | 3 | 4;
 
 export type Action =
   | { t: 'start'; starter: string; name: string; look?: number }
+  | { t: 'carve'; name: string }
   | { t: 'gather'; node: string; grade: Grade; at: Tile }
   | { t: 'dig'; spot: string; grade: Grade; at: Tile }
   | { t: 'craft'; recipe: string; at: Tile }
@@ -266,8 +267,8 @@ function apply(ctx: Ctx, a: Action): void {
   const { s } = ctx;
   if (a.t === 'start') return start(ctx, a.starter, a.name, a.look ?? 0);
   if (s.player.starter === '') refuse('Pick a character first.');
-  // a position report is not work: it goes through while the player is busy
-  if (a.t !== 'move' && ctx.tick < s.player.busyUntil) refuse('You are still busy.');
+  // a position report and a carved name are not work: they go through while the player is busy
+  if (a.t !== 'move' && a.t !== 'carve' && ctx.tick < s.player.busyUntil) refuse('You are still busy.');
   // satiety is kept lazily: bring it up to now before anything reads it
   s.player.satiety = satietyAt(ctx.b, s, ctx.tick);
   s.player.satietyAt = ctx.tick;
@@ -318,6 +319,8 @@ function perform(ctx: Ctx, a: Action): void {
       return visit(ctx, a.slot, a.at);
     case 'learn':
       return learn(ctx, a.item);
+    case 'carve':
+      return carve(ctx, a.name);
     case 'spend':
       return spend(ctx, a.attr);
     case 'wear':
@@ -329,15 +332,28 @@ function perform(ctx: Ctx, a: Action): void {
   }
 }
 
+function checkName(name: string): void {
+  if (!/^[A-Za-z0-9 _-]{1,16}$/.test(name) || name.trim() === '') {
+    refuse('A name is 1 to 16 letters, digits, spaces, "_" or "-".');
+  }
+}
+
+/** Sets the name of a character that has none yet; a name already set is kept. */
+function carve(ctx: Ctx, name: string): void {
+  const p = ctx.s.player;
+  if (p.name !== '') refuse('The name is already carved.');
+  checkName(name);
+  p.name = name.trim();
+}
+
 function start(ctx: Ctx, starterId: string, name: string, look: number): void {
   const { b, s } = ctx;
   if (s.player.starter !== '') refuse('The character is already chosen.');
   const starter = b.starters[starterId];
   if (!starter) refuse('Unknown character.');
   if (look !== 0 && !(look === 1 && starter.sprite_alt)) refuse('Unknown look.');
-  if (!/^[A-Za-z0-9 _-]{1,16}$/.test(name) || name.trim() === '') {
-    refuse('A name is 1 to 16 letters, digits, spaces, "_" or "-".');
-  }
+  // an empty name is allowed: the player carves it at the bridge's stone (carve)
+  if (name.trim() !== '') checkName(name);
   s.player.name = name.trim();
   s.player.starter = starterId;
   s.player.look = look;
@@ -366,6 +382,7 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   const r = b.resources[inst.source]!;
   checkAt(ctx, at, { x: inst.x, y: inst.y, w: 1, h: 1 });
   checkGrade(grade);
+  if (nodeLocked(b, s, r)) refuse('Something else catches the light first.');
   const node = s.nodes[nodeId] ?? { readyAt: 0, draws: 0 };
   if (ctx.tick < node.readyAt) refuse('It has not grown back yet.');
   if (r.hours && !inHours(hourOf(b, ctx.tick), r.hours)) {
@@ -771,6 +788,15 @@ function applyReward(ctx: Ctx, reward: Pick<QuestDef['reward'], 'items' | 'recip
 /** A quest that names a starter is offered to a character of that starter only. */
 export function offeredTo(q: { starter?: string }, s: State): boolean {
   return q.starter === undefined || q.starter === s.player.starter;
+}
+
+/**
+ * A node with `opens_after` waits for that quest, but only for a character the
+ * quest is offered to: another start strikes it as ever.
+ */
+export function nodeLocked(bundle: Bundle, state: State, node: { opens_after?: string }): boolean {
+  const q = node.opens_after === undefined ? undefined : bundle.quests[node.opens_after];
+  return q !== undefined && offeredTo(q, state) && state.player.quests[q.id] !== 'done';
 }
 
 /**

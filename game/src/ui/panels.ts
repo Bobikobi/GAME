@@ -27,6 +27,7 @@ import {
   sendFeedback,
 } from '../feedback-payload';
 import type { SignInfo } from '../scenes/world';
+import type { StoneView } from '../stone';
 import { Session } from '../session';
 import { ATTRIBUTE_MAX, activeQuests, attributeEffects, bagGroups, classLine, clock, eatLabel, gold, itemBenefit, itemName, journalGroups, questSteps, restoreHint, seconds, sellable, stacks, stationGate, stationText, stationUpgrades, toolOpens, wornAt } from '../text';
 import { s1, s1Available } from '../net/s1';
@@ -268,7 +269,7 @@ export function openJournal(ui: UI, tab: JournalTab = 'tasks'): void {
     return h(
       'div',
       null,
-      h('p', null, h('b', null, `${st.player.name}, level ${characterLevel(b, st)}`), points > 0 ? ` - ${points} skill point${points > 1 ? 's' : ''} to spend` : ''),
+      h('p', null, h('b', null, `${st.player.name ? `${st.player.name}, level` : 'Level'} ${characterLevel(b, st)}`), points > 0 ? ` - ${points} skill point${points > 1 ? 's' : ''} to spend` : ''),
       h(
         'div',
         { class: 'attrs' },
@@ -813,9 +814,20 @@ export function openSignCard(ui: UI, info: SignInfo): void {
       : null,
     c.ai.length ? h('div', { class: 'sign-tools' }, h('p', { class: 'sign-note' }, 'Made with'), c.ai.map((t) => h('span', null, t))) : null,
     c.mendedBy ? h('p', { class: 'sign-mended' }, `Mended by ${c.mendedBy}`) : null,
+    c.stone ? stoneList(c.stone) : null,
     info.record && s1Available() ? reportLine(info.record) : null,
   ];
   p.body.replaceChildren(...parts.filter((x): x is HTMLElement => x !== null));
+}
+
+/** The returners' stone: the written names, then the line the player cut, or an empty one. */
+function stoneList(v: StoneView): HTMLElement {
+  return h(
+    'ul',
+    { class: 'stone' },
+    ...v.names.map((n) => h('li', null, n)),
+    h('li', { class: v.carved ? 'carved' : 'blank' }, v.carved || ' '),
+  );
 }
 
 /** One short note per record per browser, sent to the stage-1 service (GRUNT 18); nothing about the player goes with it. */
