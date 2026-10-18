@@ -39,7 +39,9 @@ import {
 import { app } from '../app';
 import { sound, type SfxId, type SongId } from '../audio';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T } from '../config';
+import { FAR_BELL, SMOKE_PUFFS, farBellDue, nearestChimney, smokeAlpha, smokeAt } from '../hookbridge';
 import { type Clear, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../mist';
+import { FOG_ATLAS, FOG_ATLAS_W, FOG_FEATHER, FOG_OFFSETS, FOG_TILE, fogPixels } from '../fog';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { TOO_DARK, feedTooLate, fireLow, fireName, readable, woodToFeed } from '../fires';
@@ -58,6 +60,8 @@ import type { WorkKind } from '../ui/ui';
 import { type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, treasureKind } from '../work';
 import { StandingReports, canEnter, landStep } from '../walking';
 
+/** px from the view's edge that the smoke marker keeps, so its column fits above the base. */
+const SMOKE_INSET = 30;
 const DEPTH = { ground: 0, restore: 1, flat: 2, shadow: 2.5, dig: 3, puff: 3.5, mist: 8000, fog: 9000, motes: 9100, shade: 9500, glow: 9600, fx: 9800, marker: 9850 };
 /** the lantern's pool of light at night, in world px: clear inside, a short edge in whole-pixel steps, the dark outside */
 const LIGHT = { r: 34, edge: 2, dark: 0.7, tint: 0xf0dcc0 };
@@ -248,6 +252,10 @@ export class WorldScene extends Phaser.Scene {
   private mistKey = '';
   /** the radius each clear place is drawn at: it moves toward what the save says, 2 tiles a second */
   private mistShown = new Map<string, number>();
+  private mistReady = false;
+  /** the town's chimney tops in world px, and the one column of single puffs that stands for the town's smoke (NEXT 16 d) */
+  private chimneys: { x: number; y: number }[] = [];
+  private smokeMark: Phaser.GameObjects.Image[] = [];
   /** the explorer's mote of light: leads through the mist to a find picked up by hand */
   private mote: Phaser.GameObjects.Image | undefined;
   /** the mist and the fogs as one layer; the player is cut out of it and of the dark frame (WebGL) */
@@ -276,7 +284,7 @@ export class WorldScene extends Phaser.Scene {
   private campCycles = new Map<string, Cycle>();
   private campGlows = new Map<string, Glow>();
   private embers = new Map<string, Emitter>();
-  private fogs: Phaser.GameObjects.TileSprite[] = [];
+  private fogs: Phaser.GameObjects.Image[] = [];
   private fogMotes: Emitter[] = [];
   private dapples: Phaser.GameObjects.TileSprite[] = [];
   private cycles: Cycle[] = [];
@@ -511,6 +519,7 @@ export class WorldScene extends Phaser.Scene {
         px(PALETTE.ink, 3, 4, 6);
       });
     }
+    make('fx-smoke-mark', 1, 1, () => px(PALETTE.paper, 0, 0, 1, 1));
     if (RICH.motion) {
       make('fx-puff', 2, 2, () => px(PALETTE.cream, 0, 0, 2, 2));
       make('fx-grit', 2, 2, () => px(PALETTE.grey, 0, 0, 2, 2));
@@ -728,6 +737,7 @@ export class WorldScene extends Phaser.Scene {
         if (RICH.detail && !FLAT.has(name)) this.shadow(cx, bottom, p.w, p.solid ? DEPTH.shadow : DEPTH.flat - 0.5);
         // the lamp head is the top 8 px of the post
         if (RICH.light && name === 'lantern_post') this.glows.push(this.glow(cx, bottom - info.h + 4, true));
+        if (name === 'house_small') this.chimneys.push({ x: cx - info.w / 2 + CHIMNEY.x, y: bottom - info.h + CHIMNEY.y });
         if (RICH.motion && name === 'house_small') this.smoke(cx - info.w / 2 + CHIMNEY.x, bottom - info.h + CHIMNEY.y, bottom + 1);
       }
       for (let y = p.y; y < p.y + p.h; y++) {
@@ -962,13 +972,63 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * The fog of every empty slot, baked once into one texture (so the fog draws in one batch, not one per
+   * slot): for each slot and each of its two layers, the fog tile (shifted by `offset`) over the slot and
+   * FOG_FEATHER px past it, cut to a rounded shape whose edge thins out through a 4x4 ordered dither, the
+   * way the night hole's edge steps. A frame of the texture is named `<slot id>:<offset>`. False when the
+   * kit has no fog tile.
+   */
+  private bakeFog(): boolean {
+    if (this.textures.exists(FOG_ATLAS)) return true;
+    if (!this.textures.exists(FOG_SPRITE)) return false;
+    const src = this.textures.get(FOG_SPRITE).getSourceImage() as CanvasImageSource;
+    const tile = document.createElement('canvas');
+    tile.width = tile.height = FOG_TILE;
+    const tc = tile.getContext('2d');
+    if (!tc) return false;
+    tc.drawImage(src, 0, 0, FOG_TILE, FOG_TILE);
+    const px = tc.getImageData(0, 0, FOG_TILE, FOG_TILE).data;
+    // shelf-pack the patches, a row at a time
+    const patches: { name: string; x: number; y: number; w: number; h: number; data: Uint8ClampedArray<ArrayBuffer> }[] = [];
+    let x = 0;
+    let y = 0;
+    let rowH = 0;
+    for (const s of this.empty) {
+      for (const offset of FOG_OFFSETS) {
+        const w = s.w * T + 2 * FOG_FEATHER;
+        const h = s.h * T + 2 * FOG_FEATHER;
+        if (x + w > FOG_ATLAS_W) {
+          x = 0;
+          y += rowH;
+          rowH = 0;
+        }
+        patches.push({ name: `${s.id}:${offset}`, x, y, w, h, data: fogPixels(px, s.w * T, s.h * T, offset) });
+        x += w;
+        rowH = Math.max(rowH, h);
+      }
+    }
+    const tex = this.textures.createCanvas(FOG_ATLAS, FOG_ATLAS_W, Math.max(1, y + rowH));
+    if (!tex) return false;
+    const ctx = tex.getContext();
+    for (const q of patches) {
+      ctx.putImageData(new ImageData(q.data, q.w, q.h), q.x, q.y);
+      tex.add(q.name, 0, q.x, q.y, q.w, q.h);
+    }
+    tex.refresh();
+    return true;
+  }
+
   private buildFog(): void {
     this.empty = emptySlots(this.b);
+    const baked = this.bakeFog();
     for (const s of this.empty) {
-      // two thin layers drifting against each other read as mist, not as clouds
-      for (const [alpha, offset] of [[0.55, 0], [0.45, 16]] as const) {
-        const fog = this.add.tileSprite(s.x * T, s.y * T, s.w * T, s.h * T, FOG_SPRITE).setOrigin(0).setDepth(DEPTH.fog).setAlpha(alpha);
-        fog.setTilePosition(offset, offset);
+      // two thin layers swaying against each other read as mist, not as clouds; each is baked with a soft,
+      // dithered edge, so a slot's fog is a patch of mist and not a rectangle of the tile
+      for (const [alpha, offset] of [[0.55, FOG_OFFSETS[0]], [0.45, FOG_OFFSETS[1]]] as const) {
+        if (!baked) continue;
+        const fog = this.add.image(s.x * T - FOG_FEATHER, s.y * T - FOG_FEATHER, FOG_ATLAS, `${s.id}:${offset}`).setOrigin(0).setDepth(DEPTH.fog).setAlpha(alpha);
+        fog.setData('home', fog.x);
         this.fogs.push(fog);
         if (RICH.light) {
           this.tweens.add({ targets: fog, alpha: alpha + 0.12, duration: 3400 + offset * 40 + (s.x % 3) * 500, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
@@ -1396,7 +1456,14 @@ export class WorldScene extends Phaser.Scene {
   // ------------------------------------------------------------ frame loop
 
   override update(time: number, delta: number): void {
-    this.fogs.forEach((fog, i) => (fog.tilePositionX += delta * (i % 2 === 0 ? 0.006 : -0.004)));
+    // a slot's fog sways only while it is in view: off screen it is neither moved nor drawn
+    const view = this.cameras.main.worldView;
+    this.fogs.forEach((fog, i) => {
+      const home = fog.getData('home') as number;
+      const seen = home + fog.width + 3 > view.x && home - 3 < view.right && fog.y + fog.height > view.y && fog.y < view.bottom;
+      fog.setVisible(seen);
+      if (seen) fog.x = home + Math.sin(time * 0.0004 + i) * (i % 2 === 0 ? 3 : -3);
+    });
     this.animate(time, delta);
     this.placePinned();
     const s = this.session;
@@ -1406,7 +1473,9 @@ export class WorldScene extends Phaser.Scene {
       return;
     }
     s.advance(delta);
-    this.placeMote(s, this.drawMist(s, delta), time);
+    const clears = this.drawMist(s, delta);
+    this.placeMote(s, clears, time);
+    this.placeSmoke(s, clears, time);
     this.placePredators(s);
     this.refreshIn -= delta;
     if (this.refreshIn <= 0) {
@@ -1685,9 +1754,12 @@ export class WorldScene extends Phaser.Scene {
 
   /** Draws B2's mist for the places the save leaves clear (src/mist.ts); a new texture only when they change, and a growing one in steps. */
   private drawMist(s: Session, delta: number): Clear[] {
+    const first = !this.mistReady;
+    this.mistReady = true;
     const clears = mistClears(this.b, s.state).map((c) => {
       const at = `${c.x},${c.y}`;
-      const r = mistRadius(this.mistShown.get(at) ?? c.r, c.r, delta);
+      // a place mended while the scene runs opens from nothing; one already in the save (a reload) is drawn open
+      const r = mistRadius(this.mistShown.get(at) ?? (first || c.rate === undefined ? c.r : 0), c.r, delta, c.rate);
       this.mistShown.set(at, r);
       return { ...c, r: mistStep(r) };
     });
@@ -1734,6 +1806,33 @@ export class WorldScene extends Phaser.Scene {
     }
     // the twinkle is slow and small: a sign, not an alarm
     this.mote.setPosition(want.x * T, want.y * T).setVisible(true).setAlpha(RICH.motion ? 0.7 + 0.3 * Math.sin(time / 380) : 1);
+  }
+
+  /**
+   * The town's smoke as a marker (NEXT 16 d, frames hook-3-day-edge and hook-3-night-edge): one column of single
+   * puffs bending at the top, held on the view's edge toward the nearest chimney while that is off screen, and
+   * drawn at the chimney while it is in view but still under the mist (always, when the chimney has no smoke of its
+   * own). It shows once the bridge is mended. It dims with the night.
+   */
+  private placeSmoke(s: Session, clears: Clear[], time: number): void {
+    // the smoke is the bridge's pay: it shows once the first mend is in the save
+    const chimney = s.state.player.restored.length > 0 ? nearestChimney(this.chimneys, { x: s.pos[0] * T, y: s.pos[1] * T }) : undefined;
+    if (!chimney) {
+      this.smokeMark.forEach((img) => img.setVisible(false));
+      return;
+    }
+    if (this.smokeMark.length === 0) {
+      this.smokeMark = SMOKE_PUFFS.map((p) => this.add.image(0, 0, 'fx-smoke-mark').setOrigin(0.5, 1).setScale(p.size).setDepth(DEPTH.motes + 1));
+    }
+    const at = smokeAt(this.cameras.main.worldView, chimney, SMOKE_INSET);
+    // in view with the mist gone from it, the chimney's own thread of smoke is the cue
+    const hidden = RICH.motion && !at.edge && mistDensity(clears, this.b.map.width, this.b.map.height, chimney.x / T, chimney.y / T) === 0;
+    const alpha = smokeAlpha(this.night);
+    const sway = RICH.motion ? Math.sin(time / 900) : 0;
+    this.smokeMark.forEach((img, i) => {
+      const p = SMOKE_PUFFS[i]!;
+      img.setVisible(!hidden).setPosition(Math.round(at.x + p.dx + sway * (p.dx / 3)), Math.round(at.y + p.dy)).setAlpha(alpha * (1 - i * 0.12));
+    });
   }
 
   private shadeFor(s: Session): void {
@@ -2326,6 +2425,10 @@ export class WorldScene extends Phaser.Scene {
         this.burst('fx-dust', cx, cy, 18);
         this.burst('fx-spark', cx, cy - 6, 12);
         this.cameras.main.shake(160, 0.004);
+      }
+      // the far bell, once: after the first mend a save has ever had, never before it and never on a reload
+      if (e.e === 'restore' && this.session && farBellDue(this.session.state.player.restored, e.restore)) {
+        this.time.delayedCall(FAR_BELL.delayMs, () => sound.sfx('bell', { gain: FAR_BELL.gain, lowpass: FAR_BELL.lowpass, detune: FAR_BELL.detune }));
       }
       if (e.e === 'fire') {
         const f = this.fires.get(e.id);

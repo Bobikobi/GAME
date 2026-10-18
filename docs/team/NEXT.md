@@ -6,12 +6,12 @@ Written 2026-10-11 when the first round of sessions closed. Each section is the 
 
 - Branch off `origin/develop`, worktree under `<repo>.worktrees/<branch-with-dashes>`, one pull request into `develop` per item. Never stack on another branch.
 - No integration session runs now. Each session lands its own pull request: squash merge into `develop` after local proof, and the owner approves the merge at the permission prompt. Nothing goes to `main`; a release is the owner's call.
-- GitHub Actions is out of minutes until the monthly reset (November 1). Red CI that never started is expected; the proof is local and is written in the pull request body: `pnpm verify` exit 0, plus `pnpm e2e` exit 0 when `game/` changed.
-- One e2e on the machine at a time: `flock /tmp/game-e2e.lock pnpm e2e > <file> 2>&1`. Two at once starve the machine and time out.
+- CI proves a pull request: `pnpm verify` and the opening e2e on a phone and a desktop screen, with one retry, on every pull request into `develop` or `main` (the repository is public, so Actions costs nothing), and the landing waits for it green. The local proof before a push is `pnpm verify` exit 0, written in the pull request body; "`pnpm e2e` green" in a measurable means green in CI (owner's manager, 18.10).
+- An e2e runs on the machine only to debug a red CI run or a new e2e file, the single file and one at a time: `flock /tmp/game-e2e.lock pnpm e2e > <file> 2>&1`. Two at once starve the machine and time out.
 - Saving tokens:
   - Long output (verify, e2e, logs, `gh run view`) goes to a file, and only the tail or the failure lines are shown.
   - Read files by range or by grep.
-  - Run the single test file first, `pnpm verify` once before the push, and e2e last, only before ready.
+  - Run the single test file first and `pnpm verify` once before the push; the e2e runs in CI.
   - Codex is the default worker and the session is the escalation (owner, 11.10; skill `gpt-consult`). A task goes to Codex unless it needs judgment, needs context only the session holds, or has no command that proves it: `codex exec --sandbox workspace-write -c sandbox_workspace_write.network_access=true "<goal> <files> <proof command>"` in the worktree, the session leaves those files alone meanwhile and re-runs the proof itself. Typical: test-expectation sweeps, tests from a spec, regenerating, e2e expectation updates, rebases onto `develop`.
   - Before ready, a bug-only review of the diff from Codex (`codex exec --sandbox read-only --skip-git-repo-check "..." < /dev/null`) and Gemini (`ask-agy`; an empty answer is a blocked tool, not a reply), each claim checked against the build. Web lookups go to `ask-agy`.
   - The pull request body names what went to Codex or Gemini and how many corrections it needed.
@@ -197,9 +197,11 @@ c) The looks are a direction. Before a cast is generated in a look, phone-size s
 
 d) Spend and download (owner, 18.10: more credits may not come, so none is left to expire):
 - Each day on all four accounts (Chrome profiles on ports 9341-9343 and 9333): first the site's tasks that earn credits, the check-in and any task that neither publishes nor connects an account; then spend, the credits that expire soonest first, in the order the owner picked in (b).
+- Search before generating (owner, 18.10): for each thing in the gap, first look in the Meshy community for a model other users made. A find costs no credits, only a download. It is taken when its licence allows use in a public game with attribution (read on its page, never assumed), it fits the look picked in (c), and it stays under the caps below. Each find goes into `docs/3d/gap.md` as the route "community", with its link, its author and its licence; a credit is spent only where the search found nothing that fits.
+- Things the plan will need later (a horse, owner 18.10) are searched for too, and their finds are listed in `docs/3d/gap.md` under "Found for later". The month's downloads that would otherwise go unused go to them, in the order of that list.
 - Generate on Meshy 6 Lite only, the one model a Free account may download; a textured draft is 20 credits, rigging is free.
 - Download only what the owner picked, once per model, with every clip added first. Downloads are capped per account per month (10, one more on check-in day 5): what does not fit this month waits for the next, since a generated model stays in its account.
-- Then rig and reduce it in the local Blender pipeline (`game/tools/blender/`), add its attribution line to the models README (CC BY 4.0, generated with Meshy), name it in `art.ts`; one pull request per batch.
+- Then rig and reduce it in the local Blender pipeline (`game/tools/blender/`), add its attribution line to the models README (CC BY 4.0, generated with Meshy; for a community find, its author and licence), name it in `art.ts`; one pull request per batch.
 - Measurable for each batch: every new model loads at `/play3d/` at 390x844 and 1440x900 (captures with headless Chrome on its own port, closed by PID); a person is at most 50,000 triangles with 1024 px maps, as the six role models; `pnpm verify` and `pnpm e2e` green.
 - Not without the owner's yes: posting a draft to the Meshy community (+50, it publishes the draft), connecting a Discord account (+100), a paid month.
 - Log each day's credits earned and spent per account in `docs/3d/meshy-notes.md`.
@@ -413,6 +415,15 @@ f) **The waking lines and one box** (`feat/hook-waking`). One box of two lines p
 - Before every proving run (AGENTS.md): grep the tests for every string the change renamed, fix them in one pass, then the single test file, then `pnpm verify`, then `pnpm e2e` last, under heavy.sh.
 - Measurable at the end of f): criteria 1 to 10 of OPENING_REVIEW section 5, each by a test or a capture; in the timed run of each starter no stretch passes 90 s of play clock between the wake and the threshold, the wait before the dark included (criterion 8).
 - For the owner on a real phone, from the release preview: the mist's shade and density, the dither's shimmer while walking, the bell's loudness, whether the smoke reads as a compass, and a human playthrough's timing (OPENING_REVIEW section 8).
+
+Notes for e and f from the session that built c and d (18.10; line numbers as of #172, grep before trusting them):
+- "Mended by" lives in: `game/src/ui/panels.ts:815` (the sign panel's `sign-mended` line, fed by `mendedBy` in `world.ts` near 2477 and 2498); `world.ts` near 2498 and `game/src/play3d/world3d.ts` near 1283 push `Mended by ${p.name}.` into the sign lines; `content/core/restores/old-bridge.json` lines 25-26 (the `done` text, the purse line being the one that moves to the stone); `game/e2e/opening.ts:693` asserts `Mended by Tess` and `game/test/text.test.ts:179` pushes a `Mended by Test` journal line. `game/e2e/opening.ts:617` counts the clicks for advances: that is f, not e.
+- The mend's moment is `celebrate()` in `world.ts`, on the `restore` event. The far bell is queued there (`farBellDue`, `FAR_BELL.delayMs` 1500); the carve comes after the bell and the clearing, not before.
+- The kernel applies a mend when its 4 s of work start, so the mist clears about 2 s in, before the `restore` event: anything that follows the mend keys on the event, not on the save. The clearing is around the slot's middle tile; the pure helpers are `game/src/hookbridge.ts`, tested in `game/test/hookbridge.test.ts`.
+- A new worktree needs `pnpm install --frozen-lockfile` and `pnpm bundle` before `pnpm typecheck` (`game/src/generated/bundle.json` is missing until then).
+- The forager has no `wake` in its JSON: tests use `starter.wake ?? b.map.spawn`.
+- The e2e lock had seven sessions queued on 18.10 (about 50 minutes to a turn): start it early, in the background; `fuser -v /tmp/game-e2e.lock` shows the queue.
+- Keep the Codex review: it found a real defect in both c and d.
 
 ## 17. The opening's quest logic: the gaps of the review that are not the hook
 

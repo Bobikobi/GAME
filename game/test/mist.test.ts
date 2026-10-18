@@ -7,7 +7,7 @@ import { beforeAll, describe, expect, test } from 'vitest';
 import { type Bundle, type State, newState, step } from '@game/kernel';
 
 import { T } from '../src/config';
-import { MIST, MIST_RGB, type Clear, firstTaskDone, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../src/mist';
+import { MIST, MIST_MEND_PER_S, MIST_RGB, type Clear, firstTaskDone, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../src/mist';
 import { loadBundle } from '../../tools/test/helpers/world';
 
 let b: Bundle;
@@ -209,5 +209,42 @@ describe("the explorer's mote", () => {
     const f = frame('core/explorer');
     const { width, height } = b.map;
     expect(mistDensity(f.clears, width, height, 11.5, 19.5)).toBe(1);
+  });
+});
+
+describe('the bridge draws the mist back (criterion 4)', () => {
+  const mended = (starter: string): State => {
+    const fresh = started(starter);
+    return { ...fresh, player: { ...fresh.player, restored: ['core/old-bridge'] } };
+  };
+
+  test.each(STARTERS)('%s: a mended bridge clears at least 13 tiles around (14,17), all three wake tiles inside', (id) => {
+    const clears = mistClears(b, mended(id));
+    const bridge = clears.find((c) => c.x === 14 && c.y === 17)!;
+    expect(bridge.r).toBeGreaterThanOrEqual(13);
+    const { width, height } = b.map;
+    for (const w of STARTERS) {
+      const wake = b.starters[w]!.wake ?? b.map.spawn;
+      expect(mistDensity(clears, width, height, wake.x + 0.5, wake.y + 0.5)).toBe(0);
+      expect(Math.hypot(wake.x - bridge.x, wake.y - bridge.y)).toBeLessThanOrEqual(bridge.r);
+    }
+  });
+
+  test('the clearing opens within 3 s of frames at 60, 20 and 10 per second, from nothing', () => {
+    for (const dt of [1000 / 60, 50, 100]) {
+      let shown = 0;
+      let t = 0;
+      while (shown < 14) {
+        shown = mistRadius(shown, 14, dt, MIST_MEND_PER_S);
+        t += dt;
+      }
+      expect(t).toBeLessThanOrEqual(3000);
+    }
+  });
+
+  test('a reload keeps it: the same save gives the same clears; an unmended save has none of it', () => {
+    const m = mended('core/forager');
+    expect(mistClears(b, JSON.parse(JSON.stringify(m)) as State)).toEqual(mistClears(b, m));
+    expect(mistClears(b, started('core/forager'))).toHaveLength(1);
   });
 });

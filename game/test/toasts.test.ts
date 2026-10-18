@@ -70,7 +70,7 @@ describe('the task lines of one action read as one toast', () => {
     const events = act({ t: 'build', camp: 'core/campfire', at }, 601_000);
     expect(eventToasts(bundle, state(), events)).toEqual([
       { lines: ['Campfire built'], tone: 'good' },
-      { lines: ['Task done: A fire before dark', 'New task: Smoke over the town'], tone: 'good' },
+      { lines: ['Task done: A fire across the river', 'New task: Smoke over the town'], tone: 'good' },
     ]);
   });
 
@@ -84,7 +84,7 @@ describe('the task lines of one action read as one toast', () => {
     expect(told).toEqual(['core/first-fire done', 'core/into-town active', 'core/into-town done']);
     expect(eventToasts(bundle, state(), events)).toEqual([
       { lines: ['Campfire built'], tone: 'good' },
-      { lines: ['Task done: A fire before dark', 'Task done: Smoke over the town'], tone: 'good' },
+      { lines: ['Task done: A fire across the river', 'Task done: Smoke over the town'], tone: 'good' },
     ]);
   });
 
@@ -100,8 +100,8 @@ describe('the task lines of one action read as one toast', () => {
 describe('how long a toast is read, and which goes first', () => {
   test('a short line is read in the least time, a long one by its letters, never past its life', () => {
     expect(readTime({ lines: ['+1 Reed'], tone: 'good' })).toBe(TOASTS.least);
-    const merged = { lines: ['Task done: A fire before dark', 'New task: Smoke over the town'], tone: 'good' as const };
-    expect(readTime(merged)).toBe((29 + 29) * TOASTS.perChar);
+    const merged = { lines: ['Task done: A fire across the river', 'New task: Smoke over the town'], tone: 'good' as const };
+    expect(readTime(merged)).toBe((34 + 29) * TOASTS.perChar);
     expect(readTime({ lines: ['Foraging level 2! You gained a skill point. New technique: Quick hands.'], tone: 'good' })).toBe(TOASTS.life);
   });
 
