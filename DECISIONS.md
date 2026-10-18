@@ -432,6 +432,8 @@ The content wave (crafting audit section 6, wave 3) seeds crafting inside the pe
 
 ## 2026-10-09 ✅ No combat yet: a predator is escaped, and a group quest is made for a group
 
+**Superseded in part (19.10):** "no combat now" holds for the demo only; combat comes after the foundation as a core part (the 2026-10-19 entry on G35).
+
 The question (a review of open product direction, 9.10): the owner spoke of buying and improving weapons, of a monster too strong for a player, and of guarding a settlement, while fighting stays out (G35) and the hazards entry of 8.10 answers a predator with a lit lantern, thrown food and the road. Does fighting come earlier, and if not, what do those words mean in a valley without combat? The owner's word (9.10):
 
 - No combat now. A stage in between, without fighting, is right, but not gear against a hazard: no "stronger lantern". A player escapes a predator by running back to town, and that run is hard and possible.
@@ -1707,14 +1709,44 @@ What this decides: the two games are the measure when a depth or a look is weigh
 What it does not decide:
 - Combat. G35 stands until the owner picks; the page's section 3 recommends combat only in the wild (d of 1 and up) and in expeditions, designed before #187's protocol is built and built after free movement and the server.
 - The look. Drakantos's proportion (a head about 40% of the height) and colour craft (local-colour outlines, hue-shifted ramps past the 32 colours) go to the owner as three stills of Pell before wave b of NEXT 15. Wave b is not drawn before the pick.
+**Updated 19.10:** the owner answered on combat and on the tree (the 2026-10-19 entries below). Combat is no longer open, and the page's sections 3, 4 and 7 were rewritten with his answers.
 **Retry when:** the owner names another measure, or a played build shows that a row of the page reads wrong. Model: claude-opus-5-5.
 
 ## 2026-10-18 ✅ Free movement replaces the tile-by-tile walk; the world and the kernel stay on tiles
 
-The owner, 18.10: "free movement, not a fixed feel". The walk until now: 4 directions, a tile per 190 ms, the phone pad in four sectors (the 2026-10-07 entry). Taken, Stardew Valley's model, which is the industry's for a tile world:
+The owner, 18.10: "free movement, not a fixed feel". The walk until now: 4 directions, a tile per 190 ms, the phone pad in four sectors (the 2026-10-07 entry). The owner's word is that the walk becomes free. The model below and the order are the builder's proposal, which the owner has not yet seen: Stardew Valley's model, which is the industry's for a tile world:
 - The body moves at pixel precision in 8 directions, analog on the phone's stick, and collides with tile boxes through a small body box.
 - An action works on the tile the player faces.
 - The client reports a tile whenever the feet cross into a new one, as it already reports its tile (P-5b). The kernel, the predators' eyes and bites, the danger level and the server's batch check of moves (G56, #187) keep the tile as their unit, so the kernel stays integer.
 - Both doors walk by the same rules (`game/src/walking.ts`).
-Order: after #191 (the 64 px engine step, the same `world.ts` window) and hook e and f. Before NEXT 19 c (the ring's walk rules) and NEXT 18 c (the client over the wire), which are built on the walk. The feel numbers (speed, acceleration, the stick's dead zone) are polish, judged by the owner on a preview; the speed starts at today's tile per 190 ms.
+Proposed order: after #191 (the 64 px engine step, the same `world.ts` window) and hook e and f. Before NEXT 19 c (the ring's walk rules) and NEXT 18 c (the client over the wire), which are built on the walk. The feel numbers (speed, acceleration, the stick's dead zone) are polish, judged by the owner on a preview; the speed starts at today's tile per 190 ms.
 **Retry when:** the server's move check refuses honest free walks at tile reports, or players on a phone miss the tile they mean to act on. Model: claude-opus-5-5.
+
+## 2026-10-19 ✅ G35 is the demo's rule: combat is a core part of the game, after the foundation
+
+The owner, 19.10: "G35 holds only for the demo. For me it is a part no less important, after the general foundation." G35 in GAME_RULES now reads "No fighting in the demo". The opening, the night ruins and the bank wolf stay hazards that are escaped. The 2026-10-09 entry "No combat yet" holds for the demo only.
+What his word decides: combat is planned, not left to stage 8 or a vote. It comes after the foundation, which means accounts and the server (NEXT 18) and the first ring of the open world (NEXT 19), the third step of the 17.10 order.
+Proposed, not yet his word (all in [docs/design/GAP_DIMRAETH_DRAKANTOS.md](docs/design/GAP_DIMRAETH_DRAKANTOS.md) section 3):
+- it is designed now, so the foundation is not rebuilt for it: one paragraph in #187's protocol, where an encounter plays on the client at a fixed tick in the kernel and the server checks it as a batch, the way `move` is checked;
+- it is fought in the wild (d of 1 and up) and in expeditions, and never in a town;
+- it comes before live presence;
+- free movement comes first.
+The combat frame (the verbs, foes as entities, what a fall costs) goes to the owner before it is built.
+**Retry when:** the owner moves combat into the demo or out to a later stage. Model: claude-opus-5-5.
+
+## 2026-10-19 ❌ The skill screen as built is generic: five attributes and fixed techniques do not make a tree
+
+The owner, 19.10: Dimraeth's skill tree is "more interesting than ours", and he did not like ours anyway: "it is generic, and it is not clear what the differences are". What was tried is the journal's Skills tab (`game/src/ui/panels.ts`). It has five attributes of up to 10 pips each (bag space, keen eyes, steady hands, luck, stamina), with two fixed techniques per profession at levels 2 and 4.
+Why it reads generic (proven by reading the content):
+- every player buys the same five numbers;
+- every point is a percentage, and none opens a new verb;
+- no choice shuts another, so there is no build to name;
+- techniques come by level, not by choice;
+- the three starters differ by 0 to 2 pips.
+Proposed, not yet his word (the page's section 4): a tree on two axes, the starter's nature against the trades, with corner nodes per pair. Major nodes change a verb, small nodes carry today's percentages, attributes become keys (thresholds), books found in the world teach nodes outside your wings, and the format leaves room for combat wings. The screen is a UI frame, so it goes to the owner as a still before it is built.
+**Retry when:** never as built. The five attributes may stay as keys inside the new tree. Model: claude-opus-5-5.
+
+## 2026-10-19 ⏸ Races to widen the starters (a goblin, an elf, a human): later, perhaps by other developers
+
+The owner, 19.10: a gap between the characters as wide as races would be a step back now, so it waits. Races are the characters' nature and their lines of growth, and other developers may be the ones to think them through. If they come, they come as the vertical axis of the proposed tree (corner nodes per race and trade), and their past needs speakers (STORY.md S1-S6).
+**Retry when:** the stage-3 tree is in place. It is a candidate for an open call to creators then. Model: claude-opus-5-5.
