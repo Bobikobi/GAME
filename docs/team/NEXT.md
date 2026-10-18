@@ -204,6 +204,14 @@ d) Spend and download (owner, 18.10: more credits may not come, so none is left 
 - Not without the owner's yes: posting a draft to the Meshy community (+50, it publishes the draft), connecting a Discord account (+100), a paid month.
 - Log each day's credits earned and spent per account in `docs/3d/meshy-notes.md`.
 
+e) One game, two doors (owner, 18.10): every rule and every development decided for the game holds in `/play3d/` too, in 3D's own means; only what is truly 2D (pixels, a sprite sheet) has no twin. First on the list, after the cast of (c) and (d):
+- The proportions of STYLE.md section 1b, measured in world units against a character's height: a grown tree at least 3, a small house 3, a street lamp 2, a bush half. The six role models set the height of 1.
+- Light and shadow (STYLE 4, C): the sun's shadows exist; add the body's own shade and the light on it.
+- The night (STYLE 5): darker than N3 out in the wild, the town lit by its own lights.
+- Height (STYLE 6, T2): the same levels and rock faces from the same data, when stage 3 brings them.
+- The six depth cues (STYLE 7): reflections in water, sinking into grass (the cover signal kept), cloud shadows, footprints, a shadow that stays on the ground, height; and the wind as the plants' sway.
+- Measurable: each item shows in a 390x844 capture of `/play3d/` beside the same place in the classic game, and the proportions are measured in world units, not by eye. A rule that will not carry across, or costs too much for a phone, goes to the owner through the manager with options; it is never dropped quietly.
+
 ## 9. The maze peek and the hint ladder
 
 Read DECISIONS 2026-10-11 "Maze difficulty is a ladder of four tiers" (PR #71). After #71 lands.
