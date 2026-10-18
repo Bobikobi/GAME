@@ -25,7 +25,9 @@ Picked: C. Which way the shadow points does not matter to the owner (DECISIONS 2
 | `night-N2` | 68% |
 | `night-N3` | 85%: only what a light touches reads |
 
-The lantern's pool is the same in all three: no tint within 44 art px, half the tint to 60. Today's vignette and mist are left out, so the frames show only the darkness. Waiting for the owner's pick.
+The lantern's pool is the same in all three: no tint within 44 art px, half the tint to 60. Today's vignette and mist are left out, so the frames show only the darkness.
+
+Picked: darker than N3. The owner said "darker than N3; street lighting and the houses' light will light the town, but in nature it has to be scary and dark". The build starts at 92% (DECISIONS 2026-10-18).
 
 ## Height and grounds (16:30, C shadows)
 
@@ -35,7 +37,9 @@ The lantern's pool is the same in all three: no tint within 44 art px, half the 
 | `terrain-T2` | T1 raised into levels with rock faces. One level is 16 art px of face. A light lip runs along the top edge (white with drips under snow, light green under grass), a dark line along the foot, and a cast shadow from the sun. Steps are cut into the shelf. |
 | `terrain-T3` | T1 raised into soft slopes. The drop is drawn in the upper ground, two steps darker, with no face, and casts half the shadow. |
 
-Waiting for the owner's pick. T1 against T2 tests height. T2 against T3 tests the face against the slope.
+T1 against T2 tests height. T2 against T3 tests the face against the slope.
+
+Picked: T2. The owner said "T2 fits" (DECISIONS 2026-10-18).
 
 ## How they were made
 

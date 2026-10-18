@@ -1549,3 +1549,37 @@ The owner asked (18.10) for "a shadow for the characters that changes during the
 How dark the night goes is shown as N1 to N3 (50, 68 and 85% night blue, frames `2026-10-18-night-*`) and waits for the owner's pick; height and grounds other than grass, asked the same day, wait likewise (frames `2026-10-18-terrain-*`, STYLE.md sections 3 and 6).
 When: the build lands with or after the engine step of the art at 32 (NEXT 15), since both touch the shadow and the shade in `game/src/scenes/world.ts`. Creators do nothing: every shadow is computed from the sprite's alpha.
 **Retry when:** the sheared shadows read as noise on a phone at twelve tiles across, a mid phone cannot hold its frame budget with a silhouette baked per frame and per hour, or the owner prefers B or A once he sees C in the live game. Model: claude-opus-5-5.
+
+## 2026-10-18 ✅ The night: darker than N3 out in the wild, the town lit by its own lights
+
+The owner, shown N1 to N3 (50, 68 and 85% night blue, frames `2026-10-18-night-*`): "darker than N3; street lighting and the houses' light will light the town, but in nature it has to be scary and dark". So the night is one darkness over the whole screen, deeper than N3, starting at 92%, and every light cuts a pool in it in two hard steps. The town reads lit because it is full of lights: street lamps (`lantern_post`) and the lit windows of the buildings the player uses. Out in the wild there is only the player's own light (DECISIONS 2026-10-12), a burning fire and the wolf's eyes. The final level is the owner's to judge in the live game and is not measured here.
+Measured at the build:
+- in the wild, no ground outside every pool is lighter than at N3;
+- every walkable town tile is within 3 tiles of a light (on 18.10, 19 of the 175 were not, with 3 lamps, 3 houses and the stall);
+- the player's pool and the wolf's eyes keep today's size and brightness;
+- the e2e has no stale colour checks.
+The owner also said "the houses' light", but player houses are paused and a sprite that looks usable must be usable (both DECISIONS 2026-10-10). So the three small houses stay dark until houses return, and only the buildings the player uses get lit windows. That was not put to him again: asked the same morning for the hook's picks, he answered "I approve everything, now only execution". He can reverse it in the live game. The build lands in one `world.ts` window with the shadows (NEXT 15), the lamps and windows in the same pull request (STYLE.md section 5).
+**Retry when:** a night playtest shows players lost or hurt by what they could not see, a phone at low brightness shows nothing but the player, or the town reads too bright beside the wild. Model: claude-opus-5-5.
+
+## 2026-10-18 ✅ Height: levels with rock faces (T2)
+
+The owner, shown T1 (one level), T2 (levels with rock faces) and T3 (soft slopes), frames `2026-10-18-terrain-*`: "T2 fits". The look (STYLE.md section 6):
+- a level is 16 art px of face in the grey ramp, with ledges every 8 px;
+- a light lip runs along the top edge: white with drips under snow, `#84c450` under meadow, `#c6cad6` under rock;
+- a dark 2 px line runs along the foot, and the face casts a shadow by the sun;
+- steps are cut into the face;
+- a thing on a level draws 16 px higher.
+It lands with the open world's first ring (stage 3), together with its new grounds. The height layer is data beside the ground layer. The walking rule (between levels only by steps or a ramp) goes to the owner through GAME_RULES section 6 when stage 3 opens.
+**Retry when:** a 16 px face reads as a wall rather than a rise on a phone, the first ring needs gentler rises than one level per tile (then slopes for low rises and faces for cliffs), or the 3D client cannot follow the same levels. Model: claude-opus-5-5.
+
+## 2026-10-18 ✅ The six depth cues, all of them
+
+Offered six cues of depth, cheapest first (STYLE.md section 7), the owner answered "I want 1-6 too". The six:
+1. reflections in water;
+2. a body sinking into tall grass and shallow water;
+3. cloud shadows by day;
+4. footprints in sand and snow;
+5. a shadow that stays on the ground when a body bobs or a thing drops;
+6. height.
+Cues 1 to 5 touch only the client. They are details inside the light direction already picked (shadows C), so they get no stills of their own: they are built with the night, in the same window, and judged in the live game, and their details are polish. Footprints come in sand with them and in snow when snow arrives; height comes with stage 3. Cue 2 replaces today's 72% fade in cover (`dimInCover`) and keeps its stealth signal: the covered bank road in `game/e2e/stealth.ts` passes unchanged in meaning, and the variety stream, which built the stealth cues, hears of it before it is built.
+**Retry when:** a cue costs a mid phone its frame budget (then it goes behind RICH like the other cosmetics), or a cue hides something a rule needs the player to see. Model: claude-opus-5-5.
