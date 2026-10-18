@@ -1691,3 +1691,9 @@ How: NEXT 8 b-d. The gap and the budget come first (`docs/3d/gap.md`), the looks
 The 3D plan (NEXT 8) spent credits on everything the gap lacks, and never looked at the models other users have already made on Meshy. The owner, 18.10: search their work before making anything; he had seen a horse there, which the game will surely need later.
 How: NEXT 8 d. For each thing in the gap, the community comes first. A find costs a download and no credits. It is taken only when its own page allows use in a public game with attribution, it fits the picked look, and it stays under the triangle and map caps. It is listed in `docs/3d/gap.md` with its link, author and licence. Finds for later needs go under "Found for later", and the month's spare downloads go to them.
 **Retry when:** the community's licences turn out not to allow use in a game, or the finds rarely fit the look. Then generating is the only route again. Model: claude-opus-5-5.
+
+## 2026-10-18 ✅ The 3D door's cast is in the Meshy realistic look (B); the environment is the next direction
+
+Three stills at phone size (390x844, the square by the elder's house) each changed one thing: A the current mix (Meshy player, Kenney chibi NPCs), B the whole cast in the Meshy realistic look, C the same cast toon-shaded. The owner picked B at 22:05 on 18.10, and added that the background and the environment are still terrible.
+Frame: `docs/design/frames/2026-10-18-3d-looks-B.png` (role models stand in for Maru and Pell). From here the daily Meshy spend (NEXT 8 d) generates only in this look; no toon shading. The environment (ground, props, background) is the next direction and gets its own ladder of stills before anything is built.
+**Retry when:** realistic people next to the low-poly props keep reading as two games; the environment ladder decides that. Model: claude-opus-5-5.
