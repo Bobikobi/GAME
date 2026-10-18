@@ -408,7 +408,7 @@ async function main(): Promise<void> {
   mkdirSync(OUT, { recursive: true });
   const local = remote ? null : await serve();
   const browser = await Browser.launch();
-  const page = await browser.newPage({ width: 390, height: 844, mobile: true, scale: 3 });
+  const page = await browser.newPage({ width: 390, height: 844, mobile: true });
   try {
     await run(page, remote ?? local?.url ?? '');
   } catch (error) {
