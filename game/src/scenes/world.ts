@@ -61,7 +61,7 @@ import { type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, trea
 import { StandingReports, canEnter, landStep } from '../walking';
 import { GroundChunks } from '../groundchunks';
 import { adopt, baseOf, densityOf, drawScaled, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
-import { cameraZoom, pixelRatio } from '../view';
+import { cameraZoom, pixelRatio, worldToPage } from '../view';
 
 /** px from the view's edge that the smoke marker keeps, so its column fits above the base. */
 const SMOKE_INSET = 30;
@@ -1987,8 +1987,7 @@ export class WorldScene extends Phaser.Scene {
   private worldToPage(x: number, y: number): { x: number; y: number } {
     const cam = this.cameras.main;
     // the page is laid out in CSS pixels, the canvas is in the device's
-    const k = cam.zoom / pixelRatio();
-    return { x: (x - cam.worldView.x) * k, y: (y - cam.worldView.y) * k };
+    return worldToPage(cam.worldView, cam.zoom, pixelRatio(), x, y);
   }
 
   /** Shows a page element over a world point for a while. */

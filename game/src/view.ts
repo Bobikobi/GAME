@@ -18,6 +18,12 @@ export function cameraZoom(shortSide: number): number {
   return 4 * cameraK(shortSide);
 }
 
+/** A world point as a CSS-pixel point on the page, for what the page lays over the world: the camera's zoom is in canvas pixels. */
+export function worldToPage(view: { x: number; y: number }, zoom: number, canvasPerCss: number, x: number, y: number): { x: number; y: number } {
+  const k = zoom / canvasPerCss;
+  return { x: (x - view.x) * k, y: (y - view.y) * k };
+}
+
 let ratio = 1;
 
 /** Canvas pixels per CSS pixel, as the canvas was last sized. */

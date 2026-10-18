@@ -6,7 +6,7 @@
  * them are kept, built as the camera moves and dropped as it leaves. A chunk with no animated tile in it shares
  * one texture across the water's frames.
  */
-import * as Phaser from 'phaser';
+import type * as Phaser from 'phaser';
 
 /** Tiles on a chunk's side. */
 export const CHUNK = 16;

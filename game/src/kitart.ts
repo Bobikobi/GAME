@@ -4,7 +4,7 @@
  * 1 / density. Every kit image and sprite the scenes make goes through here, and every later scale write
  * (a sway, a squash, a fall) is relative to that base, or a density-4 sprite would grow fourfold.
  */
-import * as Phaser from 'phaser';
+import type * as Phaser from 'phaser';
 import { app } from './app';
 
 type Art = Phaser.GameObjects.Image | Phaser.GameObjects.Sprite;
