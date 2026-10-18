@@ -253,7 +253,7 @@ function subjectBoxes(components: readonly Component[], frames: number): Box[] {
     .sort((a, b) => a.minX - b.minX);
 }
 
-function nearestPaletteIndex(
+export function nearestPaletteIndex(
   r: number,
   g: number,
   b: number,
