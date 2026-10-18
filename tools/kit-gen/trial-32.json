@@ -1,0 +1,40 @@
+{
+  "note": "The pipeline's proving run at 32 px per tile (DECISIONS 2026-10-18): one sprite of each kind. Run: pnpm kit:gen tools/kit-gen/trial-32.json. Output in .scratch/kit-gen/trial-32/, nothing goes into content/.",
+  "entries": [
+    {
+      "name": "elder",
+      "ref": "chars/elder",
+      "what": "village elder character (long white beard, brown coat, facing the viewer, full body)",
+      "width": 32,
+      "height": 48,
+      "anchor": "bottom",
+      "detail": "the face about 10 pixels wide with two eye pixels and eyebrows, the beard in 3 shades, the coat with a belt and a fold line, boots"
+    },
+    {
+      "name": "tree_oak",
+      "ref": "props/tree_oak",
+      "what": "round leafy oak tree with its trunk",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "detail": "clusters of leaves in 3 greens with light on the upper left, bark lines on the trunk, roots at its foot"
+    },
+    {
+      "name": "axe",
+      "ref": "items/axe",
+      "what": "woodcutter's axe game item",
+      "width": 32,
+      "height": 32,
+      "detail": "a wooden handle with grain and a grip wrap, a steel head with a bright cutting edge"
+    },
+    {
+      "name": "grass",
+      "ref": "tiles/grass",
+      "what": "square grass ground tile",
+      "width": 32,
+      "height": 32,
+      "kind": "tile",
+      "detail": "one flat base green, 6 to 8 tufts each a small V of 3 to 5 pixels in a lighter green, and a few single darker pixels"
+    }
+  ]
+}
