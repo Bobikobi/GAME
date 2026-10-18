@@ -105,6 +105,8 @@ export interface SpriteInfo {
   w: number;
   h: number;
   frames: number;
+  /** Art pixels per tile side: 1 is 16 per tile, 4 is 64 per tile. A frame of `w` x `h` shows at 1 / density. */
+  density: 1 | 4;
 }
 
 /** One placed node or dig spot: `<resource id>#<n>`. */
