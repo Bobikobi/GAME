@@ -54,7 +54,7 @@
       "id": "art",
       "title": "The art at 64 px per tile: the generation pipeline, the engine step, the redraw waves with proportions",
       "plan": ["DECISIONS 2026-10-18 the art moves to 64 px per tile, shadows C, the night, height T2, the six depth cues", "docs/team/NEXT.md section 15", "docs/design/ASSET_PATH.md", "docs/design/STYLE.md"],
-      "branches": ["docs/art-32", "feat/kit-gen", "docs/next-art-32", "docs/style-spec", "docs/night-height-picks", "feat/kit-gen-grid", "docs/art-64", "feat/art-density"],
+      "branches": ["docs/art-32", "feat/kit-gen", "docs/next-art-32", "docs/style-spec", "docs/night-height-picks", "feat/kit-gen-grid", "docs/art-64", "feat/kit-scatter", "docs/art-redraw-plan", "feat/art-density"],
       "owner": "the art session"
     },
     {
@@ -68,8 +68,15 @@
       "id": "state-tests",
       "title": "A text view of the state, and e2e checks moved to state tests, starting with stealth",
       "plan": ["DECISIONS 2026-10-18 a character-grid look is kept for later", "docs/design/ASCII.md section 4"],
-      "branches": ["docs/ascii-idea", "test/stealth-state"],
+      "branches": ["docs/ascii-idea", "test/stealth-state", "test/stealth-e2e-route"],
       "owner": "the state-tests session"
+    },
+    {
+      "id": "opening-logic",
+      "title": "The opening's quest logic: the review's gaps that are not the hook",
+      "plan": ["DECISIONS 2026-10-18 the opening's quest logic is built beside the hook", "docs/design/OPENING_REVIEW.md section 3", "docs/team/NEXT.md section 17"],
+      "branches": ["docs/next-quest-logic", "feat/node-opens-after", "feat/glint-first", "feat/opening-lines"],
+      "owner": "the opening-logic session"
     }
   ]
 }

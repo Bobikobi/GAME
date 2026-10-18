@@ -393,6 +393,7 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     if (res.sprite_empty) sprite(id, 'node.sprite_empty', res.sprite_empty);
     res.growth?.forEach((g, i) => sprite(id, `node.growth.${i}`, g));
     if (res.growth && !res.sprite_empty) err(id, 'node.growth', 'growth stages come after "sprite_empty": name the stump or the bare ground first');
+    if (res.opens_after !== undefined && !b.quests[res.opens_after]) err(id, 'node.opens_after', `no quest "${res.opens_after}"`);
     place(id, 'resource', res.place.slot);
     for (const extra of res.place.scatter ?? []) place(id, 'resource', extra);
   }
