@@ -18,7 +18,7 @@
  *
  * Nothing is written into `content/`: a result goes into the kit by hand, in a wave. `--dry` writes
  * the references and the prompts only; `--reimport` imports the last raw images again without
- * calling Codex. Each image costs one to two minutes and 11k to 31k Codex tokens (measured
+ * calling Codex. Each image costs one to two minutes and 14k to 37k Codex tokens (measured
  * 18.10), so run it in the background, one spec at a time.
  */
 import { spawnSync } from 'node:child_process';
@@ -336,7 +336,7 @@ interface Options {
   timeoutSeconds: number;
 }
 
-function parseArgs(args: readonly string[]): Options {
+export function parseArgs(args: readonly string[]): Options {
   const spec = args[0];
   if (spec === undefined || spec.startsWith('--')) {
     throw new Error('Usage: gen.ts <spec.json> [--only a,b] [--out dir] [--dry] [--reimport] [--timeout seconds]');
@@ -346,13 +346,18 @@ function parseArgs(args: readonly string[]): Options {
     return at < 0 ? undefined : args[at + 1];
   };
   const only = value('--only');
+  const timeout = args.includes('--timeout') ? value('--timeout') ?? '' : undefined;
+  const timeoutSeconds = timeout === undefined ? 300 : Number(timeout);
+  if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0) {
+    throw new Error(`--timeout takes a positive number of seconds, not ${JSON.stringify(timeout)}`);
+  }
   return {
     spec: resolve(spec),
     out: resolve(value('--out') ?? join(ROOT, '.scratch/kit-gen', basename(spec, '.json'))),
     only: only === undefined ? null : new Set(only.split(',')),
     dry: args.includes('--dry'),
     reimport: args.includes('--reimport'),
-    timeoutSeconds: Number(value('--timeout') ?? 300),
+    timeoutSeconds,
   };
 }
 

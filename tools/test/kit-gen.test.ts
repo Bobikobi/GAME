@@ -8,7 +8,7 @@ import { afterAll, describe, expect, test } from 'vitest';
 
 import {
   type GenEntry, type ManifestLine, buildPrompt, enlargeOnMagenta, findOutput, galleryHtml, gridWarnings,
-  importTile, loadReference, parseSpec, parseTokens,
+  importTile, loadReference, parseArgs, parseSpec, parseTokens,
 } from '../src/kit/gen.js';
 import { CORE_PALETTE, hexToRgb } from '../src/kit/palette.js';
 
@@ -45,6 +45,13 @@ describe('the spec', () => {
   test('refuses a name twice and an empty spec', () => {
     expect(() => parseSpec(spec([elder, elder]))).toThrow(/twice/);
     expect(() => parseSpec(spec([]))).toThrow(/non-empty/);
+  });
+
+  test('the timeout is a positive number of seconds, five minutes when not given', () => {
+    expect(parseArgs(['s.json']).timeoutSeconds).toBe(300);
+    expect(parseArgs(['s.json', '--timeout', '90']).timeoutSeconds).toBe(90);
+    for (const bad of ['abc', '0', '-5']) expect(() => parseArgs(['s.json', '--timeout', bad])).toThrow(/positive/);
+    expect(() => parseArgs(['s.json', '--timeout'])).toThrow(/positive/);
   });
 });
 
