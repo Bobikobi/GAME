@@ -3,11 +3,11 @@
   "format": 1,
   "type": "quest",
   "id": "core/first-fire",
-  "title": "A fire before dark",
+  "title": "A fire across the river",
   "creator": "core",
   "quest": {
     "type": "mastery",
-    "summary": "The sun is past noon. Fell a tree for logs and build a campfire across the river before dark.",
+    "summary": "Fell a tree for logs and build a campfire across the river. A camp starts with a fire.",
     "requires": [
       "core/fix-the-bridge"
     ],

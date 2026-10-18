@@ -221,7 +221,7 @@ async function run(page: Page, url: string, phone: boolean): Promise<void> {
     if (!mend.shown.includes(line)) throw new Error(`the mend never showed "${line}": ${mend.shown.join(' | ')}`);
   }
   const tasks = mend.shown.find((t) => t.includes('Task done: Mend the bridge'));
-  if (!tasks?.includes('New task: A fire before dark')) throw new Error(`the closed and the new task do not share a toast: ${mend.shown.join(' | ')}`);
+  if (!tasks?.includes('New task: A fire across the river')) throw new Error(`the closed and the new task do not share a toast: ${mend.shown.join(' | ')}`);
 
   // a bad line goes ahead: a bite 100 ms behind a pickup's four lines goes up before the calm ones still waiting
   await page.eval('__hud.reset()');
