@@ -637,6 +637,20 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       log('picked 2 herbs on the west bank');
     }
 
+    // 2c. the explorer's senses lead to an axe in the grass by the bridge, picked up by hand, before the keystone opens
+    if (!viewport.mobile) {
+      const [glint] = await page.eval<{ id: string; x: number; y: number }[]>('__e2e.nodes("core/bridge-glint")');
+      if (!glint) throw new Error('no glint by the bridge');
+      await me.walkTo({ x: glint.x, y: glint.y, w: 1, h: 1 }, 'the glint by the bridge');
+      await me.expectPrompt(/^Pick up/, 'the glint by the bridge');
+      await me.snap('senses');
+      await me.a();
+      await me.idle('picking up the axe');
+      if ((await me.bag('core/axe')) !== 1) throw new Error('no axe after the glint by the bridge');
+      if ((await me.quest('core/glint-by-the-bridge')) !== 'done') throw new Error('glint-by-the-bridge is not done');
+      log('picked up the axe by the bridge');
+    }
+
     // 3. the keystone, the first minigame: one strike, taught in one line
     // verify: after the node is gathered, the player can step onto its tile
     const keyNodes = await page.eval<{ id: string; x: number; y: number; ready: boolean }[]>('__e2e.nodes("core/keystone")');
@@ -665,20 +679,6 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
     // a miss leaves the keystone where it lies: a second try once it shows again
     await me.gather('core/keystone', 'core/keystone', 1);
     log('struck the keystone free');
-
-    // 3b. the explorer's senses lead to an axe in the grass by the bridge, picked up by hand
-    if (!viewport.mobile) {
-      const [glint] = await page.eval<{ id: string; x: number; y: number }[]>('__e2e.nodes("core/bridge-glint")');
-      if (!glint) throw new Error('no glint by the bridge');
-      await me.walkTo({ x: glint.x, y: glint.y, w: 1, h: 1 }, 'the glint by the bridge');
-      await me.expectPrompt(/^Pick up/, 'the glint by the bridge');
-      await me.snap('senses');
-      await me.a();
-      await me.idle('picking up the axe');
-      if ((await me.bag('core/axe')) !== 1) throw new Error('no axe after the glint by the bridge');
-      if ((await me.quest('core/glint-by-the-bridge')) !== 'done') throw new Error('glint-by-the-bridge is not done');
-      log('picked up the axe by the bridge');
-    }
 
     // 4. mend the bridge: the first restoration, level, journal entry and a sign with my name
     const known = (await page.eval<{ recipes: string[] }>('__e2e.player()')).recipes.length;

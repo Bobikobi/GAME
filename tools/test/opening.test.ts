@@ -57,21 +57,35 @@ describe('opening sequence', () => {
       const fire = required(campTile(bundle, 'fire'), 'The map has no fire spot.');
       expect(bfsToTile(bundle, planner.state.player, spawn, fire)).toBeUndefined();
 
+      // its own first task on its own road: herbs on the west bank, or the axe on a spot of its own
+      const ownTask = () => {
+        expect(planner.state.player.quests[own]).toBe('active');
+        const [spot] = instancesOf(bundle, place);
+        if (spot![1].kind === 'resource') planner.gather(spot![0]);
+        else planner.dig(spot![0]);
+        expect(planner.state.player.quests[own]).toBe('done');
+      };
+
       // the taught strike: one keystone in the shallows mends the bridge
       const keystones = instancesOf(bundle, 'core/keystone');
       expect(keystones).toHaveLength(1);
+      // the explorer's senses answer first: the keystone waits for the glint's axe
+      if (starter === 'core/explorer') {
+        const key = keystones[0]![1];
+        const before = JSON.stringify(planner.state);
+        const near = required(bfsNear(bundle, planner.state.player, planner.state.player.at, { x: key.x, y: key.y, w: 1, h: 1 }), 'The keystone is out of reach.');
+        const tried = step(bundle, planner.state, { t: 'gather', node: keystones[0]![0], grade: 3, at: near.at(-1)! }, planner.state.tick);
+        expect(tried).toEqual({ ok: false, error: 'Something else catches the light first.' });
+        expect(JSON.stringify(planner.state)).toBe(before);
+        ownTask();
+      }
       const strike = planner.gather(keystones[0]![0]);
       expect(strike).toContainEqual({ e: 'discover', item: 'core/keystone' });
       // the first level comes with the first strike, and a point to spend now
       expect(strike).toContainEqual({ e: 'level', profession: 'core/foraging', level: 2 });
       expect(planner.state.player.bag['core/keystone']).toBe(1);
 
-      // its own first task on its own road: herbs on the west bank, or the axe on a spot of its own
-      expect(planner.state.player.quests[own]).toBe('active');
-      const [spot] = instancesOf(bundle, place);
-      if (spot![1].kind === 'resource') planner.gather(spot![0]);
-      else planner.dig(spot![0]);
-      expect(planner.state.player.quests[own]).toBe('done');
+      if (starter !== 'core/explorer') ownTask();
 
       const known = [...planner.state.player.recipes];
       const bridge = required(findSlot(bundle.map, 'core/old-bridge'), 'The bridge slot is missing.');
