@@ -39,7 +39,7 @@ import {
 import { app } from '../app';
 import { sound, type SfxId, type SongId } from '../audio';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T } from '../config';
-import { mistClears, mistPixels } from '../mist';
+import { type Clear, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../mist';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { TOO_DARK, feedTooLate, fireLow, fireName, readable, woodToFeed } from '../fires';
@@ -48,7 +48,7 @@ import { canopyGroups, hash, remapTone, toneField, type Tone } from '../richgrou
 import type { Session } from '../session';
 import { type Run, WOLF_EYES, bangAt, flareAt, glowPixels, huntGround, huntSong, songFade, wolfDrawn } from '../predator';
 import { soundscape } from '../soundscape';
-import { SensesFind } from '../senses';
+import { SensesFind, makeTextures as makeSensesTextures } from '../senses';
 import { questTargets } from '../targets';
 import { nodeLook } from '../growth';
 import { peekOnStep, type Tile } from '../peek';
@@ -246,6 +246,10 @@ export class WorldScene extends Phaser.Scene {
   /** B2's mist: the whole map as one image of dots, redrawn only when the places it leaves clear change */
   private mist!: Phaser.GameObjects.Image;
   private mistKey = '';
+  /** the radius each clear place is drawn at: it moves toward what the save says, 2 tiles a second */
+  private mistShown = new Map<string, number>();
+  /** the explorer's mote of light: leads through the mist to a find picked up by hand */
+  private mote: Phaser.GameObjects.Image | undefined;
   /** the mist and the fogs as one layer; the player is cut out of it and of the dark frame (WebGL) */
   private veil!: Phaser.GameObjects.Container;
   /** the player's shape in the stencil that keeps the haze and the frame off the player, a copy of every frame */
@@ -1402,6 +1406,7 @@ export class WorldScene extends Phaser.Scene {
       return;
     }
     s.advance(delta);
+    this.placeMote(s, this.drawMist(s, delta), time);
     this.placePredators(s);
     this.refreshIn -= delta;
     if (this.refreshIn <= 0) {
@@ -1678,21 +1683,57 @@ export class WorldScene extends Phaser.Scene {
     sound.crackle(scape.crackle.level, scape.crackle.pan);
   }
 
-  /** Draws B2's mist for the places the save leaves clear (src/mist.ts); a new texture only when they change. */
-  private drawMist(s: Session): void {
-    const clears = mistClears(this.b, s.state);
+  /** Draws B2's mist for the places the save leaves clear (src/mist.ts); a new texture only when they change, and a growing one in steps. */
+  private drawMist(s: Session, delta: number): Clear[] {
+    const clears = mistClears(this.b, s.state).map((c) => {
+      const at = `${c.x},${c.y}`;
+      const r = mistRadius(this.mistShown.get(at) ?? c.r, c.r, delta);
+      this.mistShown.set(at, r);
+      return { ...c, r: mistStep(r) };
+    });
     const key = JSON.stringify(clears);
-    if (key === this.mistKey) return;
+    if (key === this.mistKey) return clears;
     this.mistKey = key;
     const { width, height } = this.b.map;
     const name = 'fx-mist';
     const tex = this.textures.exists(name) ? (this.textures.get(name) as Phaser.Textures.CanvasTexture) : this.textures.createCanvas(name, width * T, height * T);
-    if (!tex) return;
+    if (!tex) return clears;
     tex.setFilter(Phaser.Textures.FilterMode.NEAREST);
     const ctx = tex.getContext();
     ctx.putImageData(new ImageData(mistPixels(clears, width, height, T), width * T, height * T), 0, 0);
     tex.refresh();
     this.mist.setTexture(name).setVisible(true);
+    return clears;
+  }
+
+
+  /**
+   * The explorer's mote (NEXT 16 c): a find picked up by hand that this start can see in the mist's thickening or
+   * beyond lies hidden, so a mote of light stands on the way to it, at the pocket's edge from where the character is,
+   * and on the find itself once it is near. Gone once the find is taken, or when the find stands in the clear.
+   */
+  private placeMote(s: Session, clears: Clear[], time: number): void {
+    let want: { x: number; y: number } | undefined;
+    if (s.state.player.attrs.senses > 0) {
+      for (const id of this.digs.keys()) {
+        const inst = this.b.instances[id]!;
+        const t = this.b.treasures[inst.source];
+        if (!t || t.tool || !spotOpen(this.b, s.state, id) || !this.ready(s, id)) continue;
+        if (mistDensity(clears, this.b.map.width, this.b.map.height, inst.x + 0.5, inst.y + 0.5) === 0) continue;
+        want = moteAt(s.pos, [inst.x, inst.y], clears[0]?.r ?? 5);
+        break;
+      }
+    }
+    if (!want) {
+      this.mote?.setVisible(false);
+      return;
+    }
+    if (!this.mote) {
+      makeSensesTextures(this);
+      this.mote = this.add.image(0, 0, 'senses-glint').setDepth(DEPTH.motes).setScale(2);
+    }
+    // the twinkle is slow and small: a sign, not an alarm
+    this.mote.setPosition(want.x * T, want.y * T).setVisible(true).setAlpha(RICH.motion ? 0.7 + 0.3 * Math.sin(time / 380) : 1);
   }
 
   private shadeFor(s: Session): void {
@@ -1700,7 +1741,6 @@ export class WorldScene extends Phaser.Scene {
     // dark from 21:00 to 4:00, fading over two hours on each side
     this.night = m >= 21 || m < 4 ? 1 : m >= 19 ? (m - 19) / 2 : m < 6 ? (6 - m) / 2 : 0;
     this.shade.setFillStyle(0x172a52, 0.5 * this.night);
-    this.drawMist(s);
     this.frameLook = { strength: 0.3 + (RICH.light ? 0.45 : 0.3) * this.night, radius: 0.8 - 0.15 * this.night };
     this.drawFrame();
     if (this.dusk) {

@@ -4,10 +4,10 @@
  */
 import { beforeAll, describe, expect, test } from 'vitest';
 
-import { type Bundle, newState, step } from '@game/kernel';
+import { type Bundle, type State, newState, step } from '@game/kernel';
 
 import { T } from '../src/config';
-import { MIST, MIST_RGB, type Clear, mistClears, mistDensity, mistPixels } from '../src/mist';
+import { MIST, MIST_RGB, type Clear, firstTaskDone, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../src/mist';
 import { loadBundle } from '../../tools/test/helpers/world';
 
 let b: Bundle;
@@ -137,5 +137,77 @@ describe('B2 is dots in three colours, nothing in between', () => {
       }
     }
     expect(found).toBeGreaterThan(3);
+  });
+});
+
+/** A save of a fresh start, and the same with its first task closed. */
+function started(starter: string): State {
+  const r = step(b, newState(b, 1), { t: 'start', starter, name: 'Tess' }, 0);
+  if (!r.ok) throw new Error(r.error);
+  return r.state;
+}
+const FIRST = { 'core/forager': 'core/first-pickings', 'core/digger': 'core/buried-axe', 'core/explorer': 'core/glint-by-the-bridge' } as const;
+
+describe('the pocket and its first push (criterion 3)', () => {
+  test.each(STARTERS)('%s: 5 tiles at wake, 7 once the first task is done, from the save alone', (id) => {
+    const fresh = started(id);
+    expect(firstTaskDone(b, fresh)).toBe(false);
+    expect(mistClears(b, fresh)[0]!.r).toBe(5);
+    const done: State = { ...fresh, player: { ...fresh.player, quests: { ...fresh.player.quests, [FIRST[id as keyof typeof FIRST]]: 'done' } } };
+    expect(firstTaskDone(b, done)).toBe(true);
+    expect(mistClears(b, done)[0]!.r).toBe(7);
+    // a reload is the same save read again: the same pocket
+    expect(mistClears(b, JSON.parse(JSON.stringify(done)) as State)).toEqual(mistClears(b, done));
+  });
+
+  test("another start's first task does not open this pocket", () => {
+    const fresh = started('core/forager');
+    const other: State = { ...fresh, player: { ...fresh.player, quests: { ...fresh.player.quests, 'core/buried-axe': 'done' } } };
+    expect(mistClears(b, other)[0]!.r).toBe(5);
+  });
+
+  test('the pocket reaches 7 tiles within 1 s of frames at 60, 20 and 10 per second', () => {
+    for (const dt of [1000 / 60, 50, 100]) {
+      let shown = 5;
+      let t = 0;
+      while (t < 1000 + dt && shown < 7) {
+        shown = mistRadius(shown, 7, dt);
+        t += dt;
+      }
+      expect(shown).toBe(7);
+      expect(t).toBeLessThanOrEqual(1000 + dt + 1e-6);
+    }
+  });
+
+  test('the radius never overshoots or shrinks while growing, and is rasterised in quarter-tile steps', () => {
+    let shown = 5;
+    for (let i = 0; i < 80; i++) {
+      const next = mistRadius(shown, 7, 1000 / 60);
+      expect(next).toBeGreaterThanOrEqual(shown);
+      expect(next).toBeLessThanOrEqual(7);
+      expect((mistStep(next) * 4) % 1).toBe(0);
+      shown = next;
+    }
+  });
+});
+
+describe("the explorer's mote", () => {
+  test('at the wake it stands at the pocket edge, on the line to the glint (11,19)', () => {
+    const wake = b.starters['core/explorer']!.wake!;
+    const m = moteAt([wake.x, wake.y], [11, 19], 5);
+    expect(Math.hypot(m.x - (wake.x + 0.5), m.y - (wake.y + 0.5))).toBeCloseTo(5, 6);
+    const ang = (p: { x: number; y: number }) => Math.atan2(p.y - (wake.y + 0.5), p.x - (wake.x + 0.5));
+    expect(ang(m)).toBeCloseTo(ang({ x: 11.5, y: 19.5 }), 6);
+  });
+
+  test('it goes with the character and rests on the find once it is within reach', () => {
+    expect(moteAt([9, 14], [11, 19], 5)).not.toEqual({ x: 11.5, y: 19.5 });
+    expect(moteAt([10, 17], [11, 19], 5)).toEqual({ x: 11.5, y: 19.5 });
+  });
+
+  test('the glint hides in solid mist at wake, so the mote is its only sign', () => {
+    const f = frame('core/explorer');
+    const { width, height } = b.map;
+    expect(mistDensity(f.clears, width, height, 11.5, 19.5)).toBe(1);
   });
 });
