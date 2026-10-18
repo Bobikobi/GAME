@@ -40,6 +40,7 @@ import { app } from '../app';
 import { sound, type SfxId, type SongId } from '../audio';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T } from '../config';
 import { FAR_BELL, SMOKE_PUFFS, farBellDue, nearestChimney, smokeAlpha, smokeAt } from '../hookbridge';
+import { STONE_GLIDE_MS, STONE_STEPS, type StoneView, stoneView } from '../stone';
 import { type Clear, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../mist';
 import { FOG_ATLAS, FOG_ATLAS_W, FOG_FEATHER, FOG_OFFSETS, FOG_TILE, fogPixels } from '../fog';
 import { DIRS, type Dir } from '../input';
@@ -61,7 +62,7 @@ import { type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, trea
 import { StandingReports, canEnter, landStep } from '../walking';
 import { GroundChunks } from '../groundchunks';
 import { adopt, baseOf, densityOf, drawScaled, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
-import { cameraZoom, pixelRatio, worldToPage } from '../view';
+import { cameraK, cameraZoom, pixelRatio, worldToPage } from '../view';
 
 /** px from the view's edge that the smoke marker keeps, so its column fits above the base. */
 const SMOKE_INSET = 30;
@@ -281,6 +282,9 @@ export class WorldScene extends Phaser.Scene {
   private vignette: Phaser.GameObjects.Image | undefined;
   private frameLook = { strength: 0.3, radius: 0.8 };
   private frameKey = '';
+  /** the zoom the screen's size asks for, and whether the camera is held close on the returners' stone instead */
+  private baseZoom = 2;
+  private stoneHeld = false;
   private nodes = new Map<string, Phaser.GameObjects.Sprite>();
   private nodeShadows = new Map<string, Phaser.GameObjects.Image>();
   private digs = new Map<string, Phaser.GameObjects.Image>();
@@ -1308,6 +1312,7 @@ export class WorldScene extends Phaser.Scene {
     this.auto = null;
     this.held.clear();
     this.falling = false;
+    this.stoneHeld = false;
     this.stillReports.reset();
     for (const h of this.hazards) h.run = undefined;
     this.wolfGround = undefined;
@@ -2607,7 +2612,8 @@ export class WorldScene extends Phaser.Scene {
       };
     }
     const lines: string[] = [];
-    if (content.kind === 'restore' && p?.restored.includes(content.id)) lines.push(`Mended by ${p.name}.`);
+    const stone = content.kind === 'restore' && p ? stoneView(content.id, p.restored, p.name) : undefined;
+    if (content.kind === 'restore' && p?.restored.includes(content.id) && !stone) lines.push(`Mended by ${p.name}.`);
     const profile = b.creators[content.creator];
     const entry = b.board[content.creator];
     const name = profile?.name ?? (content.creator === 'core' ? 'the core team' : content.creator);
@@ -2631,7 +2637,8 @@ export class WorldScene extends Phaser.Scene {
         points: entry?.points,
         commits: entry?.commits,
         ai: content.ai_tools ?? [],
-        mendedBy: content.kind === 'restore' && p?.restored.includes(content.id) ? p.name : undefined,
+        mendedBy: content.kind === 'restore' && p?.restored.includes(content.id) && !stone ? p.name : undefined,
+        stone,
       },
     };
   }
@@ -2642,7 +2649,10 @@ export class WorldScene extends Phaser.Scene {
     const w = this.scale.width;
     const h = this.scale.height;
     // 4k canvas pixels per unit, k whole (view.ts): the short side shows at least 9 tiles of 64 art pixels
-    this.cameras.main.setZoom(cameraZoom(Math.min(w, h)));
+    const zoom = cameraZoom(Math.min(w, h));
+    this.baseZoom = zoom;
+    // a hold on the stone keeps its own zoom through a resize
+    this.cameras.main.setZoom(this.stoneHeld ? this.heldZoom() : zoom);
     this.shade.setSize(w, h);
     this.dusk?.setSize(w, h);
     this.frameKey = '';
@@ -2652,6 +2662,58 @@ export class WorldScene extends Phaser.Scene {
   /** Where a tile is on the page, for UI that points at the world. */
   screenOf(x: number, y: number): { x: number; y: number } {
     return this.worldToPage(x * T + T / 2, y * T);
+  }
+
+  /**
+   * The camera comes down to the returners' stone and holds close on it (NEXT 16 e, frame hook-2-stop-close). It
+   * resolves when the glide is done, or at once when the player asked for reduced motion.
+   */
+  stoneStop(slotId: string): Promise<void> {
+    const slot = findSlot(this.b.map, slotId);
+    if (!slot) return Promise.resolve();
+    const cam = this.cameras.main;
+    const ms = RICH.motion ? STONE_GLIDE_MS : 0;
+    this.stoneHeld = true;
+    cam.stopFollow();
+    const from = { z: cam.zoom };
+    const sizeFrame = () => this.vignette?.setDisplaySize(this.scale.width / cam.zoom, this.scale.height / cam.zoom);
+    if (ms === 0) {
+      cam.setZoom(this.heldZoom());
+      cam.centerOn((slot.x + slot.w / 2) * T, (slot.y + slot.h / 2) * T);
+      sizeFrame();
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      cam.pan((slot.x + slot.w / 2) * T, (slot.y + slot.h / 2) * T, ms, 'Sine.easeInOut', true);
+      this.tweens.add({
+        targets: from,
+        z: this.heldZoom(),
+        duration: ms,
+        ease: 'Sine.easeInOut',
+        onUpdate: () => {
+          if (!this.stoneHeld) return;
+          cam.setZoom(from.z);
+          sizeFrame();
+        },
+        onComplete: () => resolve(),
+      });
+    });
+  }
+
+  /** The stone's zoom: the screen's own, STONE_STEPS whole camera steps closer, so its art pixels stay whole device pixels. */
+  private heldZoom(): number {
+    return 4 * (cameraK(Math.min(this.scale.width, this.scale.height)) + STONE_STEPS);
+  }
+
+  /** The hold is over: the zoom comes back to the screen's own and the camera follows the player again. */
+  stoneRelease(): void {
+    if (!this.stoneHeld) return;
+    this.stoneHeld = false;
+    const cam = this.cameras.main;
+    cam.setZoom(this.baseZoom);
+    this.vignette?.setDisplaySize(this.scale.width / cam.zoom, this.scale.height / cam.zoom);
+    cam.startFollow(this.player, true, 0.12, 0.12);
+    this.time.delayedCall(1200, () => cam.setLerp(1, 1));
   }
 }
 
@@ -2670,6 +2732,8 @@ export interface SignInfo {
     ai: string[];
     /** the player, when this place is one they mended */
     mendedBy?: string;
+    /** the returners' stone: set for the bridge once it is mended, in place of mendedBy */
+    stone?: StoneView;
   };
 }
 

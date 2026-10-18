@@ -2,6 +2,26 @@
 
 One note per tag on `main`, newest first (docs/team/PLATFORM.md section 2).
 
+## v0.1.6 - 2026-10-18
+
+What players notice
+- The opening begins in the mist. Each starter wakes in a small clear pocket of near-black, dithered mist, 5 tiles around them, and their first task pushes it out to 7. A reload keeps it.
+- The explorer follows a mote of light to the glint by the bridge and must take the glint before the keystone opens: "Something else catches the light first."
+- Mending the bridge opens the valley: the mist draws back 14 tiles in about two seconds, a far bell rings once, and the town's smoke rises at the edge of the view.
+- The opening's lines say what is true. The forager's first task is a question ("Something on the west bank fits your basket"), the first fire is "A fire across the river", Maru no longer tells you to stay in at dusk, and Maru and Pell each say what their errand pays.
+- In the 3D door the bank wolves are models, asleep by day; at night only their two red eyes show.
+- On a slow phone or computer the world keeps real time from the first moment: work, walking, the wolf's hunts and the fires no longer crawl after the game starts or the tab comes back.
+
+What creators notice
+- New optional fields, all additive (format version stays 1): a starter's `pocket` and `pocket_grown` (the clear mist around its wake, before and after its first task), a restore's `mist` (the tiles it clears once mended) and `stone` (names, a default name and purse lines for the returners' stone; nothing reads it yet), and a resource node's `opens_after: <quest id>` (it opens only after that quest).
+- `pnpm kit:gen` has a motif-scatter route for ground tiles: the model draws small motifs and the script lays them out across tile edges and measures the seam. Tools only: no kit art changed in this release.
+
+What changed underneath
+- kernel 0.1.6 (simulation 0.10.0). Saves from v0.1.5 load unchanged.
+- The stealth beat and the vigil of the long night run as state tests on the walk's own rules; the stealth e2e takes the covered bank road.
+- CI proves the e2e on every pull request; a machine runs it only to debug a red run.
+- The 2D world advances on the browser's real frame time, capped at 250 ms like the session's own step, instead of Phaser's held delta (#194).
+
 ## v0.1.5 - 2026-10-18
 
 What players notice
