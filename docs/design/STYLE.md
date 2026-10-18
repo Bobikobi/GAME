@@ -28,7 +28,7 @@ A section marked *proposal* is the art session's recommendation, not yet the own
 | Prop | up to 128 x 128 |
 
 - A phone shows twelve tiles across. One art pixel is 3 device pixels on a 3x screen and 2 on a 2x one, always a whole number.
-- Until the redraw waves, 16 px art stays legal and draws at density 1 (NEXT 15).
+- Until the engine step (NEXT 15) the check takes 16 px art only. After it, the check takes both, 16 px at density 1 and 32 px at density 2, and the redraw waves move the kit to 32.
 
 ## 2. Pixels and colour
 
@@ -117,12 +117,11 @@ Every number above is whole art pixels at one alpha, so the build is checked by 
 
 The first two give the most depth for the least work. Each gets one still before it is built, and once it is agreed its details are polish.
 
-## 8. Creators change the world
+## 8. Users change the world
 
-The owner, 18.10: players and creators will be able to change existing areas, even completely. For the look, that means:
-- A ground and a height are data. A creator's file can re-ground or reshape an area, and the engine draws the edges, faces and shadows from that data. A creator draws fill tiles and sprites, nothing else.
+The owner, 18.10: "users will be able to change existing areas, even completely". His word is recorded under D2 in [OPEN_WORLD.md](OPEN_WORLD.md). Two questions stay open there for when stage 3 opens: who the users are, and whether the hand-made valley may change. Whoever they turn out to be, for the look it means:
+- A ground and a height are data. A change to an area re-grounds or reshapes it, and the engine draws the edges, faces and shadows from that data. Whoever makes the change draws fill tiles and sprites, nothing else.
 - The core's checks still run on every change: walkability and the rules in GAME_RULES.
-- How far a creator may change the core's own areas is question D2 in [OPEN_WORLD.md](OPEN_WORLD.md). The owner's word above reaches further than D2's recommendation. Writing it into the rules is the docs session's work.
 
 ## 9. What the check enforces
 
