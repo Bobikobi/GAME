@@ -49,6 +49,13 @@
       "plan": ["DECISIONS 2026-10-10 owner's answers of the afternoon, item 9"],
       "branches": ["trial/3d", "docs/meshy-log-2026-10-13-dev"],
       "owner": null
+    },
+    {
+      "id": "art-32",
+      "title": "The art at 32 px per tile: the generation pipeline, the engine step, the redraw waves",
+      "plan": ["DECISIONS 2026-10-18 the art moves to 32 px per tile", "docs/design/ASSET_PATH.md"],
+      "branches": ["docs/art-32", "feat/kit-gen", "docs/next-art-32"],
+      "owner": "the art session"
     }
   ]
 }
