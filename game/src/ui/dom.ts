@@ -41,8 +41,9 @@ export function button(label: Child | Child[], onClick: () => void, cls = '', di
 export function sprite(bundle: Bundle, ref: string | undefined, scale = 2, frame = 0, cls = ''): HTMLElement {
   const info = ref ? bundle.sprites[ref] : undefined;
   if (!info) return h('span', { class: `sprite missing ${cls}`.trim(), style: `width:${16 * scale}px;height:${16 * scale}px` });
-  const w = info.w * scale;
-  const hgt = info.h * scale;
+  // a density-4 sprite has 4x the pixels for the same size on the page
+  const w = (info.w / info.density) * scale;
+  const hgt = (info.h / info.density) * scale;
   return h('span', {
     class: `sprite ${cls}`.trim(),
     style:
