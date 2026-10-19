@@ -28,6 +28,7 @@
     "loop": "tsx tools/src/loop/cli.ts",
     "streams": "tsx tools/src/streams/cli.ts",
     "quests": "tsx tools/src/quests/cli.ts",
+    "rules": "tsx tools/src/rules.ts",
     "hub:data": "tsx tools/src/hub/cli.ts",
     "hub:same": "tsx tools/src/hub/same.ts",
     "mcp": "tsx mcp/src/server.ts",
