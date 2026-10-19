@@ -7,7 +7,7 @@ import type { Bundle, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
 import { tagAt } from './world';
 
-export const KERNEL_VERSION = '0.11.0';
+export const KERNEL_VERSION = '0.12.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['carry', 'senses', 'agility', 'luck', 'stamina'] as const;
@@ -149,7 +149,7 @@ export interface Player {
   bitten: string[];
   /** tended fires by map prop id */
   fires: Record<string, FireState>;
-  /** the fire the player kindled outside the town, if any; one stands at a time (null in saves from before kernel 0.11) */
+  /** the fire the player kindled outside the town, if any; one stands at a time (null in saves from before kernel 0.12) */
   own: OwnFire | null;
   /** Expedition progress by expedition id. Chain quests persist separately in `quests`. */
   expeditions: Record<string, ExpeditionState>;
