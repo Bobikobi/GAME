@@ -10,9 +10,8 @@
  * Warnings only. Thresholds live in richness.params.json.
  */
 import { readFileSync } from 'node:fs';
-import { type Bundle, type Rect, hazardsOf } from '@game/kernel';
+import { type Bundle, type Rect, hazardsOf, watchOf } from '@game/kernel';
 import type { Issue } from './load';
-import { watchOf } from './hazards';
 import { walkBitmap } from './reach';
 
 export interface RichnessParams {

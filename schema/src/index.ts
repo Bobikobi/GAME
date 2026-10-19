@@ -536,8 +536,11 @@ export const QuestStep = Type.Union([
   Type.Object({ kind: Type.Literal('build'), camp: Id }, { additionalProperties: false }),
   Type.Object({ kind: Type.Literal('visit'), slot: Id }, { additionalProperties: false }),
   Type.Object(
-    { kind: Type.Literal('tend'), fire: Id },
-    { additionalProperties: false, description: 'Keep this fire burning without a gap from dusk through dawn.' },
+    { kind: Type.Literal('tend'), fire: Type.Union([Id, Type.Literal('own')]) },
+    {
+      additionalProperties: false,
+      description: 'Keep this fire burning without a gap from dusk through dawn. "own" is the fire the player kindled outside the town (G30, G48).',
+    },
   ),
   Type.Object(
     { kind: Type.Literal('find'), item: Id, clue: Clue },
@@ -1014,6 +1017,8 @@ export const ParamsBody = Type.Object(
         cap: { ...Bounded, description: 'Most logs of burn time a fire may hold ahead of the game tick.' },
         log_ms: { ...Bounded, description: 'Game milliseconds one wood item adds to a fire.' },
         warn_min: { ...Bounded, description: 'Game minutes before a burning fire goes out when its warning is shown.' },
+        safe_tiles: { ...Bounded, description: "How far from the player's own fire, in tiles, the ground is safe while it burns: 1 is its tile and the ring around it (G30)." },
+        burn_pct_per_d: { ...Bounded, description: "How much faster a log of the player's own fire burns for each step of the area's danger d, in percent (G30, G48)." },
       },
       { additionalProperties: false, description: 'A tended fire uses the game tick, which pauses while the player is away.' },
     ),

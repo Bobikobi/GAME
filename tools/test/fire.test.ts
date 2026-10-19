@@ -62,6 +62,10 @@ describe('fire rules', () => {
     expect(text).toContain('G48');
   });
 
+  it('accepts a tending step on the fire the player kindles, with no prop for it', () => {
+    expect(checkPlay(world([], { kind: 'tend', fire: 'own' }), {})).toEqual([]);
+  });
+
   it('refuses a fire prop without an id', () => {
     expect(messages(world([prop(undefined, { fire: true })]))).toContain('a fire needs an id');
   });

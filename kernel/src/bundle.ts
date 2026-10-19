@@ -88,7 +88,8 @@ export interface Params {
   walk_step_ms: number;
   /** work slows while health is at or below this share of its cap, in percent (0: only when empty) */
   hp_low_pct: number;
-  fire: { cap: number; log_ms: number; warn_min: number };
+  /** safe_tiles: the ring of safe ground around the player's own fire while it burns; burn_pct_per_d: how much faster its logs burn for each step of the area's danger, in percent */
+  fire: { cap: number; log_ms: number; warn_min: number; safe_tiles: number; burn_pct_per_d: number };
   hazard: {
     /** refill_bp: how high a hunt outrun to a safe place lifts health, in basis points of the cap: what its bites took comes back, up to this share */
     predator: { reach: number; pace_ms: number; eyes: number; catch_ms: number; bite_ms: number; bite_pct: number; refill_bp: number };
