@@ -8,9 +8,9 @@ import type { RestoreDef } from '@game/kernel';
 
 export const STONE_RESTORE = 'core/old-bridge';
 export const STONE_SPEAKER = 'The stone';
-/** Seconds the camera takes to come down to the stone, and the zoom it holds there (frame hook-2-stop-close). */
+/** Seconds the camera takes to come down to the stone, and how many whole camera steps (view.ts) closer than the screen's own it holds (frame hook-2-stop-close: zoom 3 against 2 on a phone, 1.5 times closer; k to k+1 is the same at k = 2). */
 export const STONE_GLIDE_MS = 1200;
-export const STONE_ZOOM = 3;
+export const STONE_STEPS = 1;
 
 export interface StoneView {
   /** the six written names, top to bottom */

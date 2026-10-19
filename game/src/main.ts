@@ -9,6 +9,7 @@ import { Controls } from './input';
 import { BootScene } from './scenes/boot';
 import { WorldScene } from './scenes/world';
 import { UI } from './ui/ui';
+import { bindDeviceCanvas, firstSize } from './view';
 import './style.css';
 
 app.bundle = raw as unknown as Bundle;
@@ -17,16 +18,20 @@ app.ui = new UI(document.getElementById('ui')!);
 app.sound = sound;
 app.controls.onButton((b) => app.ui.handle(b));
 
-new Phaser.Game({
+const first = firstSize();
+const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',
   pixelArt: true,
   roundPixels: true,
   backgroundColor: '#1b1a2e',
   banner: false,
-  scale: { mode: Phaser.Scale.RESIZE, width: window.innerWidth, height: window.innerHeight },
+  // the canvas takes the device's pixels (view.ts) instead of the window's CSS pixels
+  scale: { mode: Phaser.Scale.NONE, width: first.w, height: first.h },
   scene: [BootScene, WorldScene],
 });
+
+bindDeviceCanvas(game, document.getElementById('game')!);
 
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) app.session?.save();

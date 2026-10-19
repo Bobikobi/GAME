@@ -29,6 +29,8 @@ export interface Viewport {
   height: number;
   /** a phone: touch input and a coarse pointer */
   mobile: boolean;
+  /** device pixels per CSS pixel; 1 when left out. The pixel game's phone runs at 3 (a 2K phone). */
+  scale?: number;
 }
 
 export class Browser {
@@ -178,7 +180,7 @@ export class Page {
     await this.send('Emulation.setDeviceMetricsOverride', {
       width: viewport.width,
       height: viewport.height,
-      deviceScaleFactor: 1,
+      deviceScaleFactor: viewport.scale ?? 1,
       mobile: viewport.mobile,
     });
     if (viewport.mobile) await this.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
