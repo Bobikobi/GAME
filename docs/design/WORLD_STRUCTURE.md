@@ -36,9 +36,8 @@ Ids: W1-W12 are this page's. They are structure, not play rules; a play rule sta
 - Holds: G30 (narrowed as above), G48 and G47 as the review splits them, G64, G65.
 - OSRS: banks and towns everywhere in the settled kingdoms, nothing in the Wilderness. WoW: inns and flight points spaced by zone; the far zones are long walks. DRK: not public. Openfold is OSRS near the start and WoW far out.
 
-**W7. Where an outing ends.** An outing ends at a safe place where its finds are kept. The store chest in town keeps everything. A fire of one's own keeps the night and, in the middle form, part of the finds. The owner left two forms open on 19.10 and the builder picks none without the owner's word:
-- the middle form: a fire keeps part of the finds, the chest keeps all (recommended: it needs no new item, and it matches the 19.10 entry that dropped the tent);
-- a fire with a tent: setting it up costs time and resources and the tent takes bag space; in return it keeps the whole outing. If this form is wanted, the tent is an earned thing under W9, not a starting item.
+**W7. Where an outing ends: the chest in town, or a fire with a tent.** An outing ends at a safe place where its finds are kept. The store chest in town keeps everything. Out in the world the player pitches a camp: a fire with a tent. Setting it up costs time and resources, and the tent takes a place in the bag from the start of the game; in return the camp keeps the whole outing: a player who falls after pitching it loses nothing the camp holds. A fire alone (19.10) stays a safe place while it burns, and keeps nothing. Decided 19.10 (the owner's answer, section 13); it reverses the 19.10 entry that dropped the tent, and that entry carries the note.
+- Holds: G33 (a fall costs the outing's finds), G65, the fire rules of 19.10; the camp's cost in time and resources is a kernel rule to write with the camp (the tent is not a free bank: the time it costs is the price of safety far out, W6).
 - OSRS: a bank keeps everything; death keeps three items. WoW: nothing is ever lost, a corpse run and repair. DRK: not public. Openfold loses only the outing's finds, never gear or made things (G33), softer than OSRS and matching WoW.
 
 ## 5. Where players fight
@@ -85,7 +84,7 @@ From [RULES_REVIEW.md](RULES_REVIEW.md) section 2, in one line each, so this pag
 | The ground | All hand-made | All hand-made | Hand-made | A hand-made valley, generated ground, stamped places in named lands (W3, W4) |
 | The edge | Fences and water | The sea and fatigue | Not public | Mist, near-blindness, a countdown (W5) |
 | Safety | Banks everywhere, none in the Wilderness | Inns by zone | Not public | Towns per land, pockets, relaxed far out (W6) |
-| What a fall costs | All but three items | Nothing for good | Not public | The outing's finds (W7, G33) |
+| What a fall costs | All but three items | Nothing for good | Not public | The outing's finds, unless a camp holds them (W7, G33) |
 | Players against players | The Wilderness | A switch (War Mode) | Ranked, opt in | A marked zone in the wild (W8) |
 | Travel | Teleports that cost runes | Flight points, mounts | Mounts | Walking; faster ways earned by level (W9) |
 | Who changes the map | The studio, after a poll | The studio | The studio | Creators by pull request, checks, the core team's review (W10) |
@@ -105,7 +104,7 @@ Each question was asked with the three games' choices beside it; the answer is k
 1. **The unit of content:** an authored place stamped on generated ground, grouped into lands with a name and a story. Rings are the build order only. (W4)
 2. **The edge:** a soft border. Crossing it, the player vanishes into mist and sees almost nothing, with a countdown toward a fall. When the map grows, the mist lifts and what was there (trees, for example) stays. (W5)
 3. **Safety far from town:** towns and forts per land with small safe pockets, but the rule that a safe place is always within a run may be relaxed; healing is an answer; a large world must not have too many escape hatches. (W6)
-4. **Where an outing ends:** either the middle form (a fire keeps part, the chest keeps all) or a fire with a tent that costs time and resources and takes bag space. Left open; the recommendation is in W7. (W7)
+4. **Where an outing ends:** a fire with a tent from the start: it costs time and resources, takes a place in the bag, and keeps everything. (W7)
 5. **One world or several:** one world for everyone; a split only if a measurement says the server cannot hold. (W1)
 6. **Changing existing areas:** creators ask to change what exists the way they ask to extend the game; it goes through the automatic checks and raises an alert to the core team for review. (W10)
 7. **Fights between players:** a marked zone in the wild where anyone may attack anyone, like OSRS. (W8)
@@ -113,4 +112,4 @@ Each question was asked with the three games' choices beside it; the answer is k
 9. **The account:** through an external login (Google, Apple, Steam). (W2)
 10. **A caught bot:** the account is held for review, the owner decides; the gains are wiped, not the character. (FOUNDATIONS F11)
 
-Open after this page, for the owner: the pick in W7; whether the marked zone's fall gives the finds to the attacker (the combat frame); the rest of FOUNDATIONS section 11.
+Open after this page, for the owner: whether the marked zone's fall gives the finds to the attacker (the combat frame); the rest of FOUNDATIONS section 11.
