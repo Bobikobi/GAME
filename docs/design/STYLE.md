@@ -136,7 +136,7 @@ The owner, 18.10: "darker than N3; street lighting and the houses' light will li
 - **Out in the wild there is only:** the player's own light (DECISIONS 2026-10-12), a burning fire, and the wolf's eyes. The player's pool and the wolf's eyes keep today's size and brightness, so the dark is frightening and still readable.
 - **A building's lit windows** ship as a second image of the same size that holds only the window pixels in the fire ramp. The game draws it over the building from dusk to dawn, with a pool in front of it.
 
-## 6. Height (decided: T2; the walking rule waits for stage 3)
+## 6. Height (decided: T2 and the walking rule)
 
 The owner, 18.10: "T2 fits".
 
@@ -149,7 +149,8 @@ The owner, 18.10: "T2 fits".
   - Where a top stands over a lower neighbour to the west or east, it gets a 2 px dark rim.
 - **Not picked, T3, slopes:** the drop drawn in the upper ground, two steps darker, with no face. It barely shows at phone size.
 - **Height limit:** one step shows at most 3 levels (96 px). Higher than that is a mountain band, which cannot be walked.
-- **Walking** (*proposal*). Between levels only by steps or a ramp, a tile flagged as one. Stepping off a face is refused, like a solid tile. That is a kernel rule, so it goes to the owner first ([GAME_RULES.md](GAME_RULES.md) section 6) before it is built.
+- **Walking** (decided 18.10, GAME_RULES G68). A rock face blocks both ways. Between levels only across a crossing tile, and the crossing varies by place: stairs, a ramp, a lift, a cable car, any tool that fits the place. Stepping off a face is refused, like a solid tile.
+- **Paths wind** (GAME_RULES G69). Generated ground and authored paths both: no straight run over 8 tiles (a bridge or a causeway up to 12), and a turn or a gap through trees, rocks or mountains at least that often. The ground builders and the art follow it.
 - **Both clients.** The 3D client already lifts its ground with noise (`game/src/play3d/scenery.ts`, the corner heights). With a height layer, both clients read the same data.
 
 ## 7. More depth, cheapest first (decided: all six)

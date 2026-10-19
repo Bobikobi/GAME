@@ -263,7 +263,7 @@ async function run(page: Page, url: string): Promise<void> {
   // The earlier quest and camp are setup; the stealth quest itself is accepted through Pell.
   const health = await page.eval<{ cap: number; bite: number; drain: number }>('__stealth.prepare()');
   await page.eval(`void __game.ui.talk('core/trader')`);
-  await me.choose('Task: The south bank');
+  await me.choose('The south bank');
   await me.choose('I will do it');
   await page.waitFor(`__game.session.state.player.quests['core/the-south-bank'] === 'active'`, 'Pell to give the south-bank quest');
   await page.waitFor('!__game.ui.blocking', 'Pell dialogue to close');
