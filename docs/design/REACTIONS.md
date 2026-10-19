@@ -168,7 +168,7 @@ It also warns: game-ba's richness check (the "something reacts" count, 1 or more
 | **A: read reactions** | The `reaction` type in the schema; the conditions `hours`, `night`, `ready_for_ms`, `empty_for_ms`, `on_tag`, `player_within`, `unseen`; the effects `appear`, `wait` and `cue`; the check of section 6; the shared client read with its cache. Core content: windfall berries, birds over a find, and fish rising at dusk on `riverbank` tiles. | Kernel and schema about 400-600 lines, the client about 200, plus tests | A replay of a recorded session gives the same state hash on the client and in a server-style run. The richness check's "reacts" share rises; the number is reported. Under 0.5 ms a frame for the reactions on a phone screen. `pnpm verify` green. |
 | **B: weather by day** | `weather(day)` as a pure function of the seed, the region and the day index: clear, rain or fog, decided a day ahead and shown in the morning toast (Stardew's forecast). The condition `weather`. Core content: mushrooms after rain in the grove (`appear`), reeds regrowing faster by water in rain (`wait`). Fog draws as mist the player can see. | About 300 lines, plus art for rain and fog | The same day gives the same weather on every replay. Every rain-only node shares its class with an all-year one (the season rule of 9.10, applied to weather). |
 | **C: marks the player leaves** | A felled tree falls the way the player faces, and across a stream it is a bridge until it rots back (`open`, after free movement). Tracks in mud after rain. | About 300 lines | The map stays connected in every combination of states (the check). An e2e crosses on a trunk. |
-| **Later, by the owner's word** | Spread as a front (fire through dry grass in the player's own camp area only); predators that answer weather or noise (Q1). | Not sized | - |
+| **Later, by the owner's word** | Spread as a front, under the shared-world rules of section 10; predators that answer weather or noise (Q1). | Not sized | - |
 
 Phase A lands after `pnpm streams` shows no other session on `kernel/src/step.ts` and schema/src/index.ts. The schema part goes first, as its own small pull request (PARALLEL.md). Phase A needs no art beyond game-41's birds, plus one fish and one windfall sprite.
 
@@ -184,9 +184,40 @@ Recommended: (a) yes, from phase B. Fog is drawn, so the shorter cone is still a
 
 **Q2. May weather touch a fire?** G48 says a fire is kept by hand and nothing makes it burn longer. Rain putting out an open fire would cut the other way, and would cost a vigil (`tend`) through no act of the player's. Recommended: no. Weather does not touch fires, and a lit fire is the player's one sure thing at night. A rain-out could come later for fires the player did not light, which would need a prop flag.
 
+## 10. In a shared world
+
+Reactions meet the shared-world rules of 10.10 (DECISIONS, "The shared world: whose progress, one world per character, one hour for all").
+- Progress and nodes are each player's own, except in the areas between players.
+- From stage 7, a world has one hour for everyone.
+- Players pass through each other, and nobody blocks a way.
+
+**Why the frame fits many players.** A reaction is a pure function of inputs that every player shares: the content, the seed, the world's hour, and a few stored facts. Every client and the server compute the same answer from the same inputs. So the network carries only those facts, never the state of a thousand tiles. This is deterministic lockstep, which Age of Empires used to run 1,500 archers over a 28.8k modem (Bettner and Terrano, 2001).
+
+**Whose reaction it is:**
+
+| Reaction | In a shared world | Why |
+|---|---|---|
+| Weather, the hour, the season | One per world, the same for all | A function of the seed, the region and the world's day |
+| `appear` on a node (the windfall) | Each player's own, as the node is (9.10). First come in the areas between players. | It hangs on the node's state, which is per player |
+| `cue` (the birds lift) | Each client draws it for the players it sees | It changes no state |
+| A mark that opens a way (a trunk over a stream, tracks in mud) | Shared: everyone sees it and may cross | It helps and never blocks |
+| A mark that closes a way | Only the world makes one (high water from weather), never a player | "Nobody blocks a way" (10.10) |
+| Fire | Below | |
+
+**Fire.** Minecraft servers often turn fire spread off (the `doFireTick` game rule), because one player's spark burns another's work. Three rules keep fire from becoming that here:
+- A fire a player lights burns only what it was lit in: a campfire, a hearth, a torch. In a shared world it never spreads from a player's hand.
+- If fire ever spreads, it is a world event. The seed lights it in the wild, in an area between players, never in a town and never on a plot, a house, a tent or a path. It runs as a front from its tick and its tile, so every client draws the same burn with no messages. It burns shared nodes and grass, which grow back, and never takes from a player's bag.
+- In a player's own valley, before any shared world, a spread can be the player's own: their grass, their nodes.
+
+The rule under all three: a player's act may open things for others, but never close or destroy them. Only the world may close.
+
+**Noise and predators (Q1 b).** In a shared world, one player's noise would turn a predator onto another player's stealth. That is one more reason for the recommended no.
+
 ## Sources
 
 - Hidemaro Fujibayashi, Satoru Takizawa and Takuhiro Dohta, "Breaking Conventions with The Legend of Zelda: Breath of the Wild", GDC 2017: the chemistry engine and its three rules.
 - Stardew Valley Wiki, "Weather" and "Foraging": weather decided a day ahead and shown on the TV, and forage and fish by season, weather and hour.
 - Dwarf Fortress Wiki, "Reaction" (raw files): reactions as moddable plain-text data.
+- Paul Bettner and Mark Terrano, "1500 Archers on a 28.8: Network Programming in Age of Empires and Beyond", Gamasutra, 2001: deterministic lockstep.
+- Minecraft Wiki, "Game rule": `doFireTick` turns fire spread off.
 - In this repository: kernel/src/state.ts, kernel/src/danger.ts, kernel/src/world.ts and kernel/src/values.ts at 2932f334; docs/kernel-review-v1.md (R1-R12); docs/design/GAME_RULES.md (G15, G28, G29, G35, G42, G47, G48, G62); docs/design/OPEN_WORLD.md (G51, G67); docs/design/GAP_DIMRAETH_DRAKANTOS.md (sections 3 and 4).
