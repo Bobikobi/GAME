@@ -15,6 +15,12 @@ export interface Target {
   h: number;
 }
 
+/** A sprite's height in world units (its frame's height over its density), or a default when the bundle lacks it. */
+export function heightOf(b: Bundle, ref: string | undefined, fallback: number): number {
+  const info = ref ? b.sprites[ref] : undefined;
+  return info ? info.h / info.density : fallback;
+}
+
 /** At most this many, the nearest to the player first: a resource with many nodes must not fill the valley with sparks. */
 export const MAX_TARGETS = 6;
 
@@ -24,7 +30,7 @@ export function questTargets(b: Bundle, s: State, tick: number): Target[] {
   const q = b.quests[main]!;
   if (readyToHandIn(b, s, main, tick) && q.giver) {
     const t = npcTile(b, q.giver);
-    return t ? [{ x: t[0], y: t[1], h: b.sprites[b.npcs[q.giver]?.sprite ?? '']?.h ?? 24 }] : [];
+    return t ? [{ x: t[0], y: t[1], h: heightOf(b, b.npcs[q.giver]?.sprite, 24) }] : [];
   }
   const i = questSteps(b, s, main, tick).findIndex((st) => !st.done);
   const st = i >= 0 ? q.steps[i] : undefined;
@@ -48,7 +54,7 @@ export function questTargets(b: Bundle, s: State, tick: number): Target[] {
     case 'tend': {
       // the fire to keep: its own prop, wherever the map puts it
       const p = b.map.props.find((prop) => prop.fire === true && prop.id === st.fire);
-      return p ? [{ x: p.x, y: p.y + p.h - 1, h: b.sprites[p.sprite]?.h ?? 16 }] : [];
+      return p ? [{ x: p.x, y: p.y + p.h - 1, h: heightOf(b, p.sprite, 16) }] : [];
     }
     default:
       // a find is found by its clue (sparks over the bushes would answer it for the player),
@@ -92,7 +98,7 @@ function nodesGiving(b: Bundle, s: State, tick: number, item: string): Target[] 
     const r = b.resources[inst.source];
     if (!r || r.output !== item) continue;
     if ((s.nodes[id]?.readyAt ?? 0) > tick) continue;
-    out.push({ x: inst.x, y: inst.y, h: b.sprites[r.sprite]?.h ?? 16 });
+    out.push({ x: inst.x, y: inst.y, h: heightOf(b, r.sprite, 16) });
   }
   return out;
 }

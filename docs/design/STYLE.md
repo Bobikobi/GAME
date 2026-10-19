@@ -19,6 +19,8 @@ The look in one place, for creators and for every session that draws or renders 
   - The shadows, the night with the town's lights, and depth cues 1 to 5 come with or after that step, in one window of `game/src/scenes/world.ts`.
   - Grounds and height come with the open world's first ring ([OPEN_WORLD.md](OPEN_WORLD.md)).
 
+**Both doors (owner, 18.10).** The whole standard holds for the 3D game at `/play3d/` too, in its own means: the proportions as ratios to a character's height, the light and shadow, the night, height and the depth cues. Only the pixel numbers are 2D's alone. The pixel game is built first, and the 3D game follows it. The 3D game may be desktop-only where a phone would block a rule. How it is carried across: docs/team/NEXT.md section 8 e.
+
 A section marked *proposal* is the art session's recommendation, not yet the owner's pick. The stills of section 10 were made at 32 px per tile; every art-pixel number below is already doubled for 64.
 
 ## 1. The grid
@@ -32,7 +34,7 @@ A section marked *proposal* is the art session's recommendation, not yet the own
 
 - **The screen.** The canvas draws at the device's own pixels, and one art pixel is always a whole number of device pixels: 2 on a 2K phone (1440 px across, about 11 tiles), 1 on a 1080 px phone (about 17 tiles, crisp but small; older phones are not a target). The camera's rule is in NEXT 15.
 - **A face.** At 64x96 the head is about 24 to 28 px wide and the face about 20. Eyes are 2 to 3 px, each with a white and a dark pupil; brows, a nose and a mouth are drawn, not implied. The frame `density-64` is the measure.
-- Until the engine step (NEXT 15) the check takes 16 px art only. After it, the check takes both, 16 px at density 1 and 64 px at density 4, and the redraw waves move the kit to 64. Nothing drawn at 32 goes into a kit.
+- The check takes both grids since the engine step (NEXT 15): 16 px at density 1 (the default) and 64 px at density 4, and a size that belongs to the other grid is an error. The redraw waves move the kit to 64. Nothing drawn at 32 goes into a kit.
 
 ## 1b. Proportions (decided that they rule; the numbers wait for one look)
 
