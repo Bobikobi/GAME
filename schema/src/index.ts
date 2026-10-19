@@ -798,6 +798,12 @@ export const Cue = Type.Union(CUES.map((k) => Type.Literal(k)), {
 
 export const REACTION_SIDES = ['here', 'above', 'below', 'left', 'right'] as const;
 
+/** The weather of a region for one game day, decided from the world's seed (REACTIONS.md, phase B). */
+export const WEATHERS = ['clear', 'rain', 'fog'] as const;
+export const Weather = Type.Union(WEATHERS.map((k) => Type.Literal(k)), {
+  description: 'The sky over a region for a whole game day: clear, rain or fog. The same for every player in the region and on every replay.',
+});
+
 const ReactionOn = Type.Union(
   [
     Type.Object({ resource: Type.Union([Id, Type.Literal('*')]) }, { additionalProperties: false }),
@@ -822,6 +828,7 @@ const ReactionWhen = Type.Object(
     chance_pct: Type.Optional(
       Int(1, 100, 'It holds on this many days in a hundred, drawn once a game day for each thing it hangs on, the same on every replay.'),
     ),
+    weather: Type.Optional({ ...Weather, description: 'The day\'s weather in the region of the thing it hangs on is this one.' }),
   },
   { additionalProperties: false, minProperties: 1, description: 'Holds when every condition it names holds.' },
 );
@@ -1345,6 +1352,7 @@ export type CreatorProfile = Static<typeof CreatorBody>;
 export type ReactionFile = Static<typeof ReactionFile>;
 export type Reaction = Static<typeof ReactionBody>;
 export type CueName = (typeof CUES)[number];
+export type WeatherName = (typeof WEATHERS)[number];
 export type ShopFile = Static<typeof ShopFile>;
 export type ProfessionFile = Static<typeof ProfessionFile>;
 export type ParamsFile = Static<typeof ParamsFile>;
