@@ -8821,12 +8821,6 @@
                   "description": "The node it hangs on has stood ready, untouched, for at least this long, in game ms.",
                   "type": "integer"
                 },
-                "empty_for_ms": {
-                  "minimum": 0,
-                  "maximum": 3600000,
-                  "description": "The node it hangs on has been empty for at least this long, in game ms.",
-                  "type": "integer"
-                },
                 "on_tag": {
                   "anyOf": [
                     {

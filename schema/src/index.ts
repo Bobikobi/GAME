@@ -814,7 +814,6 @@ const ReactionWhen = Type.Object(
     ),
     night: Type.Optional(Type.Boolean({ description: 'true: only at night (20:00 to 05:00); false: only by day.' })),
     ready_for_ms: Type.Optional(Ms('The node it hangs on has stood ready, untouched, for at least this long, in game ms.')),
-    empty_for_ms: Type.Optional(Ms('The node it hangs on has been empty for at least this long, in game ms.')),
     on_tag: Type.Optional({ ...TileTag, description: 'The tile of the node or spot it hangs on carries this ground tag.' }),
     player_within: Type.Optional(Int(1, 8, 'The player stands within this many tiles (the larger of the two distances).')),
     unseen: Type.Optional(
