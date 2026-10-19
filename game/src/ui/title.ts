@@ -147,7 +147,7 @@ async function intro(ui: UI, lines: string[] | undefined): Promise<void> {
   const waking = lines ?? [
     'You wake up in the tall grass beside a river. The sun stands high.',
     'Across the water, smoke rises over a town. The old bridge between is broken.',
-    'Its keystone fell into the shallows by the bridge. Strike it free, and the bridge can be mended.',
+    'Its keystone lies in the shallows by the bridge. Strike it free, and the bridge can be mended.',
   ];
   // two lines or fewer are one box and one tap (OPENING_REVIEW criterion 7); a longer start keeps paging
   await say(ui, null, waking, [], { page: waking.length <= 2 });

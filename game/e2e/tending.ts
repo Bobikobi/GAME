@@ -84,11 +84,11 @@ window.__tend = (() => {
       const s = g().session, day = g().bundle.params.day_length_ms;
       return (((s.tick + Math.floor(day / 2)) % day) * 24) / day;
     },
-    /** The earlier quests are setup: Maru's coin is found, the opening is behind, and Maru is met. */
+    /** The earlier quests are setup: Maru's berries are picked and his coin found, the opening is behind, and Maru is met. */
     prepare(logs) {
       const p = g().session.state.player;
       for (const id of Object.keys(p.quests)) if (p.quests[id] === 'active') p.quests[id] = 'done';
-      for (const id of ['core/fix-the-bridge', 'core/first-fire', 'core/into-town', 'core/a-coin-for-maru']) p.quests[id] = 'done';
+      for (const id of ['core/fix-the-bridge', 'core/first-fire', 'core/into-town', 'core/three-fruits', 'core/a-coin-for-maru']) p.quests[id] = 'done';
       if (!p.restored.includes('core/old-bridge')) p.restored.push('core/old-bridge');
       p.satiety = 100000;
       p.bag[${JSON.stringify(LOG)}] = logs;
@@ -273,7 +273,7 @@ async function start(page: Page, name: string): Promise<void> {
   await page.waitFor('!!window.__game.session && window.__game.session.started', 'the character to wake', 10_000);
 }
 
-/** A new character with Maru's coin found, beside the hearth, the long night accepted from Maru. */
+/** A new character with Maru's berries picked, beside the hearth, the long night accepted from Maru. */
 async function begin(page: Page, me: Tender, name: string, logs: number): Promise<{ at: [number, number]; facing: string; beside: [number, number] }> {
   await page.eval(IN_PAGE);
   await start(page, name);

@@ -132,8 +132,10 @@ two answers, step back to the whole day.
 4. **Report.** Ranked by harm to a first-time player: the problem, the evidence (file and the
    exact text or field), the smallest fix inside the rules, and who decides it. The agent:
    wording inside the two-line limit, a step's shape with an existing kind. The owner: the
-   opening order, a reward, a rung, a new step kind or mechanic (GAME_RULES section 6). Then
-   what strengthens the world and stays, five at most. To the owner in plain words, in the
+   opening order, a reward, a rung, a new step kind or mechanic (GAME_RULES section 6). Try
+   every fix on a scratch copy with `pnpm check` and `pnpm quests` before it is offered: a fix
+   the check refuses is not a fix (the opening's "one herb as a find", 19.10). Then what
+   strengthens the world and stays, five at most. To the owner in plain words, in the
    owner's language, the decision first, with yes or no questions.
 5. **Record.** The review goes into the design document of what it reviewed; the owner's
    answers go into `DECISIONS.md` the same day; the agent's wording fixes go in one content

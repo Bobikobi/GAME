@@ -187,10 +187,11 @@ describe('the south bank, played without a browser (game/e2e/stealth.ts)', () =>
     const wolf = hazardsOf(b).find((h) => h.id === WOLF);
     if (!wolf) throw new Error(`no ${WOLF} on the map`);
 
-    // the e2e's setup: the earlier quest and camp done, the bridge mended, health far above the chase leg's bites
+    // the e2e's setup: the earlier quests and camp done, the bridge mended, health far above the chase leg's bites
     expect(s.act({ t: 'start', starter: 'core/forager', name: 'Tess' }).ok).toBe(true);
     const p = s.state.player;
     p.quests['core/herbs-for-pell'] = 'done';
+    p.quests['core/the-night-arch'] = 'done';
     p.camp = ['core/campfire'];
     if (!p.restored.includes('core/old-bridge')) p.restored.push('core/old-bridge');
     const cap = satietyCap(b, s.state);
