@@ -1689,6 +1689,31 @@ On 18.10 the four Meshy accounts held 1,060 credits (250, 230, 200, 380) and not
 How: NEXT 8 b-d. The gap and the budget come first (`docs/3d/gap.md`), the looks of the 13.10 drafts go to the owner as stills, then each day's credits are spent on the order he picked; downloads only of picks, within each account's monthly cap. Publishing a draft, connecting Discord and a paid month wait for his yes.
 **Retry when:** Meshy changes the Free plan (credits, the download cap, the licence), or the gap is closed by another source. Model: claude-opus-5-5.
 
+## 2026-10-18 ✅ Accounts and a server: the owner's answers
+
+Relayed by the manager, 18.10, for NEXT.md section 18:
+- Everything on the owner's own Contabo server from day one: the game's API and database in their own containers, apart from "yaar-ad" (its own app and postgres, nginx, a host postgres 16); each container has its own database user, a memory cap and a nightly backup. No new monthly cost; if real-time load outgrows the box, the options go back to him. Read-only facts on 18.10: 4 cores, 7.8 GB RAM (7 GB free), 36 GB disk free, idle. Every server step is a production gate (three lines first, then check, back up, approve, execute, verify; no sudo without his yes). This supersedes "functions and a managed database" of 8.10.
+- Sign-in by email, Google and Discord; the builder sets up the OAuth apps in the browser at build time and asks only where his login is needed, each step approved. The age (13 or the country's higher) and "email and name only, after the opening" of 9.10 stand.
+- All gameplay state lives on the server, met/heard and the last position included; the device keeps settings only.
+- The opening carries into the account by replay under the phone's seed, verified, then a server-secret seed; fresh start after sign-up if that proves complicated. A pause at once when the connection drops.
+**Retry when:** the box's load shows the replay or the pause is too heavy; the vendor facts that led to 8.10 were unverified and are not used. Model: claude-sonnet-5-5 (the brief asked for opus; this session ran Sonnet 5.5).
+
+## 2026-10-18 ✅ The first ring: three stills, its first place, and creators by pull request
+
+Stills `docs/design/frames/2026-10-18-ring-*` (note beside them). The owner: "it doesn't matter to me, everything looks good, except the straight path, which is too boring". He left the pairs to the manager, who picked on what open-world games do, not on the owner's word: S1 A, big sweeps; S2 B, levels with rock faces, the valley framed by mountains, with a pass; S3 B, dense props, the boathouse's smoke on the skyline. They are stand-ins for the direction; the final look is polish inside it.
+- The first stamped place is a lakeside boathouse with a keeper and one small errand (Q6). Creators change ground by pull request in the ring and later regions (Q7).
+- Paths wind (GAME_RULES G69): no straight run over 8 tiles (a bridge or a causeway up to 12, one run in five at most), a turn or a gap through cover at least that often; a straight stretch now and then is fine. The 8 is the manager's suggestion, not measured on a phone: the owner judges it on the live ring.
+**Retry when:** the owner, on the live ring, finds the sweeps too big or the props too many. Model: claude-sonnet-5-5.
+
+## 2026-10-18 ✅ Height crossings and winding paths (G68, G69)
+
+Q8, the owner: rock faces block both ways; crossings vary by place (stairs, ramps, lifts, cable cars, any tool that fits the environment, the height, the geography and the culture). Written in GAME_RULES "The open world" as G68, and in STYLE section 6 (the "walking" proposal is decided). It follows 2026-10-18 "Height: levels with rock faces (T2)". A tool gate may not wear out and strand a player (dec 1094).
+**Retry when:** a place wants a crossing that is a one-way drop; that is a new rule, to the owner. Model: claude-sonnet-5-5.
+
+## 2026-10-18 ✅ The valley and a one-time exception to G59
+
+The owner, 18.10: the valley (48 by 49) is too small; it must feel like a valley framed by mountains in parts, with passes out; after the first bridge the player must feel the world is huge; the starters' areas must be really apart. For this he allows one pointed exception to G59, "the opening never moves": when the open world is built, the core team may reshape the valley and improve the opening. Scope, in GAME_RULES section 6: the core team only; the valley's size and frame, the wake tiles and the opening's legs; not the rung payoffs, the ladder minutes or the 90 s ceiling; creators never touch the opening; it ends at the world lock's re-anchor with the owner's yes; saves are relocated by placement, never by a fall. The valley's new size and frame are not decided: NEXT.md section 19 step 0 sends the owner stills or a map first (the valley floor near 96 by 96 and three passes are a proposal only).
+**Retry when:** the re-anchor is done; G59 then holds whole again. Model: claude-sonnet-5-5.
 ## 2026-10-18 ✅ One game, two doors: every rule and development holds in the 3D game too
 
 The 18.10 style decisions (proportions, shadows C, the darker night, height T2, the six depth cues) were written for the classic 64 px game, and only height said both clients read it. The 3D door had sun shadows and day and night, but no reflections, no wind, no cloud shadows, no footprints and no proportions rule. Asked whether they apply, the owner, 18.10: yes. Every idea and development relevant to both versions holds for both, except what is truly 3D's own (or truly 2D's). The agents bridge it, and a problem is raised, not dropped. That includes the proportions and every further game and development. And the order of effort: "first the pixel game, then the 3D". A 3D twin follows its original and never takes a builder from the pixel game.
