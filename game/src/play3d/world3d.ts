@@ -37,7 +37,8 @@ import { WOLF_EYES } from '../predator';
 import { FrameProbe, liteUrl } from './lite';
 import { createScenery, groundY, modelOf, standalone, walkY, WATER_Y, type MapData, type Places, type Scenery } from './scenery';
 import type { Session } from '../session';
-import { questTargets } from '../targets';
+import { stoneView } from '../stone';
+import { heightOf, questTargets } from '../targets';
 import { nodeLook } from '../growth';
 import { hintDistance, lanternNight, nodeAction } from '../text';
 import { beatAt, blowsDue, resourceKind, treasureKind, type AutoKind } from '../work';
@@ -357,7 +358,7 @@ export class World3D implements WorldView {
       t.repeat.set(1 / info.frames, 1);
       t.offset.set(0, 0);
     }
-    const tiles = [info.w / 16, info.h / 16] as const;
+    const tiles = [info.w / info.density / 16, info.h / info.density / 16] as const;
     if (flat) {
       const geometry = new THREE.PlaneGeometry(tiles[0], tiles[1]);
       geometry.userData.own = true;
@@ -391,8 +392,8 @@ export class World3D implements WorldView {
       for (let y = p.y; y < p.y + p.h; y++) {
         for (let x = p.x; x < p.x + p.w; x++) {
           if (p.sign) this.signs.set(key(x, y), p.sign);
-          if (p.note) this.notes.set(key(x, y), { text: p.note, name: spriteName(p.sprite), top: info.h / 16 });
-          this.tops.set(key(x, y), info.h / 16);
+          if (p.note) this.notes.set(key(x, y), { text: p.note, name: spriteName(p.sprite), top: info.h / info.density / 16 });
+          this.tops.set(key(x, y), info.h / info.density / 16);
         }
       }
       if (p.sign) this.signSpots.push({ slot: p.sign, x: p.x + p.w / 2, y: p.y, label: this.signatureEl(p.sign) });
@@ -649,7 +650,7 @@ export class World3D implements WorldView {
     const ref = done ? r.after : r.before;
     const info = this.b.sprites[ref];
     if (!info) return;
-    if (info.w === 16 && info.h === 16) {
+    if (info.w === 16 * info.density && info.h === 16 * info.density) {
       for (let y = slot.y; y < slot.y + slot.h; y++) {
         for (let x = slot.x; x < slot.x + slot.w; x++) {
           const flat = await this.picture(ref, true, x + 0.5, y + 0.5);
@@ -1288,7 +1289,7 @@ export class World3D implements WorldView {
         const r = b.resources[inst.source]!;
         // a gathered node is only ground until it grows back
         if (this.ready(s, nodeId)) {
-          return { label: nodeAction(b, r), run: () => app.ui.gather(nodeId), tile, top: (b.sprites[r.sprite]?.h ?? 16) / 16 };
+          return { label: nodeAction(b, r), run: () => app.ui.gather(nodeId), tile, top: heightOf(b, r.sprite, 16) / 16 };
         }
       } else {
         const view = this.nodes.get(nodeId);
@@ -1341,7 +1342,8 @@ export class World3D implements WorldView {
       };
     }
     const lines: string[] = [];
-    if (content.kind === 'restore' && p?.restored.includes(content.id)) lines.push(`Mended by ${p.name}.`);
+    const stone = content.kind === 'restore' && p ? stoneView(b.restores[content.id], p.restored, p.name) : undefined;
+    if (content.kind === 'restore' && p?.restored.includes(content.id) && !stone) lines.push(`Mended by ${p.name}.`);
     const profile = b.creators[content.creator];
     const entry = b.board[content.creator];
     const name = profile?.name ?? (content.creator === 'core' ? 'the core team' : content.creator);
@@ -1364,7 +1366,8 @@ export class World3D implements WorldView {
         points: entry?.points,
         commits: entry?.commits,
         ai: content.ai_tools ?? [],
-        mendedBy: content.kind === 'restore' && p?.restored.includes(content.id) ? p.name : undefined,
+        mendedBy: content.kind === 'restore' && p?.restored.includes(content.id) && !stone ? p.name : undefined,
+        stone,
       },
     };
   }

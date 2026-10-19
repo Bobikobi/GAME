@@ -2,6 +2,27 @@
 
 One note per tag on `main`, newest first (docs/team/PLATFORM.md section 2).
 
+## v0.1.7 - 2026-10-19
+
+What players notice
+- Each start wakes in one box of two lines, shown whole, so the first step is one tap away, and the bridge's task is in the tracker from the start.
+- A conversation option is the quest's own title: no more "Task:", "About:" or "Hand in:" in front of it. Maru no longer speaks of Pell's herbs.
+- The bridge's sign is now the returners' stone: six names and a last line that you carve. The name on the title screen is optional ("carve it later"); after the mend the camera goes to the stone and holds there while it speaks, and then you cut your name.
+- A success no longer shakes or flashes the screen: what you made or mended glows softly for a moment, and the level banner fades in. The screen still jolts when you are hurt or seen.
+- By day the wolves are away. Their den and the paw prints along their round show where they hunt; at night they come back out of the den.
+- The world is drawn at your screen's own pixels, so on a sharp phone the pixel art stays crisp.
+
+What creators notice
+- A kit sprite may say `density` 1 (16 px per tile, the default) or 4 (64 px per tile), and the kit check measures each one on its own grid. The field is additive; format version stays 1.
+- The returners' stone reads its names, its default word and its purse lines from the restore's `stone` field.
+- An extension's new item no longer needs an edit to the journal test.
+- Until five creators have had an extension merged, one approval merges an extension.
+
+What changed underneath
+- kernel 0.1.7 (simulation 0.10.0). `start` accepts an empty name and a new `carve` action sets it once. Saves from v0.1.6 load unchanged and keep their name.
+- The canvas draws at device pixels at a whole-number zoom, and the ground is baked in 16 by 16 tile chunks once any tile is 64 px.
+- Every e2e test writes its screenshots where CI uploads them when a run fails.
+
 ## v0.1.6 - 2026-10-18
 
 What players notice

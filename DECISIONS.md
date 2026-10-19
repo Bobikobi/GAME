@@ -45,6 +45,7 @@ The product name is undecided. "Mistvale" appears in the game, the page title an
 
 Tile-by-tile steps (190 ms each) match the handheld look and keep every position an integer tile for the kernel. Game time pauses while any dialogue, menu or minigame is open, and one frame never advances more than 250 ms, so a background tab never fast-forwards the world. Model: claude-opus-5-5.
 **Superseded in part (10.10):** from stage 7 a world's hour stops for no window, and a minigame only keeps the hazards from striking (the entries on the shared world and on the game read as one line).
+**Superseded in part (18.10):** the walk becomes free, in 8 directions, while the world and the kernel stay on tiles (the entry on free movement below).
 
 ## 2026-10-07 ✅ Signs are map props that point at a slot
 
@@ -430,6 +431,8 @@ The content wave (crafting audit section 6, wave 3) seeds crafting inside the pe
 **Retry when:** the market (CR-19) or the made-goods share (CR-18) moves the report, a lasting tool ends the demand for tools, or the asset sidecar draws the new items. Model: claude-opus-5-5.
 
 ## 2026-10-09 ✅ No combat yet: a predator is escaped, and a group quest is made for a group
+
+**Superseded in part (19.10):** "no combat now" holds for the demo only; combat comes after the foundation as a core part (the 2026-10-19 entry on G35).
 
 The question (a review of open product direction, 9.10): the owner spoke of buying and improving weapons, of a monster too strong for a player, and of guarding a settlement, while fighting stays out (G35) and the hazards entry of 8.10 answers a predator with a lit lantern, thrown food and the road. Does fighting come earlier, and if not, what do those words mean in a valley without combat? The owner's word (9.10):
 
@@ -1686,15 +1689,138 @@ On 18.10 the four Meshy accounts held 1,060 credits (250, 230, 200, 380) and not
 How: NEXT 8 b-d. The gap and the budget come first (`docs/3d/gap.md`), the looks of the 13.10 drafts go to the owner as stills, then each day's credits are spent on the order he picked; downloads only of picks, within each account's monthly cap. Publishing a draft, connecting Discord and a paid month wait for his yes.
 **Retry when:** Meshy changes the Free plan (credits, the download cap, the licence), or the gap is closed by another source. Model: claude-opus-5-5.
 
+## 2026-10-18 ✅ Accounts and a server: the owner's answers
+
+Relayed by the manager, 18.10, for NEXT.md section 18:
+- Everything on the owner's own Contabo server from day one: the game's API and database in their own containers, apart from "yaar-ad" (its own app and postgres, nginx, a host postgres 16); each container has its own database user, a memory cap and a nightly backup. No new monthly cost; if real-time load outgrows the box, the options go back to him. Read-only facts on 18.10: 4 cores, 7.8 GB RAM (7 GB free), 36 GB disk free, idle. Every server step is a production gate (three lines first, then check, back up, approve, execute, verify; no sudo without his yes). This supersedes "functions and a managed database" of 8.10.
+- Sign-in by email, Google and Discord; the builder sets up the OAuth apps in the browser at build time and asks only where his login is needed, each step approved. The age (13 or the country's higher) and "email and name only, after the opening" of 9.10 stand.
+- All gameplay state lives on the server, met/heard and the last position included; the device keeps settings only.
+- The opening carries into the account by replay under the phone's seed, verified, then a server-secret seed; fresh start after sign-up if that proves complicated. A pause at once when the connection drops.
+**Retry when:** the box's load shows the replay or the pause is too heavy; the vendor facts that led to 8.10 were unverified and are not used. Model: claude-sonnet-5-5 (the brief asked for opus; this session ran Sonnet 5.5).
+
+## 2026-10-18 ✅ The first ring: three stills, its first place, and creators by pull request
+
+Stills `docs/design/frames/2026-10-18-ring-*` (note beside them). The owner: "it doesn't matter to me, everything looks good, except the straight path, which is too boring". He left the pairs to the manager, who picked on what open-world games do, not on the owner's word: S1 A, big sweeps; S2 B, levels with rock faces, the valley framed by mountains, with a pass; S3 B, dense props, the boathouse's smoke on the skyline. They are stand-ins for the direction; the final look is polish inside it.
+- The first stamped place is a lakeside boathouse with a keeper and one small errand (Q6). Creators change ground by pull request in the ring and later regions (Q7).
+- Paths wind (GAME_RULES G69): no straight run over 8 tiles (a bridge or a causeway up to 12, one run in five at most), a turn or a gap through cover at least that often; a straight stretch now and then is fine. The 8 is the manager's suggestion, not measured on a phone: the owner judges it on the live ring.
+**Retry when:** the owner, on the live ring, finds the sweeps too big or the props too many. Model: claude-sonnet-5-5.
+
+## 2026-10-18 ✅ Height crossings and winding paths (G68, G69)
+
+Q8, the owner: rock faces block both ways; crossings vary by place (stairs, ramps, lifts, cable cars, any tool that fits the environment, the height, the geography and the culture). Written in GAME_RULES "The open world" as G68, and in STYLE section 6 (the "walking" proposal is decided). It follows 2026-10-18 "Height: levels with rock faces (T2)". A tool gate may not wear out and strand a player (dec 1094).
+**Retry when:** a place wants a crossing that is a one-way drop; that is a new rule, to the owner. Model: claude-sonnet-5-5.
+
+## 2026-10-18 ✅ The valley and a one-time exception to G59
+
+The owner, 18.10: the valley (48 by 49) is too small; it must feel like a valley framed by mountains in parts, with passes out; after the first bridge the player must feel the world is huge; the starters' areas must be really apart. For this he allows one pointed exception to G59, "the opening never moves": when the open world is built, the core team may reshape the valley and improve the opening. Scope, in GAME_RULES section 6: the core team only; the valley's size and frame, the wake tiles and the opening's legs; not the rung payoffs, the ladder minutes or the 90 s ceiling; creators never touch the opening; it ends at the world lock's re-anchor with the owner's yes; saves are relocated by placement, never by a fall. The valley's new size and frame are not decided: NEXT.md section 19 step 0 sends the owner stills or a map first (the valley floor near 96 by 96 and three passes are a proposal only).
+**Retry when:** the re-anchor is done; G59 then holds whole again. Model: claude-sonnet-5-5.
+## 2026-10-18 ✅ One game, two doors: every rule and development holds in the 3D game too
+
+The 18.10 style decisions (proportions, shadows C, the darker night, height T2, the six depth cues) were written for the classic 64 px game, and only height said both clients read it. The 3D door had sun shadows and day and night, but no reflections, no wind, no cloud shadows, no footprints and no proportions rule. Asked whether they apply, the owner, 18.10: yes. Every idea and development relevant to both versions holds for both, except what is truly 3D's own (or truly 2D's). The agents bridge it, and a problem is raised, not dropped. That includes the proportions and every further game and development. And the order of effort: "first the pixel game, then the 3D". A 3D twin follows its original and never takes a builder from the pixel game.
+How: AGENTS.md (a line for every builder), STYLE.md (the standard holds for both doors), NEXT 8 e (the first list to carry across after the cast, measured in world units and in 390x844 captures beside the classic game).
+The owner added: the 3D game need not run on a phone if the phone brings too many blocks. The phone is the pixel game's, and a phone limit that blocks a rule makes the 3D game desktop-only, not the rule smaller.
+**Retry when:** the 3D game is wanted on phones after all. Then each phone limit goes to the owner with options. Model: claude-opus-5-5.
+
+## 2026-10-18 ✅ The returners' stone: the name may be empty at the start and is carved at the bridge
+
+The question (NEXT 16 e): where the player's name is set, and who speaks the purse. Chosen: `start` accepts an empty name; a new kernel action `carve` sets a name only while it is empty (same 1 to 16 rule), so a save made before keeps its name and its stone line. The title screen's name field stays, now optional (blank means "carve it later"): nothing in the opening e2e's typed name changes. The stone is the bridge's `core/old-bridge` sign made into a card of six written names, one word each, over one line (empty until cut). The six names, the stone's purse box and the default word `Wanderer` are written client text in `game/src/stone.ts`, as `lore.ts` is, because a content field would be a schema change, which lands as its own pull request first; moving them into the restore file is the follow-up. After the mend's story box the camera glides to the stone and holds at zoom 3 while the stone speaks of the purse, then the carve is the last beat; the hold is released in a `finally`. The `done` text no longer has the purse line (the stone speaks it, S1) and no longer says "before dark" (G6).
+How: the story box "The bridge holds" opens exactly as before (hud.ts:207's 15 s wait); the glide and the name field come after it. Reduced motion skips the glide.
+**Retry when:** the owner judges the default word or the purse line on the release preview, or section 15 moves the world's camera to whole zoom steps and the hold must follow. Model: claude-sonnet-5-5. Branch: feat/hook-stone.
 ## 2026-10-18 ✅ Search the Meshy community before generating, and keep finds for later needs
 
 The 3D plan (NEXT 8) spent credits on everything the gap lacks, and never looked at the models other users have already made on Meshy. The owner, 18.10: search their work before making anything; he had seen a horse there, which the game will surely need later.
 How: NEXT 8 d. For each thing in the gap, the community comes first. A find costs a download and no credits. It is taken only when its own page allows use in a public game with attribution, it fits the picked look, and it stays under the triangle and map caps. It is listed in `docs/3d/gap.md` with its link, author and licence. Finds for later needs go under "Found for later", and the month's spare downloads go to them.
 **Retry when:** the community's licences turn out not to allow use in a game, or the finds rarely fit the look. Then generating is the only route again. Model: claude-opus-5-5.
+## 2026-10-18 ✅ The camera is 4k device pixels per world unit, k = max(1, floor(S / 576))
 
+The camera is a direction, so the engine step of NEXT 15 showed it first (frames `docs/design/frames/2026-10-18-camera-*`, note [`2026-10-18-camera.md`](docs/design/frames/2026-10-18-camera.md)): the opening's first frame today and with the rule, on the 2K phone (1440x3120) and the desktop (1440x900). The phone comes a little closer (zoom 6 to 8, 12.9 to 11.3 tiles across); the desktop shows more of the world (zoom 5 to 4, 18 to 22.5 tiles across).
+The owner approved it as shown (18.10, via game-80): S is the canvas's shorter side in device pixels, the zoom is 4k, so a 64 px art pixel is k device pixels and a 16 px one is 4k. Zoom 8 on the 2K phone, 4 on the e2e desktop, 8 on the e2e phone (390x844 at 3x).
+**Retry when:** a screen class reads too small or too close in play (then the rule's 576 changes here first). Model: claude-sonnet-5-5. Branch `feat/art-density`.
+
+## 2026-10-18 ✅ One approval, the owner's, until five creators have had an extension merged
+
+The merge rule asked three approvals on the current head (`.github/loop.json`, `approvals_to_merge: 3`). The first outside extension, #185 (3u2t, wild plums), showed "0 of 3 approvals" with no community yet to give them: the rule could not be met by anyone. The owner, 18.10, took the recommendation: one approval until the valley has five creators with a merged extension, then three again. Most open projects start this way, one maintainer approving until a community exists.
+How: `approvals_to_merge: 1`; the pull request template, CONTRIBUTING.md and ROADMAP.md say so. The loop counts any reviewer but the author, and it never merges by itself, so the maintainer who merges does so only after the owner has approved on GitHub.
+**Retry when:** five creators (handles other than the core team) have an extension merged into develop: set it back to 3 and drop the "until five creators" lines. Model: claude-opus-5-5. Link: #185.
 ## 2026-10-18 ✅ The 2D world keeps the wall clock, not Phaser's delta
 
 The hud e2e's desktop pass timed out on every pull request from 18.10 17:00 UTC (`timed out waiting for the story of the mended bridge`, run 39147952528). Cause: `WorldScene.update` advanced the game with Phaser's `delta`, which is not real time. For 120 frames after the game starts or the page regains focus Phaser holds it to 16.7 ms (`fps.panicMax`), and a frame over 200 ms counts as an older, shorter one. A 1440x900 desktop under CI's software GL draws about 9 frames a second, so the world crawled; during the hold the clock moved 153 ms per wall second.
 Evidence, from choosing "Mend it" to the story box (the mend is 4 s of game time): before, the desktop took 8.4 s at normal speed, 10.3 s at CPU slowdown 4 and 25.6 s at slowdown 8, where the phone took 23.0 s. After, on `game.loop.rawDelta` capped at 250 ms (Session's own cap, now `LONGEST_FRAME_MS`): 4.3, 4.4 and 5.5 s, the phone 5.1 s. The walk, the mist's draw-back and the 250 ms refresh follow the same clock, as the 3D door already does; Phaser's own tweens and particles still run on its delta.
 The check stays: it is the only test that sees the world fall behind the wall clock on a slow screen, which a player on a slow phone or laptop feels too. The opening e2e reaches the bridge after the hold is over and gives the mend 20 s. A timeout there now prints how far the game's clock moved against the wall's. game-ab found the cause first; its faster mist raster (2x, with a test that it draws the same pixels) is kept under tag `attempt/2026-10-hud-desktop-game-ab`, not needed for this fix.
 **Retry when:** a timeout line shows the clock behind the wall again, or Phaser's tweens crawl on a slow screen: then `fps.panicMax: 0` in the game config. Not proven: why it began failing on 18.10 (likely a change that brought the bridge earlier into the hold, or slower frames). Model: claude-opus-5-5.
+## 2026-10-18 ✅ The 3D door's gap is closed by option 2: the whole town, the cliff modules and the people variants, community finds first
+
+The owner approved option 2 of `docs/3d/gap.md` on 18.10 (19:12): the whole town (camp stations, houses, lantern posts, totem, shelf and chest), the cliff modules, and variants of the people for the 8c stills. About 520 credits and 18 downloads over two months; the Meshy community search (NEXT 8 d) turned five of the items into CC0 finds (workbench, chest, house, lantern, shelf), which brings it to about 420 credits. The rest of the month's credits are banked on drafts the plan needs next, made only in the look he picks in 8c.
+Order: the community search, this entry, the looks stills of 8c, then the daily spend of 8 d. Nothing is generated in a look before he picks it. Caps stay at 50,000 triangles and 1024 px maps per person; the 3D door gives up the phone only when a phone limit blocks a rule (NEXT 8 e), and none has.
+**Retry when:** the community finds fail the look (8c) or Meshy changes the Free plan. Model: claude-sonnet-5-5. Link: #190, #175.
+
+## 2026-10-18 ✅ A success never shakes the screen: the jolt and the flash belong to danger
+
+The owner, 18.10, after playing: the screen's shake and flash at a task's end or a success "are not really flattering". In `celebrate()` every restore and build shook the camera, the same jolt a bite gives, so a success and a wound felt alike. Cosy games (Stardew Valley, Animal Crossing) keep the shake for impacts and harm and mark a success with sound and light on the thing made.
+How: NEXT 20 a. A success keeps its jingle and gets a soft light of at most 1 s on what was made; `hurt` keeps the red flash and the shake, `seen` its jolt, a tree landing its small shake.
+**Retry when:** a success feels too quiet on the preview; then add light or sound, never a camera jolt. Model: claude-opus-5-5.
+
+## 2026-10-18 ✅ By day the wolf is away and its den stays
+
+The owner, 18.10: the wolf asleep by day "does nothing", and it should vanish entirely by day. G30 said "by day they show and can be walked around: the trap is visible, the wolf sleeps, the pit is lit", so the request went to him first with the rule quoted (GAME_RULES section 6): its purpose is that a player learns by day where the danger lives. He took the recommendation that keeps that purpose: the wolf is away by day and its den mouth and the tracks along its round stay drawn, and at dusk it comes out of the den. Many games mark where a monster comes from while it is not there.
+How: G30's text changes; NEXT 20 b builds it in the client only. The kernel keeps the wolf's place by day on the den tile, so the hunts, G34 and G47 are unchanged. The 3D door hides the model by day too (one game, two doors).
+**Retry when:** players are surprised at night by a wolf they never saw by day; then the den needs a stronger mark, not the sleeping wolf back. Model: claude-opus-5-5.
+
+## 2026-10-18 ✅ The compass for depth and for characters: Dimraeth's depth in an open world, Drakantos's characters and animation
+
+The owner, 18.10: Dimraeth is the depth and complexity Openfold aims for, but in an open world. He named its skills, the opening of its bag, its monsters, and free movement instead of a fixed feel. Drakantos is the aim for character design and animation. The distance, system by system, is in [docs/design/GAP_DIMRAETH_DRAKANTOS.md](docs/design/GAP_DIMRAETH_DRAKANTOS.md). In concept Openfold already points where Dimraeth stands on eight of twelve rows. It is apart on active skills, and opposite on movement and on monsters you fight. In what is built, the distance is large on every row but writing.
+What this decides: the two games are the measure when a depth or a look is weighed, and free movement is taken (the next entry).
+What it does not decide:
+- Combat. G35 stands until the owner picks; the page's section 3 recommends combat only in the wild (d of 1 and up) and in expeditions, designed before #187's protocol is built and built after free movement and the server.
+- The look. Drakantos's proportion (a head about 40% of the height) and colour craft (local-colour outlines, hue-shifted ramps past the 32 colours) go to the owner as three stills of Pell before wave b of NEXT 15. Wave b is not drawn before the pick.
+**Updated 19.10:** the owner answered on combat and on the tree (the 2026-10-19 entries below). Combat is no longer open, and the page's sections 3, 4 and 7 were rewritten with his answers.
+**Retry when:** the owner names another measure, or a played build shows that a row of the page reads wrong. Model: claude-opus-5-5.
+
+## 2026-10-18 ✅ Free movement replaces the tile-by-tile walk; the world and the kernel stay on tiles
+
+The owner, 18.10: "free movement, not a fixed feel". The walk until now: 4 directions, a tile per 190 ms, the phone pad in four sectors (the 2026-10-07 entry). The owner's word is that the walk becomes free. The model below and the order are the builder's proposal, which the owner has not yet seen: Stardew Valley's model, which is the industry's for a tile world:
+- The body moves at pixel precision in 8 directions, analog on the phone's stick, and collides with tile boxes through a small body box.
+- An action works on the tile the player faces.
+- The client reports a tile whenever the feet cross into a new one, as it already reports its tile (P-5b). The kernel, the predators' eyes and bites, the danger level and the server's batch check of moves (G56, #187) keep the tile as their unit, so the kernel stays integer.
+- Both doors walk by the same rules (`game/src/walking.ts`).
+Proposed order: after #191 (the 64 px engine step, the same `world.ts` window) and hook e and f. Before NEXT 19 c (the ring's walk rules) and NEXT 18 c (the client over the wire), which are built on the walk. The feel numbers (speed, acceleration, the stick's dead zone) are polish, judged by the owner on a preview; the speed starts at today's tile per 190 ms.
+**Retry when:** the server's move check refuses honest free walks at tile reports, or players on a phone miss the tile they mean to act on. Model: claude-opus-5-5.
+
+## 2026-10-19 ✅ G35 is the demo's rule: combat is a core part of the game, after the foundation
+
+The owner, 19.10: "G35 holds only for the demo. For me it is a part no less important, after the general foundation." G35 in GAME_RULES now reads "No fighting in the demo". The opening, the night ruins and the bank wolf stay hazards that are escaped. The 2026-10-09 entry "No combat yet" holds for the demo only.
+What his word decides: combat is planned, not left to stage 8 or a vote. It comes after the foundation, which means accounts and the server (NEXT 18) and the first ring of the open world (NEXT 19), the third step of the 17.10 order.
+Proposed, not yet his word (all in [docs/design/GAP_DIMRAETH_DRAKANTOS.md](docs/design/GAP_DIMRAETH_DRAKANTOS.md) section 3):
+- it is designed now, so the foundation is not rebuilt for it: one paragraph in #187's protocol, where an encounter plays on the client at a fixed tick in the kernel and the server checks it as a batch, the way `move` is checked;
+- it is fought in the wild (d of 1 and up) and in expeditions, and never in a town;
+- it comes before live presence;
+- free movement comes first.
+The combat frame (the verbs, foes as entities, what a fall costs) goes to the owner before it is built.
+**Retry when:** the owner moves combat into the demo or out to a later stage. Model: claude-opus-5-5.
+
+## 2026-10-19 ❌ The skill screen as built is generic: five attributes and fixed techniques do not make a tree
+
+The owner, 19.10: Dimraeth's skill tree is "more interesting than ours", and he did not like ours anyway: "it is generic, and it is not clear what the differences are". What was tried is the journal's Skills tab (`game/src/ui/panels.ts`). It has five attributes of up to 10 pips each (bag space, keen eyes, steady hands, luck, stamina), with two fixed techniques per profession at levels 2 and 4.
+Why it reads generic (proven by reading the content):
+- every player buys the same five numbers;
+- every point is a percentage, and none opens a new verb;
+- no choice shuts another, so there is no build to name;
+- techniques come by level, not by choice;
+- the three starters differ by 0 to 2 pips.
+Proposed, not yet his word (the page's section 4): a tree on two axes, the starter's nature against the trades, with corner nodes per pair. Major nodes change a verb, small nodes carry today's percentages, attributes become keys (thresholds), books found in the world teach nodes outside your wings, and the format leaves room for combat wings. The screen is a UI frame, so it goes to the owner as a still before it is built.
+**Retry when:** never as built. The five attributes may stay as keys inside the new tree. Model: claude-opus-5-5.
+
+## 2026-10-19 ⏸ Races to widen the starters (a goblin, an elf, a human): later, perhaps by other developers
+
+The owner, 19.10: a gap between the characters as wide as races would be a step back now, so it waits. Races are the characters' nature and their lines of growth, and other developers may be the ones to think them through. If they come, they come as the vertical axis of the proposed tree (corner nodes per race and trade), and their past needs speakers (STORY.md S1-S6).
+**Retry when:** the stage-3 tree is in place. It is a candidate for an open call to creators then. Model: claude-opus-5-5.
+## 2026-10-19 ✅ The opening's hook f: one waking box, option labels that are the quest's title, and Maru's Pell line withdrawn
+
+Built from NEXT 16 f and the owner's answers of 17.10 ("The opening's renewal", above). The waking lines are the three texts of answer 1, shown as one box of two lines that appears whole, so the first movement is one tap away (criterion 7); a start with more than two intro lines keeps paging (`say` option `page`, used by the title screen only). The bridge and its keystone come from the tracker: each start wakes with `core/fix-the-bridge` active. The owner withdrew Q2's "Pell still waits for herbs" on 19.10 ("why would he know what's with Pell, it is not related"): Maru's last box stays as it was, and the owner approved the same day dropping "Pell wants herbs." from his first box too. The unchosen plant still fills the wait, reached through Pell's own lines and the task tracker; the opening e2e's phone path now takes Pell's herbs while it waits for dusk. The same day the owner asked that the conversation never label an option: the dialogue option is the quest's title alone in all three states (offer, what is left, hand in), no "Task:", "About:" or "Hand in:".
+Measured (criterion 8, the e2e's recorder, play clock, the run's own clock jumps counted as waiting): the phone run, the forager to the threshold, has its longest stretch at 173.6 s, from Pell's hand-in (about 176 s) to the coin under the hill lantern, because the coin's glint lights only at dusk (350 s); after the coin the dark follows within the stretch limit. The desktop run, the explorer to Pell's hand-in, longest stretch 22.4 s. The digger is not played by the e2e. The check reports and does not fail while the owner decides what to shorten; the human recording is the final word.
+**Retry when:** the owner picks what shortens the wait for dusk, then the report becomes a failing assertion. Model: claude-sonnet-5-5.
+## 2026-10-18 ✅ The 3D door's cast is in the Meshy realistic look (B); the environment is the next direction
+
+Three stills at phone size (390x844, the square by the elder's house) each changed one thing: A the current mix (Meshy player, Kenney chibi NPCs), B the whole cast in the Meshy realistic look, C the same cast toon-shaded. The owner picked B at 22:05 on 18.10, and added that the background and the environment are still terrible.
+Frame: `docs/design/frames/2026-10-18-3d-looks-B.png` (role models stand in for Maru and Pell). From here the daily Meshy spend (NEXT 8 d) generates only in this look; no toon shading. The environment (ground, props, background) is the next direction and gets its own ladder of stills before anything is built.
+**Retry when:** realistic people next to the low-poly props keep reading as two games; the environment ladder decides that. Model: claude-opus-5-5.

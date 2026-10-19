@@ -19,6 +19,8 @@ The look in one place, for creators and for every session that draws or renders 
   - The shadows, the night with the town's lights, and depth cues 1 to 5 come with or after that step, in one window of `game/src/scenes/world.ts`.
   - Grounds and height come with the open world's first ring ([OPEN_WORLD.md](OPEN_WORLD.md)).
 
+**Both doors (owner, 18.10).** The whole standard holds for the 3D game at `/play3d/` too, in its own means: the proportions as ratios to a character's height, the light and shadow, the night, height and the depth cues. Only the pixel numbers are 2D's alone. The pixel game is built first, and the 3D game follows it. The 3D game may be desktop-only where a phone would block a rule. How it is carried across: docs/team/NEXT.md section 8 e.
+
 A section marked *proposal* is the art session's recommendation, not yet the owner's pick. The stills of section 10 were made at 32 px per tile; every art-pixel number below is already doubled for 64.
 
 ## 1. The grid
@@ -32,7 +34,7 @@ A section marked *proposal* is the art session's recommendation, not yet the own
 
 - **The screen.** The canvas draws at the device's own pixels, and one art pixel is always a whole number of device pixels: 2 on a 2K phone (1440 px across, about 11 tiles), 1 on a 1080 px phone (about 17 tiles, crisp but small; older phones are not a target). The camera's rule is in NEXT 15.
 - **A face.** At 64x96 the head is about 24 to 28 px wide and the face about 20. Eyes are 2 to 3 px, each with a white and a dark pupil; brows, a nose and a mouth are drawn, not implied. The frame `density-64` is the measure.
-- Until the engine step (NEXT 15) the check takes 16 px art only. After it, the check takes both, 16 px at density 1 and 64 px at density 4, and the redraw waves move the kit to 64. Nothing drawn at 32 goes into a kit.
+- The check takes both grids since the engine step (NEXT 15): 16 px at density 1 (the default) and 64 px at density 4, and a size that belongs to the other grid is an error. The redraw waves move the kit to 64. Nothing drawn at 32 goes into a kit.
 
 ## 1b. Proportions (decided that they rule; the numbers wait for one look)
 
@@ -134,7 +136,7 @@ The owner, 18.10: "darker than N3; street lighting and the houses' light will li
 - **Out in the wild there is only:** the player's own light (DECISIONS 2026-10-12), a burning fire, and the wolf's eyes. The player's pool and the wolf's eyes keep today's size and brightness, so the dark is frightening and still readable.
 - **A building's lit windows** ship as a second image of the same size that holds only the window pixels in the fire ramp. The game draws it over the building from dusk to dawn, with a pool in front of it.
 
-## 6. Height (decided: T2; the walking rule waits for stage 3)
+## 6. Height (decided: T2 and the walking rule)
 
 The owner, 18.10: "T2 fits".
 
@@ -147,7 +149,8 @@ The owner, 18.10: "T2 fits".
   - Where a top stands over a lower neighbour to the west or east, it gets a 2 px dark rim.
 - **Not picked, T3, slopes:** the drop drawn in the upper ground, two steps darker, with no face. It barely shows at phone size.
 - **Height limit:** one step shows at most 3 levels (96 px). Higher than that is a mountain band, which cannot be walked.
-- **Walking** (*proposal*). Between levels only by steps or a ramp, a tile flagged as one. Stepping off a face is refused, like a solid tile. That is a kernel rule, so it goes to the owner first ([GAME_RULES.md](GAME_RULES.md) section 6) before it is built.
+- **Walking** (decided 18.10, GAME_RULES G68). A rock face blocks both ways. Between levels only across a crossing tile, and the crossing varies by place: stairs, a ramp, a lift, a cable car, any tool that fits the place. Stepping off a face is refused, like a solid tile.
+- **Paths wind** (GAME_RULES G69). Generated ground and authored paths both: no straight run over 8 tiles (a bridge or a causeway up to 12), and a turn or a gap through trees, rocks or mountains at least that often. The ground builders and the art follow it.
 - **Both clients.** The 3D client already lifts its ground with noise (`game/src/play3d/scenery.ts`, the corner heights). With a height layer, both clients read the same data.
 
 ## 7. More depth, cheapest first (decided: all six)

@@ -9,6 +9,11 @@ import { voicePitch } from '../audio/spatial';
 import { button, h } from './dom';
 import type { Layer, UI } from './ui';
 
+export interface SayOptions {
+  /** The lines are one page: all of them at once in one box, one tap to close it (the starter's waking box, NEXT 16 f). */
+  page?: boolean;
+}
+
 export interface Option {
   label: string;
   value: string;
@@ -18,10 +23,11 @@ const CHARS_PER_SECOND = 70;
 /** one gibberish syllable per this many typed characters */
 const VOICE_EVERY = 4;
 
-export function say(ui: UI, speaker: string | null, lines: string[], options: Option[] = []): Promise<string | null> {
+export function say(ui: UI, speaker: string | null, pages: string[], options: Option[] = [], opts: SayOptions = {}): Promise<string | null> {
+  const lines = opts.page ? [pages.join('\n')] : pages;
   return new Promise((resolve) => {
     const nameEl = speaker ? h('div', { class: 'dialog-name' }, speaker) : null;
-    const textEl = h('p', { class: 'dialog-text' });
+    const textEl = h('p', { class: opts.page ? 'dialog-text page' : 'dialog-text' });
     const arrow = h('span', { class: 'dialog-arrow', hidden: true }, '▼');
     const optionsEl = h('div', { class: 'dialog-options', hidden: true });
     const box = h('div', { class: 'dialog', role: 'dialog' }, nameEl, textEl, arrow, optionsEl);
@@ -45,6 +51,10 @@ export function say(ui: UI, speaker: string | null, lines: string[], options: Op
 
     const showLine = () => {
       const line = lines[index] ?? '';
+      if (opts.page) {
+        shown = line.length;
+        return lineEnd();
+      }
       shown = 0;
       textEl.textContent = '';
       arrow.hidden = true;
