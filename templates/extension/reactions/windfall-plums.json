@@ -1,0 +1,24 @@
+{
+  "$schema": "../../../../schema/json/reaction.schema.json",
+  "format": 1,
+  "type": "reaction",
+  "id": "your-handle/windfall-plums",
+  "title": "Windfall under a full plum bush",
+  "creator": "your-handle",
+  "reaction": {
+    "on": { "resource": "your-handle/wild-plums" },
+    "when": { "ready_for_ms": 300000 },
+    "then": {
+      "appear": {
+        "output": "your-handle/plum",
+        "yield": 1,
+        "active_ms": 2000,
+        "respawn_ms": 300000,
+        "level": 1,
+        "game": "pick",
+        "sprite": "core/base-kit:items/berry",
+        "at": "below"
+      }
+    }
+  }
+}
