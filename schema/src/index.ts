@@ -782,6 +782,98 @@ export const StarterBody = Type.Object(
   { additionalProperties: false },
 );
 
+// ---------------------------------------------------------------- reactions
+
+/**
+ * A world reaction (docs/design/REACTIONS.md): a rule the kernel reads and never runs. It hangs on
+ * one kind of thing, holds while every condition it names holds, and has one effect. Its answer is a
+ * pure function of the content, the state of the one entity it hangs on, the tick and the seed, so
+ * nothing runs off screen and a replay gives the same answer. The lists are closed: a new condition
+ * or effect is a kernel release.
+ */
+export const CUES = ['birds_lift', 'fish_rise'] as const;
+export const Cue = Type.Union(CUES.map((k) => Type.Literal(k)), {
+  description: 'A sign the client draws at a tile, with a shape and a sound and never a number or a word: birds lift from cover, fish rise on the water.',
+});
+
+export const REACTION_SIDES = ['here', 'above', 'below', 'left', 'right'] as const;
+
+const ReactionOn = Type.Union(
+  [
+    Type.Object({ resource: Type.Union([Id, Type.Literal('*')]) }, { additionalProperties: false }),
+    Type.Object({ treasure: Type.Union([Id, Type.Literal('*')]) }, { additionalProperties: false }),
+    Type.Object({ tag: TileTag }, { additionalProperties: false }),
+  ],
+  { description: 'What it hangs on: every node of a resource, every spot of a treasure ("*": of every one), or every tile of a ground tag.' },
+);
+
+const ReactionWhen = Type.Object(
+  {
+    hours: Type.Optional(
+      Type.Tuple([Int(0, 23), Int(1, 24)], { description: 'Game hours it holds, [from, to), as a node\'s `hours`.' }),
+    ),
+    night: Type.Optional(Type.Boolean({ description: 'true: only at night (20:00 to 05:00); false: only by day.' })),
+    ready_for_ms: Type.Optional(Ms('The node it hangs on has stood ready, untouched, for at least this long, in game ms.')),
+    on_tag: Type.Optional({ ...TileTag, description: 'The tile of the node or spot it hangs on carries this ground tag.' }),
+    player_within: Type.Optional(Int(1, 8, 'The player stands within this many tiles (the larger of the two distances).')),
+    unseen: Type.Optional(
+      Type.Literal(true, { description: 'The spot it hangs on lies beyond the player\'s sense reach, so the find does not show yet.' }),
+    ),
+    chance_pct: Type.Optional(
+      Int(1, 100, 'It holds on this many days in a hundred, drawn once a game day for each thing it hangs on, the same on every replay.'),
+    ),
+  },
+  { additionalProperties: false, minProperties: 1, description: 'Holds when every condition it names holds.' },
+);
+
+const AppearNode = Type.Object(
+  {
+    output: Id,
+    yield: Int(1, 20, 'Units gathered per execution at perfect timing.'),
+    active_ms: Ms('Time the player is busy gathering it once.'),
+    respawn_ms: Ms('Time before it can show again once taken, while its condition still holds. Waiting is never paid.'),
+    level: Int(1, 20, 'Foraging level required.'),
+    tool: Type.Optional(ToolKind),
+    game: Type.Optional(
+      Type.Union([Type.Literal('timing'), Type.Literal('strike'), Type.Literal('pick'), Type.Literal('snap')], {
+        description: 'The minigame played when gathering it, as a resource\'s `game`.',
+      }),
+    ),
+    sprite: SpriteRef,
+    at: Type.Union(REACTION_SIDES.map((k) => Type.Literal(k)), {
+      description: 'The tile it shows on: the tile of the thing it hangs on, or the one next to it on that side.',
+    }),
+  },
+  {
+    additionalProperties: false,
+    description:
+      'A node that exists only while the condition holds, with the id "<reaction id>@<node id>". It is a source of its own in the value table, priced as any node (R6, R7).',
+  },
+);
+
+const ReactionThen = Type.Union(
+  [
+    Type.Object({ appear: AppearNode }, { additionalProperties: false }),
+    Type.Object(
+      { wait: Int(500, 2000, 'Scales the respawn of the node it hangs on, in permille. Waiting is never paid, so no value moves.') },
+      { additionalProperties: false },
+    ),
+    Type.Object(
+      {
+        cue: Cue,
+        spread: Type.Optional(Int(0, 2, 'The cue shows on a tile drawn within this many tiles of the thing, so it marks an area and not the tile. Left out: 0.')),
+      },
+      { additionalProperties: false },
+    ),
+  ],
+  { description: 'Its one effect: a node that appears, a slower or quicker respawn, or a sign for the eyes and ears.' },
+);
+
+export const ReactionBody = Type.Object(
+  { on: ReactionOn, when: ReactionWhen, then: ReactionThen },
+  { additionalProperties: false },
+);
+
 export const EFFECTS = [
   'see_ripe',
   'timing_window_pct',
@@ -1194,6 +1286,7 @@ export const RestoreFile = record('restore', 'restore', RestoreBody);
 export const CampFile = record('camp', 'camp', CampBody);
 export const StarterFile = record('starter', 'starter', StarterBody);
 export const CreatorFile = record('creator', 'profile', CreatorBody);
+export const ReactionFile = record('reaction', 'reaction', ReactionBody);
 export const ItemsFile = Type.Object({ ...envelope, type: Type.Literal('items') }, { additionalProperties: false });
 // Core-only types: a creator file of these types is refused by the check.
 export const ShopFile = record('shop', 'shop', ShopBody);
@@ -1202,7 +1295,7 @@ export const ParamsFile = record('params', 'params', ParamsBody);
 export const KitFile = record('kit', 'kit', KitBody);
 export const MapFile = record('map', 'map', MapBody);
 
-export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'expedition', 'restore', 'camp', 'starter', 'items', 'creator'] as const;
+export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'expedition', 'restore', 'camp', 'starter', 'items', 'creator', 'reaction'] as const;
 export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map'] as const;
 
 export const ExtensionFile = Type.Union([
@@ -1218,6 +1311,7 @@ export const ExtensionFile = Type.Union([
   StarterFile,
   ItemsFile,
   CreatorFile,
+  ReactionFile,
   ShopFile,
   ProfessionFile,
   ParamsFile,
@@ -1248,6 +1342,9 @@ export type StarterFile = Static<typeof StarterFile>;
 export type ItemsFile = Static<typeof ItemsFile>;
 export type CreatorFile = Static<typeof CreatorFile>;
 export type CreatorProfile = Static<typeof CreatorBody>;
+export type ReactionFile = Static<typeof ReactionFile>;
+export type Reaction = Static<typeof ReactionBody>;
+export type CueName = (typeof CUES)[number];
 export type ShopFile = Static<typeof ShopFile>;
 export type ProfessionFile = Static<typeof ProfessionFile>;
 export type ParamsFile = Static<typeof ParamsFile>;
@@ -1293,6 +1390,7 @@ export const SCHEMAS = {
   starter: StarterFile,
   items: ItemsFile,
   creator: CreatorFile,
+  reaction: ReactionFile,
   shop: ShopFile,
   profession: ProfessionFile,
   params: ParamsFile,
