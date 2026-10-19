@@ -12296,6 +12296,134 @@
             "slots"
           ],
           "properties": {
+            "creatures": {
+              "additionalProperties": false,
+              "description": "Cosmetic ambient life (the client draws it behind ?rich= motion; the kernel never sees it): kinds, and the spots where each sits until the player comes close.",
+              "type": "object",
+              "required": [
+                "kinds",
+                "spots"
+              ],
+              "properties": {
+                "kinds": {
+                  "type": "object",
+                  "patternProperties": {
+                    "^[a-z0-9_-]+/[a-z0-9_-]+$": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "look",
+                        "perch",
+                        "alert_tiles",
+                        "return_s"
+                      ],
+                      "properties": {
+                        "look": {
+                          "description": "The drawing and the way it leaves: a bird takes off, a fish darts, a rabbit bolts, a deer walks off.",
+                          "anyOf": [
+                            {
+                              "const": "bird",
+                              "type": "string"
+                            },
+                            {
+                              "const": "fish",
+                              "type": "string"
+                            },
+                            {
+                              "const": "rabbit",
+                              "type": "string"
+                            },
+                            {
+                              "const": "deer",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "perch": {
+                          "description": "What its spots stand on: a non-solid ground tile, a forest tile, or a water tile.",
+                          "anyOf": [
+                            {
+                              "const": "ground",
+                              "type": "string"
+                            },
+                            {
+                              "const": "tree",
+                              "type": "string"
+                            },
+                            {
+                              "const": "water",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "alert_tiles": {
+                          "minimum": 1,
+                          "maximum": 8,
+                          "description": "It leaves when the player comes within this many tiles.",
+                          "type": "integer"
+                        },
+                        "return_s": {
+                          "minimum": 5,
+                          "maximum": 600,
+                          "description": "Real seconds before it comes back to its spot once the player is away.",
+                          "type": "integer"
+                        },
+                        "hours": {
+                          "description": "The game hours it is out, from (inclusive) to (exclusive). Absent: all day, never at night.",
+                          "type": "array",
+                          "items": [
+                            {
+                              "minimum": 0,
+                              "maximum": 23,
+                              "type": "integer"
+                            },
+                            {
+                              "minimum": 1,
+                              "maximum": 24,
+                              "type": "integer"
+                            }
+                          ],
+                          "additionalItems": false,
+                          "minItems": 2,
+                          "maxItems": 2
+                        }
+                      }
+                    }
+                  }
+                },
+                "spots": {
+                  "maxItems": 200,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "kind",
+                      "x",
+                      "y"
+                    ],
+                    "properties": {
+                      "kind": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                        "type": "string"
+                      },
+                      "x": {
+                        "minimum": 0,
+                        "maximum": 1023,
+                        "type": "integer"
+                      },
+                      "y": {
+                        "minimum": 0,
+                        "maximum": 1023,
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            },
             "width": {
               "minimum": 8,
               "maximum": 1024,
