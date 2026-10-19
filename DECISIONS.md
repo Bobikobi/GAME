@@ -1720,3 +1720,17 @@ The check stays: it is the only test that sees the world fall behind the wall cl
 The owner approved option 2 of `docs/3d/gap.md` on 18.10 (19:12): the whole town (camp stations, houses, lantern posts, totem, shelf and chest), the cliff modules, and variants of the people for the 8c stills. About 520 credits and 18 downloads over two months; the Meshy community search (NEXT 8 d) turned five of the items into CC0 finds (workbench, chest, house, lantern, shelf), which brings it to about 420 credits. The rest of the month's credits are banked on drafts the plan needs next, made only in the look he picks in 8c.
 Order: the community search, this entry, the looks stills of 8c, then the daily spend of 8 d. Nothing is generated in a look before he picks it. Caps stay at 50,000 triangles and 1024 px maps per person; the 3D door gives up the phone only when a phone limit blocks a rule (NEXT 8 e), and none has.
 **Retry when:** the community finds fail the look (8c) or Meshy changes the Free plan. Model: claude-sonnet-5-5. Link: #190, #175.
+
+## 2026-10-19 ✅ World reactions are read, never run: the frame of the reactions table
+
+The owner, 19.10: plan "a table of reactions" as the logic step toward a richer world. Things carry tags, rows in content connect them, and the kernel judges. The frame is in [docs/design/REACTIONS.md](docs/design/REACTIONS.md).
+The builder's choice (technical, so ✅): a reaction is a pure function of the content, the one entity it hangs on, the tick and the seed, the way `predatorAt`, `fireBurns` and `satietyAt` already work. Nothing is written to a neighbour, and nothing runs off screen. So R1 holds unchanged, an endless world costs nothing while unseen, the server replays it with the same function, and G28 holds because game ticks stop while the player is away. The cost, against Breath of the Wild's real-time chemistry: nothing spreads by itself in the first phases.
+Proposed, not yet his word:
+- Phase A: conditions, plus the effects `appear` (a node of its own, priced by V), `wait` (respawn only, never paid) and `cue` (a client event with no number and no text).
+- Phase B: weather by day, decided a day ahead and shown.
+- Phase C: marks the player leaves, such as a felled trunk that bridges a stream.
+Two questions are the owner's, because each bends a rule on his page:
+- Q1 (G47): may fog shorten a predator's eyes (recommended yes), and may noise turn its head (recommended no in the demo)?
+- Q2 (G48): may weather touch a fire (recommended no)?
+It goes before NEXT 19, so the generated ring reacts by its tile tags from its first day.
+**Retry when:** a replay of the same session gives a different state on the client and the server, or one phone screen's reactions cost more than 0.5 ms a frame. Then a reaction is cached per chunk and game minute, or the depth-1 rule is narrowed. Model: claude-opus-5-5.
