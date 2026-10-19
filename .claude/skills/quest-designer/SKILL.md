@@ -108,7 +108,7 @@ two answers, step back to the whole day.
 1. **Walk the day as the player, once per start.** Write it as a timeline: what each giver
    offers and when (the client lists every task a giver offers at once, sorted by id, so
    `requires` decides, not the ladder's prose), and when each step can be done (a node's
-   `hours`, a visit `at: night`, a dig answer lit from 19:00, a hearth lit by 20:00 and kept
+   `hours`, a visit `at: night`, a dig answer lit from 19:00, a vigil's fire lit by 20:00 and kept
    to 05:00, an `opens_after`). The clock: noon start, one game hour is 50 s, dusk at 350 s,
    dark at 400 s, dawn at 850 s, no sleep yet, the clock stops while a box is open. Mark every
    stretch over 90 s with nothing new (pillar 1) and every hour when tasks pile up. Read two
