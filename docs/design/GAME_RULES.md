@@ -309,7 +309,9 @@ The valley has no combat; its danger is the hour, and what the player eats.
   wolf, the hidden pit, the trap, deep water) act after dark (the clock the
   world already keeps: dark from 20:00 to 05:00, with the dusk ramp drawn
   around it) and inside the mist; by day they show and can be walked around: the
-  trap is visible, the wolf sleeps, the pit is lit. What the player picks or
+  trap is visible, the pit is lit, and the wolf is away until dusk while its
+  den and its tracks along its round mark where it hunts (the owner, 18.10).
+  What the player picks or
   eats can hurt at any hour: a bad fruit takes health in daylight too, and a
   player can fall at noon from it.
 - **G31 Nobody falls unwarned.** A countdown to nightfall or to the mist's

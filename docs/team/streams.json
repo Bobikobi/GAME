@@ -91,6 +91,13 @@
       "plan": ["DECISIONS 2026-10-17 the world has no end", "DECISIONS 2026-10-18 height: levels with rock faces (T2)", "DECISIONS 2026-10-18 the first ring's three stills", "docs/design/OPEN_WORLD.md", "docs/team/NEXT.md section 19"],
       "branches": ["feat/ring-schema", "feat/ring-gen", "feat/ring-walk", "feat/ring-stream", "feat/ring-valley", "feat/ring-boathouse", "feat/ring-checks", "feat/ring-creators", "feat/ring-look"],
       "owner": null
+    },
+    {
+      "id": "quest-designer",
+      "title": "The quest designer: an agent that pitches quests from expert patterns, and the hand report",
+      "plan": ["DECISIONS 2026-10-18 the quest designer", "GAME_RULES G17 and section 3 (the palette)", "docs/design/QUEST_PATTERNS.md"],
+      "branches": ["feat/quest-agent"],
+      "owner": null
     }
   ]
 }
