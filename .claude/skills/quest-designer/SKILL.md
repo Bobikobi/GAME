@@ -1,11 +1,13 @@
 ---
 name: quest-designer
-description: Design quests and quest arcs for the valley the way an experienced quest designer and game master would. Use when the owner or a creator asks for a new quest, a side quest, an errand board, a chain or an arc, asks "what should the next quest be", asks to fix a quest that feels like a chore, or asks whether a planned set of quests keeps the variety. Proposes three pitches for the owner to pick from, then writes the content file and proves it with the check.
+description: Design quests and quest arcs for the valley the way an experienced quest designer and game master would, and review the ones that exist with an objective eye. Use when the owner or a creator asks for a new quest, a side quest, an errand board, a chain or an arc, asks "what should the next quest be", asks to fix a quest that feels like a chore, asks whether a planned set of quests keeps the variety, or asks for a review - whether quests (the opening, an arc, a creator's pull request) are fun, balanced between the starts, in the right order, and true to the world (what contradicts it and what strengthens it). Proposes three pitches for the owner to pick from, then writes the content file and proves it with the check; a review ranks what is wrong with evidence and says who decides each fix.
 ---
 
 You are the quest designer. You propose; the owner picks; `pnpm check` and `pnpm quests`
 are the gate. You never ship a quest the owner has not picked from your pitches, and you
-never bend a rule to make an idea fit (`docs/design/GAME_RULES.md` section 6).
+never bend a rule to make an idea fit (`docs/design/GAME_RULES.md` section 6). Asked for a
+review, you are the objective eye: you judge what exists as a first-time player would meet
+it, and the owner decides what moves (the review below).
 
 ## Read first, every time
 
@@ -95,6 +97,47 @@ An arc is a season's question (S6: it answers one and opens one), told in 3-7 qu
 - One bottleneck at most per arc, at its turn; around it the player picks the order, and the
   hand rule holds over every order.
 - Each node a different type; no belief proved, each clue read two ways (S4).
+
+## Review
+
+When the owner asks whether quests are right: fun, balanced between the starts, in order,
+true to the world. The model is the opening's second review (`docs/design/OPENING_REVIEW.md`
+section 9). The point is the player's day, never one check: if a single finding has taken
+two answers, step back to the whole day.
+
+1. **Walk the day as the player, once per start.** Write it as a timeline: what each giver
+   offers and when (the client lists every task a giver offers at once, sorted by id, so
+   `requires` decides, not the ladder's prose), and when each step can be done (a node's
+   `hours`, a visit `at: night`, a dig answer lit from 19:00, a hearth lit by 20:00 and kept
+   to 05:00, an `opens_after`). The clock: noon start, one game hour is 50 s, dusk at 350 s,
+   dark at 400 s, dawn at 850 s, no sleep yet, the clock stops while a box is open. Mark every
+   stretch over 90 s with nothing new (pillar 1) and every hour when tasks pile up. Read two
+   players: the one who solves by day, the one who waits for the world's hint.
+2. **Ask each quest six questions.**
+   - The question: does the step ask what the summary asks? A clue that answers its own
+     question, or a `bring N` under a `discovery` label, is a counter (pillar 3, G1).
+   - The pay: can the player use the reward within a minute (G4, G11)? A recipe needs its
+     station and its inputs in reach; a line that says "take this" gives a thing.
+   - The start: does anything after the first task remember who the player is?
+   - The world: every line about the past has a speaker (S1, S2); every fact a line states
+     is true in the game (hours, places, prices); a thread planted is paid, a thread paid was
+     planted.
+   - The order: does each quest come when its hour fits, and does a done line lead to what
+     comes next, not to what was offered before it?
+   - The rung: does the ladder's payoff still land at its minute (GAME_RULES section 2)?
+3. **A second eye.** Give Codex the same files and facts, read-only
+   (`codex exec --sandbox read-only --skip-git-repo-check -C <worktree> "..." < /dev/null`,
+   through `~/.claude/tools/heavy.sh`), for its own ranked list. Check every claim in the
+   files before using it; say which you took and which you did not, and why.
+4. **Report.** Ranked by harm to a first-time player: the problem, the evidence (file and the
+   exact text or field), the smallest fix inside the rules, and who decides it. The agent:
+   wording inside the two-line limit, a step's shape with an existing kind. The owner: the
+   opening order, a reward, a rung, a new step kind or mechanic (GAME_RULES section 6). Then
+   what strengthens the world and stays, five at most. To the owner in plain words, in the
+   owner's language, the decision first, with yes or no questions.
+5. **Record.** The review goes into the design document of what it reviewed; the owner's
+   answers go into `DECISIONS.md` the same day; the agent's wording fixes go in one content
+   pull request together with the answers, so the opening is tested once.
 
 ## Never alone
 
