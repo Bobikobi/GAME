@@ -17,6 +17,10 @@ export interface WorldView {
   dropWork(): void;
   lightLantern(): void;
   /** whether a rectangle of tiles is on the screen now; a view without it is read by distance */
+  /** the camera comes down to a place and holds close on it (the returners' stone); a view without it stays where it is */
+  stoneStop?(slotId: string): Promise<void>;
+  /** the camera lets go of the hold and follows the player again */
+  stoneRelease?(): void;
   sees?(r: { x: number; y: number; w: number; h: number }): boolean;
 }
 

@@ -270,3 +270,39 @@ export function songFade(from: SongId | undefined, to: SongId): number {
   if (from === 'chase') return 2500;
   return 4000;
 }
+
+/**
+ * Whether a predator is drawn at all: by day it is away (DECISIONS.md, 2026-10-18 "By day the wolf is
+ * away and its den stays"), no sprite and no eyes. `awake` is the kernel's window (20:00 to 05:00);
+ * a wolf still hunting, or still running home after dawn, is drawn until it is back on its round.
+ * Display only: the kernel keeps the wolf on its den tile by day.
+ */
+export function wolfDrawnAt(awake: boolean, hunting: boolean, running: boolean): boolean {
+  return awake || hunting || running;
+}
+
+/** One paw print along a round: where it lies (tiles, centre of the tile) and which way the wolf was going. */
+export interface Paw {
+  at: Spot;
+  heading: Spot;
+  /** which foot, to set it a little to one side of the path */
+  side: 1 | -1;
+}
+
+/**
+ * What stays of a predator by day: its den (the tile it sleeps on, the first of its round) and the
+ * tracks along the round, one print for every second tile, the left and the right foot in turn. A
+ * predator with no round has a den and no tracks.
+ */
+export function denMarks(rule: Hazard): { den: Spot; paws: Paw[] } {
+  const round = rule.round;
+  if (!round) return { den: [rule.rect.x, rule.rect.y], paws: [] };
+  const paws: Paw[] = [];
+  for (let i = 1; i < round.length; i += 2) {
+    const here = round[i]!;
+    const next = round[(i + 1) % round.length]!;
+    const heading: Spot = [Math.sign(next[0] - here[0]), Math.sign(next[1] - here[1])];
+    paws.push({ at: [here[0], here[1]], heading, side: paws.length % 2 === 0 ? 1 : -1 });
+  }
+  return { den: [round[0]![0], round[0]![1]], paws };
+}

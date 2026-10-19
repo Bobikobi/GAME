@@ -37,6 +37,7 @@ import { WOLF_EYES } from '../predator';
 import { FrameProbe, liteUrl } from './lite';
 import { createScenery, groundY, modelOf, standalone, walkY, WATER_Y, type MapData, type Places, type Scenery } from './scenery';
 import type { Session } from '../session';
+import { stoneView } from '../stone';
 import { questTargets } from '../targets';
 import { nodeLook } from '../growth';
 import { hintDistance, lanternNight, nodeAction } from '../text';
@@ -1341,7 +1342,8 @@ export class World3D implements WorldView {
       };
     }
     const lines: string[] = [];
-    if (content.kind === 'restore' && p?.restored.includes(content.id)) lines.push(`Mended by ${p.name}.`);
+    const stone = content.kind === 'restore' && p ? stoneView(b.restores[content.id], p.restored, p.name) : undefined;
+    if (content.kind === 'restore' && p?.restored.includes(content.id) && !stone) lines.push(`Mended by ${p.name}.`);
     const profile = b.creators[content.creator];
     const entry = b.board[content.creator];
     const name = profile?.name ?? (content.creator === 'core' ? 'the core team' : content.creator);
@@ -1364,7 +1366,8 @@ export class World3D implements WorldView {
         points: entry?.points,
         commits: entry?.commits,
         ai: content.ai_tools ?? [],
-        mendedBy: content.kind === 'restore' && p?.restored.includes(content.id) ? p.name : undefined,
+        mendedBy: content.kind === 'restore' && p?.restored.includes(content.id) && !stone ? p.name : undefined,
+        stone,
       },
     };
   }
