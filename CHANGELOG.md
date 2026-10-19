@@ -26,7 +26,7 @@ What changed underneath
 
 What players notice
 - A bank wolf walks its round after dark on the west meadow, its two eyes glowing toward where it heads; tall grass along the water hides you from it. Pell has a new errand on the south bank, for moonreed that grows there from 20:00 to midnight, and he now has a line for a player the wolf has bitten.
-- Maru's hearth beside her house can be kept burning by hand with the Feed button. Her quest "the long night" asks you to keep it alight until dawn; the journal says when a log still fits and when dawn is yet to come, and a vigil that comes up short at dawn says so.
+- Maru's hearth beside his house can be kept burning by hand with the Feed button. His quest "the long night" asks you to keep it alight until dawn; the journal says when a log still fits and when dawn is yet to come, and a vigil that comes up short at dawn says so.
 - In the dark the wolf is two steady red eyes. When it sees you it growls, its eyes flare, a "!" stands over it and one red line says so, and you see it run at you.
 - When a kept fire goes out, the night says so at once, wherever you stand: one red line, "tonight is lost", and a douse. The warning before a kept fire runs low opens wherever you stand, a burning fire crackles when you are near it, and Maru stands in the hearth's light at night.
 - Stepping into a maze's frame shows the whole maze from above for three seconds. How much it shows depends on the maze: the tangle south of the ruins shows a faint route line and its landmarks.
