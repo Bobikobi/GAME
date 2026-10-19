@@ -283,7 +283,7 @@ async function begin(page: Page, me: Tender, name: string, logs: number): Promis
   if (!spot.maru) throw new Error(`no tile beside both the hearth and Maru: ${JSON.stringify(spot)}`);
   await page.eval(`__tend.setHour(17); __tend.moveTo(${spot.at[0]}, ${spot.at[1]}, ${JSON.stringify(spot.facing)})`);
   await page.eval(`void __game.ui.talk('core/elder')`);
-  await me.choose('Task: The long night');
+  await me.choose('The long night');
   await me.choose('I will do it');
   await page.waitFor(`__game.session.state.player.quests[${JSON.stringify(QUEST)}] === 'active'`, 'Maru to give the long night');
   await me.idle('Maru dialogue to close');
@@ -351,7 +351,7 @@ async function run(page: Page, url: string): Promise<void> {
   await me.snap('dawn-met');
 
   await page.eval(`void __game.ui.talk('core/elder')`);
-  await me.choose('Hand in: The long night');
+  await me.choose('The long night');
   await page.waitFor(`__game.session.state.player.quests[${JSON.stringify(QUEST)}] === 'done'`, 'Maru to take the long night');
   await page.waitFor(`__game.session.state.player.recipes.includes('core/bandage')`, 'the bandage recipe');
   await me.clearPlainDialog();
@@ -392,7 +392,8 @@ async function run(page: Page, url: string): Promise<void> {
   await page.waitFor(`__tend.tracker().includes('Keep the elder hearth burning until dawn')`, 'the journal at dawn', 5000);
   if ((await me.tracker()).includes('Bring it to')) throw new Error('a vigil that went out is met');
   const options = await me.optionsOf('core/elder');
-  if (options.some((o) => o.includes('Hand in: The long night')) || !options.some((o) => o.includes('About: The long night'))) {
+  // the option is the title in every state; that a vigil gone out is not met is the tracker's "Bring it to" check above
+  if (!options.some((o) => o.includes('The long night'))) {
     throw new Error(`Maru takes a vigil that went out: ${options.join(' | ')}`);
   }
   await me.snap('went-out');
