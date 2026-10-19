@@ -303,9 +303,12 @@ The valley has no combat; its danger is the hour, and what the player eats.
   its owner approved: any of these is a safe place, or a safe area,
   the one thing every rule below means (DECISIONS.md, 10.10). The fire eats
   wood through the night, more the deeper the area and none at danger level 0,
-  where the opening's camp stands. A camp anywhere else outside the
-  town is a tent the player buys and pitches, with wood enough for the night
-  ([SETTLEMENT.md](SETTLEMENT.md) S2). Outside these the hazards that hunt (the
+  where the opening's camp stands. Anywhere else outside the town a camp is a
+  fire the player builds, no tent: it is a safe place while it burns, it is
+  never lit during a chase or inside a predator's round, and the wood it eats
+  follows the area's danger, the number never shown; the fire is seen to dim
+  and warns before it goes out (G31; DECISIONS.md, 2026-10-19, the entry on a
+  fire anywhere; [SETTLEMENT.md](SETTLEMENT.md) S2). Outside these the hazards that hunt (the
   wolf, the hidden pit, the trap, deep water) act after dark (the clock the
   world already keeps: dark from 20:00 to 05:00, with the dusk ramp drawn
   around it) and inside the mist; by day they show and can be walked around: the
