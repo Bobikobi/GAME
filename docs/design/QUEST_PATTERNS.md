@@ -69,13 +69,26 @@ only `core/into-town` left, and near the end with `core/the-night-arch` or
 `core/first-pickings` put off until last. On today's content the gate does no better than
 fixing the content.
 
-**The recommendation, for the owner.** Now: G17 holds over every order. `pnpm check`
-refuses two of one type that a hand lets come back to back, as it refuses them along a
-requires link. It lands together with the forager's fix, which is the opening stream's
-to make: an order like the explorer's keystone, or another type for one of the three.
-Later: the gate in the kernel, ranks 1 and 2, when creators' quests make a varied hand
-impossible to keep by writing alone. Until the owner's word is in `DECISIONS.md` this is
-a proposal, and G17 as written stands.
+**The recommendation, for the owner.** A warning first, then a refusal, the way a team
+brings a new lint rule into code that already breaks it. Now: `pnpm check` prints a `!`
+line for every two of one type a hand lets come back to back, and the quest designer adds
+no new one. When the opening stream has mended the forager, the warning becomes a
+refusal, as G17 refuses two of one type along a requires link. Later: the gate in the
+kernel, ranks 1 and 2, when creators' quests make a varied hand impossible to keep by
+writing alone. Until the owner's word is in `DECISIONS.md` this is a proposal, and G17 as
+written stands.
+
+**The forager's mend is an order, not a type (tried 19.10).** `core/first-pickings` has
+no requires and nothing waits on its herbs, so it can stay open beside every other quest
+the forager reaches: whatever type it takes, a quest of that type is open beside it. Of
+the fourteen types, the nine the forager's line asks each make a pair, and the five it
+never asks cannot be used (four need a step kind; `gamble` is a dig with long odds, not a
+picking). Holding both log nodes until the herbs are picked, so the herbs come before the
+first fire as the digger's axe does, clears every hand. The hold binds only the forager,
+since a node waits only for characters its quest is offered to. How to hold them is the
+opening stream's design, and a locked node refuses today with the glint's fixed line. The
+forager also shows how the gate's time comes: a quest open beside everything meets every
+type its line asks.
 
 **Not taken:** a "fatigue" that slows tools or blurs clues after the same type twice
 (it punishes a play style: pillar 5); types locked to an hour of the day (a long wait for

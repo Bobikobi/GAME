@@ -34,8 +34,11 @@ never bend a rule to make an idea fit (`docs/design/GAME_RULES.md` section 6).
    right after it: each quest that can be open beside it (the hand), and the quest it
    follows. Items order quests too: a quest with no giver that finds an item is done the
    moment the item first comes, and a node that `opens_after` a quest holds back what needs
-   it (the explorer's keystone waits for the glint). Prefer a type the valley never asks
-   (the "Never asked" line; QUEST_PATTERNS.md section 8 says which can be written today).
+   it (the explorer's keystone waits for the glint). A quest with no requires that nothing
+   waits on stays open beside everything its starter reaches, so no type keeps it apart:
+   give it an order (the forager's first pickings, QUEST_PATTERNS.md section 1). Prefer a
+   type the valley never asks (the "Never asked" line; QUEST_PATTERNS.md section 8 says
+   which can be written today).
 2. **The need behind the giver.** A quest starts from what a person in the valley needs, not
    from an item that is missing: knowledge, safety, comfort, standing, a debt, a belief to
    test. The need decides the question; the question decides the type.
