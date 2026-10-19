@@ -54,6 +54,8 @@ const SIDE: Record<string, At> = { here: [0, 0], above: [0, -1], below: [0, 1], 
 export const MAX_CUES = 3;
 /** A cue with no reach of its own is met this close, the largest reach a reaction may name. */
 export const CUE_REACH = 8;
+/** No cue shows this close to a riddle's answer: a riddle is read from the world, never pointed at (G6). */
+export const RIDDLE_CLEAR = 2;
 
 interface Index {
   /** every reaction, in id order (rule R3) */
@@ -62,6 +64,8 @@ interface Index {
   /** wait reactions by the id of the thing they hang on */
   waits: Map<string, ReactionDef[]>;
   cues: { r: ReactionDef; anchors: Anchor[] }[];
+  /** the tiles a riddle answers by a dig */
+  riddles: At[];
 }
 
 const cache = new WeakMap<Bundle, Index>();
@@ -72,7 +76,14 @@ function index(b: Bundle): Index {
   const all = Object.keys(b.reactions ?? {})
     .sort()
     .map((id) => b.reactions[id]!);
-  ix = { all, appear: new Map(), waits: new Map(), cues: [] };
+  const answers = new Set<string>();
+  for (const q of Object.values(b.quests)) {
+    for (const st of q.steps) if (st.kind === 'riddle' && st.answer.kind === 'dig') answers.add(st.answer.treasure);
+  }
+  const riddles = Object.values(b.instances)
+    .filter((inst) => inst.kind === 'treasure' && answers.has(inst.source))
+    .map((inst): At => [inst.x, inst.y]);
+  ix = { all, appear: new Map(), waits: new Map(), cues: [], riddles };
   for (const r of all) {
     const anchors = anchorsOf(b, r);
     const then = r.then;
@@ -223,11 +234,13 @@ export function waitPermille(b: Bundle, s: State, id: string, tick: number): num
 /**
  * The cues a step from `from` to `to` starts: a cue fires on the edge, when its thing comes inside
  * its reach and was outside it on the tile before, so it needs no memory. At most MAX_CUES, the
- * nearest first. A cue with a spread shows on a tile drawn around its thing, the same all day.
+ * nearest first. A cue with a spread shows on a tile drawn around its thing, the same all day, and
+ * none shows within RIDDLE_CLEAR of a riddle's answer.
  */
 export function cuesOnStep(b: Bundle, s: State, tick: number, from: At, to: At): CueHit[] {
   const hits: (CueHit & { d: number })[] = [];
-  for (const { r, anchors } of index(b).cues) {
+  const ix = index(b);
+  for (const { r, anchors } of ix.cues) {
     if (!('cue' in r.then)) continue;
     const radius = r.when.player_within ?? CUE_REACH;
     const spread = r.then.spread ?? 0;
@@ -242,6 +255,7 @@ export function cuesOnStep(b: Bundle, s: State, tick: number, from: At, to: At):
         x += (roll % span) - spread;
         y += (idiv(roll, span) % span) - spread;
       }
+      if (ix.riddles.some((t) => reach(t, x, y) <= RIDDLE_CLEAR)) continue;
       hits.push({ cue: r.then.cue, reaction: r.id, anchor: a.id, x, y, d });
     }
   }

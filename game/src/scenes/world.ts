@@ -18,8 +18,11 @@ import {
   type Grade,
   type Hazard,
   type Slot,
+  appearSlots,
+  appears,
   campTile,
   coverAt,
+  cuesOnStep,
   findSlot,
   fireBurns,
   hazardsOf,
@@ -30,7 +33,9 @@ import {
   makeWalkable,
   minuteOfDay,
   npcTile,
+  placedAt,
   predatorAt,
+  resourceOf,
   riddleSlots,
   sees,
   spotOpen,
@@ -54,6 +59,7 @@ import { SUCCESS_LIGHT, joltOf } from '../jolt';
 import { soundscape } from '../soundscape';
 import { SensesFind, makeTextures as makeSensesTextures } from '../senses';
 import { questTargets } from '../targets';
+import { BIRDS, CUE_LOOK, cueGain } from '../cues';
 import { nodeLook } from '../growth';
 import { peekOnStep, type Tile } from '../peek';
 import { MazePeek } from './peek';
@@ -319,6 +325,8 @@ export class WorldScene extends Phaser.Scene {
   private tops = new Map<string, number>();
   private npcAt = new Map<string, string>();
   private nodeAt = new Map<string, string>();
+  /** nodes a reaction makes appear (docs/design/REACTIONS.md): hidden until their condition holds */
+  private appearing = new Set<string>();
   private empty: Slot[] = [];
   private eyeSpots: [number, number][] = [];
   private eyes = new Set<Phaser.GameObjects.Image>();
@@ -521,6 +529,25 @@ export class WorldScene extends Phaser.Scene {
       px(PALETTE.paper, 1, 1);
       px(PALETTE.paper, 0, 2);
       px(PALETTE.paper, 2, 2);
+    });
+    // a fish rising: one ring on still water, 11x5
+    make('fx-ripple', 11, 5, () => {
+      px(PALETTE.paper, 3, 0, 5);
+      px(PALETTE.paper, 1, 1, 2);
+      px(PALETTE.paper, 8, 1, 2);
+      px(PALETTE.paper, 0, 2);
+      px(PALETTE.paper, 10, 2);
+      px(PALETTE.paper, 1, 3, 2);
+      px(PALETTE.paper, 8, 3, 2);
+      px(PALETTE.paper, 3, 4, 5);
+    });
+    // three birds lifting, held still: the shape of the cue when nothing moves, 11x6
+    make('fx-birds', 11, 6, () => {
+      for (const [x, y] of [[0, 3], [4, 0], [8, 2]] as const) {
+        px(PALETTE.ink, x, y);
+        px(PALETTE.ink, x + 2, y);
+        px(PALETTE.ink, x + 1, y + 1);
+      }
     });
     make('fx-arrow', 7, 5, () => {
       px(PALETTE.ink, 0, 0, 7);
@@ -962,6 +989,14 @@ export class WorldScene extends Phaser.Scene {
         this.digs.set(id, look.setAlpha(0));
       }
       this.nodeAt.set(key(inst.x, inst.y), id);
+    }
+    // a node a reaction makes appear stands hidden on its own tile until the condition holds
+    for (const slot of appearSlots(this.b).values()) {
+      const bottom = (slot.y + 1) * T;
+      const spr = kitSprite(this, slot.x * T + T / 2, bottom, slot.def.sprite).setOrigin(0.5, 1).setDepth(bottom).setAlpha(0);
+      this.nodes.set(slot.id, spr);
+      this.appearing.add(slot.id);
+      this.nodeAt.set(key(slot.x, slot.y), slot.id);
     }
   }
 
@@ -1465,6 +1500,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private ready(s: Session, id: string): boolean {
+    if (this.appearing.has(id)) return appears(this.b, s.state, id, s.tick);
     return (s.state.nodes[id]?.readyAt ?? 0) <= s.tick;
   }
 
@@ -1512,6 +1548,12 @@ export class WorldScene extends Phaser.Scene {
     const hour = hourOf(this.b, s.tick);
     for (const [id, img] of this.nodes) {
       if (this.held.has(id)) continue;
+      if (this.appearing.has(id)) {
+        // it fades in while its condition holds, and out once it is taken or the condition ends
+        const want = this.ready(s, id) ? 1 : 0;
+        img.setAlpha(Math.abs(want - img.alpha) < 0.02 ? want : img.alpha + (want - img.alpha) * 0.5);
+        continue;
+      }
       const r = this.b.resources[this.b.instances[id]!.source]!;
       const ready = this.ready(s, id);
       const inHours = !r.hours || (r.hours[0] < r.hours[1] ? hour >= r.hours[0] && hour < r.hours[1] : hour >= r.hours[0] || hour < r.hours[1]);
@@ -1687,6 +1729,65 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * The cues a step starts (docs/design/REACTIONS.md, section 5): the kernel names them on the edge of
+   * their reach, and each is drawn at its tile and heard from where it is.
+   */
+  private cueStep(s: Session, from: Tile, to: Tile): void {
+    for (const hit of cuesOnStep(this.b, s.state, s.tick, from, to)) {
+      const look = CUE_LOOK[hit.cue as keyof typeof CUE_LOOK];
+      if (!look) continue;
+      const x = hit.x * T + T / 2;
+      const y = hit.y * T + T / 2;
+      const at = this.worldToPage(x, y);
+      const pan = Math.max(-0.8, Math.min(0.8, (at.x / Math.max(1, this.scale.width / pixelRatio()) - 0.5) * 1.2));
+      sound.sfx(look.sfx, { pan, gain: cueGain(Math.max(Math.abs(hit.x - to[0]), Math.abs(hit.y - to[1]))) });
+      const depth = look.over ? DEPTH.motes + 1 : DEPTH.flat;
+      if (hit.cue === 'birds_lift') this.liftBirds(x, y, look.ms, depth);
+      else this.ripple(x, y + 3, look.ms, depth);
+    }
+  }
+
+  /** A few birds lift from the tile and climb away, flapping; with the motion group off, the flock is a still shape. */
+  private liftBirds(x: number, y: number, ms: number, depth: number): void {
+    if (!RICH.motion) {
+      const still = this.add.image(x, y - 8, 'fx-birds').setDepth(depth);
+      this.tweens.add({ targets: still, alpha: 0, delay: ms * 0.6, duration: ms * 0.4, onComplete: () => still.destroy() });
+      return;
+    }
+    for (const bird of BIRDS) {
+      const img = this.add.image(x + bird.dx, y, 'fx-bird-0').setDepth(depth).setAlpha(0);
+      const flap = this.time.addEvent({ delay: 90, loop: true, callback: () => img.setTexture(img.texture.key === 'fx-bird-0' ? 'fx-bird-1' : 'fx-bird-0') });
+      this.tweens.addCounter({
+        from: 0,
+        to: 1,
+        duration: ms,
+        delay: bird.delay,
+        onUpdate: (tw) => {
+          const k = tw.getValue() ?? 0;
+          // whole pixels, rising fast at first; seen a moment, then gone into the sky
+          img.setPosition(Math.round(x + bird.dx + bird.drift * k), Math.round(y - bird.rise * Math.sqrt(k)));
+          img.setAlpha(k < 0.1 ? k * 10 : k > 0.7 ? (1 - k) / 0.3 : 1);
+        },
+        onComplete: () => {
+          flap.remove();
+          img.destroy();
+        },
+      });
+    }
+  }
+
+  /** A fish rises: a ring on the water that widens and fades; with the motion group off, one ring that fades where it is. */
+  private ripple(x: number, y: number, ms: number, depth: number): void {
+    const ring = this.add.image(x, y, 'fx-ripple').setDepth(depth).setAlpha(0.9);
+    if (!RICH.motion) {
+      this.tweens.add({ targets: ring, alpha: 0, delay: ms * 0.6, duration: ms * 0.4, onComplete: () => ring.destroy() });
+      return;
+    }
+    ring.setScale(0.4);
+    this.tweens.add({ targets: ring, scale: 1.4, alpha: 0, duration: ms, ease: 'Sine.out', onComplete: () => ring.destroy() });
+  }
+
   /** Standing still for 3 s, the player blinks every 3-5 s: frame 1 of the idle sheet for 120 ms. */
   private idle(s: Session, time: number): void {
     if (this.falling) return;
@@ -1742,6 +1843,7 @@ export class WorldScene extends Phaser.Scene {
       landStep(s, [tx, ty]);
       if (this.falling) return;
       this.arrive(s);
+      this.cueStep(s, [fx, fy], [tx, ty]);
       if (!this.tryStep(s, carry)) this.faceFrame();
       return;
     }
@@ -2077,7 +2179,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private faceNode(s: Session, nodeId: string): void {
-    const inst = this.b.instances[nodeId];
+    const inst = placedAt(this.b, nodeId);
     if (!inst) return;
     const dx = inst.x - s.pos[0];
     const dy = inst.y - s.pos[1];
@@ -2087,7 +2189,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private impact(nodeId: string, kind: WorkKind, grade?: Grade): void {
-    const inst = this.b.instances[nodeId];
+    const inst = placedAt(this.b, nodeId);
     if (!inst) return;
     const x = inst.x * T + T / 2;
     const y = inst.y * T + T * 0.6;
@@ -2355,9 +2457,9 @@ export class WorldScene extends Phaser.Scene {
    */
   startWork(nodeId: string, onDone?: () => void): void {
     const s = this.session;
-    const inst = this.b.instances[nodeId];
+    const inst = placedAt(this.b, nodeId);
     if (!s || !inst || this.auto) return;
-    const kind = inst.kind === 'resource' ? resourceKind(this.b.resources[inst.source]!) : treasureKind(this.b.treasures[inst.source]!);
+    const kind = inst.kind === 'resource' ? resourceKind(resourceOf(this.b, nodeId)!) : treasureKind(this.b.treasures[inst.source]!);
     if (!kind) return;
     const action: Action = inst.kind === 'resource' ? { t: 'gather', node: nodeId, grade: 3, at: s.pos } : { t: 'dig', spot: nodeId, grade: 3, at: s.pos };
     const res = s.act(action);
@@ -2416,7 +2518,7 @@ export class WorldScene extends Phaser.Scene {
     if (img) {
       this.tweens.killTweensOf(img);
       setRel(img.setAngle(0), 1);
-      img.x = (this.b.instances[w.node]!.x + 0.5) * T;
+      img.x = (placedAt(this.b, w.node)!.x + 0.5) * T;
     }
   }
 
@@ -2428,13 +2530,13 @@ export class WorldScene extends Phaser.Scene {
     this.refreshNodes();
     this.faceFrame();
     if (ghost) this.fall(ghost, w.facing, w.node);
-    else this.burst(w.kind === 'dig' ? 'fx-dirt' : 'fx-dust', (this.b.instances[w.node]!.x + 0.5) * T, (this.b.instances[w.node]!.y + 0.6) * T, 8);
+    else this.burst(w.kind === 'dig' ? 'fx-dirt' : 'fx-dust', (placedAt(this.b, w.node)!.x + 0.5) * T, (placedAt(this.b, w.node)!.y + 0.6) * T, 8);
     w.onDone?.();
   }
 
   /** One blow: the arm lands, the thing sounds, shakes and throws bits; a tree leans a little more each time. */
   private blow(w: Auto, progress: number): void {
-    const inst = this.b.instances[w.node];
+    const inst = placedAt(this.b, w.node);
     if (!inst) return;
     const x = inst.x * T + T / 2;
     const y = inst.y * T + T * 0.6;
@@ -2467,7 +2569,7 @@ export class WorldScene extends Phaser.Scene {
 
   /** The tree goes over, away from the one who cut it, and lies there a moment before it fades. */
   private fall(ghost: Phaser.GameObjects.Sprite, dir: Dir, id: string): void {
-    const inst = this.b.instances[id]!;
+    const inst = placedAt(this.b, id)!;
     const x = (inst.x + 0.5) * T;
     const y = (inst.y + 0.9) * T;
     sound.sfx('crack', { gain: 0.9 });
@@ -2600,9 +2702,9 @@ export class WorldScene extends Phaser.Scene {
     if (npc) return { label: `Talk to ${b.npcs[npc]?.name ?? npc}`, run: () => app.ui.talk(npc), tile, top };
     const nodeId = this.nodeAt.get(k);
     if (nodeId) {
-      const inst = b.instances[nodeId]!;
+      const inst = placedAt(b, nodeId)!;
       if (inst.kind === 'resource') {
-        const r = b.resources[inst.source]!;
+        const r = resourceOf(b, nodeId)!;
         // a gathered node is only ground until it grows back
         if (this.ready(s, nodeId)) {
           return { label: nodeAction(b, r), run: () => app.ui.gather(nodeId), tile, top: unitOf(r.sprite)?.h ?? T };
