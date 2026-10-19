@@ -6,6 +6,7 @@ import { cpSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
+import { appearSlots } from '@game/kernel';
 import { runCheck } from '../src/check';
 import { CONTENT_DIR, REPO_ROOT } from '../src/load';
 
@@ -35,5 +36,12 @@ describe('templates/extension', () => {
       expect(n.x >= glade.x && n.x < glade.x + glade.w && n.y >= glade.y && n.y < glade.y + glade.h).toBe(true);
     }
     expect(b.values['your-handle/plum']).toBeGreaterThan(0);
+  });
+
+  it('drops a windfall plum below each bush left full, a reaction of its own', () => {
+    const b = result.assembled.bundle!;
+    const slots = [...appearSlots(b).values()].filter((s) => s.reaction.id === 'your-handle/windfall-plums');
+    expect(slots).toHaveLength(4);
+    for (const s of slots) expect([s.x, s.y]).toEqual([s.parent.x, s.parent.y + 1]);
   });
 });

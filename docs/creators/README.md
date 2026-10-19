@@ -274,6 +274,19 @@ Each starting character begins its own way and meets the others at the bridge an
 
 The check keeps the starts fair. Every start holds an axe before the first fire, in its kit or on a spot of its own, because the first fire is built from a felled oak; a shop sells an axe, so a worn-out one can be bought again; and the opening never asks for more logs than the oaks of a new valley give. Every starter's attributes add up to one total. The kits, with each start's own finds, are worth about the same (within 25 percent of the poorest), and every start reaches the bridge with its axe in about the same time (within 50 percent of the fastest). A start's own spot gives one find at 100 percent, needs only a tool its kit holds, and lies within the start's senses on its road to the bridge, on a tile where x + y is even.
 
+## A world that answers: reactions
+
+A reaction is a rule the world follows, written as data ([REACTIONS.md](../design/REACTIONS.md)). It hangs on one kind of thing, holds while every condition it names holds, and does one thing. The kernel reads it and never runs it, so nothing changes while nobody looks, and a replay gives the same world. `content/core/reactions/` holds the core's three, and `templates/extension/reactions/` drops a plum below a full bush.
+
+- `on` - what it hangs on: `{ "resource": "<id>" }` or `{ "treasure": "<id>" }`, either one `"*"` for every one, or a ground tag, `{ "tag": "water" }`.
+- `when` - one or more conditions, all of which must hold: `hours` (`[from, to)`, as a node's), `night` (`true` or `false`), `ready_for_ms` (the node has stood ready and untouched that long), `on_tag`, `player_within` (1 to 8 tiles), `unseen` (a find the player cannot see yet) and `chance_pct` (a roll of the game day, the same all day).
+- `then` - one effect:
+  - `appear`: a node beside the thing, `at` `here`, `above`, `below`, `left` or `right`, written as a resource's node is: `output`, `yield`, `active_ms`, `respawn_ms`, `level`, `sprite`, and `tool` and `game` when it needs them. Its id is `<reaction id>@<node id>`, and once picked it comes back after its own respawn, while the condition holds.
+  - `wait`: while the condition holds, the node's respawn takes this many thousandths of its time, 500 to 2000. Two waits multiply. Waiting is never paid, so no value moves.
+  - `cue`: a sign the game draws and plays, `birds_lift` or `fish_rise`, with an optional `spread` of up to 2 tiles. A cue starts on the edge, as the player steps inside its reach (`player_within`, 8 when left out), at most three a step. It is a shape and a sound, never a number or a word.
+
+An appear node is priced like any node: if it gives its item for less work than the item's cheapest source, the item's value drops, and the 10 percent rule below holds it. The core's windfall picks one redberry in 1.5 s against the bush's two in 2.5 s, so the bush stays the cheapest source and the value of a redberry does not move.
+
 ## What the check enforces
 
 - Files live in `content/extensions/<your-handle>/` and say `"creator": "<your-handle>"`. Ids start with `<your-handle>/`, and an id is never reused once merged.
@@ -296,6 +309,7 @@ The check keeps the starts fair. Every start holds an axe before the first fire,
 - A restore may carry `mist`: the tiles around its place that the mist leaves clear once it is mended (the old bridge: 13, so the three wake pockets join). The kernel ignores it; the client draws it.
 - No reward repeats a kit. A quest's reward item that a starter's kit already holds names `instead`: an item that kit lacks, which a character of that start gets in its place. The check refuses a reward item a kit holds with no `instead`, and an `instead` that the same kit holds too.
 - Your change may not move the value of anything that already exists by more than 10%. If it has to, a core maintainer re-anchors the values.
+- A reaction hangs on something that is on the map, and its conditions fit it: `ready_for_ms` only on a node or a spot, `unseen` only on a find, `on_tag` never on a ground tag. An appear node stands beside a resource node only, on the map, on open ground, on a tile no node, spot or other appear node takes, and outside the camp; its item and sprite exist and its active time is in range. A wait is never on a tile, and never under 1000 on a node with a rarity bonus, because a quicker respawn would spend the rarity budget. No cue shows within two tiles of a riddle's answer: a riddle is read, never pointed at.
 - Every sprite exists, has the right size and uses the core palette.
 
 ## AI tools
