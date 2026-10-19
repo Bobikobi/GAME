@@ -6,6 +6,7 @@
  * the trail follow it. With the motion group off the glints stand still.
  */
 import * as Phaser from 'phaser';
+import { kitImage } from './kitart';
 
 /** The colours of the chosen stills: a warm gold glow, near-white glints. */
 const GOLD = 0xffe28c;
@@ -61,7 +62,7 @@ export class SensesFind {
     makeTextures(scene);
     const y = bottom - 8;
     this.glow = scene.add.image(x, y, 'senses-glow').setDepth(depth).setAlpha(0);
-    this.find = scene.add.image(x, y, sprite).setAngle(35).setDepth(depth + 0.1).setAlpha(0);
+    this.find = kitImage(scene, x, y, sprite).setAngle(35).setDepth(depth + 0.1).setAlpha(0);
     this.find.setCrop(0, 0, this.find.width, Math.round(this.find.height * SHOWN));
     this.glints = Array.from({ length: GLINTS }, () => scene.add.image(x, y, 'senses-glint').setDepth(depth + 0.2).setAlpha(0));
     scene.events.on(Phaser.Scenes.Events.UPDATE, this.update, this);
