@@ -10,7 +10,7 @@ beforeAll(() => {
   bundle = loadBundle();
 });
 
-const OPENING = ['core/fix-the-bridge', 'core/first-fire', 'core/into-town', 'core/a-coin-for-maru'];
+const OPENING = ['core/fix-the-bridge', 'core/first-fire', 'core/into-town', 'core/three-fruits', 'core/a-coin-for-maru'];
 const ARCH = 'core/the-night-arch';
 const LONG_NIGHT = 'core/the-long-night';
 
