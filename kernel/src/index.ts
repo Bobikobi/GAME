@@ -3,6 +3,7 @@ export * from './canon';
 export * from './danger';
 export { bellTicks, bellsRung, inside, lastBellAt, visitNight, windowOpen as expeditionWindowOpen } from './expedition';
 export * from './num';
+export * from './reactions';
 export * from './rng';
 export * from './state';
 export * from './step';

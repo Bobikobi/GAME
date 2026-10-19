@@ -33,7 +33,19 @@ export interface Assembled {
   origin: Record<string, string>;
 }
 
-type RecordKey = 'resources' | 'treasures' | 'recipes' | 'npcs' | 'quests' | 'expeditions' | 'restores' | 'camps' | 'starters' | 'professions' | 'shops';
+type RecordKey =
+  | 'resources'
+  | 'treasures'
+  | 'recipes'
+  | 'npcs'
+  | 'quests'
+  | 'expeditions'
+  | 'restores'
+  | 'camps'
+  | 'starters'
+  | 'professions'
+  | 'shops'
+  | 'reactions';
 const KEY_OF: Record<string, RecordKey | undefined> = {
   resource: 'resources',
   treasure: 'treasures',
@@ -46,6 +58,7 @@ const KEY_OF: Record<string, RecordKey | undefined> = {
   starter: 'starters',
   profession: 'professions',
   shop: 'shops',
+  reaction: 'reactions',
 };
 const BODY_OF: Record<string, string> = {
   resource: 'node',
@@ -60,6 +73,7 @@ const BODY_OF: Record<string, string> = {
   starter: 'starter',
   profession: 'profession',
   shop: 'shop',
+  reaction: 'reaction',
   params: 'params',
   kit: 'kit',
   map: 'map',
@@ -155,6 +169,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
     starters: {},
     professions: {},
     shops: {},
+    reactions: {},
   };
   const origin: Record<string, string> = {};
   const credits: Credit[] = [];
@@ -261,7 +276,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   const content = { params, items, classes, ...r, map, sprites, verbs, stations, credits };
   const tag = hashText(canonical(content));
   const instances = layoutInstances(map, r.resources, r.treasures);
-  const { values, made } = computeValues({ params, items, resources: r.resources, treasures: r.treasures, recipes: r.recipes });
+  const { values, made } = computeValues({ params, items, resources: r.resources, treasures: r.treasures, recipes: r.recipes, reactions: r.reactions });
   const bundle: Bundle = { format: 1, tag, ...content, instances, values, made, creators, board };
   checkReferences(bundle, origin, issues);
   return { bundle, issues, kits, origin };
