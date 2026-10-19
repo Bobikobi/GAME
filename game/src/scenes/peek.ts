@@ -9,6 +9,7 @@
 import * as Phaser from 'phaser';
 import { T } from '../config';
 import { PEEK_MS, fitFrame, type Peek } from '../peek';
+import { pixelRatio } from '../view';
 
 const INK = 0x1b1a2e;
 /** the route: paper white, very faint, about 3 px wide on any screen */
@@ -62,13 +63,15 @@ export class MazePeek {
   show(peek: Peek): void {
     if (this.cam) return;
     const s = this.scene;
-    const w = s.scale.width;
-    const h = s.scale.height;
+    // laid out in CSS pixels, as the labels are; the camera's own zoom is scaled up to the canvas's
+    const px = pixelRatio();
+    const w = s.scale.width / px;
+    const h = s.scale.height / px;
     const band = bands(h);
     const fit = fitFrame(peek.frame, T, { w, h }, { top: band.top + EDGE, bottom: band.bottom + EDGE, side: EDGE });
-    const cam = s.cameras.add(0, 0, w, h, false, 'peek').setBackgroundColor(INK).setAlpha(0).setRoundPixels(false);
+    const cam = s.cameras.add(0, 0, s.scale.width, s.scale.height, false, 'peek').setBackgroundColor(INK).setAlpha(0).setRoundPixels(false);
     cam.ignore(s.children.list.filter((o) => (o as unknown as { depth: number }).depth >= this.air));
-    cam.setZoom(fit.zoom * RISE).centerOn(fit.x, fit.y);
+    cam.setZoom(fit.zoom * px * RISE).centerOn(fit.x, fit.y);
     this.cam = cam;
     if (peek.route.length > 1) {
       const g = s.add.graphics().setDepth(this.air - 2);
@@ -110,7 +113,7 @@ export class MazePeek {
       }
       const k = Math.min(1, t / FADE_MS);
       cam.setAlpha(Math.min(k, (PEEK_MS - t) / FADE_MS));
-      cam.setZoom(fit.zoom * (1 + (RISE - 1) * (1 - k) ** 2)).centerOn(fit.x, fit.y);
+      cam.setZoom(fit.zoom * px * (1 + (RISE - 1) * (1 - k) ** 2)).centerOn(fit.x, fit.y);
       // tier 1 keeps the landmarks lit, breathing; tier 2 lights them once, for a moment, once the peek is up
       const lit = t - FADE_MS;
       const glow =

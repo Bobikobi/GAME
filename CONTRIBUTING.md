@@ -13,7 +13,7 @@ Welcome. Openfold is built by the people who play it, and a first contribution i
 
 - The check is green, and the opening still plays in Chrome (CI does this too).
 - Quests, camps, inscriptions and dialogue follow [the rules of play](docs/design/GAME_RULES.md): `pnpm check` prints a `!` line for each rule it can test, and a reviewer answers the checklist in its section 7.
-- Three reviewers approve, each going through the reviewer checklist in the pull request.
+- Reviewers approve, each going through the reviewer checklist in the pull request. Until five creators have had an extension merged, one approval is enough and a maintainer gives it; from then on, three reviewers approve.
 - One extension per slot. When two proposals compete for the same request or slot, both stay open until the vote on the request decides.
 
 ### Requests and open calls

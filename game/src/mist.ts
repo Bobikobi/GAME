@@ -8,13 +8,15 @@
  * 4x4 dither on game pixels (the world's own grid, not the screen's), and the lighter patches and the
  * shade are a second, coarser pattern in the same three colours.
  */
-import { type Bundle, type State } from '@game/kernel';
+import { type Bundle, type State, findSlot } from '@game/kernel';
 
 /** A place the mist leaves clear: a centre in tiles and a radius in tiles. */
 export interface Clear {
   x: number;
   y: number;
   r: number;
+  /** Tiles a second the drawn radius opens at; left out: MIST_TILES_PER_S. A mend opens faster than a pocket (NEXT 16 d). */
+  rate?: number;
 }
 
 /** B2's numbers: clear for 5 tiles, then 6 tiles of thickening to solid. */
@@ -43,17 +45,28 @@ export function mistClears(b: Bundle, s: State): Clear[] {
   const starter = b.starters[s.player.starter];
   const wake = starter?.wake ?? b.map.spawn;
   const r = firstTaskDone(b, s) ? (starter?.pocket_grown ?? POCKET_GROWN) : (starter?.pocket ?? POCKET);
-  return [{ x: wake.x, y: wake.y, r }];
+  const clears: Clear[] = [{ x: wake.x, y: wake.y, r }];
+  // a mended place draws the mist back around its middle tile (NEXT 16 d); the order of the save's list is the order here
+  for (const id of s.player.restored) {
+    const def = b.restores[id];
+    const slot = def?.mist === undefined ? undefined : findSlot(b.map, def.place.slot);
+    if (def?.mist !== undefined && slot) {
+      clears.push({ x: slot.x + Math.floor(slot.w / 2), y: slot.y + Math.floor(slot.h / 2), r: def.mist, rate: MIST_MEND_PER_S });
+    }
+  }
+  return clears;
 }
 
 /** How fast a clear place opens when the save changes it: 2 tiles a second, so the first task's 5 to 7 takes 1 s. */
 export const MIST_TILES_PER_S = 2;
+/** How fast a mend's clearing opens: 7 tiles a second, so the bridge's 14 tiles take 2 s, inside the 3 s of criterion 4. */
+export const MIST_MEND_PER_S = 7;
 /** The radius is rasterised in steps of this many tiles, so a growing pocket costs one raster per step. */
 export const MIST_STEP = 0.25;
 
 /** One frame of a clear place's radius moving from what is drawn toward what the save says. */
-export function mistRadius(shown: number, target: number, dtMs: number): number {
-  const move = (MIST_TILES_PER_S * dtMs) / 1000;
+export function mistRadius(shown: number, target: number, dtMs: number, rate: number = MIST_TILES_PER_S): number {
+  const move = (rate * dtMs) / 1000;
   if (Math.abs(target - shown) <= move) return target;
   return shown + Math.sign(target - shown) * move;
 }

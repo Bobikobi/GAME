@@ -47,8 +47,8 @@
       "id": "parallel-3d",
       "title": "The 3D version, a parallel version behind its own button on the same data",
       "plan": ["DECISIONS 2026-10-10 owner's answers of the afternoon, item 9"],
-      "branches": ["trial/3d", "docs/meshy-log-2026-10-13-dev"],
-      "owner": null
+      "branches": ["trial/3d", "docs/meshy-log-2026-10-13-dev", "docs/next-3d-credits", "docs/3d-gap"],
+      "owner": "the 3D session"
     },
     {
       "id": "art",
@@ -77,6 +77,27 @@
       "plan": ["DECISIONS 2026-10-18 the opening's quest logic is built beside the hook", "docs/design/OPENING_REVIEW.md section 3", "docs/team/NEXT.md section 17"],
       "branches": ["docs/next-quest-logic", "feat/node-opens-after", "feat/glint-first", "feat/opening-lines"],
       "owner": "the opening-logic session"
+    },
+    {
+      "id": "accounts",
+      "title": "Accounts and a server: the game's own containers on the owner's box, sign-in, state on the server",
+      "plan": ["DECISIONS 2026-10-17 the order from here", "DECISIONS 2026-10-18 accounts and a server: the owner's answers", "docs/spec stage 2a", "docs/team/NEXT.md section 18"],
+      "branches": ["docs/next-stage-3", "feat/server-core", "feat/server-db", "feat/client-remote", "feat/handover-opening", "feat/signin", "feat/server-luck", "feat/server-sim"],
+      "owner": null
+    },
+    {
+      "id": "open-world",
+      "title": "The open world's first ring: generated ground in chunks, levels with rock faces, the valley reshaped, the boathouse",
+      "plan": ["DECISIONS 2026-10-17 the world has no end", "DECISIONS 2026-10-18 height: levels with rock faces (T2)", "DECISIONS 2026-10-18 the first ring's three stills", "docs/design/OPEN_WORLD.md", "docs/team/NEXT.md section 19"],
+      "branches": ["feat/ring-schema", "feat/ring-gen", "feat/ring-walk", "feat/ring-stream", "feat/ring-valley", "feat/ring-boathouse", "feat/ring-checks", "feat/ring-creators", "feat/ring-look"],
+      "owner": null
+    },
+    {
+      "id": "quest-designer",
+      "title": "The quest designer: an agent that pitches quests from expert patterns, and the hand report",
+      "plan": ["DECISIONS 2026-10-18 the quest designer", "GAME_RULES G17 and section 3 (the palette)", "docs/design/QUEST_PATTERNS.md"],
+      "branches": ["feat/quest-agent"],
+      "owner": null
     }
   ]
 }

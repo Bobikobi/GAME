@@ -61,6 +61,12 @@ interface Seen {
   above: number;
 }
 
+interface Clock {
+  tick: number;
+  wall: number;
+  frames: number;
+}
+
 const IN_PAGE = `
 window.__hud = (() => {
   const g = () => window.__game;
@@ -203,8 +209,17 @@ async function run(page: Page, url: string, phone: boolean): Promise<void> {
   await page.waitFor('__hud.toasts() === 0', 'the toasts of the opening to leave', 20_000);
   await page.eval('__hud.reset()');
   await page.press('Enter');
+  // the mend's 4 s are game time: a wait that runs out says how far the game's clock moved against the wall's
+  const clock = `({ tick: __game.session.tick, wall: performance.now(), frames: __game.world.game.loop.frame })`;
+  const before = await page.eval<Clock>(clock);
   await choose(page, 'Mend it');
-  await page.waitFor(`!!__hud.dialog() && __hud.dialog().text.includes('The bridge holds')`, 'the story of the mended bridge', 15_000);
+  await page
+    .waitFor(`!!__hud.dialog() && __hud.dialog().text.includes('The bridge holds')`, 'the story of the mended bridge', 15_000)
+    .catch(async (error: unknown) => {
+      const after = await page.eval<Clock>(clock);
+      const moved = `the game's clock moved ${after.tick - before.tick} ms in ${Math.round(after.wall - before.wall)} ms, ${after.frames - before.frames} frames`;
+      throw new Error(`${error instanceof Error ? error.message : String(error)} (${moved})`);
+    });
   // the box stays open while each of its lines is typed and read: long enough for the toasts to show if they would
   await readThrough(page, 'the story of the bridge');
   const box = await page.eval<Seen>('__hud.seen()');
@@ -221,7 +236,7 @@ async function run(page: Page, url: string, phone: boolean): Promise<void> {
     if (!mend.shown.includes(line)) throw new Error(`the mend never showed "${line}": ${mend.shown.join(' | ')}`);
   }
   const tasks = mend.shown.find((t) => t.includes('Task done: Mend the bridge'));
-  if (!tasks?.includes('New task: A fire before dark')) throw new Error(`the closed and the new task do not share a toast: ${mend.shown.join(' | ')}`);
+  if (!tasks?.includes('New task: A fire across the river')) throw new Error(`the closed and the new task do not share a toast: ${mend.shown.join(' | ')}`);
 
   // a bad line goes ahead: a bite 100 ms behind a pickup's four lines goes up before the calm ones still waiting
   await page.eval('__hud.reset()');

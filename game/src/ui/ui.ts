@@ -39,6 +39,8 @@ import {
 import { type Toast, type Tone, ToastBand, eventToasts, readTime, urgent } from '../toasts';
 import { resourceKind, treasureKind } from '../work';
 import { say, type Option } from './dialog';
+import { STONE_RESTORE, STONE_SPEAKER } from '../stone';
+import { carveName } from './carve';
 import { button, h, sprite } from './dom';
 import { feedback } from './feedback';
 import { type Minigame, pick, snap, strike, timing } from './games';
@@ -107,6 +109,7 @@ export class UI {
   private trackerKey = '';
   private talkCount = new Map<string, number>();
   private levelUpOpen = false;
+  private stoneOpen = false;
   /** the night (its end tick) whose lantern warning was shown, so it opens once per night */
   private warnedNight: number | undefined;
   /** the burns (fire and lit tick) whose running-low warning was shown, so it opens once per burn */
@@ -217,6 +220,11 @@ export class UI {
     window.clearInterval(this.hudTimer);
     this.hudTimer = window.setInterval(() => this.renderHud(), 500);
     if (session.adapted) this.toast('The valley was updated since your last visit.', 'info');
+    // a bridge mended with no name cut (the page closed before the carve): the stone asks again
+    const p = session.state.player;
+    if (p.starter !== '' && p.name === '' && p.restored.includes(STONE_RESTORE)) {
+      window.setTimeout(() => void this.stoneBeat(STONE_RESTORE, false), 800);
+    }
   }
 
   // ------------------------------------------------------------ HUD
@@ -444,6 +452,7 @@ export class UI {
       if (e.e === 'restore') {
         const done = b.restores[e.restore]?.done;
         if (done) await say(this, null, named(done));
+        if (e.restore === STONE_RESTORE) await this.stoneBeat(e.restore);
       }
       if (e.e === 'quest' && e.state === 'done') {
         const q = b.quests[e.quest];
@@ -504,9 +513,9 @@ export class UI {
       if (q.giver !== npcId) continue;
       const state = s.state.player.quests[id];
       if (state === 'active') {
-        options.push({ label: readyToHandIn(b, s.state, id, s.tick) ? `Hand in: ${q.title}` : `About: ${q.title}`, value: `quest:${id}` });
+        options.push({ label: q.title, value: `quest:${id}` });
       } else if (!state && (q.requires ?? []).every((r) => s.state.player.quests[r] === 'done')) {
-        options.push({ label: `Task: ${q.title}`, value: `quest:${id}` });
+        options.push({ label: q.title, value: `quest:${id}` });
       }
     }
     if (npc.shop) options.push({ label: 'Trade', value: 'trade' });
@@ -642,6 +651,32 @@ export class UI {
     // a fire too full for a whole log refuses it: say when one fits, as the journal does
     const at = nextLogClock(app.bundle, s.state, fireId, s.tick);
     this.toast(at === undefined ? r.error : `${r.error} A log fits at ${at}.`, 'bad');
+  }
+
+  /**
+   * The bridge's stone after the mend (NEXT 16 e): the camera comes down to it while the stone speaks of the purse,
+   * then the name is cut, last. A player who typed a name at the start has it cut; one who did not is asked, and may
+   * leave it to the stone's default. The camera is always let go.
+   */
+  private async stoneBeat(restoreId: string, pay = true): Promise<void> {
+    const s = app.session;
+    const def = app.bundle.restores[restoreId];
+    const slot = def?.place.slot;
+    if (!s || !slot || !def.stone || this.stoneOpen) return;
+    this.stoneOpen = true;
+    const glide = app.world?.stoneStop?.(slot);
+    try {
+      if (pay) await say(this, STONE_SPEAKER, def.stone.purse);
+      await glide;
+      if (s.state.player.name === '') {
+        const r = s.act({ t: 'carve', name: await carveName(this, def.stone.default_name) });
+        if (!r.ok) this.toast(r.error, 'bad');
+      }
+      await say(this, null, [`You cut ${s.state.player.name} into the last line.`]);
+    } finally {
+      this.stoneOpen = false;
+      app.world?.stoneRelease?.();
+    }
   }
 
   async sign(slotId: string): Promise<void> {

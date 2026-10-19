@@ -28,7 +28,7 @@ export interface Assembled {
   bundle: Bundle | undefined;
   issues: Issue[];
   /** kit id -> folder (absolute) and sprite list, for the PNG checks and the copy */
-  kits: Record<string, { dir: string; rel: string; sprites: Record<string, { file: string; w: number; h: number; frames: number }>; palette?: string[] }>;
+  kits: Record<string, { dir: string; rel: string; sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4 }>; palette?: string[] }>;
   /** record id -> the file it came from */
   origin: Record<string, string>;
 }
@@ -218,7 +218,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
         dir: dirname(f.abs),
         rel: toRepoPath(dirname(f.abs)),
         sprites: Object.fromEntries(
-          Object.entries(d.kit.sprites).map(([name, s]) => [name, { file: s.file, w: s.w, h: s.h, frames: s.frames ?? 1 }]),
+          Object.entries(d.kit.sprites).map(([name, s]) => [name, { file: s.file, w: s.w, h: s.h, frames: s.frames ?? 1, density: s.density ?? 1 }]),
         ),
         ...(d.kit.palette ? { palette: d.kit.palette } : {}),
       };
@@ -232,7 +232,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   const sprites: Record<string, SpriteInfo> = {};
   for (const [kitId, kit] of Object.entries(kits)) {
     for (const [name, s] of Object.entries(kit.sprites)) {
-      sprites[`${kitId}:${name}`] = { url: `kit/${kitId}/${s.file}`, w: s.w, h: s.h, frames: s.frames };
+      sprites[`${kitId}:${name}`] = { url: `kit/${kitId}/${s.file}`, w: s.w, h: s.h, frames: s.frames, density: s.density };
     }
   }
 
@@ -575,6 +575,22 @@ function checkMap(b: Bundle, origin: Record<string, string>, issues: Issue[]): v
     seen.add(s.id);
     if (s.x + s.w > m.width || s.y + s.h > m.height) err(`map.slots.${i}`, 'reaches past the edge of the map');
   });
+  if (m.creatures) {
+    const kinds = m.creatures.kinds;
+    for (const [id, k] of Object.entries(kinds)) {
+      if (k.hours && k.hours[0] >= k.hours[1]) err(`map.creatures.kinds.${id}.hours`, 'must run from an earlier hour to a later one');
+    }
+    m.creatures.spots.forEach((c, i) => {
+      const kind = kinds[c.kind];
+      const where = `map.creatures.spots.${i}`;
+      if (!kind) return err(where, `no creature kind "${c.kind}"`);
+      if (c.x >= m.width || c.y >= m.height) return err(where, 'is outside the map');
+      const tile = m.legend[m.ground[c.y]?.[c.x] ?? ''];
+      if (!tile) return;
+      const ok = kind.perch === 'water' ? tile.tag === 'water' : kind.perch === 'tree' ? tile.tag === 'grove' && tile.solid : !tile.solid;
+      if (!ok) err(where, `a ${kind.perch} creature cannot sit on this tile`);
+    });
+  }
   if (m.spawn.x >= m.width || m.spawn.y >= m.height) err('map.spawn', 'is outside the map');
   const row = m.ground[m.spawn.y] ?? '';
   if (m.legend[row[m.spawn.x] ?? '']?.solid) err('map.spawn', 'is on a solid tile');

@@ -379,14 +379,22 @@ describe('bag categories (CR-11)', () => {
 describe('the journal by class and family (C12)', () => {
   test('one group per class by name, the items of no family first, then a row per family', () => {
     const groups = journalGroups(bundle);
-    expect(groups.map((g) => g.label)).toEqual(['Clay', 'Fibre', 'Garment', 'Jewelry', 'Meal', 'Plant', 'Relic', 'Stone', 'Tool', 'Wood']);
-    expect(groups.find((g) => g.label === 'Plant')!.rows).toEqual([
+    // the core's rows only: a creator's items join these groups (or add a class) without touching this test
+    const core = (label: string) =>
+      groups
+        .find((g) => g.label === label)!
+        .rows.map((r) => ({ ...r, ids: r.ids.filter((id) => id.startsWith('core/')) }))
+        .filter((r) => r.ids.length > 0);
+    const labels = groups.map((g) => g.label);
+    expect(labels).toEqual([...labels].sort());
+    expect(labels).toEqual(expect.arrayContaining(['Clay', 'Fibre', 'Garment', 'Jewelry', 'Meal', 'Plant', 'Relic', 'Stone', 'Tool', 'Wood']));
+    expect(core('Plant')).toEqual([
       { family: 'berry', ids: ['core/bellberry', 'core/berry'] },
       { family: 'herb', ids: ['core/sunleaf', 'core/herb'] },
       { family: 'mushroom', ids: ['core/mushroom'] },
       { family: 'plum', ids: ['3u2t/plum'] },
     ]);
-    expect(groups.find((g) => g.label === 'Relic')!.rows).toEqual([
+    expect(core('Relic')).toEqual([
       { ids: ['core/stone-idol'] },
       { family: 'coin', ids: ['core/maru-coin', 'core/old-coin'] },
       { family: 'scrap', ids: ['core/stew-scrap'] },

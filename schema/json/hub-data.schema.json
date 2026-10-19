@@ -427,6 +427,10 @@
                 "type": "string"
               },
               {
+                "const": "reaction",
+                "type": "string"
+              },
+              {
                 "const": "shop",
                 "type": "string"
               },
