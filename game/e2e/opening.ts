@@ -85,7 +85,41 @@ window.__e2e = (() => {
       const s = g().session, day = g().bundle.params.day_length_ms, q = Math.floor(day / 2);
       let t = s.tick - ((s.tick + q) % day) + Math.round((h / 24) * day);
       if (t < s.tick) t += day;
+      window.__pays?.jumps.push({ from: s.tick, to: t });
       s.tick = t;
+    },
+    /**
+     * Criterion 8 (OPENING_REVIEW): writes down every pay with the play clock (the session tick, in ms): a coin or an item gained,
+     * a task changed, a place mended or a recipe learned, a box opened. A jump of the clock (setHour) is not a pay: it is kept
+     * apart, and the time it skips counts as waiting.
+     */
+    paysOn() {
+      const gen = (window.__paysGen = (window.__paysGen ?? 0) + 1);
+      const rec = (window.__pays = { list: [{ t: g().session.tick, k: 'wake' }], jumps: [] });
+      let prev = null, boxed = false;
+      const frame = () => {
+        if (window.__paysGen !== gen) return;
+        const s = g().session, p = s.state.player;
+        const mark = (k) => rec.list.push({ t: s.tick, k });
+        const now = { gold: p.gold, bag: { ...p.bag }, quests: { ...p.quests }, n: p.restored.length + p.recipes.length + p.solved.length + p.visited.length };
+        if (prev) {
+          if (now.gold > prev.gold) mark('gold');
+          for (const [k, v] of Object.entries(now.bag)) if (v > (prev.bag[k] ?? 0)) mark('bag ' + k);
+          for (const [k, v] of Object.entries(now.quests)) if (prev.quests[k] !== v) mark('quest ' + k + ' ' + v);
+          if (now.n > prev.n) mark('place or recipe');
+        }
+        const box = !!document.querySelector('.dialog');
+        if (box && !boxed) mark('box');
+        boxed = box;
+        prev = now;
+        requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+      return true;
+    },
+    paysOff() {
+      window.__paysGen = (window.__paysGen ?? 0) + 1;
+      return { ...window.__pays, end: g().session.tick };
     },
     slot(id) { return g().bundle.map.slots.find((s) => s.id === id); },
     prop(id) { const p = g().bundle.map.props.find((x) => x.id === id); return p && { x: p.x, y: p.y, w: p.w, h: p.h }; },
@@ -559,7 +593,7 @@ class Player {
    * only while the quest is still not active, and a late one gets a second look before the run fails.
    */
   async acceptTask(pickTitle: string, quest: string): Promise<void> {
-    await this.talkThrough(`Task: ${pickTitle}`);
+    await this.talkThrough(pickTitle);
     for (let tries = 0; tries < 2; tries++) {
       if ((await this.quest(quest)) === 'active') return;
       try {
@@ -576,6 +610,23 @@ class Player {
   async quest(id: string): Promise<string | undefined> {
     return this.page.eval<string | undefined>(`__e2e.player().quests[${JSON.stringify(id)}]`);
   }
+}
+
+/** OPENING_REVIEW criterion 8: the longest stretch of play clock between two pays, the clock's own jumps counted as waiting. */
+const LONGEST_STRETCH_MS = 90_000;
+async function stretches(page: Page, log: (msg: string) => void, who: string, until: string): Promise<{ ms: number; from: string; to: string }[]> {
+  const r = await page.eval<{ list: { t: number; k: string }[]; jumps: { from: number; to: number }[]; end: number }>('__e2e.paysOff()');
+  const gaps: { ms: number; from: string; to: string }[] = [];
+  for (let i = 1; i < r.list.length; i++) gaps.push({ ms: r.list[i]!.t - r.list[i - 1]!.t, from: r.list[i - 1]!.k, to: r.list[i]!.k });
+  const last = r.list[r.list.length - 1]!;
+  gaps.push({ ms: r.end - last.t, from: last.k, to: until });
+  gaps.sort((a, b) => b.ms - a.ms);
+  const skipped = r.jumps.reduce((n, j) => n + (j.to - j.from), 0);
+  log(`${who}: ${r.list.length} pays to ${until} in ${Math.round(r.end / 1000)} s of play clock, ${Math.round(skipped / 1000)} s of it skipped by the run`);
+  for (const g of gaps.slice(0, 3)) log(`${who}: stretch ${(g.ms / 1000).toFixed(1)} s from "${g.from}" to "${g.to}"`);
+  // reported, not thrown: the forager's run is over the ceiling while the owner decides what to shorten (criterion 8)
+  log(`${who}: criterion 8 ${gaps[0]!.ms <= LONGEST_STRETCH_MS ? 'PASS' : 'FAIL'}: the longest stretch is ${(gaps[0]!.ms / 1000).toFixed(1)} s against ${LONGEST_STRETCH_MS / 1000} s`);
+  return gaps;
 }
 
 async function play(browser: Browser, url: string, viewport: Viewport, name: string): Promise<void> {
@@ -609,8 +660,15 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
 
     // 2. wake up by the broken bridge
     const clicks0 = (await me.sound()).asked.click ?? 0;
+    await page.eval('__e2e.paysOn()');
     const intro = await me.talkThrough();
-    if (!intro.some((l) => l.includes('bridge'))) throw new Error('the intro never mentions the bridge');
+    // criterion 7 (OPENING_REVIEW): the first box is one box of at most two lines of 80 characters, one tap to the first move
+    const waking = (intro[0] ?? '').split('\n');
+    if (intro.length !== 1 || waking.length > 2 || waking.some((l) => l.length > 80)) throw new Error(`the waking box is not one box of two short lines: ${JSON.stringify(intro)}`);
+    if (!waking[0]?.includes('mist')) throw new Error(`the waking box does not open on the mist: ${JSON.stringify(intro)}`);
+    if (me.talkPresses > 1) throw new Error(`${me.talkPresses} taps before the first move, not at most one`);
+    // the bridge and its keystone come from the task tracker, not from the waking lines
+    if ((await me.quest('core/fix-the-bridge')) !== 'active') throw new Error('the bridge task is not in the tracker at the wake');
     // 4b criterion: the click plays exactly once per advance of the dialogue
     const clicks = ((await me.sound()).asked.click ?? 0) - clicks0;
     if (clicks !== me.talkPresses) throw new Error(`${me.talkPresses} presses of A on the intro made ${clicks} clicks, not one each`);
@@ -880,7 +938,7 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       await me.gather('core/bell-bushes', 'core/bellberry', 1);
       await me.walkTo({ x: elder[0], y: elder[1], w: 1, h: 1 }, 'Elder Maru');
       await me.a();
-      await me.talkThrough('Hand in');
+      await me.talkThrough('Where the bells rang');
       const thanks = await me.talkThrough();
       await me.idle('the thanks');
       if (!thanks.some((l) => l.includes('a tool of mine'))) throw new Error(`the elder never gives a tool of his: ${thanks.join(' / ')}`);
@@ -904,7 +962,22 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       await me.snap('stones');
       const spot = (await page.eval<{ id: string; x: number; y: number; ready: boolean }[]>('__e2e.nodes("core/lantern-foot")'))[0];
       if (!spot) throw new Error('no dig spot under the hill lantern');
-      // at dusk the hill lantern lights the tile to dig
+      // the wait for dusk is filled by Pell's herbs, open from noon (OPENING_REVIEW Q2): take them, pick one, hand it in
+      await me.walkTo({ x: trader[0], y: trader[1], w: 1, h: 1 }, 'Pell');
+      await me.expectPrompt(/^Talk to Pell/, 'the trader');
+      await me.a();
+      await me.acceptTask('Herbs for Pell', 'core/herbs-for-pell');
+      await me.idle('accepting the herbs');
+      if ((await me.quest('core/herbs-for-pell')) !== 'active') throw new Error('herbs-for-pell was not accepted');
+      await me.gather('core/sun-herbs', 'core/sunleaf', 1);
+      await me.walkTo({ x: trader[0], y: trader[1], w: 1, h: 1 }, 'Pell');
+      await me.a();
+      await me.talkThrough('Herbs for Pell');
+      await me.talkThrough();
+      await me.idle('handing in the herbs');
+      if ((await me.quest('core/herbs-for-pell')) !== 'done') throw new Error('herbs-for-pell is not done');
+      log('helped Pell as well: the herbs and the stew while the day runs out');
+      // at dusk the hill lantern lights the tile to dig; the run skips to it, and the skipped time counts as waiting
       const before = await page.eval<number>('__e2e.hour()');
       if (before >= 5 && before < 19) await page.eval('__e2e.setHour(19)');
       await page.waitFor(`__e2e.glint(${spot.x}, ${spot.y})`, 'the lantern to light the spot at dusk', 5000);
@@ -924,7 +997,7 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       await me.walkTo({ x: elder[0], y: elder[1], w: 1, h: 1 }, 'Elder Maru');
       const unpaid = await page.eval<number>('__e2e.player().gold');
       await me.a();
-      await me.talkThrough('Hand in');
+      await me.talkThrough('The coin under the lantern');
       const coin = await me.talkThrough();
       await me.idle('handing in the coin');
       if ((await me.quest('core/a-coin-for-maru')) !== 'done') throw new Error('a-coin-for-maru is not done');
@@ -935,7 +1008,7 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       if (!(await page.eval<string[]>('__e2e.player().recipes')).includes('core/herb-tea')) throw new Error('the herb-tea recipe was not learned');
       if (!coin.some((l) => l.includes('arch'))) throw new Error(`the elder never mentions the arch: ${coin.join(' / ')}`);
       if ((await me.quest('core/the-night-arch')) !== 'active') throw new Error('the-night-arch did not start');
-      log('read the three stones, dug under the hill lantern at dusk, handed in the coin');
+      log('read the three stones, dug under the hill lantern, handed in the coin');
 
       // 11. the first night: the broken arch shows a way, and it leads to the threshold of the night ruins
       const mouth = await page.eval<Rect>(`__e2e.slot('core/arch-mouth')`);
@@ -944,7 +1017,7 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       await me.walkTo(mouth, 'the broken arch');
       if (await page.eval<boolean>(`!!__e2e.plan(${JSON.stringify(threshold)})`)) throw new Error('the night ruins are open before the arch');
       const dark = await page.eval<number>('__e2e.hour()');
-      if (dark >= 5 && dark < 20) await page.eval('__e2e.setHour(21)');
+      if (dark >= 5 && dark < 20) await page.eval('__e2e.setHour(20)');
       // dark finds the player outside a safe place: the lantern is lit, with its one box a night (G31)
       await page.waitFor('!!__e2e.dialog()', 'the lantern warning', 5000);
       const lantern = await me.talkThrough();
@@ -979,6 +1052,7 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       if (!visited.includes('core/night-threshold')) throw new Error('the threshold was not reached');
       await me.snap('threshold');
       log(`walked under the arch at ${await page.eval<number>('__e2e.hour()')}:00 and reached the threshold of the night ruins`);
+      await stretches(page, log, 'forager', 'the threshold');
 
       // 12. the threshold is safe and the night hunts one step past it (P-5c): the pit, then the wolf, then a fall.
       // The safe threshold has just closed the outing, so the fall takes nothing back: the bag and the quests stay.
@@ -1008,7 +1082,7 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       await me.gather('core/sun-herbs', 'core/sunleaf', 1);
       await me.walkTo({ x: trader[0], y: trader[1], w: 1, h: 1 }, 'Pell');
       await me.a();
-      await me.talkThrough('Hand in');
+      await me.talkThrough('Herbs for Pell');
       await me.talkThrough();
       await me.idle('handing in the herbs');
       if ((await me.quest('core/herbs-for-pell')) !== 'done') throw new Error('herbs-for-pell is not done');
@@ -1016,6 +1090,7 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       if (p.gold !== paid + 30_000) throw new Error(`gold is ${p.gold} mg after the herbs, not ${paid + 30_000}`);
       if (!p.recipes.includes('core/herb-stew')) throw new Error('the herb-stew recipe was not learned');
       log(`handed the sunleaf to Pell: the herb stew and ${p.gold} mg`);
+      await stretches(page, log, 'explorer', "Pell's hand-in");
     }
 
     if (page.errors.length > 0) throw new Error(`page errors:\n${page.errors.join('\n')}`);
