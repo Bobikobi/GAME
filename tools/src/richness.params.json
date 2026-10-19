@@ -1,0 +1,10 @@
+{
+  "note": "Thresholds of the richness warning (docs/design/OPEN_WORLD.md section 1.5, beside G62). Warnings only: the owner decides if one becomes an error.",
+  "window_w": 15,
+  "window_h": 10,
+  "min_walkable_pct": 10,
+  "min_kinds_to_act_on": 3,
+  "min_movers": 2,
+  "min_reactors": 1,
+  "min_water_tiles": 3
+}

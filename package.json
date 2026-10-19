@@ -9,6 +9,7 @@
   },
   "scripts": {
     "check": "tsx tools/src/cli.ts check",
+    "sheet": "tsx tools/src/sheet.ts",
     "values": "tsx tools/src/cli.ts values",
     "bundle": "tsx tools/src/cli.ts bundle",
     "schemas": "tsx schema/src/emit.ts",
