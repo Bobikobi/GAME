@@ -14,6 +14,7 @@ import { CORE_PALETTE } from './kit/palette';
 import { LOCK_FILE, loadAll, toRepoPath, type Issue } from './load';
 import { baseOf } from './material';
 import { checkHazards } from './hazards';
+import { checkReactions } from './reactions';
 import { checkPlay, rewardItems } from './play';
 import { checkDeadProps } from './deadprops';
 import { checkReach } from './reach';
@@ -36,6 +37,7 @@ export function runCheck(root?: string): CheckResult {
     const paramsFile = files.find((f) => f.data.type === 'params')?.data;
     issues.push(...checkParams(paramsFile?.type === 'params' ? paramsFile : undefined));
     issues.push(...checkEconomy(b, assembled.origin));
+    issues.push(...checkReactions(b, assembled.origin));
     issues.push(...checkCrafting(b, assembled.origin));
     issues.push(...checkWear(b));
     issues.push(...checkDrift(b));
