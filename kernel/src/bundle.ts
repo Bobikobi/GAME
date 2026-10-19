@@ -14,6 +14,7 @@ import type {
   Profession,
   Quest,
   RarityName,
+  Reaction,
   Recipe,
   Resource,
   Restore,
@@ -47,6 +48,8 @@ export type StarterDef = Meta & Starter;
 export type ProfessionDef = Meta & Profession;
 export type ShopDef = Meta & Shop;
 export type MapDef = Meta & GameMap;
+/** A world reaction (docs/design/REACTIONS.md): read by reactions.ts, never run. */
+export type ReactionDef = Meta & Reaction;
 
 export interface Params {
   k_permille: number;
@@ -155,6 +158,7 @@ export interface Bundle {
   starters: Record<string, StarterDef>;
   professions: Record<string, ProfessionDef>;
   shops: Record<string, ShopDef>;
+  reactions: Record<string, ReactionDef>;
   map: MapDef;
   sprites: Record<string, SpriteInfo>;
   instances: Record<string, Instance>;

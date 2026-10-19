@@ -1404,6 +1404,131 @@
         "solid": false
       }
     ],
+    "creatures": {
+      "kinds": {
+        "core/sparrow": {
+          "look": "bird",
+          "perch": "ground",
+          "alert_tiles": 3,
+          "return_s": 40
+        },
+        "core/crow": {
+          "look": "bird",
+          "perch": "tree",
+          "alert_tiles": 3,
+          "return_s": 60
+        },
+        "core/trout": {
+          "look": "fish",
+          "perch": "water",
+          "alert_tiles": 2,
+          "return_s": 20
+        },
+        "core/hare": {
+          "look": "rabbit",
+          "perch": "ground",
+          "alert_tiles": 4,
+          "return_s": 45
+        },
+        "core/roe": {
+          "look": "deer",
+          "perch": "ground",
+          "alert_tiles": 5,
+          "return_s": 90,
+          "hours": [
+            5,
+            8
+          ]
+        }
+      },
+      "spots": [
+        {
+          "kind": "core/sparrow",
+          "x": 9,
+          "y": 6
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 20,
+          "y": 15
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 21,
+          "y": 9
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 42,
+          "y": 6
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 30,
+          "y": 15
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 5,
+          "y": 20
+        },
+        {
+          "kind": "core/crow",
+          "x": 19,
+          "y": 35
+        },
+        {
+          "kind": "core/crow",
+          "x": 4,
+          "y": 30
+        },
+        {
+          "kind": "core/trout",
+          "x": 14,
+          "y": 6
+        },
+        {
+          "kind": "core/trout",
+          "x": 15,
+          "y": 10
+        },
+        {
+          "kind": "core/trout",
+          "x": 13,
+          "y": 21
+        },
+        {
+          "kind": "core/trout",
+          "x": 14,
+          "y": 24
+        },
+        {
+          "kind": "core/trout",
+          "x": 13,
+          "y": 30
+        },
+        {
+          "kind": "core/hare",
+          "x": 3,
+          "y": 9
+        },
+        {
+          "kind": "core/hare",
+          "x": 44,
+          "y": 16
+        },
+        {
+          "kind": "core/roe",
+          "x": 44,
+          "y": 11
+        },
+        {
+          "kind": "core/roe",
+          "x": 3,
+          "y": 25
+        }
+      ]
+    },
     "spawn": {
       "x": 6,
       "y": 17

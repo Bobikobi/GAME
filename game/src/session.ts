@@ -12,10 +12,12 @@ import {
   type GameEvent,
   KERNEL_VERSION,
   type State,
+  appearSlots,
   fitWorn,
   hourOf,
   makeWalkable,
   newState,
+  placedAt,
   serialize,
   step,
 } from '@game/kernel';
@@ -372,7 +374,7 @@ export class Session {
       }
     }
     if (action.t === 'gather') {
-      const node = this.bundle.instances[action.node];
+      const node = placedAt(this.bundle, action.node);
       this.pickup = node?.kind === 'resource' ? node.source : null;
       if (!events.some((e) => e.e === 'busy')) this.landPickup();
     }
@@ -495,7 +497,8 @@ function adapt(bundle: Bundle, state: State): boolean {
   // a world that changed may have moved the hazards and the safe ground: nothing carries over
   p.outing = null;
   p.chase = null;
-  state.nodes = keepKeys(state.nodes, bundle.instances);
+  // a node a reaction makes appear keeps its state under its own id, as long as the reaction stays
+  state.nodes = keepKeys(state.nodes, { ...bundle.instances, ...Object.fromEntries(appearSlots(bundle)) });
   // a worn item that is gone, or no longer fits its place, comes off
   fitWorn(bundle, state);
   state.content = bundle.tag;

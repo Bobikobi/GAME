@@ -21,6 +21,7 @@ import { canonical } from './canon';
 import { bitesAfter, dangerAt, distanceTo, fireArea, harmOf, hazardsOf, isSafe, isTownTile, reappearTile, sees, townAt, watchedAt, windowOpen, windowShuts } from './danger';
 import { bellTicks, inside as insideExpedition, lastBellAt, visitNight, windowOpen as expeditionWindowOpen } from './expedition';
 import { clamp, idiv, idivUp, mulDiv, mulDivUp } from './num';
+import { appearSlot, placedAt, reactionHolds, resourceOf, waitPermille } from './reactions';
 import { drawBasisPoints } from './rng';
 import {
   ATTRIBUTES,
@@ -386,12 +387,17 @@ function start(ctx: Ctx, starterId: string, name: string, look: number): void {
 
 function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   const { b, s } = ctx;
-  const inst = b.instances[nodeId];
+  // a placed node, or one a reaction makes appear beside it (docs/design/REACTIONS.md)
+  const inst = placedAt(b, nodeId);
   if (!inst || inst.kind !== 'resource') refuse('There is nothing to gather here.');
-  const r = b.resources[inst.source]!;
+  const r = resourceOf(b, nodeId)!;
   checkAt(ctx, at, { x: inst.x, y: inst.y, w: 1, h: 1 });
   checkGrade(grade);
   if (nodeLocked(b, s, r)) refuse('Something else catches the light first.');
+  const appear = appearSlot(b, nodeId);
+  if (appear && !reactionHolds(b, s, appear.reaction, appear.parent, ctx.tick)) refuse('Nothing is there now.');
+  // the waits on its respawn are read before the gather changes the node
+  const wait = waitPermille(b, s, nodeId, ctx.tick);
   const node = s.nodes[nodeId] ?? { readyAt: 0, draws: 0 };
   if (ctx.tick < node.readyAt) refuse('It has not grown back yet.');
   if (r.hours && !inHours(hourOf(b, ctx.tick), r.hours)) {
@@ -411,7 +417,7 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   if (qty > 0) take(ctx, r.output, qty);
   else ctx.events.push({ e: 'nothing', verb: 'gather' });
   if (tool) wearTool(ctx, tool);
-  node.readyAt = ctx.tick + ms + r.respawn_ms;
+  node.readyAt = ctx.tick + ms + mulDiv(r.respawn_ms, wait, 1000);
   s.nodes[nodeId] = node;
   busy(ctx, 'gather', ms);
   gainXp(ctx, verb, grade === 4 ? r.active_ms * JACKPOT_XP : r.active_ms);
@@ -426,6 +432,7 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
   if (d.starter !== undefined && d.starter !== s.player.starter) refuse('There is nothing to dig here.');
   checkAt(ctx, at, { x: inst.x, y: inst.y, w: 1, h: 1 });
   checkGrade(grade);
+  const wait = waitPermille(b, s, spotId, ctx.tick);
   const node = s.nodes[spotId] ?? { readyAt: 0, draws: 0 };
   if (!spotOpen(b, s, spotId)) refuse('There is nothing more here.');
   if (ctx.tick < node.readyAt) refuse('This spot was dug up recently.');
@@ -454,7 +461,7 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
   if (found) take(ctx, found, 1);
   else ctx.events.push({ e: 'nothing', verb: 'dig' });
   if (tool) wearTool(ctx, tool);
-  node.readyAt = ctx.tick + ms + d.respawn_ms;
+  node.readyAt = ctx.tick + ms + mulDiv(d.respawn_ms, wait, 1000);
   s.nodes[spotId] = node;
   busy(ctx, 'dig', ms);
   gainXp(ctx, 'dig', grade === 4 ? d.active_ms * JACKPOT_XP : d.active_ms);

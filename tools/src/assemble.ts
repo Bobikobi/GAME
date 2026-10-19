@@ -33,7 +33,19 @@ export interface Assembled {
   origin: Record<string, string>;
 }
 
-type RecordKey = 'resources' | 'treasures' | 'recipes' | 'npcs' | 'quests' | 'expeditions' | 'restores' | 'camps' | 'starters' | 'professions' | 'shops';
+type RecordKey =
+  | 'resources'
+  | 'treasures'
+  | 'recipes'
+  | 'npcs'
+  | 'quests'
+  | 'expeditions'
+  | 'restores'
+  | 'camps'
+  | 'starters'
+  | 'professions'
+  | 'shops'
+  | 'reactions';
 const KEY_OF: Record<string, RecordKey | undefined> = {
   resource: 'resources',
   treasure: 'treasures',
@@ -46,6 +58,7 @@ const KEY_OF: Record<string, RecordKey | undefined> = {
   starter: 'starters',
   profession: 'professions',
   shop: 'shops',
+  reaction: 'reactions',
 };
 const BODY_OF: Record<string, string> = {
   resource: 'node',
@@ -60,6 +73,7 @@ const BODY_OF: Record<string, string> = {
   starter: 'starter',
   profession: 'profession',
   shop: 'shop',
+  reaction: 'reaction',
   params: 'params',
   kit: 'kit',
   map: 'map',
@@ -157,6 +171,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
     starters: {},
     professions: {},
     shops: {},
+    reactions: {},
   };
   const origin: Record<string, string> = {};
   const credits: Credit[] = [];
@@ -263,7 +278,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   const content = { params, items, classes, ...r, map, sprites, verbs, stations, credits };
   const tag = hashText(canonical(content));
   const instances = layoutInstances(map, r.resources, r.treasures);
-  const { values, made } = computeValues({ params, items, resources: r.resources, treasures: r.treasures, recipes: r.recipes });
+  const { values, made } = computeValues({ params, items, resources: r.resources, treasures: r.treasures, recipes: r.recipes, reactions: r.reactions });
   const bundle: Bundle = { format: 1, tag, ...content, instances, values, made, creators, board };
   checkReferences(bundle, origin, issues);
   return { bundle, issues, kits, origin };
@@ -577,6 +592,22 @@ function checkMap(b: Bundle, origin: Record<string, string>, issues: Issue[]): v
     seen.add(s.id);
     if (s.x + s.w > m.width || s.y + s.h > m.height) err(`map.slots.${i}`, 'reaches past the edge of the map');
   });
+  if (m.creatures) {
+    const kinds = m.creatures.kinds;
+    for (const [id, k] of Object.entries(kinds)) {
+      if (k.hours && k.hours[0] >= k.hours[1]) err(`map.creatures.kinds.${id}.hours`, 'must run from an earlier hour to a later one');
+    }
+    m.creatures.spots.forEach((c, i) => {
+      const kind = kinds[c.kind];
+      const where = `map.creatures.spots.${i}`;
+      if (!kind) return err(where, `no creature kind "${c.kind}"`);
+      if (c.x >= m.width || c.y >= m.height) return err(where, 'is outside the map');
+      const tile = m.legend[m.ground[c.y]?.[c.x] ?? ''];
+      if (!tile) return;
+      const ok = kind.perch === 'water' ? tile.tag === 'water' : kind.perch === 'tree' ? tile.tag === 'grove' && tile.solid : !tile.solid;
+      if (!ok) err(where, `a ${kind.perch} creature cannot sit on this tile`);
+    });
+  }
   if (m.spawn.x >= m.width || m.spawn.y >= m.height) err('map.spawn', 'is outside the map');
   const row = m.ground[m.spawn.y] ?? '';
   if (m.legend[row[m.spawn.x] ?? '']?.solid) err('map.spawn', 'is on a solid tile');

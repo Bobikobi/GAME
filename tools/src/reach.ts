@@ -20,6 +20,16 @@ function wakePlaces(b: Bundle): [number, number][] {
   return all.filter(([x, y], i) => all.findIndex(([u, v]) => u === x && v === y) === i);
 }
 
+/** The map's walkable tiles with every passable restoration mended, one build for any check that needs them (row-major, 1 = a foot can stand there). */
+export function walkBitmap(b: Bundle): Uint8Array {
+  const walkable = makeWalkable(b);
+  const view = { restored: Object.values(b.restores).filter((r) => r.passable).map((r) => r.id), camp: [] as string[] };
+  const { width, height } = b.map;
+  const open = new Uint8Array(width * height);
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) open[y * width + x] = walkable(x, y, view) ? 1 : 0;
+  return open;
+}
+
 /** The slots the player can stand next to, walking four ways from where a character wakes. */
 function reachable(b: Bundle, from: [number, number]): Set<string> {
   const walkable = makeWalkable(b);

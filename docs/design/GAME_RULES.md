@@ -303,9 +303,12 @@ The valley has no combat; its danger is the hour, and what the player eats.
   its owner approved: any of these is a safe place, or a safe area,
   the one thing every rule below means (DECISIONS.md, 10.10). The fire eats
   wood through the night, more the deeper the area and none at danger level 0,
-  where the opening's camp stands. A camp anywhere else outside the
-  town is a tent the player buys and pitches, with wood enough for the night
-  ([SETTLEMENT.md](SETTLEMENT.md) S2). Outside these the hazards that hunt (the
+  where the opening's camp stands. Anywhere else outside the town a camp is a
+  fire the player builds, no tent: it is a safe place while it burns, it is
+  never lit during a chase or inside a predator's round, and the wood it eats
+  follows the area's danger, the number never shown; the fire is seen to dim
+  and warns before it goes out (G31; DECISIONS.md, 2026-10-19, the entry on a
+  fire anywhere; [SETTLEMENT.md](SETTLEMENT.md) S2). Outside these the hazards that hunt (the
   wolf, the hidden pit, the trap, deep water) act after dark (the clock the
   world already keeps: dark from 20:00 to 05:00, with the dusk ramp drawn
   around it) and inside the mist; by day they show and can be walked around: the
@@ -376,7 +379,10 @@ The valley has no combat; its danger is the hour, and what the player eats.
   The window to cross is learned by watching the eyes in the dark, never told
   by a number. The check holds a stealth quest to it: its target lies inside
   a round's watch, with cover on the way (section 8). Added 2026-10-13
-  (DECISIONS.md, the entry on the three frames).
+  (DECISIONS.md, the entry on the three frames). Fog shortens the cone, from
+  weather's phase B: fog is drawn, so the shorter cone is still read by the
+  eyes. Noise never turns a predator's head in the demo (the owner, 19.10;
+  [REACTIONS.md](REACTIONS.md) section 9).
 - **G48 A fire is kept by hand.** A fire holds a few logs and burns them on
   the game hour, only while the player is in the valley; feeding it by hand
   lights it or adds a log, a whole one or none (a fire with no room left for
@@ -390,7 +396,9 @@ The valley has no combat; its danger is the hour, and what the player eats.
   the fire is lit again by day. Added
   2026-10-13 (the same entry); a log goes in whole since 2026-10-14
   (DECISIONS.md, the entry on the full fire); the vigil closes at dawn since
-  2026-10-16 (the entry on the vigil at dawn).
+  2026-10-16 (the entry on the vigil at dawn). Weather never touches a fire:
+  rain neither puts one out nor makes it burn longer (the owner, 19.10;
+  [REACTIONS.md](REACTIONS.md) section 9).
 
 ### Expeditions
 
