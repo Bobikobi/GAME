@@ -223,13 +223,18 @@ characters.
   else waits behind a topic. A standing line is one box, two at most. A topic
   is at most four boxes. A new topic appears when the world changed (a quest
   done, a place mended), so coming back to a character pays.
-- **G22 Plain words, all ages, the valley's own names.** A child of eight
-  reads every line: no slang, no jokes about games, no brand names, no
-  irony at the player's expense. The valley's words (the mist, the bells, the
-  ruins, the hills, the grove) are the same in every mouth and on every sign.
-  English only, the game and its files alike (owner, 8.10); a language field
-  on content, never a copied folder, is the format decision for a day that
-  may not come.
+- **G22 Plain words, the valley's own names, and death by its name.** Short
+  sentences, concrete nouns, the simplest word that is exact: a reader whose
+  English is their second language follows every line. No slang of the day,
+  no jokes about games, no brand names, no irony at the player's expense. The
+  valley's words (the mist, the bells, the ruins, the hills, the grove) are the
+  same in every mouth and on every sign. Death is named death and blood is
+  named when it is in the scene, never to decorate; a character speaks hard
+  only as its voice sheet says, with the words on the stall and never a slur
+  or a sexual word ([TONE.md](TONE.md), the owner's line of 19.10). English
+  only, the game and its files alike (owner, 8.10); a language field on
+  content, never a copied folder, is the format decision for a day that may
+  not come.
 - **G23 Talk choices are real.** Topics are a choice of what to learn, never
   a quiz with one right pick. When the player gets answers of their own
   (P-2 or later), at most three, each a different stance (ask, doubt, offer),
@@ -339,19 +344,23 @@ The valley has no combat; its danger is the hour, and what the player eats.
   core content sets `satiety_drain_per_min` to 0, in the same change that
   brought the first hazards; the field takes the name hp with the rename
   (DECISIONS.md, 10.10 and 11.10).
-- **G33 A fall is clear, and it costs the outing.** At zero health the player
-  falls: crosses for eyes, the body sinks into the ground, one plain box says
-  what happened; no gravestone, nothing left in the world. The player reappears
-  in the town they were last in, on a random tile inside its bounds (before the
-  first town: where they started). An outing runs from leaving a safe place
-  (G30) to reaching one again, or to a fall. What was gathered on that outing
-  is lost, nothing spent on it comes back, each quest goes back to the step it
-  stood at when the outing began, and a place found on it counts only once
-  brought home; nothing marks where the fall was. The bag from before the
-  outing, the camp, the gold, the levels and the quests already done are
-  untouched. The cost is the lesson:
-  a bad fruit eaten on the way means the basket is gone and the walk is made
-  again.
+- **G33 A death is clear, it costs the outing, and it leaves a pack.** At zero
+  health the player dies (the kernel and the older pages call it a fall): the
+  body falls where it stood and lies in the grass for the seconds the card is
+  up, blood small, and the card says "You died." The player reappears in the
+  town they were last in, on a random tile inside its bounds (before the first
+  town: where they started). An outing runs from leaving a safe place (G30) to
+  reaching one again, or to a death. What the outing gathered does not come
+  home: it lies where the body fell as a pack any player may take, first come,
+  the dead player included, and a game day after the death it is gone (the
+  owner, 19.10; DECISIONS.md, the entry on six open ends). Nothing spent on the
+  outing comes back, each quest goes back to the step it stood at when the
+  outing began, and a place found on it counts only once brought home. The bag
+  from before the outing, the camp, the gold, the levels and the quests
+  already done are untouched. Dying never pays: the pack holds no more than
+  the outing found, and a death on the way to it loses that outing too. The
+  cost is the lesson: a bad fruit eaten on the way means the basket lies in
+  the grass, and the walk is made again, now against the day.
 - **G34 A hazard is a rule, not a roll, and the answer is a run, never gear.**
   Each hazard acts by a rule the player can learn, and no thing bought or made
   answers it (DECISIONS.md, 9.10 and 10.10). A hunting hazard (the wolf, the
@@ -484,17 +493,23 @@ day); the audit behind them is `docs/design/CRAFTING_AUDIT.md`.
 Added 2026-10-10 by the sweep for holes, and changed the same day on the
 owner's word (DECISIONS.md, the entry on menace with a limit).
 
-- **G46 Menace with a limit.** Danger shows through shape, sound and the dark,
-  and blood, a wound and a fallen body may show too, within a limit: nothing
-  lingers, nothing is shown close up, no gore is there for its own sake, and no
-  suffering is played for show. Blood and a wound show small and brief, at the
-  sprite's own size. A person, the player or a character of the valley, never
-  bleeds or shows a wound at the moment of harm: the hit shows the health it
-  takes, and a wound on a person shows only afterwards, as a bandage or a torn
-  sleeve. A fall keeps its look (crosses for eyes, a sinking into the ground,
-  G33). It is visual only and changes no rule, number or state. The text says
-  the player fell, never that they died or were killed, since the player wakes
-  again in town. The aim is ESRB E10+ and PEGI 12.
+- **G46 Brutal in taste, never for show: the line is PEGI 16 and ESRB T.** The
+  valley is a hard place and the game says so. Danger shows through shape,
+  sound and the dark, and through blood, a wound, a body and a predator drawn
+  biting, all at the sprite's own size. A hit may bleed, a person's too; a
+  wound stays on the body afterwards as a bandage, a torn sleeve or a scar; a
+  death leaves the body in the world for the card's seconds and is named
+  (G33). The limit is the rating's own and does not move: nothing is shown
+  close up, no screen, camera or sound dwells on pain, no gore for its own
+  sake, no dismemberment, no torture played out, no violence against someone
+  who cannot act, nothing sexual of any kind, no slur. Alcohol is a thing of
+  the inn, never a reward; the gamble kind wagers effort, never money at a
+  table. It is visual and verbal and changes no number: what a hazard takes,
+  the death and its cost, the warnings (G31) and the run back (G34) stay. The
+  scenes of [TONE.md](TONE.md) are the measure; a sprite that shows any of
+  this is a direction decision and goes to the owner as stills first. The aim
+  is PEGI 16 and ESRB T; the account stays at 13 or the country's age
+  (DECISIONS.md, 9.10 and 19.10).
 
 ### The open world
 
@@ -620,9 +635,10 @@ names the rule and the pull request waits.
    and without colour? (G15, G29)
 10. Did the owner play the preview, or did the reviewer play it for him and say
     so in the pull request?
-11. Does any blood, wound or fallen body stay small, brief and never there
-    for show, with none on a person at the moment of harm, does it change no
-    rule or number, and does the text say the player fell, never died? (G46)
+11. Does every blood mark, wound, body and bite stay at the sprite's size,
+    never close up and never dwelt on; is there nothing sexual, no slur, no
+    violence on someone who cannot act; is death named and sold to nobody?
+    (G46, TONE.md)
 12. Does the valley by day still go on without every expedition: does each
     item, place and quest it touches have a road by day as well, and is its
     place entered one way, through its exit? (G36, G37)

@@ -110,6 +110,12 @@ this shape: a lean toward each belief, and no single good-evil meter.
   shared worlds (stage 2); until then each player's own lean is the world's.
 - **G28 and G12 hold.** Nothing fades by the clock, no door closes for good,
   a lean can always be walked back, and both sides of a dilemma lead on.
+- **A lean opens doors, never closes them** (the owner, 19.10). Past a
+  threshold a belief's own people, places and quests open to the player who
+  leaned its way, with a worn mark and a title; the other beliefs' people
+  still talk and trade, and only their own quests wait until the lean is
+  walked back. One parameter holds the threshold (DECISIONS.md, the entry on
+  six open ends).
 
 ## 5. How it is built (approved, 2026-10-10)
 
