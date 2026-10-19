@@ -513,9 +513,9 @@ export class UI {
       if (q.giver !== npcId) continue;
       const state = s.state.player.quests[id];
       if (state === 'active') {
-        options.push({ label: readyToHandIn(b, s.state, id, s.tick) ? `Hand in: ${q.title}` : `About: ${q.title}`, value: `quest:${id}` });
+        options.push({ label: q.title, value: `quest:${id}` });
       } else if (!state && (q.requires ?? []).every((r) => s.state.player.quests[r] === 'done')) {
-        options.push({ label: `Task: ${q.title}`, value: `quest:${id}` });
+        options.push({ label: q.title, value: `quest:${id}` });
       }
     }
     if (npc.shop) options.push({ label: 'Trade', value: 'trade' });

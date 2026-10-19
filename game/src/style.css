@@ -757,6 +757,9 @@ body {
   font-size: 15px;
 }
 
+.dialog-text.page {
+  white-space: pre-line;
+}
 .dialog-text {
   margin: 6px 0 0;
   min-height: 2.8em;
