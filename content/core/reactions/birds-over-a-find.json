@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../schema/json/reaction.schema.json",
+  "format": 1,
+  "type": "reaction",
+  "id": "core/birds-over-a-find",
+  "title": "Birds lift where something lies hidden",
+  "creator": "core",
+  "reaction": {
+    "on": { "treasure": "*" },
+    "when": { "player_within": 8, "unseen": true, "night": false },
+    "then": { "cue": "birds_lift", "spread": 2 }
+  }
+}

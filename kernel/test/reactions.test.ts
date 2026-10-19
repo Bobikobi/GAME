@@ -12,6 +12,7 @@ import {
   type State,
   type Tile,
   MAX_CUES,
+  RIDDLE_CLEAR,
   anchorsOf,
   appearSlots,
   appears,
@@ -141,7 +142,8 @@ describe('cues', () => {
   test('fire on the edge of their reach, around a find the player cannot see yet', () => {
     const b = world(birds);
     const s = started(b);
-    const spot = b.instances['core/lantern-foot#0']!;
+    const FIND = 'core/ruins-gate#1';
+    const spot = b.instances[FIND]!;
     const outside: Tile = [spot.x - 9, spot.y];
     const edge: Tile = [spot.x - 8, spot.y];
     const hits = cuesOnStep(b, s, 100_000, outside, edge);
@@ -153,12 +155,27 @@ describe('cues', () => {
     expect(cuesOnStep(b, s, 100_500, outside, edge)).toEqual(hits);
     // a step inside the reach starts nothing, and nor does a find the player already sees
     expect(cuesOnStep(b, s, 100_000, edge, [spot.x - 7, spot.y])).toEqual([]);
-    expect(cuesOnStep(b, s, 100_000, [spot.x - 1, spot.y + 9], [spot.x - 1, spot.y + 8]).some((h) => h.anchor === 'core/lantern-foot#0')).toBe(true);
-    expect(reactionHolds(b, s, birds, { id: 'core/lantern-foot#0', x: spot.x, y: spot.y, inst: spot }, 100_000, [spot.x - 1, spot.y])).toBe(false);
+    expect(cuesOnStep(b, s, 100_000, [spot.x - 1, spot.y + 9], [spot.x - 1, spot.y + 8]).some((h) => h.anchor === FIND)).toBe(true);
+    expect(reactionHolds(b, s, birds, { id: FIND, x: spot.x, y: spot.y, inst: spot }, 100_000, [spot.x - 1, spot.y])).toBe(false);
     // not at night, and not over a start's own find for another start
     expect(cuesOnStep(b, s, NIGHT, outside, edge)).toEqual([]);
     const glint = b.instances['core/bridge-glint#0']!;
     expect(cuesOnStep(b, s, 100_000, [glint.x - 9, glint.y], [glint.x - 8, glint.y]).some((h) => h.anchor === 'core/bridge-glint#0')).toBe(false);
+  });
+
+  test("never point at a riddle's answer, nor land beside it", () => {
+    const onLantern = reaction('test/birds-on-lantern', { on: { treasure: 'core/lantern-foot' }, when: { player_within: 8, unseen: true }, then: { cue: 'birds_lift', spread: 2 } });
+    const answer = base.instances['core/lantern-foot#0']!;
+    const from: Tile = [answer.x - 9, answer.y];
+    const to: Tile = [answer.x - 8, answer.y];
+    const b = world(onLantern);
+    expect(cuesOnStep(b, started(b), 100_000, from, to)).toEqual([]);
+    // the same find with no riddle on it draws its birds, inside its spread of two
+    const free = world(onLantern);
+    delete free.quests['core/a-coin-for-maru'];
+    const hits = cuesOnStep(free, started(free), 100_000, from, to);
+    expect(hits).toHaveLength(1);
+    expect(Math.max(Math.abs(hits[0]!.x - answer.x), Math.abs(hits[0]!.y - answer.y))).toBeLessThanOrEqual(RIDDLE_CLEAR);
   });
 
   test('a step starts at most a few, the nearest first, and a day roll is the same on every replay', () => {

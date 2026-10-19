@@ -4,7 +4,8 @@ import { noiseBuffer, playPulse } from './synth';
 export type SfxId =
   | 'strike' | 'crack' | 'snap' | 'tug' | 'rustle' | 'pluck' | 'dig' | 'thud' | 'douse'
   | 'hammer' | 'sizzle' | 'coin' | 'pickup' | 'ui' | 'back' | 'miss' | 'good'
-  | 'perfect' | 'step' | 'whisper' | 'bell' | 'click' | 'voice' | 'growl' | 'safe';
+  | 'perfect' | 'step' | 'whisper' | 'bell' | 'click' | 'voice' | 'growl' | 'safe'
+  | 'wings' | 'plop';
 
 export interface SfxOptions {
   pan?: number;
@@ -62,7 +63,49 @@ export function playSfx(
     case 'voice': return playVoice(context, output, when, detune);
     case 'growl': return growl(context, output, when, detune);
     case 'safe': return safe(context, output, when, detune);
+    case 'wings': return wings(context, output, when);
+    case 'plop': return plop(context, output, when, detune);
   }
+}
+
+/** Birds lift: a soft flutter of wingbeats, quick at first and slowing as they climb away. */
+function wings(context: BaseAudioContext, out: AudioNode, at: number): number {
+  const filter = context.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.value = 1_600;
+  filter.Q.value = 0.7;
+  const envelope = context.createGain();
+  envelope.gain.setValueAtTime(0, at);
+  // eight beats, each a short swell of air, further apart and fainter as the birds climb
+  let t = at;
+  for (let i = 0; i < 8; i++) {
+    const peak = 0.22 * (1 - i / 10);
+    envelope.gain.setValueAtTime(0, t);
+    envelope.gain.linearRampToValueAtTime(peak, t + 0.015);
+    envelope.gain.linearRampToValueAtTime(0, t + 0.06);
+    t += 0.07 + i * 0.012;
+  }
+  filter.connect(envelope).connect(out);
+  noiseSource(context, filter, at, t - at);
+  return t - at;
+}
+
+/** A fish rises: a small drop into still water, a falling note and a breath of splash. */
+function plop(context: BaseAudioContext, out: AudioNode, at: number, detune: number): number {
+  const oscillator = context.createOscillator();
+  oscillator.type = 'sine';
+  oscillator.detune.value = detune;
+  oscillator.frequency.setValueAtTime(620, at);
+  oscillator.frequency.exponentialRampToValueAtTime(180, at + 0.09);
+  oscillator.connect(decay(context, out, at, 0.12, 0.28));
+  oscillator.start(at);
+  oscillator.stop(at + 0.12);
+  const filter = context.createBiquadFilter();
+  filter.type = 'highpass';
+  filter.frequency.value = 3_000;
+  filter.connect(decay(context, out, at + 0.02, 0.08, 0.06));
+  noiseSource(context, filter, at + 0.02, 0.08);
+  return 0.14;
 }
 
 /** A predator has seen the player: a low growl that rises and sinks, rasping, over a breath of noise. */

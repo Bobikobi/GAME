@@ -13,6 +13,7 @@ import {
   isNight,
   minuteOfDay,
   pickRemark,
+  resourceOf,
   rewardItem,
   satietyAt,
   satietyCap,
@@ -567,8 +568,7 @@ export class UI {
     const s = app.session;
     const b = app.bundle;
     if (!s) return;
-    const inst = b.instances[nodeId]!;
-    const r = b.resources[inst.source]!;
+    const r = resourceOf(b, nodeId)!;
     const why = s.check({ t: 'gather', node: nodeId, grade: 3, at: s.pos });
     if (why) return this.toast(why, 'bad');
     // a node worked with a tool runs by itself after this one press: no pop-up, no bar

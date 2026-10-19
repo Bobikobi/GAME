@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../schema/json/reaction.schema.json",
+  "format": 1,
+  "type": "reaction",
+  "id": "core/fish-at-dusk",
+  "title": "Fish rise at dusk",
+  "creator": "core",
+  "reaction": {
+    "on": { "tag": "water" },
+    "when": { "hours": [18, 21], "player_within": 5, "chance_pct": 6 },
+    "then": { "cue": "fish_rise" }
+  }
+}
