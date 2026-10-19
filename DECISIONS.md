@@ -1754,6 +1754,18 @@ The owner approved option 2 of `docs/3d/gap.md` on 18.10 (19:12): the whole town
 Order: the community search, this entry, the looks stills of 8c, then the daily spend of 8 d. Nothing is generated in a look before he picks it. Caps stay at 50,000 triangles and 1024 px maps per person; the 3D door gives up the phone only when a phone limit blocks a rule (NEXT 8 e), and none has.
 **Retry when:** the community finds fail the look (8c) or Meshy changes the Free plan. Model: claude-sonnet-5-5. Link: #190, #175.
 
+## 2026-10-18 ✅ A success never shakes the screen: the jolt and the flash belong to danger
+
+The owner, 18.10, after playing: the screen's shake and flash at a task's end or a success "are not really flattering". In `celebrate()` every restore and build shook the camera, the same jolt a bite gives, so a success and a wound felt alike. Cosy games (Stardew Valley, Animal Crossing) keep the shake for impacts and harm and mark a success with sound and light on the thing made.
+How: NEXT 20 a. A success keeps its jingle and gets a soft light of at most 1 s on what was made; `hurt` keeps the red flash and the shake, `seen` its jolt, a tree landing its small shake.
+**Retry when:** a success feels too quiet on the preview; then add light or sound, never a camera jolt. Model: claude-opus-5-5.
+
+## 2026-10-18 ✅ By day the wolf is away and its den stays
+
+The owner, 18.10: the wolf asleep by day "does nothing", and it should vanish entirely by day. G30 said "by day they show and can be walked around: the trap is visible, the wolf sleeps, the pit is lit", so the request went to him first with the rule quoted (GAME_RULES section 6): its purpose is that a player learns by day where the danger lives. He took the recommendation that keeps that purpose: the wolf is away by day and its den mouth and the tracks along its round stay drawn, and at dusk it comes out of the den. Many games mark where a monster comes from while it is not there.
+How: G30's text changes; NEXT 20 b builds it in the client only. The kernel keeps the wolf's place by day on the den tile, so the hunts, G34 and G47 are unchanged. The 3D door hides the model by day too (one game, two doors).
+**Retry when:** players are surprised at night by a wolf they never saw by day; then the den needs a stronger mark, not the sleeping wolf back. Model: claude-opus-5-5.
+
 ## 2026-10-18 ✅ The compass for depth and for characters: Dimraeth's depth in an open world, Drakantos's characters and animation
 
 The owner, 18.10: Dimraeth is the depth and complexity Openfold aims for, but in an open world. He named its skills, the opening of its bag, its monsters, and free movement instead of a fixed feel. Drakantos is the aim for character design and animation. The distance, system by system, is in [docs/design/GAP_DIMRAETH_DRAKANTOS.md](docs/design/GAP_DIMRAETH_DRAKANTOS.md). In concept Openfold already points where Dimraeth stands on eight of twelve rows. It is apart on active skills, and opposite on movement and on monsters you fight. In what is built, the distance is large on every row but writing.
