@@ -1032,8 +1032,46 @@ const Slot = Type.Object(
   { additionalProperties: false },
 );
 
+export const CREATURE_LOOKS = ['bird', 'fish', 'rabbit', 'deer'] as const;
+export const CREATURE_PERCHES = ['ground', 'tree', 'water'] as const;
+
+/** One kind of ambient creature: how it looks, where it sits, how close the player may come, when it is out. */
+const CreatureKind = Type.Object(
+  {
+    look: Type.Union(CREATURE_LOOKS.map((k) => Type.Literal(k)), {
+      description: 'The drawing and the way it leaves: a bird takes off, a fish darts, a rabbit bolts, a deer walks off.',
+    }),
+    perch: Type.Union(CREATURE_PERCHES.map((k) => Type.Literal(k)), {
+      description: 'What its spots stand on: a non-solid ground tile, a forest tile, or a water tile.',
+    }),
+    alert_tiles: Int(1, 8, 'It leaves when the player comes within this many tiles.'),
+    return_s: Int(5, 600, 'Real seconds before it comes back to its spot once the player is away.'),
+    hours: Type.Optional(
+      Type.Tuple([Int(0, 23), Int(1, 24)], {
+        description: 'The game hours it is out, from (inclusive) to (exclusive). Absent: all day, never at night.',
+      }),
+    ),
+  },
+  { additionalProperties: false },
+);
+
 export const MapBody = Type.Object(
   {
+    creatures: Type.Optional(
+      Type.Object(
+        {
+          kinds: Type.Record(Id, CreatureKind),
+          spots: Type.Array(
+            Type.Object({ kind: Id, x: Int(0, 1023), y: Int(0, 1023) }, { additionalProperties: false }),
+            { maxItems: 200 },
+          ),
+        },
+        {
+          additionalProperties: false,
+          description: 'Cosmetic ambient life (the client draws it behind ?rich= motion; the kernel never sees it): kinds, and the spots where each sits until the player comes close.',
+        },
+      ),
+    ),
     width: Int(8, 1024),
     height: Int(8, 1024),
     legend: Type.Record(Type.String({ pattern: '^.$' }), Type.Object(
