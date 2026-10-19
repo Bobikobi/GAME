@@ -1,6 +1,6 @@
 # World reactions: a world that answers by rules
 
-Status: a design for the owner, written 19.10.2026 by game-1b. Nothing here is built. On 19.10 the owner approved planning "a table of reactions" as the logic step toward a richer world: things carry tags, rows in content connect them, and the kernel judges. Everything below is a proposal until he picks. Section 9 lists the two questions that are his to answer, because each would bend a rule on his page.
+Status: a design written 19.10.2026 by game-1b. On 19.10 the owner approved planning "a table of reactions" as the logic step toward a richer world: things carry tags, rows in content connect them, and the kernel judges. The same day he answered the two questions of section 9, each of which bends a rule on his page, and gave his word on fire in a shared world (section 10). Phase A is in build, its schema first (#207).
 
 Facts are read from `origin/develop` @ 2932f334.
 
@@ -63,29 +63,29 @@ All conditions of a reaction must hold at once.
 | `hours: [a, b]` | the game hour is in [a, b), as nodes' `hours` already work | the tick |
 | `night` | 20:00 to 05:00, as `isNight` | the tick |
 | `ready_for_ms: n` | the node it hangs on has been ready, untouched, for at least n game ms | that node's `readyAt` |
-| `empty_for_ms: n` | the node has been empty for at least n | that node's state |
 | `on_tag: t` | the tile it hangs on carries tile tag t | the map |
 | `player_within: r` | the player stands within r tiles, with r at most 8 | the player's tile |
 | `unseen` | the hidden thing it hangs on lies beyond the player's sense reach (`senseReach`), so the find does not show yet | the player's senses |
+| `chance_pct: p` | a roll of the day comes under p percent, the same all day on every replay (R4) | the seed and the day |
 | `player_doing: verb` | the player is busy with that verb | `busyUntil`, plus the verb the player is busy with (a new field in the player's state) |
 | `player_has: node` | the player has that skill-tree node, once the tree exists (W3) | the player |
 
-Phase B adds `weather: kind`.
+Phase B adds `weather: kind`. `empty_for_ms` (the node has been empty for n) waits until a node's state keeps the tick it was emptied; today it keeps only the tick it is ready again (`readyAt`).
 
 ### 3.3 Effects: what a reaction does
 
 | Effect | What it does | Its guard |
 |---|---|---|
-| `appear` | A node that exists only while the condition holds, at the tile it hangs on or a neighbour. Its id is `<reaction id>@<parent id>`. It is a full resource in its own file, with an activity record, a level and a miss table. | V prices it like any node (R6, R7). It must come back whenever the condition holds again, so it is a gate and never a last chance (G42, G28). |
+| `appear` | A node that exists only while the condition holds, at the tile it hangs on or a neighbour. Its id is `<reaction id>@<parent id>`. It is written inline in the reaction, as a node is in a resource file (its item, yield, active time, respawn, level and sprite), because a resource file needs a place of its own on the map. | V prices it like any node (R6, R7). It must come back whenever the condition holds again, so it is a gate and never a last chance (G42, G28). |
 | `wait` | Scales the respawn of the node it hangs on, in permille, clamped to 500-2000. | Waiting is never paid (R6), so no V moves. |
 | `cue` | Sends the client an event at a tile, with no change to the state: birds lift, fish rise, a glint. | Each cue has a shape and a sound, never colour alone, and reduced motion gets a still shape (G29). It never shows a number (CR-17). It never speaks: a cue has no text (STORY S1). |
 | `open` / `close` | Makes a tile passable while the condition holds (a felled trunk across a stream), or blocked (a ford under high water). | In every combination of states, the map stays connected and G62 still holds. `close` never touches a path tile or a town tile. Phase C only. |
-| `sight` | Changes how far a predator's eyes reach (fog), or the player's sense reach. | Bends G47, so it waits for the owner (section 9, Q1). |
+| `sight` | Changes how far a predator's eyes reach (fog), or the player's sense reach. | Fog only, from phase B: the owner said yes (section 9, Q1). |
 
 What no effect may do:
 - change the yield or the active time of an activity outside R9's one calculator;
 - harm the player, since harm stays with the hazards (G35);
-- make a fire burn longer or shorter (G48; Q2);
+- make a fire burn longer or shorter, and weather never touches a fire (G48; Q2, the owner's no);
 - act as gear against a hazard, which is the owner's 9.10 word "no stronger lantern";
 - move a predator off the place its clock sets (G47).
 
@@ -101,13 +101,20 @@ Two examples for phase A:
   "id": "core/windfall-berries",
   "title": "Windfall under a full bush",
   "creator": "core",
-  "on": { "resource": "core/berry-bushes" },
-  "when": { "ready_for_ms": 240000 },
-  "then": { "appear": { "resource": "core/windfall", "at": "below" } }
+  "reaction": {
+    "on": { "resource": "core/berry-bushes" },
+    "when": { "ready_for_ms": 240000 },
+    "then": {
+      "appear": {
+        "output": "core/berry", "yield": 1, "active_ms": 1500, "respawn_ms": 240000,
+        "level": 1, "game": "pick", "sprite": "core/base-kit:items/berry", "at": "below"
+      }
+    }
+  }
 }
 ```
 
-A bush left full for four game minutes drops a few berries on the tile below it. Picking them is a quicker, smaller pick, a resource of its own (`core/windfall`) with its own V. When the bush is picked, it is no longer full, so the windfall stops coming until it is full again.
+A bush left full for four game minutes drops a berry on the tile below it. Picking it is a quicker, smaller pick of the same redberry. V prices it as a source of its own; it costs no less than the bush, so the bush stays the cheapest source and V(berry) does not move. When the bush is picked, it is no longer full, so the windfall stops coming until it is full again.
 
 ```json
 {
@@ -115,19 +122,23 @@ A bush left full for four game minutes drops a few berries on the tile below it.
   "id": "core/birds-over-a-find",
   "title": "Birds lift where something lies hidden",
   "creator": "core",
-  "on": { "treasure": "*" },
-  "when": { "player_within": 8, "unseen": true },
-  "then": { "cue": "birds_lift", "spread": 2 }
+  "reaction": {
+    "on": { "treasure": "*" },
+    "when": { "player_within": 8, "unseen": true, "night": false },
+    "then": { "cue": "birds_lift", "spread": 2 }
+  }
 }
 ```
 
-When the player steps inside eight tiles of a hidden find they cannot see yet, birds lift from a tile drawn within two of it. This is a hint with no number in it. The birds mark the area, not the tile. Keen eyes (`senseReach`, 4 tiles at senses 1 and 6 at senses 2) still show the find itself first, so the explorer's edge stays.
+When the player steps inside eight tiles of a hidden find they cannot see yet, birds lift from a tile drawn within two of it, by day. This is a hint with no number in it. The birds mark the area, not the tile. Keen eyes (`senseReach`, 4 tiles at senses 1 and 6 at senses 2) still show the find itself first, so the explorer's edge stays. No cue shows within two tiles of a riddle's answer: a riddle is read from the world, never pointed at (G6).
+
+The third core reaction, fish rising at dusk, hangs on the `water` tag: from 18:00 to 21:00 a fish rises on a water tile when the player comes within five of it, on 6 percent of the tiles each day.
 
 The `on` field takes a resource id, a treasure id or `*`, or a tile tag (`{ "tag": "riverbank" }`). A tile-tag reaction is the kind that scales to the generated rings with no placement.
 
 ## 5. How the kernel and the client read it
 
-- **On a step.** An action that names a derived node, such as `gather` on `core/windfall-berries@core/berry-bushes#2`, is accepted only if the reaction's condition holds at that tick. Otherwise it is refused in words ("Nothing has fallen here"). Once touched, the derived node keeps a `NodeState` like any node, under its own id, which R1 already covers.
+- **On a step.** An action that names a derived node, such as `gather` on `core/windfall-berries@core/berry-bushes#2`, is accepted only if the reaction's condition holds at that tick. Otherwise it is refused in words ("Nothing is there now."). Once touched, the derived node keeps a `NodeState` like any node, under its own id, which R1 already covers.
 - **Cues.** A cue changes no state, so the kernel never emits one. The client runs the shared function each time the player crosses into a tile, through a tile index (radius at most 8). A cue fires on the edge, from outside its radius to inside it, which needs only the player's previous and new tile and no memory.
 - **In the client.** The same pure functions, shared as `world.ts` is today, run for the chunks in view. Their answers are cached until the state changes or the game minute turns.
 - **Order (R3).** Reactions are walked in sorted id order.
@@ -147,7 +158,7 @@ The check refuses:
 - an `appear` whose condition cannot hold again once it has held (G42: a gate, never a last chance);
 - an `open` or `close` that disconnects the map in any combination of states, or a `close` on a path or a town tile;
 - a cue with no shape or no sound (G29);
-- a `sight` effect, until the owner answers Q1.
+- a `sight` effect, until phase B builds fog (Q1 a).
 
 It also warns: game-ba's richness check (the "something reacts" count, 1 or more a screen) counts reaction tiles, so a creator sees which screens a new reaction makes richer.
 
@@ -165,10 +176,10 @@ It also warns: game-ba's richness check (the "something reacts" count, 1 or more
 
 | Phase | What it builds | Size | Measure that proves it |
 |---|---|---|---|
-| **A: read reactions** | The `reaction` type in the schema; the conditions `hours`, `night`, `ready_for_ms`, `empty_for_ms`, `on_tag`, `player_within`, `unseen`; the effects `appear`, `wait` and `cue`; the check of section 6; the shared client read with its cache. Core content: windfall berries, birds over a find, and fish rising at dusk on `riverbank` tiles. | Kernel and schema about 400-600 lines, the client about 200, plus tests | A replay of a recorded session gives the same state hash on the client and in a server-style run. The richness check's "reacts" share rises; the number is reported. Under 0.5 ms a frame for the reactions on a phone screen. `pnpm verify` green. |
-| **B: weather by day** | `weather(day)` as a pure function of the seed, the region and the day index: clear, rain or fog, decided a day ahead and shown in the morning toast (Stardew's forecast). The condition `weather`. Core content: mushrooms after rain in the grove (`appear`), reeds regrowing faster by water in rain (`wait`). Fog draws as mist the player can see. | About 300 lines, plus art for rain and fog | The same day gives the same weather on every replay. Every rain-only node shares its class with an all-year one (the season rule of 9.10, applied to weather). |
+| **A: read reactions** | The `reaction` type in the schema; the conditions `hours`, `night`, `ready_for_ms`, `on_tag`, `player_within`, `unseen`, `chance_pct`; the effects `appear`, `wait` and `cue`; the check of section 6; the shared client read with its cache. Core content: windfall berries, birds over a find, and fish rising at dusk on `water` tiles. | Kernel and schema about 400-600 lines, the client about 200, plus tests | A replay of a recorded session gives the same state hash on the client and in a server-style run. The richness check's "reacts" share rises; the number is reported. Under 0.5 ms a frame for the reactions on a phone screen. `pnpm verify` green. |
+| **B: weather by day** | `weather(day)` as a pure function of the seed, the region and the day index: clear, rain or fog, decided a day ahead and shown in the morning toast (Stardew's forecast). The condition `weather`. Core content: mushrooms after rain in the grove (`appear`), reeds regrowing faster by water in rain (`wait`). Fog draws as mist the player can see, and it shortens a predator's sight (`sight`, Q1 a). | About 300 lines, plus art for rain and fog | The same day gives the same weather on every replay. Every rain-only node shares its class with an all-year one (the season rule of 9.10, applied to weather). |
 | **C: marks the player leaves** | A felled tree falls the way the player faces, and across a stream it is a bridge until it rots back (`open`, after free movement). Tracks in mud after rain. | About 300 lines | The map stays connected in every combination of states (the check). An e2e crosses on a trunk. |
-| **Later, by the owner's word** | Spread as a front, under the shared-world rules of section 10; predators that answer weather or noise (Q1). | Not sized | - |
+| **Later, by the owner's word** | The world fire: a front the seed lights in the wild, which players put out together (section 10). A fire set on purpose by a player only in the future. A predator that turns to noise waits for combat (Q1 b). | Not sized | - |
 
 Phase A lands after `pnpm streams` shows no other session on `kernel/src/step.ts` and schema/src/index.ts. The schema part goes first, as its own small pull request (PARALLEL.md). Phase A needs no art beyond game-41's birds, plus one fish and one windfall sprite.
 
@@ -183,6 +194,11 @@ Each of these bends a rule on the owner's page, so it is his (GAME_RULES section
 Recommended: (a) yes, from phase B. Fog is drawn, so the shorter cone is still a rule the eyes can read. (b) no, inside the demo: a head that turns on noise is a rule the player cannot learn by watching, which is what G47 protects. Revisit (b) with combat (W2), where reading a foe's attention is part of the fight.
 
 **Q2. May weather touch a fire?** G48 says a fire is kept by hand and nothing makes it burn longer. Rain putting out an open fire would cut the other way, and would cost a vigil (`tend`) through no act of the player's. Recommended: no. Weather does not touch fires, and a lit fire is the player's one sure thing at night. A rain-out could come later for fires the player did not light, which would need a prop flag.
+
+**The owner's answers, 19.10.** Both as recommended:
+- Q1 (a) yes: fog shortens a predator's sight, and it lands with weather in phase B. G47 carries it.
+- Q1 (b) no in the demo: noise never turns a predator's head. It comes back with combat, if at all.
+- Q2 no: weather never touches a fire, neither to put it out nor to make it burn longer. G48 carries it.
 
 ## 10. In a shared world
 
@@ -204,14 +220,15 @@ Reactions meet the shared-world rules of 10.10 (DECISIONS, "The shared world: wh
 | A mark that closes a way | Only the world makes one (high water from weather), never a player | "Nobody blocks a way" (10.10) |
 | Fire | Below | |
 
-**Fire.** Minecraft servers often turn fire spread off (the `doFireTick` game rule), because one player's spark burns another's work. Three rules keep fire from becoming that here:
-- A fire a player lights burns only what it was lit in: a campfire, a hearth, a torch. In a shared world it never spreads from a player's hand.
-- If fire ever spreads, it is a world event. The seed lights it in the wild, in an area between players, never in a town and never on a plot, a house, a tent or a path. It runs as a front from its tick and its tile, so every client draws the same burn with no messages. It burns shared nodes and grass, which grow back, and never takes from a player's bag.
-- In a player's own valley, before any shared world, a spread can be the player's own: their grass, their nodes.
+**Fire.** The owner, 19.10: a wildfire and putting it out are rewarding; several players may fight one at once; a fire set on purpose comes only in the future. So:
+- A spreading fire is a world event. The seed lights it in the wild, in an area between players, never in a town and never on a plot, a house, a tent or a path. It runs as a front from its tick and its tile, so every client draws the same burn with no messages. It burns shared nodes and grass, which grow back, and never takes from a player's bag.
+- Putting it out pays, and many hands work on one front at once. Each player's work is their own act and is paid as their own (R6), and nobody waits on another to start. What it pays is designed with the fire itself.
+- A fire a player lights burns only what it was lit in: a campfire, a hearth, a torch. Setting a fire on purpose waits for the future, with its own rules then.
+- Minecraft servers often turn fire spread off (the `doFireTick` game rule), because one player's spark burns another's work. That is why spread stays the world's for now.
 
-The rule under all three: a player's act may open things for others, but never close or destroy them. Only the world may close.
+The rule this page proposed under these, that a player's act may open things for others but never close or destroy them, is an open question for the rules session (the owner, 19.10: "I don't know").
 
-**Noise and predators (Q1 b).** In a shared world, one player's noise would turn a predator onto another player's stealth. That is one more reason for the recommended no.
+**Noise and predators (Q1 b).** In a shared world, one player's noise would turn a predator onto another player's stealth. That is one more reason for the owner's no.
 
 ## Sources
 

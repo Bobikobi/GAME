@@ -376,7 +376,10 @@ The valley has no combat; its danger is the hour, and what the player eats.
   The window to cross is learned by watching the eyes in the dark, never told
   by a number. The check holds a stealth quest to it: its target lies inside
   a round's watch, with cover on the way (section 8). Added 2026-10-13
-  (DECISIONS.md, the entry on the three frames).
+  (DECISIONS.md, the entry on the three frames). Fog shortens the cone, from
+  weather's phase B: fog is drawn, so the shorter cone is still read by the
+  eyes. Noise never turns a predator's head in the demo (the owner, 19.10;
+  [REACTIONS.md](REACTIONS.md) section 9).
 - **G48 A fire is kept by hand.** A fire holds a few logs and burns them on
   the game hour, only while the player is in the valley; feeding it by hand
   lights it or adds a log, a whole one or none (a fire with no room left for
@@ -390,7 +393,9 @@ The valley has no combat; its danger is the hour, and what the player eats.
   the fire is lit again by day. Added
   2026-10-13 (the same entry); a log goes in whole since 2026-10-14
   (DECISIONS.md, the entry on the full fire); the vigil closes at dawn since
-  2026-10-16 (the entry on the vigil at dawn).
+  2026-10-16 (the entry on the vigil at dawn). Weather never touches a fire:
+  rain neither puts one out nor makes it burn longer (the owner, 19.10;
+  [REACTIONS.md](REACTIONS.md) section 9).
 
 ### Expeditions
 
