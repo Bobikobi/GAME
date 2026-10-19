@@ -341,8 +341,9 @@ that hold one together.
 
 ## 7. Generating quests at scale (the land beyond the valley)
 
-For the endless generated ground (DECISIONS 2026-10-17). Nothing here is built; it is the
-reading list for when generation starts.
+For the endless generated ground (DECISIONS 2026-10-17). Since 19.10 the plan is
+[QUEST_FORGE.md](QUEST_FORGE.md) (a grammar, a land graph, a storylet library, a binder,
+gates, a voice pass with a fallback, a digest); the list below is what it drew on.
 
 - **Roles bound at start.** Write the quest as roles (giver, place, object) with rules,
   and bind them from the live world when it starts ([Nesmith on Skyrim's Radiant Story](https://gamesbeat.com/bethesdas-nesmith-reflects-on-the-difficult-birth-of-skyrims-radiant-story-system/)).
