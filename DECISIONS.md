@@ -1754,6 +1754,18 @@ The owner approved option 2 of `docs/3d/gap.md` on 18.10 (19:12): the whole town
 Order: the community search, this entry, the looks stills of 8c, then the daily spend of 8 d. Nothing is generated in a look before he picks it. Caps stay at 50,000 triangles and 1024 px maps per person; the 3D door gives up the phone only when a phone limit blocks a rule (NEXT 8 e), and none has.
 **Retry when:** the community finds fail the look (8c) or Meshy changes the Free plan. Model: claude-sonnet-5-5. Link: #190, #175.
 
+## 2026-10-18 ✅ A success never shakes the screen: the jolt and the flash belong to danger
+
+The owner, 18.10, after playing: the screen's shake and flash at a task's end or a success "are not really flattering". In `celebrate()` every restore and build shook the camera, the same jolt a bite gives, so a success and a wound felt alike. Cosy games (Stardew Valley, Animal Crossing) keep the shake for impacts and harm and mark a success with sound and light on the thing made.
+How: NEXT 20 a. A success keeps its jingle and gets a soft light of at most 1 s on what was made; `hurt` keeps the red flash and the shake, `seen` its jolt, a tree landing its small shake.
+**Retry when:** a success feels too quiet on the preview; then add light or sound, never a camera jolt. Model: claude-opus-5-5.
+
+## 2026-10-18 ✅ By day the wolf is away and its den stays
+
+The owner, 18.10: the wolf asleep by day "does nothing", and it should vanish entirely by day. G30 said "by day they show and can be walked around: the trap is visible, the wolf sleeps, the pit is lit", so the request went to him first with the rule quoted (GAME_RULES section 6): its purpose is that a player learns by day where the danger lives. He took the recommendation that keeps that purpose: the wolf is away by day and its den mouth and the tracks along its round stay drawn, and at dusk it comes out of the den. Many games mark where a monster comes from while it is not there.
+How: G30's text changes; NEXT 20 b builds it in the client only. The kernel keeps the wolf's place by day on the den tile, so the hunts, G34 and G47 are unchanged. The 3D door hides the model by day too (one game, two doors).
+**Retry when:** players are surprised at night by a wolf they never saw by day; then the den needs a stronger mark, not the sleeping wolf back. Model: claude-opus-5-5.
+
 ## 2026-10-18 ✅ The compass for depth and for characters: Dimraeth's depth in an open world, Drakantos's characters and animation
 
 The owner, 18.10: Dimraeth is the depth and complexity Openfold aims for, but in an open world. He named its skills, the opening of its bag, its monsters, and free movement instead of a fixed feel. Drakantos is the aim for character design and animation. The distance, system by system, is in [docs/design/GAP_DIMRAETH_DRAKANTOS.md](docs/design/GAP_DIMRAETH_DRAKANTOS.md). In concept Openfold already points where Dimraeth stands on eight of twelve rows. It is apart on active skills, and opposite on movement and on monsters you fight. In what is built, the distance is large on every row but writing.
@@ -1802,6 +1814,16 @@ Proposed, not yet his word (the page's section 4): a tree on two axes, the start
 
 The owner, 19.10: a gap between the characters as wide as races would be a step back now, so it waits. Races are the characters' nature and their lines of growth, and other developers may be the ones to think them through. If they come, they come as the vertical axis of the proposed tree (corner nodes per race and trade), and their past needs speakers (STORY.md S1-S6).
 **Retry when:** the stage-3 tree is in place. It is a candidate for an open call to creators then. Model: claude-opus-5-5.
+## 2026-10-19 ✅ The opening's hook f: one waking box, option labels that are the quest's title, and Maru's Pell line withdrawn
+
+Built from NEXT 16 f and the owner's answers of 17.10 ("The opening's renewal", above). The waking lines are the three texts of answer 1, shown as one box of two lines that appears whole, so the first movement is one tap away (criterion 7); a start with more than two intro lines keeps paging (`say` option `page`, used by the title screen only). The bridge and its keystone come from the tracker: each start wakes with `core/fix-the-bridge` active. The owner withdrew Q2's "Pell still waits for herbs" on 19.10 ("why would he know what's with Pell, it is not related"): Maru's last box stays as it was, and the owner approved the same day dropping "Pell wants herbs." from his first box too. The unchosen plant still fills the wait, reached through Pell's own lines and the task tracker; the opening e2e's phone path now takes Pell's herbs while it waits for dusk. The same day the owner asked that the conversation never label an option: the dialogue option is the quest's title alone in all three states (offer, what is left, hand in), no "Task:", "About:" or "Hand in:".
+Measured (criterion 8, the e2e's recorder, play clock, the run's own clock jumps counted as waiting): the phone run, the forager to the threshold, has its longest stretch at 173.6 s, from Pell's hand-in (about 176 s) to the coin under the hill lantern, because the coin's glint lights only at dusk (350 s); after the coin the dark follows within the stretch limit. The desktop run, the explorer to Pell's hand-in, longest stretch 22.4 s. The digger is not played by the e2e. The check reports and does not fail while the owner decides what to shorten; the human recording is the final word.
+**Retry when:** the owner picks what shortens the wait for dusk, then the report becomes a failing assertion. Model: claude-sonnet-5-5.
+## 2026-10-18 ✅ The 3D door's cast is in the Meshy realistic look (B); the environment is the next direction
+
+Three stills at phone size (390x844, the square by the elder's house) each changed one thing: A the current mix (Meshy player, Kenney chibi NPCs), B the whole cast in the Meshy realistic look, C the same cast toon-shaded. The owner picked B at 22:05 on 18.10, and added that the background and the environment are still terrible.
+Frame: `docs/design/frames/2026-10-18-3d-looks-B.png` (role models stand in for Maru and Pell). From here the daily Meshy spend (NEXT 8 d) generates only in this look; no toon shading. The environment (ground, props, background) is the next direction and gets its own ladder of stills before anything is built.
+**Retry when:** realistic people next to the low-poly props keep reading as two games; the environment ladder decides that. Model: claude-opus-5-5.
 ## 2026-10-19 ✅ World reactions are read, never run: the frame of the reactions table
 
 The owner, 19.10: plan "a table of reactions" as the logic step toward a richer world. Things carry tags, rows in content connect them, and the kernel judges. The frame is in [docs/design/REACTIONS.md](docs/design/REACTIONS.md).

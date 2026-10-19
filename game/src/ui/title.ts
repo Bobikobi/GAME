@@ -144,11 +144,13 @@ export function showTitle(ui: UI): Promise<void> {
 
 /** What the narrator says as the character wakes: the start's own lines, or the game's. */
 async function intro(ui: UI, lines: string[] | undefined): Promise<void> {
-  await say(ui, null, lines ?? [
+  const waking = lines ?? [
     'You wake up in the tall grass beside a river. The sun stands high.',
     'Across the water, smoke rises over a town. The old bridge between is broken.',
     'Its keystone fell into the shallows by the bridge. Strike it free, and the bridge can be mended.',
-  ]);
+  ];
+  // two lines or fewer are one box and one tap (OPENING_REVIEW criterion 7); a longer start keeps paging
+  await say(ui, null, waking, [], { page: waking.length <= 2 });
   const touch = matchMedia('(pointer: coarse)').matches;
   ui.toast(touch ? 'Walk with the pad. Press A next to things.' : 'Walk with the arrows or WASD. Press Space next to things.', 'info');
 }
