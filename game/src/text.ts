@@ -12,6 +12,7 @@ import {
   campTile,
   findSlot,
   hazardsOf,
+  hintReach,
   isNight,
   isSafe,
   minuteOfDay,
@@ -27,7 +28,6 @@ import {
   salePrice,
   satietyCap,
   slotsFor,
-  senseReach,
   techniqueValue,
 } from '@game/kernel';
 import { feedTooLate, fireName, tendLine } from './fires';
@@ -239,8 +239,9 @@ export function digRiddleOpen(b: Bundle, s: State, treasure: string): boolean {
   });
 }
 
+/** How far a hidden find shows: the kernel's reach, so the birds over a find and the find itself agree. */
 export function hintDistance(b: Bundle, s: State): number {
-  return senseReach(b, s.player.attrs.senses) + (techniqueValue(b, s, 'second_hint') > 0 ? 2 : 0);
+  return hintReach(b, s);
 }
 
 export function campSpotOf(b: Bundle, campId: string): [number, number] | undefined {

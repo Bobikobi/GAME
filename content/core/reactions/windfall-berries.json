@@ -1,0 +1,24 @@
+{
+  "$schema": "../../../schema/json/reaction.schema.json",
+  "format": 1,
+  "type": "reaction",
+  "id": "core/windfall-berries",
+  "title": "Windfall under a full bush",
+  "creator": "core",
+  "reaction": {
+    "on": { "resource": "core/berry-bushes" },
+    "when": { "ready_for_ms": 240000 },
+    "then": {
+      "appear": {
+        "output": "core/berry",
+        "yield": 1,
+        "active_ms": 1500,
+        "respawn_ms": 240000,
+        "level": 1,
+        "game": "pick",
+        "sprite": "core/base-kit:items/berry",
+        "at": "below"
+      }
+    }
+  }
+}
