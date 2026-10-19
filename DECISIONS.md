@@ -1824,3 +1824,16 @@ Measured (criterion 8, the e2e's recorder, play clock, the run's own clock jumps
 Three stills at phone size (390x844, the square by the elder's house) each changed one thing: A the current mix (Meshy player, Kenney chibi NPCs), B the whole cast in the Meshy realistic look, C the same cast toon-shaded. The owner picked B at 22:05 on 18.10, and added that the background and the environment are still terrible.
 Frame: `docs/design/frames/2026-10-18-3d-looks-B.png` (role models stand in for Maru and Pell). From here the daily Meshy spend (NEXT 8 d) generates only in this look; no toon shading. The environment (ground, props, background) is the next direction and gets its own ladder of stills before anything is built.
 **Retry when:** realistic people next to the low-poly props keep reading as two games; the environment ladder decides that. Model: claude-opus-5-5.
+## 2026-10-19 ✅ World reactions are read, never run: the frame of the reactions table
+
+The owner, 19.10: plan "a table of reactions" as the logic step toward a richer world. Things carry tags, rows in content connect them, and the kernel judges. The frame is in [docs/design/REACTIONS.md](docs/design/REACTIONS.md).
+The builder's choice (technical, so ✅): a reaction is a pure function of the content, the one entity it hangs on, the tick and the seed, the way `predatorAt`, `fireBurns` and `satietyAt` already work. Nothing is written to a neighbour, and nothing runs off screen. So R1 holds unchanged, an endless world costs nothing while unseen, the server replays it with the same function, and G28 holds because game ticks stop while the player is away. The cost, against Breath of the Wild's real-time chemistry: nothing spreads by itself in the first phases.
+Proposed, not yet his word:
+- Phase A: conditions, plus the effects `appear` (a node of its own, priced by V), `wait` (respawn only, never paid) and `cue` (a client event with no number and no text).
+- Phase B: weather by day, decided a day ahead and shown.
+- Phase C: marks the player leaves, such as a felled trunk that bridges a stream.
+Two questions are the owner's, because each bends a rule on his page:
+- Q1 (G47): may fog shorten a predator's eyes (recommended yes), and may noise turn its head (recommended no in the demo)?
+- Q2 (G48): may weather touch a fire (recommended no)?
+It goes before NEXT 19, so the generated ring reacts by its tile tags from its first day.
+**Retry when:** a replay of the same session gives a different state on the client and the server, or one phone screen's reactions cost more than 0.5 ms a frame. Then a reaction is cached per chunk and game minute, or the depth-1 rule is narrowed. Model: claude-opus-5-5.
