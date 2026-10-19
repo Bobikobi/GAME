@@ -4,13 +4,13 @@
  * default word. Resolves with the name to cut, valid for the kernel's `carve` action.
  */
 import { sound } from '../audio';
-import { DEFAULT_CARVE, STONE_SPEAKER } from '../stone';
+import { STONE_SPEAKER } from '../stone';
 import { button, h } from './dom';
 import type { Layer, UI } from './ui';
 
 const NAME = /^[A-Za-z0-9 _-]{1,16}$/;
 
-export function carveName(ui: UI): Promise<string> {
+export function carveName(ui: UI, defaultName: string): Promise<string> {
   return new Promise((resolve) => {
     const input = h('input', { class: 'name', maxlength: 16, placeholder: 'Your name', autocomplete: 'off', spellcheck: 'false' });
     const error = h('p', { class: 'dialog-text' });
@@ -41,7 +41,7 @@ export function carveName(ui: UI): Promise<string> {
       h('p', { class: 'dialog-text' }, 'One line is empty under the names.'),
       input,
       error,
-      h('div', { class: 'dialog-options' }, button('Cut it', cut, 'option'), button('Leave it to the stone', () => finish(DEFAULT_CARVE), 'option')),
+      h('div', { class: 'dialog-options' }, button('Cut it', cut, 'option'), button('Leave it to the stone', () => finish(defaultName), 'option')),
     );
     const el = h('div', { class: 'layer dialog-layer' }, box);
     const layer: Layer = {
@@ -53,7 +53,7 @@ export function carveName(ui: UI): Promise<string> {
           if (input.value.trim() === '') input.focus();
           else cut();
         }
-        else if (b === 'b') finish(DEFAULT_CARVE);
+        else if (b === 'b') finish(defaultName);
         return true;
       },
     };
