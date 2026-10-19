@@ -46,7 +46,7 @@ A 3D client of the same valley is in progress. It uses the same simulation, cont
 
 - **Content:** a fruit, a herb, a recipe, a quest, a treasure or a place to restore. Start with [Add a fruit in 10 minutes](docs/creators/README.md).
 - **Pixel art:** 16x24 characters and 32x32 work poses, in the kit's palette (the guide covers it).
-- **Reviewing:** every extension proposal needs three approvals, and an approval earns points when that proposal is merged.
+- **Reviewing:** every extension proposal needs three approvals once five creators have had an extension merged (until then, one approval from a maintainer), and an approval earns points when that proposal is merged.
 - **3D:** models and scenes for the 3D door.
 - **Code:** read [CONTRIBUTING.md](CONTRIBUTING.md) first. The simulation in `kernel/` stays pure and integer-only.
 

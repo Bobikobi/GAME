@@ -13,7 +13,7 @@
 
 ## Reviewer checklist
 
-An extension merges with three approvals and a green check. Before you approve, confirm each point:
+An extension merges with a green check and one approval, a maintainer's, until five creators have had an extension merged; from then on, three approvals. Before you approve, confirm each point:
 
 - [ ] **It plays.** I opened the preview, found it, and it does what the description says.
 - [ ] **It fits.** Names, text and art suit the valley: cosy, plain words for every age, menace within its limit (GAME_RULES.md G22 and G46), handheld-era pixel art.
