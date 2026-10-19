@@ -39,6 +39,8 @@ import {
 import { app } from '../app';
 import { sound, type SfxId, type SongId } from '../audio';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T } from '../config';
+import { makeCreatureTextures } from '../creatureart';
+import { CreatureLife } from '../creaturelife';
 import { FAR_BELL, SMOKE_PUFFS, farBellDue, nearestChimney, smokeAlpha, smokeAt } from '../hookbridge';
 import { STONE_GLIDE_MS, STONE_STEPS, type StoneView, stoneView } from '../stone';
 import { type Clear, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../mist';
@@ -337,6 +339,8 @@ export class WorldScene extends Phaser.Scene {
   private refreshIn = 0;
   private zoneIn = 0;
   private nextBird = 0;
+  /** sparrows, trout, hares and roe that leave when the player comes close (creatures.ts); only under RICH.motion */
+  private creatures: CreatureLife | undefined;
   private idleSince = 0;
   private nextBlink = 0;
   private blinkUntil = 0;
@@ -393,6 +397,7 @@ export class WorldScene extends Phaser.Scene {
     app.ui.root.prepend(this.labels);
     this.peek = new MazePeek(this, DEPTH.mist - 1, this.labels);
     this.makeFx();
+    this.buildCreatures();
     this.buildGround();
     this.buildProps();
     this.buildNodes();
@@ -450,6 +455,15 @@ export class WorldScene extends Phaser.Scene {
   }
 
   // ------------------------------------------------------------ building
+
+  /** The ambient creatures of the map's `creatures` block: frames, then one sprite per spot. */
+  private buildCreatures(): void {
+    const m = this.b.map;
+    if (!RICH.motion || !m.creatures) return;
+    makeCreatureTextures(this);
+    const solid = (x: number, y: number) => m.legend[m.ground[y]?.[x] ?? '']?.solid ?? true;
+    this.creatures = new CreatureLife(this, m, solid);
+  }
 
   /** Tiny pixel textures for dust, sparks, motes, eyes and the target arrow, and the soft ones the rich groups add. */
   private makeFx(): void {
@@ -1573,6 +1587,14 @@ export class WorldScene extends Phaser.Scene {
       this.hearPlace(s);
     }
     this.walk(s, real);
+    this.creatures?.update(
+      time,
+      real,
+      { x: this.player.x / T, y: this.player.y / T - 0.5, moving: this.move !== null },
+      hourOf(this.b, s.tick),
+      this.night,
+      view,
+    );
     this.dimInCover(s);
     this.stillReports.frame(this.b, s, this.hazards, !this.move && !this.falling, app.ui.blocking);
     this.playSong(s);

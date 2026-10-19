@@ -1464,6 +1464,36 @@
         },
         {
           "kind": "core/sparrow",
+          "x": 40,
+          "y": 13
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 39,
+          "y": 6
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 35,
+          "y": 12
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 28,
+          "y": 11
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 33,
+          "y": 8
+        },
+        {
+          "kind": "core/sparrow",
+          "x": 30,
+          "y": 6
+        },
+        {
+          "kind": "core/sparrow",
           "x": 30,
           "y": 15
         },
