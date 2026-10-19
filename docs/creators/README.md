@@ -235,8 +235,9 @@ Run it from a full Git clone after commits exist. The generated board is committ
 
 Sprites live in a kit: `content/kit/<your-handle>/kit.json` plus PNG files next to it.
 
-- Items and tiles are 16x16, character frames 16x24, props up to 64x64.
-- Character work poses are 32x32 with two frames: tool raised, then tool down.
+- Two grids. A new sprite is drawn at 64 art pixels per tile and says `"density": 4` in its kit entry: items and tiles 64x64, character frames 64x96, props up to 384x384 (six tiles a side). The 16 pixel grid is still accepted, with no `density` or `"density": 1`: items and tiles 16x16, character frames 16x24, props up to 64x64. A size that belongs to the other grid is an error: a 64x64 tile with no `density: 4` is refused, and the message says so.
+- Character work poses have two frames, tool raised, then tool down: 128x128 at density 4, 32x32 at density 1.
+- A generated sprite may name where it came from: `"source": {"spec": "tools/kit-gen/<spec>.json", "manifest": "<path>/manifest.jsonl:<line>"}`.
 - Only the 32 colors of the core palette, and every pixel fully clear or fully solid.
 - How the world looks (grounds, light and shadow, height): [docs/design/STYLE.md](../design/STYLE.md). Never draw a shadow into a sprite; the game casts it.
 - AI images are welcome. Run any image through the importer and it snaps to the grid and the palette: `pnpm kit:import my-plum.png content/kit/<your-handle>/items/plum.png 16 16`.

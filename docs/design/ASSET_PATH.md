@@ -11,8 +11,11 @@ Sizes are by code complexity and the hardware a step needs, never by hours.
 
 ## 1. Where the art stands today
 
-- Items and tiles are 16x16, character frames 16x24, work poses 32x32 in two
-  frames, props up to 64x64; the 32 colours of the core palette; every pixel
+- Two grids, picked per sprite by its `density` (STYLE.md section 1). At 64 art
+  pixels per tile (`density: 4`, the standard for new art): items and tiles
+  64x64, character frames 64x96, work poses 128x128 in two frames, props up to
+  384x384. At 16 per tile (the default, still accepted): 16x16, 16x24, 32x32,
+  64x64. The 32 colours of the core palette; every pixel
   fully clear or fully solid ([docs/creators/README.md](../creators/README.md)).
 - `pnpm kit:import` snaps any picture to the grid and the palette, with an
   optional one-pixel outline. The kit check refuses what does not fit.

@@ -469,6 +469,45 @@ function checkDrift(b: Bundle): Issue[] {
   return issues;
 }
 
+/** The two grids a sprite may be drawn on: art pixels per tile side, 16 (density 1) or 64 (density 4). */
+const DENSITY_SCALE: Record<number, number> = { 1: 1, 4: 4 };
+
+/** What a sprite of this group should measure at a density: an exact size, or a ceiling for a prop. */
+function sizeRule(name: string, m: number): { w: number; h: number; exact: boolean; what: string } {
+  const group = name.split('/')[0];
+  if (group === 'tiles' || group === 'items') return { w: 16 * m, h: 16 * m, exact: true, what: `${group} are` };
+  // a work pose is twice a walk frame so a raised tool fits; its feet stay on the same spot as the walk frames
+  if (group === 'chars' && /_work_(down|left|up|right)$/.test(name)) return { w: 32 * m, h: 32 * m, exact: true, what: 'work poses are' };
+  if (group === 'chars') return { w: 16 * m, h: 24 * m, exact: true, what: 'character frames are' };
+  // a prop reaches six tiles a side at density 4 (STYLE.md section 1b), four at density 1
+  const top = m === 4 ? 384 : 64;
+  return { w: top, h: top, exact: false, what: `${group} are at most` };
+}
+
+function fits(name: string, w: number, h: number, m: number): boolean {
+  const r = sizeRule(name, m);
+  return r.exact ? w === r.w && h === r.h : w <= r.w && h <= r.h;
+}
+
+/**
+ * V-1, size: a sprite measures what its group says at its density (16 or 64 art pixels per tile). A size that
+ * belongs to the other density is named as such, so a 64x64 tile that forgot `density: 4` is not read as a bad one.
+ */
+export function spriteSizeProblem(name: string, s: { w: number; h: number; density?: number }): string | undefined {
+  const density = s.density ?? 1;
+  const m = DENSITY_SCALE[density];
+  if (m === undefined) return `density is ${density}, it is 1 (16 art pixels per tile) or 4 (64 per tile)`;
+  if (fits(name, s.w, s.h, m)) return undefined;
+  const other = density === 1 ? 4 : 1;
+  const here = sizeRule(name, m);
+  const there = sizeRule(name, DENSITY_SCALE[other]!);
+  const said = (r: typeof here) => `${r.w}x${r.h}`;
+  const hint = fits(name, s.w, s.h, DENSITY_SCALE[other]!)
+    ? `; this size is a density ${other} size, so set "density": ${other} or draw it on the ${density === 1 ? '16' : '64'} px grid`
+    : '';
+  return `${here.what} ${said(here)} at density ${density} (${said(there)} at density ${other}), this one is ${s.w}x${s.h}${hint}`;
+}
+
 /** V-1: every sprite exists, has the published size, and uses the core palette only. */
 function checkKits(a: Assembled): Issue[] {
   const issues: Issue[] = [];
@@ -480,18 +519,8 @@ function checkKits(a: Assembled): Issue[] {
     }
     for (const [name, s] of Object.entries(kit.sprites)) {
       const where = `kit.sprites.${name}`;
-      const group = name.split('/')[0];
-      if ((group === 'tiles' || group === 'items') && (s.w !== 16 || s.h !== 16)) {
-        issues.push({ file: kitFile, where, message: `${group} are 16x16, this one is ${s.w}x${s.h}`, level: 'error' });
-      }
-      // a work pose is 32x32 so a raised tool fits; its feet stay on the same spot as the walk frames
-      const work = /_work_(down|left|up|right)$/.test(name);
-      if (group === 'chars' && work && (s.w !== 32 || s.h !== 32)) {
-        issues.push({ file: kitFile, where, message: `work poses are 32x32, this one is ${s.w}x${s.h}`, level: 'error' });
-      }
-      if (group === 'chars' && !work && (s.w !== 16 || s.h !== 24)) {
-        issues.push({ file: kitFile, where, message: `character frames are 16x24, this one is ${s.w}x${s.h}`, level: 'error' });
-      }
+      const problem = spriteSizeProblem(name, s);
+      if (problem) issues.push({ file: kitFile, where, message: problem, level: 'error' });
       const abs = join(kit.dir, s.file);
       if (!existsSync(abs)) {
         issues.push({ file: kitFile, where, message: `missing file ${kit.rel}/${s.file}`, level: 'error' });

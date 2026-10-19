@@ -977,9 +977,32 @@ export const KitBody = Type.Object(
       Type.Object(
         {
           file: Type.String({ pattern: '^[a-z0-9_/-]+\\.png$', description: 'PNG next to this file.' }),
-          w: Int(8, 64, 'Frame width in pixels. tiles/ and items/ are 16, chars/ are 16.'),
-          h: Int(8, 64, 'Frame height in pixels. tiles/ and items/ are 16, chars/ are 24.'),
+          w: Int(
+            8,
+            384,
+            'Frame width in pixels. At density 1 (16 art pixels per tile) tiles/ and items/ are 16, chars/ are 16, a work pose 32 and props up to 64. At density 4 (64 art pixels per tile) tiles/ and items/ are 64, chars/ are 64, a work pose 128 and props up to 384.',
+          ),
+          h: Int(
+            8,
+            384,
+            'Frame height in pixels. At density 1 tiles/ and items/ are 16, chars/ are 24, a work pose 32 and props up to 64. At density 4 tiles/ and items/ are 64, chars/ are 96, a work pose 128 and props up to 384.',
+          ),
           frames: Type.Optional(Int(1, 16, 'Animation frames laid side by side. Default 1.')),
+          density: Type.Optional(
+            Type.Union([Type.Literal(1), Type.Literal(4)], {
+              description:
+                'Art pixels per tile side: 1 means 16 per tile (the 16x16 grid, the default), 4 means 64 per tile (the 64x64 grid, the standard for new art). The size rules of w and h follow it.',
+            }),
+          ),
+          source: Type.Optional(
+            Type.Object(
+              {
+                spec: Type.String({ minLength: 1, description: 'The pnpm kit:gen spec file this sprite was made from, as a path from the repository root.' }),
+                manifest: Type.String({ minLength: 1, description: 'The manifest.jsonl line of that run, as <path>:<line number>.' }),
+              },
+              { additionalProperties: false, description: 'Where a generated sprite came from (ASSET_PATH section 4, item 2). Left out for a hand-drawn one.' },
+            ),
+          ),
         },
         { additionalProperties: false },
       ),
