@@ -360,10 +360,11 @@ The valley has no combat; its danger is the hour, and what the player eats.
   answer a hazard. Chance, where a rule has it, runs through the kernel's own
   random stream so the server at stage 2a can replay it. Road thieves wait for
   weapons (G35).
-- **G35 No fighting.** Predators are hazards, not enemies: the answer is to run
-  back to a safe place, never gear. Combat stays where the spec puts it (stage
-  8, or a community vote), and the road thieves of the boards entry wait for
-  it.
+- **G35 No fighting in the demo.** In the demo (stage 1) predators are hazards,
+  not enemies: the answer is to run back to a safe place, never gear. Combat
+  comes after the foundation, as a core part of the game (the owner, 19.10, in
+  DECISIONS.md). Where it is fought, and its frame, are the owner's to approve
+  before it is built. The road thieves of the boards entry wait for it.
 
 - **G47 A watched road is a rule the eyes can read.** A predator that rounds
   after dark walks a closed loop at one pace, its place set by the clock
