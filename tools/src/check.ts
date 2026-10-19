@@ -17,6 +17,7 @@ import { checkHazards } from './hazards';
 import { checkPlay, rewardItems } from './play';
 import { checkDeadProps } from './deadprops';
 import { checkReach } from './reach';
+import { checkRichness } from './richness';
 import { checkStarts } from './starts';
 
 export interface CheckResult {
@@ -44,6 +45,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkReach(b, assembled.origin));
     issues.push(...checkDeadProps(b, assembled.origin));
     issues.push(...checkHazards(b, assembled.origin));
+    issues.push(...checkRichness(b, assembled.origin));
   }
   return { issues: dedupe(issues), files: files.length, assembled };
 }
