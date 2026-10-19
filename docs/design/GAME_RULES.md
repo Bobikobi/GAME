@@ -362,10 +362,11 @@ The valley has no combat; its danger is the hour, and what the player eats.
   answer a hazard. Chance, where a rule has it, runs through the kernel's own
   random stream so the server at stage 2a can replay it. Road thieves wait for
   weapons (G35).
-- **G35 No fighting.** Predators are hazards, not enemies: the answer is to run
-  back to a safe place, never gear. Combat stays where the spec puts it (stage
-  8, or a community vote), and the road thieves of the boards entry wait for
-  it.
+- **G35 No fighting in the demo.** In the demo (stage 1) predators are hazards,
+  not enemies: the answer is to run back to a safe place, never gear. Combat
+  comes after the foundation, as a core part of the game (the owner, 19.10, in
+  DECISIONS.md). Where it is fought, and its frame, are the owner's to approve
+  before it is built. The road thieves of the boards entry wait for it.
 
 - **G47 A watched road is a rule the eyes can read.** A predator that rounds
   after dark walks a closed loop at one pace, its place set by the clock
@@ -487,12 +488,19 @@ owner's word (DECISIONS.md, the entry on menace with a limit).
   the player fell, never that they died or were killed, since the player wakes
   again in town. The aim is ESRB E10+ and PEGI 12.
 
+### The open world
+
+Added 2026-10-18 on the owner's word (DECISIONS.md, "Height crossings and winding paths"). The numbers G50 to G67 are held by the drafts in [OPEN_WORLD.md](OPEN_WORLD.md).
+
+- **G68 A rock face blocks both ways, and the way across suits the place.** A step between two tiles whose levels differ is refused in both directions, except across a tile that is a crossing: stairs, a ramp, a lift, a cable car, or any tool that fits the environment, its height, its geography and its culture. Two places never share the same crossing by habit. A crossing is never a gate that wears out and strands a player (dec 1094). A change of level that is only a mountain band (more than 3 levels in a step) is not walked at all.
+- **G69 Paths wind.** A path winds between trees, rocks and mountains. No straight run of a path is longer than 8 tiles, and at least that often it turns or passes through a gap in cover (a tree, a rock or a mountain within one tile of both sides). A bridge or a causeway may run up to 12 tiles, and at most one run in five of the ring may be longer than 8. The rule holds for generated and authored paths, and a straight stretch now and then is fine.
+
 ### What this page covers, and what lives elsewhere
 
 | Topic | Where | State |
 |---|---|---|
 | The opening and onboarding | [FTUE_RESEARCH.md](../FTUE_RESEARCH.md) | Written; roadmap phases 2 and 3 open. |
-| Loop and hook, quests, riddles, reading, builds, choices, feel, session, variety, dialogue, sound, fairness, access, danger, expeditions, crafting, menace | This page | Rules G1-G49. |
+| Loop and hook, quests, riddles, reading, builds, choices, feel, session, variety, dialogue, sound, fairness, access, danger, expeditions, crafting, menace | This page | Rules G1-G49, G68 and G69. |
 | Economy and balance | The kernel rules R1-R12, `content/core/params.json`, `pnpm values` | Enforced by code. |
 | Art and sprites | [docs/creators/README.md](../creators/README.md) | Enforced by the kit check. |
 | Community: requests, votes, merges, conduct | [CONTRIBUTING.md](../../CONTRIBUTING.md), [docs/loop/README.md](../loop/README.md) | Live. |
@@ -581,6 +589,8 @@ riddle uses, numbers inside the ranges in `content/core/params.json`, art and
 sound. What it never decides alone: a new step kind, a removed beat, a reward
 type, a rung of the ladder, the opening order, anything that makes a read or a
 build pay less.
+
+**A one-time exception to "the opening never moves" (G59 of the draft in [OPEN_WORLD.md](OPEN_WORLD.md)), the owner, 18.10.** When the open world's first ring is built (NEXT.md section 19), the core team, and only it, may reshape the valley and improve the opening: the valley's size and frame, the wake tiles and the opening's legs. It does not cover the rung payoffs, the ladder minutes or the 90 s ceiling, which stay as section 2 says, and creators never touch the opening. It ends when the world lock is re-anchored with the owner's yes; after that G59 holds again, whole. Saves are relocated by placement, never by a fall. Any other request to move the opening goes to the owner as above.
 
 ## 7. The review checklist
 
