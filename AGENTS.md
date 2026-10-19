@@ -7,6 +7,7 @@ Read [docs/creators/README.md](docs/creators/README.md) before changing content.
 - Do not edit generated bundles, schemas, credits, values or the creators board by hand.
 - Run `pnpm check` while creating content. Run `pnpm verify` before handing work back.
 - Read [docs/design/GAME_RULES.md](docs/design/GAME_RULES.md) before touching quests, camps, map props, NPC lines, rewards, timing or the opening. A request that breaks a rule is not built and not bent: it goes to the owner first (section 6 there), and `pnpm check` prints a `!` line for each rule it can test.
+- Read [docs/design/WORLD_STRUCTURE.md](docs/design/WORLD_STRUCTURE.md) first before touching the map, the ground, rings, lands, the edge, safe places, travel, fights between players or who may change an area. It states the structure as facts (W1-W12) with what RuneScape, World of Warcraft and Drakantos chose beside each; where an older page says otherwise, that page is the current word, and a contradiction is cited in the hand-back and never built on.
 
 ## How work moves
 
