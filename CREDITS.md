@@ -22,7 +22,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Woodcutting (profession) - `content/core/professions/woodcutting.json`
 - The coin under the lantern (quest) - `content/core/quests/a-coin-for-maru.json`
 - The slid bank (quest) - `content/core/quests/buried-axe.json`
-- A fire before dark (quest) - `content/core/quests/first-fire.json`
+- A fire across the river (quest) - `content/core/quests/first-fire.json`
 - First pickings (quest) - `content/core/quests/first-pickings.json`
 - Mend the bridge (quest) - `content/core/quests/fix-the-bridge.json`
 - A glint by the bridge (quest) - `content/core/quests/glint-by-the-bridge.json`
@@ -33,6 +33,9 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - The south bank (quest) - `content/core/quests/the-south-bank.json`
 - The tangle past the ruins (quest) - `content/core/quests/the-tangle.json`
 - Where the bells rang (quest) - `content/core/quests/three-fruits.json`
+- Birds lift where something lies hidden (reaction) - `content/core/reactions/birds-over-a-find.json`
+- Fish rise at dusk (reaction) - `content/core/reactions/fish-at-dusk.json`
+- Windfall under a full bush (reaction) - `content/core/reactions/windfall-berries.json`
 - Bandage (recipe) - `content/core/recipes/bandage.json`
 - Berry mash (recipe) - `content/core/recipes/berry-mash.json`
 - Fine basket (recipe) - `content/core/recipes/fine-basket.json`
