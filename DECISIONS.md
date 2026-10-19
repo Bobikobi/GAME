@@ -1869,3 +1869,10 @@ On fire in a shared world (section 10), his words: a wildfire and putting it out
 Left open for the rules session: the line "a player's act may open things for others, never close or destroy them" (his word: "I don't know").
 The section 4 examples now carry the real file shape of #207 (`reaction: { on, when, then }`, the appear node inline), `empty_for_ms` is out of phase A, and the fish rise on `water` tiles.
 **Retry when:** combat (W2) makes reading a foe's attention part of the fight; then noise turning a head is asked again. Model: claude-opus-5-5.
+
+## 2026-10-19 ✅ Weather is one sky per region and day, drawn from the world's seed and nothing of the player's
+
+Phase B of [docs/design/REACTIONS.md](docs/design/REACTIONS.md) reads the weather. `weatherOf(seed, region, day)` draws clear, rain or fog from the world's seed with fixed odds (70, 20 and 10 in a hundred days), so everyone in a region sees one sky, as large online games keep one weather per zone, and a replay on the server gives the same day. The days are drawn apart, so tomorrow is known today for the morning's forecast. The hand-made map is one region (`regionOf`); a chunk of the open world will name its own.
+The odds stay in the kernel, not in `params`: a creator's lever on the sky would be a lever on value. Two core rows read it: mushrooms by a grove log in the rain (the forest patch's node, so the mushroom's value does not move) and reeds back in 0.6 of their time. The check holds G45 for the sky: a node of one weather gives a class found in every weather. Weather never touches a fire (the owner, 19.10), and a test burns the hearth the same in rain, fog and clear.
+Evidence: kernel/test/weather.test.ts (the shares of 1000 days within 5 points of the odds; two players with different starts, tiles and senses read the same sky) and tools/test/reactions.test.ts.
+**Retry when:** a region needs a climate of its own (a wet coast, a dry plain); then the odds move into the region's file, under a check that keeps V still. Model: claude-opus-5-5.
