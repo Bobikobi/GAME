@@ -5,8 +5,9 @@
  */
 import type { Bundle, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
+import { tagAt } from './world';
 
-export const KERNEL_VERSION = '0.10.0';
+export const KERNEL_VERSION = '0.11.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['carry', 'senses', 'agility', 'luck', 'stamina'] as const;
@@ -77,6 +78,19 @@ export interface FireState {
   kept?: number;
 }
 
+/** The id a `feed` action and a `tend` step give the fire the player kindled themselves (`Player.own`). No prop id has this shape: an id has a slash. */
+export const OWN_FIRE = 'own';
+
+/**
+ * The one fire the player kindled outside the town (DECISIONS.md, 2026-10-19): it burns like a map fire, on the same
+ * `lit`, `until` and `kept`, and also keeps its tile and the game milliseconds one log of it lasts, fixed when it was
+ * kindled from the danger of the ground it stands on, so `until` and `nextLogAt` stay single numbers.
+ */
+export interface OwnFire extends FireState {
+  at: [number, number];
+  log: number;
+}
+
 export interface ExpeditionState {
   climax: boolean;
   /** Tick of the first action or report inside the place on this visit. */
@@ -135,6 +149,8 @@ export interface Player {
   bitten: string[];
   /** tended fires by map prop id */
   fires: Record<string, FireState>;
+  /** the fire the player kindled outside the town, if any; one stands at a time (null in saves from before kernel 0.11) */
+  own: OwnFire | null;
   /** Expedition progress by expedition id. Chain quests persist separately in `quests`. */
   expeditions: Record<string, ExpeditionState>;
   /** falls so far: the draw counter of the tile they wake on (rule R4) */
@@ -194,6 +210,7 @@ export function newState(bundle: Bundle, seed: number): State {
       chase: null,
       bitten: [],
       fires: {},
+      own: null,
       expeditions: {},
       falls: 0,
       movedAt: 0,
@@ -387,9 +404,19 @@ export function isNight(bundle: Bundle, tick: number): boolean {
   return hour >= 20 || hour < 5;
 }
 
+/** The tended fire an id names: a map fire by its prop id, or the player's own by `OWN_FIRE`. Saves from before the fields existed read as none. */
+export function fireOf(state: State, id: string): FireState | undefined {
+  return id === OWN_FIRE ? (state.player.own ?? undefined) : state.player.fires?.[id];
+}
+
 /** Whether a tended fire still burns at this game tick. */
 export function fireBurns(state: State, id: string, tick: number): boolean {
-  return (state.player.fires?.[id]?.until ?? 0) > tick;
+  return (fireOf(state, id)?.until ?? 0) > tick;
+}
+
+/** Game milliseconds one log lasts in a tended fire: `fire.log_ms`, and for the player's own fire what it was kindled with. */
+export function logMsOf(bundle: Bundle, state: State, id: string): number {
+  return id === OWN_FIRE ? (state.player.own?.log ?? bundle.params.fire.log_ms) : bundle.params.fire.log_ms;
 }
 
 /** Whether an item feeds a fire: its class is wood, or a class an extension declares under wood. */
@@ -406,7 +433,9 @@ export function burnsAsWood(bundle: Bundle, itemId: string): boolean {
  * relit or not (DECISIONS.md, 2026-10-16: the vigil closes at dawn).
  */
 export function tendHolds(bundle: Bundle, state: State, id: string, tick: number): boolean {
-  const fire = state.player.fires?.[id];
+  const fire = fireOf(state, id);
+  // the player's own fire keeps a vigil only while it stands outside the town
+  if (id === OWN_FIRE && state.player.own !== null && tagAt(bundle.map, state.player.own.at[0], state.player.own.at[1]) === 'town') return false;
   const dusk = lastDusk(bundle, tick);
   const dawn = nightEnds(bundle, dusk);
   return fire !== undefined && tick >= dawn && (fire.kept === dawn || (fire.lit <= dusk && fire.until >= dawn));
@@ -418,8 +447,8 @@ export function tendHolds(bundle: Bundle, state: State, id: string, tick: number
  * enough of its wood has burned down. A log goes in whole or not at all, so no feed wastes wood.
  */
 export function nextLogAt(bundle: Bundle, state: State, id: string, tick: number): number {
-  const until = state.player.fires?.[id]?.until ?? tick;
-  return Math.max(tick, until - (bundle.params.fire.cap - 1) * bundle.params.fire.log_ms);
+  const until = fireOf(state, id)?.until ?? tick;
+  return Math.max(tick, until - (bundle.params.fire.cap - 1) * logMsOf(bundle, state, id));
 }
 
 /** Where a tick falls in its day: 0 at midnight (tick 0 is noon, half way in; same start as hourOf). */

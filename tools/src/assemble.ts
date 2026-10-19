@@ -108,6 +108,8 @@ export function flattenParams(p: ParamsBody): Params {
       cap: p.fire.cap.value,
       log_ms: p.fire.log_ms.value,
       warn_min: p.fire.warn_min.value,
+      safe_tiles: p.fire.safe_tiles.value,
+      burn_pct_per_d: p.fire.burn_pct_per_d.value,
     },
     hazard: {
       predator: {

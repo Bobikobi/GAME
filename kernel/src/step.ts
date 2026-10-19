@@ -18,7 +18,7 @@
  */
 import type { Bundle, QuestDef, RecipeDef, Verb } from './bundle';
 import { canonical } from './canon';
-import { bitesAfter, distanceTo, harmOf, hazardsOf, isSafe, isTownTile, reappearTile, sees, townAt, windowOpen, windowShuts } from './danger';
+import { bitesAfter, dangerAt, distanceTo, fireArea, harmOf, hazardsOf, isSafe, isTownTile, reappearTile, sees, townAt, watchedAt, windowOpen, windowShuts } from './danger';
 import { bellTicks, inside as insideExpedition, lastBellAt, visitNight, windowOpen as expeditionWindowOpen } from './expedition';
 import { clamp, idiv, idivUp, mulDiv, mulDivUp } from './num';
 import { drawBasisPoints } from './rng';
@@ -26,6 +26,8 @@ import {
   ATTRIBUTES,
   type Attribute,
   type FireState,
+  OWN_FIRE,
+  type OwnFire,
   type State,
   WEAR_SLOTS,
   type WearSlot,
@@ -36,9 +38,11 @@ import {
   effectValue,
   fitWorn,
   fireBurns,
+  fireOf,
   hourOf,
   isNight,
   lastDusk,
+  logMsOf,
   nextLogAt,
   nightEnds,
   nodeVerb,
@@ -65,6 +69,8 @@ export type Action =
   | { t: 'craft'; recipe: string; at: Tile }
   | { t: 'eat'; item: string }
   | { t: 'feed'; fire: string; item: string; at: Tile }
+  /** build the player's own fire on `fire`, a free tile beside `at`, outside the town (G30) */
+  | { t: 'kindle'; fire: Tile; at: Tile }
   | { t: 'buy'; npc: string; item: string; qty: number; at: Tile }
   | { t: 'sell'; npc: string; item: string; qty: number; at: Tile }
   | { t: 'restore'; restore: string; at: Tile }
@@ -228,6 +234,7 @@ export function step(bundle: Bundle, state: State, action: Action, tick: number)
   // Quest reads use the state's clock; advance the clone before an explicit or automatic turn-in reads it.
   ctx.s.tick = tick;
   ctx.s.player.fires ??= {};
+  ctx.s.player.own ??= null;
   ctx.s.player.expeditions ??= {};
   ctx.s.player.bitten ??= [];
   try {
@@ -303,6 +310,8 @@ function perform(ctx: Ctx, a: Action): void {
       return eat(ctx, a.item);
     case 'feed':
       return feed(ctx, a.fire, a.item, a.at);
+    case 'kindle':
+      return kindle(ctx, a.fire, a.at);
     case 'buy':
       return buy(ctx, a.npc, a.item, a.qty, a.at);
     case 'sell':
@@ -532,23 +541,65 @@ function eat(ctx: Ctx, itemId: string): void {
 
 function feed(ctx: Ctx, fireId: string, itemId: string, at: Tile): void {
   const { b, s, tick } = ctx;
-  const prop = b.map.props.find((p) => p.id === fireId && p.fire === true);
-  if (!prop) refuse('There is no fire there.');
-  checkAt(ctx, at, prop);
+  const own = fireId === OWN_FIRE ? s.player.own : null;
+  const prop = fireId === OWN_FIRE ? undefined : b.map.props.find((p) => p.id === fireId && p.fire === true);
+  if (own === null && !prop) refuse('There is no fire there.');
+  checkAt(ctx, at, own === null ? prop! : { x: own.at[0], y: own.at[1], w: 1, h: 1 });
   if (!burnsAsWood(b, itemId)) refuse('That is not wood.');
   if ((s.player.bag[itemId] ?? 0) < 1) refuse('You do not have any.');
   // a log goes in whole or not at all: a fire with less than a log's room under its cap refuses it
   if (nextLogAt(b, s, fireId, tick) > tick) refuse('The fire is already full.');
   const burning = fireBurns(s, fireId, tick);
-  const current = s.player.fires[fireId];
-  const next: FireState = burning
-    ? { ...current!, until: current!.until + b.params.fire.log_ms }
-    : { lit: tick, until: tick + b.params.fire.log_ms };
+  const current = fireOf(s, fireId);
+  const log = logMsOf(b, s, fireId);
+  const next: FireState = burning ? { ...current!, until: current!.until + log } : { lit: tick, until: tick + log };
+  // the player's own fire is kept where it stands and with the log it was kindled with, burning or not
+  if (own !== null) Object.assign(next, { at: own.at, log: own.log });
   // lit again by day after a night it kept: the new burn carries that night's dawn, so the vigil still holds until the next dusk
   if (!burning && tendHolds(b, s, fireId, tick)) next.kept = nightEnds(b, lastDusk(b, tick));
   removeItem(ctx, itemId, 1);
-  s.player.fires[fireId] = next;
+  if (own !== null) s.player.own = next as OwnFire;
+  else s.player.fires[fireId] = next;
   ctx.events.push({ e: 'fire', id: fireId, until: next.until });
+}
+
+/** The camp part whose logs and time build the player's own fire: the same two logs as the camp's fire (NEXT 21). */
+const KINDLE_FROM = 'core/campfire';
+
+/**
+ * The player's own fire (G30; DECISIONS.md, 2026-10-19): built on a free tile beside them, outside the town and every
+ * slot, never during a hunt and never where a predator's round watches the ground it would make safe, so it is a stay
+ * the player plans and never a way out. Every refusal comes before the logs leave the bag. One stands at a time:
+ * kindling another puts the first out and takes its place, carrying a night the first had kept (G48, as a relit
+ * fire does). A log of it lasts `fire.log_ms` shortened by the danger of its ground, fixed here so the rest stays whole numbers.
+ */
+function kindle(ctx: Ctx, fire: Tile, at: Tile): void {
+  const { b, s, tick } = ctx;
+  const camp = b.camps[KINDLE_FROM];
+  if (!camp) refuse('There is nothing to kindle a fire with.');
+  if (!Array.isArray(fire) || fire.length !== 2 || !Number.isSafeInteger(fire[0]) || !Number.isSafeInteger(fire[1])) refuse('Where would the fire go?');
+  checkAt(ctx, at, { x: fire[0], y: fire[1], w: 1, h: 1 });
+  if (at[0] === fire[0] && at[1] === fire[1]) refuse('Step off that spot first.');
+  if (s.player.chase !== null) refuse('Not with the wolf at your heels.');
+  if (!walkableFor(b)(fire[0], fire[1], s.player)) refuse('Nothing here will hold a fire.');
+  if (isTownTile(b, fire)) refuse('The town has its own fires.');
+  if (b.map.slots.some((slot) => inRect(fire[0], fire[1], slot))) refuse('A fire has no place here.');
+  if (Object.values(b.instances).some((inst) => inst.x === fire[0] && inst.y === fire[1]) || b.map.props.some((p) => p.fire === true && inRect(fire[0], fire[1], p))) {
+    refuse('Something is already there.');
+  }
+  if (fireArea(b, fire).some((tile) => watchedAt(b, tile))) refuse('A wolf watches this ground. Not here.');
+  for (const input of camp.inputs) {
+    if ((s.player.bag[input.item] ?? 0) < input.qty) refuse(`You need ${input.qty} ${b.items[input.item]?.name ?? input.item}.`);
+  }
+  const ms = duration(ctx, camp.active_ms, 1000);
+  const log = mulDiv(b.params.fire.log_ms, 100, 100 + b.params.fire.burn_pct_per_d * dangerAt(b, fire));
+  const next: OwnFire = { at: [fire[0], fire[1]], lit: tick, until: tick + log, log };
+  // a night the fire it replaces had kept stays kept until the next dusk: moving the fire by day does not undo it
+  if (tendHolds(b, s, OWN_FIRE, tick)) next.kept = nightEnds(b, lastDusk(b, tick));
+  for (const input of camp.inputs) removeItem(ctx, input.item, input.qty);
+  s.player.own = next;
+  ctx.events.push({ e: 'fire', id: OWN_FIRE, until: next.until });
+  busy(ctx, 'kindle', ms);
 }
 
 /**
@@ -572,7 +623,7 @@ function firesOut(ctx: Ctx, since: number): void {
     for (const st of b.quests[id]?.steps ?? []) if (st.kind === 'tend') kept.add(st.fire);
   }
   for (const id of [...kept].sort()) {
-    const fire = s.player.fires[id];
+    const fire = fireOf(s, id);
     if (fire === undefined || fire.until <= since || fire.until > tick) continue;
     const dusk = lastDusk(b, fire.until);
     if (fire.lit <= dusk && fire.until < nightEnds(b, dusk)) ctx.events.push({ e: 'fire_out', id });

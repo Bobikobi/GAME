@@ -4,7 +4,7 @@
  * are errors since the core content was rewritten to pass them (GRUNT P-3,
  * 8.10): a breach stops the check, core and extensions alike.
  */
-import { campTile, findSlot, inRect, isSafeGround, makeWalkable, type Bundle, type QuestDef } from '@game/kernel';
+import { OWN_FIRE, campTile, findSlot, inRect, isSafeGround, makeWalkable, type Bundle, type QuestDef } from '@game/kernel';
 import { QUEST_TYPES } from '@game/schema';
 import type { Issue } from './load';
 
@@ -321,7 +321,7 @@ export function checkPlay(b: Bundle, origin: Record<string, string>): Issue[] {
   });
   for (const q of Object.values(b.quests)) {
     q.steps.forEach((step, i) => {
-      if (step.kind !== 'tend' || fires.has(step.fire)) return;
+      if (step.kind !== 'tend' || step.fire === OWN_FIRE || fires.has(step.fire)) return;
       issues.push({
         file: at(q.id),
         where: `quest.steps.${i}.fire`,

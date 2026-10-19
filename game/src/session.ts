@@ -169,8 +169,10 @@ export class Session {
     danger.falls ??= 0;
     danger.movedAt ??= state.tick;
     // a save from before tending (P-13a) has no fire ledger
-    const tending = state.player as Partial<Pick<State['player'], 'fires'>>;
+    const tending = state.player as Partial<Pick<State['player'], 'fires' | 'own'>>;
     tending.fires ??= {};
+    // and one from before kernel 0.11 has no fire of the player's own
+    tending.own ??= null;
     // a save from before expeditions (P-14a) has no expedition progress
     const expedition = state.player as Partial<Pick<State['player'], 'expeditions'>>;
     expedition.expeditions ??= {};

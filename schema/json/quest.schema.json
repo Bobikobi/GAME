@@ -701,7 +701,7 @@
               },
               {
                 "additionalProperties": false,
-                "description": "Keep this fire burning without a gap from dusk through dawn.",
+                "description": "Keep this fire burning without a gap from dusk through dawn. \"own\" is the fire the player kindled outside the town (G30, G48).",
                 "type": "object",
                 "required": [
                   "kind",
@@ -713,10 +713,18 @@
                     "type": "string"
                   },
                   "fire": {
-                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
-                    "maxLength": 80,
-                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
-                    "type": "string"
+                    "anyOf": [
+                      {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                        "type": "string"
+                      },
+                      {
+                        "const": "own",
+                        "type": "string"
+                      }
+                    ]
                   }
                 }
               },

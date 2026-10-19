@@ -4234,7 +4234,7 @@
                   },
                   {
                     "additionalProperties": false,
-                    "description": "Keep this fire burning without a gap from dusk through dawn.",
+                    "description": "Keep this fire burning without a gap from dusk through dawn. \"own\" is the fire the player kindled outside the town (G30, G48).",
                     "type": "object",
                     "required": [
                       "kind",
@@ -4246,10 +4246,18 @@
                         "type": "string"
                       },
                       "fire": {
-                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
-                        "maxLength": 80,
-                        "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
-                        "type": "string"
+                        "anyOf": [
+                          {
+                            "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                            "maxLength": 80,
+                            "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                            "type": "string"
+                          },
+                          {
+                            "const": "own",
+                            "type": "string"
+                          }
+                        ]
                       }
                     }
                   },
@@ -10575,7 +10583,9 @@
               "required": [
                 "cap",
                 "log_ms",
-                "warn_min"
+                "warn_min",
+                "safe_tiles",
+                "burn_pct_per_d"
               ],
               "properties": {
                 "cap": {
@@ -10658,6 +10668,60 @@
                     }
                   },
                   "description": "Game minutes before a burning fire goes out when its warning is shown."
+                },
+                "safe_tiles": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "How far from the player's own fire, in tiles, the ground is safe while it burns: 1 is its tile and the ring around it (G30)."
+                },
+                "burn_pct_per_d": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "How much faster a log of the player's own fire burns for each step of the area's danger d, in percent (G30, G48)."
                 }
               }
             },
