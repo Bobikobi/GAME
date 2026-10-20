@@ -7,10 +7,10 @@
 import type { WhenDef } from '@game/schema';
 
 import type { Bundle } from './bundle';
-import { type State, campBuilt, isNight } from './state';
+import { type PublicState, campBuilt, isNight } from './state';
 
 /** Whether every condition `when` names holds, at `tick` for the time of day. */
-export function holds(bundle: Bundle, state: State, when: WhenDef, tick: number = state.tick): boolean {
+export function holds(bundle: Bundle, state: PublicState, when: WhenDef, tick: number = state.tick): boolean {
   const p = state.player;
   if (when.done && !when.done.every((q) => p.quests[q] === 'done')) return false;
   if (when.active && !when.active.every((q) => p.quests[q] === 'active')) return false;
@@ -37,7 +37,7 @@ export function remarkKey(npcId: string, index: number): string {
 /** The remark a character says now, or undefined when none holds that was not said before. */
 export function pickRemark(
   bundle: Bundle,
-  state: State,
+  state: PublicState,
   npcId: string,
   heard: ReadonlySet<string>,
   tick: number = state.tick,
@@ -60,7 +60,7 @@ export function pickRemark(
  * the quest was open, on an outing that came home (`player.bitten`), and the content wrote that line,
  * else `talk.done`; undefined when it has neither.
  */
-export function doneLines(bundle: Bundle, state: State, questId: string): readonly string[] | undefined {
+export function doneLines(bundle: Bundle, state: PublicState, questId: string): readonly string[] | undefined {
   const talk = bundle.quests[questId]?.talk;
   if (talk?.done_bitten && state.player.bitten?.includes(questId)) return talk.done_bitten;
   return talk?.done;
