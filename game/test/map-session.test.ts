@@ -1,6 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import type { Bundle } from '@game/kernel';
+import { SAVE_KEY } from '../src/config';
 import { STALL_SLOT } from '../src/places';
 import { Session } from '../src/session';
 import { loadBundle } from '../../tools/test/helpers/world';
@@ -74,6 +75,21 @@ describe('the stall marker and the walked ground survive a save', () => {
     expect(again!.stall).toBe(STALL_SLOT);
     expect(again!.seen.has(STALL_SLOT)).toBe(true);
     expect(again!.seenChunks.size).toBeGreaterThan(0);
+  });
+
+  test('a save from before the map loads with no stall and draws the ground under it', () => {
+    const s = started();
+    s.save();
+    const raw = JSON.parse(localStorage.getItem(SAVE_KEY)!) as Record<string, unknown>;
+    delete raw.seen;
+    delete raw.seenChunks;
+    delete raw.stall;
+    localStorage.setItem(SAVE_KEY, JSON.stringify(raw));
+
+    const again = Session.restore(bundle);
+    expect(again).toBeDefined();
+    expect(again!.stall).toBeUndefined();
+    expect(again!.seenChunks.size).toBe(1);
   });
 
   test('a stall cannot be placed from the road, and it can be lifted at the corner', () => {
