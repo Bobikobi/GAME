@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, test } from 'vitest';
-import { canonical, lastDusk, publicState, type Action, type Bundle, type GameEvent, type Tile } from '@game/kernel';
+import { OWN_FIRE, canonical, lastDusk, publicState, type Action, type Bundle, type GameEvent, type Tile } from '@game/kernel';
 
 import { Session } from '../src/session';
 import { RemoteSession, type ActResult, type ChangeReply, type StateReply, type Wire, WireGap } from '../src/remote';
@@ -408,22 +408,31 @@ describe('the remote session: a failed resume', () => {
 });
 
 describe('the remote session: a fire going out is told', () => {
-  /** A started game at `tick`, with the hearth the long night tends burning out at `until` and that quest open. */
+  /** The fire the long night tends, read from the content: a map fire or the player's own. */
+  function tended(): string {
+    const step = bundle.quests['core/the-long-night']!.steps.find((st) => st.kind === 'tend');
+    if (step?.kind !== 'tend') throw new Error('The long night tends no fire.');
+    return step.fire;
+  }
+
+  /** A started game at `lit`, with the fire the long night tends burning out at `until` and that quest open. */
   async function burning(lit: number, until: number) {
     const clock = { now: 0 };
     const game = await started(clock);
     const { server, remote } = game;
+    const fire = tended();
     server.state.tick = lit;
     server.state.player.quests['core/the-long-night'] = 'active';
-    server.state.player.fires = { 'core/elder-hearth': { lit, until } };
+    if (fire === OWN_FIRE) server.state.player.own = { lit, until, at: [remote.pos[0] + 1, remote.pos[1]], log: until - lit };
+    else server.state.player.fires = { [fire]: { lit, until } };
     await remote.resumeFromServer();
     server.calls.length = 0;
-    return game;
+    return { ...game, fire };
   }
 
   test('a burn that runs out in the night is reported once, and its fire_out reaches the screens', async () => {
     const dusk = lastDusk(bundle, bundle.params.day_length_ms * 3);
-    const { server, remote, clock } = await burning(dusk - 1_000, dusk + 5_000);
+    const { server, remote, clock, fire } = await burning(dusk - 1_000, dusk + 5_000);
     const told: GameEvent[] = [];
     remote.on('events', (events) => told.push(...events));
     for (let i = 0; i < 60; i++) {
@@ -435,12 +444,12 @@ describe('the remote session: a fire going out is told', () => {
     expect(moves.length).toBe(1);
     const body = moves[0]!.body as { moves: { at: Tile }[] };
     expect(body.moves.at(-1)!.at).toEqual([...remote.pos]);
-    expect(told).toContainEqual({ e: 'fire_out', id: 'core/elder-hearth' });
+    expect(told).toContainEqual({ e: 'fire_out', id: fire });
   });
 
   test('a burn whose report was lost to a dropped line is asked about again after the resume', async () => {
     const dusk = lastDusk(bundle, bundle.params.day_length_ms * 3);
-    const { server, remote, clock } = await burning(dusk - 1_000, dusk + 5_000);
+    const { server, remote, clock, fire } = await burning(dusk - 1_000, dusk + 5_000);
     const told: GameEvent[] = [];
     remote.on('events', (events) => told.push(...events));
     server.gap = true;
@@ -455,7 +464,7 @@ describe('the remote session: a fire going out is told', () => {
     remote.advance(250);
     clock.now += 250;
     await remote.flushMoves();
-    expect(told).toContainEqual({ e: 'fire_out', id: 'core/elder-hearth' });
+    expect(told).toContainEqual({ e: 'fire_out', id: fire });
   });
 
   test('the player\'s own fire running out is asked about the same way', async () => {
