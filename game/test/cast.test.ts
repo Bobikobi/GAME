@@ -1,0 +1,144 @@
+import { describe, expect, test } from 'vitest';
+
+import { SUN_TODAY, maskOfAlpha, shadowOf, sunAt, sunKey, sunTableOf } from '../src/cast.js';
+
+/**
+ * STYLE section 4, the shadow the owner picked on 18.10: the caster's silhouette laid on
+ * the ground and sheared away from the sun, long in the morning and evening, short at noon,
+ * and nothing at night. The numbers here are the sun's table, not a formula in the scene.
+ */
+describe('the sun', () => {
+  test('is up from 06:00 to 18:00 and down outside those hours', () => {
+    expect(sunAt(SUN_TODAY, 6 * 60).up).toBe(true);
+    expect(sunAt(SUN_TODAY, 18 * 60).up).toBe(false);
+    expect(sunAt(SUN_TODAY, 19 * 60).up).toBe(false);
+    expect(sunAt(SUN_TODAY, 5 * 60).up).toBe(false);
+  });
+
+  test('points left in the morning, straight down at noon, right in the evening', () => {
+    expect(sunAt(SUN_TODAY, 8 * 60).sx).toBeLessThan(0);
+    expect(sunAt(SUN_TODAY, 12 * 60).sx).toBeCloseTo(0, 6);
+    expect(sunAt(SUN_TODAY, 16 * 60 + 30).sx).toBeGreaterThan(0);
+  });
+
+  test('is long at 08:00 and 16:30 and short at noon, within the decided range', () => {
+    expect(sunAt(SUN_TODAY, 8 * 60).length).toBeCloseTo(0.936, 3);
+    expect(sunAt(SUN_TODAY, 16 * 60 + 30).length).toBeCloseTo(1.099, 3);
+    expect(sunAt(SUN_TODAY, 12 * 60).length).toBeCloseTo(0.11, 3);
+    expect(sunAt(SUN_TODAY, 8 * 60).length).toBeGreaterThanOrEqual(0.8);
+    expect(sunAt(SUN_TODAY, 8 * 60).length).toBeLessThanOrEqual(1.1);
+    expect(sunAt(SUN_TODAY, 16 * 60 + 30).length).toBeGreaterThanOrEqual(0.8);
+    expect(sunAt(SUN_TODAY, 16 * 60 + 30).length).toBeLessThanOrEqual(1.1);
+  });
+
+  test('at noon the shadow reaches no more than 12 art px past the feet at 64', () => {
+    // a 96 art px character at 64 px per tile: the shear is the shadow's length
+    expect(sunAt(SUN_TODAY, 12 * 60).length * 96).toBeLessThanOrEqual(12);
+  });
+
+  test('steps evenly between two keys', () => {
+    const seven = sunAt(SUN_TODAY, 7 * 60);
+    expect(seven.sx).toBeCloseTo(-0.945, 3);
+    expect(seven.sy).toBeCloseTo(0.38, 3);
+  });
+
+  test('never grows past the cap, and carries the table alpha', () => {
+    const long = sunTableOf({
+      alpha: 40,
+      cap: 100,
+      keys: [
+        { at: '06:00', right: 200, down: 100 },
+        { at: '18:00', right: 200, down: 100 },
+      ],
+    });
+    const sun = sunAt(long, 12 * 60);
+    expect(sun.length).toBeCloseTo(1, 6);
+    expect(Math.hypot(sun.sx, sun.sy)).toBeCloseTo(1, 6);
+    expect(sun.alpha).toBeCloseTo(0.4, 6);
+  });
+
+  test('reads the valley params into minutes and fractions, in order', () => {
+    const table = sunTableOf({
+      alpha: 30,
+      cap: 110,
+      keys: [
+        { at: '16:30', right: 102, down: 41 },
+        { at: '08:00', right: -86, down: 37 },
+      ],
+    });
+    expect(table.keys.map((k) => k.at)).toEqual([8 * 60, 16 * 60 + 30]);
+    expect(table.alpha).toBeCloseTo(0.3, 6);
+    expect(table.cap).toBeCloseTo(1.1, 6);
+    expect(sunAt(table, 8 * 60).sx).toBeCloseTo(-0.86, 6);
+  });
+
+  test('a key changes only when the shear does', () => {
+    expect(sunKey(sunAt(SUN_TODAY, 12 * 60))).toBe(sunKey(sunAt(SUN_TODAY, 12 * 60)));
+    expect(sunKey(sunAt(SUN_TODAY, 8 * 60))).not.toBe(sunKey(sunAt(SUN_TODAY, 16 * 60)));
+  });
+});
+
+describe('the mask', () => {
+  const cross = maskOfAlpha(
+    Uint8Array.from([
+      0, 1, 1, 1, 0,
+      0, 1, 1, 1, 0,
+      0, 1, 1, 1, 0,
+    ]),
+    5,
+    3,
+  );
+
+  test('reads rows into runs and finds the feet', () => {
+    expect(cross.feet).toBe(2);
+    expect(cross.top).toBe(0);
+    expect(cross.rows[0]).toEqual([[1, 3]]);
+  });
+
+  test('an empty mask has no feet', () => {
+    const empty = maskOfAlpha(new Uint8Array(9), 3, 3);
+    expect(empty.feet).toBe(-1);
+    expect(empty.top).toBe(-1);
+  });
+});
+
+describe('the shadow', () => {
+  const mask = maskOfAlpha(
+    Uint8Array.from([
+      0, 1, 1, 1, 0,
+      0, 1, 1, 1, 0,
+      0, 1, 1, 1, 0,
+    ]),
+    5,
+    3,
+  );
+  const sun = (sx: number, sy: number) => ({ up: true, sx, sy, length: Math.hypot(sx, sy), alpha: 0.3 });
+
+  test('moves each row by its height, and the feet stay at the feet', () => {
+    const shadow = shadowOf(mask, sun(0.5, 0.5));
+    expect(shadow.contact).toEqual([[1, 3]]);
+    expect(shadow.minX).toBe(1);
+    expect(shadow.maxX).toBe(4);
+    expect(shadow.height).toBe(2);
+    expect(shadow.spans).toContainEqual({ x: 1, y: 0, w: 3 });
+    expect(shadow.spans).toContainEqual({ x: 2, y: 1, w: 3 });
+  });
+
+  test('mirrors a shear left and right', () => {
+    const left = shadowOf(mask, sun(-0.5, 0.5));
+    expect(left.minX).toBe(0);
+    expect(left.maxX).toBe(3);
+    expect(left.spans).toContainEqual({ x: 0, y: 1, w: 3 });
+  });
+
+  test('a flat sun keeps the silhouette on one row', () => {
+    const flat = shadowOf(mask, sun(0, 0));
+    expect(flat.height).toBe(1);
+    expect(flat.spans.every((s) => s.y === 0)).toBe(true);
+  });
+
+  test('nothing casts when the sun is down, or from an empty mask', () => {
+    expect(shadowOf(mask, sunAt(SUN_TODAY, 22 * 60)).spans).toEqual([]);
+    expect(shadowOf(maskOfAlpha(new Uint8Array(9), 3, 3), sunAt(SUN_TODAY, 12 * 60)).spans).toEqual([]);
+  });
+});
