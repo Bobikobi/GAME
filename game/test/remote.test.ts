@@ -180,6 +180,18 @@ describe('the remote session (NEXT 18 c)', () => {
     expect(canonical(remote.state)).toBe(canonical(publicState(server.state)));
   });
 
+  test('a node a reaction raises is the server\'s answer, and the phone only reads it', async () => {
+    const local = Session.fresh(bundle);
+    const server = new FakeServer(bundle, local.state);
+    const remote = await RemoteSession.join(bundle, server);
+    await remote.act({ t: 'start', starter: 'core/forager', name: 'Tess' });
+
+    // the same id answers the same way on both sides, and the phone never saw a seed to work it out
+    for (const id of Object.keys(bundle.instances).slice(0, 20)) {
+      expect(remote.appears(id)).toBe(local.appears(id));
+    }
+  });
+
   test('there is no save to write: saving sends the walk to the server', async () => {
     const local = Session.fresh(bundle);
     const server = new FakeServer(bundle, local.state);

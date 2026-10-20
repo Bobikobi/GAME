@@ -21,7 +21,7 @@ import { canonical } from './canon';
 import { bitesAfter, dangerAt, distanceTo, fireArea, harmOf, hazardsOf, isSafe, isTownTile, reappearTile, sees, townAt, watchedAt, windowOpen, windowShuts } from './danger';
 import { bellTicks, inside as insideExpedition, lastBellAt, visitNight, windowOpen as expeditionWindowOpen } from './expedition';
 import { clamp, idiv, idivUp, mulDiv, mulDivUp } from './num';
-import { appearSlot, placedAt, reactionHolds, resourceOf, waitPermille } from './reactions';
+import { appearSlot, cuesOnStep, placedAt, reactionHolds, resourceOf, waitPermille } from './reactions';
 import { drawBasisPoints } from './rng';
 import {
   ATTRIBUTES,
@@ -121,7 +121,9 @@ export type GameEvent =
   | { e: 'safe'; id: string; bitten: boolean }
   | { e: 'bell'; expedition: string; n: number }
   | { e: 'walked_out'; expedition: string }
-  | { e: 'climax'; expedition: string };
+  | { e: 'climax'; expedition: string }
+  /** a sign the world raised on this step (REACTIONS.md section 5): drawn and heard, never a number or a word */
+  | { e: 'cue'; cue: string; reaction: string; anchor: string; x: number; y: number };
 
 export type StepResult = { ok: true; state: State; events: GameEvent[] } | { ok: false; error: string };
 
@@ -1198,6 +1200,12 @@ function arrive(ctx: Ctx, at: Tile): boolean {
     p.outing ??= { gained: {}, solved: [], visited: [] };
     // past an expedition's last bell the mist walks the player out: nothing wakes under this tile (G49)
     if (ctx.walkOut === undefined) strike(ctx, before, at);
+  }
+  // the signs this step raised, told here so a phone that holds no seed can show them too (REACTIONS 5)
+  if (before[0] !== at[0] || before[1] !== at[1]) {
+    for (const hit of cuesOnStep(b, s, tick, before, at)) {
+      ctx.events.push({ e: 'cue', cue: hit.cue, reaction: hit.reaction, anchor: hit.anchor, x: hit.x, y: hit.y });
+    }
   }
   return fallIfDown(ctx);
 }

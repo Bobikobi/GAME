@@ -19,20 +19,25 @@ import {
   hourOf,
 } from '@game/kernel';
 
-import { LONGEST_FRAME_MS, type Facing, type LogEntry, type SessionEvents } from './session';
+import { LONGEST_FRAME_MS } from './session';
+import type { ActResult, Facing, GameSession, LogEntry, SessionEvents } from './session-surface';
 
-export type ActResult = { ok: true; events: GameEvent[] } | { ok: false; error: string };
+export type { ActResult } from './session-surface';
 
 /** What the four endpoints answer: the state, or a patch of it with the events of the step. */
 export interface StateReply {
   state: PublicState;
   version: number;
+  /** the appear nodes standing now, as the server drew them */
+  appears: string[];
 }
 
 export interface ChangeReply {
   events: GameEvent[];
   patch: MergePatch;
   version: number;
+  /** the appear nodes standing now, as the server drew them */
+  appears: string[];
 }
 
 /** The wire the phone talks over. A test passes a fake that answers the same four shapes. */
@@ -89,7 +94,7 @@ const TAIL = 40;
 /** How many movement reports one batch carries at most: the server's own cap (NEXT 18 a). */
 const MOVE_BATCH = 256;
 
-export class RemoteSession {
+export class RemoteSession implements GameSession {
   readonly bundle: Bundle;
   state: PublicState;
   tick = 0;
@@ -99,6 +104,10 @@ export class RemoteSession {
   readonly met = new Set<string>();
   readonly heard = new Set<string>();
   tail: LogEntry[] = [];
+  /** the appear nodes the server says stand now: drawn on the phone, never drawn from a seed here */
+  private appearing = new Set<string>();
+  /** The server keeps the state: nothing is ever fitted to this content on the phone. */
+  readonly adapted = false;
   /** the state version the next write names: two requests cannot both win on the server */
   version: number;
   /** true while an action waits for its reply: input is held, so nothing is sent twice */
@@ -139,6 +148,11 @@ export class RemoteSession {
 
   get paused(): boolean {
     return this.pauses > 0 || !this.open;
+  }
+
+  /** A node a reaction raises: the server drew it, and this phone only reads that it stands. */
+  appears(id: string): boolean {
+    return this.appearing.has(id);
   }
 
   /** False once the line dropped: the game waits for `resume()` rather than play on. */
@@ -300,8 +314,7 @@ export class RemoteSession {
     const reply = await this.wire.get('/state').catch((error: unknown) => {
       throw error;
     }) as StateReply;
-    this.state = reply.state;
-    this.version = reply.version;
+    this.land(reply);
     this.moves = [];
     this.deferred = [];
     this.open = true;
@@ -330,8 +343,9 @@ export class RemoteSession {
     }
   }
 
-  private land(reply: ChangeReply): void {
-    this.state = applyStatePatch(this.state, reply.patch);
+  private land(reply: StateReply | ChangeReply): void {
+    this.state = 'patch' in reply ? applyStatePatch(this.state, reply.patch) : reply.state;
+    this.appearing = new Set(reply.appears);
     this.version = reply.version;
   }
 

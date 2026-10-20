@@ -34,6 +34,8 @@ import {
 import type { SignInfo } from '../scenes/world';
 import type { StoneView } from '../stone';
 import { Session } from '../session';
+import type { GameSession } from '../session-surface';
+import type { ActResult } from '../session-surface';
 import { ATTRIBUTE_MAX, activeQuests, attributeEffects, bagGroups, classLine, clock, eatLabel, gold, itemBenefit, itemName, journalGroups, questSteps, restoreHint, seconds, sellable, stacks, stationGate, stationText, stationUpgrades, toolOpens, wornAt } from '../text';
 import { s1, s1Available } from '../net/s1';
 import { STALL_SLOT, canPlaceStall, directionOf, localMapState, mapPlaces } from '../places';
@@ -103,12 +105,12 @@ function setLabel(id: string): string {
   return name.replaceAll('-', ' ').replace(/^./, (c) => c.toUpperCase());
 }
 
-function kitEffects(s: Session): { label: string; value: number }[] {
+function kitEffects(s: GameSession): { label: string; value: number }[] {
   return KIT_EFFECTS.map(([effect, label]) => ({ label, value: wornValue(app.bundle, s.state, effect) }));
 }
 
 /** The first set the work clothes touch, with how many of its pieces are on. */
-function kitSet(s: Session): { name: string; held: number; total: number; full: boolean } | undefined {
+function kitSet(s: GameSession): { name: string; held: number; total: number; full: boolean } | undefined {
   const b = app.bundle;
   const worn = Object.values(s.state.player.worn);
   for (const [set, ids] of Object.entries(setPieces(b))) {
@@ -143,8 +145,8 @@ function skillsBody(ui: UI, after: () => void): HTMLElement {
           h('span', { class: 'muted' }, `${fx.now} -> ${full ? 'at its limit' : fx.next}`),
           fx.note ? h('span', { class: 'muted' }, fx.note) : null,
           points > 0 && !full
-            ? button('+', () => {
-                const r = s.act({ t: 'spend', attr: fx.attr });
+            ? button('+', async () => {
+                const r = await s.act({ t: 'spend', attr: fx.attr });
                 if (!r.ok) ui.toast(r.error, 'bad');
                 after();
               }, 'small plus')
@@ -176,7 +178,7 @@ function skillsBody(ui: UI, after: () => void): HTMLElement {
 
 export function openBag(ui: UI): void {
   const s = app.session;
-  if (!s) return;
+  if (!s || s.waiting) return;
   const b = app.bundle;
   const p = panel(ui, 'Your kit', 'bag');
   let selected: string | undefined;
@@ -495,16 +497,16 @@ export function openBag(ui: UI): void {
     const price = salePrice(b, s.state, id, 1);
     const actions: HTMLElement[] = [];
     if (item.food) {
-      actions.push(button(eatLabel(b, id), () => {
-        const r = s.act({ t: 'eat', item: id });
+      actions.push(button(eatLabel(b, id), async () => {
+        const r = await s.act({ t: 'eat', item: id });
         if (!r.ok) ui.toast(r.error, 'bad');
         after();
       }));
     }
     if (item.fragment) {
       const recipe = b.recipes[item.fragment.unlocks];
-      actions.push(button(`Learn ${recipe?.title ?? 'the recipe'}`, () => {
-        const r = s.act({ t: 'learn', item: id });
+      actions.push(button(`Learn ${recipe?.title ?? 'the recipe'}`, async () => {
+        const r = await s.act({ t: 'learn', item: id });
         if (!r.ok) ui.toast(r.error, 'bad');
         after();
       }));
@@ -519,15 +521,15 @@ export function openBag(ui: UI): void {
       const at = wornAt(b, s.state, id);
       if (at) {
         facts.push(at.look ? 'You wear it as your look.' : 'You are wearing it.');
-        actions.push(button('Take off', () => {
-          const r = s.act({ t: 'unwear', slot: at.slot, look: at.look });
+        actions.push(button('Take off', async () => {
+          const r = await s.act({ t: 'unwear', slot: at.slot, look: at.look });
           if (!r.ok) ui.toast(r.error, 'bad');
           after();
         }));
       }
       if (!at || s.check({ t: 'wear', item: id }) === undefined) {
-        actions.push(button('Wear', () => {
-          const r = s.act({ t: 'wear', item: id });
+        actions.push(button('Wear', async () => {
+          const r = await s.act({ t: 'wear', item: id });
           if (!r.ok) ui.toast(r.error, 'bad');
           after();
         }));
@@ -681,8 +683,8 @@ export function openShop(ui: UI, npcId: string): void {
   const p = panel(ui, `${npc.name}'s stall`, 'shop');
   let current: 'buy' | 'sell' = 'buy';
 
-  const deal = (action: () => { ok: boolean; error?: string }) => {
-    const r = action();
+  const deal = async (action: () => ActResult | Promise<ActResult>) => {
+    const r = await action();
     if (!r.ok && r.error) ui.toast(r.error, 'bad');
     render();
   };
@@ -771,8 +773,8 @@ export function openCraft(ui: UI, station: string): void {
             h('div', { class: 'muted' }, `${classLine(b, out?.item ?? '')} - ${seconds(r.active_ms)}`),
             gate ? h('div', { class: haveAll(r.inputs) ? 'lack' : 'muted' }, gate) : why && haveAll(r.inputs) ? h('div', { class: 'lack' }, why) : null,
           ),
-          button(fire ? 'Cook' : 'Make', () => {
-            const res = s.act({ t: 'craft', recipe: id, at: s.pos });
+          button(fire ? 'Cook' : 'Make', async () => {
+            const res = await s.act({ t: 'craft', recipe: id, at: s.pos });
             if (!res.ok) ui.toast(res.error, 'bad');
             else p.close();
           }, 'small', why !== undefined),
@@ -795,8 +797,8 @@ export function openCraft(ui: UI, station: string): void {
             h(
               'div',
               { class: 'actions' },
-              button('Build', () => {
-                const res = s.act({ t: 'build', camp: id, at: s.pos });
+              button('Build', async () => {
+                const res = await s.act({ t: 'build', camp: id, at: s.pos });
                 if (!res.ok) ui.toast(res.error, 'bad');
                 else p.close();
               }, 'small', why !== undefined),
@@ -822,9 +824,9 @@ export function confirmBuild(ui: UI, campId: string): void {
   const have = c.inputs.map((i) => `${i.qty} ${itemName(b, i.item)} (you have ${s.state.player.bag[i.item] ?? 0})`).join(', ');
   const ok = c.inputs.every((i) => (s.state.player.bag[i.item] ?? 0) >= i.qty);
   const what = c.provides === 'fire' ? 'Somewhere to cook.' : c.provides ? 'Somewhere to make things.' : c.bag_bonus ? `Your bag holds ${c.bag_bonus} more.` : 'A place for what you find.';
-  void say(ui, c.title, [`${what} Needs ${have}.`], ok ? [{ label: 'Build it', value: 'yes' }, { label: 'Not now', value: 'no' }] : []).then((pick) => {
+  void say(ui, c.title, [`${what} Needs ${have}.`], ok ? [{ label: 'Build it', value: 'yes' }, { label: 'Not now', value: 'no' }] : []).then(async (pick) => {
     if (pick !== 'yes') return;
-    const r = s.act({ t: 'build', camp: campId, at: s.pos });
+    const r = await s.act({ t: 'build', camp: campId, at: s.pos });
     if (!r.ok) ui.toast(r.error, 'bad');
   });
 }
@@ -841,9 +843,9 @@ export function confirmRestore(ui: UI, restoreId: string): void {
   }
   const have = r.inputs.map((i) => `${i.qty} ${itemName(b, i.item)} (you have ${s.state.player.bag[i.item] ?? 0})`).join(', ');
   const ok = r.inputs.every((i) => (s.state.player.bag[i.item] ?? 0) >= i.qty);
-  void say(ui, r.title, [`It is broken. Mending it takes ${have}.`], ok ? [{ label: 'Mend it', value: 'yes' }, { label: 'Not now', value: 'no' }] : []).then((pick) => {
+  void say(ui, r.title, [`It is broken. Mending it takes ${have}.`], ok ? [{ label: 'Mend it', value: 'yes' }, { label: 'Not now', value: 'no' }] : []).then(async (pick) => {
     if (pick !== 'yes') return;
-    const res = s.act({ t: 'restore', restore: restoreId, at: s.pos });
+    const res = await s.act({ t: 'restore', restore: restoreId, at: s.pos });
     if (!res.ok) ui.toast(res.error, 'bad');
   });
 }

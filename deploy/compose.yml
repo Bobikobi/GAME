@@ -1,0 +1,59 @@
+# The game's own two containers (NEXT 18 b). Nothing here shares a container, a database or a port with
+# another product on the box: the database is reachable only inside this network, and the API listens on
+# the loopback address so the host's nginx can reach it and the world cannot.
+name: openfold
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER:?set DB_USER in .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      POSTGRES_DB: ${DB_NAME:?set DB_NAME in .env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks: [game]
+    mem_limit: 768m
+    restart: unless-stopped
+    # a write that outlives its container must be flushed before the container goes
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    environment:
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      PORT: 8080
+      # no default on purpose: the API exits at boot unless this names a mode it knows, so a missing
+      # line in .env stops the container instead of opening it to any caller (NEXT 18 e adds the real one)
+      AUTH_MODE: ${AUTH_MODE:?set AUTH_MODE in .env}
+      # empty unless .env sets it; dev-header refuses to start without ALLOW_DEV_HEADER=staging-only
+      ALLOW_DEV_HEADER: ${ALLOW_DEV_HEADER:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    # loopback only: the host nginx proxies to it, and nothing else on the box sees it
+    ports: ["127.0.0.1:${API_PORT:-8710}:8080"]
+    networks: [game]
+    mem_limit: 512m
+    restart: unless-stopped
+    stop_grace_period: 20s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+networks:
+  game:
+    name: openfold-game
+
+volumes:
+  db-data:
+    name: openfold-db-data
