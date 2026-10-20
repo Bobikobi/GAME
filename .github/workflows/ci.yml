@@ -21,6 +21,22 @@ jobs:
     name: Check, test, build and play
     runs-on: ubuntu-24.04
     timeout-minutes: 25
+    # the game's database as it will run on the owner's box: postgres 16, its own user and database.
+    # No production database exists yet (NEXT 18 b); this one is created for the run and thrown away.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: game
+          POSTGRES_PASSWORD: game
+          POSTGRES_DB: game
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U game"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
     steps:
       # pull requests go into develop (releases: develop into main); a pull request
       # stacked on another branch lands there, not in develop (AGENTS.md, "How work moves")
@@ -57,6 +73,15 @@ jobs:
 
       - name: Schemas, content, lint, types, tests and build
         run: pnpm verify
+
+      # the database tests are skipped by `pnpm verify` above (no DATABASE_URL), and run here against a
+      # real postgres: the migrations apply twice without a second change, and the store's lock holds
+      - name: Database migrations against postgres 16
+        env:
+          DATABASE_URL: postgres://game:game@localhost:5432/game
+        run: |
+          pnpm db:migrate
+          pnpm exec vitest run server/test/db.test.ts
 
       # the opening flakes on slow runners (issue #25): one retry, and the screenshots of
       # the failed attempt are kept so the flake stays visible and countable
