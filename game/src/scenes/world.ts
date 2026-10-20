@@ -52,7 +52,8 @@ import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { TOO_DARK, feedTooLate, fireLow, fireName, readable, woodToFeed } from '../fires';
 import { emptySlots, slotContent } from '../places';
 import { canopyGroups, hash, remapTone, toneField, type Tone } from '../richground';
-import { LONGEST_FRAME_MS, type Session } from '../session';
+import {LONGEST_FRAME_MS} from '../session';
+import type { GameSession } from '../session-surface';
 import { type Run, WOLF_EYES, bangAt, denMarks, flareAt, glowPixels, huntGround, huntSong, songFade, wolfDrawn, wolfDrawnAt } from '../predator';
 import { SUCCESS_LIGHT, joltOf } from '../jolt';
 import { soundscape } from '../soundscape';
@@ -245,7 +246,7 @@ class TileZone {
 export class WorldScene extends Phaser.Scene {
   private b!: Bundle;
   private walkable!: ReturnType<typeof makeWalkable>;
-  private session: Session | undefined;
+  private session: GameSession | undefined;
   private unbind: (() => void)[] = [];
   private ground!: Phaser.GameObjects.Image;
   /** the ground in chunks, once any ground sprite is at density 4 (groundchunks.ts); `ground` is then unused */
@@ -881,7 +882,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Flames only while the kernel says the fire burns; in a burn's last minutes the embers dim and slow. */
-  private refreshFires(s: Session): void {
+  private refreshFires(s: GameSession): void {
     for (const [id, f] of this.fires) {
       const burns = fireBurns(s.state, id, s.tick);
       const low = burns && fireLow(this.b, s.state, id, s.tick);
@@ -1371,7 +1372,7 @@ export class WorldScene extends Phaser.Scene {
   // ------------------------------------------------------------ session
 
   /** Show this session's world. Called for a new game and for a loaded one. */
-  bind(session: Session): void {
+  bind(session: GameSession): void {
     for (const off of this.unbind) off();
     this.session = session;
     this.move = null;
@@ -1504,7 +1505,7 @@ export class WorldScene extends Phaser.Scene {
     if (RICH.motion) this.refreshGlints(s);
   }
 
-  private ready(s: Session, id: string): boolean {
+  private ready(s: GameSession, id: string): boolean {
     if (this.appearing.has(id)) return s.appears(id);
     return (s.state.nodes[id]?.readyAt ?? 0) <= s.tick;
   }
@@ -1515,7 +1516,7 @@ export class WorldScene extends Phaser.Scene {
    * giver once the task is ready to hand in), so the next place to go reads from the map
    * itself. Rebuilt only when the targets change; off with the rest of the motion group.
    */
-  private refreshGlints(s: Session): void {
+  private refreshGlints(s: GameSession): void {
     const targets = questTargets(this.b, s.state, s.tick);
     const key = JSON.stringify(targets);
     if (key === this.glintKey) return;
@@ -1795,7 +1796,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Standing still for 3 s, the player blinks every 3-5 s: frame 1 of the idle sheet for 120 ms. */
-  private idle(s: Session, time: number): void {
+  private idle(s: GameSession, time: number): void {
     if (this.falling) return;
     const still = !this.move && !s.busy && !this.work && !this.auto && this.swingUntil === 0;
     if (!still) {
@@ -1827,11 +1828,12 @@ export class WorldScene extends Phaser.Scene {
     cam.centerOn(Math.round(cx), Math.round(cy));
   }
 
-  private canControl(s: Session): boolean {
-    return !s.paused && !s.busy && !app.ui.blocking && !this.peek.active;
+  private canControl(s: GameSession): boolean {
+    // while an action waits for the server the player has no control: nothing is sent twice
+    return !s.paused && !s.busy && !s.waiting && !app.ui.blocking && !this.peek.active;
   }
 
-  private walk(s: Session, delta: number): void {
+  private walk(s: GameSession, delta: number): void {
     if (this.falling) return;
     if (this.move) {
       this.move.t += delta;
@@ -1856,7 +1858,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Start walking one tile if a direction is held. Returns true if moving. */
-  private tryStep(s: Session, carry: number): boolean {
+  private tryStep(s: GameSession, carry: number): boolean {
     if (!this.canControl(s)) return false;
     const dir = app.controls.direction();
     if (!dir) return false;
@@ -1896,11 +1898,11 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** The kernel's rule, and a plant or stone that is ready stands in the way (walking.ts). */
-  canWalk(s: Session, x: number, y: number): boolean {
+  canWalk(s: GameSession, x: number, y: number): boolean {
     return canEnter(this.b, this.walkable, this.nodeAt, s, x, y);
   }
 
-  private arrive(s: Session): void {
+  private arrive(s: GameSession): void {
     const [x, y] = s.pos;
     const riddles = riddleSlots(this.b, s.state);
     for (const slot of this.b.map.slots) {
@@ -1927,7 +1929,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** A step into a maze from outside shows it from above first (NEXT 9); never while a hunt runs. */
-  private enterMaze(s: Session): void {
+  private enterMaze(s: GameSession): void {
     const from = this.lastAt;
     this.lastAt = [...s.pos];
     if (!from || s.state.player.chase) return;
@@ -1939,14 +1941,14 @@ export class WorldScene extends Phaser.Scene {
   // ------------------------------------------------------------ day, night and the things in the dark
 
   /** The campfire, the stream, the ruins and a burning fire sound as loud as the player is near them (soundscape.ts). */
-  private hearPlace(s: Session): void {
+  private hearPlace(s: GameSession): void {
     const scape = soundscape(this.b, s.state, s.tick, this.player.x / T, this.player.y / T - 0.5);
     for (const id of ['fire', 'stream', 'dread'] as const) sound.bed(id, scape[id].level, scape[id].pan);
     sound.crackle(scape.crackle.level, scape.crackle.pan);
   }
 
   /** Draws B2's mist for the places the save leaves clear (src/mist.ts); a new texture only when they change, and a growing one in steps. */
-  private drawMist(s: Session, delta: number): Clear[] {
+  private drawMist(s: GameSession, delta: number): Clear[] {
     const first = !this.mistReady;
     this.mistReady = true;
     const clears = mistClears(this.b, s.state).map((c) => {
@@ -1977,7 +1979,7 @@ export class WorldScene extends Phaser.Scene {
    * beyond lies hidden, so a mote of light stands on the way to it, at the pocket's edge from where the character is,
    * and on the find itself once it is near. Gone once the find is taken, or when the find stands in the clear.
    */
-  private placeMote(s: Session, clears: Clear[], time: number): void {
+  private placeMote(s: GameSession, clears: Clear[], time: number): void {
     let want: { x: number; y: number } | undefined;
     if (s.state.player.attrs.senses > 0) {
       for (const id of this.digs.keys()) {
@@ -2007,7 +2009,7 @@ export class WorldScene extends Phaser.Scene {
    * drawn at the chimney while it is in view but still under the mist (always, when the chimney has no smoke of its
    * own). It shows once the bridge is mended. It dims with the night.
    */
-  private placeSmoke(s: Session, clears: Clear[], time: number): void {
+  private placeSmoke(s: GameSession, clears: Clear[], time: number): void {
     // the smoke is the bridge's pay: it shows once the first mend is in the save
     const chimney = s.state.player.restored.length > 0 ? nearestChimney(this.chimneys, { x: s.pos[0] * T, y: s.pos[1] * T }) : undefined;
     if (!chimney) {
@@ -2028,7 +2030,7 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
-  private shadeFor(s: Session): void {
+  private shadeFor(s: GameSession): void {
     const minute = minuteOfDay(this.b, s.tick);
     this.night = nightAt(minute);
     this.shade.setFillStyle(0x172a52, shadeAt(this.night));
@@ -2062,7 +2064,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** At night: eyes at the edge of the forest that close when you come near, and whispers by the ruins. */
-  private haunt(s: Session, time: number): void {
+  private haunt(s: GameSession, time: number): void {
     const [px, py] = s.pos;
     for (const eye of this.eyes) {
       const ex = Math.floor(eye.x / T);
@@ -2160,7 +2162,7 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  private showSignatures(s: Session): void {
+  private showSignatures(s: GameSession): void {
     const blocked = app.ui.blocking;
     for (const spot of this.signSpots) {
       const d = Math.max(Math.abs(spot.x - 0.5 - s.pos[0]), Math.abs(spot.y - s.pos[1]));
@@ -2183,7 +2185,7 @@ export class WorldScene extends Phaser.Scene {
     this.impact(nodeId, kind, grade);
   }
 
-  private faceNode(s: Session, nodeId: string): void {
+  private faceNode(s: GameSession, nodeId: string): void {
     const inst = placedAt(this.b, nodeId);
     if (!inst) return;
     const dx = inst.x - s.pos[0];
@@ -2233,7 +2235,7 @@ export class WorldScene extends Phaser.Scene {
     emitter.explode(n, x, y);
   }
 
-  private drawBusy(s: Session, time: number): void {
+  private drawBusy(s: GameSession, time: number): void {
     this.bar.clear();
     if (this.auto) return;
     if (!s.busy) {
@@ -2273,7 +2275,7 @@ export class WorldScene extends Phaser.Scene {
    * and the pit are plain to see. At night the wolf is awake and the pit and
    * the trap are lost in the dark (G30). The hour is the kernel's, not the shade's.
    */
-  private showHazards(s: Session): void {
+  private showHazards(s: GameSession): void {
     const night = isNight(this.b, s.tick);
     for (const h of this.hazards) {
       const { spr, kind, rule, eyes, halo } = h;
@@ -2291,7 +2293,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Whether a predator is drawn now: by day it is away and only its den and tracks show (`wolfDrawnAt`). */
-  private wolfShown(h: { rule?: Hazard; run?: Run }, s: Session): boolean {
+  private wolfShown(h: { rule?: Hazard; run?: Run }, s: GameSession): boolean {
     const chase = s.state.player.chase;
     const awake = h.rule !== undefined && windowOpen(this.b, h.rule, s.tick);
     return wolfDrawnAt(awake, chase !== null && chase.hazard === h.rule?.id, h.run !== undefined);
@@ -2303,7 +2305,7 @@ export class WorldScene extends Phaser.Scene {
    * keeps it on its round and bites by its own clock. The moment a predator sees the player a "!"
    * stands over it, and a walking wolf's eyes flare (`SEEN`).
    */
-  private placePredators(s: Session): void {
+  private placePredators(s: GameSession): void {
     const chase = s.state.player.chase;
     const since = chase ? s.tick - chase.since : -1;
     let alarmed: Phaser.GameObjects.Sprite | undefined;
@@ -2332,7 +2334,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** The ground a drawn wolf runs on (`huntGround`), worked out again only when a mend or the camp changes it. */
-  private huntWalk(s: Session): (x: number, y: number) => boolean {
+  private huntWalk(s: GameSession): (x: number, y: number) => boolean {
     const p = s.state.player;
     const key = `${p.restored.join()}|${p.camp.join()}`;
     if (this.wolfGround?.key !== key) this.wolfGround = { key, walk: huntGround(this.b, s.state, this.walkable) };
@@ -2344,7 +2346,7 @@ export class WorldScene extends Phaser.Scene {
    * hunt begins, and back when it ends, however it ends. The hour is the shade's, so the song waits
    * for the shade's first look at this session's hour.
    */
-  private playSong(s: Session): void {
+  private playSong(s: GameSession): void {
     if (this.wasNight === undefined) return;
     const song = huntSong(s.state.player.chase !== null, this.wasNight);
     if (song === this.song) return;
@@ -2353,7 +2355,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Reeds and tall grass marked as cover soften the player, then release them at the next tile. */
-  private dimInCover(s: Session): void {
+  private dimInCover(s: GameSession): void {
     const at = this.falling ? s.state.player.at : s.pos;
     this.player.setAlpha(!this.falling && coverAt(this.b, at) ? 0.72 : 1);
   }
@@ -2375,7 +2377,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** The lantern burns around the player while they are out in the night it was lit for; in town or by day it is out. */
-  private placeLantern(s: Session): void {
+  private placeLantern(s: GameSession): void {
     if (!this.lantern) return;
     const lit = !this.falling && this.lanternFor !== undefined && lanternNight(this.b, s.state, s.pos, s.tick) === this.lanternFor;
     this.lantern.setVisible(lit);
@@ -2458,16 +2460,17 @@ export class WorldScene extends Phaser.Scene {
   /**
    * One press starts the work (DECISIONS.md, 2026-10-11): the kernel takes the action now and keeps
    * the player busy for as long as it lasts, and the swings, chips and the thing's own shaking show
-   * it. A step away takes the action back (Session.cancelWork), so nothing was yielded.
+   * it. A step away takes the action back (GameSession.cancelWork), so nothing was yielded.
    */
-  startWork(nodeId: string, onDone?: () => void): void {
+  async startWork(nodeId: string, onDone?: () => void): Promise<void> {
     const s = this.session;
     const inst = placedAt(this.b, nodeId);
     if (!s || !inst || this.auto) return;
     const kind = inst.kind === 'resource' ? resourceKind(resourceOf(this.b, nodeId)!) : treasureKind(this.b.treasures[inst.source]!);
     if (!kind) return;
     const action: Action = inst.kind === 'resource' ? { t: 'gather', node: nodeId, grade: 3, at: s.pos } : { t: 'dig', spot: nodeId, grade: 3, at: s.pos };
-    const res = s.act(action);
+    // an action on the server waits for its reply, so the work starts when the answer comes
+    const res = await s.act(action);
     if (!res.ok) return app.ui.toast(res.error, 'bad');
     const busy = res.events.find((e) => e.e === 'busy');
     if (!busy || busy.e !== 'busy') return;
@@ -2492,7 +2495,7 @@ export class WorldScene extends Phaser.Scene {
     return this.auto !== null;
   }
 
-  private workTick(s: Session): void {
+  private workTick(s: GameSession): void {
     const w = this.auto;
     if (!w) return;
     const elapsed = s.tick - w.start;
@@ -2509,7 +2512,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Walked away, or something opened: the work is dropped as if it had not begun. */
-  private stopWork(s: Session, w: Auto): void {
+  private stopWork(s: GameSession, w: Auto): void {
     this.endWork(w);
     s.cancelWork();
     this.faceFrame();
@@ -2527,7 +2530,7 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  private finishWork(s: Session, w: Auto): void {
+  private finishWork(s: GameSession, w: Auto): void {
     const img = this.nodes.get(w.node);
     // the tree that falls is a copy of the standing one, so the stump can be there under it at once
     const ghost = w.kind === 'fell' && img ? kitSprite(this, img.x, img.y, img.texture.key, img.frame.name).setOrigin(0.5, 1).setDepth(img.depth + 1).setAngle(img.angle) : undefined;
@@ -2664,7 +2667,7 @@ export class WorldScene extends Phaser.Scene {
 
   // ------------------------------------------------------------ interaction
 
-  private updatePrompt(s: Session): void {
+  private updatePrompt(s: GameSession): void {
     const t = this.canControl(s) && !this.move ? this.target(s) : undefined;
     const label = t?.label ?? '';
     if (label !== this.prompt) {
@@ -2682,7 +2685,7 @@ export class WorldScene extends Phaser.Scene {
     this.target(s)?.run();
   }
 
-  private target(s: Session): Target | undefined {
+  private target(s: GameSession): Target | undefined {
     const [x, y] = s.pos;
     const [fx, fy] = DIRS[s.facing];
     const order: [number, number][] = [[x + fx, y + fy], [x, y]];
@@ -2697,7 +2700,7 @@ export class WorldScene extends Phaser.Scene {
     return undefined;
   }
 
-  private targetAt(s: Session, x: number, y: number): Target | undefined {
+  private targetAt(s: GameSession, x: number, y: number): Target | undefined {
     const b = this.b;
     const p = s.state.player;
     const k = key(x, y);
