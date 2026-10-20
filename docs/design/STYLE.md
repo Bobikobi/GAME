@@ -61,6 +61,18 @@ The owner, 18.10, on the walk video where an oak stood barely taller than Pell: 
 | Ruin arch, ruin wall | 2 x 2 | 2 x 3 to 3 x 4 | - |
 | Item | 1 x 1 | 1 x 1 (64 x 64), an icon, the thing filling 40 to 56 px of it | - |
 
+People and animals, seen by the owner on 20.10 on `frames/2026-10-21-nature-scale.png` and picked as drawn, with the young tree at 2 above (DECISIONS 2026-10-20, "Nature's laws"). NATURE.md section 1 holds the kinds no still has shown yet.
+
+| Thing | At 64 (tiles) | Against a character's height |
+|---|---|---|
+| Child | 1 x 1 | 0.65, the head kept at the adult's size |
+| Elder | 1 x 1 | 0.9, stooped: a stoop, not a smaller body |
+| Hen | 1 x 1 | 0.25 |
+| Dog | 1 x 1 | 0.45 at the shoulder |
+| Wolf | 1 x 2 | 0.55 at the shoulder: never taller than a person on four legs |
+| Deer | 1 x 2 | 0.9 at the head, antlers to 1.4 |
+| Horse | 1 x 2, with a cart 2 x 3 | 1.25 |
+
 - **The map does not move.** A trunk, a door or a post stands on the tile it stands on today, and the solid tiles stay as they are (G59). A bigger drawing grows upward and over its neighbours, never into a new solid tile.
 - **See-through.** A thing that draws over the player (a canopy, a roof, a tall prop the player walks behind) shows the player through it: a fade of the part in front or a silhouette, the builder's choice. A bigger prop never hides the player or a thing a task points at.
 - **Measured at each wave:** on the opening's first frame and at the bridge, no wake tile, pickup or prop a task names is covered by another sprite's solid pixels over more than half its area, after the see-through rule.
@@ -122,6 +134,7 @@ The engine draws the edges between grounds, so a new ground ships only its fill 
 | Body light | The 4 art px on the side away from the light one step darker, the side toward it one step lighter. None at noon |
 | Night | No sun shadow. Inside a light's pool, shadow and body light come from that light. Outside every pool, nothing casts |
 | Raised ground | Casts the same way, with z = levels x 32 (section 6) |
+| Weather | Overcast: the same length at half the alpha (15%). Rain and storm: no sun shadow. Fog waits for its still (the owner, 20.10, NATURE.md section 10 question 4) |
 
 Every number above is whole art pixels at one alpha, so the build is checked by stills at fixed hours against this table. Creators do nothing: every shadow comes from the sprite's alpha.
 
