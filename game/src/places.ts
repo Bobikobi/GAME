@@ -1,5 +1,5 @@
 /** What stands where: read from the bundle, shared by the world and the menus. */
-import type { Bundle, Slot } from '@game/kernel';
+import { inRect, type Bundle, type Slot } from '@game/kernel';
 
 export interface PlaceInfo {
   id: string;
@@ -26,4 +26,87 @@ export function slotContent(b: Bundle, slotId: string): PlaceInfo | undefined {
 /** Slots nothing fills yet: fog, and a sign that invites a creator. */
 export function emptySlots(b: Bundle): Slot[] {
   return b.map.slots.filter((s) => s.kind !== 'camp' && s.kind !== 'area' && !slotContent(b, s.id));
+}
+
+/** The map is revealed in 8x8-tile chunks: an area a walk can take in, never a tile. */
+export const MAP_CHUNK = 8;
+
+/** The town's free corner, where a player's stall can stand beside the trader. */
+export const STALL_SLOT = 'core/town-corner';
+
+export interface MapPlace {
+  id: string;
+  label?: string;
+  kind: Slot['kind'];
+  /** slot centre, in tiles */
+  x: number;
+  y: number;
+  current: boolean;
+  stall: boolean;
+}
+
+export function chunkKey(x: number, y: number): string {
+  return `${Math.floor(x / MAP_CHUNK)},${Math.floor(y / MAP_CHUNK)}`;
+}
+
+/**
+ * A place's name on the map: the slot's own label, or the content's title for a
+ * place. People and plain ground stay unnamed unless the map names them, so a
+ * trader is not a landmark.
+ */
+export function mapPlaceLabel(b: Bundle, slot: Slot): string | undefined {
+  if (slot.label) return slot.label;
+  if (slot.kind === 'resource' || slot.kind === 'npc') return undefined;
+  return slotContent(b, slot.id)?.title;
+}
+
+/**
+ * What the chart may show: slots the player has entered. A resource slot with
+ * no name is ground, not a place; a person is met, not a landmark.
+ */
+export function mapPlaces(b: Bundle, seen: ReadonlySet<string>, at: readonly [number, number], stall?: string): MapPlace[] {
+  const out: MapPlace[] = [];
+  for (const slot of b.map.slots) {
+    if (!seen.has(slot.id)) continue;
+    const label = mapPlaceLabel(b, slot);
+    if (label === undefined && (slot.kind === 'resource' || slot.kind === 'npc')) continue;
+    out.push({
+      id: slot.id,
+      label,
+      kind: slot.kind,
+      x: slot.x + slot.w / 2,
+      y: slot.y + slot.h / 2,
+      current: inRect(at[0], at[1], slot),
+      stall: slot.id === stall,
+    });
+  }
+  return out;
+}
+
+/** True when the player stands on the town's free corner, where a stall may stand. */
+export function canPlaceStall(b: Bundle, at: readonly [number, number]): boolean {
+  const slot = b.map.slots.find((s) => s.id === STALL_SLOT);
+  return slot !== undefined && inRect(at[0], at[1], slot) && slotContent(b, slot.id) === undefined;
+}
+
+export const PLACE_KIND: Record<Slot['kind'], string> = {
+  area: 'Place',
+  ruin: 'Ruin',
+  npc: 'Landmark',
+  building: 'Building',
+  restore: 'Crossing',
+  camp: 'Camp',
+  resource: 'Ground',
+};
+
+/** Eight-point direction from one tile to another, in words a walk can use. */
+export function directionOf(from: readonly [number, number], to: readonly [number, number]): string {
+  const dx = to[0] - from[0];
+  const dy = to[1] - from[1];
+  if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1) return 'Beside you';
+  const ns = dy < 0 ? 'north' : 'south';
+  const ew = dx < 0 ? 'west' : 'east';
+  if (Math.abs(dx) <= 2) return ns;
+  if (Math.abs(dy) <= 2) return ew;
+  return `${ns}-${ew}`;
 }

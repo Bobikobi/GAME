@@ -43,6 +43,7 @@ import { say, type Option } from './dialog';
 import { STONE_RESTORE, STONE_SPEAKER } from '../stone';
 import { carveName } from './carve';
 import { button, h, sprite } from './dom';
+import { miniMapSvg } from './map';
 import { feedback } from './feedback';
 import { type Minigame, pick, snap, strike, timing } from './games';
 import { BEAT, buzz } from './haptics';
@@ -51,6 +52,7 @@ import {
   openBag,
   openCraft,
   openJournal,
+  openMap,
   openMenu,
   openShop,
   openSignCard,
@@ -107,6 +109,10 @@ export class UI {
   private titleOpen = false;
   private hudTimer = 0;
   private hudParts: HudParts | undefined;
+  private hudMap: HTMLButtonElement;
+  private hudMapChart: HTMLElement;
+  private hudMapNote: HTMLElement;
+  private hudMapKey = '';
   private trackerKey = '';
   private talkCount = new Map<string, number>();
   private levelUpOpen = false;
@@ -122,8 +128,17 @@ export class UI {
     this.tracker = h('div', { class: 'tracker', hidden: true });
     this.toasts = h('div', { class: 'toasts', 'aria-live': 'polite' });
     this.promptEl = h('div', { class: 'prompt', hidden: true });
+    this.hudMapChart = h('span', { class: 'hud-map-chart' });
+    this.hudMapNote = h('span', { class: 'hud-map-note' }, 'No stall placed');
+    this.hudMap = h(
+      'button',
+      { class: 'hud-map', type: 'button', title: 'The valley - open the map', hidden: true, onclick: () => this.panel(() => openMap(this)) },
+      h('span', { class: 'hud-map-head' }, h('span', null, 'THE VALLEY'), h('span', null, 'Map')),
+      this.hudMapChart,
+      this.hudMapNote,
+    );
     this.loadingEl = h('div', { class: 'loading' }, h('div', { class: 'loading-title' }, 'Loading the valley'), h('div', { class: 'loading-bar' }, h('i')));
-    root.append(h('div', { class: 'top' }, this.hud, this.tracker, this.toasts), this.promptEl, this.loadingEl);
+    root.append(h('div', { class: 'top' }, this.hud, this.tracker, this.toasts), this.promptEl, this.loadingEl, this.hudMap);
     mountTouch(root);
     this.tracker.addEventListener('click', () => this.panel(() => openJournal(this, 'tasks')));
   }
@@ -143,6 +158,7 @@ export class UI {
   push(layer: Layer): void {
     this.layers.push(layer);
     this.root.append(layer.el);
+    this.hudMap.hidden = true;
     app.session?.pause();
     this.setPrompt('');
     // the hold starts as the box opens: a toast already up keeps the rest of its time for after it
@@ -154,6 +170,7 @@ export class UI {
     if (i < 0) return;
     this.layers.splice(i, 1);
     layer.el.remove();
+    if (this.layers.length === 0 && app.session?.started) this.hudMap.hidden = false;
     app.session?.resume();
     layer.onClose?.();
     this.renderHud();
@@ -217,6 +234,7 @@ export class UI {
     session.on('change', () => this.renderHud());
     this.hud.hidden = false;
     this.tracker.hidden = false;
+    this.hudMap.hidden = false;
     this.renderHud();
     window.clearInterval(this.hudTimer);
     this.hudTimer = window.setInterval(() => this.renderHud(), 500);
@@ -263,7 +281,17 @@ export class UI {
     p.bag.hidden = !unlocked.bag;
     p.log.hidden = !unlocked.log;
     this.renderTracker(s);
+    this.renderHudMap(s);
     this.placeToasts(s);
+  }
+
+  /** The desktop's pocket chart: redrawn only when the walk, the map or the stall changed. */
+  private renderHudMap(s: Session): void {
+    const key = `${s.pos[0]},${s.pos[1]}|${s.seen.size}|${s.seenChunks.size}|${s.stall ?? ''}`;
+    if (key === this.hudMapKey) return;
+    this.hudMapKey = key;
+    this.hudMapChart.innerHTML = miniMapSvg(app.bundle, { seen: s.seen, chunks: s.seenChunks, at: s.pos, stall: s.stall });
+    this.hudMapNote.textContent = s.stall ? 'Your stall · the empty corner' : 'No stall placed';
   }
 
   /**
