@@ -1,7 +1,8 @@
 # The game's box, one approved action at a time
 
-The box (`207.180.241.81`) runs another product: `yaar-ad`, `yaar-ad-db`, `watchtower` and the host's
-nginx. **None of them is touched.** This runbook adds one compose project called `openfold`, its own
+The box runs another product: its own containers, an auto-updater and the host's nginx. Their names, the
+box's address and its open ports live in the owner's private notes, never in this public repo. **None of
+them is touched.** This runbook adds one compose project called `openfold`, its own
 network and its own named volume, and one new nginx site file. It never edits an existing container, an
 existing database, an existing volume or an existing nginx file.
 
@@ -12,7 +13,7 @@ back up, his approval for that one action, execute, verify.
 
 - Docker and the compose plugin (`v5.6`), the owner's user in the `docker` group, no passwordless sudo.
 - Port `5432` is taken on the host by another product's postgres, listening on `127.0.0.1` only.
-- Port `8710` is free (checked 20.10: listening ports are 22, 53, 5432, 44828, 53628).
+- Port `8710` is free (checked 20.10 with `ss -ltn`; the full list stays in the owner's notes).
 
 ## 1. A directory of its own
 
@@ -47,7 +48,7 @@ Verify: run it by hand once, then `zcat` the newest file and see `CREATE TABLE p
 
 ## Never
 
-- `docker system prune` on this host: watchtower and the other product's images live there.
+- `docker system prune` on this host: the other product's images and its auto-updater live there.
 - Editing a file under `/etc/nginx` that is already there, or reloading without `nginx -t`.
-- Pointing the game's database at the host's postgres, or at `yaar-ad-db`.
+- Pointing the game's database at the host's postgres, or at the other product's database container.
 - Ports on `db`: it is reachable inside the `openfold-game` network only, by design.
