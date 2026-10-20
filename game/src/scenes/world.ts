@@ -45,6 +45,7 @@ import { app } from '../app';
 import { sound, type SfxId, type SongId } from '../audio';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T } from '../config';
 import { FAR_BELL, SMOKE_PUFFS, farBellDue, nearestChimney, smokeAlpha, smokeAt } from '../hookbridge';
+import { HOLE, LIGHT_POOL, dappleAt, duskAt, frameAt, nightAt, shadeAt } from '../light';
 import { STONE_GLIDE_MS, STONE_STEPS, type StoneView, stoneView } from '../stone';
 import { type Clear, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../mist';
 import { FOG_ATLAS, FOG_ATLAS_W, FOG_FEATHER, FOG_OFFSETS, FOG_TILE, fogPixels } from '../fog';
@@ -75,9 +76,8 @@ import { cameraK, cameraZoom, pixelRatio, worldToPage } from '../view';
 /** px from the view's edge that the smoke marker keeps, so its column fits above the base. */
 const SMOKE_INSET = 30;
 const DEPTH = { ground: 0, restore: 1, flat: 2, shadow: 2.5, dig: 3, puff: 3.5, mist: 8000, fog: 9000, motes: 9100, shade: 9500, glow: 9600, fx: 9800, marker: 9850 };
-/** the lantern's pool of light at night, in world px: clear inside, a short edge in whole-pixel steps, the dark outside */
-const LIGHT = { r: 34, edge: 2, dark: 0.7, tint: 0xf0dcc0 };
-const HOLE = 2 * (LIGHT.r + LIGHT.edge + 1);
+/** the lantern's pool, now held with the rest of the light; LIGHT stays as the name world.ts reads */
+const LIGHT = LIGHT_POOL;
 const NEIGHBOURS: readonly [number, number][] = [
   [0, -1], [1, 0], [0, 1], [-1, 0], [1, -1], [1, 1], [-1, 1], [-1, -1],
 ];
@@ -2082,19 +2082,18 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private shadeFor(s: Session): void {
-    const m = minuteOfDay(this.b, s.tick) / 60;
-    // dark from 21:00 to 4:00, fading over two hours on each side
-    this.night = m >= 21 || m < 4 ? 1 : m >= 19 ? (m - 19) / 2 : m < 6 ? (6 - m) / 2 : 0;
-    this.shade.setFillStyle(0x172a52, 0.5 * this.night);
-    this.frameLook = { strength: 0.3 + (RICH.light ? 0.45 : 0.3) * this.night, radius: 0.8 - 0.15 * this.night };
+    const minute = minuteOfDay(this.b, s.tick);
+    this.night = nightAt(minute);
+    this.shade.setFillStyle(0x172a52, shadeAt(this.night));
+    this.frameLook = frameAt(this.night, RICH.light);
     this.drawFrame();
     if (this.dusk) {
       // gold over the valley around 20:00 and again around 05:30; the kernel's hours are untouched
-      this.dusk.setFillStyle(PALETTE.gold, 0.4 * Math.max(warmth(m, 20), warmth(m, 5.5)));
+      this.dusk.setFillStyle(PALETTE.gold, duskAt(minute));
     }
-    for (const d of this.dapples) d.setAlpha(0.08 * (1 - this.night));
+    for (const d of this.dapples) d.setAlpha(dappleAt(this.night));
     // the cloud shade goes with the sun; the banks gather before dawn and after dusk (sky.ts)
-    const fog = fogStrength(minuteOfDay(this.b, s.tick));
+    const fog = fogStrength(minute);
     this.cloud?.setAlpha(1 - this.night);
     // the banks keep their pale tone through the dark, so the night's one shade does not swallow them
     const weight = [0.6, 0.45, 0.85];
@@ -2980,10 +2979,6 @@ function kitOf(ref: string): string {
 }
 
 /** 1 within half an hour of the centre, falling to 0 over the next 45 minutes on either side. */
-function warmth(hour: number, centre: number): number {
-  return Math.max(0, Math.min(1, 1 - Math.max(0, Math.abs(hour - centre) - 0.5) / 0.75));
-}
-
 /**
  * Rectangles covering the grove and forest tiles, in world pixels: each is grown right
  * then down over tiles not yet covered, and only the roomy ones (six tiles or more,
