@@ -28,7 +28,16 @@ export interface Assembled {
   bundle: Bundle | undefined;
   issues: Issue[];
   /** kit id -> folder (absolute) and sprite list, for the PNG checks and the copy */
-  kits: Record<string, { dir: string; rel: string; sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4 }>; palette?: string[] }>;
+  kits: Record<
+    string,
+    {
+      dir: string;
+      rel: string;
+      sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4; ramps?: string[] }>;
+      palette?: string[];
+      ramps?: { id: string; for?: string; steps: string[] }[];
+    }
+  >;
   /** record id -> the file it came from */
   origin: Record<string, string>;
 }
@@ -236,9 +245,20 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
         dir: dirname(f.abs),
         rel: toRepoPath(dirname(f.abs)),
         sprites: Object.fromEntries(
-          Object.entries(d.kit.sprites).map(([name, s]) => [name, { file: s.file, w: s.w, h: s.h, frames: s.frames ?? 1, density: s.density ?? 1 }]),
+          Object.entries(d.kit.sprites).map(([name, s]) => [
+            name,
+            {
+              file: s.file,
+              w: s.w,
+              h: s.h,
+              frames: s.frames ?? 1,
+              density: s.density ?? 1,
+              ...(s.ramps ? { ramps: s.ramps } : {}),
+            },
+          ]),
         ),
         ...(d.kit.palette ? { palette: d.kit.palette } : {}),
+        ...(d.kit.ramps ? { ramps: d.kit.ramps } : {}),
       };
     }
   }
