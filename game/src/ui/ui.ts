@@ -38,6 +38,7 @@ import {
   windowScalePct,
 } from '../text';
 import { type Toast, type Tone, ToastBand, eventToasts, readTime, urgent } from '../toasts';
+import { localMapState } from '../places';
 import { resourceKind, treasureKind } from '../work';
 import { say, type Option } from './dialog';
 import { STONE_RESTORE, STONE_SPEAKER } from '../stone';
@@ -287,11 +288,16 @@ export class UI {
 
   /** The desktop's pocket chart: redrawn only when the walk, the map or the stall changed. */
   private renderHudMap(s: Session): void {
-    const key = `${s.pos[0]},${s.pos[1]}|${s.seen.size}|${s.seenChunks.size}|${s.stall ?? ''}`;
+    const local = localMapState(s);
+    if (!local) {
+      this.hudMap.hidden = true;
+      return;
+    }
+    const key = `${s.pos[0]},${s.pos[1]}|${local.seen.size}|${local.seenChunks.size}|${local.stall ?? ''}`;
     if (key === this.hudMapKey) return;
     this.hudMapKey = key;
-    this.hudMapChart.innerHTML = miniMapSvg(app.bundle, { seen: s.seen, chunks: s.seenChunks, at: s.pos, stall: s.stall });
-    this.hudMapNote.textContent = s.stall ? 'Your stall · the empty corner' : 'No stall placed';
+    this.hudMapChart.innerHTML = miniMapSvg(app.bundle, { seen: local.seen, chunks: local.seenChunks, at: s.pos, stall: local.stall });
+    this.hudMapNote.textContent = local.stall ? 'Your stall · the empty corner' : 'No stall placed';
   }
 
   /**

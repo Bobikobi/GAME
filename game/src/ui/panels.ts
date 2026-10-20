@@ -36,7 +36,7 @@ import type { StoneView } from '../stone';
 import { Session } from '../session';
 import { ATTRIBUTE_MAX, activeQuests, attributeEffects, bagGroups, classLine, clock, eatLabel, gold, itemBenefit, itemName, journalGroups, questSteps, restoreHint, seconds, sellable, stacks, stationGate, stationText, stationUpgrades, toolOpens, wornAt } from '../text';
 import { s1, s1Available } from '../net/s1';
-import { STALL_SLOT, canPlaceStall, directionOf, mapPlaces } from '../places';
+import { STALL_SLOT, canPlaceStall, directionOf, localMapState, mapPlaces } from '../places';
 import { say } from './dialog';
 import { button, h, sprite } from './dom';
 import { mapSvg, placeKind } from './map';
@@ -437,7 +437,7 @@ export function openBag(ui: UI): void {
         h(
           'p',
           { class: 'shop-note' },
-          s.stall
+          localMapState(s)?.stall
             ? 'Your stall stands at the empty corner. Other players and sales while you are away come with the shared world (SETTLEMENT 3.4).'
             : 'A draft. Place your stall at the empty corner on the map; other players and sales while you are away come with the shared world (SETTLEMENT 3.4).',
         ),
@@ -863,17 +863,21 @@ export function openMap(ui: UI): void {
   let selected: string | undefined;
 
   const render = () => {
-    const places = mapPlaces(b, s.seen, s.pos, s.stall)
+    const local = localMapState(s);
+    const seen = local?.seen ?? new Set<string>();
+    const chunks = local?.seenChunks ?? new Set<string>();
+    const stall = local?.stall;
+    const places = mapPlaces(b, seen, s.pos, stall)
       .filter((place) => place.label !== undefined)
       .sort((a, c) => Number(c.current) - Number(a.current) || Number(c.stall) - Number(a.stall) || (a.label ?? '').localeCompare(c.label ?? ''));
     const current = places.find((place) => place.current);
     selected = places.some((place) => place.id === selected) ? selected : (current?.id ?? places[0]?.id);
     const corner = places.find((place) => place.id === STALL_SLOT);
-    const atCorner = canPlaceStall(b, s.pos);
+    const atCorner = local !== undefined && canPlaceStall(b, s.pos);
     const day = Math.floor(s.tick / b.params.day_length_ms) + 1;
 
     const chart = h('div', { class: 'map-chart' });
-    chart.innerHTML = mapSvg(b, { seen: s.seen, chunks: s.seenChunks, at: s.pos, stall: s.stall, selected });
+    chart.innerHTML = mapSvg(b, { seen, chunks, at: s.pos, stall, selected });
 
     const rows = places.map((place) => {
       const name = place.stall ? 'Your stall' : place.id === STALL_SLOT ? 'The empty corner' : place.label!;
@@ -907,13 +911,14 @@ export function openMap(ui: UI): void {
 
     let note: string;
     let action: HTMLElement | undefined;
-    if (s.stall) {
+    if (stall) {
       note = atCorner
         ? 'Your stall stands at the empty corner. Buyers and sales while you are away come with the shared world.'
         : 'Your stall stands at the empty corner. Walk there to lift it; buyers come with the shared world.';
       if (atCorner) {
         action = button('Lift your stall', () => {
-          if (!s.liftStall()) return ui.toast('Walk to the empty corner first.', 'bad');
+          const lift = (s as { liftStall?: () => boolean }).liftStall;
+          if (!lift?.call(s)) return ui.toast('Walk to the empty corner first.', 'bad');
           ui.toast('The empty corner is free again.', 'info');
           render();
         });
@@ -925,13 +930,16 @@ export function openMap(ui: UI): void {
       action = button(
         'Place your stall',
         () => {
-          if (!s.placeStall()) return ui.toast('Walk to the empty corner first.', 'bad');
+          const place = (s as { placeStall?: () => boolean }).placeStall;
+          if (!place?.call(s)) return ui.toast('Walk to the empty corner first.', 'bad');
           ui.toast('Your stall stands at the empty corner.', 'good');
           render();
         },
         'gold',
         !atCorner,
       );
+    } else if (!local) {
+      note = 'The map is drawn from the local save. This door does not carry the walked ground or the stall yet.';
     } else {
       note = 'The empty corner is not on your map yet. Walk into town to find it.';
     }
@@ -941,7 +949,7 @@ export function openMap(ui: UI): void {
         'div',
         { class: 'map-strip' },
         h('span', null, `Day ${day} · ${clock(minuteOfDay(b, s.tick))}`),
-        h('span', null, s.stall ? 'Your stall · the empty corner' : 'No stall placed'),
+        h('span', null, stall ? 'Your stall · the empty corner' : 'No stall placed'),
       ),
       chart,
       h(

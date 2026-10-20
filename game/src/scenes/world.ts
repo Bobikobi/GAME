@@ -1897,7 +1897,7 @@ export class WorldScene extends Phaser.Scene {
 
   private arrive(s: Session): void {
     const [x, y] = s.pos;
-    s.seeAt();
+    (s as { seeAt?: () => void }).seeAt?.();
     const riddles = riddleSlots(this.b, s.state);
     for (const slot of this.b.map.slots) {
       if (!inRect(x, y, slot)) {

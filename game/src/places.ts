@@ -110,3 +110,18 @@ export function directionOf(from: readonly [number, number], to: readonly [numbe
   if (Math.abs(dy) <= 2) return ew;
   return `${ns}-${ew}`;
 }
+
+/** What the local save carries for the map; a server session has no such fields yet. */
+export interface LocalMapState {
+  seen: ReadonlySet<string>;
+  seenChunks: ReadonlySet<string>;
+  stall?: string;
+}
+
+/** The map's local state, when the session is the one that keeps a save. */
+export function localMapState(s: unknown): LocalMapState | undefined {
+  const m = s as Partial<LocalMapState>;
+  return m.seen instanceof Set && m.seenChunks instanceof Set
+    ? { seen: m.seen, seenChunks: m.seenChunks, stall: typeof m.stall === 'string' ? m.stall : undefined }
+    : undefined;
+}
