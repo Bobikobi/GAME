@@ -49,7 +49,7 @@ import { HOLE, LIGHT_POOL, dappleAt, duskAt, frameAt, nightAt, shadeAt } from '.
 import { STONE_GLIDE_MS, STONE_STEPS, type StoneView, stoneView } from '../stone';
 import { type Clear, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../mist';
 import { FOG_ATLAS, FOG_ATLAS_W, FOG_FEATHER, FOG_OFFSETS, FOG_TILE, fogPixels } from '../fog';
-import { AIR_DENSITY, BANK_DRIFT, BANK_TILE, CLOUD_TILE, bankPixels, cloudOffset, cloudPixels, fogStrength } from '../sky';
+import { AIR_DENSITY, BANK_DRIFT, BANK_TILE, CLOUD_BUCKETS, CLOUD_TILE, bankPixels, cloudBucket, cloudCover, cloudOffset, cloudPixels, fogStrength } from '../sky';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { TOO_DARK, feedTooLate, fireLow, fireName, readable, woodToFeed } from '../fires';
@@ -304,6 +304,10 @@ export class WorldScene extends Phaser.Scene {
   private fogs: Phaser.GameObjects.Image[] = [];
   /** the cloud shade over the ground by day, one patch repeated, and the fog banks that lie in the valley (sky.ts) */
   private clouds: Phaser.GameObjects.Image[] = [];
+  /** the sky's weight today: an index into CLOUD_BUCKETS, and 0 is a clear day with the patches hidden */
+  private cloudDay = -1;
+  /** a sky picked by `?debug&cloud=0..3`, for a still or a test; unset in play */
+  private cloudForce: number | null = null;
   private banks: { spr: Phaser.GameObjects.TileSprite; drift: number; at: number }[] = [];
   private fogMotes: Emitter[] = [];
   private dapples: Phaser.GameObjects.TileSprite[] = [];
@@ -1305,16 +1309,24 @@ export class WorldScene extends Phaser.Scene {
     // both textures are baked at the world's own density, so a texel lands on a screen pixel and no shape is
     // drawn twice its size; a tile is then a quarter of its own pixels, which tileScale says
     const side = CLOUD_TILE * AIR_DENSITY;
-    const cloudTex = this.textures.createCanvas('fx-cloud', side, side);
-    if (cloudTex) {
-      const img = cloudTex.getContext().createImageData(side, side);
-      img.data.set(cloudPixels(side));
-      cloudTex.getContext().putImageData(img, 0, 0);
-      cloudTex.refresh();
+    // one patch per weight of sky, so a clear day has none, a still day one, and a heavy day many
+    CLOUD_BUCKETS.forEach((cover, k) => {
+      const tex = this.textures.createCanvas(`fx-cloud-${k}`, side, side);
+      if (!tex) return;
+      const img = tex.getContext().createImageData(side, side);
+      img.data.set(cloudPixels(side, cover));
+      tex.getContext().putImageData(img, 0, 0);
+      tex.refresh();
+    });
+    if (new URLSearchParams(location.search).has('debug')) {
+      const asked = Number(new URLSearchParams(location.search).get('cloud'));
+      if (Number.isInteger(asked) && asked >= 0 && asked < CLOUD_BUCKETS.length) this.cloudForce = asked;
+    }
+    if (this.textures.exists('fx-cloud-0')) {
       // three by three copies of one patch: a tile sprite drew its overlapping edge twice and doubled the shade
       for (let j = 0; j < 3; j++) {
         for (let i = 0; i < 3; i++) {
-          const img = this.add.image(0, 0, 'fx-cloud').setOrigin(0).setScale(1 / AIR_DENSITY).setDepth(DEPTH.flat - 0.3).setAlpha(0);
+          const img = this.add.image(0, 0, 'fx-cloud-0').setOrigin(0).setScale(1 / AIR_DENSITY).setDepth(DEPTH.flat - 0.3).setAlpha(0);
           this.clouds.push(img);
         }
       }
@@ -2108,7 +2120,15 @@ export class WorldScene extends Phaser.Scene {
     for (const d of this.dapples) d.setAlpha(dappleAt(this.night));
     // the cloud shade goes with the sun; the banks gather before dawn and after dusk (sky.ts)
     const fog = fogStrength(minute);
-    for (const c of this.clouds) c.setAlpha(1 - this.night);
+    // the day's own sky: clear on some days, one cloud on others, heavy on a few
+    const day = Math.floor(s.tick / this.b.params.day_length_ms);
+    const k = this.cloudForce ?? cloudBucket(cloudCover(day));
+    if (k !== this.cloudDay) {
+      this.cloudDay = k;
+      for (const c of this.clouds) c.setTexture(`fx-cloud-${k}`);
+    }
+    const clear = k === 0 ? 0 : 1 - this.night;
+    for (const c of this.clouds) c.setAlpha(clear);
     // the banks keep their pale tone through the dark, so the night's one shade does not swallow them
     const weight = [0.9, 0.7, 1];
     this.banks.forEach((b, i) => b.spr.setAlpha(Math.min(0.95, fog * (weight[i] ?? 0.9) * (1 + 0.4 * this.night))));

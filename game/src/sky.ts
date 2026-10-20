@@ -9,8 +9,6 @@ import { T } from './config';
 export const CLOUD_TILE = 192;
 /** The ink over the ground: `#1b1a2e` at 12% at a cloud's rim and 28% through its heart, so the shape reads. */
 export const CLOUD_ALPHA = Math.round(0.34 * 255);
-/** The rim's share of `CLOUD_ALPHA`, at the very edge of a cloud. */
-export const CLOUD_RIM = 0.43;
 /** Art pixels a screen pixel: the world camera runs at four, so a texture is baked at this density to stay sharp. */
 export const AIR_DENSITY = 4;
 /** How the patch drifts, art pixels a second: a slow cross-wind, the same one the fire leans with. */
@@ -40,21 +38,42 @@ export function cloudField(x: number, y: number, size = CLOUD_TILE): number {
  * One patch of cloud shade as RGBA bytes: the ink at `CLOUD_ALPHA` through the middle of a cloud, thinning over
  * the last fifth of its edge so the shape has no cut line. A patch tiles with itself on all four sides.
  */
-export function cloudPixels(size = CLOUD_TILE * AIR_DENSITY): Uint8ClampedArray<ArrayBuffer> {
+/** How much of the sky a day carries, at the four weights the scene bakes: clear, one cloud, a few, a heavy sky. */
+export const CLOUD_BUCKETS = [0, 0.3, 0.55, 0.8] as const;
+
+/**
+ * The sky's own cover over the days, 0 to 1: slow weather the player can feel without a forecast. Some days
+ * are clear, some carry one cloud, some are heavy. A pure function of the day number, so a reload keeps the sky.
+ */
+export function cloudCover(day: number): number {
+  const v = 0.5 + 0.32 * Math.sin(day * 0.5 + 0.4) + 0.18 * Math.sin(day * 0.21 + 2.1) + 0.1 * Math.sin(day * 1.1 + 0.9);
+  // leaning clear: a heavy sky is the rarer day, and half the valley's days carry no cloud at all
+  return Math.min(1, Math.max(0, v * 1.05 - 0.16));
+}
+
+/** The bucket a day's cover falls in: the index into `CLOUD_BUCKETS`, and the baked patch that goes with it. */
+export function cloudBucket(cover: number): number {
+  let k = 0;
+  for (let i = 1; i < CLOUD_BUCKETS.length; i++) if (cover >= CLOUD_BUCKETS[i]!) k = i;
+  return k;
+}
+
+/** One patch of cloud shade at a given cover, 0 (clear sky) to 1 (a heavy sky). */
+export function cloudPixels(size = CLOUD_TILE * AIR_DENSITY, cover = 0.6): Uint8ClampedArray<ArrayBuffer> {
   const out = new Uint8ClampedArray(new ArrayBuffer(size * size * 4));
+  // more cover, a lower bar for the field: a thin sky keeps only the tops of the clouds
+  const bar = 0.86 - 0.5 * Math.min(1, Math.max(0, cover));
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const f = cloudField(x, y, size);
-      // a wider sky under cloud than the field's own half, so a cloud is met often and its edge is a ramp
       // a shade has an edge, not a fog: one step in, and a rim of two hundredths of the field to soften it
-      const edge = Math.min(1, Math.max(0, (f - 0.5) / 0.02));
+      const edge = Math.min(1, Math.max(0, (f - bar) / 0.02));
       if (edge <= 0) continue;
-      const heart = 1;
       const i = 4 * (y * size + x);
       out[i] = INK[0];
       out[i + 1] = INK[1];
       out[i + 2] = INK[2];
-      out[i + 3] = Math.round(CLOUD_ALPHA * edge * (CLOUD_RIM + (1 - CLOUD_RIM) * heart));
+      out[i + 3] = Math.round(CLOUD_ALPHA * edge);
     }
   }
   return out;

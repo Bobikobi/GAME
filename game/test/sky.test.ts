@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AIR_DENSITY, BANK_ALPHA, BANK_RGB, BANK_TILE, CLOUD_ALPHA, CLOUD_TILE, bankPixels, cloudField, cloudOffset, cloudPixels, fogStrength } from '../src/sky';
+import { AIR_DENSITY, BANK_ALPHA, BANK_RGB, BANK_TILE, CLOUD_ALPHA, CLOUD_BUCKETS, CLOUD_TILE, bankPixels, cloudBucket, cloudCover, cloudField, cloudOffset, cloudPixels, fogStrength } from '../src/sky';
 
 /** The alpha and colour of one pixel of an RGBA buffer. */
 function at(buf: Uint8ClampedArray, w: number, x: number, y: number): [number, number, number, number] {
@@ -13,7 +13,7 @@ describe('the cloud shade', () => {
     for (const x of [0, 17, 64, 127]) expect(cloudField(x, 0)).toBeCloseTo(cloudField(x, CLOUD_TILE), 6);
   });
 
-  it('is ink at 15 percent through a cloud, thinning at its rim, never above its own alpha', () => {
+  it('is ink at 34 percent inside a cloud with a thin rim, never above its own alpha', () => {
     const side = CLOUD_TILE * AIR_DENSITY;
     const px = cloudPixels();
     expect(px.length).toBe(side * side * 4);
@@ -32,10 +32,24 @@ describe('the cloud shade', () => {
     }
     // a cloud covers a share of the patch, not all of it and not none, and its edge is a ramp rather than a cut
     const share = covered / (side * side);
-    expect(share).toBeGreaterThan(0.15);
+    expect(share).toBeGreaterThan(0.1);
     expect(share).toBeLessThan(0.6);
     // the rim is thin: a shade has an edge, so only a little of the patch is between ink and clear
     expect(soft / covered).toBeLessThan(0.15);
+  });
+
+  it('carries fewer clouds on a still day and more on a heavy one', () => {
+    const side = CLOUD_TILE * AIR_DENSITY;
+    const inked = (cover: number) => {
+      const px = cloudPixels(side, cover);
+      let n = 0;
+      for (let i = 3; i < px.length; i += 4) if (px[i]! > 0) n++;
+      return n;
+    };
+    // a clear sky keeps only a wisp or two, and the scene hides even that on a clear day
+    expect(inked(0)).toBeLessThan(side * side * 0.05);
+    expect(inked(0.3)).toBeLessThan(inked(0.55));
+    expect(inked(0.55)).toBeLessThan(inked(0.8));
   });
 
   it('drifts on one wind, moving a little more every second', () => {
@@ -44,6 +58,23 @@ describe('the cloud shade', () => {
     expect(a).toEqual({ x: 0, y: 0 });
     expect(b.x).toBeGreaterThan(a.x);
     expect(b.y).toBeGreaterThan(a.y);
+  });
+});
+
+describe('the sky over the days', () => {
+  it('has clear days, single-cloud days and heavy days, and moves slowly', () => {
+    const days = Array.from({ length: 120 }, (_, d) => cloudCover(d));
+    expect(Math.min(...days)).toBe(0);
+    expect(Math.max(...days)).toBeGreaterThan(0.8);
+    const buckets = new Set(days.map(cloudBucket));
+    expect(buckets.size).toBe(CLOUD_BUCKETS.length);
+    for (let d = 0; d < days.length - 1; d++) expect(Math.abs(days[d + 1]! - days[d]!)).toBeLessThan(0.35);
+  });
+
+  it('leans clear: most days carry no cloud or one' , () => {
+    const days = Array.from({ length: 120 }, (_, d) => cloudCover(d));
+    const quiet = days.filter((c) => cloudBucket(c) <= 1).length;
+    expect(quiet / days.length).toBeGreaterThan(0.5);
   });
 });
 
