@@ -8882,6 +8882,23 @@
                   "maximum": 100,
                   "description": "It holds on this many days in a hundred, drawn once a game day for each thing it hangs on, the same on every replay.",
                   "type": "integer"
+                },
+                "weather": {
+                  "description": "The day's weather in the region of the thing it hangs on is this one.",
+                  "anyOf": [
+                    {
+                      "const": "clear",
+                      "type": "string"
+                    },
+                    {
+                      "const": "rain",
+                      "type": "string"
+                    },
+                    {
+                      "const": "fog",
+                      "type": "string"
+                    }
+                  ]
                 }
               }
             },
