@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BANK_RGB, BANK_TILE, CLOUD_ALPHA, CLOUD_TILE, bankPixels, cloudField, cloudOffset, cloudPixels, fogStrength } from '../src/sky';
+import { AIR_DENSITY, BANK_ALPHA, BANK_RGB, BANK_TILE, CLOUD_ALPHA, CLOUD_TILE, bankPixels, cloudField, cloudOffset, cloudPixels, fogStrength } from '../src/sky';
 
 /** The alpha and colour of one pixel of an RGBA buffer. */
 function at(buf: Uint8ClampedArray, w: number, x: number, y: number): [number, number, number, number] {
@@ -13,24 +13,29 @@ describe('the cloud shade', () => {
     for (const x of [0, 17, 64, 127]) expect(cloudField(x, 0)).toBeCloseTo(cloudField(x, CLOUD_TILE), 6);
   });
 
-  it('is ink at 12 to 15 percent, whole pixels, nothing in between', () => {
+  it('is ink at 15 percent through a cloud, thinning at its rim, never above its own alpha', () => {
+    const side = CLOUD_TILE * AIR_DENSITY;
     const px = cloudPixels();
-    expect(px.length).toBe(CLOUD_TILE * CLOUD_TILE * 4);
+    expect(px.length).toBe(side * side * 4);
+    expect(CLOUD_ALPHA).toBe(Math.round(0.34 * 255));
     let covered = 0;
-    for (let y = 0; y < CLOUD_TILE; y++) {
-      for (let x = 0; x < CLOUD_TILE; x++) {
-        const [r, g, b, a] = at(px, CLOUD_TILE, x, y);
-        expect([0, CLOUD_ALPHA]).toContain(a);
+    let soft = 0;
+    for (let y = 0; y < side; y++) {
+      for (let x = 0; x < side; x++) {
+        const [r, g, b, a] = at(px, side, x, y);
+        expect(a).toBeLessThanOrEqual(CLOUD_ALPHA);
         if (a === 0) continue;
         covered++;
-        expect([r, g, b]).toEqual([0x1b, 0x1a, 0x2e]);
+        if (a < CLOUD_ALPHA) soft++;
+        expect([r, g, b]).toEqual([0x17, 0x2a, 0x52]);
       }
     }
-    expect(CLOUD_ALPHA).toBe(Math.round(0.15 * 255));
-    // a cloud covers a share of the patch, not all of it and not none: the view can sit inside one or between two
-    const share = covered / (CLOUD_TILE * CLOUD_TILE);
-    expect(share).toBeGreaterThan(0.2);
-    expect(share).toBeLessThan(0.75);
+    // a cloud covers a share of the patch, not all of it and not none, and its edge is a ramp rather than a cut
+    const share = covered / (side * side);
+    expect(share).toBeGreaterThan(0.15);
+    expect(share).toBeLessThan(0.6);
+    // the rim is thin: a shade has an edge, so only a little of the patch is between ink and clear
+    expect(soft / covered).toBeLessThan(0.15);
   });
 
   it('drifts on one wind, moving a little more every second', () => {
@@ -50,24 +55,33 @@ describe('the fog banks', () => {
     const px = bankPixels(W, H, 1.7);
     const rowShare = (y: number) => {
       let n = 0;
-      for (let x = 0; x < W; x++) if (at(px, W, x, y)[3] === 255) n++;
+      for (let x = 0; x < W; x++) if (at(px, W, x, y)[3] > 0) n++;
       return n / W;
+    };
+    const rowAlpha = (y: number) => {
+      let n = 0;
+      for (let x = 0; x < W; x++) n += at(px, W, x, y)[3];
+      return n / W / (255 * BANK_ALPHA);
     };
     // its very edges thin to a few dots and its middle is a sheet, so it has no straight border
     expect(rowShare(0)).toBeLessThan(0.15);
     expect(rowShare(H - 1)).toBeLessThan(0.15);
-    expect(rowShare(Math.round(H / 2))).toBeGreaterThan(0.7);
+    expect(rowShare(Math.round(H / 2))).toBeGreaterThan(0.95);
+    // and the veil is thick there rather than a few pale dots
+    expect(rowAlpha(Math.round(H / 2))).toBeGreaterThan(0.55);
   });
 
-  it('uses the grey ramp and whole pixels only', () => {
+  it('is a pale veil: the light end of the ramp and an alpha under its own cap', () => {
     const px = bankPixels(W, H, 4.3);
     const tones = new Set(Object.values(BANK_RGB).map((c) => c.join(',')));
     for (let y = 0; y < H; y++) {
       for (let x = 0; x < W; x++) {
         const [r, g, b, a] = at(px, W, x, y);
         if (a === 0) continue;
-        expect(a).toBe(255);
+        expect(a).toBeLessThanOrEqual(Math.round(255 * BANK_ALPHA));
         expect(tones.has([r, g, b].join(','))).toBe(true);
+        // nothing darker than the light rim: fog reads white, not smoke
+        expect(Math.min(r, g, b)).toBeGreaterThanOrEqual(0xc6);
       }
     }
   });

@@ -49,7 +49,7 @@ import { HOLE, LIGHT_POOL, dappleAt, duskAt, frameAt, nightAt, shadeAt } from '.
 import { STONE_GLIDE_MS, STONE_STEPS, type StoneView, stoneView } from '../stone';
 import { type Clear, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../mist';
 import { FOG_ATLAS, FOG_ATLAS_W, FOG_FEATHER, FOG_OFFSETS, FOG_TILE, fogPixels } from '../fog';
-import { BANK_DRIFT, BANK_TILE, CLOUD_TILE, bankPixels, cloudOffset, cloudPixels, fogStrength } from '../sky';
+import { AIR_DENSITY, BANK_DRIFT, BANK_TILE, CLOUD_TILE, bankPixels, cloudOffset, cloudPixels, fogStrength } from '../sky';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { TOO_DARK, feedTooLate, fireLow, fireName, readable, woodToFeed } from '../fires';
@@ -302,8 +302,8 @@ export class WorldScene extends Phaser.Scene {
   private campGlows = new Map<string, Glow>();
   private embers = new Map<string, Emitter>();
   private fogs: Phaser.GameObjects.Image[] = [];
-  /** the cloud shade over the ground by day, and the fog banks that lie in the valley (sky.ts) */
-  private cloud?: Phaser.GameObjects.TileSprite;
+  /** the cloud shade over the ground by day, one patch repeated, and the fog banks that lie in the valley (sky.ts) */
+  private clouds: Phaser.GameObjects.Image[] = [];
   private banks: { spr: Phaser.GameObjects.TileSprite; drift: number; at: number }[] = [];
   private fogMotes: Emitter[] = [];
   private dapples: Phaser.GameObjects.TileSprite[] = [];
@@ -1302,13 +1302,22 @@ export class WorldScene extends Phaser.Scene {
    */
   private buildAir(): void {
     if (!RICH.light) return;
-    const cloudTex = this.textures.createCanvas('fx-cloud', CLOUD_TILE, CLOUD_TILE);
+    // both textures are baked at the world's own density, so a texel lands on a screen pixel and no shape is
+    // drawn twice its size; a tile is then a quarter of its own pixels, which tileScale says
+    const side = CLOUD_TILE * AIR_DENSITY;
+    const cloudTex = this.textures.createCanvas('fx-cloud', side, side);
     if (cloudTex) {
-      const img = cloudTex.getContext().createImageData(CLOUD_TILE, CLOUD_TILE);
-      img.data.set(cloudPixels());
+      const img = cloudTex.getContext().createImageData(side, side);
+      img.data.set(cloudPixels(side));
       cloudTex.getContext().putImageData(img, 0, 0);
       cloudTex.refresh();
-      this.cloud = this.add.tileSprite(0, 0, T, T, 'fx-cloud').setOrigin(0).setDepth(DEPTH.flat - 0.3).setAlpha(0);
+      // three by three copies of one patch: a tile sprite drew its overlapping edge twice and doubled the shade
+      for (let j = 0; j < 3; j++) {
+        for (let i = 0; i < 3; i++) {
+          const img = this.add.image(0, 0, 'fx-cloud').setOrigin(0).setScale(1 / AIR_DENSITY).setDepth(DEPTH.flat - 0.3).setAlpha(0);
+          this.clouds.push(img);
+        }
+      }
     }
     const banks = [
       { key: 'fx-bank-high', tile: BANK_TILE.high, drift: BANK_DRIFT.high, at: 0.22, seed: 1.7 },
@@ -1317,13 +1326,15 @@ export class WorldScene extends Phaser.Scene {
     ];
     for (const b of banks) {
       const wide = 24 * T;
-      const tex = this.textures.createCanvas(b.key, wide, b.tile);
+      const px = wide * AIR_DENSITY;
+      const ph = b.tile * AIR_DENSITY;
+      const tex = this.textures.createCanvas(b.key, px, ph);
       if (!tex) continue;
-      const img = tex.getContext().createImageData(wide, b.tile);
-      img.data.set(bankPixels(wide, b.tile, b.seed));
+      const img = tex.getContext().createImageData(px, ph);
+      img.data.set(bankPixels(px, ph, b.seed));
       tex.getContext().putImageData(img, 0, 0);
       tex.refresh();
-      const spr = this.add.tileSprite(0, 0, wide / 2, b.tile, b.key).setOrigin(0).setAlpha(0);
+      const spr = this.add.tileSprite(0, 0, wide / 2, b.tile, b.key).setOrigin(0).setAlpha(0).setTileScale(1 / AIR_DENSITY);
       this.banks.push({ spr, drift: b.drift, at: b.at });
     }
   }
@@ -1334,11 +1345,14 @@ export class WorldScene extends Phaser.Scene {
    */
   private driftAir(time: number, delta: number): void {
     const view = this.cameras.main.worldView;
-    if (this.cloud) {
+    if (this.clouds.length > 0) {
+      // the patch is anchored in the world and wraps at its own edge, so the copies hand the cloud on to each other
       const off = cloudOffset(time);
-      this.cloud.setPosition(view.x - CLOUD_TILE / 2, view.y - CLOUD_TILE / 2);
-      this.cloud.setSize(view.width + CLOUD_TILE, view.height + CLOUD_TILE);
-      this.cloud.setTilePosition(view.x + off.x, view.y + off.y);
+      const dx = ((off.x % CLOUD_TILE) + CLOUD_TILE) % CLOUD_TILE;
+      const dy = ((off.y % CLOUD_TILE) + CLOUD_TILE) % CLOUD_TILE;
+      const left = Math.floor(view.x) - CLOUD_TILE + dx;
+      const top = Math.floor(view.y) - CLOUD_TILE + dy;
+      this.clouds.forEach((img, k) => img.setPosition(left + (k % 3) * CLOUD_TILE, top + Math.floor(k / 3) * CLOUD_TILE));
     }
     for (const b of this.banks) {
       b.spr.setPosition(view.x - b.spr.width / 2, view.y + view.height * b.at - b.spr.height / 2);
@@ -2094,10 +2108,10 @@ export class WorldScene extends Phaser.Scene {
     for (const d of this.dapples) d.setAlpha(dappleAt(this.night));
     // the cloud shade goes with the sun; the banks gather before dawn and after dusk (sky.ts)
     const fog = fogStrength(minute);
-    this.cloud?.setAlpha(1 - this.night);
+    for (const c of this.clouds) c.setAlpha(1 - this.night);
     // the banks keep their pale tone through the dark, so the night's one shade does not swallow them
-    const weight = [0.6, 0.45, 0.85];
-    this.banks.forEach((b, i) => b.spr.setAlpha(Math.min(0.85, fog * (weight[i] ?? 0.6) * (1 + 0.7 * this.night))));
+    const weight = [0.9, 0.7, 1];
+    this.banks.forEach((b, i) => b.spr.setAlpha(Math.min(0.95, fog * (weight[i] ?? 0.9) * (1 + 0.4 * this.night))));
     this.showHazards(s);
     const isNight = this.night >= 0.5;
     if (isNight !== this.wasNight) {
