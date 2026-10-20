@@ -692,6 +692,28 @@ def draw_path(img, c: Roles) -> None:
         ww = r.choice([2, 3, 4])
         ellipse(d, [x, y, x + ww, y + 2], c.stone_mid)
         d.point((x, y + 1), fill=c.stone_dark + (255,))
+    # stepping stones down the track: a garden path, not a paved road
+    for i, sy in enumerate(range(596, H - 10, 34)):
+        cx = centre(sy) + (2 + r.randrange(3)) * (-1 if i % 2 else 1)
+        hw = 7 + r.randrange(3)
+        hh = 4 + r.randrange(2)
+        d.rounded_rectangle([cx - hw, sy + 2, cx + hw, sy + hh + 4], radius=3,
+                            fill=c.path_dark + (255,))
+        d.rounded_rectangle([cx - hw - 1, sy - hh - 1, cx + hw + 1, sy + hh + 1],
+                            radius=4, fill=c.cobble_dark + (255,))
+        d.rounded_rectangle([cx - hw, sy - hh, cx + hw, sy + hh], radius=3,
+                            fill=c.cobble_mid + (255,))
+        line(d, [(cx - hw + 2, sy - hh + 1), (cx + hw - 4, sy - hh + 1)], c.cobble_light)
+        line(d, [(cx - hw + 2, sy + hh - 1), (cx + hw - 3, sy + hh - 1)], c.cobble_dark)
+        if r.random() < 0.5:
+            d.point((cx + r.randrange(-3, 4), sy + r.randrange(-2, 3)),
+                    fill=c.cobble_dark + (255,))
+        if r.random() < 0.45:
+            tuft(d, cx + hw + 1, sy + 1, c.grass_dark, c.grass_light, c.grass_outline,
+                 r.choice([-1, 0, 1]), 4 + r.randrange(4), r)
+        if r.random() < 0.45:
+            tuft(d, cx - hw - 1, sy + 1, c.grass_dark, c.grass_light, c.grass_outline,
+                 r.choice([-1, 0, 1]), 4 + r.randrange(4), r)
 
 
 def draw_far_bank(img, look: Look, c: Roles) -> None:

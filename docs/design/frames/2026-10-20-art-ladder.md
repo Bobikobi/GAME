@@ -11,9 +11,9 @@ The green by the elder's house at 19:00, when the last sun, the street lamp's po
 | Far bank meadow | y 0 to 56, the second region ramp from L1, with a field fence and two bushes |
 | Water | y 56 to 197, four depth bands, the far oak and the boat reflected, three lily pads near the shore |
 | Sand shore | y 197 to 232, five fading footprints, three reed clusters, driftwood and shells |
-| Village green | y 232 to 844: meadow grass, not a paved square. A small worn forecourt of large flagstones and dirt around the well and the door, dirt patches under the bench, lamp, cart and hearth, a curved ragged path, a grass bed for the tall grass, two bushes, flowers and clover, one puddle |
+| Village green | y 232 to 844: meadow grass, not a paved square. A small worn forecourt of large flagstones and dirt around the well and the door, dirt patches under the bench, lamp, cart and hearth, a curved ragged path with stepping stones, a grass bed for the tall grass, two bushes, flowers and clover, one puddle |
 | Forecourt | a ragged patch around the well, x 0 to 260, y 250 to 560 (about 4.1 x 4.8 tiles), and a narrow tongue to the door at x 190 to 390, y 430 to 630; cut by grass islands, 26 to 45 px flagstones 18 to 27 px tall in 6 to 7 px dirt joints, a stippled fringe, no drawn oval |
-| Path | from the door step (290, 560) to (330, 844), 22 to 36 px wide, centre `290 + 26 sin((y-560)/110) + 0.04 (y-560)`, ragged edges and grass tufts, ruts, hoofprints and ten pressed stones |
+| Path | from the door step (290, 560) to (330, 844), 22 to 36 px wide, centre `290 + 26 sin((y-560)/110) + 0.04 (y-560)`, ragged edges and grass tufts, ruts, hoofprints, ten pressed stones and seven stepping stones |
 | Dirt patches | nine worn patches, 56 to 104 px across, four overlapping ellipses each, 22 tufts and 36 mottled pixels at the rim |
 | Bushes | two 30x22 shrubs at (348, 582) and (100, 560), in the leaf ramp, with contact shadows |
 | Elder's house | 192x320 at (198, 252); a shingled roof 108 tall, a door 64x112 at (262, 460) with a canopy, two 32x32 lit windows with flower boxes, a wall lantern, a hanging leaf sign and a woodpile |
@@ -74,6 +74,7 @@ The 30% dusk shade is the still's number so the pool's steps read at 19:00. Toda
 | Sand-to-grass edge | a wavy line at `224 + 4 sin(x/17) + 0 to 2`, four rows of sand above it, a tuft every third column. No straight border |
 | Forecourt | eight ellipses unioned (x 0 to 380, y 250 to 610) minus four grass islands (x 14 to 388, y 300 to 620); stones 26 to 45 px across and 18 to 27 px tall in 6 to 7 px dirt joints, one in seven with a crack, 48 grass tufts in the joints; the edge stippled with grass and dirt pixels and ten loose stones outside |
 | Path | `centre(y) = 290 + 26 sin((y-560)/110) + 0.04 (y-560)` from y 560 to 844; half-width `11 + 5 sin(y/19)` plus 0 to 2 px jitter; 84% `path_base`, 6% `path_alt`, the rest `path_dark`; two ruts 5 px either side; hoofprints every 19 rows; ten 2 to 4 px stones |
+| Stepping stones | seven flat stones from y 596 to 800 every 34 px, 14 to 20 px wide and 8 to 10 px tall, alternating 2 to 4 px off the centre, one ramp step of outline and a top highlight, a soft shadow on the dirt; a tuft on either side of about half of them |
 | Dirt patches | nine: under the bench, the lamp, the cart and the hearth, plus five on the open green; four overlapping ellipses, 22 tufts inside, 36 mottled grass/dirt pixels |
 | Grass bed | an ellipse (318, 756) to (392, 844) in `grass_base` under the tall grass, 16 tufts |
 | Puddle | (58, 778) to (82, 790), three water steps and a `path_dark` rim |
