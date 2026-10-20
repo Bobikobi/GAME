@@ -172,6 +172,12 @@
       "max": 400,
       "step": 10
     },
+    "move_reach_max": {
+      "value": 32,
+      "min": 2,
+      "max": 32,
+      "step": 1
+    },
     "hp_low_pct": {
       "value": 25,
       "min": 0,

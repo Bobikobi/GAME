@@ -1008,6 +1008,10 @@ export const ParamsBody = Type.Object(
       ...Bounded,
       description: 'Milliseconds the player takes to walk one tile. The client walks at this pace; the kernel checks a position report against it (DECISIONS.md, 2026-10-10: health and hazards).',
     },
+    move_reach_max: Type.Optional({
+      ...Bounded,
+      description: 'The maximum number of tiles a movement report may cover after the walk-time allowance (G56). Defaults to 32.',
+    }),
     hp_low_pct: {
       ...Bounded,
       description: 'Work takes half as long again while health is at or below this share of its cap, in percent. 0 slows it only when health is empty (G32).',

@@ -95,6 +95,9 @@ function checkParams(file: { params?: ParamsBody } | undefined): Issue[] {
       issues.push({ file: 'content/core/params.json', where: `params.${name}.max`, message: 'the trader may never pay as much as the shop charges: keep the share below 1000', level: 'error' });
     }
   }
+  if (file.params.move_reach_max && (file.params.move_reach_max.value < 2 || file.params.move_reach_max.value > 32)) {
+    issues.push({ file: 'content/core/params.json', where: 'params.move_reach_max.value', message: 'keep G56 movement reach between 2 and 32 tiles', level: 'error' });
+  }
   // G48 with whole logs: a burning fire takes a log only once cap - 1 logs of burn or less are left, so its
   // warning opens inside that window or it asks for a log the fire refuses (and a cap of one never takes one)
   const { cap, log_ms: logMs, warn_min: warnMin } = file.params.fire;
