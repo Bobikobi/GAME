@@ -58,7 +58,11 @@ interface ChangeBody {
   version: number;
 }
 
+/** The kinds of client-played step a batch may carry. An encounter joins this list later (NEXT 18 a), with no new endpoint. */
+const MOVE_REPORT_KEYS = ['kind', 'at', 'tick'] as const;
+
 interface MoveReport {
+  kind: 'move';
   at: Tile;
   tick: number;
 }
@@ -82,6 +86,18 @@ function isTile(value: unknown): value is Tile {
 
 function hasOnlyKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
   return Object.keys(value).every((key) => keys.includes(key));
+}
+
+function moveReport(value: unknown): MoveReport {
+  if (!isRecord(value)) throw new RequestError('Each movement report must be an object.', 400);
+  if (!hasOnlyKeys(value, MOVE_REPORT_KEYS)) {
+    throw new RequestError('A movement report holds a kind, a tile and a tick, nothing else.', 400);
+  }
+  if (value.kind !== 'move') throw new RequestError('Only movement reports are accepted here for now.', 400);
+  if (!isTile(value.at) || !validTick(value.tick)) {
+    throw new RequestError('Each movement report needs a tile and a valid tick.', 400);
+  }
+  return { kind: 'move', at: value.at, tick: value.tick };
 }
 
 function isAction(value: unknown): value is Action {
@@ -308,16 +324,14 @@ async function route(request: IncomingMessage, response: ServerResponse, options
     if (!Array.isArray(body.moves) || body.moves.length === 0 || body.moves.length > MOVE_LIMIT) {
       throw new RequestError(`Send between 1 and ${MOVE_LIMIT} movement reports.`, 400);
     }
+    const reports = body.moves.map(moveReport);
     let previousTick = state.tick;
-    for (const report of body.moves) {
-      if (!isRecord(report) || !isTile(report.at) || !validTick(report.tick)) {
-        throw new RequestError('Each movement report needs a tile and a valid tick.', 400);
-      }
+    for (const report of reports) {
       if (report.tick < previousTick) throw new RequestError('Movement report times cannot run backwards.', 409);
       previousTick = report.tick;
     }
     checkClock(previousTick, record, now);
-    for (const report of body.moves as MoveReport[]) {
+    for (const report of reports) {
       const nextCredit = nextMovementCredit(
         options.bundle,
         state,

@@ -65,6 +65,10 @@ function started(): State {
   return result.state;
 }
 
+function move(at: Tile, tick: number): { kind: 'move'; at: Tile; tick: number } {
+  return { kind: 'move', at, tick };
+}
+
 function longMovementPath(state: State): Tile[] {
   const walkable = makeWalkable(bundle);
   const [x, y] = state.player.at;
@@ -135,14 +139,14 @@ describe('Stage 2a server protocol', () => {
     const { base, store, clock } = await api(started());
     const first = await post(base, '/moves', {
       version: 1,
-      moves: [{ at: store.record.state.player.at, tick: 2_000 }],
+      moves: [move(store.record.state.player.at, 2_000)],
     });
     expect(first.status, await first.clone().text()).toBe(200);
 
     const before = serialize(store.record.state);
     const repeatedSlack = await post(base, '/moves', {
       version: 2,
-      moves: [{ at: store.record.state.player.at, tick: 4_000 }],
+      moves: [move(store.record.state.player.at, 4_000)],
     });
     expect(repeatedSlack.status).toBe(409);
     expect(await repeatedSlack.json()).toEqual({ error: 'That game time is ahead of the time elapsed.' });
@@ -152,7 +156,7 @@ describe('Stage 2a server protocol', () => {
     clock.now += 1_000;
     const elapsedTime = await post(base, '/moves', {
       version: 2,
-      moves: [{ at: store.record.state.player.at, tick: 3_000 }],
+      moves: [move(store.record.state.player.at, 3_000)],
     });
     expect(elapsedTime.status).toBe(200);
   });
@@ -212,14 +216,35 @@ describe('Stage 2a server protocol', () => {
   test('refuses malformed and overlong movement batches without mutation', async () => {
     const { base, store } = await api(started());
     const before = serialize(store.record.state);
-    const malformed = await post(base, '/moves', { version: 1, moves: [{ at: [1], tick: 0 }] });
+    const malformed = await post(base, '/moves', { version: 1, moves: [{ kind: 'move', at: [1], tick: 0 }] });
     expect(malformed.status).toBe(400);
     const oversized = await post(base, '/moves', {
       version: 1,
-      moves: Array.from({ length: 257 }, () => ({ at: store.record.state.player.at, tick: 0 })),
+      moves: Array.from({ length: 257 }, () => move(store.record.state.player.at, 0)),
     });
     expect(oversized.status).toBe(400);
     expect(serialize(store.record.state)).toBe(before);
+  });
+
+  test('a movement report names its kind, and an unknown kind is refused', async () => {
+    const { base, store } = await api(started());
+    const before = serialize(store.record.state);
+    const at = store.record.state.player.at;
+
+    const withoutKind = await post(base, '/moves', { version: 1, moves: [{ at, tick: 0 }] });
+    expect(withoutKind.status).toBe(400);
+    expect(await withoutKind.json()).toEqual({ error: 'Only movement reports are accepted here for now.' });
+
+    const unknownKind = await post(base, '/moves', { version: 1, moves: [{ kind: 'encounter', at, tick: 0 }] });
+    expect(unknownKind.status).toBe(400);
+    expect(await unknownKind.json()).toEqual({ error: 'Only movement reports are accepted here for now.' });
+
+    const extraField = await post(base, '/moves', { version: 1, moves: [{ kind: 'move', at, tick: 0, blows: [] }] });
+    expect(extraField.status).toBe(400);
+    expect(await extraField.json()).toEqual({ error: 'A movement report holds a kind, a tile and a tick, nothing else.' });
+
+    expect(serialize(store.record.state)).toBe(before);
+    expect(store.record.version).toBe(1);
   });
 
   test('movement credit is cumulative across reports and separate requests', async () => {
@@ -229,7 +254,7 @@ describe('Stage 2a server protocol', () => {
     const before = serialize(store.record.state);
     const batch = await post(base, '/moves', {
       version: 1,
-      moves: path.slice(1, 4).map((at) => ({ at, tick: 0 })),
+      moves: path.slice(1, 4).map((at) => move(at, 0)),
     });
     expect(batch.status).toBe(409);
     expect(serialize(store.record.state)).toBe(before);
@@ -237,14 +262,14 @@ describe('Stage 2a server protocol', () => {
     for (const [index, at] of path.slice(1, 3).entries()) {
       const response = await post(base, '/moves', {
         version: store.record.version,
-        moves: [{ at, tick: 0 }],
+        moves: [move(at, 0)],
       });
       expect(response.status, `movement report ${index + 1}`).toBe(200);
     }
     const afterTwoTiles = serialize(store.record.state);
     const thirdTile = await post(base, '/moves', {
       version: store.record.version,
-      moves: [{ at: path[3], tick: 0 }],
+      moves: [move(path[3]!, 0)],
     });
     expect(thirdTile.status).toBe(409);
     expect(serialize(store.record.state)).toBe(afterTwoTiles);
@@ -257,7 +282,7 @@ describe('Stage 2a server protocol', () => {
     for (const at of path.slice(1, 3)) {
       const response = await post(base, '/moves', {
         version: store.record.version,
-        moves: [{ at, tick: 0 }],
+        moves: [move(at, 0)],
       });
       expect(response.status).toBe(200);
     }
@@ -265,7 +290,7 @@ describe('Stage 2a server protocol', () => {
     clock.now += bundle.params.walk_step_ms;
     const response = await post(base, '/moves', {
       version: store.record.version,
-      moves: [{ at: path[3], tick: bundle.params.walk_step_ms }],
+      moves: [move(path[3]!, bundle.params.walk_step_ms)],
     });
     expect(response.status).toBe(200);
   });
