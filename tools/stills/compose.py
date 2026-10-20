@@ -54,7 +54,7 @@ CORE = {
 # cooler as it darkens and warmer as it lightens.
 MATERIAL = {
     "wood": ["#2e1e24", "#4a2c2a", "#6e4032", "#95603c", "#bd8655", "#e0b37a"],
-    "stone": ["#242338", "#3b3a52", "#57576e", "#787a8c", "#a09a96", "#c6bca8"],
+    "stone": ["#3a3230", "#5c4f48", "#837369", "#a99889", "#cdbca7", "#eadcc4"],
     "leaf": ["#16332f", "#27543a", "#3f7d45", "#68a94f", "#a8cd6f"],
     "meadow": ["#243330", "#3e5038", "#5e7141", "#889552", "#b8b96d"],
     "water2": ["#12203f", "#1c3d6e", "#2c6494", "#557f96", "#c9b28a"],
@@ -117,14 +117,17 @@ class Roles:
         s = look.step
         o = look.outline
         if look.name == "L0":
-            self.cobble_base = s("grey", 1)
-            self.cobble_mid = s("grey", 2)
-            self.cobble_light = s("grey", 3)
-            self.cobble_dark = s("grey", 0)
-            self.stone_base = s("grey", 1)
-            self.stone_mid = s("grey", 2)
-            self.stone_light = s("grey", 3)
-            self.stone_dark = s("grey", 1)
+            self.cobble_base = s("grey", 2)
+            self.cobble_mid = s("grey", 3)
+            self.cobble_light = s("grey", 4)
+            self.cobble_dark = s("grey", 1)
+            self.cobble_alt = s("earth", 2)
+            self.cobble_alt_light = s("earth", 3)
+            self.cobble_alt_dark = s("earth", 1)
+            self.stone_base = s("earth", 3)
+            self.stone_mid = s("earth", 4)
+            self.stone_light = s("grey", 5)
+            self.stone_dark = s("earth", 2)
             self.stone_outline = hx("#1b1a2e")
             self.grass_base = s("green", 2)
             self.grass_dark = s("green", 1)
@@ -142,6 +145,9 @@ class Roles:
             self.sand_mid = s("earth", 3)
             self.sand_dark = s("earth", 2)
             self.sand_outline = hx("#1b1a2e")
+            self.path_base = s("earth", 3)
+            self.path_alt = s("earth", 4)
+            self.path_dark = s("earth", 2)
             self.wood_base = s("earth", 1)
             self.wood_mid = s("earth", 2)
             self.wood_light = s("earth", 3)
@@ -171,14 +177,17 @@ class Roles:
             self.hair_light = s("grey", 5)
             self.hair_mid = s("grey", 4)
         else:
-            self.cobble_base = s("stone", 1)
-            self.cobble_mid = s("stone", 2)
-            self.cobble_light = s("stone", 3)
-            self.cobble_dark = s("stone", 0)
-            self.stone_base = s("stone", 2)
-            self.stone_mid = s("stone", 3)
-            self.stone_light = s("stone", 4)
-            self.stone_dark = s("stone", 1)
+            self.cobble_base = s("stone", 2)
+            self.cobble_mid = s("stone", 3)
+            self.cobble_light = s("stone", 4)
+            self.cobble_dark = s("stone", 1)
+            self.cobble_alt = s("grey", 3)
+            self.cobble_alt_light = s("grey", 4)
+            self.cobble_alt_dark = s("grey", 2)
+            self.stone_base = s("stone", 3)
+            self.stone_mid = s("stone", 4)
+            self.stone_light = s("stone", 5)
+            self.stone_dark = s("stone", 2)
             self.stone_outline = o("stone")
             self.grass_base = s("leaf", 2)
             self.grass_dark = s("leaf", 1)
@@ -196,6 +205,9 @@ class Roles:
             self.sand_mid = s("sand2", 2)
             self.sand_dark = s("sand2", 1)
             self.sand_outline = o("sand2")
+            self.path_base = s("sand2", 3)
+            self.path_alt = s("sand2", 4)
+            self.path_dark = s("sand2", 2)
             self.wood_base = s("wood", 2)
             self.wood_mid = s("wood", 3)
             self.wood_light = s("wood", 4)
@@ -456,13 +468,17 @@ def draw_cobble(img, c: Roles) -> None:
             w = 15 + r.randrange(10)
             skew = r.choice([-1, 0, 0, 1])
             box = [x, y + (1 if skew > 0 else 0), x + w - 2, y + h - 2 - (1 if skew < 0 else 0)]
-            ellipse(d, box, c.cobble_mid)
+            alt = r.random() < 0.12
+            body = c.cobble_alt if alt else c.cobble_mid
+            hi = c.cobble_alt_light if alt else c.cobble_light
+            lo = c.cobble_alt_dark if alt else c.cobble_dark
+            ellipse(d, box, body)
             # top-left light, bottom-right dark
-            line(d, [(box[0] + 3, box[1] + 1), (box[2] - 4, box[1] + 1)], c.cobble_light)
-            line(d, [(box[0] + 1, box[1] + 3), (box[0] + 1, box[3] - 3)], c.cobble_light)
-            line(d, [(box[0] + 3, box[3] - 1), (box[2] - 3, box[3] - 1)], c.cobble_dark)
+            line(d, [(box[0] + 3, box[1] + 1), (box[2] - 4, box[1] + 1)], hi)
+            line(d, [(box[0] + 1, box[1] + 3), (box[0] + 1, box[3] - 3)], hi)
+            line(d, [(box[0] + 3, box[3] - 1), (box[2] - 3, box[3] - 1)], lo)
             if r.random() < 0.22:
-                d.point((box[0] + w // 2, box[1] + h // 2), fill=c.cobble_dark + (255,))
+                d.point((box[0] + w // 2, box[1] + h // 2), fill=lo + (255,))
             x += w
         y += h
         row += 1
@@ -516,14 +532,14 @@ def draw_path(img, c: Roles) -> None:
             edge = abs(x - cx) / w
             if edge > 0.84 and r.random() < 0.55:
                 continue
-            col = c.sand_mid if r.random() < 0.74 else c.sand_dark
-            if r.random() < 0.04:
-                col = c.sand_base
+            col = c.path_base if r.random() < 0.74 else c.path_dark
+            if r.random() < 0.06:
+                col = c.path_alt
             d.point((x, y), fill=col + (255,))
     for y in range(578, H):
         cx = 292 + int((y - 566) * 0.11) + int(3 * math.sin(y / 31))
-        d.point((cx - 5, y), fill=c.sand_dark + (255,))
-        d.point((cx + 5, y), fill=c.sand_dark + (255,))
+        d.point((cx - 5, y), fill=c.path_dark + (255,))
+        d.point((cx + 5, y), fill=c.path_dark + (255,))
     for _ in range(14):
         x = r.randrange(270, 340)
         y = r.randrange(600, H - 4)
@@ -532,8 +548,8 @@ def draw_path(img, c: Roles) -> None:
         d.point((x, y + 1), fill=c.stone_dark + (255,))
     for hy in range(600, H - 6, 19):
         cx = 292 + int((hy - 566) * 0.11) + int(3 * math.sin(hy / 31))
-        d.rectangle([cx - 3, hy, cx - 1, hy + 2], fill=c.sand_dark + (255,))
-        d.rectangle([cx + 2, hy + 6, cx + 4, hy + 8], fill=c.sand_dark + (255,))
+        d.rectangle([cx - 3, hy, cx - 1, hy + 2], fill=c.path_dark + (255,))
+        d.rectangle([cx + 2, hy + 6, cx + 4, hy + 8], fill=c.path_dark + (255,))
 
 
 def draw_far_bank(img, look: Look, c: Roles) -> None:
@@ -1703,11 +1719,11 @@ def make_world(look: Look, *, pell_sprite: Image.Image | None = None,
     if level == "L0":
         return light_frame(img, [LIGHTS_L0["lamp"]], [LIGHTS_L0["hearth"]],
                            [LIGHTS_L0["window_l"], LIGHTS_L0["window_r"]],
-                           warm=(hx("#eda83a"), 0.13), base_dark=0.40,
+                           warm=(hx("#eda83a"), 0.13), base_dark=0.30,
                            dither=False, glow=False)
     return light_frame(img, [LIGHTS_L2["lamp"]], [LIGHTS_L2["hearth"]],
                        [LIGHTS_L2["window_l"], LIGHTS_L2["window_r"]],
-                       warm=(hx("#e2533f"), 0.28), base_dark=0.40,
+                       warm=(hx("#e2533f"), 0.28), base_dark=0.30,
                        dither=True, glow=False)
 
 
@@ -1841,7 +1857,7 @@ def declared_colors(look: Look, level: str, extra: set[tuple[int, int, int]] | N
     blue = hx("#172a52")
     refl = hx("#275a99") if look.name == "L0" else look.step("water2", 1)
     warm = (hx("#eda83a"), 0.13) if level == "L0" else (hx("#e2533f"), 0.28)
-    dark_level = 0.40
+    dark_level = 0.30
     pool = [dark_level * i / 2 for i in range(3)] if level == "L0" else [dark_level * i / 4 for i in range(5)]
     allowed: set[int] = set()
 

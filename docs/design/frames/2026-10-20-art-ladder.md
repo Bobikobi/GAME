@@ -11,7 +11,7 @@ The square by the elder's house at 19:00, when the last sun, the street lamp's p
 | Far bank meadow | y 0 to 56, the second region ramp from L1, with a field fence and two bushes |
 | Water | y 56 to 197, four depth bands, the far oak and the boat reflected, three lily pads near the shore |
 | Sand shore | y 197 to 232, five fading footprints, three reed clusters, driftwood and shells |
-| Cobble square | y 232 to 844, the worn path with ruts and hoofprints, five flagstones, two puddles, a drain, cracks and moss |
+| Cobble square | y 232 to 844, light grey cobbles with a warm stone mix, the worn path with ruts and hoofprints, five flagstones, two puddles, a drain, cracks and moss |
 | Elder's house | 192x320 at (198, 252); a shingled roof 108 tall, a door 64x112 at (262, 460) with a canopy, two 32x32 lit windows with flower boxes, a wall lantern, a hanging leaf sign and a woodpile |
 | Well | 128x160 at (48, 244); a shingled roof, a windlass, a rope, a bucket and a stone rim |
 | Street lamp | 64x192 at (144, 424); a stone foot, an iron bracket and a chain; the lantern's light at (170, 458) |
@@ -53,14 +53,14 @@ The Pell frames put the candidate at (190, 620) on the same L0 square, with the 
 | Hour | 19:00. The last sun, the street lamp and the hearth are all lit |
 | Warm wash, L0 and L1 | `#eda83a` at 13% multiply (today's `0.4 x warmth(19, 20)`, 13.3%) |
 | Warm wash, L2 | `#e2533f` at 28% multiply (the hour table's 19:00 value) |
-| Dusk shade | `#172a52` at 40% over the frame, cut by every pool |
-| Pool, L0 | Two hard steps: 0 inside, 20% in the ring, 40% outside. Lamp 96 then 160 px at (170, 458); hearth 40 then 104 at (272, 720); each window 24 then 56 at (232, 428) and (354, 428) |
-| Pool, L2 | Four steps: 0, 10, 20, 30 and 40%. Lamp 96, 118, 140, 160 px at (170, 458); hearth 40, 62, 84, 104 at (272, 720); each window 24, 34, 44, 56 at (232, 428) and (354, 428) |
+| Dusk shade | `#172a52` at 30% over the frame, cut by every pool |
+| Pool, L0 | Two hard steps: 0 inside, 15% in the ring, 30% outside. Lamp 96 then 160 px at (170, 458); hearth 40 then 104 at (272, 720); each window 24 then 56 at (232, 428) and (354, 428) |
+| Pool, L2 | Four steps: 0, 7.5, 15, 22.5 and 30%. Lamp 96, 118, 140, 160 px at (170, 458); hearth 40, 62, 84, 104 at (272, 720); each window 24, 34, 44, 56 at (232, 428) and (354, 428) |
 | Dither, L2 | A 50% checker in a 7 px band on every pool boundary |
 | Canopy shade, L2 | `#1b1a2e` at 12% under the near and the far canopy |
 | Light cores | The lamp's panes, the fire and the window panes are fire-ramp pixels in the sprites; no additive glow is layered on |
 
-The 40% dusk shade is the still's number so the pool's steps read at 19:00. Today's code is at 0% at 19:00 and 50% at full night; the decided night is 92% from 20:00, and the owner's final level stays a live-game setting.
+The 30% dusk shade is the still's number so the pool's steps read at 19:00. Today's code is at 0% at 19:00 and 50% at full night; the decided night is 92% from 20:00, and the owner's final level stays a live-game setting.
 
 ### Shadows, depth cues and motion
 
@@ -103,7 +103,7 @@ L1 to L3 declare these eleven material ramps beside the core, which the trial Pe
 
 ```text
 wood    #2e1e24 #4a2c2a #6e4032 #95603c #bd8655 #e0b37a
-stone   #242338 #3b3a52 #57576e #787a8c #a09a96 #c6bca8
+stone   #3a3230 #5c4f48 #837369 #a99889 #cdbca7 #eadcc4
 leaf    #16332f #27543a #3f7d45 #68a94f #a8cd6f
 meadow  #243330 #3e5038 #5e7141 #889552 #b8b96d
 water2  #12203f #1c3d6e #2c6494 #557f96 #c9b28a
@@ -119,7 +119,7 @@ The hue runs, dark to light, in degrees:
 
 ```text
 wood    337.5   3.8  14.0  24.3  28.3  33.5
-stone   242.9 242.5 240.0 234.0  24.0  40.0
+stone    12.0  21.0  23.1  28.1  33.2  37.9
 leaf    171.7 145.3 125.8 103.3  83.6
 meadow  168.0 105.0  83.7  71.6  60.8
 water2  221.3 215.9 207.7 201.2  38.1
