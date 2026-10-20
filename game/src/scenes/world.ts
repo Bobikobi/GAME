@@ -24,12 +24,14 @@ import {
   coverAt,
   cuesOnStep,
   findSlot,
+  OWN_FIRE,
   fireBurns,
   hazardsOf,
   headingOf,
   hourOf,
   inRect,
   isNight,
+  isTownTile,
   makeWalkable,
   minuteOfDay,
   npcTile,
@@ -50,7 +52,7 @@ import { type Clear, mistClears, mistDensity, mistPixels, mistRadius, mistStep, 
 import { FOG_ATLAS, FOG_ATLAS_W, FOG_FEATHER, FOG_OFFSETS, FOG_TILE, fogPixels } from '../fog';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
-import { TOO_DARK, feedTooLate, fireLow, fireName, readable, woodToFeed } from '../fires';
+import { TOO_DARK, type FireStage, feedTooLate, fireName, fireStage, holdsKindling, readable, woodToFeed } from '../fires';
 import { emptySlots, slotContent } from '../places';
 import { canopyGroups, hash, remapTone, toneField, type Tone } from '../richground';
 import { LONGEST_FRAME_MS, type Session } from '../session';
@@ -151,22 +153,34 @@ interface SignSpot {
 
 /** A tended fire on the map (NEXT 13): its flame and glow follow the kernel's burn, never a clock of the client's. */
 interface Fire {
+  /** the logs and stones, cold when the fire is out */
   spr: Phaser.GameObjects.Sprite;
-  /** the flame frames, stepping only while it burns (with motion on) */
-  cycle: Cycle | undefined;
+  /** the flame drawn above them, its size read from the wood left (NEXT 21b) */
+  flame: Phaser.GameObjects.Image;
   glow: Glow | undefined;
-  /** the prop's own sprite, shown while the fire is out, and the burning one */
-  unlit: string;
-  lit: string;
+  /** how much wood is left, by quarters of the fire's own log (NEXT 21b) */
+  stage: FireStage;
+  /** the stage's size, before the flicker of animate() */
+  baseScale: number;
+  /** where this fire's flicker starts, so two fires never beat as one */
+  phase: number;
 }
 
-/** The burning look of a fire prop, from the base kit. */
-const FIRE_LIT_SPRITE = 'core/base-kit:props/campfire_lit';
-/** A flame's frame time, and the slower one of embers running down in a burn's last minutes. */
-const FLAME_MS = 120;
-const EMBER_MS = 260;
-/** How strongly the embers show in a burn's last minutes. */
-const EMBER_ALPHA = 0.6;
+/** The cold look of a fire prop and of the fire the player kindles: the flame is drawn over it, in four sizes. */
+const FIRE_UNLIT_SPRITE = 'core/base-kit:props/campfire_unlit';
+/** The ember tint at the burn's end: the flame cools before it goes. */
+const EMBER_TINT = 0xe09050;
+/**
+ * How each stage of a burn shows (NEXT 21b): the drawn flame shrinks as the wood runs out, and its light with
+ * it. Nothing here counts logs or minutes; the player reads the fire by the size of its flame.
+ */
+const STAGE_LOOK: Record<FireStage, { alpha: number; scale: number; glow: number; tint?: number }> = {
+  full: { alpha: 1, scale: 1, glow: 1 },
+  steady: { alpha: 0.95, scale: 0.82, glow: 0.85 },
+  low: { alpha: 0.86, scale: 0.6, glow: 0.6, tint: 0xf0b060 },
+  embers: { alpha: 0.7, scale: 0.34, glow: 0.38, tint: EMBER_TINT },
+  out: { alpha: 0, scale: 0, glow: 0 },
+};
 
 /** A page element pinned to a point of the world, moved with the camera. */
 interface Pinned {
@@ -200,6 +214,8 @@ interface Glow {
   img: Phaser.GameObjects.Image;
   phase: number;
   lit: boolean;
+  /** how strongly it shows while lit: a fire's light dims with its last wood (NEXT 21b) */
+  strength?: number;
 }
 
 /** An emitter that only runs while its patch of the valley is on screen. */
@@ -477,6 +493,20 @@ export class WorldScene extends Phaser.Scene {
     make('fx-chip', 2, 1, () => px(PALETTE.wood2, 0, 0, 2));
     make('fx-dirt', 2, 2, () => px(PALETTE.wood, 0, 0, 2, 2));
     make('fx-spark', 1, 1, () => px(PALETTE.yellow, 0, 0));
+    // the flame of a tended fire, drawn so its four stages read by size (NEXT 21b): a red rim, gold body, yellow heart
+    make('fx-flame', 7, 13, () => {
+      const rows = [
+        '...#...', '...#...', '..r#r..', '..rgr..', '.rgggr.', '.rgggr.', 'rgggggr',
+        'rgyyggr', 'rgggggr', '.rgggr.', '.rgggr.', '..rgr..', '...#...',
+      ];
+      const colors: Record<string, number> = { '#': PALETTE.cream, r: PALETTE.red2, g: PALETTE.gold, y: PALETTE.yellow };
+      rows.forEach((row, y) => {
+        for (let x = 0; x < row.length; x++) {
+          const color = colors[row[x] ?? '.'];
+          if (color !== undefined) px(color, x, y);
+        }
+      });
+    });
     make('fx-mote', 1, 1, () => px(PALETTE.paper, 0, 0));
     make('fx-fly', 2, 2, () => px(PALETTE.green4, 0, 0, 2, 2));
     make('fx-eye', 4, 1, () => {
@@ -863,38 +893,76 @@ export class WorldScene extends Phaser.Scene {
    * hearth for the burning one; its flames and glow wait for the kernel's burn.
    */
   private buildFire(id: string, p: { w: number; solid: boolean; sprite: string }, cx: number, bottom: number): void {
-    const spr = kitSprite(this, cx, bottom, p.sprite, 0).setOrigin(0.5, 1).setDepth(p.solid ? bottom : DEPTH.flat);
+    const depth = p.solid ? bottom : DEPTH.flat;
+    const spr = kitSprite(this, cx, bottom, p.sprite, 0).setOrigin(0.5, 1).setDepth(depth);
     if (RICH.detail && !FLAT.has(baseName(p.sprite))) this.shadow(cx, bottom, p.w, p.solid ? DEPTH.shadow : DEPTH.flat - 0.5);
-    let cycle: Cycle | undefined;
-    if (RICH.motion) {
-      cycle = { spr, min: FLAME_MS, max: FLAME_MS, next: 0, frame: 0, active: false };
-      this.cycles.push(cycle);
-    }
-    let glow: Glow | undefined;
-    if (RICH.light) {
-      glow = this.glow(cx, bottom - 8, false);
-      this.glows.push(glow);
-    }
-    this.fires.set(id, { spr, cycle, glow, unlit: p.sprite, lit: this.has(FIRE_LIT_SPRITE) ? FIRE_LIT_SPRITE : p.sprite });
+    this.fires.set(id, this.fireAtTile(spr, depth));
   }
 
-  /** Flames only while the kernel says the fire burns; in a burn's last minutes the embers dim and slow. */
+  /** The drawn flame, its glow and its burn stage over a sprite already standing on its tile. A fire's light covers its safe ring. */
+  private fireAtTile(spr: Phaser.GameObjects.Sprite, depth: number): Fire {
+    const flame = this.add
+      .image(spr.x, spr.y - 3, 'fx-flame')
+      .setOrigin(0.5, 1)
+      .setDepth(depth + 0.01)
+      .setVisible(false);
+    let glow: Glow | undefined;
+    if (RICH.light) {
+      glow = this.glow(spr.x, spr.y - 8, false);
+      // the light is the safe ring: fire.safe_tiles around the tile, drawn whole (fx-glow is 25 px wide)
+      glow.img.setScale(((this.b.params.fire.safe_tiles * 2 + 1) * T) / 25);
+      this.glows.push(glow);
+    }
+    spr.setDepth(depth);
+    return { spr, flame, glow, stage: 'out', baseScale: 0, phase: Math.random() * Math.PI * 2 };
+  }
+
+  /**
+   * The fire the player kindled (NEXT 21b): one sprite that follows the tile the kernel names, cold until it is
+   * lit. It is not a map prop, so nothing builds it at bind time; refreshFires() calls this first.
+   */
+  private ensureOwnFire(s: Session): Fire | undefined {
+    const own = s.state.player.own;
+    let f = this.fires.get(OWN_FIRE);
+    if (own === null) {
+      f?.spr.setVisible(false);
+      f?.flame.setVisible(false);
+      if (f?.glow) f.glow.lit = false;
+      return undefined;
+    }
+    const cx = (own.at[0] + 0.5) * T;
+    const bottom = (own.at[1] + 1) * T;
+    if (!f) {
+      const spr = kitSprite(this, cx, bottom, FIRE_UNLIT_SPRITE, 0).setOrigin(0.5, 1);
+      f = this.fireAtTile(spr, bottom);
+      this.fires.set(OWN_FIRE, f);
+    }
+    f.spr.setVisible(true).setPosition(cx, bottom).setDepth(bottom);
+    f.flame.setPosition(cx, bottom - 3);
+    f.glow?.img.setPosition(cx, bottom - 8);
+    return f;
+  }
+
+  /** A flame only while the kernel says the fire burns; its stage shrinks and dims it as the wood runs out. */
   private refreshFires(s: Session): void {
+    this.ensureOwnFire(s);
     for (const [id, f] of this.fires) {
-      const burns = fireBurns(s.state, id, s.tick);
-      const low = burns && fireLow(this.b, s.state, id, s.tick);
-      const look = burns ? f.lit : f.unlit;
-      if (f.spr.texture.key !== look) {
-        retex(f.spr, look, 0);
-        if (f.cycle) f.cycle.frame = 0;
+      const stage = fireStage(this.b, s.state, id, s.tick);
+      const l = STAGE_LOOK[stage];
+      f.flame.setVisible(stage !== 'out');
+      f.flame.setAlpha(l.alpha).setScale(l.scale);
+      f.baseScale = l.scale;
+      f.spr.setAlpha(1);
+      // the last wood cools the flame; a lit flame and the cold logs keep their own colours
+      if (f.flame.isTinted !== (l.tint !== undefined)) {
+        if (l.tint === undefined) f.flame.clearTint();
+        else f.flame.setTint(l.tint);
       }
-      if (f.cycle) {
-        f.cycle.active = burns;
-        f.cycle.min = f.cycle.max = low ? EMBER_MS : FLAME_MS;
+      if (f.glow) {
+        f.glow.lit = stage !== 'out';
+        f.glow.strength = l.glow;
       }
-      const alpha = low ? EMBER_ALPHA : 1;
-      if (f.spr.alpha !== alpha) f.spr.setAlpha(alpha);
-      if (f.glow) f.glow.lit = burns;
+      f.stage = stage;
     }
     // beside a fire burning at night: in its light, cut out of the haze and the frame like the player, and warm
     for (const n of this.fireSide) {
@@ -906,10 +974,10 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  /** How a fire is drawn now, for a test: its sprite, whether that is the burning one, and how strongly it shows. */
-  fireLook(id: string): { sprite: string; burning: boolean; alpha: number } | undefined {
+  /** How a fire is drawn now, for a test and for the walk-out proof: its sprite, its burn, its wood stage and its strength. */
+  fireLook(id: string): { sprite: string; burning: boolean; alpha: number; scale: number; stage: FireStage } | undefined {
     const f = this.fires.get(id);
-    return f && { sprite: f.spr.texture.key, burning: f.spr.texture.key === f.lit && f.lit !== f.unlit, alpha: f.spr.alpha };
+    return f && { sprite: f.spr.texture.key, burning: f.stage !== 'out', alpha: f.flame.alpha, scale: f.baseScale, stage: f.stage };
   }
 
   /** Whether a rectangle of tiles is on the screen now. */
@@ -1652,6 +1720,13 @@ export class WorldScene extends Phaser.Scene {
         b.spr.setFrame(1);
       }
     }
+    // a burning flame breathes: a small sideways flicker of its size, never a count of anything
+    if (RICH.motion) {
+      for (const f of this.fires.values()) {
+        if (!f.flame.visible) continue;
+        f.flame.setScale(f.baseScale * (1 + 0.07 * Math.sin(time / 130 + f.phase)), f.baseScale);
+      }
+    }
     if (this.glows.length > 0) {
       const level = 0.9 * this.night;
       for (const g of this.glows) {
@@ -1660,7 +1735,7 @@ export class WorldScene extends Phaser.Scene {
           continue;
         }
         const flicker = 0.5 + 0.5 * Math.sin(time / 173 + g.phase) * Math.sin(time / 419 + g.phase * 1.7);
-        g.img.setAlpha(level * (0.8 + 0.2 * flicker));
+        g.img.setAlpha(level * (g.strength ?? 1) * (0.8 + 0.2 * flicker));
       }
     }
     for (const d of this.dapples) {
@@ -2643,6 +2718,8 @@ export class WorldScene extends Phaser.Scene {
         this.time.delayedCall(FAR_BELL.delayMs, () => sound.sfx('bell', { gain: FAR_BELL.gain, lowpass: FAR_BELL.lowpass, detune: FAR_BELL.detune }));
       }
       if (e.e === 'fire') {
+        // the fire the player just kindled has no sprite until the next refresh: build it now, so its sparks land on it
+        if (e.id === OWN_FIRE && this.session) this.ensureOwnFire(this.session);
         const f = this.fires.get(e.id);
         const s = this.session;
         // lit after its night was lost: no sparks of cheer
@@ -2689,7 +2766,20 @@ export class WorldScene extends Phaser.Scene {
       const t = this.targetAt(s, tx, ty);
       if (t) return t;
     }
-    return undefined;
+    // nothing else to do here: with two logs and outside the town, the ground ahead takes a fire (NEXT 21b).
+    // It comes after every other target, so a fire never hides a thing the player already faces.
+    return this.kindleTarget(s);
+  }
+
+  /**
+   * The Build a fire button, where Build sits: on the tile the player faces, while the bag holds what kindling
+   * takes and the player stands outside the town. The kernel decides the rest and keeps the logs on a refusal.
+   */
+  private kindleTarget(s: Session): Target | undefined {
+    if (!holdsKindling(this.b, s.state) || isTownTile(this.b, s.pos)) return undefined;
+    const [fx, fy] = DIRS[s.facing];
+    const tile: [number, number] = [s.pos[0] + fx, s.pos[1] + fy];
+    return { label: 'Build a fire', run: () => app.ui.kindle(tile), tile, top: T };
   }
 
   private targetAt(s: Session, x: number, y: number): Target | undefined {
@@ -2734,6 +2824,11 @@ export class WorldScene extends Phaser.Scene {
     // a fire takes wood from beside it, where Build and Mend are offered
     const fire = this.fireAt.get(k);
     if (fire && woodToFeed(b, s.state)) return { label: `Feed the ${fireName(fire)}`, run: () => app.ui.feed(fire), tile, top };
+    // the fire of one's own stands on no prop: its tile is offered the same way (NEXT 21b)
+    const own = s.state.player.own;
+    if (own !== null && own.at[0] === x && own.at[1] === y && woodToFeed(b, s.state)) {
+      return { label: `Feed the ${fireName(OWN_FIRE)}`, run: () => app.ui.feed(OWN_FIRE), tile, top };
+    }
     // a prop lit by a fire reads only while that fire burns (lit_by)
     const lit = () => readable(s.state, this.litBy.get(k), s.tick);
     const sign = this.signs.get(k);

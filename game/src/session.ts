@@ -297,7 +297,8 @@ export class Session {
     if (this.busy) return;
     const since = Math.max(this.state.tick, this.outSeen);
     this.outSeen = this.tick;
-    for (const fire of Object.values(this.state.player.fires ?? {})) {
+    const ends = [...Object.values(this.state.player.fires ?? {}), ...(this.state.player.own === null ? [] : [this.state.player.own])];
+    for (const fire of ends) {
       if (fire.until > since && fire.until <= this.tick) {
         this.report(this.pos, true);
         return;
