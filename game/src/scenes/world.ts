@@ -176,8 +176,9 @@ interface Fire {
   phase: number;
   /** the tint now on the flame, kept so a change from one tint to another is not missed */
   tint: number | undefined;
-  /** a few sparks rising while it burns (with motion on) */
+  /** a few sparks rising while it burns (with motion on), and a thin smoke above them */
   sparks: Emitter | undefined;
+  smoke: Emitter | undefined;
 }
 
 /** The burning look of a fire prop, from the base kit, and the cold look of the fire the player kindles. */
@@ -964,6 +965,7 @@ export class WorldScene extends Phaser.Scene {
       this.glows.push(glow);
     }
     let sparks: Emitter | undefined;
+    let smoke: Emitter | undefined;
     if (RICH.motion) {
       sparks = this.add
         .particles(spr.x, spr.y - 6, 'fx-spark', {
@@ -977,6 +979,18 @@ export class WorldScene extends Phaser.Scene {
           emitting: false,
         })
         .setDepth(depth + 0.02);
+      smoke = this.add
+        .particles(spr.x, spr.y - 12, 'fx-smoke', {
+          speedY: { min: -9, max: -4 },
+          speedX: { min: -3, max: 3 },
+          lifespan: { min: 2200, max: 3800 },
+          scale: { start: 1, end: 2.5 },
+          alpha: { values: [0.7, 0.35, 0] },
+          frequency: 900,
+          maxAliveParticles: 6,
+          emitting: false,
+        })
+        .setDepth(depth + 0.005);
     }
     spr.setDepth(depth);
     return {
@@ -994,6 +1008,7 @@ export class WorldScene extends Phaser.Scene {
       phase: Math.random() * Math.PI * 2,
       tint: undefined,
       sparks,
+      smoke,
     };
   }
 
@@ -1073,6 +1088,10 @@ export class WorldScene extends Phaser.Scene {
       if (f.sparks) {
         f.sparks.emitting = stage !== 'out' && stage !== 'embers';
         f.sparks.frequency = stage === 'full' ? 550 : stage === 'steady' ? 800 : 1300;
+      }
+      if (f.smoke) {
+        f.smoke.emitting = stage === 'full' || stage === 'steady' || stage === 'low';
+        f.smoke.setDepth(night ? DEPTH.shade + 0.7 : f.baseDepth + 0.005);
       }
       f.stage = stage;
     }
@@ -1845,15 +1864,20 @@ export class WorldScene extends Phaser.Scene {
         b.spr.setFrame(1);
       }
     }
-    // a burning flame breathes: a small sway and a flicker in its size, never a count of anything
+    // a burning flame breathes: a small sway and a flicker in its size, never a count of anything.
+    // the valley's wind leans it, the same slow gust on every fire, while the burn itself is untouched (G48)
     if (RICH.motion) {
+      const wind = Math.sin(time / 1700) * 0.6 + Math.sin(time / 4700 + 1.3) * 0.4;
       for (const f of this.fires.values()) {
         if (!f.flame.visible) continue;
         f.flame.setScale(
           f.baseX * (1 + 0.07 * Math.sin(time / 130 + f.phase)),
           f.baseY * (1 + 0.05 * Math.sin(time / 170 + f.phase * 1.3)),
         );
-        f.flame.x = f.spr.x + 0.6 * Math.sin(time / 210 + f.phase);
+        f.flame.x = f.spr.x + 0.6 * Math.sin(time / 210 + f.phase) + wind * 1.6;
+        // new smoke and embers leave the fire a little downwind, so the flame's lean and the drift agree
+        f.smoke?.setPosition(f.spr.x + wind * 1.5, f.spr.y - 12);
+        f.sparks?.setPosition(f.spr.x + wind * 1.2, f.spr.y - 6);
       }
     }
     if (this.glows.length > 0) {
@@ -2036,9 +2060,13 @@ export class WorldScene extends Phaser.Scene {
       const k = Math.min(1, this.move.t / STEP_MS);
       const [fx, fy] = this.move.from;
       const [tx, ty] = this.move.to;
-      this.player.setPosition(Math.round((fx + (tx - fx) * k) * T + T / 2), Math.round((fy + (ty - fy) * k + 1) * T));
+      const ground = Math.round((fy + (ty - fy) * k + 1) * T);
+      // one pixel of body bob at mid-step, as a walker's weight comes over the leg; the shadow stays on the ground
+      // one pixel up through the passing pose, never a float: grounded at both ends of the step
+      const bob = Math.sin(k * Math.PI) > 0.6 ? 1 : 0;
+      this.player.setPosition(Math.round((fx + (tx - fx) * k) * T + T / 2), ground - bob);
       this.player.setDepth(Math.round((Math.max(fy, ty) + 1) * T + 1));
-      this.playerShadow?.setPosition(this.player.x, this.player.y + 2);
+      this.playerShadow?.setPosition(this.player.x, ground + 2);
       this.faceFrame(strideFrame(k, this.steps, this.b.sprites[this.playerFrame(s.facing).key]?.frames ?? 1));
       if (k < 1) return;
       const carry = this.move.t - STEP_MS;
