@@ -600,6 +600,63 @@
                   }
                 }
               }
+            },
+            "sun": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "alpha",
+                "cap",
+                "keys"
+              ],
+              "properties": {
+                "alpha": {
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "How dark the cast shadow is, in whole percent (STYLE section 4: 30).",
+                  "type": "integer"
+                },
+                "cap": {
+                  "minimum": 0,
+                  "maximum": 200,
+                  "description": "The longest a shadow may be, in percent of the caster's height (STYLE section 4: 110).",
+                  "type": "integer"
+                },
+                "keys": {
+                  "minItems": 2,
+                  "maxItems": 12,
+                  "description": "The sun's shear by hour (STYLE section 4): the shadow leans right and toward the viewer by these shares of the caster's height. The hours between two keys step evenly; outside the first and the last the sun is down.",
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "at",
+                      "right",
+                      "down"
+                    ],
+                    "properties": {
+                      "at": {
+                        "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$",
+                        "description": "The hour and minute the sun is at its own shear, for example \"16:30\".",
+                        "type": "string"
+                      },
+                      "right": {
+                        "minimum": -200,
+                        "maximum": 200,
+                        "description": "How far the shadow leans right, in percent of the caster's height; negative in the morning, positive in the evening.",
+                        "type": "integer"
+                      },
+                      "down": {
+                        "minimum": 0,
+                        "maximum": 100,
+                        "description": "How far the shadow leans toward the viewer, in percent of the caster's height.",
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         },
