@@ -8,7 +8,7 @@ Two rules stand over all of it:
 - **The kernel never reads any of this** except the one `weather` condition of #215. A climate, a season or a storm changes what a player sees and hears, never what a rule answers (G29: colour is never the only signal). The one exception already decided: fog shortens a predator's sight (REACTIONS Q1 a).
 - **A direction is seen as stills before it is built** (AGENTS.md). Every table below says whether it is a direction (stills first) or polish (iterate, do not ask).
 
-**Where it stands (2026-10-21):** proposal, with its sheets made. The twelve stills of section 8 exist (`docs/design/frames/2026-10-21-nature-*.png`, the note [2026-10-21-nature.md](frames/2026-10-21-nature.md)), composed by `tools/stills/nature.py` from `tools/stills/nature.json`, which holds every table of sections 1 to 5 as data. Nothing in the game is built or decided except what the sources already decided (section 0). The owner's questions are in section 10, each with a default; section 12 says where this page and the older pages disagreed and how it was settled.
+**Where it stands (2026-10-20, the owner's answers):** partly decided, nothing built. The owner answered section 10 and judged the sheets (DECISIONS 2026-10-20, "Nature's laws"). Decided: the people and animals of section 1 as drawn (now in STYLE 1b), the valley as temperate, autumn and winter, overcast, and the cast shadows under weather (now in STYLE 4). Open: rain, fog and the shade over people (not seen yet), the dry, cold and wet climates (a second round when the open world reaches one), and the monster grades (not now). The twelve stills of section 8 are `docs/design/frames/2026-10-21-nature-*.png` with the note [2026-10-21-nature.md](frames/2026-10-21-nature.md), composed by `tools/stills/nature.py` from `tools/stills/nature.json`, which holds every table of sections 1 to 5 as data. Section 12 says where this page and the older pages disagreed and how it was settled.
 
 ## 0. Already decided, not reopened here
 
@@ -50,7 +50,7 @@ STYLE 1b gives the floor for trees, houses and props. This section adds what it 
 | Tower, church, keep | 6 to 10 | 3 x 3 up | Built from pieces above the 384 px cap; a landmark seen over the mist (OPEN_WORLD, one landmark per region) |
 | Bridge, causeway | | 2 tiles wide | Wide enough for a cart |
 
-- **Monsters are exempt from the floors, never from the rules.** A monster kind declares its own grade, one of four (STYLE 1b's grades): small (under 1), person-sized (1 to 1.5), large (2 to 3), colossal (above 3, built from pieces). A colossal thing keeps STYLE 1b's three rules: the map does not move, see-through over the player, nothing a task names hidden. A monster's grade is a design value chosen with its danger, so a large thing is never a weak one (G47: a rule a player can read by watching).
+- **Monsters are exempt from the floors, never from the rules.** (The grades below are not decided: the owner, 20.10, "not now", section 10 question 5.) A monster kind declares its own grade, one of four (STYLE 1b's grades): small (under 1), person-sized (1 to 1.5), large (2 to 3), colossal (above 3, built from pieces). A colossal thing keeps STYLE 1b's three rules: the map does not move, see-through over the player, nothing a task names hidden. A monster's grade is a design value chosen with its danger, so a large thing is never a weak one (G47: a rule a player can read by watching).
 - **The check** (`pnpm check`, proposal): a kit sprite may declare `scale` (its height in characters, one decimal). A kind in this table or in STYLE 1b with a `scale` under its floor is a warning; a creature with no `scale` is a warning once the first creature kit lands. The owner makes either an error when he wants.
 - **Kind:** the numbers are the art session's starting point, judged by the owner by eye on one still (as STYLE 1b: "only by eye will I know"). The still: the square at 12:00 with an adult, a child, the elder, a hen, a dog, a wolf, a deer, a horse and cart, and the oak, in one frame (section 8).
 
@@ -167,21 +167,21 @@ The distance is large on every row and the ladder is already the path. This page
 
 ## 10. The owner's questions
 
-Each with a recommended default; silence keeps the default.
+Each with a recommended default; silence keeps the default. Answered by the owner on 20.10 (DECISIONS 2026-10-20, "Nature's laws").
 
-1. **Hemisphere.** The valley's seasons follow the northern months (winter in December). Default: yes. The game is for the whole world, but a world has one calendar, and the valley's story has a long night in winter.
-2. **Does the valley get snow?** Default: no, except a rare winter day in the hills; snow as a ground belongs to the cold climate. A snowed valley is a holiday look later, never a rule.
-3. **How long is a weather?** The whole game day, as decided (REACTIONS phase B). Default: keep it; a change at midday is a later refinement with its own still.
-4. **Do overcast days cancel the cast shadows?** Default: no, half alpha; rain and storm cancel them. A shadow is a depth cue a player reads, and a day without any is flat.
-5. **Monster grades.** Four grades, small to colossal, declared per kind. Default: yes; the number of grades is the same as STYLE 1b's "bigger is open" already implies.
-6. **Interiors in weather.** Default: a storm is heard indoors and lightning flashes the window pool; nothing else of the weather enters.
+1. **Hemisphere.** The valley's seasons follow the northern months (winter in December). Default: yes. The game is for the whole world, but a world has one calendar, and the valley's story has a long night in winter. **Answer: the default.**
+2. **Does the valley get snow?** Default: no, except a rare winter day in the hills; snow as a ground belongs to the cold climate. A snowed valley is a holiday look later, never a rule. **Answer: the default.**
+3. **How long is a weather?** The whole game day, as decided (REACTIONS phase B). Default: keep it; a change at midday is a later refinement with its own still. **Answer: the default.**
+4. **Do overcast days cancel the cast shadows?** Default: no, half alpha; rain and storm cancel them. A shadow is a depth cue a player reads, and a day without any is flat. **Answer: the default** (STYLE 4, the weather row).
+5. **Monster grades.** Four grades, small to colossal, declared per kind. Default: yes; the number of grades is the same as STYLE 1b's "bigger is open" already implies. **Answer: not now.** The grades are decided with the first monster kind (combat, stage 8).
+6. **Interiors in weather.** Default: a storm is heard indoors and lightning flashes the window pool; nothing else of the weather enters. **Answer: the default.**
 
 ## 11. The order, who builds what, and the proof
 
 | # | Step | Kind | Builder | Waits on | Proof |
 |---|---|---|---|---|---|
-| 1 | This page as a decision: the owner's answers to section 10 into DECISIONS | Decision | The owner | Nothing | The DECISIONS entry |
-| 2 | The scale rows into STYLE 1b and `scale` in the check | Mechanics | The art stream | Nothing | Tests; every kit of today passes |
+| 1 | This page as a decision: the owner's answers to section 10 into DECISIONS | Decision | The owner | Nothing | The DECISIONS entry (done 20.10) |
+| 2 | `scale` in the check (the picked rows are in STYLE 1b since 20.10) | Mechanics | The art stream | Nothing | Tests; every kit of today passes |
 | 3 | `climates.json`, `climate` on the region, the ramp-set remap per climate | Mechanics, shared file first | The art stream, with the open-world stream told (NEXT 19 a's chunk file carries the ramp set) | #230 (landed) | The valley as `temperate`, no pixel moves |
 | 4 | The sheets of section 8 from `tools/stills/` | Direction | The art stream | The L1 to L3 pick | The frames and their note |
 | 5 | Weather looks: the sky layer per weather, the ground's wet step, the ambient level | Polish inside the weather pick | The light stream | REACTIONS phase B (the `weather(day)` function) and the pick | Stills at 12:00 per weather against the table; e2e signals under storm |
