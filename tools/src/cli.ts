@@ -124,6 +124,7 @@ function creditsText(credits: { title: string; type: string; creator: string; fi
     '',
     '- [Phaser](https://phaser.io) game framework - MIT license.',
     '- [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) by Stefie Justprince - SIL Open Font License 1.1 (`game/public/fonts/OFL.txt`).',
+    '- [Atkinson Hyperlegible Next](https://github.com/googlefonts/atkinson-hyperlegible-next) by the Braille Institute of America - SIL Open Font License 1.1 (`game/public/fonts/atkinson-hyperlegible-next/OFL.txt`).',
     '',
   );
   return lines.join('\n');
