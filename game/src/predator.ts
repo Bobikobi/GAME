@@ -4,7 +4,7 @@
  * running after the player while the kernel's hunt names it, and the music of a hunt. Display only:
  * every input is the kernel's state and clock, and nothing here decides a sight, a bite or a safe place.
  */
-import { type Bundle, type Hazard, type State, type WorldView, headingOf, isSafe, lastDusk, predatorAt, windowOpen } from '@game/kernel';
+import { type Bundle, type Hazard, type WorldView, headingOf, isSafe, lastDusk, predatorAt, windowOpen, type PublicState } from '@game/kernel';
 import type { SongId } from './audio';
 
 export type Spot = readonly [number, number];
@@ -106,7 +106,7 @@ export const HOME_SPEED = 2;
 const STEPS: readonly Spot[] = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 
 /** The ground a drawn wolf runs on: where the player may walk, and never a safe place. */
-export function huntGround(b: Bundle, s: State, walkable: (x: number, y: number, view: WorldView) => boolean): (x: number, y: number) => boolean {
+export function huntGround(b: Bundle, s: PublicState, walkable: (x: number, y: number, view: WorldView) => boolean): (x: number, y: number) => boolean {
   const { width, height } = b.map;
   const open = new Uint8Array(width * height);
   for (let y = 0; y < height; y++) {
@@ -228,7 +228,7 @@ export function homeOn(run: Run, tick: number, msPerTile: number, round: Spot, n
 export function wolfDrawn(
   b: Bundle,
   rule: Hazard,
-  s: State,
+  s: PublicState,
   tick: number,
   last: Run | undefined,
   walk: (x: number, y: number) => boolean,

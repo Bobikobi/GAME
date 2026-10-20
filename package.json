@@ -18,6 +18,7 @@
     "test": "vitest run",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "db:migrate": "tsx server/src/migrate-cli.ts",
     "kit:gen": "tsx tools/src/kit/gen.ts",
     "kit:import": "tsx tools/src/kit/import.ts",
     "kit:sketches": "tsx tools/src/kit/sketches.ts",

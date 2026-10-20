@@ -6,7 +6,6 @@
 import {
   OWN_FIRE,
   type Bundle,
-  type State,
   burnsAsWood,
   fireBurns,
   fireOf,
@@ -20,6 +19,7 @@ import {
   nightEnds,
   nightFalls,
   tendHolds,
+  type PublicState,
 } from '@game/kernel';
 
 /** A fire's name as the player reads it: its id after the namespace, hyphens as spaces ("core/elder-hearth" is "elder hearth"), and "fire" for the one the player kindles, which has no place to name. */
@@ -32,7 +32,7 @@ export function fireName(id: string): string {
 const KINDLE_FROM = 'core/campfire';
 
 /** Whether the bag holds what kindling takes, so the Build a fire button has a place (the kernel keeps the logs on a refusal). */
-export function holdsKindling(b: Bundle, s: State): boolean {
+export function holdsKindling(b: Bundle, s: PublicState): boolean {
   const camp = b.camps[KINDLE_FROM];
   return camp !== undefined && camp.inputs.every((input) => (s.player.bag[input.item] ?? 0) >= input.qty);
 }
@@ -44,7 +44,7 @@ export function holdsKindling(b: Bundle, s: State): boolean {
  */
 export type FireStage = 'out' | 'embers' | 'low' | 'steady' | 'full';
 
-export function fireStage(b: Bundle, s: State, id: string, tick: number): FireStage {
+export function fireStage(b: Bundle, s: PublicState, id: string, tick: number): FireStage {
   const fire = fireOf(s, id);
   if (fire === undefined || fire.until <= tick) return 'out';
   const left = fire.until - tick;
@@ -55,7 +55,7 @@ export function fireStage(b: Bundle, s: State, id: string, tick: number): FireSt
 }
 
 /** The wood a Feed sends: a log when the bag holds one, else the first wood item in the bag; undefined with no wood. */
-export function woodToFeed(b: Bundle, s: State): string | undefined {
+export function woodToFeed(b: Bundle, s: PublicState): string | undefined {
   const bag = s.player.bag;
   if ((bag['core/log'] ?? 0) > 0 && burnsAsWood(b, 'core/log')) return 'core/log';
   return Object.keys(bag).find((id) => (bag[id] ?? 0) > 0 && burnsAsWood(b, id));
@@ -67,7 +67,7 @@ export function warnTicks(b: Bundle): number {
 }
 
 /** A burning fire within its last `fire.warn_min` game minutes: the embers run down. */
-export function fireLow(b: Bundle, s: State, id: string, tick: number): boolean {
+export function fireLow(b: Bundle, s: PublicState, id: string, tick: number): boolean {
   const fire = fireOf(s, id);
   return fire !== undefined && fire.until > tick && fire.until - tick <= warnTicks(b);
 }
@@ -76,13 +76,13 @@ export function fireLow(b: Bundle, s: State, id: string, tick: number): boolean 
  * The once-per-burn key of a fire's warning: one value for each uninterrupted burn
  * (one `lit`), while that burn is in its last `fire.warn_min` game minutes.
  */
-export function fireWarnKey(b: Bundle, s: State, id: string, tick: number): string | undefined {
+export function fireWarnKey(b: Bundle, s: PublicState, id: string, tick: number): string | undefined {
   const fire = fireOf(s, id);
   return fire !== undefined && fireLow(b, s, id, tick) ? `${id}@${fire.lit}` : undefined;
 }
 
 /** The fires that a `tend` step of an active quest asks the player to keep. */
-export function tendedFires(b: Bundle, s: State): Set<string> {
+export function tendedFires(b: Bundle, s: PublicState): Set<string> {
   const out = new Set<string>();
   for (const [id, state] of Object.entries(s.player.quests)) {
     if (state !== 'active') continue;
@@ -101,7 +101,7 @@ export function tendedFires(b: Bundle, s: State): Set<string> {
  */
 export function fireWarning(
   b: Bundle,
-  s: State,
+  s: PublicState,
   tick: number,
   warned: ReadonlySet<string>,
 ): { key: string; id: string; name: string } | undefined {
@@ -118,7 +118,7 @@ export function fireWarning(
  * it burns, it was lit by that night's dusk, and its wood falls short of that dawn. Only then
  * does the journal count logs (`tendLine`) and the running-low warning open (`fireWarning`).
  */
-export function wantsWood(b: Bundle, s: State, id: string, tick: number): boolean {
+export function wantsWood(b: Bundle, s: PublicState, id: string, tick: number): boolean {
   const fire = fireOf(s, id);
   return (
     fire !== undefined &&
@@ -134,7 +134,7 @@ export function wantsWood(b: Bundle, s: State, id: string, tick: number): boolea
  * under way, or by day the one that comes next. 0 when its wood already reaches dawn.
  * A log of the player's own fire is the one it was kindled with, shorter on deeper ground.
  */
-export function logsToDawn(b: Bundle, s: State, id: string, tick: number): number {
+export function logsToDawn(b: Bundle, s: PublicState, id: string, tick: number): number {
   const until = fireOf(s, id)?.until ?? tick;
   const dawn = nightEnds(b, vigilDusk(b, tick));
   return dawn > until ? idivUp(dawn - until, logMsOf(b, s, id)) : 0;
@@ -156,7 +156,7 @@ function clockFrom(b: Bundle, tick: number): string {
 }
 
 /** The clock time from which a fire too full for a whole log takes the next one ("21:00"); undefined while one fits now. */
-export function nextLogClock(b: Bundle, s: State, id: string, tick: number): string | undefined {
+export function nextLogClock(b: Bundle, s: PublicState, id: string, tick: number): string | undefined {
   const next = nextLogAt(b, s, id, tick);
   return next > tick ? clockFrom(b, next) : undefined;
 }
@@ -168,7 +168,7 @@ export function nextLogClock(b: Bundle, s: State, id: string, tick: number): str
  * out in, until the next dusk. Undefined while the night can still be kept, once it was
  * kept, and from the next dusk on, which starts clean.
  */
-export function nightLost(b: Bundle, s: State, id: string, tick: number): 'out' | 'late' | 'past' | undefined {
+export function nightLost(b: Bundle, s: PublicState, id: string, tick: number): 'out' | 'late' | 'past' | undefined {
   const fire = fireOf(s, id);
   const dusk = lastDusk(b, tick);
   if (fire === undefined || fire.until < dusk || tendHolds(b, s, id, tick)) return undefined;
@@ -178,7 +178,7 @@ export function nightLost(b: Bundle, s: State, id: string, tick: number): 'out' 
 }
 
 /** Whether a feed of a kept fire lit it, or fed it, after its night was lost: that is answered plainly, never cheered. */
-export function feedTooLate(b: Bundle, s: State, id: string, tick: number): boolean {
+export function feedTooLate(b: Bundle, s: PublicState, id: string, tick: number): boolean {
   return tendedFires(b, s).has(id) && nightLost(b, s, id, tick) === 'late';
 }
 
@@ -196,7 +196,7 @@ const LOST = { out: 'it went out, tonight is lost', late: 'tonight is lost', pas
  * the ground it stands on, so a number of logs would tell the danger level (G30, CR-38).
  * It asks for wood while it needs it and no more.
  */
-export function tendLine(b: Bundle, s: State, id: string, tick: number): { text: string; done: boolean } {
+export function tendLine(b: Bundle, s: PublicState, id: string, tick: number): { text: string; done: boolean } {
   const text = `Keep the ${fireName(id)} burning until dawn`;
   if (tendHolds(b, s, id, tick)) return { text, done: true };
   const lost = nightLost(b, s, id, tick);
@@ -212,7 +212,7 @@ export function tendLine(b: Bundle, s: State, id: string, tick: number): { text:
 }
 
 /** Whether a prop's note and sign can be read now: always, unless it is lit by a fire that does not burn (`lit_by`). */
-export function readable(s: State, litBy: string | undefined, tick: number): boolean {
+export function readable(s: PublicState, litBy: string | undefined, tick: number): boolean {
   return litBy === undefined || fireBurns(s, litBy, tick);
 }
 

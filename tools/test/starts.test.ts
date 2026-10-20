@@ -12,8 +12,8 @@ import { CONTENT_DIR } from '../src/load';
 describe('the core content', () => {
   it('passes with no line: trees give the wood, every start holds or finds an axe, Pell sells another', () => {
     const result = runCheck();
-    // the richness lines are an advisory count (tools/src/richness.ts), not a defect of the content
-    expect(result.issues.filter((i) => !i.where.startsWith('map.richness'))).toEqual([]);
+    // the richness and colour lines are advisory counts (tools/src/richness.ts, tools/src/colors.ts), not defects of the content
+    expect(result.issues.filter((i) => !i.where.startsWith('map.richness') && !i.where.startsWith('art.'))).toEqual([]);
     const b = result.assembled.bundle!;
     expect(b.resources['core/oak-trees']!.tool).toBe('axe');
     expect(Object.keys(b.starters).sort()).toEqual(['core/digger', 'core/explorer', 'core/forager']);
