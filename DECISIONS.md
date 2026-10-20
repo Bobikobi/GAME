@@ -1927,6 +1927,11 @@ The tests (`game/test/remote.test.ts`, with `game/test/fake-server.ts`) run a 30
 Not widened, on purpose: anything that draws (the fall's waking tile, a gather's luck, a craft's chance, a reaction's appearance) still takes `State`, because the seed is the server's alone and those calls belong to the kernel on the server.
 **Retry when:** a screen needs a number that today comes from a seed-taking function; that is a question about what the phone may compute, not a type to widen.
 
+## 2026-10-20 ✅ The light is a module, with today's numbers (ART_SYSTEM step 2, the base)
+
+`game/src/light.ts` holds the light as numbers, not as drawing calls: the night's curve, the dusk's two hours, the shade's and the dapple's share of them, the frame's tightening and the lantern's pool. `world.ts` reads it, so the five places that drew light by hand now agree with one table. Every number is the one the valley showed on 20.10, and `game/test/light.test.ts` pins each of them, so no pixel changed.
+Next in the step: the hour table moves into `params.json` and the pool's steps, which is where a pick can change the values without touching the module.
+**Retry when:** a capture at a fixed hour differs from the same hour before the module, or the 3D door needs a number the table does not carry. Model: Copilot.
 ## 2026-10-20 ✅ A drawn outcome is the server's to say and the phone's to show (the owner, for NEXT 18 c)
 
 The owner approved the builder's recommendation on the last two questions the screens ask that are drawn from the seed: whether a hidden node has appeared, and whether anything happened on a step between two tiles. **The phone never computes them.** The server already runs the same kernel function with the seed, so it sends the outcome and the screen draws it. This is R4 (the seed is the server's alone) applied to what a screen reads, and it closes the last gap in switching the classic client and the 3D door to the shared session surface of NEXT 18 c.
