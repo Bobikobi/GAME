@@ -4,6 +4,7 @@
  * top one gets the buttons, and while any is open the game clock stops.
  */
 import {
+  OWN_FIRE,
   type GameEvent,
   type Grade,
   characterLevel,
@@ -648,9 +649,21 @@ export class UI {
     if (!item) return this.toast('You have no wood.', 'bad');
     const r = await s.act({ t: 'feed', fire: fireId, item, at: s.pos });
     if (r.ok) return;
-    // a fire too full for a whole log refuses it: say when one fits, as the journal does
-    const at = nextLogClock(app.bundle, s.state, fireId, s.tick);
+    // a fire too full for a whole log refuses it: say when one fits, as the journal does.
+    // The player's own fire tells no clock (NEXT 21b): its log is shorter on deeper ground.
+    const at = fireId === OWN_FIRE ? undefined : nextLogClock(app.bundle, s.state, fireId, s.tick);
     this.toast(at === undefined ? r.error : `${r.error} A log fits at ${at}.`, 'bad');
+  }
+
+  /**
+   * Build the player's own fire on `at`, the free tile the Build a fire button points at (NEXT 21b). The kernel
+   * decides every refusal and keeps the logs itself: this sends the action and shows the kernel's words as a toast.
+   */
+  async kindle(at: readonly [number, number]): Promise<void> {
+    const s = app.session;
+    if (!s) return;
+    const r = await s.act({ t: 'kindle', fire: [at[0], at[1]], at: s.pos });
+    if (!r.ok) this.toast(r.error, 'bad');
   }
 
   /**
