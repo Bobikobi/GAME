@@ -164,6 +164,8 @@ interface Fire {
   baseScale: number;
   /** where this fire's flicker starts, so two fires never beat as one */
   phase: number;
+  /** the tint now on the flame, kept so a change from one tint to another is not missed */
+  tint: number | undefined;
 }
 
 /** The cold look of a fire prop and of the fire the player kindles: the flame is drawn over it, in four sizes. */
@@ -914,7 +916,7 @@ export class WorldScene extends Phaser.Scene {
       this.glows.push(glow);
     }
     spr.setDepth(depth);
-    return { spr, flame, glow, stage: 'out', baseScale: 0, phase: Math.random() * Math.PI * 2 };
+    return { spr, flame, glow, stage: 'out', baseScale: 0, phase: Math.random() * Math.PI * 2, tint: undefined };
   }
 
   /**
@@ -938,7 +940,8 @@ export class WorldScene extends Phaser.Scene {
       this.fires.set(OWN_FIRE, f);
     }
     f.spr.setVisible(true).setPosition(cx, bottom).setDepth(bottom);
-    f.flame.setPosition(cx, bottom - 3);
+    // the flame keeps its own depth with the tile: a fire kindled a row lower must not draw under its logs
+    f.flame.setPosition(cx, bottom - 3).setDepth(bottom + 0.01);
     f.glow?.img.setPosition(cx, bottom - 8);
     return f;
   }
@@ -953,8 +956,9 @@ export class WorldScene extends Phaser.Scene {
       f.flame.setAlpha(l.alpha).setScale(l.scale);
       f.baseScale = l.scale;
       f.spr.setAlpha(1);
-      // the last wood cools the flame; a lit flame and the cold logs keep their own colours
-      if (f.flame.isTinted !== (l.tint !== undefined)) {
+      // the last wood cools the flame; a change from one tint to another (low to embers) is a tint too
+      if (f.tint !== l.tint) {
+        f.tint = l.tint;
         if (l.tint === undefined) f.flame.clearTint();
         else f.flame.setTint(l.tint);
       }
