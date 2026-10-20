@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { DUSK, HOLE, LIGHT_POOL, NIGHT, dappleAt, duskAt, frameAt, hourAt, nightAt, shadeAt, warmth } from '../src/light.js';
+import { DUSK, HOLE, LIGHT_POOL, NIGHT, dappleAt, duskAt, frameAt, hourAt, nightAt, shadeAt, tableOf, washAt, warmth } from '../src/light.js';
 
 /**
  * ART_SYSTEM section 2: one module holds the light, and its numbers are today's numbers. Every
@@ -61,5 +61,45 @@ describe('the lantern pool', () => {
   test('the pool keeps the numbers it was decided with', () => {
     expect(LIGHT_POOL).toEqual({ r: 34, edge: 2, dark: 0.7, tint: 0xf0dcc0 });
     expect(NIGHT).toEqual({ from: 21, to: 4, fade: 2 });
+  });
+});
+
+describe('the hour table from params', () => {
+  // today's curve, keyed: gold at 40% across the half hour either side of 20:00 and of 05:30
+  const KEYS = [
+    { at: '04:15', tint: '#eda83a', pct: 0 },
+    { at: '05:00', tint: '#eda83a', pct: 40 },
+    { at: '06:00', tint: '#eda83a', pct: 40 },
+    { at: '06:45', tint: '#eda83a', pct: 0 },
+    { at: '18:45', tint: '#eda83a', pct: 0 },
+    { at: '19:30', tint: '#eda83a', pct: 40 },
+    { at: '20:30', tint: '#eda83a', pct: 40 },
+    { at: '21:15', tint: '#eda83a', pct: 0 },
+  ];
+  const table = tableOf(KEYS);
+
+  test('the keys sort by the clock, whatever order the file lists them in', () => {
+    expect(table.map((k) => k.at)).toEqual([255, 300, 360, 405, 1125, 1170, 1230, 1275]);
+  });
+
+  test('the table reproduces the two peaks the valley shows today', () => {
+    expect(washAt(table, 20 * 60)).toEqual({ tint: 0xeda83a, alpha: 0.4 });
+    expect(washAt(table, 5 * 60 + 30)).toEqual({ tint: 0xeda83a, alpha: 0.4 });
+    expect(washAt(table, 12 * 60)).toEqual({ tint: 0xeda83a, alpha: 0 });
+    expect(washAt(table, 16 * 60 + 30)).toEqual({ tint: 0xeda83a, alpha: 0 });
+  });
+
+  test('the shoulders ramp evenly and reach nothing at the edges', () => {
+    expect(washAt(table, 6 * 60 + 45).alpha).toBe(0);
+    expect(washAt(table, 18 * 60 + 45).alpha).toBe(0);
+    expect(washAt(table, 21 * 60 + 15).alpha).toBe(0);
+    expect(washAt(table, 19 * 60).alpha).toBe(0.13);
+    expect(washAt(table, 20 * 60 + 45).alpha).toBe(0.27);
+  });
+
+  test('outside the keys the day is plain', () => {
+    expect(washAt(table, 2 * 60).alpha).toBe(0);
+    expect(washAt(table, 23 * 60).alpha).toBe(0);
+    expect(washAt(table, 12 * 60).alpha).toBe(0);
   });
 });
