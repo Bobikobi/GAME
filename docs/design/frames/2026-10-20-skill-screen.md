@@ -26,6 +26,8 @@ Which frame is the skill screen: the picture, the list or the build first?
 
 Recommended: S1, the wings, with the strip at the foot. It answers the fault of 19.10 ("it is not clear what the differences are") in one look, and the build is one tap away. S3 if the build should be the first thing seen; S2 is the plainest on a phone and the most like every other game's list.
 
+Picked: **S1, the wings** (the owner, 20.10; DECISIONS 2026-10-20 "The skill screen is a tree of wings"). The frame is the picture: the trunk in the centre, the wings around it, the touched node's card under the picture, the build as a strip at the foot. Everything inside the frame is polish.
+
 ## How they were made
 
 A script writes the three pages from one shared stylesheet and one content list, and a headless browser shoots each at 390x844 with a device scale of 3. The script is not kept in the repository: the frames are the record, and a rebuilt screen is built from the kernel's state, not from the mockup.
