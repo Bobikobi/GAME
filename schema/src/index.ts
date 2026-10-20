@@ -941,22 +941,48 @@ const LightKey = Type.Object(
   { additionalProperties: false },
 );
 
-export const ParamsBody = Type.Object(
+/** One hour of the sun's shear (STYLE section 4): the shadow leans right and toward the viewer by these shares of the caster's height. */
+const SunKey = Type.Object(
   {
-    k_permille: Bounded,
-    light: Type.Optional(
+    at: Type.String({ pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$', description: 'The hour and minute the sun is at its own shear, for example "16:30".' }),
+    right: Int(-200, 200, 'How far the shadow leans right, in percent of the caster\'s height; negative in the morning, positive in the evening.'),
+    down: Int(0, 100, 'How far the shadow leans toward the viewer, in percent of the caster\'s height.'),
+  },
+  { additionalProperties: false },
+);
+
+/** The light block in params: the hour's wash and the sun's shear (ART_SYSTEM section 2, STYLE sections 4 and 5). */
+export const LightParams = Type.Object(
+  {
+    keys: Type.Array(LightKey, {
+      minItems: 2,
+      maxItems: 12,
+      description:
+        'The hours the valley is washed in a colour (ART_SYSTEM section 2): cool before sunrise, none at noon, warm in the late afternoon, dusk at 19:00, the night after that. The scene multiplies by the wash between keys, in whole percent.',
+    }),
+    sun: Type.Optional(
       Type.Object(
         {
-          keys: Type.Array(LightKey, {
+          alpha: Int(0, 100, 'How dark the cast shadow is, in whole percent (STYLE section 4: 30).'),
+          cap: Int(0, 200, 'The longest a shadow may be, in percent of the caster\'s height (STYLE section 4: 110).'),
+          keys: Type.Array(SunKey, {
             minItems: 2,
             maxItems: 12,
             description:
-              'The hours the valley is washed in a colour (ART_SYSTEM section 2): cool before sunrise, none at noon, warm in the late afternoon, dusk at 19:00, the night after that. The scene multiplies by the wash between keys, in whole percent.',
+              'The sun\'s shear by hour (STYLE section 4): the shadow leans right and toward the viewer by these shares of the caster\'s height. The hours between two keys step evenly; outside the first and the last the sun is down.',
           }),
         },
         { additionalProperties: false },
       ),
     ),
+  },
+  { additionalProperties: false },
+);
+
+export const ParamsBody = Type.Object(
+  {
+    k_permille: Bounded,
+    light: Type.Optional(LightParams),
     k_craft_permille: {
       ...Bounded,
       description:
