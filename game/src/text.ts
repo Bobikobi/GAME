@@ -1,5 +1,6 @@
 /** Words for numbers and events. Display only: the kernel never sees these. */
 import {
+  OWN_FIRE,
   type Attribute,
   type Bundle,
   type GameEvent,
@@ -433,6 +434,8 @@ export function describe(b: Bundle, s: PublicState, e: GameEvent): { text: strin
       const name = fireName(e.id);
       // lit after the night it keeps was lost: plain, not cheered
       if (feedTooLate(b, s, e.id, s.tick)) return { text: `The ${name} burns, but tonight is lost.`, tone: 'info' };
+      // the player's own fire tells no clock: no minute of its burn is shown (NEXT 21b)
+      if (e.id === OWN_FIRE) return { text: `The ${name} takes.`, tone: 'good' };
       return { text: `The ${name} burns until ${clock(minuteOfDay(b, e.until))}.`, tone: 'good' };
     }
     case 'fire_out':

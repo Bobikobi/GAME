@@ -197,7 +197,7 @@ describe('Stage 2a server protocol', () => {
     const response = await post(base, '/session', {});
     expect(response.status).toBe(200);
     const resumed = await response.json() as { state: Record<string, unknown>; version: number };
-    expect(resumed).toEqual({ state: publicState(store.record.state), version: 1 });
+    expect(resumed).toEqual({ state: publicState(store.record.state), version: 1, appears: [] });
     expect(resumed.state).not.toHaveProperty('seed');
     const forged = await post(base, '/session', { state: newState(bundle, 1) });
     expect(forged.status).toBe(400);
@@ -209,7 +209,7 @@ describe('Stage 2a server protocol', () => {
     const response = await fetch(`${base}/state`, { headers: { authorization: 'Bearer test' } });
     expect(response.status).toBe(200);
     const body = await response.json() as { state: Record<string, unknown>; version: number };
-    expect(body).toEqual({ state: publicState(state), version: 1 });
+    expect(body).toEqual({ state: publicState(state), version: 1, appears: [] });
     expect(body.state).not.toHaveProperty('seed');
   });
 

@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { ATTRIBUTES, WEAR_SLOTS, step, walkDistance, type Action, type Bundle, type GameEvent, type State, type Tile } from '@game/kernel';
+import { ATTRIBUTES, WEAR_SLOTS, appearSlots, appears, step, walkDistance, type Action, type Bundle, type GameEvent, type State, type Tile } from '@game/kernel';
 
 import { publicState, statePatch, type MergePatch, type PublicState } from './patch';
 
@@ -50,12 +50,15 @@ interface ErrorBody {
 interface StateBody {
   state: PublicState;
   version: number;
+  /** the appear nodes that stand at this state's tick: drawn from the seed here, never on the phone */
+  appears: string[];
 }
 
 interface ChangeBody {
   events: GameEvent[];
   patch: MergePatch;
   version: number;
+  appears: string[];
 }
 
 /** The kinds of client-played step a batch may carry. An encounter joins this list later (NEXT 18 a), with no new endpoint. */
@@ -178,6 +181,12 @@ function validTick(value: unknown): value is number {
   return Number.isSafeInteger(value) && (value as number) >= 0;
 }
 
+function appearIds(bundle: Bundle, state: State): string[] {
+  return [...appearSlots(bundle).keys()]
+    .filter((id) => appears(bundle, state, id, state.tick))
+    .sort();
+}
+
 function json(response: ServerResponse, status: number, body: ErrorBody | StateBody | ChangeBody): void {
   response.writeHead(status, {
     'cache-control': 'no-store',
@@ -281,7 +290,7 @@ async function route(request: IncomingMessage, response: ServerResponse, options
       const body = requireObject(await readJson(request, options.bodyLimit ?? BODY_LIMIT));
       if (Object.keys(body).length > 0) throw new RequestError('Resume does not accept client state.', 400);
     }
-    json(response, 200, { state: publicState(record.state), version: record.version });
+    json(response, 200, { state: publicState(record.state), version: record.version, appears: appearIds(options.bundle, record.state) });
     return;
   }
 
@@ -360,7 +369,7 @@ async function route(request: IncomingMessage, response: ServerResponse, options
   if (!(await options.store.compareAndSet(playerId, record.version, next))) {
     throw new RequestError('The game state changed; resume before sending another action.', 409);
   }
-  json(response, 200, { events, patch: statePatch(record.state, state), version: next.version });
+  json(response, 200, { events, patch: statePatch(record.state, state), version: next.version, appears: appearIds(options.bundle, state) });
 }
 
 export function createGameApi(options: ApiOptions): Server {
