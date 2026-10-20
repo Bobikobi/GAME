@@ -8,24 +8,26 @@ The square by the elder's house at 19:00, when the last sun, the street lamp's p
 
 | Part | Size and place in art px |
 |---|---|
-| Far bank meadow | y 0 to 56, the second region ramp from L1 |
-| Water | y 56 to 197, four depth bands, the far oak and the boat reflected |
-| Sand shore | y 197 to 232, five fading footprints and three reed clusters |
-| Cobble square | y 232 to 844, the worn path from the door to the near edge |
-| Elder's house | 192x320 at (198, 252); roof 108 tall, door 64x112 at (262, 460), two 32x32 lit windows |
-| Well | 128x128 at (48, 276), a stone rim, a bucket and a rope |
-| Street lamp | 64x192 at (144, 424); the lantern's light at (170, 458) |
-| Hearth | 64x64 at (240, 680); the fire at (272, 720) |
-| Young tree | 128x192 at (-32, 652), framing the near-left corner |
-| Far oak | 200x132 at (-54, -30), canopy only, overhanging the water |
-| Boat | 84x30 at (248, 104) |
-| Bench, barrel, crate | 64x26 at (24, 470), 24x30 at (92, 442), 30x28 at (116, 478) |
-| Elder | 64x96 at (208, 572), a script-drawn stand-in beside the door |
+| Far bank meadow | y 0 to 56, the second region ramp from L1, with a field fence and two bushes |
+| Water | y 56 to 197, four depth bands, the far oak and the boat reflected, three lily pads near the shore |
+| Sand shore | y 197 to 232, five fading footprints, three reed clusters, driftwood and shells |
+| Cobble square | y 232 to 844, the worn path with ruts and hoofprints, five flagstones, two puddles, a drain, cracks and moss |
+| Elder's house | 192x320 at (198, 252); a shingled roof 108 tall, a door 64x112 at (262, 460) with a canopy, two 32x32 lit windows with flower boxes, a wall lantern, a hanging leaf sign and a woodpile |
+| Well | 128x160 at (48, 244); a shingled roof, a windlass, a rope, a bucket and a stone rim |
+| Street lamp | 64x192 at (144, 424); a stone foot, an iron bracket and a chain; the lantern's light at (170, 458) |
+| Hearth | 64x64 at (240, 680); a tripod and a cauldron over the fire at (272, 720) |
+| Young tree | 128x192 at (-32, 652), framing the near-left corner, with branches, bark, a knot and moss |
+| Far oak | 200x88 at (-54, -30), canopy only, overhanging the water |
+| Boat | 84x30 at (248, 104); planks, a seat, an oar, a net and a rope coil |
+| Mooring post | 24x34 at (228, 164), with a rope to the boat's stern |
+| Bench, barrel, crate | 64x26 at (24, 470), 24x30 at (92, 442), 30x28 at (116, 478); a mug, hoops and slats |
+| Handcart | 64x40 at (148, 698); two spoked wheels, a handle and two sacks |
+| Elder | 64x96 at (208, 572), a detailed script-drawn stand-in beside the door: hood, pouch, robe folds |
 | Pell | 64x96 at (312, 696), in the tall grass at the near edge |
 | Tall grass | 104x80 at (288, 724), in front of Pell's feet |
 | Bird | 24x16 at (230, 540); its shadow is the ground ellipse (272, 624) to (308, 636) |
 
-The Pell sprites are the only real 64 px sprites in the stills. The house, well, lamp, hearth, trees, boat, bench, barrels, elder, grass, water and ground are script-drawn stand-ins in the frame's ramps, as the 18.10 boulders and grounds were: the 64 px ground wave is not built yet. The Pell A, B and C sprites are the checked-in generated inputs (`tools/stills/inputs/`), drawn by Codex image generation for the density-64 trial and its two variants. No model is called at run time.
+The Pell sprites are the only real 64 px sprites in the stills. The house, well, lamp, hearth, trees, boat, bench, barrels, cart, elder, grass, water and ground are detailed script-drawn stand-ins in the frame's ramps, as the 18.10 boulders and grounds were: the 64 px ground wave is not built yet. They are for composition and light, not the final art. The Pell A, B and C sprites are the checked-in generated inputs (`tools/stills/inputs/`), drawn by Codex image generation for the density-64 trial and its two variants. No model is called at run time.
 
 ## What each frame adds
 

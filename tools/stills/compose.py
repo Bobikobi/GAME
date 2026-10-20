@@ -365,6 +365,14 @@ def draw_water(img, look: Look, c: Roles) -> None:
         line(d, [(x, y), (x + n, y)], col)
         if r.random() < 0.5:
             d.point((x + n // 2, y + 1), fill=c.water_pale + (255,))
+    # lily pads near the near shore
+    for px_, py_, pw_ in [(58, 176, 11), (78, 184, 9), (96, 172, 8)]:
+        ellipse(d, [px_, py_, px_ + pw_, py_ + 5], c.grass_dark)
+        ellipse(d, [px_ + 1, py_, px_ + pw_ - 1, py_ + 3], c.grass_base)
+        line(d, [(px_ + pw_ // 2, py_), (px_ + pw_ // 2, py_ + 2)], c.water_dark)
+        if pw_ == 11:
+            d.point((px_ + 3, py_ - 1), fill=c.cloth_mid + (255,))
+            d.point((px_ + 4, py_ - 2), fill=c.fire_mid + (255,))
     # the far bank's edge: a dark line and a light lip
     d.rectangle([0, 54, W, 57], fill=c.water_dark + (255,))
     for x in range(W):
@@ -410,6 +418,14 @@ def draw_shore_details(img, c: Roles) -> None:
         y = fy + (i % 2) * 3
         d.rectangle([x, y, x + 3, y + 5], fill=col + (255,))
         d.rectangle([x + 1, y + 7, x + 4, y + 10], fill=col + (255,))
+    # driftwood and shells on the sand
+    line(d, [(168, 220), (196, 216), (204, 218)], c.wood_base, 3)
+    line(d, [(170, 219), (194, 215)], c.wood_light, 1)
+    line(d, [(174, 222), (190, 220)], c.wood_dark, 1)
+    line(d, [(236, 226), (250, 222)], c.wood_dark, 2)
+    for sx_, sy_ in [(150, 208), (156, 214), (214, 206), (306, 214), (318, 220)]:
+        d.point((sx_, sy_), fill=c.stone_light + (255,))
+        d.point((sx_ + 1, sy_), fill=c.stone_mid + (255,))
     # reeds at the water's edge
     for x0 in (18, 96, 336):
         reeds(d, c, x0, shore_line(x0, 200, 4, 3) + 2, seeded(x0))
@@ -450,12 +466,44 @@ def draw_cobble(img, c: Roles) -> None:
             x += w
         y += h
         row += 1
-    # grass in the joints near the shore and the edges
-    for _ in range(34):
+    # a few worn flagstones break the cobble grid
+    for fx, fy, fw, fh in [(28, 588, 30, 15), (322, 552, 28, 14), (54, 742, 26, 13),
+                           (300, 700, 24, 13), (150, 820, 30, 14)]:
+        for k in range(fh):
+            d.line([(fx + (fh - k) // 2, fy + k), (fx + fw - (fh - k) // 2, fy + k)], fill=c.cobble_mid + (255,))
+        line(d, [(fx + 6, fy + 1), (fx + fw - 6, fy + 1)], c.cobble_light)
+        line(d, [(fx + 5, fy + fh - 1), (fx + fw - 5, fy + fh - 1)], c.cobble_dark)
+    # two puddles, the sky in them
+    for px_, py_, pw_ in [(104, 642, 22), (58, 786, 18)]:
+        ellipse(d, [px_ - 2, py_ - 2, px_ + pw_ + 2, py_ + 9], c.cobble_dark)
+        ellipse(d, [px_, py_, px_ + pw_, py_ + 7], c.water_dark)
+        ellipse(d, [px_ + 3, py_ + 2, px_ + pw_ - 4, py_ + 6], c.water_mid)
+        line(d, [(px_ + 5, py_ + 2), (px_ + pw_ - 6, py_ + 2)], c.water_light)
+        d.point((px_ + pw_ - 7, py_ + 5), fill=c.water_pale + (255,))
+    # a drain by the well and cracks in the stones
+    rect(d, [92, 430, 110, 439], c.stone_mid)
+    rect(d, [94, 432, 108, 437], c.iron_base)
+    for gx in range(96, 107, 4):
+        line(d, [(gx, 432), (gx, 437)], c.iron_outline)
+    for _ in range(7):
+        x = r.randrange(20, W - 20)
+        y = r.randrange(300, H - 20)
+        line(d, [(x, y), (x + r.randrange(2, 6), y + r.randrange(1, 4))], c.cobble_dark)
+    # grass and moss in the joints near the shore and the edges
+    for _ in range(58):
         x = r.randrange(W)
         y = r.randrange(240, H - 4)
-        if y < 300 or x < 20 or x > W - 20 or r.random() < 0.25:
+        if y < 300 or x < 20 or x > W - 20 or r.random() < 0.35:
             tuft(d, x, y, c.grass_dark, c.grass_light, c.grass_outline, r.choice([-1, 0, 1]), 5 + r.randrange(5), r)
+    # leaves fallen from the near tree
+    for _ in range(16):
+        x = r.randrange(6, 120)
+        y = r.randrange(700, H - 6)
+        col = c.fire_mid if r.random() < 0.35 else c.grass_dark
+        d.point((x, y), fill=col + (255,))
+        d.point((x + 1, y), fill=c.grass_light + (255,))
+        if r.random() < 0.5:
+            d.point((x, y + 1), fill=col + (255,))
 
 
 def draw_path(img, c: Roles) -> None:
@@ -468,21 +516,41 @@ def draw_path(img, c: Roles) -> None:
             edge = abs(x - cx) / w
             if edge > 0.84 and r.random() < 0.55:
                 continue
-            col = c.sand_mid if r.random() < 0.62 else c.sand_dark
-            if r.random() < 0.14:
+            col = c.sand_mid if r.random() < 0.74 else c.sand_dark
+            if r.random() < 0.04:
                 col = c.sand_base
             d.point((x, y), fill=col + (255,))
+    for y in range(578, H):
+        cx = 292 + int((y - 566) * 0.11) + int(3 * math.sin(y / 31))
+        d.point((cx - 5, y), fill=c.sand_dark + (255,))
+        d.point((cx + 5, y), fill=c.sand_dark + (255,))
     for _ in range(14):
         x = r.randrange(270, 340)
         y = r.randrange(600, H - 4)
         ww = r.choice([2, 3, 4])
         ellipse(d, [x, y, x + ww, y + 2], c.stone_mid)
         d.point((x, y + 1), fill=c.stone_dark + (255,))
+    for hy in range(600, H - 6, 19):
+        cx = 292 + int((hy - 566) * 0.11) + int(3 * math.sin(hy / 31))
+        d.rectangle([cx - 3, hy, cx - 1, hy + 2], fill=c.sand_dark + (255,))
+        d.rectangle([cx + 2, hy + 6, cx + 4, hy + 8], fill=c.sand_dark + (255,))
 
 
 def draw_far_bank(img, look: Look, c: Roles) -> None:
     d = ImageDraw.Draw(img)
     draw_meadow(img, look, c, 0, 58, True, 31)
+    # a field fence and two bushes on the far bank
+    for x in range(150, 286, 22):
+        rect(d, [x, 30, x + 3, 52], c.wood_dark)
+        rect(d, [x, 30, x + 1, 52], c.wood_base)
+        d.point((x + 1, 31), fill=c.wood_light + (255,))
+    for yy in (35, 43):
+        line(d, [(150, yy), (286, yy)], c.wood_base)
+        line(d, [(150, yy + 1), (286, yy + 1)], c.wood_dark)
+    for bx, by, br in [(170, 44, 9), (272, 46, 7)]:
+        ellipse(d, [bx - br, by - br, bx + br, by + br], c.far_dark)
+        ellipse(d, [bx - br + 2, by - br + 1, bx + br - 3, by + br - 3], c.far_base)
+        ellipse(d, [bx - br + 3, by - br + 1, bx - 1, by], c.far_light)
     # the bank's lip, a ragged dark line over the water
     for x in range(W):
         y = 54 + int(2 * math.sin(x / 17))
@@ -563,73 +631,125 @@ def draw_house(c: Roles, look: Look) -> tuple[Image.Image, int, int, int]:
     w, h = 192, 320
     im = canvas(w, h)
     d = ImageDraw.Draw(im)
-    # roof: a hipped thatch, ridge at the top
+    r = seeded(41)
+
+    # ---- roof: a hipped thatch, shingled, ridge at the top
     roof_h = 108
     pts = [(18, 0), (w - 18, 0), (w, roof_h), (0, roof_h)]
-    poly(d, pts, c.wood_base)
-    # shingle rows, clipped by the roof polygon
     mask = Image.new("L", (w, h), 0)
-    md = ImageDraw.Draw(mask)
-    md.polygon(pts, fill=255)
-    r = seeded(41)
-    for yy in range(6, roof_h - 4, 9):
+    ImageDraw.Draw(mask).polygon(pts, fill=255)
+    roof = canvas(w, h)
+    rd = ImageDraw.Draw(roof)
+    poly(rd, pts, c.wood_base)
+    for row, yy in enumerate(range(4, roof_h - 6, 8)):
         inset = int(18 * (1 - yy / roof_h))
-        line(d, [(inset, yy), (w - inset, yy)], c.wood_dark)
-        x = inset + (4 if (yy // 9) % 2 else 0)
+        x = inset - 6 + (6 if row % 2 else 0)
         while x < w - inset:
-            line(d, [(x, yy), (x, yy + 8)], c.wood_dark)
+            x0, x1 = max(x, inset), min(x + 12, w - inset)
+            if x1 > x0:
+                col = c.wood_base if (row * 5 + x // 12) % 4 else c.wood_mid
+                rect(rd, [x0, yy, x1, yy + 7], col)
+                line(rd, [(x0, yy), (x1, yy)], c.wood_light)
+                line(rd, [(x0, yy + 7), (x1, yy + 7)], c.wood_dark)
+                line(rd, [(x0, yy), (x0, yy + 7)], c.wood_dark)
+                if r.random() < 0.08:
+                    for k in range(3):
+                        rd.point((x0 + 2 + k, yy + 1), fill=c.grass_dark + (255,))
             x += 13
-    # ridge cap and eave
+    # two worn patches and a little moss on the roof
+    for px_, py_, pw_ in [(44, 30, 22), (118, 52, 18), (72, 78, 14)]:
+        rect(rd, [px_, py_, px_ + pw_, py_ + 5], c.wood_mid)
+        line(rd, [(px_, py_ + 5), (px_ + pw_, py_ + 5)], c.wood_dark)
+    for _ in range(9):
+        mx = r.randrange(20, w - 20)
+        my = r.randrange(8, roof_h - 12)
+        if mask.getpixel((mx, my)):
+            for k in range(3):
+                rd.point((mx + k, my + (k % 2)), fill=(c.grass_dark if k % 2 else c.grass_base) + (255,))
+    im.alpha_composite(Image.composite(roof, canvas(w, h), mask))
+    # ridge cap, eave and the last sun's lit lip
     rect(d, [16, 0, w - 17, 4], c.wood_light)
+    rect(d, [16, 3, w - 17, 5], c.wood_dark)
     rect(d, [0, roof_h - 6, w - 1, roof_h - 1], c.wood_dark)
-    rect(d, [0, roof_h, w - 1, roof_h + 3], c.wood_outline)
-    # the last sun from the left: a lit lip on the left slope, a dark right edge
-    for yy in range(6, roof_h - 8):
+    rect(d, [0, roof_h, w - 1, roof_h + 2], c.wood_outline)
+    for yy in range(5, roof_h - 7):
         inset = int(18 * (1 - yy / roof_h))
+        for k in range(3):
+            d.point((inset + k, yy), fill=(c.wood_light if k < 1 else c.wood_mid) + (255,))
         for k in range(4):
-            d.point((inset + k, yy), fill=(c.wood_light if k < 2 else c.wood_mid) + (255,))
-        for k in range(5):
-            d.point((w - inset - 1 - k, yy), fill=(c.wood_dark if k < 3 else c.wood_base) + (255,))
-    # chimney
+            d.point((w - inset - 1 - k, yy), fill=(c.wood_dark if k < 2 else c.wood_base) + (255,))
+    # eave brackets
+    for bx in (18, w - 30):
+        poly(d, [(bx, roof_h + 1), (bx + 12, roof_h + 1), (bx + 2, roof_h + 12)], c.wood_dark)
+        line(d, [(bx + 1, roof_h + 2), (bx + 10, roof_h + 2)], c.wood_base)
+
+    # ---- chimney: stone courses, a cap and a dark flue
     cx, cy = 146, 8
     rect(d, [cx, cy, cx + 30, cy + 46], c.stone_base)
-    rect(d, [cx - 2, cy - 2, cx + 32, cy + 2], c.stone_light)
-    rect(d, [cx + 2, cy + 2, cx + 28, cy + 8], c.stone_dark)
-    rect(d, [cx + 2, cy + 6, cx + 28, cy + 12], c.stone_outline)
-    for yy in range(cy + 16, cy + 44, 9):
+    for yy in range(cy + 10, cy + 44, 8):
         line(d, [(cx, yy), (cx + 30, yy)], c.stone_dark)
-    # walls
+        off = 6 if (yy // 8) % 2 else 0
+        for xx in range(cx + 2 + off, cx + 28, 12):
+            line(d, [(xx, yy), (xx, yy + 8)], c.stone_dark)
+    rect(d, [cx - 3, cy - 3, cx + 33, cy + 3], c.stone_light)
+    rect(d, [cx - 3, cy + 1, cx + 33, cy + 3], c.stone_dark)
+    rect(d, [cx + 4, cy - 1, cx + 26, cy + 6], c.stone_outline)
+    rect(d, [cx + 5, cy, cx + 25, cy + 4], c.iron_base)
+
+    # ---- walls: plaster panels between timber, stone foot
     wall_y = roof_h + 4
     rect(d, [4, wall_y, w - 5, h - 1], c.plaster_base)
     rect(d, [4, wall_y, w - 5, wall_y + 14], c.plaster_dark)
     rect(d, [4, wall_y + 15, w - 5, wall_y + 24], c.plaster_mid)
-    # stone foundation
+    # plaster patches and cracks
+    for px_, py_, pw_, ph_ in [(22, wall_y + 42, 22, 14), (108, wall_y + 108, 26, 10),
+                                (26, wall_y + 148, 18, 12), (140, wall_y + 62, 18, 16)]:
+        rect(d, [px_, py_, px_ + pw_, py_ + ph_], c.plaster_mid)
+        line(d, [(px_, py_ + ph_), (px_ + pw_, py_ + ph_)], c.plaster_dark)
+    for _ in range(14):
+        x = r.randrange(16, w - 20)
+        y = r.randrange(wall_y + 34, h - 34)
+        d.point((x, y), fill=c.plaster_dark + (255,))
+        if r.random() < 0.55:
+            d.point((x + 1, y + 2), fill=c.plaster_dark + (255,))
+    # stone foundation: irregular blocks, light tops, dark joints
     rect(d, [4, h - 26, w - 5, h - 1], c.stone_mid)
-    rect(d, [4, h - 26, w - 5, h - 23], c.stone_light)
-    for yy in range(h - 21, h - 1, 8):
-        line(d, [(4, yy), (w - 5, yy)], c.stone_dark)
-    for xx in range(8, w - 8, 20):
-        line(d, [(xx, h - 25), (xx, h - 1)], c.stone_dark)
-    # timber frame
+    for row in range(3):
+        yy = h - 25 + row * 8
+        off = 10 if row % 2 else 0
+        for xx in range(6 + off, w - 8, 22):
+            rect(d, [xx, yy, min(xx + 20, w - 6), yy + 7], c.stone_mid)
+            line(d, [(xx + 1, yy + 1), (min(xx + 19, w - 7), yy + 1)], c.stone_light)
+            line(d, [(xx + 1, yy + 6), (min(xx + 19, w - 7), yy + 6)], c.stone_dark)
+    for x in range(8, w - 8, 9):
+        d.point((x, h - 2), fill=c.grass_dark + (255,))
+
+    # ---- timber frame, with pegs at the joints
     for xx in (4, 88, w - 12):
         rect(d, [xx, wall_y, xx + 7, h - 1], c.wood_base)
         rect(d, [xx, wall_y, xx + 2, h - 1], c.wood_light)
         rect(d, [xx + 5, wall_y, xx + 7, h - 1], c.wood_dark)
     rect(d, [4, wall_y + 24, w - 5, wall_y + 31], c.wood_base)
     rect(d, [4, wall_y + 24, w - 5, wall_y + 26], c.wood_light)
-    # diagonal braces
     line(d, [(12, wall_y + 32), (86, wall_y + 96)], c.wood_base, 5)
     line(d, [(w - 14, wall_y + 32), (96, wall_y + 96)], c.wood_base, 5)
-    # plaster cracks
-    r = seeded(42)
-    for _ in range(8):
-        x = r.randrange(18, w - 20)
-        y = r.randrange(wall_y + 34, h - 30)
-        d.point((x, y), fill=c.plaster_dark + (255,))
-        if r.random() < 0.5:
-            d.point((x + 1, y + 2), fill=c.plaster_dark + (255,))
-    # door, 64 x 112
+    for px_, py_ in [(9, wall_y + 27), (92, wall_y + 27), (w - 9, wall_y + 27),
+                     (11, wall_y + 92), (91, wall_y + 92)]:
+        d.point((px_, py_), fill=c.wood_dark + (255,))
+        d.point((px_ + 1, py_), fill=c.wood_light + (255,))
+
+    # ---- door: planks, studs, a ring, a canopy and a worn step
     dx, dy = 64, h - 112
+    # canopy: a small sloped shingle roof on two brackets
+    poly(d, [(dx - 9, dy - 8), (dx + 72, dy - 8), (dx + 66, dy - 20), (dx - 3, dy - 20)], c.wood_base)
+    for cy_ in (dy - 18, dy - 14, dy - 10):
+        line(d, [(dx - 6, cy_), (dx + 69, cy_)], c.wood_dark)
+    for cx_ in range(dx - 4, dx + 68, 11):
+        line(d, [(cx_, dy - 20), (cx_, dy - 8)], c.wood_dark)
+    rect(d, [dx - 9, dy - 9, dx + 72, dy - 7], c.wood_light)
+    rect(d, [dx - 9, dy - 7, dx + 72, dy - 5], c.wood_dark)
+    for bx in (dx - 5, dx + 61):
+        poly(d, [(bx, dy - 6), (bx + 8, dy - 6), (bx + 2, dy + 2)], c.wood_dark)
     rect(d, [dx - 3, dy - 3, dx + 67, h - 1], c.wood_dark)
     for i in range(4):
         x = dx + i * 16
@@ -638,19 +758,24 @@ def draw_house(c: Roles, look: Look) -> tuple[Image.Image, int, int, int]:
         line(d, [(x + 12, dy + 2), (x + 12, h - 8)], c.wood_dark)
     rect(d, [dx, dy + 2, dx + 63, dy + 8], c.wood_dark)
     rect(d, [dx + 2, h - 14, dx + 61, h - 8], c.wood_dark)
-    # handle and hinges
-    rect(d, [dx + 50, dy + 54, dx + 56, dy + 60], c.iron_light)
-    rect(d, [dx + 2, dy + 22, dx + 16, dy + 25], c.iron_base)
-    rect(d, [dx + 2, dy + 78, dx + 16, dy + 81], c.iron_base)
-    # step
-    rect(d, [dx - 8, h - 8, dx + 72, h - 1], c.stone_light)
-    rect(d, [dx - 8, h - 4, dx + 72, h - 1], c.stone_mid)
-    # windows, 32 x 32, lit at 19:00
+    for sx, sy in [(dx + 8, dy + 20), (dx + 8, dy + 84), (dx + 56, dy + 20), (dx + 56, dy + 84)]:
+        d.point((sx, sy), fill=c.iron_light + (255,))
+        d.point((sx + 1, sy), fill=c.iron_base + (255,))
+    # ring handle
+    d.ellipse([dx + 47, dy + 52, dx + 57, dy + 62], outline=c.iron_light + (255,), width=1)
+    d.ellipse([dx + 49, dy + 54, dx + 55, dy + 60], outline=c.iron_base + (255,), width=1)
+    # step: three worn stones
+    rect(d, [dx - 10, h - 8, dx + 74, h - 1], c.stone_light)
+    rect(d, [dx - 10, h - 4, dx + 74, h - 1], c.stone_mid)
+    for xx in range(dx - 6, dx + 72, 12):
+        line(d, [(xx, h - 8), (xx, h - 2)], c.stone_dark)
+
+    # ---- windows: four panes, a sill and a flower box
     for wx in (18, w - 52):
         wy = wall_y + 52
         rect(d, [wx - 3, wy - 3, wx + 35, wy + 35], c.wood_dark)
+        rect(d, [wx - 1, wy + 2, wx + 32, wy + 33], c.wood_base)
         rect(d, [wx, wy, wx + 31, wy + 31], c.fire_base)
-        # four panes
         for py in (wy + 2, wy + 17):
             for px in (wx + 2, wx + 17):
                 rect(d, [px, py, px + 12, py + 12], c.fire_mid)
@@ -660,104 +785,168 @@ def draw_house(c: Roles, look: Look) -> tuple[Image.Image, int, int, int]:
         line(d, [(wx, wy + 15), (wx + 31, wy + 15)], c.wood_dark)
         rect(d, [wx - 4, wy + 32, wx + 35, wy + 36], c.wood_light)
         rect(d, [wx - 4, wy + 34, wx + 35, wy + 36], c.wood_dark)
-    # baked light: left edge lighter, right darker, a light band under the eave
+        # flower box
+        rect(d, [wx - 2, wy + 35, wx + 33, wy + 43], c.wood_base)
+        rect(d, [wx - 2, wy + 35, wx + 33, wy + 37], c.wood_light)
+        rect(d, [wx - 2, wy + 41, wx + 33, wy + 43], c.wood_dark)
+        for fx in range(wx + 2, wx + 32, 6):
+            d.point((fx, wy + 34), fill=c.grass_light + (255,))
+            d.point((fx + 1, wy + 33), fill=(c.cloth_mid if (fx // 6) % 2 else c.fire_mid) + (255,))
+            d.point((fx + 2, wy + 34), fill=c.grass_dark + (255,))
+
+    # ---- a wall lantern by the door, unlit at this hour
+    lx0, ly0 = 40, dy + 14
+    line(d, [(56, ly0 + 2), (50, ly0 + 6)], c.iron_base, 2)
+    rect(d, [lx0, ly0, lx0 + 12, ly0 + 18], c.iron_base)
+    rect(d, [lx0 + 2, ly0 + 2, lx0 + 10, ly0 + 14], c.stone_dark)
+    rect(d, [lx0 + 3, ly0 + 3, lx0 + 9, ly0 + 6], c.fire_base)
+    rect(d, [lx0 - 1, ly0 - 2, lx0 + 13, ly0 + 1], c.iron_mid)
+    d.point((lx0 + 6, ly0 + 9), fill=c.fire_light + (255,))
+    # ---- a hanging sign above the right window
+    sx0, sy0 = 136, wall_y + 116
+    line(d, [(sx0 + 15, sy0 - 4), (sx0 + 30, sy0 - 4)], c.iron_base, 2)
+    line(d, [(sx0 + 4, sy0), (sx0 + 4, sy0 - 4)], c.iron_light)
+    line(d, [(sx0 + 27, sy0), (sx0 + 27, sy0 - 4)], c.iron_light)
+    rect(d, [sx0, sy0, sx0 + 31, sy0 + 14], c.wood_dark)
+    rect(d, [sx0 + 2, sy0 + 2, sx0 + 29, sy0 + 12], c.wood_base)
+    rect(d, [sx0 + 2, sy0 + 2, sx0 + 29, sy0 + 3], c.wood_light)
+    poly(d, [(sx0 + 14, sy0 + 4), (sx0 + 18, sy0 + 4), (sx0 + 20, sy0 + 8),
+             (sx0 + 16, sy0 + 11), (sx0 + 12, sy0 + 8)], c.grass_light)
+    d.point((sx0 + 16, sy0 + 7), fill=c.grass_dark + (255,))
+    # ---- a woodpile at the left foot, log ends facing out
+    for i in range(6):
+        lx = 12 + (i % 3) * 10
+        ly = h - 12 - (i // 3) * 8
+        rect(d, [lx, ly, lx + 9, ly + 7], c.wood_base)
+        rect(d, [lx, ly, lx + 9, ly + 2], c.wood_mid)
+        rect(d, [lx + 1, ly + 3, lx + 8, ly + 6], c.wood_dark)
+        d.point((lx + 4, ly + 5), fill=c.wood_light + (255,))
+    rect(d, [10, h - 5, 42, h - 2], c.wood_dark)
+
+    # baked shade at the two ends
     rect(d, [4, wall_y + 25, 10, h - 1], c.plaster_dark)
     rect(d, [w - 12, wall_y + 25, w - 5, h - 1], c.plaster_dark)
-    # outline
-    if look.local_outline:
-        # the frame's own ramps already carry local dark steps; a one-pixel
-        # contour in each material's darkest step reads as the outline
-        pass
     return outline_sprite(im, c.wood_outline), 198, 252, 252 + h
 
 
 def draw_well(c: Roles) -> tuple[Image.Image, int, int, int]:
-    w, h = 128, 128
+    w, h = 128, 160
     im = canvas(w, h)
     d = ImageDraw.Draw(im)
+    r = seeded(43)
+    # a small shingled roof on two posts
+    roof = [(8, 0), (120, 0), (128, 30), (0, 30)]
+    poly(d, roof, c.wood_base)
+    for row, yy in enumerate(range(3, 28, 7)):
+        inset = int(8 * (1 - yy / 30))
+        x = inset - 5 + (5 if row % 2 else 0)
+        while x < w - inset:
+            x0, x1 = max(x, inset), min(x + 11, w - inset)
+            if x1 > x0:
+                col = c.wood_base if (row * 3 + x // 11) % 3 else c.wood_mid
+                rect(d, [x0, yy, x1, yy + 6], col)
+                line(d, [(x0, yy), (x1, yy)], c.wood_light)
+                line(d, [(x0, yy + 6), (x1, yy + 6)], c.wood_dark)
+            x += 12
+    rect(d, [6, 0, 121, 3], c.wood_light)
+    rect(d, [0, 27, 127, 31], c.wood_dark)
+    for bx in (14, w - 26):
+        poly(d, [(bx, 30), (bx + 10, 30), (bx + 2, 40)], c.wood_dark)
+    # posts and a windlass
+    for px_ in (24, 96):
+        rect(d, [px_, 28, px_ + 8, 86], c.wood_base)
+        rect(d, [px_, 28, px_ + 2, 86], c.wood_light)
+        rect(d, [px_ + 6, 28, px_ + 8, 86], c.wood_dark)
     # the front face: three courses of stone, staggered
     for row in range(3):
-        y = 60 + row * 19
+        y = 86 + row * 19
         for i in range(7):
             x = 6 + i * 19 - (9 if row % 2 else 0)
             rect(d, [x, y, min(x + 17, 122), y + 17], c.stone_mid)
             line(d, [(x + 1, y + 1), (min(x + 16, 121), y + 1)], c.stone_light)
             line(d, [(x + 1, y + 16), (min(x + 16, 121), y + 16)], c.stone_dark)
         line(d, [(6, y + 18), (122, y + 18)], c.stone_dark)
-    rect(d, [4, 116, 124, 121], c.stone_outline)
+    rect(d, [4, 148, 124, 153], c.stone_outline)
     # the rim, a ring of stone with a dark opening
-    ellipse(d, [2, 14, 126, 90], c.stone_dark)
-    ellipse(d, [4, 16, 124, 88], c.stone_mid)
-    ellipse(d, [8, 19, 120, 84], c.stone_light)
-    ellipse(d, [14, 23, 114, 80], c.stone_mid)
-    # radial seams on the rim
+    ellipse(d, [2, 44, 126, 120], c.stone_dark)
+    ellipse(d, [4, 46, 124, 118], c.stone_mid)
+    ellipse(d, [8, 49, 120, 114], c.stone_light)
+    ellipse(d, [14, 53, 114, 110], c.stone_mid)
     for a in (-2.6, -2.0, -1.2, -0.4, 0.4, 1.2, 2.0, 2.6):
         x0 = int(64 + 60 * math.cos(a))
-        y0 = int(52 + 36 * math.sin(a))
+        y0 = int(82 + 36 * math.sin(a))
         x1 = int(64 + 30 * math.cos(a))
-        y1 = int(52 + 18 * math.sin(a))
+        y1 = int(82 + 18 * math.sin(a))
         line(d, [(x0, y0), (x1, y1)], c.stone_dark)
-    ellipse(d, [28, 32, 100, 72], c.stone_dark)
-    ellipse(d, [34, 36, 94, 68], c.water_dark)
-    ellipse(d, [42, 42, 86, 62], c.water_mid)
+    ellipse(d, [28, 62, 100, 102], c.stone_dark)
+    ellipse(d, [34, 66, 94, 98], c.water_dark)
+    ellipse(d, [42, 72, 86, 92], c.water_mid)
     for x in range(46, 84, 6):
-        d.point((x, 50), fill=c.water_light + (255,))
-        d.point((x + 2, 52), fill=c.water_pale + (255,))
-    # posts and beam
-    rect(d, [24, 0, 32, 40], c.wood_base)
-    rect(d, [24, 0, 27, 40], c.wood_light)
-    rect(d, [96, 0, 104, 40], c.wood_base)
-    rect(d, [99, 0, 102, 40], c.wood_light)
-    rect(d, [20, 0, 108, 7], c.wood_mid)
-    rect(d, [20, 0, 108, 2], c.wood_light)
-    rect(d, [20, 5, 108, 7], c.wood_dark)
-    # rope and bucket
-    line(d, [(64, 7), (64, 30)], c.iron_light)
-    rect(d, [56, 28, 72, 42], c.wood_dark)
-    rect(d, [58, 30, 70, 34], c.wood_base)
-    rect(d, [58, 34, 70, 36], c.wood_mid)
+        d.point((x, 80), fill=c.water_light + (255,))
+        d.point((x + 2, 82), fill=c.water_pale + (255,))
+    # the windlass over the opening, with its rope and bucket
+    rect(d, [28, 50, 100, 58], c.wood_base)
+    rect(d, [28, 50, 100, 52], c.wood_light)
+    rect(d, [28, 56, 100, 58], c.wood_dark)
+    d.ellipse([30, 50, 38, 58], outline=c.iron_light + (255,), width=1)
+    d.ellipse([90, 50, 98, 58], outline=c.iron_light + (255,), width=1)
+    line(d, [(102, 54), (112, 48), (114, 56)], c.iron_base, 2)
+    line(d, [(64, 58), (64, 74)], c.iron_light)
+    rect(d, [56, 72, 72, 86], c.wood_dark)
+    rect(d, [58, 74, 70, 78], c.wood_base)
+    rect(d, [58, 78, 70, 80], c.wood_mid)
     # moss and grass at the foot
     for x in range(8, 124, 7):
-        d.point((x, 117), fill=c.grass_dark + (255,))
+        d.point((x, 149), fill=c.grass_dark + (255,))
     for x in range(12, 120, 11):
-        d.point((x, 119), fill=c.grass_base + (255,))
-    return outline_sprite(im, c.stone_outline), 48, 276, 276 + h
+        d.point((x, 151), fill=c.grass_base + (255,))
+    return outline_sprite(im, c.stone_outline), 48, 244, 244 + h
 
 
 def draw_lamp(c: Roles) -> tuple[Image.Image, int, int, int]:
     w, h = 64, 192
     im = canvas(w, h)
     d = ImageDraw.Draw(im)
-    # stone base
-    ellipse(d, [14, 174, 50, 190], c.stone_base)
-    ellipse(d, [18, 176, 46, 186], c.stone_mid)
-    # post
+    # stone foot, two courses
+    rect(d, [14, 174, 50, 190], c.stone_mid)
+    rect(d, [14, 174, 50, 177], c.stone_light)
+    line(d, [(14, 182), (50, 182)], c.stone_dark)
+    line(d, [(30, 174), (30, 190)], c.stone_dark)
+    for x in range(16, 50, 6):
+        d.point((x, 189), fill=c.grass_dark + (255,))
+    # post, grain and iron bands
     rect(d, [27, 52, 36, 180], c.wood_base)
     rect(d, [27, 52, 29, 180], c.wood_light)
     rect(d, [34, 52, 36, 180], c.wood_dark)
-    rect(d, [26, 112, 37, 118], c.iron_base)
-    rect(d, [26, 116, 37, 118], c.iron_light)
-    # bracket
-    line(d, [(32, 58), (44, 50), (44, 44)], c.iron_base, 3)
-    # lantern
-    rect(d, [12, 10, 50, 52], c.iron_base)
-    rect(d, [14, 12, 48, 50], c.fire_mid)
-    # panes
-    for py in (15, 33):
+    for yy in range(66, 176, 18):
+        line(d, [(29, yy), (34, yy + 2)], c.wood_dark)
+    for yy in (58, 112, 158):
+        rect(d, [26, yy, 37, yy + 4], c.iron_base)
+        rect(d, [26, yy, 37, yy + 1], c.iron_light)
+    # bracket: an iron scroll from the post to the lantern
+    line(d, [(32, 58), (20, 54), (14, 46)], c.iron_base, 2)
+    line(d, [(20, 54), (20, 64), (26, 66)], c.iron_base, 2)
+    d.point((18, 52), fill=c.iron_light + (255,))
+    d.point((14, 44), fill=c.iron_light + (255,))
+    # lantern: cap, glass, frame and base
+    rect(d, [12, 12, 50, 54], c.iron_base)
+    rect(d, [14, 14, 48, 52], c.fire_base)
+    for py in (16, 34):
         for px in (16, 33):
             rect(d, [px, py, px + 13, py + 15], c.fire_mid)
             rect(d, [px + 2, py + 2, px + 11, py + 13], c.fire_light)
             d.point((px + 6, py + 7), fill=c.fire_white + (255,))
-    # frame
-    line(d, [(31, 12), (31, 50)], c.iron_base)
-    line(d, [(14, 31), (48, 31)], c.iron_base)
-    # cap and ring
-    poly(d, [(10, 10), (52, 10), (46, 2), (16, 2)], c.iron_mid)
-    rect(d, [14, 0, 46, 3], c.iron_light)
-    line(d, [(32, 0), (32, -3)], c.iron_light)
-    # bottom plate
-    rect(d, [12, 50, 50, 56], c.iron_base)
-    rect(d, [12, 50, 50, 52], c.iron_light)
+    line(d, [(31, 14), (31, 52)], c.iron_base)
+    line(d, [(14, 32), (48, 32)], c.iron_base)
+    poly(d, [(9, 12), (53, 12), (46, 2), (16, 2)], c.iron_mid)
+    rect(d, [15, 0, 47, 3], c.iron_light)
+    rect(d, [12, 52, 50, 57], c.iron_base)
+    rect(d, [12, 52, 50, 54], c.iron_light)
+    line(d, [(31, 57), (31, 62)], c.iron_base)
+    d.ellipse([28, 60, 34, 66], outline=c.iron_light + (255,), width=1)
+    # a chain from the bracket to the cap
+    for cy_ in range(8, 12, 2):
+        d.point((31, cy_), fill=c.iron_light + (255,))
     return outline_sprite(im, c.iron_outline), 144, 424, 424 + h
 
 
@@ -768,11 +957,22 @@ def draw_hearth(c: Roles) -> tuple[Image.Image, int, int, int]:
     # ash and logs
     ellipse(d, [8, 32, 56, 58], c.stone_dark)
     ellipse(d, [12, 36, 52, 54], c.stone_base)
-    rect(d, [16, 42, 46, 48], c.wood_dark)
-    rect(d, [20, 38, 44, 44], c.wood_base)
-    rect(d, [18, 44, 42, 47], c.wood_mid)
+    rect(d, [15, 44, 49, 49], c.wood_dark)
+    rect(d, [18, 40, 46, 45], c.wood_base)
+    rect(d, [20, 46, 44, 48], c.wood_mid)
+    rect(d, [22, 38, 30, 41], c.wood_light)
     # flame: three tongues, the shape changes only in the loop
     flame(d, c, 32, 42, 1.0, 0)
+    # a tripod and a cauldron over the fire
+    for lx, rx in [(18, 30), (46, 34), (32, 40)]:
+        line(d, [(lx, 48), (rx, 22)], c.iron_base, 2)
+        d.point((rx, 21), fill=c.iron_light + (255,))
+    line(d, [(26, 22), (38, 22)], c.iron_base, 2)
+    ellipse(d, [23, 18, 41, 33], c.iron_base)
+    ellipse(d, [25, 20, 39, 30], c.iron_mid)
+    ellipse(d, [27, 20, 37, 24], c.fire_base)
+    line(d, [(32, 18), (32, 13)], c.iron_light)
+    d.ellipse([28, 10, 36, 18], outline=c.iron_light + (255,), width=1)
     # stones round the fire, in front of the flame
     for i in range(9):
         a = -0.05 + i * (math.pi * 1.05) / 8
@@ -782,7 +982,7 @@ def draw_hearth(c: Roles) -> tuple[Image.Image, int, int, int]:
         rect(d, [x - 4, y - 2, x + 2, y], c.stone_light)
         rect(d, [x + 1, y + 1, x + 5, y + 3], c.stone_dark)
     # embers
-    for x, y in [(22, 50), (42, 49), (30, 53), (38, 54)]:
+    for x, y in [(22, 52), (42, 51), (30, 55), (38, 56), (16, 47), (48, 48)]:
         d.point((x, y), fill=c.fire_mid + (255,))
     return outline_sprite(im, c.stone_outline), 240, 680, 680 + h
 
@@ -820,26 +1020,46 @@ def draw_tree(c: Roles, look: Look, w: int = 128, h: int = 192, seed: int = 51) 
     im = canvas(w, h)
     d = ImageDraw.Draw(im)
     r = seeded(seed)
-    # trunk
     tx = w // 2
-    rect(d, [tx - 7, h - 72, tx + 7, h - 8], c.wood_base)
-    rect(d, [tx - 7, h - 72, tx - 4, h - 8], c.wood_light)
-    rect(d, [tx + 4, h - 72, tx + 7, h - 8], c.wood_dark)
+    # trunk: a flare, bark and a knot
+    poly(d, [(tx - 8, h - 74), (tx + 8, h - 74), (tx + 11, h - 10), (tx - 11, h - 10)], c.wood_base)
+    poly(d, [(tx - 8, h - 74), (tx - 3, h - 74), (tx - 5, h - 10), (tx - 11, h - 10)], c.wood_light)
+    poly(d, [(tx + 4, h - 74), (tx + 8, h - 74), (tx + 11, h - 10), (tx + 6, h - 10)], c.wood_dark)
+    for yy in range(h - 70, h - 14, 9):
+        line(d, [(tx - 5, yy), (tx + 4, yy + 3)], c.wood_dark)
+        d.point((tx + 2, yy + 5), fill=c.wood_mid + (255,))
+    ellipse(d, [tx - 2, h - 54, tx + 4, h - 46], c.wood_dark)
+    ellipse(d, [tx - 1, h - 53, tx + 3, h - 48], c.wood_mid)
     # roots
-    line(d, [(tx - 7, h - 12), (tx - 16, h - 4)], c.wood_base, 3)
-    line(d, [(tx + 7, h - 12), (tx + 16, h - 4)], c.wood_base, 3)
-    # canopy blobs, dark to light
+    line(d, [(tx - 10, h - 12), (tx - 22, h - 5)], c.wood_base, 4)
+    line(d, [(tx + 10, h - 12), (tx + 23, h - 6)], c.wood_base, 4)
+    line(d, [(tx - 4, h - 10), (tx - 12, h - 3)], c.wood_dark, 3)
+    # moss at the foot
+    for mx in range(tx - 16, tx + 18, 5):
+        d.point((mx, h - 7), fill=(c.grass_dark if mx % 2 else c.grass_base) + (255,))
+
+    # branches into the crown; the leaves cover all but the gaps
+    for bx0, by0, bx1, by1 in [(tx, h - 70, tx - 30, 50), (tx, h - 72, tx + 26, 38),
+                                (tx - 2, h - 74, tx - 10, 24)]:
+        line(d, [(bx0, by0), (bx1, by1)], c.wood_dark, 2)
+        line(d, [(bx0 + 1, by0), (bx1 + 1, by1)], c.wood_base, 1)
+
+    # canopy: a layered crown of blobs
     blobs = []
-    for i in range(11):
-        bx = tx + int(34 * math.cos(i * 2.1)) + r.randrange(-6, 7)
-        by = 54 + int(30 * math.sin(i * 1.4)) + r.randrange(-6, 7)
-        br = 24 + r.randrange(14)
+    for i in range(18):
+        ang = i * 2.4
+        bx = tx + int((w * 0.30) * math.cos(ang)) + r.randrange(-7, 8)
+        by = int(h * 0.32) + int((h * 0.18) * math.sin(ang)) + r.randrange(-7, 8)
+        br = 15 + r.randrange(16)
         blobs.append((bx, by, br))
     mask = Image.new("L", (w, h), 0)
     md = ImageDraw.Draw(mask)
     for bx, by, br in blobs:
         md.ellipse([bx - br, by - br, bx + br, by + br], fill=255)
-    # local outline / dark base
+    # a few gaps where the light comes through
+    for gx, gy, gr in [(tx - 18, 38, 4), (tx + 24, 24, 3), (tx + 6, 62, 3), (tx - 40, 56, 3)]:
+        md.ellipse([gx - gr, gy - gr, gx + gr, gy + gr], fill=0)
+
     dark = canvas(w, h)
     dd = ImageDraw.Draw(dark)
     for bx, by, br in blobs:
@@ -847,24 +1067,49 @@ def draw_tree(c: Roles, look: Look, w: int = 128, h: int = 192, seed: int = 51) 
     for bx, by, br in blobs:
         dd.ellipse([bx - br, by - br, bx + br, by + br], fill=c.grass_dark + (255,))
     im.alpha_composite(dark)
-    # mid and light clusters
+
     mid = canvas(w, h)
     md2 = ImageDraw.Draw(mid)
     for bx, by, br in blobs:
         md2.ellipse([bx - br + 3, by - br + 2, bx + br - 4, by + br - 4], fill=c.grass_base + (255,))
     im.alpha_composite(Image.composite(mid, canvas(w, h), mask))
+
     light = canvas(w, h)
     ld = ImageDraw.Draw(light)
     for bx, by, br in blobs:
         ld.ellipse([bx - br + 7, by - br + 5, bx + br - 11, by + br - 13], fill=c.grass_light + (255,))
         ld.ellipse([bx - br + 11, by - br + 8, bx - br + 18, by - br + 13], fill=c.grass_light + (255,))
     im.alpha_composite(light)
-    # leaf texture
-    for _ in range(40):
-        x = r.randrange(8, w - 8)
-        y = r.randrange(8, 120)
-        if mask.getpixel((x, y)):
-            d.point((x, y), fill=(c.grass_dark if r.random() < 0.5 else c.grass_light) + (255,))
+
+    # the light from the left: a lit crown, a shaded foot
+    shade = canvas(w, h)
+    sd = ImageDraw.Draw(shade)
+    for bx, by, br in blobs:
+        if bx >= tx - 6 and by >= h * 0.30:
+            sd.ellipse([bx - br + 9, by - br + 12, bx + br - 2, by + br - 2], fill=c.grass_dark + (255,))
+    im.alpha_composite(Image.composite(shade, canvas(w, h), mask))
+    lit = canvas(w, h)
+    lu = ImageDraw.Draw(lit)
+    for bx, by, br in blobs:
+        if bx <= tx + 8 and by <= h * 0.34:
+            lu.ellipse([bx - br + 4, by - br + 3, bx + br - 9, by + br - 9], fill=c.grass_light + (255,))
+    im.alpha_composite(Image.composite(lit, canvas(w, h), mask))
+
+    for gx, gy in [(tx + 18, 30), (tx - 26, 44), (tx + 34, 58), (tx - 8, 20)]:
+        d.point((gx, gy), fill=c.fire_mid + (255,))
+        d.point((gx + 1, gy + 1), fill=c.fire_base + (255,))
+
+    # leaf texture: small clusters, denser at the top-left
+    for _ in range(150):
+        x = r.randrange(6, w - 6)
+        y = r.randrange(6, int(h * 0.58))
+        if mask.getpixel((x, y)) and im.getpixel((x, y))[3]:
+            col = c.grass_dark if r.random() < 0.40 else c.grass_light
+            d.point((x, y), fill=col + (255,))
+            if r.random() < 0.6:
+                d.point((x + 1, y), fill=col + (255,))
+            if r.random() < 0.3:
+                d.point((x, y + 1), fill=col + (255,))
     return outline_sprite(im, c.grass_outline)
 
 
@@ -875,10 +1120,68 @@ def draw_boat(c: Roles) -> Image.Image:
     poly(d, [(2, 8), (80, 8), (70, 24), (12, 24)], c.wood_base)
     poly(d, [(6, 10), (76, 10), (66, 21), (16, 21)], c.wood_dark)
     poly(d, [(10, 12), (72, 12), (64, 19), (18, 19)], c.wood_mid)
-    rect(d, [16, 14, 64, 17], c.wood_light)
-    line(d, [(20, 10), (60, 10)], c.wood_light, 2)
-    # oar
+    # planks and ribs
+    for yy in (13, 16):
+        line(d, [(11, yy), (70, yy)], c.wood_light)
+    for xx in range(16, 68, 9):
+        line(d, [(xx, 12), (xx - 1, 20)], c.wood_dark)
+    # a seat, an oar, a rope coil and a small net
+    rect(d, [22, 13, 40, 16], c.wood_light)
+    rect(d, [22, 16, 40, 17], c.wood_dark)
     line(d, [(64, 4), (48, 18)], c.wood_light, 2)
+    line(d, [(64, 4), (66, 2)], c.wood_dark, 2)
+    d.ellipse([56, 18, 66, 24], outline=c.iron_light + (255,), width=1)
+    d.ellipse([58, 19, 64, 23], outline=c.wood_dark + (255,), width=1)
+    for nx in range(44, 54, 3):
+        line(d, [(nx, 13), (nx + 1, 18)], c.iron_mid)
+    line(d, [(44, 13), (53, 13)], c.iron_mid)
+    return outline_sprite(im, c.wood_outline)
+
+
+def draw_cart(c: Roles) -> Image.Image:
+    im = canvas(64, 40)
+    d = ImageDraw.Draw(im)
+    # bed and planks
+    rect(d, [10, 14, 60, 27], c.wood_base)
+    rect(d, [12, 16, 58, 25], c.wood_mid)
+    for yy in (18, 21, 24):
+        line(d, [(12, yy), (58, yy)], c.wood_dark)
+    rect(d, [10, 14, 60, 16], c.wood_light)
+    rect(d, [10, 25, 60, 27], c.wood_dark)
+    # wheels
+    for wx in (18, 50):
+        d.ellipse([wx - 8, 24, wx + 8, 39], fill=c.wood_dark + (255,))
+        d.ellipse([wx - 6, 26, wx + 6, 37], fill=c.wood_base + (255,))
+        d.ellipse([wx - 3, 29, wx + 3, 34], fill=c.wood_light + (255,))
+        for a in range(0, 360, 45):
+            ex = wx + int(6 * math.cos(math.radians(a)))
+            ey = 31 + int(5 * math.sin(math.radians(a)))
+            d.point((ex, ey), fill=c.wood_dark + (255,))
+    # handle
+    line(d, [(10, 18), (1, 12)], c.wood_base, 2)
+    line(d, [(10, 17), (2, 11)], c.wood_light, 1)
+    # sacks on the bed
+    ellipse(d, [24, 6, 40, 18], c.cloth_base)
+    ellipse(d, [27, 7, 37, 15], c.cloth_mid)
+    rect(d, [28, 5, 36, 9], c.cloth_dark)
+    ellipse(d, [42, 8, 54, 18], c.cloth_base)
+    ellipse(d, [44, 9, 52, 15], c.cloth_mid)
+    rect(d, [45, 7, 51, 10], c.cloth_dark)
+    return outline_sprite(im, c.wood_outline)
+
+
+def draw_mooring(c: Roles) -> Image.Image:
+    im = canvas(24, 34)
+    d = ImageDraw.Draw(im)
+    ellipse(d, [2, 26, 22, 33], c.stone_mid)
+    ellipse(d, [4, 27, 20, 32], c.stone_light)
+    rect(d, [10, 2, 16, 30], c.wood_base)
+    rect(d, [10, 2, 12, 30], c.wood_light)
+    rect(d, [15, 2, 16, 30], c.wood_dark)
+    rect(d, [9, 8, 17, 11], c.iron_base)
+    rect(d, [9, 8, 17, 9], c.iron_light)
+    d.ellipse([3, 20, 13, 28], outline=c.wood_light + (255,), width=1)
+    d.ellipse([5, 22, 11, 26], outline=c.wood_dark + (255,), width=1)
     return outline_sprite(im, c.wood_outline)
 
 
@@ -889,6 +1192,12 @@ def draw_bench(c: Roles) -> Image.Image:
     rect(d, [2, 4, 61, 6], c.wood_light)
     rect(d, [4, 10, 9, 25], c.wood_dark)
     rect(d, [54, 10, 59, 25], c.wood_dark)
+    for gx in range(8, 58, 7):
+        d.point((gx, 7), fill=c.wood_dark + (255,))
+        d.point((gx + 2, 8), fill=c.wood_dark + (255,))
+    rect(d, [44, 0, 51, 5], c.iron_mid)
+    rect(d, [45, 1, 50, 3], c.iron_light)
+    d.point((52, 2), fill=c.iron_light + (255,))
     return outline_sprite(im, c.wood_outline)
 
 
@@ -898,9 +1207,16 @@ def draw_barrel(c: Roles) -> Image.Image:
     rect(d, [4, 2, 20, 28], c.wood_base)
     rect(d, [6, 2, 18, 28], c.wood_mid)
     rect(d, [6, 2, 9, 28], c.wood_light)
+    for sx in (10, 14, 18):
+        line(d, [(sx, 4), (sx, 27)], c.wood_dark)
     rect(d, [4, 7, 20, 9], c.iron_base)
     rect(d, [4, 21, 20, 23], c.iron_base)
+    rect(d, [4, 7, 20, 8], c.iron_light)
+    rect(d, [4, 21, 20, 22], c.iron_light)
     ellipse(d, [4, 0, 20, 5], c.wood_light)
+    ellipse(d, [6, 1, 18, 4], c.wood_mid)
+    rect(d, [16, 14, 22, 17], c.iron_mid)
+    d.point((22, 16), fill=c.iron_light + (255,))
     return outline_sprite(im, c.wood_outline)
 
 
@@ -930,16 +1246,31 @@ def draw_elder(c: Roles, look: Look) -> Image.Image:
     poly(d, [(42, 38), (47, 38), (53, 92), (46, 92)], robe_d)
     # a hood's shadow at the shoulders
     rect(d, [20, 38, 44, 42], robe_d)
+    # folds in the cloth
+    line(d, [(24, 44), (22, 90)], c.wood_dark)
+    line(d, [(41, 46), (43, 88)], c.wood_dark)
+    line(d, [(18, 48), (16, 88)], c.wood_light)
+    line(d, [(28, 72), (27, 89)], c.wood_dark)
+    # a hood behind the shoulders
+    poly(d, [(18, 36), (46, 36), (44, 46), (32, 50), (20, 46)], c.wood_dark)
+    line(d, [(20, 38), (44, 38)], c.wood_base)
     # belt and a hanging cord
     rect(d, [14, 62, 50, 68], c.cloth_dark)
     rect(d, [28, 61, 36, 69], c.cloth_base)
     rect(d, [31, 69, 33, 82], c.cloth_base)
+    # a pouch on the belt
+    rect(d, [39, 66, 48, 78], c.wood_dark)
+    rect(d, [40, 68, 47, 76], c.wood_base)
+    rect(d, [40, 68, 47, 70], c.wood_mid)
+    line(d, [(41, 66), (46, 62)], c.cloth_base)
     # arms
     poly(d, [(17, 42), (12, 44), (14, 70), (20, 68)], robe)
     poly(d, [(47, 42), (52, 44), (50, 70), (44, 68)], robe_d)
-    # hands
+    # hands and cuffs
     rect(d, [12, 68, 18, 74], skin)
     rect(d, [46, 68, 52, 74], skin_d)
+    rect(d, [11, 66, 19, 69], c.wood_mid)
+    rect(d, [45, 66, 53, 69], c.wood_dark)
     # head: 24 wide, round
     rect(d, [21, 14, 43, 40], skin)
     rect(d, [21, 14, 23, 40], skin_l)
@@ -964,16 +1295,21 @@ def draw_elder(c: Roles, look: Look) -> Image.Image:
     poly(d, [(24, 35), (40, 35), (38, 42), (32, 47), (26, 42)], hair_d)
     rect(d, [21, 32, 43, 36], hair)
     rect(d, [28, 44, 36, 48], hair)
+    line(d, [(27, 37), (29, 45)], c.hair_mid)
+    line(d, [(35, 37), (34, 46)], c.hair_mid)
+    line(d, [(31, 41), (31, 49)], c.hair_light)
     # staff
     rect(d, [53, 20, 57, 92], c.wood_dark)
     rect(d, [53, 20, 54, 92], c.wood_light)
     ellipse(d, [50, 14, 60, 24], c.iron_light)
     ellipse(d, [52, 16, 58, 22], c.iron_base)
-    # boots
+    # boots with soles
     rect(d, [14, 90, 29, 94], c.wood_dark)
     rect(d, [35, 90, 50, 94], c.wood_dark)
     rect(d, [14, 90, 29, 91], c.wood_base)
     rect(d, [35, 90, 50, 91], c.wood_base)
+    line(d, [(14, 94), (29, 94)], c.wood_outline)
+    line(d, [(35, 94), (50, 94)], c.wood_outline)
     # outline: a one-pixel contour in the local darkest step
     mask = alpha_of(im)
     edge = mask.filter(ImageFilter.FIND_EDGES)
@@ -1193,6 +1529,8 @@ def compose_scene(look: Look, *, pell: Image.Image | None = None,
     hearth, fx0, fy0, ffeet = draw_hearth(c)
     tree = draw_tree(c, look)
     boat = draw_boat(c)
+    mooring = draw_mooring(c)
+    cart = draw_cart(c)
     bench = draw_bench(c)
     barrel = draw_barrel(c)
     crate = draw_crate(c)
@@ -1200,7 +1538,7 @@ def compose_scene(look: Look, *, pell: Image.Image | None = None,
     elder_s = draw_elder(c, look) if elder else None
 
     # the far-bank oak is a canopy only, overhanging the water
-    far_tree = draw_tree(c, look, 200, 150, seed=71).crop((0, 0, 200, 132))
+    far_tree = draw_tree(c, look, 200, 150, seed=71).crop((0, 0, 200, 88))
     far_pos = (-54, -30)
 
     # reflections on the water: the far tree and the boat, flipped, cut at the shore,
@@ -1239,6 +1577,7 @@ def compose_scene(look: Look, *, pell: Image.Image | None = None,
         (bench, 24, 470, 496, 20, True),
         (barrel, 92, 442, 472, 28, True),
         (crate, 116, 478, 506, 26, True),
+        (cart, 148, 698, 738, 38, True),
     ]
     if elder_s is not None:
         casters.append((elder_s, 208, 572, 668, 96, True))
@@ -1252,7 +1591,7 @@ def compose_scene(look: Look, *, pell: Image.Image | None = None,
         sm = shadow_mask(m, feet, 0.92, 0.36, cap)
         union = ImageChops.lighter(union, sm)
     wm = Image.new("L", (W, H), 0)
-    ImageDraw.Draw(wm).ellipse([wx0 + 20, wy0 + 108, wx0 + 172, wy0 + 142], fill=255)
+    ImageDraw.Draw(wm).ellipse([wx0 + 20, wfeet - 20, wx0 + 172, wfeet + 14], fill=255)
     union = ImageChops.lighter(union, wm)
     if bird:
         # a body above the ground: its shadow stays on the ground
@@ -1298,12 +1637,17 @@ def compose_scene(look: Look, *, pell: Image.Image | None = None,
         (bench, 24, 470),
         (barrel, 92, 442),
         (crate, 116, 478),
+        (cart, 148, 698),
         (lamp, lx0, ly0),
         (hearth, fx0, fy0),
     ]:
         paste(ground, spr, x, y)
     if far_tree:
         paste(ground, far_tree, far_pos[0], far_pos[1])
+    # the mooring rope from the post to the boat's stern
+    line(ImageDraw.Draw(ground), [(240, 174), (244, 148), (248, 120)], c.wood_light, 1)
+    line(ImageDraw.Draw(ground), [(239, 174), (243, 149), (247, 121)], c.wood_dark, 1)
+    paste(ground, mooring, 228, 164)
     paste(ground, boat, 248, 104)
     if elder_s is not None:
         paste(ground, body_light(elder_s, stepper, protect=frozenset({c.wood_outline})), 208, 572)
