@@ -1,11 +1,12 @@
-import type { State } from './state';
+import type { PublicState, State } from './state';
+
+export type { PublicState };
 
 /**
  * The wire's merge patch (NEXT 18 a): the server turns one step into a patch of the public state, and the
  * phone turns it back into a state. It lives in the kernel because both ends apply the same rule, and it is
  * pure and depends on nothing but the state's own shape.
  */
-export type PublicState = Omit<State, 'seed'>;
 export type MergePatch =
   | null
   | boolean

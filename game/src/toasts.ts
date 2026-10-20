@@ -12,7 +12,7 @@
  * A dialogue box that covers the toasts (on a phone, where they sit low) holds
  * them: while it is open nothing new goes up and the ones up stand still.
  */
-import type { Bundle, GameEvent, State } from '@game/kernel';
+import type { Bundle, GameEvent, PublicState } from '@game/kernel';
 import { describe } from './text';
 
 export type Tone = 'good' | 'bad' | 'info';
@@ -54,7 +54,7 @@ export function urgent(t: Toast): boolean {
  * The toasts of one batch of events. A fall says it all in its one box: the calls to run from
  * the hunt that ended stay down. A task that opens and closes in the same step is told once, as done.
  */
-export function eventToasts(b: Bundle, s: State, events: readonly GameEvent[]): Toast[] {
+export function eventToasts(b: Bundle, s: PublicState, events: readonly GameEvent[]): Toast[] {
   const fell = events.some((e) => e.e === 'fall');
   const lines: Line[] = [];
   events.forEach((e, i) => {

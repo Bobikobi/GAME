@@ -171,6 +171,9 @@ export interface State {
   ledger: { minted: number; burned: number };
 }
 
+/** The state as a screen or a reply sees it: the seed is the server's alone (kernel-review R4). */
+export type PublicState = Omit<State, 'seed'>;
+
 export function newState(bundle: Bundle, seed: number): State {
   const attrs = Object.fromEntries(ATTRIBUTES.map((a) => [a, 0])) as Record<Attribute, number>;
   return {
@@ -222,25 +225,25 @@ export function newState(bundle: Bundle, seed: number): State {
 
 // ------------------------------------------------------------ derived numbers
 
-export function satietyCap(bundle: Bundle, state: State): number {
+export function satietyCap(bundle: Bundle, state: PublicState): number {
   return (bundle.params.satiety_cap + bundle.params.per_point.stamina * state.player.attrs.stamina) * 1000;
 }
 
 /** Satiety at a tick: it drains with play time and stops at zero. */
-export function satietyAt(bundle: Bundle, state: State, tick: number): number {
+export function satietyAt(bundle: Bundle, state: PublicState, tick: number): number {
   const p = state.player;
   const elapsed = Math.max(0, tick - p.satietyAt);
   return Math.max(0, p.satiety - mulDiv(elapsed, bundle.params.satiety_drain_per_min, 60_000));
 }
 
-export function bagUsed(state: State): number {
+export function bagUsed(state: PublicState): number {
   let n = 0;
   for (const k of Object.keys(state.player.bag)) n += state.player.bag[k] ?? 0;
   return n;
 }
 
 /** Whether a camp part stands, itself or under an upgrade built over it. */
-export function campBuilt(bundle: Bundle, state: State, campId: string): boolean {
+export function campBuilt(bundle: Bundle, state: PublicState, campId: string): boolean {
   for (const id of state.player.camp) {
     let cur: string | undefined = id;
     for (let guard = 0; cur !== undefined && guard < 20; guard++) {
@@ -256,13 +259,13 @@ export function senseReach(bundle: Bundle, senses: number): number {
   return 2 + bundle.params.per_point.senses * senses;
 }
 
-export function bagCapacity(bundle: Bundle, state: State): number {
+export function bagCapacity(bundle: Bundle, state: PublicState): number {
   let cap = bundle.params.bag_base + bundle.params.per_point.carry * state.player.attrs.carry;
   for (const id of state.player.camp) cap += bundle.camps[id]?.bag_bonus ?? 0;
   return cap;
 }
 
-export function professionLevel(bundle: Bundle, state: State, professionId: string): number {
+export function professionLevel(bundle: Bundle, state: PublicState, professionId: string): number {
   const prof = bundle.professions[professionId];
   if (!prof) return 1;
   const xp = state.player.xp[professionId] ?? 0;
@@ -271,7 +274,7 @@ export function professionLevel(bundle: Bundle, state: State, professionId: stri
   return level;
 }
 
-export function verbLevel(bundle: Bundle, state: State, verb: Verb): number {
+export function verbLevel(bundle: Bundle, state: PublicState, verb: Verb): number {
   return professionLevel(bundle, state, bundle.verbs[verb]);
 }
 
@@ -281,25 +284,25 @@ export function nodeVerb(resource: { tool?: string }): Verb {
 }
 
 /** Character level: one more for every profession level gained. */
-export function characterLevel(bundle: Bundle, state: State): number {
+export function characterLevel(bundle: Bundle, state: PublicState): number {
   let level = 1;
   for (const id of Object.keys(bundle.professions)) level += professionLevel(bundle, state, id) - 1;
   return level;
 }
 
-export function skillPoints(bundle: Bundle, state: State): number {
+export function skillPoints(bundle: Bundle, state: PublicState): number {
   return characterLevel(bundle, state) - 1 - state.player.spent;
 }
 
 /** Rule R9: the one clamp on every rate multiplier, by character level. */
-export function powerCap(bundle: Bundle, state: State): number {
+export function powerCap(bundle: Bundle, state: PublicState): number {
   const caps = bundle.params.power_cap_permille;
   const i = clamp(characterLevel(bundle, state), 1, caps.length) - 1;
   return caps[i] ?? 1000;
 }
 
 /** Sum of a technique effect the player has unlocked through profession levels; `only` counts one profession's. */
-export function techniqueValue(bundle: Bundle, state: State, effect: string, only?: string): number {
+export function techniqueValue(bundle: Bundle, state: PublicState, effect: string, only?: string): number {
   let total = 0;
   for (const id of Object.keys(bundle.professions).sort()) {
     if (only !== undefined && id !== only) continue;
@@ -327,14 +330,14 @@ export function setPieces(bundle: Bundle): Record<string, string[]> {
 }
 
 /** Whether every piece of a set is worn on the work layer. */
-export function setComplete(bundle: Bundle, state: State, set: string): boolean {
+export function setComplete(bundle: Bundle, state: PublicState, set: string): boolean {
   const pieces = setPieces(bundle)[set] ?? [];
   const worn = Object.values(state.player.worn);
   return pieces.length > 1 && pieces.every((id) => worn.includes(id));
 }
 
 /** Sum of an effect from the work clothes: each worn piece once, and a full set a little more (rounded down). */
-export function wornValue(bundle: Bundle, state: State, effect: string): number {
+export function wornValue(bundle: Bundle, state: PublicState, effect: string): number {
   let total = 0;
   const bySet: Record<string, number> = {};
   for (const slot of WEAR_SLOTS) {
@@ -359,7 +362,7 @@ export function wornValue(bundle: Bundle, state: State, effect: string): number 
  * technique helps the recipes of its own profession only. Every caller still
  * clamps the rate it feeds under the power cap (rule R9).
  */
-export function effectValue(bundle: Bundle, state: State, effect: string, profession?: string): number {
+export function effectValue(bundle: Bundle, state: PublicState, effect: string, profession?: string): number {
   return techniqueValue(bundle, state, effect, profession) + wornValue(bundle, state, effect);
 }
 
@@ -368,7 +371,7 @@ export function effectValue(bundle: Bundle, state: State, effect: string, profes
  * enough units of, or that no longer fits its place. `only` looks at one item.
  * Returns what came off, so the caller can tell the player.
  */
-export function fitWorn(bundle: Bundle, state: State, only?: string): { item: string; slot: WearSlot; look: boolean }[] {
+export function fitWorn(bundle: Bundle, state: PublicState, only?: string): { item: string; slot: WearSlot; look: boolean }[] {
   const p = state.player;
   const off: { item: string; slot: WearSlot; look: boolean }[] = [];
   for (const look of [false, true]) {
@@ -405,17 +408,17 @@ export function isNight(bundle: Bundle, tick: number): boolean {
 }
 
 /** The tended fire an id names: a map fire by its prop id, or the player's own by `OWN_FIRE`. Saves from before the fields existed read as none. */
-export function fireOf(state: State, id: string): FireState | undefined {
+export function fireOf(state: PublicState, id: string): FireState | undefined {
   return id === OWN_FIRE ? (state.player.own ?? undefined) : state.player.fires?.[id];
 }
 
 /** Whether a tended fire still burns at this game tick. */
-export function fireBurns(state: State, id: string, tick: number): boolean {
+export function fireBurns(state: PublicState, id: string, tick: number): boolean {
   return (fireOf(state, id)?.until ?? 0) > tick;
 }
 
 /** Game milliseconds one log lasts in a tended fire: `fire.log_ms`, and for the player's own fire what it was kindled with. */
-export function logMsOf(bundle: Bundle, state: State, id: string): number {
+export function logMsOf(bundle: Bundle, state: PublicState, id: string): number {
   return id === OWN_FIRE ? (state.player.own?.log ?? bundle.params.fire.log_ms) : bundle.params.fire.log_ms;
 }
 
@@ -432,7 +435,7 @@ export function burnsAsWood(bundle: Bundle, itemId: string): boolean {
  * Before dawn it does not hold, however much wood the fire has; by day it holds until the next dusk,
  * relit or not (DECISIONS.md, 2026-10-16: the vigil closes at dawn).
  */
-export function tendHolds(bundle: Bundle, state: State, id: string, tick: number): boolean {
+export function tendHolds(bundle: Bundle, state: PublicState, id: string, tick: number): boolean {
   const fire = fireOf(state, id);
   // the player's own fire keeps a vigil only while it stands outside the town
   if (id === OWN_FIRE && state.player.own !== null && tagAt(bundle.map, state.player.own.at[0], state.player.own.at[1]) === 'town') return false;
@@ -446,7 +449,7 @@ export function tendHolds(bundle: Bundle, state: State, id: string, tick: number
  * out or a whole log still fits under its cap (`fire.cap` logs ahead of the tick), else once
  * enough of its wood has burned down. A log goes in whole or not at all, so no feed wastes wood.
  */
-export function nextLogAt(bundle: Bundle, state: State, id: string, tick: number): number {
+export function nextLogAt(bundle: Bundle, state: PublicState, id: string, tick: number): number {
   const until = fireOf(state, id)?.until ?? tick;
   return Math.max(tick, until - (bundle.params.fire.cap - 1) * logMsOf(bundle, state, id));
 }

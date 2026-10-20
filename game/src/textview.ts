@@ -11,11 +11,11 @@
  *
  * Under the grid one line gives the hour, the health, the hunt and where each awake predator looks.
  */
-import { type Bundle, type State, type Tile, hazardsOf, makeWalkable, minuteOfDay, npcTile, predatorAt, headingOf, sees, windowOpen } from '@game/kernel';
+import { type Bundle, type Tile, hazardsOf, makeWalkable, minuteOfDay, npcTile, predatorAt, headingOf, sees, windowOpen, type PublicState } from '@game/kernel';
 
 /** What a moment of play is made of: the kernel's state, the clock, and the tile the client has the player on. */
 export interface Moment {
-  state: State;
+  state: PublicState;
   tick: number;
   pos: readonly [number, number];
 }
