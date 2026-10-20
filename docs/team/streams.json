@@ -58,6 +58,13 @@
       "owner": "the art session"
     },
     {
+      "id": "engine-light",
+      "title": "The light layer: one engine module both doors call, with the decided shadows and night inside it and the hour table in params",
+      "plan": ["docs/design/ART_SYSTEM.md section 2, step 2 of its order", "DECISIONS 2026-10-20 the art system", "STYLE sections 4 and 5", "docs/team/NEXT.md section 15"],
+      "branches": [],
+      "owner": null
+    },
+    {
       "id": "hook",
       "title": "The opening's hook: the receding mist, the bridge's moment, the returners' stone",
       "plan": ["DECISIONS 2026-10-10 the hook is the receding mist", "DECISIONS 2026-10-17 the opening's renewal", "DECISIONS 2026-10-18 the hook's stills", "docs/design/OPENING_REVIEW.md", "docs/team/NEXT.md section 16"],
