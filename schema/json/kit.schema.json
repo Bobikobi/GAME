@@ -517,6 +517,75 @@
             "type": "string"
           }
         },
+        "ramps": {
+          "maxItems": 4,
+          "description": "The ramps this kit draws with (ART_SYSTEM section 3). A sprite that names none uses the core palette only, so every kit written before this field stays valid.",
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "description": "A material or region ramp, declared by the kit that draws with it.",
+            "type": "object",
+            "required": [
+              "id",
+              "steps"
+            ],
+            "properties": {
+              "id": {
+                "pattern": "^[a-z0-9][a-z0-9-]*$",
+                "maxLength": 32,
+                "description": "Names the ramp so a sprite of this kit can cite it, for example \"meadow\" or \"wet-stone\".",
+                "type": "string"
+              },
+              "for": {
+                "anyOf": [
+                  {
+                    "const": "ground",
+                    "type": "string"
+                  },
+                  {
+                    "const": "vegetation",
+                    "type": "string"
+                  },
+                  {
+                    "const": "stone",
+                    "type": "string"
+                  },
+                  {
+                    "const": "wood",
+                    "type": "string"
+                  },
+                  {
+                    "const": "water",
+                    "type": "string"
+                  },
+                  {
+                    "const": "cloth",
+                    "type": "string"
+                  },
+                  {
+                    "const": "skin",
+                    "type": "string"
+                  },
+                  {
+                    "const": "light",
+                    "type": "string"
+                  }
+                ]
+              },
+              "steps": {
+                "minItems": 5,
+                "maxItems": 6,
+                "description": "Five or six steps from dark to light, the hue moving between them: a ramp that only changes value is not a ramp and the check says so.",
+                "type": "array",
+                "items": {
+                  "pattern": "^#[0-9a-f]{6}$",
+                  "description": "One step of the ramp, dark to light.",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
         "sprites": {
           "description": "Sprite name (group/name) to its PNG. Groups: tiles, items, chars, props, ui.",
           "type": "object",
@@ -552,6 +621,17 @@
                   "maximum": 16,
                   "description": "Animation frames laid side by side. Default 1.",
                   "type": "integer"
+                },
+                "ramps": {
+                  "minItems": 1,
+                  "maxItems": 4,
+                  "description": "The ramps of this kit the sprite draws in, in order: the first is the one its outline comes from. A sprite that names none uses the core palette only.",
+                  "type": "array",
+                  "items": {
+                    "pattern": "^[a-z0-9][a-z0-9-]*$",
+                    "maxLength": 32,
+                    "type": "string"
+                  }
                 },
                 "density": {
                   "description": "Art pixels per tile side: 1 means 16 per tile (the 16x16 grid, the default), 4 means 64 per tile (the 64x64 grid, the standard for new art). The size rules of w and h follow it.",

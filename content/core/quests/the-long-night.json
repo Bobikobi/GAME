@@ -10,7 +10,7 @@
     "type": "tending",
     "summary": "My hearth went cold the year the bells began. Does a fire kept by hand hold through one whole night?",
     "requires": [
-      "core/a-coin-for-maru"
+      "core/three-fruits"
     ],
     "steps": [
       {
@@ -34,6 +34,12 @@
     "reward": {
       "rep": 15,
       "gold_mg": 20000,
+      "items": [
+        {
+          "item": "core/bandage",
+          "qty": 1
+        }
+      ],
       "recipes": [
         "core/bandage"
       ]

@@ -9,7 +9,7 @@
     {
       "id": "core/stone-idol",
       "name": "Stone idol",
-      "description": "Small, heavy, and older than the town.",
+      "description": "Small and heavy, its carving worn almost smooth.",
       "kind": "treasure",
       "rarity": "rare",
       "class": "relic",

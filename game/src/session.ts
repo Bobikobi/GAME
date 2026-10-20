@@ -13,6 +13,7 @@ import {
   KERNEL_VERSION,
   type State,
   appearSlots,
+  appears,
   fitWorn,
   hourOf,
   makeWalkable,
@@ -171,8 +172,10 @@ export class Session {
     danger.falls ??= 0;
     danger.movedAt ??= state.tick;
     // a save from before tending (P-13a) has no fire ledger
-    const tending = state.player as Partial<Pick<State['player'], 'fires'>>;
+    const tending = state.player as Partial<Pick<State['player'], 'fires' | 'own'>>;
     tending.fires ??= {};
+    // and one from before kernel 0.12 has no fire of the player's own
+    tending.own ??= null;
     // a save from before expeditions (P-14a) has no expedition progress
     const expedition = state.player as Partial<Pick<State['player'], 'expeditions'>>;
     expedition.expeditions ??= {};
@@ -301,6 +304,11 @@ export class Session {
         return;
       }
     }
+  }
+
+  /** A node a reaction raises stands when the kernel's own draw says so: this game holds its seed. */
+  appears(id: string): boolean {
+    return appears(this.bundle, this.state, id, this.tick);
   }
 
   /** Ask the kernel without changing anything: would this action be accepted? */

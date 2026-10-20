@@ -52,6 +52,19 @@
         "say": [
           "My hearth remembers your night. So does the mist, I think."
         ]
+      },
+      {
+        "when": {
+          "done": [
+            "core/a-coin-for-maru"
+          ],
+          "has": [
+            "core/herb"
+          ]
+        },
+        "say": [
+          "Two herbs and a fire. That is all my mother's tea ever asked."
+        ]
       }
     ],
     "topics": [
@@ -68,7 +81,7 @@
         "lines": [
           "South-east, past the broken arch. Houses, a hall, a garden, all fallen in.",
           "They left in a hurry and left things behind. A trowel finds them.",
-          "Two lanterns stand there, and a marked stone by the river. I read it once."
+          "A lantern stands at their east edge, one by the town. I read the stones once."
         ]
       },
       {

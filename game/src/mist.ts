@@ -8,7 +8,7 @@
  * 4x4 dither on game pixels (the world's own grid, not the screen's), and the lighter patches and the
  * shade are a second, coarser pattern in the same three colours.
  */
-import { type Bundle, type State, findSlot } from '@game/kernel';
+import { type Bundle, type PublicState, findSlot } from '@game/kernel';
 
 /** A place the mist leaves clear: a centre in tiles and a radius in tiles. */
 export interface Clear {
@@ -33,7 +33,7 @@ const POCKET = MIST.clear;
 const POCKET_GROWN = 7;
 
 /** Whether the character's own first task is done: a quest offered to their start alone, closed (NEXT 16 c). */
-export function firstTaskDone(b: Bundle, s: State): boolean {
+export function firstTaskDone(b: Bundle, s: PublicState): boolean {
   return Object.entries(b.quests).some(([id, q]) => q.starter === s.player.starter && s.player.quests[id] === 'done');
 }
 
@@ -41,7 +41,7 @@ export function firstTaskDone(b: Bundle, s: State): boolean {
  * The mist's clear places for a save, a pure function of it (so a reload keeps them): the starter's wake,
  * clear for `pocket` tiles and for `pocket_grown` once the first task is done.
  */
-export function mistClears(b: Bundle, s: State): Clear[] {
+export function mistClears(b: Bundle, s: PublicState): Clear[] {
   const starter = b.starters[s.player.starter];
   const wake = starter?.wake ?? b.map.spawn;
   const r = firstTaskDone(b, s) ? (starter?.pocket_grown ?? POCKET_GROWN) : (starter?.pocket ?? POCKET);

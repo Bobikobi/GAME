@@ -9,7 +9,7 @@
     {
       "id": "core/keystone",
       "name": "Keystone",
-      "description": "The wedge at the top of the bridge's arch. It fell into the shallows long ago.",
+      "description": "The wedge at the top of the bridge's arch, wet from the shallows.",
       "kind": "material",
       "rarity": "common",
       "class": "stone",

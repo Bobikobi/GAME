@@ -252,3 +252,28 @@ With these the e2e is timed again. If a person still waits over 90 s before dusk
 The agent's own, in one content pull request with the owner's answers: R4 (one herb as a `find`, and a line from Maru, when the tea arrives, that the herbs in the bag are its two), R7 and R8 (each line says what is there now, or gets its speaker), except the long night's lines, which NEXT 21 b rewrites.
 
 Owner questions: (1) the three changes of the order, as one; (2) one bandage with the long night's recipe, so it is felt at once; (3) a design entry for the lasting starts, with one cue per start inside the errands that exist (for example, the explorer's senses show the soft earth at the hill lantern before dusk).
+
+### 9.5 What was built, 19.10
+
+The owner's word on 19.10, after this review: "you can change the quests further, rewrite them or improve them, if you see fit". Taken as yes to questions 1 and 2 and a free hand on the words; question 3 (the lasting starts) still waits. Built in one content pull request on `develop` 7c9c0464, inside the step kinds that exist and the ladder's rungs.
+
+| Play clock | What opens now |
+|---|---|
+| about 50 s | The town. Maru offers his bells, Pell her herbs: one task each. |
+| after the bells | Maru's coin, which the trowel he pays digs, and the long night, in the afternoon: a fire lit before dark and kept to dawn. |
+| after the coin | The arch, alone. |
+| after the arch | The tangle (Maru: "The way runs past the ruins. After dark, keep wide of them."), Pell's south bank, the night's fire, and Pell's topic on the bells once the threshold is reached. |
+
+| # | Built | How |
+|---|---|---|
+| R1, R2 | Yes | `a-coin-for-maru` and `the-long-night` require `three-fruits`; `the-tangle` requires `the-night-arch`; `the-south-bank` requires `herbs-for-pell` and `the-night-arch`. |
+| R3 | By the order | The vigil is offered after the bells, hours before dark. Its lines are NEXT 21 b's, which should say "before dark". |
+| R4 | Part | The step stays a bring of two herbs: the check refuses a `find` of an item that grows in more than one place (`tools/src/assemble.ts`, G2), and a done line in the first 15 s would be a second box (the ladder's 0:00-0:15). One pick yields two herbs, so the count is one motion. Built: Maru's line once the tea is learned and herbs are in the bag, "Two herbs and a fire. That is all my mother's tea ever asked." |
+| R5 | Waits | A design entry for the lasting starts (the owner's 10.10 answer 1). |
+| R6 | Half | The long night pays one bandage beside its recipe, so "Take this." gives a thing. The idol now carries readings: Maru's mother "kept it from the mist", Pell has heard old things sleep or wake, and it sells. A tangle reward that changes what the player can do waits for a pitch. |
+| R7 | Yes | The six lines, and two more found while building: the idol "older than the town" and the slid bank's hint "slid in the night". Each says what is there now, or names Maru as its speaker. The fallback waking line in `game/src/ui/title.ts` too. |
+| R8 | Yes | Maru: "A lantern stands at their east edge, one by the town." The berries: "from dawn until dark". Pell: "Nobody has sold me one yet." The long night's line is NEXT 21 b's. |
+
+Added for the world (STORY section 3, S4): after the threshold, Pell's topic "About the bells" repeats the three beliefs as travellers' rumours, with her price on all three ("no charge"); Maru's warning about the ruins after dark now says how to keep it on the way to the tangle (the ruins' wolf reaches 4 tiles from 36,25; the meadow at x 31 and x 45 and the grove pass clear of it).
+
+Measured: `pnpm quests` shows at most 3 tasks open at once for the digger and the explorer (were 5) and 4 for the forager (were 6), and only the forager's two pairs of R4, as before; `pnpm check` 72 files, 0 errors (its 28 warnings are the map's richness, unchanged). A person playing the reordered day is still the evidence owed (section 8).

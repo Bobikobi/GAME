@@ -6,7 +6,7 @@
  * costs less than a whole fall. Nothing here names an item: a hazard is only
  * escaped (G34), and the schema has no field to answer it with.
  */
-import { type Bundle, type Hazard, type Rect, type Tile, bitesAfter, findSlot, hazardsOf, inRect, isSafeGround, makeWalkable } from '@game/kernel';
+import { type Bundle, type Hazard, type Rect, type Tile, bitesAfter, findSlot, hazardsOf, inRect, isSafeGround, makeWalkable, watchOf } from '@game/kernel';
 import type { Issue } from './load';
 
 const STEPS: readonly (readonly [number, number])[] = [
@@ -17,25 +17,6 @@ const STEPS: readonly (readonly [number, number])[] = [
 ];
 
 const tileKey = ([x, y]: readonly [number, number]): string => `${x},${y}`;
-
-/** Every map tile in the Chebyshev watch of a predator's round. */
-export function watchOf(b: Bundle, hazard: Hazard): readonly Tile[] {
-  if (!hazard.round) return [];
-  const watched = new Set<string>();
-  const tiles: Tile[] = [];
-  for (const [rx, ry] of hazard.round) {
-    for (let y = Math.max(0, ry - hazard.eyes); y <= Math.min(b.map.height - 1, ry + hazard.eyes); y++) {
-      for (let x = Math.max(0, rx - hazard.eyes); x <= Math.min(b.map.width - 1, rx + hazard.eyes); x++) {
-        const at: Tile = [x, y];
-        const key = tileKey(at);
-        if (watched.has(key)) continue;
-        watched.add(key);
-        tiles.push(at);
-      }
-    }
-  }
-  return tiles;
-}
 
 function reachOf(b: Bundle, hazard: Hazard): Tile[] {
   const tiles: Tile[] = [];

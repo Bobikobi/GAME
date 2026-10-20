@@ -12,7 +12,7 @@ import type { WeatherName } from '@game/schema';
 import type { Bundle, Instance, ReactionDef, ResourceDef } from './bundle';
 import { idiv } from './num';
 import { drawBasisPoints } from './rng';
-import { type State, hourOf, isNight, senseReach, techniqueValue } from './state';
+import { type State, hourOf, isNight, senseReach, techniqueValue , type PublicState } from './state';
 import { spotOpen } from './step';
 import { tagAt } from './world';
 
@@ -140,7 +140,7 @@ export function anchorsOf(b: Bundle, r: ReactionDef): Anchor[] {
 }
 
 /** How far the player sees a hidden find: the senses, and two more tiles with the second-hint technique. */
-export function hintReach(b: Bundle, s: State): number {
+export function hintReach(b: Bundle, s: PublicState): number {
   return senseReach(b, s.player.attrs.senses) + (techniqueValue(b, s, 'second_hint') > 0 ? 2 : 0);
 }
 
@@ -163,7 +163,9 @@ export const WEATHER_ODDS: readonly (readonly [WeatherName, number])[] = [
  * The weather over a region on a game day: a pure function of the world's seed, the region and the
  * day, and of nothing of the player's. In the shared world everyone in a region sees one sky, as
  * large online games keep one weather per zone, and a replay here or on the server gives the same
- * day. The days are drawn apart, so tomorrow's sky is known today (the morning's forecast).
+ * day. The days are drawn apart, so tomorrow's sky is known today (the morning's forecast). The
+ * phone never computes it: the seed is the server's, which sends the day's sky with its reply, as it
+ * sends the appear nodes that stand (DECISIONS 2026-10-20, a drawn outcome is the server's to say).
  */
 export function weatherOf(seed: number, region: string, day: number): WeatherName {
   let roll = drawBasisPoints(seed, `weather@${region}`, day);

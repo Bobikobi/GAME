@@ -28,7 +28,16 @@ export interface Assembled {
   bundle: Bundle | undefined;
   issues: Issue[];
   /** kit id -> folder (absolute) and sprite list, for the PNG checks and the copy */
-  kits: Record<string, { dir: string; rel: string; sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4 }>; palette?: string[] }>;
+  kits: Record<
+    string,
+    {
+      dir: string;
+      rel: string;
+      sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4; ramps?: string[] }>;
+      palette?: string[];
+      ramps?: { id: string; for?: string; steps: string[] }[];
+    }
+  >;
   /** record id -> the file it came from */
   origin: Record<string, string>;
 }
@@ -117,11 +126,14 @@ export function flattenParams(p: ParamsBody): Params {
     satiety_drain_per_min: p.satiety_drain_per_min.value,
     day_length_ms: p.day_length_ms.value,
     walk_step_ms: p.walk_step_ms.value,
+    move_reach_max: p.move_reach_max?.value ?? 32,
     hp_low_pct: p.hp_low_pct.value,
     fire: {
       cap: p.fire.cap.value,
       log_ms: p.fire.log_ms.value,
       warn_min: p.fire.warn_min.value,
+      safe_tiles: p.fire.safe_tiles.value,
+      burn_pct_per_d: p.fire.burn_pct_per_d.value,
     },
     hazard: {
       predator: {
@@ -233,9 +245,20 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
         dir: dirname(f.abs),
         rel: toRepoPath(dirname(f.abs)),
         sprites: Object.fromEntries(
-          Object.entries(d.kit.sprites).map(([name, s]) => [name, { file: s.file, w: s.w, h: s.h, frames: s.frames ?? 1, density: s.density ?? 1 }]),
+          Object.entries(d.kit.sprites).map(([name, s]) => [
+            name,
+            {
+              file: s.file,
+              w: s.w,
+              h: s.h,
+              frames: s.frames ?? 1,
+              density: s.density ?? 1,
+              ...(s.ramps ? { ramps: s.ramps } : {}),
+            },
+          ]),
         ),
         ...(d.kit.palette ? { palette: d.kit.palette } : {}),
+        ...(d.kit.ramps ? { ramps: d.kit.ramps } : {}),
       };
     }
   }

@@ -8,12 +8,12 @@
   "quest": {
     "starter": "core/digger",
     "type": "discovery",
-    "summary": "The bank slid in the night, south of the bridge. Dig in the turned earth with your trowel.",
+    "summary": "The bank south of the bridge has slid, and its earth lies loose. Dig in it with your trowel.",
     "steps": [
       {
         "kind": "find",
         "item": "core/axe",
-        "clue": "The turned earth lies south of the bridge, on the near bank. Your trowel opens it."
+        "clue": "The loose earth lies south of the bridge, on the near bank. Your trowel opens it."
       }
     ],
     "reward": {
