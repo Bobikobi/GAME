@@ -81,6 +81,29 @@ The 30% dusk shade is the still's number so the pool's steps read at 19:00. Toda
 | Flowers and clover | fourteen flower clusters and eight clover clusters on the open green |
 | No straight ground border | the shore, the grass edge, the forecourt, every dirt patch and the path are ragged or stippled; the only straight lines are the water's depth bands |
 
+### The stepping-stone library
+
+The first green carried seven stones. The owner asked for more and for random sizes, and for a library to choose from before the frames change. The references were the genre's stepping stones rather than its paving: Stardew Valley's Stepping Stone Path (rounded, irregular, several sizes, small pebbles between), Graveyard Keeper's worn edges and moss, and continuous path tilesets, which are the paved look the owner rejected. The 18 options below are original shapes drawn by the script; no outside art is copied.
+
+| Family | Shape | S | M | L |
+|---|---|---|---|---|
+| oval | a rounded pebble, light top, dark rim | 11x7 | 17x10 | 25x14 |
+| slab | an angular flagstone, one chipped edge | 13x8 | 19x11 | 28x15 |
+| split | a slab with a crack and a notch | 12x8 | 18x11 | 27x15 |
+| pair | a large stone and a small one | 16x9 | 22x11 | 31x15 |
+| moss | a slab with grass on one edge | 12x8 | 18x11 | 26x14 |
+| pebbles | a cluster of three or four small stones | 12x7 | 16x9 | 22x11 |
+
+The 18 1x stones and the manifest are in `tools/stills/stones/`; the sheets are [2026-10-20-stones-options.png](2026-10-20-stones-options.png) (the 18, shown at 2x) and [2026-10-20-stones-recipes.png](2026-10-20-stones-recipes.png) (three mixes on the same path). The recipes, with their full 284 px path counts:
+
+| Recipe | Families | On the path | Sizes | Gap |
+|---|---|---|---|---|
+| A Rounded | oval 60%, pair 20%, pebbles 20% | 12 + 4 loose = 16 | S 30, M 45, L 25 | 10 to 18 px |
+| B Angular | slab 55%, split 25%, moss 20% | 11 + 3 loose = 14 | S 25, M 45, L 30 | 12 to 20 px |
+| C Mixed | oval 35%, slab 30%, pair 15%, moss 10%, pebbles 10% | 14 + 6 loose = 20 | S 35, M 45, L 20 | 8 to 16 px |
+
+**The proposal is A.** It doubles the stone count without turning the trail into a paved line: 16 stones on the 284 px path against the first seven, sizes 11 to 25 px, two or three of them paired or in a small cluster, and the rest of the trail still dirt. [2026-10-20-stones-proposal.png](2026-10-20-stones-proposal.png) is the L2 scene with A laid on it; the ladder frames still carry the first seven until the owner picks.
+
 ### Shadows, depth cues and motion
 
 | What | Number |
@@ -166,7 +189,13 @@ The composing script is `tools/stills/compose.py`. One command re-makes every fr
 python3 tools/stills/compose.py
 ```
 
-It reads the three checked-in Pell sprites, writes the eight files into this folder, and prints, for each still, its size and `in the declared ramps`:
+It reads the three checked-in Pell sprites, writes the eight files into this folder, and prints, for each still, its size and `in the declared ramps`. The library has its own command, which writes the 18 stones and the two sheets and checks both sheets the same way:
+
+```sh
+python3 tools/stills/stones.py
+```
+
+`python3 tools/stills/compose.py --proposal` also writes `2026-10-20-stones-proposal.png`, the L2 scene with recipe A. The nine stills and both sheets print `in the declared ramps`; the default `compose.py` run keeps the seven-stone ladder unchanged.
 
 ```text
 2026-10-20-art-L0.png: 1170x2532, in the declared ramps
@@ -190,4 +219,4 @@ Pillow only, no network and no model call. Each frame is composed on the 390x844
 
 ## The pick
 
-Two picks from the same batch: which of L0 to L3 becomes the direction, and which of A, B or C is Pell's proportion and colour. The recommendation is in the pull request's question.
+Two picks from the batch: which of L0 to L3 becomes the direction, and which of A, B or C is Pell's proportion and colour. The recommendation is in the pull request's question. The stone mix is a detail inside the direction: the proposal is recipe A; B and C are on the recipe sheet, and the pick's record changes the path in a later commit.
