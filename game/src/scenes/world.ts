@@ -358,7 +358,8 @@ export class WorldScene extends Phaser.Scene {
   private attractT = 0;
   private night = 0;
   /** the hour table from params, read once: the colour the valley is washed in, by the clock */
-  private readonly lightTable = tableOf(this.b.params.light?.keys ?? []);
+  /** the hour table, read once the bundle is here: a field initializer would run before it */
+  private lightTable: ReturnType<typeof tableOf> = [];
   private wasNight: boolean | undefined;
   private nextEyes = 0;
   private nextWhisper = 0;
@@ -397,6 +398,7 @@ export class WorldScene extends Phaser.Scene {
 
   create(): void {
     this.b = app.bundle;
+    this.lightTable = tableOf(this.b.params.light?.keys ?? []);
     this.walkable = makeWalkable(this.b);
     this.labels = document.createElement('div');
     this.labels.className = 'world-labels';
