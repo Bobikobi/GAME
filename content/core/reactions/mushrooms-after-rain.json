@@ -1,0 +1,25 @@
+{
+  "$schema": "../../../schema/json/reaction.schema.json",
+  "format": 1,
+  "type": "reaction",
+  "id": "core/mushrooms-after-rain",
+  "title": "Mushrooms by a grove log in the rain",
+  "creator": "core",
+  "reaction": {
+    "on": { "resource": "core/fallen-logs" },
+    "when": { "weather": "rain", "on_tag": "grove" },
+    "then": {
+      "appear": {
+        "output": "core/mushroom",
+        "yield": 2,
+        "active_ms": 3500,
+        "respawn_ms": 90000,
+        "level": 2,
+        "tool": "basket",
+        "game": "pick",
+        "sprite": "core/base-kit:props/mushroom_patch",
+        "at": "below"
+      }
+    }
+  }
+}
