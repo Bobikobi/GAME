@@ -55,6 +55,7 @@ import {
   slotsFor,
   tendHolds,
   verbLevel,
+  type PublicState,
 } from './state';
 import { rarityRank, payFor } from './values';
 import { campTile, findSlot, inRect, makeWalkable, near, npcTile, type Rect } from './world';
@@ -139,12 +140,12 @@ export const MISS_KEEP_MAX_BP = 9000;
 export const JACKPOT_XP = 3;
 
 /** How often a missed gather still brings one unit home, in basis points: luck raises it. */
-export function missKeepBp(bundle: Bundle, state: State): number {
+export function missKeepBp(bundle: Bundle, state: PublicState): number {
   return Math.min(MISS_KEEP_MAX_BP, MISS_KEEP_BP + 10 * bundle.params.per_point.luck_permille * state.player.attrs.luck);
 }
 
 /** The multiplier on rare and legendary dig chances, in permille: luck, techniques and worn items, inside the power cap. */
-export function rareFindPermille(bundle: Bundle, state: State): number {
+export function rareFindPermille(bundle: Bundle, state: PublicState): number {
   const raw = 1000 + bundle.params.per_point.luck_permille * state.player.attrs.luck + 10 * effectValue(bundle, state, 'rare_find_pct');
   return clamp(raw, 1000, powerCap(bundle, state));
 }
@@ -734,7 +735,7 @@ function sell(ctx: Ctx, npcId: string, itemId: string, qty: number, at: Tile): v
  * last, so only a sale of every unit sells it short, and a lasting tool
  * loses nothing. The client shows this price; the sale pays it.
  */
-export function salePrice(bundle: Bundle, state: State, itemId: string, qty: number): number | undefined {
+export function salePrice(bundle: Bundle, state: PublicState, itemId: string, qty: number): number | undefined {
   const value = bundle.values[itemId];
   if (value === undefined || !bundle.items[itemId]) return undefined;
   const each = payFor(bundle.params, value, bundle.made.includes(itemId));
@@ -810,7 +811,7 @@ export function rewardItem(bundle: Bundle, starter: string, stack: { item: strin
   return stack.instead !== undefined && kit.some((k) => k.item === stack.item) ? stack.instead : stack.item;
 }
 
-export function questSatisfied(bundle: Bundle, state: State, questId: string): boolean {
+export function questSatisfied(bundle: Bundle, state: PublicState, questId: string): boolean {
   const q = bundle.quests[questId];
   if (!q) return false;
   const p = state.player;
@@ -889,7 +890,7 @@ function applyReward(ctx: Ctx, reward: Pick<QuestDef['reward'], 'items' | 'recip
 }
 
 /** A quest that names a starter is offered to a character of that starter only. */
-export function offeredTo(q: { starter?: string }, s: State): boolean {
+export function offeredTo(q: { starter?: string }, s: PublicState): boolean {
   return q.starter === undefined || q.starter === s.player.starter;
 }
 
@@ -907,7 +908,7 @@ export function nodeLocked(bundle: Bundle, state: State, node: { opens_after?: s
  * only for its starter, and only until it gave its find. A spot that grows
  * back is open again later; the clock is checked apart.
  */
-export function spotOpen(bundle: Bundle, state: State, spotId: string): boolean {
+export function spotOpen(bundle: Bundle, state: PublicState, spotId: string): boolean {
   const inst = bundle.instances[spotId];
   const d = inst?.kind === 'treasure' ? bundle.treasures[inst.source] : undefined;
   if (!d) return false;
@@ -1066,7 +1067,7 @@ function solveRiddles(ctx: Ctx, got: RiddleHit): void {
 }
 
 /** Slots an open riddle answers by standing there: the client sends a visit on every entry, visited before or not. */
-export function riddleSlots(bundle: Bundle, state: State): Set<string> {
+export function riddleSlots(bundle: Bundle, state: PublicState): Set<string> {
   const out = new Set<string>();
   for (const id of Object.keys(state.player.quests)) {
     if (state.player.quests[id] !== 'active') continue;
