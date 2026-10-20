@@ -375,7 +375,8 @@ export class RemoteSession implements GameSession {
       throw error;
     }
     this.land(reply);
-    // the phone's clock never runs back, and never stays behind the server's (the same rule as `join`)
+    // the phone's clock never runs back, and never stays behind the server's; not at the end of work under way,
+    // as `Session.load` does, for the server's clock check (`server/src/api.ts`, see the constructor)
     this.tick = Math.max(this.tick, this.state.tick);
     // the walk that was owed is dropped, so the player stands where the server last heard them
     this.pos = [this.state.player.at[0], this.state.player.at[1]];
