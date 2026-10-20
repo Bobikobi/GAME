@@ -5,6 +5,10 @@
   "license": "AGPL-3.0-only",
   "type": "module",
   "dependencies": {
-    "@game/kernel": "workspace:*"
+    "@game/kernel": "workspace:*",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1"
   }
 }
