@@ -8,7 +8,7 @@ Two rules stand over all of it:
 - **The kernel never reads any of this** except the one `weather` condition of #215. A climate, a season or a storm changes what a player sees and hears, never what a rule answers (G29: colour is never the only signal). The one exception already decided: fog shortens a predator's sight (REACTIONS Q1 a).
 - **A direction is seen as stills before it is built** (AGENTS.md). Every table below says whether it is a direction (stills first) or polish (iterate, do not ask).
 
-**Where it stands (2026-10-20):** proposal. Nothing here is built or decided except what the sources already decided (section 0). The owner's questions are in section 10, each with a default.
+**Where it stands (2026-10-21):** proposal, with its sheets made. The twelve stills of section 8 exist (`docs/design/frames/2026-10-21-nature-*.png`, the note [2026-10-21-nature.md](frames/2026-10-21-nature.md)), composed by `tools/stills/nature.py` from `tools/stills/nature.json`, which holds every table of sections 1 to 5 as data. Nothing in the game is built or decided except what the sources already decided (section 0). The owner's questions are in section 10, each with a default; section 12 says where this page and the older pages disagreed and how it was settled.
 
 ## 0. Already decided, not reopened here
 
@@ -146,7 +146,9 @@ One scene, one difference per still, at phone size, as the 18.10 and 20.10 sets 
 | Weather | 3: the square at 12:00 under overcast, rain and fog | Section 4 (direction); wind, storm and snow are polish inside the pick |
 | Shade | 2: Pell in the grove at 12:00 with and without the shade over him | Section 5 (polish, shown once because it changes every character's look under every tree) |
 
-The sheets go in one batch after the L1 to L3 pick, from the same `tools/stills/` script, so a number change costs a run.
+The sheets were made on 21.10 with the L1 material look (the ladder's L1, since L1 is the world's half of the character pick C and the climate tables are ramp overrides on it), by `tools/stills/nature.py` from `tools/stills/nature.json`. A number change costs a run. What each frame shows and its exact numbers: [frames/2026-10-21-nature.md](frames/2026-10-21-nature.md).
+
+What they do not show, on purpose: the final art (every prop is the ladder's script-drawn stand-in), the house's windows (lit in the stand-in at every hour), motion (rain, flakes and leaves stand still), and the night (decided, not reopened).
 
 ## 9. The compass: Graveyard Keeper, and the honest distance
 
@@ -187,6 +189,21 @@ Each with a recommended default; silence keeps the default.
 | 7 | Shade over characters and between trees | Polish | The light stream | #234 (landed) | The shade sheet |
 
 Rules for every step as ART_SYSTEM 8 says: its own pull request off `origin/develop`, the shared files as PARALLEL.md says, a look change only after its still is picked, a DECISIONS entry as built with a `Model:` line.
+
+## 12. Where the pages disagreed, and how it was settled (21.10)
+
+Read together on 21.10: STYLE, ART_SYSTEM, REACTIONS, OPEN_WORLD, the DECISIONS of 18 to 20.10, and the code of #230, #234, #238 and #241. Six places disagreed. Each is settled here and, where the older page needed a line, in the same pull request.
+
+| Disagreement | Was | Settled |
+|---|---|---|
+| Cloud shade: STYLE 7 said `#1b1a2e` at 12%, whole pixels; #238 built `#172a52` at 34%, ground only, with the owner's "keep" on three stills | Two numbers in force | STYLE 7's row now carries the kept number and names the one open question (shade over props and people too). Section 4's "overcast" uses the same colour; its 20% is the whole-sky case, not the drifting patch |
+| STYLE 2 "every pixel fully clear or fully solid" against the engine's alpha layers (shadows at 30%, the night, pools, the wash, fog) | A rule written for sprites read as a rule for the screen | STYLE 2 now says the rule is for sprites and tiles; a layer is a blend at one alpha per step, at most four steps, dithered where steps meet. `nature.py` keeps fog to three alphas for that reason |
+| #238's fog "in the low ground" (the code's comment) against its banks at fixed fractions of the view | The comment described fog by place; the code draws bands | Section 4 says one sky per region and bands across the view; fog by place needs a height or water test and waits for T2 (STYLE 6) |
+| ART_SYSTEM 2 listed "the day's weather" as an input of the light module with no table behind it | An input with no values | Section 4's table is the values; ART_SYSTEM 2 points here |
+| REACTIONS phase B has three weathers (clear, rain, fog); the look needs more | Overcast, wind, storm, snow had no home | Section 4 adds four, as look only; the closed list in `schema/src/index.ts` grows with phase B, never before (G29: no rule reads them) |
+| The colour count of #230 reads the sprites' PNG palettes under a window, and every pixel must still be in the 32 colours, so no window can pass 32 and "warn above 96" cannot fire until a kit declares ramps | A measure that reads 21 today and cannot see the 382 to 492 of the references | `nature.py` counts colours on the finished still, light and weather included: 97 to 374 on the sheets against 117 on the plain square. That is the number to put beside a reference frame; the check's count stays what it is, a count of sprite palettes, and says so in its warning once ramps land |
+
+What the ramp check measures, restated (for the owner reading its numbers): that a declared ramp's warmth (red minus blue over the colour's light) moves by at least 0.03 from its darkest to its lightest step, in either direction, and that its steps rise in value. It does not check the direction ART_SYSTEM 3 names (cooler as it darkens, warmer as it lightens), because the core's own earth ramp cools as it pales and would fail; and a ramp that only desaturates passes. It is a smoke test against a pure value ramp, not the rule's full statement. A stricter form is a pick of the owner's after L1, not before.
 
 ## Sources
 

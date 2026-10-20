@@ -158,6 +158,20 @@ export function flattenParams(p: ParamsBody): Params {
       luck_permille: p.per_point.luck_permille.value,
       stamina: p.per_point.stamina.value,
     },
+    light: p.light
+      ? {
+          keys: p.light.keys.map((k) => ({ at: k.at, tint: k.tint, pct: k.pct })),
+          ...(p.light.sun
+            ? {
+                sun: {
+                  alpha: p.light.sun.alpha,
+                  cap: p.light.sun.cap,
+                  keys: p.light.sun.keys.map((k) => ({ at: k.at, right: k.right, down: k.down })),
+                },
+              }
+            : {}),
+        }
+      : undefined,
   };
 }
 

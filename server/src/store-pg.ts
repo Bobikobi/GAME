@@ -1,7 +1,7 @@
 import type { Pool } from 'pg';
 import type { State } from '@game/kernel';
 
-import type { PlayerRecord, PlayerStore } from './api';
+import type { Books, PlayerRecord, PlayerStore } from './api';
 import { publicState } from './patch';
 
 /** An account id is a uuid: anything else names no account, and asking the database would raise. */
@@ -66,16 +66,44 @@ export function createPgStore(pool: Pool): PlayerStore {
       return row ? recordOf(row) : undefined;
     },
 
-    async compareAndSet(playerId: string, expectedVersion: number, next: PlayerRecord): Promise<boolean> {
+    async compareAndSet(playerId: string, expectedVersion: number, next: PlayerRecord, books: Books): Promise<boolean> {
       if (!UUID.test(playerId)) return false;
-      const { rowCount } = await pool.query(
-        `update player_state
-            set state = $1, seed = $2, kernel_version = $3, content_version = $4, clock_anchor_ms = $5,
-                movement_at = $6, movement_credit_ms = $7, version = $8, updated_at = now()
-          where account_id = $9 and version = $10`,
-        [...rowOf(next), next.version, playerId, expectedVersion],
-      );
-      return (rowCount ?? 0) === 1;
+      // the state, the log row and the gold rows are one transaction: a write that loses the race, or a book
+      // that cannot be written, leaves nothing of the other two
+      const client = await pool.connect();
+      try {
+        await client.query('begin');
+        const { rowCount } = await client.query(
+          `update player_state
+              set state = $1, seed = $2, kernel_version = $3, content_version = $4, clock_anchor_ms = $5,
+                  movement_at = $6, movement_credit_ms = $7, version = $8, updated_at = now()
+            where account_id = $9 and version = $10`,
+          [...rowOf(next), next.version, playerId, expectedVersion],
+        );
+        if ((rowCount ?? 0) !== 1) {
+          await client.query('rollback');
+          return false;
+        }
+        const action = JSON.stringify(books.action);
+        await client.query(
+          'insert into action_log (account_id, seq, action, tick) values ($1, $2, $3, $4)',
+          [playerId, next.version, action, books.tick],
+        );
+        for (const deltaMg of books.goldDeltasMg) {
+          if (deltaMg === 0) continue; // the table refuses a zero, and a zero moved nothing
+          await client.query(
+            'insert into gold_ledger (account_id, delta_mg, action, tick) values ($1, $2, $3, $4)',
+            [playerId, deltaMg, action, books.tick],
+          );
+        }
+        await client.query('commit');
+        return true;
+      } catch (error) {
+        await client.query('rollback').catch(() => undefined);
+        throw error;
+      } finally {
+        client.release();
+      }
     },
   };
 }
