@@ -343,6 +343,14 @@ def tuft(d, x, y, dark, light, outline, lean, height, r) -> None:
     d.point((x - 1, y), fill=outline + (255,))
 
 
+def clover(d, x: int, y: int, c: Roles) -> None:
+    d.point((x, y), fill=c.grass_dark + (255,))
+    d.point((x - 1, y - 1), fill=c.grass_light + (255,))
+    d.point((x + 1, y - 1), fill=c.grass_light + (255,))
+    d.point((x, y - 2), fill=c.grass_light + (255,))
+    d.point((x, y - 1), fill=c.grass_base + (255,))
+
+
 def flower(d, x, y, c: Roles, r) -> None:
     col = c.cloth_mid if r.random() < 0.5 else c.fire_mid
     d.point((x, y - 3), fill=col + (255,))
@@ -455,63 +463,186 @@ def reeds(d, c: Roles, x0: int, y0: int, r) -> None:
             d.rectangle([x + lean - 1, y0 - h - 4, x + lean + 1, y0 - h], fill=head + (255,))
 
 
-def draw_cobble(img, c: Roles) -> None:
+def apron_mask(shapes) -> Image.Image:
+    m = Image.new("L", (W, H), 0)
+    md = ImageDraw.Draw(m)
+    for shape in shapes:
+        md.ellipse(shape, fill=255)
+    return m
+
+
+def dirt_patch(img, c: Roles, cx: int, cy: int, rx: int, ry: int, seed: int) -> None:
     d = ImageDraw.Draw(img)
-    d.rectangle([0, 232, W, H], fill=c.cobble_base + (255,))
-    r = seeded(21)
-    y = 236
+    r = seeded(seed)
+    for _ in range(4):
+        x = cx + r.randrange(-rx // 3, rx // 3 + 1)
+        y = cy + r.randrange(-ry // 3, ry // 3 + 1)
+        ellipse(d, [x - rx // 2, y - ry // 2, x + rx // 2, y + ry // 2], c.path_base)
+    for _ in range(3):
+        x = cx + r.randrange(-rx // 2, rx // 2 + 1)
+        y = cy + r.randrange(-ry // 2, ry // 2 + 1)
+        ellipse(d, [x - rx // 4, y - ry // 4, x + rx // 4, y + ry // 4],
+                c.path_alt if r.random() < 0.4 else c.path_base)
+    for _ in range(22):
+        x = cx + r.randrange(-rx, rx + 1)
+        y = cy + r.randrange(-ry, ry + 1)
+        if ((x - cx) / max(1, rx)) ** 2 + ((y - cy) / max(1, ry)) ** 2 < 1.35:
+            tuft(d, x, y, c.grass_dark, c.grass_light, c.grass_outline,
+                 r.choice([-1, 0, 1]), 4 + r.randrange(5), r)
+    for _ in range(36):
+        x = cx + r.randrange(-rx, rx + 1)
+        y = cy + r.randrange(-ry, ry + 1)
+        if ((x - cx) / max(1, rx)) ** 2 + ((y - cy) / max(1, ry)) ** 2 < 0.95 and r.random() < 0.5:
+            d.point((x, y), fill=(c.grass_base if r.random() < 0.4 else c.grass_dark) + (255,))
+
+
+def draw_apron(img, c: Roles, mask: Image.Image, seed: int) -> None:
+    r = seeded(seed)
+    patch = canvas()
+    d = ImageDraw.Draw(patch)
+    dirt = Image.new("RGBA", (W, H), c.path_base + (255,))
+    patch.alpha_composite(Image.composite(dirt, canvas(), mask))
+    # large flagstones with wide dirt joints
+    y = 220
     row = 0
     while y < H:
-        h = 10 + r.randrange(5)
-        x = -14 - (r.randrange(8) if row % 2 else 0)
+        h = 18 + r.randrange(10)
+        x = -20 - (r.randrange(16) if row % 2 else 0)
         while x < W:
-            w = 15 + r.randrange(10)
-            skew = r.choice([-1, 0, 0, 1])
-            box = [x, y + (1 if skew > 0 else 0), x + w - 2, y + h - 2 - (1 if skew < 0 else 0)]
-            alt = r.random() < 0.12
-            body = c.cobble_alt if alt else c.cobble_mid
-            hi = c.cobble_alt_light if alt else c.cobble_light
-            lo = c.cobble_alt_dark if alt else c.cobble_dark
-            ellipse(d, box, body)
-            # top-left light, bottom-right dark
-            line(d, [(box[0] + 3, box[1] + 1), (box[2] - 4, box[1] + 1)], hi)
-            line(d, [(box[0] + 1, box[1] + 3), (box[0] + 1, box[3] - 3)], hi)
-            line(d, [(box[0] + 3, box[3] - 1), (box[2] - 3, box[3] - 1)], lo)
-            if r.random() < 0.22:
-                d.point((box[0] + w // 2, box[1] + h // 2), fill=lo + (255,))
-            x += w
-        y += h
+            w = 26 + r.randrange(20)
+            bx0, by0, bx1, by1 = x + 3, y + 3, x + w - 4, y + h - 4
+            mx, my = (bx0 + bx1) // 2, (by0 + by1) // 2
+            if bx1 > bx0 and by1 > by0 and 0 <= mx < W and 0 <= my < H and mask.getpixel((mx, my)) > 0:
+                alt = r.random() < 0.18
+                body = c.cobble_alt if alt else c.cobble_mid
+                hi = c.cobble_alt_light if alt else c.cobble_light
+                lo = c.cobble_alt_dark if alt else c.cobble_dark
+                d.rounded_rectangle([bx0, by0, bx1, by1], radius=4, fill=body + (255,))
+                line(d, [(bx0 + 2, by0 + 1), (bx1 - 3, by0 + 1)], hi)
+                line(d, [(bx0 + 1, by0 + 2), (bx0 + 1, by1 - 3)], hi)
+                line(d, [(bx0 + 3, by1 - 1), (bx1 - 3, by1 - 1)], lo)
+                line(d, [(bx1 - 1, by0 + 3), (bx1 - 1, by1 - 3)], lo)
+                if r.random() < 0.14:
+                    d.point((mx, my), fill=lo + (255,))
+            x += w + 6
+        y += h + 7
         row += 1
-    # a few worn flagstones break the cobble grid
-    for fx, fy, fw, fh in [(28, 588, 30, 15), (322, 552, 28, 14), (54, 742, 26, 13),
-                           (300, 700, 24, 13), (150, 820, 30, 14)]:
-        for k in range(fh):
-            d.line([(fx + (fh - k) // 2, fy + k), (fx + fw - (fh - k) // 2, fy + k)], fill=c.cobble_mid + (255,))
-        line(d, [(fx + 6, fy + 1), (fx + fw - 6, fy + 1)], c.cobble_light)
-        line(d, [(fx + 5, fy + fh - 1), (fx + fw - 5, fy + fh - 1)], c.cobble_dark)
-    # two puddles, the sky in them
-    for px_, py_, pw_ in [(104, 642, 22), (58, 786, 18)]:
-        ellipse(d, [px_ - 2, py_ - 2, px_ + pw_ + 2, py_ + 9], c.cobble_dark)
-        ellipse(d, [px_, py_, px_ + pw_, py_ + 7], c.water_dark)
-        ellipse(d, [px_ + 3, py_ + 2, px_ + pw_ - 4, py_ + 6], c.water_mid)
-        line(d, [(px_ + 5, py_ + 2), (px_ + pw_ - 6, py_ + 2)], c.water_light)
-        d.point((px_ + pw_ - 7, py_ + 5), fill=c.water_pale + (255,))
-    # a drain by the well and cracks in the stones
-    rect(d, [92, 430, 110, 439], c.stone_mid)
-    rect(d, [94, 432, 108, 437], c.iron_base)
-    for gx in range(96, 107, 4):
-        line(d, [(gx, 432), (gx, 437)], c.iron_outline)
-    for _ in range(7):
+    # puddles, the drain and cracks, only where the apron is
+    for px_, py_, pw_ in [(110, 470, 20), (150, 750, 18)]:
+        if mask.getpixel((min(W - 1, px_ + pw_ // 2), min(H - 1, py_ + 4))) > 0:
+            ellipse(d, [px_ - 2, py_ - 2, px_ + pw_ + 2, py_ + 9], c.cobble_dark)
+            ellipse(d, [px_, py_, px_ + pw_, py_ + 7], c.water_dark)
+            ellipse(d, [px_ + 3, py_ + 2, px_ + pw_ - 4, py_ + 6], c.water_mid)
+            line(d, [(px_ + 5, py_ + 2), (px_ + pw_ - 6, py_ + 2)], c.water_light)
+            d.point((px_ + pw_ - 7, py_ + 5), fill=c.water_pale + (255,))
+    if mask.getpixel((101, 434)) > 0:
+        rect(d, [92, 430, 110, 439], c.stone_mid)
+        rect(d, [94, 432, 108, 437], c.iron_base)
+        for gx in range(96, 107, 4):
+            line(d, [(gx, 432), (gx, 437)], c.iron_outline)
+    for _ in range(10):
         x = r.randrange(20, W - 20)
-        y = r.randrange(300, H - 20)
-        line(d, [(x, y), (x + r.randrange(2, 6), y + r.randrange(1, 4))], c.cobble_dark)
-    # grass and moss in the joints near the shore and the edges
-    for _ in range(58):
+        y = r.randrange(240, H - 20)
+        if mask.getpixel((x, y)) > 0:
+            line(d, [(x, y), (x + r.randrange(2, 6), y + r.randrange(1, 4))], c.cobble_dark)
+    # moss and weeds in the wide joints
+    for _ in range(48):
         x = r.randrange(W)
+        y = r.randrange(220, H)
+        if mask.getpixel((x, y)) > 0:
+            tuft(d, x, y, c.grass_dark, c.grass_light, c.grass_outline,
+                 r.choice([-1, 0, 1]), 3 + r.randrange(4), r)
+    img.alpha_composite(Image.composite(patch, canvas(), mask))
+    # a stippled grassy fringe so the apron never ends on a drawn line
+    edge = mask.filter(ImageFilter.FIND_EDGES)
+    ep = edge.load()
+    gd = ImageDraw.Draw(img)
+    for yy in range(220, H):
+        for xx in range(W):
+            if ep[xx, yy] == 0:
+                continue
+            for _ in range(5):
+                x = xx + r.randrange(-5, 6)
+                y = yy + r.randrange(-5, 6)
+                if not (0 <= x < W and 0 <= y < H):
+                    continue
+                inside = mask.getpixel((x, y)) > 0
+                if inside and r.random() < 0.32:
+                    gd.point((x, y), fill=(c.grass_dark if r.random() < 0.5 else c.grass_base) + (255,))
+                elif not inside and r.random() < 0.22:
+                    gd.point((x, y), fill=(c.path_base if r.random() < 0.7 else c.path_dark) + (255,))
+            if r.random() < 0.22:
+                tuft(gd, xx, yy, c.grass_dark, c.grass_light, c.grass_outline,
+                     r.choice([-1, 0, 1]), 4 + r.randrange(5), r)
+    # a few loose stones just outside
+    for _ in range(10):
+        x = r.randrange(10, W - 10)
         y = r.randrange(240, H - 4)
-        if y < 300 or x < 20 or x > W - 20 or r.random() < 0.35:
-            tuft(d, x, y, c.grass_dark, c.grass_light, c.grass_outline, r.choice([-1, 0, 1]), 5 + r.randrange(5), r)
-    # leaves fallen from the near tree
+        if mask.getpixel((x, y)) == 0:
+            gd.point((x, y), fill=c.cobble_mid + (255,))
+            gd.point((x + 1, y), fill=c.cobble_dark + (255,))
+
+
+def draw_village_ground(img, look: Look, c: Roles) -> None:
+    r = seeded(21)
+    draw_meadow(img, look, c, 220, H, False, 21)
+    d = ImageDraw.Draw(img)
+    # a ragged sand-to-grass edge, so the shore never ends on a straight line
+    for x in range(W):
+        y = 224 + int(4 * math.sin(x / 17)) + r.randrange(0, 3)
+        for yy in range(y - 4, y):
+            if r.random() < 0.5:
+                d.point((x, yy), fill=(c.sand_base if r.random() < 0.4 else c.sand_mid) + (255,))
+        if r.random() < 0.3:
+            tuft(d, x, y, c.grass_dark, c.grass_light, c.grass_outline,
+                 r.choice([-1, 0, 1]), 4 + r.randrange(5), r)
+    # worn dirt patches on the green
+    for cx, cy, rx, ry, sd in [(70, 600, 44, 26, 31), (300, 600, 38, 22, 32),
+                                (40, 820, 44, 24, 33), (28, 760, 30, 20, 34),
+                                (240, 640, 40, 22, 35)]:
+        dirt_patch(img, c, cx, cy, rx, ry, sd)
+    # a small cobbled forecourt by the well and the door, not a paved square
+    upper = apron_mask([
+        (24, 262, 180, 420), (60, 250, 210, 400), (20, 330, 150, 450),
+        (120, 300, 220, 440), (190, 430, 380, 610), (140, 380, 260, 500),
+        (0, 300, 70, 380), (320, 560, 390, 630),
+    ])
+    # grass islands and a ragged edge so the apron is not a drawn oval
+    upper = ImageChops.subtract(upper, apron_mask([(14, 300, 74, 368), (318, 552, 388, 620),
+                                                    (168, 300, 208, 340), (214, 566, 254, 602)]))
+    draw_apron(img, c, upper, 41)
+    # dirt under the bench, the lamp, the cart and the hearth
+    for cx, cy, rx, ry, sd in [(80, 470, 52, 26, 36), (176, 600, 28, 18, 37),
+                                (160, 710, 44, 26, 38), (272, 710, 44, 24, 39)]:
+        dirt_patch(img, c, cx, cy, rx, ry, sd)
+    # a puddle on the green, with a dirt rim
+    d = ImageDraw.Draw(img)
+    ellipse(d, [58, 778, 82, 790], c.path_dark)
+    ellipse(d, [60, 779, 80, 788], c.water_dark)
+    ellipse(d, [63, 781, 77, 786], c.water_mid)
+    line(d, [(65, 781), (75, 781)], c.water_light)
+    # a grass bed for the tall grass at the near edge
+    d = ImageDraw.Draw(img)
+    ellipse(d, [318, 756, 392, 844], c.grass_base)
+    for _ in range(16):
+        x = r.randrange(320, 390)
+        y = r.randrange(760, 840)
+        tuft(d, x, y, c.grass_dark, c.grass_light, c.grass_outline,
+             r.choice([-1, 0, 1]), 6 + r.randrange(7), r)
+    # the worn path: curved, ragged, never a straight strip
+    draw_path(img, c)
+    # flowers and fallen leaves on the green
+    for fx, fy in [(16, 590), (34, 650), (18, 760), (60, 822), (10, 840),
+                   (380, 600), (30, 690), (70, 660), (24, 710), (52, 580),
+                   (86, 840), (12, 620), (44, 780), (74, 700)]:
+        flower(d, fx, fy, c, r)
+    for cx_, cy_ in [(12, 610), (26, 670), (44, 706), (20, 800), (64, 748),
+                     (78, 640), (36, 560), (56, 856)]:
+        clover(d, cx_, cy_, c)
+    for gx, gy in [(10, 604), (82, 704), (130, 820), (366, 620), (350, 760),
+                   (18, 832), (100, 660), (58, 750), (28, 576), (116, 740)]:
+        tuft(d, gx, gy, c.grass_dark, c.grass_light, c.grass_outline,
+             r.choice([-1, 0, 1]), 10 + r.randrange(7), r)
     for _ in range(16):
         x = r.randrange(6, 120)
         y = r.randrange(700, H - 6)
@@ -525,31 +656,42 @@ def draw_cobble(img, c: Roles) -> None:
 def draw_path(img, c: Roles) -> None:
     d = ImageDraw.Draw(img)
     r = seeded(61)
-    for y in range(566, H):
-        cx = 292 + int((y - 566) * 0.11) + int(3 * math.sin(y / 31))
-        w = 15 + int(4 * math.sin(y / 17))
+    def centre(y: int) -> int:
+        return 290 + int(26 * math.sin((y - 560) / 110)) + int((y - 560) * 0.04)
+    for y in range(560, H):
+        cx = centre(y)
+        w = 11 + int(5 * math.sin(y / 19)) + (r.randrange(3) if y % 9 == 0 else 0)
         for x in range(cx - w, cx + w):
-            edge = abs(x - cx) / w
-            if edge > 0.84 and r.random() < 0.55:
+            edge = abs(x - cx) / max(1, w)
+            if edge > 0.78 and r.random() < 0.55:
                 continue
-            col = c.path_base if r.random() < 0.74 else c.path_dark
+            col = c.path_base if r.random() < 0.84 else c.path_dark
             if r.random() < 0.06:
                 col = c.path_alt
             d.point((x, y), fill=col + (255,))
+        if r.random() < 0.22:
+            tuft(d, cx - w - 2, y, c.grass_dark, c.grass_light, c.grass_outline,
+                 r.choice([-1, 0, 1]), 3 + r.randrange(4), r)
+        if r.random() < 0.22:
+            tuft(d, cx + w + 2, y, c.grass_dark, c.grass_light, c.grass_outline,
+                 r.choice([-1, 0, 1]), 3 + r.randrange(4), r)
+    # ruts and hoofprints follow the curve
     for y in range(578, H):
-        cx = 292 + int((y - 566) * 0.11) + int(3 * math.sin(y / 31))
+        cx = centre(y)
         d.point((cx - 5, y), fill=c.path_dark + (255,))
         d.point((cx + 5, y), fill=c.path_dark + (255,))
-    for _ in range(14):
-        x = r.randrange(270, 340)
+    for hy in range(600, H - 6, 19):
+        cx = centre(hy)
+        d.rectangle([cx - 3, hy, cx - 1, hy + 2], fill=c.path_dark + (255,))
+        d.rectangle([cx + 2, hy + 6, cx + 4, hy + 8], fill=c.path_dark + (255,))
+    # a few stones pressed into the track
+    for _ in range(10):
         y = r.randrange(600, H - 4)
+        cx = centre(y)
+        x = cx + r.randrange(-6, 7)
         ww = r.choice([2, 3, 4])
         ellipse(d, [x, y, x + ww, y + 2], c.stone_mid)
         d.point((x, y + 1), fill=c.stone_dark + (255,))
-    for hy in range(600, H - 6, 19):
-        cx = 292 + int((hy - 566) * 0.11) + int(3 * math.sin(hy / 31))
-        d.rectangle([cx - 3, hy, cx - 1, hy + 2], fill=c.path_dark + (255,))
-        d.rectangle([cx + 2, hy + 6, cx + 4, hy + 8], fill=c.path_dark + (255,))
 
 
 def draw_far_bank(img, look: Look, c: Roles) -> None:
@@ -1186,6 +1328,27 @@ def draw_cart(c: Roles) -> Image.Image:
     return outline_sprite(im, c.wood_outline)
 
 
+def draw_bush(c: Roles, seed: int) -> Image.Image:
+    im = canvas(30, 22)
+    d = ImageDraw.Draw(im)
+    r = seeded(seed)
+    blobs = [(8, 13, 6), (15, 10, 7), (22, 13, 6), (12, 16, 5), (19, 16, 5)]
+    for bx, by, br in blobs:
+        ellipse(d, [bx - br - 1, by - br - 1, bx + br + 1, by + br + 1], c.grass_outline)
+    for bx, by, br in blobs:
+        ellipse(d, [bx - br, by - br, bx + br, by + br], c.grass_dark)
+    for bx, by, br in blobs:
+        ellipse(d, [bx - br + 2, by - br + 1, bx + br - 3, by + br - 3], c.grass_base)
+    for bx, by, br in blobs:
+        ellipse(d, [bx - br + 3, by - br + 2, bx - br + 7, by - br + 6], c.grass_light)
+    for _ in range(14):
+        x = r.randrange(3, 27)
+        y = r.randrange(3, 19)
+        if im.getpixel((x, y))[3]:
+            d.point((x, y), fill=(c.grass_light if r.random() < 0.4 else c.grass_dark) + (255,))
+    return outline_sprite(im, c.grass_outline)
+
+
 def draw_mooring(c: Roles) -> Image.Image:
     im = canvas(24, 34)
     d = ImageDraw.Draw(im)
@@ -1535,8 +1698,7 @@ def compose_scene(look: Look, *, pell: Image.Image | None = None,
     draw_shore_base(ground, c)
     draw_water(ground, look, c)
     draw_shore_details(ground, c)
-    draw_cobble(ground, c)
-    draw_path(ground, c)
+    draw_village_ground(ground, look, c)
 
     # props
     house, hx0, hy0, hfeet = draw_house(c, look)
@@ -1547,6 +1709,8 @@ def compose_scene(look: Look, *, pell: Image.Image | None = None,
     boat = draw_boat(c)
     mooring = draw_mooring(c)
     cart = draw_cart(c)
+    bush1 = draw_bush(c, 53)
+    bush2 = draw_bush(c, 54)
     bench = draw_bench(c)
     barrel = draw_barrel(c)
     crate = draw_crate(c)
@@ -1594,6 +1758,8 @@ def compose_scene(look: Look, *, pell: Image.Image | None = None,
         (barrel, 92, 442, 472, 28, True),
         (crate, 116, 478, 506, 26, True),
         (cart, 148, 698, 738, 38, True),
+        (bush1, 348, 582, 604, 18, True),
+        (bush2, 100, 560, 582, 18, True),
     ]
     if elder_s is not None:
         casters.append((elder_s, 208, 572, 668, 96, True))
@@ -1654,6 +1820,8 @@ def compose_scene(look: Look, *, pell: Image.Image | None = None,
         (barrel, 92, 442),
         (crate, 116, 478),
         (cart, 148, 698),
+        (bush1, 348, 582),
+        (bush2, 100, 560),
         (lamp, lx0, ly0),
         (hearth, fx0, fy0),
     ]:
