@@ -1,10 +1,10 @@
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
-import { newState, serialize, step, type Bundle, type State } from '@game/kernel';
+import { makeWalkable, newState, serialize, step, type Bundle, type State, type Tile } from '@game/kernel';
 import type { IncomingMessage, Server } from 'node:http';
 
-import { createGameApi, listen, type PlayerRecord, type PlayerStore } from '../src';
+import { createGameApi, createPlayerRecord, listen, type PlayerRecord, type PlayerStore } from '../src';
 import { applyStatePatch, publicState } from '../src/patch';
-import { loadBundle } from '../../tools/test/helpers/world.js';
+import { bfsToTile, loadBundle } from '../../tools/test/helpers/world.js';
 
 const PLAYER = 'player-1';
 let bundle: Bundle;
@@ -18,7 +18,7 @@ class MemoryStore implements PlayerStore {
   record: PlayerRecord;
 
   constructor(state: State, acceptedAt: number) {
-    this.record = { state, version: 1, acceptedAt };
+    this.record = createPlayerRecord(bundle, state, acceptedAt);
   }
 
   async load(playerId: string): Promise<PlayerRecord | undefined> {
@@ -32,16 +32,17 @@ class MemoryStore implements PlayerStore {
   }
 }
 
-async function api(state: State, now = 1_000_000): Promise<{ store: MemoryStore; base: string }> {
+async function api(state: State, now = 1_000_000): Promise<{ store: MemoryStore; base: string; clock: { now: number } }> {
+  const clock = { now };
   const store = new MemoryStore(state, now);
   server = createGameApi({
     bundle,
     store,
-    now: () => now,
+    now: () => clock.now,
     resolvePlayerId: async (request: IncomingMessage) => request.headers.authorization === 'Bearer test' ? PLAYER : undefined,
   });
   const address = await listen(server, 0);
-  return { store, base: `http://127.0.0.1:${address.port}` };
+  return { store, base: `http://127.0.0.1:${address.port}`, clock };
 }
 
 async function post(base: string, path: string, body: unknown, authorization = 'Bearer test'): Promise<Response> {
@@ -62,6 +63,20 @@ function started(): State {
   const result = step(bundle, newState(bundle, 17), { t: 'start', starter: 'core/forager', name: 'Tester' }, 0);
   if (!result.ok) throw new Error(result.error);
   return result.state;
+}
+
+function longMovementPath(state: State): Tile[] {
+  const walkable = makeWalkable(bundle);
+  const [x, y] = state.player.at;
+  for (let dy = -6; dy <= 6; dy++) {
+    for (let dx = -6; dx <= 6; dx++) {
+      const target: Tile = [x + dx, y + dy];
+      if (!walkable(target[0], target[1], state.player)) continue;
+      const path = bfsToTile(bundle, state.player, state.player.at, target);
+      if (path && path.length >= 5) return path;
+    }
+  }
+  throw new Error('The starting area has no walkable path long enough to test movement limits.');
 }
 
 describe('Stage 2a server protocol', () => {
@@ -106,6 +121,32 @@ describe('Stage 2a server protocol', () => {
     expect(await response.json()).toEqual({ error: 'That game time is ahead of the time elapsed.' });
     expect(serialize(store.record.state)).toBe(before);
     expect(store.record.version).toBe(1);
+  });
+
+  test('does not grant the two-second clock slack again after every accepted request', async () => {
+    const { base, store, clock } = await api(started());
+    const first = await post(base, '/moves', {
+      version: 1,
+      moves: [{ at: store.record.state.player.at, tick: 2_000 }],
+    });
+    expect(first.status, await first.clone().text()).toBe(200);
+
+    const before = serialize(store.record.state);
+    const repeatedSlack = await post(base, '/moves', {
+      version: 2,
+      moves: [{ at: store.record.state.player.at, tick: 4_000 }],
+    });
+    expect(repeatedSlack.status).toBe(409);
+    expect(await repeatedSlack.json()).toEqual({ error: 'That game time is ahead of the time elapsed.' });
+    expect(serialize(store.record.state)).toBe(before);
+    expect(store.record.version).toBe(2);
+
+    clock.now += 1_000;
+    const elapsedTime = await post(base, '/moves', {
+      version: 2,
+      moves: [{ at: store.record.state.player.at, tick: 3_000 }],
+    });
+    expect(elapsedTime.status).toBe(200);
   });
 
   test('refuses a repeated action with its stale version without changing the accepted state', async () => {
@@ -171,5 +212,53 @@ describe('Stage 2a server protocol', () => {
     });
     expect(oversized.status).toBe(400);
     expect(serialize(store.record.state)).toBe(before);
+  });
+
+  test('movement credit is cumulative across reports and separate requests', async () => {
+    const state = started();
+    const path = longMovementPath(state);
+    const { base, store } = await api(state);
+    const before = serialize(store.record.state);
+    const batch = await post(base, '/moves', {
+      version: 1,
+      moves: path.slice(1, 4).map((at) => ({ at, tick: 0 })),
+    });
+    expect(batch.status).toBe(409);
+    expect(serialize(store.record.state)).toBe(before);
+
+    for (const [index, at] of path.slice(1, 3).entries()) {
+      const response = await post(base, '/moves', {
+        version: store.record.version,
+        moves: [{ at, tick: 0 }],
+      });
+      expect(response.status, `movement report ${index + 1}`).toBe(200);
+    }
+    const afterTwoTiles = serialize(store.record.state);
+    const thirdTile = await post(base, '/moves', {
+      version: store.record.version,
+      moves: [{ at: path[3], tick: 0 }],
+    });
+    expect(thirdTile.status).toBe(409);
+    expect(serialize(store.record.state)).toBe(afterTwoTiles);
+  });
+
+  test('movement credit refills with elapsed game time', async () => {
+    const state = started();
+    const path = longMovementPath(state);
+    const { base, store, clock } = await api(state);
+    for (const at of path.slice(1, 3)) {
+      const response = await post(base, '/moves', {
+        version: store.record.version,
+        moves: [{ at, tick: 0 }],
+      });
+      expect(response.status).toBe(200);
+    }
+
+    clock.now += bundle.params.walk_step_ms;
+    const response = await post(base, '/moves', {
+      version: store.record.version,
+      moves: [{ at: path[3], tick: bundle.params.walk_step_ms }],
+    });
+    expect(response.status).toBe(200);
   });
 });

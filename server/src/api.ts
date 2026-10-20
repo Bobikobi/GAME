@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { ATTRIBUTES, WEAR_SLOTS, step, type Action, type Bundle, type GameEvent, type State, type Tile } from '@game/kernel';
+import { ATTRIBUTES, WEAR_SLOTS, step, walkDistance, type Action, type Bundle, type GameEvent, type State, type Tile } from '@game/kernel';
 
 import { publicState, statePatch, type MergePatch, type PublicState } from './patch';
 
@@ -11,8 +11,22 @@ const TICK_SLACK_MS = 2_000;
 export interface PlayerRecord {
   state: State;
   version: number;
-  /** Wall-clock time of the last accepted request, in milliseconds. */
+  /** Wall-clock time corresponding to state.tick; preserve its offset when state.tick advances. */
   acceptedAt: number;
+  /** Game tick at which movement credit was last refilled. */
+  movementAt: number;
+  /** Unspent movement time, in milliseconds. */
+  movementCreditMs: number;
+}
+
+export function createPlayerRecord(bundle: Bundle, state: State, acceptedAt: number): PlayerRecord {
+  return {
+    state: structuredClone(state),
+    version: 1,
+    acceptedAt,
+    movementAt: state.player.movedAt,
+    movementCreditMs: Math.min(2, bundle.params.move_reach_max) * bundle.params.walk_step_ms,
+  };
 }
 
 export interface PlayerStore {
@@ -188,8 +202,37 @@ function requirePlayer(record: PlayerRecord | undefined): PlayerRecord {
 }
 
 function checkClock(tick: number, record: PlayerRecord, now: number): void {
-  const allowed = Math.max(0, now - record.acceptedAt) + TICK_SLACK_MS;
+  const allowed = now - record.acceptedAt + TICK_SLACK_MS;
   if (tick - record.state.tick > allowed) throw new RequestError('That game time is ahead of the time elapsed.', 409);
+}
+
+function nextMovementCredit(
+  bundle: Bundle,
+  state: State,
+  from: Tile,
+  target: Tile,
+  tick: number,
+  movementAt: number,
+  movementCreditMs: number,
+): { at: number; creditMs: number } {
+  const { walk_step_ms: stepMs, move_reach_max: maxReach } = bundle.params;
+  const elapsedSinceMove = Math.max(0, tick - state.player.movedAt);
+  const reach = Math.min(2 + Math.floor(elapsedSinceMove / stepMs), maxReach);
+  const distance = walkDistance(bundle, state, from, target, reach);
+  if (distance === undefined) return { at: tick, creditMs: movementCreditMs };
+
+  const maxCreditMs = maxReach * stepMs;
+  const elapsedSinceCredit = Math.max(0, tick - movementAt);
+  const available = Math.min(maxCreditMs, movementCreditMs + elapsedSinceCredit);
+  const cost = distance * stepMs;
+  if (cost > available) {
+    throw new RequestError('That is further than a walk goes in that time.', 409);
+  }
+  return { at: tick, creditMs: available - cost };
+}
+
+function actionTile(action: Action, current: Tile): Tile {
+  return 'at' in action ? action.at : current;
 }
 
 function refused(error: string): never {
@@ -236,15 +279,31 @@ async function route(request: IncomingMessage, response: ServerResponse, options
   const now = (options.now ?? Date.now)();
   let state = record.state;
   let events: GameEvent[] = [];
+  let movementAt = record.movementAt;
+  let movementCreditMs = record.movementCreditMs;
 
   if (url.pathname === '/action') {
     if (!isAction(body.action) || body.action.t === 'move') throw new RequestError('Send one non-movement action.', 400);
     if (!validTick(body.tick)) throw new RequestError('A valid client tick is required.', 400);
     checkClock(body.tick, record, now);
+    let nextCredit = { at: movementAt, creditMs: movementCreditMs };
+    if (body.action.t !== 'start') {
+      nextCredit = nextMovementCredit(
+        options.bundle,
+        state,
+        state.player.at,
+        actionTile(body.action, state.player.at),
+        body.tick,
+        movementAt,
+        movementCreditMs,
+      );
+    }
     const result = step(options.bundle, state, body.action, body.tick, { validateTravel: true });
     if (!result.ok) refused(result.error);
     state = result.state;
     events = result.events;
+    movementAt = nextCredit.at;
+    movementCreditMs = nextCredit.creditMs;
   } else {
     if (!Array.isArray(body.moves) || body.moves.length === 0 || body.moves.length > MOVE_LIMIT) {
       throw new RequestError(`Send between 1 and ${MOVE_LIMIT} movement reports.`, 400);
@@ -259,14 +318,31 @@ async function route(request: IncomingMessage, response: ServerResponse, options
     }
     checkClock(previousTick, record, now);
     for (const report of body.moves as MoveReport[]) {
+      const nextCredit = nextMovementCredit(
+        options.bundle,
+        state,
+        state.player.at,
+        report.at,
+        report.tick,
+        movementAt,
+        movementCreditMs,
+      );
       const result = step(options.bundle, state, { t: 'move', at: report.at }, report.tick, { validateTravel: true });
       if (!result.ok) refused(result.error);
       state = result.state;
       events.push(...result.events);
+      movementAt = nextCredit.at;
+      movementCreditMs = nextCredit.creditMs;
     }
   }
 
-  const next: PlayerRecord = { state, version: record.version + 1, acceptedAt: now };
+  const next: PlayerRecord = {
+    state,
+    version: record.version + 1,
+    acceptedAt: record.acceptedAt + state.tick - record.state.tick,
+    movementAt,
+    movementCreditMs,
+  };
   if (!(await options.store.compareAndSet(playerId, record.version, next))) {
     throw new RequestError('The game state changed; resume before sending another action.', 409);
   }

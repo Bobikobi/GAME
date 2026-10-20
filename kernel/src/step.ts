@@ -220,6 +220,41 @@ function walkableFor(bundle: Bundle) {
   return fn;
 }
 
+/** The shortest four-way path to a tile, limited to a square and a maximum number of steps. */
+export function walkDistance(bundle: Bundle, state: State, from: Tile, target: Tile, maxSteps: number): number | undefined {
+  const validTile = (tile: Tile): boolean =>
+    Array.isArray(tile) && tile.length === 2 && tile.every(Number.isSafeInteger);
+  if (!validTile(from) || !validTile(target) || !Number.isSafeInteger(maxSteps) || maxSteps < 0) return undefined;
+  const walkable = walkableFor(bundle);
+  if (!walkable(target[0], target[1], state.player)) return undefined;
+  if (from[0] === target[0] && from[1] === target[1]) return 0;
+
+  const side = 2 * maxSteps + 1;
+  const minX = from[0] - maxSteps;
+  const minY = from[1] - maxSteps;
+  const key = (x: number, y: number): number => (y - minY) * side + (x - minX);
+  const seen = new Set<number>([key(from[0], from[1])]);
+  const queue: Array<{ x: number; y: number; steps: number }> = [{ x: from[0], y: from[1], steps: 0 }];
+  const directions: readonly Tile[] = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+
+  for (let head = 0; head < queue.length; head++) {
+    const current = queue[head]!;
+    if (current.steps >= maxSteps) continue;
+    for (const [stepX, stepY] of directions) {
+      const x = current.x + stepX;
+      const y = current.y + stepY;
+      if (x < minX || x > from[0] + maxSteps || y < minY || y > from[1] + maxSteps) continue;
+      const nextKey = key(x, y);
+      if (seen.has(nextKey) || !walkable(x, y, state.player)) continue;
+      const steps = current.steps + 1;
+      if (x === target[0] && y === target[1]) return steps;
+      seen.add(nextKey);
+      queue.push({ x, y, steps });
+    }
+  }
+  return undefined;
+}
+
 interface Ctx {
   b: Bundle;
   s: State;
@@ -1123,39 +1158,16 @@ function moveTo(ctx: Ctx, at: Tile, validateTravel: boolean): void {
 function checkTravel(ctx: Ctx, target: Tile): void {
   const { b, s, tick } = ctx;
   const from = s.player.at;
+  if (!Array.isArray(target) || target.length !== 2 || !target.every(Number.isSafeInteger)) refuse('Where are you?');
   const elapsed = Math.max(0, tick - s.player.movedAt);
   const reach = Math.min(2 + idiv(elapsed, b.params.walk_step_ms), b.params.move_reach_max);
   const dx = target[0] - from[0];
   const dy = target[1] - from[1];
   if (Math.abs(dx) > reach || Math.abs(dy) > reach) refuse('That is further than a walk goes in that time.');
-
-  const walkable = walkableFor(b);
-  if (!walkable(target[0], target[1], s.player)) refuse('You cannot stand there.');
-  if (dx === 0 && dy === 0) return;
-
-  const side = 2 * reach + 1;
-  const minX = from[0] - reach;
-  const minY = from[1] - reach;
-  const key = (x: number, y: number): number => (y - minY) * side + (x - minX);
-  const seen = new Set<number>([key(from[0], from[1])]);
-  const queue: Array<{ x: number; y: number; steps: number }> = [{ x: from[0], y: from[1], steps: 0 }];
-  const directions: readonly Tile[] = [[0, -1], [1, 0], [0, 1], [-1, 0]];
-
-  for (let head = 0; head < queue.length; head++) {
-    const current = queue[head]!;
-    if (current.steps >= reach) continue;
-    for (const [stepX, stepY] of directions) {
-      const x = current.x + stepX;
-      const y = current.y + stepY;
-      if (x < minX || x > from[0] + reach || y < minY || y > from[1] + reach) continue;
-      const nextKey = key(x, y);
-      if (seen.has(nextKey) || !walkable(x, y, s.player)) continue;
-      if (x === target[0] && y === target[1]) return;
-      seen.add(nextKey);
-      queue.push({ x, y, steps: current.steps + 1 });
-    }
+  if (walkDistance(b, s, from, target, reach) === undefined) {
+    if (!walkableFor(b)(target[0], target[1], s.player)) refuse('You cannot stand there.');
+    refuse('That is further than a walk goes in that time.');
   }
-  refuse('That is further than a walk goes in that time.');
 }
 
 /**
