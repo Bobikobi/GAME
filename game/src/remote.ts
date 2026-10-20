@@ -19,9 +19,10 @@ import {
   hourOf,
 } from '@game/kernel';
 
-import { LONGEST_FRAME_MS, type Facing, type LogEntry, type SessionEvents } from './session';
+import { LONGEST_FRAME_MS } from './session';
+import type { ActResult, Facing, GameSession, LogEntry, SessionEvents } from './session-surface';
 
-export type ActResult = { ok: true; events: GameEvent[] } | { ok: false; error: string };
+export type { ActResult } from './session-surface';
 
 /** What the four endpoints answer: the state, or a patch of it with the events of the step. */
 export interface StateReply {
@@ -93,7 +94,7 @@ const TAIL = 40;
 /** How many movement reports one batch carries at most: the server's own cap (NEXT 18 a). */
 const MOVE_BATCH = 256;
 
-export class RemoteSession {
+export class RemoteSession implements GameSession {
   readonly bundle: Bundle;
   state: PublicState;
   tick = 0;
@@ -105,6 +106,8 @@ export class RemoteSession {
   tail: LogEntry[] = [];
   /** the appear nodes the server says stand now: drawn on the phone, never drawn from a seed here */
   private appearing = new Set<string>();
+  /** The server keeps the state: nothing is ever fitted to this content on the phone. */
+  readonly adapted = false;
   /** the state version the next write names: two requests cannot both win on the server */
   version: number;
   /** true while an action waits for its reply: input is held, so nothing is sent twice */
