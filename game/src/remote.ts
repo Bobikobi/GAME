@@ -90,6 +90,12 @@ export function fetchWire(base = '', send: typeof fetch = fetch): Wire {
   return { post, get: (path) => call(path, 'GET') as Promise<StateReply> };
 }
 
+/**
+ * The server's words when the version a call named is no longer its own (another device moved the state on).
+ * The server answers 409 for this and for a step the kernel refuses alike, so the words tell the two apart.
+ */
+const STALE = 'The game state changed; resume before sending another action.';
+
 const TAIL = 40;
 /** How many movement reports one batch carries at most: the server's own cap (NEXT 18 a). */
 const MOVE_BATCH = 256;
@@ -322,7 +328,11 @@ export class RemoteSession implements GameSession {
     try {
       reply = await this.call('/action', { version: this.version, tick: this.tick, action });
     } catch (error) {
-      if (error instanceof WireRefusal) return { ok: false, error: error.message };
+      if (error instanceof WireRefusal) {
+        // a stale version is read again at once, or every action queued behind this one would name it too
+        if (error.status === 409 && error.message === STALE) await this.resync().catch(() => undefined);
+        return { ok: false, error: error.message };
+      }
       throw error;
     }
     if (!reply) return { ok: false, error: 'Waiting for the connection' };
@@ -382,6 +392,9 @@ export class RemoteSession implements GameSession {
     this.pos = [this.state.player.at[0], this.state.player.at[1]];
     this.moves = [];
     this.deferred = [];
+    // a burn that ran out since the server's last step is asked about again, once: a report lost to a refusal
+    // or a dropped line would otherwise never tell it to a player who stands still
+    this.outSeen = 0;
     this.open = true;
     this.emit('change', undefined);
   }

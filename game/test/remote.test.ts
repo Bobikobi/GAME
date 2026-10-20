@@ -363,6 +363,18 @@ describe('the remote session: one call at a time', () => {
   });
 });
 
+describe('the remote session: another device moved the state on', () => {
+  test('an action refused as stale reads the state again, so the next one names the new version', async () => {
+    const { server, remote } = await started();
+    server.version += 1;
+    const first = await remote.act({ t: 'carve', name: 'Tess' });
+    expect(first).toEqual({ ok: false, error: 'The game state changed; resume before sending another action.' });
+    expect(remote.version).toBe(server.version);
+    const second = await remote.act({ t: 'carve', name: 'Tess' });
+    expect(second.ok === false && /state changed/.test(second.error)).toBe(false);
+  });
+});
+
 describe('the remote session: a failed resume', () => {
   test('stays closed, says so with one change, and reports the error', async () => {
     const { server, remote } = await started();
@@ -423,6 +435,26 @@ describe('the remote session: a fire going out is told', () => {
     expect(moves.length).toBe(1);
     const body = moves[0]!.body as { moves: { at: Tile }[] };
     expect(body.moves.at(-1)!.at).toEqual([...remote.pos]);
+    expect(told).toContainEqual({ e: 'fire_out', id: 'core/elder-hearth' });
+  });
+
+  test('a burn whose report was lost to a dropped line is asked about again after the resume', async () => {
+    const dusk = lastDusk(bundle, bundle.params.day_length_ms * 3);
+    const { server, remote, clock } = await burning(dusk - 1_000, dusk + 5_000);
+    const told: GameEvent[] = [];
+    remote.on('events', (events) => told.push(...events));
+    server.gap = true;
+    for (let i = 0; i < 40 && remote.connected; i++) {
+      remote.advance(250);
+      clock.now += 250;
+      await remote.flushMoves();
+    }
+    expect(remote.connected).toBe(false);
+    server.gap = false;
+    await remote.resumeFromServer();
+    remote.advance(250);
+    clock.now += 250;
+    await remote.flushMoves();
     expect(told).toContainEqual({ e: 'fire_out', id: 'core/elder-hearth' });
   });
 
