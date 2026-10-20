@@ -226,6 +226,29 @@ describe('Stage 2a server protocol', () => {
     expect(serialize(store.record.state)).toBe(before);
   });
 
+  test('kindle names its fire as a tile, not as a fire id', async () => {
+    const state = started();
+    const { base, store } = await api(state);
+    const before = serialize(store.record.state);
+    const [x, y] = state.player.at;
+
+    const tileFire = await post(base, '/action', {
+      version: 1,
+      tick: 0,
+      action: { t: 'kindle', fire: [x + 1, y], at: [x, y] },
+    });
+    expect(tileFire.status, await tileFire.clone().text()).toBe(409);
+
+    const fireId = await post(base, '/action', {
+      version: 1,
+      tick: 0,
+      action: { t: 'kindle', fire: 'own', at: [x, y] },
+    });
+    expect(fireId.status).toBe(400);
+    expect(await fireId.json()).toEqual({ error: 'Send one non-movement action.' });
+    expect(serialize(store.record.state)).toBe(before);
+  });
+
   test('a movement report names its kind, and an unknown kind is refused', async () => {
     const { base, store } = await api(started());
     const before = serialize(store.record.state);
