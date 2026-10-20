@@ -288,7 +288,7 @@ export class UI {
   }
 
   /** The desktop's pocket chart: redrawn only when the walk, the map or the stall changed. */
-  private renderHudMap(s: Session): void {
+  private renderHudMap(s: GameSession): void {
     const local = localMapState(s);
     if (!local) {
       this.hudMap.hidden = true;
