@@ -1,24 +1,24 @@
 /**
  * The walk's rules with nothing drawn: which tile a step may enter, what a step that lands tells the
  * kernel, and what a player standing still owes it while a predator watches or a hunt runs (P-5b).
- * The 2D scene and the 3D door both walk by them. Pure apart from the Session it is handed, so the walk
+ * The 2D scene and the 3D door both walk by them. Pure apart from the GameSession it is handed, so the walk
  * can be played on the real map without a renderer (game/test/stealth-flow.test.ts).
  */
 import { type Bundle, type Hazard, type Tile, type makeWalkable, sees, windowOpen } from '@game/kernel';
 
-import type { Session } from './session';
+import type { GameSession } from './session-surface';
 
 type Walkable = ReturnType<typeof makeWalkable>;
 
 /** The kernel's rule, and a plant or stone that is ready stands in the way. `nodeAt` holds each node and find by its tile, `x,y`. */
-export function canEnter(b: Bundle, walkable: Walkable, nodeAt: ReadonlyMap<string, string>, s: Session, x: number, y: number): boolean {
+export function canEnter(b: Bundle, walkable: Walkable, nodeAt: ReadonlyMap<string, string>, s: GameSession, x: number, y: number): boolean {
   if (!walkable(x, y, s.state.player)) return false;
   const node = nodeAt.get(`${x},${y}`);
   return !(node && b.instances[node]?.kind === 'resource' && (s.state.nodes[node]?.readyAt ?? 0) <= s.tick);
 }
 
 /** The last frame of a step: the tile is the player's, and the kernel hears of it. A hazard there may hurt, and a fall moves the player to town. */
-export function landStep(s: Session, to: Tile): void {
+export function landStep(s: GameSession, to: Tile): void {
   s.pos = [to[0], to[1]];
   s.report(s.pos);
 }
@@ -45,7 +45,7 @@ export class StandingReports {
    * One frame, after the walk. `hazards` are the predators to watch with (those without a round are
    * skipped), `still` is true when no step and no fall is under way, `blocked` when a menu holds the world.
    */
-  frame(b: Bundle, s: Session, hazards: Iterable<{ rule?: Hazard }>, still: boolean, blocked: boolean): void {
+  frame(b: Bundle, s: GameSession, hazards: Iterable<{ rule?: Hazard }>, still: boolean, blocked: boolean): void {
     for (const { rule } of hazards) {
       if (!rule?.round) continue;
       const watched = windowOpen(b, rule, s.tick) && sees(b, rule, s.tick, s.pos);

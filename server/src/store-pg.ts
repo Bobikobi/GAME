@@ -4,6 +4,9 @@ import type { State } from '@game/kernel';
 import type { PlayerRecord, PlayerStore } from './api';
 import { publicState } from './patch';
 
+/** An account id is a uuid: anything else names no account, and asking the database would raise. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 interface PlayerRow {
   state: State;
   seed: string;
@@ -52,6 +55,7 @@ export async function insertPlayer(pool: Pool, playerId: string, record: PlayerR
 export function createPgStore(pool: Pool): PlayerStore {
   return {
     async load(playerId: string): Promise<PlayerRecord | undefined> {
+      if (!UUID.test(playerId)) return undefined;
       const { rows } = await pool.query<PlayerRow>(
         `select state, seed, clock_anchor_ms, movement_at, movement_credit_ms, version
            from player_state
@@ -63,6 +67,7 @@ export function createPgStore(pool: Pool): PlayerStore {
     },
 
     async compareAndSet(playerId: string, expectedVersion: number, next: PlayerRecord): Promise<boolean> {
+      if (!UUID.test(playerId)) return false;
       const { rowCount } = await pool.query(
         `update player_state
             set state = $1, seed = $2, kernel_version = $3, content_version = $4, clock_anchor_ms = $5,
