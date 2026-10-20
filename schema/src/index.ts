@@ -536,8 +536,11 @@ export const QuestStep = Type.Union([
   Type.Object({ kind: Type.Literal('build'), camp: Id }, { additionalProperties: false }),
   Type.Object({ kind: Type.Literal('visit'), slot: Id }, { additionalProperties: false }),
   Type.Object(
-    { kind: Type.Literal('tend'), fire: Id },
-    { additionalProperties: false, description: 'Keep this fire burning without a gap from dusk through dawn.' },
+    { kind: Type.Literal('tend'), fire: Type.Union([Id, Type.Literal('own')]) },
+    {
+      additionalProperties: false,
+      description: 'Keep this fire burning without a gap from dusk through dawn. "own" is the fire the player kindled outside the town (G30, G48).',
+    },
   ),
   Type.Object(
     { kind: Type.Literal('find'), item: Id, clue: Clue },
@@ -936,9 +939,31 @@ const Bounded = Type.Object(
 );
 
 /** Rule R12: every constant has bounds, a step and lives in one file. */
+const LightKey = Type.Object(
+  {
+    at: Type.String({ pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$', description: 'The hour and minute the wash is at its own strength, for example "16:30".' }),
+    tint: Type.String({ pattern: '^#[0-9a-f]{6}$', description: 'The colour the scene is multiplied by at that hour.' }),
+    pct: Int(0, 100, 'How strong the wash is at that hour, in whole percent. The hours between two keys step evenly.'),
+  },
+  { additionalProperties: false },
+);
+
 export const ParamsBody = Type.Object(
   {
     k_permille: Bounded,
+    light: Type.Optional(
+      Type.Object(
+        {
+          keys: Type.Array(LightKey, {
+            minItems: 2,
+            maxItems: 12,
+            description:
+              'The hours the valley is washed in a colour (ART_SYSTEM section 2): cool before sunrise, none at noon, warm in the late afternoon, dusk at 19:00, the night after that. The scene multiplies by the wash between keys, in whole percent.',
+          }),
+        },
+        { additionalProperties: false },
+      ),
+    ),
     k_craft_permille: {
       ...Bounded,
       description:
@@ -1012,6 +1037,10 @@ export const ParamsBody = Type.Object(
       ...Bounded,
       description: 'Milliseconds the player takes to walk one tile. The client walks at this pace; the kernel checks a position report against it (DECISIONS.md, 2026-10-10: health and hazards).',
     },
+    move_reach_max: Type.Optional({
+      ...Bounded,
+      description: 'The maximum number of tiles a movement report may cover after the walk-time allowance (G56). Defaults to 32.',
+    }),
     hp_low_pct: {
       ...Bounded,
       description: 'Work takes half as long again while health is at or below this share of its cap, in percent. 0 slows it only when health is empty (G32).',
@@ -1021,6 +1050,8 @@ export const ParamsBody = Type.Object(
         cap: { ...Bounded, description: 'Most logs of burn time a fire may hold ahead of the game tick.' },
         log_ms: { ...Bounded, description: 'Game milliseconds one wood item adds to a fire.' },
         warn_min: { ...Bounded, description: 'Game minutes before a burning fire goes out when its warning is shown.' },
+        safe_tiles: { ...Bounded, description: "How far from the player's own fire, in tiles, the ground is safe while it burns: 1 is its tile and the ring around it (G30)." },
+        burn_pct_per_d: { ...Bounded, description: "How much faster a log of the player's own fire burns for each step of the area's danger d, in percent (G30, G48)." },
       },
       { additionalProperties: false, description: 'A tended fire uses the game tick, which pauses while the player is away.' },
     ),
@@ -1062,6 +1093,31 @@ export const ParamsBody = Type.Object(
   { additionalProperties: false },
 );
 
+/** What a ramp is for. A creator's kit declares at most four of them (ART_SYSTEM section 3). */
+export const RAMP_FOR = ['ground', 'vegetation', 'stone', 'wood', 'water', 'cloth', 'skin', 'light'] as const;
+export const RampFor = Type.Union(RAMP_FOR.map((f) => Type.Literal(f)));
+
+const RampId = Type.String({
+  pattern: '^[a-z0-9][a-z0-9-]*$',
+  maxLength: 32,
+  description: 'Names the ramp so a sprite of this kit can cite it, for example "meadow" or "wet-stone".',
+});
+const RampStep = Type.String({ pattern: '^#[0-9a-f]{6}$', description: 'One step of the ramp, dark to light.' });
+
+export const RampBody = Type.Object(
+  {
+    id: RampId,
+    for: Type.Optional(RampFor),
+    steps: Type.Array(RampStep, {
+      minItems: 5,
+      maxItems: 6,
+      description:
+        'Five or six steps from dark to light, the hue moving between them: a ramp that only changes value is not a ramp and the check says so.',
+    }),
+  },
+  { additionalProperties: false, description: 'A material or region ramp, declared by the kit that draws with it.' },
+);
+
 export const KitBody = Type.Object(
   {
     palette: Type.Optional(
@@ -1069,6 +1125,13 @@ export const KitBody = Type.Object(
         minItems: 2,
         maxItems: 32,
         description: 'Only the core kit sets the palette. Every sprite of every kit must use these colors.',
+      }),
+    ),
+    ramps: Type.Optional(
+      Type.Array(RampBody, {
+        maxItems: 4,
+        description:
+          'The ramps this kit draws with (ART_SYSTEM section 3). A sprite that names none uses the core palette only, so every kit written before this field stays valid.',
       }),
     ),
     sprites: Type.Record(
@@ -1087,6 +1150,14 @@ export const KitBody = Type.Object(
             'Frame height in pixels. At density 1 tiles/ and items/ are 16, chars/ are 24, a work pose 32 and props up to 64. At density 4 tiles/ and items/ are 64, chars/ are 96, a work pose 128 and props up to 384.',
           ),
           frames: Type.Optional(Int(1, 16, 'Animation frames laid side by side. Default 1.')),
+          ramps: Type.Optional(
+            Type.Array(Type.String({ pattern: '^[a-z0-9][a-z0-9-]*$', maxLength: 32 }), {
+              minItems: 1,
+              maxItems: 4,
+              description:
+                'The ramps of this kit the sprite draws in, in order: the first is the one its outline comes from. A sprite that names none uses the core palette only.',
+            }),
+          ),
           density: Type.Optional(
             Type.Union([Type.Literal(1), Type.Literal(4)], {
               description:
@@ -1375,6 +1446,8 @@ export type Starter = Static<typeof StarterBody>;
 export type Profession = Static<typeof ProfessionBody>;
 export type Shop = Static<typeof ShopBody>;
 export type Kit = Static<typeof KitBody>;
+export type Ramp = Static<typeof RampBody>;
+export type RampPurpose = Static<typeof RampFor>;
 export type GameMap = Static<typeof MapBody>;
 export type EffectName = (typeof EFFECTS)[number];
 export type WornEffectName = (typeof WORN_EFFECTS)[number];

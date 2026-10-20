@@ -38,10 +38,11 @@ describe('the opening recut B', () => {
     const s = inTown();
     // whom to help first is the player's: both neighbours' roads are open at once
     expect(toolOpens(bundle, s, 'basket')).toEqual(['Herbs for Pell', 'Where the bells rang']);
-    // a start's own task is not a road for anyone else
-    expect(toolOpens(bundle, s, 'trowel')).toEqual(['The coin under the lantern']);
+    // a start's own task is not a road for anyone else, and Maru's coin waits for his bells
+    expect(toolOpens(bundle, s, 'trowel')).toEqual([]);
     s.player.quests['core/three-fruits'] = 'done';
     expect(toolOpens(bundle, s, 'basket')).toEqual(['Herbs for Pell']);
+    expect(toolOpens(bundle, s, 'trowel')).toEqual(['The coin under the lantern']);
     s.player.quests['core/a-coin-for-maru'] = 'active';
     expect(toolOpens(bundle, s, 'trowel')).toEqual(['The coin under the lantern']);
     s.player.quests['core/a-coin-for-maru'] = 'done';

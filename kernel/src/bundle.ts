@@ -52,6 +52,8 @@ export type MapDef = Meta & GameMap;
 export type ReactionDef = Meta & Reaction;
 
 export interface Params {
+  /** The hours the valley is washed in a colour (ART_SYSTEM section 2). Read by the renderer, never by a rule. */
+  light?: { keys: { at: string; tint: string; pct: number }[] };
   k_permille: number;
   /** What the trader pays for a made good, per mille of r * V (CR-18); below 1000. */
   k_craft_permille: number;
@@ -86,9 +88,12 @@ export interface Params {
   day_length_ms: number;
   /** milliseconds to walk one tile; the client's pace and the bound on a position report */
   walk_step_ms: number;
+  /** maximum path length allowed for a move report; defaults to 32 for older content */
+  move_reach_max: number;
   /** work slows while health is at or below this share of its cap, in percent (0: only when empty) */
   hp_low_pct: number;
-  fire: { cap: number; log_ms: number; warn_min: number };
+  /** safe_tiles: the ring of safe ground around the player's own fire while it burns; burn_pct_per_d: how much faster its logs burn for each step of the area's danger, in percent */
+  fire: { cap: number; log_ms: number; warn_min: number; safe_tiles: number; burn_pct_per_d: number };
   hazard: {
     /** refill_bp: how high a hunt outrun to a safe place lifts health, in basis points of the cap: what its bites took comes back, up to this share */
     predator: { reach: number; pace_ms: number; eyes: number; catch_ms: number; bite_ms: number; bite_pct: number; refill_bp: number };

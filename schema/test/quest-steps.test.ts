@@ -40,6 +40,12 @@ describe('quest steps', () => {
     expect(validateFile(quest([{ ...find, clue: 'x'.repeat(241) }]))).not.toEqual([]);
   });
 
+  it('accept a tend step on a fire prop or on the fire the player kindles, and refuse any other bare word', () => {
+    expect(validateFile(quest([{ kind: 'tend', fire: 'core/elder-hearth' }]))).toEqual([]);
+    expect(validateFile(quest([{ kind: 'tend', fire: 'own' }]))).toEqual([]);
+    expect(validateFile(quest([{ kind: 'tend', fire: 'hearth' }]))).not.toEqual([]);
+  });
+
   it('accept every palette type and refuse one outside it', () => {
     for (const type of QUEST_TYPES) expect(validateFile(quest([find], { type }))).toEqual([]);
     expect(validateFile(quest([find], { type: 'kill' }))).not.toEqual([]);

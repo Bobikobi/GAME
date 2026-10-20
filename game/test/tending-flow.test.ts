@@ -125,14 +125,14 @@ class Tender {
     this.s.state.player.at = [at[0], at[1]];
   }
 
-  /** A new character with Maru's coin found, beside the hearth, the long night accepted from Maru. */
+  /** A new character with Maru's berries picked, beside the hearth, the long night accepted from Maru. */
   begin(logs: number): void {
     const s = this.s;
     expect(s.act({ t: 'start', starter: 'core/forager', name: 'Tess' }).ok).toBe(true);
     const p = s.state.player;
-    // the earlier quests are setup: the opening is behind, Maru's coin is found, and Maru is met
+    // the earlier quests are setup: the opening is behind, Maru's berries are picked and his coin found, and Maru is met
     for (const id of Object.keys(p.quests)) if (p.quests[id] === 'active') p.quests[id] = 'done';
-    for (const id of ['core/fix-the-bridge', 'core/first-fire', 'core/into-town', 'core/a-coin-for-maru']) p.quests[id] = 'done';
+    for (const id of ['core/fix-the-bridge', 'core/first-fire', 'core/into-town', 'core/three-fruits', 'core/a-coin-for-maru']) p.quests[id] = 'done';
     if (!p.restored.includes('core/old-bridge')) p.restored.push('core/old-bridge');
     p.satiety = 10 * satietyCap(this.b, s.state);
     p.satietyAt = s.tick;

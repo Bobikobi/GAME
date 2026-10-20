@@ -4,7 +4,7 @@
  * the bundle, the state and a position in tiles; the world scene reads it every quarter second
  * and hands the levels to the sound bus.
  */
-import { type Bundle, type State, campTile, fireBurns, hazardsOf, isNight, isSafe, tagAt, windowOpen } from '@game/kernel';
+import { type Bundle, campTile, fireBurns, hazardsOf, isNight, isSafe, tagAt, windowOpen, type PublicState } from '@game/kernel';
 import { falloff, panFor } from './audio/spatial';
 
 /** [near, far] in tiles: full volume inside near, silent beyond far. */
@@ -58,7 +58,7 @@ function nearest(spots: readonly Spot[], x: number, y: number): { distance: numb
 }
 
 /** The player's position (x, y in tiles, fractions allowed, the tile's centre at +0.5) to the bed levels. */
-export function soundscape(b: Bundle, state: State, tick: number, x: number, y: number): Scape {
+export function soundscape(b: Bundle, state: PublicState, tick: number, x: number, y: number): Scape {
   const none = { level: 0, pan: 0 };
   const scape: Scape = { fire: none, stream: none, dread: none, crackle: none };
 

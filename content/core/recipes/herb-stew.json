@@ -9,7 +9,7 @@
     {
       "id": "core/herb-stew",
       "name": "Herb stew",
-      "description": "An old recipe, found in the ruins.",
+      "description": "Herbs and mushrooms, cooked thick, with a berry for the sour.",
       "kind": "food",
       "rarity": "uncommon",
       "class": "meal",

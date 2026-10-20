@@ -85,6 +85,7 @@ window.__stealth = (() => {
     prepare() {
       const s = g().session, params = g().bundle.params;
       s.state.player.quests['core/herbs-for-pell'] = 'done';
+      s.state.player.quests['core/the-night-arch'] = 'done';
       s.state.player.camp = ['core/campfire'];
       if (!s.state.player.restored.includes('core/old-bridge')) s.state.player.restored.push('core/old-bridge');
       // Health far above anything the chase leg can bite away, so the run home

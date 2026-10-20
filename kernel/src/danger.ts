@@ -8,7 +8,7 @@ import type { Bundle, ExpeditionDef } from './bundle';
 import { windowOpen as expeditionWindowOpen } from './expedition';
 import { idiv, mulDiv } from './num';
 import { draw } from './rng';
-import { type State, isNight, lastDusk, nightEnds } from './state';
+import { OWN_FIRE, type State, fireBurns, isNight, lastDusk, nightEnds , type PublicState } from './state';
 import type { Tile } from './step';
 import { type Rect, type WorldView, findSlot, inRect, tagAt } from './world';
 
@@ -58,6 +58,37 @@ export function hazardsOf(bundle: Bundle): readonly Hazard[] {
     hazardCache.set(bundle, list);
   }
   return list;
+}
+
+/** Every map tile in the Chebyshev watch of a predator's round: the tiles its eyes cover as it walks (G47). Static, so it holds by day as well. */
+export function watchOf(bundle: Bundle, hazard: Hazard): readonly Tile[] {
+  if (!hazard.round) return [];
+  const watched = new Set<string>();
+  const tiles: Tile[] = [];
+  for (const [rx, ry] of hazard.round) {
+    for (let y = Math.max(0, ry - hazard.eyes); y <= Math.min(bundle.map.height - 1, ry + hazard.eyes); y++) {
+      for (let x = Math.max(0, rx - hazard.eyes); x <= Math.min(bundle.map.width - 1, rx + hazard.eyes); x++) {
+        const at: Tile = [x, y];
+        const key = tileKey(at);
+        if (watched.has(key)) continue;
+        watched.add(key);
+        tiles.push(at);
+      }
+    }
+  }
+  return tiles;
+}
+
+const watchCache = new WeakMap<Bundle, ReadonlySet<string>>();
+
+/** Whether a tile lies in the watch of any predator's round. */
+export function watchedAt(bundle: Bundle, at: Tile): boolean {
+  let watched = watchCache.get(bundle);
+  if (!watched) {
+    watched = new Set(hazardsOf(bundle).filter((h) => h.kind === 'predator').flatMap((h) => watchOf(bundle, h)).map(tileKey));
+    watchCache.set(bundle, watched);
+  }
+  return watched.has(tileKey(at));
 }
 
 const coverCache = new WeakMap<Bundle, ReadonlySet<string>>();
@@ -138,12 +169,33 @@ export function isTownTile(bundle: Bundle, at: Tile): boolean {
 }
 
 /**
- * Whether a tile is safe (G30): the town's cobbles, a slot marked safe, and the
- * camp's ground once a part of the camp stands. No hazard acts on a safe tile
- * and a chase ends there.
+ * The danger level d of the ground at a tile. Areas carry none yet (CR-38): it is 0 where ground is safe by itself
+ * (the town and the safe slots) and 1 everywhere else, until the map fills it in. Every rule that reads d reads it here.
  */
-export function isSafe(bundle: Bundle, state: State, at: Tile): boolean {
-  return isSafeGround(bundle, at, state.player.camp.length > 0);
+export function dangerAt(bundle: Bundle, at: Tile): number {
+  return isSafeGround(bundle, at, false) ? 0 : 1;
+}
+
+/** The tiles a fire on `at` makes safe while it burns: its own and the ring of `fire.safe_tiles` around it, inside the map. */
+export function fireArea(bundle: Bundle, at: Tile): Tile[] {
+  const reach = bundle.params.fire.safe_tiles;
+  const tiles: Tile[] = [];
+  for (let y = Math.max(0, at[1] - reach); y <= Math.min(bundle.map.height - 1, at[1] + reach); y++) {
+    for (let x = Math.max(0, at[0] - reach); x <= Math.min(bundle.map.width - 1, at[0] + reach); x++) tiles.push([x, y]);
+  }
+  return tiles;
+}
+
+/**
+ * Whether a tile is safe (G30): the town's cobbles, a slot marked safe, the
+ * camp's ground once a part of the camp stands, and the ground around the
+ * player's own fire while it burns. No hazard acts on a safe tile and a chase
+ * ends there. `tick` is the moment asked about, the state's own by default.
+ */
+export function isSafe(bundle: Bundle, state: PublicState, at: Tile, tick: number = state.tick): boolean {
+  if (isSafeGround(bundle, at, state.player.camp.length > 0)) return true;
+  const own = state.player.own;
+  return own != null && fireBurns(state, OWN_FIRE, tick) && Math.max(Math.abs(at[0] - own.at[0]), Math.abs(at[1] - own.at[1])) <= bundle.params.fire.safe_tiles;
 }
 
 /** The same, for a player whose camp does (or does not) stand: the content checks ask it with the camp built. */

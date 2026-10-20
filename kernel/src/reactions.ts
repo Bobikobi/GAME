@@ -11,7 +11,7 @@
 import type { Bundle, Instance, ReactionDef, ResourceDef } from './bundle';
 import { idiv } from './num';
 import { drawBasisPoints } from './rng';
-import { type State, hourOf, isNight, senseReach, techniqueValue } from './state';
+import { type State, hourOf, isNight, senseReach, techniqueValue , type PublicState } from './state';
 import { spotOpen } from './step';
 import { tagAt } from './world';
 
@@ -139,7 +139,7 @@ export function anchorsOf(b: Bundle, r: ReactionDef): Anchor[] {
 }
 
 /** How far the player sees a hidden find: the senses, and two more tiles with the second-hint technique. */
-export function hintReach(b: Bundle, s: State): number {
+export function hintReach(b: Bundle, s: PublicState): number {
   return senseReach(b, s.player.attrs.senses) + (techniqueValue(b, s, 'second_hint') > 0 ? 2 : 0);
 }
 
