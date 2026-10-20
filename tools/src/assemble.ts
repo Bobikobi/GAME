@@ -117,6 +117,7 @@ export function flattenParams(p: ParamsBody): Params {
     satiety_drain_per_min: p.satiety_drain_per_min.value,
     day_length_ms: p.day_length_ms.value,
     walk_step_ms: p.walk_step_ms.value,
+    move_reach_max: p.move_reach_max?.value ?? 32,
     hp_low_pct: p.hp_low_pct.value,
     fire: {
       cap: p.fire.cap.value,

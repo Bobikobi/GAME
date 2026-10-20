@@ -11425,6 +11425,33 @@
               },
               "description": "Milliseconds the player takes to walk one tile. The client walks at this pace; the kernel checks a position report against it (DECISIONS.md, 2026-10-10: health and hazards)."
             },
+            "move_reach_max": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "The maximum number of tiles a movement report may cover after the walk-time allowance (G56). Defaults to 32."
+            },
             "hp_low_pct": {
               "additionalProperties": false,
               "type": "object",

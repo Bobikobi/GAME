@@ -124,6 +124,11 @@ export type GameEvent =
 
 export type StepResult = { ok: true; state: State; events: GameEvent[] } | { ok: false; error: string };
 
+export interface StepOptions {
+  /** Enforce server-side four-way reachability for reported and action tiles (G56). */
+  validateTravel?: boolean;
+}
+
 /** Output share per timing grade: miss, ok, good, perfect, jackpot. A missed dig keeps a quarter of its chances. */
 export const GRADE_PCT = [25, 50, 80, 100, 100] as const;
 /** A missed gather still brings one unit home this often, in basis points, before luck: a miss is a gamble, not a wall. */
@@ -215,6 +220,41 @@ function walkableFor(bundle: Bundle) {
   return fn;
 }
 
+/** The shortest four-way path to a tile, limited to a square and a maximum number of steps. */
+export function walkDistance(bundle: Bundle, state: State, from: Tile, target: Tile, maxSteps: number): number | undefined {
+  const validTile = (tile: Tile): boolean =>
+    Array.isArray(tile) && tile.length === 2 && tile.every(Number.isSafeInteger);
+  if (!validTile(from) || !validTile(target) || !Number.isSafeInteger(maxSteps) || maxSteps < 0) return undefined;
+  const walkable = walkableFor(bundle);
+  if (!walkable(target[0], target[1], state.player)) return undefined;
+  if (from[0] === target[0] && from[1] === target[1]) return 0;
+
+  const side = 2 * maxSteps + 1;
+  const minX = from[0] - maxSteps;
+  const minY = from[1] - maxSteps;
+  const key = (x: number, y: number): number => (y - minY) * side + (x - minX);
+  const seen = new Set<number>([key(from[0], from[1])]);
+  const queue: Array<{ x: number; y: number; steps: number }> = [{ x: from[0], y: from[1], steps: 0 }];
+  const directions: readonly Tile[] = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+
+  for (let head = 0; head < queue.length; head++) {
+    const current = queue[head]!;
+    if (current.steps >= maxSteps) continue;
+    for (const [stepX, stepY] of directions) {
+      const x = current.x + stepX;
+      const y = current.y + stepY;
+      if (x < minX || x > from[0] + maxSteps || y < minY || y > from[1] + maxSteps) continue;
+      const nextKey = key(x, y);
+      if (seen.has(nextKey) || !walkable(x, y, state.player)) continue;
+      const steps = current.steps + 1;
+      if (x === target[0] && y === target[1]) return steps;
+      seen.add(nextKey);
+      queue.push({ x, y, steps });
+    }
+  }
+  return undefined;
+}
+
 interface Ctx {
   b: Bundle;
   s: State;
@@ -228,7 +268,7 @@ interface Ctx {
   walkOut?: { expedition: string; bell: number };
 }
 
-export function step(bundle: Bundle, state: State, action: Action, tick: number): StepResult {
+export function step(bundle: Bundle, state: State, action: Action, tick: number, options: StepOptions = {}): StepResult {
   if (!Number.isSafeInteger(tick) || tick < state.tick) return { ok: false, error: 'Time cannot run backwards.' };
   if (state.content !== bundle.tag) return { ok: false, error: 'This save belongs to different game content.' };
   const ctx: Ctx = { b: bundle, s: structuredClone(state), tick, events: [], hurt: false, fell: false };
@@ -241,7 +281,7 @@ export function step(bundle: Bundle, state: State, action: Action, tick: number)
   try {
     ctx.walkOut = walkOutDue(ctx);
     firesOut(ctx, state.tick);
-    apply(ctx, action);
+    apply(ctx, action, options);
     autoQuests(ctx);
     expeditions(ctx);
     return { ok: true, state: ctx.s, events: ctx.events };
@@ -256,12 +296,13 @@ export function replay(
   bundle: Bundle,
   start: State,
   log: readonly { a: Action; tick: number }[],
+  options: StepOptions = {},
 ): { state: State; events: GameEvent[]; error?: string; at?: number } {
   let state = start;
   const events: GameEvent[] = [];
   for (let i = 0; i < log.length; i++) {
     const entry = log[i]!;
-    const r = step(bundle, state, entry.a, entry.tick);
+    const r = step(bundle, state, entry.a, entry.tick, options);
     if (!r.ok) return { state, events, error: r.error, at: i };
     state = r.state;
     events.push(...r.events);
@@ -271,7 +312,7 @@ export function replay(
 
 // ------------------------------------------------------------------ actions
 
-function apply(ctx: Ctx, a: Action): void {
+function apply(ctx: Ctx, a: Action, options: StepOptions): void {
   const { s } = ctx;
   if (a.t === 'start') return start(ctx, a.starter, a.name, a.look ?? 0);
   if (s.player.starter === '') refuse('Pick a character first.');
@@ -280,11 +321,15 @@ function apply(ctx: Ctx, a: Action): void {
   // satiety is kept lazily: bring it up to now before anything reads it
   s.player.satiety = satietyAt(ctx.b, s, ctx.tick);
   s.player.satietyAt = ctx.tick;
-  if (a.t === 'move') return moveTo(ctx, a.at);
+  if (a.t === 'move') return moveTo(ctx, a.at, options.validateTravel === true);
   // past an expedition's last bell the mist walks the player out first: the action is not made, and its tile is not read (G49)
   if (ctx.walkOut !== undefined) {
     arrive(ctx, s.player.at);
     return;
+  }
+  if (options.validateTravel) {
+    checkTravel(ctx, tileOf(a, s.player.at));
+    if (a.t === 'kindle') checkTravel(ctx, a.fire);
   }
   // wherever the action is made, the world acts on the player first; a fall ends the step and the action does not happen
   if (arrive(ctx, tileOf(a, s.player.at))) return;
@@ -1095,14 +1140,34 @@ function spend(ctx: Ctx, attr: Attribute): void {
 // ------------------------------------------------------------------ danger
 
 /** A position report (DECISIONS.md, 2026-10-10): the tile the player stands on now. It is the one place travel is checked. */
-function moveTo(ctx: Ctx, at: Tile): void {
+function moveTo(ctx: Ctx, at: Tile, validateTravel: boolean): void {
+  if (validateTravel) {
+    checkTravel(ctx, at);
+    arrive(ctx, at);
+    return;
+  }
   const { b, s } = ctx;
   if (!Array.isArray(at) || at.length !== 2 || !Number.isSafeInteger(at[0]) || !Number.isSafeInteger(at[1])) refuse('Where are you?');
   if (!walkableFor(b)(at[0], at[1], s.player)) refuse('You cannot stand there.');
-  const p = s.player;
-  const reach = 2 + idiv(ctx.tick - p.movedAt, b.params.walk_step_ms);
-  if (Math.max(Math.abs(at[0] - p.at[0]), Math.abs(at[1] - p.at[1])) > reach) refuse('That is further than a walk goes in that time.');
+  const reach = 2 + idiv(ctx.tick - s.player.movedAt, b.params.walk_step_ms);
+  if (Math.max(Math.abs(at[0] - s.player.at[0]), Math.abs(at[1] - s.player.at[1])) > reach) refuse('That is further than a walk goes in that time.');
   arrive(ctx, at);
+}
+
+/** G56: travel and action tiles must be reachable by a four-way walk inside the elapsed-time square. */
+function checkTravel(ctx: Ctx, target: Tile): void {
+  const { b, s, tick } = ctx;
+  const from = s.player.at;
+  if (!Array.isArray(target) || target.length !== 2 || !target.every(Number.isSafeInteger)) refuse('Where are you?');
+  const elapsed = Math.max(0, tick - s.player.movedAt);
+  const reach = Math.min(2 + idiv(elapsed, b.params.walk_step_ms), b.params.move_reach_max);
+  const dx = target[0] - from[0];
+  const dy = target[1] - from[1];
+  if (Math.abs(dx) > reach || Math.abs(dy) > reach) refuse('That is further than a walk goes in that time.');
+  if (walkDistance(b, s, from, target, reach) === undefined) {
+    if (!walkableFor(b)(target[0], target[1], s.player)) refuse('You cannot stand there.');
+    refuse('That is further than a walk goes in that time.');
+  }
 }
 
 /**
