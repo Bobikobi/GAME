@@ -45,7 +45,7 @@ import { app } from '../app';
 import { sound, type SfxId, type SongId } from '../audio';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T } from '../config';
 import { FAR_BELL, SMOKE_PUFFS, farBellDue, nearestChimney, smokeAlpha, smokeAt } from '../hookbridge';
-import { HOLE, LIGHT_POOL, dappleAt, duskAt, frameAt, nightAt, shadeAt } from '../light';
+import { HOLE, LIGHT_POOL, dappleAt, frameAt, nightAt, shadeAt, tableOf, washAt } from '../light';
 import { STONE_GLIDE_MS, STONE_STEPS, type StoneView, stoneView } from '../stone';
 import { type Clear, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../mist';
 import { FOG_ATLAS, FOG_ATLAS_W, FOG_FEATHER, FOG_OFFSETS, FOG_TILE, fogPixels } from '../fog';
@@ -357,6 +357,8 @@ export class WorldScene extends Phaser.Scene {
   private lastAt: Tile | undefined;
   private attractT = 0;
   private night = 0;
+  /** the hour table from params, read once: the colour the valley is washed in, by the clock */
+  private readonly lightTable = tableOf(this.b.params.light?.keys ?? []);
   private wasNight: boolean | undefined;
   private nextEyes = 0;
   private nextWhisper = 0;
@@ -2030,8 +2032,9 @@ export class WorldScene extends Phaser.Scene {
     this.frameLook = frameAt(this.night, RICH.light);
     this.drawFrame();
     if (this.dusk) {
-      // gold over the valley around 20:00 and again around 05:30; the kernel's hours are untouched
-      this.dusk.setFillStyle(PALETTE.gold, duskAt(minute));
+      // the hour's wash from params: cool before sunrise, none at noon, warm by 16:30, dusk at 19:00
+      const wash = washAt(this.lightTable, minute);
+      this.dusk.setFillStyle(wash.tint, wash.alpha);
     }
     for (const d of this.dapples) d.setAlpha(dappleAt(this.night));
     this.showHazards(s);

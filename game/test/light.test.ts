@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { DUSK, HOLE, LIGHT_POOL, NIGHT, dappleAt, duskAt, frameAt, hourAt, nightAt, shadeAt, warmth } from '../src/light.js';
+import { DUSK, HOLE, LIGHT_POOL, NIGHT, dappleAt, duskAt, frameAt, hourAt, nightAt, shadeAt, tableOf, washAt, warmth } from '../src/light.js';
 
 /**
  * ART_SYSTEM section 2: one module holds the light, and its numbers are today's numbers. Every
@@ -61,5 +61,39 @@ describe('the lantern pool', () => {
   test('the pool keeps the numbers it was decided with', () => {
     expect(LIGHT_POOL).toEqual({ r: 34, edge: 2, dark: 0.7, tint: 0xf0dcc0 });
     expect(NIGHT).toEqual({ from: 21, to: 4, fade: 2 });
+  });
+});
+
+describe('the hour table from params', () => {
+  const KEYS = [
+    { at: '05:00', tint: '#7cc4ec', pct: 20 },
+    { at: '08:00', tint: '#eda83a', pct: 0 },
+    { at: '12:00', tint: '#eda83a', pct: 0 },
+    { at: '16:30', tint: '#eda83a', pct: 12 },
+    { at: '19:00', tint: '#e2533f', pct: 28 },
+    { at: '20:00', tint: '#172a52', pct: 0 },
+  ];
+  const table = tableOf(KEYS);
+
+  test('the keys sort by the clock, whatever order the file lists them in', () => {
+    expect(table.map((k) => k.at)).toEqual([300, 480, 720, 990, 1140, 1200]);
+  });
+
+  test('every hour of the day has a wash, and the afternoon stops being noon', () => {
+    expect(washAt(table, 12 * 60).alpha).toBe(0);
+    expect(washAt(table, 16 * 60 + 30)).toEqual({ tint: 0xeda83a, alpha: 0.12 });
+    expect(washAt(table, 19 * 60)).toEqual({ tint: 0xe2533f, alpha: 0.28 });
+    expect(washAt(table, 5 * 60)).toEqual({ tint: 0x7cc4ec, alpha: 0.2 });
+  });
+
+  test('between two keys the wash steps evenly, in whole percent', () => {
+    const mid = washAt(table, 17 * 60 + 45);
+    expect(mid.alpha).toBeCloseTo(0.2, 5);
+    expect(washAt(table, 20 * 60).alpha).toBe(0);
+  });
+
+  test('before the first key and after the last, that key holds', () => {
+    expect(washAt(table, 2 * 60).alpha).toBe(0.2);
+    expect(washAt(table, 23 * 60).alpha).toBe(0);
   });
 });

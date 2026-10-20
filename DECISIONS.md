@@ -1939,3 +1939,9 @@ Checked against the field before it was taken, on the owner's word ("make sure w
 As built, the two reads travel with the reply: the list of appear nodes that stand now goes beside the state in every answer, and a step's cues go with the events of that step, so the local demo and the phone read them the same way.
 **Supersedes:** nothing the owner wrote; it makes explicit what 18 a left open, and the plan text of 18 c needs no change.
 **Retry when:** a screen needs a drawn number that a reply cannot carry (a prediction the player would feel as lag), and then the answer is a designed prediction rule with the owner, never a seed on the phone.
+
+## 2026-10-20 ✅ The hour table is data, and the afternoon is no longer noon (ART_SYSTEM step 2)
+
+Measured on the live game first: four frames a day apart are the same picture. At 08:00, 12:00, 16:30 and 19:00 the valley is pixel-identical and only 22:00 differs, so the game had two lights and nothing between them. `params.light.keys` now carries the hours the valley is washed in a colour - 05:00 cool 20%, 08:00 none, 12:00 none, 16:30 warm 12%, 19:00 dusk 28%, 20:00 none - and `washAt` steps evenly between two keys in whole percent, so a pick changes numbers and not code.
+The night's own shade is untouched at 0.5; ART_SYSTEM section 2's 92% is the owner's number for the L2 pick, not something this step assumes.
+**Retry when:** a capture at 16:30 still matches noon, or a wash key reads as a veil rather than as light. Model: Copilot.
