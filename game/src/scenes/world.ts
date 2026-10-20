@@ -162,11 +162,16 @@ interface Fire {
   lit: string;
   /** a drawn tongue above the logs while the wood runs low: the kit's flame cannot show less than itself (NEXT 21b) */
   flame: Phaser.GameObjects.Image;
+  /** the warm pool the fire puts over the night's shade, so its ring is lit, not only haloed */
+  nightLight: Phaser.GameObjects.Image;
   glow: Glow | undefined;
   /** how much wood is left, by quarters of the fire's own log (NEXT 21b) */
   stage: FireStage;
+  /** the tile's own depth, where the fire sits by day */
+  baseDepth: number;
   /** the stage's size, before the flicker of animate() */
-  baseScale: number;
+  baseX: number;
+  baseY: number;
   /** where this fire's flicker starts, so two fires never beat as one */
   phase: number;
   /** the tint now on the flame, kept so a change from one tint to another is not missed */
@@ -180,6 +185,8 @@ const FIRE_LIT_SPRITE = 'core/base-kit:props/campfire_lit';
 const FIRE_UNLIT_SPRITE = 'core/base-kit:props/campfire_unlit';
 /** A flame's frame time: the kit's three frames while the fire is full. */
 const FLAME_MS = 120;
+/** How strongly a fire's warm pool sits over the night's shade, by stage: the safe ring is lit, not merely haloed. */
+const NIGHT_LIGHT: Record<FireStage, number> = { full: 0.9, steady: 0.75, low: 0.52, embers: 0.28, out: 0 };
 /** The ember tint at the burn's end: the flame cools before it goes. */
 const EMBER_TINT = 0xe09050;
 /**
@@ -524,6 +531,18 @@ export class WorldScene extends Phaser.Scene {
         }
       }
       for (const [x, y] of rim) px(PALETTE.red2, x, y);
+    });
+    // a fire's pool of light: a soft warm disc three tiles wide, stepped in eighths so it stays pixel art
+    make('fx-firelight', 48, 48, () => {
+      const half = 23.5;
+      for (let y = 0; y < 48; y++) {
+        for (let x = 0; x < 48; x++) {
+          const d = Math.hypot(x - half, y - half) / 24;
+          if (d >= 1) continue;
+          const alpha = Math.round((1 - d) * (1 - d) * 8) / 8 * 0.6;
+          if (alpha > 0) g.fillStyle(0xffb060, alpha).fillRect(x, y, 1, 1);
+        }
+      }
     });
     make('fx-mote', 1, 1, () => px(PALETTE.paper, 0, 0));
     make('fx-fly', 2, 2, () => px(PALETTE.green4, 0, 0, 2, 2));
@@ -929,13 +948,19 @@ export class WorldScene extends Phaser.Scene {
       .setOrigin(0.5, 1)
       .setDepth(depth + 0.01)
       .setVisible(false);
+    // a normal-blend pool above the night's shade: the fire's ring is lit ground, not a halo over the dark
+    // three tiles wide: the safe ring, and no bigger
+    const ring = ((this.b.params.fire.safe_tiles * 2 + 1) * T) / 48;
+    const nightLight = this.add
+      .image(spr.x, spr.y - 4, 'fx-firelight')
+      .setBlendMode(Phaser.BlendModes.NORMAL)
+      .setScale(ring)
+      .setDepth(DEPTH.shade + 0.5)
+      .setAlpha(0);
     let glow: Glow | undefined;
     if (RICH.light) {
       // the light pools on the ground around the fire, not over the flame
-      glow = this.glow(spr.x, spr.y - 4, false);
-      // the light is the safe ring: fire.safe_tiles around the tile, drawn whole (fx-glow is 25 px wide),
-      // warmed so an additive gold over the night's blue reads as firelight, not a pale halo
-      glow.img.setScale(((this.b.params.fire.safe_tiles * 2 + 1) * T) / 25).setTint(0xff9a58);
+      glow = this.glow(spr.x, spr.y - 4, false, 'fx-firelight', ring * 0.72);
       this.glows.push(glow);
     }
     let sparks: Emitter | undefined;
@@ -960,9 +985,12 @@ export class WorldScene extends Phaser.Scene {
       unlit,
       lit: this.has(FIRE_LIT_SPRITE) ? FIRE_LIT_SPRITE : unlit,
       flame,
+      nightLight,
       glow,
       stage: 'out',
-      baseScale: 0,
+      baseDepth: depth,
+      baseX: 0,
+      baseY: 0,
       phase: Math.random() * Math.PI * 2,
       tint: undefined,
       sparks,
@@ -992,6 +1020,7 @@ export class WorldScene extends Phaser.Scene {
     f.spr.setVisible(true).setPosition(cx, bottom).setDepth(bottom);
     // the flame keeps its own depth with the tile: a fire kindled a row lower must not draw under its logs
     f.flame.setPosition(cx, bottom - 3).setDepth(bottom + 0.01);
+    f.nightLight.setPosition(cx, bottom - 4);
     f.glow?.img.setPosition(cx, bottom - 4);
     f.sparks?.setPosition(cx, bottom - 6);
     return f;
@@ -1004,7 +1033,10 @@ export class WorldScene extends Phaser.Scene {
       const stage = fireStage(this.b, s.state, id, s.tick);
       const l = STAGE_LOOK[stage];
       const full = stage === 'full' || stage === 'steady';
-      const drawn = stage === 'low' || stage === 'embers';
+      // by day the kit's own flame shows while the wood is full; at night the shade would hide it, so the drawn tongue
+      // carries the flame over the dark at every stage
+      const night = this.night > 0.15;
+      const drawn = stage === 'low' || stage === 'embers' || (night && full);
       const look = full ? f.lit : f.unlit;
       if (f.spr.texture.key !== look) {
         retex(f.spr, look, 0);
@@ -1016,9 +1048,18 @@ export class WorldScene extends Phaser.Scene {
       }
       // the full fire is the kit's campfire, a little smaller when it settles; the last wood is a drawn tongue
       f.spr.setAlpha(1).setScale(full ? (stage === 'full' ? 1 : 0.9) : 1);
+      // at night the fire itself, its flame and its sparks are lifted over the shade, so the light has a source
+      const nightFull = night && full;
+      const sx = nightFull ? (stage === 'full' ? 1.2 : 1.1) : 1;
+      const sy = nightFull ? (stage === 'full' ? 0.85 : 0.72) : l.scale;
       f.flame.setVisible(drawn);
-      f.flame.setAlpha(l.alpha).setScale(l.scale);
-      f.baseScale = l.scale;
+      f.flame.setAlpha(l.alpha).setScale(sx, sy);
+      f.baseX = sx;
+      f.baseY = sy;
+      f.spr.setDepth(night ? DEPTH.shade + 0.8 : f.baseDepth);
+      f.flame.setDepth(night ? DEPTH.shade + 1 : f.baseDepth + 0.01);
+      f.sparks?.setDepth(night ? DEPTH.shade + 0.9 : f.baseDepth + 0.02);
+      f.nightLight.setAlpha(NIGHT_LIGHT[stage] * this.night);
       // the last wood cools the tongue; a change from one tint to another (low to embers) is a tint too
       if (f.tint !== l.tint) {
         f.tint = l.tint;
@@ -1049,12 +1090,12 @@ export class WorldScene extends Phaser.Scene {
   fireLook(id: string): { sprite: string; burning: boolean; alpha: number; scale: number; stage: FireStage } | undefined {
     const f = this.fires.get(id);
     if (!f) return undefined;
-    const drawn = f.stage === 'low' || f.stage === 'embers';
+    const drawn = f.flame.visible;
     return {
       sprite: f.spr.texture.key,
       burning: f.stage !== 'out',
       alpha: drawn ? f.flame.alpha : f.spr.alpha,
-      scale: drawn ? f.baseScale : f.spr.scaleX,
+      scale: drawn ? f.baseY : f.spr.scaleX,
       stage: f.stage,
     };
   }
@@ -1092,8 +1133,13 @@ export class WorldScene extends Phaser.Scene {
     return this.add.image(cx, bottom + 2, 'fx-shadow').setOrigin(0.5, 1).setAlpha(SHADOW_ALPHA).setDepth(depth).setScale(Math.max(1, Math.round(tiles)), 1);
   }
 
-  private glow(x: number, y: number, lit: boolean): Glow {
-    const img = this.add.image(x, y, 'fx-glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.glow).setAlpha(0);
+  private glow(x: number, y: number, lit: boolean, key = 'fx-glow', scale = 1): Glow {
+    const img = this.add
+      .image(x, y, key)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(DEPTH.glow)
+      .setScale(scale)
+      .setAlpha(0);
     return { img, phase: Math.random() * Math.PI * 2, lit };
   }
 
@@ -1804,8 +1850,8 @@ export class WorldScene extends Phaser.Scene {
       for (const f of this.fires.values()) {
         if (!f.flame.visible) continue;
         f.flame.setScale(
-          f.baseScale * (1 + 0.07 * Math.sin(time / 130 + f.phase)),
-          f.baseScale * (1 + 0.05 * Math.sin(time / 170 + f.phase * 1.3)),
+          f.baseX * (1 + 0.07 * Math.sin(time / 130 + f.phase)),
+          f.baseY * (1 + 0.05 * Math.sin(time / 170 + f.phase * 1.3)),
         );
         f.flame.x = f.spr.x + 0.6 * Math.sin(time / 210 + f.phase);
       }
