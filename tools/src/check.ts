@@ -11,6 +11,7 @@ import { RARITIES, type ParamsBody } from '@game/schema';
 import { assemble, type Assembled } from './assemble';
 import { readBoard } from './board';
 import { CORE_PALETTE } from './kit/palette';
+import { accentsOf, allowedColors, rampProblems } from './kit/ramps';
 import { LOCK_FILE, loadAll, toRepoPath, type Issue } from './load';
 import { baseOf } from './material';
 import { checkHazards } from './hazards';
@@ -513,14 +514,25 @@ export function spriteSizeProblem(name: string, s: { w: number; h: number; densi
   return `${here.what} ${said(here)} at density ${density} (${said(there)} at density ${other}), this one is ${s.w}x${s.h}${hint}`;
 }
 
-/** V-1: every sprite exists, has the published size, and uses the core palette only. */
+/** V-1: every sprite exists, has the published size, and uses the core palette and its own declared ramps. */
 function checkKits(a: Assembled): Issue[] {
   const issues: Issue[] = [];
-  const allowed = new Set(CORE_PALETTE.map((h) => h.toLowerCase()));
+  const core = CORE_PALETTE.map((h) => h.toLowerCase());
   for (const [kitId, kit] of Object.entries(a.kits)) {
     const kitFile = `${kit.rel}/kit.json`;
     if (kit.palette && kit.palette.join(',') !== CORE_PALETTE.join(',')) {
       issues.push({ file: kitFile, where: 'kit.palette', message: 'differs from the core palette in tools/src/kit/palette.ts', level: 'error' });
+    }
+    // A declared ramp is held to the rule: five or six steps, each lighter than the one below, the hue moving.
+    const ramps = kit.ramps ?? [];
+    const rampById = new Map<string, { id: string; steps: readonly string[] }>();
+    for (const [index, ramp] of ramps.entries()) {
+      const where = `kit.ramps.${index}`;
+      if (rampById.has(ramp.id)) issues.push({ file: kitFile, where, message: `the ramp "${ramp.id}" is declared twice`, level: 'error' });
+      rampById.set(ramp.id, ramp);
+      for (const problem of rampProblems(ramp)) {
+        issues.push({ file: kitFile, where, message: `the ramp "${ramp.id}" ${problem}`, level: 'error' });
+      }
     }
     for (const [name, s] of Object.entries(kit.sprites)) {
       const where = `kit.sprites.${name}`;
@@ -546,6 +558,16 @@ function checkKits(a: Assembled): Issue[] {
           level: 'error',
         });
       }
+      // A sprite that names no ramps uses the core only, which is how every kit written before
+      // ramps stays valid. One that names them may also use their steps.
+      const named = s.ramps ?? [];
+      for (const id of named) {
+        if (!rampById.has(id)) {
+          issues.push({ file: kitFile, where, message: `names the ramp "${id}", which this kit does not declare`, level: 'error' });
+        }
+      }
+      const allowed = allowedColors(core, ramps, named);
+      const used = new Set<string>();
       const bad = new Set<string>();
       let soft = 0;
       for (let i = 0; i < png.data.length; i += 4) {
@@ -553,16 +575,31 @@ function checkKits(a: Assembled): Issue[] {
         if (alpha === 0) continue;
         if (alpha !== 255) soft++;
         const hex = `#${[png.data[i]!, png.data[i + 1]!, png.data[i + 2]!].map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+        used.add(hex);
         if (!allowed.has(hex)) bad.add(hex);
       }
       if (soft > 0) issues.push({ file: `${kit.rel}/${s.file}`, where: '', message: `${soft} half-transparent pixels; use fully clear or fully solid`, level: 'error' });
       if (bad.size > 0) {
+        const set = named.length > 0 ? 'the core palette and its declared ramps' : 'the core palette';
         issues.push({
           file: `${kit.rel}/${s.file}`,
           where: '',
-          message: `${bad.size} colors outside the core palette (${[...bad].slice(0, 4).join(', ')}${bad.size > 4 ? ', ...' : ''}). Run it through "pnpm kit:import".`,
+          message: `${bad.size} colors outside ${set} (${[...bad].slice(0, 4).join(', ')}${bad.size > 4 ? ', ...' : ''}). Run it through "pnpm kit:import".`,
           level: 'error',
         });
+      }
+      // A ground tile is its ramp plus at most two accents (STYLE section 9).
+      const first = named[0] ? rampById.get(named[0]) : undefined;
+      if (name.startsWith('tiles/') && first) {
+        const accents = accentsOf(used, first);
+        if (accents.size > 2) {
+          issues.push({
+            file: `${kit.rel}/${s.file}`,
+            where,
+            message: `a ground tile is its ramp "${first.id}" plus at most two accents, and this one draws ${accents.size} (${[...accents].slice(0, 4).join(', ')})`,
+            level: 'error',
+          });
+        }
       }
     }
     void kitId;

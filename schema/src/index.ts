@@ -1064,6 +1064,31 @@ export const ParamsBody = Type.Object(
   { additionalProperties: false },
 );
 
+/** What a ramp is for. A creator's kit declares at most four of them (ART_SYSTEM section 3). */
+export const RAMP_FOR = ['ground', 'vegetation', 'stone', 'wood', 'water', 'cloth', 'skin', 'light'] as const;
+export const RampFor = Type.Union(RAMP_FOR.map((f) => Type.Literal(f)));
+
+const RampId = Type.String({
+  pattern: '^[a-z0-9][a-z0-9-]*$',
+  maxLength: 32,
+  description: 'Names the ramp so a sprite of this kit can cite it, for example "meadow" or "wet-stone".',
+});
+const RampStep = Type.String({ pattern: '^#[0-9a-f]{6}$', description: 'One step of the ramp, dark to light.' });
+
+export const RampBody = Type.Object(
+  {
+    id: RampId,
+    for: Type.Optional(RampFor),
+    steps: Type.Array(RampStep, {
+      minItems: 5,
+      maxItems: 6,
+      description:
+        'Five or six steps from dark to light, the hue moving between them: a ramp that only changes value is not a ramp and the check says so.',
+    }),
+  },
+  { additionalProperties: false, description: 'A material or region ramp, declared by the kit that draws with it.' },
+);
+
 export const KitBody = Type.Object(
   {
     palette: Type.Optional(
@@ -1071,6 +1096,13 @@ export const KitBody = Type.Object(
         minItems: 2,
         maxItems: 32,
         description: 'Only the core kit sets the palette. Every sprite of every kit must use these colors.',
+      }),
+    ),
+    ramps: Type.Optional(
+      Type.Array(RampBody, {
+        maxItems: 4,
+        description:
+          'The ramps this kit draws with (ART_SYSTEM section 3). A sprite that names none uses the core palette only, so every kit written before this field stays valid.',
       }),
     ),
     sprites: Type.Record(
@@ -1089,6 +1121,14 @@ export const KitBody = Type.Object(
             'Frame height in pixels. At density 1 tiles/ and items/ are 16, chars/ are 24, a work pose 32 and props up to 64. At density 4 tiles/ and items/ are 64, chars/ are 96, a work pose 128 and props up to 384.',
           ),
           frames: Type.Optional(Int(1, 16, 'Animation frames laid side by side. Default 1.')),
+          ramps: Type.Optional(
+            Type.Array(Type.String({ pattern: '^[a-z0-9][a-z0-9-]*$', maxLength: 32 }), {
+              minItems: 1,
+              maxItems: 4,
+              description:
+                'The ramps of this kit the sprite draws in, in order: the first is the one its outline comes from. A sprite that names none uses the core palette only.',
+            }),
+          ),
           density: Type.Optional(
             Type.Union([Type.Literal(1), Type.Literal(4)], {
               description:
@@ -1376,6 +1416,8 @@ export type Starter = Static<typeof StarterBody>;
 export type Profession = Static<typeof ProfessionBody>;
 export type Shop = Static<typeof ShopBody>;
 export type Kit = Static<typeof KitBody>;
+export type Ramp = Static<typeof RampBody>;
+export type RampPurpose = Static<typeof RampFor>;
 export type GameMap = Static<typeof MapBody>;
 export type EffectName = (typeof EFFECTS)[number];
 export type WornEffectName = (typeof WORN_EFFECTS)[number];
