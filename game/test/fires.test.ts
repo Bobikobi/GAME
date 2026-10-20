@@ -9,6 +9,7 @@ import {
   holdsKindling,
   fireLow,
   fireName,
+  fireSpot,
   fireWarnKey,
   fireWarning,
   logsToDawn,
@@ -434,5 +435,25 @@ describe("a fire of one's own (NEXT 21b)", () => {
     // a log shortened by the ground is the one the count of the night uses
     const short = withOwn({ lit: H19, until: H19 + 50_000, log: 50_000 });
     expect(logsToDawn(bundle, short, OWN_FIRE, H19)).toBe(9);
+  });
+});
+
+describe('where a fire stands on its tile (NEXT 21b)', () => {
+  test('a fire kindled a row lower sits, draws and smokes from its own row, every part above its logs', () => {
+    const first = fireSpot([27, 16], 64);
+    const lower = fireSpot([27, 17], 64);
+    expect(first.depth).toBe(17 * 64);
+    expect(lower.depth).toBe(18 * 64);
+    expect(lower.depth).toBeGreaterThan(first.depth);
+    expect(lower.smokeY - first.smokeY).toBe(64);
+    expect(lower.flameY - first.flameY).toBe(64);
+    for (const spot of [first, lower]) {
+      expect(spot.x).toBe(27.5 * 64);
+      expect(spot.smokeDepth).toBeGreaterThan(spot.depth);
+      expect(spot.flameDepth).toBeGreaterThan(spot.depth);
+      expect(spot.sparksDepth).toBeGreaterThan(spot.flameDepth);
+    }
+    // a part of the lower fire never falls under the first fire's flame
+    expect(lower.depth).toBeGreaterThan(first.sparksDepth);
   });
 });

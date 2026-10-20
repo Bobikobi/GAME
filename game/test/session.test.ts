@@ -529,6 +529,29 @@ describe("a fire of one's own that goes out while the player stands still (6b, N
     expect(session.busy).toBe(false);
     expect(outs).toEqual([{ e: 'fire_out', id: OWN_FIRE }]);
   });
+
+  test('a prop fire, the elder hearth, is told out the same way (the tellOuts path over state.player.fires)', () => {
+    const HEARTH = 'core/elder-hearth';
+    const VIGIL = 'test/hearth-vigil';
+    // the long night now asks for a fire of one's own, so a stand-in task keeps the hearth
+    bundle.quests[VIGIL] = { ...bundle.quests[QUEST]!, id: VIGIL, steps: [{ kind: 'tend', fire: HEARTH }] };
+    try {
+      const session = startedSession();
+      session.state.player.quests[VIGIL] = 'active';
+      session.state.player.fires[HEARTH] = { lit: H19, until: H21 };
+      session.tick = H21 - 100;
+      session.report(session.pos, true);
+      const outs = listen(session);
+      session.advance(50);
+      expect(outs).toEqual([]);
+      session.advance(100);
+      expect(outs).toEqual([{ e: 'fire_out', id: HEARTH }]);
+      for (let i = 0; i < 8; i++) session.advance(250);
+      expect(outs).toHaveLength(1);
+    } finally {
+      delete bundle.quests[VIGIL];
+    }
+  });
 });
 
 describe('the stage-1 service hears of play (GRUNT 18)', () => {

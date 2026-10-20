@@ -218,3 +218,35 @@ export function readable(s: PublicState, litBy: string | undefined, tick: number
 
 /** What looking at an unlit `lit_by` prop says. */
 export const TOO_DARK = 'Too dark to read.';
+
+/** Where each part of a fire stands for a tile: the base is the tile's bottom edge, and every part keeps its depth with it. */
+export interface FireSpot {
+  x: number;
+  bottom: number;
+  flameY: number;
+  lightY: number;
+  sparksY: number;
+  smokeY: number;
+  /** the sprite's depth, which the flame, sparks and smoke stand just above */
+  depth: number;
+  flameDepth: number;
+  sparksDepth: number;
+  smokeDepth: number;
+}
+
+/** The parts of a fire on `tile` of `tilePx` pixels: a fire kindled a row lower draws, and smokes, from its own row. */
+export function fireSpot(tile: readonly [number, number], tilePx: number): FireSpot {
+  const bottom = (tile[1] + 1) * tilePx;
+  return {
+    x: (tile[0] + 0.5) * tilePx,
+    bottom,
+    flameY: bottom - 3,
+    lightY: bottom - 4,
+    sparksY: bottom - 6,
+    smokeY: bottom - 12,
+    depth: bottom,
+    flameDepth: bottom + 0.01,
+    sparksDepth: bottom + 0.02,
+    smokeDepth: bottom + 0.005,
+  };
+}

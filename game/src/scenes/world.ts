@@ -51,7 +51,7 @@ import { type Clear, mistClears, mistDensity, mistPixels, mistRadius, mistStep, 
 import { FOG_ATLAS, FOG_ATLAS_W, FOG_FEATHER, FOG_OFFSETS, FOG_TILE, fogPixels } from '../fog';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
-import { TOO_DARK, type FireStage, feedTooLate, fireName, fireStage, holdsKindling, readable, woodToFeed } from '../fires';
+import { TOO_DARK, type FireStage, feedTooLate, fireName, fireSpot, fireStage, holdsKindling, readable, woodToFeed } from '../fires';
 import { emptySlots, slotContent } from '../places';
 import { canopyGroups, hash, remapTone, toneField, type Tone } from '../richground';
 import {LONGEST_FRAME_MS} from '../session';
@@ -982,18 +982,15 @@ export class WorldScene extends Phaser.Scene {
           emitting: false,
         })
         .setDepth(depth + 0.02);
-      smoke = this.add
-        .particles(spr.x, spr.y - 12, 'fx-smoke', {
-          speedY: { min: -9, max: -4 },
-          speedX: { min: -3, max: 3 },
-          lifespan: { min: 2200, max: 3800 },
-          scale: { start: 1, end: 2.5 },
-          alpha: { values: [0.7, 0.35, 0] },
-          frequency: 900,
-          maxAliveParticles: 6,
-          emitting: false,
-        })
-        .setDepth(depth + 0.005);
+      smoke = this.smokePuffs(spr.x, spr.y - 12, depth + 0.005, {
+        speedY: { min: -9, max: -4 },
+        speedX: { min: -3, max: 3 },
+        lifespan: { min: 2200, max: 3800 },
+        scale: { start: 1, end: 2.5 },
+        alpha: { values: [0.7, 0.35, 0] },
+        frequency: 900,
+        maxAliveParticles: 6,
+      });
     }
     spr.setDepth(depth);
     return {
@@ -1028,19 +1025,20 @@ export class WorldScene extends Phaser.Scene {
       if (f?.glow) f.glow.lit = false;
       return undefined;
     }
-    const cx = (own.at[0] + 0.5) * T;
-    const bottom = (own.at[1] + 1) * T;
+    const at = fireSpot(own.at, T);
     if (!f) {
-      const spr = kitSprite(this, cx, bottom, FIRE_UNLIT_SPRITE, 0).setOrigin(0.5, 1);
-      f = this.fireAtTile(spr, FIRE_UNLIT_SPRITE, bottom);
+      const spr = kitSprite(this, at.x, at.bottom, FIRE_UNLIT_SPRITE, 0).setOrigin(0.5, 1);
+      f = this.fireAtTile(spr, FIRE_UNLIT_SPRITE, at.bottom);
       this.fires.set(OWN_FIRE, f);
     }
-    f.spr.setVisible(true).setPosition(cx, bottom).setDepth(bottom);
-    // the flame keeps its own depth with the tile: a fire kindled a row lower must not draw under its logs
-    f.flame.setPosition(cx, bottom - 3).setDepth(bottom + 0.01);
-    f.nightLight.setPosition(cx, bottom - 4);
-    f.glow?.img.setPosition(cx, bottom - 4);
-    f.sparks?.setPosition(cx, bottom - 6);
+    // a re-kindled fire moves every part with its tile: the depth it falls back to by day and the smoke's column too
+    f.baseDepth = at.depth;
+    f.spr.setVisible(true).setPosition(at.x, at.bottom).setDepth(at.depth);
+    f.flame.setPosition(at.x, at.flameY).setDepth(at.flameDepth);
+    f.nightLight.setPosition(at.x, at.lightY);
+    f.glow?.img.setPosition(at.x, at.lightY);
+    f.sparks?.setPosition(at.x, at.sparksY).setDepth(at.sparksDepth);
+    f.smoke?.setPosition(at.x, at.smokeY).setDepth(at.smokeDepth);
     return f;
   }
 
@@ -1165,19 +1163,21 @@ export class WorldScene extends Phaser.Scene {
     return { img, phase: Math.random() * Math.PI * 2, lit };
   }
 
+  /** The one smoke emitter, the 'fx-smoke' puff, off until its owner switches it on: a chimney's thread and a fire's column differ only in the numbers. */
+  private smokePuffs(x: number, y: number, depth: number, config: Omit<Phaser.Types.GameObjects.Particles.ParticleEmitterConfig, 'emitting'>): Emitter {
+    return this.add.particles(x, y, 'fx-smoke', { ...config, emitting: false }).setDepth(depth);
+  }
+
   /** A thin thread of smoke rising from (x, y), only while that chimney is on screen. */
   private smoke(x: number, y: number, depth: number): void {
-    const emitter = this.add
-      .particles(x, y, 'fx-smoke', {
-        speedY: { min: -7, max: -3 },
-        speedX: { min: 1, max: 3 },
-        lifespan: { min: 2500, max: 4000 },
-        alpha: { values: [0.7, 0.45, 0] },
-        frequency: 420,
-        maxAliveParticles: 10,
-        emitting: false,
-      })
-      .setDepth(depth);
+    const emitter = this.smokePuffs(x, y, depth, {
+      speedY: { min: -7, max: -3 },
+      speedX: { min: 1, max: 3 },
+      lifespan: { min: 2500, max: 4000 },
+      alpha: { values: [0.7, 0.45, 0] },
+      frequency: 420,
+      maxAliveParticles: 10,
+    });
     this.locals.push({ emitter, rect: new Phaser.Geom.Rectangle(x - 16, y - 40, 48, 56) });
   }
 
@@ -2068,13 +2068,9 @@ export class WorldScene extends Phaser.Scene {
       const k = Math.min(1, this.move.t / STEP_MS);
       const [fx, fy] = this.move.from;
       const [tx, ty] = this.move.to;
-      const ground = Math.round((fy + (ty - fy) * k + 1) * T);
-      // one pixel of body bob at mid-step, as a walker's weight comes over the leg; the shadow stays on the ground
-      // one pixel up through the passing pose, never a float: grounded at both ends of the step
-      const bob = Math.sin(k * Math.PI) > 0.6 ? 1 : 0;
-      this.player.setPosition(Math.round((fx + (tx - fx) * k) * T + T / 2), ground - bob);
+      this.player.setPosition(Math.round((fx + (tx - fx) * k) * T + T / 2), Math.round((fy + (ty - fy) * k + 1) * T));
       this.player.setDepth(Math.round((Math.max(fy, ty) + 1) * T + 1));
-      this.playerShadow?.setPosition(this.player.x, ground + 2);
+      this.playerShadow?.setPosition(this.player.x, this.player.y + 2);
       this.faceFrame(strideFrame(k, this.steps, this.b.sprites[this.playerFrame(s.facing).key]?.frames ?? 1));
       if (k < 1) return;
       const carry = this.move.t - STEP_MS;
