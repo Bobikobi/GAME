@@ -48,6 +48,7 @@ import { FAR_BELL, SMOKE_PUFFS, farBellDue, nearestChimney, smokeAlpha, smokeAt 
 import { STONE_GLIDE_MS, STONE_STEPS, type StoneView, stoneView } from '../stone';
 import { type Clear, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../mist';
 import { FOG_ATLAS, FOG_ATLAS_W, FOG_FEATHER, FOG_OFFSETS, FOG_TILE, fogPixels } from '../fog';
+import { BANK_DRIFT, BANK_TILE, CLOUD_TILE, bankPixels, cloudOffset, cloudPixels, fogStrength } from '../sky';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { TOO_DARK, feedTooLate, fireLow, fireName, readable, woodToFeed } from '../fires';
@@ -301,6 +302,9 @@ export class WorldScene extends Phaser.Scene {
   private campGlows = new Map<string, Glow>();
   private embers = new Map<string, Emitter>();
   private fogs: Phaser.GameObjects.Image[] = [];
+  /** the cloud shade over the ground by day, and the fog banks that lie in the valley (sky.ts) */
+  private cloud?: Phaser.GameObjects.TileSprite;
+  private banks: { spr: Phaser.GameObjects.TileSprite; drift: number; at: number }[] = [];
   private fogMotes: Emitter[] = [];
   private dapples: Phaser.GameObjects.TileSprite[] = [];
   private cycles: Cycle[] = [];
@@ -416,7 +420,7 @@ export class WorldScene extends Phaser.Scene {
     // the haze is one layer over the valley; addFilters cuts the player out of it, so the mist covers the
     // ground, the props and the other figures but never the player or what the player holds
     this.events.on(Phaser.Scenes.Events.POST_UPDATE, () => this.cutPlayer());
-    this.veil = this.add.container(0, 0, [this.mist, ...this.fogs, ...this.fogMotes]).setDepth(DEPTH.mist);
+    this.veil = this.add.container(0, 0, [this.mist, ...this.banks.map((b) => b.spr), ...this.fogs, ...this.fogMotes]).setDepth(DEPTH.mist);
     this.bar = this.add.graphics().setDepth(DEPTH.fx);
     this.marker = this.add.image(0, 0, 'fx-arrow').setOrigin(0.5, 1).setDepth(DEPTH.marker).setVisible(false);
     this.tweens.add({ targets: this.marker, displayOriginY: 7, duration: 380, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
@@ -1229,6 +1233,7 @@ export class WorldScene extends Phaser.Scene {
    * keeps the zones there) and butterflies, falling leaves and birds join in.
    */
   private buildAtmosphere(): void {
+    this.buildAir();
     const w = this.b.map.width * T;
     const hgt = this.b.map.height * T;
     this.mist = this.add.image(0, 0, '__DEFAULT').setOrigin(0).setDepth(DEPTH.mist).setVisible(false);
@@ -1288,6 +1293,58 @@ export class WorldScene extends Phaser.Scene {
         emitting: false,
       })
       .setDepth(DEPTH.motes);
+  }
+
+  /**
+   * The air over the valley (sky.ts, STYLE section 7 cue 3): one patch of ink at 12% that drifts across the ground
+   * by day, and two pale banks that gather before dawn and after dusk. Both are drawn under the mist's veil, so the
+   * player is cut out of them as the player is cut out of the haze.
+   */
+  private buildAir(): void {
+    if (!RICH.light) return;
+    const cloudTex = this.textures.createCanvas('fx-cloud', CLOUD_TILE, CLOUD_TILE);
+    if (cloudTex) {
+      const img = cloudTex.getContext().createImageData(CLOUD_TILE, CLOUD_TILE);
+      img.data.set(cloudPixels());
+      cloudTex.getContext().putImageData(img, 0, 0);
+      cloudTex.refresh();
+      this.cloud = this.add.tileSprite(0, 0, T, T, 'fx-cloud').setOrigin(0).setDepth(DEPTH.flat - 0.3).setAlpha(0);
+    }
+    const banks = [
+      { key: 'fx-bank-high', tile: BANK_TILE.high, drift: BANK_DRIFT.high, at: 0.22, seed: 1.7 },
+      { key: 'fx-bank-thin', tile: BANK_TILE.thin, drift: BANK_DRIFT.thin, at: 0.46, seed: 3.1 },
+      { key: 'fx-bank-low', tile: BANK_TILE.low, drift: BANK_DRIFT.low, at: 0.64, seed: 4.3 },
+    ];
+    for (const b of banks) {
+      const wide = 24 * T;
+      const tex = this.textures.createCanvas(b.key, wide, b.tile);
+      if (!tex) continue;
+      const img = tex.getContext().createImageData(wide, b.tile);
+      img.data.set(bankPixels(wide, b.tile, b.seed));
+      tex.getContext().putImageData(img, 0, 0);
+      tex.refresh();
+      const spr = this.add.tileSprite(0, 0, wide / 2, b.tile, b.key).setOrigin(0).setAlpha(0);
+      this.banks.push({ spr, drift: b.drift, at: b.at });
+    }
+  }
+
+  /**
+   * The air keeps the view and drifts on the valley's wind: the cloud patch is anchored in the world, so walking
+   * under it moves it the other way, and a bank slides along its own length a little faster than the one above.
+   */
+  private driftAir(time: number, delta: number): void {
+    const view = this.cameras.main.worldView;
+    if (this.cloud) {
+      const off = cloudOffset(time);
+      this.cloud.setPosition(view.x - CLOUD_TILE / 2, view.y - CLOUD_TILE / 2);
+      this.cloud.setSize(view.width + CLOUD_TILE, view.height + CLOUD_TILE);
+      this.cloud.setTilePosition(view.x + off.x, view.y + off.y);
+    }
+    for (const b of this.banks) {
+      b.spr.setPosition(view.x - b.spr.width / 2, view.y + view.height * b.at - b.spr.height / 2);
+      // a reader who asked for reduced motion keeps the banks and loses only their drift
+      if (RICH.motion) b.spr.tilePositionX += (b.drift * delta) / 1000;
+    }
   }
 
   /** Dappled light over the groves by day: one tiled layer of specks per rectangle of grove or forest tiles. */
@@ -1632,6 +1689,7 @@ export class WorldScene extends Phaser.Scene {
    * following the camera, birds now and then. Empty lists cost nothing.
    */
   private animate(time: number, delta: number): void {
+    this.driftAir(time, delta);
     for (const c of this.cycles) {
       if (!c.active || time < c.next) continue;
       c.next = time + c.min + (c.max > c.min ? Math.random() * (c.max - c.min) : 0);
@@ -2035,6 +2093,12 @@ export class WorldScene extends Phaser.Scene {
       this.dusk.setFillStyle(PALETTE.gold, 0.4 * Math.max(warmth(m, 20), warmth(m, 5.5)));
     }
     for (const d of this.dapples) d.setAlpha(0.08 * (1 - this.night));
+    // the cloud shade goes with the sun; the banks gather before dawn and after dusk (sky.ts)
+    const fog = fogStrength(minuteOfDay(this.b, s.tick));
+    this.cloud?.setAlpha(1 - this.night);
+    // the banks keep their pale tone through the dark, so the night's one shade does not swallow them
+    const weight = [0.6, 0.45, 0.85];
+    this.banks.forEach((b, i) => b.spr.setAlpha(Math.min(0.85, fog * (weight[i] ?? 0.6) * (1 + 0.7 * this.night))));
     this.showHazards(s);
     const isNight = this.night >= 0.5;
     if (isNight !== this.wasNight) {
