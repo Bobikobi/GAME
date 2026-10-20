@@ -80,6 +80,14 @@ function longMovementPath(state: State): Tile[] {
 }
 
 describe('Stage 2a server protocol', () => {
+  test('starts the movement clock at the server-owned state tick', () => {
+    const state = started();
+    state.tick = 10_000;
+    const record = createPlayerRecord(bundle, state, 1_000_000);
+    expect(record.movementAt).toBe(state.tick);
+    expect(record.movementCreditMs).toBe(2 * bundle.params.walk_step_ms);
+  });
+
   test('requires an authenticated server-side identity and never accepts a client player id', async () => {
     const { base } = await api(started());
     const response = await post(base, '/action', {

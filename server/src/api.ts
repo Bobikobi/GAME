@@ -24,7 +24,7 @@ export function createPlayerRecord(bundle: Bundle, state: State, acceptedAt: num
     state: structuredClone(state),
     version: 1,
     acceptedAt,
-    movementAt: state.player.movedAt,
+    movementAt: state.tick,
     movementCreditMs: Math.min(2, bundle.params.move_reach_max) * bundle.params.walk_step_ms,
   };
 }
