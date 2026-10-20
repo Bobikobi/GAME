@@ -12,6 +12,7 @@ import { assemble, type Assembled } from './assemble';
 import { readBoard } from './board';
 import { CORE_PALETTE } from './kit/palette';
 import { accentsOf, allowedColors, rampProblems } from './kit/ramps';
+import { checkColors } from './colors';
 import { LOCK_FILE, loadAll, toRepoPath, type Issue } from './load';
 import { baseOf } from './material';
 import { checkHazards } from './hazards';
@@ -43,6 +44,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkWear(b));
     issues.push(...checkDrift(b));
     issues.push(...checkKits(assembled));
+    issues.push(...checkColors(assembled));
     issues.push(...checkPlay(b, assembled.origin));
     issues.push(...checkStarts(b, assembled.origin));
     issues.push(...checkReach(b, assembled.origin));
