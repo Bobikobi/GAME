@@ -42,6 +42,51 @@ export function nightAt(minute: Minute): number {
  * How close an hour is to one of the dusk's two, 0 to 1: flat within half an hour of the centre,
  * then falling away over the shoulder.
  */
+/** One key of the hour table: the wash's colour and strength at an hour of the day. */
+export interface LightKey {
+  /** minutes of the day, 0 to 1439 */
+  at: number;
+  tint: number;
+  /** strength at that hour, in whole percent */
+  pct: number;
+}
+
+/** Reads `params.light.keys` into minutes of the day, sorted, so the scene needs no parsing. */
+export function tableOf(keys: readonly { at: string; tint: string; pct: number }[]): LightKey[] {
+  return keys
+    .map((k) => {
+      const [h, m] = k.at.split(':').map(Number) as [number, number];
+      return { at: h * 60 + m, tint: Number.parseInt(k.tint.slice(1), 16), pct: k.pct };
+    })
+    .sort((a, b) => a.at - b.at);
+}
+
+/**
+ * The wash at a minute of the day: the tint and its alpha, stepping evenly between the two keys
+ * around the hour. Before the first key and after the last, that key holds.
+ */
+export function washAt(table: readonly LightKey[], minute: Minute): { tint: number; alpha: number } {
+  if (table.length === 0) return { tint: 0, alpha: 0 };
+  const first = table[0]!;
+  const last = table[table.length - 1]!;
+  if (minute <= first.at) return { tint: first.tint, alpha: first.pct / 100 };
+  if (minute >= last.at) return { tint: last.tint, alpha: last.pct / 100 };
+  for (let i = 0; i < table.length - 1; i += 1) {
+    const a = table[i]!;
+    const b = table[i + 1]!;
+    if (minute < a.at || minute > b.at) continue;
+    const span = b.at - a.at;
+    const t = span === 0 ? 0 : (minute - a.at) / span;
+    const chan = (shift: number) => {
+      const ca = (a.tint >> shift) & 0xff;
+      const cb = (b.tint >> shift) & 0xff;
+      return Math.round(ca + (cb - ca) * t);
+    };
+    return { tint: (chan(16) << 16) | (chan(8) << 8) | chan(0), alpha: Math.round(a.pct + (b.pct - a.pct) * t) / 100 };
+  }
+  return { tint: last.tint, alpha: last.pct / 100 };
+}
+
 export function warmth(hour: number, centre: number): number {
   return Math.max(0, Math.min(1, 1 - Math.max(0, Math.abs(hour - centre) - DUSK.shoulder) / DUSK.halfWidth));
 }
