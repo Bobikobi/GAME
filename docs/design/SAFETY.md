@@ -1,6 +1,6 @@
 # Safety and the account contract: presence, words, reports, minors, bots, leaving (2026-10-20)
 
-What the game promises a player about being seen, being heard, being safe and leaving, written as one contract so the builders of the account (NEXT 18), of presence (PRESENCE.md) and of chat (last, W11) build to one page. Design only: no code, no schema, no content and no look changes here. The page builds on what is decided and does not say it again; section 2 points at every line it stands on. Wherever a line follows from a law, the law and its section are named (section 3). What the owner has not said is marked as proposed; one question bends a rule of his and goes to him in section 12. The people who read the queue are a question of people and stay out of this page.
+What the game promises a player about being seen, being heard, being safe and leaving, written as one contract so the builders of the account (NEXT 18), of presence (PRESENCE.md) and of chat (last, W11) build to one page. Design only: no code, no schema, no content and no look changes here. The page builds on what is decided and does not say it again; section 2 points at every line it stands on. Wherever a line follows from a law, the law and its section are named (section 3). What the owner has not said is marked as proposed; one question bent a rule of his and went to him in section 12, answered on 20.10. The people who read the queue are a question of people and stay out of this page.
 
 ## 1. The contract in one paragraph
 
@@ -84,6 +84,7 @@ What stands: the report's contents, the queue, the three-report hold, the overru
 
 - **Who reads.** One queue, read by a person with the `moderator` right on their own account, which the owner grants; the two named people are a question of people and stay out of this page. The reader's page shows the report, the quoted lines, the reported account's rung and its past decisions (a year), the reporter's overrule count, and never an email, a country or an age band; the queue sorts by the band without showing it.
 - **The reasons are a closed list**, the "short list" of PRESENCE 4 made concrete: `threat` (a threat to a person), `sexual`, `personal` (an address, a phone, a real name, an age under 13 named), `hate` (a slur), `scam` (money, a password, a link), `rude`, `cheat` (a program plays, a loop), `name` (a bad name). The list is content; `pnpm check` refuses a reason outside it. The first four are the grave reasons.
+- **One grave report hides the lines it carries** at once, until a person reads it (the owner, 20.10, section 12): the notes and lines the report quotes leave every screen but the reader's, and three reports still hold the account's words. A false grave report hides one line for `report.read_days` at most and counts toward the reporter's overrule.
 - **The queue's order and its clock.** Grave reasons first, then reports that touch a minor's account either way (section 6), then the rest, oldest first. The target for a grave report is `report.read_days` (2 real days); for the rest the hold's own end, `hold_max_days` (10.10), after which a hold lifts while the report stays open and the queue shows it red. A report counts once per account past `new_account_hold`, and `report.per_day` caps what one account may file.
 - **The card at every hold is the statement of reasons.** The moment three reports hold an account's words, the account is told inside the game in one card: what is held (notes and chat, never play), why (reports by other players, which a person reads within the days named), that a rule counted and no machine decided, and how to answer (one appeal, to another person, from the same card). The same card carries every rung of the ladder (section 7) with the quoted word. A hold is a restriction of visibility, and the card is what Art. 17(1) and 17(3) of the DSA ask for, items (a) to (f), in the plain words 17(4) asks for. Proposed: the design had the ladder's warning quote the word; this makes every restriction carry its reasons and its appeal, held or decided.
 - **The person's decisions** are the runbook's commands (build d): dismiss (the reporter's overrule count rises), hide and warn, a week, for good, close the account (an under-age account, a loop), tell the authorities. Each writes a row: who decided, when, the reason, the rung, the account's number, no quoted text. The reported player is told by the card; the reporter is told "read" and never the outcome, which is the reported player's own matter.
@@ -109,7 +110,7 @@ Four rungs, each a different hand. What stands: the filter's list and the langua
 2. **The reader's mask.** On a minor's screen (section 6) the filter runs again on what arrives and masks what slipped through, and the mask cannot be turned off; an adult's screen has the mask on by default and may turn it off in the settings. The mask changes what one screen shows, never what the world holds.
 3. **The player: mute and block.** As PRESENCE 4, from the player card. One line added: mute, block and report work from a note too, by a long press, since notes come before figures (W11) and a note is the first word that reaches another.
 4. **The report**, section 5.
-5. **A person**, with the three rungs of 10.10: hidden and warned with the quoted word; `ladder.week_days` (7 real days) without notes or chat; words off for good. The grave reasons skip to a person at once, and if the owner says yes to section 12, one grave report hides the lines it carries until that person reads it. Every rung comes on the card of section 5, and the one appeal goes from the card to another person within `ladder.appeal_days` (14), who sees the same page as the first reader. The week runs on the calendar, as a mute does in the games read, since a mute measured in play would be waited out by not playing.
+5. **A person**, with the three rungs of 10.10: hidden and warned with the quoted word; `ladder.week_days` (7 real days) without notes or chat; words off for good. The grave reasons skip to a person at once, and one grave report hides the lines it carries until that person reads it (the owner, 20.10). Every rung comes on the card of section 5, and the one appeal goes from the card to another person within `ladder.appeal_days` (14), who sees the same page as the first reader. The week runs on the calendar, as a mute does in the games read, since a mute measured in play would be waited out by not playing.
 
 What the filter never does: read private messages, because none exist (9.10); read anything on the device; keep refused text. It keeps one count per account, `filter_refusals`, and an account refused `filter.refusal_max` (20) times in one game day has its words paused until the next, with the card: that is the sign of a harasser or a program, not a slip.
 
@@ -192,7 +193,7 @@ The review checklist (GAME_RULES section 7) gains one question: "Does every new 
 
 ## 12. The owner's question, in the section 6 form
 
-One line of this page bends his word of 10.10, and it goes to him; everything else builds on his words or is marked proposed.
+One line of this page bent his word of 10.10 and went to him; everything else builds on his words or is marked proposed.
 
 ```
 To the product owner, a product question in the game:
@@ -203,16 +204,16 @@ My recommendation: yes, one grave report hides the lines it carries and three st
 Needed from you: yes / no / other
 ```
 
-His answer is recorded in DECISIONS.md in its own entry and this page's sections 5 and 7 follow it.
+**His word (20.10): A, yes.** One grave report hides the lines it carries at once, until a person reads it; three reports still hold the account's words. Recorded in DECISIONS.md (2026-10-20, "Safety, one round"); sections 5 and 7 carry it.
 
 ## 13. The order, and what this page does not do
 
-- Now: this page; the owner's one answer (section 12), recorded.
+- Now: this page, with the owner's one answer (section 12) recorded on 20.10.
 - The second rules pull request carries G93 to G99, after COMBAT.md's G78 to G86 and GROWTH.md's G87 to G92.
 - Built with NEXT 18 (the account screen with its doors, "sign out everywhere", close, close now and export; the age screen; the privacy page and the terms before the first address is collected, 9.10; the sign-up line) and PRESENCE builds b and d (the reasons list, the queue's order, the cards, the decision rows, the runbook); the filter's refusal with the first notes, the mask with them, chat last (W11).
 - Before the account build ships: the privacy page and the terms read by a person who practises the law; the countries' table filled; the contact address chosen.
 - Not done here: the two named people and the moderator right's holders; the filter's vendor and its lists; the wording of the privacy page and the terms; a parental account (9.10's retry line); the values of the countries' table; the moderator's screen beyond the runbook; Section 3 of the DSA beyond its shape; the trade window (F36, stage 4); a voice channel (none, F35).
-- Pages this page touches when its rules pull request lands: PRESENCE section 4 (the reasons list, the hold's card, the one-report hide if he says yes, after #221); FOUNDATIONS F18 and F21 (settled, after #219); F5's age line; TONE.md's filter line (the mask); NEXT 18 e (the account screen's buttons, after #220); SETTLEMENT 3.8 (the address's one use); the 10.10 shared-world entry stands, superseded in part if he says yes.
+- Pages this page touches when its rules pull request lands: PRESENCE section 4 (the reasons list, the hold's card, the one-report hide of 20.10, after #221); FOUNDATIONS F18 and F21 (settled, after #219); F5's age line; TONE.md's filter line (the mask); NEXT 18 e (the account screen's buttons, after #220); SETTLEMENT 3.8 (the address's one use); the 10.10 shared-world entry stands, superseded in part by his answer of 20.10.
 
 ## Sources
 
