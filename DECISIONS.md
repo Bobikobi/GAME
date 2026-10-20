@@ -1953,3 +1953,15 @@ The hour's wash leaves the scene and becomes `params.light.keys`: a list of hour
 The keys are **today's curve, keyed**: gold `#eda83a` at 40% across the half hour either side of 20:00 and of 05:30, zero by 18:45 and 21:15, so the valley shows what it showed before. ART_SYSTEM section 2 names the hour's tints as part of the L2 still, so the new ones (16:30 warm 12%, 19:00 dusk 28%, 05:00 cool 20%) land with that pick and not before. The night's shade is untouched at 0.5; its 92% is the same pick's number.
 Measured on the live game first: 08:00, 12:00, 16:30 and 19:00 are one picture and only the night differs, so the valley had two lights and nothing between them. Until L2 is picked, that stays true on purpose.
 **Retry when:** the pick lands and the keys are not swapped in the same day, or a wash key reads as a veil rather than as light. Model: Copilot.
+
+## 2026-10-20 ✅ The air after the review: no step at midnight, banks cut to the view, and the wash a ring (PR #238)
+
+A read-only review of PR #238 found the baked sky sound and six defects; this is the pass that closes them, on `feat/fog-clouds`, with `origin/develop` merged in (a merge, not a rebase, so #241's hour table and this branch's `shadeFor` line up).
+- **No step at midnight.** The banks' hour curve used `near(0, 240)` on a minute folded to 0..1439, so 23:59 read 0.20 and 00:00 read 0.45: a visible pop in the fog. It now measures a circular distance (`min(d, 1440 - d)`), and a test walks every minute of the day and fails on a step over a hundredth.
+- **Reduced motion (G29).** The banks already lost their drift; the cloud patch did not. `cloudDrift(tick, drifting)` is the one door, the scene passes `RICH.motion`, and a test holds both answers.
+- **A bank is as wide as the view.** The banks were 12 tiles wide and centred, so on anything wider than 12 tiles they ended mid-screen with a vertical cut. The band's pattern is now one period wide and repeating (whole harmonics of that period, so its ends meet), and each bank is cut to whole periods of the view's width plus a period of margin on each side, rebuilt when the view's width changes.
+- **One module.** The banks' weights, heights, periods and night lift live in `sky.ts` with the rest of the air; `light.ts` keeps only the fix the review asked for, `LightKey` moved back under the doc of `warmth`.
+- **The wash is a ring.** `washAt` had no wrap before the first key or after the last; harmless while both ends are 0, but the decided night key (20:00 to 05:00) crosses midnight. It now reads the table as a ring of 1440 minutes, and a test pins a key that crosses midnight (0.6 at 22:00, 0.34 at 01:00, 0.26 at 02:00, no minute stepping more than a percent).
+- **Stale words out.** The `sky.ts` header no longer claims an ordered dither, 12% or a low-ground bank; the dead `heart = 1` is gone.
+**Not in this pull request, by the manager's word (21:45):** the STYLE 2 and 7 amendment (it rides with #246, `art/nature-heart`) and the shade over the props and the player (an owner question, NATURE.md section 5, with its pair of stills). The shade stays on the ground here.
+**Model:** claude-opus-5-5.

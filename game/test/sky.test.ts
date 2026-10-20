@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AIR_DENSITY, BANK_ALPHA, BANK_RGB, BANK_TILE, CLOUD_ALPHA, CLOUD_BUCKETS, CLOUD_TILE, bankPixels, cloudBucket, cloudCover, cloudField, cloudOffset, cloudPixels, fogStrength } from '../src/sky';
+import { AIR_DENSITY, BANK_ALPHA, BANK_RGB, BANK_TILE, CLOUD_ALPHA, CLOUD_BUCKETS, CLOUD_TILE, bankPixels, cloudBucket, cloudCover, cloudDrift, cloudField, cloudOffset, cloudPixels, fogStrength } from '../src/sky';
 
 /** The alpha and colour of one pixel of an RGBA buffer. */
 function at(buf: Uint8ClampedArray, w: number, x: number, y: number): [number, number, number, number] {
@@ -50,6 +50,11 @@ describe('the cloud shade', () => {
     expect(inked(0)).toBeLessThan(side * side * 0.05);
     expect(inked(0.3)).toBeLessThan(inked(0.55));
     expect(inked(0.55)).toBeLessThan(inked(0.8));
+  });
+
+  it('keeps still when the reader asked for less motion (G29)', () => {
+    expect(cloudDrift(10_000, false)).toEqual({ x: 0, y: 0 });
+    expect(cloudDrift(10_000, true)).toEqual(cloudOffset(10_000));
   });
 
   it('drifts on one wind, moving a little more every second', () => {
@@ -125,6 +130,14 @@ describe('how thick the banks lie by the hour', () => {
     expect(fogStrength(21.5 * 60)).toBeGreaterThan(0.5);
     expect(fogStrength(0)).toBeGreaterThan(0);
     expect(fogStrength(3 * 60)).toBeLessThan(fogStrength(5.5 * 60));
+  });
+
+  it('has no step at midnight: a minute either side is a minute apart', () => {
+    expect(fogStrength(23 * 60 + 59)).toBeCloseTo(fogStrength(0), 2);
+    expect(fogStrength(0)).toBeCloseTo(fogStrength(1), 2);
+    for (let m = 0; m < 1440; m += 1) {
+      expect(Math.abs(fogStrength((m + 1) % 1440) - fogStrength(m))).toBeLessThan(0.01);
+    }
   });
 
   it('never leaves the 0 to 1 range, whatever the minute', () => {

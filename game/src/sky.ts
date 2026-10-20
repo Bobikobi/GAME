@@ -1,17 +1,18 @@
 /**
- * Air over the valley: the cloud shade that crosses the ground by day (STYLE section 7 cue 3) and the fog banks
- * that lie in the low ground at dawn and at night. Pure, so a test reads the very pixels the scene bakes:
- * whole pixels, the palette's own colours, and the ordered 4x4 dither wherever a density has to thin out.
+ * Air over the valley: the cloud shade that crosses the ground by day (STYLE section 7 cue 3, in the owner's
+ * pick of 20.10: `#172a52` at 34%) and the pale banks that lie over the valley before dawn and after dusk.
+ * Pure, so a test reads the very pixels the scene bakes: the palette's own colours, whole pixels inside a cloud,
+ * and a soft alpha veil for a bank, which is fog and not smoke.
  */
 import { T } from './config';
 
 /** Side of the cloud shade patch, in art pixels. It wraps, so one tile covers the view at any scroll. */
 export const CLOUD_TILE = 192;
-/** The ink over the ground: `#1b1a2e` at 12% at a cloud's rim and 28% through its heart, so the shape reads. */
+/** The shade's ink, `#172a52` at 34%, the value the owner kept over STYLE 7's 12%: below it, nothing showed. */
 export const CLOUD_ALPHA = Math.round(0.34 * 255);
 /** Art pixels a screen pixel: the world camera runs at four, so a texture is baked at this density to stay sharp. */
 export const AIR_DENSITY = 4;
-/** How the patch drifts, art pixels a second: a slow cross-wind, the same one the fire leans with. */
+/** How the patch drifts, world units a second: a slow cross-wind, the same one the fire leans with. */
 export const CLOUD_DRIFT = { x: 1.7, y: 0.55 } as const;
 
 const INK = [0x17, 0x2a, 0x52] as const;
@@ -35,8 +36,8 @@ export function cloudField(x: number, y: number, size = CLOUD_TILE): number {
 }
 
 /**
- * One patch of cloud shade as RGBA bytes: the ink at `CLOUD_ALPHA` through the middle of a cloud, thinning over
- * the last fifth of its edge so the shape has no cut line. A patch tiles with itself on all four sides.
+ * One patch of cloud shade as RGBA bytes: the ink at `CLOUD_ALPHA` through a cloud and nothing between clouds,
+ * with a rim of a fiftieth of the field to soften the cut. A patch tiles with itself on all four sides.
  */
 /** How much of the sky a day carries, at the four weights the scene bakes: clear, one cloud, a few, a heavy sky. */
 export const CLOUD_BUCKETS = [0, 0.3, 0.55, 0.8] as const;
@@ -79,10 +80,15 @@ export function cloudPixels(size = CLOUD_TILE * AIR_DENSITY, cover = 0.6): Uint8
   return out;
 }
 
-/** Where the cloud patch stands after `tick` game ms: art pixels of tile offset, drifting on one slow wind. */
+/** Where the cloud patch stands after `tick` game ms: world units of drift on one slow wind. */
 export function cloudOffset(tick: number): { x: number; y: number } {
   const s = tick / 1000;
   return { x: CLOUD_DRIFT.x * s, y: CLOUD_DRIFT.y * s };
+}
+
+/** The patch's drift, or none: a reader who asked for reduced motion keeps the sky and loses its movement (G29). */
+export function cloudDrift(tick: number, drifting = true): { x: number; y: number } {
+  return drifting ? cloudOffset(tick) : { x: 0, y: 0 };
 }
 
 /**
@@ -90,15 +96,19 @@ export function cloudOffset(tick: number): { x: number; y: number } {
  * top and bottom in dots, with a slow wobble along its length so no two stretches match. `crest` gives the band
  * its pale top, the way a bank catches the last light.
  */
-export function bankPixels(w: number, h: number, seed: number, crest = true): Uint8ClampedArray<ArrayBuffer> {
+export function bankPixels(w: number, h: number, seed: number, crest = true, period = w): Uint8ClampedArray<ArrayBuffer> {
   const out = new Uint8ClampedArray(new ArrayBuffer(w * h * 4));
   const s = seed * 97;
+  // the pattern is one period wide and repeats: its harmonics are whole numbers of that period, so a bank can be
+  // as wide as any view and its ends meet without a seam
+  const step = (2 * Math.PI) / Math.max(1, period);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
+      const u = step * (x % period);
       // the band's own centre line rises and falls along its length, so neither edge is a straight line
-      const centre = 0.5 + 0.09 * Math.sin(x / (w / 7) + s) + 0.05 * Math.sin(x / (w / 17) + s * 2.3);
+      const centre = 0.5 + 0.09 * Math.sin(3 * u + s) + 0.05 * Math.sin(7 * u + s * 2.3);
       const fy = Math.max(0, 1 - Math.abs((y + 0.5) / h - centre) * 2);
-      const wob = 0.72 + 0.28 * Math.sin(x / (w / 11) + s) * Math.cos(x / (w / 5.2) + s * 1.7);
+      const wob = 0.72 + 0.28 * Math.sin(2 * u + s) * Math.cos(5 * u + s * 1.7);
       // a window at each edge, so a band whose middle wanders up still leaves the rows above it clear
       const win = Math.min(1, (y + 0.5) / (h * 0.12), (h - y - 0.5) / (h * 0.12));
       const v = Math.pow(fy, 0.55) * wob * Math.max(0, win);
@@ -122,11 +132,23 @@ export function bankPixels(w: number, h: number, seed: number, crest = true): Ui
  */
 export function fogStrength(minute: number): number {
   const m = ((minute % 1440) + 1440) % 1440;
-  const near = (at: number, width: number) => Math.max(0, 1 - Math.abs(m - at) / width);
+  // a circular distance: 23:59 and 00:00 are a minute apart, not a day, so midnight has no step in it
+  const near = (at: number, width: number) => {
+    const d = Math.abs(m - at);
+    return Math.max(0, 1 - Math.min(d, 1440 - d) / width);
+  };
   return Math.min(1, Math.max(near(5.5 * 60, 150), 0.7 * near(21.5 * 60, 210), 0.45 * near(0, 240)));
 }
 
-/** A bank's drift in art pixels a second, the valley's wind again: the low banks run faster than the high ones. */
+/** How much of the fog curve each bank draws, high to low, and the cap the night's lift may reach. */
+export const BANK_WEIGHT = [0.9, 0.7, 1] as const;
+export const BANK_NIGHT_LIFT = { gain: 0.4, cap: 0.95 } as const;
+/** Banks are hung at these shares of the view's height. */
+export const BANK_AT = [0.22, 0.46, 0.64] as const;
+/** One period of a bank along its own length, in world units: the pattern repeats every this much. */
+export const BANK_PERIOD = 4 * T;
+
+/** A bank's drift in world units a second, the valley's wind again: the low banks run faster than the high ones. */
 export const BANK_DRIFT = { high: 2.2, thin: 3.1, low: 3.6 } as const;
 
 /** A tile of a bank's own height: the high bank hung over the valley, the low one on the ground. */

@@ -10,6 +10,8 @@
 
 /** A minute of the day, 0 to 1439. */
 export type Minute = number;
+/** Minutes in a day: a table of hours is read as a ring of this length. */
+const MINUTES = 1440;
 
 /** The lantern's pool at night, in world px: clear inside, a short edge in whole-pixel steps, the dark outside. */
 export const LIGHT_POOL = { r: 34, edge: 2, dark: 0.7, tint: 0xf0dcc0 } as const;
@@ -38,10 +40,6 @@ export function nightAt(minute: Minute): number {
   return 0;
 }
 
-/**
- * How close an hour is to one of the dusk's two, 0 to 1: flat within half an hour of the centre,
- * then falling away over the shoulder.
- */
 /** One key of the hour table: the wash's colour and strength at an hour of the day. */
 export interface LightKey {
   /** minutes of the day, 0 to 1439 */
@@ -68,15 +66,18 @@ export function tableOf(keys: readonly { at: string; tint: string; pct: number }
 export function washAt(table: readonly LightKey[], minute: Minute): { tint: number; alpha: number } {
   if (table.length === 0) return { tint: 0, alpha: 0 };
   const first = table[0]!;
+  if (table.length === 1) return { tint: first.tint, alpha: first.pct / 100 };
   const last = table[table.length - 1]!;
-  if (minute <= first.at) return { tint: first.tint, alpha: first.pct / 100 };
-  if (minute >= last.at) return { tint: last.tint, alpha: last.pct / 100 };
-  for (let i = 0; i < table.length - 1; i += 1) {
-    const a = table[i]!;
-    const b = table[i + 1]!;
-    if (minute < a.at || minute > b.at) continue;
+  // the table is a ring: a stretch may cross midnight, so the minutes before the first key are read as the
+  // hours after the last one, and the two ends are the same stretch as any pair in between
+  const ring = [...table, { ...first, at: first.at + MINUTES }];
+  const m = minute < first.at ? minute + MINUTES : minute;
+  for (let i = 0; i < ring.length - 1; i += 1) {
+    const a = ring[i]!;
+    const b = ring[i + 1]!;
+    if (m < a.at || m > b.at) continue;
     const span = b.at - a.at;
-    const t = span === 0 ? 0 : (minute - a.at) / span;
+    const t = span === 0 ? 0 : (m - a.at) / span;
     const chan = (shift: number) => {
       const ca = (a.tint >> shift) & 0xff;
       const cb = (b.tint >> shift) & 0xff;
@@ -87,6 +88,7 @@ export function washAt(table: readonly LightKey[], minute: Minute): { tint: numb
   return { tint: last.tint, alpha: last.pct / 100 };
 }
 
+/** How close an hour is to one of the dusk's two, 0 to 1: flat within half an hour of the centre, then falling away over the shoulder. */
 export function warmth(hour: number, centre: number): number {
   return Math.max(0, Math.min(1, 1 - Math.max(0, Math.abs(hour - centre) - DUSK.shoulder) / DUSK.halfWidth));
 }

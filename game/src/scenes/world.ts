@@ -47,7 +47,7 @@ import { HOLE, LIGHT_POOL, dappleAt, frameAt, nightAt, shadeAt, tableOf, washAt 
 import { STONE_GLIDE_MS, STONE_STEPS, type StoneView, stoneView } from '../stone';
 import { type Clear, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../mist';
 import { FOG_ATLAS, FOG_ATLAS_W, FOG_FEATHER, FOG_OFFSETS, FOG_TILE, fogPixels } from '../fog';
-import { AIR_DENSITY, BANK_DRIFT, BANK_TILE, CLOUD_BUCKETS, CLOUD_TILE, bankPixels, cloudBucket, cloudCover, cloudOffset, cloudPixels, fogStrength } from '../sky';
+import { AIR_DENSITY, BANK_AT, BANK_DRIFT, BANK_NIGHT_LIFT, BANK_PERIOD, BANK_TILE, BANK_WEIGHT, CLOUD_BUCKETS, CLOUD_TILE, bankPixels, cloudBucket, cloudCover, cloudDrift, cloudPixels, fogStrength } from '../sky';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
 import { TOO_DARK, feedTooLate, fireLow, fireName, readable, woodToFeed } from '../fires';
@@ -307,7 +307,9 @@ export class WorldScene extends Phaser.Scene {
   private cloudDay = -1;
   /** a sky picked by `?debug&cloud=0..3`, for a still or a test; unset in play */
   private cloudForce: number | null = null;
-  private banks: { spr: Phaser.GameObjects.TileSprite; drift: number; at: number }[] = [];
+  private banks: { img: Phaser.GameObjects.Image; key: string; tile: number; seed: number; drift: number; at: number; periods: number; moved: number }[] = [];
+  /** the view's width the banks were last cut for, so a wider view rebuilds them instead of ending mid-screen */
+  private bankView = 0;
   private fogMotes: Emitter[] = [];
   private dapples: Phaser.GameObjects.TileSprite[] = [];
   private cycles: Cycle[] = [];
@@ -427,7 +429,7 @@ export class WorldScene extends Phaser.Scene {
     // the haze is one layer over the valley; addFilters cuts the player out of it, so the mist covers the
     // ground, the props and the other figures but never the player or what the player holds
     this.events.on(Phaser.Scenes.Events.POST_UPDATE, () => this.cutPlayer());
-    this.veil = this.add.container(0, 0, [this.mist, ...this.banks.map((b) => b.spr), ...this.fogs, ...this.fogMotes]).setDepth(DEPTH.mist);
+    this.veil = this.add.container(0, 0, [this.mist, ...this.banks.map((b) => b.img), ...this.fogs, ...this.fogMotes]).setDepth(DEPTH.mist);
     this.bar = this.add.graphics().setDepth(DEPTH.fx);
     this.marker = this.add.image(0, 0, 'fx-arrow').setOrigin(0.5, 1).setDepth(DEPTH.marker).setVisible(false);
     this.tweens.add({ targets: this.marker, displayOriginY: 7, duration: 380, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
@@ -1335,23 +1337,41 @@ export class WorldScene extends Phaser.Scene {
       }
     }
     const banks = [
-      { key: 'fx-bank-high', tile: BANK_TILE.high, drift: BANK_DRIFT.high, at: 0.22, seed: 1.7 },
-      { key: 'fx-bank-thin', tile: BANK_TILE.thin, drift: BANK_DRIFT.thin, at: 0.46, seed: 3.1 },
-      { key: 'fx-bank-low', tile: BANK_TILE.low, drift: BANK_DRIFT.low, at: 0.64, seed: 4.3 },
+      { key: 'fx-bank-high', tile: BANK_TILE.high, drift: BANK_DRIFT.high, seed: 1.7 },
+      { key: 'fx-bank-thin', tile: BANK_TILE.thin, drift: BANK_DRIFT.thin, seed: 3.1 },
+      { key: 'fx-bank-low', tile: BANK_TILE.low, drift: BANK_DRIFT.low, seed: 4.3 },
     ];
-    for (const b of banks) {
-      const wide = 24 * T;
-      const px = wide * AIR_DENSITY;
+    banks.forEach((b, i) => {
+      const img = this.add.image(0, 0, '__DEFAULT').setOrigin(0).setScale(1 / AIR_DENSITY).setAlpha(0);
+      this.banks.push({ img, key: b.key, tile: b.tile, seed: b.seed, drift: b.drift, at: BANK_AT[i] ?? 0.5, periods: 0, moved: 0 });
+    });
+    this.cutBanks(this.cameras.main.worldView.width);
+  }
+
+  /**
+   * Cuts each bank to the view: whole periods of its own pattern, the view's width and one period of margin past
+   * each end, so a wide screen never meets a vertical edge and the drift wraps without a seam.
+   */
+  private cutBanks(viewWidth: number): void {
+    const need = viewWidth + 2 * BANK_PERIOD;
+    for (const b of this.banks) {
+      const periods = Math.ceil(need / BANK_PERIOD) + 1;
+      if (periods === b.periods) continue;
+      b.periods = periods;
+      const px = periods * BANK_PERIOD * AIR_DENSITY;
       const ph = b.tile * AIR_DENSITY;
-      const tex = this.textures.createCanvas(b.key, px, ph);
-      if (!tex) continue;
-      const img = tex.getContext().createImageData(px, ph);
-      img.data.set(bankPixels(px, ph, b.seed));
-      tex.getContext().putImageData(img, 0, 0);
-      tex.refresh();
-      const spr = this.add.tileSprite(0, 0, wide / 2, b.tile, b.key).setOrigin(0).setAlpha(0).setTileScale(1 / AIR_DENSITY);
-      this.banks.push({ spr, drift: b.drift, at: b.at });
+      const key = `${b.key}-${periods}`;
+      if (!this.textures.exists(key)) {
+        const tex = this.textures.createCanvas(key, px, ph);
+        if (!tex) continue;
+        const img = tex.getContext().createImageData(px, ph);
+        img.data.set(bankPixels(px, ph, b.seed, true, BANK_PERIOD * AIR_DENSITY));
+        tex.getContext().putImageData(img, 0, 0);
+        tex.refresh();
+      }
+      b.img.setTexture(key);
     }
+    this.bankView = viewWidth;
   }
 
   /**
@@ -1362,17 +1382,19 @@ export class WorldScene extends Phaser.Scene {
     const view = this.cameras.main.worldView;
     if (this.clouds.length > 0) {
       // the patch is anchored in the world and wraps at its own edge, so the copies hand the cloud on to each other
-      const off = cloudOffset(time);
+      const off = cloudDrift(time, RICH.motion);
       const dx = ((off.x % CLOUD_TILE) + CLOUD_TILE) % CLOUD_TILE;
       const dy = ((off.y % CLOUD_TILE) + CLOUD_TILE) % CLOUD_TILE;
       const left = Math.floor(view.x) - CLOUD_TILE + dx;
       const top = Math.floor(view.y) - CLOUD_TILE + dy;
       this.clouds.forEach((img, k) => img.setPosition(left + (k % 3) * CLOUD_TILE, top + Math.floor(k / 3) * CLOUD_TILE));
     }
+    if (view.width !== this.bankView) this.cutBanks(view.width);
     for (const b of this.banks) {
-      b.spr.setPosition(view.x - b.spr.width / 2, view.y + view.height * b.at - b.spr.height / 2);
-      // a reader who asked for reduced motion keeps the banks and loses only their drift
-      if (RICH.motion) b.spr.tilePositionX += (b.drift * delta) / 1000;
+      // a reader who asked for reduced motion keeps the banks and loses only their drift (G29)
+      if (RICH.motion) b.moved += (b.drift * delta) / 1000;
+      const drift = ((b.moved % BANK_PERIOD) + BANK_PERIOD) % BANK_PERIOD;
+      b.img.setPosition(view.x - BANK_PERIOD + drift, view.y + view.height * b.at - b.tile / 2);
     }
   }
 
@@ -2138,8 +2160,9 @@ export class WorldScene extends Phaser.Scene {
     const clear = k === 0 ? 0 : 1 - this.night;
     for (const c of this.clouds) c.setAlpha(clear);
     // the banks keep their pale tone through the dark, so the night's one shade does not swallow them
-    const weight = [0.9, 0.7, 1];
-    this.banks.forEach((b, i) => b.spr.setAlpha(Math.min(0.95, fog * (weight[i] ?? 0.9) * (1 + 0.4 * this.night))));
+    this.banks.forEach((b, i) =>
+      b.img.setAlpha(Math.min(BANK_NIGHT_LIFT.cap, fog * (BANK_WEIGHT[i] ?? 0.9) * (1 + BANK_NIGHT_LIFT.gain * this.night))),
+    );
     this.showHazards(s);
     const isNight = this.night >= 0.5;
     if (isNight !== this.wasNight) {
