@@ -1956,6 +1956,22 @@ As built, the two reads travel with the reply: the list of appear nodes that sta
 **Supersedes:** nothing the owner wrote; it makes explicit what 18 a left open, and the plan text of 18 c needs no change.
 **Retry when:** a screen needs a drawn number that a reply cannot carry (a prediction the player would feel as lag), and then the answer is a designed prediction rule with the owner, never a seed on the phone.
 
+## 2026-10-20 ✅ The UI's direction: Field Kit, one made object around the bag and the character
+
+The owner picked, from three phone-size stills of the same bag-and-character screen: [Field Kit](docs/design/frames/2026-10-20-ui-direction-field-kit.png), against [Ledger](docs/design/frames/2026-10-20-ui-direction-ledger.png) and [Quiet Glass](docs/design/frames/2026-10-20-ui-direction-quiet.png). Field Kit is the compass: the interface is a made object, oiled wood and brass fittings around canvas and paper. Ledger and Quiet Glass were trials, not a second skin; they are not adopted.
+
+What the pick settles, so the polish loop does not ask again:
+- One frame language: a 3px ink outline, a wood outer frame, brass corner fittings, a canvas or paper inset, and a title plaque. Layers differ by weight, not by style: the HUD is the lightest, a window the middle, a modal the heaviest.
+- The character lives on the kit surface: head, top, legs, feet, jewelry and hand, with a WORK/LOOK switch. Worn items are icons until stage 6 draws the looks on the body (CR-97).
+- An item is a card, not a paragraph stack: icon, name, rarity in words and in an inlay, effect, set progress, creator and the trader's price. The bag's detail edits in place; it does not sit below the fold.
+- The same materials carry the other windows: paper and ink for the journal, map and a creator's signature, canvas and brass for the shop, the craft and the kit. There is no second theme.
+- The 32-colour palette, the 64 px world and Pixelify Sans stay. No new colours, no gradients in the UI frame, no radius. Every action still goes through `session.act()`; the pick changes the frame, not the rules.
+
+The first refinement (the owner's word, 20.10): the body face is **Atkinson Hyperlegible Next**, self-hosted beside Pixelify Sans; Pixelify keeps the titles and the numbers, and the body, the buttons, the item facts and the dialogue are set in the reading face. The same change adds a **SKILLS** tab to the kit surface, because a character is gear and skill together: the attributes with their real before-to-after numbers, the professions and their techniques, and the bonuses the worn kit gives. On a desktop the kit opens wide: the tabs across the top, the bag beside the item card, the outfit with the character and all eight places, and the shop with the bag on one side and the stall on the other. The same play settled the tabs (the owner, 20.10): **Bag, Outfit, Skills, Shop and Journal**, each with one line under it, and the character belongs to Outfit alone and leaves the other pages. The Shop tab is the stall's draft: an item dragged (or tapped) into a slot opens a price window, and the stall keeps the price; other players, a map marker and sales while away wait for the shared world (SETTLEMENT 3.4) and are named in the window. The final stall is planned at the town's market board, not in the kit anywhere; the tab keeps its shape until that place opens.
+
+The stills are [phone](docs/design/frames/2026-10-20-ui-field-kit-phone.png), [outfit](docs/design/frames/2026-10-20-ui-field-kit-outfit.png), [skills](docs/design/frames/2026-10-20-ui-field-kit-skills.png), [shop](docs/design/frames/2026-10-20-ui-field-kit-shop.png), [price](docs/design/frames/2026-10-20-ui-field-kit-price.png), [desktop](docs/design/frames/2026-10-20-ui-field-kit-desktop.png) and [desktop shop](docs/design/frames/2026-10-20-ui-field-kit-desktop-shop.png).
+
+The still is a study, not production parity. The frame art, the item cards, the aggregate effects and the enlarged character are the next art wave. CR-104 (the map) and CR-97 (the dressing panel) are the two screens this direction unblocks; their open questions still go to the owner.
 ## 2026-10-20 ✅ The hour table is data, at today's numbers (ART_SYSTEM step 2)
 
 The hour's wash leaves the scene and becomes `params.light.keys`: a list of hours, each with a colour and a strength in whole percent, and `washAt` stepping evenly between the two keys around the clock. A pick changes the numbers; the module does not change.
