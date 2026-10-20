@@ -1418,7 +1418,7 @@ export class WorldScene extends Phaser.Scene {
   private placePlayer(x: number, y: number): void {
     this.player.setPosition(x * T + T / 2, (y + 1) * T);
     this.player.setDepth((y + 1) * T + 1);
-    this.playerShadow?.setPosition(this.player.x, this.player.y + 2);
+    this.playerShadow?.setPosition(this.player.x, ground + 2);
   }
 
   /** The starter's sprite for a direction, in the look the player picked. */
@@ -1840,7 +1840,11 @@ export class WorldScene extends Phaser.Scene {
       const k = Math.min(1, this.move.t / STEP_MS);
       const [fx, fy] = this.move.from;
       const [tx, ty] = this.move.to;
-      this.player.setPosition(Math.round((fx + (tx - fx) * k) * T + T / 2), Math.round((fy + (ty - fy) * k + 1) * T));
+      const ground = Math.round((fy + (ty - fy) * k + 1) * T);
+      // one pixel of body bob at mid-step, as a walker's weight comes over the leg; the shadow stays on the ground
+      // one pixel up through the passing pose, never a float: grounded at both ends of the step
+      const bob = Math.sin(k * Math.PI) > 0.6 ? 1 : 0;
+      this.player.setPosition(Math.round((fx + (tx - fx) * k) * T + T / 2), ground - bob);
       this.player.setDepth(Math.round((Math.max(fy, ty) + 1) * T + 1));
       this.playerShadow?.setPosition(this.player.x, this.player.y + 2);
       this.faceFrame(strideFrame(k, this.steps, this.b.sprites[this.playerFrame(s.facing).key]?.frames ?? 1));
