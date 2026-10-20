@@ -29,9 +29,24 @@ export function createPlayerRecord(bundle: Bundle, state: State, acceptedAt: num
   };
 }
 
+/**
+ * What an accepted request adds to the two books (NEXT 18 b): one action_log row, and one gold_ledger row
+ * per gold change. The store writes them in the transaction of the compare-and-set, so a write that loses
+ * the race leaves neither behind.
+ *
+ * Gold is milli-gold in a JS number here, exact up to 2^53 milli-gold; it is a bigint only in the database.
+ */
+export interface Books {
+  /** the action as the client sent it, or `{ kind: 'moves', moves }` for a movement batch */
+  action: unknown;
+  tick: number;
+  /** the milli-gold of each gold event the request caused; a zero is never booked */
+  goldDeltasMg: number[];
+}
+
 export interface PlayerStore {
   load(playerId: string): Promise<PlayerRecord | undefined>;
-  compareAndSet(playerId: string, expectedVersion: number, next: PlayerRecord): Promise<boolean>;
+  compareAndSet(playerId: string, expectedVersion: number, next: PlayerRecord, books: Books): Promise<boolean>;
 }
 
 export interface ApiOptions {
@@ -39,6 +54,8 @@ export interface ApiOptions {
   store: PlayerStore;
   /** Must be supplied by trusted server-side authentication; identity is never read from request data. */
   resolvePlayerId(request: IncomingMessage): Promise<string | undefined>;
+  /** Whether the database answers; GET /health reports it and reads no player row. Absent, the process is the only thing checked. */
+  health?(): Promise<boolean>;
   now?: () => number;
   bodyLimit?: number;
 }
@@ -187,7 +204,11 @@ function appearIds(bundle: Bundle, state: State): string[] {
     .sort();
 }
 
-function json(response: ServerResponse, status: number, body: ErrorBody | StateBody | ChangeBody): void {
+interface HealthBody {
+  ok: boolean;
+}
+
+function json(response: ServerResponse, status: number, body: ErrorBody | StateBody | ChangeBody | HealthBody): void {
   response.writeHead(status, {
     'cache-control': 'no-store',
     'content-type': 'application/json; charset=utf-8',
@@ -273,6 +294,16 @@ async function playerIdFor(request: IncomingMessage, resolve: ApiOptions['resolv
 async function route(request: IncomingMessage, response: ServerResponse, options: ApiOptions): Promise<void> {
   const url = new URL(request.url ?? '/', 'http://localhost');
   if (url.search || url.hash) throw new RequestError('This endpoint does not accept a query string.', 400);
+  if (url.pathname === '/health') {
+    // no identity and no player row: the one answer is whether the process and its pool are up, and it says nothing more
+    if (request.method !== 'GET') {
+      response.setHeader('allow', 'GET');
+      throw new RequestError('Method not allowed.', 405);
+    }
+    const up = await (options.health?.() ?? Promise.resolve(true)).catch(() => false);
+    json(response, up ? 200 : 503, { ok: up });
+    return;
+  }
   if (!['/action', '/moves', '/state', '/session'].includes(url.pathname)) {
     throw new RequestError('Not found.', 404);
   }
@@ -306,6 +337,7 @@ async function route(request: IncomingMessage, response: ServerResponse, options
   let events: GameEvent[] = [];
   let movementAt = record.movementAt;
   let movementCreditMs = record.movementCreditMs;
+  let booked: unknown;
 
   if (url.pathname === '/action') {
     if (!isAction(body.action) || body.action.t === 'move') throw new RequestError('Send one non-movement action.', 400);
@@ -329,6 +361,7 @@ async function route(request: IncomingMessage, response: ServerResponse, options
     events = result.events;
     movementAt = nextCredit.at;
     movementCreditMs = nextCredit.creditMs;
+    booked = body.action;
   } else {
     if (!Array.isArray(body.moves) || body.moves.length === 0 || body.moves.length > MOVE_LIMIT) {
       throw new RequestError(`Send between 1 and ${MOVE_LIMIT} movement reports.`, 400);
@@ -357,6 +390,7 @@ async function route(request: IncomingMessage, response: ServerResponse, options
       movementAt = nextCredit.at;
       movementCreditMs = nextCredit.creditMs;
     }
+    booked = { kind: 'moves', moves: reports };
   }
 
   const next: PlayerRecord = {
@@ -366,7 +400,12 @@ async function route(request: IncomingMessage, response: ServerResponse, options
     movementAt,
     movementCreditMs,
   };
-  if (!(await options.store.compareAndSet(playerId, record.version, next))) {
+  const books: Books = {
+    action: booked,
+    tick: state.tick,
+    goldDeltasMg: events.flatMap((event) => (event.e === 'gold' && event.delta !== 0 ? [event.delta] : [])),
+  };
+  if (!(await options.store.compareAndSet(playerId, record.version, next, books))) {
     throw new RequestError('The game state changed; resume before sending another action.', 409);
   }
   json(response, 200, { events, patch: statePatch(record.state, state), version: next.version, appears: appearIds(options.bundle, state) });

@@ -24,16 +24,17 @@ Verify: `ls -la ~/openfold` shows the four files and no `.env` in git.
 
 ## 2. The two containers up
 
-Prepare: `docker compose -f compose.yml up -d --build` from `~/openfold`.
+Prepare: `.env` sets `AUTH_MODE=dev-header` and `ALLOW_DEV_HEADER=staging-only` (see `.env.example`; compose refuses to start without `AUTH_MODE`, and the API exits at boot without both). Then `docker compose -f compose.yml up -d --build` from `~/openfold`.
 What happens if it goes wrong: the two new containers fail to start; nothing else on the box notices, and
 `docker compose -f compose.yml down` removes them without touching the data volume.
-Verify: `docker compose -f compose.yml ps` shows `db` healthy and `api` up; `curl -s -H 'x-player-id: smoke' -X POST http://127.0.0.1:8710/session` answers 404 "No game state exists for this account." (the row is made by the opening handover, NEXT 18 d).
+Verify: `docker compose -f compose.yml ps` shows `db` and `api` both healthy (the API's check is `GET /health`, which needs no identity); the boot log carries one line saying the server trusts the `x-player-id` header; `curl -s -H 'x-player-id: smoke' -X POST http://127.0.0.1:8710/session` answers 404 "No game state exists for this account." (the row is made by the opening handover, NEXT 18 d).
 
 ## 3. The API behind nginx
 
 Prepare: copy `nginx-openfold.conf` to the host's sites directory as a **new** file, with the real name.
 What happens if it goes wrong: `nginx -t` refuses the config and nginx keeps serving what it served.
 Verify: `nginx -t` passes, `systemctl reload nginx`, then the same curl through the name.
+**The name is not pointed at the box until NEXT 18 e lands** (sign-in by email, Google, Discord). Until then the only mode is `dev-header`, which believes a header, so a reachable box means anyone can act as any player; it runs with `ALLOW_DEV_HEADER=staging-only` or not at all. The nginx file blanks `x-player-id`, so through the name every request is refused: the staging check in step 2 is made on the loopback port, never through nginx.
 
 ## 4. The certificate
 

@@ -35,6 +35,8 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Where the bells rang (quest) - `content/core/quests/three-fruits.json`
 - Birds lift where something lies hidden (reaction) - `content/core/reactions/birds-over-a-find.json`
 - Fish rise at dusk (reaction) - `content/core/reactions/fish-at-dusk.json`
+- Mushrooms by a grove log in the rain (reaction) - `content/core/reactions/mushrooms-after-rain.json`
+- Reeds grow back sooner in the rain (reaction) - `content/core/reactions/reeds-in-rain.json`
 - Windfall under a full bush (reaction) - `content/core/reactions/windfall-berries.json`
 - Bandage (recipe) - `content/core/recipes/bandage.json`
 - Berry mash (recipe) - `content/core/recipes/berry-mash.json`
