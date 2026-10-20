@@ -153,9 +153,14 @@ interface SignSpot {
 
 /** A tended fire on the map (NEXT 13): its flame and glow follow the kernel's burn, never a clock of the client's. */
 interface Fire {
-  /** the logs and stones, cold when the fire is out */
+  /** the logs and stones, cold when the fire is out, and the kit's own burning look while it is full */
   spr: Phaser.GameObjects.Sprite;
-  /** the flame drawn above them, its size read from the wood left (NEXT 21b) */
+  /** the kit's flame frames, stepping only while the fire is full or steady (with motion on) */
+  cycle: Cycle | undefined;
+  /** the prop's cold look, and the kit's burning one */
+  unlit: string;
+  lit: string;
+  /** a drawn tongue above the logs while the wood runs low: the kit's flame cannot show less than itself (NEXT 21b) */
   flame: Phaser.GameObjects.Image;
   glow: Glow | undefined;
   /** how much wood is left, by quarters of the fire's own log (NEXT 21b) */
@@ -166,21 +171,26 @@ interface Fire {
   phase: number;
   /** the tint now on the flame, kept so a change from one tint to another is not missed */
   tint: number | undefined;
+  /** a few sparks rising while it burns (with motion on) */
+  sparks: Emitter | undefined;
 }
 
-/** The cold look of a fire prop and of the fire the player kindles: the flame is drawn over it, in four sizes. */
+/** The burning look of a fire prop, from the base kit, and the cold look of the fire the player kindles. */
+const FIRE_LIT_SPRITE = 'core/base-kit:props/campfire_lit';
 const FIRE_UNLIT_SPRITE = 'core/base-kit:props/campfire_unlit';
+/** A flame's frame time: the kit's three frames while the fire is full. */
+const FLAME_MS = 120;
 /** The ember tint at the burn's end: the flame cools before it goes. */
 const EMBER_TINT = 0xe09050;
 /**
- * How each stage of a burn shows (NEXT 21b): the drawn flame shrinks as the wood runs out, and its light with
- * it. Nothing here counts logs or minutes; the player reads the fire by the size of its flame.
+ * How each stage of a burn shows (NEXT 21b): the kit's own campfire while the wood is full or steady, then a drawn
+ * tongue that shrinks as the last logs go, and the light with it. Nothing here counts logs or minutes.
  */
 const STAGE_LOOK: Record<FireStage, { alpha: number; scale: number; glow: number; tint?: number }> = {
-  full: { alpha: 1, scale: 1, glow: 1 },
-  steady: { alpha: 0.95, scale: 0.82, glow: 0.85 },
-  low: { alpha: 0.86, scale: 0.6, glow: 0.6, tint: 0xf0b060 },
-  embers: { alpha: 0.7, scale: 0.34, glow: 0.38, tint: EMBER_TINT },
+  full: { alpha: 1, scale: 1, glow: 0.45 },
+  steady: { alpha: 1, scale: 0.88, glow: 0.32 },
+  low: { alpha: 0.95, scale: 0.62, glow: 0.22, tint: 0xf0b060 },
+  embers: { alpha: 0.8, scale: 0.36, glow: 0.12, tint: EMBER_TINT },
   out: { alpha: 0, scale: 0, glow: 0 },
 };
 
@@ -496,18 +506,24 @@ export class WorldScene extends Phaser.Scene {
     make('fx-dirt', 2, 2, () => px(PALETTE.wood, 0, 0, 2, 2));
     make('fx-spark', 1, 1, () => px(PALETTE.yellow, 0, 0));
     // the flame of a tended fire, drawn so its four stages read by size (NEXT 21b): a red rim, gold body, yellow heart
-    make('fx-flame', 7, 13, () => {
+    make('fx-flame', 7, 15, () => {
       const rows = [
-        '...#...', '...#...', '..r#r..', '..rgr..', '.rgggr.', '.rgggr.', 'rgggggr',
-        'rgyyggr', 'rgggggr', '.rgggr.', '.rgggr.', '..rgr..', '...#...',
+        '...#...', '...#...', '...#...', '..###..', '..###..', '..###..', '.#####.', '.#####.',
+        '#######', '##.#.##', '#######', '.#####.', '..###..', '..###..', '...#...',
       ];
-      const colors: Record<string, number> = { '#': PALETTE.cream, r: PALETTE.red2, g: PALETTE.gold, y: PALETTE.yellow };
-      rows.forEach((row, y) => {
-        for (let x = 0; x < row.length; x++) {
-          const color = colors[row[x] ?? '.'];
-          if (color !== undefined) px(color, x, y);
+      const lit = (x: number, y: number): boolean => rows[y]?.[x] === '#';
+      // the body, then a warmer heart low in it, in the kit's own two flame colours
+      for (let y = 0; y < rows.length; y++) for (let x = 0; x < 7; x++) if (lit(x, y)) px(PALETTE.gold, x, y);
+      for (let y = 5; y < 14; y++) for (let x = 2; x <= 4; x++) if (lit(x, y)) px(PALETTE.yellow, x, y);
+      // a rim of darker red around every lit pixel that meets the air
+      const rim: [number, number][] = [];
+      for (let y = 0; y < rows.length; y++) {
+        for (let x = 0; x < 7; x++) {
+          if (!lit(x, y)) continue;
+          if (!lit(x - 1, y) || !lit(x + 1, y) || !lit(x, y - 1) || !lit(x, y + 1)) rim.push([x, y]);
         }
-      });
+      }
+      for (const [x, y] of rim) px(PALETTE.red2, x, y);
     });
     make('fx-mote', 1, 1, () => px(PALETTE.paper, 0, 0));
     make('fx-fly', 2, 2, () => px(PALETTE.green4, 0, 0, 2, 2));
@@ -898,11 +914,16 @@ export class WorldScene extends Phaser.Scene {
     const depth = p.solid ? bottom : DEPTH.flat;
     const spr = kitSprite(this, cx, bottom, p.sprite, 0).setOrigin(0.5, 1).setDepth(depth);
     if (RICH.detail && !FLAT.has(baseName(p.sprite))) this.shadow(cx, bottom, p.w, p.solid ? DEPTH.shadow : DEPTH.flat - 0.5);
-    this.fires.set(id, this.fireAtTile(spr, depth));
+    this.fires.set(id, this.fireAtTile(spr, p.sprite, depth));
   }
 
-  /** The drawn flame, its glow and its burn stage over a sprite already standing on its tile. A fire's light covers its safe ring. */
-  private fireAtTile(spr: Phaser.GameObjects.Sprite, depth: number): Fire {
+  /** The kit's burning look, the drawn low flame, the glow and the burn stage over a sprite already on its tile. A fire's light covers its safe ring. */
+  private fireAtTile(spr: Phaser.GameObjects.Sprite, unlit: string, depth: number): Fire {
+    let cycle: Cycle | undefined;
+    if (RICH.motion) {
+      cycle = { spr, min: FLAME_MS, max: FLAME_MS, next: 0, frame: 0, active: false };
+      this.cycles.push(cycle);
+    }
     const flame = this.add
       .image(spr.x, spr.y - 3, 'fx-flame')
       .setOrigin(0.5, 1)
@@ -910,13 +931,42 @@ export class WorldScene extends Phaser.Scene {
       .setVisible(false);
     let glow: Glow | undefined;
     if (RICH.light) {
-      glow = this.glow(spr.x, spr.y - 8, false);
-      // the light is the safe ring: fire.safe_tiles around the tile, drawn whole (fx-glow is 25 px wide)
-      glow.img.setScale(((this.b.params.fire.safe_tiles * 2 + 1) * T) / 25);
+      // the light pools on the ground around the fire, not over the flame
+      glow = this.glow(spr.x, spr.y - 4, false);
+      // the light is the safe ring: fire.safe_tiles around the tile, drawn whole (fx-glow is 25 px wide),
+      // warmed so an additive gold over the night's blue reads as firelight, not a pale halo
+      glow.img.setScale(((this.b.params.fire.safe_tiles * 2 + 1) * T) / 25).setTint(0xff9a58);
       this.glows.push(glow);
     }
+    let sparks: Emitter | undefined;
+    if (RICH.motion) {
+      sparks = this.add
+        .particles(spr.x, spr.y - 6, 'fx-spark', {
+          speedY: { min: -16, max: -6 },
+          speedX: { min: -4, max: 4 },
+          lifespan: { min: 450, max: 900 },
+          alpha: { start: 1, end: 0 },
+          frequency: 700,
+          maxAliveParticles: 8,
+          blendMode: 'ADD',
+          emitting: false,
+        })
+        .setDepth(depth + 0.02);
+    }
     spr.setDepth(depth);
-    return { spr, flame, glow, stage: 'out', baseScale: 0, phase: Math.random() * Math.PI * 2, tint: undefined };
+    return {
+      spr,
+      cycle,
+      unlit,
+      lit: this.has(FIRE_LIT_SPRITE) ? FIRE_LIT_SPRITE : unlit,
+      flame,
+      glow,
+      stage: 'out',
+      baseScale: 0,
+      phase: Math.random() * Math.PI * 2,
+      tint: undefined,
+      sparks,
+    };
   }
 
   /**
@@ -936,27 +986,40 @@ export class WorldScene extends Phaser.Scene {
     const bottom = (own.at[1] + 1) * T;
     if (!f) {
       const spr = kitSprite(this, cx, bottom, FIRE_UNLIT_SPRITE, 0).setOrigin(0.5, 1);
-      f = this.fireAtTile(spr, bottom);
+      f = this.fireAtTile(spr, FIRE_UNLIT_SPRITE, bottom);
       this.fires.set(OWN_FIRE, f);
     }
     f.spr.setVisible(true).setPosition(cx, bottom).setDepth(bottom);
     // the flame keeps its own depth with the tile: a fire kindled a row lower must not draw under its logs
     f.flame.setPosition(cx, bottom - 3).setDepth(bottom + 0.01);
-    f.glow?.img.setPosition(cx, bottom - 8);
+    f.glow?.img.setPosition(cx, bottom - 4);
+    f.sparks?.setPosition(cx, bottom - 6);
     return f;
   }
 
-  /** A flame only while the kernel says the fire burns; its stage shrinks and dims it as the wood runs out. */
+  /** A burning fire, full through the kit's flame then a drawn tongue that shrinks; its light falls as the wood runs out. */
   private refreshFires(s: Session): void {
     this.ensureOwnFire(s);
     for (const [id, f] of this.fires) {
       const stage = fireStage(this.b, s.state, id, s.tick);
       const l = STAGE_LOOK[stage];
-      f.flame.setVisible(stage !== 'out');
+      const full = stage === 'full' || stage === 'steady';
+      const drawn = stage === 'low' || stage === 'embers';
+      const look = full ? f.lit : f.unlit;
+      if (f.spr.texture.key !== look) {
+        retex(f.spr, look, 0);
+        if (f.cycle) f.cycle.frame = 0;
+      }
+      if (f.cycle) {
+        f.cycle.active = full;
+        f.cycle.min = f.cycle.max = FLAME_MS;
+      }
+      // the full fire is the kit's campfire, a little smaller when it settles; the last wood is a drawn tongue
+      f.spr.setAlpha(1).setScale(full ? (stage === 'full' ? 1 : 0.9) : 1);
+      f.flame.setVisible(drawn);
       f.flame.setAlpha(l.alpha).setScale(l.scale);
       f.baseScale = l.scale;
-      f.spr.setAlpha(1);
-      // the last wood cools the flame; a change from one tint to another (low to embers) is a tint too
+      // the last wood cools the tongue; a change from one tint to another (low to embers) is a tint too
       if (f.tint !== l.tint) {
         f.tint = l.tint;
         if (l.tint === undefined) f.flame.clearTint();
@@ -965,6 +1028,10 @@ export class WorldScene extends Phaser.Scene {
       if (f.glow) {
         f.glow.lit = stage !== 'out';
         f.glow.strength = l.glow;
+      }
+      if (f.sparks) {
+        f.sparks.emitting = stage !== 'out' && stage !== 'embers';
+        f.sparks.frequency = stage === 'full' ? 550 : stage === 'steady' ? 800 : 1300;
       }
       f.stage = stage;
     }
@@ -981,7 +1048,15 @@ export class WorldScene extends Phaser.Scene {
   /** How a fire is drawn now, for a test and for the walk-out proof: its sprite, its burn, its wood stage and its strength. */
   fireLook(id: string): { sprite: string; burning: boolean; alpha: number; scale: number; stage: FireStage } | undefined {
     const f = this.fires.get(id);
-    return f && { sprite: f.spr.texture.key, burning: f.stage !== 'out', alpha: f.flame.alpha, scale: f.baseScale, stage: f.stage };
+    if (!f) return undefined;
+    const drawn = f.stage === 'low' || f.stage === 'embers';
+    return {
+      sprite: f.spr.texture.key,
+      burning: f.stage !== 'out',
+      alpha: drawn ? f.flame.alpha : f.spr.alpha,
+      scale: drawn ? f.baseScale : f.spr.scaleX,
+      stage: f.stage,
+    };
   }
 
   /** Whether a rectangle of tiles is on the screen now. */
@@ -1724,11 +1799,15 @@ export class WorldScene extends Phaser.Scene {
         b.spr.setFrame(1);
       }
     }
-    // a burning flame breathes: a small sideways flicker of its size, never a count of anything
+    // a burning flame breathes: a small sway and a flicker in its size, never a count of anything
     if (RICH.motion) {
       for (const f of this.fires.values()) {
         if (!f.flame.visible) continue;
-        f.flame.setScale(f.baseScale * (1 + 0.07 * Math.sin(time / 130 + f.phase)), f.baseScale);
+        f.flame.setScale(
+          f.baseScale * (1 + 0.07 * Math.sin(time / 130 + f.phase)),
+          f.baseScale * (1 + 0.05 * Math.sin(time / 170 + f.phase * 1.3)),
+        );
+        f.flame.x = f.spr.x + 0.6 * Math.sin(time / 210 + f.phase);
       }
     }
     if (this.glows.length > 0) {
