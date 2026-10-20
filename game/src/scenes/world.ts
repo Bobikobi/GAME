@@ -19,10 +19,8 @@ import {
   type Hazard,
   type Slot,
   appearSlots,
-  appears,
   campTile,
   coverAt,
-  cuesOnStep,
   findSlot,
   fireBurns,
   hazardsOf,
@@ -1393,7 +1391,10 @@ export class WorldScene extends Phaser.Scene {
         this.busyMs = ms;
         this.nextSwing = 0;
       }),
-      session.on('events', (events) => this.celebrate(events)),
+      session.on('events', (events) => {
+        this.celebrate(events);
+        for (const event of events) if (event.e === 'cue') this.playCue(event);
+      }),
       session.on('change', () => this.refresh()),
     ];
     this.player.setVisible(true);
@@ -1500,7 +1501,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private ready(s: Session, id: string): boolean {
-    if (this.appearing.has(id)) return appears(this.b, s.state, id, s.tick);
+    if (this.appearing.has(id)) return s.appears(id);
     return (s.state.nodes[id]?.readyAt ?? 0) <= s.tick;
   }
 
@@ -1731,21 +1732,22 @@ export class WorldScene extends Phaser.Scene {
 
   /**
    * The cues a step starts (docs/design/REACTIONS.md, section 5): the kernel names them on the edge of
-   * their reach, and each is drawn at its tile and heard from where it is.
+   * their reach and sends them with the step's events, so a phone that holds no seed draws the same ones.
    */
-  private cueStep(s: Session, from: Tile, to: Tile): void {
-    for (const hit of cuesOnStep(this.b, s.state, s.tick, from, to)) {
-      const look = CUE_LOOK[hit.cue as keyof typeof CUE_LOOK];
-      if (!look) continue;
-      const x = hit.x * T + T / 2;
-      const y = hit.y * T + T / 2;
-      const at = this.worldToPage(x, y);
-      const pan = Math.max(-0.8, Math.min(0.8, (at.x / Math.max(1, this.scale.width / pixelRatio()) - 0.5) * 1.2));
-      sound.sfx(look.sfx, { pan, gain: cueGain(Math.max(Math.abs(hit.x - to[0]), Math.abs(hit.y - to[1]))) });
-      const depth = look.over ? DEPTH.motes + 1 : DEPTH.flat;
-      if (hit.cue === 'birds_lift') this.liftBirds(x, y, look.ms, depth);
-      else this.ripple(x, y + 3, look.ms, depth);
-    }
+  private playCue(hit: { cue: string; x: number; y: number }): void {
+    const look = CUE_LOOK[hit.cue as keyof typeof CUE_LOOK];
+    if (!look) return;
+    const s = this.session;
+    if (!s) return;
+    const x = hit.x * T + T / 2;
+    const y = hit.y * T + T / 2;
+    const at = this.worldToPage(x, y);
+    const pan = Math.max(-0.8, Math.min(0.8, (at.x / Math.max(1, this.scale.width / pixelRatio()) - 0.5) * 1.2));
+    const far = Math.max(Math.abs(hit.x - s.pos[0]), Math.abs(hit.y - s.pos[1]));
+    sound.sfx(look.sfx, { pan, gain: cueGain(far) });
+    const depth = look.over ? DEPTH.motes + 1 : DEPTH.flat;
+    if (hit.cue === 'birds_lift') this.liftBirds(x, y, look.ms, depth);
+    else this.ripple(x, y + 3, look.ms, depth);
   }
 
   /** A few birds lift from the tile and climb away, flapping; with the motion group off, the flock is a still shape. */
@@ -1843,7 +1845,6 @@ export class WorldScene extends Phaser.Scene {
       landStep(s, [tx, ty]);
       if (this.falling) return;
       this.arrive(s);
-      this.cueStep(s, [fx, fy], [tx, ty]);
       if (!this.tryStep(s, carry)) this.faceFrame();
       return;
     }
