@@ -18,6 +18,7 @@ The look in one place, for creators and for every session that draws or renders 
   - Nothing in the game changes before the engine step (docs/team/NEXT.md section 15).
   - The shadows, the night with the town's lights, and depth cues 1 to 5 come with or after that step, in one window of `game/src/scenes/world.ts`.
   - The layers above the sprite (the light module, ramps per material and region, motion, composition) and the ladder of stills that decides their look: [ART_SYSTEM.md](ART_SYSTEM.md) (2026-10-20).
+  - The world's natural laws (scale in characters, a climate per region, the seasons, the weathers as a look, the light's laws) and their sheets of stills: [NATURE.md](NATURE.md) (2026-10-21, proposal).
   - Grounds and height come with the open world's first ring ([OPEN_WORLD.md](OPEN_WORLD.md)).
 
 **Both doors (owner, 18.10).** The whole standard holds for the 3D game at `/play3d/` too, in its own means: the proportions as ratios to a character's height, the light and shadow, the night, height and the depth cues. Only the pixel numbers are 2D's alone. The pixel game is built first, and the 3D game follows it. The 3D game may be desktop-only where a phone would block a rule. How it is carried across: docs/team/NEXT.md section 8 e.
@@ -69,7 +70,7 @@ The owner, 18.10, on the walk video where an oak stood barely taller than Pell: 
 ## 2. Pixels and colour
 
 - **Colours:** only the 32 core colours (`tools/src/kit/palette.ts`).
-- **Pixels:** every pixel fully clear or fully solid. No anti-aliasing, no gradients, no half-clear pixels.
+- **Pixels:** every pixel fully clear or fully solid. No anti-aliasing, no gradients, no half-clear pixels. This is the rule for a sprite and a ground tile. A layer the engine draws over them (a shadow, the night, a pool, the hour's wash, cloud shade, fog) is a blend at one alpha per step, and the result is still a fully solid pixel; such a layer never has more than four steps, and where two steps meet it may dither (ART_SYSTEM 2, NATURE 4 and 5).
 - **Ramps** run dark to light:
   - greys: `#1b1a2e #3a3554 #5d6177 #8f94a8 #c6cad6 #f5f4ef`
   - greens: `#1f3d2b #2e6b3b #4c9a3f #84c450 #c8e88a`
@@ -162,7 +163,7 @@ The owner, 18.10: "I want 1-6 too".
 |---|---|---|
 | 1. Reflections | A thing standing by water shows in it, flipped, in `#275a99` at 35%. The reflection is cut at the shore and wobbles 2 px sideways as the water moves | the client |
 | 2. Into the grass | In tall grass or shallow water, the bottom 16 to 24 px of a character are hidden behind blades or a waterline. Today's 72% fade (`dimInCover`) gives way to this, and the kernel's cover is unchanged | the client |
-| 3. Cloud shadows | Large shapes of `#1b1a2e` at 12%, in whole pixels, drifting slowly over the ground by day | the client |
+| 3. Cloud shadows | Large shapes drifting slowly over the ground by day. Proposed as `#1b1a2e` at 12%; at 12% nothing showed on a phone, and the owner kept `#172a52` at 34% on the three stills of 20.10 (#238). That number is the one built; whether the shade also falls on props and people, or on the ground alone as the stills showed, is the open question NATURE.md section 5 carries | the client |
 | 4. Footprints | In sand and snow, fading after 20 s | the client |
 | 5. A shadow that stays down | When a body bobs or a dropped thing arcs, its shadow stays on the ground and grows as the thing lands | the client |
 | 6. Height | Section 6 | the map, the kernel, both clients |

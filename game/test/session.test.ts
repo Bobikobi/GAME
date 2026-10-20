@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { type Bundle, type GameEvent, type Tile, isSafe, makeWalkable, npcTile } from '@game/kernel';
+import { OWN_FIRE, type Bundle, type GameEvent, type Tile, isSafe, makeWalkable, npcTile } from '@game/kernel';
 import { app } from '../src/app';
 import { LEGACY_SAVE_KEY, SAVE_KEY } from '../src/config';
 import { s1Use } from '../src/net/s1';
@@ -219,11 +219,11 @@ describe('session persistence', () => {
 
   test('a save from kernel 0.9 in the middle of a vigil waits for dawn, and the giver takes it from 05:00', () => {
     const quest = 'core/the-long-night';
-    const hearth = 'core/elder-hearth';
+    const fireAt: Tile = [27, 16];
     const session = startedSession();
     // lit at 19:00 with wood to 05:00 exactly, saved at 23:00 by a kernel that met the step as soon as the wood reached dawn
     session.state.player.quests[quest] = 'active';
-    session.state.player.fires[hearth] = { lit: 350_000, until: 850_000 };
+    session.state.player.own = { at: fireAt, lit: 350_000, until: 850_000, log: 66_666 };
     session.tick = 550_000;
     session.save();
     const file = JSON.parse(storage.getItem(SAVE_KEY)!) as { kernel: string; state: string };
@@ -233,10 +233,10 @@ describe('session persistence', () => {
 
     const restored = Session.restore(bundle)!;
     expect(restored.tick).toBe(550_000);
-    expect(restored.state.player.fires[hearth]).toEqual({ lit: 350_000, until: 850_000 });
+    expect(restored.state.player.own).toEqual({ at: fireAt, lit: 350_000, until: 850_000, log: 66_666 });
     expect(readyToHandIn(bundle, restored.state, quest, restored.tick)).toBe(false);
     expect(questSteps(bundle, restored.state, quest, restored.tick)).toEqual([
-      { text: 'Keep the elder hearth burning until dawn - it has the wood: wait for dawn', done: false },
+      { text: 'Keep the fire burning until dawn - it has the wood: wait for dawn', done: false },
     ]);
     // beside the elder, the hand-in is refused at 23:00 and taken at 05:00
     const elder = npcTile(bundle, bundle.quests[quest]!.giver!)!;
@@ -431,18 +431,19 @@ describe('position reports (P-5b)', () => {
 
 });
 
-describe('a fire that goes out while the player stands still (6b)', () => {
+describe("a fire of one's own that goes out while the player stands still (6b, NEXT 21b)", () => {
   const QUEST = 'core/the-long-night';
-  const HEARTH = 'core/elder-hearth';
+  const AT: Tile = [27, 16];
+  const LOG = 66_666;
   /** 19:00 and 21:00 of the first evening: tick 0 is noon and a game hour is 50 000 ms. */
   const H19 = 350_000;
   const H21 = 450_000;
 
-  /** A session keeping the elder hearth, lit at 19:00 with wood to 21:00, whose last step was a moment before it runs out; and the fire_out events it shows. */
+  /** A session keeping a fire of its own, lit at 19:00 with wood to 21:00, whose last step was a moment before it runs out; and the fire_out events it shows. */
   function keeping(quest: 'active' | 'done' = 'active'): { session: Session; outs: GameEvent[] } {
     const session = startedSession();
     session.state.player.quests[QUEST] = quest;
-    session.state.player.fires[HEARTH] = { lit: H19, until: H21 };
+    session.state.player.own = { at: AT, lit: H19, until: H21, log: LOG };
     session.tick = H21 - 100;
     session.report(session.pos, true);
     expect(session.state.tick).toBe(H21 - 100);
@@ -462,7 +463,7 @@ describe('a fire that goes out while the player stands still (6b)', () => {
     session.advance(50);
     expect(outs).toEqual([]);
     session.advance(100);
-    expect(outs).toEqual([{ e: 'fire_out', id: HEARTH }]);
+    expect(outs).toEqual([{ e: 'fire_out', id: OWN_FIRE }]);
     for (let i = 0; i < 8; i++) session.advance(250);
     expect(outs).toHaveLength(1);
     const file = JSON.parse(storage.getItem(SAVE_KEY)!) as { state: string };
@@ -491,7 +492,7 @@ describe('a fire that goes out while the player stands still (6b)', () => {
     restored.advance(50);
     expect(outs).toEqual([]);
     restored.advance(100);
-    expect(outs).toEqual([{ e: 'fire_out', id: HEARTH }]);
+    expect(outs).toEqual([{ e: 'fire_out', id: OWN_FIRE }]);
     restored.advance(250);
     expect(outs).toHaveLength(1);
   });
@@ -515,7 +516,7 @@ describe('a fire that goes out while the player stands still (6b)', () => {
     expect(outs).toEqual([]);
     session.pos = here;
     session.report(here, true);
-    expect(outs).toEqual([{ e: 'fire_out', id: HEARTH }]);
+    expect(outs).toEqual([{ e: 'fire_out', id: OWN_FIRE }]);
   });
 
   test('work under way holds it, and it is told once the work is done', () => {
@@ -526,7 +527,30 @@ describe('a fire that goes out while the player stands still (6b)', () => {
     expect(outs).toEqual([]);
     for (let i = 0; i < 4; i++) session.advance(250);
     expect(session.busy).toBe(false);
-    expect(outs).toEqual([{ e: 'fire_out', id: HEARTH }]);
+    expect(outs).toEqual([{ e: 'fire_out', id: OWN_FIRE }]);
+  });
+
+  test('a prop fire, the elder hearth, is told out the same way (the tellOuts path over state.player.fires)', () => {
+    const HEARTH = 'core/elder-hearth';
+    const VIGIL = 'test/hearth-vigil';
+    // the long night now asks for a fire of one's own, so a stand-in task keeps the hearth
+    bundle.quests[VIGIL] = { ...bundle.quests[QUEST]!, id: VIGIL, steps: [{ kind: 'tend', fire: HEARTH }] };
+    try {
+      const session = startedSession();
+      session.state.player.quests[VIGIL] = 'active';
+      session.state.player.fires[HEARTH] = { lit: H19, until: H21 };
+      session.tick = H21 - 100;
+      session.report(session.pos, true);
+      const outs = listen(session);
+      session.advance(50);
+      expect(outs).toEqual([]);
+      session.advance(100);
+      expect(outs).toEqual([{ e: 'fire_out', id: HEARTH }]);
+      for (let i = 0; i < 8; i++) session.advance(250);
+      expect(outs).toHaveLength(1);
+    } finally {
+      delete bundle.quests[VIGIL];
+    }
   });
 });
 

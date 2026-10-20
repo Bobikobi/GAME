@@ -1,14 +1,15 @@
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
-import { makeWalkable, newState, serialize, step, type Bundle, type State, type Tile } from '@game/kernel';
+import { makeWalkable, newState, npcTile, salePrice, serialize, step, type Bundle, type State, type Tile } from '@game/kernel';
 import type { IncomingMessage, Server } from 'node:http';
 
-import { createGameApi, createPlayerRecord, listen, type PlayerRecord, type PlayerStore } from '../src';
+import { createGameApi, createPlayerRecord, listen, type Books, type PlayerRecord, type PlayerStore } from '../src';
 import { applyStatePatch, publicState } from '../src/patch';
-import { bfsToTile, loadBundle } from '../../tools/test/helpers/world.js';
+import { bfsNear, bfsToTile, loadBundle } from '../../tools/test/helpers/world.js';
 
 const PLAYER = 'player-1';
 let bundle: Bundle;
 let server: Server | undefined;
+const health = { up: true };
 
 beforeAll(() => {
   bundle = loadBundle();
@@ -16,6 +17,9 @@ beforeAll(() => {
 
 class MemoryStore implements PlayerStore {
   record: PlayerRecord;
+  /** the two books, written only when the compare-and-set wins, as the postgres store does in one transaction */
+  actionLog: Array<{ seq: number; books: Books }> = [];
+  goldLedger: Array<{ seq: number; deltaMg: number; action: unknown; tick: number }> = [];
 
   constructor(state: State, acceptedAt: number) {
     this.record = createPlayerRecord(bundle, state, acceptedAt);
@@ -25,9 +29,13 @@ class MemoryStore implements PlayerStore {
     return playerId === PLAYER ? structuredClone(this.record) : undefined;
   }
 
-  async compareAndSet(playerId: string, expectedVersion: number, next: PlayerRecord): Promise<boolean> {
+  async compareAndSet(playerId: string, expectedVersion: number, next: PlayerRecord, books: Books): Promise<boolean> {
     if (playerId !== PLAYER || this.record.version !== expectedVersion) return false;
     this.record = structuredClone(next);
+    this.actionLog.push({ seq: next.version, books: structuredClone(books) });
+    for (const deltaMg of books.goldDeltasMg) {
+      this.goldLedger.push({ seq: next.version, deltaMg, action: structuredClone(books.action), tick: books.tick });
+    }
     return true;
   }
 }
@@ -40,6 +48,7 @@ async function api(state: State, now = 1_000_000): Promise<{ store: MemoryStore;
     store,
     now: () => clock.now,
     resolvePlayerId: async (request: IncomingMessage) => request.headers.authorization === 'Bearer test' ? PLAYER : undefined,
+    health: async () => health.up,
   });
   const address = await listen(server, 0);
   return { store, base: `http://127.0.0.1:${address.port}`, clock };
@@ -102,6 +111,33 @@ describe('Stage 2a server protocol', () => {
     }, '');
     expect(response.status).toBe(401);
     expect(await response.json()).toEqual({ error: 'Sign in to continue.' });
+  });
+
+  test('a valid identity that also puts another player in the body acts only as the first', async () => {
+    const { base, store } = await api(started());
+    const response = await post(base, '/action', {
+      playerId: 'player-2',
+      version: 1,
+      tick: 0,
+      action: { t: 'carve', name: 'Tess' },
+    });
+    // the body is checked field by field: a player id there is refused, never read as who is acting
+    expect(response.status).toBe(400);
+    expect(store.record.version).toBe(1);
+    expect(store.actionLog).toEqual([]);
+
+    const resumed = await post(base, '/session', { playerId: 'player-2' });
+    expect(resumed.status).toBe(400);
+    const own = await post(base, '/session', {});
+    expect(own.status).toBe(200);
+  });
+
+  test('the identity comes from the resolver alone: no header or body names the player', async () => {
+    const { base } = await api(started());
+    for (const headers of [{ 'x-player-id': PLAYER }, { 'x-player-id': 'player-2', authorization: 'Bearer other' }] as Array<Record<string, string>>) {
+      const response = await fetch(`${base}/state`, { headers });
+      expect(response.status).toBe(401);
+    }
   });
 
   test('a successful action returns a versioned patch that reproduces the full state', async () => {
@@ -179,6 +215,91 @@ describe('Stage 2a server protocol', () => {
     const responses = await Promise.all([post(base, '/action', body), post(base, '/action', body)]);
     expect(responses.map((response) => response.status).sort()).toEqual([200, 409]);
     expect(store.record.version).toBe(2);
+  });
+
+  test('an accepted action writes one action_log row, at the version it made', async () => {
+    const { base, store } = await api(newState(bundle, 17));
+    const action = { t: 'start', starter: 'core/forager', name: 'Tess' };
+    expect((await post(base, '/action', { version: 1, tick: 0, action })).status).toBe(200);
+    expect(store.actionLog).toHaveLength(1);
+    expect(store.actionLog[0]!.seq).toBe(2);
+    expect(store.actionLog[0]!.books.action).toEqual(action);
+    expect(store.actionLog[0]!.books.tick).toBe(store.record.state.tick);
+    expect(store.goldLedger).toEqual([]);
+  });
+
+  test('a movement batch is one action_log row holding the batch, and a refused request writes nothing', async () => {
+    const { base, store } = await api(started());
+    const at = store.record.state.player.at;
+    const reports = [move(at, 0), move(at, 100)];
+    expect((await post(base, '/moves', { version: 1, moves: reports })).status).toBe(200);
+    expect(store.actionLog).toHaveLength(1);
+    expect(store.actionLog[0]!.books.action).toEqual({ kind: 'moves', moves: reports });
+
+    expect((await post(base, '/moves', { version: 1, moves: reports })).status).toBe(409);
+    expect((await post(base, '/action', { version: 2, tick: 99_999_999, action: { t: 'carve', name: 'Tess' } })).status).toBe(409);
+    expect(store.actionLog).toHaveLength(1);
+  });
+
+  test('a sale writes one gold_ledger row for the gold it paid, with its action and tick', async () => {
+    const trader = Object.keys(bundle.npcs).sort().find((id) => {
+      const shop = bundle.npcs[id]!.shop;
+      return shop !== undefined && bundle.shops[shop]?.buys;
+    })!;
+    const state = started();
+    state.player.attrs.carry = 100;
+    state.player.restored = ['core/old-bridge'];
+    state.player.quests['core/fix-the-bridge'] = 'done';
+    const item = Object.keys(bundle.items).sort().find((id) => {
+      const probe = structuredClone(state);
+      probe.player.bag[id] = 1;
+      return (salePrice(bundle, probe, id, 1) ?? 0) >= 1;
+    })!;
+    state.player.bag[item] = 1;
+    const [nx, ny] = npcTile(bundle, trader)!;
+    const spot = { x: nx, y: ny, w: 1, h: 1 };
+    const at = bfsNear(bundle, state.player, state.player.at, spot)!.at(-1)! as Tile;
+    state.player.at = at;
+    const pay = salePrice(bundle, state, item, 1)!;
+
+    const { base, store } = await api(state);
+    const action = { t: 'sell', npc: trader, item, qty: 1, at };
+    const response = await post(base, '/action', { version: 1, tick: state.tick, action });
+    expect(response.status, await response.clone().text()).toBe(200);
+    expect(store.goldLedger).toEqual([{ seq: 2, deltaMg: pay, action, tick: store.record.state.tick }]);
+    expect(store.actionLog).toHaveLength(1);
+  });
+
+  test('a lost race writes neither book', async () => {
+    const { base, store } = await api(newState(bundle, 17));
+    const body = { version: 1, tick: 0, action: { t: 'start', starter: 'core/forager', name: 'Tess' } };
+    await Promise.all([post(base, '/action', body), post(base, '/action', body)]);
+    expect(store.record.version).toBe(2);
+    expect(store.actionLog).toHaveLength(1);
+  });
+
+  test('GET /health answers 200 with no identity and no store read, and 503 when the pool does not answer', async () => {
+    const { base, store } = await api(started());
+    const loads: string[] = [];
+    const load = store.load.bind(store);
+    store.load = async (id) => { loads.push(id); return load(id); };
+
+    const up = await fetch(`${base}/health`);
+    expect(up.status).toBe(200);
+    expect(await up.json()).toEqual({ ok: true });
+    expect(loads).toEqual([]);
+
+    health.up = false;
+    try {
+      const down = await fetch(`${base}/health`);
+      expect(down.status).toBe(503);
+      expect(await down.json()).toEqual({ ok: false });
+    } finally {
+      health.up = true;
+    }
+
+    const wrong = await fetch(`${base}/health`, { method: 'POST' });
+    expect(wrong.status).toBe(405);
   });
 
   test('refuses unknown action fields before reaching the kernel', async () => {
