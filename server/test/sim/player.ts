@@ -185,17 +185,16 @@ export class Player {
       );
       if (!held) return false;
     }
-    if (treasure.level !== undefined && professionLevel(this.bundle, this.state, 'core/digging') < treasure.level) {
+    if (treasure.level !== undefined && professionLevel(this.bundle, this.state, this.bundle.verbs.dig) < treasure.level) {
       return false;
     }
     return true;
   }
 
-  /** The first thing in the bag a trader pays for, with one unit to sell. */
+  /** The first thing in the bag a trader pays for, with one unit to sell: never a tool, which is what works. */
   sellable(): string | undefined {
-    const tools = new Set(['core/axe', 'core/trowel', 'core/walking-staff', 'core/basket']);
     return Object.keys(this.state.player.bag)
-      .filter((item) => !tools.has(item) && (this.state.player.bag[item] ?? 0) > 0)
+      .filter((item) => (this.state.player.bag[item] ?? 0) > 0 && this.bundle.items[item]?.tool === undefined)
       .filter((item) => (salePrice(this.bundle, this.state, item, 1) ?? 0) > 0)
       .sort()[0];
   }
