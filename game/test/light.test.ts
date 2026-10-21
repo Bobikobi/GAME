@@ -102,4 +102,23 @@ describe('the hour table from params', () => {
     expect(washAt(table, 23 * 60).alpha).toBe(0);
     expect(washAt(table, 12 * 60).alpha).toBe(0);
   });
+
+  test('a key that crosses midnight is read across it, not cut at the clock', () => {
+    // the decided night key as it will read: strong at 22:00, nothing at 05:00
+    const night = tableOf([
+      { at: '05:00', tint: '#000000', pct: 0 },
+      { at: '22:00', tint: '#ffffff', pct: 60 },
+    ]);
+    expect(washAt(night, 22 * 60).alpha).toBeCloseTo(0.6, 5);
+    expect(washAt(night, 5 * 60).alpha).toBeCloseTo(0, 5);
+    // the stretch is 22:00 to 05:00, seven hours: 01:00 is three of them in, so three sevenths are gone
+    expect(washAt(night, 60).alpha).toBeCloseTo(0.34, 2);
+    expect(washAt(night, 23 * 60 + 59).alpha).toBeCloseTo(0.43, 2);
+    expect(washAt(night, 2 * 60).alpha).toBeCloseTo(0.26, 2);
+    // and no minute steps the wash by more than a rounding of a percent
+    for (let m = 0; m < 1440; m += 1) {
+      // whole percents, so a minute is at most a percent: no step in the circle is bigger than that
+      expect(Math.abs(washAt(night, (m + 1) % 1440).alpha - washAt(night, m).alpha)).toBeLessThanOrEqual(0.0101);
+    }
+  });
 });
