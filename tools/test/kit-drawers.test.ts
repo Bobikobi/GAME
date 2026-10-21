@@ -84,6 +84,8 @@ describe('the local route', () => {
     expect(localSettings({})).toMatchObject({ url: LOCAL_DEFAULTS.url, steps: LOCAL_DEFAULTS.steps, denoise: LOCAL_DEFAULTS.denoise, size: LOCAL_DEFAULTS.size });
     expect(localSettings({ COMFYUI_URL: 'http://10.0.0.2:8188/', LOCAL_STEPS: '20', LOCAL_DENOISE: '0.5', LOCAL_SIZE: '512' })).toMatchObject({ url: 'http://10.0.0.2:8188', steps: 20, denoise: 0.5, size: 512 });
     expect(() => localSettings({ LOCAL_STEPS: 'many' })).toThrow(/LOCAL_STEPS/);
+    expect(localSettings({}).seed).toBe(LOCAL_DEFAULTS.seed);
+    expect(localSettings({ LOCAL_SEED: '11' }).seed).toBe(11);
   });
 
   test('the workflow wires reference, LoRA, prompts and sampler the way ComfyUI reads them', () => {
