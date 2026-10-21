@@ -98,7 +98,9 @@ export class Walker {
     const x0 = this.x;
     const y0 = this.y;
     if (length > 0 && ms > 0) {
-      const reach = (Math.min(1, length) * ART_PX * ms) / stepMs;
+      // a frame longer than a tile takes (a slow machine, a tab coming back) walks one tile at most: a single
+      // frame never carries the body through a tile, so the tile under the feet is a place a hand can stop on
+      const reach = Math.min(ART_PX, (Math.min(1, length) * ART_PX * ms) / stepMs);
       const dx = (input[0] / length) * reach;
       const dy = (input[1] / length) * reach;
       const pieces = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / PIECE));
