@@ -5,7 +5,7 @@
  * sprite it redraws, what it is, the grid, and the detail to spell out. The prompt's house style
  * lives here, so the spec is the only thing that changes between waves.
  *
- *   pnpm kit:gen <spec.json> [--only a,b] [--out dir] [--dry] [--reimport] [--timeout seconds] [--drawer codex|gemini]
+ *   pnpm kit:gen <spec.json> [--only a,b] [--out dir] [--dry] [--reimport] [--timeout seconds] [--drawer codex|gemini|local]
  *
  * For each entry: the reference is enlarged onto flat magenta (a white ground keys out a white
  * beard), Codex's image generation redraws it on the subscription, and the importer brings the
@@ -36,8 +36,9 @@
  * steps on import; with no `ramps` of its own it draws in every shared ramp.
  *
  * `--drawer` picks the route an image prompt goes down (`drawers.ts`, docs/art/DRAWERS.md): `codex`, the agent
- * on its subscription, or `gemini`, one HTTP call on a `GEMINI_API_KEY`. Text routes (grid, scatter) stay with
- * Codex. The manifest line says which route drew each image.
+ * on its subscription; `gemini`, one HTTP call on a `GEMINI_API_KEY` (a project with billing); `local`, Stable
+ * Diffusion with a pixel-art LoRA in a ComfyUI on your own machine, free. Text routes (grid, scatter) stay with
+ * Codex. The manifest line says which route drew each image and the prompt it was given.
  *
  * Nothing is written into `content/`: a result goes into the kit by hand, in a wave. `--dry` writes
  * the references and the prompts only; `--reimport` imports the last raw images again without
@@ -52,7 +53,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { PNG } from 'pngjs';
 
 import { colourCount, gridPrompt, parseGrid, pngToGrid, renderGrid, seamWarnings } from './gengrid.js';
-import { type DrawerId, drawWithGemini, parseDrawer } from './drawers.js';
+import { type DrawerId, drawWithGemini, drawWithLocal, localPrompt, parseDrawer } from './drawers.js';
 import { importSprite, nearestPaletteIndex } from './import.js';
 import { CORE_PALETTE, CORE_RAMPS, type Rgb, hexToRgb, paletteWithRamps } from './palette.js';
 import {
@@ -428,7 +429,7 @@ interface Options {
 export function parseArgs(args: readonly string[], env: NodeJS.ProcessEnv = process.env): Options {
   const spec = args[0];
   if (spec === undefined || spec.startsWith('--')) {
-    throw new Error('Usage: gen.ts <spec.json> [--only a,b] [--out dir] [--dry] [--reimport] [--timeout seconds] [--drawer codex|gemini]');
+    throw new Error('Usage: gen.ts <spec.json> [--only a,b] [--out dir] [--dry] [--reimport] [--timeout seconds] [--drawer codex|gemini|local]');
   }
   const value = (flag: string): string | undefined => {
     const at = args.indexOf(flag);
@@ -517,13 +518,14 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
     // a text grid is written, not drawn: no picture goes in and no image tool is needed
     const styleRefs = (entry.style_refs ?? []).flatMap((p) => ['-i', join(ROOT, p)]);
     // a picture goes down the chosen route; letters (a grid tile) stay with Codex, a text model
-    const asked = !grid && options.drawer === 'gemini'
-      ? (() => {
-          const drawn = drawWithGemini({ out: options.out, name: entry.name, stamp, prompt: line.prompt, images: [refPath, ...(entry.style_refs ?? []).map((p) => join(ROOT, p))], expect: file, timeoutSeconds: options.timeoutSeconds });
-          return { codex: { version: drawn.version, exit: drawn.exit, seconds: drawn.seconds, tokens: drawn.tokens, log: drawn.log }, saved: drawn.saved, error: drawn.error };
-        })()
-      : askCodex(options, version, entry.name, stamp, line.prompt, grid ? [] : ['-i', refPath, ...styleRefs], grid ? `${entry.name}.txt` : file);
-    line.drawer = grid ? 'codex' : options.drawer;
+    const route = grid ? 'codex' : options.drawer;
+    if (route === 'local') line.prompt = localPrompt(entry);
+    const call = { out: options.out, name: entry.name, stamp, prompt: line.prompt, images: [refPath, ...(entry.style_refs ?? []).map((p) => join(ROOT, p))], expect: file, timeoutSeconds: options.timeoutSeconds };
+    const drawn = route === 'gemini' ? drawWithGemini(call) : route === 'local' ? drawWithLocal(call) : null;
+    const asked = drawn === null
+      ? askCodex(options, version, entry.name, stamp, line.prompt, grid ? [] : ['-i', refPath, ...styleRefs], grid ? `${entry.name}.txt` : file)
+      : { codex: { version: drawn.version, exit: drawn.exit, seconds: drawn.seconds, tokens: drawn.tokens, log: drawn.log }, saved: drawn.saved, error: drawn.error };
+    line.drawer = route;
     line.codex = asked.codex;
     const saved = asked.saved;
     if (saved === null) {
@@ -726,7 +728,7 @@ function runCli(args: readonly string[]): void {
   const entries = parseSpec(readFileSync(options.spec, 'utf8')).filter((e) => entryMatches(e, options.only));
   if (entries.length === 0) throw new Error('No spec entry matches --only');
   for (const dir of ['', 'ref', 'raw', 'log', 'work', 'out']) mkdirSync(join(options.out, dir), { recursive: true });
-  const version = options.dry || options.reimport || options.drawer === 'gemini' ? 'none' : codexVersion();
+  const version = options.dry || options.reimport || options.drawer !== 'codex' ? 'none' : codexVersion();
   const manifestPath = join(options.out, 'manifest.jsonl');
   const earlier = readManifest(manifestPath);
   let failed = 0;
