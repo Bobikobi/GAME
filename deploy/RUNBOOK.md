@@ -34,7 +34,7 @@ Verify: `docker compose -f compose.yml ps` shows `db` and `api` both healthy (th
 Prepare: copy `nginx-openfold.conf` to the host's sites directory as a **new** file, with the real name.
 What happens if it goes wrong: `nginx -t` refuses the config and nginx keeps serving what it served.
 Verify: `nginx -t` passes, `systemctl reload nginx`, then the same curl through the name.
-**The name is not pointed at the box until NEXT 18 e lands** (sign-in by email, Google, Discord). Until then the only mode is `dev-header`, which believes a header, so a reachable box means anyone can act as any player; it runs with `ALLOW_DEV_HEADER=staging-only` or not at all. The nginx file blanks `x-player-id`, so through the name every request is refused: the staging check in step 2 is made on the loopback port, never through nginx.
+**The name is not pointed at the box while it runs `dev-header`.** That mode believes a header, so a reachable box means anyone can act as any player; it runs with `ALLOW_DEV_HEADER=staging-only` or not at all. A box the name points at runs `AUTH_MODE=session` (step 6), and only after the Fable auth review the owner asked for. The nginx file blanks `x-player-id`, so through the name every request is refused: the staging check in step 2 is made on the loopback port, never through nginx.
 
 ## 4. The certificate
 
@@ -46,6 +46,25 @@ Verify: `curl -sI https://<name>/state` answers 401 without a player header.
 Prepare: one cron line for the owner's user, `15 3 * * * ~/openfold/backup.sh >> ~/openfold/backups/log 2>&1`.
 What happens if it goes wrong: no dump is written; the game is unaffected (`set -eu` stops on the first error).
 Verify: run it by hand once, then `zcat` the newest file and see `CREATE TABLE player_state`.
+
+## 6. Sign-in on (NEXT 18 e)
+
+Waits for: the Fable auth review of `server/src/auth/`, the name and its certificate (steps 3 and 4), and the
+owner's choice of a mail sender (NEXT 18 h5; until then the only mailer writes the link to the API's log).
+Prepare: in `~/openfold/.env`, remove `ALLOW_DEV_HEADER` (the session mode refuses to start beside it) and set
+`AUTH_MODE=session`, `PUBLIC_ORIGIN=https://<name>`, `APP_ORIGIN=https://<the game's name>`, and the Google pair
+`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` from the owner's secrets folder on the laptop (Google project
+`openfold-game`). On the Google client, add `https://<name>/auth/google/callback` as a redirect; it lists only the
+laptop's `http://localhost:8080/auth/google/callback` today. Then `docker compose -f compose.yml up -d --no-build`.
+What happens if it goes wrong: the API refuses to start and says which variable; the database is untouched, and
+putting the two `dev-header` lines back brings the staging box back.
+Verify: the boot log carries one line beginning `AUTH_MODE=session`; `curl -sI https://<name>/auth/google/start`
+answers 302 to `accounts.google.com`; `curl -s https://<name>/state` answers 401; and a sign-in by the owner's
+test address (eladeladsaa@gmail.com, the client's one test user while it is in Testing) lands on the game.
+
+On the laptop, the same mode runs against the dev client: `AUTH_MODE=session PUBLIC_ORIGIN=http://localhost:8080
+APP_ORIGIN=http://localhost:5173` with the Google pair exported from the secrets file, never pasted into a shell
+history or a chat.
 
 ## Never
 

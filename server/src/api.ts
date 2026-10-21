@@ -57,6 +57,8 @@ export interface ApiOptions {
   resolvePlayerId(request: IncomingMessage): Promise<string | undefined>;
   /** Whether the database answers; GET /health reports it and reads no player row. Absent, the process is the only thing checked. */
   health?(): Promise<boolean>;
+  /** Sign-in's routes under `/auth/` (NEXT 18 e); absent in the header mode, where those paths are not found. */
+  signIn?: { handle(request: IncomingMessage, response: ServerResponse, url: URL): Promise<boolean> };
   now?: () => number;
   bodyLimit?: number;
 }
@@ -303,6 +305,8 @@ async function playerIdFor(request: IncomingMessage, resolve: ApiOptions['resolv
 
 async function route(request: IncomingMessage, response: ServerResponse, options: ApiOptions): Promise<void> {
   const url = new URL(request.url ?? '/', 'http://localhost');
+  // sign-in reads its own query strings (an OAuth callback, an email link) and answers before the game's rules
+  if (options.signIn && (await options.signIn.handle(request, response, url))) return;
   if (url.search || url.hash) throw new RequestError('This endpoint does not accept a query string.', 400);
   if (url.pathname === '/health') {
     // no identity and no player row: the one answer is whether the process and its pool are up, and it says nothing more
