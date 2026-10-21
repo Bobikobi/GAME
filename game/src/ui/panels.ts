@@ -33,7 +33,7 @@ import {
 } from '../feedback-payload';
 import type { SignInfo } from '../scenes/world';
 import type { StoneView } from '../stone';
-import { Session } from '../session';
+import { Session, STALL_SLOTS, stallDraftOf, type StallDraft } from '../session';
 import type { GameSession } from '../session-surface';
 import type { ActResult } from '../session-surface';
 import { ATTRIBUTE_MAX, activeQuests, attributeEffects, bagGroups, classLine, clock, eatLabel, gold, itemBenefit, itemName, journalGroups, questSteps, restoreHint, seconds, sellable, stacks, stationGate, stationText, stationUpgrades, toolOpens, wornAt } from '../text';
@@ -187,8 +187,8 @@ export function openBag(ui: UI): void {
   let look = false;
   let shopPick: string | undefined;
   let priceFor: { item: string; slot: number } | undefined;
-  type Draft = { item: string; qty: number; price: number };
-  const stall: (Draft | undefined)[] = Array.from({ length: 6 }, () => undefined);
+  // the draft is kept in the save; a session that keeps none (the server door) keeps it in this panel
+  const stall: (StallDraft | null)[] = stallDraftOf(s) ?? Array.from({ length: STALL_SLOTS }, () => null);
 
   const layer = () => (look ? s.state.player.looks : s.state.player.worn);
   const figure = () => {
@@ -408,6 +408,7 @@ export function openBag(ui: UI): void {
                 button('Set price', () => {
                   const n = Math.max(1, Math.min(9999, Math.round(Number(input.value) || suggested)));
                   stall[at.slot] = { item: at.item, qty: 1, price: n };
+                  s.save();
                   priceFor = undefined;
                   render();
                 }, 'small'),
