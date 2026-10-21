@@ -50,6 +50,7 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       MAILER: ${MAILER:-log}
+      COUNTRY_HEADER: ${COUNTRY_HEADER:-}
     depends_on:
       db:
         condition: service_healthy

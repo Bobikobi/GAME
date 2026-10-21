@@ -173,8 +173,8 @@ export class Browser {
     public origin: string | undefined,
   ) {}
 
-  async request(path: string, init: { method?: string; json?: unknown; form?: Record<string, string> } = {}): Promise<Response> {
-    const headers: Record<string, string> = { accept: 'application/json' };
+  async request(path: string, init: { method?: string; json?: unknown; form?: Record<string, string>; headers?: Record<string, string> } = {}): Promise<Response> {
+    const headers: Record<string, string> = { accept: 'application/json', ...init.headers };
     if (this.jar.size > 0) headers.cookie = [...this.jar].map(([name, value]) => `${name}=${value}`).join('; ');
     if (this.origin !== undefined && (init.method ?? 'GET') !== 'GET') headers.origin = this.origin;
     let body: string | undefined;

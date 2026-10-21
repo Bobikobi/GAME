@@ -79,6 +79,20 @@ describe('the session mode at boot (NEXT 18 e)', () => {
     expect(() => authFromEnv({ ...ready, ALLOW_DEV_HEADER: 'staging-only' })).toThrow(/ALLOW_DEV_HEADER/);
     expect(() => authFromEnv({ ...ready, MAILER: 'smtp' })).toThrow(/MAILER/);
   });
+
+  test('reads a country header only when COUNTRY_HEADER names one, and says so in the notice', () => {
+    const unset = authFromEnv(ready);
+    if (unset.mode !== 'session') throw new Error('expected the session mode');
+    expect(unset.session.countryHeader).toBeUndefined();
+    expect(unset.notice).toMatch(/highest \(no COUNTRY_HEADER\)/);
+    const set = authFromEnv({ ...ready, COUNTRY_HEADER: 'X-Country' });
+    if (set.mode !== 'session') throw new Error('expected the session mode');
+    expect(set.session.countryHeader).toBe('x-country');
+    expect(set.notice).toContain('x-country');
+    for (const bad of ['X Country', 'x-country:', 'x_country']) {
+      expect(() => authFromEnv({ ...ready, COUNTRY_HEADER: bad }), bad).toThrow(/COUNTRY_HEADER/);
+    }
+  });
 });
 
 describe('the process itself', () => {

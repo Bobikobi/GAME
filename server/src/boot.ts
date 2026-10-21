@@ -23,6 +23,8 @@ export interface SessionConfig {
   /** absent when neither variable is set: Google then answers "not open yet" */
   google?: { clientId: string; clientSecret: string };
   mailer: MailerName;
+  /** the header our nginx sets to the visitor's country (lower case); absent, every sign-up is held to the highest age */
+  countryHeader?: string;
 }
 
 export type Auth =
@@ -76,10 +78,14 @@ function sessionMode(env: NodeJS.ProcessEnv): Auth {
     throw new BootError(`MAILER=${JSON.stringify(mailer)} is not a mailer this build has. Known: ${MAILERS.join(', ')}.`);
   }
   const google = clientId === '' ? undefined : { clientId, clientSecret };
+  const countryHeader = env.COUNTRY_HEADER ? env.COUNTRY_HEADER.toLowerCase() : undefined;
+  if (countryHeader !== undefined && !/^[a-z0-9-]+$/.test(countryHeader)) {
+    throw new BootError(`COUNTRY_HEADER=${JSON.stringify(env.COUNTRY_HEADER)} is not a header name, such as X-Country.`);
+  }
   return {
     mode: 'session',
-    notice: `AUTH_MODE=session: players are who their session cookie says; sign-in by email (links to the ${mailer} mailer)${google ? ' and Google' : ''}, the game at ${appOrigin}.`,
-    session: { publicOrigin, appOrigin, google, mailer: mailer as MailerName },
+    notice: `AUTH_MODE=session: players are who their session cookie says; sign-in by email (links to the ${mailer} mailer)${google ? ' and Google' : ''}, the game at ${appOrigin}; the age limit ${countryHeader ? `by the country in ${countryHeader}` : 'is the highest (no COUNTRY_HEADER)'}.`,
+    session: { publicOrigin, appOrigin, google, mailer: mailer as MailerName, countryHeader },
   };
 }
 

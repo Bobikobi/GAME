@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
-import { ageGate } from './age';
-import { clearCookie, cookie, FLOW_COOKIE, readCookie, SESSION_COOKIE, SIGNUP_COOKIE } from './cookies';
+import { ageGate, parseBirthDate } from './age';
+import { AGE_COOKIE, clearCookie, cookie, FLOW_COOKIE, readCookie, SESSION_COOKIE, SIGNUP_COOKIE } from './cookies';
 import type { Mailer } from './mailer';
 import { SignInRefusal, type OAuthProvider, type ProvenIdentity } from './provider';
 import type { AuthStore } from './store';
@@ -12,6 +12,8 @@ const FLOW_TTL_MS = 10 * MINUTE;
 const LINK_TTL_MS = 15 * MINUTE;
 const TICKET_TTL_MS = 30 * MINUTE;
 const SESSION_TTL_MS = 30 * 24 * 60 * MINUTE;
+/** how long a browser that was refused for its age is refused a new date (the neutral age screen) */
+const AGE_REFUSAL_TTL_MS = 24 * 60 * MINUTE;
 /** links sent to one address within a link's life; past it the request is answered the same and nothing is sent */
 const LINKS_PER_ADDRESS = 3;
 const SWEEP_EVERY_MS = MINUTE;
@@ -30,6 +32,11 @@ export interface SignInOptions {
   publicOrigin: string;
   /** where the game is: a browser is sent there after a sign-in, and a POST must come from it or from publicOrigin */
   appOrigin: string;
+  /**
+   * The request header our nginx sets to the visitor's country from GeoIP, overwriting any the client sent.
+   * Unset, no header is read and every sign-up is held to the highest age; the player never says where they are.
+   */
+  countryHeader?: string;
   now?: () => number;
 }
 
@@ -263,46 +270,53 @@ export function createSignIn(options: SignInOptions): SignIn {
     return found;
   }
 
+  /** The 403 that ends a sign-up for its age. It names no age, so it is no hint for the next answer. */
+  async function refuseAge(response: ServerResponse, ticketHash: string, cookies: string[]): Promise<void> {
+    await store.dropTicket(ticketHash);
+    sendJson(response, 403, {
+      error: 'You cannot make an Openfold account. The demo stays open to you.',
+      reason: 'under-age',
+      demo: '/',
+    }, [...cookies, clearCookie(SIGNUP_COOKIE)]);
+  }
+
+  /** The country our proxy says the request comes from; undefined without the header, or with a value that is not one. */
+  function countryOf(request: IncomingMessage): string | undefined {
+    if (!options.countryHeader) return undefined;
+    const value = request.headers[options.countryHeader];
+    return typeof value === 'string' && COUNTRY.test(value) ? value : undefined;
+  }
+
   async function signupShow(request: IncomingMessage, response: ServerResponse): Promise<void> {
     const ticket = await ticketOf(request, now());
+    if (readCookie(request, AGE_COOKIE) !== undefined) return refuseAge(response, ticket.ticketHash, []);
     sendJson(response, 200, { email: ticket.email });
   }
 
   /**
-   * The sign-up asks for a name and a year of birth, and nothing else (DECISIONS 2026-10-09; CR-49): the
-   * address comes from the proven identity, and the country, if the phone sends one, only sets the age and
-   * is not kept. `oneAccount` is the player's yes to "one person, one account in a world" (CR-53).
+   * The sign-up asks for a name and a date of birth, and nothing else (DECISIONS 2026-10-09; CR-49): the
+   * address comes from the proven identity, and the country from our proxy, never from the player. The
+   * date sets the band and is not kept. `oneAccount` is the player's yes to "one person, one account in a
+   * world" (CR-53). A browser refused for its age is refused a new date for a day, as a neutral age screen
+   * asks, and its ticket ends.
    */
   async function signupCreate(request: IncomingMessage, response: ServerResponse): Promise<void> {
     requireOrigin(request);
     const at = now();
     const ticket = await ticketOf(request, at);
+    if (readCookie(request, AGE_COOKIE) !== undefined) return refuseAge(response, ticket.ticketHash, []);
     const body = await readJsonObject(request);
-    onlyKeys(body, ['name', 'birthYear', 'country', 'oneAccount']);
+    onlyKeys(body, ['name', 'birthDate', 'oneAccount']);
     if (body.oneAccount !== true) {
       throw new SignInRefusal('One person, one account in a world: agree to it to make your account.', 'request');
     }
     if (typeof body.name !== 'string' || !NAME.test(body.name) || body.name.trim() === '') {
       throw new SignInRefusal('A name is 1 to 16 letters, digits, spaces, "_" or "-".', 'request');
     }
-    const year = new Date(at).getUTCFullYear();
-    if (!Number.isSafeInteger(body.birthYear) || (body.birthYear as number) < year - 120 || (body.birthYear as number) > year) {
-      throw new SignInRefusal('Give the year you were born.', 'request');
-    }
-    if (body.country !== undefined && (typeof body.country !== 'string' || !COUNTRY.test(body.country))) {
-      throw new SignInRefusal('A country is two capital letters, such as IL or DE.', 'request');
-    }
-    const gate = ageGate(body.birthYear as number, body.country as string | undefined, at);
-    if ('underAge' in gate) {
-      // the ticket ends with the refusal, so going back and giving another year means proving the address again
-      await store.dropTicket(ticket.ticketHash);
-      sendJson(response, 403, {
-        error: `Openfold accounts are for players of ${gate.underAge} and older. The demo stays open to you.`,
-        reason: 'under-age',
-        demo: '/',
-      }, [clearCookie(SIGNUP_COOKIE)]);
-      return;
-    }
+    const birth = parseBirthDate(body.birthDate, at);
+    if (!birth) throw new SignInRefusal('Give the day you were born.', 'request');
+    const gate = ageGate(birth, countryOf(request), at);
+    if ('underAge' in gate) return refuseAge(response, ticket.ticketHash, [cookie(AGE_COOKIE, '1', AGE_REFUSAL_TTL_MS / 1000)]);
     const made = await store.createAccount({ email: ticket.email, name: body.name.trim(), birthBand: gate.band }, ticket);
     if (made === 'name-taken') throw new SignInRefusal('That name is taken in this world. Choose another.', 'name-taken', 409);
     if (made === 'email-taken') throw new SignInRefusal('That address already has an account. Sign in instead.', 'email-taken', 409);

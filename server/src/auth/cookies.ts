@@ -7,6 +7,8 @@ import type { IncomingMessage } from 'node:http';
 export const SESSION_COOKIE = '__Host-of_session';
 export const FLOW_COOKIE = '__Host-of_flow';
 export const SIGNUP_COOKIE = '__Host-of_signup';
+/** set for a day when a sign-up is refused for its age; while it stands the browser gets no new try */
+export const AGE_COOKIE = '__Host-of_age';
 
 /** The value of one cookie the request carries, or undefined; a name sent twice is read as absent. */
 export function readCookie(request: IncomingMessage, name: string): string | undefined {

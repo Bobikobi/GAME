@@ -3,7 +3,7 @@ import type { Server } from 'node:http';
 import { newState, step, type Bundle, type State } from '@game/kernel';
 
 import { createGameApi, createPlayerRecord, createSignIn, googleProvider, listen, type Mail, type PlayerRecord, type PlayerStore, type SignIn } from '../src';
-import { ageGate, consentAge, UNKNOWN_COUNTRY_AGE } from '../src/auth/age';
+import { ageGate, ageOn, consentAge, parseBirthDate, UNKNOWN_COUNTRY_AGE } from '../src/auth/age';
 import { pkceChallenge, tokenHash } from '../src/auth/tokens';
 import { loadBundle } from '../../tools/test/helpers/world.js';
 import { Browser, CLIENT_ID, CLIENT_SECRET, FakeGoogle, MemoryAuthStore } from './support/auth.js';
@@ -42,7 +42,7 @@ function started(): State {
 }
 
 /** The API in the session mode, on a free port, with Google, a mail outbox and a clock the test moves. */
-async function ready(options: { google?: boolean } = {}) {
+async function ready(options: { google?: boolean; countryHeader?: string } = {}) {
   const clock = { now: Date.UTC(2026, 9, 21, 12) };
   const store = new MemoryAuthStore();
   const players = new Players();
@@ -65,6 +65,7 @@ async function ready(options: { google?: boolean } = {}) {
     google: options.google === false ? undefined : googleProvider({ clientId: CLIENT_ID, clientSecret: CLIENT_SECRET, fetch: google.fetch }),
     publicOrigin: base,
     appOrigin: APP,
+    countryHeader: options.countryHeader,
     now: () => clock.now,
   });
   return { clock, store, players, google, outbox, base, browser: new Browser(base, base) };
@@ -98,7 +99,7 @@ async function emailLink(w: Awaited<ReturnType<typeof ready>>, address = 'player
   return new URL(link).searchParams.get('token')!;
 }
 
-const SIGNUP = { name: 'Tess', birthYear: 2000, country: 'IL', oneAccount: true };
+const SIGNUP = { name: 'Tess', birthDate: '2000-01-01', oneAccount: true };
 
 describe('sign-in with Google (NEXT 18 e)', () => {
   test('the start sends the browser to Google with PKCE S256, a state, a nonce and the three scopes, and binds the state to a cookie', async () => {
@@ -323,16 +324,21 @@ describe('sign-in by an email link (NEXT 18 e)', () => {
 });
 
 describe('the sign-up (NEXT 18 e; CR-49, CR-53)', () => {
-  async function ticket() {
-    const w = await ready();
+  async function ticket(options: { countryHeader?: string } = {}) {
+    const w = await ready(options);
     await googleSignIn(w);
     return w;
   }
 
-  test('asks for a name and a year of birth and nothing else: any other field is refused', async () => {
+  /** The sign-up as a browser behind our proxy sends it: the proxy's country header, if any, beside the body. */
+  function signUp(w: Awaited<ReturnType<typeof ready>>, json: unknown, country?: string): Promise<Response> {
+    return w.browser.request('/auth/signup', { method: 'POST', json, headers: country === undefined ? {} : { 'x-country': country } });
+  }
+
+  test('asks for a name and a date of birth and nothing else: any other field, a country among them, is refused', async () => {
     const w = await ticket();
-    for (const extra of [{ email: 'other@example.com' }, { phone: '000' }, { birthDate: '2000-01-01' }, { look: 3 }]) {
-      const response = await w.browser.request('/auth/signup', { method: 'POST', json: { ...SIGNUP, ...extra } });
+    for (const extra of [{ email: 'other@example.com' }, { phone: '000' }, { birthYear: 2000 }, { country: 'IL' }, { look: 3 }]) {
+      const response = await signUp(w, { ...SIGNUP, ...extra });
       expect(response.status, JSON.stringify(extra)).toBe(400);
     }
     expect(w.store.accounts.size).toBe(0);
@@ -341,51 +347,91 @@ describe('the sign-up (NEXT 18 e; CR-49, CR-53)', () => {
   test('one person, one account in a world: the sign-up is refused until the player agrees to it', async () => {
     const w = await ticket();
     for (const oneAccount of [undefined, false, 'yes']) {
-      const response = await w.browser.request('/auth/signup', { method: 'POST', json: { ...SIGNUP, oneAccount } });
+      const response = await signUp(w, { ...SIGNUP, oneAccount });
       expect(response.status).toBe(400);
       expect((await response.json()).error).toMatch(/One person, one account in a world/);
     }
     expect(w.store.accounts.size).toBe(0);
   });
 
-  test('under 13 is refused and pointed to the demo, and the ticket ends so another year needs a new proof', async () => {
+  test('under 13 is refused without naming an age, pointed to the demo, and the ticket ends', async () => {
     const w = await ticket();
-    const response = await w.browser.request('/auth/signup', { method: 'POST', json: { ...SIGNUP, birthYear: 2014, country: 'US' } });
+    const response = await signUp(w, { ...SIGNUP, birthDate: '2014-01-01' });
     expect(response.status).toBe(403);
-    expect(await response.json()).toEqual({
-      error: 'Openfold accounts are for players of 13 and older. The demo stays open to you.',
-      reason: 'under-age',
-      demo: '/',
-    });
+    const body = await response.json();
+    expect(body).toEqual({ error: 'You cannot make an Openfold account. The demo stays open to you.', reason: 'under-age', demo: '/' });
+    expect(body.error).not.toMatch(/\d/);
     expect(w.store.accounts.size).toBe(0);
     expect(w.store.tickets.size).toBe(0);
-    const retry = await w.browser.request('/auth/signup', { method: 'POST', json: { ...SIGNUP, birthYear: 1990 } });
-    expect(retry.status).toBe(401);
-    expect(w.store.accounts.size).toBe(0);
+    expect((await signUp(w, { ...SIGNUP, birthDate: '1990-01-01' })).status).toBe(401);
   });
 
-  test('a country with a higher age of digital consent holds the player to it; no country holds them to the highest', async () => {
+  test('a browser refused for its age gets no new date for a day, even after a new proof; another browser is not touched', async () => {
     const w = await ticket();
-    // born 2011: surely 14 in 2026, old enough in Israel, not in Germany (16)
-    const germany = await w.browser.request('/auth/signup', { method: 'POST', json: { ...SIGNUP, birthYear: 2011, country: 'DE' } });
-    expect(germany.status).toBe(403);
-    expect((await germany.json()).error).toMatch(/players of 16 and older/);
+    const refused = await signUp(w, { ...SIGNUP, birthDate: '2014-01-01' });
+    expect(refused.headers.getSetCookie()).toContain('__Host-of_age=1; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400');
 
-    const w2 = await ticket();
-    const israel = await w2.browser.request('/auth/signup', { method: 'POST', json: { ...SIGNUP, birthYear: 2011, country: 'IL' } });
-    expect(israel.status).toBe(201);
-    expect([...w2.store.accounts.values()][0]!.birthBand).toBe('13-15');
+    // proving the address again opens a ticket, but the page and the form both answer as the refusal did
+    await googleSignIn(w);
+    expect(w.store.tickets.size).toBe(1);
+    const page = await w.browser.request('/auth/signup');
+    expect(page.status).toBe(403);
+    expect(await page.json()).toMatchObject({ reason: 'under-age' });
+    await googleSignIn(w);
+    const older = await signUp(w, { ...SIGNUP, birthDate: '1990-01-01' });
+    expect(older.status).toBe(403);
+    expect(await older.json()).toMatchObject({ reason: 'under-age' });
+    expect(w.store.tickets.size).toBe(0);
+    expect(w.store.accounts.size).toBe(0);
 
-    const w3 = await ticket();
-    const { country: _dropped, ...noCountry } = SIGNUP;
-    const unknown = await w3.browser.request('/auth/signup', { method: 'POST', json: { ...noCountry, birthYear: 2011 } });
-    expect(unknown.status).toBe(403);
+    const other = new Browser(w.base, w.base);
+    await googleSignIn({ ...w, browser: other });
+    expect((await other.request('/auth/signup', { method: 'POST', json: SIGNUP })).status).toBe(201);
+  });
+
+  test('the birthday counts from its own day, on the server\'s date: the day before the 13th is refused, the day itself is not', async () => {
+    // the clock stands at 2026-10-21 12:00 UTC
+    const before = await ticket({ countryHeader: 'x-country' });
+    expect((await signUp(before, { ...SIGNUP, birthDate: '2013-10-22' }, 'US')).status).toBe(403);
+    const on = await ticket({ countryHeader: 'x-country' });
+    expect((await signUp(on, { ...SIGNUP, birthDate: '2013-10-21' }, 'US')).status).toBe(201);
+    expect([...on.store.accounts.values()][0]!.birthBand).toBe('13-15');
+  });
+
+  test('the 16th birthday in a country that asks for 16: the day before is refused, the day itself is not', async () => {
+    const before = await ticket({ countryHeader: 'x-country' });
+    expect((await signUp(before, { ...SIGNUP, birthDate: '2010-10-22' }, 'DE')).status).toBe(403);
+    const on = await ticket({ countryHeader: 'x-country' });
+    expect((await signUp(on, { ...SIGNUP, birthDate: '2010-10-21' }, 'DE')).status).toBe(201);
+    expect([...on.store.accounts.values()][0]!.birthBand).toBe('16-17');
+  });
+
+  test('the country is the one our proxy\'s header names; without the header the highest age holds', async () => {
+    const fifteen = { ...SIGNUP, birthDate: '2011-01-01' };
+    const germany = await ticket({ countryHeader: 'x-country' });
+    expect((await signUp(germany, fifteen, 'DE')).status).toBe(403);
+    const israel = await ticket({ countryHeader: 'x-country' });
+    expect((await signUp(israel, fifteen, 'IL')).status).toBe(201);
+    const none = await ticket({ countryHeader: 'x-country' });
+    expect((await signUp(none, fifteen)).status).toBe(403);
     expect(UNKNOWN_COUNTRY_AGE).toBe(16);
+  });
+
+  test('a country header is trusted only when the server is told our proxy sets it, and only as one plain code', async () => {
+    const fifteen = { ...SIGNUP, birthDate: '2011-01-01' };
+    // no COUNTRY_HEADER: a header the client sends itself is not read
+    const unset = await ticket();
+    expect((await signUp(unset, fifteen, 'IL')).status).toBe(403);
+    // a value that is not one capital code (lower case, or two values joined) counts as no country
+    for (const value of ['il', 'IL, DE', 'ISR', '']) {
+      const w = await ticket({ countryHeader: 'x-country' });
+      expect((await signUp(w, fifteen, value)).status, value).toBe(403);
+    }
   });
 
   test('a name the world already shows, in any case, is refused', async () => {
     const w = await ticket();
-    await w.browser.request('/auth/signup', { method: 'POST', json: SIGNUP });
+    await signUp(w, SIGNUP);
     const other = new Browser(w.base, w.base);
     w.google.claims = (nonce, now) => ({ ...new FakeGoogle().claims(nonce, now), sub: 'another', email: 'other@example.com' });
     await googleSignIn({ ...w, browser: other });
@@ -395,31 +441,47 @@ describe('the sign-up (NEXT 18 e; CR-49, CR-53)', () => {
     expect(w.store.accounts.size).toBe(1);
   });
 
-  test('the name follows the kernel\'s rule, and the year must be a year', async () => {
+  test('the name follows the kernel\'s rule, and the date of birth must be a past day of the calendar', async () => {
     const w = await ticket();
     for (const json of [
       { ...SIGNUP, name: '' },
       { ...SIGNUP, name: '   ' },
       { ...SIGNUP, name: 'x'.repeat(17) },
       { ...SIGNUP, name: '<b>Tess</b>' },
-      { ...SIGNUP, birthYear: 2027 },
-      { ...SIGNUP, birthYear: '2000' },
-      { ...SIGNUP, birthYear: 1899 },
-      { ...SIGNUP, country: 'il' },
+      { ...SIGNUP, birthDate: '2026-10-22' },
+      { ...SIGNUP, birthDate: '2000-02-30' },
+      { ...SIGNUP, birthDate: '2000-13-01' },
+      { ...SIGNUP, birthDate: '2000-1-1' },
+      { ...SIGNUP, birthDate: 20000101 },
+      { ...SIGNUP, birthDate: '1905-10-20' },
+      { ...SIGNUP, birthDate: undefined },
     ]) {
-      expect((await w.browser.request('/auth/signup', { method: 'POST', json })).status, JSON.stringify(json)).toBe(400);
+      expect((await signUp(w, json)).status, JSON.stringify(json)).toBe(400);
     }
     expect(w.store.accounts.size).toBe(0);
   });
 
-  test('the age gate keeps a band, never the year', () => {
+  test('the age is exact on the server\'s UTC date, a leap-day birthday counts from 1 March, and the gate keeps a band, never the date', () => {
+    const born = (text: string) => parseBirthDate(text, Date.UTC(2026, 9, 21))!;
+    expect(ageOn(born('2013-10-21'), Date.UTC(2026, 9, 20, 23, 59, 59))).toBe(12);
+    expect(ageOn(born('2013-10-21'), Date.UTC(2026, 9, 21, 0, 0, 0))).toBe(13);
+    expect(ageOn(born('2012-02-29'), Date.UTC(2025, 1, 28))).toBe(12);
+    expect(ageOn(born('2012-02-29'), Date.UTC(2025, 2, 1))).toBe(13);
+    expect(ageOn(born('2012-02-29'), Date.UTC(2024, 1, 29))).toBe(12);
+    expect(parseBirthDate('1906-10-21', Date.UTC(2026, 9, 21))).toBeDefined();
+    expect(parseBirthDate('1905-12-31', Date.UTC(2026, 9, 21))).toBeUndefined();
+
     const now = Date.UTC(2026, 5, 1);
-    expect(ageGate(2013, 'US', now)).toEqual({ underAge: 13 });
-    expect(ageGate(2012, 'US', now)).toEqual({ band: '13-15' });
-    expect(ageGate(2009, 'US', now)).toEqual({ band: '16-17' });
-    expect(ageGate(2007, 'US', now)).toEqual({ band: '18+' });
+    expect(ageGate(born('2013-06-02'), 'US', now)).toEqual({ underAge: true });
+    expect(ageGate(born('2013-06-01'), 'US', now)).toEqual({ band: '13-15' });
+    expect(ageGate(born('2010-06-01'), 'US', now)).toEqual({ band: '16-17' });
+    expect(ageGate(born('2008-06-02'), 'US', now)).toEqual({ band: '16-17' });
+    expect(ageGate(born('2008-06-01'), 'US', now)).toEqual({ band: '18+' });
     expect(consentAge('FR')).toBe(15);
+    expect(consentAge('CN')).toBe(14);
+    expect(consentAge('KR')).toBe(14);
     expect(consentAge('IL')).toBe(13);
+    expect(consentAge(undefined)).toBe(16);
   });
 });
 

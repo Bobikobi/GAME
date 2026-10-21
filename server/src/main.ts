@@ -47,6 +47,7 @@ function identity(chosen: Auth): Pick<ApiOptions, 'resolvePlayerId' | 'signIn'> 
     google: chosen.session.google && googleProvider(chosen.session.google),
     publicOrigin: chosen.session.publicOrigin,
     appOrigin: chosen.session.appOrigin,
+    countryHeader: chosen.session.countryHeader,
   });
   return { resolvePlayerId: signIn.resolve, signIn };
 }
