@@ -18,6 +18,7 @@ import {
   hourOf,
   makeWalkable,
   newState,
+  inRect,
   placedAt,
   serialize,
   step,
@@ -25,7 +26,7 @@ import {
 import { LEGACY_SAVE_KEY, REVIEW_KEY, SAVE_KEY } from './config';
 import type { ActResult, Facing, GameSession, LogEntry, SessionEvents } from './session-surface';
 import { s1 } from './net/s1';
-import { slotContent } from './places';
+import { STALL_SLOT, canPlaceStall, chunkKey, slotContent } from './places';
 
 /**
  * The save file's version. 2 came with the new opening (the axe, the three
@@ -55,6 +56,12 @@ interface SaveFile {
   heard?: string[];
   /** the last actions, attached to bug reports */
   tail: LogEntry[];
+  /** places entered, for the map; optional in old saves */
+  seen?: string[];
+  /** 8x8 ground chunks walked or seen, for the map; optional in old saves */
+  seenChunks?: string[];
+  /** the slot the player's stall stands in, once placed */
+  stall?: string;
 }
 
 type Listener = (payload: never) => void;
@@ -69,6 +76,12 @@ export class Session implements GameSession {
   facing: Facing = 'down';
   readonly met = new Set<string>();
   readonly heard = new Set<string>();
+  /** The slots the player has entered: the map may name what is here and nothing else. */
+  readonly seen = new Set<string>();
+  /** The 8x8 chunks the player has walked or seen: the map's ground. */
+  readonly seenChunks = new Set<string>();
+  /** The slot the player's stall stands in, once placed at the empty corner. */
+  stall: string | undefined;
   tail: LogEntry[] = [];
   /** set when the save was made with other content and had to be adapted */
   adapted = false;
@@ -95,6 +108,36 @@ export class Session implements GameSession {
     const seed = new Uint32Array(1);
     crypto.getRandomValues(seed);
     return new Session(bundle, newState(bundle, seed[0] ?? 1));
+  }
+
+  /**
+   * Remember the ground under the player and the place they stand in. Called
+   * after every step and every wake; the map draws nothing else (G5, G8).
+   */
+  seeAt(): void {
+    const [x, y] = this.pos;
+    this.seenChunks.add(chunkKey(x, y));
+    for (const slot of this.bundle.map.slots) if (inRect(x, y, slot)) this.seen.add(slot.id);
+  }
+
+  /** Put the stall on the town's free corner. Only from there, and only while it is free (G10). */
+  placeStall(): boolean {
+    if (!this.started || !canPlaceStall(this.bundle, this.pos)) return false;
+    if (this.stall === STALL_SLOT) return true;
+    this.stall = STALL_SLOT;
+    this.seeAt();
+    this.save();
+    this.emit('change', undefined);
+    return true;
+  }
+
+  /** Lift the stall, standing at it; the corner is free again. */
+  liftStall(): boolean {
+    if (!this.stall || !canPlaceStall(this.bundle, this.pos)) return false;
+    this.stall = undefined;
+    this.save();
+    this.emit('change', undefined);
+    return true;
   }
 
   static hasSave(): boolean {
@@ -191,6 +234,21 @@ export class Session implements GameSession {
     const [x, y] = file.pos;
     session.pos = walkable(x, y, state.player) ? [x, y] : [state.player.at[0], state.player.at[1]];
     if (!walkable(session.pos[0], session.pos[1], state.player)) session.pos = [bundle.map.spawn.x, bundle.map.spawn.y];
+    // the map: what an older save remembers of places, plus what it has walked since; the
+    // slots it visited are places it has stood in, so they are named too
+    for (const id of Array.isArray(file.seen) ? file.seen : []) {
+      if (bundle.map.slots.some((slot) => slot.id === id)) session.seen.add(id);
+    }
+    for (const id of state.player.visited) session.seen.add(id);
+    for (const key of Array.isArray(file.seenChunks) ? file.seenChunks : []) {
+      if (/^\d+,\d+$/.test(key)) session.seenChunks.add(key);
+    }
+    session.stall =
+      typeof file.stall === 'string' && bundle.map.slots.some((slot) => slot.id === file.stall) && slotContent(bundle, file.stall) === undefined
+        ? file.stall
+        : undefined;
+    if (session.stall) session.seen.add(session.stall);
+    session.seeAt();
     return session;
   }
 
@@ -346,6 +404,7 @@ export class Session implements GameSession {
     // each start wakes at its own place
     if (action.t === 'start') {
       this.pos = [r.state.player.at[0], r.state.player.at[1]];
+      this.seeAt();
       stampDemo();
     }
     this.tail.push({ a: action, tick: this.tick });
@@ -391,6 +450,7 @@ export class Session implements GameSession {
     const fall = events.find((e) => e.e === 'fall');
     if (fall?.e !== 'fall') return;
     this.pos = [fall.at[0], fall.at[1]];
+    this.seeAt();
     // what the work under way would have announced went with the outing
     this.deferred = [];
     this.pickup = null;
@@ -427,6 +487,9 @@ export class Session implements GameSession {
       facing: this.facing,
       met: [...this.met].sort(),
       heard: [...this.heard].sort(),
+      seen: [...this.seen].sort(),
+      seenChunks: [...this.seenChunks].sort(),
+      stall: this.stall,
       tail: this.tail,
     };
     try {
