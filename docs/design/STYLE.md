@@ -206,5 +206,6 @@ The owner, 18.10: "users will be able to change existing areas, even completely"
 - `2026-10-18-shadow-*`: A, B, C and a day.
 - `2026-10-18-night-*`: N1 to N3.
 - `2026-10-18-terrain-*`: T1 to T3.
+- `2026-10-21-cast-*`: the cast pass with the sun in the south (GK2 B), at 08:00 and 16:30, phone size at 3x (390x844, 1170x2532): up-left in the morning, up-right in the evening.
 
 How each set was made: [2026-10-18-density.md](frames/2026-10-18-density.md), [2026-10-18-art-size.md](frames/2026-10-18-art-size.md) and [2026-10-18-light-and-ground.md](frames/2026-10-18-light-and-ground.md).
