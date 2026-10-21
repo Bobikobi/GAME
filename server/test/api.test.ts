@@ -33,8 +33,9 @@ class MemoryStore implements PlayerStore {
     if (playerId !== PLAYER || this.record.version !== expectedVersion) return false;
     this.record = structuredClone(next);
     this.actionLog.push({ seq: next.version, books: structuredClone(books) });
-    for (const deltaMg of books.goldDeltasMg) {
-      this.goldLedger.push({ seq: next.version, deltaMg, action: structuredClone(books.action), tick: books.tick });
+    for (const row of books.gold) {
+      if (row.deltaMg === 0) continue;
+      this.goldLedger.push({ seq: next.version, ...structuredClone(row) });
     }
     return true;
   }
@@ -166,7 +167,7 @@ describe('Stage 2a server protocol', () => {
       action: { t: 'carve', name: 'Tess' },
     });
     expect(response.status).toBe(409);
-    expect(await response.json()).toEqual({ error: 'That game time is ahead of the time elapsed.' });
+    expect(await response.json()).toEqual({ error: 'That game time is ahead of the time elapsed.', reason: 'clock-ahead' });
     expect(serialize(store.record.state)).toBe(before);
     expect(store.record.version).toBe(1);
   });
@@ -185,7 +186,7 @@ describe('Stage 2a server protocol', () => {
       moves: [move(store.record.state.player.at, 4_000)],
     });
     expect(repeatedSlack.status).toBe(409);
-    expect(await repeatedSlack.json()).toEqual({ error: 'That game time is ahead of the time elapsed.' });
+    expect(await repeatedSlack.json()).toEqual({ error: 'That game time is ahead of the time elapsed.', reason: 'clock-ahead' });
     expect(serialize(store.record.state)).toBe(before);
     expect(store.record.version).toBe(2);
 
@@ -204,7 +205,7 @@ describe('Stage 2a server protocol', () => {
     const afterFirst = serialize(store.record.state);
     const response = await post(base, '/action', body);
     expect(response.status).toBe(409);
-    expect(await response.json()).toEqual({ error: 'The game state changed; resume before sending another action.' });
+    expect(await response.json()).toEqual({ error: 'The game state changed; resume before sending another action.', reason: 'stale' });
     expect(serialize(store.record.state)).toBe(afterFirst);
     expect(store.record.version).toBe(2);
   });
@@ -235,6 +236,8 @@ describe('Stage 2a server protocol', () => {
     expect((await post(base, '/moves', { version: 1, moves: reports })).status).toBe(200);
     expect(store.actionLog).toHaveLength(1);
     expect(store.actionLog[0]!.books.action).toEqual({ kind: 'moves', moves: reports });
+    // no step inside a batch pays gold today, and a step that does would book the report that paid, not the batch
+    expect(store.actionLog[0]!.books.gold).toEqual([]);
 
     expect((await post(base, '/moves', { version: 1, moves: reports })).status).toBe(409);
     expect((await post(base, '/action', { version: 2, tick: 99_999_999, action: { t: 'carve', name: 'Tess' } })).status).toBe(409);
@@ -437,5 +440,67 @@ describe('Stage 2a server protocol', () => {
       moves: [move(path[3]!, bundle.params.walk_step_ms)],
     });
     expect(response.status).toBe(200);
+  });
+});
+
+describe('a 409 says why in a code as well as in words', () => {
+  const stale = { error: 'The game state changed; resume before sending another action.', reason: 'stale' };
+
+  async function reasonOf(response: Response): Promise<unknown> {
+    return ((await response.json()) as { reason?: unknown }).reason;
+  }
+
+  test('a version the server has left behind is stale, on both of its places', async () => {
+    // the version check, before the store is asked
+    const { base } = await api(newState(bundle, 17));
+    const body = { version: 1, tick: 0, action: { t: 'start', starter: 'core/forager', name: 'Tess' } };
+    expect((await post(base, '/action', body)).status).toBe(200);
+    const repeated = await post(base, '/action', body);
+    expect(repeated.status).toBe(409);
+    expect(await repeated.json()).toEqual(stale);
+
+    // the compare-and-set losing the race, the second place that throws the same words
+    const { base: racingBase } = await api(newState(bundle, 17));
+    const raced = await Promise.all([post(racingBase, '/action', body), post(racingBase, '/action', body)]);
+    expect(raced.map((response) => response.status).sort()).toEqual([200, 409]);
+    expect(await raced.find((response) => response.status === 409)!.json()).toEqual(stale);
+  });
+
+  test('a tick ahead of the clock says clock-ahead, and so does the clock slack spent twice', async () => {
+    const { base } = await api(started());
+    const ahead = await post(base, '/action', { version: 1, tick: 2_001, action: { t: 'carve', name: 'Tess' } });
+    expect(ahead.status).toBe(409);
+    expect(await reasonOf(ahead)).toBe('clock-ahead');
+  });
+
+  test('a walk further than the credit allows says walk-credit', async () => {
+    const state = started();
+    const path = longMovementPath(state);
+    const { base } = await api(state);
+    const beyond = await post(base, '/moves', { version: 1, moves: path.slice(1, 4).map((at) => move(at, 0)) });
+    expect(beyond.status).toBe(409);
+    expect((await beyond.json()) as { error: string }).toEqual({
+      error: 'That is further than a walk goes in that time.',
+      reason: 'walk-credit',
+    });
+  });
+
+  test('a step the kernel refuses says refused, and the kernel keeps its own words', async () => {
+    const { base } = await api(started());
+    const refused = await post(base, '/action', { version: 1, tick: 0, action: { t: 'eat', item: 'core/not-a-thing' } });
+    expect(refused.status).toBe(409);
+    expect(await reasonOf(refused)).toBe('refused');
+  });
+
+  test('movement report times running backwards say backwards', async () => {
+    const state = started();
+    const path = longMovementPath(state);
+    const { base } = await api(state);
+    const backwards = await post(base, '/moves', { version: 1, moves: [move(path[1]!, 1_000), move(path[2]!, 500)] });
+    expect(backwards.status).toBe(409);
+    expect((await backwards.json()) as { error: string }).toEqual({
+      error: 'Movement report times cannot run backwards.',
+      reason: 'backwards',
+    });
   });
 });

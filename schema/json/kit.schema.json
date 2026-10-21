@@ -646,6 +646,12 @@
                     }
                   ]
                 },
+                "scale": {
+                  "minimum": 0.1,
+                  "maximum": 40,
+                  "description": "The sprite's height in characters, one decimal (NATURE section 1): a person is 1.0, a house 3.5. The check warns when a kind in NATURE section 1 or STYLE 1b falls under its floor. Left out when the sprite has no true size.",
+                  "type": "number"
+                },
                 "source": {
                   "additionalProperties": false,
                   "description": "Where a generated sprite came from (ASSET_PATH section 4, item 2). Left out for a hand-drawn one.",

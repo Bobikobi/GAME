@@ -1190,6 +1190,14 @@ export const KitBody = Type.Object(
                 'Art pixels per tile side: 1 means 16 per tile (the 16x16 grid, the default), 4 means 64 per tile (the 64x64 grid, the standard for new art). The size rules of w and h follow it.',
             }),
           ),
+          scale: Type.Optional(
+            Type.Number({
+              minimum: 0.1,
+              maximum: 40,
+              description:
+                'The sprite\'s height in characters, one decimal (NATURE section 1): a person is 1.0, a house 3.5. The check warns when a kind in NATURE section 1 or STYLE 1b falls under its floor. Left out when the sprite has no true size.',
+            }),
+          ),
           source: Type.Optional(
             Type.Object(
               {
@@ -1251,8 +1259,16 @@ const CreatureKind = Type.Object(
   { additionalProperties: false },
 );
 
+/** The closed list of climates a region may declare (NATURE section 2). The tables live in content/core/climates.json. */
+export const CLIMATES = ['temperate', 'dry', 'cold', 'wet'] as const;
+
 export const MapBody = Type.Object(
   {
+    climate: Type.Optional(
+      Type.Union(CLIMATES.map((c) => Type.Literal(c)), {
+        description: 'The climate this region declares (NATURE section 2): which ramp set, densities, kinds, air and sound beds the engine reads. Left out, the region is read as temperate.',
+      }),
+    ),
     creatures: Type.Optional(
       Type.Object(
         {
