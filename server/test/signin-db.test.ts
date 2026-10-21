@@ -117,7 +117,7 @@ describe.skipIf(!DATABASE_URL)('sign-in in postgres (NEXT 18 e)', () => {
     await store.createSession(tokenHash(newToken()), accountId, NOW, NOW + MINUTE);
     const record = createPlayerRecord(bundle, started(), NOW);
     await insertPlayer(pool, accountId, record);
-    await createPgStore(pool).compareAndSet(accountId, 1, { ...record, version: 2 }, { action: { t: 'carve', name: 'Tess' }, tick: 0, goldDeltasMg: [500] });
+    await createPgStore(pool).compareAndSet(accountId, 1, { ...record, version: 2 }, { action: { t: 'carve', name: 'Tess' }, tick: 0, gold: [{ deltaMg: 500, action: { t: 'carve', name: 'Tess' }, tick: 0 }] });
     await pool.query('insert into boards (week, board, rank, account_id, score) values ($1, $2, 1, $3, 10)', ['2026-10-19', 'gold', accountId]);
     const tables = ['sign_in_identities', 'sessions', 'player_state', 'action_log', 'gold_ledger', 'boards'];
     for (const table of tables) expect(await count(table, accountId), table).toBe(1);
