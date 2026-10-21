@@ -3,11 +3,12 @@
  * holds the closed lists and the numbers (a reach of 8 at most, a wait inside 500-2000, a spread
  * of 2); this adds what needs the whole world: the thing a reaction hangs on exists, its
  * conditions fit that thing, an appear node is a fair node on a free tile, and a quicker respawn
- * never raises a rare node past its budget.
+ * never raises a rare node past its budget. A node that shows only in one weather gives a thing
+ * whose class is also found in every weather (G45, the season rule of 9.10 applied to the sky).
  *
- * Every phase-A condition comes back by itself (an hour, the night, a node left full, a tile, a
- * walk near, a find not yet seen, a day's roll), so an appear node is always a gate and never a
- * last chance (G42). A condition that could hold once and never again is a new condition, and
+ * Every condition comes back by itself (an hour, the night, a node left full, a tile, a walk near,
+ * a find not yet seen, a day's roll, a day's weather), so an appear node is always a gate and never
+ * a last chance (G42). A condition that could hold once and never again is a new condition, and
  * comes with its own check.
  */
 import { type Bundle, activitiesOf, anchorsOf, appearSlots, inRect, staticSolid } from '@game/kernel';
@@ -20,6 +21,13 @@ export function checkReactions(b: Bundle, origin: Record<string, string>): Issue
   // the tiles taken by a placed node or spot, and by every appear node so far
   const taken = new Map<string, string>();
   for (const [id, inst] of Object.entries(b.instances)) taken.set(`${inst.x},${inst.y}`, id);
+  // what is found in every weather: every node's and every dig's output, and an appear node with no weather of its own
+  const allWeather = new Set<string>([
+    ...Object.values(b.resources).map((r) => r.output),
+    ...Object.values(b.treasures).flatMap((t) => t.finds.map((f) => f.item)),
+    ...Object.values(b.reactions).flatMap((r) => ('appear' in r.then && r.when.weather === undefined ? [r.then.appear.output] : [])),
+  ]);
+  const allWeatherClasses = new Set([...allWeather].map((i) => b.items[i]?.class).filter((c) => c !== undefined));
 
   for (const id of Object.keys(b.reactions).sort()) {
     const r = b.reactions[id]!;
@@ -41,6 +49,10 @@ export function checkReactions(b: Bundle, origin: Record<string, string>): Issue
       const n = then.appear;
       if (kind !== 'resource') err('then.appear', 'a node appears beside a resource node only, for now');
       if (!b.items[n.output]) err('then.appear.output', `no item "${n.output}" exists`);
+      const cls = b.items[n.output]?.class;
+      if (w.weather !== undefined && b.items[n.output] && !allWeather.has(n.output) && (cls === undefined || !allWeatherClasses.has(cls))) {
+        err('when.weather', `"${n.output}" shows only in ${w.weather}: its class must also be found in every weather (G45)`);
+      }
       if (!b.sprites[n.sprite]) err('then.appear.sprite', `no sprite "${n.sprite}" in any kit`);
       if (n.active_ms < b.params.t_min_ms || n.active_ms > b.params.max_action_ms) {
         err('then.appear.active_ms', `active time ${n.active_ms} ms is outside [${b.params.t_min_ms}, ${b.params.max_action_ms}] ms`);
