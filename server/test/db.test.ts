@@ -33,7 +33,7 @@ afterAll(async () => {
   await cleanup.end();
 });
 
-const books: Books = { action: { t: 'carve', name: 'Tess' }, tick: 500, goldDeltasMg: [] };
+const books: Books = { action: { t: 'carve', name: 'Tess' }, tick: 500, gold: [] };
 
 async function bookRows(id: string): Promise<{ log: number; ledger: number }> {
   const log = await pool.query<{ n: string }>('select count(*) as n from action_log where account_id = $1', [id]);
@@ -114,7 +114,9 @@ describe.skipIf(!DATABASE_URL)('the database of Stage 2a (NEXT 18 b)', () => {
     const record = createPlayerRecord(bundle, started(), 1_000_000);
     await insertPlayer(pool, id, record);
 
-    const sale: Books = { action: { t: 'sell', npc: 'core/trader', item: 'core/berries', qty: 2 }, tick: 700, goldDeltasMg: [30, -10, 0] };
+    const saleAction = { t: 'sell', npc: 'core/trader', item: 'core/berries', qty: 2 };
+    const gold = [30, -10, 0].map((deltaMg) => ({ deltaMg, action: saleAction, tick: 700 }));
+    const sale: Books = { action: saleAction, tick: 700, gold };
     expect(await store.compareAndSet(id, 1, { ...record, version: 2 }, sale)).toBe(true);
 
     const log = await pool.query('select seq, action, tick from action_log where account_id = $1', [id]);
@@ -132,7 +134,7 @@ describe.skipIf(!DATABASE_URL)('the database of Stage 2a (NEXT 18 b)', () => {
     const record = createPlayerRecord(bundle, started(), 1_000_000);
     await insertPlayer(pool, id, record);
 
-    const sale: Books = { action: { t: 'sell' }, tick: 700, goldDeltasMg: [25] };
+    const sale: Books = { action: { t: 'sell' }, tick: 700, gold: [{ deltaMg: 25, action: { t: 'sell' }, tick: 700 }] };
     const next = { ...record, version: 2 };
     const results = await Promise.all([
       store.compareAndSet(id, 1, next, sale),

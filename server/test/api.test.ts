@@ -33,8 +33,9 @@ class MemoryStore implements PlayerStore {
     if (playerId !== PLAYER || this.record.version !== expectedVersion) return false;
     this.record = structuredClone(next);
     this.actionLog.push({ seq: next.version, books: structuredClone(books) });
-    for (const deltaMg of books.goldDeltasMg) {
-      this.goldLedger.push({ seq: next.version, deltaMg, action: structuredClone(books.action), tick: books.tick });
+    for (const row of books.gold) {
+      if (row.deltaMg === 0) continue;
+      this.goldLedger.push({ seq: next.version, ...structuredClone(row) });
     }
     return true;
   }
@@ -235,6 +236,8 @@ describe('Stage 2a server protocol', () => {
     expect((await post(base, '/moves', { version: 1, moves: reports })).status).toBe(200);
     expect(store.actionLog).toHaveLength(1);
     expect(store.actionLog[0]!.books.action).toEqual({ kind: 'moves', moves: reports });
+    // no step inside a batch pays gold today, and a step that does would book the report that paid, not the batch
+    expect(store.actionLog[0]!.books.gold).toEqual([]);
 
     expect((await post(base, '/moves', { version: 1, moves: reports })).status).toBe(409);
     expect((await post(base, '/action', { version: 2, tick: 99_999_999, action: { t: 'carve', name: 'Tess' } })).status).toBe(409);
