@@ -62,6 +62,18 @@ Verify: the boot log carries one line beginning `AUTH_MODE=session`; `curl -sI h
 answers 302 to `accounts.google.com`; `curl -s https://<name>/state` answers 401; and a sign-in by the owner's
 test address (eladeladsaa@gmail.com, the client's one test user while it is in Testing) lands on the game.
 
+The country for the age limit (the owner, 21.10: "align with the big companies"). The sign-up never asks the
+player where they are; the API reads the header named by `COUNTRY_HEADER`, and only our nginx may set it.
+Prepare: the GeoIP2 module and a country database on the host (a new package and a new file, nothing existing
+edited), then in the game's own site file replace `proxy_set_header X-Country "";` with
+`proxy_set_header X-Country $geoip2_data_country_iso_code;` (the `geoip2` block that defines it goes in the same
+file), and add `COUNTRY_HEADER=X-Country` to `~/openfold/.env`. `proxy_set_header` replaces whatever the client
+sent, so a forged header never reaches the API, and the API port listens on 127.0.0.1 only.
+What happens if it goes wrong: `nginx -t` refuses the file and nginx keeps serving the old one; without the
+header the API holds every sign-up to the highest age (16), which refuses more players, never fewer.
+Verify: the boot log line ends `the age limit by the country in x-country`; `curl -s -H 'X-Country: IL'` to the
+loopback port is answered as Israel, and the same through the name is answered by the caller's real country.
+
 On the laptop, the same mode runs against the dev client: `AUTH_MODE=session PUBLIC_ORIGIN=http://localhost:8080
 APP_ORIGIN=http://localhost:5173` with the Google pair exported from the secrets file, never pasted into a shell
 history or a chat.
