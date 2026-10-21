@@ -30,6 +30,14 @@ function messages(...rs: ReactionDef[]): string {
   return checkReactions(b, {}).map((i) => `${i.where}: ${i.message}`).join('\n');
 }
 
+/** The check over the core content with one more item, of a class nothing else gives. */
+function withLoneClass(...rs: ReactionDef[]): string {
+  const b = structuredClone(base);
+  b.items['test/rain-pearl'] = { ...b.items['core/berry']!, id: 'test/rain-pearl', class: 'test/pearl' };
+  b.reactions = { ...b.reactions, ...Object.fromEntries(rs.map((r) => [r.id, r])) };
+  return checkReactions(b, {}).map((i) => `${i.where}: ${i.message}`).join('\n');
+}
+
 describe('the reaction check', () => {
   it('passes a windfall below the bushes, birds over a find and fish on the water', () => {
     expect(
@@ -68,6 +76,19 @@ describe('the reaction check', () => {
         reaction({ on: { resource: 'core/berry-bushes' }, when: { night: true }, then: { appear: node() } }, 'test/two'),
       ),
     ).toMatch(/would lie on test\/one@core\/berry-bushes#0/);
+  });
+
+  it('passes the core rows, and a node of the rain whose class is found in every weather', () => {
+    expect(checkReactions(base, {})).toEqual([]);
+    expect(Object.values(base.reactions).some((r) => r.when.weather === 'rain' && 'appear' in r.then)).toBe(true);
+    expect(messages(reaction({ on: { resource: 'core/berry-bushes' }, when: { weather: 'fog' }, then: { appear: node() } }))).toBe('');
+  });
+
+  it('refuses a node that shows in one weather only and gives a class found in no other', () => {
+    const lone = reaction({ on: { resource: 'core/berry-bushes' }, when: { weather: 'rain' }, then: { appear: node({ output: 'test/rain-pearl', at: 'above' }) } });
+    expect(withLoneClass(lone)).toMatch(/"test\/rain-pearl" shows only in rain: its class must also be found in every weather/);
+    // the same node with no weather is found every day, so it passes
+    expect(withLoneClass(reaction({ on: { resource: 'core/berry-bushes' }, when: { ready_for_ms: 1000 }, then: { appear: node({ output: 'test/rain-pearl', at: 'above' }) } }))).toBe('');
   });
 
   it('refuses a wait on a tile, and a quicker respawn of a node that carries a rarity bonus', () => {
