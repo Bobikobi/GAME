@@ -2039,3 +2039,8 @@ The Field Kit work drew a stall a player sets up: a draft of six slots with pric
 Still out: sales while the player is away and other players buying (SETTLEMENT 3.4, the shared world), and houses and plots, still paused (10.10). The stall is a look and a draft until then; it sells nothing on its own.
 **Supersedes:** in part, those two 10.10 lines, for the stall only; the market board and the forms of a player's shop while away stand.
 **Retry when:** the shared world opens (then a stall's sales while away are designed with the two funds of 10.10), or stalls at the corner crowd the square (then where a stall stands moves, not whether). Model: claude-opus-5-5 (the manager wrote it; the answer is the owner's).
+
+## 2026-10-21 ✅ Nature's schema fields: `scale` on a kit sprite, `climate` on a map body
+
+Two optional fields, as NATURE sections 1 and 2 propose, in the shared schema file alone so it lands fast. `scale` is a number from 0.1 to 40 (a sprite's height in characters; the one-decimal rule is for the check of step 2, not the schema, because a JSON-schema `multipleOf: 0.1` rejects valid values such as 1.7 through float error). `climate` is one of `temperate`, `dry`, `cold`, `wet`; left out, a region reads as temperate. `schema/test/nature.test.ts` covers both: the kit and the valley of today validate without the fields, each value is accepted, and out-of-range or off-list values are refused. Nothing reads either field yet; the scale check and `climates.json` follow as their own pull requests.
+**Retry when:** the one-decimal rule needs the schema to enforce it (then a `pattern` on a string form or an integer in tenths, not `multipleOf`). Model: claude-sonnet-5-5 (game-19, which died in the restart), finished by claude-opus-5-5 (game-12).
