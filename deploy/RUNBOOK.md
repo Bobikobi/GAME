@@ -53,3 +53,4 @@ Verify: run it by hand once, then `zcat` the newest file and see `CREATE TABLE p
 - Editing a file under `/etc/nginx` that is already there, or reloading without `nginx -t`.
 - Pointing the game's database at the host's postgres, or at the other product's database container.
 - Ports on `db`: it is reachable inside the `openfold-game` network only, by design.
+- A floating tag on `db`: the other product's auto-updater scans every container on the box daily, so `postgres:16-alpine` would be swapped for whatever upstream published, at 04:00, with no one choosing it. `compose.yml` pins the digest on purpose; to move it, take the new digest on purpose, change that one line, and run `up -d` yourself.
