@@ -59,9 +59,9 @@ export class MemoryStore implements PlayerStore {
     if (playerId !== PLAYER || this.record.version !== expectedVersion) return false;
     this.record = structuredClone(next);
     this.actionLog.push({ seq: next.version, action: structuredClone(books.action), tick: books.tick });
-    for (const deltaMg of books.goldDeltasMg) {
-      if (deltaMg === 0) continue;
-      this.goldLedger.push({ deltaMg, action: structuredClone(books.action), tick: books.tick });
+    for (const row of books.gold) {
+      if (row.deltaMg === 0) continue;
+      this.goldLedger.push(structuredClone(row));
     }
     return true;
   }

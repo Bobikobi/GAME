@@ -3,9 +3,11 @@ export { applyStatePatch, publicState, statePatch, type MergePatch, type PublicS
 export {
   bookedGoldMg,
   checkAccount,
+  goldRowsOf,
   ledgerSumMg,
   replayAccount,
   type AccountBooks,
+  type BookedStep,
   type LedgerRow,
   type LoggedAction,
   type Replay,

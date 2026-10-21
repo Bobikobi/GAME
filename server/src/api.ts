@@ -2,7 +2,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { AddressInfo } from 'node:net';
 import { ATTRIBUTES, WEAR_SLOTS, appearSlots, appears, step, walkDistance, type Action, type Bundle, type GameEvent, type State, type Tile } from '@game/kernel';
 
-import { bookedGoldMg } from './ledger';
+import { goldRowsOf, type BookedStep, type LedgerRow } from './ledger';
 import { publicState, statePatch, type MergePatch, type PublicState } from './patch';
 
 const BODY_LIMIT = 64 * 1024;
@@ -32,8 +32,12 @@ export function createPlayerRecord(bundle: Bundle, state: State, acceptedAt: num
 
 /**
  * What an accepted request adds to the two books (NEXT 18 b): one action_log row, and one gold_ledger row
- * per grant and payment, as `bookedGoldMg` names them (NEXT 18 f). The store writes them in the
- * transaction of the compare-and-set, so a write that loses the race leaves neither behind.
+ * per grant and payment (NEXT 18 f). The store writes them in the transaction of the compare-and-set, so a
+ * write that loses the race leaves neither behind.
+ *
+ * A gold row carries the action that paid it and that action's own tick, not the request's: inside a
+ * movement batch the paying step is one report, and a replay books the same row from the same report
+ * (`goldRowsOf` is the one rule both sides read).
  *
  * Gold is milli-gold in a JS number here, exact up to 2^53 milli-gold; it is a bigint only in the database.
  */
@@ -41,8 +45,8 @@ export interface Books {
   /** the action as the client sent it, or `{ kind: 'moves', moves }` for a movement batch */
   action: unknown;
   tick: number;
-  /** the milli-gold of each gold event the request caused; a zero is never booked */
-  goldDeltasMg: number[];
+  /** one row per grant and payment, each with the action and tick that paid it; a zero is never booked */
+  gold: LedgerRow[];
 }
 
 export interface PlayerStore {
@@ -348,6 +352,8 @@ async function route(request: IncomingMessage, response: ServerResponse, options
   let movementAt = record.movementAt;
   let movementCreditMs = record.movementCreditMs;
   let booked: unknown;
+  /** the steps the request played: one action, or one step per report inside a movement batch */
+  const played: BookedStep[] = [];
 
   if (url.pathname === '/action') {
     if (!isAction(body.action) || body.action.t === 'move') throw new RequestError('Send one non-movement action.', 400);
@@ -371,6 +377,7 @@ async function route(request: IncomingMessage, response: ServerResponse, options
     events = result.events;
     movementAt = nextCredit.at;
     movementCreditMs = nextCredit.creditMs;
+    played.push({ action: body.action, tick: state.tick, events: result.events });
     booked = body.action;
   } else {
     if (!Array.isArray(body.moves) || body.moves.length === 0 || body.moves.length > MOVE_LIMIT) {
@@ -399,6 +406,8 @@ async function route(request: IncomingMessage, response: ServerResponse, options
       events.push(...result.events);
       movementAt = nextCredit.at;
       movementCreditMs = nextCredit.creditMs;
+      // the report is the action that paid, at the report's own tick, and the replay reads the same two
+      played.push({ action: { t: 'move', at: report.at }, tick: report.tick, events: result.events });
     }
     booked = { kind: 'moves', moves: reports };
   }
@@ -413,7 +422,7 @@ async function route(request: IncomingMessage, response: ServerResponse, options
   const books: Books = {
     action: booked,
     tick: state.tick,
-    goldDeltasMg: bookedGoldMg(options.bundle, booked, events),
+    gold: goldRowsOf(options.bundle, played),
   };
   if (!(await options.store.compareAndSet(playerId, record.version, next, books))) {
     throw new RequestError('The game state changed; resume before sending another action.', 409, 'stale');
