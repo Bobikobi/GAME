@@ -375,6 +375,27 @@ describe('the stall draft in the save', () => {
     expect(restored[5]).toEqual({ item: 'core/axe', qty: 1, price: 12 });
   });
 
+  test('a place cannot offer more than the bag holds, and one whose item left the bag is left out', () => {
+    const session = startedSession();
+    session.save();
+    const file = JSON.parse(storage.getItem(SAVE_KEY)!) as Record<string, unknown>;
+    file.stallDraft = [
+      { item: 'core/axe', qty: 9, price: 4 },
+      { item: 'core/trowel', qty: 1, price: 4 },
+      null,
+      null,
+      null,
+      null,
+    ];
+    storage.setItem(SAVE_KEY, JSON.stringify(file));
+
+    const restored = stallDraftOf(Session.restore(bundle)!)!;
+    // the forager wakes with one axe: nine asked for is one offered
+    expect(restored[0]).toEqual({ item: 'core/axe', qty: 1, price: 4 });
+    // a trowel is in the world but not in this bag
+    expect(restored[1]).toBeNull();
+  });
+
   test('a draft cleared back to empty leaves the field out of the save again', () => {
     const session = startedSession();
     stallDraftOf(session)![0] = { item: 'core/axe', qty: 1, price: 7 };
