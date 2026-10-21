@@ -33,7 +33,7 @@ import {
 } from '../feedback-payload';
 import type { SignInfo } from '../scenes/world';
 import type { StoneView } from '../stone';
-import { Session } from '../session';
+import { Session, STALL_SLOTS, stallDraftOf, type StallDraft } from '../session';
 import type { GameSession } from '../session-surface';
 import type { ActResult } from '../session-surface';
 import { ATTRIBUTE_MAX, activeQuests, attributeEffects, bagGroups, classLine, clock, eatLabel, gold, itemBenefit, itemName, journalGroups, questSteps, restoreHint, seconds, sellable, stacks, stationGate, stationText, stationUpgrades, toolOpens, wornAt } from '../text';
@@ -187,8 +187,8 @@ export function openBag(ui: UI): void {
   let look = false;
   let shopPick: string | undefined;
   let priceFor: { item: string; slot: number } | undefined;
-  type Draft = { item: string; qty: number; price: number };
-  const stall: (Draft | undefined)[] = Array.from({ length: 6 }, () => undefined);
+  // the draft is kept in the save; a session that keeps none (the server door) keeps it in this panel
+  const stall: (StallDraft | null)[] = stallDraftOf(s) ?? Array.from({ length: STALL_SLOTS }, () => null);
 
   const layer = () => (look ? s.state.player.looks : s.state.player.worn);
   const figure = () => {
@@ -363,7 +363,8 @@ export function openBag(ui: UI): void {
           class: `shop-slot ${d ? 'filled' : ''} ${priceFor?.slot === i ? 'pricing' : ''}`.trim(),
           role: 'button',
           tabindex: '0',
-          'aria-label': d ? `${item?.name ?? d.item}, ${d.price} gold` : `Stall slot ${i + 1}, empty`,
+          'aria-label': d ? `${item?.name ?? d.item}, ${d.qty > 1 ? `${d.qty} at ` : ''}${d.price} gold${d.qty > 1 ? ' each' : ''}` : `Stall slot ${i + 1}, empty`,
+          title: d ? 'Change the price, or take it off' : 'Drop an item here',
           ondragover: (e: Event) => e.preventDefault(),
           ondrop: (e: Event) => {
             e.preventDefault();
@@ -372,26 +373,36 @@ export function openBag(ui: UI): void {
           },
           onclick: () => {
             if (shopPick) openPrice(shopPick, i);
+            else if (d) openPrice(d.item, i);
           },
           onkeydown: (e: Event) => {
             const k = (e as KeyboardEvent).key;
-            if (shopPick && (k === 'Enter' || k === ' ')) {
+            const held = d && !shopPick ? d.item : shopPick;
+            if (held && (k === 'Enter' || k === ' ')) {
               e.preventDefault();
-              openPrice(shopPick, i);
+              openPrice(held, i);
             }
           },
         },
         d && item
-          ? [sprite(b, item.sprite, 2), h('span', { class: 'shop-name' }, item.name), h('span', { class: 'price' }, String(d.price))]
+          ? [
+              sprite(b, item.sprite, 2),
+              h('span', { class: 'shop-name' }, d.qty > 1 ? `${item.name} ×${d.qty}` : item.name),
+              h('span', { class: 'price' }, String(d.price)),
+            ]
           : [h('span', { class: 'shop-slot-num' }, `Stall ${i + 1}`), h('span', { class: 'shop-slot-hint' }, 'drop here')],
       );
     });
     const at = priceFor;
+    const held = at ? stall[at.slot] : null;
     const dialog = at
       ? (() => {
           const item = b.items[at.item]!;
-          const suggested = Math.max(1, salePrice(b, s.state, at.item, 1) ?? 1);
-          const input = h('input', { class: 'shop-price-input', type: 'number', min: 1, max: 9999, value: String(suggested), 'aria-label': `Price for ${item.name} in gold` });
+          const heldQty = held?.item === at.item ? held.qty : 1;
+          const suggested = held?.item === at.item ? held.price : Math.max(1, salePrice(b, s.state, at.item, 1) ?? 1);
+          const can = Math.max(1, s.state.player.bag[at.item] ?? 0);
+          const input = h('input', { class: 'shop-price-input', type: 'number', min: 1, max: 9999, value: String(suggested), 'aria-label': `Price for one ${item.name}, in gold` });
+          const many = h('input', { class: 'shop-qty-input', type: 'number', min: 1, max: can, value: String(Math.min(heldQty, can)), 'aria-label': `How many ${item.name}` });
           window.setTimeout(() => input.select(), 0);
           return h(
             'div',
@@ -400,23 +411,34 @@ export function openBag(ui: UI): void {
               'div',
               { class: 'shop-price', role: 'dialog', 'aria-label': `Set a price for ${item.name}` },
               h('b', null, item.name),
-              h('p', null, 'Price in gold. The shared market will keep it inside the trade band.'),
-              h('label', null, 'Price ', input, ' g'),
+              h('p', null, `You carry ${can}. The shared market will keep the price inside the trade band.`),
+              h('label', null, 'How many ', many, ` of ${can}`),
+              h('label', null, 'Price for one ', input, ' g'),
               h(
                 'div',
                 { class: 'actions' },
                 button('Set price', () => {
                   const n = Math.max(1, Math.min(9999, Math.round(Number(input.value) || suggested)));
-                  stall[at.slot] = { item: at.item, qty: 1, price: n };
+                  const qty = Math.max(1, Math.min(can, Math.round(Number(many.value) || 1)));
+                  stall[at.slot] = { item: at.item, qty, price: n };
+                  s.save();
                   priceFor = undefined;
                   render();
                 }, 'small'),
+                held
+                  ? button('Take it off', () => {
+                      stall[at.slot] = null;
+                      s.save();
+                      priceFor = undefined;
+                      render();
+                    }, 'small')
+                  : null,
                 button('Cancel', () => {
                   priceFor = undefined;
                   render();
                 }, 'small'),
               ),
-              h('p', { class: 'shop-note' }, 'Draft only: nothing is listed until the shared market opens.'),
+              h('p', { class: 'shop-note' }, 'A draft, kept in your save: nothing is listed until the shared market opens.'),
             ),
           );
         })()
@@ -440,8 +462,8 @@ export function openBag(ui: UI): void {
           'p',
           { class: 'shop-note' },
           localMapState(s)?.stall
-            ? 'Your stall stands at the empty corner. Other players and sales while you are away come with the shared world (SETTLEMENT 3.4).'
-            : 'A draft. Place your stall at the empty corner on the map; other players and sales while you are away come with the shared world (SETTLEMENT 3.4).',
+            ? 'Your stall stands at the empty corner, its places kept in your save. Other players and sales while you are away come with the shared world (SETTLEMENT 3.4).'
+            : 'A draft, kept in your save. Place your stall at the empty corner on the map; other players and sales while you are away come with the shared world (SETTLEMENT 3.4).',
         ),
       ),
       dialog,

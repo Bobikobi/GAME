@@ -57,9 +57,17 @@ function isStart(action: unknown): action is Action & { t: 'start' } {
   return isRecord(action) && action.t === 'start';
 }
 
+/** One step of a request, as the books see it: the action that played, its tick, and what it reported. */
+export interface BookedStep {
+  /** the action as it was played: a whole request, or one report inside a movement batch */
+  action: unknown;
+  tick: number;
+  events: readonly GameEvent[];
+}
+
 /**
- * The milli-gold of each grant and payment an accepted request makes, in order; a zero is never booked
- * (the table refuses it, and a zero moved nothing).
+ * The milli-gold of each grant and payment one step makes, in order; a zero is never booked (the table
+ * refuses it, and a zero moved nothing).
  *
  * A step reports its gold as `gold` events, and the server books one row per event, so a sale pays one
  * row and a purchase one row even when they stand in the same request. The opening is the one grant the
@@ -71,6 +79,18 @@ export function bookedGoldMg(bundle: Bundle, action: unknown, events: readonly G
   const rows = events.flatMap((event) => (event.e === 'gold' && event.delta !== 0 ? [event.delta] : []));
   if (isStart(action) && bundle.params.starting_gold_mg !== 0) rows.unshift(bundle.params.starting_gold_mg);
   return rows;
+}
+
+/**
+ * The gold rows a request's steps make: one row per grant or payment, carrying the action that paid it
+ * and that action's own tick. The server books its request through here and a replay books its steps
+ * through here, so the two can never key the same grant differently: a payment inside a movement batch
+ * is the one report that made it, at the report's tick, on both sides.
+ */
+export function goldRowsOf(bundle: Bundle, steps: readonly BookedStep[]): LedgerRow[] {
+  return steps.flatMap((one) =>
+    bookedGoldMg(bundle, one.action, one.events).map((deltaMg) => ({ deltaMg, action: one.action, tick: one.tick })),
+  );
 }
 
 /** The gold a book holds, in milli-gold: the state's purse is this number, exactly. */
@@ -113,9 +133,8 @@ export function replayAccount(bundle: Bundle, seed: number, log: readonly Logged
     for (const one of steps) {
       const result = step(bundle, state, one.action, one.tick, { validateTravel: true });
       if (!result.ok) return { ok: false, problem: `seq ${row.seq} does not play again: ${result.error}` };
-      for (const deltaMg of bookedGoldMg(bundle, one.action, result.events)) {
-        ledger.push({ deltaMg, action: one.action, tick: one.tick });
-      }
+      // the same rule the server books with, on the step rather than on the request (NEXT 18 f)
+      ledger.push(...goldRowsOf(bundle, [{ action: one.action, tick: one.tick, events: result.events }]));
       state = result.state;
     }
   }
