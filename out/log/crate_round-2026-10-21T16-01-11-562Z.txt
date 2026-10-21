@@ -1,0 +1,1163 @@
+Generated with the built-in image tool and saved to [crate_round.png](/home/elad-saadon/Projects/GAME.worktrees/feat-prop-from-ref/out/work/crate_round.png).
+
+Final prompt enforced the five-plank lid, raised rim, eight-plus staves, red/navy palette, magenta background, and no extra objects or shadows.
+
+Note: the generator emitted 1254×1254 despite the 64×64 prompt. I left it unprocessed as requested. `pnpm verify` was blocked by the sandbox’s `tsx` IPC permission error.
+Reading additional input from stdin...
+OpenAI Codex v0.147.0
+--------
+workdir: /home/elad-saadon/Projects/GAME.worktrees/feat-prop-from-ref/out/work
+model: gpt-5.6-sol
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR]
+reasoning effort: high
+reasoning summaries: none
+session id: 01a15f31-fdd1-7dd3-ba57-d5d1744bc96b
+--------
+user
+Use your image generation tool. The attached image is a reference: squat round wooden tub with a fitted plank lid, seen from above and slightly to the front (top-down three-quarter view), 75x69 pixels, from our top-down pixel-art game, shown enlarged on magenta. Generate a NEW image of the same squat round wooden tub with a fitted plank lid, seen from above and slightly to the front (top-down three-quarter view) - same design, same colors, same top-down three-quarter view - redrawn as pixel art 64 pixels wide and 64 pixels tall, far more pixels than the reference, with the lid of five planks with thin dark seams and a raised wooden rim, at least eight vertical staves with grain lines, the body about as tall as the lid is wide, no metal bands, light from above so the lid is lightest and the underside darkest with left and right even, the red ramp #5e1c28 #a8302f #e2533f #f6a07f only and the navy #1b1a2e outline, no skin, no brown, no plum, no text, no shadow, no extra objects. Every pixel stays a crisp square of one flat color, no anti-aliasing, each one about 1/64 of the drawing's width: draw no smaller pixels than that. Thick dark navy outline one pixel wide. Limited palette, two-tone shading, solid flat pure magenta #FF00FF background around it, no text, no shadow, no extra objects. The 64x64 drawing fills most of the image. Do not process the image with code afterwards; just generate it and save it as crate_round.png in the current directory.
+codex
+I’m using the imagegen skill because this is a reference-guided pixel-art redraw. I’ll inspect its instructions, then generate directly to the requested file without post-processing.
+exec
+/bin/bash -lc "sed -n '1,240p' /home/elad-saadon/.codex/skills/.system/imagegen/SKILL.md" in /home/elad-saadon/Projects/GAME.worktrees/feat-prop-from-ref/out/work
+ succeeded in 0ms:
+---
+name: "imagegen"
+description: "Generate or edit raster images when the task benefits from AI-created bitmap visuals such as photos, illustrations, textures, sprites, mockups, or transparent-background cutouts. Use when Codex should create a brand-new image, transform an existing image, or derive visual variants from references, and the output should be a bitmap asset rather than repo-native code or vector. Do not use when the task is better handled by editing existing SVG/vector/code-native assets, extending an established icon or logo system, or building the visual directly in HTML/CSS/canvas."
+---
+
+# Image Generation Skill
+
+Generates or edits images for the current project (for example website assets, game assets, UI mockups, product mockups, wireframes, logo design, photorealistic images, or infographics).
+
+## Top-level modes and rules
+
+This skill has exactly two top-level modes:
+
+- **Default built-in tool mode (preferred):** built-in `image_gen` tool for normal image generation, editing, and simple transparent-image requests. Does not require `OPENAI_API_KEY`.
+- **Fallback CLI mode:** `scripts/image_gen.py` CLI. Use when the user explicitly asks for the CLI/API/model path, or after the user explicitly confirms a true model-native transparency fallback with `gpt-image-1.5`. Requires `OPENAI_API_KEY`.
+
+Within CLI fallback, the CLI exposes three subcommands:
+
+- `generate`
+- `edit`
+- `generate-batch`
+
+Rules:
+- Use the built-in `image_gen` tool by default for normal image generation and editing requests.
+- Do not switch to CLI fallback for ordinary quality, size, or file-path control.
+- If the user explicitly asks for a transparent image/background, stay on built-in `image_gen` first: prompt for a flat removable chroma-key background, then remove it locally with the installed helper at `$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py`.
+- Never silently switch from built-in `image_gen` or CLI `gpt-image-2` to CLI `gpt-image-1.5`. Treat this as a model/path downgrade and ask the user before doing it, unless the user has already explicitly requested `gpt-image-1.5`, `scripts/image_gen.py`, or CLI fallback.
+- If a transparent request appears too complex for clean chroma-key removal, asks for true/native transparency, or local removal fails validation, explain that true transparency requires CLI `gpt-image-1.5 --background transparent --output-format png` because `gpt-image-2` does not support `background=transparent`, then ask whether to proceed. Run the CLI fallback only after the user confirms.
+- The word `batch` by itself does not mean CLI fallback. If the user asks for many assets or says to batch-generate assets without explicitly asking for CLI/API/model controls, stay on the built-in path and issue one built-in call per requested asset or variant.
+- If the built-in tool fails or is unavailable, tell the user the CLI fallback exists and that it requires `OPENAI_API_KEY`. Proceed only if the user explicitly asks for that fallback.
+- If the user explicitly asks for CLI mode, use the bundled `scripts/image_gen.py` workflow. Do not create one-off SDK runners.
+- Never modify `scripts/image_gen.py`. If something is missing, ask the user before doing anything else.
+
+Built-in save-path policy:
+- In built-in tool mode, Codex saves generated images under `$CODEX_HOME/*` by default.
+- Do not describe or rely on OS temp as the default built-in destination.
+- Do not describe or rely on a destination-path argument (if any) on the built-in `image_gen` tool. If a specific location is needed, generate first and then move or copy the selected output from `$CODEX_HOME/generated_images/...`.
+- Save-path precedence in built-in mode:
+  1. If the user names a destination, move or copy the selected output there.
+  2. If the image is meant for the current project, move or copy the final selected image into the workspace before finishing.
+  3. If the image is only for preview or brainstorming, render it inline; the underlying file can remain at the default `$CODEX_HOME/*` path.
+- Never leave a project-referenced asset only at the default `$CODEX_HOME/*` path.
+- Do not overwrite an existing asset unless the user explicitly asked for replacement; otherwise create a sibling versioned filename such as `hero-v2.png` or `item-icon-edited.png`.
+
+Shared prompt guidance for both modes lives in `references/prompting.md` and `references/sample-prompts.md`.
+
+Fallback-only docs/resources for CLI mode:
+- `references/cli.md`
+- `references/image-api.md`
+- `references/codex-network.md`
+- `scripts/image_gen.py`
+
+Local post-processing helper:
+- `$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py`: removes a flat chroma-key background from a generated image and writes a PNG/WebP with alpha. Prefer auto-key sampling, soft matte, and despill for antialiased edges.
+
+## When to use
+- Generate a new image (concept art, product shot, cover, website hero)
+- Generate a new image using one or more reference images for style, composition, or mood
+- Edit an existing image (inpainting, lighting or weather transformations, background replacement, object removal, compositing, transparent background)
+- Produce many assets or variants for one task
+
+## When not to use
+- Extending or matching an existing SVG/vector icon set, logo system, or illustration library inside the repo
+- Creating simple shapes, diagrams, wireframes, or icons that are better produced directly in SVG, HTML/CSS, or canvas
+- Making a small project-local asset edit when the source file already exists in an editable native format
+- Any task where the user clearly wants deterministic code-native output instead of a generated bitmap
+
+## Decision tree
+
+Think about two separate questions:
+
+1. **Intent:** is this a new image or an edit of an existing image?
+2. **Execution strategy:** is this one asset or many assets/variants?
+
+Intent:
+- If the user wants to modify an existing image while preserving parts of it, treat the request as **edit**.
+- If the user provides images only as references for style, composition, mood, or subject guidance, treat the request as **generate**.
+- If the user provides no images, treat the request as **generate**.
+
+Built-in edit semantics:
+- Built-in edit mode is for images already visible in the conversation context, such as attached images or images generated earlier in the thread.
+- If the user wants to edit a local image file with the built-in tool, first load it with built-in `view_image` tool so the image is visible in the conversation context, then proceed with the built-in edit flow.
+- Do not promise arbitrary filesystem-path editing through the built-in tool.
+- If a local file still needs direct file-path control, masks, or other explicit CLI-only parameters, use the explicit CLI fallback only when the user asks for it.
+- For edits, preserve invariants aggressively and save non-destructively by default.
+
+Execution strategy:
+- In the built-in default path, produce many assets or variants by issuing one `image_gen` call per requested asset or variant.
+- In the CLI fallback path, use the CLI `generate-batch` subcommand only when the user explicitly chose CLI mode and needs many prompts/assets.
+- For many distinct assets, do not use `n` as a substitute for separate prompts. `n` is for variants of one prompt; distinct assets need distinct built-in calls or distinct CLI `generate-batch` jobs.
+
+Assume the user wants a new image unless they clearly ask to change an existing one.
+
+## Workflow
+1. Decide the top-level mode: built-in by default, including simple transparent-output requests; fallback CLI only if explicitly requested or after the user explicitly confirms a transparent-output fallback.
+2. Decide the intent: `generate` or `edit`.
+3. Decide whether the output is preview-only or meant to be consumed by the current project.
+4. Decide the execution strategy: single asset vs repeated built-in calls vs CLI `generate-batch`.
+5. Collect inputs up front: prompt(s), exact text (verbatim), constraints/avoid list, and any input images.
+6. For every input image, label its role explicitly:
+   - reference image
+   - edit target
+   - supporting insert/style/compositing input
+7. If the edit target is only on the local filesystem and you are staying on the built-in path, inspect it with `view_image` first so the image is available in conversation context.
+8. If the user asked for a photo, illustration, sprite, product image, banner, or other explicitly raster-style asset, use `image_gen` rather than substituting SVG/HTML/CSS placeholders. If the request is for an icon, logo, or UI graphic that should match existing repo-native SVG/vector/code assets, prefer editing those directly instead.
+9. Augment the prompt based on specificity:
+   - If the user's prompt is already specific and detailed, normalize it into a clear spec without adding creative requirements.
+   - If the user's prompt is generic, add tasteful augmentation only when it materially improves output quality.
+10. Use the built-in `image_gen` tool by default.
+11. For transparent-output requests, follow the transparent image guidance below: generate with built-in `image_gen` on a flat chroma-key background, copy the selected output into the workspace or `tmp/imagegen/`, run the installed `$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py` helper, and validate the alpha result before using it. If this path looks unsuitable or fails, ask before switching to CLI `gpt-image-1.5`.
+12. Inspect outputs and validate: subject, style, composition, text accuracy, and invariants/avoid items.
+13. Iterate with a single targeted change, then re-check.
+14. For preview-only work, render the image inline; the underlying file may remain at the default `$CODEX_HOME/generated_images/...` path.
+15. For project-bound work, move or copy the selected artifact into the workspace and update any consuming code or references. Never leave a project-referenced asset only at the default `$CODEX_HOME/generated_images/...` path.
+16. For batches or multi-asset requests, persist every requested deliverable final in the workspace unless the user explicitly asked to keep outputs preview-only. Discarded variants do not need to be kept unless requested.
+17. If the user explicitly chooses or confirms the CLI fallback, then use the fallback-only docs for model, quality, size, `input_fidelity`, masks, output format, output paths, and network setup.
+18. Always report the final saved path(s) for any workspace-bound asset(s), plus the final prompt or prompt set and whether the built-in tool or fallback CLI mode was used.
+
+## Transparent image requests
+
+Transparent-image requests still use built-in `image_gen` first. Because the built-in tool does not expose a true transparent-background control, create a removable chroma-key source image and then convert the key color to alpha locally.
+
+Default sequence:
+1. Use built-in `image_gen` to generate the requested subject on a perfectly flat solid chroma-key background.
+2. Choose a key color that is unlikely to appear in the subject: default `#00ff00`, use `#ff00ff` for green subjects, and avoid `#0000ff` for blue subjects.
+3. After generation, move or copy the selected source image from `$CODEX_HOME/generated_images/...` into the workspace or `tmp/imagegen/`.
+4. Run the installed helper path, not a project-relative script path:
+   ```bash
+   python "${CODEX_HOME:-$HOME/.codex}/skills/.system/imagegen/scripts/remove_chroma_key.py" \
+     --input <source> \
+     --out <final.png> \
+     --auto-key border \
+     --soft-matte \
+     --transparent-threshold 12 \
+     --opaque-threshold 220 \
+     --despill
+   ```
+5. Validate that the output has an alpha channel, transparent corners, plausible subject coverage, and no obvious key-color fringe. If a thin fringe remains, retry once with `--edge-contract 1`; use `--edge-feather 0.25` only when the edge is visibly stair-stepped and the subject is not shiny or reflective.
+6. Save the final alpha PNG/WebP in the project if the asset is project-bound. Never leave a project-referenced transparent asset only under `$CODEX_HOME/*`.
+
+Prompt transparent requests like this:
+
+```text
+Create the requested subject on a perfectly flat solid #00ff00 chroma-key background for background removal.
+The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation.
+Keep the subject fully separated from the background with crisp edges and generous padding.
+Do not use #00ff00 anywhere in the subject.
+No cast shadow, no contact shadow, no reflection, no watermark, and no text unless explicitly requested.
+```
+
+Do not automatically use CLI `gpt-image-1.5 --background transparent --output-format png` instead of chroma keying. Ask the user first when the user asks for true/native transparency, when local removal fails validation, or when the requested image is complex: hair, fur, feathers, smoke, glass, liquids, translucent materials, reflective objects, soft shadows, realistic product grounding, or subject colors that conflict with all practical key colors.
+
+Use a concise confirmation like:
+
+```text
+This likely needs true native transparency. The default built-in path uses a chroma-key background plus local removal, but true transparency requires the CLI fallback with gpt-image-1.5 because gpt-image-2 does not support background=transparent. It also requires OPENAI_API_KEY. Should I proceed with that CLI fallback?
+```
+
+## Prompt augmentation
+
+Reformat user prompts into a structured, production-oriented spec. Make the user's goal clearer and more actionable, but do not blindly add detail.
+
+Treat this as prompt-shaping guidance, not a closed schema. Use only the lines that help, and add a short extra labeled line when it materially improves clarity.
+
+### Specificity policy
+
+Use the user's prompt specificity to decide how much augmentation is appropriate:
+
+- If the prompt is already specific and detailed, preserve that specificity and only normalize/structure it.
+- If the prompt is generic, you may add tasteful augmentation when it will materially improve the result.
+
+Allowed augmentations:
+- composition or framing hints
+- polish level or intended-use hints
+- practical layout guidance
+- reasonable scene concreteness that supports the stated request
+
+Not allowed augmentations:
+- extra characters or objects that are not implied by the request
+- brand names, slogans, palettes, or narrative beats that are not implied
+- arbitrary side-specific placement unless the surrounding layout supports it
+
+## Use-case taxonomy (exact slugs)
+
+Classify each request into one of these buckets and keep the slug consistent across prompts and references.
+
+Generate:
+- photorealistic-natural — candid/editorial lifestyle scenes with real texture and natural lighting.
+- product-mockup — product/packaging shots, catalog imagery, merch concepts.
+- ui-mockup — app/web interface mockups and wireframes; specify the desired fidelity.
+- infographic-diagram — diagrams/infographics with structured layout and text.
+- scientific-educational — classroom explainers, scientific diagrams, and learning visuals with required labels and accuracy constraints.
+- ads-marketing — campaign concepts and ad creatives with audience, brand position, scene, and exact tagline/copy.
+- productivity-visual — slide, chart, workflow, and data-heavy business visuals.
+- logo-brand — logo/mark exploration, vector-friendly.
+- illustration-story — comics, children’s book art, narrative scenes.
+- stylized-concept — style-driven concept art, 3D/stylized renders.
+- historical-scene — period-accurate/world-knowledge scenes.
+
+Edit:
+- text-localization — translate/replace in-image text, preserve layout.
+- identity-preserve — try-on, person-in-scene; lock face/body/pose.
+- precise-object-edit — remove/replace a specific element (including interior swaps).
+- lighting-weather — time-of-day/season/atmosphere changes only.
+- background-extraction — transparent background / clean cutout. Use built-in `image_gen` with chroma-key removal first for simple opaque subjects; ask before using CLI true transparency for complex subjects.
+- style-transfer — apply reference style while changing subject/scene.
+- compositing — multi-image insert/merge with matched lighting/perspective.
+- sketch-to-render — drawing/line art to photoreal render.
+
+## Shared prompt schema
+
+Use the following labeled spec as shared prompt scaffolding for both top-level modes:
+
+```text
+Use case: <taxonomy slug>
+Asset type: <where the asset will be used>
+Primary request: <user's main prompt>
+Input images: <Image 1: role; Image 2: role> (optional)
+Scene/backdrop: <environment>
+Subject: <main subject>
+Style/medium: <photo/illustration/3D/etc>
+Composition/framing: <wide/close/top-down; placement>
+Lighting/mood: <lighting + mood>
+Color palette: <palette notes>
+Materials/textures: <surface details>
+Text (verbatim): "<exact text>"
+Constraints: <must keep/must avoid>
+Avoid: <negative constraints>
+```
+
+Notes:
+- `Asset type` and `Input images` are prompt scaffolding, not dedicated CLI flags.
+- `Scene/backdrop` refers to the visual setting. It is not the same as the fallback CLI `background` parameter, which controls output transparency behavior.
+- Fallback-only execution notes such as `Quality:`, `Input fidelity:`, masks, output format, and output paths belong in the CLI path only. Do not treat them as built-in `image_gen` tool arguments.
+
+Augmentation rules:
+- Keep it short.
+- Add only the details needed to improve the prompt materially.
+- For edits, explicitly list invariants (`change only X; keep Y unchanged`).
+- If any critical detail is missing and blocks success, ask a question; otherwise proceed.
+
+codex
+The skill confirms this should be a new reference-guided generation, not an edit. I’m checking the project’s creator and prop rules before adding the asset, then I’ll generate the PNG and inspect the result at its native size.
+exec
+/bin/bash -lc 'pnpm streams' in /home/elad-saadon/Projects/GAME.worktrees/feat-prop-from-ref/out/work
+exec
+/bin/bash -lc "sed -n '1,260p' docs/team/PARALLEL.md" in /home/elad-saadon/Projects/GAME.worktrees/feat-prop-from-ref/out/work
+ exited 2 in 0ms:
+sed: can't read docs/team/PARALLEL.md: No such file or directory
+
+exec
+/bin/bash -lc "sed -n '1,260p' docs/creators/README.md" in /home/elad-saadon/Projects/GAME.worktrees/feat-prop-from-ref/out/work
+ exited 2 in 8ms:
+sed: can't read docs/creators/README.md: No such file or directory
+
+exec
+/bin/bash -lc 'git status --short && if [ -e crate_round.png ]; then file crate_round.png; fi' in /home/elad-saadon/Projects/GAME.worktrees/feat-prop-from-ref/out/work
+exec
+/bin/bash -lc "sed -n '1,260p' docs/design/GAME_RULES.md" in /home/elad-saadon/Projects/GAME.worktrees/feat-prop-from-ref/out/work
+ exited 2 in 0ms:
+sed: can't read docs/design/GAME_RULES.md: No such file or directory
+
+ succeeded in 103ms:
+?? ../../node_modules
+?? ../
+?? ../../tools/kit-gen/prop-from-ref.json
+?? ../../tools/node_modules
+crate_round.png: PNG image data, 1254 x 1254, 8-bit/color RGB, non-interlaced
+
+ exited 1 in 1079ms:
+
+> game-monorepo@ streams /home/elad-saadon/Projects/GAME.worktrees/feat-prop-from-ref
+> tsx tools/src/streams/cli.ts
+
+node:net:1987
+      const error = new UVExceptionWithHostPort(rval, 'listen', address, port);
+                    ^
+
+Error: listen EPERM: operation not permitted /tmp/tsx-1000/15.pipe
+    at Server.setupListenHandle [as _listen2] (node:net:1987:21)
+    at listenInCluster (node:net:2066:12)
+    at Server.listen (node:net:2188:5)
+    at file:///home/elad-saadon/Projects/GAME/node_modules/.pnpm/tsx@4.23.15/node_modules/tsx/dist/cli.mjs:53:32174
+    at new Promise (<anonymous>)
+    at createIpcServer (file:///home/elad-saadon/Projects/GAME/node_modules/.pnpm/tsx@4.23.15/node_modules/tsx/dist/cli.mjs:53:32152)
+    at async file:///home/elad-saadon/Projects/GAME/node_modules/.pnpm/tsx@4.23.15/node_modules/tsx/dist/cli.mjs:55:542 {
+  code: 'EPERM',
+  errno: -1,
+  syscall: 'listen',
+  address: '/tmp/tsx-1000/15.pipe',
+  port: -1
+}
+
+Node.js v24.18.1
+ ELIFECYCLE  Command failed with exit code 1.
+
+exec
+/bin/bash -lc "sed -n '1,300p' ../../docs/creators/README.md" in /home/elad-saadon/Projects/GAME.worktrees/feat-prop-from-ref/out/work
+ succeeded in 0ms:
+# Welcome Developers and Creators
+
+Everything in Openfold - every bush, recipe, quest, shop, and ruin - is an open JSON file in the game's repository. You build the world the same way the core team does: copy a template, tweak declarative fields, run `pnpm check`, and open a pull request. Once merged, the sign at that spot in the valley carries your name, creator points, and invested hours.
+
+### Quick Start with AI
+
+Copy and paste this prompt into your AI coding tool (Claude, Cursor, ChatGPT, Antigravity):
+
+```text
+I want to add a new content extension to Openfold (a community-built 2D RPG).
+Repository guidelines:
+- Read docs/creators/README.md and templates/extension/.
+- Place files in content/extensions/<my-handle>/ (resources, recipes, items, npcs, or quests).
+- Validate all IDs start with <my-handle>/ and conform to schema/json/*.
+- Values and prices are calculated automatically via relaxation solver (no hardcoded prices).
+- Run `pnpm check` and ensure 0 errors.
+
+Please help me create a new extension.
+```
+
+---
+
+# Add a fruit in 10 minutes
+
+This guide walks through adding the smallest useful thing: a fruit bush in an empty slot of the map.
+
+## What you need
+
+- A GitHub account.
+- Node 24 (the current LTS) and pnpm 10 (`npm install -g pnpm@10`).
+- No drawing skills. You start with the core art and can swap in your own later.
+
+## 1. Run the game on your machine (2 minutes)
+
+Fork the repository on GitHub, then:
+
+```bash
+git clone https://github.com/<you>/GAME
+cd GAME
+pnpm install
+pnpm dev
+```
+
+Open the address it prints. You are playing your own copy.
+
+## 2. Copy the template (1 minute)
+
+Your handle is your GitHub name in lowercase. Copy the template into a folder with that name:
+
+```bash
+cp -r templates/extension content/extensions/<your-handle>
+```
+
+In every file of the new folder, replace `your-handle` with your handle. Everything you add has an id that starts with it, so two creators can never clash.
+
+## 3. Make it yours (4 minutes)
+
+Open `content/extensions/<your-handle>/resources/wild-plums.json`. Rename the file and the ids if you grow something else. The fields worth changing:
+
+- `items[0].name` and `description` - what the player reads.
+- `items[0].class`, `family` and `tier` - what the fruit is: `plant`, family `plum`, tier 1. See [Classes and tiers](#classes-and-tiers).
+- `food.satiety` - how much one fruit fills, 1 to 100. A redberry gives 4, a cooked berry mash 15.
+- `node.yield` - fruit per pick with perfect timing, 1 to 20.
+- `node.active_ms` - how long one pick takes, from 1000 to 15000 ms.
+- `node.respawn_ms` - how long before the same bush gives again. Waiting is never paid.
+- `node.count` - how many bushes grow in the slot, 1 to 12.
+- `node.hours` - optional. `[18, 6]` makes a fruit that only ripens at night.
+- `node.tool` - optional. `basket`, `trowel` or `axe`: the tool the player must carry to gather it. With `axe` the node is a tree: gathering it is felling, which trains Woodcutting (`core/woodcutting`) instead of Foraging, and `node.level` is the Woodcutting level it asks for. Wood comes only this way: the check refuses an item of class `wood` from any other node, and from a dig spot.
+- `node.solid` - optional. `true` keeps the tile blocked ready or not, as a tree does: the stump stays in the way until the tree is grown again. Left out, the player walks through it.
+- `node.growth` - optional, up to 3 sprites between `sprite_empty` and `sprite`. While the node grows back, the game shows them one after the other by how much of `respawn_ms` has passed, so a felled oak goes stump, sapling, young tree, oak. Needs a `sprite_empty`.
+- `node.place.slot` - where it grows. The empty resource slot today: `core/west-glade` (by the meadow where you wake up); the garden in the ruins grows the bell bushes since P-3. One extension per slot.
+
+You never set a price. The game works out every item's value from the effort it takes to get, and the trader pays from that. A rarer, slower fruit is worth more on its own. The trader pays a share of the value: 75 percent for a thing someone made, an item whose value comes from a recipe (`k_craft_permille`), and 50 percent for anything else (`k_permille`). The shop charges at least the full value.
+
+## 4. Check it (1 minute)
+
+```bash
+pnpm check
+```
+
+Each problem names the file, the field and what to do about it. Fix them until it prints no errors. `pnpm check --json` prints the same report for an AI tool to read.
+
+## 5. See it in the game (1 minute)
+
+Run `pnpm dev` again and continue your game, or start a new one. Walk west from where you wake up: the bushes grow in the glade, and its sign now reads "Added by <your-handle>".
+
+## 6. Open a pull request (1 minute)
+
+Commit only your own folder, push it to your fork, and open a pull request. The same check runs on it automatically, and the pull request template lists what reviewers look at. A preview of the game with your change is built for the pull request; for a first pull request from a fork, a maintainer approves that build first.
+
+## Classes and tiers
+
+Every item names a `class` and a `tier`, so recipes can ask for a kind of material instead of one item, and the world can grow new materials without rewriting old recipes.
+
+- `class` - one of the base classes: `plant` (leaves, herbs, berries, fruit, roots, mushrooms), `wood`, `fibre` (reeds, grass, thread, cloth), `stone`, `clay` (clay, sand, pottery, brick), `mineral` (crystals, gems, salt, ore), `metal`, `animal` (feathers, wool, hide, bone), `meal` (cooked food), `tool`, `garment`, `jewelry`, `relic` (old things from the ruins). Metal waits for its discovery: until the world finds it, the check refuses metal items.
+- A class of your own sits under one base class. Declare it in `classes` at the top level of any of your files, next to `items`: `"classes": [{ "id": "<your-handle>/stone-fruit", "name": "Stone fruit", "base": "plant" }]`. Every rule for the base class holds for it, and a recipe that asks for `plant` takes it too.
+- `family` and `tags` - optional open words: `"family": "plum"`, `"tags": ["sweet", "night"]`.
+- `tier` - how advanced it is, from 1; a first material is tier 1, and a tool has the tier of its `tool`. The world has opened tiers 1 to 3 (`open_tiers` in the params). The tier is a different ladder from the rarity: the rarity says how often a thing appears, the tier how far up it is.
+
+Players read these words too. The item detail shows the class, the family and the tier, for example "Plant (plum), tier 1"; the journal lists items under a heading per class, with a row per family; and a recipe shows the class and tier of what it makes. A base class shows as its word and a class of your own by its `name`, so name a family in a word a player would use.
+
+Recipes climb one tier at a time. A recipe's tier is the highest tier among its outputs, and:
+
+- no output is more than one tier above the highest tier among the inputs;
+- its `level` sits inside the tier's band: tier 1 from level 1 to 2, tier 2 from 3 to 5, tier 3 from 6 (`tier_min_level` in the params);
+- a camp part provides its station at that tier or higher;
+- the profession that gates it is the one named in `profession`, or else the one that works its station (cooking works the fire).
+
+From tier 3 up, a thing comes only from a gated source: a node that needs the tier's level or respawns in 5 minutes or more, a dig spot, a quest reward or a recipe. No shop sells it.
+
+### Recipe templates
+
+A template asks for a class instead of an item. The check turns it into one recipe for every item that fits, so a herb added next month works in this recipe without anyone writing it again:
+
+```json
+{
+  "format": 1,
+  "type": "template",
+  "id": "<your-handle>/dried-herbs",
+  "title": "Dried herbs",
+  "creator": "<your-handle>",
+  "template": {
+    "station": "fire",
+    "active_ms": 4000,
+    "level": 1,
+    "inputs": [{ "class": "plant", "family": "herb", "min_tier": 1, "qty": 2 }],
+    "outputs": [{ "item": "<your-handle>/dried-herbs", "qty": 1, "share_pct": 100 }]
+  }
+}
+```
+
+Each recipe it makes is named after the template and the items it took, for example "Dried herbs (Sunleaf)", with the id `<template id>+<item id>` (one item id per class input), and every player knows it from the start. A template that fits more than `template_max_recipes` combinations (12 today) makes none, and the check says so: name a family, a narrower class or a higher `min_tier`. Because the check runs on the whole world, a new item from another creator can push a broad template over the limit, so keep templates narrow.
+
+## Crafting, step by step
+
+Start from the core file that comes closest and copy it into your folder. Set `creator` to your handle and start the file's own ids with it; the items it asks for keep their ids. Run `pnpm check` after each step: it names the field to fix.
+
+### A material
+
+A material you gather comes from a resource, like the fruit above. `content/core/resources/reed-bank.json` is one: a reed of class `fibre` at tier 1, up to two a pick, from three clumps in the meadow.
+
+- `kind` is `material`. Give it a `class`, a `tier` and, if you like, a `family` (see [Classes and tiers](#classes-and-tiers)).
+- A first material is tier 1. From tier 3 up, its node asks for the tier's level in `node.level` (6 today) or comes back after `node.respawn_ms` of 300000 (5 minutes) or more.
+- You never set its value. The game works it out from the effort, as for the fruit.
+
+### A recipe
+
+`content/core/recipes/stone-blade.json` makes a stone blade from two stone flakes and a branch at the workshop. A recipe file holds the new item in `items` and the recipe in `recipe`:
+
+- `station` - `fire` (cooking) or `workshop` (handcraft). The profession that works the station gates the recipe and is trained by it; name another craft profession in `profession` only if you need one.
+- `inputs` (1 to 6) and `outputs` (1 to 4); the outputs' `share_pct` adds up to 100.
+- The tier climbs one step at most: the blade may be tier 2 because its flakes are tier 1. A tier 3 output needs a tier 2 input.
+- `level` sits in the band of the recipe's tier (`tier_min_level` in the params, `[1, 3, 6]` today): tier 1 at level 1 or 2, tier 2 from 3 to 5, tier 3 from 6. The blade asks for handcraft level 3. The level is where the recipe has its own chance, not a wall: a player below it may still try.
+- The station has to reach the tier: a tier 2 recipe needs a camp part that provides its station at tier 2 or higher. At the workshop that is the workbench (see [A camp part and its upgrade](#a-camp-part-and-its-upgrade)).
+- `known` - `start` if every player knows it, `found` if a dig or a quest teaches it.
+- `active_ms` - how long one try takes, 1000 to 15000 ms.
+
+From tier 2 a try can miss. At its own level a tier 2 recipe succeeds 80 times in 100 and a tier 3 recipe 65 (`craft_chance_bp`), and each level above the recipe's adds 5 percent to the chance (`craft_level_step_bp`). Each level below takes the same step off, down to nothing, so a tier 1 recipe tried below its level can miss too, and a try at nothing still runs and misses. The game never shows a chance, a word for the difficulty or the level a recipe wants: players learn it by trying. A miss makes nothing and keeps half of each input, rounded down; when that would keep nothing, one unit of the most valuable input comes back. `miss.keep_pct` sets another share, up to 90 percent.
+
+The check then asks one thing more: a try never loses value on average. Take the chance at the recipe's own level, before luck. The chance of a success times the value of the outputs, plus the chance of a miss times the value a miss keeps, has to reach the value of the inputs. When a miss keeps half the inputs' value, the recipe's own work has to be worth about 12.5 percent of its inputs at tier 2 and about 27 percent at tier 3. Rounding down keeps less (one unit of an input keeps none of it), and the bar climbs toward 25 and 54 percent: the core's stone trowel, which keeps one branch on a miss, needs its work to be worth about 52 percent of its inputs. If the check refuses, give the recipe more time or fewer inputs.
+
+### A template
+
+`content/core/templates/dye-cord.json` is the core's template: two berries of one kind, tier 1 or higher, and a reed cord make a dyed cord at the workshop. Today it makes two recipes, one with bellberries and one with redberries, and a berry you add makes another. Every recipe it makes follows the rules above. The fields are in [Recipe templates](#recipe-templates).
+
+### A worn item
+
+`content/core/recipes/reed-hat.json` makes a hat you wear while you gather. An item you wear has `wear`:
+
+- `wear.slot` - `head`, `top`, `legs`, `outfit` (the top and the legs at once), `feet`, `jewelry` (two places) or `hand`. A piece of class `garment` goes on the head, top, legs, outfit or feet, a piece of class `jewelry` in a jewelry place, and the hand holds a tool.
+- `wear.effects` - one or two small bonuses from a closed list: `gather_speed_pct`, `dig_speed_pct`, `craft_speed_pct`, `craft_chance_pct` and `rare_find_pct`. Each is a percent, each effect once, at most the cap of the item's tier (`wear_effect_max_pct`, `[5, 8, 12]` today: 5 at tier 1, 8 at tier 2, 12 at tier 3). The reed hat is tier 2 and gives 5.
+- `wear.set` - optional: an id of your own that two or more of your pieces name, and that fits on the character at once (one piece per place, two jewelry pieces at most). Worn whole, a set's effects grow by `wear_set_bonus_pct` (20 percent today). The reed hat and the reed sandals make the set `core/reed-walker`.
+- `wear.look` - a look shows and counts for nothing: no effects and no set.
+
+Worn items are work clothes. They help the work and never protect you from a hazard; no effect on the list does that. A worn item stays in your bag and comes off when it leaves.
+
+### A tool
+
+`content/core/recipes/flint-trowel.json` makes a trowel that wears out, and `stone-trowel.json` one that lasts. A tool is an item of kind `tool` and class `tool`, with `tool`:
+
+- `tool.kind` - `basket` or `trowel`, the kinds the world uses today.
+- `tool.tier` - the same as the item's `tier`. Each tier above 1 adds 15 percent to the speed of the work, and the best tool of its kind in your bag does it.
+- `tool.uses` - optional: the tool breaks after this many uses. Leave it out and the tool lasts. The core's tier 2 tools wear out and its tier 3 tools last.
+
+The trader buys a made tool for its share of the value. A tool you have been using sells last: only when you sell every unit you hold does it pay just for the share of its uses left. A lasting tool always sells in full. The shop's basket and trowel have no value, and the trader never buys them back.
+
+### A camp part and its upgrade
+
+`content/core/camp/workbench.json` is the workshop's second step. A camp file names:
+
+- `slot` - its place in the camp: `fire`, `storage`, `workshop` or `shelf`. One part stands in a slot at a time.
+- `provides` and `tier` - the station it works (`fire` or `workshop`) and at which tier, 1 when left out. A recipe runs at a built part that provides its station at the recipe's tier or higher; when two do, the one you stand next to does the craft.
+- `inputs` and `active_ms` - what building it takes; `bag_bonus` - optional extra places in the bag.
+- `upgrades` - optional: the part it is built over. That part has to stand first, and the new one replaces it. An upgrade stays in the same slot, provides the same station, and keeps at least the tier and the bag bonus of the part it replaces.
+
+The core's workshop climbs that way: the work stone (tier 1, four stones), the workbench over it (tier 2) and the workshop over the workbench (tier 3).
+
+## Your creator profile
+
+Add `content/extensions/<your-handle>/profile.json` so signs and the Creators menu can introduce you. The profile has:
+
+- `name` - how the game names you.
+- `role` - optional short text under your name, such as "World builder".
+- `signature.text` - the words shown above your signs, up to 24 characters.
+- `signature.style` - `carved`, `painted`, `ink`, `gold` or `moss`.
+- `signature.glyph` - optional: `none`, `leaf`, `star`, `sun`, `flower`, `key` or `wave`.
+
+```json
+{
+  "$schema": "../../../schema/json/creator.schema.json",
+  "format": 1,
+  "type": "creator",
+  "id": "<your-handle>/profile",
+  "title": "Your name",
+  "creator": "<your-handle>",
+  "profile": {
+    "name": "Your name",
+    "role": "World builder",
+    "signature": { "text": "Your mark", "style": "painted", "glyph": "leaf" }
+  }
+}
+```
+
+## Creator points and hours
+
+The Creators menu shows points for accepted content and an estimate of invested hours based on commit sessions. `pnpm board` rebuilds `content/board.json` from the repository's Git history:
+
+```bash
+pnpm board
+```
+
+Run it from a full Git clone after commits exist. The generated board is committed by maintainers; do not edit it by hand.
+
+## Your own art (optional)
+
+Sprites live in a kit: `content/kit/<your-handle>/kit.json` plus PNG files next to it.
+
+- Two grids. A new sprite is drawn at 64 art pixels per tile and says `"density": 4` in its kit entry: items and tiles 64x64, character frames 64x96, props up to 384x384 (six tiles a side). The 16 pixel grid is still accepted, with no `density` or `"density": 1`: items and tiles 16x16, character frames 16x24, props up to 64x64. A size that belongs to the other grid is an error: a 64x64 tile with no `density: 4` is refused, and the message says so.
+- Character work poses have two frames, tool raised, then tool down: 128x128 at density 4, 32x32 at density 1.
+- A generated sprite may name where it came from: `"source": {"spec": "tools/kit-gen/<spec>.json", "manifest": "<path>/manifest.jsonl:<line>"}`.
+- Only the 32 colors of the core palette, and every pixel fully clear or fully solid.
+- How the world looks (grounds, light and shadow, height): [docs/design/STYLE.md](../design/STYLE.md). Never draw a shadow into a sprite; the game casts it.
+- AI images are welcome. Run any image through the importer and it snaps to the grid and the palette: `pnpm kit:import my-plum.png content/kit/<your-handle>/items/plum.png 16 16`.
+- Frames, sheets and a prompt-to-sprite path: the `um` tool of universal-modder (free sprite commands; the drawing recipes on your own fal.ai key). The recipe and its limits: [docs/design/ASSET_PATH.md](../design/ASSET_PATH.md) section 2. List it in `ai_tools` like any other tool.
+
+A kit file looks like this:
+
+```json
+{
+  "format": 1,
+  "type": "kit",
+  "id": "<your-handle>/kit",
+  "title": "Plum art",
+  "creator": "<your-handle>",
+  "ai_tools": ["Nano Banana (Gemini)"],
+  "kit": { "sprites": { "items/plum": { "file": "items/plum.png", "w": 16, "h": 16 } } }
+}
+```
+
+Then point your item at it: `"sprite": "<your-handle>/kit:items/plum"`.
+
+## Tools and the first morning
+
+A tool is an item with a `tool` block: its `kind` (`basket`, `trowel`, `axe` or `staff`), a `tier` and the `uses` it has before it wears out. Tools have no value of their own, so a shop prices them: Pell sells all four. A staff asks for no work: it is worn in the hand for what its `wear` block helps.
+
+Each starting character begins its own way and meets the others at the bridge and the first fire:
+
+- `kit`: up to six `{ "item", "qty" }` stacks that go into the bag when the character is chosen, tier 1 only. A piece with a working `wear` slot is worn from the start.
+- `wake`: `{ "x", "y" }`, the tile the character wakes on. Left out, it wakes at the map's spawn.
+- `pocket`, `pocket_grown`: tiles of the mist's clear pocket around the wake tile (left out: 5), and once the character's first task is done (left out: 7, never less than `pocket`). The kernel ignores them; the client draws the mist from them.
+- `intro`: one to four lines the narrator says as the character wakes.
+- A quest with `"starter": "<id>"` is offered to that start only: its own first task. A task with no giver is handed to nobody, so what it asked for stays in the bag.
+- A dig spot with `"starter": "<id>"` is that start's own spot: only that character sees it and digs it, once, and it always gives its one find. Leave out the spot's `tool` and the find is picked up by hand, with no timing window, and the character's senses lead to it with a trail of glints.
+
+The check keeps the starts fair. Every start holds an axe before the first fire, in its kit or on a spot of its own, because the first fire is built from a felled oak; a shop sells an axe, so a worn-out one can be bought again; and the opening never asks for more logs than the oaks of a new valley give. Every starter's attributes add up to one total. The kits, with each start's own finds, are worth about the same (within 25 percent of the poorest), and every start reaches the bridge with its axe in about the same time (within 50 percent of the fastest). A start's own spot gives one find at 100 percent, needs only a tool its kit holds, and lies within the start's senses on its road to the bridge, on a tile where x + y is even.
+
+## A world that answers: reactions
+
+A reaction is a rule the world follows, written as data ([REACTIONS.md](../design/REACTIONS.md)). It hangs on one kind of thing, holds while every condition it names holds, and does one thing. The kernel reads it and never runs it, so nothing changes while nobody looks, and a replay gives the same world. `content/core/reactions/` holds the core's five, and `templates/extension/reactions/` drops a plum below a full bush.
+
+- `on` - what it hangs on: `{ "resource": "<id>" }` or `{ "treasure": "<id>" }`, either one `"*"` for every one, or a ground tag, `{ "tag": "water" }`.
+- `when` - one or more conditions, all of which must hold: `hours` (`[from, to)`, as a node's), `night` (`true` or `false`), `ready_for_ms` (the node has stood ready and untouched that long), `on_tag`, `player_within` (1 to 8 tiles), `unseen` (a find the player cannot see yet), `chance_pct` (a roll of the game day, the same all day) and `weather` (`clear`, `rain` or `fog`: the day's sky over the region, the same for every player there).
+- `then` - one effect:
+  - `appear`: a node beside the thing, `at` `here`, `above`, `below`, `left` or `right`, written as a resource's node is: `output`, `yield`, `active_ms`, `respawn_ms`, `level`, `sprite`, and `tool` and `game` when it needs them. Its id is `<reaction id>@<node id>`, and once picked it comes back after its own respawn, while the condition holds.
+  - `wait`: while the condition holds, the node's respawn takes this many thousandths of its time, 500 to 2000. Two waits multiply. Waiting is never paid, so no value moves.
+  - `cue`: a sign the game draws and plays, `birds_lift` or `fish_rise`, with an optional `spread` of up to 2 tiles. A cue starts on the edge, as the player steps inside its reach (`player_within`, 8 when left out), at most three a step. It is a shape and a sound, never a number or a word.
+
+An appear node is priced like any node: if it gives its item for less work than the item's cheapest source, the item's value drops, and the 10 percent rule below holds it. The core's windfall picks one redberry in 1.5 s against the bush's two in 2.5 s, so the bush stays the cheapest source and the value of a redberry does not move.
+
+## What the check enforces
+
+- Files live in `content/extensions/<your-handle>/` and say `"creator": "<your-handle>"`. Ids start with `<your-handle>/`, and an id is never reused once merged.
+- One extension per slot, and the slot must be the right kind: a resource goes in a resource slot.
+- Active times stay between 1000 and 15000 ms.
+- The rarity you declare is within one step of what the data implies. A fruit that grows anywhere at any hour is common; night-only, high-level or slow-to-regrow fruit is rarer.
+- Everything a recipe or quest asks for can be found somewhere in the world.
+- Wood comes only from felling a tree: a node that gives an item of class `wood` needs `"tool": "axe"`, and digging never gives wood. A tree stands in the way (`solid`) without cutting any place of the map off from where the player wakes up.
+- Every item has a `class` and a `tier`; the tier is open (1 to 3 today); a class of your own sits under a base class; no metal yet. A recipe climbs one tier at most, asks for a level inside its tier's band, has a profession that works its station and a camp part of its tier. From tier 3 up, nothing is sold. A recipe template stays within `template_max_recipes`. Together these make a long recipe a chain of short steps, each one behind its station and surest from its level up. See [Classes and tiers](#classes-and-tiers).
+- The rarity bonuses of the whole world stay inside the rarity budget (10% today): a rare node with many copies or a fast respawn uses more of it.
+- A garment or jewelry piece names where it is worn (`wear`), with at most two small effects under its tier's cap; a look (`wear.look`) has no effect, and only a look may carry `premium_later`, while staying obtainable in the game. A recipe's `miss` names the share of each input a miss keeps (up to 90 percent, half when left out); a miss makes nothing else and is worth less than a success.
+
+exec
+/bin/bash -lc "sed -n '1,300p' ../../docs/team/PARALLEL.md" in /home/elad-saadon/Projects/GAME.worktrees/feat-prop-from-ref/out/work
+ succeeded in 0ms:
+# Working in parallel
+
+Several sessions build the game at the same time, in different apps and on different
+machines. Three things keep that from turning into collisions, and none of them is a status
+page somebody has to remember to edit, because such a page is stale at the next merge:
+
+| What | Where | Changes |
+|---|---|---|
+| The rules | this page, pointed to from `AGENTS.md` | when a collision teaches something |
+| The stream map | `docs/team/streams.json` | only when a stream starts, ends or changes hands |
+| The live picture | `pnpm streams`, printed on demand, never committed | recomputed every time |
+
+A fresh session can rebuild all of it from the repository and GitHub. Nothing lives only in
+one session's memory.
+
+## The live picture
+
+```bash
+pnpm streams            # fetches, then reads origin/develop, the branches and GitHub
+pnpm streams --json     # the same, for a tool
+pnpm streams --local    # read streams.json from this checkout (while you are editing it)
+```
+
+It lists, per stream: the pull request, its CI, how far the branch is behind `develop`, what
+is stacked on what, and the files two streams both change, sorted by who settles them:
+**hand** (a person), **generated** (rerun a command), **append** (both sides are kept). It
+ends with a proposed merge order. It only reads: no worktree is opened and no branch is
+touched, the one write is `git fetch`. It cannot see uncommitted work, or a session in another
+app until that session pushes.
+
+Run it when you start, and before you open a pull request.
+
+## Streams
+
+A stream is one unit of work, often several branches: what it advances in the original plan
+(`docs/spec/product-spec-v4.6.html` section 9 and 16, a GRUNT item, a decision), its
+branches, and the session that holds it. Starting a stream means adding its line to
+`streams.json` in a small `docs/` pull request. The owner column stays `null` until the
+owner names the session; nobody guesses it. A branch that is ahead of `develop` and listed in
+no stream shows up as a stray in the picture.
+
+## Shared files
+
+Five or six streams change the same few files. A change there is small, additive and lands on
+its own first, so the others merge it once instead of discovering it in a conflict.
+
+| File | What to do |
+|---|---|
+| `schema/src/index.ts` | Add an optional field; do not reshape one. A reshaping is cross-cutting (below). |
+| `schema/json/*`, `content/values.lock.json`, `CREDITS.md`, `content/board.json` | Generated. Never merged by hand: take `develop`'s and rerun `pnpm schemas`, `pnpm values`, `pnpm credits`, `pnpm board`. |
+| `kernel/src/step.ts`, `kernel/src/state.ts` | A new verb or field comes with its test in a pull request that does only that. |
+| `tools/src/assemble.ts` | Same: the check or the bundle step first, content that needs it after. |
+| `DECISIONS.md` | Append at the end only. `.gitattributes` merges both sides (see below). |
+| `game/src/ui/ui.ts`, `panels.ts`, `text.ts`, `game/test/text.test.ts` | Keep the change to the lines you need; renaming a string means grepping every test for it first (`AGENTS.md`). |
+
+Cross-cutting means everyone builds on it: a rename, a reshaped schema type, a moved folder.
+It goes first, in a quiet window the owner calls, and then every stream merges `develop`
+once. Mark its stream `"cross_cutting": true` in `streams.json` so the order puts it first.
+
+## Merge order
+
+The owner presses merge; `pnpm streams` only proposes. The proposal follows four rules:
+
+1. A cross-cutting stream first.
+2. A branch that others are built on goes before them: it frees their pull requests.
+3. Then the stream that collides with fewer others, because it asks nothing of them.
+4. Then the lower pull request number.
+
+Drafts, a failing CI and a branch with no pull request stay out of the order, each with the
+reason. After every merge, the stream that is next merges `develop`, reruns the generators
+and `pnpm verify` before its own pull request lands.
+
+## Stacked branches
+
+`AGENTS.md` says a pull request is never stacked on another branch: it would land there and
+not in `develop`. A branch may still be *built on* an open branch of the same stream, as long as
+its pull request targets `develop` and goes in after the base. When the base is squash-merged:
+
+```bash
+git fetch origin
+git merge origin/develop     # not rebase, no force push
+```
+
+The squashed base brings the same changes the branch already holds, and identical changes
+merge clean (checked on a scratch repository, 10.10). The pull request's diff then shrinks
+to the branch's own work. A branch with no pull request that sits inside another branch has
+no work of its own yet; the picture says so, and the work goes on in the branch that holds it.
+
+## Conflict recipe
+
+```bash
+git fetch origin && git merge origin/develop
+# generated files only, and only those in conflict: develop's version, then regenerate
+git checkout --theirs schema/json content/values.lock.json
+pnpm schemas && pnpm values && pnpm credits && pnpm board
+git add schema/json content/values.lock.json CREDITS.md content/board.json
+# everything else: resolve by hand, then
+pnpm verify
+```
+
+`DECISIONS.md` has `merge=union` in `.gitattributes`: both sides' entries are kept. Two
+caveats: the blank line between two entries can be lost, which does not matter because the
+headings still start a line; and GitHub's own merge button ignores the setting, so merge
+`origin/develop` into your branch on your machine before the pull request lands.
+
+## The integrator
+
+The owner does not run between sessions to line them up; one session does that. It starts in
+the main checkout, which belongs to the lead and which it does not edit:
+
+```bash
+claude --model opus --effort high      # then: /integrator
+```
+
+Opus at high effort because the work crosses every stream and decides order; the skill is
+`.claude/skills/integrator/SKILL.md`. It runs `pnpm streams`, says where things stand,
+proposes the order, and writes for each session the exact instruction to line up ("merge
+develop, rerun the generators, run the opening e2e"). To reach the sessions on the same
+machine it uses `ListAgents` and `SendMessage`; the sessions in another app can only be
+reached through the repository, so for them the owner pastes the instruction, and the rules
+on this page are what they read first.
+
+It never edits, merges, rebases, pushes or deletes in another session's branch or worktree. It
+proposes; the owner presses merge. If the owner wants merges into `develop` delegated, that
+goes into `DECISIONS.md` the same day, with its limits.
+
+A session that started before this page landed has the old `AGENTS.md` and no `pnpm streams`:
+once the pull request is merged, it merges `origin/develop` and is told once to
+`Read docs/team/PARALLEL.md, then run pnpm streams`. The stream map the command reads always
+comes from `origin/develop`, so a stale checkout still sees the current map.
+
+exec
+/bin/bash -lc "sed -n '1,340p' ../../docs/design/GAME_RULES.md" in /home/elad-saadon/Projects/GAME.worktrees/feat-prop-from-ref/out/work
+ succeeded in 0ms:
+# Game rules: what keeps Openfold fun
+
+This page is the product owner's. Developers, creators and AI agents
+follow it the way `kernel/` follows its rules R1-R12: a request that breaks a
+rule is not built quietly and the rule is not bent quietly. Section 6 says what
+happens instead. A rule changes only by the owner's word, written the same day
+in [DECISIONS.md](../../DECISIONS.md).
+
+Why it exists (2026-10-07): three things shipped that break the loop. The
+collection shelf is a menu built as a camp. The town quests are "repeat the
+gather verb N times". The statue inscriptions are reads that pay nothing.
+Developers bring ideas, and an AI given a free hand fills a quest with the
+easiest thing that validates. The fun of this product is the reward landing at
+the right step, and nothing in the repository guarded that. Now something does:
+this page, the review checklist in section 7, and the `play` rules in
+`pnpm check` (section 8).
+
+What it is for, in the owner's words (2026-10-07): to reach an end product the
+game has to carry a community, so the foundations must be clear. This page
+and the files beside it are those foundations. A creator who has never met the
+team, a developer in a hurry and an AI with a free hand must all be able to
+tell right from wrong here without asking, and must get the same answer.
+
+Read with it: [FTUE_RESEARCH.md](../FTUE_RESEARCH.md) for the first five
+minutes (its five principles are assumed here, not repeated) and
+[TOOLKIT.md](TOOLKIT.md) for the free tools that help keep these rules.
+
+## 1. Pillars
+
+Five claims, each testable in a playtest. When two good ideas collide, the
+pillar higher on this list wins. A feature that serves none of them is cut.
+
+1. **Every minute pays.** In any ten minutes of play the player gets something
+   new they can see at least every ninety seconds: a find, a line, a level, a
+   door, a changed tile. Test: time the gaps in a recording.
+2. **Doing beats reading.** The player learns by acting. No more than two lines
+   of text before the next input; lore is asked for, never pushed.
+3. **Every task is a question, and the next one is a different kind.** A quest
+   is a small problem with a context: something to notice, choose or work
+   out. A counter is not a question, and the same kind of question twice in a
+   row is a counter.
+4. **The world is the interface.** World objects carry play: they change what
+   the player can do or where they can go. Menus carry information and live in
+   buttons. Nothing is built in the world in order to open a menu.
+5. **Effort is never wasted.** A miss turns up something, a wrong answer
+   teaches, a walk has a find on the way.
+
+## 2. The loop and the hook ladder
+
+The core loop is: notice a cue, act with one timed verb, get a find that was
+not fully expected, spend or build, which opens a new place or verb, which
+shows the next cue. Daniel Cook's loops build mastery; arcs (the mist, the
+bells, the statues) carry meaning. Both must be present in every session.
+
+Each beat of the loop is a hook in Nir Eyal's sense: a trigger the player sees,
+an action under fifteen seconds, a variable reward, and an investment that sets
+the next trigger. The reward lands within a few seconds of the action, with a
+sound, a name and where it went. The next goal is visible before the glow fades.
+
+The ladder below says what must happen at each stage of a player's life in the
+valley. A change that removes a rung, or moves its payoff later, is a product
+question (section 6). Its minutes are minutes at the screen, and its Day 2 is
+the valley's, never the calendar's.
+
+| Stage | The beat | The payoff | Never |
+|---|---|---|---|
+| 0:00-0:15 | Each start wakes at its own place and does its own first task: the forager picks herbs on the west bank, the digger digs its axe out of the slid bank, the explorer follows its senses to its axe in the grass by the bridge. | Something in the bag at once, found the start's own way. | A lore screen, a naming wizard, more than one box of text. |
+| 0:15-1:00 | The first strike, at the bridge's keystone in the shallows. | The strike minigame, taught once; level 1, the jingle, a skill point to spend now. | A level with nothing to spend. |
+| 1-5 min | The bridge mends; a tree is felled with the axe each start holds or finds; the fire is built. | A tile changes, a sign carries the player's name, a purse: the price of one tool, in gold only. | A build that only opens a panel. |
+| 5-8 min | The town: whom to help first, Maru or Pell; then Maru's coin; at dusk, the riddle. | A real choice: Maru pays with his old trowel, Pell with a recipe and coin, and the stall says what each tool opens. Both plants are open from noon until dark, so neither order waits. From 19:00 the hill lantern lights the tile to dig. | A fetch with a counter and nothing to notice. |
+| 8-10 min | After dark, the broken arch at the edge of the ruins. | A way under the arch that rubble filled by day, to the threshold of the night ruins: a place that opens, the first sight of the expeditions (G36). | Something to fight or something that hunts (G35). |
+| Session end | A visible mark of the day. | The day summary: what was found, built, learned; one open door. | Stopping in the middle of nothing. |
+| Day 2 | The morning after the first night, slept or played through: something changed overnight. Away, the valley waits at the hour it was left (G28). | The morning toast, a respawned grove, a new line from an NPC, a bell at night. | The same valley as yesterday. |
+
+## 3. The rules
+
+Numbered so a review, a commit or a check can point at one. Rules G2, G4, G8
+and G10 are the ones `pnpm check` can test today (section 8).
+
+### Quests
+
+- **G1 Every quest asks a question.** The summary names what is unknown, not
+  the count. "Bring 3 redberries" is a counter; "Maru remembers berries grew
+  where the bells rang" is a question with the same three berries.
+- **G2 After the opening, no quest is repeat-the-verb.** The opening chain
+  (`core/fix-the-bridge`, `core/first-fire`, `core/into-town`) may teach a
+  verb by repetition. Every later quest has at least one beat that is not
+  "do the verb N times": a find in a hinted place, a choice between two
+  answers, a riddle read from the world, a timing twist, a trade-off. A `find`
+  step is that beat: one of an item that only digging gives, or that one timed
+  plant gives, with a clue (P-2, P-3).
+- **G3 At most three steps visible at once.** The next step is revealed by the
+  previous one; the journal shows the question, not the whole recipe.
+- **G4 A reward changes what the player can do.** A recipe, a tool, a place,
+  an ally, a line that opens a door. Gold and reputation alone are for
+  repeatable errands, and those are marked as such.
+- **G5 No empty leg.** A quest never sends the player across the map twice for
+  nothing; each leg has something to notice on the way.
+
+### Riddles and puzzles
+
+- **G6 A riddle has a catch and a reveal.** One assumption to break, one clue
+  in the world (an inscription, an NPC line, a shape, a time of day), and an
+  answer that is an action in the world: dig here, bring this, stand there at
+  night. Never a text box to type into.
+- **G7 Light means light.** Solvable by a child of eight with no outside
+  knowledge; the answer is in the valley. At most three clues, the first within
+  two minutes of the question. A wrong try gives a hint, never a wall.
+
+### Reading: signs, inscriptions, notes
+
+- **G8 Every read pays.** An inscription or a note gives a clue to a riddle, a
+  key to a place, a line of character, or a laugh. A note no quest, treasure
+  or character refers to is cut. Two lines at most.
+- **G9 Reading is never the task.** "Read the statue" is not a step; "do what
+  the statue says" is.
+
+### Interface and world
+
+- **G10 A build changes play.** A camp is built only if it gives a station
+  (recipes), capacity, a path, a light, a trade. A build that opens a panel is
+  a button in disguise: the panel gets a button, the build goes.
+- **G11 Felt within a minute.** Nothing is built, bought or unlocked that the
+  player cannot feel within one minute of getting it.
+
+### Choices
+
+- **G12 A choice is real.** Neither side is strictly better, both lead on, and
+  the game shows the difference before the choice (whom to help first is the
+  model: each neighbour says what its errand gives, the two rewards differ in
+  kind, and the other errand waits; DECISIONS.md, 10.10). A choice with one
+  side greyed out, or two sides that play the same, is cut.
+
+### Feel
+
+- **G13 Every action answers.** Feedback within a tenth of a second: a flash, a
+  sound, a number. A reward lands with a beat: the jingle, the item's name,
+  where it went.
+- **G14 Two lines, one box.** At most two lines per box, one box per beat, no
+  box in the middle of a timed action.
+- **G15 A miss turns up something, never an empty hand.** A missed strike
+  gives something other than the node's item, from the node's own miss table:
+  a bruised fruit, grit, now and then a rare find, now and then only a thorn.
+  Every row of a table is a thing with a value. The jackpot strip stays the
+  reward for precision. Three misses in a row show a hint. A creator adds a
+  surprise by adding a row (DECISIONS.md, 10.10). Until the kernel reads the
+  tables (CR-60) a miss keeps one unit half the time.
+
+### Session
+
+- **G16 A session ends on a mark and leaves a door.** The day summary says
+  what was found, built and learned, and names one thing waiting for tomorrow.
+  A valley's day ends when the player sleeps, or at 05:00 when the night is
+  played through; the summary comes then, before the morning toast, and waits
+  until the player stands in a safe place (G30; DECISIONS.md, 10.10).
+
+### Variety
+
+Top-tier games (Skyrim, The Witcher 3, Fallout) keep a player for hundreds of
+hours not because each quest is good but because the next one asks for a
+different kind of effort and pays a different feeling. The need behind each
+feeling is known: competence (I can), autonomy (I chose), relatedness (someone
+needed me), and with them curiosity, completion and surprise. A chain that
+pays the same feeling twice in a row is a counter even when every quest in it
+passes G1-G5. The owner's words (2026-10-07): collecting in the game must not
+be one style; different quests and their actions answer different player
+psychology.
+
+- **G17 No two in a row of the same type.** Every quest declares its type
+  from the palette below (`quest.type`, P-2). Two consecutive quests in a
+  chain never share a type, and the first ten quests of the valley cover at
+  least five types. The check counts (section 8).
+- **G18 Getting an item is not one motion.** Across a chain, the way an item
+  is obtained varies: the timed strike, a spot found with senses, a time of
+  day, a trade, a dig with a chance, a question asked right, a thing tended
+  over days. Three quests in a row whose items come by the same motion are a
+  counter in disguise.
+
+The palette. "Feeling" is what the player says afterwards; "need" is the
+psychology behind it (the three needs of Ryan, Rigby and Przybylski; Lazzaro's
+four keys of fun); "model" is a game where the type is done well; "here" is
+what it looks like in the valley.
+
+| Type | What the player does | Feeling | Need | Model | Here |
+|---|---|---|---|---|---|
+| `investigation` | Reads the scene, follows marks, deduces where. | "I worked it out." | Competence, curiosity | The Witcher 3 contracts (witcher senses) | Moss, footprints and a glow lead to the right dig; senses shortens the search. |
+| `discovery` | Goes where nothing sends them and finds a place. | "I found it myself." | Autonomy, wonder | Skyrim's far peaks and cave mouths | A place in the mist that opens when you stand at the arch at night. |
+| `fetch_twist` | Brings a thing that is not where it should be, or that someone else wants too. | "So that is where it was." | Competence, surprise | Fallout's "simple" deliveries | The berries grow only where the bells rang (three-fruits after P-3). |
+| `dilemma` | Chooses between two answers with no right one; both lead on. | "That was my call." | Autonomy, meaning | The Witcher 3's choices; Fallout's water chip | Give the old coin to Maru, or trade it with Pell; the valley remembers either. |
+| `skill` | Beats a timing or precision challenge with a harder window. | "Nailed it." | Competence, hard fun | Skyrim's lockpicking; Fallout's VATS | A rare node whose strike window is half the usual; a miss turns up something from the node's miss table (G15). |
+| `collection` | Completes a set shown in one place. | "One more." | Completion, ownership | Skyrim's Stones of Barenziah; Fallout's bobbleheads | A set of treasures on a shelf that NPCs notice when it is full (the shelf's future, section 5 row 1). |
+| `tending` | Keeps something alive or safe over time. | "They needed me." | Relatedness, care | Companions in Skyrim; animals in Stardew Valley | Keep the fire lit through one night; a sapling watered three mornings. |
+| `riddle` | Reads clues in the world and answers with an action. | "Aha." | Insight, hard fun | Skyrim's pillar puzzles; The Witcher 3's riddles | The three ruin stones and the dig under the hill-facing statue. |
+| `mastery` | Learns a technique and uses it on something harder. | "I am getting better." | Competence over time | Skyrim's smithing; The Witcher 3's alchemy | A stew that needs two techniques the player has levelled. |
+| `gamble` | Takes a known risk for a rare find. | "Lucky me." | Thrill, variable reward | Fallout's luck | A dig spot with one rare find in five; luck changes the odds. |
+| `persuasion` | Asks the right question or brings the right fact. | "I talked my way in." | Relatedness, autonomy | Fallout's speech checks; The Witcher 3's talks | The trade opens only after the player asks Pell about the mist. |
+| `errand` | Repeats a known task for a known pay. | "Easy coins." | Routine, easy fun | Skyrim's radiant quests; The Witcher 3's notice boards | Pell's standing order for herbs, marked as an errand, only after the main beat (G4). |
+| `maze` | Finds the way through a place whose shape is the question: dead ends, a landmark seen over the trees, a sign that tells the right turn. | "I found the way." | Competence, autonomy (the route is the player's own) | The Lost Woods in Zelda (the route is read from the world, a wrong turn sends you back); Tunic (paths hide in plain sight until a page shows them) | A tangle of forest beyond the ruins, drawn in the map alone: dead ends that cost a walk back, one landmark over the canopy, the moss side of the trunks for the player who looks; the step is a `visit` of the clearing at its heart, nothing new in the kernel. |
+| `stealth` | Passes a hazard unseen: learns its loop, waits for the window, takes the route it does not watch. | "It never saw me." | Thrill, competence | Breath of the Wild's Yiga hideout (a walked loop with a window to cross); Untitled Goose Game (being seen costs a retreat, never a life) | The wolf's round at night, over G30-G35: a loop the player learns by its eyes in the dark, reeds and shadow that hide the player, running back to a safe place as the way out when it fails; seen means a chase and the walk back to the fire, never a fight (G35). |
+
+`maze` and `stealth` entered on 9.10 by the owner's word (DECISIONS.md); each
+joins `quest.type` with its first quest, and the schema's count follows.
+
+### Dialogue and voice
+
+Talk in the valley is short, in character, and always does work. The content
+shape already says so: a character has a first meeting, one line or two per
+standing (stranger, acquaintance, friend, family), and up to four topics the
+player asks about. That shape is the rule: the player pulls, the character
+answers, and every answer pays (G8). A box is one entry in those lists; on a
+phone at the dialogue size a box holds about two lines, which is about 80
+characters.
+
+- **G19 Every line does one job.** It asks a question, gives a clue, shows
+  who is talking, offers a choice, or lands a laugh. A line that only explains
+  is cut; a fact the player needs is given by the world (a sign, a glow, a
+  tile) before it is given by a mouth.
+- **G20 One voice per character.** Each character has a voice sheet (how they
+  talk, what they want, what they never say), and two of their lines next to
+  two of another's are tellable apart with the names hidden. The sheets are
+  below; the owner approves a new one before the character speaks.
+- **G21 The player pulls.** A first meeting is at most three boxes; everything
+  else waits behind a topic. A standing line is one box, two at most. A topic
+  is at most four boxes. A new topic appears when the world changed (a quest
+  done, a place mended), so coming back to a character pays.
+- **G22 Plain words, all ages, the valley's own names.** A child of eight
+  reads every line: no slang, no jokes about games, no brand names, no
+  irony at the player's expense. The valley's words (the mist, the bells, the
+  ruins, the hills, the grove) are the same in every mouth and on every sign.
+  English only, the game and its files alike (owner, 8.10); a language field
+  on content, never a copied folder, is the format decision for a day that
+  may not come.
+- **G23 Talk choices are real.** Topics are a choice of what to learn, never
+  a quiz with one right pick. When the player gets answers of their own
+  (P-2 or later), at most three, each a different stance (ask, doubt, offer),
+  and each pays something the others do not.
+
+The voice sheets, approved as written on 2026-10-08. The lines follow the
+sheet, never the other way round; a sheet changes only by the owner's word.
+
+| Voice | How they talk | What they want | Never | Status |
+|---|---|---|---|---|
+| Elder Maru | Slow. Short sentences. Speaks of "once" and of mending. Hints at the mist, does not explain it. Calls the player "you", never by name until friend. | The town back, one mended thing at a time. | Prices. Hurry. A straight answer about the bells. | Approved (8.10) |
+| Pell | Quick. Counts everything. Every subject becomes a trade or a rumour. Jokes about prices, not about people. | Customers, and the roads open again. | Sentiment. Lore of her own; she repeats what travellers say. | Approved (8.10) |
+| The narrator (the river text, toasts, the journal) | Second person, present tense, concrete nouns, one adjective at most. Says what is there, not what to feel. | Nothing; it is the valley speaking. | "You feel", "amazing", exclamation marks outside a level-up. | Approved (8.10) |
+| Signs and inscriptions | Fewest words. A fact and a hook. No "you". | To be read twice. | A full sentence where a fragment does. | Approved (8.10) |
+
+### Sound and music
+
+The game's sound is synthesized in `game/src/audio`: two songs (the valley
+by day, the night), three jingles (level, quest, found), day and night
+ambience with wildlife, short effects, and a mute preference that survives a
+reload. On a phone the browser unlocks audio on the first gesture; the opening
+already handles that and the e2e run checks it.
+
+- **G24 Every beat has a sound, every sound has a beat.** Each event the game
+  shows as a toast (a pickup, a full bag, gold, a level, a journal entry, a
+  recipe, a task opened or done, a place restored) has its own short effect,
+  and no effect plays without a visible cause on screen. Hit and miss in the
+  strike are two different sounds within a tenth of a second (G13).
+- **G25 The rare find is heard.** The found jingle plays only for a find the
+  player could not count on: a rare dig, a recipe scrap, a riddle solved. An
+  ordinary pickup gets the ordinary click. A jingle used for everything says
+  nothing.
+- **G26 Music is the clock, not a loop you notice.** The valley song by day,
+  the night song after dusk, a crossfade at the change; the ambience carries
+  the place (riverbank, grove, ruin). Music ducks under a jingle, silence is
+  allowed, and a song never restarts because a panel opened.
+- **G27 Nothing important lives only in sound.** Every beat has its visible
+  twin (G13), the mute control is one tap away and remembered, and on phones
+  haptics mirror the beats (FTUE gap 3). In stage 1 an extension brings no
+  sounds of its own: the kit's effects are the palette, like the colours.
+
+### Fairness and access
+
+- **G28 No dark patterns.** The valley waits. No punishment for being away,
+  no timer that runs out while the player sleeps, no fake scarcity, no "last
+  chance", nothing to pay for. A return is rewarded (the ladder's Day 2); an
+  absence is never punished. One written exception, for the valley's
+  holidays: a holiday falls on its real dates every year, and what it
+  gives is that year's only, a look or a title marked with the year, bound to
+  the character and never traded. A player who misses it does not get it
+  later; the next year's holiday gives its own. This is the one "last chance"
+  the game has, and it costs a look or a title, never a use, a recipe, a tool
+  or a way forward (G42; DECISIONS.md, 10.10). The exception for scarce
+  plots and houses in a shared town ([SETTLEMENT.md](SETTLEMENT.md) 3.2) is
+  paused with player houses and plots, and comes back only with them
+  (DECISIONS.md, 10.10).
+- **G29 Playable by more people.** Text at 16 px or more and dialogue at 18
+  (FTUE); colour is never the only signal (a glint has a shape, a tone has a
+  word); reduced motion is honoured by every effect; one hand is enough on a
+  phone; the strike window grows with agility so a slower hand still wins
+  (G15).
+
+### Danger and falling
+
+Added 2026-10-08 on the owner's word (DECISIONS.md, that day's falling entry).
+The valley has no combat; its danger is the hour, and what the player eats.
+
+- **G30 The town and a burning camp are safe; the night and the mist hunt.**
+  The town and all ground at danger level 0 are safe at every hour, and a camp
+  is safe while its fire burns, another player's only for a guest whose stay
+  its owner approved: any of these is a safe place, or a safe area,
+  the one thing every rule below means (DECISIONS.md, 10.10). The fire eats
+  wood through the night, more the deeper the area and none at danger level 0,
+  where the opening's camp stands. Anywhere else outside the town a camp is a
+  fire the player builds, no tent: it is a safe place while it burns, it is
+  never lit during a chase or inside a predator's round, and the wood it eats
+  follows the area's danger, the number never shown; the fire is seen to dim
+  and warns before it goes out (G31; DECISIONS.md, 2026-10-19, the entry on a
+  fire anywhere; [SETTLEMENT.md](SETTLEMENT.md) S2). Outside these the hazards that hunt (the
+  wolf, the hidden pit, the trap, deep water) act after dark (the clock the
+  world already keeps: dark from 20:00 to 05:00, with the dusk ramp drawn
+  around it) and inside the mist; by day they show and can be walked around: the
+  trap is visible, the pit is lit, and the wolf is away until dusk while its
+  den and its tracks along its round mark where it hunts (the owner, 18.10).
+  What the player picks or
+  eats can hurt at any hour: a bad fruit takes health in daylight too, and a
+  player can fall at noon from it.
+- **G31 Nobody falls unwarned.** A countdown to nightfall or to the mist's
+  coming, whichever is first, sits at the screen's edge while the player is
+  outside a safe area (in the first levels, with a banner too). Entering the
+  mist, the mist arriving, leaving a safe area after dark, or dark arriving
+  outside one lights the player's lantern and opens one warning box (G14),
+  once per night. A burning camp warns before its fire goes out.
+  The lantern is the sign that the night has begun, not a shield: its light
+  keeps nothing off, and only a safe place does (G30, G34).
+- **G32 Health is the one bar.** The food bar becomes the health bar. Hazards
+  take health; food, a first-aid kit and a night's sleep in town, at one's own
+  burning camp or at another's as a guest with a deal give it back; low health
+  slows work the way the empty bar did. A hunt outrun to a safe place gives
+  back what its bites took, up to a share of the bar
+  (`hazard.predator.refill_bp`, three quarters in the core); it never takes
+  any, and health lost before the hunt is food's to give back. A hunt that
+  ends at dawn, in a fall or at the last bell gives nothing back (DECISIONS.md,
+  16.10).
+  Nothing drains it by the clock (G28): there is no hunger timer, eating is how
+  the player heals, and cooking keeps its purpose. Since P-5c (11.10) the
+  core content sets `satiety_drain_per_min` to 0, in the same change that
+  brought the first hazards; the field takes the name hp with the rename
+
+codex
+The requested filename already exists as an earlier 1254×1254 image; your request explicitly replaces it with a new asset. The project’s art guide confirms 64×64 high-density sprites and no baked shadow, matching your brief. The stream check itself is blocked by the sandbox’s IPC restriction, but that does not affect generation.
+codex
+The first draw has the right silhouette and construction, but its shading includes tonal variation that conflicts with the exact five-color sprite palette. I’m doing one generator-only refinement—no code-based image processing—to flatten every region and tighten the native-pixel treatment.
+exec
+/bin/bash -lc 'cp /home/elad-saadon/.codex/generated_images/01a15f31-fdd1-7dd3-ba57-d5d1744bc96b/exec-bf444c80-51aa-4666-850a-2c4fe848cecc.png crate_round.png
+file crate_round.png
+sha256sum crate_round.png
+git status --short -- crate_round.png' in /home/elad-saadon/Projects/GAME.worktrees/feat-prop-from-ref/out/work
+ succeeded in 0ms:
+crate_round.png: PNG image data, 1254 x 1254, 8-bit/color RGB, non-interlaced
+5976ac805505ec08a7b3365c7e37e37336debae056d988ee5f2fe6a1f4b2849e  crate_round.png
+?? crate_round.png
+
+codex
+The refined generator output is saved, and I have not resized, palette-quantized, or otherwise post-processed it. One limitation remains: the image generator emitted a 1254×1254 PNG despite the 64×64 prompt, so I’m preserving its native output in accordance with your no-post-processing instruction. I’m running the project verification now before handoff.
+exec
+/bin/bash -lc 'pnpm verify' in /home/elad-saadon/Projects/GAME.worktrees/feat-prop-from-ref
+ exited 1 in 2208ms:
+Failed to create stream fd: Operation not permitted
+Failed to create stream fd: Operation not permitted
+Failed to create stream fd: Operation not permitted
+
+> game-monorepo@ verify /home/elad-saadon/Projects/GAME.worktrees/feat-prop-from-ref
+> pnpm schemas --verify && pnpm check && pnpm bundle && pnpm lint && pnpm typecheck && pnpm test && pnpm --filter game build && pnpm site && pnpm --filter web test
+
+
+> game-monorepo@ schemas /home/elad-saadon/Projects/GAME.worktrees/feat-prop-from-ref
+> tsx schema/src/emit.ts --verify
+
+node:net:1987
+      const error = new UVExceptionWithHostPort(rval, 'listen', address, port);
+                    ^
+
+Error: listen EPERM: operation not permitted /tmp/tsx-1000/90.pipe
+    at Server.setupListenHandle [as _listen2] (node:net:1987:21)
+    at listenInCluster (node:net:2066:12)
+    at Server.listen (node:net:2188:5)
+    at file:///home/elad-saadon/Projects/GAME/node_modules/.pnpm/tsx@4.23.15/node_modules/tsx/dist/cli.mjs:53:32174
+    at new Promise (<anonymous>)
+    at createIpcServer (file:///home/elad-saadon/Projects/GAME/node_modules/.pnpm/tsx@4.23.15/node_modules/tsx/dist/cli.mjs:53:32152)
+    at async file:///home/elad-saadon/Projects/GAME/node_modules/.pnpm/tsx@4.23.15/node_modules/tsx/dist/cli.mjs:55:542 {
+  code: 'EPERM',
+  errno: -1,
+  syscall: 'listen',
+  address: '/tmp/tsx-1000/90.pipe',
+  port: -1
+}
+
+Node.js v24.18.1
+ ELIFECYCLE  Command failed with exit code 1.
+ ELIFECYCLE  Command failed with exit code 1.
+
+codex
+Generated with the built-in image tool and saved to [crate_round.png](/home/elad-saadon/Projects/GAME.worktrees/feat-prop-from-ref/out/work/crate_round.png).
+
+Final prompt enforced the five-plank lid, raised rim, eight-plus staves, red/navy palette, magenta background, and no extra objects or shadows.
+
+Note: the generator emitted 1254×1254 despite the 64×64 prompt. I left it unprocessed as requested. `pnpm verify` was blocked by the sandbox’s `tsx` IPC permission error.
+tokens used
+46,443

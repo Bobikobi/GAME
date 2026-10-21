@@ -1,0 +1,14 @@
+{
+  "note": "Exercise: one prop from an external reference image. The reference is the plum round crate marked on ref1.jpg (crops/ref1.crate.png, 75x69, exact mask, PNG), restyled into the kit's red ramp because the plum hue family is not in the 32-colour palette and the owner was unavailable for the palette decision. Run: pnpm kit:gen tools/kit-gen/prop-from-ref.json --out out --dry, read out/ref and out/work, then run without --dry.",
+  "entries": [
+    {
+      "name": "crate_round",
+      "ref": "out/source/plum-crate-1x.png",
+      "what": "squat round wooden tub with a fitted plank lid, seen from above and slightly to the front (top-down three-quarter view)",
+      "width": 64,
+      "height": 64,
+      "kind": "sprite",
+      "detail": "the lid mostly in the mid red #a8302f with #f6a07f only on its rim and lit upper-left edge, a horizontal plank seam across it and a small dark wooden knob at its centre, at least eight vertical staves with grain lines, the body about as tall as the lid is wide, no metal bands, light from above so the lid is lightest and the underside darkest with left and right even, the red ramp #5e1c28 #a8302f #e2533f #f6a07f only and the navy #1b1a2e outline, no skin, no brown, no plum, no text, no shadow, no extra objects"
+    }
+  ]
+}
