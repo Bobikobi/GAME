@@ -2206,6 +2206,9 @@ export class WorldScene extends Phaser.Scene {
     this.steps++;
     if (RICH.motion) this.puffAt(s.pos[0], s.pos[1]);
     this.move = { from: [s.pos[0], s.pos[1]], to, t: carry };
+    // the leg lifts in the frame the step starts: at a slow frame rate the next update is already past
+    // STRIDE, and a step drawn in two frames would show only feet together
+    this.faceFrame(strideFrame(0, this.steps, this.b.sprites[this.playerFrame(dir).key]?.frames ?? 1));
     return true;
   }
 
