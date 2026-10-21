@@ -194,13 +194,19 @@ class StealthPlayer {
     if (await this.page.eval<boolean>('!!document.querySelector(".dialog")')) await this.clearPlainDialog();
     const before = await this.state();
     const want = [before.pos[0] + VEC[dir][0], before.pos[1] + VEC[dir][1]];
-    await this.walk.holdTo(want, `the ${dir} tile from ${before.pos.join(',')}`);
-    const after = await this.state();
-    if (after.pos[0] === before.pos[0] && after.pos[1] === before.pos[1]) {
-      const why = await this.page.eval(`(() => { const g = window.__game, b = g.world.body, s = g.session;
-        return { feet: [b.x, b.y], tile: b.tile(), open: g.world.canWalk(s, ${want[0]}, ${want[1]}), paused: s.pauses, busy: s.busy, blocking: g.ui.blocking }; })()`);
-      throw new Error(`${dir} step was blocked at ${before.pos.join(',')}: ${JSON.stringify(why)}`);
+    // a box can open by itself under a walk here (the night's warning at dusk): it holds the body where it
+    // stands, so it is tapped away and the step is taken again, twice at most
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await this.walk.holdTo(want, `the ${dir} tile from ${(await this.state()).pos.join(',')}`);
+      const after = await this.state();
+      if (after.pos[0] !== before.pos[0] || after.pos[1] !== before.pos[1]) return;
+      if (await this.walk.closeBox()) continue;
+      break;
     }
+    const why = await this.page.eval(`(() => { const g = window.__game, b = g.world.body, s = g.session;
+      return { feet: [b.x, b.y], tile: b.tile(), open: g.world.canWalk(s, ${want[0]}, ${want[1]}), paused: s.pauses, busy: s.busy, blocking: g.ui.blocking,
+        layers: [...document.querySelectorAll('#ui > .layer')].map((e) => e.className) }; })()`);
+    throw new Error(`${dir} step was blocked at ${before.pos.join(',')}: ${JSON.stringify(why)}`);
   }
 
   async walkTo(x: number, y: number, what: string): Promise<void> {

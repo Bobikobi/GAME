@@ -128,6 +128,20 @@ export class FreeWalk {
     return this.page.eval<Dir>('window.__game.session.facing');
   }
 
+  /**
+   * A box that opened by itself under the walk (the night's warning, a task done) is tapped away, so the walk
+   * goes on: the box's own next tap, not an A press on the game, so a test that counts A presses is untouched.
+   * False when no plain box is open — a box with choices is the test's to answer.
+   */
+  async closeBox(): Promise<boolean> {
+    return this.page.eval<boolean>(`(() => {
+      const box = document.querySelector('.dialog');
+      if (!box || box.querySelector('.dialog-options')) return false;
+      box.click();
+      return true;
+    })()`);
+  }
+
   /** Let go of everything: no key down, no finger on the pad. */
   async release(): Promise<void> {
     for (const dir of [...this.held]) await this.page.key(ARROW[dir], 'keyUp');
@@ -145,21 +159,15 @@ export class FreeWalk {
     await this.page.eval(`window.__walk.until([${tile[0]}, ${tile[1]}], ${this.touch})`);
     const [tx, ty] = middleOf(tile);
     const end = Date.now() + timeoutMs;
-    const start = await this.feet();
     try {
       for (;;) {
         const now = await this.page.eval<Sample>('window.__walk.now()');
         const [fx, fy] = now.feet;
         const there = now.tile[0] === tile[0] && now.tile[1] === tile[1];
         if (there && (await this.page.eval<boolean>('window.__walk.done()'))) return;
-        // a box opening under the walk ends it where it stands (the word in town stops the walk); before the
-        // walk has moved, a world held by something else is waited out and the walk goes on when it lets go
-        if (now.stop) {
-          if (Math.hypot(fx - start[0], fy - start[1]) > 1) return;
-          if (Date.now() > end) throw new Error(`walking to ${what} at ${tile.join(',')} waited out a world that took no input: ${JSON.stringify(now.why)}`);
-          await sleep(POLL);
-          continue;
-        }
+        // a box opening under the walk ends it where it stands (the word in town stops the walk); the caller
+        // sees that the tile was not reached and may close a box that opened by itself and walk again
+        if (now.stop) return;
         // an axis whose span the feet are already in needs no push: a step then walks the one axis it names,
         // and the facing it draws is that axis's own (a diagonal only when the tile is off both spans)
         const ax = inSpan(fx, tile[0]) ? 0 : Math.sign(tx - fx);

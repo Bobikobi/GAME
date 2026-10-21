@@ -312,9 +312,15 @@ class Player {
       await this.walk.turnTo(dir, before.pos, `the ${dir} way out of ${before.pos.join(',')}`);
       return false;
     }
-    await this.walk.holdTo(want, `the ${dir} tile from ${before.pos.join(',')}`);
-    const after = (await this.state()).pos;
-    return after[0] !== before.pos[0] || after[1] !== before.pos[1];
+    // a box can open by itself under a walk (the night's warning): it holds the body where it stands, so it
+    // is tapped away and the step taken again, twice at most; a box that is the test's own stops the step
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await this.walk.holdTo(want, `the ${dir} tile from ${(await this.state()).pos.join(',')}`);
+      const after = (await this.state()).pos;
+      if (after[0] !== before.pos[0] || after[1] !== before.pos[1]) return true;
+      if (!(await this.walk.closeBox())) return false;
+    }
+    return false;
   }
 
   private async planTo(rect: Rect, what: string): Promise<Plan> {

@@ -132,9 +132,15 @@ class Door {
       await this.walk.turnTo(dir, before, `the ${dir} way out of ${before.join(',')}`);
       return false;
     }
-    await this.walk.holdTo(want, `the ${dir} tile from ${before.join(',')}`);
-    const after = (await this.state()).pos;
-    return after[0] !== before[0] || after[1] !== before[1];
+    // a box can open by itself under a walk (the night's warning, a task done): it holds the body where it
+    // stands, so it is tapped away and the step taken again, twice at most
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await this.walk.holdTo(want, `the ${dir} tile from ${(await this.state()).pos.join(',')}`);
+      const after = (await this.state()).pos;
+      if (after[0] !== before[0] || after[1] !== before[1]) return true;
+      if (!(await this.walk.closeBox())) break;
+    }
+    return false;
   }
 
   /** Walks to a tile from which the rect's tile is the one in front; the way is planned by the world's own walkable rule. */
