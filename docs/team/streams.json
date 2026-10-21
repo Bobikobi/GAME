@@ -112,6 +112,13 @@
       "plan": ["DECISIONS 2026-10-18 free movement replaces the tile-by-tile walk", "docs/design/GAP_DIMRAETH_DRAKANTOS.md section 5", "docs/team/NEXT.md section 22"],
       "branches": ["feat/free-walk"],
       "owner": null
+    },
+    {
+      "id": "kit-and-map",
+      "title": "The Field Kit direction as built: the kit screen, the map window and pocket chart, and the stall at the town's free corner with its draft in the save",
+      "plan": ["DECISIONS 2026-10-20 the UI's direction: Field Kit", "DECISIONS 2026-10-20 the map: its own window, the ground you walked, and the stall at the empty corner", "DECISIONS 2026-10-20 a player places a stall at the town's free corner (the owner's answer)", "DECISIONS 2026-10-21 the stall draft as built", "CR-104", "docs/design/SETTLEMENT.md 3.4 (sales while away and other players wait for the shared world)"],
+      "branches": ["feat/ui-kit-screen", "feat/ui-field-kit", "feat/stall-draft-save"],
+      "owner": "the kit-and-map session"
     }
   ]
 }

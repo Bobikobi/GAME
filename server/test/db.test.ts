@@ -1,11 +1,12 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { Pool } from 'pg';
-import { newState, step, type Bundle, type State } from '@game/kernel';
+import { newState, publicState, step, type Bundle, type State } from '@game/kernel';
 
-import { createPlayerRecord } from '../src';
+import { checkAccount, createGameApi, createPlayerRecord, listen } from '../src';
 import { createPgStore, insertPlayer, type Books } from '../src';
 import { migrate } from '../src/migrate';
 import { loadBundle } from '../../tools/test/helpers/world.js';
+import { SEED, STARTS, Wire, playOpening } from './support/phone.js';
 
 /** The database tests run against a real postgres, and are skipped when none is given (NEXT 18 b). */
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -200,5 +201,47 @@ describe.skipIf(!DATABASE_URL)('the database of Stage 2a (NEXT 18 b)', () => {
     await expect(
       pool.query("insert into accounts (email, name, birth_band) values ('Case@Example.com', 'Case', '13-15')"),
     ).rejects.toThrow(/accounts_email_is_lower_case/);
+  });
+
+  test('a played account replays from its stored log to its stored row, byte for byte (NEXT 18 f)', async () => {
+    const id = await account();
+    const acceptedAt = 1_000_000;
+    const clock = { now: acceptedAt };
+    await insertPlayer(pool, id, createPlayerRecord(bundle, newState(bundle, SEED), acceptedAt));
+
+    const server = createGameApi({
+      bundle,
+      store: createPgStore(pool),
+      now: () => clock.now,
+      resolvePlayerId: async () => id,
+    });
+    try {
+      const address = await listen(server, 0);
+      const wire = new Wire(bundle, `http://127.0.0.1:${address.port}`, publicState(newState(bundle, SEED)), clock);
+      await playOpening(wire, STARTS[0]);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+
+    // the books as postgres holds them: bigint comes back as text, and jsonb as what was written
+    const log = await pool.query<{ seq: string; action: unknown; tick: string }>(
+      'select seq, action, tick from action_log where account_id = $1 order by seq',
+      [id],
+    );
+    const ledger = await pool.query<{ delta_mg: string; action: unknown; tick: string }>(
+      'select delta_mg, action, tick from gold_ledger where account_id = $1 order by id',
+      [id],
+    );
+    const stored = (await createPgStore(pool).load(id))!;
+
+    expect(log.rows.length).toBeGreaterThanOrEqual(9);
+    expect(ledger.rows).toHaveLength(3);
+    const problems = checkAccount(bundle, {
+      seed: SEED,
+      log: log.rows.map((row) => ({ seq: Number(row.seq), action: row.action, tick: Number(row.tick) })),
+      state: stored.state,
+      ledger: ledger.rows.map((row) => ({ deltaMg: Number(row.delta_mg), action: row.action, tick: Number(row.tick) })),
+    });
+    expect(problems).toEqual([]);
   });
 });
