@@ -364,6 +364,7 @@ export function openBag(ui: UI): void {
           role: 'button',
           tabindex: '0',
           'aria-label': d ? `${item?.name ?? d.item}, ${d.price} gold` : `Stall slot ${i + 1}, empty`,
+          title: d ? 'Change the price, or take it off' : 'Drop an item here',
           ondragover: (e: Event) => e.preventDefault(),
           ondrop: (e: Event) => {
             e.preventDefault();
@@ -372,12 +373,14 @@ export function openBag(ui: UI): void {
           },
           onclick: () => {
             if (shopPick) openPrice(shopPick, i);
+            else if (d) openPrice(d.item, i);
           },
           onkeydown: (e: Event) => {
             const k = (e as KeyboardEvent).key;
-            if (shopPick && (k === 'Enter' || k === ' ')) {
+            const held = d && !shopPick ? d.item : shopPick;
+            if (held && (k === 'Enter' || k === ' ')) {
               e.preventDefault();
-              openPrice(shopPick, i);
+              openPrice(held, i);
             }
           },
         },
@@ -387,10 +390,11 @@ export function openBag(ui: UI): void {
       );
     });
     const at = priceFor;
+    const held = at ? stall[at.slot] : null;
     const dialog = at
       ? (() => {
           const item = b.items[at.item]!;
-          const suggested = Math.max(1, salePrice(b, s.state, at.item, 1) ?? 1);
+          const suggested = held?.item === at.item ? held.price : Math.max(1, salePrice(b, s.state, at.item, 1) ?? 1);
           const input = h('input', { class: 'shop-price-input', type: 'number', min: 1, max: 9999, value: String(suggested), 'aria-label': `Price for ${item.name} in gold` });
           window.setTimeout(() => input.select(), 0);
           return h(
@@ -412,6 +416,14 @@ export function openBag(ui: UI): void {
                   priceFor = undefined;
                   render();
                 }, 'small'),
+                held
+                  ? button('Take it off', () => {
+                      stall[at.slot] = null;
+                      s.save();
+                      priceFor = undefined;
+                      render();
+                    }, 'small')
+                  : null,
                 button('Cancel', () => {
                   priceFor = undefined;
                   render();

@@ -375,6 +375,18 @@ describe('the stall draft in the save', () => {
     expect(restored[5]).toEqual({ item: 'core/axe', qty: 1, price: 12 });
   });
 
+  test('a draft cleared back to empty leaves the field out of the save again', () => {
+    const session = startedSession();
+    stallDraftOf(session)![0] = { item: 'core/axe', qty: 1, price: 7 };
+    session.save();
+    expect('stallDraft' in (JSON.parse(storage.getItem(SAVE_KEY)!) as Record<string, unknown>)).toBe(true);
+
+    stallDraftOf(session)![0] = null;
+    session.save();
+    expect('stallDraft' in (JSON.parse(storage.getItem(SAVE_KEY)!) as Record<string, unknown>)).toBe(false);
+    expect(Session.restore(bundle)?.started).toBe(true);
+  });
+
   test('a session that keeps no save has no draft, so the kit keeps it in the open panel', () => {
     // the server door has no such field on its state
     expect(stallDraftOf({ seen: new Set<string>(), seenChunks: new Set<string>() })).toBeUndefined();
