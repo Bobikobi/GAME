@@ -42,11 +42,13 @@ async function bookRows(id: string): Promise<{ log: number; ledger: number }> {
 }
 
 let accounts = 0;
+let names = 0;
 
 async function account(email = `player-${++accounts}@example.com`): Promise<string> {
+  // a name is unique in the world (migration 0003), so each account gets its own and only the email can collide
   const { rows } = await pool.query<{ id: string }>(
     'insert into accounts (email, name, birth_band) values ($1, $2, $3) returning id',
-    [email, 'Tess', '18+'],
+    [email, `Tess ${++names}`, '18+'],
   );
   return rows[0]!.id;
 }
@@ -60,7 +62,7 @@ function started(): State {
 describe.skipIf(!DATABASE_URL)('the database of Stage 2a (NEXT 18 b)', () => {
   test('the migrations apply once, and a second run applies nothing', async () => {
     const first = await migrate(pool);
-    expect(first).toEqual(['0001_accounts.sql', '0002_player_state.sql']);
+    expect(first).toEqual(['0001_accounts.sql', '0002_player_state.sql', '0003_signin.sql']);
     expect(await migrate(pool)).toEqual([]);
   });
 
@@ -186,7 +188,7 @@ describe.skipIf(!DATABASE_URL)('the database of Stage 2a (NEXT 18 b)', () => {
 
   test('one person is one account, and one identity belongs to one provider and subject', async () => {
     const id = await account('double@example.com');
-    await expect(account('double@example.com')).rejects.toThrow(/duplicate key value/);
+    await expect(account('double@example.com')).rejects.toThrow(/"accounts_email"/);
     await pool.query("insert into sign_in_identities (provider, subject, account_id) values ('google', 'sub-1', $1)", [id]);
     await expect(
       pool.query("insert into sign_in_identities (provider, subject, account_id) values ('google', 'sub-1', $1)", [id]),
