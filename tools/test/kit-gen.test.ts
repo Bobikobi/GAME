@@ -8,9 +8,9 @@ import { afterAll, describe, expect, test } from 'vitest';
 
 import {
   type GenEntry, type ManifestLine, buildPrompt, enlargeOnMagenta, findOutput, galleryHtml, gridWarnings,
-  importTile, loadReference, parseArgs, parseSpec, parseTokens,
+  importPalette, importRamps, importTile, loadReference, parseArgs, parseSpec, parseTokens,
 } from '../src/kit/gen.js';
-import { CORE_PALETTE, hexToRgb } from '../src/kit/palette.js';
+import { CORE_PALETTE, CORE_RAMPS, hexToRgb } from '../src/kit/palette.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const scratch = mkdtempSync(join(tmpdir(), 'kit-gen-'));
@@ -111,6 +111,31 @@ describe('the prompt', () => {
     expect(prompt).toContain('not a copy');
     expect(prompt).toContain('restyled');
     expect(prompt).not.toContain('same colors');
+  });
+
+  test('ramps name the shared ramps a sprite imports in, and rich with none means all of them', () => {
+    const tub: GenEntry = { ...elder, name: 'tub', ref: 'refs/tub.png', what: 'round wooden tub', seen: 'a round plum tub', confirmed_by: 'owner', palette: 'ramp-added', ramps: ['plum', 'wood'] };
+    expect(importRamps(tub)).toEqual(['plum', 'wood']);
+    expect(importPalette(tub)).toHaveLength(32 + 4 + 1);
+    expect(importRamps({ style: 'rich' })).toEqual(CORE_RAMPS.map((r) => r.id));
+    expect(importPalette({})).toEqual(CORE_PALETTE);
+    expect(buildPrompt(tub, { width: 75, height: 69, data: Buffer.alloc(0) }, 'tub.png')).toContain('its plum, wood ramps');
+    expect(() => parseSpec(spec([{ ...tub, ramps: ['neon'] }]))).toThrow(/not a shared ramp/);
+    expect(() => parseSpec(spec([{ ...tub, ramps: ['plum', 'plum'] }]))).toThrow(/twice/);
+    expect(() => parseSpec(spec([{ ...tub, ramps: ['plum', 'wood', 'bark', 'rust', 'moss'] }]))).toThrow(/one to four/);
+    expect(() => parseSpec(spec([{ ...tub, palette: 'fits' }]))).toThrow(/ramp-added/);
+    expect(parseSpec(spec([tub]))[0]?.ramps).toEqual(['plum', 'wood']);
+  });
+
+  test('style rich asks for painterly pixel art and points at the style examples', () => {
+    const rich: GenEntry = { ...elder, name: 'tub', ref: 'refs/tub.png', what: 'round wooden tub', seen: 'a round plum tub', confirmed_by: 'owner', palette: 'ramp-added', style: 'rich', style_refs: ['refs/a.png', 'refs/b.png'] };
+    const prompt = buildPrompt(rich, { width: 75, height: 69, data: Buffer.alloc(0) }, 'tub.png');
+    expect(prompt).toContain('Painterly pixel art');
+    expect(prompt).toContain('other attached images show');
+    expect(prompt).not.toContain('two-tone');
+    expect(buildPrompt(elder, { width: 16, height: 24, data: Buffer.alloc(0) }, 'elder.png')).toContain('two-tone');
+    expect(() => parseSpec(spec([{ ...rich, style: 'fancy' }]))).toThrow(/style/);
+    expect(() => parseSpec(spec([{ ...rich, style_refs: ['refs/a.jpg'] }]))).toThrow(/style_refs/);
   });
 
   test('a tile fills its square, repeats and has no outline', () => {

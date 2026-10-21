@@ -30,6 +30,11 @@
  * `palette` decision, and its prompt asks for the object in our style, not a copy. Procedure:
  * `docs/art/PROP_FROM_REF.md`.
  *
+ * An entry's `ramps` names the shared ramps of palette v2 it draws in (`palette.ts`, DECISIONS 2026-10-21):
+ * the importer snaps onto the 32 plus those ramps' steps, and the manifest line carries the names for the
+ * sprite's kit entry. `"style": "rich"` asks for painterly pixel art and dithers between neighbouring
+ * steps on import; with no `ramps` of its own it draws in every shared ramp.
+ *
  * Nothing is written into `content/`: a result goes into the kit by hand, in a wave. `--dry` writes
  * the references and the prompts only; `--reimport` imports the last raw images again without
  * calling Codex. Each image costs one to two minutes and 14k to 37k Codex tokens (measured
@@ -44,7 +49,7 @@ import { PNG } from 'pngjs';
 
 import { colourCount, gridPrompt, parseGrid, pngToGrid, renderGrid, seamWarnings } from './gengrid.js';
 import { importSprite, nearestPaletteIndex } from './import.js';
-import { CORE_PALETTE, type Rgb, hexToRgb } from './palette.js';
+import { CORE_PALETTE, CORE_RAMPS, type Rgb, hexToRgb, paletteWithRamps } from './palette.js';
 import {
   type Motif, type ScatterEntry, motifPrompt, motifWarnings, parseMotif, renderMotif, scatterProblem, scatterTile, tileWarnings, variantsOf,
 } from './scatter.js';
@@ -74,8 +79,14 @@ export interface GenEntry extends ScatterEntry {
   seen?: string;
   /** Outside reference only: who confirmed `seen` against the picture. */
   confirmed_by?: string;
-  /** Outside reference only: the palette decision taken before the first call (step 0b): its hues fit the core ramps, it is restyled into them, or a ramp was added by owner decision. */
+  /** Outside reference only: the palette decision taken before the first call (step 0b): its hues fit the core ramps, it is restyled into them, or it draws in shared ramps named in `ramps` (`ramp-added`). */
   palette?: 'fits' | 'restyle' | 'ramp-added';
+  /** The shared ramps of palette v2 this sprite draws in (ids from `CORE_RAMPS`, at most four, the first gives the outline): the importer allows the 32 plus their steps. */
+  ramps?: string[];
+  /** `rich` asks for painterly pixel art (hue shifts inside a surface, ambient light, texture) and dithers between neighbouring palette colours on import; with no `ramps` it draws in every shared ramp. Default `kit`. */
+  style?: 'kit' | 'rich';
+  /** PNG paths (repo root) attached after the reference as style examples; the prompt says to match their shading, hue shifts, texture and outline. */
+  style_refs?: string[];
 }
 
 /** A PNG that is not a kit sprite: a picture from outside the game, drawn in our style rather than redrawn. */
@@ -111,6 +122,8 @@ export interface ManifestLine {
   /** A scatter tile: the seed it was placed from and the raw motif files it was made of. */
   seed?: string;
   motifs?: string[];
+  /** The shared ramps the sprite was imported in, for its kit entry's `ramps`. */
+  ramps?: string[];
 }
 
 export function parseSpec(text: string): GenEntry[] {
@@ -141,6 +154,15 @@ export function parseSpec(text: string): GenEntry[] {
     }
     if (entry.anchor !== undefined && entry.anchor !== 'center' && entry.anchor !== 'bottom') throw new Error(`${where}.anchor must be center or bottom`);
     if (entry.detail !== undefined && typeof entry.detail !== 'string') throw new Error(`${where}.detail must be text`);
+    if (entry.style !== undefined && entry.style !== 'kit' && entry.style !== 'rich') throw new Error(`${where}.style must be kit or rich`);
+    if (entry.ramps !== undefined) {
+      const ids = CORE_RAMPS.map((r) => r.id);
+      if (!Array.isArray(entry.ramps) || entry.ramps.length === 0 || entry.ramps.length > 4) throw new Error(`${where}.ramps names one to four shared ramps (${ids.join(', ')})`);
+      for (const id of entry.ramps) if (!ids.includes(id as string)) throw new Error(`${where}.ramps: "${String(id)}" is not a shared ramp (${ids.join(', ')})`);
+      if (new Set(entry.ramps).size !== entry.ramps.length) throw new Error(`${where}.ramps names a ramp twice`);
+      if (isOutsideReference(entry.ref) && entry.palette !== 'ramp-added') throw new Error(`${where}: an outside reference that draws in ramps sets palette to ramp-added (step 0b)`);
+    }
+    if (entry.style_refs !== undefined && (!Array.isArray(entry.style_refs) || entry.style_refs.some((p) => typeof p !== 'string' || extname(p) !== '.png'))) throw new Error(`${where}.style_refs must be PNG paths`);
     if (isOutsideReference(entry.ref)) {
       if (typeof entry.seen !== 'string' || entry.seen.trim() === '') throw new Error(`${where}.seen must say what the eye saw in the outside reference, confirmed before any name (docs/art/PROP_FROM_REF.md step 0a)`);
       if (typeof entry.confirmed_by !== 'string' || entry.confirmed_by.trim() === '') throw new Error(`${where}.confirmed_by must name who confirmed "seen" against the picture (step 0a)`);
@@ -195,7 +217,7 @@ export function buildPrompt(entry: GenEntry, reference: Raster, file: string): s
   const outside = isOutsideReference(entry.ref);
   const palette = entry.palette === 'restyle'
     ? 'its colours restyled into our limited palette ramps, the nearest ramps rather than the original hues'
-    : entry.palette === 'ramp-added' ? 'in our limited palette including its newly added ramp' : 'in our limited palette';
+    : entry.palette === 'ramp-added' ? `in our limited palette and its ${(entry.ramps ?? []).join(', ') || 'deeper'} ramps` : 'in our limited palette';
   return [
     outside
       ? `Use your image generation tool. The attached image is a reference from outside our game: ${entry.what}, ${reference.width}x${reference.height} pixels, seen as: ${(entry.seen ?? '').trim()}. It is shown enlarged on magenta.`
@@ -205,7 +227,12 @@ export function buildPrompt(entry: GenEntry, reference: Raster, file: string): s
       : `Generate a NEW image of the same ${entry.what} - same design, same colors, same top-down three-quarter view - redrawn as pixel art ${entry.width} pixels wide and ${entry.height} pixels tall, far more pixels than the reference${detail}.`,
     `Every pixel stays a crisp square of one flat color, no anti-aliasing, each one about 1/${entry.width} of the drawing's width: draw no smaller pixels than that.`,
     kindLine,
-    'Limited palette, two-tone shading, solid flat pure magenta #FF00FF background around it, no text, no shadow, no extra objects.',
+    entry.style === 'rich'
+      ? 'Painterly pixel art: every surface shifts hue as it turns from light to shadow (warm lights, cool darks), with ambient light and colour bounced from neighbouring parts, visible material texture (wood grain, stone pores, cloth weave) drawn in pixels, and an outline whose colour follows the surface it borders rather than one flat dark line. Rich colour, as many shades as the object needs. Solid flat pure magenta #FF00FF background around it, no text, no shadow, no extra objects.'
+      : 'Limited palette, two-tone shading, solid flat pure magenta #FF00FF background around it, no text, no shadow, no extra objects.',
+    (entry.style_refs ?? []).length > 0
+      ? `The ${entry.style_refs?.length === 1 ? 'other attached image shows' : 'other attached images show'} the drawing style to match: the same shading depth, hue shifts, texture and outline treatment.`
+      : '',
     `The ${grid} drawing fills most of the image.`,
     `Do not process the image with code afterwards; just generate it and save it as ${file} in the current directory.`,
   ].join(' ');
@@ -479,7 +506,8 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
   } else {
     const stamp = at.replace(/[:.]/g, '-');
     // a text grid is written, not drawn: no picture goes in and no image tool is needed
-    const asked = askCodex(options, version, entry.name, stamp, line.prompt, grid ? [] : ['-i', refPath], grid ? `${entry.name}.txt` : file);
+    const styleRefs = (entry.style_refs ?? []).flatMap((p) => ['-i', join(ROOT, p)]);
+    const asked = askCodex(options, version, entry.name, stamp, line.prompt, grid ? [] : ['-i', refPath, ...styleRefs], grid ? `${entry.name}.txt` : file);
     line.codex = asked.codex;
     const saved = asked.saved;
     if (saved === null) {
@@ -502,14 +530,15 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
       line.colors = colourCount(rows);
       line.warnings.push(...seamWarnings(rows));
     } else if (kind === 'tile') {
-      const result = importTile(raw, entry.width, entry.height);
+      const result = importTile(raw, entry.width, entry.height, importPalette(entry));
       writeFileSync(outPath, result.png);
       line.logical = result.logical;
       line.colors = result.colors;
       line.warnings.push(...gridWarnings(result.logical, entry));
     } else {
       const result = importSprite(raw, {
-        width: entry.width, height: entry.height, anchor: entry.anchor ?? 'center', palette: CORE_PALETTE,
+        width: entry.width, height: entry.height, anchor: entry.anchor ?? 'center',
+        palette: importPalette(entry), dither: entry.style === 'rich',
       });
       writeFileSync(outPath, result.png);
       line.grid = result.grid;
@@ -519,10 +548,23 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
     }
     writeFileSync(join(options.out, file), readFileSync(outPath));
     line.out = own;
+    const ramps = importRamps(entry);
+    if (ramps.length > 0) line.ramps = [...ramps];
   } catch (error) {
     line.error = `import: ${(error as Error).message}`;
   }
   return line;
+}
+
+/** The shared ramps an entry imports in: the ones it names, else every shared ramp for `rich`, else none. */
+export function importRamps(entry: Pick<GenEntry, 'ramps' | 'style'>): readonly string[] {
+  if (entry.ramps !== undefined) return entry.ramps;
+  return entry.style === 'rich' ? CORE_RAMPS.map((r) => r.id) : [];
+}
+
+/** The colours the importer may snap onto for an entry: the 32, plus the steps of the ramps it imports in. */
+export function importPalette(entry: Pick<GenEntry, 'ramps' | 'style'>): readonly string[] {
+  return paletteWithRamps(importRamps(entry));
 }
 
 /** Does `--only` name this entry, or one of a scatter entry's motifs (`meadow_tuft`)? */

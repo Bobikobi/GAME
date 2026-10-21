@@ -36,17 +36,20 @@ owner to confirm or correct. The confirmed words go into the spec as `seen`, the
 ## Step 0b: the palette decision (before the first call)
 
 Read the object's hue families and step counts from the crop and set them against
-`tools/src/kit/palette.ts`. `DECISIONS.md` 2026-10-20 records that the 32-colour palette, not
-the 64 px grid, is the binding ceiling, and that changing it is an owner decision. So answer in
-one line and write it into the spec as `palette`:
+`tools/src/kit/palette.ts`: the 32 core colours, and the shared ramps of palette v2 (`CORE_RAMPS`,
+13 ramps of six steps; `DECISIONS.md` 2026-10-21 "The palette deepens"). Answer in one line and
+write it into the spec as `palette`:
 
-- `fits`: the hues exist with enough steps. Continue.
-- `restyle`: they do not (a plum object against two purples, twelve wood steps against a
-  five-step ramp), and the owner accepts the object redrawn into the existing ramps.
-- `ramp-added`: the owner decided to add or deepen a ramp; `palette.ts` changed first, in its
-  own pull request.
+- `fits`: the hues exist in the 32 with enough steps. Continue; the sprite names no ramp.
+- `restyle`: they do not, and the owner accepts the object redrawn into the 32 (a plum object
+  against two purples). The sprite names no ramp.
+- `ramp-added`: the object draws in shared ramps; name them in the spec's `ramps` (one to four,
+  the first gives the outline: `["wood", "green"]`). The importer allows the 32 plus those
+  steps, the manifest line carries the names, and the sprite's kit entry repeats them in its
+  `ramps`. A material no shared ramp holds is an owner decision: a new ramp in `palette.ts`,
+  in its own pull request, before the first call.
 
-`kit:gen` refuses an outside reference without one of the three.
+`kit:gen` refuses an outside reference without one of the three, and `ramps` without `ramp-added`.
 
 ## Step 1: the references
 
