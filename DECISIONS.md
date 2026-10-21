@@ -2200,3 +2200,8 @@ The phone keeps every step since the start (cap `OPENING_LOG_MAX` 2000, saved wi
 Books: a kept opening is the account's first `action_log` row `{kind:'opening', seed, log}` with its gold rows, so `checkAccount` proves a handed-over account (test: handover.test.ts). The account, its state and its books are one transaction (signin-db test).
 Open for the owner: the two caps are mine (an honest opening carries about 80 gold of quests); the client wire is same-origin and the server has no CORS, so a build with `VITE_GAME_SERVER` on another origin needs the h6 cutover first; a phone that walked faster than the movement credit allows loses its opening, not its account.
 Model: opus. Link: PR feat/handover-opening.
+
+## 2026-10-21 ✅ The opening handover's two caps stand: one hour of game time, 150 gold of worth
+The builder of 18 d (#277) set the caps an uploaded opening is held to: at most one hour of game time (`OPENING_TIME_MAX_MS`) and at most 150 gold of worth, the purse plus what the bag sells for (`OPENING_PAY_MAX_MG`, in `server/src/handover.ts`). The opening runs about ten minutes and its quests pay 80 gold, so an honest opening fits with room; a forged one can carry no more than the caps, and an opening past either starts the account fresh.
+The owner, 21.10: approved as built.
+**Retry when:** the opening's pay or length changes (the test "the caps leave an honest opening room" fails first), or honest players are seen starting fresh. Model: claude-opus-5-5 (the manager, game-1b); the numbers are game-65's.
