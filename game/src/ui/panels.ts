@@ -5,6 +5,7 @@
  */
 import {
   KERNEL_VERSION,
+  WEAR_SLOTS,
   bagCapacity,
   bagUsed,
   characterLevel,
@@ -12,7 +13,11 @@ import {
   professionLevel,
   recipeTier,
   salePrice,
+  setComplete,
+  setPieces,
   skillPoints,
+  wornValue,
+  type WearSlot,
 } from '@game/kernel';
 import { app } from '../app';
 import { sound } from '../audio';
@@ -29,6 +34,8 @@ import {
 import type { SignInfo } from '../scenes/world';
 import type { StoneView } from '../stone';
 import { Session } from '../session';
+import type { GameSession } from '../session-surface';
+import type { ActResult } from '../session-surface';
 import { ATTRIBUTE_MAX, activeQuests, attributeEffects, bagGroups, classLine, clock, eatLabel, gold, itemBenefit, itemName, journalGroups, questSteps, restoreHint, seconds, sellable, stacks, stationGate, stationText, stationUpgrades, toolOpens, wornAt } from '../text';
 import { s1, s1Available } from '../net/s1';
 import { say } from './dialog';
@@ -68,44 +75,413 @@ function need(have: number, qty: number): HTMLElement {
   return h('span', { class: have >= qty ? 'have' : 'lack' }, `${Math.min(have, qty)}/${qty}`);
 }
 
-// ------------------------------------------------------------------ bag
+// ------------------------------------------------------------------ kit
+
+/** The effects the kit summarizes, in the order the card shows them. */
+type KitTab = 'bag' | 'outfit' | 'skills' | 'shop';
+
+const KIT_EFFECTS: readonly [string, string][] = [
+  ['gather_speed_pct', 'Gathering'],
+  ['craft_chance_pct', 'Craft'],
+  ['rare_find_pct', 'Rare finds'],
+];
+
+const SLOT_LABEL: Record<WearSlot, string> = {
+  head: 'Head',
+  top: 'Top',
+  legs: 'Legs',
+  outfit: 'Outfit',
+  feet: 'Feet',
+  jewelry1: 'Jewel 1',
+  jewelry2: 'Jewel 2',
+  hand: 'Hand',
+};
+
+/** A set id is its creator's path and a name; the card reads the name alone. */
+function setLabel(id: string): string {
+  const name = id.split('/').pop() ?? id;
+  return name.replaceAll('-', ' ').replace(/^./, (c) => c.toUpperCase());
+}
+
+function kitEffects(s: GameSession): { label: string; value: number }[] {
+  return KIT_EFFECTS.map(([effect, label]) => ({ label, value: wornValue(app.bundle, s.state, effect) }));
+}
+
+/** The first set the work clothes touch, with how many of its pieces are on. */
+function kitSet(s: GameSession): { name: string; held: number; total: number; full: boolean } | undefined {
+  const b = app.bundle;
+  const worn = Object.values(s.state.player.worn);
+  for (const [set, ids] of Object.entries(setPieces(b))) {
+    const held = ids.filter((id) => worn.includes(id)).length;
+    if (held > 0) return { name: setLabel(set), held, total: ids.length, full: setComplete(b, s.state, set) };
+  }
+  return undefined;
+}
+
+/** The attributes, their real before-to-after numbers, the professions and the techniques known at each level. */
+function skillsBody(ui: UI, after: () => void): HTMLElement {
+  const s = app.session;
+  const b = app.bundle;
+  if (!s) return h('p', { class: 'muted' }, 'No character yet.');
+  const st = s.state;
+  const points = skillPoints(b, st);
+  return h(
+    'div',
+    null,
+    h('p', null, h('b', null, `${st.player.name ? `${st.player.name}, level` : 'Level'} ${characterLevel(b, st)}`), points > 0 ? ` - ${points} skill point${points > 1 ? 's' : ''} to spend` : ''),
+    h(
+      'div',
+      { class: 'attrs' },
+      attributeEffects(b, st).map((fx) => {
+        const value = st.player.attrs[fx.attr];
+        const full = value >= ATTRIBUTE_MAX;
+        return h(
+          'div',
+          { class: 'attr' },
+          h('span', { class: 'attr-name' }, `${fx.name} - ${fx.what}`),
+          h('span', { class: 'pips' }, Array.from({ length: ATTRIBUTE_MAX }, (_, i) => h('i', { class: i < value ? 'on' : '' }))),
+          h('span', { class: 'muted' }, `${fx.now} -> ${full ? 'at its limit' : fx.next}`),
+          fx.note ? h('span', { class: 'muted' }, fx.note) : null,
+          points > 0 && !full
+            ? button('+', async () => {
+                const r = await s.act({ t: 'spend', attr: fx.attr });
+                if (!r.ok) ui.toast(r.error, 'bad');
+                after();
+              }, 'small plus')
+            : null,
+        );
+      }),
+    ),
+    h('h3', null, 'Professions'),
+    Object.entries(b.professions)
+      .sort(([x], [y]) => x.localeCompare(y))
+      .map(([id, prof]) => {
+        const level = professionLevel(b, st, id);
+        const xp = st.player.xp[id] ?? 0;
+        const prev = level >= 2 ? (prof.xp_levels[level - 2] ?? 0) * 1000 : 0;
+        const next = prof.xp_levels[level - 1];
+        const pct = next === undefined ? 100 : Math.floor(((xp - prev) / (next * 1000 - prev)) * 100);
+        const upcoming = prof.techniques.find((t) => t.level > level);
+        return h(
+          'div',
+          { class: 'card' },
+          h('b', null, `${prof.name} ${level}`),
+          h('span', { class: 'meter-bar wide' }, h('i', { style: `width:${Math.max(0, Math.min(100, pct))}%` })),
+          prof.techniques.filter((t) => t.level <= level).map((t) => h('div', { class: 'tech' }, `${t.name}: ${t.text}`)),
+          upcoming ? h('div', { class: 'muted' }, `At level ${upcoming.level}: ${upcoming.name}`) : null,
+        );
+      }),
+  );
+}
 
 export function openBag(ui: UI): void {
   const s = app.session;
-  if (!s) return;
+  if (!s || s.waiting) return;
   const b = app.bundle;
-  const p = panel(ui, 'Bag', 'bag');
+  const p = panel(ui, 'Your kit', 'bag');
   let selected: string | undefined;
+  let tab: KitTab = 'bag';
+  let filter = 'All';
+  let look = false;
+  let shopPick: string | undefined;
+  let priceFor: { item: string; slot: number } | undefined;
+  type Draft = { item: string; qty: number; price: number };
+  const stall: (Draft | undefined)[] = Array.from({ length: 6 }, () => undefined);
 
-  const render = () => {
-    const bag = s.state.player.bag;
-    const ids = Object.keys(bag);
-    if (selected && !bag[selected]) selected = undefined;
-    // the bag's categories by kind (D-CRAFT-6, CR-11): a heading and a grid each
-    const groups = bagGroups(b, ids).map((g) => [
-      h('h3', null, g.label),
-      h(
-        'div',
-        { class: 'slots' },
-        g.ids.map((id) =>
-          h(
-            'button',
-            { class: `slot ${selected === id ? 'on' : ''} r-${b.items[id]?.rarity ?? 'common'}`, type: 'button', title: itemName(b, id), onclick: () => pick(id) },
-            sprite(b, b.items[id]?.sprite, 2),
-            h('span', { class: 'count' }, String(bag[id])),
-          ),
-        ),
-      ),
-    ]);
-    const detail = selected ? itemDetail(selected, render) : h('p', { class: 'muted' }, ids.length ? 'Pick something to look at it.' : 'Your bag is empty. Gather something!');
-    p.body.replaceChildren(h('div', { class: 'bag-head' }, `${bagUsed(s.state)} / ${bagCapacity(b, s.state)} places used`), ...groups.flat(), detail);
-    return detail;
+  const layer = () => (look ? s.state.player.looks : s.state.player.worn);
+  const figure = () => {
+    const starter = b.starters[s.state.player.starter ?? ''] ?? Object.entries(b.starters).sort(([x], [y]) => x.localeCompare(y))[0]?.[1];
+    const ref = (s.state.player.look === 1 && starter?.sprite_alt) || starter?.sprite;
+    return sprite(b, ref, 3, 1);
   };
-
-  // with the bag in categories the detail can sit below the fold on a phone: bring it into view
   const pick = (id: string) => {
     selected = id;
-    render().scrollIntoView({ block: 'nearest' });
+    tab = 'bag';
+    render();
+  };
+
+  const slotButton = (slot: WearSlot, big = false): HTMLElement => {
+    const id = layer()[slot];
+    const item = id ? b.items[id] : undefined;
+    const label = SLOT_LABEL[slot];
+    if (!item) return h('div', { class: `kit-slot empty ${big ? 'big' : ''}`.trim(), title: `${label}: empty` }, h('span', { class: 'lab' }, label));
+    return h(
+      'button',
+      {
+        class: `kit-slot ${big ? 'big' : ''}`.trim(),
+        type: 'button',
+        title: `${label}: ${item.name}`,
+        'aria-label': `${label}: ${item.name}`,
+        onclick: () => pick(id!),
+      },
+      sprite(b, item.sprite, big ? 3 : 2),
+      h('span', { class: 'lab' }, label),
+    );
+  };
+
+  const toggle = (): HTMLElement =>
+    h(
+      'div',
+      { class: 'kit-toggle' },
+      h('button', { class: look ? '' : 'on', type: 'button', 'aria-pressed': String(!look), onclick: () => ((look = false), render()) }, 'Work'),
+      h('button', { class: look ? 'on' : '', type: 'button', 'aria-pressed': String(look), onclick: () => ((look = true), render()) }, 'Look'),
+    );
+
+  const bagView = (): HTMLElement => {
+    const ids = Object.keys(s.state.player.bag).sort((x, y) => itemName(b, x).localeCompare(itemName(b, y)));
+    const groups = bagGroups(b, ids);
+    const labels = ['All', ...groups.map((g) => g.label)];
+    if (filter !== 'All' && !labels.includes(filter)) filter = 'All';
+    const shown = filter === 'All' ? ids : (groups.find((g) => g.label === filter)?.ids ?? []);
+    const cap = bagCapacity(b, s.state);
+    const count = filter === 'All' ? Math.max(cap, shown.length) : shown.length;
+    const cells = Array.from({ length: count }, (_, i) => {
+      const id = shown[i];
+      if (!id) return h('div', { class: 'kit-cell empty' });
+      const item = b.items[id]!;
+      const n = s.state.player.bag[id] ?? 0;
+      return h(
+        'button',
+        {
+          class: `kit-cell r-${item.rarity} ${selected === id ? 'on' : ''}`.trim(),
+          type: 'button',
+          title: `${itemName(b, id)} x${n}`,
+          'aria-label': `${itemName(b, id)}, ${n}`,
+          onclick: () => pick(id),
+        },
+        sprite(b, item.sprite, 2),
+        h('span', { class: 'count' }, String(n)),
+      );
+    });
+    const used = bagUsed(s.state);
+    return h(
+      'section',
+      { class: 'kit-bag' },
+      h(
+        'div',
+        { class: 'kit-bag-head' },
+        h(
+          'div',
+          { class: 'kit-filters' },
+          labels.map((label) =>
+            h('button', { class: `kit-filter ${filter === label ? 'on' : ''}`.trim(), type: 'button', onclick: () => ((filter = label), render()) }, label),
+          ),
+        ),
+        h('span', { class: 'kit-cap' }, `${used} / ${cap}`),
+      ),
+      ids.length === 0
+        ? h('p', { class: 'kit-hint' }, 'Your bag is empty. Gather something!')
+        : h('div', { class: 'kit-grid' }, cells, shown.length === 0 ? h('p', { class: 'kit-hint' }, 'Nothing here yet.') : null),
+      h(
+        'div',
+        { class: 'kit-foot' },
+        h('span', null, `${used} of ${cap}`),
+        h('span', { class: 'kit-bar' }, h('i', { style: `width:${Math.round((used / Math.max(1, cap)) * 100)}%` })),
+        h('span', null, `${Math.max(0, cap - used)} free`),
+      ),
+    );
+  };
+
+  const detailView = (): HTMLElement =>
+    h(
+      'section',
+      { class: 'kit-detail', 'aria-live': 'polite' },
+      selected
+        ? itemDetail(selected, render)
+        : h('div', { class: 'detail kit-card empty' }, h('p', { class: 'kit-hint' }, Object.keys(s.state.player.bag).length ? 'Pick an item to read it.' : 'Your bag is empty. Gather something!')),
+    );
+
+  const wornView = (): HTMLElement => {
+    const fx = kitEffects(s);
+    const set = kitSet(s);
+    const slots = WEAR_SLOTS;
+    const rows = slots.map((slot) => {
+      const id = layer()[slot];
+      const item = id ? b.items[id] : undefined;
+      return h(
+        'button',
+        { class: 'worn-row', type: 'button', disabled: !item, onclick: () => item && id && pick(id) },
+        h('span', { class: 'worn-slot' }, SLOT_LABEL[slot]),
+        h('span', { class: 'worn-name' }, item?.name ?? 'Empty'),
+      );
+    });
+    return h(
+      'section',
+      { class: 'kit-worn' },
+      h(
+        'div',
+        { class: 'worn-stage' },
+        h('div', { class: 'worn-slots' }, slots.slice(0, 4).map((slot) => slotButton(slot, true))),
+        h('div', { class: 'worn-figure' }, figure()),
+        h('div', { class: 'worn-slots' }, slots.slice(4).map((slot) => slotButton(slot, true))),
+        toggle(),
+      ),
+      h(
+        'div',
+        { class: 'worn-side' },
+        h('div', { class: 'kit-effects' }, fx.map((e) => h('span', null, `${e.label} `, h('b', null, `+${e.value}%`)))),
+        set ? h('div', { class: 'kit-set' }, `${set.name} set ${set.held}/${set.total}${set.full ? ' · full' : ''}`) : null,
+        h('div', { class: 'worn-list' }, rows),
+      ),
+    );
+  };
+
+  const shopView = (): HTMLElement => {
+    const ids = Object.keys(s.state.player.bag).sort((x, y) => itemName(b, x).localeCompare(itemName(b, y)));
+    const rows = ids.map((id) => {
+      const item = b.items[id]!;
+      const n = s.state.player.bag[id] ?? 0;
+      return h(
+        'button',
+        {
+          class: `shop-item ${shopPick === id ? 'on' : ''}`.trim(),
+          type: 'button',
+          draggable: 'true',
+          title: `Drag ${item.name} to a stall slot`,
+          onclick: () => {
+            shopPick = id;
+            render();
+          },
+          ondragstart: (e: Event) => {
+            const de = e as DragEvent;
+            de.dataTransfer?.setData('text/plain', id);
+            if (de.dataTransfer) de.dataTransfer.effectAllowed = 'move';
+          },
+        },
+        sprite(b, item.sprite, 2),
+        h('span', { class: 'shop-name' }, item.name),
+        h('span', { class: 'shop-count' }, `x${n}`),
+      );
+    });
+    const slots = stall.map((d, i) => {
+      const item = d ? b.items[d.item] : undefined;
+      return h(
+        'div',
+        {
+          class: `shop-slot ${d ? 'filled' : ''} ${priceFor?.slot === i ? 'pricing' : ''}`.trim(),
+          role: 'button',
+          tabindex: '0',
+          'aria-label': d ? `${item?.name ?? d.item}, ${d.price} gold` : `Stall slot ${i + 1}, empty`,
+          ondragover: (e: Event) => e.preventDefault(),
+          ondrop: (e: Event) => {
+            e.preventDefault();
+            const id = (e as DragEvent).dataTransfer?.getData('text/plain');
+            if (id && b.items[id]) openPrice(id, i);
+          },
+          onclick: () => {
+            if (shopPick) openPrice(shopPick, i);
+          },
+          onkeydown: (e: Event) => {
+            const k = (e as KeyboardEvent).key;
+            if (shopPick && (k === 'Enter' || k === ' ')) {
+              e.preventDefault();
+              openPrice(shopPick, i);
+            }
+          },
+        },
+        d && item
+          ? [sprite(b, item.sprite, 2), h('span', { class: 'shop-name' }, item.name), h('span', { class: 'price' }, String(d.price))]
+          : [h('span', { class: 'shop-slot-num' }, `Stall ${i + 1}`), h('span', { class: 'shop-slot-hint' }, 'drop here')],
+      );
+    });
+    const at = priceFor;
+    const dialog = at
+      ? (() => {
+          const item = b.items[at.item]!;
+          const suggested = Math.max(1, salePrice(b, s.state, at.item, 1) ?? 1);
+          const input = h('input', { class: 'shop-price-input', type: 'number', min: 1, max: 9999, value: String(suggested), 'aria-label': `Price for ${item.name} in gold` });
+          window.setTimeout(() => input.select(), 0);
+          return h(
+            'div',
+            { class: 'shop-price-layer' },
+            h(
+              'div',
+              { class: 'shop-price', role: 'dialog', 'aria-label': `Set a price for ${item.name}` },
+              h('b', null, item.name),
+              h('p', null, 'Price in gold. The shared market will keep it inside the trade band.'),
+              h('label', null, 'Price ', input, ' g'),
+              h(
+                'div',
+                { class: 'actions' },
+                button('Set price', () => {
+                  const n = Math.max(1, Math.min(9999, Math.round(Number(input.value) || suggested)));
+                  stall[at.slot] = { item: at.item, qty: 1, price: n };
+                  priceFor = undefined;
+                  render();
+                }, 'small'),
+                button('Cancel', () => {
+                  priceFor = undefined;
+                  render();
+                }, 'small'),
+              ),
+              h('p', { class: 'shop-note' }, 'Draft only: nothing is listed until the shared market opens.'),
+            ),
+          );
+        })()
+      : null;
+    return h(
+      'section',
+      { class: 'shop' },
+      h(
+        'section',
+        { class: 'shop-bag' },
+        h('h3', null, 'IN YOUR BAG'),
+        h('p', { class: 'shop-note' }, 'Drag an item to a stall slot, or tap it and then a slot.'),
+        rows.length ? rows : h('p', { class: 'kit-hint' }, 'Your bag is empty.'),
+      ),
+      h(
+        'section',
+        { class: 'shop-stall' },
+        h('h3', null, 'YOUR STALL'),
+        h('div', { class: 'shop-slots' }, slots),
+        h('p', { class: 'shop-note' }, 'A draft: other players, a map marker and sales while you are away come with the shared world (SETTLEMENT 3.4).'),
+      ),
+      dialog,
+    );
+  };
+
+  const TABS: readonly [KitTab, string, string][] = [
+    ['bag', 'Bag', 'What you carry. Pick an item to read it.'],
+    ['outfit', 'Outfit', 'What you wear. Work clothes on one layer, a look on the other.'],
+    ['skills', 'Skills', 'What you can do. Spend a point here or in the journal.'],
+    ['shop', 'Shop', 'Your stall. Drag an item to a slot, or tap an item then a slot.'],
+  ];
+
+  const openPrice = (item: string, slot: number) => {
+    priceFor = { item, slot };
+    render();
+  };
+
+  const tabBar = (): HTMLElement =>
+    h(
+      'nav',
+      { class: 'tabs kit-tabs' },
+      TABS.map(([name, label]) => button(label, () => ((tab = name), render()), `tab ${tab === name ? 'on' : ''}`)),
+      button('Journal', () => {
+        p.close();
+        openJournal(ui, 'tasks');
+      }, 'tab'),
+    );
+
+  const caption = (): HTMLElement => h('p', { class: 'kit-caption' }, TABS.find(([name]) => name === tab)?.[2] ?? '');
+
+  const render = () => {
+    const ids = Object.keys(s.state.player.bag).sort((x, y) => itemName(b, x).localeCompare(itemName(b, y)));
+    if (selected && !ids.includes(selected)) selected = undefined;
+    selected ??= ids[0];
+    if (tab === 'outfit') {
+      p.body.replaceChildren(tabBar(), caption(), wornView());
+      return;
+    }
+    if (tab === 'skills') {
+      p.body.replaceChildren(tabBar(), caption(), h('div', { class: 'kit-body skills-only' }, h('section', { class: 'kit-skills' }, skillsBody(ui, render))));
+      return;
+    }
+    if (tab === 'shop') {
+      p.body.replaceChildren(tabBar(), caption(), shopView());
+      return;
+    }
+    p.body.replaceChildren(tabBar(), caption(), h('div', { class: 'kit-body bag-only' }, bagView(), detailView()));
   };
 
   const itemDetail = (id: string, after: () => void): HTMLElement => {
@@ -113,35 +489,39 @@ export function openBag(ui: UI): void {
     const price = salePrice(b, s.state, id, 1);
     const actions: HTMLElement[] = [];
     if (item.food) {
-      actions.push(button(eatLabel(b, id), () => {
-        const r = s.act({ t: 'eat', item: id });
+      actions.push(button(eatLabel(b, id), async () => {
+        const r = await s.act({ t: 'eat', item: id });
         if (!r.ok) ui.toast(r.error, 'bad');
         after();
       }));
     }
     if (item.fragment) {
       const recipe = b.recipes[item.fragment.unlocks];
-      actions.push(button(`Learn ${recipe?.title ?? 'the recipe'}`, () => {
-        const r = s.act({ t: 'learn', item: id });
+      actions.push(button(`Learn ${recipe?.title ?? 'the recipe'}`, async () => {
+        const r = await s.act({ t: 'learn', item: id });
         if (!r.ok) ui.toast(r.error, 'bad');
         after();
       }));
     }
     const facts: string[] = [];
     if (item.wear) {
+      for (const e of item.wear.effects ?? []) {
+        const label = KIT_EFFECTS.find(([effect]) => effect === e.effect)?.[1] ?? e.effect.replaceAll('_', ' ');
+        facts.push(`${label} +${e.value}%.`);
+      }
       // the kernel picks the place; a second ring can still go on while one is worn
       const at = wornAt(b, s.state, id);
       if (at) {
         facts.push(at.look ? 'You wear it as your look.' : 'You are wearing it.');
-        actions.push(button('Take off', () => {
-          const r = s.act({ t: 'unwear', slot: at.slot, look: at.look });
+        actions.push(button('Take off', async () => {
+          const r = await s.act({ t: 'unwear', slot: at.slot, look: at.look });
           if (!r.ok) ui.toast(r.error, 'bad');
           after();
         }));
       }
       if (!at || s.check({ t: 'wear', item: id }) === undefined) {
-        actions.push(button('Wear', () => {
-          const r = s.act({ t: 'wear', item: id });
+        actions.push(button('Wear', async () => {
+          const r = await s.act({ t: 'wear', item: id });
           if (!r.ok) ui.toast(r.error, 'bad');
           after();
         }));
@@ -155,21 +535,39 @@ export function openBag(ui: UI): void {
       facts.push(`${item.tool.kind[0]!.toUpperCase()}${item.tool.kind.slice(1)}${speedBonus}. ${left}`);
     }
     if (price !== undefined) facts.push(`A trader pays ${gold(price)} gold.`);
+    const set = item.wear?.set
+      ? (() => {
+          const pieces = setPieces(b)[item.wear!.set!] ?? [];
+          const worn = Object.values(s.state.player.worn);
+          return {
+            name: setLabel(item.wear!.set!),
+            held: pieces.filter((piece) => worn.includes(piece)).length,
+            total: pieces.length,
+            full: setComplete(b, s.state, item.wear!.set!),
+          };
+        })()
+      : undefined;
     return h(
       'div',
-      { class: 'detail' },
+      { class: 'detail kit-card' },
       h(
         'div',
-        { class: 'detail-head' },
-        sprite(b, item.sprite, 3),
-        h('div', null, h('b', null, item.name), h('div', { class: `rarity r-${item.rarity}` }, item.rarity), h('div', { class: 'muted' }, classLine(b, id))),
+        { class: 'kit-card-body' },
+        h(
+          'div',
+          { class: 'detail-head' },
+          sprite(b, item.sprite, 3),
+          h('div', null, h('b', null, item.name), h('div', { class: `rarity r-${item.rarity}` }, item.rarity), h('div', { class: 'muted' }, classLine(b, id))),
+        ),
+        h('p', { class: 'kit-desc' }, item.description),
+        facts.map((f) => h('p', { class: 'muted' }, f)),
+        set ? h('p', { class: 'kit-set-line' }, `${set.name} set ${set.held}/${set.total}${set.full ? ' · full' : ''}`) : null,
+        h('p', { class: 'credit' }, item.creator === 'core' ? 'Added by the core team' : `Added by ${item.creator}`),
       ),
-      h('p', null, item.description),
-      facts.map((f) => h('p', { class: 'muted' }, f)),
-      h('p', { class: 'credit' }, item.creator === 'core' ? 'Added by the core team' : `Added by ${item.creator}`),
       actions.length ? h('div', { class: 'actions' }, actions) : null,
     );
   };
+
   render();
 }
 
@@ -262,58 +660,7 @@ export function openJournal(ui: UI, tab: JournalTab = 'tasks'): void {
     );
   };
 
-  const skillsTab = (): HTMLElement => {
-    const st = s.state;
-    const points = skillPoints(b, st);
-    const effects = attributeEffects(b, st);
-    return h(
-      'div',
-      null,
-      h('p', null, h('b', null, `${st.player.name ? `${st.player.name}, level` : 'Level'} ${characterLevel(b, st)}`), points > 0 ? ` - ${points} skill point${points > 1 ? 's' : ''} to spend` : ''),
-      h(
-        'div',
-        { class: 'attrs' },
-        effects.map((fx) => {
-          const value = st.player.attrs[fx.attr];
-          const full = value >= ATTRIBUTE_MAX;
-          return h(
-            'div',
-            { class: 'attr' },
-            h('span', { class: 'attr-name' }, `${fx.name} - ${fx.what}`),
-            h('span', { class: 'pips' }, Array.from({ length: ATTRIBUTE_MAX }, (_, i) => h('i', { class: i < value ? 'on' : '' }))),
-            h('span', { class: 'muted' }, `${fx.now} -> ${full ? 'at its limit' : fx.next}`),
-            fx.note ? h('span', { class: 'muted' }, fx.note) : null,
-            points > 0 && !full
-              ? button('+', () => {
-                  const r = s.act({ t: 'spend', attr: fx.attr });
-                  if (!r.ok) ui.toast(r.error, 'bad');
-                  render();
-                }, 'small plus')
-              : null,
-          );
-        }),
-      ),
-      h('h3', null, 'Professions'),
-      Object.entries(b.professions)
-        .sort(([x], [y]) => x.localeCompare(y))
-        .map(([id, prof]) => {
-          const level = professionLevel(b, st, id);
-          const xp = st.player.xp[id] ?? 0;
-          const prev = level >= 2 ? (prof.xp_levels[level - 2] ?? 0) * 1000 : 0;
-          const next = prof.xp_levels[level - 1];
-          const pct = next === undefined ? 100 : Math.floor(((xp - prev) / (next * 1000 - prev)) * 100);
-          const upcoming = prof.techniques.find((t) => t.level > level);
-          return h(
-            'div',
-            { class: 'card' },
-            h('b', null, `${prof.name} ${level}`),
-            h('span', { class: 'meter-bar wide' }, h('i', { style: `width:${Math.max(0, Math.min(100, pct))}%` })),
-            prof.techniques.filter((t) => t.level <= level).map((t) => h('div', { class: 'tech' }, `${t.name}: ${t.text}`)),
-            upcoming ? h('div', { class: 'muted' }, `At level ${upcoming.level}: ${upcoming.name}`) : null,
-          );
-        }),
-    );
-  };
+  const skillsTab = (): HTMLElement => skillsBody(ui, render);
   render();
 }
 
@@ -328,8 +675,8 @@ export function openShop(ui: UI, npcId: string): void {
   const p = panel(ui, `${npc.name}'s stall`, 'shop');
   let current: 'buy' | 'sell' = 'buy';
 
-  const deal = (action: () => { ok: boolean; error?: string }) => {
-    const r = action();
+  const deal = async (action: () => ActResult | Promise<ActResult>) => {
+    const r = await action();
     if (!r.ok && r.error) ui.toast(r.error, 'bad');
     render();
   };
@@ -418,8 +765,8 @@ export function openCraft(ui: UI, station: string): void {
             h('div', { class: 'muted' }, `${classLine(b, out?.item ?? '')} - ${seconds(r.active_ms)}`),
             gate ? h('div', { class: haveAll(r.inputs) ? 'lack' : 'muted' }, gate) : why && haveAll(r.inputs) ? h('div', { class: 'lack' }, why) : null,
           ),
-          button(fire ? 'Cook' : 'Make', () => {
-            const res = s.act({ t: 'craft', recipe: id, at: s.pos });
+          button(fire ? 'Cook' : 'Make', async () => {
+            const res = await s.act({ t: 'craft', recipe: id, at: s.pos });
             if (!res.ok) ui.toast(res.error, 'bad');
             else p.close();
           }, 'small', why !== undefined),
@@ -442,8 +789,8 @@ export function openCraft(ui: UI, station: string): void {
             h(
               'div',
               { class: 'actions' },
-              button('Build', () => {
-                const res = s.act({ t: 'build', camp: id, at: s.pos });
+              button('Build', async () => {
+                const res = await s.act({ t: 'build', camp: id, at: s.pos });
                 if (!res.ok) ui.toast(res.error, 'bad');
                 else p.close();
               }, 'small', why !== undefined),
@@ -469,9 +816,9 @@ export function confirmBuild(ui: UI, campId: string): void {
   const have = c.inputs.map((i) => `${i.qty} ${itemName(b, i.item)} (you have ${s.state.player.bag[i.item] ?? 0})`).join(', ');
   const ok = c.inputs.every((i) => (s.state.player.bag[i.item] ?? 0) >= i.qty);
   const what = c.provides === 'fire' ? 'Somewhere to cook.' : c.provides ? 'Somewhere to make things.' : c.bag_bonus ? `Your bag holds ${c.bag_bonus} more.` : 'A place for what you find.';
-  void say(ui, c.title, [`${what} Needs ${have}.`], ok ? [{ label: 'Build it', value: 'yes' }, { label: 'Not now', value: 'no' }] : []).then((pick) => {
+  void say(ui, c.title, [`${what} Needs ${have}.`], ok ? [{ label: 'Build it', value: 'yes' }, { label: 'Not now', value: 'no' }] : []).then(async (pick) => {
     if (pick !== 'yes') return;
-    const r = s.act({ t: 'build', camp: campId, at: s.pos });
+    const r = await s.act({ t: 'build', camp: campId, at: s.pos });
     if (!r.ok) ui.toast(r.error, 'bad');
   });
 }
@@ -488,9 +835,9 @@ export function confirmRestore(ui: UI, restoreId: string): void {
   }
   const have = r.inputs.map((i) => `${i.qty} ${itemName(b, i.item)} (you have ${s.state.player.bag[i.item] ?? 0})`).join(', ');
   const ok = r.inputs.every((i) => (s.state.player.bag[i.item] ?? 0) >= i.qty);
-  void say(ui, r.title, [`It is broken. Mending it takes ${have}.`], ok ? [{ label: 'Mend it', value: 'yes' }, { label: 'Not now', value: 'no' }] : []).then((pick) => {
+  void say(ui, r.title, [`It is broken. Mending it takes ${have}.`], ok ? [{ label: 'Mend it', value: 'yes' }, { label: 'Not now', value: 'no' }] : []).then(async (pick) => {
     if (pick !== 'yes') return;
-    const res = s.act({ t: 'restore', restore: restoreId, at: s.pos });
+    const res = await s.act({ t: 'restore', restore: restoreId, at: s.pos });
     if (!res.ok) ui.toast(res.error, 'bad');
   });
 }

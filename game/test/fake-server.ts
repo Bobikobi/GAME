@@ -6,7 +6,7 @@
  * movement credit, so a client that cheats on distance would not be caught here (that check has its own
  * tests on the server).
  */
-import { type Action, type Bundle, type GameEvent, type State, publicState, statePatch, step } from '@game/kernel';
+import { type Action, type Bundle, type GameEvent, type State, appearSlots, appears, publicState, statePatch, step } from '@game/kernel';
 
 import type { ChangeReply, StateReply, Wire } from '../src/remote';
 import { WireGap, WireRefusal } from '../src/remote';
@@ -54,8 +54,12 @@ export class FakeServer implements Wire {
     return this.snapshot();
   }
 
+  private appearIds(): string[] {
+    return [...appearSlots(this.bundle).keys()].filter((id) => appears(this.bundle, this.state, id, this.state.tick)).sort();
+  }
+
   private snapshot(): StateReply {
-    return { state: publicState(this.state), version: this.version };
+    return { state: publicState(this.state), version: this.version, appears: this.appearIds() };
   }
 
   private checkClock(tick: number): void {
@@ -103,6 +107,6 @@ export class FakeServer implements Wire {
     this.version += 1;
     // the clock is anchored to the state tick, as the real server's is: game time, not wall time
     this.acceptedAt += state.tick - before.tick;
-    return { events, patch, version: this.version };
+    return { events, patch, version: this.version, appears: this.appearIds() };
   }
 }

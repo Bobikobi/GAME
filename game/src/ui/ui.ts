@@ -4,6 +4,7 @@
  * top one gets the buttons, and while any is open the game clock stops.
  */
 import {
+  OWN_FIRE,
   type GameEvent,
   type Grade,
   characterLevel,
@@ -22,7 +23,7 @@ import {
 import { app } from '../app';
 import type { Button } from '../input';
 import { fireWarning, nextLogClock, woodToFeed } from '../fires';
-import type { Session } from '../session';
+import type { GameSession } from '../session-surface';
 import {
   activeQuests,
   clock,
@@ -202,7 +203,7 @@ export class UI {
   }
 
   /** A session is ready (new or loaded): show it. */
-  begin(session: Session): void {
+  begin(session: GameSession): void {
     app.session = session;
     app.world?.bind(session);
     session.on('events', (events) => {
@@ -270,7 +271,7 @@ export class UI {
    * On a phone the toasts sit low, above the action prompt (style.css). Where the camera stops
    * at the foot of the map the player can stand that low too, and there they go up under the tracker.
    */
-  private placeToasts(s: Session): void {
+  private placeToasts(s: GameSession): void {
     const feet = app.world?.screenOf(s.pos[0], s.pos[1] + 1).y;
     // up past 60% of the height, back down above 55%: a step to and fro on one row does not toss them
     const up = this.toasts.classList.contains('up');
@@ -296,7 +297,7 @@ export class UI {
     const dark = h('span', { class: 'chip dark', title: 'Dark falls: be in town or by a burning camp', hidden: true }, h('i', { class: 'moon' }), darkText);
     const level = h('span', { class: 'chip', title: 'Character level' });
     const bag = button('Bag', () => this.panel(() => openBag(this)), 'small');
-    const log = button('Log', () => this.panel(() => openJournal(this)), 'small');
+    const log = button('Journal', () => this.panel(() => openJournal(this)), 'small');
     const feedbackBtn = button('Feedback', () => openFeedback(this), 'small');
     this.hud.replaceChildren(
       h(
@@ -323,7 +324,7 @@ export class UI {
    * once a night (G31): the player left safety after dark, or dark came while
    * they were out. The lantern is a sign that the night began, not a shield.
    */
-  private warnAtNight(s: Session): void {
+  private warnAtNight(s: GameSession): void {
     const night = lanternNight(app.bundle, s.state, s.pos, s.tick);
     if (night === undefined || night === this.warnedNight || this.blocking || s.paused) return;
     this.warnedNight = night;
@@ -340,7 +341,7 @@ export class UI {
    * keep, on screen or not) while no box is open, and only while it still needs wood for the
    * night it keeps (`wantsWood`).
    */
-  private warnFireLow(s: Session): void {
+  private warnFireLow(s: GameSession): void {
     if (this.blocking || s.paused) return;
     const w = fireWarning(app.bundle, s.state, s.tick, this.warnedFires);
     if (!w) return;
@@ -348,7 +349,7 @@ export class UI {
     void say(this, null, [`The ${w.name} is burning low.`, 'Wood keeps it: feed it before it goes out.']);
   }
 
-  private renderTracker(s: Session): void {
+  private renderTracker(s: GameSession): void {
     const b = app.bundle;
     const ids = activeQuests(b, s.state);
     let title = 'Explore the valley';
@@ -551,12 +552,12 @@ export class UI {
         { label: 'Not now', value: 'no' },
       ]);
       if (pick !== 'yes') return;
-      const r = s.act({ t: 'accept', quest: questId, at: s.pos });
+      const r = await s.act({ t: 'accept', quest: questId, at: s.pos });
       if (!r.ok) this.toast(r.error, 'bad');
       return;
     }
     if (readyToHandIn(b, s.state, questId, s.tick)) {
-      const r = s.act({ t: 'turnin', quest: questId, at: s.pos });
+      const r = await s.act({ t: 'turnin', quest: questId, at: s.pos });
       if (!r.ok) this.toast(r.error, 'bad');
       return;
     }
@@ -576,7 +577,7 @@ export class UI {
     const game = r.game ?? 'timing';
     const grade = await this.play(GAMES[game], nodeAction(b, r), nodeId, game, b.items[r.output]?.sprite ?? r.sprite);
     if (grade === null) return;
-    const res = s.act({ t: 'gather', node: nodeId, grade, at: s.pos });
+    const res = await s.act({ t: 'gather', node: nodeId, grade, at: s.pos });
     if (!res.ok) this.toast(res.error, 'bad');
   }
 
@@ -595,7 +596,7 @@ export class UI {
     }
     const grade = byHand ? 3 : await this.play(timing, 'Dig', spotId, 'dig');
     if (grade === null) return;
-    const res = s.act({ t: 'dig', spot: spotId, grade, at: s.pos });
+    const res = await s.act({ t: 'dig', spot: spotId, grade, at: s.pos });
     if (!res.ok) return this.toast(res.error, 'bad');
     if (!res.events.some((e) => e.e === 'riddle')) this.digCatch(spotId, res.events.find((e) => e.e === 'busy'));
   }
@@ -641,16 +642,28 @@ export class UI {
   }
 
   /** Feed a fire one piece of wood: a log first when the bag holds one; a refusal shows like any other. */
-  feed(fireId: string): void {
+  async feed(fireId: string): Promise<void> {
     const s = app.session;
     if (!s) return;
     const item = woodToFeed(app.bundle, s.state);
     if (!item) return this.toast('You have no wood.', 'bad');
-    const r = s.act({ t: 'feed', fire: fireId, item, at: s.pos });
+    const r = await s.act({ t: 'feed', fire: fireId, item, at: s.pos });
     if (r.ok) return;
-    // a fire too full for a whole log refuses it: say when one fits, as the journal does
-    const at = nextLogClock(app.bundle, s.state, fireId, s.tick);
+    // a fire too full for a whole log refuses it: say when one fits, as the journal does.
+    // The player's own fire tells no clock (NEXT 21b): its log is shorter on deeper ground.
+    const at = fireId === OWN_FIRE ? undefined : nextLogClock(app.bundle, s.state, fireId, s.tick);
     this.toast(at === undefined ? r.error : `${r.error} A log fits at ${at}.`, 'bad');
+  }
+
+  /**
+   * Build the player's own fire on `at`, the free tile the Build a fire button points at (NEXT 21b). The kernel
+   * decides every refusal and keeps the logs itself: this sends the action and shows the kernel's words as a toast.
+   */
+  async kindle(at: readonly [number, number]): Promise<void> {
+    const s = app.session;
+    if (!s) return;
+    const r = await s.act({ t: 'kindle', fire: [at[0], at[1]], at: s.pos });
+    if (!r.ok) this.toast(r.error, 'bad');
   }
 
   /**
@@ -669,7 +682,7 @@ export class UI {
       if (pay) await say(this, STONE_SPEAKER, def.stone.purse);
       await glide;
       if (s.state.player.name === '') {
-        const r = s.act({ t: 'carve', name: await carveName(this, def.stone.default_name) });
+        const r = await s.act({ t: 'carve', name: await carveName(this, def.stone.default_name) });
         if (!r.ok) this.toast(r.error, 'bad');
       }
       await say(this, null, [`You cut ${s.state.player.name} into the last line.`]);

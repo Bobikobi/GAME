@@ -3,8 +3,12 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Pool } from 'pg';
 
-/** The migration files in the order they are applied: a numbered set of SQL files, each run once. */
-const MIGRATIONS = fileURLToPath(new URL('../migrations', import.meta.url));
+/**
+ * The migration files in the order they are applied: a numbered set of SQL files, each run once. A build
+ * that packs the server into one file passes the directory in `MIGRATIONS`, because the bundle has no
+ * neighbour folder to read.
+ */
+const MIGRATIONS = process.env.MIGRATIONS ?? fileURLToPath(new URL('../migrations', import.meta.url));
 
 /**
  * Apply every migration that has not run yet, each inside its own transaction, and return their names.

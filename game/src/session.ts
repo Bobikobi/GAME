@@ -13,6 +13,7 @@ import {
   KERNEL_VERSION,
   type State,
   appearSlots,
+  appears,
   fitWorn,
   hourOf,
   makeWalkable,
@@ -22,6 +23,7 @@ import {
   step,
 } from '@game/kernel';
 import { LEGACY_SAVE_KEY, REVIEW_KEY, SAVE_KEY } from './config';
+import type { ActResult, Facing, GameSession, LogEntry, SessionEvents } from './session-surface';
 import { s1 } from './net/s1';
 import { slotContent } from './places';
 
@@ -36,11 +38,7 @@ export const DEMO_SINCE_KEY = 'openfold.demo-since';
 /** The most a frame moves the world: a long frame (tab switch, debugger) never fast-forwards it. */
 export const LONGEST_FRAME_MS = 250;
 
-export type Facing = 'down' | 'up' | 'left' | 'right';
-export interface LogEntry {
-  a: Action;
-  tick: number;
-}
+export type { Facing, LogEntry, SessionEvents } from './session-surface';
 
 interface SaveFile {
   v: typeof SAVE_VERSION;
@@ -60,18 +58,10 @@ interface SaveFile {
 }
 
 type Listener = (payload: never) => void;
-export interface SessionEvents {
-  /** an action started that keeps the player busy for `ms` */
-  busy: { verb: string; ms: number };
-  /** what an action produced, shown once the player is free again */
-  events: GameEvent[];
-  /** the state changed: redraw what depends on it */
-  change: undefined;
-}
 
 const TAIL = 40;
 
-export class Session {
+export class Session implements GameSession {
   readonly bundle: Bundle;
   state: State;
   tick = 0;
@@ -226,6 +216,11 @@ export class Session {
     return this.pauses > 0;
   }
 
+  /** The local game never waits for anyone: the kernel answers in the same call. */
+  get waiting(): boolean {
+    return false;
+  }
+
   /** Remember an NPC before dialogue opens. Returns true only the first time. */
   meet(npcId: string): boolean {
     if (this.met.has(npcId)) return false;
@@ -297,12 +292,18 @@ export class Session {
     if (this.busy) return;
     const since = Math.max(this.state.tick, this.outSeen);
     this.outSeen = this.tick;
-    for (const fire of Object.values(this.state.player.fires ?? {})) {
+    const ends = [...Object.values(this.state.player.fires ?? {}), ...(this.state.player.own === null ? [] : [this.state.player.own])];
+    for (const fire of ends) {
       if (fire.until > since && fire.until <= this.tick) {
         this.report(this.pos, true);
         return;
       }
     }
+  }
+
+  /** A node a reaction raises stands when the kernel's own draw says so: this game holds its seed. */
+  appears(id: string): boolean {
+    return appears(this.bundle, this.state, id, this.tick);
   }
 
   /** Ask the kernel without changing anything: would this action be accepted? */
@@ -335,7 +336,7 @@ export class Session {
     this.save();
   }
 
-  act(action: Action): { ok: true; events: GameEvent[] } | { ok: false; error: string } {
+  act(action: Action): ActResult {
     const r = step(this.bundle, this.state, action, this.tick);
     if (!r.ok) return r;
     const before = { state: this.state, tail: this.tail.slice() };

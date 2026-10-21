@@ -19,17 +19,17 @@ import {
   type Hazard,
   type Slot,
   appearSlots,
-  appears,
   campTile,
   coverAt,
-  cuesOnStep,
   findSlot,
+  OWN_FIRE,
   fireBurns,
   hazardsOf,
   headingOf,
   hourOf,
   inRect,
   isNight,
+  isTownTile,
   makeWalkable,
   minuteOfDay,
   npcTile,
@@ -45,16 +45,18 @@ import { app } from '../app';
 import { sound, type SfxId, type SongId } from '../audio';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T } from '../config';
 import { FAR_BELL, SMOKE_PUFFS, farBellDue, nearestChimney, smokeAlpha, smokeAt } from '../hookbridge';
-import { HOLE, LIGHT_POOL, dappleAt, duskAt, frameAt, nightAt, shadeAt } from '../light';
+import { HOLE, LIGHT_POOL, dappleAt, frameAt, nightAt, shadeAt, tableOf, washAt } from '../light';
 import { STONE_GLIDE_MS, STONE_STEPS, type StoneView, stoneView } from '../stone';
 import { type Clear, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../mist';
 import { FOG_ATLAS, FOG_ATLAS_W, FOG_FEATHER, FOG_OFFSETS, FOG_TILE, fogPixels } from '../fog';
+import { AIR_DENSITY, BANK_AT, BANK_DRIFT, BANK_NIGHT_LIFT, BANK_PERIOD, BANK_TILE, BANK_WEIGHT, CLOUD_BUCKETS, CLOUD_TILE, bankPixels, cloudBucket, cloudCover, cloudDrift, cloudPixels, fogStrength } from '../sky';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, WHISPERS, pickOf } from '../lore';
-import { TOO_DARK, feedTooLate, fireLow, fireName, readable, woodToFeed } from '../fires';
+import { TOO_DARK, type FireStage, feedTooLate, fireName, fireSpot, fireStage, holdsKindling, readable, woodToFeed } from '../fires';
 import { emptySlots, slotContent } from '../places';
 import { canopyGroups, hash, remapTone, toneField, type Tone } from '../richground';
-import { LONGEST_FRAME_MS, type Session } from '../session';
+import {LONGEST_FRAME_MS} from '../session';
+import type { GameSession } from '../session-surface';
 import { type Run, WOLF_EYES, bangAt, denMarks, flareAt, glowPixels, huntGround, huntSong, songFade, wolfDrawn, wolfDrawnAt } from '../predator';
 import { SUCCESS_LIGHT, joltOf } from '../jolt';
 import { soundscape } from '../soundscape';
@@ -151,22 +153,54 @@ interface SignSpot {
 
 /** A tended fire on the map (NEXT 13): its flame and glow follow the kernel's burn, never a clock of the client's. */
 interface Fire {
+  /** the logs and stones, cold when the fire is out, and the kit's own burning look while it is full */
   spr: Phaser.GameObjects.Sprite;
-  /** the flame frames, stepping only while it burns (with motion on) */
+  /** the kit's flame frames, stepping only while the fire is full or steady (with motion on) */
   cycle: Cycle | undefined;
-  glow: Glow | undefined;
-  /** the prop's own sprite, shown while the fire is out, and the burning one */
+  /** the prop's cold look, and the kit's burning one */
   unlit: string;
   lit: string;
+  /** a drawn tongue above the logs while the wood runs low: the kit's flame cannot show less than itself (NEXT 21b) */
+  flame: Phaser.GameObjects.Image;
+  /** the warm pool the fire puts over the night's shade, so its ring is lit, not only haloed */
+  nightLight: Phaser.GameObjects.Image;
+  glow: Glow | undefined;
+  /** how much wood is left, by quarters of the fire's own log (NEXT 21b) */
+  stage: FireStage;
+  /** the tile's own depth, where the fire sits by day */
+  baseDepth: number;
+  /** the stage's size, before the flicker of animate() */
+  baseX: number;
+  baseY: number;
+  /** where this fire's flicker starts, so two fires never beat as one */
+  phase: number;
+  /** the tint now on the flame, kept so a change from one tint to another is not missed */
+  tint: number | undefined;
+  /** a few sparks rising while it burns (with motion on), and a thin smoke above them */
+  sparks: Emitter | undefined;
+  smoke: Emitter | undefined;
 }
 
-/** The burning look of a fire prop, from the base kit. */
+/** The burning look of a fire prop, from the base kit, and the cold look of the fire the player kindles. */
 const FIRE_LIT_SPRITE = 'core/base-kit:props/campfire_lit';
-/** A flame's frame time, and the slower one of embers running down in a burn's last minutes. */
+const FIRE_UNLIT_SPRITE = 'core/base-kit:props/campfire_unlit';
+/** A flame's frame time: the kit's three frames while the fire is full. */
 const FLAME_MS = 120;
-const EMBER_MS = 260;
-/** How strongly the embers show in a burn's last minutes. */
-const EMBER_ALPHA = 0.6;
+/** How strongly a fire's warm pool sits over the night's shade, by stage: the safe ring is lit, not merely haloed. */
+const NIGHT_LIGHT: Record<FireStage, number> = { full: 0.9, steady: 0.75, low: 0.52, embers: 0.28, out: 0 };
+/** The ember tint at the burn's end: the flame cools before it goes. */
+const EMBER_TINT = 0xe09050;
+/**
+ * How each stage of a burn shows (NEXT 21b): the kit's own campfire while the wood is full or steady, then a drawn
+ * tongue that shrinks as the last logs go, and the light with it. Nothing here counts logs or minutes.
+ */
+const STAGE_LOOK: Record<FireStage, { alpha: number; scale: number; glow: number; tint?: number }> = {
+  full: { alpha: 1, scale: 1, glow: 0.45 },
+  steady: { alpha: 1, scale: 0.88, glow: 0.32 },
+  low: { alpha: 0.95, scale: 0.62, glow: 0.22, tint: 0xf0b060 },
+  embers: { alpha: 0.8, scale: 0.36, glow: 0.12, tint: EMBER_TINT },
+  out: { alpha: 0, scale: 0, glow: 0 },
+};
 
 /** A page element pinned to a point of the world, moved with the camera. */
 interface Pinned {
@@ -200,6 +234,8 @@ interface Glow {
   img: Phaser.GameObjects.Image;
   phase: number;
   lit: boolean;
+  /** how strongly it shows while lit: a fire's light dims with its last wood (NEXT 21b) */
+  strength?: number;
 }
 
 /** An emitter that only runs while its patch of the valley is on screen. */
@@ -247,7 +283,7 @@ class TileZone {
 export class WorldScene extends Phaser.Scene {
   private b!: Bundle;
   private walkable!: ReturnType<typeof makeWalkable>;
-  private session: Session | undefined;
+  private session: GameSession | undefined;
   private unbind: (() => void)[] = [];
   private ground!: Phaser.GameObjects.Image;
   /** the ground in chunks, once any ground sprite is at density 4 (groundchunks.ts); `ground` is then unused */
@@ -301,6 +337,15 @@ export class WorldScene extends Phaser.Scene {
   private campGlows = new Map<string, Glow>();
   private embers = new Map<string, Emitter>();
   private fogs: Phaser.GameObjects.Image[] = [];
+  /** the cloud shade over the ground by day, one patch repeated, and the fog banks that lie in the valley (sky.ts) */
+  private clouds: Phaser.GameObjects.Image[] = [];
+  /** the sky's weight today: an index into CLOUD_BUCKETS, and 0 is a clear day with the patches hidden */
+  private cloudDay = -1;
+  /** a sky picked by `?debug&cloud=0..3`, for a still or a test; unset in play */
+  private cloudForce: number | null = null;
+  private banks: { img: Phaser.GameObjects.Image; key: string; tile: number; seed: number; drift: number; at: number; periods: number; moved: number }[] = [];
+  /** the view's width the banks were last cut for, so a wider view rebuilds them instead of ending mid-screen */
+  private bankView = 0;
   private fogMotes: Emitter[] = [];
   private dapples: Phaser.GameObjects.TileSprite[] = [];
   private cycles: Cycle[] = [];
@@ -357,6 +402,9 @@ export class WorldScene extends Phaser.Scene {
   private lastAt: Tile | undefined;
   private attractT = 0;
   private night = 0;
+  /** the hour table from params, read once: the colour the valley is washed in, by the clock */
+  /** the hour table, read once the bundle is here: a field initializer would run before it */
+  private lightTable: ReturnType<typeof tableOf> = [];
   private wasNight: boolean | undefined;
   private nextEyes = 0;
   private nextWhisper = 0;
@@ -395,6 +443,7 @@ export class WorldScene extends Phaser.Scene {
 
   create(): void {
     this.b = app.bundle;
+    this.lightTable = tableOf(this.b.params.light?.keys ?? []);
     this.walkable = makeWalkable(this.b);
     this.labels = document.createElement('div');
     this.labels.className = 'world-labels';
@@ -416,7 +465,7 @@ export class WorldScene extends Phaser.Scene {
     // the haze is one layer over the valley; addFilters cuts the player out of it, so the mist covers the
     // ground, the props and the other figures but never the player or what the player holds
     this.events.on(Phaser.Scenes.Events.POST_UPDATE, () => this.cutPlayer());
-    this.veil = this.add.container(0, 0, [this.mist, ...this.fogs, ...this.fogMotes]).setDepth(DEPTH.mist);
+    this.veil = this.add.container(0, 0, [this.mist, ...this.banks.map((b) => b.img), ...this.fogs, ...this.fogMotes]).setDepth(DEPTH.mist);
     this.bar = this.add.graphics().setDepth(DEPTH.fx);
     this.marker = this.add.image(0, 0, 'fx-arrow').setOrigin(0.5, 1).setDepth(DEPTH.marker).setVisible(false);
     this.tweens.add({ targets: this.marker, displayOriginY: 7, duration: 380, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
@@ -477,6 +526,38 @@ export class WorldScene extends Phaser.Scene {
     make('fx-chip', 2, 1, () => px(PALETTE.wood2, 0, 0, 2));
     make('fx-dirt', 2, 2, () => px(PALETTE.wood, 0, 0, 2, 2));
     make('fx-spark', 1, 1, () => px(PALETTE.yellow, 0, 0));
+    // the flame of a tended fire, drawn so its four stages read by size (NEXT 21b): a red rim, gold body, yellow heart
+    make('fx-flame', 7, 15, () => {
+      const rows = [
+        '...#...', '...#...', '...#...', '..###..', '..###..', '..###..', '.#####.', '.#####.',
+        '#######', '##.#.##', '#######', '.#####.', '..###..', '..###..', '...#...',
+      ];
+      const lit = (x: number, y: number): boolean => rows[y]?.[x] === '#';
+      // the body, then a warmer heart low in it, in the kit's own two flame colours
+      for (let y = 0; y < rows.length; y++) for (let x = 0; x < 7; x++) if (lit(x, y)) px(PALETTE.gold, x, y);
+      for (let y = 5; y < 14; y++) for (let x = 2; x <= 4; x++) if (lit(x, y)) px(PALETTE.yellow, x, y);
+      // a rim of darker red around every lit pixel that meets the air
+      const rim: [number, number][] = [];
+      for (let y = 0; y < rows.length; y++) {
+        for (let x = 0; x < 7; x++) {
+          if (!lit(x, y)) continue;
+          if (!lit(x - 1, y) || !lit(x + 1, y) || !lit(x, y - 1) || !lit(x, y + 1)) rim.push([x, y]);
+        }
+      }
+      for (const [x, y] of rim) px(PALETTE.red2, x, y);
+    });
+    // a fire's pool of light: a soft warm disc three tiles wide, stepped in eighths so it stays pixel art
+    make('fx-firelight', 48, 48, () => {
+      const half = 23.5;
+      for (let y = 0; y < 48; y++) {
+        for (let x = 0; x < 48; x++) {
+          const d = Math.hypot(x - half, y - half) / 24;
+          if (d >= 1) continue;
+          const alpha = Math.round((1 - d) * (1 - d) * 8) / 8 * 0.6;
+          if (alpha > 0) g.fillStyle(0xffb060, alpha).fillRect(x, y, 1, 1);
+        }
+      }
+    });
     make('fx-mote', 1, 1, () => px(PALETTE.paper, 0, 0));
     make('fx-fly', 2, 2, () => px(PALETTE.green4, 0, 0, 2, 2));
     make('fx-eye', 4, 1, () => {
@@ -863,38 +944,167 @@ export class WorldScene extends Phaser.Scene {
    * hearth for the burning one; its flames and glow wait for the kernel's burn.
    */
   private buildFire(id: string, p: { w: number; solid: boolean; sprite: string }, cx: number, bottom: number): void {
-    const spr = kitSprite(this, cx, bottom, p.sprite, 0).setOrigin(0.5, 1).setDepth(p.solid ? bottom : DEPTH.flat);
+    const depth = p.solid ? bottom : DEPTH.flat;
+    const spr = kitSprite(this, cx, bottom, p.sprite, 0).setOrigin(0.5, 1).setDepth(depth);
     if (RICH.detail && !FLAT.has(baseName(p.sprite))) this.shadow(cx, bottom, p.w, p.solid ? DEPTH.shadow : DEPTH.flat - 0.5);
+    this.fires.set(id, this.fireAtTile(spr, p.sprite, depth));
+  }
+
+  /** The kit's burning look, the drawn low flame, the glow and the burn stage over a sprite already on its tile. A fire's light covers its safe ring. */
+  private fireAtTile(spr: Phaser.GameObjects.Sprite, unlit: string, depth: number): Fire {
     let cycle: Cycle | undefined;
     if (RICH.motion) {
       cycle = { spr, min: FLAME_MS, max: FLAME_MS, next: 0, frame: 0, active: false };
       this.cycles.push(cycle);
     }
+    const flame = this.add
+      .image(spr.x, spr.y - 3, 'fx-flame')
+      .setOrigin(0.5, 1)
+      .setDepth(depth + 0.01)
+      .setVisible(false);
+    // a normal-blend pool above the night's shade: the fire's ring is lit ground, not a halo over the dark
+    // three tiles wide: the safe ring, and no bigger
+    const ring = ((this.b.params.fire.safe_tiles * 2 + 1) * T) / 48;
+    const nightLight = this.add
+      .image(spr.x, spr.y - 4, 'fx-firelight')
+      .setBlendMode(Phaser.BlendModes.NORMAL)
+      .setScale(ring)
+      .setDepth(DEPTH.shade + 0.5)
+      .setAlpha(0);
     let glow: Glow | undefined;
     if (RICH.light) {
-      glow = this.glow(cx, bottom - 8, false);
+      // the light pools on the ground around the fire, not over the flame
+      glow = this.glow(spr.x, spr.y - 4, false, 'fx-firelight', ring * 0.72);
       this.glows.push(glow);
     }
-    this.fires.set(id, { spr, cycle, glow, unlit: p.sprite, lit: this.has(FIRE_LIT_SPRITE) ? FIRE_LIT_SPRITE : p.sprite });
+    let sparks: Emitter | undefined;
+    let smoke: Emitter | undefined;
+    if (RICH.motion) {
+      sparks = this.add
+        .particles(spr.x, spr.y - 6, 'fx-spark', {
+          speedY: { min: -16, max: -6 },
+          speedX: { min: -4, max: 4 },
+          lifespan: { min: 450, max: 900 },
+          alpha: { start: 1, end: 0 },
+          frequency: 700,
+          maxAliveParticles: 8,
+          blendMode: 'ADD',
+          emitting: false,
+        })
+        .setDepth(depth + 0.02);
+      smoke = this.smokePuffs(spr.x, spr.y - 12, depth + 0.005, {
+        speedY: { min: -9, max: -4 },
+        speedX: { min: -3, max: 3 },
+        lifespan: { min: 2200, max: 3800 },
+        scale: { start: 1, end: 2.5 },
+        alpha: { values: [0.7, 0.35, 0] },
+        frequency: 900,
+        maxAliveParticles: 6,
+      });
+    }
+    spr.setDepth(depth);
+    return {
+      spr,
+      cycle,
+      unlit,
+      lit: this.has(FIRE_LIT_SPRITE) ? FIRE_LIT_SPRITE : unlit,
+      flame,
+      nightLight,
+      glow,
+      stage: 'out',
+      baseDepth: depth,
+      baseX: 0,
+      baseY: 0,
+      phase: Math.random() * Math.PI * 2,
+      tint: undefined,
+      sparks,
+      smoke,
+    };
+  }
+
+  /**
+   * The fire the player kindled (NEXT 21b): one sprite that follows the tile the kernel names, cold until it is
+   * lit. It is not a map prop, so nothing builds it at bind time; refreshFires() calls this first.
+   */
+  private ensureOwnFire(s: GameSession): Fire | undefined {
+    const own = s.state.player.own;
+    let f = this.fires.get(OWN_FIRE);
+    if (own === null) {
+      f?.spr.setVisible(false);
+      f?.flame.setVisible(false);
+      if (f?.glow) f.glow.lit = false;
+      return undefined;
+    }
+    const at = fireSpot(own.at, T);
+    if (!f) {
+      const spr = kitSprite(this, at.x, at.bottom, FIRE_UNLIT_SPRITE, 0).setOrigin(0.5, 1);
+      f = this.fireAtTile(spr, FIRE_UNLIT_SPRITE, at.bottom);
+      this.fires.set(OWN_FIRE, f);
+    }
+    // a re-kindled fire moves every part with its tile: the depth it falls back to by day and the smoke's column too
+    f.baseDepth = at.depth;
+    f.spr.setVisible(true).setPosition(at.x, at.bottom).setDepth(at.depth);
+    f.flame.setPosition(at.x, at.flameY).setDepth(at.flameDepth);
+    f.nightLight.setPosition(at.x, at.lightY);
+    f.glow?.img.setPosition(at.x, at.lightY);
+    f.sparks?.setPosition(at.x, at.sparksY).setDepth(at.sparksDepth);
+    f.smoke?.setPosition(at.x, at.smokeY).setDepth(at.smokeDepth);
+    return f;
   }
 
   /** Flames only while the kernel says the fire burns; in a burn's last minutes the embers dim and slow. */
-  private refreshFires(s: Session): void {
+  private refreshFires(s: GameSession): void {
+    this.ensureOwnFire(s);
     for (const [id, f] of this.fires) {
-      const burns = fireBurns(s.state, id, s.tick);
-      const low = burns && fireLow(this.b, s.state, id, s.tick);
-      const look = burns ? f.lit : f.unlit;
+      const stage = fireStage(this.b, s.state, id, s.tick);
+      const l = STAGE_LOOK[stage];
+      const full = stage === 'full' || stage === 'steady';
+      // by day the kit's own flame shows while the wood is full; at night the shade would hide it, so the drawn tongue
+      // carries the flame over the dark at every stage
+      const night = this.night > 0.15;
+      const drawn = stage === 'low' || stage === 'embers' || (night && full);
+      const look = full ? f.lit : f.unlit;
       if (f.spr.texture.key !== look) {
         retex(f.spr, look, 0);
         if (f.cycle) f.cycle.frame = 0;
       }
       if (f.cycle) {
-        f.cycle.active = burns;
-        f.cycle.min = f.cycle.max = low ? EMBER_MS : FLAME_MS;
+        f.cycle.active = full;
+        f.cycle.min = f.cycle.max = FLAME_MS;
       }
-      const alpha = low ? EMBER_ALPHA : 1;
-      if (f.spr.alpha !== alpha) f.spr.setAlpha(alpha);
-      if (f.glow) f.glow.lit = burns;
+      // the full fire is the kit's campfire, a little smaller when it settles; the last wood is a drawn tongue
+      f.spr.setAlpha(1).setScale(full ? (stage === 'full' ? 1 : 0.9) : 1);
+      // at night the fire itself, its flame and its sparks are lifted over the shade, so the light has a source
+      const nightFull = night && full;
+      const sx = nightFull ? (stage === 'full' ? 1.2 : 1.1) : 1;
+      const sy = nightFull ? (stage === 'full' ? 0.85 : 0.72) : l.scale;
+      f.flame.setVisible(drawn);
+      f.flame.setAlpha(l.alpha).setScale(sx, sy);
+      f.baseX = sx;
+      f.baseY = sy;
+      f.spr.setDepth(night ? DEPTH.shade + 0.8 : f.baseDepth);
+      f.flame.setDepth(night ? DEPTH.shade + 1 : f.baseDepth + 0.01);
+      f.sparks?.setDepth(night ? DEPTH.shade + 0.9 : f.baseDepth + 0.02);
+      f.nightLight.setAlpha(NIGHT_LIGHT[stage] * this.night);
+      // the last wood cools the tongue; a change from one tint to another (low to embers) is a tint too
+      if (f.tint !== l.tint) {
+        f.tint = l.tint;
+        if (l.tint === undefined) f.flame.clearTint();
+        else f.flame.setTint(l.tint);
+      }
+      if (f.glow) {
+        f.glow.lit = stage !== 'out';
+        f.glow.strength = l.glow;
+      }
+      if (f.sparks) {
+        f.sparks.emitting = stage !== 'out' && stage !== 'embers';
+        f.sparks.frequency = stage === 'full' ? 550 : stage === 'steady' ? 800 : 1300;
+      }
+      if (f.smoke) {
+        f.smoke.emitting = stage === 'full' || stage === 'steady' || stage === 'low';
+        f.smoke.setDepth(night ? DEPTH.shade + 0.7 : f.baseDepth + 0.005);
+      }
+      f.stage = stage;
     }
     // beside a fire burning at night: in its light, cut out of the haze and the frame like the player, and warm
     for (const n of this.fireSide) {
@@ -906,10 +1116,18 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  /** How a fire is drawn now, for a test: its sprite, whether that is the burning one, and how strongly it shows. */
-  fireLook(id: string): { sprite: string; burning: boolean; alpha: number } | undefined {
+  /** How a fire is drawn now, for a test and for the walk-out proof: its sprite, its burn, its wood stage and its strength. */
+  fireLook(id: string): { sprite: string; burning: boolean; alpha: number; scale: number; stage: FireStage } | undefined {
     const f = this.fires.get(id);
-    return f && { sprite: f.spr.texture.key, burning: f.spr.texture.key === f.lit && f.lit !== f.unlit, alpha: f.spr.alpha };
+    if (!f) return undefined;
+    const drawn = f.flame.visible;
+    return {
+      sprite: f.spr.texture.key,
+      burning: f.stage !== 'out',
+      alpha: drawn ? f.flame.alpha : f.spr.alpha,
+      scale: drawn ? f.baseY : f.spr.scaleX,
+      stage: f.stage,
+    };
   }
 
   /** Whether a rectangle of tiles is on the screen now. */
@@ -945,24 +1163,31 @@ export class WorldScene extends Phaser.Scene {
     return this.add.image(cx, bottom + 2, 'fx-shadow').setOrigin(0.5, 1).setAlpha(SHADOW_ALPHA).setDepth(depth).setScale(Math.max(1, Math.round(tiles)), 1);
   }
 
-  private glow(x: number, y: number, lit: boolean): Glow {
-    const img = this.add.image(x, y, 'fx-glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.glow).setAlpha(0);
+  private glow(x: number, y: number, lit: boolean, key = 'fx-glow', scale = 1): Glow {
+    const img = this.add
+      .image(x, y, key)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(DEPTH.glow)
+      .setScale(scale)
+      .setAlpha(0);
     return { img, phase: Math.random() * Math.PI * 2, lit };
+  }
+
+  /** The one smoke emitter, the 'fx-smoke' puff, off until its owner switches it on: a chimney's thread and a fire's column differ only in the numbers. */
+  private smokePuffs(x: number, y: number, depth: number, config: Omit<Phaser.Types.GameObjects.Particles.ParticleEmitterConfig, 'emitting'>): Emitter {
+    return this.add.particles(x, y, 'fx-smoke', { ...config, emitting: false }).setDepth(depth);
   }
 
   /** A thin thread of smoke rising from (x, y), only while that chimney is on screen. */
   private smoke(x: number, y: number, depth: number): void {
-    const emitter = this.add
-      .particles(x, y, 'fx-smoke', {
-        speedY: { min: -7, max: -3 },
-        speedX: { min: 1, max: 3 },
-        lifespan: { min: 2500, max: 4000 },
-        alpha: { values: [0.7, 0.45, 0] },
-        frequency: 420,
-        maxAliveParticles: 10,
-        emitting: false,
-      })
-      .setDepth(depth);
+    const emitter = this.smokePuffs(x, y, depth, {
+      speedY: { min: -7, max: -3 },
+      speedX: { min: 1, max: 3 },
+      lifespan: { min: 2500, max: 4000 },
+      alpha: { values: [0.7, 0.45, 0] },
+      frequency: 420,
+      maxAliveParticles: 10,
+    });
     this.locals.push({ emitter, rect: new Phaser.Geom.Rectangle(x - 16, y - 40, 48, 56) });
   }
 
@@ -1229,6 +1454,7 @@ export class WorldScene extends Phaser.Scene {
    * keeps the zones there) and butterflies, falling leaves and birds join in.
    */
   private buildAtmosphere(): void {
+    this.buildAir();
     const w = this.b.map.width * T;
     const hgt = this.b.map.height * T;
     this.mist = this.add.image(0, 0, '__DEFAULT').setOrigin(0).setDepth(DEPTH.mist).setVisible(false);
@@ -1288,6 +1514,100 @@ export class WorldScene extends Phaser.Scene {
         emitting: false,
       })
       .setDepth(DEPTH.motes);
+  }
+
+  /**
+   * The air over the valley (sky.ts, STYLE section 7 cue 3): one patch of ink at 12% that drifts across the ground
+   * by day, and two pale banks that gather before dawn and after dusk. Both are drawn under the mist's veil, so the
+   * player is cut out of them as the player is cut out of the haze.
+   */
+  private buildAir(): void {
+    if (!RICH.light) return;
+    // both textures are baked at the world's own density, so a texel lands on a screen pixel and no shape is
+    // drawn twice its size; a tile is then a quarter of its own pixels, which tileScale says
+    const side = CLOUD_TILE * AIR_DENSITY;
+    // one patch per weight of sky, so a clear day has none, a still day one, and a heavy day many
+    CLOUD_BUCKETS.forEach((cover, k) => {
+      const tex = this.textures.createCanvas(`fx-cloud-${k}`, side, side);
+      if (!tex) return;
+      const img = tex.getContext().createImageData(side, side);
+      img.data.set(cloudPixels(side, cover));
+      tex.getContext().putImageData(img, 0, 0);
+      tex.refresh();
+    });
+    if (new URLSearchParams(location.search).has('debug')) {
+      const asked = Number(new URLSearchParams(location.search).get('cloud'));
+      if (Number.isInteger(asked) && asked >= 0 && asked < CLOUD_BUCKETS.length) this.cloudForce = asked;
+    }
+    if (this.textures.exists('fx-cloud-0')) {
+      // three by three copies of one patch: a tile sprite drew its overlapping edge twice and doubled the shade
+      for (let j = 0; j < 3; j++) {
+        for (let i = 0; i < 3; i++) {
+          const img = this.add.image(0, 0, 'fx-cloud-0').setOrigin(0).setScale(1 / AIR_DENSITY).setDepth(DEPTH.flat - 0.3).setAlpha(0);
+          this.clouds.push(img);
+        }
+      }
+    }
+    const banks = [
+      { key: 'fx-bank-high', tile: BANK_TILE.high, drift: BANK_DRIFT.high, seed: 1.7 },
+      { key: 'fx-bank-thin', tile: BANK_TILE.thin, drift: BANK_DRIFT.thin, seed: 3.1 },
+      { key: 'fx-bank-low', tile: BANK_TILE.low, drift: BANK_DRIFT.low, seed: 4.3 },
+    ];
+    banks.forEach((b, i) => {
+      const img = this.add.image(0, 0, '__DEFAULT').setOrigin(0).setScale(1 / AIR_DENSITY).setAlpha(0);
+      this.banks.push({ img, key: b.key, tile: b.tile, seed: b.seed, drift: b.drift, at: BANK_AT[i] ?? 0.5, periods: 0, moved: 0 });
+    });
+    this.cutBanks(this.cameras.main.worldView.width);
+  }
+
+  /**
+   * Cuts each bank to the view: whole periods of its own pattern, the view's width and one period of margin past
+   * each end, so a wide screen never meets a vertical edge and the drift wraps without a seam.
+   */
+  private cutBanks(viewWidth: number): void {
+    const need = viewWidth + 2 * BANK_PERIOD;
+    for (const b of this.banks) {
+      const periods = Math.ceil(need / BANK_PERIOD) + 1;
+      if (periods === b.periods) continue;
+      b.periods = periods;
+      const px = periods * BANK_PERIOD * AIR_DENSITY;
+      const ph = b.tile * AIR_DENSITY;
+      const key = `${b.key}-${periods}`;
+      if (!this.textures.exists(key)) {
+        const tex = this.textures.createCanvas(key, px, ph);
+        if (!tex) continue;
+        const img = tex.getContext().createImageData(px, ph);
+        img.data.set(bankPixels(px, ph, b.seed, true, BANK_PERIOD * AIR_DENSITY));
+        tex.getContext().putImageData(img, 0, 0);
+        tex.refresh();
+      }
+      b.img.setTexture(key);
+    }
+    this.bankView = viewWidth;
+  }
+
+  /**
+   * The air keeps the view and drifts on the valley's wind: the cloud patch is anchored in the world, so walking
+   * under it moves it the other way, and a bank slides along its own length a little faster than the one above.
+   */
+  private driftAir(time: number, delta: number): void {
+    const view = this.cameras.main.worldView;
+    if (this.clouds.length > 0) {
+      // the patch is anchored in the world and wraps at its own edge, so the copies hand the cloud on to each other
+      const off = cloudDrift(time, RICH.motion);
+      const dx = ((off.x % CLOUD_TILE) + CLOUD_TILE) % CLOUD_TILE;
+      const dy = ((off.y % CLOUD_TILE) + CLOUD_TILE) % CLOUD_TILE;
+      const left = Math.floor(view.x) - CLOUD_TILE + dx;
+      const top = Math.floor(view.y) - CLOUD_TILE + dy;
+      this.clouds.forEach((img, k) => img.setPosition(left + (k % 3) * CLOUD_TILE, top + Math.floor(k / 3) * CLOUD_TILE));
+    }
+    if (view.width !== this.bankView) this.cutBanks(view.width);
+    for (const b of this.banks) {
+      // a reader who asked for reduced motion keeps the banks and loses only their drift (G29)
+      if (RICH.motion) b.moved += (b.drift * delta) / 1000;
+      const drift = ((b.moved % BANK_PERIOD) + BANK_PERIOD) % BANK_PERIOD;
+      b.img.setPosition(view.x - BANK_PERIOD + drift, view.y + view.height * b.at - b.tile / 2);
+    }
   }
 
   /** Dappled light over the groves by day: one tiled layer of specks per rectangle of grove or forest tiles. */
@@ -1369,7 +1689,7 @@ export class WorldScene extends Phaser.Scene {
   // ------------------------------------------------------------ session
 
   /** Show this session's world. Called for a new game and for a loaded one. */
-  bind(session: Session): void {
+  bind(session: GameSession): void {
     for (const off of this.unbind) off();
     this.session = session;
     this.move = null;
@@ -1393,7 +1713,10 @@ export class WorldScene extends Phaser.Scene {
         this.busyMs = ms;
         this.nextSwing = 0;
       }),
-      session.on('events', (events) => this.celebrate(events)),
+      session.on('events', (events) => {
+        this.celebrate(events);
+        for (const event of events) if (event.e === 'cue') this.playCue(event);
+      }),
       session.on('change', () => this.refresh()),
     ];
     this.player.setVisible(true);
@@ -1499,8 +1822,8 @@ export class WorldScene extends Phaser.Scene {
     if (RICH.motion) this.refreshGlints(s);
   }
 
-  private ready(s: Session, id: string): boolean {
-    if (this.appearing.has(id)) return appears(this.b, s.state, id, s.tick);
+  private ready(s: GameSession, id: string): boolean {
+    if (this.appearing.has(id)) return s.appears(id);
     return (s.state.nodes[id]?.readyAt ?? 0) <= s.tick;
   }
 
@@ -1510,7 +1833,7 @@ export class WorldScene extends Phaser.Scene {
    * giver once the task is ready to hand in), so the next place to go reads from the map
    * itself. Rebuilt only when the targets change; off with the rest of the motion group.
    */
-  private refreshGlints(s: Session): void {
+  private refreshGlints(s: GameSession): void {
     const targets = questTargets(this.b, s.state, s.tick);
     const key = JSON.stringify(targets);
     if (key === this.glintKey) return;
@@ -1632,6 +1955,7 @@ export class WorldScene extends Phaser.Scene {
    * following the camera, birds now and then. Empty lists cost nothing.
    */
   private animate(time: number, delta: number): void {
+    this.driftAir(time, delta);
     for (const c of this.cycles) {
       if (!c.active || time < c.next) continue;
       c.next = time + c.min + (c.max > c.min ? Math.random() * (c.max - c.min) : 0);
@@ -1652,6 +1976,22 @@ export class WorldScene extends Phaser.Scene {
         b.spr.setFrame(1);
       }
     }
+    // a burning flame breathes: a small sway and a flicker in its size, never a count of anything.
+    // the valley's wind leans it, the same slow gust on every fire, while the burn itself is untouched (G48)
+    if (RICH.motion) {
+      const wind = Math.sin(time / 1700) * 0.6 + Math.sin(time / 4700 + 1.3) * 0.4;
+      for (const f of this.fires.values()) {
+        if (!f.flame.visible) continue;
+        f.flame.setScale(
+          f.baseX * (1 + 0.07 * Math.sin(time / 130 + f.phase)),
+          f.baseY * (1 + 0.05 * Math.sin(time / 170 + f.phase * 1.3)),
+        );
+        f.flame.x = f.spr.x + 0.6 * Math.sin(time / 210 + f.phase) + wind * 1.6;
+        // new smoke and embers leave the fire a little downwind, so the flame's lean and the drift agree
+        f.smoke?.setPosition(f.spr.x + wind * 1.5, f.spr.y - 12);
+        f.sparks?.setPosition(f.spr.x + wind * 1.2, f.spr.y - 6);
+      }
+    }
     if (this.glows.length > 0) {
       const level = 0.9 * this.night;
       for (const g of this.glows) {
@@ -1660,7 +2000,7 @@ export class WorldScene extends Phaser.Scene {
           continue;
         }
         const flicker = 0.5 + 0.5 * Math.sin(time / 173 + g.phase) * Math.sin(time / 419 + g.phase * 1.7);
-        g.img.setAlpha(level * (0.8 + 0.2 * flicker));
+        g.img.setAlpha(level * (g.strength ?? 1) * (0.8 + 0.2 * flicker));
       }
     }
     for (const d of this.dapples) {
@@ -1731,21 +2071,22 @@ export class WorldScene extends Phaser.Scene {
 
   /**
    * The cues a step starts (docs/design/REACTIONS.md, section 5): the kernel names them on the edge of
-   * their reach, and each is drawn at its tile and heard from where it is.
+   * their reach and sends them with the step's events, so a phone that holds no seed draws the same ones.
    */
-  private cueStep(s: Session, from: Tile, to: Tile): void {
-    for (const hit of cuesOnStep(this.b, s.state, s.tick, from, to)) {
-      const look = CUE_LOOK[hit.cue as keyof typeof CUE_LOOK];
-      if (!look) continue;
-      const x = hit.x * T + T / 2;
-      const y = hit.y * T + T / 2;
-      const at = this.worldToPage(x, y);
-      const pan = Math.max(-0.8, Math.min(0.8, (at.x / Math.max(1, this.scale.width / pixelRatio()) - 0.5) * 1.2));
-      sound.sfx(look.sfx, { pan, gain: cueGain(Math.max(Math.abs(hit.x - to[0]), Math.abs(hit.y - to[1]))) });
-      const depth = look.over ? DEPTH.motes + 1 : DEPTH.flat;
-      if (hit.cue === 'birds_lift') this.liftBirds(x, y, look.ms, depth);
-      else this.ripple(x, y + 3, look.ms, depth);
-    }
+  private playCue(hit: { cue: string; x: number; y: number }): void {
+    const look = CUE_LOOK[hit.cue as keyof typeof CUE_LOOK];
+    if (!look) return;
+    const s = this.session;
+    if (!s) return;
+    const x = hit.x * T + T / 2;
+    const y = hit.y * T + T / 2;
+    const at = this.worldToPage(x, y);
+    const pan = Math.max(-0.8, Math.min(0.8, (at.x / Math.max(1, this.scale.width / pixelRatio()) - 0.5) * 1.2));
+    const far = Math.max(Math.abs(hit.x - s.pos[0]), Math.abs(hit.y - s.pos[1]));
+    sound.sfx(look.sfx, { pan, gain: cueGain(far) });
+    const depth = look.over ? DEPTH.motes + 1 : DEPTH.flat;
+    if (hit.cue === 'birds_lift') this.liftBirds(x, y, look.ms, depth);
+    else this.ripple(x, y + 3, look.ms, depth);
   }
 
   /** A few birds lift from the tile and climb away, flapping; with the motion group off, the flock is a still shape. */
@@ -1789,7 +2130,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Standing still for 3 s, the player blinks every 3-5 s: frame 1 of the idle sheet for 120 ms. */
-  private idle(s: Session, time: number): void {
+  private idle(s: GameSession, time: number): void {
     if (this.falling) return;
     const still = !this.move && !s.busy && !this.work && !this.auto && this.swingUntil === 0;
     if (!still) {
@@ -1821,11 +2162,12 @@ export class WorldScene extends Phaser.Scene {
     cam.centerOn(Math.round(cx), Math.round(cy));
   }
 
-  private canControl(s: Session): boolean {
-    return !s.paused && !s.busy && !app.ui.blocking && !this.peek.active;
+  private canControl(s: GameSession): boolean {
+    // while an action waits for the server the player has no control: nothing is sent twice
+    return !s.paused && !s.busy && !s.waiting && !app.ui.blocking && !this.peek.active;
   }
 
-  private walk(s: Session, delta: number): void {
+  private walk(s: GameSession, delta: number): void {
     if (this.falling) return;
     if (this.move) {
       this.move.t += delta;
@@ -1843,7 +2185,6 @@ export class WorldScene extends Phaser.Scene {
       landStep(s, [tx, ty]);
       if (this.falling) return;
       this.arrive(s);
-      this.cueStep(s, [fx, fy], [tx, ty]);
       if (!this.tryStep(s, carry)) this.faceFrame();
       return;
     }
@@ -1851,7 +2192,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Start walking one tile if a direction is held. Returns true if moving. */
-  private tryStep(s: Session, carry: number): boolean {
+  private tryStep(s: GameSession, carry: number): boolean {
     if (!this.canControl(s)) return false;
     const dir = app.controls.direction();
     if (!dir) return false;
@@ -1891,11 +2232,11 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** The kernel's rule, and a plant or stone that is ready stands in the way (walking.ts). */
-  canWalk(s: Session, x: number, y: number): boolean {
+  canWalk(s: GameSession, x: number, y: number): boolean {
     return canEnter(this.b, this.walkable, this.nodeAt, s, x, y);
   }
 
-  private arrive(s: Session): void {
+  private arrive(s: GameSession): void {
     const [x, y] = s.pos;
     const riddles = riddleSlots(this.b, s.state);
     for (const slot of this.b.map.slots) {
@@ -1922,7 +2263,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** A step into a maze from outside shows it from above first (NEXT 9); never while a hunt runs. */
-  private enterMaze(s: Session): void {
+  private enterMaze(s: GameSession): void {
     const from = this.lastAt;
     this.lastAt = [...s.pos];
     if (!from || s.state.player.chase) return;
@@ -1934,14 +2275,14 @@ export class WorldScene extends Phaser.Scene {
   // ------------------------------------------------------------ day, night and the things in the dark
 
   /** The campfire, the stream, the ruins and a burning fire sound as loud as the player is near them (soundscape.ts). */
-  private hearPlace(s: Session): void {
+  private hearPlace(s: GameSession): void {
     const scape = soundscape(this.b, s.state, s.tick, this.player.x / T, this.player.y / T - 0.5);
     for (const id of ['fire', 'stream', 'dread'] as const) sound.bed(id, scape[id].level, scape[id].pan);
     sound.crackle(scape.crackle.level, scape.crackle.pan);
   }
 
   /** Draws B2's mist for the places the save leaves clear (src/mist.ts); a new texture only when they change, and a growing one in steps. */
-  private drawMist(s: Session, delta: number): Clear[] {
+  private drawMist(s: GameSession, delta: number): Clear[] {
     const first = !this.mistReady;
     this.mistReady = true;
     const clears = mistClears(this.b, s.state).map((c) => {
@@ -1972,7 +2313,7 @@ export class WorldScene extends Phaser.Scene {
    * beyond lies hidden, so a mote of light stands on the way to it, at the pocket's edge from where the character is,
    * and on the find itself once it is near. Gone once the find is taken, or when the find stands in the clear.
    */
-  private placeMote(s: Session, clears: Clear[], time: number): void {
+  private placeMote(s: GameSession, clears: Clear[], time: number): void {
     let want: { x: number; y: number } | undefined;
     if (s.state.player.attrs.senses > 0) {
       for (const id of this.digs.keys()) {
@@ -2002,7 +2343,7 @@ export class WorldScene extends Phaser.Scene {
    * drawn at the chimney while it is in view but still under the mist (always, when the chimney has no smoke of its
    * own). It shows once the bridge is mended. It dims with the night.
    */
-  private placeSmoke(s: Session, clears: Clear[], time: number): void {
+  private placeSmoke(s: GameSession, clears: Clear[], time: number): void {
     // the smoke is the bridge's pay: it shows once the first mend is in the save
     const chimney = s.state.player.restored.length > 0 ? nearestChimney(this.chimneys, { x: s.pos[0] * T, y: s.pos[1] * T }) : undefined;
     if (!chimney) {
@@ -2023,17 +2364,33 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
-  private shadeFor(s: Session): void {
+  private shadeFor(s: GameSession): void {
     const minute = minuteOfDay(this.b, s.tick);
     this.night = nightAt(minute);
     this.shade.setFillStyle(0x172a52, shadeAt(this.night));
     this.frameLook = frameAt(this.night, RICH.light);
     this.drawFrame();
     if (this.dusk) {
-      // gold over the valley around 20:00 and again around 05:30; the kernel's hours are untouched
-      this.dusk.setFillStyle(PALETTE.gold, duskAt(minute));
+      // the hour's wash from params: cool before sunrise, none at noon, warm by 16:30, dusk at 19:00
+      const wash = washAt(this.lightTable, minute);
+      this.dusk.setFillStyle(wash.tint, wash.alpha);
     }
     for (const d of this.dapples) d.setAlpha(dappleAt(this.night));
+    // the cloud shade goes with the sun; the banks gather before dawn and after dusk (sky.ts)
+    const fog = fogStrength(minute);
+    // the day's own sky: clear on some days, one cloud on others, heavy on a few
+    const day = Math.floor(s.tick / this.b.params.day_length_ms);
+    const k = this.cloudForce ?? cloudBucket(cloudCover(day));
+    if (k !== this.cloudDay) {
+      this.cloudDay = k;
+      for (const c of this.clouds) c.setTexture(`fx-cloud-${k}`);
+    }
+    const clear = k === 0 ? 0 : 1 - this.night;
+    for (const c of this.clouds) c.setAlpha(clear);
+    // the banks keep their pale tone through the dark, so the night's one shade does not swallow them
+    this.banks.forEach((b, i) =>
+      b.img.setAlpha(Math.min(BANK_NIGHT_LIFT.cap, fog * (BANK_WEIGHT[i] ?? 0.9) * (1 + BANK_NIGHT_LIFT.gain * this.night))),
+    );
     this.showHazards(s);
     const isNight = this.night >= 0.5;
     if (isNight !== this.wasNight) {
@@ -2056,7 +2413,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** At night: eyes at the edge of the forest that close when you come near, and whispers by the ruins. */
-  private haunt(s: Session, time: number): void {
+  private haunt(s: GameSession, time: number): void {
     const [px, py] = s.pos;
     for (const eye of this.eyes) {
       const ex = Math.floor(eye.x / T);
@@ -2154,7 +2511,7 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  private showSignatures(s: Session): void {
+  private showSignatures(s: GameSession): void {
     const blocked = app.ui.blocking;
     for (const spot of this.signSpots) {
       const d = Math.max(Math.abs(spot.x - 0.5 - s.pos[0]), Math.abs(spot.y - s.pos[1]));
@@ -2177,7 +2534,7 @@ export class WorldScene extends Phaser.Scene {
     this.impact(nodeId, kind, grade);
   }
 
-  private faceNode(s: Session, nodeId: string): void {
+  private faceNode(s: GameSession, nodeId: string): void {
     const inst = placedAt(this.b, nodeId);
     if (!inst) return;
     const dx = inst.x - s.pos[0];
@@ -2227,7 +2584,7 @@ export class WorldScene extends Phaser.Scene {
     emitter.explode(n, x, y);
   }
 
-  private drawBusy(s: Session, time: number): void {
+  private drawBusy(s: GameSession, time: number): void {
     this.bar.clear();
     if (this.auto) return;
     if (!s.busy) {
@@ -2267,7 +2624,7 @@ export class WorldScene extends Phaser.Scene {
    * and the pit are plain to see. At night the wolf is awake and the pit and
    * the trap are lost in the dark (G30). The hour is the kernel's, not the shade's.
    */
-  private showHazards(s: Session): void {
+  private showHazards(s: GameSession): void {
     const night = isNight(this.b, s.tick);
     for (const h of this.hazards) {
       const { spr, kind, rule, eyes, halo } = h;
@@ -2285,7 +2642,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Whether a predator is drawn now: by day it is away and only its den and tracks show (`wolfDrawnAt`). */
-  private wolfShown(h: { rule?: Hazard; run?: Run }, s: Session): boolean {
+  private wolfShown(h: { rule?: Hazard; run?: Run }, s: GameSession): boolean {
     const chase = s.state.player.chase;
     const awake = h.rule !== undefined && windowOpen(this.b, h.rule, s.tick);
     return wolfDrawnAt(awake, chase !== null && chase.hazard === h.rule?.id, h.run !== undefined);
@@ -2297,7 +2654,7 @@ export class WorldScene extends Phaser.Scene {
    * keeps it on its round and bites by its own clock. The moment a predator sees the player a "!"
    * stands over it, and a walking wolf's eyes flare (`SEEN`).
    */
-  private placePredators(s: Session): void {
+  private placePredators(s: GameSession): void {
     const chase = s.state.player.chase;
     const since = chase ? s.tick - chase.since : -1;
     let alarmed: Phaser.GameObjects.Sprite | undefined;
@@ -2326,7 +2683,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** The ground a drawn wolf runs on (`huntGround`), worked out again only when a mend or the camp changes it. */
-  private huntWalk(s: Session): (x: number, y: number) => boolean {
+  private huntWalk(s: GameSession): (x: number, y: number) => boolean {
     const p = s.state.player;
     const key = `${p.restored.join()}|${p.camp.join()}`;
     if (this.wolfGround?.key !== key) this.wolfGround = { key, walk: huntGround(this.b, s.state, this.walkable) };
@@ -2338,7 +2695,7 @@ export class WorldScene extends Phaser.Scene {
    * hunt begins, and back when it ends, however it ends. The hour is the shade's, so the song waits
    * for the shade's first look at this session's hour.
    */
-  private playSong(s: Session): void {
+  private playSong(s: GameSession): void {
     if (this.wasNight === undefined) return;
     const song = huntSong(s.state.player.chase !== null, this.wasNight);
     if (song === this.song) return;
@@ -2347,7 +2704,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Reeds and tall grass marked as cover soften the player, then release them at the next tile. */
-  private dimInCover(s: Session): void {
+  private dimInCover(s: GameSession): void {
     const at = this.falling ? s.state.player.at : s.pos;
     this.player.setAlpha(!this.falling && coverAt(this.b, at) ? 0.72 : 1);
   }
@@ -2369,7 +2726,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** The lantern burns around the player while they are out in the night it was lit for; in town or by day it is out. */
-  private placeLantern(s: Session): void {
+  private placeLantern(s: GameSession): void {
     if (!this.lantern) return;
     const lit = !this.falling && this.lanternFor !== undefined && lanternNight(this.b, s.state, s.pos, s.tick) === this.lanternFor;
     this.lantern.setVisible(lit);
@@ -2452,16 +2809,17 @@ export class WorldScene extends Phaser.Scene {
   /**
    * One press starts the work (DECISIONS.md, 2026-10-11): the kernel takes the action now and keeps
    * the player busy for as long as it lasts, and the swings, chips and the thing's own shaking show
-   * it. A step away takes the action back (Session.cancelWork), so nothing was yielded.
+   * it. A step away takes the action back (GameSession.cancelWork), so nothing was yielded.
    */
-  startWork(nodeId: string, onDone?: () => void): void {
+  async startWork(nodeId: string, onDone?: () => void): Promise<void> {
     const s = this.session;
     const inst = placedAt(this.b, nodeId);
     if (!s || !inst || this.auto) return;
     const kind = inst.kind === 'resource' ? resourceKind(resourceOf(this.b, nodeId)!) : treasureKind(this.b.treasures[inst.source]!);
     if (!kind) return;
     const action: Action = inst.kind === 'resource' ? { t: 'gather', node: nodeId, grade: 3, at: s.pos } : { t: 'dig', spot: nodeId, grade: 3, at: s.pos };
-    const res = s.act(action);
+    // an action on the server waits for its reply, so the work starts when the answer comes
+    const res = await s.act(action);
     if (!res.ok) return app.ui.toast(res.error, 'bad');
     const busy = res.events.find((e) => e.e === 'busy');
     if (!busy || busy.e !== 'busy') return;
@@ -2486,7 +2844,7 @@ export class WorldScene extends Phaser.Scene {
     return this.auto !== null;
   }
 
-  private workTick(s: Session): void {
+  private workTick(s: GameSession): void {
     const w = this.auto;
     if (!w) return;
     const elapsed = s.tick - w.start;
@@ -2503,7 +2861,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Walked away, or something opened: the work is dropped as if it had not begun. */
-  private stopWork(s: Session, w: Auto): void {
+  private stopWork(s: GameSession, w: Auto): void {
     this.endWork(w);
     s.cancelWork();
     this.faceFrame();
@@ -2521,7 +2879,7 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  private finishWork(s: Session, w: Auto): void {
+  private finishWork(s: GameSession, w: Auto): void {
     const img = this.nodes.get(w.node);
     // the tree that falls is a copy of the standing one, so the stump can be there under it at once
     const ghost = w.kind === 'fell' && img ? kitSprite(this, img.x, img.y, img.texture.key, img.frame.name).setOrigin(0.5, 1).setDepth(img.depth + 1).setAngle(img.angle) : undefined;
@@ -2642,6 +3000,8 @@ export class WorldScene extends Phaser.Scene {
         this.time.delayedCall(FAR_BELL.delayMs, () => sound.sfx('bell', { gain: FAR_BELL.gain, lowpass: FAR_BELL.lowpass, detune: FAR_BELL.detune }));
       }
       if (e.e === 'fire') {
+        // the fire the player just kindled has no sprite until the next refresh: build it now, so its sparks land on it
+        if (e.id === OWN_FIRE && this.session) this.ensureOwnFire(this.session);
         const f = this.fires.get(e.id);
         const s = this.session;
         // lit after its night was lost: no sparks of cheer
@@ -2658,7 +3018,7 @@ export class WorldScene extends Phaser.Scene {
 
   // ------------------------------------------------------------ interaction
 
-  private updatePrompt(s: Session): void {
+  private updatePrompt(s: GameSession): void {
     const t = this.canControl(s) && !this.move ? this.target(s) : undefined;
     const label = t?.label ?? '';
     if (label !== this.prompt) {
@@ -2676,7 +3036,7 @@ export class WorldScene extends Phaser.Scene {
     this.target(s)?.run();
   }
 
-  private target(s: Session): Target | undefined {
+  private target(s: GameSession): Target | undefined {
     const [x, y] = s.pos;
     const [fx, fy] = DIRS[s.facing];
     const order: [number, number][] = [[x + fx, y + fy], [x, y]];
@@ -2688,10 +3048,25 @@ export class WorldScene extends Phaser.Scene {
       const t = this.targetAt(s, tx, ty);
       if (t) return t;
     }
-    return undefined;
+    // nothing else to do here: with two logs and outside the town, the ground ahead takes a fire (NEXT 21b).
+    // It comes after every other target, so a fire never hides a thing the player already faces.
+    return this.kindleTarget(s);
   }
 
-  private targetAt(s: Session, x: number, y: number): Target | undefined {
+  /**
+   * The Build a fire button, where Build sits: on the tile the player faces, while the bag holds what kindling
+   * takes and that tile lies outside the town. The kernel decides the rest and keeps the logs on a refusal.
+   */
+  private kindleTarget(s: GameSession): Target | undefined {
+    if (!holdsKindling(this.b, s.state)) return undefined;
+    const [fx, fy] = DIRS[s.facing];
+    const tile: [number, number] = [s.pos[0] + fx, s.pos[1] + fy];
+    // the kernel tests the fire's tile, not the player's: one tile inside the edge facing out is allowed
+    if (isTownTile(this.b, tile)) return undefined;
+    return { label: 'Build a fire', run: () => app.ui.kindle(tile), tile, top: T };
+  }
+
+  private targetAt(s: GameSession, x: number, y: number): Target | undefined {
     const b = this.b;
     const p = s.state.player;
     const k = key(x, y);
@@ -2733,6 +3108,11 @@ export class WorldScene extends Phaser.Scene {
     // a fire takes wood from beside it, where Build and Mend are offered
     const fire = this.fireAt.get(k);
     if (fire && woodToFeed(b, s.state)) return { label: `Feed the ${fireName(fire)}`, run: () => app.ui.feed(fire), tile, top };
+    // the fire of one's own stands on no prop: its tile is offered the same way (NEXT 21b)
+    const own = s.state.player.own;
+    if (own !== null && own.at[0] === x && own.at[1] === y && woodToFeed(b, s.state)) {
+      return { label: `Feed the ${fireName(OWN_FIRE)}`, run: () => app.ui.feed(OWN_FIRE), tile, top };
+    }
     // a prop lit by a fire reads only while that fire burns (lit_by)
     const lit = () => readable(s.state, this.litBy.get(k), s.tick);
     const sign = this.signs.get(k);
