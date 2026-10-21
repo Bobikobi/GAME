@@ -24,7 +24,7 @@ Verify: `ls -la ~/openfold` shows the four files and no `.env` in git.
 
 ## 2. The two containers up
 
-Prepare: `.env` sets `AUTH_MODE=dev-header` and `ALLOW_DEV_HEADER=staging-only` (see `.env.example`; compose refuses to start without `AUTH_MODE`, and the API exits at boot without both). Then `docker compose -f compose.yml up -d --build` from `~/openfold`.
+Prepare: `.env` sets `AUTH_MODE=dev-header`, `ALLOW_DEV_HEADER=staging-only` and `IMAGE_TAG=<version>` (see `.env.example`; compose refuses to start without `AUTH_MODE`, and the API exits at boot without both). The box holds no source, so the image is built on the laptop, from the repo: `docker build -f deploy/Dockerfile -t openfold-api:<version> .`, then `docker save openfold-api:<version> | gzip > openfold-api.tar.gz`, and that file is copied to `~/openfold/`. On the box: `docker load -i openfold-api.tar.gz`, `rm openfold-api.tar.gz`, then `docker compose -f compose.yml up -d --no-build` from `~/openfold` — compose runs `image: openfold-api:${IMAGE_TAG:-latest}`, so `IMAGE_TAG` in `.env` says which build is up, and `--no-build` keeps it from looking for a source that is not on the box.
 What happens if it goes wrong: the two new containers fail to start; nothing else on the box notices, and
 `docker compose -f compose.yml down` removes them without touching the data volume.
 Verify: `docker compose -f compose.yml ps` shows `db` and `api` both healthy (the API's check is `GET /health`, which needs no identity); the boot log carries one line saying the server trusts the `x-player-id` header; `curl -s -H 'x-player-id: smoke' -X POST http://127.0.0.1:8710/session` answers 404 "No game state exists for this account." (the row is made by the opening handover, NEXT 18 d).

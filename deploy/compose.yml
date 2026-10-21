@@ -29,6 +29,9 @@ services:
       options: { max-size: "10m", max-file: "3" }
 
   api:
+    # named, so a box that holds no source runs this build instead of trying to make one: the runbook
+    # builds it on the laptop, copies it over and starts it with `up -d --no-build`
+    image: openfold-api:${IMAGE_TAG:-latest}
     build:
       context: ..
       dockerfile: deploy/Dockerfile
