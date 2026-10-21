@@ -911,6 +911,7 @@ export class World3D implements WorldView {
 
   private arrive(s: GameSession): void {
     const [x, y] = s.pos;
+    (s as { seeAt?: () => void }).seeAt?.();
     const riddles = riddleSlots(this.b, s.state);
     for (const slot of this.b.map.slots) {
       if (!inRect(x, y, slot)) {

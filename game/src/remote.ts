@@ -52,6 +52,8 @@ export class WireRefusal extends Error {
   constructor(
     message: string,
     readonly status: number,
+    /** the 409's machine-readable kind when the server sends one; an old server sends none */
+    readonly reason?: string,
   ) {
     super(message);
   }
@@ -78,8 +80,10 @@ export function fetchWire(base = '', send: typeof fetch = fetch): Wire {
       throw new WireGap('Waiting for the connection');
     }
     if (response.status === 401) throw new WireRefusal('Sign in to continue.', 401);
-    const answer = await response.json().catch(() => ({})) as { error?: string };
-    if (!response.ok) throw new WireRefusal(answer.error ?? 'The game server could not complete the request.', response.status);
+    const answer = await response.json().catch(() => ({})) as { error?: string; reason?: string };
+    if (!response.ok) {
+      throw new WireRefusal(answer.error ?? 'The game server could not complete the request.', response.status, answer.reason);
+    }
     return answer as StateReply | ChangeReply;
   };
   function post(path: '/session', body: unknown): Promise<StateReply>;
@@ -91,10 +95,16 @@ export function fetchWire(base = '', send: typeof fetch = fetch): Wire {
 }
 
 /**
- * The server's words when the version a call named is no longer its own (another device moved the state on).
- * The server answers 409 for this and for a step the kernel refuses alike, so the words tell the two apart.
+ * The 409 a phone must answer by reading the state again: the version it named is no longer the server's.
+ * The server sends `reason: 'stale'`; a server older than that code sends only the words, read as the fallback.
  */
+const STALE_REASON = 'stale';
 const STALE = 'The game state changed; resume before sending another action.';
+
+function isStale(refusal: WireRefusal): boolean {
+  if (refusal.status !== 409) return false;
+  return refusal.reason === undefined ? refusal.message === STALE : refusal.reason === STALE_REASON;
+}
 
 const TAIL = 40;
 /** How many movement reports one batch carries at most: the server's own cap (NEXT 18 a). */
@@ -330,7 +340,7 @@ export class RemoteSession implements GameSession {
     } catch (error) {
       if (error instanceof WireRefusal) {
         // a stale version is read again at once, or every action queued behind this one would name it too
-        if (error.status === 409 && error.message === STALE) await this.resync().catch(() => undefined);
+        if (isStale(error)) await this.resync().catch(() => undefined);
         return { ok: false, error: error.message };
       }
       throw error;

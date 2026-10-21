@@ -33,7 +33,7 @@ export interface Assembled {
     {
       dir: string;
       rel: string;
-      sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4; ramps?: string[] }>;
+      sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4; ramps?: string[]; scale?: number }>;
       palette?: string[];
       ramps?: { id: string; for?: string; steps: string[] }[];
     }
@@ -268,6 +268,8 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
               frames: s.frames ?? 1,
               density: s.density ?? 1,
               ...(s.ramps ? { ramps: s.ramps } : {}),
+              // read by the scale check (tools/src/kit/scale.ts); the bundle does not carry it
+              ...(s.scale === undefined ? {} : { scale: s.scale }),
             },
           ]),
         ),

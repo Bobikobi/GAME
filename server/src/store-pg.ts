@@ -89,11 +89,12 @@ export function createPgStore(pool: Pool): PlayerStore {
           'insert into action_log (account_id, seq, action, tick) values ($1, $2, $3, $4)',
           [playerId, next.version, action, books.tick],
         );
-        for (const deltaMg of books.goldDeltasMg) {
-          if (deltaMg === 0) continue; // the table refuses a zero, and a zero moved nothing
+        // each row names the action that paid it and that action's own tick, not the request's (NEXT 18 f)
+        for (const row of books.gold) {
+          if (row.deltaMg === 0) continue; // the table refuses a zero, and a zero moved nothing
           await client.query(
             'insert into gold_ledger (account_id, delta_mg, action, tick) values ($1, $2, $3, $4)',
-            [playerId, deltaMg, action, books.tick],
+            [playerId, row.deltaMg, JSON.stringify(row.action), row.tick],
           );
         }
         await client.query('commit');

@@ -12,6 +12,7 @@ import { assemble, type Assembled } from './assemble';
 import { readBoard } from './board';
 import { CORE_PALETTE } from './kit/palette';
 import { accentsOf, allowedColors, rampProblems } from './kit/ramps';
+import { scaleProblems } from './kit/scale';
 import { checkColors } from './colors';
 import { LOCK_FILE, loadAll, toRepoPath, type Issue } from './load';
 import { baseOf } from './material';
@@ -540,6 +541,8 @@ function checkKits(a: Assembled): Issue[] {
       const where = `kit.sprites.${name}`;
       const problem = spriteSizeProblem(name, s);
       if (problem) issues.push({ file: kitFile, where, message: problem, level: 'error' });
+      // A declared height in characters is held to its kind's floor (NATURE section 1, STYLE 1b).
+      for (const message of scaleProblems(name, s.scale)) issues.push({ file: kitFile, where, message, level: 'warning' });
       const abs = join(kit.dir, s.file);
       if (!existsSync(abs)) {
         issues.push({ file: kitFile, where, message: `missing file ${kit.rel}/${s.file}`, level: 'error' });

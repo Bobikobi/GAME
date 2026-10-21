@@ -2,6 +2,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { AddressInfo } from 'node:net';
 import { ATTRIBUTES, STEP_MILLI, WEAR_SLOTS, appearSlots, appears, step, walkCharge, type Action, type Bundle, type GameEvent, type State, type Tile } from '@game/kernel';
 
+import { goldRowsOf, type BookedStep, type LedgerRow } from './ledger';
 import { publicState, statePatch, type MergePatch, type PublicState } from './patch';
 
 const BODY_LIMIT = 64 * 1024;
@@ -31,8 +32,12 @@ export function createPlayerRecord(bundle: Bundle, state: State, acceptedAt: num
 
 /**
  * What an accepted request adds to the two books (NEXT 18 b): one action_log row, and one gold_ledger row
- * per gold change. The store writes them in the transaction of the compare-and-set, so a write that loses
- * the race leaves neither behind.
+ * per grant and payment (NEXT 18 f). The store writes them in the transaction of the compare-and-set, so a
+ * write that loses the race leaves neither behind.
+ *
+ * A gold row carries the action that paid it and that action's own tick, not the request's: inside a
+ * movement batch the paying step is one report, and a replay books the same row from the same report
+ * (`goldRowsOf` is the one rule both sides read).
  *
  * Gold is milli-gold in a JS number here, exact up to 2^53 milli-gold; it is a bigint only in the database.
  */
@@ -40,8 +45,8 @@ export interface Books {
   /** the action as the client sent it, or `{ kind: 'moves', moves }` for a movement batch */
   action: unknown;
   tick: number;
-  /** the milli-gold of each gold event the request caused; a zero is never booked */
-  goldDeltasMg: number[];
+  /** one row per grant and payment, each with the action and tick that paid it; a zero is never booked */
+  gold: LedgerRow[];
 }
 
 export interface PlayerStore {
@@ -56,13 +61,23 @@ export interface ApiOptions {
   resolvePlayerId(request: IncomingMessage): Promise<string | undefined>;
   /** Whether the database answers; GET /health reports it and reads no player row. Absent, the process is the only thing checked. */
   health?(): Promise<boolean>;
+  /** Sign-in's routes under `/auth/` (NEXT 18 e); absent in the header mode, where those paths are not found. */
+  signIn?: { handle(request: IncomingMessage, response: ServerResponse, url: URL): Promise<boolean> };
   now?: () => number;
   bodyLimit?: number;
 }
 
 interface ErrorBody {
   error: string;
+  /** a 409's machine-readable kind, so the phone reads a code rather than the words */
+  reason?: ConflictReason;
 }
+
+/**
+ * Why a 409 came back: the state a call named is no longer the server's (`stale`), or the step it named was
+ * refused for its own reason. The words say it to the player; the code is what the client branches on.
+ */
+export type ConflictReason = 'stale' | 'clock-ahead' | 'walk-credit' | 'refused' | 'backwards';
 
 interface StateBody {
   state: PublicState;
@@ -91,6 +106,7 @@ class RequestError extends Error {
   constructor(
     message: string,
     readonly status: number,
+    readonly reason?: ConflictReason,
   ) {
     super(message);
   }
@@ -249,7 +265,7 @@ function requirePlayer(record: PlayerRecord | undefined): PlayerRecord {
 
 function checkClock(tick: number, record: PlayerRecord, now: number): void {
   const allowed = now - record.acceptedAt + TICK_SLACK_MS;
-  if (tick - record.state.tick > allowed) throw new RequestError('That game time is ahead of the time elapsed.', 409);
+  if (tick - record.state.tick > allowed) throw new RequestError('That game time is ahead of the time elapsed.', 409, 'clock-ahead');
 }
 
 function nextMovementCredit(
@@ -274,7 +290,7 @@ function nextMovementCredit(
   const available = Math.min(maxCreditMs, movementCreditMs + elapsedSinceCredit);
   const cost = Math.floor((charge.milli * stepMs) / STEP_MILLI);
   if (cost > available) {
-    throw new RequestError('That is further than a walk goes in that time.', 409);
+    throw new RequestError('That is further than a walk goes in that time.', 409, 'walk-credit');
   }
   return { at: tick, creditMs: available - cost, leg: charge.leg };
 }
@@ -284,7 +300,7 @@ function actionTile(action: Action, current: Tile): Tile {
 }
 
 function refused(error: string): never {
-  throw new RequestError(error, 409);
+  throw new RequestError(error, 409, 'refused');
 }
 
 async function playerIdFor(request: IncomingMessage, resolve: ApiOptions['resolvePlayerId']): Promise<string> {
@@ -295,6 +311,8 @@ async function playerIdFor(request: IncomingMessage, resolve: ApiOptions['resolv
 
 async function route(request: IncomingMessage, response: ServerResponse, options: ApiOptions): Promise<void> {
   const url = new URL(request.url ?? '/', 'http://localhost');
+  // sign-in reads its own query strings (an OAuth callback, an email link) and answers before the game's rules
+  if (options.signIn && (await options.signIn.handle(request, response, url))) return;
   if (url.search || url.hash) throw new RequestError('This endpoint does not accept a query string.', 400);
   if (url.pathname === '/health') {
     // no identity and no player row: the one answer is whether the process and its pool are up, and it says nothing more
@@ -332,7 +350,7 @@ async function route(request: IncomingMessage, response: ServerResponse, options
     throw new RequestError('The request contains an unexpected field.', 400);
   }
   if (!validVersion(body.version)) throw new RequestError('A valid state version is required.', 400);
-  if (body.version !== record.version) throw new RequestError('The game state changed; resume before sending another action.', 409);
+  if (body.version !== record.version) throw new RequestError('The game state changed; resume before sending another action.', 409, 'stale');
 
   const now = (options.now ?? Date.now)();
   let state = record.state;
@@ -340,6 +358,8 @@ async function route(request: IncomingMessage, response: ServerResponse, options
   let movementAt = record.movementAt;
   let movementCreditMs = record.movementCreditMs;
   let booked: unknown;
+  /** the steps the request played: one action, or one step per report inside a movement batch */
+  const played: BookedStep[] = [];
 
   if (url.pathname === '/action') {
     if (!isAction(body.action) || body.action.t === 'move') throw new RequestError('Send one non-movement action.', 400);
@@ -363,6 +383,7 @@ async function route(request: IncomingMessage, response: ServerResponse, options
     events = result.events;
     movementAt = nextCredit.at;
     movementCreditMs = nextCredit.creditMs;
+    played.push({ action: body.action, tick: state.tick, events: result.events });
     booked = body.action;
   } else {
     if (!Array.isArray(body.moves) || body.moves.length === 0 || body.moves.length > MOVE_LIMIT) {
@@ -371,7 +392,7 @@ async function route(request: IncomingMessage, response: ServerResponse, options
     const reports = body.moves.map(moveReport);
     let previousTick = state.tick;
     for (const report of reports) {
-      if (report.tick < previousTick) throw new RequestError('Movement report times cannot run backwards.', 409);
+      if (report.tick < previousTick) throw new RequestError('Movement report times cannot run backwards.', 409, 'backwards');
       previousTick = report.tick;
     }
     checkClock(previousTick, record, now);
@@ -395,6 +416,8 @@ async function route(request: IncomingMessage, response: ServerResponse, options
       movementAt = nextCredit.at;
       movementCreditMs = nextCredit.creditMs;
       leg = nextCredit.leg;
+      // the report is the action that paid, at the report's own tick, and the replay reads the same two
+      played.push({ action: { t: 'move', at: report.at }, tick: report.tick, events: result.events });
     }
     booked = { kind: 'moves', moves: reports };
   }
@@ -409,10 +432,10 @@ async function route(request: IncomingMessage, response: ServerResponse, options
   const books: Books = {
     action: booked,
     tick: state.tick,
-    goldDeltasMg: events.flatMap((event) => (event.e === 'gold' && event.delta !== 0 ? [event.delta] : [])),
+    gold: goldRowsOf(options.bundle, played),
   };
   if (!(await options.store.compareAndSet(playerId, record.version, next, books))) {
-    throw new RequestError('The game state changed; resume before sending another action.', 409);
+    throw new RequestError('The game state changed; resume before sending another action.', 409, 'stale');
   }
   json(response, 200, { events, patch: statePatch(record.state, state), version: next.version, appears: appearIds(options.bundle, state) });
 }
@@ -425,7 +448,8 @@ export function createGameApi(options: ApiOptions): Server {
         return;
       }
       if (error instanceof RequestError) {
-        json(response, error.status, { error: error.message });
+        const body: ErrorBody = error.reason === undefined ? { error: error.message } : { error: error.message, reason: error.reason };
+        json(response, error.status, body);
         return;
       }
       json(response, 500, { error: 'The game server could not complete the request.' });
