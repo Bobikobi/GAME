@@ -2076,14 +2076,6 @@ Still out: sales while the player is away and other players buying (SETTLEMENT 3
 **Supersedes:** in part, those two 10.10 lines, for the stall only; the market board and the forms of a player's shop while away stand.
 **Retry when:** the shared world opens (then a stall's sales while away are designed with the two funds of 10.10), or stalls at the corner crowd the square (then where a stall stands moves, not whether). Model: claude-opus-5-5 (the manager wrote it; the answer is the owner's).
 
-## 2026-10-21 ✅ The stall draft as built: the kit's six places and their prices are kept in the save
-
-The build of the owner's answer of 20.10 (a player places a stall at the town's free corner, drafts its slots and prices, and the save keeps the draft). The kit's Shop tab wrote its six places into a variable in the open panel, so a reload lost them. The draft now lives on the session and lands in the save as one optional field, `stallDraft`: six entries, each `{ item, qty, price }` or `null`. An old save carries no field and loads exactly as it did, and nothing is written while every place is empty, so a player who never opened the tab keeps the save they had. On load, an entry naming an item this world dropped, or numbers outside the kit's window (a whole quantity of at least one, a price from 1 to 9999 gold), is left empty rather than trusted.
-
-The server door keeps no draft: `RemoteSession` holds no save and the server's state has no field for one, so there the draft lasts as long as the kit is open, and the same panel that reads it keeps it in its own memory. No file of `server/` and no line of `game/src/remote.ts` is touched. The draft still lists nothing and sells nothing: sales while the player is away and other players buying are SETTLEMENT 3.4.
-
-Tests: `game/test/session.test.ts`, "the stall draft in the save" - a price comes back after a reload, a save from before the field loads and writes none, a bad entry is left out, and a session that keeps no save has no draft.
-**Retry when:** the shared market opens (then a draft becomes a listing, with its own rules), or the server's state grows a stall field (then the remote door saves it as the phone does). Model: Copilot.
 ## 2026-10-21 ✅ Nature's schema fields: `scale` on a kit sprite, `climate` on a map body
 
 Two optional fields, as NATURE sections 1 and 2 propose, in the shared schema file alone so it lands fast. `scale` is a number from 0.1 to 40 (a sprite's height in characters; the one-decimal rule is for the check of step 2, not the schema, because a JSON-schema `multipleOf: 0.1` rejects valid values such as 1.7 through float error). `climate` is one of `temperate`, `dry`, `cold`, `wet`; left out, a region reads as temperate. `schema/test/nature.test.ts` covers both: the kit and the valley of today validate without the fields, each value is accepted, and out-of-range or off-list values are refused. Nothing reads either field yet; the scale check and `climates.json` follow as their own pull requests.
@@ -2095,3 +2087,12 @@ The owner named three gaps on 21.10. None is built now; each is filed where it r
 - **Music by a composer or real instruments.** Today every sound is the synthesizer's (`game/src/audio/`) and the game ships no audio file. A direction step of its own: three one-minute town-theme samples, each testing one named difference, after the art picks now open. The sound-by-place logic of 2026-10-11 stays; the beds change. The source and its cost are the owner's question.
 - **An illustrated map and UI** is polish inside Field Kit (2026-10-20). #257 is the map's function; its drawn art follows the 64 px waves.
 **Retry when:** the owner moves one of them earlier. Model: claude-opus-5-5 (the manager filed them; the gaps are the owner's).
+
+## 2026-10-21 ✅ The stall draft as built: the kit's six places and their prices are kept in the save
+
+The build of the owner's answer of 20.10 (a player places a stall at the town's free corner, drafts its slots and prices, and the save keeps the draft). The kit's Shop tab wrote its six places into a variable in the open panel, so a reload lost them. The draft now lives on the session and lands in the save as one optional field, `stallDraft`: six entries, each `{ item, qty, price }` or `null`. An old save carries no field and loads exactly as it did, and nothing is written while every place is empty, so a player who never opened the tab keeps the save they had. On load, an entry naming an item this world dropped, or numbers outside the kit's window (a whole quantity of at least one, a price from 1 to 9999 gold), is left empty rather than trusted.
+
+The server door keeps no draft: `RemoteSession` holds no save and the server's state has no field for one, so there the draft lasts as long as the kit is open, and the same panel that reads it keeps it in its own memory. No file of `server/` and no line of `game/src/remote.ts` is touched. The draft still lists nothing and sells nothing: sales while the player is away and other players buying are SETTLEMENT 3.4.
+
+Tests: `game/test/session.test.ts`, "the stall draft in the save" - a price comes back after a reload, a save from before the field loads and writes none, a bad entry is left out, a draft cleared back to empty leaves the field out again, and a session that keeps no save has no draft.
+**Retry when:** the shared market opens (then a draft becomes a listing, with its own rules), or the server's state grows a stall field (then the remote door saves it as the phone does). Model: Copilot.
