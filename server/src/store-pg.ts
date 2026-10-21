@@ -1,4 +1,4 @@
-import type { Pool } from 'pg';
+import type { ClientBase, Pool } from 'pg';
 import type { State } from '@game/kernel';
 
 import type { Books, PlayerRecord, PlayerStore } from './api';
@@ -39,8 +39,8 @@ function recordOf(row: PlayerRow): PlayerRecord {
   };
 }
 
-/** Write a player's first row: the state as `createPlayerRecord` built it, at version 1. */
-export async function insertPlayer(pool: Pool, playerId: string, record: PlayerRecord): Promise<void> {
+/** Write a player's first row: the state as `createPlayerRecord` built it, at version 1. A sign-up writes it inside its own transaction. */
+export async function insertPlayer(pool: Pool | ClientBase, playerId: string, record: PlayerRecord): Promise<void> {
   await pool.query(
     `insert into player_state (state, seed, kernel_version, content_version, clock_anchor_ms, movement_at, movement_credit_ms, version, account_id)
      values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,

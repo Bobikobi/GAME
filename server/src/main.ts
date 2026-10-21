@@ -43,6 +43,7 @@ function identity(chosen: Auth): Pick<ApiOptions, 'resolvePlayerId' | 'signIn'> 
   if (chosen.mode === 'dev-header') return { resolvePlayerId: chosen.resolve };
   const signIn = createSignIn({
     store: createPgAuthStore(pool),
+    bundle,
     mailer: logMailer(),
     google: chosen.session.google && googleProvider(chosen.session.google),
     publicOrigin: chosen.session.publicOrigin,
