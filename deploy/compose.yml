@@ -39,10 +39,18 @@ services:
       DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
       PORT: 8080
       # no default on purpose: the API exits at boot unless this names a mode it knows, so a missing
-      # line in .env stops the container instead of opening it to any caller (NEXT 18 e adds the real one)
+      # line in .env stops the container instead of opening it to any caller (session is the real one, NEXT 18 e)
       AUTH_MODE: ${AUTH_MODE:?set AUTH_MODE in .env}
       # empty unless .env sets it; dev-header refuses to start without ALLOW_DEV_HEADER=staging-only
       ALLOW_DEV_HEADER: ${ALLOW_DEV_HEADER:-}
+      # the session mode (NEXT 18 e); each is empty unless .env sets it, and the API refuses to start in that
+      # mode without the two origins, or with only one of the Google pair
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:-}
+      APP_ORIGIN: ${APP_ORIGIN:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      MAILER: ${MAILER:-log}
+      COUNTRY_HEADER: ${COUNTRY_HEADER:-}
     depends_on:
       db:
         condition: service_healthy

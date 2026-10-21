@@ -28,10 +28,13 @@ import {
 import {
   bookedGoldMg,
   checkAccount,
+  goldRowsOf,
+  replayAccount,
   createGameApi,
   ledgerSumMg,
   listen,
   type AccountBooks,
+  type BookedStep,
   type LedgerRow,
 } from '../src';
 import { loadBundle } from '../../tools/test/helpers/world.js';
@@ -162,6 +165,43 @@ describe('the ledger and the replay (NEXT 18 f)', () => {
       { e: 'gold', delta: -100 },
     ] as GameEvent[])).toEqual([250, -100]);
     expect(ledgerSumMg([])).toBe(0);
+  });
+
+  test.each(STARTS.map((start) => [start.starter, start] as const))(
+    "%s: the server's gold rows and the replay's gold rows are the same rows, action and tick and all",
+    async (_starter, start) => {
+      const { store } = await scriptedRun(start);
+      const replay = replayAccount(bundle, SEED, store.actionLog);
+      expect(replay.ok).toBe(true);
+      if (!replay.ok) return;
+      // not merely the same sum: the same rows, keyed the same way (the drift game-94 named on 21.10 14:10)
+      expect(store.goldLedger).toEqual(replay.replay.ledger);
+    },
+  );
+
+  test('a payment inside a movement batch is booked as the report that paid it, at the report\'s tick', () => {
+    // No step inside a batch pays gold in today's content, and the kernel is not changed for this test:
+    // the batch below is the one the books see, with the gold on its middle report. The server books its
+    // requests through `goldRowsOf` and a replay books its steps through `goldRowsOf`, so this one rule is
+    // what keeps an honest row from reading as forged the day a move pays (game-94, 21.10 14:10).
+    const stepMs = bundle.params.walk_step_ms;
+    const reports = [{ t: 'move', at: [2, 4] as [number, number] }, { t: 'move', at: [3, 4] as [number, number] }, { t: 'move', at: [4, 4] as [number, number] }];
+    const steps: BookedStep[] = reports.map((action, i) => ({
+      action,
+      tick: 1_000 + i * stepMs,
+      events: i === 1 ? [{ e: 'gold', delta: 250 }, { e: 'gold', delta: 0 }] : [],
+    }));
+    // one row, keyed by the report and its tick, not by the batch and the last tick
+    expect(goldRowsOf(bundle, steps)).toEqual([{ deltaMg: 250, action: reports[1], tick: 1_000 + stepMs }]);
+    // and a batch that pays twice keeps the order it paid in
+    const twice: BookedStep[] = [
+      { action: reports[0], tick: 1_000, events: [{ e: 'gold', delta: -100 }] },
+      { action: reports[1], tick: 1_000 + stepMs, events: [{ e: 'gold', delta: 300 }] },
+    ];
+    expect(goldRowsOf(bundle, twice)).toEqual([
+      { deltaMg: -100, action: reports[0], tick: 1_000 },
+      { deltaMg: 300, action: reports[1], tick: 1_000 + stepMs },
+    ]);
   });
 
   test('the log row and the state row line up: seq is the version the action made', async () => {
