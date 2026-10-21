@@ -106,6 +106,7 @@ GAP section 7 stands unchanged: the stills A, B and C (made with the ladder, sec
 | 7 | The rules in the ring generator and stamps at the cadence | With NEXT 19 b | The open-world stream | 19 a and b | NEXT 19's measures |
 | 8 | Characters, GAP section 7 steps 2 to 5 | Mechanics and production | The art stream | The pick of A, B or C | GAP section 7's measures |
 | 9 | The world's natural laws: the sheets of NATURE.md section 8 (made 21.10, `tools/stills/nature.py`), the owner's picks, then its steps 2 to 7 | Direction, then mechanics | The art stream and the light stream | The L1 to L3 pick for the look; nothing for the sheets | NATURE.md sections 7 and 11 |
+| 10 | The forest as a layered mass: canopy, edge and floor ([GAP_DIMRAETH_DRAKANTOS.md](GAP_DIMRAETH_DRAKANTOS.md) section 9, the owner, 21.10) | Direction, then mechanics | The art stream | The ladder pick and the GK2 method pick; NEXT 22 for walking under the canopy | The owner's pick in DECISIONS; then the wood's capture beside its still |
 
 Rules for every step: its own pull request off `origin/develop`, never stacked; shared files as PARALLEL.md says (the schema, the check, `assemble.ts`, the `world.ts` window); a look change only after its still is picked; polish inside a pick iterates without asking; the body carries the `pnpm verify` line and the step's measures as PASS or FAIL; a DECISIONS entry "as built" with a `Model:` line closes each step.
 
