@@ -35,25 +35,32 @@ describe('the scale warnings', () => {
   test('a kind with a scale under its floor is a warning', () => {
     const [problem] = scaleProblems('props/tree_oak', 2);
     expect(problem).toContain('under the floor of a oak, 3 characters');
-    expect(scaleProblems('creatures/wolf', 0.5)[0]).toContain('0.55');
+    expect(scaleProblems('props/hazard_wolf', 0.5)[0]).toContain('0.55');
     expect(scaleProblems('chars/child_down', 0.6)[0]).toContain('child');
   });
 
   test('a scale at or over its floor says nothing: bigger is open', () => {
     expect(scaleProblems('props/tree_oak', 3)).toEqual([]);
     expect(scaleProblems('props/tree_oak', 12.5)).toEqual([]);
-    expect(scaleProblems('creatures/horse', 1.3)).toEqual([]);
+    expect(scaleProblems('props/horse', 1.3)).toEqual([]);
     expect(scaleProblems('props/chest', 0.4)).toEqual([]);
   });
 
   test('the floors STYLE 1b picked with two decimals hold as given', () => {
     expect(scaleProblems('props/dog', 0.45)).toEqual([]);
     expect(scaleProblems('props/dog', 0.4)[0]).toContain('0.45');
-    expect(scaleProblems('creatures/horse', 1.2)[0]).toContain('1.25');
+    expect(scaleProblems('props/horse', 1.2)[0]).toContain('1.25');
   });
 
   test('a creature with no scale is a warning', () => {
     expect(scaleProblems('creatures/deer_walk', undefined)[0]).toContain('a creature declares its "scale"');
+  });
+
+  test('a creature is exempt from the floors: a monster declares its own grade', () => {
+    // NATURE section 1: "Monsters are exempt from the floors, never from the rules", and a monster kind
+    // declares its own grade, a design value chosen with its danger and not this table's animal
+    expect(scaleProblems('creatures/wolf', 0.5)).toEqual([]);
+    expect(scaleProblems('creatures/hen', 0.2)).toEqual([]);
   });
 
   test('any other sprite with no scale says nothing', () => {

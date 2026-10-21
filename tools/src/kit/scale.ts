@@ -67,15 +67,18 @@ export function scaleKindOf(name: string): ScaleKind | undefined {
 
 /**
  * What the check says about one sprite's `scale`, as warnings (NATURE 7): a height under its kind's
- * floor, and a creature with no height at all. NATURE 1 asks for one decimal, but STYLE 1b's picks
- * (a dog at 0.45, a child at 0.65, a horse at 1.25) carry two, so the check reads the number as given.
+ * floor, and a creature with no height at all. A creature is exempt from the floors - a monster
+ * declares its own grade (NATURE section 1) - so it owes the height and nothing more. NATURE 1 asks
+ * for one decimal, but STYLE 1b's picks (a dog at 0.45, a child at 0.65, a horse at 1.25) carry two,
+ * so the check reads the number as given.
  */
 export function scaleProblems(name: string, scale: number | undefined): string[] {
-  if (scale === undefined) {
-    return name.startsWith(`${CREATURE_GROUP}/`)
+  if (name.startsWith(`${CREATURE_GROUP}/`)) {
+    return scale === undefined
       ? ['a creature declares its "scale", its height in characters (NATURE section 1)']
       : [];
   }
+  if (scale === undefined) return [];
   const kind = scaleKindOf(name);
   return kind && scale < kind.floor
     ? [`scale ${scale} is under the floor of a ${kind.kind}, ${kind.floor} characters (NATURE section 1, STYLE 1b); bigger is open`]
