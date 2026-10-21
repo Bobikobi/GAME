@@ -2075,3 +2075,11 @@ The Field Kit work drew a stall a player sets up: a draft of six slots with pric
 Still out: sales while the player is away and other players buying (SETTLEMENT 3.4, the shared world), and houses and plots, still paused (10.10). The stall is a look and a draft until then; it sells nothing on its own.
 **Supersedes:** in part, those two 10.10 lines, for the stall only; the market board and the forms of a player's shop while away stand.
 **Retry when:** the shared world opens (then a stall's sales while away are designed with the two funds of 10.10), or stalls at the corner crowd the square (then where a stall stands moves, not whether). Model: claude-opus-5-5 (the manager wrote it; the answer is the owner's).
+
+## 2026-10-21 ✅ Three gaps of 21.10 filed under their stages: the forest as mass, music played by people, the illustrated map
+
+The owner named three gaps on 21.10. None is built now; each is filed where it runs (GAP_DIMRAETH_DRAKANTOS section 9, ART_SYSTEM step 10).
+- **The forest as a layered mass** (canopy, edge, floor) was in no plan. It is a direction: stills first, after the ladder pick (#240) and the GK2 method pick, which decide how a tree is drawn; walking under a canopy waits on free movement (NEXT 22).
+- **Music by a composer or real instruments.** Today every sound is the synthesizer's (`game/src/audio/`) and the game ships no audio file. A direction step of its own: three one-minute town-theme samples, each testing one named difference, after the art picks now open. The sound-by-place logic of 2026-10-11 stays; the beds change. The source and its cost are the owner's question.
+- **An illustrated map and UI** is polish inside Field Kit (2026-10-20). #257 is the map's function; its drawn art follows the 64 px waves.
+**Retry when:** the owner moves one of them earlier. Model: claude-opus-5-5 (the manager filed them; the gaps are the owner's).
