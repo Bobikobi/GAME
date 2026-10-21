@@ -272,7 +272,7 @@ export class Session implements GameSession {
         ? file.stall
         : undefined;
     if (session.stall) session.seen.add(session.stall);
-    readStallDraft(file.stallDraft, bundle).forEach((draft, i) => (session.stallDraft[i] = draft));
+    readStallDraft(file.stallDraft, bundle, state.player.bag).forEach((draft, i) => (session.stallDraft[i] = draft));
     session.seeAt();
     return session;
   }
@@ -548,19 +548,22 @@ function readSave(): SaveFile | undefined {
 }
 
 /**
- * A saved stall draft, fitted to this world: a place whose item is gone, or whose numbers are
- * outside what the kit's price window takes, stays empty. A save from before the draft carries none.
+ * A saved stall draft, fitted to this world: a place whose item the bag no longer holds, or whose
+ * numbers are outside what the kit's price window takes, stays empty, and a quantity is cut to what
+ * the bag carries. A save from before the draft carries none.
  */
-function readStallDraft(raw: unknown, bundle: Bundle): (StallDraft | null)[] {
+function readStallDraft(raw: unknown, bundle: Bundle, bag: Readonly<Record<string, number>>): (StallDraft | null)[] {
   const draft: (StallDraft | null)[] = Array.from({ length: STALL_SLOTS }, () => null);
   if (!Array.isArray(raw)) return draft;
   raw.slice(0, STALL_SLOTS).forEach((entry, i) => {
     if (typeof entry !== 'object' || entry === null) return;
     const { item, qty, price } = entry as Partial<StallDraft>;
     if (typeof item !== 'string' || !(item in bundle.items)) return;
+    const can = bag[item] ?? 0;
+    if (can < 1) return;
     if (!Number.isInteger(qty) || (qty as number) < 1) return;
     if (!Number.isInteger(price) || (price as number) < 1 || (price as number) > 9999) return;
-    draft[i] = { item, qty: qty as number, price: price as number };
+    draft[i] = { item, qty: Math.min(qty as number, can), price: price as number };
   });
   return draft;
 }
