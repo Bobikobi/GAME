@@ -2120,6 +2120,14 @@ The owner named three gaps on 21.10. None is built now; each is filed where it r
 - **An illustrated map and UI** is polish inside Field Kit (2026-10-20). #257 is the map's function; its drawn art follows the 64 px waves.
 **Retry when:** the owner moves one of them earlier. Model: claude-opus-5-5 (the manager filed them; the gaps are the owner's).
 
+## 2026-10-21 ✅ The stall draft as built: the kit's six places and their prices are kept in the save
+
+The build of the owner's answer of 20.10 (a player places a stall at the town's free corner, drafts its slots and prices, and the save keeps the draft). The kit's Shop tab wrote its six places into a variable in the open panel, so a reload lost them. The draft now lives on the session and lands in the save as one optional field, `stallDraft`: six entries, each `{ item, qty, price }` or `null`. An old save carries no field and loads exactly as it did, and nothing is written while every place is empty, so a player who never opened the tab keeps the save they had. On load, an entry naming an item this world dropped, or numbers outside the kit's window (a whole quantity of at least one, a price from 1 to 9999 gold), is left empty rather than trusted.
+
+The server door keeps no draft: `RemoteSession` holds no save and the server's state has no field for one, so there the draft lasts as long as the kit is open, and the same panel that reads it keeps it in its own memory. No file of `server/` and no line of `game/src/remote.ts` is touched. The draft still lists nothing and sells nothing: sales while the player is away and other players buying are SETTLEMENT 3.4.
+
+Tests: `game/test/session.test.ts`, "the stall draft in the save" - a price comes back after a reload, a save from before the field loads and writes none, a bad entry is left out, a draft cleared back to empty leaves the field out again, and a session that keeps no save has no draft.
+**Retry when:** the shared market opens (then a draft becomes a listing, with its own rules), or the server's state grows a stall field (then the remote door saves it as the phone does). Model: Copilot.
 ## 2026-10-21 ✅ The books on the server: one `gold_ledger` row per grant, and an account's log that plays again (NEXT 18 f)
 
 The gold book and the action log now have one definition each, in `server/src/ledger.ts`, and the server and the proof read the same one.

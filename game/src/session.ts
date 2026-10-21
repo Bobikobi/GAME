@@ -41,6 +41,26 @@ export const LONGEST_FRAME_MS = 250;
 
 export type { Facing, LogEntry, SessionEvents } from './session-surface';
 
+/** One place in the player's stall draft: what it holds, and the price asked for it in gold. */
+export interface StallDraft {
+  item: string;
+  qty: number;
+  price: number;
+}
+
+/** The places the kit's Shop tab shows. */
+export const STALL_SLOTS = 6;
+
+/**
+ * The draft stall the kit is arranging, when the session keeps one: the phone's save does, and a
+ * server session has no such field yet, so the draft stays in the open panel there. Screens write
+ * into the array they are given and call `save()`.
+ */
+export function stallDraftOf(session: unknown): (StallDraft | null)[] | undefined {
+  const draft = (session as { stallDraft?: unknown } | null | undefined)?.stallDraft;
+  return Array.isArray(draft) && draft.length === STALL_SLOTS ? (draft as (StallDraft | null)[]) : undefined;
+}
+
 interface SaveFile {
   v: typeof SAVE_VERSION;
   kernel: string;
@@ -62,6 +82,8 @@ interface SaveFile {
   seenChunks?: string[];
   /** the slot the player's stall stands in, once placed */
   stall?: string;
+  /** the stall the kit is arranging, one entry per place; absent in old saves and while it is empty */
+  stallDraft?: (StallDraft | null)[];
 }
 
 type Listener = (payload: never) => void;
@@ -82,6 +104,8 @@ export class Session implements GameSession {
   readonly seenChunks = new Set<string>();
   /** The slot the player's stall stands in, once placed at the empty corner. */
   stall: string | undefined;
+  /** The stall the kit is arranging; kept in the save, and nothing is listed anywhere yet. */
+  readonly stallDraft: (StallDraft | null)[] = Array.from({ length: STALL_SLOTS }, () => null);
   tail: LogEntry[] = [];
   /** set when the save was made with other content and had to be adapted */
   adapted = false;
@@ -248,6 +272,7 @@ export class Session implements GameSession {
         ? file.stall
         : undefined;
     if (session.stall) session.seen.add(session.stall);
+    readStallDraft(file.stallDraft, bundle).forEach((draft, i) => (session.stallDraft[i] = draft));
     session.seeAt();
     return session;
   }
@@ -490,6 +515,7 @@ export class Session implements GameSession {
       seen: [...this.seen].sort(),
       seenChunks: [...this.seenChunks].sort(),
       stall: this.stall,
+      stallDraft: this.stallDraft.some((draft) => draft !== null) ? this.stallDraft : undefined,
       tail: this.tail,
     };
     try {
@@ -519,6 +545,24 @@ function readSave(): SaveFile | undefined {
   } catch {
     return undefined;
   }
+}
+
+/**
+ * A saved stall draft, fitted to this world: a place whose item is gone, or whose numbers are
+ * outside what the kit's price window takes, stays empty. A save from before the draft carries none.
+ */
+function readStallDraft(raw: unknown, bundle: Bundle): (StallDraft | null)[] {
+  const draft: (StallDraft | null)[] = Array.from({ length: STALL_SLOTS }, () => null);
+  if (!Array.isArray(raw)) return draft;
+  raw.slice(0, STALL_SLOTS).forEach((entry, i) => {
+    if (typeof entry !== 'object' || entry === null) return;
+    const { item, qty, price } = entry as Partial<StallDraft>;
+    if (typeof item !== 'string' || !(item in bundle.items)) return;
+    if (!Number.isInteger(qty) || (qty as number) < 1) return;
+    if (!Number.isInteger(price) || (price as number) < 1 || (price as number) > 9999) return;
+    draft[i] = { item, qty: qty as number, price: price as number };
+  });
+  return draft;
 }
 
 /**

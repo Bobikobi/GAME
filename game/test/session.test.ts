@@ -4,7 +4,7 @@ import { OWN_FIRE, type Bundle, type GameEvent, type Tile, isSafe, makeWalkable,
 import { app } from '../src/app';
 import { LEGACY_SAVE_KEY, SAVE_KEY } from '../src/config';
 import { s1Use } from '../src/net/s1';
-import { DEMO_SINCE_KEY, Session } from '../src/session';
+import { DEMO_SINCE_KEY, Session, stallDraftOf } from '../src/session';
 import { questSteps, readyToHandIn } from '../src/text';
 import { say } from '../src/ui/dialog';
 import { UI } from '../src/ui/ui';
@@ -335,6 +335,61 @@ describe('session persistence', () => {
     app.session = Session.restore(bundle)!;
     await talker().talk('core/elder');
     expect(vi.mocked(say).mock.calls[1]?.[2]).not.toEqual(remark.say);
+  });
+});
+
+describe('the stall draft in the save', () => {
+  test('a price set in the kit comes back after a reload', () => {
+    const session = startedSession();
+    stallDraftOf(session)![0] = { item: 'core/axe', qty: 1, price: 7 };
+    session.save();
+
+    const restored = stallDraftOf(Session.restore(bundle)!);
+    expect(restored?.[0]).toEqual({ item: 'core/axe', qty: 1, price: 7 });
+    expect(restored?.[1]).toBeNull();
+  });
+
+  test('a save from before the draft loads, and nothing is written while every place is empty', () => {
+    const session = startedSession();
+    expect(stallDraftOf(session)?.every((draft) => draft === null)).toBe(true);
+    expect('stallDraft' in (JSON.parse(storage.getItem(SAVE_KEY)!) as Record<string, unknown>)).toBe(false);
+    expect(Session.restore(bundle)?.started).toBe(true);
+  });
+
+  test('an item this world dropped, and a price outside the kit window, are left out on load', () => {
+    const session = startedSession();
+    session.save();
+    const file = JSON.parse(storage.getItem(SAVE_KEY)!) as Record<string, unknown>;
+    file.stallDraft = [
+      { item: 'ghost/no-such-axe', qty: 1, price: 5 },
+      { item: 'core/axe', qty: 0, price: 5 },
+      { item: 'core/axe', qty: 1, price: 0 },
+      { item: 'core/axe', qty: 1, price: 2.5 },
+      { item: 'core/axe', qty: 1, price: 99999 },
+      { item: 'core/axe', qty: 1, price: 12 },
+    ];
+    storage.setItem(SAVE_KEY, JSON.stringify(file));
+
+    const restored = stallDraftOf(Session.restore(bundle)!)!;
+    expect(restored.slice(0, 5)).toEqual([null, null, null, null, null]);
+    expect(restored[5]).toEqual({ item: 'core/axe', qty: 1, price: 12 });
+  });
+
+  test('a draft cleared back to empty leaves the field out of the save again', () => {
+    const session = startedSession();
+    stallDraftOf(session)![0] = { item: 'core/axe', qty: 1, price: 7 };
+    session.save();
+    expect('stallDraft' in (JSON.parse(storage.getItem(SAVE_KEY)!) as Record<string, unknown>)).toBe(true);
+
+    stallDraftOf(session)![0] = null;
+    session.save();
+    expect('stallDraft' in (JSON.parse(storage.getItem(SAVE_KEY)!) as Record<string, unknown>)).toBe(false);
+    expect(Session.restore(bundle)?.started).toBe(true);
+  });
+
+  test('a session that keeps no save has no draft, so the kit keeps it in the open panel', () => {
+    // the server door has no such field on its state
+    expect(stallDraftOf({ seen: new Set<string>(), seenChunks: new Set<string>() })).toBeUndefined();
   });
 });
 
