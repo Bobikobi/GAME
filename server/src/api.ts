@@ -2,7 +2,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { AddressInfo } from 'node:net';
 import { ATTRIBUTES, WEAR_SLOTS, appearSlots, appears, step, walkDistance, type Action, type Bundle, type GameEvent, type State, type Tile } from '@game/kernel';
 
-import { bookedGoldMg } from './ledger';
+import { ledgerRowsFor } from './ledger';
 import { publicState, statePatch, type MergePatch, type PublicState } from './patch';
 
 const BODY_LIMIT = 64 * 1024;
@@ -413,7 +413,8 @@ async function route(request: IncomingMessage, response: ServerResponse, options
   const books: Books = {
     action: booked,
     tick: state.tick,
-    goldDeltasMg: bookedGoldMg(options.bundle, booked, events),
+    // the same rule the replay books by: the request's own action, at the tick it ended at
+    goldDeltasMg: ledgerRowsFor(options.bundle, booked, state.tick, events).map((row) => row.deltaMg),
   };
   if (!(await options.store.compareAndSet(playerId, record.version, next, books))) {
     throw new RequestError('The game state changed; resume before sending another action.', 409, 'stale');

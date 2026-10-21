@@ -73,6 +73,17 @@ export function bookedGoldMg(bundle: Bundle, action: unknown, events: readonly G
   return rows;
 }
 
+/**
+ * The rows one accepted request writes: one per grant and payment, and every one of them under the
+ * request's own logged action and the tick the request ended at. The server books through this, and so
+ * does the replay, so a movement batch's row is the batch in both books and never one move inside it
+ * with that report's tick: today no step inside a batch pays gold, and the day one does, the two books
+ * must still name the same row.
+ */
+export function ledgerRowsFor(bundle: Bundle, action: unknown, tick: number, events: readonly GameEvent[]): LedgerRow[] {
+  return bookedGoldMg(bundle, action, events).map((deltaMg) => ({ deltaMg, action, tick }));
+}
+
 /** The gold a book holds, in milli-gold: the state's purse is this number, exactly. */
 export function ledgerSumMg(ledger: readonly LedgerRow[]): number {
   return ledger.reduce((total, row) => total + row.deltaMg, 0);
@@ -110,14 +121,15 @@ export function replayAccount(bundle: Bundle, seed: number, log: readonly Logged
   for (const row of log) {
     const steps = stepsOf(row.action, row.tick);
     if (typeof steps === 'string') return { ok: false, problem: `seq ${row.seq}: ${steps}` };
+    const events: GameEvent[] = [];
     for (const one of steps) {
       const result = step(bundle, state, one.action, one.tick, { validateTravel: true });
       if (!result.ok) return { ok: false, problem: `seq ${row.seq} does not play again: ${result.error}` };
-      for (const deltaMg of bookedGoldMg(bundle, one.action, result.events)) {
-        ledger.push({ deltaMg, action: one.action, tick: one.tick });
-      }
+      events.push(...result.events);
       state = result.state;
     }
+    // the row the server wrote for this request: its own action, and the tick the request ended at
+    ledger.push(...ledgerRowsFor(bundle, row.action, state.tick, events));
   }
   return { ok: true, replay: { state, ledger } };
 }

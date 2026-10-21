@@ -29,8 +29,10 @@ import {
   bookedGoldMg,
   checkAccount,
   createGameApi,
+  ledgerRowsFor,
   ledgerSumMg,
   listen,
+  replayAccount,
   type AccountBooks,
   type LedgerRow,
 } from '../src';
@@ -108,6 +110,36 @@ describe('the ledger and the replay (NEXT 18 f)', () => {
       }
     },
   );
+
+  test('a request is booked as its own logged action, at the tick it ended at, batch included', async () => {
+    // the row the server writes and the row the replay expects come from one rule, so a batch is the
+    // batch in both books and never one move inside it: today no step in a batch pays gold, and the
+    // day one does, both sides must still name the same row
+    const batch = { kind: 'moves', moves: [{ kind: 'move', at: [10, 18], tick: 400 }, { kind: 'move', at: [11, 18], tick: 600 }] };
+    const paidInside: GameEvent[] = [{ e: 'visit', slot: 'core/threshold' }, { e: 'gold', delta: 7_000 }];
+    expect(ledgerRowsFor(bundle, batch, 600, paidInside)).toEqual([{ deltaMg: 7_000, action: batch, tick: 600 }]);
+
+    // and the same for one action, whose own action and tick are the request's
+    const sale = { t: 'sell' as const, npc: 'core/trader', item: 'core/log', qty: 1, at: [0, 0] as [number, number] };
+    expect(ledgerRowsFor(bundle, sale, 900, [{ e: 'gold', delta: -5_000 }])).toEqual([{ deltaMg: -5_000, action: sale, tick: 900 }]);
+    // a zero moved nothing and is never booked
+    expect(ledgerRowsFor(bundle, sale, 900, [{ e: 'gold', delta: 0 }])).toEqual([]);
+  });
+
+  test('the replay books a movement batch as the batch, never a single move inside it', async () => {
+    const { store } = await scriptedRun(STARTS[0]);
+    const batchRow = required(store.actionLog.find((entry) => (entry.action as { kind?: string }).kind === 'moves'), 'The run has no movement batch.');
+    const played = replayAccount(bundle, SEED, store.actionLog);
+    expect(played.ok).toBe(true);
+    if (!played.ok) return;
+    // every row the replay books names a log row's action and the tick that row ended at, as the store's do
+    for (const row of played.replay.ledger) {
+      expect(store.actionLog.some((entry) => entry.tick === row.tick && JSON.stringify(entry.action) === JSON.stringify(row.action))).toBe(true);
+    }
+    // and a batch paying gold would be booked under the batch, not under a `move` the log never holds
+    expect(played.replay.ledger.some((row) => (row.action as { t?: string }).t === 'move')).toBe(false);
+    expect(ledgerRowsFor(bundle, batchRow.action, batchRow.tick, [])).toEqual([]);
+  });
 
   test('a grant with no action behind it fails the check', async () => {
     const { store } = await scriptedRun(STARTS[0]);
