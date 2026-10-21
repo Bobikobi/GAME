@@ -15,10 +15,16 @@ describe('the sun', () => {
     expect(sunAt(SUN_TODAY, 5 * 60).up).toBe(false);
   });
 
-  test('points left in the morning, straight down at noon, right in the evening', () => {
+  test('points left in the morning, straight back at noon, right in the evening', () => {
     expect(sunAt(SUN_TODAY, 8 * 60).sx).toBeLessThan(0);
     expect(sunAt(SUN_TODAY, 12 * 60).sx).toBeCloseTo(0, 6);
     expect(sunAt(SUN_TODAY, 16 * 60 + 30).sx).toBeGreaterThan(0);
+  });
+
+  test('falls away from the viewer all day: the sun stands south (GK2 B)', () => {
+    for (const minute of [6 * 60, 8 * 60, 12 * 60, 16 * 60 + 30, 17 * 60]) {
+      expect(sunAt(SUN_TODAY, minute).sy).toBeLessThan(0);
+    }
   });
 
   test('is long at 08:00 and 16:30 and short at noon, within the decided range', () => {
@@ -36,10 +42,10 @@ describe('the sun', () => {
     expect(sunAt(SUN_TODAY, 12 * 60).length * 96).toBeLessThanOrEqual(12);
   });
 
-  test('steps evenly between two keys', () => {
+  test('steps evenly between two keys, the shear away from the viewer throughout', () => {
     const seven = sunAt(SUN_TODAY, 7 * 60);
     expect(seven.sx).toBeCloseTo(-0.945, 3);
-    expect(seven.sy).toBeCloseTo(0.38, 3);
+    expect(seven.sy).toBeCloseTo(-0.38, 3);
   });
 
   test('never grows past the cap, and carries the table alpha', () => {
@@ -62,8 +68,8 @@ describe('the sun', () => {
       alpha: 30,
       cap: 110,
       keys: [
-        { at: '16:30', right: 102, down: 41 },
-        { at: '08:00', right: -86, down: 37 },
+        { at: '16:30', right: 102, down: -41 },
+        { at: '08:00', right: -86, down: -37 },
       ],
     });
     expect(table.keys.map((k) => k.at)).toEqual([8 * 60, 16 * 60 + 30]);
@@ -129,6 +135,19 @@ describe('the shadow', () => {
     expect(left.minX).toBe(0);
     expect(left.maxX).toBe(3);
     expect(left.spans).toContainEqual({ x: 0, y: 1, w: 3 });
+  });
+
+  test('under the valley sun the shadow falls up-screen: up-left at 08:00, up-right at 16:30', () => {
+    const morning = shadowOf(mask, sunAt(SUN_TODAY, 8 * 60));
+    expect(morning.spans.every((s) => s.y <= 0)).toBe(true);
+    expect(morning.spans.some((s) => s.y < 0)).toBe(true);
+    expect(morning.minX).toBeLessThan(1);
+    expect(morning.contact).toEqual([[1, 3]]);
+    const evening = shadowOf(mask, sunAt(SUN_TODAY, 16 * 60 + 30));
+    expect(evening.spans.every((s) => s.y <= 0)).toBe(true);
+    expect(evening.spans.some((s) => s.y < 0)).toBe(true);
+    expect(evening.maxX).toBeGreaterThan(3);
+    expect(evening.contact).toEqual([[1, 3]]);
   });
 
   test('a flat sun keeps the silhouette on one row', () => {

@@ -8,6 +8,11 @@
  * The caller draws the spans into a mask at one alpha, so where two casters overlap the
  * ground is no darker than under one.
  *
+ * The sun stands south (the GK2 method B, DECISIONS 2026-10-21): the fronts of the standing
+ * things take the light and the shadow falls away from the viewer, up-screen, behind the
+ * caster. So `sy` is negative, and a thing that stands north covers the shadow its neighbour
+ * casts. Morning leans left, evening right, noon straight back.
+ *
  * The sun's numbers are data (`params.light.sun`): keyed hours with the shear right and down
  * in whole percent, the cast alpha and the length cap. A season is a change of data, not of
  * code. `SUN_TODAY` is the valley's table when a bundle carries none, and the one the tests
@@ -22,7 +27,7 @@ export interface SunKey {
   at: Minute;
   /** positive leans right, negative left */
   right: number;
-  /** toward the viewer, always forward */
+  /** positive toward the viewer; negative under the sun in the south (GK2 B), the shadow falling up-screen */
   down: number;
 }
 
@@ -40,7 +45,7 @@ export interface Sun {
   up: boolean;
   /** art px to the right per art px of height; negative in the morning */
   sx: number;
-  /** art px toward the viewer per art px of height, always forward */
+  /** art px toward the viewer per art px of height; negative under the sun in the south, so the shadow falls away */
   sy: number;
   /** the shadow's length as a share of the caster's height, never past the table's cap */
   length: number;
@@ -48,19 +53,23 @@ export interface Sun {
   alpha: number;
 }
 
-/** STYLE section 4 as decided: 0.8 to 1.1 of the height at 08:00 and 16:30, at most 12 art px past the feet at noon. */
+/**
+ * STYLE section 4 as decided: 0.8 to 1.1 of the height at 08:00 and 16:30, at most 12 art px
+ * past the feet at noon, the sun in the south (GK2 B): the morning shadow up-left, the
+ * evening up-right.
+ */
 export const SUN_TODAY: SunTable = {
   alpha: 0.3,
   cap: 1.1,
   keys: [
-    { at: 6 * 60, right: -103, down: 39 },
-    { at: 8 * 60, right: -86, down: 37 },
-    { at: 10 * 60, right: -22, down: 16 },
-    { at: 12 * 60, right: 0, down: 11 },
-    { at: 14 * 60, right: 22, down: 16 },
-    { at: 16 * 60, right: 86, down: 37 },
-    { at: 16 * 60 + 30, right: 102, down: 41 },
-    { at: 18 * 60, right: 103, down: 39 },
+    { at: 6 * 60, right: -103, down: -39 },
+    { at: 8 * 60, right: -86, down: -37 },
+    { at: 10 * 60, right: -22, down: -16 },
+    { at: 12 * 60, right: 0, down: -11 },
+    { at: 14 * 60, right: 22, down: -16 },
+    { at: 16 * 60, right: 86, down: -37 },
+    { at: 16 * 60 + 30, right: 102, down: -41 },
+    { at: 18 * 60, right: 103, down: -39 },
   ],
 };
 

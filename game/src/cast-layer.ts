@@ -24,7 +24,12 @@ export interface Caster {
   enabled: boolean;
 }
 
-/** Where the two shadow layers sit, between the ground and the things that stand on it. */
+/**
+ * Where the two shadow layers sit, between the ground and the things that stand on it. Both
+ * are below `DEPTH.puff` (3.5), the shallowest thing `world.ts` lets cast, so with the sun in
+ * the south (GK2 B) a caster is drawn over its own shadow and a thing standing north, nearer
+ * the sun, covers the shadow that falls behind it.
+ */
 export const CAST_DEPTH = { under: 1.5, standing: 2.5, contact: 0.1 } as const;
 
 const INK = `#${SHADOW.ink.toString(16).padStart(6, '0')}`;

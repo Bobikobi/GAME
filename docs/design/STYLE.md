@@ -123,13 +123,13 @@ The engine draws the edges between grounds, so a new ground ships only its fill 
 - Later grounds (mud, ash, ice, moss, swamp) each add a row of their own.
 - **On one level:** the higher-ranked ground lies over the lower on a ragged line, never along a tile edge. The pixels of the lower ground along that line are one step darker (frame `terrain-T1`).
 
-## 4. Light and shadow (decided: C)
+## 4. Light and shadow (decided: C; the direction moved with the GK2 B sun)
 
 | Part | Rule |
 |---|---|
 | Cast shadow | The caster's silhouette, sheared away from the light. A pixel z rows above the lowest solid row lands at (x + z·sx, feet + z·sy). Colour `#1b1a2e` at 30%. Where shadows overlap, the ground is no darker than under one |
 | Length | 0.8 to 1.1 times the caster's height at 08:00 and 16:30. At 12:00, no more than 12 art px past the feet |
-| Direction | Free (the owner's word). The convention: a little toward the viewer, left in the morning, right in the evening. Every caster in a frame points the same way |
+| Direction | The sun stands south (DECISIONS 2026-10-21, the GK2 method B), so the shadow falls **away** from the viewer: up-screen, behind its caster, which the depth order draws over it, and a thing standing north covers the shadow of the thing before it. Left in the morning, right in the evening: up-left at 08:00, up-right at 16:30, straight back at noon. Every caster in a frame points the same way |
 | Contact line | Four rows under the feet, `#1b1a2e` at 45% |
 | Body light | The 4 art px on the side away from the light one step darker, the side toward it one step lighter. None at noon |
 | Night | No sun shadow. Inside a light's pool, shadow and body light come from that light. Outside every pool, nothing casts |
