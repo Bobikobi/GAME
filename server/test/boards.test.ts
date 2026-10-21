@@ -1,26 +1,33 @@
 /**
  * The verified boards (NEXT 18 g): a score is posted only when the account's own action log replays to the
- * state its row holds, byte for byte. A forged score — a tampered state, or a log with a hole in it — is
- * refused, and the board it would have joined is left as it was.
+ * state its row holds, byte for byte, and the gold ledger holds exactly the grants that log makes. A forged
+ * score - a tampered state, a log with a hole in it, a grant with no action behind it - is refused, and the
+ * board it would have joined is left as it was.
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
-import { type Action, type Bundle, type PublicState, newState, publicState, step } from '@game/kernel';
+import { type Action, type Bundle, type State, newState, step } from '@game/kernel';
 
 import { RemoteSession, fetchWire } from '../../game/src/remote.js';
 import { loadBundle } from '../../tools/test/helpers/world.js';
-import { ForgedLog, postScores, readBoard, scoresOf, verifyLog, weekStart } from '../src/boards.js';
+import { bookedGoldMg, checkAccount } from '../src';
+import { ForgedLog, gapIn, postScores, readBoard, scoresOf, weekStart } from '../src/boards.js';
 import { Player } from './sim/player.js';
 import { STARTS, playSession } from './sim/session.js';
 import { hasDatabase, startRig, type Account, type Rig } from './sim/rig.js';
 
 let bundle: Bundle;
 
-/** The first action of every account, and the state it earns. */
-function opened(seed: number): { seed: number; action: Action; state: PublicState } {
-  const result = step(bundle, newState(bundle, seed), { t: 'start', starter: 'core/forager', name: 'Tess' }, 0);
+/** The first action of every account, the log it leaves and the ledger that log pays. */
+function opened(seed: number): { seed: number; log: { seq: number; action: unknown; tick: number }[]; state: State } {
+  const action: Action = { t: 'start', starter: 'core/forager', name: 'Tess' };
+  const result = step(bundle, newState(bundle, seed), action, 0);
   if (!result.ok) throw new Error(result.error);
-  return { seed, action: { t: 'start', starter: 'core/forager', name: 'Tess' }, state: publicState(result.state) };
+  return {
+    seed,
+    log: [{ seq: 2, action, tick: 0 }],
+    state: result.state,
+  };
 }
 
 beforeAll(() => {
@@ -29,29 +36,23 @@ beforeAll(() => {
 
 describe('a log that replays (NEXT 18 g)', () => {
   test('lands on the state its row holds, and a state that is not the log\'s is refused', () => {
-    const { seed, action, state } = opened(42);
-    const log = [{ seq: 2, action, tick: 0 }];
-
-    const verified = verifyLog(bundle, seed, state, log);
-    expect(verified.ok, verified.ok ? undefined : verified.error).toBe(true);
+    const { seed, log, state } = opened(42);
+    const ledger = bookedGoldMg(bundle, log[0]!.action, []).map((deltaMg) => ({ deltaMg, action: log[0]!.action, tick: 0 }));
+    expect(checkAccount(bundle, { seed, state, log, ledger })).toEqual([]);
 
     // a client that writes itself a purse: the log still says what it says, so the row is not its state
-    const richer: PublicState = { ...state, player: { ...state.player, gold: state.player.gold + 100_000 } };
-    const refused = verifyLog(bundle, seed, richer, log);
-    expect(refused.ok).toBe(false);
-    if (!refused.ok) expect(refused.error).toMatch(/does not land/);
-
-    // a log with a hole in it: the address books every write, so a missing row is a forgery too
-    const skipped = verifyLog(bundle, seed, state, [{ seq: 4, action, tick: 0 }]);
-    expect(skipped.ok).toBe(false);
-    if (!skipped.ok) expect(skipped.error).toMatch(/skips/);
+    const richer: State = { ...state, player: { ...state.player, gold: state.player.gold + 100_000 } };
+    const problems = checkAccount(bundle, { seed, state: richer, log, ledger });
+    expect(problems.join(' ')).toMatch(/does not land on the stored state/);
+    expect(problems.join(' ')).toMatch(/the ledger sums to/);
   });
 
-  test('a state written by another kernel or other content cannot be replayed here', () => {
-    const { seed, action, state } = opened(43);
-    const log = [{ seq: 2, action, tick: 0 }];
-    expect(verifyLog(bundle, seed, { ...state, kernel: '0.0.1' }, log).ok).toBe(false);
-    expect(verifyLog(bundle, seed, { ...state, content: 'not-this-content' }, log).ok).toBe(false);
+  test('a log with a hole in it is refused before anything is read from it', () => {
+    const { log } = opened(43);
+    expect(gapIn([])).toBeUndefined();
+    expect(gapIn(log)).toBeUndefined();
+    expect(gapIn([{ ...log[0]!, seq: 4 }])).toMatch(/skips from version 1 to 4/);
+    expect(gapIn([...log, { ...log[0]!, seq: 9 }])).toMatch(/skips from version 2 to 9/);
   });
 
   test('the measures are CR-40\'s, read off the state alone', () => {
@@ -142,6 +143,15 @@ describe.skipIf(!hasDatabase())('the boards over the books (NEXT 18 g)', () => {
       [honest.id, 999, { t: 'carve', name: 'Forged' }, 0],
     );
     await expect(postScores(rig.pool!, bundle, honest.id, week)).rejects.toBeInstanceOf(ForgedLog);
+    expect(await readBoard(rig.pool!, week, 'wealth')).toEqual(before);
+
+    // and a grant with no action behind it (NEXT 18 f's proof reads the ledger too): refused
+    const paid = await played(STARTS[2]!, 2033);
+    await rig.pool!.query(
+      'insert into gold_ledger (account_id, delta_mg, action, tick) values ($1, $2, $3, $4)',
+      [paid.id, 100_000, { t: 'carve', name: 'Forged' }, 0],
+    );
+    await expect(postScores(rig.pool!, bundle, paid.id, week)).rejects.toBeInstanceOf(ForgedLog);
     expect(await readBoard(rig.pool!, week, 'wealth')).toEqual(before);
   }, 240_000);
 });

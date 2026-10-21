@@ -1,8 +1,10 @@
 /**
  * The verified boards (NEXT 18 g; kernel-review 8.3: "leaderboards rank accounts from server-validated
- * state only"). A board is never written from what a player reports: the server replays the account's own
- * action log through the kernel from its start state, and a log that does not land on the state the row
- * holds byte for byte is refused, so nothing is posted for it.
+ * state only"). A board is never written from what a player reports: the account's own action log is
+ * replayed through the kernel from its start state under the seed column, and only a log that lands on
+ * the state the row holds - and whose grants the gold ledger holds - is scored. The proof itself is
+ * `checkAccount` in `server/src/ledger.ts` (NEXT 18 f); this file reads the boards' measures off the state
+ * that proof returns.
  *
  * The measures are CR-40's, read off the verified state alone: worth (gold plus the goods in the bag at
  * the trader's pay today), the collection (what the journal says was discovered), and the levels (every
@@ -10,17 +12,9 @@
  */
 import type { Pool } from 'pg';
 
-import {
-  type Action,
-  type Bundle,
-  type PublicState,
-  type State,
-  canonical,
-  newState,
-  professionLevel,
-  salePrice,
-  step,
-} from '@game/kernel';
+import { type Bundle, type PublicState, type State, professionLevel, salePrice } from '@game/kernel';
+
+import { type AccountBooks, type LedgerRow, type LoggedAction, checkAccount, replayAccount } from './ledger';
 
 export type BoardName = 'wealth' | 'collection' | 'levels';
 
@@ -32,15 +26,6 @@ export interface ScoreRow {
   score: number;
 }
 
-/** One row of `action_log`: the action the client sent, or a movement batch, at the tick it named. */
-export interface LogRow {
-  seq: number;
-  action: unknown;
-  tick: number;
-}
-
-export type Verification = { ok: true; state: State; log: LogRow[] } | { ok: false; error: string };
-
 /** A log that does not replay: the score it claims is not the score the rules give. */
 export class ForgedLog extends Error {}
 
@@ -48,48 +33,16 @@ export class ForgedLog extends Error {}
 const FIRST_SEQ = 2;
 
 /**
- * The steps a log row stands for: a movement batch is several moves, and an action is one step. A move is
- * held to the server's travel check (G56), as `POST /moves` holds it; an action is not, as `POST /action`.
+ * The log is the write history: version 1 is the first state row, so a verified log starts at 2 and steps
+ * by one. A hole is not a log any more, whatever its rows replay to, and the board refuses it as such.
  */
-function stepsOf(row: LogRow): { a: Action; tick: number; travel: boolean }[] {
-  const action = row.action as { kind?: string; moves?: { at: readonly [number, number]; tick: number }[] };
-  if (action?.kind === 'moves') {
-    return (action.moves ?? []).map((move) => ({
-      a: { t: 'move', at: [move.at[0], move.at[1]] },
-      tick: move.tick,
-      travel: true,
-    }));
-  }
-  return [{ a: row.action as Action, tick: row.tick, travel: false }];
-}
-
-/**
- * Replay an account's log from its start state (`newState` and the seed the server alone keeps) and check
- * that it lands on the state the row holds: `serialize`, byte for byte.
- */
-export function verifyLog(bundle: Bundle, seed: number, stored: PublicState, log: readonly LogRow[]): Verification {
-  const start = newState(bundle, seed);
-  if (stored.kernel !== start.kernel) {
-    return { ok: false, error: `The state was written by kernel ${String(stored.kernel)}, and this server runs ${start.kernel}.` };
-  }
-  if (stored.content !== start.content) {
-    return { ok: false, error: 'The state was written by other content, so its log cannot be replayed here.' };
-  }
-  let state = start;
+export function gapIn(log: readonly LoggedAction[]): string | undefined {
   let expected = FIRST_SEQ;
   for (const row of log) {
-    if (row.seq !== expected) return { ok: false, error: `The log skips from ${expected - 1} to ${row.seq}.` };
+    if (row.seq !== expected) return `the log skips from version ${expected - 1} to ${row.seq}`;
     expected += 1;
-    for (const entry of stepsOf(row)) {
-      const result = step(bundle, state, entry.a, entry.tick, { validateTravel: entry.travel });
-      if (!result.ok) return { ok: false, error: `Action ${row.seq} does not replay: ${result.error}` };
-      state = result.state;
-    }
   }
-  if (canonical(state) !== canonical({ ...stored, seed })) {
-    return { ok: false, error: 'The log does not land on the state the row holds.' };
-  }
-  return { ok: true, state, log: [...log] };
+  return undefined;
 }
 
 /** The scores a verified state is worth, in the board's own measures. */
@@ -123,23 +76,49 @@ interface StateRow {
 }
 
 /**
- * Post an account's scores for a week: the log is read from the books, replayed, and only then ranked.
- * A forged score — a row that does not replay, or a log that skips — is refused before anything is written,
- * and the caller is told which action broke it.
+ * Post an account's scores for a week: read the books, prove them, and only then rank.
+ *
+ * The proof is 18 f's `checkAccount`: the log replays from `newState` under the seed column to the stored
+ * state byte for byte, the ledger holds exactly the grants the log makes none more, and both sums are the
+ * state's own purse. A state a client wrote for itself, a log with a hole in it and a grant with no action
+ * behind it are each refused before the transaction opens, and the board is left as it was.
  */
 export async function postScores(pool: Pool, bundle: Bundle, accountId: string, week: string): Promise<ScoreRow[]> {
-  const state = await pool.query<StateRow>('select state, seed from player_state where account_id = $1', [accountId]);
-  const row = state.rows[0];
-  if (!row) throw new Error('No game state exists for this account.');
-  const { rows } = await pool.query<{ seq: string; action: unknown; tick: string }>(
+  const row = await pool.query<StateRow>('select state, seed from player_state where account_id = $1', [accountId]);
+  const stored = row.rows[0];
+  if (!stored) throw new Error('No game state exists for this account.');
+  const seed = Number(stored.seed);
+  const state: State = { ...stored.state, seed };
+
+  const logRows = await pool.query<{ seq: string; action: unknown; tick: string }>(
     'select seq, action, tick from action_log where account_id = $1 order by seq',
     [accountId],
   );
-  const log = rows.map((entry) => ({ seq: Number(entry.seq), action: entry.action, tick: Number(entry.tick) }));
+  const log: LoggedAction[] = logRows.rows.map((entry) => ({
+    seq: Number(entry.seq),
+    action: entry.action,
+    tick: Number(entry.tick),
+  }));
+  const gap = gapIn(log);
+  if (gap !== undefined) throw new ForgedLog(gap);
 
-  const verified = verifyLog(bundle, Number(row.seed), row.state, log);
-  if (!verified.ok) throw new ForgedLog(verified.error);
-  const scores = scoresOf(bundle, verified.state);
+  const ledgerRows = await pool.query<{ delta_mg: string; action: unknown; tick: string }>(
+    'select delta_mg, action, tick from gold_ledger where account_id = $1 order by id',
+    [accountId],
+  );
+  const ledger: LedgerRow[] = ledgerRows.rows.map((entry) => ({
+    deltaMg: Number(entry.delta_mg),
+    action: entry.action,
+    tick: Number(entry.tick),
+  }));
+
+  const books: AccountBooks = { seed, state, log, ledger };
+  const problems = checkAccount(bundle, books);
+  if (problems.length > 0) throw new ForgedLog(problems.join('; '));
+
+  const played = replayAccount(bundle, seed, log);
+  if (!played.ok) throw new ForgedLog(played.problem);
+  const scores = scoresOf(bundle, played.replay.state);
 
   const client = await pool.connect();
   try {
