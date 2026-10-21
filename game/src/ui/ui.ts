@@ -3,6 +3,7 @@
  * action prompt, dialogue, menus and the timing minigame. Layers stack; the
  * top one gets the buttons, and while any is open the game clock stops.
  */
+import { offerSignup } from './signup';
 import {
   OWN_FIRE,
   type GameEvent,
@@ -505,7 +506,7 @@ export class UI {
           'Past the arch the ruins go on, darker and deeper than by day. Far below, a bell rings once.',
           'Not tonight. The way stays open.',
         ]);
-        void openOpeningReview(this);
+        void openOpeningReview(this).then(() => offerSignup(this));
       }
     }
   }
