@@ -164,8 +164,11 @@ export async function playOpening(bundle: Bundle, player: Player, start: Start):
 }
 
 /**
- * The first outing the content has: past the arch by day, the gate stones of the ruins dug, the tangle's
- * heart found, and the walk home to hand it in to the elder.
+ * The first outing: past the arch by day, the gate stones of the ruins dug (and the deep, once the gate
+ * has taught the trowel's way), the tangle's heart found, and the walk home to hand it in to the elder.
+ *
+ * This is the first expedition `develop` has content for: `bundle.expeditions` is empty, since the night
+ * ruins of NEXT 14b are not built. The outing is its own step so the real one joins here.
  */
 export async function playFirstOuting(bundle: Bundle, player: Player): Promise<{ digs: number }> {
   const elder = at(one(npcTile(bundle, 'core/elder'), 'The elder has no tile.'));
@@ -191,6 +194,7 @@ export async function playFirstOuting(bundle: Bundle, player: Player): Promise<{
 
   await player.visit('core/tangle-heart');
   await player.actNear(elder, (tile) => ({ t: 'turnin', quest: 'core/the-tangle', at: tile }));
+  // TODO(NEXT 18 g): when 14b's night ruins land, this outing is the expedition the item names.
   return { digs };
 }
 
