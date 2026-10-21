@@ -33,13 +33,15 @@ import {
 } from '../feedback-payload';
 import type { SignInfo } from '../scenes/world';
 import type { StoneView } from '../stone';
-import { Session } from '../session';
+import { Session, STALL_SLOTS, stallDraftOf, type StallDraft } from '../session';
 import type { GameSession } from '../session-surface';
 import type { ActResult } from '../session-surface';
 import { ATTRIBUTE_MAX, activeQuests, attributeEffects, bagGroups, classLine, clock, eatLabel, gold, itemBenefit, itemName, journalGroups, questSteps, restoreHint, seconds, sellable, stacks, stationGate, stationText, stationUpgrades, toolOpens, wornAt } from '../text';
 import { s1, s1Available } from '../net/s1';
+import { STALL_SLOT, canPlaceStall, directionOf, localMapState, mapPlaces } from '../places';
 import { say } from './dialog';
 import { button, h, sprite } from './dom';
+import { mapSvg, placeKind } from './map';
 import type { Layer, UI } from './ui';
 
 interface Panel {
@@ -48,9 +50,9 @@ interface Panel {
   close: () => void;
 }
 
-function panel(ui: UI, title: string, cls = ''): Panel {
+function panel(ui: UI, title: string, cls = '', subtitle?: string): Panel {
   const body = h('div', { class: 'panel-body' });
-  const titleEl = h('h2', null, title);
+  const titleEl = h('div', { class: 'panel-head' }, h('h2', null, title), subtitle ? h('p', { class: 'panel-sub' }, subtitle) : null);
   const closeBtn = button('Close', () => ui.pop(layer), 'close small');
   const box = h('div', { class: `panel ${cls}`.trim(), role: 'dialog', 'aria-label': title }, h('header', null, titleEl, closeBtn), body);
   const el = h('div', { class: 'layer panel-layer' }, box);
@@ -185,8 +187,8 @@ export function openBag(ui: UI): void {
   let look = false;
   let shopPick: string | undefined;
   let priceFor: { item: string; slot: number } | undefined;
-  type Draft = { item: string; qty: number; price: number };
-  const stall: (Draft | undefined)[] = Array.from({ length: 6 }, () => undefined);
+  // the draft is kept in the save; a session that keeps none (the server door) keeps it in this panel
+  const stall: (StallDraft | null)[] = stallDraftOf(s) ?? Array.from({ length: STALL_SLOTS }, () => null);
 
   const layer = () => (look ? s.state.player.looks : s.state.player.worn);
   const figure = () => {
@@ -362,6 +364,7 @@ export function openBag(ui: UI): void {
           role: 'button',
           tabindex: '0',
           'aria-label': d ? `${item?.name ?? d.item}, ${d.price} gold` : `Stall slot ${i + 1}, empty`,
+          title: d ? 'Change the price, or take it off' : 'Drop an item here',
           ondragover: (e: Event) => e.preventDefault(),
           ondrop: (e: Event) => {
             e.preventDefault();
@@ -370,12 +373,14 @@ export function openBag(ui: UI): void {
           },
           onclick: () => {
             if (shopPick) openPrice(shopPick, i);
+            else if (d) openPrice(d.item, i);
           },
           onkeydown: (e: Event) => {
             const k = (e as KeyboardEvent).key;
-            if (shopPick && (k === 'Enter' || k === ' ')) {
+            const held = d && !shopPick ? d.item : shopPick;
+            if (held && (k === 'Enter' || k === ' ')) {
               e.preventDefault();
-              openPrice(shopPick, i);
+              openPrice(held, i);
             }
           },
         },
@@ -385,10 +390,11 @@ export function openBag(ui: UI): void {
       );
     });
     const at = priceFor;
+    const held = at ? stall[at.slot] : null;
     const dialog = at
       ? (() => {
           const item = b.items[at.item]!;
-          const suggested = Math.max(1, salePrice(b, s.state, at.item, 1) ?? 1);
+          const suggested = held?.item === at.item ? held.price : Math.max(1, salePrice(b, s.state, at.item, 1) ?? 1);
           const input = h('input', { class: 'shop-price-input', type: 'number', min: 1, max: 9999, value: String(suggested), 'aria-label': `Price for ${item.name} in gold` });
           window.setTimeout(() => input.select(), 0);
           return h(
@@ -406,9 +412,18 @@ export function openBag(ui: UI): void {
                 button('Set price', () => {
                   const n = Math.max(1, Math.min(9999, Math.round(Number(input.value) || suggested)));
                   stall[at.slot] = { item: at.item, qty: 1, price: n };
+                  s.save();
                   priceFor = undefined;
                   render();
                 }, 'small'),
+                held
+                  ? button('Take it off', () => {
+                      stall[at.slot] = null;
+                      s.save();
+                      priceFor = undefined;
+                      render();
+                    }, 'small')
+                  : null,
                 button('Cancel', () => {
                   priceFor = undefined;
                   render();
@@ -434,7 +449,13 @@ export function openBag(ui: UI): void {
         { class: 'shop-stall' },
         h('h3', null, 'YOUR STALL'),
         h('div', { class: 'shop-slots' }, slots),
-        h('p', { class: 'shop-note' }, 'A draft: other players, a map marker and sales while you are away come with the shared world (SETTLEMENT 3.4).'),
+        h(
+          'p',
+          { class: 'shop-note' },
+          localMapState(s)?.stall
+            ? 'Your stall stands at the empty corner. Other players and sales while you are away come with the shared world (SETTLEMENT 3.4).'
+            : 'A draft. Place your stall at the empty corner on the map; other players and sales while you are away come with the shared world (SETTLEMENT 3.4).',
+        ),
       ),
       dialog,
     );
@@ -844,6 +865,124 @@ export function confirmRestore(ui: UI, restoreId: string): void {
 
 // ------------------------------------------------------------------ menu and help
 
+/**
+ * The valley as the player has walked it (CR-104): their ground, the places
+ * they have stood in, and the stall at the town's free corner. A marker is
+ * local; buyers and sales while away wait for the shared world.
+ */
+export function openMap(ui: UI): void {
+  const s = app.session;
+  if (!s) return;
+  const b = app.bundle;
+  const p = panel(ui, 'Map', 'map', 'The valley, as you have walked it');
+  let selected: string | undefined;
+
+  const render = () => {
+    const local = localMapState(s);
+    const seen = local?.seen ?? new Set<string>();
+    const chunks = local?.seenChunks ?? new Set<string>();
+    const stall = local?.stall;
+    const places = mapPlaces(b, seen, s.pos, stall)
+      .filter((place) => place.label !== undefined)
+      .sort((a, c) => Number(c.current) - Number(a.current) || Number(c.stall) - Number(a.stall) || (a.label ?? '').localeCompare(c.label ?? ''));
+    const current = places.find((place) => place.current);
+    selected = places.some((place) => place.id === selected) ? selected : (current?.id ?? places[0]?.id);
+    const corner = places.find((place) => place.id === STALL_SLOT);
+    const atCorner = local !== undefined && canPlaceStall(b, s.pos);
+    const day = Math.floor(s.tick / b.params.day_length_ms) + 1;
+
+    const chart = h('div', { class: 'map-chart' });
+    chart.innerHTML = mapSvg(b, { seen, chunks, at: s.pos, stall, selected });
+
+    const rows = places.map((place) => {
+      const name = place.stall ? 'Your stall' : place.id === STALL_SLOT ? 'The empty corner' : place.label!;
+      const atStall = place.stall || place.id === STALL_SLOT;
+      const sub = place.current
+        ? atStall
+          ? place.stall
+            ? 'You are here · your stall'
+            : 'You are here · a stall can stand here'
+          : 'You are here'
+        : place.stall
+          ? 'The empty corner'
+          : place.id === STALL_SLOT
+            ? 'A stall can stand here'
+            : `${placeKind(place)} · ${directionOf(s.pos, [place.x, place.y])}`;
+      return h(
+        'button',
+        {
+          class: `map-row ${selected === place.id ? 'on' : ''} ${place.stall ? 'stall' : ''} ${place.id === STALL_SLOT ? 'corner' : ''}`.trim(),
+          type: 'button',
+          'aria-current': place.current ? 'true' : undefined,
+          onclick: () => {
+            selected = place.id;
+            render();
+          },
+        },
+        h('span', { class: `map-ico kind-${place.kind}` }, place.stall ? '▣' : place.kind === 'camp' ? '⌂' : place.kind === 'ruin' ? '⌘' : place.kind === 'restore' ? '⌁' : place.kind === 'npc' ? '●' : '◎'),
+        h('span', { class: 'map-txt' }, h('span', { class: 'map-nm' }, name), h('span', { class: 'map-sub' }, sub)),
+      );
+    });
+
+    let note: string;
+    let action: HTMLElement | undefined;
+    if (stall) {
+      note = atCorner
+        ? 'Your stall stands at the empty corner. Buyers and sales while you are away come with the shared world.'
+        : 'Your stall stands at the empty corner. Walk there to lift it; buyers come with the shared world.';
+      if (atCorner) {
+        action = button('Lift your stall', () => {
+          const lift = (s as { liftStall?: () => boolean }).liftStall;
+          if (!lift?.call(s)) return ui.toast('Walk to the empty corner first.', 'bad');
+          ui.toast('The empty corner is free again.', 'info');
+          render();
+        });
+      }
+    } else if (corner) {
+      note = atCorner
+        ? 'The empty corner is free. Your stall would stand here, and stay when you log off; buyers come with the shared world.'
+        : 'The empty corner is free. Walk there to place your stall.';
+      action = button(
+        'Place your stall',
+        () => {
+          const place = (s as { placeStall?: () => boolean }).placeStall;
+          if (!place?.call(s)) return ui.toast('Walk to the empty corner first.', 'bad');
+          ui.toast('Your stall stands at the empty corner.', 'good');
+          render();
+        },
+        'gold',
+        !atCorner,
+      );
+    } else if (!local) {
+      note = 'The map is drawn from the local save. This door does not carry the walked ground or the stall yet.';
+    } else {
+      note = 'The empty corner is not on your map yet. Walk into town to find it.';
+    }
+
+    p.body.replaceChildren(
+      h(
+        'div',
+        { class: 'map-strip' },
+        h('span', null, `Day ${day} · ${clock(minuteOfDay(b, s.tick))}`),
+        h('span', null, stall ? 'Your stall · the empty corner' : 'No stall placed'),
+      ),
+      chart,
+      h(
+        'div',
+        { class: 'map-key' },
+        h('span', null, h('i', { class: 'map-key-you' }), 'You'),
+        h('span', null, h('i', { class: 'map-key-stall' }), 'Stall'),
+        h('span', null, h('i', { class: 'map-key-walked' }), 'Walked'),
+        h('span', null, h('i', { class: 'map-key-blank' }), 'Not yet'),
+      ),
+      rows.length ? h('div', { class: 'map-list' }, rows) : h('p', { class: 'map-empty' }, 'Nothing walked yet. The map draws only what you have walked; go and look.'),
+      h('div', { class: 'map-foot' }, h('p', { class: 'map-status', 'aria-live': 'polite' }, note), action),
+    );
+  };
+
+  render();
+}
+
 export function openMenu(ui: UI): void {
   const p = panel(ui, 'Menu', 'menu');
   const go = (fn: () => void) => () => {
@@ -855,6 +994,7 @@ export function openMenu(ui: UI): void {
       h(
         'div',
         { class: 'menu-list' },
+        button('Map', go(() => openMap(ui))),
         button(`Sound: ${sound.muted ? 'Off' : 'On'}`, () => {
           sound.setMuted(!sound.muted);
           render();

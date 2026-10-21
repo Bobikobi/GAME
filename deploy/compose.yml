@@ -4,7 +4,10 @@
 name: openfold
 services:
   db:
-    image: postgres:16-alpine
+    # pinned to the digest, not the moving 16-alpine tag: the box also runs another product's watchtower,
+    # which scans every container daily, so a floating tag means an upstream patch release swaps this
+    # container at 04:00 with a version nobody chose. Move the digest on purpose, then `up -d`.
+    image: postgres:16.15-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
     environment:
       POSTGRES_USER: ${DB_USER:?set DB_USER in .env}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
@@ -26,6 +29,9 @@ services:
       options: { max-size: "10m", max-file: "3" }
 
   api:
+    # named, so a box that holds no source runs this build instead of trying to make one: the runbook
+    # builds it on the laptop, copies it over and starts it with `up -d --no-build`
+    image: openfold-api:${IMAGE_TAG:-latest}
     build:
       context: ..
       dockerfile: deploy/Dockerfile

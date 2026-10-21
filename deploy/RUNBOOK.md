@@ -24,7 +24,7 @@ Verify: `ls -la ~/openfold` shows the four files and no `.env` in git.
 
 ## 2. The two containers up
 
-Prepare: `.env` sets `AUTH_MODE=dev-header` and `ALLOW_DEV_HEADER=staging-only` (see `.env.example`; compose refuses to start without `AUTH_MODE`, and the API exits at boot without both). Then `docker compose -f compose.yml up -d --build` from `~/openfold`.
+Prepare: `.env` sets `AUTH_MODE=dev-header`, `ALLOW_DEV_HEADER=staging-only` and `IMAGE_TAG=<version>` (see `.env.example`; compose refuses to start without `AUTH_MODE`, and the API exits at boot without both). The box holds no source, so the image is built on the laptop, from the repo: `docker build -f deploy/Dockerfile -t openfold-api:<version> .`, then `docker save openfold-api:<version> | gzip > openfold-api.tar.gz`, and that file is copied to `~/openfold/`. On the box: `docker load -i openfold-api.tar.gz`, `rm openfold-api.tar.gz`, then `docker compose -f compose.yml up -d --no-build` from `~/openfold` — compose runs `image: openfold-api:${IMAGE_TAG:-latest}`, so `IMAGE_TAG` in `.env` says which build is up, and `--no-build` keeps it from looking for a source that is not on the box.
 What happens if it goes wrong: the two new containers fail to start; nothing else on the box notices, and
 `docker compose -f compose.yml down` removes them without touching the data volume.
 Verify: `docker compose -f compose.yml ps` shows `db` and `api` both healthy (the API's check is `GET /health`, which needs no identity); the boot log carries one line saying the server trusts the `x-player-id` header; `curl -s -H 'x-player-id: smoke' -X POST http://127.0.0.1:8710/session` answers 404 "No game state exists for this account." (the row is made by the opening handover, NEXT 18 d).
@@ -53,3 +53,4 @@ Verify: run it by hand once, then `zcat` the newest file and see `CREATE TABLE p
 - Editing a file under `/etc/nginx` that is already there, or reloading without `nginx -t`.
 - Pointing the game's database at the host's postgres, or at the other product's database container.
 - Ports on `db`: it is reachable inside the `openfold-game` network only, by design.
+- A floating tag on `db`: the other product's auto-updater scans every container on the box daily, so `postgres:16-alpine` would be swapped for whatever upstream published, at 04:00, with no one choosing it. `compose.yml` pins the digest on purpose; to move it, take the new digest on purpose, change that one line, and run `up -d` yourself.
