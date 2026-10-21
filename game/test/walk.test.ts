@@ -68,6 +68,15 @@ describe('the walk on open ground (measurable 1)', () => {
     expect(Math.abs(Math.hypot(w.x - x0, w.y - y0) / ART_PX - 10)).toBeLessThanOrEqual(0.3);
   });
 
+  test('a frame longer than a tile takes walks one tile at most', () => {
+    // a slow machine, or a tab coming back: a quarter of a second is the longest frame the scene allows
+    const w = new Walker();
+    w.place([0, 0]);
+    const tiles = w.frame([1, 0], 250, STEP_MS, open);
+    expect((w.x - ART_PX / 2) / ART_PX).toBeLessThanOrEqual(1);
+    expect(tiles.length).toBeLessThanOrEqual(1);
+  });
+
   test('the stride is the distance walked: one tile of it per tile', () => {
     const w = new Walker();
     w.place([0, 0]);
@@ -136,9 +145,11 @@ describe('stopping and walls (measurable 2)', () => {
     const w = new Walker();
     w.place([2, 1]);
     w.x -= 20;
-    hold(w, [0, 1], 4 * STEP_MS, isOpen);
-    expect(w.tile()).toEqual([2, 4]);
-    expect(w.x).toBe(2 * ART_PX + ART_PX / 2);
+    const tiles = hold(w, [0, 1], 4 * STEP_MS, isOpen);
+    // the ease lifts the box clear of the wall, and the walk goes on down the lane
+    expect(w.x - BODY_BOX.w / 2).toBeGreaterThanOrEqual(2 * ART_PX);
+    expect(tiles.every(([tileX]) => tileX === 2)).toBe(true);
+    expect(w.tile()[1]).toBeGreaterThanOrEqual(4);
   });
 });
 
@@ -241,9 +252,9 @@ describe('after a diagonal walk an action hits the tile in front of the feet (me
    * A fresh forager on the real map walks a diagonal of two tiles to the tile beside `target`, facing it on
    * the way, and stops when the feet's centre is there. Every tile is told to the kernel, as the scene does.
    */
-  function walkUpTo(target: Tile): Session {
+  function walkUpTo(target: Tile, starter = 'core/forager'): Session {
     const s = Session.fresh(b);
-    expect(s.act({ t: 'start', starter: 'core/forager', name: 'Tess' }).ok).toBe(true);
+    expect(s.act({ t: 'start', starter, name: 'Tess' }).ok).toBe(true);
     const walkable = makeWalkable(b);
     const nodeAt = new Map<string, string>();
     for (const [id, inst] of Object.entries(b.instances)) nodeAt.set(`${inst.x},${inst.y}`, id);
@@ -302,10 +313,15 @@ describe('after a diagonal walk an action hits the tile in front of the feet (me
   });
 
   test('dig: the faced tile is the spot, and the kernel takes the dig', () => {
-    const id = Object.keys(b.instances).find((n) => b.instances[n]!.kind === 'treasure' && b.treasures[b.instances[n]!.source]?.starter === 'core/forager');
-    if (!id) throw new Error("no spot of the forager's own");
+    // a start's own spot is a find by hand: no tool, and whoever starts there may dig it
+    const id = Object.keys(b.instances).find((n) => {
+      const inst = b.instances[n]!;
+      const d = inst.kind === 'treasure' ? b.treasures[inst.source] : undefined;
+      return d?.starter !== undefined && d.tool === undefined;
+    });
+    if (!id) throw new Error("no spot of a start's own");
     const inst = b.instances[id]!;
-    const s = walkUpTo([inst.x, inst.y]);
+    const s = walkUpTo([inst.x, inst.y], b.treasures[inst.source]!.starter);
     expect(facedTile(s)).toEqual([inst.x, inst.y]);
     expect(s.act({ t: 'dig', spot: id, grade: 3, at: s.pos })).toMatchObject({ ok: true });
   });
