@@ -105,6 +105,13 @@
       "plan": ["DECISIONS 2026-10-18 the quest designer", "GAME_RULES G17 and section 3 (the palette)", "docs/design/QUEST_PATTERNS.md"],
       "branches": ["feat/quest-agent"],
       "owner": null
+    },
+    {
+      "id": "free-walk",
+      "title": "Free movement: the body walks freely in eight directions, the world and the kernel stay on tiles",
+      "plan": ["DECISIONS 2026-10-18 free movement replaces the tile-by-tile walk", "docs/design/GAP_DIMRAETH_DRAKANTOS.md section 5", "docs/team/NEXT.md section 22"],
+      "branches": ["feat/free-walk"],
+      "owner": null
     }
   ]
 }
