@@ -2,6 +2,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { AddressInfo } from 'node:net';
 import { ATTRIBUTES, WEAR_SLOTS, appearSlots, appears, step, walkDistance, type Action, type Bundle, type GameEvent, type State, type Tile } from '@game/kernel';
 
+import { bookedGoldMg } from './ledger';
 import { publicState, statePatch, type MergePatch, type PublicState } from './patch';
 
 const BODY_LIMIT = 64 * 1024;
@@ -31,8 +32,8 @@ export function createPlayerRecord(bundle: Bundle, state: State, acceptedAt: num
 
 /**
  * What an accepted request adds to the two books (NEXT 18 b): one action_log row, and one gold_ledger row
- * per gold change. The store writes them in the transaction of the compare-and-set, so a write that loses
- * the race leaves neither behind.
+ * per grant and payment, as `bookedGoldMg` names them (NEXT 18 f). The store writes them in the
+ * transaction of the compare-and-set, so a write that loses the race leaves neither behind.
  *
  * Gold is milli-gold in a JS number here, exact up to 2^53 milli-gold; it is a bigint only in the database.
  */
@@ -412,7 +413,7 @@ async function route(request: IncomingMessage, response: ServerResponse, options
   const books: Books = {
     action: booked,
     tick: state.tick,
-    goldDeltasMg: events.flatMap((event) => (event.e === 'gold' && event.delta !== 0 ? [event.delta] : [])),
+    goldDeltasMg: bookedGoldMg(options.bundle, booked, events),
   };
   if (!(await options.store.compareAndSet(playerId, record.version, next, books))) {
     throw new RequestError('The game state changed; resume before sending another action.', 409, 'stale');
