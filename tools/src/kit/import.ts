@@ -594,7 +594,7 @@ function validateOptions(options: ImportOptions): Required<Omit<ImportOptions, '
 const BAYER_2X2 = [0.2, 0.7, 0.95, 0.45] as const;
 
 /** The palette colour for a source colour at (x, y): the nearest, or, with dither, one of the nearest two by an ordered pattern. */
-function paletteColourAt(r: number, g: number, b: number, x: number, y: number, palette: readonly Rgb[], dither: boolean): Rgb | undefined {
+export function paletteColourAt(r: number, g: number, b: number, x: number, y: number, palette: readonly Rgb[], dither: boolean): Rgb | undefined {
   const first = nearestPaletteIndex(r, g, b, palette);
   const c1 = palette[first];
   if (!dither || c1 === undefined || palette.length < 2) return c1;

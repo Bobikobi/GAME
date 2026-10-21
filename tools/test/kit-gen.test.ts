@@ -113,6 +113,17 @@ describe('the prompt', () => {
     expect(prompt).not.toContain('same colors');
   });
 
+  test('style rich asks for painterly pixel art and points at the style examples (exp/rich-style)', () => {
+    const rich: GenEntry = { ...elder, name: 'tub', ref: 'refs/tub.png', what: 'round wooden tub', seen: 'a round plum tub', confirmed_by: 'owner', palette: 'ramp-added', style: 'rich', style_refs: ['refs/a.png', 'refs/b.png'] };
+    const prompt = buildPrompt(rich, { width: 75, height: 69, data: Buffer.alloc(0) }, 'tub.png');
+    expect(prompt).toContain('Painterly pixel art');
+    expect(prompt).toContain('other attached images show');
+    expect(prompt).not.toContain('two-tone');
+    expect(buildPrompt(elder, { width: 16, height: 24, data: Buffer.alloc(0) }, 'elder.png')).toContain('two-tone');
+    expect(() => parseSpec(spec([{ ...rich, style: 'fancy' }]))).toThrow(/style/);
+    expect(() => parseSpec(spec([{ ...rich, style_refs: ['refs/a.jpg'] }]))).toThrow(/style_refs/);
+  });
+
   test('a tile fills its square, repeats and has no outline', () => {
     const prompt = buildPrompt({ ...elder, kind: 'tile', width: 32, height: 32 }, { width: 16, height: 16, data: Buffer.alloc(0) }, 'grass.png');
     expect(prompt).toContain('No outline');

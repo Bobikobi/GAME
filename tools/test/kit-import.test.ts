@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { PNG } from 'pngjs';
 import { describe, expect, test } from 'vitest';
 
-import { importSprite } from '../src/kit/import.js';
+import { importSprite, paletteColourAt } from '../src/kit/import.js';
 import { CORE_PALETTE, hexToRgb } from '../src/kit/palette.js';
 
 type Pixel = readonly [number, number, number] | null;
@@ -171,6 +171,19 @@ function nearestPreview(image: PNG, scale: number): Buffer {
 }
 
 describe('importSprite', () => {
+  test('dither alternates the two nearest colours only for a colour between them (exp/rich-style)', () => {
+    const palette = CORE_PALETTE.map(hexToRgb);
+    const a = palette[2] ?? [0, 0, 0];
+    const b = palette[3] ?? [0, 0, 0];
+    const mid = [Math.round((a[0] + b[0]) / 2), Math.round((a[1] + b[1]) / 2), Math.round((a[2] + b[2]) / 2)] as const;
+    const block = (r: number, g: number, bl: number, dither: boolean): Set<string> => new Set(
+      [0, 1, 2, 3].map((i) => String(paletteColourAt(r, g, bl, i % 2, Math.floor(i / 2), palette, dither))),
+    );
+    expect(block(mid[0], mid[1], mid[2], true).size).toBe(2);
+    expect(block(mid[0], mid[1], mid[2], false).size).toBe(1);
+    expect(block(a[0], a[1], a[2], true)).toEqual(new Set([String(a)]));
+  });
+
   test('recovers a noisy, exactly scaled palette sprite pixel for pixel', () => {
     const expected = originalSprite();
     const source = noisyUpscale([expected], 12, 12, 16, 400, 400, [[83, 97]], true);
