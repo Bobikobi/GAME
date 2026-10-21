@@ -1,0 +1,737 @@
+{
+  "note": "Props wave 1 (RICH_STYLE_EXPERIMENT.md, 'The wave this opens', item 2): every prop of the core kit redrawn from itself at 64 px per tile (four times its 16 px size), in the shared ramps of its materials, style rich. Drawn on the free local route, best of three by seed (docs/art/DRAWERS.md): LOCAL_SEED=7, 11 and 13, each into its own folder, e.g. LOCAL_SEED=11 pnpm kit:gen tools/kit-gen/props-wave-1.json --drawer local --out .scratch/kit-gen/props-wave-1-s11 --timeout 900. A sheet gives its first frame only. The galleries are judged by eye; nothing goes into content/ until the picks are made.",
+  "entries": [
+    {
+      "name": "broken_statue",
+      "ref": "props/broken_statue",
+      "what": "broken stone statue on a plinth",
+      "width": 64,
+      "height": 128,
+      "anchor": "bottom",
+      "ramps": [
+        "grey",
+        "stone",
+        "moss"
+      ],
+      "style": "rich",
+      "detail": "cracked weathered stone with a lit left edge, a chipped top, moss in the seams, a square plinth"
+    },
+    {
+      "name": "bush_berry",
+      "ref": "props/bush_berry",
+      "what": "round green bush with red berries",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "green",
+        "moss",
+        "red"
+      ],
+      "style": "rich",
+      "detail": "leaf clusters in three greens lit from the upper left, small red berries with a bright dot"
+    },
+    {
+      "name": "bush_empty",
+      "ref": "props/bush_empty",
+      "what": "round green bush",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "green",
+        "moss"
+      ],
+      "style": "rich",
+      "detail": "leaf clusters in three greens lit from the upper left, a dark shadow underneath"
+    },
+    {
+      "name": "campfire_lit",
+      "ref": "props/campfire_lit",
+      "what": "burning campfire in a ring of stones",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "grey",
+        "fire",
+        "wood"
+      ],
+      "style": "rich",
+      "detail": "a ring of grey stones, crossed logs, orange and yellow flames with a bright core"
+    },
+    {
+      "name": "campfire_unlit",
+      "ref": "props/campfire_unlit",
+      "what": "unlit campfire in a ring of stones",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "grey",
+        "wood",
+        "bark"
+      ],
+      "style": "rich",
+      "detail": "a ring of grey stones around crossed charred logs and ash"
+    },
+    {
+      "name": "canopy_1",
+      "ref": "props/canopy_1",
+      "what": "dense leafy tree canopy seen from above",
+      "width": 128,
+      "height": 128,
+      "anchor": "center",
+      "ramps": [
+        "green",
+        "moss"
+      ],
+      "style": "rich",
+      "detail": "big leaf clusters in four greens, lit tops, deep shadows between clusters"
+    },
+    {
+      "name": "canopy_2",
+      "ref": "props/canopy_2",
+      "what": "dense leafy tree canopy seen from above",
+      "width": 128,
+      "height": 128,
+      "anchor": "center",
+      "ramps": [
+        "green",
+        "moss"
+      ],
+      "style": "rich",
+      "detail": "rounded leaf masses in four greens, a dark shaded edge on the right"
+    },
+    {
+      "name": "canopy_3",
+      "ref": "props/canopy_3",
+      "what": "dense leafy tree canopy seen from above",
+      "width": 128,
+      "height": 128,
+      "anchor": "center",
+      "ramps": [
+        "green",
+        "moss"
+      ],
+      "style": "rich",
+      "detail": "two layers of leaf clusters in four greens with a dark gap between them"
+    },
+    {
+      "name": "chest",
+      "ref": "props/chest",
+      "what": "small wooden treasure chest",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "wood",
+        "bark",
+        "grey"
+      ],
+      "style": "rich",
+      "detail": "planks with grain, iron bands and a lock, a lit lid edge"
+    },
+    {
+      "name": "sapling",
+      "ref": "props/sapling",
+      "what": "small young sapling",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "green",
+        "bark"
+      ],
+      "style": "rich",
+      "detail": "a thin brown stem, a few bright leaves in two greens"
+    },
+    {
+      "name": "young_tree",
+      "ref": "props/young_tree",
+      "what": "young round tree",
+      "width": 64,
+      "height": 96,
+      "anchor": "bottom",
+      "ramps": [
+        "green",
+        "bark",
+        "moss"
+      ],
+      "style": "rich",
+      "detail": "a round crown in three greens lit from the upper left, a thin brown trunk"
+    },
+    {
+      "name": "dead_tree",
+      "ref": "props/dead_tree",
+      "what": "dead leafless twisted tree",
+      "width": 128,
+      "height": 128,
+      "anchor": "bottom",
+      "ramps": [
+        "bark",
+        "plum",
+        "grey"
+      ],
+      "style": "rich",
+      "detail": "gnarled dark branches, bark cracks, a pale lit edge on the trunk"
+    },
+    {
+      "name": "dig_spot",
+      "ref": "props/dig_spot",
+      "what": "patch of freshly dug soil",
+      "width": 64,
+      "height": 64,
+      "anchor": "center",
+      "ramps": [
+        "wood",
+        "bark"
+      ],
+      "style": "rich",
+      "detail": "loose brown earth with darker lumps and a lit rim"
+    },
+    {
+      "name": "fallen_branches",
+      "ref": "props/fallen_branches",
+      "what": "pile of fallen dry branches",
+      "width": 64,
+      "height": 64,
+      "anchor": "center",
+      "ramps": [
+        "bark",
+        "wood"
+      ],
+      "style": "rich",
+      "detail": "crossed twigs and sticks in three browns with lit tops"
+    },
+    {
+      "name": "fence",
+      "ref": "props/fence",
+      "what": "short wooden fence section",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "wood",
+        "bark"
+      ],
+      "style": "rich",
+      "detail": "two posts and two rails with grain and a lit top edge"
+    },
+    {
+      "name": "fence_post",
+      "ref": "props/fence_post",
+      "what": "single wooden fence post",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "wood",
+        "bark"
+      ],
+      "style": "rich",
+      "detail": "a round-topped post with grain and a lit left edge"
+    },
+    {
+      "name": "flowers",
+      "ref": "props/flowers",
+      "what": "clump of yellow and purple wildflowers",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "green",
+        "fire",
+        "plum"
+      ],
+      "style": "rich",
+      "detail": "small yellow and purple blossoms on green stems and leaves"
+    },
+    {
+      "name": "flowers_blue",
+      "ref": "props/flowers_blue",
+      "what": "clump of small blue wildflowers",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "green",
+        "water"
+      ],
+      "style": "rich",
+      "detail": "small blue blossoms with pale centres on green stems"
+    },
+    {
+      "name": "flowers_white",
+      "ref": "props/flowers_white",
+      "what": "clump of small white daisies",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "green",
+        "grey",
+        "fire"
+      ],
+      "style": "rich",
+      "detail": "white petals with yellow centres on green stems"
+    },
+    {
+      "name": "fog",
+      "ref": "props/fog",
+      "what": "soft white cloud of fog",
+      "width": 128,
+      "height": 128,
+      "anchor": "center",
+      "ramps": [
+        "grey",
+        "water"
+      ],
+      "style": "rich",
+      "detail": "a puffy white cloud with pale blue-grey shading at the bottom edge"
+    },
+    {
+      "name": "glow_mushrooms",
+      "ref": "props/glow_mushrooms",
+      "what": "cluster of glowing blue mushrooms",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "water",
+        "teal",
+        "skin"
+      ],
+      "style": "rich",
+      "detail": "glowing blue caps with bright spots, pale stems, a soft light rim"
+    },
+    {
+      "name": "grass_tall",
+      "ref": "props/grass_tall",
+      "what": "clump of tall grass",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "green",
+        "moss"
+      ],
+      "style": "rich",
+      "detail": "thin blades in three greens, lit tips, darker base"
+    },
+    {
+      "name": "hazard_pit",
+      "ref": "props/hazard_pit",
+      "what": "dark pit hole in the ground",
+      "width": 64,
+      "height": 64,
+      "anchor": "center",
+      "ramps": [
+        "stone",
+        "bark"
+      ],
+      "style": "rich",
+      "detail": "a dark deep hole with a stone rim lit on the far edge"
+    },
+    {
+      "name": "hazard_trap",
+      "ref": "props/hazard_trap",
+      "what": "steel jaw trap with a chain",
+      "width": 64,
+      "height": 64,
+      "anchor": "center",
+      "ramps": [
+        "grey",
+        "bark"
+      ],
+      "style": "rich",
+      "detail": "metal jaws with teeth, a lit steel edge, a short chain"
+    },
+    {
+      "name": "hazard_wolf",
+      "ref": "props/hazard_wolf",
+      "what": "grey wolf lying down asleep",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "grey",
+        "stone",
+        "skin"
+      ],
+      "style": "rich",
+      "detail": "grey fur in three shades, a lit back, a dark ear and nose"
+    },
+    {
+      "name": "herb_plant",
+      "ref": "props/herb_plant",
+      "what": "leafy herb plant with small white flowers",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "green",
+        "moss",
+        "grey"
+      ],
+      "style": "rich",
+      "detail": "jagged leaves in three greens, a few small white blossoms"
+    },
+    {
+      "name": "house_small",
+      "ref": "props/house_small",
+      "what": "small wooden cottage with a red tiled roof",
+      "width": 192,
+      "height": 192,
+      "anchor": "bottom",
+      "ramps": [
+        "wood",
+        "red",
+        "stone",
+        "fire"
+      ],
+      "style": "rich",
+      "detail": "red roof tiles in rows, plank walls with grain, a lit window, a door, a chimney"
+    },
+    {
+      "name": "lantern_post",
+      "ref": "props/lantern_post",
+      "what": "iron lantern post with a lit lamp",
+      "width": 64,
+      "height": 128,
+      "anchor": "bottom",
+      "ramps": [
+        "grey",
+        "fire"
+      ],
+      "style": "rich",
+      "detail": "a dark iron post, a glass lamp with a warm yellow glow"
+    },
+    {
+      "name": "log_fallen",
+      "ref": "props/log_fallen",
+      "what": "fallen tree log lying on its side",
+      "width": 64,
+      "height": 64,
+      "anchor": "center",
+      "ramps": [
+        "bark",
+        "wood"
+      ],
+      "style": "rich",
+      "detail": "bark with grain, a pale cut end with rings"
+    },
+    {
+      "name": "log_mossy",
+      "ref": "props/log_mossy",
+      "what": "mossy fallen log",
+      "width": 64,
+      "height": 64,
+      "anchor": "center",
+      "ramps": [
+        "bark",
+        "moss",
+        "green"
+      ],
+      "style": "rich",
+      "detail": "a low brown log with green moss on top"
+    },
+    {
+      "name": "market_stall",
+      "ref": "props/market_stall",
+      "what": "market stall with a striped awning",
+      "width": 128,
+      "height": 128,
+      "anchor": "bottom",
+      "ramps": [
+        "wood",
+        "red",
+        "grey"
+      ],
+      "style": "rich",
+      "detail": "a red and white striped awning, wooden posts, a counter with a crate"
+    },
+    {
+      "name": "mushroom_patch",
+      "ref": "props/mushroom_patch",
+      "what": "patch of brown mushrooms",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "wood",
+        "bark",
+        "skin"
+      ],
+      "style": "rich",
+      "detail": "tan caps with a lit rim and darker undersides, pale stems"
+    },
+    {
+      "name": "mushrooms_small",
+      "ref": "props/mushrooms_small",
+      "what": "two small brown mushrooms",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "wood",
+        "skin"
+      ],
+      "style": "rich",
+      "detail": "tan caps with a lit rim, pale stems"
+    },
+    {
+      "name": "pebbles",
+      "ref": "props/pebbles",
+      "what": "scattered small pebbles",
+      "width": 64,
+      "height": 64,
+      "anchor": "center",
+      "ramps": [
+        "grey",
+        "stone"
+      ],
+      "style": "rich",
+      "detail": "a few small grey stones with lit tops and dark undersides"
+    },
+    {
+      "name": "reeds",
+      "ref": "props/reeds",
+      "what": "clump of reeds with brown seed heads",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "green",
+        "moss",
+        "bark"
+      ],
+      "style": "rich",
+      "detail": "thin green stalks, brown cattail heads"
+    },
+    {
+      "name": "rock_mossy",
+      "ref": "props/rock_mossy",
+      "what": "grey rock with moss",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "stone",
+        "grey",
+        "moss"
+      ],
+      "style": "rich",
+      "detail": "a rounded grey rock, lit top, a green moss patch"
+    },
+    {
+      "name": "rock_small",
+      "ref": "props/rock_small",
+      "what": "small grey rock",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "grey",
+        "stone"
+      ],
+      "style": "rich",
+      "detail": "a rounded grey rock with a lit top and a dark underside"
+    },
+    {
+      "name": "rock_stones",
+      "ref": "props/rock_stones",
+      "what": "pile of grey stones",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "grey",
+        "stone"
+      ],
+      "style": "rich",
+      "detail": "several rounded grey stones, lit tops, dark gaps"
+    },
+    {
+      "name": "rubble",
+      "ref": "props/rubble",
+      "what": "pile of broken stone rubble",
+      "width": 128,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "grey",
+        "stone",
+        "wood"
+      ],
+      "style": "rich",
+      "detail": "broken grey stone blocks with lit edges, a few brown chips"
+    },
+    {
+      "name": "ruin_arch",
+      "ref": "props/ruin_arch",
+      "what": "ruined stone archway overgrown with vines",
+      "width": 128,
+      "height": 128,
+      "anchor": "bottom",
+      "ramps": [
+        "stone",
+        "wood",
+        "moss",
+        "green"
+      ],
+      "style": "rich",
+      "detail": "tan stone blocks, cracks, green vines hanging from the top"
+    },
+    {
+      "name": "ruin_pillar",
+      "ref": "props/ruin_pillar",
+      "what": "broken stone pillar",
+      "width": 64,
+      "height": 128,
+      "anchor": "bottom",
+      "ramps": [
+        "grey",
+        "stone",
+        "moss"
+      ],
+      "style": "rich",
+      "detail": "a cracked pale pillar with a broken top and moss at its foot"
+    },
+    {
+      "name": "ruin_wall",
+      "ref": "props/ruin_wall",
+      "what": "crumbling ruined stone wall",
+      "width": 128,
+      "height": 128,
+      "anchor": "bottom",
+      "ramps": [
+        "stone",
+        "grey",
+        "moss",
+        "bark"
+      ],
+      "style": "rich",
+      "detail": "grey stone blocks, broken top, moss and brown vines"
+    },
+    {
+      "name": "shelf",
+      "ref": "props/shelf",
+      "what": "small wooden shelf with jars",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "wood",
+        "bark",
+        "plum"
+      ],
+      "style": "rich",
+      "detail": "a plank shelf with small coloured jars and bottles"
+    },
+    {
+      "name": "sign",
+      "ref": "props/sign",
+      "what": "wooden signboard on a post",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "wood",
+        "bark"
+      ],
+      "style": "rich",
+      "detail": "a plank board with grain on a short post, a lit top edge"
+    },
+    {
+      "name": "standing_stone",
+      "ref": "props/standing_stone",
+      "what": "tall grey standing stone",
+      "width": 64,
+      "height": 128,
+      "anchor": "bottom",
+      "ramps": [
+        "stone",
+        "grey",
+        "moss"
+      ],
+      "style": "rich",
+      "detail": "a tall rounded menhir, lit left side, lichen spots"
+    },
+    {
+      "name": "statue_head",
+      "ref": "props/statue_head",
+      "what": "giant stone head overgrown with moss",
+      "width": 128,
+      "height": 128,
+      "anchor": "bottom",
+      "ramps": [
+        "stone",
+        "wood",
+        "moss"
+      ],
+      "style": "rich",
+      "detail": "a carved face in tan stone, cracks, green moss on top"
+    },
+    {
+      "name": "stump",
+      "ref": "props/stump",
+      "what": "tree stump",
+      "width": 64,
+      "height": 64,
+      "anchor": "bottom",
+      "ramps": [
+        "bark",
+        "wood"
+      ],
+      "style": "rich",
+      "detail": "bark sides in browns, a pale cut top with rings"
+    },
+    {
+      "name": "totem",
+      "ref": "props/totem",
+      "what": "tall carved stone totem pole",
+      "width": 64,
+      "height": 128,
+      "anchor": "bottom",
+      "ramps": [
+        "grey",
+        "stone",
+        "fire"
+      ],
+      "style": "rich",
+      "detail": "a narrow grey column with carved bands and small orange marks"
+    },
+    {
+      "name": "tree_oak",
+      "ref": "props/tree_oak",
+      "what": "round leafy oak tree with its trunk",
+      "width": 128,
+      "height": 128,
+      "anchor": "bottom",
+      "ramps": [
+        "green",
+        "bark",
+        "moss"
+      ],
+      "style": "rich",
+      "detail": "clusters of leaves in three greens lit from the upper left, bark lines, roots"
+    },
+    {
+      "name": "well_old",
+      "ref": "props/well_old",
+      "what": "old stone well with a wooden roof",
+      "width": 128,
+      "height": 128,
+      "anchor": "bottom",
+      "ramps": [
+        "stone",
+        "wood",
+        "bark",
+        "water"
+      ],
+      "style": "rich",
+      "detail": "a round grey stone well, a plank roof on two posts, dark water inside"
+    }
+  ]
+}
