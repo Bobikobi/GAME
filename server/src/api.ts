@@ -136,7 +136,8 @@ function moveReport(value: unknown): MoveReport {
   return { kind: 'move', at: value.at, tick: value.tick };
 }
 
-function isAction(value: unknown): value is Action {
+/** Whether a value is an action the wire accepts: the kernel's shape, and no field besides it. */
+export function isAction(value: unknown): value is Action {
   if (!isRecord(value) || typeof value.t !== 'string') return false;
   switch (value.t) {
     case 'start':
@@ -268,7 +269,12 @@ function checkClock(tick: number, record: PlayerRecord, now: number): void {
   if (tick - record.state.tick > allowed) throw new RequestError('That game time is ahead of the time elapsed.', 409, 'clock-ahead');
 }
 
-function nextMovementCredit(
+/**
+ * The movement-time credit after a walk to `target` at `tick` (NEXT 18 a): a four-way path spends it, the
+ * game time since it was last refilled refills it, and `move_reach_max` caps it. Undefined when the walk
+ * costs more than the credit holds. A target the kernel cannot reach is left to the kernel to refuse.
+ */
+export function spendWalk(
   bundle: Bundle,
   state: State,
   from: Tile,
@@ -276,7 +282,7 @@ function nextMovementCredit(
   tick: number,
   movementAt: number,
   movementCreditMs: number,
-): { at: number; creditMs: number } {
+): { at: number; creditMs: number } | undefined {
   const { walk_step_ms: stepMs, move_reach_max: maxReach } = bundle.params;
   const elapsedSinceMove = Math.max(0, tick - state.player.movedAt);
   const reach = Math.min(2 + Math.floor(elapsedSinceMove / stepMs), maxReach);
@@ -287,10 +293,14 @@ function nextMovementCredit(
   const elapsedSinceCredit = Math.max(0, tick - movementAt);
   const available = Math.min(maxCreditMs, movementCreditMs + elapsedSinceCredit);
   const cost = distance * stepMs;
-  if (cost > available) {
-    throw new RequestError('That is further than a walk goes in that time.', 409, 'walk-credit');
-  }
+  if (cost > available) return undefined;
   return { at: tick, creditMs: available - cost };
+}
+
+function nextMovementCredit(...walk: Parameters<typeof spendWalk>): { at: number; creditMs: number } {
+  const next = spendWalk(...walk);
+  if (!next) throw new RequestError('That is further than a walk goes in that time.', 409, 'walk-credit');
+  return next;
 }
 
 function actionTile(action: Action, current: Tile): Tile {
