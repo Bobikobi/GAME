@@ -7,7 +7,7 @@ import type { Bundle, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
 import { tagAt } from './world';
 
-export const KERNEL_VERSION = '0.13.0';
+export const KERNEL_VERSION = '0.14.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['carry', 'senses', 'agility', 'luck', 'stamina'] as const;

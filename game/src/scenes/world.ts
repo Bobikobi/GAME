@@ -69,7 +69,7 @@ import { MazePeek } from './peek';
 import { hintDistance, lanternNight, nodeAction } from '../text';
 import type { WorkKind } from '../ui/ui';
 import { type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, treasureKind } from '../work';
-import { StandingReports, canEnter, landStep } from '../walking';
+import { ART_PX, StandingReports, Walker, canEnter, facedTile, facingFor, landStep } from '../walking';
 import { GroundChunks } from '../groundchunks';
 import { adopt, baseOf, densityOf, drawScaled, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
 import { cameraK, cameraZoom, pixelRatio, worldToPage } from '../view';
@@ -119,12 +119,6 @@ export interface Target {
   /** the tile the marker points at, and how tall the thing standing there is */
   tile: [number, number];
   top: number;
-}
-
-interface Move {
-  from: [number, number];
-  to: [number, number];
-  t: number;
 }
 
 /** Work that runs by itself after one press: a tree being felled, a spot being dug (game/src/work.ts). */
@@ -377,8 +371,8 @@ export class WorldScene extends Phaser.Scene {
   private eyes = new Set<Phaser.GameObjects.Image>();
   private labels!: HTMLElement;
   private pinned = new Set<Pinned>();
-  private move: Move | null = null;
-  private steps = 0;
+  /** the body walking freely between tiles (walking.ts); the session keeps the tile under its feet */
+  readonly body = new Walker();
   private busyFrom = 0;
   private busyMs = 0;
   private work: { node: string; kind: WorkKind } | null = null;
@@ -1692,7 +1686,6 @@ export class WorldScene extends Phaser.Scene {
   bind(session: GameSession): void {
     for (const off of this.unbind) off();
     this.session = session;
-    this.move = null;
     this.work = null;
     this.auto = null;
     this.held.clear();
@@ -1733,8 +1726,17 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private placePlayer(x: number, y: number): void {
-    this.player.setPosition(x * T + T / 2, (y + 1) * T);
-    this.player.setDepth((y + 1) * T + 1);
+    this.body.place([x, y]);
+    this.drawBody();
+  }
+
+  /** The sprite where the body stands, on the art's pixel grid: standing in a tile's middle, it stands on the tile's foot as before. */
+  private drawBody(): void {
+    const unit = T / ART_PX;
+    const x = Math.round(this.body.x) * unit;
+    const y = Math.round(this.body.y) * unit + T / 2;
+    this.player.setPosition(x, y);
+    this.player.setDepth(Math.round(y) + 1);
     this.playerShadow?.setPosition(this.player.x, this.player.y + 2);
   }
 
@@ -1939,7 +1941,7 @@ export class WorldScene extends Phaser.Scene {
     }
     this.walk(s, real);
     this.dimInCover(s);
-    this.stillReports.frame(this.b, s, this.hazards, !this.move && !this.falling, app.ui.blocking);
+    this.stillReports.frame(this.b, s, this.hazards, !this.body.moving && !this.falling, app.ui.blocking);
     this.playSong(s);
     this.placeLantern(s);
     if (RICH.motion) this.idle(s, time);
@@ -2132,7 +2134,7 @@ export class WorldScene extends Phaser.Scene {
   /** Standing still for 3 s, the player blinks every 3-5 s: frame 1 of the idle sheet for 120 ms. */
   private idle(s: GameSession, time: number): void {
     if (this.falling) return;
-    const still = !this.move && !s.busy && !this.work && !this.auto && this.swingUntil === 0;
+    const still = !this.body.moving && !s.busy && !this.work && !this.auto && this.swingUntil === 0;
     if (!still) {
       this.idleSince = time;
       this.blinkUntil = 0;
@@ -2167,46 +2169,31 @@ export class WorldScene extends Phaser.Scene {
     return !s.paused && !s.busy && !s.waiting && !app.ui.blocking && !this.peek.active;
   }
 
+  /**
+   * The free walk (NEXT 22 a): the body moves with the held input and slides along what it meets, and each tile
+   * its feet enter is the player's, told to the kernel in order. The facing follows the motion's leading axis.
+   */
   private walk(s: GameSession, delta: number): void {
     if (this.falling) return;
-    if (this.move) {
-      this.move.t += delta;
-      const k = Math.min(1, this.move.t / STEP_MS);
-      const [fx, fy] = this.move.from;
-      const [tx, ty] = this.move.to;
-      this.player.setPosition(Math.round((fx + (tx - fx) * k) * T + T / 2), Math.round((fy + (ty - fy) * k + 1) * T));
-      this.player.setDepth(Math.round((Math.max(fy, ty) + 1) * T + 1));
-      this.playerShadow?.setPosition(this.player.x, this.player.y + 2);
-      this.faceFrame(strideFrame(k, this.steps, this.b.sprites[this.playerFrame(s.facing).key]?.frames ?? 1));
-      if (k < 1) return;
-      const carry = this.move.t - STEP_MS;
-      this.move = null;
+    // the session may have put the player elsewhere: a load, a fall, the server's tile taken back
+    const moved = this.body.follow(s.pos);
+    const was = this.body.moving;
+    const input: [number, number] = this.canControl(s) ? app.controls.vector() : [0, 0];
+    const facing = facingFor(input, s.facing);
+    const turned = facing !== s.facing;
+    s.facing = facing;
+    for (const tile of this.body.frame(input, delta, STEP_MS, (x, y) => this.canWalk(s, x, y))) {
+      if (RICH.motion) this.puffAt(s.pos[0], s.pos[1]);
       // the kernel hears of each new tile; a hazard there may hurt, and a fall ends the walk
-      landStep(s, [tx, ty]);
+      landStep(s, tile);
       if (this.falling) return;
       this.arrive(s);
-      if (!this.tryStep(s, carry)) this.faceFrame();
-      return;
     }
-    if (this.canControl(s)) this.tryStep(s, 0);
-  }
-
-  /** Start walking one tile if a direction is held. Returns true if moving. */
-  private tryStep(s: GameSession, carry: number): boolean {
-    if (!this.canControl(s)) return false;
-    const dir = app.controls.direction();
-    if (!dir) return false;
-    if (s.facing !== dir) {
-      s.facing = dir;
-      this.faceFrame();
-    }
-    const [dx, dy] = DIRS[dir];
-    const to: [number, number] = [s.pos[0] + dx, s.pos[1] + dy];
-    if (!this.canWalk(s, to[0], to[1])) return false;
-    this.steps++;
-    if (RICH.motion) this.puffAt(s.pos[0], s.pos[1]);
-    this.move = { from: [s.pos[0], s.pos[1]], to, t: carry };
-    return true;
+    if (!this.body.moving && !was && !turned && !moved) return;
+    this.drawBody();
+    const walked = this.body.walked / ART_PX;
+    if (this.body.moving) this.faceFrame(strideFrame(walked % 1, Math.floor(walked), this.b.sprites[this.playerFrame(s.facing).key]?.frames ?? 1));
+    else this.faceFrame();
   }
 
   /** A little dust at the feet as a step starts, in the colour of the ground left behind. */
@@ -2756,7 +2743,6 @@ export class WorldScene extends Phaser.Scene {
     this.falling = true;
     // work under way is not taken back: it is simply over (the session drops its undo)
     if (this.auto) this.endWork(this.auto);
-    this.move = null;
     this.work = null;
     this.swingUntil = 0;
     // the fall ends any work: nothing may put the standing frame back while the body sinks
@@ -3019,7 +3005,7 @@ export class WorldScene extends Phaser.Scene {
   // ------------------------------------------------------------ interaction
 
   private updatePrompt(s: GameSession): void {
-    const t = this.canControl(s) && !this.move ? this.target(s) : undefined;
+    const t = this.canControl(s) ? this.target(s) : undefined;
     const label = t?.label ?? '';
     if (label !== this.prompt) {
       this.prompt = label;
@@ -3032,14 +3018,14 @@ export class WorldScene extends Phaser.Scene {
   /** The A button: act on what the player faces, stands on, or stands next to. */
   interact(): void {
     const s = this.session;
-    if (!s || this.move || !this.canControl(s)) return;
+    if (!s || !this.canControl(s)) return;
     this.target(s)?.run();
   }
 
   private target(s: GameSession): Target | undefined {
     const [x, y] = s.pos;
     const [fx, fy] = DIRS[s.facing];
-    const order: [number, number][] = [[x + fx, y + fy], [x, y]];
+    const order: [number, number][] = [facedTile(s), [x, y]];
     for (const [dx, dy] of NEIGHBOURS) {
       if (dx === fx && dy === fy) continue;
       order.push([x + dx, y + dy]);
@@ -3059,8 +3045,7 @@ export class WorldScene extends Phaser.Scene {
    */
   private kindleTarget(s: GameSession): Target | undefined {
     if (!holdsKindling(this.b, s.state)) return undefined;
-    const [fx, fy] = DIRS[s.facing];
-    const tile: [number, number] = [s.pos[0] + fx, s.pos[1] + fy];
+    const tile = facedTile(s);
     // the kernel tests the fire's tile, not the player's: one tile inside the edge facing out is allowed
     if (isTownTile(this.b, tile)) return undefined;
     return { label: 'Build a fire', run: () => app.ui.kindle(tile), tile, top: T };
@@ -3120,7 +3105,8 @@ export class WorldScene extends Phaser.Scene {
     const note = this.notes.get(k);
     if (note) return { label: `Look at the ${note.name}`, run: () => app.ui.note(lit() ? note.text : TOO_DARK), tile, top: note.top };
     const fog = this.empty.find((slot) => inRect(x, y, slot));
-    if (fog && x === s.pos[0] + DIRS[s.facing][0] && y === s.pos[1] + DIRS[s.facing][1]) {
+    const faced = facedTile(s);
+    if (fog && x === faced[0] && y === faced[1]) {
       return { label: `Look at the ${fog.label ?? 'mist'}`, run: () => app.ui.sign(fog.id), tile, top: T };
     }
     return undefined;
