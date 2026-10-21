@@ -4,6 +4,7 @@ import { GAME_TITLE } from '../config';
 import { Session } from '../session';
 import { ATTRIBUTE_LABEL, ATTRIBUTE_TEXT } from '../text';
 import { say } from './dialog';
+import { gameServer, offerSignup } from './signup';
 import { button, h, sprite } from './dom';
 import type { UI } from './ui';
 
@@ -33,7 +34,7 @@ export function showTitle(ui: UI): Promise<void> {
             button('New game', () => (canContinue ? confirmNew() : choose()), canContinue ? '' : 'big'),
           ),
           dropped ? h('p', { class: 'demo-note', 'data-save-reset': '' }, 'The valley has a new opening, so the game saved in this browser starts over. Thank you for playing the demo early.') : null,
-          h('p', { class: 'demo-note' }, 'Demo: your progress is saved in this browser only, and will not move to an account later.'),
+          h('p', { class: 'demo-note' }, gameServer() ? 'Your progress is saved in this browser. Finish the opening to make an account.' : 'Demo: your progress is saved in this browser only, and will not move to an account later.'),
           h('a', { class: 'btn small site-link', href: '../' }, 'Site'),
         ),
       );
@@ -49,6 +50,8 @@ export function showTitle(ui: UI): Promise<void> {
       }
       done();
       ui.begin(session);
+      // back from Google or the email link: the sign-up form waits (NEXT 18 d)
+      if (window.location.hash === '#signin=signup') offerSignup(ui);
     };
 
     const confirmNew = () => {

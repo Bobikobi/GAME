@@ -1,14 +1,17 @@
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import type { Server } from 'node:http';
-import { newState, step, type Bundle, type State } from '@game/kernel';
+import { newState, serialize, step, type Bundle, type State } from '@game/kernel';
 
 import { createGameApi, createPlayerRecord, createSignIn, googleProvider, listen, type Mail, type PlayerRecord, type PlayerStore, type SignIn } from '../src';
 import { ageGate, ageOn, consentAge, parseBirthDate, UNKNOWN_COUNTRY_AGE } from '../src/auth/age';
 import { pkceChallenge, tokenHash } from '../src/auth/tokens';
 import { loadBundle } from '../../tools/test/helpers/world.js';
 import { Browser, CLIENT_ID, CLIENT_SECRET, FakeGoogle, MemoryAuthStore } from './support/auth.js';
+import { LocalPhone, STARTS, playOpening } from './support/phone.js';
 
 const APP = 'http://localhost:5173';
+/** the seed every account of these tests is given: the server's own, never the phone's */
+const SECRET_SEED = 424242;
 let bundle: Bundle;
 let server: Server | undefined;
 
@@ -25,8 +28,10 @@ afterEach(async () => {
 /** A player store that holds a state for whichever account a test gives one to. */
 class Players implements PlayerStore {
   rows = new Map<string, PlayerRecord>();
+  /** the games the sign-up made: an account's first state, until a test or a request writes another */
+  constructor(private readonly made: MemoryAuthStore) {}
   async load(playerId: string) {
-    return this.rows.get(playerId);
+    return this.rows.get(playerId) ?? this.made.games.get(playerId)?.record;
   }
   async compareAndSet(playerId: string, expected: number, next: PlayerRecord) {
     if (this.rows.get(playerId)?.version !== expected) return false;
@@ -45,7 +50,7 @@ function started(): State {
 async function ready(options: { google?: boolean; countryHeader?: string } = {}) {
   const clock = { now: Date.UTC(2026, 9, 21, 12) };
   const store = new MemoryAuthStore();
-  const players = new Players();
+  const players = new Players(store);
   const google = new FakeGoogle();
   google.clock = () => clock.now;
   const outbox: Mail[] = [];
@@ -61,6 +66,8 @@ async function ready(options: { google?: boolean; countryHeader?: string } = {})
   const base = `http://127.0.0.1:${(await listen(server, 0)).port}`;
   late.signIn = createSignIn({
     store,
+    bundle,
+    newSeed: () => SECRET_SEED,
     mailer: { name: 'test', send: (mail) => Promise.resolve(void outbox.push(mail)) },
     google: options.google === false ? undefined : googleProvider({ clientId: CLIENT_ID, clientSecret: CLIENT_SECRET, fetch: google.fetch }),
     publicOrigin: base,
@@ -143,7 +150,7 @@ describe('sign-in with Google (NEXT 18 e)', () => {
     expect(await shown.json()).toEqual({ email: 'player@example.com' });
     const made = await w.browser.request('/auth/signup', { method: 'POST', json: SIGNUP });
     expect(made.status).toBe(201);
-    expect(await made.json()).toEqual({ name: 'Tess' });
+    expect(await made.json()).toEqual({ name: 'Tess', opening: 'fresh' });
     expect([...w.store.accounts.values()]).toEqual([{ email: 'player@example.com', name: 'Tess', birthBand: '18+' }]);
     const sessionCookie = made.headers.getSetCookie().find((line) => line.startsWith('__Host-of_session='))!;
     expect(sessionCookie).toMatch(/^__Host-of_session=[A-Za-z0-9_-]{43}; Path=\/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000$/);
@@ -364,6 +371,46 @@ describe('the sign-up (NEXT 18 e; CR-49, CR-53)', () => {
     expect(w.store.accounts.size).toBe(0);
     expect(w.store.tickets.size).toBe(0);
     expect((await signUp(w, { ...SIGNUP, birthDate: '1990-01-01' })).status).toBe(401);
+  });
+
+  test('the opening the phone played comes along: replayed, kept under the server\'s seed, and served as the account\'s game', async () => {
+    const w = await ticket();
+    const phone = new LocalPhone(bundle, 77);
+    await playOpening(phone, STARTS[1]);
+    const response = await signUp(w, { ...SIGNUP, opening: phone.upload() });
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({ name: 'Tess', opening: 'kept' });
+
+    const accountId = [...w.store.accounts.keys()][0]!;
+    const game = w.store.games.get(accountId)!;
+    expect(game.record.state.seed).toBe(SECRET_SEED);
+    expect(serialize(game.record.state)).toBe(serialize({ ...phone.state, seed: SECRET_SEED }));
+    // the account's books begin with the opening, and its grants are booked beside it
+    expect(game.books?.action).toMatchObject({ kind: 'opening', seed: 77 });
+    expect(game.books?.gold.reduce((total, row) => total + row.deltaMg, 0)).toBe(phone.state.player.gold);
+
+    const state = await w.browser.request('/state');
+    const served = (await state.json()).state;
+    expect(served.player.starter).toBe('core/digger');
+    expect(served.tick).toBe(phone.state.tick);
+    expect(served).not.toHaveProperty('seed');
+  });
+
+  test('an opening that does not prove, or none at all, starts the account fresh, and the reply says so', async () => {
+    const w = await ticket();
+    const phone = new LocalPhone(bundle, 77);
+    await playOpening(phone, STARTS[0]);
+    const upload = phone.upload();
+    const forged = upload.state.replace(`"gold":${phone.state.player.gold}`, `"gold":${phone.state.player.gold + 1}`);
+    expect(forged).not.toBe(upload.state);
+    const response = await signUp(w, { ...SIGNUP, opening: { ...upload, state: forged } });
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({ name: 'Tess', opening: 'fresh' });
+    const game = w.store.games.get([...w.store.accounts.keys()][0]!)!;
+    expect(serialize(game.record.state)).toBe(serialize(newState(bundle, SECRET_SEED)));
+    expect(game.books).toBeUndefined();
+    // before the start: the player picks a start again, under the account's own seed
+    expect((await (await w.browser.request('/state')).json()).state.player.starter).toBe('');
   });
 
   test('a browser refused for its age gets no new date for a day, even after a new proof; another browser is not touched', async () => {

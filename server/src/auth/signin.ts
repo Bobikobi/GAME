@@ -1,4 +1,8 @@
+import { randomInt } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import type { Bundle } from '@game/kernel';
+
+import { takeOpening } from '../handover';
 
 import { ageGate, parseBirthDate } from './age';
 import { AGE_COOKIE, clearCookie, cookie, FLOW_COOKIE, readCookie, SESSION_COOKIE, SIGNUP_COOKIE } from './cookies';
@@ -18,6 +22,8 @@ const AGE_REFUSAL_TTL_MS = 24 * 60 * MINUTE;
 const LINKS_PER_ADDRESS = 3;
 const SWEEP_EVERY_MS = MINUTE;
 const BODY_LIMIT = 4 * 1024;
+/** the sign-up carries the opening the phone played: up to 2000 steps and the state they end on (NEXT 18 d) */
+const SIGNUP_BODY_LIMIT = 512 * 1024;
 /** the kernel's rule for a name (kernel/src/step.ts, checkName): the world shows the same name it played with */
 const NAME = /^[A-Za-z0-9 _-]{1,16}$/;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -25,6 +31,10 @@ const COUNTRY = /^[A-Z]{2}$/;
 
 export interface SignInOptions {
   store: AuthStore;
+  /** the world the sign-up replays a handed-over opening in (NEXT 18 d) */
+  bundle: Bundle;
+  /** the account's secret seed; a test passes its own */
+  newSeed?: () => number;
   mailer: Mailer;
   /** Google, when its client id and secret are set; Discord is a slot that is not open yet */
   google?: OAuthProvider;
@@ -67,25 +77,25 @@ function redirect(response: ServerResponse, location: string, cookies: string[] 
   response.end();
 }
 
-async function readBody(request: IncomingMessage): Promise<string> {
+async function readBody(request: IncomingMessage, limit = BODY_LIMIT): Promise<string> {
   const chunks: Buffer[] = [];
   let length = 0;
   for await (const value of request) {
     const chunk = Buffer.isBuffer(value) ? value : Buffer.from(value);
     length += chunk.length;
-    if (length > BODY_LIMIT) throw new SignInRefusal('The request is too large.', 'request', 413);
+    if (length > limit) throw new SignInRefusal('The request is too large.', 'request', 413);
     chunks.push(chunk);
   }
   return Buffer.concat(chunks).toString('utf8');
 }
 
-async function readJsonObject(request: IncomingMessage): Promise<Record<string, unknown>> {
+async function readJsonObject(request: IncomingMessage, limit = BODY_LIMIT): Promise<Record<string, unknown>> {
   if (!/^application\/json(?:\s*;|$)/.test(request.headers['content-type']?.toLowerCase() ?? '')) {
     throw new SignInRefusal('Send JSON with content-type application/json.', 'request', 415);
   }
   let value: unknown;
   try {
-    value = JSON.parse(await readBody(request)) as unknown;
+    value = JSON.parse(await readBody(request, limit)) as unknown;
   } catch {
     throw new SignInRefusal('The request is not valid JSON.', 'request');
   }
@@ -122,6 +132,7 @@ function escapeHtml(text: string): string {
 export function createSignIn(options: SignInOptions): SignIn {
   const { store, mailer } = options;
   const now = options.now ?? Date.now;
+  const newSeed = options.newSeed ?? (() => randomInt(0, 2 ** 32));
   const allowedOrigins = new Set([options.publicOrigin, options.appOrigin]);
   const redirectUri = (provider: string) => `${options.publicOrigin}/auth/${provider}/callback`;
   let sweptAt = 0;
@@ -298,15 +309,17 @@ export function createSignIn(options: SignInOptions): SignIn {
    * address comes from the proven identity, and the country from our proxy, never from the player. The
    * date sets the band and is not kept. `oneAccount` is the player's yes to "one person, one account in a
    * world" (CR-53). A browser refused for its age is refused a new date for a day, as a neutral age screen
-   * asks, and its ticket ends.
+   * asks, and its ticket ends. `opening`, when the phone sends it, is the opening it played before the
+   * account existed (NEXT 18 d): the account keeps it when the server's replay proves it, and starts fresh
+   * otherwise; the reply says which in `opening`, `kept` or `fresh`.
    */
   async function signupCreate(request: IncomingMessage, response: ServerResponse): Promise<void> {
     requireOrigin(request);
     const at = now();
     const ticket = await ticketOf(request, at);
     if (readCookie(request, AGE_COOKIE) !== undefined) return refuseAge(response, ticket.ticketHash, []);
-    const body = await readJsonObject(request);
-    onlyKeys(body, ['name', 'birthDate', 'oneAccount']);
+    const body = await readJsonObject(request, SIGNUP_BODY_LIMIT);
+    onlyKeys(body, ['name', 'birthDate', 'oneAccount', 'opening']);
     if (body.oneAccount !== true) {
       throw new SignInRefusal('One person, one account in a world: agree to it to make your account.', 'request');
     }
@@ -317,11 +330,16 @@ export function createSignIn(options: SignInOptions): SignIn {
     if (!birth) throw new SignInRefusal('Give the day you were born.', 'request');
     const gate = ageGate(birth, countryOf(request), at);
     if ('underAge' in gate) return refuseAge(response, ticket.ticketHash, [cookie(AGE_COOKIE, '1', AGE_REFUSAL_TTL_MS / 1000)]);
-    const made = await store.createAccount({ email: ticket.email, name: body.name.trim(), birthBand: gate.band }, ticket);
+    // the opening the phone played comes with the account, replayed and proven, or the game starts fresh (NEXT 18 d)
+    const handover = takeOpening(options.bundle, body.opening, newSeed(), at);
+    const game = handover.kept
+      ? { record: handover.record, books: { action: handover.opening, tick: handover.tick, gold: handover.gold } }
+      : { record: handover.record };
+    const made = await store.createAccount({ email: ticket.email, name: body.name.trim(), birthBand: gate.band }, ticket, game);
     if (made === 'name-taken') throw new SignInRefusal('That name is taken in this world. Choose another.', 'name-taken', 409);
     if (made === 'email-taken') throw new SignInRefusal('That address already has an account. Sign in instead.', 'email-taken', 409);
     const session = await startSession(request, made.accountId, at);
-    sendJson(response, 201, { name: body.name.trim() }, [session, clearCookie(SIGNUP_COOKIE)]);
+    sendJson(response, 201, { name: body.name.trim(), opening: handover.kept ? 'kept' : 'fresh' }, [session, clearCookie(SIGNUP_COOKIE)]);
   }
 
   async function sessionHash(request: IncomingMessage): Promise<{ hash: string; accountId: string } | undefined> {

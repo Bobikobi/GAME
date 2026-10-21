@@ -5,7 +5,7 @@
  */
 import { generateKeyPairSync, sign, type KeyObject } from 'node:crypto';
 
-import type { AuthStore, EmailLink, NewAccount, OAuthFlow, SignupTicket } from '../../src/auth/store';
+import type { AuthStore, EmailLink, NewAccount, NewGame, OAuthFlow, SignupTicket } from '../../src/auth/store';
 import type { ProviderId } from '../../src/auth/provider';
 
 export class MemoryAuthStore implements AuthStore {
@@ -15,6 +15,8 @@ export class MemoryAuthStore implements AuthStore {
   sessions = new Map<string, { accountId: string; expiresAt: number; revokedAt?: number }>();
   accounts = new Map<string, NewAccount>();
   identities = new Map<string, string>();
+  /** the game each account was made with (NEXT 18 d), as postgres writes it in the same transaction */
+  games = new Map<string, NewGame>();
   private ids = 0;
 
   async saveFlow(flow: OAuthFlow) {
@@ -56,7 +58,7 @@ export class MemoryAuthStore implements AuthStore {
   async dropTicket(ticketHash: string) {
     this.tickets.delete(ticketHash);
   }
-  async createAccount(account: NewAccount, ticket: SignupTicket) {
+  async createAccount(account: NewAccount, ticket: SignupTicket, game: NewGame) {
     const accounts = [...this.accounts.values()];
     if (accounts.some((other) => other.name.toLowerCase() === account.name.toLowerCase())) return 'name-taken' as const;
     if (accounts.some((other) => other.email === account.email) || this.identities.has(`${ticket.provider}:${ticket.subject}`)) {
@@ -66,6 +68,7 @@ export class MemoryAuthStore implements AuthStore {
     this.accounts.set(accountId, { ...account });
     this.identities.set(`${ticket.provider}:${ticket.subject}`, accountId);
     this.tickets.delete(ticket.ticketHash);
+    this.games.set(accountId, structuredClone(game));
     return { accountId };
   }
   async createSession(tokenHash: string, accountId: string, _createdAt: number, expiresAt: number) {
@@ -85,6 +88,7 @@ export class MemoryAuthStore implements AuthStore {
   }
   async closeAccount(accountId: string) {
     this.accounts.delete(accountId);
+    this.games.delete(accountId);
     for (const [key, id] of this.identities) if (id === accountId) this.identities.delete(key);
     for (const [hash, session] of this.sessions) if (session.accountId === accountId) this.sessions.delete(hash);
   }

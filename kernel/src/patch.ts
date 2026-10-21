@@ -1,4 +1,5 @@
 import type { PublicState, State } from './state';
+import type { Action } from './step';
 
 export type { PublicState };
 
@@ -75,4 +76,23 @@ export function applyStatePatch<T>(value: T, patch: MergePatch): T {
     }
   }
   return result as T;
+}
+
+/**
+ * The most steps a phone keeps of the opening it plays before an account exists (NEXT 18 d). The phone
+ * logs every step, a walked tile included, from the start until the sign-up; past this many it keeps
+ * nothing more and the account starts fresh.
+ */
+export const OPENING_LOG_MAX = 2000;
+
+/**
+ * The opening as the phone hands it over at the sign-up (NEXT 18 d): the seed it played under, every step
+ * in the order it played with the tick it played at (the shape `replay` reads), and the state it ended on
+ * as `serialize` writes it. The server plays the log again under that seed and keeps the result only when
+ * it lands on the same text.
+ */
+export interface OpeningUpload {
+  seed: number;
+  log: { a: Action; tick: number }[];
+  state: string;
 }

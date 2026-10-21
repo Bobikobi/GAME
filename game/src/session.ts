@@ -11,6 +11,8 @@ import {
   type Bundle,
   type GameEvent,
   KERNEL_VERSION,
+  OPENING_LOG_MAX,
+  type OpeningUpload,
   type State,
   appearSlots,
   appears,
@@ -84,6 +86,8 @@ interface SaveFile {
   stall?: string;
   /** the stall the kit is arranging, one entry per place; absent in old saves and while it is empty */
   stallDraft?: (StallDraft | null)[];
+  /** the opening log of NEXT 18 d: the seed the game began under, and every step played since; absent in older saves */
+  opening?: { seed: number; log: { a: Action; tick: number }[]; full?: boolean };
 }
 
 type Listener = (payload: never) => void;
@@ -107,12 +111,18 @@ export class Session implements GameSession {
   /** The stall the kit is arranging; kept in the save, and nothing is listed anywhere yet. */
   readonly stallDraft: (StallDraft | null)[] = Array.from({ length: STALL_SLOTS }, () => null);
   tail: LogEntry[] = [];
+  /**
+   * Every step played since the start, in order, until an account exists (NEXT 18 d): the sign-up hands it
+   * to the server, which plays it again. The tail above is for bug reports and stays at 40; this one runs to
+   * `OPENING_LOG_MAX`, and past that the opening is too long to hand over and the account starts fresh.
+   */
+  private opening: { seed: number; log: { a: Action; tick: number }[]; full: boolean } | undefined;
   /** set when the save was made with other content and had to be adapted */
   adapted = false;
   private pauses = 0;
   private deferred: GameEvent[] = [];
   /** the state and log from before the action that keeps the player busy now, so work walked away from can be taken back */
-  private undo: { state: State; tail: LogEntry[] } | null = null;
+  private undo: { state: State; tail: LogEntry[]; opening: number } | null = null;
   /** the record of a gather under way: counted as a pickup when the work lands, dropped when it is walked away from */
   private pickup: string | null = null;
   private listeners = new Map<keyof SessionEvents, Set<Listener>>();
@@ -162,6 +172,30 @@ export class Session implements GameSession {
     this.save();
     this.emit('change', undefined);
     return true;
+  }
+
+  /** Keep one played step in the opening log; the log begins at the start and stops growing at its cap. */
+  private keep(action: Action, tick: number, seed: number): void {
+    if (action.t === 'start') this.opening = { seed, log: [], full: false };
+    const opening = this.opening;
+    if (!opening || opening.full) return;
+    if (opening.log.length >= OPENING_LOG_MAX) {
+      opening.full = true;
+      opening.log = [];
+      return;
+    }
+    opening.log.push({ a: structuredClone(action), tick });
+  }
+
+  /**
+   * What the sign-up hands the server: the seed, every step since the start and the state they ended on.
+   * Nothing when the game was not played from its start in this browser, or the log outgrew its cap: the
+   * account then starts fresh.
+   */
+  openingUpload(): OpeningUpload | undefined {
+    const opening = this.opening;
+    if (!opening || opening.full || opening.log.length === 0 || opening.log[0]!.a.t !== 'start') return undefined;
+    return { seed: opening.seed, log: structuredClone(opening.log), state: serialize(this.state) };
   }
 
   static hasSave(): boolean {
@@ -254,6 +288,10 @@ export class Session implements GameSession {
       for (const key of file.heard) if (typeof key === 'string') session.heard.add(key);
     }
     session.tail = file.tail.slice(-TAIL);
+    const kept = file.opening;
+    if (kept && Number.isSafeInteger(kept.seed) && Array.isArray(kept.log) && state.content === file.content) {
+      session.opening = { seed: kept.seed, log: kept.log, full: kept.full === true };
+    }
     const walkable = makeWalkable(bundle);
     const [x, y] = file.pos;
     session.pos = walkable(x, y, state.player) ? [x, y] : [state.player.at[0], state.player.at[1]];
@@ -410,6 +448,7 @@ export class Session implements GameSession {
     const r = step(this.bundle, this.state, { t: 'move', at: [at[0], at[1]] }, this.tick);
     if (!r.ok) return;
     this.state = r.state;
+    this.keep({ t: 'move', at: [at[0], at[1]] }, this.tick, r.state.seed);
     // a hunt heard during work changes the world under it: that work can no longer be taken back
     this.undo = null;
     if (r.events.length === 0) return;
@@ -422,7 +461,8 @@ export class Session implements GameSession {
   act(action: Action): ActResult {
     const r = step(this.bundle, this.state, action, this.tick);
     if (!r.ok) return r;
-    const before = { state: this.state, tail: this.tail.slice() };
+    const before = { state: this.state, tail: this.tail.slice(), opening: this.opening?.log.length ?? 0 };
+    this.keep(action, this.tick, this.state.seed);
     this.state = r.state;
     this.undo = null;
     this.wake(r.events);
@@ -491,6 +531,7 @@ export class Session implements GameSession {
     if (!this.busy || !this.undo) return false;
     this.state = this.undo.state;
     this.tail = this.undo.tail;
+    if (this.opening && !this.opening.full) this.opening.log.length = Math.min(this.opening.log.length, this.undo.opening);
     this.deferred = [];
     this.pickup = null;
     this.undo = null;
@@ -517,6 +558,7 @@ export class Session implements GameSession {
       stall: this.stall,
       stallDraft: this.stallDraft.some((draft) => draft !== null) ? this.stallDraft : undefined,
       tail: this.tail,
+      opening: this.opening,
     };
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(file));
