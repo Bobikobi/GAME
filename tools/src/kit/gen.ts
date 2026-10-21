@@ -25,6 +25,11 @@
  * `--only meadow_tuft` redraws one motif and keeps the others; `--reimport` bakes again from the last
  * motifs with no Codex call.
  *
+ * A `ref` that is a PNG outside `content/kit/` is an outside reference (a screenshot, a photo): its entry
+ * must carry `seen` (what the eye saw, confirmed before any name was given), `confirmed_by` and the
+ * `palette` decision, and its prompt asks for the object in our style, not a copy. Procedure:
+ * `docs/art/PROP_FROM_REF.md`.
+ *
  * Nothing is written into `content/`: a result goes into the kit by hand, in a wave. `--dry` writes
  * the references and the prompts only; `--reimport` imports the last raw images again without
  * calling Codex. Each image costs one to two minutes and 14k to 37k Codex tokens (measured
@@ -65,6 +70,17 @@ export interface GenEntry extends ScatterEntry {
   anchor?: 'center' | 'bottom';
   /** The detail to spell out. The model draws as many pixels as it is given things to draw. */
   detail?: string;
+  /** Outside reference only: what the eye saw in the crop before any name was given (docs/art/PROP_FROM_REF.md, step 0a). */
+  seen?: string;
+  /** Outside reference only: who confirmed `seen` against the picture. */
+  confirmed_by?: string;
+  /** Outside reference only: the palette decision taken before the first call (step 0b): its hues fit the core ramps, it is restyled into them, or a ramp was added by owner decision. */
+  palette?: 'fits' | 'restyle' | 'ramp-added';
+}
+
+/** A PNG that is not a kit sprite: a picture from outside the game, drawn in our style rather than redrawn. */
+export function isOutsideReference(ref: string): boolean {
+  return extname(ref) === '.png' && !ref.startsWith('content/kit/');
 }
 
 export interface Raster {
@@ -125,6 +141,11 @@ export function parseSpec(text: string): GenEntry[] {
     }
     if (entry.anchor !== undefined && entry.anchor !== 'center' && entry.anchor !== 'bottom') throw new Error(`${where}.anchor must be center or bottom`);
     if (entry.detail !== undefined && typeof entry.detail !== 'string') throw new Error(`${where}.detail must be text`);
+    if (isOutsideReference(entry.ref)) {
+      if (typeof entry.seen !== 'string' || entry.seen.trim() === '') throw new Error(`${where}.seen must say what the eye saw in the outside reference, confirmed before any name (docs/art/PROP_FROM_REF.md step 0a)`);
+      if (typeof entry.confirmed_by !== 'string' || entry.confirmed_by.trim() === '') throw new Error(`${where}.confirmed_by must name who confirmed "seen" against the picture (step 0a)`);
+      if (entry.palette !== 'fits' && entry.palette !== 'restyle' && entry.palette !== 'ramp-added') throw new Error(`${where}.palette must be fits, restyle or ramp-added, decided before the first call (step 0b)`);
+    }
     return entry as GenEntry;
   });
 }
@@ -171,9 +192,17 @@ export function buildPrompt(entry: GenEntry, reference: Raster, file: string): s
   const kindLine = entry.kind === 'tile'
     ? `No outline: it is a ground texture that fills the whole ${grid} square edge to edge, centered on the magenta. Its left edge continues its right edge and its top continues its bottom, so it repeats without a seam.`
     : 'Thick dark navy outline one pixel wide.';
+  const outside = isOutsideReference(entry.ref);
+  const palette = entry.palette === 'restyle'
+    ? 'its colours restyled into our limited palette ramps, the nearest ramps rather than the original hues'
+    : entry.palette === 'ramp-added' ? 'in our limited palette including its newly added ramp' : 'in our limited palette';
   return [
-    `Use your image generation tool. The attached image is a reference: ${entry.what}, ${reference.width}x${reference.height} pixels, from our top-down pixel-art game, shown enlarged on magenta.`,
-    `Generate a NEW image of the same ${entry.what} - same design, same colors, same top-down three-quarter view - redrawn as pixel art ${entry.width} pixels wide and ${entry.height} pixels tall, far more pixels than the reference${detail}.`,
+    outside
+      ? `Use your image generation tool. The attached image is a reference from outside our game: ${entry.what}, ${reference.width}x${reference.height} pixels, seen as: ${(entry.seen ?? '').trim()}. It is shown enlarged on magenta.`
+      : `Use your image generation tool. The attached image is a reference: ${entry.what}, ${reference.width}x${reference.height} pixels, from our top-down pixel-art game, shown enlarged on magenta.`,
+    outside
+      ? `Generate a NEW image of a ${entry.what} in the style of our top-down pixel-art game: the same object, shape and proportions, not a copy of the picture, top-down three-quarter view, ${palette}, drawn as pixel art ${entry.width} pixels wide and ${entry.height} pixels tall${detail}.`
+      : `Generate a NEW image of the same ${entry.what} - same design, same colors, same top-down three-quarter view - redrawn as pixel art ${entry.width} pixels wide and ${entry.height} pixels tall, far more pixels than the reference${detail}.`,
     `Every pixel stays a crisp square of one flat color, no anti-aliasing, each one about 1/${entry.width} of the drawing's width: draw no smaller pixels than that.`,
     kindLine,
     'Limited palette, two-tone shading, solid flat pure magenta #FF00FF background around it, no text, no shadow, no extra objects.',
