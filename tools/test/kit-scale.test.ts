@@ -1,7 +1,11 @@
-import { describe, expect, test } from 'vitest';
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterAll, describe, expect, test } from 'vitest';
 
 import { runCheck } from '../src/check.js';
 import { scaleKindOf, scaleProblems } from '../src/kit/scale.js';
+import { CONTENT_DIR } from '../src/load.js';
 
 /**
  * NATURE section 1 and STYLE 1b: a sprite may declare `scale`, its height in characters, and a
@@ -73,5 +77,33 @@ describe('the check on today content', () => {
   test('every kit of today passes with no scale line', () => {
     const result = runCheck();
     expect(result.issues.filter((i) => /scale|floor of a|creature declares/.test(i.message))).toEqual([]);
+  });
+});
+
+describe('the check, end to end, on a kit that declares a height', () => {
+  // the whole content in a copy, one oak and one creature sprite given a `scale`: the warning has to come
+  // out of `pnpm check` itself, not only out of the function above, or the field would be read by nobody
+  const root = mkdtempSync(join(tmpdir(), 'openfold-scale-'));
+  afterAll(() => rmSync(root, { recursive: true, force: true }));
+  cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
+  cpSync(join(CONTENT_DIR, 'kit'), join(root, 'kit'), { recursive: true });
+
+  const kitPath = join(root, 'kit', 'core', 'kit.json');
+  const kit = JSON.parse(readFileSync(kitPath, 'utf8')) as { kit: { sprites: Record<string, { scale?: number }> } };
+  kit.kit.sprites['props/tree_oak']!.scale = 2;
+  kit.kit.sprites['props/house_small']!.scale = 3.5;
+  writeFileSync(kitPath, JSON.stringify(kit, null, 2));
+
+  const issues = runCheck(root).issues;
+
+  test('an oak declared at 2 characters is a warning from the check, under the floor of 3', () => {
+    const problem = issues.find((i) => i.where === 'kit.sprites.props/tree_oak');
+    expect(problem?.level).toBe('warning');
+    expect(problem?.message).toContain('under the floor of a oak, 3 characters');
+  });
+
+  test('a house at 3.5 characters, over its floor, says nothing, and nothing new is an error', () => {
+    expect(issues.some((i) => i.where === 'kit.sprites.props/house_small')).toBe(false);
+    expect(issues.filter((i) => i.level === 'error')).toEqual([]);
   });
 });
