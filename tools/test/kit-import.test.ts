@@ -171,7 +171,7 @@ function nearestPreview(image: PNG, scale: number): Buffer {
 }
 
 describe('importSprite', () => {
-  test('dither alternates the two nearest colours only for a colour between them (exp/rich-style)', () => {
+  test('dither alternates the two nearest colours only for a colour between them', () => {
     const palette = CORE_PALETTE.map(hexToRgb);
     const a = palette[2] ?? [0, 0, 0];
     const b = palette[3] ?? [0, 0, 0];

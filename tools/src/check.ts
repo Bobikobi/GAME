@@ -10,7 +10,7 @@ import { type Bundle, computeValues, idiv, minChargeFor, missOutcome, rarityBudg
 import { RARITIES, type ParamsBody } from '@game/schema';
 import { assemble, type Assembled } from './assemble';
 import { readBoard } from './board';
-import { CORE_PALETTE } from './kit/palette';
+import { CORE_PALETTE, coreRamp } from './kit/palette';
 import { accentsOf, allowedColors, rampProblems } from './kit/ramps';
 import { scaleProblems } from './kit/scale';
 import { checkColors } from './colors';
@@ -532,6 +532,11 @@ function checkKits(a: Assembled): Issue[] {
     for (const [index, ramp] of ramps.entries()) {
       const where = `kit.ramps.${index}`;
       if (rampById.has(ramp.id)) issues.push({ file: kitFile, where, message: `the ramp "${ramp.id}" is declared twice`, level: 'error' });
+      // A shared ramp (palette v2) is the same in every kit: a kit may repeat it, never change it.
+      const shared = coreRamp(ramp.id);
+      if (shared !== undefined && shared.steps.join(',') !== ramp.steps.map((s) => s.toLowerCase()).join(',')) {
+        issues.push({ file: kitFile, where, message: `the ramp "${ramp.id}" is a shared ramp of palette v2 (tools/src/kit/palette.ts) and its steps differ; a kit's own ramp takes another id`, level: 'error' });
+      }
       rampById.set(ramp.id, ramp);
       for (const problem of rampProblems(ramp)) {
         issues.push({ file: kitFile, where, message: `the ramp "${ramp.id}" ${problem}`, level: 'error' });
@@ -567,11 +572,11 @@ function checkKits(a: Assembled): Issue[] {
       // ramps stays valid. One that names them may also use their steps.
       const named = s.ramps ?? [];
       for (const id of named) {
-        if (!rampById.has(id)) {
-          issues.push({ file: kitFile, where, message: `names the ramp "${id}", which this kit does not declare`, level: 'error' });
+        if (!rampById.has(id) && coreRamp(id) === undefined) {
+          issues.push({ file: kitFile, where, message: `names the ramp "${id}", which neither this kit nor the shared ramps of palette v2 declare`, level: 'error' });
         }
       }
-      const allowed = allowedColors(core, ramps, named);
+      const allowed = allowedColors(core, [...ramps, ...named.flatMap((id) => (rampById.has(id) ? [] : [coreRamp(id)]).filter((r) => r !== undefined))], named);
       const used = new Set<string>();
       const bad = new Set<string>();
       let soft = 0;
