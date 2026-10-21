@@ -78,7 +78,7 @@ class MemoryStore implements PlayerStore {
     if (!record || record.version !== expectedVersion) return false;
     this.records.set(playerId, structuredClone(next));
     this.books.set(playerId, [...(this.books.get(playerId) ?? []), { action: structuredClone(books.action), tick: books.tick }]);
-    this.gold.set(playerId, [...(this.gold.get(playerId) ?? []), ...books.goldDeltasMg]);
+    this.gold.set(playerId, [...(this.gold.get(playerId) ?? []), ...books.gold.map((row) => row.deltaMg)]);
     return true;
   }
 }
@@ -89,6 +89,7 @@ let schemas = 0;
 export async function startRig(bundle: Bundle): Promise<Rig> {
   const clock: Clock = { now: 1_000 };
   const auth = authFromEnv({ AUTH_MODE: 'dev-header', ALLOW_DEV_HEADER: 'staging-only' });
+  if (auth.mode !== 'dev-header') throw new Error('the sim names its players by the dev header');
   const memory = new MemoryStore(bundle);
 
   let store: PlayerStore = memory;
