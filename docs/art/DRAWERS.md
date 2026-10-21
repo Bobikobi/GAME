@@ -9,7 +9,7 @@ says which route drew each image, so a gallery can mix them.
 | route | what it is | cost per image, measured or published | what it needs | when |
 |---|---|---|---|---|
 | `codex` | the Codex agent on its subscription (`codex exec` with the image tool) | 150-250 s, 30k-60k tokens (21.10) | the `codex` CLI signed in | the default; a text route (grid tile, scatter motif) always |
-| `gemini` | Google's image model over the Generative Language API, one HTTP call through curl | 10-20 s; the free AI Studio tier has a daily cap, enough for dozens a day | `GEMINI_API_KEY` in the shell; `GEMINI_IMAGE_MODEL` to change the model (default `gemini-2.5-flash-image`) | volume: a wave of props from themselves, best of three in minutes |
+| `gemini` | Google's image model over the Generative Language API, one HTTP call through curl | 10-20 s; **not on the free tier**: the first live run (21.10, a fresh key) answered `RESOURCE_EXHAUSTED ... limit: 0` for every image-model metric, which means no free allocation for image models at all, not a cap reached. A project with billing (Tier 1) pays per image, in the cents; a new billing account starts with trial credit | `GEMINI_API_KEY` from a project with billing; `GEMINI_IMAGE_MODEL` to change the model (default `gemini-2.5-flash-image`) | volume: a wave of props from themselves, best of three in minutes, once the owner puts billing on the project |
 
 Rules that hold for every route:
 
@@ -22,9 +22,16 @@ Rules that hold for every route:
   RICH_STYLE_EXPERIMENT.md). A route that returns a JPEG is refused: the importer keys the
   magenta from a PNG.
 - **Live check before trusting a new route:** one `--dry` run, read the prompt; one real image
-  of a kit sprite; open the gallery. The Gemini route was built from the API's published shape
-  and its live run waits for a key (the test holds the request and the answer parsing, not the
-  wire).
+  of a kit sprite; open the gallery. The Gemini route's wire is proven (21.10: the request reached
+  the API and its structured answer landed in the gallery as a readable error); its first picture
+  waits for billing on the project.
+
+## What is free, honestly
+
+The AI Studio web page draws for free by hand (paste the prompt `--dry` wrote, attach the
+reference, download the PNG, `pnpm kit:import` it): fine for a few objects, not for a wave.
+The Codex route costs the subscription already paid. No built route gives free images by API
+today; the two below that could are slower or lower in quality for this task.
 
 ## Routes not built, and what each would take
 

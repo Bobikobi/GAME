@@ -7,10 +7,11 @@
  *           minutes and 30k to 60k tokens per image, measured 21.10. The agent reads the prompt,
  *           calls its own image tool and saves the file.
  *   gemini  Google's image model over the Generative Language API, one HTTP call, ten to twenty
- *           seconds per image. The key is `GEMINI_API_KEY` in the environment (AI Studio gives one
- *           with a free tier and a daily cap; on that tier Google may use the request to improve its
- *           models, so a third-party reference does not go down this route). The model is
- *           `GEMINI_IMAGE_MODEL`, default `gemini-2.5-flash-image`.
+ *           seconds per image. The key is `GEMINI_API_KEY` in the environment, from a project with
+ *           billing: the free tier has no quota for image models (21.10: `limit: 0` on a fresh key), so a
+ *           free key answers RESOURCE_EXHAUSTED before drawing. Paid per image, in the cents. Where the
+ *           terms let Google train on the request, a third-party reference does not go down this route.
+ *           The model is `GEMINI_IMAGE_MODEL`, default `gemini-2.5-flash-image`.
  *
  * `--drawer <id>` picks the route, else `KIT_DRAWER`, else codex. A text route (a grid tile, a scatter
  * motif) stays with Codex: those are letters, not pictures. Adding a route is one `Drawer` here and
