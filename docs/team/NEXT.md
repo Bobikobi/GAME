@@ -563,3 +563,43 @@ b) The client and the content, branch `feat/fire-anywhere`, after (a) is in `dev
 - E2E (`game/e2e/tending.ts`): take the long night from Maru, walk out of the town, build a fire, feed it through the night with the clock moved, see the warning once, see the step met at dawn and hand it in; building inside the bank wolf's round and during a chase is refused; a second pass lets the fire go out and the step stays unmet.
 - Measurable: (1) at 390x844 a fire built six tiles or more outside the town draws, and at 21:00 a chase that reaches its ring ends there; (2) a build inside a round's watch or during a chase is refused and no log leaves the bag; (3) a capture at each of the four flame stages shows no digit about the fire; (4) the long night is met at dawn by a fire of one's own and not by the hearth; `pnpm verify` and `pnpm e2e` green. The look of the flame stages is polish inside the agreed pixel style: iterate, do not ask.
 - Before the proving run (AGENTS.md): grep the tests for every changed line ("the hearth", Maru's long-night lines), fix all expectations in one pass, then the single test files, then `pnpm verify` through `~/.claude/tools/heavy.sh`, then push. Send the manager "PR ready #N" with the PASS/FAIL lines.
+
+## 22. Free movement: the body walks freely, the world and the kernel stay on tiles
+
+The owner, 18.10 (DECISIONS 2026-10-18, the entry on free movement) and 21.10: "free movement now, but graphics come first for me". So this stream starts now, and it takes no builder, review or machine time from the art and light streams (the ladder and #240, the cast shadow pass #256, the 64 px waves): when both want the machine, the art's job runs first. Read DECISIONS 2026-10-07 "Grid movement", the 18.10 entry, [GAP_DIMRAETH_DRAKANTOS.md](../design/GAP_DIMRAETH_DRAKANTOS.md) section 5, G47 and G56 first.
+
+What there is today:
+- `game/src/input.ts`: four held directions; `game/src/ui/touch.ts`: the pad picks one of four sectors, with a dead zone of 12% of its width.
+- `game/src/scenes/world.ts` `tryStep`: one tile per `walk_step_ms` (190), `facing`, `strideFrame` by step count, and `landStep` reports the tile. `game/src/play3d/world3d.ts` walks by the same rules.
+- `game/src/walking.ts`: `canEnter` (the kernel's walkable, and a ready plant or stone stands in the way), `landStep`, `StandingReports`.
+- The kernel: `{t:'move', at}` is valid within Chebyshev `2 + floor(elapsed / walk_step_ms)` of the last tile; `validateTravel` (G56) asks four-way reachability inside that square.
+- The server (`server/src/api.ts` `nextMovementCredit`): a report costs its four-way `walkDistance` times `walk_step_ms`, from a pool of `move_reach_max` (32) steps that refills with time. `RemoteSession` (`game/src/remote.ts`) batches the reports with `kind: 'move'`; #254 is open on it.
+- The e2e (`game/e2e/opening.ts`, `stealth.ts`, `tending.ts`) walk by held arrow keys or the pad, counted in tiles.
+
+One pull request, branch `feat/free-walk`, off `origin/develop`. The pixel game first; the walk's rules move into `walking.ts`, so the 3D door takes them in the same pull request if that is a few lines, and otherwise as a note under section 8 e.
+
+a) The walk:
+- The body's position is in art pixels (a float, in the client only). Its velocity comes from the held input: eight directions on the keyboard (two arrows at once), normalised so a diagonal is as fast as a straight line. Speed: one tile per `walk_step_ms`, as today. No acceleration yet; the feel is polish.
+- Collision: a small body box at the feet (proposal 28 x 16 art px, a param) against the tiles `canEnter` refuses. Resolve x and y apart, so the body slides along a wall. No corner cut between two refused tiles.
+- Tiles: the tile under the feet's centre is `s.pos`, and `landStep` reports it when it changes. When the centre crosses a corner in one frame, report first the side tile the box crossed, so the reports stay four-connected (G56).
+- Facing: the dominant axis of the motion, with a little hysteresis so a walk near 45 degrees does not flicker; drawn with today's three directions and the mirror. The faced tile is the one beside the feet's tile in that direction, and every action that reads `pos + DIRS[facing]` today reads it.
+- The stride: today's walk frames, advanced by the distance walked (one stride per tile), not by the step count. No new art: a diagonal walk shows its dominant facing, as Stardew Valley does. New poses wait for the owner's pick of Pell A, B or C (wave b).
+- Standing still, for `StandingReports`, is a frame with no motion.
+
+b) The phone: the pad becomes a stick. The direction is the finger's offset from the centre at any angle, the dead zone stays 12% of the width, and full speed comes at 40%. A and B do not change, and neither do the keys.
+
+c) The server's move check. A diagonal walk at full speed covers about 1.41 four-way tiles per `walk_step_ms`, so today's charge (the four-way distance) drains the pool and refuses an honest diagonal walk after about 15 s (32 / 0.41 steps). Proposal: the charge becomes the path's octile length (a diagonal pair of steps costs 1.414, integer as 1414 per 1000), in one kernel function that the server reads; the reachability stays four-way (G56). It is a rule's number: G56's line and a DECISIONS entry change with it, and `KERNEL_VERSION` takes the next minor.
+
+d) The e2e: a `walkTo(tile)` helper in `game/e2e` that holds the input until the feet's centre is on the tile, with a timeout, in place of counted presses; every e2e that walks moves to it, and a phone run drives the stick.
+
+e) Records: a DECISIONS entry as built (the 2026-10-07 entry's first half is already marked superseded), and G56 if its number changes.
+
+Measurable:
+1. Holding right for 1.9 s moves the feet 10 tiles (within 0.3); holding right and down for 1.9 s moves them 10 tiles in a straight line (7.07 on each axis, within 0.3).
+2. On release the body stops in the same frame. Over 200 frames of walking into a wall at every angle, the body box never overlaps a refused tile.
+3. Every tile report is four-connected to the one before. A 20 s diagonal walk at full speed passes the server's check (a server test), and a jump of 3 tiles in one frame is still refused.
+4. After a diagonal walk an action hits the tile in front of the feet in the facing direction (a test for pick, dig and talk); `pnpm verify` green, and the opening, stealth and tending e2e green in CI.
+
+The feel (speed, acceleration, the stick's dead zone and size) is for the owner on a preview: deploy one and open it with `~/.claude/tools/open-url.sh`, then iterate on his word without asking again about the numbers inside it.
+
+Before the proving run (AGENTS.md): grep the tests for every counted walk and every `DIRS[` use, fix all expectations in one pass, then the single test files, then `pnpm verify` through `~/.claude/tools/heavy.sh`, then push. If #254 lands first, merge `develop` in, never rebase. Send the manager session "PR ready #N" with the PASS/FAIL lines, or the owner if no manager is live (ListAgents). Model: opus, effort high (the walk in two doors, the server's check and every e2e).
