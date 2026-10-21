@@ -42,6 +42,17 @@ describe('the spec', () => {
     expect(() => parseSpec(spec([entry]))).toThrow(message);
   });
 
+  test('an outside reference needs what the eye saw, who confirmed it and the palette decision', () => {
+    const outside = { ...elder, name: 'tub', ref: 'refs/tub.png', what: 'round wooden tub' };
+    const seen = { ...outside, seen: 'a round plum tub with a padded lid', confirmed_by: 'owner' };
+    expect(() => parseSpec(spec([outside]))).toThrow(/seen/);
+    expect(() => parseSpec(spec([{ ...outside, seen: seen.seen }]))).toThrow(/confirmed_by/);
+    expect(() => parseSpec(spec([seen]))).toThrow(/palette/);
+    expect(() => parseSpec(spec([{ ...seen, palette: 'maybe' }]))).toThrow(/palette/);
+    expect(parseSpec(spec([{ ...seen, palette: 'restyle' }]))).toHaveLength(1);
+    expect(() => parseSpec(spec([{ ...elder, ref: 'content/kit/core/props.png' }]))).not.toThrow();
+  });
+
   test('refuses a name twice and an empty spec', () => {
     expect(() => parseSpec(spec([elder, elder]))).toThrow(/twice/);
     expect(() => parseSpec(spec([]))).toThrow(/non-empty/);
@@ -90,6 +101,16 @@ describe('the prompt', () => {
     expect(prompt).toContain('#FF00FF');
     expect(prompt).toContain('outline');
     expect(prompt).toContain('save it as elder.png');
+  });
+
+  test('an outside reference asks for our style, not a copy, and carries what was seen', () => {
+    const tub: GenEntry = { ...elder, name: 'tub', ref: 'refs/tub.png', what: 'round wooden tub', seen: 'a round plum tub', confirmed_by: 'owner', palette: 'restyle' };
+    const prompt = buildPrompt(tub, { width: 75, height: 69, data: Buffer.alloc(0) }, 'tub.png');
+    expect(prompt).toContain('from outside our game');
+    expect(prompt).toContain('seen as: a round plum tub');
+    expect(prompt).toContain('not a copy');
+    expect(prompt).toContain('restyled');
+    expect(prompt).not.toContain('same colors');
   });
 
   test('a tile fills its square, repeats and has no outline', () => {
