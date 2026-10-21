@@ -19,6 +19,7 @@ import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page, type Viewport } from './cdp';
 import { solveMinigame } from './minigame';
+import { FreeWalk, OPPOSITE, VEC, type Dir } from './walk';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(GAME_DIR, 'dist');
@@ -71,7 +72,7 @@ window.__e2e = (() => {
   return {
     state() {
       const s = g().session, w = g().world, p = document.querySelector('.prompt');
-      return { pos: [...s.pos], facing: s.facing, busy: s.busy, moving: !!w.move, blocking: g().ui.blocking,
+      return { pos: [...s.pos], facing: s.facing, busy: s.busy, moving: !!w.body.moving, blocking: g().ui.blocking,
         prompt: p && !p.hidden ? p.textContent.slice(1).trim() : '' };
     },
     player() { return g().session.state.player; },
@@ -162,33 +163,10 @@ window.__e2e = (() => {
       }
       return null;
     },
-    /**
-     * Lets go of a held direction in the frame its step starts, or the player turns.
-     * Phaser asks for its next frame before this does, so this runs right after the
-     * update that started the step and lets go before the next one: one tile per
-     * press, however slow the frames are.
-     */
-    releaseOnStep(dir, touch) {
-      const s = g().session, w = g().world, facing = s.facing, t0 = performance.now();
-      const gen = (window.__e2eGen = (window.__e2eGen ?? 0) + 1);
-      window.__e2eStepped = false;
-      const look = () => {
-        if (window.__e2eGen !== gen) return;
-        if (w.move || s.facing !== facing) {
-          window.__e2eStepped = true;
-          if (touch) g().controls.setTouchDir(null);
-          else window.dispatchEvent(new KeyboardEvent('keyup', { code: KEY[dir] }));
-          return;
-        }
-        if (performance.now() - t0 < 1000) requestAnimationFrame(look);
-      };
-      requestAnimationFrame(look);
-      return true;
-    },
     /** What the player's sprite shows: the sheet, the frame, whether it is mirrored, and whether a step is under way. */
     look() {
       const w = g().world, p = w.player;
-      return { key: p.texture.key, frame: Number(p.frame.name), flip: p.flipX, moving: !!w.move };
+      return { key: p.texture.key, frame: Number(p.frame.name), flip: p.flipX, moving: !!w.body.moving };
     },
     /** Starts or stops writing down what the player's sprite shows at every frame. */
     watchLook(on) {
@@ -228,11 +206,6 @@ window.__e2e = (() => {
 })();
 true`;
 
-type Dir = 'up' | 'down' | 'left' | 'right';
-const ARROW: Record<Dir, string> = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
-const PAD_OFFSET: Record<Dir, [number, number]> = { up: [0, -48], down: [0, 48], left: [-48, 0], right: [48, 0] };
-const VEC: Record<Dir, [number, number]> = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
-const OPPOSITE: Record<Dir, Dir> = { up: 'down', down: 'up', left: 'right', right: 'left' };
 
 interface Rect {
   x: number;
@@ -270,11 +243,15 @@ class Player {
   private shot = 0;
   /** how many A presses talkThrough made while a dialogue was open */
   talkPresses = 0;
+  /** the free walk: the input is held until the feet stand on a tile, not pressed a tile at a time (NEXT 22 d) */
+  private readonly walk: FreeWalk;
   constructor(
     readonly page: Page,
     readonly touch: boolean,
     readonly name: string,
-  ) {}
+  ) {
+    this.walk = new FreeWalk(page, touch);
+  }
 
   state(): Promise<State> {
     return this.page.eval<State>('__e2e.state()');
@@ -314,24 +291,6 @@ class Player {
     if (last) throw new Stop(label);
   }
 
-  private async padCenter(): Promise<[number, number]> {
-    return this.page.eval<[number, number]>(
-      `(() => { const r = document.querySelector('.pad').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; })()`,
-    );
-  }
-
-  private async holdDir(dir: Dir): Promise<void> {
-    if (!this.touch) return this.page.key(ARROW[dir], 'keyDown');
-    const [cx, cy] = await this.padCenter();
-    const [dx, dy] = PAD_OFFSET[dir];
-    await this.page.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx + dx, y: cy + dy, id: 1 }] });
-  }
-
-  private async releaseDir(dir: Dir): Promise<void> {
-    if (!this.touch) return this.page.key(ARROW[dir], 'keyUp');
-    await this.page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  }
-
   /** The A button: Enter on a keyboard, the round A on a phone. */
   async a(): Promise<void> {
     await this.settle();
@@ -339,41 +298,23 @@ class Player {
     else await this.page.press('Enter');
   }
 
-  /** One tile in a direction, or just a turn when the way is blocked. True when the player moved. */
+  /**
+   * One tile in a direction, or just a turn when the way is blocked, holding the input until the feet stand on
+   * the tile and letting go there (NEXT 22 d). True when the player moved.
+   */
   async step(dir: Dir): Promise<boolean> {
     await this.settle();
     const before = await this.state();
     const want: [number, number] = [before.pos[0] + VEC[dir][0], before.pos[1] + VEC[dir][1]];
-    await this.press(dir);
-    // software rendering can drop a hold whole (no frame saw the key down): while the player
-    // has not moved and the tile ahead is open, press again, twice at most
-    for (let tries = 0; tries < 2; tries++) {
-      const at = (await this.state()).pos;
-      if (at[0] !== before.pos[0] || at[1] !== before.pos[1]) break;
-      const open = await this.page.eval<boolean>(`__game.world.canWalk(__game.session, ${want[0]}, ${want[1]})`);
-      if (!open) break;
-      await this.press(dir);
+    const open = await this.page.eval<boolean>(`__game.world.canWalk(__game.session, ${want[0]}, ${want[1]})`);
+    if (!open) {
+      // toward a wall the player does not yet face, the held input only turns it
+      await this.walk.turnTo(dir, before.pos, `the ${dir} way out of ${before.pos.join(',')}`);
+      return false;
     }
-    // a press should walk one tile; if it ever walks two, walk back to the one tile wanted
-    for (let i = 0; i < 3; i++) {
-      const at = (await this.state()).pos;
-      const over = (at[0] - want[0]) * VEC[dir][0] + (at[1] - want[1]) * VEC[dir][1];
-      if (over <= 0) break;
-      await this.press(OPPOSITE[dir]);
-    }
+    await this.walk.holdTo(want, `the ${dir} tile from ${before.pos.join(',')}`);
     const after = (await this.state()).pos;
     return after[0] !== before.pos[0] || after[1] !== before.pos[1];
-  }
-
-  private async press(dir: Dir): Promise<void> {
-    // letting go from here, a poll after the step started, can leave the direction held
-    // into a second step when frames are slow (CI renders in software), so the page lets go
-    await this.page.eval(`__e2e.releaseOnStep(${JSON.stringify(dir)}, ${this.touch})`);
-    await this.holdDir(dir);
-    // a press toward a wall the player already faces neither turns nor steps
-    await this.page.waitFor('window.__e2eStepped', 'the step to start', 600).catch(() => undefined);
-    await this.releaseDir(dir);
-    await this.page.waitFor('!__e2e.state().moving', 'the step to end', 3000);
   }
 
   private async planTo(rect: Rect, what: string): Promise<Plan> {
@@ -384,7 +325,17 @@ class Player {
 
   /** Walks a planned path; false at the first step that does not move the player. */
   private async follow(path: Dir[]): Promise<boolean> {
-    for (const d of path) if (!(await this.step(d))) return false;
+    // the tiles the plan named, counted from where the walk starts: the body holds toward a tile, not a distance
+    let at = (await this.state()).pos;
+    for (const d of path) {
+      const next: [number, number] = [at[0] + VEC[d][0], at[1] + VEC[d][1]];
+      const open = await this.page.eval<boolean>(`__game.world.canWalk(__game.session, ${next[0]}, ${next[1]})`);
+      if (!open) return false;
+      await this.walk.holdTo(next, `the ${d} tile of the way`);
+      const now = (await this.state()).pos;
+      if (now[0] !== next[0] || now[1] !== next[1]) return false;
+      at = next;
+    }
     return true;
   }
 
@@ -396,17 +347,8 @@ class Player {
     for (let again = 0; !(await this.follow(plan.path)) && again < 3; again++) plan = await this.planTo(rect, what);
     const at = await this.state();
     if (at.pos.join(',') !== plan.goal.join(',')) throw new Error(`walking to ${what} ended at ${at.pos.join(',')}, not ${plan.goal.join(',')}`);
-    if (at.facing === plan.face) return;
-    const v = VEC[plan.face];
-    const open = (dx: number, dy: number) => this.page.eval<boolean>(`__game.world.canWalk(__game.session, ${at.pos[0] + dx}, ${at.pos[1] + dy})`);
-    if (!(await open(v[0], v[1]))) {
-      await this.step(plan.face); // blocked ahead: pressing toward it only turns
-      return;
-    }
-    if (!(await open(-v[0], -v[1]))) throw new Error(`cannot turn toward ${what} at ${at.pos.join(',')}`);
-    // open ahead: back up one tile and step forward again, which leaves the player facing it
-    await this.step(OPPOSITE[plan.face]);
-    await this.step(plan.face);
+    // the action reads the tile in front of the feet, so the last turn faces what was walked to
+    if (at.facing !== plan.face) await this.walk.turnTo(plan.face, plan.goal, what);
   }
 
   async expectPrompt(pattern: RegExp, what: string): Promise<void> {
