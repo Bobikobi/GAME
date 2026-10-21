@@ -2212,8 +2212,8 @@ entry left the change to the pull request that builds the pass. This is it, in #
   [`-1630.png`](docs/design/frames/2026-10-21-cast-1630.png), phone size at 3x (390x844, 1170x2532), the bridge corner:
   the rocks, the sign post and the player throw their shadows up-left at 08:00 and up-right at 16:30. A shadow pointing
   away is mostly behind its caster, so what the eye reads is the part that spills past the silhouette; on the sand of the
-  16:30 frame the ink `#1b1a2e` measures 0.29 to 0.31 across its three channels, and the same frame with the pass
-  switched off holds no pixel of it.
+  16:30 frame the ink `#1b1a2e` measures 0.29 to 0.31 across its three channels, and over that sand the same frame with
+  the pass switched off holds none of it: 0 pixels against 4,106.
 - STYLE section 4's Direction row is rewritten to this, as the GK2 entry asked, in the same pull request.
 
 **Retry when:** the owner finds the moved sun's shadows wrong in the live game (the retry the GK2 entry itself names);
