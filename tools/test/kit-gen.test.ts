@@ -61,6 +61,11 @@ describe('the spec', () => {
   test('the timeout is a positive number of seconds, five minutes when not given', () => {
     expect(parseArgs(['s.json']).timeoutSeconds).toBe(300);
     expect(parseArgs(['s.json', '--timeout', '90']).timeoutSeconds).toBe(90);
+    expect(parseArgs(['s.json'], {}).drawer).toBe('codex');
+    expect(parseArgs(['s.json', '--drawer', 'gemini'], {}).drawer).toBe('gemini');
+    expect(parseArgs(['s.json'], { KIT_DRAWER: 'gemini' }).drawer).toBe('gemini');
+    expect(parseArgs(['s.json', '--drawer', 'codex'], { KIT_DRAWER: 'gemini' }).drawer).toBe('codex');
+    expect(() => parseArgs(['s.json', '--drawer', 'dalle'], {})).toThrow(/codex or gemini/);
     for (const bad of ['abc', '0', '-5']) expect(() => parseArgs(['s.json', '--timeout', bad])).toThrow(/positive/);
     expect(() => parseArgs(['s.json', '--timeout'])).toThrow(/positive/);
   });

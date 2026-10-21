@@ -109,5 +109,5 @@ the materials it is made of and `style: rich` for the hand. The order:
 3. Open each `gallery.html`; pick by eye; write the pick and two sentences per object.
 
 Cost today through the Codex agent: three to four minutes and 30k to 60k tokens per image. The
-next step for volume is a direct image API call in place of the agent, not another lever on
-the drawing.
+step for volume is a direct image call in place of the agent, not another lever on the drawing:
+`--drawer gemini` ([DRAWERS.md](DRAWERS.md)), ten to twenty seconds per image on a free AI Studio key.
