@@ -131,15 +131,26 @@ export class FreeWalk {
   /**
    * A box that opened by itself under the walk (the night's warning, a task done) is tapped away, so the walk
    * goes on: the box's own next tap, not an A press on the game, so a test that counts A presses is untouched.
-   * False when no plain box is open — a box with choices is the test's to answer.
+   * A box types its line out and takes a tap per line, so it is tapped until it is gone. False when no plain
+   * box was open — a box with choices is the test's to answer.
    */
   async closeBox(): Promise<boolean> {
-    return this.page.eval<boolean>(`(() => {
-      const box = document.querySelector('.dialog');
-      if (!box || box.querySelector('.dialog-options')) return false;
-      box.click();
-      return true;
-    })()`);
+    let closed = false;
+    for (let i = 0; i < 24; i++) {
+      const open = await this.page.eval<boolean>(`(() => {
+        const box = document.querySelector('.dialog');
+        if (!box) return false;
+        // the choices are in the box from its first frame, hidden until the lines are read: no box shown
+        const choice = box.querySelector('.dialog-options');
+        if (choice && !choice.hidden) return false;
+        box.click();
+        return true;
+      })()`);
+      if (!open) return closed;
+      closed = true;
+      await sleep(120);
+    }
+    return closed;
   }
 
   /** Let go of everything: no key down, no finger on the pad. */
