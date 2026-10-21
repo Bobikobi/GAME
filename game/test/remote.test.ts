@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, test } from 'vitest';
 import { OWN_FIRE, canonical, lastDusk, publicState, type Action, type Bundle, type GameEvent, type Tile } from '@game/kernel';
 
 import { Session } from '../src/session';
-import { RemoteSession, type ActResult, type ChangeReply, type StateReply, type Wire, WireGap } from '../src/remote';
+import { RemoteSession, fetchWire, type ActResult, type ChangeReply, type StateReply, type Wire, WireGap, WireRefusal } from '../src/remote';
 import { bfsNear, loadBundle } from '../../tools/test/helpers/world.js';
 import { FakeServer } from './fake-server';
 
@@ -372,6 +372,53 @@ describe('the remote session: another device moved the state on', () => {
     expect(remote.version).toBe(server.version);
     const second = await remote.act({ t: 'carve', name: 'Tess' });
     expect(second.ok === false && /state changed/.test(second.error)).toBe(false);
+  });
+});
+
+describe('the remote session: the 409 code, not only its words', () => {
+  const STALE_WORDS = 'The game state changed; resume before sending another action.';
+
+  test('an old server that sends the words and no code still gets its state read again', async () => {
+    const { server, remote } = await started();
+    server.noReasons = true;
+    server.version += 1;
+    server.calls.length = 0;
+    const stale = await remote.act({ t: 'carve', name: 'Tess' });
+    expect(stale).toEqual({ ok: false, error: STALE_WORDS });
+    expect(server.calls.map((call) => call.path)).toEqual(['/action', '/state']);
+    expect(remote.version).toBe(server.version);
+  });
+
+  test('a code that is not stale is believed over the words, and the state is not read again', async () => {
+    const local = Session.fresh(bundle);
+    const server = new FakeServer(bundle, local.state);
+    const honouring = new SlowWire(server);
+    // the same wire, with a step's own code on the answer that carries the stale words
+    const rewrite = (error: unknown): never => {
+      if (error instanceof WireRefusal && error.status === 409) throw new WireRefusal(error.message, 409, 'refused');
+      throw error;
+    };
+    const lying: Wire = {
+      post: ((path: string, body: unknown) => honouring.post(path as '/action', body).catch(rewrite)) as Wire['post'],
+      get: (path) => honouring.get(path),
+    };
+    const remote = await RemoteSession.join(bundle, lying);
+    await remote.act({ t: 'start', starter: 'core/forager', name: 'Tess' });
+    server.calls.length = 0;
+    server.version += 1;
+
+    const refused = await remote.act({ t: 'carve', name: 'Tess' });
+    expect(refused).toEqual({ ok: false, error: STALE_WORDS });
+    expect(server.calls.map((call) => call.path)).toEqual(['/action']);
+  });
+
+  test('the reason reaches a WireRefusal through fetchWire, not only through a fake wire', async () => {
+    const answer = () => new Response(JSON.stringify({ error: STALE_WORDS, reason: 'stale' }), { status: 409 });
+    const wire = fetchWire('', (async () => answer()) as typeof fetch);
+    const refusal = await wire.post('/action', { version: 1 }).catch((error: unknown) => error);
+    expect(refusal).toBeInstanceOf(WireRefusal);
+    expect((refusal as WireRefusal).reason).toBe('stale');
+    expect((refusal as WireRefusal).message).toBe(STALE_WORDS);
   });
 });
 

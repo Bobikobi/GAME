@@ -62,7 +62,15 @@ export interface ApiOptions {
 
 interface ErrorBody {
   error: string;
+  /** a 409's machine-readable kind, so the phone reads a code rather than the words */
+  reason?: ConflictReason;
 }
+
+/**
+ * Why a 409 came back: the state a call named is no longer the server's (`stale`), or the step it named was
+ * refused for its own reason. The words say it to the player; the code is what the client branches on.
+ */
+export type ConflictReason = 'stale' | 'clock-ahead' | 'walk-credit' | 'refused' | 'backwards';
 
 interface StateBody {
   state: PublicState;
@@ -91,6 +99,7 @@ class RequestError extends Error {
   constructor(
     message: string,
     readonly status: number,
+    readonly reason?: ConflictReason,
   ) {
     super(message);
   }
@@ -249,7 +258,7 @@ function requirePlayer(record: PlayerRecord | undefined): PlayerRecord {
 
 function checkClock(tick: number, record: PlayerRecord, now: number): void {
   const allowed = now - record.acceptedAt + TICK_SLACK_MS;
-  if (tick - record.state.tick > allowed) throw new RequestError('That game time is ahead of the time elapsed.', 409);
+  if (tick - record.state.tick > allowed) throw new RequestError('That game time is ahead of the time elapsed.', 409, 'clock-ahead');
 }
 
 function nextMovementCredit(
@@ -272,7 +281,7 @@ function nextMovementCredit(
   const available = Math.min(maxCreditMs, movementCreditMs + elapsedSinceCredit);
   const cost = distance * stepMs;
   if (cost > available) {
-    throw new RequestError('That is further than a walk goes in that time.', 409);
+    throw new RequestError('That is further than a walk goes in that time.', 409, 'walk-credit');
   }
   return { at: tick, creditMs: available - cost };
 }
@@ -282,7 +291,7 @@ function actionTile(action: Action, current: Tile): Tile {
 }
 
 function refused(error: string): never {
-  throw new RequestError(error, 409);
+  throw new RequestError(error, 409, 'refused');
 }
 
 async function playerIdFor(request: IncomingMessage, resolve: ApiOptions['resolvePlayerId']): Promise<string> {
@@ -330,7 +339,7 @@ async function route(request: IncomingMessage, response: ServerResponse, options
     throw new RequestError('The request contains an unexpected field.', 400);
   }
   if (!validVersion(body.version)) throw new RequestError('A valid state version is required.', 400);
-  if (body.version !== record.version) throw new RequestError('The game state changed; resume before sending another action.', 409);
+  if (body.version !== record.version) throw new RequestError('The game state changed; resume before sending another action.', 409, 'stale');
 
   const now = (options.now ?? Date.now)();
   let state = record.state;
@@ -369,7 +378,7 @@ async function route(request: IncomingMessage, response: ServerResponse, options
     const reports = body.moves.map(moveReport);
     let previousTick = state.tick;
     for (const report of reports) {
-      if (report.tick < previousTick) throw new RequestError('Movement report times cannot run backwards.', 409);
+      if (report.tick < previousTick) throw new RequestError('Movement report times cannot run backwards.', 409, 'backwards');
       previousTick = report.tick;
     }
     checkClock(previousTick, record, now);
@@ -406,7 +415,7 @@ async function route(request: IncomingMessage, response: ServerResponse, options
     goldDeltasMg: events.flatMap((event) => (event.e === 'gold' && event.delta !== 0 ? [event.delta] : [])),
   };
   if (!(await options.store.compareAndSet(playerId, record.version, next, books))) {
-    throw new RequestError('The game state changed; resume before sending another action.', 409);
+    throw new RequestError('The game state changed; resume before sending another action.', 409, 'stale');
   }
   json(response, 200, { events, patch: statePatch(record.state, state), version: next.version, appears: appearIds(options.bundle, state) });
 }
@@ -419,7 +428,8 @@ export function createGameApi(options: ApiOptions): Server {
         return;
       }
       if (error instanceof RequestError) {
-        json(response, error.status, { error: error.message });
+        const body: ErrorBody = error.reason === undefined ? { error: error.message } : { error: error.message, reason: error.reason };
+        json(response, error.status, body);
         return;
       }
       json(response, 500, { error: 'The game server could not complete the request.' });
