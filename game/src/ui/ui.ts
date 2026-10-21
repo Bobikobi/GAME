@@ -297,7 +297,7 @@ export class UI {
     const dark = h('span', { class: 'chip dark', title: 'Dark falls: be in town or by a burning camp', hidden: true }, h('i', { class: 'moon' }), darkText);
     const level = h('span', { class: 'chip', title: 'Character level' });
     const bag = button('Bag', () => this.panel(() => openBag(this)), 'small');
-    const log = button('Log', () => this.panel(() => openJournal(this)), 'small');
+    const log = button('Journal', () => this.panel(() => openJournal(this)), 'small');
     const feedbackBtn = button('Feedback', () => openFeedback(this), 'small');
     this.hud.replaceChildren(
       h(
