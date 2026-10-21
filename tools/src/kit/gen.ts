@@ -45,6 +45,7 @@ import { PNG } from 'pngjs';
 import { colourCount, gridPrompt, parseGrid, pngToGrid, renderGrid, seamWarnings } from './gengrid.js';
 import { importSprite, nearestPaletteIndex } from './import.js';
 import { CORE_PALETTE, type Rgb, hexToRgb } from './palette.js';
+import { RICH_PALETTE } from './palette_rich.js';
 import {
   type Motif, type ScatterEntry, motifPrompt, motifWarnings, parseMotif, renderMotif, scatterProblem, scatterTile, tileWarnings, variantsOf,
 } from './scatter.js';
@@ -76,6 +77,10 @@ export interface GenEntry extends ScatterEntry {
   confirmed_by?: string;
   /** Outside reference only: the palette decision taken before the first call (step 0b): its hues fit the core ramps, it is restyled into them, or a ramp was added by owner decision. */
   palette?: 'fits' | 'restyle' | 'ramp-added';
+  /** EXPERIMENT (exp/rich-style): `rich` asks for painterly pixel art (hue shifts inside a surface, ambient light, texture) and imports on the deeper experimental palette with dither. Default `kit`. */
+  style?: 'kit' | 'rich';
+  /** EXPERIMENT: PNG paths (repo root) attached after the reference as style examples; the prompt says to match their shading, hue shifts, texture and outline. */
+  style_refs?: string[];
 }
 
 /** A PNG that is not a kit sprite: a picture from outside the game, drawn in our style rather than redrawn. */
@@ -141,6 +146,8 @@ export function parseSpec(text: string): GenEntry[] {
     }
     if (entry.anchor !== undefined && entry.anchor !== 'center' && entry.anchor !== 'bottom') throw new Error(`${where}.anchor must be center or bottom`);
     if (entry.detail !== undefined && typeof entry.detail !== 'string') throw new Error(`${where}.detail must be text`);
+    if (entry.style !== undefined && entry.style !== 'kit' && entry.style !== 'rich') throw new Error(`${where}.style must be kit or rich`);
+    if (entry.style_refs !== undefined && (!Array.isArray(entry.style_refs) || entry.style_refs.some((p) => typeof p !== 'string' || extname(p) !== '.png'))) throw new Error(`${where}.style_refs must be PNG paths`);
     if (isOutsideReference(entry.ref)) {
       if (typeof entry.seen !== 'string' || entry.seen.trim() === '') throw new Error(`${where}.seen must say what the eye saw in the outside reference, confirmed before any name (docs/art/PROP_FROM_REF.md step 0a)`);
       if (typeof entry.confirmed_by !== 'string' || entry.confirmed_by.trim() === '') throw new Error(`${where}.confirmed_by must name who confirmed "seen" against the picture (step 0a)`);
@@ -205,7 +212,12 @@ export function buildPrompt(entry: GenEntry, reference: Raster, file: string): s
       : `Generate a NEW image of the same ${entry.what} - same design, same colors, same top-down three-quarter view - redrawn as pixel art ${entry.width} pixels wide and ${entry.height} pixels tall, far more pixels than the reference${detail}.`,
     `Every pixel stays a crisp square of one flat color, no anti-aliasing, each one about 1/${entry.width} of the drawing's width: draw no smaller pixels than that.`,
     kindLine,
-    'Limited palette, two-tone shading, solid flat pure magenta #FF00FF background around it, no text, no shadow, no extra objects.',
+    entry.style === 'rich'
+      ? 'Painterly pixel art: every surface shifts hue as it turns from light to shadow (warm lights, cool darks), with ambient light and colour bounced from neighbouring parts, visible material texture (wood grain, stone pores, cloth weave) drawn in pixels, and an outline whose colour follows the surface it borders rather than one flat dark line. Rich colour, as many shades as the object needs. Solid flat pure magenta #FF00FF background around it, no text, no shadow, no extra objects.'
+      : 'Limited palette, two-tone shading, solid flat pure magenta #FF00FF background around it, no text, no shadow, no extra objects.',
+    (entry.style_refs ?? []).length > 0
+      ? `The ${entry.style_refs?.length === 1 ? 'other attached image shows' : 'other attached images show'} the drawing style to match: the same shading depth, hue shifts, texture and outline treatment.`
+      : '',
     `The ${grid} drawing fills most of the image.`,
     `Do not process the image with code afterwards; just generate it and save it as ${file} in the current directory.`,
   ].join(' ');
@@ -479,7 +491,8 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
   } else {
     const stamp = at.replace(/[:.]/g, '-');
     // a text grid is written, not drawn: no picture goes in and no image tool is needed
-    const asked = askCodex(options, version, entry.name, stamp, line.prompt, grid ? [] : ['-i', refPath], grid ? `${entry.name}.txt` : file);
+    const styleRefs = (entry.style_refs ?? []).flatMap((p) => ['-i', join(ROOT, p)]);
+    const asked = askCodex(options, version, entry.name, stamp, line.prompt, grid ? [] : ['-i', refPath, ...styleRefs], grid ? `${entry.name}.txt` : file);
     line.codex = asked.codex;
     const saved = asked.saved;
     if (saved === null) {
@@ -509,7 +522,8 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
       line.warnings.push(...gridWarnings(result.logical, entry));
     } else {
       const result = importSprite(raw, {
-        width: entry.width, height: entry.height, anchor: entry.anchor ?? 'center', palette: CORE_PALETTE,
+        width: entry.width, height: entry.height, anchor: entry.anchor ?? 'center',
+        palette: entry.style === 'rich' ? RICH_PALETTE : CORE_PALETTE, dither: entry.style === 'rich',
       });
       writeFileSync(outPath, result.png);
       line.grid = result.grid;
