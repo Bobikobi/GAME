@@ -6,7 +6,7 @@ His answers on 19.10, which this revision writes in:
 - "G35 holds only for the demo." Combat is "a part no less important, after the general foundation" (section 3).
 - The work on colour, frames and animation looks large. So the answer is rules, mechanics, tools and working methods built for the long run, more than recommendations by stage (section 7).
 - Look at the details, and watch a video if needed. Dimraeth's skill tree is more interesting than ours. He did not like ours anyway: "it is generic, and it is not clear what the differences are" (section 4).
-- Widening the gap between the characters through races (a goblin, an elf, a human or the like) is a step back, so it waits. It touches the characters' nature and lines of growth, and it may be left to other developers (section 8).
+- Widening the gap between the characters through races (a goblin, an elf, a human or the like) is a step back, so it waits. It touches the characters' nature and lines of growth, and it may be left to other developers (section 8). Superseded by the owner on 22.10: three races come now (section 8).
 
 Facts about Openfold come from `origin/develop` @ 7e1babf4, plus the stage-3 spec in PR #187 (not merged). Facts about the two games come from:
 - their Steam pages, the fan wiki dimraeth.org and two written guides to Dimraeth's tree;
@@ -69,7 +69,7 @@ What to take from Dimraeth's fight, by its players, and what not to:
 - Luck: a miss still gives 1 in N%.
 - Stamina: health or minutes of work.
 
-Below them sit the five professions, each with two fixed techniques at levels 2 and 4 ("Cooking is 25% faster", "The timing window is 20% wider"). The three starters differ by 0 to 2 pips of the same five (the explorer has senses 2 and luck 2; the forager carry 2 and agility 2; the digger luck 2 and stamina 2).
+Below them sit the five professions, each with two fixed techniques at levels 2 and 4 ("Cooking is 25% faster", "The timing window is 20% wider"). The three starters differ by 0 to 2 pips of the same five (the explorer has senses 2 and luck 2; the forager carry 2 and agility 2; the digger luck 2 and stamina 2). Since 22.10 the starters give way to three races, each with one fixed profile of seven points in six attributes (section 8).
 
 That is why it is generic:
 - (1) every player buys the same five numbers;
@@ -92,7 +92,7 @@ That is why it is generic:
 - **What its players fault:** most of the strong nodes sit in one quadrant, so builds converge; the key pieces of a build arrive by level 13 of 25; five active slots run out.
 
 **A frame for ours.** This is a direction to show the owner as a still of the tree screen, and the screen is a UI frame. It is not designed here.
-- **The axes are who you are and what you do.** The vertical axis is the starter's nature (the forager, the digger, the explorer, and later a race if one comes, section 8). The horizontal axis is the trades (the five professions). A corner node exists only for one starter and one trade, so a forager who digs grows differently from a digger who digs.
+- **The axes are who you are and what you do.** The vertical axis is the race (the human, the elf, the skeleton; the owner, 22.10, section 8): each race has its own wing, with major nodes that change a verb, and a shared centre of the attributes and small nodes anyone may take. The horizontal axis is the trades (the five professions). A corner node exists only for one race and one trade, so an elf who digs grows differently from a skeleton who digs. A book found in the world teaches a node from a foreign wing.
 - **Major nodes change a verb, they do not add a percentage.** Examples of the kind, for the still only:
   - digging: the dig game shows how deep the find lies;
   - woodcutting: a tree falls the way you face, and across a stream it is a bridge;
@@ -100,7 +100,7 @@ That is why it is generic:
   - senses: a predator's eyes show their cone for a beat when it turns;
   - cooking: a meal cooked at the camp keeps through a night.
   Each major node has its own short sub-branch. Small nodes carry today's percentages.
-- **Attributes become keys.** A technique, a recipe or a path asks for an attribute threshold, so a pip opens a door. The five attributes stay, and the numbers they move stay small.
+- **Attributes become keys.** A technique, a recipe or a path asks for an attribute threshold, so a pip opens a door. The attributes are six since 22.10: might (was bag space, and the skeleton's home), senses, agility, luck, stamina and spirit (new, and the elf's home), seven points per race; the numbers they move stay small.
 - **Points are trained at the camp's fire or by Maru**, so the camp is a place to come back to.
 - **Books found in the world teach a node outside your wings.** A `find` or `riddle` step can give one, and a creator can add one as data.
 - **Combat later gets its own wings.** The tree's format leaves room for them now, so the tree is not redrawn when combat lands (section 3).
@@ -210,6 +210,8 @@ The owner, 19.10: the work on colour, frames and animation is large, so the answ
 
 The owner, 19.10: a gap between the characters as wide as Dimraeth's races (a goblin, an elf, a human) would be a step back now, so it waits. It is the characters' nature and their lines of growth, and other developers may be the ones to think it through. In Dimraeth the race is half the tree (section 4), so if races come, they come as the vertical axis of the tree's frame, with corner nodes per race and trade. It also touches the story: a race's past needs its speakers (STORY.md S1-S6). Recorded as postponed in DECISIONS, and a candidate for an open call to creators when stage 3's tree is in place.
 
+**Superseded by the owner's word of 22.10.** Three races, the human, the elf and the skeleton, replace the three starters now (DECISIONS.md, 2026-10-22, decisions 9-12 and 38-46). Each is a returner from a fold of its own (STORY.md section 1), has its own wing on the tree's vertical axis (section 4), a fixed profile of seven points in six attributes, and a grade per world: strong at home, and the grade moves only its two home attributes. Quests react to the race and never close to one. The paragraph above is kept as the record of 19.10.
+
 ## 9. The order: each part filed under its stage
 
 | What | Stage, and when | What it waits on |
@@ -223,8 +225,8 @@ The owner, 19.10: a gap between the characters as wide as Dimraeth's races (a go
 | The bag: a quick bar of food, crafting beside the bag, effects in words | Stage-1 polish, any free builder | Nothing |
 | Gear slots, salvage, sets | With combat (CR-12) | Combat |
 | Pets with a skill each | Stage-3 candidate | The tree's format |
-| Styles and dyes per starter in place of clothes drawn on the body | Stage 6, with the palette swap built in step 2 of section 7 | The owner, with stage 6 |
-| Races | Later, perhaps an open call | The tree in place |
+| Styles and dyes per race in place of clothes drawn on the body (start outfits over a bare body, decision 42 of 22.10) | Stage 6, with the palette swap built in step 2 of section 7 | The owner, with stage 6 |
+| Races (the human, the elf, the skeleton; the owner, 22.10) | Now: the race kind, the six attributes and the random wake pool in the engine; the race wings with the tree in stage 3 | The tree for the wings; the race figures for their look |
 | Co-op | The 17.10 order: presence, then chat | Stages 2a and 3, and combat if it goes first |
 | The forest as a layered mass: a canopy that closes over the ground, an edge of trunks where wood meets meadow, a floor of its own (undergrowth, litter, shade); today a grove is single trees on grass (the owner, 21.10) | Direction in the art stream, ART_SYSTEM step 10: two or three phone stills of one wood, each testing one named difference, then the build inside the picked look; the valley's grove by hand, the ring's woods by the generator (NEXT 19 b) | The ladder pick (#240) and the GK2 method pick, which decide how a tree is drawn; free movement (NEXT 22) for walking under a canopy |
 | Music played by people: a composer or real instruments in place of the synthesizer (today every note is code, and the game ships no audio file) (the owner, 21.10) | Direction, its own step: three one-minute samples of the town's theme for the owner, each testing one named difference; then recorded beds behind today's sound-by-place logic (three beds by distance, the hunt's song), both doors | The art picks now open, so the owner judges one direction at a time; the source (a commissioned composer, as most studios do, or a licensed library) and its cost are his question |
