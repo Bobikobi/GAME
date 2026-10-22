@@ -1048,7 +1048,7 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
       if ((await me.quest('core/herbs-for-pell')) !== 'done') throw new Error('herbs-for-pell is not done');
       log('helped Pell as well: the herbs and the stew while the day runs out');
       // the afternoon is played, not skipped (criterion 8): Pell's whole bowl, a gamble in the collapsed hall, then Maru's stew,
-      // whose mushrooms open when the grove cools at 18:00
+      // whose mushrooms open when the grove cools at 17:00
       await me.walkTo({ x: trader[0], y: trader[1], w: 1, h: 1 }, 'Pell');
       await me.expectPrompt(/^Talk to Pell/, 'the trader');
       await me.a();
@@ -1081,9 +1081,9 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
       const bowl = await me.talkThrough();
       await me.idle('handing in the bowl');
       if ((await me.quest('core/a-whole-one')) !== 'done') throw new Error('a-whole-one is not done');
-      if ((await me.bag('core/lucky-charm')) < 1) throw new Error('no lucky charm from Pell');
-      if (!bowl.some((l) => l.includes('Hands work surer'))) throw new Error(`Pell's done line is missing: ${bowl.join(' / ')}`);
-      log(`dug the collapsed hall ${digs} times for a whole bowl: Pell gave a lucky charm`);
+      if ((await me.bag('core/reed-basket')) < 1) throw new Error('no reed basket from Pell');
+      if (!bowl.some((l) => l.includes('A reed basket'))) throw new Error(`Pell's done line does not name the basket: ${bowl.join(' / ')}`);
+      log(`dug the collapsed hall ${digs} times for a whole bowl: Pell gave a reed basket`);
       await me.walkTo({ x: elder[0], y: elder[1], w: 1, h: 1 }, 'Elder Maru');
       await me.expectPrompt(/^Talk to Elder Maru/, 'the elder');
       await me.a();
@@ -1091,13 +1091,14 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
       await me.idle('accepting the stew');
       if ((await me.quest('core/something-warm')) !== 'active') throw new Error('something-warm was not accepted');
       const fireAt = await page.eval<[number, number]>(`(() => { const c = __e2e.slot('core/camp'); return [c.x + 2, c.y + 2]; })()`);
+      const basketWorn = await page.eval<number>(`__e2e.player().wear['core/reed-basket'] ?? 0`);
       for (let tries = 0; tries < 3 && !(await page.eval<boolean>(`(__e2e.player().made['core/herb-stew'] ?? 0) > 0`)); tries++) {
         await me.gather('core/berry-bushes', 'core/berry', 1);
         await me.gather('core/wild-herbs', 'core/herb', 2);
         if ((await me.bag('core/mushroom')) < 2) {
-          // the grove opens its mushrooms at 18:00: the player waits beside it, and the wait counts
+          // the grove opens its mushrooms at 17:00: the player waits beside it, and the wait counts
           await me.walkTo(await page.eval<Rect>(`__e2e.slot('core/forest-mushrooms')`), 'the grove');
-          await page.waitFor('__e2e.hour() >= 18 || __e2e.hour() < 5', 'the grove to cool at 18:00', 300_000);
+          await page.waitFor('__e2e.hour() >= 17 || __e2e.hour() < 5', 'the grove to cool at 17:00', 300_000);
           await me.gather('core/forest-mushrooms', 'core/mushroom', 2);
         }
         await me.walkTo({ x: fireAt[0], y: fireAt[1], w: 1, h: 1 }, 'the fire');
@@ -1108,15 +1109,17 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
         await me.idle('cooking the stew');
       }
       if (!(await page.eval<boolean>(`(__e2e.player().made['core/herb-stew'] ?? 0) > 0`))) throw new Error('no herb stew after three tries');
+      if ((await page.eval<number>(`__e2e.player().wear['core/reed-basket'] ?? 0`)) <= basketWorn) throw new Error("Pell's reed basket was not used for the stew");
+      const branches = await me.bag('core/branch');
       await me.walkTo({ x: elder[0], y: elder[1], w: 1, h: 1 }, 'Elder Maru');
       await me.a();
       await me.talkThrough('Something warm for the night');
       const warm = await me.talkThrough();
       await me.idle('handing in the stew');
       if ((await me.quest('core/something-warm')) !== 'done') throw new Error('something-warm is not done');
-      if ((await me.bag('core/reed-sandals')) < 1) throw new Error('no sandals from Maru');
+      if ((await me.bag('core/branch')) !== branches + 2) throw new Error('no dry branches from Maru');
       if (!warm.some((l) => l.includes('a fire of your own'))) throw new Error(`Maru's done line does not point to the night: ${warm.join(' / ')}`);
-      log(`cooked a herb stew for Maru at ${await page.eval<number>('__e2e.hour()')}:00: his old sandals, and the night ahead`);
+      log(`cooked a herb stew for Maru at ${await page.eval<number>('__e2e.hour()')}:00: dry branches, and the long night opens`);
       // the lucky digger reaches the grove earliest: its wait is the longest the fillers leave (criterion 8); the rest is the phone run's
       if (run.lucky) {
         await stretches(page, log, name, "Maru's stew");
@@ -1159,15 +1162,33 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
       // 11. the first night: the broken arch shows a way, and it leads to the threshold of the night ruins
       const mouth = await page.eval<Rect>(`__e2e.slot('core/arch-mouth')`);
       const threshold = await page.eval<Rect>(`__e2e.slot('core/night-threshold')`);
-      // a walk to a place stops beside it, never through it, so the arch is entered only by the step below
-      await me.walkTo(mouth, 'the broken arch');
+      // a walk to a place stops beside it, never through it, so the arch is entered only by the step below.
+      // The game clock runs while the run plays, so a slow machine can leave the lantern late and meet 20:00 on the
+      // road: the lantern warning then opens mid-walk and holds every step (CI, 22.10). It is read where dark finds
+      // the player, as a player would, and the walk goes on; once only, and only that box at that hour
+      let lantern: string[] = [];
+      for (let readOnRoad = false; ; readOnRoad = true) {
+        try {
+          await me.walkTo(mouth, 'the broken arch');
+          break;
+        } catch (err) {
+          // only the lantern box itself, at a dark hour: any other dialog, or a walk that failed for another reason, throws as it was
+          const darkBox = await page.eval<boolean>("(__e2e.dialog()?.text ?? '').includes('lantern is lit') && (__e2e.hour() >= 20 || __e2e.hour() < 5)");
+          if (!darkBox || readOnRoad) throw err;
+          lantern = await me.talkThrough();
+          await me.idle('the lantern warning');
+          log(`dark came on the way to the arch, at ${(await me.state()).pos.join(',')}: the lantern warning was read there`);
+        }
+      }
       if (await page.eval<boolean>(`!!__e2e.plan(${JSON.stringify(threshold)})`)) throw new Error('the night ruins are open before the arch');
       // dark comes at 20:00; the player waits for it at the arch, and the wait counts (criterion 8)
       await page.waitFor('__e2e.hour() >= 20 || __e2e.hour() < 5', 'dark at 20:00', 300_000);
       // dark finds the player outside a safe place: the lantern is lit, with its one box a night (G31)
-      await page.waitFor('!!__e2e.dialog()', 'the lantern warning', 5000);
-      const lantern = await me.talkThrough();
-      await me.idle('the lantern warning');
+      if (lantern.length === 0) {
+        await page.waitFor('!!__e2e.dialog()', 'the lantern warning', 5000);
+        lantern = await me.talkThrough();
+        await me.idle('the lantern warning');
+      }
       if (!lantern.some((l) => l.includes('lantern is lit'))) throw new Error(`no lantern warning at dark: ${lantern.join(' / ')}`);
       const lit = { x: mouth.x + Math.floor(mouth.w / 2), y: mouth.y + mouth.h - 1 };
       await page.waitFor(`__e2e.glint(${lit.x}, ${lit.y})`, 'the arch to show its way at night', 5000);

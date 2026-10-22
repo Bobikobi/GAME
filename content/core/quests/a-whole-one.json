@@ -32,7 +32,7 @@
       ],
       "done": [
         "Whole. Buyers will walk a day for that. Ha - they will say I dug it.",
-        "Wear this. Hands work surer in it, and you carry luck, it seems."
+        "A reed basket, not one I sell. It picks quicker than mine. Yours now."
       ],
       "variants": [
         {
@@ -77,7 +77,7 @@
       "rep": 20,
       "items": [
         {
-          "item": "core/lucky-charm",
+          "item": "core/reed-basket",
           "qty": 1
         }
       ]

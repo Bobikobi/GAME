@@ -111,11 +111,11 @@ window.__tend = (() => {
       const s = g().session, day = g().bundle.params.day_length_ms;
       return (((s.tick + Math.floor(day / 2)) % day) * 24) / day;
     },
-    /** The earlier quests are setup: Maru's berries are picked and his coin found, the opening is behind, and Maru is met. */
+    /** The earlier quests are setup: Maru's berries are picked, his coin found and his stew cooked (the long night waits for it), the opening is behind, and Maru is met. */
     prepare(logs) {
       const p = g().session.state.player;
       for (const id of Object.keys(p.quests)) if (p.quests[id] === 'active') p.quests[id] = 'done';
-      for (const id of ['core/fix-the-bridge', 'core/first-fire', 'core/into-town', 'core/three-fruits', 'core/a-coin-for-maru']) p.quests[id] = 'done';
+      for (const id of ['core/fix-the-bridge', 'core/first-fire', 'core/into-town', 'core/three-fruits', 'core/a-coin-for-maru', 'core/herbs-for-pell', 'core/a-whole-one', 'core/something-warm']) p.quests[id] = 'done';
       if (!p.restored.includes('core/old-bridge')) p.restored.push('core/old-bridge');
       p.satiety = 100000;
       p.satietyAt = g().session.tick;

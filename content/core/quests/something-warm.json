@@ -8,7 +8,7 @@
   "quest": {
     "giver": "core/elder",
     "type": "mastery",
-    "summary": "Pell taught you her stew, and the grove gives its mushrooms once it cools at six. Will you cook one for Maru?",
+    "summary": "Pell taught you her stew, and the grove gives its mushrooms once it cools at five. Will you cook one for Maru?",
     "requires": [
       "core/a-whole-one"
     ],
@@ -28,7 +28,7 @@
       ],
       "done": [
         "Warm. Like the hall, before. Keep it: you will want it out there tonight.",
-        "My old sandals. Wood comes quicker in them. Tonight, a fire of your own?"
+        "Dry branches from my pile. Tonight, a fire of your own? Ask me how."
       ],
       "variants": [
         {
@@ -65,7 +65,7 @@
           ],
           "done": [
             "Warm. Like the hall, before. You need not eat it: the smell was enough.",
-            "My old sandals. Wood comes quicker in them. Tonight, a fire of your own?"
+            "Dry branches from my pile. Tonight, a fire of your own? Ask me how."
           ]
         }
       ]
@@ -74,8 +74,8 @@
       "rep": 10,
       "items": [
         {
-          "item": "core/reed-sandals",
-          "qty": 1
+          "item": "core/branch",
+          "qty": 2
         }
       ]
     }
