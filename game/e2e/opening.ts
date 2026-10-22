@@ -413,6 +413,36 @@ class Player {
     await this.step(plan.face);
   }
 
+  /** the lantern warning's lines, once dark has found the player on the way (pastDusk) */
+  lantern: string[] = [];
+
+  /**
+   * Runs a step of the run that can meet 20:00. The game clock runs while the run plays, so a slow
+   * machine can meet dark on the road: the lantern warning (G31) then opens and holds every step
+   * (CI, 22.10). It is read where dark finds the player, as a player would, and the step runs again;
+   * once only, and only that box at a dark hour: any other dialog, or a failure for another reason,
+   * throws as it was.
+   */
+  async pastDusk(what: string, act: () => Promise<void>): Promise<void> {
+    for (let readOnRoad = false; ; readOnRoad = true) {
+      try {
+        await act();
+        return;
+      } catch (err) {
+        const darkBox = await this.page.eval<boolean>("(__e2e.dialog()?.text ?? '').includes('lantern is lit') && (__e2e.hour() >= 20 || __e2e.hour() < 5)");
+        if (!darkBox || readOnRoad) throw err;
+        this.lantern = await this.talkThrough();
+        await this.idle('the lantern warning');
+        console.log(`[${this.name}] dark came on the way to ${what}, at ${(await this.state()).pos.join(',')}: the lantern warning was read there`);
+      }
+    }
+  }
+
+  /** walkTo for a walk that can meet 20:00 on the road (pastDusk). */
+  walkPastDusk(rect: Rect, what: string): Promise<void> {
+    return this.pastDusk(what, () => this.walkTo(rect, what));
+  }
+
   async expectPrompt(pattern: RegExp, what: string): Promise<void> {
     const st = await this.page.waitFor<State>(`(() => { const s = __e2e.state(); return s.prompt ? s : null; })()`, `a prompt for ${what}`, 3000);
     if (!pattern.test(st.prompt)) throw new Error(`expected a prompt like ${pattern} for ${what}, got "${st.prompt}"`);
@@ -615,6 +645,14 @@ class Player {
     return this.page.eval<string | undefined>(`__e2e.player().quests[${JSON.stringify(id)}]`);
   }
 }
+
+/** The minute of the game day, 0 to 1439 (tick 0 is noon), as an in-page expression. */
+const DAY_MINUTE = '(() => { const s = __game.session, day = __game.bundle.params.day_length_ms; return Math.floor((((s.tick + Math.floor(day / 2)) % day) * 1440) / day); })()';
+/**
+ * The latest stew hand-in that still leaves the walk to the hill, the dig and the walk back to Maru before 20:00:
+ * those take about 40 game minutes on a laptop (19:00 to 19:39), so 19:10 leaves a slower machine a quarter more.
+ */
+const LATEST_HILL_MINUTE = 19 * 60 + 10;
 
 /** OPENING_REVIEW criterion 8: the longest stretch of play clock between two pays, the clock's own jumps counted as waiting. */
 const LONGEST_STRETCH_MS = 90_000;
@@ -1097,11 +1135,11 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
         await me.gather('core/wild-herbs', 'core/herb', 2);
         if ((await me.bag('core/mushroom')) < 2) {
           // the grove opens its mushrooms at 17:00: the player waits beside it, and the wait counts
-          await me.walkTo(await page.eval<Rect>(`__e2e.slot('core/forest-mushrooms')`), 'the grove');
+          await me.walkPastDusk(await page.eval<Rect>(`__e2e.slot('core/forest-mushrooms')`), 'the grove');
           await page.waitFor('__e2e.hour() >= 17 || __e2e.hour() < 5', 'the grove to cool at 17:00', 300_000);
           await me.gather('core/forest-mushrooms', 'core/mushroom', 2);
         }
-        await me.walkTo({ x: fireAt[0], y: fireAt[1], w: 1, h: 1 }, 'the fire');
+        await me.walkPastDusk({ x: fireAt[0], y: fireAt[1], w: 1, h: 1 }, 'the fire');
         await me.expectPrompt(/^Cook at the/, 'the fire');
         await me.a();
         await page.waitFor(`!!document.querySelector('.panel .row')`, 'the cooking panel');
@@ -1111,7 +1149,7 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
       if (!(await page.eval<boolean>(`(__e2e.player().made['core/herb-stew'] ?? 0) > 0`))) throw new Error('no herb stew after three tries');
       if ((await page.eval<number>(`__e2e.player().wear['core/reed-basket'] ?? 0`)) <= basketWorn) throw new Error("Pell's reed basket was not used for the stew");
       const branches = await me.bag('core/branch');
-      await me.walkTo({ x: elder[0], y: elder[1], w: 1, h: 1 }, 'Elder Maru');
+      await me.walkPastDusk({ x: elder[0], y: elder[1], w: 1, h: 1 }, 'Elder Maru');
       await me.a();
       await me.talkThrough('Something warm for the night');
       const warm = await me.talkThrough();
@@ -1126,24 +1164,35 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
         if (page.errors.length > 0) throw new Error(`page errors:\n${page.errors.join('\n')}`);
         return;
       }
-      // at dusk the hill lantern lights the tile to dig: the player waits beside it, and the wait counts
-      await me.walkTo({ x: spot.x, y: spot.y, w: 1, h: 1 }, 'the spot under the hill lantern');
+      // the hill is dug at dusk and left before dark, when the night hunts on it. A slow machine can hand in the stew too late
+      // for that (CI, 22.10: the stew at 19:3x, dark on the road to the hill, a fall at the dig): then the player stays in town
+      // for the next dusk, as a player would. The jump is a skip of the run, counted as waiting (criterion 8)
+      const stewAt = await page.eval<number>(DAY_MINUTE);
+      if (stewAt >= LATEST_HILL_MINUTE || stewAt < 5 * 60) {
+        await page.eval('__e2e.setHour(19)');
+        log(`the stew came at ${Math.floor(stewAt / 60)}:${String(stewAt % 60).padStart(2, '0')}, too late to dig before dark: the player waits in town for the next dusk`);
+      }
+      // at dusk the hill lantern lights the tile to dig: the player waits beside it, and the wait counts.
+      // From the stew on, every step that can meet 20:00 on a slow machine reads the lantern warning where it opens (pastDusk)
+      await me.walkPastDusk({ x: spot.x, y: spot.y, w: 1, h: 1 }, 'the spot under the hill lantern');
       await page.waitFor('__e2e.hour() >= 19 || __e2e.hour() < 5', 'dusk at 19:00', 300_000);
       await page.waitFor(`__e2e.glint(${spot.x}, ${spot.y})`, 'the lantern to light the spot at dusk', 5000);
       for (let tries = 0; tries < 3 && (await me.bag('core/maru-coin')) < 1; tries++) {
         await page.waitFor('__e2e.nodes("core/lantern-foot")[0].ready', 'the spot under the lantern to be ready', 90_000);
-        await me.walkTo({ x: spot.x, y: spot.y, w: 1, h: 1 }, 'the spot under the hill lantern');
-        await me.expectPrompt(/^Dig here/, 'the spot under the hill lantern');
+        await me.pastDusk('the spot under the hill lantern', async () => {
+          await me.walkTo({ x: spot.x, y: spot.y, w: 1, h: 1 }, 'the spot under the hill lantern');
+          await me.expectPrompt(/^Dig here/, 'the spot under the hill lantern');
+        });
         if (tries === 0) await me.snap('dusk');
         await me.a();
         await me.expectWorking('digging under the lantern');
-        await me.idle('digging under the lantern');
+        await me.pastDusk('the end of the dig', () => me.idle('digging under the lantern'));
       }
       if ((await me.bag('core/maru-coin')) < 1) throw new Error('no coin after three digs under the hill lantern');
       const solved = await page.eval<string[]>('__e2e.player().solved');
       if (!solved.includes('core/a-coin-for-maru#0')) throw new Error(`the riddle is not solved: [${solved.join(', ')}]`);
       await me.snap('riddle');
-      await me.walkTo({ x: elder[0], y: elder[1], w: 1, h: 1 }, 'Elder Maru');
+      await me.walkPastDusk({ x: elder[0], y: elder[1], w: 1, h: 1 }, 'Elder Maru');
       const unpaid = await page.eval<number>('__e2e.player().gold');
       await me.a();
       await me.talkThrough('The coin under the lantern');
@@ -1163,23 +1212,9 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
       const mouth = await page.eval<Rect>(`__e2e.slot('core/arch-mouth')`);
       const threshold = await page.eval<Rect>(`__e2e.slot('core/night-threshold')`);
       // a walk to a place stops beside it, never through it, so the arch is entered only by the step below.
-      // The game clock runs while the run plays, so a slow machine can leave the lantern late and meet 20:00 on the
-      // road: the lantern warning then opens mid-walk and holds every step (CI, 22.10). It is read where dark finds
-      // the player, as a player would, and the walk goes on; once only, and only that box at that hour
-      let lantern: string[] = [];
-      for (let readOnRoad = false; ; readOnRoad = true) {
-        try {
-          await me.walkTo(mouth, 'the broken arch');
-          break;
-        } catch (err) {
-          // only the lantern box itself, at a dark hour: any other dialog, or a walk that failed for another reason, throws as it was
-          const darkBox = await page.eval<boolean>("(__e2e.dialog()?.text ?? '').includes('lantern is lit') && (__e2e.hour() >= 20 || __e2e.hour() < 5)");
-          if (!darkBox || readOnRoad) throw err;
-          lantern = await me.talkThrough();
-          await me.idle('the lantern warning');
-          log(`dark came on the way to the arch, at ${(await me.state()).pos.join(',')}: the lantern warning was read there`);
-        }
-      }
+      // A slow machine can meet 20:00 before the arch: the lantern warning was then read on the road (pastDusk)
+      await me.walkPastDusk(mouth, 'the broken arch');
+      let lantern = me.lantern;
       if (await page.eval<boolean>(`!!__e2e.plan(${JSON.stringify(threshold)})`)) throw new Error('the night ruins are open before the arch');
       // dark comes at 20:00; the player waits for it at the arch, and the wait counts (criterion 8)
       await page.waitFor('__e2e.hour() >= 20 || __e2e.hour() < 5', 'dark at 20:00', 300_000);
@@ -1247,7 +1282,8 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
       log(`game hour ${hour}:00 before the sun bank; sunleaf opens 12:00 to 20:00`);
       if (hour < 12 || hour >= 20) throw new Error(`the sunleaf is closed at ${hour}:00: the run took too long to reach the bank`);
       await me.gather('core/sun-herbs', 'core/sunleaf', 1);
-      await me.walkTo({ x: trader[0], y: trader[1], w: 1, h: 1 }, 'Pell');
+      // the walk back to town can meet 20:00 on a slow machine (pastDusk)
+      await me.walkPastDusk({ x: trader[0], y: trader[1], w: 1, h: 1 }, 'Pell');
       await me.a();
       await me.talkThrough('Herbs for Pell');
       await me.talkThrough();
