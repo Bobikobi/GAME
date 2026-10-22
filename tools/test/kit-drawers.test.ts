@@ -5,8 +5,8 @@ import { join } from 'node:path';
 import { afterAll, describe, expect, test } from 'vitest';
 
 import {
-  KAGGLE_DEFAULTS, KAGGLE_WAVE_MARK, LOCAL_DEFAULTS, LOCAL_NEGATIVE, drawWaveWithKaggle, drawWithGemini, drawWithKaggle, drawWithLocal, geminiAnswer, geminiRequest,
-  kaggleFileName, kaggleInferenceSteps, kaggleKernelScript, kaggleManifest, kaggleMetadata, kaggleOwner, kagglePushAnswer, kaggleSettings, kaggleStatus, kaggleWave,
+  CLIP_TOKENS, KAGGLE_DEFAULTS, KAGGLE_NEGATIVE, KAGGLE_RECIPES, KAGGLE_WAVE_MARK, LOCAL_DEFAULTS, LOCAL_NEGATIVE, clipTokenEstimate, drawWaveWithKaggle, drawWithGemini, drawWithKaggle, drawWithLocal, geminiAnswer, geminiRequest,
+  kaggleCanvas, kaggleFileName, kaggleInferenceSteps, kagglePrompt, kaggleSubject, pngSize, sdClause, kaggleKernelScript, kaggleManifest, kaggleMetadata, kaggleOwner, kagglePushAnswer, kaggleSettings, kaggleStatus, kaggleWave,
   localHistory, localPrompt, localSettings, localWorkflow, parseDrawer, promptForModel, splitWave,
 } from '../src/kit/drawers.js';
 
@@ -151,11 +151,74 @@ function runDir(name: string): string {
 describe('the kaggle route', () => {
   test('settings default to the local recipe and read the environment', () => {
     expect(kaggleSettings({})).toMatchObject({
-      kernel: KAGGLE_DEFAULTS.kernel, gpu: true, accelerator: '', denoise: LOCAL_DEFAULTS.denoise, steps: LOCAL_DEFAULTS.steps,
-      size: LOCAL_DEFAULTS.size, cfg: LOCAL_DEFAULTS.cfg, loraStrength: LOCAL_DEFAULTS.loraStrength, seed: 7,
+      kernel: KAGGLE_DEFAULTS.kernel, gpu: true, accelerator: '', recipe: 'sd15', model: KAGGLE_DEFAULTS.model, vae: '', denoise: LOCAL_DEFAULTS.denoise,
+      denoiseCharacter: 0.7, steps: LOCAL_DEFAULTS.steps, size: LOCAL_DEFAULTS.size, cfg: LOCAL_DEFAULTS.cfg, loraStrength: LOCAL_DEFAULTS.loraStrength, seed: 7,
     });
     expect(kaggleSettings({ KAGGLE_GPU: '0', KAGGLE_SIZE: '250', KAGGLE_STEPS: '6', KAGGLE_KERNEL: 'someone/wave' })).toMatchObject({ gpu: false, size: 248, steps: 6, kernel: 'someone/wave' });
+    expect(kaggleSettings({ KAGGLE_DENOISE_CHARACTER: '0.3', KAGGLE_DENOISE: '0.7' })).toMatchObject({ denoise: 0.7, denoiseCharacter: 0.3 });
     expect(() => kaggleSettings({ KAGGLE_DENOISE: 'half' })).toThrow(/KAGGLE_DENOISE/);
+    expect(() => kaggleSettings({ KAGGLE_MODEL: 'someone/model', KAGGLE_RECIPE: 'flux' })).toThrow(/KAGGLE_RECIPE/);
+  });
+
+  test('KAGGLE_MODEL=sdxl switches the whole recipe; a repo id keeps the recipe it is given', () => {
+    expect(kaggleSettings({ KAGGLE_MODEL: 'sdxl' })).toMatchObject({
+      recipe: 'sdxl', model: KAGGLE_RECIPES.sdxl.model, vae: KAGGLE_RECIPES.sdxl.vae, loraRepo: 'nerijs/pixel-art-xl', loraFile: 'pixel-art-xl.safetensors',
+      loraStrength: 1, size: 1024, steps: 25, denoise: 0.6, denoiseCharacter: 0.8,
+    });
+    expect(kaggleSettings({ KAGGLE_MODEL: 'SDXL', KAGGLE_SIZE: '896', KAGGLE_VAE: '' })).toMatchObject({ recipe: 'sdxl', size: 896, vae: '' });
+    expect(kaggleSettings({ KAGGLE_MODEL: 'someone/sd15-tune' })).toMatchObject({ recipe: 'sd15', model: 'someone/sd15-tune', size: 512 });
+    expect(kaggleSettings({ KAGGLE_MODEL: 'someone/xl-tune', KAGGLE_RECIPE: 'sdxl' })).toMatchObject({ recipe: 'sdxl', model: 'someone/xl-tune', size: 1024 });
+  });
+
+  test('the prompt is written for Stable Diffusion: trigger words first, no pixel counts, inside CLIP\'s window', () => {
+    const elder = {
+      ref: 'chars/elder', what: 'village elder character (long white beard, brown coat, facing the viewer, full body)',
+      detail: 'the face about 10 pixels wide with two eye pixels and eyebrows, the beard in 3 shades, the coat with a belt and a fold line, boots',
+    };
+    const prompt = kagglePrompt(elder);
+    expect(prompt.startsWith('Pixel Art, PixArFK, one single character alone, full body, front view, village elder character, long white beard, brown coat')).toBe(true);
+    expect(prompt).not.toMatch(/pixels wide|eye pixels|3 shades|the beard,/u);
+    expect(prompt).toContain('the coat with a belt and a fold line, boots');
+    expect(prompt.endsWith('flat pure magenta background')).toBe(true);
+    expect(prompt.match(/full body/gu)).toHaveLength(1);
+    expect(clipTokenEstimate(prompt)).toBeLessThanOrEqual(CLIP_TOKENS);
+    expect(kagglePrompt(elder, 'sdxl').startsWith('pixel art, one single character alone')).toBe(true);
+    const oak = kagglePrompt({ ref: 'props/tree_oak', what: 'round leafy oak tree with its trunk', detail: 'clusters of leaves in 3 greens with light on the upper left, roots at its foot' });
+    expect(oak).toContain('game sprite, top-down three-quarter view, round leafy oak tree with its trunk, clusters of leaves in green with light on the upper left');
+    const long = kagglePrompt({ ref: 'props/x', what: 'barrel', detail: Array.from({ length: 30 }, (_, i) => `hoop number ${i} with rivets`).join(', ') });
+    expect(clipTokenEstimate(long)).toBeLessThanOrEqual(CLIP_TOKENS - 4);
+    expect(long).toContain('hoop number 0 with rivets');
+    expect(long.endsWith('flat pure magenta background')).toBe(true);
+  });
+
+  test('clauses lose what a text encoder cannot count, and the estimate counts the hard words high', () => {
+    expect(sdClause('the face about 10 pixels wide')).toBeNull();
+    expect(sdClause('the beard in 3 shades')).toBeNull();
+    expect(sdClause('the cloak in three shades of red')).toBe('the cloak of red');
+    expect(sdClause('leaves in 3 greens')).toBe('leaves in green');
+    expect(sdClause(' a steel head ')).toBe('a steel head');
+    expect(clipTokenEstimate('')).toBe(2);
+    expect(clipTokenEstimate('a tree, oak')).toBe(6);
+    expect(clipTokenEstimate('PixArFK')).toBeGreaterThan(2);
+    expect(clipTokenEstimate("woodcutter's")).toBe(5);
+  });
+
+  test('a character is told apart by its ref, and the canvas follows the reference', () => {
+    expect(kaggleSubject('chars/elder')).toBe('character');
+    expect(kaggleSubject('props/tree_oak')).toBe('prop');
+    expect(kaggleSubject('items/axe')).toBe('prop');
+    expect(kaggleCanvas({ width: 320, height: 448 }, 512)).toEqual({ width: 512, height: 704 });
+    expect(kaggleCanvas({ width: 32, height: 48 }, 512)).toEqual({ width: 512, height: 768 });
+    expect(kaggleCanvas({ width: 48, height: 32 }, 1024)).toEqual({ width: 1536, height: 1024 });
+    expect(kaggleCanvas({ width: 10, height: 100 }, 512)).toEqual({ width: 512, height: 1024 });
+    expect(kaggleCanvas({ width: 64, height: 64 }, 500)).toEqual({ width: 512, height: 512 });
+    expect(kaggleCanvas(null, 512)).toEqual({ width: 512, height: 512 });
+    const header = Buffer.alloc(24);
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(header);
+    header.writeUInt32BE(320, 16);
+    header.writeUInt32BE(448, 20);
+    expect(pngSize(header)).toEqual({ width: 320, height: 448 });
+    expect(pngSize(Buffer.from('tree'))).toBeNull();
   });
 
   test('the schedule is stretched so image to image runs the local step count', () => {
@@ -179,16 +242,40 @@ describe('the kaggle route', () => {
     const script = kaggleKernelScript(wave);
     const b64 = new RegExp(`${KAGGLE_WAVE_MARK} = "([A-Za-z0-9+/=]+)"`).exec(script)?.[1] ?? '';
     const back = JSON.parse(Buffer.from(b64, 'base64').toString()) as { settings: Record<string, unknown>; requests: { name: string; file: string; prompt: string; seed: number; png: string }[] };
-    expect(back.settings).toMatchObject({ model: KAGGLE_DEFAULTS.model, lora_file: KAGGLE_DEFAULTS.loraFile, denoise: 0.6, steps: 20, inference_steps: 34, size: 512, cfg: 7, lora_strength: 0.8, negative: LOCAL_NEGATIVE });
+    expect(back.settings).toMatchObject({ recipe: 'sd15', model: KAGGLE_DEFAULTS.model, lora_file: KAGGLE_DEFAULTS.loraFile, denoise: 0.6, steps: 20, inference_steps: 34, size: 512, cfg: 7, lora_strength: 0.8, negative: KAGGLE_NEGATIVE, clip_tokens: 77 });
+    expect(KAGGLE_NEGATIVE).toContain(LOCAL_NEGATIVE.split(', ')[0] ?? '');
+    expect(KAGGLE_NEGATIVE).toMatch(/multiple characters.*animal/u);
+    expect(clipTokenEstimate(KAGGLE_NEGATIVE)).toBeLessThanOrEqual(CLIP_TOKENS);
     expect(back.requests.map((r) => [r.name, r.file, r.seed])).toEqual([['tree oak', 'tree_oak.png', 7], ['barrel', 'barrel.png', 11]]);
     expect(Buffer.from(back.requests[0]?.png ?? '', 'base64').toString()).toBe('tree');
     expect(script).toContain('StableDiffusionImg2ImgPipeline');
+    expect(script).toContain('StableDiffusionXLImg2ImgPipeline');
     expect(script).toContain('kitgen-manifest.json');
+    // a prompt past the window is refused by name in the kernel, never cut
+    expect(script).toContain('it would be cut silently');
+    expect(script).toContain('tokenizer_2');
     expect(kaggleMetadata('someone/kitgen-drawer', 'kitgen_wave.py', settings)).toMatchObject({
       id: 'someone/kitgen-drawer', title: 'kitgen-drawer', kernel_type: 'script', is_private: true, enable_gpu: true, enable_internet: true,
     });
     expect(kaggleMetadata('a/b', 'x.py', kaggleSettings({ KAGGLE_GPU: 'false', KAGGLE_ACCELERATOR: 'NvidiaTeslaT4' }))).toMatchObject({ enable_gpu: false, machine_shape: 'NvidiaTeslaT4' });
     expect(kaggleFileName('a/b c')).toBe('a_b_c.png');
+  });
+
+  test('each request carries its own canvas and its subject\'s denoise', () => {
+    const png = (w: number, h: number): Buffer => {
+      const b = Buffer.alloc(24);
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(b);
+      b.writeUInt32BE(w, 16);
+      b.writeUInt32BE(h, 20);
+      return b;
+    };
+    const wave = kaggleWave([
+      { name: 'elder', prompt: 'p', png: png(320, 448), seed: 7, subject: 'character' },
+      { name: 'oak', prompt: 'p', png: png(320, 320), seed: 7 },
+    ], kaggleSettings({ KAGGLE_MODEL: 'sdxl' })) as { settings: Record<string, unknown>; requests: Record<string, unknown>[] };
+    expect(wave.settings).toMatchObject({ recipe: 'sdxl', vae: KAGGLE_RECIPES.sdxl.vae, size: 1024 });
+    expect(wave.requests[0]).toMatchObject({ subject: 'character', denoise: 0.8, inference_steps: 32, width: 1024, height: 1408 });
+    expect(wave.requests[1]).toMatchObject({ subject: 'prop', denoise: 0.6, inference_steps: 42, width: 1024, height: 1024 });
   });
 
   test('a wave splits only past the embed limit', () => {

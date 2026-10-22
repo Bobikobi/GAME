@@ -17,10 +17,12 @@
  *           image by size and steps (21.10: 512 px, 20 steps, 290 s); seconds on a GPU. Settings in
  *           the environment (`COMFYUI_URL`, `LOCAL_DENOISE`, `LOCAL_STEPS` 20, `LOCAL_SIZE` 512; 384/12 is 94 s but speckled); the prompt
  *           is the compact one, since the model reads about 75 tokens.
- *   kaggle  the local recipe (the same checkpoint, LoRA, prompt, denoise, steps and size) with `diffusers` in a
- *           private Kaggle kernel on its free GPU, driven by the `kaggle` CLI. A kernel takes minutes to start,
- *           so `kit:gen` sends the whole wave in one run (`drawWaveWithKaggle`): push, poll, fetch the output.
- *           On a T4 (22.10) 4-5 s per picture plus about 90 s per wave (kernel start and the weights).
+ *   kaggle  Stable Diffusion with `diffusers` in a private Kaggle kernel on its free GPU, driven by the `kaggle`
+ *           CLI: SD 1.5 with the local route's LoRA (`KAGGLE_MODEL` sd15, the default) or SDXL with a pixel-art
+ *           LoRA (`KAGGLE_MODEL=sdxl`). Its own short prompt (`kagglePrompt`, checked against CLIP's 77 tokens in
+ *           the kernel, never cut), a negative prompt, a canvas in the reference's shape and a denoise of its
+ *           own for characters. A kernel takes minutes to start, so `kit:gen` sends the whole wave in one run
+ *           (`drawWaveWithKaggle`): push, poll, fetch the output.
  *
  * `--drawer <id>` picks the route, else `KIT_DRAWER`, else codex. A text route (a grid tile, a scatter
  * motif) stays with Codex: those are letters, not pictures. Adding a route is one `Drawer` here and
@@ -340,18 +342,59 @@ export function drawWithLocal(call: DrawCall & { seed?: number }): Drawn {
 /* ---------------------------------------------------------------- the kaggle route */
 
 /**
- * The local recipe on Kaggle's free GPU. The weights are the same open files the `local` route loads into
- * ComfyUI (SD 1.5 and PixelArtRedmond15V, here from Hugging Face), the prompt is `localPrompt`, and denoise,
- * steps, size, CFG and LoRA strength default to the local ones, so a picture from either route can sit in
- * one gallery. The kernel is a private script on the account the `kaggle` CLI is signed in to; the token
- * is the CLI's own (`~/.kaggle`), never read here.
+ * Stable Diffusion on Kaggle's free GPU, in two recipes. `sd15` is the local route's weights (SD 1.5 and
+ * PixelArtRedmond15V, here from Hugging Face) with its steps, size, CFG and LoRA strength; `sdxl` is SDXL base
+ * with the fp16-safe VAE and the pixel-art-xl LoRA, in half precision with the VAE tiled so a T4's 16 GB
+ * holds it. Both read `kagglePrompt` (not the local route's), the negative `KAGGLE_NEGATIVE`, a canvas in the
+ * reference's shape (`kaggleCanvas`) and a denoise by subject (`kaggleSubject`), each recipe with its own.
+ * The kernel is a private script on the account the `kaggle` CLI is signed in to; the token is the CLI's
+ * own (`~/.kaggle`), never read here.
  */
+export const KAGGLE_RECIPES = {
+  sd15: {
+    model: 'stable-diffusion-v1-5/stable-diffusion-v1-5',
+    vae: '',
+    loraRepo: 'artificialguybr/pixelartredmond-1-5v-pixel-art-loras-for-sd-1-5',
+    loraFile: 'PixelArtRedmond15V-PixelArt-PIXARFK.safetensors',
+    loraStrength: LOCAL_DEFAULTS.loraStrength,
+    steps: LOCAL_DEFAULTS.steps,
+    size: LOCAL_DEFAULTS.size,
+    cfg: LOCAL_DEFAULTS.cfg,
+    /**
+     * How far a picture may leave its reference: a prop as on the local route; a character further, since at
+     * 0.45-0.55 the model hands back the reference's blob with a smeared face, and from 0.65 it draws one
+     * elder with a face (22.10, three seeds each). What split the elder in two was the prompt and the square
+     * canvas, not the denoise.
+     */
+    denoise: LOCAL_DEFAULTS.denoise,
+    denoiseCharacter: 0.7,
+    /** The LoRA's trigger words, first in the prompt. */
+    trigger: 'Pixel Art, PixArFK',
+  },
+  sdxl: {
+    model: 'stabilityai/stable-diffusion-xl-base-1.0',
+    /** SDXL's own VAE turns to NaN (a black picture) in fp16; this one is retrained not to. */
+    vae: 'madebyollin/sdxl-vae-fp16-fix',
+    loraRepo: 'nerijs/pixel-art-xl',
+    loraFile: 'pixel-art-xl.safetensors',
+    loraStrength: 1,
+    steps: 25,
+    size: 1024,
+    cfg: 7,
+    /** SDXL holds the reference harder: a character below 0.75 comes back as the blob, or with a blank face (22.10). */
+    denoise: 0.6,
+    denoiseCharacter: 0.8,
+    trigger: 'pixel art',
+  },
+} as const;
+export type KaggleRecipe = keyof typeof KAGGLE_RECIPES;
+
 export const KAGGLE_DEFAULTS = {
   kernel: 'kitgen-drawer',
   cli: 'kaggle',
-  model: 'stable-diffusion-v1-5/stable-diffusion-v1-5',
-  loraRepo: 'artificialguybr/pixelartredmond-1-5v-pixel-art-loras-for-sd-1-5',
-  loraFile: 'PixelArtRedmond15V-PixelArt-PIXARFK.safetensors',
+  model: KAGGLE_RECIPES.sd15.model,
+  loraRepo: KAGGLE_RECIPES.sd15.loraRepo,
+  loraFile: KAGGLE_RECIPES.sd15.loraFile,
   seed: 7,
   /** A kernel's start, the pip check and the model download, before the first picture. */
   setupSeconds: 1200,
@@ -367,12 +410,18 @@ export interface KaggleSettings {
   gpu: boolean;
   /** Kaggle's `machine_shape` (`NvidiaTeslaT4`, ...); empty lets Kaggle pick. */
   accelerator: string;
+  recipe: KaggleRecipe;
   model: string;
+  /** A VAE to load in place of the model's own (SDXL in fp16), or empty. */
+  vae: string;
   loraRepo: string;
   loraFile: string;
   loraStrength: number;
+  /** A prop's denoise; a character's is `denoiseCharacter`. */
   denoise: number;
+  denoiseCharacter: number;
   steps: number;
+  /** The canvas's short side; the long side follows the reference (`kaggleCanvas`). */
   size: number;
   cfg: number;
   seed: number;
@@ -383,9 +432,10 @@ export interface KaggleSettings {
 
 /**
  * The kaggle route's settings: `KAGGLE_KERNEL`, `KAGGLE_CLI`, `KAGGLE_GPU` (0 for a CPU run), `KAGGLE_ACCELERATOR`,
- * `KAGGLE_MODEL`, `KAGGLE_LORA_REPO`, `KAGGLE_LORA_FILE`, `KAGGLE_LORA_STRENGTH`, `KAGGLE_DENOISE`, `KAGGLE_STEPS`,
- * `KAGGLE_SIZE`, `KAGGLE_CFG`, `KAGGLE_SEED`, `KAGGLE_SETUP_SECONDS`, `KAGGLE_POLL_SECONDS`; the picture's
- * numbers default to the local route's.
+ * `KAGGLE_MODEL` (`sd15`, the default, or `sdxl`; any other value is a Hugging Face repo id drawn with the
+ * recipe in `KAGGLE_RECIPE`, default sd15), `KAGGLE_VAE`, `KAGGLE_LORA_REPO`, `KAGGLE_LORA_FILE`, `KAGGLE_LORA_STRENGTH`,
+ * `KAGGLE_DENOISE` (props, 0.6), `KAGGLE_DENOISE_CHARACTER` (0.7 on sd15, 0.8 on sdxl), `KAGGLE_STEPS`, `KAGGLE_SIZE` (the short side),
+ * `KAGGLE_CFG`, `KAGGLE_SEED`, `KAGGLE_SETUP_SECONDS`, `KAGGLE_POLL_SECONDS`; the rest default to the recipe's.
  */
 export function kaggleSettings(env: NodeJS.ProcessEnv = process.env): KaggleSettings {
   const num = (name: string, fallback: number): number => envNumber(env, name, fallback);
@@ -394,19 +444,27 @@ export function kaggleSettings(env: NodeJS.ProcessEnv = process.env): KaggleSett
     return raw === undefined || raw.trim() === '' ? fallback : raw.trim();
   };
   const gpu = text('KAGGLE_GPU', '1').toLowerCase();
+  const model = text('KAGGLE_MODEL', 'sd15');
+  const named = model.toLowerCase();
+  const recipeName = named === 'sd15' || named === 'sdxl' ? named : text('KAGGLE_RECIPE', 'sd15').toLowerCase();
+  if (recipeName !== 'sd15' && recipeName !== 'sdxl') throw new Error(`KAGGLE_RECIPE takes sd15 or sdxl, not ${JSON.stringify(recipeName)}`);
+  const recipe = KAGGLE_RECIPES[recipeName];
   return {
     cli: text('KAGGLE_CLI', KAGGLE_DEFAULTS.cli),
     kernel: text('KAGGLE_KERNEL', KAGGLE_DEFAULTS.kernel),
     gpu: !['0', 'false', 'no', 'off'].includes(gpu),
     accelerator: text('KAGGLE_ACCELERATOR', ''),
-    model: text('KAGGLE_MODEL', KAGGLE_DEFAULTS.model),
-    loraRepo: text('KAGGLE_LORA_REPO', KAGGLE_DEFAULTS.loraRepo),
-    loraFile: text('KAGGLE_LORA_FILE', KAGGLE_DEFAULTS.loraFile),
-    loraStrength: num('KAGGLE_LORA_STRENGTH', LOCAL_DEFAULTS.loraStrength),
-    denoise: Math.min(1, num('KAGGLE_DENOISE', LOCAL_DEFAULTS.denoise)),
-    steps: Math.round(num('KAGGLE_STEPS', LOCAL_DEFAULTS.steps)),
-    size: Math.round(num('KAGGLE_SIZE', LOCAL_DEFAULTS.size) / 8) * 8,
-    cfg: num('KAGGLE_CFG', LOCAL_DEFAULTS.cfg),
+    recipe: recipeName,
+    model: named === recipeName ? recipe.model : model,
+    vae: env['KAGGLE_VAE'] === undefined ? recipe.vae : env['KAGGLE_VAE'].trim(),
+    loraRepo: text('KAGGLE_LORA_REPO', recipe.loraRepo),
+    loraFile: text('KAGGLE_LORA_FILE', recipe.loraFile),
+    loraStrength: num('KAGGLE_LORA_STRENGTH', recipe.loraStrength),
+    denoise: Math.min(1, num('KAGGLE_DENOISE', recipe.denoise)),
+    denoiseCharacter: Math.min(1, num('KAGGLE_DENOISE_CHARACTER', recipe.denoiseCharacter)),
+    steps: Math.round(num('KAGGLE_STEPS', recipe.steps)),
+    size: Math.round(num('KAGGLE_SIZE', recipe.size) / 8) * 8,
+    cfg: num('KAGGLE_CFG', recipe.cfg),
     seed: Math.round(num('KAGGLE_SEED', KAGGLE_DEFAULTS.seed)),
     setupSeconds: num('KAGGLE_SETUP_SECONDS', KAGGLE_DEFAULTS.setupSeconds),
     pollSeconds: num('KAGGLE_POLL_SECONDS', KAGGLE_DEFAULTS.pollSeconds),
@@ -433,22 +491,120 @@ export function kaggleFileName(name: string): string {
   return `${name.replace(/[^A-Za-z0-9_-]/gu, '_')}.png`;
 }
 
+/** What a sprite is to the kaggle route: a character (a `chars/` sprite) keeps its silhouette harder than a prop. */
+export type KaggleSubject = 'character' | 'prop';
+
+export function kaggleSubject(ref: string): KaggleSubject {
+  return ref.startsWith('chars/') ? 'character' : 'prop';
+}
+
+/** CLIP's window: 77 tokens with the start and end marks, so 75 for the words. Past it the encoder cuts silently. */
+export const CLIP_TOKENS = 77;
+
+/**
+ * An upper estimate of the CLIP tokens a prompt takes (start and end marks included), with no vocabulary at
+ * hand: a common short word is one token, a long or made-up word several, every punctuation mark one. The
+ * kernel counts with the real tokenizer and refuses a prompt over the window; this keeps `kagglePrompt` well
+ * inside it.
+ */
+export function clipTokenEstimate(text: string): number {
+  let count = 2;
+  for (const piece of text.match(/'s\b|[A-Za-z]+|\d|[^\sA-Za-z\d]/gu) ?? []) {
+    if (/^[A-Za-z]+$/u.test(piece)) {
+      const camel = /[a-z][A-Z]/u.test(piece);
+      count += camel ? Math.ceil(piece.length / 2) : piece.length <= 8 ? 1 : Math.ceil(piece.length / 5);
+    } else {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+/** The negative prompt of the kaggle route: the local one, plus what split the elder into two figures (22.10). */
+export const KAGGLE_NEGATIVE = 'multiple characters, two figures, extra figure, animal, duplicate, cropped, blurry, photo, realistic, 3d render, text, watermark, gradient background, shadow on the ground';
+
+const NUMBER_WORD = '(?:\\d+|two|three|four|five|six)';
+
+/**
+ * A spec clause as a diffusion model can use it, or null to drop it. A Stable Diffusion text encoder cannot
+ * count pixels or shades, so a clause about pixels goes, `in 3 shades` goes, and `in 3 greens` keeps the colour.
+ */
+export function sdClause(clause: string): string | null {
+  let c = clause.trim();
+  if (c === '' || /\bpixels?\b/iu.test(c)) return null;
+  c = c.replace(new RegExp(`\\s+in ${NUMBER_WORD} (?:shades|tones|colou?rs|steps)\\b`, 'giu'), '');
+  c = c.replace(new RegExp(`\\bin ${NUMBER_WORD} (\\w+?)s\\b`, 'giu'), 'in $1');
+  c = c.replace(/\s+/gu, ' ').trim();
+  // what is left of "the beard in 3 shades" is just "the beard": the subject already says it
+  if (c === '' || /^(?:the|a|an) \w+$/iu.test(c)) return null;
+  return c;
+}
+
+function clauses(text: string | undefined): string[] {
+  return (text ?? '').split(/[,;()]/u).map((c) => c.trim()).filter((c) => c !== '');
+}
+
+/**
+ * The kaggle route's prompt, written for Stable Diffusion rather than for an agent: the LoRA's trigger words
+ * first, then what the sprite is (a character is asked for as one figure), the subject and its colours, the
+ * spec's detail without pixel counts, and the three things the importer needs (outline, crisp pixels, flat
+ * magenta). Detail clauses go from the end while the estimate is past the window, so the words that matter
+ * most are never the ones cut. The local route keeps `localPrompt`.
+ */
+export function kagglePrompt(entry: { what: string; detail?: string; ref: string }, recipe: KaggleRecipe = 'sd15'): string {
+  const head = [KAGGLE_RECIPES[recipe].trigger, ...(kaggleSubject(entry.ref) === 'character' ? ['one single character alone', 'full body', 'front view'] : ['game sprite', 'top-down three-quarter view'])];
+  const tail = ['thick dark navy outline', 'crisp square pixels', 'flat pure magenta background'];
+  const subject = clauses(entry.what).map(sdClause).filter((c): c is string => c !== null);
+  const detail = clauses(entry.detail).map(sdClause).filter((c): c is string => c !== null);
+  const build = (): string => [...new Map([...head, ...subject, ...detail, ...tail].map((c) => [c.toLowerCase(), c])).values()].join(', ');
+  while (detail.length > 0 && clipTokenEstimate(build()) > CLIP_TOKENS - 4) detail.pop();
+  return build();
+}
+
+/** A PNG's width and height from its header, or null when the bytes are not a PNG. */
+export function pngSize(png: Buffer): { width: number; height: number } | null {
+  if (png.length < 24 || !png.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return null;
+  return { width: png.readUInt32BE(16), height: png.readUInt32BE(20) };
+}
+
+/**
+ * The canvas a reference is drawn on: the short side `size`, the long side in the reference's proportion (at
+ * most twice the short one), both in multiples of 64, so a 2:3 character is not squeezed into a square. The
+ * kernel pads the reference with its background to this shape before scaling it, never stretches it.
+ */
+export function kaggleCanvas(ref: { width: number; height: number } | null, size: number): { width: number; height: number } {
+  const short = Math.max(64, Math.round(size / 64) * 64);
+  if (ref === null || ref.width <= 0 || ref.height <= 0) return { width: short, height: short };
+  const ratio = Math.min(2, Math.max(ref.width, ref.height) / Math.min(ref.width, ref.height));
+  const long = Math.max(short, Math.round((short * ratio) / 64) * 64);
+  return ref.width >= ref.height ? { width: long, height: short } : { width: short, height: long };
+}
+
 export interface KaggleRequest {
   name: string;
   prompt: string;
   png: Buffer;
   seed: number;
+  subject?: KaggleSubject;
 }
 
-/** What the kernel reads: the settings of the recipe and each request with its reference inline. */
+/** What the kernel reads: the settings of the recipe and each request with its reference, canvas and denoise. */
 export function kaggleWave(requests: readonly KaggleRequest[], s: KaggleSettings): Record<string, unknown> {
   return {
     settings: {
-      model: s.model, lora_repo: s.loraRepo, lora_file: s.loraFile, lora_strength: s.loraStrength,
+      recipe: s.recipe, model: s.model, vae: s.vae, lora_repo: s.loraRepo, lora_file: s.loraFile, lora_strength: s.loraStrength,
       denoise: s.denoise, steps: s.steps, inference_steps: kaggleInferenceSteps(s.steps, s.denoise),
-      size: s.size, cfg: s.cfg, negative: LOCAL_NEGATIVE,
+      size: s.size, cfg: s.cfg, negative: KAGGLE_NEGATIVE, clip_tokens: CLIP_TOKENS,
     },
-    requests: requests.map((r) => ({ name: r.name, file: kaggleFileName(r.name), prompt: r.prompt, seed: r.seed, png: r.png.toString('base64') })),
+    requests: requests.map((r) => {
+      const denoise = r.subject === 'character' ? s.denoiseCharacter : s.denoise;
+      const canvas = kaggleCanvas(pngSize(r.png), s.size);
+      return {
+        name: r.name, file: kaggleFileName(r.name), prompt: r.prompt, seed: r.seed, subject: r.subject ?? 'prop',
+        denoise, inference_steps: kaggleInferenceSteps(s.steps, denoise), width: canvas.width, height: canvas.height,
+        png: r.png.toString('base64'),
+      };
+    }),
   };
 }
 
@@ -474,10 +630,12 @@ export function splitWave<T extends { png: Buffer }>(requests: readonly T[], lim
 export const KAGGLE_WAVE_MARK = 'WAVE_B64';
 
 /**
- * The kernel: a Python script with the wave inline. It loads SD 1.5 image-to-image with the Euler sampler and
- * the LoRA at the local strength (on the UNet and the text encoder, as ComfyUI's LoraLoader does), draws each
- * reference scaled to the working size with nearest neighbour, and writes `<name>.png` plus
- * `kitgen-manifest.json` (device, load time, per image seconds or error) to the kernel's output.
+ * The kernel: a Python script with the wave inline. It loads the recipe's image-to-image pipeline (SD 1.5, or
+ * SDXL in fp16 with its VAE swapped and tiled) with the Euler sampler and the LoRA at the recipe's strength,
+ * counts each prompt with the pipeline's own tokenizers and refuses one past CLIP's window rather than let it
+ * be cut, pads each reference to its canvas's shape and scales it up with nearest neighbour, draws it at its
+ * subject's denoise, and writes `<name>.png` plus `kitgen-manifest.json` (device, load time, per image
+ * seconds, tokens, canvas, or error) to the kernel's output.
  */
 export function kaggleKernelScript(wave: Record<string, unknown>): string {
   const b64 = Buffer.from(JSON.stringify(wave)).toString('base64');
@@ -517,41 +675,84 @@ try:
         subprocess.run([sys.executable, "-m", "pip", "install", "-q", "diffusers", "peft"], check=True)
     import torch
     from PIL import Image
-    from diffusers import EulerDiscreteScheduler, StableDiffusionImg2ImgPipeline
+    from diffusers import AutoencoderKL, EulerDiscreteScheduler, StableDiffusionImg2ImgPipeline, StableDiffusionXLImg2ImgPipeline
 
     s = WAVE["settings"]
     cuda = torch.cuda.is_available()
     device = "cuda" if cuda else "cpu"
+    dtype = torch.float16 if cuda else torch.float32
     MANIFEST["device"] = torch.cuda.get_device_name(0) if cuda else "cpu"
-    say(f"device {MANIFEST['device']}, {len(WAVE['requests'])} requests")
-    pipe = StableDiffusionImg2ImgPipeline.from_pretrained(
-        s["model"], torch_dtype=torch.float16 if cuda else torch.float32, safety_checker=None, requires_safety_checker=False)
+    say(f"device {MANIFEST['device']}, recipe {s['recipe']}, {len(WAVE['requests'])} requests")
+    extra = {}
+    if s["vae"]:
+        extra["vae"] = AutoencoderKL.from_pretrained(s["vae"], torch_dtype=dtype)
+    if s["recipe"] == "sdxl":
+        pipe = StableDiffusionXLImg2ImgPipeline.from_pretrained(
+            s["model"], torch_dtype=dtype, use_safetensors=True, **({"variant": "fp16"} if cuda else {}), **extra)
+    else:
+        pipe = StableDiffusionImg2ImgPipeline.from_pretrained(
+            s["model"], torch_dtype=dtype, safety_checker=None, requires_safety_checker=False, **extra)
     pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
     pipe.load_lora_weights(s["lora_repo"], weight_name=s["lora_file"], adapter_name="pixel")
     pipe.set_adapters(["pixel"], adapter_weights=[s["lora_strength"]])
     pipe = pipe.to(device)
+    if s["recipe"] == "sdxl":
+        # a 1024 px canvas decodes in tiles, so the VAE's peak stays well inside a T4's 16 GB
+        pipe.vae.enable_tiling()
     pipe.set_progress_bar_config(disable=True)
     MANIFEST["load_seconds"] = round(time.time() - START, 1)
     save()
     say("model loaded")
+
+    def clip_tokens(text):
+        # every text encoder the pipeline has; CLIP cuts past its window without an error, so it is counted here
+        counts = [len(t(text).input_ids) for t in (getattr(pipe, "tokenizer", None), getattr(pipe, "tokenizer_2", None)) if t is not None]
+        return max(counts) if counts else 0
+
+    def too_long(what, text):
+        n = clip_tokens(text)
+        if n > s["clip_tokens"]:
+            return f"the {what} is {n} CLIP tokens, past the encoder's {s['clip_tokens']}: it would be cut silently, so it is not drawn; shorten it"
+        return None
+
+    def on_canvas(png, width, height):
+        # pad with the reference's own background to the canvas's shape, then scale up with nearest neighbour
+        ref = Image.open(io.BytesIO(base64.b64decode(png))).convert("RGB")
+        rw, rh = ref.size
+        if rw * height > rh * width:
+            pw, ph = rw, max(rh, round(rw * height / width))
+        else:
+            pw, ph = max(rw, round(rh * width / height)), rh
+        if (pw, ph) != (rw, rh):
+            padded = Image.new("RGB", (pw, ph), ref.getpixel((0, 0)))
+            padded.paste(ref, ((pw - rw) // 2, (ph - rh) // 2))
+            ref = padded
+        return ref.resize((width, height), Image.NEAREST)
+
+    negative_error = too_long("negative prompt", s["negative"])
+    if negative_error is not None:
+        raise ValueError(negative_error)
     for r in WAVE["requests"]:
         began = time.time()
-        item = {"name": r["name"], "file": None, "seconds": None, "error": None}
+        item = {"name": r["name"], "file": None, "seconds": None, "error": None, "tokens": None,
+                "width": r["width"], "height": r["height"], "denoise": r["denoise"]}
         try:
-            ref = Image.open(io.BytesIO(base64.b64decode(r["png"]))).convert("RGB").resize((s["size"], s["size"]), Image.NEAREST)
-            image = pipe(
-                prompt=r["prompt"], negative_prompt=s["negative"], image=ref, strength=s["denoise"],
-                num_inference_steps=s["inference_steps"], guidance_scale=s["cfg"],
-                generator=torch.Generator(device="cpu").manual_seed(r["seed"]),
-            ).images[0]
-            image.save(os.path.join(OUT, r["file"]), format="PNG")
-            item["file"] = r["file"]
+            item["tokens"] = clip_tokens(r["prompt"])
+            item["error"] = too_long("prompt", r["prompt"])
+            if item["error"] is None:
+                image = pipe(
+                    prompt=r["prompt"], negative_prompt=s["negative"], image=on_canvas(r["png"], r["width"], r["height"]),
+                    strength=r["denoise"], num_inference_steps=r["inference_steps"], guidance_scale=s["cfg"],
+                    generator=torch.Generator(device="cpu").manual_seed(r["seed"]),
+                ).images[0]
+                image.save(os.path.join(OUT, r["file"]), format="PNG")
+                item["file"] = r["file"]
         except Exception as error:  # one bad request does not lose the wave
             item["error"] = f"{type(error).__name__}: {error}"[:400]
         item["seconds"] = round(time.time() - began, 1)
         MANIFEST["images"].append(item)
         save()
-        say(f"{r['name']} {item['seconds']}s {item['error'] or 'ok'}")
+        say(f"{r['name']} {r['width']}x{r['height']} denoise {r['denoise']} {item['tokens']} tokens {item['seconds']}s {item['error'] or 'ok'}")
 except Exception as error:
     MANIFEST["error"] = f"{type(error).__name__}: {error}"[:600]
     traceback.print_exc()
@@ -596,7 +797,7 @@ export function kagglePushAnswer(text: string): { ok: boolean; error: string | n
   return { ok: false, error: said === '' ? 'the push said nothing' : said.slice(0, 400) };
 }
 
-export interface KaggleManifestImage { name: string; file: string | null; seconds: number | null; error: string | null }
+export interface KaggleManifestImage { name: string; file: string | null; seconds: number | null; error: string | null; tokens?: number }
 
 /** The kernel's `kitgen-manifest.json`, read defensively. */
 export function kaggleManifest(body: string): { device: string | null; loadSeconds: number | null; seconds: number | null; error: string | null; images: KaggleManifestImage[] } {
@@ -611,7 +812,8 @@ export function kaggleManifest(body: string): { device: string | null; loadSecon
   const images = (Array.isArray(json.images) ? json.images : []).flatMap((raw: unknown) => {
     const item = raw as Record<string, unknown>;
     const name = str(item['name']);
-    return name === null ? [] : [{ name, file: str(item['file']), seconds: n(item['seconds']), error: str(item['error']) }];
+    const tokens = n(item['tokens']);
+    return name === null ? [] : [{ name, file: str(item['file']), seconds: n(item['seconds']), error: str(item['error']), ...(tokens === null ? {} : { tokens }) }];
   });
   return { device: str(json.device), loadSeconds: n(json.load_seconds), seconds: n(json.seconds), error: str(json.error), images };
 }
@@ -636,7 +838,7 @@ export interface KaggleWaveCall {
   /** The run folder: `work/`, `log/` and `kaggle/` are under it. */
   out: string;
   stamp: string;
-  requests: readonly { name: string; prompt: string; reference: string; expect: string; seed?: number }[];
+  requests: readonly { name: string; prompt: string; reference: string; expect: string; seed?: number; subject?: KaggleSubject }[];
   /** Per picture; the wave waits the setup time plus this for each picture. */
   timeoutSeconds: number;
   env?: NodeJS.ProcessEnv;
@@ -675,13 +877,13 @@ export function drawWaveWithKaggle(call: KaggleWaveCall): Map<string, Drawn> {
     mkdirSync(src, { recursive: true });
     mkdirSync(got, { recursive: true });
     const codeFile = 'kitgen_wave.py';
-    writeFileSync(join(src, codeFile), kaggleKernelScript(kaggleWave(chunk.map((r) => ({ name: r.name, prompt: r.prompt, png: r.png, seed: r.seed ?? s.seed })), s)));
+    writeFileSync(join(src, codeFile), kaggleKernelScript(kaggleWave(chunk.map((r) => ({ name: r.name, prompt: r.prompt, png: r.png, seed: r.seed ?? s.seed, ...(r.subject === undefined ? {} : { subject: r.subject }) })), s)));
     writeFileSync(join(src, 'kernel-metadata.json'), JSON.stringify(kaggleMetadata(kernel.id ?? '', codeFile, s), null, 1));
     const limit = Math.round(s.setupSeconds + call.timeoutSeconds * chunk.length);
     const lines = [
       `kaggle kernel ${(kernel.id ?? '').split('/')[1] ?? ''} run ${index + 1}, ${chunk.length} pictures, ${s.gpu ? `gpu ${s.accelerator || 'any'}` : 'cpu'}`,
-      `model ${s.model}`, `lora ${s.loraRepo}/${s.loraFile} x${s.loraStrength}`,
-      `denoise ${s.denoise} steps ${s.steps} (schedule ${kaggleInferenceSteps(s.steps, s.denoise)}) size ${s.size} cfg ${s.cfg}`,
+      `recipe ${s.recipe}, model ${s.model}${s.vae === '' ? '' : `, vae ${s.vae}`}`, `lora ${s.loraRepo}/${s.loraFile} x${s.loraStrength}`,
+      `denoise ${s.denoise} (characters ${s.denoiseCharacter}) steps ${s.steps} short side ${s.size} cfg ${s.cfg}`,
       `kernel ${src.replace(`${call.out}/`, '')}`,
     ];
     const elapsed = (): number => Math.round((Date.now() - since) / 1000);
@@ -719,7 +921,7 @@ export function drawWaveWithKaggle(call: KaggleWaveCall): Map<string, Drawn> {
     for (const request of chunk) {
       const logPath = join(call.out, 'log', `${request.name}-${call.stamp}.txt`);
       const image = manifest.images.find((i) => i.name === request.name);
-      const own = [...lines, image === undefined ? 'not drawn' : `drawn in ${image.seconds ?? '?'} s`];
+      const own = [...lines, image === undefined ? 'not drawn' : `drawn in ${image.seconds ?? '?'} s${image.tokens === undefined ? '' : `, prompt ${image.tokens} CLIP tokens`}`];
       const drawn = (saved: string | null, error: string): Drawn => {
         writeFileSync(logPath, [...own, saved === null ? error : ''].filter((l) => l !== '').join('\n'));
         return { version, exit: 0, seconds: share, tokens: null, log: logPath.replace(`${call.out}/`, ''), saved, error };
@@ -742,7 +944,7 @@ export function drawWaveWithKaggle(call: KaggleWaveCall): Map<string, Drawn> {
 }
 
 /** One picture down the kaggle route: a wave of one. `kit:gen` sends a whole wave at once instead. */
-export function drawWithKaggle(call: DrawCall & { seed?: number }): Drawn {
+export function drawWithKaggle(call: DrawCall & { seed?: number; subject?: KaggleSubject }): Drawn {
   const reference = call.images[0];
   const logPath = join(call.out, 'log', `${call.name}-${call.stamp}.txt`);
   if (reference === undefined) {
@@ -751,7 +953,10 @@ export function drawWithKaggle(call: DrawCall & { seed?: number }): Drawn {
   }
   const wave = drawWaveWithKaggle({
     out: call.out, stamp: call.stamp, timeoutSeconds: call.timeoutSeconds, ...(call.env === undefined ? {} : { env: call.env }),
-    requests: [{ name: call.name, prompt: call.prompt, reference, expect: call.expect, ...(call.seed === undefined ? {} : { seed: call.seed }) }],
+    requests: [{
+      name: call.name, prompt: call.prompt, reference, expect: call.expect,
+      ...(call.seed === undefined ? {} : { seed: call.seed }), ...(call.subject === undefined ? {} : { subject: call.subject }),
+    }],
   });
   return wave.get(call.name) ?? { version: 'kaggle', exit: null, seconds: 0, tokens: null, log: logPath.replace(`${call.out}/`, ''), saved: null, error: 'the kaggle route returned nothing' };
 }
