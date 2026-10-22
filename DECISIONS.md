@@ -2534,3 +2534,9 @@ The owner, 22.10: adopted as written (decision 50 of the 51 he adopted that afte
 **Making in the neutral valley.** One small workshop (the planned large stall opened by a quest) and the trainers; no forge and no fields; basic making for every race (rope, basket, handle); real technology - smith, machines, steampunk - only in the city. Design note recorded with it: shops are redesigned like the big games - never one big unsorted list. Every shop has a defined stock (what it sells and why) and a proper display (categories, the item drawn, price, what it does); this binds Pell's stall, the inn, the workshop, the elf wayside stalls and the city shops.
 The owner, 22.10: adopted as written (decision 51 of the 51 he adopted that afternoon).
 **Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-23 ✅ The rich wave: items at a full tile, best of three by eye
+
+**Items are drawn at a full tile, 64x64**, as today's items fill their 16x16 tile, so every icon in the bag is one size. **Every free spec of the wave runs best of three and the gallery is judged by eye**, as the rich experiment did: three parallel `kit:gen` runs, each with its own `--out`; the picks go into the kit with their ramps.
+The owner, 23.10: yes to both, at the written defaults (the two questions of the wave's prompts).
+**Retry when:** a full-tile icon reads too busy in the bag at phone size, or a judge model that rejects bad draws arrives and the eye pass becomes its review. Model: claude-opus-5-5.
