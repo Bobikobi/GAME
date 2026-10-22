@@ -9,7 +9,7 @@
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import type { IncomingMessage, Server } from 'node:http';
 
-import { OPENING_LOG_MAX, newState, npcTile, publicState, serialize, step, type Action, type Bundle, type OpeningUpload, type State } from '@game/kernel';
+import { LEGACY_STARTERS, OPENING_LOG_MAX, newState, npcTile, publicState, serialize, step, type Action, type Bundle, type OpeningUpload, type State } from '@game/kernel';
 
 import {
   OPENING_PAY_MAX_MG,
@@ -93,7 +93,7 @@ describe('the opening handover (NEXT 18 d)', () => {
       const { phone, upload } = await captured(start);
       const handover = kept(takeOpening(bundle, upload, SECRET_SEED, NOW));
       expect(serialize(handover.record.state)).toBe(serialize({ ...phone.state, seed: SECRET_SEED }));
-      expect(handover.record.state.player.starter).toBe(start.starter);
+      expect(handover.record.state.player.race).toBe(LEGACY_STARTERS[start.starter]!.race);
       expect(handover.opening).toEqual({ kind: 'opening', seed: PHONE_SEED, log: upload.log });
       expect(handover.tick).toBe(phone.state.tick);
       // the bridge's purse, the berry and the log: the opening's grants, each with the step that paid it

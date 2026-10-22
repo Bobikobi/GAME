@@ -10,6 +10,7 @@
  * phone's own kernel, under the phone's own seed, keeping every step it played as the opening log.
  */
 import {
+  LEGACY_STARTERS,
   type Action,
   type Bundle,
   type GameEvent,
@@ -229,7 +230,7 @@ export class LocalPhone extends Player {
 /** The three starts, with their own first task and the place it happens (the opening, section 18). */
 export const STARTS = [
   { starter: 'core/forager', own: 'core/first-pickings', place: 'core/bank-herbs' },
-  { starter: 'core/digger', own: 'core/buried-axe', place: 'core/slid-bank' },
+  { starter: 'core/digger', own: 'core/buried-axe', place: 'core/slid-bank-dig' },
   { starter: 'core/explorer', own: 'core/glint-by-the-bridge', place: 'core/bridge-glint' },
 ] as const;
 
@@ -266,7 +267,7 @@ function required<T>(value: T | undefined, message: string): T {
 export async function playOpening(wire: Player, start: Start): Promise<PlayedRun> {
   const { bundle } = wire;
   await wire.act({ t: 'start', starter: start.starter, name: 'Tess' }, 0);
-  if (wire.state.player.starter !== start.starter) throw new Error(`The server did not start ${start.starter}.`);
+  if (wire.state.player.race !== LEGACY_STARTERS[start.starter]?.race) throw new Error(`The server did not start ${start.starter}.`);
 
   const [own, instance] = required(instancesOf(bundle, start.place)[0], `The map has no ${start.place}.`);
   if (instance.kind === 'resource') await wire.gather(own, 3);

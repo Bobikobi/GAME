@@ -266,6 +266,14 @@
                   {
                     "const": "staff",
                     "type": "string"
+                  },
+                  {
+                    "const": "hammer",
+                    "type": "string"
+                  },
+                  {
+                    "const": "pick",
+                    "type": "string"
                   }
                 ]
               },
@@ -594,6 +602,14 @@
             },
             {
               "const": "staff",
+              "type": "string"
+            },
+            {
+              "const": "hammer",
+              "type": "string"
+            },
+            {
+              "const": "pick",
               "type": "string"
             }
           ]

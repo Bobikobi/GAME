@@ -51,7 +51,8 @@ describe('the opening recut B', () => {
 
   test('a find with no giver is found once it is in the journal, even after it is used up', () => {
     const s = newState(bundle, 1);
-    s.player.starter = 'core/explorer';
+    s.player.race = 'core/human';
+    s.player.pocket = 'core/north-meadow';
     s.player.quests['core/glint-by-the-bridge'] = 'active';
     expect(questSteps(bundle, s, 'core/glint-by-the-bridge')[0]!.done).toBe(false);
     s.player.journal = ['core/axe'];
@@ -213,7 +214,7 @@ describe('the sell list', () => {
 
 describe('worn things', () => {
   test('names the place the kernel put an item, and taking it off from there is accepted', () => {
-    const r = step(bundle, newState(bundle, 1), { t: 'start', starter: 'core/forager', name: 'Wearer' }, 0);
+    const r = step(bundle, newState(bundle, 1), { t: 'start', race: 'core/human', name: 'Wearer' }, 0);
     if (!r.ok) throw new Error(r.error);
     const put = (s: State, item: string): State => {
       const next = step(bundle, s, { t: 'wear', item }, s.tick);
@@ -265,10 +266,14 @@ describe('station upgrades', () => {
 
 describe('skills in plain words (the owner, 10.10)', () => {
   test('the start cards name every attribute in plain words, and a level-up reads as one sentence', () => {
-    expect(Object.keys(ATTRIBUTE_LABEL).sort()).toEqual(['agility', 'carry', 'luck', 'senses', 'stamina']);
+    expect(Object.keys(ATTRIBUTE_LABEL).sort()).toEqual(['agility', 'luck', 'might', 'senses', 'spirit', 'stamina']);
     const s = newState(bundle, 1);
-    const carry = attributeEffects(bundle, s).find((fx) => fx.attr === 'carry')!;
-    expect(`${carry.what} ${carry.now} -> ${carry.next}`).toMatch(/^Your bag holds \d+ -> \d+ things$/);
+    expect(attributeEffects(bundle, s).map((fx) => fx.attr).sort()).toEqual(Object.keys(ATTRIBUTE_LABEL).sort());
+    const might = attributeEffects(bundle, s).find((fx) => fx.attr === 'might')!;
+    expect(`${might.what} ${might.now} -> ${might.next}`).toMatch(/^Your bag holds \d+ -> \d+ things$/);
+    // spirit has no rule that reads it yet: the row says so instead of promising a number
+    const spirit = attributeEffects(bundle, s).find((fx) => fx.attr === 'spirit')!;
+    expect(spirit.note).toMatch(/nothing yet/);
     const stamina = attributeEffects(bundle, s).find((fx) => fx.attr === 'stamina')!;
     expect(stamina.next).toMatch(/^\d+ points$/);
     const draining = structuredClone(bundle);

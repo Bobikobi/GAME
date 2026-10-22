@@ -169,7 +169,7 @@ export class RemoteSession implements GameSession {
   }
 
   get started(): boolean {
-    return this.state.player.starter !== '';
+    return this.state.player.race !== '';
   }
 
   get busy(): boolean {

@@ -2,6 +2,7 @@
 import {
   OWN_FIRE,
   type Attribute,
+  attrAt,
   type Bundle,
   type GameEvent,
   type RecipeDef,
@@ -62,19 +63,21 @@ export function clock(minuteOfDay: number): string {
 
 /** One plain word or two per attribute, as the start cards show it (the owner's finding of 10.10: as simple as other games). */
 export const ATTRIBUTE_LABEL: Record<string, string> = {
-  carry: 'Bag space',
+  might: 'Might',
   senses: 'Keen eyes',
   agility: 'Steady hands',
   luck: 'Luck',
   stamina: 'Stamina',
+  spirit: 'Spirit',
 };
 
 export const ATTRIBUTE_TEXT: Record<string, string> = {
-  carry: 'Bag space: carry more',
+  might: 'Might: a bigger bag, carry more',
   senses: 'Keen eyes: see hidden finds from farther away',
   agility: 'Steady hands: easier timing in every minigame',
   luck: 'Luck: a miss keeps something more often, and rare finds come more',
   stamina: 'Stamina: eat less often',
+  spirit: 'Spirit: counts for nothing yet; its first use comes in a later update',
 };
 
 /** The most points one attribute can take (the kernel refuses more). */
@@ -82,7 +85,7 @@ export const ATTRIBUTE_MAX = 10;
 
 /** How wide the minigame windows are, in percent of the base. */
 export function windowScalePct(b: Bundle, s: PublicState): number {
-  return 100 + b.params.per_point.agility_pct * s.player.attrs.agility + techniqueValue(b, s, 'timing_window_pct');
+  return 100 + b.params.per_point.agility_pct * attrAt(b, s, 'agility') + techniqueValue(b, s, 'timing_window_pct');
 }
 
 export interface AttributeEffect {
@@ -107,7 +110,7 @@ export function attributeEffects(b: Bundle, s: PublicState): AttributeEffect[] {
   const luckNext = plus('luck');
   const capped = rareFindPermille(b, luckNext) === rareFindPermille(b, s) && rareFindPermille(b, s) >= powerCap(b, s);
   return [
-    { attr: 'carry', name: 'Bag space', what: 'Your bag holds', now: `${bagCapacity(b, s)}`, next: `${bagCapacity(b, plus('carry'))} things` },
+    { attr: 'might', name: 'Might', what: 'Your bag holds', now: `${bagCapacity(b, s)}`, next: `${bagCapacity(b, plus('might'))} things` },
     { attr: 'senses', name: 'Keen eyes', what: 'You see hidden finds from', now: `${hintDistance(b, s)}`, next: `${hintDistance(b, plus('senses'))} steps away` },
     { attr: 'agility', name: 'Steady hands', what: 'The good zone in a minigame', now: `${windowScalePct(b, s)}%`, next: `${windowScalePct(b, plus('agility'))}% wide` },
     {
@@ -124,6 +127,15 @@ export function attributeEffects(b: Bundle, s: PublicState): AttributeEffect[] {
       what: drain > 0 ? 'Work before you must eat' : 'Your health holds',
       now: `${minutes(s)}`,
       next: `${minutes(plus('stamina'))} ${drain > 0 ? 'minutes' : 'points'}`,
+    },
+    // spirit has no rule that reads it yet (schema per_point): the row shows the points and says so plainly
+    {
+      attr: 'spirit',
+      name: 'Spirit',
+      what: 'Your spirit',
+      now: `${attrAt(b, s, 'spirit')}`,
+      next: `${attrAt(b, plus('spirit'), 'spirit')} points`,
+      note: 'Counts for nothing yet: its first use comes in a later update',
     },
   ];
 }
@@ -508,14 +520,14 @@ export function itemBenefit(b: Bundle, id: string): string {
     // a tool with no uses never wears out
     const uses = it.tool.uses === undefined ? 'lasts' : `${it.tool.uses} uses`;
     const speed = it.tool.tier > 1 ? ` · +${15 * (it.tool.tier - 1)}% gathering speed` : '';
-    // two patches of the same plant read as one; a start's own spot is no dig site of the trowel's
+    // two patches of the same plant read as one; a wake pocket's own spot is no dig site of the trowel's
     const resources = [...new Set(Object.values(b.resources)
       .filter((resource) => resource.tool === it.tool?.kind)
       .map((resource) => resource.title.toLowerCase()))]
       .sort();
     const digSites = it.tool.kind === 'trowel'
       ? Object.values(b.treasures)
-          .filter((treasure) => treasure.tool === it.tool?.kind && treasure.starter === undefined)
+          .filter((treasure) => treasure.tool === it.tool?.kind && treasure.pocket === undefined)
           .map((treasure) => treasure.title.toLowerCase())
           .sort()
       : [];

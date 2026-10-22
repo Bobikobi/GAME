@@ -590,7 +590,8 @@ export class World3D implements WorldView {
 
   private async loadHero(session: GameSession): Promise<void> {
     const p = session.state.player;
-    const short = p.starter.split('/').pop() ?? '';
+    // a race wears today's model of the sheet its sprite names (human -> explorer, elf -> forager, skeleton -> digger) until its own art
+    const short = (this.b.races[p.race]?.sprite ?? '').split('/').pop()?.replace(/_down$/, '') ?? '';
     const wanted = `character-${short}-${p.look === 1 ? 'f' : 'm'}`;
     const fallback = p.look === 1 ? 'character-female-a' : 'character-male-a';
     if (this.heroKey === wanted && this.hero) return;
@@ -951,7 +952,7 @@ export class World3D implements WorldView {
         s.act({ t: 'visit', slot: slot.id, at: [x, y] });
       }
       if (slot.kind === 'ruin' && !this.hinted.has(slot.id)) {
-        const t = Object.values(this.b.treasures).find((d) => d.place.slot === slot.id && (d.starter ?? s.state.player.starter) === s.state.player.starter);
+        const t = Object.values(this.b.treasures).find((d) => d.place.slot === slot.id && (d.pocket ?? s.state.player.pocket) === s.state.player.pocket);
         if (t) {
           this.hinted.add(slot.id);
           app.ui.toast(`Hint: ${t.hint}`, 'info');

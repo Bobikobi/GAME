@@ -17,8 +17,10 @@ import {
   appearSlots,
   appears,
   fitWorn,
+  groundSpots,
   hourOf,
   makeWalkable,
+  migrateState,
   newState,
   inRect,
   placedAt,
@@ -36,6 +38,17 @@ import { STALL_SLOT, canPlaceStall, chunkKey, slotContent } from './places';
  * title screen, and from then on a save always loads (DECISIONS.md, 2026-10-10).
  */
 const SAVE_VERSION = 2;
+/**
+ * A fixed world seed for tests and support: `?debug&seed=N` (N a whole number below 2^32). Without
+ * `debug` the seed is always random, so a shared link never fixes where a player wakes.
+ */
+export function debugSeed(search: string = typeof location === 'undefined' ? '' : location.search): number | undefined {
+  const q = new URLSearchParams(search);
+  const raw = q.get('seed');
+  if (!q.has('debug') || raw === null || !/^\d{1,10}$/.test(raw)) return undefined;
+  const n = Number(raw);
+  return n <= 0xffffffff ? n : undefined;
+}
 /** The date this browser first played the demo: kept outside the save, so no reset or new game clears it (CR-85). */
 export const DEMO_SINCE_KEY = 'openfold.demo-since';
 /** The most a frame moves the world: a long frame (tab switch, debugger) never fast-forwards it. */
@@ -138,9 +151,11 @@ export class Session implements GameSession {
     this.pos = [state.player.at[0], state.player.at[1]];
   }
 
-  static fresh(bundle: Bundle): Session {
+  /** A new world. The seed is random; a test may fix it (`?debug&seed=N`, see debugSeed), and the seed draws the wake pocket. */
+  static fresh(bundle: Bundle, fixed?: number): Session {
     const seed = new Uint32Array(1);
-    crypto.getRandomValues(seed);
+    if (fixed !== undefined) seed[0] = fixed;
+    else crypto.getRandomValues(seed);
     return new Session(bundle, newState(bundle, seed[0] ?? 1));
   }
 
@@ -272,6 +287,14 @@ export class Session implements GameSession {
     // a save from before kernel 0.9 holds no record of bites
     const bites = state.player as Partial<Pick<State['player'], 'bitten'>>;
     bites.bitten ??= [];
+    // a save from before the races (state format 2, kernel 0.14): carry is read as might, spirit starts at 0,
+    // and the starter becomes its race and its wake pocket; the pocket's tools it carried stay in the bag,
+    // so the spots that lay them by the wake are spent
+    const before = state.format ?? 1;
+    state = migrateState(state);
+    if (before < 2 && state.player.pocket !== '') {
+      for (const id of groundSpots(bundle, state.player.pocket)) state.nodes[id] ??= { readyAt: 0, draws: 1 };
+    }
     const session = new Session(bundle, state);
     stampDemo();
     if (state.content !== bundle.tag) {
@@ -326,7 +349,7 @@ export class Session implements GameSession {
   }
 
   get started(): boolean {
-    return this.state.player.starter !== '';
+    return this.state.player.race !== '';
   }
 
   get busy(): boolean {
@@ -617,9 +640,11 @@ function readStallDraft(raw: unknown, bundle: Bundle, bag: Readonly<Record<strin
  */
 function adapt(bundle: Bundle, state: State): boolean {
   const p = state.player;
-  if (p.starter !== '' && !bundle.starters[p.starter]) return false;
+  if (p.race !== '' && !bundle.races[p.race]) return false;
+  // a wake pocket that left the content: the mist and the first task fall back to the map's spawn
+  if (p.pocket !== '' && !bundle.pockets[p.pocket]) p.pocket = '';
   // saves from kernel 0.1 have no look, and a look can be withdrawn with its sprite
-  if (typeof p.look !== 'number' || (p.look === 1 && p.starter !== '' && !bundle.starters[p.starter]?.sprite_alt)) p.look = 0;
+  if (typeof p.look !== 'number' || (p.look === 1 && p.race !== '' && !bundle.races[p.race]?.sprite_alt)) p.look = 0;
   const keepKeys = <T>(record: Record<string, T>, known: Record<string, unknown>): Record<string, T> =>
     Object.fromEntries(Object.entries(record).filter(([k]) => k in known));
   p.bag = keepKeys(p.bag, bundle.items);
@@ -631,13 +656,14 @@ function adapt(bundle: Bundle, state: State): boolean {
   p.journal = p.journal.filter((id) => id in bundle.items);
   p.recipes = p.recipes.filter((id) => id in bundle.recipes);
   // a recipe everyone starts with that came with this version is known at once
-  if (p.starter !== '') {
+  if (p.race !== '') {
     const fresh = Object.keys(bundle.recipes).filter((id) => bundle.recipes[id]!.known === 'start' && !p.recipes.includes(id));
     if (fresh.length > 0) p.recipes = [...p.recipes, ...fresh].sort();
   }
-  // a start whose kit came with this version: a save that holds none of a kit item gets it once
-  if (p.starter !== '') {
-    for (const stack of bundle.starters[p.starter]!.kit ?? []) {
+  // a race whose outfit came with this version: a save that holds none of an outfit piece gets it once
+  // (the pocket's tools are never granted here: they lie on the ground by the wake)
+  if (p.race !== '') {
+    for (const stack of bundle.races[p.race]!.outfit ?? []) {
       if ((p.bag[stack.item] ?? 0) > 0) continue;
       p.bag[stack.item] = stack.qty;
       if (!p.journal.includes(stack.item)) p.journal = [...p.journal, stack.item].sort();

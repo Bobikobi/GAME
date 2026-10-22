@@ -20,6 +20,7 @@ import {
   satietyAt,
   satietyCap,
   skillPoints,
+  talkLines,
 } from '@game/kernel';
 import { app } from '../app';
 import type { Button } from '../input';
@@ -244,7 +245,7 @@ export class UI {
     if (session.adapted) this.toast('The valley was updated since your last visit.', 'info');
     // a bridge mended with no name cut (the page closed before the carve): the stone asks again
     const p = session.state.player;
-    if (p.starter !== '' && p.name === '' && p.restored.includes(STONE_RESTORE)) {
+    if (p.race !== '' && p.name === '' && p.restored.includes(STONE_RESTORE)) {
       window.setTimeout(() => void this.stoneBeat(STONE_RESTORE, false), 800);
     }
   }
@@ -582,7 +583,7 @@ export class UI {
     const state = s.state.player.quests[questId];
     const rewards = rewardText(questId);
     if (!state) {
-      const pick = await say(this, npc.name, [...named(q.talk?.offer ?? [q.summary]), `Reward: ${rewards}.`], [
+      const pick = await say(this, npc.name, [...named(talkLines(b, s.state, questId, 'offer', s.tick) ?? [q.summary]), `Reward: ${rewards}.`], [
         { label: 'I will do it', value: 'yes' },
         { label: 'Not now', value: 'no' },
       ]);
@@ -597,7 +598,7 @@ export class UI {
       return;
     }
     const left = questSteps(b, s.state, questId, s.tick).filter((st) => !st.done).map((st) => st.text);
-    await say(this, npc.name, [...named(q.talk?.waiting ?? [q.summary]), `Still needed: ${left.join('; ')}.`]);
+    await say(this, npc.name, [...named(talkLines(b, s.state, questId, 'waiting', s.tick) ?? [q.summary]), `Still needed: ${left.join('; ')}.`]);
   }
 
   async gather(nodeId: string): Promise<void> {
@@ -748,11 +749,11 @@ function named(lines: readonly string[]): string[] {
 function rewardText(questId: string): string {
   const b = app.bundle;
   const r = b.quests[questId]!.reward;
-  const starter = app.session?.state.player.starter ?? '';
+  const pocket = app.session?.state.player.pocket ?? '';
   const parts: string[] = [];
   if (r.gold_mg) parts.push(`${gold(r.gold_mg)} gold`);
-  // what this start gets: a reward its kit already holds is swapped for one it lacks
-  for (const it of r.items ?? []) parts.push(`${it.qty} ${itemName(b, rewardItem(b, starter, it))}`);
+  // what this wake gets: a reward its pocket's ground already laid is swapped for one it lacks
+  for (const it of r.items ?? []) parts.push(`${it.qty} ${itemName(b, rewardItem(b, pocket, it))}`);
   for (const rc of r.recipes ?? []) parts.push(`the ${b.recipes[rc]?.title ?? rc} recipe`);
   for (const o of r.opens ?? []) parts.push(`a way through the ${b.restores[o]?.title ?? o}`);
   if (r.rep) parts.push('their trust');
