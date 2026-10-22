@@ -8,6 +8,7 @@ import {
   WEAR_SLOTS,
   bagCapacity,
   bagUsed,
+  attrAt,
   characterLevel,
   minuteOfDay,
   professionLevel,
@@ -135,8 +136,9 @@ function skillsBody(ui: UI, after: () => void): HTMLElement {
       'div',
       { class: 'attrs' },
       attributeEffects(b, st).map((fx) => {
-        const value = st.player.attrs[fx.attr];
-        const full = value >= ATTRIBUTE_MAX;
+        // the pips show what the attribute counts for here (race base, spent points, the world's grade); the limit is on the base
+        const value = attrAt(b, st, fx.attr);
+        const full = st.player.attrs[fx.attr] >= ATTRIBUTE_MAX;
         return h(
           'div',
           { class: 'attr' },
@@ -192,8 +194,8 @@ export function openBag(ui: UI): void {
 
   const layer = () => (look ? s.state.player.looks : s.state.player.worn);
   const figure = () => {
-    const starter = b.starters[s.state.player.starter ?? ''] ?? Object.entries(b.starters).sort(([x], [y]) => x.localeCompare(y))[0]?.[1];
-    const ref = (s.state.player.look === 1 && starter?.sprite_alt) || starter?.sprite;
+    const race = b.races[s.state.player.race] ?? Object.entries(b.races).sort(([x], [y]) => x.localeCompare(y))[0]?.[1];
+    const ref = (s.state.player.look === 1 && race?.sprite_alt) || race?.sprite;
     return sprite(b, ref, 3, 1);
   };
   const pick = (id: string) => {

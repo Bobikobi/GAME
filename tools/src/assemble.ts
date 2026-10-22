@@ -51,7 +51,8 @@ type RecordKey =
   | 'expeditions'
   | 'restores'
   | 'camps'
-  | 'starters'
+  | 'races'
+  | 'pockets'
   | 'professions'
   | 'shops'
   | 'reactions';
@@ -64,7 +65,8 @@ const KEY_OF: Record<string, RecordKey | undefined> = {
   expedition: 'expeditions',
   restore: 'restores',
   camp: 'camps',
-  starter: 'starters',
+  race: 'races',
+  pocket: 'pockets',
   profession: 'professions',
   shop: 'shops',
   reaction: 'reactions',
@@ -79,7 +81,8 @@ const BODY_OF: Record<string, string> = {
   expedition: 'expedition',
   restore: 'restore',
   camp: 'camp',
-  starter: 'starter',
+  race: 'race',
+  pocket: 'pocket',
   profession: 'profession',
   shop: 'shop',
   reaction: 'reaction',
@@ -152,11 +155,12 @@ export function flattenParams(p: ParamsBody): Params {
     bag_base: p.bag_base.value,
     starting_gold_mg: p.starting_gold_mg.value,
     per_point: {
-      carry: p.per_point.carry.value,
+      might: p.per_point.might.value,
       senses: p.per_point.senses.value,
       agility_pct: p.per_point.agility_pct.value,
       luck_permille: p.per_point.luck_permille.value,
       stamina: p.per_point.stamina.value,
+      spirit: p.per_point.spirit.value,
     },
     light: p.light
       ? {
@@ -192,7 +196,8 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
     expeditions: {},
     restores: {},
     camps: {},
-    starters: {},
+    races: {},
+    pockets: {},
     professions: {},
     shops: {},
     reactions: {},
@@ -455,7 +460,7 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     t.finds.forEach((f, i) => item(id, `dig.finds.${i}.item`, f.item));
     const chance = t.finds.reduce((n, f) => n + f.chance_pct, 0);
     if (chance > 100) err(id, 'dig.finds', `chances add up to ${chance}%, at most 100%`);
-    if (t.starter !== undefined && !b.starters[t.starter]) err(id, 'dig.starter', `no starter "${t.starter}"`);
+    if (t.pocket !== undefined && !b.pockets[t.pocket]) err(id, 'dig.pocket', `no wake pocket "${t.pocket}"`);
     place(id, 'treasure', t.place.slot);
   }
   for (const [id, c] of Object.entries(b.recipes)) {
@@ -473,6 +478,7 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
       ['built', 'camp part', (r) => !!b.camps[r]],
       ['has', 'item', (r) => !!b.items[r]],
       ['visited', 'slot', (r) => b.map.slots.some((sl) => sl.id === r)],
+      ['race', 'race', (r) => !!b.races[r]],
     ];
     for (const [key, kind, exists] of named) {
       const refs = w[key];
@@ -493,12 +499,21 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
   }
   for (const [id, s] of Object.entries(b.shops)) s.sells.forEach((o, i) => item(id, `shop.sells.${i}.item`, o.item));
   const findable = findableItems(b);
+  const groundRule = (id: string, w: string, s: { item: string; instead?: string }) => {
+    for (const [pid, p] of Object.entries(b.pockets)) {
+      const ground = p.ground.map((g) => g.item);
+      if (!ground.includes(s.item)) continue;
+      if (s.instead === undefined) err(id, w, `the wake pocket "${pid}" lays "${s.item}" on the ground: name an item for it in "instead"`);
+      else if (ground.includes(s.instead)) err(id, `${w}.instead`, `the wake pocket "${pid}" lays "${s.instead}" on the ground too`);
+    }
+  };
   const propIds = new Set(b.map.props.flatMap((p) => (p.id === undefined ? [] : [p.id])));
   for (const [id, q] of Object.entries(b.quests)) {
     if (q.giver && !b.npcs[q.giver]) err(id, 'quest.giver', `no npc "${q.giver}"`);
-    if (q.starter !== undefined && !b.starters[q.starter]) err(id, 'quest.starter', `no starter "${q.starter}"`);
+    if (q.pocket !== undefined && !b.pockets[q.pocket]) err(id, 'quest.pocket', `no wake pocket "${q.pocket}"`);
+    (q.talk?.variants ?? []).forEach((v, i) => when(id, `quest.talk.variants.${i}.when`, v.when));
     if (q.talk?.done_bitten && !q.talk.done) err(id, 'quest.talk.done_bitten', 'a line for a bitten hand-in needs the plain "done" line too: without it a hand-in with no bite says nothing');
-    const gifts = q.starter === undefined ? new Set<string>() : startFinds(b, q.starter);
+    const gifts = q.pocket === undefined ? new Set<string>() : startFinds(b, q.pocket);
     (q.requires ?? []).forEach((r, i) => {
       if (!b.quests[r]) err(id, `quest.requires.${i}`, `no quest "${r}"`);
     });
@@ -529,13 +544,8 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
       const w = `quest.reward.items.${i}`;
       item(id, w, s.item);
       if (s.instead !== undefined) item(id, `${w}.instead`, s.instead);
-      // no reward repeats a kit: a start whose kit holds the item gets `instead`, which that kit lacks
-      for (const [sid, st] of Object.entries(b.starters)) {
-        const kit = (st.kit ?? []).map((k) => k.item);
-        if (!kit.includes(s.item)) continue;
-        if (s.instead === undefined) err(id, w, `the kit of "${sid}" holds "${s.item}": name an item for it in "instead"`);
-        else if (kit.includes(s.instead)) err(id, `${w}.instead`, `the kit of "${sid}" holds "${s.instead}" too`);
-      }
+      // no reward repeats a pocket's tool: a character whose wake pocket lays the item on the ground gets `instead`, which that ground lacks
+      groundRule(id, w, s);
     });
     (q.reward.recipes ?? []).forEach((rid, i) => {
       if (!b.recipes[rid]) err(id, `quest.reward.recipes.${i}`, `no recipe "${rid}"`);
@@ -555,12 +565,7 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
       const w = `expedition.reward.items.${i}`;
       item(id, w, s.item);
       if (s.instead !== undefined) item(id, `${w}.instead`, s.instead);
-      for (const [sid, st] of Object.entries(b.starters)) {
-        const kit = (st.kit ?? []).map((k) => k.item);
-        if (!kit.includes(s.item)) continue;
-        if (s.instead === undefined) err(id, w, `the kit of "${sid}" holds "${s.item}": name an item for it in "instead"`);
-        else if (kit.includes(s.instead)) err(id, `${w}.instead`, `the kit of "${sid}" holds "${s.instead}" too`);
-      }
+      groundRule(id, w, s);
     });
     (x.reward.opens ?? []).forEach((rid, i) => {
       if (!b.restores[rid]) err(id, `expedition.reward.opens.${i}`, `no restore "${rid}"`);
@@ -582,14 +587,14 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     sprite(id, 'camp.sprite', c.sprite);
     if (c.upgrades !== undefined && !b.camps[c.upgrades]) err(id, 'camp.upgrades', `no camp part "${c.upgrades}"`);
   }
-  const totals = Object.entries(b.starters).map(([id, s]) => [id, Object.values(s.attributes).reduce((n, v) => n + v, 0)] as const);
-  for (const [id, total] of totals) {
-    sprite(id, 'starter.sprite', b.starters[id]!.sprite);
-    const alt = b.starters[id]!.sprite_alt;
-    if (alt) sprite(id, 'starter.sprite_alt', alt);
-    b.starters[id]!.kit?.forEach((k, i) => item(id, `starter.kit.${i}.item`, k.item));
-    if (total !== STARTER_POINTS) err(id, 'starter.attributes', `attributes add up to ${total}; every starter has exactly ${STARTER_POINTS}`);
+  for (const [id, r] of Object.entries(b.races)) {
+    sprite(id, 'race.sprite', r.sprite);
+    if (r.sprite_alt) sprite(id, 'race.sprite_alt', r.sprite_alt);
+    r.outfit?.forEach((k, i) => item(id, `race.outfit.${i}.item`, k.item));
+    const total = Object.values(r.attributes).reduce((n, v) => n + v, 0);
+    if (total !== RACE_POINTS) err(id, 'race.attributes', `attributes add up to ${total}; every race has exactly ${RACE_POINTS}`);
   }
+  for (const [id, p] of Object.entries(b.pockets)) p.ground.forEach((k, i) => item(id, `pocket.ground.${i}.item`, k.item));
   for (const [slotId, owners] of Object.entries(slotFill)) {
     if (owners.length > 1) {
       for (const owner of owners) err(owner, 'place.slot', `slot "${slotId}" is taken by more than one extension: ${owners.join(', ')}`);
@@ -598,8 +603,8 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
   checkMap(b, origin, issues);
 }
 
-/** Every starter gets the same number of attribute points: different, never better. */
-export const STARTER_POINTS = 6;
+/** Every race gets the same number of attribute points: different, never better (DECISIONS.md, 2026-10-22: total 7 over six attributes). */
+export const RACE_POINTS = 7;
 
 function checkMap(b: Bundle, origin: Record<string, string>, issues: Issue[]): void {
   const m = b.map;

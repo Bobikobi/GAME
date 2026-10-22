@@ -11,6 +11,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page } from './cdp';
+import { TAKE_GROUND, seedQuery } from './wakes';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(GAME_DIR, 'dist');
@@ -418,15 +419,17 @@ class Tender {
 async function start(page: Page, name: string): Promise<void> {
   await page.tap('.title-screen button', 'New game');
   const choice = await page.waitFor<string>(
-    `document.querySelector('.card.starter') ? 'cards' : [...document.querySelectorAll('.title-screen button')].some((b) => b.textContent.includes('Start a new game')) ? 'ask' : ''`,
-    'the starter cards',
+    `document.querySelector('.card.race') ? 'cards' : [...document.querySelectorAll('.title-screen button')].some((b) => b.textContent.includes('Start a new game')) ? 'ask' : ''`,
+    'the race cards',
   );
   if (choice === 'ask') await page.tap('.title-screen button', 'Start a new game');
-  await page.tap('.card.starter', 'Forager');
+  await page.tap('.card.race', 'Elf');
   await page.tap('input.name');
   await page.type(name);
   await page.tap('.title-screen button', 'Wake up');
   await page.waitFor('!!window.__game.session && window.__game.session.started', 'the character to wake', 10_000);
+  // the west bank's basket and axe lie on the ground by the wake: this script tests what comes later, so they are handed over
+  await page.eval(TAKE_GROUND);
 }
 
 /** A new character with the opening behind, beside Maru, the long night accepted from him. */
@@ -449,7 +452,7 @@ async function begin(page: Page, me: Tender, name: string, logs: number): Promis
 
 async function run(page: Page, url: string): Promise<void> {
   const me = new Tender(page);
-  await page.goto(`${url}?debug&rich=none`);
+  await page.goto(`${url}?debug&rich=none${seedQuery('core/west-bank')}`);
   await page.waitFor(`!!document.querySelector('.title-screen button')`, 'the title screen', 30_000);
 
   // ---- pass 1: a fire of one's own out in the wild meets the long night; Maru's hearth does not
@@ -545,7 +548,7 @@ async function run(page: Page, url: string): Promise<void> {
   await me.snap('handed-in');
 
   // ---- pass 2: a new character builds a fire, reloads, and lets it go out
-  await page.goto(`${url}?debug&rich=none`);
+  await page.goto(`${url}?debug&rich=none${seedQuery('core/west-bank')}`);
   await page.waitFor(`!!document.querySelector('.title-screen button')`, 'the title screen again', 30_000);
   await begin(page, me, 'Wren', 6);
   if (await page.eval<boolean>(`__game.session.state.player.recipes.includes('core/bandage')`)) {
@@ -558,7 +561,7 @@ async function run(page: Page, url: string): Promise<void> {
   const kept = await me.own();
 
   // the burn lives in the save: a reload finds the fire of one's own still burning
-  await page.goto(`${url}?debug&rich=none`);
+  await page.goto(`${url}?debug&rich=none${seedQuery('core/west-bank')}`);
   await page.waitFor(`!!document.querySelector('.title-screen button')`, 'the title screen after the reload', 30_000);
   await page.eval(IN_PAGE);
   await page.tap('.title-screen button', 'Continue');

@@ -14,13 +14,14 @@ import { CORE_PALETTE, coreRamp } from './kit/palette';
 import { accentsOf, allowedColors, rampProblems } from './kit/ramps';
 import { scaleProblems } from './kit/scale';
 import { checkColors } from './colors';
-import { LOCK_FILE, loadAll, toRepoPath, type Issue } from './load';
+import { LOCK_FILE, REPO_ROOT, loadAll, toRepoPath, type Issue } from './load';
 import { baseOf } from './material';
 import { checkHazards } from './hazards';
 import { checkReactions } from './reactions';
 import { checkPlay, rewardItems } from './play';
 import { checkDeadProps } from './deadprops';
 import { checkReach } from './reach';
+import { checkRaces } from './races';
 import { checkRichness } from './richness';
 import { checkStarts } from './starts';
 
@@ -44,9 +45,11 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkCrafting(b, assembled.origin));
     issues.push(...checkWear(b));
     issues.push(...checkDrift(b));
+    issues.push(...checkRetiredWords());
     issues.push(...checkKits(assembled));
     issues.push(...checkColors(assembled));
     issues.push(...checkPlay(b, assembled.origin));
+    issues.push(...checkRaces(b, assembled.origin));
     issues.push(...checkStarts(b, assembled.origin));
     issues.push(...checkReach(b, assembled.origin));
     issues.push(...checkDeadProps(b, assembled.origin));
@@ -123,7 +126,7 @@ function computedRarity(b: Bundle, itemId: string, visiting: Set<string> = new S
     best = best === undefined ? r : Math.min(best, r);
   };
   for (const t of Object.values(b.treasures)) {
-    if (t.starter !== undefined) continue; // a start's own find is a gift, not how the item is obtained
+    if (t.pocket !== undefined) continue; // a wake pocket's own find is a gift, not how the item is obtained
     for (const f of t.finds) {
       if (f.item !== itemId) continue;
       take(f.chance_pct >= 30 ? 0 : f.chance_pct >= 10 ? 1 : f.chance_pct >= 3 ? 2 : 3);
@@ -449,6 +452,29 @@ function checkWear(b: Bundle): Issue[] {
       .filter((slot) => per[slot]! > (slot === 'jewelry' ? 2 : 1));
     if (per.outfit && (per.top || per.legs)) crowded.push('outfit');
     if (crowded.length > 0) err(first.file, where, `the set "${set}" cannot be worn whole: too many pieces for the ${crowded.join(', ')} (G44)`);
+  }
+  return issues;
+}
+
+/**
+ * Words a change retired, which the creators' guide must not teach any more
+ * (DECISIONS.md, 2026-10-22: the races replace the starters; a start is a race
+ * in a wake pocket).
+ */
+const RETIRED_WORDS: { file: string; word: RegExp; now: string }[] = [
+  { file: 'docs/creators/README.md', word: /\bstarters?\b/i, now: 'a race (chosen) in a wake pocket (drawn by the seed): "race" and "pocket"' },
+];
+
+function checkRetiredWords(): Issue[] {
+  const issues: Issue[] = [];
+  for (const { file, word, now } of RETIRED_WORDS) {
+    const abs = join(REPO_ROOT, file);
+    if (!existsSync(abs)) continue;
+    readFileSync(abs, 'utf8')
+      .split('\n')
+      .forEach((line, i) => {
+        if (word.test(line)) issues.push({ file, where: `line ${i + 1}`, message: `names a retired word (${word.source}): say ${now}`, level: 'error' });
+      });
   }
   return issues;
 }

@@ -14,6 +14,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page, type Viewport } from './cdp';
+import { TAKE_GROUND, seedQuery } from './wakes';
 import { solveMinigame } from './minigame';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -65,7 +66,8 @@ const VEC: Record<Dir, [number, number]> = { up: [0, -1], down: [0, 1], left: [-
 const same = (a: Record<string, number>, b: Record<string, number>): boolean => JSON.stringify(Object.entries(a).sort()) === JSON.stringify(Object.entries(b).sort());
 
 interface Saved {
-  starter: string;
+  race: string;
+  pocket: string;
   name: string;
   look: number;
   pos: [number, number];
@@ -79,7 +81,7 @@ const READ_SAVE = `(() => {
   if (!g || !g.session || !g.session.started) return null;
   g.session.save();
   const p = g.session.state.player;
-  return { starter: p.starter, name: p.name, look: p.look, pos: [...g.session.pos], bag: { ...p.bag }, visited: [...p.visited] };
+  return { race: p.race, pocket: p.pocket, name: p.name, look: p.look, pos: [...g.session.pos], bag: { ...p.bag }, visited: [...p.visited] };
 })()`;
 
 class Door {
@@ -247,22 +249,24 @@ async function run(browser: Browser, base: string, viewport: Viewport, name: str
   };
   try {
     // 1. a character made at the classic door
-    await page.goto(`${base}/play/?debug`);
+    await page.goto(`${base}/play/?debug${seedQuery(viewport.mobile ? 'core/west-bank' : 'core/north-meadow')}`);
     await page.waitFor(`!!document.querySelector('.title-screen button')`, 'the classic title screen', 30_000);
     await page.tap('.title-screen button', 'New game');
     const ask = await page.waitFor<string>(
-      `document.querySelector('.card.starter') ? 'cards' : [...document.querySelectorAll('.title-screen button')].some((b) => b.textContent.includes('Start a new game')) ? 'ask' : ''`,
-      'the starter cards',
+      `document.querySelector('.card.race') ? 'cards' : [...document.querySelectorAll('.title-screen button')].some((b) => b.textContent.includes('Start a new game')) ? 'ask' : ''`,
+      'the race cards',
     );
     if (ask === 'ask') await page.tap('.title-screen button', 'Start a new game');
-    await page.waitFor(`!!document.querySelector('.card.starter')`, 'the starter cards');
-    await page.tap('.card.starter', viewport.mobile ? 'Forager' : 'Explorer');
+    await page.waitFor(`!!document.querySelector('.card.race')`, 'the race cards');
+    await page.tap('.card.race', viewport.mobile ? 'Elf' : 'Human');
     if (!viewport.mobile) await page.tap('.look-toggle button', 'Female');
     await page.tap('input.name');
     await page.type('Tess');
     await page.tap('.title-screen button', 'Wake up');
     await page.waitFor('!!window.__game.session && window.__game.session.started', 'the game to start');
     await me.dismissDialogue();
+    // the pocket's tools lie on the ground by the wake; handed over here, so the 3D door can fell with the west bank's axe
+    await page.eval(TAKE_GROUND);
     const made = await me.save();
     if (!made) throw new Error('no save after waking up at /play/');
     log(`made at /play/: ${JSON.stringify(made)}`);
@@ -275,7 +279,7 @@ async function run(browser: Browser, base: string, viewport: Viewport, name: str
     await page.waitFor('!!window.__game.session && window.__game.session.started && window.__world3d.debug().hero', 'the 3D world with its character', 60_000);
     await sleep(800);
     const loaded = await me.save();
-    check(!!loaded && loaded.starter === made.starter && loaded.name === made.name && loaded.look === made.look, 'the character made at /play/ loads at /play3d/');
+    check(!!loaded && loaded.race === made.race && loaded.pocket === made.pocket && loaded.name === made.name && loaded.look === made.look, 'the character made at /play/ loads at /play3d/');
     check(!!loaded && loaded.pos.join() === made.pos.join(), `it stands where it was saved (${made.pos.join(',')})`);
     await me.snap('wake3d');
 
@@ -319,7 +323,7 @@ async function run(browser: Browser, base: string, viewport: Viewport, name: str
     check(total > bagBefore, `the work ran under the kernel (${total - bagBefore} item(s) gained; ${target.item}: ${had} -> ${got})`);
     await me.snap('gathered3d');
 
-    // 4b. work that runs by itself after one press: a start that carries an axe fells the nearest tree
+    // 4b. work that runs by itself after one press: a character that carries an axe fells the nearest tree
     const tree = await page.eval<{ id: string; x: number; y: number; item: string } | null>(`(() => {
       const g = window.__game, s = g.session, b = g.bundle;
       if (!(s.state.player.bag['core/axe'] > 0)) return null;
@@ -351,7 +355,7 @@ async function run(browser: Browser, base: string, viewport: Viewport, name: str
     await page.tap('.title-screen button', 'Continue');
     await page.waitFor('!!window.__game.session && window.__game.session.started', 'the classic game to load the save');
     const back = await me.save();
-    check(!!back && same(back.bag, done3d.bag) && back.pos.join() === done3d.pos.join() && back.name === made.name && back.starter === made.starter && back.look === made.look, `the 3D game saved to the same place: /play/ loads it and back (${JSON.stringify(done3d.bag)} / ${JSON.stringify(back?.bag)})`);
+    check(!!back && same(back.bag, done3d.bag) && back.pos.join() === done3d.pos.join() && back.name === made.name && back.race === made.race && back.pocket === made.pocket && back.look === made.look, `the 3D game saved to the same place: /play/ loads it and back (${JSON.stringify(done3d.bag)} / ${JSON.stringify(back?.bag)})`);
     await me.snap('back2d');
 
     if (page.errors.length > 0) throw new Error(`page errors: ${page.errors.join(' | ')}`);

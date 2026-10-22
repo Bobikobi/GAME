@@ -1,7 +1,10 @@
 /**
  * Plays the whole opening in a real browser, the way a player would: walking
- * tile by tile, the timing minigame, dialogue, menus. Once on a phone screen
- * with touch only (d-pad, A button, taps), once on a desktop with the keyboard.
+ * tile by tile, the timing minigame, dialogue, menus. One race per wake pocket,
+ * each under a fixed seed (wakes.ts): the elf on the west bank on a phone screen
+ * with touch only (d-pad, A button, taps), the human in the north meadow on a
+ * desktop with the keyboard, and the skeleton on the slid bank on a desktop up
+ * to the mended bridge. E2E_ONLY=phone|desktop|slid-bank plays one of them.
  *
  *   pnpm build && pnpm e2e [out-dir]
  *   E2E_URL=https://<deployment> pnpm e2e    (play a deployed copy instead)
@@ -19,6 +22,7 @@ import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page, type Viewport } from './cdp';
 import { solveMinigame } from './minigame';
+import { type WakePocket, seedQuery } from './wakes';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(GAME_DIR, 'dist');
@@ -624,12 +628,22 @@ async function stretches(page: Page, log: (msg: string) => void, who: string, un
   const skipped = r.jumps.reduce((n, j) => n + (j.to - j.from), 0);
   log(`${who}: ${r.list.length} pays to ${until} in ${Math.round(r.end / 1000)} s of play clock, ${Math.round(skipped / 1000)} s of it skipped by the run`);
   for (const g of gaps.slice(0, 3)) log(`${who}: stretch ${(g.ms / 1000).toFixed(1)} s from "${g.from}" to "${g.to}"`);
-  // reported, not thrown: the forager's run is over the ceiling while the owner decides what to shorten (criterion 8)
+  // reported, not thrown: the phone run is over the ceiling while the owner decides what to shorten (criterion 8)
   log(`${who}: criterion 8 ${gaps[0]!.ms <= LONGEST_STRETCH_MS ? 'PASS' : 'FAIL'}: the longest stretch is ${(gaps[0]!.ms / 1000).toFixed(1)} s against ${LONGEST_STRETCH_MS / 1000} s`);
   return gaps;
 }
 
-async function play(browser: Browser, url: string, viewport: Viewport, name: string): Promise<void> {
+/** One opening run: its device, the race it picks on the title, the pocket its seed wakes it in, and whether it ends at the bridge. */
+interface Run {
+  name: string;
+  viewport: Viewport;
+  race: string;
+  pocket: WakePocket;
+  toBridge?: boolean;
+}
+
+async function play(browser: Browser, url: string, run: Run): Promise<void> {
+  const { name, viewport } = run;
   const page = await browser.newPage(viewport);
   // E2E_VIDEO=<dir> keeps every frame of the run, for a video of the opening
   if (process.env.E2E_VIDEO) await page.record(join(process.env.E2E_VIDEO, name));
@@ -638,21 +652,27 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
   try {
     // E2E_QUERY=a=1&b=2 rides behind ?debug: the static server drops the query, the game reads it
     const extra = process.env.E2E_QUERY ? `&${process.env.E2E_QUERY}` : '';
-    await page.goto(`${url}?debug${extra}`);
+    // the seed draws the wake pocket (DECISIONS.md, 2026-10-22): fixed, so the run wakes where it means to
+    await page.goto(`${url}?debug${seedQuery(run.pocket)}${extra}`);
     await page.waitFor(`!!document.querySelector('.title-screen button')`, 'the title screen', 30_000);
     await page.eval(IN_PAGE);
     await me.snap('title');
 
-    // 1. pick a character
+    // 1. pick a race; where it wakes is the seed's draw, not a choice
     await page.tap('.title-screen button', 'New game');
     // a save from an earlier run asks first
     const ask = await page.waitFor<string>(
-      `document.querySelector('.card.starter') ? 'cards' : [...document.querySelectorAll('.title-screen button')].some((b) => b.textContent.includes('Start a new game')) ? 'ask' : ''`,
-      'the starter cards',
+      `document.querySelector('.card.race') ? 'cards' : [...document.querySelectorAll('.title-screen button')].some((b) => b.textContent.includes('Start a new game')) ? 'ask' : ''`,
+      'the race cards',
     );
     if (ask === 'ask') await page.tap('.title-screen button', 'Start a new game');
-    await page.waitFor(`!!document.querySelector('.card.starter')`, 'the starter cards');
-    await page.tap('.card.starter', viewport.mobile ? 'Forager' : 'Explorer');
+    await page.waitFor(`!!document.querySelector('.card.race')`, 'the race cards');
+    const cards = await page.eval<number>(`document.querySelectorAll('.card.race').length`);
+    if (cards !== 3) throw new Error(`${cards} race cards on the title, not three`);
+    await page.tap('.card.race', run.race);
+    // the skeleton is one figure: no look to pick
+    const toggle = await page.eval<boolean>(`!document.querySelector('.look-toggle').hidden`);
+    if (toggle !== (run.race !== 'Skeleton')) throw new Error(`the look toggle is ${toggle ? 'shown' : 'hidden'} for the ${run.race}`);
     await page.tap('input.name');
     await page.type('Tess');
     await me.snap('choose');
@@ -688,15 +708,42 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
     const noon = await page.eval<number>('__e2e.hour()');
     if (noon !== 12) throw new Error(`the first day starts at ${noon}:00, not at noon`);
 
-    // 2b. each start its own first task: the forager picks herbs on the west bank
-    if (viewport.mobile) {
+    // 2a. the race picked, the pocket drawn; the pocket's tools lie on the ground by the wake, found by hand and not worn
+    const who = await page.eval<{ race: string; pocket: string; worn: Record<string, string> }>('__e2e.player()');
+    if (who.pocket !== run.pocket) throw new Error(`the seed woke the character in ${who.pocket}, not ${run.pocket}`);
+    if (who.race !== `core/${run.race.toLowerCase()}`) throw new Error(`the character is ${who.race}, not the ${run.race}`);
+    const ground = await page.eval<{ source: string; item: string }[]>(`(() => {
+      const b = __game.bundle, p = __e2e.player().pocket, lays = (b.pockets[p]?.ground ?? []).map((k) => k.item);
+      return Object.entries(b.treasures)
+        .filter(([, t]) => t.pocket === p && !t.tool && t.finds.every((f) => lays.includes(f.item)))
+        .map(([id, t]) => ({ source: id, item: t.finds[0].item }));
+    })()`);
+    const lays = await page.eval<number>(`(__game.bundle.pockets[__e2e.player().pocket]?.ground ?? []).length`);
+    if (ground.length === 0 || ground.length !== lays) throw new Error(`${ground.length} spots lay the ${lays} tools of ${run.pocket}`);
+    for (const g of ground) {
+      if ((await me.bag(g.item)) !== 0) throw new Error(`${g.item} is in the bag at the wake: it should lie on the ground`);
+      const [spot] = await page.eval<{ id: string; x: number; y: number }[]>(`__e2e.nodes(${JSON.stringify(g.source)})`);
+      if (!spot) throw new Error(`no ${g.source} by the wake`);
+      await me.walkTo({ x: spot.x, y: spot.y, w: 1, h: 1 }, g.source);
+      await me.expectPrompt(/^Pick up/, g.source);
+      await me.a();
+      await me.idle(`picking up ${g.item}`);
+      if ((await me.bag(g.item)) !== 1) throw new Error(`no ${g.item} in the bag after ${g.source}`);
+      const worn = await page.eval<string[]>('Object.values(__e2e.player().worn)');
+      if (worn.includes(g.item)) throw new Error(`${g.item} was put on: a found tool goes into the bag`);
+    }
+    await me.snap('ground');
+    log(`${run.race} woke in ${run.pocket} and picked up ${ground.map((g) => g.item).join(' and ')}`);
+
+    // 2b. each pocket its own first task: the west bank's herbs
+    if (run.pocket === 'core/west-bank') {
       await me.gather('core/bank-herbs', 'core/herb', 2);
       if ((await me.quest('core/first-pickings')) !== 'done') throw new Error('first-pickings is not done');
       log('picked 2 herbs on the west bank');
     }
 
-    // 2c. the explorer's senses lead to an axe in the grass by the bridge, picked up by hand, before the keystone opens
-    if (!viewport.mobile) {
+    // 2c. the north meadow's glint leads to an axe in the grass by the bridge, picked up by hand, before the keystone opens
+    if (run.pocket === 'core/north-meadow') {
       const [glint] = await page.eval<{ id: string; x: number; y: number }[]>('__e2e.nodes("core/bridge-glint")');
       if (!glint) throw new Error('no glint by the bridge');
       await me.walkTo({ x: glint.x, y: glint.y, w: 1, h: 1 }, 'the glint by the bridge');
@@ -707,6 +754,21 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       if ((await me.bag('core/axe')) !== 1) throw new Error('no axe after the glint by the bridge');
       if ((await me.quest('core/glint-by-the-bridge')) !== 'done') throw new Error('glint-by-the-bridge is not done');
       log('picked up the axe by the bridge');
+    }
+
+    // 2d. the slid bank: the trowel found by the wake digs the axe out of the bank that slid
+    if (run.pocket === 'core/slid-bank') {
+      const [bank] = await page.eval<{ id: string; x: number; y: number }[]>('__e2e.nodes("core/slid-bank-dig")');
+      if (!bank) throw new Error('no slid bank to dig');
+      await me.walkTo({ x: bank.x, y: bank.y, w: 1, h: 1 }, 'the slid bank');
+      await me.expectPrompt(/^Dig here/, 'the slid bank');
+      await me.snap('slid-bank');
+      await me.a();
+      await me.expectWorking('digging the slid bank');
+      await me.idle('digging the slid bank');
+      if ((await me.bag('core/axe')) !== 1) throw new Error('no axe out of the slid bank');
+      if ((await me.quest('core/buried-axe')) !== 'done') throw new Error('buried-axe is not done');
+      log('dug the axe out of the slid bank');
     }
 
     // 3. the keystone, the first minigame: one strike, taught in one line
@@ -757,6 +819,12 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
     if (purse.recipes.length !== known) throw new Error('the purse under the stone taught a recipe: it holds gold only');
     await me.snap('bridge');
     log('mended the bridge: 30000 mg in the purse');
+    // the slid bank's run ends here: the walk, the fire and the town are the same for every pocket and run twice above
+    if (run.toBridge) {
+      if (page.errors.length > 0) throw new Error(`page errors:\n${page.errors.join('\n')}`);
+      log('the slid bank run ends at the mended bridge');
+      return;
+    }
 
     // 4b. game feel: the four walks, one press fells a tree on its own, and a step away stops the work
     const walks: string[] = [];
@@ -1052,7 +1120,7 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       if (!visited.includes('core/night-threshold')) throw new Error('the threshold was not reached');
       await me.snap('threshold');
       log(`walked under the arch at ${await page.eval<number>('__e2e.hour()')}:00 and reached the threshold of the night ruins`);
-      await stretches(page, log, 'forager', 'the threshold');
+      await stretches(page, log, name, 'the threshold');
 
       // 12. the threshold is safe and the night hunts one step past it (P-5c): the pit, then the wolf, then a fall.
       // The safe threshold has just closed the outing, so the fall takes nothing back: the bag and the quests stay.
@@ -1090,7 +1158,7 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
       if (p.gold !== paid + 30_000) throw new Error(`gold is ${p.gold} mg after the herbs, not ${paid + 30_000}`);
       if (!p.recipes.includes('core/herb-stew')) throw new Error('the herb-stew recipe was not learned');
       log(`handed the sunleaf to Pell: the herb stew and ${p.gold} mg`);
-      await stretches(page, log, 'explorer', "Pell's hand-in");
+      await stretches(page, log, name, "Pell's hand-in");
     }
 
     if (page.errors.length > 0) throw new Error(`page errors:\n${page.errors.join('\n')}`);
@@ -1119,9 +1187,10 @@ async function play(browser: Browser, url: string, viewport: Viewport, name: str
   }
 }
 
-const RUNS: [string, Viewport][] = [
-  ['phone', { width: 390, height: 844, mobile: true }],
-  ['desktop', { width: 1280, height: 800, mobile: false }],
+const RUNS: Run[] = [
+  { name: 'phone', viewport: { width: 390, height: 844, mobile: true }, race: 'Elf', pocket: 'core/west-bank' },
+  { name: 'desktop', viewport: { width: 1280, height: 800, mobile: false }, race: 'Human', pocket: 'core/north-meadow' },
+  { name: 'slid-bank', viewport: { width: 1280, height: 800, mobile: false }, race: 'Skeleton', pocket: 'core/slid-bank', toBridge: true },
 ];
 
 async function main(): Promise<void> {
@@ -1133,11 +1202,11 @@ async function main(): Promise<void> {
   const browser = await Browser.launch();
   const only = process.env.E2E_ONLY;
   try {
-    for (const [name, viewport] of RUNS) {
-      if (only && only !== name) continue;
+    for (const run of RUNS) {
+      if (only && only !== run.name) continue;
       const t0 = Date.now();
-      await play(browser, url, viewport, name);
-      console.log(`[${name}] opening finished in ${Math.round((Date.now() - t0) / 1000)} s`);
+      await play(browser, url, run);
+      console.log(`[${run.name}] opening finished in ${Math.round((Date.now() - t0) / 1000)} s`);
     }
   } finally {
     await browser.close();

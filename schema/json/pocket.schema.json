@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "additionalProperties": false,
-  "$id": "https://github.com/Bobikobi/GAME/schema/json/starter.schema.json",
+  "$id": "https://github.com/Bobikobi/GAME/schema/json/pocket.schema.json",
   "type": "object",
   "required": [
     "format",
@@ -9,7 +9,7 @@
     "title",
     "creator",
     "type",
-    "starter"
+    "pocket"
   ],
   "properties": {
     "$schema": {
@@ -266,6 +266,14 @@
                   {
                     "const": "staff",
                     "type": "string"
+                  },
+                  {
+                    "const": "hammer",
+                    "type": "string"
+                  },
+                  {
+                    "const": "pick",
+                    "type": "string"
                   }
                 ]
               },
@@ -497,17 +505,16 @@
       }
     },
     "type": {
-      "const": "starter",
+      "const": "pocket",
       "type": "string"
     },
-    "starter": {
+    "pocket": {
       "additionalProperties": false,
       "type": "object",
       "required": [
         "name",
-        "summary",
-        "attributes",
-        "sprite"
+        "wake",
+        "ground"
       ],
       "properties": {
         "name": {
@@ -515,90 +522,9 @@
           "maxLength": 40,
           "type": "string"
         },
-        "summary": {
-          "minLength": 1,
-          "maxLength": 240,
-          "type": "string"
-        },
-        "attributes": {
-          "additionalProperties": false,
-          "type": "object",
-          "required": [
-            "carry",
-            "senses",
-            "agility",
-            "luck",
-            "stamina"
-          ],
-          "properties": {
-            "carry": {
-              "minimum": 0,
-              "maximum": 5,
-              "type": "integer"
-            },
-            "senses": {
-              "minimum": 0,
-              "maximum": 5,
-              "type": "integer"
-            },
-            "agility": {
-              "minimum": 0,
-              "maximum": 5,
-              "type": "integer"
-            },
-            "luck": {
-              "minimum": 0,
-              "maximum": 5,
-              "type": "integer"
-            },
-            "stamina": {
-              "minimum": 0,
-              "maximum": 5,
-              "type": "integer"
-            }
-          }
-        },
-        "sprite": {
-          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
-          "maxLength": 120,
-          "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
-          "type": "string"
-        },
-        "sprite_alt": {
-          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
-          "maxLength": 120,
-          "description": "Another look of the same character (for example a woman instead of a man), offered by one toggle on the character screen. Same sprite sizes and directions as `sprite`.",
-          "type": "string"
-        },
-        "kit": {
-          "maxItems": 6,
-          "description": "What the character carries on the first morning: the tools of its first task, put in the bag when the character is chosen. A piece with a working \"wear\" slot is worn from the start.",
-          "type": "array",
-          "items": {
-            "additionalProperties": false,
-            "type": "object",
-            "required": [
-              "item",
-              "qty"
-            ],
-            "properties": {
-              "item": {
-                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
-                "maxLength": 80,
-                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
-                "type": "string"
-              },
-              "qty": {
-                "minimum": 1,
-                "maximum": 999,
-                "type": "integer"
-              }
-            }
-          }
-        },
         "wake": {
           "additionalProperties": false,
-          "description": "The tile the character wakes on. Left out: the map's spawn.",
+          "description": "The tile the character wakes on.",
           "type": "object",
           "required": [
             "x",
@@ -626,7 +552,7 @@
         "pocket_grown": {
           "minimum": 1,
           "maximum": 32,
-          "description": "Tiles of that pocket once the character's first task is done. Left out: 7. Never less than `pocket`.",
+          "description": "Tiles of that pocket once the pocket's first task is done. Left out: 7. Never less than `pocket`.",
           "type": "integer"
         },
         "intro": {
@@ -638,6 +564,33 @@
             "minLength": 1,
             "maxLength": 240,
             "type": "string"
+          }
+        },
+        "ground": {
+          "minItems": 1,
+          "maxItems": 3,
+          "description": "What lies on the ground by the wake tile: each stack is given by one of the pocket's own spots (a treasure whose `pocket` names this pocket, picked up by hand). A reward's `instead` reads it.",
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "item",
+              "qty"
+            ],
+            "properties": {
+              "item": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              },
+              "qty": {
+                "minimum": 1,
+                "maximum": 999,
+                "type": "integer"
+              }
+            }
           }
         }
       }

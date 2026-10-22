@@ -12,9 +12,9 @@ import type { WeatherName } from '@game/schema';
 import type { Bundle, Instance, ReactionDef, ResourceDef } from './bundle';
 import { idiv } from './num';
 import { drawBasisPoints } from './rng';
-import { type State, hourOf, isNight, senseReach, techniqueValue , type PublicState } from './state';
+import { type State, attrAt, hourOf, isNight, senseReach, techniqueValue , type PublicState } from './state';
 import { spotOpen } from './step';
-import { tagAt } from './world';
+import { regionAt, tagAt } from './world';
 
 type At = readonly [number, number];
 
@@ -141,7 +141,7 @@ export function anchorsOf(b: Bundle, r: ReactionDef): Anchor[] {
 
 /** How far the player sees a hidden find: the senses, and two more tiles with the second-hint technique. */
 export function hintReach(b: Bundle, s: PublicState): number {
-  return senseReach(b, s.player.attrs.senses) + (techniqueValue(b, s, 'second_hint') > 0 ? 2 : 0);
+  return senseReach(b, attrAt(b, s, 'senses')) + (techniqueValue(b, s, 'second_hint') > 0 ? 2 : 0);
 }
 
 /** The game day a tick falls in: a reaction that rolls draws once a day (rule R4, the day as the counter). */
@@ -177,11 +177,12 @@ export function weatherOf(seed: number, region: string, day: number): WeatherNam
 }
 
 /**
- * The region a tile lies in: today the one hand-made map. When the world grows by chunks, a chunk
- * names its region and every tile of it reads that one.
+ * The region a tile lies in: the map region that holds it (`map.regions`), else the one hand-made
+ * map. When the world grows by chunks, a chunk names its region and every tile of it reads that one.
  */
-export function regionOf(b: Bundle, _x: number, _y: number): string {
-  return b.map.id;
+export function regionOf(b: Bundle, x: number, y: number): string {
+  const region = regionAt(b.map, x, y);
+  return region === undefined ? b.map.id : `${b.map.id}/${region.id}`;
 }
 
 function inHours(hour: number, [from, to]: readonly [number, number]): boolean {
