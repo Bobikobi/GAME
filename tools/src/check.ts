@@ -24,6 +24,9 @@ import { checkReach } from './reach';
 import { checkRaces } from './races';
 import { checkRichness } from './richness';
 import { checkStarts } from './starts';
+import { mergedPullRequests, gitReader, resolveBase } from './decisions/base';
+import { NEXT_FILE, checkNext } from './decisions/next';
+import { RATCHETS, checkRatchets } from './decisions/ratchets';
 
 export interface CheckResult {
   issues: Issue[];
@@ -57,6 +60,31 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkRichness(b, assembled.origin));
   }
   return { issues: dedupe(issues), files: files.length, assembled };
+}
+
+/**
+ * `pnpm check`: runCheck() over the content, then the checks over the repository itself (next-status,
+ * list-shrinks against the base, base-available). runCheck() stays content-only for its many callers.
+ */
+export function runRepoCheck(opts: { root?: string; repo?: string; env?: Readonly<Record<string, string | undefined>> } = {}): CheckResult {
+  const result = runCheck(opts.root);
+  const repo = opts.repo ?? REPO_ROOT;
+  const issues = [...result.issues];
+  const base = resolveBase(opts.env ?? process.env, repo);
+  issues.push(...base.issues);
+  const readHead = (file: string): string | null => {
+    const path = join(repo, file);
+    return existsSync(path) ? readFileSync(path, 'utf8') : null;
+  };
+  const next = readHead(NEXT_FILE);
+  if (next !== null) {
+    const streams = readHead('docs/team/streams.json');
+    const ids = streams ? (JSON.parse(streams) as { streams: { id: string }[] }).streams.map((s) => s.id) : [];
+    issues.push(...checkNext(next, ids, mergedPullRequests(repo) ?? undefined));
+  }
+  const atBase = base.ref ? gitReader(base.ref, RATCHETS.map((r) => r.file), repo) : null;
+  issues.push(...checkRatchets(readHead, atBase ? (file) => atBase.get(file) ?? null : null));
+  return { ...result, issues: dedupe(issues) };
 }
 
 function dedupe(issues: Issue[]): Issue[] {
