@@ -46,8 +46,11 @@ export const Rarity = Type.Union(RARITIES.map((r) => Type.Literal(r)), {
   description: 'Declared rarity. The check compares it with the rarity computed from the data.',
 });
 
-/** A staff is worn in the hand for what it helps; no work asks for one. */
-export const TOOL_KINDS = ['basket', 'trowel', 'axe', 'staff'] as const;
+/**
+ * A staff, a hammer and a pick are worn in the hand for what they help; no work asks for one yet.
+ * The hammer and the pick are the human's and the skeleton's outfit tools (DECISIONS.md, 2026-10-22).
+ */
+export const TOOL_KINDS = ['basket', 'trowel', 'axe', 'staff', 'hammer', 'pick'] as const;
 export const ToolKind = Type.Union(TOOL_KINDS.map((k) => Type.Literal(k)));
 
 export const STATIONS = ['fire', 'workshop'] as const;
@@ -66,8 +69,20 @@ export const HAZARD_WINDOWS = ['night'] as const;
 export const TILE_TAGS = ['grove', 'meadow', 'riverbank', 'ruin', 'town', 'water', 'path', 'interior'] as const;
 export const TileTag = Type.Union(TILE_TAGS.map((k) => Type.Literal(k)));
 
-export const ATTRIBUTES = ['carry', 'senses', 'agility', 'luck', 'stamina'] as const;
+/**
+ * Six attributes (DECISIONS.md, 2026-10-22: the races). `might` was `carry` before kernel 0.14: a save
+ * of state format 1 reads its `carry` as `might` and gets `spirit` 0 (kernel migrateState).
+ */
+export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
 export type Attribute = (typeof ATTRIBUTES)[number];
+export const AttributeName = Type.Union(ATTRIBUTES.map((a) => Type.Literal(a)));
+
+/** How a world takes a race (DECISIONS.md, 2026-10-22): its two home attributes one lower, as they are, or one higher. */
+export const WORLD_GRADES = ['weak', 'normal', 'strong'] as const;
+export type WorldGrade = (typeof WORLD_GRADES)[number];
+
+/** A world a map or a region belongs to, for example "valley". Open, not a closed list: a creator's race may name a new one. */
+export const WorldId = Type.String({ pattern: '^[a-z0-9_-]+$', minLength: 1, maxLength: 40 });
 
 export const REP_TIERS = ['stranger', 'acquaintance', 'friend', 'family'] as const;
 
@@ -108,8 +123,8 @@ export const Stack = Type.Object(
   { additionalProperties: false },
 );
 /**
- * An item a quest gives. A start whose kit already holds it gets `instead`
- * (DECISIONS.md, 2026-10-10: whom to help first), so no reward repeats a kit.
+ * An item a quest gives. A character whose wake pocket already lays it on the ground gets `instead`
+ * (DECISIONS.md, 2026-10-10: whom to help first), so no reward repeats a pocket's tool.
  */
 export const RewardStack = Type.Object(
   {
@@ -117,7 +132,7 @@ export const RewardStack = Type.Object(
     qty: Int(1, 999),
     instead: Type.Optional({
       ...Id,
-      description: 'What a start whose kit holds the item gets in its place: something that kit lacks.',
+      description: "What a character whose wake pocket lays the item on the ground gets in its place: something that pocket lacks.",
     }),
   },
   { additionalProperties: false },
@@ -319,10 +334,10 @@ export const TreasureBody = Type.Object(
     level: Int(1, 20, 'Digging level required.'),
     finds: Type.Array(Find, { minItems: 1, maxItems: 8 }),
     place: Place,
-    starter: Type.Optional({
+    pocket: Type.Optional({
       ...Id,
       description:
-        "A start's own spot: only a character of this starter sees it and digs it, once, and it always gives its one find. A gift of the start, so it prices nothing (it is no source in the value table).",
+        "A wake pocket's own spot: only a character who woke in this pocket sees it and digs it, once, and it always gives its one find. A gift of the start, so it prices nothing (it is no source in the value table).",
     }),
   },
   { additionalProperties: false },
@@ -410,6 +425,7 @@ export const When = Type.Object(
     built: Type.Optional(Ids('Camp parts that stand, themselves or under an upgrade.')),
     has: Type.Optional(Ids('Items with at least one in the bag.')),
     visited: Type.Optional(Ids('Map slots the player has stood in.')),
+    race: Type.Optional(Ids('Races the player may be: holds when the player is one of them. A line may differ by race; a quest step never does.')),
     time: Type.Optional(
       Type.Union([Type.Literal('day'), Type.Literal('night')], { description: 'By day (05:00 to 20:00) or by night.' }),
     ),
@@ -536,8 +552,11 @@ export const QuestStep = Type.Union([
   Type.Object({ kind: Type.Literal('build'), camp: Id }, { additionalProperties: false }),
   Type.Object({ kind: Type.Literal('visit'), slot: Id }, { additionalProperties: false }),
   Type.Object(
-    { kind: Type.Literal('tend'), fire: Id },
-    { additionalProperties: false, description: 'Keep this fire burning without a gap from dusk through dawn.' },
+    { kind: Type.Literal('tend'), fire: Type.Union([Id, Type.Literal('own')]) },
+    {
+      additionalProperties: false,
+      description: 'Keep this fire burning without a gap from dusk through dawn. "own" is the fire the player kindled outside the town (G30, G48).',
+    },
   ),
   Type.Object(
     { kind: Type.Literal('find'), item: Id, clue: Clue },
@@ -564,9 +583,9 @@ export const QuestStep = Type.Union([
 export const QuestBody = Type.Object(
   {
     giver: Type.Optional(Id),
-    starter: Type.Optional({
+    pocket: Type.Optional({
       ...Id,
-      description: "Offered to a character of this starter only: a start's own first task. Left out: every character.",
+      description: "Offered to a character who woke in this wake pocket only: the pocket's own first task. Left out: every character. Never a race: no quest is gated by race.",
     }),
     type: Type.Optional(QuestType),
     summary: Text,
@@ -586,6 +605,25 @@ export const QuestBody = Type.Object(
               maxItems: 3,
               description: 'The giver, at the hand-in, when a predator bit the player while the task was open, on an outing that came home. Left out, done.',
             }),
+          ),
+          variants: Type.Optional(
+            Type.Array(
+              Type.Object(
+                {
+                  when: When,
+                  offer: Type.Optional(Type.Array(Text, { minItems: 1, maxItems: 3 })),
+                  waiting: Type.Optional(Type.Array(Text, { minItems: 1, maxItems: 2 })),
+                  done: Type.Optional(Type.Array(Text, { minItems: 1, maxItems: 3 })),
+                },
+                { additionalProperties: false },
+              ),
+              {
+                minItems: 1,
+                maxItems: 4,
+                description:
+                  'Other words for the same task while a condition holds, for example `when.race`: the first variant that holds and names that part replaces it. The steps and the reward never change.',
+              },
+            ),
           ),
         },
         {
@@ -736,40 +774,75 @@ export const CampBody = Type.Object(
   { additionalProperties: false },
 );
 
-export const StarterBody = Type.Object(
+const Tile = (description: string) =>
+  Type.Object({ x: Int(0, 1023), y: Int(0, 1023) }, { additionalProperties: false, description });
+
+/** Six attribute points, each 0 to 5. */
+const AttributeSet = Type.Object(
+  {
+    might: Int(0, 5, 'Bag places; heavy work; later combat. Was "carry".'),
+    senses: Int(0, 5),
+    agility: Int(0, 5),
+    luck: Int(0, 5),
+    stamina: Int(0, 5),
+    spirit: Int(0, 5),
+  },
+  { additionalProperties: false },
+);
+
+/**
+ * A race (DECISIONS.md, 2026-10-22): chosen at the title, the player's fixed profile, the two home
+ * attributes each world grades, and what it wears on the first morning. The race never gates a quest
+ * step; a line may differ by race (`when.race`).
+ */
+export const RaceBody = Type.Object(
   {
     name: Name,
-    summary: Text,
-    attributes: Type.Object(
-      { carry: Int(0, 5), senses: Int(0, 5), agility: Int(0, 5), luck: Int(0, 5), stamina: Int(0, 5) },
-      { additionalProperties: false },
+    about: { ...Text, description: 'Who they are, in one or two present-tense sentences, shown on the title card.' },
+    attributes: { ...AttributeSet, description: 'The fixed profile: no free points at the title. The check holds every race to one total.' },
+    home: Type.Array(AttributeName, {
+      minItems: 2,
+      maxItems: 2,
+      uniqueItems: true,
+      description: 'The two home attributes: a world that is strong for the race lifts each by one, a weak world lowers each by one (never below 0).',
+    }),
+    grades: Type.Optional(
+      Type.Record(WorldId, Type.Union(WORLD_GRADES.map((g) => Type.Literal(g))), {
+        description: 'How each world takes the race. A world left out is "normal". The valley is neutral to every race.',
+      }),
     ),
-    sprite: SpriteRef,
+    outfit: Type.Optional(
+      Type.Array(Stack, {
+        maxItems: 3,
+        description: 'What the race wears on the first morning: put in the bag and worn at once. Never a weapon, never the pocket\'s tool.',
+      }),
+    ),
+    sprite: { ...SpriteRef, description: 'The figure the race is drawn with. Until the race\'s own art comes, an existing sheet.' },
     sprite_alt: Type.Optional(
       Type.String({
         pattern: SPRITE_PATTERN,
         maxLength: 120,
-        description: 'Another look of the same character (for example a woman instead of a man), offered by one toggle on the character screen. Same sprite sizes and directions as `sprite`.',
+        description: 'Another look of the same race (for example a woman instead of a man), offered by one toggle on the character screen. Same sprite sizes and directions as `sprite`.',
       }),
     ),
-    kit: Type.Optional(
-      Type.Array(Stack, {
-        maxItems: 6,
-        description:
-          'What the character carries on the first morning: the tools of its first task, put in the bag when the character is chosen. A piece with a working "wear" slot is worn from the start.',
-      }),
-    ),
-    wake: Type.Optional(
-      Type.Object(
-        { x: Int(0, 1023), y: Int(0, 1023) },
-        { additionalProperties: false, description: "The tile the character wakes on. Left out: the map's spawn." },
-      ),
-    ),
+  },
+  { additionalProperties: false },
+);
+
+/**
+ * A wake pocket (DECISIONS.md, 2026-10-22): one of the places a new game wakes in, drawn by the
+ * world's seed, never chosen. It adds nothing to the attributes. Its tools lie on the ground by the
+ * wake tile, found by hand; they are never in the bag at the start.
+ */
+export const PocketBody = Type.Object(
+  {
+    name: Name,
+    wake: Tile('The tile the character wakes on.'),
     pocket: Type.Optional(
       Int(1, 32, "Tiles of the mist's clear pocket around the wake tile (B2, NEXT 16). Left out: 5. The kernel does not read it; the client draws it."),
     ),
     pocket_grown: Type.Optional(
-      Int(1, 32, "Tiles of that pocket once the character's first task is done. Left out: 7. Never less than `pocket`."),
+      Int(1, 32, "Tiles of that pocket once the pocket's first task is done. Left out: 7. Never less than `pocket`."),
     ),
     intro: Type.Optional(
       Type.Array(Text, {
@@ -778,7 +851,112 @@ export const StarterBody = Type.Object(
         description: "What the narrator says as the character wakes, one box a line. Left out: the game's own waking lines.",
       }),
     ),
+    ground: Type.Array(Stack, {
+      minItems: 1,
+      maxItems: 3,
+      description:
+        "What lies on the ground by the wake tile: each stack is given by one of the pocket's own spots (a treasure whose `pocket` names this pocket, picked up by hand). A reward's `instead` reads it.",
+    }),
   },
+  { additionalProperties: false },
+);
+
+// ---------------------------------------------------------------- reactions
+
+/**
+ * A world reaction (docs/design/REACTIONS.md): a rule the kernel reads and never runs. It hangs on
+ * one kind of thing, holds while every condition it names holds, and has one effect. Its answer is a
+ * pure function of the content, the state of the one entity it hangs on, the tick and the seed, so
+ * nothing runs off screen and a replay gives the same answer. The lists are closed: a new condition
+ * or effect is a kernel release.
+ */
+export const CUES = ['birds_lift', 'fish_rise'] as const;
+export const Cue = Type.Union(CUES.map((k) => Type.Literal(k)), {
+  description: 'A sign the client draws at a tile, with a shape and a sound and never a number or a word: birds lift from cover, fish rise on the water.',
+});
+
+export const REACTION_SIDES = ['here', 'above', 'below', 'left', 'right'] as const;
+
+/** The weather of a region for one game day, decided from the world's seed (REACTIONS.md, phase B). */
+export const WEATHERS = ['clear', 'rain', 'fog'] as const;
+export const Weather = Type.Union(WEATHERS.map((k) => Type.Literal(k)), {
+  description: 'The sky over a region for a whole game day: clear, rain or fog. The same for every player in the region and on every replay.',
+});
+
+const ReactionOn = Type.Union(
+  [
+    Type.Object({ resource: Type.Union([Id, Type.Literal('*')]) }, { additionalProperties: false }),
+    Type.Object({ treasure: Type.Union([Id, Type.Literal('*')]) }, { additionalProperties: false }),
+    Type.Object({ tag: TileTag }, { additionalProperties: false }),
+  ],
+  { description: 'What it hangs on: every node of a resource, every spot of a treasure ("*": of every one), or every tile of a ground tag.' },
+);
+
+const ReactionWhen = Type.Object(
+  {
+    hours: Type.Optional(
+      Type.Tuple([Int(0, 23), Int(1, 24)], { description: 'Game hours it holds, [from, to), as a node\'s `hours`.' }),
+    ),
+    night: Type.Optional(Type.Boolean({ description: 'true: only at night (20:00 to 05:00); false: only by day.' })),
+    ready_for_ms: Type.Optional(Ms('The node it hangs on has stood ready, untouched, for at least this long, in game ms.')),
+    on_tag: Type.Optional({ ...TileTag, description: 'The tile of the node or spot it hangs on carries this ground tag.' }),
+    player_within: Type.Optional(Int(1, 8, 'The player stands within this many tiles (the larger of the two distances).')),
+    unseen: Type.Optional(
+      Type.Literal(true, { description: 'The spot it hangs on lies beyond the player\'s sense reach, so the find does not show yet.' }),
+    ),
+    chance_pct: Type.Optional(
+      Int(1, 100, 'It holds on this many days in a hundred, drawn once a game day for each thing it hangs on, the same on every replay.'),
+    ),
+    weather: Type.Optional({ ...Weather, description: 'The day\'s weather in the region of the thing it hangs on is this one.' }),
+  },
+  { additionalProperties: false, minProperties: 1, description: 'Holds when every condition it names holds.' },
+);
+
+const AppearNode = Type.Object(
+  {
+    output: Id,
+    yield: Int(1, 20, 'Units gathered per execution at perfect timing.'),
+    active_ms: Ms('Time the player is busy gathering it once.'),
+    respawn_ms: Ms('Time before it can show again once taken, while its condition still holds. Waiting is never paid.'),
+    level: Int(1, 20, 'Foraging level required.'),
+    tool: Type.Optional(ToolKind),
+    game: Type.Optional(
+      Type.Union([Type.Literal('timing'), Type.Literal('strike'), Type.Literal('pick'), Type.Literal('snap')], {
+        description: 'The minigame played when gathering it, as a resource\'s `game`.',
+      }),
+    ),
+    sprite: SpriteRef,
+    at: Type.Union(REACTION_SIDES.map((k) => Type.Literal(k)), {
+      description: 'The tile it shows on: the tile of the thing it hangs on, or the one next to it on that side.',
+    }),
+  },
+  {
+    additionalProperties: false,
+    description:
+      'A node that exists only while the condition holds, with the id "<reaction id>@<node id>". It is a source of its own in the value table, priced as any node (R6, R7).',
+  },
+);
+
+const ReactionThen = Type.Union(
+  [
+    Type.Object({ appear: AppearNode }, { additionalProperties: false }),
+    Type.Object(
+      { wait: Int(500, 2000, 'Scales the respawn of the node it hangs on, in permille. Waiting is never paid, so no value moves.') },
+      { additionalProperties: false },
+    ),
+    Type.Object(
+      {
+        cue: Cue,
+        spread: Type.Optional(Int(0, 2, 'The cue shows on a tile drawn within this many tiles of the thing, so it marks an area and not the tile. Left out: 0.')),
+      },
+      { additionalProperties: false },
+    ),
+  ],
+  { description: 'Its one effect: a node that appears, a slower or quicker respawn, or a sign for the eyes and ears.' },
+);
+
+export const ReactionBody = Type.Object(
+  { on: ReactionOn, when: ReactionWhen, then: ReactionThen },
   { additionalProperties: false },
 );
 
@@ -837,9 +1015,57 @@ const Bounded = Type.Object(
 );
 
 /** Rule R12: every constant has bounds, a step and lives in one file. */
+const LightKey = Type.Object(
+  {
+    at: Type.String({ pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$', description: 'The hour and minute the wash is at its own strength, for example "16:30".' }),
+    tint: Type.String({ pattern: '^#[0-9a-f]{6}$', description: 'The colour the scene is multiplied by at that hour.' }),
+    pct: Int(0, 100, 'How strong the wash is at that hour, in whole percent. The hours between two keys step evenly.'),
+  },
+  { additionalProperties: false },
+);
+
+/** One hour of the sun's shear (STYLE section 4): the shadow leans right and toward the viewer by these shares of the caster's height. */
+const SunKey = Type.Object(
+  {
+    at: Type.String({ pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$', description: 'The hour and minute the sun is at its own shear, for example "16:30".' }),
+    right: Int(-200, 200, 'How far the shadow leans right, in percent of the caster\'s height; negative in the morning, positive in the evening.'),
+    down: Int(0, 100, 'How far the shadow leans toward the viewer, in percent of the caster\'s height.'),
+  },
+  { additionalProperties: false },
+);
+
+/** The light block in params: the hour's wash and the sun's shear (ART_SYSTEM section 2, STYLE sections 4 and 5). */
+export const LightParams = Type.Object(
+  {
+    keys: Type.Array(LightKey, {
+      minItems: 2,
+      maxItems: 12,
+      description:
+        'The hours the valley is washed in a colour (ART_SYSTEM section 2): cool before sunrise, none at noon, warm in the late afternoon, dusk at 19:00, the night after that. The scene multiplies by the wash between keys, in whole percent.',
+    }),
+    sun: Type.Optional(
+      Type.Object(
+        {
+          alpha: Int(0, 100, 'How dark the cast shadow is, in whole percent (STYLE section 4: 30).'),
+          cap: Int(0, 200, 'The longest a shadow may be, in percent of the caster\'s height (STYLE section 4: 110).'),
+          keys: Type.Array(SunKey, {
+            minItems: 2,
+            maxItems: 12,
+            description:
+              'The sun\'s shear by hour (STYLE section 4): the shadow leans right and toward the viewer by these shares of the caster\'s height. The hours between two keys step evenly; outside the first and the last the sun is down.',
+          }),
+        },
+        { additionalProperties: false },
+      ),
+    ),
+  },
+  { additionalProperties: false },
+);
+
 export const ParamsBody = Type.Object(
   {
     k_permille: Bounded,
+    light: Type.Optional(LightParams),
     k_craft_permille: {
       ...Bounded,
       description:
@@ -913,6 +1139,10 @@ export const ParamsBody = Type.Object(
       ...Bounded,
       description: 'Milliseconds the player takes to walk one tile. The client walks at this pace; the kernel checks a position report against it (DECISIONS.md, 2026-10-10: health and hazards).',
     },
+    move_reach_max: Type.Optional({
+      ...Bounded,
+      description: 'The maximum number of tiles a movement report may cover after the walk-time allowance (G56). Defaults to 32.',
+    }),
     hp_low_pct: {
       ...Bounded,
       description: 'Work takes half as long again while health is at or below this share of its cap, in percent. 0 slows it only when health is empty (G32).',
@@ -922,6 +1152,8 @@ export const ParamsBody = Type.Object(
         cap: { ...Bounded, description: 'Most logs of burn time a fire may hold ahead of the game tick.' },
         log_ms: { ...Bounded, description: 'Game milliseconds one wood item adds to a fire.' },
         warn_min: { ...Bounded, description: 'Game minutes before a burning fire goes out when its warning is shown.' },
+        safe_tiles: { ...Bounded, description: "How far from the player's own fire, in tiles, the ground is safe while it burns: 1 is its tile and the ring around it (G30)." },
+        burn_pct_per_d: { ...Bounded, description: "How much faster a log of the player's own fire burns for each step of the area's danger d, in percent (G30, G48)." },
       },
       { additionalProperties: false, description: 'A tended fire uses the game tick, which pauses while the player is away.' },
     ),
@@ -952,15 +1184,40 @@ export const ParamsBody = Type.Object(
     bag_base: Bounded,
     starting_gold_mg: Bounded,
     per_point: Type.Object(
-      { carry: Bounded, senses: Bounded, agility_pct: Bounded, luck_permille: Bounded, stamina: Bounded },
+      { might: Bounded, senses: Bounded, agility_pct: Bounded, luck_permille: Bounded, stamina: Bounded, spirit: Bounded },
       {
         additionalProperties: false,
         description:
-          'What one point in an attribute adds: bag places (carry), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina).',
+          'What one point in an attribute adds: bag places (might), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina). Spirit is defined and read by no rule yet: its first readers come with the night layer and the tree.',
       },
     ),
   },
   { additionalProperties: false },
+);
+
+/** What a ramp is for. A creator's kit declares at most four of them (ART_SYSTEM section 3). */
+export const RAMP_FOR = ['ground', 'vegetation', 'stone', 'wood', 'water', 'cloth', 'skin', 'light'] as const;
+export const RampFor = Type.Union(RAMP_FOR.map((f) => Type.Literal(f)));
+
+const RampId = Type.String({
+  pattern: '^[a-z0-9][a-z0-9-]*$',
+  maxLength: 32,
+  description: 'Names the ramp so a sprite of this kit can cite it, for example "meadow" or "wet-stone".',
+});
+const RampStep = Type.String({ pattern: '^#[0-9a-f]{6}$', description: 'One step of the ramp, dark to light.' });
+
+export const RampBody = Type.Object(
+  {
+    id: RampId,
+    for: Type.Optional(RampFor),
+    steps: Type.Array(RampStep, {
+      minItems: 5,
+      maxItems: 6,
+      description:
+        'Five or six steps from dark to light, the hue moving between them: a ramp that only changes value is not a ramp and the check says so.',
+    }),
+  },
+  { additionalProperties: false, description: 'A material or region ramp, declared by the kit that draws with it.' },
 );
 
 export const KitBody = Type.Object(
@@ -970,6 +1227,13 @@ export const KitBody = Type.Object(
         minItems: 2,
         maxItems: 32,
         description: 'Only the core kit sets the palette. Every sprite of every kit must use these colors.',
+      }),
+    ),
+    ramps: Type.Optional(
+      Type.Array(RampBody, {
+        maxItems: 4,
+        description:
+          'The ramps this kit draws with (ART_SYSTEM section 3). A sprite that names none uses the core palette only, so every kit written before this field stays valid.',
       }),
     ),
     sprites: Type.Record(
@@ -988,10 +1252,26 @@ export const KitBody = Type.Object(
             'Frame height in pixels. At density 1 tiles/ and items/ are 16, chars/ are 24, a work pose 32 and props up to 64. At density 4 tiles/ and items/ are 64, chars/ are 96, a work pose 128 and props up to 384.',
           ),
           frames: Type.Optional(Int(1, 16, 'Animation frames laid side by side. Default 1.')),
+          ramps: Type.Optional(
+            Type.Array(Type.String({ pattern: '^[a-z0-9][a-z0-9-]*$', maxLength: 32 }), {
+              minItems: 1,
+              maxItems: 4,
+              description:
+                'The ramps of this kit the sprite draws in, in order: the first is the one its outline comes from. A sprite that names none uses the core palette only.',
+            }),
+          ),
           density: Type.Optional(
             Type.Union([Type.Literal(1), Type.Literal(4)], {
               description:
                 'Art pixels per tile side: 1 means 16 per tile (the 16x16 grid, the default), 4 means 64 per tile (the 64x64 grid, the standard for new art). The size rules of w and h follow it.',
+            }),
+          ),
+          scale: Type.Optional(
+            Type.Number({
+              minimum: 0.1,
+              maximum: 40,
+              description:
+                'The sprite\'s height in characters, one decimal (NATURE section 1): a person is 1.0, a house 3.5. The check warns when a kind in NATURE section 1 or STYLE 1b falls under its floor. Left out when the sprite has no true size.',
             }),
           ),
           source: Type.Optional(
@@ -1032,8 +1312,54 @@ const Slot = Type.Object(
   { additionalProperties: false },
 );
 
+export const CREATURE_LOOKS = ['bird', 'fish', 'rabbit', 'deer'] as const;
+export const CREATURE_PERCHES = ['ground', 'tree', 'water'] as const;
+
+/** One kind of ambient creature: how it looks, where it sits, how close the player may come, when it is out. */
+const CreatureKind = Type.Object(
+  {
+    look: Type.Union(CREATURE_LOOKS.map((k) => Type.Literal(k)), {
+      description: 'The drawing and the way it leaves: a bird takes off, a fish darts, a rabbit bolts, a deer walks off.',
+    }),
+    perch: Type.Union(CREATURE_PERCHES.map((k) => Type.Literal(k)), {
+      description: 'What its spots stand on: a non-solid ground tile, a forest tile, or a water tile.',
+    }),
+    alert_tiles: Int(1, 8, 'It leaves when the player comes within this many tiles.'),
+    return_s: Int(5, 600, 'Real seconds before it comes back to its spot once the player is away.'),
+    hours: Type.Optional(
+      Type.Tuple([Int(0, 23), Int(1, 24)], {
+        description: 'The game hours it is out, from (inclusive) to (exclusive). Absent: all day, never at night.',
+      }),
+    ),
+  },
+  { additionalProperties: false },
+);
+
+/** The closed list of climates a region may declare (NATURE section 2). The tables live in content/core/climates.json. */
+export const CLIMATES = ['temperate', 'dry', 'cold', 'wet'] as const;
+
 export const MapBody = Type.Object(
   {
+    climate: Type.Optional(
+      Type.Union(CLIMATES.map((c) => Type.Literal(c)), {
+        description: 'The climate this region declares (NATURE section 2): which ramp set, densities, kinds, air and sound beds the engine reads. Left out, the region is read as temperate.',
+      }),
+    ),
+    creatures: Type.Optional(
+      Type.Object(
+        {
+          kinds: Type.Record(Id, CreatureKind),
+          spots: Type.Array(
+            Type.Object({ kind: Id, x: Int(0, 1023), y: Int(0, 1023) }, { additionalProperties: false }),
+            { maxItems: 200 },
+          ),
+        },
+        {
+          additionalProperties: false,
+          description: 'Cosmetic ambient life (the client draws it behind ?rich= motion; the kernel never sees it): kinds, and the spots where each sits until the player comes close.',
+        },
+      ),
+    ),
     width: Int(8, 1024),
     height: Int(8, 1024),
     legend: Type.Record(Type.String({ pattern: '^.$' }), Type.Object(
@@ -1093,6 +1419,29 @@ export const MapBody = Type.Object(
       ),
     ),
     spawn: Type.Object({ x: Int(0, 1023), y: Int(0, 1023) }, { additionalProperties: false }),
+    world: Type.Optional({
+      ...WorldId,
+      description: 'The world this map belongs to, for a race\'s grade. Left out: "valley", neutral to every race.',
+    }),
+    regions: Type.Optional(
+      Type.Array(
+        Type.Object(
+          {
+            id: { ...WorldId, description: 'The region\'s name, unique on the map. Its weather is drawn per region.' },
+            x: Int(0, 1023),
+            y: Int(0, 1023),
+            w: Int(1, 1024),
+            h: Int(1, 1024),
+            world: Type.Optional({ ...WorldId, description: "The world the region belongs to. Left out: the map's world." }),
+          },
+          { additionalProperties: false },
+        ),
+        {
+          maxItems: 32,
+          description: 'Named rectangles of the map. A tile in none is the map\'s own region. The first region that holds a tile wins.',
+        },
+      ),
+    ),
     slots: Type.Array(Slot),
   },
   { additionalProperties: false },
@@ -1154,8 +1503,9 @@ export const QuestFile = record('quest', 'quest', QuestBody);
 export const ExpeditionFile = record('expedition', 'expedition', ExpeditionBody);
 export const RestoreFile = record('restore', 'restore', RestoreBody);
 export const CampFile = record('camp', 'camp', CampBody);
-export const StarterFile = record('starter', 'starter', StarterBody);
+export const RaceFile = record('race', 'race', RaceBody);
 export const CreatorFile = record('creator', 'profile', CreatorBody);
+export const ReactionFile = record('reaction', 'reaction', ReactionBody);
 export const ItemsFile = Type.Object({ ...envelope, type: Type.Literal('items') }, { additionalProperties: false });
 // Core-only types: a creator file of these types is refused by the check.
 export const ShopFile = record('shop', 'shop', ShopBody);
@@ -1163,9 +1513,10 @@ export const ProfessionFile = record('profession', 'profession', ProfessionBody)
 export const ParamsFile = record('params', 'params', ParamsBody);
 export const KitFile = record('kit', 'kit', KitBody);
 export const MapFile = record('map', 'map', MapBody);
+export const PocketFile = record('pocket', 'pocket', PocketBody);
 
-export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'expedition', 'restore', 'camp', 'starter', 'items', 'creator'] as const;
-export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map'] as const;
+export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'expedition', 'restore', 'camp', 'race', 'items', 'creator', 'reaction'] as const;
+export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map', 'pocket'] as const;
 
 export const ExtensionFile = Type.Union([
   ResourceFile,
@@ -1177,14 +1528,16 @@ export const ExtensionFile = Type.Union([
   ExpeditionFile,
   RestoreFile,
   CampFile,
-  StarterFile,
+  RaceFile,
   ItemsFile,
   CreatorFile,
+  ReactionFile,
   ShopFile,
   ProfessionFile,
   ParamsFile,
   KitFile,
   MapFile,
+  PocketFile,
 ]);
 
 export type ItemDef = Static<typeof ItemDef>;
@@ -1206,10 +1559,15 @@ export type QuestType = (typeof QUEST_TYPES)[number];
 export type RiddleAnswer = Static<typeof RiddleAnswer>;
 export type RestoreFile = Static<typeof RestoreFile>;
 export type CampFile = Static<typeof CampFile>;
-export type StarterFile = Static<typeof StarterFile>;
+export type RaceFile = Static<typeof RaceFile>;
+export type PocketFile = Static<typeof PocketFile>;
 export type ItemsFile = Static<typeof ItemsFile>;
 export type CreatorFile = Static<typeof CreatorFile>;
 export type CreatorProfile = Static<typeof CreatorBody>;
+export type ReactionFile = Static<typeof ReactionFile>;
+export type Reaction = Static<typeof ReactionBody>;
+export type CueName = (typeof CUES)[number];
+export type WeatherName = (typeof WEATHERS)[number];
 export type ShopFile = Static<typeof ShopFile>;
 export type ProfessionFile = Static<typeof ProfessionFile>;
 export type ParamsFile = Static<typeof ParamsFile>;
@@ -1228,10 +1586,13 @@ export type Quest = Static<typeof QuestBody>;
 export type Expedition = Static<typeof ExpeditionBody>;
 export type Restore = Static<typeof RestoreBody>;
 export type Camp = Static<typeof CampBody>;
-export type Starter = Static<typeof StarterBody>;
+export type Race = Static<typeof RaceBody>;
+export type Pocket = Static<typeof PocketBody>;
 export type Profession = Static<typeof ProfessionBody>;
 export type Shop = Static<typeof ShopBody>;
 export type Kit = Static<typeof KitBody>;
+export type Ramp = Static<typeof RampBody>;
+export type RampPurpose = Static<typeof RampFor>;
 export type GameMap = Static<typeof MapBody>;
 export type EffectName = (typeof EFFECTS)[number];
 export type WornEffectName = (typeof WORN_EFFECTS)[number];
@@ -1252,14 +1613,16 @@ export const SCHEMAS = {
   expedition: ExpeditionFile,
   restore: RestoreFile,
   camp: CampFile,
-  starter: StarterFile,
+  race: RaceFile,
   items: ItemsFile,
   creator: CreatorFile,
+  reaction: ReactionFile,
   shop: ShopFile,
   profession: ProfessionFile,
   params: ParamsFile,
   kit: KitFile,
   map: MapFile,
+  pocket: PocketFile,
 } as const;
 
 export { validateFile, type SchemaIssue } from './validate';

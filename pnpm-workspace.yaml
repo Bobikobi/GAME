@@ -5,6 +5,7 @@ packages:
   - game
   - mcp
   - web
+  - server
 
 # esbuild (through tsx and vite) is the only dependency allowed to run an install script
 onlyBuiltDependencies:

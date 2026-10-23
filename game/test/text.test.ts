@@ -13,7 +13,7 @@ beforeAll(() => {
 describe('tool benefits', () => {
   test('derives resource and dig-site lists from the bundle', () => {
     expect(itemBenefit(bundle, 'core/basket')).toBe('Tier 1 basket · gathers bell bushes & forest mushrooms & sun herbs & wild herbs · 60 uses');
-    expect(itemBenefit(bundle, 'core/trowel')).toBe('Tier 1 trowel · digs deep ruins & gate rubble & under the hill lantern · 40 uses');
+    expect(itemBenefit(bundle, 'core/trowel')).toBe('Tier 1 trowel · digs deep ruins & gate rubble & hall rubble & under the hill lantern · 40 uses');
 
     const withReeds: Bundle = {
       ...bundle,
@@ -38,10 +38,11 @@ describe('the opening recut B', () => {
     const s = inTown();
     // whom to help first is the player's: both neighbours' roads are open at once
     expect(toolOpens(bundle, s, 'basket')).toEqual(['Herbs for Pell', 'Where the bells rang']);
-    // a start's own task is not a road for anyone else
-    expect(toolOpens(bundle, s, 'trowel')).toEqual(['The coin under the lantern']);
+    // a start's own task is not a road for anyone else, and Maru's coin waits for his bells
+    expect(toolOpens(bundle, s, 'trowel')).toEqual([]);
     s.player.quests['core/three-fruits'] = 'done';
     expect(toolOpens(bundle, s, 'basket')).toEqual(['Herbs for Pell']);
+    expect(toolOpens(bundle, s, 'trowel')).toEqual(['The coin under the lantern']);
     s.player.quests['core/a-coin-for-maru'] = 'active';
     expect(toolOpens(bundle, s, 'trowel')).toEqual(['The coin under the lantern']);
     s.player.quests['core/a-coin-for-maru'] = 'done';
@@ -50,7 +51,8 @@ describe('the opening recut B', () => {
 
   test('a find with no giver is found once it is in the journal, even after it is used up', () => {
     const s = newState(bundle, 1);
-    s.player.starter = 'core/explorer';
+    s.player.race = 'core/human';
+    s.player.pocket = 'core/north-meadow';
     s.player.quests['core/glint-by-the-bridge'] = 'active';
     expect(questSteps(bundle, s, 'core/glint-by-the-bridge')[0]!.done).toBe(false);
     s.player.journal = ['core/axe'];
@@ -70,7 +72,7 @@ describe('the opening recut B', () => {
 
   test('a tool with no uses lasts', () => {
     expect(itemBenefit(bundle, 'core/fine-basket')).toBe('Tier 3 basket · gathers bell bushes & forest mushrooms & sun herbs & wild herbs · lasts · +30% gathering speed');
-    expect(itemBenefit(bundle, 'core/stone-trowel')).toBe('Tier 3 trowel · digs deep ruins & gate rubble & under the hill lantern · lasts · +30% gathering speed');
+    expect(itemBenefit(bundle, 'core/stone-trowel')).toBe('Tier 3 trowel · digs deep ruins & gate rubble & hall rubble & under the hill lantern · lasts · +30% gathering speed');
     expect(itemBenefit(bundle, 'core/flint-trowel')).toContain(' · 80 uses · ');
   });
 });
@@ -212,7 +214,7 @@ describe('the sell list', () => {
 
 describe('worn things', () => {
   test('names the place the kernel put an item, and taking it off from there is accepted', () => {
-    const r = step(bundle, newState(bundle, 1), { t: 'start', starter: 'core/forager', name: 'Wearer' }, 0);
+    const r = step(bundle, newState(bundle, 1), { t: 'start', race: 'core/human', name: 'Wearer' }, 0);
     if (!r.ok) throw new Error(r.error);
     const put = (s: State, item: string): State => {
       const next = step(bundle, s, { t: 'wear', item }, s.tick);
@@ -264,10 +266,14 @@ describe('station upgrades', () => {
 
 describe('skills in plain words (the owner, 10.10)', () => {
   test('the start cards name every attribute in plain words, and a level-up reads as one sentence', () => {
-    expect(Object.keys(ATTRIBUTE_LABEL).sort()).toEqual(['agility', 'carry', 'luck', 'senses', 'stamina']);
+    expect(Object.keys(ATTRIBUTE_LABEL).sort()).toEqual(['agility', 'luck', 'might', 'senses', 'spirit', 'stamina']);
     const s = newState(bundle, 1);
-    const carry = attributeEffects(bundle, s).find((fx) => fx.attr === 'carry')!;
-    expect(`${carry.what} ${carry.now} -> ${carry.next}`).toMatch(/^Your bag holds \d+ -> \d+ things$/);
+    expect(attributeEffects(bundle, s).map((fx) => fx.attr).sort()).toEqual(Object.keys(ATTRIBUTE_LABEL).sort());
+    const might = attributeEffects(bundle, s).find((fx) => fx.attr === 'might')!;
+    expect(`${might.what} ${might.now} -> ${might.next}`).toMatch(/^Your bag holds \d+ -> \d+ things$/);
+    // spirit has no rule that reads it yet: the row says so instead of promising a number
+    const spirit = attributeEffects(bundle, s).find((fx) => fx.attr === 'spirit')!;
+    expect(spirit.note).toMatch(/nothing yet/);
     const stamina = attributeEffects(bundle, s).find((fx) => fx.attr === 'stamina')!;
     expect(stamina.next).toMatch(/^\d+ points$/);
     const draining = structuredClone(bundle);

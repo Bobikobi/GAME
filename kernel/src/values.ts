@@ -63,7 +63,7 @@ export interface ValueTable {
   issues: ValueIssue[];
 }
 
-type ContentForValues = Pick<Bundle, 'items' | 'resources' | 'treasures' | 'recipes' | 'params'>;
+type ContentForValues = Pick<Bundle, 'items' | 'resources' | 'treasures' | 'recipes' | 'params'> & Partial<Pick<Bundle, 'reactions'>>;
 
 /** Rarity bonus: only on capacity-limited sources, never above beta of the base cost. */
 function rarityBonus(params: Params, rarity: keyof Params['rarity_bonus_ms'], w: number, t: number, limited: boolean): number {
@@ -96,8 +96,8 @@ export function activitiesOf(content: ContentForValues): Activity[] {
   }
   for (const id of Object.keys(content.treasures).sort()) {
     const d = content.treasures[id]!;
-    // a start's own spot gives once, to one character: a gift of the start, no source of value
-    if (d.starter !== undefined) continue;
+    // a pocket's own spot gives once, to one character: a gift of the start, no source of value
+    if (d.pocket !== undefined) continue;
     const effort = effortTier('dig', tierOf(d.finds.map((f) => f.item)));
     const w = params.effort_permille[effort];
     const capacity = d.respawn_ms > 0 ? { count: d.count, respawn_ms: d.respawn_ms } : undefined;
@@ -128,6 +128,32 @@ export function activitiesOf(content: ContentForValues): Activity[] {
       b: 0,
       inputs: c.inputs.map((s) => ({ item: s.item, qty: s.qty })),
       outputs: c.outputs.map((o) => ({ item: o.item, num: o.qty, den: 1, share: o.share_pct })),
+    });
+  }
+  // a node a reaction makes appear is a source of its own, priced as any node (docs/design/REACTIONS.md).
+  // It comes last, so an older source that costs the same still sets the value.
+  for (const id of Object.keys(content.reactions ?? {}).sort()) {
+    const re = content.reactions![id]!;
+    if (!('appear' in re.then)) continue;
+    const n = re.then.appear;
+    const effort = effortTier('gather', tierOf([n.output]));
+    const w = params.effort_permille[effort];
+    // one appears beside each node it hangs on, so it has as many places as those nodes have
+    const on = 'resource' in re.on ? re.on.resource : undefined;
+    const parents = Object.keys(content.resources)
+      .filter((rid) => on === '*' || rid === on)
+      .reduce((sum, rid) => sum + content.resources[rid]!.count + (content.resources[rid]!.place.scatter?.length ?? 0), 0);
+    const capacity = n.respawn_ms > 0 && parents > 0 ? { count: parents, respawn_ms: n.respawn_ms } : undefined;
+    out.push({
+      id,
+      verb: 'gather',
+      effort,
+      w,
+      t: n.active_ms,
+      b: rarityBonus(params, rarityOf(n.output), w, n.active_ms, capacity !== undefined),
+      inputs: [],
+      outputs: [{ item: n.output, num: n.yield, den: 1, share: 100 }],
+      ...(capacity ? { capacity } : {}),
     });
   }
   return out;

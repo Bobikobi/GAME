@@ -7,7 +7,7 @@
   "creator": "core",
   "quest": {
     "type": "skill",
-    "summary": "The bridge lost its keystone to the shallows. Strike it free when the ring meets the circle, then mend the bridge.",
+    "summary": "The keystone lies in the shallows by the bridge. Strike it free when the ring meets the circle, then mend the bridge.",
     "steps": [
       {
         "kind": "restore",

@@ -10,13 +10,19 @@ import { type Bundle, computeValues, idiv, minChargeFor, missOutcome, rarityBudg
 import { RARITIES, type ParamsBody } from '@game/schema';
 import { assemble, type Assembled } from './assemble';
 import { readBoard } from './board';
-import { CORE_PALETTE } from './kit/palette';
-import { LOCK_FILE, loadAll, toRepoPath, type Issue } from './load';
+import { CORE_PALETTE, coreRamp } from './kit/palette';
+import { accentsOf, allowedColors, rampProblems } from './kit/ramps';
+import { scaleProblems } from './kit/scale';
+import { checkColors } from './colors';
+import { LOCK_FILE, REPO_ROOT, loadAll, toRepoPath, type Issue } from './load';
 import { baseOf } from './material';
 import { checkHazards } from './hazards';
+import { checkReactions } from './reactions';
 import { checkPlay, rewardItems } from './play';
 import { checkDeadProps } from './deadprops';
 import { checkReach } from './reach';
+import { checkRaces } from './races';
+import { checkRichness } from './richness';
 import { checkStarts } from './starts';
 
 export interface CheckResult {
@@ -35,15 +41,20 @@ export function runCheck(root?: string): CheckResult {
     const paramsFile = files.find((f) => f.data.type === 'params')?.data;
     issues.push(...checkParams(paramsFile?.type === 'params' ? paramsFile : undefined));
     issues.push(...checkEconomy(b, assembled.origin));
+    issues.push(...checkReactions(b, assembled.origin));
     issues.push(...checkCrafting(b, assembled.origin));
     issues.push(...checkWear(b));
     issues.push(...checkDrift(b));
+    issues.push(...checkRetiredWords());
     issues.push(...checkKits(assembled));
+    issues.push(...checkColors(assembled));
     issues.push(...checkPlay(b, assembled.origin));
+    issues.push(...checkRaces(b, assembled.origin));
     issues.push(...checkStarts(b, assembled.origin));
     issues.push(...checkReach(b, assembled.origin));
     issues.push(...checkDeadProps(b, assembled.origin));
     issues.push(...checkHazards(b, assembled.origin));
+    issues.push(...checkRichness(b, assembled.origin));
   }
   return { issues: dedupe(issues), files: files.length, assembled };
 }
@@ -91,6 +102,9 @@ function checkParams(file: { params?: ParamsBody } | undefined): Issue[] {
       issues.push({ file: 'content/core/params.json', where: `params.${name}.max`, message: 'the trader may never pay as much as the shop charges: keep the share below 1000', level: 'error' });
     }
   }
+  if (file.params.move_reach_max && (file.params.move_reach_max.value < 2 || file.params.move_reach_max.value > 32)) {
+    issues.push({ file: 'content/core/params.json', where: 'params.move_reach_max.value', message: 'keep G56 movement reach between 2 and 32 tiles', level: 'error' });
+  }
   // G48 with whole logs: a burning fire takes a log only once cap - 1 logs of burn or less are left, so its
   // warning opens inside that window or it asks for a log the fire refuses (and a cap of one never takes one)
   const { cap, log_ms: logMs, warn_min: warnMin } = file.params.fire;
@@ -112,7 +126,7 @@ function computedRarity(b: Bundle, itemId: string, visiting: Set<string> = new S
     best = best === undefined ? r : Math.min(best, r);
   };
   for (const t of Object.values(b.treasures)) {
-    if (t.starter !== undefined) continue; // a start's own find is a gift, not how the item is obtained
+    if (t.pocket !== undefined) continue; // a wake pocket's own find is a gift, not how the item is obtained
     for (const f of t.finds) {
       if (f.item !== itemId) continue;
       take(f.chance_pct >= 30 ? 0 : f.chance_pct >= 10 ? 1 : f.chance_pct >= 3 ? 2 : 3);
@@ -442,6 +456,29 @@ function checkWear(b: Bundle): Issue[] {
   return issues;
 }
 
+/**
+ * Words a change retired, which the creators' guide must not teach any more
+ * (DECISIONS.md, 2026-10-22: the races replace the starters; a start is a race
+ * in a wake pocket).
+ */
+const RETIRED_WORDS: { file: string; word: RegExp; now: string }[] = [
+  { file: 'docs/creators/README.md', word: /\bstarters?\b/i, now: 'a race (chosen) in a wake pocket (drawn by the seed): "race" and "pocket"' },
+];
+
+function checkRetiredWords(): Issue[] {
+  const issues: Issue[] = [];
+  for (const { file, word, now } of RETIRED_WORDS) {
+    const abs = join(REPO_ROOT, file);
+    if (!existsSync(abs)) continue;
+    readFileSync(abs, 'utf8')
+      .split('\n')
+      .forEach((line, i) => {
+        if (word.test(line)) issues.push({ file, where: `line ${i + 1}`, message: `names a retired word (${word.source}): say ${now}`, level: 'error' });
+      });
+  }
+  return issues;
+}
+
 /** Rule R11: values may move only within the drift budget of the committed anchor. */
 function checkDrift(b: Bundle): Issue[] {
   const file = toRepoPath(LOCK_FILE);
@@ -506,19 +543,37 @@ export function spriteSizeProblem(name: string, s: { w: number; h: number; densi
   return `${here.what} ${said(here)} at density ${density} (${said(there)} at density ${other}), this one is ${s.w}x${s.h}${hint}`;
 }
 
-/** V-1: every sprite exists, has the published size, and uses the core palette only. */
+/** V-1: every sprite exists, has the published size, and uses the core palette and its own declared ramps. */
 function checkKits(a: Assembled): Issue[] {
   const issues: Issue[] = [];
-  const allowed = new Set(CORE_PALETTE.map((h) => h.toLowerCase()));
+  const core = CORE_PALETTE.map((h) => h.toLowerCase());
   for (const [kitId, kit] of Object.entries(a.kits)) {
     const kitFile = `${kit.rel}/kit.json`;
     if (kit.palette && kit.palette.join(',') !== CORE_PALETTE.join(',')) {
       issues.push({ file: kitFile, where: 'kit.palette', message: 'differs from the core palette in tools/src/kit/palette.ts', level: 'error' });
     }
+    // A declared ramp is held to the rule: five or six steps, each lighter than the one below, the hue moving.
+    const ramps = kit.ramps ?? [];
+    const rampById = new Map<string, { id: string; steps: readonly string[] }>();
+    for (const [index, ramp] of ramps.entries()) {
+      const where = `kit.ramps.${index}`;
+      if (rampById.has(ramp.id)) issues.push({ file: kitFile, where, message: `the ramp "${ramp.id}" is declared twice`, level: 'error' });
+      // A shared ramp (palette v2) is the same in every kit: a kit may repeat it, never change it.
+      const shared = coreRamp(ramp.id);
+      if (shared !== undefined && shared.steps.join(',') !== ramp.steps.map((s) => s.toLowerCase()).join(',')) {
+        issues.push({ file: kitFile, where, message: `the ramp "${ramp.id}" is a shared ramp of palette v2 (tools/src/kit/palette.ts) and its steps differ; a kit's own ramp takes another id`, level: 'error' });
+      }
+      rampById.set(ramp.id, ramp);
+      for (const problem of rampProblems(ramp)) {
+        issues.push({ file: kitFile, where, message: `the ramp "${ramp.id}" ${problem}`, level: 'error' });
+      }
+    }
     for (const [name, s] of Object.entries(kit.sprites)) {
       const where = `kit.sprites.${name}`;
       const problem = spriteSizeProblem(name, s);
       if (problem) issues.push({ file: kitFile, where, message: problem, level: 'error' });
+      // A declared height in characters is held to its kind's floor (NATURE section 1, STYLE 1b).
+      for (const message of scaleProblems(name, s.scale)) issues.push({ file: kitFile, where, message, level: 'warning' });
       const abs = join(kit.dir, s.file);
       if (!existsSync(abs)) {
         issues.push({ file: kitFile, where, message: `missing file ${kit.rel}/${s.file}`, level: 'error' });
@@ -539,6 +594,16 @@ function checkKits(a: Assembled): Issue[] {
           level: 'error',
         });
       }
+      // A sprite that names no ramps uses the core only, which is how every kit written before
+      // ramps stays valid. One that names them may also use their steps.
+      const named = s.ramps ?? [];
+      for (const id of named) {
+        if (!rampById.has(id) && coreRamp(id) === undefined) {
+          issues.push({ file: kitFile, where, message: `names the ramp "${id}", which neither this kit nor the shared ramps of palette v2 declare`, level: 'error' });
+        }
+      }
+      const allowed = allowedColors(core, [...ramps, ...named.flatMap((id) => (rampById.has(id) ? [] : [coreRamp(id)]).filter((r) => r !== undefined))], named);
+      const used = new Set<string>();
       const bad = new Set<string>();
       let soft = 0;
       for (let i = 0; i < png.data.length; i += 4) {
@@ -546,16 +611,31 @@ function checkKits(a: Assembled): Issue[] {
         if (alpha === 0) continue;
         if (alpha !== 255) soft++;
         const hex = `#${[png.data[i]!, png.data[i + 1]!, png.data[i + 2]!].map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+        used.add(hex);
         if (!allowed.has(hex)) bad.add(hex);
       }
       if (soft > 0) issues.push({ file: `${kit.rel}/${s.file}`, where: '', message: `${soft} half-transparent pixels; use fully clear or fully solid`, level: 'error' });
       if (bad.size > 0) {
+        const set = named.length > 0 ? 'the core palette and its declared ramps' : 'the core palette';
         issues.push({
           file: `${kit.rel}/${s.file}`,
           where: '',
-          message: `${bad.size} colors outside the core palette (${[...bad].slice(0, 4).join(', ')}${bad.size > 4 ? ', ...' : ''}). Run it through "pnpm kit:import".`,
+          message: `${bad.size} colors outside ${set} (${[...bad].slice(0, 4).join(', ')}${bad.size > 4 ? ', ...' : ''}). Run it through "pnpm kit:import".`,
           level: 'error',
         });
+      }
+      // A ground tile is its ramp plus at most two accents (STYLE section 9).
+      const first = named[0] ? rampById.get(named[0]) : undefined;
+      if (name.startsWith('tiles/') && first) {
+        const accents = accentsOf(used, first);
+        if (accents.size > 2) {
+          issues.push({
+            file: `${kit.rel}/${s.file}`,
+            where,
+            message: `a ground tile is its ramp "${first.id}" plus at most two accents, and this one draws ${accents.size} (${[...accents].slice(0, 4).join(', ')})`,
+            level: 'error',
+          });
+        }
       }
     }
     void kitId;

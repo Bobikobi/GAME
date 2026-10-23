@@ -415,7 +415,7 @@
                 "type": "string"
               },
               {
-                "const": "starter",
+                "const": "race",
                 "type": "string"
               },
               {
@@ -424,6 +424,10 @@
               },
               {
                 "const": "creator",
+                "type": "string"
+              },
+              {
+                "const": "reaction",
                 "type": "string"
               },
               {
@@ -444,6 +448,10 @@
               },
               {
                 "const": "map",
+                "type": "string"
+              },
+              {
+                "const": "pocket",
                 "type": "string"
               }
             ]

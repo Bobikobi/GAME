@@ -10,7 +10,8 @@
     "type": "stealth",
     "summary": "Travellers pay well for moonreed. The wolf charges more. Bring me one from the south bank after dark.",
     "requires": [
-      "core/herbs-for-pell"
+      "core/herbs-for-pell",
+      "core/the-night-arch"
     ],
     "steps": [
       {

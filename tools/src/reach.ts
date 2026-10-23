@@ -14,10 +14,20 @@ const STEPS: readonly (readonly [number, number])[] = [
   [-1, 0],
 ];
 
-/** Where the characters wake: the map's spawn, and every starter's own place. */
+/** Where the characters wake: the map's spawn, and every wake pocket of the pool. */
 function wakePlaces(b: Bundle): [number, number][] {
-  const all: [number, number][] = [[b.map.spawn.x, b.map.spawn.y], ...Object.values(b.starters).flatMap((s) => (s.wake ? [[s.wake.x, s.wake.y] as [number, number]] : []))];
+  const all: [number, number][] = [[b.map.spawn.x, b.map.spawn.y], ...Object.values(b.pockets).map((p) => [p.wake.x, p.wake.y] as [number, number])];
   return all.filter(([x, y], i) => all.findIndex(([u, v]) => u === x && v === y) === i);
+}
+
+/** The map's walkable tiles with every passable restoration mended, one build for any check that needs them (row-major, 1 = a foot can stand there). */
+export function walkBitmap(b: Bundle): Uint8Array {
+  const walkable = makeWalkable(b);
+  const view = { restored: Object.values(b.restores).filter((r) => r.passable).map((r) => r.id), camp: [] as string[] };
+  const { width, height } = b.map;
+  const open = new Uint8Array(width * height);
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) open[y * width + x] = walkable(x, y, view) ? 1 : 0;
+  return open;
 }
 
 /** The slots the player can stand next to, walking four ways from where a character wakes. */

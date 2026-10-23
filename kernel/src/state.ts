@@ -5,13 +5,44 @@
  */
 import type { Bundle, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
+import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.10.0';
+export const KERNEL_VERSION = '0.14.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
-export const ATTRIBUTES = ['carry', 'senses', 'agility', 'luck', 'stamina'] as const;
+export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
 export type Attribute = (typeof ATTRIBUTES)[number];
-export const STATE_FORMAT = 1;
+/**
+ * The shape of a saved state. Format 2 (kernel 0.14, the races): `attrs.carry` is `attrs.might`,
+ * `attrs.spirit` is new, and the player's `starter` became a `race` and a wake `pocket`.
+ * `migrateState` brings a format 1 save forward; a save always loads.
+ */
+export const STATE_FORMAT = 2;
+
+/**
+ * The three starters of format 1 and what each became (DECISIONS.md, 2026-10-22): the race it reads
+ * as, the pocket it woke in, and its old profile (`carry` read as `might`). A replayed `start` that
+ * still names a starter plays as it did: that profile, that pocket, the pocket's tools in the bag.
+ */
+export const LEGACY_STARTERS: Readonly<Record<string, { race: string; pocket: string; attrs: Readonly<Record<Attribute, number>> }>> = {
+  'core/explorer': { race: 'core/human', pocket: 'core/north-meadow', attrs: { might: 0, senses: 2, agility: 1, luck: 2, stamina: 1, spirit: 0 } },
+  'core/forager': { race: 'core/elf', pocket: 'core/west-bank', attrs: { might: 2, senses: 1, agility: 2, luck: 0, stamina: 1, spirit: 0 } },
+  'core/digger': { race: 'core/skeleton', pocket: 'core/slid-bank', attrs: { might: 1, senses: 1, agility: 0, luck: 2, stamina: 2, spirit: 0 } },
+};
+
+/**
+ * Content ids the races renamed (format 1 to 2): the slid bank's dig spot became `core/slid-bank-dig`
+ * when its wake pocket took the old id. A node is keyed `<source>#<n>`, so a save's spent spot and a
+ * logged dig keep pointing at the same place through `legacyNodeId`.
+ */
+export const LEGACY_NODE_SOURCES: Readonly<Record<string, string>> = { 'core/slid-bank': 'core/slid-bank-dig' };
+
+/** A node id of format 1 as it reads now (LEGACY_NODE_SOURCES); any other id as it is. */
+export function legacyNodeId(id: string): string {
+  const hash = id.lastIndexOf('#');
+  const now = hash > 0 ? LEGACY_NODE_SOURCES[id.slice(0, hash)] : undefined;
+  return now === undefined ? id : now + id.slice(hash);
+}
 
 /** Places on the character (DECISIONS.md, 2026-10-09: the upgrade). An outfit takes the top and the legs. */
 export const WEAR_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'jewelry1', 'jewelry2', 'hand'] as const;
@@ -77,6 +108,19 @@ export interface FireState {
   kept?: number;
 }
 
+/** The id a `feed` action and a `tend` step give the fire the player kindled themselves (`Player.own`). No prop id has this shape: an id has a slash. */
+export const OWN_FIRE = 'own';
+
+/**
+ * The one fire the player kindled outside the town (DECISIONS.md, 2026-10-19): it burns like a map fire, on the same
+ * `lit`, `until` and `kept`, and also keeps its tile and the game milliseconds one log of it lasts, fixed when it was
+ * kindled from the danger of the ground it stands on, so `until` and `nextLogAt` stay single numbers.
+ */
+export interface OwnFire extends FireState {
+  at: [number, number];
+  log: number;
+}
+
 export interface ExpeditionState {
   climax: boolean;
   /** Tick of the first action or report inside the place on this visit. */
@@ -87,9 +131,11 @@ export interface ExpeditionState {
 
 export interface Player {
   name: string;
-  /** '' until the player picks a starter */
-  starter: string;
-  /** 0 for the starter's sprite, 1 for its sprite_alt (another look of the same character) */
+  /** the race picked at the title; '' until the character is chosen */
+  race: string;
+  /** the wake pocket the seed drew at the start; '' until the character is chosen */
+  pocket: string;
+  /** 0 for the race's sprite, 1 for its sprite_alt (another look of the same race) */
   look: number;
   at: [number, number];
   /** milli-gold */
@@ -135,6 +181,8 @@ export interface Player {
   bitten: string[];
   /** tended fires by map prop id */
   fires: Record<string, FireState>;
+  /** the fire the player kindled outside the town, if any; one stands at a time (null in saves from before kernel 0.12) */
+  own: OwnFire | null;
   /** Expedition progress by expedition id. Chain quests persist separately in `quests`. */
   expeditions: Record<string, ExpeditionState>;
   /** falls so far: the draw counter of the tile they wake on (rule R4) */
@@ -155,6 +203,9 @@ export interface State {
   ledger: { minted: number; burned: number };
 }
 
+/** The state as a screen or a reply sees it: the seed is the server's alone (kernel-review R4). */
+export type PublicState = Omit<State, 'seed'>;
+
 export function newState(bundle: Bundle, seed: number): State {
   const attrs = Object.fromEntries(ATTRIBUTES.map((a) => [a, 0])) as Record<Attribute, number>;
   return {
@@ -165,7 +216,8 @@ export function newState(bundle: Bundle, seed: number): State {
     tick: 0,
     player: {
       name: '',
-      starter: '',
+      race: '',
+      pocket: '',
       look: 0,
       at: [bundle.map.spawn.x, bundle.map.spawn.y],
       gold: 0,
@@ -194,6 +246,7 @@ export function newState(bundle: Bundle, seed: number): State {
       chase: null,
       bitten: [],
       fires: {},
+      own: null,
       expeditions: {},
       falls: 0,
       movedAt: 0,
@@ -203,27 +256,83 @@ export function newState(bundle: Bundle, seed: number): State {
   };
 }
 
+/**
+ * Brings a saved state of an older format forward (format 1 to 2: the races). Pure: returns a new
+ * object and leaves the input as it was. `carry` is read as `might`, `spirit` starts at 0, and the
+ * starter becomes its race and its pocket (LEGACY_STARTERS); an unknown starter keeps its id as the
+ * race with no pocket, and the caller decides whether the content still holds it. The old six-point
+ * total stays as it is: the seven is a content rule, not a save rule.
+ */
+export function migrateState(saved: State): State {
+  const s = structuredClone(saved) as State & { player: Player & { starter?: string; attrs: Record<string, number> } };
+  if ((s.format ?? 1) >= STATE_FORMAT) return s;
+  const p = s.player;
+  const attrs = p.attrs ?? {};
+  if (attrs.might === undefined) attrs.might = attrs.carry ?? 0;
+  delete attrs.carry;
+  for (const a of ATTRIBUTES) attrs[a] ??= 0;
+  p.attrs = attrs as Record<Attribute, number>;
+  if (p.race === undefined) {
+    const old = p.starter ?? '';
+    const now = LEGACY_STARTERS[old];
+    p.race = now?.race ?? old;
+    p.pocket = now?.pocket ?? '';
+  }
+  p.pocket ??= '';
+  delete p.starter;
+  // a spot whose source was renamed keeps what was done to it (a dug bank stays dug)
+  for (const id of Object.keys(s.nodes ?? {})) {
+    const now = legacyNodeId(id);
+    if (now === id) continue;
+    s.nodes[now] ??= s.nodes[id]!;
+    delete s.nodes[id];
+  }
+  s.format = STATE_FORMAT;
+  return s;
+}
+
 // ------------------------------------------------------------ derived numbers
 
-export function satietyCap(bundle: Bundle, state: State): number {
-  return (bundle.params.satiety_cap + bundle.params.per_point.stamina * state.player.attrs.stamina) * 1000;
+/**
+ * How the world under the player shifts one attribute (DECISIONS.md, 2026-10-22): +1 or -1 on the
+ * race's two home attributes where a world grades the race strong or weak, else 0. The valley is
+ * neutral, so today it is 0 everywhere.
+ */
+export function gradeShift(bundle: Bundle, state: PublicState, attr: Attribute, at: readonly [number, number] = state.player.at): number {
+  const race = bundle.races[state.player.race];
+  if (!race || !race.home.includes(attr)) return 0;
+  const grade = race.grades?.[worldAt(bundle.map, at[0], at[1])];
+  return grade === 'strong' ? 1 : grade === 'weak' ? -1 : 0;
+}
+
+/**
+ * The one calculator's attribute side: the points an attribute counts for now. The race gives the
+ * base (copied into `attrs` at the start, raised by spent points), the region's grade shifts the
+ * home pair, never below 0. Every rule that reads an attribute reads it here; spending reads the base.
+ */
+export function attrAt(bundle: Bundle, state: PublicState, attr: Attribute): number {
+  return Math.max(0, (state.player.attrs[attr] ?? 0) + gradeShift(bundle, state, attr));
+}
+
+export function satietyCap(bundle: Bundle, state: PublicState): number {
+  return (bundle.params.satiety_cap + bundle.params.per_point.stamina * attrAt(bundle, state, 'stamina')) * 1000;
 }
 
 /** Satiety at a tick: it drains with play time and stops at zero. */
-export function satietyAt(bundle: Bundle, state: State, tick: number): number {
+export function satietyAt(bundle: Bundle, state: PublicState, tick: number): number {
   const p = state.player;
   const elapsed = Math.max(0, tick - p.satietyAt);
   return Math.max(0, p.satiety - mulDiv(elapsed, bundle.params.satiety_drain_per_min, 60_000));
 }
 
-export function bagUsed(state: State): number {
+export function bagUsed(state: PublicState): number {
   let n = 0;
   for (const k of Object.keys(state.player.bag)) n += state.player.bag[k] ?? 0;
   return n;
 }
 
 /** Whether a camp part stands, itself or under an upgrade built over it. */
-export function campBuilt(bundle: Bundle, state: State, campId: string): boolean {
+export function campBuilt(bundle: Bundle, state: PublicState, campId: string): boolean {
   for (const id of state.player.camp) {
     let cur: string | undefined = id;
     for (let guard = 0; cur !== undefined && guard < 20; guard++) {
@@ -239,13 +348,13 @@ export function senseReach(bundle: Bundle, senses: number): number {
   return 2 + bundle.params.per_point.senses * senses;
 }
 
-export function bagCapacity(bundle: Bundle, state: State): number {
-  let cap = bundle.params.bag_base + bundle.params.per_point.carry * state.player.attrs.carry;
+export function bagCapacity(bundle: Bundle, state: PublicState): number {
+  let cap = bundle.params.bag_base + bundle.params.per_point.might * attrAt(bundle, state, 'might');
   for (const id of state.player.camp) cap += bundle.camps[id]?.bag_bonus ?? 0;
   return cap;
 }
 
-export function professionLevel(bundle: Bundle, state: State, professionId: string): number {
+export function professionLevel(bundle: Bundle, state: PublicState, professionId: string): number {
   const prof = bundle.professions[professionId];
   if (!prof) return 1;
   const xp = state.player.xp[professionId] ?? 0;
@@ -254,7 +363,7 @@ export function professionLevel(bundle: Bundle, state: State, professionId: stri
   return level;
 }
 
-export function verbLevel(bundle: Bundle, state: State, verb: Verb): number {
+export function verbLevel(bundle: Bundle, state: PublicState, verb: Verb): number {
   return professionLevel(bundle, state, bundle.verbs[verb]);
 }
 
@@ -264,25 +373,25 @@ export function nodeVerb(resource: { tool?: string }): Verb {
 }
 
 /** Character level: one more for every profession level gained. */
-export function characterLevel(bundle: Bundle, state: State): number {
+export function characterLevel(bundle: Bundle, state: PublicState): number {
   let level = 1;
   for (const id of Object.keys(bundle.professions)) level += professionLevel(bundle, state, id) - 1;
   return level;
 }
 
-export function skillPoints(bundle: Bundle, state: State): number {
+export function skillPoints(bundle: Bundle, state: PublicState): number {
   return characterLevel(bundle, state) - 1 - state.player.spent;
 }
 
 /** Rule R9: the one clamp on every rate multiplier, by character level. */
-export function powerCap(bundle: Bundle, state: State): number {
+export function powerCap(bundle: Bundle, state: PublicState): number {
   const caps = bundle.params.power_cap_permille;
   const i = clamp(characterLevel(bundle, state), 1, caps.length) - 1;
   return caps[i] ?? 1000;
 }
 
 /** Sum of a technique effect the player has unlocked through profession levels; `only` counts one profession's. */
-export function techniqueValue(bundle: Bundle, state: State, effect: string, only?: string): number {
+export function techniqueValue(bundle: Bundle, state: PublicState, effect: string, only?: string): number {
   let total = 0;
   for (const id of Object.keys(bundle.professions).sort()) {
     if (only !== undefined && id !== only) continue;
@@ -310,14 +419,14 @@ export function setPieces(bundle: Bundle): Record<string, string[]> {
 }
 
 /** Whether every piece of a set is worn on the work layer. */
-export function setComplete(bundle: Bundle, state: State, set: string): boolean {
+export function setComplete(bundle: Bundle, state: PublicState, set: string): boolean {
   const pieces = setPieces(bundle)[set] ?? [];
   const worn = Object.values(state.player.worn);
   return pieces.length > 1 && pieces.every((id) => worn.includes(id));
 }
 
 /** Sum of an effect from the work clothes: each worn piece once, and a full set a little more (rounded down). */
-export function wornValue(bundle: Bundle, state: State, effect: string): number {
+export function wornValue(bundle: Bundle, state: PublicState, effect: string): number {
   let total = 0;
   const bySet: Record<string, number> = {};
   for (const slot of WEAR_SLOTS) {
@@ -340,9 +449,10 @@ export function wornValue(bundle: Bundle, state: State, effect: string): number 
  * The one calculator (spec section 15): an effect from techniques and from the
  * work clothes together. A craft effect passes the recipe's profession, so a
  * technique helps the recipes of its own profession only. Every caller still
- * clamps the rate it feeds under the power cap (rule R9).
+ * clamps the rate it feeds under the power cap (rule R9). Its attribute side is
+ * `attrAt`: the race's profile and the region's grade (DECISIONS.md, 2026-10-22).
  */
-export function effectValue(bundle: Bundle, state: State, effect: string, profession?: string): number {
+export function effectValue(bundle: Bundle, state: PublicState, effect: string, profession?: string): number {
   return techniqueValue(bundle, state, effect, profession) + wornValue(bundle, state, effect);
 }
 
@@ -351,7 +461,7 @@ export function effectValue(bundle: Bundle, state: State, effect: string, profes
  * enough units of, or that no longer fits its place. `only` looks at one item.
  * Returns what came off, so the caller can tell the player.
  */
-export function fitWorn(bundle: Bundle, state: State, only?: string): { item: string; slot: WearSlot; look: boolean }[] {
+export function fitWorn(bundle: Bundle, state: PublicState, only?: string): { item: string; slot: WearSlot; look: boolean }[] {
   const p = state.player;
   const off: { item: string; slot: WearSlot; look: boolean }[] = [];
   for (const look of [false, true]) {
@@ -387,9 +497,19 @@ export function isNight(bundle: Bundle, tick: number): boolean {
   return hour >= 20 || hour < 5;
 }
 
+/** The tended fire an id names: a map fire by its prop id, or the player's own by `OWN_FIRE`. Saves from before the fields existed read as none. */
+export function fireOf(state: PublicState, id: string): FireState | undefined {
+  return id === OWN_FIRE ? (state.player.own ?? undefined) : state.player.fires?.[id];
+}
+
 /** Whether a tended fire still burns at this game tick. */
-export function fireBurns(state: State, id: string, tick: number): boolean {
-  return (state.player.fires?.[id]?.until ?? 0) > tick;
+export function fireBurns(state: PublicState, id: string, tick: number): boolean {
+  return (fireOf(state, id)?.until ?? 0) > tick;
+}
+
+/** Game milliseconds one log lasts in a tended fire: `fire.log_ms`, and for the player's own fire what it was kindled with. */
+export function logMsOf(bundle: Bundle, state: PublicState, id: string): number {
+  return id === OWN_FIRE ? (state.player.own?.log ?? bundle.params.fire.log_ms) : bundle.params.fire.log_ms;
 }
 
 /** Whether an item feeds a fire: its class is wood, or a class an extension declares under wood. */
@@ -405,8 +525,10 @@ export function burnsAsWood(bundle: Bundle, itemId: string): boolean {
  * Before dawn it does not hold, however much wood the fire has; by day it holds until the next dusk,
  * relit or not (DECISIONS.md, 2026-10-16: the vigil closes at dawn).
  */
-export function tendHolds(bundle: Bundle, state: State, id: string, tick: number): boolean {
-  const fire = state.player.fires?.[id];
+export function tendHolds(bundle: Bundle, state: PublicState, id: string, tick: number): boolean {
+  const fire = fireOf(state, id);
+  // the player's own fire keeps a vigil only while it stands outside the town
+  if (id === OWN_FIRE && state.player.own !== null && tagAt(bundle.map, state.player.own.at[0], state.player.own.at[1]) === 'town') return false;
   const dusk = lastDusk(bundle, tick);
   const dawn = nightEnds(bundle, dusk);
   return fire !== undefined && tick >= dawn && (fire.kept === dawn || (fire.lit <= dusk && fire.until >= dawn));
@@ -417,9 +539,9 @@ export function tendHolds(bundle: Bundle, state: State, id: string, tick: number
  * out or a whole log still fits under its cap (`fire.cap` logs ahead of the tick), else once
  * enough of its wood has burned down. A log goes in whole or not at all, so no feed wastes wood.
  */
-export function nextLogAt(bundle: Bundle, state: State, id: string, tick: number): number {
-  const until = state.player.fires?.[id]?.until ?? tick;
-  return Math.max(tick, until - (bundle.params.fire.cap - 1) * bundle.params.fire.log_ms);
+export function nextLogAt(bundle: Bundle, state: PublicState, id: string, tick: number): number {
+  const until = fireOf(state, id)?.until ?? tick;
+  return Math.max(tick, until - (bundle.params.fire.cap - 1) * logMsOf(bundle, state, id));
 }
 
 /** Where a tick falls in its day: 0 at midnight (tick 0 is noon, half way in; same start as hourOf). */

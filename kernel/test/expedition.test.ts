@@ -60,7 +60,7 @@ function world(): Bundle {
     ...source,
     id: QUESTS[0],
     giver: undefined,
-    starter: undefined,
+    pocket: undefined,
     type: 'investigation',
     requires: undefined,
     steps: source.steps.map((st) => (st.kind === 'riddle' ? { ...st, answer: { kind: 'visit', slot: SPOT, at: 'night' } } : st)),
@@ -70,7 +70,7 @@ function world(): Bundle {
     ...source,
     id: QUESTS[1],
     giver: undefined,
-    starter: undefined,
+    pocket: undefined,
     type: 'skill',
     requires: [QUESTS[0]],
     reward: { rep: 0 },
@@ -79,7 +79,7 @@ function world(): Bundle {
     ...source,
     id: QUESTS[2],
     giver: undefined,
-    starter: undefined,
+    pocket: undefined,
     type: 'tending',
     requires: [QUESTS[1]],
     reward: { rep: 0 },
@@ -108,7 +108,7 @@ function begin(b: Bundle): State {
   const r = step(b, newState(b, 7), { t: 'start', starter: 'core/forager', name: 'Tester' }, 0);
   if (!r.ok) throw new Error(r.error);
   const s = structuredClone(r.state);
-  s.player.attrs.carry = 100;
+  s.player.attrs.might = 100;
   return s;
 }
 

@@ -67,8 +67,8 @@ export function openLevelUp(ui: UI, profession?: string): Promise<void> {
       (body.querySelector(points > 0 ? 'button.choice:not(:disabled)' : '.levelup-actions button') as HTMLElement | null)?.focus();
     };
 
-    const spend = (attr: Attribute) => {
-      const r = s.act({ t: 'spend', attr });
+    const spend = async (attr: Attribute) => {
+      const r = await s.act({ t: 'spend', attr });
       if (!r.ok) {
         ui.toast(r.error, 'bad');
         sound.sfx('back');

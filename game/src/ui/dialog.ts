@@ -10,7 +10,7 @@ import { button, h } from './dom';
 import type { Layer, UI } from './ui';
 
 export interface SayOptions {
-  /** The lines are one page: all of them at once in one box, one tap to close it (the starter's waking box, NEXT 16 f). */
+  /** The lines are one page: all of them at once in one box, one tap to close it (the wake pocket's waking box, NEXT 16 f). */
   page?: boolean;
 }
 

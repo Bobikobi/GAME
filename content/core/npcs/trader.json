@@ -20,7 +20,7 @@
       ],
       "stranger": [
         "Baskets, trowels, food. I buy what you find.",
-        "They say bells ring in the deep ruins at night. I charge extra after dark."
+        "They say bells ring in the deep ruins at night. Nobody has sold me one yet."
       ],
       "acquaintance": [
         "Herbs sell well. The best stand where the mist is thin at noon.",
@@ -50,6 +50,43 @@
         },
         "say": [
           "Moonreed sells dear. A customer need not know what watched you pick it."
+        ]
+      },
+      {
+        "when": {
+          "has": [
+            "core/stone-idol"
+          ]
+        },
+        "say": [
+          "A stone idol. Some say old things like that sleep. Some say they wake.",
+          "Me, I say it sells. Keep it, or I pay fair for it. Mostly."
+        ]
+      },
+      {
+        "when": {
+          "done": [
+            "core/a-whole-one"
+          ]
+        },
+        "say": [
+          "That bowl sold before I set it down. The hall keeps more, I would bet."
+        ]
+      }
+    ],
+    "topics": [
+      {
+        "ask": "About the bells",
+        "when": {
+          "visited": [
+            "core/night-threshold"
+          ]
+        },
+        "lines": [
+          "Bells below the ruins? Travellers tell it three ways. All three, no charge.",
+          "One: the bells warn that the mist is coming. It takes what nobody looks after.",
+          "Two: something old is still awake down there. Who else lights the lanterns?",
+          "Three: someone buried old things on purpose. Leave them. Take what you need."
         ]
       }
     ]

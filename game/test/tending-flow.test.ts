@@ -1,20 +1,33 @@
 /**
- * Maru's hearth (NEXT 13b) of game/e2e/tending.ts, played on the real map without a browser: the Session,
- * the kernel and the client's own pure rules (fires.ts for the journal line, the running-low warning and
- * when a log fits; text.ts for the toast lines). Two passes as in the e2e: the hearth kept from before
- * dusk to dawn and handed in for the bandage recipe, and a second character whose fire survives a reload
- * and then goes out, so the vigil stays unmet. A failure prints every beat so far; TENDING_VIEW=1 prints
- * them on a pass too.
+ * A fire anywhere outside the town (NEXT 21b) of game/e2e/tending.ts, played on the real map without a browser:
+ * the Session, the kernel and the client's own pure rules (fires.ts for the journal line, the running-low warning,
+ * the four flame stages and when a log fits; text.ts for the toast lines). Two passes as in the e2e: the long night
+ * taken from Maru and met at dawn by a fire of the player's own out in the wild, while the hearth by Maru's door
+ * burns a whole night and does not count; and a second character whose fire survives a reload and then goes out, so
+ * the vigil stays unmet. A build inside the bank wolf's watch and during a chase is refused, and no log leaves the
+ * bag. A failure prints every beat so far; TENDING_VIEW=1 prints them on a pass too.
  *
- * What it leaves to the e2e: the dialogue boxes themselves (the quest is accepted and handed in by its
- * kernel action, the warning box is the `fireWarning` the HUD opens), the Feed button on screen and the
- * flame's sprite, the toasts' timing, and everything drawn.
+ * What it leaves to the e2e: the dialogue boxes themselves (the quest is accepted and handed in by its kernel
+ * action, the warning box is the `fireWarning` the HUD opens), the Build a fire prompt on screen, the flame's
+ * sprite and size, the toasts' timing, and everything drawn.
  */
 import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { type Bundle, fireBurns, makeWalkable, satietyCap } from '@game/kernel';
+import {
+  OWN_FIRE,
+  type Bundle,
+  type GameEvent,
+  fireBurns,
+  hazardsOf,
+  isTownTile,
+  makeWalkable,
+  mulDiv,
+  npcTile,
+  satietyCap,
+  watchOf,
+} from '@game/kernel';
 import { s1Use } from '../src/net/s1';
-import { fireLow, fireWarning, nextLogClock, woodToFeed } from '../src/fires';
+import { fireName, fireStage, fireWarning, holdsKindling, woodToFeed } from '../src/fires';
 import { Session } from '../src/session';
 import { describe as eventText, questSteps, readyToHandIn } from '../src/text';
 import { loadBundle } from '../../tools/test/helpers/world';
@@ -22,6 +35,17 @@ import { loadBundle } from '../../tools/test/helpers/world';
 const HEARTH = 'core/elder-hearth';
 const QUEST = 'core/the-long-night';
 const LOG = 'core/log';
+const WOLF = 'core/bank-wolf';
+/** The fire of the player's own, six tiles south of the town square, and the path beside it. */
+const BUILD: [number, number] = [27, 16];
+const STAND: [number, number] = [28, 16];
+/** A tile in the bank wolf's round watch, and a tile beside it to stand on. */
+const WOLF_FIRE: [number, number] = [3, 19];
+const WOLF_STAND: [number, number] = [2, 19];
+/** Outside the fire's safe ring: a chase can begin here and end at the ring. */
+const OUTSIDE: [number, number] = [30, 16];
+const DUSK = 400_000;
+const DAWN = 850_000;
 
 class MemoryStorage implements Storage {
   private readonly values = new Map<string, string>();
@@ -45,7 +69,7 @@ class MemoryStorage implements Storage {
   }
 }
 
-/** A player beside the elder hearth and Maru, on the real map, with nothing drawn. */
+/** A player on the real map, with nothing drawn: the session, the kernel, and the client's own fire rules. */
 class Tender {
   readonly s: Session;
   /** the boxes the HUD would open for the running-low warning, as its `warnedFires` keeps them */
@@ -61,9 +85,13 @@ class Tender {
     this.s = session ?? Session.fresh(b);
   }
 
+  private get own() {
+    return this.s.state.player.own;
+  }
+
   private get now(): string {
     const s = this.s;
-    return `hour ${this.hour().toFixed(2)}, ${s.state.player.bag[LOG] ?? 0} logs, fire ${JSON.stringify(s.state.player.fires[HEARTH] ?? null)}, journal: ${this.tracker()}`;
+    return `hour ${this.hour().toFixed(2)}, ${s.state.player.bag[LOG] ?? 0} logs, own ${JSON.stringify(this.own)}, journal: ${this.tracker()}`;
   }
 
   /** Keep the moment, where the e2e takes a screenshot. */
@@ -86,9 +114,13 @@ class Tender {
     const day = this.b.params.day_length_ms;
     let t = s.tick - ((s.tick + Math.floor(day / 2)) % day) + Math.round((h / 24) * day);
     if (t < s.tick) t += day;
-    s.tick = t;
-    // the jump is not hunger: health stays where the e2e's setup put it
-    s.state.player.satietyAt = Math.max(s.state.player.satietyAt, s.state.tick);
+    this.setTick(t);
+  }
+
+  /** A jump to an exact game tick, for the four stages of one burn: the clock jump is not hunger. */
+  setTick(t: number): void {
+    this.s.tick = t;
+    this.s.state.player.satietyAt = Math.max(this.s.state.player.satietyAt, this.s.state.tick);
   }
 
   hour(): number {
@@ -97,64 +129,124 @@ class Tender {
     return (((s.tick + Math.floor(day / 2)) % day) * 24) / day;
   }
 
-  /** A tile beside the hearth the player can stand on, beside Maru too: where both are in reach. */
-  spot(): { at: [number, number]; facing: 'up' | 'down' | 'left' | 'right' } {
-    const b = this.b;
-    const walkable = makeWalkable(b);
-    const p = b.map.props.find((x) => x.id === HEARTH);
-    const slot = b.map.slots.find((x) => x.id === b.npcs['core/elder']?.place.slot);
-    if (!p || !slot) return this.fail('no hearth or no Maru on the map');
-    const m = [slot.x + Math.floor(slot.w / 2), slot.y + Math.floor(slot.h / 2)];
-    const near = (a: readonly number[], c: readonly number[]) => Math.max(Math.abs(a[0]! - c[0]!), Math.abs(a[1]! - c[1]!)) <= 1;
-    const tiles: [number, number][] = [];
-    for (let dy = -1; dy <= 1; dy++) {
-      for (let dx = -1; dx <= 1; dx++) {
-        const t: [number, number] = [p.x + dx, p.y + dy];
-        if ((dx || dy) && walkable(t[0], t[1], this.s.state.player)) tiles.push(t);
-      }
-    }
-    tiles.sort((a, c) => Number(near(c, m)) - Number(near(a, m)) || Math.abs(a[1] - p.y) - Math.abs(c[1] - p.y));
-    const at = tiles[0];
-    if (!at || !near(at, m)) return this.fail(`no tile beside both the hearth and Maru: ${JSON.stringify(tiles)}`);
-    const facing = at[1] === p.y ? (at[0] < p.x ? 'right' : 'left') : at[1] < p.y ? 'down' : 'up';
-    return { at, facing };
-  }
-
   place(at: readonly [number, number]): void {
     this.s.pos = [at[0], at[1]];
     this.s.state.player.at = [at[0], at[1]];
   }
 
-  /** A new character with Maru's coin found, beside the hearth, the long night accepted from Maru. */
+  /** A walkable tile beside the elder, where the long night is taken and handed in. */
+  maruSpot(): [number, number] {
+    const b = this.b;
+    const walkable = makeWalkable(b);
+    const maru = npcTile(b, 'core/elder');
+    if (!maru) this.fail('no place for Maru on the map');
+    const tiles: [number, number][] = [];
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        const t: [number, number] = [maru[0] + dx, maru[1] + dy];
+        if ((dx || dy) && walkable(t[0], t[1], this.s.state.player)) tiles.push(t);
+      }
+    }
+    const at = tiles[0];
+    if (!at) this.fail(`no tile beside Maru: ${maru.join(',')}`);
+    return at;
+  }
+
+  /** A walkable tile beside the hearth by Maru's door. */
+  hearthSpot(): [number, number] {
+    const b = this.b;
+    const walkable = makeWalkable(b);
+    const p = b.map.props.find((x) => x.id === HEARTH);
+    if (!p) this.fail('no hearth on the map');
+    for (const [dx, dy] of [[0, 1], [1, 0], [-1, 0], [0, -1]] as const) {
+      const t: [number, number] = [p.x + dx, p.y + dy];
+      if (walkable(t[0], t[1], this.s.state.player)) return t;
+    }
+    return this.fail('no tile beside the hearth');
+  }
+
+  /** A new character with the opening behind, the long night accepted from Maru, and logs in the bag. */
   begin(logs: number): void {
     const s = this.s;
     expect(s.act({ t: 'start', starter: 'core/forager', name: 'Tess' }).ok).toBe(true);
     const p = s.state.player;
-    // the earlier quests are setup: the opening is behind, Maru's coin is found, and Maru is met
+    // the earlier tasks are setup: the opening is behind, Maru has his stew (the long night waits for it), and Maru is met
     for (const id of Object.keys(p.quests)) if (p.quests[id] === 'active') p.quests[id] = 'done';
-    for (const id of ['core/fix-the-bridge', 'core/first-fire', 'core/into-town', 'core/a-coin-for-maru']) p.quests[id] = 'done';
+    for (const id of ['core/fix-the-bridge', 'core/first-fire', 'core/into-town', 'core/three-fruits', 'core/a-coin-for-maru', 'core/herbs-for-pell', 'core/a-whole-one', 'core/something-warm']) p.quests[id] = 'done';
     if (!p.restored.includes('core/old-bridge')) p.restored.push('core/old-bridge');
     p.satiety = 10 * satietyCap(this.b, s.state);
     p.satietyAt = s.tick;
     p.bag[LOG] = logs;
     s.met.add('core/elder');
     this.setHour(17);
-    this.place(this.spot().at);
+    this.place(this.maruSpot());
     const r = s.act({ t: 'accept', quest: QUEST, at: s.pos });
     this.check(r.ok, `Maru did not give the long night: ${r.ok ? '' : r.error}`);
-    // each action replaces the state: read the player afresh
-    const now = s.state.player;
-    this.check(now.quests[QUEST] === 'active', 'the long night is not active');
-    // quests that open by themselves on the way are setup too: the tracker shows the vigil
-    for (const id of Object.keys(now.quests)) if (id !== QUEST && now.quests[id] === 'active') now.quests[id] = 'done';
+    this.check(s.state.player.quests[QUEST] === 'active', 'the long night is not active');
+    // tasks that open by themselves on the way are setup too: the tracker shows this one
+    for (const id of Object.keys(s.state.player.quests)) if (id !== QUEST && s.state.player.quests[id] === 'active') s.state.player.quests[id] = 'done';
   }
 
-  fire(): { lit: number; until: number } | null {
-    return this.s.state.player.fires[HEARTH] ?? null;
+  /** The Build a fire button's own condition: two logs in the bag and the ground outside the town (NEXT 21b). */
+  buildShown(): boolean {
+    return holdsKindling(this.b, this.s.state) && !isTownTile(this.b, this.s.pos);
+  }
+
+  /** One press of Build a fire, as ui.kindle sends it. A refusal keeps the logs, as the kernel does. */
+  build(at: readonly [number, number] = BUILD): { ok: true; toast: string } | { ok: false; toast: string } {
+    const s = this.s;
+    const before = s.state.player.bag[LOG] ?? 0;
+    const r = s.act({ t: 'kindle', fire: [at[0], at[1]], at: s.pos });
+    if (r.ok) {
+      const toast = r.events.map((e) => eventText(this.b, s.state, e)?.text ?? '').join(' | ');
+      return { ok: true, toast };
+    }
+    this.check((s.state.player.bag[LOG] ?? 0) === before, 'a refused build still took a log');
+    return { ok: false, toast: r.error };
+  }
+
+  /** One press of Feed on the player's own fire, as ui.feed sends it. */
+  feedOwn(): { fed: true; toast: string } | { fed: false; toast: string } {
+    const s = this.s;
+    const item = woodToFeed(this.b, s.state);
+    if (!item) return { fed: false, toast: 'You have no wood.' };
+    const r = s.act({ t: 'feed', fire: OWN_FIRE, item, at: s.pos });
+    if (r.ok) return { fed: true, toast: r.events.map((e) => eventText(this.b, s.state, e)?.text ?? '').join(' | ') };
+    return { fed: false, toast: r.error };
+  }
+
+  /** One press of Feed on the hearth by Maru's door, as ui.feed sends it there. */
+  feedHearth(): boolean {
+    const s = this.s;
+    const item = woodToFeed(this.b, s.state);
+    if (!item) return false;
+    return s.act({ t: 'feed', fire: HEARTH, item, at: s.pos }).ok;
+  }
+
+  /** The hearth kept from before dusk to dawn, as if Maru's own fire could satisfy the task (it cannot, after NEXT 21b). */
+  keepHearthToDawn(): void {
+    this.place(this.hearthSpot());
+    this.setHour(19);
+    for (let i = 0; i < 12 && (this.s.state.player.fires[HEARTH]?.until ?? 0) < DAWN; i++) {
+      if (!this.feedHearth()) this.setHour(this.hour() + 1);
+    }
+    const fire = this.s.state.player.fires[HEARTH];
+    this.check((fire?.until ?? 0) >= DAWN, `the hearth did not reach dawn: ${JSON.stringify(fire ?? null)}`);
   }
 
   burns(): boolean {
-    return fireBurns(this.s.state, HEARTH, this.s.tick);
+    return fireBurns(this.s.state, OWN_FIRE, this.s.tick);
+  }
+
+  stage(): string {
+    return fireStage(this.b, this.s.state, OWN_FIRE, this.s.tick);
+  }
+
+  /** A jump to the middle of a stage of the burn now going: a fraction of its own log left. */
+  stageAt(leftOfLog: number): void {
+    const own = this.own;
+    if (!own) this.fail('no fire of the player\'s own to dim');
+    this.setTick(own.until - Math.round(own.log * leftOfLog));
   }
 
   logs(): number {
@@ -168,40 +260,31 @@ class Tender {
       .join(' | ');
   }
 
-  /** What the journal still asks for: the logs to dawn, 0 once it asks for none. */
-  logsNeeded(): number {
-    const m = /fed to reach dawn: (\d+) more logs?/.exec(this.tracker());
-    return m ? Number(m[1]) : 0;
-  }
-
-  /** The Feed button shows only with wood in the bag. */
-  feedShown(): boolean {
-    return woodToFeed(this.b, this.s.state) !== undefined;
-  }
-
-  /** One press of Feed, as ui.feed sends it: one log leaves the bag, or the fire is full and says when one fits. */
-  feed(): { fed: true; toast: string } | { fed: false; toast: string } {
-    const s = this.s;
-    const item = woodToFeed(this.b, s.state);
-    if (!item) return { fed: false, toast: 'You have no wood.' };
-    const r = s.act({ t: 'feed', fire: HEARTH, item, at: s.pos });
-    if (r.ok) {
-      const toast = r.events.map((e) => eventText(this.b, s.state, e)?.text ?? '').join(' | ');
-      return { fed: true, toast };
-    }
-    const at = nextLogClock(this.b, s.state, HEARTH, s.tick);
-    return { fed: false, toast: at === undefined ? r.error : `${r.error} A log fits at ${at}.` };
-  }
-
-  /** Feed while the journal asks for logs, as a player would; `full` when the hearth refused a log that would not burn whole. */
-  feedAsAsked(): { fed: number; full: boolean; refusal: string } {
+  /** Feed while a log still fits, up to a fire's cap of three: the quick top-up a player makes when the fire is low. */
+  feedFitting(): number {
     let fed = 0;
-    while (this.logsNeeded() > 0) {
-      const r = this.feed();
-      if (!r.fed) return { fed, full: true, refusal: r.toast };
+    for (let i = 0; i < 4; i++) {
+      const r = this.feedOwn();
+      if (!r.fed) break;
       fed++;
     }
-    return { fed, full: false, refusal: '' };
+    return fed;
+  }
+
+  /** Feed while the journal asks for wood, as a player would; a full fire says so and the clock is moved on an hour. */
+  holdToDawn(): { fed: number; full: boolean } {
+    let fed = 0;
+    for (let i = 0; i < 20 && this.tracker().includes('it still needs wood'); i++) {
+      const r = this.feedOwn();
+      if (!r.fed) {
+        this.check(/already full/.test(r.toast), `an unexpected refusal while feeding: ${r.toast}`);
+        this.setHour(this.hour() + 1);
+        continue;
+      }
+      fed++;
+    }
+    this.check(this.tracker().includes('it has the wood: wait for dawn'), `the journal does not wait for dawn: ${this.tracker()}`);
+    return { fed, full: false };
   }
 
   /** The HUD's check for the running-low box, every beat: opens it once per burn. */
@@ -216,6 +299,14 @@ class Tender {
   /** Maru's options for the long night: handed in when the kernel takes it, asked about while it waits. */
   maruOffers(): 'hand in' | 'about' {
     return readyToHandIn(this.b, this.s.state, QUEST, this.s.tick) ? 'hand in' : 'about';
+  }
+
+  /** The kernel's step for a walk: it moves the player and the world acts on the tile they reach. */
+  move(at: readonly [number, number]): GameEvent[] {
+    const r = this.s.act({ t: 'move', at: [at[0], at[1]] });
+    if (!r.ok) this.fail(`the walk to ${at.join(',')} was refused: ${r.error}`);
+    this.place(at);
+    return r.events;
   }
 }
 
@@ -234,71 +325,84 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("Maru's hearth, played without a browser (game/e2e/tending.ts)", () => {
-  test('the hearth kept from before dusk to dawn, and handed in for the bandage recipe', () => {
+describe("a fire anywhere outside the town, played without a browser (game/e2e/tending.ts)", () => {
+  test("the long night is met at dawn by a fire of one's own out in the wild, and not by the hearth", () => {
     const me = new Tender(bundle);
-    me.begin(10);
+    me.begin(16);
     const s = me.s;
 
-    me.check(me.tracker().includes('Keep the elder hearth burning until dawn - light it before dusk'), 'the journal does not ask to light the hearth');
-    me.check(!me.burns(), 'the cold hearth burns');
-    // the Feed button shows only with wood in the bag: it goes with the logs and comes back with them
-    me.check(me.feedShown(), 'no Feed with ten logs in the bag');
-    s.state.player.bag[LOG] = 0;
-    me.check(!me.feedShown(), 'Feed shows with no wood');
-    s.state.player.bag[LOG] = 10;
+    me.check(me.tracker().includes('Keep the fire burning until dawn - light it before dusk'), 'the journal does not ask to light a fire of its own');
+    me.check(!me.tracker().includes('hearth'), 'the journal still names Maru\'s hearth');
+    // the Build a fire button shows only with the two logs in the bag and outside the town
+    me.place(STAND);
+    me.check(me.buildShown(), 'no Build a fire with sixteen logs out of the town');
+    me.place([27, 8]);
+    me.check(isTownTile(bundle, me.s.pos) && !me.buildShown(), 'Build a fire shows inside the town');
+    me.check(me.build([28, 8]).toast === 'The town has its own fires.', 'a build offered by hand inside the town was not refused by the kernel');
 
-    me.setHour(19);
-    me.snap('before-dusk-cold');
-    const first = me.feed();
-    me.check(first.fed, `the cold hearth refused its first log: ${first.toast}`);
-    me.check(/The elder hearth burns until \d+:\d\d\./.test(first.toast), `the fire event line is "${first.toast}"`);
-    me.check(me.burns(), 'the hearth does not burn after a log');
-    const lit = me.fire()!.lit;
-    me.check(me.tracker().includes('fed to reach dawn: 4 more logs'), 'the journal does not count four logs to dawn');
-
-    // the cap holds three logs ahead of the clock: two more fit, each takes one log from the bag,
-    // and the next press, still asked for by the journal, is refused with the log kept
-    const before = JSON.stringify(me.fire());
-    const topUp = me.feedAsAsked();
-    me.check(topUp.fed === 2, `fed ${topUp.fed} more logs before the cap, not 2`);
-    me.check(topUp.full, 'the hearth at its cap was never refused a log');
-    me.check(me.logs() === 7, `the bag holds ${me.logs()} logs after three feeds, not 7`);
-    me.check(/A log fits at \d+:\d\d\./.test(topUp.refusal), `the full toast does not say when a log fits: "${topUp.refusal}"`);
-    const full = me.fire()!;
-    expect(me.feed().fed).toBe(false);
-    me.check(me.logs() === 7 && me.fire()!.until === full.until, 'a full fire still took a log or changed its burn');
-    me.check(before !== JSON.stringify(full), 'the top-up did not lengthen the burn');
-    me.check(/fed to reach dawn: 2 more logs, the next at 21:\d\d/.test(me.tracker()), 'the journal does not ask for two more logs and say when the next fits');
-    me.snap('lit-before-dusk');
-
-    // the first log of the night burns down: at 00:40 the embers run low and the warning opens once
-    me.setHour(2 / 3);
-    me.check(me.burns() && fireLow(bundle, s.state, HEARTH, s.tick), 'the embers do not run low at 00:40');
-    me.check(me.beat() && me.warnings === 1, 'the running-low warning did not open');
-    me.snap('running-low');
-    me.check(!me.beat(), 'the warning opened a second time in the same burn');
-    const night = me.feedAsAsked();
-    me.check(night.fed === 2 && !night.full, `fed ${night.fed} logs to reach dawn after midnight (full: ${night.full}), not 2`);
-    me.check(me.fire()!.lit === lit, 'a top-up started a new burn');
-    me.check(me.tracker().includes('it has the wood: wait for dawn'), 'the journal does not wait for dawn with wood to reach it');
-    me.check(me.maruOffers() === 'about', 'the vigil was met before dawn');
-    me.check(!fireLow(bundle, s.state, HEARTH, s.tick), 'the flame stays low after the top-up');
-
-    // running low again before dawn is the same burn: no second box
-    me.setHour(4.75);
-    me.check(fireLow(bundle, s.state, HEARTH, s.tick), 'the embers do not dim before dawn');
-    for (let t = 0; t < 1500; t += 250) {
-      s.advance(250);
-      me.beat();
-    }
-    me.check(me.warnings === 1, 'the warning opened twice in one burn');
+    // the hearth by Maru's door burns the whole first night: the task is not met by it
+    me.keepHearthToDawn();
     me.setHour(5.5);
-    me.check(!me.burns(), 'the hearth still burns after dawn');
-    me.check(me.maruOffers() === 'hand in', 'the vigil is not met at dawn');
+    me.check(me.maruOffers() === 'about', 'the hearth met the long night');
+    me.check(!me.tracker().includes('Bring it to'), 'the tracker sends the long night in after the hearth kept a night');
+    me.snap('hearth-night-unmet');
+
+    // the next evening, out in the wild: a build inside the bank wolf's watch is refused and keeps the logs
+    me.place(WOLF_STAND);
+    me.s.facing = 'right';
+    me.setHour(17);
+    const before = me.logs();
+    const watched = me.build(WOLF_FIRE);
+    me.check(!watched.ok && watched.toast === 'A wolf watches this ground. Not here.', `the wolf's watch did not refuse a build: ${watched.toast}`);
+    me.check(me.logs() === before, 'a build inside a round\'s watch took a log');
+    me.snap('wolf-watch-refused');
+
+    // out past the last house, six tiles from the town, a fire of one's own is built
+    me.place(STAND);
+    me.s.facing = 'left';
+    me.setHour(19);
+    const built = me.build();
+    me.check(built.ok, `the wild ground refused a fire: ${built.toast}`);
+    me.check(me.logs() === before - 2, `kindling took ${before - me.logs()} logs, not 2`);
+    me.check(me.burns() && me.stage() === 'full', `the new fire is not full: ${me.stage()}`);
+    me.check(fireName(OWN_FIRE) === 'fire', 'the fire of one\'s own is named by its kernel word');
+    me.snap('flame-full');
+
+    // the flame dims through four stages, and no line about the fire carries a digit
+    for (const [left, stage] of [[0.6, 'steady'], [0.45, 'low'], [0.25, 'embers']] as const) {
+      me.stageAt(left);
+      me.check(me.stage() === stage, `at ${left} of a log the fire is ${me.stage()}, not ${stage}`);
+      me.check(!/\d/.test(me.tracker()), `the journal counts the fire: ${me.tracker()}`);
+      me.snap(`flame-${stage}`);
+    }
+    me.check(me.burns() && me.beat() && me.warnings === 1, 'the running-low warning did not open once at the embers');
+    // the fire is topped up to its cap at once, still twenty-hundred hours, and burns into the night
+    me.check(me.feedFitting() === 2, 'the embers took two logs, not the two that fit under the cap');
+    me.setHour(21);
+    me.check(me.burns(), 'the topped-up fire is out by 21:00');
+
+    // a build during a chase is refused and keeps the logs; a chase that reaches the fire's ring ends there
+    me.place(OUTSIDE);
+    s.state.player.chase = { hazard: WOLF, since: s.tick, bites: 0 };
+    const chasedBefore = me.logs();
+    const chased = me.build([31, 16]);
+    me.check(!chased.ok && chased.toast === 'Not with the wolf at your heels.', `a build during a chase was not refused: ${chased.toast}`);
+    me.check(me.logs() === chasedBefore, 'a build during a chase took a log');
+    me.snap('chase-refused');
+    const safe = me.move(STAND);
+    me.check(s.state.player.chase === null, 'a chase that reached the fire\'s ring did not end there');
+    me.check(safe.some((e) => e.e === 'safe' && e.id === WOLF), 'reaching the ring did not tell the hunt safe');
+
+    // through the night from 21:00, fed to dawn, the warning not repeated in the same burn
+    const night = me.holdToDawn();
+    me.check(night.fed > 0, 'the fire reached dawn without another log');
+    me.check(!me.beat(), 'the warning opened twice in one burn');
+    me.setHour(5.5);
+    me.check(me.maruOffers() === 'hand in', 'the fire of one\'s own did not meet the long night at dawn');
     me.snap('dawn-met');
 
     expect(s.state.player.recipes).not.toContain('core/bandage');
+    me.place(me.maruSpot());
     const done = s.act({ t: 'turnin', quest: QUEST, at: s.pos });
     me.check(done.ok, `Maru did not take the long night: ${done.ok ? '' : done.error}`);
     me.check(s.state.player.quests[QUEST] === 'done', 'the long night is not done');
@@ -307,34 +411,45 @@ describe("Maru's hearth, played without a browser (game/e2e/tending.ts)", () => 
     me.snap('handed-in');
   });
 
-  test('a lit hearth survives a reload, and a fire that goes out leaves the vigil unmet', () => {
+  test('a lit fire survives a reload, and a fire that goes out leaves the vigil unmet', () => {
     const first = new Tender(bundle);
-    first.begin(3);
+    first.begin(6);
     expect(first.s.state.player.recipes).not.toContain('core/bandage');
+    first.place(STAND);
     first.setHour(19);
-    first.check(first.feed().fed, 'the second hearth refused its log');
-    const kept = first.fire();
+    first.check(first.build().ok, 'the second fire was refused in the wild');
+    const kept = first.own;
 
-    // the burn lives in the save: a reload finds the hearth still burning
+    // the burn lives in the save: a reload finds the fire of one's own still burning, where it stood
     first.s.save();
     const back = Session.restore(bundle);
     if (!back) throw new Error('the save did not load');
     const me = new Tender(bundle, back);
-    const again = me.fire();
-    me.check(!!again && again.lit === kept?.lit && again.until === kept?.until, `the fire did not survive the reload: ${JSON.stringify({ kept, again })}`);
-    me.check(me.burns(), 'the reloaded hearth does not burn');
-    me.place(first.spot().at);
+    me.check(
+      !!kept && me.own?.lit === kept.lit && me.own?.until === kept.until && me.own?.at.join() === kept.at.join() && me.own?.log === kept.log,
+      `the fire did not survive the reload: ${JSON.stringify({ kept, again: me.own })}`,
+    );
+    me.place(STAND);
+    me.check(me.burns(), 'the reloaded fire does not burn');
 
     me.setHour(22);
-    me.check(!me.burns(), 'the unfed hearth did not go out');
-    me.check(me.tracker().includes('light it before dusk'), 'the journal does not ask for a new fire');
+    me.check(!me.burns() && me.stage() === 'out', 'the unfed fire did not go out');
+    me.check(me.tracker().includes('it went out, tonight is lost'), `the journal does not tell the night lost: ${me.tracker()}`);
     me.setHour(5.5);
-    const dawn = me.hour();
-    me.check(dawn >= 5.5 && dawn <= 6, `the clock is not at dawn: ${dawn}`);
-    me.check(me.tracker().includes('Keep the elder hearth burning until dawn'), 'the journal is missing at dawn');
     me.check(me.maruOffers() === 'about', 'Maru takes a vigil that went out');
+    me.check(me.tracker().includes('it went out in the night'), `the day after does not remember the lost night: ${me.tracker()}`);
     const refused = me.s.act({ t: 'turnin', quest: QUEST, at: me.s.pos });
     me.check(!refused.ok, 'the kernel took a vigil that went out');
     me.check(me.s.state.player.quests[QUEST] === 'active', 'the unmet vigil left the journal');
+    me.snap('went-out');
+    // the refusal says what a fire is worth on ground the wolf watches, and keeps every log
+    me.setHour(17);
+    me.place(WOLF_STAND);
+    const logs = me.logs();
+    me.check(me.build(WOLF_FIRE).toast === 'A wolf watches this ground. Not here.', 'the watch refused nothing the second time');
+    me.check(me.logs() === logs, 'a refused build took a log the second time');
+    me.check(mulDiv(bundle.params.fire.log_ms, 100, 150) === 66_666, 'the danger of the wild ground no longer shortens a log');
+    me.check(hazardsOf(bundle).some((h) => h.id === WOLF && watchOf(bundle, h).some(([x, y]) => x === WOLF_FIRE[0] && y === WOLF_FIRE[1])), 'the wolf\'s watch moved off the test tile');
+    me.check(DUSK === 400_000, 'the dusk moved');
   });
 });

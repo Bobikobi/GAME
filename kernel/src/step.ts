@@ -18,17 +18,23 @@
  */
 import type { Bundle, QuestDef, RecipeDef, Verb } from './bundle';
 import { canonical } from './canon';
-import { bitesAfter, distanceTo, harmOf, hazardsOf, isSafe, isTownTile, reappearTile, sees, townAt, windowOpen, windowShuts } from './danger';
+import { bitesAfter, dangerAt, distanceTo, fireArea, harmOf, hazardsOf, isSafe, isTownTile, reappearTile, sees, townAt, watchedAt, windowOpen, windowShuts } from './danger';
 import { bellTicks, inside as insideExpedition, lastBellAt, visitNight, windowOpen as expeditionWindowOpen } from './expedition';
 import { clamp, idiv, idivUp, mulDiv, mulDivUp } from './num';
+import { appearSlot, cuesOnStep, placedAt, reactionHolds, resourceOf, waitPermille } from './reactions';
 import { drawBasisPoints } from './rng';
 import {
   ATTRIBUTES,
   type Attribute,
   type FireState,
+  LEGACY_STARTERS,
+  legacyNodeId,
+  OWN_FIRE,
+  type OwnFire,
   type State,
   WEAR_SLOTS,
   type WearSlot,
+  attrAt,
   bagCapacity,
   bagUsed,
   burnsAsWood,
@@ -36,9 +42,12 @@ import {
   effectValue,
   fitWorn,
   fireBurns,
+  fireOf,
+  gradeShift,
   hourOf,
   isNight,
   lastDusk,
+  logMsOf,
   nextLogAt,
   nightEnds,
   nodeVerb,
@@ -50,6 +59,7 @@ import {
   slotsFor,
   tendHolds,
   verbLevel,
+  type PublicState,
 } from './state';
 import { rarityRank, payFor } from './values';
 import { campTile, findSlot, inRect, makeWalkable, near, npcTile, type Rect } from './world';
@@ -58,13 +68,19 @@ export type Tile = [number, number];
 export type Grade = 0 | 1 | 2 | 3 | 4;
 
 export type Action =
-  | { t: 'start'; starter: string; name: string; look?: number }
+  /**
+   * Pick the race and begin: the seed draws the wake pocket. `starter` is the format 1 word, still
+   * read so a logged game replays: it names the race and the pocket the old starter became.
+   */
+  | { t: 'start'; race?: string; starter?: string; name: string; look?: number }
   | { t: 'carve'; name: string }
   | { t: 'gather'; node: string; grade: Grade; at: Tile }
   | { t: 'dig'; spot: string; grade: Grade; at: Tile }
   | { t: 'craft'; recipe: string; at: Tile }
   | { t: 'eat'; item: string }
   | { t: 'feed'; fire: string; item: string; at: Tile }
+  /** build the player's own fire on `fire`, a free tile beside `at`, outside the town (G30) */
+  | { t: 'kindle'; fire: Tile; at: Tile }
   | { t: 'buy'; npc: string; item: string; qty: number; at: Tile }
   | { t: 'sell'; npc: string; item: string; qty: number; at: Tile }
   | { t: 'restore'; restore: string; at: Tile }
@@ -100,6 +116,8 @@ export type GameEvent =
   | { e: 'tool_broke'; item: string }
   | { e: 'visit'; slot: string }
   | { e: 'attr'; attr: Attribute; value: number }
+  /** the player stepped into a world that grades their race otherwise: a home attribute now counts `value` (DECISIONS.md, 2026-10-22) */
+  | { e: 'grade'; attr: Attribute; value: number }
   | { e: 'miss'; recipe: string }
   | { e: 'wear'; item: string; slot: WearSlot; look: boolean }
   | { e: 'unwear'; item: string; slot: WearSlot; look: boolean }
@@ -113,9 +131,16 @@ export type GameEvent =
   | { e: 'safe'; id: string; bitten: boolean }
   | { e: 'bell'; expedition: string; n: number }
   | { e: 'walked_out'; expedition: string }
-  | { e: 'climax'; expedition: string };
+  | { e: 'climax'; expedition: string }
+  /** a sign the world raised on this step (REACTIONS.md section 5): drawn and heard, never a number or a word */
+  | { e: 'cue'; cue: string; reaction: string; anchor: string; x: number; y: number };
 
 export type StepResult = { ok: true; state: State; events: GameEvent[] } | { ok: false; error: string };
+
+export interface StepOptions {
+  /** Enforce server-side four-way reachability for reported and action tiles (G56). */
+  validateTravel?: boolean;
+}
 
 /** Output share per timing grade: miss, ok, good, perfect, jackpot. A missed dig keeps a quarter of its chances. */
 export const GRADE_PCT = [25, 50, 80, 100, 100] as const;
@@ -127,13 +152,13 @@ export const MISS_KEEP_MAX_BP = 9000;
 export const JACKPOT_XP = 3;
 
 /** How often a missed gather still brings one unit home, in basis points: luck raises it. */
-export function missKeepBp(bundle: Bundle, state: State): number {
-  return Math.min(MISS_KEEP_MAX_BP, MISS_KEEP_BP + 10 * bundle.params.per_point.luck_permille * state.player.attrs.luck);
+export function missKeepBp(bundle: Bundle, state: PublicState): number {
+  return Math.min(MISS_KEEP_MAX_BP, MISS_KEEP_BP + 10 * bundle.params.per_point.luck_permille * attrAt(bundle, state, 'luck'));
 }
 
 /** The multiplier on rare and legendary dig chances, in permille: luck, techniques and worn items, inside the power cap. */
-export function rareFindPermille(bundle: Bundle, state: State): number {
-  const raw = 1000 + bundle.params.per_point.luck_permille * state.player.attrs.luck + 10 * effectValue(bundle, state, 'rare_find_pct');
+export function rareFindPermille(bundle: Bundle, state: PublicState): number {
+  const raw = 1000 + bundle.params.per_point.luck_permille * attrAt(bundle, state, 'luck') + 10 * effectValue(bundle, state, 'rare_find_pct');
   return clamp(raw, 1000, powerCap(bundle, state));
 }
 
@@ -155,7 +180,7 @@ export function recipeTier(bundle: Bundle, recipe: RecipeDef): number {
  */
 export function craftLuckPermille(bundle: Bundle, state: State, profession: string): number {
   const raw =
-    1000 + bundle.params.per_point.luck_permille * state.player.attrs.luck + 10 * effectValue(bundle, state, 'craft_chance_pct', profession);
+    1000 + bundle.params.per_point.luck_permille * attrAt(bundle, state, 'luck') + 10 * effectValue(bundle, state, 'craft_chance_pct', profession);
   return Math.min(bundle.params.craft_luck_max_permille, clamp(raw, 1000, powerCap(bundle, state)) - 1000);
 }
 
@@ -208,6 +233,41 @@ function walkableFor(bundle: Bundle) {
   return fn;
 }
 
+/** The shortest four-way path to a tile, limited to a square and a maximum number of steps. */
+export function walkDistance(bundle: Bundle, state: State, from: Tile, target: Tile, maxSteps: number): number | undefined {
+  const validTile = (tile: Tile): boolean =>
+    Array.isArray(tile) && tile.length === 2 && tile.every(Number.isSafeInteger);
+  if (!validTile(from) || !validTile(target) || !Number.isSafeInteger(maxSteps) || maxSteps < 0) return undefined;
+  const walkable = walkableFor(bundle);
+  if (!walkable(target[0], target[1], state.player)) return undefined;
+  if (from[0] === target[0] && from[1] === target[1]) return 0;
+
+  const side = 2 * maxSteps + 1;
+  const minX = from[0] - maxSteps;
+  const minY = from[1] - maxSteps;
+  const key = (x: number, y: number): number => (y - minY) * side + (x - minX);
+  const seen = new Set<number>([key(from[0], from[1])]);
+  const queue: Array<{ x: number; y: number; steps: number }> = [{ x: from[0], y: from[1], steps: 0 }];
+  const directions: readonly Tile[] = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+
+  for (let head = 0; head < queue.length; head++) {
+    const current = queue[head]!;
+    if (current.steps >= maxSteps) continue;
+    for (const [stepX, stepY] of directions) {
+      const x = current.x + stepX;
+      const y = current.y + stepY;
+      if (x < minX || x > from[0] + maxSteps || y < minY || y > from[1] + maxSteps) continue;
+      const nextKey = key(x, y);
+      if (seen.has(nextKey) || !walkable(x, y, state.player)) continue;
+      const steps = current.steps + 1;
+      if (x === target[0] && y === target[1]) return steps;
+      seen.add(nextKey);
+      queue.push({ x, y, steps });
+    }
+  }
+  return undefined;
+}
+
 interface Ctx {
   b: Bundle;
   s: State;
@@ -221,19 +281,20 @@ interface Ctx {
   walkOut?: { expedition: string; bell: number };
 }
 
-export function step(bundle: Bundle, state: State, action: Action, tick: number): StepResult {
+export function step(bundle: Bundle, state: State, action: Action, tick: number, options: StepOptions = {}): StepResult {
   if (!Number.isSafeInteger(tick) || tick < state.tick) return { ok: false, error: 'Time cannot run backwards.' };
   if (state.content !== bundle.tag) return { ok: false, error: 'This save belongs to different game content.' };
   const ctx: Ctx = { b: bundle, s: structuredClone(state), tick, events: [], hurt: false, fell: false };
   // Quest reads use the state's clock; advance the clone before an explicit or automatic turn-in reads it.
   ctx.s.tick = tick;
   ctx.s.player.fires ??= {};
+  ctx.s.player.own ??= null;
   ctx.s.player.expeditions ??= {};
   ctx.s.player.bitten ??= [];
   try {
     ctx.walkOut = walkOutDue(ctx);
     firesOut(ctx, state.tick);
-    apply(ctx, action);
+    apply(ctx, action, options);
     autoQuests(ctx);
     expeditions(ctx);
     return { ok: true, state: ctx.s, events: ctx.events };
@@ -248,12 +309,13 @@ export function replay(
   bundle: Bundle,
   start: State,
   log: readonly { a: Action; tick: number }[],
+  options: StepOptions = {},
 ): { state: State; events: GameEvent[]; error?: string; at?: number } {
   let state = start;
   const events: GameEvent[] = [];
   for (let i = 0; i < log.length; i++) {
     const entry = log[i]!;
-    const r = step(bundle, state, entry.a, entry.tick);
+    const r = step(bundle, state, entry.a, entry.tick, options);
     if (!r.ok) return { state, events, error: r.error, at: i };
     state = r.state;
     events.push(...r.events);
@@ -263,20 +325,24 @@ export function replay(
 
 // ------------------------------------------------------------------ actions
 
-function apply(ctx: Ctx, a: Action): void {
+function apply(ctx: Ctx, a: Action, options: StepOptions): void {
   const { s } = ctx;
-  if (a.t === 'start') return start(ctx, a.starter, a.name, a.look ?? 0);
-  if (s.player.starter === '') refuse('Pick a character first.');
+  if (a.t === 'start') return start(ctx, a);
+  if (s.player.race === '') refuse('Pick a character first.');
   // a position report and a carved name are not work: they go through while the player is busy
   if (a.t !== 'move' && a.t !== 'carve' && ctx.tick < s.player.busyUntil) refuse('You are still busy.');
   // satiety is kept lazily: bring it up to now before anything reads it
   s.player.satiety = satietyAt(ctx.b, s, ctx.tick);
   s.player.satietyAt = ctx.tick;
-  if (a.t === 'move') return moveTo(ctx, a.at);
+  if (a.t === 'move') return moveTo(ctx, a.at, options.validateTravel === true);
   // past an expedition's last bell the mist walks the player out first: the action is not made, and its tile is not read (G49)
   if (ctx.walkOut !== undefined) {
     arrive(ctx, s.player.at);
     return;
+  }
+  if (options.validateTravel) {
+    checkTravel(ctx, tileOf(a, s.player.at));
+    if (a.t === 'kindle') checkTravel(ctx, a.fire);
   }
   // wherever the action is made, the world acts on the player first; a fall ends the step and the action does not happen
   if (arrive(ctx, tileOf(a, s.player.at))) return;
@@ -296,13 +362,16 @@ function perform(ctx: Ctx, a: Action): void {
     case 'gather':
       return gather(ctx, a.node, a.grade, a.at);
     case 'dig':
-      return dig(ctx, a.spot, a.grade, a.at);
+      // a logged dig from format 1 may name a spot by its old source id
+      return dig(ctx, ctx.b.instances[a.spot] ? a.spot : legacyNodeId(a.spot), a.grade, a.at);
     case 'craft':
       return craft(ctx, a.recipe, a.at);
     case 'eat':
       return eat(ctx, a.item);
     case 'feed':
       return feed(ctx, a.fire, a.item, a.at);
+    case 'kindle':
+      return kindle(ctx, a.fire, a.at);
     case 'buy':
       return buy(ctx, a.npc, a.item, a.qty, a.at);
     case 'sell':
@@ -346,18 +415,56 @@ function carve(ctx: Ctx, name: string): void {
   p.name = name.trim();
 }
 
-function start(ctx: Ctx, starterId: string, name: string, look: number): void {
+/**
+ * The wake pocket the world's seed draws for a new game (DECISIONS.md, 2026-10-22): one of the
+ * bundle's pockets, by id order, never chosen and never the race's. '' when the content has none.
+ */
+export function wakePocket(bundle: Bundle, seed: number): string {
+  const ids = Object.keys(bundle.pockets).sort();
+  if (ids.length === 0) return '';
+  return ids[idiv(drawBasisPoints(seed >>> 0, 'pocket', 0) * ids.length, 10_000)]!;
+}
+
+/**
+ * The placed spots that lay a pocket's tools on the ground by its wake: a spot of that pocket that
+ * asks no tool and finds nothing but the pocket's ground items. A pocket's own task spot (a glint, a
+ * slid bank) is not one of them, even when it asks no tool.
+ */
+export function groundSpots(bundle: Bundle, pocketId: string): string[] {
+  const ground = new Set((bundle.pockets[pocketId]?.ground ?? []).map((k) => k.item));
+  return Object.entries(bundle.instances)
+    .filter(([, inst]) => {
+      const t = inst.kind === 'treasure' ? bundle.treasures[inst.source] : undefined;
+      return t !== undefined && t.pocket === pocketId && t.tool === undefined && t.finds.every((f) => ground.has(f.item));
+    })
+    .map(([id]) => id)
+    .sort();
+}
+
+function start(ctx: Ctx, a: Extract<Action, { t: 'start' }>): void {
   const { b, s } = ctx;
-  if (s.player.starter !== '') refuse('The character is already chosen.');
-  const starter = b.starters[starterId];
-  if (!starter) refuse('Unknown character.');
-  if (look !== 0 && !(look === 1 && starter.sprite_alt)) refuse('Unknown look.');
+  if (s.player.race !== '') refuse('The character is already chosen.');
+  // a format 1 start names a starter: it becomes the race and the pocket that starter turned into, with its old profile and kit, so a logged game replays as it played
+  const legacy = a.race === undefined && a.starter !== undefined ? LEGACY_STARTERS[a.starter] : undefined;
+  const raceId = a.race ?? legacy?.race ?? '';
+  const race = b.races[raceId];
+  if (!race) refuse('Unknown character.');
+  let look = a.look ?? 0;
+  if (legacy && look === 1 && !race.sprite_alt) look = 0;
+  if (look !== 0 && !(look === 1 && race.sprite_alt)) refuse('Unknown look.');
+  const pocketId = legacy?.pocket ?? wakePocket(b, s.seed);
+  const pocket = b.pockets[pocketId];
+  if (!pocket) refuse('There is nowhere to wake.');
   // an empty name is allowed: the player carves it at the bridge's stone (carve)
+  const name = a.name ?? '';
   if (name.trim() !== '') checkName(name);
   s.player.name = name.trim();
-  s.player.starter = starterId;
+  s.player.race = raceId;
+  s.player.pocket = pocketId;
   s.player.look = look;
-  s.player.attrs = { ...starter.attributes };
+  s.player.attrs = legacy ? { ...legacy.attrs } : { ...race.attributes };
+  // the wake tile first: the grade of the world under it counts in the health cap below
+  s.player.at = [pocket.wake.x, pocket.wake.y];
   s.player.gold = b.params.starting_gold_mg;
   if (b.params.starting_gold_mg > 0) s.ledger.minted += b.params.starting_gold_mg;
   s.player.satiety = satietyCap(b, s);
@@ -366,23 +473,30 @@ function start(ctx: Ctx, starterId: string, name: string, look: number): void {
   s.player.recipes = Object.keys(b.recipes)
     .filter((id) => b.recipes[id]!.known === 'start')
     .sort();
-  if (starter.wake) s.player.at = [starter.wake.x, starter.wake.y];
-  for (const stack of starter.kit ?? []) addItem(ctx, stack.item, stack.qty);
-  // a kit piece worn for its work goes on from the first morning
-  for (const stack of starter.kit ?? []) {
+  // the race's outfit is worn from the first morning; the pocket's tools lie on the ground by the wake tile (its own spots), never in the bag
+  // a format 1 starter carried only its kit (its pocket's tools, now in the bag, their spots spent) and no race outfit, so a logged game rolls as it did
+  const firstMorning = legacy ? [...pocket.ground] : [...(race.outfit ?? [])];
+  if (legacy) for (const id of groundSpots(b, pocketId)) s.nodes[id] = { readyAt: 0, draws: 1 };
+  for (const stack of firstMorning) addItem(ctx, stack.item, stack.qty);
+  for (const stack of firstMorning) {
     const w = b.items[stack.item]?.wear;
-    if (w && w.look !== true && (s.player.bag[stack.item] ?? 0) > 0) wear(ctx, stack.item, undefined);
+    if (w && w.look !== true && (s.player.bag[stack.item] ?? 0) > 0 && !Object.values(s.player.worn).includes(stack.item)) wear(ctx, stack.item, undefined);
   }
 }
 
 function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   const { b, s } = ctx;
-  const inst = b.instances[nodeId];
+  // a placed node, or one a reaction makes appear beside it (docs/design/REACTIONS.md)
+  const inst = placedAt(b, nodeId);
   if (!inst || inst.kind !== 'resource') refuse('There is nothing to gather here.');
-  const r = b.resources[inst.source]!;
+  const r = resourceOf(b, nodeId)!;
   checkAt(ctx, at, { x: inst.x, y: inst.y, w: 1, h: 1 });
   checkGrade(grade);
   if (nodeLocked(b, s, r)) refuse('Something else catches the light first.');
+  const appear = appearSlot(b, nodeId);
+  if (appear && !reactionHolds(b, s, appear.reaction, appear.parent, ctx.tick)) refuse('Nothing is there now.');
+  // the waits on its respawn are read before the gather changes the node
+  const wait = waitPermille(b, s, nodeId, ctx.tick);
   const node = s.nodes[nodeId] ?? { readyAt: 0, draws: 0 };
   if (ctx.tick < node.readyAt) refuse('It has not grown back yet.');
   if (r.hours && !inHours(hourOf(b, ctx.tick), r.hours)) {
@@ -402,7 +516,7 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   if (qty > 0) take(ctx, r.output, qty);
   else ctx.events.push({ e: 'nothing', verb: 'gather' });
   if (tool) wearTool(ctx, tool);
-  node.readyAt = ctx.tick + ms + r.respawn_ms;
+  node.readyAt = ctx.tick + ms + mulDiv(r.respawn_ms, wait, 1000);
   s.nodes[nodeId] = node;
   busy(ctx, 'gather', ms);
   gainXp(ctx, verb, grade === 4 ? r.active_ms * JACKPOT_XP : r.active_ms);
@@ -414,9 +528,10 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
   const inst = b.instances[spotId];
   if (!inst || inst.kind !== 'treasure') refuse('There is nothing to dig here.');
   const d = b.treasures[inst.source]!;
-  if (d.starter !== undefined && d.starter !== s.player.starter) refuse('There is nothing to dig here.');
+  if (d.pocket !== undefined && d.pocket !== s.player.pocket) refuse('There is nothing to dig here.');
   checkAt(ctx, at, { x: inst.x, y: inst.y, w: 1, h: 1 });
   checkGrade(grade);
+  const wait = waitPermille(b, s, spotId, ctx.tick);
   const node = s.nodes[spotId] ?? { readyAt: 0, draws: 0 };
   if (!spotOpen(b, s, spotId)) refuse('There is nothing more here.');
   if (ctx.tick < node.readyAt) refuse('This spot was dug up recently.');
@@ -431,8 +546,8 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
   const roll = drawBasisPoints(s.seed, spotId, node.draws);
   node.draws += 1;
   let edge = 0;
-  // a start's own spot always gives its one find, whatever the timing: no start ends at a wall
-  let found: string | undefined = d.starter !== undefined ? d.finds[0]?.item : undefined;
+  // a pocket's own spot always gives its one find, whatever the timing: no start ends at a wall
+  let found: string | undefined = d.pocket !== undefined ? d.finds[0]?.item : undefined;
   for (const f of found ? [] : d.finds) {
     let bp = mulDiv(f.chance_pct * 100, GRADE_PCT[grade], 100);
     if (rarityRank(b.items[f.item]?.rarity ?? 'common') >= 2) bp = mulDiv(bp, luck, 1000);
@@ -445,7 +560,7 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
   if (found) take(ctx, found, 1);
   else ctx.events.push({ e: 'nothing', verb: 'dig' });
   if (tool) wearTool(ctx, tool);
-  node.readyAt = ctx.tick + ms + d.respawn_ms;
+  node.readyAt = ctx.tick + ms + mulDiv(d.respawn_ms, wait, 1000);
   s.nodes[spotId] = node;
   busy(ctx, 'dig', ms);
   gainXp(ctx, 'dig', grade === 4 ? d.active_ms * JACKPOT_XP : d.active_ms);
@@ -532,23 +647,65 @@ function eat(ctx: Ctx, itemId: string): void {
 
 function feed(ctx: Ctx, fireId: string, itemId: string, at: Tile): void {
   const { b, s, tick } = ctx;
-  const prop = b.map.props.find((p) => p.id === fireId && p.fire === true);
-  if (!prop) refuse('There is no fire there.');
-  checkAt(ctx, at, prop);
+  const own = fireId === OWN_FIRE ? s.player.own : null;
+  const prop = fireId === OWN_FIRE ? undefined : b.map.props.find((p) => p.id === fireId && p.fire === true);
+  if (own === null && !prop) refuse('There is no fire there.');
+  checkAt(ctx, at, own === null ? prop! : { x: own.at[0], y: own.at[1], w: 1, h: 1 });
   if (!burnsAsWood(b, itemId)) refuse('That is not wood.');
   if ((s.player.bag[itemId] ?? 0) < 1) refuse('You do not have any.');
   // a log goes in whole or not at all: a fire with less than a log's room under its cap refuses it
   if (nextLogAt(b, s, fireId, tick) > tick) refuse('The fire is already full.');
   const burning = fireBurns(s, fireId, tick);
-  const current = s.player.fires[fireId];
-  const next: FireState = burning
-    ? { ...current!, until: current!.until + b.params.fire.log_ms }
-    : { lit: tick, until: tick + b.params.fire.log_ms };
+  const current = fireOf(s, fireId);
+  const log = logMsOf(b, s, fireId);
+  const next: FireState = burning ? { ...current!, until: current!.until + log } : { lit: tick, until: tick + log };
+  // the player's own fire is kept where it stands and with the log it was kindled with, burning or not
+  if (own !== null) Object.assign(next, { at: own.at, log: own.log });
   // lit again by day after a night it kept: the new burn carries that night's dawn, so the vigil still holds until the next dusk
   if (!burning && tendHolds(b, s, fireId, tick)) next.kept = nightEnds(b, lastDusk(b, tick));
   removeItem(ctx, itemId, 1);
-  s.player.fires[fireId] = next;
+  if (own !== null) s.player.own = next as OwnFire;
+  else s.player.fires[fireId] = next;
   ctx.events.push({ e: 'fire', id: fireId, until: next.until });
+}
+
+/** The camp part whose logs and time build the player's own fire: the same two logs as the camp's fire (NEXT 21). */
+const KINDLE_FROM = 'core/campfire';
+
+/**
+ * The player's own fire (G30; DECISIONS.md, 2026-10-19): built on a free tile beside them, outside the town and every
+ * slot, never during a hunt and never where a predator's round watches the ground it would make safe, so it is a stay
+ * the player plans and never a way out. Every refusal comes before the logs leave the bag. One stands at a time:
+ * kindling another puts the first out and takes its place, carrying a night the first had kept (G48, as a relit
+ * fire does). A log of it lasts `fire.log_ms` shortened by the danger of its ground, fixed here so the rest stays whole numbers.
+ */
+function kindle(ctx: Ctx, fire: Tile, at: Tile): void {
+  const { b, s, tick } = ctx;
+  const camp = b.camps[KINDLE_FROM];
+  if (!camp) refuse('There is nothing to kindle a fire with.');
+  if (!Array.isArray(fire) || fire.length !== 2 || !Number.isSafeInteger(fire[0]) || !Number.isSafeInteger(fire[1])) refuse('Where would the fire go?');
+  checkAt(ctx, at, { x: fire[0], y: fire[1], w: 1, h: 1 });
+  if (at[0] === fire[0] && at[1] === fire[1]) refuse('Step off that spot first.');
+  if (s.player.chase !== null) refuse('Not with the wolf at your heels.');
+  if (!walkableFor(b)(fire[0], fire[1], s.player)) refuse('Nothing here will hold a fire.');
+  if (isTownTile(b, fire)) refuse('The town has its own fires.');
+  if (b.map.slots.some((slot) => inRect(fire[0], fire[1], slot))) refuse('A fire has no place here.');
+  if (Object.values(b.instances).some((inst) => inst.x === fire[0] && inst.y === fire[1]) || b.map.props.some((p) => p.fire === true && inRect(fire[0], fire[1], p))) {
+    refuse('Something is already there.');
+  }
+  if (fireArea(b, fire).some((tile) => watchedAt(b, tile))) refuse('A wolf watches this ground. Not here.');
+  for (const input of camp.inputs) {
+    if ((s.player.bag[input.item] ?? 0) < input.qty) refuse(`You need ${input.qty} ${b.items[input.item]?.name ?? input.item}.`);
+  }
+  const ms = duration(ctx, camp.active_ms, 1000);
+  const log = mulDiv(b.params.fire.log_ms, 100, 100 + b.params.fire.burn_pct_per_d * dangerAt(b, fire));
+  const next: OwnFire = { at: [fire[0], fire[1]], lit: tick, until: tick + log, log };
+  // a night the fire it replaces had kept stays kept until the next dusk: moving the fire by day does not undo it
+  if (tendHolds(b, s, OWN_FIRE, tick)) next.kept = nightEnds(b, lastDusk(b, tick));
+  for (const input of camp.inputs) removeItem(ctx, input.item, input.qty);
+  s.player.own = next;
+  ctx.events.push({ e: 'fire', id: OWN_FIRE, until: next.until });
+  busy(ctx, 'kindle', ms);
 }
 
 /**
@@ -572,7 +729,7 @@ function firesOut(ctx: Ctx, since: number): void {
     for (const st of b.quests[id]?.steps ?? []) if (st.kind === 'tend') kept.add(st.fire);
   }
   for (const id of [...kept].sort()) {
-    const fire = s.player.fires[id];
+    const fire = fireOf(s, id);
     if (fire === undefined || fire.until <= since || fire.until > tick) continue;
     const dusk = lastDusk(b, fire.until);
     if (fire.lit <= dusk && fire.until < nightEnds(b, dusk)) ctx.events.push({ e: 'fire_out', id });
@@ -631,7 +788,7 @@ function sell(ctx: Ctx, npcId: string, itemId: string, qty: number, at: Tile): v
  * last, so only a sale of every unit sells it short, and a lasting tool
  * loses nothing. The client shows this price; the sale pays it.
  */
-export function salePrice(bundle: Bundle, state: State, itemId: string, qty: number): number | undefined {
+export function salePrice(bundle: Bundle, state: PublicState, itemId: string, qty: number): number | undefined {
   const value = bundle.values[itemId];
   if (value === undefined || !bundle.items[itemId]) return undefined;
   const each = payFor(bundle.params, value, bundle.made.includes(itemId));
@@ -699,15 +856,15 @@ function accept(ctx: Ctx, questId: string, at: Tile): void {
 }
 
 /**
- * The item a reward gives this start: what the reward names, or its `instead`
- * when the start's kit already holds it (DECISIONS.md, 2026-10-10: whom to help first).
+ * The item a reward gives this character: what the reward names, or its `instead`
+ * when the character's wake pocket lays it on the ground (DECISIONS.md, 2026-10-10: whom to help first).
  */
-export function rewardItem(bundle: Bundle, starter: string, stack: { item: string; instead?: string }): string {
-  const kit = bundle.starters[starter]?.kit ?? [];
-  return stack.instead !== undefined && kit.some((k) => k.item === stack.item) ? stack.instead : stack.item;
+export function rewardItem(bundle: Bundle, pocket: string, stack: { item: string; instead?: string }): string {
+  const ground = bundle.pockets[pocket]?.ground ?? [];
+  return stack.instead !== undefined && ground.some((k) => k.item === stack.item) ? stack.instead : stack.item;
 }
 
-export function questSatisfied(bundle: Bundle, state: State, questId: string): boolean {
+export function questSatisfied(bundle: Bundle, state: PublicState, questId: string): boolean {
   const q = bundle.quests[questId];
   if (!q) return false;
   const p = state.player;
@@ -776,7 +933,7 @@ function turnIn(ctx: Ctx, questId: string, at: Tile | undefined, explicit: boole
 /** The non-currency part shared by quest and expedition rewards. */
 function applyReward(ctx: Ctx, reward: Pick<QuestDef['reward'], 'items' | 'recipes' | 'opens'>): void {
   const { b, s } = ctx;
-  for (const stack of reward.items ?? []) addItem(ctx, rewardItem(b, s.player.starter, stack), stack.qty);
+  for (const stack of reward.items ?? []) addItem(ctx, rewardItem(b, s.player.pocket, stack), stack.qty);
   for (const recipe of reward.recipes ?? []) learnRecipe(ctx, recipe);
   for (const place of reward.opens ?? []) {
     if (s.player.restored.includes(place)) continue;
@@ -785,9 +942,9 @@ function applyReward(ctx: Ctx, reward: Pick<QuestDef['reward'], 'items' | 'recip
   }
 }
 
-/** A quest that names a starter is offered to a character of that starter only. */
-export function offeredTo(q: { starter?: string }, s: State): boolean {
-  return q.starter === undefined || q.starter === s.player.starter;
+/** A quest that names a wake pocket is offered to a character who woke there only. No quest names a race. */
+export function offeredTo(q: { pocket?: string }, s: PublicState): boolean {
+  return q.pocket === undefined || q.pocket === s.player.pocket;
 }
 
 /**
@@ -800,22 +957,22 @@ export function nodeLocked(bundle: Bundle, state: State, node: { opens_after?: s
 }
 
 /**
- * Whether this character can dig the spot at all: a start's own spot is there
- * only for its starter, and only until it gave its find. A spot that grows
- * back is open again later; the clock is checked apart.
+ * Whether this character can dig the spot at all: a pocket's own spot is there
+ * only for a character who woke in that pocket, and only until it gave its find.
+ * A spot that grows back is open again later; the clock is checked apart.
  */
-export function spotOpen(bundle: Bundle, state: State, spotId: string): boolean {
+export function spotOpen(bundle: Bundle, state: PublicState, spotId: string): boolean {
   const inst = bundle.instances[spotId];
   const d = inst?.kind === 'treasure' ? bundle.treasures[inst.source] : undefined;
   if (!d) return false;
-  if (d.starter === undefined) return true;
-  return d.starter === state.player.starter && (state.nodes[spotId]?.draws ?? 0) === 0;
+  if (d.pocket === undefined) return true;
+  return d.pocket === state.player.pocket && (state.nodes[spotId]?.draws ?? 0) === 0;
 }
 
 /** Quests with no giver start by themselves and finish by themselves. */
 function autoQuests(ctx: Ctx): void {
   const { b, s } = ctx;
-  if (s.player.starter === '') return;
+  if (s.player.race === '') return;
   for (let guard = 0; guard < 20; guard++) {
     let moved = false;
     for (const id of Object.keys(b.quests).sort()) {
@@ -963,7 +1120,7 @@ function solveRiddles(ctx: Ctx, got: RiddleHit): void {
 }
 
 /** Slots an open riddle answers by standing there: the client sends a visit on every entry, visited before or not. */
-export function riddleSlots(bundle: Bundle, state: State): Set<string> {
+export function riddleSlots(bundle: Bundle, state: PublicState): Set<string> {
   const out = new Set<string>();
   for (const id of Object.keys(state.player.quests)) {
     if (state.player.quests[id] !== 'active') continue;
@@ -1034,17 +1191,45 @@ function spend(ctx: Ctx, attr: Attribute): void {
   ctx.events.push({ e: 'attr', attr, value: s.player.attrs[attr] });
 }
 
+/** A step into a world that grades the race otherwise: one event per home attribute that moved, so its pips glow or dim on entry. */
+function gradeEvents(ctx: Ctx, from: readonly [number, number]): void {
+  const { b, s } = ctx;
+  for (const attr of b.races[s.player.race]?.home ?? []) {
+    if (gradeShift(b, s, attr, from) !== gradeShift(b, s, attr)) ctx.events.push({ e: 'grade', attr, value: attrAt(b, s, attr) });
+  }
+}
+
 // ------------------------------------------------------------------ danger
 
 /** A position report (DECISIONS.md, 2026-10-10): the tile the player stands on now. It is the one place travel is checked. */
-function moveTo(ctx: Ctx, at: Tile): void {
+function moveTo(ctx: Ctx, at: Tile, validateTravel: boolean): void {
+  if (validateTravel) {
+    checkTravel(ctx, at);
+    arrive(ctx, at);
+    return;
+  }
   const { b, s } = ctx;
   if (!Array.isArray(at) || at.length !== 2 || !Number.isSafeInteger(at[0]) || !Number.isSafeInteger(at[1])) refuse('Where are you?');
   if (!walkableFor(b)(at[0], at[1], s.player)) refuse('You cannot stand there.');
-  const p = s.player;
-  const reach = 2 + idiv(ctx.tick - p.movedAt, b.params.walk_step_ms);
-  if (Math.max(Math.abs(at[0] - p.at[0]), Math.abs(at[1] - p.at[1])) > reach) refuse('That is further than a walk goes in that time.');
+  const reach = 2 + idiv(ctx.tick - s.player.movedAt, b.params.walk_step_ms);
+  if (Math.max(Math.abs(at[0] - s.player.at[0]), Math.abs(at[1] - s.player.at[1])) > reach) refuse('That is further than a walk goes in that time.');
   arrive(ctx, at);
+}
+
+/** G56: travel and action tiles must be reachable by a four-way walk inside the elapsed-time square. */
+function checkTravel(ctx: Ctx, target: Tile): void {
+  const { b, s, tick } = ctx;
+  const from = s.player.at;
+  if (!Array.isArray(target) || target.length !== 2 || !target.every(Number.isSafeInteger)) refuse('Where are you?');
+  const elapsed = Math.max(0, tick - s.player.movedAt);
+  const reach = Math.min(2 + idiv(elapsed, b.params.walk_step_ms), b.params.move_reach_max);
+  const dx = target[0] - from[0];
+  const dy = target[1] - from[1];
+  if (Math.abs(dx) > reach || Math.abs(dy) > reach) refuse('That is further than a walk goes in that time.');
+  if (walkDistance(b, s, from, target, reach) === undefined) {
+    if (!walkableFor(b)(target[0], target[1], s.player)) refuse('You cannot stand there.');
+    refuse('That is further than a walk goes in that time.');
+  }
 }
 
 /**
@@ -1062,6 +1247,7 @@ function arrive(ctx: Ctx, at: Tile): boolean {
   if (fallIfDown(ctx)) return true;
   p.at = [at[0], at[1]];
   p.movedAt = tick;
+  gradeEvents(ctx, before);
   if (isSafe(b, s, at)) {
     if (ctx.walkOut === undefined) reachSafety(ctx);
     else {
@@ -1074,6 +1260,12 @@ function arrive(ctx: Ctx, at: Tile): boolean {
     p.outing ??= { gained: {}, solved: [], visited: [] };
     // past an expedition's last bell the mist walks the player out: nothing wakes under this tile (G49)
     if (ctx.walkOut === undefined) strike(ctx, before, at);
+  }
+  // the signs this step raised, told here so a phone that holds no seed can show them too (REACTIONS 5)
+  if (before[0] !== at[0] || before[1] !== at[1]) {
+    for (const hit of cuesOnStep(b, s, tick, before, at)) {
+      ctx.events.push({ e: 'cue', cue: hit.cue, reaction: hit.reaction, anchor: hit.anchor, x: hit.x, y: hit.y });
+    }
   }
   return fallIfDown(ctx);
 }

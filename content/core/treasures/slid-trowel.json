@@ -1,0 +1,26 @@
+{
+  "$schema": "../../../schema/json/treasure.schema.json",
+  "format": 1,
+  "type": "treasure",
+  "id": "core/slid-trowel",
+  "title": "A trowel in the grass",
+  "creator": "core",
+  "dig": {
+    "hint": "A trowel lies in the grass beside you.",
+    "active_ms": 1000,
+    "respawn_ms": 60000,
+    "count": 1,
+    "level": 1,
+    "finds": [
+      {
+        "item": "core/trowel",
+        "chance_pct": 100,
+        "share_pct": 100
+      }
+    ],
+    "place": {
+      "slot": "core/slid-trowel"
+    },
+    "pocket": "core/slid-bank"
+  }
+}

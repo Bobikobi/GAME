@@ -64,13 +64,17 @@ the valley's, never the calendar's.
 
 | Stage | The beat | The payoff | Never |
 |---|---|---|---|
-| 0:00-0:15 | Each start wakes at its own place and does its own first task: the forager picks herbs on the west bank, the digger digs its axe out of the slid bank, the explorer follows its senses to its axe in the grass by the bridge. | Something in the bag at once, found the start's own way. | A lore screen, a naming wizard, more than one box of text. |
+| 0:00-0:15 | The player wakes in one of the wake pockets, drawn at random, and does that pocket's own first task: picks herbs on the west bank, digs the axe out of the slid bank, or follows the senses to the axe in the grass by the bridge from the north meadow. The pocket's tool lies on the ground by the wake tile, found, not worn. | Something in the bag at once, found the pocket's own way. | A lore screen, a naming wizard, more than one box of text. |
 | 0:15-1:00 | The first strike, at the bridge's keystone in the shallows. | The strike minigame, taught once; level 1, the jingle, a skill point to spend now. | A level with nothing to spend. |
-| 1-5 min | The bridge mends; a tree is felled with the axe each start holds or finds; the fire is built. | A tile changes, a sign carries the player's name, a purse: the price of one tool, in gold only. | A build that only opens a panel. |
+| 1-5 min | The bridge mends; a tree is felled with the axe each pocket gives; the fire is built. | A tile changes, a sign carries the player's name, a purse: the price of one tool, in gold only. | A build that only opens a panel. |
 | 5-8 min | The town: whom to help first, Maru or Pell; then Maru's coin; at dusk, the riddle. | A real choice: Maru pays with his old trowel, Pell with a recipe and coin, and the stall says what each tool opens. Both plants are open from noon until dark, so neither order waits. From 19:00 the hill lantern lights the tile to dig. | A fetch with a counter and nothing to notice. |
 | 8-10 min | After dark, the broken arch at the edge of the ruins. | A way under the arch that rubble filled by day, to the threshold of the night ruins: a place that opens, the first sight of the expeditions (G36). | Something to fight or something that hunts (G35). |
 | Session end | A visible mark of the day. | The day summary: what was found, built, learned; one open door. | Stopping in the middle of nothing. |
 | Day 2 | The morning after the first night, slept or played through: something changed overnight. Away, the valley waits at the hour it was left (G28). | The morning toast, a respawned grove, a new line from an NPC, a bell at night. | The same valley as yesterday. |
+
+Every race climbs the same ladder from whichever pocket it wakes in: a race
+changes how a rung is played, never whether, and the grade of the world it
+stands in moves only its two home attributes (G70).
 
 ## 3. The rules
 
@@ -291,6 +295,15 @@ already handles that and the e2e run checks it.
   word); reduced motion is honoured by every effect; one hand is enough on a
   phone; the strike window grows with agility so a slower hand still wins
   (G15).
+- **G70 A race changes how, never whether.** The valley speaks to each race
+  in its own lines, and a quest may offer a race a step variant or a harder
+  way through; no quest step, door or reward closes to a race (G12, G28).
+  The grade is the one place a race's numbers move with the world: weak,
+  normal or strong per race per world, home always strong, it shifts the
+  race's two home attributes by +1, 0 or -1 in the world the player stands
+  in, never below zero, and nothing else. A required attribute opens a
+  harder way, never a closed door (DECISIONS.md, 22.10, decisions 10, 12,
+  28 and 46).
 
 ### Danger and falling
 
@@ -303,9 +316,12 @@ The valley has no combat; its danger is the hour, and what the player eats.
   its owner approved: any of these is a safe place, or a safe area,
   the one thing every rule below means (DECISIONS.md, 10.10). The fire eats
   wood through the night, more the deeper the area and none at danger level 0,
-  where the opening's camp stands. A camp anywhere else outside the
-  town is a tent the player buys and pitches, with wood enough for the night
-  ([SETTLEMENT.md](SETTLEMENT.md) S2). Outside these the hazards that hunt (the
+  where the opening's camp stands. Anywhere else outside the town a camp is a
+  fire the player builds, no tent: it is a safe place while it burns, it is
+  never lit during a chase or inside a predator's round, and the wood it eats
+  follows the area's danger, the number never shown; the fire is seen to dim
+  and warns before it goes out (G31; DECISIONS.md, 2026-10-19, the entry on a
+  fire anywhere; [SETTLEMENT.md](SETTLEMENT.md) S2). Outside these the hazards that hunt (the
   wolf, the hidden pit, the trap, deep water) act after dark (the clock the
   world already keeps: dark from 20:00 to 05:00, with the dusk ramp drawn
   around it) and inside the mist; by day they show and can be walked around: the
@@ -376,7 +392,10 @@ The valley has no combat; its danger is the hour, and what the player eats.
   The window to cross is learned by watching the eyes in the dark, never told
   by a number. The check holds a stealth quest to it: its target lies inside
   a round's watch, with cover on the way (section 8). Added 2026-10-13
-  (DECISIONS.md, the entry on the three frames).
+  (DECISIONS.md, the entry on the three frames). Fog shortens the cone, from
+  weather's phase B: fog is drawn, so the shorter cone is still read by the
+  eyes. Noise never turns a predator's head in the demo (the owner, 19.10;
+  [REACTIONS.md](REACTIONS.md) section 9).
 - **G48 A fire is kept by hand.** A fire holds a few logs and burns them on
   the game hour, only while the player is in the valley; feeding it by hand
   lights it or adds a log, a whole one or none (a fire with no room left for
@@ -390,7 +409,9 @@ The valley has no combat; its danger is the hour, and what the player eats.
   the fire is lit again by day. Added
   2026-10-13 (the same entry); a log goes in whole since 2026-10-14
   (DECISIONS.md, the entry on the full fire); the vigil closes at dawn since
-  2026-10-16 (the entry on the vigil at dawn).
+  2026-10-16 (the entry on the vigil at dawn). Weather never touches a fire:
+  rain neither puts one out nor makes it burn longer (the owner, 19.10;
+  [REACTIONS.md](REACTIONS.md) section 9).
 
 ### Expeditions
 
@@ -500,7 +521,7 @@ Added 2026-10-18 on the owner's word (DECISIONS.md, "Height crossings and windin
 | Topic | Where | State |
 |---|---|---|
 | The opening and onboarding | [FTUE_RESEARCH.md](../FTUE_RESEARCH.md) | Written; roadmap phases 2 and 3 open. |
-| Loop and hook, quests, riddles, reading, builds, choices, feel, session, variety, dialogue, sound, fairness, access, danger, expeditions, crafting, menace | This page | Rules G1-G49, G68 and G69. |
+| Loop and hook, quests, riddles, reading, builds, choices, feel, session, variety, dialogue, sound, fairness, access, danger, expeditions, crafting, menace | This page | Rules G1-G49 and G68-G70. |
 | Economy and balance | The kernel rules R1-R12, `content/core/params.json`, `pnpm values` | Enforced by code. |
 | Art and sprites | [docs/creators/README.md](../creators/README.md) | Enforced by the kit check. |
 | Community: requests, votes, merges, conduct | [CONTRIBUTING.md](../../CONTRIBUTING.md), [docs/loop/README.md](../loop/README.md) | Live. |

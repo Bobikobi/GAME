@@ -2,11 +2,11 @@
   "$schema": "../../../schema/json/treasure.schema.json",
   "format": 1,
   "type": "treasure",
-  "id": "core/slid-bank",
+  "id": "core/slid-bank-dig",
   "title": "The slid bank",
   "creator": "core",
   "dig": {
-    "hint": "The earth is turned where the bank slid in the night.",
+    "hint": "The earth is loose where the bank has slid.",
     "active_ms": 3000,
     "respawn_ms": 60000,
     "count": 1,
@@ -22,6 +22,6 @@
     "place": {
       "slot": "core/slid-bank"
     },
-    "starter": "core/digger"
+    "pocket": "core/slid-bank"
   }
 }

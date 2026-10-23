@@ -10,30 +10,38 @@
     "type": "tending",
     "summary": "My hearth went cold the year the bells began. Does a fire kept by hand hold through one whole night?",
     "requires": [
-      "core/a-coin-for-maru"
+      "core/something-warm"
     ],
     "steps": [
       {
         "kind": "tend",
-        "fire": "core/elder-hearth"
+        "fire": "own"
       }
     ],
     "talk": {
       "offer": [
-        "This hearth by my door was kept every night, once. Then it was not.",
-        "Light it before dusk. Feed it until dawn. What is looked after stays."
+        "This hearth by my door is mine to keep. Yours is out there, where you choose.",
+        "Past the last house, build it before dusk. Feed it until dawn.",
+        "What is looked after stays."
       ],
       "waiting": [
-        "Before dusk, light it. Then wood, all night, until the sky goes grey."
+        "Out past the last house, a fire of your own. Light it before dusk.",
+        "Wood through the night, until the sky goes grey. A fire gone out takes it."
       ],
       "done": [
-        "It held, the whole night. What is looked after is not forgotten.",
+        "A fire of your own, a whole night. What is looked after is not forgotten.",
         "Take this. Herbs and cord, the way we bound a hurt once."
       ]
     },
     "reward": {
       "rep": 15,
       "gold_mg": 20000,
+      "items": [
+        {
+          "item": "core/bandage",
+          "qty": 1
+        }
+      ],
       "recipes": [
         "core/bandage"
       ]
