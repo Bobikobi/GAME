@@ -76,6 +76,16 @@ window.__inn = (() => {
       }
       throw new Error('no tile beside the innkeeper');
     },
+    /** Stands the player below Maru's hearth, for the dusk capture. */
+    toHearth() {
+      const s = g().session, b = g().bundle, p = s.state.player;
+      const h = b.map.props.find((x) => x.kept);
+      const at = [h.x, h.y + 1];
+      s.pos = [at[0], at[1]];
+      p.at = [at[0], at[1]];
+      g().world.bind(s);
+      return at;
+    },
     hungry() {
       const p = g().session.state.player;
       p.satiety = 0;
@@ -192,8 +202,13 @@ async function run(page: Page, url: string, viewport: Viewport, name: string): P
   log('the bed by day: refused');
   await sleep(400);
 
-  // the bed at dusk: a night in it, awake at 05:00, fed in full
+  // the bed at dusk: a night in it, awake at 05:00, fed in full. On the way, Maru's hearth, lit while he is home
   await page.eval('__inn.setHour(19.5)');
+  await page.eval('__inn.toHearth()');
+  await sleep(800);
+  await shot('hearth');
+  await page.eval('__inn.toInn()');
+  await sleep(300);
   await page.eval('__inn.hungry()');
   await page.eval(`void __game.ui.talk(${JSON.stringify(INN)})`);
   await choose(page, 'Sleep until dawn');
