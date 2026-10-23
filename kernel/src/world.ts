@@ -3,7 +3,7 @@
  * tile a player can stand on and the tile the kernel accepts are the same.
  */
 import type { Bundle, Instance, MapDef, ResourceDef, TreasureDef } from './bundle';
-import { idiv } from './num';
+import { idiv, mulDiv } from './num';
 
 export interface Rect {
   x: number;
@@ -156,11 +156,150 @@ function besideLand(map: MapDef, solid: Uint8Array, x: number, y: number): boole
   });
 }
 
-/** Tile an NPC stands on. */
-export function npcTile(bundle: Bundle, npcId: string): [number, number] | undefined {
+/** The tile an NPC calls home: the centre of its slot. */
+export function npcHome(bundle: Bundle, npcId: string): [number, number] | undefined {
   const npc = bundle.npcs[npcId];
   const slot = npc && findSlot(bundle.map, npc.place.slot);
   return slot ? centerOf(slot) : undefined;
+}
+
+/**
+ * Tile an NPC stands on at a game tick: at home, or on the leg of its round whose hours hold the tick
+ * (decision 27 of 22.10: a ranger who walks the edges by day), from the first dawn on: the waking day's
+ * first meeting finds the keeper at home. Without a tick, home: the tile a map
+ * check or a placement reads.
+ */
+export function npcTile(bundle: Bundle, npcId: string, tick?: number): [number, number] | undefined {
+  const home = npcHome(bundle, npcId);
+  if (home === undefined || tick === undefined) return home;
+  const leg = roundLeg(bundle, npcId, tick);
+  if (leg === undefined) return home;
+  const walk = roundWalk(bundle, npcId, leg.index);
+  const steps = walk.length - 1;
+  if (steps <= 0) return home;
+  const at = walk[Math.min(steps, mulDiv(leg.into, steps, leg.span))]!;
+  return [at[0], at[1]];
+}
+
+/** Whether an NPC stands at home at a game tick: it has no round, or no leg of the round holds the tick. */
+export function npcAtHome(bundle: Bundle, npcId: string, tick: number): boolean {
+  return roundLeg(bundle, npcId, tick) === undefined;
+}
+
+/** The leg of an NPC's round that holds this tick: its index, how far into the leg the tick is and how long the leg runs, in game ms. */
+function roundLeg(bundle: Bundle, npcId: string, tick: number): { index: number; into: number; span: number } | undefined {
+  const round = bundle.npcs[npcId]?.round;
+  if (round === undefined || !Number.isSafeInteger(tick)) return undefined;
+  const day = bundle.params.day_length_ms;
+  // the day the player wakes he keeps to his post: the rounds begin with the first dawn (tick 0 is noon)
+  if (tick < idiv(day, 2) + mulDiv(5, day, 24)) return undefined;
+  // the ms since midnight (state.ts, hourOf)
+  const phase = (((tick + idiv(day, 2)) % day) + day) % day;
+  for (let index = 0; index < round.length; index++) {
+    const [from, to] = round[index]!.hours;
+    const start = mulDiv(from, day, 24);
+    const end = mulDiv(to, day, 24);
+    if (end > start && phase >= start && phase < end) return { index, into: phase - start, span: end - start };
+  }
+  return undefined;
+}
+
+const walkCache = new WeakMap<Bundle, Map<string, readonly (readonly [number, number])[]>>();
+
+/**
+ * The tiles of one leg of a round, home to home: a four-way walk from home through each via tile in order,
+ * then back the same way. Walked on the ground and the props that never change, with every mend that opens
+ * a way made: the keeper of the valley knows the ford. A via tile no walk reaches is stepped to straight.
+ */
+export function roundWalk(bundle: Bundle, npcId: string, leg: number): readonly (readonly [number, number])[] {
+  let byNpc = walkCache.get(bundle);
+  if (byNpc === undefined) walkCache.set(bundle, (byNpc = new Map()));
+  const key = `${npcId}#${leg}`;
+  const cached = byNpc.get(key);
+  if (cached !== undefined) return cached;
+  const home = npcHome(bundle, npcId);
+  const via = bundle.npcs[npcId]?.round?.[leg]?.via ?? [];
+  if (home === undefined) return [];
+  const open = openGround(bundle);
+  const out: [number, number][] = [home];
+  for (const target of via) {
+    const from = out[out.length - 1]!;
+    out.push(...pathBetween(bundle.map, open, from, [target[0], target[1]]));
+  }
+  const back = out.slice(0, -1).reverse();
+  const walk = [...out, ...back];
+  byNpc.set(key, walk);
+  return walk;
+}
+
+/** The ground a walker crosses: not solid, or inside a passable mend (a bridge). */
+function openGround(bundle: Bundle): Uint8Array {
+  const map = bundle.map;
+  const solid = staticSolid(map);
+  const open = new Uint8Array(solid.length);
+  for (let i = 0; i < solid.length; i++) open[i] = solid[i] ? 0 : 1;
+  for (const r of Object.values(bundle.restores)) {
+    if (!r.passable) continue;
+    const slot = findSlot(map, r.place.slot);
+    if (!slot) continue;
+    for (let y = slot.y; y < slot.y + slot.h; y++) for (let x = slot.x; x < slot.x + slot.w; x++) open[y * map.width + x] = 1;
+  }
+  return open;
+}
+
+/** The tiles after `from` up to and including `to`: a shortest four-way walk over open ground, else straight steps. */
+function pathBetween(map: MapDef, open: Uint8Array, from: readonly [number, number], to: readonly [number, number]): [number, number][] {
+  if (from[0] === to[0] && from[1] === to[1]) return [];
+  const w = map.width;
+  const size = w * map.height;
+  const inside = (x: number, y: number) => x >= 0 && y >= 0 && x < w && y < map.height;
+  const goal = to[1] * w + to[0];
+  const start = from[1] * w + from[0];
+  if (inside(to[0], to[1]) && inside(from[0], from[1])) {
+    const prev = new Int32Array(size).fill(-1);
+    prev[start] = start;
+    const queue = [start];
+    for (let head = 0; head < queue.length && prev[goal] === -1; head++) {
+      const i = queue[head]!;
+      const x = i % w;
+      const y = idiv(i, w);
+      for (const [dx, dy] of [[0, -1], [1, 0], [0, 1], [-1, 0]] as const) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (!inside(nx, ny)) continue;
+        const n = ny * w + nx;
+        if (prev[n] !== -1 || (!open[n] && n !== goal)) continue;
+        prev[n] = i;
+        queue.push(n);
+      }
+    }
+    if (prev[goal] !== -1) {
+      const path: [number, number][] = [];
+      for (let i = goal; i !== start; i = prev[i]!) path.push([i % w, idiv(i, w)]);
+      return path.reverse();
+    }
+  }
+  const path: [number, number][] = [];
+  let [x, y] = from;
+  while (x !== to[0]) path.push([(x += Math.sign(to[0] - x)), y]);
+  while (y !== to[1]) path.push([x, (y += Math.sign(to[1] - y))]);
+  return path;
+}
+
+/**
+ * Whether a fire a character keeps burns at this tick (the owner, 23.10: Maru's hearth): from its hour while
+ * the keeper is home, through the night, until the keeper leaves on the round. Not the player's fire: its
+ * wood, its vigil and its safety stay the player's own (G48).
+ */
+export function keptFireLit(bundle: Bundle, propId: string, tick: number): boolean {
+  const kept = bundle.map.props.find((p) => p.id === propId)?.kept;
+  if (kept === undefined || bundle.npcs[kept.by] === undefined) return false;
+  const day = bundle.params.day_length_ms;
+  const phase = (((tick + idiv(day, 2)) % day) + day) % day;
+  // lit from its hour to midnight, and on from midnight until the keeper leaves home
+  const evening = phase >= mulDiv(kept.from, day, 24);
+  const morning = phase < idiv(day, 2);
+  return (evening || morning) && npcAtHome(bundle, kept.by, tick);
 }
 
 /** Tile a camp upgrade stands on, inside the first camp slot of the map. */

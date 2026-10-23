@@ -934,6 +934,65 @@
           "maxLength": 80,
           "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
           "type": "string"
+        },
+        "round": {
+          "minItems": 1,
+          "maxItems": 4,
+          "description": "A character who walks a round by day (decision 27 of 22.10): the legs of the day, each away from home over its hours. Where the character stands at a game tick is the kernel's (`npcTile`), so a talk, a trade or a task finds them where they are.",
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "hours",
+              "via"
+            ],
+            "properties": {
+              "hours": {
+                "description": "From (inclusive) to (exclusive), game hours, inside one day. Outside every leg the character stands at home, on the slot.",
+                "type": "array",
+                "items": [
+                  {
+                    "minimum": 0,
+                    "maximum": 23,
+                    "type": "integer"
+                  },
+                  {
+                    "minimum": 1,
+                    "maximum": 24,
+                    "type": "integer"
+                  }
+                ],
+                "additionalItems": false,
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "via": {
+                "minItems": 1,
+                "maxItems": 48,
+                "description": "Tiles walked through in order, x then y, each one a foot can stand on: from home to the first, on through the rest, then back the same way home, at an even pace that fills the hours.",
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": [
+                    {
+                      "minimum": 0,
+                      "maximum": 1023,
+                      "type": "integer"
+                    },
+                    {
+                      "minimum": 0,
+                      "maximum": 1023,
+                      "type": "integer"
+                    }
+                  ],
+                  "additionalItems": false,
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              }
+            }
+          }
         }
       }
     }
