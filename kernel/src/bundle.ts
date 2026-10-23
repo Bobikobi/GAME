@@ -112,6 +112,8 @@ export interface Params {
   };
   /** places with nothing on the back: hands and belt (a bag on the back gives its own `wear.places`) */
   bag_base: number;
+  /** things of one kind that share one place (a stack) */
+  place_stack: number;
   /**
    * Weight and pace (DECISIONS.md, 2026-10-23): the limit is `base` + `per_point.might` per point + a frame bag's
    * `load_bonus`; light up to `light_permille` of it, steady up to all of it, heavy above; nothing more is picked up

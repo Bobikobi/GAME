@@ -153,6 +153,7 @@ export function flattenParams(p: ParamsBody): Params {
       deep_water: { harm_pct: p.hazard.deep_water.harm_pct.value },
     },
     bag_base: p.bag_base.value,
+    place_stack: p.place_stack.value,
     load: {
       base: p.load.base.value,
       light_permille: p.load.light_permille.value,

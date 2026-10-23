@@ -1233,6 +1233,10 @@ export const ParamsBody = Type.Object(
       ...Bounded,
       description: 'Places with nothing on the back: hands and belt (DECISIONS.md, 2026-10-23). A bag on the back gives its own `wear.places` instead.',
     },
+    place_stack: {
+      ...Bounded,
+      description: 'Things of one kind that share one place: a place holds a stack of up to this many (DECISIONS.md, 2026-10-23). Weight still counts every unit.',
+    },
     load: Type.Object(
       {
         base: { ...Bounded, description: 'The weight limit before might: the limit is this plus `per_point.might` for each point, plus a frame bag\'s `load_bonus`.' },

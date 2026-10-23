@@ -232,9 +232,16 @@ async function run(page: Page, base: string, viewport: Viewport): Promise<void> 
   await page.eval(`window.__load.fillTo(${target})`);
   c = await chipReads(page, 'Light');
   const before = Number(c.count.split('/')[0]);
-  // the first of a tool hangs at the belt and takes no place; a spare takes one
-  const spare = await page.eval<boolean>(`(window.__game.session.state.player.bag[${JSON.stringify(ground.item)}] ?? 0) > 0`);
-  const after = before + (spare ? 1 : 0);
+  // the first of a tool hangs at the belt and takes no place; a spare joins its kind's stack, opening a
+  // new place only when the last stack is full
+  const grows = await page.eval<number>(`(() => {
+    const g = window.__game, stack = g.bundle.params.place_stack;
+    const have = g.session.state.player.bag[${JSON.stringify(ground.item)}] ?? 0;
+    const body = g.bundle.items[${JSON.stringify(ground.item)}].tool ? 1 : 0;
+    const places = (n) => Math.ceil(Math.max(0, n - body) / stack);
+    return places(have + 1) - places(have);
+  })()`);
+  const after = before + grows;
   const picked = await page.eval<{ ok: boolean; error?: string }>(`(() => {
     const s = window.__game.session;
     const r = s.act({ t: 'dig', spot: ${JSON.stringify(ground.spot)}, grade: 3, at: ${JSON.stringify(ground.at)} });

@@ -1,6 +1,7 @@
 /**
  * Weight and pace (DECISIONS.md, 2026-10-23: races, weight and bags). Two numbers, two jobs: places
- * say how many things the player holds and come from what is on the back (`bagCapacity`); weight
+ * say how many stacks the player holds (ten of a kind to a place) and come from what is on the back
+ * (`bagCapacity`); weight
  * says how fast they walk, against a limit that comes from might. Every item weighs, worn ones too.
  * Pure and integer-only, like the rest of the kernel.
  */

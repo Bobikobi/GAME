@@ -11599,6 +11599,7 @@
             "fire",
             "hazard",
             "bag_base",
+            "place_stack",
             "load",
             "starting_gold_mg",
             "per_point"
@@ -12891,6 +12892,33 @@
                 }
               },
               "description": "Places with nothing on the back: hands and belt (DECISIONS.md, 2026-10-23). A bag on the back gives its own `wear.places` instead."
+            },
+            "place_stack": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Things of one kind that share one place: a place holds a stack of up to this many (DECISIONS.md, 2026-10-23). Weight still counts every unit."
             },
             "load": {
               "additionalProperties": false,

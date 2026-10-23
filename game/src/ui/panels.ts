@@ -8,6 +8,7 @@ import {
   WEAR_SLOTS,
   bagCapacity,
   bagUsed,
+  placeRoom,
   attrAt,
   characterLevel,
   minuteOfDay,
@@ -735,7 +736,7 @@ export function openShop(ui: UI, npcId: string): void {
                 opens.length ? h('div', { class: 'muted', 'data-opens': '' }, `Opens: ${opens.join(', ')}`) : null,
               ),
               h('span', { class: 'price' }, gold(o.price_mg)),
-              button('Buy', () => deal(() => s.act({ t: 'buy', npc: npcId, item: o.item, qty: 1, at: s.pos })), 'small', st.player.gold < o.price_mg || room < 1),
+              button('Buy', () => deal(() => s.act({ t: 'buy', npc: npcId, item: o.item, qty: 1, at: s.pos })), 'small', st.player.gold < o.price_mg || placeRoom(b, st, o.item) < 1),
             );
           })
         : sellable(b, st).map(({ item: id, each }) => {

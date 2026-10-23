@@ -327,21 +327,50 @@ export function satietyAt(bundle: Bundle, state: PublicState, tick: number): num
 }
 
 /**
- * The places the bag's things take (DECISIONS.md, 2026-10-23): one a unit, except what is on the body -
- * the units worn on either layer, and one of each tool, which hangs at the belt. A spare tool takes a
- * place. Their weight still counts (`loadWeight`).
+ * The places the bag's things take (DECISIONS.md, 2026-10-23): things of one kind share a place, up to
+ * `place_stack` of them, so a place holds a stack. What is on the body takes none - the units worn on
+ * either layer, and one of each tool, which hangs at the belt; a spare tool goes in the places. Weight
+ * still counts every unit (`loadWeight`).
  */
 export function bagUsed(bundle: Bundle, state: PublicState): number {
+  return placesWith(bundle, state, {});
+}
+
+/** The places the bag would take with `delta` units added to (or taken from) it. */
+export function placesWith(bundle: Bundle, state: PublicState, delta: Record<string, number>): number {
   const p = state.player;
+  const stack = Math.max(1, bundle.params.place_stack);
+  const worn = onBodyCounts(state);
   let n = 0;
-  for (const k of Object.keys(p.bag)) n += p.bag[k] ?? 0;
-  const worn: Record<string, number> = {};
-  for (const layer of [p.worn, p.looks]) for (const id of Object.values(layer)) if (id !== undefined) worn[id] = (worn[id] ?? 0) + 1;
-  for (const id of Object.keys(p.bag)) {
-    const onBody = Math.max(worn[id] ?? 0, bundle.items[id]?.tool !== undefined ? 1 : 0);
-    n -= Math.min(onBody, p.bag[id] ?? 0);
+  for (const id of new Set([...Object.keys(p.bag), ...Object.keys(delta)])) {
+    const have = (p.bag[id] ?? 0) + (delta[id] ?? 0);
+    n += idivUp(Math.max(0, have - onBody(bundle, worn, id)), stack);
   }
   return n;
+}
+
+/**
+ * How many more units of one kind fit in the places: the free places' stacks, plus what the kind's own
+ * last stack still takes, plus a tool's belt hook when none is carried yet.
+ */
+export function placeRoom(bundle: Bundle, state: PublicState, itemId: string): number {
+  const stack = Math.max(1, bundle.params.place_stack);
+  const have = state.player.bag[itemId] ?? 0;
+  const body = onBody(bundle, onBodyCounts(state), itemId);
+  const mine = idivUp(Math.max(0, have - body), stack);
+  const free = Math.max(0, bagCapacity(bundle, state) - bagUsed(bundle, state));
+  return Math.max(0, (mine + free) * stack + body - have);
+}
+
+function onBodyCounts(state: PublicState): Record<string, number> {
+  const p = state.player;
+  const worn: Record<string, number> = {};
+  for (const layer of [p.worn, p.looks]) for (const id of Object.values(layer)) if (id !== undefined) worn[id] = (worn[id] ?? 0) + 1;
+  return worn;
+}
+
+function onBody(bundle: Bundle, worn: Record<string, number>, id: string): number {
+  return Math.max(worn[id] ?? 0, bundle.items[id]?.tool !== undefined ? 1 : 0);
 }
 
 /** Whether a camp part stands, itself or under an upgrade built over it. */

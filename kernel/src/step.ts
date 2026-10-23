@@ -38,6 +38,8 @@ import {
   attrAt,
   bagCapacity,
   bagUsed,
+  placeRoom,
+  placesWith,
   burnsAsWood,
   campBuilt,
   effectValue,
@@ -521,7 +523,7 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   const verb = nodeVerb(r);
   if (verbLevel(b, s, verb) < r.level) refuse(`Needs ${b.professions[b.verbs[verb]]?.name ?? 'gathering'} level ${r.level}.`);
   const tool = r.tool ? requireTool(ctx, r.tool) : undefined;
-  if (bagCapacity(b, s) - bagUsed(b, s) <= 0) refuse('Your bag is full.');
+  if (placeRoom(b, s, r.output) < 1) refuse('Your bag is full.');
   if (weightRoom(b, s, r.output) < 1) refuse(TOO_HEAVY);
 
   const ms = duration(ctx, r.active_ms, speedPermille(ctx, (tool ? 150 * (toolTier(ctx, tool) - 1) : 0) + 10 * effectValue(b, s, 'gather_speed_pct')));
@@ -555,7 +557,8 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
   if (verbLevel(b, s, 'dig') < d.level) refuse(`Needs ${b.professions[b.verbs.dig]?.name ?? 'digging'} level ${d.level}.`);
   // a find picked up by hand asks for no tool and wears none
   const tool = d.tool ? requireTool(ctx, d.tool) : undefined;
-  if (bagCapacity(b, s) - bagUsed(b, s) <= 0) refuse('Your bag is full.');
+  // full means no find of this spot still fits: a stack with room left takes one more
+  if (d.finds.every((f) => placeRoom(b, s, f.item) < 1)) refuse('Your bag is full.');
   if (loadWeight(b, s) >= loadMax(b, s)) refuse(TOO_HEAVY);
 
   const ms = duration(ctx, d.active_ms, speedPermille(ctx, (tool ? 150 * (toolTier(ctx, tool) - 1) : 0) + 10 * effectValue(b, s, 'dig_speed_pct')));
@@ -618,12 +621,15 @@ function craft(ctx: Ctx, recipeId: string, at: Tile): void {
   }
   // the bag must hold what either outcome leaves
   const miss = missOutcome(b, c);
-  const used = c.inputs.reduce((n, i) => n + i.qty, 0);
-  const growth = Math.max(
-    c.outputs.reduce((n, o) => n + o.qty, 0) - used,
-    miss.keep.reduce((n, k) => n + k.qty, 0) - used,
-  );
-  if (growth > bagCapacity(b, s) - bagUsed(b, s)) refuse('Your bag is too full for what this makes.');
+  const placesNow = bagUsed(b, s);
+  const outcome = (out: readonly { item: string; qty: number }[]): number => {
+    const delta: Record<string, number> = {};
+    for (const i of c.inputs) delta[i.item] = (delta[i.item] ?? 0) - i.qty;
+    for (const o of out) delta[o.item] = (delta[o.item] ?? 0) + o.qty;
+    return placesWith(b, s, delta);
+  };
+  const after = Math.max(outcome(c.outputs), outcome(miss.keep));
+  if (after > placesNow && after > bagCapacity(b, s)) refuse('Your bag is too full for what this makes.');
   // and the weight: what either outcome adds must stay under the most the player carries
   const inWeight = c.inputs.reduce((n, i) => n + i.qty * itemWeight(b, i.item), 0);
   const heavier = Math.max(
@@ -788,7 +794,7 @@ function buy(ctx: Ctx, npcId: string, itemId: string, qty: number, at: Tile): vo
   if (!offer) refuse('That is not for sale here.');
   const total = offer.price_mg * qty;
   if (s.player.gold < total) refuse('You do not have enough gold.');
-  if (bagCapacity(b, s) - bagUsed(b, s) < qty) refuse('Your bag is too full.');
+  if (placeRoom(b, s, itemId) < qty) refuse('Your bag is too full.');
   if (weightRoom(b, s, itemId) < qty) refuse('That would be too heavy to carry.');
   s.player.gold -= total;
   s.ledger.burned += total;
@@ -1520,7 +1526,7 @@ function wearTool(ctx: Ctx, itemId: string): void {
 /** Put something into the bag; returns how many fit. */
 function addItem(ctx: Ctx, itemId: string, qty: number): number {
   const { b, s } = ctx;
-  const room = Math.min(Math.max(0, bagCapacity(b, s) - bagUsed(b, s)), weightRoom(b, s, itemId));
+  const room = Math.min(placeRoom(b, s, itemId), weightRoom(b, s, itemId));
   const kept = Math.min(qty, room);
   if (kept > 0) {
     s.player.bag[itemId] = (s.player.bag[itemId] ?? 0) + kept;

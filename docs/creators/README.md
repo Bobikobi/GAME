@@ -174,7 +174,7 @@ The check then asks one thing more: a try never loses value on average. Take the
 - `wear.set` - optional: an id of your own that two or more of your pieces name, and that fits on the character at once (one piece per place, two jewelry pieces at most). Worn whole, a set's effects grow by `wear_set_bonus_pct` (20 percent today). The reed hat and the reed sandals make the set `core/reed-walker`.
 - `wear.look` - a look shows and counts for nothing: no effects and no set.
 
-Worn items are work clothes. They help the work and never protect you from a hazard; no effect on the list does that. A worn item stays in your bag and comes off when it leaves. It takes no place while worn, and neither does one of each tool, which hangs at the belt; their weight still counts.
+Worn items are work clothes. They help the work and never protect you from a hazard; no effect on the list does that. A worn item stays in your bag and comes off when it leaves. It takes no place while worn, and neither does one of each tool, which hangs at the belt; their weight still counts. Other things of one kind share a place, up to `place_stack` (ten) to a place.
 
 ### A tool
 

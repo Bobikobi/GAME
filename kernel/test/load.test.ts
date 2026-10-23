@@ -23,6 +23,7 @@ import {
   newState,
   npcTile,
   paceWeight,
+  placeRoom,
   restMendPermille,
   step,
   walkStepMs,
@@ -194,17 +195,35 @@ describe('bags', () => {
   test('the bag on the back takes no place of its own', () => {
     const s = started('core/elf');
     s.player.bag = { 'core/satchel': 1, 'x/pebble': 3 };
-    expect(bagUsed(b, s)).toBe(4);
+    expect(bagUsed(b, s)).toBe(2);
     s.player.worn.back = 'core/satchel';
-    expect(bagUsed(b, s)).toBe(3);
+    expect(bagUsed(b, s)).toBe(1);
+  });
+
+  test('things of one kind share a place, ten to a stack, and every unit still weighs', () => {
+    const s = started('core/elf');
+    s.player.bag = { 'x/pebble': 10 };
+    expect(bagUsed(b, s)).toBe(1);
+    expect(placeRoom(b, s, 'x/pebble')).toBe(110);
+    s.player.bag['x/pebble'] = 11;
+    expect(bagUsed(b, s)).toBe(2);
+    expect(placeRoom(b, s, 'x/pebble')).toBe(109);
+    expect(placeRoom(b, s, 'core/herb')).toBe(100);
+    expect(loadWeight(b, s)).toBe(11);
+    // a full bag still takes more of a kind whose last stack has room
+    for (let i = 0; i < 10; i++) s.player.bag[`x/kind-${i}`] = 1;
+    expect(bagUsed(b, s)).toBe(12);
+    expect(placeRoom(b, s, 'x/pebble')).toBe(9);
+    expect(placeRoom(b, s, 'core/herb')).toBe(0);
   });
 
   test('one of each tool hangs at the belt and takes no place; a spare takes one, and both weigh', () => {
     const s = started('core/elf');
     s.player.bag = { 'core/axe': 1, 'core/trowel': 1, 'x/pebble': 2 };
-    expect(bagUsed(b, s)).toBe(2);
+    expect(bagUsed(b, s)).toBe(1);
+    expect(placeRoom(b, s, 'core/trowel')).toBe(110);
     s.player.bag['core/axe'] = 2;
-    expect(bagUsed(b, s)).toBe(3);
+    expect(bagUsed(b, s)).toBe(2);
     expect(loadWeight(b, s)).toBe(2 * itemWeight(b, 'core/axe') + itemWeight(b, 'core/trowel') + 2);
   });
 
@@ -213,10 +232,10 @@ describe('bags', () => {
     s.player.bag = { 'core/satchel': 1 };
     s = ok(s, { t: 'wear', item: 'core/satchel' });
     expect(s.player.worn.back).toBe('core/satchel');
-    s.player.bag['core/herb'] = 20;
+    s.player.bag['core/herb'] = 200;
     const r = act(s, { t: 'unwear', slot: 'back' });
     expect(r).toEqual({ ok: false, error: 'Your bag has no room for that. Make room first.' });
-    s.player.bag['core/herb'] = 10;
+    s.player.bag['core/herb'] = 110;
     expect(act(s, { t: 'unwear', slot: 'back' }).ok).toBe(true);
   });
 
