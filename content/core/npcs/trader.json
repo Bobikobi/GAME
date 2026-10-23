@@ -15,11 +15,11 @@
     "dialogue": {
       "first": [
         "Ha, a new face! I am Pell. I left years ago; the roads brought me back.",
-        "A basket, a trowel, some food. And I buy what you find, at a fair price. Mostly.",
+        "A basket, a trowel, an axe. And I buy what you find, at a fair price. Mostly.",
         "Herbs for me: I pay in coin, and a recipe too."
       ],
       "stranger": [
-        "Baskets, trowels, food. I buy what you find.",
+        "Baskets, trowels, axes. Food is at the inn. I buy what you find.",
         "They say bells ring in the deep ruins at night. Nobody has sold me one yet."
       ],
       "acquaintance": [
@@ -71,6 +71,36 @@
         },
         "say": [
           "That bowl sold before I set it down. The hall keeps more, I would bet."
+        ]
+      },
+      {
+        "when": {
+          "race": [
+            "core/human"
+          ]
+        },
+        "say": [
+          "Same age as me, by the boots. Good. Your age knows what a basket is for."
+        ]
+      },
+      {
+        "when": {
+          "race": [
+            "core/elf"
+          ]
+        },
+        "say": [
+          "Travellers sold me a tale of folk with your ears, up north. I might pay now."
+        ]
+      },
+      {
+        "when": {
+          "race": [
+            "core/skeleton"
+          ]
+        },
+        "say": [
+          "Bones that walk and buy. I have no price for that yet. Give me a day."
         ]
       }
     ],

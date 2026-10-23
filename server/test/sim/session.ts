@@ -17,6 +17,7 @@ import {
   type GameEvent,
   type Tile,
   campTile,
+  npcAtHome,
   npcTile,
 } from '@game/kernel';
 
@@ -205,6 +206,8 @@ export async function playFirstOuting(bundle: Bundle, player: Player): Promise<{
   }
 
   await player.visit('core/tangle-heart');
+  // Maru walks the valley's edges 07:00-15:00 (decision 27): the hand-in waits at his door for him
+  if (!npcAtHome(bundle, 'core/elder', player.tick)) player.waitForHour(15);
   await player.actNear(elder, (tile) => ({ t: 'turnin', quest: 'core/the-tangle', at: tile }));
   // TODO(NEXT 18 g): when 14b's night ruins land, this outing is the expedition the item names.
   return { digs };

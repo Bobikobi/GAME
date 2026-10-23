@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 const E2E_DIR = dirname(fileURLToPath(import.meta.url));
 
 /** Every script, in the order `pnpm e2e` plays them. A new script goes here and into one group below. */
-const ALL = ['opening', 'stealth', 'tending', 'hud', 'camera', 'play3d', 'map', 'shop', 'shop-stock', 'fishing', 'signin', 'load', 'tree'];
+const ALL = ['opening', 'stealth', 'tending', 'hud', 'camera', 'play3d', 'map', 'shop', 'shop-stock', 'inn', 'fishing', 'signin', 'load', 'tree'];
 
 interface Entry {
   name: string;
@@ -44,7 +44,7 @@ const GROUPS: Record<string, Group> = {
   'opening-desktop': { entries: [{ name: 'opening-desktop', script: 'opening', env: { E2E_SKIP: 'phone' } }], minutes: 8 },
   'night-and-hud': { entries: ['stealth', 'tending', 'hud'].map(plain), minutes: 8 },
   '3d-and-load': { entries: ['play3d', 'load', 'camera', 'tree'].map(plain), minutes: 8 },
-  'map-and-shops': { entries: ['map', 'shop', 'shop-stock', 'fishing', 'signin'].map(plain), minutes: 8 },
+  'map-and-shops': { entries: ['map', 'shop', 'shop-stock', 'inn', 'fishing', 'signin'].map(plain), minutes: 8 },
 };
 
 /** Throws when a script is in no group or a plain script is in two: CI would skip it or play it twice. */

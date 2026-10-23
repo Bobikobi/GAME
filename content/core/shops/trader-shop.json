@@ -26,22 +26,6 @@
       {
         "item": "core/walking-staff",
         "price_mg": 30000
-      },
-      {
-        "item": "core/berry",
-        "price_mg": 5000
-      },
-      {
-        "item": "core/herb-tea",
-        "price_mg": 36000
-      },
-      {
-        "item": "core/berry-mash",
-        "price_mg": 42000
-      },
-      {
-        "item": "core/first-aid-kit",
-        "price_mg": 60000
       }
     ],
     "buys": true
