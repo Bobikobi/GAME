@@ -2536,6 +2536,22 @@ The owner, 22.10: adopted as written (decision 50 of the 51 he adopted that afte
 The owner, 22.10: adopted as written (decision 51 of the 51 he adopted that afternoon).
 **Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
 
+## 2026-10-23 ✅ The rich wave: items at a full tile, best of three by eye
+
+**Items are drawn at a full tile, 64x64**, as today's items fill their 16x16 tile, so every icon in the bag is one size. **Every free spec of the wave runs best of three and the gallery is judged by eye**, as the rich experiment did: three parallel `kit:gen` runs, each with its own `--out`; the picks go into the kit with their ramps.
+The owner, 23.10: yes to both, at the written defaults (the two questions of the wave's prompts).
+**Retry when:** a full-tile icon reads too busy in the bag at phone size, or a judge model that rejects bad draws arrives and the eye pass becomes its review. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The rich wave lands: 35 picks by eye in the kit, pebbles and the small rock wait
+
+The owner picked 35 of the wave's 37 entries by eye, over five rounds of the two specs of the wave (`tools/kit-gen/rich-items.json`, `tools/kit-gen/rich-props-small.json`). They are in the core kit at 64x64 with `density` 4, so each fills the same tile as the 16 px sprite it replaces, with the ramps it was drawn in and a `source` pointing at its line in `tools/kit-gen/rich-wave.manifest.jsonl` (round, route, model, seed or candidate, prompt, date). Each picked entry's `what`, `detail` and `ramps` in the specs is now the text that drew it. The order of 20.10 (the ladder of stills before the 64 px waves) was overtaken for this group by 21.10, "The palette deepens": the existing props and items are redrawn from themselves, the cast waits for L1, and the outline stays the decided one.
+What the five rounds showed:
+- **The 16 px sprite is a poor reference.** Drawn image to image from it (Stable Diffusion 1.5, denoise 0.7) the model kept its blur and its sixteen-pixel shapes; drawn from the words alone (denoise 1) it gave the entries the first round missed, so the old sprite gives the canvas and the object's name, not the look.
+- **SDXL won every free pick it was offered.** With rewritten prompts SDXL and its pixel-art LoRA ran beside Stable Diffusion 1.5 on the same entries; every pick from those rounds went to SDXL, 15 of the 35.
+- **What the free model misreads goes to Codex.** Ten entries the free models kept drawing as another object (the branch drawn as food) went to Codex with the kit sprite as the reference and two picks of this wave as style examples; eight of them were picked.
+- **pebbles and rock_small wait.** The Codex credits ran out during that round, so the two keep today's 16 px sprites until a draw passes the eye.
+The owner, 23.10: picked the 35 in the gallery by eye; pebbles and rock_small keep their sprites for now.
+**Retry when:** a picked sprite reads wrong in the live game at phone size beside its 16 px neighbours (then it is drawn again through its spec, with the next round's text written back), or Codex has credits again (then pebbles and rock_small go down the round that drew the other eight). Model: claude-opus-5-5.
 ## 2026-10-22 ✅ The long night follows Maru's stew
 
 `core/the-long-night` requires `core/something-warm` instead of `core/three-fruits`. The phone opening's chain is now one line: `into-town`, then `herbs-for-pell` and `three-fruits`, then Pell's `a-whole-one`, then Maru's `something-warm`, then `the-long-night`. `a-coin-for-maru` keeps `three-fruits`.
