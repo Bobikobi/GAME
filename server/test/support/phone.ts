@@ -5,19 +5,27 @@
  *
  * It is a helper and not a test: it asserts nothing, so a test can play the same script against the
  * memory store and against postgres and compare two books that were written by the same requests.
+ *
+ * `LocalPhone` plays the same script the way the demo does before an account exists (NEXT 18 d): on the
+ * phone's own kernel, under the phone's own seed, keeping every step it played as the opening log.
  */
 import {
+  LEGACY_STARTERS,
   type Action,
   type Bundle,
   type GameEvent,
+  type OpeningUpload,
   type PublicState,
   type Rect,
   type State,
   type Tile,
   applyStatePatch,
   findSlot,
+  newState,
   npcTile,
   salePrice,
+  serialize,
+  step,
 } from '@game/kernel';
 
 import {
@@ -67,20 +75,89 @@ export class MemoryStore implements PlayerStore {
   }
 }
 
+/** A walked tile as the client reports it, with the tick it was reached at. */
+interface MoveReport {
+  kind: 'move';
+  at: Tile;
+  tick: number;
+}
+
+/**
+ * The script's player, wherever it plays: it walks and acts on the state it can see, and a subclass says
+ * where a step goes, to the API or to the phone's own kernel.
+ */
+abstract class Player {
+  abstract readonly state: PublicState;
+
+  constructor(readonly bundle: Bundle) {}
+
+  /** Play a run of walked tiles, each at its own tick. */
+  protected abstract sendMoves(moves: MoveReport[]): Promise<void>;
+  /** Play one action at a tick and answer its events. */
+  protected abstract sendAction(action: Action, tick: number): Promise<GameEvent[]>;
+
+  /** Walks a four-way path one tile at a time, in batches, as the client reports movement (NEXT 18 a). */
+  async walk(path: readonly Tile[]): Promise<void> {
+    const tiles = path.slice(1);
+    if (tiles.length === 0) return;
+    // the walk starts once the hands are free
+    const from = Math.max(this.state.tick, this.state.player.busyUntil);
+    const stepMs = this.bundle.params.walk_step_ms;
+    const LIMIT = 200;
+    for (let index = 0; index < tiles.length; index += LIMIT) {
+      let tick = Math.max(from, this.state.tick);
+      const moves = tiles.slice(index, index + LIMIT).map((at) => {
+        tick += stepMs;
+        return { kind: 'move' as const, at, tick };
+      });
+      await this.sendMoves(moves);
+    }
+  }
+
+  async walkNear(target: Rect): Promise<void> {
+    const path = bfsNear(this.bundle, this.state.player, this.state.player.at, target);
+    if (!path) throw new Error(`No walking path to ${JSON.stringify(target)}.`);
+    await this.walk(path);
+  }
+
+  async act(action: Action, tick = Math.max(this.state.tick, this.state.player.busyUntil)): Promise<GameEvent[]> {
+    return this.sendAction(action, tick);
+  }
+
+  async gather(node: string, grade: number): Promise<GameEvent[]> {
+    const instance = this.bundle.instances[node]!;
+    const resource = this.bundle.resources[instance.source]!;
+    await this.walkNear({ x: instance.x, y: instance.y, w: 1, h: 1 });
+    const ready = Math.max(this.state.tick, this.state.player.busyUntil, this.state.nodes[node]?.readyAt ?? 0);
+    return this.act(
+      { t: 'gather', node, grade: grade as 0 | 1 | 2 | 3 | 4, at: this.state.player.at },
+      firstOpenTick(this.bundle, ready, resource.hours),
+    );
+  }
+
+  async dig(spot: string, grade: number): Promise<GameEvent[]> {
+    const instance = this.bundle.instances[spot]!;
+    await this.walkNear({ x: instance.x, y: instance.y, w: 1, h: 1 });
+    const ready = Math.max(this.state.tick, this.state.player.busyUntil, this.state.nodes[spot]?.readyAt ?? 0);
+    return this.act({ t: 'dig', spot, grade: grade as 0 | 1 | 2 | 3 | 4, at: this.state.player.at }, ready);
+  }
+}
+
 /**
  * A player at the API's door: it posts what a phone posts, and keeps only what a phone keeps - the
  * public state, built from the reply patches, and the version. It never reads the store's state.
  */
-export class Wire {
+export class Wire extends Player {
   version = 1;
   state: PublicState;
 
   constructor(
-    readonly bundle: Bundle,
+    bundle: Bundle,
     readonly base: string,
     readonly startedAt: PublicState,
     readonly clock: { now: number },
   ) {
+    super(bundle);
     this.state = startedAt;
   }
 
@@ -103,59 +180,57 @@ export class Wire {
     return reply.events;
   }
 
-  /** Walks a four-way path one tile at a time, in batches, as the client reports movement (NEXT 18 a). */
-  async walk(path: readonly Tile[]): Promise<void> {
-    const tiles = path.slice(1);
-    if (tiles.length === 0) return;
-    // the walk starts once the hands are free, and the wall clock moves with the tick it claims
-    const from = Math.max(this.state.tick, this.state.player.busyUntil);
-    const stepMs = this.bundle.params.walk_step_ms;
-    const LIMIT = 200;
-    for (let index = 0; index < tiles.length; index += LIMIT) {
-      let tick = Math.max(from, this.state.tick);
-      const moves = tiles.slice(index, index + LIMIT).map((at) => {
-        tick += stepMs;
-        return { kind: 'move' as const, at, tick };
-      });
-      this.setTick(tick);
-      await this.post('/moves', { version: this.version, moves });
-    }
+  protected async sendMoves(moves: MoveReport[]): Promise<void> {
+    this.setTick(moves[moves.length - 1]!.tick);
+    await this.post('/moves', { version: this.version, moves });
   }
 
-  async walkNear(target: Rect): Promise<void> {
-    const path = bfsNear(this.bundle, this.state.player, this.state.player.at, target);
-    if (!path) throw new Error(`No walking path to ${JSON.stringify(target)}.`);
-    await this.walk(path);
-  }
-
-  async act(action: Action, tick = Math.max(this.state.tick, this.state.player.busyUntil)): Promise<GameEvent[]> {
+  protected sendAction(action: Action, tick: number): Promise<GameEvent[]> {
     this.setTick(tick);
     return this.post('/action', { version: this.version, tick, action });
   }
+}
 
-  async gather(node: string, grade: number): Promise<GameEvent[]> {
-    const instance = this.bundle.instances[node]!;
-    const resource = this.bundle.resources[instance.source]!;
-    await this.walkNear({ x: instance.x, y: instance.y, w: 1, h: 1 });
-    const ready = Math.max(this.state.tick, this.state.player.busyUntil, this.state.nodes[node]?.readyAt ?? 0);
-    return this.act(
-      { t: 'gather', node, grade: grade as 0 | 1 | 2 | 3 | 4, at: this.state.player.at },
-      firstOpenTick(this.bundle, ready, resource.hours),
-    );
+/**
+ * The demo before an account (NEXT 18 d): the phone's own kernel under the phone's own seed, as the game's
+ * `Session` plays it - no travel check, since the server is not there yet - with every step it played kept
+ * in order as the opening log the sign-up hands over.
+ */
+export class LocalPhone extends Player {
+  state: State;
+  readonly log: { a: Action; tick: number }[] = [];
+
+  constructor(bundle: Bundle, readonly seed: number) {
+    super(bundle);
+    this.state = newState(bundle, seed);
   }
 
-  async dig(spot: string, grade: number): Promise<GameEvent[]> {
-    const instance = this.bundle.instances[spot]!;
-    await this.walkNear({ x: instance.x, y: instance.y, w: 1, h: 1 });
-    const ready = Math.max(this.state.tick, this.state.player.busyUntil, this.state.nodes[spot]?.readyAt ?? 0);
-    return this.act({ t: 'dig', spot, grade: grade as 0 | 1 | 2 | 3 | 4, at: this.state.player.at }, ready);
+  private play(action: Action, tick: number): GameEvent[] {
+    const result = step(this.bundle, this.state, action, tick);
+    if (!result.ok) throw new Error(`The phone refused ${JSON.stringify(action)} at ${tick}: ${result.error}`);
+    this.state = result.state;
+    this.log.push({ a: structuredClone(action), tick });
+    return result.events;
+  }
+
+  protected async sendMoves(moves: MoveReport[]): Promise<void> {
+    for (const move of moves) this.play({ t: 'move', at: move.at }, move.tick);
+  }
+
+  protected async sendAction(action: Action, tick: number): Promise<GameEvent[]> {
+    return this.play(action, tick);
+  }
+
+  /** What the sign-up hands over: the seed, the log, and the state the log ended on. */
+  upload(): OpeningUpload {
+    return { seed: this.seed, log: structuredClone(this.log), state: serialize(this.state) };
   }
 }
 
 /** The three starts, with their own first task and the place it happens (the opening, section 18). */
 export const STARTS = [
   { starter: 'core/forager', own: 'core/first-pickings', place: 'core/bank-herbs' },
-  { starter: 'core/digger', own: 'core/buried-axe', place: 'core/slid-bank' },
+  { starter: 'core/digger', own: 'core/buried-axe', place: 'core/slid-bank-dig' },
   { starter: 'core/explorer', own: 'core/glint-by-the-bridge', place: 'core/bridge-glint' },
 ] as const;
 
@@ -189,10 +264,10 @@ function required<T>(value: T | undefined, message: string): T {
  * under it decides whether a log falls. It comes last so that the luck shows in the books without
  * changing what the rest of the run costs.
  */
-export async function playOpening(wire: Wire, start: Start): Promise<PlayedRun> {
+export async function playOpening(wire: Player, start: Start): Promise<PlayedRun> {
   const { bundle } = wire;
   await wire.act({ t: 'start', starter: start.starter, name: 'Tess' }, 0);
-  if (wire.state.player.starter !== start.starter) throw new Error(`The server did not start ${start.starter}.`);
+  if (wire.state.player.race !== LEGACY_STARTERS[start.starter]?.race) throw new Error(`The server did not start ${start.starter}.`);
 
   const [own, instance] = required(instancesOf(bundle, start.place)[0], `The map has no ${start.place}.`);
   if (instance.kind === 'resource') await wire.gather(own, 3);

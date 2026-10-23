@@ -13,6 +13,7 @@ import {
   newState,
   npcTile,
   step,
+  wakePocket,
 } from '@game/kernel';
 
 import {
@@ -33,26 +34,37 @@ beforeAll(() => {
 describe('opening sequence', () => {
   // the recut B on the axe and the starts: a keystone, a felled tree for the fire, one purse,
   // then whom to help first, Maru or Pell, and the arch at night
-  const STARTS: [string, string, string][] = [
-    ['core/forager', 'core/first-pickings', 'core/bank-herbs'],
-    ['core/digger', 'core/buried-axe', 'core/slid-bank'],
-    ['core/explorer', 'core/glint-by-the-bridge', 'core/bridge-glint'],
+  // one race per wake pocket, as the e2e opening plays them (DECISIONS.md, 2026-10-22); the pocket is drawn by the seed
+  const STARTS: [string, string, string, string][] = [
+    ['core/elf', 'core/west-bank', 'core/first-pickings', 'core/bank-herbs'],
+    ['core/skeleton', 'core/slid-bank', 'core/buried-axe', 'core/slid-bank-dig'],
+    ['core/human', 'core/north-meadow', 'core/glint-by-the-bridge', 'core/bridge-glint'],
   ];
   const ORDERS = ['core/three-fruits', 'core/herbs-for-pell'] as const;
-  test.each(STARTS.flatMap(([starter, own, place]) => ORDERS.map((first) => [starter, first, own, place] as const)))(
-    '%s can finish the opening, helping first with %s',
-    (starter, first, own, place) => {
-      const planner = new Planner(bundle, 2026);
-      const kit = (bundle.starters[starter]!.kit ?? []).map((k) => k.item);
+  test.each(STARTS.flatMap(([race, pocket, own, place]) => ORDERS.map((first) => [race, pocket, first, own, place] as const)))(
+    '%s in %s can finish the opening, helping first with %s',
+    (race, pocket, first, own, place) => {
+      const planner = new Planner(bundle, seedFor(bundle, pocket));
+      const kit = bundle.pockets[pocket]!.ground.map((k) => k.item);
 
-      planner.act({ t: 'start', starter, name: 'Tester' }, 0);
-      expect(planner.state.player.starter).toBe(starter);
+      planner.act({ t: 'start', race, name: 'Tester' }, 0);
+      expect(planner.state.player.race).toBe(race);
+      expect(planner.state.player.pocket).toBe(pocket);
       expect(planner.state.player.name).toBe('Tester');
       expect(planner.state.tick).toBe(0);
       expect(hourOf(bundle, planner.state.tick)).toBe(12);
       const spawn: Tile = [bundle.map.spawn.x, bundle.map.spawn.y];
-      const wake = bundle.starters[starter]!.wake;
-      expect(planner.state.player.at).toEqual(wake ? [wake.x, wake.y] : spawn);
+      const wake = bundle.pockets[pocket]!.wake;
+      expect(planner.state.player.at).toEqual([wake.x, wake.y]);
+      // the pocket's tools lie on the ground by the wake tile: picked up by hand, never in the bag at the start
+      for (const g of bundle.pockets[pocket]!.ground) {
+        expect(planner.state.player.bag[g.item], g.item).toBeUndefined();
+        const [spot] = Object.entries(bundle.instances).filter(
+          ([, i]) => i.kind === 'treasure' && bundle.treasures[i.source]!.pocket === pocket && bundle.treasures[i.source]!.tool === undefined && bundle.treasures[i.source]!.finds[0]!.item === g.item,
+        );
+        planner.dig(spot![0]);
+        expect(planner.state.player.bag[g.item], g.item).toBe(g.qty);
+      }
 
       const fire = required(campTile(bundle, 'fire'), 'The map has no fire spot.');
       expect(bfsToTile(bundle, planner.state.player, spawn, fire)).toBeUndefined();
@@ -69,12 +81,12 @@ describe('opening sequence', () => {
       // the taught strike: one keystone in the shallows mends the bridge
       const keystones = instancesOf(bundle, 'core/keystone');
       expect(keystones).toHaveLength(1);
-      // the explorer's senses answer first: the keystone waits for the glint's axe
-      if (starter === 'core/explorer') {
+      // in the north meadow the senses answer first: the keystone waits for the glint's axe
+      if (pocket === 'core/north-meadow') {
         const key = keystones[0]![1];
         const before = JSON.stringify(planner.state);
         const near = required(bfsNear(bundle, planner.state.player, planner.state.player.at, { x: key.x, y: key.y, w: 1, h: 1 }), 'The keystone is out of reach.');
-        const tried = step(bundle, planner.state, { t: 'gather', node: keystones[0]![0], grade: 3, at: near.at(-1)! }, planner.state.tick);
+        const tried = step(bundle, planner.state, { t: 'gather', node: keystones[0]![0], grade: 3, at: near.at(-1)! }, Math.max(planner.state.tick, planner.state.player.busyUntil));
         expect(tried).toEqual({ ok: false, error: 'Something else catches the light first.' });
         expect(JSON.stringify(planner.state)).toBe(before);
         ownTask();
@@ -85,7 +97,7 @@ describe('opening sequence', () => {
       expect(strike).toContainEqual({ e: 'level', profession: 'core/foraging', level: 2 });
       expect(planner.state.player.bag['core/keystone']).toBe(1);
 
-      if (starter !== 'core/explorer') ownTask();
+      if (pocket !== 'core/north-meadow') ownTask();
 
       const known = [...planner.state.player.recipes];
       const bridge = required(findSlot(bundle.map, 'core/old-bridge'), 'The bridge slot is missing.');
@@ -293,6 +305,12 @@ class Planner {
     expect(path, 'The visit slot must be reachable by four-neighbour walking.').toBeDefined();
     return this.act({ t: 'visit', slot: slot.id, at: path!.at(-1)! }, tick);
   }
+}
+
+/** A seed whose world wakes in this pocket. */
+function seedFor(bundle: Bundle, pocket: string): number {
+  for (let seed = 2026; seed < 12_026; seed++) if (wakePocket(bundle, seed) === pocket) return seed;
+  throw new Error(`no seed wakes in ${pocket}`);
 }
 
 function instancesOf(bundle: Bundle, source: string): [string, Bundle['instances'][string]][] {

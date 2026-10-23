@@ -1,3 +1,4 @@
+import type { Books, PlayerRecord } from '../api';
 import type { BirthBand } from './age';
 import type { ProviderId } from './provider';
 
@@ -25,6 +26,15 @@ export interface SignupTicket {
   email: string;
   createdAt: number;
   expiresAt: number;
+}
+
+/**
+ * The account's game as the sign-up starts it (NEXT 18 d): its first state row, and for an opening the
+ * phone handed over and the server kept, the first `action_log` row and the gold rows it made.
+ */
+export interface NewGame {
+  record: PlayerRecord;
+  books?: Books;
 }
 
 export interface NewAccount {
@@ -55,8 +65,8 @@ export interface AuthStore {
   saveTicket(ticket: SignupTicket): Promise<void>;
   loadTicket(ticketHash: string): Promise<SignupTicket | undefined>;
   dropTicket(ticketHash: string): Promise<void>;
-  /** The account, its first identity and the end of the ticket, in one transaction; or why it was not made. */
-  createAccount(account: NewAccount, ticket: SignupTicket): Promise<{ accountId: string } | 'name-taken' | 'email-taken'>;
+  /** The account, its first identity, its game and the end of the ticket, in one transaction; or why it was not made. */
+  createAccount(account: NewAccount, ticket: SignupTicket, game: NewGame): Promise<{ accountId: string } | 'name-taken' | 'email-taken'>;
 
   createSession(tokenHash: string, accountId: string, createdAt: number, expiresAt: number): Promise<void>;
   /** The account a session stands for while it is neither revoked nor past its end. */

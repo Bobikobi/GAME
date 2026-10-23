@@ -1,7 +1,8 @@
 import type { Pool } from 'pg';
 
+import { insertPlayer } from '../store-pg';
 import type { ProviderId } from './provider';
-import type { AuthStore, EmailLink, OAuthFlow, SignupTicket } from './store';
+import type { AuthStore, EmailLink, OAuthFlow, NewGame, SignupTicket } from './store';
 
 /** An account id is a uuid: anything else names no account, and asking the database would raise. */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -115,7 +116,7 @@ export function createPgAuthStore(pool: Pool): AuthStore {
       await pool.query('delete from signup_tickets where ticket_hash = $1', [ticketHash]);
     },
 
-    async createAccount(account, ticket: SignupTicket) {
+    async createAccount(account, ticket: SignupTicket, game: NewGame) {
       const client = await pool.connect();
       try {
         await client.query('begin');
@@ -128,6 +129,21 @@ export function createPgAuthStore(pool: Pool): AuthStore {
           'insert into sign_in_identities (provider, subject, account_id) values ($1, $2, $3)',
           [ticket.provider, ticket.subject, accountId],
         );
+        // the game starts with the account (NEXT 18 d): its state row, and a kept opening's books beside it
+        await insertPlayer(client, accountId, game.record);
+        if (game.books) {
+          await client.query(
+            'insert into action_log (account_id, seq, action, tick) values ($1, $2, $3, $4)',
+            [accountId, game.record.version, JSON.stringify(game.books.action), game.books.tick],
+          );
+          for (const row of game.books.gold) {
+            if (row.deltaMg === 0) continue;
+            await client.query(
+              'insert into gold_ledger (account_id, delta_mg, action, tick) values ($1, $2, $3, $4)',
+              [accountId, row.deltaMg, JSON.stringify(row.action), row.tick],
+            );
+          }
+        }
         await client.query('delete from signup_tickets where ticket_hash = $1', [ticket.ticketHash]);
         await client.query('commit');
         return { accountId };

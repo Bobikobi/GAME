@@ -348,6 +348,7 @@ The question (crafting audit Q9): what does a crafted upgrade give, and where do
 ## 2026-10-09 ✅ Each player role reads at a glance: one big item, one colour, its own build
 
 The player roles differed only in their attributes. They now differ in look too, in the pixel sprites and the 3D models alike. Each role carries one big item and one colour that read at phone size, and has its own body build. The patched base clothes stay the same for every role; fine attire is still earned. First round: the Explorer (tall and lean; a wide-brimmed hat and a tall backpack with a blanket roll), the Forager (short and slight; a large wicker basket on the back, the rust red on a neckerchief and the basket lining, and no head wrap, which the owner found looked bad) and the Digger (broad and heavy-set; a spade strapped across the back and a cap). Every role has a man as its base look plus a woman option in the same kit; the first round drew the Forager as a woman, and the base is now a man. Ethnicity is drawn at random for each figure, not one default look, and the skin tone follows the draw. The colours (moss green, rust red, indigo blue) and the exact builds stay a proposal until the owner picks from the 3D stills. The cook, Elder Maru and Pell come later.
+**Superseded in part (22.10):** the same patched base clothes for every role give way to three start outfits over a bare body (decision 42 of 22.10), and the random draw of the look to a pick from the shared skin ramp (decision 37 of 22.10). One big item, one colour and its own build stay, now per race (decision 40 of 22.10).
 **Retry when:** a role cannot be told apart at phone size, or a clothing system needs one shared body. Model: claude-opus-5-5.
 
 ## 2026-10-09 ✅ The owner added maze and stealth to the palette, and set the order of the variety work
@@ -1189,6 +1190,7 @@ Five sessions, three of them in another app, built at once with no single view: 
 - Check (`tools/src/starts.ts`). Every start holds an axe before the first fire, in its kit or on its own spot (this replaces "every kit holds an axe" of the axe entry above). A start's own spot gives one find at 100 percent, count 1, tier 1, needs only a tool the start's kit holds, has a tile on the map, and lies within the start's senses (`senseReach`) somewhere on its shortest walk from its wake to the bridge. A wake is a tile one can stand on. One attribute total (6). The kits, with each start's own finds, within 25 percent of the poorest (60000 mg each today). Every start reaches the bridge with its axe within 50 percent of the fastest, counting the work of its own task and the walk at the client's step time; the effort is measured to the bridge because the roads meet there, and the road from the bridge to the first fire is the same for every start. Reach is checked from every wake. The headless opening walk runs once per starter.
 - Client. The game puts the character where its start wakes; the title screen shows the three cards in one row on a desktop and reads each start's own lines. The explorer's senses (`game/src/senses.ts`): a find picked up by hand lies half-buried in a soft glow, and while it shows, a drifting line of glints runs from the character's feet to it, in place of the generic dig mark; the prompt says "Pick up". The direction, a trail, was chosen from three phone-size stills (a trail, a ripple of rings from the character, a mark over its head); the preview is the owner's to judge, as the entry on three starters says. A start's own spot and its hint show to that start only. The world scene changed in those places only. The opening's walk in the browser: the phone's forager picks the bank herbs first, the desktop's explorer picks up the axe by the bridge before the bridge is mended.
 - Wart, left on purpose. The walking staff borrows the branch's sprite and the digger the forager's sprites until the art lands.
+**Superseded in part (22.10):** the per-starter profiles (CR-84's six points among them) give way to one fixed race profile of seven points in six attributes (decisions 44-45 of 22.10); the wakes, first tasks and own spots stay as the random wake pool, keyed by the pocket, and the pocket's tool lies on the ground by the wake tile instead of in a kit (decision 43 of 22.10).
 **Retry when:** players walk past the glint, read the slid bank as a ruin with more to dig, or a starter needs more than one spot of its own. Model: claude-opus-5-5. Branch `feat/three-starts`, GRUNT CR-37.
 
 ## 2026-10-09 ✅ The opening recut: option B, toward the first dusk, closing on a night discovery
@@ -1300,6 +1302,7 @@ The owner answered nine open questions on 10.10 in the afternoon, one at a time,
 9. **The 3D trial ships to production as a parallel version** behind its own button on the home page, on the same data, built alongside the 2D game; if the community prefers it, it gets the investment. The 64 px painted trial and the rich-pixel trial are archived with a tag.
 
 Also noted by the owner: the skill descriptions at the start are not as simple as in other games, and raising a skill or a level does not weigh as much as it should. This goes to the opening's stream as a finding.
+**Superseded in part (22.10):** item 1 only. The three lasting starter edges become corner nodes of the race wings, not three fixed percentages, and the starters give way to races (the entries of 22.10, decisions 9 and 38). Items 2-9 stand.
 **Retry when:** players read the camp price as a toll that blocks play (then a free first night), the plot odds read as unfair, or the 3D version's cost outruns the community's interest. Model: claude-opus-5-5.
 
 ## 2026-10-10 ✅ No dead props: a sprite that looks workable must be workable, and `pnpm check` lists the ones that lie
@@ -1825,11 +1828,13 @@ Why it reads generic (proven by reading the content):
 - techniques come by level, not by choice;
 - the three starters differ by 0 to 2 pips.
 Proposed, not yet his word (the page's section 4): a tree on two axes, the starter's nature against the trades, with corner nodes per pair. Major nodes change a verb, small nodes carry today's percentages, attributes become keys (thresholds), books found in the world teach nodes outside your wings, and the format leaves room for combat wings. The screen is a UI frame, so it goes to the owner as a still before it is built.
+**Superseded in part (22.10):** the tree's vertical axis is the race, not the starter's nature, and the attributes are six: might (was carry), senses, agility, luck, stamina and spirit (decisions 38 and 45 of 22.10).
 **Retry when:** never as built. The five attributes may stay as keys inside the new tree. Model: claude-opus-5-5.
 
 ## 2026-10-19 ⏸ Races to widen the starters (a goblin, an elf, a human): later, perhaps by other developers
 
 The owner, 19.10: a gap between the characters as wide as races would be a step back now, so it waits. Races are the characters' nature and their lines of growth, and other developers may be the ones to think them through. If they come, they come as the vertical axis of the proposed tree (corner nodes per race and trade), and their past needs speakers (STORY.md S1-S6).
+**Superseded (22.10):** the races come now. Three races, the human, the elf and the skeleton, replace the three starters as returners from three folds and as the vertical axis of the tree (the entries of 22.10, decisions 9-12 and 38).
 **Retry when:** the stage-3 tree is in place. It is a candidate for an open call to creators then. Model: claude-opus-5-5.
 
 ## 2026-10-19 ✅ The opening's hook f: one waking box, option labels that are the quest's title, and Maru's Pell line withdrawn
@@ -1887,6 +1892,7 @@ The owner, 19.10, after the opening's second review ([docs/design/OPENING_REVIEW
 Built (section 9.5 there): `a-coin-for-maru` and `the-long-night` require `three-fruits`, as the recut B entry of 10.10 meant ("Maru's coin follows by the trowel's road"); `the-tangle` and `the-south-bank` require `the-night-arch`. Each neighbour offers one task in town, the vigil is offered in the afternoon, and the arch lands alone at dark with nothing that hunts beside it. `pnpm quests`: at most 3 tasks open at once for the digger and the explorer (were 5), 4 for the forager (were 6), no new pair of one type. The long night pays one bandage beside its recipe.
 The words: ten lines that stated the past (nine in content, one the title screen's fallback) now say what is there or name Maru as the speaker (STORY S1, S2), three that said what the game does not do are true (the lanterns' places, the berries' hours, Pell's one price), and Pell repeats the three beliefs about the bells as rumours after the threshold (STORY section 3).
 Not built: the review's "one herb as a find" (R4). The check refuses a `find` of an item that grows in more than one place (G2), and a done line in the first 15 s would be a second box. The review offered it untried; the quest designer now tries every fix with the check before offering it.
+**Superseded in part (22.10):** `the-long-night` now requires `something-warm`, not `three-fruits`, so the vigil is offered after Maru's stew, around 17:00-18:00, not in the afternoon (the entry on the long night after the stew below). `a-coin-for-maru` still requires `three-fruits`.
 **Retry when:** a person playing the reordered day still waits over 90 s before dusk (then waiting by a fire, section 9.4), or the arch's minutes fill with the night's other tasks. Model: claude-opus-5-5.
 
 ## 2026-10-20 ✅ A fire of one's own, client and content half as built (NEXT 21 b)
@@ -2131,6 +2137,16 @@ The owner named three gaps on 21.10. None is built now; each is filed where it r
 - **An illustrated map and UI** is polish inside Field Kit (2026-10-20). #257 is the map's function; its drawn art follows the 64 px waves.
 **Retry when:** the owner moves one of them earlier. Model: claude-opus-5-5 (the manager filed them; the gaps are the owner's).
 
+## 2026-10-21 ✅ The simulated player and the verified boards: one log, and the same state twice (NEXT 18 g)
+
+A scripted player plays a starter's whole opening, the first outing the content has and the first sale through the real HTTP API of `server/`, and the state the server ends on must equal the same log replayed from `newState` on the laptop: `serialize`, byte for byte. All three starters run. The phone is the real client - `RemoteSession` over `fetchWire`, the code the game itself runs - not a test-local post; the store is postgres 16 in CI and in memory without it, and the identity mode is the real `AUTH_MODE=dev-header` gate.
+- **The clock.** The run spans sixteen game hours (the opening ends at the night arch, and the ruins' night is the doorstep pit's toll and the wolf's round, so the outing is walked by day), which a real phone spends sitting still. The script moves the API's own `ApiOptions.now` seam with the game time it claims and never past it, so the time proof is not bypassed: a step claiming more than the clock paid for is still refused, as `server/test/api.test.ts` shows on its own.
+- **The books are the run.** The `action_log` and `gold_ledger` rows the request wrote are compared with the log the player sent, entry for entry, and the client's own mirror (rebuilt from the reply patches) with the server's state.
+- **The first expedition.** `bundle.expeditions` is empty: the night ruins of NEXT 14b are not built. The outing is therefore the first one the content supports - past the night arch, the gate stones of the ruins dug by day and the deep ruins once the gate has taught the trowel's way, then the tangle's heart and home to the elder (NEXT 6). The script keeps the outing as its own step and carries a TODO for 14b, so the real expedition joins it as content and not as code.
+- **The boards.** `server/src/boards.ts` scores nothing it has not proved: 18 f's `checkAccount` replays the account's own log from its start state under the seed column to the stored row byte for byte, asks the gold ledger for exactly the grants that log makes and for both sums to be the purse, and a log whose versions skip is refused before anything is read from it. A tampered row, a hole and a grant with no action behind it are each refused before the transaction opens, and the board it would have joined is left as it was. The measures are CR-40's, read off the verified state: worth (gold plus the bag at the trader's pay), collection (the journal), levels (every profession added up). Places count nothing while houses and plots are paused. The proof is 18 f's, not a second copy of it.
+- **CI.** One step, `pnpm exec vitest run server/test/sim.test.ts server/test/boards.test.ts` against the same postgres service container: 3.9 s on the laptop (three starters at 0.55-0.70 s, the boards at 1.0-1.3 s), well inside the three minutes 18 g allows.
+
+**Retry when:** NEXT 14b lands (the outing becomes the expedition 18 g names), or an account's log outgrows a whole replay per board post (then a signed checkpoint per week, decided before it is built - a board that trusts a stored number is the thing this entry exists to refuse). Model: Copilot in VS Code (the engine's model name is not shown to the session).
 ## 2026-10-21 ✅ The stall draft as built: the kit's six places and their prices are kept in the save
 
 The build of the owner's answer of 20.10 (a player places a stall at the town's free corner, drafts its slots and prices, and the save keeps the draft). The kit's Shop tab wrote its six places into a variable in the open panel, so a reload lost them. The draft now lives on the session and lands in the save as one optional field, `stallDraft`: six entries, each `{ item, qty, price }` or `null`. An old save carries no field and loads exactly as it did, and nothing is written while every place is empty, so a player who never opened the tab keeps the save they had. On load, an entry naming an item this world dropped, or numbers outside the kit's window (a whole quantity of at least one, a price from 1 to 9999 gold), is left empty rather than trusted.
@@ -2220,3 +2236,361 @@ entry left the change to the pull request that builds the pass. This is it, in #
 or B items 1, 2 and 4 land - the 3D shapes under real light - and this shear table is replaced by the sun's azimuth and
 elevation in the hour table. Model: DeepSeek (deepseek-light, Copilot SDK in VS Code), from the manager's orders; the
 pick is the owner's, relayed by the manager.
+## 2026-10-21 ✅ The opening handover as built: the phone's log is replayed, kept under a secret seed, or the account starts fresh (NEXT 18 d)
+The phone keeps every step since the start (cap `OPENING_LOG_MAX` 2000, saved with the game, rolled back with cancelled work) and uploads `{seed, log, state}` with the sign-up. The server plays it again from `newState(seed)` with the kernel's travel check and the `/moves` movement credit, refuses a second start, time running backwards, more than one hour of game time or more than 150 gold of pay (purse plus what the bag sells for), and keeps it only when the replay serializes to the phone's state. The state then takes a secret seed. Anything else: a not-started state under the secret seed, and the box says so in one line.
+Books: a kept opening is the account's first `action_log` row `{kind:'opening', seed, log}` with its gold rows, so `checkAccount` proves a handed-over account (test: handover.test.ts). The account, its state and its books are one transaction (signin-db test).
+Open for the owner: the two caps are mine (an honest opening carries about 80 gold of quests); the client wire is same-origin and the server has no CORS, so a build with `VITE_GAME_SERVER` on another origin needs the h6 cutover first; a phone that walked faster than the movement credit allows loses its opening, not its account.
+Model: opus. Link: PR feat/handover-opening.
+
+## 2026-10-21 ✅ The opening handover's two caps stand: one hour of game time, 150 gold of worth
+The builder of 18 d (#277) set the caps an uploaded opening is held to: at most one hour of game time (`OPENING_TIME_MAX_MS`) and at most 150 gold of worth, the purse plus what the bag sells for (`OPENING_PAY_MAX_MG`, in `server/src/handover.ts`). The opening runs about ten minutes and its quests pay 80 gold, so an honest opening fits with room; a forged one can carry no more than the caps, and an opening past either starts the account fresh.
+The owner, 21.10: approved as built.
+**Retry when:** the opening's pay or length changes (the test "the caps leave an honest opening room" fails first), or honest players are seen starting fresh. Model: claude-opus-5-5 (the manager, game-1b); the numbers are game-65's.
+
+## 2026-10-21 ✅ The palette deepens: the 32 stay, the world's ramps are shared (the owner, on the rich-style evidence)
+
+The rich-style experiment (`docs/art/RICH_STYLE_EXPERIMENT.md`, PR exp/rich-style) put the same five objects through the same model and importer with only the palette and the style line changed, and the imported sprite's colour richness went from about a quarter of the reference's to half to four fifths. On that, the owner, 21.10: **deepen**.
+The shape is the one fixed on 20.10 (ART_SYSTEM section 3): the 32 core colours do not move, the depth is ramps of five or six hue-shifted steps, and a sprite that names none is valid as it is. What this entry adds:
+- **The ramps of the world are shared.** `CORE_RAMPS` in `tools/src/kit/palette.ts`: 13 ramps of six steps (grey, stone, green, moss, rust, wood, bark, water, teal, red, plum, fire, skin), 78 colours with the core, each holding to the ramp rule in `ramps.ts` (`kit-ramps.test.ts`), each core family carried inside its own ramp so a sprite drawn in the core wood sits inside `wood`. A shared ramp needs no `ramps` block in a kit file; a sprite names the ones it draws in (`ramps` in its kit entry, one to four, the first gives the outline). A kit's own `ramps` stay for materials the shared set lacks, and a kit that repeats a shared id with other steps is refused by `pnpm check`. So no protected path changes, and the schema's four-ramp cap on a kit holds.
+- **`kit:gen` draws in them.** An entry's `ramps` names shared ramps; the importer snaps onto the 32 plus their steps and the manifest line carries the names for the kit entry. `"style": "rich"` asks for painterly pixel art and dithers between neighbouring steps; with no `ramps` of its own it draws in every shared ramp. An outside reference that names ramps sets its palette decision to `ramp-added` (PROP_FROM_REF step 0b, rewritten).
+- **A new material is still the owner's.** Sand, brass, anything no shared ramp holds: a new ramp in `palette.ts`, by owner decision, in its own pull request, before the sprite that needs it.
+- **Nothing of today's content changed.** Every kit of today names no ramp and passes unchanged (the check test). The depth arrives sprite by sprite through `kit:gen`: the 64 px waves from their first sprite, the existing props and items redrawn from themselves (a kit sprite id as `ref`, `ramps` per material), the cast after L1.
+**Retry when:** a shared ramp reads wrong beside the core in a still (then its steps move, in `palette.ts`, with the test); a phone window passes 96 colours once sprites name ramps (then the window count becomes an error, as ART_SYSTEM proposed); or the schema's description of a sprite's `ramps` ("of this kit") misleads a creator (then the wording changes with `pnpm schemas`).
+Model: claude-fable-5-1; the numbers are the experiment's.
+
+## 2026-10-22 ✅ Drawing route by size (decision 1 of 22.10)
+
+**Drawing route by size.** Sprites up to about 64 art px (items, small props) go down the free local route; larger or thin ones (buildings, trees, statues, fences, lantern posts, reeds) go down Codex. First a Codex measurement on four failed props (house_small, market_stall, broken_statue, lantern_post) to price the quality before the rest.
+The owner, 22.10: adopted as written (decision 1 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Production order: the first map first (decision 2 of 22.10)
+
+**Production order: the first map first.** Every region the first map shows is completed to a good level before any new region; a new region is produced only once it has a written description.
+The owner, 22.10: adopted as written (decision 2 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Characters are redesigned (decision 3 of 22.10)
+
+**Characters are redesigned.** Richer looks and roles (some of today's cast is too generic). The base body is unclothed; the player starts with one outfit of given values and upgrades by slot: legs, torso, hands, jewellery, head, feet, weapon, tool (slot names general and game-like, armour and more may come). Two detail levels: in play the usual 64x96; in the wardrobe / appearance menu a zoomed, detailed figure; the same for every small item (a zoom view in the menu).
+The owner, 22.10: adopted as written (decision 3 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ External material: any open licence is allowed (decision 4 of 22.10)
+
+**External material: any open licence is allowed, including share-alike** (CC-BY-SA, GPL), as a source or as a reference for a redraw. Consequence recorded with the decision: a sprite derived from share-alike material obliges the game's art to carry the same licence, so anyone may take and redistribute it. Every imported piece keeps its source and licence in the kit; a CREDITS file is generated from them.
+The owner, 22.10: adopted as written (decision 4 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The first map is composed by hand (decision 5 of 22.10)
+
+**The first map is composed by hand.** A map plan on paper first (regions, landmarks, paths, heights, climate - the geographic and physiological logic lives here), then 2-3 phone-size direction stills for the owner's pick, then the library is produced to the plan. No more random scatter on a flat ground.
+The owner, 22.10: adopted as written (decision 5 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Lighting and animation (decision 6 of 22.10)
+
+**Lighting and animation.** The engine ladder (tint by hour, light sources, shadows and cloud shade, shader motion for wind, water and flame, particles, hit and move feedback) is one deep session after the map plan and the Pell pick. A normal map per sprite (light striking from the side) is an automatic kit stage once the sprite set settles, not hand work. The character animation route (the strip route vs a 3D model rendered to pixels) is decided before the cast is redrawn: the unclothed base plus layered equipment, each layer in every pose and direction, is far cheaper from a 3D model.
+The owner, 22.10: adopted as written (decision 6 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Paid services: none now (decision 7 of 22.10)
+
+**Paid services: none now.** Codex draws the large and thin sprites, Blender (free, CPU) proves the character route on Pell first; a rented GPU (RunPod, about 1-2 USD a session after a 10 USD deposit) only if the mid-sized sprites turn out to be a bottleneck; no fal.ai or Gemini billing yet. Measured 22.10: Codex kept the size on the four props the local route failed (house 139x160 art px for 192, lantern 33x145 for 64x128), about 2 minutes a picture.
+The owner, 22.10: adopted as written (decision 7 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ A prop's look follows its place, not one global pick (decision 8 of 22.10)
+
+**A prop's look follows its place, not one global pick.** The three lantern direction stills (iron post with a hanging lamp, stone pillar with a fire bowl, old crooked wooden post with a paper lantern) are all kept: each settlement or region has its own design, chosen in its map plan. Consequence: the map plan names the regional style of every prop kind that has one (lanterns and light sources first), and the kit holds one sprite per kind per style (`props/lantern_post_stone`, `props/lantern_post_iron`, ...), not one lantern. The same rule for statues: the three statue stills (a robed founder holding a sickle, head missing; a stag with a broken antler; a toppled knight) are all kept, each placed where its story belongs, the inscription band on the plinth carrying the riddle.
+The owner, 22.10: adopted as written (decision 8 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Three races replace the three starters (decision 9 of 22.10)
+
+**Three races replace the three starters.** Human, elf, skeleton. The frame: a race is a returner from a different fold (STORY 1): the human from the present age, the elf from the fold that looks like magic, the skeleton from the fold under the bells. Each race has its own wing of the skill tree and its own traits, with shared parts. The three professions of today felt too shallow for a world meant to grow.
+The owner, 22.10: adopted as written (decision 9 of the 51 he adopted that afternoon).
+**Supersedes:** "Races to widen the starters (a goblin, an elf, a human): later, perhaps by other developers" (19.10), and STORY.md section 7 ruling 3 ("The core names no fold yet"): the core now names three folds, and none of them is the first or the last (STORY.md section 1).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Quests react to the race, never close to one (decision 10 of 22.10)
+
+**Quests react to the race, never close to one.** Lines, a step variant, another way through - never a quest only one race can take. Race is an extensible content kind: creators add races and extend everything (characters, quests, places) around them.
+The owner, 22.10: adopted as written (decision 10 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Three worlds (decision 11 of 22.10)
+
+**Three worlds.** The undead world: a hidden layer, dark and spooky, its people physically strong. The human world: ordinary, technology. The elf world: magical - potions, spells, lightness, the bow. Each race is strong at home and weaker outside; the exact limits come later.
+The owner, 22.10: adopted as written (decision 11 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Grades (decision 12 of 22.10)
+
+**Grades.** Per race per world one of three: weak, normal, strong. Home is always strong.
+The owner, 22.10: adopted as written (decision 12 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The undead world is the night ruins and what lies below the arch (decision 13 of 22.10)
+
+**The undead world** is the night ruins and what lies below the arch, but further south than the demo's ruins - a walk that does not feel close.
+The owner, 22.10: adopted as written (decision 13 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The skeleton outside its home: normal in the human world, weak in the elf world (decision 14 of 22.10)
+
+**The skeleton outside its home:** normal in the human world, weak in the elf world.
+The owner, 22.10: adopted as written (decision 14 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The skeleton's look: bare bones (decision 15 of 22.10)
+
+**The skeleton's look:** bare bones, no clothes at first; its wear is defined with the wear topic later.
+The owner, 22.10: adopted as written (decision 15 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The elf comes from the depth of the forest (decision 16 of 22.10)
+
+**The elf comes from the depth of the forest.**
+The owner, 22.10: adopted as written (decision 16 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The elf world lies far north (decision 17 of 22.10)
+
+**The elf world** lies far north: a dense, branching forest with forest monsters and mysterious wayside stalls, a region of its own. Map axis: elf north, the valley and its town in the centre, the undead south.
+The owner, 22.10: adopted as written (decision 17 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The elf outside its home: normal in the human world, weak in the undead world (decision 18 of 22.10)
+
+**The elf outside its home:** normal in the human world, weak in the undead world.
+The owner, 22.10: adopted as written (decision 18 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The elf's look: tall and thin (decision 19 of 22.10)
+
+**The elf's look:** tall and thin, pointed ears, moss green; a bow on the back once it has one (see 42); a cloak or hood is optional and not binding at first.
+The owner, 22.10: adopted as written (decision 19 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Human technology means made things (decision 20 of 22.10)
+
+**Human technology** means made things - tools, workshop, forge, farming, a specification to order from - and, later, the discovery of a steampunk world.
+The owner, 22.10: adopted as written (decision 20 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The human outside its home: normal in both other worlds (decision 21 of 22.10)
+
+**The human outside its home:** normal in both other worlds.
+The owner, 22.10: adopted as written (decision 21 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The human's look: medium build (decision 22 of 22.10)
+
+**The human's look:** medium build, patched work clothes, one big tool on the back (a hammer or an axe), rust-brown.
+The owner, 22.10: adopted as written (decision 22 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Everyone wakes in the neutral valley (decision 23 of 22.10)
+
+**Everyone wakes in the neutral valley**, at one of the wake pockets drawn at random, and chooses where to go after the opening.
+The owner, 22.10: adopted as written (decision 23 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The human world is a serious city across the river (decision 24 of 22.10)
+
+**The human world is a serious city across the river**, which becomes a bay; boats cross it.
+The owner, 22.10: adopted as written (decision 24 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The opening pool and the region quests (decision 25 of 22.10)
+
+**The opening pool and the region quests.** Today's three wake pockets with their first tasks are the random pool. After the opening, every region (the north forest, the city, the undead south) opens by its own quest, regardless of grade or level - part of getting to know the world.
+The owner, 22.10: adopted as written (decision 25 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Maru is a forest ranger, out on patrol - no longer only an elder by the hearth (decision 26 of 22.10)
+
+**Maru is a forest ranger**, out on patrol - no longer only an elder by the hearth.
+The owner, 22.10: adopted as written (decision 26 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Maru's hours: by day a round along the valley's edges (decision 27 of 22.10)
+
+**Maru's hours:** by day a round along the valley's edges; at dusk home by the hearth.
+The owner, 22.10: adopted as written (decision 27 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Every character reacts differently to each race (decision 28 of 22.10)
+
+**Every character reacts differently to each race** - in what they say, never in which quest they give.
+The owner, 22.10: adopted as written (decision 28 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Pell is human (decision 29 of 22.10)
+
+**Pell is human.** She ferries the human, and only the human, across to the city; she trades with every race.
+The owner, 22.10: adopted as written (decision 29 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Pell's quests are identical for all races (decision 30 of 22.10)
+
+**Pell's quests are identical for all races.** The bay-crossing quest has no giver.
+The owner, 22.10: adopted as written (decision 30 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The skeleton and the elf reach the human city another, harder way (decision 31 of 22.10)
+
+**The skeleton and the elf reach the human city another, harder way**, each with its own opening quest for it.
+The owner, 22.10: adopted as written (decision 31 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The cook is the innkeeper of the neutral valley and sells food (decision 32 of 22.10)
+
+**The cook is the innkeeper** of the neutral valley and sells food. Pell sells only raw materials and equipment, never food.
+The owner, 22.10: adopted as written (decision 32 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The Wakers' face is the wandering traveller who carries an ember (decision 33 of 22.10)
+
+**The Wakers' face is the wandering traveller** who carries an ember (the QUEST_PATTERNS card), met again and again.
+The owner, 22.10: adopted as written (decision 33 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Beliefs are not bound to races (decision 34 of 22.10)
+
+**Beliefs are not bound to races.** Each world leans to one belief (the undead to the Wakers, the forest to the Keepers, the valley to the Menders); people speak differently to each race, but no race owns a belief.
+The owner, 22.10: adopted as written (decision 34 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The grove clearing is the traveller's ember camp (decision 35 of 22.10)
+
+**The grove clearing is the traveller's ember camp:** some nights he is there with the ember lit; by day ash and stones; no permanent character in the slot.
+The owner, 22.10: adopted as written (decision 35 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The night faces enter the plan now, as a second wave (decision 36 of 22.10)
+
+**The night faces enter the plan now, as a second wave.** The watchman on his round in the valley, the drunk at the inn, the smuggler between the bay and the ruins get names and routes in the plan today; they are drawn after the three races, Maru, Pell, the innkeeper and the traveller.
+The owner, 22.10: adopted as written (decision 36 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Appearance menu (decision 37 of 22.10)
+
+**Appearance menu.** Per race: man or woman (the skeleton has no gender - one figure), plus a skin tone picked from the shared skin ramp (human and elf three to four tones; the skeleton two to three bone tints: white, ivory, grey-green). Three body figures, one per race; the sex a variant of each.
+The owner, 22.10: adopted as written (decision 37 of the 51 he adopted that afternoon).
+**Supersedes in part:** "Each player role reads at a glance: one big item, one colour, its own build" (9.10): the random draw of the look gives way to a pick from the shared skin ramp.
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The tree (decision 38 of 22.10)
+
+**The tree.** The race is the vertical axis of the written frame (GAP 4): each race its own wing with major nodes that change a verb and corner nodes with the professions; a shared centre of the attributes and the small nodes anyone may take; books teach a node from a foreign wing; the five professions stay the horizontal axis.
+The owner, 22.10: adopted as written (decision 38 of the 51 he adopted that afternoon).
+**Supersedes in part:** item 1 of "The owner's answers of 10.10 afternoon" (the three lasting starter edges become corner nodes of the race wings, not fixed percentages), and the axis proposed on 19.10 ("the starter's nature against the trades"): the vertical axis is the race.
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ No percentages on screen (decision 39 of 22.10)
+
+**No percentages on screen.** Every node is a thing you know how to do - a name and one sentence, closed or open; chains of two or three small nodes lead to a major node. The number stays in the code (a long press shows it). Progression principle: later skills are more advanced, more rewarding and harder to get, with a logic laid from the first minute (rising cost per tier, attribute keys, books and teachers, rare finds as the price of the upper tiers).
+The owner, 22.10: adopted as written (decision 39 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ What marks a race at first sight is its build (decision 40 of 22.10)
+
+**What marks a race at first sight is its build**, with the written rule of 9.10: one big item, one colour, its own build.
+The owner, 22.10: adopted as written (decision 40 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Every character stands on the same rig and slots as the player (decision 41 of 22.10)
+
+**Every character stands on the same rig and slots as the player.** Maru, Pell, the innkeeper, the traveller, the route people: a body on the shared rig plus wear in slots; Maru's stoop as a body figure; the route people made from dyes and items; one model route draws all.
+The owner, 22.10: adopted as written (decision 41 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Start outfit: three slot items over the bare body, no weapon (decision 42 of 22.10)
+
+**Start outfit: three slot items over the bare body, no weapon.** The human: patched work clothes (torso), the big tool on the back (tool), boots (feet). The elf: a light cloak (torso), sandals (feet), one more non-weapon item (a pouch or quiver as jewellery). The skeleton: bones, one tool in hand (tool), a remnant amulet (jewellery), no cloth. The race colour sits on the torso item or the amulet. A weapon - the elf's bow included - is bought, made or found. Everything shows in the wardrobe and can be swapped.
+The owner, 22.10: adopted as written (decision 42 of the 51 he adopted that afternoon).
+**Supersedes in part:** "Each player role reads at a glance: one big item, one colour, its own build" (9.10): the same patched base clothes for every role give way to the three start outfits. One big item, one colour and its own build stay (decision 40).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The three starter looks retire (decision 43 of 22.10)
+
+**The three starter looks retire.** The wake pockets and their first quests stay as the random pool; the pocket's tool (staff, basket, trowel) lies on the ground beside the wake tile and is found, not worn. The explorer, forager and digger sprites and the script that cuts them go to the archive once the race figures land; nothing new is built on them. A new opening balance is tuned with the existing checks.
+The owner, 22.10: adopted as written (decision 43 of the 51 he adopted that afternoon).
+**Supersedes in part:** "Three starts: the forager picks, the digger digs up its axe, the explorer's senses find one" (10.10): the wakes, first tasks and own spots stay as the random pool, keyed by the pocket; the per-starter kit gives way to the pocket's tool on the ground. The first build of the race wave puts the races in the engine and keeps today's sprites as their stand-ins until the race figures are drawn.
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Opening balance: a fixed attribute profile per race (decision 44 of 22.10)
+
+**Opening balance: a fixed attribute profile per race**, same total for all, no free points at the title; the pocket adds nothing.
+The owner, 22.10: adopted as written (decision 44 of the 51 he adopted that afternoon).
+**Supersedes in part:** "Three starts" (10.10): the per-starter attribute points (CR-84's six among them) give way to one fixed profile per race.
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Six attributes (decision 45 of 22.10)
+
+**Six attributes.** Might (replaces carry: carrying, heavy work, later combat - the skeleton's home), senses, agility, luck, stamina, spirit (new: potions, spells, seeing the hidden layer - the elf's home). The human is balanced and gets its technology through the tree, not through an attribute. Total 7 per race.
+The owner, 22.10: adopted as written (decision 45 of the 51 he adopted that afternoon).
+Save format: `carry` is renamed `might` in the player's attributes and in the content params, and `spirit` is new. A game saved before the rename loads with its carry read as might and spirit at 0, so a saved game always loads (the entry of 10.10 on saves).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ What a grade does (decision 46 of 22.10)
+
+**What a grade does.** Plus one, zero or minus one on the race's two home attributes by the region stood in, never below zero; the pips brighten or dim on entering, without a message. The grade is a tool for every layer that lives in that world - monsters and later combat (the fighting style follows the race: the elf fast with spells, the skeleton slow and strong, and these qualities shift by region), quests that ask an attribute, characters, riddles, anything else - may, never must. A required attribute opens a harder way, never a closed door (10, G12, G28). The exact look of combat waits for the combat wave.
+The owner, 22.10: adopted as written (decision 46 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The bay opens in the valley's south-west (decision 47 of 22.10)
+
+**The bay opens in the valley's south-west**, below the south bank where the wolf keeps its round: a jetty with a moored boat at the bank's foot, the city faint across the water, the smuggler's way along the trackless bank between the bay and the ruins. No existing coordinate moves; the framing is tested in a direction still.
+The owner, 22.10: adopted as written (decision 47 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The mended bridge stays the opening's gate for every race (decision 48 of 22.10)
+
+**The mended bridge stays the opening's gate for every race.** It is the valley's own west-east crossing; the boats cross the bay to the city elsewhere and only after the opening; the jetty sits on the south bank, not at the bridgehead.
+The owner, 22.10: adopted as written (decision 48 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The ruins continue and deepen southward (decision 49 of 22.10)
+
+**The ruins continue and deepen southward.** Today's ruins stay the near ruins and no opening tile moves; from the collapsed hall a descent carries on south into new rows of the map, darker step by step, and the passage into the undead world is gradual - a gradient, no hard border - opened by its region quest.
+The owner, 22.10: adopted as written (decision 49 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The inn is the ruined house at the town's edge (decision 50 of 22.10)
+
+**The inn is the ruined house at the town's edge, rebuilt** (the 3x4 building by the old road to the ruins, its sign already placed): the innkeeper inside, the drunk's post at night. The town corner stays the player's stall (20.10).
+The owner, 22.10: adopted as written (decision 50 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Making in the neutral valley (decision 51 of 22.10)
+
+**Making in the neutral valley.** One small workshop (the planned large stall opened by a quest) and the trainers; no forge and no fields; basic making for every race (rope, basket, handle); real technology - smith, machines, steampunk - only in the city. Design note recorded with it: shops are redesigned like the big games - never one big unsorted list. Every shop has a defined stock (what it sells and why) and a proper display (categories, the item drawn, price, what it does); this binds Pell's stall, the inn, the workshop, the elf wayside stalls and the city shops.
+The owner, 22.10: adopted as written (decision 51 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-23 ✅ The rich wave: items at a full tile, best of three by eye
+
+**Items are drawn at a full tile, 64x64**, as today's items fill their 16x16 tile, so every icon in the bag is one size. **Every free spec of the wave runs best of three and the gallery is judged by eye**, as the rich experiment did: three parallel `kit:gen` runs, each with its own `--out`; the picks go into the kit with their ramps.
+The owner, 23.10: yes to both, at the written defaults (the two questions of the wave's prompts).
+**Retry when:** a full-tile icon reads too busy in the bag at phone size, or a judge model that rejects bad draws arrives and the eye pass becomes its review. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The rich wave lands: 35 picks by eye in the kit, pebbles and the small rock wait
+
+The owner picked 35 of the wave's 37 entries by eye, over five rounds of the two specs of the wave (`tools/kit-gen/rich-items.json`, `tools/kit-gen/rich-props-small.json`). They are in the core kit at 64x64 with `density` 4, so each fills the same tile as the 16 px sprite it replaces, with the ramps it was drawn in and a `source` pointing at its line in `tools/kit-gen/rich-wave.manifest.jsonl` (round, route, model, seed or candidate, prompt, date). Each picked entry's `what`, `detail` and `ramps` in the specs is now the text that drew it. The order of 20.10 (the ladder of stills before the 64 px waves) was overtaken for this group by 21.10, "The palette deepens": the existing props and items are redrawn from themselves, the cast waits for L1, and the outline stays the decided one.
+What the five rounds showed:
+- **The 16 px sprite is a poor reference.** Drawn image to image from it (Stable Diffusion 1.5, denoise 0.7) the model kept its blur and its sixteen-pixel shapes; drawn from the words alone (denoise 1) it gave the entries the first round missed, so the old sprite gives the canvas and the object's name, not the look.
+- **SDXL won every free pick it was offered.** With rewritten prompts SDXL and its pixel-art LoRA ran beside Stable Diffusion 1.5 on the same entries; every pick from those rounds went to SDXL, 15 of the 35.
+- **What the free model misreads goes to Codex.** Ten entries the free models kept drawing as another object (the branch drawn as food) went to Codex with the kit sprite as the reference and two picks of this wave as style examples; eight of them were picked.
+- **pebbles and rock_small wait.** The Codex credits ran out during that round, so the two keep today's 16 px sprites until a draw passes the eye.
+The owner, 23.10: picked the 35 in the gallery by eye; pebbles and rock_small keep their sprites for now.
+**Retry when:** a picked sprite reads wrong in the live game at phone size beside its 16 px neighbours (then it is drawn again through its spec, with the next round's text written back), or Codex has credits again (then pebbles and rock_small go down the round that drew the other eight). Model: claude-opus-5-5.
+## 2026-10-22 ✅ The long night follows Maru's stew
+
+`core/the-long-night` requires `core/something-warm` instead of `core/three-fruits`. The phone opening's chain is now one line: `into-town`, then `herbs-for-pell` and `three-fruits`, then Pell's `a-whole-one`, then Maru's `something-warm`, then `the-long-night`. `a-coin-for-maru` keeps `three-fruits`.
+Why: the two afternoon fillers make one continuous chain, and Maru's stew gets a real pay: his done line ("a fire of your own?") opens the night task, and his two dry branches feed that fire.
+Cost: the vigil is offered around 17:00-18:00, after the stew, not in the afternoon as the 19.10 order had it.
+The owner, 22.10: yes to the new order, as built on the opening-filler branch. Supersedes the long night's part of the 19.10 entry on the opening's order.
+**Retry when:** a person playing the day has too little time between the stew and dark to build and light a fire, or the stew's chain stalls a race. Model: claude-opus-5-5.

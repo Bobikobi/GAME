@@ -1,0 +1,20 @@
+{
+  "note": "Template for a prop from an outside picture (docs/art/PROP_FROM_REF.md). Put the crop under .scratch/outside/ (ignored by git), fill seen from looking at it, get it confirmed, decide the palette, then: pnpm kit:gen tools/kit-gen/example-outside.json --out .scratch/kit-gen/example --dry, read the prompt, then the real call. ramps names the shared ramps of palette v2 the sprite draws in (tools/src/kit/palette.ts); with palette fits or restyle leave ramps out and the 32 core colours are the whole set. Drop style and style_refs for the kit's flat two-tone line (no dither). Nothing goes into content/.",
+  "entries": [
+    {
+      "name": "signpost_example",
+      "ref": ".scratch/outside/signpost.png",
+      "what": "wooden signpost holding a small framed painting",
+      "seen": "a wooden post with a small framed picture mounted on it, seen from the front: a dark brown post, a light wooden frame around a tiny landscape painting in greens and blues, a small plank roof above the frame, lit from the upper left; the rectangle carries grass and red leaves behind it",
+      "confirmed_by": "the owner, 2026-10-21",
+      "palette": "ramp-added",
+      "ramps": ["wood", "green", "water"],
+      "style": "rich",
+      "style_refs": [".scratch/outside/bench.png", ".scratch/outside/stone_bridge.png"],
+      "width": 48,
+      "height": 64,
+      "anchor": "bottom",
+      "detail": "the post in three browns with grain, the frame lighter with a lit edge, the painting as a tiny landscape in four or five greens and blues, the plank roof with a shadow under it, no leaves behind"
+    }
+  ]
+}

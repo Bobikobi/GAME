@@ -11,12 +11,16 @@ import {
   type Bundle,
   type GameEvent,
   KERNEL_VERSION,
+  OPENING_LOG_MAX,
+  type OpeningUpload,
   type State,
   appearSlots,
   appears,
   fitWorn,
+  groundSpots,
   hourOf,
   makeWalkable,
+  migrateState,
   newState,
   inRect,
   placedAt,
@@ -34,6 +38,17 @@ import { STALL_SLOT, canPlaceStall, chunkKey, slotContent } from './places';
  * title screen, and from then on a save always loads (DECISIONS.md, 2026-10-10).
  */
 const SAVE_VERSION = 2;
+/**
+ * A fixed world seed for tests and support: `?debug&seed=N` (N a whole number below 2^32). Without
+ * `debug` the seed is always random, so a shared link never fixes where a player wakes.
+ */
+export function debugSeed(search: string = typeof location === 'undefined' ? '' : location.search): number | undefined {
+  const q = new URLSearchParams(search);
+  const raw = q.get('seed');
+  if (!q.has('debug') || raw === null || !/^\d{1,10}$/.test(raw)) return undefined;
+  const n = Number(raw);
+  return n <= 0xffffffff ? n : undefined;
+}
 /** The date this browser first played the demo: kept outside the save, so no reset or new game clears it (CR-85). */
 export const DEMO_SINCE_KEY = 'openfold.demo-since';
 /** The most a frame moves the world: a long frame (tab switch, debugger) never fast-forwards it. */
@@ -84,6 +99,8 @@ interface SaveFile {
   stall?: string;
   /** the stall the kit is arranging, one entry per place; absent in old saves and while it is empty */
   stallDraft?: (StallDraft | null)[];
+  /** the opening log of NEXT 18 d: the seed the game began under, and every step played since; absent in older saves */
+  opening?: { seed: number; log: { a: Action; tick: number }[]; full?: boolean };
 }
 
 type Listener = (payload: never) => void;
@@ -107,12 +124,18 @@ export class Session implements GameSession {
   /** The stall the kit is arranging; kept in the save, and nothing is listed anywhere yet. */
   readonly stallDraft: (StallDraft | null)[] = Array.from({ length: STALL_SLOTS }, () => null);
   tail: LogEntry[] = [];
+  /**
+   * Every step played since the start, in order, until an account exists (NEXT 18 d): the sign-up hands it
+   * to the server, which plays it again. The tail above is for bug reports and stays at 40; this one runs to
+   * `OPENING_LOG_MAX`, and past that the opening is too long to hand over and the account starts fresh.
+   */
+  private opening: { seed: number; log: { a: Action; tick: number }[]; full: boolean } | undefined;
   /** set when the save was made with other content and had to be adapted */
   adapted = false;
   private pauses = 0;
   private deferred: GameEvent[] = [];
   /** the state and log from before the action that keeps the player busy now, so work walked away from can be taken back */
-  private undo: { state: State; tail: LogEntry[] } | null = null;
+  private undo: { state: State; tail: LogEntry[]; opening: number } | null = null;
   /** the record of a gather under way: counted as a pickup when the work lands, dropped when it is walked away from */
   private pickup: string | null = null;
   private listeners = new Map<keyof SessionEvents, Set<Listener>>();
@@ -128,9 +151,11 @@ export class Session implements GameSession {
     this.pos = [state.player.at[0], state.player.at[1]];
   }
 
-  static fresh(bundle: Bundle): Session {
+  /** A new world. The seed is random; a test may fix it (`?debug&seed=N`, see debugSeed), and the seed draws the wake pocket. */
+  static fresh(bundle: Bundle, fixed?: number): Session {
     const seed = new Uint32Array(1);
-    crypto.getRandomValues(seed);
+    if (fixed !== undefined) seed[0] = fixed;
+    else crypto.getRandomValues(seed);
     return new Session(bundle, newState(bundle, seed[0] ?? 1));
   }
 
@@ -162,6 +187,30 @@ export class Session implements GameSession {
     this.save();
     this.emit('change', undefined);
     return true;
+  }
+
+  /** Keep one played step in the opening log; the log begins at the start and stops growing at its cap. */
+  private keep(action: Action, tick: number, seed: number): void {
+    if (action.t === 'start') this.opening = { seed, log: [], full: false };
+    const opening = this.opening;
+    if (!opening || opening.full) return;
+    if (opening.log.length >= OPENING_LOG_MAX) {
+      opening.full = true;
+      opening.log = [];
+      return;
+    }
+    opening.log.push({ a: structuredClone(action), tick });
+  }
+
+  /**
+   * What the sign-up hands the server: the seed, every step since the start and the state they ended on.
+   * Nothing when the game was not played from its start in this browser, or the log outgrew its cap: the
+   * account then starts fresh.
+   */
+  openingUpload(): OpeningUpload | undefined {
+    const opening = this.opening;
+    if (!opening || opening.full || opening.log.length === 0 || opening.log[0]!.a.t !== 'start') return undefined;
+    return { seed: opening.seed, log: structuredClone(opening.log), state: serialize(this.state) };
   }
 
   static hasSave(): boolean {
@@ -238,6 +287,14 @@ export class Session implements GameSession {
     // a save from before kernel 0.9 holds no record of bites
     const bites = state.player as Partial<Pick<State['player'], 'bitten'>>;
     bites.bitten ??= [];
+    // a save from before the races (state format 2, kernel 0.14): carry is read as might, spirit starts at 0,
+    // and the starter becomes its race and its wake pocket; the pocket's tools it carried stay in the bag,
+    // so the spots that lay them by the wake are spent
+    const before = state.format ?? 1;
+    state = migrateState(state);
+    if (before < 2 && state.player.pocket !== '') {
+      for (const id of groundSpots(bundle, state.player.pocket)) state.nodes[id] ??= { readyAt: 0, draws: 1 };
+    }
     const session = new Session(bundle, state);
     stampDemo();
     if (state.content !== bundle.tag) {
@@ -254,6 +311,10 @@ export class Session implements GameSession {
       for (const key of file.heard) if (typeof key === 'string') session.heard.add(key);
     }
     session.tail = file.tail.slice(-TAIL);
+    const kept = file.opening;
+    if (kept && Number.isSafeInteger(kept.seed) && Array.isArray(kept.log) && state.content === file.content) {
+      session.opening = { seed: kept.seed, log: kept.log, full: kept.full === true };
+    }
     const walkable = makeWalkable(bundle);
     const [x, y] = file.pos;
     session.pos = walkable(x, y, state.player) ? [x, y] : [state.player.at[0], state.player.at[1]];
@@ -288,7 +349,7 @@ export class Session implements GameSession {
   }
 
   get started(): boolean {
-    return this.state.player.starter !== '';
+    return this.state.player.race !== '';
   }
 
   get busy(): boolean {
@@ -410,6 +471,7 @@ export class Session implements GameSession {
     const r = step(this.bundle, this.state, { t: 'move', at: [at[0], at[1]] }, this.tick);
     if (!r.ok) return;
     this.state = r.state;
+    this.keep({ t: 'move', at: [at[0], at[1]] }, this.tick, r.state.seed);
     // a hunt heard during work changes the world under it: that work can no longer be taken back
     this.undo = null;
     if (r.events.length === 0) return;
@@ -422,7 +484,8 @@ export class Session implements GameSession {
   act(action: Action): ActResult {
     const r = step(this.bundle, this.state, action, this.tick);
     if (!r.ok) return r;
-    const before = { state: this.state, tail: this.tail.slice() };
+    const before = { state: this.state, tail: this.tail.slice(), opening: this.opening?.log.length ?? 0 };
+    this.keep(action, this.tick, this.state.seed);
     this.state = r.state;
     this.undo = null;
     this.wake(r.events);
@@ -491,6 +554,7 @@ export class Session implements GameSession {
     if (!this.busy || !this.undo) return false;
     this.state = this.undo.state;
     this.tail = this.undo.tail;
+    if (this.opening && !this.opening.full) this.opening.log.length = Math.min(this.opening.log.length, this.undo.opening);
     this.deferred = [];
     this.pickup = null;
     this.undo = null;
@@ -517,6 +581,7 @@ export class Session implements GameSession {
       stall: this.stall,
       stallDraft: this.stallDraft.some((draft) => draft !== null) ? this.stallDraft : undefined,
       tail: this.tail,
+      opening: this.opening,
     };
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(file));
@@ -575,9 +640,11 @@ function readStallDraft(raw: unknown, bundle: Bundle, bag: Readonly<Record<strin
  */
 function adapt(bundle: Bundle, state: State): boolean {
   const p = state.player;
-  if (p.starter !== '' && !bundle.starters[p.starter]) return false;
+  if (p.race !== '' && !bundle.races[p.race]) return false;
+  // a wake pocket that left the content: the mist and the first task fall back to the map's spawn
+  if (p.pocket !== '' && !bundle.pockets[p.pocket]) p.pocket = '';
   // saves from kernel 0.1 have no look, and a look can be withdrawn with its sprite
-  if (typeof p.look !== 'number' || (p.look === 1 && p.starter !== '' && !bundle.starters[p.starter]?.sprite_alt)) p.look = 0;
+  if (typeof p.look !== 'number' || (p.look === 1 && p.race !== '' && !bundle.races[p.race]?.sprite_alt)) p.look = 0;
   const keepKeys = <T>(record: Record<string, T>, known: Record<string, unknown>): Record<string, T> =>
     Object.fromEntries(Object.entries(record).filter(([k]) => k in known));
   p.bag = keepKeys(p.bag, bundle.items);
@@ -589,13 +656,14 @@ function adapt(bundle: Bundle, state: State): boolean {
   p.journal = p.journal.filter((id) => id in bundle.items);
   p.recipes = p.recipes.filter((id) => id in bundle.recipes);
   // a recipe everyone starts with that came with this version is known at once
-  if (p.starter !== '') {
+  if (p.race !== '') {
     const fresh = Object.keys(bundle.recipes).filter((id) => bundle.recipes[id]!.known === 'start' && !p.recipes.includes(id));
     if (fresh.length > 0) p.recipes = [...p.recipes, ...fresh].sort();
   }
-  // a start whose kit came with this version: a save that holds none of a kit item gets it once
-  if (p.starter !== '') {
-    for (const stack of bundle.starters[p.starter]!.kit ?? []) {
+  // a race whose outfit came with this version: a save that holds none of an outfit piece gets it once
+  // (the pocket's tools are never granted here: they lie on the ground by the wake)
+  if (p.race !== '') {
+    for (const stack of bundle.races[p.race]!.outfit ?? []) {
       if ((p.bag[stack.item] ?? 0) > 0) continue;
       p.bag[stack.item] = stack.qty;
       if (!p.journal.includes(stack.item)) p.journal = [...p.journal, stack.item].sort();

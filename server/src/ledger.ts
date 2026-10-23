@@ -13,6 +13,10 @@
  *
  * Anything the replay cannot reproduce is reported, never repaired: a log the server wrote is the
  * account, and a book that disagrees with it is a finding, not a rounding.
+ *
+ * An account whose opening was handed over from the phone (NEXT 18 d) starts its log with that opening:
+ * one row `{ kind: 'opening', seed, log }`. The replay plays it from `newState(bundle, seed)` under the
+ * phone's seed, then gives the state the account's own seed, as the sign-up did, and goes on from there.
  */
 import { newState, serialize, step, type Action, type Bundle, type GameEvent, type State } from '@game/kernel';
 
@@ -119,6 +123,20 @@ function stepsOf(action: unknown, tick: number): { action: Action; tick: number 
   return steps;
 }
 
+/** The opening a log row hands over (NEXT 18 d): the phone's seed and its steps, or undefined for any other row. */
+function openingOf(action: unknown): { seed: number; steps: { action: Action; tick: number }[] } | string | undefined {
+  if (!isRecord(action) || action.kind !== 'opening') return undefined;
+  if (!Number.isSafeInteger(action.seed) || !Array.isArray(action.log)) return 'the opening row holds no seed or log';
+  const steps: { action: Action; tick: number }[] = [];
+  for (const entry of action.log) {
+    if (!isRecord(entry) || !isRecord(entry.a) || typeof entry.a.t !== 'string' || !Number.isSafeInteger(entry.tick)) {
+      return 'an opening step holds no action or tick';
+    }
+    steps.push({ action: entry.a as unknown as Action, tick: entry.tick as number });
+  }
+  return { seed: action.seed as number, steps };
+}
+
 /**
  * Play an account's whole log from its start state, under its own seed, and return the state and the
  * ledger the log implies. The first refusal is the answer: an action the server accepted must play
@@ -127,7 +145,22 @@ function stepsOf(action: unknown, tick: number): { action: Action; tick: number 
 export function replayAccount(bundle: Bundle, seed: number, log: readonly LoggedAction[]): ReplayResult {
   let state = newState(bundle, seed);
   const ledger: LedgerRow[] = [];
-  for (const row of log) {
+  for (const [index, row] of log.entries()) {
+    const opening = openingOf(row.action);
+    if (typeof opening === 'string') return { ok: false, problem: `seq ${row.seq}: ${opening}` };
+    if (opening) {
+      if (index !== 0) return { ok: false, problem: `seq ${row.seq}: an opening is handed over only as the first row` };
+      // the opening played under the phone's seed; the account plays on under its own, as the sign-up set it
+      state = newState(bundle, opening.seed);
+      for (const one of opening.steps) {
+        const result = step(bundle, state, one.action, one.tick, { validateTravel: true });
+        if (!result.ok) return { ok: false, problem: `seq ${row.seq} does not play again: ${result.error}` };
+        ledger.push(...goldRowsOf(bundle, [{ action: one.action, tick: one.tick, events: result.events }]));
+        state = result.state;
+      }
+      state = { ...state, seed: seed >>> 0 };
+      continue;
+    }
     const steps = stepsOf(row.action, row.tick);
     if (typeof steps === 'string') return { ok: false, problem: `seq ${row.seq}: ${steps}` };
     for (const one of steps) {

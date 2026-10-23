@@ -1,0 +1,26 @@
+{
+  "$schema": "../../../schema/json/treasure.schema.json",
+  "format": 1,
+  "type": "treasure",
+  "id": "core/meadow-staff",
+  "title": "A staff in the grass",
+  "creator": "core",
+  "dig": {
+    "hint": "A walking staff lies in the grass beside you.",
+    "active_ms": 1000,
+    "respawn_ms": 60000,
+    "count": 1,
+    "level": 1,
+    "finds": [
+      {
+        "item": "core/walking-staff",
+        "chance_pct": 100,
+        "share_pct": 100
+      }
+    ],
+    "place": {
+      "slot": "core/meadow-staff"
+    },
+    "pocket": "core/north-meadow"
+  }
+}

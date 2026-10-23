@@ -1,6 +1,6 @@
 /**
  * B2's mist (NEXT 16 a, OPENING_REVIEW section 5): criteria 1 and 2 on the raster the game itself
- * draws (src/mist.ts), for each of the three starters, read pixel by pixel and not by eye.
+ * draws (src/mist.ts), for each of the three wake pockets, read pixel by pixel and not by eye.
  */
 import { beforeAll, describe, expect, test } from 'vitest';
 
@@ -8,20 +8,25 @@ import { type Bundle, type State, newState, step } from '@game/kernel';
 
 import { T } from '../src/config';
 import { MIST, MIST_MEND_PER_S, MIST_RGB, type Clear, firstTaskDone, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../src/mist';
-import { loadBundle } from '../../tools/test/helpers/world';
+import { loadBundle, seedFor } from '../../tools/test/helpers/world';
 
 let b: Bundle;
 beforeAll(() => {
   b = loadBundle();
 });
 
-const STARTERS = ['core/forager', 'core/digger', 'core/explorer'];
+const POCKETS = ['core/west-bank', 'core/slid-bank', 'core/north-meadow'];
 
-/** The mist raster for a starter's fresh save, and the clear places it was drawn from. */
-function frame(starter: string): { clears: Clear[]; px: Uint8ClampedArray; w: number; h: number } {
-  const r = step(b, newState(b, 1), { t: 'start', starter, name: 'Tess' }, 0);
+/** A fresh save woken in a pocket: the seed draws the pocket, the race does not matter to the mist. */
+function started(pocket: string): State {
+  const r = step(b, newState(b, seedFor(b, pocket)), { t: 'start', race: 'core/human', name: 'Tess' }, 0);
   if (!r.ok) throw new Error(r.error);
-  const s = r.state;
+  return r.state;
+}
+
+/** The mist raster for a pocket's fresh save, and the clear places it was drawn from. */
+function frame(pocket: string): { clears: Clear[]; px: Uint8ClampedArray; w: number; h: number } {
+  const s = started(pocket);
   const clears = mistClears(b, s);
   const { width, height } = b.map;
   return { clears, px: mistPixels(clears, width, height, T), w: width * T, h: height * T };
@@ -29,14 +34,14 @@ function frame(starter: string): { clears: Clear[]; px: Uint8ClampedArray; w: nu
 
 const alpha = (f: { px: Uint8ClampedArray; w: number }, x: number, y: number): number => f.px[4 * (y * f.w + x) + 3]!;
 
-describe('B2 at wake, for each starter', () => {
-  test.each(STARTERS)('%s: the wake tile is the clear places centre, 5 tiles wide', (id) => {
-    const wake = b.starters[id]!.wake ?? b.map.spawn;
+describe('B2 at wake, for each pocket', () => {
+  test.each(POCKETS)('%s: the wake tile is the clear places centre, 5 tiles wide', (id) => {
+    const wake = b.pockets[id]!.wake;
     const { clears } = frame(id);
     expect(clears).toEqual([{ x: wake.x, y: wake.y, r: MIST.clear }]);
   });
 
-  test.each(STARTERS)('%s (criterion 1): no mist inside the 5-tile circle around the character', (id) => {
+  test.each(POCKETS)('%s (criterion 1): no mist inside the 5-tile circle around the character', (id) => {
     const f = frame(id);
     const c = f.clears[0]!;
     const cx = (c.x + 0.5) * T;
@@ -52,7 +57,7 @@ describe('B2 at wake, for each starter', () => {
     expect(inside).toBeGreaterThan(Math.PI * (c.r * T) ** 2 * 0.6);
   });
 
-  test.each(STARTERS)('%s (criterion 2): at least 90%% of the border pixels are mist', (id) => {
+  test.each(POCKETS)('%s (criterion 2): at least 90%% of the border pixels are mist', (id) => {
     const f = frame(id);
     let mist = 0;
     let total = 0;
@@ -66,7 +71,7 @@ describe('B2 at wake, for each starter', () => {
     expect(mist / total).toBeGreaterThanOrEqual(0.96);
   });
 
-  test.each(STARTERS)('%s (criterion 2): from the character outward the mist only thickens', (id) => {
+  test.each(POCKETS)('%s (criterion 2): from the character outward the mist only thickens', (id) => {
     const { clears } = frame(id);
     const c = clears[0]!;
     const { width, height } = b.map;
@@ -85,7 +90,7 @@ describe('B2 at wake, for each starter', () => {
     }
   });
 
-  test.each(STARTERS)('%s: 6 tiles of thickening, and a share of dots that grows with the ring', (id) => {
+  test.each(POCKETS)('%s: 6 tiles of thickening, and a share of dots that grows with the ring', (id) => {
     const f = frame(id);
     const c = f.clears[0]!;
     const share = (from: number, to: number): number => {
@@ -109,7 +114,7 @@ describe('B2 at wake, for each starter', () => {
 
 describe('B2 is dots in three colours, nothing in between', () => {
   test('every pixel is clear or fully solid, in the three colours only', () => {
-    const f = frame('core/forager');
+    const f = frame('core/west-bank');
     const allowed = new Set(Object.values(MIST_RGB).map((c) => c.join(',')));
     const seen = new Set<string>();
     for (let i = 0; i < f.px.length; i += 4) {
@@ -140,16 +145,11 @@ describe('B2 is dots in three colours, nothing in between', () => {
   });
 });
 
-/** A save of a fresh start, and the same with its first task closed. */
-function started(starter: string): State {
-  const r = step(b, newState(b, 1), { t: 'start', starter, name: 'Tess' }, 0);
-  if (!r.ok) throw new Error(r.error);
-  return r.state;
-}
-const FIRST = { 'core/forager': 'core/first-pickings', 'core/digger': 'core/buried-axe', 'core/explorer': 'core/glint-by-the-bridge' } as const;
+/** Each pocket's own first task. */
+const FIRST = { 'core/west-bank': 'core/first-pickings', 'core/slid-bank': 'core/buried-axe', 'core/north-meadow': 'core/glint-by-the-bridge' } as const;
 
 describe('the pocket and its first push (criterion 3)', () => {
-  test.each(STARTERS)('%s: 5 tiles at wake, 7 once the first task is done, from the save alone', (id) => {
+  test.each(POCKETS)('%s: 5 tiles at wake, 7 once the first task is done, from the save alone', (id) => {
     const fresh = started(id);
     expect(firstTaskDone(b, fresh)).toBe(false);
     expect(mistClears(b, fresh)[0]!.r).toBe(5);
@@ -160,8 +160,8 @@ describe('the pocket and its first push (criterion 3)', () => {
     expect(mistClears(b, JSON.parse(JSON.stringify(done)) as State)).toEqual(mistClears(b, done));
   });
 
-  test("another start's first task does not open this pocket", () => {
-    const fresh = started('core/forager');
+  test("another pocket's first task does not open this pocket", () => {
+    const fresh = started('core/west-bank');
     const other: State = { ...fresh, player: { ...fresh.player, quests: { ...fresh.player.quests, 'core/buried-axe': 'done' } } };
     expect(mistClears(b, other)[0]!.r).toBe(5);
   });
@@ -191,9 +191,9 @@ describe('the pocket and its first push (criterion 3)', () => {
   });
 });
 
-describe("the explorer's mote", () => {
+describe("the north meadow's mote", () => {
   test('at the wake it stands at the pocket edge, on the line to the glint (11,19)', () => {
-    const wake = b.starters['core/explorer']!.wake!;
+    const wake = b.pockets['core/north-meadow']!.wake;
     const m = moteAt([wake.x, wake.y], [11, 19], 5);
     expect(Math.hypot(m.x - (wake.x + 0.5), m.y - (wake.y + 0.5))).toBeCloseTo(5, 6);
     const ang = (p: { x: number; y: number }) => Math.atan2(p.y - (wake.y + 0.5), p.x - (wake.x + 0.5));
@@ -206,25 +206,25 @@ describe("the explorer's mote", () => {
   });
 
   test('the glint hides in solid mist at wake, so the mote is its only sign', () => {
-    const f = frame('core/explorer');
+    const f = frame('core/north-meadow');
     const { width, height } = b.map;
     expect(mistDensity(f.clears, width, height, 11.5, 19.5)).toBe(1);
   });
 });
 
 describe('the bridge draws the mist back (criterion 4)', () => {
-  const mended = (starter: string): State => {
-    const fresh = started(starter);
+  const mended = (pocket: string): State => {
+    const fresh = started(pocket);
     return { ...fresh, player: { ...fresh.player, restored: ['core/old-bridge'] } };
   };
 
-  test.each(STARTERS)('%s: a mended bridge clears at least 13 tiles around (14,17), all three wake tiles inside', (id) => {
+  test.each(POCKETS)('%s: a mended bridge clears at least 13 tiles around (14,17), all three wake tiles inside', (id) => {
     const clears = mistClears(b, mended(id));
     const bridge = clears.find((c) => c.x === 14 && c.y === 17)!;
     expect(bridge.r).toBeGreaterThanOrEqual(13);
     const { width, height } = b.map;
-    for (const w of STARTERS) {
-      const wake = b.starters[w]!.wake ?? b.map.spawn;
+    for (const w of POCKETS) {
+      const wake = b.pockets[w]!.wake;
       expect(mistDensity(clears, width, height, wake.x + 0.5, wake.y + 0.5)).toBe(0);
       expect(Math.hypot(wake.x - bridge.x, wake.y - bridge.y)).toBeLessThanOrEqual(bridge.r);
     }
@@ -243,8 +243,8 @@ describe('the bridge draws the mist back (criterion 4)', () => {
   });
 
   test('a reload keeps it: the same save gives the same clears; an unmended save has none of it', () => {
-    const m = mended('core/forager');
+    const m = mended('core/west-bank');
     expect(mistClears(b, JSON.parse(JSON.stringify(m)) as State)).toEqual(mistClears(b, m));
-    expect(mistClears(b, started('core/forager'))).toHaveLength(1);
+    expect(mistClears(b, started('core/west-bank'))).toHaveLength(1);
   });
 });

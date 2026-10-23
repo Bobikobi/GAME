@@ -16,6 +16,7 @@ import {
   type Bundle,
   type GameEvent,
   type Grade,
+  attrAt,
   type Hazard,
   type Slot,
   appearSlots,
@@ -1743,12 +1744,12 @@ export class WorldScene extends Phaser.Scene {
     this.player.setDepth((y + 1) * T + 1);
   }
 
-  /** The starter's sprite for a direction, in the look the player picked. */
+  /** The race's sprite for a direction, in the look the player picked (races wear today's sheets until their own art). */
   private playerFrame(dir: Dir, pose = 'walk'): { key: string; flip: boolean } {
     const p = this.session?.state.player;
-    const starter = p ? this.b.starters[p.starter] : undefined;
-    const first = Object.values(this.b.starters)[0];
-    const base = (p?.look === 1 && starter?.sprite_alt) || starter?.sprite || first?.sprite || '';
+    const race = p ? this.b.races[p.race] : undefined;
+    const first = Object.values(this.b.races)[0];
+    const base = (p?.look === 1 && race?.sprite_alt) || race?.sprite || first?.sprite || '';
     const stem = pose === 'walk' ? base : base.replace(/_down$/, `_${pose}_down`);
     const of = (d: string) => stem.replace(/_down$/, `_${d}`);
     const has = (k: string) => k in this.b.sprites;
@@ -2260,7 +2261,7 @@ export class WorldScene extends Phaser.Scene {
         s.act({ t: 'visit', slot: slot.id, at: [x, y] });
       }
       if (slot.kind === 'ruin' && !this.hinted.has(slot.id)) {
-        const t = Object.values(this.b.treasures).find((d) => d.place.slot === slot.id && (d.starter ?? s.state.player.starter) === s.state.player.starter);
+        const t = Object.values(this.b.treasures).find((d) => d.place.slot === slot.id && (d.pocket ?? s.state.player.pocket) === s.state.player.pocket);
         if (t) {
           this.hinted.add(slot.id);
           app.ui.toast(`Hint: ${t.hint}`, 'info');
@@ -2324,7 +2325,7 @@ export class WorldScene extends Phaser.Scene {
    */
   private placeMote(s: GameSession, clears: Clear[], time: number): void {
     let want: { x: number; y: number } | undefined;
-    if (s.state.player.attrs.senses > 0) {
+    if (attrAt(this.b, s.state, 'senses') > 0) {
       for (const id of this.digs.keys()) {
         const inst = this.b.instances[id]!;
         const t = this.b.treasures[inst.source];

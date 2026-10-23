@@ -1797,6 +1797,42 @@
         "tag": "riverbank"
       },
       {
+        "id": "core/meadow-staff",
+        "kind": "ruin",
+        "x": 8,
+        "y": 6,
+        "w": 1,
+        "h": 1,
+        "tag": "meadow"
+      },
+      {
+        "id": "core/bank-basket",
+        "kind": "ruin",
+        "x": 6,
+        "y": 16,
+        "w": 1,
+        "h": 1,
+        "tag": "meadow"
+      },
+      {
+        "id": "core/bank-axe",
+        "kind": "ruin",
+        "x": 6,
+        "y": 18,
+        "w": 1,
+        "h": 1,
+        "tag": "meadow"
+      },
+      {
+        "id": "core/slid-trowel",
+        "kind": "ruin",
+        "x": 8,
+        "y": 22,
+        "w": 1,
+        "h": 1,
+        "tag": "meadow"
+      },
+      {
         "id": "core/sun-bank",
         "kind": "resource",
         "x": 7,
