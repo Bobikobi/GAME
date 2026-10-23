@@ -2543,3 +2543,11 @@ Why: the two afternoon fillers make one continuous chain, and Maru's stew gets a
 Cost: the vigil is offered around 17:00-18:00, after the stew, not in the afternoon as the 19.10 order had it.
 The owner, 22.10: yes to the new order, as built on the opening-filler branch. Supersedes the long night's part of the 19.10 entry on the opening's order.
 **Retry when:** a person playing the day has too little time between the stew and dark to build and light a fire, or the stew's chain stalls a race. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The kit's theme "B, canvas", and Jersey 15 as the game's one face
+
+The Field Kit (Bag, Outfit, Skills, Shop) wears theme B: the oiled-wood frame, a mid-tone canvas inset with dark ink on it, the tabs and buttons as dark wood plates with a brass inner line, a paper card, dark sockets for the cells, and brass for what is picked or can be taken now. The parts are reusable classes and tokens in `game/src/ui/theme.css` (`.kit-frame`, `.kit-inset`, `.kit-plate`, `.kit-tab`, `.kit-btn`, `.kit-paper`, `.kit-socket`, `.kit-node`); the Field Kit's rules in `kit.css` name no colour of their own. The game's face is Jersey 15 (SIL Open Font License 1.1), self-hosted with its licence, for the titles, the numbers and the reading text alike; the text sizes are 18 and 27 px, where a font pixel lands on whole device pixels on a 3x phone. Behaviour is unchanged.
+The stills were snapped to the core palette: the canvas #b59468 to #c99a5e, the card #d9bd8a to #ebd3a2, the cloth and wood darks to #3d2618 and #6e4226, the brass to the fire ramp #eda83a and #b8661f. Every text reads at 4.5:1 or more on its ground (ink on canvas 6.7, on paper 11.65; cream on a plate 9.65; brass on a plate 6.89; ink on brass 8.32); `tools/test/ui-theme.test.ts` holds the palette, the ratios and the face.
+Why: the owner chose theme B, polished, and Jersey 15 everywhere in the game (23.10), with colours only from the repo palette.
+Cost: the site keeps its own faces (`design/tokens.css` stays Pixelify); the HUD and the dialogs read in Jersey 15 at the sizes they had, and the Pixelify and Atkinson faces stay loaded because the map's labels still use Atkinson. No scrims, gradients or rounded corners in the kit.
+**Retry when:** a playtest finds a text too small or a page too dark, or the owner changes the face. Model: claude-opus-5-5.

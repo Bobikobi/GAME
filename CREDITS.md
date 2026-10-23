@@ -10,17 +10,22 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Workbench (camp) - `content/core/camp/workbench.json`
 - Workshop (camp) - `content/core/camp/workshop.json`
 - Healing (items) - `content/core/items/healing.json`
+- Outfits (items) - `content/core/items/outfits.json`
 - Tools (items) - `content/core/items/tools.json`
 - The valley (map) - `content/core/map.json`
 - Elder Maru (npc) - `content/core/npcs/elder.json`
 - Pell the trader (npc) - `content/core/npcs/trader.json`
 - Game parameters (params) - `content/core/params.json`
+- The north meadow (pocket) - `content/core/pockets/north-meadow.json`
+- The slid bank (pocket) - `content/core/pockets/slid-bank.json`
+- The west bank (pocket) - `content/core/pockets/west-bank.json`
 - Cooking (profession) - `content/core/professions/cooking.json`
 - Digging (profession) - `content/core/professions/digging.json`
 - Foraging (profession) - `content/core/professions/foraging.json`
 - Handcraft (profession) - `content/core/professions/handcraft.json`
 - Woodcutting (profession) - `content/core/professions/woodcutting.json`
 - The coin under the lantern (quest) - `content/core/quests/a-coin-for-maru.json`
+- A whole one (quest) - `content/core/quests/a-whole-one.json`
 - The slid bank (quest) - `content/core/quests/buried-axe.json`
 - A fire across the river (quest) - `content/core/quests/first-fire.json`
 - First pickings (quest) - `content/core/quests/first-pickings.json`
@@ -28,11 +33,15 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - A glint by the bridge (quest) - `content/core/quests/glint-by-the-bridge.json`
 - Herbs for Pell (quest) - `content/core/quests/herbs-for-pell.json`
 - Smoke over the town (quest) - `content/core/quests/into-town.json`
+- Something warm for the night (quest) - `content/core/quests/something-warm.json`
 - The long night (quest) - `content/core/quests/the-long-night.json`
 - The arch at night (quest) - `content/core/quests/the-night-arch.json`
 - The south bank (quest) - `content/core/quests/the-south-bank.json`
 - The tangle past the ruins (quest) - `content/core/quests/the-tangle.json`
 - Where the bells rang (quest) - `content/core/quests/three-fruits.json`
+- Elf (race) - `content/core/races/elf.json`
+- Human (race) - `content/core/races/human.json`
+- Skeleton (race) - `content/core/races/skeleton.json`
 - Birds lift where something lies hidden (reaction) - `content/core/reactions/birds-over-a-find.json`
 - Fish rise at dusk (reaction) - `content/core/reactions/fish-at-dusk.json`
 - Mushrooms by a grove log in the rain (reaction) - `content/core/reactions/mushrooms-after-rain.json`
@@ -70,15 +79,17 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Broken arch (restore) - `content/core/restores/arch-way.json`
 - Old bridge (restore) - `content/core/restores/old-bridge.json`
 - Pell's stall (shop) - `content/core/shops/trader-shop.json`
-- Digger (starter) - `content/core/starters/digger.json`
-- Explorer (starter) - `content/core/starters/explorer.json`
-- Forager (starter) - `content/core/starters/forager.json`
 - Dyed cord (template) - `content/core/templates/dye-cord.json`
+- An axe on the bank (treasure) - `content/core/treasures/bank-axe.json`
+- A basket on the bank (treasure) - `content/core/treasures/bank-basket.json`
 - A glint by the bridge (treasure) - `content/core/treasures/bridge-glint.json`
 - Under the hill lantern (treasure) - `content/core/treasures/lantern-foot.json`
+- A staff in the grass (treasure) - `content/core/treasures/meadow-staff.json`
 - Deep ruins (treasure) - `content/core/treasures/ruins-deep.json`
 - Gate rubble (treasure) - `content/core/treasures/ruins-gate.json`
-- The slid bank (treasure) - `content/core/treasures/slid-bank.json`
+- Hall rubble (treasure) - `content/core/treasures/ruins-hall.json`
+- The slid bank (treasure) - `content/core/treasures/slid-bank-dig.json`
+- A trowel in the grass (treasure) - `content/core/treasures/slid-trowel.json`
 - Base kit (kit) - `content/kit/core/kit.json`
 
 AI tools: Claude Code: text-grid sprites and frames via a PIL script; Codex: text-grid sprites in tools/src/kit/sketches.ts; Nano Banana (gemini-3.1-flash-image) via Antigravity.
@@ -88,3 +99,4 @@ AI tools: Claude Code: text-grid sprites and frames via a PIL script; Codex: tex
 - [Phaser](https://phaser.io) game framework - MIT license.
 - [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) by Stefie Justprince - SIL Open Font License 1.1 (`game/public/fonts/OFL.txt`).
 - [Atkinson Hyperlegible Next](https://github.com/googlefonts/atkinson-hyperlegible-next) by the Braille Institute of America - SIL Open Font License 1.1 (`game/public/fonts/atkinson-hyperlegible-next/OFL.txt`).
+- [Jersey 15](https://github.com/scfried/soft-type-jersey) by The Soft Type Project Authors - SIL Open Font License 1.1 (`game/public/fonts/jersey-15/OFL.txt`).
