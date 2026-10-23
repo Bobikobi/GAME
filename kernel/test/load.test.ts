@@ -215,9 +215,13 @@ describe('bags', () => {
     expect(Object.keys(b.items).filter((id) => b.items[id]!.wear?.slot === 'back').sort()).toEqual(['core/frame-pack', 'core/satchel']);
   });
 
-  test('the first bag is made at the valley workshop', () => {
+  test('the first bag is made at the valley workshop, and Pell sells it too', () => {
     const recipe = Object.values(b.recipes).find((r) => r.outputs.some((o) => o.item === 'core/satchel'))!;
     expect(recipe.station).toBe('workshop');
+    const offer = b.shops['core/trader-shop']!.sells.find((o) => o.item === 'core/satchel');
+    expect(offer).toBeDefined();
+    // a shop never sells below the value (R8)
+    expect(offer!.price_mg).toBeGreaterThanOrEqual(b.params.r_mg_per_value_ms * b.values['core/satchel']!);
   });
 });
 
