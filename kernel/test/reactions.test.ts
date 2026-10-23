@@ -154,8 +154,12 @@ describe('cues', () => {
     expect(Math.abs(hits[0]!.y - spot.y)).toBeLessThanOrEqual(2);
     // the same day draws the same tile
     expect(cuesOnStep(b, s, 100_500, outside, edge).filter((h) => h.anchor === FIND)).toEqual(hits);
-    // a step inside the reach starts nothing, and nor does a find the player already sees
-    expect(cuesOnStep(b, s, 100_000, edge, [spot.x - 7, spot.y])).toEqual([]);
+    // a step inside the reach starts nothing for this find, nor does a seen find; the hall's spots nearby have reaches of their
+    // own, so what the step does start is theirs alone, one cue a spot
+    const inside = cuesOnStep(b, s, 100_000, edge, [spot.x - 7, spot.y]);
+    expect(inside.filter((h) => h.anchor === FIND)).toEqual([]);
+    expect(inside.every((h) => h.anchor.startsWith('core/ruins-hall#'))).toBe(true);
+    expect(new Set(inside.map((h) => h.anchor)).size).toBe(inside.length);
     expect(cuesOnStep(b, s, 100_000, [spot.x - 1, spot.y + 9], [spot.x - 1, spot.y + 8]).some((h) => h.anchor === FIND)).toBe(true);
     expect(reactionHolds(b, s, birds, { id: FIND, x: spot.x, y: spot.y, inst: spot }, 100_000, [spot.x - 1, spot.y])).toBe(false);
     // not at night, and not over a start's own find for another start

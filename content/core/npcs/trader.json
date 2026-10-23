@@ -65,6 +65,16 @@
       },
       {
         "when": {
+          "done": [
+            "core/a-whole-one"
+          ]
+        },
+        "say": [
+          "That bowl sold before I set it down. The hall keeps more, I would bet."
+        ]
+      },
+      {
+        "when": {
           "race": [
             "core/human"
           ]

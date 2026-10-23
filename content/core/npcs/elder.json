@@ -68,6 +68,16 @@
       },
       {
         "when": {
+          "done": [
+            "core/something-warm"
+          ]
+        },
+        "say": [
+          "My mother put less salt in. Do not tell Pell I said so."
+        ]
+      },
+      {
+        "when": {
           "race": [
             "core/human"
           ]

@@ -1,0 +1,49 @@
+{
+  "$schema": "../../../schema/json/treasure.schema.json",
+  "format": 1,
+  "type": "treasure",
+  "id": "core/ruins-hall",
+  "title": "Hall rubble",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/whole-bowl",
+      "name": "Whole bowl",
+      "description": "Blue and white, not a crack in it. The same pattern as every shard.",
+      "kind": "treasure",
+      "rarity": "rare",
+      "class": "clay",
+      "family": "pottery",
+      "tier": 1,
+      "sprite": "core/base-kit:items/pottery-shard"
+    }
+  ],
+  "dig": {
+    "hint": "The hall fell in on its own shelves.",
+    "active_ms": 5000,
+    "respawn_ms": 30000,
+    "count": 6,
+    "tool": "trowel",
+    "level": 1,
+    "finds": [
+      {
+        "item": "core/whole-bowl",
+        "chance_pct": 8,
+        "share_pct": 17
+      },
+      {
+        "item": "core/pottery-shard",
+        "chance_pct": 82,
+        "share_pct": 63
+      },
+      {
+        "item": "core/old-coin",
+        "chance_pct": 10,
+        "share_pct": 20
+      }
+    ],
+    "place": {
+      "slot": "core/ruins-hall"
+    }
+  }
+}
