@@ -14456,6 +14456,65 @@
                       }
                     }
                   }
+                },
+                "exits": {
+                  "maxItems": 16,
+                  "description": "The ways out of the first region: the first night is held by the length of the road beyond each one, never by the gate (DECISIONS.md, 2026-10-23).",
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "to",
+                      "min_road_steps"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                        "type": "string"
+                      },
+                      "slot": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "The gate: the slot a region quest opens (decision 25). Give this or `at`.",
+                        "type": "string"
+                      },
+                      "at": {
+                        "description": "A way out with no gate slot (the jetty where the boat waits): the last tile a foot stands on.",
+                        "type": "array",
+                        "items": [
+                          {
+                            "minimum": 0,
+                            "maximum": 1023,
+                            "type": "integer"
+                          },
+                          {
+                            "minimum": 0,
+                            "maximum": 1023,
+                            "type": "integer"
+                          }
+                        ],
+                        "additionalItems": false,
+                        "minItems": 2,
+                        "maxItems": 2
+                      },
+                      "to": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "The plan region the way leads into.",
+                        "type": "string"
+                      },
+                      "min_road_steps": {
+                        "minimum": 1,
+                        "maximum": 100000,
+                        "description": "G71: the fewest steps the road beyond this exit must run before the next region's ground, so that no wake reaches that ground before the first dusk with every gate open. The daylight in steps at the fastest wake, less its steps to this exit, plus a margin; the check refuses a smaller number and any stitched map whose road beyond is shorter.",
+                        "type": "integer"
+                      }
+                    }
+                  }
                 }
               }
             },

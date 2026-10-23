@@ -2599,3 +2599,15 @@ The owner, 22.10 (decisions 26, 27).
 **Pell sells the basket, the trowel, the axe and the walking staff, and buys what the player finds;** the food and the first-aid kit are the inn's (decision 32), and her lines say so. **Each of the three greets each race once** with the cast plan's lines (decision 10), after the lines the world earned. The jetty lines wait for the jetty.
 The owner, 22.10 (decisions 10, 32).
 **Retry when:** the jetty or the workshop stall opens. Model: claude-opus-5-5.
+## 2026-10-23 ✅ G71 measures the road beyond each exit, every gate open
+
+**The gate never holds the first night; the road beyond it does.** The gates stay where the story wants them, but beyond every exit of the first region a road runs long enough that, with every gate open, no wake reaches the next region's ground before the first dusk. This replaces the shut-gate measure of the entry above.
+As built: `plan.exits[]` (additive): `id`, the gate `slot` or the `at` tile of a way with no slot (a jetty), `to` (a plan region) and `min_road_steps`. `firstNight` walks with every listed gate open; reaching another world or the edge by any way that is not a listed exit before dusk fails the map. `exitRoads` names each exit's least road: the daylight in steps less the fastest wake's steps to the gate, plus `ROAD_MARGIN` (10); a smaller `min_road_steps` fails, and so does a stitched map whose next world's ground starts closer beyond the gate. Tests: `tools/test/mapplan.test.ts`.
+The owner, 23.10.
+**Retry when:** the clock or the walk speed changes (the numbers move), or a way to travel faster than walking lands. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The valley's four exits and the road each one needs
+
+**Four ways out of the valley, each with the road its neighbour owes.** `plan.exits` in `content/core/map.json`, every gate open, against 2106 steps of daylight (400 s at 190 ms a step), margin 10: the north gate to the north wood, 6 steps from the nearest wake (north meadow), needs 2110; the ferry from the jetty end (8,36) across the bay, 14 from the slid bank, needs 2102; the shore gate to the shore way, 28 from the slid bank, needs 2088; the descent gate to the cutting, 57 from the slid bank, needs 2059. The steps the descent and the shore way already run on this map count toward their roads. No wake leaves the valley by any other way. The region plans that stitch onto these exits must provide these roads, or `pnpm check` fails them.
+The owner, 23.10.
+**Retry when:** a region beyond an exit is drawn, the clock or the walk speed changes, or a wake moves. Model: claude-opus-5-5.

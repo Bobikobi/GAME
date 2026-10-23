@@ -107,18 +107,33 @@ function checkPaths(b: Bundle, plan: Plan, err: (where: string, message: string)
   for (let x = 0; x < m.width; x++) scan(x, 0, 0, 1);
 }
 
-/** One wake's measure for G71. Steps are four-way walks; `null` when nothing of the kind can be reached. */
+/** G71: the steps added to the least road an exit needs, so a stitched road is never cut to the bone. */
+export const ROAD_MARGIN = 10;
+
+/** One wake's measure for G71, every gate open. Steps are four-way walks; `null` when nothing of the kind can be reached. */
 export interface FirstNight {
   pocket: string;
   wake: Tile;
   /** game milliseconds from waking (tick 0, noon) to the first dusk */
   daylightMs: number;
-  /** steps to the nearest tile of another world or the map's edge, every gate shut */
+  /** steps to the nearest tile of another world or the map's edge by a way the plan does not list as an exit */
   exitSteps: number | null;
   exit?: Tile;
-  /** steps to stand beside the nearest shut gate: where a region quest would open the way */
+  /** steps to stand on each listed exit (its gate open), by exit id */
+  exits: Record<string, number | null>;
+}
+
+/** One exit of the plan, as G71 measures it. */
+export interface ExitRoad {
+  id: string;
+  /** the fewest steps any wake walks to stand on it */
   gateSteps: number | null;
-  gate?: string;
+  /** the least road beyond it: the daylight in steps less `gateSteps`, plus the margin */
+  needed: number | null;
+  declared: number;
+  /** steps beyond it to the next region's ground drawn on this map (another world); `null` when the road leaves the map first */
+  road: number | null;
+  ground?: Tile;
 }
 
 /** The first dusk after tick 0, the moment a new character wakes. */
@@ -129,59 +144,106 @@ export function firstDusk(b: Bundle): number {
   return dusk;
 }
 
+/** The tiles of each listed exit: its gate slot, or its one tile. */
+function exitTiles(b: Bundle): { id: string; tiles: Tile[] }[] {
+  return (b.map.plan?.exits ?? []).map((e) => {
+    const tiles: Tile[] = [];
+    const slot = e.slot ? findSlot(b.map, e.slot) : undefined;
+    if (slot) for (let y = slot.y; y < slot.y + slot.h; y++) for (let x = slot.x; x < slot.x + slot.w; x++) tiles.push([x, y]);
+    else if (e.at) tiles.push(e.at);
+    return { id: e.id, tiles };
+  });
+}
+
+/** A walk over the map with every mend made and every listed gate open; `stop` tiles are entered but not walked past. */
+function walkFrom(b: Bundle, starts: readonly Tile[], stop: (x: number, y: number) => boolean, skip: (x: number, y: number) => boolean = () => false): Map<number, number> {
+  const m = b.map;
+  const walkable = makeWalkable(b);
+  const view = { restored: passableSlots(b).map((s) => s.id), camp: [] as string[] };
+  const gate = new Set(exitTiles(b).flatMap((e) => e.tiles.map(([x, y]) => y * m.width + x)));
+  const open = (x: number, y: number) => x >= 0 && y >= 0 && x < m.width && y < m.height && (gate.has(y * m.width + x) || walkable(x, y, view));
+  const dist = new Map<number, number>();
+  const queue: Tile[] = [];
+  for (const [x, y] of starts) {
+    dist.set(y * m.width + x, 0);
+    queue.push([x, y]);
+  }
+  for (let i = 0; i < queue.length; i++) {
+    const [x, y] = queue[i]!;
+    const d = dist.get(y * m.width + x)!;
+    if (i >= starts.length && stop(x, y)) continue;
+    for (const [dx, dy] of STEPS) {
+      const nx = x + dx;
+      const ny = y + dy;
+      const k = ny * m.width + nx;
+      if (dist.has(k) || !open(nx, ny) || skip(nx, ny)) continue;
+      dist.set(k, d + 1);
+      queue.push([nx, ny]);
+    }
+  }
+  return dist;
+}
+
+const nearest = (b: Bundle, dist: Map<number, number>, hit: (x: number, y: number) => boolean): { at: Tile; d: number } | undefined => {
+  let best: { at: Tile; d: number } | undefined;
+  for (const [k, d] of dist) {
+    const x = k % b.map.width;
+    const y = Math.floor(k / b.map.width);
+    if (hit(x, y) && (!best || d < best.d)) best = { at: [x, y], d };
+  }
+  return best;
+};
+
 /**
- * G71, measured from every wake of the pool: the valley's own mends made (the bridge, the arch), every
- * gate to another world shut, the walk to the nearest tile of another world or to the map's edge.
+ * G71, measured from every wake of the pool with the valley's own mends made (the bridge, the arch) and
+ * every gate of the plan's exits open (DECISIONS.md, 2026-10-23): the walk to another world's ground or
+ * the map's edge by any way that is not a listed exit, and the walk to stand on each exit.
  */
 export function firstNight(b: Bundle): FirstNight[] {
   const m = b.map;
-  const walkable = makeWalkable(b);
   const daylightMs = firstDusk(b);
+  const exits = exitTiles(b);
+  const onExit = (x: number, y: number) => exits.some((e) => e.tiles.some(([ex, ey]) => ex === x && ey === y));
   const out: FirstNight[] = [];
   for (const [id, pocket] of Object.entries(b.pockets).sort(([a], [c]) => a.localeCompare(c))) {
     const wake: Tile = [pocket.wake.x, pocket.wake.y];
     const home = worldAt(m, wake[0], wake[1]);
-    const foreign = (x: number, y: number) => worldAt(m, x, y) !== home;
-    const touchesForeign = (r: Rect) => {
-      for (let y = r.y - 1; y <= r.y + r.h; y++) for (let x = r.x - 1; x <= r.x + r.w; x++) if (x >= 0 && y >= 0 && x < m.width && y < m.height && foreign(x, y)) return true;
-      return false;
-    };
-    const slots = passableSlots(b);
-    const gates = slots.filter((s) => touchesForeign(s.slot));
-    const view = { restored: slots.filter((s) => !gates.includes(s)).map((s) => s.id), camp: [] as string[] };
-    const dist = new Map<number, number>([[wake[1] * m.width + wake[0], 0]]);
-    const queue: Tile[] = [wake];
-    let exit: Tile | undefined;
-    let gate: { id: string; at: number } | undefined;
-    for (let i = 0; i < queue.length; i++) {
-      const [x, y] = queue[i]!;
-      const d = dist.get(y * m.width + x)!;
-      if (!exit && (foreign(x, y) || x === 0 || y === 0 || x === m.width - 1 || y === m.height - 1)) exit = [x, y];
-      if (!gate) {
-        const beside = gates.find((g) => STEPS.some(([dx, dy]) => inRect(x + dx, y + dy, g.slot)));
-        if (beside) gate = { id: beside.id, at: d };
-      }
-      if (exit && gate) break;
-      for (const [dx, dy] of STEPS) {
-        const nx = x + dx;
-        const ny = y + dy;
-        const k = ny * m.width + nx;
-        if (dist.has(k) || !walkable(nx, ny, view)) continue;
-        dist.set(k, d + 1);
-        queue.push([nx, ny]);
-      }
-    }
-    out.push({
-      pocket: id,
-      wake,
-      daylightMs,
-      exitSteps: exit ? dist.get(exit[1] * m.width + exit[0])! : null,
-      ...(exit ? { exit } : {}),
-      gateSteps: gate ? gate.at : null,
-      ...(gate ? { gate: gate.id } : {}),
-    });
+    const dist = walkFrom(b, [wake], onExit);
+    const away = nearest(b, dist, (x, y) => !onExit(x, y) && (worldAt(m, x, y) !== home || x === 0 || y === 0 || x === m.width - 1 || y === m.height - 1));
+    const steps: Record<string, number | null> = {};
+    for (const e of exits) steps[e.id] = nearest(b, dist, (x, y) => e.tiles.some(([ex, ey]) => ex === x && ey === y))?.d ?? null;
+    out.push({ pocket: id, wake, daylightMs, exitSteps: away ? away.d : null, ...(away ? { exit: away.at } : {}), exits: steps });
   }
   return out;
+}
+
+/**
+ * G71 at each exit: the least road the region beyond must provide, and, where that region is drawn on
+ * this map (ground of another world past the gate), the road it does provide.
+ */
+export function exitRoads(b: Bundle): ExitRoad[] {
+  const m = b.map;
+  const nights = firstNight(b);
+  const daylightSteps = firstDusk(b) / b.params.walk_step_ms;
+  const valley = new Set<number>();
+  for (const f of nights) {
+    const exits = exitTiles(b);
+    const onExit = (x: number, y: number) => exits.some((e) => e.tiles.some(([ex, ey]) => ex === x && ey === y));
+    for (const [k] of walkFrom(b, [f.wake], onExit)) {
+      const x = k % m.width;
+      if (!onExit(x, Math.floor(k / m.width))) valley.add(k);
+    }
+  }
+  return exitTiles(b).map((e, i) => {
+    const declared = m.plan!.exits![i]!.min_road_steps;
+    const reached = nights.map((f) => f.exits[e.id]).filter((d): d is number => d !== null && d !== undefined);
+    const gateSteps = reached.length ? Math.min(...reached) : null;
+    const needed = gateSteps === null ? null : Math.max(1, Math.ceil(daylightSteps - gateSteps) + ROAD_MARGIN);
+    const home = nights[0] ? worldAt(m, nights[0].wake[0], nights[0].wake[1]) : undefined;
+    const beyond = walkFrom(b, e.tiles, () => false, (x, y) => valley.has(y * m.width + x));
+    const ground = nearest(b, beyond, (x, y) => worldAt(m, x, y) !== home);
+    return { id: e.id, gateSteps, needed, declared, road: ground ? ground.d : null, ...(ground ? { ground: ground.at } : {}) };
+  });
 }
 
 export function checkMapPlan(b: Bundle, origin: Record<string, string>): Issue[] {
@@ -198,13 +260,28 @@ export function checkMapPlan(b: Bundle, origin: Record<string, string>): Issue[]
     });
   }
 
+  const walkMs = b.params.walk_step_ms;
   for (const f of firstNight(b)) {
-    if (f.exitSteps === null || f.exitSteps * b.params.walk_step_ms > f.daylightMs) continue;
-    const secs = (f.exitSteps * b.params.walk_step_ms) / 1000;
+    if (f.exitSteps === null || f.exitSteps * walkMs > f.daylightMs) continue;
+    const secs = (f.exitSteps * walkMs) / 1000;
     err(
       'map',
-      `G71: from the wake of ${f.pocket} ${at(f.wake)} a walk of ${f.exitSteps} steps (${secs} s) reaches ${at(f.exit!)}, outside the first region, and the first dusk comes ${f.daylightMs / 1000} s after waking: the land must be larger, the first night is held by size`,
+      `G71: from the wake of ${f.pocket} ${at(f.wake)} a walk of ${f.exitSteps} steps (${secs} s), every gate open, reaches ${at(f.exit!)}, outside the first region by no listed exit, and the first dusk comes ${f.daylightMs / 1000} s after waking: the land must be larger, the first night is held by size`,
     );
+  }
+  if (m.plan?.exits?.length) {
+    exitRoads(b).forEach((r, i) => {
+      const e = m.plan!.exits![i]!;
+      const where = `map.plan.exits.${i}`;
+      if (!e.slot === !e.at) return err(where, `${r.id}: give the gate's slot or the tile, one of the two`);
+      if (e.slot && !findSlot(m, e.slot)) return err(where, `${r.id}: no slot "${e.slot}"`);
+      if (!(m.plan!.regions ?? []).some((g) => g.id === e.to)) err(where, `${r.id}: no plan region "${e.to}"`);
+      if (r.needed === null) return warn(where, `${r.id}: no wake reaches it with every gate open`);
+      if (r.declared < r.needed)
+        err(where, `G71: ${r.id} is ${r.gateSteps} steps from the nearest wake; the road beyond it must run at least ${r.needed} steps before the next region's ground (the first dusk is ${Math.ceil(firstDusk(b) / walkMs)} steps after waking, margin ${ROAD_MARGIN}), the plan asks ${r.declared}`);
+      if (r.road !== null && r.road < r.declared)
+        err(where, `G71: beyond ${r.id} the next region's ground begins at ${at(r.ground!)}, ${r.road} steps past the gate; its road must run ${r.declared}: the first night is held by the length of the road, never by the gate`);
+    });
   }
 
   const plan = m.plan;

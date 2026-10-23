@@ -1369,6 +1369,35 @@
           "pocket": "core/west-bank",
           "quest": "core/first-pickings"
         }
+      ],
+      "exits": [
+        {
+          "id": "core/north-exit",
+          "slot": "core/north-gate",
+          "to": "core/north-wood",
+          "min_road_steps": 2110
+        },
+        {
+          "id": "core/descent-exit",
+          "slot": "core/descent-gate",
+          "to": "core/descent-cut",
+          "min_road_steps": 2059
+        },
+        {
+          "id": "core/shore-exit",
+          "slot": "core/shore-gate",
+          "to": "core/shore-way",
+          "min_road_steps": 2088
+        },
+        {
+          "id": "core/ferry",
+          "at": [
+            8,
+            36
+          ],
+          "to": "core/bay",
+          "min_road_steps": 2102
+        }
       ]
     },
     "props": [
