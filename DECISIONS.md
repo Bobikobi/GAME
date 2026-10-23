@@ -2571,7 +2571,7 @@ The owner, 23.10: picked v1 of three key-art stills ("perfect"), asked for it to
 
 **Retry when:** the video costs a mid-range laptop visible frames or a slow line its first screen, or the Developers and Leaderboard pages are restyled in the same line (then the frame's exception widens in its own entry). Model: claude-opus-5-5.
 
-## 2026-10-24 ✅ Search, first slice: a daily draw kept in state, rare rows tilted by luck, nothing near the opening
+## 2026-10-23 ✅ Search, first slice: a daily draw kept in state, rare rows tilted by luck, nothing near the opening
 
 A treasure file may carry `search` (rows of item and chance, a prop to hang on) in place of `dig`; the design is `docs/design/SEARCH.md`. Searchables live in their own `searchables` map in the bundle, not among the dig spots, and the value solver is untouched (search has no active time; the check only requires every row's item to already have a value, so it is never the only source). The kernel has two actions, `search` and `take`: each row is drawn once per dawn with the seeded draw and kept in `state.searched[id]`, luck tilts only rows of rank 2 and up (`rareFindPermille`), and an old save without the field reads as empty. `pnpm check` refuses a searchable within 4 tiles of the opening's first path, derived from the road, spawn, wake tiles and the first quests' places, since the map marks none. KERNEL_VERSION is 0.15.0; #296 and #310 also bump it, so whichever lands later takes the next number.
 Evidence: 12 kernel, 7 check and 6 client tests; `pnpm verify` green. Three valley searchables ship (log, branch heap, tree) with one rare row each; the table reuses the only two rare items that exist.

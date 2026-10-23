@@ -1,6 +1,6 @@
 # Search: press A on things to look inside
 
-Status: a design note written 24.10.2026 for the owner's rule of 23.10 ("Search: press A on things to look inside", DECISIONS, recorded in #305). The first slice is built in the same pull request as this note (section 7). Facts are read from `origin/develop` @ 6ce5ec0b.
+Status: a design note written 23.10.2026 for the owner's rule of 23.10 ("Search: press A on things to look inside", DECISIONS, recorded in #305). The first slice is built in the same pull request as this note (section 7). Facts are read from `origin/develop` @ 6ce5ec0b.
 
 ## 1. The owner's rule
 
