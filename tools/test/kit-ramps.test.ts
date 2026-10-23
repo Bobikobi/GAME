@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import { runCheck } from '../src/check.js';
 import { accentsOf, allowedColors, lightOf, rampProblems, warmthOf } from '../src/kit/ramps.js';
-import { CORE_PALETTE } from '../src/kit/palette.js';
+import { CORE_PALETTE, CORE_RAMPS, DEEP_PALETTE, paletteWithRamps } from '../src/kit/palette.js';
 
 /**
  * ART_SYSTEM section 3: a ramp is five or six steps dark to light, each lighter than the one
@@ -65,6 +65,37 @@ describe('which colours a sprite may use', () => {
   test('a tile is its ramp plus at most two accents', () => {
     expect(accentsOf(['#172a52', '#275a99', '#f5f4ef'], WATER).size).toBe(1);
     expect(accentsOf(['#172a52', '#f5f4ef', '#84c450', '#eda83a'], WATER).size).toBe(3);
+  });
+});
+
+describe('the shared ramps of palette v2 (DECISIONS 2026-10-21)', () => {
+  test('every shared ramp is a ramp by the rule: six steps, rising light, moving hue', () => {
+    expect(CORE_RAMPS.length).toBe(13);
+    for (const ramp of CORE_RAMPS) {
+      expect(ramp.steps, ramp.id).toHaveLength(6);
+      expect(rampProblems(ramp), ramp.id).toEqual([]);
+    }
+    expect(new Set(CORE_RAMPS.map((r) => r.id)).size).toBe(CORE_RAMPS.length);
+  });
+
+  test('a core family sits inside its shared ramp, so a sprite drawn in the core stays inside it', () => {
+    const steps = (id: string): readonly string[] => CORE_RAMPS.find((r) => r.id === id)?.steps ?? [];
+    for (const hex of ['#1f3d2b', '#2e6b3b', '#4c9a3f', '#84c450', '#c8e88a']) expect(steps('green')).toContain(hex);
+    for (const hex of ['#3d2618', '#6e4226', '#9e6b3c', '#c99a5e', '#ebd3a2']) expect(steps('wood')).toContain(hex);
+    for (const hex of ['#172a52', '#275a99', '#3f8fd1', '#7cc4ec', '#c4ecf8']) expect(steps('water')).toContain(hex);
+    for (const hex of ['#5e1c28', '#a8302f', '#e2533f', '#f6a07f']) expect(steps('red')).toContain(hex);
+    for (const hex of ['#5b3373', '#9a5bb0']) expect(steps('plum')).toContain(hex);
+    expect(steps('grey')).toEqual(CORE_PALETTE.slice(0, 6));
+  });
+
+  test('the 32 stay the 32; naming ramps only adds their new steps', () => {
+    expect(CORE_PALETTE).toHaveLength(32);
+    expect(paletteWithRamps([])).toEqual(CORE_PALETTE);
+    expect(paletteWithRamps(['plum'])).toHaveLength(32 + 4);
+    expect(paletteWithRamps(['grey'])).toEqual(CORE_PALETTE);
+    expect(DEEP_PALETTE).toHaveLength(78);
+    expect(new Set(DEEP_PALETTE).size).toBe(78);
+    expect(() => paletteWithRamps(['neon'])).toThrow(/not a shared ramp/);
   });
 });
 

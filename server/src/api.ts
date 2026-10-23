@@ -141,8 +141,11 @@ export function isAction(value: unknown): value is Action {
   if (!isRecord(value) || typeof value.t !== 'string') return false;
   switch (value.t) {
     case 'start':
-      return hasOnlyKeys(value, ['t', 'starter', 'name', 'look'])
-        && typeof value.starter === 'string'
+      // a race (DECISIONS.md, 2026-10-22), or a format 1 starter id: a logged opening from before the races replays as it played
+      return hasOnlyKeys(value, ['t', 'race', 'starter', 'name', 'look'])
+        && (typeof value.race === 'string') !== (typeof value.starter === 'string')
+        && (value.race === undefined || typeof value.race === 'string')
+        && (value.starter === undefined || typeof value.starter === 'string')
         && typeof value.name === 'string'
         && (value.look === undefined || Number.isSafeInteger(value.look));
     case 'carve':

@@ -1,0 +1,83 @@
+{
+  "$schema": "../../../schema/json/quest.schema.json",
+  "format": 1,
+  "type": "quest",
+  "id": "core/something-warm",
+  "title": "Something warm for the night",
+  "creator": "core",
+  "quest": {
+    "giver": "core/elder",
+    "type": "mastery",
+    "summary": "Pell taught you her stew, and the grove gives its mushrooms once it cools at five. Will you cook one for Maru?",
+    "requires": [
+      "core/a-whole-one"
+    ],
+    "steps": [
+      {
+        "kind": "make",
+        "recipe": "core/herb-stew"
+      }
+    ],
+    "talk": {
+      "offer": [
+        "I have not had a stew since the hall fell. One warm thing, before the night.",
+        "Herbs, a berry, and what the grove gives when it cools. Then your fire."
+      ],
+      "waiting": [
+        "Herbs, a berry, and what the grove gives when it cools. Then your fire."
+      ],
+      "done": [
+        "Warm. Like the hall, before. Keep it: you will want it out there tonight.",
+        "Dry branches from my pile. Tonight, a fire of your own? Ask me how."
+      ],
+      "variants": [
+        {
+          "when": {
+            "race": [
+              "core/human"
+            ]
+          },
+          "offer": [
+            "You came by the road, as we did. A stew kept the hall warm, once. Cook one?",
+            "Herbs, a berry, and what the grove gives when it cools. Then your fire."
+          ]
+        },
+        {
+          "when": {
+            "race": [
+              "core/elf"
+            ]
+          },
+          "offer": [
+            "They say your folk lived on leaves and light. Here a stew wants a fire. Try?",
+            "Herbs, a berry, and what the grove gives when it cools. Then your fire."
+          ]
+        },
+        {
+          "when": {
+            "race": [
+              "core/skeleton"
+            ]
+          },
+          "offer": [
+            "You may not eat, I think. Cook it anyway. The hall smelled of it, once.",
+            "Herbs, a berry, and what the grove gives when it cools. Then your fire."
+          ],
+          "done": [
+            "Warm. Like the hall, before. You need not eat it: the smell was enough.",
+            "Dry branches from my pile. Tonight, a fire of your own? Ask me how."
+          ]
+        }
+      ]
+    },
+    "reward": {
+      "rep": 10,
+      "items": [
+        {
+          "item": "core/branch",
+          "qty": 2
+        }
+      ]
+    }
+  }
+}

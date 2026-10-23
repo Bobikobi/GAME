@@ -11,6 +11,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page, type Viewport } from './cdp';
+import { TAKE_GROUND, seedQuery } from './wakes';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(GAME_DIR, 'dist');
@@ -141,15 +142,17 @@ true`;
 async function start(page: Page): Promise<void> {
   await page.tap('.title-screen button', 'New game');
   const choice = await page.waitFor<string>(
-    `document.querySelector('.card.starter') ? 'cards' : [...document.querySelectorAll('.title-screen button')].some((b) => b.textContent.includes('Start a new game')) ? 'ask' : ''`,
-    'the starter cards',
+    `document.querySelector('.card.race') ? 'cards' : [...document.querySelectorAll('.title-screen button')].some((b) => b.textContent.includes('Start a new game')) ? 'ask' : ''`,
+    'the race cards',
   );
   if (choice === 'ask') await page.tap('.title-screen button', 'Start a new game');
-  await page.tap('.card.starter', 'Forager');
+  await page.tap('.card.race', 'Elf');
   await page.tap('input.name');
   await page.type('Tess');
   await page.tap('.title-screen button', 'Wake up');
   await page.waitFor('!!window.__game.session && window.__game.session.started', 'the character to wake', 10_000);
+  // the west bank's basket and axe lie on the ground by the wake: this script tests what comes later, so they are handed over
+  await page.eval(TAKE_GROUND);
 }
 
 /** Reads every box on screen to its end, a line at a time once it is typed, and any level-up after them. */
@@ -189,7 +192,7 @@ async function choose(page: Page, label: string): Promise<void> {
 }
 
 async function run(page: Page, url: string, phone: boolean): Promise<void> {
-  await page.goto(`${url}?debug&rich=none`);
+  await page.goto(`${url}?debug&rich=none${seedQuery('core/west-bank')}`);
   await page.waitFor(`!!document.querySelector('.title-screen button')`, 'the title screen', 30_000);
   await page.eval(IN_PAGE);
   await start(page);

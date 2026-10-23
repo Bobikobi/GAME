@@ -266,6 +266,14 @@
                   {
                     "const": "staff",
                     "type": "string"
+                  },
+                  {
+                    "const": "hammer",
+                    "type": "string"
+                  },
+                  {
+                    "const": "pick",
+                    "type": "string"
                   }
                 ]
               },
@@ -699,6 +707,18 @@
                       "type": "string"
                     }
                   },
+                  "race": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Races the player may be: holds when the player is one of them. A line may differ by race; a quest step never does.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
                   "time": {
                     "description": "By day (05:00 to 20:00) or by night.",
                     "anyOf": [
@@ -844,6 +864,18 @@
                     "minItems": 1,
                     "maxItems": 4,
                     "description": "Map slots the player has stood in.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    }
+                  },
+                  "race": {
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "description": "Races the player may be: holds when the player is one of them. A line may differ by race; a quest step never does.",
                     "type": "array",
                     "items": {
                       "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",

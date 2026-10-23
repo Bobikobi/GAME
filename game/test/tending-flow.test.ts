@@ -170,9 +170,9 @@ class Tender {
     const s = this.s;
     expect(s.act({ t: 'start', starter: 'core/forager', name: 'Tess' }).ok).toBe(true);
     const p = s.state.player;
-    // the earlier tasks are setup: the opening is behind, and Maru is met
+    // the earlier tasks are setup: the opening is behind, Maru has his stew (the long night waits for it), and Maru is met
     for (const id of Object.keys(p.quests)) if (p.quests[id] === 'active') p.quests[id] = 'done';
-    for (const id of ['core/fix-the-bridge', 'core/first-fire', 'core/into-town', 'core/three-fruits', 'core/a-coin-for-maru']) p.quests[id] = 'done';
+    for (const id of ['core/fix-the-bridge', 'core/first-fire', 'core/into-town', 'core/three-fruits', 'core/a-coin-for-maru', 'core/herbs-for-pell', 'core/a-whole-one', 'core/something-warm']) p.quests[id] = 'done';
     if (!p.restored.includes('core/old-bridge')) p.restored.push('core/old-bridge');
     p.satiety = 10 * satietyCap(this.b, s.state);
     p.satietyAt = s.tick;

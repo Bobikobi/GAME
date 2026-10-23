@@ -5,14 +5,44 @@
  */
 import type { Bundle, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
-import { tagAt } from './world';
+import { tagAt, worldAt } from './world';
 
 export const KERNEL_VERSION = '0.14.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
-export const ATTRIBUTES = ['carry', 'senses', 'agility', 'luck', 'stamina'] as const;
+export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
 export type Attribute = (typeof ATTRIBUTES)[number];
-export const STATE_FORMAT = 1;
+/**
+ * The shape of a saved state. Format 2 (kernel 0.14, the races): `attrs.carry` is `attrs.might`,
+ * `attrs.spirit` is new, and the player's `starter` became a `race` and a wake `pocket`.
+ * `migrateState` brings a format 1 save forward; a save always loads.
+ */
+export const STATE_FORMAT = 2;
+
+/**
+ * The three starters of format 1 and what each became (DECISIONS.md, 2026-10-22): the race it reads
+ * as, the pocket it woke in, and its old profile (`carry` read as `might`). A replayed `start` that
+ * still names a starter plays as it did: that profile, that pocket, the pocket's tools in the bag.
+ */
+export const LEGACY_STARTERS: Readonly<Record<string, { race: string; pocket: string; attrs: Readonly<Record<Attribute, number>> }>> = {
+  'core/explorer': { race: 'core/human', pocket: 'core/north-meadow', attrs: { might: 0, senses: 2, agility: 1, luck: 2, stamina: 1, spirit: 0 } },
+  'core/forager': { race: 'core/elf', pocket: 'core/west-bank', attrs: { might: 2, senses: 1, agility: 2, luck: 0, stamina: 1, spirit: 0 } },
+  'core/digger': { race: 'core/skeleton', pocket: 'core/slid-bank', attrs: { might: 1, senses: 1, agility: 0, luck: 2, stamina: 2, spirit: 0 } },
+};
+
+/**
+ * Content ids the races renamed (format 1 to 2): the slid bank's dig spot became `core/slid-bank-dig`
+ * when its wake pocket took the old id. A node is keyed `<source>#<n>`, so a save's spent spot and a
+ * logged dig keep pointing at the same place through `legacyNodeId`.
+ */
+export const LEGACY_NODE_SOURCES: Readonly<Record<string, string>> = { 'core/slid-bank': 'core/slid-bank-dig' };
+
+/** A node id of format 1 as it reads now (LEGACY_NODE_SOURCES); any other id as it is. */
+export function legacyNodeId(id: string): string {
+  const hash = id.lastIndexOf('#');
+  const now = hash > 0 ? LEGACY_NODE_SOURCES[id.slice(0, hash)] : undefined;
+  return now === undefined ? id : now + id.slice(hash);
+}
 
 /** Places on the character (DECISIONS.md, 2026-10-09: the upgrade). An outfit takes the top and the legs. */
 export const WEAR_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'jewelry1', 'jewelry2', 'hand'] as const;
@@ -101,9 +131,11 @@ export interface ExpeditionState {
 
 export interface Player {
   name: string;
-  /** '' until the player picks a starter */
-  starter: string;
-  /** 0 for the starter's sprite, 1 for its sprite_alt (another look of the same character) */
+  /** the race picked at the title; '' until the character is chosen */
+  race: string;
+  /** the wake pocket the seed drew at the start; '' until the character is chosen */
+  pocket: string;
+  /** 0 for the race's sprite, 1 for its sprite_alt (another look of the same race) */
   look: number;
   at: [number, number];
   /** milli-gold */
@@ -184,7 +216,8 @@ export function newState(bundle: Bundle, seed: number): State {
     tick: 0,
     player: {
       name: '',
-      starter: '',
+      race: '',
+      pocket: '',
       look: 0,
       at: [bundle.map.spawn.x, bundle.map.spawn.y],
       gold: 0,
@@ -223,10 +256,66 @@ export function newState(bundle: Bundle, seed: number): State {
   };
 }
 
+/**
+ * Brings a saved state of an older format forward (format 1 to 2: the races). Pure: returns a new
+ * object and leaves the input as it was. `carry` is read as `might`, `spirit` starts at 0, and the
+ * starter becomes its race and its pocket (LEGACY_STARTERS); an unknown starter keeps its id as the
+ * race with no pocket, and the caller decides whether the content still holds it. The old six-point
+ * total stays as it is: the seven is a content rule, not a save rule.
+ */
+export function migrateState(saved: State): State {
+  const s = structuredClone(saved) as State & { player: Player & { starter?: string; attrs: Record<string, number> } };
+  if ((s.format ?? 1) >= STATE_FORMAT) return s;
+  const p = s.player;
+  const attrs = p.attrs ?? {};
+  if (attrs.might === undefined) attrs.might = attrs.carry ?? 0;
+  delete attrs.carry;
+  for (const a of ATTRIBUTES) attrs[a] ??= 0;
+  p.attrs = attrs as Record<Attribute, number>;
+  if (p.race === undefined) {
+    const old = p.starter ?? '';
+    const now = LEGACY_STARTERS[old];
+    p.race = now?.race ?? old;
+    p.pocket = now?.pocket ?? '';
+  }
+  p.pocket ??= '';
+  delete p.starter;
+  // a spot whose source was renamed keeps what was done to it (a dug bank stays dug)
+  for (const id of Object.keys(s.nodes ?? {})) {
+    const now = legacyNodeId(id);
+    if (now === id) continue;
+    s.nodes[now] ??= s.nodes[id]!;
+    delete s.nodes[id];
+  }
+  s.format = STATE_FORMAT;
+  return s;
+}
+
 // ------------------------------------------------------------ derived numbers
 
+/**
+ * How the world under the player shifts one attribute (DECISIONS.md, 2026-10-22): +1 or -1 on the
+ * race's two home attributes where a world grades the race strong or weak, else 0. The valley is
+ * neutral, so today it is 0 everywhere.
+ */
+export function gradeShift(bundle: Bundle, state: PublicState, attr: Attribute, at: readonly [number, number] = state.player.at): number {
+  const race = bundle.races[state.player.race];
+  if (!race || !race.home.includes(attr)) return 0;
+  const grade = race.grades?.[worldAt(bundle.map, at[0], at[1])];
+  return grade === 'strong' ? 1 : grade === 'weak' ? -1 : 0;
+}
+
+/**
+ * The one calculator's attribute side: the points an attribute counts for now. The race gives the
+ * base (copied into `attrs` at the start, raised by spent points), the region's grade shifts the
+ * home pair, never below 0. Every rule that reads an attribute reads it here; spending reads the base.
+ */
+export function attrAt(bundle: Bundle, state: PublicState, attr: Attribute): number {
+  return Math.max(0, (state.player.attrs[attr] ?? 0) + gradeShift(bundle, state, attr));
+}
+
 export function satietyCap(bundle: Bundle, state: PublicState): number {
-  return (bundle.params.satiety_cap + bundle.params.per_point.stamina * state.player.attrs.stamina) * 1000;
+  return (bundle.params.satiety_cap + bundle.params.per_point.stamina * attrAt(bundle, state, 'stamina')) * 1000;
 }
 
 /** Satiety at a tick: it drains with play time and stops at zero. */
@@ -260,7 +349,7 @@ export function senseReach(bundle: Bundle, senses: number): number {
 }
 
 export function bagCapacity(bundle: Bundle, state: PublicState): number {
-  let cap = bundle.params.bag_base + bundle.params.per_point.carry * state.player.attrs.carry;
+  let cap = bundle.params.bag_base + bundle.params.per_point.might * attrAt(bundle, state, 'might');
   for (const id of state.player.camp) cap += bundle.camps[id]?.bag_bonus ?? 0;
   return cap;
 }
@@ -360,7 +449,8 @@ export function wornValue(bundle: Bundle, state: PublicState, effect: string): n
  * The one calculator (spec section 15): an effect from techniques and from the
  * work clothes together. A craft effect passes the recipe's profession, so a
  * technique helps the recipes of its own profession only. Every caller still
- * clamps the rate it feeds under the power cap (rule R9).
+ * clamps the rate it feeds under the power cap (rule R9). Its attribute side is
+ * `attrAt`: the race's profile and the region's grade (DECISIONS.md, 2026-10-22).
  */
 export function effectValue(bundle: Bundle, state: PublicState, effect: string, profession?: string): number {
   return techniqueValue(bundle, state, effect, profession) + wornValue(bundle, state, effect);

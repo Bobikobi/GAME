@@ -9,7 +9,9 @@
   "ai_tools": [
     "Nano Banana (gemini-3.1-flash-image) via Antigravity",
     "Codex: text-grid sprites in tools/src/kit/sketches.ts",
-    "Claude Code: text-grid sprites and frames via a PIL script"
+    "Claude Code: text-grid sprites and frames via a PIL script",
+    "Stable Diffusion 1.5 and SDXL, pixel-art LoRAs, via kit:gen",
+    "Codex image generation via kit:gen"
   ],
   "kit": {
     "palette": [
@@ -167,88 +169,241 @@
       },
       "items/basket": {
         "file": "items/basket.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-items.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:3"
+        }
       },
       "items/berry": {
         "file": "items/berry.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "red",
+          "green"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-items.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:4"
+        }
       },
       "items/berry-mash": {
         "file": "items/berry-mash.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-items.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:5"
+        }
       },
       "items/branch": {
         "file": "items/branch.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "bark",
+          "wood"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-items.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:6"
+        }
       },
       "items/herb": {
         "file": "items/herb.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-items.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:14"
+        }
       },
       "items/herb-stew": {
         "file": "items/herb-stew.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-items.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:15"
+        }
       },
       "items/herb-tea": {
         "file": "items/herb-tea.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "green",
+          "water"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-items.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:16"
+        }
       },
       "items/mushroom": {
         "file": "items/mushroom.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-items.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:20"
+        }
       },
       "items/mushroom-skewer": {
         "file": "items/mushroom-skewer.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-items.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:22"
+        }
       },
       "items/old-coin": {
         "file": "items/old-coin.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "fire"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-items.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:24"
+        }
       },
       "items/pottery-shard": {
         "file": "items/pottery-shard.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "water"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-items.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:25"
+        }
       },
       "items/stew-scrap": {
         "file": "items/stew-scrap.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-items.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:31"
+        }
       },
       "items/stone": {
         "file": "items/stone.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "stone"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-items.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:32"
+        }
       },
       "items/stone-idol": {
         "file": "items/stone-idol.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-items.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:33"
+        }
       },
       "items/trowel": {
         "file": "items/trowel.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "wood"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-items.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:35"
+        }
       },
       "items/log": {
         "file": "items/log.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "bark",
+          "wood"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-items.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:17"
+        }
       },
       "items/axe": {
         "file": "items/axe.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "fire"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-items.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:1"
+        }
       },
       "props/broken_statue": {
         "file": "props/broken_statue.png",
@@ -275,8 +430,17 @@
       },
       "props/campfire_unlit": {
         "file": "props/campfire_unlit.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-props-small.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:7"
+        }
       },
       "props/canopy_1": {
         "file": "props/canopy_1.png",
@@ -295,13 +459,31 @@
       },
       "props/chest": {
         "file": "props/chest.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-props-small.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:8"
+        }
       },
       "props/sapling": {
         "file": "props/sapling.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "bark"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-props-small.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:28"
+        }
       },
       "props/young_tree": {
         "file": "props/young_tree.png",
@@ -316,13 +498,31 @@
       },
       "props/dig_spot": {
         "file": "props/dig_spot.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "bark",
+          "wood"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-props-small.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:9"
+        }
       },
       "props/fallen_branches": {
         "file": "props/fallen_branches.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "bark",
+          "wood"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-props-small.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:10"
+        }
       },
       "props/fence": {
         "file": "props/fence.png",
@@ -371,13 +571,31 @@
       },
       "props/hazard_pit": {
         "file": "props/hazard_pit.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-props-small.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:12"
+        }
       },
       "props/hazard_trap": {
         "file": "props/hazard_trap.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "rust"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-props-small.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:13"
+        }
       },
       "props/hazard_wolf": {
         "file": "props/hazard_wolf.png",
@@ -404,13 +622,31 @@
       },
       "props/log_fallen": {
         "file": "props/log_fallen.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "bark",
+          "wood"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-props-small.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:18"
+        }
       },
       "props/log_mossy": {
         "file": "props/log_mossy.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "bark",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-props-small.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:19"
+        }
       },
       "props/market_stall": {
         "file": "props/market_stall.png",
@@ -419,13 +655,31 @@
       },
       "props/mushroom_patch": {
         "file": "props/mushroom_patch.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-props-small.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:21"
+        }
       },
       "props/mushrooms_small": {
         "file": "props/mushrooms_small.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-props-small.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:23"
+        }
       },
       "props/pebbles": {
         "file": "props/pebbles.png",
@@ -440,8 +694,17 @@
       },
       "props/rock_mossy": {
         "file": "props/rock_mossy.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-props-small.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:26"
+        }
       },
       "props/rock_small": {
         "file": "props/rock_small.png",
@@ -450,8 +713,17 @@
       },
       "props/rock_stones": {
         "file": "props/rock_stones.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "stone"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-props-small.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:27"
+        }
       },
       "props/rubble": {
         "file": "props/rubble.png",
@@ -475,13 +747,32 @@
       },
       "props/shelf": {
         "file": "props/shelf.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "plum",
+          "fire"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-props-small.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:29"
+        }
       },
       "props/sign": {
         "file": "props/sign.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-props-small.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:30"
+        }
       },
       "props/standing_stone": {
         "file": "props/standing_stone.png",
@@ -495,8 +786,17 @@
       },
       "props/stump": {
         "file": "props/stump.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "bark",
+          "wood"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-props-small.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:34"
+        }
       },
       "props/totem": {
         "file": "props/totem.png",
@@ -707,13 +1007,30 @@
       },
       "items/bandage": {
         "file": "items/bandage.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-items.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:2"
+        }
       },
       "items/first-aid-kit": {
         "file": "items/first-aid-kit.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "red"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-items.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:11"
+        }
       },
       "chars/explorer_down": {
         "file": "chars/explorer_down.png",

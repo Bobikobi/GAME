@@ -250,7 +250,7 @@ describe('Stage 2a server protocol', () => {
       return shop !== undefined && bundle.shops[shop]?.buys;
     })!;
     const state = started();
-    state.player.attrs.carry = 100;
+    state.player.attrs.might = 100;
     state.player.restored = ['core/old-bridge'];
     state.player.quests['core/fix-the-bridge'] = 'done';
     const item = Object.keys(bundle.items).sort().find((id) => {
