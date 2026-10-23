@@ -33,9 +33,9 @@ One row per step. *Gap* is the play-clock time since the last new thing the play
 | 45 | Walks to the town square. Box: "Two neighbours could use a hand: Elder Maru by his house, and Pell at her stall." / "Each says what the help is worth. Whom you help first is yours to choose." | "Follow the smoke": no smoke is in the frame from the camp (section 3, G4). | Two named people. | 5 | discovery (`visit`) |
 | 50 | Meets Maru. Three boxes. Asks for berries; "Whom you help first is yours." (the same sentence, third time). | Maru: his berries, "where the bells rang". | Reward named: a trowel. | 5.4 | fetch_twist |
 | 54-61 | Reads a ruin sign at 54.3 s, picks three bellberries at 60.7 s. | Maru's request. | A walk to the berry patch. | 10.4 | fetch_twist |
-| 73 | Hands in the berries; gets the trowel and a new quest at once: a coin buried under a lantern. | Maru: he buried a coin the day the bells first rang. | Reward named: 20 gold and a recipe. | 12 | riddle |
+| 73 | Hands in the berries; gets the trowel and a new quest at once: a coin buried under a lantern. | Maru: he buried a coin the day the bells first rang. | Reward named: a key to Maru's house and a recipe (was 20 gold until 23.10). | 12 | riddle |
 | 77-127 | Reads the marked stone (89 s), the lantern statue (100 s), digs under the hill lantern at dusk (127 s). | Maru's riddle, three stones. | Each stone narrows the lantern. | 12.2 and 11.4, then 17.0 | riddle |
-| 144 | Hands in the coin: 20 gold, the herb tea recipe, and "They say the broken arch shows a way after dark." | Maru. | The arch, after dark. | 10 | discovery (`riddle`) |
+| 144 | Hands in the coin: the key to Maru's house, the herb tea recipe, and "They say the broken arch shows a way after dark." | Maru. | The arch, after dark. | 10 | discovery (`riddle`) |
 | 154-400 | **Waits for the dark.** Nothing on the main path. | The arch only opens after dark. | None. | **254.5** | none |
 | 400-412 | Dark box at the lantern. Arch: "The mist draws back from the broken arch. A way runs under it now." Threshold: "Past the arch the ruins go on, darker and deeper than by day. Far below, a bell rings once." | The night. | The ruins beyond. | 4.2 | discovery |
 
