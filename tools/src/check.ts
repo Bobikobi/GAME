@@ -12,6 +12,7 @@ import { assemble, type Assembled } from './assemble';
 import { readBoard } from './board';
 import { CORE_PALETTE, coreRamp } from './kit/palette';
 import { accentsOf, allowedColors, rampProblems } from './kit/ramps';
+import { CORE_KIT, richProblem, staleLeft } from './kit/rich';
 import { scaleProblems } from './kit/scale';
 import { checkColors } from './colors';
 import { LOCK_FILE, REPO_ROOT, loadAll, toRepoPath, type Issue } from './load';
@@ -543,7 +544,10 @@ export function spriteSizeProblem(name: string, s: { w: number; h: number; densi
   return `${here.what} ${said(here)} at density ${density} (${said(there)} at density ${other}), this one is ${s.w}x${s.h}${hint}`;
 }
 
-/** V-1: every sprite exists, has the published size, and uses the core palette and its own declared ramps. */
+/**
+ * V-1: every sprite exists, has the published size, and uses the core palette and its own declared ramps;
+ * and it is drawn rich at 64 px per tile unless the core kit still waits to redraw it (DECISIONS.md, 2026-10-23).
+ */
 function checkKits(a: Assembled): Issue[] {
   const issues: Issue[] = [];
   const core = CORE_PALETTE.map((h) => h.toLowerCase());
@@ -572,6 +576,8 @@ function checkKits(a: Assembled): Issue[] {
       const where = `kit.sprites.${name}`;
       const problem = spriteSizeProblem(name, s);
       if (problem) issues.push({ file: kitFile, where, message: problem, level: 'error' });
+      const rich = richProblem(kitId, name, s);
+      if (rich) issues.push({ file: kitFile, where, message: rich, level: 'error' });
       // A declared height in characters is held to its kind's floor (NATURE section 1, STYLE 1b).
       for (const message of scaleProblems(name, s.scale)) issues.push({ file: kitFile, where, message, level: 'warning' });
       const abs = join(kit.dir, s.file);
@@ -638,7 +644,11 @@ function checkKits(a: Assembled): Issue[] {
         }
       }
     }
-    void kitId;
+    if (kitId === CORE_KIT) {
+      for (const name of staleLeft(kit.sprites)) {
+        issues.push({ file: 'tools/src/kit/rich.ts', where: 'SIXTEEN_PX_LEFT', message: `names "${name}", which the core kit does not hold: take it off the list`, level: 'error' });
+      }
+    }
   }
   return issues;
 }

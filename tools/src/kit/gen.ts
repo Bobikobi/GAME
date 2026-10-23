@@ -32,8 +32,9 @@
  *
  * An entry's `ramps` names the shared ramps of palette v2 it draws in (`palette.ts`, DECISIONS 2026-10-21):
  * the importer snaps onto the 32 plus those ramps' steps, and the manifest line carries the names for the
- * sprite's kit entry. `"style": "rich"` asks for painterly pixel art and dithers between neighbouring
- * steps on import; with no `ramps` of its own it draws in every shared ramp.
+ * sprite's kit entry. Every entry is drawn rich (DECISIONS 2026-10-23, the whole game is rich): painterly
+ * pixel art, dithered between neighbouring steps on import, and a sprite with no `ramps` of its own draws
+ * in every shared ramp. `"style": "kit"`, the flat two-tone look of the 16 px kit, is retired and refused.
  *
  * `--drawer` picks the route an image prompt goes down (`drawers.ts`, docs/art/DRAWERS.md): `codex`, the agent
  * on its subscription; `gemini`, one HTTP call on a `GEMINI_API_KEY` (a project with billing); `local`, Stable
@@ -90,8 +91,8 @@ export interface GenEntry extends ScatterEntry {
   palette?: 'fits' | 'restyle' | 'ramp-added';
   /** The shared ramps of palette v2 this sprite draws in (ids from `CORE_RAMPS`, at most four, the first gives the outline): the importer allows the 32 plus their steps. */
   ramps?: string[];
-  /** `rich` asks for painterly pixel art (hue shifts inside a surface, ambient light, texture) and dithers between neighbouring palette colours on import; with no `ramps` it draws in every shared ramp. Default `kit`. */
-  style?: 'kit' | 'rich';
+  /** Always `rich`, the default (DECISIONS 2026-10-23): painterly pixel art (hue shifts inside a surface, ambient light, texture), dithered between neighbouring palette colours on import; a sprite with no `ramps` draws in every shared ramp. `kit` is retired. */
+  style?: 'rich';
   /** PNG paths (repo root) attached after the reference as style examples; the prompt says to match their shading, hue shifts, texture and outline. */
   style_refs?: string[];
 }
@@ -163,7 +164,9 @@ export function parseSpec(text: string): GenEntry[] {
     }
     if (entry.anchor !== undefined && entry.anchor !== 'center' && entry.anchor !== 'bottom') throw new Error(`${where}.anchor must be center or bottom`);
     if (entry.detail !== undefined && typeof entry.detail !== 'string') throw new Error(`${where}.detail must be text`);
-    if (entry.style !== undefined && entry.style !== 'kit' && entry.style !== 'rich') throw new Error(`${where}.style must be kit or rich`);
+    const style: unknown = entry.style;
+    if (style === 'kit') throw new Error(`${where}.style "kit" is retired: the whole game is drawn rich (DECISIONS.md, 2026-10-23); leave style out`);
+    if (style !== undefined && style !== 'rich') throw new Error(`${where}.style must be rich, or left out`);
     if (entry.ramps !== undefined) {
       const ids = CORE_RAMPS.map((r) => r.id);
       if (!Array.isArray(entry.ramps) || entry.ramps.length === 0 || entry.ramps.length > 4) throw new Error(`${where}.ramps names one to four shared ramps (${ids.join(', ')})`);
@@ -236,9 +239,7 @@ export function buildPrompt(entry: GenEntry, reference: Raster, file: string): s
       : `Generate a NEW image of the same ${entry.what} - same design, same colors, same top-down three-quarter view - redrawn as pixel art ${entry.width} pixels wide and ${entry.height} pixels tall, far more pixels than the reference${detail}.`,
     `Every pixel stays a crisp square of one flat color, no anti-aliasing, each one about 1/${entry.width} of the drawing's width: draw no smaller pixels than that.`,
     kindLine,
-    entry.style === 'rich'
-      ? 'Painterly pixel art: every surface shifts hue as it turns from light to shadow (warm lights, cool darks), with ambient light and colour bounced from neighbouring parts, visible material texture (wood grain, stone pores, cloth weave) drawn in pixels, and an outline whose colour follows the surface it borders rather than one flat dark line. Rich colour, as many shades as the object needs. Solid flat pure magenta #FF00FF background around it, no text, no shadow, no extra objects.'
-      : 'Limited palette, two-tone shading, solid flat pure magenta #FF00FF background around it, no text, no shadow, no extra objects.',
+    `Painterly pixel art: every surface shifts hue as it turns from light to shadow (warm lights, cool darks), with ambient light and colour bounced from neighbouring parts, visible material texture (wood grain, stone pores, cloth weave) drawn in pixels${entry.kind === 'tile' ? '' : ', and an outline whose colour follows the surface it borders rather than one flat dark line'}. Rich colour, as many shades as the object needs. Solid flat pure magenta #FF00FF background around it, no text, no shadow, no extra objects.`,
     (entry.style_refs ?? []).length > 0
       ? `The ${entry.style_refs?.length === 1 ? 'other attached image shows' : 'other attached images show'} the drawing style to match: the same shading depth, hue shifts, texture and outline treatment.`
       : '',
@@ -569,7 +570,7 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
     } else {
       const result = importSprite(raw, {
         width: entry.width, height: entry.height, anchor: entry.anchor ?? 'center',
-        palette: importPalette(entry), dither: entry.style === 'rich',
+        palette: importPalette(entry), dither: true,
       });
       writeFileSync(outPath, result.png);
       line.grid = result.grid;
@@ -587,14 +588,14 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
   return line;
 }
 
-/** The shared ramps an entry imports in: the ones it names, else every shared ramp for `rich`, else none. */
-export function importRamps(entry: Pick<GenEntry, 'ramps' | 'style'>): readonly string[] {
+/** The shared ramps an entry imports in: the ones it names, else every shared ramp for a sprite, none for a tile (a ground tile keeps to its own ramp, STYLE section 9). */
+export function importRamps(entry: Pick<GenEntry, 'ramps' | 'kind'>): readonly string[] {
   if (entry.ramps !== undefined) return entry.ramps;
-  return entry.style === 'rich' ? CORE_RAMPS.map((r) => r.id) : [];
+  return entry.kind === 'tile' ? [] : CORE_RAMPS.map((r) => r.id);
 }
 
 /** The colours the importer may snap onto for an entry: the 32, plus the steps of the ramps it imports in. */
-export function importPalette(entry: Pick<GenEntry, 'ramps' | 'style'>): readonly string[] {
+export function importPalette(entry: Pick<GenEntry, 'ramps' | 'kind'>): readonly string[] {
   return paletteWithRamps(importRamps(entry));
 }
 
