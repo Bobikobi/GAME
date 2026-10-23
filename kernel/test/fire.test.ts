@@ -251,11 +251,11 @@ describe('the vigil closes at dawn', () => {
   const nextDusk = (b: Bundle) => DUSK + b.params.day_length_ms;
 
   /** The vigil open and the player beside its giver (Maru, from the copied quest), ready to hand it in. */
-  function atGiver(b: Bundle, state: State): { s: State; at: Tile } {
+  function atGiver(b: Bundle, state: State, tick?: number): { s: State; at: Tile } {
     const s = structuredClone(state);
     s.player.quests[QUEST] = 'active';
     const giver = b.quests[QUEST]!.giver!;
-    const tile = npcTile(b, giver)!;
+    const tile = npcTile(b, giver, tick)!;
     const walkable = makeWalkable(b);
     for (let y = tile[1] - 1; y <= tile[1] + 1; y++) {
       for (let x = tile[0] - 1; x <= tile[0] + 1; x++) {
@@ -375,7 +375,8 @@ describe('the vigil closes at dawn', () => {
     expect(topped.player.fires[FIRE]).toEqual({ lit: DAWN, until: DAWN + 2 * log_ms, kept: DAWN });
     const again = feed(b, topped, DAWN + 2 * log_ms + 5).state;
     expect(again.player.fires[FIRE]).toEqual({ lit: DAWN + 2 * log_ms + 5, until: DAWN + 3 * log_ms + 5, kept: DAWN });
-    const { s, at } = atGiver(b, again);
+    // at noon Maru is out on his round: the giver takes it where he stands
+    const { s, at } = atGiver(b, again, b.params.day_length_ms);
     const handed = step(b, s, { t: 'turnin', quest: QUEST, at }, b.params.day_length_ms);
     if (!handed.ok) throw new Error(handed.error);
     expect(handed.state.player.quests[QUEST]).toBe('done');

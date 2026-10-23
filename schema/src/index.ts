@@ -482,6 +482,30 @@ export const NpcBody = Type.Object(
       ),
     ),
     shop: Type.Optional(Id),
+    round: Type.Optional(
+      Type.Array(
+        Type.Object(
+          {
+            hours: Type.Tuple([Int(0, 23), Int(1, 24)], {
+              description: 'From (inclusive) to (exclusive), game hours, inside one day. Outside every leg the character stands at home, on the slot.',
+            }),
+            via: Type.Array(Type.Tuple([Int(0, 1023), Int(0, 1023)]), {
+              minItems: 1,
+              maxItems: 48,
+              description:
+                'Tiles walked through in order, x then y, each one a foot can stand on: from home to the first, on through the rest, then back the same way home, at an even pace that fills the hours.',
+            }),
+          },
+          { additionalProperties: false },
+        ),
+        {
+          minItems: 1,
+          maxItems: 4,
+          description:
+            "A character who walks a round by day (decision 27 of 22.10): the legs of the day, each away from home over its hours. Where the character stands at a game tick is the kernel's (`npcTile`), so a talk, a trade or a task finds them where they are.",
+        },
+      ),
+    ),
   },
   { additionalProperties: false },
 );
@@ -496,6 +520,12 @@ export const ShopBody = Type.Object(
       { maxItems: 40 },
     ),
     buys: Type.Boolean({ description: 'Whether the shop buys anything that has a value.' }),
+    bed: Type.Optional(
+      Type.Literal(true, {
+        description:
+          'The keeper gives a bed for the night (G16, G32): from 19:00 to dawn the player may sleep here, and wakes at 05:00 with full health. The night passes; nothing in it is skipped.',
+      }),
+    ),
   },
   { additionalProperties: false },
 );
@@ -1479,6 +1509,19 @@ export const MapBody = Type.Object(
             }),
           ),
           fire: Type.Optional(Type.Literal(true, { description: 'A fire the player may feed by hand. It needs an id.' })),
+          kept: Type.Optional(
+            Type.Object(
+              {
+                by: { ...Id, description: 'The character whose fire it is.' },
+                from: Int(12, 23, 'The hour it is lit, when the keeper is home.'),
+              },
+              {
+                additionalProperties: false,
+                description:
+                  "A fire a character keeps (the owner, 23.10: Maru's hearth): it burns from `from` while its keeper is home, through the night, until the keeper leaves on the first leg of the round. A fire prop only. It never keeps a player's vigil (G48): a `tend` step counts the wood the player gave.",
+              },
+            ),
+          ),
           crossing: Type.Optional(
             Type.Literal(true, { description: 'Steps or a ramp: the way across a change of level (G68), on the lower tile, facing the face.' }),
           ),
