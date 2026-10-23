@@ -217,16 +217,15 @@ describe('bags', () => {
     expect(placeRoom(b, s, 'core/herb')).toBe(0);
   });
 
-  test('one tool hangs at the belt and the one in the hand is worn: every other tool takes a place, and all weigh', () => {
+  test('one tool in the hand and one at the belt take no place: every other tool does, and all weigh', () => {
     const s = started('core/elf');
     s.player.worn = {};
-    s.player.bag = { 'core/axe': 1, 'x/pebble': 2 };
-    expect(bagUsed(b, s)).toBe(1);
-    s.player.bag['core/trowel'] = 1;
-    expect(bagUsed(b, s)).toBe(2);
-    s.player.worn.hand = 'core/trowel';
+    s.player.bag = { 'core/axe': 1, 'core/trowel': 1, 'x/pebble': 2 };
     expect(bagUsed(b, s)).toBe(1);
     s.player.bag['core/basket'] = 1;
+    expect(bagUsed(b, s)).toBe(2);
+    // a tool worn in the hand is that hand's tool: the belt still holds just one more
+    s.player.worn.hand = 'core/trowel';
     expect(bagUsed(b, s)).toBe(2);
     expect(placeRoom(b, s, 'core/axe')).toBe(109);
     expect(loadWeight(b, s)).toBe(itemWeight(b, 'core/axe') + itemWeight(b, 'core/trowel') + itemWeight(b, 'core/basket') + 2);

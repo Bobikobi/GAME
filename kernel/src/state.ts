@@ -331,8 +331,9 @@ export function satietyAt(bundle: Bundle, state: PublicState, tick: number): num
 /**
  * The places the bag's things take (DECISIONS.md, 2026-10-23): things of one kind share a place, up to
  * `place_stack` of them, so a place holds a stack. What is on the body takes none: the units worn on
- * either layer (a tool in the hand among them) and ONE tool at the belt - the owner's answer of 23.10,
- * not one of each kind. Every other tool goes in the places. Weight still counts every unit (`loadWeight`).
+ * either layer, the tool in the hand and ONE tool at the belt - the owner's answer of 23.10, not one of
+ * each kind. A hand with no tool worn in it holds one of the bag's tools. Every other tool goes in the
+ * places. Weight still counts every unit (`loadWeight`).
  */
 export function bagUsed(bundle: Bundle, state: PublicState): number {
   return placesWith(bundle, state, {});
@@ -344,14 +345,16 @@ export function placesWith(bundle: Bundle, state: PublicState, delta: Record<str
   const stack = Math.max(1, bundle.params.place_stack);
   const worn = onBodyCounts(state);
   let n = 0;
-  let belt = false;
+  let single = 0;
   for (const id of new Set([...Object.keys(p.bag), ...Object.keys(delta)])) {
     const loose = Math.max(0, (p.bag[id] ?? 0) + (delta[id] ?? 0) - (worn[id] ?? 0));
     n += idivUp(loose, stack);
-    // the belt takes one tool off the places: it saves a place where that tool's last stack holds just one
-    if (bundle.items[id]?.tool !== undefined && loose % stack === 1) belt = true;
+    // a tool carried on the body saves a place where that tool's last stack holds just one
+    if (bundle.items[id]?.tool !== undefined && loose % stack === 1) single++;
   }
-  return belt ? n - 1 : n;
+  // the belt holds one tool, and the hand one more unless a tool is worn there already
+  const onBody = p.worn.hand === undefined ? 2 : 1;
+  return n - Math.min(onBody, single);
 }
 
 /** How many more units of one kind fit in the places: up to the free places, or into what is left of its own stacks when over. */

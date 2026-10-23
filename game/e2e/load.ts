@@ -249,19 +249,19 @@ async function run(page: Page, base: string, viewport: Viewport): Promise<void> 
   await page.waitFor(`(window.__load.chip()?.title ?? '').includes('Load ${target} of')`, 'the bag button to show the filled weight');
   c = await chipReads(page, 'Light');
   const before = Number(c.count.split('/')[0]);
-  // the places as the kernel counts them: ten of a kind to a place, worn units and one tool at the belt take none
+  // the places as the kernel counts them: ten of a kind to a place; worn units, a tool in the hand and one at the belt take none
   const grows = await page.eval<number>(`(() => {
     const g = window.__game, b = g.bundle, p = g.session.state.player, stack = b.params.place_stack;
     const worn = {};
     for (const layer of [p.worn, p.looks]) for (const id of Object.values(layer)) if (id) worn[id] = (worn[id] ?? 0) + 1;
     const places = (bag) => {
-      let n = 0, belt = false;
+      let n = 0, single = 0;
       for (const [id, q] of Object.entries(bag)) {
         const loose = Math.max(0, q - (worn[id] ?? 0));
         n += Math.ceil(loose / stack);
-        if (b.items[id]?.tool && loose % stack === 1) belt = true;
+        if (b.items[id]?.tool && loose % stack === 1) single++;
       }
-      return belt ? n - 1 : n;
+      return n - Math.min(p.worn.hand ? 1 : 2, single);
     };
     const item = ${JSON.stringify(ground.item)};
     return places({ ...p.bag, [item]: (p.bag[item] ?? 0) + 1 }) - places(p.bag);
