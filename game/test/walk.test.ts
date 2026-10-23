@@ -112,9 +112,11 @@ describe('stopping and walls (measurable 2)', () => {
         for (let f = 0; f < 200; f++) {
           // long and short frames alike: a frame of 250 ms is the longest the scene allows
           const tiles = w.frame([Math.cos(angle), Math.sin(angle)], f % 50 === 0 ? 250 : FRAME, STEP_MS, isOpen);
-          expect(fourConnected(from, tiles), `angle ${a}/64 from ${start.join(',')}`).toBe(true);
+          // checked plainly and failed by hand: 51,200 frames of expect() calls outlast the test timeout on a busy machine
+          if (!fourConnected(from, tiles)) expect.fail(`angle ${a}/64 from ${start.join(',')}: a report is not four-connected`);
           if (tiles.length > 0) from = tiles[tiles.length - 1]!;
-          for (const [x, y] of walls) expect(overlaps(w, x, y), `angle ${a}/64 from ${start.join(',')} overlaps ${x},${y}`).toBe(false);
+          const hit = walls.find(([x, y]) => overlaps(w, x, y));
+          if (hit) expect.fail(`angle ${a}/64 from ${start.join(',')} overlaps ${hit.join(',')}`);
         }
       }
     }
