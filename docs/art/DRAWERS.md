@@ -80,6 +80,21 @@ applies to it and is the next step there.
   `sdxl` is worth it for a character once its halo and background are dealt with (a downscale to the
   grid and a magenta key in the kernel), at about 8x the drawing time.
 
+### The rich wave by the owner's eye (23.10, 37 items and small props, five rounds)
+
+- **The 16 px sprite is a poor reference for a 64 px redraw.** At denoise 0.6 the picture stays muddy next
+  to it; at 0.9 it drifts off the object (an idol became a robot, a coin a blob). Drawing from the prompt
+  alone (`KAGGLE_DENOISE=1`, the old sprite only sets the canvas) gave cleaner pictures than any
+  reference strength.
+- **`sdxl` won every free pick it was offered.** With rewritten prompts (one object, its view, what it is
+  not: "no leaves", "no flames"), the owner chose an `sdxl` draw for all eleven entries of the round that
+  offered both recipes, and for six of the next sixteen. Run a wave of props and items with
+  `KAGGLE_MODEL=sdxl KAGGLE_DENOISE=1`; the code default stays `sd15` until the halo and the magenta are
+  dealt with for characters.
+- **What the free models misread goes to Codex.** Some objects come back pretty but wrong on every seed
+  and every recipe (a branch drawn as food); `--drawer codex` with the kit sprite as the reference and two
+  picked draws as `style_refs` drew the right object for each of them.
+
 ## What is free, honestly
 
 The `local` route: your own machine, open weights, no key, no terms on the request. Its price is
