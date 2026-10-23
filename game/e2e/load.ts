@@ -165,6 +165,15 @@ async function walkMs(page: Page): Promise<number> {
   return (times[5]! - times[1]!) / 4;
 }
 
+/** With LOAD_CAPTURE set to a folder, the desktop run saves a few pictures of the load for a review page. */
+const CAPTURE = process.env.LOAD_CAPTURE;
+async function capture(page: Page, viewport: Viewport, name: string): Promise<void> {
+  if (!CAPTURE || viewport.mobile) return;
+  mkdirSync(CAPTURE, { recursive: true });
+  await sleep(400);
+  await page.screenshot(join(CAPTURE, `${name}.png`));
+}
+
 async function newGame(page: Page, base: string, viewport: Viewport, race: string): Promise<void> {
   await page.goto(`${base}/play/?debug`);
   await page.waitFor(`!!document.querySelector('.title-screen button')`, 'the title screen', 30_000);
@@ -178,6 +187,7 @@ async function newGame(page: Page, base: string, viewport: Viewport, race: strin
   );
   if (ask === 'ask') await page.tap('.title-screen button', 'Start a new game');
   await page.waitFor(`!!document.querySelector('.card.race')`, 'the race cards');
+  await capture(page, viewport, '01-race-body-facts');
   await page.tap('.card.race', race);
   await page.tap('input.name');
   await page.type('Carrier');
@@ -262,6 +272,14 @@ async function run(page: Page, base: string, viewport: Viewport): Promise<void> 
   if (!worn.ok) throw new Error(`the satchel did not go on: ${worn.error}`);
   c = await chipReads(page, 'Steady', new RegExp(`^${after} / ${satchelPlaces}$`));
   log(`a satchel on the back: "${c.count} ${c.word}"`);
+  await capture(page, viewport, '02-load-steady');
+  if (CAPTURE && !viewport.mobile) {
+    await page.eval(`document.querySelector('.hud [data-load]').closest('button').click()`);
+    await page.waitFor(`!!document.querySelector('.kit-bag')`, 'the bag panel');
+    await capture(page, viewport, '03-bag-with-satchel');
+    await page.press('Escape');
+    await page.waitFor(`!document.querySelector('.kit-bag')`, 'the bag panel to close');
+  }
 
   // 4. over the limit: Heavy, said once, and the walk slows
   await page.eval(`(() => {
@@ -273,6 +291,7 @@ async function run(page: Page, base: string, viewport: Viewport): Promise<void> 
   c = await chipReads(page, 'Heavy');
   await page.waitFor(`[...document.querySelectorAll('.toast-text')].some((t) => t.textContent.includes('Heavy going.'))`, 'the one line that says the load turned heavy');
   log(`over the limit: "${c.count} ${c.word}", and "Heavy going."`);
+  await capture(page, viewport, '04-load-heavy');
   const heavy = await walkMs(page);
   log(`a heavy tile takes ${heavy.toFixed(0)} ms`);
   // 230 against 170 ms a tile: a frame can only add to a step, so the heavy walk stays the slower by a margin
