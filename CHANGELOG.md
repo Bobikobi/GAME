@@ -2,6 +2,20 @@
 
 One note per tag on `main`, newest first (docs/team/PLATFORM.md section 2).
 
+## v0.1.9 - 2026-10-23 - the new desktop home
+
+A site-only release: the game is unchanged and stays at v0.1.8.
+
+What players notice
+- On a computer, the home page now opens on the painted valley at dawn: the elf, the human and the skeleton in a quiet looping video, with Play free and Build a place over it. With reduced motion turned on, the still picture shows instead.
+- The bar over it leads to the Leaderboard, Developers, the Guide and GitHub, and Play is the one gold button.
+- Every page ends in a new footer with Play, Build and Community links.
+- On a phone the home page is unchanged and downloads no video.
+
+What changed underneath
+- The site self-hosts two OFL faces (Cinzel, Manrope) for the desktop home.
+- Tests guard the phone home weight (under 300 KB), the desktop first paint (under 600 KB) and each video (under 12 MB).
+
 ## v0.1.7 - 2026-10-19
 
 What players notice
