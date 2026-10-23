@@ -187,6 +187,11 @@ async function newGame(page: Page, base: string, viewport: Viewport, race: strin
   );
   if (ask === 'ask') await page.tap('.title-screen button', 'Start a new game');
   await page.waitFor(`!!document.querySelector('.card.race')`, 'the race cards');
+  // every race card says its one body fact in words, not only on a hover
+  const facts = await page.eval<{ cards: number; facts: number }>(
+    `({ cards: document.querySelectorAll('.card.race').length, facts: [...document.querySelectorAll('.card.race .race-body')].filter((p) => p.getBoundingClientRect().height > 0).length })`,
+  );
+  if (facts.cards === 0 || facts.facts !== facts.cards) throw new Error(`${facts.facts} of ${facts.cards} race cards show the body fact`);
   await capture(page, viewport, '01-race-body-facts');
   await page.tap('.card.race', race);
   await page.tap('input.name');

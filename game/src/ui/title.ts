@@ -7,6 +7,7 @@ import { say } from './dialog';
 import { gameServer, offerSignup } from './signup';
 import { button, h, sprite } from './dom';
 import type { UI } from './ui';
+import './race-body.css';
 
 export function showTitle(ui: UI): Promise<void> {
   return new Promise((resolve) => {
@@ -100,8 +101,6 @@ export function showTitle(ui: UI): Promise<void> {
                 class: `card race ${picked === id ? 'on' : ''}`,
                 type: 'button',
                 'data-race': id,
-                // the body fact on demand: a hover on a desktop, a long press on a phone (DECISIONS.md, 2026-10-23)
-                title: st.body ? `${st.body.name}: ${st.body.about}` : undefined,
                 onclick: () => ((picked = id), drawToggle(), drawCards()),
               },
               sprite(b, spr, 3, 1),
@@ -114,6 +113,8 @@ export function showTitle(ui: UI): Promise<void> {
                   h('div', { title: ATTRIBUTE_TEXT[a] ?? a }, h('span', null, ATTRIBUTE_LABEL[a] ?? a), h('span', { class: 'pips' }, Array.from({ length: pipCount }, (_, i) => h('i', { class: i < v ? 'on' : '' })))),
                 ),
               ),
+              // the race's one body fact, in words on the card (DECISIONS.md, 2026-10-23)
+              ...(st.body ? [h('p', { class: 'race-body', 'data-body': st.body.name }, h('b', null, st.body.name), ` - ${st.body.about}`)] : []),
             );
           }),
         );
