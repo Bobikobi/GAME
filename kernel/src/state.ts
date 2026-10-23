@@ -7,7 +7,7 @@ import type { Bundle, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.14.0';
+export const KERNEL_VERSION = '0.15.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -140,6 +140,12 @@ export interface Player {
   at: [number, number];
   /** milli-gold */
   gold: number;
+  /**
+   * The starting gold, in milli-gold, kept apart from the purse (DECISIONS.md, 2026-10-10: starting gold is bound).
+   * A purchase at a shop takes from it first; nothing else reads or moves it, and it is never paid to a player or
+   * listed. Absent in saves from before kernel 0.15, read as 0 (`migrateState`).
+   */
+  boundGold: number;
   bag: Record<string, number>;
   /** uses already taken from the tool unit in hand, per tool item */
   wear: Record<string, number>;
@@ -199,7 +205,7 @@ export interface State {
   tick: number;
   player: Player;
   nodes: Record<string, NodeState>;
-  /** every milli-gold that entered or left the world (rule R6: one ledger) */
+  /** every milli-gold that entered or left the world (rule R6: one ledger); the purse and the bound balance together are minted less burned */
   ledger: { minted: number; burned: number };
 }
 
@@ -221,6 +227,7 @@ export function newState(bundle: Bundle, seed: number): State {
       look: 0,
       at: [bundle.map.spawn.x, bundle.map.spawn.y],
       gold: 0,
+      boundGold: 0,
       bag: {},
       wear: {},
       satiety: 0,
@@ -265,6 +272,8 @@ export function newState(bundle: Bundle, seed: number): State {
  */
 export function migrateState(saved: State): State {
   const s = structuredClone(saved) as State & { player: Player & { starter?: string; attrs: Record<string, number> } };
+  // kernel 0.15: the bound balance is a field of its own; a save without it holds none
+  s.player.boundGold ??= 0;
   if ((s.format ?? 1) >= STATE_FORMAT) return s;
   const p = s.player;
   const attrs = p.attrs ?? {};
