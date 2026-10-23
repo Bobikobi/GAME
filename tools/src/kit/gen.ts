@@ -56,6 +56,7 @@ import { PNG } from 'pngjs';
 import { colourCount, gridPrompt, parseGrid, pngToGrid, renderGrid, seamWarnings } from './gengrid.js';
 import { type DrawerId, type Drawn, drawWaveWithKaggle, drawWithGemini, drawWithKaggle, drawWithLocal, kagglePrompt, kaggleSettings, kaggleSubject, localPrompt, parseDrawer } from './drawers.js';
 import { importSprite, nearestPaletteIndex } from './import.js';
+import { applyInk } from './ink.js';
 import { CORE_PALETTE, CORE_RAMPS, type Rgb, hexToRgb, paletteWithRamps } from './palette.js';
 import {
   type Motif, type ScatterEntry, motifPrompt, motifWarnings, parseMotif, renderMotif, scatterProblem, scatterTile, tileWarnings, variantsOf,
@@ -571,7 +572,8 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
         width: entry.width, height: entry.height, anchor: entry.anchor ?? 'center',
         palette: importPalette(entry), dither: entry.style === 'rich',
       });
-      writeFileSync(outPath, result.png);
+      // the owner's decision of 23.10 (PR #305): every rich sprite carries the one-pixel ink edge
+      writeFileSync(outPath, entry.style === 'rich' ? applyInk(result.png, entry.width) : result.png);
       line.grid = result.grid;
       line.logical = result.logical;
       line.colors = result.colors;

@@ -14,6 +14,7 @@ import { CORE_PALETTE, coreRamp } from './kit/palette';
 import { accentsOf, allowedColors, rampProblems } from './kit/ramps';
 import { scaleProblems } from './kit/scale';
 import { checkColors } from './colors';
+import { checkInk } from './ink-check';
 import { LOCK_FILE, REPO_ROOT, loadAll, toRepoPath, type Issue } from './load';
 import { baseOf } from './material';
 import { checkHazards } from './hazards';
@@ -48,6 +49,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkRetiredWords());
     issues.push(...checkKits(assembled));
     issues.push(...checkColors(assembled));
+    issues.push(...checkInk(assembled));
     issues.push(...checkPlay(b, assembled.origin));
     issues.push(...checkRaces(b, assembled.origin));
     issues.push(...checkStarts(b, assembled.origin));
