@@ -2573,5 +2573,10 @@ The before/after on grass goes to the owner before the merge.
 
 The owner looked at the same eleven small entries drawn by Codex, FLUX.1 schnell and Qwen-Image side by side and picked one card each. Nine change in the kit, each imported again from its raw drawing with the importer that keeps the drawing inside its outline, at density 4 in the spec entry's ramps: the branch (FLUX seed 1), the rock_small (FLUX seed 1), the sapling (FLUX seed 2), the dig_spot and the hazard_pit (Qwen seed 1), the log_fallen and the stone (Qwen seed 2), the pebbles (Codex round 5 candidate 1) and the unlit campfire (Codex round 6 candidate 1, drawn from the old 16 px unlit sprite with no fire, no embers and no smoke). The pebbles and the small rock were still 16 px and are now rich. The bandage and the mossy rock stay as they are: the owner picked the cards already in the kit, byte for byte. Every one has 0 enclosed see-through pixels before and after the import, and each has its line in `tools/kit-gen/rich-wave.manifest.jsonl` (model, seed or candidate, round, date).
 **The owner's rule: a draw that came out as the wrong object is never discarded.** It is kept in a library for possible future use, with a one-line note of what it looks like and its provenance: `docs/art/wrong-draws/` (a README and `library.jsonl`), outside the kit, not loaded by the game and not read by `pnpm check`. It starts with seven: three branches (SDXL seed 44, a cutting board with a fork; Qwen seeds 1 and 2), a hazard pit, a mossy rock, a sapling, and the unlit campfire the kit had until today, which is drawn burning.
-PENDING the owner's confirmation, not decided: the free drawing route draws Qwen and FLUX side by side, and the owner picks.
-**Retry when:** a library draw fits an object the game needs (import it through the kit pipeline), or the free route's side-by-side draw is confirmed or refused. Model: claude-opus-5-5.
+The owner, 23.10: picked the 11 in the models review; a draw that comes out as the wrong object is kept in docs/art/wrong-draws for future use.
+**Retry when:** a library draw fits an object the game needs (import it through the kit pipeline). Model: claude-opus-5-5.
+
+## 2026-10-23 The free drawing route: Qwen and FLUX side by side
+
+PENDING the owner's confirmation, not decided: the free drawing route draws Qwen-Image and FLUX.1 schnell side by side for each entry, and the owner picks one card.
+**Retry when:** the owner confirms or refuses the side-by-side draw. Model: claude-opus-5-5.
