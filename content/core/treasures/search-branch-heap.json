@@ -1,0 +1,31 @@
+{
+  "$schema": "../../../schema/json/treasure.schema.json",
+  "format": 1,
+  "type": "treasure",
+  "id": "core/branch-heap",
+  "title": "A heap of branches",
+  "creator": "core",
+  "search": {
+    "rows": [
+      {
+        "item": "core/berry",
+        "chance_pct": 35
+      },
+      {
+        "item": "core/stone",
+        "chance_pct": 30
+      },
+      {
+        "item": "core/pottery-shard",
+        "chance_pct": 15
+      },
+      {
+        "item": "core/whole-bowl",
+        "chance_pct": 1
+      }
+    ],
+    "place": {
+      "prop": "core/branch-heap"
+    }
+  }
+}

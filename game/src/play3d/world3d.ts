@@ -40,7 +40,7 @@ import type { GameSession } from '../session-surface';
 import { stoneView } from '../stone';
 import { heightOf, questTargets } from '../targets';
 import { nodeLook } from '../growth';
-import { hintDistance, lanternNight, nodeAction } from '../text';
+import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
 import { beatAt, blowsDue, resourceKind, treasureKind, type AutoKind } from '../work';
 import { StandingReports, canEnter, landStep } from '../walking';
 import type { WorkKind } from '../ui/ui';
@@ -216,6 +216,7 @@ export class World3D implements WorldView {
   private readonly nodeAt = new Map<string, string>();
   private readonly npcAt = new Map<string, string>();
   private readonly signs = new Map<string, string>();
+  private readonly searches = new Map<string, string>();
   private readonly notes = new Map<string, { text: string; name: string; top: number }>();
   private readonly tops = new Map<string, number>();
   private readonly signSpots: { slot: string; x: number; y: number; label: HTMLElement }[] = [];
@@ -393,6 +394,8 @@ export class World3D implements WorldView {
         for (let x = p.x; x < p.x + p.w; x++) {
           if (p.sign) this.signs.set(key(x, y), p.sign);
           if (p.note) this.notes.set(key(x, y), { text: p.note, name: spriteName(p.sprite), top: info.h / info.density / 16 });
+          const searchable = p.id === undefined ? undefined : searchableOn(b, p.id);
+          if (searchable) this.searches.set(key(x, y), searchable);
           this.tops.set(key(x, y), info.h / info.density / 16);
         }
       }
@@ -1321,6 +1324,8 @@ export class World3D implements WorldView {
     if (sign) return { label: 'Read the sign', run: () => app.ui.sign(sign), tile, top };
     const note = this.notes.get(k);
     if (note) return { label: `Look at the ${note.name}`, run: () => app.ui.note(note.text), tile, top: note.top };
+    const searchable = this.searches.get(k);
+    if (searchable) return { label: 'Search', run: () => void app.ui.search(searchable), tile, top };
     const fog = this.empty.find((slot) => inRect(x, y, slot));
     if (fog && x === s.pos[0] + DIRS[s.facing][0] && y === s.pos[1] + DIRS[s.facing][1]) {
       return { label: `Look at the ${fog.label ?? 'mist'}`, run: () => app.ui.sign(fog.id), tile, top: 0.6 };
