@@ -9,23 +9,42 @@
  * contact line under the feet is separate, at the decided 45%.
  *
  * A layer is painted only when what it shows has moved: the sun's shear, the canvas's corner
- * (it steps by `SNAP`, so the camera scrolls inside it), or one of its casters' frame, mirror or
- * place. A frame where nothing moved costs a comparison, and a walk paints the standing layer
- * only. A software renderer (a test runner with no GPU) pays a whole canvas upload per paint:
- * two paints and two uploads in every frame slowed its frames past the length a step is drawn
- * in, so a step on the desktop door showed only its landing frame.
+ * (it steps by `SNAP`, so the camera scrolls inside it), or one of its casters' texture, mirror
+ * or place. A software renderer (a test runner with no GPU) pays a whole canvas upload per
+ * paint: two paints and two uploads in every frame slowed its frames past the length a step is
+ * drawn in, so a step on the desktop door showed only its landing frame. So nothing that changes
+ * every frame is painted into a layer:
+ * - a thing that walks (`moving`: the player, a wolf) casts through its own small image, one
+ *   texture per frame and sun shear, made once and then only placed. Where it crosses another
+ *   shadow the two darken, the one exception to "overlaps are one shadow";
+ * - a thing on a beat (`rest`: a sway, a flicker, a blink) casts the shadow of its first frame,
+ *   so the beat does not repaint the layer.
  */
 import * as Phaser from 'phaser';
 
-import { type Mask, type Shadow, type Sun, type SunTable, SHADOW, downsampleAlpha, maskOfAlpha, mirrorMask, shadowOf, sunAt, sunKey } from './cast';
+import { type Mask, type Shadow, type Sun, type SunTable, SHADOW, downsampleAlpha, maskOfAlpha, mirrorMask, shadowBox, shadowOf, sunAt, sunKey } from './cast';
 
 export type CastLayerName = 'under' | 'standing';
+
+/**
+ * How a caster's shadow is drawn: `drawn` from the frame it shows, in its layer; `rest` from its first frame,
+ * in its layer (a thing on a beat); `moving` from the frame it shows, through its own image (a thing that walks).
+ */
+export type CastMode = 'drawn' | 'rest' | 'moving';
 
 /** One thing that casts: a world image or sprite, and how strongly it casts now. */
 export interface Caster {
   readonly image: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite;
   readonly layer: CastLayerName;
+  readonly mode: CastMode;
   enabled: boolean;
+}
+
+/** A moving caster's own shadow: its image, its contact line, and the texture both show now. */
+interface Own {
+  readonly image: Phaser.GameObjects.Image;
+  readonly contact: Phaser.GameObjects.Graphics;
+  key: string;
 }
 
 /**
@@ -80,6 +99,10 @@ export class CastLayer {
   /** the shadow of each mask (and its mirror) under the sun of `shadowsSun`; a new shear empties it */
   private readonly shadows = new Map<string, Shadow>();
   private shadowsSun = '';
+  /** each moving caster's own image */
+  private readonly owns = new Map<Caster, Own>();
+  /** the moving casters' textures under the sun of `shadowsSun`, by key, with the corner of each shadow's box */
+  private readonly ownTex = new Map<string, { x: number; y: number }>();
 
   constructor(scene: Phaser.Scene, sun: SunTable, density = 1, densityOf: (key: string) => number = () => 1) {
     this.scene = scene;
@@ -101,8 +124,8 @@ export class CastLayer {
   }
 
   /** Registers one thing that casts; the scene keeps the returned caster to turn it off. */
-  add(image: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite, layer: CastLayerName): Caster {
-    const caster: Caster = { image, layer, enabled: true };
+  add(image: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite, layer: CastLayerName, mode: CastMode = 'drawn'): Caster {
+    const caster: Caster = { image, layer, mode, enabled: true };
     this.casters.push(caster);
     return caster;
   }
@@ -116,6 +139,11 @@ export class CastLayer {
   clear(): void {
     this.casters.length = 0;
     for (const p of Object.values(this.planes)) p.painted = '';
+    for (const own of this.owns.values()) {
+      own.image.destroy();
+      own.contact.destroy();
+    }
+    this.owns.clear();
   }
 
   /**
@@ -130,10 +158,13 @@ export class CastLayer {
       return;
     }
     const shear = sunKey(sun);
+    const stale = shear !== this.shadowsSun ? [...this.ownTex.keys()] : [];
     if (shear !== this.shadowsSun) {
       this.shadows.clear();
+      this.ownTex.clear();
       this.shadowsSun = shear;
     }
+    const placed = new Set<Caster>();
     const v = view ?? this.scene.cameras.main.worldView;
     // the corner on a step of SNAP world pixels and the canvas a step wider than the view, so the view always
     // lies inside it and a shadow keeps its pixels however the camera scrolls
@@ -149,7 +180,8 @@ export class CastLayer {
       if (!caster.enabled) continue;
       const img = caster.image;
       if (!img.visible || img.alpha <= MIN_ALPHA) continue;
-      const frame = img.frame;
+      // a thing on a beat casts its first frame, so the beat leaves the layer as it is
+      const frame = caster.mode === 'rest' && img.texture.has('0') ? img.texture.get('0') : img.frame;
       if (!frame) continue;
       const tex = img.texture.key;
       const density = this.densityOf(tex);
@@ -163,6 +195,11 @@ export class CastLayer {
       const flip = img.flipX;
       const shadow = this.shadowFor(maskKey, frame, density, flip, sun);
       if (!shadow || shadow.spans.length === 0) continue;
+      if (caster.mode === 'moving') {
+        this.placeOwn(caster, shadow, `${maskKey}${flip ? '~' : ''}`, left, feet, sun.alpha);
+        placed.add(caster);
+        continue;
+      }
       const x = Math.round((left - ox) * this.density);
       const y = Math.round((feet - oy) * this.density);
       draws[caster.layer].push({ layer: caster.layer, shadow, x, y });
@@ -177,6 +214,9 @@ export class CastLayer {
       p.image.setPosition(ox, oy).setScale(1 / this.density).setAlpha(sun.alpha).setVisible(true);
       p.contact.setPosition(ox, oy).setVisible(true);
     }
+    for (const [caster, own] of this.owns) if (!placed.has(caster)) this.hideOwn(own);
+    // the last shear's textures go once nothing shows them
+    for (const key of stale) if (!this.ownTex.has(key) && this.scene.textures.exists(key)) this.scene.textures.remove(key);
   }
 
   /** Turns the pass off, for the night and for a scene that is leaving. */
@@ -186,6 +226,7 @@ export class CastLayer {
       p.contact.clear().setVisible(false);
       p.painted = '';
     }
+    for (const own of this.owns.values()) this.hideOwn(own);
   }
 
   destroy(): void {
@@ -193,7 +234,59 @@ export class CastLayer {
       p.image.destroy();
       p.contact.destroy();
     }
-    for (const key of [UNDER_KEY, STANDING_KEY]) if (this.scene.textures.exists(key)) this.scene.textures.remove(key);
+    this.clear();
+    for (const key of [UNDER_KEY, STANDING_KEY, ...this.ownTex.keys()]) if (this.scene.textures.exists(key)) this.scene.textures.remove(key);
+    this.ownTex.clear();
+  }
+
+  /**
+   * Lays a moving caster's shadow through its own image: the texture of this frame and shear is made the
+   * first time it is needed and kept, so a walk only places an image and swaps among a few textures.
+   */
+  private placeOwn(caster: Caster, shadow: Shadow, shadowKey: string, left: number, feet: number, alpha: number): void {
+    const key = `cast:${shadowKey}@${this.shadowsSun}`;
+    let corner = this.ownTex.get(key);
+    if (!corner) {
+      const box = shadowBox(shadow);
+      if (this.scene.textures.exists(key)) this.scene.textures.remove(key);
+      const tex = this.scene.textures.createCanvas(key, box.w, box.h) as Phaser.Textures.CanvasTexture;
+      tex.setFilter(Phaser.Textures.FilterMode.NEAREST);
+      const ctx = tex.getContext();
+      ctx.fillStyle = INK;
+      for (const span of shadow.spans) ctx.fillRect(span.x - box.x, span.y - box.y, span.w, 1);
+      tex.refresh();
+      corner = { x: box.x, y: box.y };
+      this.ownTex.set(key, corner);
+    }
+    const depth = CAST_DEPTH[caster.layer];
+    let own = this.owns.get(caster);
+    if (!own) {
+      own = {
+        image: this.scene.add.image(0, 0, key).setOrigin(0).setDepth(depth),
+        contact: this.scene.add.graphics().setDepth(depth + CAST_DEPTH.contact),
+        key: '',
+      };
+      this.owns.set(caster, own);
+    }
+    const scale = 1 / this.density;
+    if (own.key !== key) {
+      own.image.setTexture(key);
+      own.contact.clear();
+      own.contact.fillStyle(SHADOW.ink, SHADOW.contact);
+      for (const [a, b] of shadow.contact) own.contact.fillRect(a * scale, 0, (b - a + 1) * scale, scale);
+      own.key = key;
+    }
+    // on the layer's grid, as a painted shadow would lie
+    const x = Math.round(left * this.density) * scale;
+    const y = Math.round(feet * this.density) * scale;
+    own.image.setPosition(x + corner.x * scale, y + corner.y * scale).setScale(scale).setAlpha(alpha).setVisible(true);
+    own.contact.setPosition(x, y).setVisible(true);
+  }
+
+  private hideOwn(own: Own): void {
+    if (!own.image.visible && !own.contact.visible) return;
+    own.image.setVisible(false);
+    own.contact.setVisible(false);
   }
 
   /** Paints one layer's shadows and contact lines, and uploads its canvas once. */

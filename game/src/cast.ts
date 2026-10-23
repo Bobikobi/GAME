@@ -256,3 +256,22 @@ export function mirrorMask(mask: Mask): Mask {
   const rows = mask.rows.map((row) => row.map(([a, b]) => [mask.w - 1 - b, mask.w - 1 - a] as Span).reverse());
   return { w: mask.w, h: mask.h, rows, feet: mask.feet, top: mask.top };
 }
+
+/**
+ * The box a shadow's runs fill, counted like the runs from the frame's left edge and the feet: the corner a
+ * moving caster's own texture is laid at, and the texture's size. An empty shadow is one clear pixel.
+ */
+export function shadowBox(shadow: Shadow): { x: number; y: number; w: number; h: number } {
+  if (shadow.spans.length === 0) return { x: 0, y: 0, w: 1, h: 1 };
+  let x0 = Infinity;
+  let x1 = -Infinity;
+  let y0 = Infinity;
+  let y1 = -Infinity;
+  for (const s of shadow.spans) {
+    x0 = Math.min(x0, s.x);
+    x1 = Math.max(x1, s.x + s.w);
+    y0 = Math.min(y0, s.y);
+    y1 = Math.max(y1, s.y + 1);
+  }
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+}

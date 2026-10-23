@@ -1159,6 +1159,10 @@ export class WorldScene extends Phaser.Scene {
   private buildCasters(): void {
     // a density-4 prop casts at the size it is drawn: the layer reads each texture's density
     this.cast = new CastLayer(this, sunTableOf(this.b.params.light?.sun), 1, densityOf);
+    // nothing that changes every frame is painted into a layer (cast-layer.ts): a thing that walks casts
+    // through its own image, a thing on a beat (a sway, a flame, a blink) from its first frame
+    const walks = new Set<Phaser.GameObjects.GameObject>(this.hazards.map((h) => h.spr));
+    const beats = new Set<Phaser.GameObjects.GameObject>([...this.cycles.map((c) => c.spr), ...this.blinks.map((b) => b.spr)]);
     for (const obj of this.children.list) {
       if (!(obj instanceof Phaser.GameObjects.Image) && !(obj instanceof Phaser.GameObjects.Sprite)) continue;
       if (obj === this.player || obj === this.cutout) continue;
@@ -1172,9 +1176,9 @@ export class WorldScene extends Phaser.Scene {
       if (depth < DEPTH.flat || depth > 1000) continue;
       // a dig spot and a puff lie at 3 and 3.5; the props and the people stand at their own feet
       if (depth > DEPTH.flat && depth <= DEPTH.puff) continue;
-      this.cast.add(obj, depth === DEPTH.flat ? 'under' : 'standing');
+      this.cast.add(obj, depth === DEPTH.flat ? 'under' : 'standing', walks.has(obj) ? 'moving' : beats.has(obj) ? 'rest' : 'drawn');
     }
-    this.cast.add(this.player, 'standing');
+    this.cast.add(this.player, 'standing', 'moving');
   }
 
   private glow(x: number, y: number, lit: boolean, key = 'fx-glow', scale = 1): Glow {

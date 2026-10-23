@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { SUN_TODAY, downsampleAlpha, maskOfAlpha, mirrorMask, shadowOf, sunAt, sunKey, sunTableOf } from '../src/cast.js';
+import { SUN_TODAY, downsampleAlpha, maskOfAlpha, mirrorMask, shadowBox, shadowOf, sunAt, sunKey, sunTableOf } from '../src/cast.js';
 
 /**
  * STYLE section 4, the shadow the owner picked on 18.10: the caster's silhouette laid on
@@ -204,5 +204,31 @@ describe('a mask on the layer grid', () => {
     expect([mirrored.feet, mirrored.top]).toEqual([mask.feet, mask.top]);
     const noon = { up: true, sx: 0, sy: -0.5, length: 0.5, alpha: 0.3 };
     expect(shadowOf(mirrored, noon).spans).toContainEqual({ x: 4, y: -1, w: 1 });
+  });
+});
+
+describe("a moving caster's own texture", () => {
+  const sun = (sx: number, sy: number) => ({ up: true, sx, sy, length: Math.hypot(sx, sy), alpha: 0.3 });
+  const mask = maskOfAlpha(Uint8Array.from([0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1]), 4, 3);
+
+  test('is the box of its runs: every run inside it, and each edge touched by one', () => {
+    for (const [sx, sy] of [[0.5, 0.5], [-0.7, 0.4], [0, 1.2]] as const) {
+      const shadow = shadowOf(mask, sun(sx, sy));
+      const box = shadowBox(shadow);
+      for (const s of shadow.spans) {
+        expect(s.x).toBeGreaterThanOrEqual(box.x);
+        expect(s.x + s.w).toBeLessThanOrEqual(box.x + box.w);
+        expect(s.y).toBeGreaterThanOrEqual(box.y);
+        expect(s.y + 1).toBeLessThanOrEqual(box.y + box.h);
+      }
+      expect(Math.min(...shadow.spans.map((s) => s.x))).toBe(box.x);
+      expect(Math.max(...shadow.spans.map((s) => s.x + s.w))).toBe(box.x + box.w);
+      expect(Math.min(...shadow.spans.map((s) => s.y))).toBe(box.y);
+      expect(Math.max(...shadow.spans.map((s) => s.y + 1))).toBe(box.y + box.h);
+    }
+  });
+
+  test('an empty shadow is one clear pixel, never a zero-sized texture', () => {
+    expect(shadowBox(shadowOf(maskOfAlpha(new Uint8Array(4), 2, 2), sun(0.5, 0.5)))).toEqual({ x: 0, y: 0, w: 1, h: 1 });
   });
 });
