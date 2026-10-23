@@ -2552,3 +2552,26 @@ The owner, 23.10.
 
 **A map may carry its plan.** Additive, `format` stays 1: `heights` (a digit row per ground row, read by the check only until the kernel walks levels; kit schema answer 6 of 22.10), a prop's `crossing` (steps or a ramp, G68), and `plan` with `regions[]` (cells, purpose stop or passage, height, tags, cover per mille, and `opens_by`: `wake`, the quest that opens it (decision 25), or left out for ground nobody walks), `paths[]` (corner tiles, G69), `routes[]` (who walks where and at which hours), `rests[]` and `wakes[]` (the spawn pool: each wake pocket with its first task; the wake tile and the tools stay in the pocket files of 22.10). The kernel and the clients never read the plan; an `opens_by` may name a region quest before it is written (its gate stays shut ground until then).
 **Retry when:** the cover tool or the level walk lands (they read the same block). Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The valley v2 on the map: 64x64, the plan block filled
+
+**The core map grows to 64x64 as the valley plan v2 draws it.** No opening tile a quest names moves. New: the bay with the jetty's planks (the boat keeps its place, nothing drawn yet), the shore way, the tangle's cutting and the descent's four ragged bands into the undead world, the east hills (toe, foot, hill, mountain band, `heights` 0-7), the town shelf and the ruins terrace at height 1, the lane's two jogs with a boulder in each, the night place's wall line, three statues, eleven lamps, the workshop stall (its slot opened later by a quest), the trainers' stall (reserved, empty), the ember camp, the cutting stone. The `plan` block holds the 23 regions with `opens_by`, the 8 paths, the 8 routes, the 7 rests and the 3 wakes. The four gates (north, descent, shore, the hall's stair) are marked as `area` slots on ground that stays shut; each becomes a restore in the pull request that writes the region quest opening it (a restore no quest opens fails the check), and until then the plan's `opens_by` names a quest not written yet (warnings). Every new piece wears the closest kit sprite as a stand-in (heath and rock as grass and rubble, the crossings as pebbles and rubble, the knight as rubble); new art replaces them in place.
+The owner, 22.10 and 23.10 (the plan's answers).
+**Retry when:** the art for heath, rock, steps, ramps and statues lands, or the kernel walks levels. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The riddle pair are two lanterns; the bridge slot is 3x2
+
+**The riddle's two lantern statues become two lanterns:** an iron post in town and a stone fire bowl on the hill, about 1.6 characters tall (both `lantern_post` until the bowl is drawn); the clue reads "one of the two lanterns". **The bridge's slot is 3x2**, two rows of planks over the river.
+The owner, 23.10.
+**Retry when:** the owner changes his word on it. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The wake tools are personal in the opening
+
+**A pocket's tools are its own character's:** another player neither sees nor takes them (the kernel already refuses a dig by another pocket; the clients filter by pocket). Nothing more is built: no trade, and nothing blocks a trade later. Test: `kernel/test/starts.test.ts`. Three tools moved off the new paths: the basket to (5,17), the axe to (4,18), the trowel to (7,23).
+The owner, 23.10.
+**Retry when:** players share one world. Model: claude-opus-5-5.
+
+## 2026-10-23 ⏸ The inn waits for the content wave
+
+**The inn stays the ruin at the town's edge on this map.** The opening's own walk reads that ruin as "Awaiting restoration"; rebuilding it, with the innkeeper and the drunk's post, belongs to the wave that writes their quests and lines (decision 50 of 22.10 stands).
+**Retry when:** the content wave opens. Model: claude-opus-5-5.
