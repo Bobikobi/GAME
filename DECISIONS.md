@@ -2567,7 +2567,7 @@ The owner, 23.10.
 
 ## 2026-10-23 ✅ The wake tools are personal in the opening
 
-**A pocket's tools are its own character's:** another player neither sees nor takes them (the kernel already refuses a dig by another pocket; the clients filter by pocket). Nothing more is built: no trade, and nothing blocks a trade later. Test: `kernel/test/starts.test.ts`. Three tools moved off the new paths: the basket to (5,17), the axe to (4,18), the trowel to (7,23).
+**A pocket's tools are its own character's:** another player neither sees nor takes them (the kernel already refuses a dig by another pocket; the clients filter by pocket). Nothing more is built: no trade, and nothing blocks a trade later. Test: `kernel/test/starts.test.ts`. Three tools moved off the new paths: the basket to (7,17), the axe to (4,18), the trowel to (7,23).
 The owner, 23.10.
 **Retry when:** players share one world. Model: claude-opus-5-5.
 
