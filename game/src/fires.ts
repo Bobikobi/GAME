@@ -12,6 +12,7 @@ import {
   idiv,
   idivUp,
   isNight,
+  keptFireLit,
   lastDusk,
   logMsOf,
   minuteOfDay,
@@ -46,7 +47,7 @@ export type FireStage = 'out' | 'embers' | 'low' | 'steady' | 'full';
 
 export function fireStage(b: Bundle, s: PublicState, id: string, tick: number): FireStage {
   const fire = fireOf(s, id);
-  if (fire === undefined || fire.until <= tick) return 'out';
+  if (fire === undefined || fire.until <= tick) return keptFireLit(b, id, tick) ? 'full' : 'out';
   const left = fire.until - tick;
   const log = logMsOf(b, s, id);
   if (left * 4 > log * 3) return 'full';

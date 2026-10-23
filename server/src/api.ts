@@ -182,6 +182,8 @@ export function isAction(value: unknown): value is Action {
         && typeof value.item === 'string'
         && Number.isSafeInteger(value.qty)
         && isTile(value.at);
+    case 'sleep':
+      return hasOnlyKeys(value, ['t', 'place', 'at']) && typeof value.place === 'string' && isTile(value.at);
     case 'restore':
       return hasOnlyKeys(value, ['t', 'restore', 'at']) && typeof value.restore === 'string' && isTile(value.at);
     case 'build':
@@ -429,10 +431,14 @@ async function route(request: IncomingMessage, response: ServerResponse, options
     booked = { kind: 'moves', moves: reports };
   }
 
+  // a night in a sleep place passes at once (the kernel's `sleep`): the phone's clock runs on from the dawn it
+  // woke at, so the night counts as time elapsed for the clock check
+  const slept = events.find((e) => e.e === 'sleep');
+  const night = slept?.e === 'sleep' ? slept.until - state.tick : 0;
   const next: PlayerRecord = {
     state,
     version: record.version + 1,
-    acceptedAt: record.acceptedAt + state.tick - record.state.tick,
+    acceptedAt: record.acceptedAt + state.tick - record.state.tick - night,
     movementAt,
     movementCreditMs,
   };
