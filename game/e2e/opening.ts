@@ -988,8 +988,8 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
     }
 
     // 9. a ruin in the mist at the edge of town, waiting for a creator (no way into the developers' pages from the game: DECISIONS 2026-10-11)
-    const ruin = await page.eval<Rect>(`__e2e.slot('core/town-edge')`);
-    await me.walkTo(ruin, 'the ruined house');
+    const ruin = await page.eval<Rect>(`__e2e.slot('core/workshop-stall')`);
+    await me.walkTo(ruin, 'the workshop stall');
     await me.expectPrompt(/^(Look at|Read the sign)/, 'the ruined house');
     await me.snap('ruin');
     await me.a();
