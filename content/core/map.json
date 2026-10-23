@@ -2985,6 +2985,14 @@
       },
       {
         "sprite": "core/base-kit:props/rock_mossy",
+        "x": 11,
+        "y": 18,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/rock_mossy",
         "x": 45,
         "y": 22,
         "w": 1,
