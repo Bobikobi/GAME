@@ -16,8 +16,6 @@ export const MINIMUM_AGE = 13;
 /** The age a sign-up with no known country is held to: the highest in the list, so a missing country never lowers the bar. */
 export const UNKNOWN_COUNTRY_AGE = Math.max(MINIMUM_AGE, ...Object.values(CONSENT_AGE));
 
-export type BirthBand = '13-15' | '16-17' | '18+';
-
 export interface BirthDate {
   year: number;
   month: number;
@@ -58,12 +56,9 @@ export function ageOn(birth: BirthDate, now: number): number {
 }
 
 /**
- * The band an account keeps (`accounts.birth_band`), or `underAge`. The date of birth itself is never
- * stored, so the row cannot become a birthday.
+ * Whether the age check passed, or `underAge`. Neither the date of birth nor a band is stored (the owner,
+ * 23.10): the account keeps only that the check passed, and the country.
  */
-export function ageGate(birth: BirthDate, country: string | undefined, now: number): { band: BirthBand } | { underAge: true } {
-  const age = ageOn(birth, now);
-  if (age < consentAge(country)) return { underAge: true };
-  if (age >= 18) return { band: '18+' };
-  return { band: age >= 16 ? '16-17' : '13-15' };
+export function ageGate(birth: BirthDate, country: string | undefined, now: number): { passed: true } | { underAge: true } {
+  return ageOn(birth, now) < consentAge(country) ? { underAge: true } : { passed: true };
 }

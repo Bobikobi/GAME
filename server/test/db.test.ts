@@ -47,8 +47,8 @@ let names = 0;
 async function account(email = `player-${++accounts}@example.com`): Promise<string> {
   // a name is unique in the world (migration 0003), so each account gets its own and only the email can collide
   const { rows } = await pool.query<{ id: string }>(
-    'insert into accounts (email, name, birth_band) values ($1, $2, $3) returning id',
-    [email, `Tess ${++names}`, '18+'],
+    'insert into accounts (email, name) values ($1, $2) returning id',
+    [email, `Tess ${++names}`],
   );
   return rows[0]!.id;
 }
@@ -62,7 +62,7 @@ function started(): State {
 describe.skipIf(!DATABASE_URL)('the database of Stage 2a (NEXT 18 b)', () => {
   test('the migrations apply once, and a second run applies nothing', async () => {
     const first = await migrate(pool);
-    expect(first).toEqual(['0001_accounts.sql', '0002_player_state.sql', '0003_signin.sql']);
+    expect(first).toEqual(['0001_accounts.sql', '0002_player_state.sql', '0003_signin.sql', '0004_close_grace.sql']);
     expect(await migrate(pool)).toEqual([]);
   });
 
@@ -198,12 +198,15 @@ describe.skipIf(!DATABASE_URL)('the database of Stage 2a (NEXT 18 b)', () => {
     ).rejects.toThrow(/sign_in_identities_provider_is_known/);
   });
 
-  test('an account keeps the age band CR-49 asks for, not a birth date', async () => {
+  test('an account keeps that the age check passed and the country, not a birth date or a band', async () => {
     await expect(
-      pool.query("insert into accounts (email, name, birth_band) values ('young@example.com', 'Young', '9')"),
-    ).rejects.toThrow(/accounts_birth_band_is_known/);
+      pool.query("insert into accounts (email, name, country) values ('young@example.com', 'Young', 'israel')"),
+    ).rejects.toThrow(/accounts_country_is_two_letters/);
     await expect(
-      pool.query("insert into accounts (email, name, birth_band) values ('Case@Example.com', 'Case', '13-15')"),
+      pool.query("insert into accounts (email, name, age_checked) values ('nope@example.com', 'Nope', false)"),
+    ).rejects.toThrow(/accounts_age_was_checked/);
+    await expect(
+      pool.query("insert into accounts (email, name) values ('Case@Example.com', 'Case')"),
     ).rejects.toThrow(/accounts_email_is_lower_case/);
   });
 
