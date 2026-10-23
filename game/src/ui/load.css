@@ -47,3 +47,23 @@
     padding: 0 4px;
   }
 }
+
+/* A full bag: a small word by the bag button that blinks over its first seconds (DECISIONS.md, 2026-10-23). */
+.load-full {
+  margin-left: 6px;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-weight: 700;
+  color: #fff;
+  background: #b4442f;
+  animation: load-full-blink 0.8s steps(2, jump-none) 4;
+}
+
+@keyframes load-full-blink {
+  from { opacity: 1; }
+  to { opacity: 0.25; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .load-full { animation: none; }
+}

@@ -217,14 +217,45 @@ describe('bags', () => {
     expect(placeRoom(b, s, 'core/herb')).toBe(0);
   });
 
-  test('one of each tool hangs at the belt and takes no place; a spare takes one, and both weigh', () => {
+  test('one tool hangs at the belt and the one in the hand is worn: every other tool takes a place, and all weigh', () => {
     const s = started('core/elf');
-    s.player.bag = { 'core/axe': 1, 'core/trowel': 1, 'x/pebble': 2 };
+    s.player.worn = {};
+    s.player.bag = { 'core/axe': 1, 'x/pebble': 2 };
     expect(bagUsed(b, s)).toBe(1);
-    expect(placeRoom(b, s, 'core/trowel')).toBe(110);
-    s.player.bag['core/axe'] = 2;
+    s.player.bag['core/trowel'] = 1;
     expect(bagUsed(b, s)).toBe(2);
-    expect(loadWeight(b, s)).toBe(2 * itemWeight(b, 'core/axe') + itemWeight(b, 'core/trowel') + 2);
+    s.player.worn.hand = 'core/trowel';
+    expect(bagUsed(b, s)).toBe(1);
+    s.player.bag['core/basket'] = 1;
+    expect(bagUsed(b, s)).toBe(2);
+    expect(placeRoom(b, s, 'core/axe')).toBe(109);
+    expect(loadWeight(b, s)).toBe(itemWeight(b, 'core/axe') + itemWeight(b, 'core/trowel') + itemWeight(b, 'core/basket') + 2);
+  });
+
+  test('a thing put down stays on its tile, saved, and comes back with a pick-up', () => {
+    let s = started('core/elf');
+    s.player.bag = { 'x/pebble': 5 };
+    const at: [number, number] = [s.player.at[0], s.player.at[1]];
+    const r = step(b, s, { t: 'drop', item: 'x/pebble', qty: 3, at }, s.tick);
+    if (!r.ok) throw new Error(r.error);
+    s = r.state;
+    expect(s.player.bag['x/pebble']).toBe(2);
+    expect(s.player.ground).toEqual({ [`${at[0]},${at[1]}`]: { 'x/pebble': 3 } });
+    expect(r.events).toContainEqual({ e: 'drop', item: 'x/pebble', qty: 3, at });
+    s = JSON.parse(JSON.stringify(s)) as State;
+    // a step away, the pile is not under the player
+    expect(act(s, { t: 'pickup', item: 'x/pebble', at: [at[0] + 1, at[1]] })).toEqual({ ok: false, error: 'There is nothing like that here.' });
+    s = ok(s, { t: 'pickup', item: 'x/pebble', at });
+    expect(s.player.bag['x/pebble']).toBe(5);
+    expect(s.player.ground).toEqual({});
+    expect(act(s, { t: 'pickup', item: 'x/pebble', at })).toEqual({ ok: false, error: 'There is nothing like that here.' });
+  });
+
+  test('a worn thing is taken off before it is put down', () => {
+    const s = started('core/elf');
+    s.player.bag = { 'core/satchel': 1 };
+    s.player.worn.back = 'core/satchel';
+    expect(act(s, { t: 'drop', item: 'core/satchel', qty: 1, at: s.player.at })).toEqual({ ok: false, error: 'Take it off before you put it down.' });
   });
 
   test('a satchel goes on the back, and comes off only when the rest still fits', () => {

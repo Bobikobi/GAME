@@ -52,7 +52,7 @@ import { feedback } from './feedback';
 import { type Minigame, pick, snap, strike, timing } from './games';
 import { BEAT, buzz } from './haptics';
 import { openLevelUp } from './levelup';
-import { HEAVY_LINE, loadChip, loadView, paintLoad, turnedHeavy } from './load';
+import { FULL_BAG, HEAVY_LINE, flashFull, loadChip, loadView, paintLoad, turnedHeavy } from './load';
 import {
   openBag,
   openCraft,
@@ -436,6 +436,7 @@ export class UI {
 
   /** A toast joins the line (toasts.ts): two at most stand at once, a bad one goes ahead, and none is dropped. */
   private queueToast(t: Toast): void {
+    if (t.lines.some((l) => FULL_BAG.test(l))) flashFull(this.hud);
     const el = h('div', { class: `toast ${t.tone}` }, t.icon ? sprite(app.bundle, t.icon, 1) : null, h('span', { class: 'toast-text' }, t.lines.join('\n')));
     this.band.add(el, { urgent: urgent(t), read: readTime(t) });
   }
@@ -624,6 +625,14 @@ export class UI {
     if (grade === null) return;
     const res = await s.act({ t: 'gather', node: nodeId, grade, at: s.pos });
     if (!res.ok) this.toast(res.error, 'bad');
+  }
+
+  /** Pick a thing put down back up, from the tile the player stands on. */
+  async pickUp(itemId: string): Promise<void> {
+    const s = app.session;
+    if (!s) return;
+    const r = await s.act({ t: 'pickup', item: itemId, at: s.pos });
+    if (!r.ok) this.toast(r.error, 'bad');
   }
 
   async dig(spotId: string): Promise<void> {

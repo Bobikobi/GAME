@@ -419,6 +419,8 @@ export function describe(b: Bundle, s: PublicState, e: GameEvent): { text: strin
       return { text: `+${e.qty} ${itemName(b, e.item)}`, icon: b.items[e.item]?.sprite, tone: 'good' };
     case 'bag_full':
       return { text: `Bag full - ${e.qty} ${itemName(b, e.item)} left behind`, tone: 'bad' };
+    case 'drop':
+      return { text: `Put down ${e.qty} ${itemName(b, e.item)}`, icon: b.items[e.item]?.sprite, tone: 'info' };
     case 'gold':
       return { text: `${e.delta > 0 ? '+' : '-'}${gold(Math.abs(e.delta))} gold`, tone: e.delta > 0 ? 'good' : 'info' };
     case 'level': {

@@ -26,6 +26,7 @@ import {
   spotOpen,
   walkStepMs,
 } from '@game/kernel';
+import { pileAt } from '../scenes/piles';
 import { app, type WorldView } from '../app';
 import { sound, type SfxId } from '../audio';
 import { DIG_SPOT_SPRITE } from '../config';
@@ -1287,6 +1288,9 @@ export class World3D implements WorldView {
     const k = key(x, y);
     const tile: [number, number] = [x, y];
     const top = this.tops.get(k) ?? 1;
+    // a pile the player put down, under their feet (drawn in the 2D door; here the prompt finds it)
+    const dropped = x === s.pos[0] && y === s.pos[1] ? pileAt(s.state, x, y) : undefined;
+    if (dropped) return { label: `Pick up ${b.items[dropped]?.name ?? dropped}`, run: () => app.ui.pickUp(dropped), tile, top: 0.4 };
     const npc = this.npcAt.get(k);
     if (npc) return { label: `Talk to ${b.npcs[npc]?.name ?? npc}`, run: () => app.ui.talk(npc), tile, top };
     const nodeId = this.nodeAt.get(k);

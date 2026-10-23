@@ -182,6 +182,8 @@ export interface Player {
   bitten: string[];
   /** tended fires by map prop id */
   fires: Record<string, FireState>;
+  /** what the player dropped, by tile (`groundKey`): it stays there until picked up again (DECISIONS.md, 2026-10-23) */
+  ground?: Record<string, Record<string, number>>;
   /** the fire the player kindled outside the town, if any; one stands at a time (null in saves from before kernel 0.12) */
   own: OwnFire | null;
   /** Expedition progress by expedition id. Chain quests persist separately in `quests`. */
@@ -328,9 +330,9 @@ export function satietyAt(bundle: Bundle, state: PublicState, tick: number): num
 
 /**
  * The places the bag's things take (DECISIONS.md, 2026-10-23): things of one kind share a place, up to
- * `place_stack` of them, so a place holds a stack. What is on the body takes none - the units worn on
- * either layer, and one of each tool, which hangs at the belt; a spare tool goes in the places. Weight
- * still counts every unit (`loadWeight`).
+ * `place_stack` of them, so a place holds a stack. What is on the body takes none: the units worn on
+ * either layer (a tool in the hand among them) and ONE tool at the belt - the owner's answer of 23.10,
+ * not one of each kind. Every other tool goes in the places. Weight still counts every unit (`loadWeight`).
  */
 export function bagUsed(bundle: Bundle, state: PublicState): number {
   return placesWith(bundle, state, {});
@@ -342,24 +344,33 @@ export function placesWith(bundle: Bundle, state: PublicState, delta: Record<str
   const stack = Math.max(1, bundle.params.place_stack);
   const worn = onBodyCounts(state);
   let n = 0;
+  let belt = false;
   for (const id of new Set([...Object.keys(p.bag), ...Object.keys(delta)])) {
-    const have = (p.bag[id] ?? 0) + (delta[id] ?? 0);
-    n += idivUp(Math.max(0, have - onBody(bundle, worn, id)), stack);
+    const loose = Math.max(0, (p.bag[id] ?? 0) + (delta[id] ?? 0) - (worn[id] ?? 0));
+    n += idivUp(loose, stack);
+    // the belt takes one tool off the places: it saves a place where that tool's last stack holds just one
+    if (bundle.items[id]?.tool !== undefined && loose % stack === 1) belt = true;
   }
-  return n;
+  return belt ? n - 1 : n;
 }
 
-/**
- * How many more units of one kind fit in the places: the free places' stacks, plus what the kind's own
- * last stack still takes, plus a tool's belt hook when none is carried yet.
- */
+/** How many more units of one kind fit in the places: up to the free places, or into what is left of its own stacks when over. */
 export function placeRoom(bundle: Bundle, state: PublicState, itemId: string): number {
+  const ceiling = Math.max(bagCapacity(bundle, state), bagUsed(bundle, state));
   const stack = Math.max(1, bundle.params.place_stack);
-  const have = state.player.bag[itemId] ?? 0;
-  const body = onBody(bundle, onBodyCounts(state), itemId);
-  const mine = idivUp(Math.max(0, have - body), stack);
-  const free = Math.max(0, bagCapacity(bundle, state) - bagUsed(bundle, state));
-  return Math.max(0, (mine + free) * stack + body - have);
+  let lo = 0;
+  let hi = (ceiling + 2) * stack;
+  while (lo < hi) {
+    const mid = hi - idiv(hi - lo, 2);
+    if (placesWith(bundle, state, { [itemId]: mid }) <= ceiling) lo = mid;
+    else hi = mid - 1;
+  }
+  return lo;
+}
+
+/** The key of a tile in `player.ground`. */
+export function groundKey(at: readonly [number, number]): string {
+  return `${at[0]},${at[1]}`;
 }
 
 function onBodyCounts(state: PublicState): Record<string, number> {
@@ -369,9 +380,6 @@ function onBodyCounts(state: PublicState): Record<string, number> {
   return worn;
 }
 
-function onBody(bundle: Bundle, worn: Record<string, number>, id: string): number {
-  return Math.max(worn[id] ?? 0, bundle.items[id]?.tool !== undefined ? 1 : 0);
-}
 
 /** Whether a camp part stands, itself or under an upgrade built over it. */
 export function campBuilt(bundle: Bundle, state: PublicState, campId: string): boolean {

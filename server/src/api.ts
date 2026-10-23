@@ -203,6 +203,10 @@ export function isAction(value: unknown): value is Action {
       return hasOnlyKeys(value, ['t', 'slot', 'look'])
         && WEAR_SLOTS.some((slot) => slot === value.slot)
         && (value.look === undefined || typeof value.look === 'boolean');
+    case 'drop':
+      return hasOnlyKeys(value, ['t', 'item', 'qty', 'at']) && typeof value.item === 'string' && Number.isSafeInteger(value.qty) && isTile(value.at);
+    case 'pickup':
+      return hasOnlyKeys(value, ['t', 'item', 'at']) && typeof value.item === 'string' && isTile(value.at);
     case 'move':
       return hasOnlyKeys(value, ['t', 'at']) && isTile(value.at);
     default:

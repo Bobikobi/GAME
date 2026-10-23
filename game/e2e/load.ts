@@ -249,14 +249,22 @@ async function run(page: Page, base: string, viewport: Viewport): Promise<void> 
   await page.waitFor(`(window.__load.chip()?.title ?? '').includes('Load ${target} of')`, 'the bag button to show the filled weight');
   c = await chipReads(page, 'Light');
   const before = Number(c.count.split('/')[0]);
-  // the first of a tool hangs at the belt and takes no place; a spare joins its kind's stack, opening a
-  // new place only when the last stack is full
+  // the places as the kernel counts them: ten of a kind to a place, worn units and one tool at the belt take none
   const grows = await page.eval<number>(`(() => {
-    const g = window.__game, stack = g.bundle.params.place_stack;
-    const have = g.session.state.player.bag[${JSON.stringify(ground.item)}] ?? 0;
-    const body = g.bundle.items[${JSON.stringify(ground.item)}].tool ? 1 : 0;
-    const places = (n) => Math.ceil(Math.max(0, n - body) / stack);
-    return places(have + 1) - places(have);
+    const g = window.__game, b = g.bundle, p = g.session.state.player, stack = b.params.place_stack;
+    const worn = {};
+    for (const layer of [p.worn, p.looks]) for (const id of Object.values(layer)) if (id) worn[id] = (worn[id] ?? 0) + 1;
+    const places = (bag) => {
+      let n = 0, belt = false;
+      for (const [id, q] of Object.entries(bag)) {
+        const loose = Math.max(0, q - (worn[id] ?? 0));
+        n += Math.ceil(loose / stack);
+        if (b.items[id]?.tool && loose % stack === 1) belt = true;
+      }
+      return belt ? n - 1 : n;
+    };
+    const item = ${JSON.stringify(ground.item)};
+    return places({ ...p.bag, [item]: (p.bag[item] ?? 0) + 1 }) - places(p.bag);
   })()`);
   const after = before + grows;
   const picked = await page.eval<{ ok: boolean; error?: string }>(`(() => {
@@ -304,7 +312,24 @@ async function run(page: Page, base: string, viewport: Viewport): Promise<void> 
   // 230 against 170 ms a tile: a frame can only add to a step, so the heavy walk stays the slower by a margin
   if (heavy < 200 || heavy < light * 1.15) throw new Error(`a heavy tile took ${heavy.toFixed(0)} ms against ${light.toFixed(0)} ms light: the load does not slow the walk`);
 
-  // 5. the same save at the 3D door: the bag button reads the same
+  // 5. put a stone down: it leaves the weight, lies on the tile, the prompt offers it back, and a pick-up returns it
+  const put = await page.eval<{ ok: boolean; error?: string; before: number; after: number; pile: number }>(`(async () => {
+    const s = window.__game.session, before = window.__load.weight();
+    const r = await s.act({ t: 'drop', item: 'core/stone', qty: 1, at: s.pos });
+    return { ok: r.ok, error: r.error, before, after: window.__load.weight(), pile: (s.state.player.ground ?? {})[s.pos.join(',')]?.['core/stone'] ?? 0 };
+  })()`);
+  if (!put.ok || put.after !== put.before - 3 || put.pile !== 1) throw new Error(`putting a stone down: ${JSON.stringify(put)}`);
+  await page.waitFor(`/Pick up/.test(document.querySelector('.prompt:not([hidden])')?.textContent ?? '')`, 'the prompt to offer the stone back');
+  await page.eval(`window.__game.ui.pickUp('core/stone')`);
+  await page.waitFor(`window.__load.weight() === ${put.before} && !(window.__game.session.state.player.ground ?? {})[window.__game.session.pos.join(',')]`, 'the stone back in the bag');
+  log('put a stone down and picked it up again');
+  // a full bag says so with a small alert by the bag button that blinks for a few seconds, then goes
+  await page.eval(`window.__game.ui.toast('Your bag is full.', 'bad')`);
+  await page.waitFor(`!!document.querySelector('.hud [data-full]')`, 'the full-bag alert');
+  await page.waitFor(`!document.querySelector('.hud [data-full]')`, 'the full-bag alert to go', 8000);
+  log('a full bag blinks "Full" by the bag button');
+
+  // 6. the same save at the 3D door: the bag button reads the same
   if (!viewport.mobile && existsSync(join(ROOTS['/play3d/']!, 'index.html'))) {
     await page.eval('window.__game.session.save()');
     const want = c.count;

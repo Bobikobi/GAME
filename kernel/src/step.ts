@@ -40,6 +40,7 @@ import {
   bagUsed,
   placeRoom,
   placesWith,
+  groundKey,
   burnsAsWood,
   campBuilt,
   effectValue,
@@ -95,12 +96,17 @@ export type Action =
   | { t: 'spend'; attr: Attribute }
   | { t: 'wear'; item: string; slot?: WearSlot }
   | { t: 'unwear'; slot: WearSlot; look?: boolean }
+  /** put down `qty` of a thing on the tile the player stands on (`at`); it stays there for a later pick-up */
+  | { t: 'drop'; item: string; qty: number; at: Tile }
+  /** pick a dropped thing up again from the tile the player stands on */
+  | { t: 'pickup'; item: string; at: Tile }
   | { t: 'move'; at: Tile };
 
 export type GameEvent =
   | { e: 'gain'; item: string; qty: number }
   | { e: 'spend'; item: string; qty: number }
   | { e: 'bag_full'; item: string; qty: number }
+  | { e: 'drop'; item: string; qty: number; at: Tile }
   | { e: 'gold'; delta: number }
   | { e: 'level'; profession: string; level: number }
   | { e: 'discover'; item: string }
@@ -414,6 +420,10 @@ function act(ctx: Ctx, a: Action): void {
       return wear(ctx, a.item, a.slot);
     case 'unwear':
       return unwear(ctx, a.slot, a.look === true);
+    case 'drop':
+      return drop(ctx, a.item, a.qty);
+    case 'pickup':
+      return pickUp(ctx, a.item);
     default:
       refuse('Unknown action.');
   }
@@ -1521,6 +1531,37 @@ function wearTool(ctx: Ctx, itemId: string): void {
   } else {
     s.player.wear[itemId] = worn;
   }
+}
+
+/** Put down what is not worn on the player's tile (DECISIONS.md, 2026-10-23): it stays there, saved, until picked up. */
+function drop(ctx: Ctx, itemId: string, qty: number): void {
+  const p = ctx.s.player;
+  checkQty(qty);
+  let worn = 0;
+  for (const layer of [p.worn, p.looks]) for (const id of Object.values(layer)) if (id === itemId) worn++;
+  if ((p.bag[itemId] ?? 0) - worn < qty) refuse(worn > 0 ? 'Take it off before you put it down.' : 'You do not have enough.');
+  removeItem(ctx, itemId, qty, true);
+  const at: Tile = [p.at[0], p.at[1]];
+  const ground = (p.ground ??= {});
+  const pile = (ground[groundKey(at)] ??= {});
+  pile[itemId] = (pile[itemId] ?? 0) + qty;
+  ctx.events.push({ e: 'drop', item: itemId, qty, at });
+}
+
+/** Pick up a dropped thing from the tile the player stands on: as much as the places and the weight take. */
+function pickUp(ctx: Ctx, itemId: string): void {
+  const { b, s } = ctx;
+  const p = s.player;
+  const key = groundKey(p.at);
+  const pile = p.ground?.[key];
+  const n = pile?.[itemId] ?? 0;
+  if (!pile || n < 1) refuse('There is nothing like that here.');
+  if (placeRoom(b, s, itemId) < 1) refuse('Your bag is full.');
+  if (weightRoom(b, s, itemId) < 1) refuse(TOO_HEAVY);
+  const kept = addItem(ctx, itemId, n);
+  if (kept < n) pile[itemId] = n - kept;
+  else delete pile[itemId];
+  if (Object.keys(pile).length === 0) delete p.ground![key];
 }
 
 /** Put something into the bag; returns how many fit. */

@@ -70,3 +70,25 @@ export function turnedHeavy(memory: { band?: LoadBand }, band: LoadBand): boolea
   memory.band = band;
   return was !== undefined && was !== 'heavy' && band === 'heavy';
 }
+
+/** A full bag, as the kernel words it on a refusal or a find left behind. */
+export const FULL_BAG = /bag is (too )?full|^Bag full/i;
+
+/**
+ * A full bag says so with a small alert by the bag button that blinks a few times over its first
+ * seconds (the owner's answer of 23.10), besides the one toast. `data-full` is the hook the e2e reads.
+ */
+export function flashFull(hud: HTMLElement): void {
+  const chip = hud.querySelector<HTMLElement>('[data-load]');
+  const host = chip?.closest('button');
+  if (!host) return;
+  host.querySelector('.load-full')?.remove();
+  const alert = document.createElement('span');
+  alert.className = 'load-full';
+  alert.dataset.full = '';
+  alert.textContent = 'Full';
+  host.append(alert);
+  window.setTimeout(() => alert.remove(), FULL_ALERT_MS);
+}
+
+export const FULL_ALERT_MS = 3200;
