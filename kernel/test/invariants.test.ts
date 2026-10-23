@@ -72,14 +72,21 @@ describe('determinism', () => {
   });
 
   test('changes at least one find in 100 digs when the seed changes', () => {
-    const startOne = digState(1);
-    const log = digLog(startOne, 100);
-    const one = replay(bundle, digState(1), log);
-    const two = replay(bundle, digState(2), log);
+    // places no longer grow with might (DECISIONS.md, 2026-10-23): a bag of 400 holds every find of 100 digs
+    const bagBase = bundle.params.bag_base;
+    bundle.params.bag_base = 400;
+    try {
+      const startOne = digState(1);
+      const log = digLog(startOne, 100);
+      const one = replay(bundle, digState(1), log);
+      const two = replay(bundle, digState(2), log);
 
-    expect(one.error).toBeUndefined();
-    expect(two.error).toBeUndefined();
-    expect(findSignature(one.events)).not.toEqual(findSignature(two.events));
+      expect(one.error).toBeUndefined();
+      expect(two.error).toBeUndefined();
+      expect(findSignature(one.events)).not.toEqual(findSignature(two.events));
+    } finally {
+      bundle.params.bag_base = bagBase;
+    }
   });
 });
 

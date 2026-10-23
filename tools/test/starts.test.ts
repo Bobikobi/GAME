@@ -78,7 +78,7 @@ describe('a fixture that breaks each rule', () => {
     j.pocket!.wake = { x: 0, y: 0 };
   });
   edit('races/skeleton.json', (j) => {
-    (j.race!.attributes as unknown as Record<string, number>).stamina = 3;
+    (j.race!.attributes as unknown as Record<string, number>).stamina = 5;
   });
   edit('races/human.json', (j) => {
     j.race!.outfit = [

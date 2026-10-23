@@ -252,6 +252,12 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
   for (let i = 1; i < wornCaps.length; i++) {
     if (wornCaps[i]! < wornCaps[i - 1]!) err(PARAMS_FILE, `params.wear_effect_max_pct.${i}`, 'the cap on a worn effect never falls with the tier');
   }
+  // the three paces run light, steady, heavy, and the hard edge lies beyond the limit (DECISIONS.md, 2026-10-23)
+  if (!(p.load.light_step_ms <= p.walk_step_ms && p.walk_step_ms <= p.load.heavy_step_ms)) {
+    err(PARAMS_FILE, 'params.load', 'the paces run light, steady, heavy: load.light_step_ms <= walk_step_ms <= load.heavy_step_ms');
+  }
+  if (p.load.light_permille >= 1000) err(PARAMS_FILE, 'params.load.light_permille', 'the light pace ends before the limit: under 1000');
+  if (p.load.max_permille <= 1000) err(PARAMS_FILE, 'params.load.max_permille', 'the hard edge lies beyond the limit: over 1000');
 
   for (const [id, it] of Object.entries(b.items)) {
     const where = `items.${id}`;
@@ -411,6 +417,11 @@ function checkWear(b: Bundle): Issue[] {
     } else if (base !== 'garment') {
       err(it.file, `${where}.wear.slot`, `the ${w.slot} takes items of class "garment"`);
     }
+    // a bag on the back gives places, and a frame bag a weight bonus (DECISIONS.md, 2026-10-23)
+    if ((w.places !== undefined || w.load_bonus !== undefined) && (w.slot !== 'back' || w.look)) {
+      err(it.file, `${where}.wear.places`, 'only a work piece worn on the back gives places or a weight bonus');
+    }
+    if (w.load_bonus !== undefined && w.places === undefined) err(it.file, `${where}.wear.load_bonus`, 'a weight bonus comes with a bag: give it "places" too');
     if (w.look) {
       if (w.effects) err(it.file, `${where}.wear.effects`, 'a look shows and counts for nothing: it has no effects (G44)');
       if (w.set) err(it.file, `${where}.wear.set`, 'a look belongs to no set');

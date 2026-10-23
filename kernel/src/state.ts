@@ -3,11 +3,11 @@
  * integers, strings, arrays and plain objects only, so its canonical text is
  * stable and a save is just that text.
  */
-import type { Bundle, Verb } from './bundle';
+import type { BodyEffectName, Bundle, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.14.0';
+export const KERNEL_VERSION = '0.15.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -44,8 +44,8 @@ export function legacyNodeId(id: string): string {
   return now === undefined ? id : now + id.slice(hash);
 }
 
-/** Places on the character (DECISIONS.md, 2026-10-09: the upgrade). An outfit takes the top and the legs. */
-export const WEAR_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'jewelry1', 'jewelry2', 'hand'] as const;
+/** Places on the character (DECISIONS.md, 2026-10-09: the upgrade). An outfit takes the top and the legs; the back holds a bag or a quiver (2026-10-23). */
+export const WEAR_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'jewelry1', 'jewelry2', 'hand', 'back'] as const;
 export type WearSlot = (typeof WEAR_SLOTS)[number];
 
 const SLOTS_OF: Record<string, readonly WearSlot[]> = {
@@ -56,6 +56,7 @@ const SLOTS_OF: Record<string, readonly WearSlot[]> = {
   feet: ['feet'],
   jewelry: ['jewelry1', 'jewelry2'],
   hand: ['hand'],
+  back: ['back'],
 };
 
 /** The places an item's wear slot fits: jewelry takes either of two. */
@@ -325,9 +326,17 @@ export function satietyAt(bundle: Bundle, state: PublicState, tick: number): num
   return Math.max(0, p.satiety - mulDiv(elapsed, bundle.params.satiety_drain_per_min, 60_000));
 }
 
+/**
+ * The places the bag's things take (DECISIONS.md, 2026-10-23): one a unit, except the units worn on
+ * either layer, which are on the body. Their weight still counts (`loadWeight`).
+ */
 export function bagUsed(state: PublicState): number {
+  const p = state.player;
   let n = 0;
-  for (const k of Object.keys(state.player.bag)) n += state.player.bag[k] ?? 0;
+  for (const k of Object.keys(p.bag)) n += p.bag[k] ?? 0;
+  const worn: Record<string, number> = {};
+  for (const layer of [p.worn, p.looks]) for (const id of Object.values(layer)) if (id !== undefined) worn[id] = (worn[id] ?? 0) + 1;
+  for (const id of Object.keys(worn)) n -= Math.min(worn[id]!, p.bag[id] ?? 0);
   return n;
 }
 
@@ -348,10 +357,30 @@ export function senseReach(bundle: Bundle, senses: number): number {
   return 2 + bundle.params.per_point.senses * senses;
 }
 
+/**
+ * The places the player has (DECISIONS.md, 2026-10-23): what is on the back decides, `bag_base` with
+ * nothing there (hands and belt) and the bag's own `wear.places` with a bag, plus the race's
+ * `bag_places` in any bag (never bare hands), plus a camp chest's `bag_bonus`. Might no longer adds
+ * places: it raises the weight limit (`loadLimit`).
+ */
 export function bagCapacity(bundle: Bundle, state: PublicState): number {
-  let cap = bundle.params.bag_base + bundle.params.per_point.might * attrAt(bundle, state, 'might');
+  const places = backBag(bundle, state)?.places;
+  let cap = places === undefined ? bundle.params.bag_base : places + bodyValue(bundle, state, 'bag_places', 0);
   for (const id of state.player.camp) cap += bundle.camps[id]?.bag_bonus ?? 0;
   return cap;
+}
+
+/** The bag on the back's work layer: its places and what it adds to the weight limit, or undefined with none there. */
+export function backBag(bundle: Bundle, state: PublicState): { item: string; places: number; load_bonus: number } | undefined {
+  const id = state.player.worn.back;
+  const w = id === undefined ? undefined : bundle.items[id]?.wear;
+  if (!w || w.look || w.places === undefined) return undefined;
+  return { item: id!, places: w.places, load_bonus: w.load_bonus ?? 0 };
+}
+
+/** One effect of the race's body fact (DECISIONS.md, 2026-10-23), or `fallback` when its body names none. */
+export function bodyValue(bundle: Bundle, state: PublicState, effect: BodyEffectName, fallback: number): number {
+  return bundle.races[state.player.race]?.body?.effects.find((e) => e.effect === effect)?.value ?? fallback;
 }
 
 export function professionLevel(bundle: Bundle, state: PublicState, professionId: string): number {

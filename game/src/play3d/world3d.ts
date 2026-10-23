@@ -24,10 +24,11 @@ import {
   npcTile,
   riddleSlots,
   spotOpen,
+  walkStepMs,
 } from '@game/kernel';
 import { app, type WorldView } from '../app';
 import { sound, type SfxId } from '../audio';
-import { DIG_SPOT_SPRITE, STEP_MS } from '../config';
+import { DIG_SPOT_SPRITE } from '../config';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, pickOf } from '../lore';
 import { emptySlots, slotContent } from '../places';
@@ -898,13 +899,15 @@ export class World3D implements WorldView {
   private walk(s: GameSession, delta: number): void {
     if (this.move) {
       this.move.t += delta;
-      const k = Math.min(1, this.move.t / STEP_MS);
+      // the load sets the pace in this door too (DECISIONS.md, 2026-10-23)
+      const stepMs = walkStepMs(this.b, s.state);
+      const k = Math.min(1, this.move.t / stepMs);
       const [fx, fy] = this.move.from;
       const [tx, ty] = this.move.to;
       this.pos.x = fx + (tx - fx) * k + 0.5;
       this.pos.z = fy + (ty - fy) * k + 0.5;
       if (k < 1) return;
-      const carry = this.move.t - STEP_MS;
+      const carry = this.move.t - stepMs;
       this.move = null;
       this.fell = false;
       // the kernel hears of each new tile; a hazard there may hurt, and a fall ends the walk

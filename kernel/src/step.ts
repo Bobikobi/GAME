@@ -22,6 +22,7 @@ import { bitesAfter, dangerAt, distanceTo, fireArea, harmOf, hazardsOf, isSafe, 
 import { bellTicks, inside as insideExpedition, lastBellAt, visitNight, windowOpen as expeditionWindowOpen } from './expedition';
 import { clamp, idiv, idivUp, mulDiv, mulDivUp } from './num';
 import { appearSlot, cuesOnStep, placedAt, reactionHolds, resourceOf, waitPermille } from './reactions';
+import { foodFillPermille, itemWeight, loadMax, loadWeight, walkStepMs, weightRoom } from './load';
 import { drawBasisPoints } from './rng';
 import {
   ATTRIBUTES,
@@ -219,6 +220,9 @@ export function missOutcome(bundle: Bundle, recipe: RecipeDef): { keep: { item: 
 }
 
 class Refusal extends Error {}
+/** Beyond the most the player carries nothing more is picked up (DECISIONS.md, 2026-10-23). */
+const TOO_HEAVY = 'Too heavy to carry more. Lighten the load first.';
+
 function refuse(message: string): never {
   throw new Refusal(message);
 }
@@ -357,7 +361,19 @@ function tileOf(a: Action, last: Tile): Tile {
   return 'at' in a && Array.isArray(a.at) && a.at.length === 2 && Number.isSafeInteger(a.at[0]) && Number.isSafeInteger(a.at[1]) ? a.at : last;
 }
 
+/**
+ * Every action but a start or a move: no action may leave the bag holding more than its places (DECISIONS.md,
+ * 2026-10-23). A worn thing takes no place, so taking it off, swapping a bag for a smaller one or parting with
+ * the bag on the back is refused while the rest would not fit.
+ */
 function perform(ctx: Ctx, a: Action): void {
+  const { b, s } = ctx;
+  const over = bagUsed(s) > bagCapacity(b, s);
+  act(ctx, a);
+  if (!over && bagUsed(s) > bagCapacity(b, s)) refuse('Your bag has no room for that. Make room first.');
+}
+
+function act(ctx: Ctx, a: Action): void {
   switch (a.t) {
     case 'gather':
       return gather(ctx, a.node, a.grade, a.at);
@@ -506,6 +522,7 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   if (verbLevel(b, s, verb) < r.level) refuse(`Needs ${b.professions[b.verbs[verb]]?.name ?? 'gathering'} level ${r.level}.`);
   const tool = r.tool ? requireTool(ctx, r.tool) : undefined;
   if (bagCapacity(b, s) - bagUsed(s) <= 0) refuse('Your bag is full.');
+  if (weightRoom(b, s, r.output) < 1) refuse(TOO_HEAVY);
 
   const ms = duration(ctx, r.active_ms, speedPermille(ctx, (tool ? 150 * (toolTier(ctx, tool) - 1) : 0) + 10 * effectValue(b, s, 'gather_speed_pct')));
   let qty = gradeYield(r.yield, grade);
@@ -539,6 +556,7 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
   // a find picked up by hand asks for no tool and wears none
   const tool = d.tool ? requireTool(ctx, d.tool) : undefined;
   if (bagCapacity(b, s) - bagUsed(s) <= 0) refuse('Your bag is full.');
+  if (loadWeight(b, s) >= loadMax(b, s)) refuse(TOO_HEAVY);
 
   const ms = duration(ctx, d.active_ms, speedPermille(ctx, (tool ? 150 * (toolTier(ctx, tool) - 1) : 0) + 10 * effectValue(b, s, 'dig_speed_pct')));
   // luck and the rare-find technique raise only rare and legendary chances, inside the power cap
@@ -606,6 +624,13 @@ function craft(ctx: Ctx, recipeId: string, at: Tile): void {
     miss.keep.reduce((n, k) => n + k.qty, 0) - used,
   );
   if (growth > bagCapacity(b, s) - bagUsed(s)) refuse('Your bag is too full for what this makes.');
+  // and the weight: what either outcome adds must stay under the most the player carries
+  const inWeight = c.inputs.reduce((n, i) => n + i.qty * itemWeight(b, i.item), 0);
+  const heavier = Math.max(
+    c.outputs.reduce((n, o) => n + o.qty * itemWeight(b, o.item), 0) - inWeight,
+    miss.keep.reduce((n, k, i) => n + k.qty * itemWeight(b, c.inputs[i]?.item ?? ''), 0) - inWeight,
+  );
+  if (heavier > 0 && loadWeight(b, s) + heavier > loadMax(b, s)) refuse('What this makes would be too heavy to carry.');
 
   const ms = duration(ctx, c.active_ms, speedPermille(ctx, 10 * effectValue(b, s, 'craft_speed_pct', profession)));
   // one draw per try of this recipe (rule R4); a sure craft takes its turn of the counter too
@@ -637,8 +662,13 @@ function eat(ctx: Ctx, itemId: string): void {
   // only a food that does nothing but good can be too much; a bad fruit is eaten full or not
   const hurts = item.food.hurt ?? 0;
   if (hurts === 0 && s.player.satiety >= cap) refuse('You are full.');
-  // a hearty eater gets more from a meal, not from a bandage
-  const fill = mulDiv(item.food.satiety * 1000, 100 + (item.kind === 'food' ? effectValue(b, s, 'meal_fill_pct') : 0), 100);
+  // a hearty eater gets more from a meal, not from a bandage; a body with nothing to digest gets less from food, never from a bandage (2026-10-23)
+  const meal = item.kind === 'food';
+  const fill = mulDiv(
+    mulDiv(item.food.satiety * 1000, 100 + (meal ? effectValue(b, s, 'meal_fill_pct') : 0), 100),
+    meal ? foodFillPermille(b, s) : 1000,
+    1000,
+  );
   removeItem(ctx, itemId, 1);
   s.player.satiety = Math.min(cap, s.player.satiety + fill);
   ctx.events.push({ e: 'eat', item: itemId, satiety: s.player.satiety });
@@ -759,6 +789,7 @@ function buy(ctx: Ctx, npcId: string, itemId: string, qty: number, at: Tile): vo
   const total = offer.price_mg * qty;
   if (s.player.gold < total) refuse('You do not have enough gold.');
   if (bagCapacity(b, s) - bagUsed(s) < qty) refuse('Your bag is too full.');
+  if (weightRoom(b, s, itemId) < qty) refuse('That would be too heavy to carry.');
   s.player.gold -= total;
   s.ledger.burned += total;
   ctx.events.push({ e: 'gold', delta: -total });
@@ -1211,7 +1242,7 @@ function moveTo(ctx: Ctx, at: Tile, validateTravel: boolean): void {
   const { b, s } = ctx;
   if (!Array.isArray(at) || at.length !== 2 || !Number.isSafeInteger(at[0]) || !Number.isSafeInteger(at[1])) refuse('Where are you?');
   if (!walkableFor(b)(at[0], at[1], s.player)) refuse('You cannot stand there.');
-  const reach = 2 + idiv(ctx.tick - s.player.movedAt, b.params.walk_step_ms);
+  const reach = 2 + idiv(ctx.tick - s.player.movedAt, walkStepMs(b, s));
   if (Math.max(Math.abs(at[0] - s.player.at[0]), Math.abs(at[1] - s.player.at[1])) > reach) refuse('That is further than a walk goes in that time.');
   arrive(ctx, at);
 }
@@ -1222,7 +1253,8 @@ function checkTravel(ctx: Ctx, target: Tile): void {
   const from = s.player.at;
   if (!Array.isArray(target) || target.length !== 2 || !target.every(Number.isSafeInteger)) refuse('Where are you?');
   const elapsed = Math.max(0, tick - s.player.movedAt);
-  const reach = Math.min(2 + idiv(elapsed, b.params.walk_step_ms), b.params.move_reach_max);
+  // the pace the load allows (DECISIONS.md, 2026-10-23): a heavy player cannot report a light walk
+  const reach = Math.min(2 + idiv(elapsed, walkStepMs(b, s)), b.params.move_reach_max);
   const dx = target[0] - from[0];
   const dy = target[1] - from[1];
   if (Math.abs(dx) > reach || Math.abs(dy) > reach) refuse('That is further than a walk goes in that time.');
@@ -1488,7 +1520,7 @@ function wearTool(ctx: Ctx, itemId: string): void {
 /** Put something into the bag; returns how many fit. */
 function addItem(ctx: Ctx, itemId: string, qty: number): number {
   const { b, s } = ctx;
-  const room = Math.max(0, bagCapacity(b, s) - bagUsed(s));
+  const room = Math.min(Math.max(0, bagCapacity(b, s) - bagUsed(s)), weightRoom(b, s, itemId));
   const kept = Math.min(qty, room);
   if (kept > 0) {
     s.player.bag[itemId] = (s.player.bag[itemId] ?? 0) + kept;

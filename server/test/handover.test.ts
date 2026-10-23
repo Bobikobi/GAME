@@ -132,11 +132,12 @@ describe('the opening handover (NEXT 18 d)', () => {
 
   test('a walk faster than the movement time allows is refused, though the phone accepted it', async () => {
     const { upload } = await captured();
-    // every walked tile claimed a few ms after the one before: the kernel takes it, the movement credit does not
+    // every walked tile claimed a millisecond after the one before: the kernel takes it, the movement credit does not.
+    // The gap is the phone's own, whatever pace its load walks (DECISIONS.md, 2026-10-23: the light pace is quicker).
     let shift = 0;
     const log = upload.log.map((entry, index) => {
       const previous = upload.log[index - 1];
-      if (entry.a.t === 'move' && previous?.a.t === 'move') shift += bundle.params.walk_step_ms - 5;
+      if (entry.a.t === 'move' && previous?.a.t === 'move') shift += entry.tick - previous.tick - 1;
       return { a: entry.a, tick: entry.tick - shift };
     });
     const state = phonePlays(log);

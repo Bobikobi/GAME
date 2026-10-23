@@ -13,6 +13,8 @@ import {
   type PublicState,
   type Rect,
   type Tile,
+  bagCapacity,
+  bagUsed,
   hourOf,
   professionLevel,
   salePrice,
@@ -175,10 +177,16 @@ export class Player {
     return this.act({ t: 'visit', slot: slotId, at });
   }
 
-  /** Whether a dig spot can be worked at all: its tool in the bag, and the level it asks for. */
+  /** Places left in the bag (DECISIONS.md, 2026-10-23: no bag holds 12). */
+  freePlaces(): number {
+    return bagCapacity(this.bundle, this.state) - bagUsed(this.state);
+  }
+
+  /** Whether a dig spot can be worked at all: its tool in the bag, the level it asks for, and a place for the find. */
   canDig(spot: string): boolean {
     const treasure = this.bundle.treasures[this.bundle.instances[spot]?.source ?? ''];
     if (treasure === undefined) return false;
+    if (this.freePlaces() < 1) return false;
     if (treasure.tool !== undefined) {
       const held = Object.keys(this.state.player.bag).some(
         (item) => this.bundle.items[item]?.tool?.kind === treasure.tool && (this.state.player.bag[item] ?? 0) > 0,

@@ -21,6 +21,7 @@ import {
   type WearSlot,
 } from '@game/kernel';
 import { app } from '../app';
+import { loadChipFor } from './load';
 import { sound } from '../audio';
 import { GAME_TITLE, REPO_URL, REVIEW_KEY } from '../config';
 import {
@@ -98,6 +99,7 @@ const SLOT_LABEL: Record<WearSlot, string> = {
   jewelry1: 'Jewel 1',
   jewelry2: 'Jewel 2',
   hand: 'Hand',
+  back: 'Back',
 };
 
 /** A set id is its creator's path and a name; the card reads the name alone. */
@@ -271,7 +273,7 @@ export function openBag(ui: UI): void {
             h('button', { class: `kit-filter ${filter === label ? 'on' : ''}`.trim(), type: 'button', onclick: () => ((filter = label), render()) }, label),
           ),
         ),
-        h('span', { class: 'kit-cap' }, `${used} / ${cap}`),
+        h('span', { class: 'kit-cap' }, loadChipFor(b, s.state)),
       ),
       ids.length === 0
         ? h('p', { class: 'kit-hint' }, 'Your bag is empty. Gather something!')

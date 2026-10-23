@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { ATTRIBUTES, WEAR_SLOTS, appearSlots, appears, step, walkDistance, type Action, type Bundle, type GameEvent, type State, type Tile } from '@game/kernel';
+import { ATTRIBUTES, WEAR_SLOTS, appearSlots, appears, step, walkDistance, walkStepMs, type Action, type Bundle, type GameEvent, type State, type Tile } from '@game/kernel';
 
 import { goldRowsOf, type BookedStep, type LedgerRow } from './ledger';
 import { publicState, statePatch, type MergePatch, type PublicState } from './patch';
@@ -286,7 +286,9 @@ export function spendWalk(
   movementAt: number,
   movementCreditMs: number,
 ): { at: number; creditMs: number } | undefined {
-  const { walk_step_ms: stepMs, move_reach_max: maxReach } = bundle.params;
+  // the pace the load allows (DECISIONS.md, 2026-10-23): a heavy player cannot report a light walk
+  const stepMs = walkStepMs(bundle, state);
+  const maxReach = bundle.params.move_reach_max;
   const elapsedSinceMove = Math.max(0, tick - state.player.movedAt);
   const reach = Math.min(2 + Math.floor(elapsedSinceMove / stepMs), maxReach);
   const distance = walkDistance(bundle, state, from, target, reach);

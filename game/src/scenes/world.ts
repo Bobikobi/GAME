@@ -40,11 +40,12 @@ import {
   riddleSlots,
   sees,
   spotOpen,
+  walkStepMs,
   windowOpen,
 } from '@game/kernel';
 import { app } from '../app';
 import { sound, type SfxId, type SongId } from '../audio';
-import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T } from '../config';
+import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, T } from '../config';
 import { FAR_BELL, SMOKE_PUFFS, farBellDue, nearestChimney, smokeAlpha, smokeAt } from '../hookbridge';
 import { HOLE, LIGHT_POOL, dappleAt, frameAt, nightAt, shadeAt, tableOf, washAt } from '../light';
 import { STONE_GLIDE_MS, STONE_STEPS, type StoneView, stoneView } from '../stone';
@@ -2172,7 +2173,9 @@ export class WorldScene extends Phaser.Scene {
     if (this.falling) return;
     if (this.move) {
       this.move.t += delta;
-      const k = Math.min(1, this.move.t / STEP_MS);
+      // the load sets the pace (DECISIONS.md, 2026-10-23): STEP_MS is the steady one, the kernel says which applies
+      const stepMs = walkStepMs(this.b, s.state);
+      const k = Math.min(1, this.move.t / stepMs);
       const [fx, fy] = this.move.from;
       const [tx, ty] = this.move.to;
       this.player.setPosition(Math.round((fx + (tx - fx) * k) * T + T / 2), Math.round((fy + (ty - fy) * k + 1) * T));
@@ -2180,7 +2183,7 @@ export class WorldScene extends Phaser.Scene {
       this.playerShadow?.setPosition(this.player.x, this.player.y + 2);
       this.faceFrame(strideFrame(k, this.steps, this.b.sprites[this.playerFrame(s.facing).key]?.frames ?? 1));
       if (k < 1) return;
-      const carry = this.move.t - STEP_MS;
+      const carry = this.move.t - stepMs;
       this.move = null;
       // the kernel hears of each new tile; a hazard there may hurt, and a fall ends the walk
       landStep(s, [tx, ty]);

@@ -52,6 +52,7 @@ import { feedback } from './feedback';
 import { type Minigame, pick, snap, strike, timing } from './games';
 import { BEAT, buzz } from './haptics';
 import { openLevelUp } from './levelup';
+import { HEAVY_LINE, loadChip, loadView, paintLoad, turnedHeavy } from './load';
 import {
   openBag,
   openCraft,
@@ -96,6 +97,8 @@ interface HudParts {
   darkText: Text;
   level: HTMLElement;
   bag: HTMLButtonElement;
+  /** the load on the bag button: "14 / 24" and one coloured word (DECISIONS.md, 2026-10-23) */
+  load: HTMLElement;
   log: HTMLButtonElement;
 }
 
@@ -125,6 +128,8 @@ export class UI {
   private warnedNight: number | undefined;
   /** the burns (fire and lit tick) whose running-low warning was shown, so it opens once per burn */
   private warnedFires = new Set<string>();
+  /** the pace at the last look, so turning heavy is said once */
+  private loadSeen: { band?: 'light' | 'steady' | 'heavy' } = {};
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -283,6 +288,9 @@ export class UI {
     setTitle(p.level, points > 0 ? 'A skill point to spend: open the journal' : 'Character level');
     setText(p.level, `Lv ${characterLevel(b, st)}${points > 0 ? ' +' : ''}`);
     p.bag.hidden = !unlocked.bag;
+    const load = loadView(b, st);
+    paintLoad(p.load, load);
+    if (turnedHeavy(this.loadSeen, load.band)) this.toast(HEAVY_LINE, 'info');
     p.log.hidden = !unlocked.log;
     this.renderTracker(s);
     this.renderHudMap(s);
@@ -332,7 +340,8 @@ export class UI {
     const darkText = document.createTextNode('');
     const dark = h('span', { class: 'chip dark', title: 'Dark falls: be in town or by a burning camp', hidden: true }, h('i', { class: 'moon' }), darkText);
     const level = h('span', { class: 'chip', title: 'Character level' });
-    const bag = button('Bag', () => this.panel(() => openBag(this)), 'small');
+    const load = loadChip();
+    const bag = button([h('span', { class: 'load-label' }, 'Bag'), load], () => this.panel(() => openBag(this)), 'small');
     const log = button('Journal', () => this.panel(() => openJournal(this)), 'small');
     const feedbackBtn = button('Feedback', () => openFeedback(this), 'small');
     this.hud.replaceChildren(
@@ -352,7 +361,7 @@ export class UI {
       ),
       h('div', { class: 'hud-right' }, feedbackBtn, bag, log, button('Menu', () => this.panel(() => openMenu(this)), 'small')),
     );
-    return { meter, bar, num, goldText, clockChip, clockIcon, clockText, dark, darkText, level, bag, log };
+    return { meter, bar, num, goldText, clockChip, clockIcon, clockText, dark, darkText, level, bag, load, log };
   }
 
   /**

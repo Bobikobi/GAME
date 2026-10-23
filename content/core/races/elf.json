@@ -39,6 +39,16 @@
         "qty": 1
       }
     ],
+    "body": {
+      "name": "Light frame",
+      "about": "Its load counts four fifths for pace, so it stays quick a little longer. Its thin arms already pay: the smallest weight limit.",
+      "effects": [
+        {
+          "effect": "pace_load_permille",
+          "value": 800
+        }
+      ]
+    },
     "sprite": "core/base-kit:chars/forager_down",
     "sprite_alt": "core/base-kit:chars/forager_w_down"
   }

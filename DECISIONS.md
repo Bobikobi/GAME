@@ -2559,3 +2559,30 @@ Why: the two afternoon fillers make one continuous chain, and Maru's stew gets a
 Cost: the vigil is offered around 17:00-18:00, after the stew, not in the afternoon as the 19.10 order had it.
 The owner, 22.10: yes to the new order, as built on the opening-filler branch. Supersedes the long night's part of the 19.10 entry on the opening's order.
 **Retry when:** a person playing the day has too little time between the stew and dark to build and light a fire, or the stew's chain stalls a race. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Weight and the three paces: places say how many, weight says how fast
+
+**Every item names a whole weight** (0 to 20; most things 1, a log, a stone or the keystone 3, a herb, a sun leaf or a coin 0), and the schema refuses an item without one. **The weight limit is 30 and 10 for each point of might** (`load.base`, `per_point.might`), read as the grade leaves might. **Three walking paces:** light up to three fifths of the limit at 170 ms a tile, steady up to the limit at 190 ms (the old `walk_step_ms`, so every walk the world was measured at is the steady one), heavy above it at 230 ms. The server credits a walk at the pace the load allows, so a heavy player cannot report a light walk. **Nothing more is picked up past one and a half times the limit** ("Too heavy to carry more. Lighten the load first."). **A heavy load in a fight brings breath back at half speed** (`load.heavy_breath_permille` 500); no fight reads it yet, so the rule is fixed in the kernel (`breathRefillPermille`) for the combat wave. Places and weight are two numbers with two jobs: might no longer adds places, it raises the limit. A worn thing takes no place but its weight still counts.
+The owner, 23.10 (asked one by one): every item has a weight; light-load limit 30 + 10 per might point; three paces, light, steady, heavy, at 170 / 190 / 230 ms a tile as proposed; a heavy load in a fight refills breath at half speed.
+Defaults taken from the recommendation, not asked: the bands at 60 and 100 percent of the limit and the hard edge at 150 percent; worn things take no place but weigh; the item weights above.
+**Retry when:** a playtest finds the light pace never reached after the opening, or the heavy pace reached in the opening itself; or the combat wave reads breath and half speed proves too soft or too hard. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Bags on the back: 12, a satchel 24, a frame pack 36
+
+**The back is one gear slot, holding a bag or a quiver** (`back` joins the worn slots in the schema and the kernel); an archer pays in bag space. **Places come from what is on the back:** nothing there gives 12 (`bag_base`), a satchel 24, a frame pack 36, and the frame pack also adds 10 to the weight limit (`wear.places`, `wear.load_bonus`). A bag comes off only while the rest still fits. **The first bag, the satchel, is made at the valley workshop** (two reed cords and a woven mat, workshop level 3) **and Pell sells it too.** The frame pack is in the content with no source yet: it is the city's.
+The owner, 23.10: no bag 12 places, satchel 24, frame pack 36 (frame pack also +10 light-load limit); the back holds a bag or a quiver; the satchel is made at the valley workshop and Pell also sells it.
+Defaults taken, not asked: the satchel's recipe numbers, and both bags drawn with the basket sprite until their own art lands.
+**Retry when:** the opening's first outing has no room for its finds without a sale at Pell's first (the simulated player now sells one or two things before the ruins), or the satchel comes too late in a playtest. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ One body fact per race, and the skeleton's profile
+
+**The skeleton is stamina 4, might 1** (senses 1, luck 1, agility 0, spirit 0; seven points as every race). **Each race has one body fact, equal in size** (`body` on the race, effects from a closed list, each once): the skeleton is *mended, not fed* - a rest by a fire mends double, food fills half (a bandage or a first-aid kit is not food); the elf has a *light frame* - its load counts four fifths for pace; the human *packs well* - two more places in any bag, never in bare hands. The title's race card shows the body fact.
+The owner, 23.10: skeleton stamina 4, might 1, total unchanged, because every trait must also pay off; one body fact per race as above. The human's +4 was sized for bags of 20/40/60; on bags of 12/24/36 it keeps its share as +2 (stated to the owner, follows the recommendation).
+Built so far: the food half, the elf's pace and the human's places play now. The double mend waits for a rest to exist (G32): the kernel holds it (`restMendPermille`, 2000 for the skeleton) for the first rest or sleep by a fire to read.
+**Retry when:** a rest by a fire lands and the double mend has to be wired in, or a playtest shows one race's fact plainly stronger. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The load on screen: "14 / 24" and one coloured word
+
+**The bag button and the head of the bag show the places as "14 / 24" and the pace as one coloured word, Light, Steady or Heavy**; the word, not the colour alone, carries the meaning. The weight is a number only on demand (a hover on a desktop), never a bar to manage. Turning heavy says one line once, "Heavy going.", and the walk itself slows. Both doors show it: the 2D game and /play3d/. Desktop first; on a phone the button keeps the count and the word and gives up its label.
+The owner, 23.10: stated to him with the recommendation, not asked - the HUD shows load as 14 / 24 plus one coloured word, desktop first.
+**Retry when:** a playtest misses the turn to heavy, or the phone bar runs out of room. Model: claude-opus-5-5.
