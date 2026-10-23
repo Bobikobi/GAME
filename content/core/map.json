@@ -1478,7 +1478,7 @@
       },
       {
         "sprite": "core/base-kit:props/sign",
-        "x": 11,
+        "x": 12,
         "y": 16,
         "w": 1,
         "h": 1,
@@ -2982,6 +2982,22 @@
         "h": 1,
         "solid": true,
         "id": "core/cutting-stone"
+      },
+      {
+        "sprite": "core/base-kit:props/rock_mossy",
+        "x": 11,
+        "y": 18,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/rock_mossy",
+        "x": 9,
+        "y": 17,
+        "w": 1,
+        "h": 1,
+        "solid": true
       },
       {
         "sprite": "core/base-kit:props/rock_mossy",
