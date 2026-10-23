@@ -1892,6 +1892,7 @@ The owner, 19.10, after the opening's second review ([docs/design/OPENING_REVIEW
 Built (section 9.5 there): `a-coin-for-maru` and `the-long-night` require `three-fruits`, as the recut B entry of 10.10 meant ("Maru's coin follows by the trowel's road"); `the-tangle` and `the-south-bank` require `the-night-arch`. Each neighbour offers one task in town, the vigil is offered in the afternoon, and the arch lands alone at dark with nothing that hunts beside it. `pnpm quests`: at most 3 tasks open at once for the digger and the explorer (were 5), 4 for the forager (were 6), no new pair of one type. The long night pays one bandage beside its recipe.
 The words: ten lines that stated the past (nine in content, one the title screen's fallback) now say what is there or name Maru as the speaker (STORY S1, S2), three that said what the game does not do are true (the lanterns' places, the berries' hours, Pell's one price), and Pell repeats the three beliefs about the bells as rumours after the threshold (STORY section 3).
 Not built: the review's "one herb as a find" (R4). The check refuses a `find` of an item that grows in more than one place (G2), and a done line in the first 15 s would be a second box. The review offered it untried; the quest designer now tries every fix with the check before offering it.
+**Superseded in part (22.10):** `the-long-night` now requires `something-warm`, not `three-fruits`, so the vigil is offered after Maru's stew, around 17:00-18:00, not in the afternoon (the entry on the long night after the stew below). `a-coin-for-maru` still requires `three-fruits`.
 **Retry when:** a person playing the reordered day still waits over 90 s before dusk (then waiting by a fire, section 9.4), or the arch's minutes fill with the night's other tasks. Model: claude-opus-5-5.
 
 ## 2026-10-20 ✅ A fire of one's own, client and content half as built (NEXT 21 b)
@@ -2551,3 +2552,10 @@ What the five rounds showed:
 - **pebbles and rock_small wait.** The Codex credits ran out during that round, so the two keep today's 16 px sprites until a draw passes the eye.
 The owner, 23.10: picked the 35 in the gallery by eye; pebbles and rock_small keep their sprites for now.
 **Retry when:** a picked sprite reads wrong in the live game at phone size beside its 16 px neighbours (then it is drawn again through its spec, with the next round's text written back), or Codex has credits again (then pebbles and rock_small go down the round that drew the other eight). Model: claude-opus-5-5.
+## 2026-10-22 ✅ The long night follows Maru's stew
+
+`core/the-long-night` requires `core/something-warm` instead of `core/three-fruits`. The phone opening's chain is now one line: `into-town`, then `herbs-for-pell` and `three-fruits`, then Pell's `a-whole-one`, then Maru's `something-warm`, then `the-long-night`. `a-coin-for-maru` keeps `three-fruits`.
+Why: the two afternoon fillers make one continuous chain, and Maru's stew gets a real pay: his done line ("a fire of your own?") opens the night task, and his two dry branches feed that fire.
+Cost: the vigil is offered around 17:00-18:00, after the stew, not in the afternoon as the 19.10 order had it.
+The owner, 22.10: yes to the new order, as built on the opening-filler branch. Supersedes the long night's part of the 19.10 entry on the opening's order.
+**Retry when:** a person playing the day has too little time between the stew and dark to build and light a fire, or the stew's chain stalls a race. Model: claude-opus-5-5.
