@@ -259,7 +259,7 @@ export function openBag(ui: UI): void {
         h('span', { class: 'count' }, String(n)),
       );
     });
-    const used = bagUsed(s.state);
+    const used = bagUsed(b, s.state);
     return h(
       'section',
       { class: 'kit-bag' },
@@ -717,7 +717,7 @@ export function openShop(ui: UI, npcId: string): void {
 
   const render = () => {
     const st = s.state;
-    const room = bagCapacity(b, st) - bagUsed(st);
+    const room = bagCapacity(b, st) - bagUsed(b, st);
     const rows =
       current === 'buy'
         ? shop.sells.map((o) => {

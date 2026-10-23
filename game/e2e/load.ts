@@ -232,6 +232,9 @@ async function run(page: Page, base: string, viewport: Viewport): Promise<void> 
   await page.eval(`window.__load.fillTo(${target})`);
   c = await chipReads(page, 'Light');
   const before = Number(c.count.split('/')[0]);
+  // the first of a tool hangs at the belt and takes no place; a spare takes one
+  const spare = await page.eval<boolean>(`(window.__game.session.state.player.bag[${JSON.stringify(ground.item)}] ?? 0) > 0`);
+  const after = before + (spare ? 1 : 0);
   const picked = await page.eval<{ ok: boolean; error?: string }>(`(() => {
     const s = window.__game.session;
     const r = s.act({ t: 'dig', spot: ${JSON.stringify(ground.spot)}, grade: 3, at: ${JSON.stringify(ground.at)} });
@@ -239,7 +242,7 @@ async function run(page: Page, base: string, viewport: Viewport): Promise<void> 
     return r;
   })()`);
   if (!picked.ok) throw new Error(`picking up ${ground.item} was refused: ${picked.error}`);
-  c = await chipReads(page, 'Steady', new RegExp(`^${before + 1} / 12$`));
+  c = await chipReads(page, 'Steady', new RegExp(`^${after} / 12$`));
   log(`picked up ${ground.item} at ${target} weight: "${c.count} ${c.word}"`);
   await page.waitFor('!window.__game.session.busy', 'the pick-up to end', 20_000);
 
@@ -250,7 +253,7 @@ async function run(page: Page, base: string, viewport: Viewport): Promise<void> 
     return s.act({ t: 'wear', item: 'core/satchel' });
   })()`);
   if (!worn.ok) throw new Error(`the satchel did not go on: ${worn.error}`);
-  c = await chipReads(page, 'Steady', new RegExp(`^${before + 1} / ${satchelPlaces}$`));
+  c = await chipReads(page, 'Steady', new RegExp(`^${after} / ${satchelPlaces}$`));
   log(`a satchel on the back: "${c.count} ${c.word}"`);
 
   // 4. over the limit: Heavy, said once, and the walk slows

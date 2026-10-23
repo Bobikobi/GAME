@@ -142,7 +142,7 @@ function checkedStep(state: State, action: Action, tick: number): State {
   for (const count of Object.values(result.state.player.bag)) {
     invariant(Number.isInteger(count) && count > 0, 'bag contains a non-positive or fractional stack');
   }
-  invariant(bagUsed(result.state) <= bagCapacity(bundle, result.state), 'bag exceeds capacity');
+  invariant(bagUsed(bundle, result.state) <= bagCapacity(bundle, result.state), 'bag exceeds capacity');
   // a worn item stays in the bag: never more worn units than the bag holds
   for (const layer of [result.state.player.worn, result.state.player.looks]) {
     const worn: Record<string, number> = {};

@@ -168,7 +168,7 @@ describe('the edge of the load', () => {
     const rest = loadMax(b, s) - loadWeight(b, s);
     s.player.bag['x/anvil'] = Math.floor(rest / 20);
     s.player.bag['x/pebble'] = (rest % 20) - 1;
-    expect(bagUsed(s)).toBeLessThan(bagCapacity(b, s));
+    expect(bagUsed(b, s)).toBeLessThan(bagCapacity(b, s));
     expect(weightRoom(b, s, 'core/stone')).toBe(0);
     expect(weightRoom(b, s, 'x/pebble')).toBe(1);
     expect(weightRoom(b, s, 'core/herb')).toBe(Number.MAX_SAFE_INTEGER);
@@ -194,9 +194,18 @@ describe('bags', () => {
   test('the bag on the back takes no place of its own', () => {
     const s = started('core/elf');
     s.player.bag = { 'core/satchel': 1, 'x/pebble': 3 };
-    expect(bagUsed(s)).toBe(4);
+    expect(bagUsed(b, s)).toBe(4);
     s.player.worn.back = 'core/satchel';
-    expect(bagUsed(s)).toBe(3);
+    expect(bagUsed(b, s)).toBe(3);
+  });
+
+  test('one of each tool hangs at the belt and takes no place; a spare takes one, and both weigh', () => {
+    const s = started('core/elf');
+    s.player.bag = { 'core/axe': 1, 'core/trowel': 1, 'x/pebble': 2 };
+    expect(bagUsed(b, s)).toBe(2);
+    s.player.bag['core/axe'] = 2;
+    expect(bagUsed(b, s)).toBe(3);
+    expect(loadWeight(b, s)).toBe(2 * itemWeight(b, 'core/axe') + itemWeight(b, 'core/trowel') + 2);
   });
 
   test('a satchel goes on the back, and comes off only when the rest still fits', () => {

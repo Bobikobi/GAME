@@ -327,16 +327,20 @@ export function satietyAt(bundle: Bundle, state: PublicState, tick: number): num
 }
 
 /**
- * The places the bag's things take (DECISIONS.md, 2026-10-23): one a unit, except the units worn on
- * either layer, which are on the body. Their weight still counts (`loadWeight`).
+ * The places the bag's things take (DECISIONS.md, 2026-10-23): one a unit, except what is on the body -
+ * the units worn on either layer, and one of each tool, which hangs at the belt. A spare tool takes a
+ * place. Their weight still counts (`loadWeight`).
  */
-export function bagUsed(state: PublicState): number {
+export function bagUsed(bundle: Bundle, state: PublicState): number {
   const p = state.player;
   let n = 0;
   for (const k of Object.keys(p.bag)) n += p.bag[k] ?? 0;
   const worn: Record<string, number> = {};
   for (const layer of [p.worn, p.looks]) for (const id of Object.values(layer)) if (id !== undefined) worn[id] = (worn[id] ?? 0) + 1;
-  for (const id of Object.keys(worn)) n -= Math.min(worn[id]!, p.bag[id] ?? 0);
+  for (const id of Object.keys(p.bag)) {
+    const onBody = Math.max(worn[id] ?? 0, bundle.items[id]?.tool !== undefined ? 1 : 0);
+    n -= Math.min(onBody, p.bag[id] ?? 0);
+  }
   return n;
 }
 

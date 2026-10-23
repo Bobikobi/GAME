@@ -179,7 +179,7 @@ export class Player {
 
   /** Places left in the bag (DECISIONS.md, 2026-10-23: no bag holds 12). */
   freePlaces(): number {
-    return bagCapacity(this.bundle, this.state) - bagUsed(this.state);
+    return bagCapacity(this.bundle, this.state) - bagUsed(this.bundle, this.state);
   }
 
   /** Whether a dig spot can be worked at all: its tool in the bag, the level it asks for, and a place for the find. */

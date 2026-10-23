@@ -29,7 +29,7 @@ export interface LoadView {
 }
 
 export function loadView(b: Bundle, s: PublicState): LoadView {
-  return { used: bagUsed(s), places: bagCapacity(b, s), band: loadBand(b, s), weight: loadWeight(b, s), limit: loadLimit(b, s) };
+  return { used: bagUsed(b, s), places: bagCapacity(b, s), band: loadBand(b, s), weight: loadWeight(b, s), limit: loadLimit(b, s) };
 }
 
 /** The number on demand: the weight against the limit, and what the pace means. */
