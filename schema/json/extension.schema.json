@@ -14096,6 +14096,306 @@
                 "type": "string"
               }
             },
+            "heights": {
+              "minItems": 8,
+              "description": "The level of every tile, one row of digits per ground row (0 the lowest, 9 the highest; G68). Read by the map check only: the kernel and the clients do not walk or draw levels yet.",
+              "type": "array",
+              "items": {
+                "pattern": "^[0-9]+$",
+                "type": "string"
+              }
+            },
+            "plan": {
+              "additionalProperties": false,
+              "type": "object",
+              "properties": {
+                "regions": {
+                  "maxItems": 64,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "purpose",
+                      "cells",
+                      "opens_by"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                        "type": "string"
+                      },
+                      "purpose": {
+                        "anyOf": [
+                          {
+                            "const": "stop",
+                            "type": "string"
+                          },
+                          {
+                            "const": "passage",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "cells": {
+                        "minItems": 1,
+                        "maxItems": 8,
+                        "description": "The rectangles the region covers: x, y, width, height.",
+                        "type": "array",
+                        "items": {
+                          "type": "array",
+                          "items": [
+                            {
+                              "minimum": 0,
+                              "maximum": 1023,
+                              "type": "integer"
+                            },
+                            {
+                              "minimum": 0,
+                              "maximum": 1023,
+                              "type": "integer"
+                            },
+                            {
+                              "minimum": 1,
+                              "maximum": 1024,
+                              "type": "integer"
+                            },
+                            {
+                              "minimum": 1,
+                              "maximum": 1024,
+                              "type": "integer"
+                            }
+                          ],
+                          "additionalItems": false,
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      },
+                      "height": {
+                        "minimum": 0,
+                        "maximum": 9,
+                        "description": "The level the region stands on, read against `heights`.",
+                        "type": "integer"
+                      },
+                      "tags": {
+                        "maxItems": 8,
+                        "uniqueItems": true,
+                        "type": "array",
+                        "items": {
+                          "pattern": "^[a-z0-9:_-]+$",
+                          "maxLength": 40,
+                          "type": "string"
+                        }
+                      },
+                      "cover": {
+                        "description": "The scatter line: per mille of the walkable tiles each small prop covers.",
+                        "type": "object",
+                        "patternProperties": {
+                          "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$": {
+                            "minimum": 0,
+                            "maximum": 300,
+                            "type": "integer"
+                          }
+                        }
+                      },
+                      "opens_by": {
+                        "description": "\"wake\": open from the first wake. Otherwise the quest whose reward opens the way in (decision 25 of 22.10); a quest not yet written is a warning, never an error.",
+                        "anyOf": [
+                          {
+                            "const": "wake",
+                            "type": "string"
+                          },
+                          {
+                            "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                            "maxLength": 80,
+                            "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                "paths": {
+                  "maxItems": 64,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "width",
+                      "via"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                        "type": "string"
+                      },
+                      "width": {
+                        "minimum": 1,
+                        "maximum": 2,
+                        "description": "1 for feet, 2 for a barrow or a cart.",
+                        "type": "integer"
+                      },
+                      "via": {
+                        "minItems": 2,
+                        "maxItems": 32,
+                        "description": "The corners of the path, each pair on one row or one column; every tile between is a path tile or a mended crossing (G69).",
+                        "type": "array",
+                        "items": {
+                          "description": "A tile: x, then y.",
+                          "type": "array",
+                          "items": [
+                            {
+                              "minimum": 0,
+                              "maximum": 1023,
+                              "type": "integer"
+                            },
+                            {
+                              "minimum": 0,
+                              "maximum": 1023,
+                              "type": "integer"
+                            }
+                          ],
+                          "additionalItems": false,
+                          "minItems": 2,
+                          "maxItems": 2
+                        }
+                      }
+                    }
+                  }
+                },
+                "routes": {
+                  "maxItems": 32,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "who",
+                      "hours",
+                      "via"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                        "type": "string"
+                      },
+                      "who": {
+                        "minLength": 1,
+                        "maxLength": 40,
+                        "type": "string"
+                      },
+                      "hours": {
+                        "description": "From (inclusive) to (exclusive), game hours; a later from than to runs over midnight.",
+                        "type": "array",
+                        "items": [
+                          {
+                            "minimum": 0,
+                            "maximum": 23,
+                            "type": "integer"
+                          },
+                          {
+                            "minimum": 1,
+                            "maximum": 24,
+                            "type": "integer"
+                          }
+                        ],
+                        "additionalItems": false,
+                        "minItems": 2,
+                        "maxItems": 2
+                      },
+                      "via": {
+                        "minItems": 1,
+                        "maxItems": 48,
+                        "description": "Points a person walks through, each a tile a foot can stand on.",
+                        "type": "array",
+                        "items": {
+                          "description": "A tile: x, then y.",
+                          "type": "array",
+                          "items": [
+                            {
+                              "minimum": 0,
+                              "maximum": 1023,
+                              "type": "integer"
+                            },
+                            {
+                              "minimum": 0,
+                              "maximum": 1023,
+                              "type": "integer"
+                            }
+                          ],
+                          "additionalItems": false,
+                          "minItems": 2,
+                          "maxItems": 2
+                        }
+                      }
+                    }
+                  }
+                },
+                "rests": {
+                  "maxItems": 32,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "description": "The top-left tile of a plain 3x3 the scatter leaves empty.",
+                    "type": "object",
+                    "required": [
+                      "x",
+                      "y"
+                    ],
+                    "properties": {
+                      "x": {
+                        "minimum": 0,
+                        "maximum": 1023,
+                        "type": "integer"
+                      },
+                      "y": {
+                        "minimum": 0,
+                        "maximum": 1023,
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "wakes": {
+                  "maxItems": 16,
+                  "description": "The spawn pool: every wake the seed may draw, with its first task.",
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "pocket",
+                      "quest"
+                    ],
+                    "properties": {
+                      "pocket": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "A wake pocket of the pool (content/core/pockets): its file holds the wake tile and the tools on the ground.",
+                        "type": "string"
+                      },
+                      "quest": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "The first task of that pocket: a quest whose `pocket` names it.",
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            },
             "props": {
               "type": "array",
               "items": {
@@ -14154,6 +14454,11 @@
                   },
                   "fire": {
                     "description": "A fire the player may feed by hand. It needs an id.",
+                    "const": true,
+                    "type": "boolean"
+                  },
+                  "crossing": {
+                    "description": "Steps or a ramp: the way across a change of level (G68), on the lower tile, facing the face.",
                     "const": true,
                     "type": "boolean"
                   },

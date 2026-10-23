@@ -2534,3 +2534,21 @@ The owner, 22.10: adopted as written (decision 50 of the 51 he adopted that afte
 **Making in the neutral valley.** One small workshop (the planned large stall opened by a quest) and the trainers; no forge and no fields; basic making for every race (rope, basket, handle); real technology - smith, machines, steampunk - only in the city. Design note recorded with it: shops are redesigned like the big games - never one big unsorted list. Every shop has a defined stock (what it sells and why) and a proper display (categories, the item drawn, price, what it does); this binds Pell's stall, the inn, the workshop, the elf wayside stalls and the city shops.
 The owner, 22.10: adopted as written (decision 51 of the 51 he adopted that afternoon).
 **Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-23 ✅ No way-finding rule anywhere in the game; G69 stays
+
+**No way-finding rule.** This is an open world: whoever sets out for another world explores on their own. The valley map plan's own convention of a landmark every 12 tiles, so a player never loses the way, is dropped for the whole game, the tangle included (its exemption is moot). Landmarks stand where the story or the look puts them, never by a spacing count. **G69 stays:** paths wind, no straight run over 8 tiles (12 on a bridge); it is a look rule, not a way-finding rule. `pnpm check` now measures it on every map that carries a plan: each planned path's runs and every straight row or column of path letters on the ground.
+The owner, 23.10.
+**Retry when:** the owner changes his word on it. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The first night is held by size, not by a rule (G71)
+
+**The first night is unavoidable by size.** No rule forbids leaving the first town; the ground is simply too large to cross before dusk, so the first night's quest is a must by geometry. No gate, flag or quest lock enforces it; the region gates of decision 25 stay what they are, physical obstacles a quest clears.
+As built: `tools/src/mapplan.ts` (`firstNight`) walks four ways from every wake tile of the pool, the valley's own mends made (the bridge, the arch) and every gate to another world shut, to the nearest tile of another world (a map region with its own `world`) or the map's edge. The walk at `walk_step_ms` a step must take longer than the daylight left at waking (tick 0, noon, to the first dusk at 20:00: 400 s with today's `day_length_ms`), or `pnpm check` fails the map. It also measures the walk to the nearest shut gate, which is where a region quest would open the way. Tests: `tools/test/mapplan.test.ts`.
+The owner, 23.10.
+**Retry when:** a region quest can be finished before the first dusk (then the walk to that gate is what holds the night, and the check must count the gate open), or the clock or the walk speed changes. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The map plan block in the map format
+
+**A map may carry its plan.** Additive, `format` stays 1: `heights` (a digit row per ground row, read by the check only until the kernel walks levels; kit schema answer 6 of 22.10), a prop's `crossing` (steps or a ramp, G68), and `plan` with `regions[]` (cells, purpose stop or passage, height, tags, cover per mille, and `opens_by`: `wake` or the quest that opens it, decision 25), `paths[]` (corner tiles, G69), `routes[]` (who walks where and at which hours), `rests[]` and `wakes[]` (the spawn pool: each wake pocket with its first task; the wake tile and the tools stay in the pocket files of 22.10). The kernel and the clients never read the plan; a quest an `opens_by` names that is not written yet is a warning.
+**Retry when:** the cover tool or the level walk lands (they read the same block). Model: claude-opus-5-5.
