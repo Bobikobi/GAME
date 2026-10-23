@@ -1892,6 +1892,7 @@ The owner, 19.10, after the opening's second review ([docs/design/OPENING_REVIEW
 Built (section 9.5 there): `a-coin-for-maru` and `the-long-night` require `three-fruits`, as the recut B entry of 10.10 meant ("Maru's coin follows by the trowel's road"); `the-tangle` and `the-south-bank` require `the-night-arch`. Each neighbour offers one task in town, the vigil is offered in the afternoon, and the arch lands alone at dark with nothing that hunts beside it. `pnpm quests`: at most 3 tasks open at once for the digger and the explorer (were 5), 4 for the forager (were 6), no new pair of one type. The long night pays one bandage beside its recipe.
 The words: ten lines that stated the past (nine in content, one the title screen's fallback) now say what is there or name Maru as the speaker (STORY S1, S2), three that said what the game does not do are true (the lanterns' places, the berries' hours, Pell's one price), and Pell repeats the three beliefs about the bells as rumours after the threshold (STORY section 3).
 Not built: the review's "one herb as a find" (R4). The check refuses a `find` of an item that grows in more than one place (G2), and a done line in the first 15 s would be a second box. The review offered it untried; the quest designer now tries every fix with the check before offering it.
+**Superseded in part (22.10):** `the-long-night` now requires `something-warm`, not `three-fruits`, so the vigil is offered after Maru's stew, around 17:00-18:00, not in the afternoon (the entry on the long night after the stew below). `a-coin-for-maru` still requires `three-fruits`.
 **Retry when:** a person playing the reordered day still waits over 90 s before dusk (then waiting by a fire, section 9.4), or the arch's minutes fill with the night's other tasks. Model: claude-opus-5-5.
 
 ## 2026-10-20 ✅ A fire of one's own, client and content half as built (NEXT 21 b)
@@ -2559,3 +2560,26 @@ The owner, 23.10.
 As built: `plan.exits[]` (additive): `id`, the gate `slot` or the `at` tile of a way with no slot (a jetty), `to` (a plan region) and `min_road_steps`. `firstNight` walks with every listed gate open; reaching another world or the edge by any way that is not a listed exit before dusk fails the map. `exitRoads` names each exit's least road: the daylight in steps less the fastest wake's steps to the gate, plus `ROAD_MARGIN` (10); a smaller `min_road_steps` fails, and so does a stitched map whose next world's ground starts closer beyond the gate. Tests: `tools/test/mapplan.test.ts`.
 The owner, 23.10.
 **Retry when:** the clock or the walk speed changes (the numbers move), or a way to travel faster than walking lands. Model: claude-opus-5-5.
+## 2026-10-23 ✅ The rich wave: items at a full tile, best of three by eye
+
+**Items are drawn at a full tile, 64x64**, as today's items fill their 16x16 tile, so every icon in the bag is one size. **Every free spec of the wave runs best of three and the gallery is judged by eye**, as the rich experiment did: three parallel `kit:gen` runs, each with its own `--out`; the picks go into the kit with their ramps.
+The owner, 23.10: yes to both, at the written defaults (the two questions of the wave's prompts).
+**Retry when:** a full-tile icon reads too busy in the bag at phone size, or a judge model that rejects bad draws arrives and the eye pass becomes its review. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The rich wave lands: 35 picks by eye in the kit, pebbles and the small rock wait
+
+The owner picked 35 of the wave's 37 entries by eye, over five rounds of the two specs of the wave (`tools/kit-gen/rich-items.json`, `tools/kit-gen/rich-props-small.json`). They are in the core kit at 64x64 with `density` 4, so each fills the same tile as the 16 px sprite it replaces, with the ramps it was drawn in and a `source` pointing at its line in `tools/kit-gen/rich-wave.manifest.jsonl` (round, route, model, seed or candidate, prompt, date). Each picked entry's `what`, `detail` and `ramps` in the specs is now the text that drew it. The order of 20.10 (the ladder of stills before the 64 px waves) was overtaken for this group by 21.10, "The palette deepens": the existing props and items are redrawn from themselves, the cast waits for L1, and the outline stays the decided one.
+What the five rounds showed:
+- **The 16 px sprite is a poor reference.** Drawn image to image from it (Stable Diffusion 1.5, denoise 0.7) the model kept its blur and its sixteen-pixel shapes; drawn from the words alone (denoise 1) it gave the entries the first round missed, so the old sprite gives the canvas and the object's name, not the look.
+- **SDXL won every free pick it was offered.** With rewritten prompts SDXL and its pixel-art LoRA ran beside Stable Diffusion 1.5 on the same entries; every pick from those rounds went to SDXL, 15 of the 35.
+- **What the free model misreads goes to Codex.** Ten entries the free models kept drawing as another object (the branch drawn as food) went to Codex with the kit sprite as the reference and two picks of this wave as style examples; eight of them were picked.
+- **pebbles and rock_small wait.** The Codex credits ran out during that round, so the two keep today's 16 px sprites until a draw passes the eye.
+The owner, 23.10: picked the 35 in the gallery by eye; pebbles and rock_small keep their sprites for now.
+**Retry when:** a picked sprite reads wrong in the live game at phone size beside its 16 px neighbours (then it is drawn again through its spec, with the next round's text written back), or Codex has credits again (then pebbles and rock_small go down the round that drew the other eight). Model: claude-opus-5-5.
+## 2026-10-22 ✅ The long night follows Maru's stew
+
+`core/the-long-night` requires `core/something-warm` instead of `core/three-fruits`. The phone opening's chain is now one line: `into-town`, then `herbs-for-pell` and `three-fruits`, then Pell's `a-whole-one`, then Maru's `something-warm`, then `the-long-night`. `a-coin-for-maru` keeps `three-fruits`.
+Why: the two afternoon fillers make one continuous chain, and Maru's stew gets a real pay: his done line ("a fire of your own?") opens the night task, and his two dry branches feed that fire.
+Cost: the vigil is offered around 17:00-18:00, after the stew, not in the afternoon as the 19.10 order had it.
+The owner, 22.10: yes to the new order, as built on the opening-filler branch. Supersedes the long night's part of the 19.10 entry on the opening's order.
+**Retry when:** a person playing the day has too little time between the stew and dark to build and light a fire, or the stew's chain stalls a race. Model: claude-opus-5-5.
