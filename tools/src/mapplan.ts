@@ -217,7 +217,7 @@ export function checkMapPlan(b: Bundle, origin: Record<string, string>): Issue[]
     r.cells.forEach(([x, y, w, h], k) => {
       if (x + w > m.width || y + h > m.height) err(`${where}.cells.${k}`, 'reaches past the edge of the map');
     });
-    if (r.opens_by !== 'wake' && !b.quests[r.opens_by]) warn(`${where}.opens_by`, `${r.id} opens by ${r.opens_by}, which no quest holds yet: the region stays shut until it is written`);
+    if (r.opens_by !== undefined && r.opens_by !== 'wake' && !b.quests[r.opens_by]) warn(`${where}.opens_by`, `${r.id} opens by ${r.opens_by}, which no quest holds yet: the region stays shut until it is written`);
   });
 
   checkPaths(b, plan, err);

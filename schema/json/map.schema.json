@@ -770,8 +770,7 @@
                 "required": [
                   "id",
                   "purpose",
-                  "cells",
-                  "opens_by"
+                  "cells"
                 ],
                 "properties": {
                   "id": {
@@ -854,7 +853,7 @@
                     }
                   },
                   "opens_by": {
-                    "description": "\"wake\": open from the first wake. Otherwise the quest whose reward opens the way in (decision 25 of 22.10); a quest not yet written is a warning, never an error.",
+                    "description": "\"wake\": open from the first wake. Otherwise the quest whose reward opens the way in (decision 25 of 22.10); a quest not yet written is a warning, never an error. Left out: ground nobody walks (water, the woods, a mountain band).",
                     "anyOf": [
                       {
                         "const": "wake",

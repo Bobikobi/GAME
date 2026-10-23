@@ -1366,9 +1366,12 @@ export const MapPlan = Type.Object(
             cover: Type.Optional(
               Type.Record(SpriteRef, Int(0, 300), { description: 'The scatter line: per mille of the walkable tiles each small prop covers.' }),
             ),
-            opens_by: Type.Union([Type.Literal('wake'), Id], {
-              description: '"wake": open from the first wake. Otherwise the quest whose reward opens the way in (decision 25 of 22.10); a quest not yet written is a warning, never an error.',
-            }),
+            opens_by: Type.Optional(
+              Type.Union([Type.Literal('wake'), Id], {
+                description:
+                  '"wake": open from the first wake. Otherwise the quest whose reward opens the way in (decision 25 of 22.10); a quest not yet written is a warning, never an error. Left out: ground nobody walks (water, the woods, a mountain band).',
+              }),
+            ),
           },
           { additionalProperties: false },
         ),
