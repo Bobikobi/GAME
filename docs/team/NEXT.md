@@ -69,7 +69,7 @@ After P-5, in order:
 - P-4, then P-6, which defines the mist;
 - CR-25 tent, then CR-38.
 
-Starters must stay different all game: CR-37 only built the opening part.
+Races must stay different all game: CR-37 only built the opening part.
 
 ## 2. Land the crafting stack (#45, then #46, then #48)
 
@@ -152,7 +152,7 @@ b) Sound, branch `feat/sound-pass`, all under the existing mute:
 
 Measurable: each source's volume falls with distance; the click plays exactly once per advance; mute silences all of it.
 
-d) Before (c), branch `feat/starter-looks`: the three starters look different in the game. Today the forager, the digger and the explorer all draw `chars/player_*` (or `woman_*` with the look toggle), so the choice of starter is invisible after the title screen. The look is already decided: DECISIONS 2026-10-09 "Each player role reads at a glance: one big item, one colour, its own build" (the Explorer tall and lean with a wide-brimmed hat and a tall backpack with a blanket roll; the Forager short and slight with a large wicker basket and the rust red on a neckerchief and the basket lining, no head wrap; the Digger broad and heavy-set with a spade across the back and a cap; a man base plus a woman option each; the same patched base clothes). The 3D cast on `trial/3d` already follows it. So this is building an agreed direction, not a new one: no stills round. Draw walk, idle and work in four directions for each role and both looks, inside the pixel look, and give each starter's JSON its own `sprite` and `sprite_alt`. It runs before (c) so the every-action frames are drawn once per role. Measurable: in one capture the three starters stand side by side and are told apart at phone size by item, colour and build; no starter names `chars/player_*`; `pnpm verify` and `pnpm e2e` green.
+d) Superseded by decision 43 of 22.10 (nothing new is built on the starter looks; whether to rewrite it as race figures stays with the owner). Before (c), branch `feat/starter-looks`: the three starters look different in the game. Today the forager, the digger and the explorer all draw `chars/player_*` (or `woman_*` with the look toggle), so the choice of starter is invisible after the title screen. The look is already decided: DECISIONS 2026-10-09 "Each player role reads at a glance: one big item, one colour, its own build" (the Explorer tall and lean with a wide-brimmed hat and a tall backpack with a blanket roll; the Forager short and slight with a large wicker basket and the rust red on a neckerchief and the basket lining, no head wrap; the Digger broad and heavy-set with a spade across the back and a cap; a man base plus a woman option each; the same patched base clothes). The 3D cast on `trial/3d` already follows it. So this is building an agreed direction, not a new one: no stills round. Draw walk, idle and work in four directions for each role and both looks, inside the pixel look, and give each starter's JSON its own `sprite` and `sprite_alt`. It runs before (c) so the every-action frames are drawn once per role. Measurable: in one capture the three starters stand side by side and are told apart at phone size by item, colour and build; no starter names `chars/player_*`; `pnpm verify` and `pnpm e2e` green.
 
 c) After (a), (b) and (d) land, branch `feat/every-action`: one animation for each action the player takes (gather, pick, dig, fell, mine, craft at the workshop stall, cook, eat, drink, talk, pay, pitch a camp, sleep), inside the pixel look, so no stills. In the same pull request, a quest given in talk is offered in the giver's words and the "New task:" line goes (`game/src/text.ts`); the journal records the quest quietly. Measurable: every action in the list shows its own frames in a capture; no "New task" string in `game/src`; `pnpm verify` and `pnpm e2e` green.
 
@@ -193,7 +193,7 @@ Stealth over the hazards is section 12.
 
 Status: built (#58)
 
-A docs pull request: chapter 1 approved, and how the three starters differ in it.
+A docs pull request: chapter 1 approved, and how the three races differ in it.
 1. Merge `develop` into it and check it against `docs/design/STORY.md` S1-S6.
 2. Ask the owner one question if anything there contradicts a later decision, then land it.
 
@@ -214,7 +214,7 @@ c) The looks are a direction. Before a cast is generated in a look, phone-size s
 
 d) Spend and download (owner, 18.10: more credits may not come, so none is left to expire):
 - Each day on all four accounts (Chrome profiles on ports 9341-9343 and 9333): first the site's tasks that earn credits, the check-in and any task that neither publishes nor connects an account; then spend, the credits that expire soonest first, in the order the owner picked in (b).
-- Search before generating (owner, 18.10): for each thing in the gap, first look in the Meshy community for a model other users made. A find costs no credits, only a download. It is taken when its licence allows use in a public game with attribution (read on its page, never assumed), it fits the look picked in (c), and it stays under the caps below. Each find goes into `docs/3d/gap.md` as the route "community", with its link, its author and its licence; a credit is spent only where the search found nothing that fits.
+- Search before generating (owner, 18.10): for each thing in the gap, first look in the Meshy community for a model other users made. A find costs no credits, only a download. It is taken under any open licence, share-alike included (DECISIONS 2026-10-22, decision 4: a sprite derived from share-alike material obliges the art to carry the same licence, and the source and licence stay in the kit, CREDITS generated), it fits the look picked in (c), and it stays under the caps below. Each find goes into `docs/3d/gap.md` as the route "community", with its link, its author and its licence; a credit is spent only where the search found nothing that fits.
 - Things the plan will need later (a horse, owner 18.10) are searched for too, and their finds are listed in `docs/3d/gap.md` under "Found for later". The month's downloads that would otherwise go unused go to them, in the order of that list.
 - Generate on Meshy 6 Lite only, the one model a Free account may download; a textured draft is 20 credits, rigging is free.
 - Download only what the owner picked, once per model, with every clip added first. Downloads are capped per account per month (10, one more on check-in day 5): what does not fit this month waits for the next, since a generated model stays in its account.
@@ -396,11 +396,11 @@ Measurable, in headless Chrome on its own port, closed by PID, at 480x1040 with 
 
 After it, not in this pull request: the waves, in this order.
 - (a) The ground at 64: the fill tiles and the scatter motifs of STYLE.md section 3, with its measures, for the valley's grounds and the first ring's.
-- (b) The opening's characters at 64x96 in the look of the frame `density-64`: the four starters, Maru and Pell, then their walk, idle and work frames.
+- (b) The opening's characters at 64x96 in the look of the frame `density-64`: the four starters, Maru and Pell, then their walk, idle and work frames. Superseded (DECISIONS 2026-10-22, decisions 3, 41 and 43): the cast is the races and the NPCs on one unclothed rig with slot wear, drawn after the animation route of decision 6.
 - (c) The props and trees at the sizes of STYLE.md section 1b, with the see-through rule.
 - (d) The items.
 
-Each wave is a pull request of kit PNGs with `density: 4` and their `source`, with a phone still of the wave. The first wave's still shows the proportions table to the owner once (STYLE.md section 1b); after that a wave is polish inside the agreed direction, with no stills round. The shadows, the night and depth cues 1 to 5 land in the same `world.ts` window as this step or right after it, with the doubled numbers of STYLE.md.
+Each wave is a pull request of kit PNGs with `density: 4` and their `source`, with a phone still of the wave. The first wave's still shows the proportions table to the owner once (STYLE.md section 1b); after that a wave is polish inside the agreed direction, with no stills round. The shadows, the night and depth cues 1 to 5 did not land with this step: they come in the engine-ladder session of decision 6 of 22.10 (after the map plan and the Pell pick), with the doubled numbers of STYLE.md.
 
 ### The waves' tools
 
@@ -419,7 +419,7 @@ Written 2026-10-18 after one measured image per tool (the same 64x64 axe item, `
 Order, as the player sees it:
 
 1. **The opening's ground** (4 images, then text): bridge, broken bridge, cobble and water by image; meadow, sand, path, forest floor, grove and ruin floor by scatter, with shores, banks and fringes left to the engine's edge masks (STYLE.md section 3), which retires 16 of the kit's 37 tiles from the redraw.
-2. **The cast** (52 images): the four starters in both builds (`player`, `woman`, `explorer`, `forager`, `digger`, each with its `_w` form, 8 in all) at 6 images each (one strip per direction for walk and idle, one for the work pose; left is the right one mirrored), then Maru's and Pell's frames (elder, trader, 2 each).
+2. **The cast** (52 images; superseded by decisions 3, 9, 41 and 43 of 22.10, which put the races and the NPCs on one rig): the four starters in both builds (`player`, `woman`, `explorer`, `forager`, `digger`, each with its `_w` form, 8 in all) at 6 images each (one strip per direction for walk and idle, one for the work pose; left is the right one mirrored), then Maru's and Pell's frames (elder, trader, 2 each).
 3. **The trees around the wake and the bridge, then the town** (55 images): oak (3 variants), young tree, dead tree, canopy 1 to 3 first; then house, stall, well, lamp, stone and totem, the ruin set, then the small ground props (bushes, grass, flowers, rocks, signs, hazards), the large ones at the sizes of section 1b.
 4. **The items** (19 images, or 5 if four icons share a picture): the ones a quest names first (axe, basket, berry, herb, stone, log), then the rest.
 
@@ -493,7 +493,8 @@ Where it runs (the owner, 18.10): on his own rented server, from the first day, 
 
 Eight pull requests, in this order, each off `origin/develop` once the one before it has merged (the gates are listed under h):
 
-a) **The server package and the protocol** (`feat/server-core`). A new pnpm package `server/` (Node, TypeScript, the same toolchain) that imports the kernel and the bundle and exposes: `POST /action` (one action, the player's tile, the client tick), `POST /moves` (a batch of `move` reports), `GET /state`, `POST /session` (resume), nothing else. The rules of the wire:
+a) **The server package and the protocol** (`feat/server-core`). A new pnpm package `server/` (Node, TypeScript, the same toolchain) that imports the kernel and the bundle and exposes: `POST /action` (one action, the player's tile, the client tick), `POST /moves` (a batch of `move` reports), `GET /state`, `POST /session` (resume), and what the later entries added (`GET /health`, the `/auth/*` routes). The rules of the wire:
+   - The world's hour is the server's clock (DECISIONS 2026-10-20, "The world's hour is the server's clock"): `world.epoch`, one origin per world with tick 0 a noon; the server sets `state.tick` at every accepted action; a return after an absence is one kernel action `resume`; a player leaves after `logout_countdown_s` outside a safe place.
    - Every action except `move` waits for the server's reply, which carries a merge patch of the state and the events of the step. The seed is secret on the server, so the client cannot predict a drawn action (kernel-review R4); an optimistic client would guess wrong. `move` reports are batched and shown at once, and the server checks them as G56 describes (the BFS with `move_reach_max`, moved into the kernel by this item with its test). A movement-time credit is kept with the player: four-way path length spends it, elapsed game time refills it, and `move_reach_max` caps it (DECISIONS 2026-10-20, the wire as built).
    - Room for combat. G35 is the demo's rule and combat is a core part after this stage (DECISIONS 2026-10-19), so the wire must not rule it out: a real-time encounter cannot wait for a reply per blow. The proposal, which the owner has not yet seen: an encounter plays on the client at a fixed tick inside the kernel (pure, integer) and reaches the server as one batch, which the server replays and checks the way it checks `move` reports, with caps from `params.json` on what one encounter can pay. So `POST /moves` takes a batch of client-played steps with a `kind` field, `move` the only kind this item accepts; adding a kind later adds no endpoint and changes no rule above.
    - The time proof (kernel-review S1): the server keeps the wall-clock instant of the current state tick and refuses an action whose claimed tick advance is more than the gap since that instant plus 2 s of slack, and only accepted game time moves the instant, so a run of requests cannot claim the slack again (DECISIONS 2026-10-20, the wire as built). A refusal changes nothing and says why in plain words.
@@ -506,7 +507,7 @@ d) **From the demo to an account: the opening handover** (`feat/handover-opening
 e) **Sign-in** (`feat/signin`). Email, Google and Discord (the owner, Q2). Email by a link, with the sender decided at the gate under h (test mails go only to eladeladsaa@gmail.com). Google and Discord by OAuth; the builder creates the two OAuth apps in the browser at build time and asks the owner only where his own login is needed, each step approved. An account is made after the opening, for a player of 13 or the country's higher age of digital consent (CR-49; a younger player is pointed to the demo), and asks for an email and a name, nothing else (DECISIONS 9.10). One person, one account in a world (CR-53): the sign-up says it. A session cookie that is httpOnly, secure and same-site; secrets under `~/.claude/secrets/` and in the container's environment, never in git. Closing an account deletes its rows.
 f) **Luck and the ledger on the server** (`feat/server-luck`). The draws `draw(seed, entity, counter)` already run from the state's seed; with the seed secret they are the server's luck. The gold ledger records every grant. A test replays any account's action log from its start state and must land on the stored state byte for byte (`serialize`).
 g) **The simulated player in CI and the verified boards** (`feat/server-sim`). A script plays a starter's whole opening, the first expedition and the first sale through the real server in CI (against the service container), and the run must reach the same state as `replay` on the laptop. The boards read only the verified log: a score that did not replay is not posted.
-h) **Provisioning and cutover** (docs plus the owner's gates; the builder prepares everything and executes nothing alone). `docs/ops/GAME_SERVER.md` is the runbook, with a gate per step; each is three lines to the owner first:
+h) **Provisioning and cutover** (docs plus the owner's gates; the builder prepares everything and executes nothing alone). `deploy/RUNBOOK.md` is the runbook, with a gate per step; each is three lines to the owner first:
    1. Read-only inventory of the box (containers, ports, nginx sites, disk, RAM) written into the runbook.
    2. A new nginx site file for the game's name only, `nginx -t` first, reload only after the test; the other product's sites are not edited. The hostname and its DNS record are the owner's to choose and add.
    3. The two containers with their caps and their own database user; the database is not reachable from outside the box.
@@ -522,7 +523,7 @@ h) **Provisioning and cutover** (docs plus the owner's gates; the builder prepar
   - The restore test of h4 brings a scratch database back and `GET /state` for a test account matches the pre-backup state.
   - A memory cap shows in `docker stats` for both game containers and the other product's containers are untouched (their image ids and uptimes unchanged).
   - With the wire cut for 10 s the client takes no input and, once back, the state equals the server's.
-  - The sign-up asks for an email and a name and nothing else, and refuses a birth year under 13.
+  - The sign-up asks for a name, a full date of birth and the one-account agreement, and refuses a player under 13 or under the country's higher age (DECISIONS 2026-10-21, the age-gate entry).
 - For the owner: the wording of the sign-up and the pause box; whether the pause on a dropped line feels too sharp on a real phone; and the three-line gates, which he answers one by one.
 
 ## 19. The open world's first ring
@@ -551,7 +552,7 @@ c) **The rules in the kernel** (`feat/ring-walk`). The height layer enters the w
 d) **Chunk streaming in the client** (`feat/ring-stream`). The classic client loads the 3 by 3 chunks around the player, drops those beyond one ring away, and bakes by 16-tile pages (section 15). The stream never holds more than 9 chunks in memory; a chunk loads in under 1 frame of blocking work per page (idle-sliced), and the mist of "Beyond the mist" hides the seam. The 3D door reads the same files.
 e) **The valley reshaped** (`feat/ring-valley`; the one-time G59 exception, only after 0 is picked and only the core team). The valley is reshaped to the frame chosen in 0: mountains in parts, passes out, the starters' areas apart, the wake tiles and the opening's legs moved as the frame needs. The exception does not cover the rung payoffs, the ladder minutes or the 90 s ceiling, and the opening's pay stays what it is (GAME_RULES section 6). The world lock is re-anchored at the end with the owner's yes (OPEN_WORLD G59's command). Saves are relocated by placement.
 f) **The boathouse** (`feat/ring-boathouse`). The first stamped place, on a lake in the ring: a boathouse with a chimney whose smoke shows on the skyline (S3), a keeper (one NPC, with a voice and a want by the rules of G12 and STORY.md; a line about the past needs a speaker, S1 to S6) and one small errand that is not a fetch (G1, G17), paying what the ladder allows and no more. The keeper's errand uses a crossing of G68 (a ramp or a boat lift) so the first crossing is shown, not told.
-g) **The checks** (`feat/ring-checks`, in `tools/`; each prints a `!` line and fails `pnpm check`):
+g) **The checks** (`feat/ring-checks`, in `tools/`; each prints an error (`x`) line and fails `pnpm check`):
    - every place and every stamp is reachable on foot from the wake tiles within the pay-gap proxy of G62 (`floor(90000/(2*190)) + 5 = 241` steps for the first gap, read from `params.json`, not hard-coded);
    - no crossing is a tool gate that wears out and strands a player (dec 1094);
    - no straight run of a path is over 8 tiles (G69), generated or authored;

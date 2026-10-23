@@ -1,5 +1,5 @@
 {
-  "note": "The pipeline's proving run at 32 px per tile (DECISIONS 2026-10-18): one sprite of each kind. Run: pnpm kit:gen tools/kit-gen/trial-32.json. Output in .scratch/kit-gen/trial-32/, nothing goes into content/.",
+  "note": "Record of the 32 px trial, superseded by 64 px and the scatter route (DECISIONS 2026-10-18); not a live spec. The pipeline's proving run at 32 px per tile (DECISIONS 2026-10-18): one sprite of each kind. Run: pnpm kit:gen tools/kit-gen/trial-32.json. Output in .scratch/kit-gen/trial-32/, nothing goes into content/.",
   "entries": [
     {
       "name": "elder",
