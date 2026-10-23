@@ -27,7 +27,7 @@
         "name": "Steady hands",
         "effect": "craft_speed_pct",
         "value": 25,
-        "text": "Handcraft is 25% faster."
+        "text": "Handcraft goes a lot faster."
       },
       {
         "level": 4,

@@ -27,14 +27,14 @@
         "name": "Practiced",
         "effect": "craft_speed_pct",
         "value": 25,
-        "text": "Cooking is 25% faster."
+        "text": "Cooking goes a lot faster."
       },
       {
         "level": 4,
         "name": "Hearty",
         "effect": "meal_fill_pct",
         "value": 25,
-        "text": "Meals fill 25% more."
+        "text": "Meals fill a lot more."
       }
     ]
   }
