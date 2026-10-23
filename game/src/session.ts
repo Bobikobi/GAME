@@ -497,6 +497,7 @@ export class Session implements GameSession {
     this.state = r.state;
     this.undo = null;
     this.wake(r.events);
+    this.sleepThrough(r.events);
     // each start wakes at its own place
     if (action.t === 'start') {
       this.pos = [r.state.player.at[0], r.state.player.at[1]];
@@ -539,6 +540,13 @@ export class Session implements GameSession {
   private landPickup(): void {
     if (this.pickup) s1.pickup(this.pickup);
     this.pickup = null;
+  }
+
+  /** A night in a sleep place: the clock runs on from the dawn the kernel woke the player at (G16). */
+  private sleepThrough(events: readonly GameEvent[]): void {
+    const slept = events.find((e) => e.e === 'sleep');
+    if (slept?.e !== 'sleep') return;
+    this.tick = Math.max(this.tick, slept.until);
   }
 
   /** A fall moves the player to the town they were last in: the walk goes on from there. */

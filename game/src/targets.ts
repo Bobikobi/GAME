@@ -29,7 +29,7 @@ export function questTargets(b: Bundle, s: PublicState, tick: number): Target[] 
   if (!main) return [];
   const q = b.quests[main]!;
   if (readyToHandIn(b, s, main, tick) && q.giver) {
-    const t = npcTile(b, q.giver);
+    const t = npcTile(b, q.giver, tick);
     return t ? [{ x: t[0], y: t[1], h: heightOf(b, b.npcs[q.giver]?.sprite, 24) }] : [];
   }
   const i = questSteps(b, s, main, tick).findIndex((st) => !st.done);

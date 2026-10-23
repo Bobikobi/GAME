@@ -34,6 +34,7 @@ import {
   makeWalkable,
   minuteOfDay,
   npcTile,
+  keptFireLit,
   placedAt,
   predatorAt,
   resourceOf,
@@ -371,6 +372,8 @@ export class WorldScene extends Phaser.Scene {
   private litBy = new Map<string, string>();
   private tops = new Map<string, number>();
   private npcAt = new Map<string, string>();
+  /** the people who walk a round by day (decision 27 of 22.10): where each was last drawn, so a step moves their art and their talk tile */
+  private walkers: { id: string; parts: Phaser.GameObjects.Image[]; at: [number, number]; step?: Phaser.Tweens.Tween }[] = [];
   private nodeAt = new Map<string, string>();
   /** nodes a reaction makes appear (docs/design/REACTIONS.md): hidden until their condition holds */
   private appearing = new Set<string>();
@@ -1113,7 +1116,7 @@ export class WorldScene extends Phaser.Scene {
     }
     // beside a fire burning at night: in its light, cut out of the haze and the frame like the player, and warm
     for (const n of this.fireSide) {
-      const lit = this.night > 0 && fireBurns(s.state, n.fire, s.tick);
+      const lit = this.night > 0 && (fireBurns(s.state, n.fire, s.tick) || keptFireLit(this.b, n.fire, s.tick));
       if (n.cut.visible === lit) continue;
       n.cut.setVisible(lit);
       if (lit) n.img.setTint(LIGHT.tint);
@@ -1174,7 +1177,7 @@ export class WorldScene extends Phaser.Scene {
     this.cast = new CastLayer(this, sunTableOf(this.b.params.light?.sun), 1, densityOf);
     // nothing that changes every frame is painted into a layer (cast-layer.ts): a thing that walks casts
     // through its own image, a thing on a beat (a sway, a flame, a blink) from its first frame
-    const walks = new Set<Phaser.GameObjects.GameObject>(this.hazards.map((h) => h.spr));
+    const walks = new Set<Phaser.GameObjects.GameObject>([...this.hazards.map((h) => h.spr), ...this.walkers.map((w) => w.parts[0]!)]);
     const beats = new Set<Phaser.GameObjects.GameObject>([...this.cycles.map((c) => c.spr), ...this.blinks.map((b) => b.spr)]);
     for (const obj of this.children.list) {
       if (!(obj instanceof Phaser.GameObjects.Image) && !(obj instanceof Phaser.GameObjects.Sprite)) continue;
@@ -1277,6 +1280,37 @@ export class WorldScene extends Phaser.Scene {
       this.tweens.add({ targets: cut ? [img, cut] : img, scaleY: rel(img, 1, 1.04).y, duration: 900 + (id.length % 5) * 120, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       this.npcAt.set(key(t[0], t[1]), id);
       this.tops.set(key(t[0], t[1]), unitOf(npc.sprite)?.h ?? 24);
+      if (npc.round) this.walkers.push({ id, parts: [img, ...(cut ? [cut] : [])], at: [t[0], t[1]] });
+    }
+  }
+
+  /** A walker stands where the kernel says at this tick (`npcTile`): home, or a tile of the round; a step glides, and the talk tile follows. */
+  private placeWalkers(s: GameSession): void {
+    for (const w of this.walkers) {
+      const t = npcTile(this.b, w.id, s.tick);
+      if (!t || (t[0] === w.at[0] && t[1] === w.at[1])) continue;
+      const far = Math.abs(t[0] - w.at[0]) + Math.abs(t[1] - w.at[1]) > 1;
+      const top = this.tops.get(key(w.at[0], w.at[1]));
+      if (this.npcAt.get(key(w.at[0], w.at[1])) === w.id) {
+        this.npcAt.delete(key(w.at[0], w.at[1]));
+        this.tops.delete(key(w.at[0], w.at[1]));
+      }
+      const dx = (t[0] - w.at[0]) * T;
+      const dy = (t[1] - w.at[1]) * T;
+      w.at = [t[0], t[1]];
+      this.npcAt.set(key(t[0], t[1]), w.id);
+      if (top !== undefined) this.tops.set(key(t[0], t[1]), top);
+      // the step under way lands first, so every part moves from where it stands
+      w.step?.complete();
+      w.step = undefined;
+      // a jump (a reload, a night slept) lands at once; one tile is walked
+      if (far || !RICH.motion) {
+        for (const part of w.parts) part.setPosition(part.x + dx, part.y + dy);
+      } else {
+        w.step = this.tweens.add({ targets: w.parts, x: `+=${dx}`, y: `+=${dy}`, duration: 450, ease: 'Linear' });
+      }
+      const [img] = w.parts;
+      if (img) img.setDepth((t[1] + 1) * T);
     }
   }
 
@@ -1972,6 +2006,7 @@ export class WorldScene extends Phaser.Scene {
     this.placeMote(s, clears, time);
     this.placeSmoke(s, clears, time);
     this.placePredators(s);
+    this.placeWalkers(s);
     this.refreshIn -= real;
     if (this.refreshIn <= 0) {
       this.refreshIn = 250;

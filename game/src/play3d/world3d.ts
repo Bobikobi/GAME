@@ -21,6 +21,7 @@ import {
   isNight,
   makeWalkable,
   minuteOfDay,
+  keptFireLit,
   npcTile,
   riddleSlots,
   spotOpen,
@@ -212,6 +213,10 @@ export class World3D implements WorldView {
   private readonly nodes = new Map<string, NodeView>();
   private readonly nodeAt = new Map<string, string>();
   private readonly npcAt = new Map<string, string>();
+  /** the people who walk a round by day (decision 27 of 22.10), as in the classic game: the tile each stands on now */
+  private readonly walkers: { id: string; art: THREE.Object3D; at: [number, number] }[] = [];
+  /** the fires a character keeps (Maru's hearth): a flame and a light, shown while the kernel says it burns */
+  private readonly keptFires: { id: string; art: THREE.Group }[] = [];
   private readonly signs = new Map<string, string>();
   private readonly searches = new Map<string, string>();
   private readonly notes = new Map<string, { text: string; name: string; top: number }>();
@@ -422,6 +427,24 @@ export class World3D implements WorldView {
       if (art) this.scene.add(art);
       this.npcAt.set(key(t[0], t[1]), id);
       this.tops.set(key(t[0], t[1]), 1.5);
+      if (art && npc.round) this.walkers.push({ id, art, at: [t[0], t[1]] });
+    }
+
+    // a fire a character keeps: the same flame and light as the built fire, lit by the hour
+    for (const p of b.map.props) {
+      if (p.kept === undefined || p.id === undefined) continue;
+      const art = new THREE.Group();
+      const flame = flameOf();
+      flame.position.y = 0.18;
+      const light = new THREE.PointLight(0xffa24a, 6, 8, 2);
+      light.position.set(0, 0.8, 0);
+      art.add(flame, light);
+      const x = p.x + p.w / 2;
+      const z = p.y + p.h / 2;
+      art.position.set(x, groundY(x, z), z);
+      art.visible = false;
+      this.scene.add(art);
+      this.keptFires.push({ id: p.id, art });
     }
 
     // a sign for every place a creator filled where the map has none
@@ -845,10 +868,42 @@ export class World3D implements WorldView {
   /** the built fire breathes: its flame sways a little every frame */
   private flicker(): void {
     const k = 1 + 0.08 * Math.sin(this.time * 19) + 0.05 * Math.sin(this.time * 7.3);
-    for (const c of this.campArt.values()) {
-      const flame = c.art.getObjectByName('flame');
+    for (const art of [...[...this.campArt.values()].map((c) => c.art), ...this.keptFires.map((f) => f.art)]) {
+      const flame = art.getObjectByName('flame');
       if (flame) flame.scale.set(1 / Math.sqrt(k), k, 1 / Math.sqrt(k));
     }
+  }
+
+  /** A walker stands where the kernel says at this tick (`npcTile`): its talk tile moves at once, its body walks there. */
+  private placeWalkers(s: GameSession, dt: number): void {
+    for (const w of this.walkers) {
+      const t = npcTile(this.b, w.id, s.tick);
+      if (!t) continue;
+      if (t[0] !== w.at[0] || t[1] !== w.at[1]) {
+        if (this.npcAt.get(key(w.at[0], w.at[1])) === w.id) {
+          this.npcAt.delete(key(w.at[0], w.at[1]));
+          this.tops.delete(key(w.at[0], w.at[1]));
+        }
+        w.at = [t[0], t[1]];
+        this.npcAt.set(key(t[0], t[1]), w.id);
+        this.tops.set(key(t[0], t[1]), 1.5);
+      }
+      const x = t[0] + 0.5;
+      const z = t[1] + 0.5;
+      const dx = x - w.art.position.x;
+      const dz = z - w.art.position.z;
+      const far = Math.abs(dx) + Math.abs(dz);
+      // a jump (a reload, a night slept) lands at once; a step is walked at about two tiles a second
+      const k = far > 1.5 ? 1 : Math.min(1, (2.2 * dt) / Math.max(far, 0.001));
+      const nx = w.art.position.x + dx * k;
+      const nz = w.art.position.z + dz * k;
+      if (far > 0.01) w.art.rotation.y = Math.atan2(dx, dz);
+      w.art.position.set(nx, groundY(nx, nz), nz);
+    }
+  }
+
+  private lightKeptFires(s: GameSession): void {
+    for (const f of this.keptFires) f.art.visible = keptFireLit(this.b, f.id, s.tick);
   }
 
   private update(delta: number): void {
@@ -863,6 +918,8 @@ export class World3D implements WorldView {
       return;
     }
     s.advance(delta);
+    this.placeWalkers(s, dt);
+    this.lightKeptFires(s);
     this.refreshIn -= delta;
     if (this.refreshIn <= 0) {
       this.refreshIn = 250;
