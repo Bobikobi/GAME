@@ -2561,7 +2561,7 @@ The owner, 22.10 and 23.10 (the plan's answers).
 
 ## 2026-10-23 ✅ The riddle pair are two lanterns; the bridge slot is 3x2
 
-**The riddle's two lantern statues become two lanterns:** an iron post in town and a stone fire bowl on the hill, about 1.6 characters tall (both `lantern_post` until the bowl is drawn); the clue reads "one of the two lanterns". **The bridge's slot is 3x2**, two rows of planks over the river.
+**The riddle's two lantern statues become two lanterns:** an iron post in town and a stone fire bowl on the hill, about 1.6 characters tall (both `lantern_post` until the bowl is drawn); the clue reads "one of the two lanterns". **The bridge's slot is 3x2**, two rows of planks over the river; its sign steps one tile west, to (11,16), off the north row's mouth.
 The owner, 23.10.
 **Retry when:** the owner changes his word on it. Model: claude-opus-5-5.
 
