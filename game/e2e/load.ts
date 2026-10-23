@@ -240,6 +240,8 @@ async function run(page: Page, base: string, viewport: Viewport): Promise<void> 
     return w;
   })()`);
   await page.eval(`window.__load.fillTo(${target})`);
+  // the count is read only once the button shows the filled weight, never the count from before the fill
+  await page.waitFor(`(window.__load.chip()?.title ?? '').includes('Load ${target} of')`, 'the bag button to show the filled weight');
   c = await chipReads(page, 'Light');
   const before = Number(c.count.split('/')[0]);
   // the first of a tool hangs at the belt and takes no place; a spare joins its kind's stack, opening a
