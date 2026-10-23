@@ -1587,6 +1587,22 @@
         "solid": true
       },
       {
+        "sprite": "core/base-kit:props/ruin_wall",
+        "x": 35,
+        "y": 27,
+        "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_wall",
+        "x": 37,
+        "y": 27,
+        "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
         "sprite": "core/base-kit:props/ruin_arch",
         "x": 36,
         "y": 19,
@@ -2772,14 +2788,6 @@
         "x": 36,
         "y": 32,
         "w": 2,
-        "h": 1,
-        "solid": true
-      },
-      {
-        "sprite": "core/base-kit:props/ruin_pillar",
-        "x": 38,
-        "y": 32,
-        "w": 1,
         "h": 1,
         "solid": true
       },

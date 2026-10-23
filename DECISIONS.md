@@ -2611,3 +2611,8 @@ Why: the two afternoon fillers make one continuous chain, and Maru's stew gets a
 Cost: the vigil is offered around 17:00-18:00, after the stew, not in the afternoon as the 19.10 order had it.
 The owner, 22.10: yes to the new order, as built on the opening-filler branch. Supersedes the long night's part of the 19.10 entry on the opening's order.
 **Retry when:** a person playing the day has too little time between the stew and dark to build and light a fire, or the stew's chain stalls a race. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The collapsed hall is its own room, with a door in the south wall
+
+**The hall is dug by day, the night place still has one way in.** The opening sends the player to dig the collapsed hall for Pell's whole bowl in the afternoon, before the arch opens. A wall at row 27 (x 35-38) now closes the hall off from the rest of the walled night place, and the south wall has a doorway at (38,32), from the lane south of the ruins into the hall. The threshold stays the night place's only way in; the hall, its six digs, the knight and the stair keep their tiles.
+**Retry when:** the expedition needs the hall reached from inside the night place. Model: claude-opus-5-5.
