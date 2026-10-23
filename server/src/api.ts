@@ -195,6 +195,12 @@ export function isAction(value: unknown): value is Action {
       return hasOnlyKeys(value, ['t', 'item']) && typeof value.item === 'string';
     case 'spend':
       return hasOnlyKeys(value, ['t', 'attr']) && ATTRIBUTES.some((attribute) => attribute === value.attr);
+    case 'learn_node':
+      return hasOnlyKeys(value, ['t', 'node', 'at']) && typeof value.node === 'string' && isTile(value.at);
+    case 'equip':
+      return hasOnlyKeys(value, ['t', 'node', 'slot', 'at']) && typeof value.node === 'string' && Number.isSafeInteger(value.slot) && isTile(value.at);
+    case 'unequip':
+      return hasOnlyKeys(value, ['t', 'slot', 'at']) && Number.isSafeInteger(value.slot) && isTile(value.at);
     case 'wear':
       return hasOnlyKeys(value, ['t', 'item', 'slot'])
         && typeof value.item === 'string'
