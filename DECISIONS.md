@@ -2663,3 +2663,21 @@ Carried from #247 (GROWTH.md and the stills), which closes unmerged; the stills 
 What it fixes: the skill screen is the picture, S1 is its frame, and the strip at the foot is where the build is changed. Everything inside the frame (node shapes and sizes, wing colours, the card's wording, how a full wing scrolls or zooms, the strip's layout) is polish, iterated without asking (AGENTS.md). It reads the kernel's state, not the mockup.
 **Superseded in part (22.10):** the wings are the race wings of decision 38 around the shared centre, not the five trades of the still; no node shows a percentage (decision 39).
 **Retry when:** a full wing does not fit a phone's width without a zoom that loses the picture (then the wings fold, the frame stays). Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The tent comes back as a portable inn: bought, a full night's sleep, and the place a player returns to after death (the owner, 23.10)
+
+The open question of the #219 carry entry above (W7 against the 19.10 entry that dropped the tent), answered by the owner on 23.10 in chat. A player can buy a tent. A pitched tent gives a full night of sleep, as the inn's bed does, and it is a return point: a player who dies comes back at their tent, not in town. In his words, a portable inn.
+**Supersedes:** the tent part of the 19.10 entry "A fire anywhere outside the town is a safe place while it burns; the tent is dropped" (the fire rule of that entry stands); #219's W7 wording ("a fire with a tent from the start ... keeps everything"), so the tent is bought, not given at the start, and what it gives is sleep and the return point; G33's "wakes in the last town" for a player with a pitched tent. The pack where the body fell (the open ends and combat round 2 above) is unchanged.
+**Retry when:** the tent becomes the only way anyone plays far out (then its price or its pitching cost moves, never the rule), or returning at a tent next to a fight makes a death cost nothing. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ A campfire is the safe way to log out far from town (the owner, 23.10)
+
+The owner, 23.10 in chat: a player far from town who wants to stay there lights a campfire and can log out safely. In real-time multiplayer, logging out without one will probably cost the character's life; the exact cost is set with the combat and presence waves.
+**Supersedes in part:** "nothing is taken from a player who is away" (10.10, the shared world) for a player who logs out in the wild with no fire, tent or inn (the entry below). It agrees with the 19.10 fire entry: a fire outside the town is a safe place while it burns.
+**Retry when:** a dropped connection, not a choice, is what costs players their characters (then a grace window for drops, with the owner). Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Logging out with no fire, tent or inn leaves the character asleep in the world (the owner, 23.10)
+
+The owner, 23.10 in chat: a player who logs out with no fire, tent or inn leaves the character in the world, asleep and vulnerable where it logged out, until the player returns, as sleepers do in Rust. A campfire, a pitched tent or the inn are the safe places to log out.
+**Supersedes in part:** "nothing is taken from a player who is away" (10.10) and the hunters' board's "nothing from a player who is away" for a sleeper out in the open. What can harm a sleeper (foes, hazards, players in the marked zone) is the combat and presence waves' to write.
+**Retry when:** sleepers are hunted as an easy kill so often that players stop going far out (then the safe ways to log out get cheaper, never the rule). Model: claude-opus-5-5.
