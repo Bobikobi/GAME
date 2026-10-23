@@ -2575,3 +2575,9 @@ The owner, 23.10.
 
 **The inn stays the ruin at the town's edge on this map.** The opening's own walk reads that ruin as "Awaiting restoration"; rebuilding it, with the innkeeper and the drunk's post, belongs to the wave that writes their quests and lines (decision 50 of 22.10 stands).
 **Retry when:** the content wave opens. Model: claude-opus-5-5.
+## 2026-10-23 ✅ G71 measures the road beyond each exit, every gate open
+
+**The gate never holds the first night; the road beyond it does.** The gates stay where the story wants them, but beyond every exit of the first region a road runs long enough that, with every gate open, no wake reaches the next region's ground before the first dusk. This replaces the shut-gate measure of the entry above.
+As built: `plan.exits[]` (additive): `id`, the gate `slot` or the `at` tile of a way with no slot (a jetty), `to` (a plan region) and `min_road_steps`. `firstNight` walks with every listed gate open; reaching another world or the edge by any way that is not a listed exit before dusk fails the map. `exitRoads` names each exit's least road: the daylight in steps less the fastest wake's steps to the gate, plus `ROAD_MARGIN` (10); a smaller `min_road_steps` fails, and so does a stitched map whose next world's ground starts closer beyond the gate. Tests: `tools/test/mapplan.test.ts`.
+The owner, 23.10.
+**Retry when:** the clock or the walk speed changes (the numbers move), or a way to travel faster than walking lands. Model: claude-opus-5-5.
