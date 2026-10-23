@@ -1603,6 +1603,30 @@
         "solid": true
       },
       {
+        "sprite": "core/base-kit:props/rubble",
+        "x": 35,
+        "y": 28,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/rubble",
+        "x": 37,
+        "y": 28,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/rubble",
+        "x": 38,
+        "y": 31,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
         "sprite": "core/base-kit:props/ruin_arch",
         "x": 36,
         "y": 19,
@@ -2784,10 +2808,18 @@
         "solid": true
       },
       {
-        "sprite": "core/base-kit:props/ruin_wall",
+        "sprite": "core/base-kit:props/ruin_pillar",
         "x": 36,
         "y": 32,
-        "w": 2,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 38,
+        "y": 32,
+        "w": 1,
         "h": 1,
         "solid": true
       },
@@ -2811,14 +2843,6 @@
         "sprite": "core/base-kit:props/ruin_pillar",
         "x": 39,
         "y": 28,
-        "w": 1,
-        "h": 1,
-        "solid": true
-      },
-      {
-        "sprite": "core/base-kit:props/ruin_pillar",
-        "x": 39,
-        "y": 29,
         "w": 1,
         "h": 1,
         "solid": true
