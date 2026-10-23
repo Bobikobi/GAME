@@ -5,8 +5,8 @@
  * walks all keep their shadow without a second list.
  *
  * The shadows of a layer are painted opaque into one canvas a little larger than the camera's
- * view, then drawn once at the table's alpha. Overlaps are therefore one shadow, not two. The
- * contact line under the feet is separate, at the decided 45%.
+ * view, then drawn at the table's alpha in the squares (`CELL`) a shadow reaches. Overlaps are
+ * therefore one shadow, not two. The contact line under the feet is separate, at the decided 45%.
  *
  * A layer is painted only when what it shows has moved: the sun's shear, the canvas's corner
  * (it steps by `SNAP`, so the camera scrolls inside it), or one of its casters' texture, mirror
@@ -71,10 +71,14 @@ interface Draw {
   y: number;
 }
 
-/** One of the two layers: its canvas, the image that draws it, its contact lines, and what it shows now. */
+/** One of the two layers: its canvas, the cells that draw it, its contact lines, and what it shows now. */
 interface Plane {
+  readonly key: string;
   readonly tex: Phaser.Textures.CanvasTexture;
-  readonly image: Phaser.GameObjects.Image;
+  readonly depth: number;
+  /** one image per `CELL` square a shadow reaches, each a frame of the one canvas; the rest of the pool is hidden */
+  readonly cells: Phaser.GameObjects.Image[];
+  used: number;
   readonly contact: Phaser.GameObjects.Graphics;
   /** what the plane shows now; a frame that would paint the same leaves it as it is */
   painted: string;
@@ -85,6 +89,13 @@ interface Plane {
  * camera scrolls inside it, so a layer whose casters stand still is not painted again while the player walks.
  */
 const SNAP = 64;
+
+/**
+ * A layer is drawn in squares of this many world pixels, only those a shadow reaches. One quad the size of the
+ * view, blended in every frame for each layer, is a cost a software renderer feels on a large screen; the
+ * squares cover the shadows and little else, and the canvas they cut is still one, so overlaps stay one shadow.
+ */
+const CELL = 32;
 
 export class CastLayer {
   private readonly scene: Phaser.Scene;
@@ -114,8 +125,11 @@ export class CastLayer {
       const tex = scene.textures.createCanvas(key, 1, 1) as Phaser.Textures.CanvasTexture;
       tex.setFilter(Phaser.Textures.FilterMode.NEAREST);
       return {
+        key,
         tex,
-        image: scene.add.image(0, 0, key).setOrigin(0).setDepth(depth).setVisible(false),
+        depth,
+        cells: [],
+        used: 0,
         contact: scene.add.graphics().setDepth(depth + CAST_DEPTH.contact).setVisible(false),
         painted: '',
       };
@@ -208,10 +222,10 @@ export class CastLayer {
     for (const name of ['under', 'standing'] as const) {
       const p = this.planes[name];
       if (sig[name] !== p.painted) {
-        this.paint(p, draws[name], ww * this.density, wh * this.density);
+        this.paint(p, draws[name], ww * this.density, wh * this.density, ox, oy);
         p.painted = sig[name];
       }
-      p.image.setPosition(ox, oy).setScale(1 / this.density).setAlpha(sun.alpha).setVisible(true);
+      for (let i = 0; i < p.used; i++) p.cells[i]!.setAlpha(sun.alpha);
       p.contact.setPosition(ox, oy).setVisible(true);
     }
     for (const [caster, own] of this.owns) if (!placed.has(caster)) this.hideOwn(own);
@@ -222,7 +236,8 @@ export class CastLayer {
   /** Turns the pass off, for the night and for a scene that is leaving. */
   hide(): void {
     for (const p of Object.values(this.planes)) {
-      p.image.setVisible(false);
+      for (const cell of p.cells) cell.setVisible(false);
+      p.used = 0;
       p.contact.clear().setVisible(false);
       p.painted = '';
     }
@@ -231,7 +246,8 @@ export class CastLayer {
 
   destroy(): void {
     for (const p of Object.values(this.planes)) {
-      p.image.destroy();
+      for (const cell of p.cells) cell.destroy();
+      p.cells.length = 0;
       p.contact.destroy();
     }
     this.clear();
@@ -289,8 +305,8 @@ export class CastLayer {
     own.contact.setVisible(false);
   }
 
-  /** Paints one layer's shadows and contact lines, and uploads its canvas once. */
-  private paint(p: Plane, draws: readonly Draw[], cw: number, ch: number): void {
+  /** Paints one layer's shadows and contact lines, uploads its canvas once, and lays the cells its shadows reach. */
+  private paint(p: Plane, draws: readonly Draw[], cw: number, ch: number, ox: number, oy: number): void {
     if (p.tex.width !== cw || p.tex.height !== ch) p.tex.setSize(cw, ch);
     const ctx = p.tex.getContext();
     ctx.clearRect(0, 0, cw, ch);
@@ -305,6 +321,35 @@ export class CastLayer {
     }
     // the canvas was painted after it was made, so it is uploaded now
     p.tex.refresh();
+    // the squares a shadow reaches, each drawn as a frame of the canvas (the canvas is a whole number of them)
+    const cell = CELL * this.density;
+    const cols = Math.ceil(cw / cell);
+    const rows = Math.ceil(ch / cell);
+    const hit = new Set<number>();
+    for (const d of draws) {
+      const box = shadowBox(d.shadow);
+      const x0 = Math.max(0, Math.floor((d.x + box.x) / cell));
+      const x1 = Math.min(cols - 1, Math.floor((d.x + box.x + box.w - 1) / cell));
+      const y0 = Math.max(0, Math.floor((d.y + box.y) / cell));
+      const y1 = Math.min(rows - 1, Math.floor((d.y + box.y + box.h - 1) / cell));
+      for (let cy = y0; cy <= y1; cy++) for (let cx = x0; cx <= x1; cx++) hit.add(cy * cols + cx);
+    }
+    let used = 0;
+    for (const n of hit) {
+      const cx = n % cols;
+      const cy = Math.floor(n / cols);
+      const name = `${cx},${cy}`;
+      if (!p.tex.has(name)) p.tex.add(name, 0, cx * cell, cy * cell, cell, cell);
+      let img = p.cells[used];
+      if (!img) {
+        img = this.scene.add.image(0, 0, p.key, name).setOrigin(0).setDepth(p.depth);
+        p.cells.push(img);
+      }
+      img.setTexture(p.key, name).setPosition(ox + cx * CELL, oy + cy * CELL).setScale(scale).setVisible(true);
+      used++;
+    }
+    for (let i = used; i < p.cells.length; i++) p.cells[i]!.setVisible(false);
+    p.used = used;
   }
 
   private inView(x: number, y: number, w: number, h: number, view: Phaser.Geom.Rectangle): boolean {
