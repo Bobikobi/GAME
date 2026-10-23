@@ -2552,3 +2552,10 @@ The owner, 23.10.
 
 **A map may carry its plan.** Additive, `format` stays 1: `heights` (a digit row per ground row, read by the check only until the kernel walks levels; kit schema answer 6 of 22.10), a prop's `crossing` (steps or a ramp, G68), and `plan` with `regions[]` (cells, purpose stop or passage, height, tags, cover per mille, and `opens_by`: `wake`, the quest that opens it (decision 25), or left out for ground nobody walks), `paths[]` (corner tiles, G69), `routes[]` (who walks where and at which hours), `rests[]` and `wakes[]` (the spawn pool: each wake pocket with its first task; the wake tile and the tools stay in the pocket files of 22.10). The kernel and the clients never read the plan; an `opens_by` may name a region quest before it is written (its gate stays shut ground until then).
 **Retry when:** the cover tool or the level walk lands (they read the same block). Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ G71 measures the road beyond each exit, every gate open
+
+**The gate never holds the first night; the road beyond it does.** The gates stay where the story wants them, but beyond every exit of the first region a road runs long enough that, with every gate open, no wake reaches the next region's ground before the first dusk. This replaces the shut-gate measure of the entry above.
+As built: `plan.exits[]` (additive): `id`, the gate `slot` or the `at` tile of a way with no slot (a jetty), `to` (a plan region) and `min_road_steps`. `firstNight` walks with every listed gate open; reaching another world or the edge by any way that is not a listed exit before dusk fails the map. `exitRoads` names each exit's least road: the daylight in steps less the fastest wake's steps to the gate, plus `ROAD_MARGIN` (10); a smaller `min_road_steps` fails, and so does a stitched map whose next world's ground starts closer beyond the gate. Tests: `tools/test/mapplan.test.ts`.
+The owner, 23.10.
+**Retry when:** the clock or the walk speed changes (the numbers move), or a way to travel faster than walking lands. Model: claude-opus-5-5.

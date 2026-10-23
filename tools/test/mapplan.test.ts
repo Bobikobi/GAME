@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { Bundle } from '@game/kernel';
 import { validateFile } from '@game/schema';
-import { checkMapPlan, firstDusk, firstNight, straightRuns } from '../src/mapplan';
+import { ROAD_MARGIN, checkMapPlan, exitRoads, firstDusk, firstNight, straightRuns } from '../src/mapplan';
 import { loadBundle } from './helpers/world';
 
 let bundle: Bundle;
@@ -34,6 +34,7 @@ describe('the plan block in the schema', () => {
       routes: [{ id: 'core/a-round', who: 'Maru', hours: [5, 10], via: [[2, 2]] }],
       rests: [{ x: 2, y: 2 }],
       wakes: [{ pocket: 'core/west-bank', quest: 'core/first-pickings' }],
+      exits: [{ id: 'core/a-way', at: [2, 5], to: 'core/a-bank', min_road_steps: 2200 }],
     };
     file.map.heights = file.map.ground.map((row: string) => '0'.repeat(row.length));
     expect(validateFile(file)).toEqual([]);
@@ -89,7 +90,7 @@ describe('G71: the first night is held by size', () => {
     expect(firstDusk(bundle)).toBe((bundle.params.day_length_ms * 8) / 24);
   });
 
-  it('the core valley holds every wake inside it until the first dusk', () => {
+  it('the core valley holds every wake inside it until the first dusk, every gate open', () => {
     const walk = bundle.params.walk_step_ms;
     for (const f of firstNight(bundle)) {
       if (f.exitSteps !== null) expect(f.exitSteps * walk, f.pocket).toBeGreaterThan(f.daylightMs);
@@ -103,5 +104,47 @@ describe('G71: the first night is held by size', () => {
     const found = errors(near).find((i) => i.message.startsWith(`G71: from the wake of ${pocket.id} `));
     expect(found, 'the wake on ground of its own world one step from the valley').toBeDefined();
     expect(found!.message).toContain('a walk of 1 steps');
+  });
+
+  describe('an exit: the road beyond the gate holds the night, never the gate', () => {
+    // a corridor: the wake at x 1, the valley to x 4, the gate at x 5 (shut rubble), the road beyond to x 19
+    const stitched = (worldFrom: number | null, minRoad: number): Bundle => {
+      const row = (y: number) => (y === 2 ? `%${'.'.repeat(4)}%${'.'.repeat(14)}` : '%'.repeat(20));
+      const map: Map = {
+        ...bundle.map,
+        width: 20,
+        height: 5,
+        ground: [0, 1, 2, 3, 4].map(row),
+        heights: undefined,
+        props: [],
+        slots: [{ id: 'core/a-gate', kind: 'area', x: 5, y: 2, w: 1, h: 1 }],
+        regions: worldFrom === null ? undefined : [{ id: 'elsewhere', x: worldFrom, y: 0, w: 20 - worldFrom, h: 5, world: 'elsewhere' }],
+        plan: {
+          regions: [{ id: 'core/a-wood', purpose: 'passage', cells: [[5, 0, 15, 5]], opens_by: 'core/a-quest' }],
+          exits: [{ id: 'core/a-way', slot: 'core/a-gate', to: 'core/a-wood', min_road_steps: minRoad }],
+        },
+      };
+      const pocket = Object.values(bundle.pockets)[0]!;
+      return { ...bundle, map, instances: {}, pockets: { [pocket.id]: { ...pocket, wake: { x: 1, y: 2 } } } };
+    };
+    const g71 = (b: Bundle) => errors(b).filter((i) => i.message.startsWith('G71'));
+
+    it('names the least road beyond: the daylight in steps less the walk to the gate, plus the margin', () => {
+      const [road] = exitRoads(stitched(null, 1));
+      expect(road!.gateSteps).toBe(4);
+      expect(road!.needed).toBe(Math.ceil(firstDusk(bundle) / bundle.params.walk_step_ms - 4) + ROAD_MARGIN);
+      expect(road!.road).toBeNull();
+      expect(g71(stitched(null, road!.needed!))).toEqual([]);
+      expect(g71(stitched(null, road!.needed! - 1)).map((i) => i.message).join(' / ')).toContain(`must run at least ${road!.needed} steps`);
+    });
+
+    it('fails a stitched map whose road beyond the gate is shorter than the plan asks', () => {
+      const needed = exitRoads(stitched(null, 1))[0]!.needed!;
+      const short = stitched(10, needed);
+      expect(exitRoads(short)[0]!.road).toBe(5);
+      const found = g71(short).find((i) => i.message.includes('beyond core/a-way the next region'));
+      expect(found, 'a road of 5 steps where the plan asks for the night').toBeDefined();
+      expect(found!.message).toContain('5 steps past the gate');
+    });
   });
 });

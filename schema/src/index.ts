@@ -1422,6 +1422,25 @@ export const MapPlan = Type.Object(
         { maxItems: 16, description: 'The spawn pool: every wake the seed may draw, with its first task.' },
       ),
     ),
+    exits: Type.Optional(
+      Type.Array(
+        Type.Object(
+          {
+            id: Id,
+            slot: Type.Optional({ ...Id, description: 'The gate: the slot a region quest opens (decision 25). Give this or `at`.' }),
+            at: Type.Optional({ ...PlanTile, description: 'A way out with no gate slot (the jetty where the boat waits): the last tile a foot stands on.' }),
+            to: { ...Id, description: 'The plan region the way leads into.' },
+            min_road_steps: Int(
+              1,
+              100000,
+              'G71: the fewest steps the road beyond this exit must run before the next region\'s ground, so that no wake reaches that ground before the first dusk with every gate open. The daylight in steps at the fastest wake, less its steps to this exit, plus a margin; the check refuses a smaller number and any stitched map whose road beyond is shorter.',
+            ),
+          },
+          { additionalProperties: false },
+        ),
+        { maxItems: 16, description: 'The ways out of the first region: the first night is held by the length of the road beyond each one, never by the gate (DECISIONS.md, 2026-10-23).' },
+      ),
+    ),
   },
   { additionalProperties: false },
 );
