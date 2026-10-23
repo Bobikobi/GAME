@@ -37,6 +37,27 @@
   --kit-brass: #eda83a;
   --kit-brass-dark: #b8661f;
 
+  /* the skill tree: a learned node fills with its school's colour, and the school's name on dark wood
+     reads in a lighter one of the same family (on --kit-plate: green 6.71, wood 5.55, skin 9.06,
+     red 6.89, water 7.36, plum 9.65, fire 6.89, grey 8.61); the trunk is plum, paper on it 8.8 */
+  --kit-tree-green: #4c9a3f;
+  --kit-tree-green-ink: #84c450;
+  --kit-tree-wood: #9e6b3c;
+  --kit-tree-wood-ink: #c99a5e;
+  --kit-tree-skin: #d38c66;
+  --kit-tree-skin-ink: #f3c7a0;
+  --kit-tree-red: #a8302f;
+  --kit-tree-red-ink: #f6a07f;
+  --kit-tree-water: #3f8fd1;
+  --kit-tree-water-ink: #7cc4ec;
+  --kit-tree-plum: #9a5bb0;
+  --kit-tree-plum-ink: #ebd3a2;
+  --kit-tree-fire: #eda83a;
+  --kit-tree-fire-ink: #eda83a;
+  --kit-tree-grey: #8f94a8;
+  --kit-tree-grey-ink: #c6cad6;
+  --kit-tree-trunk: #5b3373;
+
   /* the face: Jersey 15 draws a pixel at 1/27 of its size, so 18px and 27px sit on whole device pixels at 3x */
   --kit-text: 18px;
   --kit-text-l: 27px;

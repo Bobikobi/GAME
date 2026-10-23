@@ -2557,3 +2557,26 @@ A new core-only content kind, `school` (`content/core/schools/*.json`), one per 
 Why: GROWTH.md section 4 asks for the tree to come from content, and the screen needs a format to read before it can be drawn.
 Cost: the profession `techniques` stay and still count; the two ways of buying overlap until a later step moves the techniques into the nodes. There is no way to unlearn a node yet. The seed nodes are placeholders drawn from the effects the code reads today (no `see_ripe`, which nothing reads); the content wave writes the real ones.
 **Retry when:** the content wave writes the real nodes, or a playtest shows the slots open too early or too late. Model: claude-opus-5-5.
+
+
+## 2026-10-23 ✅ Platform priority: the PC first
+
+Platform priority: the game is designed for the PC first; the phone keeps working but is secondary (owner, 23.10).
+Why: the owner, 23.10: this is a full PC game, and the phone is not critical.
+Cost: new screens are laid out, tested and measured on a desktop viewport first, with the mouse, the wheel and the keys; the phone layout keeps working and keeps its existing e2e green, and the 44 px tap rule applies to the phone layout only.
+**Retry when:** the owner changes the platform order. Model: claude-opus-5-5; the first line is the owner's.
+
+## 2026-10-23 ✅ The tree is data: a graph of any size, laid out from the content
+
+The skill tree is content, not layout code, and its rules hold for hundreds of nodes and many branches. A node has an id, a size (`small`, `major`, `keystone`, or a race's `corner`), an optional price inside its size's band (`params.growth.cost_band`), optional attribute keys, an effect, an optional `cluster` of its school, an optional place (`pos`), and `needs`, which may name a node of another school by its full key. A school is a branch with an optional colour family (`tint`) and direction (`angle`) and named `clusters`. `pnpm check` holds the graph: every need exists, no chain of needs goes round (across schools too), each school hangs together, a price stays in its band, a cluster exists and holds a node, a school places every node or none and no two share a place, and a player of a race sees at most `params.growth.nodes_max` nodes in a school. Where there is no `pos`, `game/src/treelayout.ts` places the nodes from the graph, the same every time.
+A generated tree of about three hundred nodes (`tools/test/helpers/bigtree.ts`) proves the rules, the layout and the screen's speed; it lives in the tests only, and the shipped tree stays the five core schools.
+Why: the owner, 23.10: the tree must grow far bigger, like the big games compared (Path of Exile, Grim Dawn, the sphere grid of FFX), and a later session designs the full tree; this lays its foundations.
+Cost: the format grows by optional fields only, so the saves and the content of the earlier format load unchanged; the seed nodes are still placeholders.
+**Retry when:** the session that designs the full tree needs a rule this model cannot say (a node shared by two schools, a choice of one of two), or a tree over the bound draws too slowly. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The skill tree screen: frame S1 on a map to pan and zoom
+
+The kit's Skills page is the tree (frame S1, the owner's pick): the race is the trunk in the middle, each school a wing around it in its colour, a race's corner nodes on the wings, the touched node's card beside the tree and the build as a strip at its foot. No number is written on the tree; a long press, or V on the keys, shows a node's number on its card. On a computer the window takes the wide screen; the wheel zooms where the pointer is, a drag pans, a node shows a card while the pointer rests on it, the arrows move between nodes, + and - zoom, 0 shows the whole tree and 1 to 9 one school, L learns. On a phone a finger pans, two fingers zoom, and every node takes a 44 px tap at the starting zoom. Only the nodes on screen are drawn. The reasons a node cannot be learned are the kernel's words. The attributes stay in the journal with their numbers, and as keys on this page.
+Why: the owner chose frame S1, no numbers on the tree, a long press for the value, and the PC first (23.10).
+Cost: the kit's old Skills list (attributes and professions) is gone from the kit and stays in the journal.
+**Retry when:** a playtest finds the tree hard to read at the whole-tree zoom, or the full tree's design asks for another frame. Model: claude-opus-5-5.

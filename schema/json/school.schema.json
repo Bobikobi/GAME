@@ -530,8 +530,8 @@
         },
         "nodes": {
           "minItems": 1,
-          "maxItems": 24,
-          "description": "The path and the corners. At most 12 nodes for each race (the path and that race's corner).",
+          "maxItems": 400,
+          "description": "The paths and the corners. At most `growth.nodes_max` nodes for each race (the paths and that race's corner).",
           "type": "array",
           "items": {
             "additionalProperties": false,
@@ -576,20 +576,30 @@
                   {
                     "const": "corner",
                     "type": "string"
+                  },
+                  {
+                    "const": "keystone",
+                    "type": "string"
                   }
                 ]
               },
               "needs": {
                 "maxItems": 3,
                 "uniqueItems": true,
-                "description": "The nodes of the same school learned before this one: its place on the path.",
+                "description": "The nodes learned before this one, all of them: its place on the path. Most are of the same school; a node of another school joins the two wings.",
                 "type": "array",
                 "items": {
-                  "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
-                  "maxLength": 40,
-                  "description": "The node's name inside its school, for example \"steady\". A learned node is kept as \"<school id>/<node id>\".",
+                  "pattern": "^([a-z0-9]+(-[a-z0-9]+)*/[a-z0-9]+(-[a-z0-9]+)*/)?[a-z0-9]+(-[a-z0-9]+)*$",
+                  "maxLength": 120,
+                  "description": "A node of the same school by its id (\"steady\"), or of another school by \"<school id>/<node id>\" (\"core/digging-school/steady\").",
                   "type": "string"
                 }
+              },
+              "cost": {
+                "minimum": 1,
+                "maximum": 20,
+                "description": "Its price in skill points, inside the band of its size (params growth.cost, min to max). Left out: the size's price.",
+                "type": "integer"
               },
               "key": {
                 "additionalProperties": false,
@@ -689,6 +699,102 @@
                 "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
                 "maxLength": 80,
                 "description": "An item whose sprite pictures the node on the tree.",
+                "type": "string"
+              },
+              "cluster": {
+                "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+                "maxLength": 40,
+                "description": "The cluster of its school it belongs to (the school's `clusters`): nodes that stand together.",
+                "type": "string"
+              },
+              "pos": {
+                "additionalProperties": false,
+                "description": "Where it stands on the tree, in steps from the trunk (x to the right, y down). A school gives every node a place or none; with none, the screen lays the school out from its paths.",
+                "type": "object",
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "properties": {
+                  "x": {
+                    "minimum": -400,
+                    "maximum": 400,
+                    "type": "integer"
+                  },
+                  "y": {
+                    "minimum": -400,
+                    "maximum": 400,
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tint": {
+          "description": "The colour family of the core palette the wing is drawn in. Left out: wood.",
+          "anyOf": [
+            {
+              "const": "green",
+              "type": "string"
+            },
+            {
+              "const": "wood",
+              "type": "string"
+            },
+            {
+              "const": "skin",
+              "type": "string"
+            },
+            {
+              "const": "red",
+              "type": "string"
+            },
+            {
+              "const": "water",
+              "type": "string"
+            },
+            {
+              "const": "plum",
+              "type": "string"
+            },
+            {
+              "const": "fire",
+              "type": "string"
+            },
+            {
+              "const": "grey",
+              "type": "string"
+            }
+          ]
+        },
+        "angle": {
+          "minimum": 0,
+          "maximum": 359,
+          "description": "The direction the wing grows from the trunk, in degrees clockwise from the right. Left out: the wings share the circle in the order of their ids.",
+          "type": "integer"
+        },
+        "clusters": {
+          "maxItems": 40,
+          "description": "Named groups of the school's nodes, for example \"the trowel\". A node names its cluster.",
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "id",
+              "name"
+            ],
+            "properties": {
+              "id": {
+                "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+                "maxLength": 40,
+                "description": "The node's name inside its school, for example \"steady\". A learned node is kept as \"<school id>/<node id>\".",
+                "type": "string"
+              },
+              "name": {
+                "minLength": 1,
+                "maxLength": 40,
                 "type": "string"
               }
             }

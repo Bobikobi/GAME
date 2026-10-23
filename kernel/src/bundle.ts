@@ -10,6 +10,7 @@ import type {
   Expedition,
   GameMap,
   ItemDef,
+  NodeSizeName,
   Npc,
   Pocket,
   Profession,
@@ -116,7 +117,15 @@ export interface Params {
   /** what one attribute point adds; see the params schema */
   per_point: { might: number; senses: number; agility_pct: number; luck_permille: number; stamina: number; spirit: number };
   /** the skill tree: skill points per node size, and the character level each active slot opens at; absent, the tree is closed */
-  growth?: { cost: { small: number; major: number; corner: number }; slot_levels: number[] };
+  growth?: {
+    /** the price of a node by its size */
+    cost: Record<NodeSizeName, number>;
+    /** the lowest and highest price a node of that size may name for itself */
+    cost_band: Record<NodeSizeName, [number, number]>;
+    slot_levels: number[];
+    /** the most nodes a player of one race sees in one school */
+    nodes_max: number;
+  };
 }
 
 export interface SpriteInfo {

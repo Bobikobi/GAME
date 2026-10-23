@@ -42,6 +42,7 @@ import { s1, s1Available } from '../net/s1';
 import { STALL_SLOT, canPlaceStall, directionOf, localMapState, mapPlaces } from '../places';
 import { say } from './dialog';
 import { button, h, sprite } from './dom';
+import { treeScreen, type TreeMemo } from './tree';
 import { mapSvg, placeKind } from './map';
 import type { Layer, UI } from './ui';
 
@@ -189,6 +190,8 @@ export function openBag(ui: UI): void {
   let look = false;
   let shopPick: string | undefined;
   let priceFor: { item: string; slot: number } | undefined;
+  // the skill tree keeps where it looks and the node chosen while the kit stays open
+  const treeMemo: TreeMemo = {};
   // the draft is kept in the save; a session that keeps none (the server door) keeps it in this panel
   const stall: (StallDraft | null)[] = stallDraftOf(s) ?? Array.from({ length: STALL_SLOTS }, () => null);
 
@@ -475,7 +478,7 @@ export function openBag(ui: UI): void {
   const TABS: readonly [KitTab, string, string][] = [
     ['bag', 'Bag', 'What you carry. Pick an item to read it.'],
     ['outfit', 'Outfit', 'What you wear. Work clothes on one layer, a look on the other.'],
-    ['skills', 'Skills', 'What you can do. Spend a point here or in the journal.'],
+    ['skills', 'Skills', 'Your tree: the trunk is your race, each wing a school. Learn at a fire, a camp or in town.'],
     ['shop', 'Shop', 'Your stall. Drag an item to a slot, or tap an item then a slot.'],
   ];
 
@@ -498,6 +501,8 @@ export function openBag(ui: UI): void {
   const caption = (): HTMLElement => h('p', { class: 'kit-caption' }, TABS.find(([name]) => name === tab)?.[2] ?? '');
 
   const render = () => {
+    // the tree takes the wide screen; the other pages keep the kit's size
+    p.body.parentElement?.classList.toggle('tree-open', tab === 'skills');
     const ids = Object.keys(s.state.player.bag).sort((x, y) => itemName(b, x).localeCompare(itemName(b, y)));
     if (selected && !ids.includes(selected)) selected = undefined;
     selected ??= ids[0];
@@ -506,7 +511,7 @@ export function openBag(ui: UI): void {
       return;
     }
     if (tab === 'skills') {
-      p.body.replaceChildren(tabBar(), caption(), h('div', { class: 'kit-body skills-only' }, h('section', { class: 'kit-skills' }, skillsBody(ui, render))));
+      p.body.replaceChildren(tabBar(), caption(), h('div', { class: 'kit-body tree-only' }, treeScreen(ui, treeMemo, render)));
       return;
     }
     if (tab === 'shop') {

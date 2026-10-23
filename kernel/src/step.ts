@@ -1221,7 +1221,7 @@ function learnNode(ctx: Ctx, key: string): void {
   const why = nodeRefusal(b, s, key);
   if (why !== undefined) refuse(why);
   atSafePlace(ctx, 'Learn');
-  const cost = nodeCost(b, treeNode(b, key)!.node.size);
+  const cost = nodeCost(b, treeNode(b, key)!.node);
   s.player.nodes = [...(s.player.nodes ?? []), key].sort();
   s.player.spent += cost;
   ctx.events.push({ e: 'node', node: key, cost });

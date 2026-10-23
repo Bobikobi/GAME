@@ -1,6 +1,7 @@
 @import '../../design/tokens.css';
 @import './ui/theme.css';
 @import './ui/kit.css';
+@import './ui/tree.css';
 
 /* Handheld-era UI drawn with the core palette (tools/src/kit/palette.ts). */
 @font-face {

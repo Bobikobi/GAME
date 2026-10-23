@@ -167,8 +167,15 @@ export function flattenParams(p: ParamsBody): Params {
     },
     growth: p.growth
       ? {
-          cost: { small: p.growth.cost.small.value, major: p.growth.cost.major.value, corner: p.growth.cost.corner.value },
+          cost: { small: p.growth.cost.small.value, major: p.growth.cost.major.value, corner: p.growth.cost.corner.value, keystone: p.growth.cost.keystone.value },
+          cost_band: {
+            small: [p.growth.cost.small.min, p.growth.cost.small.max],
+            major: [p.growth.cost.major.min, p.growth.cost.major.max],
+            corner: [p.growth.cost.corner.min, p.growth.cost.corner.max],
+            keystone: [p.growth.cost.keystone.min, p.growth.cost.keystone.max],
+          },
           slot_levels: [...p.growth.slot_levels],
+          nodes_max: p.growth.nodes_max,
         }
       : undefined,
     light: p.light

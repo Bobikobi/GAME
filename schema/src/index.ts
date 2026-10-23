@@ -1009,15 +1009,24 @@ export const ProfessionBody = Type.Object(
  * percentages on screen"): a school is one wing of the tree, tied to a profession; its nodes are bought
  * with skill points by choice, never handed out by level. A small node moves one number and is always
  * on; a major node changes a verb or teaches a technique; a corner node is where the race (the trunk)
- * meets the school, one per race and school.
+ * meets the school, one per race and school; a keystone is always on and changes how a whole school
+ * plays. The tree is data, not layout: it carries hundreds of nodes in many wings, each wing laid out
+ * from its paths (or from places it gives), grouped in clusters and joined to other wings by needs.
  */
-export const NODE_SIZES = ['small', 'major', 'corner'] as const;
+export const NODE_SIZES = ['small', 'major', 'corner', 'keystone'] as const;
 export const NodeSize = Type.Union(NODE_SIZES.map((k) => Type.Literal(k)));
 const NodeId = Type.String({
   pattern: '^[a-z0-9]+(-[a-z0-9]+)*$',
   maxLength: 40,
   description: 'The node\'s name inside its school, for example "steady". A learned node is kept as "<school id>/<node id>".',
 });
+const NodeRef = Type.String({
+  pattern: '^([a-z0-9]+(-[a-z0-9]+)*/[a-z0-9]+(-[a-z0-9]+)*/)?[a-z0-9]+(-[a-z0-9]+)*$',
+  maxLength: 120,
+  description: 'A node of the same school by its id ("steady"), or of another school by "<school id>/<node id>" ("core/digging-school/steady").',
+});
+/** The colour families of the core palette a wing may be drawn in (tools/src/kit/palette.ts; the kit theme maps each to its colours). */
+export const TREE_TINTS = ['green', 'wood', 'skin', 'red', 'water', 'plum', 'fire', 'grey'] as const;
 const AttributeKey = Type.Object(
   {
     might: Type.Optional(Int(1, 10)),
@@ -1040,11 +1049,14 @@ export const SchoolNode = Type.Object(
     text: { ...Text, description: 'One sentence in words, never a number or a percentage (the number stays in the code).' },
     size: NodeSize,
     needs: Type.Optional(
-      Type.Array(NodeId, {
+      Type.Array(NodeRef, {
         maxItems: 3,
         uniqueItems: true,
-        description: 'The nodes of the same school learned before this one: its place on the path.',
+        description: 'The nodes learned before this one, all of them: its place on the path. Most are of the same school; a node of another school joins the two wings.',
       }),
+    ),
+    cost: Type.Optional(
+      Int(1, 20, 'Its price in skill points, inside the band of its size (params growth.cost, min to max). Left out: the size\'s price.'),
     ),
     key: Type.Optional(AttributeKey),
     effect: Effect,
@@ -1056,6 +1068,16 @@ export const SchoolNode = Type.Object(
     ),
     race: Type.Optional({ ...Id, description: 'A corner node only: the race whose node this is. Only a player of that race sees and learns it.' }),
     icon: Type.Optional({ ...Id, description: 'An item whose sprite pictures the node on the tree.' }),
+    cluster: Type.Optional({ ...NodeId, description: 'The cluster of its school it belongs to (the school\'s `clusters`): nodes that stand together.' }),
+    pos: Type.Optional(
+      Type.Object(
+        { x: Int(-400, 400), y: Int(-400, 400) },
+        {
+          additionalProperties: false,
+          description: 'Where it stands on the tree, in steps from the trunk (x to the right, y down). A school gives every node a place or none; with none, the screen lays the school out from its paths.',
+        },
+      ),
+    ),
   },
   { additionalProperties: false },
 );
@@ -1066,9 +1088,21 @@ export const SchoolBody = Type.Object(
     profession: { ...Id, description: 'The profession whose wing this is. The profession keeps its levels; the school is what the points buy.' },
     nodes: Type.Array(SchoolNode, {
       minItems: 1,
-      maxItems: 24,
-      description: 'The path and the corners. At most 12 nodes for each race (the path and that race\'s corner).',
+      maxItems: 400,
+      description: 'The paths and the corners. At most `growth.nodes_max` nodes for each race (the paths and that race\'s corner).',
     }),
+    tint: Type.Optional(
+      Type.Union(TREE_TINTS.map((k) => Type.Literal(k)), { description: 'The colour family of the core palette the wing is drawn in. Left out: wood.' }),
+    ),
+    angle: Type.Optional(
+      Int(0, 359, 'The direction the wing grows from the trunk, in degrees clockwise from the right. Left out: the wings share the circle in the order of their ids.'),
+    ),
+    clusters: Type.Optional(
+      Type.Array(Type.Object({ id: NodeId, name: Name }, { additionalProperties: false }), {
+        maxItems: 40,
+        description: 'Named groups of the school\'s nodes, for example "the trowel". A node names its cluster.',
+      }),
+    ),
   },
   { additionalProperties: false },
 );
@@ -1264,9 +1298,13 @@ export const ParamsBody = Type.Object(
       Type.Object(
         {
           cost: Type.Object(
-            { small: Bounded, major: Bounded, corner: Bounded },
-            { additionalProperties: false, description: 'Skill points a node costs, by its size (GROWTH section 3.6).' },
+            { small: Bounded, major: Bounded, corner: Bounded, keystone: Bounded },
+            {
+              additionalProperties: false,
+              description: 'Skill points a node costs, by its size (GROWTH section 3.6): the value is the price, and a node that names its own `cost` stays between min and max.',
+            },
           ),
+          nodes_max: Int(1, 400, 'At most this many nodes a player of one race sees in one school: its paths and that race\'s corner.'),
           slot_levels: Type.Array(Type.Integer({ minimum: 1, maximum: 40 }), {
             minItems: 1,
             maxItems: 8,
@@ -1678,6 +1716,7 @@ export type Pocket = Static<typeof PocketBody>;
 export type School = Static<typeof SchoolBody>;
 export type SchoolNodeDef = Static<typeof SchoolNode>;
 export type NodeSizeName = (typeof NODE_SIZES)[number];
+export type TreeTint = (typeof TREE_TINTS)[number];
 export type SchoolFile = Static<typeof SchoolFile>;
 export type Profession = Static<typeof ProfessionBody>;
 export type Shop = Static<typeof ShopBody>;

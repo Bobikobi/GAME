@@ -317,8 +317,15 @@
           "min": 2,
           "max": 5,
           "step": 1
+        },
+        "keystone": {
+          "value": 4,
+          "min": 3,
+          "max": 6,
+          "step": 1
         }
       },
+      "nodes_max": 12,
       "slot_levels": [
         1,
         1,
