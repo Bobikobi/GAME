@@ -453,6 +453,10 @@
               {
                 "const": "pocket",
                 "type": "string"
+              },
+              {
+                "const": "school",
+                "type": "string"
               }
             ]
           },

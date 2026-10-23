@@ -22,6 +22,7 @@ import { checkPlay, rewardItems } from './play';
 import { checkDeadProps } from './deadprops';
 import { checkReach } from './reach';
 import { checkRaces } from './races';
+import { checkSchools } from './schools';
 import { checkRichness } from './richness';
 import { checkStarts } from './starts';
 
@@ -50,6 +51,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkColors(assembled));
     issues.push(...checkPlay(b, assembled.origin));
     issues.push(...checkRaces(b, assembled.origin));
+    issues.push(...checkSchools(b, assembled.origin));
     issues.push(...checkStarts(b, assembled.origin));
     issues.push(...checkReach(b, assembled.origin));
     issues.push(...checkDeadProps(b, assembled.origin));

@@ -1,0 +1,106 @@
+{
+  "$schema": "../../../schema/json/school.schema.json",
+  "format": 1,
+  "type": "school",
+  "id": "core/cooking-school",
+  "title": "Cooking",
+  "creator": "core",
+  "school": {
+    "name": "Cooking",
+    "profession": "core/cooking",
+    "nodes": [
+      {
+        "id": "practiced",
+        "name": "Practiced",
+        "text": "Cooking goes a little faster.",
+        "size": "small",
+        "effect": "craft_speed_pct",
+        "value": 5,
+        "icon": "core/herb-tea"
+      },
+      {
+        "id": "camp-meal",
+        "name": "Camp meal",
+        "text": "A meal fills you more.",
+        "size": "major",
+        "needs": [
+          "practiced"
+        ],
+        "effect": "meal_fill_pct",
+        "value": 20,
+        "slot": true,
+        "icon": "core/herb-stew"
+      },
+      {
+        "id": "even-heat",
+        "name": "Even heat",
+        "text": "A dish fails less often.",
+        "size": "small",
+        "needs": [
+          "camp-meal"
+        ],
+        "effect": "craft_chance_pct",
+        "value": 5,
+        "icon": "core/berry-mash"
+      },
+      {
+        "id": "hearty-pot",
+        "name": "Hearty pot",
+        "text": "A meal fills you much more.",
+        "size": "major",
+        "needs": [
+          "even-heat"
+        ],
+        "key": {
+          "stamina": 2
+        },
+        "effect": "meal_fill_pct",
+        "value": 30,
+        "slot": true,
+        "icon": "core/mushroom-skewer"
+      },
+      {
+        "id": "inn-cook",
+        "name": "Inn cook",
+        "text": "You cook as fast as an inn kitchen.",
+        "size": "corner",
+        "needs": [
+          "camp-meal"
+        ],
+        "effect": "craft_speed_pct",
+        "value": 15,
+        "slot": true,
+        "race": "core/human",
+        "icon": "core/whole-bowl"
+      },
+      {
+        "id": "herb-cook",
+        "name": "Herb cook",
+        "text": "Herbs make every meal fill more.",
+        "size": "corner",
+        "needs": [
+          "camp-meal"
+        ],
+        "effect": "meal_fill_pct",
+        "value": 20,
+        "slot": true,
+        "race": "core/elf",
+        "icon": "core/herb"
+      },
+      {
+        "id": "bone-broth",
+        "name": "Bone broth",
+        "text": "A dish of yours hardly ever fails.",
+        "size": "corner",
+        "needs": [
+          "camp-meal"
+        ],
+        "effect": "craft_chance_pct",
+        "value": 10,
+        "slot": true,
+        "race": "core/skeleton",
+        "icon": "core/stew-scrap"
+      }
+    ]
+  }
+}
