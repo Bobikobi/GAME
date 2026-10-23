@@ -28,11 +28,11 @@ describe('list-shrinks', () => {
   it('a swap fails: a key comes in while another leaves', () => {
     const issues = checkRatchets(files({ [J.file]: '{"a":1,"c":1}' }), files({ [J.file]: '{"a":1,"b":1}' }), [J]);
     expect(issues).toHaveLength(1);
-    expect(issues[0].message).toMatch(/adds "c"/);
+    expect(issues[0]!.message).toMatch(/adds "c"/);
   });
 
   it('a list deleted or reshaped at head fails', () => {
-    expect(checkRatchets(files({}), files({ [R.file]: ts('a') }), [R])[0].message).toMatch(/cannot be read at head/);
+    expect(checkRatchets(files({}), files({ [R.file]: ts('a') }), [R])[0]!.message).toMatch(/cannot be read at head/);
     expect(checkRatchets(files({ [R.file]: 'export let LEFT = ["a"];' }), files({ [R.file]: ts('a') }), [R])).toHaveLength(1);
   });
 

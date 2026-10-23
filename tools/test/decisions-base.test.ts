@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { gitReader, mergedPullRequests, resolveBase } from '../src/decisions/base';
+import { type GitRun, gitReader, mergedPullRequests, resolveBase, runGit } from '../src/decisions/base';
 
 let dir = '';
 let plain = '';
@@ -32,6 +32,10 @@ beforeAll(() => {
   git('checkout', '-q', 'develop');
   baseTip = commit('a.txt', 'two\n', 'second (#2)');
   git('merge', '-q', '--no-ff', '-m', 'Merge pull request #3 from someone/feat', 'feat');
+  git('checkout', '-q', '-b', 'wip');
+  commit('c.txt', 'wip\n', 'names (#4) in the middle');
+  commit('c.txt', 'wip 2\n', 'not merged yet (#9)');
+  git('checkout', '-q', 'develop');
   git('update-ref', 'refs/remotes/origin/develop', start);
   mkdirSync(plain);
 });
@@ -62,7 +66,7 @@ describe('base-available', () => {
     const ci = resolveBase({ DECISIONS_BASE: 'no-such-ref', CI: 'true' }, dir);
     expect(ci.ref).toBeNull();
     expect(ci.issues).toEqual([expect.objectContaining({ level: 'error', message: expect.stringMatching(/cannot be read.*\[base-available\]$/) })]);
-    expect(resolveBase({ DECISIONS_BASE: 'no-such-ref' }, dir).issues[0].level).toBe('warning');
+    expect(resolveBase({ DECISIONS_BASE: 'no-such-ref' }, dir).issues[0]!.level).toBe('warning');
   });
 
   it('no git here is one warning and no base', () => {
@@ -71,8 +75,16 @@ describe('base-available', () => {
     expect(base.issues).toEqual([expect.objectContaining({ level: 'warning', message: expect.stringMatching(/not a git checkout/) })]);
   });
 
-  it('reads the pull request numbers of the history', () => {
-    expect(mergedPullRequests(dir)).toEqual(new Set([1, 2, 3]));
-    expect(mergedPullRequests(dir, () => null)).toBeNull();
+  it('reads the pull request numbers of the base history, not of the branch', () => {
+    expect(mergedPullRequests(dir, 'develop')).toEqual(new Set([1, 2, 3]));
+    expect(mergedPullRequests(dir)).toEqual(new Set([1]));
+    expect(mergedPullRequests(dir, 'wip')).toEqual(new Set([1, 2, 3, 9]));
+    expect(mergedPullRequests(dir, 'no-such-ref')).toBeNull();
+    expect(mergedPullRequests(dir, 'develop', () => null)).toBeNull();
+  });
+
+  it('a shallow clone gives no merged list, since its history is partial', () => {
+    const shallow: GitRun = (args, cwd, input) => (args[1] === '--is-shallow-repository' ? Buffer.from('true\n') : runGit(args, cwd, input));
+    expect(mergedPullRequests(dir, 'develop', shallow)).toBeNull();
   });
 });

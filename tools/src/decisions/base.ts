@@ -88,11 +88,20 @@ export function gitReader(ref: string, paths: readonly string[], root: string, g
   return out;
 }
 
-/** The pull request numbers the history of HEAD names ('(#12)' of a squash merge, 'pull request #12' of a merge); null without git. */
-export function mergedPullRequests(root: string, git: GitRun = runGit): Set<number> | null {
-  const log = git(['log', '--format=%s', 'HEAD'], root);
+/**
+ * The pull request numbers the history of `ref` names (default origin/develop): '(#12)' at the end of a
+ * squash merge's subject, 'Merge pull request #12' of a merge. It reads the base, never HEAD, so the
+ * branch's own commits do not count as merged. Null without git, without the ref, or in a shallow clone,
+ * whose partial history would miss pull requests that did merge.
+ */
+export function mergedPullRequests(root: string, ref = 'origin/develop', git: GitRun = runGit): Set<number> | null {
+  if (git(['rev-parse', '--is-shallow-repository'], root)?.toString('utf8').trim() !== 'false') return null;
+  const log = git(['log', '--format=%s', ref, '--'], root);
   if (log === null) return null;
   const out = new Set<number>();
-  for (const m of log.toString('utf8').matchAll(/\(#(\d+)\)|pull request #(\d+)/g)) out.add(Number(m[1] ?? m[2]));
+  for (const subject of log.toString('utf8').split('\n')) {
+    const m = /\(#(\d+)\)$/.exec(subject.trim()) ?? /^Merge pull request #(\d+)/.exec(subject);
+    if (m) out.add(Number(m[1]));
+  }
   return out;
 }

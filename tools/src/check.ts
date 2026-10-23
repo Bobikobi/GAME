@@ -70,7 +70,8 @@ export function runRepoCheck(opts: { root?: string; repo?: string; env?: Readonl
   const result = runCheck(opts.root);
   const repo = opts.repo ?? REPO_ROOT;
   const issues = [...result.issues];
-  const base = resolveBase(opts.env ?? process.env, repo);
+  const env = opts.env ?? process.env;
+  const base = resolveBase(env, repo);
   issues.push(...base.issues);
   const readHead = (file: string): string | null => {
     const path = join(repo, file);
@@ -80,7 +81,10 @@ export function runRepoCheck(opts: { root?: string; repo?: string; env?: Readonl
   if (next !== null) {
     const streams = readHead('docs/team/streams.json');
     const ids = streams ? (JSON.parse(streams) as { streams: { id: string }[] }).streams.map((s) => s.id) : [];
-    issues.push(...checkNext(next, ids, mergedPullRequests(repo) ?? undefined));
+    // a pull request counts as merged when the base names it: CI's base is the tip of develop; on a machine
+    // the merge base is where the branch started, so the tip of origin/develop is read instead
+    const mergedRef = env.DECISIONS_BASE?.trim() && base.ref ? base.ref : 'origin/develop';
+    issues.push(...checkNext(next, ids, mergedPullRequests(repo, mergedRef) ?? undefined));
   }
   const atBase = base.ref ? gitReader(base.ref, RATCHETS.map((r) => r.file), repo) : null;
   issues.push(...checkRatchets(readHead, atBase ? (file) => atBase.get(file) ?? null : null));

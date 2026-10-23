@@ -46,13 +46,13 @@ export function nextSections(text: string): NextSection[] {
     if (!m) return;
     let status: string | null = null;
     for (let j = i + 1; j < lines.length; j++) {
-      const next = lines[j].trim();
+      const next = lines[j]!.trim();
       if (next === '') continue;
       const s = /^Status:\s*(.*)$/.exec(next);
-      if (s) status = s[1].trim();
+      if (s) status = s[1]!.trim();
       break;
     }
-    out.push({ id: m[1], title: m[2].trim(), line: i + 1, status });
+    out.push({ id: m[1]!, title: m[2]!.trim(), line: i + 1, status });
   });
   return out;
 }
@@ -62,13 +62,13 @@ export function parseStatus(text: string): NextStatus | null {
   const t = text.trim();
   if (t === 'open') return { kind: 'open' };
   let m = /^building - ([a-z0-9][a-z0-9-]*)$/.exec(t);
-  if (m) return { kind: 'building', stream: m[1] };
+  if (m) return { kind: 'building', stream: m[1]! };
   m = /^built \((#\d+(?:, #\d+)*)\)$/.exec(t);
-  if (m) return { kind: 'built', prs: m[1].split(', ').map((p) => Number(p.slice(1))) };
+  if (m) return { kind: 'built', prs: m[1]!.split(', ').map((p) => Number(p.slice(1))) };
   m = /^built - (\S.*)$/.exec(t);
-  if (m) return { kind: 'built-where', where: m[1] };
+  if (m) return { kind: 'built-where', where: m[1]! };
   m = /^(paused|dropped) - (\S.*)$/.exec(t);
-  if (m) return m[1] === 'paused' ? { kind: 'paused', why: m[2] } : { kind: 'dropped', why: m[2] };
+  if (m) return m[1] === 'paused' ? { kind: 'paused', why: m[2]! } : { kind: 'dropped', why: m[2]! };
   return null;
 }
 
