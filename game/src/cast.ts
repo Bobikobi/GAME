@@ -223,3 +223,36 @@ export function shadowOf(mask: Mask, sun: Sun): Shadow {
 export function sunKey(sun: Sun, precision = 64): string {
   return `${roundHalf(sun.sx * precision)}:${roundHalf(sun.sy * precision)}`;
 }
+
+/**
+ * A sprite's alpha brought onto a coarser grid, one cell per `f` x `f` block of art pixels, solid when at
+ * least a quarter of the block is. A density-4 sprite (64 art px a tile) casts on the shadow layer's grid this
+ * way, at the size it is drawn: the mask of its own 64 px would lay a shadow four times too large.
+ */
+export function downsampleAlpha(alpha: Uint8Array, w: number, h: number, f: number): { alpha: Uint8Array; w: number; h: number } {
+  const k = Math.max(1, Math.round(f));
+  if (k === 1) return { alpha, w, h };
+  const ow = Math.ceil(w / k);
+  const oh = Math.ceil(h / k);
+  const out = new Uint8Array(ow * oh);
+  for (let oy = 0; oy < oh; oy++) {
+    for (let ox = 0; ox < ow; ox++) {
+      let solid = 0;
+      let all = 0;
+      for (let y = oy * k; y < Math.min(h, (oy + 1) * k); y++) {
+        for (let x = ox * k; x < Math.min(w, (ox + 1) * k); x++) {
+          all++;
+          if ((alpha[y * w + x] ?? 0) !== 0) solid++;
+        }
+      }
+      out[oy * ow + ox] = solid > 0 && solid * 4 >= all ? 1 : 0;
+    }
+  }
+  return { alpha: out, w: ow, h: oh };
+}
+
+/** The mask of a sprite drawn mirrored (`flipX`): every run reflected about the frame's middle, left to right again. */
+export function mirrorMask(mask: Mask): Mask {
+  const rows = mask.rows.map((row) => row.map(([a, b]) => [mask.w - 1 - b, mask.w - 1 - a] as Span).reverse());
+  return { w: mask.w, h: mask.h, rows, feet: mask.feet, top: mask.top };
+}

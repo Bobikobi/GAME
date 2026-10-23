@@ -1157,7 +1157,8 @@ export class WorldScene extends Phaser.Scene {
    * `noCast`.
    */
   private buildCasters(): void {
-    this.cast = new CastLayer(this, sunTableOf(this.b.params.light?.sun));
+    // a density-4 prop casts at the size it is drawn: the layer reads each texture's density
+    this.cast = new CastLayer(this, sunTableOf(this.b.params.light?.sun), 1, densityOf);
     for (const obj of this.children.list) {
       if (!(obj instanceof Phaser.GameObjects.Image) && !(obj instanceof Phaser.GameObjects.Sprite)) continue;
       if (obj === this.player || obj === this.cutout) continue;

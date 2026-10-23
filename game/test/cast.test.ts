@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { SUN_TODAY, maskOfAlpha, shadowOf, sunAt, sunKey, sunTableOf } from '../src/cast.js';
+import { SUN_TODAY, downsampleAlpha, maskOfAlpha, mirrorMask, shadowOf, sunAt, sunKey, sunTableOf } from '../src/cast.js';
 
 /**
  * STYLE section 4, the shadow the owner picked on 18.10: the caster's silhouette laid on
@@ -159,5 +159,50 @@ describe('the shadow', () => {
   test('nothing casts when the sun is down, or from an empty mask', () => {
     expect(shadowOf(mask, sunAt(SUN_TODAY, 22 * 60)).spans).toEqual([]);
     expect(shadowOf(maskOfAlpha(new Uint8Array(9), 3, 3), sunAt(SUN_TODAY, 12 * 60)).spans).toEqual([]);
+  });
+});
+
+describe('a mask on the layer grid', () => {
+  test('a density-4 sprite is brought down by its blocks: a quarter of a block solid casts, less does not', () => {
+    // 8 x 4 art px at 4 per world px: two cells; the left block is 4 of 16 solid, the right 3 of 16
+    const alpha = new Uint8Array(32);
+    for (const [x, y] of [[0, 3], [1, 3], [2, 3], [3, 3], [4, 3], [5, 3], [6, 3]] as const) alpha[y * 8 + x] = 1;
+    const grid = downsampleAlpha(alpha, 8, 4, 4);
+    expect([grid.w, grid.h]).toEqual([2, 1]);
+    expect([...grid.alpha]).toEqual([1, 0]);
+  });
+
+  test('a 64 px prop casts at the 16 px it is drawn, not four times larger', () => {
+    const alpha = new Uint8Array(64 * 64);
+    for (let y = 32; y < 64; y++) for (let x = 16; x < 48; x++) alpha[y * 64 + x] = 1;
+    const grid = downsampleAlpha(alpha, 64, 64, 4);
+    const mask = maskOfAlpha(grid.alpha, grid.w, grid.h);
+    expect([mask.w, mask.h, mask.top, mask.feet]).toEqual([16, 16, 8, 15]);
+    expect(mask.rows[15]).toEqual([[4, 11]]);
+    const shadow = shadowOf(mask, sunAt(SUN_TODAY, 16 * 60 + 30));
+    // the far edge lies within the cap of the 8 px it stands, not of the 32 art px it was drawn in
+    expect(Math.min(...shadow.spans.map((sp) => sp.y))).toBeGreaterThanOrEqual(-Math.ceil(8 * 1.1));
+  });
+
+  test('density 1 keeps the alpha as it is', () => {
+    const alpha = Uint8Array.from([0, 1, 1, 0]);
+    expect(downsampleAlpha(alpha, 2, 2, 1).alpha).toBe(alpha);
+  });
+
+  test('a mirrored sprite casts its mirrored silhouette', () => {
+    const mask = maskOfAlpha(
+      Uint8Array.from([
+        1, 0, 0, 0, 0,
+        1, 1, 0, 1, 0,
+      ]),
+      5,
+      2,
+    );
+    const mirrored = mirrorMask(mask);
+    expect(mirrored.rows[0]).toEqual([[4, 4]]);
+    expect(mirrored.rows[1]).toEqual([[1, 1], [3, 4]]);
+    expect([mirrored.feet, mirrored.top]).toEqual([mask.feet, mask.top]);
+    const noon = { up: true, sx: 0, sy: -0.5, length: 0.5, alpha: 0.3 };
+    expect(shadowOf(mirrored, noon).spans).toContainEqual({ x: 4, y: -1, w: 1 });
   });
 });
