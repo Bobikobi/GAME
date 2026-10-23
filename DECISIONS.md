@@ -2575,3 +2575,27 @@ The owner, 23.10.
 
 **The inn stays the ruin at the town's edge on this map.** The opening's own walk reads that ruin as "Awaiting restoration"; rebuilding it, with the innkeeper and the drunk's post, belongs to the wave that writes their quests and lines (decision 50 of 22.10 stands).
 **Retry when:** the content wave opens. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The inn opens at the town edge, with Wenna (closes "The inn waits for the content wave")
+
+**The ruined house at the town edge is the inn from the first day.** Wenna keeps it: food and drink and the first-aid kit on her counter (decision 32), nothing bought back, and a bed. Her slot is `core/town-edge`, now an npc slot labelled "The inn"; a small house stands in for the inn art (3x6 with a roof piece) until it is drawn. The opening step that read an empty place now reads the workshop stall, which still awaits restoration (`game/e2e/opening.ts` step 9, the slot id and the walk label only). Her voice sheet is in `GAME_RULES.md` as proposed; merging approves it (G20). The night's road food waits for its item; the drunk's post waits for the second wave.
+The owner, 22.10 (decisions 32, 50) and 23.10 (the content wave).
+**Retry when:** the inn art lands, or the owner wants the inn rebuilt by a restore instead. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Sleep is a verb on a sleep place; the inn's bed is the first
+
+**A night in a sleep place (`sleep`, kernel 0.15.0):** from 19:00 the player lies down and wakes at the next 05:00 fed in full (G16, G32). The night is spent, not skipped: a fire left burning eats its wood and goes out, so no vigil is kept asleep (G48), and a bed stands only in town, so the first night outside is still held by size (G71). Refused by day, away from the place, or with a hunt at the door. The bed is free. `sleepPlace` is the one place a kind of rest is found: today a keeper whose shop has `bed`; the tent the owner has decided on (the same night, and a return point) adds its source there and nothing else in the kernel changes. The tent, the return point and logging out are not built. Tests: `kernel/test/sleep.test.ts`, `game/e2e/inn.ts`.
+The owner, 22.10 (the bed that ends a day) and 23.10 (a sleep place, the tent later).
+**Retry when:** the tent is built, or a bed gets a price. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Maru walks his round from the first dawn; his hearth is lit from 19:00 while he is home
+
+**Maru walks the map plan's routes:** 07:00-10:00 the east round, 10:00-15:00 the west round, home from 15:00. Two changes to the plan: the morning leg starts at 07:00, not 05:00, so a vigil handed in at dawn finds him at his door (the tending run hands it in at 05:30) and a sleeper who wakes at the inn can catch him; and the rounds begin at the first dawn, so on the day the player wakes he is at home for the whole opening (the plan's check, Maru at his door from 15:00 of day 1, holds). The round lives in the npc file (`round`), since the plan block is never read by the game. His hearth is a kept fire (`kept` on the prop): lit from 19:00 to dawn while he is home, in 2D and 3D; the player can still feed it. Wenna points to his round by day. Test: `kernel/test/sleep.test.ts`.
+The owner, 22.10 (decisions 26, 27).
+**Retry when:** a quest needs Maru at the north edge (the cast plan's 07:00 at the notch), or the night faces take their posts. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Pell keeps the gear; race lines for Maru, Pell and Wenna
+
+**Pell sells the basket, the trowel, the axe and the walking staff, and buys what the player finds;** the food and the first-aid kit are the inn's (decision 32), and her lines say so. **Each of the three greets each race once** with the cast plan's lines (decision 10), after the lines the world earned. The jetty lines wait for the jetty.
+The owner, 22.10 (decisions 10, 32).
+**Retry when:** the jetty or the workshop stall opens. Model: claude-opus-5-5.
