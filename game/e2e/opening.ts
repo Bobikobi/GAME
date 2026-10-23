@@ -388,9 +388,21 @@ class Player {
     }
   }
 
-  /** Whether the box open now is the lantern warning, at a dark hour (G31). */
-  private lanternOpen(): Promise<boolean> {
-    return this.page.eval<boolean>("(__e2e.dialog()?.text ?? '').includes('lantern is lit') && (__e2e.hour() >= 20 || __e2e.hour() < 5)");
+  /**
+   * Whether the box open now is the lantern warning, at a dark hour (G31). The box types its line out, and a
+   * held walk (NEXT 22 d) gives up on the tile the moment the box stops the feet, so the line is first let finish:
+   * read half typed ("Dark. Your lan"), the warning was taken for another box (CI, 23.10).
+   */
+  private async lanternOpen(): Promise<boolean> {
+    let text = '';
+    for (let i = 0; i < 30; i++) {
+      const now = await this.page.eval<string | null>('__e2e.dialog()?.text ?? null');
+      if (now === null) return false;
+      if (now === text && now !== '') break;
+      text = now;
+      await sleep(150);
+    }
+    return text.includes('lantern is lit') && (await this.page.eval<boolean>('__e2e.hour() >= 20 || __e2e.hour() < 5'));
   }
 
   /**
@@ -942,8 +954,10 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
     if ((await me.quest('core/into-town')) !== 'done') throw new Error('into-town is not done');
     if (!town.some((l) => l.includes('Whom you help first'))) throw new Error(`no word of whom to help first: ${town.join(' / ')}`);
     log('reached the town: Maru and Pell could use a hand');
-    // 4b criterion: each source is quieter the farther you stand from it
-    const inTown = await me.bedWhen('fire', (l) => l === 0, 'the fire out of earshot in town');
+    // 4b criterion: each source is quieter the farther you stand from it. The feet walk freely (NEXT 22) and
+    // rest anywhere inside the square's tile, so the fire's edge (12 tiles) can fall a hair inside it (a level of
+    // 0.0000015 on CI, 23.10): out of earshot is under a thousandth, 60 dB down, not an exact zero
+    const inTown = await me.bedWhen('fire', (l) => l < 0.001, 'the fire out of earshot in town');
     if (!(atFire.fire! > inTown.fire!)) throw new Error('the fire is not quieter in town');
     await me.bedWhen('stream', (l) => l < atBridge.stream!, 'the stream quieter than at the bridge');
     log(`beds in town: ${JSON.stringify(inTown)}; fire ${atFire.fire} -> ${inTown.fire}`);
