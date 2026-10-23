@@ -2576,7 +2576,8 @@ The owner looked at the same eleven small entries drawn by Codex, FLUX.1 schnell
 The owner, 23.10: picked the 11 in the models review; a draw that comes out as the wrong object is kept in docs/art/wrong-draws for future use.
 **Retry when:** a library draw fits an object the game needs (import it through the kit pipeline). Model: claude-opus-5-5.
 
-## 2026-10-23 The free drawing route: Qwen and FLUX side by side
+## 2026-10-23 ✅ The free drawing route: Qwen and FLUX side by side
 
-PENDING the owner's confirmation, not decided: the free drawing route draws Qwen-Image and FLUX.1 schnell side by side for each entry, and the owner picks one card.
-**Retry when:** the owner confirms or refuses the side-by-side draw. Model: claude-opus-5-5.
+The free drawing route draws Qwen-Image and FLUX.1 schnell side by side for each entry, and the owner picks one card. In the models review each won entries of its own (Qwen four, FLUX three), so neither replaces the other.
+The owner, 23.10: yes, both side by side, and the owner picks.
+**Retry when:** one model wins nearly every pick over a full wave (then drawing only that one saves the GPU time). Model: claude-opus-5-5.
