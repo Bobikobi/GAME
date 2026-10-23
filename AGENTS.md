@@ -21,4 +21,20 @@ Learned on the first three days of building, each line from a real cost.
 - CI retries the opening e2e once and keeps the screenshots of the failed attempt (issue #25). When CI flakes, rerun the job.
 - Fetching assets from a provider: read its index or API first, check the size before downloading, and keep a cap per model. Raw photoscans run to hundreds of megabytes and a browser cannot carry them.
 - One game, two doors: every rule, idea and development decided for the game holds in the classic game and in the 3D game at `/play3d/` alike, unless it is truly 2D (pixels, a sprite sheet). The builder carries it across in the other door's own means, or raises the problem to the owner; it is never dropped quietly. The pixel game gets the effort first and the 3D game follows: a 3D twin never holds back or takes builders from the pixel game's work (DECISIONS 2026-10-18, NEXT 8 e).
+- One session is the manager. A building session sends every dilemma, owner question and blocker to the manager, which decides it or relays it to the owner; it does not ask the owner directly.
+- Every tool runs at its stage. Each line is taken from the tool's own header or doc; a tool not listed here has no fixed stage.
+
+| Tool | Stage: when it runs |
+|---|---|
+| `pnpm streams` | Before you start, with [docs/team/PARALLEL.md](docs/team/PARALLEL.md): it shows the other streams and who touches the same files. Reads refs and GitHub only. |
+| integrator skill (`.claude/skills/integrator`) | When the merge order, a collision between branches or the state of the streams is in question, or when the session's job is integration. |
+| quest-designer skill (`.claude/skills/quest-designer`) | Any new or changed quest, and a review of the quests in a pull request. It proposes pitches, the owner picks. |
+| `pnpm quests` | Any change to a quest, a reward or a timing: the hand per wake pocket must gain no new pair of one type. `pnpm check` prints the same breaches as `!` lines. |
+| `pnpm check` | While creating content, and inside `pnpm verify`. |
+| `pnpm verify` | Before handing work back. No e2e inside it. |
+| `pnpm values` | Core maintainers only, when an anchor must move ([CONTRIBUTING.md](CONTRIBUTING.md)). After a merge, take `develop`'s `content/values.lock.json` and regenerate it instead of merging by hand. |
+| prop-from-ref skill, `pnpm kit:gen`, `pnpm kit:import` | A sprite, prop or tile from a picture outside the game: follow [docs/art/PROP_FROM_REF.md](docs/art/PROP_FROM_REF.md). `kit:gen` calls the importer itself; run `kit:import` alone to bring a finished picture onto the grid. |
+| `pnpm e2e` | CI runs it on the pull request. On your machine only to debug a red run, one browser at a time. |
+| `pnpm loop` | The community loop, run by `.github/workflows/loop.yml` (hourly and on pull request events). By hand only with `--dry-run`, and it needs `GITHUB_TOKEN` and `GITHUB_REPOSITORY`. |
+
 - Read [docs/design/STORY.md](docs/design/STORY.md) before writing lore, a line about the past, a new character or an extension's setting. The narrator never states the past, and every claim about it has a speaker (S1-S6 there).
