@@ -110,7 +110,7 @@ two answers, step back to the whole day.
    `requires` decides, not the ladder's prose), and when each step can be done (a node's
    `hours`, a visit `at: night`, a dig answer lit from 19:00, a vigil's fire lit by 20:00 and kept
    to 05:00, an `opens_after`). The clock: noon start, one game hour is 50 s, dusk at 350 s,
-   dark at 400 s, dawn at 850 s, no sleep yet, the clock stops while a box is open. Mark every
+   dark at 400 s, dawn at 850 s, the inn's bed (from 19:00) skips to 05:00 and fires burn out unattended (no vigil is kept asleep), the clock stops while a box is open. Mark every
    stretch over 90 s with nothing new (pillar 1) and every hour when tasks pile up. Read two
    players: the one who solves by day, the one who waits for the world's hint.
 2. **Ask each quest six questions.**

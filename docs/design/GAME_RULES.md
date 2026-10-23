@@ -246,6 +246,7 @@ sheet, never the other way round; a sheet changes only by the owner's word.
 |---|---|---|---|---|
 | Elder Maru | Slow. Short sentences. Speaks of "once" and of mending. Hints at the mist, does not explain it. Calls the player "you", never by name until friend. | The town back, one mended thing at a time. | Prices. Hurry. A straight answer about the bells. | Approved (8.10) |
 | Pell | Quick. Counts everything. Every subject becomes a trade or a rumour. Jokes about prices, not about people. | Customers, and the roads open again. | Sentiment. Lore of her own; she repeats what travellers say. | Approved (8.10) |
+| Wenna (the innkeeper) | Warm and plain. Short orders about food and rest ("Sit.", "Eat first."). Speaks of the house, the pot and the bench. Holds no belief and tells no history; a claim about the past is always "the stories say". | Everyone fed, nobody turned away. | Rationing or prices as a joke. A side in the valley's beliefs. Lore of her own. | Proposed (23.10, the inn PR; merging approves it) |
 | The narrator (the river text, toasts, the journal) | Second person, present tense, concrete nouns, one adjective at most. Says what is there, not what to feel. | Nothing; it is the valley speaking. | "You feel", "amazing", exclamation marks outside a level-up. | Approved (8.10) |
 | Signs and inscriptions | Fewest words. A fact and a hook. No "you". | To be read twice. | A full sentence where a fragment does. | Approved (8.10) |
 

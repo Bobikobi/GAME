@@ -1495,6 +1495,15 @@
         "sign": "core/elder-house"
       },
       {
+        "id": "core/inn-house",
+        "sprite": "core/base-kit:props/house_small",
+        "x": 36,
+        "y": 4,
+        "w": 3,
+        "h": 2,
+        "solid": true
+      },
+      {
         "sprite": "core/base-kit:props/sign",
         "x": 37,
         "y": 8,
@@ -1531,7 +1540,11 @@
         "w": 1,
         "h": 1,
         "solid": true,
-        "fire": true
+        "fire": true,
+        "kept": {
+          "by": "core/elder",
+          "from": 19
+        }
       },
       {
         "sprite": "core/base-kit:props/statue_head",
@@ -3346,13 +3359,13 @@
       },
       {
         "id": "core/town-edge",
-        "kind": "building",
+        "kind": "npc",
         "x": 36,
         "y": 4,
         "w": 3,
         "h": 4,
         "tag": "town",
-        "label": "Ruined house"
+        "label": "The inn"
       },
       {
         "id": "core/town-corner",

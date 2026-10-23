@@ -463,7 +463,7 @@ describe('what an expedition gives, in the content check', () => {
   write('restores', 'edge-house', {
     ...envelope('restore', 'edge-house'),
     restore: {
-      place: { slot: 'core/town-edge' },
+      place: { slot: 'core/workshop-stall' },
       before: 'core/base-kit:tiles/rubble',
       after: 'core/base-kit:tiles/ruin_floor',
       inputs: [{ item: 'tester/bell-shard', qty: 1 }],
