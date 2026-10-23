@@ -10,7 +10,7 @@
     "type": "tending",
     "summary": "My hearth went cold the year the bells began. Does a fire kept by hand hold through one whole night?",
     "requires": [
-      "core/three-fruits"
+      "core/something-warm"
     ],
     "steps": [
       {

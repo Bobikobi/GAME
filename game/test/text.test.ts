@@ -13,7 +13,7 @@ beforeAll(() => {
 describe('tool benefits', () => {
   test('derives resource and dig-site lists from the bundle', () => {
     expect(itemBenefit(bundle, 'core/basket')).toBe('Tier 1 basket · gathers bell bushes & forest mushrooms & sun herbs & wild herbs · 60 uses');
-    expect(itemBenefit(bundle, 'core/trowel')).toBe('Tier 1 trowel · digs deep ruins & gate rubble & under the hill lantern · 40 uses');
+    expect(itemBenefit(bundle, 'core/trowel')).toBe('Tier 1 trowel · digs deep ruins & gate rubble & hall rubble & under the hill lantern · 40 uses');
 
     const withReeds: Bundle = {
       ...bundle,
@@ -72,7 +72,7 @@ describe('the opening recut B', () => {
 
   test('a tool with no uses lasts', () => {
     expect(itemBenefit(bundle, 'core/fine-basket')).toBe('Tier 3 basket · gathers bell bushes & forest mushrooms & sun herbs & wild herbs · lasts · +30% gathering speed');
-    expect(itemBenefit(bundle, 'core/stone-trowel')).toBe('Tier 3 trowel · digs deep ruins & gate rubble & under the hill lantern · lasts · +30% gathering speed');
+    expect(itemBenefit(bundle, 'core/stone-trowel')).toBe('Tier 3 trowel · digs deep ruins & gate rubble & hall rubble & under the hill lantern · lasts · +30% gathering speed');
     expect(itemBenefit(bundle, 'core/flint-trowel')).toContain(' · 80 uses · ');
   });
 });

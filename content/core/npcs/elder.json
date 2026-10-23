@@ -65,6 +65,16 @@
         "say": [
           "Two herbs and a fire. That is all my mother's tea ever asked."
         ]
+      },
+      {
+        "when": {
+          "done": [
+            "core/something-warm"
+          ]
+        },
+        "say": [
+          "My mother put less salt in. Do not tell Pell I said so."
+        ]
       }
     ],
     "topics": [
