@@ -443,6 +443,75 @@ describe('Stage 2a server protocol', () => {
   });
 });
 
+/** The top-left tile of a square of open ground `side` tiles wide, for the forager. */
+function openSquare(state: State, side: number): Tile {
+  const walkable = makeWalkable(bundle);
+  const { width: w, height: h } = bundle.map;
+  for (let y = 0; y + side <= h; y++) {
+    for (let x = 0; x + side <= w; x++) {
+      let open = true;
+      for (let dy = 0; dy < side && open; dy++) for (let dx = 0; dx < side && open; dx++) open = walkable(x + dx, y + dy, state.player);
+      if (open) return [x, y];
+    }
+  }
+  throw new Error(`The map has no open square of ${side} tiles.`);
+}
+
+describe('the free walk on the server (NEXT 22 c)', () => {
+  /**
+   * A free walk at full speed on a diagonal, as the client reports it: the feet cross a corner every
+   * `walk_step_ms * sqrt 2`, and the side tile goes first, at the same tick, so the reports stay four-way.
+   * It bounces between two corners of an open square, `pairs` tiles each way.
+   */
+  function diagonalWalk(start: Tile, pairs: number, ms: number): { kind: 'move'; at: Tile; tick: number }[] {
+    const stepMs = bundle.params.walk_step_ms;
+    const reports: { kind: 'move'; at: Tile; tick: number }[] = [];
+    let at = start;
+    let sign = 1;
+    for (let k = 1; ; k++) {
+      const tick = Math.round(k * stepMs * Math.SQRT2);
+      if (tick > ms) break;
+      const side: Tile = [at[0] + sign, at[1]];
+      const corner: Tile = [at[0] + sign, at[1] + sign];
+      reports.push(move(side, tick), move(corner, tick));
+      at = corner;
+      if (k % pairs === 0) sign = -sign;
+    }
+    return reports;
+  }
+
+  test('a 20 s diagonal walk at full speed passes from a fresh record, and a jump of 3 tiles is still refused', async () => {
+    const state = started();
+    const corner = openSquare(state, 6);
+    state.player.at = corner;
+    const { base, store, clock } = await api(state);
+    const reports = diagonalWalk(corner, 5, 20_000);
+    expect(reports.length).toBeGreaterThan(140);
+    clock.now += 20_000;
+    for (let i = 0; i < reports.length; i += 256) {
+      const response = await post(base, '/moves', { version: store.record.version, moves: reports.slice(i, i + 256) });
+      expect(response.status, await response.clone().text()).toBe(200);
+    }
+    const last = reports[reports.length - 1]!;
+    expect(store.record.state.player.at).toEqual(last.at);
+
+    // the same frame, three tiles on: further than a walk goes in that time
+    const before = serialize(store.record.state);
+    const jump = await post(base, '/moves', { version: store.record.version, moves: [move([last.at[0] + 3, last.at[1]], last.tick)] });
+    expect(jump.status).toBe(409);
+    expect(serialize(store.record.state)).toBe(before);
+  });
+
+  test('the same walk charged by its four-way length would run dry', () => {
+    // what the octile charge fixes: four-way steps cost 1.41 walk_step_ms per walk_step_ms on a diagonal
+    const stepMs = bundle.params.walk_step_ms;
+    const reports = diagonalWalk([0, 0], 5, 20_000);
+    const fourWay = reports.length * stepMs;
+    const refill = 20_000 + 2 * stepMs;
+    expect(fourWay).toBeGreaterThan(refill + bundle.params.move_reach_max * stepMs);
+  });
+});
+
 describe('a 409 says why in a code as well as in words', () => {
   const stale = { error: 'The game state changed; resume before sending another action.', reason: 'stale' };
 

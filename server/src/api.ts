@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { ATTRIBUTES, WEAR_SLOTS, appearSlots, appears, step, walkDistance, type Action, type Bundle, type GameEvent, type State, type Tile } from '@game/kernel';
+import { ATTRIBUTES, STEP_MILLI, WEAR_SLOTS, appearSlots, appears, step, walkCharge, type Action, type Bundle, type GameEvent, type State, type Tile } from '@game/kernel';
 
 import { goldRowsOf, type BookedStep, type LedgerRow } from './ledger';
 import { publicState, statePatch, type MergePatch, type PublicState } from './patch';
@@ -285,22 +285,24 @@ export function spendWalk(
   tick: number,
   movementAt: number,
   movementCreditMs: number,
-): { at: number; creditMs: number } | undefined {
+  leg: Tile | null = null,
+): { at: number; creditMs: number; leg: Tile | null } | undefined {
   const { walk_step_ms: stepMs, move_reach_max: maxReach } = bundle.params;
   const elapsedSinceMove = Math.max(0, tick - state.player.movedAt);
   const reach = Math.min(2 + Math.floor(elapsedSinceMove / stepMs), maxReach);
-  const distance = walkDistance(bundle, state, from, target, reach);
-  if (distance === undefined) return { at: tick, creditMs: movementCreditMs };
+  // the octile length of the walk (G56): a free walk on a diagonal pays for its distance, not its staircase
+  const charge = walkCharge(bundle, state, from, target, reach, leg);
+  if (charge === undefined) return { at: tick, creditMs: movementCreditMs, leg: null };
 
   const maxCreditMs = maxReach * stepMs;
   const elapsedSinceCredit = Math.max(0, tick - movementAt);
   const available = Math.min(maxCreditMs, movementCreditMs + elapsedSinceCredit);
-  const cost = distance * stepMs;
+  const cost = Math.floor((charge.milli * stepMs) / STEP_MILLI);
   if (cost > available) return undefined;
-  return { at: tick, creditMs: available - cost };
+  return { at: tick, creditMs: available - cost, leg: charge.leg };
 }
 
-function nextMovementCredit(...walk: Parameters<typeof spendWalk>): { at: number; creditMs: number } {
+function nextMovementCredit(...walk: Parameters<typeof spendWalk>): { at: number; creditMs: number; leg: Tile | null } {
   const next = spendWalk(...walk);
   if (!next) throw new RequestError('That is further than a walk goes in that time.', 409, 'walk-credit');
   return next;
@@ -407,6 +409,8 @@ async function route(request: IncomingMessage, response: ServerResponse, options
       previousTick = report.tick;
     }
     checkClock(previousTick, record, now);
+    // the unpaired step a diagonal pair may close; a batch starts with none
+    let leg: Tile | null = null;
     for (const report of reports) {
       const nextCredit = nextMovementCredit(
         options.bundle,
@@ -416,6 +420,7 @@ async function route(request: IncomingMessage, response: ServerResponse, options
         report.tick,
         movementAt,
         movementCreditMs,
+        leg,
       );
       const result = step(options.bundle, state, { t: 'move', at: report.at }, report.tick, { validateTravel: true });
       if (!result.ok) refused(result.error);
@@ -423,6 +428,7 @@ async function route(request: IncomingMessage, response: ServerResponse, options
       events.push(...result.events);
       movementAt = nextCredit.at;
       movementCreditMs = nextCredit.creditMs;
+      leg = nextCredit.leg;
       // the report is the action that paid, at the report's own tick, and the replay reads the same two
       played.push({ action: { t: 'move', at: report.at }, tick: report.tick, events: result.events });
     }
