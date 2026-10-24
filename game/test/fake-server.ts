@@ -24,6 +24,8 @@ export class FakeServer implements Wire {
   readonly calls: { path: string; body: unknown }[] = [];
   /** while true the line is down: every request fails the way a dropped connection does */
   gap = false;
+  /** while true the server is one older than the reason code: a 409 carries the words only */
+  noReasons = false;
 
   constructor(bundle: Bundle, state: State, now = () => 0) {
     this.bundle = bundle;
@@ -41,7 +43,7 @@ export class FakeServer implements Wire {
     }
     const request = body as { version?: unknown; tick?: unknown; action?: unknown; moves?: unknown };
     if (request.version !== this.version) {
-      throw new WireRefusal('The game state changed; resume before sending another action.', 409);
+      throw this.refuse('The game state changed; resume before sending another action.', 409, 'stale');
     }
     if (path === '/action') return this.action(request.action as Action, request.tick as number);
     return this.moves(request.moves as { kind?: unknown; at?: [number, number]; tick?: number }[]);
@@ -54,6 +56,11 @@ export class FakeServer implements Wire {
     return this.snapshot();
   }
 
+  /** a refusal as the real server sends it, or as the server before the reason code did */
+  private refuse(message: string, status: number, reason?: string): WireRefusal {
+    return new WireRefusal(message, status, this.noReasons ? undefined : reason);
+  }
+
   private appearIds(): string[] {
     return [...appearSlots(this.bundle).keys()].filter((id) => appears(this.bundle, this.state, id, this.state.tick)).sort();
   }
@@ -64,7 +71,7 @@ export class FakeServer implements Wire {
 
   private checkClock(tick: number): void {
     if (tick - this.state.tick > this.now() - this.acceptedAt + SLACK_MS) {
-      throw new WireRefusal('That game time is ahead of the time elapsed.', 409);
+      throw this.refuse('That game time is ahead of the time elapsed.', 409, 'clock-ahead');
     }
   }
 
@@ -73,7 +80,7 @@ export class FakeServer implements Wire {
     if (!Number.isSafeInteger(tick) || (tick as number) < 0) throw new WireRefusal('A valid client tick is required.', 400);
     this.checkClock(tick);
     const result = step(this.bundle, this.state, action, tick, { validateTravel: true });
-    if (!result.ok) throw new WireRefusal(result.error, 409);
+    if (!result.ok) throw this.refuse(result.error, 409, 'refused');
     return this.land(result.state, result.events);
   }
 
@@ -87,13 +94,13 @@ export class FakeServer implements Wire {
     for (const report of moves) {
       if (!report || report.kind !== 'move') throw new WireRefusal('Only movement reports are accepted here for now.', 400);
       if (!Number.isSafeInteger(report.tick)) throw new WireRefusal('Each movement report needs a tile and a valid tick.', 400);
-      if ((report.tick as number) < previous) throw new WireRefusal('Movement report times cannot run backwards.', 409);
+      if ((report.tick as number) < previous) throw this.refuse('Movement report times cannot run backwards.', 409, 'backwards');
       previous = report.tick as number;
     }
     this.checkClock(previous);
     for (const report of moves) {
       const result = step(this.bundle, state, { t: 'move', at: report.at! }, report.tick as number, { validateTravel: true });
-      if (!result.ok) throw new WireRefusal(result.error, 409);
+      if (!result.ok) throw this.refuse(result.error, 409, 'refused');
       state = result.state;
       events.push(...result.events);
     }

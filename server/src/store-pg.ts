@@ -1,8 +1,11 @@
-import type { Pool } from 'pg';
+import type { ClientBase, Pool } from 'pg';
 import type { State } from '@game/kernel';
 
-import type { PlayerRecord, PlayerStore } from './api';
+import type { Books, PlayerRecord, PlayerStore } from './api';
 import { publicState } from './patch';
+
+/** An account id is a uuid: anything else names no account, and asking the database would raise. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface PlayerRow {
   state: State;
@@ -36,8 +39,8 @@ function recordOf(row: PlayerRow): PlayerRecord {
   };
 }
 
-/** Write a player's first row: the state as `createPlayerRecord` built it, at version 1. */
-export async function insertPlayer(pool: Pool, playerId: string, record: PlayerRecord): Promise<void> {
+/** Write a player's first row: the state as `createPlayerRecord` built it, at version 1. A sign-up writes it inside its own transaction. */
+export async function insertPlayer(pool: Pool | ClientBase, playerId: string, record: PlayerRecord): Promise<void> {
   await pool.query(
     `insert into player_state (state, seed, kernel_version, content_version, clock_anchor_ms, movement_at, movement_credit_ms, version, account_id)
      values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
@@ -52,6 +55,7 @@ export async function insertPlayer(pool: Pool, playerId: string, record: PlayerR
 export function createPgStore(pool: Pool): PlayerStore {
   return {
     async load(playerId: string): Promise<PlayerRecord | undefined> {
+      if (!UUID.test(playerId)) return undefined;
       const { rows } = await pool.query<PlayerRow>(
         `select state, seed, clock_anchor_ms, movement_at, movement_credit_ms, version
            from player_state
@@ -62,15 +66,45 @@ export function createPgStore(pool: Pool): PlayerStore {
       return row ? recordOf(row) : undefined;
     },
 
-    async compareAndSet(playerId: string, expectedVersion: number, next: PlayerRecord): Promise<boolean> {
-      const { rowCount } = await pool.query(
-        `update player_state
-            set state = $1, seed = $2, kernel_version = $3, content_version = $4, clock_anchor_ms = $5,
-                movement_at = $6, movement_credit_ms = $7, version = $8, updated_at = now()
-          where account_id = $9 and version = $10`,
-        [...rowOf(next), next.version, playerId, expectedVersion],
-      );
-      return (rowCount ?? 0) === 1;
+    async compareAndSet(playerId: string, expectedVersion: number, next: PlayerRecord, books: Books): Promise<boolean> {
+      if (!UUID.test(playerId)) return false;
+      // the state, the log row and the gold rows are one transaction: a write that loses the race, or a book
+      // that cannot be written, leaves nothing of the other two
+      const client = await pool.connect();
+      try {
+        await client.query('begin');
+        const { rowCount } = await client.query(
+          `update player_state
+              set state = $1, seed = $2, kernel_version = $3, content_version = $4, clock_anchor_ms = $5,
+                  movement_at = $6, movement_credit_ms = $7, version = $8, updated_at = now()
+            where account_id = $9 and version = $10`,
+          [...rowOf(next), next.version, playerId, expectedVersion],
+        );
+        if ((rowCount ?? 0) !== 1) {
+          await client.query('rollback');
+          return false;
+        }
+        const action = JSON.stringify(books.action);
+        await client.query(
+          'insert into action_log (account_id, seq, action, tick) values ($1, $2, $3, $4)',
+          [playerId, next.version, action, books.tick],
+        );
+        // each row names the action that paid it and that action's own tick, not the request's (NEXT 18 f)
+        for (const row of books.gold) {
+          if (row.deltaMg === 0) continue; // the table refuses a zero, and a zero moved nothing
+          await client.query(
+            'insert into gold_ledger (account_id, delta_mg, action, tick) values ($1, $2, $3, $4)',
+            [playerId, row.deltaMg, JSON.stringify(row.action), row.tick],
+          );
+        }
+        await client.query('commit');
+        return true;
+      } catch (error) {
+        await client.query('rollback').catch(() => undefined);
+        throw error;
+      } finally {
+        client.release();
+      }
     },
   };
 }

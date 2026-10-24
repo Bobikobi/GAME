@@ -242,7 +242,7 @@ Not taken from the second eye: Codex asked to drop the place from the berries' a
 
 The quests are good; their order in time is not. Three changes to `requires`, none to the kernel:
 1. **The coin waits for the berries** (`a-coin-for-maru` requires `three-fruits`, as before 11.10). Each neighbour offers one task, the trowel the berries pay digs the coin, and the done line leads to what comes next.
-2. **The long night comes with the coin** (`the-long-night` requires `three-fruits`). Since the owner's yes of 19.10 the vigil is a fire of the player's own, built anywhere outside the town and safe while it burns (NEXT 21). Offered in the afternoon, it gives the hands a job while the riddle waits (wood, a place chosen, the fire lit before 20:00), and the night a fire of one's own to come back to. Its step and its lines are NEXT 21 b's; they should say "before dark", the hour the kernel keeps.
+2. **The long night comes with the coin** (`the-long-night` requires `three-fruits`; since the owner's yes of 22.10 it requires `something-warm`, Maru's stew, and is offered around 17:00-18:00, DECISIONS.md). Since the owner's yes of 19.10 the vigil is a fire of the player's own, built anywhere outside the town and safe while it burns (NEXT 21). Offered in the afternoon, it gives the hands a job while the riddle waits (wood, a place chosen, the fire lit before 20:00), and the night a fire of one's own to come back to. Its step and its lines are NEXT 21 b's; they should say "before dark", the hour the kernel keeps.
 3. **After the coin, only the arch.** `the-tangle` and `the-south-bank` also require `the-night-arch`, so the arch lands alone at dark, and the maze, the wolf and the fire fill the 450 s of night after it.
 
 Tried on a scratch copy of `develop` f3b3778b, not committed: `pnpm quests` shows the most tasks a player can hold at once falling from 5 to 3 for the digger and the explorer, and from 6 to 4 for the forager (its first pickings stay open, R4); no new pair of one type; `pnpm check` 72 files, 0 errors, 0 warnings, as before.
@@ -260,13 +260,13 @@ The owner's word on 19.10, after this review: "you can change the quests further
 | Play clock | What opens now |
 |---|---|
 | about 50 s | The town. Maru offers his bells, Pell her herbs: one task each. |
-| after the bells | Maru's coin, which the trowel he pays digs, and the long night, in the afternoon: a fire lit before dark and kept to dawn. |
+| after the bells | Maru's coin, which the trowel he pays digs, and the long night, in the afternoon: a fire lit before dark and kept to dawn. Since 22.10 the long night waits for Maru's stew (`something-warm`), around 17:00-18:00. |
 | after the coin | The arch, alone. |
 | after the arch | The tangle (Maru: "The way runs past the ruins. After dark, keep wide of them."), Pell's south bank, the night's fire, and Pell's topic on the bells once the threshold is reached. |
 
 | # | Built | How |
 |---|---|---|
-| R1, R2 | Yes | `a-coin-for-maru` and `the-long-night` require `three-fruits`; `the-tangle` requires `the-night-arch`; `the-south-bank` requires `herbs-for-pell` and `the-night-arch`. |
+| R1, R2 | Yes | `a-coin-for-maru` and `the-long-night` require `three-fruits` (since 22.10 `the-long-night` requires `something-warm`, DECISIONS.md); `the-tangle` requires `the-night-arch`; `the-south-bank` requires `herbs-for-pell` and `the-night-arch`. |
 | R3 | By the order | The vigil is offered after the bells, hours before dark. Its lines are NEXT 21 b's, which should say "before dark". |
 | R4 | Part | The step stays a bring of two herbs: the check refuses a `find` of an item that grows in more than one place (`tools/src/assemble.ts`, G2), and a done line in the first 15 s would be a second box (the ladder's 0:00-0:15). One pick yields two herbs, so the count is one motion. Built: Maru's line once the tea is learned and herbs are in the bag, "Two herbs and a fire. That is all my mother's tea ever asked." |
 | R5 | Waits | A design entry for the lasting starts (the owner's 10.10 answer 1). |

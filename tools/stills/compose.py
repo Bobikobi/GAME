@@ -1522,16 +1522,46 @@ class Scene:
     casters: list[tuple[Image.Image, int, int, int, int, bool]]
 
 
+@dataclass(frozen=True)
+class Sun:
+    """The sun of one hour and season: where a shadow falls and how dark it is.
+
+    The defaults are the ladder's 19:00 (shear 0.92 right and 0.36 down, 30%).
+    `cap_mult` scales each caster's cap (1.0 keeps the ladder); `cloud` is the
+    cloud shadow's alpha over the ground (0 on an overcast day, when the whole
+    sky is one cloud); `canopy_over_all` puts the canopy shade over the sprites
+    standing under the canopy as well as the ground (NATURE.md section 5).
+    """
+
+    sx: float = 0.92
+    sy: float = 0.36
+    alpha: float = 0.30
+    cap_mult: float = 1.0
+    cloud: float = 0.12
+    canopy_alpha: float = 0.12
+    canopy_over_all: bool = False
+    tree_on_top: bool = False
+
+
 def compose_scene(look: Look, *, pell: Image.Image | None = None,
                   pell_pos: tuple[int, int] = (312, 696), elder: bool = True,
                   tall_grass: bool = True, bird: bool = True,
                   canopy_shade: bool = False, smoke_static: bool = True,
-                  water_phase: int = 0) -> Scene:
+                  water_phase: int = 0, sun: Sun = Sun(),
+                  far_bank=None, tree_fn=None, grass_fn=None,
+                  extra: list[tuple[Image.Image, int, int, int, int]] = ()) -> Scene:
+    """Compose the square. `far_bank(img, look, c)`, `tree_fn(c, look, w, h, seed)`
+    and `grass_fn(c, w, h, seed, scale)` replace the ladder's drawings when a
+    climate or season gives its own (tools/stills/nature.py); `extra` is a list
+    of (sprite, x, y, feet, cap) pasted in depth order with their shadows."""
     c = Roles(look)
     stepper = Stepper(look)
     ground = canvas()
+    far_bank = far_bank or draw_far_bank
+    tree_fn = tree_fn or draw_tree
+    grass_fn = grass_fn or draw_grass_patch
 
-    draw_far_bank(ground, look, c)
+    far_bank(ground, look, c)
     draw_shore_base(ground, c)
     draw_water(ground, look, c)
     draw_shore_details(ground, c)
@@ -1543,7 +1573,7 @@ def compose_scene(look: Look, *, pell: Image.Image | None = None,
     well, wx0, wy0, wfeet = draw_well(c)
     lamp, lx0, ly0, lfeet = draw_lamp(c)
     hearth, fx0, fy0, ffeet = draw_hearth(c)
-    tree = draw_tree(c, look)
+    tree = tree_fn(c, look, 128, 192, 51)
     boat = draw_boat(c)
     mooring = draw_mooring(c)
     cart = draw_cart(c)
@@ -1554,7 +1584,7 @@ def compose_scene(look: Look, *, pell: Image.Image | None = None,
     elder_s = draw_elder(c, look) if elder else None
 
     # the far-bank oak is a canopy only, overhanging the water
-    far_tree = draw_tree(c, look, 200, 150, seed=71).crop((0, 0, 200, 88))
+    far_tree = tree_fn(c, look, 200, 150, 71).crop((0, 0, 200, 88))
     far_pos = (-54, -30)
 
     # reflections on the water: the far tree and the boat, flipped, cut at the shore,
@@ -1599,12 +1629,14 @@ def compose_scene(look: Look, *, pell: Image.Image | None = None,
         casters.append((elder_s, 208, 572, 668, 96, True))
     if pell is not None:
         casters.append((pell, pell_pos[0], pell_pos[1], pell_pos[1] + 96, 96, True))
+    for spr, x, y, feet, cap in extra:
+        casters.append((spr, x, y, feet, cap, True))
 
 
     for spr, x, y, feet, cap, contact in casters:
         m = Image.new("L", (W, H), 0)
         m.paste(spr.getchannel("A"), (x, y))
-        sm = shadow_mask(m, feet, 0.92, 0.36, cap)
+        sm = shadow_mask(m, feet, sun.sx, sun.sy, None if cap is None else max(1, round(cap * sun.cap_mult)))
         union = ImageChops.lighter(union, sm)
     wm = Image.new("L", (W, H), 0)
     ImageDraw.Draw(wm).ellipse([wx0 + 20, wfeet - 20, wx0 + 172, wfeet + 14], fill=255)
@@ -1614,7 +1646,7 @@ def compose_scene(look: Look, *, pell: Image.Image | None = None,
         bm = Image.new("L", (W, H), 0)
         ImageDraw.Draw(bm).ellipse([272, 624, 308, 636], fill=255)
         union = ImageChops.lighter(union, bm)
-    apply_shadow(ground, union, hx("#1b1a2e"), 0.30)
+    apply_shadow(ground, union, hx("#1b1a2e"), sun.alpha)
     for spr, x, y, feet, cap, contact in casters:
         if not contact:
             continue
@@ -1636,14 +1668,15 @@ def compose_scene(look: Look, *, pell: Image.Image | None = None,
             x = cx + r.randrange(-cw // 3, cw // 3)
             y = cy + r.randrange(-ch // 3, ch // 3)
             cd.ellipse([x - cw // 3, y - ch // 3, x + cw // 3, y + ch // 3], fill=255)
-    apply_shadow(ground, cloud, hx("#1b1a2e"), 0.12)
+    if sun.cloud:
+        apply_shadow(ground, cloud, hx("#1b1a2e"), sun.cloud)
 
-    if canopy_shade:
+    cm = Image.new("L", (W, H), 0)
+    cm.paste(tree.getchannel("A"), (-32, 652 + 46))
+    cm.paste(far_tree.getchannel("A"), (far_pos[0], far_pos[1] + 30))
+    if canopy_shade and not sun.canopy_over_all:
         # 12% under the canopies, the strength of a cloud shadow
-        cm = Image.new("L", (W, H), 0)
-        cm.paste(tree.getchannel("A"), (-32, 652 + 46))
-        cm.paste(far_tree.getchannel("A"), (far_pos[0], far_pos[1] + 30))
-        apply_shadow(ground, cm, hx("#1b1a2e"), 0.12)
+        apply_shadow(ground, cm, hx("#1b1a2e"), sun.canopy_alpha)
 
     # paste props back to front
     for spr, x, y in [
@@ -1667,13 +1700,22 @@ def compose_scene(look: Look, *, pell: Image.Image | None = None,
     paste(ground, boat, 248, 104)
     if elder_s is not None:
         paste(ground, body_light(elder_s, stepper, protect=frozenset({c.wood_outline})), 208, 572)
+    for spr, x, y, feet, cap in sorted(extra, key=lambda e: e[3]):
+        paste(ground, spr, x, y)
     if pell is not None:
         paste(ground, pell, pell_pos[0], pell_pos[1])
     if tall_grass:
-        grass = draw_grass_patch(c, 104, 80, 91, 1.45)
+        grass = grass_fn(c, 104, 80, 91, 1.45)
         paste(ground, grass, 288, 724)
     if bird:
         paste(ground, b, 230, 540)
+    if canopy_shade and sun.canopy_over_all:
+        # the shade over whoever stands under the canopy too
+        apply_shadow(ground, cm, hx("#1b1a2e"), sun.canopy_alpha)
+    if sun.tree_on_top or (canopy_shade and sun.canopy_over_all):
+        # the canopy back on top of whoever stands under it
+        paste(ground, tree, -32, 652)
+        paste(ground, far_tree, far_pos[0], far_pos[1])
 
     # a still plume from the chimney; the loop moves it
     if smoke_static:

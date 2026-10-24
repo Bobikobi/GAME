@@ -50,7 +50,7 @@
           ]
         },
         "say": [
-          "My hearth remembers your night. So does the mist, I think."
+          "You kept a fire of your own a whole night. I will remember that."
         ]
       },
       {
@@ -64,6 +64,16 @@
         },
         "say": [
           "Two herbs and a fire. That is all my mother's tea ever asked."
+        ]
+      },
+      {
+        "when": {
+          "done": [
+            "core/something-warm"
+          ]
+        },
+        "say": [
+          "My mother put less salt in. Do not tell Pell I said so."
         ]
       }
     ],

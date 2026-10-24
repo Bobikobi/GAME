@@ -6,14 +6,15 @@
  *
  * Three effects are read in phase A: a node that appears beside the thing while the condition
  * holds, a wait that scales the thing's respawn, and a cue the client draws (the kernel never
- * emits one, since a cue changes no state).
+ * emits one, since a cue changes no state). Phase B adds the day's weather as a condition.
  */
+import type { WeatherName } from '@game/schema';
 import type { Bundle, Instance, ReactionDef, ResourceDef } from './bundle';
 import { idiv } from './num';
 import { drawBasisPoints } from './rng';
-import { type State, hourOf, isNight, senseReach, techniqueValue , type PublicState } from './state';
+import { type State, attrAt, hourOf, isNight, senseReach, techniqueValue , type PublicState } from './state';
 import { spotOpen } from './step';
-import { tagAt } from './world';
+import { regionAt, tagAt } from './world';
 
 type At = readonly [number, number];
 
@@ -140,12 +141,48 @@ export function anchorsOf(b: Bundle, r: ReactionDef): Anchor[] {
 
 /** How far the player sees a hidden find: the senses, and two more tiles with the second-hint technique. */
 export function hintReach(b: Bundle, s: PublicState): number {
-  return senseReach(b, s.player.attrs.senses) + (techniqueValue(b, s, 'second_hint') > 0 ? 2 : 0);
+  return senseReach(b, attrAt(b, s, 'senses')) + (techniqueValue(b, s, 'second_hint') > 0 ? 2 : 0);
 }
 
 /** The game day a tick falls in: a reaction that rolls draws once a day (rule R4, the day as the counter). */
 export function dayOf(b: Bundle, tick: number): number {
   return idiv(tick, b.params.day_length_ms);
+}
+
+/**
+ * The odds of each weather, in basis points of the days: clear on most, rain on one in five, fog on
+ * one in ten. Fixed in the kernel, so a region's sky is never a creator's lever on value.
+ */
+export const WEATHER_ODDS: readonly (readonly [WeatherName, number])[] = [
+  ['rain', 2000],
+  ['fog', 1000],
+  ['clear', 7000],
+];
+
+/**
+ * The weather over a region on a game day: a pure function of the world's seed, the region and the
+ * day, and of nothing of the player's. In the shared world everyone in a region sees one sky, as
+ * large online games keep one weather per zone, and a replay here or on the server gives the same
+ * day. The days are drawn apart, so tomorrow's sky is known today (the morning's forecast). The
+ * phone never computes it: the seed is the server's, which sends the day's sky with its reply, as it
+ * sends the appear nodes that stand (DECISIONS 2026-10-20, a drawn outcome is the server's to say).
+ */
+export function weatherOf(seed: number, region: string, day: number): WeatherName {
+  let roll = drawBasisPoints(seed, `weather@${region}`, day);
+  for (const [kind, bp] of WEATHER_ODDS) {
+    if (roll < bp) return kind;
+    roll -= bp;
+  }
+  return 'clear';
+}
+
+/**
+ * The region a tile lies in: the map region that holds it (`map.regions`), else the one hand-made
+ * map. When the world grows by chunks, a chunk names its region and every tile of it reads that one.
+ */
+export function regionOf(b: Bundle, x: number, y: number): string {
+  const region = regionAt(b.map, x, y);
+  return region === undefined ? b.map.id : `${b.map.id}/${region.id}`;
 }
 
 function inHours(hour: number, [from, to]: readonly [number, number]): boolean {
@@ -179,6 +216,7 @@ export function reactionHolds(b: Bundle, s: State, r: ReactionDef, anchor: Ancho
     if (reach(at, anchor.x, anchor.y) <= hintReach(b, s)) return false;
   }
   if (w.chance_pct !== undefined && drawBasisPoints(s.seed, `${r.id}@${anchor.id}`, dayOf(b, tick)) >= w.chance_pct * 100) return false;
+  if (w.weather !== undefined && weatherOf(s.seed, regionOf(b, anchor.x, anchor.y), dayOf(b, tick)) !== w.weather) return false;
   return true;
 }
 
