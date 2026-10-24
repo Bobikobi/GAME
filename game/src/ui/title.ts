@@ -1,9 +1,10 @@
 /** The title screen and the choice of character. */
 import { app } from '../app';
 import { GAME_TITLE } from '../config';
-import { Session } from '../session';
+import { Session, debugSeed } from '../session';
 import { ATTRIBUTE_LABEL, ATTRIBUTE_TEXT } from '../text';
 import { say } from './dialog';
+import { gameServer, offerSignup } from './signup';
 import { button, h, sprite } from './dom';
 import type { UI } from './ui';
 
@@ -33,7 +34,7 @@ export function showTitle(ui: UI): Promise<void> {
             button('New game', () => (canContinue ? confirmNew() : choose()), canContinue ? '' : 'big'),
           ),
           dropped ? h('p', { class: 'demo-note', 'data-save-reset': '' }, 'The valley has a new opening, so the game saved in this browser starts over. Thank you for playing the demo early.') : null,
-          h('p', { class: 'demo-note' }, 'Demo: your progress is saved in this browser only, and will not move to an account later.'),
+          h('p', { class: 'demo-note' }, gameServer() ? 'Your progress is saved in this browser. Finish the opening to make an account.' : 'Demo: your progress is saved in this browser only, and will not move to an account later.'),
           h('a', { class: 'btn small site-link', href: '../' }, 'Site'),
         ),
       );
@@ -49,6 +50,8 @@ export function showTitle(ui: UI): Promise<void> {
       }
       done();
       ui.begin(session);
+      // back from Google or the email link: the sign-up form waits (NEXT 18 d)
+      if (window.location.hash === '#signin=signup') offerSignup(ui);
     };
 
     const confirmNew = () => {
@@ -64,31 +67,37 @@ export function showTitle(ui: UI): Promise<void> {
 
     const choose = () => {
       const b = app.bundle;
-      const starters = Object.entries(b.starters).sort(([x], [y]) => x.localeCompare(y));
-      let picked = starters[0]?.[0] ?? '';
+      // the races, in id order; the wake pocket is drawn by the world's seed, never chosen here
+      const races = Object.entries(b.races).sort(([x], [y]) => x.localeCompare(y));
+      let picked = races[0]?.[0] ?? '';
       let look = 0;
       const nameInput = h('input', { class: 'name', maxlength: 16, placeholder: 'Your name (or carve it later)', autocomplete: 'off', spellcheck: 'false' });
       const error = h('p', { class: 'error' });
       const cards = h('div', { class: 'cards' });
       const lookToggle = h('div', { class: 'tabs look-toggle' });
 
-      const drawToggle = () =>
+      // a race with one figure (no second sheet) has no look to pick: the toggle hides
+      const drawToggle = () => {
+        const one = !b.races[picked]?.sprite_alt;
+        lookToggle.hidden = one;
+        if (one) look = 0;
         lookToggle.replaceChildren(
           h('span', null, 'Look'),
           button('Male', () => { look = 0; drawCards(); drawToggle(); }, `tab ${look === 0 ? 'on' : ''}`),
           button('Female', () => { look = 1; drawCards(); drawToggle(); }, `tab ${look === 1 ? 'on' : ''}`),
         );
+      };
 
       const drawCards = () =>
         cards.replaceChildren(
-          ...starters.map(([id, st]) => {
+          ...races.map(([id, st]) => {
             const spr = look === 1 && st.sprite_alt ? st.sprite_alt : st.sprite;
             return h(
               'button',
-              { class: `card starter ${picked === id ? 'on' : ''}`, type: 'button', onclick: () => ((picked = id), drawCards()) },
+              { class: `card race ${picked === id ? 'on' : ''}`, type: 'button', 'data-race': id, onclick: () => ((picked = id), drawToggle(), drawCards()) },
               sprite(b, spr, 3, 1),
               h('b', null, st.name),
-              h('p', null, st.summary),
+              h('p', null, st.about),
               h(
                 'div',
                 { class: 'mini-attrs' },
@@ -110,15 +119,16 @@ export function showTitle(ui: UI): Promise<void> {
           return;
         }
         Session.erase();
-        const session = Session.fresh(b);
-        const r = session.act({ t: 'start', starter: picked, name, look });
+        const session = Session.fresh(b, debugSeed());
+        const r = session.act({ t: 'start', race: picked, name, look });
         if (!r.ok) {
           error.textContent = r.error;
           return;
         }
         done();
         ui.begin(session);
-        void intro(ui, b.starters[picked]?.intro);
+        // the narrator speaks for the pocket the seed drew
+        void intro(ui, b.pockets[session.state.player.pocket]?.intro);
       };
       nameInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') start();
@@ -142,7 +152,7 @@ export function showTitle(ui: UI): Promise<void> {
   });
 }
 
-/** What the narrator says as the character wakes: the start's own lines, or the game's. */
+/** What the narrator says as the character wakes: the wake pocket's own lines, or the game's. */
 async function intro(ui: UI, lines: string[] | undefined): Promise<void> {
   const waking = lines ?? [
     'You wake up in the tall grass beside a river. The sun stands high.',

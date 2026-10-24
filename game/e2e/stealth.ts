@@ -8,7 +8,9 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page } from './cdp';
+import { TAKE_GROUND, seedQuery } from './wakes';
 import { solveMinigame } from './minigame';
+import { FreeWalk, VEC, type Dir } from './walk';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(GAME_DIR, 'dist');
@@ -42,7 +44,6 @@ function serve(): Promise<{ server: Server; url: string }> {
   });
 }
 
-type Dir = 'up' | 'down' | 'left' | 'right';
 interface State {
   pos: [number, number];
   moving: boolean;
@@ -64,17 +65,14 @@ interface Health {
   since: number | null;
 }
 
-const KEY: Record<Dir, string> = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
-
 const IN_PAGE = `
 window.__stealth = (() => {
   const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
-  const KEY = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
   const g = () => window.__game;
   return {
     state() {
       const s = g().session;
-      return { pos: [...s.pos], moving: !!g().world.move, busy: s.busy, blocking: g().ui.blocking };
+      return { pos: [...s.pos], moving: !!g().world.body.moving, busy: s.busy, blocking: g().ui.blocking };
     },
     setHour(h) {
       const s = g().session, day = g().bundle.params.day_length_ms, q = Math.floor(day / 2);
@@ -118,21 +116,6 @@ window.__stealth = (() => {
       return Object.entries(g().bundle.instances).filter(([, n]) => n.source === 'core/moon-reeds')
         .map(([id, n]) => ({ id, x: n.x, y: n.y }))[0];
     },
-    releaseOnStep(dir) {
-      const s = g().session, w = g().world, facing = s.facing, t0 = performance.now();
-      const gen = (window.__stealthGen = (window.__stealthGen ?? 0) + 1);
-      window.__stealthStepped = false;
-      const look = () => {
-        if (window.__stealthGen !== gen) return;
-        if (w.move || s.facing !== facing) {
-          window.__stealthStepped = true;
-          window.dispatchEvent(new KeyboardEvent('keyup', { code: KEY[dir] }));
-          return;
-        }
-        if (performance.now() - t0 < 1000) requestAnimationFrame(look);
-      };
-      requestAnimationFrame(look);
-    },
     plan(x0, y0) {
       const s = g().session, w = g().world;
       const start = s.pos[0] + ',' + s.pos[1], goal = x0 + ',' + y0;
@@ -159,8 +142,12 @@ true`;
 
 class StealthPlayer {
   private shot = 0;
+  /** the free walk: the input is held until the feet stand on a tile, not pressed a tile at a time (NEXT 22 d) */
+  private readonly walk: FreeWalk;
 
-  constructor(readonly page: Page) {}
+  constructor(readonly page: Page) {
+    this.walk = new FreeWalk(page, false);
+  }
 
   state(): Promise<State> {
     return this.page.eval<State>('__stealth.state()');
@@ -202,17 +189,25 @@ class StealthPlayer {
     throw new Error(`dialogue never offered "${label}"`);
   }
 
+  /** One tile in a direction, holding the input until the feet stand on it and letting go there (NEXT 22 d). */
   async step(dir: Dir): Promise<void> {
     await this.page.waitFor('!__stealth.state().busy && !__stealth.state().moving', 'the player to stand still', 10_000);
     if (await this.page.eval<boolean>('!!document.querySelector(".dialog")')) await this.clearPlainDialog();
     const before = await this.state();
-    await this.page.eval(`__stealth.releaseOnStep(${JSON.stringify(dir)})`);
-    await this.page.key(KEY[dir], 'keyDown');
-    await this.page.waitFor('window.__stealthStepped', `the ${dir} step to start`, 1500).catch(() => undefined);
-    await this.page.key(KEY[dir], 'keyUp');
-    await this.page.waitFor('!__stealth.state().moving', `the ${dir} step to end`, 5000);
-    const after = await this.state();
-    if (after.pos[0] === before.pos[0] && after.pos[1] === before.pos[1]) throw new Error(`${dir} step was blocked at ${before.pos.join(',')}`);
+    const want = [before.pos[0] + VEC[dir][0], before.pos[1] + VEC[dir][1]];
+    // a box can open by itself under a walk here (the night's warning at dusk): it holds the body where it
+    // stands, so it is tapped away and the step is taken again, twice at most
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await this.walk.holdTo(want, `the ${dir} tile from ${(await this.state()).pos.join(',')}`);
+      const after = await this.state();
+      if (after.pos[0] !== before.pos[0] || after.pos[1] !== before.pos[1]) return;
+      if (await this.walk.closeBox()) continue;
+      break;
+    }
+    const why = await this.page.eval(`(() => { const g = window.__game, b = g.world.body, s = g.session;
+      return { feet: [b.x, b.y], tile: b.tile(), open: g.world.canWalk(s, ${want[0]}, ${want[1]}), paused: s.pauses, busy: s.busy, blocking: g.ui.blocking,
+        layers: [...document.querySelectorAll('#ui > .layer')].map((e) => e.className) }; })()`);
+    throw new Error(`${dir} step was blocked at ${before.pos.join(',')}: ${JSON.stringify(why)}`);
   }
 
   async walkTo(x: number, y: number, what: string): Promise<void> {
@@ -242,20 +237,22 @@ class StealthPlayer {
 async function start(page: Page): Promise<void> {
   await page.tap('.title-screen button', 'New game');
   const choice = await page.waitFor<string>(
-    `document.querySelector('.card.starter') ? 'cards' : [...document.querySelectorAll('.title-screen button')].some((b) => b.textContent.includes('Start a new game')) ? 'ask' : ''`,
-    'the starter cards',
+    `document.querySelector('.card.race') ? 'cards' : [...document.querySelectorAll('.title-screen button')].some((b) => b.textContent.includes('Start a new game')) ? 'ask' : ''`,
+    'the race cards',
   );
   if (choice === 'ask') await page.tap('.title-screen button', 'Start a new game');
-  await page.tap('.card.starter', 'Forager');
+  await page.tap('.card.race', 'Elf');
   await page.tap('input.name');
   await page.type('Tess');
   await page.tap('.title-screen button', 'Wake up');
   await page.waitFor('!!window.__game.session && window.__game.session.started', 'the character to wake', 10_000);
+  // the west bank's basket and axe lie on the ground by the wake: this script tests what comes later, so they are handed over
+  await page.eval(TAKE_GROUND);
 }
 
 async function run(page: Page, url: string): Promise<void> {
   const me = new StealthPlayer(page);
-  await page.goto(`${url}?debug&rich=none`);
+  await page.goto(`${url}?debug&rich=none${seedQuery('core/west-bank')}`);
   await page.waitFor(`!!document.querySelector('.title-screen button')`, 'the title screen', 30_000);
   await page.eval(IN_PAGE);
   await start(page);

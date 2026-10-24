@@ -1,10 +1,11 @@
 /** Words for numbers and events. Display only: the kernel never sees these. */
 import {
+  OWN_FIRE,
   type Attribute,
+  attrAt,
   type Bundle,
   type GameEvent,
   type RecipeDef,
-  type State,
   type WearSlot,
   bagCapacity,
   bagUsed,
@@ -28,8 +29,7 @@ import {
   salePrice,
   satietyCap,
   slotsFor,
-  techniqueValue,
-} from '@game/kernel';
+  techniqueValue, type PublicState } from '@game/kernel';
 import { feedTooLate, fireName, tendLine } from './fires';
 
 export function itemName(b: Bundle, id: string): string {
@@ -63,27 +63,29 @@ export function clock(minuteOfDay: number): string {
 
 /** One plain word or two per attribute, as the start cards show it (the owner's finding of 10.10: as simple as other games). */
 export const ATTRIBUTE_LABEL: Record<string, string> = {
-  carry: 'Bag space',
+  might: 'Might',
   senses: 'Keen eyes',
   agility: 'Steady hands',
   luck: 'Luck',
   stamina: 'Stamina',
+  spirit: 'Spirit',
 };
 
 export const ATTRIBUTE_TEXT: Record<string, string> = {
-  carry: 'Bag space: carry more',
+  might: 'Might: a bigger bag, carry more',
   senses: 'Keen eyes: see hidden finds from farther away',
   agility: 'Steady hands: easier timing in every minigame',
   luck: 'Luck: a miss keeps something more often, and rare finds come more',
   stamina: 'Stamina: eat less often',
+  spirit: 'Spirit: counts for nothing yet; its first use comes in a later update',
 };
 
 /** The most points one attribute can take (the kernel refuses more). */
 export const ATTRIBUTE_MAX = 10;
 
 /** How wide the minigame windows are, in percent of the base. */
-export function windowScalePct(b: Bundle, s: State): number {
-  return 100 + b.params.per_point.agility_pct * s.player.attrs.agility + techniqueValue(b, s, 'timing_window_pct');
+export function windowScalePct(b: Bundle, s: PublicState): number {
+  return 100 + b.params.per_point.agility_pct * attrAt(b, s, 'agility') + techniqueValue(b, s, 'timing_window_pct');
 }
 
 export interface AttributeEffect {
@@ -98,17 +100,17 @@ export interface AttributeEffect {
 }
 
 /** What one more point in each attribute really changes, as numbers. */
-export function attributeEffects(b: Bundle, s: State): AttributeEffect[] {
-  const plus = (a: Attribute): State => ({ ...s, player: { ...s.player, attrs: { ...s.player.attrs, [a]: s.player.attrs[a] + 1 } } });
+export function attributeEffects(b: Bundle, s: PublicState): AttributeEffect[] {
+  const plus = (a: Attribute): PublicState => ({ ...s, player: { ...s.player, attrs: { ...s.player.attrs, [a]: s.player.attrs[a] + 1 } } });
   // with no hunger clock (G32) a point of stamina is health, not minutes of work
   const drain = b.params.satiety_drain_per_min;
-  const minutes = (st: State) => Math.floor(satietyCap(b, st) / (drain > 0 ? drain : 1000));
+  const minutes = (st: PublicState) => Math.floor(satietyCap(b, st) / (drain > 0 ? drain : 1000));
   const pct = (bp: number) => `${Math.round(bp / 100)}%`;
   const times = (permille: number) => `x${(permille / 1000).toFixed(2).replace(/0$/, '')}`;
   const luckNext = plus('luck');
   const capped = rareFindPermille(b, luckNext) === rareFindPermille(b, s) && rareFindPermille(b, s) >= powerCap(b, s);
   return [
-    { attr: 'carry', name: 'Bag space', what: 'Your bag holds', now: `${bagCapacity(b, s)}`, next: `${bagCapacity(b, plus('carry'))} things` },
+    { attr: 'might', name: 'Might', what: 'Your bag holds', now: `${bagCapacity(b, s)}`, next: `${bagCapacity(b, plus('might'))} things` },
     { attr: 'senses', name: 'Keen eyes', what: 'You see hidden finds from', now: `${hintDistance(b, s)}`, next: `${hintDistance(b, plus('senses'))} steps away` },
     { attr: 'agility', name: 'Steady hands', what: 'The good zone in a minigame', now: `${windowScalePct(b, s)}%`, next: `${windowScalePct(b, plus('agility'))}% wide` },
     {
@@ -125,6 +127,15 @@ export function attributeEffects(b: Bundle, s: State): AttributeEffect[] {
       what: drain > 0 ? 'Work before you must eat' : 'Your health holds',
       now: `${minutes(s)}`,
       next: `${minutes(plus('stamina'))} ${drain > 0 ? 'minutes' : 'points'}`,
+    },
+    // spirit has no rule that reads it yet (schema per_point): the row shows the points and says so plainly
+    {
+      attr: 'spirit',
+      name: 'Spirit',
+      what: 'Your spirit',
+      now: `${attrAt(b, s, 'spirit')}`,
+      next: `${attrAt(b, plus('spirit'), 'spirit')} points`,
+      note: 'Counts for nothing yet: its first use comes in a later update',
     },
   ];
 }
@@ -143,7 +154,7 @@ export function firstLine(text: string): string {
  * One line per quest step, with a tick when it is done; `short` is what the tracker shows when the line is a clue.
  * `tick` is the live game tick (the session's), which a tend step reads; it defaults to the state's own.
  */
-export function questSteps(b: Bundle, s: State, questId: string, tick = s.tick): { text: string; done: boolean; short?: string }[] {
+export function questSteps(b: Bundle, s: PublicState, questId: string, tick = s.tick): { text: string; done: boolean; short?: string }[] {
   const q = b.quests[questId];
   if (!q) return [];
   const p = s.player;
@@ -195,13 +206,13 @@ export function questSteps(b: Bundle, s: State, questId: string, tick = s.tick):
  * What a restore with no inputs says when the player faces it: it opens only as
  * a quest's reward, so the line points at that quest's next step while it is open.
  */
-export function restoreHint(b: Bundle, s: State, restoreId: string, tick = s.tick): string {
+export function restoreHint(b: Bundle, s: PublicState, restoreId: string, tick = s.tick): string {
   const q = Object.values(b.quests).find((x) => (x.reward.opens ?? []).includes(restoreId));
   const next = q && s.player.quests[q.id] === 'active' ? questSteps(b, s, q.id, tick).find((st) => !st.done) : undefined;
   return next ? `It does not open by hand. ${next.text}` : 'It does not open by hand.';
 }
 
-export function activeQuests(b: Bundle, s: State): string[] {
+export function activeQuests(b: Bundle, s: PublicState): string[] {
   return Object.keys(s.player.quests)
     .filter((id) => s.player.quests[id] === 'active' && b.quests[id])
     .sort((x, y) => questOrder(b, x) - questOrder(b, y) || x.localeCompare(y));
@@ -213,7 +224,7 @@ function questOrder(b: Bundle, id: string): number {
 }
 
 /** Whether the giver takes the quest now; `tick` is the live game tick (a tend step reads the clock), the state's own by default. */
-export function readyToHandIn(b: Bundle, s: State, questId: string, tick = s.tick): boolean {
+export function readyToHandIn(b: Bundle, s: PublicState, questId: string, tick = s.tick): boolean {
   return s.player.quests[questId] === 'active' && questSatisfied(b, tick === s.tick ? s : { ...s, tick }, questId);
 }
 
@@ -223,14 +234,14 @@ export function readyToHandIn(b: Bundle, s: State, questId: string, tick = s.tic
  * task was finished, and both as soon as a skill point waits to be spent there. Read
  * from the state, so a reload shows the same buttons; the keys work from the start.
  */
-export function hudUnlocks(s: State, points = 0): { bag: boolean; log: boolean } {
+export function hudUnlocks(s: PublicState, points = 0): { bag: boolean; log: boolean } {
   const p = s.player;
   const log = p.journal.length > 0 || points > 0 || Object.values(p.quests).some((q) => q === 'done');
   return { bag: log || bagUsed(s) > 0, log };
 }
 
 /** An active quest still waits on a riddle that a dig at another spot than `treasure` answers: this is the wrong place. */
-export function digRiddleOpen(b: Bundle, s: State, treasure: string): boolean {
+export function digRiddleOpen(b: Bundle, s: PublicState, treasure: string): boolean {
   return Object.keys(s.player.quests).some((id) => {
     if (s.player.quests[id] !== 'active') return false;
     return (b.quests[id]?.steps ?? []).some(
@@ -240,7 +251,7 @@ export function digRiddleOpen(b: Bundle, s: State, treasure: string): boolean {
 }
 
 /** How far a hidden find shows: the kernel's reach, so the birds over a find and the find itself agree. */
-export function hintDistance(b: Bundle, s: State): number {
+export function hintDistance(b: Bundle, s: PublicState): number {
   return hintReach(b, s);
 }
 
@@ -250,7 +261,7 @@ export function campSpotOf(b: Bundle, campId: string): [number, number] | undefi
 }
 
 /** What a trader buys from the bag, by name, at the kernel's price for one unit: a worn tool that is the last unit pays less, and what pays nothing stays out. */
-export function sellable(b: Bundle, s: State): { item: string; each: number }[] {
+export function sellable(b: Bundle, s: PublicState): { item: string; each: number }[] {
   return Object.keys(s.player.bag)
     .map((item) => ({ item, each: salePrice(b, s, item, 1) ?? 0 }))
     .filter((row) => row.each >= 1)
@@ -258,7 +269,7 @@ export function sellable(b: Bundle, s: State): { item: string; each: number }[] 
 }
 
 /** Where an item is worn now, on the layer it goes on (looks apart from work clothes), or undefined. */
-export function wornAt(b: Bundle, s: State, itemId: string): { slot: WearSlot; look: boolean } | undefined {
+export function wornAt(b: Bundle, s: PublicState, itemId: string): { slot: WearSlot; look: boolean } | undefined {
   const w = b.items[itemId]?.wear;
   if (!w) return undefined;
   const look = w.look === true;
@@ -268,7 +279,7 @@ export function wornAt(b: Bundle, s: State, itemId: string): { slot: WearSlot; l
 }
 
 /** The camp parts built over a standing part that provides this station: its next step up. */
-export function stationUpgrades(b: Bundle, s: State, station: string): string[] {
+export function stationUpgrades(b: Bundle, s: PublicState, station: string): string[] {
   const standing = s.player.camp.filter((id) => b.camps[id]?.provides === station);
   return Object.keys(b.camps)
     .filter((id) => {
@@ -347,7 +358,7 @@ export function stationText(b: Bundle, recipe: RecipeDef): string {
  * for its station is below the recipe's tier. Names the lowest part that
  * fits. Undefined when a built part fits, or when none is built yet.
  */
-export function stationGate(b: Bundle, s: State, recipe: RecipeDef): string | undefined {
+export function stationGate(b: Bundle, s: PublicState, recipe: RecipeDef): string | undefined {
   const tier = recipeTier(b, recipe);
   const tierOf = (id: string) => b.camps[id]!.tier ?? 1;
   const parts = Object.keys(b.camps).filter((id) => b.camps[id]!.provides === recipe.station);
@@ -384,7 +395,7 @@ export function eatLabel(b: Bundle, id: string): string {
  * game's own time. Undefined on safe ground, after dark, and in a world where
  * nothing hunts. The mist's coming joins it with the mist (GRUNT P-6).
  */
-export function nightCountdown(b: Bundle, s: State, at: readonly [number, number], tick: number): { text: string; soon: boolean } | undefined {
+export function nightCountdown(b: Bundle, s: PublicState, at: readonly [number, number], tick: number): { text: string; soon: boolean } | undefined {
   if (hazardsOf(b).length === 0 || isNight(b, tick) || isSafe(b, s, [at[0], at[1]])) return undefined;
   const ms = nightFalls(b, tick) - tick;
   const sec = Math.ceil(ms / 1000);
@@ -396,12 +407,12 @@ export function nightCountdown(b: Bundle, s: State, at: readonly [number, number
  * while it is dark and the player stands outside a safe place in a world that
  * has hazards; undefined otherwise. The warning opens once for each value.
  */
-export function lanternNight(b: Bundle, s: State, at: readonly [number, number], tick: number): number | undefined {
+export function lanternNight(b: Bundle, s: PublicState, at: readonly [number, number], tick: number): number | undefined {
   if (hazardsOf(b).length === 0 || !isNight(b, tick) || isSafe(b, s, [at[0], at[1]])) return undefined;
   return nightEnds(b, tick);
 }
 
-export function describe(b: Bundle, s: State, e: GameEvent): { text: string; icon?: string; tone?: 'good' | 'bad' | 'info' } | undefined {
+export function describe(b: Bundle, s: PublicState, e: GameEvent): { text: string; icon?: string; tone?: 'good' | 'bad' | 'info' } | undefined {
   switch (e.e) {
     case 'gain':
       return { text: `+${e.qty} ${itemName(b, e.item)}`, icon: b.items[e.item]?.sprite, tone: 'good' };
@@ -435,6 +446,8 @@ export function describe(b: Bundle, s: State, e: GameEvent): { text: string; ico
       const name = fireName(e.id);
       // lit after the night it keeps was lost: plain, not cheered
       if (feedTooLate(b, s, e.id, s.tick)) return { text: `The ${name} burns, but tonight is lost.`, tone: 'info' };
+      // the player's own fire tells no clock: no minute of its burn is shown (NEXT 21b)
+      if (e.id === OWN_FIRE) return { text: `The ${name} takes.`, tone: 'good' };
       return { text: `The ${name} burns until ${clock(minuteOfDay(b, e.until))}.`, tone: 'good' };
     }
     case 'fire_out':
@@ -477,7 +490,7 @@ export function describe(b: Bundle, s: State, e: GameEvent): { text: string; ico
  * with a step whose find or dig needs that tool. The stall shows them, so a
  * tool is bought for a road the player can already see.
  */
-export function toolOpens(b: Bundle, s: State, kind: string): string[] {
+export function toolOpens(b: Bundle, s: PublicState, kind: string): string[] {
   const p = s.player;
   const needs = new Set<string>();
   for (const r of Object.values(b.resources)) if (r.tool === kind) needs.add(r.output);
@@ -507,14 +520,14 @@ export function itemBenefit(b: Bundle, id: string): string {
     // a tool with no uses never wears out
     const uses = it.tool.uses === undefined ? 'lasts' : `${it.tool.uses} uses`;
     const speed = it.tool.tier > 1 ? ` · +${15 * (it.tool.tier - 1)}% gathering speed` : '';
-    // two patches of the same plant read as one; a start's own spot is no dig site of the trowel's
+    // two patches of the same plant read as one; a wake pocket's own spot is no dig site of the trowel's
     const resources = [...new Set(Object.values(b.resources)
       .filter((resource) => resource.tool === it.tool?.kind)
       .map((resource) => resource.title.toLowerCase()))]
       .sort();
     const digSites = it.tool.kind === 'trowel'
       ? Object.values(b.treasures)
-          .filter((treasure) => treasure.tool === it.tool?.kind && treasure.starter === undefined)
+          .filter((treasure) => treasure.tool === it.tool?.kind && treasure.pocket === undefined)
           .map((treasure) => treasure.title.toLowerCase())
           .sort()
       : [];

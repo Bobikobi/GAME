@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../schema/json/reaction.schema.json",
+  "format": 1,
+  "type": "reaction",
+  "id": "core/reeds-in-rain",
+  "title": "Reeds grow back sooner in the rain",
+  "creator": "core",
+  "reaction": {
+    "on": { "resource": "core/reed-bank" },
+    "when": { "weather": "rain" },
+    "then": { "wait": 600 }
+  }
+}

@@ -62,6 +62,19 @@ export function staticSolid(map: MapDef): Uint8Array {
   return solid;
 }
 
+/** The world a map belongs to when it names none: the valley, neutral to every race (DECISIONS.md, 2026-10-22). */
+export const HOME_WORLD = 'valley';
+
+/** The map region that holds tile (x, y): the first of `map.regions` whose rectangle holds it, else none. */
+export function regionAt(map: MapDef, x: number, y: number): NonNullable<MapDef['regions']>[number] | undefined {
+  return map.regions?.find((r) => inRect(x, y, r));
+}
+
+/** The world under tile (x, y): its region's, else the map's, else the valley. A race's grade reads it. */
+export function worldAt(map: MapDef, x: number, y: number): string {
+  return regionAt(map, x, y)?.world ?? map.world ?? HOME_WORLD;
+}
+
 /** Tile tag of the ground at (x, y). */
 export function tagAt(map: MapDef, x: number, y: number): string | undefined {
   const row = map.ground[y];

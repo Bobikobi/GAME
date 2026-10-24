@@ -1,4 +1,5 @@
 @import '../../design/tokens.css';
+@import './ui/kit.css';
 
 /* Handheld-era UI drawn with the core palette (tools/src/kit/palette.ts). */
 @font-face {
@@ -8,10 +9,28 @@
   font-display: swap;
 }
 
+/* The reading face of the site, self-hosted here: the body, the buttons, the
+   item facts and the dialogue read in it; the pixel face keeps the titles and
+   the numbers (DECISIONS 2026-10-20, Field Kit). */
+@font-face {
+  font-family: 'Atkinson Hyperlegible Next';
+  src: url('/fonts/atkinson-hyperlegible-next/atkinson-hyperlegible-next-latin.woff2') format('woff2');
+  font-weight: 400 700;
+  font-display: swap;
+}
+
 :root {
-  /* body text is the pixel face too; it reads well from 16px up */
-  --font-body: var(--font);
+  --font-body: var(--font-reading);
   color-scheme: light;
+}
+
+h1,
+h2,
+h3,
+h4,
+.logo,
+.dialog-name {
+  font-family: var(--font);
 }
 
 * {
@@ -25,9 +44,9 @@ body {
   overflow: hidden;
   background: var(--ink);
   color: var(--ink);
-  font-family: var(--font);
+  font-family: var(--font-body);
   font-size: 16px;
-  line-height: 1.25;
+  line-height: 1.35;
   /* Pixelify Sans draws its "fi" ligature as a broken glyph ("Fire" read "Are") */
   font-variant-ligatures: none;
   font-feature-settings:
@@ -107,6 +126,7 @@ body {
 
 .btn {
   font: inherit;
+  font-family: var(--font-body);
   color: var(--ink);
   background: var(--cream);
   border: 3px solid var(--ink);
@@ -279,7 +299,7 @@ body {
   text-align: left;
 }
 
-.card.starter {
+.card.race {
   font: inherit;
   cursor: pointer;
   display: grid;
@@ -289,13 +309,13 @@ body {
   margin: 0;
 }
 
-.card.starter.on {
+.card.race.on {
   border-color: var(--ink);
   background: #fffbe9;
   box-shadow: inset 0 0 0 2px var(--yellow);
 }
 
-.card.starter p {
+.card.race p {
   margin: 2px 0 6px;
   font-size: 16px;
   color: var(--ink2);
@@ -881,6 +901,7 @@ body {
 }
 
 .slot .count {
+  font-family: var(--font);
   position: absolute;
   right: 2px;
   bottom: 0;

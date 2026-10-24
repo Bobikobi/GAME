@@ -1,13 +1,13 @@
 /**
- * The three starts (DECISIONS.md, 2026-10-10): each character wakes at its own
- * place with its own kit, a kit piece worn for its work goes on from the first
- * morning, a start's own first task is offered to it alone, and a start's own
- * spot shows to it alone, gives its one find every time, and only once. A
- * reward its kit already holds comes as something the kit lacks.
+ * The three wake pockets (DECISIONS.md, 2026-10-22, after the three starts of 2026-10-10): the seed
+ * draws where a character wakes, the pocket's tools lie on the ground by the wake tile, a pocket's own
+ * first task is offered to a character who woke there alone, and a pocket's own spot shows to that
+ * character alone, gives its one find every time, and only once. A reward the pocket's ground already
+ * gives comes as something the pocket lacks.
  */
 import { beforeAll, describe, expect, test } from 'vitest';
 
-import { type Bundle, type State, type StepResult, newState, npcTile, rewardItem, spotOpen, step } from '@game/kernel';
+import { type Bundle, type State, type StepResult, newState, npcTile, rewardItem, spotOpen, step, wakePocket } from '@game/kernel';
 
 import { type Tile, bfsNear, loadBundle } from '../../tools/test/helpers/world.js';
 
@@ -17,8 +17,15 @@ beforeAll(() => {
   b = loadBundle();
 });
 
-function started(starter: string): State {
-  const r = step(b, newState(b, 7), { t: 'start', starter, name: 'Tester' }, 0);
+/** The first seed that wakes in this pocket. */
+function seedFor(pocket: string): number {
+  for (let seed = 1; seed < 10_000; seed++) if (wakePocket(b, seed) === pocket) return seed;
+  throw new Error(`no seed wakes in ${pocket}`);
+}
+
+/** A character of this race woken in this pocket. */
+function started(pocket: string, race = 'core/human'): State {
+  const r = step(b, newState(b, seedFor(pocket)), { t: 'start', race, name: 'Tester' }, 0);
   if (!r.ok) throw new Error(r.error);
   return r.state;
 }
@@ -36,60 +43,79 @@ function dig(s: State, spot: string, grade: 0 | 3 = 3, tick = Math.max(s.tick, s
   return step(b, s, { t: 'dig', spot, grade, at }, tick);
 }
 
+/** Pick up every tool the pocket lays by the wake tile. */
+function pickUpGround(s: State): State {
+  let state = s;
+  for (const [id, inst] of Object.entries(b.instances)) {
+    if (inst.kind !== 'treasure' || b.treasures[inst.source]?.pocket !== s.player.pocket) continue;
+    if (!b.pockets[s.player.pocket]!.ground.some((g) => b.treasures[inst.source]!.finds[0]?.item === g.item)) continue;
+    const r = dig(state, id);
+    if (!r.ok) throw new Error(r.error);
+    state = r.state;
+  }
+  return state;
+}
+
 describe('waking', () => {
-  test('each start wakes at its own place, the map spawn when it names none', () => {
-    expect(Object.keys(b.starters).sort()).toEqual(['core/digger', 'core/explorer', 'core/forager']);
-    for (const s of Object.values(b.starters)) {
-      expect(started(s.id).player.at, s.id).toEqual(s.wake ? [s.wake.x, s.wake.y] : [b.map.spawn.x, b.map.spawn.y]);
-    }
+  test('the three pockets wake where the old starts woke', () => {
+    expect(Object.keys(b.pockets).sort()).toEqual(['core/north-meadow', 'core/slid-bank', 'core/west-bank']);
+    expect(b.pockets['core/north-meadow']!.wake).toEqual({ x: 7, y: 6 });
+    expect(b.pockets['core/west-bank']!.wake).toEqual({ x: 6, y: 17 });
+    expect(b.pockets['core/slid-bank']!.wake).toEqual({ x: 9, y: 23 });
+    for (const p of Object.values(b.pockets)) expect(started(p.id).player.at, p.id).toEqual([p.wake.x, p.wake.y]);
   });
 
-  test('a kit piece worn for its work goes on from the first morning', () => {
-    const explorer = started('core/explorer');
-    expect(explorer.player.bag['core/walking-staff']).toBe(1);
-    expect(explorer.player.worn).toEqual({ hand: 'core/walking-staff' });
-    expect(started('core/digger').player.worn).toEqual({});
-  });
-});
-
-describe("a start's own first task", () => {
-  test('is offered to its start alone', () => {
-    const own = Object.values(b.quests).filter((q) => q.starter !== undefined);
-    expect(own.map((q) => q.starter).sort()).toEqual(['core/digger', 'core/explorer', 'core/forager']);
-    for (const s of Object.values(b.starters)) {
-      const quests = started(s.id).player.quests;
-      for (const q of own) expect(quests[q.id], `${s.id} ${q.id}`).toBe(q.starter === s.id ? 'active' : undefined);
+  test("the pocket's tools lie on the ground: none is in the bag, and each is picked up by hand", () => {
+    for (const p of Object.values(b.pockets)) {
+      const s = started(p.id);
+      for (const g of p.ground) expect(s.player.bag[g.item], `${p.id} ${g.item}`).toBeUndefined();
+      const picked = pickUpGround(s);
+      for (const g of p.ground) expect(picked.player.bag[g.item], `${p.id} ${g.item}`).toBe(g.qty);
+      expect(picked.player.wear, p.id).toEqual({});
     }
   });
 });
 
-describe("a start's own spot", () => {
-  test('shows to its start alone, and refuses every other', () => {
-    const spot = spotOf('core/slid-bank');
-    expect(spotOpen(b, started('core/digger'), spot)).toBe(true);
-    const forager = started('core/forager');
-    forager.player.bag['core/trowel'] = 1;
-    expect(spotOpen(b, forager, spot)).toBe(false);
-    expect(dig(forager, spot)).toEqual({ ok: false, error: 'There is nothing to dig here.' });
+describe("a pocket's own first task", () => {
+  test('is offered to a character who woke there alone, whatever the race', () => {
+    const own = Object.values(b.quests).filter((q) => q.pocket !== undefined);
+    expect(own.map((q) => q.pocket).sort()).toEqual(['core/north-meadow', 'core/slid-bank', 'core/west-bank']);
+    for (const p of Object.values(b.pockets)) {
+      for (const race of Object.keys(b.races)) {
+        const quests = started(p.id, race).player.quests;
+        for (const q of own) expect(quests[q.id], `${p.id} ${race} ${q.id}`).toBe(q.pocket === p.id ? 'active' : undefined);
+      }
+    }
+  });
+});
+
+describe("a pocket's own spot", () => {
+  test('shows to a character who woke there alone, and refuses every other', () => {
+    const spot = spotOf('core/slid-bank-dig');
+    expect(spotOpen(b, started('core/slid-bank'), spot)).toBe(true);
+    const other = started('core/west-bank');
+    other.player.bag['core/trowel'] = 1;
+    expect(spotOpen(b, other, spot)).toBe(false);
+    expect(dig(other, spot)).toEqual({ ok: false, error: 'There is nothing to dig here.' });
   });
 
   test('gives its one find on the worst timing, and only once', () => {
-    const spot = spotOf('core/slid-bank');
-    const r = dig(started('core/digger'), spot, 0);
+    const spot = spotOf('core/slid-bank-dig');
+    const s = pickUpGround(started('core/slid-bank'));
+    const r = dig(s, spot, 0);
     if (!r.ok) throw new Error(r.error);
     expect(r.state.player.bag['core/axe']).toBe(1);
-    // a task nobody gave keeps what it found: the axe is the digger's
+    // a task nobody gave keeps what it found: the axe is the finder's
     expect(r.state.player.quests['core/buried-axe']).toBe('done');
     expect(spotOpen(b, r.state, spot)).toBe(false);
     expect(dig(r.state, spot, 3, r.state.player.busyUntil + 3_600_000)).toEqual({ ok: false, error: 'There is nothing more here.' });
   });
 
   test('picked up by hand asks for no tool and wears none', () => {
-    const explorer = started('core/explorer');
-    expect(Object.values(b.items).filter((it) => it.tool?.kind !== 'staff' && explorer.player.bag[it.id])).toEqual([]);
-    const r = dig(explorer, spotOf('core/bridge-glint'));
+    const s = started('core/north-meadow');
+    const r = dig(s, spotOf('core/bridge-glint'));
     if (!r.ok) throw new Error(r.error);
-    expect(r.state.player.bag).toEqual({ 'core/walking-staff': 1, 'core/axe': 1 });
+    expect(r.state.player.bag['core/axe']).toBe(1);
     expect(r.state.player.wear).toEqual({});
     expect(r.state.player.quests['core/glint-by-the-bridge']).toBe('done');
   });
@@ -98,15 +124,15 @@ describe("a start's own spot", () => {
 describe('a reward item', () => {
   const stack = { item: 'core/trowel', instead: 'core/walking-staff' };
 
-  test('comes as its swap to a start whose kit holds it, and as itself to every other', () => {
-    expect(rewardItem(b, 'core/digger', stack)).toBe('core/walking-staff');
-    expect(rewardItem(b, 'core/forager', stack)).toBe('core/trowel');
-    expect(rewardItem(b, 'core/explorer', stack)).toBe('core/trowel');
-    expect(rewardItem(b, 'core/digger', { item: 'core/trowel' })).toBe('core/trowel');
+  test("comes as its swap to a pocket whose ground lays it, and as itself to every other", () => {
+    expect(rewardItem(b, 'core/slid-bank', stack)).toBe('core/walking-staff');
+    expect(rewardItem(b, 'core/west-bank', stack)).toBe('core/trowel');
+    expect(rewardItem(b, 'core/north-meadow', stack)).toBe('core/trowel');
+    expect(rewardItem(b, 'core/slid-bank', { item: 'core/trowel' })).toBe('core/trowel');
   });
 
-  test("Maru's bells give the digger a walking staff in place of a second trowel", () => {
-    const s = started('core/digger');
+  test("Maru's bells give the slid bank a walking staff in place of a second trowel", () => {
+    const s = pickUpGround(started('core/slid-bank'));
     // past the bridge and into town, with the bells picked
     s.player.restored = ['core/old-bridge'];
     for (const id of ['core/fix-the-bridge', 'core/first-fire', 'core/into-town']) s.player.quests[id] = 'done';
@@ -114,7 +140,7 @@ describe('a reward item', () => {
     s.player.bag['core/bellberry'] = 1;
     const [x, y] = npcTile(b, 'core/elder')!;
     const at: Tile = bfsNear(b, s.player, s.player.at, { x, y, w: 1, h: 1 })!.at(-1)!;
-    const r = step(b, s, { t: 'turnin', quest: 'core/three-fruits', at }, 0);
+    const r = step(b, s, { t: 'turnin', quest: 'core/three-fruits', at }, Math.max(s.tick, s.player.busyUntil));
     if (!r.ok) throw new Error(r.error);
     expect(r.state.player.bag['core/trowel']).toBe(1);
     expect(r.state.player.bag['core/walking-staff']).toBe(1);
@@ -129,8 +155,8 @@ describe('the keystone waits for the glint (opens_after)', () => {
     return step(b, s, { t: 'gather', node: key(), grade: 3, at }, Math.max(s.tick, s.player.busyUntil));
   }
 
-  test('the explorer is refused with one short line that changes nothing, until the glint is picked up', () => {
-    const s = started('core/explorer');
+  test('the north meadow is refused with one short line that changes nothing, until the glint is picked up', () => {
+    const s = started('core/north-meadow');
     const refused = strike(s);
     expect(refused).toEqual({ ok: false, error: 'Something else catches the light first.' });
     expect(refused.ok ? 0 : refused.error.length).toBeLessThanOrEqual(80);
@@ -145,11 +171,11 @@ describe('the keystone waits for the glint (opens_after)', () => {
     expect(after.ok && after.state.player.bag['core/keystone']).toBe(1);
   });
 
-  test('the forager and the digger strike it at once, as before', () => {
-    for (const starter of ['core/forager', 'core/digger']) {
-      const r = strike(started(starter));
-      expect(r.ok, starter).toBe(true);
-      expect(r.ok && r.state.player.bag['core/keystone'], starter).toBe(1);
+  test('the west bank and the slid bank strike it at once, as before', () => {
+    for (const pocket of ['core/west-bank', 'core/slid-bank']) {
+      const r = strike(started(pocket));
+      expect(r.ok, pocket).toBe(true);
+      expect(r.ok && r.state.player.bag['core/keystone'], pocket).toBe(1);
     }
   });
 });
