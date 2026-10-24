@@ -2004,6 +2004,11 @@ The keys are **today's curve, keyed**: gold `#eda83a` at 40% across the half hou
 Measured on the live game first: 08:00, 12:00, 16:30 and 19:00 are one picture and only the night differs, so the valley had two lights and nothing between them. Until L2 is picked, that stays true on purpose.
 **Retry when:** the pick lands and the keys are not swapped in the same day, or a wash key reads as a veil rather than as light. Model: Copilot.
 
+## 2026-10-20 ✅ The cast shadow, as built (ART_SYSTEM step 2, the shadows)
+
+The sun's shear is data: `params.light.sun` carries keyed hours with `right` and `down` in whole percent of the caster's height, the cast `alpha` (30) and the length `cap` (110), and `game/src/cast.ts` steps between the keys, clamps the shadow to the cap and is pure, so the 3D door can read the same sun later. The values are STYLE section 4's: 0.8 to 1.1 of the height at 08:00 and 16:30, at most 12 art px past the feet at noon.
+`game/src/cast-layer.ts` paints every caster's own alpha, sheared away from the sun, opaque into one canvas the size of the camera's view, and draws it once at the table's alpha, so two shadows that meet are one shape and the ground is no darker than under one. The contact line under the feet is 45%, separate. `world.ts` registers the scene's images and sprites by one scan, so a kind of thing added later casts without a second list; the hook is the scan and one `update` call.
+A shadow texture is regenerated only when the sun's shear moves; the masks are kept by `texture#frame`. The night and the pools are not this entry; they are the next output of the same stream. Model: Copilot.
 ## 2026-10-20 ✅ The world's hour is the server's clock, and a player's clock joins it at the join by one resume (PRESENCE section 0, option A)
 
 The question PRESENCE.md section 0 waited on: whose clock is the hour from the step where players see each other, given "one hour for all" (10.10) and a per-valley tick today. Three options, the first recommended: A, the world's hour is the server's clock (`world.epoch`, one origin per world, tick 0 a noon), every player's `state.tick` set by the server at every accepted action, a return after an absence one kernel action `resume` that moves the player's tick to the world's and shifts everything that counts the player's own elapsed time so nothing ran while away (Q8), the vigil the one exception, `leave` after `logout_countdown_s` outside a safe place; B, each player keeps their own hour; C, a game day is a real day. His word (20.10): A.
@@ -2201,6 +2206,36 @@ The owner's answer on #272's two age points was "align with the big companies" (
 Proof: `server/test/signin.test.ts` (birthday edges at 13 and 16, the refusal cookie, the header trusted only when configured, a missing header) and `server/test/boot.test.ts` (`COUNTRY_HEADER`).
 **Retry when:** the game opens to a country with a different age (review the list); the owner wants accounts for younger players (then a parent-consent flow, and the data rules that come with it); GeoIP proves too coarse at a border. Model: claude-opus-5-5 (game-65).
 
+## 2026-10-21 ✅ The sun moves south: every cast shadow falls away from the viewer (GK2 B, #256)
+
+The entry above, "The GK2 method (B)", says what B does to decision C: the sun stands south, the fronts of the standing
+things take the light and the backs the shade, and the cast shadow points away from the viewer instead of toward it. That
+entry left the change to the pull request that builds the pass. This is it, in #256.
+
+- **The data.** Every key of `content/core/params.json` `light.sun.keys` keeps its `right` and turns its `down`
+  negative: -39 at 06:00, -37 at 08:00, -16 at 10:00, -11 at 12:00, -16 at 14:00, -37 at 16:00, -41 at 16:30, -39 at
+  18:00. The lengths are the old ones to the third digit: 0.936 of the caster's height at 08:00, 1.099 at 16:30, 0.11 at
+  noon, which is 10.6 art px on a 64-px caster. So the morning shadow leans up-left, the evening up-right, and the noon
+  shadow straight back.
+- **The schema follows.** `SunKey.down` is -100..100: a negative `down` is the sun in the south, a real value now and not
+  a typo, and `schema/test/params-sun.test.ts` pins every key below zero.
+- **The depth order holds, with no change to the pass.** Both shadow layers sit at 2.5 and below, under the shallowest
+  thing `world.ts` lets cast (`DEPTH.puff`, 3.5). A shadow falling north therefore lies behind its caster, the caster is
+  drawn over it, and a thing standing nearer covers the shadow of the thing behind it - which is what a sun in the south
+  asks for and what the old direction could not have. The one thing the pass loses is the shadow that spills in front of
+  the viewer: there is none now, by the decision, not by a bug.
+- **What the frames show.** [`2026-10-21-cast-08.png`](docs/design/frames/2026-10-21-cast-08.png) and
+  [`-1630.png`](docs/design/frames/2026-10-21-cast-1630.png), phone size at 3x (390x844, 1170x2532), the bridge corner:
+  the rocks, the sign post and the player throw their shadows up-left at 08:00 and up-right at 16:30. A shadow pointing
+  away is mostly behind its caster, so what the eye reads is the part that spills past the silhouette; on the sand of the
+  16:30 frame the ink `#1b1a2e` measures 0.29 to 0.31 across its three channels, and over that sand the same frame with
+  the pass switched off holds none of it: 0 pixels against 4,106.
+- STYLE section 4's Direction row is rewritten to this, as the GK2 entry asked, in the same pull request.
+
+**Retry when:** the owner finds the moved sun's shadows wrong in the live game (the retry the GK2 entry itself names);
+or B items 1, 2 and 4 land - the 3D shapes under real light - and this shear table is replaced by the sun's azimuth and
+elevation in the hour table. Model: DeepSeek (deepseek-light, Copilot SDK in VS Code), from the manager's orders; the
+pick is the owner's, relayed by the manager.
 ## 2026-10-21 ✅ Free movement as built: the feet walk the pixels, the world and the kernel stay on tiles (NEXT 22)
 
 The owner, 18.10: "free movement, not a fixed feel"; and 21.10: "free movement now, but graphics come first for me", so this landed after the art and light streams took the machine. What the entry below builds, in the builder's own file, next to the rules it walks by.

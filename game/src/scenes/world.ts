@@ -46,6 +46,8 @@ import { app } from '../app';
 import { sound, type SfxId, type SongId } from '../audio';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T } from '../config';
 import { FAR_BELL, SMOKE_PUFFS, farBellDue, nearestChimney, smokeAlpha, smokeAt } from '../hookbridge';
+import { sunTableOf } from '../cast';
+import { CastLayer } from '../cast-layer';
 import { HOLE, LIGHT_POOL, dappleAt, frameAt, nightAt, shadeAt, tableOf, washAt } from '../light';
 import { STONE_GLIDE_MS, STONE_STEPS, type StoneView, stoneView } from '../stone';
 import { type Clear, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../mist';
@@ -102,8 +104,6 @@ const PALETTE = {
   grey: 0x5d6177,
   grey2: 0x8f94a8,
 };
-/** How dark the ground shadows are. */
-const SHADOW_ALPHA = 0.22;
 /** Props that lie on the ground and cast no shadow, by sprite name. */
 const FLAT = new Set([
   'flowers', 'flowers_white', 'flowers_blue', 'glow_mushrooms', 'mushrooms_small', 'mushroom_patch', 'rubble', 'pebbles', 'fallen_branches',
@@ -286,7 +286,9 @@ export class WorldScene extends Phaser.Scene {
   private groundFrames = 2;
   private waterFrame = 0;
   private player!: Phaser.GameObjects.Sprite;
-  private playerShadow: Phaser.GameObjects.Image | undefined;
+  /** the decided cast shadows, every caster's own alpha sheared away from the sun */
+  private cast: CastLayer | undefined;
+  private readonly noCast = new Set<Phaser.GameObjects.GameObject>();
   private shade!: Phaser.GameObjects.Rectangle;
   private dusk: Phaser.GameObjects.Rectangle | undefined;
   private bar!: Phaser.GameObjects.Graphics;
@@ -324,7 +326,6 @@ export class WorldScene extends Phaser.Scene {
   private baseZoom = 2;
   private stoneHeld = false;
   private nodes = new Map<string, Phaser.GameObjects.Sprite>();
-  private nodeShadows = new Map<string, Phaser.GameObjects.Image>();
   private digs = new Map<string, Phaser.GameObjects.Image>();
   private restoreArt = new Map<string, Phaser.GameObjects.Image[]>();
   private campArt = new Map<string, Phaser.GameObjects.Sprite>();
@@ -455,8 +456,8 @@ export class WorldScene extends Phaser.Scene {
     this.buildSigns();
     this.buildAtmosphere();
     if (RICH.light) this.buildDapple();
-    if (RICH.detail) this.playerShadow = this.shadow(0, 0, 1).setVisible(false);
     this.player = kitSprite(this, 0, 0, this.playerFrame('down').key, 1).setOrigin(0.5, 1).setVisible(false);
+    if (RICH.detail) this.buildCasters();
     // the haze is one layer over the valley; addFilters cuts the player out of it, so the mist covers the
     // ground, the props and the other figures but never the player or what the player holds
     this.events.on(Phaser.Scenes.Events.POST_UPDATE, () => this.cutPlayer());
@@ -638,16 +639,6 @@ export class WorldScene extends Phaser.Scene {
       px(PALETTE.ink, 4, 3);
       px(PALETTE.ink, 3, 4);
     });
-    if (RICH.detail) {
-      // a whole-pixel ellipse, 12x5: the ground shadow under anything that stands
-      make('fx-shadow', 12, 5, () => {
-        px(PALETTE.ink, 3, 0, 6);
-        px(PALETTE.ink, 1, 1, 10);
-        px(PALETTE.ink, 0, 2, 12);
-        px(PALETTE.ink, 1, 3, 10);
-        px(PALETTE.ink, 3, 4, 6);
-      });
-    }
     make('fx-smoke-mark', 1, 1, () => px(PALETTE.paper, 0, 0, 1, 1));
     if (RICH.motion) {
       make('fx-puff', 2, 2, () => px(PALETTE.cream, 0, 0, 2, 2));
@@ -908,6 +899,8 @@ export class WorldScene extends Phaser.Scene {
             marks.push(this.add.image(x, y, 'fx-paw').setDepth(DEPTH.flat + 0.2).setAlpha(0.7).setAngle(hx === 0 ? (hy > 0 ? 180 : 0) : hx > 0 ? 90 : -90));
           }
         }
+        // a pit and a trap lie in the ground; only the wolf stands and casts
+        if (p.hazard.kind !== 'predator') this.noCast.add(spr);
         this.hazards.push({ spr, kind: p.hazard.kind, rule, eyes, halo, flare, marks });
         continue;
       }
@@ -916,7 +909,6 @@ export class WorldScene extends Phaser.Scene {
       } else {
         const img = this.standing(p.sprite, cx, bottom, hash(p.x, p.y));
         img.setDepth(p.solid ? bottom : DEPTH.flat);
-        if (RICH.detail && !FLAT.has(name)) this.shadow(cx, bottom, p.w, p.solid ? DEPTH.shadow : DEPTH.flat - 0.5);
         // the lamp head is the top 8 px of the post
         if (RICH.light && name === 'lantern_post') this.glows.push(this.glow(cx, bottom - unit.h + 4, true));
         if (name === 'house_small') this.chimneys.push({ x: cx - unit.w / 2 + CHIMNEY.x, y: bottom - unit.h + CHIMNEY.y });
@@ -941,7 +933,6 @@ export class WorldScene extends Phaser.Scene {
   private buildFire(id: string, p: { w: number; solid: boolean; sprite: string }, cx: number, bottom: number): void {
     const depth = p.solid ? bottom : DEPTH.flat;
     const spr = kitSprite(this, cx, bottom, p.sprite, 0).setOrigin(0.5, 1).setDepth(depth);
-    if (RICH.detail && !FLAT.has(baseName(p.sprite))) this.shadow(cx, bottom, p.w, p.solid ? DEPTH.shadow : DEPTH.flat - 0.5);
     this.fires.set(id, this.fireAtTile(spr, p.sprite, depth));
   }
 
@@ -1153,9 +1144,35 @@ export class WorldScene extends Phaser.Scene {
     return { spr, min: period, max: period, next: this.time.now + (seed % period), frame: 0, active: true };
   }
 
-  /** The ground shadow under something standing at (cx, bottom), as wide as its footprint in tiles. */
-  private shadow(cx: number, bottom: number, tiles: number, depth = DEPTH.shadow): Phaser.GameObjects.Image {
-    return this.add.image(cx, bottom + 2, 'fx-shadow').setOrigin(0.5, 1).setAlpha(SHADOW_ALPHA).setDepth(depth).setScale(Math.max(1, Math.round(tiles)), 1);
+  /**
+   * Registers every thing the scene drew as a caster of the decided shadow (STYLE 4), from its
+   * own alpha, so a kind of thing added later casts without a second list. The ground, the flat
+   * props, the digs and the overlays are not casters; a thing that lies in the ground is in
+   * `noCast`.
+   */
+  private buildCasters(): void {
+    // a density-4 prop casts at the size it is drawn: the layer reads each texture's density
+    this.cast = new CastLayer(this, sunTableOf(this.b.params.light?.sun), 1, densityOf);
+    // nothing that changes every frame is painted into a layer (cast-layer.ts): a thing that walks casts
+    // through its own image, a thing on a beat (a sway, a flame, a blink) from its first frame
+    const walks = new Set<Phaser.GameObjects.GameObject>(this.hazards.map((h) => h.spr));
+    const beats = new Set<Phaser.GameObjects.GameObject>([...this.cycles.map((c) => c.spr), ...this.blinks.map((b) => b.spr)]);
+    for (const obj of this.children.list) {
+      if (!(obj instanceof Phaser.GameObjects.Image) && !(obj instanceof Phaser.GameObjects.Sprite)) continue;
+      if (obj === this.player || obj === this.cutout) continue;
+      if (obj instanceof Phaser.GameObjects.RenderTexture) continue;
+      if (!obj.visible || this.noCast.has(obj)) continue;
+      const key = obj.texture.key;
+      if (!key || key.startsWith('fx-') || key.startsWith('senses-') || key.startsWith('cast-') || key.startsWith('cast:')) continue;
+      if (key === '__DEFAULT' || key === '__WHITE' || key.startsWith('ground-')) continue;
+      if (FLAT.has(baseName(key))) continue;
+      const depth = obj.depth;
+      if (depth < DEPTH.flat || depth > 1000) continue;
+      // a dig spot and a puff lie at 3 and 3.5; the props and the people stand at their own feet
+      if (depth > DEPTH.flat && depth <= DEPTH.puff) continue;
+      this.cast.add(obj, depth === DEPTH.flat ? 'under' : 'standing', walks.has(obj) ? 'moving' : beats.has(obj) ? 'rest' : 'drawn');
+    }
+    this.cast.add(this.player, 'standing', 'moving');
   }
 
   private glow(x: number, y: number, lit: boolean, key = 'fx-glow', scale = 1): Glow {
@@ -1197,9 +1214,6 @@ export class WorldScene extends Phaser.Scene {
         this.nodes.set(id, spr);
         const animated = [r.sprite, r.sprite_empty].some((ref) => ref && (this.b.sprites[ref]?.frames ?? 1) > 1);
         if (RICH.motion && animated) this.cycles.push(this.sway(spr, hash(inst.x, inst.y)));
-        if (RICH.detail && !FLAT.has(baseName(r.sprite))) {
-          this.nodeShadows.set(id, this.shadow(cx, bottom, Math.round((unitOf(r.sprite)?.w ?? T) / T)));
-        }
       } else {
         const t = this.b.treasures[inst.source];
         // a find picked up by hand lies half-buried, and the senses lead to it
@@ -1242,7 +1256,6 @@ export class WorldScene extends Phaser.Scene {
       if (cut && fire?.id !== undefined) this.fireSide.push({ img, cut, fire: fire.id });
       // a slow breath so people read as alive
       this.tweens.add({ targets: cut ? [img, cut] : img, scaleY: rel(img, 1, 1.04).y, duration: 900 + (id.length % 5) * 120, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-      if (RICH.detail) this.shadow(cx, bottom, 1);
       this.npcAt.set(key(t[0], t[1]), id);
       this.tops.set(key(t[0], t[1]), unitOf(npc.sprite)?.h ?? 24);
     }
@@ -1406,7 +1419,6 @@ export class WorldScene extends Phaser.Scene {
       const cx = at[0] * T + T / 2;
       const bottom = (at[1] + 1) * T;
       kitImage(this, cx, bottom, SIGN_SPRITE).setOrigin(0.5, 1).setDepth(DEPTH.flat);
-      if (RICH.detail) this.shadow(cx, bottom, 1, DEPTH.flat - 0.5);
       this.signs.set(key(at[0], at[1]), slot.id);
       this.tops.set(key(at[0], at[1]), T);
       this.signSpots.push({ slot: slot.id, x: at[0] + 0.5, y: at[1], label: this.signatureEl(slot.id) });
@@ -1714,7 +1726,6 @@ export class WorldScene extends Phaser.Scene {
       session.on('change', () => this.refresh()),
     ];
     this.player.setVisible(true);
-    this.playerShadow?.setVisible(true);
     this.placePlayer(session.pos[0], session.pos[1]);
     this.faceFrame();
     this.idleSince = this.time.now;
@@ -1738,7 +1749,7 @@ export class WorldScene extends Phaser.Scene {
     const y = Math.round(this.body.y) * unit + T / 2;
     this.player.setPosition(x, y);
     this.player.setDepth(Math.round(y) + 1);
-    this.playerShadow?.setPosition(this.player.x, this.player.y + 2);
+    // the cast layer draws the player's shadow (buildCasters); light-cast has no fx-shadow ellipse
   }
 
   /** The race's sprite for a direction, in the look the player picked (races wear today's sheets until their own art). */
@@ -1889,7 +1900,8 @@ export class WorldScene extends Phaser.Scene {
       if (img.texture.key !== look.sprite) retex(img, look.sprite);
       if (look.flat) img.setAlpha(look.alpha).setDepth(DEPTH.flat);
       else img.setAlpha(ready && !inHours ? 0.55 : look.alpha).setDepth(img.y);
-      this.nodeShadows.get(id)?.setAlpha(ready ? SHADOW_ALPHA : 0);
+      const caster = this.cast?.of(img);
+      if (caster) caster.enabled = ready;
     }
     const reach = hintDistance(this.b, s.state);
     for (const [id, img] of this.digs) {
@@ -1941,6 +1953,9 @@ export class WorldScene extends Phaser.Scene {
       this.hearPlace(s);
     }
     this.walk(s, real);
+    this.cast?.update(minuteOfDay(this.b, s.tick), this.cameras.main.worldView);
+    const playerCaster = this.cast?.of(this.player);
+    if (playerCaster) playerCaster.enabled = !this.falling;
     this.dimInCover(s);
     this.stillReports.frame(this.b, s, this.hazards, !this.body.moving && !this.falling, app.ui.blocking);
     this.playSong(s);
@@ -2771,7 +2786,6 @@ export class WorldScene extends Phaser.Scene {
         // the part below the ground line is cut away as the body goes down
         this.player.setY(baseY + sunk).setCrop(0, 0, this.player.width, (height - sunk) * back);
         this.cutout?.setCrop(0, 0, this.player.width, (height - sunk) * back);
-        this.playerShadow?.setAlpha(SHADOW_ALPHA * (1 - k));
         for (const eye of eyes) eye.setY(top + 6 + sunk).setVisible(sunk < 6);
       },
       onComplete: () => {
@@ -2780,7 +2794,6 @@ export class WorldScene extends Phaser.Scene {
         this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
           this.player.setCrop();
           this.cutout?.setCrop();
-          this.playerShadow?.setAlpha(SHADOW_ALPHA);
           s.facing = 'down';
           this.placePlayer(to[0], to[1]);
           this.faceFrame();
