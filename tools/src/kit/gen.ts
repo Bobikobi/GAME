@@ -5,7 +5,7 @@
  * sprite it redraws, what it is, the grid, and the detail to spell out. The prompt's house style
  * lives here, so the spec is the only thing that changes between waves.
  *
- *   pnpm kit:gen <spec.json> [--only a,b] [--out dir] [--dry] [--reimport] [--timeout seconds] [--drawer codex|gemini|local]
+ *   pnpm kit:gen <spec.json> [--only a,b] [--out dir] [--dry] [--reimport] [--timeout seconds] [--drawer codex|gemini|local|kaggle]
  *
  * For each entry: the reference is enlarged onto flat magenta (a white ground keys out a white
  * beard), Codex's image generation redraws it on the subscription, and the importer brings the
@@ -37,8 +37,9 @@
  *
  * `--drawer` picks the route an image prompt goes down (`drawers.ts`, docs/art/DRAWERS.md): `codex`, the agent
  * on its subscription; `gemini`, one HTTP call on a `GEMINI_API_KEY` (a project with billing); `local`, Stable
- * Diffusion with a pixel-art LoRA in a ComfyUI on your own machine, free. Text routes (grid, scatter) stay with
- * Codex. The manifest line says which route drew each image and the prompt it was given.
+ * Diffusion with a pixel-art LoRA in a ComfyUI on your own machine, free; `kaggle`, Stable Diffusion (1.5 or SDXL,
+ * its own short prompt) in a private Kaggle kernel on its free GPU, the whole wave in one kernel run (drawn before the loop, then imported entry by
+ * entry as usual). Text routes (grid, scatter) stay with Codex. The manifest line says which route drew each image and the prompt it was given.
  *
  * Nothing is written into `content/`: a result goes into the kit by hand, in a wave. `--dry` writes
  * the references and the prompts only; `--reimport` imports the last raw images again without
@@ -53,7 +54,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { PNG } from 'pngjs';
 
 import { colourCount, gridPrompt, parseGrid, pngToGrid, renderGrid, seamWarnings } from './gengrid.js';
-import { type DrawerId, drawWithGemini, drawWithLocal, localPrompt, parseDrawer } from './drawers.js';
+import { type DrawerId, type Drawn, drawWaveWithKaggle, drawWithGemini, drawWithKaggle, drawWithLocal, kagglePrompt, kaggleSettings, kaggleSubject, localPrompt, parseDrawer } from './drawers.js';
 import { importSprite, nearestPaletteIndex } from './import.js';
 import { CORE_PALETTE, CORE_RAMPS, type Rgb, hexToRgb, paletteWithRamps } from './palette.js';
 import {
@@ -424,12 +425,14 @@ interface Options {
   reimport: boolean;
   timeoutSeconds: number;
   drawer: DrawerId;
+  /** Pictures a batch route drew for the whole wave before the loop (the kaggle route), by entry name. */
+  predrawn?: Map<string, Drawn>;
 }
 
 export function parseArgs(args: readonly string[], env: NodeJS.ProcessEnv = process.env): Options {
   const spec = args[0];
   if (spec === undefined || spec.startsWith('--')) {
-    throw new Error('Usage: gen.ts <spec.json> [--only a,b] [--out dir] [--dry] [--reimport] [--timeout seconds] [--drawer codex|gemini|local]');
+    throw new Error('Usage: gen.ts <spec.json> [--only a,b] [--out dir] [--dry] [--reimport] [--timeout seconds] [--drawer codex|gemini|local|kaggle]');
   }
   const value = (flag: string): string | undefined => {
     const at = args.indexOf(flag);
@@ -485,12 +488,18 @@ function askCodex(
   };
 }
 
+/** The entry's reference as the game draws it (`-1x`) and enlarged on magenta, the one a route draws from. */
+function writeReference(entry: GenEntry, out: string): { reference: PNG; refPath: string } {
+  const reference = loadReference(entry.ref);
+  const refPath = join(out, 'ref', `${entry.name}.png`);
+  writeFileSync(refPath, PNG.sync.write(enlargeOnMagenta(reference)));
+  writeFileSync(join(out, 'ref', `${entry.name}-1x.png`), PNG.sync.write(reference));
+  return { reference, refPath };
+}
+
 function generateOne(entry: GenEntry, options: Options, version: string, earlier: readonly ManifestLine[]): ManifestLine {
   const kind = entry.kind ?? 'sprite';
-  const reference = loadReference(entry.ref);
-  const refPath = join(options.out, 'ref', `${entry.name}.png`);
-  writeFileSync(refPath, PNG.sync.write(enlargeOnMagenta(reference)));
-  writeFileSync(join(options.out, 'ref', `${entry.name}-1x.png`), PNG.sync.write(reference));
+  const { reference, refPath } = writeReference(entry, options.out);
   const file = `${entry.name}.png`;
   const grid = entry.route === 'grid';
   const at = new Date().toISOString();
@@ -499,6 +508,8 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
     kind, route: entry.route ?? 'image', width: entry.width, height: entry.height, prompt: entry.route === 'grid' ? gridPrompt({ what: entry.what, width: entry.width, height: entry.height, detail: entry.detail, reference: referenceGrid(reference), file: `${entry.name}.txt` }) : buildPrompt(entry, reference, file), codex: null,
     raw: null, out: null, grid: null, logical: null, colors: null, warnings: [], error: null, at,
   };
+  // a --dry run of the kaggle route shows the prompt the kernel will read, not the agent's
+  if (options.dry && options.drawer === 'kaggle' && !grid) line.prompt = kagglePrompt(entry, kaggleSettings().recipe);
   if (options.dry) return line;
 
   if (options.reimport) {
@@ -520,8 +531,10 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
     // a picture goes down the chosen route; letters (a grid tile) stay with Codex, a text model
     const route = grid ? 'codex' : options.drawer;
     if (route === 'local') line.prompt = localPrompt(entry);
+    if (route === 'kaggle') line.prompt = kagglePrompt(entry, kaggleSettings().recipe);
     const call = { out: options.out, name: entry.name, stamp, prompt: line.prompt, images: [refPath, ...(entry.style_refs ?? []).map((p) => join(ROOT, p))], expect: file, timeoutSeconds: options.timeoutSeconds };
-    const drawn = route === 'gemini' ? drawWithGemini(call) : route === 'local' ? drawWithLocal(call) : null;
+    const drawn = route === 'gemini' ? drawWithGemini(call) : route === 'local' ? drawWithLocal(call)
+      : route === 'kaggle' ? options.predrawn?.get(entry.name) ?? drawWithKaggle({ ...call, subject: kaggleSubject(entry.ref) }) : null;
     const asked = drawn === null
       ? askCodex(options, version, entry.name, stamp, line.prompt, grid ? [] : ['-i', refPath, ...styleRefs], grid ? `${entry.name}.txt` : file)
       : { codex: { version: drawn.version, exit: drawn.exit, seconds: drawn.seconds, tokens: drawn.tokens, log: drawn.log }, saved: drawn.saved, error: drawn.error };
@@ -723,6 +736,29 @@ ${rows.join('\n')}
 `;
 }
 
+/**
+ * The kaggle route's batch hook: a kernel takes minutes to start, so every picture of the wave (not the grid or
+ * scatter entries, which stay with Codex) goes up in one run before the loop, and `generateOne` picks up its
+ * own `Drawn` from the map and imports it like any other route's picture.
+ */
+export function kaggleWaveRequests(entries: readonly GenEntry[]): GenEntry[] {
+  return entries.filter((e) => e.route !== 'grid' && e.route !== 'scatter');
+}
+
+function drawKaggleWave(entries: readonly GenEntry[], options: Options): Map<string, Drawn> {
+  const wave = kaggleWaveRequests(entries);
+  if (wave.length === 0) return new Map();
+  process.stdout.write(`kaggle: ${wave.length} pictures in one kernel run\n`);
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const { recipe } = kaggleSettings();
+  return drawWaveWithKaggle({
+    out: options.out, stamp, timeoutSeconds: options.timeoutSeconds,
+    requests: wave.map((entry) => ({
+      name: entry.name, prompt: kagglePrompt(entry, recipe), reference: writeReference(entry, options.out).refPath, expect: `${entry.name}.png`, subject: kaggleSubject(entry.ref),
+    })),
+  });
+}
+
 function runCli(args: readonly string[]): void {
   const options = parseArgs(args);
   const entries = parseSpec(readFileSync(options.spec, 'utf8')).filter((e) => entryMatches(e, options.only));
@@ -731,6 +767,7 @@ function runCli(args: readonly string[]): void {
   const version = options.dry || options.reimport || options.drawer !== 'codex' ? 'none' : codexVersion();
   const manifestPath = join(options.out, 'manifest.jsonl');
   const earlier = readManifest(manifestPath);
+  if (options.drawer === 'kaggle' && !options.dry && !options.reimport) options.predrawn = drawKaggleWave(entries, options);
   let failed = 0;
   for (const entry of entries) {
     for (const line of entry.route === 'scatter' ? generateScatter(entry, options, version, earlier) : [generateOne(entry, options, version, earlier)]) {
