@@ -91,53 +91,101 @@ export function windowScalePct(b: Bundle, s: PublicState): number {
 export interface AttributeEffect {
   attr: Attribute;
   name: string;
-  /** what the number measures, for example "Bag" */
+  /** what the attribute does, in words ("Your bag holds more") */
   what: string;
+  /** the attribute on its plain scale, for example "3/10" */
   now: string;
   next: string;
   /** a short honest note, for example when the level cap holds luck back */
   note?: string;
+  /** the real before-to-after values, one long press away (decision 39) */
+  exact: string;
 }
 
-/** What one more point in each attribute really changes, as numbers. */
+/** How big a bonus reads in words; the number it came from stays one long press away. */
+export function strengthWord(value: number): string {
+  if (value <= 0) return 'none';
+  if (value <= 5) return 'a little';
+  if (value <= 10) return 'somewhat';
+  if (value <= 20) return 'a good deal';
+  return 'a lot';
+}
+
+/** What one more point in each attribute changes: in words on screen, the real numbers in `exact`. */
 export function attributeEffects(b: Bundle, s: PublicState): AttributeEffect[] {
   const plus = (a: Attribute): PublicState => ({ ...s, player: { ...s.player, attrs: { ...s.player.attrs, [a]: s.player.attrs[a] + 1 } } });
   // with no hunger clock (G32) a point of stamina is health, not minutes of work
   const drain = b.params.satiety_drain_per_min;
   const minutes = (st: PublicState) => Math.floor(satietyCap(b, st) / (drain > 0 ? drain : 1000));
-  const pct = (bp: number) => `${Math.round(bp / 100)}%`;
+  const exactPct = (bp: number) => `${Math.round(bp / 100)}%`;
   const times = (permille: number) => `x${(permille / 1000).toFixed(2).replace(/0$/, '')}`;
   const luckNext = plus('luck');
   const capped = rareFindPermille(b, luckNext) === rareFindPermille(b, s) && rareFindPermille(b, s) >= powerCap(b, s);
+  // the plain scale: the points the attribute counts for out of ATTRIBUTE_MAX, before and after one more point;
+  // a strong region can lift a full attribute past the limit, and the scale still ends at its last step
+  const step = (st: PublicState, a: Attribute) => `${Math.min(attrAt(b, st, a), ATTRIBUTE_MAX)}/${ATTRIBUTE_MAX}`;
+  const scale = (a: Attribute) => ({ now: step(s, a), next: step(plus(a), a) });
   return [
-    { attr: 'might', name: 'Might', what: 'Your bag holds', now: `${bagCapacity(b, s)}`, next: `${bagCapacity(b, plus('might'))} things` },
-    { attr: 'senses', name: 'Keen eyes', what: 'You see hidden finds from', now: `${hintDistance(b, s)}`, next: `${hintDistance(b, plus('senses'))} steps away` },
-    { attr: 'agility', name: 'Steady hands', what: 'The good zone in a minigame', now: `${windowScalePct(b, s)}%`, next: `${windowScalePct(b, plus('agility'))}% wide` },
+    {
+      attr: 'might',
+      name: 'Might',
+      what: 'Your bag holds more',
+      ...scale('might'),
+      exact: `Your bag holds ${bagCapacity(b, s)} -> ${bagCapacity(b, plus('might'))} things`,
+    },
+    {
+      attr: 'senses',
+      name: 'Keen eyes',
+      what: 'You see hidden finds from further away',
+      ...scale('senses'),
+      exact: `You see hidden finds from ${hintDistance(b, s)} -> ${hintDistance(b, plus('senses'))} steps away`,
+    },
+    {
+      attr: 'agility',
+      name: 'Steady hands',
+      what: 'The good zone in a minigame is wider',
+      ...scale('agility'),
+      exact: `The good zone in a minigame ${windowScalePct(b, s)}% -> ${windowScalePct(b, plus('agility'))}% wide`,
+    },
     {
       attr: 'luck',
       name: 'Luck',
-      what: 'A miss still gives you 1',
-      now: `${pct(missKeepBp(b, s))}`,
-      next: `${pct(missKeepBp(b, luckNext))} of misses`,
-      note: `Rare finds ${times(rareFindPermille(b, s))} -> ${times(rareFindPermille(b, luckNext))}${capped ? ' (held by your level: level up to raise it)' : ''}`,
+      what: 'A miss gives you something more often',
+      ...scale('luck'),
+      note: capped ? 'Held by your level: level up to raise it' : undefined,
+      exact: `A miss still gives you 1: ${exactPct(missKeepBp(b, s))} -> ${exactPct(missKeepBp(b, luckNext))} of misses. Rare finds ${times(rareFindPermille(b, s))} -> ${times(rareFindPermille(b, luckNext))}`,
     },
     {
       attr: 'stamina',
       name: 'Stamina',
-      what: drain > 0 ? 'Work before you must eat' : 'Your health holds',
-      now: `${minutes(s)}`,
-      next: `${minutes(plus('stamina'))} ${drain > 0 ? 'minutes' : 'points'}`,
+      what: drain > 0 ? 'You work longer before you must eat' : 'Your health holds more',
+      ...scale('stamina'),
+      exact: `${drain > 0 ? 'Work before you must eat' : 'Your health holds'} ${minutes(s)} -> ${minutes(plus('stamina'))} ${drain > 0 ? 'minutes' : 'points'}`,
     },
     // spirit has no rule that reads it yet (schema per_point): the row shows the points and says so plainly
     {
       attr: 'spirit',
       name: 'Spirit',
       what: 'Your spirit',
-      now: `${attrAt(b, s, 'spirit')}`,
-      next: `${attrAt(b, plus('spirit'), 'spirit')} points`,
+      ...scale('spirit'),
       note: 'Counts for nothing yet: its first use comes in a later update',
+      exact: `Your spirit ${attrAt(b, s, 'spirit')} -> ${attrAt(b, plus('spirit'), 'spirit')} points`,
     },
   ];
+}
+
+/** A bonus as the rules hold it, for the long press behind its words. */
+export function exactBonus(label: string, value: number): string {
+  return `${label} +${value}%`;
+}
+
+/** Gathering speed a tool's tier adds, in words (tier 2 is +15 in the rules, one long press away). */
+export function toolSpeedWord(tier: number): string {
+  return tier > 1 ? strengthWord(toolSpeedValue(tier)) : '';
+}
+
+export function toolSpeedValue(tier: number): number {
+  return tier > 1 ? 15 * (tier - 1) : 0;
 }
 
 export function stacks(b: Bundle, list: readonly { item: string; qty: number }[]): string {
@@ -519,7 +567,7 @@ export function itemBenefit(b: Bundle, id: string): string {
     const tier = `Tier ${it.tool.tier} ${it.tool.kind}`;
     // a tool with no uses never wears out
     const uses = it.tool.uses === undefined ? 'lasts' : `${it.tool.uses} uses`;
-    const speed = it.tool.tier > 1 ? ` · +${15 * (it.tool.tier - 1)}% gathering speed` : '';
+    const speed = it.tool.tier > 1 ? ` · gathers ${toolSpeedWord(it.tool.tier)} faster` : '';
     // two patches of the same plant read as one; a wake pocket's own spot is no dig site of the trowel's
     const resources = [...new Set(Object.values(b.resources)
       .filter((resource) => resource.tool === it.tool?.kind)

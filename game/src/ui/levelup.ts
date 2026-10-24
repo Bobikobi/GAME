@@ -8,6 +8,7 @@ import { sound } from '../audio';
 import { ATTRIBUTE_MAX, attributeEffects } from '../text';
 import { banner } from './feedback';
 import { button, h } from './dom';
+import { withExact } from './exact';
 import type { Layer, UI } from './ui';
 
 /** Opens the choice; resolves once the window is closed. */
@@ -44,9 +45,10 @@ export function openLevelUp(ui: UI, profession?: string): Promise<void> {
             'data-attr': fx.attr,
             onclick: () => spend(fx.attr),
           },
-          h('span', { class: 'choice-name' }, fx.name, h('small', null, ` ${value}/${ATTRIBUTE_MAX}`)),
+          // the change line below carries the plain scale, so the name stands alone
+          h('span', { class: 'choice-name' }, fx.name),
           h('span', { class: 'choice-what' }, fx.what),
-          h('span', { class: 'choice-change' }, h('s', null, fx.now), ' -> ', h('b', null, full ? 'at its limit' : fx.next)),
+          withExact(h('span', { class: 'choice-change' }, h('s', null, fx.now), ' -> ', h('b', null, full ? 'at its limit' : fx.next)), fx.exact),
           fx.note ? h('span', { class: 'choice-note' }, fx.note) : null,
           h('span', { class: 'choice-plus' }, '+1'),
         );

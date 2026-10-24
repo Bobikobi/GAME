@@ -31,7 +31,7 @@
         "name": "Lucky strike",
         "effect": "rare_find_pct",
         "value": 10,
-        "text": "Rare finds are 10% more likely."
+        "text": "Rare finds are somewhat more likely."
       }
     ]
   }

@@ -71,8 +71,8 @@ describe('the opening recut B', () => {
   });
 
   test('a tool with no uses lasts', () => {
-    expect(itemBenefit(bundle, 'core/fine-basket')).toBe('Tier 3 basket · gathers bell bushes & forest mushrooms & sun herbs & wild herbs · lasts · +30% gathering speed');
-    expect(itemBenefit(bundle, 'core/stone-trowel')).toBe('Tier 3 trowel · digs deep ruins & gate rubble & hall rubble & under the hill lantern · lasts · +30% gathering speed');
+    expect(itemBenefit(bundle, 'core/fine-basket')).toBe('Tier 3 basket · gathers bell bushes & forest mushrooms & sun herbs & wild herbs · lasts · gathers a lot faster');
+    expect(itemBenefit(bundle, 'core/stone-trowel')).toBe('Tier 3 trowel · digs deep ruins & gate rubble & hall rubble & under the hill lantern · lasts · gathers a lot faster');
     expect(itemBenefit(bundle, 'core/flint-trowel')).toContain(' · 80 uses · ');
   });
 });
@@ -106,7 +106,7 @@ describe('food benefits', () => {
     b.params.satiety_drain_per_min = 0;
     expect(itemBenefit(b, 'core/berry')).toBe('+4 health');
     const stamina = attributeEffects(b, newState(b, 1)).find((fx) => fx.attr === 'stamina')!;
-    expect(stamina.next).toMatch(/^\d+ points$/);
+    expect(stamina.exact).toMatch(/ \d+ -> \d+ points$/);
 
     b.items['core/berry'] = { ...b.items['core/berry']!, food: { satiety: 2, hurt: 10 } };
     expect(itemBenefit(b, 'core/berry')).toBe('+2 health · hurts: -10 health');
@@ -270,15 +270,17 @@ describe('skills in plain words (the owner, 10.10)', () => {
     const s = newState(bundle, 1);
     expect(attributeEffects(bundle, s).map((fx) => fx.attr).sort()).toEqual(Object.keys(ATTRIBUTE_LABEL).sort());
     const might = attributeEffects(bundle, s).find((fx) => fx.attr === 'might')!;
-    expect(`${might.what} ${might.now} -> ${might.next}`).toMatch(/^Your bag holds \d+ -> \d+ things$/);
+    // words and a plain n/10 scale on screen; the real numbers behind the long press
+    expect(`${might.what}: ${might.now} -> ${might.next}`).toMatch(/^Your bag holds more: \d+\/10 -> \d+\/10$/);
+    expect(might.exact).toMatch(/^Your bag holds \d+ -> \d+ things$/);
     // spirit has no rule that reads it yet: the row says so instead of promising a number
     const spirit = attributeEffects(bundle, s).find((fx) => fx.attr === 'spirit')!;
     expect(spirit.note).toMatch(/nothing yet/);
     const stamina = attributeEffects(bundle, s).find((fx) => fx.attr === 'stamina')!;
-    expect(stamina.next).toMatch(/^\d+ points$/);
+    expect(stamina.exact).toMatch(/ \d+ -> \d+ points$/);
     const draining = structuredClone(bundle);
     draining.params.satiety_drain_per_min = 7000;
-    expect(attributeEffects(draining, s).find((fx) => fx.attr === 'stamina')!.next).toMatch(/^\d+ minutes$/);
+    expect(attributeEffects(draining, s).find((fx) => fx.attr === 'stamina')!.exact).toMatch(/ \d+ minutes$/);
   });
 });
 

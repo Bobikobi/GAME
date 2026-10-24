@@ -1966,3 +1966,10 @@ body {
     transition: none;
   }
 }
+
+/* the exact values a long press opens under a line of words (decision 39) */
+.exact {
+  display: block;
+  font-size: 14px;
+  grid-column: 1 / -1;
+}
