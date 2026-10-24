@@ -5,7 +5,7 @@
  */
 import { beforeAll, describe, expect, test } from 'vitest';
 
-import { type Bundle, type State, type StepResult, makeWalkable, newState, nodeVerb, step } from '@game/kernel';
+import { type Bundle, LEGACY_STARTERS, type State, type StepResult, makeWalkable, newState, nodeVerb, step } from '@game/kernel';
 
 import { loadBundle } from '../../tools/test/helpers/world.js';
 
@@ -47,11 +47,12 @@ describe('felling', () => {
   });
 
   test('without an axe the tree is refused', () => {
-    const bare = structuredClone(b);
-    for (const starter of Object.values(bare.starters)) delete starter.kit;
-    const s = begin(bare);
+    // a race start carries no tool: the pocket's tools lie on the ground
+    const r = step(b, newState(b, 7), { t: 'start', race: 'core/elf', name: 'Tester' }, 0);
+    if (!r.ok) throw new Error(r.error);
+    const s = r.state;
     expect(s.player.bag['core/axe']).toBeUndefined();
-    expect(fell(bare, s, tree, 1000)).toEqual({ ok: false, error: 'You need an axe for this.' });
+    expect(fell(b, s, tree, 1000)).toEqual({ ok: false, error: 'You need an axe for this.' });
   });
 
   test('felling gives logs, trains woodcutting only and wears the axe', () => {
@@ -95,10 +96,10 @@ describe('felling', () => {
   });
 });
 
-describe('the kit of a starter', () => {
-  test.each(['core/forager', 'core/explorer'])('%s begins with its kit in the bag', (starter) => {
+describe('the kit of a format 1 starter (a replayed start)', () => {
+  test.each(['core/forager', 'core/explorer'])('%s begins with its pocket\'s tools in the bag', (starter) => {
     const s = begin(b, starter);
-    for (const stack of b.starters[starter]!.kit ?? []) expect(s.player.bag[stack.item]).toBe(stack.qty);
+    for (const stack of b.pockets[LEGACY_STARTERS[starter]!.pocket]!.ground) expect(s.player.bag[stack.item]).toBe(stack.qty);
     expect(Object.keys(s.player.bag).length).toBeGreaterThan(0);
   });
 

@@ -1,5 +1,5 @@
 /**
- * The overworld in 3D, behind /play3d/: the same game as scenes/world.ts. It feeds the same Session (so the same kernel,
+ * The overworld in 3D, behind /play3d/: the same game as scenes/world.ts. It feeds the same GameSession (so the same kernel,
  * the same bundle and the same save), walks tile by tile with the kernel's own walkable(), and finds what the player
  * can touch with the same rules; only the drawing differs. The rules below that mirror world.ts (target, arrive,
  * signText) are copied on purpose, so the classic scene stays untouched while the 3D door is young; DECISIONS.md
@@ -36,13 +36,13 @@ import { nodeModel, npcLook, pickLook, wolfModel } from './art';
 import { WOLF_EYES } from '../predator';
 import { FrameProbe, liteUrl } from './lite';
 import { createScenery, groundY, modelOf, standalone, walkY, WATER_Y, type MapData, type Places, type Scenery } from './scenery';
-import type { Session } from '../session';
+import type { GameSession } from '../session-surface';
 import { stoneView } from '../stone';
 import { heightOf, questTargets } from '../targets';
 import { nodeLook } from '../growth';
 import { hintDistance, lanternNight, nodeAction } from '../text';
 import { beatAt, blowsDue, resourceKind, treasureKind, type AutoKind } from '../work';
-import { StandingReports, canEnter, landStep } from '../walking';
+import { ART_PX, StandingReports, Walker, canEnter, facedTile, facingFor, landStep } from '../walking';
 import type { WorkKind } from '../ui/ui';
 
 const NEIGHBOURS: readonly [number, number][] = [
@@ -63,12 +63,6 @@ export interface Target {
   /** the tile the marker points at, and how tall the thing standing there is, in metres */
   tile: [number, number];
   top: number;
-}
-
-interface Move {
-  from: [number, number];
-  to: [number, number];
-  t: number;
 }
 
 interface Hero {
@@ -189,7 +183,7 @@ function setAlpha(obj: THREE.Object3D, alpha: number): void {
 }
 
 export class World3D implements WorldView {
-  private session?: Session;
+  private session?: GameSession;
   private readonly b: Bundle;
   private readonly walkable: ReturnType<typeof makeWalkable>;
   private readonly renderer: THREE.WebGLRenderer;
@@ -205,9 +199,10 @@ export class World3D implements WorldView {
   private heroKey = '';
   private walking = false;
   private yaw = Math.PI;
-  /** the player's drawn place, between tiles while a step lasts */
+  /** the player's drawn place */
   private readonly pos = new THREE.Vector3();
-  private move: Move | null = null;
+  /** the body walking freely between tiles, by the 2D scene's rules (walking.ts) */
+  private readonly body = new Walker();
   private zoom = 11;
   private first = true;
   private time = 0;
@@ -555,10 +550,10 @@ export class World3D implements WorldView {
 
   // ------------------------------------------------------------ the session
 
-  bind(session: Session): void {
+  bind(session: GameSession): void {
     for (const off of this.unbind) off();
     this.session = session;
-    this.move = null;
+    this.body.place(session.pos);
     this.work = null;
     this.auto = null;
     this.held.clear();
@@ -576,7 +571,7 @@ export class World3D implements WorldView {
       session.on('events', (events) => {
         if (!events.some((e) => e.e === 'fall')) return;
         this.fell = true;
-        this.move = null;
+        this.body.moving = false;
         if (this.auto) this.endWork(this.auto);
         this.inside.clear();
         this.first = true;
@@ -588,9 +583,10 @@ export class World3D implements WorldView {
     void this.loadHero(session).then(() => this.refresh());
   }
 
-  private async loadHero(session: Session): Promise<void> {
+  private async loadHero(session: GameSession): Promise<void> {
     const p = session.state.player;
-    const short = p.starter.split('/').pop() ?? '';
+    // a race wears today's model of the sheet its sprite names (human -> explorer, elf -> forager, skeleton -> digger) until its own art
+    const short = (this.b.races[p.race]?.sprite ?? '').split('/').pop()?.replace(/_down$/, '') ?? '';
     const wanted = `character-${short}-${p.look === 1 ? 'f' : 'm'}`;
     const fallback = p.look === 1 ? 'character-female-a' : 'character-male-a';
     if (this.heroKey === wanted && this.hero) return;
@@ -690,7 +686,7 @@ export class World3D implements WorldView {
     art.add(pic);
   }
 
-  private ready(s: Session, id: string): boolean {
+  private ready(s: GameSession, id: string): boolean {
     return (s.state.nodes[id]?.readyAt ?? 0) <= s.tick;
   }
 
@@ -739,7 +735,7 @@ export class World3D implements WorldView {
     }
   }
 
-  private async refreshDig(id: string, view: NodeView, s: Session): Promise<void> {
+  private async refreshDig(id: string, view: NodeView, s: GameSession): Promise<void> {
     const inst = this.b.instances[id]!;
     const t = this.b.treasures[inst.source];
     const ref = t && !t.tool ? (this.b.items[t.finds[0]!.item]?.sprite ?? DIG_SPOT_SPRITE) : DIG_SPOT_SPRITE;
@@ -767,7 +763,7 @@ export class World3D implements WorldView {
   }
 
   /** A few yellow lights over every target of the first open step of the main task, so the next place to go reads from the map itself. */
-  private refreshGlints(s: Session): void {
+  private refreshGlints(s: GameSession): void {
     const targets = questTargets(this.b, s.state, s.tick);
     const k = JSON.stringify(targets);
     if (k === this.glintKey) return;
@@ -869,7 +865,7 @@ export class World3D implements WorldView {
       this.showSignatures(s);
     }
     this.walk(s, delta);
-    this.stillReports.frame(this.b, s, [], !this.move, app.ui.blocking);
+    this.stillReports.frame(this.b, s, [], !this.body.moving, app.ui.blocking);
     this.shade(s, dt);
     this.workTick(s);
     this.drawBusy(s);
@@ -889,53 +885,34 @@ export class World3D implements WorldView {
     this.scenery.followSun(x, this.pos.y, z);
   }
 
-  private canControl(s: Session): boolean {
-    return !s.paused && !s.busy && !app.ui.blocking;
+  private canControl(s: GameSession): boolean {
+    // while an action waits for the server the player has no control: nothing is sent twice
+    return !s.paused && !s.busy && !s.waiting && !app.ui.blocking;
   }
 
-  private walk(s: Session, delta: number): void {
-    if (this.move) {
-      this.move.t += delta;
-      const k = Math.min(1, this.move.t / STEP_MS);
-      const [fx, fy] = this.move.from;
-      const [tx, ty] = this.move.to;
-      this.pos.x = fx + (tx - fx) * k + 0.5;
-      this.pos.z = fy + (ty - fy) * k + 0.5;
-      if (k < 1) return;
-      const carry = this.move.t - STEP_MS;
-      this.move = null;
-      this.fell = false;
+  /** The free walk, by the 2D scene's rules (NEXT 22 a); the hero turns to the motion itself, at any angle. */
+  private walk(s: GameSession, delta: number): void {
+    this.body.follow(s.pos);
+    const input: [number, number] = this.canControl(s) ? app.controls.vector() : [0, 0];
+    s.facing = facingFor(input, s.facing);
+    if (input[0] !== 0 || input[1] !== 0) this.yaw = Math.atan2(input[0], input[1]);
+    this.fell = false;
+    for (const tile of this.body.frame(input, delta, STEP_MS, (x, y) => this.canWalk(s, x, y))) {
       // the kernel hears of each new tile; a hazard there may hurt, and a fall ends the walk
-      landStep(s, [tx, ty]);
+      landStep(s, tile);
       if (this.fell) return;
       this.arrive(s);
-      this.tryStep(s, carry);
-      return;
     }
-    if (this.canControl(s)) this.tryStep(s, 0);
-  }
-
-  /** Start walking one tile if a direction is held. Returns true if moving. */
-  private tryStep(s: Session, carry: number): boolean {
-    if (!this.canControl(s)) return false;
-    const dir = app.controls.direction();
-    if (!dir) return false;
-    if (s.facing !== dir) s.facing = dir;
-    const [dx, dy] = DIRS[dir];
-    this.yaw = Math.atan2(dx, dy);
-    const to: [number, number] = [s.pos[0] + dx, s.pos[1] + dy];
-    if (!this.canWalk(s, to[0], to[1])) return false;
-    this.move = { from: [s.pos[0], s.pos[1]], to, t: carry };
-    return true;
   }
 
   /** The kernel's rule, and a plant or stone that is ready stands in the way (walking.ts). */
-  canWalk(s: Session, x: number, y: number): boolean {
+  canWalk(s: GameSession, x: number, y: number): boolean {
     return canEnter(this.b, this.walkable, this.nodeAt, s, x, y);
   }
 
-  private arrive(s: Session): void {
+  private arrive(s: GameSession): void {
     const [x, y] = s.pos;
+    (s as { seeAt?: () => void }).seeAt?.();
     const riddles = riddleSlots(this.b, s.state);
     for (const slot of this.b.map.slots) {
       if (!inRect(x, y, slot)) {
@@ -949,7 +926,7 @@ export class World3D implements WorldView {
         s.act({ t: 'visit', slot: slot.id, at: [x, y] });
       }
       if (slot.kind === 'ruin' && !this.hinted.has(slot.id)) {
-        const t = Object.values(this.b.treasures).find((d) => d.place.slot === slot.id && (d.starter ?? s.state.player.starter) === s.state.player.starter);
+        const t = Object.values(this.b.treasures).find((d) => d.place.slot === slot.id && (d.pocket ?? s.state.player.pocket) === s.state.player.pocket);
         if (t) {
           this.hinted.add(slot.id);
           app.ui.toast(`Hint: ${t.hint}`, 'info');
@@ -960,7 +937,7 @@ export class World3D implements WorldView {
   }
 
   /** Day and night follow the game's clock: dark from 21:00 to 4:00, fading over two hours on each side. */
-  private shade(s: Session, dt: number): void {
+  private shade(s: GameSession, dt: number): void {
     const m = minuteOfDay(this.b, s.tick) / 60;
     const night = m >= 21 || m < 4 ? 1 : m >= 19 ? (m - 19) / 2 : m < 6 ? (6 - m) / 2 : 0;
     const dark = night >= 0.5;
@@ -983,7 +960,7 @@ export class World3D implements WorldView {
   }
 
   /** By day a hazard shows and can be walked around: the wolf sleeps, the pit lies plain. At night the wolf is awake and the pit is lost in the dark. The hour is the kernel's. */
-  private showHazards(s: Session): void {
+  private showHazards(s: GameSession): void {
     const night = isNight(this.b, s.tick);
     for (const h of this.hazards) {
       if (h.kind === 'predator' && h.wolf) {
@@ -1004,20 +981,21 @@ export class World3D implements WorldView {
   }
 
   /** The lantern burns around the player while they are out in the night it was lit for; in town, by a camp or by day it is out. */
-  private placeLantern(s: Session): void {
+  private placeLantern(s: GameSession): void {
     const lit = this.lanternFor !== undefined && lanternNight(this.b, s.state, s.pos, s.tick) === this.lanternFor;
     const flicker = 0.5 + 0.5 * Math.sin(this.time * 5.8) * Math.sin(this.time * 2.4);
     this.scenery.lantern.intensity = lit ? 14 + 4 * flicker : 0;
   }
 
-  private placeHero(s: Session, dt: number): void {
+  private placeHero(s: GameSession, dt: number): void {
     const hero = this.hero;
     if (!hero) return;
-    if (!this.move) this.pos.set(s.pos[0] + 0.5, 0, s.pos[1] + 0.5);
+    this.body.follow(s.pos);
+    this.pos.set(this.body.x / ART_PX, 0, this.body.y / ART_PX);
     this.pos.y = walkY(this.pos.x, this.pos.z);
     hero.holder.position.copy(this.pos);
     hero.holder.rotation.y = lerpAngle(hero.holder.rotation.y, this.yaw, 1 - Math.exp(-dt * 14));
-    const moving = !!this.move;
+    const moving = this.body.moving;
     if (moving !== this.walking) {
       this.walking = moving;
       const from = moving ? hero.idle : hero.walk;
@@ -1070,7 +1048,7 @@ export class World3D implements WorldView {
     this.impact(nodeId, kind, grade);
   }
 
-  private faceNode(s: Session, nodeId: string): void {
+  private faceNode(s: GameSession, nodeId: string): void {
     const inst = this.b.instances[nodeId];
     if (!inst) return;
     const dx = inst.x - s.pos[0];
@@ -1097,7 +1075,7 @@ export class World3D implements WorldView {
     }
   }
 
-  private drawBusy(s: Session): void {
+  private drawBusy(s: GameSession): void {
     if (!s.busy || this.busyMs <= 0) {
       this.bar.visible = false;
       if (!s.busy && this.busyMs > 0) {
@@ -1127,16 +1105,17 @@ export class World3D implements WorldView {
 
   /**
    * One press starts the work (DECISIONS.md, 2026-10-11): the kernel takes the action now and keeps the player busy for as
-   * long as it lasts, and the blows are shown on the thing. A step away takes the action back (Session.cancelWork).
+   * long as it lasts, and the blows are shown on the thing. A step away takes the action back (GameSession.cancelWork).
    */
-  startWork(nodeId: string, onDone?: () => void): void {
+  async startWork(nodeId: string, onDone?: () => void): Promise<void> {
     const s = this.session;
     const inst = this.b.instances[nodeId];
     if (!s || !inst || this.auto) return;
     const kind = inst.kind === 'resource' ? resourceKind(this.b.resources[inst.source]!) : treasureKind(this.b.treasures[inst.source]!);
     if (!kind) return;
     const action: Action = inst.kind === 'resource' ? { t: 'gather', node: nodeId, grade: 3, at: s.pos } : { t: 'dig', spot: nodeId, grade: 3, at: s.pos };
-    const res = s.act(action);
+    // an action on the server waits for its reply, so the work starts when the answer comes
+    const res = await s.act(action);
     if (!res.ok) return app.ui.toast(res.error, 'bad');
     const busy = res.events.find((e) => e.e === 'busy');
     if (!busy || busy.e !== 'busy') return;
@@ -1154,7 +1133,7 @@ export class World3D implements WorldView {
     if (s && this.auto) this.stopWork(s, this.auto);
   }
 
-  private workTick(s: Session): void {
+  private workTick(s: GameSession): void {
     const w = this.auto;
     if (!w) return;
     const elapsed = s.tick - w.start;
@@ -1170,7 +1149,7 @@ export class World3D implements WorldView {
   }
 
   /** Walked away, or something opened: the work is dropped as if it had not begun. */
-  private stopWork(s: Session, w: NonNullable<World3D['auto']>): void {
+  private stopWork(s: GameSession, w: NonNullable<World3D['auto']>): void {
     this.endWork(w);
     s.cancelWork();
   }
@@ -1218,7 +1197,7 @@ export class World3D implements WorldView {
 
   // ------------------------------------------------------------ interaction
 
-  private showSignatures(s: Session): void {
+  private showSignatures(s: GameSession): void {
     const blocked = app.ui.blocking;
     for (const spot of this.signSpots) {
       const d = Math.max(Math.abs(spot.x - 0.5 - s.pos[0]), Math.abs(spot.y - s.pos[1]));
@@ -1237,8 +1216,8 @@ export class World3D implements WorldView {
     }
   }
 
-  private updatePrompt(s: Session): void {
-    const t = this.canControl(s) && !this.move ? this.target(s) : undefined;
+  private updatePrompt(s: GameSession): void {
+    const t = this.canControl(s) ? this.target(s) : undefined;
     const label = t?.label ?? '';
     if (label !== this.prompt) {
       this.prompt = label;
@@ -1255,14 +1234,14 @@ export class World3D implements WorldView {
   /** The A button: act on what the player faces, stands on, or stands next to. */
   interact(): void {
     const s = this.session;
-    if (!s || this.move || !this.canControl(s)) return;
+    if (!s || !this.canControl(s)) return;
     this.target(s)?.run();
   }
 
-  private target(s: Session): Target | undefined {
+  private target(s: GameSession): Target | undefined {
     const [x, y] = s.pos;
     const [fx, fy] = DIRS[s.facing];
-    const order: [number, number][] = [[x + fx, y + fy], [x, y]];
+    const order: [number, number][] = [facedTile(s), [x, y]];
     for (const [dx, dy] of NEIGHBOURS) {
       if (dx === fx && dy === fy) continue;
       order.push([x + dx, y + dy]);
@@ -1274,7 +1253,7 @@ export class World3D implements WorldView {
     return undefined;
   }
 
-  private targetAt(s: Session, x: number, y: number): Target | undefined {
+  private targetAt(s: GameSession, x: number, y: number): Target | undefined {
     const b = this.b;
     const p = s.state.player;
     const k = key(x, y);
@@ -1318,7 +1297,8 @@ export class World3D implements WorldView {
     const note = this.notes.get(k);
     if (note) return { label: `Look at the ${note.name}`, run: () => app.ui.note(note.text), tile, top: note.top };
     const fog = this.empty.find((slot) => inRect(x, y, slot));
-    if (fog && x === s.pos[0] + DIRS[s.facing][0] && y === s.pos[1] + DIRS[s.facing][1]) {
+    const faced = facedTile(s);
+    if (fog && x === faced[0] && y === faced[1]) {
       return { label: `Look at the ${fog.label ?? 'mist'}`, run: () => app.ui.sign(fog.id), tile, top: 0.6 };
     }
     return undefined;

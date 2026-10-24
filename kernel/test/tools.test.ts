@@ -45,7 +45,7 @@ beforeAll(() => {
 function started(bag: Record<string, number>, bundle = b): State {
   const r = step(bundle, newState(bundle, 1), { t: 'start', starter: 'core/forager', name: 'Maker' }, 0);
   if (!r.ok) throw new Error(r.error);
-  r.state.player.attrs.carry = 100;
+  r.state.player.attrs.might = 100;
   r.state.player.restored = ['core/old-bridge'];
   // the bridge's quest pays on its own once the bridge stands; done here so a sale pays only the sale
   r.state.player.quests['core/fix-the-bridge'] = 'done';

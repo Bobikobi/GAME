@@ -1,0 +1,10 @@
+node_modules
+**/node_modules
+game/dist
+game/dist-3d
+web/dist
+web/.astro
+.vercel
+e2e-shots
+*.log
+.git

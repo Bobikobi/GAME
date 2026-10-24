@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../schema/json/pocket.schema.json",
+  "format": 1,
+  "type": "pocket",
+  "id": "core/north-meadow",
+  "title": "The north meadow",
+  "creator": "core",
+  "pocket": {
+    "name": "The north meadow",
+    "wake": {
+      "x": 7,
+      "y": 6
+    },
+    "pocket": 5,
+    "pocket_grown": 7,
+    "intro": [
+      "You wake in a clear patch of mist. A walking staff lies in the grass.",
+      "Something shines by the broken bridge, far to the south."
+    ],
+    "ground": [
+      {
+        "item": "core/walking-staff",
+        "qty": 1
+      }
+    ]
+  }
+}
