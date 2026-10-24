@@ -2614,6 +2614,65 @@ Cost: the vigil is offered around 17:00-18:00, after the stew, not in the aftern
 The owner, 22.10: yes to the new order, as built on the opening-filler branch. Supersedes the long night's part of the 19.10 entry on the opening's order.
 **Retry when:** a person playing the day has too little time between the stew and dark to build and light a fire, or the stew's chain stalls a race. Model: claude-opus-5-5.
 
+## 2026-10-23 ✅ Every sprite has the dark ink outline
+
+**The outline is the one-pixel ink line `#1b1a2e`, on every sprite.** The rich wave left a mix: 16 of its 35 sprites have under a tenth of their edge in ink, and the rest of the edge is the darkest step of the first ramp or a mid grey. The owner compared three versions of nine rich sprites on grass: as built, ink, and an edge in a darker shade of the sprite's own colours. Ink held them together best; with the own-colour edge, the bandage and the lantern posts faded into the grass. This keeps the 18.10 outline (1915, 2547, STYLE.md) and retires the first-ramp outline wording of 2219 and of the schema's ramp comment. The rich sprites get an ink outline pass, and a check that measures ink on the edge follows, so the mix cannot come back.
+The owner, 23.10: option 2 of the comparison sheet, the dark ink line.
+**Retry when:** the art ladder's coloured-outline rung is shown to the owner in stills and picked. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Each race carries its colour and its big item from the start
+
+Decision 40 holds for the races from the first minute: one big item, one colour, its own build. **The colours: the skeleton white, the elf a light pastel sky blue, the human skin tones.** The elf's big item is its cloak, a large hooded cloak in that colour (still no weapon; the bow comes later, decision 19). A player may pick another colour for their race from a wide palette (a red elf, a blue skeleton). Later, clothing a player finds can be recoloured too. Colour is looks only: it changes nothing in play, only how a player appears to others in multiplayer, and it needs its own build.
+The owner, 23.10: marks from the start (contradiction 2 of the decisions audit), and the colours as written.
+**Retry when:** the race figures are drawn and one race does not read at phone size. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Closing an account: 30 days to change one's mind, as decided on 10.10
+
+The 10.10 entry (1074) stands, and the built close is brought to it. Closing hides the account at once; signing in within 30 days brings it back; after 30 days the personal details are erased. The gold ledger and the action log keep their rows under a number with no name. Sign-up keeps only whether the age check passed, and the country: no age band. Today the server deletes the account and every row naming it at once (`server/src/auth/signin.ts`, asserted by `server/test/signin-db.test.ts`), and it stores a birth band; both change, and so do the lines that describe today's behaviour (2180, NEXT.md 469, GRUNT CR-72).
+The owner, 23.10: 30 days, as decided (contradiction 3 of the decisions audit).
+**Retry when:** a privacy law the game falls under needs a shorter erasure. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ G29 holds in the Field Kit: all text 16 px or more
+
+The Field Kit gets no exception from G29. Every text a player reads in the kit's windows (labels, toggles, item facts, tabs) is 16 px or more, and dialogue 18, as on 16.10 for the tracker, chips and toasts. The windows keep the Field Kit look and grow roomier; a long one may scroll. A size scan in the tests keeps it.
+The owner, 23.10: readability wins, everything 16 or more (contradiction 4 of the decisions audit).
+**Retry when:** a window cannot hold its content at 16 px on a 390 px wide phone even with scrolling. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The world: a hand-made first map, and a generator that sets the difficulty
+
+The 17.10 seed rings and decision 5's hand-made first map (2252) are combined. The first map is planned and drawn by hand, as decision 5 says. **The generator's job becomes difficulty.** From a place's distance to the game's start and the level the character is expected to have there (from the quests before it and the grinding open to it), it recommends the place's difficulty: how many quests and of what kind, which monsters, how many and how strong, and what else opens there. The same reckoning later grows the world past the first map's edges. NEXT.md section 19 is rewritten to match before any of it is built.
+The owner, 23.10: a combination of the two (contradiction 5 of the decisions audit), as written.
+**Retry when:** the first map's stills are picked and the difficulty reckoning has to be checked against a playtest. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ A session merges its own pull request after the owner approves
+
+What has happened since 11.10 is now the written rule: the session that made a pull request merges it into develop once the owner has approved it. A release to the public stays the owner's alone. This is the delegation 1173 asked to be written; PARALLEL.md, WORKFLOW.md, the integrator skill and HANDOFF_TEMPLATE.md change to match.
+The owner, 23.10: as today, and write it down (contradiction 6 of the decisions audit).
+**Retry when:** two merges in a day break develop. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Maru's coin pays a key to his house
+
+When the player hands Maru the coin, he gives the herb tea recipe and **a key to his house**, instead of the 20 gold. This is the place reward of 7.10 (GAME_RULES.md 570), now that a place can be a reward. The house is a place to rest: a bed to sleep in, where the player wakes after a fall at night, and a desk with an old map that hints at the next quest. **It is the one building where a player can leave gear.**
+The owner, 23.10: a key instead of gold; inside, a place to rest (contradiction 7 of the decisions audit).
+**Retry when:** the opening's economy runs short without the 20 gold. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Search: press A on things to look inside
+
+**Many things in the world can be searched.** Pressing A on a drawer, a cupboard, a book, a shelf or even a stone opens a small window showing what is inside. Sometimes it holds something, often nothing. Out in the open, things can hide easter eggs and rare, valuable gifts; the higher the player's luck, the better the odds of finding them. **Every building gets a random number of furniture pieces**, so it looks lived in, and sometimes an extra one: a statue, or a picture that opens to show its painting. Searchable things are deepened step by step as the game grows. A player cannot put gear into them; the one place that stores gear is Maru's house. Later, in other towns, a guest house lets a player stay in multiplayer.
+The owner, 23.10: an idea for the game, like searching drawers in Fallout, as written.
+**Retry when:** searching slows the opening's path, or the luck odds make rare gifts common. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The bound starting balance is built
+
+The 10.10 rule (834, 914, 1055) stands and is built. A new player's starting gold is a separate bound balance shown beside the purse. It is spent first, and only at the shop, the trainers and the settlement. It is never paid to a player or listed. Today `kernel/src/step.ts` puts it into the purse and the server books it as ordinary gold; both change.
+The owner, 23.10: build it as decided (contradiction 8 of the decisions audit).
+**Retry when:** fake accounts are stopped some other way and the bound balance only confuses new players. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Words on screen, and a number only as a clear scale
+
+Decision 39 holds everywhere: on the skill tree, in the kit's SKILLS tab and in item descriptions. A line reads as words ("you dig faster"). Where a number is shown, it is a plain scale and not a percentage. For example, agility rises by 2 on a 10-step scale, from 1/10 to 3/10, and a node of the branch opens only at 5/10 (or at whatever step is set). Exact values stay one long press away. This replaces the "real before-to-after numbers" of the SKILLS tab (1983).
+The owner, 23.10: words; if there is a number it must be very clear, like agility +2 to 3/10, with a node opening at 5/10 (contradiction 9 of the decisions audit).
+**Retry when:** players in a playtest cannot compare two items without the long press. Model: claude-opus-5-5.
 ## 2026-10-23 ✅ The desktop home is painted key art that lives
 
 **From 1024px the home page opens on the owner's key art in motion:** the valley at dawn with the three opening characters (the elf, the human, the skeleton), first drawn by GPT image from their kit sprites, then brought to life as a video the owner generated and picked (`web/public/keyart/hero.webm` and `hero.mp4`, 1920x1080, 24 fps, a 17 s ping-pong, so its loop has no seam; `hero-poster.jpg` and `.webp` are its first frame). The video carries the characters' auras (the elf white, the human red, the skeleton a thin black haze) and their small motions. It plays muted and looped, drawn with cover from the bottom; under reduced motion it stays still and the poster shows; it pauses while the tab is hidden. The phone keeps its own first screen and fetches neither the video nor the still.
