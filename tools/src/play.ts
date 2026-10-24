@@ -22,17 +22,18 @@ const STEPS: readonly (readonly [number, number])[] = [
 export const OPENING_QUESTS: ReadonlySet<string> = new Set(['core/fix-the-bridge', 'core/first-fire', 'core/into-town']);
 
 /**
- * The opening as the content names it: the shared chain, and each start's own
- * first task, a quest that names its starter (DECISIONS.md, 2026-10-09: each
- * character begins its own way, and the opening chain names each first task).
+ * The opening as the content names it: the shared chain, and each wake
+ * pocket's own first task, a quest that names its pocket (DECISIONS.md,
+ * 2026-10-09: each character begins its own way; 2026-10-22: the pocket is
+ * drawn by the seed, and the race never gates a quest).
  */
 export function openingQuests(b: Bundle): Set<string> {
-  return new Set([...OPENING_QUESTS, ...Object.values(b.quests).flatMap((q) => (q.starter === undefined ? [] : [q.id]))]);
+  return new Set([...OPENING_QUESTS, ...Object.values(b.quests).flatMap((q) => (q.pocket === undefined ? [] : [q.id]))]);
 }
 
-/** What a start's own spots give: a gift of the start, which its own first task may name as a find. */
-export function startFinds(b: Bundle, starter: string): Set<string> {
-  return new Set(Object.values(b.treasures).flatMap((t) => (t.starter === starter ? t.finds.map((f) => f.item) : [])));
+/** What a wake pocket's own spots give: a gift of the start, which its own first task may name as a find. */
+export function startFinds(b: Bundle, pocket: string): Set<string> {
+  return new Set(Object.values(b.treasures).flatMap((t) => (t.pocket === pocket ? t.finds.map((f) => f.item) : [])));
 }
 
 /** About two lines of dialogue on a phone at the dialogue size (G14). */
@@ -49,8 +50,8 @@ export function digOnlyItems(b: Bundle): Set<string> {
   const gathered = new Set(Object.values(b.resources).map((r) => r.output));
   const made = madeItems(b);
   const sold = soldItems(b);
-  // a start's own spot is a gift, not a source
-  const dug = Object.values(b.treasures).flatMap((t) => (t.starter === undefined ? t.finds.map((f) => f.item) : []));
+  // a wake pocket's own spot is a gift, not a source
+  const dug = Object.values(b.treasures).flatMap((t) => (t.pocket === undefined ? t.finds.map((f) => f.item) : []));
   return new Set(dug.filter((item) => !gathered.has(item) && !made.has(item) && !sold.has(item)));
 }
 

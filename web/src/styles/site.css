@@ -29,6 +29,36 @@
   --track-mark: -0.01em;
 }
 
+/* the site's roles (DECISIONS.md, 2026-10-23): every page is night - ink ground, paper words - like the desktop
+   home. Rules read these roles, never a palette name for ground, words or lines. The phone home keeps its day
+   look until it gets its own pass, so it resets the roles to day below. */
+:root {
+  --bg: var(--ink);
+  --fg: var(--paper);
+  --fg2: var(--paper2);
+  --muted: var(--grey2);
+  --line: var(--ink2);
+  --rule: var(--paper);
+  --raise: var(--ink2);
+  --accent: var(--green3);
+  --frame: var(--px) solid var(--rule);
+  color-scheme: dark;
+}
+@media (max-width: 1023px) {
+  body[data-section='home'] {
+    --bg: var(--paper);
+    --fg: var(--ink);
+    --fg2: var(--ink2);
+    --muted: var(--grey);
+    --line: var(--paper2);
+    --rule: var(--ink);
+    --raise: var(--paper2);
+    --accent: var(--green);
+    --frame: var(--px) solid var(--ink);
+    color-scheme: light;
+  }
+}
+
 *,
 *::before,
 *::after {
@@ -39,8 +69,8 @@ html {
 }
 body {
   margin: 0;
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--bg);
+  color: var(--fg);
   font: 400 var(--text-m) / 26px var(--font-reading);
   font-variant-ligatures: none;
 }
@@ -58,7 +88,7 @@ a {
   color: inherit;
 }
 :focus-visible {
-  outline: 3px solid var(--ink);
+  outline: 3px solid var(--rule);
   outline-offset: 3px;
 }
 .vh {
@@ -75,8 +105,8 @@ a {
   top: calc(-1 * var(--s-12));
   z-index: 3;
   padding: var(--s-2) var(--s-3);
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--fg);
+  color: var(--bg);
 }
 .skip:focus {
   top: var(--s-2);
@@ -108,7 +138,7 @@ h1 {
 }
 .lead {
   margin-top: var(--s-3);
-  color: var(--ink2);
+  color: var(--fg2);
   max-width: 36em;
   text-wrap: pretty;
 }
@@ -121,15 +151,15 @@ h1 {
   min-height: 44px;
   padding: 0 var(--s-4);
   border: var(--frame);
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--bg);
+  color: var(--fg);
   font: 700 var(--text-m) / 1 var(--font-reading);
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
 }
 .btn:hover {
-  background: var(--paper2);
+  background: var(--raise);
 }
 .btn:active {
   transform: translateY(var(--px));
@@ -140,15 +170,16 @@ h1 {
   color: var(--paper);
 }
 .btn.primary:hover {
-  background: var(--ink);
-  border-color: var(--ink);
+  background: var(--fg);
+  border-color: var(--fg);
+  color: var(--bg);
 }
 /* a label, not a chip: stone fill, no line */
 .tag {
   display: inline-block;
   padding: 0 var(--s-2);
-  background: var(--paper2);
-  color: var(--ink);
+  background: var(--raise);
+  color: var(--fg);
   font: 700 var(--text-s) / 24px var(--font-reading);
   vertical-align: 0.2em;
 }
@@ -159,7 +190,7 @@ h1 {
   text-underline-offset: 6px;
 }
 .go:hover {
-  text-decoration-color: var(--green);
+  text-decoration-color: var(--accent);
   text-decoration-thickness: 4px;
 }
 
@@ -188,9 +219,9 @@ h1 {
   display: none;
 }
 .menu[open] > summary {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--paper);
+  background: var(--fg);
+  border-color: var(--fg);
+  color: var(--bg);
 }
 .menu-list {
   position: absolute;
@@ -202,7 +233,7 @@ h1 {
   padding: var(--s-2) 0;
   list-style: none;
   border: var(--frame);
-  background: var(--paper);
+  background: var(--bg);
 }
 .menu-list a {
   display: flex;
@@ -213,38 +244,57 @@ h1 {
 }
 .menu-list a[aria-current='page'] {
   font-weight: 700;
-  text-decoration: underline 4px var(--green);
+  text-decoration: underline 4px var(--accent);
   text-underline-offset: 8px;
 }
 
-/* the footer: what was built, from which commit, when */
+/* the footer: the brand, three columns of links, and a legal line that says what was built and when */
 .foot {
   margin-top: var(--s-12);
-  padding: var(--s-6) 0 var(--s-8);
+  padding: var(--s-8) 0 var(--s-6);
+  border-top: 1px solid var(--line);
   font-size: var(--text-s);
   line-height: 22px;
-  color: var(--grey);
+  color: var(--muted);
 }
-.foot .wrap {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--s-3) var(--s-6);
-  justify-content: space-between;
+.foot-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-6);
 }
-.foot nav {
-  display: flex;
-  gap: var(--s-4);
+.foot-brand {
+  grid-column: 1 / -1;
+}
+.foot-brand p {
+  margin-top: var(--s-2);
+  max-width: 360px;
+}
+.foot h2 {
+  font: 700 var(--text-s) / 22px var(--font-reading);
+  color: var(--fg);
+}
+.foot ul {
+  margin: var(--s-2) 0 0;
+  padding: 0;
+  list-style: none;
 }
 .foot nav a {
-  color: var(--ink);
-  font-size: var(--text-m);
-  min-height: 44px;
   display: inline-flex;
   align-items: center;
+  min-height: 44px;
+  color: var(--fg);
+  font-size: var(--text-m);
+}
+.foot-legal {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--s-2) var(--s-6);
+  margin-top: var(--s-6);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--line);
 }
 .foot .build {
-  display: block;
   font-variant-numeric: tabular-nums;
 }
 
@@ -271,9 +321,16 @@ h1 {
     text-decoration: underline var(--px);
     text-underline-offset: 8px;
   }
+  .foot-grid {
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: var(--s-12);
+  }
+  .foot-brand {
+    grid-column: auto;
+  }
   .nav a[aria-current='page'] {
     font-weight: 700;
-    text-decoration: underline 4px var(--green);
+    text-decoration: underline 4px var(--accent);
     text-underline-offset: 8px;
   }
   h1 {

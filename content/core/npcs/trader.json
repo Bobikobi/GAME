@@ -62,6 +62,16 @@
           "A stone idol. Some say old things like that sleep. Some say they wake.",
           "Me, I say it sells. Keep it, or I pay fair for it. Mostly."
         ]
+      },
+      {
+        "when": {
+          "done": [
+            "core/a-whole-one"
+          ]
+        },
+        "say": [
+          "That bowl sold before I set it down. The hall keeps more, I would bet."
+        ]
       }
     ],
     "topics": [

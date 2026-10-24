@@ -19,12 +19,14 @@ describe('the build output', () => {
     expect(existsSync(join(DIST, 'play/index.html'))).toBe(true);
   });
 
-  it('puts no script on the home page but Vercel Web Analytics', () => {
-    expect(withoutAnalytics(readFileSync(join(DIST, 'index.html'), 'utf8'))).not.toContain('<script');
+  it('puts no script on the home page but Vercel Web Analytics and the key-art module loader', () => {
+    const scripts = withoutAnalytics(readFileSync(join(DIST, 'index.html'), 'utf8')).match(/<script\b[^>]*>/g) ?? [];
+    expect(scripts.length).toBeLessThanOrEqual(1);
+    for (const s of scripts) expect(s).toContain('type="module"');
   });
 
   it('ships the two faces with their licences', () => {
-    for (const face of ['platypi/platypi-latin.woff2', 'platypi/OFL.txt', 'atkinson-hyperlegible-next/atkinson-hyperlegible-next-latin.woff2', 'atkinson-hyperlegible-next/OFL.txt'])
+    for (const face of ['cinzel/cinzel-latin.woff2', 'cinzel/OFL.txt', 'manrope/manrope-latin.woff2', 'manrope/OFL.txt', 'platypi/platypi-latin.woff2', 'platypi/OFL.txt', 'atkinson-hyperlegible-next/atkinson-hyperlegible-next-latin.woff2', 'atkinson-hyperlegible-next/OFL.txt'])
       expect(existsSync(join(DIST, 'fonts', face)), face).toBe(true);
   });
 });

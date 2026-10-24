@@ -88,7 +88,7 @@ function prepared(seed: number, edit: (s: State) => void = () => {}): State {
   const r = step(b, newState(b, seed), { t: 'start', starter: 'core/forager', name: 'Maker' }, 0);
   if (!r.ok) throw new Error(r.error);
   const s = r.state;
-  s.player.attrs.carry = 100;
+  s.player.attrs.might = 100;
   s.player.attrs.luck = 0;
   s.player.restored = ['core/old-bridge'];
   // the bridge's quest pays gold; closed here, so a craft never settles it and moves the ledger

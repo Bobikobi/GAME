@@ -4,7 +4,7 @@
  * the bundle, the state and a position in tiles; the world scene reads it every quarter second
  * and hands the levels to the sound bus.
  */
-import { type Bundle, type State, campTile, fireBurns, hazardsOf, isNight, isSafe, tagAt, windowOpen } from '@game/kernel';
+import { OWN_FIRE, type Bundle, campTile, fireBurns, hazardsOf, isNight, isSafe, tagAt, windowOpen, type PublicState } from '@game/kernel';
 import { falloff, panFor } from './audio/spatial';
 
 /** [near, far] in tiles: full volume inside near, silent beyond far. */
@@ -58,7 +58,7 @@ function nearest(spots: readonly Spot[], x: number, y: number): { distance: numb
 }
 
 /** The player's position (x, y in tiles, fractions allowed, the tile's centre at +0.5) to the bed levels. */
-export function soundscape(b: Bundle, state: State, tick: number, x: number, y: number): Scape {
+export function soundscape(b: Bundle, state: PublicState, tick: number, x: number, y: number): Scape {
   const none = { level: 0, pan: 0 };
   const scape: Scape = { fire: none, stream: none, dread: none, crackle: none };
 
@@ -97,6 +97,13 @@ export function soundscape(b: Bundle, state: State, tick: number, x: number, y: 
   for (const p of b.map.props) {
     if (p.fire !== true || p.id === undefined || !fireBurns(state, p.id, tick)) continue;
     const [cx, cy] = [p.x + p.w / 2, p.y + p.h / 2];
+    const level = falloff(Math.hypot(cx - x, cy - y), CRACKLE_RANGE[0], CRACKLE_RANGE[1]);
+    if (level > scape.crackle.level) scape.crackle = { level, pan: panFor(cx - x, CRACKLE_RANGE[1]) };
+  }
+  // and the one the player kindled, on its own tile (NEXT 21b)
+  const own = state.player.own;
+  if (own !== null && fireBurns(state, OWN_FIRE, tick)) {
+    const [cx, cy] = [own.at[0] + 0.5, own.at[1] + 0.5];
     const level = falloff(Math.hypot(cx - x, cy - y), CRACKLE_RANGE[0], CRACKLE_RANGE[1]);
     if (level > scape.crackle.level) scape.crackle = { level, pan: panFor(cx - x, CRACKLE_RANGE[1]) };
   }

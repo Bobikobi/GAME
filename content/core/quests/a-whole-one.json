@@ -1,0 +1,86 @@
+{
+  "$schema": "../../../schema/json/quest.schema.json",
+  "format": 1,
+  "type": "quest",
+  "id": "core/a-whole-one",
+  "title": "A whole one",
+  "creator": "core",
+  "quest": {
+    "giver": "core/trader",
+    "type": "gamble",
+    "summary": "Every day I buy blue-and-white shards. Did a single bowl come out of the collapsed hall whole?",
+    "requires": [
+      "core/herbs-for-pell",
+      "core/three-fruits"
+    ],
+    "steps": [
+      {
+        "kind": "find",
+        "item": "core/whole-bowl",
+        "clue": "The collapsed hall, south of the ruin gate. A trowel digs there."
+      }
+    ],
+    "talk": {
+      "offer": [
+        "Shards, every day. Blue and white, all from one hall. Never a whole one.",
+        "The hall that fell in, south of the gate. One dig in twelve, I would guess.",
+        "Safe till the lanterns light. After that the ruin is not mine to sell."
+      ],
+      "waiting": [
+        "Shards are what that hall gives, mostly. Keep at it.",
+        "Safe till the lanterns light. After that the ruin is not mine to sell."
+      ],
+      "done": [
+        "Whole. Buyers will walk a day for that. Ha - they will say I dug it.",
+        "A reed basket, not one I sell. It picks quicker than mine. Yours now."
+      ],
+      "variants": [
+        {
+          "when": {
+            "race": [
+              "core/human"
+            ]
+          },
+          "offer": [
+            "Your sort trusts a thing made whole, they say. So do my buyers.",
+            "The hall that fell in, south of the gate. One dig in twelve, I would guess.",
+            "Safe till the lanterns light. After that the ruin is not mine to sell."
+          ]
+        },
+        {
+          "when": {
+            "race": [
+              "core/elf"
+            ]
+          },
+          "offer": [
+            "They say elves see what the dark hides. See me one bowl that never broke.",
+            "The hall that fell in, south of the gate. One dig in twelve, I would guess.",
+            "Safe till the lanterns light. After that the ruin is not mine to sell."
+          ]
+        },
+        {
+          "when": {
+            "race": [
+              "core/skeleton"
+            ]
+          },
+          "offer": [
+            "Travellers say your kind knew these halls. Or slept under them.",
+            "The hall that fell in, south of the gate. One dig in twelve, I would guess.",
+            "Safe till the lanterns light. After that the ruin is not mine to sell."
+          ]
+        }
+      ]
+    },
+    "reward": {
+      "rep": 20,
+      "items": [
+        {
+          "item": "core/reed-basket",
+          "qty": 1
+        }
+      ]
+    }
+  }
+}

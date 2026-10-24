@@ -91,6 +91,11 @@ describe('density in a kit', () => {
     expect(sprites['core/base-kit:tiles/dense_forgot']?.density).toBe(1);
     const others = Object.entries(sprites).filter(([k]) => !k.includes('dense_'));
     expect(others.length).toBeGreaterThan(100);
-    expect(others.every(([, s]) => s.density === 1)).toBe(true);
+    // every real sprite carries what its kit entry says, 1 where it says nothing (the rich wave landed density-4 picks)
+    const declared = (JSON.parse(readFileSync(join(CONTENT_DIR, 'kit/core/kit.json'), 'utf8')) as { kit: { sprites: Record<string, { density?: number }> } }).kit.sprites;
+    for (const [k, s] of others) {
+      const own = k.startsWith('core/base-kit:') ? declared[k.slice('core/base-kit:'.length)] : undefined;
+      expect(s.density, k).toBe(own?.density ?? 1);
+    }
   });
 });

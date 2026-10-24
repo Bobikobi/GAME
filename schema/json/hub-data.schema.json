@@ -415,7 +415,7 @@
                 "type": "string"
               },
               {
-                "const": "starter",
+                "const": "race",
                 "type": "string"
               },
               {
@@ -448,6 +448,10 @@
               },
               {
                 "const": "map",
+                "type": "string"
+              },
+              {
+                "const": "pocket",
                 "type": "string"
               }
             ]

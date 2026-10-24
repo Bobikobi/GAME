@@ -32,6 +32,11 @@ quest, character and extension is written against this page from here on.
   Others came before and did not stay ("You are like the first ones who came
   back. They did not stay."). Many players in one world are many returners;
   none of them is the one.
+- **The returners come from three folds** (the owner, 2026-10-22;
+  DECISIONS 2026-10-22, decision 9). Each race is a returner from a fold
+  of its own: the human from the present age, the elf from the fold that
+  looks like magic, the skeleton from the fold under the bells. None of
+  the three is the first or the last fold, and more may still be found.
 - **The valley is the hero.** The story is what happens to the valley: a
   place mended, a bell heard, a fold found. A player's mark is left in the
   valley (a mended place, a board), never in a prophecy.
@@ -185,6 +190,11 @@ The tools:
    Keepers.
 2. Karma: yes, as a hidden lean toward each belief (section 4).
 3. The core names no fold yet; the night ruins under the bells hint at one.
+   Superseded on 2026-10-22 by the owner's word (DECISIONS 2026-10-22,
+   decision 9): the core names three folds, those its three races come
+   from - the present age (the human), the fold that looks like magic
+   (the elf) and the fold under the bells (the skeleton). None of them
+   is the first or the last (section 1).
 4. The work starts with lines with conditions and lines on the quest (S-1 and
    S-2), since G21 needs them whatever the beliefs.
 

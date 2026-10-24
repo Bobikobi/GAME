@@ -1,0 +1,161 @@
+{
+  "$schema": "../../../schema/json/items.schema.json",
+  "format": 1,
+  "type": "items",
+  "id": "core/outfits",
+  "title": "Outfits",
+  "creator": "core",
+  "description": "What each race wears on the first morning: three pieces over the bare body, no weapon (DECISIONS.md, 2026-10-22). Drawn with stand-in sprites until the race art comes.",
+  "items": [
+    {
+      "id": "core/work-clothes",
+      "name": "Patched work clothes",
+      "description": "Rust-brown, patched at the elbows. Quick hands at the workbench.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "garment",
+      "tier": 1,
+      "sprite": "core/base-kit:items/branch",
+      "wear": {
+        "slot": "top",
+        "effects": [
+          {
+            "effect": "craft_speed_pct",
+            "value": 5
+          }
+        ]
+      }
+    },
+    {
+      "id": "core/work-hammer",
+      "name": "Work hammer",
+      "description": "A big hammer with a worn haft, carried on the back. A steadier hand at the bench.",
+      "kind": "tool",
+      "rarity": "common",
+      "class": "tool",
+      "tier": 1,
+      "sprite": "core/base-kit:items/axe",
+      "tool": {
+        "kind": "hammer",
+        "tier": 1
+      },
+      "wear": {
+        "slot": "hand",
+        "effects": [
+          {
+            "effect": "craft_chance_pct",
+            "value": 5
+          }
+        ]
+      }
+    },
+    {
+      "id": "core/work-boots",
+      "name": "Work boots",
+      "description": "Boots with road dust on them.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "garment",
+      "tier": 1,
+      "sprite": "core/base-kit:items/branch",
+      "wear": {
+        "slot": "feet",
+        "look": true
+      }
+    },
+    {
+      "id": "core/light-cloak",
+      "name": "Light cloak",
+      "description": "A moss-green cloak of thin weave. Light between the bushes.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "garment",
+      "tier": 1,
+      "sprite": "core/base-kit:items/branch",
+      "wear": {
+        "slot": "top",
+        "effects": [
+          {
+            "effect": "gather_speed_pct",
+            "value": 5
+          }
+        ]
+      }
+    },
+    {
+      "id": "core/sandals",
+      "name": "Sandals",
+      "description": "Thin soles, soft on the forest floor.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "garment",
+      "tier": 1,
+      "sprite": "core/base-kit:items/branch",
+      "wear": {
+        "slot": "feet",
+        "look": true
+      }
+    },
+    {
+      "id": "core/herb-pouch",
+      "name": "Herb pouch",
+      "description": "A small pouch on a cord, smelling of leaves. Quick fingers for picking.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "jewelry",
+      "tier": 1,
+      "sprite": "core/base-kit:items/herb",
+      "wear": {
+        "slot": "jewelry",
+        "effects": [
+          {
+            "effect": "gather_speed_pct",
+            "value": 5
+          }
+        ]
+      }
+    },
+    {
+      "id": "core/rust-pick",
+      "name": "Rust pick",
+      "description": "An old pick, rusted but whole. Digs a little faster.",
+      "kind": "tool",
+      "rarity": "common",
+      "class": "tool",
+      "tier": 1,
+      "sprite": "core/base-kit:items/trowel",
+      "tool": {
+        "kind": "pick",
+        "tier": 1
+      },
+      "wear": {
+        "slot": "hand",
+        "effects": [
+          {
+            "effect": "dig_speed_pct",
+            "value": 5
+          }
+        ]
+      }
+    },
+    {
+      "id": "core/remnant-amulet",
+      "name": "Remnant amulet",
+      "description": "An old amulet with one worn letter. A lucky hand.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "jewelry",
+      "tier": 1,
+      "sprite": "core/base-kit:items/old-coin",
+      "wear": {
+        "slot": "jewelry",
+        "effects": [
+          {
+            "effect": "rare_find_pct",
+            "value": 5
+          }
+        ]
+      }
+    }
+  ]
+}

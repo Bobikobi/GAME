@@ -72,7 +72,7 @@ function begin(b: Bundle, bag: Record<string, number> = {}): State {
   const state = structuredClone(result.state);
   state.player.at = [...AT];
   state.player.movedAt = 0;
-  state.player.attrs.carry = 100;
+  state.player.attrs.might = 100;
   Object.assign(state.player.bag, bag);
   return state;
 }
