@@ -54,7 +54,7 @@ Before you open it:
 
 ```bash
 pnpm verify                # schemas, content check, lint, types, tests, build
-pnpm build && pnpm e2e     # plays the opening in Chrome, phone and desktop
+# CI plays the opening e2e; run it locally only to debug a red run, under flock /tmp/game-e2e.lock
 ```
 
 The description says what changed and why, not a list of files, and how you checked it. CI runs the same checks; the required job is "Check, test, build and play". Vercel posts a preview link; reviewers play that, not the code alone.

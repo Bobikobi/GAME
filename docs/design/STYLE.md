@@ -81,7 +81,7 @@ People and animals, seen by the owner on 20.10 on `frames/2026-10-21-nature-scal
 
 ## 2. Pixels and colour
 
-- **Colours:** only the 32 core colours (`tools/src/kit/palette.ts`).
+- **Colours:** the 32 core colours plus the shared `CORE_RAMPS` a sprite names (`tools/src/kit/palette.ts`), and a kit's own ramps for materials the shared set lacks.
 - **Pixels:** every pixel fully clear or fully solid. No anti-aliasing, no gradients, no half-clear pixels. This is the rule for a sprite and a ground tile. A layer the engine draws over them (a shadow, the night, a pool, the hour's wash, cloud shade, fog) is a blend at one alpha per step, and the result is still a fully solid pixel; such a layer never has more than four steps, and where two steps meet it may dither (ART_SYSTEM 2, NATURE 4 and 5).
 - **Ramps** run dark to light:
   - greys: `#1b1a2e #3a3554 #5d6177 #8f94a8 #c6cad6 #f5f4ef`
@@ -192,11 +192,9 @@ The owner, 18.10: "users will be able to change existing areas, even completely"
 
 ## 9. What the check enforces
 
-- **Today:** the palette, hard alpha and the sizes.
-- **With the engine step:** the sizes for each density (NEXT 15).
+- **Today:** the palette, hard alpha, the sizes for each density (NEXT 15) and, for a ground tile, its own ramp plus at most two accent colours (all errors in `tools/src/check.ts`).
 - **Proposed with the ground wave:**
-  - a ground tile fills its square edge to edge;
-  - a ground uses only its own ramp plus at most two accent colours.
+  - a ground tile fills its square edge to edge.
 
 ## 10. Frames
 

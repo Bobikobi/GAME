@@ -2,13 +2,13 @@
 
 A review of the opening as it stands on `develop` (aa903eb, 2026-10-17), from the first frame to the entrance of the night ruins, and a proposal for its renewal. Docs only: nothing here is built, no rung of [GAME_RULES.md](GAME_RULES.md) section 2 moves (G59), and every look that changes goes to the owner as stills first (the direction rule). Asked by the owner on 17.10 as step 1 of "the order from here" ([DECISIONS.md](../../DECISIONS.md), 2026-10-17).
 
-## תקציר (עברית)
+## Summary
 
-1. הקרס שאושר ב-10.10 (ערפל שנסוג, אבן החוזרים, שורת התעוררות) עדיין לא נבנה. לשחקן אין סיבה משלו להיות כאן, והפתיחה נפתחת ב-3 תיבות טקסט, בעוד שהסולם מרשה תיבה אחת.
-2. בריצת רובוט של הכפרי יש 254 שניות של שעון משחק בין המטלה האחרונה לחושך בלי שום תגמול במסלול הראשי (עמוד 1 מתיר 90). אדם איטי יותר ויחכה פחות; זה עוד לא נמדד על אדם.
-3. "עשן מעל העיירה" שולחת לעקוב אחרי עשן שאי אפשר לראות מהמחנה, והכפרי מקבל שתי משימות "מיומנות" ברצף (עמוד 3). הפעמון שעל האבן המסומנת לא נשמע לפני כן אף פעם.
-4. ההצעה: לבנות את הקרס כפי שאושר, B2 קודם; בתיקון הגשר הערפל נסוג לפחות 13 משבצות (7 שאושרו לא מחברים את שלוש הכיסים), פעמון רחוק נשמע, ועשן העיירה מופיע בקצה המסך. האבן הופכת למקום הראשון שבו יעמדו שמות של אחרים: עכשיו שמות כתובים, אחרי חשבונות שמות אמיתיים מאחורי מסנן.
-5. שום שלב בסולם לא זז. שלוש שאלות לבעלים בסעיף 6: ניסוח שורות ההתעוררות; איך מוצאים מטרה ל-250 השניות לפני החושך; האם לשתול עשן רחוק מעבר לעמק עוד לפני שהקרקע שלו קיימת.
+1. The hook approved on 10.10 (the receding mist, the returners' stone, the waking line) is not built yet. The player has no reason of their own to be here, and the opening starts with 3 text boxes while the ladder allows one.
+2. In a robot run of the forager there are 254 seconds of game clock between the last task and dark with no reward on the main path (pillar 1 allows 90). A slower person will wait less; this has not been measured on a person yet.
+3. "Smoke over the town" sends the player to follow smoke that cannot be seen from the camp, and the forager gets two "skill" tasks in a row (pillar 3). The bell on the marked stone has never been heard before.
+4. The proposal: build the hook as approved, B2 first. When the bridge is mended the mist draws back at least 13 tiles (the 7 that were approved do not join the three pockets), a distant bell is heard, and the town's smoke appears at the edge of the screen. The stone becomes the first place where the names of others will stand: written names for now, real names behind a filter once accounts exist.
+5. No rung of the ladder moves. Three questions for the owner in section 6: the wording of the waking lines; how to find a goal for the 250 seconds before dark; whether to plant distant smoke beyond the valley before its ground exists.
 
 ## 1. How it was timed
 

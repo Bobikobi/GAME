@@ -280,7 +280,7 @@ function curl(args: readonly string[], timeoutSeconds: number): { status: number
 }
 
 /**
- * One image through the local ComfyUI (`~/ceos-server/scripts/comfyui.sh start` on the laptop that
+ * One image through the local ComfyUI (start the local ComfyUI on the laptop that
  * holds it; any machine with ComfyUI on `COMFYUI_URL`): upload the reference, queue the workflow,
  * poll its history, fetch the picture. The prompt is the compact one (`localPrompt`), not the agent's.
  */
