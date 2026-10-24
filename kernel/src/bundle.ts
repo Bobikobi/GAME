@@ -11,15 +11,16 @@ import type {
   GameMap,
   ItemDef,
   Npc,
+  Pocket,
   Profession,
   Quest,
+  Race,
   RarityName,
   Reaction,
   Recipe,
   Resource,
   Restore,
   Shop,
-  Starter,
   Treasure,
 } from '@game/schema';
 
@@ -44,7 +45,10 @@ export type QuestDef = Meta & Quest;
 export type ExpeditionDef = Meta & Expedition;
 export type RestoreDef = Meta & Restore;
 export type CampDef = Meta & Camp;
-export type StarterDef = Meta & Starter;
+/** A race the player picks at the title (DECISIONS.md, 2026-10-22). */
+export type RaceDef = Meta & Race;
+/** A wake pocket a new game is drawn into by the seed (DECISIONS.md, 2026-10-22). */
+export type PocketDef = Meta & Pocket;
 export type ProfessionDef = Meta & Profession;
 export type ShopDef = Meta & Shop;
 export type MapDef = Meta & GameMap;
@@ -52,8 +56,11 @@ export type MapDef = Meta & GameMap;
 export type ReactionDef = Meta & Reaction;
 
 export interface Params {
-  /** The hours the valley is washed in a colour (ART_SYSTEM section 2). Read by the renderer, never by a rule. */
-  light?: { keys: { at: string; tint: string; pct: number }[] };
+  /** The hours the valley is washed in a colour and the sun's shear (ART_SYSTEM section 2). Read by the renderer, never by a rule. */
+  light?: {
+    keys: { at: string; tint: string; pct: number }[];
+    sun?: { alpha: number; cap: number; keys: { at: string; right: number; down: number }[] };
+  };
   k_permille: number;
   /** What the trader pays for a made good, per mille of r * V (CR-18); below 1000. */
   k_craft_permille: number;
@@ -104,7 +111,7 @@ export interface Params {
   bag_base: number;
   starting_gold_mg: number;
   /** what one attribute point adds; see the params schema */
-  per_point: { carry: number; senses: number; agility_pct: number; luck_permille: number; stamina: number };
+  per_point: { might: number; senses: number; agility_pct: number; luck_permille: number; stamina: number; spirit: number };
 }
 
 export interface SpriteInfo {
@@ -159,7 +166,8 @@ export interface Bundle {
   expeditions: Record<string, ExpeditionDef>;
   restores: Record<string, RestoreDef>;
   camps: Record<string, CampDef>;
-  starters: Record<string, StarterDef>;
+  races: Record<string, RaceDef>;
+  pockets: Record<string, PocketDef>;
   professions: Record<string, ProfessionDef>;
   shops: Record<string, ShopDef>;
   reactions: Record<string, ReactionDef>;

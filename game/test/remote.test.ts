@@ -1,8 +1,8 @@
 import { beforeAll, describe, expect, test } from 'vitest';
-import { canonical, publicState, type Action, type Bundle, type Tile } from '@game/kernel';
+import { OWN_FIRE, canonical, lastDusk, publicState, type Action, type Bundle, type GameEvent, type Tile } from '@game/kernel';
 
 import { Session } from '../src/session';
-import { RemoteSession, type ActResult } from '../src/remote';
+import { RemoteSession, fetchWire, type ActResult, type ChangeReply, type StateReply, type Wire, WireGap, WireRefusal } from '../src/remote';
 import { bfsNear, loadBundle } from '../../tools/test/helpers/world.js';
 import { FakeServer } from './fake-server';
 
@@ -203,5 +203,327 @@ describe('the remote session (NEXT 18 c)', () => {
     remote.save();
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(server.calls.map((entry) => entry.path)).toEqual(['/moves']);
+  });
+});
+
+/**
+ * A wire that answers after a real pause and counts how many calls are in the air at once. The fake server
+ * keeps no movement credit (see its header: the server's own tests hold that check), so the walks here are
+ * single steps the real server would credit anyway.
+ */
+class SlowWire implements Wire {
+  inFlight = 0;
+  mostInFlight = 0;
+  constructor(readonly server: FakeServer, private readonly delayMs = 5) {}
+
+  private async slowly<T>(run: () => Promise<T>): Promise<T> {
+    this.inFlight += 1;
+    this.mostInFlight = Math.max(this.mostInFlight, this.inFlight);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, this.delayMs));
+      return await run();
+    } finally {
+      this.inFlight -= 1;
+    }
+  }
+
+  post(path: '/session', body: unknown): Promise<StateReply>;
+  post(path: '/action' | '/moves', body: unknown): Promise<ChangeReply>;
+  post(path: '/action' | '/moves' | '/session', body: unknown): Promise<StateReply | ChangeReply> {
+    return this.slowly(() => this.server.post(path as '/session', body) as Promise<StateReply | ChangeReply>);
+  }
+
+  get(path: '/state'): Promise<StateReply> {
+    return this.slowly(() => this.server.get(path));
+  }
+}
+
+async function started(clock = { now: 0 }) {
+  const local = Session.fresh(bundle);
+  const server = new FakeServer(bundle, local.state, () => clock.now);
+  const wire = new SlowWire(server);
+  const remote = await RemoteSession.join(bundle, wire);
+  await remote.act({ t: 'start', starter: 'core/forager', name: 'Tess' });
+  return { local, server, wire, remote, clock };
+}
+
+describe('the remote session: the clock on resume (Stage 2a follow-up)', () => {
+  test('a player who returns at a late server tick can walk at once, with no catching up', async () => {
+    const clock = { now: 0 };
+    const { local, server, remote } = await started(clock);
+    const route = workNearby(local).route;
+    const home = [...remote.pos] as Tile;
+    // an hour of game time passes with the phone in use, then the phone is closed
+    clock.now += 3_600_000;
+    remote.tick = 3_600_000;
+    remote.report(route[0]!);
+    await remote.flushMoves();
+    expect(server.state.tick).toBe(3_600_000);
+
+    const returned = await RemoteSession.join(bundle, new SlowWire(server));
+    expect(returned.tick).toBe(server.state.tick);
+    returned.report(home);
+    await returned.flushMoves();
+    expect(server.state.player.at).toEqual(home);
+    expect(returned.connected).toBe(true);
+  });
+
+  test('a player back while work is still under way is not sent ahead of the server\'s clock', async () => {
+    const { server } = await started();
+    // work of 30 s began at the state's tick, and the player is back 1 s later (the wall clock barely moved)
+    server.state.player.busyUntil = server.state.tick + 30_000;
+    const returned = await RemoteSession.join(bundle, new SlowWire(server));
+    expect(returned.tick).toBe(server.state.tick);
+    expect(returned.busy).toBe(true);
+    const answered = await returned.act({ t: 'carve', name: 'Tess' });
+    expect(answered).not.toEqual({ ok: false, error: 'That game time is ahead of the time elapsed.' });
+  });
+
+  test('a resume after a dropped line never moves the clock backwards', async () => {
+    const clock = { now: 0 };
+    const { server, remote } = await started(clock);
+    clock.now = 60_000;
+    remote.tick = 60_000;
+    server.gap = true;
+    await remote.act({ t: 'carve', name: 'Tess' });
+    // another device played on meanwhile: the server's clock is now ahead of the phone's
+    server.state.tick += 120_000;
+    server.gap = false;
+    await remote.resumeFromServer();
+    expect(remote.tick).toBeGreaterThanOrEqual(60_000);
+    expect(remote.tick).toBeGreaterThanOrEqual(server.state.tick);
+    expect(remote.tick).toBeGreaterThanOrEqual(server.state.player.busyUntil);
+  });
+});
+
+describe('the remote session: one call at a time', () => {
+  test('three flushers and an action never put two calls on the wire, and every move lands', async () => {
+    const { local, server, wire, remote } = await started();
+    const route = workNearby(local).route;
+    remote.report(route[0]!);
+    const answers = await Promise.all([
+      remote.flushMoves(),
+      remote.flushMoves(),
+      remote.flushMoves(),
+      remote.act({ t: 'eat', item: 'core/not-a-thing' }),
+    ]);
+    expect(wire.mostInFlight).toBe(1);
+    // the action is refused for its own reason, never because a flusher left it a stale version
+    const act = answers[3] as ActResult;
+    expect(act.ok === false && /state changed/.test(act.error)).toBe(false);
+    expect(server.state.player.at).toEqual(route[0]);
+    expect(remote.version).toBe(server.version);
+  });
+
+  test('a second action waits for the first, and both name the version they find', async () => {
+    const { server, wire, remote } = await started();
+    const both = await Promise.all([
+      remote.act({ t: 'eat', item: 'core/not-a-thing' }),
+      remote.act({ t: 'eat', item: 'core/not-a-thing' }),
+    ]);
+    expect(wire.mostInFlight).toBe(1);
+    for (const answer of both) expect(answer.ok === false && /state changed/.test(answer.error)).toBe(false);
+    expect(remote.version).toBe(server.version);
+    expect(remote.waiting).toBe(false);
+  });
+
+  test('a tile reported while an action is in flight is kept, not dropped', async () => {
+    const { local, server, remote } = await started();
+    const route = workNearby(local).route;
+    const acting = remote.act({ t: 'eat', item: 'core/not-a-thing' });
+    remote.report(route[0]!);
+    await Promise.all([remote.flushMoves(), acting]);
+    expect(server.state.player.at).toEqual(route[0]);
+  });
+
+  test('a batch that fills sends once and the rest follows behind it', async () => {
+    const { local, server, wire, remote } = await started();
+    const away = workNearby(local).route[0]!;
+    // 300 reports: more than one batch, all sent in order, one call at a time
+    for (let i = 0; i < 300; i++) remote.report(away);
+    await remote.flushMoves();
+    expect(wire.mostInFlight).toBe(1);
+    expect(server.calls.filter((c) => c.path === '/moves').length).toBe(2);
+  });
+
+  test('a real conflict drops the walk, takes the server tile back and the next action goes through', async () => {
+    const { local, server, remote } = await started();
+    const home = [...remote.pos];
+    const first = workNearby(local).route[0]!;
+    // the scene moves the player and reports the tile; another device wins the version meanwhile
+    remote.pos = [first[0], first[1]];
+    remote.report(first);
+    server.version += 1;
+    await remote.flushMoves();
+    expect(remote.version).toBe(server.version);
+    expect(remote.pos).toEqual(home);
+    expect(remote.pos).toEqual([server.state.player.at[0], server.state.player.at[1]]);
+    const answered = await remote.act({ t: 'eat', item: 'core/not-a-thing' });
+    expect(answered.ok === false && /state changed/.test(answered.error)).toBe(false);
+  });
+});
+
+describe('the remote session: another device moved the state on', () => {
+  test('an action refused as stale reads the state again, so the next one names the new version', async () => {
+    const { server, remote } = await started();
+    server.version += 1;
+    const first = await remote.act({ t: 'carve', name: 'Tess' });
+    expect(first).toEqual({ ok: false, error: 'The game state changed; resume before sending another action.' });
+    expect(remote.version).toBe(server.version);
+    const second = await remote.act({ t: 'carve', name: 'Tess' });
+    expect(second.ok === false && /state changed/.test(second.error)).toBe(false);
+  });
+});
+
+describe('the remote session: the 409 code, not only its words', () => {
+  const STALE_WORDS = 'The game state changed; resume before sending another action.';
+
+  test('an old server that sends the words and no code still gets its state read again', async () => {
+    const { server, remote } = await started();
+    server.noReasons = true;
+    server.version += 1;
+    server.calls.length = 0;
+    const stale = await remote.act({ t: 'carve', name: 'Tess' });
+    expect(stale).toEqual({ ok: false, error: STALE_WORDS });
+    expect(server.calls.map((call) => call.path)).toEqual(['/action', '/state']);
+    expect(remote.version).toBe(server.version);
+  });
+
+  test('a code that is not stale is believed over the words, and the state is not read again', async () => {
+    const local = Session.fresh(bundle);
+    const server = new FakeServer(bundle, local.state);
+    const honouring = new SlowWire(server);
+    // the same wire, with a step's own code on the answer that carries the stale words
+    const rewrite = (error: unknown): never => {
+      if (error instanceof WireRefusal && error.status === 409) throw new WireRefusal(error.message, 409, 'refused');
+      throw error;
+    };
+    const lying: Wire = {
+      post: ((path: string, body: unknown) => honouring.post(path as '/action', body).catch(rewrite)) as Wire['post'],
+      get: (path) => honouring.get(path),
+    };
+    const remote = await RemoteSession.join(bundle, lying);
+    await remote.act({ t: 'start', starter: 'core/forager', name: 'Tess' });
+    server.calls.length = 0;
+    server.version += 1;
+
+    const refused = await remote.act({ t: 'carve', name: 'Tess' });
+    expect(refused).toEqual({ ok: false, error: STALE_WORDS });
+    expect(server.calls.map((call) => call.path)).toEqual(['/action']);
+  });
+
+  test('the reason reaches a WireRefusal through fetchWire, not only through a fake wire', async () => {
+    const answer = () => new Response(JSON.stringify({ error: STALE_WORDS, reason: 'stale' }), { status: 409 });
+    const wire = fetchWire('', (async () => answer()) as typeof fetch);
+    const refusal = await wire.post('/action', { version: 1 }).catch((error: unknown) => error);
+    expect(refusal).toBeInstanceOf(WireRefusal);
+    expect((refusal as WireRefusal).reason).toBe('stale');
+    expect((refusal as WireRefusal).message).toBe(STALE_WORDS);
+  });
+});
+
+describe('the remote session: a failed resume', () => {
+  test('stays closed, says so with one change, and reports the error', async () => {
+    const { server, remote } = await started();
+    server.gap = true;
+    await remote.act({ t: 'carve', name: 'Tess' });
+    expect(remote.connected).toBe(false);
+
+    let changes = 0;
+    remote.on('change', () => (changes += 1));
+    await expect(remote.resumeFromServer()).rejects.toThrow();
+    expect(remote.connected).toBe(false);
+    expect(remote.paused).toBe(true);
+    expect(changes).toBe(1);
+
+    server.gap = false;
+    await remote.resumeFromServer();
+    expect(remote.connected).toBe(true);
+  });
+
+  test('a walk refused while the resume then fails leaves the session closed', async () => {
+    const { server, remote } = await started();
+    const [x, y] = remote.pos;
+    remote.report([x + 8, y]);
+    // the walk is refused as too far, and the resume that follows it finds the line down
+    server.get = async () => {
+      throw new WireGap('Waiting for the connection');
+    };
+    await remote.flushMoves().catch(() => undefined);
+    expect(remote.connected).toBe(false);
+  });
+});
+
+describe('the remote session: a fire going out is told', () => {
+  /** The fire the long night tends, read from the content: a map fire or the player's own. */
+  function tended(): string {
+    const step = bundle.quests['core/the-long-night']!.steps.find((st) => st.kind === 'tend');
+    if (step?.kind !== 'tend') throw new Error('The long night tends no fire.');
+    return step.fire;
+  }
+
+  /** A started game at `lit`, with the fire the long night tends burning out at `until` and that quest open. */
+  async function burning(lit: number, until: number) {
+    const clock = { now: 0 };
+    const game = await started(clock);
+    const { server, remote } = game;
+    const fire = tended();
+    server.state.tick = lit;
+    server.state.player.quests['core/the-long-night'] = 'active';
+    if (fire === OWN_FIRE) server.state.player.own = { lit, until, at: [remote.pos[0] + 1, remote.pos[1]], log: until - lit };
+    else server.state.player.fires = { [fire]: { lit, until } };
+    await remote.resumeFromServer();
+    server.calls.length = 0;
+    return { ...game, fire };
+  }
+
+  test('a burn that runs out in the night is reported once, and its fire_out reaches the screens', async () => {
+    const dusk = lastDusk(bundle, bundle.params.day_length_ms * 3);
+    const { server, remote, clock, fire } = await burning(dusk - 1_000, dusk + 5_000);
+    const told: GameEvent[] = [];
+    remote.on('events', (events) => told.push(...events));
+    for (let i = 0; i < 60; i++) {
+      remote.advance(250);
+      clock.now += 250;
+    }
+    await remote.flushMoves();
+    const moves = server.calls.filter((c) => c.path === '/moves');
+    expect(moves.length).toBe(1);
+    const body = moves[0]!.body as { moves: { at: Tile }[] };
+    expect(body.moves.at(-1)!.at).toEqual([...remote.pos]);
+    expect(told).toContainEqual({ e: 'fire_out', id: fire });
+  });
+
+  test('a burn whose report was lost to a dropped line is asked about again after the resume', async () => {
+    const dusk = lastDusk(bundle, bundle.params.day_length_ms * 3);
+    const { server, remote, clock, fire } = await burning(dusk - 1_000, dusk + 5_000);
+    const told: GameEvent[] = [];
+    remote.on('events', (events) => told.push(...events));
+    server.gap = true;
+    for (let i = 0; i < 40 && remote.connected; i++) {
+      remote.advance(250);
+      clock.now += 250;
+      await remote.flushMoves();
+    }
+    expect(remote.connected).toBe(false);
+    server.gap = false;
+    await remote.resumeFromServer();
+    remote.advance(250);
+    clock.now += 250;
+    await remote.flushMoves();
+    expect(told).toContainEqual({ e: 'fire_out', id: fire });
+  });
+
+  test('the player\'s own fire running out is asked about the same way', async () => {
+    const { server, remote, clock } = await started();
+    server.state.player.own = { lit: 0, until: 5_000, at: [remote.pos[0] + 1, remote.pos[1]], log: 5_000 };
+    await remote.resumeFromServer();
+    server.calls.length = 0;
+    for (let i = 0; i < 40; i++) {
+      remote.advance(250);
+      clock.now += 250;
+    }
+    await remote.flushMoves();
+    expect(server.calls.filter((c) => c.path === '/moves').length).toBe(1);
   });
 });

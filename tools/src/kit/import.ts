@@ -19,6 +19,12 @@ export interface ImportOptions {
    * dozen pixels wide needs one back to read against the ground.
    */
   outline?: boolean;
+  /**
+   * EXPERIMENT (exp/rich-style): where a source colour sits between its two nearest palette colours,
+   * alternate them in a 2x2 ordered pattern instead of snapping to one. Soft gradients in the drawing
+   * survive the import as texture instead of becoming flat bands.
+   */
+  dither?: boolean;
 }
 
 export interface ImportResult {
@@ -571,6 +577,7 @@ function scaleSprite(sprite: LogicalSprite, scale: number, palette: readonly Rgb
 }
 
 function validateOptions(options: ImportOptions): Required<Omit<ImportOptions, 'palette'>> {
+  const dither = options.dither ?? false;
   const frames = options.frames ?? 1;
   const anchor = options.anchor ?? 'center';
   const padding = options.padding ?? 0;
@@ -581,7 +588,38 @@ function validateOptions(options: ImportOptions): Required<Omit<ImportOptions, '
   if (!Number.isInteger(padding) || padding < 0) throw new Error('padding must be a non-negative integer');
   if (options.width <= padding * 2 || options.height <= padding * 2) throw new Error('padding leaves no output area');
   if (options.palette.length === 0) throw new Error('palette must contain at least one color');
-  return { width: options.width, height: options.height, frames, anchor, padding, outline };
+  return { width: options.width, height: options.height, frames, anchor, padding, outline, dither };
+}
+
+const BAYER_2X2 = [0.2, 0.7, 0.95, 0.45] as const;
+
+/** The palette colour for a source colour at (x, y): the nearest, or, with dither, one of the nearest two by an ordered pattern. */
+export function paletteColourAt(r: number, g: number, b: number, x: number, y: number, palette: readonly Rgb[], dither: boolean): Rgb | undefined {
+  const first = nearestPaletteIndex(r, g, b, palette);
+  const c1 = palette[first];
+  if (!dither || c1 === undefined || palette.length < 2) return c1;
+  let second = -1;
+  let secondDistance = Number.POSITIVE_INFINITY;
+  for (let index = 0; index < palette.length; index += 1) {
+    if (index === first) continue;
+    const c = palette[index];
+    if (c === undefined) continue;
+    const d = (r - c[0]) ** 2 + (g - c[1]) ** 2 + (b - c[2]) ** 2;
+    if (d < secondDistance) { secondDistance = d; second = index; }
+  }
+  const c2 = palette[second];
+  if (c2 === undefined) return c1;
+  // where the source sits on the segment c1 -> c2, 0 at c1 and 1 at c2
+  const vx = c2[0] - c1[0];
+  const vy = c2[1] - c1[1];
+  const vz = c2[2] - c1[2];
+  const length = vx * vx + vy * vy + vz * vz;
+  if (length === 0) return c1;
+  const t = Math.max(0, Math.min(1, ((r - c1[0]) * vx + (g - c1[1]) * vy + (b - c1[2]) * vz) / length));
+  // only a real in-between colour dithers; a colour that is clearly one of the two stays flat
+  if (t < 0.3 || t > 0.7) return t > 0.5 ? c2 : c1;
+  const threshold = BAYER_2X2[(y % 2) * 2 + (x % 2)] ?? 0.5;
+  return t > threshold ? c2 : c1;
 }
 
 export function importSprite(source: Buffer, options: ImportOptions): ImportResult {
@@ -626,7 +664,7 @@ export function importSprite(source: Buffer, options: ImportOptions): ImportResu
       for (let x = 0; x < sprite.width; x += 1) {
         const cell = sprite.cells[y * sprite.width + x] ?? TRANSPARENT;
         if (cell.a === 0) continue;
-        const color = palette[nearestPaletteIndex(cell.r, cell.g, cell.b, palette)];
+        const color = paletteColourAt(cell.r, cell.g, cell.b, x, y, palette, settings.dither);
         if (color === undefined) continue;
         const offset = ((top + y) * output.width + left + x) * 4;
         output.data[offset] = color[0];

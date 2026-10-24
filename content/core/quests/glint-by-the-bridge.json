@@ -6,7 +6,7 @@
   "title": "A glint by the bridge",
   "creator": "core",
   "quest": {
-    "starter": "core/explorer",
+    "pocket": "core/north-meadow",
     "type": "investigation",
     "summary": "Something catches the light by the broken bridge. Walk there; your senses will lead you.",
     "steps": [

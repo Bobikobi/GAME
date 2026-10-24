@@ -98,7 +98,7 @@ function good(): Bundle {
       ...source,
       id,
       giver: undefined,
-      starter: undefined,
+      pocket: undefined,
       type: types[i]!,
       requires: i === 0 ? undefined : [QUESTS[i - 1]!],
       // read and answered inside the place
@@ -295,7 +295,7 @@ describe('an expedition is never the only road (G37)', () => {
 
   it('refuses a quest of the opening in the chain', () => {
     const b = good();
-    b.quests[QUESTS[0]]!.starter = 'core/forager';
+    b.quests[QUESTS[0]]!.pocket = 'core/west-bank';
     expect(messages(b, 'G37')).toContain(`quest "${QUESTS[0]}" is part of the opening`);
   });
 

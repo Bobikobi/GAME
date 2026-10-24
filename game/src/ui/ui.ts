@@ -3,6 +3,7 @@
  * action prompt, dialogue, menus and the timing minigame. Layers stack; the
  * top one gets the buttons, and while any is open the game clock stops.
  */
+import { offerSignup } from './signup';
 import {
   OWN_FIRE,
   type GameEvent,
@@ -19,6 +20,7 @@ import {
   satietyAt,
   satietyCap,
   skillPoints,
+  talkLines,
 } from '@game/kernel';
 import { app } from '../app';
 import type { Button } from '../input';
@@ -39,11 +41,13 @@ import {
   windowScalePct,
 } from '../text';
 import { type Toast, type Tone, ToastBand, eventToasts, readTime, urgent } from '../toasts';
+import { localMapState } from '../places';
 import { resourceKind, treasureKind } from '../work';
 import { say, type Option } from './dialog';
 import { STONE_RESTORE, STONE_SPEAKER } from '../stone';
 import { carveName } from './carve';
 import { button, h, sprite } from './dom';
+import { miniMapSvg } from './map';
 import { feedback } from './feedback';
 import { type Minigame, pick, snap, strike, timing } from './games';
 import { BEAT, buzz } from './haptics';
@@ -52,6 +56,7 @@ import {
   openBag,
   openCraft,
   openJournal,
+  openMap,
   openMenu,
   openShop,
   openSignCard,
@@ -108,6 +113,10 @@ export class UI {
   private titleOpen = false;
   private hudTimer = 0;
   private hudParts: HudParts | undefined;
+  private hudMap: HTMLButtonElement;
+  private hudMapChart: HTMLElement;
+  private hudMapNote: HTMLElement;
+  private hudMapKey = '';
   private trackerKey = '';
   private talkCount = new Map<string, number>();
   private levelUpOpen = false;
@@ -123,8 +132,17 @@ export class UI {
     this.tracker = h('div', { class: 'tracker', hidden: true });
     this.toasts = h('div', { class: 'toasts', 'aria-live': 'polite' });
     this.promptEl = h('div', { class: 'prompt', hidden: true });
+    this.hudMapChart = h('span', { class: 'hud-map-chart' });
+    this.hudMapNote = h('span', { class: 'hud-map-note' }, 'No stall placed');
+    this.hudMap = h(
+      'button',
+      { class: 'hud-map', type: 'button', title: 'The valley - open the map', hidden: true, onclick: () => this.panel(() => openMap(this)) },
+      h('span', { class: 'hud-map-head' }, h('span', null, 'THE VALLEY'), h('span', null, 'Map')),
+      this.hudMapChart,
+      this.hudMapNote,
+    );
     this.loadingEl = h('div', { class: 'loading' }, h('div', { class: 'loading-title' }, 'Loading the valley'), h('div', { class: 'loading-bar' }, h('i')));
-    root.append(h('div', { class: 'top' }, this.hud, this.tracker, this.toasts), this.promptEl, this.loadingEl);
+    root.append(h('div', { class: 'top' }, this.hud, this.tracker, this.toasts), this.promptEl, this.loadingEl, this.hudMap);
     mountTouch(root);
     this.tracker.addEventListener('click', () => this.panel(() => openJournal(this, 'tasks')));
   }
@@ -144,6 +162,7 @@ export class UI {
   push(layer: Layer): void {
     this.layers.push(layer);
     this.root.append(layer.el);
+    this.hudMap.hidden = true;
     app.session?.pause();
     this.setPrompt('');
     // the hold starts as the box opens: a toast already up keeps the rest of its time for after it
@@ -155,6 +174,7 @@ export class UI {
     if (i < 0) return;
     this.layers.splice(i, 1);
     layer.el.remove();
+    if (this.layers.length === 0 && app.session?.started) this.hudMap.hidden = false;
     app.session?.resume();
     layer.onClose?.();
     this.renderHud();
@@ -218,13 +238,14 @@ export class UI {
     session.on('change', () => this.renderHud());
     this.hud.hidden = false;
     this.tracker.hidden = false;
+    this.hudMap.hidden = false;
     this.renderHud();
     window.clearInterval(this.hudTimer);
     this.hudTimer = window.setInterval(() => this.renderHud(), 500);
     if (session.adapted) this.toast('The valley was updated since your last visit.', 'info');
     // a bridge mended with no name cut (the page closed before the carve): the stone asks again
     const p = session.state.player;
-    if (p.starter !== '' && p.name === '' && p.restored.includes(STONE_RESTORE)) {
+    if (p.race !== '' && p.name === '' && p.restored.includes(STONE_RESTORE)) {
       window.setTimeout(() => void this.stoneBeat(STONE_RESTORE, false), 800);
     }
   }
@@ -264,7 +285,22 @@ export class UI {
     p.bag.hidden = !unlocked.bag;
     p.log.hidden = !unlocked.log;
     this.renderTracker(s);
+    this.renderHudMap(s);
     this.placeToasts(s);
+  }
+
+  /** The desktop's pocket chart: redrawn only when the walk, the map or the stall changed. */
+  private renderHudMap(s: GameSession): void {
+    const local = localMapState(s);
+    if (!local) {
+      this.hudMap.hidden = true;
+      return;
+    }
+    const key = `${s.pos[0]},${s.pos[1]}|${local.seen.size}|${local.seenChunks.size}|${local.stall ?? ''}`;
+    if (key === this.hudMapKey) return;
+    this.hudMapKey = key;
+    this.hudMapChart.innerHTML = miniMapSvg(app.bundle, { seen: local.seen, chunks: local.seenChunks, at: s.pos, stall: local.stall });
+    this.hudMapNote.textContent = local.stall ? 'Your stall · the empty corner' : 'No stall placed';
   }
 
   /**
@@ -297,7 +333,7 @@ export class UI {
     const dark = h('span', { class: 'chip dark', title: 'Dark falls: be in town or by a burning camp', hidden: true }, h('i', { class: 'moon' }), darkText);
     const level = h('span', { class: 'chip', title: 'Character level' });
     const bag = button('Bag', () => this.panel(() => openBag(this)), 'small');
-    const log = button('Log', () => this.panel(() => openJournal(this)), 'small');
+    const log = button('Journal', () => this.panel(() => openJournal(this)), 'small');
     const feedbackBtn = button('Feedback', () => openFeedback(this), 'small');
     this.hud.replaceChildren(
       h(
@@ -471,7 +507,7 @@ export class UI {
           'Past the arch the ruins go on, darker and deeper than by day. Far below, a bell rings once.',
           'Not tonight. The way stays open.',
         ]);
-        void openOpeningReview(this);
+        void openOpeningReview(this).then(() => offerSignup(this));
       }
     }
   }
@@ -547,7 +583,7 @@ export class UI {
     const state = s.state.player.quests[questId];
     const rewards = rewardText(questId);
     if (!state) {
-      const pick = await say(this, npc.name, [...named(q.talk?.offer ?? [q.summary]), `Reward: ${rewards}.`], [
+      const pick = await say(this, npc.name, [...named(talkLines(b, s.state, questId, 'offer', s.tick) ?? [q.summary]), `Reward: ${rewards}.`], [
         { label: 'I will do it', value: 'yes' },
         { label: 'Not now', value: 'no' },
       ]);
@@ -562,7 +598,7 @@ export class UI {
       return;
     }
     const left = questSteps(b, s.state, questId, s.tick).filter((st) => !st.done).map((st) => st.text);
-    await say(this, npc.name, [...named(q.talk?.waiting ?? [q.summary]), `Still needed: ${left.join('; ')}.`]);
+    await say(this, npc.name, [...named(talkLines(b, s.state, questId, 'waiting', s.tick) ?? [q.summary]), `Still needed: ${left.join('; ')}.`]);
   }
 
   async gather(nodeId: string): Promise<void> {
@@ -713,11 +749,11 @@ function named(lines: readonly string[]): string[] {
 function rewardText(questId: string): string {
   const b = app.bundle;
   const r = b.quests[questId]!.reward;
-  const starter = app.session?.state.player.starter ?? '';
+  const pocket = app.session?.state.player.pocket ?? '';
   const parts: string[] = [];
   if (r.gold_mg) parts.push(`${gold(r.gold_mg)} gold`);
-  // what this start gets: a reward its kit already holds is swapped for one it lacks
-  for (const it of r.items ?? []) parts.push(`${it.qty} ${itemName(b, rewardItem(b, starter, it))}`);
+  // what this wake gets: a reward its pocket's ground already laid is swapped for one it lacks
+  for (const it of r.items ?? []) parts.push(`${it.qty} ${itemName(b, rewardItem(b, pocket, it))}`);
   for (const rc of r.recipes ?? []) parts.push(`the ${b.recipes[rc]?.title ?? rc} recipe`);
   for (const o of r.opens ?? []) parts.push(`a way through the ${b.restores[o]?.title ?? o}`);
   if (r.rep) parts.push('their trust');

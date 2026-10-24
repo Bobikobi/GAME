@@ -33,7 +33,8 @@ export interface SameAgain {
 }
 
 export interface Hand {
-  starter: string;
+  /** The wake pocket the character woke in: the race offers and closes no quest (DECISIONS.md, 2026-10-22). */
+  pocket: string;
   /** The quests this character can reach, sorted. */
   quests: string[];
   /** The most quests it can hold open at once. */
@@ -48,7 +49,7 @@ export interface Order {
   start: Map<string, Set<string>>;
 }
 
-const offered = (q: { starter?: string }, starter: string) => q.starter === undefined || q.starter === starter;
+const offered = (q: { pocket?: string }, pocket: string) => q.pocket === undefined || q.pocket === pocket;
 
 /** Every quest that must be done before this one can start, through the requires links. */
 function ancestry(b: Bundle): Map<string, Set<string>> {
@@ -71,9 +72,9 @@ function ancestry(b: Bundle): Map<string, Set<string>> {
   return memo;
 }
 
-/** The quests a character of this starter is offered and can open: offered to it, and every requirement reachable too. */
-function reachable(b: Bundle, starter: string, anc: Map<string, Set<string>>): string[] {
-  const ok = (id: string) => b.quests[id] !== undefined && offered(b.quests[id]!, starter);
+/** The quests a character who woke in this pocket is offered and can open: offered to it, and every requirement reachable too. */
+function reachable(b: Bundle, pocket: string, anc: Map<string, Set<string>>): string[] {
+  const ok = (id: string) => b.quests[id] !== undefined && offered(b.quests[id]!, pocket);
   return Object.keys(b.quests)
     .filter((id) => ok(id) && !anc.get(id)!.has(id) && [...anc.get(id)!].every(ok))
     .sort();
@@ -85,21 +86,20 @@ interface Way {
   after?: string;
 }
 
-function waysTo(b: Bundle, starter: string, item: string): Way[] {
+function waysTo(b: Bundle, pocket: string, item: string): Way[] {
   const ways: Way[] = [];
   for (const r of Object.values(b.resources)) {
     if (r.output !== item) continue;
     const q = r.opens_after === undefined ? undefined : b.quests[r.opens_after];
-    ways.push({ tool: r.tool, after: q && offered(q, starter) ? q.id : undefined });
+    ways.push({ tool: r.tool, after: q && offered(q, pocket) ? q.id : undefined });
   }
   for (const t of Object.values(b.treasures)) {
-    if (offered(t, starter) && t.finds.some((f) => f.item === item)) ways.push({ tool: t.tool });
+    if (offered(t, pocket) && t.finds.some((f) => f.item === item)) ways.push({ tool: t.tool });
   }
   const rewards = [...Object.values(b.quests), ...Object.values(b.expeditions)].flatMap((x) => x.reward?.items ?? []);
   const free =
     Object.values(b.recipes).some((r) => r.outputs.some((o) => o.item === item)) ||
     Object.values(b.shops).some((s) => s.sells.some((o) => o.item === item)) ||
-    (b.starters[starter]?.kit ?? []).some((k) => k.item === item) ||
     rewards.some((r) => r.item === item || r.instead === item);
   if (free) ways.push({});
   return ways;
@@ -132,7 +132,7 @@ function needs(b: Bundle, q: QuestDef): Set<string> {
 }
 
 /** The orders the items make, for one character: for each quest, the quests that are done before it is done. */
-function itemOrders(b: Bundle, starter: string, ids: readonly string[]): Map<string, Set<string>> {
+function itemOrders(b: Bundle, pocket: string, ids: readonly string[]): Map<string, Set<string>> {
   const before = new Map(ids.map((id) => [id, new Set<string>()]));
   // open from the start, with nobody to hand the find to: done the moment the item comes
   const finders = new Map<string, string[]>();
@@ -145,7 +145,7 @@ function itemOrders(b: Bundle, starter: string, ids: readonly string[]): Map<str
   for (const id of ids) {
     const q = b.quests[id]!;
     for (const item of needs(b, q)) {
-      const ways = waysTo(b, starter, item);
+      const ways = waysTo(b, pocket, item);
       const lock = onlyAfter(ways);
       if (lock !== undefined && lock !== id && before.has(lock)) before.get(id)!.add(lock);
       const tool = onlyTool(b, ways);
@@ -160,9 +160,9 @@ function itemOrders(b: Bundle, starter: string, ids: readonly string[]): Map<str
   return before;
 }
 
-export function orderOf(b: Bundle, starter: string): Order {
-  const quests = reachable(b, starter, ancestry(b));
-  const items = itemOrders(b, starter, quests);
+export function orderOf(b: Bundle, pocket: string): Order {
+  const quests = reachable(b, pocket, ancestry(b));
+  const items = itemOrders(b, pocket, quests);
   const done = new Map<string, Set<string>>();
   const walk = (id: string, trail: Set<string>): Set<string> => {
     const known = done.get(id);
@@ -210,8 +210,8 @@ function width(ids: readonly string[], start: Map<string, Set<string>>): number 
   return ids.length - matched;
 }
 
-export function handOf(b: Bundle, starter: string): Hand {
-  const { quests, done, start } = orderOf(b, starter);
+export function handOf(b: Bundle, pocket: string): Hand {
+  const { quests, done, start } = orderOf(b, pocket);
   const same: SameAgain[] = [];
   for (const [i, a] of quests.entries()) {
     const ta = b.quests[a]!.type;
@@ -230,13 +230,13 @@ export function handOf(b: Bundle, starter: string): Hand {
       if (!between) same.push({ type: ta, first, then, how: b.quests[then]!.requires?.includes(first) ? 'requires' : 'needs' });
     }
   }
-  return { starter, quests, widest: width(quests, start), same };
+  return { pocket, quests, widest: width(quests, start), same };
 }
 
 export function hands(b: Bundle): Hand[] {
-  return Object.keys(b.starters)
+  return Object.keys(b.pockets)
     .sort()
-    .map((s) => handOf(b, s));
+    .map((p) => handOf(b, p));
 }
 
 /** The types the content uses, how often, and the ones it never asks. */

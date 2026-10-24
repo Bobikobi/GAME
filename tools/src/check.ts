@@ -10,16 +10,19 @@ import { type Bundle, computeValues, idiv, minChargeFor, missOutcome, rarityBudg
 import { RARITIES, type ParamsBody } from '@game/schema';
 import { assemble, type Assembled } from './assemble';
 import { readBoard } from './board';
-import { CORE_PALETTE } from './kit/palette';
+import { CORE_PALETTE, coreRamp } from './kit/palette';
 import { accentsOf, allowedColors, rampProblems } from './kit/ramps';
+import { scaleProblems } from './kit/scale';
 import { checkColors } from './colors';
-import { LOCK_FILE, loadAll, toRepoPath, type Issue } from './load';
+import { LOCK_FILE, REPO_ROOT, loadAll, toRepoPath, type Issue } from './load';
 import { baseOf } from './material';
 import { checkHazards } from './hazards';
 import { checkReactions } from './reactions';
 import { checkPlay, rewardItems } from './play';
 import { checkDeadProps } from './deadprops';
 import { checkReach } from './reach';
+import { checkRaces } from './races';
+import { checkHands } from './hands';
 import { checkRichness } from './richness';
 import { checkStarts } from './starts';
 
@@ -43,14 +46,17 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkCrafting(b, assembled.origin));
     issues.push(...checkWear(b));
     issues.push(...checkDrift(b));
+    issues.push(...checkRetiredWords());
     issues.push(...checkKits(assembled));
     issues.push(...checkColors(assembled));
     issues.push(...checkPlay(b, assembled.origin));
+    issues.push(...checkRaces(b, assembled.origin));
     issues.push(...checkStarts(b, assembled.origin));
     issues.push(...checkReach(b, assembled.origin));
     issues.push(...checkDeadProps(b, assembled.origin));
     issues.push(...checkHazards(b, assembled.origin));
     issues.push(...checkRichness(b, assembled.origin));
+    issues.push(...checkHands(b, assembled.origin));
   }
   return { issues: dedupe(issues), files: files.length, assembled };
 }
@@ -122,7 +128,7 @@ function computedRarity(b: Bundle, itemId: string, visiting: Set<string> = new S
     best = best === undefined ? r : Math.min(best, r);
   };
   for (const t of Object.values(b.treasures)) {
-    if (t.starter !== undefined) continue; // a start's own find is a gift, not how the item is obtained
+    if (t.pocket !== undefined) continue; // a wake pocket's own find is a gift, not how the item is obtained
     for (const f of t.finds) {
       if (f.item !== itemId) continue;
       take(f.chance_pct >= 30 ? 0 : f.chance_pct >= 10 ? 1 : f.chance_pct >= 3 ? 2 : 3);
@@ -452,6 +458,29 @@ function checkWear(b: Bundle): Issue[] {
   return issues;
 }
 
+/**
+ * Words a change retired, which the creators' guide must not teach any more
+ * (DECISIONS.md, 2026-10-22: the races replace the starters; a start is a race
+ * in a wake pocket).
+ */
+const RETIRED_WORDS: { file: string; word: RegExp; now: string }[] = [
+  { file: 'docs/creators/README.md', word: /\bstarters?\b/i, now: 'a race (chosen) in a wake pocket (drawn by the seed): "race" and "pocket"' },
+];
+
+function checkRetiredWords(): Issue[] {
+  const issues: Issue[] = [];
+  for (const { file, word, now } of RETIRED_WORDS) {
+    const abs = join(REPO_ROOT, file);
+    if (!existsSync(abs)) continue;
+    readFileSync(abs, 'utf8')
+      .split('\n')
+      .forEach((line, i) => {
+        if (word.test(line)) issues.push({ file, where: `line ${i + 1}`, message: `names a retired word (${word.source}): say ${now}`, level: 'error' });
+      });
+  }
+  return issues;
+}
+
 /** Rule R11: values may move only within the drift budget of the committed anchor. */
 function checkDrift(b: Bundle): Issue[] {
   const file = toRepoPath(LOCK_FILE);
@@ -531,6 +560,11 @@ function checkKits(a: Assembled): Issue[] {
     for (const [index, ramp] of ramps.entries()) {
       const where = `kit.ramps.${index}`;
       if (rampById.has(ramp.id)) issues.push({ file: kitFile, where, message: `the ramp "${ramp.id}" is declared twice`, level: 'error' });
+      // A shared ramp (palette v2) is the same in every kit: a kit may repeat it, never change it.
+      const shared = coreRamp(ramp.id);
+      if (shared !== undefined && shared.steps.join(',') !== ramp.steps.map((s) => s.toLowerCase()).join(',')) {
+        issues.push({ file: kitFile, where, message: `the ramp "${ramp.id}" is a shared ramp of palette v2 (tools/src/kit/palette.ts) and its steps differ; a kit's own ramp takes another id`, level: 'error' });
+      }
       rampById.set(ramp.id, ramp);
       for (const problem of rampProblems(ramp)) {
         issues.push({ file: kitFile, where, message: `the ramp "${ramp.id}" ${problem}`, level: 'error' });
@@ -540,6 +574,8 @@ function checkKits(a: Assembled): Issue[] {
       const where = `kit.sprites.${name}`;
       const problem = spriteSizeProblem(name, s);
       if (problem) issues.push({ file: kitFile, where, message: problem, level: 'error' });
+      // A declared height in characters is held to its kind's floor (NATURE section 1, STYLE 1b).
+      for (const message of scaleProblems(name, s.scale)) issues.push({ file: kitFile, where, message, level: 'warning' });
       const abs = join(kit.dir, s.file);
       if (!existsSync(abs)) {
         issues.push({ file: kitFile, where, message: `missing file ${kit.rel}/${s.file}`, level: 'error' });
@@ -564,11 +600,11 @@ function checkKits(a: Assembled): Issue[] {
       // ramps stays valid. One that names them may also use their steps.
       const named = s.ramps ?? [];
       for (const id of named) {
-        if (!rampById.has(id)) {
-          issues.push({ file: kitFile, where, message: `names the ramp "${id}", which this kit does not declare`, level: 'error' });
+        if (!rampById.has(id) && coreRamp(id) === undefined) {
+          issues.push({ file: kitFile, where, message: `names the ramp "${id}", which neither this kit nor the shared ramps of palette v2 declare`, level: 'error' });
         }
       }
-      const allowed = allowedColors(core, ramps, named);
+      const allowed = allowedColors(core, [...ramps, ...named.flatMap((id) => (rampById.has(id) ? [] : [coreRamp(id)]).filter((r) => r !== undefined))], named);
       const used = new Set<string>();
       const bad = new Set<string>();
       let soft = 0;

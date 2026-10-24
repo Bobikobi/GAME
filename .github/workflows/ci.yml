@@ -76,12 +76,21 @@ jobs:
 
       # the database tests are skipped by `pnpm verify` above (no DATABASE_URL), and run here against a
       # real postgres: the migrations apply twice without a second change, and the store's lock holds
+      # (and sign-in: a link spent once under a race, a closed account leaving no row)
       - name: Database migrations against postgres 16
         env:
           DATABASE_URL: postgres://game:game@localhost:5432/game
         run: |
           pnpm db:migrate
-          pnpm exec vitest run server/test/db.test.ts
+          pnpm exec vitest run server/test/db.test.ts server/test/signin-db.test.ts
+
+      # the simulated player (NEXT 18 g): a starter's whole opening, the first outing and the first sale
+      # through the real HTTP API against postgres, then the same log replayed on the laptop, byte for
+      # byte; and only a log that replays is posted to a board. The clock is the API's own `now` seam.
+      - name: The simulated player and the verified boards against postgres 16
+        env:
+          DATABASE_URL: postgres://game:game@localhost:5432/game
+        run: pnpm exec vitest run server/test/sim.test.ts server/test/boards.test.ts
 
       # the opening flakes on slow runners (issue #25): one retry, and the screenshots of
       # the failed attempt are kept so the flake stays visible and countable

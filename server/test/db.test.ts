@@ -1,11 +1,12 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { Pool } from 'pg';
-import { newState, step, type Bundle, type State } from '@game/kernel';
+import { newState, publicState, step, type Bundle, type State } from '@game/kernel';
 
-import { createPlayerRecord } from '../src';
-import { createPgStore, insertPlayer } from '../src';
+import { checkAccount, createGameApi, createPlayerRecord, listen } from '../src';
+import { createPgStore, insertPlayer, type Books } from '../src';
 import { migrate } from '../src/migrate';
 import { loadBundle } from '../../tools/test/helpers/world.js';
+import { SEED, STARTS, Wire, playOpening } from './support/phone.js';
 
 /** The database tests run against a real postgres, and are skipped when none is given (NEXT 18 b). */
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -32,12 +33,22 @@ afterAll(async () => {
   await cleanup.end();
 });
 
+const books: Books = { action: { t: 'carve', name: 'Tess' }, tick: 500, gold: [] };
+
+async function bookRows(id: string): Promise<{ log: number; ledger: number }> {
+  const log = await pool.query<{ n: string }>('select count(*) as n from action_log where account_id = $1', [id]);
+  const ledger = await pool.query<{ n: string }>('select count(*) as n from gold_ledger where account_id = $1', [id]);
+  return { log: Number(log.rows[0]!.n), ledger: Number(ledger.rows[0]!.n) };
+}
+
 let accounts = 0;
+let names = 0;
 
 async function account(email = `player-${++accounts}@example.com`): Promise<string> {
+  // a name is unique in the world (migration 0003), so each account gets its own and only the email can collide
   const { rows } = await pool.query<{ id: string }>(
     'insert into accounts (email, name, birth_band) values ($1, $2, $3) returning id',
-    [email, 'Tess', '18+'],
+    [email, `Tess ${++names}`, '18+'],
   );
   return rows[0]!.id;
 }
@@ -51,7 +62,7 @@ function started(): State {
 describe.skipIf(!DATABASE_URL)('the database of Stage 2a (NEXT 18 b)', () => {
   test('the migrations apply once, and a second run applies nothing', async () => {
     const first = await migrate(pool);
-    expect(first).toEqual(['0001_accounts.sql', '0002_player_state.sql']);
+    expect(first).toEqual(['0001_accounts.sql', '0002_player_state.sql', '0003_signin.sql']);
     expect(await migrate(pool)).toEqual([]);
   });
 
@@ -78,8 +89,8 @@ describe.skipIf(!DATABASE_URL)('the database of Stage 2a (NEXT 18 b)', () => {
 
     const next = { ...record, version: record.version + 1, acceptedAt: record.acceptedAt + 500 };
     const results = await Promise.all([
-      store.compareAndSet(id, record.version, next),
-      store.compareAndSet(id, record.version, next),
+      store.compareAndSet(id, record.version, next, books),
+      store.compareAndSet(id, record.version, next, books),
     ]);
     expect(results.sort()).toEqual([false, true]);
     expect((await store.load(id))!.version).toBe(record.version + 1);
@@ -92,9 +103,62 @@ describe.skipIf(!DATABASE_URL)('the database of Stage 2a (NEXT 18 b)', () => {
     await insertPlayer(pool, id, record);
 
     const moved = { ...record, version: 2, acceptedAt: 1_001_000 };
-    expect(await store.compareAndSet(id, 1, moved)).toBe(true);
-    expect(await store.compareAndSet(id, 1, { ...moved, version: 2, acceptedAt: 1_002_000 })).toBe(false);
+    expect(await store.compareAndSet(id, 1, moved, books)).toBe(true);
+    expect(await store.compareAndSet(id, 1, { ...moved, version: 2, acceptedAt: 1_002_000 }, books)).toBe(false);
     expect((await store.load(id))!.acceptedAt).toBe(1_001_000);
+  });
+
+  test('a won write adds one action_log row at the new version and one gold_ledger row per gold change', async () => {
+    const id = await account();
+    const store = createPgStore(pool);
+    const record = createPlayerRecord(bundle, started(), 1_000_000);
+    await insertPlayer(pool, id, record);
+
+    const saleAction = { t: 'sell', npc: 'core/trader', item: 'core/berries', qty: 2 };
+    const gold = [30, -10, 0].map((deltaMg) => ({ deltaMg, action: saleAction, tick: 700 }));
+    const sale: Books = { action: saleAction, tick: 700, gold };
+    expect(await store.compareAndSet(id, 1, { ...record, version: 2 }, sale)).toBe(true);
+
+    const log = await pool.query('select seq, action, tick from action_log where account_id = $1', [id]);
+    expect(log.rows).toEqual([{ seq: '2', action: sale.action, tick: '700' }]);
+    const ledger = await pool.query('select delta_mg, action, tick from gold_ledger where account_id = $1 order by id', [id]);
+    expect(ledger.rows).toEqual([
+      { delta_mg: '30', action: sale.action, tick: '700' },
+      { delta_mg: '-10', action: sale.action, tick: '700' },
+    ]);
+  });
+
+  test('a lost race writes neither book: of two writes at one version, one log row and one set of gold rows land', async () => {
+    const id = await account();
+    const store = createPgStore(pool);
+    const record = createPlayerRecord(bundle, started(), 1_000_000);
+    await insertPlayer(pool, id, record);
+
+    const sale: Books = { action: { t: 'sell' }, tick: 700, gold: [{ deltaMg: 25, action: { t: 'sell' }, tick: 700 }] };
+    const next = { ...record, version: 2 };
+    const results = await Promise.all([
+      store.compareAndSet(id, 1, next, sale),
+      store.compareAndSet(id, 1, next, sale),
+      store.compareAndSet(id, 1, next, sale),
+    ]);
+    expect(results.filter(Boolean)).toHaveLength(1);
+    expect(await bookRows(id)).toEqual({ log: 1, ledger: 1 });
+    // a stale one afterwards writes nothing either
+    expect(await store.compareAndSet(id, 1, next, sale)).toBe(false);
+    expect(await bookRows(id)).toEqual({ log: 1, ledger: 1 });
+  });
+
+  test('the books and the state move together: when a book row cannot be written, the state stays at its version', async () => {
+    const id = await account();
+    const store = createPgStore(pool);
+    const record = createPlayerRecord(bundle, started(), 1_000_000);
+    await insertPlayer(pool, id, record);
+    // a log row already stands at seq 2, so the insert inside the transaction raises
+    await pool.query("insert into action_log (account_id, seq, action, tick) values ($1, 2, '{}', 0)", [id]);
+
+    await expect(store.compareAndSet(id, 1, { ...record, version: 2 }, books)).rejects.toThrow(/duplicate key/);
+    expect((await store.load(id))!.version).toBe(1);
+    expect(await bookRows(id)).toEqual({ log: 1, ledger: 0 });
   });
 
   test('the action log and the gold ledger are append-only', async () => {
@@ -124,7 +188,7 @@ describe.skipIf(!DATABASE_URL)('the database of Stage 2a (NEXT 18 b)', () => {
 
   test('one person is one account, and one identity belongs to one provider and subject', async () => {
     const id = await account('double@example.com');
-    await expect(account('double@example.com')).rejects.toThrow(/duplicate key value/);
+    await expect(account('double@example.com')).rejects.toThrow(/"accounts_email"/);
     await pool.query("insert into sign_in_identities (provider, subject, account_id) values ('google', 'sub-1', $1)", [id]);
     await expect(
       pool.query("insert into sign_in_identities (provider, subject, account_id) values ('google', 'sub-1', $1)", [id]),
@@ -141,5 +205,47 @@ describe.skipIf(!DATABASE_URL)('the database of Stage 2a (NEXT 18 b)', () => {
     await expect(
       pool.query("insert into accounts (email, name, birth_band) values ('Case@Example.com', 'Case', '13-15')"),
     ).rejects.toThrow(/accounts_email_is_lower_case/);
+  });
+
+  test('a played account replays from its stored log to its stored row, byte for byte (NEXT 18 f)', async () => {
+    const id = await account();
+    const acceptedAt = 1_000_000;
+    const clock = { now: acceptedAt };
+    await insertPlayer(pool, id, createPlayerRecord(bundle, newState(bundle, SEED), acceptedAt));
+
+    const server = createGameApi({
+      bundle,
+      store: createPgStore(pool),
+      now: () => clock.now,
+      resolvePlayerId: async () => id,
+    });
+    try {
+      const address = await listen(server, 0);
+      const wire = new Wire(bundle, `http://127.0.0.1:${address.port}`, publicState(newState(bundle, SEED)), clock);
+      await playOpening(wire, STARTS[0]);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+
+    // the books as postgres holds them: bigint comes back as text, and jsonb as what was written
+    const log = await pool.query<{ seq: string; action: unknown; tick: string }>(
+      'select seq, action, tick from action_log where account_id = $1 order by seq',
+      [id],
+    );
+    const ledger = await pool.query<{ delta_mg: string; action: unknown; tick: string }>(
+      'select delta_mg, action, tick from gold_ledger where account_id = $1 order by id',
+      [id],
+    );
+    const stored = (await createPgStore(pool).load(id))!;
+
+    expect(log.rows.length).toBeGreaterThanOrEqual(9);
+    expect(ledger.rows).toHaveLength(3);
+    const problems = checkAccount(bundle, {
+      seed: SEED,
+      log: log.rows.map((row) => ({ seq: Number(row.seq), action: row.action, tick: Number(row.tick) })),
+      state: stored.state,
+      ledger: ledger.rows.map((row) => ({ deltaMg: Number(row.delta_mg), action: row.action, tick: Number(row.tick) })),
+    });
+    expect(problems).toEqual([]);
   });
 });
