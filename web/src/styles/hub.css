@@ -5,7 +5,7 @@
  */
 .kicker {
   margin-bottom: var(--s-2);
-  color: var(--green);
+  color: var(--accent);
   font-weight: 700;
 }
 .hub-head {
@@ -20,7 +20,7 @@
   align-items: baseline;
   gap: var(--s-2) var(--s-6);
   margin-top: var(--s-6);
-  color: var(--ink2);
+  color: var(--fg2);
 }
 .earn b {
   margin-right: var(--s-1);
@@ -29,17 +29,17 @@
   font-size: 28px;
   line-height: 32px;
   font-variant-numeric: tabular-nums;
-  color: var(--ink);
+  color: var(--fg);
 }
 .earn .go {
-  color: var(--ink);
+  color: var(--fg);
   font-size: var(--text-s);
 }
 
 /* section titles: a 4px rule of ink over the heading, as the home page's board */
 .hub h2 {
   padding-top: var(--s-3);
-  border-top: 4px solid var(--ink);
+  border-top: 4px solid var(--rule);
   font-size: 24px;
   line-height: 28px;
 }
@@ -66,7 +66,7 @@
   grid-template-columns: 40px minmax(0, 1fr);
   column-gap: var(--s-3);
   padding: var(--s-4) 0 var(--s-6);
-  border-bottom: var(--px) solid var(--paper2);
+  border-bottom: var(--px) solid var(--line);
 }
 .steps > li::before {
   content: counter(step);
@@ -75,14 +75,14 @@
   font-weight: var(--w-display);
   font-size: 28px;
   line-height: 28px;
-  color: var(--green);
+  color: var(--accent);
 }
 .steps > li > * {
   grid-column: 2;
 }
 .steps p {
   margin-top: var(--s-2);
-  color: var(--ink2);
+  color: var(--fg2);
   max-width: 60ch;
 }
 .steps h3 .tag {
@@ -101,14 +101,14 @@
 .code {
   margin: var(--s-3) 0 0;
   padding: var(--s-3) var(--s-4);
-  background: var(--paper2);
-  color: var(--ink);
+  background: var(--raise);
+  color: var(--fg);
   font: 400 var(--text-s) / 22px ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 .code .dim {
-  color: var(--ink2);
+  color: var(--fg2);
 }
 
 /* the side: the builders teaser and this week */
@@ -128,15 +128,15 @@
   align-items: baseline;
   column-gap: var(--s-3);
   padding: var(--s-3) 0;
-  border-bottom: var(--px) solid var(--paper2);
+  border-bottom: var(--px) solid var(--line);
 }
 .ledger .rank {
   font-weight: 700;
-  color: var(--grey);
+  color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
 .ledger li:first-child .rank {
-  color: var(--ink);
+  color: var(--fg);
 }
 .ledger .who {
   font-family: var(--font-display);
@@ -153,11 +153,11 @@
 }
 .ledger .pts small {
   font: 400 var(--text-s) / 1 var(--font-reading);
-  color: var(--grey);
+  color: var(--muted);
 }
 .formula {
   margin: var(--s-3) 0 var(--s-1);
-  color: var(--grey);
+  color: var(--muted);
   font-size: var(--text-s);
   line-height: 22px;
   font-variant-numeric: tabular-nums;
@@ -170,11 +170,11 @@
 }
 .week p {
   margin-top: var(--s-3);
-  color: var(--ink2);
+  color: var(--fg2);
 }
 .week small {
   display: block;
-  color: var(--grey);
+  color: var(--muted);
   font-size: var(--text-s);
 }
 
@@ -189,7 +189,7 @@
 }
 .tools p {
   margin-top: var(--s-2);
-  color: var(--ink2);
+  color: var(--fg2);
 }
 .swatches {
   display: grid;
@@ -206,14 +206,14 @@
   margin-top: var(--s-2);
   padding: 0;
   list-style: none;
-  color: var(--ink2);
+  color: var(--fg2);
 }
 .rules li {
   padding: var(--s-1) 0;
-  border-bottom: var(--px) solid var(--paper2);
+  border-bottom: var(--px) solid var(--line);
 }
 .rules .go {
-  color: var(--ink);
+  color: var(--fg);
 }
 
 @media (min-width: 1024px) {

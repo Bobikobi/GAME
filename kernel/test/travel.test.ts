@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, test } from 'vitest';
-import { makeWalkable, newState, step, type Bundle, type State, type Tile } from '@game/kernel';
+import { DIAGONAL_PAIR_MILLI, STEP_MILLI, makeWalkable, newState, step, walkCharge, type Bundle, type State, type Tile } from '@game/kernel';
 
 import { loadBundle } from '../../tools/test/helpers/world.js';
 
@@ -75,5 +75,62 @@ describe('server travel bounds (G56)', () => {
 
   test('old content receives the bounded default', () => {
     expect(bundle.params.move_reach_max).toBe(32);
+  });
+});
+
+/** The top-left tile of a square of open ground `side` tiles wide, for the forager. */
+function openSquare(state: State, side: number): Tile {
+  const walkable = makeWalkable(bundle);
+  const { width: w, height: h } = bundle.map;
+  for (let y = 0; y + side <= h; y++) {
+    for (let x = 0; x + side <= w; x++) {
+      let open = true;
+      for (let dy = 0; dy < side && open; dy++) for (let dx = 0; dx < side && open; dx++) open = walkable(x + dx, y + dy, state.player);
+      if (open) return [x, y];
+    }
+  }
+  throw new Error(`The map has no open square of ${side} tiles.`);
+}
+
+describe('the walk charge is the octile length of the path (G56, NEXT 22 c)', () => {
+  test('a straight step costs a step, and a step that turns off an unpaired one closes a diagonal pair', () => {
+    const state = started();
+    const [x, y] = openSquare(state, 4);
+    const right = walkCharge(bundle, state, [x, y], [x + 1, y], 2, null);
+    expect(right).toEqual({ milli: STEP_MILLI, leg: [1, 0] });
+    const down = walkCharge(bundle, state, [x + 1, y], [x + 1, y + 1], 2, right!.leg);
+    expect(down).toEqual({ milli: DIAGONAL_PAIR_MILLI - STEP_MILLI, leg: null });
+    // the pair is closed: the next step starts a new one, and a straight step after an unpaired one pairs nothing
+    expect(walkCharge(bundle, state, [x + 1, y + 1], [x + 2, y + 1], 2, down!.leg)).toEqual({ milli: STEP_MILLI, leg: [1, 0] });
+    expect(walkCharge(bundle, state, [x + 1, y], [x + 2, y], 2, [1, 0])).toEqual({ milli: STEP_MILLI, leg: [1, 0] });
+    // turning back is no diagonal either
+    expect(walkCharge(bundle, state, [x + 1, y], [x, y], 2, [1, 0])).toEqual({ milli: STEP_MILLI, leg: [-1, 0] });
+  });
+
+  test('a staircase of n pairs costs n diagonal steps', () => {
+    const state = started();
+    const [x, y] = openSquare(state, 4);
+    let at: Tile = [x, y];
+    let leg: Tile | null = null;
+    let milli = 0;
+    for (let i = 0; i < 3; i++) {
+      for (const [dx, dy] of [[1, 0], [0, 1]] as const) {
+        const to: Tile = [at[0] + dx, at[1] + dy];
+        const charge: { milli: number; leg: Tile | null } = walkCharge(bundle, state, at, to, 2, leg)!;
+        milli += charge.milli;
+        leg = charge.leg;
+        at = to;
+      }
+    }
+    expect(milli).toBe(3 * DIAGONAL_PAIR_MILLI);
+  });
+
+  test('a report of several steps pairs as many as its two axes share, and an unreachable one is not charged', () => {
+    const state = started();
+    const [x, y] = openSquare(state, 4);
+    expect(walkCharge(bundle, state, [x, y], [x + 2, y + 1], 3, null)).toEqual({ milli: STEP_MILLI + DIAGONAL_PAIR_MILLI, leg: null });
+    expect(walkCharge(bundle, state, [x, y], [x + 2, y + 2], 4, null)).toEqual({ milli: 2 * DIAGONAL_PAIR_MILLI, leg: null });
+    expect(walkCharge(bundle, state, [x, y], [x, y], 0, [1, 0])).toEqual({ milli: 0, leg: [1, 0] });
+    expect(walkCharge(bundle, state, [x, y], [x + 3, y], 2, null)).toBeUndefined();
   });
 });
