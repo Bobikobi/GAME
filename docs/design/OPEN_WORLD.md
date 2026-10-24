@@ -149,6 +149,7 @@ Algorithm, move check (stage 2a):
 - That is at most `(2r + 1)^2` visits, about 4,200 at r = 32. Integer math and a fixed order keep it deterministic.
 - The cap adds no reports and no log growth, because the client already reports every tile and keeps moves out of the tail (session.ts:284-305, 319).
 - A refused report is dropped today (session.ts:296), so the client gains a snap-back to the kernel's `at`.
+- **The charge is the path's octile length, from 2026-10-21 (NEXT 22 c).** The reach above stays four-way; the credit a report spends is `walkCharge` in `kernel/src/step.ts`: a four-way step costs `STEP_MILLI` (1000) and a step that turns off the one before it closes a diagonal pair for `DIAGONAL_PAIR_MILLI` (1414) the two. A free walk on a diagonal reports a staircase of single steps, and charging it by its four-way length drains the pool in about 15 s (32 / 0.41 steps), refusing an honest walk. A report of several steps pairs as many as its two axes share. Proof: `kernel/test/travel.test.ts` and `server/test/api.test.ts` (a 20 s diagonal walk passes; a jump of 3 tiles is refused).
 
 ### 1.3 Growth
 
