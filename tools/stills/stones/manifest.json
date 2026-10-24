@@ -1,0 +1,219 @@
+{
+  "palette": "stone ramp from #3a3230 to #eadcc4; outlines stone[0]",
+  "scale": "1x art pixels; the sheets are 3x (1170x2532)",
+  "tile": 64,
+  "recipes_note": "path is the 240 px crop on the recipe sheet; full_path is the 284 px scene path; loose stones are extra.",
+  "options": [
+    {
+      "id": 1,
+      "family": "oval",
+      "tier": "S",
+      "w": 11,
+      "h": 7,
+      "file": "01-oval-s.png"
+    },
+    {
+      "id": 2,
+      "family": "oval",
+      "tier": "M",
+      "w": 17,
+      "h": 10,
+      "file": "02-oval-m.png"
+    },
+    {
+      "id": 3,
+      "family": "oval",
+      "tier": "L",
+      "w": 25,
+      "h": 14,
+      "file": "03-oval-l.png"
+    },
+    {
+      "id": 4,
+      "family": "slab",
+      "tier": "S",
+      "w": 13,
+      "h": 8,
+      "file": "04-slab-s.png"
+    },
+    {
+      "id": 5,
+      "family": "slab",
+      "tier": "M",
+      "w": 19,
+      "h": 11,
+      "file": "05-slab-m.png"
+    },
+    {
+      "id": 6,
+      "family": "slab",
+      "tier": "L",
+      "w": 28,
+      "h": 15,
+      "file": "06-slab-l.png"
+    },
+    {
+      "id": 7,
+      "family": "split",
+      "tier": "S",
+      "w": 12,
+      "h": 8,
+      "file": "07-split-s.png"
+    },
+    {
+      "id": 8,
+      "family": "split",
+      "tier": "M",
+      "w": 18,
+      "h": 11,
+      "file": "08-split-m.png"
+    },
+    {
+      "id": 9,
+      "family": "split",
+      "tier": "L",
+      "w": 27,
+      "h": 15,
+      "file": "09-split-l.png"
+    },
+    {
+      "id": 10,
+      "family": "pair",
+      "tier": "S",
+      "w": 16,
+      "h": 9,
+      "file": "10-pair-s.png"
+    },
+    {
+      "id": 11,
+      "family": "pair",
+      "tier": "M",
+      "w": 22,
+      "h": 11,
+      "file": "11-pair-m.png"
+    },
+    {
+      "id": 12,
+      "family": "pair",
+      "tier": "L",
+      "w": 31,
+      "h": 15,
+      "file": "12-pair-l.png"
+    },
+    {
+      "id": 13,
+      "family": "moss",
+      "tier": "S",
+      "w": 12,
+      "h": 8,
+      "file": "13-moss-s.png"
+    },
+    {
+      "id": 14,
+      "family": "moss",
+      "tier": "M",
+      "w": 18,
+      "h": 11,
+      "file": "14-moss-m.png"
+    },
+    {
+      "id": 15,
+      "family": "moss",
+      "tier": "L",
+      "w": 26,
+      "h": 14,
+      "file": "15-moss-l.png"
+    },
+    {
+      "id": 16,
+      "family": "pebbles",
+      "tier": "S",
+      "w": 12,
+      "h": 7,
+      "file": "16-pebbles-s.png"
+    },
+    {
+      "id": 17,
+      "family": "pebbles",
+      "tier": "M",
+      "w": 16,
+      "h": 9,
+      "file": "17-pebbles-m.png"
+    },
+    {
+      "id": 18,
+      "family": "pebbles",
+      "tier": "L",
+      "w": 22,
+      "h": 11,
+      "file": "18-pebbles-l.png"
+    }
+  ],
+  "recipes": {
+    "A": {
+      "name": "Rounded",
+      "families": {
+        "oval": 0.6,
+        "pair": 0.2,
+        "pebbles": 0.2
+      },
+      "sizes": {
+        "S": 0.3,
+        "M": 0.45,
+        "L": 0.25
+      },
+      "path": 10,
+      "full_path": 12,
+      "loose": 4,
+      "gap": [
+        10,
+        18
+      ],
+      "pair": 0.15
+    },
+    "B": {
+      "name": "Angular",
+      "families": {
+        "slab": 0.55,
+        "split": 0.25,
+        "moss": 0.2
+      },
+      "sizes": {
+        "S": 0.25,
+        "M": 0.45,
+        "L": 0.3
+      },
+      "path": 9,
+      "full_path": 11,
+      "loose": 3,
+      "gap": [
+        12,
+        20
+      ],
+      "pair": 0.1
+    },
+    "C": {
+      "name": "Mixed",
+      "families": {
+        "oval": 0.35,
+        "slab": 0.3,
+        "pair": 0.15,
+        "moss": 0.1,
+        "pebbles": 0.1
+      },
+      "sizes": {
+        "S": 0.35,
+        "M": 0.45,
+        "L": 0.2
+      },
+      "path": 12,
+      "full_path": 14,
+      "loose": 6,
+      "gap": [
+        8,
+        16
+      ],
+      "pair": 0.25
+    }
+  }
+}
