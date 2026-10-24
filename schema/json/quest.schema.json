@@ -266,6 +266,14 @@
                   {
                     "const": "staff",
                     "type": "string"
+                  },
+                  {
+                    "const": "hammer",
+                    "type": "string"
+                  },
+                  {
+                    "const": "pick",
+                    "type": "string"
                   }
                 ]
               },
@@ -515,10 +523,10 @@
           "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
           "type": "string"
         },
-        "starter": {
+        "pocket": {
           "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
           "maxLength": 80,
-          "description": "Offered to a character of this starter only: a start's own first task. Left out: every character.",
+          "description": "Offered to a character who woke in this wake pocket only: the pocket's own first task. Left out: every character. Never a race: no quest is gated by race.",
           "type": "string"
         },
         "type": {
@@ -912,6 +920,168 @@
                 "maxLength": 240,
                 "type": "string"
               }
+            },
+            "variants": {
+              "minItems": 1,
+              "maxItems": 4,
+              "description": "Other words for the same task while a condition holds, for example `when.race`: the first variant that holds and names that part replaces it. The steps and the reward never change.",
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "when"
+                ],
+                "properties": {
+                  "when": {
+                    "additionalProperties": false,
+                    "minProperties": 1,
+                    "description": "Holds when every condition it names holds.",
+                    "type": "object",
+                    "properties": {
+                      "done": {
+                        "minItems": 1,
+                        "maxItems": 4,
+                        "description": "Quests the player has finished.",
+                        "type": "array",
+                        "items": {
+                          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                          "maxLength": 80,
+                          "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                          "type": "string"
+                        }
+                      },
+                      "active": {
+                        "minItems": 1,
+                        "maxItems": 4,
+                        "description": "Quests the player is on now.",
+                        "type": "array",
+                        "items": {
+                          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                          "maxLength": 80,
+                          "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                          "type": "string"
+                        }
+                      },
+                      "not_done": {
+                        "minItems": 1,
+                        "maxItems": 4,
+                        "description": "Quests the player has not finished yet, on them or not.",
+                        "type": "array",
+                        "items": {
+                          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                          "maxLength": 80,
+                          "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                          "type": "string"
+                        }
+                      },
+                      "restored": {
+                        "minItems": 1,
+                        "maxItems": 4,
+                        "description": "Places the player has mended.",
+                        "type": "array",
+                        "items": {
+                          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                          "maxLength": 80,
+                          "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                          "type": "string"
+                        }
+                      },
+                      "built": {
+                        "minItems": 1,
+                        "maxItems": 4,
+                        "description": "Camp parts that stand, themselves or under an upgrade.",
+                        "type": "array",
+                        "items": {
+                          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                          "maxLength": 80,
+                          "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                          "type": "string"
+                        }
+                      },
+                      "has": {
+                        "minItems": 1,
+                        "maxItems": 4,
+                        "description": "Items with at least one in the bag.",
+                        "type": "array",
+                        "items": {
+                          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                          "maxLength": 80,
+                          "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                          "type": "string"
+                        }
+                      },
+                      "visited": {
+                        "minItems": 1,
+                        "maxItems": 4,
+                        "description": "Map slots the player has stood in.",
+                        "type": "array",
+                        "items": {
+                          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                          "maxLength": 80,
+                          "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                          "type": "string"
+                        }
+                      },
+                      "race": {
+                        "minItems": 1,
+                        "maxItems": 4,
+                        "description": "Races the player may be: holds when the player is one of them. A line may differ by race; a quest step never does.",
+                        "type": "array",
+                        "items": {
+                          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                          "maxLength": 80,
+                          "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                          "type": "string"
+                        }
+                      },
+                      "time": {
+                        "description": "By day (05:00 to 20:00) or by night.",
+                        "anyOf": [
+                          {
+                            "const": "day",
+                            "type": "string"
+                          },
+                          {
+                            "const": "night",
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "offer": {
+                    "minItems": 1,
+                    "maxItems": 3,
+                    "type": "array",
+                    "items": {
+                      "minLength": 1,
+                      "maxLength": 240,
+                      "type": "string"
+                    }
+                  },
+                  "waiting": {
+                    "minItems": 1,
+                    "maxItems": 2,
+                    "type": "array",
+                    "items": {
+                      "minLength": 1,
+                      "maxLength": 240,
+                      "type": "string"
+                    }
+                  },
+                  "done": {
+                    "minItems": 1,
+                    "maxItems": 3,
+                    "type": "array",
+                    "items": {
+                      "minLength": 1,
+                      "maxLength": 240,
+                      "type": "string"
+                    }
+                  }
+                }
+              }
             }
           }
         },
@@ -958,7 +1128,7 @@
                   "instead": {
                     "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
                     "maxLength": 80,
-                    "description": "What a start whose kit holds the item gets in its place: something that kit lacks.",
+                    "description": "What a character whose wake pocket lays the item on the ground gets in its place: something that pocket lacks.",
                     "type": "string"
                   }
                 }

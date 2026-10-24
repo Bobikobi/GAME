@@ -1,0 +1,45 @@
+{
+  "$schema": "../../../schema/json/race.schema.json",
+  "format": 1,
+  "type": "race",
+  "id": "core/human",
+  "title": "Human",
+  "creator": "core",
+  "race": {
+    "name": "Human",
+    "about": "Comes back from the present age by the road, as Pell came. Even in every way, and good with made things.",
+    "attributes": {
+      "might": 1,
+      "senses": 2,
+      "agility": 1,
+      "luck": 1,
+      "stamina": 1,
+      "spirit": 1
+    },
+    "home": [
+      "senses",
+      "luck"
+    ],
+    "grades": {
+      "city": "strong",
+      "north": "normal",
+      "south": "normal"
+    },
+    "outfit": [
+      {
+        "item": "core/work-clothes",
+        "qty": 1
+      },
+      {
+        "item": "core/work-hammer",
+        "qty": 1
+      },
+      {
+        "item": "core/work-boots",
+        "qty": 1
+      }
+    ],
+    "sprite": "core/base-kit:chars/explorer_down",
+    "sprite_alt": "core/base-kit:chars/explorer_w_down"
+  }
+}

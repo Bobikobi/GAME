@@ -14,9 +14,9 @@ const STEPS: readonly (readonly [number, number])[] = [
   [-1, 0],
 ];
 
-/** Where the characters wake: the map's spawn, and every starter's own place. */
+/** Where the characters wake: the map's spawn, and every wake pocket of the pool. */
 function wakePlaces(b: Bundle): [number, number][] {
-  const all: [number, number][] = [[b.map.spawn.x, b.map.spawn.y], ...Object.values(b.starters).flatMap((s) => (s.wake ? [[s.wake.x, s.wake.y] as [number, number]] : []))];
+  const all: [number, number][] = [[b.map.spawn.x, b.map.spawn.y], ...Object.values(b.pockets).map((p) => [p.wake.x, p.wake.y] as [number, number])];
   return all.filter(([x, y], i) => all.findIndex(([u, v]) => u === x && v === y) === i);
 }
 

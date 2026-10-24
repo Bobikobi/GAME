@@ -1,5 +1,5 @@
 /**
- * Wood, the starts and the rewards they get (DECISIONS.md, 2026-10-10): the core
+ * Wood, the starts and the rewards they get (DECISIONS.md, 2026-10-10; 2026-10-22: a race in a wake pocket): the core
  * content passes with no line, and a fixture that breaks each rule gets an error that names it.
  */
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -8,18 +8,30 @@ import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { runCheck } from '../src/check';
 import { CONTENT_DIR } from '../src/load';
+import { EFFORT_BAND_PCT, KIT_BAND_PCT, measureStarts } from '../src/starts';
 
 describe('the core content', () => {
-  it('passes with no line: trees give the wood, every start holds or finds an axe, Pell sells another', () => {
+  it('passes with no line: trees give the wood, every pocket lays or finds an axe, Pell sells another', () => {
     const result = runCheck();
-    // the richness lines are an advisory count (tools/src/richness.ts), not a defect of the content
-    expect(result.issues.filter((i) => !i.where.startsWith('map.richness'))).toEqual([]);
+    // the richness, hand and colour lines are advisory counts (tools/src/richness.ts, tools/src/colors.ts), not defects of the content
+    expect(result.issues.filter((i) => !i.where.startsWith('map.richness') && !i.where.startsWith('quests.hand.') && !i.where.startsWith('art.'))).toEqual([]);
     const b = result.assembled.bundle!;
     expect(b.resources['core/oak-trees']!.tool).toBe('axe');
-    expect(Object.keys(b.starters).sort()).toEqual(['core/digger', 'core/explorer', 'core/forager']);
+    expect(Object.keys(b.pockets).sort()).toEqual(['core/north-meadow', 'core/slid-bank', 'core/west-bank']);
+    expect(Object.keys(b.races).sort()).toEqual(['core/elf', 'core/human', 'core/skeleton']);
     const axe = (item: string) => b.items[item]?.tool?.kind === 'axe';
-    const found = (id: string) => Object.values(b.treasures).some((t) => t.starter === id && t.finds.some((f) => axe(f.item)));
-    expect(Object.values(b.starters).every((s) => (s.kit ?? []).some((k) => axe(k.item)) || found(s.id))).toBe(true);
+    const found = (id: string) => Object.values(b.treasures).some((t) => t.pocket === id && t.finds.some((f) => axe(f.item)));
+    expect(Object.values(b.pockets).every((p) => p.ground.some((k) => axe(k.item)) || found(p.id))).toBe(true);
+  });
+
+  it('measures every (race, pocket) pair inside the bands', () => {
+    const b = runCheck().assembled.bundle!;
+    const m = measureStarts(b);
+    expect(m).toHaveLength(9);
+    const worth = m.map((x) => x.worth_mg);
+    const effort = m.map((x) => x.effort_ms!);
+    expect(Math.max(...worth) * 100).toBeLessThanOrEqual(Math.min(...worth) * (100 + KIT_BAND_PCT));
+    expect(Math.max(...effort) * 100).toBeLessThanOrEqual(Math.min(...effort) * (100 + EFFORT_BAND_PCT));
   });
 });
 
@@ -35,19 +47,20 @@ describe('a fixture that breaks each rule', () => {
     change(json);
     writeFileSync(path, JSON.stringify(json, null, 2));
   };
-  // a start with no axe, no shop that sells one, and a fire that asks for more logs than the valley's trees give
-  edit('starters/forager.json', (j) => {
-    j.starter!.kit = [{ item: 'core/basket', qty: 1 }];
+  // a pocket with no axe on its ground or its spots, no shop that sells one, and a fire that asks for more logs than the valley's trees give
+  edit('pockets/west-bank.json', (j) => {
+    j.pocket!.ground = [{ item: 'core/basket', qty: 1 }];
   });
+  rmSync(join(root, 'core', 'treasures', 'bank-axe.json'));
   edit('shops/trader-shop.json', (j) => {
     j.shop!.sells = (j.shop!.sells as { item: string }[]).filter((o) => o.item !== 'core/axe');
   });
   edit('camp/campfire.json', (j) => {
     j.camp!.inputs = [{ item: 'core/log', qty: 99 }];
   });
-  // a start's own spot that can miss, one that asks for a tool its start lacks and lies off its road,
-  // and a start that wakes in the forest with a kit twice the others' and a point more (no shop sells an axe, so a found axe prices nothing)
-  edit('treasures/slid-bank.json', (j) => {
+  // a pocket's own spot that can miss, one that asks for a tool its ground lacks and lies off its road,
+  // a pocket that wakes in the forest, and a race a point over the total wearing a valued tier-2 piece
+  edit('treasures/slid-bank-dig.json', (j) => {
     (j.dig!.finds as { chance_pct: number }[])[0]!.chance_pct = 50;
   });
   edit('treasures/bridge-glint.json', (j) => {
@@ -61,22 +74,30 @@ describe('a fixture that breaks each rule', () => {
     const slot = (j.map!.slots as { id: string; x: number; y: number }[]).find((sl) => sl.id === 'core/bridge-glint')!;
     [slot.x, slot.y] = [8, 32];
   });
-  edit('starters/digger.json', (j) => {
-    j.starter!.wake = { x: 0, y: 0 };
-    j.starter!.kit = [{ item: 'core/trowel', qty: 1 }, { item: 'core/basket', qty: 1 }];
-    (j.starter!.attributes as unknown as Record<string, number>).stamina = 3;
+  edit('pockets/slid-bank.json', (j) => {
+    j.pocket!.wake = { x: 0, y: 0 };
+  });
+  edit('races/skeleton.json', (j) => {
+    (j.race!.attributes as unknown as Record<string, number>).stamina = 3;
+  });
+  edit('races/human.json', (j) => {
+    j.race!.outfit = [
+      { item: 'core/work-clothes', qty: 1 },
+      { item: 'core/work-hammer', qty: 1 },
+      { item: 'core/reed-sandals', qty: 1 },
+    ];
   });
   // a pocket that shrinks when the first task is done
-  edit('starters/explorer.json', (j) => {
-    j.starter!.pocket = 9;
-    j.starter!.pocket_grown = 6;
+  edit('pockets/north-meadow.json', (j) => {
+    j.pocket!.pocket = 9;
+    j.pocket!.pocket_grown = 6;
   });
-  // a reward a kit repeats: Pell's herbs give a basket two kits hold, and the digger, whose kit holds Maru's trowel, gets a basket it holds too
+  // a reward a pocket's ground lays: Pell's herbs give a basket the west bank lays, and Maru's trowel names the trowel itself in its place
   edit('quests/herbs-for-pell.json', (j) => {
     (j.quest!.reward as Record<string, unknown>).items = [{ item: 'core/basket', qty: 1 }];
   });
   edit('quests/three-fruits.json', (j) => {
-    (j.quest!.reward as { items: { instead: string }[] }).items[0]!.instead = 'core/basket';
+    (j.quest!.reward as { items: { instead: string }[] }).items[0]!.instead = 'core/trowel';
   });
   // twigs from the ground: wood with no axe
   const ext = join(root, 'extensions', 'tester', 'resources');
@@ -112,47 +133,53 @@ describe('a fixture that breaks each rule', () => {
     expect(lines[0]!.file).toContain('twigs.json');
   });
 
-  it("a start's own spot that can miss", () => {
+  it("a pocket's own spot that can miss", () => {
     const lines = text('gives its one find every time');
     expect(lines).toHaveLength(1);
-    expect(lines[0]!.file).toContain('slid-bank.json');
+    expect(lines[0]!.file).toContain('slid-bank-dig.json');
   });
 
-  it("a start's own spot that asks for a tool the start does not wake with", () => {
-    const lines = text('does not wake with one');
+  it("a pocket's own spot that asks for a tool its ground does not lay", () => {
+    const lines = text('lays none on its ground');
     expect(lines).toHaveLength(1);
     expect(lines[0]!.file).toContain('bridge-glint.json');
   });
 
-  it("a start's own spot out of its senses on the road to the bridge", () => {
-    const lines = text('is out of the senses of "core/explorer"');
+  it("a pocket's own spot out of the fewest senses on the road to the bridge", () => {
+    const lines = text('is out of the senses of the race with the fewest (1,');
     expect(lines).toHaveLength(1);
     expect(lines[0]!.file).toContain('bridge-glint.json');
   });
 
-  it('a start that wakes where nobody can stand', () => {
+  it('a pocket that wakes where nobody can stand', () => {
     const lines = text('is not a tile to stand on');
     expect(lines).toHaveLength(1);
-    expect(lines[0]!.file).toContain('digger.json');
+    expect(lines[0]!.file).toContain('slid-bank.json');
   });
 
   it('a pocket that is smaller once the first task is done', () => {
     const lines = text('is smaller than the pocket (9)');
     expect(lines).toHaveLength(1);
-    expect(lines[0]!.file).toContain('explorer.json');
+    expect(lines[0]!.file).toContain('north-meadow.json');
   });
 
-  it('a start worth more than one band over the poorest', () => {
-    const lines = text('over the poorest start (30000 mg)');
-    expect(lines).toHaveLength(1);
-    expect(lines[0]!.file).toContain('digger.json');
+  it('a pair worth more than one band over the poorest', () => {
+    const lines = text('over the poorest pair');
+    expect(lines.length).toBeGreaterThan(0);
+    expect(lines.every((l) => l.message.startsWith('core/human in '))).toBe(true);
   });
 
-  it('a start whose attributes add up to more than the others', () => {
-    const lines = text('one attribute total');
+  it('a race whose attributes add up to more than the total', () => {
+    const lines = text('every race has exactly 7');
     expect(lines).toHaveLength(1);
-    expect(lines[0]!.file).toContain('digger.json');
-    expect(lines[0]!.message).toContain('add up to 7');
+    expect(lines[0]!.file).toContain('skeleton.json');
+    expect(lines[0]!.message).toContain('add up to 8');
+  });
+
+  it('an outfit piece above tier 1', () => {
+    const lines = text('core/reed-sandals is above tier 1');
+    expect(lines).toHaveLength(1);
+    expect(lines[0]!.file).toContain('human.json');
   });
 
   it('a dig that asks for a staff', () => {
@@ -161,23 +188,24 @@ describe('a fixture that breaks each rule', () => {
     expect(lines[0]!.file).toContain('ruins-gate.json');
   });
 
-  it('a start with no axe in its kit', () => {
-    const lines = text('this start holds no axe');
+  it('a pocket with no axe on its ground or its spots', () => {
+    const lines = text('this wake pocket gives no axe');
     expect(lines).toHaveLength(1);
-    expect(lines[0]!.file).toContain('forager.json');
+    expect(lines[0]!.file).toContain('west-bank.json');
   });
 
-  it('a reward item a kit already holds, with nothing named in its place', () => {
+  it("a reward item a pocket's ground lays, with nothing named in its place", () => {
     const lines = text('name an item for it in "instead"');
-    expect(lines).toHaveLength(2);
-    expect(lines.every((l) => l.file.includes('herbs-for-pell.json'))).toBe(true);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]!.file).toContain('herbs-for-pell.json');
+    expect(lines[0]!.message).toContain('core/west-bank');
   });
 
-  it('an item in place of a reward that the same kit holds too', () => {
-    const lines = text('holds "core/basket" too');
+  it('an item in place of a reward that the same ground lays too', () => {
+    const lines = text('lays "core/trowel" on the ground too');
     expect(lines).toHaveLength(1);
     expect(lines[0]!.file).toContain('three-fruits.json');
-    expect(lines[0]!.message).toContain('core/digger');
+    expect(lines[0]!.message).toContain('core/slid-bank');
   });
 
   it('a tree and no shop that sells an axe', () => {

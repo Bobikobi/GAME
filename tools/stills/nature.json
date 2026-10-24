@@ -1,0 +1,409 @@
+{
+  "_about": "The tables of NATURE.md as data the stills read. A climate overrides ramps of the L1 look by name; a season overrides a climate; a weather is a look over the finished scene. Every number is the proposal's starting point; the owner judges by eye on the sheets and his correction goes here first.",
+  "climates": {
+    "temperate": {
+      "title": "Temperate, pastoral (the valley)",
+      "tree": "oak",
+      "far_bank": "meadow",
+      "scatter": 1.0,
+      "ramps": {},
+      "air": "clear",
+      "shadow": "soft"
+    },
+    "dry": {
+      "title": "Dry, a desert village",
+      "tree": "palm",
+      "far_bank": "sand",
+      "scatter": 0.33,
+      "ramps": {
+        "leaf": [
+          "#2f3a22",
+          "#4a5a2a",
+          "#6e7d36",
+          "#9a9c4a",
+          "#c4b96a"
+        ],
+        "meadow": [
+          "#5e4a3a",
+          "#8a6f4f",
+          "#b59468",
+          "#d9bd8a",
+          "#ebd3a2"
+        ],
+        "water2": [
+          "#1c3d4a",
+          "#2c6470",
+          "#3f8f8a",
+          "#7cc4b0",
+          "#c4ecd8"
+        ],
+        "sand2": [
+          "#5e4a3a",
+          "#8a6f4f",
+          "#b59468",
+          "#d9bd8a",
+          "#f1dca6"
+        ],
+        "stone": [
+          "#4a3a2e",
+          "#6e5a44",
+          "#95805e",
+          "#b9a47c",
+          "#d9c79c",
+          "#f0e2bd"
+        ],
+        "plaster": [
+          "#5a4a38",
+          "#7d6a4e",
+          "#a58c66",
+          "#c8ad84",
+          "#e6d2a8"
+        ]
+      },
+      "air": "heat",
+      "shadow": "hard"
+    },
+    "cold": {
+      "title": "Cold, a highland pass",
+      "tree": "pine",
+      "far_bank": "snow",
+      "scatter": 0.6,
+      "ramps": {
+        "leaf": [
+          "#102422",
+          "#16332f",
+          "#27543a",
+          "#3f7d45",
+          "#5c9a4a"
+        ],
+        "meadow": [
+          "#243330",
+          "#34463a",
+          "#4a5e44",
+          "#6a7a52",
+          "#8c9668"
+        ],
+        "water2": [
+          "#0e1a33",
+          "#12203f",
+          "#1c3d6e",
+          "#2c6494",
+          "#8fb3c4"
+        ],
+        "sand2": [
+          "#5d6177",
+          "#8f94a8",
+          "#c6cad6",
+          "#e4e6ec",
+          "#f5f4ef"
+        ]
+      },
+      "air": "fog",
+      "shadow": "long"
+    },
+    "wet": {
+      "title": "Wet, a marsh",
+      "tree": "willow",
+      "far_bank": "marsh",
+      "scatter": 1.2,
+      "ramps": {
+        "leaf": [
+          "#1f2e22",
+          "#35502e",
+          "#55733a",
+          "#7f9448",
+          "#a9b05e"
+        ],
+        "meadow": [
+          "#2e3324",
+          "#4a5230",
+          "#6c7540",
+          "#8f9450",
+          "#aeb06a"
+        ],
+        "water2": [
+          "#1a2a22",
+          "#2a4433",
+          "#3f5f44",
+          "#5f7a5a",
+          "#9fa88a"
+        ],
+        "sand2": [
+          "#2e2622",
+          "#4a3c30",
+          "#6b5a44",
+          "#8a7858",
+          "#a8956c"
+        ]
+      },
+      "air": "fog",
+      "shadow": "soft"
+    }
+  },
+  "seasons": {
+    "summer": {
+      "title": "Summer",
+      "sun_down": "20:30",
+      "ramps": {},
+      "tree": null,
+      "far_bank": null,
+      "leaves": false,
+      "puddles": false
+    },
+    "autumn": {
+      "title": "Autumn",
+      "sun_down": "18:00",
+      "ramps": {
+        "leaf": [
+          "#4a2016",
+          "#8c3a1e",
+          "#b8661f",
+          "#eda83a",
+          "#f8de62"
+        ],
+        "meadow": [
+          "#3a3324",
+          "#5e5030",
+          "#8a7a3c",
+          "#b09a4a",
+          "#cdb86a"
+        ]
+      },
+      "tree": null,
+      "far_bank": null,
+      "leaves": true,
+      "puddles": false
+    },
+    "winter": {
+      "title": "Winter",
+      "sun_down": "16:30",
+      "ramps": {
+        "leaf": [
+          "#2e1e24",
+          "#4a2c2a",
+          "#6e4032",
+          "#95603c",
+          "#bd8655"
+        ],
+        "meadow": [
+          "#3a3230",
+          "#5c4f48",
+          "#837369",
+          "#a99889",
+          "#cdbca7"
+        ]
+      },
+      "tree": "bare",
+      "far_bank": null,
+      "leaves": false,
+      "puddles": true
+    }
+  },
+  "weathers": {
+    "clear": {
+      "title": "Clear",
+      "ambient": null,
+      "shadow_alpha": 1.0,
+      "shadow_cap": 1.0,
+      "cloud": "patches",
+      "rain": false,
+      "fog": 0,
+      "wet": false
+    },
+    "heat": {
+      "title": "Clear, dry heat",
+      "ambient": [
+        "#eda83a",
+        0.06
+      ],
+      "shadow_alpha": 1.2,
+      "shadow_cap": 1.0,
+      "cloud": "none",
+      "rain": false,
+      "fog": 0,
+      "wet": false,
+      "shimmer": true
+    },
+    "overcast": {
+      "title": "Overcast",
+      "ambient": [
+        "#5d6177",
+        0.25
+      ],
+      "shadow_alpha": 0.5,
+      "shadow_cap": 1.0,
+      "cloud": "whole",
+      "rain": false,
+      "fog": 0,
+      "wet": false
+    },
+    "rain": {
+      "title": "Rain",
+      "ambient": [
+        "#275a99",
+        0.18
+      ],
+      "shadow_alpha": 0.0,
+      "shadow_cap": 1.0,
+      "cloud": "whole",
+      "rain": true,
+      "fog": 0,
+      "wet": true
+    },
+    "fog": {
+      "title": "Fog",
+      "ambient": [
+        "#c6cad6",
+        0.15
+      ],
+      "shadow_alpha": 0.5,
+      "shadow_cap": 0.5,
+      "cloud": "none",
+      "rain": false,
+      "fog": 0.45,
+      "wet": true
+    }
+  },
+  "sun": {
+    "_about": "Shear of a cast shadow (right, down) per unit of height, its alpha, and the cap multiplier, by hour and season (STYLE 4 and NATURE 5). 19:00 summer is the ladder's.",
+    "12:00": {
+      "summer": [
+        0.06,
+        0.1,
+        0.3,
+        0.12
+      ],
+      "autumn": [
+        0.18,
+        0.16,
+        0.3,
+        0.4
+      ],
+      "winter": [
+        0.28,
+        0.2,
+        0.3,
+        0.6
+      ]
+    },
+    "16:30": {
+      "summer": [
+        0.7,
+        0.3,
+        0.3,
+        0.8
+      ],
+      "autumn": [
+        0.95,
+        0.36,
+        0.3,
+        1.0
+      ],
+      "winter": [
+        1.25,
+        0.4,
+        0.3,
+        1.3
+      ]
+    },
+    "19:00": {
+      "summer": [
+        0.92,
+        0.36,
+        0.3,
+        1.0
+      ],
+      "autumn": [
+        1.1,
+        0.4,
+        0.25,
+        1.1
+      ],
+      "winter": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "hours": {
+    "_about": "The wash and the shade at the hours the sheets use, per season (the hour table of #241 moved by the season's sunset).",
+    "12:00": {
+      "summer": [
+        null,
+        0.0
+      ],
+      "autumn": [
+        null,
+        0.0
+      ],
+      "winter": [
+        [
+          "#7cc4ec",
+          0.06
+        ],
+        0.0
+      ]
+    },
+    "16:30": {
+      "summer": [
+        [
+          "#eda83a",
+          0.12
+        ],
+        0.0
+      ],
+      "autumn": [
+        [
+          "#eda83a",
+          0.16
+        ],
+        0.0
+      ],
+      "winter": [
+        [
+          "#e2533f",
+          0.28
+        ],
+        0.15
+      ]
+    },
+    "19:00": {
+      "summer": [
+        [
+          "#e2533f",
+          0.28
+        ],
+        0.3
+      ],
+      "autumn": [
+        [
+          "#e2533f",
+          0.28
+        ],
+        0.4
+      ],
+      "winter": [
+        [
+          "#172a52",
+          0.0
+        ],
+        0.5
+      ]
+    }
+  },
+  "scale": {
+    "_about": "NATURE section 1, in characters (a character is 96 px of frame, about 80 px of body).",
+    "adult": 1.0,
+    "child": 0.65,
+    "elder": 0.9,
+    "hen": 0.25,
+    "dog": 0.45,
+    "wolf": 0.55,
+    "deer": 0.9,
+    "horse": 1.25,
+    "young_tree": 2.0,
+    "oak": 3.0
+  }
+}

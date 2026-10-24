@@ -6,7 +6,7 @@
   "title": "First pickings",
   "creator": "core",
   "quest": {
-    "starter": "core/forager",
+    "pocket": "core/west-bank",
     "type": "discovery",
     "summary": "Something on the west bank fits your basket. Walk the bank and see what it will take.",
     "steps": [
