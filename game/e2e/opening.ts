@@ -1199,9 +1199,10 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
       const coin = await me.talkThrough();
       await me.idle('handing in the coin');
       if ((await me.quest('core/a-coin-for-maru')) !== 'done') throw new Error('a-coin-for-maru is not done');
-      // the coin pays gold and the herb tea, and no basket: every start holds one by now
+      // the coin pays the herb tea and the key to Maru's house, no gold and no basket: every start holds one by now
       const coinPaid = (await page.eval<number>('__e2e.player().gold')) - unpaid;
-      if (coinPaid !== 20_000) throw new Error(`the coin paid ${coinPaid} mg, not 20000`);
+      if (coinPaid !== 0) throw new Error(`the coin paid ${coinPaid} mg, not the key alone`);
+      if ((await me.bag('core/maru-house-key')) !== 1) throw new Error('no key to Maru\'s house after the coin');
       if ((await me.bag('core/basket')) !== 1) throw new Error('a second basket after the coin');
       if (!(await page.eval<string[]>('__e2e.player().recipes')).includes('core/herb-tea')) throw new Error('the herb-tea recipe was not learned');
       if (!coin.some((l) => l.includes('arch'))) throw new Error(`the elder never mentions the arch: ${coin.join(' / ')}`);

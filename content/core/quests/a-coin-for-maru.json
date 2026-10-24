@@ -35,14 +35,20 @@
     "talk": {
       "done": [
         "My coin, home at last. Take my mother's way with tea.",
+        "Here, the key to my house. My door is open to you.",
         "They say the broken arch shows a way after dark. I never went to look."
       ]
     },
     "reward": {
       "rep": 20,
-      "gold_mg": 20000,
       "recipes": [
         "core/herb-tea"
+      ],
+      "items": [
+        {
+          "item": "core/maru-house-key",
+          "qty": 1
+        }
       ]
     }
   }
