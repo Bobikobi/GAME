@@ -2026,6 +2026,118 @@
               }
             }
           }
+        },
+        "growth": {
+          "additionalProperties": false,
+          "description": "The skill tree: what a node costs and when the build's slots open. Left out: the tree is closed.",
+          "type": "object",
+          "required": [
+            "cost",
+            "slot_levels"
+          ],
+          "properties": {
+            "cost": {
+              "additionalProperties": false,
+              "description": "Skill points a node costs, by its size (GROWTH section 3.6).",
+              "type": "object",
+              "required": [
+                "small",
+                "major",
+                "corner"
+              ],
+              "properties": {
+                "small": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  }
+                },
+                "major": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  }
+                },
+                "corner": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            },
+            "slot_levels": {
+              "minItems": 1,
+              "maxItems": 8,
+              "description": "The character level each active slot of the build opens at, from the first slot, never falling (GROWTH section 3.3: two at level 1, then one more at 5, 10 and 15).",
+              "type": "array",
+              "items": {
+                "minimum": 1,
+                "maximum": 40,
+                "type": "integer"
+              }
+            }
+          }
         }
       }
     }

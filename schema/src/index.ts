@@ -1004,6 +1004,75 @@ export const ProfessionBody = Type.Object(
   { additionalProperties: false },
 );
 
+/**
+ * The growth frame (docs/design/GROWTH.md section 4; DECISIONS.md 2026-10-22 "The tree" and "No
+ * percentages on screen"): a school is one wing of the tree, tied to a profession; its nodes are bought
+ * with skill points by choice, never handed out by level. A small node moves one number and is always
+ * on; a major node changes a verb or teaches a technique; a corner node is where the race (the trunk)
+ * meets the school, one per race and school.
+ */
+export const NODE_SIZES = ['small', 'major', 'corner'] as const;
+export const NodeSize = Type.Union(NODE_SIZES.map((k) => Type.Literal(k)));
+const NodeId = Type.String({
+  pattern: '^[a-z0-9]+(-[a-z0-9]+)*$',
+  maxLength: 40,
+  description: 'The node\'s name inside its school, for example "steady". A learned node is kept as "<school id>/<node id>".',
+});
+const AttributeKey = Type.Object(
+  {
+    might: Type.Optional(Int(1, 10)),
+    senses: Type.Optional(Int(1, 10)),
+    agility: Type.Optional(Int(1, 10)),
+    luck: Type.Optional(Int(1, 10)),
+    stamina: Type.Optional(Int(1, 10)),
+    spirit: Type.Optional(Int(1, 10)),
+  },
+  {
+    additionalProperties: false,
+    description: 'Keys: the attribute pips the node asks for, for example { "senses": 3 }. A key opens the node; it is never spent.',
+  },
+);
+
+export const SchoolNode = Type.Object(
+  {
+    id: NodeId,
+    name: { ...Name, description: 'A thing the player knows how to do, for example "Depth sense".' },
+    text: { ...Text, description: 'One sentence in words, never a number or a percentage (the number stays in the code).' },
+    size: NodeSize,
+    needs: Type.Optional(
+      Type.Array(NodeId, {
+        maxItems: 3,
+        uniqueItems: true,
+        description: 'The nodes of the same school learned before this one: its place on the path.',
+      }),
+    ),
+    key: Type.Optional(AttributeKey),
+    effect: Effect,
+    value: Int(0, 100, 'The number the effect moves. Shown only on a long press, never on the tree.'),
+    slot: Type.Optional(
+      Type.Boolean({
+        description: 'A technique: it works only while it sits in an active slot of the build. Left out: always on once learned. Never on a small node.',
+      }),
+    ),
+    race: Type.Optional({ ...Id, description: 'A corner node only: the race whose node this is. Only a player of that race sees and learns it.' }),
+    icon: Type.Optional({ ...Id, description: 'An item whose sprite pictures the node on the tree.' }),
+  },
+  { additionalProperties: false },
+);
+
+export const SchoolBody = Type.Object(
+  {
+    name: Name,
+    profession: { ...Id, description: 'The profession whose wing this is. The profession keeps its levels; the school is what the points buy.' },
+    nodes: Type.Array(SchoolNode, {
+      minItems: 1,
+      maxItems: 24,
+      description: 'The path and the corners. At most 12 nodes for each race (the path and that race\'s corner).',
+    }),
+  },
+  { additionalProperties: false },
+);
+
 const Bounded = Type.Object(
   {
     value: Type.Integer(),
@@ -1190,6 +1259,22 @@ export const ParamsBody = Type.Object(
         description:
           'What one point in an attribute adds: bag places (might), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina). Spirit is defined and read by no rule yet: its first readers come with the night layer and the tree.',
       },
+    ),
+    growth: Type.Optional(
+      Type.Object(
+        {
+          cost: Type.Object(
+            { small: Bounded, major: Bounded, corner: Bounded },
+            { additionalProperties: false, description: 'Skill points a node costs, by its size (GROWTH section 3.6).' },
+          ),
+          slot_levels: Type.Array(Type.Integer({ minimum: 1, maximum: 40 }), {
+            minItems: 1,
+            maxItems: 8,
+            description: 'The character level each active slot of the build opens at, from the first slot, never falling (GROWTH section 3.3: two at level 1, then one more at 5, 10 and 15).',
+          }),
+        },
+        { additionalProperties: false, description: 'The skill tree: what a node costs and when the build\'s slots open. Left out: the tree is closed.' },
+      ),
     ),
   },
   { additionalProperties: false },
@@ -1514,9 +1599,10 @@ export const ParamsFile = record('params', 'params', ParamsBody);
 export const KitFile = record('kit', 'kit', KitBody);
 export const MapFile = record('map', 'map', MapBody);
 export const PocketFile = record('pocket', 'pocket', PocketBody);
+export const SchoolFile = record('school', 'school', SchoolBody);
 
 export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'expedition', 'restore', 'camp', 'race', 'items', 'creator', 'reaction'] as const;
-export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map', 'pocket'] as const;
+export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map', 'pocket', 'school'] as const;
 
 export const ExtensionFile = Type.Union([
   ResourceFile,
@@ -1538,6 +1624,7 @@ export const ExtensionFile = Type.Union([
   KitFile,
   MapFile,
   PocketFile,
+  SchoolFile,
 ]);
 
 export type ItemDef = Static<typeof ItemDef>;
@@ -1588,6 +1675,10 @@ export type Restore = Static<typeof RestoreBody>;
 export type Camp = Static<typeof CampBody>;
 export type Race = Static<typeof RaceBody>;
 export type Pocket = Static<typeof PocketBody>;
+export type School = Static<typeof SchoolBody>;
+export type SchoolNodeDef = Static<typeof SchoolNode>;
+export type NodeSizeName = (typeof NODE_SIZES)[number];
+export type SchoolFile = Static<typeof SchoolFile>;
 export type Profession = Static<typeof ProfessionBody>;
 export type Shop = Static<typeof ShopBody>;
 export type Kit = Static<typeof KitBody>;
@@ -1623,6 +1714,7 @@ export const SCHEMAS = {
   kit: KitFile,
   map: MapFile,
   pocket: PocketFile,
+  school: SchoolFile,
 } as const;
 
 export { validateFile, type SchemaIssue } from './validate';
