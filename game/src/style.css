@@ -985,6 +985,33 @@ body {
   color: var(--grey);
 }
 
+/* a trader's counter in named groups (decision 51); the look follows the kit's tokens until the UI is redrawn */
+.shop-jump {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 4px 0;
+  background: var(--paper);
+}
+
+.shop-jump .btn.tab {
+  flex: none;
+}
+
+.shop-group + .shop-group {
+  margin-top: 8px;
+}
+
+.shop-group-name {
+  margin: 8px 0 0;
+  font-size: 16px;
+  color: var(--wood2);
+  border-bottom: 3px solid var(--paper2);
+}
+
 .needs span {
   margin-right: 8px;
   font-size: 14px;
