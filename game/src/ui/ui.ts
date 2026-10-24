@@ -64,6 +64,7 @@ import {
   confirmRestore,
   openFeedback,
   openOpeningReview,
+  openSearch,
 } from './panels';
 import { showTitle } from './title';
 import { mountTouch } from './touch';
@@ -635,6 +636,15 @@ export class UI {
     const res = await s.act({ t: 'dig', spot: spotId, grade, at: s.pos });
     if (!res.ok) return this.toast(res.error, 'bad');
     if (!res.events.some((e) => e.e === 'riddle')) this.digCatch(spotId, res.events.find((e) => e.e === 'busy'));
+  }
+
+  /** Look inside a searchable: the kernel draws or keeps today's contents, and a small window shows them (docs/design/SEARCH.md). */
+  async search(spotId: string): Promise<void> {
+    const s = app.session;
+    if (!s) return;
+    const r = await s.act({ t: 'search', spot: spotId, at: s.pos });
+    if (!r.ok) return this.toast(r.error, 'bad');
+    openSearch(this, spotId);
   }
 
   /** The catch (G6): while a riddle waits on a dig somewhere else, a dig here says so once the hands stop. */

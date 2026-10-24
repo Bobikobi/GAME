@@ -1402,6 +1402,33 @@
         "w": 1,
         "h": 1,
         "solid": false
+      },
+      {
+        "id": "core/hollow-log",
+        "sprite": "core/base-kit:props/log_mossy",
+        "x": 41,
+        "y": 4,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "id": "core/branch-heap",
+        "sprite": "core/base-kit:props/fallen_branches",
+        "x": 44,
+        "y": 14,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "id": "core/hollow-tree",
+        "sprite": "core/base-kit:props/dead_tree",
+        "x": 27,
+        "y": 31,
+        "w": 2,
+        "h": 1,
+        "solid": true
       }
     ],
     "creatures": {
