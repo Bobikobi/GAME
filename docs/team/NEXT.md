@@ -603,3 +603,12 @@ Measurable:
 The feel (speed, acceleration, the stick's dead zone and size) is for the owner on a preview: deploy one and open it with `~/.claude/tools/open-url.sh`, then iterate on his word without asking again about the numbers inside it.
 
 Before the proving run (AGENTS.md): grep the tests for every counted walk and every `DIRS[` use, fix all expectations in one pass, then the single test files, then `pnpm verify` through `~/.claude/tools/heavy.sh`, then push. If #254 lands first, merge `develop` in, never rebase. Send the manager session "PR ready #N" with the PASS/FAIL lines, or the owner if no manager is live (ListAgents). Model: opus, effort high (the walk in two doors, the server's check and every e2e).
+
+## 23. The quest forge: quests at the scale of the open world
+
+Read first: [docs/design/QUEST_FORGE.md](../design/QUEST_FORGE.md), the whole page; it is the spec, and this section only says where it sits. Decided 19.10 (DECISIONS "The quest forge"): one quest grammar, quests bound per land by a deterministic binder when the land is made, RuneScape in the quests and World of Warcraft in the size, and no human per land.
+
+- Ten phases, each one pull request, in the plan's section 4: 0 the shapes catalogue (docs and data, can start now), 1a the grammar without combat (design page first, then build), 1b the combat kinds (with the combat frame), 2 the hand gate in the kernel, 3 the land graph (can start now, beside 1a), 4 the storylet library's first batch (the one approval, the owner's, per batch), 5 the binder (design, then build), 6 the gates, 7 the voice pass (optional, behind a flag, the key at the owner's gate), 8 the digest and the retire file, 9 the loop from play (after section 18), 10 the gold layer per land by the quest-designer skill.
+- Shared files first and alone: the schema (phases 1a, 3, 4), `GAME_RULES.md` (the grammar's rows), this file.
+- Nothing in section 19 waits for the forge; the boathouse keeps its hand-written errand and the first bind runs on the valley plus the ring once phase 5 lands.
+- Measurable at the end of phase 5: the valley binds to 12 to 20 quests of at least 8 types, byte-identical on two machines, `pnpm check` and `pnpm quests` green on the bound set, the opening's quests untouched.
