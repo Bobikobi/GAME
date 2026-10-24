@@ -23,6 +23,7 @@ import { checkDeadProps } from './deadprops';
 import { checkReach } from './reach';
 import { checkRaces } from './races';
 import { checkSchools } from './schools';
+import { checkHands } from './hands';
 import { checkRichness } from './richness';
 import { checkStarts } from './starts';
 
@@ -57,6 +58,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkDeadProps(b, assembled.origin));
     issues.push(...checkHazards(b, assembled.origin));
     issues.push(...checkRichness(b, assembled.origin));
+    issues.push(...checkHands(b, assembled.origin));
   }
   return { issues: dedupe(issues), files: files.length, assembled };
 }

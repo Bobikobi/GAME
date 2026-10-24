@@ -83,7 +83,7 @@ const schemas = Object.entries(found)
   .intro {
     margin-top: var(--s-3);
     max-width: 60ch;
-    color: var(--ink2);
+    color: var(--fg2);
   }
   .files {
     margin-top: var(--s-2);
@@ -97,8 +97,8 @@ const schemas = Object.entries(found)
   }
   .files dd {
     padding: var(--s-1) 0 var(--s-4);
-    border-bottom: var(--px) solid var(--paper2);
-    color: var(--ink2);
+    border-bottom: var(--px) solid var(--line);
+    color: var(--fg2);
   }
   .files dd p {
     max-width: 60ch;
@@ -120,14 +120,14 @@ const schemas = Object.entries(found)
   .schemas li {
     display: grid;
     padding: var(--s-1) 0 var(--s-3);
-    border-bottom: var(--px) solid var(--paper2);
+    border-bottom: var(--px) solid var(--line);
   }
   .schemas .file {
     justify-self: start;
   }
   .hub code {
     font: 400 var(--text-s) / 22px ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-    color: var(--ink2);
+    color: var(--fg2);
     overflow-wrap: anywhere;
   }
   /* on a desktop each schema is one row, its name beside its $id */

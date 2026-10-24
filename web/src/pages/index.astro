@@ -3,8 +3,10 @@
 // the headline, the doors into the game, the builders board, and the way in for developers. No script.
 import Site from '../layouts/Site.astro';
 import ComingSoon from '../components/ComingSoon.astro';
+import KeyArt from '../components/KeyArt.astro';
 import '../styles/scene.css';
 import '../styles/home.css';
+import '../styles/keyart.css';
 import { GAME_LD, repoTree } from '../data/site';
 import { bridgeBuilder, builders, count, door3d, earn, signature } from '../data/home';
 
@@ -25,6 +27,7 @@ const signs = bridgeBuilder ? `, and the builder ${bridgeBuilder} signs it` : ''
   <Fragment slot="head"><style is:inline set:html={tally} /></Fragment>
 
   <div class="home">
+    <KeyArt />
     <section class="wrap hero" aria-labelledby="play-h">
       <div class="hero-text">
         <h1 id="play-h">A valley the players rebuild together</h1>
