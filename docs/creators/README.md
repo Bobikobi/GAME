@@ -261,18 +261,31 @@ Then point your item at it: `"sprite": "<your-handle>/kit:items/plum"`.
 
 ## Tools and the first morning
 
-A tool is an item with a `tool` block: its `kind` (`basket`, `trowel`, `axe` or `staff`), a `tier` and the `uses` it has before it wears out. Tools have no value of their own, so a shop prices them: Pell sells all four. A staff asks for no work: it is worn in the hand for what its `wear` block helps.
+A tool is an item with a `tool` block: its `kind` (`basket`, `trowel`, `axe`, `staff`, `hammer` or `pick`), a `tier` and the `uses` it has before it wears out. Tools have no value of their own, so a shop prices them: Pell sells the basket, the trowel, the axe and the staff. A staff, a hammer and a pick ask for no work: they are worn in the hand for what their `wear` block helps.
 
-Each starting character begins its own way and meets the others at the bridge and the first fire:
+A new game starts with two things. The player chooses a race; the world's seed draws the wake pocket, the same draw for every race. Every character meets the others at the bridge and the first fire.
 
-- `kit`: up to six `{ "item", "qty" }` stacks that go into the bag when the character is chosen, tier 1 only. A piece with a working `wear` slot is worn from the start.
-- `wake`: `{ "x", "y" }`, the tile the character wakes on. Left out, it wakes at the map's spawn.
-- `pocket`, `pocket_grown`: tiles of the mist's clear pocket around the wake tile (left out: 5), and once the character's first task is done (left out: 7, never less than `pocket`). The kernel ignores them; the client draws the mist from them.
+A wake pocket (`"type": "pocket"`, core only) is one of the places a new game wakes in:
+
+- `wake`: `{ "x", "y" }`, the tile the character wakes on.
+- `pocket`, `pocket_grown`: tiles of the mist's clear pocket around the wake tile (left out: 5), and once the pocket's first task is done (left out: 7, never less than `pocket`). The kernel ignores them; the client draws the mist from them.
 - `intro`: one to four lines the narrator says as the character wakes.
-- A quest with `"starter": "<id>"` is offered to that start only: its own first task. A task with no giver is handed to nobody, so what it asked for stays in the bag.
-- A dig spot with `"starter": "<id>"` is that start's own spot: only that character sees it and digs it, once, and it always gives its one find. Leave out the spot's `tool` and the find is picked up by hand, with no timing window, and the character's senses lead to it with a trail of glints.
+- `ground`: one to three `{ "item", "qty" }` stacks that lie on the ground by the wake tile, tier 1 only. They are never in the bag at the start: each is the one find of a spot of the pocket's own, picked up by hand.
+- A quest with `"pocket": "<id>"` is offered to a character who woke there only: the pocket's own first task. A task with no giver is handed to nobody, so what it asked for stays in the bag.
+- A dig spot with `"pocket": "<id>"` is that pocket's own spot: only a character who woke there sees it and digs it, once, and it always gives its one find. Leave out the spot's `tool` and the find is picked up by hand, with no timing window, and the character's senses lead to it with a trail of glints.
 
-The check keeps the starts fair. Every start holds an axe before the first fire, in its kit or on a spot of its own, because the first fire is built from a felled oak; a shop sells an axe, so a worn-out one can be bought again; and the opening never asks for more logs than the oaks of a new valley give. Every starter's attributes add up to one total. The kits, with each start's own finds, are worth about the same (within 25 percent of the poorest), and every start reaches the bridge with its axe in about the same time (within 50 percent of the fastest). A start's own spot gives one find at 100 percent, needs only a tool its kit holds, and lies within the start's senses on its road to the bridge, on a tile where x + y is even.
+### A race
+
+A race (`"type": "race"`) is chosen at the title. It is a fixed profile, never a gate: a quest step, a requirement, a dig spot, a restore, a shop, a recipe or a node never names a race. A line may differ by race (`when.race` on a remark, a topic or a quest's `talk.variants`); the steps and the reward stay the same.
+
+- `name`, `about`: the name and one or two present-tense sentences for the title card.
+- `attributes`: six numbers from 0 to 5, `might`, `senses`, `agility`, `luck`, `stamina` and `spirit`, that add up to 7. There are no free points at the title. (`might` was called `carry` before; an old save reads its `carry` as `might`.)
+- `home`: the race's two home attributes, each at 1 or more.
+- `grades`: how each world takes the race, `weak`, `normal` or `strong`. A world left out is `normal`; the valley is neutral to every race. Where the world under the player is strong, each home attribute rises by one; where it is weak, each drops by one, never below 0. Home is always `strong`. The core names four worlds: `valley`, `north`, `south` and `city`; a map or a region of it names its `world`.
+- `outfit`: up to three `{ "item", "qty" }` stacks put in the bag and worn on the first morning, one per place, tier 1, never a weapon and never a tool a wake pocket lays on its ground.
+- `sprite`, `sprite_alt`: the figure the race is drawn with, and an optional second look.
+
+The check keeps the starts fair over every pair of a race and a wake pocket. Every pocket gives an axe before the first fire, on its ground or on a spot of its own, because the first fire is built from a felled oak; a shop sells an axe, so a worn-out one can be bought again; and the opening never asks for more logs than the oaks of a new valley give. Every race's attributes add up to 7. The race's outfit with the pocket's own finds is worth about the same for every pair (within 25 percent of the poorest), and every pair reaches the bridge with its axe in about the same time (within 50 percent of the fastest). A pocket's own spot gives one find at 100 percent, needs only a tool the pocket's ground lays, and lies within the senses of the race with the fewest on the road to the bridge, on a tile where x + y is even.
 
 ## A world that answers: reactions
 
@@ -307,7 +320,8 @@ An appear node is priced like any node: if it gives its item for less work than 
 - A `maze` quest may name its rung of help on the ladder of four (`maze.tier`) and the map area that frames the whole maze (`maze.area`). Stepping into that area from outside shows the maze from above for three seconds: at tier 1 with a faint line of the route and its landmarks lit (the props drawn with `maze.landmark`), at tier 2 with the landmarks lit a moment, at tier 3 the shape alone, and at tier 4 nothing. The check refuses the block on a quest of another type, a frame that is not an area or does not hold the heart, and a landmark drawn nowhere inside it.
 - A dig spot may leave out `tool`: its find is then picked up by hand, with no minigame and nothing worn. A restore may have no `inputs`: it then never opens by hand, and a quest opens it as its reward (`reward.opens`, a place reward, up to two restores). The check refuses an `opens` that names no restore, and a restore with no inputs that no quest opens.
 - A restore may carry `mist`: the tiles around its place that the mist leaves clear once it is mended (the old bridge: 13, so the three wake pockets join). The kernel ignores it; the client draws it.
-- No reward repeats a kit. A quest's reward item that a starter's kit already holds names `instead`: an item that kit lacks, which a character of that start gets in its place. The check refuses a reward item a kit holds with no `instead`, and an `instead` that the same kit holds too.
+- No reward repeats a pocket's tool. A quest's reward item that a wake pocket lays on its ground names `instead`: an item that ground lacks, which a character who woke there gets in its place. The check refuses a reward item a pocket's ground lays with no `instead`, and an `instead` that the same ground lays too.
+- No quest is gated by race: `race` appears only inside a `when`, on a remark, a topic or a quest's `talk.variants`.
 - Your change may not move the value of anything that already exists by more than 10%. If it has to, a core maintainer re-anchors the values.
 - A reaction hangs on something that is on the map, and its conditions fit it: `ready_for_ms` only on a node or a spot, `unseen` only on a find, `on_tag` never on a ground tag. An appear node stands beside a resource node only, on the map, on open ground, on a tile no node, spot or other appear node takes, and outside the camp; its item and sprite exist and its active time is in range. A wait is never on a tile, and never under 1000 on a node with a rarity bonus, because a quicker respawn would spend the rarity budget. No cue shows within two tiles of a riddle's answer: a riddle is read, never pointed at. A node that shows in one weather only gives a thing whose class is found in every weather too (G45), so a dry week costs a wait, never a way forward.
 - Every sprite exists, has the right size and uses the core palette.

@@ -19,14 +19,15 @@ export function holds(bundle: Bundle, state: PublicState, when: WhenDef, tick: n
   if (when.built && !when.built.every((c) => campBuilt(bundle, state, c))) return false;
   if (when.has && !when.has.every((it) => (p.bag[it] ?? 0) > 0)) return false;
   if (when.visited && !when.visited.every((sl) => p.visited.includes(sl))) return false;
+  if (when.race && !when.race.includes(p.race)) return false;
   if (when.time && (when.time === 'night') !== isNight(bundle, tick)) return false;
   return true;
 }
 
-/** How specific a condition is: one for each id it names, and one for a time of day. */
+/** How specific a condition is: one for each id it names, one for a race (it names one of them), and one for a time of day. */
 export function weight(when: WhenDef): number {
   const lists = [when.done, when.active, when.not_done, when.restored, when.built, when.has, when.visited];
-  return lists.reduce((n, list) => n + (list?.length ?? 0), 0) + (when.time ? 1 : 0);
+  return lists.reduce((n, list) => n + (list?.length ?? 0), 0) + (when.race ? 1 : 0) + (when.time ? 1 : 0);
 }
 
 /** The key a heard remark is remembered by: "<npc id>#<index>". */
@@ -60,8 +61,25 @@ export function pickRemark(
  * the quest was open, on an outing that came home (`player.bitten`), and the content wrote that line,
  * else `talk.done`; undefined when it has neither.
  */
-export function doneLines(bundle: Bundle, state: PublicState, questId: string): readonly string[] | undefined {
+export function doneLines(bundle: Bundle, state: PublicState, questId: string, tick: number = state.tick): readonly string[] | undefined {
   const talk = bundle.quests[questId]?.talk;
   if (talk?.done_bitten && state.player.bitten?.includes(questId)) return talk.done_bitten;
-  return talk?.done;
+  return talkLines(bundle, state, questId, 'done', tick);
+}
+
+/**
+ * What a quest's giver says for one part of the task (`offer`, `waiting` or `done`): the first of
+ * `talk.variants` whose `when` holds and that names the part (a line may differ by race, the task
+ * never does), else the part itself; undefined when the content wrote neither.
+ */
+export function talkLines(
+  bundle: Bundle,
+  state: PublicState,
+  questId: string,
+  part: 'offer' | 'waiting' | 'done',
+  tick: number = state.tick,
+): readonly string[] | undefined {
+  const talk = bundle.quests[questId]?.talk;
+  for (const v of talk?.variants ?? []) if (v[part] && holds(bundle, state, v.when, tick)) return v[part];
+  return talk?.[part];
 }

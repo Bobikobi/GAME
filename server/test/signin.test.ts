@@ -391,7 +391,7 @@ describe('the sign-up (NEXT 18 e; CR-49, CR-53)', () => {
 
     const state = await w.browser.request('/state');
     const served = (await state.json()).state;
-    expect(served.player.starter).toBe('core/digger');
+    expect(served.player.race).toBe('core/skeleton');
     expect(served.tick).toBe(phone.state.tick);
     expect(served).not.toHaveProperty('seed');
   });
@@ -410,7 +410,7 @@ describe('the sign-up (NEXT 18 e; CR-49, CR-53)', () => {
     expect(serialize(game.record.state)).toBe(serialize(newState(bundle, SECRET_SEED)));
     expect(game.books).toBeUndefined();
     // before the start: the player picks a start again, under the account's own seed
-    expect((await (await w.browser.request('/state')).json()).state.player.starter).toBe('');
+    expect((await (await w.browser.request('/state')).json()).state.player.race).toBe('');
   });
 
   test('a browser refused for its age gets no new date for a day, even after a new proof; another browser is not touched', async () => {

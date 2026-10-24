@@ -84,27 +84,65 @@ describe('session persistence', () => {
     expect(restored?.met.size).toBe(0);
   });
 
-  test('a save from before the kit existed is given the start\'s axe once, and the next visit leaves it alone', () => {
-    startedSession();
+  test("a save from before the outfit existed is given the race's piece once, and the next visit leaves it alone", () => {
+    const session = Session.fresh(bundle);
+    expect(session.act({ t: 'start', race: 'core/elf', name: 'Tester' }).ok).toBe(true);
+    session.save();
     const file = JSON.parse(storage.getItem(SAVE_KEY)!) as { state: string };
-    const old = JSON.parse(file.state) as { content: string; player: { bag: Record<string, number>; journal: string[] } };
-    delete old.player.bag['core/axe'];
-    old.player.journal = old.player.journal.filter((id) => id !== 'core/axe');
+    const old = JSON.parse(file.state) as { content: string; player: { bag: Record<string, number>; worn: Record<string, string>; journal: string[] } };
+    delete old.player.bag['core/herb-pouch'];
+    old.player.worn = Object.fromEntries(Object.entries(old.player.worn).filter(([, id]) => id !== 'core/herb-pouch'));
+    old.player.journal = old.player.journal.filter((id) => id !== 'core/herb-pouch');
     old.content = 'an-older-world';
     file.state = JSON.stringify(old);
     storage.setItem(SAVE_KEY, JSON.stringify(file));
 
     const restored = Session.restore(bundle)!;
     expect(restored.adapted).toBe(true);
-    expect(restored.state.player.bag['core/axe']).toBe(1);
-    expect(restored.state.player.journal).toContain('core/axe');
+    expect(restored.state.player.bag['core/herb-pouch']).toBe(1);
+    expect(restored.state.player.journal).toContain('core/herb-pouch');
+    // the pocket's tools are never handed out: they lie on the ground by the wake
+    expect(restored.state.player.bag['core/axe']).toBeUndefined();
 
-    // the world is current now: an axe the player no longer holds is not handed out again
-    delete restored.state.player.bag['core/axe'];
+    // the world is current now: a piece the player no longer holds is not handed out again
+    delete restored.state.player.bag['core/herb-pouch'];
     restored.save();
     const again = Session.restore(bundle)!;
     expect(again.adapted).toBe(false);
-    expect(again.state.player.bag['core/axe']).toBeUndefined();
+    expect(again.state.player.bag['core/herb-pouch']).toBeUndefined();
+  });
+
+  test('a save of state format 1 loads: carry reads as might, spirit starts at 0, the starter becomes its race and pocket', () => {
+    startedSession();
+    const file = JSON.parse(storage.getItem(SAVE_KEY)!) as { state: string };
+    const old = JSON.parse(file.state) as {
+      format: number;
+      nodes: Record<string, unknown>;
+      player: { race?: string; pocket?: string; starter?: string; attrs: Record<string, number> };
+    };
+    const might = old.player.attrs.might!;
+    old.format = 1;
+    old.player.starter = 'core/forager';
+    delete old.player.race;
+    delete old.player.pocket;
+    old.player.attrs.carry = might;
+    delete old.player.attrs.might;
+    delete old.player.attrs.spirit;
+    old.nodes = {};
+    file.state = JSON.stringify(old);
+    storage.setItem(SAVE_KEY, JSON.stringify(file));
+
+    const restored = Session.restore(bundle)!;
+    expect(restored.started).toBe(true);
+    const p = restored.state.player;
+    expect(p.race).toBe('core/elf');
+    expect(p.pocket).toBe('core/west-bank');
+    expect(p.attrs).toMatchObject({ might, spirit: 0 });
+    expect('carry' in p.attrs).toBe(false);
+    expect((p as { starter?: string }).starter).toBeUndefined();
+    expect(restored.state.format).toBe(2);
+    // the old start carried the basket and the axe: the spots that lay them by the wake are spent
+    for (const id of ['core/bank-basket#0', 'core/bank-axe#0']) expect(restored.state.nodes[id]).toBeDefined();
   });
 
   test('carries a save made under the working title over to the new key', () => {

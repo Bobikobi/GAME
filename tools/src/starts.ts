@@ -1,24 +1,27 @@
 /**
  * Wood and the starts (DECISIONS.md, 2026-10-09: no fallen branches, the
  * first fire is built from a felled tree, and each character begins its own
- * way; 2026-10-10: the axe and the starts, three starters). No start ends at a
- * wall: wood comes only from felling, every character holds an axe before the
- * first fire (in its kit, or found on a spot of its own), an axe that breaks
- * can be bought again, and the opening never asks for more logs than the
- * valley's trees give when the world is new. The starts are fair: every kit
- * with its own finds is worth about the same, every start reaches the bridge
- * with its axe in about the same time, and a start's own find shows on its
- * road, within its senses.
+ * way; 2026-10-10: the axe and the starts; 2026-10-22: a start is a race,
+ * chosen, in a wake pocket, drawn by the seed). No start ends at a wall: wood
+ * comes only from felling, every pocket gives an axe before the first fire (on
+ * its ground, or on a spot of its own), an axe that breaks can be bought
+ * again, and the opening never asks for more logs than the valley's trees give
+ * when the world is new. The starts are fair over every (race, pocket) pair:
+ * the race's outfit with the pocket's own finds is worth about the same, every
+ * pair reaches the bridge with its axe in about the same time, and a pocket's
+ * own find shows on its road, within the senses of every race.
  */
-import { type Bundle, type Rect, findSlot, makeWalkable, near, senseReach } from '@game/kernel';
+import { type Bundle, type Rect, findSlot, makeWalkable, mulDivUp, near, senseReach } from '@game/kernel';
 import type { Issue } from './load';
 import { isTool, isWood } from './material';
 import { openingQuests } from './play';
 
-/** The richest start, kit and own finds, is worth at most this much more than the poorest (C1: one band of kit value). */
+/** The richest (race, pocket) pair, outfit and the pocket's own finds, is worth at most this much more than the poorest (C1: one band of kit value). */
 export const KIT_BAND_PCT = 25;
-/** The slowest start reaches the bridge with its axe in at most this much more time than the fastest (C1: one band of effort). */
+/** The slowest (race, pocket) pair reaches the bridge with its axe in at most this much more time than the fastest (C1: one band of effort). */
 export const EFFORT_BAND_PCT = 50;
+/** Tool kinds worn in the hand for what they help, that no work asks for. */
+const WORN_ONLY: ReadonlySet<string> = new Set(['staff', 'hammer', 'pick']);
 /** One tile of walking, in ms: the client's step time. */
 export const WALK_MS = 190;
 
@@ -61,6 +64,107 @@ function worth(b: Bundle, item: string): number {
   return b.values[item] ?? (prices.length > 0 ? Math.min(...prices) : 0);
 }
 
+/** What the race's outfit, worn from the first morning, adds to one worn effect (the set bonus left out: no outfit is a set). */
+function outfitEffect(b: Bundle, race: Bundle['races'][string], effect: string): number {
+  return (race.outfit ?? []).reduce((n, o) => n + (b.items[o.item]?.wear?.look ? 0 : (b.items[o.item]?.wear?.effects ?? []).filter((e) => e.effect === effect).reduce((m, e) => m + e.value, 0)), 0);
+}
+
+/** A timed action's time at perfect timing with a speed bonus in percent, as the kernel's duration (tier-1 tools add no speed). */
+function timed(b: Bundle, activeMs: number, speedPct: number): number {
+  return Math.max(b.params.t_min_ms, mulDivUp(activeMs, 1000, 1000 + 10 * speedPct));
+}
+
+/** Measured over every (race, pocket) pair: what each is worth and how long it takes to the first mending. For the check, a test and `pnpm check --json` readers. */
+export interface StartMeasure {
+  race: string;
+  pocket: string;
+  worth_mg: number;
+  effort_ms?: number;
+}
+
+export function measureStarts(b: Bundle): StartMeasure[] {
+  return pairs(b).map(([race, pocket]) => ({ race, pocket, worth_mg: pairWorth(b, race, pocket), effort_ms: pairEffort(b, race, pocket)?.ms }));
+}
+
+function pairs(b: Bundle): [string, string][] {
+  return Object.keys(b.races)
+    .sort()
+    .flatMap((r) => Object.keys(b.pockets).sort().map((p) => [r, p] as [string, string]));
+}
+
+const ownSpots = (b: Bundle, pocket: string) => Object.values(b.treasures).filter((t) => t.pocket === pocket);
+
+/** The race's outfit and what the pocket's own spots give (its ground tools among them). */
+function pairWorth(b: Bundle, race: string, pocket: string): number {
+  const outfit = (b.races[race]?.outfit ?? []).reduce((n, k) => n + worth(b, k.item) * k.qty, 0);
+  return outfit + ownSpots(b, pocket).reduce((n, t) => n + worth(b, t.finds[0]?.item ?? ''), 0);
+}
+
+/** The first restoration of the shared opening (the bridge): where every start meets the shared road. */
+function firstMend(b: Bundle): string | undefined {
+  return Object.values(b.quests)
+    .filter((q) => (q.requires ?? []).length === 0 && q.pocket === undefined && openingQuests(b).has(q.id))
+    .flatMap((q) => q.steps.flatMap((st) => (st.kind === 'restore' ? [st.restore] : [])))[0];
+}
+
+/**
+ * The walk and the work from the wake tile to the first mending: the pocket's ground tools picked up first, then its own
+ * first task step by step (an own spot for a find, the nearest node for a bring), then the road. The race counts through
+ * its outfit's worn speed; its agility widens timing windows and changes no time at perfect timing.
+ */
+function pairEffort(b: Bundle, raceId: string, pocketId: string): { ms: number; lost: boolean } | undefined {
+  const race = b.races[raceId];
+  const p = b.pockets[pocketId];
+  const mend = firstMend(b);
+  const meet = mend ? findSlot(b.map, b.restores[mend]?.place.slot ?? '') : undefined;
+  if (!race || !p || !meet) return undefined;
+  let here: Tile = [p.wake.x, p.wake.y];
+  let ms = 0;
+  let tiles = 0;
+  let lost = false;
+  const go = (to: Rect): Tile[] | undefined => {
+    const path = walkTo(b, here, to);
+    if (!path) return undefined;
+    tiles += path.length - 1;
+    here = path[path.length - 1]!;
+    return path;
+  };
+  const spotOf = (item: string) =>
+    Object.values(b.instances).find((inst) => inst.kind === 'treasure' && b.treasures[inst.source]?.pocket === pocketId && b.treasures[inst.source]!.finds.some((f) => f.item === item));
+  const dig = outfitEffect(b, race, 'dig_speed_pct');
+  const gather = outfitEffect(b, race, 'gather_speed_pct');
+  for (const g of p.ground) {
+    const spot = spotOf(g.item);
+    if (!spot) continue;
+    if (!go({ x: spot.x, y: spot.y, w: 1, h: 1 })) lost = true;
+    ms += timed(b, b.treasures[spot.source]!.active_ms, dig);
+  }
+  for (const q of Object.values(b.quests).filter((x) => x.pocket === pocketId)) {
+    for (const st of q.steps) {
+      if (st.kind === 'find') {
+        const spot = spotOf(st.item);
+        if (!spot) continue;
+        if (!go({ x: spot.x, y: spot.y, w: 1, h: 1 })) lost = true;
+        ms += timed(b, b.treasures[spot.source]!.active_ms, dig);
+      }
+      if (st.kind === 'bring') {
+        const nodes = Object.values(b.instances).filter((inst) => inst.kind === 'resource' && b.resources[inst.source]?.output === st.item);
+        const paths = nodes.map((n) => ({ n, path: walkTo(b, here, { x: n.x, y: n.y, w: 1, h: 1 }) })).filter((x) => x.path);
+        const best = paths.sort((x, y) => x.path!.length - y.path!.length)[0];
+        if (!best) {
+          lost = true;
+          continue;
+        }
+        go({ x: best.n.x, y: best.n.y, w: 1, h: 1 });
+        const r = b.resources[best.n.source]!;
+        ms += Math.ceil(st.qty / r.yield) * timed(b, r.active_ms, gather);
+      }
+    }
+  }
+  if (!go(meet)) lost = true;
+  return { ms: ms + tiles * WALK_MS, lost };
+}
+
 export function checkStarts(b: Bundle, origin: Record<string, string>): Issue[] {
   const issues: Issue[] = [];
   const at = (id: string) => origin[id] ?? 'content';
@@ -78,68 +182,55 @@ export function checkStarts(b: Bundle, origin: Record<string, string>): Issue[] 
     });
   }
 
-  // a staff is worn for what it helps: no work asks for one
+  // a staff, a hammer and a pick are worn for what they help: no work asks for one
   for (const r of Object.values(b.resources)) {
-    if (r.tool === 'staff') err(at(r.id), 'node.tool', 'no work asks for a staff, it is worn for what it helps: a basket, a trowel or an axe');
+    if (r.tool && WORN_ONLY.has(r.tool)) err(at(r.id), 'node.tool', `no work asks for a ${r.tool}, it is worn for what it helps: a basket, a trowel or an axe`);
   }
   for (const t of Object.values(b.treasures)) {
-    if (t.tool === 'staff') err(at(t.id), 'dig.tool', 'no work asks for a staff, it is worn for what it helps: a trowel, or nothing for a find picked up by hand');
+    if (t.tool && WORN_ONLY.has(t.tool)) err(at(t.id), 'dig.tool', `no work asks for a ${t.tool}, it is worn for what it helps: a trowel, or nothing for a find picked up by hand`);
   }
 
-  // a start's own spot: one find, always, once, with a tool its own kit holds, tier 1 like a kit
-  const own = (starter: string) => Object.values(b.treasures).filter((t) => t.starter === starter);
+  // a wake pocket's own spot: one find, always, once, with a tool its own ground lays, tier 1 like a start
   for (const t of Object.values(b.treasures)) {
-    if (t.starter === undefined) continue;
-    const s = b.starters[t.starter];
+    if (t.pocket === undefined) continue;
+    const p = b.pockets[t.pocket];
     if (t.finds.length !== 1 || t.finds[0]!.chance_pct !== 100) {
-      err(at(t.id), 'dig.finds', "a start's own spot gives its one find every time: one find at 100%, or a miss would leave the start at a wall");
+      err(at(t.id), 'dig.finds', "a wake pocket's own spot gives its one find every time: one find at 100%, or a miss would leave the start at a wall");
     }
-    if (t.count !== 1) err(at(t.id), 'dig.count', "a start's own spot is one place: count 1");
+    if (t.count !== 1) err(at(t.id), 'dig.count', "a wake pocket's own spot is one place: count 1");
     if (!Object.values(b.instances).some((inst) => inst.kind === 'treasure' && inst.source === t.id)) {
       err(at(t.id), 'dig.place', `the slot ${t.place.slot} has no tile for the spot (a spot stands where x + y is even, off the path): the start would never find it`);
     }
-    if (t.tool && s && !(s.kit ?? []).some((k) => isTool(b, k.item, t.tool!))) {
-      err(at(t.id), 'dig.tool', `the spot asks for a ${t.tool}, and the start "${t.starter}" does not wake with one: put it in the kit, or let the find be picked up by hand`);
+    if (t.tool && p && !p.ground.some((g) => isTool(b, g.item, t.tool!))) {
+      err(at(t.id), 'dig.tool', `the spot asks for a ${t.tool}, and the wake pocket "${t.pocket}" lays none on its ground: put one on the ground, or let the find be picked up by hand`);
     }
     t.finds.forEach((f, i) => {
       if ((b.items[f.item]?.tier ?? 1) > 1) err(at(t.id), `dig.finds.${i}.item`, `${f.item} is above tier 1: a start gives tier-1 things only (G41)`);
     });
   }
-  for (const s of Object.values(b.starters)) {
-    (s.kit ?? []).forEach((k, i) => {
-      if ((b.items[k.item]?.tier ?? 1) > 1) err(at(s.id), `starter.kit.${i}.item`, `${k.item} is above tier 1: a kit holds tier-1 things only (G41)`);
+  for (const p of Object.values(b.pockets)) {
+    p.ground.forEach((g, i) => {
+      if ((b.items[g.item]?.tier ?? 1) > 1) err(at(p.id), `pocket.ground.${i}.item`, `${g.item} is above tier 1: the ground of a wake pocket holds tier-1 things only (G41)`);
+      // the ground is found, never handed over: one of the pocket's own spots, picked up by hand, gives it
+      const laid = ownSpots(b, p.id).some((t) => t.tool === undefined && t.finds[0]?.item === g.item);
+      if (!laid) err(at(p.id), `pocket.ground.${i}.item`, `nothing lays ${g.item} by the wake tile: give the pocket a spot of its own ("pocket": "${p.id}", no tool) whose one find is it`);
     });
-  }
-
-  // one attribute total: every start spends the same points, the total most starts have
-  const totals = new Map(Object.values(b.starters).map((s) => [s.id, Object.values(s.attributes).reduce((n, v) => n + v, 0)]));
-  const counts = new Map<number, number>();
-  for (const t of totals.values()) counts.set(t, (counts.get(t) ?? 0) + 1);
-  const total = [...counts].sort(([x, n], [y, m]) => m - n || x - y)[0]?.[0];
-  for (const [id, t] of totals) {
-    if (t !== total) err(at(id), 'starter.attributes', `the attributes add up to ${t}, and the other starts' to ${total}: one attribute total`);
   }
 
   // where each character wakes
   const walkable = makeWalkable(b);
-  const startOf = (s: Bundle['starters'][string]): Tile => (s.wake ? [s.wake.x, s.wake.y] : [b.map.spawn.x, b.map.spawn.y]);
-  for (const s of Object.values(b.starters)) {
-    const [x, y] = startOf(s);
-    if (s.wake && !walkable(x, y, { restored: [], camp: [] })) err(at(s.id), 'starter.wake', `[${x}, ${y}] is not a tile to stand on: off the map, solid, or taken`);
-    if ((s.pocket_grown ?? 7) < (s.pocket ?? 5)) err(at(s.id), 'starter.pocket_grown', `the pocket grown (${s.pocket_grown ?? 7} tiles) is smaller than the pocket (${s.pocket ?? 5}): the first task pushes the mist back, never in`);
+  for (const p of Object.values(b.pockets)) {
+    const { x, y } = p.wake;
+    if (!walkable(x, y, { restored: [], camp: [] })) err(at(p.id), 'pocket.wake', `[${x}, ${y}] is not a tile to stand on: off the map, solid, or taken`);
+    if ((p.pocket_grown ?? 7) < (p.pocket ?? 5)) err(at(p.id), 'pocket.pocket_grown', `the pocket grown (${p.pocket_grown ?? 7} tiles) is smaller than the pocket (${p.pocket ?? 5}): the first task pushes the mist back, never in`);
   }
 
-  // the kits are worth about the same, counting what each start finds on its own spots
-  const value = new Map(
-    Object.values(b.starters).map((s) => [
-      s.id,
-      (s.kit ?? []).reduce((n, k) => n + worth(b, k.item) * k.qty, 0) + own(s.id).reduce((n, t) => n + worth(b, t.finds[0]?.item ?? ''), 0),
-    ]),
-  );
-  const poorest = Math.min(...value.values());
-  for (const [id, v] of value) {
+  // every (race, pocket) pair is worth about the same: the race's outfit and what the pocket's own spots give
+  const value = new Map(pairs(b).map(([r, p]) => [`${r} in ${p}`, { v: pairWorth(b, r, p), file: at(p) }]));
+  const poorest = Math.min(...[...value.values()].map((x) => x.v));
+  for (const [pair, { v, file }] of value) {
     if (poorest > 0 && v * 100 > poorest * (100 + KIT_BAND_PCT)) {
-      err(at(id), 'starter.kit', `the start is worth ${v} mg with its own finds, more than ${KIT_BAND_PCT}% over the poorest start (${poorest} mg): one band of kit value`);
+      err(file, 'pocket.ground', `${pair} is worth ${v} mg with its outfit and own finds, more than ${KIT_BAND_PCT}% over the poorest pair (${poorest} mg): one band of kit value`);
     }
   }
 
@@ -150,12 +241,12 @@ export function checkStarts(b: Bundle, origin: Record<string, string>): Issue[] 
   const sold = Object.values(b.shops).some((s) => s.sells.some((o) => isTool(b, o.item, 'axe')));
   if (!sold) err(at(trees[0]!.id), 'node.tool', 'a tree needs an axe, and no shop sells one: a broken axe would end the game for the player');
 
-  // every character holds an axe before the first fire: in the kit, or on a spot of its own
-  for (const s of Object.values(b.starters)) {
-    const inKit = (s.kit ?? []).some((k) => isTool(b, k.item, 'axe'));
-    const found = own(s.id).some((t) => t.finds.some((f) => isTool(b, f.item, 'axe')));
-    if (!inKit && !found) {
-      err(at(s.id), 'starter.kit', 'this start holds no axe, and the first fire is built from a felled tree: put an axe in the kit, or on a spot of its own (no start ends at a wall)');
+  // every pocket gives an axe before the first fire: on its ground, or on a spot of its own (the race never decides it)
+  for (const p of Object.values(b.pockets)) {
+    const onGround = p.ground.some((k) => isTool(b, k.item, 'axe'));
+    const found = ownSpots(b, p.id).some((t) => t.finds.some((f) => isTool(b, f.item, 'axe')));
+    if (!onGround && !found) {
+      err(at(p.id), 'pocket.ground', 'this wake pocket gives no axe, and the first fire is built from a felled tree: lay an axe on its ground, or on a spot of its own (no start ends at a wall)');
     }
   }
 
@@ -180,70 +271,41 @@ export function checkStarts(b: Bundle, origin: Record<string, string>): Issue[] 
     }
   }
 
-  // every start meets the shared road at its first mending (the bridge) in about the same time, its axe in hand
-  const firstMend = Object.values(b.quests)
-    .filter((q) => (q.requires ?? []).length === 0 && q.starter === undefined && openingQuests(b).has(q.id))
-    .flatMap((q) => q.steps.flatMap((st) => (st.kind === 'restore' ? [st.restore] : [])))[0];
-  const meet = firstMend ? findSlot(b.map, b.restores[firstMend]?.place.slot ?? '') : undefined;
+  // every pair meets the shared road at its first mending (the bridge) in about the same time, its axe in hand
+  const mend = firstMend(b);
+  const meet = mend ? findSlot(b.map, b.restores[mend]?.place.slot ?? '') : undefined;
   if (!meet) return issues;
-  const effort = new Map<string, number>();
-  for (const s of Object.values(b.starters)) {
-    let here = startOf(s);
-    let ms = 0;
-    let tiles = 0;
-    let lost = false;
-    const go = (to: Rect): Tile[] | undefined => {
-      const path = walkTo(b, here, to);
-      if (!path) return undefined;
-      tiles += path.length - 1;
-      here = path[path.length - 1]!;
-      return path;
-    };
-    // its own first task, step by step: an own spot for a find, the nearest node for a bring
-    for (const q of Object.values(b.quests).filter((x) => x.starter === s.id)) {
-      for (const st of q.steps) {
-        if (st.kind === 'find') {
-          const spot = Object.entries(b.instances).find(([, inst]) => inst.kind === 'treasure' && b.treasures[inst.source]?.starter === s.id && b.treasures[inst.source]!.finds.some((f) => f.item === st.item));
-          if (!spot) continue;
-          if (!go({ x: spot[1].x, y: spot[1].y, w: 1, h: 1 })) lost = true;
-          ms += b.treasures[spot[1].source]!.active_ms;
-        }
-        if (st.kind === 'bring') {
-          const nodes = Object.values(b.instances).filter((inst) => inst.kind === 'resource' && b.resources[inst.source]?.output === st.item);
-          const paths = nodes.map((n) => ({ n, path: walkTo(b, here, { x: n.x, y: n.y, w: 1, h: 1 }) })).filter((p) => p.path);
-          const best = paths.sort((x, y) => x.path!.length - y.path!.length)[0];
-          if (!best) {
-            lost = true;
-            continue;
-          }
-          go({ x: best.n.x, y: best.n.y, w: 1, h: 1 });
-          const r = b.resources[best.n.source]!;
-          ms += Math.ceil(st.qty / r.yield) * r.active_ms;
-        }
-      }
-    }
-    const road = go(meet);
-    if (lost || !road) {
-      err(at(s.id), 'starter.wake', `from where this start wakes, its own first task or the ${b.restores[firstMend!]?.place.slot} cannot be walked to before anything is mended`);
+  const effort = new Map<string, { ms: number; file: string }>();
+  for (const [r, pid] of pairs(b)) {
+    const e = pairEffort(b, r, pid);
+    if (!e) continue;
+    if (e.lost) {
+      err(at(pid), 'pocket.wake', `from where this pocket wakes, its own first task or the ${meet.id} cannot be walked to before anything is mended`);
       continue;
     }
-    effort.set(s.id, ms + tiles * WALK_MS);
-    // a start's own find shows on its road: within its senses of where it walks to the bridge
-    const reach = senseReach(b, s.attributes.senses);
-    const walked = walkTo(b, startOf(s), meet) ?? [];
-    for (const t of own(s.id)) {
-      for (const inst of Object.values(b.instances)) {
-        if (inst.kind !== 'treasure' || inst.source !== t.id) continue;
-        if (!walked.some(([x, y]) => Math.max(Math.abs(x - inst.x), Math.abs(y - inst.y)) <= reach)) {
-          err(at(t.id), 'dig.place', `the spot at [${inst.x}, ${inst.y}] is out of the senses of "${s.id}" (${reach} tiles) all the way from where it wakes to the ${meet.id}: the start would never see it`);
+    effort.set(`${r} in ${pid}`, { ms: e.ms, file: at(pid) });
+  }
+  // a pocket's own find shows on its road: within the senses of every race (the lowest decides) of where it walks to the bridge
+  const senses = Math.min(...Object.values(b.races).map((r) => r.attributes.senses));
+  if (Number.isFinite(senses)) {
+    const reach = senseReach(b, senses);
+    for (const p of Object.values(b.pockets)) {
+      const walked = walkTo(b, [p.wake.x, p.wake.y], meet);
+      if (!walked) continue; // no road at all: reported above as a start that cannot walk to the bridge
+      for (const t of ownSpots(b, p.id)) {
+        for (const inst of Object.values(b.instances)) {
+          if (inst.kind !== 'treasure' || inst.source !== t.id) continue;
+          if (!walked.some(([x, y]) => Math.max(Math.abs(x - inst.x), Math.abs(y - inst.y)) <= reach)) {
+            err(at(t.id), 'dig.place', `the spot at [${inst.x}, ${inst.y}] is out of the senses of the race with the fewest (${senses}, ${reach} tiles) all the way from "${p.id}" to the ${meet.id}: that start would never see it`);
+          }
         }
       }
     }
   }
-  const fastest = Math.min(...effort.values());
-  for (const [id, ms] of effort) {
+  const fastest = Math.min(...[...effort.values()].map((x) => x.ms));
+  for (const [pair, { ms, file }] of effort) {
     if (ms * 100 > fastest * (100 + EFFORT_BAND_PCT)) {
-      err(at(id), 'starter.wake', `this start reaches the ${meet.id} with its axe after about ${Math.round(ms / 1000)} s of walking and work, more than ${EFFORT_BAND_PCT}% over the fastest start (${Math.round(fastest / 1000)} s): one band of effort`);
+      err(file, 'pocket.wake', `${pair} reaches the ${meet.id} with its axe after about ${Math.round(ms / 1000)} s of walking and work, more than ${EFFORT_BAND_PCT}% over the fastest pair (${Math.round(fastest / 1000)} s): one band of effort`);
     }
   }
   return issues;

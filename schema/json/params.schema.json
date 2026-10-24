@@ -266,6 +266,14 @@
                   {
                     "const": "staff",
                     "type": "string"
+                  },
+                  {
+                    "const": "hammer",
+                    "type": "string"
+                  },
+                  {
+                    "const": "pick",
+                    "type": "string"
                   }
                 ]
               },
@@ -1850,17 +1858,18 @@
         },
         "per_point": {
           "additionalProperties": false,
-          "description": "What one point in an attribute adds: bag places (carry), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina).",
+          "description": "What one point in an attribute adds: bag places (might), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina). Spirit is defined and read by no rule yet: its first readers come with the night layer and the tree.",
           "type": "object",
           "required": [
-            "carry",
+            "might",
             "senses",
             "agility_pct",
             "luck_permille",
-            "stamina"
+            "stamina",
+            "spirit"
           ],
           "properties": {
-            "carry": {
+            "might": {
               "additionalProperties": false,
               "type": "object",
               "required": [
@@ -1965,6 +1974,32 @@
               }
             },
             "stamina": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              }
+            },
+            "spirit": {
               "additionalProperties": false,
               "type": "object",
               "required": [

@@ -141,7 +141,7 @@ function beside(b: Bundle, s: State, tile: Tile, within?: Rect): Tile {
 /** At the hearth with logs in the bag and the vigil open (or not). */
 function tending(b: Bundle, logs = 3, open = true): State {
   const s = place(begin(b), HEARTH, 0);
-  s.player.attrs.carry = 100;
+  s.player.attrs.might = 100;
   s.player.bag[LOG] = logs;
   if (open) s.player.quests[VIGIL] = 'active';
   return s;
