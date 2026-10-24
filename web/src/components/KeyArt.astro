@@ -1,0 +1,50 @@
+---
+// The desktop first screen (DECISIONS.md, 2026-10-23): the valley at dawn with the three opening characters (the
+// elf, the human, the skeleton) as a living video, quiet words over it, and an opaque band at its foot. Shown from
+// 1024px; the phone keeps its own first screen and fetches neither the video nor its still: every source here
+// carries the desktop media query, and the still's fallback is a one-pixel image.
+const PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+const DESK = '(min-width: 1024px)';
+---
+
+<section class="keyart" data-keyart aria-labelledby="ka-h">
+  <div class="ka-art" aria-hidden="true">
+    <picture>
+      <source media={DESK} type="image/webp" srcset="/keyart/hero-poster.webp" />
+      <source media={DESK} srcset="/keyart/hero-poster.jpg" />
+      <img class="ka-still" src={PIXEL} alt="" width="1920" height="1080" fetchpriority="high" />
+    </picture>
+    <video class="ka-video" data-ka-video autoplay muted loop playsinline preload="metadata" tabindex="-1">
+      <source media={DESK} src="/keyart/hero.webm" type="video/webm" />
+      <source media={DESK} src="/keyart/hero.mp4" type="video/mp4" />
+    </video>
+  </div>
+  <div class="ka-scrim" aria-hidden="true"></div>
+
+  <div class="ka-copy">
+    <p class="ka-kick">// a valley written by its players</p>
+    <h1 id="ka-h">Write the valley <em>back</em></h1>
+    <p class="ka-lead">An elf, a human and a skeleton wake in a valley its players write in code.</p>
+    <div class="ka-acts">
+      <a class="ka-btn go" href="/play/">Play free</a>
+      <a class="ka-btn line" href="/hub/">Build a place</a>
+    </div>
+  </div>
+  <div class="ka-band">
+    <a class="ka-news" href="/hub/boards/"><span class="ka-tag">New</span><b>Carve your name on the returners' stone</b><span class="ka-arr" aria-hidden="true">&rarr;</span></a>
+  </div>
+</section>
+
+<script>
+  // under reduced motion the video stays still and the poster shows; elsewhere it plays as the page asks
+  const video = document.querySelector<HTMLVideoElement>('[data-ka-video]');
+  const still = matchMedia('(prefers-reduced-motion: reduce)');
+  const hold = (): void => {
+    if (!video) return;
+    if (still.matches) video.pause();
+    else if (matchMedia('(min-width: 1024px)').matches) void video.play().catch(() => undefined);
+  };
+  hold();
+  still.addEventListener('change', hold);
+  document.addEventListener('visibilitychange', () => (document.hidden ? video?.pause() : hold()));
+</script>
