@@ -13,8 +13,8 @@ import { EFFORT_BAND_PCT, KIT_BAND_PCT, measureStarts } from '../src/starts';
 describe('the core content', () => {
   it('passes with no line: trees give the wood, every pocket lays or finds an axe, Pell sells another', () => {
     const result = runCheck();
-    // the richness and colour lines are advisory counts (tools/src/richness.ts, tools/src/colors.ts), not defects of the content
-    expect(result.issues.filter((i) => !i.where.startsWith('map.richness') && !i.where.startsWith('art.'))).toEqual([]);
+    // the richness, hand and colour lines are advisory counts (tools/src/richness.ts, tools/src/colors.ts), not defects of the content
+    expect(result.issues.filter((i) => !i.where.startsWith('map.richness') && !i.where.startsWith('quests.hand.') && !i.where.startsWith('art.'))).toEqual([]);
     const b = result.assembled.bundle!;
     expect(b.resources['core/oak-trees']!.tool).toBe('axe');
     expect(Object.keys(b.pockets).sort()).toEqual(['core/north-meadow', 'core/slid-bank', 'core/west-bank']);

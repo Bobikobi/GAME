@@ -658,7 +658,7 @@
                 "keys": {
                   "minItems": 2,
                   "maxItems": 12,
-                  "description": "The sun's shear by hour (STYLE section 4): the shadow leans right and toward the viewer by these shares of the caster's height. The hours between two keys step evenly; outside the first and the last the sun is down.",
+                  "description": "The sun's shear by hour (STYLE section 4): the shadow leans right and toward the viewer by these shares of the caster's height, so a negative `down` is the sun in the south and the shadow falling away, up-screen. The hours between two keys step evenly; outside the first and the last the sun is down.",
                   "type": "array",
                   "items": {
                     "additionalProperties": false,
@@ -681,9 +681,9 @@
                         "type": "integer"
                       },
                       "down": {
-                        "minimum": 0,
+                        "minimum": -100,
                         "maximum": 100,
-                        "description": "How far the shadow leans toward the viewer, in percent of the caster's height.",
+                        "description": "How far the shadow leans toward the viewer, in percent of the caster's height; negative when the sun stands south (STYLE section 4: the shadow falls up-screen, away from the viewer, behind the caster).",
                         "type": "integer"
                       }
                     }

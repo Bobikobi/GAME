@@ -1072,12 +1072,12 @@ const LightKey = Type.Object(
   { additionalProperties: false },
 );
 
-/** One hour of the sun's shear (STYLE section 4): the shadow leans right and toward the viewer by these shares of the caster's height. */
+/** One hour of the sun's shear (STYLE section 4): the shadow leans right and away from the viewer by these shares of the caster's height. */
 const SunKey = Type.Object(
   {
     at: Type.String({ pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$', description: 'The hour and minute the sun is at its own shear, for example "16:30".' }),
     right: Int(-200, 200, 'How far the shadow leans right, in percent of the caster\'s height; negative in the morning, positive in the evening.'),
-    down: Int(0, 100, 'How far the shadow leans toward the viewer, in percent of the caster\'s height.'),
+    down: Int(-100, 100, 'How far the shadow leans toward the viewer, in percent of the caster\'s height; negative when the sun stands south (STYLE section 4: the shadow falls up-screen, away from the viewer, behind the caster).'),
   },
   { additionalProperties: false },
 );
@@ -1100,7 +1100,7 @@ export const LightParams = Type.Object(
             minItems: 2,
             maxItems: 12,
             description:
-              'The sun\'s shear by hour (STYLE section 4): the shadow leans right and toward the viewer by these shares of the caster\'s height. The hours between two keys step evenly; outside the first and the last the sun is down.',
+              'The sun\'s shear by hour (STYLE section 4): the shadow leans right and toward the viewer by these shares of the caster\'s height, so a negative `down` is the sun in the south and the shadow falling away, up-screen. The hours between two keys step evenly; outside the first and the last the sun is down.',
           }),
         },
         { additionalProperties: false },
