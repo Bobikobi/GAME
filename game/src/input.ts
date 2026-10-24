@@ -1,7 +1,8 @@
 /**
- * Keyboard and touch in one place. Directions are held (the last one pressed
- * wins, like a real d-pad); buttons are presses that the app routes to
- * whatever is on top: the minigame, a dialogue, a menu, or the world.
+ * Keyboard and touch in one place. Directions are held: the walk reads them as
+ * one vector (two arrows at once walk a diagonal, the phone's stick any angle),
+ * and a menu reads the last one pressed. Buttons are presses that the app routes
+ * to whatever is on top: the minigame, a dialogue, a menu, or the world.
  */
 export type Dir = 'up' | 'down' | 'left' | 'right';
 export type Button = 'a' | 'b' | 'bag' | 'journal' | 'menu' | 'up' | 'down';
@@ -12,6 +13,20 @@ export const DIRS: Record<Dir, readonly [number, number]> = {
   left: [-1, 0],
   right: [1, 0],
 };
+
+/** Inside this share of the pad's width from its center the stick reads nothing. */
+export const STICK_DEAD = 0.12;
+/** At this share of the pad's width from its center the stick walks at full speed. */
+export const STICK_FULL = 0.4;
+
+/** The stick's vector for a finger `dx, dy` from the center of a pad `width` wide: a length of 0 to 1. */
+export function stickFrom(dx: number, dy: number, width: number): [number, number] {
+  const r = Math.hypot(dx, dy);
+  const dead = width * STICK_DEAD;
+  if (r <= dead) return [0, 0];
+  const speed = Math.min(1, (r - dead) / (width * STICK_FULL - dead));
+  return [(dx / r) * speed, (dy / r) * speed];
+}
 
 const KEY_DIR: Record<string, Dir> = {
   ArrowUp: 'up',
@@ -45,7 +60,8 @@ function topWindow(): Element | null {
 
 export class Controls {
   private held: Dir[] = [];
-  private touchDir: Dir | null = null;
+  /** the phone's stick, with a length of 0 to 1; null while no finger is on it */
+  private stick: readonly [number, number] | null = null;
   private handlers = new Set<(b: Button) => boolean | void>();
 
   constructor() {
@@ -53,17 +69,36 @@ export class Controls {
     window.addEventListener('keyup', (e) => this.keyUp(e));
     window.addEventListener('blur', () => {
       this.held = [];
-      this.touchDir = null;
+      this.stick = null;
     });
   }
 
-  /** The direction being held right now, if any. */
+  /** The direction being held right now, if any: the stick's leading axis, or the last key pressed. */
   direction(): Dir | null {
-    return this.touchDir ?? this.held[this.held.length - 1] ?? null;
+    if (this.stick) {
+      const [x, y] = this.stick;
+      if (x === 0 && y === 0) return null;
+      return Math.abs(x) >= Math.abs(y) ? (x > 0 ? 'right' : 'left') : y > 0 ? 'down' : 'up';
+    }
+    return this.held[this.held.length - 1] ?? null;
   }
 
-  setTouchDir(dir: Dir | null): void {
-    this.touchDir = dir;
+  /**
+   * The walk's input: the stick as it is, or the held keys as eight directions, a diagonal as long as a straight
+   * line (NEXT 22 a). Opposite keys cancel. A length of 1 is full speed.
+   */
+  vector(): [number, number] {
+    if (this.stick) return [this.stick[0], this.stick[1]];
+    const on = (d: Dir) => (this.held.includes(d) ? 1 : 0);
+    const x = on('right') - on('left');
+    const y = on('down') - on('up');
+    const length = Math.hypot(x, y);
+    return length === 0 ? [0, 0] : [x / length, y / length];
+  }
+
+  /** The phone's stick: a vector of length 0 to 1, or null when the finger lifts. */
+  setStick(v: readonly [number, number] | null): void {
+    this.stick = v ? [v[0], v[1]] : null;
   }
 
   onButton(fn: (b: Button) => boolean | void): void {
