@@ -127,6 +127,14 @@
       "branches": ["feat/race-wave-1"],
       "owner": null,
       "cross_cutting": true
+    },
+    {
+      "id": "races-bags",
+      "title": "Races, weight and bags: a weight on every item, three walking paces, the back slot with a satchel and a frame pack, one body fact per race",
+      "plan": ["DECISIONS 2026-10-23 races, weight and bags (the owner's answers)", "GAME_RULES section 2"],
+      "branches": ["feat/races-bags"],
+      "owner": null,
+      "cross_cutting": true
     }
   ]
 }

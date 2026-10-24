@@ -59,6 +59,7 @@ Open `content/extensions/<your-handle>/resources/wild-plums.json`. Rename the fi
 
 - `items[0].name` and `description` - what the player reads.
 - `items[0].class`, `family` and `tier` - what the fruit is: `plant`, family `plum`, tier 1. See [Classes and tiers](#classes-and-tiers).
+- `items[0].weight` - how heavy one is, a whole number from 0 to 20. Most things weigh 1; a log or a stone 3; a herb or a coin 0. The load sets the player's pace.
 - `food.satiety` - how much one fruit fills, 1 to 100. A redberry gives 4, a cooked berry mash 15.
 - `node.yield` - fruit per pick with perfect timing, 1 to 20.
 - `node.active_ms` - how long one pick takes, from 1000 to 15000 ms.
@@ -167,12 +168,13 @@ The check then asks one thing more: a try never loses value on average. Take the
 
 `content/core/recipes/reed-hat.json` makes a hat you wear while you gather. An item you wear has `wear`:
 
-- `wear.slot` - `head`, `top`, `legs`, `outfit` (the top and the legs at once), `feet`, `jewelry` (two places) or `hand`. A piece of class `garment` goes on the head, top, legs, outfit or feet, a piece of class `jewelry` in a jewelry place, and the hand holds a tool.
+- `wear.slot` - `head`, `top`, `legs`, `outfit` (the top and the legs at once), `feet`, `jewelry` (two places), `hand` or `back`. A piece of class `garment` goes on the head, top, legs, outfit, feet or back, a piece of class `jewelry` in a jewelry place, and the hand holds a tool.
+- `wear.places`, `wear.load_bonus` - a bag on the back: how many places it gives (no bag gives 12, a satchel 24), and for a frame bag how much it adds to the weight limit. Only a work piece on the back has them.
 - `wear.effects` - one or two small bonuses from a closed list: `gather_speed_pct`, `dig_speed_pct`, `craft_speed_pct`, `craft_chance_pct` and `rare_find_pct`. Each is a percent, each effect once, at most the cap of the item's tier (`wear_effect_max_pct`, `[5, 8, 12]` today: 5 at tier 1, 8 at tier 2, 12 at tier 3). The reed hat is tier 2 and gives 5.
 - `wear.set` - optional: an id of your own that two or more of your pieces name, and that fits on the character at once (one piece per place, two jewelry pieces at most). Worn whole, a set's effects grow by `wear_set_bonus_pct` (20 percent today). The reed hat and the reed sandals make the set `core/reed-walker`.
 - `wear.look` - a look shows and counts for nothing: no effects and no set.
 
-Worn items are work clothes. They help the work and never protect you from a hazard; no effect on the list does that. A worn item stays in your bag and comes off when it leaves.
+Worn items are work clothes. They help the work and never protect you from a hazard; no effect on the list does that. A worn item stays in your bag and comes off when it leaves. It takes no place while worn, and neither do two tools: the one in the hand (worn there, or else one from the bag) and one at the belt; every other tool takes a place, and the weight of all of them still counts. Other things of one kind share a place, up to `place_stack` (ten) to a place.
 
 ### A tool
 
@@ -283,6 +285,7 @@ A race (`"type": "race"`) is chosen at the title. It is a fixed profile, never a
 - `home`: the race's two home attributes, each at 1 or more.
 - `grades`: how each world takes the race, `weak`, `normal` or `strong`. A world left out is `normal`; the valley is neutral to every race. Where the world under the player is strong, each home attribute rises by one; where it is weak, each drops by one, never below 0. Home is always `strong`. The core names four worlds: `valley`, `north`, `south` and `city`; a map or a region of it names its `world`.
 - `outfit`: up to three `{ "item", "qty" }` stacks put in the bag and worn on the first morning, one per place, tier 1, never a weapon and never a tool a wake pocket lays on its ground.
+- `body`: optional, one fact about the race's body with one or two effects from a closed list: `rest_mend_permille` (what a rest by a fire mends, against 1000), `food_fill_permille` (what food fills, against 1000), `pace_load_permille` (how heavy the load counts for pace, against 1000) and `bag_places` (places added in any bag). Each effect once.
 - `sprite`, `sprite_alt`: the figure the race is drawn with, and an optional second look.
 
 The check keeps the starts fair over every pair of a race and a wake pocket. Every pocket gives an axe before the first fire, on its ground or on a spot of its own, because the first fire is built from a felled oak; a shop sells an axe, so a worn-out one can be bought again; and the opening never asks for more logs than the oaks of a new valley give. Every race's attributes add up to 7. The race's outfit with the pocket's own finds is worth about the same for every pair (within 25 percent of the poorest), and every pair reaches the bridge with its axe in about the same time (within 50 percent of the fastest). A pocket's own spot gives one find at 100 percent, needs only a tool the pocket's ground lays, and lies within the senses of the race with the fewest on the road to the bridge, on a tile where x + y is even.

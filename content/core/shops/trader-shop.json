@@ -12,6 +12,10 @@
         "price_mg": 30000
       },
       {
+        "item": "core/satchel",
+        "price_mg": 290000
+      },
+      {
         "item": "core/trowel",
         "price_mg": 30000
       },

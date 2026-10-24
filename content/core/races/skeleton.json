@@ -7,13 +7,13 @@
   "creator": "core",
   "race": {
     "name": "Skeleton",
-    "about": "Comes back from the fold under the bells. Strong and steady, and wants to know what it was kept for.",
+    "about": "Comes back from the fold under the bells. No flesh to tire, and wants to know what it was kept for.",
     "attributes": {
-      "might": 3,
+      "might": 1,
       "senses": 1,
       "agility": 0,
       "luck": 1,
-      "stamina": 2,
+      "stamina": 4,
       "spirit": 0
     },
     "home": [
@@ -35,6 +35,20 @@
         "qty": 1
       }
     ],
+    "body": {
+      "name": "Mended, not fed",
+      "about": "A rest by a fire mends it twice as much as anyone; food fills it half as much, with nothing to digest.",
+      "effects": [
+        {
+          "effect": "rest_mend_permille",
+          "value": 2000
+        },
+        {
+          "effect": "food_fill_permille",
+          "value": 500
+        }
+      ]
+    },
     "sprite": "core/base-kit:chars/digger_down"
   }
 }

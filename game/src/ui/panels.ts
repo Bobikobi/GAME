@@ -8,6 +8,7 @@ import {
   WEAR_SLOTS,
   bagCapacity,
   bagUsed,
+  placeRoom,
   attrAt,
   characterLevel,
   minuteOfDay,
@@ -21,6 +22,7 @@ import {
   type WearSlot,
 } from '@game/kernel';
 import { app } from '../app';
+import { loadChipFor } from './load';
 import { sound } from '../audio';
 import { GAME_TITLE, REPO_URL, REVIEW_KEY } from '../config';
 import {
@@ -98,6 +100,7 @@ const SLOT_LABEL: Record<WearSlot, string> = {
   jewelry1: 'Jewel 1',
   jewelry2: 'Jewel 2',
   hand: 'Hand',
+  back: 'Back',
 };
 
 /** A set id is its creator's path and a name; the card reads the name alone. */
@@ -257,7 +260,7 @@ export function openBag(ui: UI): void {
         h('span', { class: 'count' }, String(n)),
       );
     });
-    const used = bagUsed(s.state);
+    const used = bagUsed(b, s.state);
     return h(
       'section',
       { class: 'kit-bag' },
@@ -271,7 +274,7 @@ export function openBag(ui: UI): void {
             h('button', { class: `kit-filter ${filter === label ? 'on' : ''}`.trim(), type: 'button', onclick: () => ((filter = label), render()) }, label),
           ),
         ),
-        h('span', { class: 'kit-cap' }, `${used} / ${cap}`),
+        h('span', { class: 'kit-cap' }, loadChipFor(b, s.state)),
       ),
       ids.length === 0
         ? h('p', { class: 'kit-hint' }, 'Your bag is empty. Gather something!')
@@ -566,6 +569,16 @@ export function openBag(ui: UI): void {
       // the tier is in the head with the class; the check keeps a tool's tier the tier of its "tool"
       facts.push(`${item.tool.kind[0]!.toUpperCase()}${item.tool.kind.slice(1)}${speedBonus}. ${left}`);
     }
+    // put one down where the player stands; it stays on that tile (DECISIONS.md, 2026-10-23)
+    if (s.check({ t: 'drop', item: id, qty: 1, at: s.pos }) === undefined) {
+      const put = button('Put down', async () => {
+        const r = await s.act({ t: 'drop', item: id, qty: 1, at: s.pos });
+        if (!r.ok) ui.toast(r.error, 'bad');
+        after();
+      });
+      put.dataset.drop = id;
+      actions.push(put);
+    }
     if (price !== undefined) facts.push(`A trader pays ${gold(price)} gold.`);
     const set = item.wear?.set
       ? (() => {
@@ -715,7 +728,7 @@ export function openShop(ui: UI, npcId: string): void {
 
   const render = () => {
     const st = s.state;
-    const room = bagCapacity(b, st) - bagUsed(st);
+    const room = bagCapacity(b, st) - bagUsed(b, st);
     const rows =
       current === 'buy'
         ? shop.sells.map((o) => {
@@ -733,7 +746,7 @@ export function openShop(ui: UI, npcId: string): void {
                 opens.length ? h('div', { class: 'muted', 'data-opens': '' }, `Opens: ${opens.join(', ')}`) : null,
               ),
               h('span', { class: 'price' }, gold(o.price_mg)),
-              button('Buy', () => deal(() => s.act({ t: 'buy', npc: npcId, item: o.item, qty: 1, at: s.pos })), 'small', st.player.gold < o.price_mg || room < 1),
+              button('Buy', () => deal(() => s.act({ t: 'buy', npc: npcId, item: o.item, qty: 1, at: s.pos })), 'small', st.player.gold < o.price_mg || placeRoom(b, st, o.item) < 1),
             );
           })
         : sellable(b, st).map(({ item: id, each }) => {
