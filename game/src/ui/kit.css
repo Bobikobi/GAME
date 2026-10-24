@@ -1,0 +1,1182 @@
+/* The kit: one window with five pages, in the Field Kit's materials
+   (DECISIONS 2026-10-20). Bag carries what you carry, Outfit what you wear,
+   Skills what you can do, Shop the stall's draft, and Journal opens the
+   ledger. The character belongs to Outfit alone. The mobile layout is one
+   column; from 900px the bag and the card stand side by side. */
+
+.panel.bag {
+  width: 100%;
+  max-width: 560px;
+  height: 100%;
+  overflow: hidden;
+  background: var(--wood);
+  border: 3px solid var(--ink);
+  box-shadow: inset 0 0 0 3px var(--wood2);
+}
+
+.panel.bag header {
+  background: var(--wood2);
+  border-bottom: 3px solid var(--ink);
+}
+
+.panel.bag header h2 {
+  color: var(--cream);
+  font-size: 21px;
+  letter-spacing: 0.08em;
+}
+
+.panel.bag header .btn.close {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.panel.bag .panel-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: var(--wood);
+  padding: 6px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.panel.bag .kit-tabs {
+  margin: 0;
+  flex-wrap: nowrap;
+}
+
+.panel.bag .kit-tabs .btn.tab {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 34px;
+  padding: 2px 4px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  background: var(--wood2);
+  color: var(--cream);
+  border: 2px solid var(--ink);
+  box-shadow: none;
+}
+
+.panel.bag .kit-tabs .btn.tab.on {
+  background: var(--gold);
+  color: var(--ink);
+}
+
+.kit-caption {
+  margin: 0;
+  padding: 1px 2px 0;
+  font-size: 12px;
+  color: var(--cream);
+}
+
+.kit-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 200px minmax(0, 1fr) auto;
+  gap: 6px;
+}
+
+.kit-body.bag-only {
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.kit-body.skills-only {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+/* ------------------------------------------------------------ the worn strip */
+
+.worn-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kit-slot {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: var(--wood2);
+  border: 2px solid var(--ink);
+  box-shadow: inset 0 0 0 2px #c99a5e;
+}
+
+.kit-slot .sprite {
+  transform: scale(0.8);
+}
+
+.kit-slot .lab {
+  position: absolute;
+  left: 1px;
+  bottom: -1px;
+  font-family: var(--font-body);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--cream);
+}
+
+.kit-slot.empty {
+  background: #b9814a;
+}
+
+.kit-slot.empty::after {
+  content: '+';
+  color: var(--wood);
+  font: 700 14px/1 var(--font-body);
+}
+
+.kit-slot.big {
+  width: 54px;
+  height: 54px;
+}
+
+.kit-slot.big .sprite {
+  transform: none;
+}
+
+.kit-toggle {
+  position: static;
+  margin: 2px auto 0;
+  align-self: center;
+  display: flex;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+}
+
+.kit-toggle button {
+  font: 700 9px/1 var(--font-body);
+  letter-spacing: 0.04em;
+  padding: 4px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+}
+
+.kit-toggle button.on {
+  background: var(--gold);
+}
+
+.kit-effects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 2px;
+  border-top: 1px solid #c9a86c;
+  font-size: 10px;
+  color: var(--wood);
+}
+
+.kit-effects b {
+  font-family: var(--font);
+  font-weight: 400;
+  color: var(--ink);
+}
+
+.kit-set {
+  font-size: 10px;
+  color: var(--wood);
+}
+
+
+
+/* ------------------------------------------------------------ the pockets */
+
+.kit-bag {
+  min-height: 0;
+  padding: 5px 7px;
+  display: flex;
+  flex-direction: column;
+  background: var(--cream);
+  border: 2px solid var(--ink);
+  box-shadow: inset 0 0 0 2px #c99a5e;
+}
+
+.kit-bag-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.kit-filters {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.kit-filter {
+  font: 700 10px/1 var(--font-body);
+  padding: 3px 5px;
+  border: 1px solid var(--wood2);
+  background: #e5c58c;
+  color: var(--wood);
+}
+
+.kit-filter.on {
+  background: var(--wood2);
+  color: var(--cream);
+}
+
+.kit-cap {
+  font: 400 11px/1 var(--font);
+  color: var(--wood);
+  white-space: nowrap;
+}
+
+.kit-grid,
+.kit-card-body,
+.kit-skills,
+.kit-worn {
+  scrollbar-width: thin;
+  scrollbar-color: var(--wood2) transparent;
+}
+
+.kit-grid::-webkit-scrollbar,
+.kit-card-body::-webkit-scrollbar,
+.kit-skills::-webkit-scrollbar,
+.kit-worn::-webkit-scrollbar {
+  width: 6px;
+}
+
+.kit-grid::-webkit-scrollbar-thumb,
+.kit-card-body::-webkit-scrollbar-thumb,
+.kit-skills::-webkit-scrollbar-thumb,
+.kit-worn::-webkit-scrollbar-thumb {
+  background: var(--wood2);
+}
+
+.kit-grid {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  align-content: start;
+  padding: 5px 0;
+}
+
+.kit-cell {
+  position: relative;
+  height: 54px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: #d9b67a;
+  border: 2px solid var(--wood2);
+  box-shadow: inset 0 0 0 2px #ebd3a2;
+}
+
+.kit-cell .sprite {
+  transform: scale(0.85);
+}
+
+.kit-cell .count {
+  position: absolute;
+  right: 2px;
+  bottom: 0;
+  padding: 0 2px;
+  background: var(--paper);
+  border: 1px solid var(--wood2);
+  font: 400 10px/1.1 var(--font);
+}
+
+.kit-cell.on {
+  border-color: var(--gold);
+  background: #efd59a;
+  box-shadow: inset 0 0 0 2px var(--gold);
+}
+
+.kit-cell.empty {
+  background: #d2ac70;
+  box-shadow: inset 0 0 0 2px #e5c58c;
+}
+
+.kit-cell.empty::after {
+  content: '';
+  width: 12px;
+  height: 2px;
+  background: #b9814a;
+  box-shadow:
+    0 -4px 0 #b9814a,
+    0 4px 0 #b9814a;
+}
+
+.kit-cell.r-uncommon {
+  border-color: var(--green2);
+}
+
+.kit-cell.r-rare {
+  border-color: var(--blue2);
+}
+
+.kit-cell.r-legendary {
+  border-color: var(--purple2);
+}
+
+.kit-foot {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--wood);
+}
+
+.kit-bar {
+  flex: 1;
+  height: 4px;
+  background: #d2ac70;
+  border: 1px solid var(--wood2);
+}
+
+.kit-bar i {
+  display: block;
+  height: 100%;
+  background: var(--green2);
+}
+
+/* ------------------------------------------------------------ the card */
+
+.kit-detail {
+  min-height: 0;
+}
+
+.panel.bag .detail.kit-card.empty {
+  height: auto;
+  max-height: none;
+  display: grid;
+  place-items: center;
+}
+
+.panel.bag .detail.kit-card {
+  height: 210px;
+  max-height: 210px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 7px 8px;
+  background: var(--cream);
+  border: 2px solid var(--ink);
+  box-shadow: inset 0 0 0 2px #c99a5e;
+}
+
+.panel.bag .detail .detail-head .sprite {
+  flex: none;
+}
+
+.panel.bag .detail p {
+  margin: 3px 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+}
+
+.panel.bag .detail .kit-desc {
+  color: var(--ink2);
+}
+
+.panel.bag .detail .actions {
+  flex: none;
+  margin-top: 6px;
+}
+
+.kit-card-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.panel.bag .detail .actions .btn {
+  min-height: 36px;
+  font-family: var(--font-body);
+  font-size: 14px;
+}
+
+.kit-hint {
+  margin: 0;
+  padding: 8px;
+  font-size: 13px;
+  color: var(--grey);
+}
+
+.kit-set-line {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--wood);
+}
+
+/* ------------------------------------------------------------ the skills page */
+
+.kit-skills {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 10px;
+  background: var(--cream);
+  border: 2px solid var(--ink);
+  box-shadow: inset 0 0 0 2px #c99a5e;
+}
+
+.kit-skills .attr {
+  font-size: 14px;
+}
+
+.kit-skills .attr-name {
+  font-size: 14px;
+}
+
+.kit-skills .attr > .muted {
+  font-size: 13px;
+}
+
+.kit-skills .pips i {
+  width: 10px;
+  height: 10px;
+}
+
+.kit-skills .card {
+  margin-top: 6px;
+}
+
+.kit-skills .btn.plus {
+  min-height: 30px;
+  font-family: var(--font-body);
+  font-size: 18px;
+}
+
+/* ------------------------------------------------------------ the worn page */
+
+.kit-worn {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+}
+
+.worn-stage {
+  position: relative;
+  min-height: 300px;
+  padding: 8px 8px 34px;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) 64px;
+  align-items: center;
+  justify-items: center;
+  background: var(--cream);
+  border: 2px solid var(--ink);
+  box-shadow: inset 0 0 0 2px #c99a5e;
+}
+
+.worn-stage .kit-toggle {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  transform: translateX(-50%);
+  margin: 0;
+}
+
+.worn-figure {
+  display: grid;
+  place-items: center;
+}
+
+.worn-figure .sprite {
+  transform: scale(2);
+}
+
+.worn-side {
+  padding: 8px 10px;
+  background: var(--cream);
+  border: 2px solid var(--ink);
+  box-shadow: inset 0 0 0 2px #c99a5e;
+}
+
+.worn-list {
+  display: grid;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.worn-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 6px;
+  border: 1px solid var(--wood2);
+  background: #e5c58c;
+  font: 400 13px/1.2 var(--font-body);
+  color: var(--ink);
+  text-align: left;
+}
+
+.worn-row:disabled {
+  opacity: 0.55;
+}
+
+.worn-slot {
+  font-weight: 700;
+  color: var(--wood);
+}
+
+.worn-name {
+  text-align: right;
+}
+
+
+/* ------------------------------------------------------------ the player's stall */
+
+.shop {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 6px;
+}
+
+.shop-bag,
+.shop-stall {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 7px 8px;
+  background: var(--cream);
+  border: 2px solid var(--ink);
+  box-shadow: inset 0 0 0 2px #c99a5e;
+}
+
+.shop h3 {
+  margin: 0 0 4px;
+  font: 400 12px/1 var(--font);
+  letter-spacing: 0.08em;
+  color: var(--wood);
+}
+
+.shop-item {
+  width: 100%;
+  min-height: 42px;
+  margin-bottom: 3px;
+  padding: 3px 5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--wood2);
+  background: #e5c58c;
+  color: var(--ink);
+  font: 400 13px/1.2 var(--font-body);
+  text-align: left;
+  cursor: grab;
+}
+
+.shop-item.on {
+  border-color: var(--gold);
+  box-shadow: inset 0 0 0 2px var(--gold);
+}
+
+.shop-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.shop-count,
+.shop-slot .price {
+  font-family: var(--font);
+}
+
+.shop-slots {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.shop-slot {
+  min-height: 82px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 2px dashed var(--wood2);
+  background: #e5c58c;
+  color: var(--wood);
+  font: 400 11px/1.25 var(--font-body);
+  text-align: center;
+}
+
+.shop-slot.filled {
+  border-style: solid;
+  border-color: var(--green2);
+  background: #efd59a;
+}
+
+.shop-slot.pricing {
+  border-color: var(--gold);
+}
+
+.shop-slot img {
+  width: 32px;
+  height: 32px;
+}
+
+.shop-slot .price {
+  color: var(--ink);
+}
+
+.shop-note {
+  margin: 5px 0 0;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--wood);
+}
+
+.shop-price-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  background: rgba(27, 26, 46, 0.5);
+}
+
+.shop-price {
+  width: min(100%, 330px);
+  padding: 10px 12px;
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  box-shadow: inset 0 0 0 2px var(--paper2);
+}
+
+.shop-price b {
+  font: 400 17px/1.1 var(--font);
+}
+
+.shop-price p {
+  margin: 4px 0;
+  font-size: 12px;
+  color: var(--ink2);
+}
+
+.shop-price label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.shop-price input {
+  width: 84px;
+  min-height: 34px;
+  padding: 3px 6px;
+  border: 2px solid var(--ink);
+  background: var(--cream);
+  font: 400 15px/1 var(--font);
+}
+
+.shop-price .actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+/* ------------------------------------------------------------ a desktop window */
+
+@media (min-width: 900px) {
+  .layer.panel-layer {
+    padding-top: 150px;
+    padding-bottom: 10px;
+  }
+
+  .hud {
+    font-size: 15px;
+    gap: 10px;
+  }
+
+  .hud .btn.small {
+    min-height: 38px;
+    padding: 4px 12px;
+    font-size: 15px;
+  }
+
+  .hud-row {
+    gap: 8px;
+  }
+
+  .meter-bar {
+    width: 200px;
+  }
+
+  .tracker {
+    font-size: 15px;
+  }
+
+  .panel.bag {
+    width: 100%;
+    max-width: 1100px;
+    max-height: 780px;
+  }
+
+  .panel.bag .kit-body.bag-only {
+    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .panel.bag .kit-body.bag-only .kit-bag {
+    grid-area: 1 / 1 / 2 / 2;
+  }
+
+  .panel.bag .kit-body.bag-only .kit-detail {
+    grid-area: 1 / 2 / 2 / 3;
+  }
+
+  .panel.bag .kit-body.bag-only .kit-detail .detail.kit-card {
+    height: 100%;
+    max-height: none;
+  }
+
+  .panel.bag .kit-body.bag-only .kit-detail .detail.kit-card.empty {
+    height: 100%;
+  }
+
+  .panel.bag .kit-body.skills-only {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .shop {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .kit-slot {
+    width: 54px;
+    height: 54px;
+  }
+
+  .kit-slot .sprite {
+    transform: none;
+  }
+
+
+
+  .kit-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .kit-cell {
+    height: 64px;
+  }
+
+  .kit-cell .sprite {
+    transform: none;
+  }
+
+  .panel.bag .detail.kit-card {
+    height: 210px;
+    max-height: 210px;
+  }
+
+  .kit-worn {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-template-rows: minmax(0, 1fr);
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .worn-stage {
+    min-height: 0;
+    height: 100%;
+  }
+
+  .worn-figure .sprite {
+    transform: scale(3.2);
+  }
+
+  .worn-side {
+    height: 100%;
+    overflow-y: auto;
+  }
+}
+
+/* ------------------------------------------------------------ the map */
+
+.panel .panel-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.panel .panel-sub {
+  margin: 0;
+  font: 600 11px/1.3 var(--font-body);
+  color: var(--cream);
+  opacity: 0.8;
+}
+
+.panel.map {
+  width: 100%;
+  max-width: 980px;
+  height: 100%;
+  overflow: hidden;
+  background: var(--wood);
+  border: 3px solid var(--ink);
+  box-shadow: inset 0 0 0 3px var(--wood2);
+}
+
+.panel.map header {
+  background: var(--wood2);
+  border-bottom: 3px solid var(--ink);
+}
+
+.panel.map header h2 {
+  color: var(--cream);
+  font-size: 21px;
+  letter-spacing: 0.08em;
+}
+
+.panel.map header .btn.close {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.panel.map .panel-body {
+  flex: 1;
+  min-height: 0;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--wood);
+}
+
+.map-strip {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 9px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  color: var(--ink);
+  font: 600 11px/1.3 var(--font-body);
+}
+
+.map-strip b {
+  color: var(--wood);
+}
+
+.map-chart {
+  flex: none;
+  aspect-ratio: 48 / 49;
+  border: 3px solid var(--ink);
+  background: var(--cream);
+  box-shadow: inset 0 0 0 2px var(--gold);
+  overflow: hidden;
+}
+
+.map-chart svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.map-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 10px;
+  padding: 0 2px;
+  color: var(--cream);
+  font: 600 10px/1.3 var(--font-body);
+}
+
+.map-key span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.map-key i {
+  width: 9px;
+  height: 9px;
+  display: inline-block;
+  border: 2px solid var(--ink);
+}
+
+.map-key-you {
+  background: var(--red);
+  border-radius: 50% 50% 50% 0;
+  rotate: -45deg;
+}
+
+.map-key-stall {
+  background: var(--gold);
+}
+
+.map-key-walked {
+  background: #84c450;
+}
+
+.map-key-blank {
+  background: var(--cream);
+}
+
+.map-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+}
+
+.map-row {
+  width: 100%;
+  min-height: 46px;
+  padding: 5px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-bottom: 1px solid var(--cream);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.map-row:last-child {
+  border-bottom: 0;
+}
+
+.map-row.on {
+  background: var(--cream);
+  box-shadow: inset 4px 0 0 var(--red);
+}
+
+.map-ico {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--ink);
+  background: var(--gold);
+  color: var(--ink);
+  font: 800 13px/1 var(--font-body);
+}
+
+.map-ico.kind-ruin {
+  background: #5d6177;
+}
+
+.map-ico.kind-npc {
+  background: #5d6177;
+}
+
+.map-ico.kind-restore {
+  background: #3f8fd1;
+}
+
+.map-ico.kind-camp {
+  background: #4c9a3f;
+}
+
+.map-ico.kind-resource {
+  background: #84c450;
+}
+
+.map-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.map-nm {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.map-sub {
+  font-size: 10px;
+  line-height: 1.3;
+  color: var(--wood);
+}
+
+.map-empty {
+  flex: 1;
+  margin: 0;
+  padding: 12px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--wood);
+}
+
+.map-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.map-status {
+  flex: 1;
+  margin: 0;
+  font-size: 10.5px;
+  line-height: 1.35;
+  color: var(--cream);
+}
+
+.map-foot .btn {
+  flex: none;
+}
+
+.map-foot .btn.gold {
+  background: var(--gold);
+}
+
+.map-foot .btn:disabled {
+  opacity: 0.55;
+}
+
+/* a pocket chart on a desktop, where there is room beside the world */
+.hud-map {
+  position: fixed;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: max(14px, env(safe-area-inset-bottom));
+  display: none;
+  flex-direction: column;
+  width: 176px;
+  padding: 0;
+  background: var(--wood);
+  border: 3px solid var(--ink);
+  box-shadow:
+    inset 0 0 0 2px var(--wood2),
+    0 5px 0 rgba(27, 26, 46, 0.4);
+  color: var(--cream);
+  font-family: var(--font-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.hud-map-head {
+  padding: 4px 6px;
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  background: var(--wood2);
+  border-bottom: 2px solid var(--ink);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.hud-map-chart {
+  display: block;
+  height: 148px;
+  margin: 4px;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  overflow: hidden;
+}
+
+.hud-map-chart svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.hud-map-note {
+  padding: 0 6px 5px;
+  font-size: 9px;
+  line-height: 1.3;
+  color: var(--cream);
+}
+
+.hud-map-note b {
+  color: var(--gold);
+}
+
+@media (min-width: 900px) {
+  .hud-map {
+    display: flex;
+  }
+
+  .panel.map {
+    max-width: 1040px;
+    max-height: 780px;
+  }
+
+  .panel.map .panel-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    gap: 6px 8px;
+  }
+
+  .map-strip {
+    grid-column: 1 / 3;
+    grid-row: 1;
+  }
+
+  .map-chart {
+    grid-column: 1;
+    grid-row: 2 / 5;
+    aspect-ratio: auto;
+    height: 100%;
+  }
+
+  .map-key {
+    grid-column: 2;
+    grid-row: 2;
+    color: var(--cream);
+  }
+
+  .map-list {
+    grid-column: 2;
+    grid-row: 3;
+  }
+
+  .map-foot {
+    grid-column: 2;
+    grid-row: 4;
+    align-items: flex-end;
+  }
+
+  .map-foot .btn {
+    min-height: 38px;
+  }
+}
+
+.map-row.stall .map-ico {
+  background: var(--gold);
+}
+
+@media (min-width: 900px) {
+  .map-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .map-row {
+    flex: 1 0 auto;
+  }
+}
+
+.map-row.corner .map-ico {
+  background: var(--gold);
+}
+

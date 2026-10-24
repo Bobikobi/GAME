@@ -3,7 +3,7 @@
  * next place to go reads from the map itself (G28, onboarding research phase 2). Pure, so the
  * rule can be tested without a scene.
  */
-import { type Bundle, type Rect, type State, campTile, findSlot, hourOf, isNight, npcTile, spotOpen } from '@game/kernel';
+import { type Bundle, type Rect, campTile, findSlot, hourOf, isNight, npcTile, spotOpen, type PublicState } from '@game/kernel';
 
 import { activeQuests, questSteps, readyToHandIn } from './text';
 
@@ -24,7 +24,7 @@ export function heightOf(b: Bundle, ref: string | undefined, fallback: number): 
 /** At most this many, the nearest to the player first: a resource with many nodes must not fill the valley with sparks. */
 export const MAX_TARGETS = 6;
 
-export function questTargets(b: Bundle, s: State, tick: number): Target[] {
+export function questTargets(b: Bundle, s: PublicState, tick: number): Target[] {
   const main = activeQuests(b, s)[0];
   if (!main) return [];
   const q = b.quests[main]!;
@@ -70,7 +70,7 @@ type RiddleStep = Extract<Bundle['quests'][string]['steps'][number], { kind: 'ri
  * cites that stands next to the answer lights it, the way a lantern lights the
  * ground below it: a dig answer from dusk (19:00) to dawn, a night visit at night.
  */
-function litAnswer(b: Bundle, s: State, tick: number, st: RiddleStep): Target[] {
+function litAnswer(b: Bundle, s: PublicState, tick: number, st: RiddleStep): Target[] {
   const props = b.map.props.filter((p) => p.id !== undefined && st.props.includes(p.id));
   const lit = (r: Rect): boolean => props.some((p) => p.x <= r.x + r.w && r.x <= p.x + p.w && p.y <= r.y + r.h && r.y <= p.y + p.h);
   const a = st.answer;
@@ -91,7 +91,7 @@ function litAnswer(b: Bundle, s: State, tick: number, st: RiddleStep): Target[] 
 }
 
 /** The resource nodes that give the item and can be worked now (a regrowing node is only ground). */
-function nodesGiving(b: Bundle, s: State, tick: number, item: string): Target[] {
+function nodesGiving(b: Bundle, s: PublicState, tick: number, item: string): Target[] {
   const out: Target[] = [];
   for (const [id, inst] of Object.entries(b.instances)) {
     if (inst.kind !== 'resource') continue;
@@ -103,7 +103,7 @@ function nodesGiving(b: Bundle, s: State, tick: number, item: string): Target[] 
   return out;
 }
 
-function nearest(s: State, targets: Target[]): Target[] {
+function nearest(s: PublicState, targets: Target[]): Target[] {
   const [px, py] = s.player.at;
   const d = (t: Target): number => Math.abs(t.x - px) + Math.abs(t.y - py);
   return targets.sort((a, c) => d(a) - d(c) || a.y - c.y || a.x - c.x).slice(0, MAX_TARGETS);

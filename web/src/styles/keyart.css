@@ -1,0 +1,223 @@
+/*
+ * The desktop first screen: the painted key art (DECISIONS.md, 2026-10-23). This page, from 1024px, is the one
+ * place that bends the 2026-10-10 frame: a painted video, its own two faces (Cinzel signs, Manrope explains),
+ * soft scrims. Colours stay tokens; transparency is color-mix over a token, never rgba.
+ */
+@font-face {
+  font-family: 'Cinzel';
+  font-style: normal;
+  font-weight: 600 800;
+  font-display: swap;
+  src: url('/fonts/cinzel/cinzel-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/fonts/manrope/manrope-latin.woff2') format('woff2');
+}
+
+.keyart {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --ka-night: color-mix(in srgb, var(--ink) 70%, black);
+    --ka-veil: color-mix(in srgb, var(--ka-night) 88%, transparent);
+    --ka-line: color-mix(in srgb, var(--paper) 16%, transparent);
+    --ka-sign: 'Cinzel', var(--font-display);
+    --ka-say: 'Manrope', var(--font-reading);
+  }
+  body[data-section='home'] {
+    background: var(--ka-night);
+    color: var(--paper);
+  }
+  /* the desktop home is the key art and the footer; the phone's sections stay for the phone */
+  .home > :not(.keyart) {
+    display: none;
+  }
+  .keyart {
+    display: block;
+    position: relative;
+    height: 100vh;
+    min-height: 720px;
+    overflow: hidden;
+    isolation: isolate;
+    font-family: var(--ka-say);
+  }
+  .ka-art {
+    position: absolute;
+    inset: 0;
+    background: var(--ka-night);
+  }
+  .ka-art img,
+  .ka-art video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    object-position: center bottom;
+  }
+  .ka-scrim {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(90deg, var(--ka-veil) 0%, color-mix(in srgb, var(--ka-night) 62%, transparent) 30%, transparent 58%),
+      linear-gradient(0deg, color-mix(in srgb, var(--ka-night) 90%, transparent) 0%, transparent 26%),
+      linear-gradient(180deg, color-mix(in srgb, var(--ka-night) 70%, transparent) 0%, transparent 16%);
+  }
+  /* the opaque band at the foot: the video is drawn with cover from the bottom, so its rendered height is
+     max(hero height, hero width x 9/16); the band covers more than 13% of it at every desktop size */
+  .keyart {
+    --ka-band: max(13.5%, 7.6vw);
+  }
+  .ka-band {
+    position: absolute;
+    z-index: 5;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: var(--ka-band);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 56px;
+    background: var(--ka-night);
+    border-top: 1px solid var(--ka-line);
+  }
+  .ka-copy {
+    position: absolute;
+    z-index: 4;
+    left: 56px;
+    bottom: calc(var(--ka-band) + 40px);
+    width: 640px;
+  }
+  .ka-kick {
+    font: 700 var(--text-s) / 1 ui-monospace, monospace;
+    color: var(--green3);
+  }
+  .keyart h1 {
+    margin-top: 22px;
+    font: 800 84px / 0.98 var(--ka-sign);
+    letter-spacing: 0.01em;
+    text-shadow: 0 4px 40px color-mix(in srgb, black 45%, transparent);
+  }
+  .keyart h1 em {
+    font-style: normal;
+    color: var(--gold);
+  }
+  .ka-lead {
+    margin-top: 26px;
+    max-width: 560px;
+    font-size: 19px;
+    line-height: 1.6;
+    color: var(--paper2);
+  }
+  .ka-acts {
+    margin-top: 36px;
+    display: flex;
+    gap: 16px;
+  }
+  .ka-btn {
+    display: inline-flex;
+    align-items: center;
+    height: 56px;
+    padding: 0 30px;
+    font: 800 16px / 1 var(--ka-say);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .ka-btn.go {
+    background: var(--gold);
+    color: var(--ka-night);
+  }
+  .ka-btn.line {
+    border: var(--px) solid color-mix(in srgb, var(--paper) 55%, transparent);
+    background: color-mix(in srgb, var(--ka-night) 25%, transparent);
+    backdrop-filter: blur(6px);
+  }
+  .ka-btn:hover {
+    filter: brightness(1.08);
+  }
+  .ka-news {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    border-radius: 6px;
+    border: 1px solid var(--ka-line);
+    text-decoration: none;
+  }
+  .ka-tag {
+    font: 700 13px / 1 ui-monospace, monospace;
+    color: var(--ka-night);
+    background: var(--green3);
+    padding: 6px 8px;
+    border-radius: 3px;
+  }
+  .ka-news b {
+    font: 700 16px / 1.2 var(--ka-say);
+  }
+  .ka-arr {
+    color: var(--gold);
+    font-weight: 800;
+  }
+
+  /* the bar sits over the art on the home page; Play is the one filled button, last */
+  body[data-section='home'] .top {
+    position: absolute;
+    z-index: 6;
+    top: 0;
+    left: 0;
+    right: 0;
+  }
+  body[data-section='home'] .bar {
+    max-width: none;
+    padding: 16px 56px 0;
+    height: 88px;
+  }
+  body[data-section='home'] .wordmark {
+    font: 800 28px / 1 var(--ka-sign);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  body[data-section='home'] .nav {
+    flex: 1;
+    align-items: center;
+    margin-left: 56px;
+    gap: 32px;
+  }
+  body[data-section='home'] .nav a {
+    font: 700 15px / 44px var(--ka-say);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  body[data-section='home'] .nav a[href^='http'] {
+    margin-left: auto;
+  }
+  body[data-section='home'] .nav a[href='/play/'] {
+    order: 9;
+    padding: 0 22px;
+    line-height: 44px;
+    border-radius: 4px;
+    background: var(--gold);
+    color: var(--ka-night);
+  }
+  body[data-section='home'] .foot {
+    margin-top: 0;
+  }
+}
+
+@media (min-width: 1024px) and (prefers-reduced-motion: reduce) {
+  .ka-video {
+    display: none;
+  }
+}
