@@ -211,7 +211,7 @@ Reactions meet the shared-world rules of 10.10 (DECISIONS, "The shared world: wh
 - From stage 7, a world has one hour for everyone.
 - Players pass through each other, and nobody blocks a way.
 
-**Why the frame fits many players.** A reaction is a pure function of inputs that every player shares: the content, the seed, the world's hour, and a few stored facts. Every client and the server compute the same answer from the same inputs. So the network carries only those facts, never the state of a thousand tiles. This is deterministic lockstep, which Age of Empires used to run 1,500 archers over a 28.8k modem (Bettner and Terrano, 2001).
+**Why the frame fits many players.** A reaction is a pure function of inputs that every player shares: the content, the seed, the world's hour, and a few stored facts. Every client and the server compute the same answer from the same inputs. So the network carries only those facts, never the state of a thousand tiles. It is not lockstep: the server holds the state and sends results (the kernel review's 6e), and a client that computes a reaction for its own screen is drawing ahead of the reply, never deciding. The saving is the one Age of Empires took to run 1,500 archers over a 28.8k modem, carrying inputs and not state (Bettner and Terrano, 2001); the authority is not.
 
 **Whose reaction it is:**
 

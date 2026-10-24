@@ -229,6 +229,11 @@ Upstash Redis from the Vercel Marketplace (free tier) as the store.
   the same way: functions on the site's host with a managed database, no machine
   to operate (owner, 8.10; DECISIONS.md). The spec's dedicated server waits for
   stage 7, the first stage with a live connection per player.
+- **Superseded (18.10, DECISIONS "Accounts and a server: the owner's answers"):**
+  stage 2a runs on the owner's own box in two containers of its own, the API and
+  the database (NEXT.md section 18), and the presence step adds a relay beside
+  them (docs/design/PRESENCE.md). The two lines above are kept as the history of
+  8.10; nothing uses a paid vendor.
 
 Rejected: the analytics vendor's custom events (reports do not fit, and the
 read side is a paid API), a self-hosted endpoint (a server to run now, and this
