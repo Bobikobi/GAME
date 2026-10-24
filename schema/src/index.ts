@@ -482,6 +482,30 @@ export const NpcBody = Type.Object(
       ),
     ),
     shop: Type.Optional(Id),
+    round: Type.Optional(
+      Type.Array(
+        Type.Object(
+          {
+            hours: Type.Tuple([Int(0, 23), Int(1, 24)], {
+              description: 'From (inclusive) to (exclusive), game hours, inside one day. Outside every leg the character stands at home, on the slot.',
+            }),
+            via: Type.Array(Type.Tuple([Int(0, 1023), Int(0, 1023)]), {
+              minItems: 1,
+              maxItems: 48,
+              description:
+                'Tiles walked through in order, x then y, each one a foot can stand on: from home to the first, on through the rest, then back the same way home, at an even pace that fills the hours.',
+            }),
+          },
+          { additionalProperties: false },
+        ),
+        {
+          minItems: 1,
+          maxItems: 4,
+          description:
+            "A character who walks a round by day (decision 27 of 22.10): the legs of the day, each away from home over its hours. Where the character stands at a game tick is the kernel's (`npcTile`), so a talk, a trade or a task finds them where they are.",
+        },
+      ),
+    ),
   },
   { additionalProperties: false },
 );
@@ -496,6 +520,12 @@ export const ShopBody = Type.Object(
       { maxItems: 40 },
     ),
     buys: Type.Boolean({ description: 'Whether the shop buys anything that has a value.' }),
+    bed: Type.Optional(
+      Type.Literal(true, {
+        description:
+          'The keeper gives a bed for the night (G16, G32): from 19:00 to dawn the player may sleep here, and wakes at 05:00 with full health. The night passes; nothing in it is skipped.',
+      }),
+    ),
   },
   { additionalProperties: false },
 );
@@ -1338,6 +1368,113 @@ const CreatureKind = Type.Object(
 /** The closed list of climates a region may declare (NATURE section 2). The tables live in content/core/climates.json. */
 export const CLIMATES = ['temperate', 'dry', 'cold', 'wet'] as const;
 
+/** What a region of a map plan is for: a place a player stops in, or ground a player passes through. */
+export const REGION_PURPOSES = ['stop', 'passage'] as const;
+
+const PlanTile = Type.Tuple([Int(0, 1023), Int(0, 1023)], { description: 'A tile: x, then y.' });
+
+/**
+ * The plan block of a hand-composed map (DECISIONS.md, 2026-10-23: the valley map plan in the game): why
+ * each place is where it is, written beside the tiles. The map check reads it; the kernel and the
+ * clients do not. Every field is optional, so a map without a plan stays valid.
+ */
+export const MapPlan = Type.Object(
+  {
+    regions: Type.Optional(
+      Type.Array(
+        Type.Object(
+          {
+            id: Id,
+            purpose: Type.Union(REGION_PURPOSES.map((p) => Type.Literal(p))),
+            cells: Type.Array(Type.Tuple([Int(0, 1023), Int(0, 1023), Int(1, 1024), Int(1, 1024)]), {
+              minItems: 1,
+              maxItems: 8,
+              description: 'The rectangles the region covers: x, y, width, height.',
+            }),
+            height: Type.Optional(Int(0, 9, 'The level the region stands on, read against `heights`.')),
+            tags: Type.Optional(Type.Array(Type.String({ pattern: '^[a-z0-9:_-]+$', maxLength: 40 }), { maxItems: 8, uniqueItems: true })),
+            cover: Type.Optional(
+              Type.Record(SpriteRef, Int(0, 300), { description: 'The scatter line: per mille of the walkable tiles each small prop covers.' }),
+            ),
+            opens_by: Type.Optional(
+              Type.Union([Type.Literal('wake'), Id], {
+                description:
+                  '"wake": open from the first wake. Otherwise the quest whose reward opens the way in (decision 25 of 22.10); a quest not yet written is a warning, never an error. Left out: ground nobody walks (water, the woods, a mountain band).',
+              }),
+            ),
+          },
+          { additionalProperties: false },
+        ),
+        { maxItems: 64 },
+      ),
+    ),
+    paths: Type.Optional(
+      Type.Array(
+        Type.Object(
+          {
+            id: Id,
+            width: Int(1, 2, '1 for feet, 2 for a barrow or a cart.'),
+            via: Type.Array(PlanTile, {
+              minItems: 2,
+              maxItems: 32,
+              description: 'The corners of the path, each pair on one row or one column; every tile between is a path tile or a mended crossing (G69).',
+            }),
+          },
+          { additionalProperties: false },
+        ),
+        { maxItems: 64 },
+      ),
+    ),
+    routes: Type.Optional(
+      Type.Array(
+        Type.Object(
+          {
+            id: Id,
+            who: Name,
+            hours: Type.Tuple([Int(0, 23), Int(1, 24)], { description: 'From (inclusive) to (exclusive), game hours; a later from than to runs over midnight.' }),
+            via: Type.Array(PlanTile, { minItems: 1, maxItems: 48, description: 'Points a person walks through, each a tile a foot can stand on.' }),
+          },
+          { additionalProperties: false },
+        ),
+        { maxItems: 32 },
+      ),
+    ),
+    rests: Type.Optional(Type.Array(Tile('The top-left tile of a plain 3x3 the scatter leaves empty.'), { maxItems: 32 })),
+    wakes: Type.Optional(
+      Type.Array(
+        Type.Object(
+          {
+            pocket: { ...Id, description: 'A wake pocket of the pool (content/core/pockets): its file holds the wake tile and the tools on the ground.' },
+            quest: { ...Id, description: 'The first task of that pocket: a quest whose `pocket` names it.' },
+          },
+          { additionalProperties: false },
+        ),
+        { maxItems: 16, description: 'The spawn pool: every wake the seed may draw, with its first task.' },
+      ),
+    ),
+    exits: Type.Optional(
+      Type.Array(
+        Type.Object(
+          {
+            id: Id,
+            slot: Type.Optional({ ...Id, description: 'The gate: the slot a region quest opens (decision 25). Give this or `at`.' }),
+            at: Type.Optional({ ...PlanTile, description: 'A way out with no gate slot (the jetty where the boat waits): the last tile a foot stands on.' }),
+            to: { ...Id, description: 'The plan region the way leads into.' },
+            min_road_steps: Int(
+              1,
+              100000,
+              'G71: the fewest steps the road beyond this exit must run before the next region\'s ground, so that no wake reaches that ground before the first dusk with every gate open. The daylight in steps at the fastest wake, less its steps to this exit, plus a margin; the check refuses a smaller number and any stitched map whose road beyond is shorter.',
+            ),
+          },
+          { additionalProperties: false },
+        ),
+        { maxItems: 16, description: 'The ways out of the first region: the first night is held by the length of the road beyond each one, never by the gate (DECISIONS.md, 2026-10-23).' },
+      ),
+    ),
+  },
+  { additionalProperties: false },
+);
+
 export const MapBody = Type.Object(
   {
     climate: Type.Optional(
@@ -1367,6 +1504,14 @@ export const MapBody = Type.Object(
       { additionalProperties: false },
     )),
     ground: Type.Array(Type.String(), { minItems: 8 }),
+    heights: Type.Optional(
+      Type.Array(Type.String({ pattern: '^[0-9]+$' }), {
+        minItems: 8,
+        description:
+          'The level of every tile, one row of digits per ground row (0 the lowest, 9 the highest; G68). Read by the map check only: the kernel and the clients do not walk or draw levels yet.',
+      }),
+    ),
+    plan: Type.Optional(MapPlan),
     props: Type.Array(
       Type.Object(
         {
@@ -1383,6 +1528,22 @@ export const MapBody = Type.Object(
             }),
           ),
           fire: Type.Optional(Type.Literal(true, { description: 'A fire the player may feed by hand. It needs an id.' })),
+          kept: Type.Optional(
+            Type.Object(
+              {
+                by: { ...Id, description: 'The character whose fire it is.' },
+                from: Int(12, 23, 'The hour it is lit, when the keeper is home.'),
+              },
+              {
+                additionalProperties: false,
+                description:
+                  "A fire a character keeps (the owner, 23.10: Maru's hearth): it burns from `from` while its keeper is home, through the night, until the keeper leaves on the first leg of the round. A fire prop only. It never keeps a player's vigil (G48): a `tend` step counts the wood the player gave.",
+              },
+            ),
+          ),
+          crossing: Type.Optional(
+            Type.Literal(true, { description: 'Steps or a ramp: the way across a change of level (G68), on the lower tile, facing the face.' }),
+          ),
           lit_by: Type.Optional({
             ...Id,
             description: 'Id of the fire prop while whose fire burns this prop\'s note and sign may be read.',

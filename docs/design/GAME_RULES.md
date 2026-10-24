@@ -246,6 +246,7 @@ sheet, never the other way round; a sheet changes only by the owner's word.
 |---|---|---|---|---|
 | Elder Maru | Slow. Short sentences. Speaks of "once" and of mending. Hints at the mist, does not explain it. Calls the player "you", never by name until friend. | The town back, one mended thing at a time. | Prices. Hurry. A straight answer about the bells. | Approved (8.10) |
 | Pell | Quick. Counts everything. Every subject becomes a trade or a rumour. Jokes about prices, not about people. | Customers, and the roads open again. | Sentiment. Lore of her own; she repeats what travellers say. | Approved (8.10) |
+| Wenna (the innkeeper) | Warm and plain. Short orders about food and rest ("Sit.", "Eat first."). Speaks of the house, the pot and the bench. Holds no belief and tells no history; a claim about the past is always "the stories say". | Everyone fed, nobody turned away. | Rationing or prices as a joke. A side in the valley's beliefs. Lore of her own. | Proposed (23.10, the inn PR; merging approves it) |
 | The narrator (the river text, toasts, the journal) | Second person, present tense, concrete nouns, one adjective at most. Says what is there, not what to feel. | Nothing; it is the valley speaking. | "You feel", "amazing", exclamation marks outside a level-up. | Approved (8.10) |
 | Signs and inscriptions | Fewest words. A fact and a hook. No "you". | To be read twice. | A full sentence where a fragment does. | Approved (8.10) |
 
@@ -515,13 +516,14 @@ Added 2026-10-18 on the owner's word (DECISIONS.md, "Height crossings and windin
 
 - **G68 A rock face blocks both ways, and the way across suits the place.** A step between two tiles whose levels differ is refused in both directions, except across a tile that is a crossing: stairs, a ramp, a lift, a cable car, or any tool that fits the environment, its height, its geography and its culture. Two places never share the same crossing by habit. A crossing is never a gate that wears out and strands a player (dec 1094). A change of level that is only a mountain band (more than 3 levels in a step) is not walked at all.
 - **G69 Paths wind.** A path winds between trees, rocks and mountains. No straight run of a path is longer than 8 tiles, and at least that often it turns or passes through a gap in cover (a tree, a rock or a mountain within one tile of both sides). A bridge or a causeway may run up to 12 tiles, and at most one run in five of the ring may be longer than 8. The rule holds for generated and authored paths, and a straight stretch now and then is fine.
+- **G71 The first night is held by size, not by a rule.** Nothing forbids leaving the first town; the land is too large to cross before dusk, so the first night is a must by geometry. From every wake tile, with the valley's own mends made and every gate to another world shut, the shortest walk to ground of another world or the map's edge takes longer than the daylight left at waking, at the walk speed and on the clock the params set. No gate, flag or quest lock is added to hold a player in; a region gate stays a physical obstacle its quest clears (decision 25 of 22.10). `pnpm check` measures it and fails the map otherwise (DECISIONS.md, 2026-10-23).
 
 ### What this page covers, and what lives elsewhere
 
 | Topic | Where | State |
 |---|---|---|
 | The opening and onboarding | [FTUE_RESEARCH.md](../FTUE_RESEARCH.md) | Written; roadmap phases 2 and 3 open. |
-| Loop and hook, quests, riddles, reading, builds, choices, feel, session, variety, dialogue, sound, fairness, access, danger, expeditions, crafting, menace | This page | Rules G1-G49 and G68-G70. |
+| Loop and hook, quests, riddles, reading, builds, choices, feel, session, variety, dialogue, sound, fairness, access, danger, expeditions, crafting, menace | This page | Rules G1-G49 and G68-G71. |
 | Economy and balance | The kernel rules R1-R12, `content/core/params.json`, `pnpm values` | Enforced by code. |
 | Art and sprites | [docs/creators/README.md](../creators/README.md) | Enforced by the kit check. |
 | Community: requests, votes, merges, conduct | [CONTRIBUTING.md](../../CONTRIBUTING.md), [docs/loop/README.md](../loop/README.md) | Live. |

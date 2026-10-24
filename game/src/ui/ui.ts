@@ -20,6 +20,7 @@ import {
   satietyAt,
   satietyCap,
   skillPoints,
+  sleepPlace,
   talkLines,
 } from '@game/kernel';
 import { app } from '../app';
@@ -487,6 +488,8 @@ export class UI {
     const b = app.bundle;
     if (!s) return;
     for (const e of events) {
+      // a night in a sleep place: one plain box, and the morning is on screen (G16)
+      if (e.e === 'sleep') await say(this, null, ['You sleep. The night passes, and it is morning.']);
       if (e.e === 'restore') {
         const done = b.restores[e.restore]?.done;
         if (done) await say(this, null, named(done));
@@ -557,6 +560,8 @@ export class UI {
       }
     }
     if (npc.shop) options.push({ label: 'Trade', value: 'trade' });
+    // a sleep place (the inn's bed): offered all day, so the player learns it is there; the kernel says when it is given
+    if (sleepPlace(b, npcId) !== undefined) options.push({ label: 'Sleep until dawn', value: 'sleep' });
     options.push({ label: 'Goodbye', value: 'bye' });
 
     const choice = await say(this, npc.name, lines, options);
@@ -571,6 +576,11 @@ export class UI {
       return;
     }
     if (choice === 'trade' && npc.shop) return openShop(this, npcId);
+    if (choice === 'sleep') {
+      const r = await s.act({ t: 'sleep', place: npcId, at: s.pos });
+      if (!r.ok) this.toast(r.error, 'bad');
+      return;
+    }
     if (choice.startsWith('quest:')) return this.questTalk(npcId, choice.slice(6));
   }
 

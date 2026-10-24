@@ -1,0 +1,75 @@
+{
+  "$schema": "../../../schema/json/npc.schema.json",
+  "format": 1,
+  "type": "npc",
+  "id": "core/innkeeper",
+  "title": "Wenna the innkeeper",
+  "creator": "core",
+  "npc": {
+    "name": "Wenna",
+    "sprite": "core/base-kit:chars/woman_idle_down",
+    "place": {
+      "slot": "core/town-edge"
+    },
+    "shop": "core/inn",
+    "dialogue": {
+      "first": [
+        "I am Wenna. I keep the inn: food on the counter, a bed for the night.",
+        "Take what you need. The rest keeps."
+      ],
+      "stranger": [
+        "Eat first, then go. The night out there is long.",
+        "Beds from dusk. Nobody here is turned away."
+      ],
+      "acquaintance": [
+        "You come back hungry. Good. That is what the door is for."
+      ],
+      "friend": [
+        "The bench by the fire is yours whenever you want it."
+      ],
+      "family": [
+        "Whatever this house was before, it is a kitchen now."
+      ]
+    },
+    "remarks": [
+      {
+        "when": {
+          "race": [
+            "core/human"
+          ]
+        },
+        "say": [
+          "Hands like that mend things. Mine cook. Sit; the stew is the valley's."
+        ]
+      },
+      {
+        "when": {
+          "race": [
+            "core/elf"
+          ]
+        },
+        "say": [
+          "Forest folk, the stories say. Stories eat too. Sit."
+        ]
+      },
+      {
+        "when": {
+          "race": [
+            "core/skeleton"
+          ]
+        },
+        "say": [
+          "You eat? Good. Everyone here eats. The chair by the fire is yours."
+        ]
+      },
+      {
+        "when": {
+          "time": "day"
+        },
+        "say": [
+          "Maru walks the edges by day. At dusk, the hearth. Catch him out there or wait."
+        ]
+      }
+    ]
+  }
+}

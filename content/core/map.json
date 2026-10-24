@@ -5,10 +5,10 @@
   "id": "core/world",
   "title": "The valley",
   "creator": "core",
-  "description": "The first region: a river, a town, a grove and the ruins.",
+  "description": "The valley: a river and its bay, a town on its shelf, a grove, the ruins and the hills; every road out opens by its own quest.",
   "map": {
-    "width": 48,
-    "height": 49,
+    "width": 64,
+    "height": 64,
     "legend": {
       ".": {
         "sprite": "core/base-kit:tiles/grass",
@@ -59,59 +59,1347 @@
         "sprite": "core/base-kit:tiles/rubble",
         "solid": true,
         "tag": "ruin"
+      },
+      "^": {
+        "sprite": "core/base-kit:tiles/grass",
+        "solid": true,
+        "tag": "meadow"
+      },
+      "A": {
+        "sprite": "core/base-kit:tiles/rubble",
+        "solid": true,
+        "tag": "ruin"
+      },
+      "j": {
+        "sprite": "core/base-kit:tiles/bridge",
+        "solid": false,
+        "tag": "riverbank"
+      },
+      "a": {
+        "sprite": "core/base-kit:tiles/rubble",
+        "solid": false,
+        "tag": "ruin"
+      },
+      "b": {
+        "sprite": "core/base-kit:tiles/sand",
+        "solid": false,
+        "tag": "ruin"
       }
     },
     "ground": [
-      "TTTTTTTTTTTTT~~~TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-      "TTTTTTTTTTTTT~~~TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-      "TTTTTT......_~~~_......................,TTTTTTTT",
-      "TTTTTT......_~~~_.....================..TTTTTTTT",
-      "TTTTTT...,.._~~~_.....================......TTTT",
-      "TT.........._~~~_,....================..,...TTTT",
-      "TT,........._~~~_.....================......TTTT",
-      "TT........,._~~~_.....================......TTTT",
-      "TT.........._~~~_.,...================...,..TTTT",
-      "TT.,........_~~~_.....================......TTTT",
-      "TT.........,_~~~_.....================........TT",
-      "TT.........._~~~_..,..================....,...TT",
-      "TT..,....____~~~_.....================........TT",
-      "TT.......____~~~_.....======:=========........TT",
-      "TT.......____~~~_...,.......:..............,..TT",
-      "TT...,...____~~~_...........:.................TT",
-      "TT.......____~~~_...........:.......,.........TT",
-      "TT.:::::::::_~~~_:::::::::::::::::::::......,.TT",
-      "TT....,..____~~~_............,.......:........TT",
-      "TT.......____~~~_...............%%##########%.TT",
-      "TT.......____~~~_.....,.........###%##%#####%,TT",
-      "TT.....,.____~~~_.............,.###%#%#######.TT",
-      "TT.........._~~~_...............####%########.TT",
-      "TT.........._~~~_......,........#############.TT",
-      "TT......,..._~~~_..............,#############.TT",
-      "TT.........._~~~_\"\"\"\"\"\"\"\"\"\"\"\"\"\".######%%#####.TT",
-      "TT.........._~~~_\"T\"\"\"\"\"\"\"\"\"\"\"T.#############.TT",
-      "TT.......,.._~~~_\"\"\"\"\"\"T\"\"\"\"\"\"\".#############.TT",
-      "TTTTTTT....._~~~_\"\"\"\"\"\"\"\"\"\"\"\"\"\".#############.TT",
-      "TTTTTTT....._~~~_\"\"\"\"\"\"\"\"\"\"\"\"\"\".#############.TT",
-      "TTTTTTT...,._~~~_\"\"\"\"\"\"\"\"\"\"\"\"\"\".#############.TT",
-      "TTTTTTT....._~~~_TTTT\"\"\"\"\"\"\"\"\"\".%############.TT",
-      "TTTTTTT....._~~~_TTTT\"\"\"\"\"\"\"TTTT#%#########%%.TT",
-      "TTTTTTT....,_~~~_TTTT\"\"\"TTT\"TTTT..,...........TT",
-      "TTTTTTTTTTTTT~~~TTTTTTTTTTTTTTTTTTTTTTT\"TTTTTTTT",
-      "TTTTTTTTTTTTT~~~TTTTT\"T\"\"\"\"\"T\"\"\"\"\"\"\"T\"T\"\"\"T\"TTTT",
-      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"T\"T\"T\"TTT\"T\"T\"T\"TTTT",
-      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"T\"T\"T\"T\"T\"\"\"T\"\"\"TTTT",
-      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"TTTTT\"TTT\"TTT\"TTT\"TTTT",
-      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"\"\"T\"T\"T\"\"\"T\"T\"\"\"TTTT",
-      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"T\"T\"T\"T\"TTTTTTT\"TTTT",
-      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"T\"\"\"\"\"\"\"\"\"\"\"T\"\"\"TTTT",
-      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"TTT\"TTT\"TTT\"T\"T\"TTTT",
-      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"T\"\"\"T\"T\"\"\"T\"T\"T\"TTTT",
-      "TTTTTTTTTTTTT~~~TTTTT\"T\"T\"T\"TTT\"T\"T\"T\"T\"T\"T\"TTTT",
-      "TTTTTTTTTTTTT~~~TTTTT\"\"\"T\"T\"T\"T\"T\"\"\"T\"T\"T\"T\"TTTT",
-      "TTTTTTTTTTTTT~~~TTTTT\"\"\"T\"TTT\"T\"TTT\"T\"T\"T\"T\"TTTT",
-      "TTTTTTTTTTTTT~~~TTTTT\"\"\"T\"\"\"\"\"\"\"T\"\"\"T\"T\"\"\"T\"TTTT",
-      "TTTTTTTTTTTTT~~~TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+      "TTTTTTTTTTTTT~~~TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT^^^^^^AAAAAAAAAA",
+      "TTTTTTTTTTTTT~~~TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT^^^^^^AAAAAAAAAA",
+      "TTTTTT:....._~~~_......................,TTTTTTTT^^^^^^AAAAAAAAAA",
+      "TTTTTT:....._~~~_.....================..TTTTTTTT^^^^^^AAAAAAAAAA",
+      "TTTTTT:..,.._~~~_.....================......TTTT^^^^^^AAAAAAAAAA",
+      "TT....:....._~~~_,....================..,...TTTT^^^^^^AAAAAAAAAA",
+      "TT,...::...._~~~_.....================......TTTT^^^^^^AAAAAAAAAA",
+      "TT.....:..,._~~~_.....================......TTTT^^^^^^AAAAAAAAAA",
+      "TT.....::..._~~~_.,...================...,..TTTT^^^^^^AAAAAAAAAA",
+      "TT.,....:..._~~~_.....================......TTTT^^^^^^AAAAAAAAAA",
+      "TT......:..,_~~~_.....================........TT^^^^^^AAAAAAAAAA",
+      "TT......:..._~~~_..,..================....,...TT^^^^^^AAAAAAAAAA",
+      "TT..,...:____~~~_.....================........TT^^^^^^AAAAAAAAAA",
+      "TT....:::____~~~_.....======:=========........TT^^^^^^AAAAAAAAAA",
+      "TT....:..____~~~_...,.......:......::......,..TT^^^^^^AAAAAAAAAA",
+      "TT...,:..____~~~_......::::::......::.........TT^^^^^^AAAAAAAAAA",
+      "TT....:..____~~~_:::::::....:......::.........TT^^^^^^AAAAAAAAAA",
+      "TT....:...:::~~~::..........::.....:::::....,.TT^^^^^^AAAAAAAAAA",
+      "TT....:::::__~~~_............::::::::..:......TT^^^^^^AAAAAAAAAA",
+      "TT....:::____~~~_:..............%%#####:####%.TT^^^^^^AAAAAAAAAA",
+      "TT......:____~~~_:....,.........###%##%:####%,TT^^^^^^AAAAAAAAAA",
+      "TT.....,:____~~~_:............,.###%#%#:#####..^^^^^^^AAAAAAAAAA",
+      "TT......::.._~~~_:..............#######:#####..^^^^^^^AAAAAAAAAA",
+      "TT.........._~~~_:.....,........#######:#####..^^^^^^^AAAAAAAAAA",
+      "TT......,..._~~~_::::::::......,#######:::::#.^^^^^^^^AAAAAAAAAA",
+      "TT.........._~~~_\"\"\"\"\"\"\":\"\"\"\"\"\".######%%###:#.^^^^^^^^AAAAAAAAAA",
+      "TT.........._~~~_\"T\"\"\"\"\":\"\"\"\"\"T.###########:#.^^^^^^^^AAAAAAAAAA",
+      "TT.......,.._~~~_\"\"\"\"\"\"T:\"\"\"\"\"\".#############.^^^^^^^^AAAAAAAAAA",
+      "TTTTTTT....._~~~_\"\"\"\"\"\"\":\"\"\"\"\"\".#############.^^^^^^^^AAAAAAAAAA",
+      "TTTTTTT....._~~~_\"\"\"\"\"\"\":\"\"\"\"\"\".#############..^^^^^^^AAAAAAAAAA",
+      "TTTTTTT...,._~~~_\"\"\"\"\"\"\":\"\"\"\"\"\".#############..^^^^^^^AAAAAAAAAA",
+      "TTTTTTT....._~~~_TTTT\"\"\":\"\"\"\"\"\".%###%########..^^^^^^^AAAAAAAAAA",
+      "TTTTTTT....._~~~_TTTT\"\"\"\"\"\"\"TTTT#%#########%%.T^^^^^^^AAAAAAAAAA",
+      "TTTTTTT....,_~~~_TTTT\"\"\"TTT\"TTTT..,...........T^^^^^^^AAAAAAAAAA",
+      "~~~~~~~~j~~~~~~~TTTTTTTTTTTTTTTTTTTTTTT\"TTTTTTT^^^^^^^AAAAAAAAAA",
+      "~~~~~~~~j~~~~~~~TTTTT\"T\"\"\"\"\"T\"\"\"\"\"\"\"T\"T\"\"\"T\"T:T^^^^^^^AAAAAAAAAA",
+      "~~~~~~~~j~~~~~~~TTTTT\"T\"T\"T\"T\"T\"T\"TTT\"T\"T\"T\"T:T^^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTT\"T\"T\"T\"T\"T\"T\"T\"T\"\"\"T\"\"\"T:T^^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTT\"T\"T\"TTTTT\"TTT\"TTT\"TTT\"T::^^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTT\"T\"T\"T\"\"\"T\"T\"T\"\"\"T\"T\"\"\"TT:^^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTT\"T\"T\"T\"T\"T\"T\"T\"TTTTTTT\"TT:^^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTT\"T\"T\"T\"T\"\"\"\"\"\"\"\"\"\"\"T\"\"\"T.:^^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTT\"T\"T\"T\"TTT\"TTT\"TTT\"T\"T\"TT:^^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTT\"T\"T\"T\"T\"\"\"T\"T\"\"\"T\"T\"T\"T::^^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTT\"T\"T\"T\"TTT\"T\"T\"T\"T\"T\"T\"T:T^^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTT\"\"\"T\"T\"T\"T\"T\"\"\"T\"T\"T\"T\"T:T^^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTT\"\"\"T\"TTT\"T\"TTT\"T\"T\"T\"T\"T:T^^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTT\"\"\"T\"\"\"\"\"\"\"T\"\"\"T\"T\"\"\"T\"T:T^^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTTTTTTTTTTTTTTTTTTTTTTTTTT:T^^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTT###########################^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTT###########################^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTT###########################^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTTaaa#a#####a###a#####a#####a^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTTaaa#a#a#aaa##aaa##aaaaa#a#a^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTTaaaaaaaaaaaaaaaaaaaaaaaaaaa^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTTaaaaaaaaaaaaaaaaaaaaaaaaaaa^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTTbbbabaaaaabaaabaaaaabaaaaab^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTTbbbabababbbaabbbaabbbbbabab^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTTbbbbbbbbbbbbbbbbbbbbbbbbbbb^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTTbbbbbbbbbbbbbbbbbbbbbbbbbbb^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTT\"\"\"b\"bbbbb\"bbb\"bbbbb\"bbbbb\"^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTT\"\"\"b\"b\"b\"\"\"bb\"\"\"bb\"\"\"\"\"b\"b\"^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTT\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"^^^^^^AAAAAAAAAA",
+      "~~~~~~~~~~~~~~~~TTTTT\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"^^^^^^AAAAAAAAAA"
     ],
+    "heights": [
+      "0000000000000000000000111111111111111110000000001222223333777777",
+      "0000000000000000000000111111111111111110000000001222223333777777",
+      "0000000000000000000000111111111111111110000000001222223333777777",
+      "0000000000000000000000111111111111111110000000001222223333777777",
+      "0000000000000000000000111111111111111110000000001222223333777777",
+      "0000000000000000000000111111111111111110000000001222223333777777",
+      "0000000000000000000000111111111111111110000000001222223333777777",
+      "0000000000000000000000111111111111111110000000001222223333777777",
+      "0000000000000000000000111111111111111110000000001222223333777777",
+      "0000000000000000000000111111111111111110000000001222223333777777",
+      "0000000000000000000000111111111111111110000000001222223333777777",
+      "0000000000000000000000111111111111111110000000001222223333777777",
+      "0000000000000000000000011111111111111110000000001222223333777777",
+      "0000000000000000000000011111111111111110000000001222223333777777",
+      "0000000000000000000000000000000000000000000000001222223333777777",
+      "0000000000000000000000000000000000000000000000001222223333777777",
+      "0000000000000000000000000000000000000000000000001222223333777777",
+      "0000000000000000000000000000000000000000000000001222223333777777",
+      "0000000000000000000000000000000000000000000000001222223333777777",
+      "0000000000000000000000000000000000000000000000001222223333777777",
+      "0000000000000000000000000000000000000000000000001222223333777777",
+      "0000000000000000000000000000000000000000000000011222223333777777",
+      "0000000000000000000000000000000000000000000000011222223333777777",
+      "0000000000000000000000000000000000000000000000011222223333777777",
+      "0000000000000000000000000000000000000000000000111222223333777777",
+      "0000000000000000000000000000000000000001111110111222223333777777",
+      "0000000000000000000000000000000000000001111110111222223333777777",
+      "0000000000000000000000000000000000000001111110111222223333777777",
+      "0000000000000000000000000000000000000001111110111222223333777777",
+      "0000000000000000000000000000000000000001111110011222223333777777",
+      "0000000000000000000000000000000000000001111110011222223333777777",
+      "0000000000000000000000000000000000000001111110011222223333777777",
+      "0000000000000000000000000000000000000000000000011222223333777777",
+      "0000000000000000000000000000000000000000000000011222223333777777",
+      "0000000000000000000000000000000000000000000000011222223333777777",
+      "0000000000000000000000000000000000000000000000011222223333777777",
+      "0000000000000000000000000000000000000000000000011222223333777777",
+      "0000000000000000000000000000000000000000000000011222223333777777",
+      "0000000000000000000000000000000000000000000000011222223333777777",
+      "0000000000000000000000000000000000000000000000011222223333777777",
+      "0000000000000000000000000000000000000000000000011222223333777777",
+      "0000000000000000000000000000000000000000000000011222223333777777",
+      "0000000000000000000000000000000000000000000000011222223333777777",
+      "0000000000000000000000000000000000000000000000011222223333777777",
+      "0000000000000000000000000000000000000000000000011222223333777777",
+      "0000000000000000000000000000000000000000000000011222223333777777",
+      "0000000000000000000000000000000000000000000000011222223333777777",
+      "0000000000000000000000000000000000000000000000011222223333777777",
+      "0000000000000000000000000000000000000000000000011222223333777777",
+      "0000000000000000000000000000000000000000000000001222223333777777",
+      "0000000000000000000000000000000000000000000000001222223333777777",
+      "0000000000000000000000000000000000000000000000001222223333777777",
+      "0000000000000000000000000000000000000000000000001222223333777777",
+      "0000000000000000000000000000000000000000000000001222223333777777",
+      "0000000000000000000000000000000000000000000000001222223333777777",
+      "0000000000000000000000000000000000000000000000001222223333777777",
+      "0000000000000000000000000000000000000000000000001222223333777777",
+      "0000000000000000000000000000000000000000000000001222223333777777",
+      "0000000000000000000000000000000000000000000000001222223333777777",
+      "0000000000000000000000000000000000000000000000001222223333777777",
+      "0000000000000000000000000000000000000000000000001222223333777777",
+      "0000000000000000000000000000000000000000000000001222223333777777",
+      "0000000000000000000000000000000000000000000000001222223333777777",
+      "0000000000000000000000000000000000000000000000001222223333777777"
+    ],
+    "plan": {
+      "regions": [
+        {
+          "id": "core/north-wood",
+          "purpose": "passage",
+          "cells": [
+            [
+              0,
+              0,
+              48,
+              2
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "forest",
+            "frame",
+            "world:elf"
+          ],
+          "opens_by": "core/the-north-wood"
+        },
+        {
+          "id": "core/sun-bank-north",
+          "purpose": "stop",
+          "cells": [
+            [
+              2,
+              2,
+              11,
+              10
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "meadow",
+            "riverbank"
+          ],
+          "cover": {
+            "core/base-kit:props/grass_tall": 30,
+            "core/base-kit:props/flowers": 20,
+            "core/base-kit:props/pebbles": 10
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/wake-bank",
+          "purpose": "stop",
+          "cells": [
+            [
+              2,
+              12,
+              11,
+              11
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "meadow",
+            "riverbank"
+          ],
+          "cover": {
+            "core/base-kit:props/grass_tall": 50,
+            "core/base-kit:props/flowers": 30,
+            "core/base-kit:props/flowers_white": 20,
+            "core/base-kit:props/pebbles": 20
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/south-bank",
+          "purpose": "stop",
+          "cells": [
+            [
+              2,
+              23,
+              11,
+              11
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "meadow",
+            "riverbank"
+          ],
+          "cover": {
+            "core/base-kit:props/reeds": 30,
+            "core/base-kit:props/flowers": 20,
+            "core/base-kit:props/mushrooms_small": 10
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/river",
+          "purpose": "passage",
+          "cells": [
+            [
+              13,
+              2,
+              3,
+              32
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "water"
+          ]
+        },
+        {
+          "id": "core/bay",
+          "purpose": "passage",
+          "cells": [
+            [
+              0,
+              34,
+              16,
+              30
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "water",
+            "riverbank",
+            "frame"
+          ],
+          "cover": {
+            "core/base-kit:props/reeds": 60
+          },
+          "opens_by": "core/the-landing"
+        },
+        {
+          "id": "core/west-gate",
+          "purpose": "passage",
+          "cells": [
+            [
+              16,
+              2,
+              6,
+              12
+            ],
+            [
+              22,
+              12,
+              1,
+              2
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "meadow"
+          ],
+          "cover": {
+            "core/base-kit:props/grass_tall": 30,
+            "core/base-kit:props/flowers_white": 20,
+            "core/base-kit:props/pebbles": 10
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/camp-meadow",
+          "purpose": "stop",
+          "cells": [
+            [
+              16,
+              14,
+              16,
+              5
+            ],
+            [
+              16,
+              19,
+              16,
+              6
+            ],
+            [
+              32,
+              14,
+              7,
+              4
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "meadow"
+          ],
+          "cover": {
+            "core/base-kit:props/grass_tall": 50,
+            "core/base-kit:props/flowers": 30,
+            "core/base-kit:props/flowers_white": 20
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/town-shelf",
+          "purpose": "stop",
+          "cells": [
+            [
+              22,
+              2,
+              17,
+              10
+            ],
+            [
+              23,
+              12,
+              16,
+              2
+            ]
+          ],
+          "height": 1,
+          "tags": [
+            "town"
+          ],
+          "cover": {
+            "core/base-kit:props/pebbles": 20,
+            "core/base-kit:props/flowers": 10
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/town-foot",
+          "purpose": "passage",
+          "cells": [
+            [
+              39,
+              2,
+              7,
+              17
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "meadow"
+          ],
+          "cover": {
+            "core/base-kit:props/grass_tall": 40,
+            "core/base-kit:props/flowers_blue": 20,
+            "core/base-kit:props/rock_mossy": 10
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/gate-yard",
+          "purpose": "stop",
+          "cells": [
+            [
+              32,
+              18,
+              7,
+              2
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "ruin"
+          ],
+          "cover": {
+            "core/base-kit:props/pebbles": 20,
+            "core/base-kit:props/rock_small": 10
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/ruins-night",
+          "purpose": "stop",
+          "cells": [
+            [
+              32,
+              20,
+              7,
+              13
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "ruin",
+            "walled"
+          ],
+          "cover": {
+            "core/base-kit:props/rock_stones": 30,
+            "core/base-kit:props/mushrooms_small": 30
+          },
+          "opens_by": "core/the-night-arch"
+        },
+        {
+          "id": "core/garden-court",
+          "purpose": "stop",
+          "cells": [
+            [
+              39,
+              19,
+              6,
+              6
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "ruin"
+          ],
+          "cover": {
+            "core/base-kit:props/rock_mossy": 20,
+            "core/base-kit:props/pebbles": 20
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/ruins-terrace",
+          "purpose": "stop",
+          "cells": [
+            [
+              39,
+              25,
+              6,
+              7
+            ]
+          ],
+          "height": 1,
+          "tags": [
+            "ruin"
+          ],
+          "cover": {
+            "core/base-kit:props/rock_mossy": 40,
+            "core/base-kit:props/pebbles": 40
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/east-lane",
+          "purpose": "passage",
+          "cells": [
+            [
+              45,
+              19,
+              1,
+              15
+            ],
+            [
+              46,
+              21,
+              1,
+              3
+            ],
+            [
+              46,
+              29,
+              1,
+              3
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "meadow",
+            "hollow"
+          ],
+          "cover": {
+            "core/base-kit:props/rock_mossy": 60,
+            "core/base-kit:props/mushrooms_small": 60
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/ruins-south",
+          "purpose": "passage",
+          "cells": [
+            [
+              39,
+              32,
+              6,
+              1
+            ],
+            [
+              32,
+              33,
+              13,
+              1
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "ruin",
+            "meadow"
+          ],
+          "cover": {
+            "core/base-kit:props/pebbles": 20,
+            "core/base-kit:props/grass_tall": 20
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/grove",
+          "purpose": "stop",
+          "cells": [
+            [
+              16,
+              25,
+              16,
+              9
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "grove"
+          ],
+          "cover": {
+            "core/base-kit:props/mushrooms_small": 80,
+            "core/base-kit:props/fallen_branches": 60,
+            "core/base-kit:props/flowers_white": 40,
+            "core/base-kit:props/glow_mushrooms": 40,
+            "core/base-kit:props/log_mossy": 30
+          },
+          "opens_by": "wake"
+        },
+        {
+          "id": "core/tangle",
+          "purpose": "stop",
+          "cells": [
+            [
+              20,
+              34,
+              25,
+              15
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "grove"
+          ],
+          "cover": {
+            "core/base-kit:props/mushrooms_small": 60,
+            "core/base-kit:props/rock_small": 50,
+            "core/base-kit:props/glow_mushrooms": 40
+          },
+          "opens_by": "core/the-tangle"
+        },
+        {
+          "id": "core/descent-cut",
+          "purpose": "passage",
+          "cells": [
+            [
+              45,
+              34,
+              2,
+              15
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "ruin",
+            "forest",
+            "world:undead"
+          ],
+          "cover": {
+            "core/base-kit:props/rock_stones": 40,
+            "core/base-kit:props/fallen_branches": 40
+          },
+          "opens_by": "core/the-descent"
+        },
+        {
+          "id": "core/undead-descent",
+          "purpose": "passage",
+          "cells": [
+            [
+              20,
+              49,
+              28,
+              15
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "ruin",
+            "ash",
+            "world:undead"
+          ],
+          "cover": {
+            "core/base-kit:props/rock_stones": 80,
+            "core/base-kit:props/glow_mushrooms": 60,
+            "core/base-kit:props/mushrooms_small": 40,
+            "core/base-kit:props/fallen_branches": 20
+          },
+          "opens_by": "core/the-descent"
+        },
+        {
+          "id": "core/shore-way",
+          "purpose": "passage",
+          "cells": [
+            [
+              16,
+              34,
+              4,
+              30
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "forest",
+            "riverbank",
+            "world:human"
+          ],
+          "cover": {
+            "core/base-kit:props/reeds": 40,
+            "core/base-kit:props/pebbles": 20
+          },
+          "opens_by": "core/the-shore-way"
+        },
+        {
+          "id": "core/east-hills",
+          "purpose": "passage",
+          "cells": [
+            [
+              48,
+              0,
+              16,
+              64
+            ],
+            [
+              47,
+              21,
+              1,
+              28
+            ],
+            [
+              46,
+              24,
+              1,
+              5
+            ]
+          ],
+          "height": 1,
+          "tags": [
+            "heath",
+            "frame",
+            "scenery"
+          ],
+          "cover": {
+            "core/base-kit:props/rock_mossy": 30,
+            "core/base-kit:props/grass_tall": 20
+          }
+        },
+        {
+          "id": "core/woods",
+          "purpose": "passage",
+          "cells": [
+            [
+              0,
+              2,
+              2,
+              32
+            ],
+            [
+              46,
+              2,
+              2,
+              19
+            ],
+            [
+              46,
+              32,
+              1,
+              2
+            ]
+          ],
+          "height": 0,
+          "tags": [
+            "forest",
+            "frame"
+          ]
+        }
+      ],
+      "paths": [
+        {
+          "id": "core/bank-path",
+          "width": 1,
+          "via": [
+            [
+              7,
+              6
+            ],
+            [
+              7,
+              8
+            ],
+            [
+              8,
+              8
+            ],
+            [
+              8,
+              11
+            ],
+            [
+              8,
+              13
+            ],
+            [
+              6,
+              13
+            ],
+            [
+              6,
+              17
+            ],
+            [
+              6,
+              19
+            ],
+            [
+              8,
+              19
+            ],
+            [
+              8,
+              22
+            ],
+            [
+              9,
+              22
+            ]
+          ]
+        },
+        {
+          "id": "core/north-track",
+          "width": 1,
+          "via": [
+            [
+              7,
+              6
+            ],
+            [
+              6,
+              6
+            ],
+            [
+              6,
+              2
+            ]
+          ]
+        },
+        {
+          "id": "core/bridge-road",
+          "width": 1,
+          "via": [
+            [
+              6,
+              17
+            ],
+            [
+              6,
+              18
+            ],
+            [
+              10,
+              18
+            ],
+            [
+              10,
+              17
+            ],
+            [
+              12,
+              17
+            ],
+            [
+              16,
+              17
+            ],
+            [
+              17,
+              17
+            ],
+            [
+              17,
+              16
+            ],
+            [
+              23,
+              16
+            ],
+            [
+              23,
+              15
+            ],
+            [
+              28,
+              15
+            ],
+            [
+              28,
+              14
+            ],
+            [
+              28,
+              13
+            ]
+          ]
+        },
+        {
+          "id": "core/old-road",
+          "width": 1,
+          "via": [
+            [
+              28,
+              17
+            ],
+            [
+              29,
+              17
+            ],
+            [
+              29,
+              18
+            ],
+            [
+              36,
+              18
+            ]
+          ]
+        },
+        {
+          "id": "core/market-way",
+          "width": 2,
+          "via": [
+            [
+              35,
+              14
+            ],
+            [
+              35,
+              17
+            ]
+          ]
+        },
+        {
+          "id": "core/garden-way",
+          "width": 1,
+          "via": [
+            [
+              36,
+              17
+            ],
+            [
+              39,
+              17
+            ],
+            [
+              39,
+              24
+            ],
+            [
+              43,
+              24
+            ],
+            [
+              43,
+              26
+            ]
+          ]
+        },
+        {
+          "id": "core/grove-track",
+          "width": 1,
+          "via": [
+            [
+              17,
+              19
+            ],
+            [
+              17,
+              24
+            ],
+            [
+              24,
+              24
+            ],
+            [
+              24,
+              31
+            ]
+          ]
+        },
+        {
+          "id": "core/descent-way",
+          "width": 1,
+          "via": [
+            [
+              45,
+              35
+            ],
+            [
+              45,
+              38
+            ],
+            [
+              46,
+              38
+            ],
+            [
+              46,
+              43
+            ],
+            [
+              45,
+              43
+            ],
+            [
+              45,
+              48
+            ]
+          ]
+        }
+      ],
+      "routes": [
+        {
+          "id": "core/maru-round-east",
+          "who": "Maru",
+          "hours": [
+            5,
+            10
+          ],
+          "via": [
+            [
+              29,
+              7
+            ],
+            [
+              31,
+              7
+            ],
+            [
+              31,
+              10
+            ],
+            [
+              33,
+              10
+            ],
+            [
+              33,
+              12
+            ],
+            [
+              36,
+              12
+            ],
+            [
+              36,
+              13
+            ],
+            [
+              36,
+              14
+            ],
+            [
+              36,
+              18
+            ],
+            [
+              36,
+              17
+            ],
+            [
+              39,
+              17
+            ],
+            [
+              39,
+              18
+            ],
+            [
+              45,
+              18
+            ],
+            [
+              45,
+              21
+            ],
+            [
+              46,
+              21
+            ],
+            [
+              46,
+              23
+            ],
+            [
+              45,
+              23
+            ],
+            [
+              45,
+              29
+            ],
+            [
+              46,
+              29
+            ],
+            [
+              46,
+              31
+            ],
+            [
+              45,
+              31
+            ],
+            [
+              45,
+              33
+            ],
+            [
+              39,
+              33
+            ]
+          ]
+        },
+        {
+          "id": "core/maru-round-west",
+          "who": "Maru",
+          "hours": [
+            10,
+            15
+          ],
+          "via": [
+            [
+              29,
+              18
+            ],
+            [
+              28,
+              17
+            ],
+            [
+              17,
+              16
+            ],
+            [
+              17,
+              19
+            ],
+            [
+              24,
+              31
+            ],
+            [
+              17,
+              16
+            ],
+            [
+              10,
+              17
+            ],
+            [
+              10,
+              18
+            ],
+            [
+              6,
+              18
+            ],
+            [
+              6,
+              17
+            ],
+            [
+              7,
+              6
+            ]
+          ]
+        },
+        {
+          "id": "core/innkeeper-post",
+          "who": "the innkeeper",
+          "hours": [
+            0,
+            24
+          ],
+          "via": [
+            [
+              36,
+              7
+            ]
+          ]
+        },
+        {
+          "id": "core/traveller-camp",
+          "who": "the traveller",
+          "hours": [
+            20,
+            5
+          ],
+          "via": [
+            [
+              26,
+              31
+            ]
+          ]
+        },
+        {
+          "id": "core/pell-ferry",
+          "who": "Pell",
+          "hours": [
+            6,
+            19
+          ],
+          "via": [
+            [
+              35,
+              12
+            ],
+            [
+              28,
+              14
+            ],
+            [
+              16,
+              17
+            ],
+            [
+              6,
+              18
+            ],
+            [
+              8,
+              33
+            ]
+          ]
+        },
+        {
+          "id": "core/watchman-round",
+          "who": "the watchman",
+          "hours": [
+            20,
+            5
+          ],
+          "via": [
+            [
+              23,
+              16
+            ],
+            [
+              28,
+              13
+            ],
+            [
+              25,
+              8
+            ],
+            [
+              30,
+              7
+            ]
+          ]
+        },
+        {
+          "id": "core/drunk-post",
+          "who": "the drunk",
+          "hours": [
+            20,
+            5
+          ],
+          "via": [
+            [
+              38,
+              8
+            ]
+          ]
+        },
+        {
+          "id": "core/smuggler-way",
+          "who": "the smuggler",
+          "hours": [
+            20,
+            5
+          ],
+          "via": [
+            [
+              8,
+              33
+            ],
+            [
+              7,
+              32
+            ],
+            [
+              8,
+              26
+            ],
+            [
+              6,
+              20
+            ],
+            [
+              6,
+              18
+            ],
+            [
+              17,
+              16
+            ],
+            [
+              29,
+              18
+            ],
+            [
+              36,
+              18
+            ]
+          ]
+        }
+      ],
+      "rests": [
+        {
+          "x": 5,
+          "y": 9
+        },
+        {
+          "x": 2,
+          "y": 14
+        },
+        {
+          "x": 4,
+          "y": 25
+        },
+        {
+          "x": 18,
+          "y": 4
+        },
+        {
+          "x": 27,
+          "y": 19
+        },
+        {
+          "x": 31,
+          "y": 8
+        },
+        {
+          "x": 39,
+          "y": 13
+        }
+      ],
+      "wakes": [
+        {
+          "pocket": "core/north-meadow",
+          "quest": "core/glint-by-the-bridge"
+        },
+        {
+          "pocket": "core/slid-bank",
+          "quest": "core/buried-axe"
+        },
+        {
+          "pocket": "core/west-bank",
+          "quest": "core/first-pickings"
+        }
+      ],
+      "exits": [
+        {
+          "id": "core/north-exit",
+          "slot": "core/north-gate",
+          "to": "core/north-wood",
+          "min_road_steps": 2110
+        },
+        {
+          "id": "core/descent-exit",
+          "slot": "core/descent-gate",
+          "to": "core/descent-cut",
+          "min_road_steps": 2059
+        },
+        {
+          "id": "core/shore-exit",
+          "slot": "core/shore-gate",
+          "to": "core/shore-way",
+          "min_road_steps": 2088
+        },
+        {
+          "id": "core/ferry",
+          "at": [
+            8,
+            36
+          ],
+          "to": "core/bay",
+          "min_road_steps": 2102
+        }
+      ]
+    },
     "props": [
       {
         "sprite": "core/base-kit:props/house_small",
@@ -203,14 +1491,6 @@
       },
       {
         "sprite": "core/base-kit:props/flowers",
-        "x": 25,
-        "y": 15,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/flowers",
         "x": 33,
         "y": 15,
         "w": 1,
@@ -244,6 +1524,15 @@
         "sign": "core/elder-house"
       },
       {
+        "id": "core/inn-house",
+        "sprite": "core/base-kit:props/house_small",
+        "x": 36,
+        "y": 4,
+        "w": 3,
+        "h": 2,
+        "solid": true
+      },
+      {
         "sprite": "core/base-kit:props/sign",
         "x": 37,
         "y": 8,
@@ -264,13 +1553,13 @@
       },
       {
         "id": "core/town-lantern",
-        "sprite": "core/base-kit:props/broken_statue",
+        "sprite": "core/base-kit:props/lantern_post",
         "x": 22,
         "y": 8,
         "w": 1,
         "h": 1,
         "solid": true,
-        "note": "A lantern statue, face gone, turned to the town. Paving stones at its feet."
+        "note": "An iron lantern post, turned to the town. Paving stones at its feet."
       },
       {
         "id": "core/elder-hearth",
@@ -280,7 +1569,11 @@
         "w": 1,
         "h": 1,
         "solid": true,
-        "fire": true
+        "fire": true,
+        "kept": {
+          "by": "core/elder",
+          "from": 19
+        }
       },
       {
         "sprite": "core/base-kit:props/statue_head",
@@ -303,6 +1596,46 @@
         "x": 32,
         "y": 27,
         "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_wall",
+        "x": 35,
+        "y": 27,
+        "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_wall",
+        "x": 37,
+        "y": 27,
+        "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/rubble",
+        "x": 35,
+        "y": 28,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/rubble",
+        "x": 37,
+        "y": 28,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/rubble",
+        "x": 38,
+        "y": 31,
+        "w": 1,
         "h": 1,
         "solid": true
       },
@@ -368,26 +1701,86 @@
             "night"
           ],
           "round": [
-            [8, 24],
-            [9, 24],
-            [10, 24],
-            [11, 24],
-            [11, 25],
-            [11, 26],
-            [11, 27],
-            [11, 28],
-            [11, 29],
-            [11, 30],
-            [11, 31],
-            [10, 31],
-            [9, 31],
-            [8, 31],
-            [8, 30],
-            [8, 29],
-            [8, 28],
-            [8, 27],
-            [8, 26],
-            [8, 25]
+            [
+              8,
+              24
+            ],
+            [
+              9,
+              24
+            ],
+            [
+              10,
+              24
+            ],
+            [
+              11,
+              24
+            ],
+            [
+              11,
+              25
+            ],
+            [
+              11,
+              26
+            ],
+            [
+              11,
+              27
+            ],
+            [
+              11,
+              28
+            ],
+            [
+              11,
+              29
+            ],
+            [
+              11,
+              30
+            ],
+            [
+              11,
+              31
+            ],
+            [
+              10,
+              31
+            ],
+            [
+              9,
+              31
+            ],
+            [
+              8,
+              31
+            ],
+            [
+              8,
+              30
+            ],
+            [
+              8,
+              29
+            ],
+            [
+              8,
+              28
+            ],
+            [
+              8,
+              27
+            ],
+            [
+              8,
+              26
+            ],
+            [
+              8,
+              25
+            ]
           ]
         }
       },
@@ -425,13 +1818,13 @@
       },
       {
         "id": "core/hill-lantern",
-        "sprite": "core/base-kit:props/broken_statue",
+        "sprite": "core/base-kit:props/lantern_post",
         "x": 44,
         "y": 25,
         "w": 1,
         "h": 1,
         "solid": true,
-        "note": "A lantern statue facing the hills, where the mist comes from. Soft earth below."
+        "note": "A stone fire bowl facing the hills, where the mist comes from. Soft earth below."
       },
       {
         "sprite": "core/base-kit:props/grass_tall",
@@ -532,28 +1925,12 @@
         "solid": true
       },
       {
-        "sprite": "core/base-kit:props/pebbles",
-        "x": 38,
-        "y": 21,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
         "sprite": "core/base-kit:props/rock_mossy",
         "x": 34,
         "y": 27,
         "w": 1,
         "h": 1,
         "solid": true
-      },
-      {
-        "sprite": "core/base-kit:props/pebbles",
-        "x": 38,
-        "y": 32,
-        "w": 1,
-        "h": 1,
-        "solid": false
       },
       {
         "sprite": "core/base-kit:props/mushrooms_small",
@@ -613,14 +1990,6 @@
       },
       {
         "sprite": "core/base-kit:props/flowers_white",
-        "x": 7,
-        "y": 7,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/flowers_white",
         "x": 24,
         "y": 16,
         "w": 1,
@@ -639,14 +2008,6 @@
         "sprite": "core/base-kit:props/flowers_white",
         "x": 41,
         "y": 17,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/flowers_white",
-        "x": 5,
-        "y": 27,
         "w": 1,
         "h": 1,
         "solid": false
@@ -940,22 +2301,6 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/pebbles",
-        "x": 8,
-        "y": 20,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/rock_mossy",
-        "x": 8,
-        "y": 21,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
         "sprite": "core/base-kit:props/rock_mossy",
         "x": 43,
         "y": 31,
@@ -1006,23 +2351,7 @@
       {
         "sprite": "core/base-kit:props/pebbles",
         "x": 8,
-        "y": 19,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/pebbles",
-        "x": 8,
         "y": 14,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/rock_mossy",
-        "x": 8,
-        "y": 12,
         "w": 1,
         "h": 1,
         "solid": false
@@ -1031,14 +2360,6 @@
         "sprite": "core/base-kit:props/flowers_white",
         "x": 3,
         "y": 18,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/flowers_white",
-        "x": 3,
-        "y": 16,
         "w": 1,
         "h": 1,
         "solid": false
@@ -1084,22 +2405,6 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/flowers_white",
-        "x": 36,
-        "y": 16,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/flowers_white",
-        "x": 36,
-        "y": 18,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
         "sprite": "core/base-kit:props/flowers_blue",
         "x": 44,
         "y": 17,
@@ -1132,25 +2437,9 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/flowers",
-        "x": 5,
-        "y": 25,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
         "sprite": "core/base-kit:props/flowers_blue",
         "x": 7,
         "y": 27,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
-        "sprite": "core/base-kit:props/flowers",
-        "x": 4,
-        "y": 25,
         "w": 1,
         "h": 1,
         "solid": false
@@ -1292,14 +2581,6 @@
         "solid": false
       },
       {
-        "sprite": "core/base-kit:props/mushrooms_small",
-        "x": 2,
-        "y": 15,
-        "w": 1,
-        "h": 1,
-        "solid": false
-      },
-      {
         "sprite": "core/base-kit:props/rock_mossy",
         "x": 45,
         "y": 31,
@@ -1399,6 +2680,443 @@
         "sprite": "core/base-kit:props/glow_mushrooms",
         "x": 21,
         "y": 47,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_wall",
+        "x": 32,
+        "y": 20,
+        "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 34,
+        "y": 20,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 38,
+        "y": 21,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 38,
+        "y": 22,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 38,
+        "y": 23,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 38,
+        "y": 24,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 32,
+        "y": 21,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 32,
+        "y": 22,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 32,
+        "y": 23,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 32,
+        "y": 24,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 32,
+        "y": 25,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 32,
+        "y": 26,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 32,
+        "y": 28,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 32,
+        "y": 29,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 32,
+        "y": 30,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 32,
+        "y": 32,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_wall",
+        "x": 34,
+        "y": 32,
+        "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 36,
+        "y": 32,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 38,
+        "y": 32,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 39,
+        "y": 26,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 39,
+        "y": 27,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 39,
+        "y": 28,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 39,
+        "y": 30,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/ruin_pillar",
+        "x": 39,
+        "y": 31,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 28,
+        "y": 14,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "id": "core/town-steps",
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/rubble",
+        "x": 35,
+        "y": 14,
+        "w": 2,
+        "h": 1,
+        "solid": false,
+        "id": "core/market-ramp",
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/pebbles",
+        "x": 43,
+        "y": 24,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "id": "core/terrace-ramp",
+        "crossing": true
+      },
+      {
+        "sprite": "core/base-kit:props/broken_statue",
+        "x": 27,
+        "y": 10,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "id": "core/founder"
+      },
+      {
+        "sprite": "core/base-kit:props/broken_statue",
+        "x": 24,
+        "y": 32,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "id": "core/stag"
+      },
+      {
+        "sprite": "core/base-kit:props/rubble",
+        "x": 33,
+        "y": 28,
+        "w": 2,
+        "h": 1,
+        "solid": true,
+        "id": "core/knight"
+      },
+      {
+        "sprite": "core/base-kit:props/lantern_post",
+        "x": 22,
+        "y": 4,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/lantern_post",
+        "x": 25,
+        "y": 4,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/lantern_post",
+        "x": 28,
+        "y": 3,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/lantern_post",
+        "x": 34,
+        "y": 4,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/lantern_post",
+        "x": 37,
+        "y": 3,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/lantern_post",
+        "x": 33,
+        "y": 7,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/lantern_post",
+        "x": 22,
+        "y": 11,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/lantern_post",
+        "x": 28,
+        "y": 12,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/lantern_post",
+        "x": 37,
+        "y": 13,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/lantern_post",
+        "x": 35,
+        "y": 19,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "id": "core/arch-bowl-west"
+      },
+      {
+        "sprite": "core/base-kit:props/lantern_post",
+        "x": 38,
+        "y": 19,
+        "w": 1,
+        "h": 1,
+        "solid": false,
+        "id": "core/arch-bowl-east"
+      },
+      {
+        "sprite": "core/base-kit:props/market_stall",
+        "x": 25,
+        "y": 12,
+        "w": 3,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/market_stall",
+        "x": 34,
+        "y": 7,
+        "w": 2,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/campfire_unlit",
+        "x": 26,
+        "y": 32,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "id": "core/ember-camp"
+      },
+      {
+        "sprite": "core/base-kit:props/standing_stone",
+        "x": 45,
+        "y": 41,
+        "w": 1,
+        "h": 1,
+        "solid": true,
+        "id": "core/cutting-stone"
+      },
+      {
+        "sprite": "core/base-kit:props/rock_mossy",
+        "x": 11,
+        "y": 18,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/rock_mossy",
+        "x": 9,
+        "y": 17,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/rock_mossy",
+        "x": 45,
+        "y": 22,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/rock_mossy",
+        "x": 45,
+        "y": 30,
+        "w": 1,
+        "h": 1,
+        "solid": true
+      },
+      {
+        "sprite": "core/base-kit:props/glow_mushrooms",
+        "x": 24,
+        "y": 62,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/glow_mushrooms",
+        "x": 31,
+        "y": 62,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/glow_mushrooms",
+        "x": 37,
+        "y": 62,
+        "w": 1,
+        "h": 1,
+        "solid": false
+      },
+      {
+        "sprite": "core/base-kit:props/glow_mushrooms",
+        "x": 42,
+        "y": 62,
         "w": 1,
         "h": 1,
         "solid": false
@@ -1549,7 +3267,7 @@
         "x": 13,
         "y": 17,
         "w": 3,
-        "h": 1,
+        "h": 2,
         "label": "Old bridge"
       },
       {
@@ -1702,13 +3420,13 @@
       },
       {
         "id": "core/town-edge",
-        "kind": "building",
+        "kind": "npc",
         "x": 36,
         "y": 4,
         "w": 3,
         "h": 4,
         "tag": "town",
-        "label": "Ruined house"
+        "label": "The inn"
       },
       {
         "id": "core/town-corner",
@@ -1808,8 +3526,8 @@
       {
         "id": "core/bank-basket",
         "kind": "ruin",
-        "x": 6,
-        "y": 16,
+        "x": 7,
+        "y": 17,
         "w": 1,
         "h": 1,
         "tag": "meadow"
@@ -1817,7 +3535,7 @@
       {
         "id": "core/bank-axe",
         "kind": "ruin",
-        "x": 6,
+        "x": 4,
         "y": 18,
         "w": 1,
         "h": 1,
@@ -1826,8 +3544,8 @@
       {
         "id": "core/slid-trowel",
         "kind": "ruin",
-        "x": 8,
-        "y": 22,
+        "x": 7,
+        "y": 23,
         "w": 1,
         "h": 1,
         "tag": "meadow"
@@ -1968,6 +3686,63 @@
         "w": 1,
         "h": 1,
         "tag": "grove"
+      },
+      {
+        "id": "core/north-gate",
+        "kind": "area",
+        "x": 6,
+        "y": 0,
+        "w": 1,
+        "h": 2,
+        "label": "North gate"
+      },
+      {
+        "id": "core/descent-gate",
+        "kind": "area",
+        "x": 45,
+        "y": 34,
+        "w": 1,
+        "h": 1,
+        "label": "Descent gate"
+      },
+      {
+        "id": "core/shore-gate",
+        "kind": "area",
+        "x": 16,
+        "y": 34,
+        "w": 1,
+        "h": 1,
+        "label": "Shore gate"
+      },
+      {
+        "id": "core/hall-stair",
+        "kind": "area",
+        "x": 36,
+        "y": 31,
+        "w": 1,
+        "h": 1,
+        "tag": "ruin",
+        "label": "Collapsed stair"
+      },
+      {
+        "id": "core/workshop-stall",
+        "kind": "building",
+        "x": 25,
+        "y": 12,
+        "w": 3,
+        "h": 1,
+        "tag": "town",
+        "label": "Workshop stall"
+      },
+      {
+        "id": "core/trainers-stall",
+        "kind": "npc",
+        "x": 34,
+        "y": 8,
+        "w": 2,
+        "h": 1,
+        "tag": "town",
+        "label": "Trainers' stall"
       }
     ]
   }

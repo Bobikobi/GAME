@@ -351,6 +351,9 @@ export class RemoteSession implements GameSession {
     if (this.tail.length > TAIL) this.tail.splice(0, this.tail.length - TAIL);
     if (action.t === 'start') this.pos = [this.state.player.at[0], this.state.player.at[1]];
     this.wake(reply.events);
+    // a night in a sleep place: the clock runs on from the dawn the server woke the player at (G16)
+    const slept = reply.events.find((e) => e.e === 'sleep');
+    if (slept?.e === 'sleep') this.tick = Math.max(this.tick, slept.until);
     const busy = reply.events.find((e) => e.e === 'busy');
     if (busy?.e === 'busy') {
       this.deferred.push(...reply.events.filter((e) => e.e !== 'busy'));

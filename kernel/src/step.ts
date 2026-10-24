@@ -50,6 +50,7 @@ import {
   logMsOf,
   nextLogAt,
   nightEnds,
+  nightFalls,
   nodeVerb,
   powerCap,
   professionLevel,
@@ -83,6 +84,8 @@ export type Action =
   | { t: 'kindle'; fire: Tile; at: Tile }
   | { t: 'buy'; npc: string; item: string; qty: number; at: Tile }
   | { t: 'sell'; npc: string; item: string; qty: number; at: Tile }
+  /** sleep in a sleep place (`sleepPlace`; today a keeper's bed), from 19:00 to dawn: the night passes and the player wakes at 05:00 (G16, G32) */
+  | { t: 'sleep'; place: string; at: Tile }
   | { t: 'restore'; restore: string; at: Tile }
   | { t: 'build'; camp: string; at: Tile }
   | { t: 'accept'; quest: string; at: Tile }
@@ -118,6 +121,8 @@ export type GameEvent =
   | { e: 'attr'; attr: Attribute; value: number }
   /** the player stepped into a world that grades their race otherwise: a home attribute now counts `value` (DECISIONS.md, 2026-10-22) */
   | { e: 'grade'; attr: Attribute; value: number }
+  /** the player lay down in a sleep place: the night passes and they wake at `until`, the next 05:00, with full health; the caller's clock goes on from there */
+  | { e: 'sleep'; place: string; until: number }
   | { e: 'miss'; recipe: string }
   | { e: 'wear'; item: string; slot: WearSlot; look: boolean }
   | { e: 'unwear'; item: string; slot: WearSlot; look: boolean }
@@ -411,6 +416,8 @@ function perform(ctx: Ctx, a: Action): void {
       return buy(ctx, a.npc, a.item, a.qty, a.at);
     case 'sell':
       return sell(ctx, a.npc, a.item, a.qty, a.at);
+    case 'sleep':
+      return sleep(ctx, a.place, a.at);
     case 'restore':
       return restore(ctx, a.restore, a.at);
     case 'build':
@@ -776,9 +783,52 @@ function shopOf(ctx: Ctx, npcId: string, at: Tile) {
   const npc = b.npcs[npcId];
   const shop = npc?.shop ? b.shops[npc.shop] : undefined;
   if (!npc || !shop) refuse('Nobody is trading here.');
-  const tile = npcTile(b, npcId)!;
+  const tile = npcTile(b, npcId, ctx.tick)!;
   checkAt(ctx, at, { x: tile[0], y: tile[1], w: 1, h: 1 });
   return shop;
+}
+
+/** The hour a sleep place takes a sleeper from: the dusk ramp, an hour before the dark (G16). */
+export const BED_FROM_HOUR = 19;
+
+/** When a sleeper who lies down at `tick` wakes: the next 05:00 (the night's dawn), or undefined by day, when no bed is given. */
+export function sleepUntil(bundle: Bundle, tick: number): number | undefined {
+  if (!isNight(bundle, tick) && hourOf(bundle, tick) < BED_FROM_HOUR) return undefined;
+  return nightEnds(bundle, nightFalls(bundle, tick));
+}
+
+/**
+ * Where a sleep place named by `id` stands at a tick, for the sleeper to lie down beside: the one door every
+ * kind of night's rest goes through. Today the only kind is a keeper's bed (an npc whose shop has `bed`, the
+ * inn's), found where the keeper stands. A later kind (the tent the owner has decided on) adds its source
+ * here; the night itself, the waking, the server's clock and the clients read only the action and its event.
+ */
+export function sleepPlace(bundle: Bundle, id: string, tick?: number): Rect | undefined {
+  const npc = bundle.npcs[id];
+  if (npc?.shop !== undefined && bundle.shops[npc.shop]?.bed === true) {
+    const tile = npcTile(bundle, id, tick);
+    return tile && { x: tile[0], y: tile[1], w: 1, h: 1 };
+  }
+  return undefined;
+}
+
+/**
+ * A night in a sleep place (G16: a valley's day ends when the player sleeps; G32: a night's sleep in town gives
+ * health back). The night is not skipped: the clock runs to dawn and every rule of the night holds in it, so a
+ * fire left burning eats its wood and a vigil is kept only by a fire that lasted (G48). Free: the bed is the inn's.
+ */
+function sleep(ctx: Ctx, placeId: string, at: Tile): void {
+  const { b, s } = ctx;
+  const place = sleepPlace(b, placeId, ctx.tick);
+  if (!place) refuse('There is no bed here.');
+  checkAt(ctx, at, place);
+  const until = sleepUntil(b, ctx.tick);
+  if (until === undefined) refuse('The beds are for the night. Come back at dusk.');
+  if (!isSafe(b, s, s.player.at)) refuse('Nobody sleeps with a hunt at the door.');
+  s.player.satiety = satietyCap(b, s);
+  s.player.satietyAt = ctx.tick;
+  s.player.busyUntil = until;
+  ctx.events.push({ e: 'sleep', place: placeId, until });
 }
 
 function checkQty(qty: number): void {
@@ -883,7 +933,7 @@ function accept(ctx: Ctx, questId: string, at: Tile): void {
   if (!q?.giver || !offeredTo(q, s)) refuse('Nobody offers that task.');
   if (s.player.quests[questId]) refuse('You already took that task.');
   if (!(q.requires ?? []).every((r) => s.player.quests[r] === 'done')) refuse('Not yet.');
-  const tile = npcTile(b, q.giver);
+  const tile = npcTile(b, q.giver, ctx.tick);
   if (!tile) refuse('Nobody offers that task.');
   checkAt(ctx, at, { x: tile[0], y: tile[1], w: 1, h: 1 });
   s.player.quests[questId] = 'active';
@@ -944,7 +994,7 @@ function turnIn(ctx: Ctx, questId: string, at: Tile | undefined, explicit: boole
   if (!q || s.player.quests[questId] !== 'active') refuse('That task is not open.');
   if (!questSatisfied(b, s, questId)) refuse('That task is not finished yet.');
   if (q.giver && explicit) {
-    const tile = npcTile(b, q.giver);
+    const tile = npcTile(b, q.giver, ctx.tick);
     if (!tile || !at) refuse('Bring it to whoever asked.');
     checkAt(ctx, at, { x: tile[0], y: tile[1], w: 1, h: 1 });
   }

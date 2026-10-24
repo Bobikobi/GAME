@@ -50,7 +50,7 @@ export function textView(b: Bundle, m: Moment, radius = 6, at: Tile = [m.pos[0],
   }
   for (const h of hazards) if (h.kind === 'pit' || h.kind === 'trap') fill(h.rect, '!');
   for (const id of Object.keys(b.npcs)) {
-    const t = npcTile(b, id);
+    const t = npcTile(b, id, m.tick);
     if (t) mark(t[0], t[1], 'N');
   }
   for (const [id, inst] of Object.entries(b.instances)) {

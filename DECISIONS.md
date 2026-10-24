@@ -2590,6 +2590,82 @@ The owner, 22.10: adopted as written (decision 50 of the 51 he adopted that afte
 The owner, 22.10: adopted as written (decision 51 of the 51 he adopted that afternoon).
 **Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
 
+## 2026-10-23 ✅ No way-finding rule anywhere in the game; G69 stays
+
+**No way-finding rule.** This is an open world: whoever sets out for another world explores on their own. The valley map plan's own convention of a landmark every 12 tiles, so a player never loses the way, is dropped for the whole game, the tangle included (its exemption is moot). Landmarks stand where the story or the look puts them, never by a spacing count. **G69 stays:** paths wind, no straight run over 8 tiles (12 on a bridge); it is a look rule, not a way-finding rule. `pnpm check` now measures it on every map that carries a plan: each planned path's runs and every straight row or column of path letters on the ground.
+The owner, 23.10.
+**Retry when:** the owner changes his word on it. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The first night is held by size, not by a rule (G71)
+
+**The first night is unavoidable by size.** No rule forbids leaving the first town; the ground is simply too large to cross before dusk, so the first night's quest is a must by geometry. No gate, flag or quest lock enforces it; the region gates of decision 25 stay what they are, physical obstacles a quest clears.
+As built: `tools/src/mapplan.ts` (`firstNight`) walks four ways from every wake tile of the pool, the valley's own mends made (the bridge, the arch) and every gate to another world shut, to the nearest tile of another world (a map region with its own `world`) or the map's edge. The walk at `walk_step_ms` a step must take longer than the daylight left at waking (tick 0, noon, to the first dusk at 20:00: 400 s with today's `day_length_ms`), or `pnpm check` fails the map. It also measures the walk to the nearest shut gate, which is where a region quest would open the way. Tests: `tools/test/mapplan.test.ts`.
+The owner, 23.10.
+**Retry when:** a region quest can be finished before the first dusk (then the walk to that gate is what holds the night, and the check must count the gate open), or the clock or the walk speed changes. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The map plan block in the map format
+
+**A map may carry its plan.** Additive, `format` stays 1: `heights` (a digit row per ground row, read by the check only until the kernel walks levels; kit schema answer 6 of 22.10), a prop's `crossing` (steps or a ramp, G68), and `plan` with `regions[]` (cells, purpose stop or passage, height, tags, cover per mille, and `opens_by`: `wake`, the quest that opens it (decision 25), or left out for ground nobody walks), `paths[]` (corner tiles, G69), `routes[]` (who walks where and at which hours), `rests[]` and `wakes[]` (the spawn pool: each wake pocket with its first task; the wake tile and the tools stay in the pocket files of 22.10). The kernel and the clients never read the plan; an `opens_by` may name a region quest before it is written (its gate stays shut ground until then).
+**Retry when:** the cover tool or the level walk lands (they read the same block). Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The valley v2 on the map: 64x64, the plan block filled
+
+**The core map grows to 64x64 as the valley plan v2 draws it.** No opening tile a quest names moves. New: the bay with the jetty's planks (the boat keeps its place, nothing drawn yet), the shore way, the tangle's cutting and the descent's four ragged bands into the undead world, the east hills (toe, foot, hill, mountain band, `heights` 0-7), the town shelf and the ruins terrace at height 1, the lane's two jogs with a boulder in each, the night place's wall line, three statues, eleven lamps, the workshop stall (its slot opened later by a quest), the trainers' stall (reserved, empty), the ember camp, the cutting stone. The `plan` block holds the 23 regions with `opens_by`, the 8 paths, the 8 routes, the 7 rests and the 3 wakes. The four gates (north, descent, shore, the hall's stair) are marked as `area` slots on ground that stays shut; each becomes a restore in the pull request that writes the region quest opening it (a restore no quest opens fails the check), and until then the plan's `opens_by` names a quest not written yet (warnings). Every new piece wears the closest kit sprite as a stand-in (heath and rock as grass and rubble, the crossings as pebbles and rubble, the knight as rubble); new art replaces them in place.
+The owner, 22.10 and 23.10 (the plan's answers).
+**Retry when:** the art for heath, rock, steps, ramps and statues lands, or the kernel walks levels. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The riddle pair are two lanterns; the bridge slot is 3x2
+
+**The riddle's two lantern statues become two lanterns:** an iron post in town and a stone fire bowl on the hill, about 1.6 characters tall (both `lantern_post` until the bowl is drawn); the clue reads "one of the two lanterns". **The bridge's slot is 3x2**, two rows of planks over the river; two mossy rocks sit on the bank at its foot, (11,18) and (9,17), beside the keystone's shallows.
+The owner, 23.10.
+**Retry when:** the owner changes his word on it. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The wake tools are personal in the opening
+
+**A pocket's tools are its own character's:** another player neither sees nor takes them (the kernel already refuses a dig by another pocket; the clients filter by pocket). Nothing more is built: no trade, and nothing blocks a trade later. Test: `kernel/test/starts.test.ts`. Three tools moved off the new paths: the basket to (7,17), the axe to (4,18), the trowel to (7,23).
+The owner, 23.10.
+**Retry when:** players share one world. Model: claude-opus-5-5.
+
+## 2026-10-23 ⏸ The inn waits for the content wave
+
+**The inn stays the ruin at the town's edge on this map.** The opening's own walk reads that ruin as "Awaiting restoration"; rebuilding it, with the innkeeper and the drunk's post, belongs to the wave that writes their quests and lines (decision 50 of 22.10 stands).
+**Retry when:** the content wave opens. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The inn opens at the town edge, with Wenna (closes "The inn waits for the content wave")
+
+**The ruined house at the town edge is the inn from the first day.** Wenna keeps it: food and drink and the first-aid kit on her counter (decision 32), nothing bought back, and a bed. Her slot is `core/town-edge`, now an npc slot labelled "The inn"; a small house stands in for the inn art (3x6 with a roof piece) until it is drawn. The opening step that read an empty place now reads the workshop stall, which still awaits restoration (`game/e2e/opening.ts` step 9, the slot id and the walk label only). Her voice sheet is in `GAME_RULES.md` as proposed; merging approves it (G20). The night's road food waits for its item; the drunk's post waits for the second wave.
+The owner, 22.10 (decisions 32, 50) and 23.10 (the content wave).
+**Retry when:** the inn art lands, or the owner wants the inn rebuilt by a restore instead. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Sleep is a verb on a sleep place; the inn's bed is the first
+
+**A night in a sleep place (`sleep`, kernel 0.15.0):** from 19:00 the player lies down and wakes at the next 05:00 fed in full (G16, G32). The night is spent, not skipped: a fire left burning eats its wood and goes out, so no vigil is kept asleep (G48), and a bed stands only in town, so the first night outside is still held by size (G71). Refused by day, away from the place, or with a hunt at the door. The bed is free. `sleepPlace` is the one place a kind of rest is found: today a keeper whose shop has `bed`; the tent the owner has decided on (the same night, and a return point) adds its source there and nothing else in the kernel changes. The tent, the return point and logging out are not built. Tests: `kernel/test/sleep.test.ts`, `game/e2e/inn.ts`.
+The owner, 22.10 (the bed that ends a day) and 23.10 (a sleep place, the tent later).
+**Retry when:** the tent is built, or a bed gets a price. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Maru walks his round from the first dawn; his hearth is lit from 19:00 while he is home
+
+**Maru walks the map plan's routes:** 07:00-10:00 the east round, 10:00-15:00 the west round, home from 15:00. Two changes to the plan: the morning leg starts at 07:00, not 05:00, so a vigil handed in at dawn finds him at his door (the tending run hands it in at 05:30) and a sleeper who wakes at the inn can catch him; and the rounds begin at the first dawn, so on the day the player wakes he is at home for the whole opening (the plan's check, Maru at his door from 15:00 of day 1, holds). The round lives in the npc file (`round`), since the plan block is never read by the game. His hearth is a kept fire (`kept` on the prop): lit from 19:00 to dawn while he is home, in 2D and 3D; the player can still feed it. Wenna points to his round by day. Test: `kernel/test/sleep.test.ts`.
+The owner, 22.10 (decisions 26, 27).
+**Retry when:** a quest needs Maru at the north edge (the cast plan's 07:00 at the notch), or the night faces take their posts. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Pell keeps the gear; race lines for Maru, Pell and Wenna
+
+**Pell sells the basket, the trowel, the axe and the walking staff, and buys what the player finds;** the food and the first-aid kit are the inn's (decision 32), and her lines say so. **Each of the three greets each race once** with the cast plan's lines (decision 10), after the lines the world earned. The jetty lines wait for the jetty.
+The owner, 22.10 (decisions 10, 32).
+**Retry when:** the jetty or the workshop stall opens. Model: claude-opus-5-5.
+## 2026-10-23 ✅ G71 measures the road beyond each exit, every gate open
+
+**The gate never holds the first night; the road beyond it does.** The gates stay where the story wants them, but beyond every exit of the first region a road runs long enough that, with every gate open, no wake reaches the next region's ground before the first dusk. This replaces the shut-gate measure of the entry above.
+As built: `plan.exits[]` (additive): `id`, the gate `slot` or the `at` tile of a way with no slot (a jetty), `to` (a plan region) and `min_road_steps`. `firstNight` walks with every listed gate open; reaching another world or the edge by any way that is not a listed exit before dusk fails the map. `exitRoads` names each exit's least road: the daylight in steps less the fastest wake's steps to the gate, plus `ROAD_MARGIN` (10); a smaller `min_road_steps` fails, and so does a stitched map whose next world's ground starts closer beyond the gate. Tests: `tools/test/mapplan.test.ts`.
+The owner, 23.10.
+**Retry when:** the clock or the walk speed changes (the numbers move), or a way to travel faster than walking lands. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The valley's four exits and the road each one needs
+
+**Four ways out of the valley, each with the road its neighbour owes.** `plan.exits` in `content/core/map.json`, every gate open, against 2106 steps of daylight (400 s at 190 ms a step), margin 10: the north gate to the north wood, 6 steps from the nearest wake (north meadow), needs 2110; the ferry from the jetty end (8,36) across the bay, 14 from the slid bank, needs 2102; the shore gate to the shore way, 28 from the slid bank, needs 2088; the descent gate to the cutting, 57 from the slid bank, needs 2059. The steps the descent and the shore way already run on this map count toward their roads. No wake leaves the valley by any other way. The region plans that stitch onto these exits must provide these roads, or `pnpm check` fails them.
+The owner, 23.10.
+**Retry when:** a region beyond an exit is drawn, the clock or the walk speed changes, or a wake moves. Model: claude-opus-5-5.
 ## 2026-10-23 ✅ The rich wave: items at a full tile, best of three by eye
 
 **Items are drawn at a full tile, 64x64**, as today's items fill their 16x16 tile, so every icon in the bag is one size. **Every free spec of the wave runs best of three and the gallery is judged by eye**, as the rich experiment did: three parallel `kit:gen` runs, each with its own `--out`; the picks go into the kit with their ramps.
@@ -2614,6 +2690,10 @@ Cost: the vigil is offered around 17:00-18:00, after the stew, not in the aftern
 The owner, 22.10: yes to the new order, as built on the opening-filler branch. Supersedes the long night's part of the 19.10 entry on the opening's order.
 **Retry when:** a person playing the day has too little time between the stew and dark to build and light a fire, or the stew's chain stalls a race. Model: claude-opus-5-5.
 
+## 2026-10-23 ✅ The collapsed hall is its own room, with a door in the south wall
+
+**The hall is dug by day, the night place still has one way in.** The opening sends the player to dig the collapsed hall for Pell's whole bowl in the afternoon, before the arch opens. A wall at row 27 (x 35-38) now closes the hall off from the rest of the walled night place, the south wall has a doorway at (37,32) from the lane south of the ruins, and the terrace face a gap at (39,29). Fallen rubble at (35,28), (37,28) and (38,31) leaves every dig spot a tile to stand on with room to turn. The threshold stays the night place's only way in; the hall, its six digs, the knight and the stair keep their tiles.
+**Retry when:** the expedition needs the hall reached from inside the night place. Model: claude-opus-5-5.
 ## 2026-10-23 ✅ The desktop home is painted key art that lives
 
 **From 1024px the home page opens on the owner's key art in motion:** the valley at dawn with the three opening characters (the elf, the human, the skeleton), first drawn by GPT image from their kit sprites, then brought to life as a video the owner generated and picked (`web/public/keyart/hero.webm` and `hero.mp4`, 1920x1080, 24 fps, a 17 s ping-pong, so its loop has no seam; `hero-poster.jpg` and `.webp` are its first frame). The video carries the characters' auras (the elf white, the human red, the skeleton a thin black haze) and their small motions. It plays muted and looped, drawn with cover from the bottom; under reduced motion it stays still and the poster shows; it pauses while the tab is hidden. The phone keeps its own first screen and fetches neither the video nor the still.
