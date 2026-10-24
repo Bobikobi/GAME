@@ -282,7 +282,7 @@ function digState(seed: number): State {
   if (!result.ok) throw new Error(result.error);
   const state = result.state;
   state.player.bag['core/trowel'] = 3;
-  state.player.attrs.carry = 100;
+  state.player.attrs.might = 100;
   state.player.restored = ['core/old-bridge'];
   return state;
 }

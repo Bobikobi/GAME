@@ -229,15 +229,15 @@ describe('a fire out (6b)', () => {
       return r.events;
     };
     go({ t: 'start', starter: 'core/forager', name: 'Tess' }, 0);
-    // the long night under way: the elder hearth lit at 19:00 with wood to 21:00
+    // the long night under way: a fire of the player's own lit at 19:00 with wood to 21:00
     s.player.quests['core/the-long-night'] = 'active';
-    s.player.fires['core/elder-hearth'] = { lit: 350_000, until: 450_000 };
+    s.player.own = { at: [27, 16], lit: 350_000, until: 450_000, log: 66_666 };
     const here: Action = { t: 'move', at: [s.player.at[0], s.player.at[1]] };
     expect(go(here, 449_000)).toEqual([]);
     const events = go(here, 450_001);
-    expect(events).toEqual([{ e: 'fire_out', id: 'core/elder-hearth' }]);
+    expect(events).toEqual([{ e: 'fire_out', id: 'own' }]);
     const toasts = eventToasts(bundle, s, events);
-    expect(toasts).toEqual([{ lines: ['The elder hearth went out - tonight is lost. Try again before the next dusk.'], tone: 'bad' }]);
+    expect(toasts).toEqual([{ lines: ['The fire went out - tonight is lost. Try again before the next dusk.'], tone: 'bad' }]);
     expect(urgent(toasts[0]!)).toBe(true);
     // told once: the steps after it say nothing of it
     expect(go(here, 460_000)).toEqual([]);

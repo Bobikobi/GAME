@@ -24,5 +24,5 @@ COPY --from=build /repo/server/migrations ./migrations
 ENV MIGRATIONS=/app/migrations
 USER node
 EXPOSE 8080
-HEALTHCHECK --interval=30s --timeout=3s --start-period=20s CMD wget -qO- http://127.0.0.1:8080/state >/dev/null 2>&1 || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=20s CMD wget -qO- http://127.0.0.1:8080/health >/dev/null 2>&1 || exit 1
 CMD ["node", "main.mjs"]

@@ -11,13 +11,18 @@ import {
   type Bundle,
   type GameEvent,
   KERNEL_VERSION,
+  OPENING_LOG_MAX,
+  type OpeningUpload,
   type State,
   appearSlots,
   appears,
   fitWorn,
+  groundSpots,
   hourOf,
   makeWalkable,
+  migrateState,
   newState,
+  inRect,
   placedAt,
   serialize,
   step,
@@ -25,7 +30,7 @@ import {
 import { LEGACY_SAVE_KEY, REVIEW_KEY, SAVE_KEY } from './config';
 import type { ActResult, Facing, GameSession, LogEntry, SessionEvents } from './session-surface';
 import { s1 } from './net/s1';
-import { slotContent } from './places';
+import { STALL_SLOT, canPlaceStall, chunkKey, slotContent } from './places';
 
 /**
  * The save file's version. 2 came with the new opening (the axe, the three
@@ -33,12 +38,43 @@ import { slotContent } from './places';
  * title screen, and from then on a save always loads (DECISIONS.md, 2026-10-10).
  */
 const SAVE_VERSION = 2;
+/**
+ * A fixed world seed for tests and support: `?debug&seed=N` (N a whole number below 2^32). Without
+ * `debug` the seed is always random, so a shared link never fixes where a player wakes.
+ */
+export function debugSeed(search: string = typeof location === 'undefined' ? '' : location.search): number | undefined {
+  const q = new URLSearchParams(search);
+  const raw = q.get('seed');
+  if (!q.has('debug') || raw === null || !/^\d{1,10}$/.test(raw)) return undefined;
+  const n = Number(raw);
+  return n <= 0xffffffff ? n : undefined;
+}
 /** The date this browser first played the demo: kept outside the save, so no reset or new game clears it (CR-85). */
 export const DEMO_SINCE_KEY = 'openfold.demo-since';
 /** The most a frame moves the world: a long frame (tab switch, debugger) never fast-forwards it. */
 export const LONGEST_FRAME_MS = 250;
 
 export type { Facing, LogEntry, SessionEvents } from './session-surface';
+
+/** One place in the player's stall draft: what it holds, and the price asked for it in gold. */
+export interface StallDraft {
+  item: string;
+  qty: number;
+  price: number;
+}
+
+/** The places the kit's Shop tab shows. */
+export const STALL_SLOTS = 6;
+
+/**
+ * The draft stall the kit is arranging, when the session keeps one: the phone's save does, and a
+ * server session has no such field yet, so the draft stays in the open panel there. Screens write
+ * into the array they are given and call `save()`.
+ */
+export function stallDraftOf(session: unknown): (StallDraft | null)[] | undefined {
+  const draft = (session as { stallDraft?: unknown } | null | undefined)?.stallDraft;
+  return Array.isArray(draft) && draft.length === STALL_SLOTS ? (draft as (StallDraft | null)[]) : undefined;
+}
 
 interface SaveFile {
   v: typeof SAVE_VERSION;
@@ -55,6 +91,16 @@ interface SaveFile {
   heard?: string[];
   /** the last actions, attached to bug reports */
   tail: LogEntry[];
+  /** places entered, for the map; optional in old saves */
+  seen?: string[];
+  /** 8x8 ground chunks walked or seen, for the map; optional in old saves */
+  seenChunks?: string[];
+  /** the slot the player's stall stands in, once placed */
+  stall?: string;
+  /** the stall the kit is arranging, one entry per place; absent in old saves and while it is empty */
+  stallDraft?: (StallDraft | null)[];
+  /** the opening log of NEXT 18 d: the seed the game began under, and every step played since; absent in older saves */
+  opening?: { seed: number; log: { a: Action; tick: number }[]; full?: boolean };
 }
 
 type Listener = (payload: never) => void;
@@ -69,13 +115,27 @@ export class Session implements GameSession {
   facing: Facing = 'down';
   readonly met = new Set<string>();
   readonly heard = new Set<string>();
+  /** The slots the player has entered: the map may name what is here and nothing else. */
+  readonly seen = new Set<string>();
+  /** The 8x8 chunks the player has walked or seen: the map's ground. */
+  readonly seenChunks = new Set<string>();
+  /** The slot the player's stall stands in, once placed at the empty corner. */
+  stall: string | undefined;
+  /** The stall the kit is arranging; kept in the save, and nothing is listed anywhere yet. */
+  readonly stallDraft: (StallDraft | null)[] = Array.from({ length: STALL_SLOTS }, () => null);
   tail: LogEntry[] = [];
+  /**
+   * Every step played since the start, in order, until an account exists (NEXT 18 d): the sign-up hands it
+   * to the server, which plays it again. The tail above is for bug reports and stays at 40; this one runs to
+   * `OPENING_LOG_MAX`, and past that the opening is too long to hand over and the account starts fresh.
+   */
+  private opening: { seed: number; log: { a: Action; tick: number }[]; full: boolean } | undefined;
   /** set when the save was made with other content and had to be adapted */
   adapted = false;
   private pauses = 0;
   private deferred: GameEvent[] = [];
   /** the state and log from before the action that keeps the player busy now, so work walked away from can be taken back */
-  private undo: { state: State; tail: LogEntry[] } | null = null;
+  private undo: { state: State; tail: LogEntry[]; opening: number } | null = null;
   /** the record of a gather under way: counted as a pickup when the work lands, dropped when it is walked away from */
   private pickup: string | null = null;
   private listeners = new Map<keyof SessionEvents, Set<Listener>>();
@@ -91,10 +151,66 @@ export class Session implements GameSession {
     this.pos = [state.player.at[0], state.player.at[1]];
   }
 
-  static fresh(bundle: Bundle): Session {
+  /** A new world. The seed is random; a test may fix it (`?debug&seed=N`, see debugSeed), and the seed draws the wake pocket. */
+  static fresh(bundle: Bundle, fixed?: number): Session {
     const seed = new Uint32Array(1);
-    crypto.getRandomValues(seed);
+    if (fixed !== undefined) seed[0] = fixed;
+    else crypto.getRandomValues(seed);
     return new Session(bundle, newState(bundle, seed[0] ?? 1));
+  }
+
+  /**
+   * Remember the ground under the player and the place they stand in. Called
+   * after every step and every wake; the map draws nothing else (G5, G8).
+   */
+  seeAt(): void {
+    const [x, y] = this.pos;
+    this.seenChunks.add(chunkKey(x, y));
+    for (const slot of this.bundle.map.slots) if (inRect(x, y, slot)) this.seen.add(slot.id);
+  }
+
+  /** Put the stall on the town's free corner. Only from there, and only while it is free (G10). */
+  placeStall(): boolean {
+    if (!this.started || !canPlaceStall(this.bundle, this.pos)) return false;
+    if (this.stall === STALL_SLOT) return true;
+    this.stall = STALL_SLOT;
+    this.seeAt();
+    this.save();
+    this.emit('change', undefined);
+    return true;
+  }
+
+  /** Lift the stall, standing at it; the corner is free again. */
+  liftStall(): boolean {
+    if (!this.stall || !canPlaceStall(this.bundle, this.pos)) return false;
+    this.stall = undefined;
+    this.save();
+    this.emit('change', undefined);
+    return true;
+  }
+
+  /** Keep one played step in the opening log; the log begins at the start and stops growing at its cap. */
+  private keep(action: Action, tick: number, seed: number): void {
+    if (action.t === 'start') this.opening = { seed, log: [], full: false };
+    const opening = this.opening;
+    if (!opening || opening.full) return;
+    if (opening.log.length >= OPENING_LOG_MAX) {
+      opening.full = true;
+      opening.log = [];
+      return;
+    }
+    opening.log.push({ a: structuredClone(action), tick });
+  }
+
+  /**
+   * What the sign-up hands the server: the seed, every step since the start and the state they ended on.
+   * Nothing when the game was not played from its start in this browser, or the log outgrew its cap: the
+   * account then starts fresh.
+   */
+  openingUpload(): OpeningUpload | undefined {
+    const opening = this.opening;
+    if (!opening || opening.full || opening.log.length === 0 || opening.log[0]!.a.t !== 'start') return undefined;
+    return { seed: opening.seed, log: structuredClone(opening.log), state: serialize(this.state) };
   }
 
   static hasSave(): boolean {
@@ -171,6 +287,14 @@ export class Session implements GameSession {
     // a save from before kernel 0.9 holds no record of bites
     const bites = state.player as Partial<Pick<State['player'], 'bitten'>>;
     bites.bitten ??= [];
+    // a save from before the races (state format 2, kernel 0.14): carry is read as might, spirit starts at 0,
+    // and the starter becomes its race and its wake pocket; the pocket's tools it carried stay in the bag,
+    // so the spots that lay them by the wake are spent
+    const before = state.format ?? 1;
+    state = migrateState(state);
+    if (before < 2 && state.player.pocket !== '') {
+      for (const id of groundSpots(bundle, state.player.pocket)) state.nodes[id] ??= { readyAt: 0, draws: 1 };
+    }
     const session = new Session(bundle, state);
     stampDemo();
     if (state.content !== bundle.tag) {
@@ -187,10 +311,30 @@ export class Session implements GameSession {
       for (const key of file.heard) if (typeof key === 'string') session.heard.add(key);
     }
     session.tail = file.tail.slice(-TAIL);
+    const kept = file.opening;
+    if (kept && Number.isSafeInteger(kept.seed) && Array.isArray(kept.log) && state.content === file.content) {
+      session.opening = { seed: kept.seed, log: kept.log, full: kept.full === true };
+    }
     const walkable = makeWalkable(bundle);
     const [x, y] = file.pos;
     session.pos = walkable(x, y, state.player) ? [x, y] : [state.player.at[0], state.player.at[1]];
     if (!walkable(session.pos[0], session.pos[1], state.player)) session.pos = [bundle.map.spawn.x, bundle.map.spawn.y];
+    // the map: what an older save remembers of places, plus what it has walked since; the
+    // slots it visited are places it has stood in, so they are named too
+    for (const id of Array.isArray(file.seen) ? file.seen : []) {
+      if (bundle.map.slots.some((slot) => slot.id === id)) session.seen.add(id);
+    }
+    for (const id of state.player.visited) session.seen.add(id);
+    for (const key of Array.isArray(file.seenChunks) ? file.seenChunks : []) {
+      if (/^\d+,\d+$/.test(key)) session.seenChunks.add(key);
+    }
+    session.stall =
+      typeof file.stall === 'string' && bundle.map.slots.some((slot) => slot.id === file.stall) && slotContent(bundle, file.stall) === undefined
+        ? file.stall
+        : undefined;
+    if (session.stall) session.seen.add(session.stall);
+    readStallDraft(file.stallDraft, bundle, state.player.bag).forEach((draft, i) => (session.stallDraft[i] = draft));
+    session.seeAt();
     return session;
   }
 
@@ -205,7 +349,7 @@ export class Session implements GameSession {
   }
 
   get started(): boolean {
-    return this.state.player.starter !== '';
+    return this.state.player.race !== '';
   }
 
   get busy(): boolean {
@@ -292,7 +436,8 @@ export class Session implements GameSession {
     if (this.busy) return;
     const since = Math.max(this.state.tick, this.outSeen);
     this.outSeen = this.tick;
-    for (const fire of Object.values(this.state.player.fires ?? {})) {
+    const ends = [...Object.values(this.state.player.fires ?? {}), ...(this.state.player.own === null ? [] : [this.state.player.own])];
+    for (const fire of ends) {
       if (fire.until > since && fire.until <= this.tick) {
         this.report(this.pos, true);
         return;
@@ -326,6 +471,7 @@ export class Session implements GameSession {
     const r = step(this.bundle, this.state, { t: 'move', at: [at[0], at[1]] }, this.tick);
     if (!r.ok) return;
     this.state = r.state;
+    this.keep({ t: 'move', at: [at[0], at[1]] }, this.tick, r.state.seed);
     // a hunt heard during work changes the world under it: that work can no longer be taken back
     this.undo = null;
     if (r.events.length === 0) return;
@@ -338,13 +484,15 @@ export class Session implements GameSession {
   act(action: Action): ActResult {
     const r = step(this.bundle, this.state, action, this.tick);
     if (!r.ok) return r;
-    const before = { state: this.state, tail: this.tail.slice() };
+    const before = { state: this.state, tail: this.tail.slice(), opening: this.opening?.log.length ?? 0 };
+    this.keep(action, this.tick, this.state.seed);
     this.state = r.state;
     this.undo = null;
     this.wake(r.events);
     // each start wakes at its own place
     if (action.t === 'start') {
       this.pos = [r.state.player.at[0], r.state.player.at[1]];
+      this.seeAt();
       stampDemo();
     }
     this.tail.push({ a: action, tick: this.tick });
@@ -390,6 +538,7 @@ export class Session implements GameSession {
     const fall = events.find((e) => e.e === 'fall');
     if (fall?.e !== 'fall') return;
     this.pos = [fall.at[0], fall.at[1]];
+    this.seeAt();
     // what the work under way would have announced went with the outing
     this.deferred = [];
     this.pickup = null;
@@ -405,6 +554,7 @@ export class Session implements GameSession {
     if (!this.busy || !this.undo) return false;
     this.state = this.undo.state;
     this.tail = this.undo.tail;
+    if (this.opening && !this.opening.full) this.opening.log.length = Math.min(this.opening.log.length, this.undo.opening);
     this.deferred = [];
     this.pickup = null;
     this.undo = null;
@@ -426,7 +576,12 @@ export class Session implements GameSession {
       facing: this.facing,
       met: [...this.met].sort(),
       heard: [...this.heard].sort(),
+      seen: [...this.seen].sort(),
+      seenChunks: [...this.seenChunks].sort(),
+      stall: this.stall,
+      stallDraft: this.stallDraft.some((draft) => draft !== null) ? this.stallDraft : undefined,
       tail: this.tail,
+      opening: this.opening,
     };
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(file));
@@ -458,15 +613,38 @@ function readSave(): SaveFile | undefined {
 }
 
 /**
+ * A saved stall draft, fitted to this world: a place whose item the bag no longer holds, or whose
+ * numbers are outside what the kit's price window takes, stays empty, and a quantity is cut to what
+ * the bag carries. A save from before the draft carries none.
+ */
+function readStallDraft(raw: unknown, bundle: Bundle, bag: Readonly<Record<string, number>>): (StallDraft | null)[] {
+  const draft: (StallDraft | null)[] = Array.from({ length: STALL_SLOTS }, () => null);
+  if (!Array.isArray(raw)) return draft;
+  raw.slice(0, STALL_SLOTS).forEach((entry, i) => {
+    if (typeof entry !== 'object' || entry === null) return;
+    const { item, qty, price } = entry as Partial<StallDraft>;
+    if (typeof item !== 'string' || !(item in bundle.items)) return;
+    const can = bag[item] ?? 0;
+    if (can < 1) return;
+    if (!Number.isInteger(qty) || (qty as number) < 1) return;
+    if (!Number.isInteger(price) || (price as number) < 1 || (price as number) > 9999) return;
+    draft[i] = { item, qty: Math.min(qty as number, can), price: price as number };
+  });
+  return draft;
+}
+
+/**
  * Fit a save made with older content to the current bundle: drop what no
  * longer exists and keep the rest. Returns false when the character itself
  * is gone and the save cannot be used.
  */
 function adapt(bundle: Bundle, state: State): boolean {
   const p = state.player;
-  if (p.starter !== '' && !bundle.starters[p.starter]) return false;
+  if (p.race !== '' && !bundle.races[p.race]) return false;
+  // a wake pocket that left the content: the mist and the first task fall back to the map's spawn
+  if (p.pocket !== '' && !bundle.pockets[p.pocket]) p.pocket = '';
   // saves from kernel 0.1 have no look, and a look can be withdrawn with its sprite
-  if (typeof p.look !== 'number' || (p.look === 1 && p.starter !== '' && !bundle.starters[p.starter]?.sprite_alt)) p.look = 0;
+  if (typeof p.look !== 'number' || (p.look === 1 && p.race !== '' && !bundle.races[p.race]?.sprite_alt)) p.look = 0;
   const keepKeys = <T>(record: Record<string, T>, known: Record<string, unknown>): Record<string, T> =>
     Object.fromEntries(Object.entries(record).filter(([k]) => k in known));
   p.bag = keepKeys(p.bag, bundle.items);
@@ -478,13 +656,14 @@ function adapt(bundle: Bundle, state: State): boolean {
   p.journal = p.journal.filter((id) => id in bundle.items);
   p.recipes = p.recipes.filter((id) => id in bundle.recipes);
   // a recipe everyone starts with that came with this version is known at once
-  if (p.starter !== '') {
+  if (p.race !== '') {
     const fresh = Object.keys(bundle.recipes).filter((id) => bundle.recipes[id]!.known === 'start' && !p.recipes.includes(id));
     if (fresh.length > 0) p.recipes = [...p.recipes, ...fresh].sort();
   }
-  // a start whose kit came with this version: a save that holds none of a kit item gets it once
-  if (p.starter !== '') {
-    for (const stack of bundle.starters[p.starter]!.kit ?? []) {
+  // a race whose outfit came with this version: a save that holds none of an outfit piece gets it once
+  // (the pocket's tools are never granted here: they lie on the ground by the wake)
+  if (p.race !== '') {
+    for (const stack of bundle.races[p.race]!.outfit ?? []) {
       if ((p.bag[stack.item] ?? 0) > 0) continue;
       p.bag[stack.item] = stack.qty;
       if (!p.journal.includes(stack.item)) p.journal = [...p.journal, stack.item].sort();

@@ -1,0 +1,115 @@
+import type { IncomingMessage } from 'node:http';
+
+import { MAILERS, type MailerName } from './auth/mailer';
+
+/** The identity modes this build knows: a signed-in session (NEXT 18 e), and the staging header. */
+const MODES = ['session', 'dev-header'] as const;
+type AuthMode = (typeof MODES)[number];
+
+const PLAYER_HEADER = 'x-player-id';
+const STAGING_ONLY = 'staging-only';
+/** hosts a browser treats as secure over plain http, so a laptop can run the session mode */
+const LOOPBACK = ['localhost', '127.0.0.1', '[::1]'];
+
+/** A refusal to start: main.ts prints it and exits non-zero, before the API listens or opens a database. */
+export class BootError extends Error {}
+
+/** What the session mode is built from; main.ts turns it into the sign-in with the database's store. */
+export interface SessionConfig {
+  /** the origin this API answers on (the OAuth redirect and the email link are built on it) */
+  publicOrigin: string;
+  /** the origin the game is served from */
+  appOrigin: string;
+  /** absent when neither variable is set: Google then answers "not open yet" */
+  google?: { clientId: string; clientSecret: string };
+  mailer: MailerName;
+  /** the header our nginx sets to the visitor's country (lower case); absent, every sign-up is held to the highest age */
+  countryHeader?: string;
+}
+
+export type Auth =
+  | {
+      mode: 'dev-header';
+      /** the one line the boot log carries about who the server trusts */
+      notice: string;
+      resolve(request: IncomingMessage): Promise<string | undefined>;
+    }
+  | {
+      mode: 'session';
+      notice: string;
+      session: SessionConfig;
+    };
+
+function headerId(request: IncomingMessage): Promise<string | undefined> {
+  const id = request.headers[PLAYER_HEADER];
+  return Promise.resolve(typeof id === 'string' && id.length > 0 && id.length <= 64 ? id : undefined);
+}
+
+/** An origin as a browser sends it: a scheme, a host and a port, no path; https unless the host is a loopback. */
+function origin(env: NodeJS.ProcessEnv, name: string): string {
+  const value = env[name];
+  if (!value) throw new BootError(`AUTH_MODE=session needs ${name}, the origin it serves, such as https://play.example.org.`);
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new BootError(`${name}=${JSON.stringify(value)} is not a URL.`);
+  }
+  if (url.origin !== value) throw new BootError(`${name} is an origin only, with no path or trailing slash: ${url.origin}.`);
+  if (url.protocol !== 'https:' && !(url.protocol === 'http:' && LOOPBACK.includes(url.hostname))) {
+    throw new BootError(`${name} must be https: the session cookie is Secure, and only a loopback host may use plain http.`);
+  }
+  return value;
+}
+
+function sessionMode(env: NodeJS.ProcessEnv): Auth {
+  if (env.ALLOW_DEV_HEADER) {
+    throw new BootError('ALLOW_DEV_HEADER is set with AUTH_MODE=session: the header mode and sign-in never run together. Remove it.');
+  }
+  const publicOrigin = origin(env, 'PUBLIC_ORIGIN');
+  const appOrigin = origin(env, 'APP_ORIGIN');
+  const clientId = env.GOOGLE_CLIENT_ID ?? '';
+  const clientSecret = env.GOOGLE_CLIENT_SECRET ?? '';
+  if ((clientId === '') !== (clientSecret === '')) {
+    throw new BootError('Set both GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, or neither (Google then stays closed).');
+  }
+  const mailer = env.MAILER ?? 'log';
+  if (!MAILERS.some((known) => known === mailer)) {
+    throw new BootError(`MAILER=${JSON.stringify(mailer)} is not a mailer this build has. Known: ${MAILERS.join(', ')}.`);
+  }
+  const google = clientId === '' ? undefined : { clientId, clientSecret };
+  const countryHeader = env.COUNTRY_HEADER ? env.COUNTRY_HEADER.toLowerCase() : undefined;
+  if (countryHeader !== undefined && !/^[a-z0-9-]+$/.test(countryHeader)) {
+    throw new BootError(`COUNTRY_HEADER=${JSON.stringify(env.COUNTRY_HEADER)} is not a header name, such as X-Country.`);
+  }
+  return {
+    mode: 'session',
+    notice: `AUTH_MODE=session: players are who their session cookie says; sign-in by email (links to the ${mailer} mailer)${google ? ' and Google' : ''}, the game at ${appOrigin}; the age limit ${countryHeader ? `by the country in ${countryHeader}` : 'is the highest (no COUNTRY_HEADER)'}.`,
+    session: { publicOrigin, appOrigin, google, mailer: mailer as MailerName, countryHeader },
+  };
+}
+
+/**
+ * Who is allowed to say who is asking. `session` is sign-in (NEXT 18 e): a cookie the API set after an email
+ * link or Google proved the player. `dev-header` trusts a header, and starts only when a second variable
+ * says, in so many words, that the box is a staging one. Anything else, including no value at all, is a
+ * refusal: a server that cannot tell players apart must not listen.
+ */
+export function authFromEnv(env: NodeJS.ProcessEnv): Auth {
+  const mode = env.AUTH_MODE;
+  if (mode === undefined || mode === '') {
+    throw new BootError(`AUTH_MODE is not set. Known modes: ${MODES.join(', ')}.`);
+  }
+  if (!MODES.some((known) => known === mode)) {
+    throw new BootError(`AUTH_MODE=${JSON.stringify(mode)} is not a mode this build knows. Known modes: ${MODES.join(', ')}.`);
+  }
+  if ((mode as AuthMode) === 'session') return sessionMode(env);
+  if (env.ALLOW_DEV_HEADER !== STAGING_ONLY) {
+    throw new BootError(`AUTH_MODE=dev-header lets any caller act as any player; it starts only with ALLOW_DEV_HEADER=${STAGING_ONLY}, on a box no real player reaches.`);
+  }
+  return {
+    mode: 'dev-header',
+    notice: `AUTH_MODE=dev-header: this server trusts the ${PLAYER_HEADER} header as the player's identity (staging only, no sign-in).`,
+    resolve: headerId,
+  };
+}

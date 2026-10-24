@@ -4,7 +4,10 @@
 name: openfold
 services:
   db:
-    image: postgres:16-alpine
+    # pinned to the digest, not the moving 16-alpine tag: the box also runs another product's watchtower,
+    # which scans every container daily, so a floating tag means an upstream patch release swaps this
+    # container at 04:00 with a version nobody chose. Move the digest on purpose, then `up -d`.
+    image: postgres:16.15-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
     environment:
       POSTGRES_USER: ${DB_USER:?set DB_USER in .env}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
@@ -26,14 +29,28 @@ services:
       options: { max-size: "10m", max-file: "3" }
 
   api:
+    # named, so a box that holds no source runs this build instead of trying to make one: the runbook
+    # builds it on the laptop, copies it over and starts it with `up -d --no-build`
+    image: openfold-api:${IMAGE_TAG:-latest}
     build:
       context: ..
       dockerfile: deploy/Dockerfile
     environment:
       DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
       PORT: 8080
-      # NEXT 18 e replaces this with a signed-in cookie; until then the box serves staging only
-      AUTH_MODE: ${AUTH_MODE:-dev-header}
+      # no default on purpose: the API exits at boot unless this names a mode it knows, so a missing
+      # line in .env stops the container instead of opening it to any caller (session is the real one, NEXT 18 e)
+      AUTH_MODE: ${AUTH_MODE:?set AUTH_MODE in .env}
+      # empty unless .env sets it; dev-header refuses to start without ALLOW_DEV_HEADER=staging-only
+      ALLOW_DEV_HEADER: ${ALLOW_DEV_HEADER:-}
+      # the session mode (NEXT 18 e); each is empty unless .env sets it, and the API refuses to start in that
+      # mode without the two origins, or with only one of the Google pair
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:-}
+      APP_ORIGIN: ${APP_ORIGIN:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      MAILER: ${MAILER:-log}
+      COUNTRY_HEADER: ${COUNTRY_HEADER:-}
     depends_on:
       db:
         condition: service_healthy

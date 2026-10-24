@@ -62,7 +62,7 @@
       "title": "The light layer: one engine module both doors call, with the decided shadows and night inside it and the hour table in params",
       "plan": ["docs/design/ART_SYSTEM.md section 2, step 2 of its order", "DECISIONS 2026-10-20 the art system", "STYLE sections 4 and 5", "docs/team/NEXT.md section 15"],
       "branches": ["feat/light-module"],
-      "owner": null
+      "owner": "the lighting session"
     },
     {
       "id": "hook",
@@ -105,6 +105,28 @@
       "plan": ["DECISIONS 2026-10-18 the quest designer", "GAME_RULES G17 and section 3 (the palette)", "docs/design/QUEST_PATTERNS.md"],
       "branches": ["feat/quest-agent"],
       "owner": null
+    },
+    {
+      "id": "free-walk",
+      "title": "Free movement: the body walks freely in eight directions, the world and the kernel stay on tiles",
+      "plan": ["DECISIONS 2026-10-18 free movement replaces the tile-by-tile walk", "docs/design/GAP_DIMRAETH_DRAKANTOS.md section 5", "docs/team/NEXT.md section 22"],
+      "branches": ["feat/free-walk"],
+      "owner": null
+    },
+    {
+      "id": "kit-and-map",
+      "title": "The Field Kit direction as built: the kit screen, the map window and pocket chart, and the stall at the town's free corner with its draft in the save",
+      "plan": ["DECISIONS 2026-10-20 the UI's direction: Field Kit", "DECISIONS 2026-10-20 the map: its own window, the ground you walked, and the stall at the empty corner", "DECISIONS 2026-10-20 a player places a stall at the town's free corner (the owner's answer)", "DECISIONS 2026-10-21 the stall draft as built", "CR-104", "docs/design/SETTLEMENT.md 3.4 (sales while away and other players wait for the shared world)"],
+      "branches": ["feat/ui-kit-screen", "feat/ui-field-kit", "feat/stall-draft-save"],
+      "owner": "the kit-and-map session"
+    },
+    {
+      "id": "races",
+      "title": "Races, wave 1: the race content kind, six attributes (carry renamed might, spirit added), the random wake pocket and its tool on the ground, the starters archived",
+      "plan": ["DECISIONS 2026-10-22 the races and the wake pockets", "STORY sections 1 and 7 (the three folds)", "GAME_RULES section 2"],
+      "branches": ["feat/race-wave-1"],
+      "owner": null,
+      "cross_cutting": true
     }
   ]
 }

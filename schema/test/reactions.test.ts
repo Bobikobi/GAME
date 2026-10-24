@@ -43,6 +43,12 @@ describe('reactions', () => {
     expect(validateFile(reaction({ ...slower, then: {} }))).not.toEqual([]);
   });
 
+  it('accept a weather from the closed list, and refuse any other', () => {
+    for (const weather of ['clear', 'rain', 'fog']) expect(validateFile(reaction({ ...slower, when: { weather } }))).toEqual([]);
+    expect(validateFile(reaction({ ...fish, when: { hours: [18, 21], weather: 'rain' } }))).toEqual([]);
+    expect(validateFile(reaction({ ...slower, when: { weather: 'snow' } }))).not.toEqual([]);
+  });
+
   it('hold the guards in numbers: a reach of 8 at most, a wait inside 500-2000, a spread of 2 at most', () => {
     expect(validateFile(reaction({ ...birds, when: { player_within: 9 } }))).not.toEqual([]);
     expect(validateFile(reaction({ ...slower, then: { wait: 499 } }))).not.toEqual([]);

@@ -32,13 +32,13 @@
   padding: 0;
 }
 .doc-toc li {
-  border-bottom: var(--px) solid var(--paper2);
+  border-bottom: var(--px) solid var(--line);
 }
 .doc-toc a {
   display: flex;
   align-items: center;
   min-height: 44px;
-  color: var(--ink);
+  color: var(--fg);
   text-decoration: none;
 }
 .doc-toc a:hover {
@@ -79,21 +79,21 @@
   margin-top: var(--s-1);
 }
 .prose a {
-  color: var(--ink);
+  color: var(--fg);
 }
 .prose pre {
   overflow-x: auto;
   padding: var(--s-3);
-  background: var(--paper2) !important;
-  color: var(--ink);
+  background: var(--raise) !important;
+  color: var(--fg);
   font-size: var(--text-s);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-/* the highlighter colours its tokens for a dark ground; on paper the code is ink */
+/* the highlighter colours its tokens for its own ground; on the site the code is the words' colour */
 .prose pre,
 .prose pre * {
-  color: var(--ink) !important;
+  color: var(--fg) !important;
 }
 .prose pre code {
   background: none;
@@ -103,7 +103,7 @@
 }
 .prose hr {
   border: 0;
-  border-top: var(--px) solid var(--paper2);
+  border-top: var(--px) solid var(--line);
 }
 .prose table {
   display: block;
@@ -113,14 +113,14 @@
 .prose th,
 .prose td {
   padding: var(--s-2) var(--s-3) var(--s-2) 0;
-  border-bottom: var(--px) solid var(--paper2);
+  border-bottom: var(--px) solid var(--line);
   text-align: left;
   vertical-align: top;
 }
 .doc-source {
   margin-top: var(--s-12) !important;
   padding-top: var(--s-3);
-  border-top: var(--px) solid var(--paper2);
-  color: var(--ink2);
+  border-top: var(--px) solid var(--line);
+  color: var(--fg2);
   font-size: var(--text-s);
 }

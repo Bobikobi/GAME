@@ -126,4 +126,14 @@ describe('soundscape', () => {
     expect(soundscape(b, state, 100_000, cx, cy).crackle.level).toBe(0);
     expect(CRACKLE_RANGE).toEqual([1.5, 6]);
   });
+
+  test("a fire of the player's own crackles on its tile while it burns, and not once out (NEXT 21b)", () => {
+    const state = newState(b, 1);
+    const [cx, cy] = [27.5, 16.5];
+    expect(soundscape(b, state, 0, cx, cy).crackle.level).toBe(0);
+    state.player.own = { at: [27, 16], lit: 0, until: 100_000, log: 66_666 };
+    expect(soundscape(b, state, 0, cx, cy).crackle.level).toBe(1);
+    expect(soundscape(b, state, 0, cx + 3, cy).crackle.level).toBeGreaterThan(0);
+    expect(soundscape(b, state, 100_000, cx, cy).crackle.level).toBe(0);
+  });
 });

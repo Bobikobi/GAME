@@ -6,7 +6,7 @@
   "title": "The slid bank",
   "creator": "core",
   "quest": {
-    "starter": "core/digger",
+    "pocket": "core/slid-bank",
     "type": "discovery",
     "summary": "The bank south of the bridge has slid, and its earth lies loose. Dig in it with your trowel.",
     "steps": [

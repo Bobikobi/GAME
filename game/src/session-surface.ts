@@ -7,7 +7,7 @@
  * The state a screen may read is the public one: the seed is the server's and never reaches the phone
  * (kernel-review R4), and a screen cannot tell the two apart.
  */
-import type { Action, Bundle, GameEvent, PublicState } from '@game/kernel';
+import type { Action, Bundle, FireState, GameEvent, PublicState } from '@game/kernel';
 
 export type Facing = 'down' | 'up' | 'left' | 'right';
 
@@ -66,4 +66,16 @@ export interface GameSession {
   cancelWork(): boolean;
   /** Write what is owed: the save on the phone, the pending walk on the wire. */
   save(): void;
+}
+
+/**
+ * Did a burn run out after `since` and by `tick`? The kernel tells a fire going out (`fire_out`) only with a
+ * step, so a session that sees this reports the tile again and shows what the step tells. The map's fires
+ * and the player's own (#211) are asked alike. `RemoteSession` asks it every frame; `Session` keeps its own
+ * loop until #227, which widens that loop to the own fire, moves it here.
+ */
+export function burnEnded(state: PublicState, since: number, tick: number): boolean {
+  const own = state.player.own ?? null;
+  const ends: FireState[] = [...Object.values(state.player.fires ?? {}), ...(own === null ? [] : [own])];
+  return ends.some((fire) => fire.until > since && fire.until <= tick);
 }

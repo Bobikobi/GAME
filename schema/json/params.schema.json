@@ -266,6 +266,14 @@
                   {
                     "const": "staff",
                     "type": "string"
+                  },
+                  {
+                    "const": "hammer",
+                    "type": "string"
+                  },
+                  {
+                    "const": "pick",
+                    "type": "string"
                   }
                 ]
               },
@@ -597,6 +605,63 @@
                     "maximum": 100,
                     "description": "How strong the wash is at that hour, in whole percent. The hours between two keys step evenly.",
                     "type": "integer"
+                  }
+                }
+              }
+            },
+            "sun": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "alpha",
+                "cap",
+                "keys"
+              ],
+              "properties": {
+                "alpha": {
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "How dark the cast shadow is, in whole percent (STYLE section 4: 30).",
+                  "type": "integer"
+                },
+                "cap": {
+                  "minimum": 0,
+                  "maximum": 200,
+                  "description": "The longest a shadow may be, in percent of the caster's height (STYLE section 4: 110).",
+                  "type": "integer"
+                },
+                "keys": {
+                  "minItems": 2,
+                  "maxItems": 12,
+                  "description": "The sun's shear by hour (STYLE section 4): the shadow leans right and toward the viewer by these shares of the caster's height, so a negative `down` is the sun in the south and the shadow falling away, up-screen. The hours between two keys step evenly; outside the first and the last the sun is down.",
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "at",
+                      "right",
+                      "down"
+                    ],
+                    "properties": {
+                      "at": {
+                        "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$",
+                        "description": "The hour and minute the sun is at its own shear, for example \"16:30\".",
+                        "type": "string"
+                      },
+                      "right": {
+                        "minimum": -200,
+                        "maximum": 200,
+                        "description": "How far the shadow leans right, in percent of the caster's height; negative in the morning, positive in the evening.",
+                        "type": "integer"
+                      },
+                      "down": {
+                        "minimum": -100,
+                        "maximum": 100,
+                        "description": "How far the shadow leans toward the viewer, in percent of the caster's height; negative when the sun stands south (STYLE section 4: the shadow falls up-screen, away from the viewer, behind the caster).",
+                        "type": "integer"
+                      }
+                    }
                   }
                 }
               }
@@ -1793,17 +1858,18 @@
         },
         "per_point": {
           "additionalProperties": false,
-          "description": "What one point in an attribute adds: bag places (carry), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina).",
+          "description": "What one point in an attribute adds: bag places (might), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina). Spirit is defined and read by no rule yet: its first readers come with the night layer and the tree.",
           "type": "object",
           "required": [
-            "carry",
+            "might",
             "senses",
             "agility_pct",
             "luck_permille",
-            "stamina"
+            "stamina",
+            "spirit"
           ],
           "properties": {
-            "carry": {
+            "might": {
               "additionalProperties": false,
               "type": "object",
               "required": [
@@ -1908,6 +1974,32 @@
               }
             },
             "stamina": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              }
+            },
+            "spirit": {
               "additionalProperties": false,
               "type": "object",
               "required": [
