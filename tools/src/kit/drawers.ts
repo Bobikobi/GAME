@@ -214,7 +214,7 @@ export interface LocalSettings {
   seed: number;
 }
 
-/** The local route's settings from the environment (`COMFYUI_URL`, `LOCAL_DENOISE`, `LOCAL_STEPS`, `LOCAL_SIZE`, `LOCAL_LORA`, `LOCAL_CHECKPOINT`), else the defaults. */
+/** The local route's settings from the environment (`COMFYUI_URL`, `LOCAL_DENOISE`, `LOCAL_STEPS`, `LOCAL_SIZE`, `LOCAL_SEED`, `LOCAL_LORA`, `LOCAL_CHECKPOINT`), else the defaults. */
 /** A positive number from the environment, else the fallback; anything else is refused by name. */
 function envNumber(env: NodeJS.ProcessEnv, name: string, fallback: number): number {
   const raw = env[name];
