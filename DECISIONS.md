@@ -2004,6 +2004,11 @@ The keys are **today's curve, keyed**: gold `#eda83a` at 40% across the half hou
 Measured on the live game first: 08:00, 12:00, 16:30 and 19:00 are one picture and only the night differs, so the valley had two lights and nothing between them. Until L2 is picked, that stays true on purpose.
 **Retry when:** the pick lands and the keys are not swapped in the same day, or a wash key reads as a veil rather than as light. Model: Copilot.
 
+## 2026-10-20 ✅ The cast shadow, as built (ART_SYSTEM step 2, the shadows)
+
+The sun's shear is data: `params.light.sun` carries keyed hours with `right` and `down` in whole percent of the caster's height, the cast `alpha` (30) and the length `cap` (110), and `game/src/cast.ts` steps between the keys, clamps the shadow to the cap and is pure, so the 3D door can read the same sun later. The values are STYLE section 4's: 0.8 to 1.1 of the height at 08:00 and 16:30, at most 12 art px past the feet at noon.
+`game/src/cast-layer.ts` paints every caster's own alpha, sheared away from the sun, opaque into one canvas the size of the camera's view, and draws it once at the table's alpha, so two shadows that meet are one shape and the ground is no darker than under one. The contact line under the feet is 45%, separate. `world.ts` registers the scene's images and sprites by one scan, so a kind of thing added later casts without a second list; the hook is the scan and one `update` call.
+A shadow texture is regenerated only when the sun's shear moves; the masks are kept by `texture#frame`. The night and the pools are not this entry; they are the next output of the same stream. Model: Copilot.
 ## 2026-10-20 ✅ The world's hour is the server's clock, and a player's clock joins it at the join by one resume (PRESENCE section 0, option A)
 
 The question PRESENCE.md section 0 waited on: whose clock is the hour from the step where players see each other, given "one hour for all" (10.10) and a per-valley tick today. Three options, the first recommended: A, the world's hour is the server's clock (`world.epoch`, one origin per world, tick 0 a noon), every player's `state.tick` set by the server at every accepted action, a return after an absence one kernel action `resume` that moves the player's tick to the world's and shifts everything that counts the player's own elapsed time so nothing ran while away (Q8), the vigil the one exception, `leave` after `logout_countdown_s` outside a safe place; B, each player keeps their own hour; C, a game day is a real day. His word (20.10): A.
@@ -2201,6 +2206,55 @@ The owner's answer on #272's two age points was "align with the big companies" (
 Proof: `server/test/signin.test.ts` (birthday edges at 13 and 16, the refusal cookie, the header trusted only when configured, a missing header) and `server/test/boot.test.ts` (`COUNTRY_HEADER`).
 **Retry when:** the game opens to a country with a different age (review the list); the owner wants accounts for younger players (then a parent-consent flow, and the data rules that come with it); GeoIP proves too coarse at a border. Model: claude-opus-5-5 (game-65).
 
+## 2026-10-21 ✅ The sun moves south: every cast shadow falls away from the viewer (GK2 B, #256)
+
+The entry above, "The GK2 method (B)", says what B does to decision C: the sun stands south, the fronts of the standing
+things take the light and the backs the shade, and the cast shadow points away from the viewer instead of toward it. That
+entry left the change to the pull request that builds the pass. This is it, in #256.
+
+- **The data.** Every key of `content/core/params.json` `light.sun.keys` keeps its `right` and turns its `down`
+  negative: -39 at 06:00, -37 at 08:00, -16 at 10:00, -11 at 12:00, -16 at 14:00, -37 at 16:00, -41 at 16:30, -39 at
+  18:00. The lengths are the old ones to the third digit: 0.936 of the caster's height at 08:00, 1.099 at 16:30, 0.11 at
+  noon, which is 10.6 art px on a 64-px caster. So the morning shadow leans up-left, the evening up-right, and the noon
+  shadow straight back.
+- **The schema follows.** `SunKey.down` is -100..100: a negative `down` is the sun in the south, a real value now and not
+  a typo, and `schema/test/params-sun.test.ts` pins every key below zero.
+- **The depth order holds, with no change to the pass.** Both shadow layers sit at 2.5 and below, under the shallowest
+  thing `world.ts` lets cast (`DEPTH.puff`, 3.5). A shadow falling north therefore lies behind its caster, the caster is
+  drawn over it, and a thing standing nearer covers the shadow of the thing behind it - which is what a sun in the south
+  asks for and what the old direction could not have. The one thing the pass loses is the shadow that spills in front of
+  the viewer: there is none now, by the decision, not by a bug.
+- **What the frames show.** [`2026-10-21-cast-08.png`](docs/design/frames/2026-10-21-cast-08.png) and
+  [`-1630.png`](docs/design/frames/2026-10-21-cast-1630.png), phone size at 3x (390x844, 1170x2532), the bridge corner:
+  the rocks, the sign post and the player throw their shadows up-left at 08:00 and up-right at 16:30. A shadow pointing
+  away is mostly behind its caster, so what the eye reads is the part that spills past the silhouette; on the sand of the
+  16:30 frame the ink `#1b1a2e` measures 0.29 to 0.31 across its three channels, and over that sand the same frame with
+  the pass switched off holds none of it: 0 pixels against 4,106.
+- STYLE section 4's Direction row is rewritten to this, as the GK2 entry asked, in the same pull request.
+
+**Retry when:** the owner finds the moved sun's shadows wrong in the live game (the retry the GK2 entry itself names);
+or B items 1, 2 and 4 land - the 3D shapes under real light - and this shear table is replaced by the sun's azimuth and
+elevation in the hour table. Model: DeepSeek (deepseek-light, Copilot SDK in VS Code), from the manager's orders; the
+pick is the owner's, relayed by the manager.
+## 2026-10-21 ✅ Free movement as built: the feet walk the pixels, the world and the kernel stay on tiles (NEXT 22)
+
+The owner, 18.10: "free movement, not a fixed feel"; and 21.10: "free movement now, but graphics come first for me", so this landed after the art and light streams took the machine. What the entry below builds, in the builder's own file, next to the rules it walks by.
+- **The walk** (`game/src/walking.ts`, `Walker`): the feet's centre at art-pixel precision, a velocity from the held input at one tile per `walk_step_ms` whatever the angle (two arrows at once, or the stick at any angle, are normalised to one length), and no acceleration yet. The tile under the feet's centre is the player's, and every tile the centre enters is reported to the kernel in order.
+- **Collision**: a body box at the feet, 28 x 16 art px (`BODY_BOX`, a tunable constant beside the walk), against the tiles `canEnter` refuses. x and y are resolved apart so the body slides along a wall, and because the box has width it never cuts the corner between two refused tiles. A straight walk that meets a corner is eased onto its lane while the motion is blocked, so a corridor slightly off the body's line does not stop it. A frame longer than a tile takes (a slow machine, a tab coming back) walks one tile at most, so one frame never carries the body through a tile and the tile under the feet stays a place a hand can stop on.
+- **Four-connected reports (G56)**: the axes are resolved one after the other inside a frame, so a centre that crosses a corner reports the side tile first, at the same frame. A tile is reported once, and only when the centre enters it.
+- **Facing**: the dominant axis of the motion with a hysteresis of 1.25, so a walk near 45 degrees does not flicker. The three drawn directions and the mirror are unchanged; a diagonal walk shows its dominant facing, as Stardew Valley does. The faced tile is the tile beside the feet's tile, and every action that read `pos + DIRS[facing]` reads `facedTile(s)`.
+- **The stride**: today's walk frames advanced by the distance walked (one stride per tile), not by a step count.
+- **The phone** (`game/src/input.ts`, `game/src/ui/touch.ts`): the pad is a stick. The direction is the finger's offset at any angle, the dead zone stays 12% of the width, and full speed comes at 40%. A and B, and the keys, are unchanged.
+- **Both doors**: the 3D door walks by the same `Walker` in the same pull request, with the hero's yaw taken from the motion itself.
+- **The server's check (NEXT 22 c)**: the reachability stays four-way, and the charge becomes the path's octile length in one kernel function, `walkCharge` (`STEP_MILLI` 1000, a turning pair `DIAGONAL_PAIR_MILLI` 1414). Charging a diagonal walk by its four-way length drained the pool and refused an honest walk after about 15 s. `KERNEL_VERSION` is 0.14.0. G56's line carries the number.
+- **The e2e (NEXT 22 d)**: `game/e2e/walk.ts` holds the input until the feet's centre stands on a tile, with a timeout, in place of counted presses; the opening, stealth and 3D runs all walk through it, and the opening's phone player pushes the pad's stick. The page lets go on the frame the tile is reached: a release sent over the wire lands a frame late, and on a machine rendering in software a frame is a quarter of a second. A walk stops where it stands when a window opens under it (the word in town stops the walk) and waits out a world held by a window that closes.
+Proof: `game/test/walk.test.ts` (the four measurable lines of NEXT 22 without a renderer: 10 tiles in 1.9 s straight and 7.07 on each axis diagonally, stopping in the frame of release, 200 frames of walls at 64 angles with no overlap and four-connected reports, the faced tile after a diagonal walk for pick, dig and talk), `kernel/test/travel.test.ts` (the octile charge), `server/test/api.test.ts` (a 20 s diagonal walk passes; a 3-tile jump is still refused); the opening, stealth and tending e2e in CI.
+**Retry when:** the owner judges the feel on a preview and wants different speed, acceleration or stick numbers (polish); a phone player misses the tile meant for an action (the faced tile is the thing to widen); a predator's watch reads oddly with the body between two tiles. Model: claude-opus-5-5 (game-b1), finished by deepseek-walk.
+## 2026-10-21 ✅ A step lifts its leg in the frame it starts: the walk check's flake was the client's, at a slow frame rate
+
+The opening e2e failed on CI with "stepping left/right/down never lifted a leg: frames 1 in 2 drawn" (develop run 39598103878 attempt 1, #252, #256): every retry drew a step in exactly two frames, both feet together. The cause is in `tryStep` (`game/src/scenes/world.ts`): a step began on the standing frame, and the next update added a whole frame's delta, so at frames over 133 ms (`STRIDE` 0.7 of `STEP_MS` 190) it was already past the stride and showed the landing. The test was right; a slow phone walked without legs. The fix sets the stride frame (0 or 2) in the update the step starts, so its first drawn frame lifts a leg at any frame rate; the frames after it are unchanged.
+Measured by a probe of 30 single steps from rest on the desktop door (`.scratch`, not committed): CPU throttle 8, before 15 of 30 steps showed no leg, after 0 of 30; throttle 4, 1 of 30 against 0; unthrottled, 0 against 0. No sleep and no timeout changed; the e2e is untouched. Five local runs of the opening e2e on a loaded laptop: the walk check passed in all ten doors (every step showed a leg frame); four runs passed whole, and run 4 failed on another check, "a step away still cut logs" (phone): the first step-away press came 7 s after the A that started the felling, slowed by the swing screenshot, and the felling had ended by then. That is a timing gap of its own in the test, left for a separate fix.
+**Retry when:** a walk sheet gets more than three frames, or the stride's timing changes (then the first frame of a step is chosen by the new table). Model: claude-opus-5-5.
 ## 2026-10-21 ✅ The opening handover as built: the phone's log is replayed, kept under a secret seed, or the account starts fresh (NEXT 18 d)
 The phone keeps every step since the start (cap `OPENING_LOG_MAX` 2000, saved with the game, rolled back with cancelled work) and uploads `{seed, log, state}` with the sign-up. The server plays it again from `newState(seed)` with the kernel's travel check and the `/moves` movement credit, refuses a second start, time running backwards, more than one hour of game time or more than 150 gold of pay (purse plus what the bag sells for), and keeps it only when the replay serializes to the phone's state. The state then takes a secret seed. Anything else: a not-started state under the secret seed, and the box says so in one line.
 Books: a kept opening is the account's first `action_log` row `{kind:'opening', seed, log}` with its gold rows, so `checkAccount` proves a handed-over account (test: handover.test.ts). The account, its state and its books are one transaction (signin-db test).
