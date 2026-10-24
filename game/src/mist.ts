@@ -8,7 +8,7 @@
  * 4x4 dither on game pixels (the world's own grid, not the screen's), and the lighter patches and the
  * shade are a second, coarser pattern in the same three colours.
  */
-import { type Bundle, type State, findSlot } from '@game/kernel';
+import { type Bundle, type PublicState, findSlot } from '@game/kernel';
 
 /** A place the mist leaves clear: a centre in tiles and a radius in tiles. */
 export interface Clear {
@@ -28,23 +28,23 @@ export const MIST_RGB = { base: [0x3a, 0x35, 0x54], light: [0x5d, 0x61, 0x77], s
 /** The ordered 4x4 dither: a pixel is mist where the density is above its cell's threshold. */
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5] as const;
 
-/** B2's defaults for what content leaves out (schema: starter.pocket, starter.pocket_grown). */
+/** B2's defaults for what content leaves out (schema: pocket.pocket, pocket.pocket_grown). */
 const POCKET = MIST.clear;
 const POCKET_GROWN = 7;
 
-/** Whether the character's own first task is done: a quest offered to their start alone, closed (NEXT 16 c). */
-export function firstTaskDone(b: Bundle, s: State): boolean {
-  return Object.entries(b.quests).some(([id, q]) => q.starter === s.player.starter && s.player.quests[id] === 'done');
+/** Whether the character's own first task is done: a quest offered to their wake pocket alone, closed (NEXT 16 c). */
+export function firstTaskDone(b: Bundle, s: PublicState): boolean {
+  return Object.entries(b.quests).some(([id, q]) => q.pocket !== undefined && q.pocket === s.player.pocket && s.player.quests[id] === 'done');
 }
 
 /**
- * The mist's clear places for a save, a pure function of it (so a reload keeps them): the starter's wake,
+ * The mist's clear places for a save, a pure function of it (so a reload keeps them): the pocket's wake,
  * clear for `pocket` tiles and for `pocket_grown` once the first task is done.
  */
-export function mistClears(b: Bundle, s: State): Clear[] {
-  const starter = b.starters[s.player.starter];
-  const wake = starter?.wake ?? b.map.spawn;
-  const r = firstTaskDone(b, s) ? (starter?.pocket_grown ?? POCKET_GROWN) : (starter?.pocket ?? POCKET);
+export function mistClears(b: Bundle, s: PublicState): Clear[] {
+  const pocket = b.pockets[s.player.pocket];
+  const wake = pocket?.wake ?? b.map.spawn;
+  const r = firstTaskDone(b, s) ? (pocket?.pocket_grown ?? POCKET_GROWN) : (pocket?.pocket ?? POCKET);
   const clears: Clear[] = [{ x: wake.x, y: wake.y, r }];
   // a mended place draws the mist back around its middle tile (NEXT 16 d); the order of the save's list is the order here
   for (const id of s.player.restored) {

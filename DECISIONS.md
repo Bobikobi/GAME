@@ -348,6 +348,7 @@ The question (crafting audit Q9): what does a crafted upgrade give, and where do
 ## 2026-10-09 ✅ Each player role reads at a glance: one big item, one colour, its own build
 
 The player roles differed only in their attributes. They now differ in look too, in the pixel sprites and the 3D models alike. Each role carries one big item and one colour that read at phone size, and has its own body build. The patched base clothes stay the same for every role; fine attire is still earned. First round: the Explorer (tall and lean; a wide-brimmed hat and a tall backpack with a blanket roll), the Forager (short and slight; a large wicker basket on the back, the rust red on a neckerchief and the basket lining, and no head wrap, which the owner found looked bad) and the Digger (broad and heavy-set; a spade strapped across the back and a cap). Every role has a man as its base look plus a woman option in the same kit; the first round drew the Forager as a woman, and the base is now a man. Ethnicity is drawn at random for each figure, not one default look, and the skin tone follows the draw. The colours (moss green, rust red, indigo blue) and the exact builds stay a proposal until the owner picks from the 3D stills. The cook, Elder Maru and Pell come later.
+**Superseded in part (22.10):** the same patched base clothes for every role give way to three start outfits over a bare body (decision 42 of 22.10), and the random draw of the look to a pick from the shared skin ramp (decision 37 of 22.10). One big item, one colour and its own build stay, now per race (decision 40 of 22.10).
 **Retry when:** a role cannot be told apart at phone size, or a clothing system needs one shared body. Model: claude-opus-5-5.
 
 ## 2026-10-09 ✅ The owner added maze and stealth to the palette, and set the order of the variety work
@@ -1189,6 +1190,7 @@ Five sessions, three of them in another app, built at once with no single view: 
 - Check (`tools/src/starts.ts`). Every start holds an axe before the first fire, in its kit or on its own spot (this replaces "every kit holds an axe" of the axe entry above). A start's own spot gives one find at 100 percent, count 1, tier 1, needs only a tool the start's kit holds, has a tile on the map, and lies within the start's senses (`senseReach`) somewhere on its shortest walk from its wake to the bridge. A wake is a tile one can stand on. One attribute total (6). The kits, with each start's own finds, within 25 percent of the poorest (60000 mg each today). Every start reaches the bridge with its axe within 50 percent of the fastest, counting the work of its own task and the walk at the client's step time; the effort is measured to the bridge because the roads meet there, and the road from the bridge to the first fire is the same for every start. Reach is checked from every wake. The headless opening walk runs once per starter.
 - Client. The game puts the character where its start wakes; the title screen shows the three cards in one row on a desktop and reads each start's own lines. The explorer's senses (`game/src/senses.ts`): a find picked up by hand lies half-buried in a soft glow, and while it shows, a drifting line of glints runs from the character's feet to it, in place of the generic dig mark; the prompt says "Pick up". The direction, a trail, was chosen from three phone-size stills (a trail, a ripple of rings from the character, a mark over its head); the preview is the owner's to judge, as the entry on three starters says. A start's own spot and its hint show to that start only. The world scene changed in those places only. The opening's walk in the browser: the phone's forager picks the bank herbs first, the desktop's explorer picks up the axe by the bridge before the bridge is mended.
 - Wart, left on purpose. The walking staff borrows the branch's sprite and the digger the forager's sprites until the art lands.
+**Superseded in part (22.10):** the per-starter profiles (CR-84's six points among them) give way to one fixed race profile of seven points in six attributes (decisions 44-45 of 22.10); the wakes, first tasks and own spots stay as the random wake pool, keyed by the pocket, and the pocket's tool lies on the ground by the wake tile instead of in a kit (decision 43 of 22.10).
 **Retry when:** players walk past the glint, read the slid bank as a ruin with more to dig, or a starter needs more than one spot of its own. Model: claude-opus-5-5. Branch `feat/three-starts`, GRUNT CR-37.
 
 ## 2026-10-09 ✅ The opening recut: option B, toward the first dusk, closing on a night discovery
@@ -1300,6 +1302,7 @@ The owner answered nine open questions on 10.10 in the afternoon, one at a time,
 9. **The 3D trial ships to production as a parallel version** behind its own button on the home page, on the same data, built alongside the 2D game; if the community prefers it, it gets the investment. The 64 px painted trial and the rich-pixel trial are archived with a tag.
 
 Also noted by the owner: the skill descriptions at the start are not as simple as in other games, and raising a skill or a level does not weigh as much as it should. This goes to the opening's stream as a finding.
+**Superseded in part (22.10):** item 1 only. The three lasting starter edges become corner nodes of the race wings, not three fixed percentages, and the starters give way to races (the entries of 22.10, decisions 9 and 38). Items 2-9 stand.
 **Retry when:** players read the camp price as a toll that blocks play (then a free first night), the plot odds read as unfair, or the 3D version's cost outruns the community's interest. Model: claude-opus-5-5.
 
 ## 2026-10-10 ✅ No dead props: a sprite that looks workable must be workable, and `pnpm check` lists the ones that lie
@@ -1692,7 +1695,7 @@ How: NEXT 8 b-d. The gap and the budget come first (`docs/3d/gap.md`), the looks
 ## 2026-10-18 ✅ Accounts and a server: the owner's answers
 
 Relayed by the manager, 18.10, for NEXT.md section 18:
-- Everything on the owner's own Contabo server from day one: the game's API and database in their own containers, apart from "yaar-ad" (its own app and postgres, nginx, a host postgres 16); each container has its own database user, a memory cap and a nightly backup. No new monthly cost; if real-time load outgrows the box, the options go back to him. Read-only facts on 18.10: 4 cores, 7.8 GB RAM (7 GB free), 36 GB disk free, idle. Every server step is a production gate (three lines first, then check, back up, approve, execute, verify; no sudo without his yes). This supersedes "functions and a managed database" of 8.10.
+- Everything on the owner's own Contabo server from day one: the game's API and database in their own containers, apart from the other product on the box (its own app and postgres, nginx, a host postgres 16); each container has its own database user, a memory cap and a nightly backup. No new monthly cost; if real-time load outgrows the box, the options go back to him. Read-only facts on 18.10: 4 cores, 7.8 GB RAM (7 GB free), 36 GB disk free, idle. Every server step is a production gate (three lines first, then check, back up, approve, execute, verify; no sudo without his yes). This supersedes "functions and a managed database" of 8.10.
 - Sign-in by email, Google and Discord; the builder sets up the OAuth apps in the browser at build time and asks only where his login is needed, each step approved. The age (13 or the country's higher) and "email and name only, after the opening" of 9.10 stand.
 - All gameplay state lives on the server, met/heard and the last position included; the device keeps settings only.
 - The opening carries into the account by replay under the phone's seed, verified, then a server-secret seed; fresh start after sign-up if that proves complicated. A pause at once when the connection drops.
@@ -1825,11 +1828,13 @@ Why it reads generic (proven by reading the content):
 - techniques come by level, not by choice;
 - the three starters differ by 0 to 2 pips.
 Proposed, not yet his word (the page's section 4): a tree on two axes, the starter's nature against the trades, with corner nodes per pair. Major nodes change a verb, small nodes carry today's percentages, attributes become keys (thresholds), books found in the world teach nodes outside your wings, and the format leaves room for combat wings. The screen is a UI frame, so it goes to the owner as a still before it is built.
+**Superseded in part (22.10):** the tree's vertical axis is the race, not the starter's nature, and the attributes are six: might (was carry), senses, agility, luck, stamina and spirit (decisions 38 and 45 of 22.10).
 **Retry when:** never as built. The five attributes may stay as keys inside the new tree. Model: claude-opus-5-5.
 
 ## 2026-10-19 ⏸ Races to widen the starters (a goblin, an elf, a human): later, perhaps by other developers
 
 The owner, 19.10: a gap between the characters as wide as races would be a step back now, so it waits. Races are the characters' nature and their lines of growth, and other developers may be the ones to think them through. If they come, they come as the vertical axis of the proposed tree (corner nodes per race and trade), and their past needs speakers (STORY.md S1-S6).
+**Superseded (22.10):** the races come now. Three races, the human, the elf and the skeleton, replace the three starters as returners from three folds and as the vertical axis of the tree (the entries of 22.10, decisions 9-12 and 38).
 **Retry when:** the stage-3 tree is in place. It is a candidate for an open call to creators then. Model: claude-opus-5-5.
 
 ## 2026-10-19 ✅ The opening's hook f: one waking box, option labels that are the quest's title, and Maru's Pell line withdrawn
@@ -1874,12 +1879,20 @@ On fire in a shared world (section 10), his words: a wildfire and putting it out
 Left open for the rules session: the line "a player's act may open things for others, never close or destroy them" (his word: "I don't know").
 The section 4 examples now carry the real file shape of #207 (`reaction: { on, when, then }`, the appear node inline), `empty_for_ms` is out of phase A, and the fish rise on `water` tiles.
 **Retry when:** combat (W2) makes reading a foe's attention part of the fight; then noise turning a head is asked again. Model: claude-opus-5-5.
+
+## 2026-10-19 ✅ Weather is one sky per region and day, drawn from the world's seed and nothing of the player's
+
+Phase B of [docs/design/REACTIONS.md](docs/design/REACTIONS.md) reads the weather. `weatherOf(seed, region, day)` draws clear, rain or fog from the world's seed with fixed odds (70, 20 and 10 in a hundred days), so everyone in a region sees one sky, as large online games keep one weather per zone, and a replay on the server gives the same day. The days are drawn apart, so tomorrow is known today for the morning's forecast. The hand-made map is one region (`regionOf`); a chunk of the open world will name its own.
+The odds stay in the kernel, not in `params`: a creator's lever on the sky would be a lever on value. Two core rows read it: mushrooms by a grove log in the rain (the forest patch's node, so the mushroom's value does not move) and reeds back in 0.6 of their time. The check holds G45 for the sky: a node of one weather gives a class found in every weather. Weather never touches a fire (the owner, 19.10), and a test burns the hearth the same in rain, fog and clear.
+Evidence: kernel/test/weather.test.ts (the shares of 1000 days within 5 points of the odds; two players with different starts, tiles and senses read the same sky) and tools/test/reactions.test.ts.
+**Retry when:** a region needs a climate of its own (a wet coast, a dry plain); then the odds move into the region's file, under a check that keeps V still. Model: claude-opus-5-5.
 ## 2026-10-19 ✅ The opening's order and words: the coin after the bells, the arch alone at dark, every past with a speaker
 
 The owner, 19.10, after the opening's second review ([docs/design/OPENING_REVIEW.md](docs/design/OPENING_REVIEW.md) section 9): "you can change the quests further, rewrite them or improve them, if you see fit". Taken as yes to its questions 1 (the order) and 2 (a bandage with the long night) and a free hand on the words; question 3, the lasting starts, still waits for a design entry.
 Built (section 9.5 there): `a-coin-for-maru` and `the-long-night` require `three-fruits`, as the recut B entry of 10.10 meant ("Maru's coin follows by the trowel's road"); `the-tangle` and `the-south-bank` require `the-night-arch`. Each neighbour offers one task in town, the vigil is offered in the afternoon, and the arch lands alone at dark with nothing that hunts beside it. `pnpm quests`: at most 3 tasks open at once for the digger and the explorer (were 5), 4 for the forager (were 6), no new pair of one type. The long night pays one bandage beside its recipe.
 The words: ten lines that stated the past (nine in content, one the title screen's fallback) now say what is there or name Maru as the speaker (STORY S1, S2), three that said what the game does not do are true (the lanterns' places, the berries' hours, Pell's one price), and Pell repeats the three beliefs about the bells as rumours after the threshold (STORY section 3).
 Not built: the review's "one herb as a find" (R4). The check refuses a `find` of an item that grows in more than one place (G2), and a done line in the first 15 s would be a second box. The review offered it untried; the quest designer now tries every fix with the check before offering it.
+**Superseded in part (22.10):** `the-long-night` now requires `something-warm`, not `three-fruits`, so the vigil is offered after Maru's stew, around 17:00-18:00, not in the afternoon (the entry on the long night after the stew below). `a-coin-for-maru` still requires `three-fruits`.
 **Retry when:** a person playing the reordered day still waits over 90 s before dusk (then waiting by a fire, section 9.4), or the arch's minutes fill with the night's other tasks. Model: claude-opus-5-5.
 
 ## 2026-10-19 ✅ The forge's two design pages: the grammar with shared steps, and the binder
@@ -1889,3 +1902,732 @@ The owner, 19.10: the foundation stones before the builds; the forge's two judge
 - The binder: every choice a kernel draw keyed on the land and its purpose; the pick by type order, freshness and play weight; the bind by role constraints with the pair and cross-land refusals; per-quest gates at bind time and per-land gates after; a `bound` block, `CHART.md`, `bindings.json` across lands, `bind.lock.json` with the input digests, and `--verify` in CI that names which input changed; `pnpm forge why` explains a binding by its draws.
 - QUEST_FORGE phases 1a and 5 point at these pages once #220 lands (a one-line pull request).
 **Retry when:** the first bind of the valley and the ring leaves holes the library cannot fill, or a `shared` step is found waiting on another player. Model: claude-fable-5-1.
+## 2026-10-20 ✅ A fire of one's own, client and content half as built (NEXT 21 b)
+
+On kernel 0.12.0 (NEXT 21 a). The Build a fire prompt sits where Build sits, on the tile the player faces, and shows only while the bag holds the campfire part's two logs and the player stands outside the town. The action is the kernel's `kindle`; every refusal shows the kernel's own words as a toast (the town's fires, a wolf's watch, a chase, water or a solid thing) and the kernel keeps the logs. The own fire is drawn on its tile in four stages by the wood left: the kit's burning campfire with its three flame frames by day while it is full or steady, and a code-drawn tongue (`fx-flame`, no new art file) above it as the wood runs low or the night's shade would dim it, shrinking and cooling through low and embers, with a few sparks and a thin smoke while it burns and the valley's slow wind leaning flame, smoke and embers together, the burn itself untouched (G48). At night the fire and its flame are lifted over the shade and it lays a soft warm pool `fire.safe_tiles` wide on its ring, so the light has a visible source and the ring is lit ground, not a halo. Smoke, sparks and the wind lean are drawn only; no rule reads them, and the player's fire never spreads (a wildfire is a world event, REACTIONS.md). Its journal line says only "it still needs wood" or "it has the wood: wait for dawn", and its event line says "The fire takes.": no number of logs, minutes or danger on screen, because a log's length is the ground's danger (CR-38), so the client's next-log clock and its log count are suppressed for `own`.
+`core/the-long-night` names `fire: 'own'`. Maru's offer, waiting and done lines send the player past the last house to a place of their choosing, in his voice and within G14; the hearth by his door stays a fire anyone may feed, and no quest names it. `game/e2e/tending.ts` takes the task from Maru, keeps the hearth a whole first night without meeting it, builds out in the wild, captures the four flame stages, refuses a build in the bank wolf's watch and during a chase with the logs kept, ends a chase at the ring, meets the task at dawn and hands it in; a second character's fire survives a reload, goes out and leaves the step unmet. `game/test/tending-flow.test.ts` follows both passes without a browser, and the tests that used the hearth as the long night's fire now use `own`.
+Interpretation, in the PR body: "no number of logs, minutes or d on screen" is taken to mean every word the fire itself speaks and its journal line, not the HUD clock, which is the time of day. The 3D twin has no tending and no kindle: left as a note for NEXT 8 e.
+**Retry when:** CR-38 fills `d` (then the own fire's journal may count logs again only if the count no longer names the ground), or a player cannot tell the four stages apart on a phone. Model: claude-opus-5-5.
+## 2026-10-20 ✅ The server's wire, as built (NEXT 18 a): a kind on every report, a clock anchor, and a movement credit
+
+`server/` (Node, the monorepo's toolchain) serves `POST /action`, `POST /moves`, `GET /state` and `POST /session` and nothing else, and holds the seed: no reply, patch or event carries it (`server/test/api.test.ts`). A batch report names its `kind` (`{kind, at, tick}`, `move` the only kind accepted now), so an encounter joins the batch later without a new endpoint (the combat proposal of NEXT 18 a, which the owner has not seen). Extra fields are refused inside a report as they are at the top of a request, and so is an unknown kind. An action is applied by the same kernel the phone runs, with `step`'s new `validateTravel`, which checks every tile an action names, `kindle`'s fire included.
+Choices the spec left open, all as built: the clock is anchored to the state tick rather than to the last request (`acceptedAt` moves only by the game time an accepted request advances, and 2 s of slack is granted once, not per call), because a slack granted afresh let a client walk the clock forward a request at a time; movement is a credit kept with the player (`movementAt`, `movementCreditMs`), spent by the four-way path length of each report and refilled by elapsed game time up to `move_reach_max`, because a fresh two-tile reach per report let a batch or a run of requests cross the map at one tick. The four-way search lives in the kernel as `walkDistance`, so the phone and the server walk by one rule (G56); `move_reach_max` is a new parameter (32) with a default for older content. The store is an interface (`load`, `compareAndSet`) with an optimistic version check; the state row this item's b) will need now also holds the clock anchor and the unspent credit.
+**Supersedes:** the time proof of NEXT 18 a ("more than the wall-clock time elapsed plus a slack of 2 s per call") and its `move` check as a per-report reach, both written before the review found that each one compounds; the plan text in `docs/team/NEXT.md` follows in its own pull request (#225).
+**Retry when:** an honest phone on a slow line is refused after a pause it did not take (then the credit refills from the wall clock too), or combat lands and the batch's `kind` needs a cap per encounter. Model: Copilot SDK in VS Code.
+## 2026-10-20 ✅ The art system: the four findings of 20.10 become four engine layers, one ladder of stills first
+
+The owner, 20.10, on the agents' four findings about the look (the 32 colours as a ceiling, code that makes texture and not composition, the light prototype that should be an engine component, one size grade and nothing in motion): maximize the graphics, and the agents work by one page. The page is [docs/design/ART_SYSTEM.md](docs/design/ART_SYSTEM.md). The measure is unchanged: the compass of 18.10 (Dimraeth's depth, Drakantos's characters and animation).
+Decided here, inside the directions already picked (technical, so ✅): the four findings become four layers above the sprite, each as data with a check and a measure. A light module both doors call, carrying the decided shadows and night (STYLE sections 4 and 5), with the hour's tints in `params.json`. Ramps of five or six hue-shifted steps per material and per region, declared in the kit and checked, the 32 core colours unchanged and every sprite of today valid as it is. A motion block of seven kinds the engine runs once, attached by data. Composition rules per phone window beside the richness warning, with hand-composed stamps at a cadence. The characters' plan (GAP section 7) stands unchanged.
+The order: one ladder of stills at phone size (L0 as decided, L1 colour craft, L2 the light layer, L3 a one-second motion loop, with Pell A, B and C in the same batch) before the 64 px waves that draw by a pick; the mechanics that wait on no pick (the light module with today's numbers, the ramp schema and check, the motion format, the composition check) now, each as its own pull request, shared files first; the picks into STYLE and params; the ring's rules with NEXT 19 b; the cast. Nothing a rule needs is dimmed; nothing the kernel reads changes; a weaker phone falls back by `RICH` group and still plays.
+Waits for the owner: the picks of the ladder. Until them the outline, the pool's two steps, the hour's tints and the cast's ramps stay as decided on 18.10; wave b of NEXT 15 (the cast) waits, wave a (the ground) does not, since a ground drawn in the core ramps is remapped per region later.
+**Retry when:** a 2K phone cannot hold its frame budget with every layer on (then layers fall back by `RICH` group before any number moves), the colour count of a phone window passes the cap after the ramp rule, or the ladder's picks say the layers read as four looks and not one. Model: claude-fable-5-1.
+
+## 2026-10-20 ✅ The ramp rule is in the schema and in the check (ART_SYSTEM step 3, the shared part)
+
+ART_SYSTEM section 3 asked for ramps declared in the kit and held by `pnpm check`, with every kit of today valid unchanged. Built: an optional `ramps` on a kit (an id, an optional `for` from a closed list, five or six steps), an optional `ramps` on a sprite naming the ramps it draws in, and the rules: each step lighter than the one below, the hue moving between them, a sprite's pixels inside the core and its own ramps, a ramp a kit does not declare refused, and a ground tile inside its first ramp plus at most two accents.
+How the hue is measured: warmth, red minus blue over the colour's own light. It is the measure that reads a pale step and a deep one of the same hue alike, and it keeps the palette's own ramps valid: the water ramp travels 0.31 from dark to light, the greens 0.21, the core greys 0.16, since they move from violet to near-neutral. The check asks that the hue move, not which way: "warmer as lighter" would refuse the palette's own earth ramp, which cools as it pales. The direction stays guidance until the owner makes it an error.
+Not in this step: the importer that snaps a generated picture onto a sprite's ramps, the colour count of a phone window, and the six ramps a region may declare (that one waits for the chunk file of NEXT 19 a).
+**Retry when:** a declared ramp passes the check and still reads flat in a still, or a wave cannot draw in its ramp without an accent the tile rule refuses. Model: Copilot.
+**What the rule does not catch (amended 20.10, after a read-only review):** warmth ignores saturation, so a ramp that only greys out as it darkens passes; the direction (cooler dark, warmer light) is not checked; and a drift of 0.03 refuses only a ramp whose steps keep one red-to-blue proportion, a plain scale of one colour. The rule proves a ramp is not a pure value scale. It does not prove a ramp reads as one in a still: that stays the eye's call, on the ladder of stills.
+
+## 2026-10-20 ✅ The colour count is a number in the check (ART_SYSTEM step 3, the measure)
+
+The 20.10 finding was a number nobody could read from the repository: the study's water carried 8 colours per 64 px tile against a reference's 41 to 44. `pnpm check` now reports two advisory lines, warnings only: colours per `tiles/` sprite, and colours per phone window over the richness windows, both read from the PNGs themselves so a redraw moves the count and a comment does not.
+What it says about today's content: 37 tile sprites, a median of **3** colours each, 34 of the 37 at five or fewer, and **no sprite at 64 px at all**; 50 phone windows, a median of **21** colours, the richest 29. The style spec asks a 64 px fill tile for at least five colours, so the measure agrees with the spec's own floor by flagging today's art, and the 96 colours per window that ART_SYSTEM section 3 proposed as a ceiling never fires: what the game has is a floor problem, not a ceiling one.
+**Retry when:** a tile passes five colours and still reads flat in a still, or a window's count stops tracking what the eye sees. Model: Copilot.
+**What the count can see today (amended 20.10, after a read-only review):** every pixel must sit in the 32-colour core plus the ramps its sprite names, and no kit declares a ramp yet, so no window can pass 32 colours by construction. The window line measures how much of the core a window uses, not the gap to the reference's 41 to 44 colours per tile, and the 96 ceiling cannot fire until a kit declares ramps or palette v2 lands. Read the tile line (the floor of five) as the live number; read the window line only after that day.
+## 2026-10-20 ✅ The database as built (NEXT 18 b): migrations, the seed in its own column, and the version as the lock
+
+Two numbered SQL files under `server/migrations/`, applied once each by `server/src/migrate.ts` and recorded in `schema_migrations`, so a second run changes nothing (a test runs the pair twice). `0001` holds `accounts` (id, email, name, birth band, created) and `sign_in_identities` (provider, subject); `0002` holds `player_state`, `action_log`, `gold_ledger` and `boards`, with the triggers that make the two books append-only. Choices the spec left open, as built: the age is stored as the band CR-49 asks for (`13-15`, `16-17`, `18+`), never as a birth date, so the row cannot become a birthday; the state is a `jsonb` column and the seed its own `bigint`, with a check that the state's keys hold no `seed`, so nothing built from the state can carry the secret (kernel-review R4); money is `bigint` milli-gold and the column refuses a fraction sent as text; `player_state.version` is the optimistic lock, and `server/src/store-pg.ts` writes only `where version = $n`; the two books refuse `update` and `delete` with a trigger, so an audit row is written once. The driver is `pg`, added to the `server` package, and the store implements the `PlayerStore` the wire already takes.
+The database tests (`server/test/db.test.ts`) need a real postgres and are skipped without `DATABASE_URL`, so `pnpm verify` stays green on a laptop with none; CI runs them against a `postgres:16` service container, the version the owner's box will run. Not built here: no production database exists, nothing writes `action_log` or `gold_ledger` from the API yet (the rows are the next item's, once the client sends what it played), and `boards` stays empty until the board builder lands.
+**Retry when:** a resumed session shows a state that does not match its own tick (then the anchor moves into the state blob), or the audit of a played session cannot be rebuilt from `action_log` because a write path skipped a row.
+**Amended 20.10 (fix/server-identity):** the books now have their writer. `compareAndSet` takes a `Books` argument and writes the state, one `action_log` row (`seq` is the new version; a movement batch is one row holding the batch) and one `gold_ledger` row per gold event in one transaction, so a lost race or a failed book write leaves nothing. The sentence above that nothing writes them yet is out of date.
+
+## 2026-10-20 ✅ The client over the wire, half built (NEXT 18 c): the remote session, and the patch rule moved into the kernel
+
+`game/src/remote.ts` holds `RemoteSession`, which offers the local session's surface over the four endpoints and keeps no save and no seed: the state arrives by patch, the walk is batched and sent with a `kind`, an action waits for its reply, and a refused walk takes the server's tile back rather than walking on (the client snap-back). `Wire`/`fetchWire` are the connection, with the session cookie carried same-origin, `credentials: 'same-origin'` so the script never touches it (NEXT 18 e); `WireGap` pauses the game at once as the owner asked (Q5), and `resumeFromServer` goes on from `GET /state` with no tick replayed. Choices the spec left open, as built: the merge patch moved into the kernel (`kernel/src/patch.ts`, re-exported by `server/src/patch.ts`) because both ends apply it and the phone may not import the server; `check` answers nothing on the phone, since only the server may judge; `cancelWork` is false, because the server already made the step; `meet`/`hear` are kept in memory until an endpoint carries them, which the four-endpoint rule of 18 a does not yet allow.
+The tests (`game/test/remote.test.ts`, with `game/test/fake-server.ts`) run a 30-minute day at four frames a second: walk to the nearest node, gather it, walk back, and compare the canonical state after **every** frame between the save and the wire. They pass. A fake answers as well over the real one on purpose: it keeps no movement credit, so a cheating client would not be caught there, and the credit keeps its own server tests.
+**Not built, and next in this item:** the classic client and the 3D door still type their session as `Session`. Switching them to one interface is the second half, and it is not a rename: `act` becomes a wait, so the scenes' walk loop, the input that starts an action and the animation that follows it each need an in-flight lock, which is a design step of its own.
+**Retry when:** the scenes' switch shows a frame that keeps taking input while an action waits (then the lock belongs in the scene, not the session), or a resumed session lands a tile away from where the phone stood (then the move batch needs an ack).
+
+## 2026-10-20 ✅ The public state as a type: a reader that never sees the seed says so
+
+`PublicState` is now declared beside `State` in `kernel/src/state.ts` (`Omit<State, 'seed'>`), and every kernel and game function that answers a screen without ever reading the seed takes it: the totals and levels of a character, the shop price, whether a quest is satisfied, whether ground is safe, the riddle slots, the spot of a treasure, the map of a hunt, the words of a tooltip, the mist, the soundscape, the toasts. Nothing about behaviour changed; only the signatures did, and a `State` still passes wherever the public one is asked for, so every caller stands as it was. The point is the boundary R4 draws: a function that cannot name the seed cannot leak it, and when the phone plays on the server (NEXT 18 c) the screens keep reading the state they are given.
+Not widened, on purpose: anything that draws (the fall's waking tile, a gather's luck, a craft's chance, a reaction's appearance) still takes `State`, because the seed is the server's alone and those calls belong to the kernel on the server.
+**Retry when:** a screen needs a number that today comes from a seed-taking function; that is a question about what the phone may compute, not a type to widen.
+
+## 2026-10-20 ✅ The light is a module, with today's numbers (ART_SYSTEM step 2, the base)
+
+`game/src/light.ts` holds the light as numbers, not as drawing calls: the night's curve, the dusk's two hours, the shade's and the dapple's share of them, the frame's tightening and the lantern's pool. `world.ts` reads it, so the five places that drew light by hand now agree with one table. Every number is the one the valley showed on 20.10, and `game/test/light.test.ts` pins each of them, so no pixel changed.
+Next in the step: the hour table moves into `params.json` and the pool's steps, which is where a pick can change the values without touching the module.
+**Retry when:** a capture at a fixed hour differs from the same hour before the module, or the 3D door needs a number the table does not carry. Model: Copilot.
+## 2026-10-20 ✅ A drawn outcome is the server's to say and the phone's to show (the owner, for NEXT 18 c)
+
+The owner approved the builder's recommendation on the last two questions the screens ask that are drawn from the seed: whether a hidden node has appeared, and whether anything happened on a step between two tiles. **The phone never computes them.** The server already runs the same kernel function with the seed, so it sends the outcome and the screen draws it. This is R4 (the seed is the server's alone) applied to what a screen reads, and it closes the last gap in switching the classic client and the 3D door to the shared session surface of NEXT 18 c.
+Checked against the field before it was taken, on the owner's word ("make sure what is accepted in multiplayer today"): the server rolls and the client is given results in Valve's model ([Source Multiplayer Networking](https://web.archive.org/web/20231228173444/https://developer.valvesoftware.com/wiki/Source_Multiplayer_Networking)) and in Riot's ([Peeking into VALORANT's Netcode](https://www.riotgames.com/en/news/peeking-valorants-netcode)); prediction covers input, movement and animation, not outcomes ([Gaffer On Games](https://gafferongames.com/post/what_every_programmer_needs_to_know_about_game_networking/)); a live game sends the roll itself, as WoW does with the loot roll in its events ([Warcraft Wiki, Events](https://warcraft.wiki.gg/wiki/Events)). The one model where clients do hold the seed is deterministic lockstep in real-time strategy, and its price is a bit-exact simulation on every machine and fog-of-war hacks ([1500 Archers on a 28.8](https://www.gamedeveloper.com/programming/1500-archers-on-a-28-8-network-programming-in-age-of-empires-and-beyond), [Gaffer, Deterministic Lockstep](https://gafferongames.com/post/deterministic_lockstep/)); the documented seed handoff in a live game is Minecraft's world seed, partial on purpose and still the target of a seed cracker ([Minecraft Wiki, World seed](https://minecraft.wiki/w/World_seed)). None of it fits a tile game whose phone holds no simulation.
+As built, the two reads travel with the reply: the list of appear nodes that stand now goes beside the state in every answer, and a step's cues go with the events of that step, so the local demo and the phone read them the same way.
+**Supersedes:** nothing the owner wrote; it makes explicit what 18 a left open, and the plan text of 18 c needs no change.
+**Retry when:** a screen needs a drawn number that a reply cannot carry (a prediction the player would feel as lag), and then the answer is a designed prediction rule with the owner, never a seed on the phone.
+
+## 2026-10-20 ✅ The air over the valley: cloud shade by day, fog banks at dawn and at night (the owner's pick of three stills)
+
+The owner asked for fog and clouds carried as far as *Graveyard Keeper* carries them. Three phone stills were put to him at 390x844, each one named difference and each captured from the built game (`docs/design/frames/2026-10-20-air-clouds.png`, `-dawn.png`, `-night.png`): **A** one patch of cloud shade crossing the ground by day, **B** two and then three pale dithered banks lying in the valley before dawn, **C** the same banks at night with the lantern's pool cut through them. He answered: keep all three as they are, and go on sharpening them. So the direction is the three together, and the numbers below are the compass until he says otherwise.
+As built on `feat/fog-clouds` (`game/src/sky.ts`, pure, and `game/src/scenes/world.ts`): the shade is `#172a52` at 34% in one step, with a two-hundredths rim to soften the cut (STYLE section 7 asks for `#1b1a2e` at 12%, which on this palette read as nothing at phone size; the owner's first note was that the clouds never showed), a 192-unit patch of three wrapped harmonics repeated three by three and anchored in the world, drifting 1.7 units right and 0.55 down a second, gone as the night comes. The banks are three bands 6, 2 and 4 tiles tall at 22%, 46% and 64% of the view, a **pale veil rather than a dither**: `#f5f4ef` at its heart over a `#c6cad6` rim, up to 80% of its own alpha, brightest in the middle and gone at the rim, their centre line wandering along the length so neither edge is straight, drifting 2.2, 3.1 and 3.6 px a second. He saw the first cut of them as dots and said the fog was coarse and read as smoke: hence the veil and the near-white, and hence both textures are baked at the world's own density of four so a texel lands on a screen pixel instead of a block of four. `fogStrength(minute)` gathers them before 05:30, clears them at midday and brings them back after dusk, and they lift their own weight at night rather than sitting darker. The sky itself has a weight by the day: `cloudCover(day)` is a slow pure curve over the days (leaning clear, so about four days in ten carry nothing, a third carry one cloud, a quarter carry a few, and a heavy sky is the rarer day), and four patches are baked once for the four weights, so the scene only swaps a texture when the day's weight changes. `?debug&cloud=0..3` pins a weight for a still or a test. Both layers sit under the mist's veil, so the stencil that keeps the haze off the player keeps them off too, and reduced motion (`RICH.motion` off) keeps the banks and loses only their drift.
+**Not built, and next if he wants it:** fog that pools in hollows and by water rather than in bands across the view, a bank that lifts as the sun climbs instead of thinning, and rain or snow, which is weather and needs a rule of its own (G48 keeps weather off a burn, so it is not a look-only change).
+**Retry when:** the banks hide a wolf's eyes or a hazard before it is read (then they thin or go behind the light direction), or a mid phone drops frames with the three bands in view (then they fall behind `RICH.light` alone rather than all three).
+**Model:** claude-opus-5-5.
+## 2026-10-20 ✅ The UI's direction: Field Kit, one made object around the bag and the character
+
+The owner picked, from three phone-size stills of the same bag-and-character screen: [Field Kit](docs/design/frames/2026-10-20-ui-direction-field-kit.png), against [Ledger](docs/design/frames/2026-10-20-ui-direction-ledger.png) and [Quiet Glass](docs/design/frames/2026-10-20-ui-direction-quiet.png). Field Kit is the compass: the interface is a made object, oiled wood and brass fittings around canvas and paper. Ledger and Quiet Glass were trials, not a second skin; they are not adopted.
+
+What the pick settles, so the polish loop does not ask again:
+- One frame language: a 3px ink outline, a wood outer frame, brass corner fittings, a canvas or paper inset, and a title plaque. Layers differ by weight, not by style: the HUD is the lightest, a window the middle, a modal the heaviest.
+- The character lives on the kit surface: head, top, legs, feet, jewelry and hand, with a WORK/LOOK switch. Worn items are icons until stage 6 draws the looks on the body (CR-97).
+- An item is a card, not a paragraph stack: icon, name, rarity in words and in an inlay, effect, set progress, creator and the trader's price. The bag's detail edits in place; it does not sit below the fold.
+- The same materials carry the other windows: paper and ink for the journal, map and a creator's signature, canvas and brass for the shop, the craft and the kit. There is no second theme.
+- The 32-colour palette, the 64 px world and Pixelify Sans stay. No new colours, no gradients in the UI frame, no radius. Every action still goes through `session.act()`; the pick changes the frame, not the rules.
+
+The first refinement (the owner's word, 20.10): the body face is **Atkinson Hyperlegible Next**, self-hosted beside Pixelify Sans; Pixelify keeps the titles and the numbers, and the body, the buttons, the item facts and the dialogue are set in the reading face. The same change adds a **SKILLS** tab to the kit surface, because a character is gear and skill together: the attributes with their real before-to-after numbers, the professions and their techniques, and the bonuses the worn kit gives. On a desktop the kit opens wide: the tabs across the top, the bag beside the item card, the outfit with the character and all eight places, and the shop with the bag on one side and the stall on the other. The same play settled the tabs (the owner, 20.10): **Bag, Outfit, Skills, Shop and Journal**, each with one line under it, and the character belongs to Outfit alone and leaves the other pages. The Shop tab is the stall's draft: an item dragged (or tapped) into a slot opens a price window, and the stall keeps the price; other players, a map marker and sales while away wait for the shared world (SETTLEMENT 3.4) and are named in the window. The final stall is planned at the town's market board, not in the kit anywhere; the tab keeps its shape until that place opens.
+
+The stills are [phone](docs/design/frames/2026-10-20-ui-field-kit-phone.png), [outfit](docs/design/frames/2026-10-20-ui-field-kit-outfit.png), [skills](docs/design/frames/2026-10-20-ui-field-kit-skills.png), [shop](docs/design/frames/2026-10-20-ui-field-kit-shop.png), [price](docs/design/frames/2026-10-20-ui-field-kit-price.png), [desktop](docs/design/frames/2026-10-20-ui-field-kit-desktop.png) and [desktop shop](docs/design/frames/2026-10-20-ui-field-kit-desktop-shop.png).
+
+The still is a study, not production parity. The frame art, the item cards, the aggregate effects and the enlarged character are the next art wave. CR-104 (the map) and CR-97 (the dressing panel) are the two screens this direction unblocks; their open questions still go to the owner.
+
+## 2026-10-20 ✅ The map: its own window, the ground you walked, and the stall at the empty corner
+
+The owner picked, from three phone-size stills of the same walked valley: [the window](docs/design/frames/2026-10-20-map-direction-window.png), against [a page in the kit](docs/design/frames/2026-10-20-map-direction-page.png) and [a chart in the phone's corner](docs/design/frames/2026-10-20-map-direction-corner.png). The map is **its own Field Kit window, opened from the menu**; the kit keeps its five tabs. A desktop keeps a pocket chart pinned in the bottom-right corner (CR-104); a phone does not carry one, because the chart would take the world it is meant to show. The two other stills were trials, not a second skin.
+
+What the pick settles, and the build that follows it:
+- The chart draws `content/core/map.json`, never a drawn picture: **only the ground walked and the slots entered**, in 8x8-tile chunks, and a place gets its name only after the player has stood in it. Treasures, predators and rounds are never on it (G5, G8, G47), and the list beside the chart is the accessible copy of what the chart shows.
+- The list carries the kind, the direction from where the player stands, and the one place they are in; the chart carries the pins and as many names as fit, and its aria-label names the same places, so a small screen loses nothing.
+- **The stall marker stands at `core/town-corner`**: the empty 2x2 beside the trader's stall, a place the map already has. Placing or lifting it is done while standing on that corner, through the same session the world uses (G10); the chart, the list and the desktop pocket chart show it. This is the owner's answer to the manager's question (22:10), recorded in the entry "A player places a stall at the town's free corner (the owner's answer)"; this entry builds that answer and does not re-decide it. Other players and sales while away are still **SETTLEMENT 3.4**, and the window says so instead of pretending.
+- The window, the chart, the list and the pocket chart use the Field Kit materials: wood frame, brass fittings, canvas and paper, the 3px ink outline, no radius. No new palette.
+
+The stills are [phone](docs/design/frames/2026-10-20-ui-map-phone.png), [desktop](docs/design/frames/2026-10-20-ui-map-desktop.png), [the free corner before the stall is placed](docs/design/frames/2026-10-20-ui-map-empty.png) and [the pocket chart](docs/design/frames/2026-10-20-ui-map-pocket.png). CR-104's open questions about a phone corner chart and a shared map remain open; the local marker is the first slice, not the market. Model: Copilot.
+## 2026-10-20 ✅ The hour table is data, at today's numbers (ART_SYSTEM step 2)
+
+The hour's wash leaves the scene and becomes `params.light.keys`: a list of hours, each with a colour and a strength in whole percent, and `washAt` stepping evenly between the two keys around the clock. A pick changes the numbers; the module does not change.
+The keys are **today's curve, keyed**: gold `#eda83a` at 40% across the half hour either side of 20:00 and of 05:30, zero by 18:45 and 21:15, so the valley shows what it showed before. ART_SYSTEM section 2 names the hour's tints as part of the L2 still, so the new ones (16:30 warm 12%, 19:00 dusk 28%, 05:00 cool 20%) land with that pick and not before. The night's shade is untouched at 0.5; its 92% is the same pick's number.
+Measured on the live game first: 08:00, 12:00, 16:30 and 19:00 are one picture and only the night differs, so the valley had two lights and nothing between them. Until L2 is picked, that stays true on purpose.
+**Retry when:** the pick lands and the keys are not swapped in the same day, or a wash key reads as a veil rather than as light. Model: Copilot.
+
+## 2026-10-20 ✅ The cast shadow, as built (ART_SYSTEM step 2, the shadows)
+
+The sun's shear is data: `params.light.sun` carries keyed hours with `right` and `down` in whole percent of the caster's height, the cast `alpha` (30) and the length `cap` (110), and `game/src/cast.ts` steps between the keys, clamps the shadow to the cap and is pure, so the 3D door can read the same sun later. The values are STYLE section 4's: 0.8 to 1.1 of the height at 08:00 and 16:30, at most 12 art px past the feet at noon.
+`game/src/cast-layer.ts` paints every caster's own alpha, sheared away from the sun, opaque into one canvas the size of the camera's view, and draws it once at the table's alpha, so two shadows that meet are one shape and the ground is no darker than under one. The contact line under the feet is 45%, separate. `world.ts` registers the scene's images and sprites by one scan, so a kind of thing added later casts without a second list; the hook is the scan and one `update` call.
+A shadow texture is regenerated only when the sun's shear moves; the masks are kept by `texture#frame`. The night and the pools are not this entry; they are the next output of the same stream. Model: Copilot.
+## 2026-10-20 ✅ The world's hour is the server's clock, and a player's clock joins it at the join by one resume (PRESENCE section 0, option A)
+
+The question PRESENCE.md section 0 waited on: whose clock is the hour from the step where players see each other, given "one hour for all" (10.10) and a per-valley tick today. Three options, the first recommended: A, the world's hour is the server's clock (`world.epoch`, one origin per world, tick 0 a noon), every player's `state.tick` set by the server at every accepted action, a return after an absence one kernel action `resume` that moves the player's tick to the world's and shifts everything that counts the player's own elapsed time so nothing ran while away (Q8), the vigil the one exception, `leave` after `logout_countdown_s` outside a safe place; B, each player keeps their own hour; C, a game day is a real day. His word (20.10): A.
+What it fixes: the lines of section 0, option A, go into PRESENCE build b as written; the time proof becomes free, since the server owns the tick; a window pauses nothing for an account (10.10); a player who joins at the world's night arrives in a town at night; the day's length is one number for the whole world; the opening keeps its own clock as the demo, and the seam is the first join of the shared world by one `resume`. A builder may take the world clock already at NEXT 18 c. The lines for NEXT 18 a and c follow in the pointer pull request once the open plan pull requests land.
+**Supersedes:** nothing of his; "one hour for all" (10.10) now has its mechanism.
+**Retry when:** a resumed player's fire or hunger shows a jump the shift did not cover (then the list of shifted fields grows), or the first shared world's players ask for a longer day (then `day_length_ms` moves for everyone at once). Model: claude-fable-5-1.
+
+## 2026-10-20 ⏸ The empty world: traces of others first, the town as the funnel, the valley's own people on routes, and never a figure that pretends to be a player
+
+One world (W1), no end (17.10), a few dozen players at first: most streets are empty on any screen. [docs/design/EMPTY_WORLD.md](docs/design/EMPTY_WORLD.md) lays three answers side by side with their costs and recommends an order. Proposed, not yet his word, except where the page cites his entries:
+- C, light presence, first: the traces of others (a camp's cold ashes, footprints, a note, the pack, the repaired thing's sign, the returners' stone, and one new kind, a moment: a faint nameless figure that plays once the pose a player stood in when a step closed), rows of one `marks` table per chunk under a cap, written by the kernel's events the server already sees, read with the state, worth nothing, no relay needed. They scale with the accounts that ever played, the one quantity that grows while the live count stays small.
+- B, the town as the funnel, said out loud: the chest, the board, the inn that sells the night, quests by day, the stone and the sign, the night's arrival in town (the clock's A), a square of `town.square_tiles` so a few players fill a screen and F34 fades a crowd. Nothing new but the number.
+- A, the players the game runs (CR-100, his word of 11.10), split in two: A1, the valley's own people on routes read from the clock the way a predator's round is, named, holding no gold and trading nothing, one field on the character the night's faces of 19.10 already need; A2, figures that trade as players do, refused as a recommendation because every sale is a mint outside every cap, every purchase gold from nowhere, every listing supply against a real maker, so a third fund beside the two that never meet (10.10) and a line in the sinks table of 19.10, and because a figure found to be the game's costs the player's trust.
+- Rule lines G100 and G101 proposed in the page's section 7.
+The one question to him (section 5): whether CR-100 reads as A1 rather than A2. His answer is its own entry.
+**Supersedes:** nothing of his.
+**Retry when:** he answers section 5 (then the entry below), or the first ring's measurement shows a screen in the wild still empty with the traces in (then more authored places per ring, as the 17.10 entry's retry says, before any figure). Model: claude-fable-5-1.
+
+## 2026-10-20 ✅ The players the game runs are the valley's own people on routes, named, without gold or trade (CR-100 read as A1)
+
+The one question of [docs/design/EMPTY_WORLD.md](docs/design/EMPTY_WORLD.md) (section 5): whether CR-100 (his word of 11.10, "play like everyone, gathering, crafting, buying and selling") reads as A1, the valley's own people on routes read from the clock the way a predator's round is, named, holding no gold, taking nothing and trading nothing, or as A2, figures with a purse that sell to the trader, buy from the shop and list on the board, fewer as real players join by a count. Three options: A1 (recommended), A2, no figures at all. His word (20.10): A1.
+What it fixes: a character gains a `route` (`[{at, hour}]`) beside its `hours`, read by one pure reader from the tick and the seed, nothing run off screen and no server state; the figures hold no gold, move no stock and touch no ledger, so the books of 9.10 and 10.10 and the sinks table of 19.10 stay as they are; no figure pretends to be a player, carries a card or bears a name a player could; fewer where players crowd is the content's placement and F34's fade, never a count the server keeps; CR-100's open points close (visible: yes, as the valley's own; gold: none; how many: the content's hand, ten to twenty for the first ring's town; how they give way: the fade). Rule line G100 of the page stands as proposed for the rules pull request; the town as the funnel (B) and the traces of others (C) go first, as the page's section 4 orders.
+**Supersedes:** CR-100's "buying and selling" and "fewer as real players join" by a count (11.10), in part: the look and the name stay, the trade and the count go.
+**Retry when:** the first ring's measurement shows the market's stock standing still with few players (then the demand drain of 9.10 is tuned, never a figure that trades), or he asks for the figures to move the market (then A2 with a third fund in the books, designed first). Model: claude-fable-5-1.
+## 2026-10-20 ✅ The remote session talks one call at a time, and its clock starts at the server's tick
+
+`RemoteSession` (`game/src/remote.ts`) puts every call to the wire behind one queue: the walk, an action, a resume. A call starts only after the one before it landed, so it names the version that call brought back. Before, `report` at the batch size, `act` and `save` could each send the same version at once; the server took one and refused the rest with 409, and the refused caller dropped its moves. A tile reported while a call is in the air waits in the batch and goes with the next call. A 409 now means a real conflict (another device, a refused walk): the walk is dropped, the state is read again and the player stands on the server's tile.
+The clock on join and on resume starts at the state's tick, never below it (a returning player was refused as "time cannot run backwards"). It does **not** jump to the end of work under way, as `Session.load` does on the phone: the server lets game time run only as fast as the wall clock since it last accepted a step (`server/src/api.ts`, `checkClock`), so a player back within the work's time would be refused as ahead of time. The phone's own clock finishes the work. Pinned by `game/test/remote.test.ts`.
+A resume that fails leaves the session closed, emits one `change`, and the error reaches the caller. An action refused because the version is stale reads the state again at once; the server answers 409 for that and for a kernel refusal alike, so the client tells them apart by the server's words until the server sends a reason a machine can read.
+**Retry when:** the server sends its clock allowance in the reply, so the phone can safely jump to the end of the work. Model: Opus 5.5 (began on Sonnet 5.5).
+## 2026-10-20 ✅ The air after the review: no step at midnight, banks cut to the view, and the wash a ring (PR #238)
+
+A read-only review of PR #238 found the baked sky sound and six defects; this is the pass that closes them, on `feat/fog-clouds`, with `origin/develop` merged in (a merge, not a rebase, so #241's hour table and this branch's `shadeFor` line up).
+- **No step at midnight.** The banks' hour curve used `near(0, 240)` on a minute folded to 0..1439, so 23:59 read 0.20 and 00:00 read 0.45: a visible pop in the fog. It now measures a circular distance (`min(d, 1440 - d)`), and a test walks every minute of the day and fails on a step over a hundredth.
+- **Reduced motion (G29).** The banks already lost their drift; the cloud patch did not. `cloudDrift(tick, drifting)` is the one door, the scene passes `RICH.motion`, and a test holds both answers.
+- **A bank is as wide as the view.** The banks were 12 tiles wide and centred, so on anything wider than 12 tiles they ended mid-screen with a vertical cut. The band's pattern is now one period wide and repeating (whole harmonics of that period, so its ends meet), and each bank is cut to whole periods of the view's width plus a period of margin on each side, rebuilt when the view's width changes.
+- **One module.** The banks' weights, heights, periods and night lift live in `sky.ts` with the rest of the air; `light.ts` keeps only the fix the review asked for, `LightKey` moved back under the doc of `warmth`.
+- **The wash is a ring.** `washAt` had no wrap before the first key or after the last; harmless while both ends are 0, but the decided night key (20:00 to 05:00) crosses midnight. It now reads the table as a ring of 1440 minutes, and a test pins a key that crosses midnight (0.6 at 22:00, 0.34 at 01:00, 0.26 at 02:00, no minute stepping more than a percent).
+- **Stale words out.** The `sky.ts` header no longer claims an ordered dither, 12% or a low-ground bank; the dead `heart = 1` is gone.
+**Not in this pull request, by the manager's word (21:45):** the STYLE 2 and 7 amendment (it rides with #246, `art/nature-heart`) and the shade over the props and the player (an owner question, NATURE.md section 5, with its pair of stills). The shade stays on the ground here.
+**Model:** claude-opus-5-5.
+## 2026-10-20 ✅ Weather by day, phase B's read as built: one sky per region and day, two rows in the core
+
+`weatherOf(seed, region, day)` in `kernel/src/reactions.ts` is a pure function of the world's seed, the region and the day, and reads nothing of the player; `regionOf` names the one hand-made map today. The odds are one exported integer table, `WEATHER_ODDS` (rain 2000, fog 1000, clear 7000 basis points), not `params.json`: a params key would be a schema change to a shared file, and the manager asked for none in this PR. A reaction may hold on `weather` (the schema condition of #215); `reactionHolds` checks it. Two core rows use it: `mushrooms-after-rain` (a node by a fallen log on a rain day, sharing its class with an all-year one) and `reeds-in-rain` (reeds back sooner).
+Proven by `kernel/test/weather.test.ts` (same day same sky, the odds over 1000 days, one sky per region, two players one sky, the rain's mushrooms and reeds, the mushroom's value unchanged, a fire burning the same in the rain) and `tools/test/reactions.test.ts` (the rain-only node shares a class with an all-year one). Weather never touches a fire (G48). Kernel 0.13.0.
+Not built, waiting on the owner's pick of stills: drawn rain, fog as mist, the morning forecast, fog's shorter sight; and NATURE.md's new kinds and climates (PR #242).
+**Retry when:** NATURE.md's weights per climate and season are accepted; the table then moves into `params.json` with a schema change of its own. Model: claude-sonnet-5-5 (built by claude-opus-5-5).
+## 2026-10-20 ✅ The server's identity gate: it will not start without a mode it knows, and the header mode is staging only
+
+The review of Stage 2a found that the API threw per request when `AUTH_MODE` was not `dev-header` but only warned at boot, that `compose.yml` defaulted `AUTH_MODE` to `dev-header`, and that nginx passed `x-player-id` through unchanged: once the name pointed at the box, anyone could act as any uuid. Now `server/src/boot.ts` decides before the bundle, the database or the port is touched: `AUTH_MODE` unset or unknown exits 1; `dev-header` also needs `ALLOW_DEV_HEADER=staging-only` (an exact match, nothing like `1` or `true` stands in) and logs one line saying the server trusts the header. `compose.yml` has no default (`${AUTH_MODE:?}`), nginx blanks `x-player-id`, and RUNBOOK step 3 says the name is not pointed at the box until NEXT 18 e (sign-in) lands. `GET /health` (no identity, no player row, 200 only when the pool answers) is the container's healthcheck; the old one hit `/state`, got 401, and the box would never have been healthy. `deploy/backup.sh` is bash with `pipefail` and refuses a dump under 2 KB. Tests: `server/test/boot.test.ts` (including a real process that must exit 1 with no database), `backup.test.ts`, the identity and books cases in `api.test.ts`, the transaction cases in `db.test.ts`.
+**Retry when:** NEXT 18 e adds the session mode (then `MODES` in `boot.ts` grows and `dev-header` can be deleted from production images), or a second box shape needs the header mode without a proxy in front.
+Model: claude-sonnet-5-5 (manager: game-94).
+
+## 2026-10-20 ✅ Nature's laws: the owner's six answers, and his first picks from the sheets
+
+The owner answered NATURE.md section 10 and judged the sheets of #246 by eye, asked one question at a time by the manager. Five answers keep the default: the valley follows the northern months; no snow in the valley, only a rare winter day in the hills; a weather lasts the whole game day; overcast halves the cast shadows' alpha at the same length, and rain and storm cancel them (STYLE 4's new weather row); indoors, only a storm is heard and its lightning flashes the window pool. **Monster grades: not now.** The four grades wait for the first monster kind (combat, stage 8); until then section 1's grades are a proposal.
+Picked on the sheets:
+- **Scale**, `docs/design/frames/2026-10-21-nature-scale.png`: the numbers as drawn. Pell 1, a child 0.65 with the head kept, the elder 0.9 stooped, a hen 0.25, a dog 0.45, the wolf 0.55 at the shoulder and two tiles long, a deer 0.9 at the head with antlers to 1.4, a horse 1.25, the young tree 2. They join STYLE 1b in this pull request as the floor of each kind. NATURE 1's other rows (birds, sheep, the bear, fish, pines, towers) stay starting points until a still shows them.
+- **Climate**, `2026-10-21-nature-climate-temperate.png`: the valley is temperate, as drawn. Dry, cold and wet (`-dry`, `-cold`, `-wet`) did not read right; they get a second round when the open world first reaches a region of another climate. The frame's shadow at 0.7 of the height is not part of the pick: STYLE 4's 0.8 to 1.1 stands.
+- **Seasons**, `2026-10-21-nature-season-autumn.png` and `-winter.png`: autumn's fire-and-earth canopy and winter's bare trees and puddles are the valley's. The hour and sun numbers drawn on them (winter's dusk at 16:30, its shadow at 1.3 of the height) are polish for step 6, and STYLE 4 gets its season line when that step lands.
+- **Weather**, `2026-10-21-nature-weather-overcast.png`: overcast as drawn. Rain and fog (`-rain`, `-fog`) and the shade over Pell (`2026-10-21-nature-shade-ground.png` against `-over.png`) are not seen yet and stay open. #238's fog keeps its own recorded pick.
+What this opens in NATURE 11: step 3 (`climates.json`, the valley as temperate, no pixel moves); step 6 for autumn and winter once step 3 is in; step 5 for overcast only. Step 2 shrinks to the `scale` check, since the rows land here. Step 7 waits for the shade pick.
+**Retry when:** the first creature kit stands beside Pell on a phone and a size reads wrong (the owner corrects the row), or the open world reaches a region that is not temperate (the climate round). Model: claude-opus-5-5 (the manager wrote it; the answers are the owner's).
+
+## 2026-10-20 ❌ #241's hour table never reached the bundle (fixed by #249)
+
+#241 was reported as "the look does not move": the hour's wash became `params.light.keys` at today's numbers. On develop the scene read an empty table. `flattenParams` in `tools/src/assemble.ts` copies params block by block and had no line for `light`, so the bundle carried none, `world.ts` fell back to `tableOf([])`, and the gold wash at dawn and dusk was gone from 20:48 (#241 merged) until #249. v0.1.7 in production was never affected.
+Found by copilot-light while putting the sun's numbers in data. #249 carries `light` through `flattenParams`, and `tools/test/light-params.test.ts` runs the real `params.json` through it and checks that the keys arrive.
+Why it slipped: the module's tests fed `tableOf` its keys directly and never went through the bundle, and no e2e reads a colour at 05:30 or 20:00.
+**Retry when:** a new params block is added: a test of the light-params kind goes with it, or `flattenParams` carries a whole block by default. Model: claude-opus-5-5 (this entry); the find and the fix, Copilot.
+
+## 2026-10-20 ✅ A player places a stall at the town's free corner (the owner's answer)
+
+The Field Kit work drew a stall a player sets up: a draft of six slots with prices, kept in the save, and a marker at the town's free corner (`core/town-corner`). 10.10 said the opposite: "stalls" and "a stall" are no thing a player places; a player's shop sells at the house or on the market board, and the stall is Pell's (the superseded-in-part line under "The shared world" entry, and "A player's shop before stage 7" in the entry on the game read as one line). The manager put it to the owner before anything more was built (GAME_RULES section 6). His answer, 20.10: change it. A player places a stall at the town's free corner, drafts its slots and prices, and the save keeps the draft.
+Still out: sales while the player is away and other players buying (SETTLEMENT 3.4, the shared world), and houses and plots, still paused (10.10). The stall is a look and a draft until then; it sells nothing on its own.
+**Supersedes:** in part, those two 10.10 lines, for the stall only; the market board and the forms of a player's shop while away stand.
+**Retry when:** the shared world opens (then a stall's sales while away are designed with the two funds of 10.10), or stalls at the corner crowd the square (then where a stall stands moves, not whether). Model: claude-opus-5-5 (the manager wrote it; the answer is the owner's).
+
+## 2026-10-21 ✅ A 409 says why in a code, and the phone reads the code rather than the words
+
+#254 made `RemoteSession` decide whether to read the state again by comparing the server's English sentence (`game/src/remote.ts`, `STALE`). A rewording on the server would have stopped the resync silently, and the next action would then have named the same dead version again. Now every 409 from `server/src/api.ts` carries a `reason` next to `error`, typed `ConflictReason` and one of five: `stale` (both throw sites that say "The game state changed": the version check and the compare-and-set that lost the race), `clock-ahead`, `walk-credit`, `refused` (a step the kernel refuses, its words kept), `backwards`. The client branches on `reason === 'stale'`, and reads the words only when the server sent no reason at all, so a server older than this code still resyncs.
+Tests: `server/test/api.test.ts`, the block "a 409 says why in a code as well as in words" (a case per reason, both stale sites included); `game/test/remote.test.ts`, "the 409 code, not only its words" (no reason still resyncs; a code that is not stale is believed over stale words and nothing is read again; `fetchWire` carries the reason into `WireRefusal`). `game/test/fake-server.ts` sends the same codes, with a `noReasons` switch standing for the old server.
+**Retry when:** NEXT 18 e adds the signed-in modes and the refusal list grows, or a second client (a bot, a tool) needs the codes as a published list. Model: GitHub Copilot (Copilot SDK, model not named to the session; manager: game-94).
+## 2026-10-21 ✅ The box runs a named image, and the runbook builds it where the source is
+
+`deploy/compose.yml` gave the `api` service a `build:` and no `image:`, so on the box, which holds no source, `docker compose up -d` would try to build and fail; RUNBOOK step 2 said `up -d --build` from `~/openfold`, a line that cannot work there. Step 2 also predates the box's first real run (20.10), which was done by hand with `--no-build` and the image tagged `openfold-api:latest`. Now the service carries `image: openfold-api:${IMAGE_TAG:-latest}` beside its `build:`, and step 2 says where that image comes from: built on the laptop (`docker build -f deploy/Dockerfile -t openfold-api:<version> .`, since the compose file's `${AUTH_MODE:?}` refuses to interpolate without the box's `.env`), saved, copied to `~/openfold/`, loaded on the box, then `docker compose -f compose.yml up -d --no-build` with `IMAGE_TAG` in `.env` naming the build. Nothing on the box changes by this PR: `openfold-api:latest` is what runs there today, and the default keeps it running.
+Proof: `docker compose -f deploy/compose.yml config` with a dummy env file kept in `/tmp` and never in the repo, run twice: `image: openfold-api:latest` without `IMAGE_TAG`, `image: openfold-api:0.1.2` with it, the same `build:` block beside both. `deploy/.env.example` is untouched, so `IMAGE_TAG` is described in the runbook only until the manager says the example may grow a line.
+**Retry when:** the API has a registry to pull from (then the box pulls by digest instead of copying a tar, and `IMAGE_TAG` pins it), or the box is given a checkout of its own (then `build:` is usable there and `--no-build` can go). Model: GitHub Copilot (Copilot SDK, model not named to the session; manager: game-94).
+## 2026-10-21 ✅ The GK2 method (B): the same sprites on 3D shapes, under real light
+
+The owner's measure for the look is the level of Graveyard Keeper 2 ([NATURE.md](docs/design/NATURE.md) section 9). Two ways from today's frame to it were shown to him the same corner, the same art, at phone size (390x844 at 3x, 1170x2532), one sheet per hour: **A** the game today, its light painted into the sprites and drawn over the frame; **B** the same sprites, every standing thing pinned onto a rough 3D shape and lit by real lights - the sun of the day or the lamps of the night, a shadow map behind it - and put back into the frame in place of the ground, the standing things and the painted light, while the fx layers (dapple, glow, firelight, motes, mist), the colour filter and the HUD stay the game's own. The still was made by injecting three.js into the running page and rebuilding the frame shot by shot; its scripts are one-off and not committed.
+The owner, 21.10: **"B"**.
+
+The numbers, B against A in the same frame at 16:00 and 21:30 (frames [`2026-10-21-gk2-method-day.png`](docs/design/frames/2026-10-21-gk2-method-day.png) and [`-night.png`](docs/design/frames/2026-10-21-gk2-method-night.png)):
+- A roof's two slopes, west against east: 1.11 under A's painted light, 1.33 under B. Real light separates the planes the sprite only implies.
+- At 16:00 a front facing the camera stands at 0.60 of A's brightness: the trial's sun sits to the north, so the fronts are backlit. B wants the sun south (below), and then the fronts take the light and the backs the shade.
+- At 21:30 a front facing a lamp against the same front turned away: 0.99 under A, whose painted glow touches both alike, and 1.60 under B, where the lamp's light lands on the near face and leaves the far one dark.
+- The frame's mean luminance barely moves: day 91 under A against 85 under B, night 57 against 56. B changes where the light falls, not how bright the frame is.
+- The HUD differs by 1 to 2 levels, the colour filter's own rounding: it is untouched.
+
+**What B does to decision C (18.10).** Under B the body light and the cast shadow are the render's, not painted: the bent normals give the step of shade and light on the body's sides, and the shadow map gives the cast shadow and the contact line. The sun therefore moves south so that the fronts are lit, and C's direction convention in [STYLE.md](docs/design/STYLE.md) section 4 ("a little toward the viewer, left in the morning, right in the evening") moves with it: shadows will point away from the viewer. That is a rule page change and lands in the pull request that builds the pass, never here. The light stream (copilot-light, the #256 cast pass) builds on B from here.
+
+**What building B needs**, for the manager to dispatch, none of it built in this pull request:
+1. The pass in the engine, in place of a one-off injection. three.js is already the client's dependency; the classic's camera is an oblique projection and becomes the 3D camera (the trial's matrix is that camera exactly), with the standing leaves fed to the renderer each frame and the fx layers, the filter and the HUD drawn over it as today.
+2. A shape per kind, declared in data. The trial hardcodes five - the house with its front, gable and two roof slopes, a tall-low front and top, a low card, a rounded card, a figure - behind a list of prop keys. Every prop and kit needs its shape and its bend numbers declared, and a prop that declares none stands as a flat card, so the content of today is valid unchanged ([ART_SYSTEM.md](docs/design/ART_SYSTEM.md) section 3's rule, applied to shape instead of colour).
+3. The sun in the hour table. `params.light` holds a tint and a strength per hour today; B also needs a direction (azimuth and elevation) and a colour per hour - south by day, the moon by night - and the 2D door's painted shadows read the same direction, or the two doors disagree (ART_SYSTEM section 9, its last line).
+4. Its cost, measured before it lands. The trial drew the sun's shadow at 4096 and each lamp's at 1024, at 1170x2532, in a headless browser, and no frame time was taken. The frame budget at 1440x3120 (ART_SYSTEM section 9) decides whether the pass ships; it sits behind a `RICH` group so a phone that cannot hold it falls back to the painted valley.
+5. Checks. Captures at the hour table's hours against the picked frames, as the light module's step already does, and the e2e's colour checks fixed in one pass before the proving run.
+
+**Retry when:** the pass misses the frame budget at 1440x3120 and cannot be cut to it (then the ground and the light stay painted and only the standing things take shapes, which keeps most of the numbers above), or the owner finds the moved sun's shadows wrong in the live game. Model: Copilot (the still, the numbers and this entry); the pick is the owner's, relayed by the manager.
+## 2026-10-21 ✅ Nature's schema fields: `scale` on a kit sprite, `climate` on a map body
+
+Two optional fields, as NATURE sections 1 and 2 propose, in the shared schema file alone so it lands fast. `scale` is a number from 0.1 to 40 (a sprite's height in characters; the one-decimal rule is for the check of step 2, not the schema, because a JSON-schema `multipleOf: 0.1` rejects valid values such as 1.7 through float error). `climate` is one of `temperate`, `dry`, `cold`, `wet`; left out, a region reads as temperate. `schema/test/nature.test.ts` covers both: the kit and the valley of today validate without the fields, each value is accepted, and out-of-range or off-list values are refused. Nothing reads either field yet; the scale check and `climates.json` follow as their own pull requests.
+**Retry when:** the one-decimal rule needs the schema to enforce it (then a `pattern` on a string form or an integer in tenths, not `multipleOf`). Model: claude-sonnet-5-5 (game-19, which died in the restart), finished by claude-opus-5-5 (game-12).
+
+## 2026-10-21 ✅ The scale check: a declared height under its kind's floor is a warning
+
+NATURE section 11 step 2, built. `tools/src/kit/scale.ts` holds the floors of NATURE section 1 and STYLE 1b as a table of kinds, each with the words of a sprite's name that make it that kind (`props/tree_oak` is an oak, `props/young_tree` a young tree, a `chars/` sprite that is no child or elder an adult). Where a page gives a range the floor is its low end; where STYLE 1b picked one number on the owner's look (a dog at 0.45, a child at 0.65, a horse at 1.25) that number rules. `pnpm check` warns when a sprite's `scale` is under its kind's floor, and when a sprite of the `creatures/` group has no `scale`; no kit has that group yet, so the second warning sleeps until the first creature kit lands. A `creatures/` sprite is exempt from the floors and owes the height alone, because a monster declares its own grade and the table's numbers are the natural animals' (NATURE section 1: "Monsters are exempt from the floors, never from the rules"). A sprite without `scale` and outside that group says nothing. NATURE 1 asks for one decimal, but STYLE 1b's picks carry two, so the check reads the number as given and does not count decimals. The height reaches the check through `tools/src/assemble.ts`, which carries a sprite's `scale` on the kit it hands `checkKits` (the bundle does not carry it). Proof: `tools/test/kit-scale.test.ts` (both warnings, the kinds, today's kits with no scale line, and the check end to end on a copy of the content with an oak declared at 2 and a house at 3.5 - the oak warned, the house silent, no new error); `pnpm check` gives 30 warnings before and after.
+**Retry when:** the owner makes either warning an error (NATURE 1), a creature kit names its group otherwise than `creatures/`, or a kind's name does not carry its kind's word (then the kind is named on the sprite, not read from its name). Model: claude-opus-5-5, pushed by copilot-server (GitHub Copilot, model not named to the session).
+
+## 2026-10-21 ✅ Three gaps of 21.10 filed under their stages: the forest as mass, music played by people, the illustrated map
+
+The owner named three gaps on 21.10. None is built now; each is filed where it runs (GAP_DIMRAETH_DRAKANTOS section 9, ART_SYSTEM step 10).
+- **The forest as a layered mass** (canopy, edge, floor) was in no plan. It is a direction: stills first, after the ladder pick (#240) and the GK2 method pick, which decide how a tree is drawn; walking under a canopy waits on free movement (NEXT 22).
+- **Music by a composer or real instruments.** Today every sound is the synthesizer's (`game/src/audio/`) and the game ships no audio file. A direction step of its own: three one-minute town-theme samples, each testing one named difference, after the art picks now open. The sound-by-place logic of 2026-10-11 stays; the beds change. The source and its cost are the owner's question.
+- **An illustrated map and UI** is polish inside Field Kit (2026-10-20). #257 is the map's function; its drawn art follows the 64 px waves.
+**Retry when:** the owner moves one of them earlier. Model: claude-opus-5-5 (the manager filed them; the gaps are the owner's).
+
+## 2026-10-21 ✅ The simulated player and the verified boards: one log, and the same state twice (NEXT 18 g)
+
+A scripted player plays a starter's whole opening, the first outing the content has and the first sale through the real HTTP API of `server/`, and the state the server ends on must equal the same log replayed from `newState` on the laptop: `serialize`, byte for byte. All three starters run. The phone is the real client - `RemoteSession` over `fetchWire`, the code the game itself runs - not a test-local post; the store is postgres 16 in CI and in memory without it, and the identity mode is the real `AUTH_MODE=dev-header` gate.
+- **The clock.** The run spans sixteen game hours (the opening ends at the night arch, and the ruins' night is the doorstep pit's toll and the wolf's round, so the outing is walked by day), which a real phone spends sitting still. The script moves the API's own `ApiOptions.now` seam with the game time it claims and never past it, so the time proof is not bypassed: a step claiming more than the clock paid for is still refused, as `server/test/api.test.ts` shows on its own.
+- **The books are the run.** The `action_log` and `gold_ledger` rows the request wrote are compared with the log the player sent, entry for entry, and the client's own mirror (rebuilt from the reply patches) with the server's state.
+- **The first expedition.** `bundle.expeditions` is empty: the night ruins of NEXT 14b are not built. The outing is therefore the first one the content supports - past the night arch, the gate stones of the ruins dug by day and the deep ruins once the gate has taught the trowel's way, then the tangle's heart and home to the elder (NEXT 6). The script keeps the outing as its own step and carries a TODO for 14b, so the real expedition joins it as content and not as code.
+- **The boards.** `server/src/boards.ts` scores nothing it has not proved: 18 f's `checkAccount` replays the account's own log from its start state under the seed column to the stored row byte for byte, asks the gold ledger for exactly the grants that log makes and for both sums to be the purse, and a log whose versions skip is refused before anything is read from it. A tampered row, a hole and a grant with no action behind it are each refused before the transaction opens, and the board it would have joined is left as it was. The measures are CR-40's, read off the verified state: worth (gold plus the bag at the trader's pay), collection (the journal), levels (every profession added up). Places count nothing while houses and plots are paused. The proof is 18 f's, not a second copy of it.
+- **CI.** One step, `pnpm exec vitest run server/test/sim.test.ts server/test/boards.test.ts` against the same postgres service container: 3.9 s on the laptop (three starters at 0.55-0.70 s, the boards at 1.0-1.3 s), well inside the three minutes 18 g allows.
+
+**Retry when:** NEXT 14b lands (the outing becomes the expedition 18 g names), or an account's log outgrows a whole replay per board post (then a signed checkpoint per week, decided before it is built - a board that trusts a stored number is the thing this entry exists to refuse). Model: Copilot in VS Code (the engine's model name is not shown to the session).
+## 2026-10-21 ✅ The stall draft as built: the kit's six places and their prices are kept in the save
+
+The build of the owner's answer of 20.10 (a player places a stall at the town's free corner, drafts its slots and prices, and the save keeps the draft). The kit's Shop tab wrote its six places into a variable in the open panel, so a reload lost them. The draft now lives on the session and lands in the save as one optional field, `stallDraft`: six entries, each `{ item, qty, price }` or `null`. An old save carries no field and loads exactly as it did, and nothing is written while every place is empty, so a player who never opened the tab keeps the save they had. On load, an entry naming an item this world dropped, or numbers outside the kit's window (a whole quantity of at least one, a price from 1 to 9999 gold), is left empty rather than trusted.
+
+The server door keeps no draft: `RemoteSession` holds no save and the server's state has no field for one, so there the draft lasts as long as the kit is open, and the same panel that reads it keeps it in its own memory. No file of `server/` and no line of `game/src/remote.ts` is touched. The draft still lists nothing and sells nothing: sales while the player is away and other players buying are SETTLEMENT 3.4.
+
+Tests: `game/test/session.test.ts`, "the stall draft in the save" - a price comes back after a reload, a save from before the field loads and writes none, a bad entry is left out, a draft cleared back to empty leaves the field out again, and a session that keeps no save has no draft.
+**Retry when:** the shared market opens (then a draft becomes a listing, with its own rules), or the server's state grows a stall field (then the remote door saves it as the phone does). Model: Copilot.
+## 2026-10-21 ✅ The books on the server: one `gold_ledger` row per grant, and an account's log that plays again (NEXT 18 f)
+
+The gold book and the action log now have one definition each, in `server/src/ledger.ts`, and the server and the proof read the same one.
+- **What a request books** (`bookedGoldMg`): one row per `gold` event the step reports, in order, a zero never booked - so a sale is one row and a purchase is one row even in one request. The opening is the one grant the kernel pays without an event (`start` sets the purse from `params.starting_gold_mg` and adds it to the state's own ledger), so the server books it here from the same number, or a purse paid by content would stand in the state with nothing behind it in the book. Today `starting_gold_mg` is 0 and the row is never written; a test raises it on a copied bundle to prove the row appears.
+- **The draws stay the seed's.** `draw(seed, entity, counter)` in `kernel/src/rng.ts` is unchanged: the seed is the server's secret (R4), the counters live in the state, so the luck of a replay is the luck of the run - nothing else. A careless gather pays nothing by itself and adds one unit when `drawBasisPoints(seed, node, draws)` stands under `missKeepBp`; a test reads that rule off the stored state instead of restating it.
+- **The replay** (`replayAccount`): `newState(bundle, seed)`, then every `action_log` row at its own tick with the server's rules (`validateTravel`), one step per movement report inside a `moves` batch. The first refusal is a finding, never a repair.
+- **The check** (`checkAccount`) asks three questions of the books and returns the problems it finds: the replayed text is the stored text (`serialize`, with the first byte they part at named); the ledger holds exactly the rows the log implies, as a multiset, so a forged row is "a grant with no action behind it" and a missing one is named too; and the ledger's sum is the state's purse, down to the milli-gold, with the state's own `minted - burned` agreeing.
+- **Where it is proven:** `server/test/luck.test.ts` plays each of the three starts' opening through the real API over HTTP - start, own task, keystone, the bridge's 30000, a felled oak, one berry bought, one log sold, one careless strike - and checks the books of every run; the forged row, the removed row, the removed action, one milli-gold of tampering and a seed on the other side of the draw all fail. `server/test/db.test.ts` plays the forager's run through postgres and checks the rows as postgres returns them (bigint as text, jsonb as written). The moving parts of a phone and the script live in `server/test/support/phone.ts`, which NEXT 18 g reuses.
+**Retry when:** NEXT 18 g posts a score to a board (it reads this log and this check), or a second drawing site makes a row-per-event too thin (then a `seq` column on `gold_ledger` ties each row to the log row that made it, a migration of its own).
+**Model:** GitHub Copilot (Copilot SDK, model not named to the session; manager: game-94).
+
+## 2026-10-21 ✅ Rain: the drops fall and land, and the wet world shines
+
+The weather table's rain row was a look with no still of its own, and the ladder's stand-in (`docs/design/frames/2026-10-21-nature-weather-rain.png`) drew one mark everywhere. The owner saw the square at 12:00 at phone size, clear against two ways of drawing the drops, and asked for two corrections before choosing: a landing cannot look the same on every surface - a wall, a canopy and the water each answer differently, or not at all - and the wet world was matte, "missing a shine" (21.10). Three rounds later, 13:00, his word: **"both"**, the drops in the air and the drops landing, with the shine. Frame [`2026-10-21-rain-both.png`](docs/design/frames/2026-10-21-rain-both.png).
+- **Rain A, the drops in the air:** 2 px streaks at the wind's angle in whole pixels, `#c4ecf8` at 78% at the head and 55% at the tail, over the whole view, behind `RICH.motion` as NATURE 4 says. Measured: the drops move 2.5% of the frame's art pixels.
+- **Rain B, the landing, surface by surface** ([`2026-10-21-rain-landing.png`](docs/design/frames/2026-10-21-rain-landing.png), each surface without and with its mark, 7x the art): stone takes a ring at 60% with a crown and a dark centre; water a flat ripple only, no crown; a wall a drop that runs down it, never a ring; a roof one bead; grass one drop in the blades; sand a dimple and no shine; a canopy nothing on the leaf, only the drop leaving it below. 1.6% of the frame. The client already knows what stands where by prop kind and by depth, so the build is a table per kind and per ground tag, not a new system.
+- **The shine a wet world has** ([`2026-10-21-rain-shine.png`](docs/design/frames/2026-10-21-rain-shine.png), matte against wet, and a lit window without and with its bleed): the tops of the stones throw the sky back (`#c4ecf8` at 42%, only where a stone's top edge stands 10 levels above what lies under it), the puddles and the well's water hold the sky at 26%, and a lit window or a fire bleeds a soft warm halo into the wet air. 3.2% of the frame; the frame's mean luminance is 112 clear and 86 with the rain on, so the weather's own light is unchanged.
+The stills are one-off: the scripts build on `tools/stills/nature.py` and `nature.json`, and a surface map (the square composed in one flat colour per material ramp, read back as a class per pixel) is what lets a mark answer its surface. The rain row of [NATURE.md](docs/design/NATURE.md) section 4 and the shine line under it carry the rule in this pull request.
+**Retry when:** the client cannot afford the landing table per prop kind, or the shine under the phone's colour filter at night loses the stones and the puddles; then the landing stays and the shine is cut to the water. Model: GitHub Copilot (Copilot SDK, model not named to the session; manager: game-94). The pick is the owner's.
+## 2026-10-21 ✅ Sign-in as built: Google with PKCE, an email link behind a button, a revocable cookie, and an age gate that errs toward refusing (NEXT 18 e)
+
+`server/src/auth/` and migration `0003_signin.sql`; the API starts in it with `AUTH_MODE=session`. Choices the spec left open, as built:
+- **Google** is the code flow with PKCE (S256), a `state` bound to a `__Host-` cookie and held hashed in `oauth_flows` for one answer, and a nonce. The id token from the token endpoint is checked in full (RS256 against Google's published keys, `iss`, `aud`, `exp`, the nonce, `email_verified === true`) and its claims are used; no userinfo call, so the one answer trusted is the signed one. The app is project `openfold-game`, in Testing, with one test user; the client JSON is in the owner's secrets folder.
+- **The email link** is a single-use token kept as its sha-256, 15 minutes, three per address in that time, and the request answers the same for every address. Opening the link changes nothing: the page posts the token only when the player presses its button, so a mail scanner that follows links cannot spend it. The only mailer writes the link to the log; the sender waits for h5.
+- **A proven identity** signs in to the account it names, or joins the account its proven address already has, or waits on a sign-up ticket (30 minutes). The sign-up takes a name (the kernel's rule, unique in the world in any case), a year of birth and the player's yes to one account per person (CR-53); the country, sent by the phone, only sets the age and is not kept.
+- **The age** (CR-49): only the year is asked, so the gate counts the age surely reached (one less than the difference) and errs toward refusing; 13, or the higher age of digital consent of the countries listed in `age.ts` (GDPR article 8 and Korea), and the highest of them (16) when no country is sent. Under-age ends the ticket, so a second year needs a new proof. The list is the commonly published one, not legal advice: the owner confirms it before the first address is collected.
+- **The session** is a random token in a `__Host-of_session` cookie (httpOnly, Secure, SameSite=Lax, 30 days) and a `sessions` row by its hash, rotated at every sign-in and revoked at sign-out; a POST stands for no one unless its Origin is the API's or the game's.
+- **Closing an account** found that the append-only books of 18 b refused the cascade, so no account could be closed; `0003` lets a removal through only once its account is gone, and a direct `delete` on a book still raises.
+- **Discord** is a slot that answers "not open yet": its OAuth app needs the owner's own login.
+Nothing goes public before the Fable auth review the owner asked for.
+**Retry when:** the review asks for a change; the owner confirms the age list or asks for a month of birth; a real mailer is chosen (h5); Discord's app exists. Model: claude-opus-5-5 (game-65).
+## 2026-10-21 ✅ The books key a grant by the step that paid it, on both sides (the follow-up game-94 named on #268)
+
+#268 booked a `gold_ledger` row with the whole request - a `moves` batch, at the state's tick after it - while `replayAccount` booked the same grant with the single `move` and the report's own tick. Nothing pays gold inside a batch today, so no row was wrong yet; the day a step inside one pays, `checkAccount` would have called an honest row forged.
+- **One rule, called twice.** `goldRowsOf(bundle, steps)` in `server/src/ledger.ts` turns a list of played steps - action, tick, events - into the gold rows of a request. `server/src/api.ts` plays its request into that list (one step for `/action`, one step per report for `/moves`) and books through it; `replayAccount` books each of its steps through it. The two cannot key a grant differently, because there is one place that does the keying.
+- **`Books` carries the rows, not the deltas.** `Books.gold` is `LedgerRow[]` (`deltaMg`, `action`, `tick`) instead of `goldDeltasMg: number[]`, and `store-pg` writes each row's own action and tick. A zero is still never booked.
+- **Proof.** `server/test/luck.test.ts`: the three starters' runs now compare the server's rows with the replay's rows *element for element* ("the server's gold rows and the replay's gold rows are the same rows, action and tick and all"), and a batch that pays on its middle report is booked as that report, at its tick, with the batch's later tick ignored ("a payment inside a movement batch is booked as the report that paid it, at the report's tick"). `server/test/api.test.ts` asserts a real batch's `books.gold` is empty and the log row is still the batch.
+- **What is not done here.** No step inside a batch pays gold in today's content, and content cannot make one: a move changes the tile, and every gold event comes from buy, sell, turn-in or the opening's purse. The batch case is proven where the two sides meet (the step list), and the kernel is unchanged; the day a move pays, the row is keyed right with no change to this rule.
+**Retry when:** a step inside a batch pays for real (then the batch's gold rows can be asserted end to end through the API), or a board reads `gold_ledger.action` as a request rather than as the step that paid.
+**Model:** GitHub Copilot (Copilot SDK, model not named to the session; manager: game-94).
+## 2026-10-21 ✅ The age gate aligned with the big companies: a full date of birth, no retry for a day, and the country from our proxy (fix/signin-age)
+
+The owner's answer on #272's two age points was "align with the big companies" (Epic, Roblox, Supercell, and the FTC's neutral age screen). What changed against #272:
+- **A full date of birth** (`birthDate`, `YYYY-MM-DD`) replaces the year. The gate counts the exact age on the server's UTC date: the birthday counts from its own day, and a 29 February birthday from 1 March in other years. Only `birth_band` is stored, never the date. This also answers #272's second point: a player who turns 13 later this year is no longer refused today.
+- **A neutral screen**: the refusal names no age, and an under-age answer sets `__Host-of_age` (httpOnly, 24 h). While it stands, that browser's sign-up page and form both answer `under-age`, even after a new proof of the address. The ticket still ends.
+- **The country comes from our proxy, never from the player.** The `country` field is refused. The API reads the header named by `COUNTRY_HEADER` (nginx sets `X-Country` from GeoIP and overwrites a client's value). Unset, missing, or not one capital code, it holds the sign-up to the highest age (16).
+- **The list** keeps the EU article 8 values and KR 14, adds CN 14 (PIPL), and is reviewed whenever the game opens to a new country.
+- **Where we differ from the big companies**: an under-age player gets the offline demo, not a parent-consent "cabined" account. We hold no child data at all, so there is no parental consent flow to build or to get wrong.
+Proof: `server/test/signin.test.ts` (birthday edges at 13 and 16, the refusal cookie, the header trusted only when configured, a missing header) and `server/test/boot.test.ts` (`COUNTRY_HEADER`).
+**Retry when:** the game opens to a country with a different age (review the list); the owner wants accounts for younger players (then a parent-consent flow, and the data rules that come with it); GeoIP proves too coarse at a border. Model: claude-opus-5-5 (game-65).
+
+## 2026-10-21 ✅ The sun moves south: every cast shadow falls away from the viewer (GK2 B, #256)
+
+The entry above, "The GK2 method (B)", says what B does to decision C: the sun stands south, the fronts of the standing
+things take the light and the backs the shade, and the cast shadow points away from the viewer instead of toward it. That
+entry left the change to the pull request that builds the pass. This is it, in #256.
+
+- **The data.** Every key of `content/core/params.json` `light.sun.keys` keeps its `right` and turns its `down`
+  negative: -39 at 06:00, -37 at 08:00, -16 at 10:00, -11 at 12:00, -16 at 14:00, -37 at 16:00, -41 at 16:30, -39 at
+  18:00. The lengths are the old ones to the third digit: 0.936 of the caster's height at 08:00, 1.099 at 16:30, 0.11 at
+  noon, which is 10.6 art px on a 64-px caster. So the morning shadow leans up-left, the evening up-right, and the noon
+  shadow straight back.
+- **The schema follows.** `SunKey.down` is -100..100: a negative `down` is the sun in the south, a real value now and not
+  a typo, and `schema/test/params-sun.test.ts` pins every key below zero.
+- **The depth order holds, with no change to the pass.** Both shadow layers sit at 2.5 and below, under the shallowest
+  thing `world.ts` lets cast (`DEPTH.puff`, 3.5). A shadow falling north therefore lies behind its caster, the caster is
+  drawn over it, and a thing standing nearer covers the shadow of the thing behind it - which is what a sun in the south
+  asks for and what the old direction could not have. The one thing the pass loses is the shadow that spills in front of
+  the viewer: there is none now, by the decision, not by a bug.
+- **What the frames show.** [`2026-10-21-cast-08.png`](docs/design/frames/2026-10-21-cast-08.png) and
+  [`-1630.png`](docs/design/frames/2026-10-21-cast-1630.png), phone size at 3x (390x844, 1170x2532), the bridge corner:
+  the rocks, the sign post and the player throw their shadows up-left at 08:00 and up-right at 16:30. A shadow pointing
+  away is mostly behind its caster, so what the eye reads is the part that spills past the silhouette; on the sand of the
+  16:30 frame the ink `#1b1a2e` measures 0.29 to 0.31 across its three channels, and over that sand the same frame with
+  the pass switched off holds none of it: 0 pixels against 4,106.
+- STYLE section 4's Direction row is rewritten to this, as the GK2 entry asked, in the same pull request.
+
+**Retry when:** the owner finds the moved sun's shadows wrong in the live game (the retry the GK2 entry itself names);
+or B items 1, 2 and 4 land - the 3D shapes under real light - and this shear table is replaced by the sun's azimuth and
+elevation in the hour table. Model: DeepSeek (deepseek-light, Copilot SDK in VS Code), from the manager's orders; the
+pick is the owner's, relayed by the manager.
+## 2026-10-21 ✅ Free movement as built: the feet walk the pixels, the world and the kernel stay on tiles (NEXT 22)
+
+The owner, 18.10: "free movement, not a fixed feel"; and 21.10: "free movement now, but graphics come first for me", so this landed after the art and light streams took the machine. What the entry below builds, in the builder's own file, next to the rules it walks by.
+- **The walk** (`game/src/walking.ts`, `Walker`): the feet's centre at art-pixel precision, a velocity from the held input at one tile per `walk_step_ms` whatever the angle (two arrows at once, or the stick at any angle, are normalised to one length), and no acceleration yet. The tile under the feet's centre is the player's, and every tile the centre enters is reported to the kernel in order.
+- **Collision**: a body box at the feet, 28 x 16 art px (`BODY_BOX`, a tunable constant beside the walk), against the tiles `canEnter` refuses. x and y are resolved apart so the body slides along a wall, and because the box has width it never cuts the corner between two refused tiles. A straight walk that meets a corner is eased onto its lane while the motion is blocked, so a corridor slightly off the body's line does not stop it. A frame longer than a tile takes (a slow machine, a tab coming back) walks one tile at most, so one frame never carries the body through a tile and the tile under the feet stays a place a hand can stop on.
+- **Four-connected reports (G56)**: the axes are resolved one after the other inside a frame, so a centre that crosses a corner reports the side tile first, at the same frame. A tile is reported once, and only when the centre enters it.
+- **Facing**: the dominant axis of the motion with a hysteresis of 1.25, so a walk near 45 degrees does not flicker. The three drawn directions and the mirror are unchanged; a diagonal walk shows its dominant facing, as Stardew Valley does. The faced tile is the tile beside the feet's tile, and every action that read `pos + DIRS[facing]` reads `facedTile(s)`.
+- **The stride**: today's walk frames advanced by the distance walked (one stride per tile), not by a step count.
+- **The phone** (`game/src/input.ts`, `game/src/ui/touch.ts`): the pad is a stick. The direction is the finger's offset at any angle, the dead zone stays 12% of the width, and full speed comes at 40%. A and B, and the keys, are unchanged.
+- **Both doors**: the 3D door walks by the same `Walker` in the same pull request, with the hero's yaw taken from the motion itself.
+- **The server's check (NEXT 22 c)**: the reachability stays four-way, and the charge becomes the path's octile length in one kernel function, `walkCharge` (`STEP_MILLI` 1000, a turning pair `DIAGONAL_PAIR_MILLI` 1414). Charging a diagonal walk by its four-way length drained the pool and refused an honest walk after about 15 s. `KERNEL_VERSION` is 0.14.0. G56's line carries the number.
+- **The e2e (NEXT 22 d)**: `game/e2e/walk.ts` holds the input until the feet's centre stands on a tile, with a timeout, in place of counted presses; the opening, stealth and 3D runs all walk through it, and the opening's phone player pushes the pad's stick. The page lets go on the frame the tile is reached: a release sent over the wire lands a frame late, and on a machine rendering in software a frame is a quarter of a second. A walk stops where it stands when a window opens under it (the word in town stops the walk) and waits out a world held by a window that closes.
+Proof: `game/test/walk.test.ts` (the four measurable lines of NEXT 22 without a renderer: 10 tiles in 1.9 s straight and 7.07 on each axis diagonally, stopping in the frame of release, 200 frames of walls at 64 angles with no overlap and four-connected reports, the faced tile after a diagonal walk for pick, dig and talk), `kernel/test/travel.test.ts` (the octile charge), `server/test/api.test.ts` (a 20 s diagonal walk passes; a 3-tile jump is still refused); the opening, stealth and tending e2e in CI.
+**Retry when:** the owner judges the feel on a preview and wants different speed, acceleration or stick numbers (polish); a phone player misses the tile meant for an action (the faced tile is the thing to widen); a predator's watch reads oddly with the body between two tiles. Model: claude-opus-5-5 (game-b1), finished by deepseek-walk.
+## 2026-10-21 ✅ A step lifts its leg in the frame it starts: the walk check's flake was the client's, at a slow frame rate
+
+The opening e2e failed on CI with "stepping left/right/down never lifted a leg: frames 1 in 2 drawn" (develop run 39598103878 attempt 1, #252, #256): every retry drew a step in exactly two frames, both feet together. The cause is in `tryStep` (`game/src/scenes/world.ts`): a step began on the standing frame, and the next update added a whole frame's delta, so at frames over 133 ms (`STRIDE` 0.7 of `STEP_MS` 190) it was already past the stride and showed the landing. The test was right; a slow phone walked without legs. The fix sets the stride frame (0 or 2) in the update the step starts, so its first drawn frame lifts a leg at any frame rate; the frames after it are unchanged.
+Measured by a probe of 30 single steps from rest on the desktop door (`.scratch`, not committed): CPU throttle 8, before 15 of 30 steps showed no leg, after 0 of 30; throttle 4, 1 of 30 against 0; unthrottled, 0 against 0. No sleep and no timeout changed; the e2e is untouched. Five local runs of the opening e2e on a loaded laptop: the walk check passed in all ten doors (every step showed a leg frame); four runs passed whole, and run 4 failed on another check, "a step away still cut logs" (phone): the first step-away press came 7 s after the A that started the felling, slowed by the swing screenshot, and the felling had ended by then. That is a timing gap of its own in the test, left for a separate fix.
+**Retry when:** a walk sheet gets more than three frames, or the stride's timing changes (then the first frame of a step is chosen by the new table). Model: claude-opus-5-5.
+## 2026-10-21 ✅ The opening handover as built: the phone's log is replayed, kept under a secret seed, or the account starts fresh (NEXT 18 d)
+The phone keeps every step since the start (cap `OPENING_LOG_MAX` 2000, saved with the game, rolled back with cancelled work) and uploads `{seed, log, state}` with the sign-up. The server plays it again from `newState(seed)` with the kernel's travel check and the `/moves` movement credit, refuses a second start, time running backwards, more than one hour of game time or more than 150 gold of pay (purse plus what the bag sells for), and keeps it only when the replay serializes to the phone's state. The state then takes a secret seed. Anything else: a not-started state under the secret seed, and the box says so in one line.
+Books: a kept opening is the account's first `action_log` row `{kind:'opening', seed, log}` with its gold rows, so `checkAccount` proves a handed-over account (test: handover.test.ts). The account, its state and its books are one transaction (signin-db test).
+Open for the owner: the two caps are mine (an honest opening carries about 80 gold of quests); the client wire is same-origin and the server has no CORS, so a build with `VITE_GAME_SERVER` on another origin needs the h6 cutover first; a phone that walked faster than the movement credit allows loses its opening, not its account.
+Model: opus. Link: PR feat/handover-opening.
+
+## 2026-10-21 ✅ The opening handover's two caps stand: one hour of game time, 150 gold of worth
+The builder of 18 d (#277) set the caps an uploaded opening is held to: at most one hour of game time (`OPENING_TIME_MAX_MS`) and at most 150 gold of worth, the purse plus what the bag sells for (`OPENING_PAY_MAX_MG`, in `server/src/handover.ts`). The opening runs about ten minutes and its quests pay 80 gold, so an honest opening fits with room; a forged one can carry no more than the caps, and an opening past either starts the account fresh.
+The owner, 21.10: approved as built.
+**Retry when:** the opening's pay or length changes (the test "the caps leave an honest opening room" fails first), or honest players are seen starting fresh. Model: claude-opus-5-5 (the manager, game-1b); the numbers are game-65's.
+
+## 2026-10-21 ✅ The palette deepens: the 32 stay, the world's ramps are shared (the owner, on the rich-style evidence)
+
+The rich-style experiment (`docs/art/RICH_STYLE_EXPERIMENT.md`, PR exp/rich-style) put the same five objects through the same model and importer with only the palette and the style line changed, and the imported sprite's colour richness went from about a quarter of the reference's to half to four fifths. On that, the owner, 21.10: **deepen**.
+The shape is the one fixed on 20.10 (ART_SYSTEM section 3): the 32 core colours do not move, the depth is ramps of five or six hue-shifted steps, and a sprite that names none is valid as it is. What this entry adds:
+- **The ramps of the world are shared.** `CORE_RAMPS` in `tools/src/kit/palette.ts`: 13 ramps of six steps (grey, stone, green, moss, rust, wood, bark, water, teal, red, plum, fire, skin), 78 colours with the core, each holding to the ramp rule in `ramps.ts` (`kit-ramps.test.ts`), each core family carried inside its own ramp so a sprite drawn in the core wood sits inside `wood`. A shared ramp needs no `ramps` block in a kit file; a sprite names the ones it draws in (`ramps` in its kit entry, one to four, the first gives the outline). A kit's own `ramps` stay for materials the shared set lacks, and a kit that repeats a shared id with other steps is refused by `pnpm check`. So no protected path changes, and the schema's four-ramp cap on a kit holds.
+- **`kit:gen` draws in them.** An entry's `ramps` names shared ramps; the importer snaps onto the 32 plus their steps and the manifest line carries the names for the kit entry. `"style": "rich"` asks for painterly pixel art and dithers between neighbouring steps; with no `ramps` of its own it draws in every shared ramp. An outside reference that names ramps sets its palette decision to `ramp-added` (PROP_FROM_REF step 0b, rewritten).
+- **A new material is still the owner's.** Sand, brass, anything no shared ramp holds: a new ramp in `palette.ts`, by owner decision, in its own pull request, before the sprite that needs it.
+- **Nothing of today's content changed.** Every kit of today names no ramp and passes unchanged (the check test). The depth arrives sprite by sprite through `kit:gen`: the 64 px waves from their first sprite, the existing props and items redrawn from themselves (a kit sprite id as `ref`, `ramps` per material), the cast after L1.
+**Retry when:** a shared ramp reads wrong beside the core in a still (then its steps move, in `palette.ts`, with the test); a phone window passes 96 colours once sprites name ramps (then the window count becomes an error, as ART_SYSTEM proposed); or the schema's description of a sprite's `ramps` ("of this kit") misleads a creator (then the wording changes with `pnpm schemas`).
+Model: claude-fable-5-1; the numbers are the experiment's.
+
+## 2026-10-22 ✅ Drawing route by size (decision 1 of 22.10)
+
+**Drawing route by size.** Sprites up to about 64 art px (items, small props) go down the free local route; larger or thin ones (buildings, trees, statues, fences, lantern posts, reeds) go down Codex. First a Codex measurement on four failed props (house_small, market_stall, broken_statue, lantern_post) to price the quality before the rest.
+The owner, 22.10: adopted as written (decision 1 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Production order: the first map first (decision 2 of 22.10)
+
+**Production order: the first map first.** Every region the first map shows is completed to a good level before any new region; a new region is produced only once it has a written description.
+The owner, 22.10: adopted as written (decision 2 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Characters are redesigned (decision 3 of 22.10)
+
+**Characters are redesigned.** Richer looks and roles (some of today's cast is too generic). The base body is unclothed; the player starts with one outfit of given values and upgrades by slot: legs, torso, hands, jewellery, head, feet, weapon, tool (slot names general and game-like, armour and more may come). Two detail levels: in play the usual 64x96; in the wardrobe / appearance menu a zoomed, detailed figure; the same for every small item (a zoom view in the menu).
+The owner, 22.10: adopted as written (decision 3 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ External material: any open licence is allowed (decision 4 of 22.10)
+
+**External material: any open licence is allowed, including share-alike** (CC-BY-SA, GPL), as a source or as a reference for a redraw. Consequence recorded with the decision: a sprite derived from share-alike material obliges the game's art to carry the same licence, so anyone may take and redistribute it. Every imported piece keeps its source and licence in the kit; a CREDITS file is generated from them.
+The owner, 22.10: adopted as written (decision 4 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The first map is composed by hand (decision 5 of 22.10)
+
+**The first map is composed by hand.** A map plan on paper first (regions, landmarks, paths, heights, climate - the geographic and physiological logic lives here), then 2-3 phone-size direction stills for the owner's pick, then the library is produced to the plan. No more random scatter on a flat ground.
+The owner, 22.10: adopted as written (decision 5 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Lighting and animation (decision 6 of 22.10)
+
+**Lighting and animation.** The engine ladder (tint by hour, light sources, shadows and cloud shade, shader motion for wind, water and flame, particles, hit and move feedback) is one deep session after the map plan and the Pell pick. A normal map per sprite (light striking from the side) is an automatic kit stage once the sprite set settles, not hand work. The character animation route (the strip route vs a 3D model rendered to pixels) is decided before the cast is redrawn: the unclothed base plus layered equipment, each layer in every pose and direction, is far cheaper from a 3D model.
+The owner, 22.10: adopted as written (decision 6 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Paid services: none now (decision 7 of 22.10)
+
+**Paid services: none now.** Codex draws the large and thin sprites, Blender (free, CPU) proves the character route on Pell first; a rented GPU (RunPod, about 1-2 USD a session after a 10 USD deposit) only if the mid-sized sprites turn out to be a bottleneck; no fal.ai or Gemini billing yet. Measured 22.10: Codex kept the size on the four props the local route failed (house 139x160 art px for 192, lantern 33x145 for 64x128), about 2 minutes a picture.
+The owner, 22.10: adopted as written (decision 7 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ A prop's look follows its place, not one global pick (decision 8 of 22.10)
+
+**A prop's look follows its place, not one global pick.** The three lantern direction stills (iron post with a hanging lamp, stone pillar with a fire bowl, old crooked wooden post with a paper lantern) are all kept: each settlement or region has its own design, chosen in its map plan. Consequence: the map plan names the regional style of every prop kind that has one (lanterns and light sources first), and the kit holds one sprite per kind per style (`props/lantern_post_stone`, `props/lantern_post_iron`, ...), not one lantern. The same rule for statues: the three statue stills (a robed founder holding a sickle, head missing; a stag with a broken antler; a toppled knight) are all kept, each placed where its story belongs, the inscription band on the plinth carrying the riddle.
+The owner, 22.10: adopted as written (decision 8 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Three races replace the three starters (decision 9 of 22.10)
+
+**Three races replace the three starters.** Human, elf, skeleton. The frame: a race is a returner from a different fold (STORY 1): the human from the present age, the elf from the fold that looks like magic, the skeleton from the fold under the bells. Each race has its own wing of the skill tree and its own traits, with shared parts. The three professions of today felt too shallow for a world meant to grow.
+The owner, 22.10: adopted as written (decision 9 of the 51 he adopted that afternoon).
+**Supersedes:** "Races to widen the starters (a goblin, an elf, a human): later, perhaps by other developers" (19.10), and STORY.md section 7 ruling 3 ("The core names no fold yet"): the core now names three folds, and none of them is the first or the last (STORY.md section 1).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Quests react to the race, never close to one (decision 10 of 22.10)
+
+**Quests react to the race, never close to one.** Lines, a step variant, another way through - never a quest only one race can take. Race is an extensible content kind: creators add races and extend everything (characters, quests, places) around them.
+The owner, 22.10: adopted as written (decision 10 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Three worlds (decision 11 of 22.10)
+
+**Three worlds.** The undead world: a hidden layer, dark and spooky, its people physically strong. The human world: ordinary, technology. The elf world: magical - potions, spells, lightness, the bow. Each race is strong at home and weaker outside; the exact limits come later.
+The owner, 22.10: adopted as written (decision 11 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Grades (decision 12 of 22.10)
+
+**Grades.** Per race per world one of three: weak, normal, strong. Home is always strong.
+The owner, 22.10: adopted as written (decision 12 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The undead world is the night ruins and what lies below the arch (decision 13 of 22.10)
+
+**The undead world** is the night ruins and what lies below the arch, but further south than the demo's ruins - a walk that does not feel close.
+The owner, 22.10: adopted as written (decision 13 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The skeleton outside its home: normal in the human world, weak in the elf world (decision 14 of 22.10)
+
+**The skeleton outside its home:** normal in the human world, weak in the elf world.
+The owner, 22.10: adopted as written (decision 14 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The skeleton's look: bare bones (decision 15 of 22.10)
+
+**The skeleton's look:** bare bones, no clothes at first; its wear is defined with the wear topic later.
+The owner, 22.10: adopted as written (decision 15 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The elf comes from the depth of the forest (decision 16 of 22.10)
+
+**The elf comes from the depth of the forest.**
+The owner, 22.10: adopted as written (decision 16 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The elf world lies far north (decision 17 of 22.10)
+
+**The elf world** lies far north: a dense, branching forest with forest monsters and mysterious wayside stalls, a region of its own. Map axis: elf north, the valley and its town in the centre, the undead south.
+The owner, 22.10: adopted as written (decision 17 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The elf outside its home: normal in the human world, weak in the undead world (decision 18 of 22.10)
+
+**The elf outside its home:** normal in the human world, weak in the undead world.
+The owner, 22.10: adopted as written (decision 18 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The elf's look: tall and thin (decision 19 of 22.10)
+
+**The elf's look:** tall and thin, pointed ears, moss green; a bow on the back once it has one (see 42); a cloak or hood is optional and not binding at first.
+The owner, 22.10: adopted as written (decision 19 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Human technology means made things (decision 20 of 22.10)
+
+**Human technology** means made things - tools, workshop, forge, farming, a specification to order from - and, later, the discovery of a steampunk world.
+The owner, 22.10: adopted as written (decision 20 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The human outside its home: normal in both other worlds (decision 21 of 22.10)
+
+**The human outside its home:** normal in both other worlds.
+The owner, 22.10: adopted as written (decision 21 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The human's look: medium build (decision 22 of 22.10)
+
+**The human's look:** medium build, patched work clothes, one big tool on the back (a hammer or an axe), rust-brown.
+The owner, 22.10: adopted as written (decision 22 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Everyone wakes in the neutral valley (decision 23 of 22.10)
+
+**Everyone wakes in the neutral valley**, at one of the wake pockets drawn at random, and chooses where to go after the opening.
+The owner, 22.10: adopted as written (decision 23 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The human world is a serious city across the river (decision 24 of 22.10)
+
+**The human world is a serious city across the river**, which becomes a bay; boats cross it.
+The owner, 22.10: adopted as written (decision 24 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The opening pool and the region quests (decision 25 of 22.10)
+
+**The opening pool and the region quests.** Today's three wake pockets with their first tasks are the random pool. After the opening, every region (the north forest, the city, the undead south) opens by its own quest, regardless of grade or level - part of getting to know the world.
+The owner, 22.10: adopted as written (decision 25 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Maru is a forest ranger, out on patrol - no longer only an elder by the hearth (decision 26 of 22.10)
+
+**Maru is a forest ranger**, out on patrol - no longer only an elder by the hearth.
+The owner, 22.10: adopted as written (decision 26 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Maru's hours: by day a round along the valley's edges (decision 27 of 22.10)
+
+**Maru's hours:** by day a round along the valley's edges; at dusk home by the hearth.
+The owner, 22.10: adopted as written (decision 27 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Every character reacts differently to each race (decision 28 of 22.10)
+
+**Every character reacts differently to each race** - in what they say, never in which quest they give.
+The owner, 22.10: adopted as written (decision 28 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Pell is human (decision 29 of 22.10)
+
+**Pell is human.** She ferries the human, and only the human, across to the city; she trades with every race.
+The owner, 22.10: adopted as written (decision 29 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Pell's quests are identical for all races (decision 30 of 22.10)
+
+**Pell's quests are identical for all races.** The bay-crossing quest has no giver.
+The owner, 22.10: adopted as written (decision 30 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The skeleton and the elf reach the human city another, harder way (decision 31 of 22.10)
+
+**The skeleton and the elf reach the human city another, harder way**, each with its own opening quest for it.
+The owner, 22.10: adopted as written (decision 31 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The cook is the innkeeper of the neutral valley and sells food (decision 32 of 22.10)
+
+**The cook is the innkeeper** of the neutral valley and sells food. Pell sells only raw materials and equipment, never food.
+The owner, 22.10: adopted as written (decision 32 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The Wakers' face is the wandering traveller who carries an ember (decision 33 of 22.10)
+
+**The Wakers' face is the wandering traveller** who carries an ember (the QUEST_PATTERNS card), met again and again.
+The owner, 22.10: adopted as written (decision 33 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Beliefs are not bound to races (decision 34 of 22.10)
+
+**Beliefs are not bound to races.** Each world leans to one belief (the undead to the Wakers, the forest to the Keepers, the valley to the Menders); people speak differently to each race, but no race owns a belief.
+The owner, 22.10: adopted as written (decision 34 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The grove clearing is the traveller's ember camp (decision 35 of 22.10)
+
+**The grove clearing is the traveller's ember camp:** some nights he is there with the ember lit; by day ash and stones; no permanent character in the slot.
+The owner, 22.10: adopted as written (decision 35 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The night faces enter the plan now, as a second wave (decision 36 of 22.10)
+
+**The night faces enter the plan now, as a second wave.** The watchman on his round in the valley, the drunk at the inn, the smuggler between the bay and the ruins get names and routes in the plan today; they are drawn after the three races, Maru, Pell, the innkeeper and the traveller.
+The owner, 22.10: adopted as written (decision 36 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Appearance menu (decision 37 of 22.10)
+
+**Appearance menu.** Per race: man or woman (the skeleton has no gender - one figure), plus a skin tone picked from the shared skin ramp (human and elf three to four tones; the skeleton two to three bone tints: white, ivory, grey-green). Three body figures, one per race; the sex a variant of each.
+The owner, 22.10: adopted as written (decision 37 of the 51 he adopted that afternoon).
+**Supersedes in part:** "Each player role reads at a glance: one big item, one colour, its own build" (9.10): the random draw of the look gives way to a pick from the shared skin ramp.
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The tree (decision 38 of 22.10)
+
+**The tree.** The race is the vertical axis of the written frame (GAP 4): each race its own wing with major nodes that change a verb and corner nodes with the professions; a shared centre of the attributes and the small nodes anyone may take; books teach a node from a foreign wing; the five professions stay the horizontal axis.
+The owner, 22.10: adopted as written (decision 38 of the 51 he adopted that afternoon).
+**Supersedes in part:** item 1 of "The owner's answers of 10.10 afternoon" (the three lasting starter edges become corner nodes of the race wings, not fixed percentages), and the axis proposed on 19.10 ("the starter's nature against the trades"): the vertical axis is the race.
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ No percentages on screen (decision 39 of 22.10)
+
+**No percentages on screen.** Every node is a thing you know how to do - a name and one sentence, closed or open; chains of two or three small nodes lead to a major node. The number stays in the code (a long press shows it). Progression principle: later skills are more advanced, more rewarding and harder to get, with a logic laid from the first minute (rising cost per tier, attribute keys, books and teachers, rare finds as the price of the upper tiers).
+The owner, 22.10: adopted as written (decision 39 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ What marks a race at first sight is its build (decision 40 of 22.10)
+
+**What marks a race at first sight is its build**, with the written rule of 9.10: one big item, one colour, its own build.
+The owner, 22.10: adopted as written (decision 40 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Every character stands on the same rig and slots as the player (decision 41 of 22.10)
+
+**Every character stands on the same rig and slots as the player.** Maru, Pell, the innkeeper, the traveller, the route people: a body on the shared rig plus wear in slots; Maru's stoop as a body figure; the route people made from dyes and items; one model route draws all.
+The owner, 22.10: adopted as written (decision 41 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Start outfit: three slot items over the bare body, no weapon (decision 42 of 22.10)
+
+**Start outfit: three slot items over the bare body, no weapon.** The human: patched work clothes (torso), the big tool on the back (tool), boots (feet). The elf: a light cloak (torso), sandals (feet), one more non-weapon item (a pouch or quiver as jewellery). The skeleton: bones, one tool in hand (tool), a remnant amulet (jewellery), no cloth. The race colour sits on the torso item or the amulet. A weapon - the elf's bow included - is bought, made or found. Everything shows in the wardrobe and can be swapped.
+The owner, 22.10: adopted as written (decision 42 of the 51 he adopted that afternoon).
+**Supersedes in part:** "Each player role reads at a glance: one big item, one colour, its own build" (9.10): the same patched base clothes for every role give way to the three start outfits. One big item, one colour and its own build stay (decision 40).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The three starter looks retire (decision 43 of 22.10)
+
+**The three starter looks retire.** The wake pockets and their first quests stay as the random pool; the pocket's tool (staff, basket, trowel) lies on the ground beside the wake tile and is found, not worn. The explorer, forager and digger sprites and the script that cuts them go to the archive once the race figures land; nothing new is built on them. A new opening balance is tuned with the existing checks.
+The owner, 22.10: adopted as written (decision 43 of the 51 he adopted that afternoon).
+**Supersedes in part:** "Three starts: the forager picks, the digger digs up its axe, the explorer's senses find one" (10.10): the wakes, first tasks and own spots stay as the random pool, keyed by the pocket; the per-starter kit gives way to the pocket's tool on the ground. The first build of the race wave puts the races in the engine and keeps today's sprites as their stand-ins until the race figures are drawn.
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Opening balance: a fixed attribute profile per race (decision 44 of 22.10)
+
+**Opening balance: a fixed attribute profile per race**, same total for all, no free points at the title; the pocket adds nothing.
+The owner, 22.10: adopted as written (decision 44 of the 51 he adopted that afternoon).
+**Supersedes in part:** "Three starts" (10.10): the per-starter attribute points (CR-84's six among them) give way to one fixed profile per race.
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Six attributes (decision 45 of 22.10)
+
+**Six attributes.** Might (replaces carry: carrying, heavy work, later combat - the skeleton's home), senses, agility, luck, stamina, spirit (new: potions, spells, seeing the hidden layer - the elf's home). The human is balanced and gets its technology through the tree, not through an attribute. Total 7 per race.
+The owner, 22.10: adopted as written (decision 45 of the 51 he adopted that afternoon).
+Save format: `carry` is renamed `might` in the player's attributes and in the content params, and `spirit` is new. A game saved before the rename loads with its carry read as might and spirit at 0, so a saved game always loads (the entry of 10.10 on saves).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ What a grade does (decision 46 of 22.10)
+
+**What a grade does.** Plus one, zero or minus one on the race's two home attributes by the region stood in, never below zero; the pips brighten or dim on entering, without a message. The grade is a tool for every layer that lives in that world - monsters and later combat (the fighting style follows the race: the elf fast with spells, the skeleton slow and strong, and these qualities shift by region), quests that ask an attribute, characters, riddles, anything else - may, never must. A required attribute opens a harder way, never a closed door (10, G12, G28). The exact look of combat waits for the combat wave.
+The owner, 22.10: adopted as written (decision 46 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The bay opens in the valley's south-west (decision 47 of 22.10)
+
+**The bay opens in the valley's south-west**, below the south bank where the wolf keeps its round: a jetty with a moored boat at the bank's foot, the city faint across the water, the smuggler's way along the trackless bank between the bay and the ruins. No existing coordinate moves; the framing is tested in a direction still.
+The owner, 22.10: adopted as written (decision 47 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The mended bridge stays the opening's gate for every race (decision 48 of 22.10)
+
+**The mended bridge stays the opening's gate for every race.** It is the valley's own west-east crossing; the boats cross the bay to the city elsewhere and only after the opening; the jetty sits on the south bank, not at the bridgehead.
+The owner, 22.10: adopted as written (decision 48 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The ruins continue and deepen southward (decision 49 of 22.10)
+
+**The ruins continue and deepen southward.** Today's ruins stay the near ruins and no opening tile moves; from the collapsed hall a descent carries on south into new rows of the map, darker step by step, and the passage into the undead world is gradual - a gradient, no hard border - opened by its region quest.
+The owner, 22.10: adopted as written (decision 49 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ The inn is the ruined house at the town's edge (decision 50 of 22.10)
+
+**The inn is the ruined house at the town's edge, rebuilt** (the 3x4 building by the old road to the ruins, its sign already placed): the innkeeper inside, the drunk's post at night. The town corner stays the player's stall (20.10).
+The owner, 22.10: adopted as written (decision 50 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-22 ✅ Making in the neutral valley (decision 51 of 22.10)
+
+**Making in the neutral valley.** One small workshop (the planned large stall opened by a quest) and the trainers; no forge and no fields; basic making for every race (rope, basket, handle); real technology - smith, machines, steampunk - only in the city. Design note recorded with it: shops are redesigned like the big games - never one big unsorted list. Every shop has a defined stock (what it sells and why) and a proper display (categories, the item drawn, price, what it does); this binds Pell's stall, the inn, the workshop, the elf wayside stalls and the city shops.
+The owner, 22.10: adopted as written (decision 51 of the 51 he adopted that afternoon).
+**Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
+
+## 2026-10-23 ✅ The rich wave: items at a full tile, best of three by eye
+
+**Items are drawn at a full tile, 64x64**, as today's items fill their 16x16 tile, so every icon in the bag is one size. **Every free spec of the wave runs best of three and the gallery is judged by eye**, as the rich experiment did: three parallel `kit:gen` runs, each with its own `--out`; the picks go into the kit with their ramps.
+The owner, 23.10: yes to both, at the written defaults (the two questions of the wave's prompts).
+**Retry when:** a full-tile icon reads too busy in the bag at phone size, or a judge model that rejects bad draws arrives and the eye pass becomes its review. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The rich wave lands: 35 picks by eye in the kit, pebbles and the small rock wait
+
+The owner picked 35 of the wave's 37 entries by eye, over five rounds of the two specs of the wave (`tools/kit-gen/rich-items.json`, `tools/kit-gen/rich-props-small.json`). They are in the core kit at 64x64 with `density` 4, so each fills the same tile as the 16 px sprite it replaces, with the ramps it was drawn in and a `source` pointing at its line in `tools/kit-gen/rich-wave.manifest.jsonl` (round, route, model, seed or candidate, prompt, date). Each picked entry's `what`, `detail` and `ramps` in the specs is now the text that drew it. The order of 20.10 (the ladder of stills before the 64 px waves) was overtaken for this group by 21.10, "The palette deepens": the existing props and items are redrawn from themselves, the cast waits for L1, and the outline stays the decided one.
+What the five rounds showed:
+- **The 16 px sprite is a poor reference.** Drawn image to image from it (Stable Diffusion 1.5, denoise 0.7) the model kept its blur and its sixteen-pixel shapes; drawn from the words alone (denoise 1) it gave the entries the first round missed, so the old sprite gives the canvas and the object's name, not the look.
+- **SDXL won every free pick it was offered.** With rewritten prompts SDXL and its pixel-art LoRA ran beside Stable Diffusion 1.5 on the same entries; every pick from those rounds went to SDXL, 15 of the 35.
+- **What the free model misreads goes to Codex.** Ten entries the free models kept drawing as another object (the branch drawn as food) went to Codex with the kit sprite as the reference and two picks of this wave as style examples; eight of them were picked.
+- **pebbles and rock_small wait.** The Codex credits ran out during that round, so the two keep today's 16 px sprites until a draw passes the eye.
+The owner, 23.10: picked the 35 in the gallery by eye; pebbles and rock_small keep their sprites for now.
+**Retry when:** a picked sprite reads wrong in the live game at phone size beside its 16 px neighbours (then it is drawn again through its spec, with the next round's text written back), or Codex has credits again (then pebbles and rock_small go down the round that drew the other eight). Model: claude-opus-5-5.
+## 2026-10-22 ✅ The long night follows Maru's stew
+
+`core/the-long-night` requires `core/something-warm` instead of `core/three-fruits`. The phone opening's chain is now one line: `into-town`, then `herbs-for-pell` and `three-fruits`, then Pell's `a-whole-one`, then Maru's `something-warm`, then `the-long-night`. `a-coin-for-maru` keeps `three-fruits`.
+Why: the two afternoon fillers make one continuous chain, and Maru's stew gets a real pay: his done line ("a fire of your own?") opens the night task, and his two dry branches feed that fire.
+Cost: the vigil is offered around 17:00-18:00, after the stew, not in the afternoon as the 19.10 order had it.
+The owner, 22.10: yes to the new order, as built on the opening-filler branch. Supersedes the long night's part of the 19.10 entry on the opening's order.
+**Retry when:** a person playing the day has too little time between the stew and dark to build and light a fire, or the stew's chain stalls a race. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The desktop home is painted key art that lives
+
+**From 1024px the home page opens on the owner's key art in motion:** the valley at dawn with the three opening characters (the elf, the human, the skeleton), first drawn by GPT image from their kit sprites, then brought to life as a video the owner generated and picked (`web/public/keyart/hero.webm` and `hero.mp4`, 1920x1080, 24 fps, a 17 s ping-pong, so its loop has no seam; `hero-poster.jpg` and `.webp` are its first frame). The video carries the characters' auras (the elf white, the human red, the skeleton a thin black haze) and their small motions. It plays muted and looped, drawn with cover from the bottom; under reduced motion it stays still and the poster shows; it pauses while the tab is hidden. The phone keeps its own first screen and fetches neither the video nor the still.
+Over it: the navbar (Leaderboard and Developers kept; Play is the one filled button, last), a headline with one line ("Write the valley back"), Play free and Build a place, and an opaque band at the foot with one small news panel. The footer with the brand, three link columns and the legal line is now on every page.
+**The clip is clean at its corners:** the final cut pastes the original still over the corner where the generator left its mark, matches the frame to the original key art, and bakes in birds, fog, cloud, river glints and two small fish jumps. The band at the foot stays as designed (at least 13.5% of the hero's height or 7.6% of its width, whichever is larger), but nothing relies on it to hide anything.
+**This supersedes, for the desktop home only,** the 2026-10-10 frame: no painted art, the two faces only (the key art signs in Cinzel and explains in Manrope, both OFL, self-hosted), no gradient, radius or transparency (soft scrims, color-mix over tokens), and no script on the home page (one small module that holds the video still under reduced motion). Every other page keeps the frame.
+The owner, 23.10: picked v1 of three key-art stills ("perfect"), asked for it to live (auras, nature, the characters' small motions), then replaced the in-page animation with his own generated video, and asked for the navbar to keep Leaderboard and Developers.
+**Every other page is night too** (the owner, after the preview): the Developers area, the boards, the rules, a builder's page, the API page and the guide wear the home's night look, an ink ground with paper words. The site's rules now read role tokens (`--bg`, `--fg`, `--fg2`, `--muted`, `--line`, `--rule`, `--raise`, `--accent` in web/src/styles/site.css), each one a palette colour, so no page carries a one-off. Still no gradients and no radius off the home's key art; text keeps 4.5:1 or better. The phone home keeps its day look until it gets its own pass.
+
+**Retry when:** the video costs a mid-range laptop visible frames or a slow line its first screen, or the Developers and Leaderboard pages are restyled in the same line (then the frame's exception widens in its own entry). Model: claude-opus-5-5.

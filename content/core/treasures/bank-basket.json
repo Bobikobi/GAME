@@ -1,0 +1,26 @@
+{
+  "$schema": "../../../schema/json/treasure.schema.json",
+  "format": 1,
+  "type": "treasure",
+  "id": "core/bank-basket",
+  "title": "A basket on the bank",
+  "creator": "core",
+  "dig": {
+    "hint": "A basket lies in the grass by the path.",
+    "active_ms": 1000,
+    "respawn_ms": 60000,
+    "count": 1,
+    "level": 1,
+    "finds": [
+      {
+        "item": "core/basket",
+        "chance_pct": 100,
+        "share_pct": 100
+      }
+    ],
+    "place": {
+      "slot": "core/bank-basket"
+    },
+    "pocket": "core/west-bank"
+  }
+}

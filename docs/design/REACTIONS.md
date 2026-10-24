@@ -1,6 +1,6 @@
 # World reactions: a world that answers by rules
 
-Status: a design written 19.10.2026 by game-1b. On 19.10 the owner approved planning "a table of reactions" as the logic step toward a richer world: things carry tags, rows in content connect them, and the kernel judges. The same day he answered the two questions of section 9, each of which bends a rule on his page, and gave his word on fire in a shared world (section 10). Phase A is in build, its schema first (#207).
+Status: a design written 19.10.2026 by game-1b. On 19.10 the owner approved planning "a table of reactions" as the logic step toward a richer world: things carry tags, rows in content connect them, and the kernel judges. The same day he answered the two questions of section 9, each of which bends a rule on his page, and gave his word on fire in a shared world (section 10). Phase A landed in #207 and #214. Phase B reads the weather: its schema is #215, and its kernel, check and two core rows follow; the drawing of rain and fog waits for the owner's pick of the stills.
 
 Facts are read from `origin/develop` @ 2932f334.
 
@@ -50,7 +50,7 @@ Most tags exist already:
 - **Ground:** the 8 tile tags (grove, meadow, riverbank, ruin, town, water, path, interior; `TILE_TAGS` in schema/src/index.ts).
 - **Items:** their class (plant, wood, fibre and the rest), and an extension's classes under them.
 - **Nodes:** ready, or empty since a tick (`NodeState.readyAt`).
-- **Time:** the hour and night (`hourOf`, `isNight`). Seasons are decided but not built (DECISIONS 2026-10-09), and weather is not built at all.
+- **Time:** the hour and night (`hourOf`, `isNight`). Seasons are decided but not built (DECISIONS 2026-10-09). The weather of a day is read from phase B (`weatherOf`).
 
 New tags come only with a phase that needs them (section 8). The names `wet`, `burning` and `chilled` are reserved now for weather and later for combat's status stacks, so the two meet on the same words (gap page, section 3).
 
@@ -67,10 +67,11 @@ All conditions of a reaction must hold at once.
 | `player_within: r` | the player stands within r tiles, with r at most 8 | the player's tile |
 | `unseen` | the hidden thing it hangs on lies beyond the player's sense reach (`senseReach`), so the find does not show yet | the player's senses |
 | `chance_pct: p` | a roll of the day comes under p percent, the same all day on every replay (R4) | the seed and the day |
+| `weather: kind` | the day's weather over the region of the thing is `clear`, `rain` or `fog` (phase B) | the world's seed, the region and the day |
 | `player_doing: verb` | the player is busy with that verb | `busyUntil`, plus the verb the player is busy with (a new field in the player's state) |
 | `player_has: node` | the player has that skill-tree node, once the tree exists (W3) | the player |
 
-Phase B adds `weather: kind`. `empty_for_ms` (the node has been empty for n) waits until a node's state keeps the tick it was emptied; today it keeps only the tick it is ready again (`readyAt`).
+`empty_for_ms` (the node has been empty for n) waits until a node's state keeps the tick it was emptied; today it keeps only the tick it is ready again (`readyAt`).
 
 ### 3.3 Effects: what a reaction does
 
@@ -171,6 +172,7 @@ It also warns: game-ba's richness check (the "something reacts" count, 1 or more
 - **The skill tree (W3).** Its major nodes "change a verb". Many of those are reactions gated by `player_has`: ripe plants glow after dark for a forager with that node, and a felled tree falls the way the player faces. The tree and the reactions share one vocabulary.
 - **Combat (W2).** `wet`, `burning` and `chilled` are reserved as tags now. Dimraeth's status stacks are reactions of the fight.
 - **Free movement (W7).** It gives the player a facing between tiles, which phase C's "the trunk falls the way you face" reads.
+- **The 3D door.** It reads none of this yet: it draws no appear node, plays no cue and shows no sky. Its kernel is the same one, so an action there is judged as in the pixel game, and a node it does not draw cannot be named. Its twin follows the pixel game's look, once the owner has picked it (pixel first, DECISIONS 2026-10-18).
 
 ## 8. Phases, with their sizes and measures
 
@@ -180,6 +182,8 @@ It also warns: game-ba's richness check (the "something reacts" count, 1 or more
 | **B: weather by day** | `weather(day)` as a pure function of the seed, the region and the day index: clear, rain or fog, decided a day ahead and shown in the morning toast (Stardew's forecast). The condition `weather`. Core content: mushrooms after rain in the grove (`appear`), reeds regrowing faster by water in rain (`wait`). Fog draws as mist the player can see, and it shortens a predator's sight (`sight`, Q1 a). | About 300 lines, plus art for rain and fog | The same day gives the same weather on every replay. Every rain-only node shares its class with an all-year one (the season rule of 9.10, applied to weather). |
 | **C: marks the player leaves** | A felled tree falls the way the player faces, and across a stream it is a bridge until it rots back (`open`, after free movement). Tracks in mud after rain. | About 300 lines | The map stays connected in every combination of states (the check). An e2e crosses on a trunk. |
 | **Later, by the owner's word** | The world fire: a front the seed lights in the wild, which players put out together (section 10). A fire set on purpose by a player only in the future. A predator that turns to noise waits for combat (Q1 b). | Not sized | - |
+
+Phase B is built in two parts. The read comes first: the condition in the schema (#215); then `weatherOf(seed, region, day)` with fixed odds (clear 70, rain 20, fog 10 in a hundred days), one region for the hand-made map, the check that a node of one weather gives a class found in every weather, and the two core rows. The drawing follows the owner's pick of stills: rain, fog as mist, the morning's forecast, and fog's shorter sight for a predator. Until then, a day of rain shows only by its mushrooms and its reeds.
 
 Phase A lands after `pnpm streams` shows no other session on `kernel/src/step.ts` and schema/src/index.ts. The schema part goes first, as its own small pull request (PARALLEL.md). Phase A needs no art beyond game-41's birds, plus one fish and one windfall sprite.
 

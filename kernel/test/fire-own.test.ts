@@ -115,7 +115,7 @@ function begin(b: Bundle, bag: Record<string, number> = { [WOOD]: 20 }, at: Tile
   s.player.at = [...at];
   s.player.movedAt = tick;
   s.player.satietyAt = tick;
-  s.player.attrs.carry = 100;
+  s.player.attrs.might = 100;
   s.player.bag = { ...bag };
   s.tick = tick;
   return s;

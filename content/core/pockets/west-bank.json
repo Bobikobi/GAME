@@ -1,0 +1,31 @@
+{
+  "$schema": "../../../schema/json/pocket.schema.json",
+  "format": 1,
+  "type": "pocket",
+  "id": "core/west-bank",
+  "title": "The west bank",
+  "creator": "core",
+  "pocket": {
+    "name": "The west bank",
+    "wake": {
+      "x": 6,
+      "y": 17
+    },
+    "pocket": 5,
+    "pocket_grown": 7,
+    "intro": [
+      "You wake in a clear patch of mist. A basket and an axe lie by the path.",
+      "Herbs grow on the bank to the west. Pick some."
+    ],
+    "ground": [
+      {
+        "item": "core/basket",
+        "qty": 1
+      },
+      {
+        "item": "core/axe",
+        "qty": 1
+      }
+    ]
+  }
+}

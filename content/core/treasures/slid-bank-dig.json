@@ -2,7 +2,7 @@
   "$schema": "../../../schema/json/treasure.schema.json",
   "format": 1,
   "type": "treasure",
-  "id": "core/slid-bank",
+  "id": "core/slid-bank-dig",
   "title": "The slid bank",
   "creator": "core",
   "dig": {
@@ -22,6 +22,6 @@
     "place": {
       "slot": "core/slid-bank"
     },
-    "starter": "core/digger"
+    "pocket": "core/slid-bank"
   }
 }

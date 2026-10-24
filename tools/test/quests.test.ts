@@ -8,13 +8,13 @@ import { describe, expect, it } from 'vitest';
 import { runCheck } from '../src/check';
 import { handOf, hands, typeCounts } from '../src/quests/hand';
 
-type Q = { type?: string; requires?: string[]; starter?: string; giver?: string; steps?: unknown[] };
+type Q = { type?: string; requires?: string[]; pocket?: string; giver?: string; steps?: unknown[] };
 
-/** The quests and the starters, and the few things the items orders read: all the hand reads. */
+/** The quests and the wake pockets, and the few things the items orders read: all the hand reads. */
 function world(quests: Record<string, Q>, things: Record<string, Record<string, object>> = {}): Bundle {
   return {
     quests: Object.fromEntries(Object.entries(quests).map(([id, q]) => [id, { id, steps: [], reward: { rep: 0 }, ...q }])),
-    starters: { a: { id: 'a' }, b: { id: 'b' } },
+    pockets: { a: { id: 'a', ground: [] }, b: { id: 'b', ground: [] } },
     items: {},
     resources: {},
     treasures: {},
@@ -27,11 +27,11 @@ function world(quests: Record<string, Q>, things: Record<string, Record<string, 
   } as unknown as Bundle;
 }
 
-/** The digger's morning in small: a dig that finds the only axe, a fire whose logs only an axe fells, a town after the fire. */
+/** The slid bank's morning in small: a dig that finds the only axe, a fire whose logs only an axe fells, a town after the fire. */
 const morning = (things: Record<string, Record<string, object>> = {}) =>
   world(
     {
-      dig: { type: 'discovery', starter: 'a', steps: [{ kind: 'find', item: 'axe', clue: '.' }] },
+      dig: { type: 'discovery', pocket: 'a', steps: [{ kind: 'find', item: 'axe', clue: '.' }] },
       fire: { type: 'mastery', steps: [{ kind: 'build', camp: 'campfire' }] },
       town: { type: 'discovery', requires: ['fire'], steps: [{ kind: 'visit', slot: 'square' }] },
     },
@@ -64,10 +64,10 @@ describe('the hand', () => {
     expect(handOf(both, 'a').same).toEqual([]);
   });
 
-  it("leaves out another start's own quests and what only they open", () => {
+  it("leaves out another pocket's own quests and what only they open", () => {
     const w = world({
-      mine: { type: 'discovery', starter: 'a' },
-      theirs: { type: 'discovery', starter: 'b' },
+      mine: { type: 'discovery', pocket: 'a' },
+      theirs: { type: 'discovery', pocket: 'b' },
       after: { type: 'riddle', requires: ['theirs'] },
       open: { type: 'discovery' },
     });
@@ -99,7 +99,7 @@ describe('the hand', () => {
     const bridge = (shops: Record<string, object> = {}) =>
       world(
         {
-          glint: { type: 'investigation', starter: 'a', steps: [{ kind: 'find', item: 'axe', clue: '.' }] },
+          glint: { type: 'investigation', pocket: 'a', steps: [{ kind: 'find', item: 'axe', clue: '.' }] },
           mend: { type: 'skill', steps: [{ kind: 'restore', restore: 'bridge' }] },
           herbs: { type: 'investigation', giver: 'pell', requires: ['mend'], steps: [{ kind: 'visit', slot: 'bank' }] },
         },
@@ -118,7 +118,7 @@ describe('the hand', () => {
   it('marks a pair where the second needs what the first opens, and nothing comes between', () => {
     const w = world(
       {
-        glint: { type: 'investigation', starter: 'a', steps: [{ kind: 'find', item: 'axe', clue: '.' }] },
+        glint: { type: 'investigation', pocket: 'a', steps: [{ kind: 'find', item: 'axe', clue: '.' }] },
         mend: { type: 'investigation', giver: 'pell', steps: [{ kind: 'restore', restore: 'bridge' }] },
       },
       { resources: { key: { output: 'keystone', opens_after: 'glint' } }, restores: { bridge: { inputs: [{ item: 'keystone', qty: 1 }] } } },
@@ -141,10 +141,10 @@ describe('the hand', () => {
     expect(handOf(w, 'a').widest).toBe(3);
   });
 
-  it('reads the core content for every starter', () => {
+  it('reads the core content for every wake pocket', () => {
     const b = runCheck().assembled.bundle!;
     const all = hands(b);
-    expect(all.map((h) => h.starter)).toEqual(Object.keys(b.starters).sort());
+    expect(all.map((h) => h.pocket)).toEqual(Object.keys(b.pockets).sort());
     for (const h of all) {
       expect(h.widest).toBeGreaterThan(0);
       expect(h.same.filter((s) => s.how === 'requires')).toEqual([]);

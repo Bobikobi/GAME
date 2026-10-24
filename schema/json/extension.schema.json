@@ -268,6 +268,14 @@
                       {
                         "const": "staff",
                         "type": "string"
+                      },
+                      {
+                        "const": "hammer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pick",
+                        "type": "string"
                       }
                     ]
                   },
@@ -596,6 +604,14 @@
                 },
                 {
                   "const": "staff",
+                  "type": "string"
+                },
+                {
+                  "const": "hammer",
+                  "type": "string"
+                },
+                {
+                  "const": "pick",
                   "type": "string"
                 }
               ]
@@ -945,6 +961,14 @@
                       {
                         "const": "staff",
                         "type": "string"
+                      },
+                      {
+                        "const": "hammer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pick",
+                        "type": "string"
                       }
                     ]
                   },
@@ -1231,6 +1255,14 @@
                 {
                   "const": "staff",
                   "type": "string"
+                },
+                {
+                  "const": "hammer",
+                  "type": "string"
+                },
+                {
+                  "const": "pick",
+                  "type": "string"
                 }
               ],
               "description": "The tool the dig asks for and wears. Left out: the find is picked up by hand, with no timing window and no tool worn."
@@ -1291,10 +1323,10 @@
                 }
               }
             },
-            "starter": {
+            "pocket": {
               "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
               "maxLength": 80,
-              "description": "A start's own spot: only a character of this starter sees it and digs it, once, and it always gives its one find. A gift of the start, so it prices nothing (it is no source in the value table).",
+              "description": "A wake pocket's own spot: only a character who woke in this pocket sees it and digs it, once, and it always gives its one find. A gift of the start, so it prices nothing (it is no source in the value table).",
               "type": "string"
             }
           }
@@ -1567,6 +1599,14 @@
                       },
                       {
                         "const": "staff",
+                        "type": "string"
+                      },
+                      {
+                        "const": "hammer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pick",
                         "type": "string"
                       }
                     ]
@@ -2200,6 +2240,14 @@
                       },
                       {
                         "const": "staff",
+                        "type": "string"
+                      },
+                      {
+                        "const": "hammer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pick",
                         "type": "string"
                       }
                     ]
@@ -2918,6 +2966,14 @@
                       {
                         "const": "staff",
                         "type": "string"
+                      },
+                      {
+                        "const": "hammer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pick",
+                        "type": "string"
                       }
                     ]
                   },
@@ -3351,6 +3407,18 @@
                           "type": "string"
                         }
                       },
+                      "race": {
+                        "minItems": 1,
+                        "maxItems": 4,
+                        "description": "Races the player may be: holds when the player is one of them. A line may differ by race; a quest step never does.",
+                        "type": "array",
+                        "items": {
+                          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                          "maxLength": 80,
+                          "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                          "type": "string"
+                        }
+                      },
                       "time": {
                         "description": "By day (05:00 to 20:00) or by night.",
                         "anyOf": [
@@ -3496,6 +3564,18 @@
                         "minItems": 1,
                         "maxItems": 4,
                         "description": "Map slots the player has stood in.",
+                        "type": "array",
+                        "items": {
+                          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                          "maxLength": 80,
+                          "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                          "type": "string"
+                        }
+                      },
+                      "race": {
+                        "minItems": 1,
+                        "maxItems": 4,
+                        "description": "Races the player may be: holds when the player is one of them. A line may differ by race; a quest step never does.",
                         "type": "array",
                         "items": {
                           "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
@@ -3799,6 +3879,14 @@
                       {
                         "const": "staff",
                         "type": "string"
+                      },
+                      {
+                        "const": "hammer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pick",
+                        "type": "string"
                       }
                     ]
                   },
@@ -4048,10 +4136,10 @@
               "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
               "type": "string"
             },
-            "starter": {
+            "pocket": {
               "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
               "maxLength": 80,
-              "description": "Offered to a character of this starter only: a start's own first task. Left out: every character.",
+              "description": "Offered to a character who woke in this wake pocket only: the pocket's own first task. Left out: every character. Never a race: no quest is gated by race.",
               "type": "string"
             },
             "type": {
@@ -4445,6 +4533,168 @@
                     "maxLength": 240,
                     "type": "string"
                   }
+                },
+                "variants": {
+                  "minItems": 1,
+                  "maxItems": 4,
+                  "description": "Other words for the same task while a condition holds, for example `when.race`: the first variant that holds and names that part replaces it. The steps and the reward never change.",
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "when"
+                    ],
+                    "properties": {
+                      "when": {
+                        "additionalProperties": false,
+                        "minProperties": 1,
+                        "description": "Holds when every condition it names holds.",
+                        "type": "object",
+                        "properties": {
+                          "done": {
+                            "minItems": 1,
+                            "maxItems": 4,
+                            "description": "Quests the player has finished.",
+                            "type": "array",
+                            "items": {
+                              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                              "maxLength": 80,
+                              "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                              "type": "string"
+                            }
+                          },
+                          "active": {
+                            "minItems": 1,
+                            "maxItems": 4,
+                            "description": "Quests the player is on now.",
+                            "type": "array",
+                            "items": {
+                              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                              "maxLength": 80,
+                              "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                              "type": "string"
+                            }
+                          },
+                          "not_done": {
+                            "minItems": 1,
+                            "maxItems": 4,
+                            "description": "Quests the player has not finished yet, on them or not.",
+                            "type": "array",
+                            "items": {
+                              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                              "maxLength": 80,
+                              "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                              "type": "string"
+                            }
+                          },
+                          "restored": {
+                            "minItems": 1,
+                            "maxItems": 4,
+                            "description": "Places the player has mended.",
+                            "type": "array",
+                            "items": {
+                              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                              "maxLength": 80,
+                              "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                              "type": "string"
+                            }
+                          },
+                          "built": {
+                            "minItems": 1,
+                            "maxItems": 4,
+                            "description": "Camp parts that stand, themselves or under an upgrade.",
+                            "type": "array",
+                            "items": {
+                              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                              "maxLength": 80,
+                              "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                              "type": "string"
+                            }
+                          },
+                          "has": {
+                            "minItems": 1,
+                            "maxItems": 4,
+                            "description": "Items with at least one in the bag.",
+                            "type": "array",
+                            "items": {
+                              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                              "maxLength": 80,
+                              "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                              "type": "string"
+                            }
+                          },
+                          "visited": {
+                            "minItems": 1,
+                            "maxItems": 4,
+                            "description": "Map slots the player has stood in.",
+                            "type": "array",
+                            "items": {
+                              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                              "maxLength": 80,
+                              "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                              "type": "string"
+                            }
+                          },
+                          "race": {
+                            "minItems": 1,
+                            "maxItems": 4,
+                            "description": "Races the player may be: holds when the player is one of them. A line may differ by race; a quest step never does.",
+                            "type": "array",
+                            "items": {
+                              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                              "maxLength": 80,
+                              "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                              "type": "string"
+                            }
+                          },
+                          "time": {
+                            "description": "By day (05:00 to 20:00) or by night.",
+                            "anyOf": [
+                              {
+                                "const": "day",
+                                "type": "string"
+                              },
+                              {
+                                "const": "night",
+                                "type": "string"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "offer": {
+                        "minItems": 1,
+                        "maxItems": 3,
+                        "type": "array",
+                        "items": {
+                          "minLength": 1,
+                          "maxLength": 240,
+                          "type": "string"
+                        }
+                      },
+                      "waiting": {
+                        "minItems": 1,
+                        "maxItems": 2,
+                        "type": "array",
+                        "items": {
+                          "minLength": 1,
+                          "maxLength": 240,
+                          "type": "string"
+                        }
+                      },
+                      "done": {
+                        "minItems": 1,
+                        "maxItems": 3,
+                        "type": "array",
+                        "items": {
+                          "minLength": 1,
+                          "maxLength": 240,
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
                 }
               }
             },
@@ -4491,7 +4741,7 @@
                       "instead": {
                         "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
                         "maxLength": 80,
-                        "description": "What a start whose kit holds the item gets in its place: something that kit lacks.",
+                        "description": "What a character whose wake pocket lays the item on the ground gets in its place: something that pocket lacks.",
                         "type": "string"
                       }
                     }
@@ -4819,6 +5069,14 @@
                       },
                       {
                         "const": "staff",
+                        "type": "string"
+                      },
+                      {
+                        "const": "hammer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pick",
                         "type": "string"
                       }
                     ]
@@ -5185,7 +5443,7 @@
                       "instead": {
                         "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
                         "maxLength": 80,
-                        "description": "What a start whose kit holds the item gets in its place: something that kit lacks.",
+                        "description": "What a character whose wake pocket lays the item on the ground gets in its place: something that pocket lacks.",
                         "type": "string"
                       }
                     }
@@ -5467,6 +5725,14 @@
                       },
                       {
                         "const": "staff",
+                        "type": "string"
+                      },
+                      {
+                        "const": "hammer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pick",
                         "type": "string"
                       }
                     ]
@@ -6109,6 +6375,14 @@
                       {
                         "const": "staff",
                         "type": "string"
+                      },
+                      {
+                        "const": "hammer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pick",
+                        "type": "string"
                       }
                     ]
                   },
@@ -6446,7 +6720,7 @@
     },
     {
       "additionalProperties": false,
-      "$id": "starter",
+      "$id": "race",
       "type": "object",
       "required": [
         "format",
@@ -6454,7 +6728,7 @@
         "title",
         "creator",
         "type",
-        "starter"
+        "race"
       ],
       "properties": {
         "$schema": {
@@ -6711,6 +6985,14 @@
                       {
                         "const": "staff",
                         "type": "string"
+                      },
+                      {
+                        "const": "hammer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pick",
+                        "type": "string"
                       }
                     ]
                   },
@@ -6942,16 +7224,17 @@
           }
         },
         "type": {
-          "const": "starter",
+          "const": "race",
           "type": "string"
         },
-        "starter": {
+        "race": {
           "additionalProperties": false,
           "type": "object",
           "required": [
             "name",
-            "summary",
+            "about",
             "attributes",
+            "home",
             "sprite"
           ],
           "properties": {
@@ -6960,25 +7243,28 @@
               "maxLength": 40,
               "type": "string"
             },
-            "summary": {
+            "about": {
               "minLength": 1,
               "maxLength": 240,
-              "type": "string"
+              "type": "string",
+              "description": "Who they are, in one or two present-tense sentences, shown on the title card."
             },
             "attributes": {
               "additionalProperties": false,
               "type": "object",
               "required": [
-                "carry",
+                "might",
                 "senses",
                 "agility",
                 "luck",
-                "stamina"
+                "stamina",
+                "spirit"
               ],
               "properties": {
-                "carry": {
+                "might": {
                   "minimum": 0,
                   "maximum": 5,
+                  "description": "Bag places; heavy work; later combat. Was \"carry\".",
                   "type": "integer"
                 },
                 "senses": {
@@ -7000,24 +7286,75 @@
                   "minimum": 0,
                   "maximum": 5,
                   "type": "integer"
+                },
+                "spirit": {
+                  "minimum": 0,
+                  "maximum": 5,
+                  "type": "integer"
+                }
+              },
+              "description": "The fixed profile: no free points at the title. The check holds every race to one total."
+            },
+            "home": {
+              "minItems": 2,
+              "maxItems": 2,
+              "uniqueItems": true,
+              "description": "The two home attributes: a world that is strong for the race lifts each by one, a weak world lowers each by one (never below 0).",
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "const": "might",
+                    "type": "string"
+                  },
+                  {
+                    "const": "senses",
+                    "type": "string"
+                  },
+                  {
+                    "const": "agility",
+                    "type": "string"
+                  },
+                  {
+                    "const": "luck",
+                    "type": "string"
+                  },
+                  {
+                    "const": "stamina",
+                    "type": "string"
+                  },
+                  {
+                    "const": "spirit",
+                    "type": "string"
+                  }
+                ]
+              }
+            },
+            "grades": {
+              "description": "How each world takes the race. A world left out is \"normal\". The valley is neutral to every race.",
+              "type": "object",
+              "patternProperties": {
+                "^[a-z0-9_-]+$": {
+                  "anyOf": [
+                    {
+                      "const": "weak",
+                      "type": "string"
+                    },
+                    {
+                      "const": "normal",
+                      "type": "string"
+                    },
+                    {
+                      "const": "strong",
+                      "type": "string"
+                    }
+                  ]
                 }
               }
             },
-            "sprite": {
-              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
-              "maxLength": 120,
-              "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
-              "type": "string"
-            },
-            "sprite_alt": {
-              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
-              "maxLength": 120,
-              "description": "Another look of the same character (for example a woman instead of a man), offered by one toggle on the character screen. Same sprite sizes and directions as `sprite`.",
-              "type": "string"
-            },
-            "kit": {
-              "maxItems": 6,
-              "description": "What the character carries on the first morning: the tools of its first task, put in the bag when the character is chosen. A piece with a working \"wear\" slot is worn from the start.",
+            "outfit": {
+              "maxItems": 3,
+              "description": "What the race wears on the first morning: put in the bag and worn at once. Never a weapon, never the pocket's tool.",
               "type": "array",
               "items": {
                 "additionalProperties": false,
@@ -7041,49 +7378,17 @@
                 }
               }
             },
-            "wake": {
-              "additionalProperties": false,
-              "description": "The tile the character wakes on. Left out: the map's spawn.",
-              "type": "object",
-              "required": [
-                "x",
-                "y"
-              ],
-              "properties": {
-                "x": {
-                  "minimum": 0,
-                  "maximum": 1023,
-                  "type": "integer"
-                },
-                "y": {
-                  "minimum": 0,
-                  "maximum": 1023,
-                  "type": "integer"
-                }
-              }
+            "sprite": {
+              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
+              "maxLength": 120,
+              "description": "The figure the race is drawn with. Until the race's own art comes, an existing sheet.",
+              "type": "string"
             },
-            "pocket": {
-              "minimum": 1,
-              "maximum": 32,
-              "description": "Tiles of the mist's clear pocket around the wake tile (B2, NEXT 16). Left out: 5. The kernel does not read it; the client draws it.",
-              "type": "integer"
-            },
-            "pocket_grown": {
-              "minimum": 1,
-              "maximum": 32,
-              "description": "Tiles of that pocket once the character's first task is done. Left out: 7. Never less than `pocket`.",
-              "type": "integer"
-            },
-            "intro": {
-              "minItems": 1,
-              "maxItems": 4,
-              "description": "What the narrator says as the character wakes, one box a line. Left out: the game's own waking lines.",
-              "type": "array",
-              "items": {
-                "minLength": 1,
-                "maxLength": 240,
-                "type": "string"
-              }
+            "sprite_alt": {
+              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
+              "maxLength": 120,
+              "description": "Another look of the same race (for example a woman instead of a man), offered by one toggle on the character screen. Same sprite sizes and directions as `sprite`.",
+              "type": "string"
             }
           }
         }
@@ -7353,6 +7658,14 @@
                       },
                       {
                         "const": "staff",
+                        "type": "string"
+                      },
+                      {
+                        "const": "hammer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pick",
                         "type": "string"
                       }
                     ]
@@ -7856,6 +8169,14 @@
                       },
                       {
                         "const": "staff",
+                        "type": "string"
+                      },
+                      {
+                        "const": "hammer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pick",
                         "type": "string"
                       }
                     ]
@@ -8455,6 +8776,14 @@
                       {
                         "const": "staff",
                         "type": "string"
+                      },
+                      {
+                        "const": "hammer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pick",
+                        "type": "string"
                       }
                     ]
                   },
@@ -8882,6 +9211,23 @@
                   "maximum": 100,
                   "description": "It holds on this many days in a hundred, drawn once a game day for each thing it hangs on, the same on every replay.",
                   "type": "integer"
+                },
+                "weather": {
+                  "description": "The day's weather in the region of the thing it hangs on is this one.",
+                  "anyOf": [
+                    {
+                      "const": "clear",
+                      "type": "string"
+                    },
+                    {
+                      "const": "rain",
+                      "type": "string"
+                    },
+                    {
+                      "const": "fog",
+                      "type": "string"
+                    }
+                  ]
                 }
               }
             },
@@ -8955,6 +9301,14 @@
                             },
                             {
                               "const": "staff",
+                              "type": "string"
+                            },
+                            {
+                              "const": "hammer",
+                              "type": "string"
+                            },
+                            {
+                              "const": "pick",
                               "type": "string"
                             }
                           ]
@@ -9330,6 +9684,14 @@
                       },
                       {
                         "const": "staff",
+                        "type": "string"
+                      },
+                      {
+                        "const": "hammer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pick",
                         "type": "string"
                       }
                     ]
@@ -9873,6 +10235,14 @@
                       },
                       {
                         "const": "staff",
+                        "type": "string"
+                      },
+                      {
+                        "const": "hammer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pick",
                         "type": "string"
                       }
                     ]
@@ -10522,6 +10892,14 @@
                       {
                         "const": "staff",
                         "type": "string"
+                      },
+                      {
+                        "const": "hammer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pick",
+                        "type": "string"
                       }
                     ]
                   },
@@ -10814,6 +11192,105 @@
                   "minimum": 0,
                   "description": "Largest change one decision may make.",
                   "type": "integer"
+                }
+              }
+            },
+            "light": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "keys"
+              ],
+              "properties": {
+                "keys": {
+                  "minItems": 2,
+                  "maxItems": 12,
+                  "description": "The hours the valley is washed in a colour (ART_SYSTEM section 2): cool before sunrise, none at noon, warm in the late afternoon, dusk at 19:00, the night after that. The scene multiplies by the wash between keys, in whole percent.",
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "at",
+                      "tint",
+                      "pct"
+                    ],
+                    "properties": {
+                      "at": {
+                        "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$",
+                        "description": "The hour and minute the wash is at its own strength, for example \"16:30\".",
+                        "type": "string"
+                      },
+                      "tint": {
+                        "pattern": "^#[0-9a-f]{6}$",
+                        "description": "The colour the scene is multiplied by at that hour.",
+                        "type": "string"
+                      },
+                      "pct": {
+                        "minimum": 0,
+                        "maximum": 100,
+                        "description": "How strong the wash is at that hour, in whole percent. The hours between two keys step evenly.",
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "sun": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "alpha",
+                    "cap",
+                    "keys"
+                  ],
+                  "properties": {
+                    "alpha": {
+                      "minimum": 0,
+                      "maximum": 100,
+                      "description": "How dark the cast shadow is, in whole percent (STYLE section 4: 30).",
+                      "type": "integer"
+                    },
+                    "cap": {
+                      "minimum": 0,
+                      "maximum": 200,
+                      "description": "The longest a shadow may be, in percent of the caster's height (STYLE section 4: 110).",
+                      "type": "integer"
+                    },
+                    "keys": {
+                      "minItems": 2,
+                      "maxItems": 12,
+                      "description": "The sun's shear by hour (STYLE section 4): the shadow leans right and toward the viewer by these shares of the caster's height, so a negative `down` is the sun in the south and the shadow falling away, up-screen. The hours between two keys step evenly; outside the first and the last the sun is down.",
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "at",
+                          "right",
+                          "down"
+                        ],
+                        "properties": {
+                          "at": {
+                            "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$",
+                            "description": "The hour and minute the sun is at its own shear, for example \"16:30\".",
+                            "type": "string"
+                          },
+                          "right": {
+                            "minimum": -200,
+                            "maximum": 200,
+                            "description": "How far the shadow leans right, in percent of the caster's height; negative in the morning, positive in the evening.",
+                            "type": "integer"
+                          },
+                          "down": {
+                            "minimum": -100,
+                            "maximum": 100,
+                            "description": "How far the shadow leans toward the viewer, in percent of the caster's height; negative when the sun stands south (STYLE section 4: the shadow falls up-screen, away from the viewer, behind the caster).",
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             },
@@ -11425,6 +11902,33 @@
               },
               "description": "Milliseconds the player takes to walk one tile. The client walks at this pace; the kernel checks a position report against it (DECISIONS.md, 2026-10-10: health and hazards)."
             },
+            "move_reach_max": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "The maximum number of tiles a movement report may cover after the walk-time allowance (G56). Defaults to 32."
+            },
             "hp_low_pct": {
               "additionalProperties": false,
               "type": "object",
@@ -11980,17 +12484,18 @@
             },
             "per_point": {
               "additionalProperties": false,
-              "description": "What one point in an attribute adds: bag places (carry), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina).",
+              "description": "What one point in an attribute adds: bag places (might), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina). Spirit is defined and read by no rule yet: its first readers come with the night layer and the tree.",
               "type": "object",
               "required": [
-                "carry",
+                "might",
                 "senses",
                 "agility_pct",
                 "luck_permille",
-                "stamina"
+                "stamina",
+                "spirit"
               ],
               "properties": {
-                "carry": {
+                "might": {
                   "additionalProperties": false,
                   "type": "object",
                   "required": [
@@ -12095,6 +12600,32 @@
                   }
                 },
                 "stamina": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  }
+                },
+                "spirit": {
                   "additionalProperties": false,
                   "type": "object",
                   "required": [
@@ -12393,6 +12924,14 @@
                       {
                         "const": "staff",
                         "type": "string"
+                      },
+                      {
+                        "const": "hammer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pick",
+                        "type": "string"
                       }
                     ]
                   },
@@ -12644,6 +13183,75 @@
                 "type": "string"
               }
             },
+            "ramps": {
+              "maxItems": 4,
+              "description": "The ramps this kit draws with (ART_SYSTEM section 3). A sprite that names none uses the core palette only, so every kit written before this field stays valid.",
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "description": "A material or region ramp, declared by the kit that draws with it.",
+                "type": "object",
+                "required": [
+                  "id",
+                  "steps"
+                ],
+                "properties": {
+                  "id": {
+                    "pattern": "^[a-z0-9][a-z0-9-]*$",
+                    "maxLength": 32,
+                    "description": "Names the ramp so a sprite of this kit can cite it, for example \"meadow\" or \"wet-stone\".",
+                    "type": "string"
+                  },
+                  "for": {
+                    "anyOf": [
+                      {
+                        "const": "ground",
+                        "type": "string"
+                      },
+                      {
+                        "const": "vegetation",
+                        "type": "string"
+                      },
+                      {
+                        "const": "stone",
+                        "type": "string"
+                      },
+                      {
+                        "const": "wood",
+                        "type": "string"
+                      },
+                      {
+                        "const": "water",
+                        "type": "string"
+                      },
+                      {
+                        "const": "cloth",
+                        "type": "string"
+                      },
+                      {
+                        "const": "skin",
+                        "type": "string"
+                      },
+                      {
+                        "const": "light",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "steps": {
+                    "minItems": 5,
+                    "maxItems": 6,
+                    "description": "Five or six steps from dark to light, the hue moving between them: a ramp that only changes value is not a ramp and the check says so.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^#[0-9a-f]{6}$",
+                      "description": "One step of the ramp, dark to light.",
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
             "sprites": {
               "description": "Sprite name (group/name) to its PNG. Groups: tiles, items, chars, props, ui.",
               "type": "object",
@@ -12680,6 +13288,17 @@
                       "description": "Animation frames laid side by side. Default 1.",
                       "type": "integer"
                     },
+                    "ramps": {
+                      "minItems": 1,
+                      "maxItems": 4,
+                      "description": "The ramps of this kit the sprite draws in, in order: the first is the one its outline comes from. A sprite that names none uses the core palette only.",
+                      "type": "array",
+                      "items": {
+                        "pattern": "^[a-z0-9][a-z0-9-]*$",
+                        "maxLength": 32,
+                        "type": "string"
+                      }
+                    },
                     "density": {
                       "description": "Art pixels per tile side: 1 means 16 per tile (the 16x16 grid, the default), 4 means 64 per tile (the 64x64 grid, the standard for new art). The size rules of w and h follow it.",
                       "anyOf": [
@@ -12692,6 +13311,12 @@
                           "type": "number"
                         }
                       ]
+                    },
+                    "scale": {
+                      "minimum": 0.1,
+                      "maximum": 40,
+                      "description": "The sprite's height in characters, one decimal (NATURE section 1): a person is 1.0, a house 3.5. The check warns when a kind in NATURE section 1 or STYLE 1b falls under its floor. Left out when the sprite has no true size.",
+                      "type": "number"
                     },
                     "source": {
                       "additionalProperties": false,
@@ -12989,6 +13614,14 @@
                       {
                         "const": "staff",
                         "type": "string"
+                      },
+                      {
+                        "const": "hammer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pick",
+                        "type": "string"
                       }
                     ]
                   },
@@ -13236,6 +13869,27 @@
             "slots"
           ],
           "properties": {
+            "climate": {
+              "description": "The climate this region declares (NATURE section 2): which ramp set, densities, kinds, air and sound beds the engine reads. Left out, the region is read as temperate.",
+              "anyOf": [
+                {
+                  "const": "temperate",
+                  "type": "string"
+                },
+                {
+                  "const": "dry",
+                  "type": "string"
+                },
+                {
+                  "const": "cold",
+                  "type": "string"
+                },
+                {
+                  "const": "wet",
+                  "type": "string"
+                }
+              ]
+            },
             "creatures": {
               "additionalProperties": false,
               "description": "Cosmetic ambient life (the client draws it behind ?rich= motion; the kernel never sees it): kinds, and the spots where each sits until the player comes close.",
@@ -13628,6 +14282,65 @@
                 }
               }
             },
+            "world": {
+              "pattern": "^[a-z0-9_-]+$",
+              "minLength": 1,
+              "maxLength": 40,
+              "type": "string",
+              "description": "The world this map belongs to, for a race's grade. Left out: \"valley\", neutral to every race."
+            },
+            "regions": {
+              "maxItems": 32,
+              "description": "Named rectangles of the map. A tile in none is the map's own region. The first region that holds a tile wins.",
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "id",
+                  "x",
+                  "y",
+                  "w",
+                  "h"
+                ],
+                "properties": {
+                  "id": {
+                    "pattern": "^[a-z0-9_-]+$",
+                    "minLength": 1,
+                    "maxLength": 40,
+                    "type": "string",
+                    "description": "The region's name, unique on the map. Its weather is drawn per region."
+                  },
+                  "x": {
+                    "minimum": 0,
+                    "maximum": 1023,
+                    "type": "integer"
+                  },
+                  "y": {
+                    "minimum": 0,
+                    "maximum": 1023,
+                    "type": "integer"
+                  },
+                  "w": {
+                    "minimum": 1,
+                    "maximum": 1024,
+                    "type": "integer"
+                  },
+                  "h": {
+                    "minimum": 1,
+                    "maximum": 1024,
+                    "type": "integer"
+                  },
+                  "world": {
+                    "pattern": "^[a-z0-9_-]+$",
+                    "minLength": 1,
+                    "maxLength": 40,
+                    "type": "string",
+                    "description": "The world the region belongs to. Left out: the map's world."
+                  }
+                }
+              }
+            },
             "slots": {
               "type": "array",
               "items": {
@@ -13744,6 +14457,604 @@
                   "safe": {
                     "description": "A safe area (G30): no hazard acts inside it at any hour, a chase ends when the player stands in it, and what the player carries in is theirs. The cobbles of the town and the camp once a part stands are safe without this.",
                     "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "additionalProperties": false,
+      "$id": "pocket",
+      "type": "object",
+      "required": [
+        "format",
+        "id",
+        "title",
+        "creator",
+        "type",
+        "pocket"
+      ],
+      "properties": {
+        "$schema": {
+          "type": "string"
+        },
+        "format": {
+          "description": "Format version of this file.",
+          "const": 1,
+          "type": "number"
+        },
+        "id": {
+          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+          "maxLength": 80,
+          "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+          "type": "string"
+        },
+        "title": {
+          "minLength": 1,
+          "maxLength": 40,
+          "type": "string"
+        },
+        "creator": {
+          "pattern": "^[a-z0-9_-]+$",
+          "maxLength": 39,
+          "description": "GitHub handle, lowercase.",
+          "type": "string"
+        },
+        "description": {
+          "minLength": 1,
+          "maxLength": 240,
+          "type": "string"
+        },
+        "ai_tools": {
+          "maxItems": 8,
+          "description": "AI tools used to make this file or its art. Required when any were used.",
+          "type": "array",
+          "items": {
+            "minLength": 1,
+            "maxLength": 60,
+            "type": "string"
+          }
+        },
+        "items": {
+          "maxItems": 40,
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "rarity",
+              "sprite"
+            ],
+            "properties": {
+              "id": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              },
+              "name": {
+                "minLength": 1,
+                "maxLength": 40,
+                "type": "string"
+              },
+              "description": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string"
+              },
+              "kind": {
+                "anyOf": [
+                  {
+                    "const": "material",
+                    "type": "string"
+                  },
+                  {
+                    "const": "food",
+                    "type": "string"
+                  },
+                  {
+                    "const": "tool",
+                    "type": "string"
+                  },
+                  {
+                    "const": "fragment",
+                    "type": "string"
+                  },
+                  {
+                    "const": "treasure",
+                    "type": "string"
+                  }
+                ]
+              },
+              "rarity": {
+                "description": "Declared rarity. The check compares it with the rarity computed from the data.",
+                "anyOf": [
+                  {
+                    "const": "common",
+                    "type": "string"
+                  },
+                  {
+                    "const": "uncommon",
+                    "type": "string"
+                  },
+                  {
+                    "const": "rare",
+                    "type": "string"
+                  },
+                  {
+                    "const": "legendary",
+                    "type": "string"
+                  }
+                ]
+              },
+              "class": {
+                "description": "A base class (plant, wood, fibre, ...) or the id of a class an extension declares under one of them.",
+                "anyOf": [
+                  {
+                    "const": "plant",
+                    "type": "string"
+                  },
+                  {
+                    "const": "wood",
+                    "type": "string"
+                  },
+                  {
+                    "const": "fibre",
+                    "type": "string"
+                  },
+                  {
+                    "const": "stone",
+                    "type": "string"
+                  },
+                  {
+                    "const": "clay",
+                    "type": "string"
+                  },
+                  {
+                    "const": "mineral",
+                    "type": "string"
+                  },
+                  {
+                    "const": "metal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "animal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "meal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "tool",
+                    "type": "string"
+                  },
+                  {
+                    "const": "garment",
+                    "type": "string"
+                  },
+                  {
+                    "const": "jewelry",
+                    "type": "string"
+                  },
+                  {
+                    "const": "relic",
+                    "type": "string"
+                  },
+                  {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  }
+                ]
+              },
+              "family": {
+                "pattern": "^[a-z0-9_-]+$",
+                "maxLength": 24,
+                "description": "A group inside the class, for example \"berry\" for every berry. Open: any lowercase word.",
+                "type": "string"
+              },
+              "tags": {
+                "maxItems": 8,
+                "uniqueItems": true,
+                "description": "Open words that describe it, for example \"sweet\" or \"night\".",
+                "type": "array",
+                "items": {
+                  "pattern": "^[a-z0-9_-]+$",
+                  "maxLength": 24,
+                  "description": "A lowercase word.",
+                  "type": "string"
+                }
+              },
+              "tier": {
+                "minimum": 1,
+                "maximum": 20,
+                "description": "How advanced it is, from 1. The rarity says how often it appears; the tier says how far up the ladder it is. A tool has the tier of its \"tool\".",
+                "type": "integer"
+              },
+              "sprite": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
+                "maxLength": 120,
+                "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
+                "type": "string"
+              },
+              "food": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "satiety"
+                ],
+                "properties": {
+                  "satiety": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                    "type": "integer"
+                  },
+                  "hurt": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
+                    "type": "integer"
+                  }
+                }
+              },
+              "tool": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "kind",
+                  "tier"
+                ],
+                "properties": {
+                  "kind": {
+                    "anyOf": [
+                      {
+                        "const": "basket",
+                        "type": "string"
+                      },
+                      {
+                        "const": "trowel",
+                        "type": "string"
+                      },
+                      {
+                        "const": "axe",
+                        "type": "string"
+                      },
+                      {
+                        "const": "staff",
+                        "type": "string"
+                      },
+                      {
+                        "const": "hammer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pick",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "tier": {
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Better tools work faster. The calculator clamps the total.",
+                    "type": "integer"
+                  },
+                  "uses": {
+                    "minimum": 1,
+                    "maximum": 1000,
+                    "description": "The tool wears out after this many uses. Left out, the tool lasts (DECISIONS.md, 2026-10-09: the crafting economy).",
+                    "type": "integer"
+                  }
+                }
+              },
+              "fragment": {
+                "additionalProperties": false,
+                "description": "A found scrap that teaches a recipe.",
+                "type": "object",
+                "required": [
+                  "unlocks"
+                ],
+                "properties": {
+                  "unlocks": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  }
+                }
+              },
+              "wear": {
+                "additionalProperties": false,
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+                "type": "object",
+                "required": [
+                  "slot"
+                ],
+                "properties": {
+                  "slot": {
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                    "anyOf": [
+                      {
+                        "const": "head",
+                        "type": "string"
+                      },
+                      {
+                        "const": "top",
+                        "type": "string"
+                      },
+                      {
+                        "const": "legs",
+                        "type": "string"
+                      },
+                      {
+                        "const": "outfit",
+                        "type": "string"
+                      },
+                      {
+                        "const": "feet",
+                        "type": "string"
+                      },
+                      {
+                        "const": "jewelry",
+                        "type": "string"
+                      },
+                      {
+                        "const": "hand",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "look": {
+                    "description": "A look: worn on the look layer over the work clothes. It shows and counts for nothing, so it has no effects and no set.",
+                    "type": "boolean"
+                  },
+                  "effects": {
+                    "minItems": 1,
+                    "maxItems": 2,
+                    "description": "Small bonuses while it is worn on the work layer. Two at most, each effect once.",
+                    "type": "array",
+                    "items": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "effect",
+                        "value"
+                      ],
+                      "properties": {
+                        "effect": {
+                          "description": "What a worn item helps: gathering, digging or crafting speed, the craft chance, or rare finds.",
+                          "anyOf": [
+                            {
+                              "const": "gather_speed_pct",
+                              "type": "string"
+                            },
+                            {
+                              "const": "dig_speed_pct",
+                              "type": "string"
+                            },
+                            {
+                              "const": "craft_speed_pct",
+                              "type": "string"
+                            },
+                            {
+                              "const": "craft_chance_pct",
+                              "type": "string"
+                            },
+                            {
+                              "const": "rare_find_pct",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "value": {
+                          "minimum": 1,
+                          "maximum": 100,
+                          "description": "Percent, at most the cap of the item's tier (params.wear_effect_max_pct).",
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  },
+                  "set": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
+                    "type": "string"
+                  }
+                }
+              },
+              "premium_later": {
+                "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "classes": {
+          "maxItems": 10,
+          "description": "Classes of your own, each under one base class.",
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "description": "A class of your own, declared under one base class. Every rule written for the base class holds for it.",
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "base"
+            ],
+            "properties": {
+              "id": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              },
+              "name": {
+                "minLength": 1,
+                "maxLength": 40,
+                "type": "string"
+              },
+              "base": {
+                "description": "plant (leaves, herbs, berries, fruit, roots, mushrooms), wood, fibre (reeds, grass, thread, cloth), stone, clay (clay, sand, pottery, brick), mineral (crystals, gems, salt, ore), metal (waits for its discovery), animal (feathers, wool, hide, bone), meal (cooked food), tool, garment (worn clothes), jewelry, relic (old things from the ruins).",
+                "anyOf": [
+                  {
+                    "const": "plant",
+                    "type": "string"
+                  },
+                  {
+                    "const": "wood",
+                    "type": "string"
+                  },
+                  {
+                    "const": "fibre",
+                    "type": "string"
+                  },
+                  {
+                    "const": "stone",
+                    "type": "string"
+                  },
+                  {
+                    "const": "clay",
+                    "type": "string"
+                  },
+                  {
+                    "const": "mineral",
+                    "type": "string"
+                  },
+                  {
+                    "const": "metal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "animal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "meal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "tool",
+                    "type": "string"
+                  },
+                  {
+                    "const": "garment",
+                    "type": "string"
+                  },
+                  {
+                    "const": "jewelry",
+                    "type": "string"
+                  },
+                  {
+                    "const": "relic",
+                    "type": "string"
+                  }
+                ]
+              },
+              "description": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string"
+              }
+            }
+          }
+        },
+        "type": {
+          "const": "pocket",
+          "type": "string"
+        },
+        "pocket": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "name",
+            "wake",
+            "ground"
+          ],
+          "properties": {
+            "name": {
+              "minLength": 1,
+              "maxLength": 40,
+              "type": "string"
+            },
+            "wake": {
+              "additionalProperties": false,
+              "description": "The tile the character wakes on.",
+              "type": "object",
+              "required": [
+                "x",
+                "y"
+              ],
+              "properties": {
+                "x": {
+                  "minimum": 0,
+                  "maximum": 1023,
+                  "type": "integer"
+                },
+                "y": {
+                  "minimum": 0,
+                  "maximum": 1023,
+                  "type": "integer"
+                }
+              }
+            },
+            "pocket": {
+              "minimum": 1,
+              "maximum": 32,
+              "description": "Tiles of the mist's clear pocket around the wake tile (B2, NEXT 16). Left out: 5. The kernel does not read it; the client draws it.",
+              "type": "integer"
+            },
+            "pocket_grown": {
+              "minimum": 1,
+              "maximum": 32,
+              "description": "Tiles of that pocket once the pocket's first task is done. Left out: 7. Never less than `pocket`.",
+              "type": "integer"
+            },
+            "intro": {
+              "minItems": 1,
+              "maxItems": 4,
+              "description": "What the narrator says as the character wakes, one box a line. Left out: the game's own waking lines.",
+              "type": "array",
+              "items": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string"
+              }
+            },
+            "ground": {
+              "minItems": 1,
+              "maxItems": 3,
+              "description": "What lies on the ground by the wake tile: each stack is given by one of the pocket's own spots (a treasure whose `pocket` names this pocket, picked up by hand). A reward's `instead` reads it.",
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "item",
+                  "qty"
+                ],
+                "properties": {
+                  "item": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "qty": {
+                    "minimum": 1,
+                    "maximum": 999,
+                    "type": "integer"
                   }
                 }
               }
