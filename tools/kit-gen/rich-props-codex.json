@@ -1,0 +1,65 @@
+{
+  "note": "The rich wave, the Codex half (DECISIONS 2026-10-22, drawing route by size): larger or thin props go down Codex, and the first run is the measurement on these four props that failed before, to price the quality before the rest: pnpm kit:gen tools/kit-gen/rich-props-codex.json --drawer codex. Sizes are today's at 64 px per tile (4x). The lantern post is a first frame only: its strip (frames 2) and the three lantern looks by place (decision 8 of 22.10) follow after this measurement. Each what + detail names shapes, materials and light, never pixel counts.",
+  "entries": [
+    {
+      "name": "house_small",
+      "ref": "props/house_small",
+      "what": "small village cottage with a red tiled roof",
+      "width": 192,
+      "height": 192,
+      "anchor": "bottom",
+      "style": "rich",
+      "ramps": [
+        "wood",
+        "red",
+        "stone"
+      ],
+      "detail": "a steep roof of red clay tiles, walls of warm wooden planks, a stone footing, a wooden door and a small window"
+    },
+    {
+      "name": "market_stall",
+      "ref": "props/market_stall",
+      "what": "wooden market stall with a striped awning",
+      "width": 128,
+      "height": 128,
+      "anchor": "bottom",
+      "style": "rich",
+      "ramps": [
+        "wood",
+        "red",
+        "grey"
+      ],
+      "detail": "a red and white striped cloth awning on four posts, a plank counter, a small crate in front"
+    },
+    {
+      "name": "broken_statue",
+      "ref": "props/broken_statue",
+      "what": "weathered stone statue of a hooded robed figure on a plinth",
+      "width": 64,
+      "height": 128,
+      "anchor": "bottom",
+      "style": "rich",
+      "ramps": [
+        "stone",
+        "grey",
+        "moss"
+      ],
+      "detail": "worn folds of a hooded robe, cracks and chips across it, moss at the plinth"
+    },
+    {
+      "name": "lantern_post",
+      "ref": "props/lantern_post",
+      "what": "slim lamp post with a glowing lamp on top",
+      "width": 64,
+      "height": 128,
+      "anchor": "bottom",
+      "style": "rich",
+      "ramps": [
+        "wood",
+        "fire",
+        "grey"
+      ],
+      "detail": "a dark wooden post on a small stone foot, a boxed glass lamp at the top with a warm yellow flame"
+    }
+  ]
+}

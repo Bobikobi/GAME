@@ -14,6 +14,8 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page, type Viewport } from './cdp';
+import { FreeWalk, VEC, type Dir } from './walk';
+import { TAKE_GROUND, seedQuery } from './wakes';
 import { solveMinigame } from './minigame';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -57,15 +59,12 @@ const RUNS: [string, Viewport][] = [
   ['desktop', { width: 1440, height: 900, mobile: false }],
 ];
 
-type Dir = 'up' | 'down' | 'left' | 'right';
-const ARROW: Record<Dir, string> = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
-const PAD_OFFSET: Record<Dir, [number, number]> = { up: [0, -48], down: [0, 48], left: [-48, 0], right: [48, 0] };
-const VEC: Record<Dir, [number, number]> = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 
 const same = (a: Record<string, number>, b: Record<string, number>): boolean => JSON.stringify(Object.entries(a).sort()) === JSON.stringify(Object.entries(b).sort());
 
 interface Saved {
-  starter: string;
+  race: string;
+  pocket: string;
   name: string;
   look: number;
   pos: [number, number];
@@ -79,16 +78,30 @@ const READ_SAVE = `(() => {
   if (!g || !g.session || !g.session.started) return null;
   g.session.save();
   const p = g.session.state.player;
-  return { starter: p.starter, name: p.name, look: p.look, pos: [...g.session.pos], bag: { ...p.bag }, visited: [...p.visited] };
+  return { race: p.race, pocket: p.pocket, name: p.name, look: p.look, pos: [...g.session.pos], bag: { ...p.bag }, visited: [...p.visited] };
 })()`;
 
 class Door {
   private shot = 0;
+  /** the free walk, the same rules in the 3D door: the input is held until the feet stand on a tile */
+  private readonly walk: FreeWalk;
   constructor(
     readonly page: Page,
     readonly touch: boolean,
     readonly name: string,
-  ) {}
+  ) {
+    this.walk = new FreeWalk(page, touch);
+  }
+
+  /** Closes a window that opened by itself (a level-up, a story panel), so the walk is never held by one. */
+  async settle(): Promise<void> {
+    for (let i = 0; i < 12; i++) {
+      if (!(await this.page.eval<boolean>(`!!document.querySelector('#ui > .layer')`))) return;
+      await this.page.press('Enter');
+      await sleep(150);
+    }
+    throw new Error('a window opened by the game would not close');
+  }
 
   async snap(label: string): Promise<void> {
     this.shot++;
@@ -103,56 +116,38 @@ class Door {
   state(): Promise<{ pos: [number, number]; moving: boolean; prompt: string }> {
     return this.page.eval(`(() => {
       const s = window.__game.session, w = window.__game.world, p = document.querySelector('.prompt');
-      return { pos: [...s.pos], moving: !!w.move, prompt: p && !p.hidden ? p.textContent.slice(1).trim() : '' };
+      return { pos: [...s.pos], moving: !!w.body.moving, prompt: p && !p.hidden ? p.textContent.slice(1).trim() : '' };
     })()`);
-  }
-
-  private async hold(dir: Dir): Promise<void> {
-    if (!this.touch) return this.page.key(ARROW[dir], 'keyDown');
-    const [cx, cy] = await this.page.eval<[number, number]>(
-      `(() => { const r = document.querySelector('.pad').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; })()`,
-    );
-    const [dx, dy] = PAD_OFFSET[dir];
-    await this.page.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx + dx, y: cy + dy, id: 1 }] });
-  }
-
-  private async release(dir: Dir): Promise<void> {
-    if (!this.touch) return this.page.key(ARROW[dir], 'keyUp');
-    await this.page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   }
 
   /**
-   * One tile in a direction: the page lets go in the frame the step starts, so a slow frame never walks two.
+   * One tile in a direction, holding the input until the feet stand on it and letting go there (NEXT 22 d).
    * True when the player moved.
    */
   async step(dir: Dir): Promise<boolean> {
+    await this.settle();
     const before = (await this.state()).pos;
-    await this.page.eval(`(() => {
-      const w = window.__game.world, s = window.__game.session, facing = s.facing, t0 = performance.now();
-      const gen = (window.__e2eGen = (window.__e2eGen ?? 0) + 1);
-      window.__e2eStepped = false;
-      const look = () => {
-        if (window.__e2eGen !== gen) return;
-        if (w.move || s.facing !== facing) {
-          window.__e2eStepped = true;
-          if (${this.touch}) window.__game.controls.setTouchDir(null);
-          else window.dispatchEvent(new KeyboardEvent('keyup', { code: ${JSON.stringify(ARROW[dir])} }));
-          return;
-        }
-        if (performance.now() - t0 < 5000) requestAnimationFrame(look);
-      };
-      requestAnimationFrame(look);
-    })()`);
-    await this.hold(dir);
-    await this.page.waitFor('window.__e2eStepped', 'the step to start', 5000).catch(() => undefined);
-    await this.release(dir);
-    await this.page.waitFor('!window.__game.world.move', 'the step to end', 10_000);
-    const after = (await this.state()).pos;
-    return after[0] !== before[0] || after[1] !== before[1];
+    const want = [before[0] + VEC[dir][0], before[1] + VEC[dir][1]];
+    const open = await this.page.eval<boolean>(`window.__game.world.canWalk(window.__game.session, ${want[0]}, ${want[1]})`);
+    if (!open) {
+      // toward a wall the player does not yet face, the held input only turns it
+      await this.walk.turnTo(dir, before, `the ${dir} way out of ${before.join(',')}`);
+      return false;
+    }
+    // a box can open by itself under a walk (the night's warning, a task done): it holds the body where it
+    // stands, so it is tapped away and the step taken again, twice at most
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await this.walk.holdTo(want, `the ${dir} tile from ${(await this.state()).pos.join(',')}`);
+      const after = (await this.state()).pos;
+      if (after[0] !== before[0] || after[1] !== before[1]) return true;
+      if (!(await this.walk.closeBox())) break;
+    }
+    return false;
   }
 
   /** Walks to a tile from which the rect's tile is the one in front; the way is planned by the world's own walkable rule. */
   async walkTo(rect: { x: number; y: number; w: number; h: number }, what: string): Promise<void> {
+    await this.settle();
     for (let again = 0; again < 3; again++) {
       const plan = await this.page.eval<{ path: Dir[]; face: Dir; goal: [number, number] } | null>(`(() => {
         const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
@@ -187,26 +182,30 @@ class Door {
         return null;
       })()`);
       if (!plan) throw new Error(`no way to reach ${what}`);
+      // the tiles the plan named, counted from where the walk starts: the body holds toward a tile, not a distance
+      let at = (await this.state()).pos;
       let ok = true;
       for (const d of plan.path) {
-        if (!(await this.step(d))) {
-          console.log(`[${this.name}] step ${d} did not move from ${(await this.state()).pos.join(',')} on the way to ${what}: ${plan.path.join(' ')}`);
+        const next: [number, number] = [at[0] + VEC[d][0], at[1] + VEC[d][1]];
+        const open = await this.page.eval<boolean>(`window.__game.world.canWalk(window.__game.session, ${next[0]}, ${next[1]})`);
+        if (!open) {
+          console.log(`[${this.name}] the ${d} tile at ${next.join(',')} is closed on the way to ${what}: ${plan.path.join(' ')}`);
           ok = false;
           break;
         }
+        await this.walk.holdTo(next, `the ${d} tile of the way`);
+        const now = (await this.state()).pos;
+        if (now[0] !== next[0] || now[1] !== next[1]) {
+          console.log(`[${this.name}] the ${d} tile did not hold from ${now.join(',')} on the way to ${what}: ${plan.path.join(' ')}`);
+          ok = false;
+          break;
+        }
+        at = next;
       }
       if (!ok) continue;
-      // turn toward the target: pressing toward a blocked tile only turns
-      const at = (await this.state()).pos;
-      const v = VEC[plan.face];
-      const open = await this.page.eval<boolean>(`window.__game.world.canWalk(window.__game.session, ${at[0] + v[0]}, ${at[1] + v[1]})`);
-      if (!open) await this.step(plan.face);
-      else {
-        // open ahead (a find lies on the ground): step off and back, which leaves the player facing it
-        const back = (({ up: 'down', down: 'up', left: 'right', right: 'left' }) as Record<Dir, Dir>)[plan.face];
-        await this.step(back);
-        await this.step(plan.face);
-      }
+      // the action reads the tile in front of the feet, so the last turn faces what was walked to
+      const facing = await this.page.eval<Dir>('window.__game.session.facing');
+      if (facing !== plan.face) await this.walk.turnTo(plan.face, at, what);
       return;
     }
     throw new Error(`could not walk to ${what}`);
@@ -247,22 +246,24 @@ async function run(browser: Browser, base: string, viewport: Viewport, name: str
   };
   try {
     // 1. a character made at the classic door
-    await page.goto(`${base}/play/?debug`);
+    await page.goto(`${base}/play/?debug${seedQuery(viewport.mobile ? 'core/west-bank' : 'core/north-meadow')}`);
     await page.waitFor(`!!document.querySelector('.title-screen button')`, 'the classic title screen', 30_000);
     await page.tap('.title-screen button', 'New game');
     const ask = await page.waitFor<string>(
-      `document.querySelector('.card.starter') ? 'cards' : [...document.querySelectorAll('.title-screen button')].some((b) => b.textContent.includes('Start a new game')) ? 'ask' : ''`,
-      'the starter cards',
+      `document.querySelector('.card.race') ? 'cards' : [...document.querySelectorAll('.title-screen button')].some((b) => b.textContent.includes('Start a new game')) ? 'ask' : ''`,
+      'the race cards',
     );
     if (ask === 'ask') await page.tap('.title-screen button', 'Start a new game');
-    await page.waitFor(`!!document.querySelector('.card.starter')`, 'the starter cards');
-    await page.tap('.card.starter', viewport.mobile ? 'Forager' : 'Explorer');
+    await page.waitFor(`!!document.querySelector('.card.race')`, 'the race cards');
+    await page.tap('.card.race', viewport.mobile ? 'Elf' : 'Human');
     if (!viewport.mobile) await page.tap('.look-toggle button', 'Female');
     await page.tap('input.name');
     await page.type('Tess');
     await page.tap('.title-screen button', 'Wake up');
     await page.waitFor('!!window.__game.session && window.__game.session.started', 'the game to start');
     await me.dismissDialogue();
+    // the pocket's tools lie on the ground by the wake; handed over here, so the 3D door can fell with the west bank's axe
+    await page.eval(TAKE_GROUND);
     const made = await me.save();
     if (!made) throw new Error('no save after waking up at /play/');
     log(`made at /play/: ${JSON.stringify(made)}`);
@@ -275,7 +276,7 @@ async function run(browser: Browser, base: string, viewport: Viewport, name: str
     await page.waitFor('!!window.__game.session && window.__game.session.started && window.__world3d.debug().hero', 'the 3D world with its character', 60_000);
     await sleep(800);
     const loaded = await me.save();
-    check(!!loaded && loaded.starter === made.starter && loaded.name === made.name && loaded.look === made.look, 'the character made at /play/ loads at /play3d/');
+    check(!!loaded && loaded.race === made.race && loaded.pocket === made.pocket && loaded.name === made.name && loaded.look === made.look, 'the character made at /play/ loads at /play3d/');
     check(!!loaded && loaded.pos.join() === made.pos.join(), `it stands where it was saved (${made.pos.join(',')})`);
     await me.snap('wake3d');
 
@@ -319,7 +320,7 @@ async function run(browser: Browser, base: string, viewport: Viewport, name: str
     check(total > bagBefore, `the work ran under the kernel (${total - bagBefore} item(s) gained; ${target.item}: ${had} -> ${got})`);
     await me.snap('gathered3d');
 
-    // 4b. work that runs by itself after one press: a start that carries an axe fells the nearest tree
+    // 4b. work that runs by itself after one press: a character that carries an axe fells the nearest tree
     const tree = await page.eval<{ id: string; x: number; y: number; item: string } | null>(`(() => {
       const g = window.__game, s = g.session, b = g.bundle;
       if (!(s.state.player.bag['core/axe'] > 0)) return null;
@@ -351,7 +352,7 @@ async function run(browser: Browser, base: string, viewport: Viewport, name: str
     await page.tap('.title-screen button', 'Continue');
     await page.waitFor('!!window.__game.session && window.__game.session.started', 'the classic game to load the save');
     const back = await me.save();
-    check(!!back && same(back.bag, done3d.bag) && back.pos.join() === done3d.pos.join() && back.name === made.name && back.starter === made.starter && back.look === made.look, `the 3D game saved to the same place: /play/ loads it and back (${JSON.stringify(done3d.bag)} / ${JSON.stringify(back?.bag)})`);
+    check(!!back && same(back.bag, done3d.bag) && back.pos.join() === done3d.pos.join() && back.name === made.name && back.race === made.race && back.pocket === made.pocket && back.look === made.look, `the 3D game saved to the same place: /play/ loads it and back (${JSON.stringify(done3d.bag)} / ${JSON.stringify(back?.bag)})`);
     await me.snap('back2d');
 
     if (page.errors.length > 0) throw new Error(`page errors: ${page.errors.join(' | ')}`);

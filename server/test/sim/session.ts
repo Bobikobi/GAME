@@ -34,7 +34,7 @@ export interface Start {
 
 export const STARTS: readonly Start[] = [
   { starter: 'core/forager', own: 'core/first-pickings', place: 'core/bank-herbs' },
-  { starter: 'core/digger', own: 'core/buried-axe', place: 'core/slid-bank' },
+  { starter: 'core/digger', own: 'core/buried-axe', place: 'core/slid-bank-dig' },
   { starter: 'core/explorer', own: 'core/glint-by-the-bridge', place: 'core/bridge-glint' },
 ];
 

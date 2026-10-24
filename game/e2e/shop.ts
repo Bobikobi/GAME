@@ -9,6 +9,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page, type Viewport } from './cdp';
+import { TAKE_GROUND, seedQuery } from './wakes';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(GAME_DIR, 'dist');
@@ -89,20 +90,22 @@ async function run(page: Page, url: string, viewport: Viewport): Promise<void> {
   await page.goto(`${url}?debug`);
   await page.waitFor(`!!document.querySelector('.title-screen button')`, 'the title screen', 30_000);
   await page.eval(`localStorage.clear()`);
-  await page.goto(`${url}?debug`);
+  await page.goto(`${url}?debug${seedQuery(viewport.mobile ? 'core/west-bank' : 'core/north-meadow')}`);
   await page.waitFor(`!!document.querySelector('.title-screen button')`, 'the title screen', 30_000);
   await page.tap('.title-screen button', 'New game');
   const ask = await page.waitFor<string>(
-    `document.querySelector('.card.starter') ? 'cards' : [...document.querySelectorAll('.title-screen button')].some((b) => b.textContent.includes('Start a new game')) ? 'ask' : ''`,
-    'the starter cards',
+    `document.querySelector('.card.race') ? 'cards' : [...document.querySelectorAll('.title-screen button')].some((b) => b.textContent.includes('Start a new game')) ? 'ask' : ''`,
+    'the race cards',
   );
   if (ask === 'ask') await page.tap('.title-screen button', 'Start a new game');
-  await page.waitFor(`!!document.querySelector('.card.starter')`, 'the starter cards');
-  await page.tap('.card.starter', viewport.mobile ? 'Forager' : 'Explorer');
+  await page.waitFor(`!!document.querySelector('.card.race')`, 'the race cards');
+  await page.tap('.card.race', viewport.mobile ? 'Elf' : 'Human');
   await page.tap('input.name');
   await page.type('Stall');
   await page.tap('.title-screen button', 'Wake up');
   await page.waitFor(`!!window.__game?.session?.started`, 'the game', 30_000);
+  // the pocket's tools lie on the ground by the wake: this script tests what comes later, so they are handed over
+  await page.eval(TAKE_GROUND);
   for (let i = 0; i < 40; i++) {
     if (!(await page.eval<boolean>(`!!document.querySelector('.dialog')`))) break;
     if (viewport.mobile) await page.tap('.tbtn.a');

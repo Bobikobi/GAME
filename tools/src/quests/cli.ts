@@ -2,7 +2,7 @@
  * pnpm quests: the picture of the quests a quest designer (a person or the
  * quest-designer agent, .claude/skills/quest-designer) starts from. It only
  * reads the content. Sections: who gives what, the types the valley asks and
- * the ones it never asks, and each starter's hand (src/quests/hand.ts): how
+ * the ones it never asks, and each wake pocket's hand (src/quests/hand.ts): how
  * many tasks a character can hold at once and which two of one type it can
  * finish back to back by choice. Flags: --json.
  */
@@ -27,7 +27,7 @@ const quests = Object.values(b.quests)
     id: q.id,
     type: q.type ?? null,
     giver: q.giver ?? null,
-    starter: q.starter ?? null,
+    pocket: q.pocket ?? null,
     requires: q.requires ?? [],
     steps: q.steps.map((s) => s.kind),
     summary: q.summary,
@@ -40,9 +40,9 @@ if (json) {
 
 const name = (id: string | null) => (id === null ? 'by itself' : (b.npcs[id]?.title ?? id));
 const out: string[] = ['# The quests', ''];
-out.push('| Quest | Type | Given by | Starter | Requires | Steps |', '|---|---|---|---|---|---|');
+out.push('| Quest | Type | Given by | Pocket | Requires | Steps |', '|---|---|---|---|---|---|');
 for (const q of quests) {
-  out.push(`| ${q.id} | ${q.type ?? '-'} | ${name(q.giver)} | ${q.starter ?? 'all'} | ${q.requires.join(', ') || '-'} | ${q.steps.join(', ')} |`);
+  out.push(`| ${q.id} | ${q.type ?? '-'} | ${name(q.giver)} | ${q.pocket ?? 'all'} | ${q.requires.join(', ') || '-'} | ${q.steps.join(', ')} |`);
 }
 out.push('', '## Types', '');
 out.push(`Asked: ${types.used.map(([t, n]) => `${t} ${n}`).join(', ')}.`);
@@ -57,7 +57,7 @@ const said: Record<SameAgain['how'], (s: SameAgain) => string> = {
   requires: (s) => `${s.then} right after ${s.first}, along a requires link (the check refuses this)`,
 };
 for (const h of all) {
-  out.push(`### ${h.starter}: ${h.quests.length} quests, up to ${h.widest} open at once`, '');
+  out.push(`### ${h.pocket}: ${h.quests.length} quests, up to ${h.widest} open at once`, '');
   if (h.same.length === 0) out.push('No two of one type can come back to back.');
   for (const how of ['open', 'needs', 'requires'] as const) {
     for (const s of h.same.filter((x) => x.how === how)) out.push(`- ${s.type}: ${said[how](s)}`);

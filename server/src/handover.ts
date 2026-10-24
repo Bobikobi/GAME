@@ -17,7 +17,7 @@
  * 'opening', seed, log }`, with one `gold_ledger` row per grant it made, so `replayAccount` plays the same
  * opening under the phone's seed, switches to the account's seed, and lands on the stored state.
  */
-import { OPENING_LOG_MAX, newState, salePrice, serialize, step, type Action, type Bundle, type OpeningUpload, type State } from '@game/kernel';
+import { OPENING_LOG_MAX, newState, salePrice, serialize, step, type Action, type Bundle, type OpeningUpload, type State, type Tile } from '@game/kernel';
 
 import { createPlayerRecord, isAction, spendWalk, type PlayerRecord } from './api';
 import { goldRowsOf, type LedgerRow } from './ledger';
@@ -103,6 +103,8 @@ export function replayOpening(bundle: Bundle, upload: OpeningUpload, timeMaxMs =
   const gold: LedgerRow[] = [];
   let movementAt = 0;
   let creditMs = 0;
+  // the unpaired step a diagonal pair may close, so a replay charges what the wire charges (the octile walk, G56)
+  let leg: Tile | null = null;
   for (const [index, { a, tick }] of upload.log.entries()) {
     if (index === 0 && a.t !== 'start') return 'the opening does not begin with a start';
     if (index > 0 && a.t === 'start') return `step ${index} starts a second character`;
@@ -110,9 +112,9 @@ export function replayOpening(bundle: Bundle, upload: OpeningUpload, timeMaxMs =
     if (tick > timeMaxMs) return `step ${index} claims more than ${timeMaxMs} ms of game time`;
     if (a.t !== 'start') {
       // the walk a step claims costs what it costs on the wire: a phone that walked faster than the credit allows did not walk
-      const walk = spendWalk(bundle, state, state.player.at, a.t === 'move' ? a.at : 'at' in a ? a.at : state.player.at, tick, movementAt, creditMs);
+      const walk = spendWalk(bundle, state, state.player.at, a.t === 'move' ? a.at : 'at' in a ? a.at : state.player.at, tick, movementAt, creditMs, leg);
       if (!walk) return `step ${index} walks further than the time allows`;
-      ({ at: movementAt, creditMs } = walk);
+      ({ at: movementAt, creditMs, leg } = walk);
     }
     const result = step(bundle, state, a, tick, { validateTravel: true });
     if (!result.ok) return `step ${index} does not play: ${result.error}`;

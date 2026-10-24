@@ -266,6 +266,14 @@
                   {
                     "const": "staff",
                     "type": "string"
+                  },
+                  {
+                    "const": "hammer",
+                    "type": "string"
+                  },
+                  {
+                    "const": "pick",
+                    "type": "string"
                   }
                 ]
               },
@@ -923,6 +931,65 @@
               "minimum": 0,
               "maximum": 1023,
               "type": "integer"
+            }
+          }
+        },
+        "world": {
+          "pattern": "^[a-z0-9_-]+$",
+          "minLength": 1,
+          "maxLength": 40,
+          "type": "string",
+          "description": "The world this map belongs to, for a race's grade. Left out: \"valley\", neutral to every race."
+        },
+        "regions": {
+          "maxItems": 32,
+          "description": "Named rectangles of the map. A tile in none is the map's own region. The first region that holds a tile wins.",
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "id",
+              "x",
+              "y",
+              "w",
+              "h"
+            ],
+            "properties": {
+              "id": {
+                "pattern": "^[a-z0-9_-]+$",
+                "minLength": 1,
+                "maxLength": 40,
+                "type": "string",
+                "description": "The region's name, unique on the map. Its weather is drawn per region."
+              },
+              "x": {
+                "minimum": 0,
+                "maximum": 1023,
+                "type": "integer"
+              },
+              "y": {
+                "minimum": 0,
+                "maximum": 1023,
+                "type": "integer"
+              },
+              "w": {
+                "minimum": 1,
+                "maximum": 1024,
+                "type": "integer"
+              },
+              "h": {
+                "minimum": 1,
+                "maximum": 1024,
+                "type": "integer"
+              },
+              "world": {
+                "pattern": "^[a-z0-9_-]+$",
+                "minLength": 1,
+                "maxLength": 40,
+                "type": "string",
+                "description": "The world the region belongs to. Left out: the map's world."
+              }
             }
           }
         },

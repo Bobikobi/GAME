@@ -266,6 +266,14 @@
                   {
                     "const": "staff",
                     "type": "string"
+                  },
+                  {
+                    "const": "hammer",
+                    "type": "string"
+                  },
+                  {
+                    "const": "pick",
+                    "type": "string"
                   }
                 ]
               },
@@ -625,7 +633,7 @@
                 "keys": {
                   "minItems": 2,
                   "maxItems": 12,
-                  "description": "The sun's shear by hour (STYLE section 4): the shadow leans right and toward the viewer by these shares of the caster's height. The hours between two keys step evenly; outside the first and the last the sun is down.",
+                  "description": "The sun's shear by hour (STYLE section 4): the shadow leans right and toward the viewer by these shares of the caster's height, so a negative `down` is the sun in the south and the shadow falling away, up-screen. The hours between two keys step evenly; outside the first and the last the sun is down.",
                   "type": "array",
                   "items": {
                     "additionalProperties": false,
@@ -648,9 +656,9 @@
                         "type": "integer"
                       },
                       "down": {
-                        "minimum": 0,
+                        "minimum": -100,
                         "maximum": 100,
-                        "description": "How far the shadow leans toward the viewer, in percent of the caster's height.",
+                        "description": "How far the shadow leans toward the viewer, in percent of the caster's height; negative when the sun stands south (STYLE section 4: the shadow falls up-screen, away from the viewer, behind the caster).",
                         "type": "integer"
                       }
                     }
@@ -1850,17 +1858,18 @@
         },
         "per_point": {
           "additionalProperties": false,
-          "description": "What one point in an attribute adds: bag places (carry), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina).",
+          "description": "What one point in an attribute adds: bag places (might), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina). Spirit is defined and read by no rule yet: its first readers come with the night layer and the tree.",
           "type": "object",
           "required": [
-            "carry",
+            "might",
             "senses",
             "agility_pct",
             "luck_permille",
-            "stamina"
+            "stamina",
+            "spirit"
           ],
           "properties": {
-            "carry": {
+            "might": {
               "additionalProperties": false,
               "type": "object",
               "required": [
@@ -1965,6 +1974,32 @@
               }
             },
             "stamina": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              }
+            },
+            "spirit": {
               "additionalProperties": false,
               "type": "object",
               "required": [

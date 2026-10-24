@@ -4,7 +4,7 @@
 }
 .soon h2 {
   padding-top: var(--s-3);
-  border-top: 4px solid var(--ink);
+  border-top: 4px solid var(--rule);
   font-size: 24px;
   line-height: 28px;
 }
@@ -18,7 +18,7 @@
 }
 .soon-box {
   padding: var(--s-4);
-  border: 2px dashed var(--ink2);
+  border: 2px dashed var(--fg2);
 }
 .soon-box h3 {
   font-size: 20px;
@@ -26,9 +26,9 @@
 }
 .soon-box p {
   margin-top: var(--s-2);
-  color: var(--ink2);
+  color: var(--fg2);
 }
 .soon-foot {
   margin-top: var(--s-3);
-  color: var(--ink2);
+  color: var(--fg2);
 }

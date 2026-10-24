@@ -266,6 +266,14 @@
                   {
                     "const": "staff",
                     "type": "string"
+                  },
+                  {
+                    "const": "hammer",
+                    "type": "string"
+                  },
+                  {
+                    "const": "pick",
+                    "type": "string"
                   }
                 ]
               },
@@ -631,7 +639,7 @@
                   "instead": {
                     "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
                     "maxLength": 80,
-                    "description": "What a start whose kit holds the item gets in its place: something that kit lacks.",
+                    "description": "What a character whose wake pocket lays the item on the ground gets in its place: something that pocket lacks.",
                     "type": "string"
                   }
                 }
