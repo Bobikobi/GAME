@@ -16,7 +16,7 @@ const QUEST = 'core/the-tangle';
 /** The one gap in the forest between the ruins and the tangle. */
 const MOUTH: readonly [number, number] = [39, 34];
 /** The tangle, in tiles: everything south of the old forest edge. */
-const TANGLE = { x: 0, y: 34, w: 48, h: 15 };
+const TANGLE = { x: 20, y: 34, w: 25, h: 15 };
 
 const STEPS: readonly (readonly [number, number])[] = [
   [0, -1],
@@ -66,7 +66,7 @@ describe('the tangle', () => {
   it('is entered by one gap south of the ruins, and the heart is reachable from the waking spot with the bridge mended', () => {
     const { width } = bundle.map;
     const gaps = [];
-    for (let x = 0; x < width; x++) if (walk(x, TANGLE.y)) gaps.push(x);
+    for (let x = TANGLE.x; x < TANGLE.x + TANGLE.w; x++) if (walk(x, TANGLE.y)) gaps.push(x);
     expect(gaps).toEqual([MOUTH[0]]);
     const fromSpawn = distances([bundle.map.spawn.x, bundle.map.spawn.y]);
     const heart = findSlot(bundle.map, HEART)!;

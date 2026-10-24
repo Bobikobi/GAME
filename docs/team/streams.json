@@ -127,6 +127,13 @@
       "branches": ["feat/race-wave-1"],
       "owner": null,
       "cross_cutting": true
+    },
+    {
+      "id": "valley-map",
+      "title": "The valley map plan v2 on the core map: the plan block, G69 and the first-night check (G71), then the 64x64 valley",
+      "plan": ["the valley map plan v2 (the owner, 22.10 and 23.10)", "GAME_RULES G68-G71", "DECISIONS 2026-10-22 decisions 25 and 49-51", "DECISIONS 2026-10-23 the map plan block"],
+      "branches": ["feat/map-plan-block", "feat/valley-v2"],
+      "owner": null
     }
   ]
 }

@@ -374,6 +374,14 @@ describe('what an expedition gives, in the content check', () => {
   const mapPath = join(root, 'core', 'map.json');
   const map = JSON.parse(readFileSync(mapPath, 'utf8')) as { map: { ground: string[]; slots: object[]; props: object[] } };
   map.map.ground = openDoorstep(map.map.ground);
+  // the rocks seal the room off the place's one door (the arch, DECISIONS 2026-10-16): in this copy the west wall comes
+  // down, and so does the hall's north wall (row 27), so the rest of the walled ruins keeps a road out and the wolf's
+  // chase still ends (G34)
+  map.map.props = map.map.props.filter((p) => {
+    const q = p as { sprite: string; x: number; y: number };
+    if (q.sprite.endsWith('/ruin_wall') && q.y === 27 && q.x >= 35) return false;
+    return !(q.sprite.endsWith('/ruin_pillar') && q.x === 32 && q.y >= 21 && q.y <= 30);
+  });
   map.map.slots.push({ id: 'core/test-hall', kind: 'area', x: 35, y: 21, w: 4, h: 5 }, { id: 'core/test-altar', kind: 'ruin', x: 37, y: 24, w: 1, h: 1 });
   map.map.props.push(...walls(runCheck().assembled.bundle!), {
     id: 'core/test-hall-stone',

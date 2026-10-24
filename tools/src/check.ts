@@ -21,6 +21,7 @@ import { checkReactions } from './reactions';
 import { checkPlay, rewardItems } from './play';
 import { checkDeadProps } from './deadprops';
 import { checkReach } from './reach';
+import { checkMapPlan } from './mapplan';
 import { checkRaces } from './races';
 import { checkHands } from './hands';
 import { checkRichness } from './richness';
@@ -56,6 +57,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkDeadProps(b, assembled.origin));
     issues.push(...checkHazards(b, assembled.origin));
     issues.push(...checkRichness(b, assembled.origin));
+    issues.push(...checkMapPlan(b, assembled.origin));
     issues.push(...checkHands(b, assembled.origin));
   }
   return { issues: dedupe(issues), files: files.length, assembled };
