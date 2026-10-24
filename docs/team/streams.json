@@ -62,7 +62,7 @@
       "title": "The light layer: one engine module both doors call, with the decided shadows and night inside it and the hour table in params",
       "plan": ["docs/design/ART_SYSTEM.md section 2, step 2 of its order", "DECISIONS 2026-10-20 the art system", "STYLE sections 4 and 5", "docs/team/NEXT.md section 15"],
       "branches": ["feat/light-module"],
-      "owner": null
+      "owner": "the lighting session"
     },
     {
       "id": "hook",

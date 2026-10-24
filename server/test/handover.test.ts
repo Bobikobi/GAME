@@ -132,13 +132,21 @@ describe('the opening handover (NEXT 18 d)', () => {
 
   test('a walk faster than the movement time allows is refused, though the phone accepted it', async () => {
     const { upload } = await captured();
-    // every walked tile claimed a few ms after the one before: the kernel takes it, the movement credit does not
-    let shift = 0;
-    const log = upload.log.map((entry, index) => {
-      const previous = upload.log[index - 1];
-      if (entry.a.t === 'move' && previous?.a.t === 'move') shift += bundle.params.walk_step_ms - 5;
-      return { a: entry.a, tick: entry.tick - shift };
-    });
+    // two tiles the phone itself walked stand side by side, and the log walks between them every 5 ms: the
+    // kernel takes each step, and the movement credit (32 tiles, refilled by the time claimed) does not. A
+    // step that closes a diagonal pair costs 1414 for the two (the octile walk, G56), so the claim has to be
+    // less than the walk's own time for a log this short to run dry.
+    const walked = upload.log.filter((entry) => entry.a.t === 'move') as { a: { t: 'move'; at: [number, number] }; tick: number }[];
+    const [first, second] = walked;
+    if (!first || !second) throw new Error('the captured opening does not walk');
+    const [here, there] = [first.a.at, second.a.at];
+    const start = upload.log[0]!;
+    const log: OpeningUpload['log'] = [start];
+    let tick = start.tick;
+    for (let i = 0; i < 60; i++) {
+      tick += 5;
+      log.push({ a: { t: 'move', at: i % 2 === 0 ? there : here }, tick });
+    }
     const state = phonePlays(log);
     expectFresh(takeOpening(bundle, { ...upload, log, state }, SECRET_SEED, NOW), /walks further than the time allows/);
   });
