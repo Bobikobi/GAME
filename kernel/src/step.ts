@@ -99,6 +99,8 @@ export type GameEvent =
   | { e: 'spend'; item: string; qty: number }
   | { e: 'bag_full'; item: string; qty: number }
   | { e: 'gold'; delta: number }
+  /** the bound starting gold moved (milli-gold); the purse's own movements are `gold` */
+  | { e: 'bound'; delta: number }
   | { e: 'level'; profession: string; level: number }
   | { e: 'discover'; item: string }
   | { e: 'learn'; recipe: string }
@@ -465,7 +467,8 @@ function start(ctx: Ctx, a: Extract<Action, { t: 'start' }>): void {
   s.player.attrs = legacy ? { ...legacy.attrs } : { ...race.attributes };
   // the wake tile first: the grade of the world under it counts in the health cap below
   s.player.at = [pocket.wake.x, pocket.wake.y];
-  s.player.gold = b.params.starting_gold_mg;
+  // the starting gold is a bound balance beside the purse, not purse gold (DECISIONS.md, 2026-10-10)
+  s.player.boundGold = b.params.starting_gold_mg;
   if (b.params.starting_gold_mg > 0) s.ledger.minted += b.params.starting_gold_mg;
   s.player.satiety = satietyCap(b, s);
   s.player.satietyAt = ctx.tick;
@@ -757,11 +760,16 @@ function buy(ctx: Ctx, npcId: string, itemId: string, qty: number, at: Tile): vo
   const offer = shop.sells.find((o) => o.item === itemId);
   if (!offer) refuse('That is not for sale here.');
   const total = offer.price_mg * qty;
-  if (s.player.gold < total) refuse('You do not have enough gold.');
+  if (s.player.boundGold + s.player.gold < total) refuse('You do not have enough gold.');
   if (bagCapacity(b, s) - bagUsed(s) < qty) refuse('Your bag is too full.');
-  s.player.gold -= total;
+  // the bound starting gold pays first, the purse the rest; this is the only place the bound balance is spent
+  const fromBound = Math.min(s.player.boundGold, total);
+  const fromPurse = total - fromBound;
+  s.player.boundGold -= fromBound;
+  s.player.gold -= fromPurse;
   s.ledger.burned += total;
-  ctx.events.push({ e: 'gold', delta: -total });
+  if (fromBound > 0) ctx.events.push({ e: 'bound', delta: -fromBound });
+  if (fromPurse > 0) ctx.events.push({ e: 'gold', delta: -fromPurse });
   addItem(ctx, itemId, qty);
 }
 
