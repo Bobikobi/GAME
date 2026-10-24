@@ -1749,7 +1749,7 @@ export class WorldScene extends Phaser.Scene {
     const y = Math.round(this.body.y) * unit + T / 2;
     this.player.setPosition(x, y);
     this.player.setDepth(Math.round(y) + 1);
-    this.playerShadow?.setPosition(this.player.x, this.player.y + 2);
+    // the cast layer draws the player's shadow (buildCasters); light-cast has no fx-shadow ellipse
   }
 
   /** The race's sprite for a direction, in the look the player picked (races wear today's sheets until their own art). */
