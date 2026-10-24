@@ -1,0 +1,1 @@
+- **S1 The narrator never states the past.** The narrator says what is there now.
