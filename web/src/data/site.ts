@@ -37,6 +37,13 @@ export const NAV: readonly { label: string; href: string; section?: Section }[] 
   { label: 'GitHub', href: REPO },
 ];
 
+/** The footer's columns: where to play, how to build, where the community meets. */
+export const FOOT_COLS: readonly { title: string; links: readonly { label: string; href: string }[] }[] = [
+  { title: 'Play', links: [ { label: 'Classic, in your browser', href: '/play/' }, { label: 'Leaderboard', href: '/hub/boards/' }, { label: 'Guide', href: '/docs/' } ] },
+  { title: 'Build', links: [ { label: 'Developer area', href: '/hub/' }, { label: 'API and schemas', href: '/api/' }, { label: 'llms.txt', href: '/llms.txt' } ] },
+  { title: 'Community', links: [ { label: 'GitHub', href: REPO }, { label: 'Rules', href: '/hub/rules/' }, { label: 'Licence', href: repoFile('LICENSE') } ] },
+];
+
 export const FOOT: readonly { label: string; href: string }[] = [
   { label: 'Rules', href: '/hub/rules/' },
   { label: 'Licence', href: repoFile('LICENSE') },

@@ -34,6 +34,8 @@ export class FakeServer implements Wire {
     this.acceptedAt = now();
   }
 
+  post(path: '/session', body: unknown): Promise<StateReply>;
+  post(path: '/action' | '/moves', body: unknown): Promise<ChangeReply>;
   async post(path: '/action' | '/moves' | '/session', body: unknown): Promise<StateReply | ChangeReply> {
     this.calls.push({ path, body });
     if (this.gap) throw new WireGap('Waiting for the connection');

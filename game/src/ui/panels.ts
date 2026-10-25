@@ -738,7 +738,7 @@ export function openShop(ui: UI, npcId: string): void {
                 opens.length ? h('div', { class: 'muted', 'data-opens': '' }, `Opens: ${opens.join(', ')}`) : null,
               ),
               h('span', { class: 'price' }, gold(o.price_mg)),
-              button('Buy', () => deal(() => s.act({ t: 'buy', npc: npcId, item: o.item, qty: 1, at: s.pos })), 'small', st.player.gold < o.price_mg || room < 1),
+              button('Buy', () => deal(() => s.act({ t: 'buy', npc: npcId, item: o.item, qty: 1, at: s.pos })), 'small', st.player.gold + st.player.boundGold < o.price_mg || room < 1),
             );
           })
         : sellable(b, st).map(({ item: id, each }) => {
@@ -755,7 +755,7 @@ export function openShop(ui: UI, npcId: string): void {
           });
     p.body.replaceChildren(
       tabs(shop.buys ? ['buy', 'sell'] : ['buy'], current, (n) => ((current = n as 'buy' | 'sell'), render())),
-      h('div', { class: 'wallet' }, h('i', { class: 'coin' }), `${gold(st.player.gold)} gold`, h('span', { class: 'muted' }, ` - ${room} free places in your bag`)),
+      h('div', { class: 'wallet' }, h('i', { class: 'coin' }), `${gold(st.player.gold)} gold`, st.player.boundGold > 0 ? h('span', null, ` + ${gold(st.player.boundGold)} starter gold`) : null, h('span', { class: 'muted' }, ` - ${room} free places in your bag`)),
       ...(rows.length ? rows : [h('p', { class: 'muted' }, current === 'sell' ? 'Nothing to sell.' : 'Sold out.')]),
     );
   };

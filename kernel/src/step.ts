@@ -107,6 +107,8 @@ export type GameEvent =
   | { e: 'spend'; item: string; qty: number }
   | { e: 'bag_full'; item: string; qty: number }
   | { e: 'gold'; delta: number }
+  /** the bound starting gold moved (milli-gold); the purse's own movements are `gold` */
+  | { e: 'bound'; delta: number }
   | { e: 'level'; profession: string; level: number }
   | { e: 'discover'; item: string }
   | { e: 'learn'; recipe: string }
@@ -279,6 +281,41 @@ export function walkDistance(bundle: Bundle, state: State, from: Tile, target: T
     }
   }
   return undefined;
+}
+
+/** A four-way step, in thousandths of a step: what a straight step costs the movement credit (G56). */
+export const STEP_MILLI = 1000;
+/** Two four-way steps that turn a corner are one diagonal step, `1414 / 1000`: the octile length of the walk (G56). */
+export const DIAGONAL_PAIR_MILLI = 1414;
+
+/**
+ * What a reported walk costs, in thousandths of a step: the octile length of its four-way path (G56). A free walk
+ * on a diagonal reports a staircase of single steps, and a step that turns off a single step still unpaired closes
+ * a diagonal pair, which costs `DIAGONAL_PAIR_MILLI` for the two. `leg` is that unpaired step's direction, and the
+ * answer carries the next one: `null` once a pair is closed, after a report of more than one step, or when there
+ * is none. A report of several steps pairs as many as its two axes share. The reach is four-way and unchanged:
+ * `undefined` when `walkDistance` finds no path.
+ */
+export function walkCharge(
+  bundle: Bundle,
+  state: State,
+  from: Tile,
+  target: Tile,
+  maxSteps: number,
+  leg: Tile | null,
+): { milli: number; leg: Tile | null } | undefined {
+  const steps = walkDistance(bundle, state, from, target, maxSteps);
+  if (steps === undefined) return undefined;
+  if (steps === 0) return { milli: 0, leg };
+  const dx = target[0] - from[0];
+  const dy = target[1] - from[1];
+  if (steps === 1) {
+    // a step across the unpaired one before it closes the pair: 1414 for the two, 1000 of it already paid
+    if (leg !== null && leg[0] * dx + leg[1] * dy === 0) return { milli: DIAGONAL_PAIR_MILLI - STEP_MILLI, leg: null };
+    return { milli: STEP_MILLI, leg: [dx, dy] };
+  }
+  const pairs = Math.min(Math.abs(dx), Math.abs(dy));
+  return { milli: steps * STEP_MILLI - pairs * (2 * STEP_MILLI - DIAGONAL_PAIR_MILLI), leg: null };
 }
 
 interface Ctx {
@@ -484,7 +521,8 @@ function start(ctx: Ctx, a: Extract<Action, { t: 'start' }>): void {
   s.player.attrs = legacy ? { ...legacy.attrs } : { ...race.attributes };
   // the wake tile first: the grade of the world under it counts in the health cap below
   s.player.at = [pocket.wake.x, pocket.wake.y];
-  s.player.gold = b.params.starting_gold_mg;
+  // the starting gold is a bound balance beside the purse, not purse gold (DECISIONS.md, 2026-10-10)
+  s.player.boundGold = b.params.starting_gold_mg;
   if (b.params.starting_gold_mg > 0) s.ledger.minted += b.params.starting_gold_mg;
   s.player.satiety = satietyCap(b, s);
   s.player.satietyAt = ctx.tick;
@@ -776,11 +814,16 @@ function buy(ctx: Ctx, npcId: string, itemId: string, qty: number, at: Tile): vo
   const offer = shop.sells.find((o) => o.item === itemId);
   if (!offer) refuse('That is not for sale here.');
   const total = offer.price_mg * qty;
-  if (s.player.gold < total) refuse('You do not have enough gold.');
+  if (s.player.boundGold + s.player.gold < total) refuse('You do not have enough gold.');
   if (bagCapacity(b, s) - bagUsed(s) < qty) refuse('Your bag is too full.');
-  s.player.gold -= total;
+  // the bound starting gold pays first, the purse the rest; this is the only place the bound balance is spent
+  const fromBound = Math.min(s.player.boundGold, total);
+  const fromPurse = total - fromBound;
+  s.player.boundGold -= fromBound;
+  s.player.gold -= fromPurse;
   s.ledger.burned += total;
-  ctx.events.push({ e: 'gold', delta: -total });
+  if (fromBound > 0) ctx.events.push({ e: 'bound', delta: -fromBound });
+  if (fromPurse > 0) ctx.events.push({ e: 'gold', delta: -fromPurse });
   addItem(ctx, itemId, qty);
 }
 
