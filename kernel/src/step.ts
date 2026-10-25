@@ -16,7 +16,7 @@
  * luck only tilts it, and a miss keeps something. The value table prices a
  * recipe at perfect execution, and nothing lifts a craft above it (R9).
  */
-import type { Bundle, QuestDef, RecipeDef, Verb } from './bundle';
+import type { Bundle, QuestDef, RecipeDef, SearchDef, Verb } from './bundle';
 import { canonical } from './canon';
 import { bitesAfter, dangerAt, distanceTo, fireArea, harmOf, hazardsOf, isSafe, isTownTile, reappearTile, sees, townAt, watchedAt, windowOpen, windowShuts } from './danger';
 import { bellTicks, inside as insideExpedition, lastBellAt, visitNight, windowOpen as expeditionWindowOpen } from './expedition';
@@ -57,6 +57,7 @@ import {
   satietyCap,
   nodeCost,
   nodeRefusal,
+  searchDawn,
   skillPoints,
   slotsFor,
   slotsOpen,
@@ -80,6 +81,10 @@ export type Action =
   | { t: 'carve'; name: string }
   | { t: 'gather'; node: string; grade: Grade; at: Tile }
   | { t: 'dig'; spot: string; grade: Grade; at: Tile }
+  /** look inside a searchable (docs/design/SEARCH.md): its contents are drawn once a day and kept */
+  | { t: 'search'; spot: string; at: Tile }
+  /** move one row of a searched searchable (`row`, a place in its list) or all its rows into the bag */
+  | { t: 'take'; spot: string; row?: number; at: Tile }
   | { t: 'craft'; recipe: string; at: Tile }
   | { t: 'eat'; item: string }
   | { t: 'feed'; fire: string; item: string; at: Tile }
@@ -122,6 +127,8 @@ export type GameEvent =
   | { e: 'fire_out'; id: string }
   | { e: 'busy'; verb: string; ms: number }
   | { e: 'nothing'; verb: string }
+  /** a searchable was looked into: what it holds now, one item per row (empty: nothing here) */
+  | { e: 'search'; spot: string; rows: string[] }
   | { e: 'jackpot'; verb: string }
   | { e: 'tool_broke'; item: string }
   | { e: 'visit'; slot: string }
@@ -341,6 +348,8 @@ export function step(bundle: Bundle, state: State, action: Action, tick: number,
   ctx.s.player.own ??= null;
   ctx.s.player.expeditions ??= {};
   ctx.s.player.bitten ??= [];
+  // a save from before kernel 0.17 has searched nothing
+  ctx.s.searched ??= {};
   try {
     ctx.walkOut = walkOutDue(ctx);
     firesOut(ctx, state.tick);
@@ -414,6 +423,10 @@ function perform(ctx: Ctx, a: Action): void {
     case 'dig':
       // a logged dig from format 1 may name a spot by its old source id
       return dig(ctx, ctx.b.instances[a.spot] ? a.spot : legacyNodeId(a.spot), a.grade, a.at);
+    case 'search':
+      return search(ctx, a.spot, a.at);
+    case 'take':
+      return takeRows(ctx, a.spot, a.row, a.at);
     case 'craft':
       return craft(ctx, a.recipe, a.at);
     case 'eat':
@@ -623,6 +636,69 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
   gainXp(ctx, 'dig', grade === 4 ? d.active_ms * JACKPOT_XP : d.active_ms);
   if (grade === 4) ctx.events.push({ e: 'jackpot', verb: 'dig' });
   solveRiddles(ctx, { kind: 'dig', treasure: inst.source });
+}
+
+/** The searchable an id names and the prop it hangs on; the player must stand beside the prop. */
+function searchableAt(ctx: Ctx, spotId: string, at: Tile): SearchDef {
+  const def = ctx.b.searchables[spotId];
+  const prop = def === undefined ? undefined : ctx.b.map.props.find((p) => p.id === def.place.prop);
+  if (!def || !prop) refuse('There is nothing to search here.');
+  checkAt(ctx, at, prop);
+  return def;
+}
+
+/**
+ * Look inside a searchable (SEARCH.md rules 2-5). After each dawn its rows are drawn once, each on its own from
+ * f(seed, searchable and item, dawn), so the same day shows the same contents however often it is opened. Rare and
+ * legendary rows are tilted by the multiplier of a dig's rare finds; common rows are not. Nothing is drawn while
+ * the day's rows stand, even when they were all taken, so a searchable never refills before the next dawn.
+ */
+function search(ctx: Ctx, spotId: string, at: Tile): void {
+  const { b, s } = ctx;
+  const def = searchableAt(ctx, spotId, at);
+  const dawn = searchDawn(b, ctx.tick);
+  const book = (s.searched ??= {});
+  let held = book[spotId];
+  if (!held || held.dawn !== dawn) {
+    const luck = rareFindPermille(b, s);
+    const rows: string[] = [];
+    for (const row of def.rows) {
+      let bp = row.chance_pct * 100;
+      if (rarityRank(b.items[row.item]?.rarity ?? 'common') >= 2) bp = Math.min(10_000, mulDiv(bp, luck, 1000));
+      if (drawBasisPoints(s.seed, `search:${spotId}:${row.item}`, dawn) < bp) rows.push(row.item);
+    }
+    held = { dawn, rows };
+    book[spotId] = held;
+  }
+  ctx.events.push({ e: 'search', spot: spotId, rows: [...held.rows] });
+}
+
+/**
+ * Move one row (or, with no `row`, every row) of a searched searchable into the bag. What does not fit stays inside
+ * and is told once as a full bag; with no room at all the answer is the dig's, "Your bag is full."
+ */
+function takeRows(ctx: Ctx, spotId: string, row: number | undefined, at: Tile): void {
+  const { b, s } = ctx;
+  searchableAt(ctx, spotId, at);
+  const held = s.searched?.[spotId];
+  if (!held || held.dawn !== searchDawn(b, ctx.tick) || held.rows.length === 0) refuse('There is nothing to take.');
+  if (row !== undefined && (!Number.isSafeInteger(row) || row < 0 || row >= held.rows.length)) refuse('That is not here.');
+  let room = Math.max(0, bagCapacity(b, s) - bagUsed(s));
+  if (room <= 0) refuse('Your bag is full.');
+  const kept: string[] = [];
+  const left: Record<string, number> = {};
+  held.rows.forEach((item, i) => {
+    if (row !== undefined && i !== row) return void kept.push(item);
+    if (room > 0) {
+      room -= 1;
+      take(ctx, item, 1);
+    } else {
+      kept.push(item);
+      left[item] = (left[item] ?? 0) + 1;
+    }
+  });
+  held.rows = kept;
+  for (const item of Object.keys(left).sort()) ctx.events.push({ e: 'bag_full', item, qty: left[item]! });
 }
 
 function craft(ctx: Ctx, recipeId: string, at: Tile): void {
