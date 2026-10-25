@@ -14,6 +14,7 @@
       "kind": "material",
       "rarity": "common",
       "class": "fibre",
+      "tags": ["medicine"],
       "tier": 1,
       "sprite": "core/base-kit:items/first-aid-kit",
       "weight": 1,
