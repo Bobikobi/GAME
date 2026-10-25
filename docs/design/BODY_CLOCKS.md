@@ -1,8 +1,8 @@
-# Body clocks: what the big games keep, what Openfold keeps, and the call (2026-10-25)
+# Body clocks: what the big games keep, and the owner's answer: two bars, harsh places, gear and dishes (2026-10-25)
 
-The owner, 25.10, on the progression map's Q8: align the body clocks with the big games; research and cross-check before deciding. This page reads every body clock and need the game has on `origin/develop`, reads the reference games' clocks with their published numbers, crosses the two, and recommends one aligned set. It decides nothing: Q8 is the owner's, at the end (section 8), with options and a recommended default.
+The owner, 25.10, on the progression map's Q8: align the body clocks with the big games; research and cross-check before deciding. Sections 1-4 read every body clock and need the game has on `origin/develop`, read the reference games' clocks with their published numbers and cross the two; they stay as the research record. The owner then answered Q8 the same day with none of the three options the first draft offered (a cold clock, a hard mode, no clock), and answered its two follow-ups: **the body has two bars only, health and experience; a place is harsh, it slows and takes health by its grade, and what the player wears answers it; food heals and cooked dishes give timed effects from a closed list; sleep only saves and passes the night.** Sections 5-9 write that model out; section 10 holds it against the decisions, section 11 is the record of the answers.
 
-Its entry: DECISIONS 2026-10-25 ⏸ "Body clocks: the research for Q8". Its parent: [PROGRESSION.md](PROGRESSION.md) section 4.5 and Q8. Design only: no schema, kernel, content, parameter or screen changes with it. Every number in sections 5 and 6 is **proposed**.
+Its entries: DECISIONS 2026-10-25 ⏸ "Body clocks: the research for Q8" (now answered) and the ✅ entries "The progression map, Q8", "Q8a" and "Q8b". Its parent: [PROGRESSION.md](PROGRESSION.md) section 4.5 and Q8. Design only: no schema, kernel, content, parameter or screen changes with it. The model is the owner's; every number in sections 5-9 is **proposed** and moves with play.
 
 Facts are read from `origin/develop` @ a6b0bf28: `kernel/src/state.ts` (`satiety`, `satietyCap`, `satietyAt`), `kernel/src/step.ts` (`eat`, `hurt`, the fall, the low-health slow-down, the hunt refill), `content/core/params.json` (`satiety_cap`, `satiety_drain_per_min`, `per_point.stamina`, `hp_low_pct`, `day_length_ms`, `fire`, `hazard`, `light`), `content/core/recipes/` and `resources/` (the foods), `content/core/schools/cooking.json` (`meal_fill_pct`), `schema/src/index.ts` (`CLIMATES`, `WORN_EFFECTS`), GAME_RULES G28-G34 and G48, NATURE.md sections 2 and 4.
 
@@ -73,107 +73,189 @@ Our clocks across, the games down the side would not fit a phone; so the rows ar
 8. **Nothing runs while the player is away**, in every one of them; where a buff ends at logout (Valheim's Rested) it is a lost bonus, not a loss.
 9. **The scale is real time, not game time.** Skyrim's rates per game hour, copied to a 20-minute day, would run 3.6 times faster in real minutes (its game hour is 3 real minutes, ours 50 s); every rate below is set in real minutes first and written in game hours after.
 
-## 5. The recommended set for Openfold (Q8 option A, proposed)
+## 5. Harsh places (Q8, Q8a)
 
-### 5.1 The set in one line
+### 5.1 The model in one line
 
-Health stays the one bar. One clock is added, **cold**, and it runs only in cold places. Two **bonuses** are added for being well kept, **Fed** and **Rested**; neither has a penalty side. Hunger, thirst, tiredness, sanity and an energy bar are not added. Combat's breath (Guard reads stamina, PROGRESSION 4.2) is COMBAT's to write and is read only in a fight.
+Two bars, health and experience, and nothing else on the body. A place carries **conditions** at a **harsh grade**; an unanswered grade slows walking and work and takes health; a garment's **trait** answers one condition by its tier, and a dish adds one step. Leaving the place, or a safe place, ends it.
 
-### 5.2 Cold: a place clock that settles
+### 5.2 The ladder (closed, proposed)
 
-```
-chill(place, hour, weather)  = climate_chill[climate]     temperate 0, wet 0, dry 0, cold 2
-                             + 1 at night (20:00-05:00, the dark the world already keeps)
-                             + 1 in rain or snow, + 1 standing in water
-                             clamped to 0..chill_max (4); temperate clamped to temperate_chill_max (1)
-                             a region of the map plan may declare its own (the south's heights)
-target(chill, warmth)        = chill * 250 * (1000 - 850 * min(warmth, warmth_max) / warmth_max) / 1000
-cold moves toward target     up   cold_rise_per_hour  150 * (100 - cold_pct) / 100       (Survival's node)
-                             down cold_fall_per_hour  300
-                             at a burning fire within its safe tiles, an inn, a pitched tent or in a town:
-                             down cold_fire_per_hour 1200, and the target is 0
-```
+The drain is a **share of the player's own maximum health per game hour** (health cap = 100 + 20 a point of stamina), so a grade means the same thing to a new player and a strong one, and stamina never makes a place harmless; what moves the time is the answer worn and eaten. Shown per real second for a new player (cap 100) and a mid one (stamina 5, cap 200).
 
-Kept lazily, as health is: the kernel brings `cold` up to the step's tick by walking the boundaries in between (dusk, dawn, a day's weather), each a pure function of the tick and the seed, so the server replays it and nothing runs off screen (R1).
+| Grade | Name | Walk x | Work x | Drain, of the cap a game hour | New (100) | Mid (200) | Bare, full to zero |
+|---|---|---|---|---|---|---|---|
+| 0 | calm | 1.0 | 1.0 | none | none | none | never |
+| 1 | rough | 1.15 | 1.15 | 20% | 0.4 a second (a point every 2.5 s) | 0.8 a second | 5 game hours, **4 min 10 s** |
+| 2 | severe | 1.3 | 1.3 | 35% | 0.7 a second | 1.4 a second | 2.9 game hours, 2 min 23 s |
+| 3 | extreme | 1.5 | 1.5 | 60% | 1.2 a second | 2.4 a second | 1.7 game hours, 1 min 23 s |
+| 4 | deadly | 2.0 | 2.0 | 100% | 2 a second | 4 a second | 1 game hour, 50 s |
 
-| Cold | Word on screen | What it does |
+Calm snow is grade 1: a new player in it with nothing on loses about a point every two and a half seconds and has a little over four minutes from full, the owner's "tolerable for a few real minutes". Grade 4 is for one or two places at the end of the long way only, and still never a door (P3): a bare player can step in for fifty seconds and back out.
+
+The slow is on the step (`walk_step_ms` x the grade's walk) and on every work time (as `hp_low_pct`'s x1.5 is); the two multiply when both apply. The drain is counted in the kernel per game millisecond in integer basis points with the remainder carried, so it is exact and replayable.
+
+### 5.3 Times with an answer
+
+The strength `s` of the answer lowers the grade: remaining = max(0, grade - s). Fully cancelled when `s` meets the grade, one grade down when it is one short, and so on.
+
+| Grade | Bare | New, tier 1-2 trait (s 1) | Mid, tier 3-4 trait (s 2) | Mid + a matching dish (s 3) | Late, tier 5 trait (s 3) | Late + dish or a master piece (s 4) |
+|---|---|---|---|---|---|---|
+| 1 rough | 4 min 10 s | none | none | none | none | none |
+| 2 severe | 2 min 23 s | 4 min 10 s (as grade 1) | none | none | none | none |
+| 3 extreme | 1 min 23 s | 2 min 23 s | 4 min 10 s | none | none | none |
+| 4 deadly | 50 s | 1 min 23 s | 2 min 23 s | 4 min 10 s | 4 min 10 s | none |
+
+A dish's "health back over time" (section 7) stretches a time: at tier 3 (4% a game hour) grade 1 bare goes from 4 min 10 s to 5 min 12 s. Food eaten heals in points, as today.
+
+### 5.4 Conditions and where a grade comes from (closed, proposed)
+
+| Condition | What it is | Where |
 |---|---|---|
-| 0-99 | Warm | nothing; the chip shows it by a fire |
-| 100-299 | Cool | nothing |
-| 300-599 | Cold | work takes 1.25 times as long |
-| 600-899 | Freezing | work takes 1.5 times as long, walking 1.25; one warning box when it begins (G31) |
-| 900-1000 | Numb | as Freezing, and health falls `numb_harm_permille` 100 of the cap a game hour; zero is a fall (G33) |
+| `frost` | biting cold | cold climate: the north's heights; +1 at night (20:00-05:00) |
+| `deep_snow` | snow above the boot | cold climate on a snow day; +1 from noon (snow deepens over the day) |
+| `storm` | wind and driving rain or sleet | wet and cold climates on a storm day (+1); exposed heights |
+| `ice` | footing that slides | frozen water, glacier, rime on rock in the cold |
+| `heat` | sun and dry heat | dry climate, 11:00-16:00 |
 
-What the numbers give, against our short day (a game hour is 50 real seconds). A bare player in the worst place (a cold climate's snowy night, chill 4) is Cold after 2 game hours (1.7 real minutes), Freezing after 4 (3.3 min), Numb after 6 (5 min), and falls about 8 minutes later: some 13 real minutes of neglect, after a warning, which sits between Skyrim (Freezing in about 6 real minutes) and The Long Dark (an empty warmth bar in about 5). The same player on a cold climate's clear night (chill 3) settles at Freezing and is never hurt; by day (chill 2) at Cold. A temperate night never passes Cool, so the valley the game opens in has no cold clock to speak of. A full warm outfit (warmth 100) settles even the snowy night at 150, Cool. A fire takes Numb to Warm inside a game hour.
+- A region of the map plan declares a base grade per condition (`conditions?: { frost: 1, deep_snow: 2 }`), and `climates.json` (NATURE step 3, not built) carries the night, noon and weather steps per climate. The hour and the day's weather move a grade within the region's own cap.
+- A grade is never above the area's danger level `d`, the one integer scale that rates areas (decisions 3.10 and 10.10). Ground at `d` 0 is a safe place (G30) and is never harsh; the valley (temperate, `d` 0 in the opening) stays calm, and its storm and snow are look and sound only.
+- Several conditions at once: each is answered on its own, and the **highest remaining grade** gives the slow and the drain. They never add.
+- Weather never touches a fire (G48); a fire's safe tiles are a safe place (G30), where the drain stops; the slow stays outside them.
 
-**Warmth.** A worn piece's `warmth` = the slot's share x the class's factor x the tier's factor. Shares: top 30, legs 20, head 15, feet 15, back 20 (a cloak; the back slot of 23.10), so a full set is `warmth_max` 100. Class: cloth and fur 1.0, leather 0.7, mail 0.3, plate 0.2 (the race answer's "a weakness matched by an advantage" in a thing: plate turns blows and is cold). Tier: 0.4, 0.7, 1.0 for tiers 1-3, the cap. Tailoring's `warmth_pct` and the quality roll move a piece inside its tier, as worn effects move (PROGRESSION 5.2); fur comes from Hunting. A warm piece names Survival in its wear requirement (PROGRESSION 5.6). A **warm meal** (Cooking's `warm_meal`, a hot dish eaten) takes 200 off at once and adds 25 warmth for 3 game hours (Skyrim's hot soup, The Long Dark's Warming Up). Weather never touches a fire (G48): rain chills the player, never the flame. A race wing may carry a step of chill (Skyrim's Nords resist cold, its Argonians chill faster); the race pages decide that, not this one.
+### 5.5 Warned, never by surprise (G31, G29)
 
-### 5.3 Fed: the meal as a bonus
+A place's card shows its conditions by sign and count (a snowflake, a gust, an icicle, a sun; one to four marks), never by colour alone (G29) and never by a percentage (decision 39). Stepping into a grade that the player's answer does not meet opens one warning box (G14) once an outing, and while health drains a countdown to zero sits at the screen's edge, where the night's countdown sits. At zero the fall of G33 applies as it is: the outing's gatherings are lost, the bag from before is kept.
 
-A cooked meal (kind `food`, class `meal`) makes the player **Fed** for `fed_hours` by the meal's tier, proposed 8, 12, 16 game hours (about 7, 10, 13 real minutes; Valheim's meals last 10-50). Fed raises the health cap by `fed_cap_pct` 20 while it lasts, so food and rest fill higher. One meal counts at a time: a better one replaces, the same one refreshes; Survival's `fed_long` and Cooking's `meal_keeps` lengthen it. When Fed ends the cap returns, and health above it stays until something takes it: nothing drains by the clock (G32). Raw food heals and does not feed. Eating is still how the player heals (G32), and `meal_fill_pct` still sizes the heal.
+### 5.6 What it does not do
 
-### 5.4 Rested: the night as a bonus
+No meter, no slow fill and empty, no "warm" state carried out of the place: the cost is the place's, at this moment, and ends when the player leaves it or reaches a safe place. Nothing runs while away (G28): the world waits at the hour it was left. No condition is a door (P3), and no node answers a condition (that is the garment's and the dish's).
 
-A night slept makes the player **Rested** until the next dusk (20:00): in one's own valley, the sleep of 10.10 (20:00 to 05:00 at a town or a burning camp); in a shared world, the game hour's rest of 10.10 after dusk at an inn's bed, a pitched tent or one's own burning fire; and a return after logging out at any of these (a return is rewarded, G28; World of Warcraft's rested state is the nearest). Rested makes work take `rested_work_pct` 5% less time, a rate under the power cap with everything else (R9). It never touches experience: the group rule's +20% is the one multiplier on experience (PROGRESSION 3.7), and Skyrim's, Fallout's and Valheim's experience bonuses are the one part of their rest this set does not copy. A later house or inn room may add comfort steps (Valheim's comfort), never a penalty for sleeping rough.
+## 6. Garments and traits (Q8)
 
-### 5.5 Why nothing else
+### 6.1 The trait list (closed)
 
-- **Hunger** stays out (G32, 11.10). If it is ever wanted, the form the big games prove is Minecraft's: spent by effort, never by the clock, and never below neutral; that is option B's opt-in shape, not A's.
-- **Tiredness** stays out: the night already is the clock that sends a player to a fire, an inn or a tent (G30), and a second clock pulling the same way would be the nag.
-- **Thirst** is kept only by Fallout and The Long Dark, the two hardest; **sanity** by Don't Starve, and the dark's menace is already the predators' (G30); an **energy** budget (Stardew) would ration play against "a return is rewarded".
+| Trait | Answers | Slots it may sit on | Made by (existing schools) | Material |
+|---|---|---|---|---|
+| `cold_proof` | `frost` | top, back, head | Tailoring (wool, fur), Leatherwork (lined hide) | wool from the farm, fur from Hunting |
+| `snow_shod` | `deep_snow` | feet | Woodcraft (snowshoes), Leatherwork (high boots) | ash and gut, hide |
+| `storm_proof` | `storm` | back, top | Tailoring (oiled cloth), Leatherwork (waxed hide) | linen and oil, hide and wax |
+| `ice_grip` | `ice` | feet | Handcraft's Stonework (stone studs, tiers 1-2), Smithing (iron cleats, tier 3 and up; city only, decision 51) | stone, iron |
+| `heat_ward` | `heat` | head, top | Tailoring (light cloth, a wide hat) | linen, reed |
 
-### 5.6 How it avoids nagging
+### 6.2 Strength by tier
 
-1. No clock runs in a safe place, in the temperate valley past Cool, or while the player is away; every field shifts on `resume`.
-2. Cold settles: a player dressed for a place never climbs past where warmth puts them, so the answer is made once, by Tailoring, not repeated by a timer.
-3. Fed and Rested lapse to neutral, never below it.
-4. One chip, shown only when the body is not neutral (G3's spirit and the "Empty tab" pattern): the cold word, a small meal mark while Fed, a small moon while Rested. Words and marks, never numbers or percentages (decision 39); the frost edge at Freezing has a shape as well as a colour (G29) and holds still under reduced motion.
-5. Harm comes only at Numb, only after the Freezing warning (G31), and only in the worst places.
-6. Nothing is spent to stay warm but a fire's logs, already the night's price; clothing never wears out (9.10).
+- A garment's trait strength: **1 at tiers 1-2, 2 at tiers 3-4, 3 at tier 5** (`trait_strength_by_tier`), +1 for a master piece of Tailoring's `quality_pct` roll (the quality is the lever; there is no warmth number). The strongest piece of one trait counts; two pieces of one trait never add.
+- The trait follows the Q5 one-tier-ahead rule (PROGRESSION 5.6): a piece worn below its requirement counts as one tier above the wearer's own, so `s` = strength of min(piece tier, own tier + 1).
+- A dish of the same condition adds +1, whatever its tier, and only one dish counts (section 7.6). The garment is the main answer, the dish the last step.
+- **The ceiling**: the total, garment + master step + dish, never exceeds the strength of the wearer's own tier + 1 (`answer_over_tier_max` 1): `s = min(garment + master + dish, trait_strength_by_tier[own tier] + 1)`. No combination answers more than one grade above the wearer's tier (the balance proof's invariant 3).
+- Every garment still carries its tree points (attribute bonuses, shown as base + gear in another colour, PROGRESSION 5.6) and its worn effects. A trait is on **some** pieces only: one trait a piece at most, set by its recipe, or added at the bench by Tailoring's `trait_sew`.
+- **A trait never adds experience.** Experience stays active work time a second (PROGRESSION 3.2), so a slower step in a harsh place is the same experience a second and fewer things an hour; a harsh place never pays more.
+- A look (the look layer) never carries a trait.
 
-## 6. Kernel shape, if A (proposed; additive; integer)
+## 7. Food and dishes (Q8b)
 
-- `Player.cold?`, `Player.coldAt?` (lazy, as health), `Player.fedUntil?`, `Player.fedCap?`, `Player.restedUntil?`, `Player.warmUntil?`; all shifted by `resume`, so "The world's hour is the server's clock" (20.10) grows its list of shifted fields, as its own Retry-when foresaw.
-- Items: `warmth` on a worn piece (an integer, beside `effects`), `warm?: true` on a hot meal.
-- Regions: `chill?` on a region of the map plan; `climates.json` (NATURE step 3) carries `chill` per climate.
-- Actions: the sleep action of 10.10 when it lands sets `restedUntil`; `eat` sets Fed for a meal; no new action for cold.
-- Events: `cold` when the word changes; `fed`, `rested` when a bonus begins or ends.
-- Params (`body`): `climate_chill`, `chill_max` (4), `temperate_chill_max` (1), `chill_step` (250), `warmth_max` (100), `warmth_relief_permille` (850), `cold_rise_per_hour` (150), `cold_fall_per_hour` (300), `cold_fire_per_hour` (1200), `cold_steps` [100, 300, 600, 900], `cold_work_pct` [0, 0, 25, 50, 50], `numb_harm_permille` (100), `warm_meal_drop` (200), `warm_meal_warmth` (25), `warm_meal_hours` (3), `fed_hours` [8, 12, 16], `fed_cap_pct` (20), `rested_work_pct` (5); each with min, max and step (R12), and each names its clock (the game hour, 10.10).
-- Checks: the reference player (9.10) is neither Fed nor Rested nor dressed; a worn piece's warmth never passes its slot's share; a temperate region never declares a chill above `temperate_chill_max`.
+### 7.1 The model in one line
 
-## 7. Against the decisions
+Food gives health back, as today. A **cooked dish** also gives up to two **timed effects**. The effect list may grow as large as content needs (the screen explains each effect, so nothing has to be remembered); what keeps it safe is that **every effect is a closed numeric definition**, so the whole space is computable and checked (PROGRESSION 4.7, the balance proof). The richness lives in the **catalogue**: many ingredients a region, each with one or two effect tags, and dishes that combine them. Finding dishes and ingredients is part of exploring (Skyrim's alchemy: about 55 effects over more than 100 ingredients; Valheim: about 40 foods, three at once).
 
-| Draft rule (option A) | Decision | Verdict | Note |
+### 7.2 The effects: each a closed numeric definition (proposed)
+
+Every effect is one row in content with five fields, and nothing else: its **stat** (what the kernel reads), its **kind** (`flat`: adds a number; `mult`: multiplies a time or a rate, in permille; `cancel_grade`: lowers one condition's grade by whole steps), its **strength by tier** (five numbers), its **duration by tier** (the dish's, 7.5), and its **category** (the stacking class of the balance proof: `food` for every dish effect). One kernel reader serves each kind, so a new effect is a data row, never new code, and the content check refuses a row with a stat no reader knows.
+
+| Effect | Stat | Kind | Strength, tiers 1-5 |
 |---|---|---|---|
-| Health stays the one bar; Fed and Rested are bonuses | G32 "Health is the one bar" (8.10, 11.10) | agrees | no second bar; Fed raises the cap and never clips health |
-| No bar empties by the clock in the valley | the forbidden pattern "Hunger clock"; G28 | agrees | cold runs only in cold places and settles; option B would conflict and needs the rule rewritten for its mode |
-| Nothing runs while away; fields shift on `resume` | G28; "The world's hour is the server's clock" (20.10) | agrees | its Retry-when named "a resumed player's fire or hunger"; the list grows |
-| Clothing and a fire answer cold | G34 "the answer is a run, never gear"; the forbidden pattern "Gear answer" | **conflicts** | declared; already bent by "The night ruins are revived" (25.10: readiness is made: a torch, clothing, cooked food, climbing gear); the rules pull request writes G34 as "a hunting hazard is answered by a run; a place's clock by readiness" |
-| A warning before cold can harm | G31 "Nobody falls unwarned" | agrees | the Freezing box, once a night |
-| Numb's health loss can end in a fall | G33 | agrees | a fall like deep water's; the outing's cost as written |
-| Rain chills the player, never the fire; nothing makes a fire burn longer | G48 (19.10: weather never touches a fire) | agrees | |
-| Rested speeds work | "The world and its clocks: nothing shortens a wait" (10.10); R9 | agrees | a rate on active time under the power cap; no wait, respawn or night moves |
-| Rested rides on the night's sleep and the tent | "The world and its clocks: sleep" (10.10); "The tent comes back as a portable inn" (23.10); "A campfire is the safe way to log out" (23.10) | agrees | |
-| A sleeper in the open | "Logging out with no fire, tent or inn leaves the character asleep in the world" (23.10) | agrees | the sleeper's clocks stop with the player's; what harms a sleeper is the combat wave's |
-| The valley stays at Cool at worst | NATURE 10.2 (the valley is temperate; snow a rare winter day in the hills) | agrees | `temperate_chill_max` 1 |
-| No experience from the body | the group rule's +20% (Q7, 25.10); R6 | agrees | the one multiplier stays one |
-| Cold gives Tailoring and Survival their work | "The night ruins are revived" (25.10: "cold and food on the long way"); PROGRESSION 4.2 | agrees | `warmth_pct`, `cold_pct`, `warm_meal`, `fed_long` |
-| Every parameter names its clock | "The world and its clocks: three clocks" (10.10) | agrees | all on the game hour; the 10.10 "three clocks" are time bases, not body clocks |
-| No percentage on screen | decision 39 (22.10) | agrees | words and marks |
+| `cold_proof`, `snow_shod`, `storm_proof`, `ice_grip`, `heat_ward` | the grade of `frost`, `deep_snow`, `storm`, `ice`, `heat` | `cancel_grade` | 1, 1, 1, 1, 1 step |
+| `work_<school>` (one per working school: Foraging, Woodcutting, Digging, Mining, Fishing, Hunting, Cooking, Handcraft, Woodcraft, Tailoring, Leatherwork, Smithing, Remedies, Tinkering) | that school's work time | `mult` | 950, 920, 880, 840, 800 permille |
+| `hp_max` | the health cap | `mult` | 1050, 1100, 1150, 1200, 1250 |
+| `regen` | health back a game hour, of the cap | `flat` | 200, 300, 400, 500, 600 bp |
+| `mend` | health from food, kits and bandages | `mult` | 1100, 1150, 1200, 1250, 1300 |
+| `light_sense` | sight in the dark, tiles (the torch's light stays the item's) | `flat` | 1, 1, 2, 2, 3 |
+| `find_sense` | the rare-find roll (`rare_find_pct`) | `flat` | 2, 3, 4, 5, 6 points |
+| `weather_sense` | game hours of a place's coming conditions shown on its card | `flat` | 2, 3, 4, 6, 8 |
+| `track_sense` | tiles at which a creature's trail shows | `flat` | 2, 3, 4, 5, 6 |
+| `fleet` | `walk_step_ms` on open ground | `mult` | 950, 920, 900, 880, 850 |
 
-## 8. Q8: the call
+27 effects today; the combat layer may add `strike`, `aim` and `guard` as `mult` rows, and later regions what their content needs, each a row of the same five fields. No row may name experience (the check refuses the stat), and none touches a hunting hazard (the wolf, the pit, the trap, deep water at night): their answer stays the run (G34).
 
-Asked as one question: **how should the body clocks work?**
+### 7.3 Ingredients, dishes and the finding
 
-- **A** (**recommended**): cold only, and only in cold places; it settles where worn warmth puts it and a fire resets it. Two bonuses for being well kept, never a penalty for not: Fed after a cooked meal (a higher health cap for a while) and Rested after a night slept (a little faster work until dusk). No hunger, thirst or tiredness bar. Aligned with Skyrim and Fallout outside their opt-in modes and with Valheim inside a cold biome; gives Tailoring, Survival, Cooking and the fire their work on the long way; keeps G32 and needs only G34 rewritten for places.
-- **B**: A, plus an opt-in hard mode per character with hunger and tiredness that drain while playing and stage penalties (Skyrim's Survival Mode, Fallout 4's Survival, New Vegas Hardcore). Needs G32 and "Hunger clock" rewritten for that mode, and a second balance of everything food and sleep touch.
-- **C**: no clock: cold stays a place's hazard escaped by a fire, as today; clothing's warmth is a look and a small percentage, and Tailoring and Survival lose their reason in the south.
+- **An ingredient** carries its raw health (as the berry's 4 today) and **one or two effect tags**. Eaten raw it heals and does nothing more, and shows its first tag (Skyrim's first bite); its second shows the first time a dish uses it.
+- **A dish** is two to four ingredients at a cooking place. Its effects are **the tags at least two of its ingredients share**, at most two (Skyrim's rule, cut to two). Each named recipe in content lists its ingredients; its effects are derived, never declared, and the content check refuses a recipe whose ingredients share fewer than one tag or more than two, so the catalogue cannot drift from the rule.
+- **The finding**: the pot takes any two to four ingredients. A set that matches a recipe makes the dish and writes it into the player's cookbook; a set that matches none makes a plain stew (health only) and is remembered as tried. A Lore book or a townsperson can give a recipe, as a book gives a node (GROWTH 4.3). Cooking's `taste_read` shows tags sooner; nothing shows all of them at once.
+- The dish's tier is its recipe's (the Cooking band that makes it); its health back grows with the tier as the stew's 40 does now.
+
+### 7.4 The catalogue, by region (target, proposed)
+
+| Where | Ingredients | Dishes | Tiers |
+|---|---|---|---|
+| The valley (the opening) | 12 | 16 | 1-2 |
+| Each further region | 16-20 | 20-30 | the region's |
+| The whole map at the end of the long way | 120 or more | 180 or more | 1-5 |
+
+Spread rules for the content check: every effect sits on at least 4 ingredients in at least 2 regions; every region grows at least one ingredient carrying the place answer its own conditions call for (the answer is found near the problem, as Valheim's mountain gear comes from the mountain); a school's work effect sits mostly in the regions where the school works; no ingredient carries two place answers.
+
+### 7.5 Duration by tier (proposed)
+
+| Dish tier | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|
+| Lasts, game hours | 6 | 9 | 12 | 18 | 24 |
+| Real time | 5 min | 7 min 30 s | 10 min | 15 min | 20 min (one day) |
+
+Cooking's `long_simmer` lengthens a dish's time; no node adds strength beyond its tier. The card and tooltip say each effect in words and marks, never a percentage (decision 39).
+
+### 7.6 Bounded: two at once
+
+- **Two dish slots.** At most two dishes count at once, so at most four effects. A third dish replaces the one with less time left, and the card says which effect would end before it is eaten.
+- The same effect in both slots: the **stronger counts**, never the sum. Only one dish's place answer counts (+1 step). Dish effects stack with the tree and gear in the balance proof's fixed order (PROGRESSION 4.7): additive within a category, multiplicative across categories, then each stat's hard cap; a `work_*` or `fleet` dish is a rate under the power cap (R9) with everything else.
+- When `hp_max` ends, health above the cap falls to the cap; nothing else is lost. A lapsed dish is the absence of a bonus, never a penalty (the research's point 2).
+- **A dish never adds experience.** Faster work in a school is the same experience a second (PROGRESSION 3.2); the mentor's +20% stays the one multiplier (3.7).
+- What it replaces: the first draft's "Fed" is folded into the dish effects; Cooking's `meal_fill_pct` stays the health a meal gives back.
+
+## 8. Sleep (Q8b)
+
+Sleep saves the game and passes the night: in one's own valley, sleeping in a town or at a burning camp after 20:00 moves the clock to 05:00 (as decided, not built), and health comes back as G32 says. **No Rested bonus**: the owner dropped it. The research's games tie Rested to experience (Skyrim +5% to +15%, Fallout +10%, Valheim +50% to skills), which here would be a second multiplier on experience beside the mentor's (3.7). Sleep is never needed: there is no tiredness.
+
+## 9. Kernel shape (proposed; additive; integer)
+
+- Schema: `CONDITIONS` = `frost | deep_snow | storm | ice | heat`; `TRAITS` = `cold_proof | snow_shod | storm_proof | ice_grip | heat_ward` with `TRAIT_ANSWERS` (trait -> condition); `DISH_EFFECTS` (section 7.2); an item's `trait?: Trait`; a resource's `tags?: DishEffect[]` (one or two); a recipe's effects derived and checked.
+- Params, `place`: `grades` = `[ {walk_pct: 100, work_pct: 100, drain_bp_h: 0}, {115, 115, 2000}, {130, 130, 3500}, {150, 150, 6000}, {200, 200, 10000} ]`, `trait_strength_by_tier` [1, 1, 2, 2, 3], `master_step` 1, `dish_place_step` 1, `answer_over_tier_max` 1, `deadly_places_max` 2. Params, `dish`: `slots` 2, `effects_max` 2, `ingredients` [2, 4], `dur_gh_by_tier` [6, 9, 12, 18, 24]. Content: `effects/*.json`, one row an effect with `stat`, `kind`, `by_tier`, `category` (7.2). The balance proof's rows: PROGRESSION 4.7.
+- A region of the map plan: `conditions?: { [c in Condition]?: grade }`; `climates.json` per climate: `night`, `noon`, `weather` steps per condition.
+- Player: `dishes?: { effects: DishEffect[]; tier: number; until: number }[]` (at most two). No body field for places: the grade at a tile is a pure function `harshAt(bundle, tile, time, weather)`, capped by `dangerAt`, and the drain is applied on the step that moves time, as `hurt` is, only while the player is in the world.
+- The move check reads the place's walk multiplier with `walk_step_ms`; work times read the work multiplier where `hp_low_pct` is read.
+
+## 10. Against the decisions
+
+| Rule or decision | Reading | How it is kept |
+|---|---|---|
+| G32 Health is the one bar | **agrees**: two bars, health and experience; no other meter | the drain and the dishes act on health only |
+| G32 "Nothing drains it by the clock (G28)" | **bends** (Q8a, the owner) | the drain is the place's, never the body's: it runs only while standing in an unanswered grade, stops in a safe place, never runs while away; outside harsh places nothing drains |
+| G28 No dark patterns; nothing runs while away | agrees | the world waits at the hour it was left; a lapsed dish is a missing bonus, not a loss |
+| G31 Nobody falls unwarned | agrees | the card's marks, one warning box an outing, the countdown at the edge (5.5) |
+| G33 The fall | agrees | at zero, as written |
+| G34 "the answer is a run, never gear"; the forbidden pattern "Gear answer"; "A hazard is escaped, never answered by an item" (10.10) | **conflicts**, declared, further than before | gear (and one dish step) answers a place's condition; a hunting hazard is still answered by the run, and no trait or dish effect touches one; the rules pull request writes G34 as "a hunting hazard is answered by a run; a place's condition by what is worn and eaten" |
+| G34 "Food ... heal, they do not answer a hazard" | **bends** (Q8b) | a dish answers a place's condition, one step, never a hazard |
+| G29 colour is never the only signal; decision 39 no percentages | agrees | marks and words on the card (5.5, 7.5) |
+| G30 one safe place; ground at `d` 0 | agrees | a grade never exceeds `d`; the drain stops in a safe place |
+| G48 weather never touches a fire | agrees | weather moves a grade, never a flame |
+| P3 a band gates nodes, never verbs | agrees | no grade is a door; grade 4 is enterable bare for 50 s |
+| R6, 3.7 the one multiplier on experience | agrees | traits, dishes and sleep add none; the balance proof's invariant 2 checks it |
+| R9 one power cap over everything worn, learned and slotted | refines, declared | the proof keeps R9's one sum for the tree-and-gear category and multiplies food and the mentor across it before each stat's cap (PROGRESSION 4.7, 10) |
+| Q5 one tier ahead | agrees | the trait reads min(piece tier, own tier + 1) |
+| The forbidden pattern "Hunger clock" | agrees | food is bonus and healing, never a need |
+
+## 11. The answers (25.10)
+
+- **Q8.** The first draft offered A (a cold clock that settles where worn warmth puts it, plus Fed and Rested as bonuses), B (A plus an opt-in hard mode) and C (no clock). The owner took none of them: **two bars only, health and experience; a place is harsh, gear answers it.** The cold track and its ladder (Warm, Cool, Cold, Freezing, Numb) and the warmth number are dropped; the research's point 4 ("cold is a place") and point 5 ("dressing for a place is an answer, once") are what the model keeps.
+- **Q8a.** Harsh places slow **and** take health, graded by how dangerous the place is; the right gear cancels the cost fully or one grade down (section 5).
+- **Q8b.** Food heals, and cooked dishes give timed effects from a closed list, with a huge catalogue of ingredients and dishes; one or two effects at once; never experience. Sleep saves and passes the night only: the Rested bonus is dropped, and Fed is folded into the dish effects (sections 7-8).
 
 ## Sources
 
 - The Elder Scrolls V: Skyrim, Survival Mode (Bethesda, 2017; Creation Club): https://en.uesp.net/wiki/Skyrim:Survival_Mode, https://en.uesp.net/wiki/Skyrim:Hunger, https://en.uesp.net/wiki/Skyrim:Fatigue, https://en.uesp.net/wiki/Skyrim:Cold, https://en.uesp.net/wiki/Skyrim:Sleeping. Flagged: the hours to clear full fatigue (8 by the rate, 11 by the page) and Well Rested's length in Survival.
 - Fallout 4 Survival and Fallout: New Vegas Hardcore (Bethesda, Obsidian): https://fallout.fandom.com/wiki/Survival_mode, https://fallout.fandom.com/wiki/Hunger, https://fallout.fandom.com/wiki/Thirst, https://fallout.fandom.com/wiki/Resting, https://fallout.fandom.com/wiki/Well_Rested, https://fallout.fandom.com/wiki/Lover%27s_Embrace, https://fallout.fandom.com/wiki/Hardcore_mode, https://fallout.fandom.com/wiki/Starvation, https://fallout.fandom.com/wiki/Dehydration. Flagged: hourly rates against "days to death".
 - The Long Dark (Hinterland): https://thelongdark.fandom.com/wiki/Hunger, https://thelongdark.fandom.com/wiki/Thirst, https://thelongdark.fandom.com/wiki/Fatigue, https://thelongdark.fandom.com/wiki/Condition, https://thelongdark.fandom.com/wiki/Feels_Like, https://thelongdark.fandom.com/wiki/Warmth, https://thelongdark.fandom.com/wiki/Fire, https://thelongdark.fandom.com/wiki/Clothing, https://thelongdark.fandom.com/wiki/Warming_Up. Flagged: the fuels' heat values.
+- The Elder Scrolls V: Skyrim, alchemy: https://en.uesp.net/wiki/Skyrim:Alchemy, https://en.uesp.net/wiki/Skyrim:Ingredients.
 - Valheim (Iron Gate): https://valheim.fandom.com/wiki/Food, https://valheim.fandom.com/wiki/Rested, https://valheim.fandom.com/wiki/Comfort, https://valheim.fandom.com/wiki/Cold, https://valheim.fandom.com/wiki/Freezing, https://valheim.fandom.com/wiki/Wet, https://valheim.fandom.com/wiki/Frost_resistance_mead.
 - Red Dead Redemption 2 (Rockstar): https://reddeadredemption.fandom.com/wiki/Core, https://reddeadredemption.fandom.com/wiki/Conditions_in_Redemption_2, https://reddeadredemption.fandom.com/wiki/Weather_in_Redemption_2, https://reddeadredemption.fandom.com/wiki/Sleeping.
 - Don't Starve (Klei): https://dontstarve.fandom.com/wiki/Hunger, https://dontstarve.fandom.com/wiki/Sanity, https://dontstarve.fandom.com/wiki/Freezing, https://dontstarve.fandom.com/wiki/Winter_Hat, https://dontstarve.fandom.com/wiki/Puffy_Vest, https://dontstarve.fandom.com/wiki/Day-Night_Cycle.
