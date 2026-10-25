@@ -12,6 +12,7 @@ import {
   characterLevel,
   minuteOfDay,
   professionLevel,
+  rareFindPermille,
   recipeTier,
   salePrice,
   setComplete,
@@ -37,8 +38,9 @@ import type { StoneView } from '../stone';
 import { Session, STALL_SLOTS, stallDraftOf, type StallDraft } from '../session';
 import type { GameSession } from '../session-surface';
 import type { ActResult } from '../session-surface';
-import { ATTRIBUTE_MAX, activeQuests, attributeEffects, bagGroups, classLine, clock, eatLabel, gold, itemBenefit, itemName, journalGroups, questSteps, restoreHint, seconds, sellable, stacks, stationGate, stationText, stationUpgrades, toolOpens, wornAt } from '../text';
+import { SEARCH_EMPTY, SEARCH_LUCK_LINE, searchRows, ATTRIBUTE_MAX, activeQuests, attributeEffects, bagGroups, classLine, clock, eatLabel, gold, itemBenefit, itemName, journalGroups, questSteps, restoreHint, seconds, sellable, stacks, stationGate, stationText, stationUpgrades, toolOpens, wornAt } from '../text';
 import { s1, s1Available } from '../net/s1';
+import { shopGroups } from '../shopstock';
 import { STALL_SLOT, canPlaceStall, directionOf, localMapState, mapPlaces } from '../places';
 import { say } from './dialog';
 import { button, h, sprite } from './dom';
@@ -709,7 +711,8 @@ export function openShop(ui: UI, npcId: string): void {
   const npc = b.npcs[npcId];
   const shop = npc?.shop ? b.shops[npc.shop] : undefined;
   if (!s || !npc || !shop) return;
-  const p = panel(ui, `${npc.name}'s stall`, 'shop');
+  // the shop file names its counter ("Pell's stall", "The inn"), so a keeper added later needs no code
+  const p = panel(ui, shop.title || `${npc.name}'s stall`, 'shop');
   let current: 'buy' | 'sell' = 'buy';
 
   const deal = async (action: () => ActResult | Promise<ActResult>) => {
@@ -721,42 +724,60 @@ export function openShop(ui: UI, npcId: string): void {
   const render = () => {
     const st = s.state;
     const room = bagCapacity(b, st) - bagUsed(st);
-    const rows =
+    const buyRow = (o: { item: string; price_mg: number }): HTMLElement => {
+      const it = b.items[o.item];
+      const opens = it?.tool ? toolOpens(b, st, it.tool.kind) : [];
+      // a recipe the player already knows is not sold twice
+      const known = !!it?.fragment && st.player.recipes.includes(it.fragment.unlocks);
+      return h(
+        'div',
+        { class: 'row', 'data-item': o.item },
+        sprite(b, it?.sprite, 2),
+        h(
+          'div',
+          { class: 'grow' },
+          h('b', null, it?.name ?? o.item),
+          h('div', { class: 'muted' }, itemBenefit(b, o.item)),
+          opens.length ? h('div', { class: 'muted', 'data-opens': '' }, `Opens: ${opens.join(', ')}`) : null,
+          known ? h('div', { class: 'muted', 'data-known': '' }, 'You know this recipe.') : null,
+        ),
+        h('span', { class: 'price' }, gold(o.price_mg)),
+        button('Buy', () => deal(() => s.act({ t: 'buy', npc: npcId, item: o.item, qty: 1, at: s.pos })), 'small', known || st.player.gold + st.player.boundGold < o.price_mg || room < 1),
+      );
+    };
+    const sellRow = ({ item: id, each }: { item: string; each: number }): HTMLElement => {
+      // the kernel's price: a worn tool that is the last unit sells for the uses it has left
+      const count = st.player.bag[id] ?? 0;
+      return h(
+        'div',
+        { class: 'row', 'data-item': id },
+        sprite(b, b.items[id]?.sprite, 2),
+        h('div', { class: 'grow' }, h('b', null, `${itemName(b, id)} x${count}`), h('div', { class: 'muted' }, `${gold(each)} gold each`)),
+        button('Sell 1', () => deal(() => s.act({ t: 'sell', npc: npcId, item: id, qty: 1, at: s.pos })), 'small'),
+        count > 1 ? button('All', () => deal(() => s.act({ t: 'sell', npc: npcId, item: id, qty: Math.min(99, count), at: s.pos })), 'small') : null,
+      );
+    };
+    // the counter in named groups (decision 51): a strip of the group names jumps to each one
+    const groups =
       current === 'buy'
-        ? shop.sells.map((o) => {
-            const it = b.items[o.item];
-            const opens = it?.tool ? toolOpens(b, st, it.tool.kind) : [];
-            return h(
-              'div',
-              { class: 'row' },
-              sprite(b, it?.sprite, 2),
-              h(
-                'div',
-                { class: 'grow' },
-                h('b', null, it?.name ?? o.item),
-                h('div', { class: 'muted' }, itemBenefit(b, o.item)),
-                opens.length ? h('div', { class: 'muted', 'data-opens': '' }, `Opens: ${opens.join(', ')}`) : null,
-              ),
-              h('span', { class: 'price' }, gold(o.price_mg)),
-              button('Buy', () => deal(() => s.act({ t: 'buy', npc: npcId, item: o.item, qty: 1, at: s.pos })), 'small', st.player.gold + st.player.boundGold < o.price_mg || room < 1),
-            );
-          })
-        : sellable(b, st).map(({ item: id, each }) => {
-            // the kernel's price: a worn tool that is the last unit sells for the uses it has left
-            const count = st.player.bag[id] ?? 0;
-            return h(
-              'div',
-              { class: 'row' },
-              sprite(b, b.items[id]?.sprite, 2),
-              h('div', { class: 'grow' }, h('b', null, `${itemName(b, id)} x${count}`), h('div', { class: 'muted' }, `${gold(each)} gold each`)),
-              button('Sell 1', () => deal(() => s.act({ t: 'sell', npc: npcId, item: id, qty: 1, at: s.pos })), 'small'),
-              count > 1 ? button('All', () => deal(() => s.act({ t: 'sell', npc: npcId, item: id, qty: Math.min(99, count), at: s.pos })), 'small') : null,
-            );
-          });
+        ? shopGroups(b, shop.sells, (o) => o.item).map((g) => ({ ...g, rows: g.entries.map(buyRow) }))
+        : shopGroups(b, sellable(b, st), (o) => o.item).map((g) => ({ ...g, rows: g.entries.map(sellRow) }));
+    const sections = groups.map((g) =>
+      h('section', { class: 'shop-group', 'data-group': g.key, 'aria-label': g.label }, h('h3', { class: 'shop-group-name' }, g.label), g.rows),
+    );
+    const jump =
+      groups.length > 1
+        ? h(
+            'nav',
+            { class: 'shop-jump', 'aria-label': 'Groups' },
+            groups.map((g, i) => button(`${g.label} ${g.rows.length}`, () => sections[i]?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 'tab')),
+          )
+        : null;
     p.body.replaceChildren(
       tabs(shop.buys ? ['buy', 'sell'] : ['buy'], current, (n) => ((current = n as 'buy' | 'sell'), render())),
       h('div', { class: 'wallet' }, h('i', { class: 'coin' }), `${gold(st.player.gold)} gold`, st.player.boundGold > 0 ? h('span', null, ` + ${gold(st.player.boundGold)} starter gold`) : null, h('span', { class: 'muted' }, ` - ${room} free places in your bag`)),
-      ...(rows.length ? rows : [h('p', { class: 'muted' }, current === 'sell' ? 'Nothing to sell.' : 'Sold out.')]),
+      ...(jump ? [jump] : []),
+      ...(sections.length ? sections : [h('p', { class: 'muted' }, current === 'sell' ? 'Nothing to sell.' : 'Sold out.')]),
     );
   };
   render();
@@ -877,6 +898,48 @@ export function confirmRestore(ui: UI, restoreId: string): void {
     const res = await s.act({ t: 'restore', restore: restoreId, at: s.pos });
     if (!res.ok) ui.toast(res.error, 'bad');
   });
+}
+
+// ------------------------------------------------------------------ search
+
+/**
+ * A searchable's window (docs/design/SEARCH.md): what it holds today, a tap on a row takes it, "Take all" takes the
+ * lot, and an empty one says "Nothing here." in one line. It reads the state each time, so it never shows what the
+ * kernel has not kept; what does not fit the bag stays inside and the kernel's words come up as a toast.
+ */
+export function openSearch(ui: UI, spotId: string): void {
+  const s = app.session;
+  const b = app.bundle;
+  const def = b.searchables[spotId];
+  if (!s || !def) return;
+  const p = panel(ui, def.title, 'search');
+  const take = async (row?: number) => {
+    const r = await s.act(row === undefined ? { t: 'take', spot: spotId, at: s.pos } : { t: 'take', spot: spotId, row, at: s.pos });
+    if (!r.ok) ui.toast(r.error, 'bad');
+    render();
+  };
+  const render = () => {
+    const rows = searchRows(b, s.state, s.tick, spotId);
+    const lucky = rareFindPermille(b, s.state) > 1000;
+    p.body.replaceChildren(
+      ...(rows.length === 0
+        ? [h('p', { class: 'search-empty' }, SEARCH_EMPTY)]
+        : [
+            ...rows.map((row) =>
+              h(
+                'button',
+                { class: `search-row r-${b.items[row.item]?.rarity ?? 'common'}`, type: 'button', 'aria-label': `Take ${row.name}`, onclick: () => void take(row.index) },
+                sprite(b, row.sprite, 3),
+                h('span', { class: 'grow' }, row.name),
+                h('span', { class: 'search-take' }, 'Take'),
+              ),
+            ),
+            button('Take all', () => void take(), 'search-all'),
+          ]),
+      ...(lucky ? [h('p', { class: 'search-luck muted' }, SEARCH_LUCK_LINE)] : []),
+    );
+  };
+  render();
 }
 
 // ------------------------------------------------------------------ menu and help

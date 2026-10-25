@@ -8,7 +8,7 @@ import type { Bundle, SchoolDef, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.16.0';
+export const KERNEL_VERSION = '0.17.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -202,6 +202,16 @@ export interface Player {
   movedAt: number;
 }
 
+/**
+ * What a searchable holds (docs/design/SEARCH.md): the rows drawn for one dawn, one item per row, in table order.
+ * Taking a row removes it; nothing is drawn again before the next dawn, so an emptied searchable stays empty all day.
+ */
+export interface SearchState {
+  /** the dawn these rows were drawn for (`searchDawn`) */
+  dawn: number;
+  rows: string[];
+}
+
 export interface State {
   format: number;
   kernel: string;
@@ -210,6 +220,8 @@ export interface State {
   tick: number;
   player: Player;
   nodes: Record<string, NodeState>;
+  /** what each searchable the player has searched holds, by searchable id; a save from before kernel 0.17 has none and reads as empty */
+  searched: Record<string, SearchState>;
   /** every milli-gold that entered or left the world (rule R6: one ledger); the purse and the bound balance together are minted less burned */
   ledger: { minted: number; burned: number };
 }
@@ -264,6 +276,7 @@ export function newState(bundle: Bundle, seed: number): State {
       movedAt: 0,
     },
     nodes: {},
+    searched: {},
     ledger: { minted: 0, burned: 0 },
   };
 }
@@ -279,6 +292,8 @@ export function migrateState(saved: State): State {
   const s = structuredClone(saved) as State & { player: Player & { starter?: string; attrs: Record<string, number> } };
   // kernel 0.15: the bound balance is a field of its own; a save without it holds none
   s.player.boundGold ??= 0;
+  // a save from before kernel 0.17 has searched nothing: it reads as empty, whatever its format
+  s.searched ??= {};
   if ((s.format ?? 1) >= STATE_FORMAT) return s;
   const p = s.player;
   const attrs = p.attrs ?? {};
@@ -578,6 +593,16 @@ export function hourOf(bundle: Bundle, tick: number): number {
   const day = bundle.params.day_length_ms;
   const t = (tick + idiv(day, 2)) % day;
   return idiv(t * 24, day);
+}
+
+/**
+ * The count of dawns (05:00) the world has seen at this tick: 0 until the first dawn, then one more at each. A searchable
+ * is drawn fresh when this number has moved since it was last drawn (docs/design/SEARCH.md rule 5). It flips at dawn, not at
+ * noon like `dayOf`, and tick 0 is noon.
+ */
+export function searchDawn(bundle: Bundle, tick: number): number {
+  const day = bundle.params.day_length_ms;
+  return idiv(tick + idiv(day, 2) - idivUp(5 * day, 24), day);
 }
 
 /** Night for the rules: 20:00 to 05:00, the hours the client darkens fully and plays the night song. */
