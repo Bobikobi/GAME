@@ -1,6 +1,8 @@
 /// <reference types="vite/client" />
 /** Dev-only Phaser study: the normal Vite build still enters index.html/main.ts. */
 import * as Phaser from 'phaser';
+import { CoastalWaterStudy } from './coastal-water-study';
+import type { WaterWeather } from './water-response';
 import { chooseShoreVariant, type ShoreMaterial } from './shore-material';
 import materialJson from '../../docs/design/frames/rich-river-kit-2026-10-25/material.json';
 import importReport from '../../docs/design/frames/rich-river-kit-2026-10-25/imports.json';
@@ -18,14 +20,12 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 
 class RiverStudy extends Phaser.Scene {
   private actor!: Phaser.GameObjects.Sprite;
-  private water!: Phaser.GameObjects.TileSprite;
+  private water!: CoastalWaterStudy;
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
   private selected: string[][] = [];
   private flowing = !reduced.matches;
   private clock = 0;
   private repeats = 0;
-  private foam: Phaser.GameObjects.Image[] = [];
-  private waterClock = 0;
 
   constructor() { super('river-study'); }
 
@@ -43,7 +43,6 @@ class RiverStudy extends Phaser.Scene {
 
   create(): void {
     this.add.image(0, 0, material.water.bed).setOrigin(0).setDisplaySize(extent, extent);
-    this.water = this.add.tileSprite(0, 0, extent, extent, material.water.surface).setOrigin(0).setAlpha(material.water.opacity);
     const motifs: string[][] = [];
     for (let y = 0; y < grid.length; y++) {
       this.selected[y] = [];
@@ -60,9 +59,7 @@ class RiverStudy extends Phaser.Scene {
         this.add.image(x * tileSize, y * tileSize, choice.variant.texture).setOrigin(0).setDepth(2);
       }
     }
-    for (const [x, y] of [[330, 180], [280, 220], [330, 270]]) {
-      if (!this.landAt(x!, y!)) this.foam.push(this.add.image(x!, y!, material.water.foam).setScale(.5).setDepth(1).setAlpha(.35));
-    }
+    this.water = new CoastalWaterStudy(this, extent, (x, y) => this.landAt(x, y), material.water.surface, material.water.foam);
     this.actor = this.add.sprite(125, 140, 'player', 1).setOrigin(.5, 1).setScale(4).setDepth(10);
     this.keys = this.input.keyboard!.addKeys('UP,DOWN,LEFT,RIGHT,W,A,S,D') as Record<string, Phaser.Input.Keyboard.Key>;
     const camera = this.cameras.main;
@@ -80,6 +77,15 @@ class RiverStudy extends Phaser.Scene {
     const onReduced = () => { this.flowing = !reduced.matches; updateLabel(); };
     reduced.addEventListener('change', onReduced);
     this.events.once('shutdown', () => reduced.removeEventListener('change', onReduced));
+    const weather = document.getElementById('weather') as HTMLSelectElement;
+    weather.onchange = () => { this.water.weather = weather.value as WaterWeather; this.water.render(); };
+    const slope = document.getElementById('slope') as HTMLSelectElement;
+    slope.onchange = () => { this.water.slope = Number(slope.value); this.water.render(); };
+    document.getElementById('wind')!.onclick = () => {
+      this.water.wind = [-this.water.wind[0], -this.water.wind[1]];
+      this.water.rebuild();
+      document.getElementById('wind')!.textContent = this.water.wind[0] < 0 ? 'רוח ← החלפת כיוון' : 'רוח → החלפת כיוון';
+    };
     updateLabel();
     document.getElementById('status')!.textContent = `דשא וחצץ · ${this.repeats} חזרות שעדיין חסרה להן חלופה`;
     (window as unknown as { __riverStudy: RiverStudy }).__riverStudy = this;
@@ -94,11 +100,7 @@ class RiverStudy extends Phaser.Scene {
   override update(_time: number, delta: number): void {
     if (!this.actor || document.hidden) return;
     const dt = Math.min(delta, 50) / 1000;
-    if (this.flowing) {
-      this.water.tilePositionY -= material.water.speed * dt;
-      this.waterClock += dt;
-      this.foam.forEach((image, index) => image.setAlpha(.15 + .2 * (Math.sin(this.waterClock * 1.2 + index * 2) + 1) / 2));
-    }
+    if (this.flowing) this.water.advance(dt);
     let dx = Number(this.keys.RIGHT!.isDown || this.keys.D!.isDown) - Number(this.keys.LEFT!.isDown || this.keys.A!.isDown);
     let dy = Number(this.keys.DOWN!.isDown || this.keys.S!.isDown) - Number(this.keys.UP!.isDown || this.keys.W!.isDown);
     const pointer = this.input.activePointer;
