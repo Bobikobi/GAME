@@ -170,10 +170,22 @@ export async function playOpening(bundle: Bundle, player: Player, start: Start):
  * This is the first expedition `develop` has content for: `bundle.expeditions` is empty, since the night
  * ruins of NEXT 14b are not built. The outing is its own step so the real one joins here.
  */
+/** The places the outing wants free before it sets out: one per dig it means to make. */
+const OUTING_ROOM = 4;
+
 export async function playFirstOuting(bundle: Bundle, player: Player): Promise<{ digs: number }> {
   const elder = at(one(npcTile(bundle, 'core/elder'), 'The elder has no tile.'));
+  const trader = at(one(npcTile(bundle, 'core/trader'), 'The trader has no tile.'));
   // the ruins' night is the toll of the pit and the wolf's round: this outing is walked by day
   player.waitForHour(6);
+
+  // a bag of 12 places has little room left after the opening (DECISIONS.md, 2026-10-23): a player
+  // empties it at Pell's stall before the ruins, one unit at a time, until the finds have room
+  while (player.freePlaces() < OUTING_ROOM) {
+    const spare = player.sellable();
+    if (spare === undefined) break;
+    await player.actNear(trader, (tile) => ({ t: 'sell', npc: 'core/trader', item: spare, qty: 1, at: tile }));
+  }
 
   await player.actNear(elder, (tile) => ({ t: 'accept', quest: 'core/the-tangle', at: tile }));
 

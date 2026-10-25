@@ -13,12 +13,15 @@ import {
   bagUsed,
   idiv,
   idivUp,
+  itemWeight,
+  loadMax,
   migrateState,
   newState,
   rareFindPermille,
   rarityRank,
   searchDawn,
   step,
+  weightRoom,
 } from '@game/kernel';
 
 import { bfsNear, loadBundle } from '../../tools/test/helpers/world.js';
@@ -204,23 +207,39 @@ describe('taking', () => {
   });
 
   test('a full bag answers as the dig does and keeps every row; a bag with one place left takes one and says the rest is full', () => {
+    // one unit per place, so a place left is exactly one row: the stacking itself is tested in load.test.ts
+    const single = structuredClone(b);
+    single.params.place_stack = 1;
     const seed = seedWith(2);
     const { s, at } = started(seed);
     const found = ok(search(s, at, 0)).state;
     const rows = found.searched[LOG]!.rows;
     const full = structuredClone(found);
-    full.player.bag = { 'core/log': bagCapacity(b, full) };
-    expect(bagUsed(full)).toBe(bagCapacity(b, full));
-    const refused = step(b, full, { t: 'take', spot: LOG, at }, 5);
+    full.player.bag = { 'core/log': bagCapacity(single, full) };
+    expect(bagUsed(single, full)).toBe(bagCapacity(single, full));
+    const refused = step(single, full, { t: 'take', spot: LOG, at }, 5);
     expect(refused).toEqual({ ok: false, error: 'Your bag is full.' });
 
     const one = structuredClone(found);
-    one.player.bag = { 'core/log': bagCapacity(b, one) - 1 };
-    const r = ok(step(b, one, { t: 'take', spot: LOG, at }, 5));
+    one.player.bag = { 'core/log': bagCapacity(single, one) - 1 };
+    const r = ok(step(single, one, { t: 'take', spot: LOG, at }, 5));
     expect(r.state.searched[LOG]!.rows).toEqual(rows.slice(1));
     expect(r.events.filter((e) => e.e === 'gain')).toHaveLength(1);
     expect(r.events.filter((e) => e.e === 'bag_full')).toHaveLength(new Set(rows.slice(1)).size);
-    expect(bagUsed(r.state)).toBe(bagCapacity(b, r.state));
+    expect(bagUsed(single, r.state)).toBe(bagCapacity(single, r.state));
+  });
+
+  test('a bag at the most it can carry takes only the rows that weigh nothing', () => {
+    const { s, at } = started(seedWith(2));
+    const found = ok(search(s, at, 0)).state;
+    const rows = found.searched[LOG]!.rows;
+    const heavy = structuredClone(found);
+    heavy.player.bag = { 'core/stone': idiv(loadMax(b, heavy), itemWeight(b, 'core/stone')) };
+    expect(weightRoom(b, heavy, 'core/berry')).toBe(0);
+    const light = rows.filter((item) => itemWeight(b, item) === 0);
+    const r = step(b, heavy, { t: 'take', spot: LOG, at }, 5);
+    if (light.length === 0) return void expect(r).toEqual({ ok: false, error: 'Your bag is full.' });
+    expect(ok(r).state.searched[LOG]!.rows).toEqual(rows.filter((item) => itemWeight(b, item) > 0));
   });
 
   test('a row that is not there, a searchable that is not there and a tile too far away are refused', () => {

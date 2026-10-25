@@ -15,6 +15,7 @@
       "class": "tool",
       "tier": 2,
       "sprite": "core/base-kit:items/basket",
+      "weight": 1,
       "tool": {
         "kind": "basket",
         "tier": 2,
