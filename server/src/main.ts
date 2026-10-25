@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs';
 import { Pool } from 'pg';
 import type { Bundle } from '@game/kernel';
 
-import { authFromEnv, BootError, createGameApi, createPgAuthStore, createPgStore, createSignIn, googleProvider, listen, logMailer, type ApiOptions, type Auth } from './index';
+import { authFromEnv, BootError, createGameApi, CLOSED_ACCOUNT_GRACE_MS, createPgAuthStore, createPgStore, createSignIn, googleProvider, listen, logMailer, type ApiOptions, type Auth } from './index';
 import { databaseUrl, migrate } from './migrate';
 
 // the identity gate comes first: a refusal here has touched nothing
@@ -52,6 +52,16 @@ function identity(chosen: Auth): Pick<ApiOptions, 'resolvePlayerId' | 'signIn'> 
   });
   return { resolvePlayerId: signIn.resolve, signIn };
 }
+
+// accounts closed more than 30 days ago lose their personal details: at start, then once a day
+const erasing = createPgAuthStore(pool);
+const eraseClosed = () =>
+  erasing.eraseClosed(Date.now(), CLOSED_ACCOUNT_GRACE_MS).then(
+    (n) => { if (n > 0) console.log(`erased the details of ${n} closed account(s)`); },
+    (error: unknown) => console.error('erasing closed accounts failed', error),
+  );
+await eraseClosed();
+setInterval(() => void eraseClosed(), 24 * 60 * 60 * 1000).unref();
 
 const server = createGameApi({
   bundle,

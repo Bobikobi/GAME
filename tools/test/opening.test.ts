@@ -222,7 +222,7 @@ describe('opening sequence', () => {
       planner.visit(threshold);
       expect(planner.state.player.visited).toContain('core/night-threshold');
 
-      expect(planner.state.player.gold).toBe(planner.state.ledger.minted - planner.state.ledger.burned);
+      expect(planner.state.player.gold + planner.state.player.boundGold).toBe(planner.state.ledger.minted - planner.state.ledger.burned);
     },
   );
 });

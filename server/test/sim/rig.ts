@@ -120,12 +120,11 @@ export async function startRig(bundle: Bundle): Promise<Rig> {
     const id = randomUUID();
     const state = newState(bundle, seed);
     if (pool) {
-      await pool.query('insert into accounts (id, email, name, birth_band) values ($1, $2, $3, $4)', [
+      await pool.query('insert into accounts (id, email, name) values ($1, $2, $3)', [
         id,
         `${id}@sim.openfold.test`,
         // a name is unique since #272, and the boards test opens two players of one starter
         `${name} ${id}`,
-        '18+',
       ]);
       await insertPlayer(pool, id, createPlayerRecord(bundle, state, clock.now));
     } else {

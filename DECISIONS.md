@@ -2689,6 +2689,73 @@ No rule changes in this entry: every line points at a decision or a build that a
 - "Player houses and plots are paused; the town serves the player through shops you walk into" (10.10): the ⏸ covers houses and plots only. The town's one-job buildings and the walk-in shops stand (✅), built on by "The shop interior" (11.10) and NEXT section 5.
 
 Model: claude-sonnet-5-5.
+## 2026-10-23 ✅ Every sprite has the dark ink outline
+
+**The outline is the one-pixel ink line `#1b1a2e`, on every sprite.** The rich wave left a mix: 16 of its 35 sprites have under a tenth of their edge in ink, and the rest of the edge is the darkest step of the first ramp or a mid grey. The owner compared three versions of nine rich sprites on grass: as built, ink, and an edge in a darker shade of the sprite's own colours. Ink held them together best; with the own-colour edge, the bandage and the lantern posts faded into the grass. This keeps the 18.10 outline (1915, 2547, STYLE.md) and retires the first-ramp outline wording of 2219 and of the schema's ramp comment. The rich sprites get an ink outline pass, and a check that measures ink on the edge follows, so the mix cannot come back.
+The owner, 23.10: option 2 of the comparison sheet, the dark ink line.
+**Retry when:** the art ladder's coloured-outline rung is shown to the owner in stills and picked. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Each race carries its colour and its big item from the start
+
+Decision 40 holds for the races from the first minute: one big item, one colour, its own build. **The colours: the skeleton white, the elf a light pastel sky blue, the human skin tones.** The elf's big item is its cloak, a large hooded cloak in that colour (still no weapon; the bow comes later, decision 19). A player may pick another colour for their race from a wide palette (a red elf, a blue skeleton). Later, clothing a player finds can be recoloured too. Colour is looks only: it changes nothing in play, only how a player appears to others in multiplayer, and it needs its own build.
+The owner, 23.10: marks from the start (contradiction 2 of the decisions audit), and the colours as written.
+**Retry when:** the race figures are drawn and one race does not read at phone size. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Closing an account: 30 days to change one's mind, as decided on 10.10
+
+The 10.10 entry (1074) stands, and the built close is brought to it. Closing hides the account at once; signing in within 30 days brings it back; after 30 days the personal details are erased. The gold ledger and the action log keep their rows under a number with no name. Sign-up keeps only whether the age check passed, and the country: no age band. Today the server deletes the account and every row naming it at once (`server/src/auth/signin.ts`, asserted by `server/test/signin-db.test.ts`), and it stores a birth band; both change, and so do the lines that describe today's behaviour (2180, NEXT.md 469, GRUNT CR-72).
+The owner, 23.10: 30 days, as decided (contradiction 3 of the decisions audit).
+**Retry when:** a privacy law the game falls under needs a shorter erasure. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ G29 holds in the Field Kit: all text 16 px or more
+
+The Field Kit gets no exception from G29. Every text a player reads in the kit's windows (labels, toggles, item facts, tabs) is 16 px or more, and dialogue 18, as on 16.10 for the tracker, chips and toasts. The windows keep the Field Kit look and grow roomier; a long one may scroll. A size scan in the tests keeps it.
+The owner, 23.10: readability wins, everything 16 or more (contradiction 4 of the decisions audit).
+**Retry when:** a window cannot hold its content at 16 px on a 390 px wide phone even with scrolling. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The world: a hand-made first map, and a generator that sets the difficulty
+
+The 17.10 seed rings and decision 5's hand-made first map (2252) are combined. The first map is planned and drawn by hand, as decision 5 says. **The generator's job becomes difficulty.** From a place's distance to the game's start and the level the character is expected to have there (from the quests before it and the grinding open to it), it recommends the place's difficulty: how many quests and of what kind, which monsters, how many and how strong, and what else opens there. The same reckoning later grows the world past the first map's edges. NEXT.md section 19 is rewritten to match before any of it is built.
+The owner, 23.10: a combination of the two (contradiction 5 of the decisions audit), as written.
+**Retry when:** the first map's stills are picked and the difficulty reckoning has to be checked against a playtest. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ A session merges its own pull request after the owner approves
+
+What has happened since 11.10 is now the written rule: the session that made a pull request merges it into develop once the owner has approved it. A release to the public stays the owner's alone. This is the delegation 1173 asked to be written; PARALLEL.md, WORKFLOW.md, the integrator skill and HANDOFF_TEMPLATE.md change to match.
+The owner, 23.10: as today, and write it down (contradiction 6 of the decisions audit).
+**Retry when:** two merges in a day break develop. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Maru's coin pays a key to his house
+
+When the player hands Maru the coin, he gives the herb tea recipe and **a key to his house**, instead of the 20 gold. This is the place reward of 7.10 (GAME_RULES.md 570), now that a place can be a reward. The house is a place to rest: a bed to sleep in, where the player wakes after a fall at night, and a desk with an old map that hints at the next quest. **It is the one building where a player can leave gear.**
+The owner, 23.10: a key instead of gold; inside, a place to rest (contradiction 7 of the decisions audit).
+**Retry when:** the opening's economy runs short without the 20 gold. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Search: press A on things to look inside
+
+**Many things in the world can be searched.** Pressing A on a drawer, a cupboard, a book, a shelf or even a stone opens a small window showing what is inside. Sometimes it holds something, often nothing. Out in the open, things can hide easter eggs and rare, valuable gifts; the higher the player's luck, the better the odds of finding them. **Every building gets a random number of furniture pieces**, so it looks lived in, and sometimes an extra one: a statue, or a picture that opens to show its painting. Searchable things are deepened step by step as the game grows. A player cannot put gear into them; the one place that stores gear is Maru's house. Later, in other towns, a guest house lets a player stay in multiplayer.
+The owner, 23.10: an idea for the game, like searching drawers in Fallout, as written.
+**Retry when:** searching slows the opening's path, or the luck odds make rare gifts common. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The bound starting balance is built
+
+The 10.10 rule (834, 914, 1055) stands and is built. A new player's starting gold is a separate bound balance shown beside the purse. It is spent first, and only at the shop, the trainers and the settlement. It is never paid to a player or listed. Today `kernel/src/step.ts` puts it into the purse and the server books it as ordinary gold; both change.
+The owner, 23.10: build it as decided (contradiction 8 of the decisions audit).
+**Retry when:** fake accounts are stopped some other way and the bound balance only confuses new players. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Words on screen, and a number only as a clear scale
+
+Decision 39 holds everywhere: on the skill tree, in the kit's SKILLS tab and in item descriptions. A line reads as words ("you dig faster"). Where a number is shown, it is a plain scale and not a percentage. For example, agility rises by 2 on a 10-step scale, from 1/10 to 3/10, and a node of the branch opens only at 5/10 (or at whatever step is set). Exact values stay one long press away. This replaces the "real before-to-after numbers" of the SKILLS tab (1983).
+The owner, 23.10: words; if there is a number it must be very clear, like agility +2 to 3/10, with a node opening at 5/10 (contradiction 9 of the decisions audit).
+**Retry when:** players in a playtest cannot compare two items without the long press. Model: claude-opus-5-5.
+## 2026-10-23 ✅ The importer keeps the drawing inside its outline, and 14 rich picks are imported again
+
+On develop, 14 of the 35 rich sprites at density 4 had see-through pixels inside their own drawing, 1,845 in all: the stone idol 589 (its face 160 and its chest 146), the trowel 332, the unlit campfire 228, the small mushrooms 169, the hazard trap 153, the herb stew 111, the shelf 91, the basket 67, the herb tea 49, the first-aid kit 30, the axe 16, the herb 5, the fallen branches 4 and the mushroom patch 1. The ground showed through the idol's face and the trowel's blade. The importer's mask (`initialMask` in `tools/src/kit/import.ts`) took every pixel within the threshold of the border's colour (65 to 100) for background, and every magenta-fringe pixel, wherever it stood.
+**Background is what lies near the border's colour and reaches the picture's edge through such pixels**, flooded from the edge, and the magenta-fringe rule holds only there. A region of that colour the drawing encloses stays drawing (a pale face, a pink bowl, a plum jar), unless 90% of it lies within a tight distance of the background, the border's own noise plus 8: then it is an opening the drawing leaves, painted in the background colour, and background too. The noise is the 99.5th percentile of the border's distances counted within the threshold, so a drawing that touches the edge is not noise; 90% and not all, because an opening's rim is a pixel or two blended toward the drawing. On the 14 raw drawings the threshold was 65 and the tight distance 12.6 to 35.6; three regions came out as openings (the herb tea's handle, 94% within it, and the two gaps between the small mushrooms' stems, 97%), and the most a region kept as drawing had within it was 89%, a glimpse of the raw's grey ground between the small mushrooms' grass blades, one art pixel, that comes back light grey. Nothing else of the importer changed.
+**The check.** `pnpm check` reports at error level a sprite at density 4 whose frame encloses a see-through region of at most 24 px (`tools/src/kit/holes.ts`). A region is its pixels side by side or corner to corner, enclosed when none of it lies on the frame's edge, so a pocket open to the outside at a corner is a notch and passes, as does an opening larger than 24 px. The message names the re-import, `pnpm kit:gen <spec> --only <entry> --reimport --out <run>`, with the raw drawing the sprite's `source` line points at, and the copy over the kit file. On the kit before the re-import it flags 12 of the 35: the basket's one speck joins its opening at a corner, and the herb's pocket opens at one. Density 1 is left out, as 14 of its 145 sprites would fail.
+**The re-import.** The 14 are the owner's picks, the same drawings, imported again from their raw drawings with the wave's parameters (the spec entries are those of the runs, and `kit:gen --reimport` gives the same bytes). Enclosed see-through pixels went from 1,845 to 207, and what is left is background in the raw drawings: the herb tea's handle 36, the small mushrooms' gaps 139, and three pockets open at a corner (the herb stew's rim 25, the herb 5, the idol 2). No solid pixel turned see-through except where a sprite moved. The axe has its blade's pale edge back and is one art pixel wider, so all of it is drawn anew: of its 903 solid pixels 423 change colour and 73 turn clear as it sits a pixel further left. The herb stew's bowl is whole, so the importer reads the drawing on its own 8 px art pixels instead of 7, and the stew comes back 42x37 instead of 48x42: 1,017 of its 1,546 solid pixels change, 379 of them to clear, as the smaller stew covers less of its tile. On the other twelve a solid pixel changes colour (0 to 75 per sprite) only where an art pixel it is drawn from now holds pixels the old mask cut. The basket's opening is painted in purple shades in its raw drawing and comes back solid purple, the hazard trap's eyes and nostrils, glowing magenta in its raw drawing, come back in the drawing's purple, and a few one-pixel glimpses of a raw's own ground between grass blades (the small mushrooms, the mushroom patch, the fallen branches) come back grey where the grass showed through.
+The before/after on grass goes to the owner before the merge.
+**Retry when:** a drawing paints an opening in a shade of the background beyond the border's noise (it then comes back solid: fix the drawing, or widen the margin), or the check reports a speck a drawing means (then the 24 px bound or the corner rule is the question). Model: claude-opus-5-5.
 ## 2026-10-23 ✅ The desktop home is painted key art that lives
 
 **From 1024px the home page opens on the owner's key art in motion:** the valley at dawn with the three opening characters (the elf, the human, the skeleton), first drawn by GPT image from their kit sprites, then brought to life as a video the owner generated and picked (`web/public/keyart/hero.webm` and `hero.mp4`, 1920x1080, 24 fps, a 17 s ping-pong, so its loop has no seam; `hero-poster.jpg` and `.webp` are its first frame). The video carries the characters' auras (the elf white, the human red, the skeleton a thin black haze) and their small motions. It plays muted and looped, drawn with cover from the bottom; under reduced motion it stays still and the poster shows; it pauses while the tab is hidden. The phone keeps its own first screen and fetches neither the video nor the still.
@@ -2705,3 +2772,27 @@ The owner, 23.10: picked v1 of three key-art stills ("perfect"), asked for it to
 The owner, 25.10, picked pitch 2 of three ("What holds the keystone") for the west bank, where `core/first-pickings` (discovery) could sit beside `core/into-town` and `core/the-night-arch` (both discovery) and opened nothing, while the digger and the explorer earn their axe with their first task. Herbs now grow thick in the shallows beside the bridge's keystone (`core/bank-herbs` moved from (4,19) to (10,18), two tiles); the forager picks them with the basket, which finishes the investigation "What holds the keystone", and only then does the keystone come free for the strike: pick, then strike, then the bridge. A resource node's `opens_after` is now a list of quests with a refusal line each (one quest per wake pocket, the assembler refuses two for one pocket); the keystone waits for the glint in the north meadow ("Something else catches the light first.") and for the herbs on the west bank ("Herbs grow thick over the stone. Clear them first."), and the slid bank strikes it at once.
 Evidence: `pnpm quests` shows no pair of one type in any pocket and the forager holds at most 3 at once (was 4, with two pairs); `pnpm check` lost its two `!` hand lines and gained none; a kernel test per pocket (refused with its own line, the slid bank at once), the opening test plays all three starts. Given up: pitch 1 (the axe hidden in the herbs, content only) stays the fallback, pitch 3 (a peg for every plant, a new step kind) is not built. The id `core/first-pickings` is kept so saves and the three-start tests stay valid; only its title, type and summary changed.
 **Retry when:** a forager going straight to the keystone and meeting the refusal proves a wall in play (then the herbs get a glint of their own), or a fourth wake pocket needs a third wait on the keystone. Model: claude-sonnet-5-5.
+## 2026-10-25 ✅ What was drawn before the rich wave is redrawn to match it, the shop interior first
+
+The owner, 25.10: the food and medicine shop interior keeps its approved frame (2026-10-11: warm planks, a runner to the counter, the trade on the back wall), but it was drawn before the rich wave (2026-10-23) and would not sit beside it. Everything drawn before the rich wave is renewed so the game reads as one hand: redrawn in the rich wave's style where the frame stands, made again where it does not. The shop interior branch is not revived as it is; it waits for its own redraw, and its layout and frame carry over.
+How it runs: an art polish stream after the rich wave, inside the agreed direction (polish, not a new direction), one list of the pre-rich pieces still on screen, the most seen first.
+**Retry when:** the rich wave's style itself is replaced (then the list is redrawn against the new style). Model: claude-opus-5-5.
+
+## 2026-10-25 ✅ The ambient creatures wait for the redraw; many animals come later, most of them hunted for what they give
+
+The owner, 25.10: the ambient creatures (birds and small animals that sit and leave when the player comes close; their kinds and spots are already map content, the client does not draw them yet) are not revived now: they come after the pre-rich redraw above, drawn once in the rich style. Later the valley gets many more animals; most can be hunted and fought at the chosen difficulty, and a kill gives raw materials, the way Red Dead Redemption 2 skins and harvests what is hunted.
+Where it sits: the hunting is combat, so it follows G35 (no fighting in the demo; combat after the foundation, where and its frame approved by the owner first). The branch with the creatures' client stays on the remote as it is until then.
+**Retry when:** combat opens (G35), or the ambient creatures are wanted before it as cosmetic life. Model: claude-opus-5-5.
+
+## 2026-10-25 ✅ The night ruins are revived with changes: the first step of the slope south, with no door
+
+The quest designer reviewed the branch of 17.10 (feat/night-ruins, never merged) against the world of 22.10: it fits with changes. Its bones stay (the bells as the clock and the last-bell walk-out, the walled yard with the wolf's round and cover, the inscription read only by firelight, the bell pit, the stair under the hall). The owner's answers, 25.10:
+- **Place:** the walled yard at night is the near ruins (decision 49), the first and shallowest step of the slope south; the climax opens the stair down toward the undead south.
+- **No door to the south.** The south is open-world steps, not a gate a quest opens: the passage is always open, and the frightening bells mark the right time to cross. It is too hard to cross before the player is ready, and readiness is made: the dark below (a torch or an ember), cold and food on the long way (clothing, cooked food), drops that need climbing gear, and creatures that need a weapon (that last one waits for combat, G35). The owner welcomes more such needs.
+- **The brazier's all-night vigil goes** (it repeated the long night): lighting the brazier becomes a step of the inscription riddle.
+- **The yard's stealth quest changes its question** (it repeated the south bank's wolf and night plant); both may stay open at once, the player's choice.
+- **The skeleton:** the cellar's rare find hints at the skeleton's fold instead of clockwork (decision 20 keeps clockwork for the humans), and the skeleton gets its own line there.
+- **The ember traveller sends the player in** (lighting an old fire is the Wakers' act).
+- **Open:** whether the climax becomes chapter 1's bell-rope dilemma (ring, tie or leave). The owner has not decided.
+Also from the review: the inscription keeps one line and the belief readings move into people's mouths; two order fixes (the yard quest requires the arch; the gamble pays something other than logs). The map rows are redrawn by the hand-made first map (NEXT 19), so the layout carries over as a plan, not as tiles. A fresh branch from develop carries the content, the bell and walk-out code and the tests; the old branch stays as it is until then.
+**Retry when:** the first hand-made map lands, or the owner decides the bell-rope question. Model: claude-opus-5-5.
