@@ -3,11 +3,12 @@
  * integers, strings, arrays and plain objects only, so its canonical text is
  * stable and a save is just that text.
  */
-import type { Bundle, Verb } from './bundle';
+import type { NodeSizeName, SchoolNodeDef } from '@game/schema';
+import type { Bundle, SchoolDef, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.15.0';
+export const KERNEL_VERSION = '0.16.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -159,8 +160,12 @@ export interface Player {
   /** active ms per profession id */
   xp: Record<string, number>;
   attrs: Record<Attribute, number>;
-  /** skill points spent */
+  /** skill points spent: on attribute pips and on the nodes of the tree */
   spent: number;
+  /** the learned nodes of the skill tree, "<school id>/<node id>", sorted; absent until the first one (saves from before kernel 0.16) */
+  nodes?: string[];
+  /** the build: the techniques in the active slots, in slot order; absent until the first one is put in */
+  build?: string[];
   recipes: string[];
   journal: string[];
   made: Record<string, number>;
@@ -399,7 +404,11 @@ export function powerCap(bundle: Bundle, state: PublicState): number {
   return caps[i] ?? 1000;
 }
 
-/** Sum of a technique effect the player has unlocked through profession levels; `only` counts one profession's. */
+/**
+ * Sum of a technique effect: the ones the player has unlocked through profession levels, and the
+ * learned nodes of the tree (a small node always, a technique only while it sits in the build);
+ * `only` counts one profession's.
+ */
 export function techniqueValue(bundle: Bundle, state: PublicState, effect: string, only?: string): number {
   let total = 0;
   for (const id of Object.keys(bundle.professions).sort()) {
@@ -408,7 +417,72 @@ export function techniqueValue(bundle: Bundle, state: PublicState, effect: strin
     const level = professionLevel(bundle, state, id);
     for (const t of prof.techniques) if (t.effect === effect && level >= t.level) total += Math.max(1, t.value);
   }
+  const build = state.player.build ?? [];
+  for (const key of state.player.nodes ?? []) {
+    const found = treeNode(bundle, key);
+    if (!found || found.node.effect !== effect) continue;
+    if (only !== undefined && found.school.profession !== only) continue;
+    if (found.node.slot === true && !build.includes(key)) continue;
+    total += Math.max(1, found.node.value);
+  }
   return total;
+}
+
+// ------------------------------------------------------------------ the skill tree
+
+/** A node of the tree as a player keeps it: "<school id>/<node id>". */
+export function nodeKey(school: string, node: string): string {
+  return `${school}/${node}`;
+}
+
+/** The school and the node a key names, if the content has them. */
+export function treeNode(bundle: Bundle, key: string): { school: SchoolDef; node: SchoolNodeDef } | undefined {
+  const cut = key.lastIndexOf('/');
+  if (cut < 0) return undefined;
+  const school = bundle.schools?.[key.slice(0, cut)];
+  const node = school?.nodes.find((n) => n.id === key.slice(cut + 1));
+  return school && node ? { school, node } : undefined;
+}
+
+/** The skill points a node of this size costs; a tree with no growth params costs nothing it can sell. */
+export function nodeCost(bundle: Bundle, size: NodeSizeName): number {
+  return bundle.params.growth?.cost[size] ?? 0;
+}
+
+/** How many active slots the build has open at the player's character level. */
+export function slotsOpen(bundle: Bundle, state: PublicState): number {
+  const level = characterLevel(bundle, state);
+  return (bundle.params.growth?.slot_levels ?? []).filter((l) => l <= level).length;
+}
+
+/** Whether a node is the player's to see: a corner belongs to one race, every other node to all. */
+export function nodeIsOurs(state: PublicState, node: SchoolNodeDef): boolean {
+  return node.size !== 'corner' || node.race === state.player.race;
+}
+
+/**
+ * Why the player cannot learn this node now, in the kernel's own words, or undefined when they can.
+ * The place is not asked here (the action asks it): this is what the tree screen shows on a node.
+ */
+export function nodeRefusal(bundle: Bundle, state: PublicState, key: string): string | undefined {
+  const found = treeNode(bundle, key);
+  if (!found || !bundle.params.growth) return 'There is no such thing to learn.';
+  const { school, node } = found;
+  const p = state.player;
+  if ((p.nodes ?? []).includes(key)) return 'You know this already.';
+  if (!nodeIsOurs(state, node)) return 'That belongs to another race.';
+  const missing = (node.needs ?? []).filter((n) => !(p.nodes ?? []).includes(nodeKey(school.id, n)));
+  if (missing.length > 0) {
+    const names = missing.map((n) => school.nodes.find((m) => m.id === n)?.name ?? n);
+    return `Learn ${names.join(' and ')} first.`;
+  }
+  for (const attr of ATTRIBUTES) {
+    const want = node.key?.[attr];
+    if (want !== undefined && (p.attrs[attr] ?? 0) < want) return `Needs ${attr} ${want} - you have ${p.attrs[attr] ?? 0}.`;
+  }
+  const cost = nodeCost(bundle, node.size);
+  if (skillPoints(bundle, state) < cost) return cost === 1 ? 'Needs a skill point.' : `Needs ${cost} skill points.`;
+  return undefined;
 }
 
 const setCache = new WeakMap<Bundle, Record<string, string[]>>();

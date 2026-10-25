@@ -298,6 +298,35 @@
       "max": 50000,
       "step": 5000
     },
+    "growth": {
+      "cost": {
+        "small": {
+          "value": 1,
+          "min": 1,
+          "max": 2,
+          "step": 1
+        },
+        "major": {
+          "value": 2,
+          "min": 1,
+          "max": 4,
+          "step": 1
+        },
+        "corner": {
+          "value": 3,
+          "min": 2,
+          "max": 5,
+          "step": 1
+        }
+      },
+      "slot_levels": [
+        1,
+        1,
+        5,
+        10,
+        15
+      ]
+    },
     "per_point": {
       "might": {
         "value": 10,

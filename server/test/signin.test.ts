@@ -151,7 +151,7 @@ describe('sign-in with Google (NEXT 18 e)', () => {
     const made = await w.browser.request('/auth/signup', { method: 'POST', json: SIGNUP });
     expect(made.status).toBe(201);
     expect(await made.json()).toEqual({ name: 'Tess', opening: 'fresh' });
-    expect([...w.store.accounts.values()]).toEqual([{ email: 'player@example.com', name: 'Tess', birthBand: '18+' }]);
+    expect([...w.store.accounts.values()]).toEqual([{ email: 'player@example.com', name: 'Tess', country: undefined }]);
     const sessionCookie = made.headers.getSetCookie().find((line) => line.startsWith('__Host-of_session='))!;
     expect(sessionCookie).toMatch(/^__Host-of_session=[A-Za-z0-9_-]{43}; Path=\/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000$/);
     expect(w.browser.jar.has('__Host-of_signup')).toBe(false);
@@ -442,7 +442,7 @@ describe('the sign-up (NEXT 18 e; CR-49, CR-53)', () => {
     expect((await signUp(before, { ...SIGNUP, birthDate: '2013-10-22' }, 'US')).status).toBe(403);
     const on = await ticket({ countryHeader: 'x-country' });
     expect((await signUp(on, { ...SIGNUP, birthDate: '2013-10-21' }, 'US')).status).toBe(201);
-    expect([...on.store.accounts.values()][0]!.birthBand).toBe('13-15');
+    expect(Object.keys([...on.store.accounts.values()][0]!)).not.toContain('birthBand');
   });
 
   test('the 16th birthday in a country that asks for 16: the day before is refused, the day itself is not', async () => {
@@ -450,7 +450,7 @@ describe('the sign-up (NEXT 18 e; CR-49, CR-53)', () => {
     expect((await signUp(before, { ...SIGNUP, birthDate: '2010-10-22' }, 'DE')).status).toBe(403);
     const on = await ticket({ countryHeader: 'x-country' });
     expect((await signUp(on, { ...SIGNUP, birthDate: '2010-10-21' }, 'DE')).status).toBe(201);
-    expect([...on.store.accounts.values()][0]!.birthBand).toBe('16-17');
+    expect([...on.store.accounts.values()][0]!.country).toBe('DE');
   });
 
   test('the country is the one our proxy\'s header names; without the header the highest age holds', async () => {
@@ -508,7 +508,7 @@ describe('the sign-up (NEXT 18 e; CR-49, CR-53)', () => {
     expect(w.store.accounts.size).toBe(0);
   });
 
-  test('the age is exact on the server\'s UTC date, a leap-day birthday counts from 1 March, and the gate keeps a band, never the date', () => {
+  test('the age is exact on the server\'s UTC date, a leap-day birthday counts from 1 March, and the gate keeps only that the check passed, never a band or the date', () => {
     const born = (text: string) => parseBirthDate(text, Date.UTC(2026, 9, 21))!;
     expect(ageOn(born('2013-10-21'), Date.UTC(2026, 9, 20, 23, 59, 59))).toBe(12);
     expect(ageOn(born('2013-10-21'), Date.UTC(2026, 9, 21, 0, 0, 0))).toBe(13);
@@ -520,10 +520,10 @@ describe('the sign-up (NEXT 18 e; CR-49, CR-53)', () => {
 
     const now = Date.UTC(2026, 5, 1);
     expect(ageGate(born('2013-06-02'), 'US', now)).toEqual({ underAge: true });
-    expect(ageGate(born('2013-06-01'), 'US', now)).toEqual({ band: '13-15' });
-    expect(ageGate(born('2010-06-01'), 'US', now)).toEqual({ band: '16-17' });
-    expect(ageGate(born('2008-06-02'), 'US', now)).toEqual({ band: '16-17' });
-    expect(ageGate(born('2008-06-01'), 'US', now)).toEqual({ band: '18+' });
+    expect(ageGate(born('2013-06-01'), 'US', now)).toEqual({ passed: true });
+    expect(ageGate(born('2010-06-01'), 'US', now)).toEqual({ passed: true });
+    expect(ageGate(born('2008-06-02'), 'US', now)).toEqual({ passed: true });
+    expect(ageGate(born('2008-06-01'), 'US', now)).toEqual({ passed: true });
     expect(consentAge('FR')).toBe(15);
     expect(consentAge('CN')).toBe(14);
     expect(consentAge('KR')).toBe(14);
@@ -586,16 +586,25 @@ describe('the session (NEXT 18 e)', () => {
     expect((await w.browser.request('/auth/me')).status).toBe(401);
   });
 
-  test('closing an account deletes it, its identities and its sessions, and needs the word', async () => {
+  test('closing an account hides it at once and ends its sessions; it needs the word', async () => {
     const w = await signedIn();
     expect((await w.browser.request('/auth/close', { method: 'POST', json: {} })).status).toBe(400);
-    expect(w.store.accounts.size).toBe(1);
+    expect(w.store.closedAt.size).toBe(0);
     const closed = await w.browser.request('/auth/close', { method: 'POST', json: { close: true } });
     expect(closed.status).toBe(200);
-    expect(w.store.accounts.size).toBe(0);
-    expect(w.store.identities.size).toBe(0);
+    expect(await closed.json()).toEqual({ closed: true, restorableDays: 30 });
+    expect(w.store.closedAt.size).toBe(1);
     expect(w.store.sessions.size).toBe(0);
     expect((await w.browser.request('/auth/me')).status).toBe(401);
+  });
+
+  test('signing in to a closed account brings it back and says so', async () => {
+    const w = await signedIn();
+    await w.browser.request('/auth/close', { method: 'POST', json: { close: true } });
+    w.clock.now += 29 * 24 * 60 * 60 * 1000;
+    expect(outcome(await googleSignIn(w))).toBe('restored');
+    expect(w.store.closedAt.size).toBe(0);
+    expect((await w.browser.request('/auth/me')).status).toBe(200);
   });
 
   test('sign-in paths answer only their method, and an unknown one is not found', async () => {

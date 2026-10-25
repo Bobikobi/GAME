@@ -1,0 +1,106 @@
+{
+  "$schema": "../../../schema/json/school.schema.json",
+  "format": 1,
+  "type": "school",
+  "id": "core/digging-school",
+  "title": "Digging",
+  "creator": "core",
+  "school": {
+    "name": "Digging",
+    "profession": "core/digging",
+    "nodes": [
+      {
+        "id": "steady",
+        "name": "Steady",
+        "text": "Every timing game's good zone is a little wider.",
+        "size": "small",
+        "effect": "timing_window_pct",
+        "value": 5,
+        "icon": "core/stone"
+      },
+      {
+        "id": "old-signs",
+        "name": "Old signs",
+        "text": "You read the signs of a find from farther away.",
+        "size": "major",
+        "needs": [
+          "steady"
+        ],
+        "effect": "second_hint",
+        "value": 0,
+        "slot": true,
+        "icon": "core/pottery-shard"
+      },
+      {
+        "id": "quick-trowel",
+        "name": "Quick trowel",
+        "text": "Digging goes a little faster.",
+        "size": "small",
+        "needs": [
+          "old-signs"
+        ],
+        "effect": "dig_speed_pct",
+        "value": 5,
+        "icon": "core/trowel"
+      },
+      {
+        "id": "depth-sense",
+        "name": "Depth sense",
+        "text": "Rare finds come up more often.",
+        "size": "major",
+        "needs": [
+          "quick-trowel"
+        ],
+        "key": {
+          "senses": 3
+        },
+        "effect": "rare_find_pct",
+        "value": 10,
+        "slot": true,
+        "icon": "core/old-coin"
+      },
+      {
+        "id": "surveyor",
+        "name": "Surveyor",
+        "text": "A made trowel in a steady hand: digging goes faster.",
+        "size": "corner",
+        "needs": [
+          "old-signs"
+        ],
+        "effect": "dig_speed_pct",
+        "value": 10,
+        "slot": true,
+        "race": "core/human",
+        "icon": "core/stone-trowel"
+      },
+      {
+        "id": "root-reader",
+        "name": "Root reader",
+        "text": "The roots tell you where old things lie.",
+        "size": "corner",
+        "needs": [
+          "old-signs"
+        ],
+        "effect": "rare_find_pct",
+        "value": 10,
+        "slot": true,
+        "race": "core/elf",
+        "icon": "core/moonreed"
+      },
+      {
+        "id": "grave-wise",
+        "name": "Grave wise",
+        "text": "You know where old things are buried.",
+        "size": "corner",
+        "needs": [
+          "old-signs"
+        ],
+        "effect": "rare_find_pct",
+        "value": 15,
+        "slot": true,
+        "race": "core/skeleton",
+        "icon": "core/stone-idol"
+      }
+    ]
+  }
+}
