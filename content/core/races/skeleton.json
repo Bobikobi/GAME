@@ -37,7 +37,7 @@
     ],
     "body": {
       "name": "Mended, not fed",
-      "about": "A rest by a fire mends it twice as much as anyone; food fills it half as much, with nothing to digest.",
+      "about": "Food fills it half as much, with nothing to digest.",
       "effects": [
         {
           "effect": "rest_mend_permille",
