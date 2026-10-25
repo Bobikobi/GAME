@@ -121,6 +121,22 @@ function majorityMask(source: readonly Pixel[], sourceWidth: number, sourceHeigh
   return result;
 }
 
+/** The cells of `originalSprite` the tests below paint over: a 4x4 square in the middle of its fill. */
+const CENTRE = new Set(Array.from({ length: 16 }, (_, i) => (4 + Math.floor(i / 4)) * 12 + 4 + (i % 4)));
+
+/** `originalSprite` with its centre painted `centre` (null leaves it open, the background showing through). */
+function spriteWithCentre(centre: Pixel): Pixel[] {
+  return originalSprite().map((pixel, index) => (CENTRE.has(index) ? centre : pixel));
+}
+
+/** The drawing came back cell for cell: every cell of `expected` in its colour, and each centre cell opaque. */
+function expectDrawingWithSolidCentre(image: PNG, expected: readonly Pixel[]): void {
+  const pixels = decodedPixels(image);
+  expect([image.width, image.height]).toEqual([12, 12]);
+  expect(pixels.filter((_, index) => !CENTRE.has(index))).toEqual(expected.filter((_, index) => !CENTRE.has(index)));
+  expect(pixels.filter((pixel, index) => CENTRE.has(index) && pixel === null)).toEqual([]);
+}
+
 function stripFrame(variant: number): Pixel[] {
   const outline = hexToRgb(CORE_PALETTE[0] ?? '#000000');
   const fill = hexToRgb(CORE_PALETTE[7 + variant] ?? '#000000');
@@ -193,6 +209,44 @@ describe('importSprite', () => {
     expect([image.width, image.height]).toEqual([12, 12]);
     expect(decodedPixels(image)).toEqual(expected);
     expect(result.grid).toBe(16);
+  });
+
+  // Background is what lies near the border's colour and reaches the picture's edge through such pixels
+  // (DECISIONS.md, 2026-10-23: the rich sprites' holes). The pictures are on magenta, as kit:gen draws them.
+  test('keeps a patch inside the drawing at distance 40 from the background', () => {
+    const patch = [255, 40, 255] as const;
+    const source = noisyUpscale([spriteWithCentre(patch)], 12, 12, 16, 400, 400, [[83, 97]], true);
+    const result = importSprite(source, { width: 12, height: 12, palette: CORE_PALETTE });
+
+    expectDrawingWithSolidCentre(decode(result.png), originalSprite());
+    expect(result.grid).toBe(16);
+  });
+
+  test('clears an opening the drawing encloses where the background itself shows through', () => {
+    const expected = spriteWithCentre(null);
+    const source = noisyUpscale([expected], 12, 12, 16, 400, 400, [[83, 97]], true);
+    const result = importSprite(source, { width: 12, height: 12, palette: CORE_PALETTE });
+
+    expect(decodedPixels(decode(result.png))).toEqual(expected);
+  });
+
+  test('keeps a drawing that touches the picture\'s edge, its pale centre too', () => {
+    const source = noisyUpscale([spriteWithCentre([255, 40, 255])], 12, 12, 16, 400, 400, [[0, 0]], true);
+    const result = importSprite(source, { width: 12, height: 12, palette: CORE_PALETTE });
+
+    expectDrawingWithSolidCentre(decode(result.png), originalSprite());
+    expect(result.grid).toBe(16);
+  });
+
+  test('clears the background around the drawing as before, its near colours and magenta fringe too', () => {
+    const expected = originalSprite();
+    // the empty cells of the drawing's square, which reach the picture's edge, painted near the magenta
+    // (distance 53, inside the threshold) and in its fringe (distance 98, outside it)
+    const haloed = expected.map((pixel, index): Pixel => pixel ?? (index % 2 === 0 ? [230, 40, 230] : [200, 60, 200]));
+    const source = noisyUpscale([haloed], 12, 12, 16, 400, 400, [[83, 97]], true);
+    const result = importSprite(source, { width: 12, height: 12, palette: CORE_PALETTE });
+
+    expect(decodedPixels(decode(result.png))).toEqual(expected);
   });
 
   test('area-downscales a sprite while preserving its alpha shape', () => {

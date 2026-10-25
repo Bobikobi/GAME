@@ -1875,13 +1875,13 @@
             "level": {
               "minimum": 1,
               "maximum": 20,
-              "description": "Level required in the profession that gates the recipe. It sits inside the level band of the recipe's tier.",
+              "description": "The recipe's level in its profession: each missing level takes craft_level_step_bp off the chance (no wall). It sits inside the level band of the recipe's tier.",
               "type": "integer"
             },
             "profession": {
               "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
               "maxLength": 80,
-              "description": "The profession that gates this recipe and that it trains. Left out: the profession that works its station.",
+              "description": "The profession that trains this recipe and sets its chance. Left out: the profession that works its station.",
               "type": "string"
             },
             "inputs": {
@@ -2516,13 +2516,13 @@
             "level": {
               "minimum": 1,
               "maximum": 20,
-              "description": "Level required in the profession that gates the recipe. It sits inside the level band of the recipe's tier.",
+              "description": "The recipe's level in its profession: each missing level takes craft_level_step_bp off the chance (no wall). It sits inside the level band of the recipe's tier.",
               "type": "integer"
             },
             "profession": {
               "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
               "maxLength": 80,
-              "description": "The profession that gates this recipe and that it trains. Left out: the profession that works its station.",
+              "description": "The profession that trains this recipe and sets its chance. Left out: the profession that works its station.",
               "type": "string"
             },
             "inputs": {
@@ -11205,7 +11205,7 @@
                 "keys": {
                   "minItems": 2,
                   "maxItems": 12,
-                  "description": "The hours the valley is washed in a colour (ART_SYSTEM section 2): cool before sunrise, none at noon, warm in the late afternoon, dusk at 19:00, the night after that. The scene multiplies by the wash between keys, in whole percent.",
+                  "description": "The hours the valley is washed in a colour (ART_SYSTEM section 2). Today's curve is the gold #eda83a at 40% around 05:30 and 20:00 and none at noon; the cool and dusk hour tints land with the L2 pick. The scene multiplies by the wash between keys, in whole percent.",
                   "type": "array",
                   "items": {
                     "additionalProperties": false,
@@ -12652,6 +12652,118 @@
                   }
                 }
               }
+            },
+            "growth": {
+              "additionalProperties": false,
+              "description": "The skill tree: what a node costs and when the build's slots open. Left out: the tree is closed.",
+              "type": "object",
+              "required": [
+                "cost",
+                "slot_levels"
+              ],
+              "properties": {
+                "cost": {
+                  "additionalProperties": false,
+                  "description": "Skill points a node costs, by its size (GROWTH section 3.6).",
+                  "type": "object",
+                  "required": [
+                    "small",
+                    "major",
+                    "corner"
+                  ],
+                  "properties": {
+                    "small": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "major": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "corner": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                },
+                "slot_levels": {
+                  "minItems": 1,
+                  "maxItems": 8,
+                  "description": "The character level each active slot of the build opens at, from the first slot, never falling (GROWTH section 3.3: two at level 1, then one more at 5, 10 and 15).",
+                  "type": "array",
+                  "items": {
+                    "minimum": 1,
+                    "maximum": 40,
+                    "type": "integer"
+                  }
+                }
+              }
             }
           }
         }
@@ -13315,7 +13427,7 @@
                     "scale": {
                       "minimum": 0.1,
                       "maximum": 40,
-                      "description": "The sprite's height in characters, one decimal (NATURE section 1): a person is 1.0, a house 3.5. The check warns when a kind in NATURE section 1 or STYLE 1b falls under its floor. Left out when the sprite has no true size.",
+                      "description": "The sprite's height in characters (NATURE section 1): a person is 1.0, a house 3.5. The check warns when a kind in NATURE section 1 or STYLE 1b falls under its floor. Left out when the sprite has no true size.",
                       "type": "number"
                     },
                     "source": {
@@ -14096,12 +14208,13 @@
                 "type": "string"
               }
             },
-            "heights": {
+            "levels": {
               "minItems": 8,
-              "description": "The level of every tile, one row of digits per ground row (0 the lowest, 9 the highest; G68). Read by the map check only: the kernel and the clients do not walk or draw levels yet.",
+              "description": "The height layer beside the ground layer (STYLE section 6): one digit 0 to 9 per tile, integers only. Absent: every tile is level 0.",
               "type": "array",
               "items": {
                 "pattern": "^[0-9]+$",
+                "description": "One level digit (0 to 9) per tile, rows like the ground (STYLE section 6).",
                 "type": "string"
               }
             },
@@ -14176,7 +14289,7 @@
                       "height": {
                         "minimum": 0,
                         "maximum": 9,
-                        "description": "The level the region stands on, read against `heights`.",
+                        "description": "The level the region stands on, read against `levels`.",
                         "type": "integer"
                       },
                       "tags": {
@@ -15418,6 +15531,705 @@
                     "minimum": 1,
                     "maximum": 999,
                     "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "additionalProperties": false,
+      "$id": "school",
+      "type": "object",
+      "required": [
+        "format",
+        "id",
+        "title",
+        "creator",
+        "type",
+        "school"
+      ],
+      "properties": {
+        "$schema": {
+          "type": "string"
+        },
+        "format": {
+          "description": "Format version of this file.",
+          "const": 1,
+          "type": "number"
+        },
+        "id": {
+          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+          "maxLength": 80,
+          "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+          "type": "string"
+        },
+        "title": {
+          "minLength": 1,
+          "maxLength": 40,
+          "type": "string"
+        },
+        "creator": {
+          "pattern": "^[a-z0-9_-]+$",
+          "maxLength": 39,
+          "description": "GitHub handle, lowercase.",
+          "type": "string"
+        },
+        "description": {
+          "minLength": 1,
+          "maxLength": 240,
+          "type": "string"
+        },
+        "ai_tools": {
+          "maxItems": 8,
+          "description": "AI tools used to make this file or its art. Required when any were used.",
+          "type": "array",
+          "items": {
+            "minLength": 1,
+            "maxLength": 60,
+            "type": "string"
+          }
+        },
+        "items": {
+          "maxItems": 40,
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "rarity",
+              "sprite"
+            ],
+            "properties": {
+              "id": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              },
+              "name": {
+                "minLength": 1,
+                "maxLength": 40,
+                "type": "string"
+              },
+              "description": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string"
+              },
+              "kind": {
+                "anyOf": [
+                  {
+                    "const": "material",
+                    "type": "string"
+                  },
+                  {
+                    "const": "food",
+                    "type": "string"
+                  },
+                  {
+                    "const": "tool",
+                    "type": "string"
+                  },
+                  {
+                    "const": "fragment",
+                    "type": "string"
+                  },
+                  {
+                    "const": "treasure",
+                    "type": "string"
+                  }
+                ]
+              },
+              "rarity": {
+                "description": "Declared rarity. The check compares it with the rarity computed from the data.",
+                "anyOf": [
+                  {
+                    "const": "common",
+                    "type": "string"
+                  },
+                  {
+                    "const": "uncommon",
+                    "type": "string"
+                  },
+                  {
+                    "const": "rare",
+                    "type": "string"
+                  },
+                  {
+                    "const": "legendary",
+                    "type": "string"
+                  }
+                ]
+              },
+              "class": {
+                "description": "A base class (plant, wood, fibre, ...) or the id of a class an extension declares under one of them.",
+                "anyOf": [
+                  {
+                    "const": "plant",
+                    "type": "string"
+                  },
+                  {
+                    "const": "wood",
+                    "type": "string"
+                  },
+                  {
+                    "const": "fibre",
+                    "type": "string"
+                  },
+                  {
+                    "const": "stone",
+                    "type": "string"
+                  },
+                  {
+                    "const": "clay",
+                    "type": "string"
+                  },
+                  {
+                    "const": "mineral",
+                    "type": "string"
+                  },
+                  {
+                    "const": "metal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "animal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "meal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "tool",
+                    "type": "string"
+                  },
+                  {
+                    "const": "garment",
+                    "type": "string"
+                  },
+                  {
+                    "const": "jewelry",
+                    "type": "string"
+                  },
+                  {
+                    "const": "relic",
+                    "type": "string"
+                  },
+                  {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  }
+                ]
+              },
+              "family": {
+                "pattern": "^[a-z0-9_-]+$",
+                "maxLength": 24,
+                "description": "A group inside the class, for example \"berry\" for every berry. Open: any lowercase word.",
+                "type": "string"
+              },
+              "tags": {
+                "maxItems": 8,
+                "uniqueItems": true,
+                "description": "Open words that describe it, for example \"sweet\" or \"night\".",
+                "type": "array",
+                "items": {
+                  "pattern": "^[a-z0-9_-]+$",
+                  "maxLength": 24,
+                  "description": "A lowercase word.",
+                  "type": "string"
+                }
+              },
+              "tier": {
+                "minimum": 1,
+                "maximum": 20,
+                "description": "How advanced it is, from 1. The rarity says how often it appears; the tier says how far up the ladder it is. A tool has the tier of its \"tool\".",
+                "type": "integer"
+              },
+              "sprite": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
+                "maxLength": 120,
+                "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
+                "type": "string"
+              },
+              "food": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "satiety"
+                ],
+                "properties": {
+                  "satiety": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                    "type": "integer"
+                  },
+                  "hurt": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
+                    "type": "integer"
+                  }
+                }
+              },
+              "tool": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "kind",
+                  "tier"
+                ],
+                "properties": {
+                  "kind": {
+                    "anyOf": [
+                      {
+                        "const": "basket",
+                        "type": "string"
+                      },
+                      {
+                        "const": "trowel",
+                        "type": "string"
+                      },
+                      {
+                        "const": "axe",
+                        "type": "string"
+                      },
+                      {
+                        "const": "staff",
+                        "type": "string"
+                      },
+                      {
+                        "const": "hammer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pick",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "tier": {
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Better tools work faster. The calculator clamps the total.",
+                    "type": "integer"
+                  },
+                  "uses": {
+                    "minimum": 1,
+                    "maximum": 1000,
+                    "description": "The tool wears out after this many uses. Left out, the tool lasts (DECISIONS.md, 2026-10-09: the crafting economy).",
+                    "type": "integer"
+                  }
+                }
+              },
+              "fragment": {
+                "additionalProperties": false,
+                "description": "A found scrap that teaches a recipe.",
+                "type": "object",
+                "required": [
+                  "unlocks"
+                ],
+                "properties": {
+                  "unlocks": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  }
+                }
+              },
+              "wear": {
+                "additionalProperties": false,
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+                "type": "object",
+                "required": [
+                  "slot"
+                ],
+                "properties": {
+                  "slot": {
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                    "anyOf": [
+                      {
+                        "const": "head",
+                        "type": "string"
+                      },
+                      {
+                        "const": "top",
+                        "type": "string"
+                      },
+                      {
+                        "const": "legs",
+                        "type": "string"
+                      },
+                      {
+                        "const": "outfit",
+                        "type": "string"
+                      },
+                      {
+                        "const": "feet",
+                        "type": "string"
+                      },
+                      {
+                        "const": "jewelry",
+                        "type": "string"
+                      },
+                      {
+                        "const": "hand",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "look": {
+                    "description": "A look: worn on the look layer over the work clothes. It shows and counts for nothing, so it has no effects and no set.",
+                    "type": "boolean"
+                  },
+                  "effects": {
+                    "minItems": 1,
+                    "maxItems": 2,
+                    "description": "Small bonuses while it is worn on the work layer. Two at most, each effect once.",
+                    "type": "array",
+                    "items": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "effect",
+                        "value"
+                      ],
+                      "properties": {
+                        "effect": {
+                          "description": "What a worn item helps: gathering, digging or crafting speed, the craft chance, or rare finds.",
+                          "anyOf": [
+                            {
+                              "const": "gather_speed_pct",
+                              "type": "string"
+                            },
+                            {
+                              "const": "dig_speed_pct",
+                              "type": "string"
+                            },
+                            {
+                              "const": "craft_speed_pct",
+                              "type": "string"
+                            },
+                            {
+                              "const": "craft_chance_pct",
+                              "type": "string"
+                            },
+                            {
+                              "const": "rare_find_pct",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "value": {
+                          "minimum": 1,
+                          "maximum": 100,
+                          "description": "Percent, at most the cap of the item's tier (params.wear_effect_max_pct).",
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  },
+                  "set": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
+                    "type": "string"
+                  }
+                }
+              },
+              "premium_later": {
+                "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "classes": {
+          "maxItems": 10,
+          "description": "Classes of your own, each under one base class.",
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "description": "A class of your own, declared under one base class. Every rule written for the base class holds for it.",
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "base"
+            ],
+            "properties": {
+              "id": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              },
+              "name": {
+                "minLength": 1,
+                "maxLength": 40,
+                "type": "string"
+              },
+              "base": {
+                "description": "plant (leaves, herbs, berries, fruit, roots, mushrooms), wood, fibre (reeds, grass, thread, cloth), stone, clay (clay, sand, pottery, brick), mineral (crystals, gems, salt, ore), metal (waits for its discovery), animal (feathers, wool, hide, bone), meal (cooked food), tool, garment (worn clothes), jewelry, relic (old things from the ruins).",
+                "anyOf": [
+                  {
+                    "const": "plant",
+                    "type": "string"
+                  },
+                  {
+                    "const": "wood",
+                    "type": "string"
+                  },
+                  {
+                    "const": "fibre",
+                    "type": "string"
+                  },
+                  {
+                    "const": "stone",
+                    "type": "string"
+                  },
+                  {
+                    "const": "clay",
+                    "type": "string"
+                  },
+                  {
+                    "const": "mineral",
+                    "type": "string"
+                  },
+                  {
+                    "const": "metal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "animal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "meal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "tool",
+                    "type": "string"
+                  },
+                  {
+                    "const": "garment",
+                    "type": "string"
+                  },
+                  {
+                    "const": "jewelry",
+                    "type": "string"
+                  },
+                  {
+                    "const": "relic",
+                    "type": "string"
+                  }
+                ]
+              },
+              "description": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string"
+              }
+            }
+          }
+        },
+        "type": {
+          "const": "school",
+          "type": "string"
+        },
+        "school": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "name",
+            "profession",
+            "nodes"
+          ],
+          "properties": {
+            "name": {
+              "minLength": 1,
+              "maxLength": 40,
+              "type": "string"
+            },
+            "profession": {
+              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+              "maxLength": 80,
+              "description": "The profession whose wing this is. The profession keeps its levels; the school is what the points buy.",
+              "type": "string"
+            },
+            "nodes": {
+              "minItems": 1,
+              "maxItems": 24,
+              "description": "The path and the corners. At most 12 nodes for each race (the path and that race's corner).",
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "id",
+                  "name",
+                  "text",
+                  "size",
+                  "effect",
+                  "value"
+                ],
+                "properties": {
+                  "id": {
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+                    "maxLength": 40,
+                    "description": "The node's name inside its school, for example \"steady\". A learned node is kept as \"<school id>/<node id>\".",
+                    "type": "string"
+                  },
+                  "name": {
+                    "minLength": 1,
+                    "maxLength": 40,
+                    "type": "string",
+                    "description": "A thing the player knows how to do, for example \"Depth sense\"."
+                  },
+                  "text": {
+                    "minLength": 1,
+                    "maxLength": 240,
+                    "type": "string",
+                    "description": "One sentence in words, never a number or a percentage (the number stays in the code)."
+                  },
+                  "size": {
+                    "anyOf": [
+                      {
+                        "const": "small",
+                        "type": "string"
+                      },
+                      {
+                        "const": "major",
+                        "type": "string"
+                      },
+                      {
+                        "const": "corner",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "needs": {
+                    "maxItems": 3,
+                    "uniqueItems": true,
+                    "description": "The nodes of the same school learned before this one: its place on the path.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+                      "maxLength": 40,
+                      "description": "The node's name inside its school, for example \"steady\". A learned node is kept as \"<school id>/<node id>\".",
+                      "type": "string"
+                    }
+                  },
+                  "key": {
+                    "additionalProperties": false,
+                    "description": "Keys: the attribute pips the node asks for, for example { \"senses\": 3 }. A key opens the node; it is never spent.",
+                    "type": "object",
+                    "properties": {
+                      "might": {
+                        "minimum": 1,
+                        "maximum": 10,
+                        "type": "integer"
+                      },
+                      "senses": {
+                        "minimum": 1,
+                        "maximum": 10,
+                        "type": "integer"
+                      },
+                      "agility": {
+                        "minimum": 1,
+                        "maximum": 10,
+                        "type": "integer"
+                      },
+                      "luck": {
+                        "minimum": 1,
+                        "maximum": 10,
+                        "type": "integer"
+                      },
+                      "stamina": {
+                        "minimum": 1,
+                        "maximum": 10,
+                        "type": "integer"
+                      },
+                      "spirit": {
+                        "minimum": 1,
+                        "maximum": 10,
+                        "type": "integer"
+                      }
+                    }
+                  },
+                  "effect": {
+                    "description": "What a technique does. A closed list: the kernel knows how to apply each one. A craft effect of a technique (craft_speed_pct, craft_chance_pct) helps the recipes of its own profession.",
+                    "anyOf": [
+                      {
+                        "const": "see_ripe",
+                        "type": "string"
+                      },
+                      {
+                        "const": "timing_window_pct",
+                        "type": "string"
+                      },
+                      {
+                        "const": "second_hint",
+                        "type": "string"
+                      },
+                      {
+                        "const": "rare_find_pct",
+                        "type": "string"
+                      },
+                      {
+                        "const": "craft_speed_pct",
+                        "type": "string"
+                      },
+                      {
+                        "const": "meal_fill_pct",
+                        "type": "string"
+                      },
+                      {
+                        "const": "gather_speed_pct",
+                        "type": "string"
+                      },
+                      {
+                        "const": "dig_speed_pct",
+                        "type": "string"
+                      },
+                      {
+                        "const": "craft_chance_pct",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "value": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "The number the effect moves. Shown only on a long press, never on the tree.",
+                    "type": "integer"
+                  },
+                  "slot": {
+                    "description": "A technique: it works only while it sits in an active slot of the build. Left out: always on once learned. Never on a small node.",
+                    "type": "boolean"
+                  },
+                  "race": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "A corner node only: the race whose node this is. Only a player of that race sees and learns it.",
+                    "type": "string"
+                  },
+                  "icon": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "An item whose sprite pictures the node on the tree.",
+                    "type": "string"
                   }
                 }
               }

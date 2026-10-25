@@ -1,7 +1,7 @@
 /**
  * pnpm check | values | bundle
  *
- *   check    validate every content file (schema, references, economy, sprites)
+ *   check    validate every content file (schema, references, economy, sprites), NEXT.md's Status lines and the shrink-only lists
  *   values   re-anchor content/values.lock.json (core maintainers only) and print gold per hour of making
  *   bundle   build game/src/generated/bundle.json and copy the kits for the client
  *   credits  write CREDITS.md from the content (--verify: fail when it is stale)
@@ -11,7 +11,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } fr
 import { join } from 'node:path';
 import { canonical } from '@game/kernel';
 import { computeBoard, readCommits, readPoints, writeBoard } from './board';
-import { formatIssues, runCheck } from './check';
+import { formatIssues, runCheck, runRepoCheck } from './check';
 import { LOCK_FILE, REPO_ROOT } from './load';
 import { formatMaking, makingReport } from './making';
 
@@ -19,7 +19,7 @@ const [command, ...args] = process.argv.slice(2);
 const json = args.includes('--json');
 
 function check(): ReturnType<typeof runCheck> {
-  const result = runCheck();
+  const result = runRepoCheck();
   if (json) console.log(JSON.stringify({ files: result.files, issues: result.issues }, null, 2));
   else console.log(formatIssues(result));
   return result;
@@ -125,6 +125,7 @@ function creditsText(credits: { title: string; type: string; creator: string; fi
     '- [Phaser](https://phaser.io) game framework - MIT license.',
     '- [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) by Stefie Justprince - SIL Open Font License 1.1 (`game/public/fonts/OFL.txt`).',
     '- [Atkinson Hyperlegible Next](https://github.com/googlefonts/atkinson-hyperlegible-next) by the Braille Institute of America - SIL Open Font License 1.1 (`game/public/fonts/atkinson-hyperlegible-next/OFL.txt`).',
+    '- [Jersey 15](https://github.com/scfried/soft-type-jersey) by The Soft Type Project Authors - SIL Open Font License 1.1 (`game/public/fonts/jersey-15/OFL.txt`).',
     '',
   );
   return lines.join('\n');

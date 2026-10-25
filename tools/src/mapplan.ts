@@ -253,13 +253,6 @@ export function checkMapPlan(b: Bundle, origin: Record<string, string>): Issue[]
   const err = (where: string, message: string) => issues.push({ file, where, message, level: 'error' });
   const warn = (where: string, message: string) => issues.push({ file, where, message, level: 'warning' });
 
-  if (m.heights) {
-    if (m.heights.length !== m.height) err('map.heights', `has ${m.heights.length} rows, the map is ${m.height} high`);
-    m.heights.forEach((row, y) => {
-      if (row.length !== m.width) err(`map.heights.${y}`, `row is ${row.length} wide, the map is ${m.width} wide`);
-    });
-  }
-
   const walkMs = b.params.walk_step_ms;
   for (const f of firstNight(b)) {
     if (f.exitSteps === null || f.exitSteps * walkMs > f.daylightMs) continue;

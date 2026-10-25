@@ -160,7 +160,7 @@ describe('wearing', () => {
     expect(cap.events).toContainEqual({ e: 'unwear', item: 'x/cap', slot: 'head', look: false });
     const ring = ok(cap.state, { t: 'sell', npc: trader, item: 'x/ring', qty: 1, at });
     expect(ring.state.player.worn).toEqual({ jewelry1: 'x/ring' });
-    expect(ring.state.player.gold).toBe(ring.state.ledger.minted - ring.state.ledger.burned);
+    expect(ring.state.player.gold + ring.state.player.boundGold).toBe(ring.state.ledger.minted - ring.state.ledger.burned);
   });
 });
 

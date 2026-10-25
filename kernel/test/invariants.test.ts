@@ -128,10 +128,10 @@ function checkedStep(state: State, action: Action, tick: number): State {
 
   serialize(result.state);
   invariant(
-    result.state.player.gold === result.state.ledger.minted - result.state.ledger.burned,
+    result.state.player.gold + result.state.player.boundGold === result.state.ledger.minted - result.state.ledger.burned,
     'gold does not balance against the ledger',
   );
-  invariant(result.state.player.gold >= 0, 'gold is negative');
+  invariant(result.state.player.gold >= 0 && result.state.player.boundGold >= 0, 'gold is negative');
   for (const count of Object.values(result.state.player.bag)) {
     invariant(Number.isInteger(count) && count > 0, 'bag contains a non-positive or fractional stack');
   }

@@ -11,7 +11,8 @@
     "Codex: text-grid sprites in tools/src/kit/sketches.ts",
     "Claude Code: text-grid sprites and frames via a PIL script",
     "Stable Diffusion 1.5 and SDXL, pixel-art LoRAs, via kit:gen",
-    "Codex image generation via kit:gen"
+    "Codex image generation via kit:gen",
+    "FLUX.1 schnell and Qwen-Image 2512 via kit:gen"
   ],
   "kit": {
     "palette": [
@@ -683,8 +684,17 @@
       },
       "props/pebbles": {
         "file": "props/pebbles.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "stone"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-props-small.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:37"
+        }
       },
       "props/reeds": {
         "file": "props/reeds.png",
@@ -708,8 +718,17 @@
       },
       "props/rock_small": {
         "file": "props/rock_small.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "stone"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/rich-props-small.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:36"
+        }
       },
       "props/rock_stones": {
         "file": "props/rock_stones.png",

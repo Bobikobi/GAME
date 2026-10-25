@@ -13,7 +13,7 @@ Welcome. Openfold is built by the people who play it, and a first contribution i
 
 - The check is green, and the opening still plays in Chrome (CI does this too).
 - Quests, camps, inscriptions and dialogue follow [the rules of play](docs/design/GAME_RULES.md): `pnpm check` prints a `!` line for each rule it can test, and a reviewer answers the checklist in its section 7.
-- Reviewers approve, each going through the reviewer checklist in the pull request. Until five creators have had an extension merged, one approval is enough and a maintainer gives it; from then on, three reviewers approve.
+- Reviewers approve, each going through the reviewer checklist in the pull request. Until five creators have had an extension merged, one approval is enough and the owner gives it; from then on, three reviewers approve.
 - One extension per slot. When two proposals compete for the same request or slot, both stay open until the vote on the request decides.
 
 ### Requests and open calls
@@ -28,7 +28,7 @@ If you are joining the core team, read [How the team works](docs/team/WORKFLOW.m
 - A change to any value anchor (`content/values.lock.json`) is a core maintainer decision: run `pnpm values` and say why in the pull request.
 - Write down a design choice, or an approach that did not work, in [DECISIONS.md](DECISIONS.md).
 - A change to play that collides with a rule in [docs/design/GAME_RULES.md](docs/design/GAME_RULES.md) goes to the owner before code is written (its section 6).
-- Before a pull request: `pnpm verify` and `pnpm e2e`.
+- Before a pull request: `pnpm verify`; CI plays the opening e2e on the pull request (run `pnpm e2e` locally, under the lock, only to debug a red run).
 
 ## Conduct
 

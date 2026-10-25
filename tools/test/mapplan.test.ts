@@ -26,7 +26,7 @@ describe('the plan block in the schema', () => {
   it('is optional, and a full block validates', () => {
     const file = load();
     delete file.map.plan;
-    delete file.map.heights;
+    delete file.map.levels;
     expect(validateFile(file)).toEqual([]);
     file.map.plan = {
       regions: [{ id: 'core/a-bank', purpose: 'stop', cells: [[2, 2, 4, 4]], height: 0, tags: ['meadow'], cover: { 'core/base-kit:props/reeds': 30 }, opens_by: 'wake' }],
@@ -36,7 +36,7 @@ describe('the plan block in the schema', () => {
       wakes: [{ pocket: 'core/west-bank', quest: 'core/first-pickings' }],
       exits: [{ id: 'core/a-way', at: [2, 5], to: 'core/a-bank', min_road_steps: 2200 }],
     };
-    file.map.heights = file.map.ground.map((row: string) => '0'.repeat(row.length));
+    file.map.levels = file.map.ground.map((row: string) => '0'.repeat(row.length));
     expect(validateFile(file)).toEqual([]);
   });
 
@@ -47,7 +47,7 @@ describe('the plan block in the schema', () => {
     file.map.plan = { regions: [{ id: 'core/a-bank', purpose: 'stop', cells: [[2, 2, 4, 4]], cover: { 'core/base-kit:props/reeds': 301 }, opens_by: 'wake' }] };
     expect(validateFile(file)).not.toEqual([]);
     file.map.plan = {};
-    file.map.heights = file.map.ground.map((row: string) => 'a'.repeat(row.length));
+    file.map.levels = file.map.ground.map((row: string) => 'a'.repeat(row.length));
     expect(validateFile(file)).not.toEqual([]);
   });
 });
@@ -115,7 +115,7 @@ describe('G71: the first night is held by size', () => {
         width: 20,
         height: 5,
         ground: [0, 1, 2, 3, 4].map(row),
-        heights: undefined,
+        levels: undefined,
         props: [],
         slots: [{ id: 'core/a-gate', kind: 'area', x: 5, y: 2, w: 1, h: 1 }],
         regions: worldFrom === null ? undefined : [{ id: 'elsewhere', x: worldFrom, y: 0, w: 20 - worldFrom, h: 5, world: 'elsewhere' }],

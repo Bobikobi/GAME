@@ -1,6 +1,8 @@
 import type { Books, PlayerRecord } from '../api';
-import type { BirthBand } from './age';
 import type { ProviderId } from './provider';
+
+/** How long a closed account can still be brought back by signing in; after it the details are erased (owner, 23.10). */
+export const CLOSED_ACCOUNT_GRACE_MS = 30 * 24 * 60 * 60 * 1000;
 
 /** Instants are milliseconds since the epoch, from the server's clock, so a test can move time. */
 export interface OAuthFlow {
@@ -40,7 +42,8 @@ export interface NewGame {
 export interface NewAccount {
   email: string;
   name: string;
-  birthBand: BirthBand;
+  /** the proxy's country, kept with the fact that the age check passed; the band and the date are not kept */
+  country?: string;
 }
 
 /**
@@ -58,8 +61,11 @@ export interface AuthStore {
   /** Mark a link used and return it; `used` when an earlier request already did, undefined when it never existed. */
   useEmailLink(tokenHash: string, now: number): Promise<EmailLink | 'used' | undefined>;
 
+  /** The account an identity signs in to, open or closed (a closed one is brought back by signing in). */
   accountForIdentity(provider: ProviderId, subject: string): Promise<string | undefined>;
   accountForEmail(email: string): Promise<string | undefined>;
+  /** Whether the account is closed and still inside its grace. */
+  isClosed(accountId: string): Promise<boolean>;
   addIdentity(provider: ProviderId, subject: string, accountId: string): Promise<void>;
 
   saveTicket(ticket: SignupTicket): Promise<void>;
@@ -72,9 +78,21 @@ export interface AuthStore {
   /** The account a session stands for while it is neither revoked nor past its end. */
   sessionAccount(tokenHash: string, now: number): Promise<string | undefined>;
   revokeSession(tokenHash: string, now: number): Promise<void>;
+  /** The account while it is open; a closed account is hidden and answers undefined. */
   account(accountId: string): Promise<{ name: string; email: string } | undefined>;
-  /** Delete the account and, by cascade, every row that names it (NEXT 18 e). */
-  closeAccount(accountId: string): Promise<void>;
+  /**
+   * Close the account at `now`: hidden at once, its sessions ended, its board places taken down. Nothing
+   * is deleted until `eraseClosed` (the 30 days of the owner's answer of 23.10).
+   */
+  closeAccount(accountId: string, now: number): Promise<void>;
+  /** Bring a closed account back; true when it was closed and not yet erased. */
+  reopenAccount(accountId: string): Promise<boolean>;
+  /**
+   * Erase the personal details of every account closed more than `graceMs` before `now`: email, name,
+   * identities, sessions, the game state and board places. The gold ledger and the action log keep
+   * their rows under the account number. Running it again changes nothing. Returns how many accounts it erased.
+   */
+  eraseClosed(now: number, graceMs: number): Promise<number>;
 
   /** Remove the flows, links, tickets and sessions whose end has passed. */
   sweep(now: number): Promise<void>;
