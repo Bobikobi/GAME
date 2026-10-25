@@ -177,7 +177,6 @@ export function showTitle(ui: UI): Promise<void> {
       const races = Object.entries(b.races).sort(([x], [y]) => x.localeCompare(y));
       let picked = races[0]?.[0] ?? '';
       let look = 0;
-      const nameInput = h('input', { class: 'name', maxlength: 16, placeholder: 'Your name (or carve it later)', autocomplete: 'off', spellcheck: 'false' });
       const error = h('p', { class: 'error' });
       const cards = h('div', { class: 'cards' });
       const lookToggle = h('div', { class: 'tabs look-toggle' });
@@ -217,14 +216,8 @@ export function showTitle(ui: UI): Promise<void> {
       drawToggle();
       drawCards();
       let starting = false;
+      // no name here: the player cuts it on the stone at the bridge, the only place a name is chosen
       const start = async () => {
-        const name = nameInput.value.trim();
-        // a blank name is allowed: it is carved at the bridge's stone
-        if (name !== '' && !/^[A-Za-z0-9 _-]{1,16}$/.test(name)) {
-          error.textContent = 'A name is 1 to 16 letters, digits, spaces, "_" or "-".';
-          nameInput.focus();
-          return;
-        }
         // one start at a time: a second tap or Enter while the first waits starts nothing more
         if (starting) return;
         starting = true;
@@ -237,7 +230,7 @@ export function showTitle(ui: UI): Promise<void> {
         // a signed-in account starts on the server, so the account keeps it; the demo starts in this browser
         let session: GameSession;
         if (remote) {
-          const answer = await remote.act({ t: 'start', race: picked, name, look });
+          const answer = await remote.act({ t: 'start', race: picked, name: '', look });
           if (!answer.ok) {
             error.textContent = answer.error;
             starting = false;
@@ -247,7 +240,7 @@ export function showTitle(ui: UI): Promise<void> {
         } else {
           Session.erase();
           const fresh = Session.fresh(b, debugSeed());
-          const answer = fresh.act({ t: 'start', race: picked, name, look });
+          const answer = fresh.act({ t: 'start', race: picked, name: '', look });
           if (!answer.ok) {
             error.textContent = answer.error;
             starting = false;
@@ -260,9 +253,6 @@ export function showTitle(ui: UI): Promise<void> {
         // the narrator speaks for the pocket the seed drew
         void intro(ui, b.pockets[session.state.player.pocket]?.intro);
       };
-      nameInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') start();
-      });
       el.replaceChildren(
         h(
           'div',
@@ -270,12 +260,11 @@ export function showTitle(ui: UI): Promise<void> {
           h('h2', null, 'Who wakes up by the river?'),
           lookToggle,
           cards,
-          h('label', { class: 'name-row' }, 'Name ', nameInput),
           error,
           h('div', { class: 'title-actions' }, button('Wake up', start, 'big'), button('Back', () => home())),
         ),
       );
-      nameInput.focus();
+      (el.querySelector('.title-actions button') as HTMLElement | null)?.focus();
     };
 
     home();
