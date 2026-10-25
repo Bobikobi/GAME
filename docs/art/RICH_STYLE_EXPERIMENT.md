@@ -110,5 +110,5 @@ the materials it is made of and `style: rich` for the hand. The order:
 
 Cost today through the Codex agent: three to four minutes and 30k to 60k tokens per image. The
 step for volume is a direct image call in place of the agent, not another lever on the drawing:
-`--drawer gemini` ([DRAWERS.md](DRAWERS.md)), ten to twenty seconds per image, on a project with billing:
+`--drawer gemini` ([DRAWERS.md](DRAWERS.md)), ten to twenty seconds per image, on a project with billing: not now, no Gemini billing (DECISIONS 2026-10-22, decision 7); the free routes are local and Kaggle.
 the free tier has no image quota (proven 21.10).
