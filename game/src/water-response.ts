@@ -3,8 +3,8 @@ export type WaterWeather = 'calm' | 'windy' | 'storm';
 export interface WaterSample { x: number; y: number; land: boolean; distance: number; nx: number; ny: number; exposure: number }
 export const WATER_WEATHER = {
   calm: { speed: .3, amplitude: .15, foam: .02, frequency: .7 },
-  windy: { speed: 4, amplitude: 2.8, foam: .42, frequency: 1.7 },
-  storm: { speed: 9, amplitude: 6, foam: .88, frequency: 2.6 },
+  windy: { speed: 1.4, amplitude: 2.8, foam: .42, frequency: 1.7 },
+  storm: { speed: 3, amplitude: 6, foam: .88, frequency: 2.6 },
 } as const;
 
 /** Sample real land silhouette; an upwind obstruction shelters the water behind it. */
@@ -54,5 +54,27 @@ export function waterResponse(sample: WaterSample, weather: WaterWeather, slope:
     bend: wave * w.amplitude * response,
     foam: sample.land ? 0 : Math.max(0, wave) ** 2 * w.foam * response * (.6 + .4 * steepness),
     speed: w.speed * (1 - .55 * near),
+  };
+}
+
+/** A visible incoming crest, short break, then a spreading, fading foam wash.
+ * Anchored to the bank rather than advected with the surface texture.
+ */
+export function shoreBreaker(sample: WaterSample, weather: WaterWeather, slope: number, time: number) {
+  const steep = Math.max(0, Math.min(1, slope));
+  const period = weather === 'storm' ? 2.8 : weather === 'windy' ? 4.2 : 6;
+  const shoreX = sample.x - sample.nx * sample.distance;
+  const shoreY = sample.y - sample.ny * sample.distance;
+  // Adjacent segments remain coherent, with a slight delay around bends.
+  const phase = ((time / period + (shoreX + shoreY) * .0015) % 1 + 1) % 1;
+  const approach = Math.min(1, phase / .48);
+  const wash = Math.max(0, (phase - .48) / .52);
+  const strength = sample.land || !Number.isFinite(sample.distance) ? 0
+    : (weather === 'calm' ? .025 : weather === 'windy' ? .8 : 1) * Math.sqrt(sample.exposure);
+  return {
+    distance: phase < .48 ? 4 + (1 - approach) * (18 - 10 * steep) : 4 + wash * (7 - 4 * steep),
+    crest: strength * Math.min(1, phase / .12) * Math.max(0, 1 - wash * 3),
+    wash: strength * Math.sin(Math.PI * wash) * (1 - wash) * .9,
+    spread: 1 + wash * (1.8 - steep),
   };
 }

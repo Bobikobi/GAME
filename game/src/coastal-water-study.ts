@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { buildWaterField, waterResponse, WATER_WEATHER, type WaterSample, type WaterWeather } from './water-response';
+import { buildWaterField, shoreBreaker, waterResponse, WATER_WEATHER, type WaterSample, type WaterWeather } from './water-response';
 
 /** Study renderer: resamples generated water art; foam uses the generated sprite, no new art drawn. */
 export class CoastalWaterStudy {
@@ -14,7 +14,7 @@ export class CoastalWaterStudy {
   private readonly pixels: ImageData;
   private readonly source: ImageData;
   private readonly image: Phaser.GameObjects.Image;
-  private foam: { image: Phaser.GameObjects.Image; sample: WaterSample }[] = [];
+  private foam: { image: Phaser.GameObjects.Image; wash: Phaser.GameObjects.Image; sample: WaterSample }[] = [];
   private budget = 0;
 
   constructor(private readonly scene: Phaser.Scene, private readonly size: number, private readonly landAt: (x: number, y: number) => boolean, surface: string, private readonly foamKey: string) {
@@ -29,14 +29,21 @@ export class CoastalWaterStudy {
     this.pixels = this.texture.getContext().createImageData(this.resolution, this.resolution);
     this.image = scene.add.image(0, 0, this.texture.key).setOrigin(0).setDisplaySize(size, size).setDepth(0);
     this.rebuild();
-    scene.events.once('shutdown', () => { this.foam.forEach(f => f.image.destroy()); this.image.destroy(); scene.textures.remove(this.texture.key); });
+    scene.events.once('shutdown', () => { this.foam.forEach(f => { f.image.destroy(); f.wash.destroy(); }); this.image.destroy(); scene.textures.remove(this.texture.key); });
   }
 
   rebuild(): void {
-    this.foam.forEach(f => f.image.destroy());
+    this.foam.forEach(f => { f.image.destroy(); f.wash.destroy(); });
     this.field = buildWaterField(this.size, 8, this.landAt, this.wind);
-    this.foam = this.field.flatMap((sample, i) => !sample.land && sample.distance >= 2 && sample.distance <= 14 && i % 3 === 0
-      ? [{ sample, image: this.scene.add.image(sample.x, sample.y, this.foamKey).setDepth(1).setScale(.42).setRotation(Math.atan2(sample.ny, sample.nx) + Math.PI / 2).setAlpha(0) }] : []);
+    this.foam = [];
+    for (const sample of this.field) {
+      if (sample.land || sample.distance < 2 || sample.distance > 9) continue;
+      const bx = sample.x - sample.nx * sample.distance, by = sample.y - sample.ny * sample.distance;
+      if (this.foam.some(f => Math.hypot(bx - (f.sample.x - f.sample.nx * f.sample.distance), by - (f.sample.y - f.sample.ny * f.sample.distance)) < 13)) continue;
+      const sprite = () => this.scene.add.image(bx, by, this.foamKey).setDepth(1)
+        .setRotation(Math.atan2(sample.ny, sample.nx) + Math.PI / 2).setAlpha(0);
+      this.foam.push({ sample, wash: sprite(), image: sprite() });
+    }
     this.render();
   }
 
@@ -70,9 +77,14 @@ export class CoastalWaterStudy {
     this.texture.refresh();
     this.image.setAlpha(this.weather === 'calm' ? .18 : this.weather === 'windy' ? .4 : .58);
     for (const f of this.foam) {
-      const r = waterResponse(f.sample, this.weather, this.slope, this.time);
-      f.image.setAlpha(r.foam).setScale(.4 + w.amplitude * .035);
-      f.image.setPosition(f.sample.x + f.sample.nx * r.bend * .35, f.sample.y + f.sample.ny * r.bend * .35);
+      const r = shoreBreaker(f.sample, this.weather, this.slope, this.time);
+      const bx = f.sample.x - f.sample.nx * f.sample.distance;
+      const by = f.sample.y - f.sample.ny * f.sample.distance;
+      f.image.setAlpha(r.crest).setScale(.5, .65)
+        .setPosition(bx + f.sample.nx * r.distance, by + f.sample.ny * r.distance);
+      f.wash.setAlpha(r.wash).setScale(.52, r.spread)
+        .setPosition(bx + f.sample.nx * r.distance, by + f.sample.ny * r.distance);
+
     }
     this.renders++;
   }

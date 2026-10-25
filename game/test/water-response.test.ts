@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { buildWaterField, waterResponse, type WaterSample } from '../src/water-response';
+import { buildWaterField, shoreBreaker, waterResponse, type WaterSample } from '../src/water-response';
 
 test('coast normals follow geometry and incoming wind exposes the facing bank', () => {
   const wall = (x: number) => x < 32;
@@ -27,4 +27,17 @@ test('open water with no land remains finite and has no shoreline reaction', () 
     expect(Number.isFinite(r.bend)).toBe(true);
     expect(r.foam).toBe(0);
   }
+});
+
+test('breaker travels shoreward, breaks brightly, and leaves fading wash', () => {
+  const sample: WaterSample = { x: 4, y: 0, land: false, distance: 4, nx: 1, ny: 0, exposure: 1 };
+  const at = (phase: number) => shoreBreaker(sample, 'storm', .4, phase * 2.8);
+  expect(at(.4).distance).toBeLessThan(at(.15).distance);
+  expect(at(.48).crest).toBeGreaterThan(.9);
+  expect(at(.7).wash).toBeGreaterThan(.1);
+  expect(at(.99).wash).toBeLessThan(at(.7).wash * .1);
+  expect(at(.99).crest).toBe(0);
+  expect(shoreBreaker({ ...sample, exposure: .04 }, 'storm', .4, 1).crest).toBeLessThan(.25);
+  expect(shoreBreaker(sample, 'calm', .4, 1).crest).toBeLessThan(.03);
+  expect(shoreBreaker({ ...sample, land: true }, 'storm', .4, 1).crest).toBe(0);
 });
