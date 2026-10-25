@@ -25,6 +25,7 @@ import {
   recipeTier,
   riddleKey,
   rareFindPermille,
+  searchDawn,
   salePrice,
   satietyCap,
   slotsFor,
@@ -411,6 +412,32 @@ export function nightCountdown(b: Bundle, s: PublicState, at: readonly [number, 
 export function lanternNight(b: Bundle, s: PublicState, at: readonly [number, number], tick: number): number | undefined {
   if (hazardsOf(b).length === 0 || !isNight(b, tick) || isSafe(b, s, [at[0], at[1]])) return undefined;
   return nightEnds(b, tick);
+}
+
+/** The searchable that hangs on a map prop, by the prop's id (docs/design/SEARCH.md). */
+export function searchableOn(b: Bundle, propId: string): string | undefined {
+  return Object.values(b.searchables).find((sr) => sr.place.prop === propId)?.id;
+}
+
+/** What an empty searchable's window says: one line (G14). */
+export const SEARCH_EMPTY = 'Nothing here.';
+
+/** The line under a window when the character's luck tilts the rare rows, in words (decision 39). */
+export const SEARCH_LUCK_LINE = 'You have a feel for hidden things.';
+
+export interface SearchRow {
+  /** the place in the searchable's list, the `row` a take names */
+  index: number;
+  item: string;
+  name: string;
+  sprite: string | undefined;
+}
+
+/** The rows a searchable holds now: those drawn for today's dawn and not yet taken, in the order the kernel keeps them. */
+export function searchRows(b: Bundle, s: PublicState, tick: number, spotId: string): SearchRow[] {
+  const held = s.searched?.[spotId];
+  if (!held || held.dawn !== searchDawn(b, tick)) return [];
+  return held.rows.map((item, index) => ({ index, item, name: itemName(b, item), sprite: b.items[item]?.sprite }));
 }
 
 export function describe(b: Bundle, s: PublicState, e: GameEvent): { text: string; icon?: string; tone?: 'good' | 'bad' | 'info' } | undefined {

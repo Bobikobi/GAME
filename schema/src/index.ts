@@ -363,6 +363,32 @@ export const TreasureBody = Type.Object(
   { additionalProperties: false },
 );
 
+export const SearchRow = Type.Object(
+  {
+    item: Id,
+    chance_pct: Int(1, 100, 'Chance of this row being inside after a refill. Each row is drawn on its own; a rare or legendary row is tilted by luck like a dig\'s rare find.'),
+  },
+  { additionalProperties: false },
+);
+
+export const SearchBody = Type.Object(
+  {
+    rows: Type.Array(SearchRow, { minItems: 1, maxItems: 8 }),
+    place: Type.Object(
+      { prop: Id },
+      {
+        additionalProperties: false,
+        description:
+          'The map prop (its `id`) that can be searched: pressing A beside it opens a window of what is inside. Nothing is put into it; it refills once a day at dawn (docs/design/SEARCH.md).',
+      },
+    ),
+  },
+  {
+    additionalProperties: false,
+    description: 'A searchable: a table of rows drawn once a day. It takes no tool and has no timing window. A treasure file carries `search` or `dig`, never both.',
+  },
+);
+
 const RecipeLevel = Int(1, 20, 'The recipe\'s level in its profession: each missing level takes craft_level_step_bp off the chance (no wall). It sits inside the level band of the recipe\'s tier.');
 const RecipeProfession = {
   ...Id,
@@ -1831,7 +1857,11 @@ function record<T extends string, K extends string, B extends TSchema>(type: T, 
 }
 
 export const ResourceFile = record('resource', 'node', ResourceBody);
-export const TreasureFile = record('treasure', 'dig', TreasureBody);
+/** A treasure file holds one dig spot (`dig`) or one searchable (`search`); the check refuses both or neither. */
+export const TreasureFile = Type.Object(
+  { ...envelope, type: Type.Literal('treasure'), dig: Type.Optional(TreasureBody), search: Type.Optional(SearchBody) },
+  { additionalProperties: false, $id: 'treasure' },
+);
 export const RecipeFile = record('recipe', 'recipe', RecipeBody);
 export const TemplateFile = record('template', 'template', TemplateBody);
 export const NpcFile = record('npc', 'npc', NpcBody);
@@ -1916,6 +1946,8 @@ export type MapFile = Static<typeof MapFile>;
 export type ExtensionFile = Static<typeof ExtensionFile>;
 export type Resource = Static<typeof ResourceBody>;
 export type Treasure = Static<typeof TreasureBody>;
+export type Search = Static<typeof SearchBody>;
+export type SearchRow = Static<typeof SearchRow>;
 export type Recipe = Static<typeof RecipeBody>;
 export type Template = Static<typeof TemplateBody>;
 export type Npc = Static<typeof NpcBody>;

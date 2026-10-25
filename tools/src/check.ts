@@ -27,6 +27,7 @@ import { checkRaces } from './races';
 import { checkSchools } from './schools';
 import { checkHands } from './hands';
 import { checkRichness } from './richness';
+import { checkSearch } from './search';
 import { checkStarts } from './starts';
 import { mergedPullRequests, gitReader, resolveBase } from './decisions/base';
 import { NEXT_FILE, checkNext } from './decisions/next';
@@ -63,6 +64,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkDeadProps(b, assembled.origin));
     issues.push(...checkHazards(b, assembled.origin));
     issues.push(...checkRichness(b, assembled.origin));
+    issues.push(...checkSearch(b, assembled.origin));
     issues.push(...checkMapPlan(b, assembled.origin));
     issues.push(...checkHands(b, assembled.origin));
   }

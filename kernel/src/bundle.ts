@@ -21,6 +21,7 @@ import type {
   Resource,
   Restore,
   School,
+  Search,
   Shop,
   Treasure,
 } from '@game/schema';
@@ -41,6 +42,7 @@ export type ItemInfo = ItemDef & { creator: string; file: string };
 export type ClassInfo = ClassDef & { creator: string; file: string };
 export type ResourceDef = Meta & Resource;
 export type TreasureDef = Meta & Treasure;
+export type SearchDef = Meta & Search;
 /** `template`: the recipe template the assembler expanded this recipe from. */
 export type RecipeDef = Meta & Recipe & { template?: string };
 export type NpcDef = Meta & Npc;
@@ -176,6 +178,8 @@ export interface Bundle {
   classes: Record<string, ClassInfo>;
   resources: Record<string, ResourceDef>;
   treasures: Record<string, TreasureDef>;
+  /** Things to search (docs/design/SEARCH.md), by the id of the treasure file that declares them. Apart from `treasures`: no dig fields, no placed instance. */
+  searchables: Record<string, SearchDef>;
   recipes: Record<string, RecipeDef>;
   npcs: Record<string, NpcDef>;
   quests: Record<string, QuestDef>;

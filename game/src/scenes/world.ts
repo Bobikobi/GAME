@@ -71,7 +71,7 @@ import { BIRDS, CUE_LOOK, cueGain } from '../cues';
 import { nodeLook } from '../growth';
 import { peekOnStep, type Tile } from '../peek';
 import { MazePeek } from './peek';
-import { hintDistance, lanternNight, nodeAction } from '../text';
+import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
 import type { WorkKind } from '../ui/ui';
 import { type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, treasureKind } from '../work';
 import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep } from '../walking';
@@ -357,6 +357,8 @@ export class WorldScene extends Phaser.Scene {
   private meadowZone: TileZone | undefined;
   private groveZone: TileZone | undefined;
   private signs = new Map<string, string>();
+  /** the tiles of a prop that can be searched, to the searchable's id (docs/design/SEARCH.md) */
+  private searches = new Map<string, string>();
   private signSpots: SignSpot[] = [];
   private notes = new Map<string, { text: string; name: string; top: number }>();
   /** tended fires by prop id, the fire on each of their tiles, and the fire each fire-lit tile reads by */
@@ -924,6 +926,8 @@ export class WorldScene extends Phaser.Scene {
         for (let x = p.x; x < p.x + p.w; x++) {
           if (p.sign) this.signs.set(key(x, y), p.sign);
           if (p.note) this.notes.set(key(x, y), { text: p.note, name: spriteName(p.sprite), top: unit.h });
+          const searchable = p.id === undefined ? undefined : searchableOn(this.b, p.id);
+          if (searchable) this.searches.set(key(x, y), searchable);
           if (p.lit_by) this.litBy.set(key(x, y), p.lit_by);
           if (p.fire === true && p.id !== undefined) this.fireAt.set(key(x, y), p.id);
           this.tops.set(key(x, y), unit.h);
@@ -3140,6 +3144,8 @@ export class WorldScene extends Phaser.Scene {
     if (sign) return { label: 'Read the sign', run: () => (lit() ? app.ui.sign(sign) : app.ui.note(TOO_DARK)), tile, top };
     const note = this.notes.get(k);
     if (note) return { label: `Look at the ${note.name}`, run: () => app.ui.note(lit() ? note.text : TOO_DARK), tile, top: note.top };
+    const searchable = this.searches.get(k);
+    if (searchable) return { label: 'Search', run: () => void app.ui.search(searchable), tile, top };
     const fog = this.empty.find((slot) => inRect(x, y, slot));
     const faced = facedTile(s);
     if (fog && x === faced[0] && y === faced[1]) {

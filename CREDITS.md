@@ -95,6 +95,9 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Deep ruins (treasure) - `content/core/treasures/ruins-deep.json`
 - Gate rubble (treasure) - `content/core/treasures/ruins-gate.json`
 - Hall rubble (treasure) - `content/core/treasures/ruins-hall.json`
+- A heap of branches (treasure) - `content/core/treasures/search-branch-heap.json`
+- A hollow log (treasure) - `content/core/treasures/search-hollow-log.json`
+- A hollow dead tree (treasure) - `content/core/treasures/search-hollow-tree.json`
 - The slid bank (treasure) - `content/core/treasures/slid-bank-dig.json`
 - A trowel in the grass (treasure) - `content/core/treasures/slid-trowel.json`
 - Base kit (kit) - `content/kit/core/kit.json`
