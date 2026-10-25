@@ -9,6 +9,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Work stone (camp) - `content/core/camp/work-stone.json`
 - Workbench (camp) - `content/core/camp/workbench.json`
 - Workshop (camp) - `content/core/camp/workshop.json`
+- Bags (items) - `content/core/items/bags.json`
 - Healing (items) - `content/core/items/healing.json`
 - Outfits (items) - `content/core/items/outfits.json`
 - Tools (items) - `content/core/items/tools.json`
@@ -59,6 +60,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Reed cord (recipe) - `content/core/recipes/reed-cord.json`
 - Reed hat (recipe) - `content/core/recipes/reed-hat.json`
 - Reed sandals (recipe) - `content/core/recipes/reed-sandals.json`
+- Satchel (recipe) - `content/core/recipes/satchel.json`
 - Split a log (recipe) - `content/core/recipes/split-log.json`
 - Stone blade (recipe) - `content/core/recipes/stone-blade.json`
 - Stone flakes (recipe) - `content/core/recipes/stone-flakes.json`
@@ -93,6 +95,9 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Deep ruins (treasure) - `content/core/treasures/ruins-deep.json`
 - Gate rubble (treasure) - `content/core/treasures/ruins-gate.json`
 - Hall rubble (treasure) - `content/core/treasures/ruins-hall.json`
+- A heap of branches (treasure) - `content/core/treasures/search-branch-heap.json`
+- A hollow log (treasure) - `content/core/treasures/search-hollow-log.json`
+- A hollow dead tree (treasure) - `content/core/treasures/search-hollow-tree.json`
 - The slid bank (treasure) - `content/core/treasures/slid-bank-dig.json`
 - A trowel in the grass (treasure) - `content/core/treasures/slid-trowel.json`
 - Base kit (kit) - `content/kit/core/kit.json`

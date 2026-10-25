@@ -14,7 +14,8 @@
       "rarity": "rare",
       "class": "relic",
       "tier": 1,
-      "sprite": "core/base-kit:items/stone-idol"
+      "sprite": "core/base-kit:items/stone-idol",
+      "weight": 1
     }
   ],
   "dig": {
