@@ -2614,6 +2614,12 @@ Cost: the vigil is offered around 17:00-18:00, after the stew, not in the aftern
 The owner, 22.10: yes to the new order, as built on the opening-filler branch. Supersedes the long night's part of the 19.10 entry on the opening's order.
 **Retry when:** a person playing the day has too little time between the stew and dark to build and light a fire, or the stew's chain stalls a race. Model: claude-opus-5-5.
 
+## 2026-10-23 ✅ The skill tree's format: schools, nodes and the build, added beside the techniques
+
+A new core-only content kind, `school` (`content/core/schools/*.json`), one per profession: a list of nodes, each with a size (small, major or corner), a name and one sentence, its path (`needs`, the same school only), an optional key of attributes it asks for and never spends, and one effect from the closed list. A small node is always on; a major or corner node marked `slot` is a technique and counts only while it sits in the build. A corner node belongs to one race (the trunk of the tree is the race, 22.10 "The tree"). The costs (1, 2, 3 points) and the levels that open the build's five slots (1, 1, 5, 10, 15) are params (`growth`). The kernel learns a node (`learn_node`) and changes the build (`equip`, `unequip`) only at a fire, a camp or in town, and says why it refuses. `Player.nodes` and `Player.build` are optional, so a save from before the tree loads unchanged; FORMAT_VERSION stays 1.
+Why: GROWTH.md section 4 asks for the tree to come from content, and the screen needs a format to read before it can be drawn.
+Cost: the profession `techniques` stay and still count; the two ways of buying overlap until a later step moves the techniques into the nodes. There is no way to unlearn a node yet. The seed nodes are placeholders drawn from the effects the code reads today (no `see_ripe`, which nothing reads); the content wave writes the real ones.
+**Retry when:** the content wave writes the real nodes, or a playtest shows the slots open too early or too late. Model: claude-opus-5-5.
 ## 2026-10-23 ✅ Bookkeeping from the decisions audit: corrections to older entries
 
 The decisions audit of 23.10 found older entries whose status, timing or pointers went stale.
