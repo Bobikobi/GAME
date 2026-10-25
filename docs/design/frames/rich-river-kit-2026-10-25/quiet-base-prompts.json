@@ -1,0 +1,18 @@
+{
+  "tool": "image_gen.imagegen",
+  "rounds": [
+    {
+      "name": "bank-outer",
+      "prompt": "Edit this existing terrain atlas without changing its canvas, alpha silhouette, shoreline geometry, registration or orientation. Remove ALL distinctive individual round grey boulders and all large orange bare-earth spots. Replace their footprints with quiet fine gravel at the rim and low subdued moss turf inland. No stones larger than one or two logical pixels, no repeating rock necklace, no upright vegetation. Keep a narrow grey-beige gravel shoreline, broad quiet green ground and subtle small-scale soil variation. Preserve transparency EXACTLY, including all corner cutouts and outer margins. This is a less distinctive base terrain layer; individual rocks will be placed as separate props. Preserve the Openfold pixel-art style and palette, no text.",
+      "source": "bank-outer-quiet-source.png",
+      "reference": "bank-outer-source.png"
+    },
+    {
+      "name": "bank-inner",
+      "prompt": "Edit this existing terrain atlas without changing its canvas, alpha silhouette, shoreline geometry, registration or orientation. Remove ALL distinctive individual round grey boulders and all large orange bare-earth spots. Replace their footprints with quiet fine gravel at the rim and low subdued moss turf inland. No stones larger than one or two logical pixels, no repeating rock necklace, no upright vegetation. Keep a narrow grey-beige gravel shoreline, broad quiet green ground and subtle small-scale soil variation. Preserve transparency EXACTLY, including all corner cutouts and outer margins. This is a less distinctive base terrain layer; individual rocks will be placed as separate props. Preserve the Openfold pixel-art style and palette, no text.",
+      "source": "bank-inner-quiet-source.png",
+      "reference": "bank-inner-source.png"
+    }
+  ],
+  "review": "Large identifiable boulders removed; quiet base lowers obvious repetition. Source alpha is regenerated and must be rechecked. Three north alternatives remain the previous generation and are not registered into the v2 material profile."
+}

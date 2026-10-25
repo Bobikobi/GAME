@@ -1,0 +1,104 @@
+{
+  "id": "grassy-gravel-study",
+  "profile": "half64-candidate-v2",
+  "variants": [
+    {
+      "id": "quiet-4",
+      "motif": "quiet-4",
+      "texture": "bank-4",
+      "mask": 4,
+      "profile": "half64-candidate-v2"
+    },
+    {
+      "id": "quiet-12",
+      "motif": "quiet-12",
+      "texture": "bank-12",
+      "mask": 12,
+      "profile": "half64-candidate-v2"
+    },
+    {
+      "id": "quiet-8",
+      "motif": "quiet-8",
+      "texture": "bank-8",
+      "mask": 8,
+      "profile": "half64-candidate-v2"
+    },
+    {
+      "id": "quiet-6",
+      "motif": "quiet-6",
+      "texture": "bank-6",
+      "mask": 6,
+      "profile": "half64-candidate-v2"
+    },
+    {
+      "id": "quiet-15",
+      "motif": "quiet-15",
+      "texture": "bank-15",
+      "mask": 15,
+      "profile": "half64-candidate-v2"
+    },
+    {
+      "id": "quiet-9",
+      "motif": "quiet-9",
+      "texture": "bank-9",
+      "mask": 9,
+      "profile": "half64-candidate-v2"
+    },
+    {
+      "id": "quiet-2",
+      "motif": "quiet-2",
+      "texture": "bank-2",
+      "mask": 2,
+      "profile": "half64-candidate-v2"
+    },
+    {
+      "id": "quiet-3",
+      "motif": "quiet-3",
+      "texture": "bank-3",
+      "mask": 3,
+      "profile": "half64-candidate-v2"
+    },
+    {
+      "id": "quiet-1",
+      "motif": "quiet-1",
+      "texture": "bank-1",
+      "mask": 1,
+      "profile": "half64-candidate-v2"
+    },
+    {
+      "id": "quiet-14",
+      "motif": "quiet-14",
+      "texture": "bank-14",
+      "mask": 14,
+      "profile": "half64-candidate-v2"
+    },
+    {
+      "id": "quiet-13",
+      "motif": "quiet-13",
+      "texture": "bank-13",
+      "mask": 13,
+      "profile": "half64-candidate-v2"
+    },
+    {
+      "id": "quiet-7",
+      "motif": "quiet-7",
+      "texture": "bank-7",
+      "mask": 7,
+      "profile": "half64-candidate-v2"
+    },
+    {
+      "id": "quiet-11",
+      "motif": "quiet-11",
+      "texture": "bank-11",
+      "mask": 11,
+      "profile": "half64-candidate-v2"
+    }
+  ],
+  "water": {
+    "bed": "depth",
+    "surface": "water",
+    "foam": "foam",
+    "speed": 10,
+    "opacity": 0.42
+  }
+}

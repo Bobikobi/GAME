@@ -14,7 +14,7 @@
     },
     {
       "name": "bank-outer",
-      "colors": 30,
+      "colors": 13,
       "ramps": [
         "green",
         "moss",
@@ -31,7 +31,7 @@
     },
     {
       "name": "bank-inner",
-      "colors": 26,
+      "colors": 15,
       "ramps": [
         "green",
         "moss",
@@ -139,7 +139,7 @@
           1
         ]
       ],
-      "alphaBoundaryMismatches": 20,
+      "alphaBoundaryMismatches": 17,
       "productionReady": false
     },
     {
@@ -203,7 +203,7 @@
           1
         ]
       ],
-      "alphaBoundaryMismatches": 30,
+      "alphaBoundaryMismatches": 25,
       "productionReady": false
     }
   ],

@@ -36,7 +36,7 @@ for (let index = 0; index < 3; index += 1) {
 }
 reports.push({ name: 'bank-variants', cells: 3, ramps: banks, registration: 'nearest sample of full192x64 canvas; hard alpha and palette snap; no trimming', status: 'alternatives need endpoint review before substitution' });
 for (const name of ['bank-outer', 'bank-inner']) {
-  const imported = importSprite(readFileSync(`${folder}${name}-source.png`), {
+  const imported = importSprite(readFileSync(`${folder}${name}-quiet-source.png`), {
     width: 128, height: 128, anchor: 'center', padding: 0,
     palette: paletteWithRamps(banks), outline: false, dither: true,
   });
