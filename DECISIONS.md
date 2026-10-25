@@ -2590,6 +2590,30 @@ The owner, 22.10: adopted as written (decision 50 of the 51 he adopted that afte
 The owner, 22.10: adopted as written (decision 51 of the 51 he adopted that afternoon).
 **Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
 
+## 2026-10-23 ✅ No way-finding rule anywhere in the game; G69 stays
+
+**No way-finding rule.** This is an open world: whoever sets out for another world explores on their own. The valley map plan's own convention of a landmark every 12 tiles, so a player never loses the way, is dropped for the whole game, the tangle included (its exemption is moot). Landmarks stand where the story or the look puts them, never by a spacing count. **G69 stays:** paths wind, no straight run over 8 tiles (12 on a bridge); it is a look rule, not a way-finding rule. `pnpm check` now measures it on every map that carries a plan: each planned path's runs and every straight row or column of path letters on the ground.
+The owner, 23.10.
+**Retry when:** the owner changes his word on it. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The first night is held by size, not by a rule (G71)
+
+**The first night is unavoidable by size.** No rule forbids leaving the first town; the ground is simply too large to cross before dusk, so the first night's quest is a must by geometry. No gate, flag or quest lock enforces it; the region gates of decision 25 stay what they are, physical obstacles a quest clears.
+As built: `tools/src/mapplan.ts` (`firstNight`) walks four ways from every wake tile of the pool, the valley's own mends made (the bridge, the arch) and every gate to another world shut, to the nearest tile of another world (a map region with its own `world`) or the map's edge. The walk at `walk_step_ms` a step must take longer than the daylight left at waking (tick 0, noon, to the first dusk at 20:00: 400 s with today's `day_length_ms`), or `pnpm check` fails the map. It also measures the walk to the nearest shut gate, which is where a region quest would open the way. Tests: `tools/test/mapplan.test.ts`.
+The owner, 23.10.
+**Retry when:** a region quest can be finished before the first dusk (then the walk to that gate is what holds the night, and the check must count the gate open), or the clock or the walk speed changes. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The map plan block in the map format
+
+**A map may carry its plan.** Additive, `format` stays 1: `heights` (a digit row per ground row, read by the check only until the kernel walks levels; kit schema answer 6 of 22.10), a prop's `crossing` (steps or a ramp, G68), and `plan` with `regions[]` (cells, purpose stop or passage, height, tags, cover per mille, and `opens_by`: `wake`, the quest that opens it (decision 25), or left out for ground nobody walks), `paths[]` (corner tiles, G69), `routes[]` (who walks where and at which hours), `rests[]` and `wakes[]` (the spawn pool: each wake pocket with its first task; the wake tile and the tools stay in the pocket files of 22.10). The kernel and the clients never read the plan; an `opens_by` may name a region quest before it is written (its gate stays shut ground until then).
+**Retry when:** the cover tool or the level walk lands (they read the same block). Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ G71 measures the road beyond each exit, every gate open
+
+**The gate never holds the first night; the road beyond it does.** The gates stay where the story wants them, but beyond every exit of the first region a road runs long enough that, with every gate open, no wake reaches the next region's ground before the first dusk. This replaces the shut-gate measure of the entry above.
+As built: `plan.exits[]` (additive): `id`, the gate `slot` or the `at` tile of a way with no slot (a jetty), `to` (a plan region) and `min_road_steps`. `firstNight` walks with every listed gate open; reaching another world or the edge by any way that is not a listed exit before dusk fails the map. `exitRoads` names each exit's least road: the daylight in steps less the fastest wake's steps to the gate, plus `ROAD_MARGIN` (10); a smaller `min_road_steps` fails, and so does a stitched map whose next world's ground starts closer beyond the gate. Tests: `tools/test/mapplan.test.ts`.
+The owner, 23.10.
+**Retry when:** the clock or the walk speed changes (the numbers move), or a way to travel faster than walking lands. Model: claude-opus-5-5.
 ## 2026-10-23 ✅ The rich wave: items at a full tile, best of three by eye
 
 **Items are drawn at a full tile, 64x64**, as today's items fill their 16x16 tile, so every icon in the bag is one size. **Every free spec of the wave runs best of three and the gallery is judged by eye**, as the rich experiment did: three parallel `kit:gen` runs, each with its own `--out`; the picks go into the kit with their ramps.
@@ -2926,6 +2950,10 @@ The quest designer reviewed the branch of 17.10 (feat/night-ruins, never merged)
 Also from the review: the inscription keeps one line and the belief readings move into people's mouths; two order fixes (the yard quest requires the arch; the gamble pays something other than logs). The map rows are redrawn by the hand-made first map (NEXT 19), so the layout carries over as a plan, not as tiles. A fresh branch from develop carries the content, the bell and walk-out code and the tests; the old branch stays as it is until then.
 **Retry when:** the first hand-made map lands, or the owner decides the bell-rope question. Model: claude-opus-5-5.
 
+## 2026-10-25 ✅ One height layer: the map plan reads levels, not heights
+
+The map plan block (#292) and the ring schema (#321) each added a per-tile digit layer to the map, `heights` and `levels`, built in parallel for the same thing (STYLE section 6, G68). One concept stays: `levels`, the name develop already shares with chunks and stamps, with develop's description. The plan's region `height` is now read against `levels`, a prop's `crossing` moves onto the shared prop of maps, chunks and stamps, and the map check drops its own row check, since the assembler already checks the shape of `levels` against the ground. The plan block itself is unchanged. Why: two names for one layer would let a map carry two heights that disagree, and every reader would have to pick one. The manager's decision, 25.10.
+**Retry when:** a map needs a second per-tile number that is not the walking level (a water depth, a snow line); it gets its own name then, never `heights`. Model: claude-opus-5-5.
 ## 2026-10-25 ✅ The forager wakes to a returner's basket, and carving a name on the stone is choosing the player's name
 
 The owner read the west bank fix of #327 told as the player lives it (pick the herbs in the shallows, find the bridge's missing stone under them, strike it) and answered: the story is bad. Three story-first versions were written (a name in the basket's handle, the mist stepping back from each picked herb, a stone knocking in the shallows); the owner picked the first, with a change.
