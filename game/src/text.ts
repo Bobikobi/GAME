@@ -423,6 +423,8 @@ export function describe(b: Bundle, s: PublicState, e: GameEvent): { text: strin
       return { text: `Put down ${e.qty} ${itemName(b, e.item)}`, icon: b.items[e.item]?.sprite, tone: 'info' };
     case 'gold':
       return { text: `${e.delta > 0 ? '+' : '-'}${gold(Math.abs(e.delta))} gold`, tone: e.delta > 0 ? 'good' : 'info' };
+    case 'bound':
+      return { text: `${e.delta > 0 ? '+' : '-'}${gold(Math.abs(e.delta))} starter gold`, tone: e.delta > 0 ? 'good' : 'info' };
     case 'level': {
       const prof = b.professions[e.profession];
       const tech = prof?.techniques.find((t) => t.level === e.level);

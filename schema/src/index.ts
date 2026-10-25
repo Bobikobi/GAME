@@ -363,10 +363,10 @@ export const TreasureBody = Type.Object(
   { additionalProperties: false },
 );
 
-const RecipeLevel = Int(1, 20, 'Level required in the profession that gates the recipe. It sits inside the level band of the recipe\'s tier.');
+const RecipeLevel = Int(1, 20, 'The recipe\'s level in its profession: each missing level takes craft_level_step_bp off the chance (no wall). It sits inside the level band of the recipe\'s tier.');
 const RecipeProfession = {
   ...Id,
-  description: 'The profession that gates this recipe and that it trains. Left out: the profession that works its station.',
+  description: 'The profession that trains this recipe and sets its chance. Left out: the profession that works its station.',
 };
 const RecipeMiss = Type.Object(
   {
@@ -1052,6 +1052,75 @@ export const ProfessionBody = Type.Object(
   { additionalProperties: false },
 );
 
+/**
+ * The growth frame (docs/design/GROWTH.md section 4; DECISIONS.md 2026-10-22 "The tree" and "No
+ * percentages on screen"): a school is one wing of the tree, tied to a profession; its nodes are bought
+ * with skill points by choice, never handed out by level. A small node moves one number and is always
+ * on; a major node changes a verb or teaches a technique; a corner node is where the race (the trunk)
+ * meets the school, one per race and school.
+ */
+export const NODE_SIZES = ['small', 'major', 'corner'] as const;
+export const NodeSize = Type.Union(NODE_SIZES.map((k) => Type.Literal(k)));
+const NodeId = Type.String({
+  pattern: '^[a-z0-9]+(-[a-z0-9]+)*$',
+  maxLength: 40,
+  description: 'The node\'s name inside its school, for example "steady". A learned node is kept as "<school id>/<node id>".',
+});
+const AttributeKey = Type.Object(
+  {
+    might: Type.Optional(Int(1, 10)),
+    senses: Type.Optional(Int(1, 10)),
+    agility: Type.Optional(Int(1, 10)),
+    luck: Type.Optional(Int(1, 10)),
+    stamina: Type.Optional(Int(1, 10)),
+    spirit: Type.Optional(Int(1, 10)),
+  },
+  {
+    additionalProperties: false,
+    description: 'Keys: the attribute pips the node asks for, for example { "senses": 3 }. A key opens the node; it is never spent.',
+  },
+);
+
+export const SchoolNode = Type.Object(
+  {
+    id: NodeId,
+    name: { ...Name, description: 'A thing the player knows how to do, for example "Depth sense".' },
+    text: { ...Text, description: 'One sentence in words, never a number or a percentage (the number stays in the code).' },
+    size: NodeSize,
+    needs: Type.Optional(
+      Type.Array(NodeId, {
+        maxItems: 3,
+        uniqueItems: true,
+        description: 'The nodes of the same school learned before this one: its place on the path.',
+      }),
+    ),
+    key: Type.Optional(AttributeKey),
+    effect: Effect,
+    value: Int(0, 100, 'The number the effect moves. Shown only on a long press, never on the tree.'),
+    slot: Type.Optional(
+      Type.Boolean({
+        description: 'A technique: it works only while it sits in an active slot of the build. Left out: always on once learned. Never on a small node.',
+      }),
+    ),
+    race: Type.Optional({ ...Id, description: 'A corner node only: the race whose node this is. Only a player of that race sees and learns it.' }),
+    icon: Type.Optional({ ...Id, description: 'An item whose sprite pictures the node on the tree.' }),
+  },
+  { additionalProperties: false },
+);
+
+export const SchoolBody = Type.Object(
+  {
+    name: Name,
+    profession: { ...Id, description: 'The profession whose wing this is. The profession keeps its levels; the school is what the points buy.' },
+    nodes: Type.Array(SchoolNode, {
+      minItems: 1,
+      maxItems: 24,
+      description: 'The path and the corners. At most 12 nodes for each race (the path and that race\'s corner).',
+    }),
+  },
+  { additionalProperties: false },
+);
+
 const Bounded = Type.Object(
   {
     value: Type.Integer(),
@@ -1089,7 +1158,7 @@ export const LightParams = Type.Object(
       minItems: 2,
       maxItems: 12,
       description:
-        'The hours the valley is washed in a colour (ART_SYSTEM section 2): cool before sunrise, none at noon, warm in the late afternoon, dusk at 19:00, the night after that. The scene multiplies by the wash between keys, in whole percent.',
+        'The hours the valley is washed in a colour (ART_SYSTEM section 2). Today\'s curve is the gold #eda83a at 40% around 05:30 and 20:00 and none at noon; the cool and dusk hour tints land with the L2 pick. The scene multiplies by the wash between keys, in whole percent.',
     }),
     sun: Type.Optional(
       Type.Object(
@@ -1261,6 +1330,22 @@ export const ParamsBody = Type.Object(
           'What one point in an attribute adds: weight limit (might), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina). Spirit is defined and read by no rule yet: its first readers come with the night layer and the tree.',
       },
     ),
+    growth: Type.Optional(
+      Type.Object(
+        {
+          cost: Type.Object(
+            { small: Bounded, major: Bounded, corner: Bounded },
+            { additionalProperties: false, description: 'Skill points a node costs, by its size (GROWTH section 3.6).' },
+          ),
+          slot_levels: Type.Array(Type.Integer({ minimum: 1, maximum: 40 }), {
+            minItems: 1,
+            maxItems: 8,
+            description: 'The character level each active slot of the build opens at, from the first slot, never falling (GROWTH section 3.3: two at level 1, then one more at 5, 10 and 15).',
+          }),
+        },
+        { additionalProperties: false, description: 'The skill tree: what a node costs and when the build\'s slots open. Left out: the tree is closed.' },
+      ),
+    ),
   },
   { additionalProperties: false },
 );
@@ -1341,7 +1426,7 @@ export const KitBody = Type.Object(
               minimum: 0.1,
               maximum: 40,
               description:
-                'The sprite\'s height in characters, one decimal (NATURE section 1): a person is 1.0, a house 3.5. The check warns when a kind in NATURE section 1 or STYLE 1b falls under its floor. Left out when the sprite has no true size.',
+                'The sprite\'s height in characters (NATURE section 1): a person is 1.0, a house 3.5. The check warns when a kind in NATURE section 1 or STYLE 1b falls under its floor. Left out when the sprite has no true size.',
             }),
           ),
           source: Type.Optional(
@@ -1408,6 +1493,58 @@ const CreatureKind = Type.Object(
 /** The closed list of climates a region may declare (NATURE section 2). The tables live in content/core/climates.json. */
 export const CLIMATES = ['temperate', 'dry', 'cold', 'wet'] as const;
 
+/** One world prop, wherever it stands: on a map, in a chunk or inside a stamped place. Coordinates are tiles inside the file's own grid. */
+const Prop = (max: number) =>
+  Type.Object(
+    {
+      id: Type.Optional(PropId),
+      sprite: SpriteRef,
+      x: Int(0, max, 'Left tile of the footprint.'),
+      y: Int(0, max, 'Top tile of the footprint.'),
+      w: Int(1, 8, 'Footprint width in tiles. The sprite is drawn bottom-centered on it.'),
+      h: Int(1, 8, 'Footprint height in tiles.'),
+      solid: Type.Boolean(),
+      cover: Type.Optional(
+        Type.Boolean({
+          description: 'Hides a player standing on this non-solid prop from a predator\'s eyes, but never from an adjacent predator.',
+        }),
+      ),
+      fire: Type.Optional(Type.Literal(true, { description: 'A fire the player may feed by hand. It needs an id.' })),
+      lit_by: Type.Optional({
+        ...Id,
+        description: 'Id of the fire prop while whose fire burns this prop\'s note and sign may be read.',
+      }),
+      sign: Type.Optional({ ...Id, description: 'Makes the prop a readable sign that names whoever filled this slot, or says it awaits restoration.' }),
+      note: Type.Optional({ ...Text, description: 'A line shown when the player looks at this prop, for example an old inscription.' }),
+      hazard: Type.Optional(
+        Type.Object(
+          {
+            kind: Type.Union(HAZARD_KINDS.map((k) => Type.Literal(k)), {
+              description: 'A predator hunts the player in its reach and bites until the player stands somewhere safe; a pit, a trap or deep water hurts once each time the player steps onto its footprint.',
+            }),
+            window: Type.Array(Type.Union(HAZARD_WINDOWS.map((k) => Type.Literal(k))), {
+              minItems: 1,
+              uniqueItems: true,
+              description: 'When it acts (G30). Outside its window it is harmless and shows.',
+            }),
+            reach: Type.Optional(Int(1, 12, 'A predator only: how many tiles from its footprint it notices the player. The params hold the default.')),
+            round: Type.Optional(
+              Type.Array(Type.Tuple([Int(0, max), Int(0, max)]), {
+                minItems: 4,
+                maxItems: 64,
+                description: 'A predator only: the closed, four-adjacent loop of tiles it walks after dark. The first tile is inside its prop footprint.',
+              }),
+            ),
+            pace_ms: Type.Optional(Int(100, 10_000, 'A predator on a round only: game milliseconds per tile. The params hold the default.')),
+            eyes: Type.Optional(Int(1, 12, 'A predator on a round only: how many tiles ahead it sees. The params hold the default.')),
+          },
+          { additionalProperties: false, description: 'Makes the prop a hazard (G30-G35). It needs an id.' },
+        ),
+      ),
+    },
+    { additionalProperties: false },
+  );
+
 export const MapBody = Type.Object(
   {
     climate: Type.Optional(
@@ -1437,57 +1574,13 @@ export const MapBody = Type.Object(
       { additionalProperties: false },
     )),
     ground: Type.Array(Type.String(), { minItems: 8 }),
-    props: Type.Array(
-      Type.Object(
-        {
-          id: Type.Optional(PropId),
-          sprite: SpriteRef,
-          x: Int(0, 1023, 'Left tile of the footprint.'),
-          y: Int(0, 1023, 'Top tile of the footprint.'),
-          w: Int(1, 8, 'Footprint width in tiles. The sprite is drawn bottom-centered on it.'),
-          h: Int(1, 8, 'Footprint height in tiles.'),
-          solid: Type.Boolean(),
-          cover: Type.Optional(
-            Type.Boolean({
-              description: 'Hides a player standing on this non-solid prop from a predator\'s eyes, but never from an adjacent predator.',
-            }),
-          ),
-          fire: Type.Optional(Type.Literal(true, { description: 'A fire the player may feed by hand. It needs an id.' })),
-          lit_by: Type.Optional({
-            ...Id,
-            description: 'Id of the fire prop while whose fire burns this prop\'s note and sign may be read.',
-          }),
-          sign: Type.Optional({ ...Id, description: 'Makes the prop a readable sign that names whoever filled this slot, or says it awaits restoration.' }),
-          note: Type.Optional({ ...Text, description: 'A line shown when the player looks at this prop, for example an old inscription.' }),
-          hazard: Type.Optional(
-            Type.Object(
-              {
-                kind: Type.Union(HAZARD_KINDS.map((k) => Type.Literal(k)), {
-                  description: 'A predator hunts the player in its reach and bites until the player stands somewhere safe; a pit, a trap or deep water hurts once each time the player steps onto its footprint.',
-                }),
-                window: Type.Array(Type.Union(HAZARD_WINDOWS.map((k) => Type.Literal(k))), {
-                  minItems: 1,
-                  uniqueItems: true,
-                  description: 'When it acts (G30). Outside its window it is harmless and shows.',
-                }),
-                reach: Type.Optional(Int(1, 12, 'A predator only: how many tiles from its footprint it notices the player. The params hold the default.')),
-                round: Type.Optional(
-                  Type.Array(Type.Tuple([Int(0, 1023), Int(0, 1023)]), {
-                    minItems: 4,
-                    maxItems: 64,
-                    description: 'A predator only: the closed, four-adjacent loop of tiles it walks after dark. The first tile is inside its prop footprint.',
-                  }),
-                ),
-                pace_ms: Type.Optional(Int(100, 10_000, 'A predator on a round only: game milliseconds per tile. The params hold the default.')),
-                eyes: Type.Optional(Int(1, 12, 'A predator on a round only: how many tiles ahead it sees. The params hold the default.')),
-              },
-              { additionalProperties: false, description: 'Makes the prop a hazard (G30-G35). It needs an id.' },
-            ),
-          ),
-        },
-        { additionalProperties: false },
-      ),
+    levels: Type.Optional(
+      Type.Array(Type.String({ pattern: '^[0-9]+$', description: 'One level digit (0 to 9) per tile, rows like the ground (STYLE section 6).' }), {
+        minItems: 8,
+        description: 'The height layer beside the ground layer (STYLE section 6): one digit 0 to 9 per tile, integers only. Absent: every tile is level 0.',
+      }),
     ),
+    props: Type.Array(Prop(1023)),
     spawn: Type.Object({ x: Int(0, 1023), y: Int(0, 1023) }, { additionalProperties: false }),
     world: Type.Optional({
       ...WorldId,
@@ -1513,6 +1606,68 @@ export const MapBody = Type.Object(
       ),
     ),
     slots: Type.Array(Slot),
+  },
+  { additionalProperties: false },
+);
+
+// ---------------------------------------------------------------- the open world's chunks (NEXT section 19 a)
+
+/** One stamped place: a hand-made place (the boathouse, later a creator's) written over a chunk's generated ground at its spot (DECISIONS 2026-10-17; NEXT section 19). */
+export const Stamp = Type.Object(
+  {
+    id: { ...Id, description: 'The place\'s id, unique on the chunk, so a quest or a check can name it.' },
+    x: Int(0, 63, 'Left tile of the place inside the chunk.'),
+    y: Int(0, 63, 'Top tile of the place inside the chunk.'),
+    height: Type.Optional(
+      Type.Integer({ minimum: 0, maximum: 9, default: 0, description: 'The level the place sits on (STYLE section 6). Absent: 0.' }),
+    ),
+    grounds: Type.Optional(
+      Type.Array(Type.String({ pattern: '^.{1,64}$', description: 'A row of the place\'s own ground, in the shared legend\'s characters; every row the same length.' }), {
+        minItems: 1,
+        maxItems: 64,
+        description: 'The place\'s hand-made ground, written over the chunk\'s ground at (x, y). Absent: the generated ground stays.',
+      }),
+    ),
+    levels: Type.Optional(
+      Type.Array(Type.String({ pattern: '^[0-9]{1,64}$', description: 'A row of level digits for the place\'s tiles, the same shape as the grounds (STYLE section 6).' }), {
+        minItems: 1,
+        maxItems: 64,
+        description: 'The place\'s per-tile levels. Absent: every tile of the place sits at the stamp\'s height.',
+      }),
+    ),
+    props: Type.Optional(
+      Type.Array(Prop(63), {
+        description: 'The place\'s props, in tiles inside the place: x and y counted from the stamp\'s (x, y).',
+      }),
+    ),
+    slots: Type.Optional(
+      Type.Array(Slot, {
+        description: 'The place\'s slots (a keeper\'s npc, a building, an area inside it), x and y counted from the stamp\'s (x, y).',
+      }),
+    ),
+  },
+  { additionalProperties: false },
+);
+
+/** One world chunk: the 64 by 64 block the world is generated, stored and streamed in (OPEN_WORLD G50-G52; NEXT section 19 a). */
+export const ChunkBody = Type.Object(
+  {
+    x: Type.Integer({ minimum: 0, maximum: 1023, multipleOf: 64, description: 'The chunk\'s top-left tile x in the world grid. A multiple of 64: chunks align to the grid\'s corner (G51).' }),
+    y: Type.Integer({ minimum: 0, maximum: 1023, multipleOf: 64, description: 'The chunk\'s top-left tile y in the world grid. A multiple of 64 (G51).' }),
+    grounds: Type.Array(Type.String({ pattern: '^.{64}$', description: 'A row of 64 ground tiles, in the shared legend\'s characters (G52).' }), {
+      minItems: 64,
+      maxItems: 64,
+      description: 'The chunk\'s ground: 64 rows of 64 tiles. The world has one shared legend; a chunk carries none (G52).',
+    }),
+    levels: Type.Optional(
+      Type.Array(Type.String({ pattern: '^[0-9]{64}$', description: 'A row of 64 level digits, one per tile (STYLE section 6).' }), {
+        minItems: 64,
+        maxItems: 64,
+        description: 'The chunk\'s height layer: one digit 0 to 9 per tile, 64 rows like the grounds. Absent: every tile is level 0.',
+      }),
+    ),
+    props: Type.Array(Prop(63), { description: 'The chunk\'s props, in chunk coordinates.' }),
+    stamps: Type.Array(Stamp, { description: 'The hand-made places stamped onto the chunk.' }),
   },
   { additionalProperties: false },
 );
@@ -1583,10 +1738,12 @@ export const ProfessionFile = record('profession', 'profession', ProfessionBody)
 export const ParamsFile = record('params', 'params', ParamsBody);
 export const KitFile = record('kit', 'kit', KitBody);
 export const MapFile = record('map', 'map', MapBody);
+export const ChunkFile = record('chunk', 'chunk', ChunkBody);
 export const PocketFile = record('pocket', 'pocket', PocketBody);
+export const SchoolFile = record('school', 'school', SchoolBody);
 
 export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'expedition', 'restore', 'camp', 'race', 'items', 'creator', 'reaction'] as const;
-export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map', 'pocket'] as const;
+export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map', 'pocket', 'school'] as const;
 
 export const ExtensionFile = Type.Union([
   ResourceFile,
@@ -1608,6 +1765,7 @@ export const ExtensionFile = Type.Union([
   KitFile,
   MapFile,
   PocketFile,
+  SchoolFile,
 ]);
 
 export type ItemDef = Static<typeof ItemDef>;
@@ -1658,12 +1816,19 @@ export type Restore = Static<typeof RestoreBody>;
 export type Camp = Static<typeof CampBody>;
 export type Race = Static<typeof RaceBody>;
 export type Pocket = Static<typeof PocketBody>;
+export type School = Static<typeof SchoolBody>;
+export type SchoolNodeDef = Static<typeof SchoolNode>;
+export type NodeSizeName = (typeof NODE_SIZES)[number];
+export type SchoolFile = Static<typeof SchoolFile>;
 export type Profession = Static<typeof ProfessionBody>;
 export type Shop = Static<typeof ShopBody>;
 export type Kit = Static<typeof KitBody>;
 export type Ramp = Static<typeof RampBody>;
 export type RampPurpose = Static<typeof RampFor>;
 export type GameMap = Static<typeof MapBody>;
+export type ChunkFile = Static<typeof ChunkFile>;
+export type Chunk = Static<typeof ChunkBody>;
+export type Stamp = Static<typeof Stamp>;
 export type EffectName = (typeof EFFECTS)[number];
 export type WornEffectName = (typeof WORN_EFFECTS)[number];
 export type WornSlotName = (typeof WORN_SLOTS)[number];
@@ -1693,7 +1858,9 @@ export const SCHEMAS = {
   params: ParamsFile,
   kit: KitFile,
   map: MapFile,
+  chunk: ChunkFile,
   pocket: PocketFile,
+  school: SchoolFile,
 } as const;
 
 export { validateFile, type SchemaIssue } from './validate';

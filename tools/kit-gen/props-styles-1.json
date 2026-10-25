@@ -1,0 +1,96 @@
+{
+  "note": "Regional styles, wave 1: three lanterns and three statues drawn from today's sprite as the size reference, the wording carrying each identity. Decided 2026-10-22: a prop's look follows its place, so every settlement picks its own from these in its map plan; the kit holds one sprite per kind per style. Codex route; the wording's 'tests X' phrase names the one difference each still was drawn to show.",
+  "entries": [
+    {
+      "name": "lantern_post_iron",
+      "ref": "props/lantern_post",
+      "what": "wrought-iron lantern post with a curled hook and a hanging glass lamp",
+      "width": 64,
+      "height": 128,
+      "anchor": "bottom",
+      "ramps": [
+        "grey",
+        "fire"
+      ],
+      "style": "rich",
+      "detail": "tests MATERIAL: iron. A slim black iron post on a three-footed base, a curled hook at the top, a square glass lamp hanging from it on a short chain, a warm flame inside with a bright core and an orange halo on the glass; rivets along the post. Fill the whole 64x128 frame top to bottom at full pixel density."
+    },
+    {
+      "name": "lantern_post_stone",
+      "ref": "props/lantern_post",
+      "what": "carved stone pillar with a fire bowl on top",
+      "width": 64,
+      "height": 128,
+      "anchor": "bottom",
+      "ramps": [
+        "stone",
+        "grey",
+        "fire"
+      ],
+      "style": "rich",
+      "detail": "tests SHAPE: a fire bowl instead of a lamp. A tapered stone pillar with carved bands, a wide iron bowl on top holding an open fire, flames licking above the rim, soot streaks down the stone, a cracked square base. Fill the whole 64x128 frame top to bottom at full pixel density."
+    },
+    {
+      "name": "lantern_post_wood",
+      "ref": "props/lantern_post",
+      "what": "old crooked wooden post with a hanging paper lantern",
+      "width": 64,
+      "height": 128,
+      "anchor": "bottom",
+      "ramps": [
+        "wood",
+        "bark",
+        "fire",
+        "moss"
+      ],
+      "style": "rich",
+      "detail": "tests AGE: old and crooked. A weathered wooden post leaning slightly, bark peeling, moss at the foot, a cross-arm with a round paper lantern hanging on a rope, the paper glowing warm orange with a dark rib pattern. Fill the whole 64x128 frame top to bottom at full pixel density."
+    },
+    {
+      "name": "statue_founder",
+      "ref": "props/broken_statue",
+      "what": "broken stone statue of a robed figure holding a sickle, head missing",
+      "width": 64,
+      "height": 128,
+      "anchor": "bottom",
+      "ramps": [
+        "grey",
+        "stone",
+        "moss"
+      ],
+      "style": "rich",
+      "detail": "tests SUBJECT: a person. A life-size stone figure in a long robe standing on a square plinth, one hand holding a sickle against the chest, the other arm broken off at the elbow, the head missing with a jagged neck, moss in the folds of the robe, an inscription band with worn marks on the plinth. Fill the whole 64x128 frame at full pixel density."
+    },
+    {
+      "name": "statue_stag",
+      "ref": "props/broken_statue",
+      "what": "stone statue of a standing stag with one antler broken",
+      "width": 64,
+      "height": 128,
+      "anchor": "bottom",
+      "ramps": [
+        "grey",
+        "stone",
+        "moss"
+      ],
+      "style": "rich",
+      "detail": "tests SUBJECT: an animal. A stag carved in grey stone standing on a plinth, head raised, one antler whole and the other snapped short, a crack across the chest, moss on the back and the plinth, an inscription band with worn marks on the plinth. Fill the whole 64x128 frame at full pixel density."
+    },
+    {
+      "name": "statue_knight",
+      "ref": "props/broken_statue",
+      "what": "toppled stone knight statue leaning off its plinth, sword half buried",
+      "width": 64,
+      "height": 128,
+      "anchor": "bottom",
+      "ramps": [
+        "grey",
+        "stone",
+        "moss",
+        "rust"
+      ],
+      "style": "rich",
+      "detail": "tests POSE: toppled. An armoured stone knight fallen forward and leaning against its own cracked plinth at an angle, a stone sword tip buried in the ground, rust stains where iron pins held the statue, moss on the shoulders, an inscription band with worn marks on the plinth. Fill the whole 64x128 frame at full pixel density."
+    }
+  ]
+}
