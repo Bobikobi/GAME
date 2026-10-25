@@ -1,84 +1,128 @@
 /* The kit: one window with five pages, in the Field Kit's materials
-   (DECISIONS 2026-10-20). Bag carries what you carry, Outfit what you wear,
-   Skills what you can do, Shop the stall's draft, and Journal opens the
-   ledger. The character belongs to Outfit alone. The mobile layout is one
-   column; from 900px the bag and the card stand side by side. */
+   (DECISIONS 2026-10-20), worn in the theme "B, canvas" (DECISIONS 2026-10-23,
+   game/src/ui/theme.css): the oiled-wood frame, a canvas inset, dark plates
+   for the tabs and the buttons, a paper card. Bag carries what you carry,
+   Outfit what you wear, Skills what you can do, Shop the stall's draft, and
+   Journal opens the ledger. The character belongs to Outfit alone. The mobile
+   layout is one column; from 900px the bag and the card stand side by side.
+   The Field Kit's rules here use the theme's tokens only, no colour of their
+   own (tools/test/ui-theme.test.ts). */
 
 .panel.bag {
   width: 100%;
   max-width: 560px;
   height: 100%;
   overflow: hidden;
-  background: var(--wood);
-  border: 3px solid var(--ink);
-  box-shadow: inset 0 0 0 3px var(--wood2);
+  background: var(--kit-wood);
+  border: 3px solid var(--kit-edge);
+  box-shadow:
+    inset 0 0 0 3px var(--kit-wood-dark),
+    inset 0 0 0 5px var(--kit-wood-light);
 }
 
 .panel.bag header {
-  background: var(--wood2);
-  border-bottom: 3px solid var(--ink);
+  padding: 10px 10px 8px;
+  background: transparent;
+  border-bottom: 0;
 }
 
 .panel.bag header h2 {
-  color: var(--cream);
-  font-size: 21px;
-  letter-spacing: 0.08em;
+  padding: 4px 12px;
+  background: var(--kit-plate);
+  color: var(--kit-brass);
+  border: 2px solid var(--kit-edge);
+  box-shadow: inset 0 0 0 2px var(--kit-brass-dark);
+  font: 400 var(--kit-text-l) / 1 var(--font);
+  letter-spacing: 0.02em;
 }
 
 .panel.bag header .btn.close {
-  background: var(--paper);
-  color: var(--ink);
+  min-height: 40px;
+  padding: 4px 14px;
+  background: var(--kit-plate);
+  color: var(--kit-plate-ink);
+  border: 2px solid var(--kit-edge);
+  box-shadow: inset 0 0 0 2px var(--kit-brass-dark);
+  font: 400 var(--kit-text) / 1 var(--font);
+}
+
+.panel.bag header .btn.close:hover,
+.panel.bag header .btn.close:focus-visible {
+  background: var(--kit-brass);
+  color: var(--kit-ink);
 }
 
 .panel.bag .panel-body {
   position: relative;
   flex: 1;
   min-height: 0;
-  background: var(--wood);
-  padding: 6px;
+  background: transparent;
+  padding: 0 8px 8px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0;
 }
 
+/* the tabs stand on the inset: the page that is open shares its canvas */
 .panel.bag .kit-tabs {
   margin: 0;
+  gap: 4px;
   flex-wrap: nowrap;
 }
 
 .panel.bag .kit-tabs .btn.tab {
   flex: 1 1 0;
   min-width: 0;
-  min-height: 34px;
+  min-height: 40px;
   padding: 2px 4px;
-  font-family: var(--font-body);
-  font-size: 13px;
-  background: var(--wood2);
-  color: var(--cream);
-  border: 2px solid var(--ink);
-  box-shadow: none;
+  font: 400 var(--kit-text) / 1 var(--font);
+  background: var(--kit-plate);
+  color: var(--kit-plate-ink);
+  border: 2px solid var(--kit-edge);
+  border-bottom: 0;
+  box-shadow: inset 0 2px 0 var(--kit-wood-light);
+}
+
+.panel.bag .kit-tabs .btn.tab:hover,
+.panel.bag .kit-tabs .btn.tab:focus-visible {
+  background: var(--kit-wood);
 }
 
 .panel.bag .kit-tabs .btn.tab.on {
-  background: var(--gold);
-  color: var(--ink);
+  background: var(--kit-canvas);
+  color: var(--kit-ink);
+  box-shadow: inset 0 2px 0 var(--kit-paper);
 }
 
+/* the inset: the page under the tabs */
 .kit-caption {
   margin: 0;
-  padding: 1px 2px 0;
-  font-size: 12px;
-  color: var(--cream);
+  padding: 8px 10px 2px;
+  background: var(--kit-canvas);
+  border: 2px solid var(--kit-edge);
+  border-top: 0;
+  border-bottom: 0;
+  font: 400 var(--kit-text) / 1.15 var(--font);
+  color: var(--kit-ink);
+}
+
+.kit-body,
+.panel.bag .kit-worn,
+.panel.bag .shop {
+  flex: 1;
+  min-height: 0;
+  padding: 6px 10px 10px;
+  background: var(--kit-canvas);
+  border: 2px solid var(--kit-edge);
+  border-top: 0;
 }
 
 .kit-body {
-  flex: 1;
-  min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: 200px minmax(0, 1fr) auto;
-  gap: 6px;
+  gap: 8px;
 }
 
 .kit-body.bag-only {
@@ -94,19 +138,19 @@
 .worn-slots {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .kit-slot {
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   display: grid;
   place-items: center;
-  background: var(--wood2);
-  border: 2px solid var(--ink);
-  box-shadow: inset 0 0 0 2px #c99a5e;
+  background: var(--kit-socket);
+  border: 2px solid var(--kit-edge);
+  box-shadow: inset 0 0 0 2px var(--kit-socket-line);
 }
 
 .kit-slot .sprite {
@@ -115,23 +159,31 @@
 
 .kit-slot .lab {
   position: absolute;
-  left: 1px;
-  bottom: -1px;
-  font-family: var(--font-body);
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: var(--cream);
+  left: 50%;
+  bottom: -14px;
+  transform: translateX(-50%);
+  padding: 0 3px;
+  background: var(--kit-plate);
+  font: 400 var(--kit-text-s) / 1 var(--font);
+  color: var(--kit-plate-ink);
+  white-space: nowrap;
 }
 
 .kit-slot.empty {
-  background: #b9814a;
+  background: var(--kit-canvas);
+  box-shadow: inset 0 0 0 2px var(--kit-canvas-line);
 }
 
 .kit-slot.empty::after {
   content: '+';
-  color: var(--wood);
-  font: 700 14px/1 var(--font-body);
+  color: var(--kit-ink-soft);
+  font: 400 var(--kit-text) / 1 var(--font);
+}
+
+.kit-slot:hover:not(.empty),
+.kit-slot:focus-visible {
+  border-color: var(--kit-brass);
+  outline: none;
 }
 
 .kit-slot.big {
@@ -148,87 +200,86 @@
   margin: 2px auto 0;
   align-self: center;
   display: flex;
-  background: var(--paper);
-  border: 2px solid var(--ink);
+  background: var(--kit-plate);
+  border: 2px solid var(--kit-edge);
 }
 
 .kit-toggle button {
-  font: 700 9px/1 var(--font-body);
-  letter-spacing: 0.04em;
-  padding: 4px 8px;
+  min-height: 36px;
+  font: 400 var(--kit-text) / 1 var(--font);
+  padding: 4px 12px;
   border: 0;
   background: transparent;
-  color: var(--ink);
+  color: var(--kit-plate-ink);
 }
 
 .kit-toggle button.on {
-  background: var(--gold);
+  background: var(--kit-brass);
+  color: var(--kit-ink);
 }
 
 .kit-effects {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  padding-top: 2px;
-  border-top: 1px solid #c9a86c;
-  font-size: 10px;
-  color: var(--wood);
+  gap: 4px 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--kit-paper-line);
+  font: 400 var(--kit-text) / 1.2 var(--font);
+  color: var(--kit-ink-soft);
 }
 
 .kit-effects b {
-  font-family: var(--font);
   font-weight: 400;
-  color: var(--ink);
+  color: var(--kit-ink);
 }
 
 .kit-set {
-  font-size: 10px;
-  color: var(--wood);
+  margin-top: 4px;
+  font: 400 var(--kit-text) / 1.2 var(--font);
+  color: var(--kit-warn);
 }
-
-
 
 /* ------------------------------------------------------------ the pockets */
 
 .kit-bag {
   min-height: 0;
-  padding: 5px 7px;
   display: flex;
   flex-direction: column;
-  background: var(--cream);
-  border: 2px solid var(--ink);
-  box-shadow: inset 0 0 0 2px #c99a5e;
+  gap: 6px;
 }
 
 .kit-bag-head {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .kit-filters {
   flex: 1;
   display: flex;
   flex-wrap: wrap;
-  gap: 3px;
+  gap: 6px;
 }
 
 .kit-filter {
-  font: 700 10px/1 var(--font-body);
-  padding: 3px 5px;
-  border: 1px solid var(--wood2);
-  background: #e5c58c;
-  color: var(--wood);
+  min-height: 36px;
+  font: 400 var(--kit-text) / 1 var(--font);
+  padding: 4px 10px;
+  border: 2px solid var(--kit-edge);
+  background: var(--kit-paper);
+  color: var(--kit-ink);
+  box-shadow: inset 0 -2px 0 var(--kit-paper-line);
 }
 
 .kit-filter.on {
-  background: var(--wood2);
-  color: var(--cream);
+  background: var(--kit-brass);
+  color: var(--kit-ink);
+  box-shadow: inset 0 -2px 0 var(--kit-brass-dark);
 }
 
 .kit-cap {
-  font: 400 11px/1 var(--font);
-  color: var(--wood);
+  font: 400 var(--kit-text) / 1 var(--font);
+  color: var(--kit-ink);
   white-space: nowrap;
 }
 
@@ -237,7 +288,7 @@
 .kit-skills,
 .kit-worn {
   scrollbar-width: thin;
-  scrollbar-color: var(--wood2) transparent;
+  scrollbar-color: var(--kit-wood-light) transparent;
 }
 
 .kit-grid::-webkit-scrollbar,
@@ -251,7 +302,7 @@
 .kit-card-body::-webkit-scrollbar-thumb,
 .kit-skills::-webkit-scrollbar-thumb,
 .kit-worn::-webkit-scrollbar-thumb {
-  background: var(--wood2);
+  background: var(--kit-wood-light);
 }
 
 .kit-grid {
@@ -259,21 +310,21 @@
   min-height: 0;
   overflow-y: auto;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 5px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
   align-content: start;
-  padding: 5px 0;
+  padding: 2px 0;
 }
 
 .kit-cell {
   position: relative;
-  height: 54px;
+  height: 56px;
   padding: 0;
   display: grid;
   place-items: center;
-  background: #d9b67a;
-  border: 2px solid var(--wood2);
-  box-shadow: inset 0 0 0 2px #ebd3a2;
+  background: var(--kit-socket);
+  border: 2px solid var(--kit-edge);
+  box-shadow: inset 0 0 0 2px var(--kit-socket-line);
 }
 
 .kit-cell .sprite {
@@ -283,32 +334,30 @@
 .kit-cell .count {
   position: absolute;
   right: 2px;
-  bottom: 0;
-  padding: 0 2px;
-  background: var(--paper);
-  border: 1px solid var(--wood2);
-  font: 400 10px/1.1 var(--font);
+  bottom: 2px;
+  padding: 0 3px;
+  background: var(--kit-paper);
+  color: var(--kit-ink);
+  border: 2px solid var(--kit-edge);
+  font: 400 var(--kit-text-s) / 1 var(--font);
+}
+
+.kit-cell:hover,
+.kit-cell:focus-visible {
+  border-color: var(--kit-brass-dark);
+  outline: none;
 }
 
 .kit-cell.on {
-  border-color: var(--gold);
-  background: #efd59a;
-  box-shadow: inset 0 0 0 2px var(--gold);
+  border-color: var(--kit-brass);
+  box-shadow:
+    inset 0 0 0 2px var(--kit-brass-dark),
+    0 0 0 2px var(--kit-brass);
 }
 
 .kit-cell.empty {
-  background: #d2ac70;
-  box-shadow: inset 0 0 0 2px #e5c58c;
-}
-
-.kit-cell.empty::after {
-  content: '';
-  width: 12px;
-  height: 2px;
-  background: #b9814a;
-  box-shadow:
-    0 -4px 0 #b9814a,
-    0 4px 0 #b9814a;
+  background: var(--kit-socket);
+  box-shadow: inset 0 0 0 2px var(--kit-wood);
 }
 
 .kit-cell.r-uncommon {
@@ -326,16 +375,16 @@
 .kit-foot {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 10px;
-  color: var(--wood);
+  gap: 8px;
+  font: 400 var(--kit-text) / 1 var(--font);
+  color: var(--kit-ink);
 }
 
 .kit-bar {
   flex: 1;
-  height: 4px;
-  background: #d2ac70;
-  border: 1px solid var(--wood2);
+  height: 8px;
+  background: var(--kit-socket);
+  border: 2px solid var(--kit-edge);
 }
 
 .kit-bar i {
@@ -358,34 +407,49 @@
 }
 
 .panel.bag .detail.kit-card {
-  height: 210px;
-  max-height: 210px;
+  height: 230px;
+  max-height: 230px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  padding: 7px 8px;
-  background: var(--cream);
-  border: 2px solid var(--ink);
-  box-shadow: inset 0 0 0 2px #c99a5e;
+  padding: 10px 12px;
+  background: var(--kit-paper);
+  color: var(--kit-ink);
+  border: 2px solid var(--kit-edge);
+  box-shadow: inset 0 0 0 2px var(--kit-paper-line);
+}
+
+.panel.bag .detail .detail-head b {
+  font: 400 var(--kit-text-l) / 1 var(--font);
 }
 
 .panel.bag .detail .detail-head .sprite {
   flex: none;
+  background-color: var(--kit-socket);
+  border: 2px solid var(--kit-edge);
+}
+
+.panel.bag .detail .detail-head .muted {
+  color: var(--kit-ink-soft);
 }
 
 .panel.bag .detail p {
-  margin: 3px 0;
-  font-family: var(--font-body);
-  font-size: 14px;
+  margin: 4px 0;
+  font: 400 var(--kit-text) / 1.2 var(--font);
 }
 
+.panel.bag .detail .muted,
 .panel.bag .detail .kit-desc {
-  color: var(--ink2);
+  color: var(--kit-ink);
+}
+
+.panel.bag .detail .credit {
+  color: var(--kit-ink-soft);
 }
 
 .panel.bag .detail .actions {
   flex: none;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 .kit-card-body {
@@ -394,23 +458,30 @@
   overflow-y: auto;
 }
 
-.panel.bag .detail .actions .btn {
-  min-height: 36px;
-  font-family: var(--font-body);
-  font-size: 14px;
+.panel.bag .btn:not(.tab):not(.close) {
+  min-height: 40px;
+  font: 400 var(--kit-text) / 1 var(--font);
+  background: var(--kit-plate);
+  color: var(--kit-plate-ink);
+  border: 2px solid var(--kit-edge);
+  box-shadow: inset 0 0 0 2px var(--kit-brass-dark);
+}
+
+.panel.bag .btn:not(.tab):not(.close):hover:not(:disabled),
+.panel.bag .btn:not(.tab):not(.close):focus-visible {
+  background: var(--kit-brass);
+  color: var(--kit-ink);
 }
 
 .kit-hint {
   margin: 0;
   padding: 8px;
-  font-size: 13px;
-  color: var(--grey);
+  font: 400 var(--kit-text) / 1.2 var(--font);
+  color: var(--kit-ink-soft);
 }
 
 .kit-set-line {
-  font-family: var(--font-body);
-  font-size: 12px;
-  color: var(--wood);
+  color: var(--kit-warn);
 }
 
 /* ------------------------------------------------------------ the skills page */
@@ -418,22 +489,22 @@
 .kit-skills {
   min-height: 0;
   overflow-y: auto;
-  padding: 8px 10px;
-  background: var(--cream);
-  border: 2px solid var(--ink);
-  box-shadow: inset 0 0 0 2px #c99a5e;
+  padding: 10px 12px;
+  background: var(--kit-paper);
+  color: var(--kit-ink);
+  border: 2px solid var(--kit-edge);
+  box-shadow: inset 0 0 0 2px var(--kit-paper-line);
+  font: 400 var(--kit-text) / 1.2 var(--font);
 }
 
-.kit-skills .attr {
-  font-size: 14px;
-}
-
-.kit-skills .attr-name {
-  font-size: 14px;
-}
-
+.kit-skills .attr,
+.kit-skills .attr-name,
 .kit-skills .attr > .muted {
-  font-size: 13px;
+  font-size: var(--kit-text);
+}
+
+.kit-skills .muted {
+  color: var(--kit-ink-soft);
 }
 
 .kit-skills .pips i {
@@ -443,12 +514,8 @@
 
 .kit-skills .card {
   margin-top: 6px;
-}
-
-.kit-skills .btn.plus {
-  min-height: 30px;
-  font-family: var(--font-body);
-  font-size: 18px;
+  background: var(--kit-canvas);
+  color: var(--kit-ink);
 }
 
 /* ------------------------------------------------------------ the worn page */
@@ -459,21 +526,25 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   overflow-y: auto;
 }
 
 .worn-stage {
   position: relative;
-  min-height: 300px;
-  padding: 8px 8px 34px;
+  min-height: 320px;
+  padding: 10px 10px 48px;
   display: grid;
   grid-template-columns: 64px minmax(0, 1fr) 64px;
   align-items: center;
   justify-items: center;
-  background: var(--cream);
-  border: 2px solid var(--ink);
-  box-shadow: inset 0 0 0 2px #c99a5e;
+  background: var(--kit-canvas);
+  border: 2px solid var(--kit-edge);
+  box-shadow: inset 0 0 0 2px var(--kit-wood-light);
+}
+
+.worn-stage .worn-slots {
+  gap: 20px;
 }
 
 .worn-stage .kit-toggle {
@@ -494,43 +565,50 @@
 }
 
 .worn-side {
-  padding: 8px 10px;
-  background: var(--cream);
-  border: 2px solid var(--ink);
-  box-shadow: inset 0 0 0 2px #c99a5e;
+  padding: 10px 12px;
+  background: var(--kit-paper);
+  color: var(--kit-ink);
+  border: 2px solid var(--kit-edge);
+  box-shadow: inset 0 0 0 2px var(--kit-paper-line);
 }
 
 .worn-list {
   display: grid;
   gap: 4px;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 .worn-row {
+  min-height: 36px;
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 8px;
-  padding: 5px 6px;
-  border: 1px solid var(--wood2);
-  background: #e5c58c;
-  font: 400 13px/1.2 var(--font-body);
-  color: var(--ink);
+  padding: 4px 8px;
+  border: 2px solid var(--kit-paper-line);
+  background: var(--kit-paper);
+  font: 400 var(--kit-text) / 1.1 var(--font);
+  color: var(--kit-ink);
   text-align: left;
 }
 
+.worn-row:hover:not(:disabled),
+.worn-row:focus-visible {
+  border-color: var(--kit-brass-dark);
+  outline: none;
+}
+
 .worn-row:disabled {
-  opacity: 0.55;
+  color: var(--kit-ink-soft);
 }
 
 .worn-slot {
-  font-weight: 700;
-  color: var(--wood);
+  color: var(--kit-ink-soft);
 }
 
 .worn-name {
   text-align: right;
 }
-
 
 /* ------------------------------------------------------------ the player's stall */
 
@@ -541,45 +619,55 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  gap: 6px;
+  gap: 8px;
 }
 
 .shop-bag,
 .shop-stall {
   min-height: 0;
   overflow-y: auto;
-  padding: 7px 8px;
-  background: var(--cream);
-  border: 2px solid var(--ink);
-  box-shadow: inset 0 0 0 2px #c99a5e;
+  padding: 8px 10px;
+  background: var(--kit-paper);
+  color: var(--kit-ink);
+  border: 2px solid var(--kit-edge);
+  box-shadow: inset 0 0 0 2px var(--kit-paper-line);
 }
 
 .shop h3 {
-  margin: 0 0 4px;
-  font: 400 12px/1 var(--font);
-  letter-spacing: 0.08em;
-  color: var(--wood);
+  display: inline-block;
+  margin: 0 0 6px;
+  padding: 2px 8px;
+  background: var(--kit-plate);
+  color: var(--kit-plate-ink);
+  font: 400 var(--kit-text) / 1.1 var(--font);
+  letter-spacing: 0.04em;
 }
 
 .shop-item {
   width: 100%;
-  min-height: 42px;
-  margin-bottom: 3px;
-  padding: 3px 5px;
+  min-height: 44px;
+  margin-bottom: 4px;
+  padding: 3px 6px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  border: 1px solid var(--wood2);
-  background: #e5c58c;
-  color: var(--ink);
-  font: 400 13px/1.2 var(--font-body);
+  gap: 8px;
+  border: 2px solid var(--kit-paper-line);
+  background: var(--kit-paper);
+  color: var(--kit-ink);
+  font: 400 var(--kit-text) / 1.1 var(--font);
   text-align: left;
   cursor: grab;
 }
 
+.shop-item:hover,
+.shop-item:focus-visible {
+  border-color: var(--kit-brass-dark);
+  outline: none;
+}
+
 .shop-item.on {
-  border-color: var(--gold);
-  box-shadow: inset 0 0 0 2px var(--gold);
+  border-color: var(--kit-brass);
+  box-shadow: inset 0 0 0 2px var(--kit-brass);
 }
 
 .shop-name {
@@ -595,32 +683,38 @@
 .shop-slots {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
+  gap: 8px;
 }
 
 .shop-slot {
-  min-height: 82px;
+  min-height: 88px;
   padding: 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  border: 2px dashed var(--wood2);
-  background: #e5c58c;
-  color: var(--wood);
-  font: 400 11px/1.25 var(--font-body);
+  border: 2px dashed var(--kit-canvas-line);
+  background: var(--kit-canvas);
+  color: var(--kit-ink);
+  font: 400 var(--kit-text) / 1.15 var(--font);
   text-align: center;
+}
+
+.shop-slot:focus-visible {
+  border-color: var(--kit-brass);
+  outline: none;
 }
 
 .shop-slot.filled {
   border-style: solid;
-  border-color: var(--green2);
-  background: #efd59a;
+  border-color: var(--kit-edge);
+  background: var(--kit-canvas);
+  box-shadow: inset 0 0 0 2px var(--green2);
 }
 
 .shop-slot.pricing {
-  border-color: var(--gold);
+  border-color: var(--kit-brass);
 }
 
 .shop-slot img {
@@ -629,16 +723,16 @@
 }
 
 .shop-slot .price {
-  color: var(--ink);
+  color: var(--kit-ink);
 }
 
 .shop-note {
-  margin: 5px 0 0;
-  font-size: 11px;
-  line-height: 1.35;
-  color: var(--wood);
+  margin: 6px 0 0;
+  font: 400 var(--kit-text) / 1.2 var(--font);
+  color: var(--kit-ink-soft);
 }
 
+/* the price card stands over the stall on a solid ink ground: no scrim */
 .shop-price-layer {
   position: absolute;
   inset: 0;
@@ -646,45 +740,49 @@
   display: grid;
   place-items: center;
   padding: 8px;
-  background: rgba(27, 26, 46, 0.5);
+  background: var(--kit-wood-dark);
 }
 
 .shop-price {
-  width: min(100%, 330px);
-  padding: 10px 12px;
-  background: var(--paper);
-  border: 3px solid var(--ink);
-  box-shadow: inset 0 0 0 2px var(--paper2);
+  width: min(100%, 360px);
+  padding: 12px 14px;
+  background: var(--kit-paper);
+  color: var(--kit-ink);
+  border: 3px solid var(--kit-edge);
+  box-shadow: inset 0 0 0 2px var(--kit-paper-line);
 }
 
 .shop-price b {
-  font: 400 17px/1.1 var(--font);
+  font: 400 var(--kit-text-l) / 1 var(--font);
 }
 
 .shop-price p {
   margin: 4px 0;
-  font-size: 12px;
-  color: var(--ink2);
+  font: 400 var(--kit-text) / 1.2 var(--font);
+  color: var(--kit-ink-soft);
 }
 
 .shop-price label {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  margin-top: 6px;
+  font: 400 var(--kit-text) / 1.1 var(--font);
 }
 
 .shop-price input {
   width: 84px;
-  min-height: 34px;
+  min-height: 36px;
   padding: 3px 6px;
-  border: 2px solid var(--ink);
-  background: var(--cream);
-  font: 400 15px/1 var(--font);
+  border: 2px solid var(--kit-edge);
+  background: var(--kit-canvas);
+  color: var(--kit-ink);
+  font: 400 var(--kit-text) / 1 var(--font);
 }
 
 .shop-price .actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   margin-top: 8px;
 }
@@ -770,7 +868,7 @@
 
 
   .kit-grid {
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
   .kit-cell {

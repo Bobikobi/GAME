@@ -112,6 +112,13 @@
       "plan": ["DECISIONS 2026-10-20 the UI's direction: Field Kit", "DECISIONS 2026-10-20 the map: its own window, the ground you walked, and the stall at the empty corner", "DECISIONS 2026-10-20 a player places a stall at the town's free corner (the owner's answer)", "DECISIONS 2026-10-21 the stall draft as built", "CR-104", "docs/design/SETTLEMENT.md 3.4 (sales while away and other players wait for the shared world)"],
       "branches": ["feat/ui-kit-screen", "feat/ui-field-kit", "feat/stall-draft-save"],
       "owner": "the kit-and-map session"
+    },
+    {
+      "id": "valley-map",
+      "title": "The valley map plan v2 on the core map: the plan block, G69 and the first-night check (G71), then the 64x64 valley",
+      "plan": ["the valley map plan v2 (the owner, 22.10 and 23.10)", "GAME_RULES G68-G71", "DECISIONS 2026-10-22 decisions 25 and 49-51", "DECISIONS 2026-10-23 the map plan block"],
+      "branches": ["feat/map-plan-block", "feat/valley-v2"],
+      "owner": null
     }
   ]
 }
