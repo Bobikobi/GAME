@@ -3042,3 +3042,35 @@ The owner caught a break in the found-trace opening of the entry above: if the d
 - **The bridge is mended with them, and nobody is waiting on the other side.** The player decides where to go from there.
 The stone's names follow the entry above (players who signed in, the written names until a server answers; the safety filter). Kept from it: carving is the only naming, for every start.
 **Retry when:** the owner changes the opening, or the bell for every signed-in player is too loud for a busy valley (then it rings only within a distance or a rate). Model: claude-opus-5-5.
+
+## 2026-10-25 ✅ The camera comes closer; the character is the measure; tall props grow to the table
+
+The owner, 25.10, on the size stills of the cut-out demo (#336, never merged): of three views - the screen's own zoom, the character drawn about 1.5 times bigger, and the camera one whole zoom step closer - the closer camera is the best, but in it the dig did not sit right against the rest of the world. A uniform zoom keeps every ratio, so the mismatch is the character's scale against the world, not the zoom. Measured on the kit's sprites (the opaque height at the sprite's own density; a tile is 16 world px) and in the game at the slid bank's dig spot:
+
+| Prop | Today, tiles | Against the character (1.5 tiles) | STYLE.md 1b wants, against the character |
+|---|---|---|---|
+| The cut-out character, the old player sprite, Pell | 1.5, 1.44, 1.44 | 1, 0.96, 0.96 | 1 (the frame, 1 x 1.5 tiles) |
+| Maru | 1.31 | 0.87 | 0.9, stooped |
+| Oak | 2.0 | 1.33 | at least 3 (3 x 5 tiles) |
+| Young tree | 1.44 | 0.96 | 2 (2 x 3 tiles) |
+| Dead tree | 2.0 | 1.33 | 2.5 (3 x 4 tiles) |
+| Lantern post | 2.0 | 1.33 | 2 (1 x 3 tiles) |
+| Standing stone | 1.81 | 1.21 | 1.5 to 2 |
+| Small house | 3.0 | 2.0 | 3 (3 x 5 tiles) |
+| Its door (the opening) | 0.875 | 0.58 | about 1.2 (112 px of 64 a tile) |
+| Bush | 0.88 | 0.59 | 0.5 |
+| Rocks and stones | 0.58 to 0.83 | 0.39 to 0.55 | - |
+| Dig spot (the loose earth) | 0.53, one tile wide | 0.35 | - |
+| An item (the trowel) | 1.0 | 0.67 | one tile, the thing 40 to 56 px of 64 |
+
+The character matches STYLE.md 1b's frame and today's player and people, and the ground things (bushes, rocks, the dig spot, items) already sit at their table size. The odd ones out are the tall props: trees, posts, stones and the house are still at the 16 px grid's sizes, 1.5 to 2.5 times shorter than the table, and a door is about half a character tall. A second round of stills set the character at 1, 1.25 and 1.5 times against one still with the tall props grown to the table, and the owner approved the recommendation:
+- **The camera comes closer:** the game's own whole zoom step at or above 1.5 times the screen's own zoom (`4 * ceil(1.5 * base / 4)`: 8 to 12 on a 390x844 phone at 3x, 1.5 times; 4 to 8 on a 1440x900 desktop at 1x, 2 times), so an art pixel stays a whole number of device pixels.
+- **The character is the measure, at 1x:** never grown; each body at its rig height ratio (human man 84, human woman 80, elf man 88, elf woman 84, skeleton 76).
+- **The tall props grow to the STYLE 1b table:** the owner approved the table's numbers as the target (STYLE 1b held its numbers until one look; this is that look).
+
+Judged frames: [2026-10-25-size-phone-2.png](docs/design/frames/2026-10-25-size-phone-2.png) (the camera closer, the human man idle by the slid bank; the pick) and [2026-10-25-size-phone-w.png](docs/design/frames/2026-10-25-size-phone-w.png) (the camera closer, the character at 1x digging at the slid bank's dig spot, the tall props grown to about the table in the page for the comparison only: the approved recommendation).
+Both doors: the proportions hold in the 3D door as ratios to the character's height (STYLE.md, both doors); the zoom step is the classic client's.
+**Follow-ups** (NEXT `camera-closer` and `tall-props-to-table`; nothing is built here):
+- (a) the real client's camera zoom set to the picked view, and the e2e camera test (`game/e2e/camera.ts`, zoom 8 at a 3x phone today) updated to it;
+- (b) the tall props redrawn or regrown to the table. All of them are on the pre-rich redraw list (#328, `docs/art/PRE_RICH_REDRAW.md`): the canopies (row 7), the oak, the young tree and the dead tree (row 11), the standing stone (row 14), the small house, the well, the market stall and the lantern post (row 22), and the ruin arch, wall and pillar, the statues and the totem (row 28). A nearest-neighbour upscale of the 16 px art is only a stopgap; the rich redraw at the table's sizes is the real fix.
+**Retry when:** a kind seen grown in play reads wrong to the owner (then that row of STYLE 1b changes), or the target phone's screen moves the zoom step. Model: claude-opus-5-5.
