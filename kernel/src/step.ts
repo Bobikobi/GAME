@@ -55,9 +55,13 @@ import {
   professionLevel,
   satietyAt,
   satietyCap,
+  nodeCost,
+  nodeRefusal,
   searchDawn,
   skillPoints,
   slotsFor,
+  slotsOpen,
+  treeNode,
   tendHolds,
   verbLevel,
   type PublicState,
@@ -95,6 +99,10 @@ export type Action =
   | { t: 'visit'; slot: string; at: Tile }
   | { t: 'learn'; item: string }
   | { t: 'spend'; attr: Attribute }
+  /** the skill tree (docs/design/GROWTH.md section 4.3): learn a node, and put a technique in a slot of the build or take it out, at a safe place */
+  | { t: 'learn_node'; node: string; at: Tile }
+  | { t: 'equip'; node: string; slot: number; at: Tile }
+  | { t: 'unequip'; slot: number; at: Tile }
   | { t: 'wear'; item: string; slot?: WearSlot }
   | { t: 'unwear'; slot: WearSlot; look?: boolean }
   | { t: 'move'; at: Tile };
@@ -104,6 +112,8 @@ export type GameEvent =
   | { e: 'spend'; item: string; qty: number }
   | { e: 'bag_full'; item: string; qty: number }
   | { e: 'gold'; delta: number }
+  /** the bound starting gold moved (milli-gold); the purse's own movements are `gold` */
+  | { e: 'bound'; delta: number }
   | { e: 'level'; profession: string; level: number }
   | { e: 'discover'; item: string }
   | { e: 'learn'; recipe: string }
@@ -123,6 +133,11 @@ export type GameEvent =
   | { e: 'tool_broke'; item: string }
   | { e: 'visit'; slot: string }
   | { e: 'attr'; attr: Attribute; value: number }
+  /** a node of the tree was learned, for `cost` skill points */
+  | { e: 'node'; node: string; cost: number }
+  /** a technique went into a slot of the build, or came out of one */
+  | { e: 'equip'; node: string; slot: number }
+  | { e: 'unequip'; node: string; slot: number }
   /** the player stepped into a world that grades their race otherwise: a home attribute now counts `value` (DECISIONS.md, 2026-10-22) */
   | { e: 'grade'; attr: Attribute; value: number }
   | { e: 'miss'; recipe: string }
@@ -333,7 +348,7 @@ export function step(bundle: Bundle, state: State, action: Action, tick: number,
   ctx.s.player.own ??= null;
   ctx.s.player.expeditions ??= {};
   ctx.s.player.bitten ??= [];
-  // a save from before kernel 0.15 has searched nothing
+  // a save from before kernel 0.17 has searched nothing
   ctx.s.searched ??= {};
   try {
     ctx.walkOut = walkOutDue(ctx);
@@ -440,6 +455,12 @@ function perform(ctx: Ctx, a: Action): void {
       return carve(ctx, a.name);
     case 'spend':
       return spend(ctx, a.attr);
+    case 'learn_node':
+      return learnNode(ctx, a.node);
+    case 'equip':
+      return equip(ctx, a.node, a.slot);
+    case 'unequip':
+      return unequip(ctx, a.slot);
     case 'wear':
       return wear(ctx, a.item, a.slot);
     case 'unwear':
@@ -513,7 +534,8 @@ function start(ctx: Ctx, a: Extract<Action, { t: 'start' }>): void {
   s.player.attrs = legacy ? { ...legacy.attrs } : { ...race.attributes };
   // the wake tile first: the grade of the world under it counts in the health cap below
   s.player.at = [pocket.wake.x, pocket.wake.y];
-  s.player.gold = b.params.starting_gold_mg;
+  // the starting gold is a bound balance beside the purse, not purse gold (DECISIONS.md, 2026-10-10)
+  s.player.boundGold = b.params.starting_gold_mg;
   if (b.params.starting_gold_mg > 0) s.ledger.minted += b.params.starting_gold_mg;
   s.player.satiety = satietyCap(b, s);
   s.player.satietyAt = ctx.tick;
@@ -868,11 +890,16 @@ function buy(ctx: Ctx, npcId: string, itemId: string, qty: number, at: Tile): vo
   const offer = shop.sells.find((o) => o.item === itemId);
   if (!offer) refuse('That is not for sale here.');
   const total = offer.price_mg * qty;
-  if (s.player.gold < total) refuse('You do not have enough gold.');
+  if (s.player.boundGold + s.player.gold < total) refuse('You do not have enough gold.');
   if (bagCapacity(b, s) - bagUsed(s) < qty) refuse('Your bag is too full.');
-  s.player.gold -= total;
+  // the bound starting gold pays first, the purse the rest; this is the only place the bound balance is spent
+  const fromBound = Math.min(s.player.boundGold, total);
+  const fromPurse = total - fromBound;
+  s.player.boundGold -= fromBound;
+  s.player.gold -= fromPurse;
   s.ledger.burned += total;
-  ctx.events.push({ e: 'gold', delta: -total });
+  if (fromBound > 0) ctx.events.push({ e: 'bound', delta: -fromBound });
+  if (fromPurse > 0) ctx.events.push({ e: 'gold', delta: -fromPurse });
   addItem(ctx, itemId, qty);
 }
 
@@ -1300,6 +1327,60 @@ function spend(ctx: Ctx, attr: Attribute): void {
   s.player.attrs[attr] += 1;
   s.player.spent += 1;
   ctx.events.push({ e: 'attr', attr, value: s.player.attrs[attr] });
+}
+
+/** The tree is learned and the build changed at a safe place only: a fire, a camp or a town (GROWTH sections 3.2, 3.3). */
+function atSafePlace(ctx: Ctx, what: string): void {
+  if (!isSafe(ctx.b, ctx.s, ctx.s.player.at, ctx.tick)) refuse(`${what} at a fire, a camp or in town.`);
+}
+
+/** Learn a node of the tree: its path before it, its keys met, the points paid (GROWTH section 4.3, `learn_node`). */
+function learnNode(ctx: Ctx, key: string): void {
+  const { b, s } = ctx;
+  const why = nodeRefusal(b, s, key);
+  if (why !== undefined) refuse(why);
+  atSafePlace(ctx, 'Learn');
+  const cost = nodeCost(b, treeNode(b, key)!.node.size);
+  s.player.nodes = [...(s.player.nodes ?? []), key].sort();
+  s.player.spent += cost;
+  ctx.events.push({ e: 'node', node: key, cost });
+}
+
+/** Put a learned technique in a slot of the build: an open slot, the next empty one at most; a technique sits in one slot. */
+function equip(ctx: Ctx, key: string, slot: number): void {
+  const { b, s } = ctx;
+  const found = treeNode(b, key);
+  if (!found || !(s.player.nodes ?? []).includes(key)) refuse('You have not learned that.');
+  if (found.node.slot !== true) refuse('That is always on: it needs no slot.');
+  const build = [...(s.player.build ?? [])];
+  const open = slotsOpen(b, s);
+  if (!Number.isSafeInteger(slot) || slot < 0 || slot >= open) refuse(open === 0 ? 'No slot is open yet.' : 'That slot is not open yet.');
+  if (build[slot] === key) refuse('It is in that slot already.');
+  atSafePlace(ctx, 'Change the build');
+  const from = build.indexOf(key);
+  if (from >= 0) {
+    build.splice(from, 1);
+    ctx.events.push({ e: 'unequip', node: key, slot: from });
+  }
+  const to = Math.min(slot, build.length);
+  if (to < build.length) {
+    ctx.events.push({ e: 'unequip', node: build[to]!, slot: to });
+    build[to] = key;
+  } else build.push(key);
+  s.player.build = build;
+  ctx.events.push({ e: 'equip', node: key, slot: to });
+}
+
+/** Take a technique out of its slot; the ones after it move up one. */
+function unequip(ctx: Ctx, slot: number): void {
+  const { s } = ctx;
+  const build = [...(s.player.build ?? [])];
+  const key = Number.isSafeInteger(slot) && slot >= 0 ? build[slot] : undefined;
+  if (key === undefined) refuse('That slot is empty.');
+  atSafePlace(ctx, 'Change the build');
+  build.splice(slot, 1);
+  s.player.build = build;
+  ctx.events.push({ e: 'unequip', node: key, slot });
 }
 
 /** A step into a world that grades the race otherwise: one event per home attribute that moved, so its pips glow or dim on entry. */

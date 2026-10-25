@@ -287,7 +287,7 @@ export class Session implements GameSession {
     // a save from before kernel 0.9 holds no record of bites
     const bites = state.player as Partial<Pick<State['player'], 'bitten'>>;
     bites.bitten ??= [];
-    // a save from before kernel 0.15 has searched nothing (migrateState also fills it)
+    // a save from before kernel 0.17 has searched nothing (migrateState also fills it)
     (state as Partial<Pick<State, 'searched'>>).searched ??= {};
     // a save from before the races (state format 2, kernel 0.14): carry is read as might, spirit starts at 0,
     // and the starter becomes its race and its wake pocket; the pocket's tools it carried stay in the bag,

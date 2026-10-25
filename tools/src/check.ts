@@ -10,6 +10,7 @@ import { type Bundle, computeValues, idiv, minChargeFor, missOutcome, rarityBudg
 import { RARITIES, type ParamsBody } from '@game/schema';
 import { assemble, type Assembled } from './assemble';
 import { readBoard } from './board';
+import { holeProblems } from './kit/holes';
 import { CORE_PALETTE, coreRamp } from './kit/palette';
 import { accentsOf, allowedColors, rampProblems } from './kit/ramps';
 import { scaleProblems } from './kit/scale';
@@ -22,6 +23,7 @@ import { checkPlay, rewardItems } from './play';
 import { checkDeadProps } from './deadprops';
 import { checkReach } from './reach';
 import { checkRaces } from './races';
+import { checkSchools } from './schools';
 import { checkHands } from './hands';
 import { checkRichness } from './richness';
 import { checkSearch } from './search';
@@ -55,6 +57,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkColors(assembled));
     issues.push(...checkPlay(b, assembled.origin));
     issues.push(...checkRaces(b, assembled.origin));
+    issues.push(...checkSchools(b, assembled.origin));
     issues.push(...checkStarts(b, assembled.origin));
     issues.push(...checkReach(b, assembled.origin));
     issues.push(...checkDeadProps(b, assembled.origin));
@@ -660,6 +663,8 @@ function checkKits(a: Assembled): Issue[] {
           level: 'error',
         });
       }
+      // A see-through speck inside the drawing at density 4 is the importer's, not the drawing's (tools/src/kit/holes.ts).
+      for (const message of holeProblems(s, png, `${kit.rel}/${s.file}`)) issues.push({ file: `${kit.rel}/${s.file}`, where, message, level: 'error' });
       // A ground tile is its ramp plus at most two accents (STYLE section 9).
       const first = named[0] ? rampById.get(named[0]) : undefined;
       if (name.startsWith('tiles/') && first) {

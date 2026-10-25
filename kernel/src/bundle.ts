@@ -20,6 +20,7 @@ import type {
   Recipe,
   Resource,
   Restore,
+  School,
   Search,
   Shop,
   Treasure,
@@ -52,6 +53,8 @@ export type RaceDef = Meta & Race;
 /** A wake pocket a new game is drawn into by the seed (DECISIONS.md, 2026-10-22). */
 export type PocketDef = Meta & Pocket;
 export type ProfessionDef = Meta & Profession;
+/** A wing of the skill tree (docs/design/GROWTH.md section 4): a profession's nodes and the races' corners. */
+export type SchoolDef = Meta & School;
 export type ShopDef = Meta & Shop;
 export type MapDef = Meta & GameMap;
 /** A world reaction (docs/design/REACTIONS.md): read by reactions.ts, never run. */
@@ -114,6 +117,8 @@ export interface Params {
   starting_gold_mg: number;
   /** what one attribute point adds; see the params schema */
   per_point: { might: number; senses: number; agility_pct: number; luck_permille: number; stamina: number; spirit: number };
+  /** the skill tree: skill points per node size, and the character level each active slot opens at; absent, the tree is closed */
+  growth?: { cost: { small: number; major: number; corner: number }; slot_levels: number[] };
 }
 
 export interface SpriteInfo {
@@ -173,6 +178,8 @@ export interface Bundle {
   races: Record<string, RaceDef>;
   pockets: Record<string, PocketDef>;
   professions: Record<string, ProfessionDef>;
+  /** The wings of the skill tree, by id (core only). */
+  schools: Record<string, SchoolDef>;
   shops: Record<string, ShopDef>;
   reactions: Record<string, ReactionDef>;
   map: MapDef;

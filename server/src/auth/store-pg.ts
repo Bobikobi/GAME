@@ -88,6 +88,12 @@ export function createPgAuthStore(pool: Pool): AuthStore {
       return rows[0]?.id;
     },
 
+    async isClosed(accountId) {
+      if (!UUID.test(accountId)) return false;
+      const { rows } = await pool.query('select 1 from accounts where id = $1 and closed_at is not null and erased_at is null', [accountId]);
+      return rows.length > 0;
+    },
+
     async addIdentity(provider, subject, accountId) {
       await pool.query(
         'insert into sign_in_identities (provider, subject, account_id) values ($1, $2, $3) on conflict do nothing',
@@ -121,8 +127,8 @@ export function createPgAuthStore(pool: Pool): AuthStore {
       try {
         await client.query('begin');
         const { rows } = await client.query<{ id: string }>(
-          'insert into accounts (email, name, birth_band) values ($1, $2, $3) returning id',
-          [account.email, account.name, account.birthBand],
+          'insert into accounts (email, name, country) values ($1, $2, $3) returning id',
+          [account.email, account.name, account.country ?? null],
         );
         const accountId = rows[0]!.id;
         await client.query(
@@ -139,8 +145,8 @@ export function createPgAuthStore(pool: Pool): AuthStore {
           for (const row of game.books.gold) {
             if (row.deltaMg === 0) continue;
             await client.query(
-              'insert into gold_ledger (account_id, delta_mg, action, tick) values ($1, $2, $3, $4)',
-              [accountId, row.deltaMg, JSON.stringify(row.action), row.tick],
+              'insert into gold_ledger (account_id, delta_mg, action, tick, fund) values ($1, $2, $3, $4, $5)',
+              [accountId, row.deltaMg, JSON.stringify(row.action), row.tick, row.fund ?? 'purse'],
             );
           }
         }
@@ -178,13 +184,58 @@ export function createPgAuthStore(pool: Pool): AuthStore {
 
     async account(accountId) {
       if (!UUID.test(accountId)) return undefined;
-      const { rows } = await pool.query<{ name: string; email: string }>('select name, email from accounts where id = $1', [accountId]);
+      const { rows } = await pool.query<{ name: string; email: string }>('select name, email from accounts where id = $1 and closed_at is null', [accountId]);
       return rows[0];
     },
 
-    async closeAccount(accountId) {
+    async closeAccount(accountId, now) {
       if (!UUID.test(accountId)) return;
-      await pool.query('delete from accounts where id = $1', [accountId]);
+      const client = await pool.connect();
+      try {
+        await client.query('begin');
+        await client.query('update accounts set closed_at = $2 where id = $1 and closed_at is null', [accountId, at(now)]);
+        await client.query('delete from sessions where account_id = $1', [accountId]);
+        await client.query('delete from boards where account_id = $1', [accountId]);
+        await client.query('commit');
+      } catch (error) {
+        await client.query('rollback').catch(() => undefined);
+        throw error;
+      } finally {
+        client.release();
+      }
+    },
+
+    async reopenAccount(accountId) {
+      if (!UUID.test(accountId)) return false;
+      const { rowCount } = await pool.query('update accounts set closed_at = null where id = $1 and closed_at is not null and erased_at is null', [accountId]);
+      return (rowCount ?? 0) > 0;
+    },
+
+    async eraseClosed(now, graceMs) {
+      const client = await pool.connect();
+      try {
+        await client.query('begin');
+        // the rows are locked as they are chosen, so two servers erasing at once do not both count them
+        const { rows } = await client.query<{ id: string }>(
+          'select id from accounts where closed_at is not null and erased_at is null and closed_at <= $1 for update',
+          [at(now - graceMs)],
+        );
+        const ids = rows.map((row) => row.id);
+        if (ids.length > 0) {
+          await client.query('delete from sign_in_identities where account_id = any($1::uuid[])', [ids]);
+          await client.query('delete from sessions where account_id = any($1::uuid[])', [ids]);
+          await client.query('delete from boards where account_id = any($1::uuid[])', [ids]);
+          await client.query('delete from player_state where account_id = any($1::uuid[])', [ids]);
+          await client.query('update accounts set email = null, name = null, erased_at = $2 where id = any($1::uuid[])', [ids, at(now)]);
+        }
+        await client.query('commit');
+        return ids.length;
+      } catch (error) {
+        await client.query('rollback').catch(() => undefined);
+        throw error;
+      } finally {
+        client.release();
+      }
     },
 
     async sweep(now) {

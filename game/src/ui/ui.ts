@@ -89,6 +89,9 @@ interface HudParts {
   bar: HTMLElement;
   num: HTMLElement;
   goldText: Text;
+  /** the starter gold chip: shown only while the bound balance is above 0 */
+  boundChip: HTMLElement;
+  boundText: Text;
   clockChip: HTMLElement;
   clockIcon: HTMLElement;
   clockText: Text;
@@ -269,6 +272,8 @@ export class UI {
     p.bar.style.width = `${pct}%`;
     setText(p.num, String(Math.ceil(sat / 1000)));
     setText(p.goldText, gold(st.player.gold));
+    p.boundChip.hidden = !(st.player.boundGold > 0);
+    setText(p.boundText, gold(st.player.boundGold));
     setTitle(p.clockChip, night ? 'Night' : 'Day');
     setClass(p.clockIcon, night ? 'moon' : 'sun');
     setText(p.clockText, clock(minuteOfDay(b, s.tick)));
@@ -327,6 +332,8 @@ export class UI {
       num,
     );
     const goldText = document.createTextNode('');
+    const boundText = document.createTextNode('');
+    const boundChip = h('span', { class: 'chip gold', title: 'Starter gold: spent first, and only at the shop', hidden: true }, h('i', { class: 'coin' }), boundText, ' starter gold');
     const clockIcon = h('i', { class: 'sun' });
     const clockText = document.createTextNode('');
     const clockChip = h('span', { class: 'chip', title: 'Day' }, clockIcon, clockText);
@@ -345,6 +352,7 @@ export class UI {
           'div',
           { class: 'hud-row' },
           h('span', { class: 'chip gold', title: 'Gold' }, h('i', { class: 'coin' }), goldText),
+          boundChip,
           clockChip,
           dark,
           level,
@@ -353,7 +361,7 @@ export class UI {
       ),
       h('div', { class: 'hud-right' }, feedbackBtn, bag, log, button('Menu', () => this.panel(() => openMenu(this)), 'small')),
     );
-    return { meter, bar, num, goldText, clockChip, clockIcon, clockText, dark, darkText, level, bag, log };
+    return { meter, bar, num, goldText, boundChip, boundText, clockChip, clockIcon, clockText, dark, darkText, level, bag, log };
   }
 
   /**

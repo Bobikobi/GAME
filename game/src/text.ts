@@ -447,6 +447,8 @@ export function describe(b: Bundle, s: PublicState, e: GameEvent): { text: strin
       return { text: `Bag full - ${e.qty} ${itemName(b, e.item)} left behind`, tone: 'bad' };
     case 'gold':
       return { text: `${e.delta > 0 ? '+' : '-'}${gold(Math.abs(e.delta))} gold`, tone: e.delta > 0 ? 'good' : 'info' };
+    case 'bound':
+      return { text: `${e.delta > 0 ? '+' : '-'}${gold(Math.abs(e.delta))} starter gold`, tone: e.delta > 0 ? 'good' : 'info' };
     case 'level': {
       const prof = b.professions[e.profession];
       const tech = prof?.techniques.find((t) => t.level === e.level);

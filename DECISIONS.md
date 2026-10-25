@@ -2614,6 +2614,12 @@ Cost: the vigil is offered around 17:00-18:00, after the stew, not in the aftern
 The owner, 22.10: yes to the new order, as built on the opening-filler branch. Supersedes the long night's part of the 19.10 entry on the opening's order.
 **Retry when:** a person playing the day has too little time between the stew and dark to build and light a fire, or the stew's chain stalls a race. Model: claude-opus-5-5.
 
+## 2026-10-23 ✅ The skill tree's format: schools, nodes and the build, added beside the techniques
+
+A new core-only content kind, `school` (`content/core/schools/*.json`), one per profession: a list of nodes, each with a size (small, major or corner), a name and one sentence, its path (`needs`, the same school only), an optional key of attributes it asks for and never spends, and one effect from the closed list. A small node is always on; a major or corner node marked `slot` is a technique and counts only while it sits in the build. A corner node belongs to one race (the trunk of the tree is the race, 22.10 "The tree"). The costs (1, 2, 3 points) and the levels that open the build's five slots (1, 1, 5, 10, 15) are params (`growth`). The kernel learns a node (`learn_node`) and changes the build (`equip`, `unequip`) only at a fire, a camp or in town, and says why it refuses. `Player.nodes` and `Player.build` are optional, so a save from before the tree loads unchanged; FORMAT_VERSION stays 1.
+Why: GROWTH.md section 4 asks for the tree to come from content, and the screen needs a format to read before it can be drawn.
+Cost: the profession `techniques` stay and still count; the two ways of buying overlap until a later step moves the techniques into the nodes. There is no way to unlearn a node yet. The seed nodes are placeholders drawn from the effects the code reads today (no `see_ripe`, which nothing reads); the content wave writes the real ones.
+**Retry when:** the content wave writes the real nodes, or a playtest shows the slots open too early or too late. Model: claude-opus-5-5.
 ## 2026-10-23 ✅ Bookkeeping from the decisions audit: corrections to older entries
 
 The decisions audit of 23.10 found older entries whose status, timing or pointers went stale.
@@ -2689,6 +2695,194 @@ No rule changes in this entry: every line points at a decision or a build that a
 - "Player houses and plots are paused; the town serves the player through shops you walk into" (10.10): the ⏸ covers houses and plots only. The town's one-job buildings and the walk-in shops stand (✅), built on by "The shop interior" (11.10) and NEXT section 5.
 
 Model: claude-sonnet-5-5.
+## 2026-10-23 ✅ Every sprite has the dark ink outline
+
+**The outline is the one-pixel ink line `#1b1a2e`, on every sprite.** The rich wave left a mix: 16 of its 35 sprites have under a tenth of their edge in ink, and the rest of the edge is the darkest step of the first ramp or a mid grey. The owner compared three versions of nine rich sprites on grass: as built, ink, and an edge in a darker shade of the sprite's own colours. Ink held them together best; with the own-colour edge, the bandage and the lantern posts faded into the grass. This keeps the 18.10 outline (1915, 2547, STYLE.md) and retires the first-ramp outline wording of 2219 and of the schema's ramp comment. The rich sprites get an ink outline pass, and a check that measures ink on the edge follows, so the mix cannot come back.
+The owner, 23.10: option 2 of the comparison sheet, the dark ink line.
+**Retry when:** the art ladder's coloured-outline rung is shown to the owner in stills and picked. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Each race carries its colour and its big item from the start
+
+Decision 40 holds for the races from the first minute: one big item, one colour, its own build. **The colours: the skeleton white, the elf a light pastel sky blue, the human skin tones.** The elf's big item is its cloak, a large hooded cloak in that colour (still no weapon; the bow comes later, decision 19). A player may pick another colour for their race from a wide palette (a red elf, a blue skeleton). Later, clothing a player finds can be recoloured too. Colour is looks only: it changes nothing in play, only how a player appears to others in multiplayer, and it needs its own build.
+The owner, 23.10: marks from the start (contradiction 2 of the decisions audit), and the colours as written.
+**Retry when:** the race figures are drawn and one race does not read at phone size. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Closing an account: 30 days to change one's mind, as decided on 10.10
+
+The 10.10 entry (1074) stands, and the built close is brought to it. Closing hides the account at once; signing in within 30 days brings it back; after 30 days the personal details are erased. The gold ledger and the action log keep their rows under a number with no name. Sign-up keeps only whether the age check passed, and the country: no age band. Today the server deletes the account and every row naming it at once (`server/src/auth/signin.ts`, asserted by `server/test/signin-db.test.ts`), and it stores a birth band; both change, and so do the lines that describe today's behaviour (2180, NEXT.md 469, GRUNT CR-72).
+The owner, 23.10: 30 days, as decided (contradiction 3 of the decisions audit).
+**Retry when:** a privacy law the game falls under needs a shorter erasure. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ G29 holds in the Field Kit: all text 16 px or more
+
+The Field Kit gets no exception from G29. Every text a player reads in the kit's windows (labels, toggles, item facts, tabs) is 16 px or more, and dialogue 18, as on 16.10 for the tracker, chips and toasts. The windows keep the Field Kit look and grow roomier; a long one may scroll. A size scan in the tests keeps it.
+The owner, 23.10: readability wins, everything 16 or more (contradiction 4 of the decisions audit).
+**Retry when:** a window cannot hold its content at 16 px on a 390 px wide phone even with scrolling. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The world: a hand-made first map, and a generator that sets the difficulty
+
+The 17.10 seed rings and decision 5's hand-made first map (2252) are combined. The first map is planned and drawn by hand, as decision 5 says. **The generator's job becomes difficulty.** From a place's distance to the game's start and the level the character is expected to have there (from the quests before it and the grinding open to it), it recommends the place's difficulty: how many quests and of what kind, which monsters, how many and how strong, and what else opens there. The same reckoning later grows the world past the first map's edges. NEXT.md section 19 is rewritten to match before any of it is built.
+The owner, 23.10: a combination of the two (contradiction 5 of the decisions audit), as written.
+**Retry when:** the first map's stills are picked and the difficulty reckoning has to be checked against a playtest. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ A session merges its own pull request after the owner approves
+
+What has happened since 11.10 is now the written rule: the session that made a pull request merges it into develop once the owner has approved it. A release to the public stays the owner's alone. This is the delegation 1173 asked to be written; PARALLEL.md, WORKFLOW.md, the integrator skill and HANDOFF_TEMPLATE.md change to match.
+The owner, 23.10: as today, and write it down (contradiction 6 of the decisions audit).
+**Retry when:** two merges in a day break develop. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Maru's coin pays a key to his house
+
+When the player hands Maru the coin, he gives the herb tea recipe and **a key to his house**, instead of the 20 gold. This is the place reward of 7.10 (GAME_RULES.md 570), now that a place can be a reward. The house is a place to rest: a bed to sleep in, where the player wakes after a fall at night, and a desk with an old map that hints at the next quest. **It is the one building where a player can leave gear.**
+The owner, 23.10: a key instead of gold; inside, a place to rest (contradiction 7 of the decisions audit).
+**Retry when:** the opening's economy runs short without the 20 gold. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Search: press A on things to look inside
+
+**Many things in the world can be searched.** Pressing A on a drawer, a cupboard, a book, a shelf or even a stone opens a small window showing what is inside. Sometimes it holds something, often nothing. Out in the open, things can hide easter eggs and rare, valuable gifts; the higher the player's luck, the better the odds of finding them. **Every building gets a random number of furniture pieces**, so it looks lived in, and sometimes an extra one: a statue, or a picture that opens to show its painting. Searchable things are deepened step by step as the game grows. A player cannot put gear into them; the one place that stores gear is Maru's house. Later, in other towns, a guest house lets a player stay in multiplayer.
+The owner, 23.10: an idea for the game, like searching drawers in Fallout, as written.
+**Retry when:** searching slows the opening's path, or the luck odds make rare gifts common. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The bound starting balance is built
+
+The 10.10 rule (834, 914, 1055) stands and is built. A new player's starting gold is a separate bound balance shown beside the purse. It is spent first, and only at the shop, the trainers and the settlement. It is never paid to a player or listed. Today `kernel/src/step.ts` puts it into the purse and the server books it as ordinary gold; both change.
+The owner, 23.10: build it as decided (contradiction 8 of the decisions audit).
+**Retry when:** fake accounts are stopped some other way and the bound balance only confuses new players. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Words on screen, and a number only as a clear scale
+
+Decision 39 holds everywhere: on the skill tree, in the kit's SKILLS tab and in item descriptions. A line reads as words ("you dig faster"). Where a number is shown, it is a plain scale and not a percentage. For example, agility rises by 2 on a 10-step scale, from 1/10 to 3/10, and a node of the branch opens only at 5/10 (or at whatever step is set). Exact values stay one long press away. This replaces the "real before-to-after numbers" of the SKILLS tab (1983).
+The owner, 23.10: words; if there is a number it must be very clear, like agility +2 to 3/10, with a node opening at 5/10 (contradiction 9 of the decisions audit).
+**Retry when:** players in a playtest cannot compare two items without the long press. Model: claude-opus-5-5.
+## 2026-10-23 ✅ The importer keeps the drawing inside its outline, and 14 rich picks are imported again
+
+On develop, 14 of the 35 rich sprites at density 4 had see-through pixels inside their own drawing, 1,845 in all: the stone idol 589 (its face 160 and its chest 146), the trowel 332, the unlit campfire 228, the small mushrooms 169, the hazard trap 153, the herb stew 111, the shelf 91, the basket 67, the herb tea 49, the first-aid kit 30, the axe 16, the herb 5, the fallen branches 4 and the mushroom patch 1. The ground showed through the idol's face and the trowel's blade. The importer's mask (`initialMask` in `tools/src/kit/import.ts`) took every pixel within the threshold of the border's colour (65 to 100) for background, and every magenta-fringe pixel, wherever it stood.
+**Background is what lies near the border's colour and reaches the picture's edge through such pixels**, flooded from the edge, and the magenta-fringe rule holds only there. A region of that colour the drawing encloses stays drawing (a pale face, a pink bowl, a plum jar), unless 90% of it lies within a tight distance of the background, the border's own noise plus 8: then it is an opening the drawing leaves, painted in the background colour, and background too. The noise is the 99.5th percentile of the border's distances counted within the threshold, so a drawing that touches the edge is not noise; 90% and not all, because an opening's rim is a pixel or two blended toward the drawing. On the 14 raw drawings the threshold was 65 and the tight distance 12.6 to 35.6; three regions came out as openings (the herb tea's handle, 94% within it, and the two gaps between the small mushrooms' stems, 97%), and the most a region kept as drawing had within it was 89%, a glimpse of the raw's grey ground between the small mushrooms' grass blades, one art pixel, that comes back light grey. Nothing else of the importer changed.
+**The check.** `pnpm check` reports at error level a sprite at density 4 whose frame encloses a see-through region of at most 24 px (`tools/src/kit/holes.ts`). A region is its pixels side by side or corner to corner, enclosed when none of it lies on the frame's edge, so a pocket open to the outside at a corner is a notch and passes, as does an opening larger than 24 px. The message names the re-import, `pnpm kit:gen <spec> --only <entry> --reimport --out <run>`, with the raw drawing the sprite's `source` line points at, and the copy over the kit file. On the kit before the re-import it flags 12 of the 35: the basket's one speck joins its opening at a corner, and the herb's pocket opens at one. Density 1 is left out, as 14 of its 145 sprites would fail.
+**The re-import.** The 14 are the owner's picks, the same drawings, imported again from their raw drawings with the wave's parameters (the spec entries are those of the runs, and `kit:gen --reimport` gives the same bytes). Enclosed see-through pixels went from 1,845 to 207, and what is left is background in the raw drawings: the herb tea's handle 36, the small mushrooms' gaps 139, and three pockets open at a corner (the herb stew's rim 25, the herb 5, the idol 2). No solid pixel turned see-through except where a sprite moved. The axe has its blade's pale edge back and is one art pixel wider, so all of it is drawn anew: of its 903 solid pixels 423 change colour and 73 turn clear as it sits a pixel further left. The herb stew's bowl is whole, so the importer reads the drawing on its own 8 px art pixels instead of 7, and the stew comes back 42x37 instead of 48x42: 1,017 of its 1,546 solid pixels change, 379 of them to clear, as the smaller stew covers less of its tile. On the other twelve a solid pixel changes colour (0 to 75 per sprite) only where an art pixel it is drawn from now holds pixels the old mask cut. The basket's opening is painted in purple shades in its raw drawing and comes back solid purple, the hazard trap's eyes and nostrils, glowing magenta in its raw drawing, come back in the drawing's purple, and a few one-pixel glimpses of a raw's own ground between grass blades (the small mushrooms, the mushroom patch, the fallen branches) come back grey where the grass showed through.
+The before/after on grass goes to the owner before the merge.
+**Retry when:** a drawing paints an opening in a shade of the background beyond the border's noise (it then comes back solid: fix the drawing, or widen the margin), or the check reports a speck a drawing means (then the 24 px bound or the corner rule is the question). Model: claude-opus-5-5.
+## 2026-10-23 ✅ The line is PEGI 16 and ESRB T: brutal in taste, never for show (the owner, 19.10; carried from #223)
+
+Carried from #223 (TONE.md), which closes unmerged; the page stays on branch `docs/tone-register` and lands with the first death or combat strings. This entry keeps the owner's word where the next builders read it.
+The question (19.10): how mature the dialogue, the violence and the content should read. Three lines were put to him with the games and the ratings on each: a hard world told softly (Minecraft, Stardew Valley, RuneScape: PEGI 7 to 12), brutal in taste (Dark Souls, Darkest Dungeon, Final Fantasy XIV: PEGI 16), brutal on the screen (The Witcher 3, Red Dead Redemption 2, Blasphemous: PEGI 18). His word: "I want it as mature as it can be (not necessarily sexual) but brutal in taste", the second line, "PEGI 16", with the account at 13 as it is.
+- **The line is PEGI 16 and ESRB T, and the tighter one holds.** The Dark Souls taste with blood kept small.
+- **The words (G22).** Plain words stay (short sentences, concrete nouns, a second-language reader follows every line); the reader of eight is no longer the measure. Death is named death, blood is named when it is in the scene, a character may speak hard by its voice sheet; slurs and sexual words are never said.
+- **The images (G46).** A hit may bleed, a person's too; a wound stays afterwards as a bandage, a torn sleeve or a scar; a predator is drawn biting; a body lies a moment. Nothing close up, nothing dwelt on, no gore for its own sake, no suffering for show, no dismemberment, no torture played out, no violence against someone who cannot act, nothing sexual.
+- **The death (G33).** The card says "You died", and the body lies where it fell; the kernel's fall keeps its name in the code.
+- **The account stays at 13 or the country's higher age (9.10).**
+- **The day stays 20 minutes.** Asked whether `day_length_ms` (1,200,000) is too short against other games, he kept the recommendation "for now".
+No art changes with this entry: a predator biting, a body in the grass and blood on a sleeve are a direction, shown to the owner as phone-size stills before a sprite is touched (AGENTS.md).
+**Supersedes:** "Menace with a limit" (10.10) and its PEGI 12 / ESRB E10+ aim; "a child of eight reads every line" in G22; "fell, never died" in G46, G33 and the review checklist's question 11. The rule pages keep the older words until the pull request that brings TONE.md rewrites them.
+**Retry when:** a store's rating comes back at 18 or M (then the scene that pushed it is cut, never the line), or a playtest shows the words reading as a promise of combat before combat is built. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Open ends of the world plan, the owner's answers of 19.10: players may destroy and the valley repairs, a death leaves a pack, characters keep hours, a lean opens doors, the sinks are the world's prices (carried from #223)
+
+Carried from #223, which closes unmerged. Asked on 19.10 one at a time, three options each with a recommendation. The sketches #223 marked as proposed are not his word and are not carried.
+1. **Players may destroy, with a repair loop.** His pick, over the recommendation ("the world wounds, the player does not") and over "nothing is destroyed". In the wild only (danger 1 and up), never in a town, on a plot or a path; a thing a player may break is marked so in the content (a grove by fire, a footbridge, a dam), and every breakable thing carries its repair: a shared quest that eats goods and gold, so the repair is a sink and the loop is the content. Supersedes in part "nobody blocks a way" (10.10) and REACTIONS section 10's "a mark that closes a way: only the world makes one", which now read "until the valley repairs it".
+2. **A death leaves a pack anyone may take, gone after a day.** His own answer, past the three offered. The outing's finds lie where the body fell as a pack any player may take, first come, the dead player included; a game day later it is gone. "A fall gains nothing" (10.10) holds: the pack holds no more than the outing found. Supersedes in part G33's "nothing left in the world, nothing marks where the fall was". Combat round 2 (below) makes it the one rule in the marked zone too.
+3. **Characters keep hours, and the inn sells the night.** The recommendation, in his words "only broader". Each character has waking hours; at dark they go home or to the inn, the stall closes, and a quest is offered and handed in only while its giver is awake. The night has faces of its own with quests and rumours. The inn sells beer and the night's road food, each with an advantage and a cost ("it has its advantages and its disadvantages"). Read with decisions 27, 32, 36 and 50 of 22.10, which name Maru's hours, the innkeeper, the three night faces and the inn's house.
+4. **A lean opens doors, never closes them.** The recommendation. Past a threshold a belief's own people, places and quests open to the player who leaned its way, with a worn mark and a title; the other beliefs' people still talk and trade, and only their own quests wait until the lean is walked back. No war between beliefs, no ending. Decision 34 of 22.10 (beliefs are not bound to races) stands beside it.
+5. **How gold leaves the world: the world's prices.** The recommendation. No upkeep (9.10) and no tax on trade; the sinks are what the world sells and does not give back: the stall and the inn, the settlement, the repair of what was destroyed (1), and the pack that vanishes (2).
+Not carried: his answer on the skill tree ("something more like The Witcher or Drakantos", the content waits), replaced by decisions 38 and 39 of 22.10. The seventh open end, who the two named persons of moderation are, was left out of that round on his scoping and stays open.
+**Retry when:** a playtest shows a ring burned faster than it is repaired, a pack taken by a stranger read as theft rather than the valley's rule, or the inn's night food bought as the only way through the night. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The world's structure, the owner's answers of 19.10: one world, lands of stamped places, a soft edge, a marked zone for fights, travel earned by level, an outside door, a caught bot held (carried from #219)
+
+Carried from #219 (WORLD_STRUCTURE.md section 13 and FOUNDATIONS.md section 11), which closes unmerged; the pages stay on branch `docs/world-structure` and are reread when the open-world stream resumes. Each question was asked with the choices of RuneScape, World of Warcraft and Drakantos beside it.
+1. **The unit of content:** an authored place stamped on generated ground, grouped into lands with a name and a story. Rings are the build order only. Read with decisions 2 and 5 of 22.10: the first map is composed by hand and finished before any new region.
+2. **The edge:** a soft border. Crossing it, the player vanishes into mist and sees almost nothing, with a countdown toward a fall; when the map grows the mist lifts and what was there stays. Supersedes in part the open world (17.10): a closed grid edge gives way to the soft edge.
+3. **Safety far from town:** towns and forts per land with small safe pockets; the promise that a safe place is always within a run may relax far out on purpose, since a large world must not have too many escape hatches; healing is an answer.
+4. **One world for everyone:** a split into copies only if a measurement on the live server says one server cannot hold the players, and then the owner decides.
+5. **Changing existing areas:** creators ask to change what exists the way they ask to extend the game, by pull request through the automatic checks, with an alert to the core team, which reviews it. Players leave marks and never edit the map.
+6. **Fights between players:** a marked zone in the wild where anyone may attack anyone, like Old School RuneScape's Wilderness; everywhere else no player can hurt another.
+7. **Travel in a large world:** every faster form is legitimate (an item, a skill, a mount, a teleport to a new or visited place), each earned by player level; none picked, none ruled out. A region's door is still its own quest, regardless of grade or level (decision 25 of 22.10): the level earns a faster way, not a door.
+8. **The account:** an external login (Google, Apple, Steam) and no password of the game's own; it adds Apple and Steam to the doors of 18.10.
+9. **A caught bot:** the account is held for review and the owner decides; the gains are wiped, never the character.
+Not carried, open: his answer on where an outing ends (W7: a fire with a tent from the start, which costs time and resources, takes a place in the bag and keeps everything) reverses the entry of 19.10 "A fire anywhere outside the town is a safe place while it burns; the tent is dropped", which stands on develop. It goes back to him as one question.
+**Retry when:** the first ring's measurement on a phone asks for a split (4), or a creator's change to an existing area lands without the core team's review (5). Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The quest forge, the owner's four decisions of 19.10: one grammar, quests bound per land, RuneScape in the quests and World of Warcraft in the size, no human per land (carried from #220)
+
+Carried from #220 (QUEST_FORGE.md), which closes unmerged; the plan stays on branch `docs/quest-forge` and comes back with the quest-designer stream's first pull request. The scan of 19.10 found no quest generator (thirteen hand-written quests on eight step kinds). The owner said yes to three decisions and added the fourth:
+1. One quest grammar, decided whole: `choose`, `ask`, `set`, `any`, a `repeat` flag, and with combat `defeat`, `hold`, `escort`.
+2. Quests are bound per land when the land is made, by a deterministic binder from the world seed and the land's graph, never at run time; the output is committed content checked like any other.
+3. RuneScape in the quests, World of Warcraft in the size: G2 stands, and density comes from bound storylets and world events, never from filler.
+4. No human per land (his addition): the gates decide, the owner reads a digest and retires a storylet when he wants; the one approval left is the library, once per batch.
+Read with decisions 10 and 25 of 22.10: a bound quest reacts to the race and never closes to one, and every region opens by its own quest.
+**Retry when:** the first bind of the valley and the ring shows holes the library cannot fill (then the library before a second land). Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Combat, round 1: real time, like a regular multiplayer game; the server runs every fight on its tick (the owner, 20.10; carried from #243)
+
+Carried from #243 (COMBAT.md, the frame G35 reserved for the owner), which closes unmerged; the page stays on branch `docs/combat-frame` and lands with the combat wave. Its five questions went to him on 20.10, one at a time, three answers each with the recommendation first; rounds 1 to 5 are his answers. The page's kernel shape and rule lines (G78 onward) are proposals and are not carried.
+The question: what a fight is made of and on what clock, so a creature fight and a zone fight are one shape. Offered: A, beats of half a second, the phone playing a creature fight and the server replaying its batch (recommended); B, real-time swings replayed from a per-frame log; C, turns. His word (20.10): "real time, like a regular multiplayer game, like League of Legends", his own answer.
+Read as (the page's reading): the server runs every fight, against a creature and between players alike, on a fixed tick of its own; the phone sends its inputs over the live socket and draws what the server sends back, predicting only its own walk; a hit lands when the server says it did. What it costs, accepted with the answer: no fight without the live connection, so combat comes after the presence relay; the server's cost per fight is measured before the step ships.
+**Supersedes:** the client-played encounter batch of NEXT 18 a and of the 19.10 entry "G35 is the demo's rule" (proposed there, never his word); that entry's "it comes before live presence" now reads "after the presence relay".
+**Retry when:** a mobile line's round trip makes a hit feel late in the first ring's fights (then a designed prediction rule with the owner, never a simulation on the phone), or the server's cost per fight is above what one process holds. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Combat, round 2: one pack rule everywhere, first come (the owner, 20.10; carried from #243)
+
+The question: who takes the outing's finds when a player falls in the marked zone, where SETTLEMENT 3.9 of 9.10 (the one who brought the player down takes them) met the pack of 19.10 (the open ends above). Offered: A, the pack rule everywhere, first come, the attacker a tile away and almost always first (recommended); B, the attacker takes them at once; C, the finds burn. His word (20.10): A.
+**Supersedes:** SETTLEMENT 3.9's line "which goes to the one who brought them down" (9.10). The hunters' board of 10.10 stands.
+**Retry when:** the zone's falls show finds passing between accounts in a pattern (the loop's sign of 10.10). Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Combat, round 3: a bar over every head in a fight (the owner, 20.10; carried from #243)
+
+The question: how a player reads a foe's state when no chance, level, difficulty, danger or time shows as a number. Offered: A, posture, breath and wounds as pictures, no bar over the foe (recommended); B, health and breath as bars over the foe and, inside the marked zone, over the other player; C, words under the figure. His word (20.10): B.
+What it fixes: a foe carries health and breath as two small bars over its head while it fights, and so does the other player inside the marked zone, only there and only while the fight runs; no number is printed on any bar. The wind-up pose, the blood where a hit lands and the weakness as a pose stay beside the bars. The bars' look is part of the fight's frame on screen, a direction shown as stills first.
+**Retry when:** the bars read as a widget over a figure that no longer needs to be watched, or a store's review reads two bars over a player as a number shown. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Combat, round 4: noise turns every head, hazards too (the owner, 20.10; carried from #243)
+
+The question: whether a foe's attention is read and turned in a fight; his no of 19.10 for the demo (REACTIONS section 9, Q1 b) named combat as its retry. Offered: A, attention inside a fight only, the predator on its round untouched (recommended); B, noise turns every head, the predator's too; C, no attention at all. His word (20.10): B.
+Read as (the page's reading): a predator's place on its round is still set by the clock, and its heading by the clock and by noise; a noisy act (felling, digging, running, a strike that lands) nearby turns its heading toward the sound for a while, and the turn is drawn so the rule stays one the eyes can read. A stealth quest's target stays reachable without a noisy act inside a watch.
+**Supersedes:** his answer of 19.10 to REACTIONS Q1 (b) ("noise never turns a predator's head in the demo") and G47's two phrases "its place set by the clock alone" and "noise never turns a predator's head in the demo". It lands with the combat wave, and in the demo only if he pulls it forward.
+**Retry when:** the first ring's stealth quests fail for most players because of other players' noise, or the turn cannot be drawn plainly enough to be read. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Combat, round 5: a fight reads the build's active slots, the attributes as small keys, and the thing in hand (the owner, 20.10; carried from #243)
+
+The question: what combat reads from the growth frame (a few active slots, a build a player equips, techniques that combine). Offered: A, the active slots as the fight's techniques, the attributes as small keys and the thing in the hand slot as the strike, all under the one power cap (recommended); B, attributes and the hand only; C, the tree only. His word (20.10): A. The order is fixed: the technique format first, then combat content.
+**Superseded in part (22.10):** the attributes are six, not five (decision 45): might replaces carry and is named there for later combat, and spirit is new, so the page's map of keys (stamina the breath, agility the dodge, senses the wind-up, luck the drop, carry nothing) is redone with the combat wave; the fighting style follows the race and its grade (decision 46); the tree's vertical axis is the race (decision 38). The technique format is on branch `docs/growth-frame` (GROWTH.md section 4).
+**Retry when:** the first builds converge on one wing in the zone, or the hand outweighs the build. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Safety: one grave report hides the lines it carries at once, and three still hold the account's words (the owner, 20.10; carried from #251)
+
+Carried from #251 (SAFETY.md), which closes unmerged; the page stays on branch `docs/safety-contract` and lands with the presence stage. The rest of the page is a proposal and is not carried.
+The question, the one line that bent his word of 10.10: the shared-world entry holds an account's words after three reports, until a person reads them; should one report with a grave reason (a threat, sexual words, personal details, a slur) hide the lines it carries at once, until a person reads it? Recommended yes. His word (20.10): A, yes.
+What it fixes: the notes and lines a grave report quotes leave every screen but the reader's the moment the report is filed; three reports still hold the account's words, never its play; the hidden lines come back if the reader dismisses the report, and the dismissal counts toward the reporter's overrule (10.10).
+**Supersedes:** in part, the shared-world entry of 10.10 ("three reports hold an account's words"): three still hold the account, and one grave report hides its own lines.
+**Retry when:** grave reports are filed to silence rather than to protect (the overrule count shows it). Model: claude-opus-5-5.
+
+## 2026-10-23 ❌ The crafting workshop screen as built is a hosted list; it is rebuilt only after a stills ladder of its own (the owner, 19.10; carried from #247)
+
+Carried from #247, which closes unmerged. The owner's word of 19.10: the crafting workshop screen is "a hosted list", uncomfortable and ugly. What was tried is the station panel (`game/src/ui/panels.ts`): one row per known recipe with the output's sprite, the needs, the gate line and a Make button, the upgrades as cards under the rows.
+It is not patched. It is rebuilt only after a ladder of two or three phone-size stills, each testing one named difference, with the owner's pick recorded with its frame (AGENTS.md). Decision 51 of 22.10 (every shop with a defined stock and a proper display, never one big unsorted list) points the same way.
+**Retry when:** never as built. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The skill screen is a tree of wings: the owner picked S1 of three stills (the owner, 20.10; carried from #247)
+
+Carried from #247 (GROWTH.md and the stills), which closes unmerged; the stills stay on branch `docs/growth-frame` (`docs/design/frames/2026-10-20-skill-S1-wings.png` and its note `2026-10-20-skill-screen.md`). Three stills with the same content and one frame each: S1 the picture (a tree of wings, the trunk in the centre, the touched node's card under the picture, the build as a strip at the foot), S2 the list (schools as cards, one open at a time), S3 the build first (a board of slots, the schools behind a button). Recommended S1. His word (20.10): S1, the wings.
+What it fixes: the skill screen is the picture, S1 is its frame, and the strip at the foot is where the build is changed. Everything inside the frame (node shapes and sizes, wing colours, the card's wording, how a full wing scrolls or zooms, the strip's layout) is polish, iterated without asking (AGENTS.md). It reads the kernel's state, not the mockup.
+**Superseded in part (22.10):** the wings are the race wings of decision 38 around the shared centre, not the five trades of the still; no node shows a percentage (decision 39).
+**Retry when:** a full wing does not fit a phone's width without a zoom that loses the picture (then the wings fold, the frame stays). Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The tent comes back as a portable inn: bought, a full night's sleep, and the place a player returns to after death (the owner, 23.10)
+
+The open question of the #219 carry entry above (W7 against the 19.10 entry that dropped the tent), answered by the owner on 23.10 in chat. A player can buy a tent. A pitched tent gives a full night of sleep, as the inn's bed does, and it is a return point: a player who dies comes back at their tent, not in town. In his words, a portable inn.
+**Supersedes:** the tent part of the 19.10 entry "A fire anywhere outside the town is a safe place while it burns; the tent is dropped" (the fire rule of that entry stands); #219's W7 wording ("a fire with a tent from the start ... keeps everything"), so the tent is bought, not given at the start, and what it gives is sleep and the return point; G33's "wakes in the last town" for a player with a pitched tent. The pack where the body fell (the open ends and combat round 2 above) is unchanged.
+**Retry when:** the tent becomes the only way anyone plays far out (then its price or its pitching cost moves, never the rule), or returning at a tent next to a fight makes a death cost nothing. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ A campfire is the safe way to log out far from town (the owner, 23.10)
+
+The owner, 23.10 in chat: a player far from town who wants to stay there lights a campfire and can log out safely. In real-time multiplayer, logging out without one will probably cost the character's life; the exact cost is set with the combat and presence waves.
+**Supersedes in part:** "nothing is taken from a player who is away" (10.10, the shared world) for a player who logs out in the wild with no fire, tent or inn (the entry below). It agrees with the 19.10 fire entry: a fire outside the town is a safe place while it burns.
+**Retry when:** a dropped connection, not a choice, is what costs players their characters (then a grace window for drops, with the owner). Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Logging out with no fire, tent or inn leaves the character asleep in the world (the owner, 23.10)
+
+The owner, 23.10 in chat: a player who logs out with no fire, tent or inn leaves the character in the world, asleep and vulnerable where it logged out, until the player returns, as sleepers do in Rust. A campfire, a pitched tent or the inn are the safe places to log out.
+**Supersedes in part:** "nothing is taken from a player who is away" (10.10) and the hunters' board's "nothing from a player who is away" for a sleeper out in the open. What can harm a sleeper (foes, hazards, players in the marked zone) is the combat and presence waves' to write.
+**Retry when:** sleepers are hunted as an easy kill so often that players stop going far out (then the safe ways to log out get cheaper, never the rule). Model: claude-opus-5-5.
 ## 2026-10-23 ✅ The desktop home is painted key art that lives
 
 **From 1024px the home page opens on the owner's key art in motion:** the valley at dawn with the three opening characters (the elf, the human, the skeleton), first drawn by GPT image from their kit sprites, then brought to life as a video the owner generated and picked (`web/public/keyart/hero.webm` and `hero.mp4`, 1920x1080, 24 fps, a 17 s ping-pong, so its loop has no seam; `hero-poster.jpg` and `.webp` are its first frame). The video carries the characters' auras (the elf white, the human red, the skeleton a thin black haze) and their small motions. It plays muted and looped, drawn with cover from the bottom; under reduced motion it stays still and the poster shows; it pauses while the tab is hidden. The phone keeps its own first screen and fetches neither the video nor the still.
@@ -2702,6 +2896,30 @@ The owner, 23.10: picked v1 of three key-art stills ("perfect"), asked for it to
 
 ## 2026-10-23 ✅ Search, first slice: a daily draw kept in state, rare rows tilted by luck, nothing near the opening
 
-A treasure file may carry `search` (rows of item and chance, a prop to hang on) in place of `dig`; the design is `docs/design/SEARCH.md`. Searchables live in their own `searchables` map in the bundle, not among the dig spots, and the value solver is untouched (search has no active time; the check only requires every row's item to already have a value, so it is never the only source). The kernel has two actions, `search` and `take`: each row is drawn once per dawn with the seeded draw and kept in `state.searched[id]`, luck tilts only rows of rank 2 and up (`rareFindPermille`), and an old save without the field reads as empty. `pnpm check` refuses a searchable within 4 tiles of the opening's first path, derived from the road, spawn, wake tiles and the first quests' places, since the map marks none. KERNEL_VERSION is 0.15.0; #296 and #310 also bump it, so whichever lands later takes the next number.
+A treasure file may carry `search` (rows of item and chance, a prop to hang on) in place of `dig`; the design is `docs/design/SEARCH.md`. Searchables live in their own `searchables` map in the bundle, not among the dig spots, and the value solver is untouched (search has no active time; the check only requires every row's item to already have a value, so it is never the only source). The kernel has two actions, `search` and `take`: each row is drawn once per dawn with the seeded draw and kept in `state.searched[id]`, luck tilts only rows of rank 2 and up (`rareFindPermille`), and an old save without the field reads as empty. `pnpm check` refuses a searchable within 4 tiles of the opening's first path, derived from the road, spawn, wake tiles and the first quests' places, since the map marks none. KERNEL_VERSION is 0.17.0, after #310 (0.15.0) and #302 (0.16.0) landed first.
 Evidence: 12 kernel, 7 check and 6 client tests; `pnpm verify` green. Three valley searchables ship (log, branch heap, tree) with one rare row each; the table reuses the only two rare items that exist.
 **Retry when:** the value solver should count search as a faucet (G42 budget), or furniture and insides arrive (SEARCH.md section 4). Model: claude-sonnet-5-5.
+## 2026-10-25 ✅ What was drawn before the rich wave is redrawn to match it, the shop interior first
+
+The owner, 25.10: the food and medicine shop interior keeps its approved frame (2026-10-11: warm planks, a runner to the counter, the trade on the back wall), but it was drawn before the rich wave (2026-10-23) and would not sit beside it. Everything drawn before the rich wave is renewed so the game reads as one hand: redrawn in the rich wave's style where the frame stands, made again where it does not. The shop interior branch is not revived as it is; it waits for its own redraw, and its layout and frame carry over.
+How it runs: an art polish stream after the rich wave, inside the agreed direction (polish, not a new direction), one list of the pre-rich pieces still on screen, the most seen first.
+**Retry when:** the rich wave's style itself is replaced (then the list is redrawn against the new style). Model: claude-opus-5-5.
+
+## 2026-10-25 ✅ The ambient creatures wait for the redraw; many animals come later, most of them hunted for what they give
+
+The owner, 25.10: the ambient creatures (birds and small animals that sit and leave when the player comes close; their kinds and spots are already map content, the client does not draw them yet) are not revived now: they come after the pre-rich redraw above, drawn once in the rich style. Later the valley gets many more animals; most can be hunted and fought at the chosen difficulty, and a kill gives raw materials, the way Red Dead Redemption 2 skins and harvests what is hunted.
+Where it sits: the hunting is combat, so it follows G35 (no fighting in the demo; combat after the foundation, where and its frame approved by the owner first). The branch with the creatures' client stays on the remote as it is until then.
+**Retry when:** combat opens (G35), or the ambient creatures are wanted before it as cosmetic life. Model: claude-opus-5-5.
+
+## 2026-10-25 ✅ The night ruins are revived with changes: the first step of the slope south, with no door
+
+The quest designer reviewed the branch of 17.10 (feat/night-ruins, never merged) against the world of 22.10: it fits with changes. Its bones stay (the bells as the clock and the last-bell walk-out, the walled yard with the wolf's round and cover, the inscription read only by firelight, the bell pit, the stair under the hall). The owner's answers, 25.10:
+- **Place:** the walled yard at night is the near ruins (decision 49), the first and shallowest step of the slope south; the climax opens the stair down toward the undead south.
+- **No door to the south.** The south is open-world steps, not a gate a quest opens: the passage is always open, and the frightening bells mark the right time to cross. It is too hard to cross before the player is ready, and readiness is made: the dark below (a torch or an ember), cold and food on the long way (clothing, cooked food), drops that need climbing gear, and creatures that need a weapon (that last one waits for combat, G35). The owner welcomes more such needs.
+- **The brazier's all-night vigil goes** (it repeated the long night): lighting the brazier becomes a step of the inscription riddle.
+- **The yard's stealth quest changes its question** (it repeated the south bank's wolf and night plant); both may stay open at once, the player's choice.
+- **The skeleton:** the cellar's rare find hints at the skeleton's fold instead of clockwork (decision 20 keeps clockwork for the humans), and the skeleton gets its own line there.
+- **The ember traveller sends the player in** (lighting an old fire is the Wakers' act).
+- **Open:** whether the climax becomes chapter 1's bell-rope dilemma (ring, tie or leave). The owner has not decided.
+Also from the review: the inscription keeps one line and the belief readings move into people's mouths; two order fixes (the yard quest requires the arch; the gamble pays something other than logs). The map rows are redrawn by the hand-made first map (NEXT 19), so the layout carries over as a plan, not as tiles. A fresh branch from develop carries the content, the bell and walk-out code and the tests; the old branch stays as it is until then.
+**Retry when:** the first hand-made map lands, or the owner decides the bell-rope question. Model: claude-opus-5-5.

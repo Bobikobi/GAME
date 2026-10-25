@@ -20,7 +20,8 @@ import {
   hashText,
   layoutInstances,
 } from '@game/kernel';
-import { BASE_CLASSES, CORE_ONLY_TYPES, type CreatorProfile, type ParamsBody, type Template, type WhenDef } from '@game/schema';
+import { BASE_CLASSES, CORE_ONLY_TYPES, type ChunkFile, type CreatorProfile, type ParamsBody, type Template, type WhenDef } from '@game/schema';
+import { chunkProblems, levelsProblems } from './chunks';
 import { toRepoPath, type Issue, type Loaded } from './load';
 import { findableItems, startFinds } from './play';
 
@@ -33,7 +34,7 @@ export interface Assembled {
     {
       dir: string;
       rel: string;
-      sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4; ramps?: string[]; scale?: number }>;
+      sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4; ramps?: string[]; scale?: number; source?: { spec: string; manifest: string } }>;
       palette?: string[];
       ramps?: { id: string; for?: string; steps: string[] }[];
     }
@@ -55,6 +56,7 @@ type RecordKey =
   | 'races'
   | 'pockets'
   | 'professions'
+  | 'schools'
   | 'shops'
   | 'reactions';
 const KEY_OF: Record<string, RecordKey | undefined> = {
@@ -69,6 +71,7 @@ const KEY_OF: Record<string, RecordKey | undefined> = {
   race: 'races',
   pocket: 'pockets',
   profession: 'professions',
+  school: 'schools',
   shop: 'shops',
   reaction: 'reactions',
 };
@@ -85,6 +88,7 @@ const BODY_OF: Record<string, string> = {
   race: 'race',
   pocket: 'pocket',
   profession: 'profession',
+  school: 'school',
   shop: 'shop',
   reaction: 'reaction',
   params: 'params',
@@ -163,6 +167,12 @@ export function flattenParams(p: ParamsBody): Params {
       stamina: p.per_point.stamina.value,
       spirit: p.per_point.spirit.value,
     },
+    growth: p.growth
+      ? {
+          cost: { small: p.growth.cost.small.value, major: p.growth.cost.major.value, corner: p.growth.cost.corner.value },
+          slot_levels: [...p.growth.slot_levels],
+        }
+      : undefined,
     light: p.light
       ? {
           keys: p.light.keys.map((k) => ({ at: k.at, tint: k.tint, pct: k.pct })),
@@ -201,6 +211,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
     races: {},
     pockets: {},
     professions: {},
+    schools: {},
     shops: {},
     reactions: {},
   };
@@ -267,6 +278,9 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
     } else if (d.type === 'map') {
       if (map) err(f, '', 'there is more than one map file (a second region comes later)');
       map = { ...meta, ...d.map };
+    } else if ((d as { type: string }).type === 'chunk') {
+      // a chunk is not in the bundle yet (NEXT section 19 b streams it); its shape is checked here all the same
+      for (const p of chunkProblems((d as unknown as ChunkFile).chunk)) err(f, p.where, p.message);
     } else if (d.type === 'kit') {
       kits[d.id] = {
         dir: dirname(f.abs),
@@ -283,6 +297,8 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
               ...(s.ramps ? { ramps: s.ramps } : {}),
               // read by the scale check (tools/src/kit/scale.ts); the bundle does not carry it
               ...(s.scale === undefined ? {} : { scale: s.scale }),
+              // read by the hole check (tools/src/kit/holes.ts) to name the re-import; the bundle does not carry it
+              ...(s.source === undefined ? {} : { source: s.source }),
             },
           ]),
         ),
@@ -633,6 +649,7 @@ function checkMap(b: Bundle, origin: Record<string, string>, issues: Issue[]): v
     if (row.length !== m.width) err(`map.ground.${y}`, `row is ${row.length} wide, the map is ${m.width} wide`);
     for (const ch of new Set(row)) if (!m.legend[ch]) err(`map.ground.${y}`, `"${ch}" is not in the legend`);
   });
+  if (m.levels) for (const p of levelsProblems(m.levels, m.ground, 'map.levels')) err(p.where, p.message);
   for (const [ch, tile] of Object.entries(m.legend)) {
     if (!b.sprites[tile.sprite]) err(`map.legend.${ch}`, `no sprite "${tile.sprite}"`);
   }
