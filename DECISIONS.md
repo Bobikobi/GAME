@@ -2984,6 +2984,7 @@ The owner read the west bank fix of #327 told as the player lives it (pick the h
 The owner, 25.10: the game's infrastructure is that of the big long games (Fallout, Skyrim), very long to complete, levelling and crafted gear, clothing and weapons all tied to skills that unlock. `docs/design/PROGRESSION.md` turns that into world rules and algorithms against what is decided and built: rise-by-use opens, points buy (the hybrid the kernel already holds, sized long); one experience curve for every school on the game's own difficulty ratio (1.5), twenty steps, mastery at 21; bands of five levels that gate nodes and never verbs; the character level read by three things only (the power cap by formula, the slots re-spaced, travel); a catalogue of sixteen schools in five families with each school's closed effect list; a school that grows by branches to about 550 nodes at the first full catalogue and a thousand by data; gear with a tier, a rarity and a third axis, quality, that a node opens while no node walls an attempt; the unlock economy's four prices (point, band, key, find) and nothing for gold; proposed rule lines P1-P9; a conflict table (one declared conflict: cross-links between schools against the 23.10 format's "same school only"); twenty holes closed by analogy.
 Nothing is built with it. Eight calls are the owner's, in the page's section 9, each with a recommended default: Q1 how long "complete" is (default `t1` 15 s: one school in about 28 active hours, sixteen in about 450), Q2 combat schools reserved now and written with the first foes, Q3 the hybrid kept, Q4 respec limited (three free, then gold), Q5 attribute pips after the opening kept, Q6 quests pay a named school, Q7 a lesson is time and never gold for a level, Q8 a cold clock.
 **Retry when:** the owner answers section 9 (each answer becomes its own ✅ entry and the page is amended), or the growth format's build (GROWTH.md section 9) finds a formula that does not hold in play. Model: claude-fable-5-1.
+**Answered in part (25.10):** Q1-Q7 by the seven ✅ entries "The progression map, Q1" to "Q7" below, folded into the page; Q8 stays open on `docs/design/BODY_CLOCKS.md` (the ⏸ entry "Body clocks: the research for Q8" below).
 ## 2026-10-25 ✅ A story keeper runs from the first pitch of a quest, and CI asks for its verdict on any story text
 
 The owner, 25.10, after a west bank fix whose mechanics passed every check and whose story read badly: an agent with a trigger in the system should surface where the story stops making sense, send it to the manager for an answer, and write a story fix only after approval - and it belongs inside the writing of a quest from the start, not after.
@@ -3001,3 +3002,57 @@ The owner caught a break in the found-trace opening of the entry above: if the d
 - **The bridge is mended with them, and nobody is waiting on the other side.** The player decides where to go from there.
 The stone's names follow the entry above (players who signed in, the written names until a server answers; the safety filter). Kept from it: carving is the only naming, for every start.
 **Retry when:** the owner changes the opening, or the bell for every signed-in player is too loud for a busy valley (then it rings only within a distance or a rate). Model: claude-opus-5-5.
+
+## 2026-10-25 ✅ The progression map, Q1: a school in about fifty active hours, the catalogue past 800, `t1` 28 s (the owner, 25.10)
+
+PROGRESSION.md section 9, Q1, "How long is complete?", options A (`t1` 10 s, 18 h a school), B (15 s, 28 h, recommended) and C (25-30 s, 45-55 h a school, 800+ h in all). The owner's word (25.10): **C**, RuneScape's band. The page's curve is set at `t1` 28 s: mastery is `t1 * 6648.5` active seconds, so 28 s gives 51.7 h a school and 827 h for sixteen schools, the smallest whole second at which the catalogue at one value passes his 800 (27 s gives 798); the first point stays inside the first minute (G11). A school may sit anywhere in 25-30 s (short actions low, long ones high) while a check row holds the catalogue's mastery hours at 800 or more (`catalogue_hours_min`). The cost he took with C: the last step is a 15-18 h series of sessions.
+**Retry when:** a playtest finds the middle bands (levels 11-16, one to seven hours) empty of things to learn, or the catalogue shrinks below sixteen schools (then `t1` rises inside 25-30 to keep 800). Model: claude-opus-5-5.
+
+## 2026-10-25 ✅ The progression map, Q2: the combat schools are reserved now and written with the first foe (the owner, 25.10)
+
+PROGRESSION.md Q2, options A (write their nodes now), B (reserve now, write with the first foe; recommended) and C (later, hidden). The owner's word (25.10): **B**. Strike, Aim and Guard are reserved by name, shape, effect list and slots (PROGRESSION 4.2), the tree screen draws three closed spokes, and their nodes arrive in the same pull request as the first foe (G35, COMBAT section 6).
+**Retry when:** combat opens (G35 lifts). Model: claude-opus-5-5.
+
+## 2026-10-25 ✅ The progression map, Q3: the hybrid as built, sized long (the owner, 25.10)
+
+PROGRESSION.md Q3, options A (the hybrid: rise by use opens, points buy; recommended), B (Fallout's one pool) and C (RuneScape's levels alone). The owner's word (25.10): **A**, the hybrid the kernel already holds, sized by Q1: a school's level rises only with its own verb's active time, every level anywhere pays one point, points buy nodes in the bands the school's level has opened (P1).
+**Retry when:** the growth format's build finds the band gate or the one point a level does not hold in play. Model: claude-opus-5-5.
+
+## 2026-10-25 ✅ The progression map, Q4: a limited respec, one node at a time, three free then gold, pips never (the owner, 25.10)
+
+PROGRESSION.md Q4, options A (none), B (limited; recommended) and C (Skyrim's per-school reset). The owner's word (25.10): **B**. `unlearn` at a safe place, one node at a time, nothing learned may depend on it; the first `respec_free` (3) are free, then `respec_mg` (proposed 20,000 mg, a sink of the world's prices); a book's node is never refunded; an attribute pip is never unlearned (PROGRESSION 6.3).
+**Supersedes:** "no way to unlearn yet" of "The skill tree's format" (23.10), as its "yet" foresaw.
+**Retry when:** players respec so often that a build stops being a choice (then the price rises, never the rule), or a first evening's mistake still costs a new character. Model: claude-opus-5-5.
+
+## 2026-10-25 ✅ The progression map, Q5: pips bought to 5, and worn gear adds attribute bonuses on top, with a soft wear requirement (the owner, 25.10)
+
+PROGRESSION.md Q5, options A (fixed for life), B (pips bought with points to 5; recommended) and C (pips from gear only). The owner's word (25.10): **B, and gear too**.
+- Pips are bought with points up to `key_max` 5, as built.
+- Worn gear adds attribute bonuses on top. They scale with the item's tier and have **no fixed cap**: late gear must match late stages (his amendment the same evening, replacing a first reading with a cap of the base plus three).
+- The stats panel shows the total with the gear part in another colour, for example "Might 7 = 5 + 2 gear"; an item's description lists its attribute bonuses under its name.
+- **The wear requirement**: each item states one, a school level and an attribute. Below it the item is still worn and still helps, gently: its bonus counts up to what gear one tier above the wearer's own tier gives, and the rest unlocks as the wearer meets the requirement. The tooltip shows the full bonus, the active part and what unlocks the rest ("+6 might, 3 active, the rest at Guard 30" in his words; on the twenty-step curve the level shown is the tier's level on 1-21). His reason: a newcomer who saved and bought from another player gets a real step ahead, not the late game.
+- Premium looks never carry a bonus (power is never sold).
+The builder's fill (proposed, PROGRESSION 5.6): `attr_bonus_max` by tier [1, 2, 3, 4, 6], then +2 a tier; the requirement's level on the band ladder (tier 2 level 6 up to tier 5 mastery); a requirement and a node's key read the base attributes (race, grade, pips), never worn bonuses, so gear cannot climb through gear and keys never become a shopping list; the same one-tier-ahead rule reads the item's worn effects.
+**Retry when:** the free market makes one tier ahead the normal way to play (then the step narrows, never the rule), or a late stage needs a bonus the tier ladder cannot reach. Model: claude-opus-5-5.
+
+## 2026-10-25 ✅ The progression map, Q6: a quest pays experience to a named school (the owner, 25.10)
+
+PROGRESSION.md Q6, options A (yes, a named school, bounded; recommended) and B (no). The owner's word (25.10): **A**. A quest reward may carry `xp: { school, seconds }`, paid to that school at completion, bounded by the quest's own active time with the effort weight (R6) and, for each player, by that player's own active time on it; it never pays the character directly (PROGRESSION 3.6).
+**Retry when:** a quest line becomes a faster road into a school than its verb (then the bound tightens). Model: claude-opus-5-5.
+
+## 2026-10-25 ✅ The progression map, Q7: teachers give time and ask standing; help in a group, never a carry (the owner, 25.10)
+
+PROGRESSION.md Q7, options A (a lesson is time at the ordinary rate, asking standing; recommended), B (teachers sell levels for gold) and C (books only). The owner's word (25.10): **A**, never gold for a level. And no industrial carry, above all in multiplayer; help is welcome, a full carry is not (his amendment the same evening):
+- Experience comes only from the player's own actions (active ms are already per player); a quest done beside a veteran pays the newcomer for what the newcomer did.
+- In a group with a stronger player, a newcomer gets (a) a share of the group's earned experience, at most a quarter of their own, bounded by their own active time, and (b) +20% on their own earned experience while the veteran is near (Final Fantasy XIV's mentors, World of Warcraft's rested experience).
+- The veteran earns standing and a line on the giving board (the boards, 9.10), not experience.
+- Diminishing returns for the same pair.
+- Selling carries falls under "An exploit loop costs its accounts and the gold it made" (9.10).
+The builder's fill (proposed, PROGRESSION 3.7): the terms per school, so a quarter of nothing is nothing; "stronger" one band above in that school, "near" the same group within 12 tiles; the pair's help full for its first 60 active minutes in a real day, half for the next 60, none after, reset at 00:00 UTC. The +20% is declared as the one multiplier on experience (against R6's activity record); no body state or node adds another.
+**Retry when:** pairs or rings of accounts farm the share (then the pair schedule shortens and the exploit-loop rule acts), or newcomers in groups still fall behind solo players (then the share, never a carry). Model: claude-opus-5-5.
+
+## 2026-10-25 ⏸ Body clocks: the research for Q8, a recommended set, and the call open
+
+The owner, 25.10, on the progression map's Q8 (the cold clock): align the body clocks with the big games, research and cross-check before deciding. `docs/design/BODY_CLOCKS.md` reads what the game has (health the one bar, no drain since 11.10; no hunger, thirst, tiredness or cold; sleep, the inn and the tent decided and not built; the fire; a 20-minute day), the reference games with their published numbers (Skyrim's Survival Mode, Fallout 4 and New Vegas, The Long Dark, Valheim, Red Dead Redemption 2, Don't Starve, Minecraft, Stardew Valley and RuneScape), a cross table, and what they agree on: hard needs are opt-in in the big role-playing games, the kind games turn needs into bonuses, cold is a place and clothing decides where the body settles.
+The recommended set (option A, not decided): cold only, only in cold places, settling where worn warmth puts it and reset by a fire; Fed after a cooked meal and Rested after a night slept as bonuses with no penalty side; no hunger, thirst or tiredness bar. B adds an opt-in hard mode; C keeps no clock. Declared conflict if A or B: clothing answers cold against G34's "never gear", already bent by the 25.10 readiness answer.
+**Retry when:** the owner answers Q8 (then a ✅ entry, and GAME_RULES G34, and G32 if B). Model: claude-opus-5-5.

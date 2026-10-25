@@ -2,15 +2,15 @@
 
 A map, not a content page. The owner's direction of 25.10: the infrastructure of the big long games (Fallout, Skyrim), games that take very long to complete, where levelling, crafting gear, clothing and weapons all hang on one thing: skills that unlock. This page turns that direction into world rules and algorithms (state machines, formulas, parameters) against what is already decided and built, so that every later content wave (a school's real nodes, a weapon family, a crafting ladder) is written to one map and not to the taste of its session. It takes GROWTH.md (the frame of schools, nodes, slots, keys, techniques and books; branch `docs/growth-frame`) and COMBAT.md (branch `docs/combat-frame`) as given and sizes them for a game of hundreds of hours.
 
-Its entry: DECISIONS 2026-10-25 ⏸ "The progression map"; each answer to section 9 becomes its own entry and amends this page.
+Its entry: DECISIONS 2026-10-25 ⏸ "The progression map"; each answer to section 9 becomes its own entry and amends this page. The owner answered Q1-Q7 on 25.10: seven ✅ entries of that day, folded in below and marked "(Q*n*, the owner)" where they land. Q8, the body clocks, stays open; its research and cross table are [BODY_CLOCKS.md](BODY_CLOCKS.md).
 
-Design only. Nothing here is built: no schema, kernel, content, parameter or screen changes with it. Everything marked **proposed** is a builder's shape or a reading of the owner's word, not his word. The questions that are his are in section 9, each with options and a recommended default. The two tree streams in flight (the skill-tree screen that draws a graph of any size, and stone mining and fishing as new schools) are not touched here; section 4 names the shape they should land in.
+Design only. Nothing here is built: no schema, kernel, content, parameter or screen changes with it. Everything marked **proposed** is a builder's shape or a reading of the owner's word, not his word; where an answer of his leaves a number or a form open, the builder's fill is marked proposed too. The questions that are his are in section 9, each with options and a recommended default. The two tree streams in flight (the skill-tree screen that draws a graph of any size, and stone mining and fishing as new schools) are not touched here; section 4 names the shape they should land in.
 
 Facts about Openfold are read from `origin/develop` @ 606e1620 (kernel 0.16.0): `kernel/src/state.ts` (`professionLevel`, `characterLevel`, `skillPoints`, `powerCap`, `techniqueValue`, `attrAt`), `kernel/src/step.ts` (`learn_node`, `equip`, `unequip`, `spend`, the experience line in the work step), `content/core/params.json` (`growth`, `per_point`, `power_cap_permille`, the crafting group), `content/core/professions/*.json` (`xp_levels`), `content/core/schools/*.json` (the five placeholder schools of 23.10), `content/core/recipes/`, `content/core/items/`, `content/core/races/`, `schema/src/index.ts` (`EFFECTS`, `WORN_EFFECTS`, `ProfessionBody`).
 
 ## 1. The map in one paragraph
 
-A character grows on two axes at once. **By doing:** every school (a trade, later a weapon, a way of moving) has a skill level that rises only with the active seconds of its own verb, on one geometric curve whose ratio is the game's own difficulty step (each level asks half again as much), so that the first levels come in a minute and the last one in a long evening, and a school's mastery is about a working week of play. **By choosing:** every skill level anywhere pays one point to the character level, and points buy nodes in any school whose band the skill level has opened: a node is a thing you know how to do, a small one moves a number, a major one changes a verb or teaches a technique, a corner one is where a race meets a school. The character level is read by nothing but the caps (the power cap, the slot count, the forms of travel). Gear is made from what the schools gather, by the schools that craft, at the stations the world holds; a node never walls a recipe and never sells for gold; what a node does to gear is open its quality and its technique. The tree is a graph the player can never buy whole, so a build is a choice; a book or a cross-link is how a build reaches across schools. Rise-by-use opens, points buy: Skyrim's hybrid, kept, sized long.
+A character grows on two axes at once. **By doing:** every school (a trade, later a weapon, a way of moving) has a skill level that rises only with the active seconds of its own verb, on one geometric curve whose ratio is the game's own difficulty step (each level asks half again as much), so that the first levels come in a minute and the last one in a string of long evenings, and a school's mastery is about fifty active hours (RuneScape's band, Q1). **By choosing:** every skill level anywhere pays one point to the character level, and points buy nodes in any school whose band the skill level has opened: a node is a thing you know how to do, a small one moves a number, a major one changes a verb or teaches a technique, a corner one is where a race meets a school. The character level is read by nothing but the caps (the power cap, the slot count, the forms of travel). Gear is made from what the schools gather, by the schools that craft, at the stations the world holds; a node never walls a recipe and never sells for gold; what a node does to gear is open its quality and its technique. Worn gear adds attribute bonuses on top of the bought pips, rising with its tier and never capped by a fixed number; an item names what it asks of its wearer, and below that it still helps, gently, one tier ahead of the wearer and no further (Q5). Experience comes only from a player's own actions; help in a group is a bounded share and a mentor's bonus, never a carry (Q7). The tree is a graph the player can never buy whole, so a build is a choice; a book or a cross-link is how a build reaches across schools. Rise-by-use opens, points buy: Skyrim's hybrid, kept, sized long.
 
 ## 2. What was decided before this page
 
@@ -62,26 +62,26 @@ One formula for every school, two numbers per school in the content and one cons
 step(i)   = t1 * ratio^(i-1)                 for i = 1..20        active seconds for the i-th level
 reach(n)  = t1 * (ratio^n - 1) / (ratio - 1)                      active seconds to stand at level n+1
 ratio     = difficulty_ratio_permille / 1000 = 1.5                 the one scale of 9.10
-t1        = the school's first step, 10 to 30 s (range 5..60)      the only knob per school
+t1        = the school's first step, 25 to 30 s, default 28 (Q1)  the only knob per school (param range 10..60 for tuning)
 ```
 
 `xp_levels` stays the stored form (twenty integers per profession, generated from the formula by a script and checked against it, so a hand-tuned table is caught; `pnpm check` gains the row). Level 21, after the twentieth step, is **mastery**: the school's crown node opens (4.3) and the board's levels row counts it (DECISIONS 2026-10-09 "The boards rank worth, levels ...").
 
 Why 1.5 and not Skyrim's power curve: the game already has one ratio for "the next step asks more" and a second constant would be a second scale; and 1.5 puts a third of a school's time into its last step, which is what makes mastery a thing (Skyrim puts about a quarter into the last ten levels).
 
-The curve at `t1 = 15 s` (the recommended default, section 9 Q1), active seconds of the school's own verb; wall time is two to three times this, since a player also walks, trades and talks:
+The owner's word (25.10, Q1 = C): `t1` 25-30 s, a school in 45-55 active hours, the catalogue in 800 hours and more, RuneScape's band. The curve at **`t1 = 28 s`**, the default inside his band, in active seconds of the school's own verb; wall time is two to three times this, since a player also walks, trades and talks:
 
 | Stand at level | Active time | What it is |
 |---|---|---|
-| 2 | 15 s | the first point, inside the first minute (G11) |
-| 4 | 71 s | three points: a small node and the first major node of the school |
-| 6 | 3.3 min | band 2 opens |
-| 11 | 28 min | band 3 opens; the second corner node of the race |
-| 16 | 3.6 h | band 4 opens |
-| 20 | 18.5 h | the last step begins |
-| 21 (mastery) | 27.7 h | the crown; the last step alone is 9.2 h |
+| 2 | 28 s | the first point, inside the first minute (G11) |
+| 4 | 2.2 min | three points: a small node and the first major node of the school |
+| 6 | 6.2 min | band 2 opens |
+| 11 | 53 min | band 3 opens; the second corner node of the race |
+| 16 | 6.8 h | band 4 opens |
+| 20 | 34.5 h | the last step begins |
+| 21 (mastery) | 51.7 h | the crown; the last step alone is 17.2 h |
 
-At `t1 = 10 s` mastery is 18.5 h; at 20 s, 36.9 h; at 30 s, 55 h. Cooking and handcraft (short actions, many of them) sit at the low end, felling and mining at the high end, so that one evening of each feels the same.
+**Why 28 and not another number in 25-30.** Mastery is `t1 * 6648.5` active seconds, so 25 s gives 46.2 h, 27 s 49.9 h, 28 s 51.7 h and 30 s 55.4 h. Sixteen schools at 27 s come to 798 h, short of the owner's 800; 28 is the smallest whole second at which the catalogue at one value passes it (827 h), and it sits near the middle of his 45-55 h. It keeps the first point inside the first minute (G11), and it leaves room on both sides for the per-school spread: cooking and handcraft (short actions, many of them) may sit at 25 s (46 h), felling and mining at 30 s (55 h), so that one evening of each feels the same. The spread is held by a check row: the catalogue's mastery hours summed over its schools stay at or above `catalogue_hours_min` (800), so a spread that leans low goes red. The cost the owner accepted with C: the last step is a 15-18 h series of sessions, a third of the school; RuneScape's 92 to 99 is half of 99, so the band is the one he named.
 
 ### 3.3 Bands
 
@@ -97,18 +97,39 @@ A school's twenty steps fall into four **bands** of five levels and the crown: b
 ### 3.5 What reads the character level
 
 Exactly three things, by rule (G89 of GROWTH, extended):
-1. **The power cap.** The table is extended by a formula past its last entry: `cap(level) = table[min(level, 14)] + power_cap_step_permille * max(0, level - 14)`, clamped to `power_cap_max_permille` (proposed step 20, max 4000, range 2000..8000); 4000 is reached at character level 64, three mastered schools. Everything a player wears, has learned and holds in slots still sums under this one number (R9).
+1. **The power cap.** The table is extended by a formula past its last entry: `cap(level) = table[min(level, 14)] + power_cap_step_permille * max(0, level - 14)`, clamped to `power_cap_max_permille` (proposed step 20, max 4000, range 2000..8000); 4000 is reached at character level 64, three mastered schools (about 155 active hours at `t1` 28 s). Everything a player wears, has learned and holds in slots still sums under this one number (R9).
 2. **The slots.** `growth.slot_levels` re-spaced to the long scale: proposed [1, 1, 10, 30, 60] for five slots (today [1, 1, 5, 10, 15]); the fifth slot is a three-school character. Values only; the format of 23.10 stands.
 3. **Travel.** Every faster form of travel names the character level it is earned at (DECISIONS 2026-10-23, item 7); on this scale the first (a trail step) sits around 10, a mount or a boat line around 40, the far forms past 100. Numbers for the world pages to set; this page only fixes the scale they are set on.
 
 Quests, dialogue, prices, foes and recipes read the character level never. A quest that wants a capable player asks for a school's band or an attribute key (CR-10 closes that way: "a quest may name a school and a band", never a character level).
 
-### 3.6 What pays experience (proposed)
+### 3.6 What pays experience (Q6, Q7, the owner)
 
-- The verb's own active time, as built, including the combat verbs when they come (a fight's active ms pay the weapon's school; COMBAT 4.3 reads the hand).
-- **A quest pays a school.** A quest reward may carry `xp: { school, seconds }`, paid to that school at completion, bounded by the quest's own active time with the effort weight (R6: a reward is an activity record; nothing pays more than the time it took). It never pays the character directly. This is how a quest line of the city teaches smithing to one who has never swung a hammer (Skyrim's quest skill rewards), with one spine.
-- **A teacher is a place to train, not a shop.** A character marked as a teacher of a school offers a lesson: an activity with active time, a minigame of the school's own kind, paying experience at the school's ordinary rate (nothing more, so it is never a shortcut) and asking nothing but standing with the character (the reputation standings) and, for the upper bands, a thing brought. Decision 39's "books and teachers" lands here; G39 forbids Skyrim's trainers (gold for levels), and this is the form that keeps both.
+- **Only the player's own actions.** The verb's own active time, as built (active ms are already kept per player), including the combat verbs when they come (a fight's active ms pay the weapon's school; COMBAT 4.3 reads the hand). Nothing another player does pays this player's experience, except the two bounded terms of the group rule below.
+- **A quest pays a school** (Q6 = A). A quest reward may carry `xp: { school, seconds }`, paid to that school at completion, bounded by the quest's own active time with the effort weight (R6: a reward is an activity record; nothing pays more than the time it took), and for each player by that player's own active time on the quest: a quest done beside a veteran pays the newcomer for what the newcomer did. It never pays the character directly. This is how a quest line of the city teaches smithing to one who has never swung a hammer (Skyrim's quest skill rewards), with one spine.
+- **A teacher is a place to train, not a shop** (Q7 = A). A character marked as a teacher of a school offers a lesson: an activity with active time, a minigame of the school's own kind, paying experience at the school's ordinary rate (nothing more, so it is never a shortcut) and asking nothing but standing with the character (the reputation standings) and, for the upper bands, a thing brought. Never gold for a level. Decision 39's "books and teachers" lands here; G39 forbids Skyrim's trainers (gold for levels), and this is the form that keeps both.
 - Nothing shortens a wait: a respawn, a growth, a night are capacity, and no node, lesson or point touches them (R6, DECISIONS 2026-10-10 "The world and its clocks").
+
+### 3.7 Help, never a carry: the group rule (Q7, the owner)
+
+The owner, 25.10: help is welcome, a full carry is not, above all in multiplayer. In a group, each player earns from their own work, and a newcomer with a stronger player gets two bounded terms on top; the veteran's reward is standing, not experience. Per school `k`, over a span of play in one group (the terms are the owner's; the neighbourhood, the "stronger" test, the pair schedule and the numbers in brackets are proposed):
+
+```
+own[k]       = the newcomer's own active ms in k in the span                      as built; the base of everything
+share[k]     = min( group[k] / (members - 1),  own[k] * group_share_max_permille / 1000 )
+               group[k] = what the other members earned in k in the span          at most a quarter of own (250)
+bonus[k]     = own[k] * mentor_bonus_pct / 100   while a stronger player is near    +20% (FFXIV's mentor, rested XP)
+paid[k]      = own[k] + pair_factor * (share[k] + bonus[k])
+pair_factor  = 1 for the first pair_full_min (60) active minutes of the same pair in a real day,
+               1/2 for the next 60, 0 after; the day resets at 00:00 UTC (the daily caps' clock, 10.10)
+```
+
+- **Bounded by the newcomer's own active time.** Both terms are multiples of `own[k]`: a newcomer who stands idle while a veteran works earns nothing, and a newcomer who gathers while the veteran fights gets no share of the fight's school, because a quarter of nothing is nothing.
+- **Stronger** (proposed): the other member's level in school `k` is at least `mentor_band_gap` (1) band above the newcomer's; **near**: in the same group, within `mentor_reach_tiles` (12) tiles. The bonus is one, however many veterans stand near.
+- **The veteran earns standing and a line on the giving board** (the boards of 9.10 rank giving), never experience, for the time spent beside a newcomer: the giving board counts the newcomer's `share + bonus` paid while the veteran was the stronger one near.
+- **Diminishing returns for the same pair** are the `pair_factor` above, so two accounts that always play together get the help for an hour a day, not for a lifetime.
+- **Selling carries** (gold for a run beside a veteran) falls under "An exploit loop costs its accounts and the gold it made" (9.10): the server's books see the pair, the pattern and the gold.
+- The +20% is the one multiplier on experience the game has, and it is declared as such in the conflict table (R6 reads a reward as an activity record; this is a bonus on one). No body state, node or item adds another: the body clocks' bonuses ([BODY_CLOCKS.md](BODY_CLOCKS.md)) move work and health, never experience.
 
 ## 4. The schools: the catalogue to aim for, and how a tree grows to a thousand nodes
 
@@ -144,7 +165,7 @@ Sixteen schools in five families. "Now" is built or in flight; "foundation" wait
 | Remedies | foundation (alchemy without magic; magic is ⏸ 9.10) | `craft_chance_pct`, `brew_strong` (a remedy's effect longer), `second_dose` (two from one brew), `taste_read` (an unknown herb's use shown), `poison_safe` |
 | Tinkering | with the city's machines (decision 20: human technology is made things) | `craft_chance_pct`, `quality_pct`, `clockwork` (a made thing with a timer: a trap, a lamp that lights itself), `salvage` (parts back from a broken made thing), `fit` (a tool fits a second verb) |
 
-**Combat** (planned layer; names and shapes reserved now, nodes written with the first foes: G35, COMBAT section 6). The effect list is COMBAT 4.3's reserved list and nothing more until then: `strike`, `sweep`, `break_guard`, `step_through`, `mark`, `brace`, `second_wind`, `bleed`.
+**Combat** (planned layer; Q2 = B, the owner: names, shapes, effect lists and slots reserved now, and the tree screen draws the three spokes closed; the nodes are written in the same pull request as the first foe: G35, COMBAT section 6). The effect list is COMBAT 4.3's reserved list and nothing more until then: `strike`, `sweep`, `break_guard`, `step_through`, `mark`, `brace`, `second_wind`, `bleed`.
 
 | School | What it reads |
 |---|---|
@@ -159,7 +180,7 @@ Hunting is the bridge: its gathering half (tracks, harvest) is written with the 
 | School | State | What its nodes may change |
 |---|---|---|
 | Travel | foundation | `walk_step_pct` on a kind of ground (trail, scree, snow; the W9 form, past the first third of the school), `load_pct` (the light-load limit higher), `camp_quick` (a fire laid faster), `path_read` (a shortcut shown for a beat) |
-| Survival | foundation | `cold_pct` (the cold clock slower), `hunger_pct` (satiety drains slower), `tent_warm`, `dark_sight` (a longer sight in the dark; the torch's light is still the item's), `fall_soft` (a drop costs less) |
+| Survival | foundation | `cold_pct` (cold creeps slower; if Q8 keeps a cold clock), `fed_long` (a cooked meal's Fed lasts longer; there is no hunger drain to slow, G32), `tent_warm`, `dark_sight` (a longer sight in the dark; the torch's light is still the item's), `fall_soft` (a drop costs less) |
 | Climbing | foundation (the drops of the south need gear and a hand) | `climb_reach` (a one-level drop crossed with rope), `rope_uses`, `grip` (a fall from a climb is not a fall), `ledge_read` |
 
 **Social and trade** (nodes change capacity and reading, never a price: R8, GROWTH 5.4)
@@ -200,7 +221,7 @@ A node never changes a recipe's output or a price (R9, R8). A sight node is the 
 
 The 25.10 answer makes the south a set of made readinesses, not a door: dark (a torch, an ember), cold and food (clothing, cooked food), drops (climbing gear), creatures (a weapon, later). This page gives each a clock or a check it hangs on, so that Survival, Tailoring, Cooking and Climbing have a thing to move:
 
-- **Cold** (proposed): a third body clock beside hunger and health, `cold` 0..1000, rising in cold regions by `cold_rise_per_min` and falling by a fire, a warm meal or worn `warmth`; at full it slows the step and then hurts like hunger does. Clothing's `warmth_pct` and Survival's `cold_pct` are the two levers; a grade does nothing to it.
+- **Cold** (Q8, open): the one body clock this map would add. Health is the only bar today and nothing drains by the clock (G32; `satiety_drain_per_min` is 0 since 11.10), so cold cannot sit "beside hunger": there is no hunger. [BODY_CLOCKS.md](BODY_CLOCKS.md) reads the big games' clocks against that and recommends a place clock (cold rises only in cold places, settles where worn warmth puts it, falls at a fire), with bonuses for a cooked meal and a night slept. Tailoring's `warmth_pct` moves where it settles, Survival's `cold_pct` how fast it gets there; a grade does nothing to it. The owner's call is Q8.
 - **Dark**: the light rule in `params.light` as built; a torch is a hand-slot item with uses; `dark_sight` lengthens the player's own sight a little and never replaces the torch.
 - **Drops**: the height layer (`levels`, DECISIONS 2026-10-25 "One height layer"); a crossing of the kind `rope` is walkable only with rope in the bag and `climb_reach` learned at the drop's depth.
 - **Creatures**: combat, when it comes; until then they are hazards escaped (G34).
@@ -239,9 +260,26 @@ a miss   = as built: inputs kept by craft_miss_keep_pct; the upgrade recipe's mi
 - The upgrade recipe (CR-20) lifts a thing one tier and keeps it on a miss; `temper` makes the miss keep more. A `master` piece upgraded keeps its quality.
 - A worn effect may carry a minus inside its cap (decided 9.10, CR-21): plate's `quiet_wear` is negative and its `guard_pct` large; that is the race answer's "a weakness matched by an advantage" in a thing.
 
-### 5.5 Power never sold, the free market, and the no-wall
+### 5.5 Power never sold, the free market, and the no-wall (see 5.6 for the soft wear requirement)
 
 A made thing sells on the market inside R8's band like any item; the made share applies; a `master` piece sells for more because its priced value is higher, never because of a tag. No shop sells a node, a recipe above tier 1, a quality or a lesson; a shop sells tier-1 tools at the floor (the 30-gold tools stay). Gear is a soft gate everywhere (4.5): it makes the south crossable, it never opens a door that was shut, and a player without it may still go and come back poorer (a death leaves a pack, DECISIONS 2026-10-23).
+
+### 5.6 Attribute bonuses on gear, and the soft wear requirement (Q5, the owner)
+
+The owner, 25.10 (Q5 = B with gear): pips are bought with points up to `key_max` 5, as built, **and** worn gear adds attribute bonuses on top. The bonus scales with the item's tier and has **no fixed cap**: late gear must match late stages. Every item states a **wear requirement**; below it the item is still worn and still helps, gently. Premium looks never carry a bonus (the look layer counts for nothing, as built).
+
+- **What an item carries.** `attrs: { might: 2, stamina: 1 }` beside its worn effects. The largest bonus one attribute may carry on one item grows with tier: `attr_bonus_max` (proposed [1, 2, 3, 4, 6] for tiers 1-5, then +2 a tier, a param with a range like the power cap's table and step). Quality (5.2) moves a piece inside its tier's number, as it does for worn effects. The bonuses of all worn pieces add; no fixed sum caps them; what an attribute then moves that is a rate still sums under the power cap (R9), and carry and the health cap, which are not rates, follow the attribute as built.
+- **The wear requirement.** Each item names a school level and an attribute threshold: `req: { school, level, attr: { might: 4 } }`. The school is the one whose verb the item serves (a pick names Mining, a blade Strike, armour Guard, a warm coat Survival, work clothes their trade; proposed). Tier sets the level on the band ladder (proposed: tier 1 none, tier 2 level 6, tier 3 level 11, tier 4 level 16, tier 5 mastery, 21; past tier 5 the attribute threshold rises with the far content). A requirement reads the **base** attributes (race, grade, pips), never worn bonuses, so gear cannot lift a wearer into the gear above it.
+- **Below the requirement** (the owner's softening): the wearer's own tier for that item is the highest tier whose requirement they meet in its school; the item's bonus counts up to what gear **one tier above** that gives, and the rest unlocks as the wearer meets the requirement:
+
+```
+own_tier = max t such that the wearer meets req(t) of the item's school   (0 if none)
+active   = min(bonus, attr_bonus_max[own_tier + 1])     per attribute; worn effects the same way against wear_effect_max_pct
+```
+
+  A newcomer who saved and bought a strong piece from another player (the free market, 9.10) gets a real step ahead, not the late game. The same rule reads the item's worn effects (proposed: one rule for all of an item's power).
+- **On screen.** The stats panel shows the total with the gear part in another colour and in words, so colour is never the only signal (G29): "Might 7 = 5 + 2 gear". An item's description lists its attribute bonuses under its name. When a requirement is unmet, the tooltip shows the full bonus, the active part and what unlocks the rest: "+6 might, 3 active, the rest at Guard 21". (The owner's example said Guard 30; school levels end at 21 on the twenty-step curve, so the tooltip names the level of the item's tier on that scale.) Counts of pips and points, never a percentage (decision 39).
+- **Keys stay the base's.** A node's key reads race, grade and pips only (6.4 rule 4): gear lends power to the verbs, never a door in the tree, which is what kept option C of Q5 ("pips from gear only") out.
 
 ## 6. The unlock economy
 
@@ -255,14 +293,15 @@ One point per character level, flat (Skyrim's rule; Fallout 4's too). Not two at
 
 ### 6.3 Respec
 
-As built: none. GROWTH 3.6 proposed three free unlearns and then gold. Options in 9 Q4; the recommended default is the limited form: `unlearn` at a safe place, free the first `respec_free` (3) times, then `respec_mg` (proposed 20,000 mg; the sinks are the world's prices, DECISIONS 2026-10-23), one node at a time, nothing learned may depend on it, a book's node is never refunded, a pip is never unlearned (Dimraeth's rule: the tree can be redone, the attributes cannot). Skyrim's per-school reset (points back, the school's level back to the first band) is option C and is not recommended: it sells time back, against "nothing shortens a wait" read the other way.
+As built: none. The owner, 25.10 (Q4 = B): the limited form. `unlearn` at a safe place, free the first `respec_free` (3) times, then `respec_mg` (proposed 20,000 mg; the sinks are the world's prices, DECISIONS 2026-10-23), one node at a time, nothing learned may depend on it, a book's node is never refunded, a pip is never unlearned (Dimraeth's rule: the tree can be redone, the attributes cannot). Skyrim's per-school reset (points back, the school's level back to the first band) was option C and is not taken: it sells time back, against "nothing shortens a wait" read the other way.
 
 ### 6.4 Keys and attributes
 
-Six attributes, a fixed profile per race (total 7) plus the grade's shift on the two home attributes (decisions 44-46); on top, as built, `spend` buys a pip for a point, capped at `key_max` (proposed 5, GROWTH 3.4). A key on a node asks a threshold of `attrAt` (race + grade + pips). Three rules:
+Six attributes, a fixed profile per race (total 7) plus the grade's shift on the two home attributes (decisions 44-46); on top, as built, `spend` buys a pip for a point, capped at `key_max` 5 (GROWTH 3.4; the owner's Q5 = B). Worn gear adds bonuses on top of that (5.6). A key on a node asks a threshold of `attrAt` (race + grade + pips). Four rules:
 1. A key never asks more than the race with the lowest value in that attribute could reach with pips by the node's band (so every race can reach every node of its own schools; the harder way of G12 is the pips' price in points).
 2. A race's home attribute meets its wing's keys without pips (the elf reads `senses 3` nodes at once; the skeleton `might 3`); that is where "every trait pays off" is cashed.
 3. The grade's shift counts (decision 46: brighten on entering a region), so a node learned in the north with a key met by the grade stays learned in the city (a key is checked at `learn_node` only; a learned node never un-learns).
+4. Worn bonuses never count toward a key or a wear requirement: `attrAt` for a key and for `req` is the base; the stats panel's total (base + gear) is what the verbs read.
 
 ### 6.5 The race trunk and the cross-links
 
@@ -274,14 +313,15 @@ Six attributes, a fixed profile per race (total 7) plus the grade's shift on the
 ## 7. Kernel shape (proposed; additive; integer; FORMAT_VERSION unchanged)
 
 - `Player.xp` as built; `xp_levels` to twenty entries per profession, generated.
-- `Player.cold?: number` (4.5), `Player.respecs?: number`, `Player.books?: Id[]` (GROWTH 4.3).
+- `Player.respecs?: number`, `Player.books?: Id[]` (GROWTH 4.3); the body clocks' fields only if Q8 takes them (BODY_CLOCKS.md section 6).
+- Group play (3.7, with presence): per player per span `own`, `share`, `bonus` by school, and a pair ledger `{ partner, day, active_ms }` for the pair schedule; the server's books, not the save.
 - A node gains `band: 1..4 | 'crown'` and may gain `branch: Id` and cross-school `needs`; a school gains `branches: [{id, title}]` and `crown: Node`.
 - A technique gains nothing here; its format is GROWTH 3.5 and COMBAT 4.3.
-- Items gain `quality?: 'plain'|'fine'|'true'|'master'` on an instance (a stack of made things splits by quality the way it splits by tier), `warmth`, `guard_pct`, `quiet_wear` in `WORN_EFFECTS` when their schools land; `weapon?: {reach, harm_band, school}` with combat.
+- Items gain `quality?: 'plain'|'fine'|'true'|'master'` on an instance (a stack of made things splits by quality the way it splits by tier), `guard_pct`, `quiet_wear` in `WORN_EFFECTS` when their schools land (`warmth` with Q8); `weapon?: {reach, harm_band, school}` with combat; `attrs?: Partial<Record<Attribute, number>>` and `req?: { school, level, attr? }` (5.6). A new read `attrTotal` (base + the active part of worn bonuses) for the verbs; `attrAt` stays the base for keys and requirements.
 - Recipes gain `family: Id` (the quality node names a family, not a recipe).
 - Quests gain `xp?: {school, seconds}` in the reward; characters gain `teaches?: {school, band_max}`.
 - Actions: `unlearn` (6.3), `lesson` (3.6); `learn_node` checks the band; `craft` rolls quality.
-- Params (`growth`): `t1_min_s`, `t1_max_s`, `band_size` (5), `slot_levels` re-spaced, `power_cap_step_permille`, `power_cap_max_permille`, `main_line_points_max`, `nodes_max`, `branches_max`, `cross_links_max`, `tree_buyable_max_permille`, `key_max`, `respec_free`, `respec_mg`, `quality_bp` by band, `cold_rise_per_min`; each with min, max and step (R12).
+- Params (`growth`): `t1_min_s` (25), `t1_max_s` (30), `catalogue_hours_min` (800), `band_size` (5), `slot_levels` re-spaced, `power_cap_step_permille`, `power_cap_max_permille`, `main_line_points_max`, `nodes_max`, `branches_max`, `cross_links_max`, `tree_buyable_max_permille`, `key_max`, `respec_free`, `respec_mg`, `quality_bp` by band, `attr_bonus_max` by tier and its step, `group_share_max_permille` (250), `mentor_bonus_pct` (20), `mentor_band_gap` (1), `mentor_reach_tiles` (12), `pair_full_min` (60); each with min, max and step (R12). The body clocks' params wait for Q8.
 - The state machine of a node, per player: `locked` (band or key unmet) -> `open` (buyable) -> `learned` (always on, or in the shelf) -> `slotted` (in the build; techniques only) -> `learned` again on unequip -> `open` again on unlearn (never back to `locked` while its school's band holds). The screen draws these five states and no number.
 
 ## 8. Rule lines proposed, in the form GAME_RULES uses
@@ -293,52 +333,32 @@ Numbers provisional (P1 onward; the rules pull request assigns G numbers after G
 - **P3 A band gates nodes, never verbs.** No level, band or node walls an attempt, a recipe, a region or a door; a band says which nodes are for sale, a node says how well.
 - **P4 The tree cannot be bought whole.** The catalogue's cost stays above what a character of the highest level could hold (the check's permille), so every character is a choice; a school's main line stays inside the points its own levels pay, so a specialist is never forced to wander.
 - **P5 A made thing has a tier, a rarity and a quality.** The tier caps it, the rarity prices it, the quality moves it inside the cap; the quality roll is what a crafting node opens, and the attempt needs knowledge, a place and materials and never a node.
-- **P6 Knowledge is found, skill is done, lessons are time.** Recipes above tier 1 and books come from the world; a teacher gives time at the ordinary rate and never a level for gold.
+- **P6 Knowledge is found, skill is done, lessons are time.** Recipes above tier 1 and books come from the world; a teacher gives time at the ordinary rate and asks standing, never gold for a level; a quest pays a named school, bounded by its own active time and each player's.
 - **P7 The long way is made ready, never unlocked.** Cold, dark, drops and creatures each hang on a clock or a check that gear and schools move; none is a door.
 - **P8 A school grows by branches.** Past its second band a school forks; a main line never grows longer than twelve nodes; a thousand nodes is more branches as data, never a longer trunk.
 - **P9 A cross-link is a bridge, not a wall.** A node may need a node of another school only as a bridge between trades, at most two per school, never from a trade into combat; a book teaches a bridge node without its link.
+- **P10 Gear lends attributes, one tier ahead.** Worn gear adds attribute bonuses that rise with tier, with no fixed cap; each item names a school level and an attribute it asks, read on the base; below it the item helps up to what gear one tier above the wearer's own gives, and says what unlocks the rest. Gear never meets a key, and a look never carries a bonus.
+- **P11 Help, never a carry.** Experience comes only from the player's own actions. In a group a newcomer gets at most a quarter of their own earned experience as a share of the group's and a fifth more of their own while a stronger player is near, both falling for the same pair over a real day; the veteran earns standing and the giving board, never experience; a carry sold for gold is an exploit loop.
 
-## 9. Open direction calls, in order of weight
+## 9. Direction calls: seven answered, one open
 
-Each is the owner's; each has a recommended default so that building can start on the default and the entry in DECISIONS records his word. Asked one at a time.
+Each is the owner's. Seven were answered on 25.10, one at a time; each answer is its own ✅ entry in DECISIONS of that day and is folded into the sections named. The options as asked are kept in the entries.
 
-**Q1. How long is "complete"?** The one number everything else is sized by: the active time to master one school (`t1`), and so the time to master all.
-- A: `t1` 10 s: one school in 18 h active, sixteen in about 300 h active (Skyrim-complete, about 250 h).
-- B: `t1` 15 s: one school in 28 h, sixteen in about 450 h active, 700-900 h wall (longer than Skyrim, far short of RuneScape). **Recommended**: a working week per school is the feel of a mastery, and the catalogue of sixteen is what makes it long, not the per-school grind.
-- C: `t1` 25-30 s: one school in 45-55 h, sixteen in 800+ h (RuneScape's band). Not recommended before a playtest: the last step alone would be a 15-18 h session series.
+| Call | His word (25.10) | Where it landed |
+|---|---|---|
+| Q1 How long is "complete" | **C**: `t1` 25-30 s, 45-55 active hours a school, 800+ h in all (RuneScape's band). Default `t1` 28 s | 3.2 (the curve, why 28, the catalogue's check row) |
+| Q2 Combat schools now or with the first foes | **B**: Strike, Aim and Guard reserved now (names, shapes, effect lists, slots; three closed spokes on the screen); nodes with the first foe | 4.2 |
+| Q3 The hybrid or points alone | **A**: the hybrid as built, sized: rise-by-use opens, points buy | 1, 3.1-3.4, P1 |
+| Q4 Respec | **B**: limited; one node at a time at a safe place, three free then gold; attribute pips never | 6.3 |
+| Q5 Attribute pips after the opening | **B with gear**: pips bought with points to 5, and worn gear adds attribute bonuses on top, rising with tier, no fixed cap; the panel shows "Might 7 = 5 + 2 gear"; each item states a wear requirement, and below it counts up to one tier above the wearer's own; looks never carry a bonus | 5.6, 6.4, P10 |
+| Q6 Quests pay a school | **A**: a named school, bounded by the quest's own active time | 3.6 |
+| Q7 Teachers | **A**: time at the ordinary rate, standing earned, never gold for a level; and no industrial carry: own actions only, a share of at most a quarter of one's own, +20% near a stronger player, the veteran on the giving board, diminishing returns for a pair, sold carries an exploit loop | 3.6, 3.7, P6, P11 |
 
-**Q2. The combat schools: write their nodes now or with the first foes?**
-- A: Now, as content, so the tree screen fills: against G35 and COMBAT section 6 ("the first nodes are written with the first foes").
-- B: **Recommended**: names, shapes, effect lists and slots reserved now (section 4.2, so the screen draws three closed spokes and the hand slot's place), the nodes written in the same pull request as the first foe. The owner has said combat is core and after the foundation; this keeps both.
-- C: Later wholly, the spokes hidden until then: the player would not see that the tree has a combat side and would build without knowing it.
+**Q8. The body clocks (open).** The owner, 25.10: align the body clocks with the big games; research and cross-check before deciding. The research, the cross table and the recommended set are [BODY_CLOCKS.md](BODY_CLOCKS.md); the call, as one question:
 
-**Q3. Rise-by-use with points (the hybrid), or points alone?**
-- A: **Recommended**: the hybrid as built and as sized here (P1): skill by doing, points by level, nodes by choice in bands. It is Skyrim's and it is already in the kernel.
-- B: Fallout's: one experience pool from everything, points per level, no skill levels; the professions' levels go. Against the owner's 19.10 word that the professions keep their levels, and it makes every verb pay the same thing.
-- C: RuneScape's: skill levels alone, nodes handed out by level, no points. Against decision 7.10 (points spent by choice) and G12.
-
-**Q4. Respec.**
-- A: None (as built, Skyrim before its reset): every point is a scar.
-- B: **Recommended**: limited, one node at a time at a safe place, three free then gold (6.3); a pip never. Keeps choice real and forgives the first evening's mistakes; the gold is a sink the world wants.
-- C: Per-school reset for points back with the level set back to band 1 (Skyrim's legendary): sells time back; not recommended.
-
-**Q5. Attribute pips after the opening.**
-- A: Fixed for life (decision 44 read strictly): keys are race and grade only; the kernel's `spend` goes.
-- B: **Recommended**: pips bought with points to `key_max` 5 (as built, as GROWTH 3.4): the harder way of G12 has a price in points, and every race reaches every node of its own schools.
-- C: Pips from gear only (jewelry that lends a pip): keys become a shopping list, against G39's spirit.
-
-**Q6. Quests pay experience to a school.**
-- A: **Recommended**: yes, named and bounded by the quest's own time (3.6); the city's quest lines are how a non-crafter is handed a trade.
-- B: No; quests pay gold, standing and things only (as today): then the only road into a school is its verb, and a trade with no verb in the valley (smithing) cannot start before the city.
-
-**Q7. Teachers.**
-- A: **Recommended**: a lesson is time at the ordinary rate, asking standing, never gold for a level (3.6).
-- B: Teachers sell nodes or levels for gold: against G39; not recommended.
-- C: No teachers; books only: decision 39 named both; not recommended.
-
-**Q8. The cold clock** (the one new body clock this page adds).
-- A: **Recommended**: a third clock, cold, with warmth on clothing and the warm meal; it is what Tailoring and Survival are for and what the south's "cold and food on the long way" asks.
-- B: No clock; cold is a region's hazard escaped by a fire: then clothing has no work but a look and a small percentage.
+- **A** (**recommended**): cold only, and only in cold places (a cold climate, the south's heights, a snowy night): it settles where worn warmth puts it and falls at a fire, so dressing right once is the answer, not a meter to top up. Two bonuses for being well kept, never a penalty for not: Fed after a cooked meal (a higher health cap for a while) and Rested after a night slept at an inn, a tent or one's own fire (a little faster work through the day). No hunger, thirst or tiredness bar. This is what Skyrim and Fallout do outside their opt-in survival modes, and Valheim's shape inside a cold biome; it gives Tailoring, Survival and the warm meal their work and keeps G32.
+- **B**: A, plus an opt-in hard mode per character with hunger and tiredness that drain while playing and their stage penalties (Skyrim's Survival Mode, Fallout 4's Survival, New Vegas Hardcore all make it a choice). Needs G32 and the forbidden pattern "Hunger clock" rewritten for that mode only, and a second balance for everything food and sleep touch.
+- **C**: no clock at all; cold stays a hazard of place escaped by a fire, as the game is today. Clothing's warmth then has no work but a look and a small percentage, and Tailoring and Survival lose their reason in the south.
 
 ## 10. The conflict table: each draft rule against the decisions
 
@@ -347,7 +367,7 @@ Each is the owner's; each has a recommended default so that building can start o
 | P1 rise by use opens, points buy | "Skill points with effects you can feel" (7.10); "The skill tree's format" (23.10) | agrees | the kernel already does it; this page sizes it |
 | The curve's ratio is 1.5 | "One internal difficulty scale: each step asks half again as much" (9.10) | extends | the decision names difficulty; this page reuses its constant for experience so there is one scale |
 | Twenty steps, mastery at 21 | GROWTH.md 3.6 "the professions keep their twenty levels"; the 19.10 answer "not skills to 99" | agrees | the schema's cap of twenty thresholds stands |
-| `t1` 15 s, a school in 28 h | "The owner's answers of 10.10 afternoon" ("raising a skill or a level does not weigh as much as it should") | extends | Q1 is his to size |
+| `t1` 28 s, a school in 52 h, the catalogue past 800 h | "The owner's answers of 10.10 afternoon" ("raising a skill or a level does not weigh as much as it should"); Q1 (25.10) | extends | sized by his Q1 = C; 28 chosen inside his 25-30 (3.2) |
 | P2 three readers of the character level | GROWTH G89 "nothing but the power cap reads the character level"; "The world's structure ... travel earned by level" (23.10) | extends | G89 said one reader; travel (23.10) and the slots (23.10 format) are two more, named so the list is closed |
 | Power cap by formula past level 14, max 4000 | kernel review R9, R12; "The reference player" (9.10) | extends | the table stays the first fourteen entries; the step and the max are params with ranges |
 | Slots at [1, 1, 10, 30, 60] | "The skill tree's format" (23.10: 1, 1, 5, 10, 15) | extends | values only; the format's `slot_levels` param holds them |
@@ -356,19 +376,28 @@ Each is the owner's; each has a recommended default so that building can start o
 | A third axis, quality, inside the tier's cap | "Two ladders: an open-ended tier ... the four rarities" (9.10); "The upgrade: work clothes with a small capped bonus" (9.10) | extends | quality moves inside `wear_effect_max_pct`, never past it |
 | Tools and weapons wear; armour never | "The crafting economy ... worn pieces never wear out" (9.10); CR-12 | agrees | a weapon is a hand-slot thing with uses, as a tool |
 | Mend restores uses as a recipe | R9 (the output of an activity with inputs is never raised) | agrees | the output is the input; nothing new is made |
-| Quests pay a school's experience | NEXT 19 (the difficulty reckoning reads "the experience quests pay"); R6 | extends | bounded by the quest's own active time; Q6 |
-| A teacher is time at the ordinary rate | "No percentages on screen" (22.10, decision 39: "books and teachers"); "Crafting and money: power is never sold" (9.10) | extends | lessons exist (39) and sell nothing (G39); Q7 |
+| Quests pay a school's experience | NEXT 19 (the difficulty reckoning reads "the experience quests pay"); R6 | extends | bounded by the quest's own active time and each player's; Q6 = A |
+| A teacher is time at the ordinary rate | "No percentages on screen" (22.10, decision 39: "books and teachers"); "Crafting and money: power is never sold" (9.10) | extends | lessons exist (39) and sell nothing (G39); Q7 = A |
+| Experience only from the player's own actions; a group share of at most a quarter of one's own | R6; kernel review (active ms per player) | extends | both group terms are multiples of the newcomer's own active ms (3.7) |
+| A newcomer earns +20% of their own near a stronger player | R6 (a reward is an activity record; nothing pays more than the time it took) | **conflicts** | declared, the owner's word (Q7, 25.10): the one multiplier on experience the game has; bounded by own time, falls for the same pair; no body state or node adds another |
+| The veteran earns standing and the giving board, not experience | "The boards rank worth, levels, quests, collection, exploration and giving" (9.10) | agrees | the giving board counts the help paid |
+| A carry sold for gold | "An exploit loop costs its accounts and the gold it made" (9.10) | agrees | the server's books see the pair and the gold |
 | Nothing shortens a wait | "The world and its clocks" (10.10) | agrees | no node, lesson or point touches a respawn or a night |
 | Race wing, corner nodes, books from a foreign wing | "The tree (decision 38)" (22.10) | agrees | kept whole |
 | Cross-links between schools | "The skill tree's format" (23.10: `needs` the same school only); GROWTH 4.5 | **conflicts** | a deliberate extension: bridge nodes, two per school, never trade into combat; the check row changes from "same school" to "same school or a declared bridge" |
-| Pips bought with points to 5 | "Opening balance: a fixed attribute profile per race" (22.10, decision 44); GROWTH 3.4 | extends | 44 fixes the opening ("no free points at the title"); `spend` after it is as built; Q5 if the owner reads 44 for life |
+| Pips bought with points to 5 | "Opening balance: a fixed attribute profile per race" (22.10, decision 44); GROWTH 3.4 | extends | 44 fixes the opening ("no free points at the title"); `spend` after it is as built; Q5 = B keeps it |
+| Worn gear adds attribute bonuses, rising with tier, no fixed cap | "The upgrade: work clothes with a small capped bonus" (9.10); `wear_effect_max_pct` per tier; R9 | extends | attributes are a new axis of a worn piece; worn effects keep their tier caps; what an attribute moves as a rate still sums under the power cap (5.6) |
+| A wear requirement, softened: one tier ahead, the rest on meeting it | "The crafting economy: a miss keeps only inputs, a free market, no level wall" (9.10); G12 | extends | the item is always worn and always helps; the requirement gates only the part of its power past one tier ahead; the free market is the reason (Q5) |
+| Gear never meets a key; looks never carry a bonus | Q5's option C (keys a shopping list); the schema's look layer ("counts for nothing"); G39 | agrees | `attrAt` stays the base for keys and requirements |
 | Keys reachable by every race of the school with pips by the band | "What a grade does" (decision 46); G12 "a harder way, never a closed door" | agrees | rule 6.4.1 |
-| Respec limited, gold after three | "The skill tree's format" (23.10: "no way to unlearn yet"); "Open ends of the world plan ... the sinks are the world's prices" (23.10) | extends | Q4; the 23.10 line says "yet" |
-| Combat schools reserved now, nodes with the first foes | "G35 is the demo's rule" (19.10); "Combat, round 5" (23.10); COMBAT section 6 | agrees | Q2's default is the decided order |
+| Respec limited, gold after three | "The skill tree's format" (23.10: "no way to unlearn yet"); "Open ends of the world plan ... the sinks are the world's prices" (23.10) | extends | Q4 = B; the 23.10 line says "yet" |
+| Combat schools reserved now, nodes with the first foes | "G35 is the demo's rule" (19.10); "Combat, round 5" (23.10); COMBAT section 6 | agrees | Q2 = B, the decided order |
 | Hunting as a school bridging combat and leatherwork | "The ambient creatures wait ... hunted for what they give" (25.10) | extends | its gathering half before combat, its kills after |
 | Smithing and Tinkering in the city only; metal content waits | "Making in the neutral valley" (decision 51); "Human technology means made things" (decision 20); "Metal: the grammar is ready" (9.10) | agrees | the forge is the gate, as decided |
 | Remedies without magic | "If magic comes: scrolls and books" (9.10 ⏸) | agrees | the school holds remedies; a spell would be a book, as the ⏸ says |
-| A cold clock | "The world and its clocks" (10.10: three clocks); "The night ruins are revived" (25.10: "cold and food on the long way") | extends | a fourth clock; Q8 |
+| A cold clock (Q8 open) | G32 "Health is the one bar"; the forbidden pattern "Hunger clock"; G28; "The night ruins are revived" (25.10: "cold and food on the long way") | extends (A) or conflicts (B) | A is a place clock: never in a safe place, never while away, settles by warmth, so no bar empties by the clock in the valley; B's opt-in drains need G32 rewritten for that mode. The first draft read "three clocks" (10.10) as body clocks; they are the game's time bases, and cold would run on the game hour (BODY_CLOCKS.md 7) |
+| Clothing and a fire as the answer to cold | G34 "the answer is a run, never gear"; the forbidden pattern "Gear answer" | **conflicts** | declared: the 25.10 answer ("readiness is made": a torch, clothing, cooked food, climbing gear) already bent it for the long way; the rules pull request writes G34 as "a hunting hazard is answered by a run; a place's clock by readiness" |
+| Survival's `fed_long` in place of `hunger_pct` | G32; "P-5c ... the hunger clock stops" (11.10) | agrees | the first draft's `hunger_pct` slowed a drain that is 0 |
 | Drops crossed with rope and a node | "One height layer" (25.10); G68 crossings | extends | a `rope` crossing kind |
 | Trade nodes move capacity, never a price | "Prices and gold" (10.10); R8; GROWTH 5.4 | agrees | `stall_slots`, `price_memory`; the band is untouched |
 | Travel nodes past the first third of the school | "The world's structure" (23.10, item 7); W9; G64 | agrees | GROWTH 5.2 kept |
@@ -378,11 +407,11 @@ Each is the owner's; each has a recommended default so that building can start o
 | A death leaves a pack; gear is a soft gate | "Open ends of the world plan ... a death leaves a pack" (23.10) | agrees | section 5.5 |
 | Power never sold: no node, recipe, quality or lesson in a shop | "Crafting and money: power is never sold" (9.10); G39, G41 | agrees | the catalogue adds no exception |
 
-One conflict, declared: the cross-link (P9) against the 23.10 format's "same school only". It is proposed because the owner's vision ties everything to skills that unlock, and a tree whose schools never touch cannot express "the smith who learned the ore's grade in the mine"; the alternative (books only) makes every bridge a rare find, which is a slower and lonelier tree. If the owner keeps "same school only", P9 falls and the bridges become books; nothing else on this page moves.
+Three conflicts, declared. The mentor's +20% (P11) against R6 is the owner's own word and stands as written. Clothing as the answer to cold against G34 waits on Q8 and follows the 25.10 readiness answer. The third is the cross-link (P9) against the 23.10 format's "same school only". It is proposed because the owner's vision ties everything to skills that unlock, and a tree whose schools never touch cannot express "the smith who learned the ore's grade in the mine"; the alternative (books only) makes every bridge a rare find, which is a slower and lonelier tree. If the owner keeps "same school only", P9 falls and the bridges become books; nothing else on this page moves.
 
 ## 11. Closed by analogy
 
-Small holes this page closes by the reference games the decisions name (Skyrim, Fallout, RuneScape, The Witcher, Dimraeth, Path of Exile, Red Dead Redemption 2), each one line, each overturnable by the owner's word:
+Small holes this page closes by the reference games the decisions name (Skyrim, Fallout, RuneScape, The Witcher, Dimraeth, Path of Exile, Red Dead Redemption 2) and, for the answers of 25.10, the games his words point at (Final Fantasy XIV, World of Warcraft, Diablo, Elden Ring), each one line, each overturnable by the owner's word:
 
 1. **Points bank** (Skyrim): unspent points keep without limit; as built.
 2. **A perk needs its skill's band** (Skyrim's 20/40/60/80): bands of five levels gate nodes; the verb is never gated.
@@ -396,20 +425,27 @@ Small holes this page closes by the reference games the decisions name (Skyrim, 
 10. **Condition on the thing in hand only** (Fallout 3 and New Vegas): tools and weapons wear by uses; armour never (already decided for clothing; extended to armour by the same rule).
 11. **Armour weight classes** (Skyrim's light/heavy): plate weighs into the light-load limit (30 + 10 per might); leather is quiet; cloth is warm.
 12. **Fixed-difficulty places** (Fallout New Vegas, not Skyrim's scaling): danger by distance and the difficulty reckoning (G64, NEXT 19); no foe reads the player's level.
-13. **Warmth** (Skyrim's survival mode): a cold clock and a `warmth` worn effect; Q8.
+13. **Warmth** (Skyrim's survival mode, The Long Dark, Valheim): read in full in BODY_CLOCKS.md; Q8.
 14. **Harvest on a kill** (Red Dead Redemption 2, named 25.10): Hunting's `harvest_yield` and `clean_kill`; the hides feed Leatherwork.
 15. **Active slots and a build** (The Witcher 3, Dimraeth): kept from GROWTH; the slot count re-spaced to the long scale.
 16. **The tree as one picture, branches as data** (Path of Exile): a thousand nodes come by branches, never longer trunks; the screen is sized for it.
 17. **No free attribute points at creation, pips later** (Dimraeth: attributes bought, never refunded): decision 44 at the title, `spend` after it, pips never unlearned.
 18. **Respec limited and paid** (Dimraeth: free at first, then a cost): three free, then gold.
 19. **A specialist fills their own tree** (Skyrim: one skill's levels pay for its own perks): a school's main line costs at most twenty points.
-20. **Bridges between trades** (Skyrim's smithing-enchanting-alchemy loop, as perks that read each other): cross-links, two per school; the one declared conflict.
+20. **Bridges between trades** (Skyrim's smithing-enchanting-alchemy loop, as perks that read each other): cross-links, two per school; a declared conflict.
+21. **Gear shows its part of a stat** (World of Warcraft's character sheet colours a raised stat and splits base and bonus in its tooltip): "Might 7 = 5 + 2 gear", the gear part in another colour and in words.
+22. **Under-requirement gear still helps, scaled** (Elden Ring and Dark Souls let a weapon be wielded under its requirement at a penalty; Diablo and World of Warcraft refuse it): the softer form, one tier ahead of the wearer and no further.
+23. **A requirement reads the base** (in Diablo II and Path of Exile gear's own attribute bonuses count toward the next piece's requirement, so a player climbs through gear; this map closes that ladder): gear never meets a requirement or a key.
+24. **A mentor's bonus** (Final Fantasy XIV's mentors and level sync, World of Warcraft's rested experience): +20% of the newcomer's own while a stronger player is near; the mentor's reward is standing and a board line, as XIV marks its mentors with a crown.
+25. **Diminishing returns for the same pair** (World of Warcraft's honour fell for killing the same player again and again): the pair schedule, an hour full, an hour half, then nothing, each real day.
+26. **Respec one node at a time** (Path of Exile's refund points and Dimraeth's paid reset): three free, then gold; a pip never.
 
 ## 12. The order, and what this page does not do
 
-- Now: this page; the owner's answers to section 9 (Q1 first; each a ✅ entry when answered); the tree-foundations stream reads the thousand-node target and the five node states; the mining and fishing stream reads the band form and the effect lists of 4.2 as the shape to land in, with the placeholder sizes of 23.10 until the content wave.
-- Next (the growth format's build, GROWTH section 9 stage 3): `band`, the generated `xp_levels`, the power cap formula, the slot values, `unlearn`, the quality roll, the cross-link check row. One pull request per piece.
-- With the first hand-made map and the city: Travel, Survival, Climbing, Tailoring, Woodcraft, Smithing, Remedies, Lore as schools with real nodes; the cold clock; quests that pay a school; teachers.
+- Now: this page; the owner's answers Q1-Q7 (25.10, seven ✅ entries) folded in; Q8 open on BODY_CLOCKS.md; the tree-foundations stream reads the thousand-node target, the five node states and the three closed combat spokes (Q2); the mining and fishing stream reads the band form and the effect lists of 4.2 as the shape to land in, with the placeholder sizes of 23.10 until the content wave.
+- Next (the growth format's build, GROWTH section 9 stage 3): `band`, the generated `xp_levels` at `t1` 25-30 with the catalogue-hours row, the power cap formula, the slot values, `unlearn`, the quality roll, the cross-link check row, gear's `attrs` and `req` with the stats panel's split total. One pull request per piece.
+- With presence and groups (PRESENCE builds): the group rule of 3.7 and the giving board's count of help.
+- With the first hand-made map and the city: Travel, Survival, Climbing, Tailoring, Woodcraft, Smithing, Remedies, Lore as schools with real nodes; the body clocks as Q8 decides; quests that pay a school; teachers.
 - With combat (G35 lifted): Strike, Aim, Guard, Hunting's kills, Leatherwork, armour's worn effects, weapons in the hand.
 - Not done here: any real node (the content wave writes them to this map); the numbers beyond their ranges (tuning in play); pets and companions (the Company school waits for its format); magic (⏸ 9.10); creators proposing nodes or schools; any screen.
 - Pages this map touches when its rules pull request lands: GAME_RULES (P1-P9 after G92), GROWTH.md 3.6 and 4.5 (bands, cross-links, slot values), COMBAT.md 4.3 (the hand's weapon record), CRAFTING_AUDIT CR-10, CR-20, CR-21, CR-32 (closed by sections 3.5, 5.3, 5.4), NEXT 19 (the difficulty reckoning reads the band and the quest's school experience), the tree-foundations stream's size target.
@@ -422,3 +458,6 @@ Small holes this page closes by the reference games the decisions name (Skyrim, 
 - Old School RuneScape: skills to 99 by doing, quest experience lamps, no classes; the per-skill time scale this page stays short of.
 - The Witcher 3 (CD Projekt Red, 2015), Dimraeth (2025), Path of Exile (2013): the build and its slots, the tree of wings, attributes as keys and books across the class, the passive tree as one picture (GROWTH.md Sources).
 - Red Dead Redemption 2 (Rockstar, 2018): hunting that skins and harvests what is killed (DECISIONS 2026-10-25).
+- Final Fantasy XIV (Square Enix): the mentor system and level sync, where a veteran beside a newcomer is rewarded with recognition; World of Warcraft (Blizzard): rested experience, the character sheet's base and bonus, and honour's diminishing returns for the same victim.
+- Diablo II and IV (Blizzard), Elden Ring and Dark Souls (FromSoftware): equipment requirements by attribute; the Souls games' under-requirement wielding at a penalty, the softer form taken in 5.6.
+- The body clocks' sources (Skyrim's Survival Mode, Fallout 4 and New Vegas, The Long Dark, Valheim, Red Dead Redemption 2, Don't Starve, Minecraft, Stardew Valley, Old School RuneScape) are listed in BODY_CLOCKS.md.
