@@ -202,12 +202,13 @@ async function run(page: Page, url: string, viewport: Viewport, name: string): P
     c,
     [
       ['Tools', ['Basket', 'Trowel', 'Axe', 'Walking staff']],
+      ['To wear', ['Satchel']],
       ['Food and drink', ['Redberry', 'Herb tea', 'Berry mash']],
       ['Medicine', ['First-aid kit']],
     ],
     "Pell's stall",
   );
-  if (c.jump.length !== 3 || !c.jump[0]!.startsWith('Tools')) throw new Error(`the strip reads ${JSON.stringify(c.jump)}`);
+  if (c.jump.length !== 4 || !c.jump[0]!.startsWith('Tools')) throw new Error(`the strip reads ${JSON.stringify(c.jump)}`);
   await shot('pell');
   log(`Pell: ${c.groups.map((g) => `${g.name} ${g.rows.length}`).join(', ')}`);
 

@@ -61,7 +61,8 @@
           "name",
           "kind",
           "rarity",
-          "sprite"
+          "sprite",
+          "weight"
         ],
         "properties": {
           "id": {
@@ -218,6 +219,12 @@
             "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
             "type": "string"
           },
+          "weight": {
+            "minimum": 0,
+            "maximum": 20,
+            "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+            "type": "integer"
+          },
           "food": {
             "additionalProperties": false,
             "type": "object",
@@ -311,14 +318,14 @@
           },
           "wear": {
             "additionalProperties": false,
-            "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+            "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
             "type": "object",
             "required": [
               "slot"
             ],
             "properties": {
               "slot": {
-                "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                 "anyOf": [
                   {
                     "const": "head",
@@ -346,6 +353,10 @@
                   },
                   {
                     "const": "hand",
+                    "type": "string"
+                  },
+                  {
+                    "const": "back",
                     "type": "string"
                   }
                 ]
@@ -406,6 +417,18 @@
                 "maxLength": 80,
                 "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
                 "type": "string"
+              },
+              "places": {
+                "minimum": 1,
+                "maximum": 99,
+                "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                "type": "integer"
+              },
+              "load_bonus": {
+                "minimum": 1,
+                "maximum": 100,
+                "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                "type": "integer"
               }
             }
           },

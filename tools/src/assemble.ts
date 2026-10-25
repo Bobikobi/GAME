@@ -158,6 +158,15 @@ export function flattenParams(p: ParamsBody): Params {
       deep_water: { harm_pct: p.hazard.deep_water.harm_pct.value },
     },
     bag_base: p.bag_base.value,
+    place_stack: p.place_stack.value,
+    load: {
+      base: p.load.base.value,
+      light_permille: p.load.light_permille.value,
+      max_permille: p.load.max_permille.value,
+      light_step_ms: p.load.light_step_ms.value,
+      heavy_step_ms: p.load.heavy_step_ms.value,
+      heavy_breath_permille: p.load.heavy_breath_permille.value,
+    },
     starting_gold_mg: p.starting_gold_mg.value,
     per_point: {
       might: p.per_point.might.value,
@@ -625,6 +634,8 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     sprite(id, 'race.sprite', r.sprite);
     if (r.sprite_alt) sprite(id, 'race.sprite_alt', r.sprite_alt);
     r.outfit?.forEach((k, i) => item(id, `race.outfit.${i}.item`, k.item));
+    const named = r.body?.effects.map((e) => e.effect) ?? [];
+    if (new Set(named).size !== named.length) err(id, 'race.body.effects', 'each body effect is named once');
     const total = Object.values(r.attributes).reduce((n, v) => n + v, 0);
     if (total !== RACE_POINTS) err(id, 'race.attributes', `attributes add up to ${total}; every race has exactly ${RACE_POINTS}`);
   }

@@ -271,7 +271,7 @@ describe('skills in plain words (the owner, 10.10)', () => {
     const s = newState(bundle, 1);
     expect(attributeEffects(bundle, s).map((fx) => fx.attr).sort()).toEqual(Object.keys(ATTRIBUTE_LABEL).sort());
     const might = attributeEffects(bundle, s).find((fx) => fx.attr === 'might')!;
-    expect(`${might.what} ${might.now} -> ${might.next}`).toMatch(/^Your bag holds \d+ -> \d+ things$/);
+    expect(`${might.what} ${might.now} -> ${might.next}`).toMatch(/^Your load limit \d+ -> \d+$/);
     // spirit has no rule that reads it yet: the row says so instead of promising a number
     const spirit = attributeEffects(bundle, s).find((fx) => fx.attr === 'spirit')!;
     expect(spirit.note).toMatch(/nothing yet/);
