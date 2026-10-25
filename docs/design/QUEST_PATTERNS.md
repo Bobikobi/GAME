@@ -330,7 +330,7 @@ that hold one together.
   the wheel and the door so the ground explains the logic ([Dormans 2010](https://www.pcgworkshop.com/archive/dormans2010adventures.pdf)).
 - **Floating pieces.** Small scenes that wait for a state of the world (a fire low, a
   night, a debt) rather than a place in a chain: storylets ([Failbetter](https://www.failbettergames.com/news/storynexus-developer-diary-2-fewer-spreadsheets-less-swearing), [Emily Short](https://emshort.blog/2019/11/29/storylets-you-want-them/)).
-- **Three doors in.** The three starters already sort the player at the start and meet
+- **Three doors in.** The three wake pockets (and the races' lines) already sort the player at the start and meet
   at the bridge; an arc may open differently for each and close the same.
 - **History makes evidence, not truth.** Let events leave objects and accounts, and let
   each speaker shape them; contradictions are the mystery ([Qud's histories](https://www.freeholdgames.com/papers/Generation_of_Mythic_Biographies_in_CavesofQud.pdf)). This is S2-S4.
