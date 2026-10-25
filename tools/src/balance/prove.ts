@@ -580,5 +580,11 @@ export function prove(rules: Rules, cat: Catalogue, bundle?: Bundle, opts: { top
   return { source: cat.source, rows, hours, walls, windows: [], top, counts };
 }
 
-/** The rows `pnpm check` holds content to: each passes on content as it stands. */
-export const WIRED_ROWS = ['curve_t1', 'ceilings', 'effect_graph_acyclic', 'xp_sources', 'common_plain', 'rarity_effects_max'] as const;
+/**
+ * The rows `pnpm check` holds content to: each passes on content as it stands
+ * and none contradicts a rule already built. The vendor loop fails on content
+ * today; common_plain and rarity_effects_max are PROGRESSION 5.7, stricter than
+ * the rarity budget the check holds now (a common garment may carry two small
+ * effects), so they report until that section is merged and the budget follows.
+ */
+export const WIRED_ROWS = ['curve_t1', 'ceilings', 'effect_graph_acyclic', 'xp_sources'] as const;
