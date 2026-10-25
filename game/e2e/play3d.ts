@@ -299,7 +299,8 @@ async function run(browser: Browser, base: string, viewport: Viewport, name: str
       const g = window.__game, s = g.session, b = g.bundle;
       const near = (i) => Math.abs(i.x - s.pos[0]) + Math.abs(i.y - s.pos[1]);
       const nodes = Object.entries(b.instances)
-        .filter(([id, i]) => i.kind === 'resource' && b.resources[i.source].game !== undefined && !b.resources[i.source].tool && (s.state.nodes[id]?.readyAt ?? 0) <= s.tick)
+        // a minigame node open to anyone at any hour: no tool, no quest it waits on (the keystone), no hours (the moon reeds)
+        .filter(([id, i]) => { const r = b.resources[i.source]; return i.kind === 'resource' && r.game !== undefined && !r.tool && !r.opens_after && !r.hours && (s.state.nodes[id]?.readyAt ?? 0) <= s.tick; })
         .sort((x, y) => near(x[1]) - near(y[1]));
       const n = nodes[0];
       return n ? { id: n[0], x: n[1].x, y: n[1].y, source: n[1].source, item: b.resources[n[1].source].output } : null;
