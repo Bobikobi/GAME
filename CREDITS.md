@@ -78,6 +78,11 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Wild herbs (resource) - `content/core/resources/wild-herbs.json`
 - Broken arch (restore) - `content/core/restores/arch-way.json`
 - Old bridge (restore) - `content/core/restores/old-bridge.json`
+- Cooking (school) - `content/core/schools/cooking.json`
+- Digging (school) - `content/core/schools/digging.json`
+- Foraging (school) - `content/core/schools/foraging.json`
+- Handcraft (school) - `content/core/schools/handcraft.json`
+- Woodcutting (school) - `content/core/schools/woodcutting.json`
 - Pell's stall (shop) - `content/core/shops/trader-shop.json`
 - Dyed cord (template) - `content/core/templates/dye-cord.json`
 - An axe on the bank (treasure) - `content/core/treasures/bank-axe.json`
