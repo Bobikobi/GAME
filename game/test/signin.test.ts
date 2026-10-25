@@ -5,7 +5,7 @@ import { newState, publicState, step, serialize } from '@game/kernel';
 import { joinRemote } from '../src/app';
 import { WireGap } from '../src/remote';
 import { Session } from '../src/session';
-import { titleActions } from '../src/ui/title';
+import { probeRedraws, titleActions } from '../src/ui/title';
 import { loadBundle } from '../../tools/test/helpers/world';
 import { FakeAuthServer } from './fake-auth';
 import { FakeServer } from './fake-server';
@@ -110,6 +110,15 @@ describe("the title screen's sign-in (the screen logic)", () => {
   test('a signed-in account with no game yet starts a new one', () => {
     const actions = titleActions({ server: true, hasSave: false, signedIn: true, started: false });
     expect(actions).toEqual({ canContinue: false, newGame: true, signIn: false, note: 'Your game lives on the server and comes with you.' });
+  });
+
+  test("a late answer from the server redraws only the home screen it was asked from", () => {
+    expect(probeRedraws('home', true)).toBe(true);
+    // mid-choice of a character, or asked whether to erase a save, the player is not thrown back to the buttons
+    expect(probeRedraws('choose', true)).toBe(false);
+    expect(probeRedraws('confirm', true)).toBe(false);
+    // the title has already left the page
+    expect(probeRedraws('home', false)).toBe(false);
   });
 });
 

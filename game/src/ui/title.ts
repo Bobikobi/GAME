@@ -38,6 +38,18 @@ export function titleActions(state: TitleState): { canContinue: boolean; newGame
   return { canContinue, newGame, signIn, note };
 }
 
+/** The screens of the title. */
+export type TitleScreen = 'home' | 'confirm' | 'choose';
+
+/**
+ * Whether the probe's late answer may redraw the title: only while the home screen it was asked from still
+ * shows. On the choice of character it would throw the player back to the buttons mid-choice; the answer is
+ * kept all the same, and the start uses it.
+ */
+export function probeRedraws(screen: TitleScreen, connected: boolean): boolean {
+  return connected && screen === 'home';
+}
+
 export function showTitle(ui: UI): Promise<void> {
   return new Promise((resolve) => {
     // a save from before the new opening is dropped once, and said so once (CR-62)
@@ -58,8 +70,13 @@ export function showTitle(ui: UI): Promise<void> {
 
     // the account's game once the probe knows: set by the probe and by a Continue that joined the server
     let remote: RemoteSession | undefined;
+    // the probe's answer while it is on its way, so a start that comes first waits for it
+    let probe: Promise<RemoteSession | undefined> | undefined;
+    // the screen the title shows: a probe that answers late redraws only the home screen it was asked from
+    let screen: TitleScreen = 'home';
 
     const render = (state: TitleState) => {
+      screen = 'home';
       const actions = titleActions(state);
       el.replaceChildren(
         h(
@@ -87,13 +104,14 @@ export function showTitle(ui: UI): Promise<void> {
     const home = () => {
       render({ server: server !== undefined, hasSave: Session.hasSave(), signedIn: false, started: false });
       if (server !== undefined) {
-        void joinRemote(app.bundle, server)
-          .then((joined) => {
-            if (!el.isConnected || !joined) return;
-            remote = joined;
-            render({ server: true, hasSave: Session.hasSave(), signedIn: true, started: joined.started });
-          })
-          .catch(() => undefined); // the line is down: the local picture stands, and the buttons ask again
+        // the line is down: the local picture stands, and the buttons ask again
+        const asked = joinRemote(app.bundle, server).catch(() => undefined);
+        probe = asked;
+        void asked.then((joined) => {
+          if (!joined) return;
+          remote = joined;
+          if (probeRedraws(screen, el.isConnected)) render({ server: true, hasSave: Session.hasSave(), signedIn: true, started: joined.started });
+        });
       }
       // back from Google or the email link: the sign-up form waits (NEXT 18 d), without another tap
       if (window.location.hash === '#signin=signup') offerSignup(ui);
@@ -141,6 +159,7 @@ export function showTitle(ui: UI): Promise<void> {
     };
 
     const confirmNew = () => {
+      screen = 'confirm';
       el.replaceChildren(
         h(
           'div',
@@ -152,6 +171,7 @@ export function showTitle(ui: UI): Promise<void> {
     };
 
     const choose = () => {
+      screen = 'choose';
       const b = app.bundle;
       // the races, in id order; the wake pocket is drawn by the world's seed, never chosen here
       const races = Object.entries(b.races).sort(([x], [y]) => x.localeCompare(y));
@@ -196,6 +216,7 @@ export function showTitle(ui: UI): Promise<void> {
         );
       drawToggle();
       drawCards();
+      let starting = false;
       const start = async () => {
         const name = nameInput.value.trim();
         // a blank name is allowed: it is carved at the bridge's stone
@@ -204,12 +225,22 @@ export function showTitle(ui: UI): Promise<void> {
           nameInput.focus();
           return;
         }
+        // one start at a time: a second tap or Enter while the first waits starts nothing more
+        if (starting) return;
+        starting = true;
+        // a start that comes before the probe's answer waits for it, so a signed-in account never starts in the browser
+        if (!remote && probe) {
+          error.textContent = 'Waiting for the connection.';
+          remote = await probe;
+          error.textContent = '';
+        }
         // a signed-in account starts on the server, so the account keeps it; the demo starts in this browser
         let session: GameSession;
         if (remote) {
           const answer = await remote.act({ t: 'start', race: picked, name, look });
           if (!answer.ok) {
             error.textContent = answer.error;
+            starting = false;
             return;
           }
           session = remote;
@@ -219,6 +250,7 @@ export function showTitle(ui: UI): Promise<void> {
           const answer = fresh.act({ t: 'start', race: picked, name, look });
           if (!answer.ok) {
             error.textContent = answer.error;
+            starting = false;
             return;
           }
           session = fresh;
