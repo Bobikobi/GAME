@@ -4,6 +4,11 @@
 
 <!-- One or two sentences, and where a player finds it (for example "a plum bush in the quiet glade west of the river"). -->
 
+## Tools that fire on this pull request
+
+Quest review: <verdict of the quest-designer skill in one line, or "no quest changed">
+Source: <where each picture added under content/kit/ came from (docs/art/PROP_FROM_REF.md), or "no new picture">
+
 ## Author checklist
 
 - [ ] `pnpm check` passes on my machine
