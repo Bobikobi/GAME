@@ -1,0 +1,143 @@
+/* The kit's theme, "B, canvas" (DECISIONS 2026-10-23): a mid-tone canvas inset
+   inside the oiled-wood frame, dark ink on it, names on small dark plates, and
+   the face Jersey 15. Every colour is one of the core palette's 32
+   (tools/src/kit/palette.ts); tools/test/ui-theme.test.ts holds this file to
+   that, with no scrims, gradients or rounded corners. Each pair of a text and
+   the ground it sits on reads at 4.5:1 or more (the ratios beside them).
+
+   The parts: the frame (.kit-frame), the inset (.kit-inset), a plate
+   (.kit-plate), a tab (.kit-tab), a button (.kit-btn), a card (.kit-paper),
+   a socket (.kit-socket) and the four states of a node on the skill tree. */
+
+:root {
+  /* the frame: oiled wood, outlined in ink */
+  --kit-wood: #6e4226;
+  --kit-wood-dark: #3d2618;
+  --kit-wood-light: #9e6b3c;
+  --kit-edge: #1b1a2e;
+
+  /* the inset: canvas, and the ink on it (6.7:1), a softer ink (5.55:1) */
+  --kit-canvas: #c99a5e;
+  --kit-canvas-line: #9e6b3c;
+  --kit-ink: #1b1a2e;
+  --kit-ink-soft: #3d2618;
+
+  /* the card: paper on the canvas, ink on it (11.65:1), a warning in deep red (8.59:1) */
+  --kit-paper: #ebd3a2;
+  --kit-paper-line: #9e6b3c;
+  --kit-warn: #5e1c28;
+
+  /* a plate and a tab: dark wood, cream on it (9.65:1); a socket where a thing sits */
+  --kit-plate: #3d2618;
+  --kit-plate-ink: #ebd3a2;
+  --kit-socket: #3d2618;
+  --kit-socket-line: #9e6b3c;
+
+  /* brass: what is picked or can be taken now; dark ink on it (8.32:1) */
+  --kit-brass: #eda83a;
+  --kit-brass-dark: #b8661f;
+
+  /* the face: Jersey 15 draws a pixel at 1/27 of its size, so 18px and 27px sit on whole device pixels at 3x */
+  --kit-text: 18px;
+  --kit-text-l: 27px;
+  --kit-text-s: 15px;
+}
+
+.kit-frame {
+  background: var(--kit-wood);
+  border: 3px solid var(--kit-edge);
+  box-shadow:
+    inset 0 0 0 3px var(--kit-wood-dark),
+    inset 0 0 0 5px var(--kit-wood-light);
+}
+
+.kit-inset {
+  background: var(--kit-canvas);
+  color: var(--kit-ink);
+  border: 2px solid var(--kit-edge);
+  box-shadow: inset 0 0 0 2px var(--kit-wood-light);
+}
+
+.kit-plate {
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--kit-plate);
+  color: var(--kit-plate-ink);
+  border: 2px solid var(--kit-wood-light);
+  font: 400 var(--kit-text) / 1.1 var(--font);
+}
+
+.kit-tab {
+  background: var(--kit-plate);
+  color: var(--kit-plate-ink);
+  border: 2px solid var(--kit-edge);
+  border-bottom: 0;
+  font: 400 var(--kit-text) / 1 var(--font);
+}
+
+.kit-tab.on,
+.kit-tab[aria-selected='true'] {
+  background: var(--kit-canvas);
+  color: var(--kit-ink);
+}
+
+.kit-btn {
+  min-height: 40px;
+  padding: 4px 14px;
+  background: var(--kit-plate);
+  color: var(--kit-plate-ink);
+  border: 2px solid var(--kit-edge);
+  box-shadow: inset 0 0 0 2px var(--kit-brass-dark);
+  font: 400 var(--kit-text) / 1 var(--font);
+  cursor: pointer;
+}
+
+.kit-btn:hover:not(:disabled),
+.kit-btn:focus-visible {
+  background: var(--kit-brass);
+  color: var(--kit-ink);
+  outline: none;
+}
+
+.kit-btn:disabled {
+  background: var(--kit-canvas);
+  color: var(--kit-ink-soft);
+  box-shadow: inset 0 0 0 2px var(--kit-canvas-line);
+  cursor: default;
+}
+
+.kit-paper {
+  background: var(--kit-paper);
+  color: var(--kit-ink);
+  border: 2px solid var(--kit-edge);
+  box-shadow: inset 0 0 0 2px var(--kit-paper-line);
+}
+
+.kit-socket {
+  background: var(--kit-socket);
+  border: 2px solid var(--kit-edge);
+  box-shadow: inset 0 0 0 2px var(--kit-socket-line);
+}
+
+/* the four states of a node: learned (filled in its school's colour, an ink ring and a light halo),
+   open to learn (brass ring), locked (a shallow quiet outline on the canvas), touched (a second ring) */
+.kit-node {
+  border: 2px solid var(--kit-canvas-line);
+  background: var(--kit-canvas);
+  color: var(--kit-ink);
+}
+
+.kit-node.learned {
+  border-color: var(--kit-ink);
+  box-shadow: 0 0 0 2px var(--kit-paper);
+}
+
+.kit-node.open {
+  border-color: var(--kit-brass);
+  box-shadow: inset 0 0 0 2px var(--kit-brass-dark);
+}
+
+.kit-node.touched {
+  outline: 2px solid var(--kit-brass);
+  outline-offset: 4px;
+}

@@ -1,4 +1,5 @@
 @import '../../design/tokens.css';
+@import './ui/theme.css';
 @import './ui/kit.css';
 
 /* Handheld-era UI drawn with the core palette (tools/src/kit/palette.ts). */
@@ -19,8 +20,18 @@
   font-display: swap;
 }
 
+/* The game's one face since the theme of 23.10 (DECISIONS 2026-10-23, Jersey 15): the titles, the
+   numbers and the reading text are all drawn in it. The site keeps its own faces (design/tokens.css). */
+@font-face {
+  font-family: 'Jersey 15';
+  src: url('/fonts/jersey-15/jersey-15-latin.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
-  --font-body: var(--font-reading);
+  --font: 'Jersey 15', ui-monospace, monospace;
+  --font-body: var(--font);
   color-scheme: light;
 }
 
@@ -45,8 +56,10 @@ body {
   background: var(--ink);
   color: var(--ink);
   font-family: var(--font-body);
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1.35;
+  /* Jersey 15 has one weight: a bold is never smeared out of it */
+  font-synthesis: none;
   /* Pixelify Sans draws its "fi" ligature as a broken glyph ("Fire" read "Are") */
   font-variant-ligatures: none;
   font-feature-settings:
