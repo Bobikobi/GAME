@@ -37,7 +37,7 @@ beforeAll(() => {
 describe('a log that replays (NEXT 18 g)', () => {
   test('lands on the state its row holds, and a state that is not the log\'s is refused', () => {
     const { seed, log, state } = opened(42);
-    const ledger = bookedGoldMg(bundle, log[0]!.action, []).map((deltaMg) => ({ deltaMg, action: log[0]!.action, tick: 0 }));
+    const ledger = bookedGoldMg(bundle, log[0]!.action, []).map((row) => ({ ...row, action: log[0]!.action, tick: 0 }));
     expect(checkAccount(bundle, { seed, state, log, ledger })).toEqual([]);
 
     // a client that writes itself a purse: the log still says what it says, so the row is not its state

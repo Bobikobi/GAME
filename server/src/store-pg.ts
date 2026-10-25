@@ -93,8 +93,8 @@ export function createPgStore(pool: Pool): PlayerStore {
         for (const row of books.gold) {
           if (row.deltaMg === 0) continue; // the table refuses a zero, and a zero moved nothing
           await client.query(
-            'insert into gold_ledger (account_id, delta_mg, action, tick) values ($1, $2, $3, $4)',
-            [playerId, row.deltaMg, JSON.stringify(row.action), row.tick],
+            'insert into gold_ledger (account_id, delta_mg, action, tick, fund) values ($1, $2, $3, $4, $5)',
+            [playerId, row.deltaMg, JSON.stringify(row.action), row.tick, row.fund ?? 'purse'],
           );
         }
         await client.query('commit');

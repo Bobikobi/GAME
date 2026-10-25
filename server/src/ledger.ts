@@ -31,6 +31,8 @@ export interface LoggedAction {
 /** One row of `gold_ledger`: milli-gold, and the action and tick it was booked with. */
 export interface LedgerRow {
   deltaMg: number;
+  /** 'bound' for the starting gold's own book (a bound balance beside the purse); absent for the purse */
+  fund?: 'bound';
   action: unknown;
   tick: number;
 }
@@ -79,10 +81,20 @@ export interface BookedStep {
  * the state's own ledger, so the server books it here from the same number, or the purse would stand in
  * the state with nothing behind it in the book.
  */
-export function bookedGoldMg(bundle: Bundle, action: unknown, events: readonly GameEvent[]): number[] {
-  const rows = events.flatMap((event) => (event.e === 'gold' && event.delta !== 0 ? [event.delta] : []));
-  if (isStart(action) && bundle.params.starting_gold_mg !== 0) rows.unshift(bundle.params.starting_gold_mg);
+export function bookedGoldMg(bundle: Bundle, action: unknown, events: readonly GameEvent[]): BookedMg[] {
+  const rows: BookedMg[] = events.flatMap((event): BookedMg[] => {
+    if (event.e === 'gold' && event.delta !== 0) return [{ deltaMg: event.delta }];
+    if (event.e === 'bound' && event.delta !== 0) return [{ deltaMg: event.delta, fund: 'bound' }];
+    return [];
+  });
+  if (isStart(action) && bundle.params.starting_gold_mg !== 0) rows.unshift({ deltaMg: bundle.params.starting_gold_mg, fund: 'bound' });
   return rows;
+}
+
+/** One booked movement before it is tied to an action: its milli-gold and the fund it moves. */
+export interface BookedMg {
+  deltaMg: number;
+  fund?: 'bound';
 }
 
 /**
@@ -93,13 +105,18 @@ export function bookedGoldMg(bundle: Bundle, action: unknown, events: readonly G
  */
 export function goldRowsOf(bundle: Bundle, steps: readonly BookedStep[]): LedgerRow[] {
   return steps.flatMap((one) =>
-    bookedGoldMg(bundle, one.action, one.events).map((deltaMg) => ({ deltaMg, action: one.action, tick: one.tick })),
+    bookedGoldMg(bundle, one.action, one.events).map((row) => ({ ...row, action: one.action, tick: one.tick })),
   );
 }
 
-/** The gold a book holds, in milli-gold: the state's purse is this number, exactly. */
+/** The gold a book holds, in milli-gold: the state's purse is this number, exactly. The bound balance is its own book (`boundSumMg`). */
 export function ledgerSumMg(ledger: readonly LedgerRow[]): number {
-  return ledger.reduce((total, row) => total + row.deltaMg, 0);
+  return ledger.reduce((total, row) => total + (row.fund === 'bound' ? 0 : row.deltaMg), 0);
+}
+
+/** The bound starting gold a book holds, in milli-gold: the state's bound balance is this number, exactly. */
+export function boundSumMg(ledger: readonly LedgerRow[]): number {
+  return ledger.reduce((total, row) => total + (row.fund === 'bound' ? row.deltaMg : 0), 0);
 }
 
 /**
@@ -185,7 +202,7 @@ function firstDifference(one: string, other: string): string {
 
 /** Multiset of the rows: the same grant twice is two rows, and a row nobody made is a row too many. */
 function ledgerKey(row: LedgerRow): string {
-  return `${JSON.stringify(row.action)}|${row.tick}|${row.deltaMg}`;
+  return `${JSON.stringify(row.action)}|${row.tick}|${row.deltaMg}|${row.fund ?? 'purse'}`;
 }
 
 function ledgerProblems(expected: readonly LedgerRow[], actual: readonly LedgerRow[]): string[] {
@@ -232,9 +249,14 @@ export function checkAccount(bundle: Bundle, books: AccountBooks): string[] {
   if (sum !== books.state.player.gold) {
     problems.push(`the ledger sums to ${sum} mg and the state's purse holds ${books.state.player.gold} mg`);
   }
+  const bound = boundSumMg(books.ledger);
+  if (bound !== books.state.player.boundGold) {
+    problems.push(`the bound book sums to ${bound} mg and the state's bound balance holds ${books.state.player.boundGold} mg`);
+  }
   const minted = books.state.ledger.minted - books.state.ledger.burned;
-  if (minted !== books.state.player.gold) {
-    problems.push(`the state's own book mints ${minted} mg and its purse holds ${books.state.player.gold} mg`);
+  const held = books.state.player.gold + books.state.player.boundGold;
+  if (minted !== held) {
+    problems.push(`the state's own book mints ${minted} mg and its purse and bound balance hold ${held} mg`);
   }
   return problems;
 }

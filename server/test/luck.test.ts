@@ -152,18 +152,18 @@ describe('the ledger and the replay (NEXT 18 f)', () => {
     expect(problems.some((problem) => problem.includes('does not land on the stored state'))).toBe(true);
   });
 
-  test('the opening grant is booked when the content pays a purse, and nothing when it does not', () => {
+  test('the opening grant is booked to the bound fund when the content pays a purse, and nothing when it does not', () => {
     const paid = structuredClone(bundle);
     paid.params.starting_gold_mg = 12_000;
     const start = { t: 'start', starter: 'core/forager', name: 'Tess' } as const;
-    expect(bookedGoldMg(paid, start, [])).toEqual([12_000]);
+    expect(bookedGoldMg(paid, start, [])).toEqual([{ deltaMg: 12_000, fund: 'bound' }]);
     expect(bookedGoldMg(bundle, start, [])).toEqual([]);
     // an event's gold is booked as it stands, and a zero is not a row
     expect(bookedGoldMg(bundle, { t: 'sell', npc: 'core/trader', item: 'core/berry', qty: 1 }, [
       { e: 'gold', delta: 250 },
       { e: 'gold', delta: 0 },
       { e: 'gold', delta: -100 },
-    ] as GameEvent[])).toEqual([250, -100]);
+    ] as GameEvent[])).toEqual([{ deltaMg: 250 }, { deltaMg: -100 }]);
     expect(ledgerSumMg([])).toBe(0);
   });
 
