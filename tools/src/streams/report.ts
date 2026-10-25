@@ -288,7 +288,7 @@ export function render(report: Report): string {
   const push = (line = '') => lines.push(line);
   push(`Streams against develop ${report.develop}`);
   push();
-  push('Proposed merge order (a proposal: the owner presses merge)');
+  push('Proposed merge order (a proposal: the owner approves, the session that made a pull request merges it)');
   if (report.order.length === 0) push('  nothing is ready to land');
   report.order.forEach((e, i) => {
     const hard = e.conflicts.some((f) => classify(f) !== 'append');

@@ -2638,6 +2638,140 @@ Cost: the vigil is offered around 17:00-18:00, after the stew, not in the aftern
 The owner, 22.10: yes to the new order, as built on the opening-filler branch. Supersedes the long night's part of the 19.10 entry on the opening's order.
 **Retry when:** a person playing the day has too little time between the stew and dark to build and light a fire, or the stew's chain stalls a race. Model: claude-opus-5-5.
 
+## 2026-10-23 ✅ Bookkeeping from the decisions audit: corrections to older entries
+
+The decisions audit of 23.10 found older entries whose status, timing or pointers went stale.
+This file is append-only, so each correction is one line here that names the entry it corrects by its date and title, and says what is true now and which later entry says so.
+No rule changes in this entry: every line points at a decision or a build that already exists.
+- "The three starters have their own pixel look, derived from the base sheets by `tools/src/kit/roles.ts`" (11.10): superseded in part by "The three starter looks retire" (22.10, decision 43). The looks are race stand-ins; `roles.ts` goes to the archive when the race figures land and is not rerun for new work.
+- "The enrichment of the valley lives behind ?rich=, in three groups" (9.10): its 9.10 gallery as the style compass at 16 px is superseded in part by "The art moves to 64 px per tile" (18.10); the compass widened with "The compass for depth and for characters" (18.10) and "The GK2 method (B)" (21.10).
+- "Shadows: the body's own shadow and light on the body (C), and a darker night" (18.10): the timing "with the engine step of NEXT 15" is replaced by "Lighting and animation" (22.10, decision 6), the engine-ladder session after the map plan and the Pell pick. Under "The GK2 method (B)" (21.10) the body light and the cast shadow come from the render.
+- "The night: darker than N3 out in the wild, the town lit by its own lights" (18.10): it lands in the engine-ladder session of decision 6 of 22.10, not in the NEXT 15 window.
+- "The six depth cues, all of them" (18.10): "the same window" now means the engine-ladder session of decision 6 of 22.10.
+- "The art system: the four findings of 20.10 become four engine layers, one ladder of stills first" (20.10): the order of the ladder before the 64 px waves is superseded in part by decision 6 of 22.10 (the motion and light work) and by "The palette deepens" (21.10) and "The rich wave lands" (23.10) for the order of props and items.
+- "The ramp rule is in the schema and in the check" (20.10): amended by "The palette deepens" (21.10). A sprite may also name a shared `CORE_RAMPS` ramp with no kit declaration; what is refused is a ramp that neither the kit nor the shared set declares.
+- "The colour count is a number in the check" (20.10): the condition was met on 21.10 ("The palette deepens"). Sprites name ramps now, so the window line is the live one.
+- "Search the Meshy community before generating, and keep finds for later needs" (18.10): its licence test is widened by "External material: any open licence is allowed" (22.10, decision 4).
+- "The upgrade: work clothes with a small capped bonus, and a look layer on the same slots" (9.10): the slot list is superseded in part by "Characters are redesigned" (22.10, decision 3). Its timing "stage 8 or a vote opens combat and a weapon slot" now reads "combat comes after the foundation" ("G35 is the demo's rule", 19.10); the no-weapon-slot rule stands.
+- "Saves need no care until the server keeps them" (9.10): superseded by "Saves reset once when the new opening lands, and from then on a save always loads" (10.10), whose Supersedes line names it. Read it as parked, not current.
+- "Stage 2a after the stage-1 service, on functions" (8.10): the hosting clause (functions on the site's host with a managed database) is superseded in part by "Accounts and a server: the owner's answers" (18.10). Stage 2a runs in containers on the owner's box.
+- "The four platform questions are answered: public, a name by vote, Astro, the stage-1 service" (8.10): clause 2, the name by vote, is superseded by "The name is Openfold, confirmed by the owner" (9.10). The rename is carried by "Openfold in the game, the docs and the saves" and "Openfold goes in everywhere" (9.10).
+- "Sign-in as built" (21.10): its year-of-birth gate and its phone-sent country are superseded by "The age gate aligned with the big companies" (21.10): a full date of birth, and the country from our proxy only.
+- "The server's wire, as built (NEXT 18 a)" (20.10): "and nothing else" has since stopped being true. The route list grew with `GET /health` ("The server's identity gate", 20.10) and the `/auth/*` routes ("Sign-in as built", 21.10).
+- "The client over the wire, half built (NEXT 18 c)" (20.10): its "Not built, and next" paragraph is out of date. The classic client and the 3D door now type their session as `GameSession` (`game/src/session-surface`), and the drawn-outcome gap is covered by "A drawn outcome is the server's to say and the phone's to show" (20.10).
+- "The age gate aligned with the big companies" (21.10): the GeoIP `X-Country` header is not set yet. `deploy/nginx-openfold.conf` sets `X-Country` to an empty value until GeoIP is configured, so today every sign-up is held to the highest age (16).
+- "Extension reach: as far as it can be made safe, opened stage by stage" (9.10): `CREATOR_TYPES` in the schema now also holds npc, expedition, restore, race and reaction beyond that entry's list. The never-list stands.
+- "Feedback round 1 continued by Antigravity after the Claude session ran out of credits" (7.10, 🔁): closed; read it as ⏸. The next pass taught the opening e2e the new opening (commits 85010d52, #3, and fac41cd3, #7), and CI runs it on every pull request.
+- "The name is Openfold, confirmed by the owner" (9.10, marked "(done)"): "(done)" is not a mark of the legend; read it as ✅.
+- "The axe and the starts come first; the crafting economy is tuned once, after them" (10.10): its retry waits on CR-37, which the races retired ("Three races replace the three starters", 22.10, decision 9). The single tune waits for felling, which is on develop, and for the race starts.
+- "The rules of play are one page the owner holds, a check that cites it, and a protocol for collisions" (7.10): the "five plain Hebrew lines" are superseded in part by "The voice sheets stand, the first meetings shrink, English is the only language" (8.10). The message to the owner is English, six lines at most, in the shape of GAME_RULES.md section 6.
+- "Each character begins its own way: a place to wake, a kit and a first task" (9.10): superseded in part by decisions 9, 43 and 44 of 22.10. Races replace the starters, the waking tool lies on the ground in the pocket, and each race has one fixed attribute profile of 7 points.
+- "The opening recut: option B, toward the first dusk, closing on a night discovery" (9.10): superseded in part by "The recut B on the axe and the starts" (10.10). The dry log and `core/wet-reeds` are gone, the first fire comes from a felled tree, and whom to help first replaces the stall choice.
+- "The hook is the receding mist: a pocket for each starter, the bridge pushes it back, the name is carved at the bridge" (10.10), item 3: superseded in part by "The returners' stone: the name may be empty at the start and is carved at the bridge" (18.10). The title's name field stays, optional; a blank name is carved at the stone.
+- "The opening's renewal: the owner's three answers to the review, before the stills" (17.10): "Pell still waits for herbs" was withdrawn by "The opening's order and words" (19.10), and decision 43 of 22.10 puts the waking tool on the ground, not "in your hand".
+- "The returners' stone: the name may be empty at the start and is carved at the bridge" (18.10): the follow-up is done. The stone's texts and default name (Wanderer) live in `content/core/restores/old-bridge.json`, and the hold is `STONE_STEPS = 1` in `game/src/stone.ts`, not zoom 3.
+- "The opening's order and words: the coin after the bells, the arch alone at dark, every past with a speaker" (19.10): its hand limits are keyed by the retired starters. `pnpm quests` now reports per wake pocket and the chain changed again ("The long night follows Maru's stew", 22.10), so the limits are re-measured per pocket.
+- "Player and gold boards wait for accounts (stage 2a)" (7.10): widened by "The boards rank worth, levels, quests, collection, exploration and giving" (9.10) and built in part by "The simulated player and the verified boards" (21.10, `server/src/boards.ts`).
+- "Points are parameters, hours are not published, nothing is called credits" (7.10): the creators' pool is now the gold pool of "The creators' pool comes from gold already spent and is split by active play" (9.10). The points `weekly_pool` of 1000 is an inactive placeholder.
+- "Crafting is optional: a player who never crafts progresses by the roads already written" (9.10): the clause "combat stays at stage 8 or a vote" is superseded by "G35 is the demo's rule: combat is a core part of the game, after the foundation" (19.10), and narrowed by "Players compete only for places" (9.10).
+- "In a shared town absence has a price, and a mail comes first", "Absence costs the place and a fifth of its price, never what the player made" and "A plot that work opens is drawn among those who did the work" (all 9.10): wholly paused with houses and plots ("Player houses and plots are paused", 10.10). Read their ✅ marks as ⏸.
+- "The owner's answers of 10.10 afternoon" (10.10): "Items 2-9 stand" reads "Items 2-5 and 7-9 stand". Item 6, the weighted plot draws, was paused the same day with houses and plots (pull request #61).
+- "A camp outside the town is a tent the player buys, safe while its fire burns" (9.10): superseded in part by "A fire anywhere outside the town is a safe place while it burns; the tent is dropped" (19.10), built in NEXT 21 a and b.
+- "An exploit loop costs its accounts and the gold it made" (9.10): a hold lasts at most `hold_max_days` (7) and then lifts while the case stays open ("A hold has an end", in the 10.10 entry "The shared world").
+- "The shared world: whose progress, one world per character, one hour for all, and people kept safe" (10.10): its Superseded line on "stalls" is itself superseded for the stall by "A player places a stall at the town's free corner (the owner's answer)" (20.10).
+- "The boards rank worth, levels, quests, collection, exploration and giving; the top is honored and hunted" (9.10): "the starter a player began with" reads "the race" since the race entries of 22.10.
+- "Skill points with effects you can feel, shown as now -> next" (7.10): superseded in part by decisions 38 and 45 of 22.10. There are six attributes, carry is renamed might, and spirit is added.
+- "Rare value comes from capacity and gates, paid by work and chance" (9.10): narrowed by the season and holiday entries of 10.10. Things of a season and holiday looks are the written exceptions to "no event timer makes anything rare".
+- "A save is a state snapshot plus the last actions, not a replay log" (7.10): its retry condition was met in part by "The opening handover as built" (21.10). Until an account exists the save also carries the full opening log (`OPENING_LOG_MAX` 2000), and the server's action log is the account's source of truth. The 40-action tail stays for bug reports, which attach the last 15 (5 when long).
+- "Every action names the player's tile; travel time comes later" (7.10): superseded in part. Travel is now checked by the kernel's `move` action and `validateTravel`, and by the server's movement credit in the replay ("Health and hazards (P-5a)" and "The server's wire, as built", 10.10 and 20.10).
+- "Players compete only for places, and later in areas between players that a player chooses to enter; no upkeep" (9.10): the trigger "stage 8 or a vote, G35" is superseded by "G35 is the demo's rule" (19.10). Combat is planned after the foundation.
+- "Three starters now: the forager, the digger and the explorer, who finds" (10.10): superseded in part by decisions 9, 43, 44 and 45 of 22.10. The races replace the starters, the starter looks retire, and the attribute profile is a fixed 7 points over six attributes. The C1 bands and the axe rule now hold per (race, pocket).
+- "The five holes of the one line closed by the owner's answers, houses paused, and the check finished" (10.10): the camp's reach is the own fire's `fire.safe_tiles` and the tent is dropped ("A fire anywhere outside the town is a safe place while it burns", 19.10). `fire_light_tiles` was never built.
+- "The opening handover as built" (21.10): its open question on the two caps was answered the same day by "The opening handover's two caps stand" (21.10): approved as built.
+- "A program may advise a player, never play for one" (9.10): the cap on plots drawn among the workers waits with houses and plots, which are paused ("Player houses and plots are paused", 10.10).
+- "The hunger clock stays until P-5, and P-5 comes right after the axe" (10.10): it ran its course. "P-5c: the night ruins hunt one step past their safe threshold, the hunger clock stops, and two things heal" (11.10) closed it, and `satiety_drain_per_min` is 0. Read it as done.
+- "The valley has a dangerous hour" (8.10): "combat stays at stage 8 or a vote" is superseded in part by "G35 is the demo's rule" (19.10), combat after the foundation. By day the wolf is away and its den stays ("By day the wolf is away and its den stays", 18.10).
+- "A hazard is escaped, never answered by an item; road thieves wait for weapons" (10.10): its retry now reads "combat opens (after the foundation, 19.10)".
+- "The world and its clocks: what a fall keeps, three clocks, sleep, scraps and menace without gore" (10.10): the digger's six points are superseded by the race profiles of decisions 44 and 45 of 22.10 (one fixed profile of 7 in six attributes). `content/core/starters` no longer exists.
+- "The axe and the felled tree: wood comes only from felling, and a start may carry a kit" (10.10): superseded in part. "Every kit holds an axe" became every start holds an axe before the first fire, and the starter kit became the pocket's tool on the ground (wake pockets, 22.10).
+- "Health and hazards (P-5a)" (10.10): its travel rule is superseded in part by "The server's wire, as built" (20.10). On the server every action's tile is travel-checked by a four-way path credit capped by `move_reach_max` (G56).
+- "The frames of stealth, tending and the first expedition" (13.10): by day the wolf is not drawn, while its den and tracks stay ("By day the wolf is away and its den stays", 18.10).
+- "A gathered node opens the way; a ready one blocks it" (7.10): the walk-over rule cited as `canWalk` in `game/src/scenes/world.ts` now lives in `canEnter` in `game/src/walking.ts`, called from `game/src/play3d/world3d.ts`.
+- "The valley's year is the real year, its days stay short, and each season gives the expansions a theme" (9.10): "nothing from the demo passes to an account" is superseded in part by "The opening handover as built" (21.10). The opening's state passes to an account.
+- "The world's hour is the server's clock, and a player's clock joins it at the join by one resume" (20.10): `PRESENCE.md`, which it cites, is not on develop. It exists only on the branch of commit d5c89dd9.
+- "Creator profiles and the creators board live outside the content tag" (7.10): its hours estimate is superseded in part by "Points are parameters, hours are not published, nothing is called credits" (7.10). Hours are not published, and points are parameters in `.github/points.json`.
+- "Pixel font everywhere again, with its ligatures turned off" (7.10): superseded in part by the Field Kit (20.10). Body, buttons, item facts and dialogue are in Atkinson Hyperlegible Next, Pixelify Sans keeps titles and numbers, and the ligatures stay off.
+- "One token sheet and the pixel frame tie the site to the game" (7.10): its site half is superseded by "The site leaves the pixel face and the shadow frame" (10.10): Platypi and Atkinson Hyperlegible Next, no hard offset shadow, `--frame-shadow` removed.
+- "The site leaves the pixel face and the shadow frame" (10.10): its aside "the game keeps Pixelify Sans inside its canvas and HUD" reads, since the Field Kit (20.10), as titles and numbers only. The game's body face is Atkinson Hyperlegible Next.
+- "Character select appearance toggle (Male / Female)" (7.10): superseded in part (22.10). Races replace the starters (decision 9), the look is man or woman per race plus a skin tone (decision 37), and the starter looks `player_*` and `woman_*` retire (decision 43).
+- "Crafting wave 3 as built: a workshop that climbs three tiers, two chains, tools that last" (9.10): superseded in part (11.10). The workshop station is a large stall in the town opened by a quest, never out in nature; the camp work stone stays ("Making in the neutral valley", 22.10, decision 51).
+- "Art from Nano Banana, stopped by the image quota" (7.10, 🔁): it was not retried. The drawing route since 18.10 is `kit:gen`, chosen by size ("Drawing route by size", 22.10, decision 1), with no Gemini billing ("Paid services: none now", 22.10, decision 7).
+- "A landing splash in front of the game (feat/landing-page)" (7.10, ⏸): the tag `attempt/2026-10-landing-splash` does not exist on origin. The branch went untagged.
+- "Signs are map props that point at a slot" (7.10): superseded in part (10.10). The "Mended by" sign at a restored bridge becomes the returners' stone (item 3 of "The hook is the receding mist", 10.10).
+- "P-5c: the night ruins hunt one step past their safe threshold, the hunger clock stops, and two things heal" (11.10): the rubble seal at (36,22) is superseded in part (16.10) by the doorstep's one way in ("This replaces the seal at (36,22) of P-5c", NEXT 14b fixes). The rubble at (35,21) and (37,21) stays.
+- "Height: levels with rock faces (T2)" (18.10): superseded in part the same day. At 64 px per tile a level is 32 art px of face with ledges every 16 px, and a thing on a level draws 32 px higher (STYLE.md section 6). The walking rule is decided as G68 ("Height crossings and winding paths", 18.10).
+- "Player houses and plots are paused; the town serves the player through shops you walk into" (10.10): the ⏸ covers houses and plots only. The town's one-job buildings and the walk-in shops stand (✅), built on by "The shop interior" (11.10) and NEXT section 5.
+
+Model: claude-sonnet-5-5.
+## 2026-10-23 ✅ Every sprite has the dark ink outline
+
+**The outline is the one-pixel ink line `#1b1a2e`, on every sprite.** The rich wave left a mix: 16 of its 35 sprites have under a tenth of their edge in ink, and the rest of the edge is the darkest step of the first ramp or a mid grey. The owner compared three versions of nine rich sprites on grass: as built, ink, and an edge in a darker shade of the sprite's own colours. Ink held them together best; with the own-colour edge, the bandage and the lantern posts faded into the grass. This keeps the 18.10 outline (1915, 2547, STYLE.md) and retires the first-ramp outline wording of 2219 and of the schema's ramp comment. The rich sprites get an ink outline pass, and a check that measures ink on the edge follows, so the mix cannot come back.
+The owner, 23.10: option 2 of the comparison sheet, the dark ink line.
+**Retry when:** the art ladder's coloured-outline rung is shown to the owner in stills and picked. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Each race carries its colour and its big item from the start
+
+Decision 40 holds for the races from the first minute: one big item, one colour, its own build. **The colours: the skeleton white, the elf a light pastel sky blue, the human skin tones.** The elf's big item is its cloak, a large hooded cloak in that colour (still no weapon; the bow comes later, decision 19). A player may pick another colour for their race from a wide palette (a red elf, a blue skeleton). Later, clothing a player finds can be recoloured too. Colour is looks only: it changes nothing in play, only how a player appears to others in multiplayer, and it needs its own build.
+The owner, 23.10: marks from the start (contradiction 2 of the decisions audit), and the colours as written.
+**Retry when:** the race figures are drawn and one race does not read at phone size. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Closing an account: 30 days to change one's mind, as decided on 10.10
+
+The 10.10 entry (1074) stands, and the built close is brought to it. Closing hides the account at once; signing in within 30 days brings it back; after 30 days the personal details are erased. The gold ledger and the action log keep their rows under a number with no name. Sign-up keeps only whether the age check passed, and the country: no age band. Today the server deletes the account and every row naming it at once (`server/src/auth/signin.ts`, asserted by `server/test/signin-db.test.ts`), and it stores a birth band; both change, and so do the lines that describe today's behaviour (2180, NEXT.md 469, GRUNT CR-72).
+The owner, 23.10: 30 days, as decided (contradiction 3 of the decisions audit).
+**Retry when:** a privacy law the game falls under needs a shorter erasure. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ G29 holds in the Field Kit: all text 16 px or more
+
+The Field Kit gets no exception from G29. Every text a player reads in the kit's windows (labels, toggles, item facts, tabs) is 16 px or more, and dialogue 18, as on 16.10 for the tracker, chips and toasts. The windows keep the Field Kit look and grow roomier; a long one may scroll. A size scan in the tests keeps it.
+The owner, 23.10: readability wins, everything 16 or more (contradiction 4 of the decisions audit).
+**Retry when:** a window cannot hold its content at 16 px on a 390 px wide phone even with scrolling. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The world: a hand-made first map, and a generator that sets the difficulty
+
+The 17.10 seed rings and decision 5's hand-made first map (2252) are combined. The first map is planned and drawn by hand, as decision 5 says. **The generator's job becomes difficulty.** From a place's distance to the game's start and the level the character is expected to have there (from the quests before it and the grinding open to it), it recommends the place's difficulty: how many quests and of what kind, which monsters, how many and how strong, and what else opens there. The same reckoning later grows the world past the first map's edges. NEXT.md section 19 is rewritten to match before any of it is built.
+The owner, 23.10: a combination of the two (contradiction 5 of the decisions audit), as written.
+**Retry when:** the first map's stills are picked and the difficulty reckoning has to be checked against a playtest. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ A session merges its own pull request after the owner approves
+
+What has happened since 11.10 is now the written rule: the session that made a pull request merges it into develop once the owner has approved it. A release to the public stays the owner's alone. This is the delegation 1173 asked to be written; PARALLEL.md, WORKFLOW.md, the integrator skill and HANDOFF_TEMPLATE.md change to match.
+The owner, 23.10: as today, and write it down (contradiction 6 of the decisions audit).
+**Retry when:** two merges in a day break develop. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Maru's coin pays a key to his house
+
+When the player hands Maru the coin, he gives the herb tea recipe and **a key to his house**, instead of the 20 gold. This is the place reward of 7.10 (GAME_RULES.md 570), now that a place can be a reward. The house is a place to rest: a bed to sleep in, where the player wakes after a fall at night, and a desk with an old map that hints at the next quest. **It is the one building where a player can leave gear.**
+The owner, 23.10: a key instead of gold; inside, a place to rest (contradiction 7 of the decisions audit).
+**Retry when:** the opening's economy runs short without the 20 gold. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Search: press A on things to look inside
+
+**Many things in the world can be searched.** Pressing A on a drawer, a cupboard, a book, a shelf or even a stone opens a small window showing what is inside. Sometimes it holds something, often nothing. Out in the open, things can hide easter eggs and rare, valuable gifts; the higher the player's luck, the better the odds of finding them. **Every building gets a random number of furniture pieces**, so it looks lived in, and sometimes an extra one: a statue, or a picture that opens to show its painting. Searchable things are deepened step by step as the game grows. A player cannot put gear into them; the one place that stores gear is Maru's house. Later, in other towns, a guest house lets a player stay in multiplayer.
+The owner, 23.10: an idea for the game, like searching drawers in Fallout, as written.
+**Retry when:** searching slows the opening's path, or the luck odds make rare gifts common. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The bound starting balance is built
+
+The 10.10 rule (834, 914, 1055) stands and is built. A new player's starting gold is a separate bound balance shown beside the purse. It is spent first, and only at the shop, the trainers and the settlement. It is never paid to a player or listed. Today `kernel/src/step.ts` puts it into the purse and the server books it as ordinary gold; both change.
+The owner, 23.10: build it as decided (contradiction 8 of the decisions audit).
+**Retry when:** fake accounts are stopped some other way and the bound balance only confuses new players. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ Words on screen, and a number only as a clear scale
+
+Decision 39 holds everywhere: on the skill tree, in the kit's SKILLS tab and in item descriptions. A line reads as words ("you dig faster"). Where a number is shown, it is a plain scale and not a percentage. For example, agility rises by 2 on a 10-step scale, from 1/10 to 3/10, and a node of the branch opens only at 5/10 (or at whatever step is set). Exact values stay one long press away. This replaces the "real before-to-after numbers" of the SKILLS tab (1983).
+The owner, 23.10: words; if there is a number it must be very clear, like agility +2 to 3/10, with a node opening at 5/10 (contradiction 9 of the decisions audit).
+**Retry when:** players in a playtest cannot compare two items without the long press. Model: claude-opus-5-5.
 ## 2026-10-23 ✅ The desktop home is painted key art that lives
 
 **From 1024px the home page opens on the owner's key art in motion:** the valley at dawn with the three opening characters (the elf, the human, the skeleton), first drawn by GPT image from their kit sprites, then brought to life as a video the owner generated and picked (`web/public/keyart/hero.webm` and `hero.mp4`, 1920x1080, 24 fps, a 17 s ping-pong, so its loop has no seam; `hero-poster.jpg` and `.webp` are its first frame). The video carries the characters' auras (the elf white, the human red, the skeleton a thin black haze) and their small motions. It plays muted and looped, drawn with cover from the bottom; under reduced motion it stays still and the poster shows; it pauses while the tab is hidden. The phone keeps its own first screen and fetches neither the video nor the still.
@@ -2648,3 +2782,33 @@ The owner, 23.10: picked v1 of three key-art stills ("perfect"), asked for it to
 **Every other page is night too** (the owner, after the preview): the Developers area, the boards, the rules, a builder's page, the API page and the guide wear the home's night look, an ink ground with paper words. The site's rules now read role tokens (`--bg`, `--fg`, `--fg2`, `--muted`, `--line`, `--rule`, `--raise`, `--accent` in web/src/styles/site.css), each one a palette colour, so no page carries a one-off. Still no gradients and no radius off the home's key art; text keeps 4.5:1 or better. The phone home keeps its day look until it gets its own pass.
 
 **Retry when:** the video costs a mid-range laptop visible frames or a slow line its first screen, or the Developers and Leaderboard pages are restyled in the same line (then the frame's exception widens in its own entry). Model: claude-opus-5-5.
+
+## 2026-10-25 ✅ What was drawn before the rich wave is redrawn to match it, the shop interior first
+
+The owner, 25.10: the food and medicine shop interior keeps its approved frame (2026-10-11: warm planks, a runner to the counter, the trade on the back wall), but it was drawn before the rich wave (2026-10-23) and would not sit beside it. Everything drawn before the rich wave is renewed so the game reads as one hand: redrawn in the rich wave's style where the frame stands, made again where it does not. The shop interior branch is not revived as it is; it waits for its own redraw, and its layout and frame carry over.
+How it runs: an art polish stream after the rich wave, inside the agreed direction (polish, not a new direction), one list of the pre-rich pieces still on screen, the most seen first.
+**Retry when:** the rich wave's style itself is replaced (then the list is redrawn against the new style). Model: claude-opus-5-5.
+
+## 2026-10-25 ✅ The ambient creatures wait for the redraw; many animals come later, most of them hunted for what they give
+
+The owner, 25.10: the ambient creatures (birds and small animals that sit and leave when the player comes close; their kinds and spots are already map content, the client does not draw them yet) are not revived now: they come after the pre-rich redraw above, drawn once in the rich style. Later the valley gets many more animals; most can be hunted and fought at the chosen difficulty, and a kill gives raw materials, the way Red Dead Redemption 2 skins and harvests what is hunted.
+Where it sits: the hunting is combat, so it follows G35 (no fighting in the demo; combat after the foundation, where and its frame approved by the owner first). The branch with the creatures' client stays on the remote as it is until then.
+**Retry when:** combat opens (G35), or the ambient creatures are wanted before it as cosmetic life. Model: claude-opus-5-5.
+
+## 2026-10-25 ✅ The night ruins are revived with changes: the first step of the slope south, with no door
+
+The quest designer reviewed the branch of 17.10 (feat/night-ruins, never merged) against the world of 22.10: it fits with changes. Its bones stay (the bells as the clock and the last-bell walk-out, the walled yard with the wolf's round and cover, the inscription read only by firelight, the bell pit, the stair under the hall). The owner's answers, 25.10:
+- **Place:** the walled yard at night is the near ruins (decision 49), the first and shallowest step of the slope south; the climax opens the stair down toward the undead south.
+- **No door to the south.** The south is open-world steps, not a gate a quest opens: the passage is always open, and the frightening bells mark the right time to cross. It is too hard to cross before the player is ready, and readiness is made: the dark below (a torch or an ember), cold and food on the long way (clothing, cooked food), drops that need climbing gear, and creatures that need a weapon (that last one waits for combat, G35). The owner welcomes more such needs.
+- **The brazier's all-night vigil goes** (it repeated the long night): lighting the brazier becomes a step of the inscription riddle.
+- **The yard's stealth quest changes its question** (it repeated the south bank's wolf and night plant); both may stay open at once, the player's choice.
+- **The skeleton:** the cellar's rare find hints at the skeleton's fold instead of clockwork (decision 20 keeps clockwork for the humans), and the skeleton gets its own line there.
+- **The ember traveller sends the player in** (lighting an old fire is the Wakers' act).
+- **Open:** whether the climax becomes chapter 1's bell-rope dilemma (ring, tie or leave). The owner has not decided.
+Also from the review: the inscription keeps one line and the belief readings move into people's mouths; two order fixes (the yard quest requires the arch; the gamble pays something other than logs). The map rows are redrawn by the hand-made first map (NEXT 19), so the layout carries over as a plan, not as tiles. A fresh branch from develop carries the content, the bell and walk-out code and the tests; the old branch stays as it is until then.
+**Retry when:** the first hand-made map lands, or the owner decides the bell-rope question. Model: claude-opus-5-5.
+
+## 2026-10-25 ✅ One height layer: the map plan reads levels, not heights
+
+The map plan block (#292) and the ring schema (#321) each added a per-tile digit layer to the map, `heights` and `levels`, built in parallel for the same thing (STYLE section 6, G68). One concept stays: `levels`, the name develop already shares with chunks and stamps, with develop's description. The plan's region `height` is now read against `levels`, a prop's `crossing` moves onto the shared prop of maps, chunks and stamps, and the map check drops its own row check, since the assembler already checks the shape of `levels` against the ground. The plan block itself is unchanged. Why: two names for one layer would let a map carry two heights that disagree, and every reader would have to pick one. The manager's decision, 25.10.
+**Retry when:** a map needs a second per-tile number that is not the walking level (a water depth, a snow line); it gets its own name then, never `heights`. Model: claude-opus-5-5.

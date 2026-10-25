@@ -748,12 +748,13 @@
             "type": "string"
           }
         },
-        "heights": {
+        "levels": {
           "minItems": 8,
-          "description": "The level of every tile, one row of digits per ground row (0 the lowest, 9 the highest; G68). Read by the map check only: the kernel and the clients do not walk or draw levels yet.",
+          "description": "The height layer beside the ground layer (STYLE section 6): one digit 0 to 9 per tile, integers only. Absent: every tile is level 0.",
           "type": "array",
           "items": {
             "pattern": "^[0-9]+$",
+            "description": "One level digit (0 to 9) per tile, rows like the ground (STYLE section 6).",
             "type": "string"
           }
         },
@@ -828,7 +829,7 @@
                   "height": {
                     "minimum": 0,
                     "maximum": 9,
-                    "description": "The level the region stands on, read against `heights`.",
+                    "description": "The level the region stands on, read against `levels`.",
                     "type": "integer"
                   },
                   "tags": {
