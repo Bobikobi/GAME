@@ -72,6 +72,7 @@ import { MazePeek } from './peek';
 import { hintDistance, lanternNight, nodeAction } from '../text';
 import type { WorkKind } from '../ui/ui';
 import { type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, treasureKind } from '../work';
+import { JUICE, chipsOf, hitFeel, knockAt } from '../hitfeel';
 import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep } from '../walking';
 import { GroundChunks } from '../groundchunks';
 import { adopt, baseOf, densityOf, drawScaled, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
@@ -382,6 +383,12 @@ export class WorldScene extends Phaser.Scene {
   private work: { node: string; kind: WorkKind } | null = null;
   private swingUntil = 0;
   private auto: Auto | null = null;
+  /** the blow's hold (hitfeel.ts): the swing keeps its pose until this scene time */
+  private holdUntil = 0;
+  /** the struck thing drawn white for a few more frames, and the tint it goes back to */
+  private flash: { img: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image; frames: number; tint: number; mode: Phaser.TintModes } | null = null;
+  /** the camera's knock after a blow: art pixels at most, until this scene time */
+  private knock: { px: number; until: number } | null = null;
   /** nodes whose look the work keeps: a tree stays a tree until it falls */
   private held = new Set<string>();
   private nextSwing = 0;
@@ -1937,6 +1944,7 @@ export class WorldScene extends Phaser.Scene {
       if (seen) fog.x = home + Math.sin(time * 0.0004 + i) * (i % 2 === 0 ? 3 : -3);
     });
     this.animate(time, delta);
+    this.feelTick();
     this.chunks?.update(this.cameras.main.worldView);
     this.placePinned();
     const s = this.session;
@@ -2867,7 +2875,8 @@ export class WorldScene extends Phaser.Scene {
     const dir = app.controls.direction();
     if (s.paused || app.ui.blocking || (dir !== null && (w.underfoot || dir !== w.facing))) return this.stopWork(s, w);
     const beat = beatAt(elapsed, w.ms);
-    this.workFrame(beat.down);
+    // the kernel's clock runs on through a blow's hold; only the pose waits
+    if (this.time.now >= this.holdUntil) this.workFrame(beat.down);
     if (blowsDue(beat) > w.hits) {
       w.hits = blowsDue(beat);
       this.blow(w, beat.progress);
@@ -2914,28 +2923,69 @@ export class WorldScene extends Phaser.Scene {
     const at = this.worldToPage(x, y);
     const pan = Math.max(-0.8, Math.min(0.8, (at.x / Math.max(1, this.scale.width / pixelRatio()) - 0.5) * 1.2));
     const img = this.nodes.get(w.node) ?? this.digs.get(w.node);
+    const feel = hitFeel(w.kind, JUICE, RICH.motion);
+    const chips = (n: number): number => chipsOf(n, feel?.chips ?? 1);
     if (w.kind === 'fell') {
       sound.sfx('thud', { pan });
       // the wood starts to give: a crack under the blows past the middle
       if (progress > 0.5) sound.sfx('crack', { pan, gain: 0.25 + 0.5 * progress });
-      this.burst('fx-chip', x, y, 6);
-      if (progress > 0.4 && img) this.burst('fx-leaf', x, y - img.displayHeight * 0.6, 2 + Math.round(progress * 4));
-    } else if (w.kind === 'mine') {
-      sound.sfx('strike', { pan });
-      this.burst('fx-dust', x, y, 5);
-      this.burst('fx-spark', x, y - 4, 3);
-    } else {
-      sound.sfx('dig', { pan });
-      this.burst('fx-dirt', x, y, 6);
+    } else if (w.kind === 'mine') sound.sfx('strike', { pan });
+    else sound.sfx('dig', { pan });
+    // the thing answers when the swing lets go: the chips fly, it shakes, the camera knocks
+    const react = (): void => {
+      if (w.kind === 'fell') {
+        this.burst('fx-chip', x, y, chips(6));
+        if (progress > 0.4 && img) this.burst('fx-leaf', x, y - img.displayHeight * 0.6, chips(2 + Math.round(progress * 4)));
+      } else if (w.kind === 'mine') {
+        this.burst('fx-dust', x, y, chips(5));
+        this.burst('fx-spark', x, y - 4, chips(3));
+      } else this.burst('fx-dirt', x, y, chips(6));
+      if (feel && feel.shakePx > 0) this.knock = { px: feel.shakePx, until: this.time.now + feel.shakeMs };
+      if (!img) return;
+      this.tweens.killTweensOf(img);
+      const x0 = x;
+      img.x = x0;
+      // the shake grows with the work: one pixel at first, two near the end
+      const shake = w.kind === 'dig' ? 0 : progress > 0.6 ? 2 : 1;
+      const lean = w.kind === 'fell' && (w.facing === 'left' || w.facing === 'right') ? (w.facing === 'left' ? -1 : 1) * progress * 3 : 0;
+      this.tweens.add({ targets: img, x: x0 + shake, scaleY: rel(img, 1, w.kind === 'dig' ? 0.92 : 1).y, angle: lean, duration: 50, yoyo: true, repeat: 1, onComplete: () => setRel(img.setX(x0), 1).setAngle(lean) });
+    };
+    if (!feel) return react();
+    if (img && feel.flashFrames > 0) this.flashWhite(img, feel.flashFrames);
+    this.holdUntil = this.time.now + feel.stopMs;
+    // a step away during the hold drops the work, and its thing does not answer
+    this.time.delayedCall(feel.stopMs, () => {
+      if (this.auto === w) react();
+    });
+  }
+
+  /** The struck thing drawn white for `frames` drawn frames, then back to its own tint (a lit node keeps its warm light). */
+  private flashWhite(img: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image, frames: number): void {
+    this.endFlash();
+    this.flash = { img, frames, tint: img.tintTopLeft, mode: img.tintMode };
+    img.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
+  }
+
+  private endFlash(): void {
+    const f = this.flash;
+    this.flash = null;
+    if (f?.img.active) f.img.setTint(f.tint).setTintMode(f.mode);
+  }
+
+  /** Once a frame, before the draw: the flash counts down its frames, and the knock moves the view by whole art pixels. */
+  private feelTick(): void {
+    if (this.flash && --this.flash.frames <= 0) this.endFlash();
+    if (!this.knock) return;
+    const cam = this.cameras.main;
+    if (this.time.now >= this.knock.until) {
+      this.knock = null;
+      cam.setPosition(0, 0);
+      return;
     }
-    if (!img) return;
-    this.tweens.killTweensOf(img);
-    const x0 = x;
-    img.x = x0;
-    // the shake grows with the work: one pixel at first, two near the end
-    const shake = w.kind === 'dig' ? 0 : progress > 0.6 ? 2 : 1;
-    const lean = w.kind === 'fell' && (w.facing === 'left' || w.facing === 'right') ? (w.facing === 'left' ? -1 : 1) * progress * 3 : 0;
-    this.tweens.add({ targets: img, x: x0 + shake, scaleY: rel(img, 1, w.kind === 'dig' ? 0.92 : 1).y, angle: lean, duration: 50, yoyo: true, repeat: 1, onComplete: () => setRel(img.setX(x0), 1).setAngle(lean) });
+    // the view itself moves, in device pixels: one art pixel is zoom / 4 of them (view.ts)
+    const k = Math.max(1, Math.round(cam.zoom / 4));
+    const at = knockAt(this.knock.px, Math.random);
+    cam.setPosition(at.x * k, at.y * k);
   }
 
   /** The tree goes over, away from the one who cut it, and lies there a moment before it fades. */
