@@ -34,7 +34,7 @@ export interface Assembled {
     {
       dir: string;
       rel: string;
-      sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4; ramps?: string[]; scale?: number }>;
+      sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4; ramps?: string[]; scale?: number; source?: { spec: string; manifest: string } }>;
       palette?: string[];
       ramps?: { id: string; for?: string; steps: string[] }[];
     }
@@ -279,6 +279,8 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
               ...(s.ramps ? { ramps: s.ramps } : {}),
               // read by the scale check (tools/src/kit/scale.ts); the bundle does not carry it
               ...(s.scale === undefined ? {} : { scale: s.scale }),
+              // read by the hole check (tools/src/kit/holes.ts) to name the re-import; the bundle does not carry it
+              ...(s.source === undefined ? {} : { source: s.source }),
             },
           ]),
         ),
