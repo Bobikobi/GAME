@@ -58,6 +58,24 @@ describe('clip configs', () => {
     expect(problems).toMatch(/ramp "velvet"/);
   });
 
+  it('refuses a set piece or a worn part the renderer cannot build, and a named IK point without a body anchor', () => {
+    const kneel = readClip('harvest_kneel');
+    const bad: Clip = {
+      ...kneel,
+      set: [{ kind: 'tree', at: [0.3] }],
+      worn: [{ kind: 'quiver', at: [0, 0, 0] }],
+      ik: { side: 'R', anchor: 'shoulder', pole: [0, 0, -1], points: ['pouch', [0, 0, 0]], t: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7] },
+      prop: { kind: 'sprig', hand: 'R', poses: [3, 8] },
+    };
+    const problems = clipProblems('bad', bad, libs, settings).join('\n');
+    expect(problems).toMatch(/set piece "tree"/);
+    expect(problems).toMatch(/set tree: at is two numbers/);
+    expect(problems).toMatch(/worn "quiver"/);
+    expect(problems).toMatch(/ik.points/);
+    expect(problems).toMatch(/prop.poses are pose numbers from 0 to 7/);
+    expect(clipProblems('kneel', { ...kneel, worn: [] }, libs, settings).join('\n')).toMatch(/ik.points/);
+  });
+
   it('a layer that follows the base takes the same phase of its own action', () => {
     const clip = readClip('walk_torch');
     const s = samples(clip, libs);
@@ -69,16 +87,19 @@ describe('clip configs', () => {
   });
 
   it('a pose lasts until the next picked frame at the library fps unless the clip says', () => {
-    expect(poseMs(readClip('harvest'), libs)).toEqual([333, 250, 250, 250, 250, 417, 417, 333]);
-    expect(poseMs(readClip('chop_ik'), libs)).toEqual([110, 110, 220, 110, 70, 220, 110, 130]);
+    const picked: Clip = { about: 'picked frames', target: 'forager', base: { library: 'ual2', action: 'Farm_Harvest' }, frames: [0, 8, 14, 20, 26, 32, 42, 52], frame: { size: [128, 128], anchor: [64, 112] }, views: ['down'] };
+    expect(poseMs(picked, libs)).toEqual([333, 250, 250, 250, 250, 417, 417, 333]);
+    expect(poseMs(readClip('dig_ik'), libs)).toEqual([110, 110, 110, 110, 110, 110, 110, 110]);
   });
 
-  it('the job carries the resolved paths, the IK and the dense feet of a locomotion clip', () => {
+  it('the job carries the resolved paths, the IK, the set, the worn parts and the dense feet of a locomotion clip', () => {
     const j = job('walk_torch', readClip('walk_torch'), libs, settings, { out: '/o', libs: ['/l1.glb'], model: '/m.glb', threads: 2 });
     expect(j).toMatchObject({ target: 'forager', target_path: '/m.glb', libs: ['/l1.glb'], prop: 'torch', prop_side: 'L', layer: { action: 'Idle_Torch_Loop', mask: ['arm_l'] }, dense: { length: 32, step: 1 } });
-    const ik = job('chop_ik', readClip('chop_ik'), libs, settings, { out: '/o', libs: [], model: '/m.glb', threads: 2 });
-    expect(ik).toMatchObject({ prop_from: 'ik', ik: { side: 'R', anchor: 'shoulder' } });
+    const ik = job('dig_ik', readClip('dig_ik'), libs, settings, { out: '/o', libs: [], model: '/m.glb', threads: 2 });
+    expect(ik).toMatchObject({ prop_from: 'ik', haft_from: 'fore', ik: { side: 'R', anchor: 'wrist' } });
     expect(ik.dense).toBeUndefined();
+    const pick = job('harvest_kneel', readClip('harvest_kneel'), libs, settings, { out: '/o', libs: [], model: '/m.glb', threads: 2 });
+    expect(pick).toMatchObject({ prop: 'sprig', prop_poses: [4, 5, 6, 7], set: [{ kind: 'herb' }, { kind: 'herb' }], worn: [{ kind: 'pouch' }], ik: { side: 'R', anchor: 'body' } });
   });
 
   it('reads the game paces from the params: one tile per step', () => {
@@ -185,7 +206,7 @@ describe('library fetch', () => {
 
 describe('snap', () => {
   const pal = classPalettes(['wood', 'red', 'skin'], 'grey');
-  const allowed = new Set([...pal.body, ...pal.fire, ...pal.metal, OUTLINE]);
+  const allowed = new Set([...pal.body, ...pal.fire, ...pal.metal, ...pal.leaf, OUTLINE]);
   // 4x supersampled 12x12 art px: a body square at art (4..7, 4..7), its right column a flame in the ID pass
   const hi = picture(48, 48, (x, y) => (x >= 16 && x < 32 && y >= 16 && y < 32 ? [180, 120, 80, 255] : undefined));
   const ids = picture(48, 48, (x, y) => (x >= 16 && x < 32 && y >= 16 && y < 32 ? (x >= 28 ? [255, 0, 0, 255] : [0, 0, 255, 255]) : undefined));
@@ -205,6 +226,15 @@ describe('snap', () => {
     expect(pal.fire).toContain(at(s, 7, 5));
     expect(pal.body).toContain(at(s, 5, 5));
     expect(pal.fire).not.toContain(at(s, 5, 5));
+  });
+
+  it('a pixel the ID pass marks as leaf takes the leaf ramp only', () => {
+    const leafIds = picture(48, 48, (x, y) => (x >= 16 && x < 32 && y >= 16 && y < 32 ? (x >= 28 ? [255, 255, 0, 255] : [0, 0, 255, 255]) : undefined));
+    const s = snap(hi, leafIds, 4, pal, OUTLINE);
+    expect(pal.leaf).toContain(at(s, 7, 5));
+    expect(pal.body).not.toContain(at(s, 7, 5));
+    expect(pal.body).toContain(at(s, 5, 5));
+    expect(paletteShare([s], allowed).pct).toBe(100);
   });
 
   it('a block less than half covered stays clear', () => {

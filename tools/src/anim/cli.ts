@@ -97,8 +97,8 @@ function measure(name: string, clip: Clip, ctx: Context): ClipMeasures {
   const target = ctx.settings.targets[clip.target];
   if (target === undefined) throw new Error(`${name}: no target ${clip.target}`);
   const ramps = clip.ramps ?? target.ramps;
-  const pal = classPalettes(ramps, target.metal);
-  const allowed = new Set([...pal.body, ...pal.fire, ...pal.metal, ctx.settings.outline]);
+  const pal = classPalettes(ramps, target.metal, target.leaf);
+  const allowed = new Set([...pal.body, ...pal.fire, ...pal.metal, ...pal.leaf, ctx.settings.outline]);
   const frames: Partial<Record<View, Picture[]>> = {};
   const n = poseMs(clip, ctx.libs).length;
   for (const view of clip.views) frames[view] = Array.from({ length: n }, (_, i) => readPng(join(out, 'sprites', `${name}_${view}_${String(i).padStart(2, '0')}.png`)));
@@ -158,7 +158,7 @@ function render(name: string, ctx: Context): ClipMeasures {
     throw new Error(`${name}: Blender (${blender}) did not finish:\n${(run.stdout ?? '').slice(-2000)}\n${(run.stderr ?? '').slice(-1500)}${run.error ? `\n${run.error.message}` : ''}`);
   }
   const blenderS = (Date.now() - t0) / 1000;
-  const pal = classPalettes(clip.ramps ?? target.ramps, target.metal);
+  const pal = classPalettes(clip.ramps ?? target.ramps, target.metal, target.leaf);
   const ms = poseMs(clip, ctx.libs);
   const [fw, fh] = clip.frame.size;
   for (const view of clip.views) {

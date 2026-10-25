@@ -1,5 +1,5 @@
 {
-  "about": "The library's tree chop, with a hatchet built by the renderer in the right hand.",
+  "about": "The chop: the library's tree chop, with a hatchet built by the renderer in the right hand.",
   "target": "forager",
   "base": {
     "library": "ual2",

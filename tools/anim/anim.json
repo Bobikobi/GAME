@@ -16,6 +16,7 @@
       "pxm": 53,
       "ramps": ["wood", "red", "skin"],
       "metal": "grey",
+      "leaf": "green",
       "credit": "Forager, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/ (game/public3d/models/README.md); modified: posed with library motion and rendered to pixels by tools/anim"
     },
     "rig": {
@@ -27,6 +28,7 @@
       "kz": 1.1547005,
       "ramps": ["rust", "bark", "stone"],
       "metal": "stone",
+      "leaf": "green",
       "colours": { "head": "#e9903a", "neck": "#e9903a", "chest": "#e9903a", "shoulder": "#e9903a", "upper_arm": "#e9903a", "elbow": "#e9903a", "forearm": "#e9903a", "hand": "#e9903a", "thigh": "#e9903a", "knee": "#e9903a", "shin": "#e9903a", "foot": "#e9903a", "pelvis": "#6f7d8c" }
     }
   }

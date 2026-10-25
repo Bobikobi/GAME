@@ -2,7 +2,8 @@
  * A supersampled render to a sprite: every sub-pixel takes the nearest colour (CIELAB) of the ramps its class may
  * use, each ss x ss block becomes one pixel by majority and is opaque when at least half of it is, and a 1 px outline
  * is drawn outside the silhouette (4-neighbours). The class comes from the renderer's flat ID pass: blue body, red
- * flame (the fire ramp only), green tool metal (the metal ramp only). No blended colour exists in the output.
+ * flame (the fire ramp only), green tool metal (the metal ramp only), yellow leaves (the leaf ramp only). No blended
+ * colour exists in the output.
  */
 import { coreRamp, hexToRgb } from '../kit/palette.js';
 
@@ -13,7 +14,8 @@ export interface Picture {
   data: Uint8Array;
 }
 
-export type SnapClass = 'body' | 'fire' | 'metal';
+export type SnapClass = 'body' | 'fire' | 'metal' | 'leaf';
+const CLASSES: readonly SnapClass[] = ['body', 'fire', 'metal', 'leaf'];
 
 export function rampColours(ids: readonly string[]): string[] {
   const out: string[] = [];
@@ -25,9 +27,9 @@ export function rampColours(ids: readonly string[]): string[] {
   return out;
 }
 
-/** The colours each class may use: the body ramps, the fire ramp, the metal ramp. */
-export function classPalettes(body: readonly string[], metal: string): Record<SnapClass, string[]> {
-  return { body: rampColours(body), fire: rampColours(['fire']), metal: rampColours([metal]) };
+/** The colours each class may use: the body ramps, the fire ramp, the metal ramp, the leaf ramp. */
+export function classPalettes(body: readonly string[], metal: string, leaf = 'green'): Record<SnapClass, string[]> {
+  return { body: rampColours(body), fire: rampColours(['fire']), metal: rampColours([metal]), leaf: rampColours([leaf]) };
 }
 
 export function lab(r: number, g: number, b: number): [number, number, number] {
@@ -49,10 +51,12 @@ function classAt(ids: Picture | undefined, i: number): SnapClass {
   if (ids === undefined) return 'body';
   const r = ids.data[i] ?? 0;
   const g = ids.data[i + 1] ?? 0;
+  const b = ids.data[i + 2] ?? 0;
   const a = ids.data[i + 3] ?? 0;
   if (a === 0) return 'body';
   if (r > 128 && g < 128) return 'fire';
   if (g > 128 && r < 128) return 'metal';
+  if (r > 128 && g > 128 && b < 128) return 'leaf';
   return 'body';
 }
 
@@ -60,8 +64,8 @@ export function snap(hi: Picture, ids: Picture | undefined, ss: number, palettes
   if (hi.width % ss !== 0 || hi.height % ss !== 0) throw new Error(`a ${hi.width}x${hi.height} render is not a multiple of ${ss}`);
   if (ids !== undefined && (ids.width !== hi.width || ids.height !== hi.height)) throw new Error('the ID pass is not the size of the render');
   const order: string[] = [];
-  for (const cls of ['body', 'fire', 'metal'] as const) for (const hex of palettes[cls]) if (!order.includes(hex)) order.push(hex);
-  const labs = Object.fromEntries((['body', 'fire', 'metal'] as const).map((c) => [c, palettes[c].map((h) => lab(...hexToRgb(h)))])) as Record<SnapClass, [number, number, number][]>;
+  for (const cls of CLASSES) for (const hex of palettes[cls]) if (!order.includes(hex)) order.push(hex);
+  const labs = Object.fromEntries(CLASSES.map((c) => [c, palettes[c].map((h) => lab(...hexToRgb(h)))])) as Record<SnapClass, [number, number, number][]>;
   const cache = new Map<string, string>();
   const nearest = (cls: SnapClass, r: number, g: number, b: number): string => {
     const key = `${cls}${(r << 16) | (g << 8) | b}`;

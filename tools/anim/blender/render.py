@@ -9,9 +9,10 @@ taken from a second action (local rotations, so a layered arm rides the base's s
 relative to its rest pose; arms and hands are aimed along the source's bone directions with the source's twist;
 the hips travel by the leg-length ratio. An IK overlay moves one wrist along a curve through a few control points
 (Catmull-Rom); only the two arm bones and the hand are solved, every other bone keeps the library pose. Nothing is
-keyed by hand. Props are built here from boxes and a cone. Each view is rendered twice: lit (Cycles, flat albedo,
-one sun) and as a flat ID pass (blue body, red flame, green tool metal) that tells the snap which ramp a pixel may
-use. Writes <name>_<view>_<ii>.png, <name>_<view>_<ii>_id.png and <name>_meta.json (the projected feet).
+keyed by hand. Props are built here from boxes, cones and spheres: a hand prop, set pieces fixed on the ground by
+the body (a herb, a berry bush) and worn parts on the hips (a pouch); an IK point may name a worn part. Each view is
+rendered twice: lit (Cycles, flat albedo, one sun) and as a flat ID pass (blue body, red flame, green tool metal,
+yellow leaves) that tells the snap which ramp a pixel may use. Writes <name>_<view>_<ii>.png, <name>_<view>_<ii>_id.png and <name>_meta.json (the projected feet).
 """
 import bpy, sys, json, os, math, time
 T0 = time.time()
@@ -279,10 +280,17 @@ def ik_overlay(ik, t):
     S = tarm.matrix_world @ up.head
     a = (tarm.matrix_world @ up.tail - S).length
     b = ((tarm.matrix_world @ fore.tail) - (tarm.matrix_world @ fore.head)).length
-    pts = [Vector(p) for p in ik["points"]]
+    def point(p):
+        if isinstance(p, str):   # a worn part (anchor body): the hand goes to its top
+            W = WORN[p][0].matrix_world.translation
+            return Vector(body_vec((W.x / SCALE_H, W.y / SCALE_H, (W.z - FLOOR0[0]) / SCALE_V + 0.07), side))
+        return Vector(p)
+    pts = [point(p) for p in ik["points"]]
     off = body_vec(catmull(pts, t), side)
     if ik.get("anchor", "shoulder") == "shoulder":
         T = S + off * SCALE_H
+    elif ik["anchor"] == "body":   # a fixed spot by the body, from the floor under it: a plant, a pouch
+        T = Vector((off.x * SCALE_H, off.y * SCALE_H, FLOOR0[0] + off.z * SCALE_V))
     else:   # the library's own wrist at this sample, moved by the curve
         T = (tarm.matrix_world @ hand.head) + off * SCALE_H
     if "floor" in ik and FLOOR0[0] is not None:   # keep the wrist above the ground (the lowest body point before the IK)
@@ -309,17 +317,23 @@ def ik_overlay(ik, t):
 PROP = None; PARTS = {}
 CLASS_OF = {}   # object name -> snap class (body / fire / cool), drawn by the ID pass
 pc = cfg.get("prop")
-def part(name, dim, rgb, emit=0.0, loc=(0, 0, 0), cone=False, cls="body"):
+LEAF, LEAF_LIGHT, BERRY = (0.16, 0.40, 0.10), (0.40, 0.68, 0.20), (0.80, 0.08, 0.10)
+def part(name, dim, rgb, emit=0.0, loc=(0, 0, 0), cone=False, cls="body", parent=None, sphere=False, rot=(0, 0, 0), flat=1.0):
     if cone:
         bpy.ops.mesh.primitive_cone_add(vertices=8, radius1=dim[0], radius2=0, depth=dim[2])
+    elif sphere:
+        bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2, radius=1.0)
     else:
         bpy.ops.mesh.primitive_cube_add(size=1.0)
     o = bpy.context.active_object; o.name = name
     if not cone:
         o.dimensions = dim
+    elif flat != 1.0:   # a leaf: a cone pressed flat
+        o.scale = (1.0, flat, 1.0)
+    o.rotation_euler = rot
     o.location = loc
-    bpy.ops.object.transform_apply(location=True, rotation=False, scale=True)
-    o.data.materials.append(mat(name, rgb, emit)); o.parent = PROP
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    o.data.materials.append(mat(name, rgb, emit)); o.parent = PROP if parent is None else parent
     CLASS_OF[o.name] = cls
     return o
 if pc:
@@ -346,6 +360,54 @@ if pc:
         part("crate", (d[0] * k, d[1] * k, d[2] * k), (0.40, 0.22, 0.09))
     elif pc == "seedbag":
         part("bag", (0.10 * k, 0.08 * k, 0.12 * k), (0.55, 0.40, 0.22))
+    elif pc == "sprig":     # a picked sprig: two leaves in a V out of the fist
+        for q, a in enumerate((-0.45, 0.45)):
+            h = 0.26 * k
+            part(f"sprig{q}", (0.07 * k, 0, h), LEAF_LIGHT, loc=(math.sin(a) * h / 2, 0, 0.02 * k + math.cos(a) * h / 2), cone=True, cls="leaf", rot=(0, a, 0), flat=0.35)
+    elif pc == "berries":   # a small handful
+        for q, (bx, by, bz) in enumerate(((0, 0, 0.05), (0.05, 0.02, 0.03), (-0.04, 0.03, 0.04), (0.01, -0.04, 0.08))):
+            part(f"berries{q}", (0.065 * k,) * 3, BERRY, loc=(bx * k, by * k, bz * k), sphere=True)
+
+# ------------------------------------------------------------------ set pieces (fixed on the ground by the body) and worn parts (on the hips)
+SIDE = (cfg.get("ik") or {}).get("side", cfg.get("prop_side", "R"))
+SETP = None
+if cfg.get("set"):
+    SETP = bpy.data.objects.new("Set", None); sc.collection.objects.link(SETP)
+    for j, sp in enumerate(cfg["set"]):
+        s_ = sp.get("size", 1.0) * SCALE_H
+        c = body_vec((sp["at"][0], sp["at"][1], 0.0), sp.get("side", SIDE)); c = Vector((c.x * SCALE_H, c.y * SCALE_H, 0.0))
+        if sp["kind"] == "herb":     # a leafy tuft, about 0.32 m tall: a dark heart and seven leaves fanned out
+            part(f"herb{j}c", (0.06 * s_, 0, 0.24 * s_), LEAF, loc=c + Vector((0, 0, 0.12 * s_)), cone=True, cls="leaf", parent=SETP)
+            for q in range(7):
+                az = math.radians(q * 360 / 7 + 10); tilt = math.radians(28 + 14 * (q % 3)); h = (0.30 + 0.05 * (q % 2)) * s_
+                top = Vector((math.sin(tilt) * math.sin(az), -math.sin(tilt) * math.cos(az), math.cos(tilt)))
+                part(f"herb{j}_{q}", (0.075 * s_, 0, h), LEAF_LIGHT if q % 2 else LEAF, loc=c + top * (h / 2), cone=True, cls="leaf", parent=SETP, rot=(tilt, 0, az), flat=0.3)
+        elif sp["kind"] == "bush":   # a lumpy berry bush, about 0.8 m tall, red berries on its face
+            r = 0.45 * s_
+            part(f"bush{j}", (2 * r, 2 * r, 1.6 * r), LEAF, loc=c + Vector((0, 0, 0.8 * r)), sphere=True, cls="leaf", parent=SETP)
+            for q, a in enumerate((30, 100, 170, 240, 310)):
+                lx, ly = 0.55 * r * math.cos(math.radians(a)), 0.55 * r * math.sin(math.radians(a))
+                part(f"bush{j}_{q}", (1.0 * r, 1.0 * r, 0.9 * r), LEAF_LIGHT if q % 2 == 0 else LEAF, loc=c + Vector((lx, ly, (1.05 + 0.15 * (q % 2)) * r)), sphere=True, cls="leaf", parent=SETP)
+            for q in range(12):
+                a = math.radians(q * 30 + 15); zq = (0.75 + 0.35 * ((q * 7) % 3) / 2) * r
+                rq = 1.0 * r * math.sqrt(max(0.0, 1 - ((zq - 0.8 * r) / (0.95 * r)) ** 2)) + 0.03 * s_
+                part(f"berry{j}_{q}", (0.11 * s_,) * 3, BERRY, loc=c + Vector((rq * math.cos(a), rq * math.sin(a), zq)), sphere=True, parent=SETP)
+WORN = {}
+for j, wp in enumerate(cfg.get("worn", [])):
+    e = bpy.data.objects.new(f"Worn{j}", None); sc.collection.objects.link(e)
+    if wp["kind"] == "pouch":     # a leather pouch with its flap
+        part(f"pouch{j}", (0.13 * SCALE_H, 0.08 * SCALE_H, 0.14 * SCALE_H), (0.66, 0.50, 0.30), parent=e)
+        part(f"pouchflap{j}", (0.135 * SCALE_H, 0.085 * SCALE_H, 0.04 * SCALE_H), (0.36, 0.20, 0.08), loc=(0, 0, 0.07 * SCALE_H), parent=e)
+    WORN[wp["kind"]] = (e, wp)
+
+def place_worn():
+    nm = P + MAP["hips"]
+    Rd = pose_rot(tarm, nm) @ t_rest[nm].inverted()
+    for e, wp in WORN.values():
+        o = body_vec(wp["at"], wp.get("side", SIDE)); o = Vector((o.x * SCALE_H, o.y * SCALE_H, o.z * SCALE_V))
+        e.parent = None
+        e.matrix_world = Matrix.Translation(pose_head(tarm, nm) + Rd @ o) @ Rd.to_4x4()
+    bpy.context.view_layer.update()
 
 def src_grip(side):
     s = side.lower()
@@ -420,7 +482,7 @@ sc.render.image_settings.file_format = "PNG"; sc.render.image_settings.color_mod
 sc.render.threads = int(cfg.get("threads", 4))
 if PROP is not None: PROP.parent = None
 
-IDCOL = {"body": (0.0, 0.0, 1.0, 1.0), "fire": (1.0, 0.0, 0.0, 1.0), "cool": (0.0, 1.0, 0.0, 1.0)}
+IDCOL = {"body": (0.0, 0.0, 1.0, 1.0), "fire": (1.0, 0.0, 0.0, 1.0), "cool": (0.0, 1.0, 0.0, 1.0), "leaf": (1.0, 1.0, 0.0, 1.0)}
 IDMAT = {}
 def idmat(c):
     if c not in IDMAT:
@@ -431,7 +493,7 @@ def idmat(c):
         nt.links.new(e.outputs[0], o.inputs["Surface"]); IDMAT[c] = m
     return IDMAT[c]
 def render_id(path):
-    """The same view once more with flat emission colours per snap class: blue body, red flame, green tool metal."""
+    """The same view once more with flat emission colours per snap class: blue body, red flame, green tool metal, yellow leaves."""
     saved = []
     for o in sc.objects:
         if o.type != "MESH" or o.hide_render: continue
@@ -474,20 +536,27 @@ for i, s in enumerate(samples):
     if PROP is not None: PROP.parent = None
     if BASKET is not None: BASKET.parent = None
     bpy.context.view_layer.update()
+    if SETP is not None: SETP.parent = None
     source_pose(s, clip)
     retarget()
+    place_worn()
     info = None
-    FLOOR0[0] = body_min_z() if (cfg.get("ik") or {}).get("floor") is not None else None
+    ikc = cfg.get("ik") or {}
+    FLOOR0[0] = body_min_z() if (ikc.get("floor") is not None or ikc.get("anchor") == "body") else None
     if cfg.get("ik"):
         info = ik_overlay(cfg["ik"], s.get("t", 0.0))
     place_prop(info)
+    if PROP is not None and cfg.get("prop_poses") is not None:   # the hand prop only on these poses (a picked sprig)
+        for ch in PROP.children: ch.hide_render = i not in cfg["prop_poses"]
     place_basket()
-    for ob in (PROP, BASKET):   # ride with the body through the ground shift and the view turn
+    for ob in (PROP, BASKET, *[e for e, _ in WORN.values()]):   # ride with the body through the ground shift and the view turn
         if ob is None: continue
         mwp = ob.matrix_world.copy(); ob.parent = ROOT; ob.matrix_world = mwp
     bpy.context.view_layer.update()
     z = body_min_z() if not cfg.get("ground_from_feet") else min((tarm.matrix_world @ tarm.pose.bones[P + n].head).z for n in MAP["contacts"].values())
     ROOT.location = (0, 0, -z + cfg.get("ground_lift", 0.0)); bpy.context.view_layer.update()
+    if SETP is not None:   # on the floor under the body, turning with it
+        SETP.parent = ROOT; SETP.matrix_world = Matrix.Identity(4); bpy.context.view_layer.update()
     rec = {"sample": s, "ground_shift": -z}
     for d, ang in DIRS.items():
         ROOT.rotation_euler = (0, 0, ang)

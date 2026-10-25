@@ -16,7 +16,11 @@ export const CACHE_DIR = join(REPO_ROOT, 'tools', '.cache', 'anim');
 export type View = 'down' | 'up' | 'left';
 export const VIEWS: readonly View[] = ['down', 'up', 'left'];
 export const MASKS = ['arm_l', 'arm_r'] as const;
-export const PROPS = ['hatchet', 'pick', 'torch', 'trowel', 'crate', 'seedbag'] as const;
+export const PROPS = ['hatchet', 'pick', 'torch', 'trowel', 'crate', 'seedbag', 'sprig', 'berries'] as const;
+/** fixed on the ground by the body */
+export const SET_PIECES = ['herb', 'bush'] as const;
+/** carried on the hips */
+export const WORN_PARTS = ['pouch'] as const;
 export type Pace = 'light' | 'steady' | 'heavy';
 
 export interface Library {
@@ -44,6 +48,8 @@ export interface Target {
   kz?: number;
   ramps: string[];
   metal: string;
+  /** the ramp of leaves (set pieces, a picked sprig); green when left out */
+  leaf?: string;
   credit?: string;
   colours?: Record<string, string>;
 }
@@ -79,8 +85,18 @@ export interface Clip {
   frames: number[] | { even: number };
   /** a second action for the masked bones; `frame` is a fixed frame, or `follow` for the base's phase */
   layer?: Source & { mask: string[]; frame: number | 'follow' };
-  ik?: { side: 'L' | 'R'; anchor: 'shoulder' | 'wrist'; pole: number[]; points: number[][]; floor?: number; t: number[] };
-  prop?: { kind: string; hand?: 'L' | 'R'; from?: 'hand' | 'ik'; haft?: 'radial' | 'fore' };
+  /**
+   * one wrist along a curve through `points`: metres in body axes (x out on the IK side, y forward, z up) from the
+   * shoulder, from the library's own wrist, or (`body`) from the floor under the body, where a point may also name a
+   * worn part
+   */
+  ik?: { side: 'L' | 'R'; anchor: 'shoulder' | 'wrist' | 'body'; pole: number[]; points: (number[] | string)[]; floor?: number; t: number[] };
+  /** `poses`: the poses that show it (a sprig appears once picked); every pose when left out */
+  prop?: { kind: string; hand?: 'L' | 'R'; from?: 'hand' | 'ik'; haft?: 'radial' | 'fore'; poses?: number[] };
+  /** set pieces on the ground: `at` is [x, y] metres in body axes on the IK side (the prop's hand without IK) */
+  set?: { kind: string; at: number[]; size?: number }[];
+  /** worn parts on the hips: `at` is [x, y, z] metres in body axes from the hips joint */
+  worn?: { kind: string; at: number[] }[];
   basket?: boolean;
   frame: { size: [number, number]; anchor: [number, number] };
   views: View[];
@@ -138,13 +154,25 @@ export function clipProblems(name: string, clip: Clip, libs: Record<string, Libr
     const f = clip.layer.frame;
     if (f !== 'follow' && (!isNum(f) || f < 0 || (layerLen !== undefined && f > layerLen))) say(`layer frame ${String(f)} is outside the layer action`);
   }
+  const worn = (clip.worn ?? []).map((w) => w.kind);
+  for (const w of clip.worn ?? []) {
+    if (!(WORN_PARTS as readonly string[]).includes(w.kind)) say(`worn "${w.kind}" is not one of ${WORN_PARTS.join(', ')}`);
+    if (!Array.isArray(w.at) || w.at.length !== 3 || !w.at.every(isNum)) say(`worn ${w.kind}: at is three numbers (metres from the hips)`);
+  }
+  if (new Set(worn).size !== worn.length) say('each worn part once');
+  for (const p of clip.set ?? []) {
+    if (!(SET_PIECES as readonly string[]).includes(p.kind)) say(`set piece "${p.kind}" is not one of ${SET_PIECES.join(', ')}`);
+    if (!Array.isArray(p.at) || p.at.length !== 2 || !p.at.every(isNum)) say(`set ${p.kind}: at is two numbers (metres, body axes: x out, y forward)`);
+    if (p.size !== undefined && (!isNum(p.size) || p.size <= 0)) say(`set ${p.kind}: size is a positive number`);
+  }
   if (clip.ik !== undefined) {
     const ik = clip.ik;
     if (ik.side !== 'L' && ik.side !== 'R') say('ik.side is L or R');
-    if (ik.anchor !== 'shoulder' && ik.anchor !== 'wrist') say('ik.anchor is shoulder or wrist');
+    if (ik.anchor !== 'shoulder' && ik.anchor !== 'wrist' && ik.anchor !== 'body') say('ik.anchor is shoulder, wrist or body');
     if (!Array.isArray(ik.pole) || ik.pole.length !== 3 || !ik.pole.every(isNum)) say('ik.pole is three numbers');
-    if (!Array.isArray(ik.points) || ik.points.length < 2 || !ik.points.every((p) => Array.isArray(p) && p.length === 3 && p.every(isNum))) {
-      say('ik.points is two or more points of three numbers (metres, body axes: x out on the tool side, y forward, z up)');
+    const okPoint = (p: number[] | string) => (typeof p === 'string' ? ik.anchor === 'body' && worn.includes(p) : Array.isArray(p) && p.length === 3 && p.every(isNum));
+    if (!Array.isArray(ik.points) || ik.points.length < 2 || !ik.points.every(okPoint)) {
+      say('ik.points is two or more points of three numbers (metres, body axes: x out on the tool side, y forward, z up), or with anchor body the name of a worn part');
     }
     if (!Array.isArray(ik.t) || ik.t.length !== count || !ik.t.every((t) => isNum(t) && t >= 0 && t <= 1)) say(`ik.t is ${count} numbers from 0 to 1, one per frame`);
     if (ik.floor !== undefined && !isNum(ik.floor)) say('ik.floor is a number of metres');
@@ -153,6 +181,7 @@ export function clipProblems(name: string, clip: Clip, libs: Record<string, Libr
     if (!(PROPS as readonly string[]).includes(clip.prop.kind)) say(`prop "${clip.prop.kind}" is not one of ${PROPS.join(', ')}`);
     if (clip.prop.hand !== undefined && clip.prop.hand !== 'L' && clip.prop.hand !== 'R') say('prop.hand is L or R');
     if (clip.prop.from === 'ik' && clip.ik === undefined) say('a prop placed from the IK needs an ik section');
+    if (clip.prop.poses !== undefined && (!Array.isArray(clip.prop.poses) || !clip.prop.poses.every((i) => isInt(i) && i >= 0 && i < count))) say(`prop.poses are pose numbers from 0 to ${count - 1}`);
   }
   const [w, h] = clip.frame?.size ?? [];
   const [ax, ay] = clip.frame?.anchor ?? [];
@@ -251,7 +280,10 @@ export function job(name: string, clip: Clip, libs: Record<string, Library>, set
     out.prop_side = clip.prop.hand ?? 'R';
     if (clip.prop.from === 'ik') out.prop_from = 'ik';
     if (clip.prop.haft === 'fore') out.haft_from = 'fore';
+    if (clip.prop.poses !== undefined) out.prop_poses = clip.prop.poses;
   }
+  if (clip.set !== undefined) out.set = clip.set;
+  if (clip.worn !== undefined) out.worn = clip.worn;
   if (clip.basket && paths.basket !== undefined) {
     out.basket = true;
     out.basket_path = paths.basket;
