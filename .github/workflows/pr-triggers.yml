@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   body:
-    name: The body names the quest review and the picture's source
+    name: The body names the quest review, the story review and the picture's source
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -31,8 +31,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
 
-      # a quest file changed -> "Quest review:" (quest-designer skill); a picture added under content/kit ->
-      # "Source:" (docs/art/PROP_FROM_REF.md). The body goes in through the environment, never into the script.
+      # a quest file changed -> "Quest review:" (quest-designer skill); a story file changed -> "Story review:"
+      # (story-keeper skill); a picture added under content/kit -> "Source:" (docs/art/PROP_FROM_REF.md).
+      # The body goes in through the environment, never into the script.
       - name: Read the changed files and the body
         env:
           BASE: ${{ github.base_ref }}
@@ -44,7 +45,7 @@ jobs:
         if: always()
         run: |
           [ -f triggers.txt ] || exit 0
-          { echo '### Quest review and picture source'; echo '```'; cat triggers.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          { echo '### Quest review, story review and picture source'; echo '```'; cat triggers.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
   streams:
     name: The other open streams (informs, never fails)

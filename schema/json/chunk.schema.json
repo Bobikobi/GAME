@@ -640,6 +640,11 @@
                 "const": true,
                 "type": "boolean"
               },
+              "crossing": {
+                "description": "Steps or a ramp: the way across a change of level (G68), on the lower tile, facing the face.",
+                "const": true,
+                "type": "boolean"
+              },
               "lit_by": {
                 "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
                 "maxLength": 80,
@@ -863,6 +868,11 @@
                     },
                     "fire": {
                       "description": "A fire the player may feed by hand. It needs an id.",
+                      "const": true,
+                      "type": "boolean"
+                    },
+                    "crossing": {
+                      "description": "Steps or a ramp: the way across a change of level (G68), on the lower tile, facing the face.",
                       "const": true,
                       "type": "boolean"
                     },
