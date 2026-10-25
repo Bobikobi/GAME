@@ -1981,6 +1981,9 @@ export class WorldScene extends Phaser.Scene {
     this.haunt(s, time);
     this.demo?.apply(this.player, { moving: this.body.moving, falling: this.falling, facing: s.facing, look: this.lookOf(s),
       race: s.state.player.race, lookIndex: s.state.player.look ?? 0, work: this.auto?.kind, now: time });
+    if (this.demo?.camera(this.cameras.main, this.baseZoom, this.stoneHeld)) {
+      this.vignette?.setDisplaySize(this.scale.width / this.cameras.main.zoom, this.scale.height / this.cameras.main.zoom);
+    }
   }
 
   /**
