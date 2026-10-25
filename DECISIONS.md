@@ -2705,3 +2705,9 @@ The owner, 23.10: picked v1 of three key-art stills ("perfect"), asked for it to
 The owner, 25.10: the food and medicine shop interior keeps its approved frame (2026-10-11: warm planks, a runner to the counter, the trade on the back wall), but it was drawn before the rich wave (2026-10-23) and would not sit beside it. Everything drawn before the rich wave is renewed so the game reads as one hand: redrawn in the rich wave's style where the frame stands, made again where it does not. The shop interior branch is not revived as it is; it waits for its own redraw, and its layout and frame carry over.
 How it runs: an art polish stream after the rich wave, inside the agreed direction (polish, not a new direction), one list of the pre-rich pieces still on screen, the most seen first.
 **Retry when:** the rich wave's style itself is replaced (then the list is redrawn against the new style). Model: claude-opus-5-5.
+
+## 2026-10-25 ✅ The ambient creatures wait for the redraw; many animals come later, most of them hunted for what they give
+
+The owner, 25.10: the ambient creatures (birds and small animals that sit and leave when the player comes close; their kinds and spots are already map content, the client does not draw them yet) are not revived now: they come after the pre-rich redraw above, drawn once in the rich style. Later the valley gets many more animals; most can be hunted and fought at the chosen difficulty, and a kill gives raw materials, the way Red Dead Redemption 2 skins and harvests what is hunted.
+Where it sits: the hunting is combat, so it follows G35 (no fighting in the demo; combat after the foundation, where and its frame approved by the owner first). The branch with the creatures' client stays on the remote as it is until then.
+**Retry when:** combat opens (G35), or the ambient creatures are wanted before it as cosmetic life. Model: claude-opus-5-5.
