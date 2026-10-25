@@ -145,8 +145,8 @@ export function createPgAuthStore(pool: Pool): AuthStore {
           for (const row of game.books.gold) {
             if (row.deltaMg === 0) continue;
             await client.query(
-              'insert into gold_ledger (account_id, delta_mg, action, tick) values ($1, $2, $3, $4)',
-              [accountId, row.deltaMg, JSON.stringify(row.action), row.tick],
+              'insert into gold_ledger (account_id, delta_mg, action, tick, fund) values ($1, $2, $3, $4, $5)',
+              [accountId, row.deltaMg, JSON.stringify(row.action), row.tick, row.fund ?? 'purse'],
             );
           }
         }

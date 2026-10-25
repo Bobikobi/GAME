@@ -34,7 +34,7 @@ People (a rigged humanoid, `art.ts` PEOPLE; anything else is a Kenney mini or th
 | Elder Maru | the opening, the elder's house | Kenney mini (male-a) | draft exists (9341) | 0 more, 1 |
 | Pell | the trader's stall | Kenney mini (female-a) | draft exists (9342) | 0 more, 1 |
 | The cook (man, woman) | named in the cast sheet; no slot in the map yet | nothing | drafts exist (9343, 9333) | 0 more, 2 (held until a cook has a place) |
-| Two empty NPC slots (`core/town-corner`, `core/grove-clearing`) | town corner, clearing | nothing | wait for content | not now |
+| Two slots, neither an empty NPC slot: `core/grove-clearing` is the traveller's ember camp with no permanent character (DECISIONS 2026-10-22, decision 35); `core/town-corner` holds the player's stall marker (DECISIONS 2026-10-20, the stall entry; `game/src/places.ts`, `STALL_SLOT`) | town corner, clearing | nothing | wait for content | not now |
 
 The camp and the town (every player meets these after the opening):
 
