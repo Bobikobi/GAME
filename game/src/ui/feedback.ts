@@ -34,6 +34,9 @@ export function feedback(root: HTMLElement, events: readonly GameEvent[]): void 
         else goldOut -= e.delta;
         add({ sfx: 'coin', detune: e.delta > 0 ? 0 : -300 });
         break;
+      case 'bound':
+        add({ sfx: 'coin', detune: e.delta > 0 ? 0 : -300 });
+        break;
       case 'level':
         add({ jingle: 'level' });
         banner(root, `${app.bundle.professions[e.profession]?.name ?? 'Level'} ${e.level}!`, 'level');

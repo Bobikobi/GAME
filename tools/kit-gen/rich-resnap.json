@@ -1,0 +1,115 @@
+{
+  "note": "The five rich-style picks of 2026-10-21 (docs/art/frames/rich/: tree_autumn c3, stone_bridge c2, bench c1, signpost c3, mushrooms c3) imported again onto the shared ramps of palette v2 instead of the experimental 92-colour list, ramps per sprite by material. No new drawing: seed .scratch/kit-gen/rich-resnap/ with those runs' manifest lines and raw images, put the outside crops under .scratch/outside2/ (ignored by git), then pnpm kit:gen tools/kit-gen/rich-resnap.json --reimport. Nothing goes into content/.",
+  "entries": [
+    {
+      "name": "tree_autumn",
+      "ref": ".scratch/outside2/tree_autumn.png",
+      "what": "round autumn tree with a golden-yellow crown",
+      "seen": "a round deciduous tree seen from the front in three-quarter view: a dense golden-yellow crown built of leaf clusters shading to orange and dark olive in the shadows, a short dark trunk at its foot, lit from the upper left; the rectangle around it carries grass, a path and the edges of neighbouring orange trees",
+      "confirmed_by": "run operator, experiment of 2026-10-21 (owner confirmation pending)",
+      "palette": "ramp-added",
+      "style": "rich",
+      "style_refs": [
+        ".scratch/outside2/stone_bridge.png",
+        ".scratch/outside2/signpost.png"
+      ],
+      "width": 128,
+      "height": 144,
+      "anchor": "bottom",
+      "detail": "leaf clusters in five to seven yellows and oranges with cool olive shadows underneath each cluster, a few single red leaves, the trunk in dark browns with a lit edge, a thin shadow at the foot",
+      "ramps": [
+        "bark",
+        "rust",
+        "fire",
+        "moss"
+      ]
+    },
+    {
+      "name": "stone_bridge",
+      "ref": ".scratch/outside2/stone_bridge.png",
+      "what": "arched stone footbridge with two arches and a cobbled walkway",
+      "seen": "a stone footbridge seen from the front-left in three-quarter view crossing a stream: two round arches of pink and tan stone blocks, a low parapet of rounded stones along both edges, a cobbled walkway of warm tan and orange flagstones, each stone a different warm shade with a lit top, lit from the upper left; the rectangle carries water, grass and a small figure on the bridge that is not part of it",
+      "confirmed_by": "run operator, experiment of 2026-10-21 (owner confirmation pending)",
+      "palette": "ramp-added",
+      "style": "rich",
+      "style_refs": [
+        ".scratch/outside2/tree_autumn.png",
+        ".scratch/outside2/signpost.png"
+      ],
+      "width": 256,
+      "height": 128,
+      "anchor": "bottom",
+      "detail": "the parapet stones each in two or three pinks and tans with a lit top and a dark seam, the two arches with visible blocks and a dark underside, the walkway in eight to ten warm flagstone shades, a few moss patches at the water line, no figure, no water",
+      "ramps": [
+        "stone",
+        "wood",
+        "skin",
+        "moss"
+      ]
+    },
+    {
+      "name": "bench",
+      "ref": ".scratch/outside2/bench.png",
+      "what": "simple wooden park bench",
+      "seen": "a low wooden bench seen from the front-left: a plank seat on two dark wooden legs, warm mid-brown wood with a lit top edge and a darker underside, lit from the upper left; the rectangle carries grass, a basket and part of a seated figure that are not part of the bench",
+      "confirmed_by": "run operator, experiment of 2026-10-21 (owner confirmation pending)",
+      "palette": "ramp-added",
+      "style": "rich",
+      "style_refs": [
+        ".scratch/outside2/signpost.png",
+        ".scratch/outside2/stone_bridge.png"
+      ],
+      "width": 64,
+      "height": 40,
+      "anchor": "bottom",
+      "detail": "plank grain in three browns, a lit top edge, a dark shadow under the seat, two legs with a darker inner face, no figure, no basket",
+      "ramps": [
+        "wood",
+        "bark"
+      ]
+    },
+    {
+      "name": "signpost",
+      "ref": ".scratch/outside2/signpost.png",
+      "what": "wooden signpost holding a small framed painting",
+      "seen": "a wooden post with a small framed picture mounted on it, seen from the front: a dark brown post, a light wooden frame around a tiny landscape painting in greens and blues, a small plank roof above the frame, lit from the upper left; the rectangle carries grass and red autumn leaves behind it",
+      "confirmed_by": "run operator, experiment of 2026-10-21 (owner confirmation pending)",
+      "palette": "ramp-added",
+      "style": "rich",
+      "style_refs": [
+        ".scratch/outside2/bench.png",
+        ".scratch/outside2/stone_bridge.png"
+      ],
+      "width": 48,
+      "height": 64,
+      "anchor": "bottom",
+      "detail": "the post in three browns with grain, the frame lighter with a lit edge, the painting as a tiny landscape in four or five greens and blues, the plank roof with a shadow under it, no leaves behind",
+      "ramps": [
+        "wood",
+        "green",
+        "water"
+      ]
+    },
+    {
+      "name": "mushrooms",
+      "ref": ".scratch/outside2/mushrooms.png",
+      "what": "cluster of three small pale mushrooms",
+      "seen": "three small mushrooms close together on grass, seen from the front: pale cream caps with a warm tan top and a lit rim, thin pale stems, soft shadow under each cap, lit from the upper left; the rectangle is mostly grass",
+      "confirmed_by": "run operator, experiment of 2026-10-21 (owner confirmation pending)",
+      "palette": "ramp-added",
+      "style": "rich",
+      "style_refs": [
+        ".scratch/outside2/bench.png",
+        ".scratch/outside2/signpost.png"
+      ],
+      "width": 32,
+      "height": 32,
+      "anchor": "bottom",
+      "detail": "each cap in three creams and tans with a lit rim and a darker underside, stems in two pales, a small shadow on the ground, no grass",
+      "ramps": [
+        "wood",
+        "skin"
+      ]
+    }
+  ]
+}

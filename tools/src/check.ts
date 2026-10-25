@@ -10,6 +10,7 @@ import { type Bundle, computeValues, idiv, minChargeFor, missOutcome, rarityBudg
 import { RARITIES, type ParamsBody } from '@game/schema';
 import { assemble, type Assembled } from './assemble';
 import { readBoard } from './board';
+import { holeProblems } from './kit/holes';
 import { CORE_PALETTE, coreRamp } from './kit/palette';
 import { accentsOf, allowedColors, rampProblems } from './kit/ramps';
 import { scaleProblems } from './kit/scale';
@@ -658,6 +659,8 @@ function checkKits(a: Assembled): Issue[] {
           level: 'error',
         });
       }
+      // A see-through speck inside the drawing at density 4 is the importer's, not the drawing's (tools/src/kit/holes.ts).
+      for (const message of holeProblems(s, png, `${kit.rel}/${s.file}`)) issues.push({ file: `${kit.rel}/${s.file}`, where, message, level: 'error' });
       // A ground tile is its ramp plus at most two accents (STYLE section 9).
       const first = named[0] ? rampById.get(named[0]) : undefined;
       if (name.startsWith('tiles/') && first) {
