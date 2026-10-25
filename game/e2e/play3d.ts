@@ -295,20 +295,30 @@ async function run(browser: Browser, base: string, viewport: Viewport, name: str
     await me.snap('walked3d');
 
     // 4. gather: walk to a node, the prompt names it, A opens the minigame, the bag grows
-    const target = await page.eval<{ id: string; x: number; y: number; source: string; item: string } | null>(`(() => {
+    // the nearest few, tried in turn: the nearest by distance can lie across water with no way round
+    const targets = await page.eval<{ id: string; x: number; y: number; source: string; item: string }[]>(`(() => {
       const g = window.__game, s = g.session, b = g.bundle;
       const near = (i) => Math.abs(i.x - s.pos[0]) + Math.abs(i.y - s.pos[1]);
       const nodes = Object.entries(b.instances)
         // a minigame node open to anyone at any hour: no tool, no quest it waits on (the keystone), no hours (the moon reeds)
         .filter(([id, i]) => { const r = b.resources[i.source]; return i.kind === 'resource' && r.game !== undefined && !r.tool && !r.opens_after && !r.hours && (s.state.nodes[id]?.readyAt ?? 0) <= s.tick; })
         .sort((x, y) => near(x[1]) - near(y[1]));
-      const n = nodes[0];
-      return n ? { id: n[0], x: n[1].x, y: n[1].y, source: n[1].source, item: b.resources[n[1].source].output } : null;
+      return nodes.slice(0, 6).map((n) => ({ id: n[0], x: n[1].x, y: n[1].y, source: n[1].source, item: b.resources[n[1].source].output }));
     })()`);
-    if (!target) throw new Error('no node to gather without a tool');
+    if (targets.length === 0) throw new Error('no node to gather without a tool');
+    let target: (typeof targets)[number] | undefined;
+    for (const t of targets) {
+      try {
+        await me.walkTo({ x: t.x, y: t.y, w: 1, h: 1 }, t.id);
+        target = t;
+        break;
+      } catch (error) {
+        if (!(error instanceof Error && error.message.startsWith('no way to reach'))) throw error;
+      }
+    }
+    if (!target) throw new Error(`no way to reach any of ${targets.map((t) => t.id).join(', ')}`);
     const had = await page.eval<number>(`window.__game.session.state.player.bag[${JSON.stringify(target.item)}] ?? 0`);
     const bagBefore = await page.eval<number>(`Object.values(window.__game.session.state.player.bag).reduce((a, n) => a + n, 0)`);
-    await me.walkTo({ x: target.x, y: target.y, w: 1, h: 1 }, target.id);
     const st = await page.waitFor<{ prompt: string }>(`(() => { const p = document.querySelector('.prompt'); return p && !p.hidden && p.textContent.trim().length > 1 ? { prompt: p.textContent.slice(1).trim() } : null; })()`, 'a prompt at the node', 4000);
     check(/^(Gather|Pick|Fell|Dig|Strike|Snap)/i.test(st.prompt), `the prompt names the work: "${st.prompt}"`);
     await me.snap('node3d');
