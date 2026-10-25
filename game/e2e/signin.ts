@@ -42,7 +42,8 @@ const TYPES: Record<string, string> = {
 
 /** The game with the server URL baked in: an empty VITE_GAME_SERVER names the game's own origin. */
 function buildSignInDist(): void {
-  execFileSync('vite', ['build', '--outDir', SIGNIN_DIST], {
+  // through pnpm: vite is the game package's own, not on the PATH a runner starts the e2e with
+  execFileSync('pnpm', ['exec', 'vite', 'build', '--outDir', SIGNIN_DIST], {
     cwd: GAME_DIR,
     env: { ...process.env, VITE_GAME_SERVER: '' },
     stdio: 'inherit',
