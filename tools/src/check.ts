@@ -22,8 +22,12 @@ import { checkPlay, rewardItems } from './play';
 import { checkDeadProps } from './deadprops';
 import { checkReach } from './reach';
 import { checkRaces } from './races';
+import { checkHands } from './hands';
 import { checkRichness } from './richness';
 import { checkStarts } from './starts';
+import { mergedPullRequests, gitReader, resolveBase } from './decisions/base';
+import { NEXT_FILE, checkNext } from './decisions/next';
+import { RATCHETS, checkRatchets } from './decisions/ratchets';
 
 export interface CheckResult {
   issues: Issue[];
@@ -55,8 +59,38 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkDeadProps(b, assembled.origin));
     issues.push(...checkHazards(b, assembled.origin));
     issues.push(...checkRichness(b, assembled.origin));
+    issues.push(...checkHands(b, assembled.origin));
   }
   return { issues: dedupe(issues), files: files.length, assembled };
+}
+
+/**
+ * `pnpm check`: runCheck() over the content, then the checks over the repository itself (next-status,
+ * list-shrinks against the base, base-available). runCheck() stays content-only for its many callers.
+ */
+export function runRepoCheck(opts: { root?: string; repo?: string; env?: Readonly<Record<string, string | undefined>> } = {}): CheckResult {
+  const result = runCheck(opts.root);
+  const repo = opts.repo ?? REPO_ROOT;
+  const issues = [...result.issues];
+  const env = opts.env ?? process.env;
+  const base = resolveBase(env, repo);
+  issues.push(...base.issues);
+  const readHead = (file: string): string | null => {
+    const path = join(repo, file);
+    return existsSync(path) ? readFileSync(path, 'utf8') : null;
+  };
+  const next = readHead(NEXT_FILE);
+  if (next !== null) {
+    const streams = readHead('docs/team/streams.json');
+    const ids = streams ? (JSON.parse(streams) as { streams: { id: string }[] }).streams.map((s) => s.id) : [];
+    // a pull request counts as merged when the base names it: CI's base is the tip of develop; on a machine
+    // the merge base is where the branch started, so the tip of origin/develop is read instead
+    const mergedRef = env.DECISIONS_BASE?.trim() && base.ref ? base.ref : 'origin/develop';
+    issues.push(...checkNext(next, ids, mergedPullRequests(repo, mergedRef) ?? undefined));
+  }
+  const atBase = base.ref ? gitReader(base.ref, RATCHETS.map((r) => r.file), repo) : null;
+  issues.push(...checkRatchets(readHead, atBase ? (file) => atBase.get(file) ?? null : null));
+  return { ...result, issues: dedupe(issues) };
 }
 
 function dedupe(issues: Issue[]): Issue[] {

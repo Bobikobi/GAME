@@ -92,6 +92,9 @@ What players notice
 - A second door on the home page: the valley in 3D, marked as a trial. The same game and the same save: a character made at Play continues in 3D and back.
 - The three starters have their own pixel look.
 
+What creators notice
+- Nothing new for creators.
+
 What changed underneath
 - The 3D door is built by `build:3d` and shipped at /play3d/ only when that build succeeds; the classic game never waits for it. A machine that cannot keep up gets the lighter draw by itself.
 - No kernel change; saves from v0.1.2 load unchanged.
