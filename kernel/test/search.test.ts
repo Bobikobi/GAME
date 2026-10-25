@@ -58,7 +58,8 @@ const dawnTick = (n: number) => {
   const d = b.params.day_length_ms;
   return n * d - idiv(d, 2) + idivUp(5 * d, 24);
 };
-const COMMON = ['core/pottery-shard', 'core/berry', 'core/old-coin'];
+const COMMON = ['core/pottery-shard', 'core/berry', 'core/old-coin', 'core/herb'];
+/** No searchable holds a rare row until a rare item of its own exists, so the luck test hangs this one on the log itself. */
 const RARE = 'core/stone-idol';
 
 /** A seed whose first search of the log holds at least `min` rows. */
@@ -71,11 +72,12 @@ function seedWith(min: number, tick = 0): number {
 }
 
 describe('the schema and the bundle', () => {
-  test('the three searchables are core content apart from the dig spots, each on a plain prop with one rare row', () => {
+  test('the three searchables are core content apart from the dig spots, each on a plain prop with no rare row yet', () => {
     expect(Object.keys(b.searchables).sort()).toEqual(['core/branch-heap', 'core/hollow-log', 'core/hollow-tree']);
     for (const sr of Object.values(b.searchables)) {
       expect(b.treasures[sr.id]).toBeUndefined();
-      expect(sr.rows.filter((r) => rarityRank(b.items[r.item]!.rarity) >= 2)).toHaveLength(1);
+      // the whole bowl stays the collapsed hall's prize and the stone idol the tangle's keepsake
+      expect(sr.rows.filter((r) => rarityRank(b.items[r.item]!.rarity) >= 2)).toHaveLength(0);
       expect(sr.rows.every((r) => b.values[r.item] !== undefined)).toBe(true);
     }
   });
@@ -153,14 +155,17 @@ describe('luck', () => {
   }
 
   test('luck tilts only the rare row: common rows draw the same, and a rare row that came without luck comes with it', () => {
+    const withRare = structuredClone(b);
+    withRare.searchables[LOG]!.rows.push({ item: RARE, chance_pct: 2 });
+    const look = (s: State, at: [number, number]) => rowsOf(step(withRare, s, { t: 'search', spot: LOG, at }, 0));
     expect(rareFindPermille(b, lucky(1).s)).toBeGreaterThan(1000);
     expect(rareFindPermille(b, started(1).s)).toBe(1000);
     let onlyLucky = 0;
     for (let seed = 1; seed < 3000; seed++) {
       const plain = started(seed);
       const luck = lucky(seed);
-      const a = rowsOf(search(plain.s, plain.at, 0));
-      const l = rowsOf(search(luck.s, luck.at, 0));
+      const a = look(plain.s, plain.at);
+      const l = look(luck.s, luck.at);
       for (const item of COMMON) expect(l.includes(item)).toBe(a.includes(item));
       if (a.includes(RARE)) expect(l).toContain(RARE);
       else if (l.includes(RARE)) onlyLucky++;

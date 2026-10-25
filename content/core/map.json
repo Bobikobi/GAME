@@ -291,6 +291,7 @@
         "solid": true
       },
       {
+        "id": "core/hollow-tree",
         "sprite": "core/base-kit:props/dead_tree",
         "x": 30,
         "y": 23,
@@ -1418,15 +1419,6 @@
         "x": 44,
         "y": 14,
         "w": 1,
-        "h": 1,
-        "solid": true
-      },
-      {
-        "id": "core/hollow-tree",
-        "sprite": "core/base-kit:props/dead_tree",
-        "x": 27,
-        "y": 31,
-        "w": 2,
         "h": 1,
         "solid": true
       }

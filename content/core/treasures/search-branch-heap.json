@@ -20,8 +20,8 @@
         "chance_pct": 15
       },
       {
-        "item": "core/whole-bowl",
-        "chance_pct": 1
+        "item": "core/branch",
+        "chance_pct": 20
       }
     ],
     "place": {

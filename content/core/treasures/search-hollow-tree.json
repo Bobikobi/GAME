@@ -20,8 +20,8 @@
         "chance_pct": 12
       },
       {
-        "item": "core/stone-idol",
-        "chance_pct": 2
+        "item": "core/branch",
+        "chance_pct": 20
       }
     ],
     "place": {

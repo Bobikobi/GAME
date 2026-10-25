@@ -54,5 +54,5 @@ These follow from his rule and from the games above; each is a default he can tu
 - Kernel: two actions. `search` draws the contents of a searchable once per day (rules 2, 4, 5) and returns them in an event; `take` moves one row or all rows into the bag, with the bag-full answer the dig already has. The contents live in state as drawn rows and the dawn they were drawn for.
 - Check: every search row is an item with a value; a searchable's place exists; no searchable sits within the opening's first-path area (rule 9, as the map plan marks it).
 - Client: A beside a searchable opens a small window of its contents with "Take all" and a tap per cell; an empty window shows "Nothing here." Text at 16 px or more (G29).
-- Content: three outdoor searchables in the valley, off the opening's path, with tables of existing items (shards, an old coin, a berry, grit) and one rare row each.
+- Content: three outdoor searchables in the valley, off the opening's path, with tables of common existing items (shards, an old coin, a berry, grit, a branch, a herb) and no rare row yet: the only rare items, the whole bowl and the stone idol, belong to the collapsed hall and to the tangle's keepsake, so the rare rows wait for items of their own (the story review of this pull request).
 - Not in this slice: furniture, insides, pictures, new items or art.
