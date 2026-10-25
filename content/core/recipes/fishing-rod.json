@@ -15,6 +15,7 @@
       "class": "tool",
       "tier": 1,
       "sprite": "core/base-kit:items/branch",
+      "weight": 1,
       "tool": {
         "kind": "rod",
         "tier": 1,
