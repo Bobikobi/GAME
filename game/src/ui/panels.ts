@@ -37,11 +37,12 @@ import type { StoneView } from '../stone';
 import { Session, STALL_SLOTS, stallDraftOf, type StallDraft } from '../session';
 import type { GameSession } from '../session-surface';
 import type { ActResult } from '../session-surface';
-import { ATTRIBUTE_MAX, activeQuests, attributeEffects, bagGroups, classLine, clock, eatLabel, gold, itemBenefit, itemName, journalGroups, questSteps, restoreHint, seconds, sellable, stacks, stationGate, stationText, stationUpgrades, toolOpens, wornAt } from '../text';
+import { ATTRIBUTE_MAX, activeQuests, attributeEffects, bagGroups, classLine, clock, eatLabel, gold, itemBenefit, itemName, journalGroups, questSteps, restoreHint, seconds, sellable, stacks, stationGate, stationText, stationUpgrades, toolOpens, exactBonus, toolSpeedValue, toolSpeedWord, strengthWord, wornAt } from '../text';
 import { s1, s1Available } from '../net/s1';
 import { STALL_SLOT, canPlaceStall, directionOf, localMapState, mapPlaces } from '../places';
 import { say } from './dialog';
 import { button, h, sprite } from './dom';
+import { withExact } from './exact';
 import { mapSvg, placeKind } from './map';
 import type { Layer, UI } from './ui';
 
@@ -121,7 +122,7 @@ function kitSet(s: GameSession): { name: string; held: number; total: number; fu
   return undefined;
 }
 
-/** The attributes, their real before-to-after numbers, the professions and the techniques known at each level. */
+/** The attributes on their plain scale (the real numbers one long press away), the professions and the techniques known at each level. */
 function skillsBody(ui: UI, after: () => void): HTMLElement {
   const s = app.session;
   const b = app.bundle;
@@ -144,7 +145,7 @@ function skillsBody(ui: UI, after: () => void): HTMLElement {
           { class: 'attr' },
           h('span', { class: 'attr-name' }, `${fx.name} - ${fx.what}`),
           h('span', { class: 'pips' }, Array.from({ length: ATTRIBUTE_MAX }, (_, i) => h('i', { class: i < value ? 'on' : '' }))),
-          h('span', { class: 'muted' }, `${fx.now} -> ${full ? 'at its limit' : fx.next}`),
+          withExact(h('span', { class: 'muted' }, `${fx.now} -> ${full ? 'at its limit' : fx.next}`), fx.exact),
           fx.note ? h('span', { class: 'muted' }, fx.note) : null,
           points > 0 && !full
             ? button('+', async () => {
@@ -171,7 +172,14 @@ function skillsBody(ui: UI, after: () => void): HTMLElement {
           { class: 'card' },
           h('b', null, `${prof.name} ${level}`),
           h('span', { class: 'meter-bar wide' }, h('i', { style: `width:${Math.max(0, Math.min(100, pct))}%` })),
-          prof.techniques.filter((t) => t.level <= level).map((t) => h('div', { class: 'tech' }, `${t.name}: ${t.text}`)),
+          prof.techniques
+            .filter((t) => t.level <= level)
+            .map((t) => {
+              const line = h('div', { class: 'tech' }, `${t.name}: ${t.text}`);
+              // the long press names what the rules raise ("Craft speed +25%"), not the technique again
+              const what = t.effect.replace(/_pct$/, '').replaceAll('_', ' ');
+              return t.value > 0 && t.effect.endsWith('_pct') ? withExact(line, `${exactBonus(`${what[0]!.toUpperCase()}${what.slice(1)}`, t.value)}.`) : line;
+            }),
           upcoming ? h('div', { class: 'muted' }, `At level ${upcoming.level}: ${upcoming.name}`) : null,
         );
       }),
@@ -323,7 +331,7 @@ export function openBag(ui: UI): void {
       h(
         'div',
         { class: 'worn-side' },
-        h('div', { class: 'kit-effects' }, fx.map((e) => h('span', null, `${e.label} `, h('b', null, `+${e.value}%`)))),
+        h('div', { class: 'kit-effects' }, fx.map((e) => withExact(h('span', null, `${e.label} `, h('b', null, strengthWord(e.value))), exactBonus(e.label, e.value)))),
         set ? h('div', { class: 'kit-set' }, `${set.name} set ${set.held}/${set.total}${set.full ? ' · full' : ''}`) : null,
         h('div', { class: 'worn-list' }, rows),
       ),
@@ -535,16 +543,17 @@ export function openBag(ui: UI): void {
         after();
       }));
     }
-    const facts: string[] = [];
+    // a fact is words; its exact values, when it has them, are one long press away
+    const facts: { text: string; exact?: string }[] = [];
     if (item.wear) {
       for (const e of item.wear.effects ?? []) {
         const label = KIT_EFFECTS.find(([effect]) => effect === e.effect)?.[1] ?? e.effect.replaceAll('_', ' ');
-        facts.push(`${label} +${e.value}%.`);
+        facts.push({ text: `${label}: ${strengthWord(e.value)} better.`, exact: `${exactBonus(label, e.value)}.` });
       }
       // the kernel picks the place; a second ring can still go on while one is worn
       const at = wornAt(b, s.state, id);
       if (at) {
-        facts.push(at.look ? 'You wear it as your look.' : 'You are wearing it.');
+        facts.push({ text: at.look ? 'You wear it as your look.' : 'You are wearing it.' });
         actions.push(button('Take off', async () => {
           const r = await s.act({ t: 'unwear', slot: at.slot, look: at.look });
           if (!r.ok) ui.toast(r.error, 'bad');
@@ -562,11 +571,14 @@ export function openBag(ui: UI): void {
     if (item.tool) {
       const uses = item.tool.uses;
       const left = uses === undefined ? 'It lasts.' : `${uses - (s.state.player.wear[id] ?? 0)} uses left.`;
-      const speedBonus = item.tool.tier > 1 ? ` (+${15 * (item.tool.tier - 1)}% gathering speed)` : '';
+      const speedBonus = item.tool.tier > 1 ? ` (gathers ${toolSpeedWord(item.tool.tier)} faster)` : '';
       // the tier is in the head with the class; the check keeps a tool's tier the tier of its "tool"
-      facts.push(`${item.tool.kind[0]!.toUpperCase()}${item.tool.kind.slice(1)}${speedBonus}. ${left}`);
+      facts.push({
+        text: `${item.tool.kind[0]!.toUpperCase()}${item.tool.kind.slice(1)}${speedBonus}. ${left}`,
+        exact: item.tool.tier > 1 ? `${exactBonus('Gathering speed', toolSpeedValue(item.tool.tier))}.` : undefined,
+      });
     }
-    if (price !== undefined) facts.push(`A trader pays ${gold(price)} gold.`);
+    if (price !== undefined) facts.push({ text: `A trader pays ${gold(price)} gold.` });
     const set = item.wear?.set
       ? (() => {
           const pieces = setPieces(b)[item.wear!.set!] ?? [];
@@ -592,7 +604,7 @@ export function openBag(ui: UI): void {
           h('div', null, h('b', null, item.name), h('div', { class: `rarity r-${item.rarity}` }, item.rarity), h('div', { class: 'muted' }, classLine(b, id))),
         ),
         h('p', { class: 'kit-desc' }, item.description),
-        facts.map((f) => h('p', { class: 'muted' }, f)),
+        facts.map((f) => (f.exact ? withExact(h('p', { class: 'muted' }, f.text), f.exact) : h('p', { class: 'muted' }, f.text))),
         set ? h('p', { class: 'kit-set-line' }, `${set.name} set ${set.held}/${set.total}${set.full ? ' · full' : ''}`) : null,
         h('p', { class: 'credit' }, item.creator === 'core' ? 'Added by the core team' : `Added by ${item.creator}`),
       ),
