@@ -58,6 +58,10 @@ Ask each of them of every line a player reads. A line fails the first question i
 8. **Who is the player?** The player is a returner, never the chosen one. Their name is what
    they carved; no line guesses their gender; a line about another player uses that player's
    name or "they".
+9. **What does the next player find?** The valley is shared and every start repeats. Anything
+   a line says one player found, took, left or named must still make sense for the second and
+   the hundredth player: if the first takes a dead returner's axe, what does the next one find,
+   and where did the axe go? A trace that one player keeps cannot also wait for the next.
 
 ## Report
 
