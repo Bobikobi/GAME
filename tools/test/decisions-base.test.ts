@@ -26,6 +26,8 @@ beforeAll(() => {
   git('config', 'user.email', 'test@example.invalid');
   git('config', 'user.name', 'test');
   git('config', 'commit.gpgsign', 'false');
+  // no hooks: a machine-wide commit hook (a secret scan) made each commit slow enough under load to time out the setup
+  git('config', 'core.hooksPath', '/dev/null');
   start = commit('a.txt', 'one\n', 'first (#1)');
   git('checkout', '-q', '-b', 'feat');
   commit('b.txt', 'branch\n', 'the branch');
@@ -38,7 +40,7 @@ beforeAll(() => {
   git('checkout', '-q', 'develop');
   git('update-ref', 'refs/remotes/origin/develop', start);
   mkdirSync(plain);
-});
+}, 60_000);
 
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
