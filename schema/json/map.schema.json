@@ -748,6 +748,16 @@
             "type": "string"
           }
         },
+        "levels": {
+          "minItems": 8,
+          "description": "The height layer beside the ground layer (STYLE section 6): one digit 0 to 9 per tile, integers only. Absent: every tile is level 0.",
+          "type": "array",
+          "items": {
+            "pattern": "^[0-9]+$",
+            "description": "One level digit (0 to 9) per tile, rows like the ground (STYLE section 6).",
+            "type": "string"
+          }
+        },
         "props": {
           "type": "array",
           "items": {
