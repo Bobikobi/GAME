@@ -164,6 +164,13 @@ export function isAction(value: unknown): value is Action {
         && (value.grade as number) >= 0
         && (value.grade as number) <= 4
         && isTile(value.at);
+    case 'search':
+      return hasOnlyKeys(value, ['t', 'spot', 'at']) && typeof value.spot === 'string' && isTile(value.at);
+    case 'take':
+      return hasOnlyKeys(value, ['t', 'spot', 'row', 'at'])
+        && typeof value.spot === 'string'
+        && (value.row === undefined || (Number.isSafeInteger(value.row) && (value.row as number) >= 0))
+        && isTile(value.at);
     case 'craft':
       return hasOnlyKeys(value, ['t', 'recipe', 'at']) && typeof value.recipe === 'string' && isTile(value.at);
     case 'eat':
