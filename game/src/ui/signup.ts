@@ -12,10 +12,15 @@ import { app } from '../app';
 import { button, h } from './dom';
 import type { Layer, UI } from './ui';
 
-/** The server this build signs in to; absent in the demo build. */
+/**
+ * The server this build signs in to; undefined only in the demo build. An empty value names the game's
+ * own origin (the build is served next to the server), so '' is a server, not an absence: the wire calls
+ * go to the same origin the page came from.
+ */
 export function gameServer(): string | undefined {
   const base = (import.meta.env.VITE_GAME_SERVER as string | undefined)?.trim();
-  return base ? base.replace(/\/+$/, '') : undefined;
+  if (base === undefined) return undefined;
+  return base.replace(/\/+$/, '');
 }
 
 export interface SignupForm {
@@ -64,7 +69,7 @@ async function post(server: string, path: string, json: unknown): Promise<Reply>
 /** Offer the sign-up to a player who has finished the opening: a no-op in the demo build. */
 export function offerSignup(ui: UI): void {
   const server = gameServer();
-  if (!server) return;
+  if (server === undefined) return;
   const layer: Layer = { el: h('div', { class: 'layer panel-layer' }) };
   const box = h('div', { class: 'panel signup', role: 'dialog', 'aria-label': 'Make an account' });
   layer.el.append(box);

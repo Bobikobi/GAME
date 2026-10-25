@@ -63,7 +63,7 @@ Paused since 10.10: player houses, plots and their draws (3.2, 3.3, what a house
 - The camp (S2, answered 9.10): a camp is safe while its fire burns. A night costs `wood_per_night` times the area's danger level `d` in wood, put on the fire before dark or through the night, and none at `d` 0: the opening's camp stands there, keeps its chest and workshop, and plays as today.
 - A camp anywhere else outside the town is a fire the player builds (the owner, 19.10; until then a tent the player bought and pitched). It is built from wood on a free tile outside the town, off the slots, and is a safe place while it burns. It is never lit during a chase or inside a predator's round, so a fire is a stay the player plans, never a way out of a hunt (G34). Readings: one fire of one's own stands at a time, and a new one puts the old out; it holds no chest and no bed; nothing bought or made burns less wood (G48), since the owner ruled out gear against hazards.
 - The fire matters only while the player is there: by day it burns for nothing and the camp is safe while it burns, at night it eats wood; away, nothing happens to the camp or its chest. Its level shows as a flame that dims, never as a number, and G31's warning comes before it goes out.
-- In a shared world each player's camp stays the player's own: it takes no plot, and another player stays at it only as a guest, at the price its owner sets and with its owner's approval. A guest with a deal is safe and rests there while its fire burns; without a deal another player's camp is no safe place. The camp reaches `fire_light_tiles` around its fire (DECISIONS.md, the owner's answers of 10.10 afternoon and the entry on the five holes). Every area outside a town is above level 0 there, except the opening's ground, which stays at level 0 as the town's edge, and the night ruins' entrance, which stays at level 0 too: no wood is burned and no fire of one's own is built on either. So every camp beyond the opening's costs wood, and the street stays free to sleep on (10.10).
+- In a shared world each player's camp stays the player's own: it takes no plot, and another player stays at it only as a guest, at the price its owner sets and with its owner's approval. A guest with a deal is safe and rests there while its fire burns; without a deal another player's camp is no safe place. The camp reaches `fire.safe_tiles` around its fire (DECISIONS.md, the owner's answers of 10.10 afternoon and the entry on the five holes). Every area outside a town is above level 0 there, except the opening's ground, which stays at level 0 as the town's edge, and the night ruins' entrance, which stays at level 0 too: no wood is burned and no fire of one's own is built on either. So every camp beyond the opening's costs wood, and the street stays free to sleep on (10.10).
 
 ### 3.5 Danger by area
 
@@ -83,7 +83,7 @@ Paused since 10.10: player houses, plots and their draws (3.2, 3.3, what a house
 - A quest may name a party, `party: { min, max }`. A player may try it alone or short-handed; the chance then falls with each missing member, since the quest is made for a group (for example `base_bp * members / min`).
 - Later, the valley's characters may fill a party. A character joins only when its content carries `companion: { level }`; by default none does. A companion below the quest's level falls by the fall rule of 8.10, goes back to where it lives, and is there again the next day.
 - Guarding a town or a fort is a quest players choose. Nothing decays and nothing is lost when nobody takes it (G28).
-- With combat (stage 8 or a vote): a group may take a quest to hold a place, and a rival group may sign up to contest it. Both sides sign up, and nothing is taken from a player who is away.
+- With combat (after the foundation, DECISIONS 2026-10-19): a group may take a quest to hold a place, and a rival group may sign up to contest it. Both sides sign up, and nothing is taken from a player who is away.
 
 ### 3.8 Notices and the account
 
@@ -93,7 +93,7 @@ Paused since 10.10: player houses, plots and their draws (3.2, 3.3, what a house
 
 ### 3.9 Areas between players (S4, answered 9.10)
 
-- Players compete for places only: plots in a shared town (3.2) and, once combat comes (stage 8 or a vote, G35), areas between players.
+- Players compete for places only: plots in a shared town (3.2) and, once combat comes (after the foundation, DECISIONS 2026-10-19, G35), areas between players.
 - An area between players lies far from the towns and high on the scale (3.6), so a new player does not walk in by chance; a sign at its edge warns before the first step in (G31). Entering is the consent, and whoever does not enter is never hurt there.
 - No player harms another in a town, a camp or a house, at any hour, and nothing is taken from a player who is away; from a hazard, a camp is safe while its fire burns (3.4, 10.10).
 - Its nodes pay more for the risk: the effort weight counts the area's protection level (kernel review 7.2, item 4).
