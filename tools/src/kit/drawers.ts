@@ -15,7 +15,7 @@
  *   local   Stable Diffusion 1.5 with a pixel-art LoRA in a ComfyUI on your own machine, free and
  *           unlimited, image to image from the reference. On the laptop's CPU about 90-300 s per
  *           image by size and steps (21.10: 512 px, 20 steps, 290 s); seconds on a GPU. Settings in
- *           the environment (`COMFYUI_URL`, `LOCAL_DENOISE`, `LOCAL_STEPS` 20, `LOCAL_SIZE` 512; 384/12 is 94 s but speckled); the prompt
+ *           the environment (`COMFYUI_URL`, `LOCAL_DENOISE`, `LOCAL_STEPS` 20, `LOCAL_SIZE` 512; 384/12 is 94 s but speckled; `LOCAL_SEED` 7); the prompt
  *           is the compact one, since the model reads about 75 tokens.
  *   kaggle  Stable Diffusion with `diffusers` in a private Kaggle kernel on its free GPU, driven by the `kaggle`
  *           CLI: SD 1.5 with the local route's LoRA (`KAGGLE_MODEL` sd15, the default) or SDXL with a pixel-art
@@ -186,6 +186,7 @@ export const LOCAL_DEFAULTS = {
   steps: 20,
   size: 512,
   cfg: 7,
+  seed: 7,
 } as const;
 
 /** The negative prompt of the local route: what Stable Diffusion drifts to and a sprite never is. */
@@ -210,9 +211,10 @@ export interface LocalSettings {
   steps: number;
   size: number;
   cfg: number;
+  seed: number;
 }
 
-/** The local route's settings from the environment (`COMFYUI_URL`, `LOCAL_DENOISE`, `LOCAL_STEPS`, `LOCAL_SIZE`, `LOCAL_LORA`, `LOCAL_CHECKPOINT`), else the defaults. */
+/** The local route's settings from the environment (`COMFYUI_URL`, `LOCAL_DENOISE`, `LOCAL_STEPS`, `LOCAL_SIZE`, `LOCAL_SEED`, `LOCAL_LORA`, `LOCAL_CHECKPOINT`), else the defaults. */
 /** A positive number from the environment, else the fallback; anything else is refused by name. */
 function envNumber(env: NodeJS.ProcessEnv, name: string, fallback: number): number {
   const raw = env[name];
@@ -221,7 +223,6 @@ function envNumber(env: NodeJS.ProcessEnv, name: string, fallback: number): numb
   if (!Number.isFinite(value) || value <= 0) throw new Error(`${name} takes a positive number, not ${JSON.stringify(raw)}`);
   return value;
 }
-
 export function localSettings(env: NodeJS.ProcessEnv = process.env): LocalSettings {
   const num = (name: string, fallback: number): number => envNumber(env, name, fallback);
   return {
@@ -233,6 +234,7 @@ export function localSettings(env: NodeJS.ProcessEnv = process.env): LocalSettin
     steps: Math.round(num('LOCAL_STEPS', LOCAL_DEFAULTS.steps)),
     size: Math.round(num('LOCAL_SIZE', LOCAL_DEFAULTS.size)),
     cfg: num('LOCAL_CFG', LOCAL_DEFAULTS.cfg),
+    seed: Math.round(num('LOCAL_SEED', LOCAL_DEFAULTS.seed)),
   };
 }
 
@@ -280,7 +282,7 @@ function curl(args: readonly string[], timeoutSeconds: number): { status: number
 }
 
 /**
- * One image through the local ComfyUI (`~/ceos-server/scripts/comfyui.sh start` on the laptop that
+ * One image through the local ComfyUI (start the local ComfyUI on the laptop that
  * holds it; any machine with ComfyUI on `COMFYUI_URL`): upload the reference, queue the workflow,
  * poll its history, fetch the picture. The prompt is the compact one (`localPrompt`), not the agent's.
  */
@@ -308,7 +310,7 @@ export function drawWithLocal(call: DrawCall & { seed?: number }): Drawn {
   } catch {
     return done(0, null, `upload answered: ${up.stdout.slice(0, 160)}`);
   }
-  const seed = call.seed ?? 7;
+  const seed = call.seed ?? settings.seed;
   const bodyPath = join(call.out, 'work', `${call.name}-${call.stamp}.workflow.json`);
   writeFileSync(bodyPath, JSON.stringify({ prompt: localWorkflow(uploaded, call.prompt, seed, settings), client_id: `kitgen-${call.stamp}` }));
   lines.push(`workflow ${bodyPath.replace(`${call.out}/`, '')}`, `seed ${seed}`);

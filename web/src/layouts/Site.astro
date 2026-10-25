@@ -2,7 +2,7 @@
 // The frame of every page (docs/team/GRUNT.md, item 4): the wordmark and the links, the page, and a footer that
 // says what was built, from which commit and when.
 import '../styles/site.css';
-import { FOOT, NAV, dateTime, fromFixture, hub, type Section } from '../data/site';
+import { FOOT_COLS, NAV, dateTime, fromFixture, hub, type Section } from '../data/site';
 
 interface Props {
   title: string;
@@ -61,7 +61,7 @@ const current = (s?: Section) => (s && s === section ? 'page' : undefined);
     <link rel="preload" href="/fonts/atkinson-hyperlegible-next/atkinson-hyperlegible-next-latin.woff2" as="font" type="font/woff2" crossorigin />
     <slot name="head" />
   </head>
-  <body>
+  <body data-section={section}>
     <a class="skip" href="#main">Skip to the content</a>
     <header class="top">
       <div class="wrap bar">
@@ -83,16 +83,31 @@ const current = (s?: Section) => (s && s === section ? 'page' : undefined);
     </main>
 
     <footer class="foot">
-      <div class="wrap">
-        <p>
-          Openfold is a demo, built in the open.
-          <span class="build">
-            Kernel {source.kernel_version}, content {source.content_tag}, commit {source.sha}, built {dateTime(built_at)} UTC{fromFixture && ' (fixture)'}.
-          </span>
+      <div class="wrap foot-grid">
+        <div class="foot-brand">
+          <a class="wordmark" href="/">Openfold</a>
+          <p>A free pixel-art valley in your browser, written by its players. Every place and quest carries its builder's name.</p>
+        </div>
+        {
+          FOOT_COLS.map((c) => (
+            <nav aria-label={c.title}>
+              <h2>{c.title}</h2>
+              <ul>
+                {c.links.map((l) => (
+                  <li>
+                    <a href={l.href}>{l.label}</a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ))
+        }
+      </div>
+      <div class="wrap foot-legal">
+        <p>&copy; 2026 Openfold. Free to play, built in the open by its builders.</p>
+        <p class="build">
+          Kernel {source.kernel_version}, content {source.content_tag}, commit {source.sha}, built {dateTime(built_at)} UTC{fromFixture && ' (fixture)'}.
         </p>
-        <nav aria-label="Footer">
-          {FOOT.map((l) => <a href={l.href}>{l.label}</a>)}
-        </nav>
       </div>
     </footer>
   </body>

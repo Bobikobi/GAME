@@ -33,7 +33,7 @@ do.
 | Hub data builder | `tools/src/hub/` (new) | tsx, reuses `tools/src/loop/github.ts`, `board.ts`, `load.ts` | writes `web/public/api/hub-data.json` |
 | Document schema | `schema/src/hub.ts` (this branch) | TypeBox, emitted to `schema/json/hub-data.schema.json` | `/api/schema/` |
 | Creator tools | `mcp/` (this branch: definitions; GRUNT: the server) | TypeBox types, later `@modelcontextprotocol/sdk`, stdio | the creator's machine |
-| Stage-1 service (spec S-1) | `web/src/pages/api/s1/` (GRUNT, after Elad's yes) | Astro server endpoints on Vercel Functions + Upstash Redis | `/api/s1/*` |
+| Stage-1 service (spec S-1) | `web/src/pages/api/s1/` | Astro server endpoints on Vercel Functions + Upstash Redis | `/api/s1/*` |
 | Tokens | `design/tokens.css` (this branch) | CSS custom properties | imported by both apps |
 
 ### Why Astro for `web/`
@@ -226,8 +226,8 @@ Upstash Redis from the Vercel Marketplace (free tier) as the store.
 - Stage 2a inherits the endpoint contract and moves the keys into its own store;
   the client does not change.
 - Stage 2a is designed only when this service is live and has numbers, and runs
-  the same way: functions on the site's host with a managed database, no machine
-  to operate (owner, 8.10; DECISIONS.md). The spec's dedicated server waits for
+  the same way: the API and the database run as containers on the owner's box
+  (owner, 18.10; DECISIONS 2026-10-18, "Accounts and a server: the owner's answers"). The spec's dedicated server waits for
   stage 7, the first stage with a live connection per player.
 
 Rejected: the analytics vendor's custom events (reports do not fit, and the
@@ -295,8 +295,8 @@ import the sheet; until then the test keeps the copies equal.
 
 ### 5.2 Type
 
-The game keeps Pixelify Sans everywhere inside it (DECISIONS.md, pixel font
-everywhere); the site does not wear it (DECISIONS.md 2026-10-10, "The site
+The game sets titles and numbers in Pixelify Sans and its body, buttons, item facts and
+dialogue in Atkinson Hyperlegible Next (DECISIONS 2026-10-20, Field Kit); the site does not wear it (DECISIONS.md 2026-10-10, "The site
 leaves the pixel face and the shadow frame"). Platypi is the site's display
 face, for what is signed or counted: the wordmark, headings, door names,
 builder handles, points. Atkinson Hyperlegible Next is its reading face, for
