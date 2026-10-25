@@ -2699,3 +2699,9 @@ The owner, 23.10: picked v1 of three key-art stills ("perfect"), asked for it to
 **Every other page is night too** (the owner, after the preview): the Developers area, the boards, the rules, a builder's page, the API page and the guide wear the home's night look, an ink ground with paper words. The site's rules now read role tokens (`--bg`, `--fg`, `--fg2`, `--muted`, `--line`, `--rule`, `--raise`, `--accent` in web/src/styles/site.css), each one a palette colour, so no page carries a one-off. Still no gradients and no radius off the home's key art; text keeps 4.5:1 or better. The phone home keeps its day look until it gets its own pass.
 
 **Retry when:** the video costs a mid-range laptop visible frames or a slow line its first screen, or the Developers and Leaderboard pages are restyled in the same line (then the frame's exception widens in its own entry). Model: claude-opus-5-5.
+
+## 2026-10-25 ✅ What was drawn before the rich wave is redrawn to match it, the shop interior first
+
+The owner, 25.10: the food and medicine shop interior keeps its approved frame (2026-10-11: warm planks, a runner to the counter, the trade on the back wall), but it was drawn before the rich wave (2026-10-23) and would not sit beside it. Everything drawn before the rich wave is renewed so the game reads as one hand: redrawn in the rich wave's style where the frame stands, made again where it does not. The shop interior branch is not revived as it is; it waits for its own redraw, and its layout and frame carry over.
+How it runs: an art polish stream after the rich wave, inside the agreed direction (polish, not a new direction), one list of the pre-rich pieces still on screen, the most seen first.
+**Retry when:** the rich wave's style itself is replaced (then the list is redrawn against the new style). Model: claude-opus-5-5.
