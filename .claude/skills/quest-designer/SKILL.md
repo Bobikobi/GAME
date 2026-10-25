@@ -17,6 +17,8 @@ it, and the owner decides what moves (the review below).
    it, every claim has a speaker, every clue fits two readings.
 3. `docs/design/QUEST_PATTERNS.md`: the pattern cards. Every pitch names the card it uses.
 4. `DECISIONS.md` entries whose heading names a quest, a type or the opening.
+5. The story-keeper skill (`.claude/skills/story-keeper`): its questions run on every pitch
+   and on the built file, from the start, not after.
 
 ## The picture
 
@@ -68,9 +70,11 @@ Giver and why they need it: <one line, in the valley's terms>
 The player: <the beats as actions, under 15 seconds each to start>
 Pays: <what it changes> · Card: <pattern card> (<source>)
 Hand: <quests open beside it> · same type beside it: none
+Story: <who speaks of the past and what it leans on in STORY.md or DECISIONS> · story-keeper: clear | open, sent to the manager
 ```
 
-Wait for the pick. An open brief ("make it interesting") still gets three pitches that all
+A pitch whose story-keeper line is open goes to the manager with the open rows before the
+pitches reach the owner; the owner picks only among pitches whose story holds. Wait for the pick. An open brief ("make it interesting") still gets three pitches that all
 keep the rules, never a free hand.
 
 ## Build and prove
@@ -80,6 +84,9 @@ keep the rules, never a free hand.
 2. `pnpm check`: no error line; read any `!` warning.
 3. `pnpm quests`: the hand gains no new pair of one type. If it does, change the type, the
    requires links or an item order, not the report.
+3a. The story keeper on the built file: every line a player reads, against its questions.
+   Its verdict is the pull request's `Story review:` line; a finding that needs an answer
+   goes to the manager before the pull request, and a fix that adds a fact waits for it.
 4. A riddle or a chain of three or more: a puzzle dependency chart (TOOLKIT.md, Puzzlon)
    pasted into the pull request.
 5. The critic: hand the file and `GAME_RULES.md` section 7 to Codex
