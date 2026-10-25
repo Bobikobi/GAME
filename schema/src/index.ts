@@ -343,10 +343,10 @@ export const TreasureBody = Type.Object(
   { additionalProperties: false },
 );
 
-const RecipeLevel = Int(1, 20, 'Level required in the profession that gates the recipe. It sits inside the level band of the recipe\'s tier.');
+const RecipeLevel = Int(1, 20, 'The recipe\'s level in its profession: each missing level takes craft_level_step_bp off the chance (no wall). It sits inside the level band of the recipe\'s tier.');
 const RecipeProfession = {
   ...Id,
-  description: 'The profession that gates this recipe and that it trains. Left out: the profession that works its station.',
+  description: 'The profession that trains this recipe and sets its chance. Left out: the profession that works its station.',
 };
 const RecipeMiss = Type.Object(
   {
@@ -1041,7 +1041,7 @@ export const LightParams = Type.Object(
       minItems: 2,
       maxItems: 12,
       description:
-        'The hours the valley is washed in a colour (ART_SYSTEM section 2): cool before sunrise, none at noon, warm in the late afternoon, dusk at 19:00, the night after that. The scene multiplies by the wash between keys, in whole percent.',
+        'The hours the valley is washed in a colour (ART_SYSTEM section 2). Today\'s curve is the gold #eda83a at 40% around 05:30 and 20:00 and none at noon; the cool and dusk hour tints land with the L2 pick. The scene multiplies by the wash between keys, in whole percent.',
     }),
     sun: Type.Optional(
       Type.Object(
@@ -1271,7 +1271,7 @@ export const KitBody = Type.Object(
               minimum: 0.1,
               maximum: 40,
               description:
-                'The sprite\'s height in characters, one decimal (NATURE section 1): a person is 1.0, a house 3.5. The check warns when a kind in NATURE section 1 or STYLE 1b falls under its floor. Left out when the sprite has no true size.',
+                'The sprite\'s height in characters (NATURE section 1): a person is 1.0, a house 3.5. The check warns when a kind in NATURE section 1 or STYLE 1b falls under its floor. Left out when the sprite has no true size.',
             }),
           ),
           source: Type.Optional(
