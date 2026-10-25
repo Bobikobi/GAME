@@ -2,6 +2,36 @@
 
 One note per tag on `main`, newest first (docs/team/PLATFORM.md section 2).
 
+## v0.1.8 - 2026-10-23
+
+What players notice
+- A new game starts with a race: human, elf or skeleton, each a card with its six attributes. Where you wake is drawn for you from three places (the north meadow, the west bank or the slid bank), the same for every race, and the tool of that place lies on the ground by you to pick up. For now each race is drawn with one of the old figures; their own art comes later.
+- A game saved before this update goes on: the explorer is now a human, the forager an elf and the digger a skeleton, with everything they carried and did. One line says the valley was updated since your last visit.
+- Outside the town you can build a fire of your own from two logs. While it burns, it and the ring around it are safe ground, and a hunt ends there; its flame shows how much wood is left. It cannot be built in the town, during a chase or where a wolf keeps watch, and a refusal keeps your logs. The long night is now kept at your own fire; Maru's hearth is still there for anyone to feed.
+- The afternoon has two new tasks. Pell asks you to dig the collapsed hall south of the ruin gate for a bowl that came out whole, and pays a reed basket that picks faster. Then Maru asks for a herb stew with the grove's mushrooms, which now open at 17:00, pays two dry branches and opens the long night. A few of their lines differ by race.
+- The opening comes in a calmer order: in town Maru and Pell each offer one task, the coin under the lantern waits for Maru's bells, and the arch at night comes alone, before the tangle and the south bank. The long night pays a bandage, and lines that told the past now say what is there or who says it.
+- The bag is now the Field Kit: one window with Bag, Outfit, Skills, Shop and Journal, in a type that is easier to read. Outfit shows your character and every worn place; Skills shows your real attributes and levels. On Shop you can lay out a stall of six places with a quantity and a price each, and the save keeps it. Nothing sells yet.
+- Menu has a Map: it draws only the ground you have walked and names only the places you have stood in. On a computer a small chart sits in the corner. At the town's empty corner, beside the trader, you can place your stall marker and lift it again.
+- The valley answers small things. A berry drops under a bush left full for a while, birds lift over a find you have not seen yet, and fish ring the water at dusk. By day a cloud's shade drifts across the ground, and fog banks gather before dawn and after dusk; with reduced motion they keep still.
+- Thirty-five items and small props are redrawn at four times the detail, in a deeper palette: among them the berry, the herbs, the axe, the log, the trowel, the basket, the chest, the sign, stumps, fallen logs, mossy rocks and mushrooms.
+
+What creators notice
+- Three races replace the three starters. A `race` record names six attributes that add up to 7, two home attributes, how each world grades it, an outfit of up to three worn pieces and its sprite. A wake pocket (`pocket`, core only) holds the wake tile, its mist and one to three stacks that lie on its ground. The `starter` kind is gone, and a quest's or a dig spot's `starter` field is now `pocket`. Attribute `carry` is now `might`, and `spirit` is new. Format version stays 1.
+- A line may differ by race (`when.race` on a remark or a topic, and a quest's `talk.variants`); the check refuses a quest, spot, shop or recipe gated by race.
+- A new `reaction` record: something on the map makes a node appear, waits its respawn longer or shorter, or shows a cue (`birds_lift`, `fish_rise`). It may hold on the day's weather (`clear`, `rain` or `fog`). The extension template drops a plum below a full bush, and the creator guide has a section on reactions.
+- A quest's `tend` step and the `feed` action may name `fire: "own"`, the player's own fire. Tools gain the kinds `hammer` and `pick`. A map may name its `world` and its `regions`.
+- A kit may declare `ramps`, and a sprite may name the shared ramps of the deeper palette it is drawn in; the check holds each ramp to the ramp rule. A kit sprite may declare its `scale` (its height in characters), and the check warns when it is under its kind's floor. A map body may name its `climate`. The colour count per tile and per phone window is a warning, not an error.
+- `pnpm kit:gen` can draw down three routes, `--drawer codex`, `gemini` or `kaggle`, and ships the rich wave's specs for items and small props.
+
+What changed underneath
+- kernel 0.1.8 (simulation 0.14.0). Saves keep version 2, and the state moves to format 2: a v0.1.7 save loads with each starter mapped to its race and pocket, `carry` read as `might` and `spirit` at 0, and a dug slid bank stays dug. A loaded character keeps its old six attribute points; a new one starts with its race's seven.
+- Races are in the engine before their art: the race figures, the outfit's worn sprites and the 3D models fall back to the old starters', the whole bowl uses the shard's sprite, and `spirit` is defined but no rule reads it yet. World grades are 0 everywhere, because the valley is neutral and no other world is built.
+- Each region gets one weather a day, chosen from the world's seed, and two core reactions read it (mushrooms by a fallen log on a rainy day, reeds back sooner in rain). Rain and fog as weather are not drawn yet.
+- The game server of stage 2a is in the repository: the game API, its database and migrations, sign-in with Google or an email link and an age gate, the opening handed over from the phone, the gold ledger that replays, and boards scored only from a verified log. Players cannot reach any of it yet: the demo plays on the phone's own save, and nothing goes public before the sign-in review.
+- Both game doors talk to one session interface, so the same screens can later run on the server; a screen no longer sees the world's seed.
+- The light is one module with an hour table in `params.json`, and the sun's shear sits beside it; today's look is unchanged.
+- The e2e plays an opening for each wake pocket, the map and the shop's stall draft; CI runs the server's database tests and a simulated player against postgres 16.
+
 ## v0.1.7 - 2026-10-19
 
 What players notice
