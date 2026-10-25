@@ -40,7 +40,7 @@ export interface TreeMemo {
   reveal?: boolean;
   /** the last change came from the keys: the chosen node takes the focus back after the page is drawn again */
   keys?: boolean;
-  cache?: { bundle: Bundle; race: string; tree: TreeLayout };
+  cache?: { schools: Bundle['schools']; race: string; tree: TreeLayout };
 }
 
 /** The words for each effect a node can carry, for the number shown when asked for. */
@@ -69,8 +69,12 @@ const costWords = (n: number) => (n === 1 ? '1 point' : `${n} points`);
 
 type NodeState = 'learned' | 'open' | 'locked';
 
+/** The layout of this player's tree, made again only when the schools or the race change; a new tree drops the old camera. */
 function layoutFor(memo: TreeMemo, b: Bundle, race: string): TreeLayout {
-  if (memo.cache?.bundle !== b || memo.cache.race !== race) memo.cache = { bundle: b, race, tree: layoutTree(b, race) };
+  if (memo.cache?.schools !== b.schools || memo.cache.race !== race) {
+    memo.cache = { schools: b.schools, race, tree: layoutTree(b, race) };
+    memo.cam = undefined;
+  }
   return memo.cache.tree;
 }
 

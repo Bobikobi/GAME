@@ -156,6 +156,8 @@ async function toTown(page: Page, url: string): Promise<void> {
   await page.eval(`(() => {
     const s = window.__game.session, b = window.__game.bundle;
     const sq = b.map.slots.find((x) => x.kind === 'area' && x.tag === 'town');
+    // the session walks from its own pos, so both move (as hud.ts and map.ts do)
+    s.pos = [sq.x + 1, sq.y + 1];
     s.state.player.at = [sq.x + 1, sq.y + 1];
     s.save();
   })()`);
@@ -256,9 +258,13 @@ async function desktop(page: Page, url: string): Promise<void> {
   // the wheel zooms where the pointer is; a drag pans
   const view = await viewBox(page);
   const centre = { x: view.x + view.w / 2, y: view.y + view.h / 2 };
+  // from the whole tree, where the wheel has room to zoom in (the keys above zoomed in on a node)
+  await page.eval(`document.querySelector('.tree-view').focus()`);
+  await key(page, '0');
+  await page.waitFor(`Number(document.querySelector('.tree-view').dataset.zoom) * 1.5 < 2.5`, 'the key 0 to show the whole tree');
   const z0 = Number((await dataset(page)).zoom);
   await page.send('Input.dispatchMouseEvent', { type: 'mouseWheel', x: centre.x, y: centre.y, deltaX: 0, deltaY: -400 });
-  await page.waitFor(`Number(document.querySelector('.tree-view').dataset.zoom) > ${z0 * 1.2}`, 'the wheel to zoom in');
+  await page.waitFor(`Number(document.querySelector('.tree-view').dataset.zoom) > ${z0 * 1.2}`, `the wheel to zoom in from ${z0}`);
   const before = await nodeBox(page, facts.root);
   if (!before) throw new Error('the root left the view on a zoom at the middle');
   await drag(page, false, { x: view.x + 24, y: view.y + 24 }, { x: 160, y: 60 });
