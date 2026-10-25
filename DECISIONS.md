@@ -2590,6 +2590,30 @@ The owner, 22.10: adopted as written (decision 50 of the 51 he adopted that afte
 The owner, 22.10: adopted as written (decision 51 of the 51 he adopted that afternoon).
 **Retry when:** the owner changes his word on it, or the build or a playtest shows it does not hold. Model: claude-opus-5-5; the wording is the adopted line's.
 
+## 2026-10-23 ✅ No way-finding rule anywhere in the game; G69 stays
+
+**No way-finding rule.** This is an open world: whoever sets out for another world explores on their own. The valley map plan's own convention of a landmark every 12 tiles, so a player never loses the way, is dropped for the whole game, the tangle included (its exemption is moot). Landmarks stand where the story or the look puts them, never by a spacing count. **G69 stays:** paths wind, no straight run over 8 tiles (12 on a bridge); it is a look rule, not a way-finding rule. `pnpm check` now measures it on every map that carries a plan: each planned path's runs and every straight row or column of path letters on the ground.
+The owner, 23.10.
+**Retry when:** the owner changes his word on it. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The first night is held by size, not by a rule (G71)
+
+**The first night is unavoidable by size.** No rule forbids leaving the first town; the ground is simply too large to cross before dusk, so the first night's quest is a must by geometry. No gate, flag or quest lock enforces it; the region gates of decision 25 stay what they are, physical obstacles a quest clears.
+As built: `tools/src/mapplan.ts` (`firstNight`) walks four ways from every wake tile of the pool, the valley's own mends made (the bridge, the arch) and every gate to another world shut, to the nearest tile of another world (a map region with its own `world`) or the map's edge. The walk at `walk_step_ms` a step must take longer than the daylight left at waking (tick 0, noon, to the first dusk at 20:00: 400 s with today's `day_length_ms`), or `pnpm check` fails the map. It also measures the walk to the nearest shut gate, which is where a region quest would open the way. Tests: `tools/test/mapplan.test.ts`.
+The owner, 23.10.
+**Retry when:** a region quest can be finished before the first dusk (then the walk to that gate is what holds the night, and the check must count the gate open), or the clock or the walk speed changes. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The map plan block in the map format
+
+**A map may carry its plan.** Additive, `format` stays 1: `heights` (a digit row per ground row, read by the check only until the kernel walks levels; kit schema answer 6 of 22.10), a prop's `crossing` (steps or a ramp, G68), and `plan` with `regions[]` (cells, purpose stop or passage, height, tags, cover per mille, and `opens_by`: `wake`, the quest that opens it (decision 25), or left out for ground nobody walks), `paths[]` (corner tiles, G69), `routes[]` (who walks where and at which hours), `rests[]` and `wakes[]` (the spawn pool: each wake pocket with its first task; the wake tile and the tools stay in the pocket files of 22.10). The kernel and the clients never read the plan; an `opens_by` may name a region quest before it is written (its gate stays shut ground until then).
+**Retry when:** the cover tool or the level walk lands (they read the same block). Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ G71 measures the road beyond each exit, every gate open
+
+**The gate never holds the first night; the road beyond it does.** The gates stay where the story wants them, but beyond every exit of the first region a road runs long enough that, with every gate open, no wake reaches the next region's ground before the first dusk. This replaces the shut-gate measure of the entry above.
+As built: `plan.exits[]` (additive): `id`, the gate `slot` or the `at` tile of a way with no slot (a jetty), `to` (a plan region) and `min_road_steps`. `firstNight` walks with every listed gate open; reaching another world or the edge by any way that is not a listed exit before dusk fails the map. `exitRoads` names each exit's least road: the daylight in steps less the fastest wake's steps to the gate, plus `ROAD_MARGIN` (10); a smaller `min_road_steps` fails, and so does a stitched map whose next world's ground starts closer beyond the gate. Tests: `tools/test/mapplan.test.ts`.
+The owner, 23.10.
+**Retry when:** the clock or the walk speed changes (the numbers move), or a way to travel faster than walking lands. Model: claude-opus-5-5.
 ## 2026-10-23 ✅ The rich wave: items at a full tile, best of three by eye
 
 **Items are drawn at a full tile, 64x64**, as today's items fill their 16x16 tile, so every icon in the bag is one size. **Every free spec of the wave runs best of three and the gallery is judged by eye**, as the rich experiment did: three parallel `kit:gen` runs, each with its own `--out`; the picks go into the kit with their ramps.
@@ -2883,6 +2907,13 @@ The owner, 23.10 in chat: a player far from town who wants to stay there lights 
 The owner, 23.10 in chat: a player who logs out with no fire, tent or inn leaves the character in the world, asleep and vulnerable where it logged out, until the player returns, as sleepers do in Rust. A campfire, a pitched tent or the inn are the safe places to log out.
 **Supersedes in part:** "nothing is taken from a player who is away" (10.10) and the hunters' board's "nothing from a player who is away" for a sleeper out in the open. What can harm a sleeper (foes, hazards, players in the marked zone) is the combat and presence waves' to write.
 **Retry when:** sleepers are hunted as an easy kill so often that players stop going far out (then the safe ways to log out get cheaper, never the rule). Model: claude-opus-5-5.
+## 2026-10-23 ✅ The kit's theme "B, canvas", and Jersey 15 as the game's one face
+
+The Field Kit (Bag, Outfit, Skills, Shop) wears theme B: the oiled-wood frame, a mid-tone canvas inset with dark ink on it, the tabs and buttons as dark wood plates with a brass inner line, a paper card, dark sockets for the cells, and brass for what is picked or can be taken now. The parts are reusable classes and tokens in `game/src/ui/theme.css` (`.kit-frame`, `.kit-inset`, `.kit-plate`, `.kit-tab`, `.kit-btn`, `.kit-paper`, `.kit-socket`, `.kit-node`); the Field Kit's rules in `kit.css` name no colour of their own. The game's face is Jersey 15 (SIL Open Font License 1.1), self-hosted with its licence, for the titles, the numbers and the reading text alike; the text sizes are 18 and 27 px, where a font pixel lands on whole device pixels on a 3x phone. Behaviour is unchanged.
+The stills were snapped to the core palette: the canvas #b59468 to #c99a5e, the card #d9bd8a to #ebd3a2, the cloth and wood darks to #3d2618 and #6e4226, the brass to the fire ramp #eda83a and #b8661f. Every text reads at 4.5:1 or more on its ground (ink on canvas 6.7, on paper 11.65; cream on a plate 9.65; brass on a plate 6.89; ink on brass 8.32); `tools/test/ui-theme.test.ts` holds the palette, the ratios and the face.
+Why: the owner chose theme B, polished, and Jersey 15 everywhere in the game (23.10), with colours only from the repo palette.
+Cost: the site keeps its own faces (`design/tokens.css` stays Pixelify); the HUD and the dialogs read in Jersey 15 at the sizes they had, and the Pixelify and Atkinson faces stay loaded because the map's labels still use Atkinson. No scrims, gradients or rounded corners in the kit.
+**Retry when:** a playtest finds a text too small or a page too dark, or the owner changes the face. Model: claude-opus-5-5.
 ## 2026-10-23 ✅ The desktop home is painted key art that lives
 
 **From 1024px the home page opens on the owner's key art in motion:** the valley at dawn with the three opening characters (the elf, the human, the skeleton), first drawn by GPT image from their kit sprites, then brought to life as a video the owner generated and picked (`web/public/keyart/hero.webm` and `hero.mp4`, 1920x1080, 24 fps, a 17 s ping-pong, so its loop has no seam; `hero-poster.jpg` and `.webp` are its first frame). The video carries the characters' auras (the elf white, the human red, the skeleton a thin black haze) and their small motions. It plays muted and looped, drawn with cover from the bottom; under reduced motion it stays still and the poster shows; it pauses while the tab is hidden. The phone keeps its own first screen and fetches neither the video nor the still.
@@ -2919,6 +2950,11 @@ The quest designer reviewed the branch of 17.10 (feat/night-ruins, never merged)
 Also from the review: the inscription keeps one line and the belief readings move into people's mouths; two order fixes (the yard quest requires the arch; the gamble pays something other than logs). The map rows are redrawn by the hand-made first map (NEXT 19), so the layout carries over as a plan, not as tiles. A fresh branch from develop carries the content, the bell and walk-out code and the tests; the old branch stays as it is until then.
 **Retry when:** the first hand-made map lands, or the owner decides the bell-rope question. Model: claude-opus-5-5.
 
+## 2026-10-25 ✅ One height layer: the map plan reads levels, not heights
+
+The map plan block (#292) and the ring schema (#321) each added a per-tile digit layer to the map, `heights` and `levels`, built in parallel for the same thing (STYLE section 6, G68). One concept stays: `levels`, the name develop already shares with chunks and stamps, with develop's description. The plan's region `height` is now read against `levels`, a prop's `crossing` moves onto the shared prop of maps, chunks and stamps, and the map check drops its own row check, since the assembler already checks the shape of `levels` against the ground. The plan block itself is unchanged. Why: two names for one layer would let a map carry two heights that disagree, and every reader would have to pick one. The manager's decision, 25.10.
+**Retry when:** a map needs a second per-tile number that is not the walking level (a water depth, a snow line); it gets its own name then, never `heights`. Model: claude-opus-5-5.
+## 2026-10-25 ✅ The forager wakes to a returner's basket, and carving a name on the stone is choosing the player's name
 ## 2026-10-25 ⏸ The forager wakes to a returner's basket, and carving a name on the stone is choosing the player's name
 
 Superseded the same day by "A bell calls every new returner to the stone": a found trace that one player keeps leaves nothing for the next.
