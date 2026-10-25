@@ -618,7 +618,7 @@ b) The client and the content, branch `feat/fire-anywhere`, after (a) is in `dev
 
 ## 22. Free movement: the body walks freely, the world and the kernel stay on tiles
 
-Status: building - free-walk
+Status: built - develop, commit b1fe4f8b (pull request 280, merged 24.10)
 
 The owner, 18.10 (DECISIONS 2026-10-18, the entry on free movement) and 21.10: "free movement now, but graphics come first for me". So this stream starts now, and it takes no builder, review or machine time from the art and light streams (the ladder and #240, the cast shadow pass #256, the 64 px waves): when both want the machine, the art's job runs first. Read DECISIONS 2026-10-07 "Grid movement", the 18.10 entry, [GAP_DIMRAETH_DRAKANTOS.md](../design/GAP_DIMRAETH_DRAKANTOS.md) section 5, G47 and G56 first.
 
