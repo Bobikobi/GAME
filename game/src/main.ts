@@ -10,9 +10,12 @@ import { BootScene } from './scenes/boot';
 import { WorldScene } from './scenes/world';
 import { UI } from './ui/ui';
 import { bindDeviceCanvas, firstSize } from './view';
+import { registerCutout } from './demo/cutout';
 import './style.css';
 
 app.bundle = raw as unknown as Bundle;
+// demo only: the cut-out cast sheets (off unless ?cutout=1 or the demo build)
+registerCutout(app.bundle);
 app.controls = new Controls();
 app.ui = new UI(document.getElementById('ui')!);
 app.sound = sound;

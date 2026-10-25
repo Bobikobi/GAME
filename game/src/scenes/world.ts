@@ -71,6 +71,7 @@ import { peekOnStep, type Tile } from '../peek';
 import { MazePeek } from './peek';
 import { hintDistance, lanternNight, nodeAction } from '../text';
 import type { WorkKind } from '../ui/ui';
+import { CUTOUT, CutoutDemo } from '../demo/cutout';
 import { type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, treasureKind } from '../work';
 import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep } from '../walking';
 import { GroundChunks } from '../groundchunks';
@@ -377,6 +378,8 @@ export class WorldScene extends Phaser.Scene {
   readonly body = new Walker();
   /** what the body is drawn facing: one of eight, leaning on the four-way facing the faced tile is read from */
   private look: Facing8 = 'down';
+  /** demo only: the cut-out cast as the player's look (null unless ?cutout=1 or the demo build) */
+  private readonly demo = CUTOUT ? new CutoutDemo() : null;
   private busyFrom = 0;
   private busyMs = 0;
   private work: { node: string; kind: WorkKind } | null = null;
@@ -1976,6 +1979,8 @@ export class WorldScene extends Phaser.Scene {
     this.drawBusy(s, time);
     this.updatePrompt(s);
     this.haunt(s, time);
+    this.demo?.apply(this.player, { moving: this.body.moving, falling: this.falling, facing: s.facing, look: this.lookOf(s),
+      race: s.state.player.race, lookIndex: s.state.player.look ?? 0, work: this.auto?.kind, now: time });
   }
 
   /**

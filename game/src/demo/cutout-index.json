@@ -1,0 +1,1734 @@
+{
+ "cell": [
+  128,
+  128
+ ],
+ "feet": [
+  64,
+  118
+ ],
+ "columns": 16,
+ "bodies": {
+  "human_man": {
+   "url": "demo-cutout/human_man.png",
+   "frames": 419,
+   "strips": {
+    "down_idle": [
+     0,
+     4
+    ],
+    "down_walk": [
+     4,
+     8
+    ],
+    "down_idle_torch": [
+     12,
+     4
+    ],
+    "down_walk_torch": [
+     16,
+     8
+    ],
+    "down_idle_lantern": [
+     24,
+     4
+    ],
+    "down_walk_lantern": [
+     28,
+     8
+    ],
+    "down_idle_carry": [
+     36,
+     4
+    ],
+    "down_walk_carry": [
+     40,
+     8
+    ],
+    "down_fish_cast": [
+     48,
+     6
+    ],
+    "down_fish_wait": [
+     54,
+     4
+    ],
+    "down_fish_bite": [
+     58,
+     3
+    ],
+    "down_fish_reel": [
+     61,
+     6
+    ],
+    "down_eat": [
+     67,
+     6
+    ],
+    "down_kindle": [
+     73,
+     6
+    ],
+    "down_sit": [
+     79,
+     4
+    ],
+    "down_sleep": [
+     83,
+     4
+    ],
+    "down_talk": [
+     87,
+     4
+    ],
+    "down_fell": [
+     91,
+     6
+    ],
+    "down_mine": [
+     97,
+     6
+    ],
+    "down_dig": [
+     103,
+     6
+    ],
+    "down_left_idle": [
+     109,
+     4
+    ],
+    "down_left_walk": [
+     113,
+     8
+    ],
+    "down_left_idle_torch": [
+     121,
+     4
+    ],
+    "down_left_walk_torch": [
+     125,
+     8
+    ],
+    "down_left_idle_lantern": [
+     133,
+     4
+    ],
+    "down_left_walk_lantern": [
+     137,
+     8
+    ],
+    "down_left_idle_carry": [
+     145,
+     4
+    ],
+    "down_left_walk_carry": [
+     149,
+     8
+    ],
+    "left_idle": [
+     157,
+     4
+    ],
+    "left_walk": [
+     161,
+     8
+    ],
+    "left_idle_torch": [
+     169,
+     4
+    ],
+    "left_walk_torch": [
+     173,
+     8
+    ],
+    "left_idle_lantern": [
+     181,
+     4
+    ],
+    "left_walk_lantern": [
+     185,
+     8
+    ],
+    "left_idle_carry": [
+     193,
+     4
+    ],
+    "left_walk_carry": [
+     197,
+     8
+    ],
+    "left_fish_cast": [
+     205,
+     6
+    ],
+    "left_fish_wait": [
+     211,
+     4
+    ],
+    "left_fish_bite": [
+     215,
+     3
+    ],
+    "left_fish_reel": [
+     218,
+     6
+    ],
+    "left_eat": [
+     224,
+     6
+    ],
+    "left_kindle": [
+     230,
+     6
+    ],
+    "left_sit": [
+     236,
+     4
+    ],
+    "left_sleep": [
+     240,
+     4
+    ],
+    "left_talk": [
+     244,
+     4
+    ],
+    "left_fell": [
+     248,
+     6
+    ],
+    "left_mine": [
+     254,
+     6
+    ],
+    "left_dig": [
+     260,
+     6
+    ],
+    "up_left_idle": [
+     266,
+     4
+    ],
+    "up_left_walk": [
+     270,
+     8
+    ],
+    "up_left_idle_torch": [
+     278,
+     4
+    ],
+    "up_left_walk_torch": [
+     282,
+     8
+    ],
+    "up_left_idle_lantern": [
+     290,
+     4
+    ],
+    "up_left_walk_lantern": [
+     294,
+     8
+    ],
+    "up_left_idle_carry": [
+     302,
+     4
+    ],
+    "up_left_walk_carry": [
+     306,
+     8
+    ],
+    "up_idle": [
+     314,
+     4
+    ],
+    "up_walk": [
+     318,
+     8
+    ],
+    "up_idle_torch": [
+     326,
+     4
+    ],
+    "up_walk_torch": [
+     330,
+     8
+    ],
+    "up_idle_lantern": [
+     338,
+     4
+    ],
+    "up_walk_lantern": [
+     342,
+     8
+    ],
+    "up_idle_carry": [
+     350,
+     4
+    ],
+    "up_walk_carry": [
+     354,
+     8
+    ],
+    "up_fish_cast": [
+     362,
+     6
+    ],
+    "up_fish_wait": [
+     368,
+     4
+    ],
+    "up_fish_bite": [
+     372,
+     3
+    ],
+    "up_fish_reel": [
+     375,
+     6
+    ],
+    "up_eat": [
+     381,
+     6
+    ],
+    "up_kindle": [
+     387,
+     6
+    ],
+    "up_sit": [
+     393,
+     4
+    ],
+    "up_talk": [
+     397,
+     4
+    ],
+    "up_fell": [
+     401,
+     6
+    ],
+    "up_mine": [
+     407,
+     6
+    ],
+    "up_dig": [
+     413,
+     6
+    ]
+   }
+  },
+  "human_woman": {
+   "url": "demo-cutout/human_woman.png",
+   "frames": 419,
+   "strips": {
+    "down_idle": [
+     0,
+     4
+    ],
+    "down_walk": [
+     4,
+     8
+    ],
+    "down_idle_torch": [
+     12,
+     4
+    ],
+    "down_walk_torch": [
+     16,
+     8
+    ],
+    "down_idle_lantern": [
+     24,
+     4
+    ],
+    "down_walk_lantern": [
+     28,
+     8
+    ],
+    "down_idle_carry": [
+     36,
+     4
+    ],
+    "down_walk_carry": [
+     40,
+     8
+    ],
+    "down_fish_cast": [
+     48,
+     6
+    ],
+    "down_fish_wait": [
+     54,
+     4
+    ],
+    "down_fish_bite": [
+     58,
+     3
+    ],
+    "down_fish_reel": [
+     61,
+     6
+    ],
+    "down_eat": [
+     67,
+     6
+    ],
+    "down_kindle": [
+     73,
+     6
+    ],
+    "down_sit": [
+     79,
+     4
+    ],
+    "down_sleep": [
+     83,
+     4
+    ],
+    "down_talk": [
+     87,
+     4
+    ],
+    "down_fell": [
+     91,
+     6
+    ],
+    "down_mine": [
+     97,
+     6
+    ],
+    "down_dig": [
+     103,
+     6
+    ],
+    "down_left_idle": [
+     109,
+     4
+    ],
+    "down_left_walk": [
+     113,
+     8
+    ],
+    "down_left_idle_torch": [
+     121,
+     4
+    ],
+    "down_left_walk_torch": [
+     125,
+     8
+    ],
+    "down_left_idle_lantern": [
+     133,
+     4
+    ],
+    "down_left_walk_lantern": [
+     137,
+     8
+    ],
+    "down_left_idle_carry": [
+     145,
+     4
+    ],
+    "down_left_walk_carry": [
+     149,
+     8
+    ],
+    "left_idle": [
+     157,
+     4
+    ],
+    "left_walk": [
+     161,
+     8
+    ],
+    "left_idle_torch": [
+     169,
+     4
+    ],
+    "left_walk_torch": [
+     173,
+     8
+    ],
+    "left_idle_lantern": [
+     181,
+     4
+    ],
+    "left_walk_lantern": [
+     185,
+     8
+    ],
+    "left_idle_carry": [
+     193,
+     4
+    ],
+    "left_walk_carry": [
+     197,
+     8
+    ],
+    "left_fish_cast": [
+     205,
+     6
+    ],
+    "left_fish_wait": [
+     211,
+     4
+    ],
+    "left_fish_bite": [
+     215,
+     3
+    ],
+    "left_fish_reel": [
+     218,
+     6
+    ],
+    "left_eat": [
+     224,
+     6
+    ],
+    "left_kindle": [
+     230,
+     6
+    ],
+    "left_sit": [
+     236,
+     4
+    ],
+    "left_sleep": [
+     240,
+     4
+    ],
+    "left_talk": [
+     244,
+     4
+    ],
+    "left_fell": [
+     248,
+     6
+    ],
+    "left_mine": [
+     254,
+     6
+    ],
+    "left_dig": [
+     260,
+     6
+    ],
+    "up_left_idle": [
+     266,
+     4
+    ],
+    "up_left_walk": [
+     270,
+     8
+    ],
+    "up_left_idle_torch": [
+     278,
+     4
+    ],
+    "up_left_walk_torch": [
+     282,
+     8
+    ],
+    "up_left_idle_lantern": [
+     290,
+     4
+    ],
+    "up_left_walk_lantern": [
+     294,
+     8
+    ],
+    "up_left_idle_carry": [
+     302,
+     4
+    ],
+    "up_left_walk_carry": [
+     306,
+     8
+    ],
+    "up_idle": [
+     314,
+     4
+    ],
+    "up_walk": [
+     318,
+     8
+    ],
+    "up_idle_torch": [
+     326,
+     4
+    ],
+    "up_walk_torch": [
+     330,
+     8
+    ],
+    "up_idle_lantern": [
+     338,
+     4
+    ],
+    "up_walk_lantern": [
+     342,
+     8
+    ],
+    "up_idle_carry": [
+     350,
+     4
+    ],
+    "up_walk_carry": [
+     354,
+     8
+    ],
+    "up_fish_cast": [
+     362,
+     6
+    ],
+    "up_fish_wait": [
+     368,
+     4
+    ],
+    "up_fish_bite": [
+     372,
+     3
+    ],
+    "up_fish_reel": [
+     375,
+     6
+    ],
+    "up_eat": [
+     381,
+     6
+    ],
+    "up_kindle": [
+     387,
+     6
+    ],
+    "up_sit": [
+     393,
+     4
+    ],
+    "up_talk": [
+     397,
+     4
+    ],
+    "up_fell": [
+     401,
+     6
+    ],
+    "up_mine": [
+     407,
+     6
+    ],
+    "up_dig": [
+     413,
+     6
+    ]
+   }
+  },
+  "elf_man": {
+   "url": "demo-cutout/elf_man.png",
+   "frames": 419,
+   "strips": {
+    "down_idle": [
+     0,
+     4
+    ],
+    "down_walk": [
+     4,
+     8
+    ],
+    "down_idle_torch": [
+     12,
+     4
+    ],
+    "down_walk_torch": [
+     16,
+     8
+    ],
+    "down_idle_lantern": [
+     24,
+     4
+    ],
+    "down_walk_lantern": [
+     28,
+     8
+    ],
+    "down_idle_carry": [
+     36,
+     4
+    ],
+    "down_walk_carry": [
+     40,
+     8
+    ],
+    "down_fish_cast": [
+     48,
+     6
+    ],
+    "down_fish_wait": [
+     54,
+     4
+    ],
+    "down_fish_bite": [
+     58,
+     3
+    ],
+    "down_fish_reel": [
+     61,
+     6
+    ],
+    "down_eat": [
+     67,
+     6
+    ],
+    "down_kindle": [
+     73,
+     6
+    ],
+    "down_sit": [
+     79,
+     4
+    ],
+    "down_sleep": [
+     83,
+     4
+    ],
+    "down_talk": [
+     87,
+     4
+    ],
+    "down_fell": [
+     91,
+     6
+    ],
+    "down_mine": [
+     97,
+     6
+    ],
+    "down_dig": [
+     103,
+     6
+    ],
+    "down_left_idle": [
+     109,
+     4
+    ],
+    "down_left_walk": [
+     113,
+     8
+    ],
+    "down_left_idle_torch": [
+     121,
+     4
+    ],
+    "down_left_walk_torch": [
+     125,
+     8
+    ],
+    "down_left_idle_lantern": [
+     133,
+     4
+    ],
+    "down_left_walk_lantern": [
+     137,
+     8
+    ],
+    "down_left_idle_carry": [
+     145,
+     4
+    ],
+    "down_left_walk_carry": [
+     149,
+     8
+    ],
+    "left_idle": [
+     157,
+     4
+    ],
+    "left_walk": [
+     161,
+     8
+    ],
+    "left_idle_torch": [
+     169,
+     4
+    ],
+    "left_walk_torch": [
+     173,
+     8
+    ],
+    "left_idle_lantern": [
+     181,
+     4
+    ],
+    "left_walk_lantern": [
+     185,
+     8
+    ],
+    "left_idle_carry": [
+     193,
+     4
+    ],
+    "left_walk_carry": [
+     197,
+     8
+    ],
+    "left_fish_cast": [
+     205,
+     6
+    ],
+    "left_fish_wait": [
+     211,
+     4
+    ],
+    "left_fish_bite": [
+     215,
+     3
+    ],
+    "left_fish_reel": [
+     218,
+     6
+    ],
+    "left_eat": [
+     224,
+     6
+    ],
+    "left_kindle": [
+     230,
+     6
+    ],
+    "left_sit": [
+     236,
+     4
+    ],
+    "left_sleep": [
+     240,
+     4
+    ],
+    "left_talk": [
+     244,
+     4
+    ],
+    "left_fell": [
+     248,
+     6
+    ],
+    "left_mine": [
+     254,
+     6
+    ],
+    "left_dig": [
+     260,
+     6
+    ],
+    "up_left_idle": [
+     266,
+     4
+    ],
+    "up_left_walk": [
+     270,
+     8
+    ],
+    "up_left_idle_torch": [
+     278,
+     4
+    ],
+    "up_left_walk_torch": [
+     282,
+     8
+    ],
+    "up_left_idle_lantern": [
+     290,
+     4
+    ],
+    "up_left_walk_lantern": [
+     294,
+     8
+    ],
+    "up_left_idle_carry": [
+     302,
+     4
+    ],
+    "up_left_walk_carry": [
+     306,
+     8
+    ],
+    "up_idle": [
+     314,
+     4
+    ],
+    "up_walk": [
+     318,
+     8
+    ],
+    "up_idle_torch": [
+     326,
+     4
+    ],
+    "up_walk_torch": [
+     330,
+     8
+    ],
+    "up_idle_lantern": [
+     338,
+     4
+    ],
+    "up_walk_lantern": [
+     342,
+     8
+    ],
+    "up_idle_carry": [
+     350,
+     4
+    ],
+    "up_walk_carry": [
+     354,
+     8
+    ],
+    "up_fish_cast": [
+     362,
+     6
+    ],
+    "up_fish_wait": [
+     368,
+     4
+    ],
+    "up_fish_bite": [
+     372,
+     3
+    ],
+    "up_fish_reel": [
+     375,
+     6
+    ],
+    "up_eat": [
+     381,
+     6
+    ],
+    "up_kindle": [
+     387,
+     6
+    ],
+    "up_sit": [
+     393,
+     4
+    ],
+    "up_talk": [
+     397,
+     4
+    ],
+    "up_fell": [
+     401,
+     6
+    ],
+    "up_mine": [
+     407,
+     6
+    ],
+    "up_dig": [
+     413,
+     6
+    ]
+   }
+  },
+  "elf_woman": {
+   "url": "demo-cutout/elf_woman.png",
+   "frames": 419,
+   "strips": {
+    "down_idle": [
+     0,
+     4
+    ],
+    "down_walk": [
+     4,
+     8
+    ],
+    "down_idle_torch": [
+     12,
+     4
+    ],
+    "down_walk_torch": [
+     16,
+     8
+    ],
+    "down_idle_lantern": [
+     24,
+     4
+    ],
+    "down_walk_lantern": [
+     28,
+     8
+    ],
+    "down_idle_carry": [
+     36,
+     4
+    ],
+    "down_walk_carry": [
+     40,
+     8
+    ],
+    "down_fish_cast": [
+     48,
+     6
+    ],
+    "down_fish_wait": [
+     54,
+     4
+    ],
+    "down_fish_bite": [
+     58,
+     3
+    ],
+    "down_fish_reel": [
+     61,
+     6
+    ],
+    "down_eat": [
+     67,
+     6
+    ],
+    "down_kindle": [
+     73,
+     6
+    ],
+    "down_sit": [
+     79,
+     4
+    ],
+    "down_sleep": [
+     83,
+     4
+    ],
+    "down_talk": [
+     87,
+     4
+    ],
+    "down_fell": [
+     91,
+     6
+    ],
+    "down_mine": [
+     97,
+     6
+    ],
+    "down_dig": [
+     103,
+     6
+    ],
+    "down_left_idle": [
+     109,
+     4
+    ],
+    "down_left_walk": [
+     113,
+     8
+    ],
+    "down_left_idle_torch": [
+     121,
+     4
+    ],
+    "down_left_walk_torch": [
+     125,
+     8
+    ],
+    "down_left_idle_lantern": [
+     133,
+     4
+    ],
+    "down_left_walk_lantern": [
+     137,
+     8
+    ],
+    "down_left_idle_carry": [
+     145,
+     4
+    ],
+    "down_left_walk_carry": [
+     149,
+     8
+    ],
+    "left_idle": [
+     157,
+     4
+    ],
+    "left_walk": [
+     161,
+     8
+    ],
+    "left_idle_torch": [
+     169,
+     4
+    ],
+    "left_walk_torch": [
+     173,
+     8
+    ],
+    "left_idle_lantern": [
+     181,
+     4
+    ],
+    "left_walk_lantern": [
+     185,
+     8
+    ],
+    "left_idle_carry": [
+     193,
+     4
+    ],
+    "left_walk_carry": [
+     197,
+     8
+    ],
+    "left_fish_cast": [
+     205,
+     6
+    ],
+    "left_fish_wait": [
+     211,
+     4
+    ],
+    "left_fish_bite": [
+     215,
+     3
+    ],
+    "left_fish_reel": [
+     218,
+     6
+    ],
+    "left_eat": [
+     224,
+     6
+    ],
+    "left_kindle": [
+     230,
+     6
+    ],
+    "left_sit": [
+     236,
+     4
+    ],
+    "left_sleep": [
+     240,
+     4
+    ],
+    "left_talk": [
+     244,
+     4
+    ],
+    "left_fell": [
+     248,
+     6
+    ],
+    "left_mine": [
+     254,
+     6
+    ],
+    "left_dig": [
+     260,
+     6
+    ],
+    "up_left_idle": [
+     266,
+     4
+    ],
+    "up_left_walk": [
+     270,
+     8
+    ],
+    "up_left_idle_torch": [
+     278,
+     4
+    ],
+    "up_left_walk_torch": [
+     282,
+     8
+    ],
+    "up_left_idle_lantern": [
+     290,
+     4
+    ],
+    "up_left_walk_lantern": [
+     294,
+     8
+    ],
+    "up_left_idle_carry": [
+     302,
+     4
+    ],
+    "up_left_walk_carry": [
+     306,
+     8
+    ],
+    "up_idle": [
+     314,
+     4
+    ],
+    "up_walk": [
+     318,
+     8
+    ],
+    "up_idle_torch": [
+     326,
+     4
+    ],
+    "up_walk_torch": [
+     330,
+     8
+    ],
+    "up_idle_lantern": [
+     338,
+     4
+    ],
+    "up_walk_lantern": [
+     342,
+     8
+    ],
+    "up_idle_carry": [
+     350,
+     4
+    ],
+    "up_walk_carry": [
+     354,
+     8
+    ],
+    "up_fish_cast": [
+     362,
+     6
+    ],
+    "up_fish_wait": [
+     368,
+     4
+    ],
+    "up_fish_bite": [
+     372,
+     3
+    ],
+    "up_fish_reel": [
+     375,
+     6
+    ],
+    "up_eat": [
+     381,
+     6
+    ],
+    "up_kindle": [
+     387,
+     6
+    ],
+    "up_sit": [
+     393,
+     4
+    ],
+    "up_talk": [
+     397,
+     4
+    ],
+    "up_fell": [
+     401,
+     6
+    ],
+    "up_mine": [
+     407,
+     6
+    ],
+    "up_dig": [
+     413,
+     6
+    ]
+   }
+  },
+  "skeleton": {
+   "url": "demo-cutout/skeleton.png",
+   "frames": 419,
+   "strips": {
+    "down_idle": [
+     0,
+     4
+    ],
+    "down_walk": [
+     4,
+     8
+    ],
+    "down_idle_torch": [
+     12,
+     4
+    ],
+    "down_walk_torch": [
+     16,
+     8
+    ],
+    "down_idle_lantern": [
+     24,
+     4
+    ],
+    "down_walk_lantern": [
+     28,
+     8
+    ],
+    "down_idle_carry": [
+     36,
+     4
+    ],
+    "down_walk_carry": [
+     40,
+     8
+    ],
+    "down_fish_cast": [
+     48,
+     6
+    ],
+    "down_fish_wait": [
+     54,
+     4
+    ],
+    "down_fish_bite": [
+     58,
+     3
+    ],
+    "down_fish_reel": [
+     61,
+     6
+    ],
+    "down_eat": [
+     67,
+     6
+    ],
+    "down_kindle": [
+     73,
+     6
+    ],
+    "down_sit": [
+     79,
+     4
+    ],
+    "down_sleep": [
+     83,
+     4
+    ],
+    "down_talk": [
+     87,
+     4
+    ],
+    "down_fell": [
+     91,
+     6
+    ],
+    "down_mine": [
+     97,
+     6
+    ],
+    "down_dig": [
+     103,
+     6
+    ],
+    "down_left_idle": [
+     109,
+     4
+    ],
+    "down_left_walk": [
+     113,
+     8
+    ],
+    "down_left_idle_torch": [
+     121,
+     4
+    ],
+    "down_left_walk_torch": [
+     125,
+     8
+    ],
+    "down_left_idle_lantern": [
+     133,
+     4
+    ],
+    "down_left_walk_lantern": [
+     137,
+     8
+    ],
+    "down_left_idle_carry": [
+     145,
+     4
+    ],
+    "down_left_walk_carry": [
+     149,
+     8
+    ],
+    "left_idle": [
+     157,
+     4
+    ],
+    "left_walk": [
+     161,
+     8
+    ],
+    "left_idle_torch": [
+     169,
+     4
+    ],
+    "left_walk_torch": [
+     173,
+     8
+    ],
+    "left_idle_lantern": [
+     181,
+     4
+    ],
+    "left_walk_lantern": [
+     185,
+     8
+    ],
+    "left_idle_carry": [
+     193,
+     4
+    ],
+    "left_walk_carry": [
+     197,
+     8
+    ],
+    "left_fish_cast": [
+     205,
+     6
+    ],
+    "left_fish_wait": [
+     211,
+     4
+    ],
+    "left_fish_bite": [
+     215,
+     3
+    ],
+    "left_fish_reel": [
+     218,
+     6
+    ],
+    "left_eat": [
+     224,
+     6
+    ],
+    "left_kindle": [
+     230,
+     6
+    ],
+    "left_sit": [
+     236,
+     4
+    ],
+    "left_sleep": [
+     240,
+     4
+    ],
+    "left_talk": [
+     244,
+     4
+    ],
+    "left_fell": [
+     248,
+     6
+    ],
+    "left_mine": [
+     254,
+     6
+    ],
+    "left_dig": [
+     260,
+     6
+    ],
+    "up_left_idle": [
+     266,
+     4
+    ],
+    "up_left_walk": [
+     270,
+     8
+    ],
+    "up_left_idle_torch": [
+     278,
+     4
+    ],
+    "up_left_walk_torch": [
+     282,
+     8
+    ],
+    "up_left_idle_lantern": [
+     290,
+     4
+    ],
+    "up_left_walk_lantern": [
+     294,
+     8
+    ],
+    "up_left_idle_carry": [
+     302,
+     4
+    ],
+    "up_left_walk_carry": [
+     306,
+     8
+    ],
+    "up_idle": [
+     314,
+     4
+    ],
+    "up_walk": [
+     318,
+     8
+    ],
+    "up_idle_torch": [
+     326,
+     4
+    ],
+    "up_walk_torch": [
+     330,
+     8
+    ],
+    "up_idle_lantern": [
+     338,
+     4
+    ],
+    "up_walk_lantern": [
+     342,
+     8
+    ],
+    "up_idle_carry": [
+     350,
+     4
+    ],
+    "up_walk_carry": [
+     354,
+     8
+    ],
+    "up_fish_cast": [
+     362,
+     6
+    ],
+    "up_fish_wait": [
+     368,
+     4
+    ],
+    "up_fish_bite": [
+     372,
+     3
+    ],
+    "up_fish_reel": [
+     375,
+     6
+    ],
+    "up_eat": [
+     381,
+     6
+    ],
+    "up_kindle": [
+     387,
+     6
+    ],
+    "up_sit": [
+     393,
+     4
+    ],
+    "up_talk": [
+     397,
+     4
+    ],
+    "up_fell": [
+     401,
+     6
+    ],
+    "up_mine": [
+     407,
+     6
+    ],
+    "up_dig": [
+     413,
+     6
+    ]
+   }
+  }
+ },
+ "clips": {
+  "idle": {
+   "ms": [
+    500,
+    350,
+    500,
+    350
+   ]
+  },
+  "walk": {
+   "ms": [
+    95,
+    95,
+    95,
+    95,
+    95,
+    95,
+    95,
+    95
+   ]
+  },
+  "idle_torch": {
+   "ms": [
+    500,
+    350,
+    500,
+    350
+   ]
+  },
+  "walk_torch": {
+   "ms": [
+    95,
+    95,
+    95,
+    95,
+    95,
+    95,
+    95,
+    95
+   ]
+  },
+  "idle_lantern": {
+   "ms": [
+    500,
+    350,
+    500,
+    350
+   ]
+  },
+  "walk_lantern": {
+   "ms": [
+    95,
+    95,
+    95,
+    95,
+    95,
+    95,
+    95,
+    95
+   ]
+  },
+  "idle_carry": {
+   "ms": [
+    500,
+    350,
+    500,
+    350
+   ]
+  },
+  "walk_carry": {
+   "ms": [
+    110,
+    110,
+    110,
+    110,
+    110,
+    110,
+    110,
+    110
+   ]
+  },
+  "fish_cast": {
+   "ms": [
+    140,
+    160,
+    70,
+    45,
+    120,
+    160
+   ]
+  },
+  "fish_wait": {
+   "ms": [
+    600,
+    400,
+    600,
+    400
+   ]
+  },
+  "fish_bite": {
+   "ms": [
+    90,
+    140,
+    120
+   ]
+  },
+  "fish_reel": {
+   "ms": [
+    110,
+    110,
+    110,
+    110,
+    110,
+    110
+   ]
+  },
+  "eat": {
+   "ms": [
+    140,
+    120,
+    200,
+    180,
+    140,
+    220
+   ]
+  },
+  "kindle": {
+   "ms": [
+    180,
+    70,
+    160,
+    70,
+    280,
+    320
+   ]
+  },
+  "sit": {
+   "ms": [
+    600,
+    420,
+    600,
+    420
+   ]
+  },
+  "sleep": {
+   "ms": [
+    900,
+    700,
+    900,
+    700
+   ]
+  },
+  "talk": {
+   "ms": [
+    220,
+    180,
+    240,
+    180
+   ]
+  },
+  "fell": {
+   "ms": [
+    90,
+    95,
+    70,
+    35,
+    135,
+    95
+   ]
+  },
+  "mine": {
+   "ms": [
+    90,
+    95,
+    70,
+    35,
+    135,
+    95
+   ]
+  },
+  "dig": {
+   "ms": [
+    90,
+    80,
+    60,
+    120,
+    90,
+    80
+   ]
+  }
+ }
+}
