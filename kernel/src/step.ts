@@ -714,14 +714,14 @@ function takeRows(ctx: Ctx, spotId: string, row: number | undefined, at: Tile): 
   const held = s.searched?.[spotId];
   if (!held || held.dawn !== searchDawn(b, ctx.tick) || held.rows.length === 0) refuse('There is nothing to take.');
   if (row !== undefined && (!Number.isSafeInteger(row) || row < 0 || row >= held.rows.length)) refuse('That is not here.');
-  let room = Math.max(0, bagCapacity(b, s) - bagUsed(s));
-  if (room <= 0) refuse('Your bag is full.');
+  // a row fits while its kind has a place and its weight stays under the edge, asked again after each take
+  const fits = (item: string) => Math.min(placeRoom(b, s, item), weightRoom(b, s, item)) > 0;
+  if (!held.rows.some((item, i) => (row === undefined || i === row) && fits(item))) refuse('Your bag is full.');
   const kept: string[] = [];
   const left: Record<string, number> = {};
   held.rows.forEach((item, i) => {
     if (row !== undefined && i !== row) return void kept.push(item);
-    if (room > 0) {
-      room -= 1;
+    if (fits(item)) {
       take(ctx, item, 1);
     } else {
       kept.push(item);
