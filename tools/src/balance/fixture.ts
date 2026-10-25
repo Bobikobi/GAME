@@ -15,7 +15,7 @@ import { masteryMs } from './curve';
 import type { Catalogue, Dish, Effect, Piece, Wall } from './catalogue';
 import { CATEGORIES, type Category, RARITY_NAMES, type Rules } from './rules';
 
-interface FixtureRules {
+export interface FixtureRules {
   schools: { id: string; first: boolean; t1_ms?: number }[];
   slots: { id: string; count: number; cats: Category[] }[];
   traits: { name: string; answers: string; slots: string[]; maker: string }[];
