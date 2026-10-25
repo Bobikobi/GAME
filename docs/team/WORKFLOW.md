@@ -7,7 +7,7 @@ This page is for the people who build the game itself: developers, artists, and 
 | Branch | What it is | Who writes to it |
 |---|---|---|
 | `main` | Production. Every push deploys the live game. | The lead only, by merging `develop`, with the owner's yes. |
-| `develop` | Integration. Its preview is "the latest version". | Reviewed pull requests, merged by the lead. |
+| `develop` | Integration. Its preview is "the latest version". | Reviewed pull requests, each merged by the session that made it once the owner has approved it. |
 | `feat/<topic>`, `fix/<topic>`, `chore/<topic>`, `docs/<topic>` | One task each. | The person or agent doing that task. |
 
 - Start every task from the newest `origin/develop` and open the pull request into `develop`.
@@ -66,7 +66,7 @@ The reviewer checks four things:
 3. Tests come with the change.
 4. It does one thing.
 
-Pull requests are merged with squash, so the history of `develop` reads one line per task.
+The session that made a pull request merges it into `develop` once the owner has approved it. It never merges another session's pull request, and never touches `main`. Pull requests are merged with squash, so the history of `develop` reads one line per task.
 
 ## Releasing
 
