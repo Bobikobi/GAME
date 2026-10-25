@@ -14,6 +14,7 @@ export class MemoryAuthStore implements AuthStore {
   tickets = new Map<string, SignupTicket>();
   sessions = new Map<string, { accountId: string; expiresAt: number; revokedAt?: number }>();
   accounts = new Map<string, NewAccount>();
+  closedAt = new Map<string, number>();
   identities = new Map<string, string>();
   /** the game each account was made with (NEXT 18 d), as postgres writes it in the same transaction */
   games = new Map<string, NewGame>();
@@ -83,14 +84,31 @@ export class MemoryAuthStore implements AuthStore {
     if (session && session.revokedAt === undefined) session.revokedAt = now;
   }
   async account(accountId: string) {
-    const account = this.accounts.get(accountId);
+    const account = this.closedAt.has(accountId) ? undefined : this.accounts.get(accountId);
     return account && { name: account.name, email: account.email };
   }
-  async closeAccount(accountId: string) {
-    this.accounts.delete(accountId);
-    this.games.delete(accountId);
-    for (const [key, id] of this.identities) if (id === accountId) this.identities.delete(key);
+  async isClosed(accountId: string) {
+    return this.closedAt.has(accountId);
+  }
+  async closeAccount(accountId: string, now: number) {
+    if (!this.accounts.has(accountId) || this.closedAt.has(accountId)) return;
+    this.closedAt.set(accountId, now);
     for (const [hash, session] of this.sessions) if (session.accountId === accountId) this.sessions.delete(hash);
+  }
+  async reopenAccount(accountId: string) {
+    return this.closedAt.delete(accountId);
+  }
+  async eraseClosed(now: number, graceMs: number) {
+    let n = 0;
+    for (const [accountId, closed] of this.closedAt) {
+      if (closed > now - graceMs) continue;
+      this.closedAt.delete(accountId);
+      this.accounts.delete(accountId);
+      this.games.delete(accountId);
+      for (const [key, id] of this.identities) if (id === accountId) this.identities.delete(key);
+      n++;
+    }
+    return n;
   }
   async sweep(now: number) {
     for (const [key, flow] of this.flows) if (flow.expiresAt <= now) this.flows.delete(key);
