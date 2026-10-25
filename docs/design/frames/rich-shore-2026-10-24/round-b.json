@@ -1,0 +1,7 @@
+{
+  "tool": "image_gen.imagegen",
+  "file": "shore-b.png",
+  "prompt": "Edit this Openfold pixel-art riverbank material study. Change ONLY the grass texture density and local contrast. Preserve the exact composition, track geometry, gravel, rocks, reeds, water, lighting, overall green palette and pixel-art medium. Replace approximately 45% of the uniformly busy grass coverage with coherent irregular quiet patches of low short grass: muted olive-green middle tones, sparse tiny blade marks, very few bright highlight pixels. Keep rich individual tufts in natural clustered islands, mostly toward path edges and around rocks. Make organic broad patches of quiet versus detailed grass, never alternating rows or checkerboard. Keep subtle worn soil visible in a few quiet patches. No extra objects, no buildings, no typography, no change in camera or path width. The sole purpose is a readable terrain backdrop for characters on a phone, with richly detailed edges and restful walkable areas.",
+  "review": "Quiet grass patches now separate detailed tufts. The path remains clear. The continuous rock edging and detailed water must be assessed again during modular tile assembly.",
+  "status": "study only; not palette-validated, not seamless, not installed in the game"
+}

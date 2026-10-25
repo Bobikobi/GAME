@@ -1,0 +1,13 @@
+{
+  "date": "2026-10-24",
+  "status": "material-composition-study-not-runtime-art",
+  "tool": "image_gen.imagegen",
+  "reference": "grass-reference.png — own meadow-c generated texture; not an outside asset",
+  "rounds": [
+    {
+      "file": "shore-a.png",
+      "prompt": "Use case: stylized-concept.\nAsset type: game environment material assembly study for Openfold, NOT a final world map.\nCreate one square top-down 2D RPG ground study, a close view of approximately 8 by 8 tiles at 64 logical pixels per tile (512x512 logical pixel art). Crisp deliberate painterly pixel clusters, rich hue-shifting material detail, controlled dithering. Image 1 is our own already-generated grass texture: use it to match the small grass tufts and colour family, not as a scene to copy. Render enlarged clean pixel art, no photographic texture, no perspective horizon.\nComposition: a traversable gently curving earth track enters top centre and follows a grassy riverbank toward lower left. The right third of the image is calm blue-teal river water. The irregular bank runs from upper right toward bottom centre. Land is flat traversable ground, not a tall cliff. Five distinct materials form coherent irregular patches: mixed short meadow grass, thin worn grass exposing earth, warm compacted soil on the track, small grey-beige gravel on the bank, darker wet stones at the water edge. Each material has both quiet spans and locally detailed groups. Clumps of reeds occur in only three small irregular groups along the water. Tiny moss seams and pebbles, grass intruding into soil, mud fading to gravel; no hard square tile boundaries or bands of separate swatches. Keep the track clear and legible, with detail at the sides. No buildings, boat, jetty, characters, UI, text, flowers, giant rocks, grid, borders or labels. We are testing materials before placing props.\nLighting: even daylight, subtle upper-left material shading, no dramatic baked cast shadows.\nPalette families: green (#15301f #1f3d2b #2e6b3b #4c9a3f #84c450 #c8e88a), moss (#1b2a16 #2f4722 #4a6a2c #6f8d36 #9cb24c #cfd36e), earth/wood (#2a1810 #3d2618 #6e4226 #9e6b3c #c99a5e #ebd3a2), stone (#1e2230 #333b4c #4a5668 #6f7d8c #9aa7b0 #d6ddd8), blue water with restrained teal shallow edges. Saturation controlled. No smooth digital painting, airbrush, realistic 3D render or noisy repeated grass carpet. This is a coherent playable ground surface whose materials remain distinct at phone width.",
+      "review": "The grass, earth, gravel and water are distinct and the path stays clear. The grass has near-uniform high-frequency contrast; the next round keeps composition and changes grass density only."
+    }
+  ]
+}

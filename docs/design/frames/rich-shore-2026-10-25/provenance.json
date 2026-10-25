@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-25",
+  "tool": "image_gen.imagegen",
+  "reference": "../rich-shore-2026-10-24/shore-b.png",
+  "rounds": [
+    {
+      "name": "ground",
+      "prompt": "Edit the supplied Openfold riverbank study to make a CLEAN STATIC GROUND LAYER. Preserve the exact path, shoreline, rocks, water and their positions. Remove ALL tall grass clumps, upright blades and reeds everywhere; replace their footprints naturally with low flat moss-green turf, bare soil or gravel matching the adjacent ground. No upright vegetation may remain; tiny flat turf speckling is okay. In particular remove the three shoreline reed clusters without moving rocks or water. Keep painterly crisp pixel-art material detail, same palette and same camera. This is only the static substrate that separate animated plant sprites will stand on. No new objects or text."
+    },
+    {
+      "name": "grass",
+      "prompt": "Create an Openfold RICH pixel art animation sprite sheet on a genuinely TRANSPARENT background. Exactly two equal square frames horizontally, total logical canvas 128x64, displayed enlarged with crisp pixels. Each frame contains the SAME short irregular grass clump rooted at exactly frame-local x32,y56. First frame foliage leans subtly 3 pixels left; second leans subtly 3 pixels right. Root pixels identical position. One clump has 7-10 tapered blades in 3 natural small groups, width about42 pixels, height36 pixels. Muted moss-green base, emerald middle, small warm lime highlights, painterly clusters and light dithering. Elevated top-down 2D RPG view matching the reference's grass, no ground patch, no dirt, no baked shadow, no outline around frame. At least8 logical pixels clear margin on all sides except bottom margin8. No grid or separator, no text, no background. Preserve identical scale and anatomy across frames; animate ONLY the bend of the upper leaves. Use shared green and moss colours #15301f #1f3d2b #2e6b3b #4c9a3f #84c450 #c8e88a #1b2a16 #2f4722 #4a6a2c #6f8d36 #9cb24c #cfd36e."
+    },
+    {
+      "name": "reeds",
+      "prompt": "Create an Openfold RICH pixel art animation sprite sheet on a genuinely TRANSPARENT background. Exactly two equal square frames horizontally, total logical canvas128x64, displayed enlarged with crisp pixels. Each frame contains the SAME small riverside reed cluster rooted at exactly frame-local x32,y56. First frame upper leaves lean subtly3 pixels left; second frame3 pixels right. Roots identical coordinates. 5 narrow long green reeds, 2 tiny golden seed heads, asymmetrical natural heights, width34 pixels height46 pixels. Painterly pixel clusters, tiny selective highlights, subtle dithering, elevated top-down RPG camera. No soil, ground, water or baked shadow. At least8 logical pixels clear margin except top2 pixels. Transparent background, no grid, separators or labels. Same scale and anatomy in bothframes; only upper stems and leaves bend. Muted emerald/moss greens and small ochre seed heads drawn with green/moss/wood palette families matching reference. Use reference only for material and pixel style, draw isolated plant sprite sheet."
+    }
+  ],
+  "review": "Ground removes upright plants successfully. Plant sheet second frames resemble mirrors, so only the first frame is imported at 64x64 with the existing kit importer. The preview deforms that single plant image around its planted base; it does not claim these sheets are accepted two-frame animation.",
+  "status": "layered preview, no runtime map or kit edits; water remains static"
+}
