@@ -22,7 +22,9 @@ describe('which work runs by itself', () => {
     expect(resourceKind(b.resources['core/oak-trees']!)).toBe('fell');
     expect(resourceKind(b.resources['core/fallen-logs']!)).toBe('fell');
     expect(resourceKind(b.resources['core/keystone']!)).toBeUndefined();
-    expect(resourceKind(b.resources['core/river-stones']!)).toBeUndefined();
+    // stone is mined: it works by itself with no tool (DECISIONS.md, 2026-10-25)
+    expect(resourceKind(b.resources['core/river-stones']!)).toBe('mine');
+    expect(resourceKind({ work: 'mine', tool: undefined })).toBe('mine');
     expect(resourceKind(b.resources['core/wild-herbs']!)).toBeUndefined();
     expect(treasureKind(b.treasures['core/ruins-gate']!)).toBe('dig');
     expect(treasureKind(b.treasures['core/bridge-glint']!)).toBeUndefined();

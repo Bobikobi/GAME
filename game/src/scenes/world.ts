@@ -2901,6 +2901,7 @@ export class WorldScene extends Phaser.Scene {
     this.refreshNodes();
     this.faceFrame();
     if (ghost) this.fall(ghost, w.facing, w.node);
+    else if (w.kind === 'mine') this.breakStone(w.node);
     else this.burst(w.kind === 'dig' ? 'fx-dirt' : 'fx-dust', (placedAt(this.b, w.node)!.x + 0.5) * T, (placedAt(this.b, w.node)!.y + 0.6) * T, 8);
     w.onDone?.();
   }
@@ -2922,8 +2923,11 @@ export class WorldScene extends Phaser.Scene {
       if (progress > 0.4 && img) this.burst('fx-leaf', x, y - img.displayHeight * 0.6, 2 + Math.round(progress * 4));
     } else if (w.kind === 'mine') {
       sound.sfx('strike', { pan });
+      // the stone starts to give as the wood does: a crack under the blows past the middle, more chips each time
+      if (progress > 0.5) sound.sfx('crack', { pan, gain: 0.2 + 0.4 * progress });
       this.burst('fx-dust', x, y, 5);
       this.burst('fx-spark', x, y - 4, 3);
+      this.burst('fx-chip', x, y - 2, 2 + Math.round(progress * 4));
     } else {
       sound.sfx('dig', { pan });
       this.burst('fx-dirt', x, y, 6);
@@ -2936,6 +2940,18 @@ export class WorldScene extends Phaser.Scene {
     const shake = w.kind === 'dig' ? 0 : progress > 0.6 ? 2 : 1;
     const lean = w.kind === 'fell' && (w.facing === 'left' || w.facing === 'right') ? (w.facing === 'left' ? -1 : 1) * progress * 3 : 0;
     this.tweens.add({ targets: img, x: x0 + shake, scaleY: rel(img, 1, w.kind === 'dig' ? 0.92 : 1).y, angle: lean, duration: 50, yoyo: true, repeat: 1, onComplete: () => setRel(img.setX(x0), 1).setAngle(lean) });
+  }
+
+  /** The last blow splits the stone: a sharp crack, chips and dust thrown wide, and a small jolt as a tree's fall has. */
+  private breakStone(id: string): void {
+    const inst = placedAt(this.b, id)!;
+    const x = (inst.x + 0.5) * T;
+    const y = (inst.y + 0.6) * T;
+    sound.sfx('crack', { gain: 0.8 });
+    this.burst('fx-chip', x, y - 2, 10);
+    this.burst('fx-dust', x, y, 10);
+    this.burst('fx-spark', x, y - 4, 4);
+    this.cameras.main.shake(90, 0.002);
   }
 
   /** The tree goes over, away from the one who cut it, and lies there a moment before it fades. */

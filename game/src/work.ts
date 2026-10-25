@@ -8,16 +8,16 @@ import type { Bundle } from '@game/kernel';
 
 export type AutoKind = 'fell' | 'dig' | 'mine';
 
-/** The tool that makes a node work by itself, and what the work is called. Stones and herbs, which need none, keep their minigames. */
+/** The tool that makes a node work by itself, and what the work is called. A node marked `work: "mine"` works by itself with no tool; herbs and the keystone keep their minigames. */
 const BY_TOOL: Readonly<Record<string, AutoKind>> = { axe: 'fell', trowel: 'dig', pick: 'mine' };
 
 export function autoKind(tool: string | undefined): AutoKind | undefined {
   return tool === undefined ? undefined : BY_TOOL[tool];
 }
 
-/** What a resource node asks for: a tree, or whatever else is worked with a tool. */
-export function resourceKind(r: Pick<Bundle['resources'][string], 'tool'>): AutoKind | undefined {
-  return autoKind(r.tool);
+/** What a resource node asks for: a tree, a mined stone, or whatever else is worked with a tool. */
+export function resourceKind(r: Pick<Bundle['resources'][string], 'tool' | 'work'>): AutoKind | undefined {
+  return r.work === 'mine' && r.tool === undefined ? 'mine' : autoKind(r.tool);
 }
 
 /** What a treasure asks for: a dig with a trowel; a find picked up by hand has no work. */

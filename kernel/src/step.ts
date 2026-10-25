@@ -562,9 +562,12 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   const verb = nodeVerb(r);
   if (verbLevel(b, s, verb) < r.level) refuse(`Needs ${b.professions[b.verbs[verb]]?.name ?? 'gathering'} level ${r.level}.`);
   const tool = r.tool ? requireTool(ctx, r.tool) : undefined;
+  // a mined node takes bare hands, and a pick or a hammer in the bag breaks it faster (the best one; it wears as any tool)
+  const helper = !r.tool && r.work === 'mine' ? bestTool(ctx, MINE_TOOLS) : undefined;
   if (bagCapacity(b, s) - bagUsed(s) <= 0) refuse('Your bag is full.');
 
-  const ms = duration(ctx, r.active_ms, speedPermille(ctx, (tool ? 150 * (toolTier(ctx, tool) - 1) : 0) + 10 * effectValue(b, s, 'gather_speed_pct')));
+  const toolBonus = tool ? 150 * (toolTier(ctx, tool) - 1) : helper ? 150 * toolTier(ctx, helper) : 0;
+  const ms = duration(ctx, r.active_ms, speedPermille(ctx, toolBonus + 10 * effectValue(b, s, 'gather_speed_pct')));
   let qty = gradeYield(r.yield, grade);
   if (grade === 0) {
     if (drawBasisPoints(s.seed, nodeId, node.draws) < missKeepBp(b, s)) qty = 1;
@@ -573,6 +576,7 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   if (qty > 0) take(ctx, r.output, qty);
   else ctx.events.push({ e: 'nothing', verb: 'gather' });
   if (tool) wearTool(ctx, tool);
+  if (helper) wearTool(ctx, helper);
   node.readyAt = ctx.tick + ms + mulDiv(r.respawn_ms, wait, 1000);
   s.nodes[nodeId] = node;
   busy(ctx, 'gather', ms);
@@ -1574,14 +1578,23 @@ function toolTier(ctx: Ctx, itemId: string): number {
   return ctx.b.items[itemId]?.tool?.tier ?? 1;
 }
 
-function requireTool(ctx: Ctx, kind: string): string {
+/** The tool kinds that help break a mined node; none is needed. */
+const MINE_TOOLS: readonly string[] = ['pick', 'hammer'];
+
+/** The highest-tier tool of these kinds in the bag (by id on a tie), or none. */
+function bestTool(ctx: Ctx, kinds: readonly string[]): string | undefined {
   const { b, s } = ctx;
   let best: string | undefined;
   for (const id of Object.keys(s.player.bag).sort()) {
     const tool = b.items[id]?.tool;
-    if (!tool || tool.kind !== kind || (s.player.bag[id] ?? 0) < 1) continue;
+    if (!tool || !kinds.includes(tool.kind) || (s.player.bag[id] ?? 0) < 1) continue;
     if (!best || tool.tier > toolTier(ctx, best)) best = id;
   }
+  return best;
+}
+
+function requireTool(ctx: Ctx, kind: string): string {
+  const best = bestTool(ctx, [kind]);
   if (!best) refuse(`You need ${/^[aeiou]/.test(kind) ? 'an' : 'a'} ${kind} for this.`);
   return best;
 }

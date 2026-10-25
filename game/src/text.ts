@@ -38,7 +38,8 @@ export function itemName(b: Bundle, id: string): string {
 
 /** The verb on a node's prompt and its minigame: a tree is felled, anything else gathered. */
 export function nodeAction(b: Bundle, r: Bundle['resources'][string]): string {
-  return r.tool === 'axe' ? 'Fell tree' : `Gather ${itemName(b, r.output)}`;
+  if (r.tool === 'axe') return 'Fell tree';
+  return r.work === 'mine' ? `Mine ${itemName(b, r.output)}` : `Gather ${itemName(b, r.output)}`;
 }
 
 /** milli-gold as gold, at most two decimals: 2500 -> "2.5" */
