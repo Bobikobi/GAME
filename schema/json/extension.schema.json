@@ -720,8 +720,7 @@
         "id",
         "title",
         "creator",
-        "type",
-        "dig"
+        "type"
       ],
       "properties": {
         "$schema": {
@@ -1353,6 +1352,60 @@
               "maxLength": 80,
               "description": "A wake pocket's own spot: only a character who woke in this pocket sees it and digs it, once, and it always gives its one find. A gift of the start, so it prices nothing (it is no source in the value table).",
               "type": "string"
+            }
+          }
+        },
+        "search": {
+          "additionalProperties": false,
+          "description": "A searchable: a table of rows drawn once a day. It takes no tool and has no timing window. A treasure file carries `search` or `dig`, never both.",
+          "type": "object",
+          "required": [
+            "rows",
+            "place"
+          ],
+          "properties": {
+            "rows": {
+              "minItems": 1,
+              "maxItems": 8,
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "item",
+                  "chance_pct"
+                ],
+                "properties": {
+                  "item": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "chance_pct": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "Chance of this row being inside after a refill. Each row is drawn on its own; a rare or legendary row is tilted by luck like a dig's rare find.",
+                    "type": "integer"
+                  }
+                }
+              }
+            },
+            "place": {
+              "additionalProperties": false,
+              "description": "The map prop (its `id`) that can be searched: pressing A beside it opens a window of what is inside. Nothing is put into it; it refills once a day at dawn (docs/design/SEARCH.md).",
+              "type": "object",
+              "required": [
+                "prop"
+              ],
+              "properties": {
+                "prop": {
+                  "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                  "maxLength": 80,
+                  "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                  "type": "string"
+                }
+              }
             }
           }
         }
