@@ -11,7 +11,7 @@
 import type { Bundle } from '@game/kernel';
 import type { Issue } from './load';
 
-/** The worlds the core names (CAST_PLAN 1.1): the valley in the centre, the elf forest north, the undead south, the human city across the bay. */
+/** The worlds the core names (DECISIONS 2026-10-22, decisions 11, 17 and 24): the valley in the centre, the elf forest north, the undead south, the human city across the bay. */
 export const CORE_WORLDS: readonly string[] = ['valley', 'north', 'south', 'city'];
 /** The world every race stands in as it is. */
 export const NEUTRAL_WORLD = 'valley';

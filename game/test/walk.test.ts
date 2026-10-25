@@ -10,7 +10,7 @@ import { STEP_MS } from '../src/config';
 import { Controls, DIRS, type Dir, STICK_DEAD, STICK_FULL, stickFrom } from '../src/input';
 import { s1Use } from '../src/net/s1';
 import { Session } from '../src/session';
-import { ART_PX, BODY_BOX, Walker, canEnter, facedTile, facingFor, landStep } from '../src/walking';
+import { ART_PX, BODY_BOX, type Facing8, SECTOR_LEAD_DEG, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep } from '../src/walking';
 import { loadBundle, seedFor } from '../../tools/test/helpers/world';
 
 /** About sixty frames a second, as the scene runs. */
@@ -336,5 +336,52 @@ describe('after a diagonal walk an action hits the tile in front of the feet (me
     const at = npcTile(b, npc)!;
     const s = walkUpTo(at);
     expect(facedTile(s)).toEqual(at);
+  });
+});
+
+describe('the drawn facing (eight sectors, the rig of 23.10)', () => {
+  const at = (deg: number): [number, number] => [Math.cos((deg * Math.PI) / 180), Math.sin((deg * Math.PI) / 180)];
+
+  test('is the nearest of the eight to the motion, a 45 degree walk drawn as a diagonal', () => {
+    const want: [number, Facing8][] = [
+      [0, 'right'], [45, 'down_right'], [90, 'down'], [135, 'down_left'],
+      [180, 'left'], [225, 'up_left'], [270, 'up'], [315, 'up_right'], [-45, 'up_right'],
+    ];
+    for (const [deg, look] of want) expect(facing8For(at(deg), deg === 90 ? 'up' : 'down'), `${deg} degrees`).toBe(look);
+  });
+
+  test('keeps its sector past the edge by the four-way lead, so a walk along an edge does not flicker', () => {
+    expect(SECTOR_LEAD_DEG).toBeCloseTo(6.34, 2);
+    // a walk wavering between 18 and 27 degrees keeps whichever facing it had
+    for (const deg of [18, 22, 23, 27]) {
+      expect(facing8For(at(deg), 'right')).toBe('right');
+      expect(facing8For(at(deg), 'down_right')).toBe('down_right');
+    }
+    // past the lead it turns
+    expect(facing8For(at(30), 'right')).toBe('down_right');
+    expect(facing8For(at(15), 'down_right')).toBe('right');
+    expect(facing8For([0, 0], 'up_left')).toBe('up_left');
+  });
+
+  test('a diagonal leans on the four-way facing the faced tile is read from', () => {
+    expect(agrees('down_right', 'right')).toBe(true);
+    expect(agrees('down_right', 'down')).toBe(true);
+    expect(agrees('down_right', 'left')).toBe(false);
+    expect(agrees('up', 'up')).toBe(true);
+    // the two picks together: a walk at 45 degrees faces a four-way axis and draws the diagonal on it
+    const input = at(45);
+    expect(agrees(facing8For(input, 'right'), facingFor(input, 'right'))).toBe(true);
+  });
+
+  test('draws the rig sheet, the right side mirrored, and the four-way sheet while a look has no diagonal yet', () => {
+    const rig = new Set(['chars/forager_down_left', 'chars/forager_up_left']);
+    const has = (k: string) => rig.has(k);
+    expect(diagonalSheet('chars/forager_down', 'down_left', 'left', has)).toEqual({ key: 'chars/forager_down_left', flip: false });
+    expect(diagonalSheet('chars/forager_down', 'down_right', 'right', has)).toEqual({ key: 'chars/forager_down_left', flip: true });
+    expect(diagonalSheet('chars/forager_down', 'up_right', 'up', has)).toEqual({ key: 'chars/forager_up_left', flip: true });
+    // no diagonal for an axis, for a look without the rig, or for a diagonal that does not lean on the facing
+    expect(diagonalSheet('chars/forager_down', 'left', 'left', has)).toBeUndefined();
+    expect(diagonalSheet('chars/explorer_down', 'down_left', 'left', has)).toBeUndefined();
+    expect(diagonalSheet('chars/forager_down', 'down_left', 'right', has)).toBeUndefined();
   });
 });

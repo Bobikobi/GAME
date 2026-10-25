@@ -20,8 +20,8 @@ it, and the owner decides what moves (the review below).
 
 ## The picture
 
-- `pnpm quests` prints every quest (type, giver, starter, requires, steps), the types the
-  valley asks and the ones it never asks, and each starter's **hand**: how many tasks a
+- `pnpm quests` prints every quest (type, giver, pocket, requires, steps), the types the
+  valley asks and the ones it never asks, and each wake pocket's **hand**: how many tasks a
   character can hold at once and which two of one type it can finish back to back by its
   own choice. G17 only reads the requires links; the hand reads every order the player can
   choose, with the orders items force. `--json` for a script.
@@ -37,7 +37,7 @@ it, and the owner decides what moves (the review below).
    follows. Items order quests too: a quest with no giver that finds an item is done the
    moment the item first comes, and a node that `opens_after` a quest holds back what needs
    it (the explorer's keystone waits for the glint). A quest with no requires that nothing
-   waits on stays open beside everything its starter reaches, so no type keeps it apart:
+   waits on stays open beside everything its pocket reaches, so no type keeps it apart:
    give it an order (the forager's first pickings, QUEST_PATTERNS.md section 1). Prefer a
    type the valley never asks (the "Never asked" line; QUEST_PATTERNS.md section 8 says
    which can be written today).
@@ -71,7 +71,7 @@ keep the rules, never a free hand.
 
 1. Start from the MCP `template` or `templates/`; the id and the file name carry the
    creator's handle prefix; never a price (R11); the type is declared.
-2. `pnpm check`: no error, and read every `!` line.
+2. `pnpm check`: no error line; read any `!` warning.
 3. `pnpm quests`: the hand gains no new pair of one type. If it does, change the type, the
    requires links or an item order, not the report.
 4. A riddle or a chain of three or more: a puzzle dependency chart (TOOLKIT.md, Puzzlon)

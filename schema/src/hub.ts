@@ -288,7 +288,7 @@ export const HubParameters = Type.Object(
         per_commit: Count,
         per_approval: Count,
         weekly_pool: Count,
-        weekly_pool_active: Type.Boolean({ description: 'false until usage exists; the pool is then shared by usage, never by seniority.' }),
+        weekly_pool_active: Type.Boolean({ description: 'false: this points pool is an inactive placeholder; the creators\' pool is gold already spent (DECISIONS 2026-10-09).' }),
       },
       { additionalProperties: false, description: 'A copy of .github/points.json: every number a ranking is computed with.' },
     ),
