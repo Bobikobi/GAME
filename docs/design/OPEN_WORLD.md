@@ -1,6 +1,6 @@
 # Open world: design draft
 
-Status: this is a draft for the owner, under the request rule in GAME_RULES.md section 6 (532-571). Nothing here is built. Every claim was checked read-only against `origin/develop` @ 2719343. That commit is three merges after ace1e33, the base of the four reader reports: #118, #106 and #119. The draft was then rebased to `origin/develop` @ dac7bdf, which adds #120 (Maru's hearth and the long night), and every cite into a file #120 changed was checked again there. Line numbers are at dac7bdf.
+Status: this is a draft for the owner, under the request rule in GAME_RULES.md section 6 (532-571). Nothing here is built, except G56: built at stage 2a (kernel `walkDistance`, the server's movement credit, `tools/src/check.ts`; DECISIONS 2026-10-20, "The server's wire, as built"). Every claim was checked read-only against `origin/develop` @ 2719343. That commit is three merges after ace1e33, the base of the four reader reports: #118, #106 and #119. The draft was then rebased to `origin/develop` @ dac7bdf, which adds #120 (Maru's hearth and the long night), and every cite into a file #120 changed was checked again there. Line numbers are at dac7bdf.
 
 **Owner direction, 17.10.2026: the world has no end** (DECISIONS.md, 2026-10-17). Generated ground from one seed surrounds the hand-made valley, danger by distance replaces doors, authored places are stamped in, the community grows the world, and it opens ring by ring. G50's 1024-tile cap, the grid edge (G54) and crossings as the only way on (G55, G58) are to be rewritten to match; the edge lip of D1 waits. Until that rewrite, read the sections below through that entry.
 
@@ -149,6 +149,7 @@ Algorithm, move check (stage 2a):
 - That is at most `(2r + 1)^2` visits, about 4,200 at r = 32. Integer math and a fixed order keep it deterministic.
 - The cap adds no reports and no log growth, because the client already reports every tile and keeps moves out of the tail (session.ts:284-305, 319).
 - A refused report is dropped today (session.ts:296), so the client gains a snap-back to the kernel's `at`.
+- **The charge is the path's octile length, from 2026-10-21 (NEXT 22 c).** The reach above stays four-way; the credit a report spends is `walkCharge` in `kernel/src/step.ts`: a four-way step costs `STEP_MILLI` (1000) and a step that turns off the one before it closes a diagonal pair for `DIAGONAL_PAIR_MILLI` (1414) the two. A free walk on a diagonal reports a staircase of single steps, and charging it by its four-way length drains the pool in about 15 s (32 / 0.41 steps), refusing an honest walk. A report of several steps pairs as many as its two axes share. Proof: `kernel/test/travel.test.ts` and `server/test/api.test.ts` (a 20 s diagonal walk passes; a jump of 3 tiles is refused).
 
 ### 1.3 Growth
 

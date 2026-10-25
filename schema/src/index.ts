@@ -343,10 +343,10 @@ export const TreasureBody = Type.Object(
   { additionalProperties: false },
 );
 
-const RecipeLevel = Int(1, 20, 'Level required in the profession that gates the recipe. It sits inside the level band of the recipe\'s tier.');
+const RecipeLevel = Int(1, 20, 'The recipe\'s level in its profession: each missing level takes craft_level_step_bp off the chance (no wall). It sits inside the level band of the recipe\'s tier.');
 const RecipeProfession = {
   ...Id,
-  description: 'The profession that gates this recipe and that it trains. Left out: the profession that works its station.',
+  description: 'The profession that trains this recipe and sets its chance. Left out: the profession that works its station.',
 };
 const RecipeMiss = Type.Object(
   {
@@ -1024,12 +1024,12 @@ const LightKey = Type.Object(
   { additionalProperties: false },
 );
 
-/** One hour of the sun's shear (STYLE section 4): the shadow leans right and toward the viewer by these shares of the caster's height. */
+/** One hour of the sun's shear (STYLE section 4): the shadow leans right and away from the viewer by these shares of the caster's height. */
 const SunKey = Type.Object(
   {
     at: Type.String({ pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$', description: 'The hour and minute the sun is at its own shear, for example "16:30".' }),
     right: Int(-200, 200, 'How far the shadow leans right, in percent of the caster\'s height; negative in the morning, positive in the evening.'),
-    down: Int(0, 100, 'How far the shadow leans toward the viewer, in percent of the caster\'s height.'),
+    down: Int(-100, 100, 'How far the shadow leans toward the viewer, in percent of the caster\'s height; negative when the sun stands south (STYLE section 4: the shadow falls up-screen, away from the viewer, behind the caster).'),
   },
   { additionalProperties: false },
 );
@@ -1041,7 +1041,7 @@ export const LightParams = Type.Object(
       minItems: 2,
       maxItems: 12,
       description:
-        'The hours the valley is washed in a colour (ART_SYSTEM section 2): cool before sunrise, none at noon, warm in the late afternoon, dusk at 19:00, the night after that. The scene multiplies by the wash between keys, in whole percent.',
+        'The hours the valley is washed in a colour (ART_SYSTEM section 2). Today\'s curve is the gold #eda83a at 40% around 05:30 and 20:00 and none at noon; the cool and dusk hour tints land with the L2 pick. The scene multiplies by the wash between keys, in whole percent.',
     }),
     sun: Type.Optional(
       Type.Object(
@@ -1052,7 +1052,7 @@ export const LightParams = Type.Object(
             minItems: 2,
             maxItems: 12,
             description:
-              'The sun\'s shear by hour (STYLE section 4): the shadow leans right and toward the viewer by these shares of the caster\'s height. The hours between two keys step evenly; outside the first and the last the sun is down.',
+              'The sun\'s shear by hour (STYLE section 4): the shadow leans right and toward the viewer by these shares of the caster\'s height, so a negative `down` is the sun in the south and the shadow falling away, up-screen. The hours between two keys step evenly; outside the first and the last the sun is down.',
           }),
         },
         { additionalProperties: false },
@@ -1271,7 +1271,7 @@ export const KitBody = Type.Object(
               minimum: 0.1,
               maximum: 40,
               description:
-                'The sprite\'s height in characters, one decimal (NATURE section 1): a person is 1.0, a house 3.5. The check warns when a kind in NATURE section 1 or STYLE 1b falls under its floor. Left out when the sprite has no true size.',
+                'The sprite\'s height in characters (NATURE section 1): a person is 1.0, a house 3.5. The check warns when a kind in NATURE section 1 or STYLE 1b falls under its floor. Left out when the sprite has no true size.',
             }),
           ),
           source: Type.Optional(
