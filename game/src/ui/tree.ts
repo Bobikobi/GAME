@@ -5,7 +5,8 @@
  * on screen is drawn.
  *
  * Made for a computer first: the wheel zooms where the pointer is, a drag pans, a node shows a card
- * while the pointer rests on it, and the keys move between nodes (arrows), zoom (+ and -), show the
+ * while the pointer rests on it, and the keys move between nodes (arrows), pan the map (Shift and an
+ * arrow, Home back to the trunk), zoom (+ and -), show the
  * whole tree (0) or one wing (1 to 9), learn the chosen node (L) and show its number (V). A phone keeps
  * working: a drag pans, two fingers zoom, a tap chooses a node and a long press shows its number, and
  * at the starting zoom every node takes a tap 44 px wide. No number is written on the tree: a node says
@@ -132,7 +133,7 @@ export function treeScreen(ui: UI, memo: TreeMemo, after: () => void): HTMLEleme
       class: 'tree-view',
       tabindex: '0',
       role: 'group',
-      'aria-label': 'The skill tree. Arrow keys move between nodes, plus and minus zoom, 0 shows the whole tree, 1 to 9 a school, L learns the chosen node, V shows its number.',
+      'aria-label': 'The skill tree. Arrow keys move between nodes, Shift and an arrow pan, plus and minus zoom, 0 shows the whole tree, 1 to 9 a school, L learns the chosen node, V shows its number.',
     },
     canvas,
     layer,
@@ -265,6 +266,7 @@ export function treeScreen(ui: UI, memo: TreeMemo, after: () => void): HTMLEleme
     }
     view.dataset.drawn = String(pool.size);
     view.dataset.zoom = cam.zoom.toFixed(3);
+    view.dataset.cam = `${cam.x.toFixed(3)},${cam.y.toFixed(3)}`;
     // how long a draw takes, the last and the longest, for the tests that hold a big tree to a frame
     const ms = performance.now() - t0;
     view.dataset.drawMs = ms.toFixed(1);
@@ -463,7 +465,12 @@ export function treeScreen(ui: UI, memo: TreeMemo, after: () => void): HTMLEleme
     const k = e.key;
     let handled = true;
     const dir = DIRS[k];
-    if (dir) {
+    if (dir && e.shiftKey) {
+      // Shift and an arrow pan the map a quarter of the view, the keys' way across a tree too big for the screen
+      cam.x += (dir[0] * vw) / 4 / px();
+      cam.y += (dir[1] * vh) / 4 / px();
+      redraw();
+    } else if (dir) {
       const p = nearest(dir[0], dir[1]);
       if (p) focusNode(p);
     } else if (k === '+' || k === '=') zoomAt(1.25);

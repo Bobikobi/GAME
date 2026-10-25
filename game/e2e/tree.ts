@@ -3,11 +3,11 @@
  * screen", "The tree is data", "Platform priority"). On a computer first: the tree fills the wide
  * window, a node's card shows while the pointer rests on it, a click chooses it with the kernel's own
  * reason when it cannot be learned, Learn works in town, the arrow keys move between nodes without
- * walking the player, L learns, a technique goes into the build, the wheel zooms, a drag pans, a number
- * key shows one school and 0 the whole tree. Then a generated tree of about three hundred nodes (tests
+ * walking the player, L learns, a technique goes into the build, the wheel zooms, a drag pans, Shift and
+ * an arrow pan, a number key shows one school and 0 the whole tree. Then a generated tree of about three hundred nodes (tests
  * only, never content) is drawn and panned within a frame's time, only what is on screen. On a phone,
  * once: every node takes a 44 px tap at the starting zoom, a tap chooses, a long press shows the
- * number, Learn works, a finger pans, and the big tree draws only what is on screen.
+ * number, Learn works, a finger pans, two fingers pinch to zoom, and the big tree draws only what is on screen.
  * Every check waits on a condition, never a fixed time.
  */
 import { createReadStream, existsSync, mkdirSync, statSync } from 'node:fs';
@@ -73,8 +73,11 @@ const viewBox = (page: Page) =>
 const dataset = (page: Page) => page.eval<Record<string, string>>(`({ ...document.querySelector('.tree-view').dataset })`);
 
 /** A key the harness has no table row for, sent to the focused element as the page would get it. */
-const key = (page: Page, k: string) =>
-  page.eval(`(document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent('keydown', { key: ${JSON.stringify(k)}, bubbles: true, cancelable: true }))`);
+const key = (page: Page, k: string, shift = false) =>
+  page.eval(`(document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent('keydown', { key: ${JSON.stringify(k)}, shiftKey: ${shift}, bubbles: true, cancelable: true }))`);
+
+/** Where the camera looks, in the layout's steps. */
+const camAt = async (page: Page) => (await dataset(page)).cam!.split(',').map(Number) as [number, number];
 
 async function mouse(page: Page, type: 'mouseMoved' | 'mousePressed' | 'mouseReleased', x: number, y: number): Promise<void> {
   await page.send('Input.dispatchMouseEvent', { type, x, y, button: type === 'mouseMoved' ? 'none' : 'left', buttons: type === 'mouseReleased' ? 0 : type === 'mousePressed' ? 1 : 0, clickCount: 1 });
@@ -271,6 +274,18 @@ async function desktop(page: Page, url: string): Promise<void> {
   await page.waitFor(`(() => { const el = document.querySelector('[data-node=${JSON.stringify(facts.root)}]'); if (!el) return false; const r = el.getBoundingClientRect(); return Math.abs(r.left + r.width / 2 - ${before.x} - 160) < 3 && Math.abs(r.top + r.height / 2 - ${before.y} - 60) < 3; })()`, 'the drag to pan by 160, 60');
   log(`the wheel zooms ${z0} -> ${(await dataset(page)).zoom}, a drag pans`);
 
+  // Shift and an arrow pan a quarter of the view; the chosen node stays chosen
+  await page.eval(`document.querySelector('.tree-view').focus()`);
+  const [cx0, cy0] = await camAt(page);
+  // a quarter of the view in the layout steps (TREE_UNIT, 56 px at zoom 1)
+  const step = view.w / 4 / (56 * Number((await dataset(page)).zoom));
+  await key(page, 'ArrowRight', true);
+  await page.waitFor(`(() => { const [x, y] = document.querySelector('.tree-view').dataset.cam.split(',').map(Number); return Math.abs(x - ${cx0} - ${step}) < ${step * 0.03} && Math.abs(y - ${cy0}) < 0.01; })()`, 'Shift and the right arrow to pan');
+  await key(page, 'ArrowUp', true);
+  await page.waitFor(`Number(document.querySelector('.tree-view').dataset.cam.split(',')[1]) < ${cy0} - 0.01`, 'Shift and the up arrow to pan');
+  if ((await page.eval<string>(`document.querySelector('.tree-card')?.dataset.card ?? ''`)) !== facts.child) throw new Error('a pan by the keys changed the chosen node');
+  log('Shift and an arrow pan the map');
+
   // a number key shows one school, 0 the whole tree
   await page.eval(`document.querySelector('.tree-view').focus()`);
   const z1 = (await dataset(page)).zoom;
@@ -389,6 +404,19 @@ async function phone(page: Page, url: string): Promise<void> {
   await page.tap('.tree-zoom-in');
   await page.waitFor(`Number(document.querySelector('.tree-view').dataset.zoom) > 1.2`, 'the zoom button');
   log('a finger pans, the button zooms');
+
+  // two fingers pinch: closing them to half the distance halves the zoom
+  const zp = Number((await dataset(page)).zoom);
+  const mid = { x: view.x + view.w / 2, y: view.y + Math.min(view.h / 2, 160) };
+  const fingers = (gap: number) => [
+    { x: mid.x - gap / 2, y: mid.y, id: 0 },
+    { x: mid.x + gap / 2, y: mid.y, id: 1 },
+  ];
+  await page.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: fingers(160) });
+  for (let i = 1; i <= 12; i++) await page.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: fingers(160 - (80 * i) / 12) });
+  await page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await page.waitFor(`(() => { const z = Number(document.querySelector('.tree-view').dataset.zoom); return z < ${zp * 0.6} && z > ${zp * 0.4}; })()`, `a pinch to zoom out from ${zp}`);
+  log(`a pinch zooms ${zp} -> ${(await dataset(page)).zoom}`);
   hadNoErrors(page);
 
   // the big tree on a phone: only what is on screen, and a tap still chooses
