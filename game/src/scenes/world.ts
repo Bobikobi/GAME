@@ -72,7 +72,7 @@ import { MazePeek } from './peek';
 import { hintDistance, lanternNight, nodeAction } from '../text';
 import type { WorkKind } from '../ui/ui';
 import { type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, treasureKind } from '../work';
-import { ART_PX, StandingReports, Walker, canEnter, facedTile, facingFor, landStep } from '../walking';
+import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep } from '../walking';
 import { GroundChunks } from '../groundchunks';
 import { adopt, baseOf, densityOf, drawScaled, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
 import { cameraK, cameraZoom, pixelRatio, worldToPage } from '../view';
@@ -375,6 +375,8 @@ export class WorldScene extends Phaser.Scene {
   private pinned = new Set<Pinned>();
   /** the body walking freely between tiles (walking.ts); the session keeps the tile under its feet */
   readonly body = new Walker();
+  /** what the body is drawn facing: one of eight, leaning on the four-way facing the faced tile is read from */
+  private look: Facing8 = 'down';
   private busyFrom = 0;
   private busyMs = 0;
   private work: { node: string; kind: WorkKind } | null = null;
@@ -1702,6 +1704,7 @@ export class WorldScene extends Phaser.Scene {
     this.work = null;
     this.auto = null;
     this.held.clear();
+    this.look = session.facing;
     this.falling = false;
     this.stoneHeld = false;
     this.stillReports.reset();
@@ -1753,7 +1756,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** The race's sprite for a direction, in the look the player picked (races wear today's sheets until their own art). */
-  private playerFrame(dir: Dir, pose = 'walk'): { key: string; flip: boolean } {
+  private playerFrame(dir: Dir, pose = 'walk', look?: Facing8): { key: string; flip: boolean } {
     const p = this.session?.state.player;
     const race = p ? this.b.races[p.race] : undefined;
     const first = Object.values(this.b.races)[0];
@@ -1763,6 +1766,9 @@ export class WorldScene extends Phaser.Scene {
     const has = (k: string) => k in this.b.sprites;
     const none = { key: '', flip: false };
     if (pose !== 'walk' && !has(stem)) return none;
+    // the rig's diagonals (23.10) for the walk and the blink; work poses stay four-way
+    const diagonal = look && (pose === 'walk' || pose === 'idle') ? diagonalSheet(stem, look, dir, has) : undefined;
+    if (diagonal) return diagonal;
     if (dir === 'down') return { key: stem, flip: false };
     if (dir === 'right' && !has(of('right'))) {
       if (has(of('left'))) return { key: of('left'), flip: true };
@@ -1772,10 +1778,15 @@ export class WorldScene extends Phaser.Scene {
     return pose !== 'walk' ? none : { key: stem, flip: false };
   }
 
+  /** The drawn facing, or the four-way one when something else turned the player (a load, a turn in place). */
+  private lookOf(s: GameSession): Facing8 {
+    return agrees(this.look, s.facing) ? this.look : s.facing;
+  }
+
   private faceFrame(frame?: number): void {
     const s = this.session;
     if (!s) return;
-    const { key: k, flip } = this.playerFrame(s.facing);
+    const { key: k, flip } = this.playerFrame(s.facing, 'walk', this.lookOf(s));
     const frames = this.b.sprites[k]?.frames ?? 1;
     if (frames === 1) retex(this.player, k);
     else retex(this.player, k, Math.min(frames - 1, frame ?? (frames >= 3 ? 1 : 0)));
@@ -2165,7 +2176,7 @@ export class WorldScene extends Phaser.Scene {
     }
     if (time - this.idleSince < 3000 || time < this.nextBlink) return;
     this.nextBlink = time + 3000 + Math.random() * 2000;
-    const { key: k, flip } = this.playerFrame(s.facing, 'idle');
+    const { key: k, flip } = this.playerFrame(s.facing, 'idle', this.lookOf(s));
     if (!k || (this.b.sprites[k]?.frames ?? 1) < 2) return;
     retex(this.player, k, 1);
     this.player.setFlipX(flip);
@@ -2196,8 +2207,10 @@ export class WorldScene extends Phaser.Scene {
     const was = this.body.moving;
     const input: [number, number] = this.canControl(s) ? app.controls.vector() : [0, 0];
     const facing = facingFor(input, s.facing);
-    const turned = facing !== s.facing;
+    const look = facing8For(input, this.lookOf(s));
+    const turned = facing !== s.facing || look !== this.look;
     s.facing = facing;
+    this.look = agrees(look, facing) ? look : facing;
     for (const tile of this.body.frame(input, delta, STEP_MS, (x, y) => this.canWalk(s, x, y))) {
       if (RICH.motion) this.puffAt(s.pos[0], s.pos[1]);
       // the kernel hears of each new tile; a hazard there may hurt, and a fall ends the walk
@@ -2208,7 +2221,7 @@ export class WorldScene extends Phaser.Scene {
     if (!this.body.moving && !was && !turned && !moved) return;
     this.drawBody();
     const walked = this.body.walked / ART_PX;
-    if (this.body.moving) this.faceFrame(strideFrame(walked % 1, Math.floor(walked), this.b.sprites[this.playerFrame(s.facing).key]?.frames ?? 1));
+    if (this.body.moving) this.faceFrame(strideFrame(walked % 1, Math.floor(walked), this.b.sprites[this.playerFrame(s.facing, 'walk', this.look).key]?.frames ?? 1));
     else this.faceFrame();
   }
 
