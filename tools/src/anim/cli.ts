@@ -5,6 +5,8 @@
  *   pnpm anim fetch [--lib <id>] [--from <zip>] download each library by URL, check its sha256, unpack the glb
  *   pnpm anim render <clip ...> | --all         Blender, then snap, strips and the four measures; exit 1 on a failure
  *   pnpm anim check [<clip ...>]                the four measures of clips already rendered; exit 1 on a failure
+ *   ... --target <id>                           render or check the clips on another target of anim.json (the cast):
+ *                                               written under tools/.cache/anim/cast/<id>/<clip>/
  *
  * Blender comes from BLENDER, else tools/.cache/anim/local.json {"blender": "<path>"}, else `blender` on the PATH.
  * Everything is written under tools/.cache/anim/ (ignored); nothing goes to content/.
@@ -88,12 +90,18 @@ function context(): Context {
   return { settings, libs: readLibraries(), paces: paces(settings, params) };
 }
 
-function outDir(name: string): string {
-  return join(CACHE_DIR, 'out', name);
+/** Where a clip's output goes: out/<clip>/ on its own target, cast/<target>/<clip>/ when --target moves it. */
+export function outDir(name: string, cast?: string): string {
+  return cast === undefined ? join(CACHE_DIR, 'out', name) : join(CACHE_DIR, 'cast', cast, name);
 }
 
-function measure(name: string, clip: Clip, ctx: Context): ClipMeasures {
-  const out = outDir(name);
+/** The clip as written, or moved to another target: the motion, props and frame stay; the body, scale and ramps are the target's. */
+export function onTarget(clip: Clip, cast: string | undefined): Clip {
+  return cast === undefined ? clip : { ...clip, target: cast };
+}
+
+function measure(name: string, clip: Clip, ctx: Context, cast?: string): ClipMeasures {
+  const out = outDir(name, cast);
   const target = ctx.settings.targets[clip.target];
   if (target === undefined) throw new Error(`${name}: no target ${clip.target}`);
   const ramps = clip.ramps ?? target.ramps;
@@ -130,9 +138,9 @@ function summary(name: string, m: ClipMeasures): string {
   return `${m.problems.length === 0 ? 'PASS' : 'FAIL'} ${name}: ${parts.join(' | ')}`;
 }
 
-function render(name: string, ctx: Context): ClipMeasures {
+function render(name: string, ctx: Context, cast?: string): ClipMeasures {
   const t0 = Date.now();
-  const clip = readClip(name);
+  const clip = onTarget(readClip(name), cast);
   const problems = clipProblems(name, clip, ctx.libs, ctx.settings);
   if (problems.length > 0) throw new Error(problems.join('\n'));
   const target = ctx.settings.targets[clip.target];
@@ -145,7 +153,7 @@ function render(name: string, ctx: Context): ClipMeasures {
     if (!glb?.ready) throw new Error(`${name}: library ${id} is not fetched; run pnpm anim fetch`);
     return glb.path;
   });
-  const out = outDir(name);
+  const out = outDir(name, cast);
   mkdirSync(join(out, 'raw'), { recursive: true });
   mkdirSync(join(out, 'sprites'), { recursive: true });
   const jobPath = join(out, 'job.json');
@@ -154,6 +162,8 @@ function render(name: string, ctx: Context): ClipMeasures {
   writeFileSync(jobPath, `${JSON.stringify(job(name, clip, ctx.libs, ctx.settings, { out: join(out, 'raw'), libs, model, basket, threads }), null, 1)}\n`);
   const blender = blenderPath(process.env);
   const run = spawnSync(blender, ['-b', '--factory-startup', '--offline-mode', '-P', join(ANIM_DIR, 'blender', 'render.py'), '--', jobPath], { encoding: 'utf8', maxBuffer: 64 << 20 });
+  const refused = /^REFUSED (.*)$/m.exec(run.stdout ?? '');
+  if (refused) throw new Error(`${name} on ${clip.target}: ${refused[1]}`);
   if (run.error || !/^DONE /m.test(run.stdout ?? '')) {
     throw new Error(`${name}: Blender (${blender}) did not finish:\n${(run.stdout ?? '').slice(-2000)}\n${(run.stderr ?? '').slice(-1500)}${run.error ? `\n${run.error.message}` : ''}`);
   }
@@ -177,7 +187,7 @@ function render(name: string, ctx: Context): ClipMeasures {
     });
     writePng(join(out, `${name}_${view}.png`), strip);
   }
-  const m = measure(name, clip, ctx);
+  const m = measure(name, clip, ctx, cast);
   // what a player of the strip needs: for distance playback, the art px walked per pose in each view
   const travel: Partial<Record<View, number>> = {};
   for (const [view, v] of Object.entries(m.views) as [View, ViewMeasures][]) if (v.stride) travel[view] = v.stride.travelPerPose;
@@ -188,7 +198,7 @@ function render(name: string, ctx: Context): ClipMeasures {
     join(out, `${name}.json`),
     `${JSON.stringify({ clip: name, frame: clip.frame.size, anchor: clip.frame.anchor, poses: ms.length, ms, views: clip.views, ...playback, right: 'the left strip mirrored', target: clip.target, credit: target.credit ?? null })}\n`,
   );
-  say(`${summary(name, m)}  (Blender ${blenderS.toFixed(0)} s, all ${((Date.now() - t0) / 1000).toFixed(0)} s)`);
+  say(`${summary(cast === undefined ? name : `${name} on ${cast}`, m)}  (Blender ${blenderS.toFixed(0)} s, all ${((Date.now() - t0) / 1000).toFixed(0)} s)`);
   return m;
 }
 
@@ -199,8 +209,13 @@ export async function main(argv: readonly string[]): Promise<number> {
     return i >= 0 ? rest[i + 1] : undefined;
   };
   const ctx = context();
-  const named = rest.filter((a, i) => !a.startsWith('--') && !['--lib', '--from'].includes(rest[i - 1] ?? ''));
-  const rendered = clipNames().filter((n) => existsSync(join(outDir(n), `${n}.json`)));
+  const named = rest.filter((a, i) => !a.startsWith('--') && !['--lib', '--from', '--target'].includes(rest[i - 1] ?? ''));
+  const cast = flag('--target');
+  if (cast !== undefined && ctx.settings.targets[cast] === undefined) {
+    say(`--target ${cast}: not one of ${Object.keys(ctx.settings.targets).join(', ')}`);
+    return 2;
+  }
+  const rendered = clipNames().filter((n) => existsSync(join(outDir(n, cast), `${n}.json`)));
   const names = rest.includes('--all') ? clipNames() : cmd === 'check' && named.length === 0 ? rendered : named;
   if (cmd === 'list') {
     for (const [id, lib] of Object.entries(ctx.libs)) say(`library ${id}: ${lib.title}, ${lib.licence}; ${libraryGlb(id, lib).ready ? 'fetched' : 'not fetched (pnpm anim fetch)'}`);
@@ -220,8 +235,8 @@ export async function main(argv: readonly string[]): Promise<number> {
     let failed = 0;
     for (const name of names) {
       try {
-        const m = cmd === 'render' ? render(name, ctx) : measure(name, readClip(name), ctx);
-        if (cmd === 'check') say(summary(name, m));
+        const m = cmd === 'render' ? render(name, ctx, cast) : measure(name, onTarget(readClip(name), cast), ctx, cast);
+        if (cmd === 'check') say(summary(cast === undefined ? name : `${name} on ${cast}`, m));
         for (const p of m.problems) say(`  ${p}`);
         if (m.problems.length > 0) failed += 1;
       } catch (err) {
@@ -232,7 +247,7 @@ export async function main(argv: readonly string[]): Promise<number> {
     say(`${names.length - failed} of ${names.length} clips pass`);
     return failed > 0 ? 1 : 0;
   }
-  say('usage: pnpm anim list | fetch [--lib <id>] [--from <zip>] | render <clip ...>|--all | check [<clip ...>]');
+  say('usage: pnpm anim list | fetch [--lib <id>] [--from <zip>] | render <clip ...>|--all [--target <id>] | check [<clip ...>] [--target <id>]');
   return 2;
 }
 

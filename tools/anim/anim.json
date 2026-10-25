@@ -8,7 +8,7 @@
   "limits": { "palette_pct": 100, "foot_slide_px": 1, "silhouette_dev_pct": 10, "poses_per_s_max": 30 },
   "targets": {
     "forager": {
-      "about": "The forager the 3D game uses (Mixamo bone names), lit and snapped to the forager's ramps.",
+      "about": "The forager, the man (character-forager-m.glb), as the 3D game uses him (Mixamo bone names), lit and snapped to his ramps.",
       "model": "game/public3d/models/character-forager-m.glb",
       "basket": "game/public3d/models/prop-basket.glb",
       "map": "mixamo",
@@ -18,6 +18,83 @@
       "metal": "grey",
       "leaf": "green",
       "credit": "Forager, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/ (game/public3d/models/README.md); modified: posed with library motion and rendered to pixels by tools/anim"
+    },
+    "forager-f": {
+      "about": "The forager, the woman: long braids, neckerchief, rope belt. Mixamo bone names, the forager's scale and camera.",
+      "model": "game/public3d/models/character-forager-f.glb",
+      "map": "mixamo",
+      "elev": 35,
+      "pxm": 53,
+      "ramps": ["wood", "bark", "skin"],
+      "metal": "grey",
+      "leaf": "green",
+      "credit": "Forager, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: scaled to 1.56 m; skeleton and skin weights added in Blender by fitting the warrior's Mixamo-named rig to the body (game/tools/blender/person_rig.py) on arm joints measured by hand, with the arms cut free where they touched the body; clips Idle, Walk and Run retargeted from the warrior; two empty prop sockets added; reduced from 88,512 to 50,000 triangles and the maps cut from 2048 to 1024 px; posed with library motion and rendered to pixels by tools/anim (game/public3d/models/README.md)"
+    },
+    "digger-m": {
+      "about": "The digger, the man: indigo hood and a short shoulder cape. Mixamo bone names, the forager's scale and camera.",
+      "model": "game/public3d/models/character-digger-m.glb",
+      "map": "mixamo",
+      "elev": 35,
+      "pxm": 53,
+      "ramps": ["stone", "wood", "skin"],
+      "metal": "grey",
+      "leaf": "green",
+      "credit": "Digger, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: a knife at the belt removed; scaled to 1.78 m without the hood; skeleton and skin weights added in Blender by fitting the warrior's Mixamo-named rig to the body (game/tools/blender/person_rig.py); clips Idle, Walk and Run retargeted from the warrior; two empty prop sockets added; reduced from 100,354 to 50,000 triangles and the maps cut from 2048 to 1024 px; posed with library motion and rendered to pixels by tools/anim (game/public3d/models/README.md)"
+    },
+    "digger-f": {
+      "about": "The digger, the woman: a short indigo hood. Mixamo bone names, the forager's scale and camera.",
+      "model": "game/public3d/models/character-digger-f.glb",
+      "map": "mixamo",
+      "elev": 35,
+      "pxm": 53,
+      "ramps": ["stone", "wood", "skin"],
+      "metal": "grey",
+      "leaf": "green",
+      "credit": "Digger, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: scaled to 1.68 m without the hood; skeleton and skin weights added in Blender by fitting the warrior's Mixamo-named rig to the body (game/tools/blender/person_rig.py) on arm joints measured by hand, with the arms cut free where they touched the body; clips Idle, Walk and Run retargeted from the warrior; two empty prop sockets added; reduced from 113,712 to 50,000 triangles and the maps cut from 2048 to 1024 px; posed with library motion and rendered to pixels by tools/anim (game/public3d/models/README.md)"
+    },
+    "explorer-m": {
+      "about": "The explorer, the man: linen tunic, tall leather backpack and blanket roll. Mixamo bone names, the forager's scale and camera.",
+      "model": "game/public3d/models/character-explorer-m.glb",
+      "map": "mixamo",
+      "elev": 35,
+      "pxm": 53,
+      "ramps": ["moss", "wood", "skin"],
+      "metal": "grey",
+      "leaf": "green",
+      "credit": "Explorer, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: scaled to 1.86 m; skeleton and skin weights added in Blender by fitting the warrior's Mixamo-named rig to the body (game/tools/blender/person_rig.py) on arm joints measured by hand, with the arms cut free where they touched the body; clips Idle, Walk and Run retargeted from the warrior; two empty prop sockets added; reduced from 138,130 to 50,000 triangles and the maps cut from 2048 to 1024 px; posed with library motion and rendered to pixels by tools/anim (game/public3d/models/README.md)"
+    },
+    "explorer-f": {
+      "about": "The explorer, the woman: long linen dress, tall leather backpack and blanket roll. Mixamo bone names, the forager's scale and camera.",
+      "model": "game/public3d/models/character-explorer-f.glb",
+      "map": "mixamo",
+      "elev": 35,
+      "pxm": 53,
+      "ramps": ["wood", "bark", "skin"],
+      "metal": "grey",
+      "leaf": "green",
+      "credit": "Explorer, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: scaled to 1.74 m; skeleton and skin weights added in Blender by fitting the warrior's Mixamo-named rig to the body (game/tools/blender/person_rig.py) on arm joints measured by hand, with the arms cut free where they touched the body; clips Idle, Walk and Run retargeted from the warrior; two empty prop sockets added; reduced from 91,754 to 50,000 triangles and the maps cut from 2048 to 1024 px; posed with library motion and rendered to pixels by tools/anim (game/public3d/models/README.md)"
+    },
+    "mage": {
+      "about": "The mage of the character experiments: a long dark robe. Mixamo bone names, the forager's scale and camera. Its skeleton was transferred from the warrior, not fitted to its body (the mesh is not standing on the ground plane): trial 3 found the robe torn and the props hidden; fit it as the six people were (game/tools/blender/person_rig.py) before its sheets are used.",
+      "model": "game/public3d/models/character-meshy-mage.glb",
+      "map": "mixamo",
+      "elev": 35,
+      "pxm": 53,
+      "ramps": ["stone", "bark", "skin"],
+      "metal": "grey",
+      "leaf": "green",
+      "credit": "Mage, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: reduced from 322,614 to 59,988 triangles; skeleton and skin weights added in Blender by transferring the warrior's Mixamo-named rig (game/tools/blender/rig_transfer.py); clips Idle, Walk and Run shared from the warrior; posed with library motion and rendered to pixels by tools/anim (game/public3d/models/README.md)"
+    },
+    "warrior": {
+      "about": "The warrior of the character experiments. Mixamo bone names, the forager's scale and camera.",
+      "model": "game/public3d/models/character-meshy-warrior.glb",
+      "map": "mixamo",
+      "elev": 35,
+      "pxm": 53,
+      "ramps": ["stone", "bark", "skin"],
+      "metal": "grey",
+      "leaf": "green",
+      "credit": "Warrior, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: reduced from 191,496 to 60,000 triangles, clips renamed to Idle, Walk and Run, a 0.08 s extra clip removed; posed with library motion and rendered to pixels by tools/anim (game/public3d/models/README.md)"
     },
     "rig": {
       "about": "A 19-bone body rig (.blend, rigid parts on bones: hips, spine, neck, head, upper_arm/forearm/hand/tool and thigh/shin/foot per side), path from ANIM_RIG_BLEND. Heights are modelled stretched by 1/cos 30 for the 30 degree camera.",

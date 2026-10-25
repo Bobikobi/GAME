@@ -79,7 +79,9 @@ if IS_RIG:
 else:
     tobjs = imp(cfg["target_path"])
     tarm = next(o for o in tobjs if o.type == "ARMATURE")
-    tmesh = next(o for o in tobjs if o.type == "MESH" and o.name.startswith("Character"))
+    # the body: the skinned mesh with the most vertices (Meshy names it Character or Mesh_0)
+    skinned = [o for o in tobjs if o.type == "MESH" and (o.parent is tarm or any(m.type == "ARMATURE" for m in o.modifiers))]
+    tmesh = max(skinned or [o for o in tobjs if o.type == "MESH"], key=lambda o: len(o.data.vertices))
     for o in tobjs:
         if o.type == "MESH" and o is not tmesh:
             bpy.data.objects.remove(o, do_unlink=True)
@@ -103,6 +105,12 @@ else:
         "arm": {"R": ["RightArm", "RightForeArm", "RightHand"], "L": ["LeftArm", "LeftForeArm", "LeftHand"]},
         "contacts": {"Left": "LeftToeBase", "Right": "RightToeBase"},
     }
+missing = [P + b for b in MAP["order"] if P + b not in tarm.data.bones]
+if missing:   # a skeleton the map cannot drive: say so in one line and stop, before any frame is drawn
+    have = [b.name for b in tarm.data.bones]
+    print(f"REFUSED the model's skeleton lacks {len(missing)} of the {len(MAP['order'])} bones the {cfg.get('map', 'mixamo')} map drives "
+          f"({', '.join(missing[:6])}{', ...' if len(missing) > 6 else ''}); it has {len(have)}: {', '.join(have[:12])}", flush=True)
+    sys.exit(1)
 mw = tarm.matrix_world.copy(); tarm.parent = ROOT; tarm.matrix_world = mw
 BASKET = None
 if cfg.get("basket") and not IS_RIG:   # the repo's own basket (prop-basket.glb, made in Blender by props.py), on socket_back

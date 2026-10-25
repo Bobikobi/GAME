@@ -9,7 +9,12 @@ pnpm anim fetch            # download each library by URL, refuse it unless its 
 pnpm anim list             # the clips, what each is made of, whether the libraries are fetched
 pnpm anim render walk_torch chop      # or --all; needs Blender (below)
 pnpm anim check            # the four measures of every rendered clip; exit 1 on a failure
+pnpm anim render chop --target digger-f   # the same clip on another body of the cast (anim.json targets)
 ```
+
+`--target <id>` moves a clip onto another target for render or check: the motion, prop, set pieces and frame stay,
+the body, its scale and its ramps are the target's, and the output goes to `tools/.cache/anim/cast/<id>/<clip>/`.
+A model whose skeleton lacks a bone its map drives is refused in one line before a frame is drawn.
 
 Blender 5.2 (any recent 4.x or 5.x with the glTF importer should do) is found by `BLENDER`, else
 `tools/.cache/anim/local.json` (`{"blender": "/path/to/blender"}`), else `blender` on the `PATH`. No add-on.
@@ -21,7 +26,7 @@ whatever admission the machine uses for heavy jobs: a clip of eight poses in thr
 | File | What |
 |---|---|
 | `libraries.json` | each library: its itch.io page and upload name, exact bytes and sha256, licence, the in-place glb inside the archive, every action's length in frames |
-| `anim.json` | the tile size (64 px: today's 16 px tile shown at 4x, the scale the cut-out demo draws at), the paces (read from `content/core/params.json`), the limits of the check, the targets (the forager; an optional 19-bone body rig from `ANIM_RIG_BLEND`) |
+| `anim.json` | the tile size (64 px: today's 16 px tile shown at 4x, the scale the cut-out demo draws at), the paces (read from `content/core/params.json`), the limits of the check, the targets (the forager and the rest of the cast of `game/public3d/models/`, each with its credit line; an optional 19-bone body rig from `ANIM_RIG_BLEND`) |
 | `clips/<clip>.json` | one clip: the base action and its frames, an optional bone-mask layer, an optional IK overlay, a prop, set pieces and worn parts, the frame size and anchor, the views, the time per pose, locomotion playback |
 | `blender/render.py` | the Blender half: retarget, layer, IK, props, two renders per view (lit, and a flat ID pass) |
 | `tools/src/anim/` | the TypeScript half: configs, fetch (with the zip reader), snap, measures, the CLI |
@@ -100,6 +105,9 @@ and adds the outline outside the silhouette. The left view is rendered facing ri
   (`License.txt` in each archive; the itch.io pages say "Creative Commons Zero v1.0"). The archives are fetched,
   never committed. Quaternius' site now also shows a "Quaternius Asset License v1.0" (no reselling or
   redistributing the assets themselves); rendered frames are not the assets.
-- The forager (`game/public3d/models/character-forager-m.glb`): made with Meshy, **CC BY 4.0**. A sprite rendered
-  from it is a derivative and carries the credit line of `game/public3d/models/README.md` (also in `anim.json`).
+- The forager and the rest of the cast (`game/public3d/models/character-*.glb` but the two Kenney minis): made with
+  Meshy, **CC BY 4.0**. A sprite rendered from one is a derivative and carries that model's credit line from
+  `game/public3d/models/README.md` (each target's `credit` in `anim.json`, written into every `<clip>.json`).
+- A target's body ramps: the two shared ramps, plus `skin`, whose steps leave the smallest mean CIELAB error over the
+  model's colour map (for the forager this gives the hand-picked `wood`, `red`, `skin`).
 - Blender is a tool (GPL); its output is ours. The props are built in `blender/render.py`.

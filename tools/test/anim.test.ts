@@ -2,16 +2,17 @@
  * tools/anim (library motion to pixels): the clip configs, the library fetch's refusal, the zip reader, the snap and
  * the four measures, on small made-up inputs. Blender and the network are not touched.
  */
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { crc32, deflateRawSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
 import { type Clip, clipNames, clipProblems, job, type Library, paces, poseMs, readClip, readLibraries, readSettings, samples, stepFrames } from '../src/anim/clip';
+import { onTarget, outDir } from '../src/anim/cli';
 import { archiveProblems, itchUploads, sha256, unpack } from '../src/anim/fetch';
 import { measureClip, outlineOf, paletteShare, plantedRuns, type RenderMeta, sharedSlope, silhouette, slideAtPace, stride } from '../src/anim/measure';
-import { classPalettes, flipX, type Picture, snap } from '../src/anim/snap';
+import { classPalettes, flipX, type Picture, rampColours, snap } from '../src/anim/snap';
 import { zipEntries, zipFile, zipRead } from '../src/anim/zip';
-import { CONTENT_DIR } from '../src/load';
+import { CONTENT_DIR, REPO_ROOT } from '../src/load';
 
 const settings = readSettings();
 const libs = readLibraries();
@@ -33,6 +34,30 @@ describe('clip configs', () => {
   it('every clip in tools/anim/clips can be rendered as written', () => {
     expect(clipNames().length).toBeGreaterThan(0);
     for (const name of clipNames()) expect(clipProblems(name, readClip(name), libs, settings)).toEqual([]);
+  });
+
+  it('every target of the cast has its model in the repo, shared ramps and a credit line naming its licence', () => {
+    const cast = Object.entries(settings.targets).filter(([, t]) => !t.model.startsWith('$'));
+    expect(cast.length).toBeGreaterThan(1);
+    for (const [id, t] of cast) {
+      expect(existsSync(join(REPO_ROOT, t.model)), id).toBe(true);
+      expect(() => classPalettes(t.ramps, t.metal, t.leaf), id).not.toThrow();
+      expect(rampColours(t.ramps).length, id).toBeGreaterThan(0);
+      expect(t.credit ?? '', id).toMatch(/CC BY 4\.0|CC0/);
+    }
+  });
+
+  it('a clip moved onto another target keeps its motion, takes that body and writes to its own folder', () => {
+    const chop = readClip('chop');
+    const moved = onTarget(chop, 'digger-f');
+    expect(moved.target).toBe('digger-f');
+    expect(moved.base).toEqual(chop.base);
+    expect(moved.prop).toEqual(chop.prop);
+    expect(onTarget(chop, undefined)).toBe(chop);
+    expect(clipProblems('chop', moved, libs, settings)).toEqual([]);
+    expect(clipProblems('chop', onTarget(chop, 'nobody'), libs, settings).join(' ')).toContain('nobody');
+    expect(outDir('chop', 'digger-f').split(/[\\/]/).slice(-3)).toEqual(['cast', 'digger-f', 'chop']);
+    expect(outDir('chop').split(/[\\/]/).slice(-2)).toEqual(['out', 'chop']);
   });
 
   it('refuses an action the library lacks, a frame past its end, a short IK curve and a locomotion clip with picked frames', () => {
