@@ -1,5 +1,6 @@
 /**
  * The three starter looks, derived from the base character sheets.
+ * Stand-in only (DECISIONS 2026-10-22, decision 43): retires when the race figures land.
  *
  * DECISIONS 2026-10-09 "Each player role reads at a glance": one big item, one colour
  * and its own build per role, over the same patched base clothes.
