@@ -10,7 +10,7 @@ Stage 1 is a playable demo. Progress is saved in your browser only. It will not 
 
 What works today:
 
-- **Three starters**, the Forager, the Digger and the Explorer. Each wakes at its own place with its own kit and its own first task.
+- **Three races**, the human, the elf and the skeleton. Each wakes in a wake pocket the seed draws, with the pocket's own first task.
 - **An opening of about ten minutes.** You mend the bridge, fell a tree for the first fire, meet the town, help Elder Maru or Pell the trader, and find the way into the night ruins.
 - **Gathering, digging, felling and cooking**, each with levels. There is also a day and night clock.
 - **Health and danger.** A countdown to dark, a pit and a wolf in the night ruins, and things that heal. A fall takes back only what the outing brought.
@@ -27,13 +27,13 @@ Each stage has a condition for moving on. Stages 2a and 2b run in parallel, and 
 | Stage | What it adds | Status |
 |---|---|---|
 | 1. Demo and the creator template | The game loop on a static site, the content format, the automatic check, the template | **Live, being finished.** Built and going live with the next release: a small service that counts visits, item pickups and short reports, shown on each creator's page, so a creator can see how their content is used. |
-| 2a. Accounts and a server | Accounts; save, bag and gold decided on the server, which replays the player's actions through the same simulation; a gold ledger; server-verified leaderboards for wealth, collections and profession levels | Planned. It is designed once the stage 1 service has real numbers. |
-| 2b. The community loop (runs beside 2a) | Requests and open calls, competing proposals as pull requests, previews, three reviewers, a vote, the credits file | **Partly built.** Requests, open calls, previews, the check and three approvals to merge already run (see [CONTRIBUTING.md](CONTRIBUTING.md)). |
-| 3. Specialisation | A camp with four places, the skill tree, quests and reputation, and harder work that opens at higher levels and pays more | Some pieces are already in the demo (three starters, a camp with three places, quests). |
+| 2a. Accounts and a server | Accounts; save, bag and gold decided on the server, which replays the player's actions through the same simulation; a gold ledger; server-verified leaderboards for wealth, collections and profession levels | In progress: sign-in, the handover, the ledger and the verified boards are on develop; step 3 of the 2026-10-17 order. |
+| 2b. The community loop (runs beside 2a) | Requests and open calls, competing proposals as pull requests, previews, three reviewers, a vote, the credits file | **Partly built.** Requests, open calls, previews, the check and one approval to merge (three once five creators have had an extension merged) already run (see [CONTRIBUTING.md](CONTRIBUTING.md)). |
+| 3. Specialisation | A camp with four places, the skill tree, quests and reputation, and harder work that opens at higher levels and pays more | Some pieces are already in the demo (three races, a camp with three places, quests). |
 | 4. The market | Shared prices that move with stock, a sales board, gold for creators by the share their content is used, a first season, light presence: you see other players' camps, tracks and notes | Planned. |
 | 5. Deciding inside the game | In-game polls and votes on rules and numbers | Planned. |
 | 6. Looks and payments | Clothes and looks drawn on the character, a premium currency for looks only. Power is never sold. | Planned. |
-| 7. Live presence and chat | Players see each other in real time, with chat and moderation | Planned. |
+| 7. Live presence and chat | Players see each other walk in real time with no chat, after accounts and the server; chat with moderation comes last (DECISIONS 2026-10-17, "The order from here") | Planned. |
 | 8. Mechanics as code | New verbs and mechanics proposed by the community as code, run in isolation | Planned. |
 
 The order can change when play shows a better one, and every change is written in [DECISIONS.md](DECISIONS.md).
@@ -46,7 +46,7 @@ A 3D client of the same valley is in progress. It uses the same simulation, cont
 
 - **Content:** a fruit, a herb, a recipe, a quest, a treasure or a place to restore. Start with [Add a fruit in 10 minutes](docs/creators/README.md).
 - **Pixel art:** 16x24 characters and 32x32 work poses, in the kit's palette (the guide covers it).
-- **Reviewing:** every extension proposal needs three approvals once five creators have had an extension merged (until then, one approval from a maintainer), and an approval earns points when that proposal is merged.
+- **Reviewing:** every extension proposal needs three approvals once five creators have had an extension merged (until then, one approval, the owner's), and an approval earns points when that proposal is merged.
 - **3D:** models and scenes for the 3D door.
 - **Code:** read [CONTRIBUTING.md](CONTRIBUTING.md) first. The simulation in `kernel/` stays pure and integer-only.
 

@@ -1201,7 +1201,7 @@
               "type": "integer"
             },
             "weekly_pool_active": {
-              "description": "false until usage exists; the pool is then shared by usage, never by seniority.",
+              "description": "false: this points pool is an inactive placeholder; the creators' pool is gold already spent (DECISIONS 2026-10-09).",
               "type": "boolean"
             }
           }

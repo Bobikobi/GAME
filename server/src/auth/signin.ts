@@ -8,10 +8,11 @@ import { ageGate, parseBirthDate } from './age';
 import { AGE_COOKIE, clearCookie, cookie, FLOW_COOKIE, readCookie, SESSION_COOKIE, SIGNUP_COOKIE } from './cookies';
 import type { Mailer } from './mailer';
 import { SignInRefusal, type OAuthProvider, type ProvenIdentity } from './provider';
-import type { AuthStore } from './store';
+import { CLOSED_ACCOUNT_GRACE_MS, type AuthStore } from './store';
 import { isToken, newToken, pkceChallenge, sameSecret, tokenHash } from './tokens';
 
 const MINUTE = 60 * 1000;
+const DAY = 24 * 60 * MINUTE;
 const FLOW_TTL_MS = 10 * MINUTE;
 const LINK_TTL_MS = 15 * MINUTE;
 const TICKET_TTL_MS = 30 * MINUTE;
@@ -178,8 +179,10 @@ export function createSignIn(options: SignInOptions): SignIn {
       if (accountId) await store.addIdentity(identity.provider, identity.subject, accountId);
     }
     if (accountId) {
+      // an account closed within its 30 days comes back by signing in; the game is told plainly
+      const restored = (await store.isClosed(accountId)) && (await store.reopenAccount(accountId));
       const session = await startSession(request, accountId, at);
-      backToGame(response, 'ok', [session, clearCookie(SIGNUP_COOKIE), clearCookie(FLOW_COOKIE)]);
+      backToGame(response, restored ? 'restored' : 'ok', [session, clearCookie(SIGNUP_COOKIE), clearCookie(FLOW_COOKIE)]);
       return;
     }
     const ticket = newToken();
@@ -307,7 +310,7 @@ export function createSignIn(options: SignInOptions): SignIn {
   /**
    * The sign-up asks for a name and a date of birth, and nothing else (DECISIONS 2026-10-09; CR-49): the
    * address comes from the proven identity, and the country from our proxy, never from the player. The
-   * date sets the band and is not kept. `oneAccount` is the player's yes to "one person, one account in a
+   * date is checked and not kept, nor is its band: the account keeps that the check passed, and the country. `oneAccount` is the player's yes to "one person, one account in a
    * world" (CR-53). A browser refused for its age is refused a new date for a day, as a neutral age screen
    * asks, and its ticket ends. `opening`, when the phone sends it, is the opening it played before the
    * account existed (NEXT 18 d): the account keeps it when the server's replay proves it, and starts fresh
@@ -335,7 +338,7 @@ export function createSignIn(options: SignInOptions): SignIn {
     const game = handover.kept
       ? { record: handover.record, books: { action: handover.opening, tick: handover.tick, gold: handover.gold } }
       : { record: handover.record };
-    const made = await store.createAccount({ email: ticket.email, name: body.name.trim(), birthBand: gate.band }, ticket, game);
+    const made = await store.createAccount({ email: ticket.email, name: body.name.trim(), country: countryOf(request) }, ticket, game);
     if (made === 'name-taken') throw new SignInRefusal('That name is taken in this world. Choose another.', 'name-taken', 409);
     if (made === 'email-taken') throw new SignInRefusal('That address already has an account. Sign in instead.', 'email-taken', 409);
     const session = await startSession(request, made.accountId, at);
@@ -364,7 +367,7 @@ export function createSignIn(options: SignInOptions): SignIn {
     sendJson(response, 200, { signedOut: true }, [clearCookie(SESSION_COOKIE)]);
   }
 
-  /** Closing an account deletes it and every row that names it, sessions included (NEXT 18 e). */
+  /** Closing an account hides it at once and ends its sessions; signing in within 30 days brings it back, after that the details are erased (23.10). */
   async function close(request: IncomingMessage, response: ServerResponse): Promise<void> {
     requireOrigin(request);
     const session = await sessionHash(request);
@@ -372,8 +375,8 @@ export function createSignIn(options: SignInOptions): SignIn {
     const body = await readJsonObject(request);
     onlyKeys(body, ['close']);
     if (body.close !== true) throw new SignInRefusal('Confirm that the account is to be closed.', 'request');
-    await store.closeAccount(session.accountId);
-    sendJson(response, 200, { closed: true }, [clearCookie(SESSION_COOKIE)]);
+    await store.closeAccount(session.accountId, now());
+    sendJson(response, 200, { closed: true, restorableDays: CLOSED_ACCOUNT_GRACE_MS / DAY }, [clearCookie(SESSION_COOKIE)]);
   }
 
   type Route = (request: IncomingMessage, response: ServerResponse, url: URL) => Promise<void>;
