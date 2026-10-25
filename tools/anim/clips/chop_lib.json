@@ -1,0 +1,30 @@
+{
+  "about": "The library's tree chop, with a hatchet built by the renderer in the right hand.",
+  "target": "forager",
+  "base": {
+    "library": "ual2",
+    "action": "TreeChopping_Loop"
+  },
+  "frames": {
+    "even": 8
+  },
+  "prop": {
+    "kind": "hatchet",
+    "hand": "R"
+  },
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      112
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

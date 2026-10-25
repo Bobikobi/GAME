@@ -1,0 +1,33 @@
+{
+  "about": "Bending to harvest: the library's farm harvest, eight of its frames.",
+  "target": "forager",
+  "base": {
+    "library": "ual2",
+    "action": "Farm_Harvest"
+  },
+  "frames": [
+    0,
+    8,
+    14,
+    20,
+    26,
+    32,
+    42,
+    52
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      112
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "about": "A chop by IK overlay: the library's sword idle for the body, the right wrist moved along a hatchet arc through five control points (wind-up behind, overhead, strike, follow-through). Only the arm is solved; nothing is keyed.",
+  "target": "forager",
+  "base": {
+    "library": "ual1",
+    "action": "Sword_Idle"
+  },
+  "frames": [
+    0,
+    5,
+    10,
+    15,
+    20,
+    25,
+    30,
+    35
+  ],
+  "ik": {
+    "side": "R",
+    "anchor": "shoulder",
+    "pole": [
+      0.6,
+      0.0,
+      -0.8
+    ],
+    "points": [
+      [
+        0.12,
+        0.3,
+        -0.3
+      ],
+      [
+        0.1,
+        -0.2,
+        0.38
+      ],
+      [
+        0.02,
+        0.18,
+        0.46
+      ],
+      [
+        -0.02,
+        0.5,
+        -0.18
+      ],
+      [
+        -0.02,
+        0.4,
+        -0.4
+      ]
+    ],
+    "t": [
+      0,
+      0.15,
+      0.25,
+      0.4,
+      0.55,
+      0.75,
+      0.85,
+      1.0
+    ]
+  },
+  "prop": {
+    "kind": "hatchet",
+    "hand": "R",
+    "from": "ik"
+  },
+  "ms": [
+    110,
+    110,
+    220,
+    110,
+    70,
+    220,
+    110,
+    130
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      112
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}
