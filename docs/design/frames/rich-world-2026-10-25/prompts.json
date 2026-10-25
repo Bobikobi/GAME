@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-25",
+  "tool": "image_gen.imagegen",
+  "reference": "../rich-shore-2026-10-25/ground.png",
+  "jobs": [
+    {
+      "name": "land",
+      "transparent": true,
+      "prompt": "Edit this image into an EXACT REGISTERED LAND OVERLAY for the same game scene. Preserve every land pixel, the path, rocks, bank and their exact coordinates, scale and framing. Remove ALL water on the right side of the shoreline, including underwater rocks, reflections, ripples and foam: that entire water region must be genuinely transparent. Keep the dry/wet bank rocks and land opaque. Do not fill the removed water with colour or a checker pattern. No crop, no shift, no resizing, no extra objects. The result must fit directly over a separate animated water texture. Entire square canvas preserved. Crisp pixel art edges; transparency only where the river water was."
+    },
+    {
+      "name": "water",
+      "prompt": "Create a seamless full-square 128x128 logical pixel-art water texture field for Openfold RICH, enlarged with crisp pixels. Aerial top-down blue-teal gently flowing river surface, painterly pixel clusters, sparse short broken cyan reflections, broad restful deep blue patches and subtle hue shifting, no foam boundary, no rocks, no plants, no shoreline, no transparency, no cast shadows, no perspective, no text, no visible tile grid. Match the pixel-art water material in the reference but make all four edges seamlessly repeatable. Avoid checkerboard noise and white highlights; clear readable water surface. Palette from navy #0f1c3b #172a52, blue #275a99 #3f8fd1 #7cc4ec, teal #1c4a49 #2a6c66 #3f8f84 #62b3a2."
+    },
+    {
+      "name": "forest",
+      "prompt": "Create a full square seamless 128x128 logical pixel-art forest floor texture field, intended to become four 64x64 ground tiles in Openfold RICH. Crisp painterly pixel clusters, controlled dithering, top-down flat ground. Dark brown humus, irregular restful moss-green flat patches and small sparse flat ochre leaf fragments embedded in soil. Material is walking ground beneath the far northern forest. NO upright vegetation, grass tufts, trees, roots sticking up, mushrooms, rocks, props, shadows, paths, magic symbols, water or text: living things will be separate animated layers. 60% quiet ground, clustered detail at irregular intervals. Shared green/moss/wood families, cooler shadows and warm highlights. Fill the entire canvas; seamless opposite edges, no borders or tile grid. Reference only for common pixel language, not the river composition."
+    },
+    {
+      "name": "city",
+      "prompt": "Create a full square seamless 128x128 logical pixel-art town paving texture field, intended to become four 64x64 ground tiles in Openfold RICH. Crisp painterly pixel clusters, top-down flat warm-grey hand-set stone pavement with varied small rectangular and irregular pavers, occasional repaired sections, a few small muted moss seams and subtle worn centres. Restrained stone/wood/moss palette families, no white outlines. Earthy medieval riverside human city, not futuristic, not ornate cathedral. Quiet readable floor with material variation. NO buildings, props, plants standing up, debris piles, shadows, water, road borders, symbols or text. All pavers at compatible scale, not one giant slab per tile. Seamless opposite edges; no visible grid for tiles. Reference only for common pixel language, not river composition."
+    },
+    {
+      "name": "ruins",
+      "prompt": "Create a full square seamless 128x128 logical pixel-art ruined floor texture field, intended as four 64x64 ground tiles in Openfold RICH. Top-down flat walkable stone, blue-grey aged small paving slabs partially sunk into dark soil, short uneven cracks, restrained moss in a few seams and occasional tiny flat stone chips. Cool slate grey shadows, muted stone highlights, some warm soil; atmospheric but easily readable and not black. This is ground for the southern ruins, no lore or symbols. NO skulls, bones, graves, runes, buildings, upright rocks, debris piles, grass tufts, props, water, shadows or text. 60% quieter worn surfaces, remaining details in irregular groups. Crisp painterly pixel clusters and selective dithering, not smooth painting. Seamless opposite edges, no tile grid. Reference only for common pixel language."
+    }
+  ],
+  "status": "material studies; not new map regions; no runtime integration"
+}

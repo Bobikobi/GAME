@@ -1,0 +1,6 @@
+{
+  "tool": "image_gen.imagegen",
+  "prompt": "Create a THREE-CELL HORIZONTAL sprite atlas of alternative straight NORTH riverbank tiles in the SAME Openfold RICH style and colour palette as reference. Logical whole canvas192x64, each cell64x64, no separators or gaps. All three cells: top32pixels truly transparent for water, bottom32pixels opaque quiet low moss-green turf. Shoreline horizontal across y32, slight irregularity only within y29..35, narrow5pixel beige-grey fine gravel border. For EACH cell, leftmost and rightmost8pixels must have the EXACT SAME flat endpoint: transparent y0..31, gravel y32..36, low turf y37..63. This endpoint registration is essential to connect neighbouring tiles. Vary only the MIDDLE48pixels per cell: first earthy bank with sparse flat tiny pebbles, second more fine grey gravel and muted moss, third grass/turf encroaching toward bank with fewer pebbles. Sparse detail, no repeated rock necklace. NO upright vegetation, large rocks, trees, reeds, water colour, foam, waves, shadow, buildings, text or grid lines. All opaque turf consistent colour across cells. True transparent background above the land, not black. Canvas wide3:1, pixel art sharp painterly clusters; the picture is an atlas to cut exactly into3squares.",
+  "source": "bank-variants-source.png",
+  "reference": "bank-outer-source.png"
+}

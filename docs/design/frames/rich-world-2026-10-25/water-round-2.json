@@ -1,0 +1,6 @@
+{
+  "tool": "image_gen.imagegen",
+  "prompt": "Revise this pixel-art water texture ONLY to reduce visual noise and repetition. Keep a full square seamless top-down blue-teal river texture, no shore, no objects. Remove the large repeating diamond lattice of bright ripples entirely. Make 80 percent of surface broad quiet deep-blue midtone water with extremely subtle small clusters, and only20 percent irregular widely separated short dark-teal currents and a FEW dim pale-blue dashes. No long bright lines, no diamonds, no regular rows, no white or near-white. Deliberate pixel clusters,128x128 logical pixels enlarged, same Openfold painterly pixel language. Navy #172a52 and blue #275a99 dominate; #3f8fd1 and teal #2a6c66 secondary; sparse #7cc4ec only. Restful walking-game background, not tropical crystalline caustics. All four edges should repeat seamlessly.",
+  "source": "water-quiet-source.png",
+  "review": "Reduced bright highlights and quieter dark areas. The diagonal motif is still present, so this is a quieter motion prototype, not a final seamless water family."
+}

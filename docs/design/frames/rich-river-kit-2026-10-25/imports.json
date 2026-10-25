@@ -1,0 +1,230 @@
+{
+  "reports": [
+    {
+      "name": "bank-variants",
+      "cells": 3,
+      "ramps": [
+        "green",
+        "moss",
+        "wood",
+        "stone"
+      ],
+      "registration": "nearest sample of full192x64 canvas; hard alpha and palette snap; no trimming",
+      "status": "alternatives need endpoint review before substitution"
+    },
+    {
+      "name": "bank-outer",
+      "colors": 30,
+      "ramps": [
+        "green",
+        "moss",
+        "wood",
+        "stone"
+      ],
+      "sourceGrid": [
+        145,
+        144
+      ],
+      "cells": 9,
+      "registration": "fit alpha artwork to128 square; pad32 on all sides; cut3x3",
+      "status": "candidate: seams need visual review"
+    },
+    {
+      "name": "bank-inner",
+      "colors": 26,
+      "ramps": [
+        "green",
+        "moss",
+        "wood",
+        "stone"
+      ],
+      "sourceGrid": [
+        180,
+        180
+      ],
+      "cells": 4,
+      "registration": "fit128 square; cut2x2",
+      "status": "candidate: seams need visual review"
+    },
+    {
+      "name": "riverbed",
+      "colors": 17,
+      "ramps": [
+        "wood",
+        "stone",
+        "teal",
+        "moss"
+      ],
+      "sourceGrid": [
+        418,
+        418
+      ],
+      "status": "candidate: repeat seams need visual review"
+    },
+    {
+      "name": "depth-transition",
+      "colors": 23,
+      "ramps": [
+        "water",
+        "teal",
+        "wood",
+        "stone"
+      ],
+      "sourceGrid": [
+        418,
+        418
+      ],
+      "status": "candidate: repeat seams need visual review"
+    }
+  ],
+  "seams": [
+    {
+      "name": "island",
+      "vertices": [
+        "0000000",
+        "0111110",
+        "0111110",
+        "0111110",
+        "0111110",
+        "0111110",
+        "0000000"
+      ],
+      "grid": [
+        [
+          4,
+          12,
+          12,
+          12,
+          12,
+          8
+        ],
+        [
+          6,
+          15,
+          15,
+          15,
+          15,
+          9
+        ],
+        [
+          6,
+          15,
+          15,
+          15,
+          15,
+          9
+        ],
+        [
+          6,
+          15,
+          15,
+          15,
+          15,
+          9
+        ],
+        [
+          6,
+          15,
+          15,
+          15,
+          15,
+          9
+        ],
+        [
+          2,
+          3,
+          3,
+          3,
+          3,
+          1
+        ]
+      ],
+      "alphaBoundaryMismatches": 20,
+      "productionReady": false
+    },
+    {
+      "name": "inlet",
+      "vertices": [
+        "0000000",
+        "0111110",
+        "0111110",
+        "0111000",
+        "0111000",
+        "0111110",
+        "0000000"
+      ],
+      "grid": [
+        [
+          4,
+          12,
+          12,
+          12,
+          12,
+          8
+        ],
+        [
+          6,
+          15,
+          15,
+          15,
+          15,
+          9
+        ],
+        [
+          6,
+          15,
+          15,
+          11,
+          3,
+          1
+        ],
+        [
+          6,
+          15,
+          15,
+          9,
+          0,
+          0
+        ],
+        [
+          6,
+          15,
+          15,
+          13,
+          12,
+          8
+        ],
+        [
+          2,
+          3,
+          3,
+          3,
+          3,
+          1
+        ]
+      ],
+      "alphaBoundaryMismatches": 30,
+      "productionReady": false
+    }
+  ],
+  "supportedMasks": [
+    4,
+    12,
+    8,
+    6,
+    15,
+    9,
+    2,
+    3,
+    1,
+    14,
+    13,
+    7,
+    11
+  ],
+  "unsupportedMasks": [
+    5,
+    10
+  ],
+  "density": 4
+}

@@ -1,0 +1,6 @@
+{
+  "tool": "image_gen.imagegen",
+  "prompt": "Create one tiny Openfold RICH pixel-art riverbank foam sprite on truly transparent background: a short thin broken crescent of pale muted cyan-white foam, irregular 2-3 tiny offshoots and small gaps, viewed top-down, logical canvas64x32. Crest occupies width42 height10 near centre. Deliberate pixel clusters, no glow, no blur, no outline, no water disk or ground beneath it, no other objects. Sparse tiny foam bubbles only immediately adjacent to crest. Colour family #3f8fd1 #7cc4ec #c4ecf8 with most visible pixels pale blue. This is an overlay to fade and drift subtly beside river rocks, not a whole water tile. No text, no grid.",
+  "source": "foam-source.png",
+  "import": "tools/src/kit/import-world-study.ts"
+}

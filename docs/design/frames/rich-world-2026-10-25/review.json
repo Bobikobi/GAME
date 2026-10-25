@@ -1,0 +1,8 @@
+{
+  "status": "prototype materials and independent layer animation; not installed in runtime",
+  "land": "Model removed the water and retained a similar bank layout. It is a new study overlay, not a pixel-exact production mask of the old image.",
+  "water": "Imported to shared water and teal ramps. Texture translates beneath fixed land; local flow, depth, reflections and player interaction are not implemented.",
+  "foam": "Generated raster overlay, imported at 64x32; fades and shifts beside rocks, occluded by land.",
+  "materials": "Forest, city and ruins are distinct static material families. Each 128x128 field is cropped into four 64x64 candidates. Arbitrary adjacency and seamless repetition are not proven.",
+  "next": "Review repeats at phone size, refine seams and material transitions, create more variants, then test alongside a character in the runtime before any map replacement. Plants, trees, city structures and undead-region content remain separate work."
+}

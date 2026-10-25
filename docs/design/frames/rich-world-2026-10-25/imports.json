@@ -1,0 +1,97 @@
+[
+  {
+    "name": "water",
+    "ramps": [
+      "water",
+      "teal"
+    ],
+    "colors": 6,
+    "sourceGrid": [
+      350,
+      254
+    ],
+    "field": [
+      128,
+      128
+    ],
+    "tile": [
+      64,
+      64
+    ],
+    "variants": 4,
+    "density": 4,
+    "status": "study: edge compatibility and runtime use not approved"
+  },
+  {
+    "name": "forest",
+    "ramps": [
+      "moss",
+      "green",
+      "wood"
+    ],
+    "colors": 12,
+    "sourceGrid": [
+      418,
+      418
+    ],
+    "field": [
+      128,
+      128
+    ],
+    "tile": [
+      64,
+      64
+    ],
+    "variants": 4,
+    "density": 4,
+    "status": "study: edge compatibility and runtime use not approved"
+  },
+  {
+    "name": "city",
+    "ramps": [
+      "stone",
+      "moss",
+      "wood"
+    ],
+    "colors": 14,
+    "sourceGrid": [
+      418,
+      418
+    ],
+    "field": [
+      128,
+      128
+    ],
+    "tile": [
+      64,
+      64
+    ],
+    "variants": 4,
+    "density": 4,
+    "status": "study: edge compatibility and runtime use not approved"
+  },
+  {
+    "name": "ruins",
+    "ramps": [
+      "stone",
+      "moss",
+      "wood"
+    ],
+    "colors": 23,
+    "sourceGrid": [
+      418,
+      418
+    ],
+    "field": [
+      128,
+      128
+    ],
+    "tile": [
+      64,
+      64
+    ],
+    "variants": 4,
+    "density": 4,
+    "status": "study: edge compatibility and runtime use not approved"
+  }
+]
