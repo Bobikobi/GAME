@@ -2711,3 +2711,16 @@ How it runs: an art polish stream after the rich wave, inside the agreed directi
 The owner, 25.10: the ambient creatures (birds and small animals that sit and leave when the player comes close; their kinds and spots are already map content, the client does not draw them yet) are not revived now: they come after the pre-rich redraw above, drawn once in the rich style. Later the valley gets many more animals; most can be hunted and fought at the chosen difficulty, and a kill gives raw materials, the way Red Dead Redemption 2 skins and harvests what is hunted.
 Where it sits: the hunting is combat, so it follows G35 (no fighting in the demo; combat after the foundation, where and its frame approved by the owner first). The branch with the creatures' client stays on the remote as it is until then.
 **Retry when:** combat opens (G35), or the ambient creatures are wanted before it as cosmetic life. Model: claude-opus-5-5.
+
+## 2026-10-25 ✅ The night ruins are revived with changes: the first step of the slope south, with no door
+
+The quest designer reviewed the branch of 17.10 (feat/night-ruins, never merged) against the world of 22.10: it fits with changes. Its bones stay (the bells as the clock and the last-bell walk-out, the walled yard with the wolf's round and cover, the inscription read only by firelight, the bell pit, the stair under the hall). The owner's answers, 25.10:
+- **Place:** the walled yard at night is the near ruins (decision 49), the first and shallowest step of the slope south; the climax opens the stair down toward the undead south.
+- **No door to the south.** The south is open-world steps, not a gate a quest opens: the passage is always open, and the frightening bells mark the right time to cross. It is too hard to cross before the player is ready, and readiness is made: the dark below (a torch or an ember), cold and food on the long way (clothing, cooked food), drops that need climbing gear, and creatures that need a weapon (that last one waits for combat, G35). The owner welcomes more such needs.
+- **The brazier's all-night vigil goes** (it repeated the long night): lighting the brazier becomes a step of the inscription riddle.
+- **The yard's stealth quest changes its question** (it repeated the south bank's wolf and night plant); both may stay open at once, the player's choice.
+- **The skeleton:** the cellar's rare find hints at the skeleton's fold instead of clockwork (decision 20 keeps clockwork for the humans), and the skeleton gets its own line there.
+- **The ember traveller sends the player in** (lighting an old fire is the Wakers' act).
+- **Open:** whether the climax becomes chapter 1's bell-rope dilemma (ring, tie or leave). The owner has not decided.
+Also from the review: the inscription keeps one line and the belief readings move into people's mouths; two order fixes (the yard quest requires the arch; the gamble pays something other than logs). The map rows are redrawn by the hand-made first map (NEXT 19), so the layout carries over as a plan, not as tiles. A fresh branch from develop carries the content, the bell and walk-out code and the tests; the old branch stays as it is until then.
+**Retry when:** the first hand-made map lands, or the owner decides the bell-rope question. Model: claude-opus-5-5.
