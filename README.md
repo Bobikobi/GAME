@@ -12,7 +12,7 @@ The valley grows in stages, each opened by a condition, not a date: accounts and
 
 ## What is in the demo
 
-- Three starters, the Forager, the Digger and the Explorer, each waking at its own place with its own kit and its own first task, with five attributes: carry (bag size), senses (how far you notice hidden things), agility (how forgiving the timing is), luck (rare finds) and stamina (how much food you can hold).
+- Three races, the human, the elf and the skeleton, each waking in a wake pocket the seed draws, with its own first task, and six attributes, seven points each: might (carrying and heavy work), senses (how far you notice hidden things), agility (how forgiving the timing is), luck (rare finds), stamina (how much food you can hold) and spirit (potions, spells and the hidden layer).
 - The opening: wake up at noon, strike the bridge's keystone free with the timing minigame, mend the bridge for a purse of gold, fell a tree for the first fire, meet the town, and choose whom to help first: Elder Maru's berries, which he pays for with his old trowel, or Pell's herbs, which she pays for with a recipe and coin. The trowel then digs up Maru's coin under the lantern the stones name, which glows at dusk. After dark, a way opens under the broken arch.
 - Foraging, digging and cooking, each with levels and techniques; a camp with three places to build and a fourth waiting for a reason; a day and night clock.
 - Empty places in the mist, each waiting for a creator, with a link to the guide below.
@@ -49,11 +49,11 @@ pnpm check        # validate the content, with readable errors (--json for tools
 pnpm test         # kernel and content tests
 pnpm build        # the game and the site, into web/dist
 pnpm e2e          # play the opening in headless Chrome, phone and desktop
-pnpm verify       # everything CI runs, except the e2e
+pnpm verify       # everything CI runs, except the e2e and the postgres tests (they need DATABASE_URL)
 ```
 
 Node 24 and pnpm 10. Design decisions and abandoned approaches are in [DECISIONS.md](DECISIONS.md).
 
 ## License
 
-Code: [AGPL-3.0](LICENSE). Content in `content/`: [CC BY-SA 4.0](content/LICENSE). Font: Pixelify Sans, SIL OFL 1.1. Everyone who made something in the valley is in [CREDITS.md](CREDITS.md).
+Code: [AGPL-3.0](LICENSE). Content in `content/`: [CC BY-SA 4.0](content/LICENSE). Fonts: Pixelify Sans, Atkinson Hyperlegible Next and Platypi, SIL OFL 1.1. Everyone who made something in the valley is in [CREDITS.md](CREDITS.md).
