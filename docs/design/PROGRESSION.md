@@ -287,6 +287,8 @@ Combat walls (foes' damage against guard and sustain) join with the combat layer
 | `top_builds_n` | 5 a band (warning) |
 | `top_over_median_max_permille` | 1600 (warning) |
 | `proof_enum_max` | 10,000,000 combinations, then dominance |
+| `common_plain` | a common item or dish carries at most 1 effect, at most its stat's smallest step (5.7) |
+| `rarity_effects_max`, `rarity_band_permille` | [1, 1, 2, 2] effects; common the step, uncommon 500-750, rare 750-1000, legendary 1000 (5.7) |
 
 ## 5. Gear: crafted weapons, armour and clothing on the map
 
@@ -297,8 +299,8 @@ Slots as built plus the back: `head, top, legs, outfit, feet, jewelry1, jewelry2
 ### 5.2 Two axes of a made thing, kept, and a third
 
 - **Tier** (how advanced; open-ended; `tier_min_level` and `craft_chance_bp` by tier as built): decides the cap of its worn effects (`wear_effect_max_pct` [5, 8, 12] and onward), its weight class, and, for a weapon, its reach and harm band (COMBAT fixes the numbers).
-- **Rarity** (how often; the four of 9.10): the source's capacity. A rare material makes a rare thing; the rarity budget prices it (kernel review 8.2).
-- **Quality** (proposed; the third axis, Skyrim's fine/superior/exquisite and Dimraeth's six): rolled at the craft, four steps, `plain, fine, true, master`. Quality moves the thing inside its tier's cap (a fine piece reaches more of `wear_effect_max_pct`; a master piece reaches all of it and may carry a second worn effect), never past it, so the power cap and the trader's day cap hold exactly as they do. Quality is the thing a school's node opens (5.3): without the family's `quality_pct` node every craft is plain.
+- **Rarity** (how often; the four of 9.10: `common`, `uncommon`, `rare`, `legendary`): the source's capacity. A rare material makes a rare thing; the rarity budget prices it (kernel review 8.2). Since 25.10 it also sets how many effects a thing may carry and where in its tier's row they sit: common things are plain (5.7).
+- **Quality** (proposed; the third axis, Skyrim's fine/superior/exquisite and Dimraeth's six): rolled at the craft, four steps, `plain, fine, true, master`. Quality moves the thing inside its tier's cap (a fine piece reaches more of `wear_effect_max_pct`; a master piece reaches all of it and may carry a second worn effect where its rarity allows two, rare or legendary, 5.7), never past it, so the power cap and the trader's day cap hold exactly as they do. Quality is the thing a school's node opens (5.3): without the family's `quality_pct` node every craft is plain.
 
 ### 5.3 The three gates of making, and the one that is not
 
@@ -338,6 +340,23 @@ active   = min(bonus, attr_bonus_max[own_tier + 1])     per attribute; worn effe
   A newcomer who saved and bought a strong piece from another player (the free market, 9.10) gets a real step ahead, not the late game. The same rule reads the item's worn effects (proposed: one rule for all of an item's power).
 - **On screen.** The stats panel shows the total with the gear part in another colour and in words, so colour is never the only signal (G29): "Might 7 = 5 + 2 gear". An item's description lists its attribute bonuses under its name. When a requirement is unmet, the tooltip shows the full bonus, the active part and what unlocks the rest: "+6 might, 3 active, the rest at Guard 21". (The owner's example said Guard 30; school levels end at 21 on the twenty-step curve, so the tooltip names the level of the item's tier on that scale.) Counts of pips and points, never a percentage (decision 39).
 - **Keys stay the base's.** A node's key reads race, grade and pips only (6.4 rule 4): gear lends power to the verbs, never a door in the tree, which is what kept option C of Q5 ("pips from gear only") out.
+
+### 5.7 Common things are plain: rarity and what a thing may carry (the owner, 25.10)
+
+The owner: the base rarity, **common**, for food and for accessories and gear, carries no effect or one very small one, never two. The map keeps the four rarities the schema already has (`common`, `uncommon`, `rare`, `legendary`, 9.10) and keeps them **orthogonal to tier**, as the schema states ("the rarity says how often it appears; the tier says how far up the ladder it is"). Tier sets the strength row an effect is read from and the ceiling band (4.7); rarity sets how many effects a thing may carry and where in its tier's row each one sits. Why orthogonal and not one axis: rarity is already a supply axis, priced by the rarity budget and computed from the data by the check, while tier is the ladder of strength and requirement; one axis would make every late thing scarce and every scarce thing strong, and the map wants both a common tier-4 coat (a plain everyday piece of the late game) and a rare tier-1 charm (a lucky find in the valley).
+
+| Rarity | Effects, at most | Strength of each, against its tier's row | Notes |
+|---|---|---|---|
+| `common` | **1, often 0** | at most the stat's **smallest step**: its tier-1 value (a worn effect's 5 points, `wear_effect_max_pct[0]`; +1 to an attribute; 1 grade for a trait; a dish effect's tier-1 row) | quality never lifts it past the step; every built common piece already fits (0 or 1 worn effect at 5) |
+| `uncommon` | 1 | 50-75% of the tier's value; a trait at the tier's strength (1, 1, 2, 2, 3) | |
+| `rare` | 2 | 75-100% | a master piece's second worn effect needs rare or above |
+| `legendary` | 2 | 100%; may also carry one ceiling raiser (4.7) | the found raisers are legendary: few, late, bound |
+
+Quality (5.2) moves a piece inside its rarity's band, plain at the bottom and master at the top, never past it. What counts as an effect: each worn effect, each trait and each dish effect; whether an attribute bonus counts is an owner call (section 9, recommended: it counts). A made piece's rarity is its materials', as the check computes it now ("a rare material makes a rare thing").
+
+- **Dishes** (BODY_CLOCKS.md 7.3): a dish's effects are the tags its ingredients share, at most two. Its rarity is that of the **rarest ingredient among those that carry one of its effects**, so a rare ingredient lifts a dish only if it takes part in an effect; **a dish of common ingredients only is common** and shows at most one effect, at the smallest step. The cook's Cooking band caps it (band 1 up to uncommon, bands 2-3 up to rare, bands 4-5 up to legendary): a cook below the cap still makes the dish, at the cap (no level wall, 9.10). Where the rarity allows fewer effects than the shared tags, the one kept is the tag carried by the rarer ingredients, ties by the effect list's order, so the same pot always makes the same dish.
+- **Garment traits** exist at common **only at the weakest grade**, strength 1 (the general rule applied, not an exception); strength 2 and up needs uncommon or better. The check against calm snow (grade 1, BODY_CLOCKS.md 5.2): a common tier-1 wool hood with `cold_proof` 1 (Tailoring at tier 1, from the valley's wool) and common snowshoes with `snow_shod` 1 (Woodcraft at tier 1, ash and gut) take frost and snow at grade 1 to nothing, and a common dish sharing the `cold_proof` tag does the same for frost; bare, the 4 min 10 s still holds. So a new player answers calm snow with two plain pieces made early. The other choice, traits from uncommon up only, would put the first answer to the valley's first snow behind the rarity budget's supply, answered only by luck or trade.
+- **Check row** `common_plain` (joins the family of 4.7; spec only): no common item or dish carries more than one effect, and no common effect exceeds its stat's smallest step. With it, `rarity_effects_max` [1, 1, 2, 2] and `rarity_band_permille` (common: the step; uncommon 500-750; rare 750-1000; legendary 1000) for the other rarities. Unlike the rest of 4.7 it can read today's content, which already passes it.
 
 ## 6. The unlock economy
 
@@ -413,8 +432,15 @@ Each is the owner's. All eight were answered on 25.10, one at a time; each answe
 | Q8 The body | none of A, B or C: **two bars only, health and experience**; no cold, warmth, hunger, thirst or tiredness meter; a place is harsh by its conditions (storm, snow and the like slow walking and work), and fitting gear answers it: a garment keeps its attribute bonuses and some carry a trait from a closed list | 4.5, BODY_CLOCKS.md section 5, P7 |
 | Q8a Harsh places' cost | slow **and** a health drain graded by the place's danger; the right gear cancels it fully or one grade down | 4.5, BODY_CLOCKS.md section 5 |
 | Balance (a refinement of Q8b) | everything computable: two red lines (no loop; experience only from the mentor), rising ceilings by band with a few rare raisers, walls proven solvable and not cheesable | 4.7 |
+| Common things are plain | common food, accessories and gear carry no effect or one very small one, never two | 5.7, BODY_CLOCKS.md 6.2 and 7.3 |
 | Q8b Food and sleep | food heals; cooked dishes give timed effects from a closed list, the catalogue huge; one or two at once; sleep only saves and passes the night (no Rested, Fed folded into dishes) | 4.5, 4.2 Cooking, BODY_CLOCKS.md sections 7-8 |
 | Q7 Teachers | **A**: time at the ordinary rate, standing earned, never gold for a level; and no industrial carry: own actions only, a share of at most a quarter of one's own, +20% near a stronger player, the veteran on the giving board, diminishing returns for a pair, sold carries an exploit loop | 3.6, 3.7, P6, P11 |
+
+**Still open, each with a recommended default (⏸):**
+
+- **Does an attribute bonus count as a common piece's one effect?** Recommended: yes, a common piece carries one thing at most (+1 to one attribute, or one worn effect at 5, or a strength-1 trait); from uncommon up attribute bonuses ride beside the effects (Q5). Other option: attributes ride beside even at common, so a common piece may carry +1 and one small effect. Today's content passes either (no common piece carries an attribute).
+- **Which school sets the ceiling band for health, sustain, senses and the place answer (4.7)?** Recommended: Survival (Travel for the step), so readiness for the long way runs through one school. Other option: the character level.
+- **How are the ceiling raisers had (4.7)?** Recommended: half crown nodes, half legendary finds in band-5 places, never sold or made, bound to the one who found or learned them. Other option: the finds trade on the free market.
 
 **Q8a and Q8b, the two follow-ups, answered by the owner the same day:**
 
@@ -469,6 +495,10 @@ Each is the owner's. All eight were answered on 25.10, one at a time; each answe
 | `sustain` clamps health back while a place drains | G32 "eating is how the player heals" | **bends** | declared: only inside a draining grade; elsewhere a meal heals at once, as built |
 | Raisers bound to the one who found or learned them | the free market (9.10); "power is never sold" | extends | a raiser is power, so it is never sold, and binding keeps it off the market; ordinary made pieces trade as before |
 | The Q8 fill's "never more than one grade above the wearer's tier" | the owner's balance answer (25.10) | superseded | dropped: the `place` ceiling by band and the walls proven both ways replace it |
+| Rarity sets the count and band of effects, orthogonal to tier | the schema's "the rarity says how often it appears; the tier says how far up the ladder it is"; the rarity budget (kernel review 8.2) | agrees | rarity keeps pricing supply; it now also bounds what a thing carries |
+| Common things are plain | the built outfits and tools (every common piece 0 or 1 worn effect at 5) | agrees | today's content passes `common_plain` as it stands |
+| A master piece's second worn effect needs rare or above | 5.2 (proposed by this page) | amended | the owner's rule wins over the page's own proposal |
+| An attribute bonus as a common piece's one effect | Q8 "every garment keeps the tree points it adds"; Q5 | **open** (owner call, section 9) | recommended: it counts, so a common piece carries one thing (+1 to one attribute, or one small worn effect, or a strength-1 trait); from uncommon up attribute bonuses ride beside the effects as Q5 wrote |
 | Sleep gives no bonus (Q8b) | G32 "a night's sleep in town ... give[s] it back" | agrees | sleep keeps G32's health and saves the game; it adds nothing more |
 | Drops crossed with rope and a node | "One height layer" (25.10); G68 crossings | extends | a `rope` crossing kind |
 | Trade nodes move capacity, never a price | "Prices and gold" (10.10); R8; GROWTH 5.4 | agrees | `stall_slots`, `price_memory`; the band is untouched |
