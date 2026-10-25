@@ -40,11 +40,13 @@ import {
   riddleSlots,
   sees,
   spotOpen,
+  walkStepMs,
   windowOpen,
 } from '@game/kernel';
 import { app } from '../app';
+import { Piles, pileAt } from './piles';
 import { sound, type SfxId, type SongId } from '../audio';
-import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T } from '../config';
+import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, T } from '../config';
 import { FAR_BELL, SMOKE_PUFFS, farBellDue, nearestChimney, smokeAlpha, smokeAt } from '../hookbridge';
 import { sunTableOf } from '../cast';
 import { CastLayer } from '../cast-layer';
@@ -388,6 +390,8 @@ export class WorldScene extends Phaser.Scene {
   private held = new Set<string>();
   private nextSwing = 0;
   private refreshIn = 0;
+  /** what the player put down, drawn on its tiles */
+  private piles?: Piles;
   private zoneIn = 0;
   private nextBird = 0;
   private idleSince = 0;
@@ -1848,6 +1852,7 @@ export class WorldScene extends Phaser.Scene {
     }
     this.refreshNodes();
     this.refreshFires(s);
+    (this.piles ??= new Piles(this, this.b, DEPTH.dig, DIG_SPOT_SPRITE)).refresh(s.state);
     if (RICH.motion) this.refreshGlints(s);
   }
 
@@ -2215,7 +2220,7 @@ export class WorldScene extends Phaser.Scene {
     const turned = facing !== s.facing || look !== this.look;
     s.facing = facing;
     this.look = agrees(look, facing) ? look : facing;
-    for (const tile of this.body.frame(input, delta, STEP_MS, (x, y) => this.canWalk(s, x, y))) {
+    for (const tile of this.body.frame(input, delta, walkStepMs(this.b, s.state), (x, y) => this.canWalk(s, x, y))) {
       if (RICH.motion) this.puffAt(s.pos[0], s.pos[1]);
       // the kernel hears of each new tile; a hazard there may hurt, and a fall ends the walk
       landStep(s, tile);
@@ -3089,6 +3094,9 @@ export class WorldScene extends Phaser.Scene {
     const k = key(x, y);
     const tile: [number, number] = [x, y];
     const top = this.tops.get(k) ?? T;
+    // a pile the player put down, under their feet
+    const dropped = x === s.pos[0] && y === s.pos[1] ? pileAt(s.state, x, y) : undefined;
+    if (dropped) return { label: `Pick up ${b.items[dropped]?.name ?? dropped}`, run: () => app.ui.pickUp(dropped), tile, top: T };
     const npc = this.npcAt.get(k);
     if (npc) return { label: `Talk to ${b.npcs[npc]?.name ?? npc}`, run: () => app.ui.talk(npc), tile, top };
     const nodeId = this.nodeAt.get(k);

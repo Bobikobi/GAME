@@ -39,6 +39,16 @@
         "qty": 1
       }
     ],
+    "body": {
+      "name": "Packs well",
+      "about": "Hands that pack well: any bag on its back holds 2 more places. It is never alone at the top of any attribute.",
+      "effects": [
+        {
+          "effect": "bag_places",
+          "value": 2
+        }
+      ]
+    },
     "sprite": "core/base-kit:chars/explorer_down",
     "sprite_alt": "core/base-kit:chars/explorer_w_down"
   }

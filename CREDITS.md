@@ -9,6 +9,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Work stone (camp) - `content/core/camp/work-stone.json`
 - Workbench (camp) - `content/core/camp/workbench.json`
 - Workshop (camp) - `content/core/camp/workshop.json`
+- Bags (items) - `content/core/items/bags.json`
 - Healing (items) - `content/core/items/healing.json`
 - Outfits (items) - `content/core/items/outfits.json`
 - Tools (items) - `content/core/items/tools.json`
@@ -59,6 +60,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Reed cord (recipe) - `content/core/recipes/reed-cord.json`
 - Reed hat (recipe) - `content/core/recipes/reed-hat.json`
 - Reed sandals (recipe) - `content/core/recipes/reed-sandals.json`
+- Satchel (recipe) - `content/core/recipes/satchel.json`
 - Split a log (recipe) - `content/core/recipes/split-log.json`
 - Stone blade (recipe) - `content/core/recipes/stone-blade.json`
 - Stone flakes (recipe) - `content/core/recipes/stone-flakes.json`

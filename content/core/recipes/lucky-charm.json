@@ -15,6 +15,7 @@
       "class": "jewelry",
       "tier": 2,
       "sprite": "core/base-kit:items/stone-idol",
+      "weight": 1,
       "wear": {
         "slot": "jewelry",
         "effects": [

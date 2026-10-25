@@ -15,6 +15,7 @@
       "class": "tool",
       "tier": 3,
       "sprite": "core/base-kit:items/trowel",
+      "weight": 1,
       "tool": {
         "kind": "trowel",
         "tier": 3

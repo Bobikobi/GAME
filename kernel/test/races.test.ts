@@ -13,7 +13,7 @@ import {
   STATE_FORMAT,
   type State,
   attrAt,
-  bagCapacity,
+  loadLimit,
   gradeShift,
   holds,
   makeWalkable,
@@ -56,7 +56,8 @@ describe('the three races', () => {
     const profile = (id: string) => b.races[id]!.attributes;
     expect(profile('core/human')).toEqual({ might: 1, senses: 2, agility: 1, luck: 1, stamina: 1, spirit: 1 });
     expect(profile('core/elf')).toEqual({ might: 0, senses: 2, agility: 2, luck: 1, stamina: 0, spirit: 2 });
-    expect(profile('core/skeleton')).toEqual({ might: 3, senses: 1, agility: 0, luck: 1, stamina: 2, spirit: 0 });
+    // the skeleton's profile, stamina 4 and might 1 (DECISIONS.md, 2026-10-23: no flesh to tire)
+    expect(profile('core/skeleton')).toEqual({ might: 1, senses: 1, agility: 0, luck: 1, stamina: 4, spirit: 0 });
     expect([...b.races['core/human']!.home].sort()).toEqual(['luck', 'senses']);
     expect([...b.races['core/elf']!.home].sort()).toEqual(['agility', 'spirit']);
     expect([...b.races['core/skeleton']!.home].sort()).toEqual(['might', 'stamina']);
@@ -184,13 +185,14 @@ describe('the grade', () => {
   test('lowers the home pair by one where the world is weak, never below 0', () => {
     const g = graded();
     const s = started('core/skeleton', 'core/north-meadow', g);
-    expect(attrAt(g, s, 'might')).toBe(2);
-    expect(attrAt(g, s, 'stamina')).toBe(1);
-    expect(bagCapacity(g, s)).toBe(g.params.bag_base + g.params.per_point.might * 2);
+    expect(attrAt(g, s, 'might')).toBe(0);
+    expect(attrAt(g, s, 'stamina')).toBe(3);
+    // the weight limit reads might as the grade leaves it
+    expect(loadLimit(g, s)).toBe(g.params.load.base);
     s.player.attrs.stamina = 0;
     expect(attrAt(g, s, 'stamina')).toBe(0);
     // spending reads the base, against the one cap
-    expect(s.player.attrs.might).toBe(3);
+    expect(s.player.attrs.might).toBe(1);
   });
 
   test('a step into another world tells each home attribute that moved', () => {
