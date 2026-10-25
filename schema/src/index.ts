@@ -1016,6 +1016,75 @@ export const ProfessionBody = Type.Object(
   { additionalProperties: false },
 );
 
+/**
+ * The growth frame (docs/design/GROWTH.md section 4; DECISIONS.md 2026-10-22 "The tree" and "No
+ * percentages on screen"): a school is one wing of the tree, tied to a profession; its nodes are bought
+ * with skill points by choice, never handed out by level. A small node moves one number and is always
+ * on; a major node changes a verb or teaches a technique; a corner node is where the race (the trunk)
+ * meets the school, one per race and school.
+ */
+export const NODE_SIZES = ['small', 'major', 'corner'] as const;
+export const NodeSize = Type.Union(NODE_SIZES.map((k) => Type.Literal(k)));
+const NodeId = Type.String({
+  pattern: '^[a-z0-9]+(-[a-z0-9]+)*$',
+  maxLength: 40,
+  description: 'The node\'s name inside its school, for example "steady". A learned node is kept as "<school id>/<node id>".',
+});
+const AttributeKey = Type.Object(
+  {
+    might: Type.Optional(Int(1, 10)),
+    senses: Type.Optional(Int(1, 10)),
+    agility: Type.Optional(Int(1, 10)),
+    luck: Type.Optional(Int(1, 10)),
+    stamina: Type.Optional(Int(1, 10)),
+    spirit: Type.Optional(Int(1, 10)),
+  },
+  {
+    additionalProperties: false,
+    description: 'Keys: the attribute pips the node asks for, for example { "senses": 3 }. A key opens the node; it is never spent.',
+  },
+);
+
+export const SchoolNode = Type.Object(
+  {
+    id: NodeId,
+    name: { ...Name, description: 'A thing the player knows how to do, for example "Depth sense".' },
+    text: { ...Text, description: 'One sentence in words, never a number or a percentage (the number stays in the code).' },
+    size: NodeSize,
+    needs: Type.Optional(
+      Type.Array(NodeId, {
+        maxItems: 3,
+        uniqueItems: true,
+        description: 'The nodes of the same school learned before this one: its place on the path.',
+      }),
+    ),
+    key: Type.Optional(AttributeKey),
+    effect: Effect,
+    value: Int(0, 100, 'The number the effect moves. Shown only on a long press, never on the tree.'),
+    slot: Type.Optional(
+      Type.Boolean({
+        description: 'A technique: it works only while it sits in an active slot of the build. Left out: always on once learned. Never on a small node.',
+      }),
+    ),
+    race: Type.Optional({ ...Id, description: 'A corner node only: the race whose node this is. Only a player of that race sees and learns it.' }),
+    icon: Type.Optional({ ...Id, description: 'An item whose sprite pictures the node on the tree.' }),
+  },
+  { additionalProperties: false },
+);
+
+export const SchoolBody = Type.Object(
+  {
+    name: Name,
+    profession: { ...Id, description: 'The profession whose wing this is. The profession keeps its levels; the school is what the points buy.' },
+    nodes: Type.Array(SchoolNode, {
+      minItems: 1,
+      maxItems: 24,
+      description: 'The path and the corners. At most 12 nodes for each race (the path and that race\'s corner).',
+    }),
+  },
+  { additionalProperties: false },
+);
+
 const Bounded = Type.Object(
   {
     value: Type.Integer(),
@@ -1203,6 +1272,22 @@ export const ParamsBody = Type.Object(
           'What one point in an attribute adds: bag places (might), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina). Spirit is defined and read by no rule yet: its first readers come with the night layer and the tree.',
       },
     ),
+    growth: Type.Optional(
+      Type.Object(
+        {
+          cost: Type.Object(
+            { small: Bounded, major: Bounded, corner: Bounded },
+            { additionalProperties: false, description: 'Skill points a node costs, by its size (GROWTH section 3.6).' },
+          ),
+          slot_levels: Type.Array(Type.Integer({ minimum: 1, maximum: 40 }), {
+            minItems: 1,
+            maxItems: 8,
+            description: 'The character level each active slot of the build opens at, from the first slot, never falling (GROWTH section 3.3: two at level 1, then one more at 5, 10 and 15).',
+          }),
+        },
+        { additionalProperties: false, description: 'The skill tree: what a node costs and when the build\'s slots open. Left out: the tree is closed.' },
+      ),
+    ),
   },
   { additionalProperties: false },
 );
@@ -1350,6 +1435,113 @@ const CreatureKind = Type.Object(
 /** The closed list of climates a region may declare (NATURE section 2). The tables live in content/core/climates.json. */
 export const CLIMATES = ['temperate', 'dry', 'cold', 'wet'] as const;
 
+/** What a region of a map plan is for: a place a player stops in, or ground a player passes through. */
+export const REGION_PURPOSES = ['stop', 'passage'] as const;
+
+const PlanTile = Type.Tuple([Int(0, 1023), Int(0, 1023)], { description: 'A tile: x, then y.' });
+
+/**
+ * The plan block of a hand-composed map (DECISIONS.md, 2026-10-23: the valley map plan in the game): why
+ * each place is where it is, written beside the tiles. The map check reads it; the kernel and the
+ * clients do not. Every field is optional, so a map without a plan stays valid.
+ */
+export const MapPlan = Type.Object(
+  {
+    regions: Type.Optional(
+      Type.Array(
+        Type.Object(
+          {
+            id: Id,
+            purpose: Type.Union(REGION_PURPOSES.map((p) => Type.Literal(p))),
+            cells: Type.Array(Type.Tuple([Int(0, 1023), Int(0, 1023), Int(1, 1024), Int(1, 1024)]), {
+              minItems: 1,
+              maxItems: 8,
+              description: 'The rectangles the region covers: x, y, width, height.',
+            }),
+            height: Type.Optional(Int(0, 9, 'The level the region stands on, read against `levels`.')),
+            tags: Type.Optional(Type.Array(Type.String({ pattern: '^[a-z0-9:_-]+$', maxLength: 40 }), { maxItems: 8, uniqueItems: true })),
+            cover: Type.Optional(
+              Type.Record(SpriteRef, Int(0, 300), { description: 'The scatter line: per mille of the walkable tiles each small prop covers.' }),
+            ),
+            opens_by: Type.Optional(
+              Type.Union([Type.Literal('wake'), Id], {
+                description:
+                  '"wake": open from the first wake. Otherwise the quest whose reward opens the way in (decision 25 of 22.10); a quest not yet written is a warning, never an error. Left out: ground nobody walks (water, the woods, a mountain band).',
+              }),
+            ),
+          },
+          { additionalProperties: false },
+        ),
+        { maxItems: 64 },
+      ),
+    ),
+    paths: Type.Optional(
+      Type.Array(
+        Type.Object(
+          {
+            id: Id,
+            width: Int(1, 2, '1 for feet, 2 for a barrow or a cart.'),
+            via: Type.Array(PlanTile, {
+              minItems: 2,
+              maxItems: 32,
+              description: 'The corners of the path, each pair on one row or one column; every tile between is a path tile or a mended crossing (G69).',
+            }),
+          },
+          { additionalProperties: false },
+        ),
+        { maxItems: 64 },
+      ),
+    ),
+    routes: Type.Optional(
+      Type.Array(
+        Type.Object(
+          {
+            id: Id,
+            who: Name,
+            hours: Type.Tuple([Int(0, 23), Int(1, 24)], { description: 'From (inclusive) to (exclusive), game hours; a later from than to runs over midnight.' }),
+            via: Type.Array(PlanTile, { minItems: 1, maxItems: 48, description: 'Points a person walks through, each a tile a foot can stand on.' }),
+          },
+          { additionalProperties: false },
+        ),
+        { maxItems: 32 },
+      ),
+    ),
+    rests: Type.Optional(Type.Array(Tile('The top-left tile of a plain 3x3 the scatter leaves empty.'), { maxItems: 32 })),
+    wakes: Type.Optional(
+      Type.Array(
+        Type.Object(
+          {
+            pocket: { ...Id, description: 'A wake pocket of the pool (content/core/pockets): its file holds the wake tile and the tools on the ground.' },
+            quest: { ...Id, description: 'The first task of that pocket: a quest whose `pocket` names it.' },
+          },
+          { additionalProperties: false },
+        ),
+        { maxItems: 16, description: 'The spawn pool: every wake the seed may draw, with its first task.' },
+      ),
+    ),
+    exits: Type.Optional(
+      Type.Array(
+        Type.Object(
+          {
+            id: Id,
+            slot: Type.Optional({ ...Id, description: 'The gate: the slot a region quest opens (decision 25). Give this or `at`.' }),
+            at: Type.Optional({ ...PlanTile, description: 'A way out with no gate slot (the jetty where the boat waits): the last tile a foot stands on.' }),
+            to: { ...Id, description: 'The plan region the way leads into.' },
+            min_road_steps: Int(
+              1,
+              100000,
+              'G71: the fewest steps the road beyond this exit must run before the next region\'s ground, so that no wake reaches that ground before the first dusk with every gate open. The daylight in steps at the fastest wake, less its steps to this exit, plus a margin; the check refuses a smaller number and any stitched map whose road beyond is shorter.',
+            ),
+          },
+          { additionalProperties: false },
+        ),
+        { maxItems: 16, description: 'The ways out of the first region: the first night is held by the length of the road beyond each one, never by the gate (DECISIONS.md, 2026-10-23).' },
+      ),
+    ),
+  },
+  { additionalProperties: false },
+);
+
 /** One world prop, wherever it stands: on a map, in a chunk or inside a stamped place. Coordinates are tiles inside the file's own grid. */
 const Prop = (max: number) =>
   Type.Object(
@@ -1367,6 +1559,9 @@ const Prop = (max: number) =>
         }),
       ),
       fire: Type.Optional(Type.Literal(true, { description: 'A fire the player may feed by hand. It needs an id.' })),
+      crossing: Type.Optional(
+        Type.Literal(true, { description: 'Steps or a ramp: the way across a change of level (G68), on the lower tile, facing the face.' }),
+      ),
       lit_by: Type.Optional({
         ...Id,
         description: 'Id of the fire prop while whose fire burns this prop\'s note and sign may be read.',
@@ -1437,6 +1632,7 @@ export const MapBody = Type.Object(
         description: 'The height layer beside the ground layer (STYLE section 6): one digit 0 to 9 per tile, integers only. Absent: every tile is level 0.',
       }),
     ),
+    plan: Type.Optional(MapPlan),
     props: Type.Array(Prop(1023)),
     spawn: Type.Object({ x: Int(0, 1023), y: Int(0, 1023) }, { additionalProperties: false }),
     world: Type.Optional({
@@ -1597,9 +1793,10 @@ export const KitFile = record('kit', 'kit', KitBody);
 export const MapFile = record('map', 'map', MapBody);
 export const ChunkFile = record('chunk', 'chunk', ChunkBody);
 export const PocketFile = record('pocket', 'pocket', PocketBody);
+export const SchoolFile = record('school', 'school', SchoolBody);
 
 export const CREATOR_TYPES = ['resource', 'treasure', 'recipe', 'template', 'npc', 'quest', 'expedition', 'restore', 'camp', 'race', 'items', 'creator', 'reaction'] as const;
-export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map', 'pocket'] as const;
+export const CORE_ONLY_TYPES = ['shop', 'profession', 'params', 'kit', 'map', 'pocket', 'school'] as const;
 
 export const ExtensionFile = Type.Union([
   ResourceFile,
@@ -1621,6 +1818,7 @@ export const ExtensionFile = Type.Union([
   KitFile,
   MapFile,
   PocketFile,
+  SchoolFile,
 ]);
 
 export type ItemDef = Static<typeof ItemDef>;
@@ -1671,6 +1869,10 @@ export type Restore = Static<typeof RestoreBody>;
 export type Camp = Static<typeof CampBody>;
 export type Race = Static<typeof RaceBody>;
 export type Pocket = Static<typeof PocketBody>;
+export type School = Static<typeof SchoolBody>;
+export type SchoolNodeDef = Static<typeof SchoolNode>;
+export type NodeSizeName = (typeof NODE_SIZES)[number];
+export type SchoolFile = Static<typeof SchoolFile>;
 export type Profession = Static<typeof ProfessionBody>;
 export type Shop = Static<typeof ShopBody>;
 export type Kit = Static<typeof KitBody>;
@@ -1710,6 +1912,7 @@ export const SCHEMAS = {
   map: MapFile,
   chunk: ChunkFile,
   pocket: PocketFile,
+  school: SchoolFile,
 } as const;
 
 export { validateFile, type SchemaIssue } from './validate';

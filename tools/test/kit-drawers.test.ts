@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -5,8 +6,8 @@ import { join } from 'node:path';
 import { afterAll, describe, expect, test } from 'vitest';
 
 import {
-  CLIP_TOKENS, KAGGLE_DEFAULTS, KAGGLE_NEGATIVE, KAGGLE_RECIPES, KAGGLE_WAVE_MARK, LOCAL_DEFAULTS, LOCAL_NEGATIVE, clipTokenEstimate, drawWaveWithKaggle, drawWithGemini, drawWithKaggle, drawWithLocal, geminiAnswer, geminiRequest,
-  kaggleCanvas, kaggleFileName, kaggleInferenceSteps, kagglePrompt, kaggleSubject, pngSize, sdClause, kaggleKernelScript, kaggleManifest, kaggleMetadata, kaggleOwner, kagglePushAnswer, kaggleSettings, kaggleStatus, kaggleWave,
+  CLIP_TOKENS, KAGGLE_DEFAULTS, KAGGLE_NEGATIVE, KAGGLE_POST_SCALE, KAGGLE_RECIPES, KAGGLE_RECIPE_NAMES, KAGGLE_WAVE_MARK, LOCAL_DEFAULTS, LOCAL_NEGATIVE, clipTokenEstimate, drawWaveWithKaggle, drawWithGemini, drawWithKaggle, drawWithLocal, geminiAnswer, geminiRequest,
+  kaggleCanvas, kaggleFileName, kaggleFromPrompt, kaggleSentencePrompt, kaggleInferenceSteps, kagglePrompt, kaggleSubject, pngSize, sdClause, kaggleKernelScript, kaggleManifest, kaggleMetadata, kaggleOwner, kagglePushAnswer, kaggleSettings, kaggleStatus, kaggleWave,
   localHistory, localPrompt, localSettings, localWorkflow, parseDrawer, promptForModel, splitWave,
 } from '../src/kit/drawers.js';
 
@@ -159,7 +160,7 @@ describe('the kaggle route', () => {
     expect(kaggleSettings({ KAGGLE_GPU: '0', KAGGLE_SIZE: '250', KAGGLE_STEPS: '6', KAGGLE_KERNEL: 'someone/wave' })).toMatchObject({ gpu: false, size: 248, steps: 6, kernel: 'someone/wave' });
     expect(kaggleSettings({ KAGGLE_DENOISE_CHARACTER: '0.3', KAGGLE_DENOISE: '0.7' })).toMatchObject({ denoise: 0.7, denoiseCharacter: 0.3 });
     expect(() => kaggleSettings({ KAGGLE_DENOISE: 'half' })).toThrow(/KAGGLE_DENOISE/);
-    expect(() => kaggleSettings({ KAGGLE_MODEL: 'someone/model', KAGGLE_RECIPE: 'flux' })).toThrow(/KAGGLE_RECIPE/);
+    expect(() => kaggleSettings({ KAGGLE_MODEL: 'someone/model', KAGGLE_RECIPE: 'dalle' })).toThrow(/KAGGLE_RECIPE takes sd15, sdxl, qwen, flux/);
   });
 
   test('KAGGLE_MODEL=sdxl switches the whole recipe; a repo id keeps the recipe it is given', () => {
@@ -321,7 +322,9 @@ describe('the kaggle route', () => {
     expect(calls.filter((c) => c.startsWith('kernels push'))).toHaveLength(1);
     expect(calls[0]).toBe('config view');
     expect(JSON.parse(readFileSync(join(cliDir, 'pushed-metadata.json'), 'utf8'))).toMatchObject({ id: 'tester/kitgen-drawer', is_private: true });
-    expect(readFileSync(join(cliDir, 'pushed.py'), 'utf8')).toContain(Buffer.from('barrel').toString('base64').slice(0, 4));
+    const pushed = new RegExp(`${KAGGLE_WAVE_MARK} = "([A-Za-z0-9+/=]+)"`).exec(readFileSync(join(cliDir, 'pushed.py'), 'utf8'))?.[1] ?? '';
+    const pushedWave = JSON.parse(Buffer.from(pushed, 'base64').toString()) as { requests: { png: string }[] };
+    expect(pushedWave.requests.map((r) => Buffer.from(r.png, 'base64').toString())).toEqual(['tree', 'barrel']);
     expect(drawn.get('tree')?.saved).toBe(join(out, 'work', 'tree.png'));
     expect(readFileSync(join(out, 'work', 'tree.png')).equals(PNG_BYTES)).toBe(true);
     expect(drawn.get('tree')?.version).toBe(`${KAGGLE_DEFAULTS.model}+${KAGGLE_DEFAULTS.loraFile}`);
@@ -353,5 +356,125 @@ describe('the kaggle route', () => {
     expect(failed.error).toContain('CUDA out of memory');
     const missing = drawWithKaggle({ ...call, stamp: 's2', env: { KAGGLE_CLI: join(scratch, 'no-such-kaggle') } });
     expect(missing.error).toContain('KAGGLE_CLI');
+  });
+});
+
+describe('the long-prompt recipes (qwen, flux)', () => {
+  test('KAGGLE_MODEL=qwen or flux switches the whole recipe: 4-bit weights, few steps, no CFG, the grid post-process', () => {
+    expect(KAGGLE_RECIPE_NAMES).toEqual(['sd15', 'sdxl', 'qwen', 'flux']);
+    expect(kaggleSettings({ KAGGLE_MODEL: 'qwen' })).toMatchObject({
+      recipe: 'qwen', model: 'unsloth/Qwen-Image-2512-unsloth-bnb-4bit', quant: 'prequantized', scheduler: 'lightning',
+      loraRepo: 'lightx2v/Qwen-Image-2512-Lightning', loraFile: 'Qwen-Image-2512-Lightning-4steps-V1.0-bf16.safetensors',
+      steps: 4, cfg: 1, size: 1024, denoise: 1, denoiseCharacter: 1, tokenLimit: 512, dtype: 'fp32', post: 'grid',
+    });
+    expect(kaggleSettings({ KAGGLE_MODEL: 'FLUX' })).toMatchObject({
+      recipe: 'flux', model: 'unsloth/FLUX.1-schnell', quant: 'nf4', scheduler: '', loraRepo: '', loraFile: '',
+      steps: 4, cfg: 0, size: 1024, denoise: 1, tokenLimit: 256, dtype: 'fp16', post: 'grid',
+    });
+    expect(kaggleFromPrompt('qwen')).toBe(true);
+    expect(kaggleFromPrompt('flux')).toBe(true);
+    expect(kaggleFromPrompt('sdxl')).toBe(false);
+    expect(kaggleSettings({ KAGGLE_MODEL: 'someone/flux-tune', KAGGLE_RECIPE: 'flux' })).toMatchObject({ recipe: 'flux', model: 'someone/flux-tune', quant: 'nf4' });
+  });
+
+  test('they draw from the prompt alone, so a denoise below 1 is refused by name', () => {
+    expect(kaggleSettings({ KAGGLE_MODEL: 'qwen', KAGGLE_DENOISE: '1' }).denoise).toBe(1);
+    expect(kaggleSettings({ KAGGLE_MODEL: 'flux', KAGGLE_DENOISE: '2' }).denoise).toBe(1);
+    expect(() => kaggleSettings({ KAGGLE_MODEL: 'qwen', KAGGLE_DENOISE: '0.6' })).toThrow(/qwen draws from the prompt alone: KAGGLE_DENOISE must be 1/);
+    expect(() => kaggleSettings({ KAGGLE_MODEL: 'flux', KAGGLE_DENOISE_CHARACTER: '0.8' })).toThrow(/KAGGLE_DENOISE_CHARACTER/);
+  });
+
+  test('the post-process and the precision are settings; Stable Diffusion keeps its pictures unless asked', () => {
+    expect(kaggleSettings({}).post).toBe('off');
+    expect(kaggleSettings({ KAGGLE_MODEL: 'sdxl' }).post).toBe('off');
+    expect(kaggleSettings({ KAGGLE_MODEL: 'sdxl', KAGGLE_POST: 'grid' }).post).toBe('grid');
+    expect(kaggleSettings({ KAGGLE_MODEL: 'qwen', KAGGLE_POST: 'OFF' }).post).toBe('off');
+    // qwen computes in fp32 (its activations pass fp16's range), the others in a T4's fast fp16
+    expect(kaggleSettings({}).dtype).toBe('fp16');
+    expect(kaggleSettings({ KAGGLE_MODEL: 'flux' }).dtype).toBe('fp16');
+    expect(kaggleSettings({ KAGGLE_MODEL: 'qwen' }).dtype).toBe('fp32');
+    expect(kaggleSettings({ KAGGLE_MODEL: 'qwen', KAGGLE_DTYPE: 'BF16' }).dtype).toBe('bf16');
+    expect(kaggleSettings({ KAGGLE_MODEL: 'flux', KAGGLE_DTYPE: 'fp32' }).dtype).toBe('fp32');
+    expect(() => kaggleSettings({ KAGGLE_POST: 'sharpen' })).toThrow(/KAGGLE_POST takes grid or off/);
+    expect(() => kaggleSettings({ KAGGLE_DTYPE: 'fp8' })).toThrow(/KAGGLE_DTYPE takes fp16 or bf16 or fp32/);
+  });
+
+  test('the prompt is sentences, the whole spec kept, with no pixel counts and the spec\'s own view', () => {
+    const branch = { ref: 'items/branch', what: 'single bare wooden stick', detail: 'one straight dry stick with a small fork, no leaves, brown bark, lying diagonally' };
+    const prompt = kaggleSentencePrompt(branch);
+    expect(prompt).toBe('Pixel art game sprite: single bare wooden stick. One straight dry stick with a small fork, no leaves, brown bark, lying diagonally. '
+      + 'Alone and centred, filling most of the picture, top-down three-quarter view. Crisp square pixels, a thick dark navy outline, a limited palette. '
+      + 'Flat pure magenta background, no shadow on the ground, no text, no other objects.');
+    expect(kagglePrompt(branch, 'qwen')).toBe(prompt);
+    expect(kagglePrompt(branch, 'flux')).toBe(prompt);
+    expect(kagglePrompt(branch, 'sd15')).not.toBe(prompt);
+    // the spec names its view: no second one is added
+    const log = kaggleSentencePrompt({ ref: 'props/log_fallen', what: 'fallen log', detail: 'rough brown bark, side view' });
+    expect(log).toContain('Rough brown bark, side view.');
+    expect(log).not.toContain('three-quarter');
+    const elder = kaggleSentencePrompt({ ref: 'chars/elder', what: 'village elder (long white beard)', detail: 'the face about 10 pixels wide, the beard in 3 shades, boots' });
+    expect(elder).toContain('One single character alone, centred, full body, front view.');
+    expect(elder).not.toMatch(/pixels wide|3 shades/u);
+    // nothing is cut to fit: the kernel counts it against the encoder's real window instead
+    const long = kaggleSentencePrompt({ ref: 'props/x', what: 'barrel', detail: Array.from({ length: 30 }, (_, i) => `hoop number ${i} with rivets`).join(', ') });
+    expect(long).toContain('hoop number 29 with rivets');
+    expect(clipTokenEstimate(long)).toBeGreaterThan(CLIP_TOKENS);
+  });
+
+  test('the wave carries the recipe and each request its art grid; the kernel has both paths and the post-process', () => {
+    const qwen = kaggleSettings({ KAGGLE_MODEL: 'qwen' });
+    const wave = kaggleWave([
+      { name: 'branch', prompt: 'p', png: Buffer.from('x'), seed: 3, grid: { width: 64, height: 64 } },
+      { name: 'fence', prompt: 'p', png: Buffer.from('y'), seed: 3 },
+    ], qwen) as { settings: Record<string, unknown>; requests: Record<string, unknown>[] };
+    expect(wave.settings).toMatchObject({
+      recipe: 'qwen', quant: 'prequantized', scheduler: 'lightning', token_limit: 512, dtype: 'fp32', post: 'grid', post_scale: KAGGLE_POST_SCALE,
+      steps: 4, inference_steps: 4, cfg: 1, lora_repo: 'lightx2v/Qwen-Image-2512-Lightning',
+    });
+    expect(wave.requests[0]).toMatchObject({ width: 1024, height: 1024, grid_width: 64, grid_height: 64, denoise: 1, seed: 3 });
+    // with no spec grid the post-process falls back to the canvas over 16
+    expect(wave.requests[1]).toMatchObject({ grid_width: 64, grid_height: 64 });
+    expect((kaggleWave([], kaggleSettings({})) as { settings: Record<string, unknown> }).settings).toMatchObject({ post: 'off', token_limit: CLIP_TOKENS });
+    const script = kaggleKernelScript(wave);
+    for (const piece of ['QwenImagePipeline', 'FluxPipeline', 'BitsAndBytesConfig', 'LIGHTNING_SCHEDULER', 'def to_grid', 'came back black', 'bitsandbytes', 'StableDiffusionImg2ImgPipeline', 'def compute_in_fp32', 'compute_type_is_set', 'ndimage.label(~back)']) {
+      expect(script).toContain(piece);
+    }
+  });
+
+  test.skipIf(spawnSync('python3', ['--version']).status !== 0)('the kernel script is valid Python for every recipe', () => {
+    for (const recipe of KAGGLE_RECIPE_NAMES) {
+      const script = kaggleKernelScript(kaggleWave([{ name: 'x', prompt: 'p', png: Buffer.from('x'), seed: 1 }], kaggleSettings({ KAGGLE_MODEL: recipe })));
+      const parsed = spawnSync('python3', ['-c', 'import ast, sys; ast.parse(sys.stdin.read())'], { input: script, encoding: 'utf8' });
+      expect(parsed.stderr).toBe('');
+      expect(parsed.status).toBe(0);
+    }
+  });
+
+  test('a recipe with no LoRA is named by its model alone, and the log says what ran', () => {
+    const out = runDir('kaggle-flux');
+    const cliDir = join(scratch, 'fake-kaggle-flux');
+    const cli = fakeKaggle(cliDir, {
+      push: 'Kernel version 1 successfully pushed.',
+      status: 'tester/kitgen-drawer has status "KernelWorkerStatus.COMPLETE"',
+      output: {
+        'kitgen-manifest.json': JSON.stringify({ device: 'Tesla T4', gpus: 2, encode_seconds: 80, load_seconds: 150, seconds: 200, images: [{ name: 'stone', file: 'stone.png', seconds: 21, error: null, tokens: 70 }] }),
+        'stone.png': PNG_BYTES,
+      },
+    });
+    writeFileSync(join(out, 'ref', 'stone.png'), Buffer.from('stone'));
+    const drawn = drawWaveWithKaggle({
+      out, stamp: 's1', timeoutSeconds: 60, env: { KAGGLE_CLI: cli, KAGGLE_POLL_SECONDS: '0.01', KAGGLE_MODEL: 'flux' },
+      requests: [{ name: 'stone', prompt: 'Pixel art game sprite: stone.', reference: join(out, 'ref', 'stone.png'), expect: 'stone.png', grid: { width: 32, height: 32 } }],
+    });
+    expect(drawn.get('stone')?.version).toBe('unsloth/FLUX.1-schnell');
+    const log = readFileSync(join(out, drawn.get('stone')?.log ?? ''), 'utf8');
+    expect(log).toContain('recipe flux, model unsloth/FLUX.1-schnell, nf4, fp16');
+    expect(log).toContain('no lora');
+    expect(log).toContain('post grid');
+    expect(log).toContain('prompts encoded at 80 s');
+    expect(log).toContain('prompt 70 tokens');
+    const pushed = new RegExp(`${KAGGLE_WAVE_MARK} = "([A-Za-z0-9+/=]+)"`).exec(readFileSync(join(cliDir, 'pushed.py'), 'utf8'))?.[1] ?? '';
+    expect((JSON.parse(Buffer.from(pushed, 'base64').toString()) as { requests: Record<string, unknown>[] }).requests[0]).toMatchObject({ grid_width: 32, grid_height: 32 });
+    expect(kaggleManifest(JSON.stringify({ encode_seconds: 80 })).encodeSeconds).toBe(80);
   });
 });

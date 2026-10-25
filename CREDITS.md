@@ -78,6 +78,11 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Wild herbs (resource) - `content/core/resources/wild-herbs.json`
 - Broken arch (restore) - `content/core/restores/arch-way.json`
 - Old bridge (restore) - `content/core/restores/old-bridge.json`
+- Cooking (school) - `content/core/schools/cooking.json`
+- Digging (school) - `content/core/schools/digging.json`
+- Foraging (school) - `content/core/schools/foraging.json`
+- Handcraft (school) - `content/core/schools/handcraft.json`
+- Woodcutting (school) - `content/core/schools/woodcutting.json`
 - Pell's stall (shop) - `content/core/shops/trader-shop.json`
 - Dyed cord (template) - `content/core/templates/dye-cord.json`
 - An axe on the bank (treasure) - `content/core/treasures/bank-axe.json`
@@ -92,10 +97,11 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - A trowel in the grass (treasure) - `content/core/treasures/slid-trowel.json`
 - Base kit (kit) - `content/kit/core/kit.json`
 
-AI tools: Claude Code: text-grid sprites and frames via a PIL script; Codex image generation via kit:gen; Codex: text-grid sprites in tools/src/kit/sketches.ts; Nano Banana (gemini-3.1-flash-image) via Antigravity; Stable Diffusion 1.5 and SDXL, pixel-art LoRAs, via kit:gen.
+AI tools: Claude Code: text-grid sprites and frames via a PIL script; Codex image generation via kit:gen; Codex: text-grid sprites in tools/src/kit/sketches.ts; FLUX.1 schnell and Qwen-Image 2512 via kit:gen; Nano Banana (gemini-3.1-flash-image) via Antigravity; Stable Diffusion 1.5 and SDXL, pixel-art LoRAs, via kit:gen.
 
 ## Libraries and fonts
 
 - [Phaser](https://phaser.io) game framework - MIT license.
 - [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) by Stefie Justprince - SIL Open Font License 1.1 (`game/public/fonts/OFL.txt`).
 - [Atkinson Hyperlegible Next](https://github.com/googlefonts/atkinson-hyperlegible-next) by the Braille Institute of America - SIL Open Font License 1.1 (`game/public/fonts/atkinson-hyperlegible-next/OFL.txt`).
+- [Jersey 15](https://github.com/scfried/soft-type-jersey) by The Soft Type Project Authors - SIL Open Font License 1.1 (`game/public/fonts/jersey-15/OFL.txt`).
