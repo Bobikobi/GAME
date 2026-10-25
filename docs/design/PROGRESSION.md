@@ -81,7 +81,7 @@ The owner's word (25.10, Q1 = C): `t1` 25-30 s, a school in 45-55 active hours, 
 | 20 | 34.5 h | the last step begins |
 | 21 (mastery) | 51.7 h | the crown; the last step alone is 17.2 h |
 
-**Why 28 and not another number in 25-30.** Mastery is `t1 * 6648.5` active seconds, so 25 s gives 46.2 h, 27 s 49.9 h, 28 s 51.7 h and 30 s 55.4 h. Sixteen schools at 27 s come to 798 h, short of the owner's 800; 28 is the smallest whole second at which the catalogue at one value passes it (827 h), and it sits near the middle of his 45-55 h. It keeps the first point inside the first minute (G11), and it leaves room on both sides for the per-school spread: cooking and handcraft (short actions, many of them) may sit at 25 s (46 h), felling and mining at 30 s (55 h), so that one evening of each feels the same. The spread is held by a check row: the catalogue's mastery hours summed over its schools stay at or above `catalogue_hours_min` (800), so a spread that leans low goes red. The cost the owner accepted with C: the last step is a 15-18 h series of sessions, a third of the school; RuneScape's 92 to 99 is half of 99, so the band is the one he named.
+**Why 28 and not another number in 25-30.** Mastery is `t1 * 6648.5` active seconds, so 25 s gives 46.2 h, 27 s 49.9 h, 28 s 51.7 h and 30 s 55.4 h. The first full catalogue's sixteen schools at 27 s come to 798 h, short of the owner's 800; 28 is the smallest whole second at which the catalogue at one value passes it (827 h), and it sits near the middle of his 45-55 h. It keeps the first point inside the first minute (G11), and it leaves room on both sides for the per-school spread: cooking and handcraft (short actions, many of them) may sit at 25 s (46 h), felling and mining at 30 s (55 h), so that one evening of each feels the same. The spread is held by a check row: the catalogue's mastery hours summed over its schools stay at or above `catalogue_hours_min` (800), so a spread that leans low goes red. The cost the owner accepted with C: the last step is a 15-18 h series of sessions, a third of the school; RuneScape's 92 to 99 is half of 99, so the band is the one he named.
 
 ### 3.3 Bands
 
@@ -89,9 +89,9 @@ A school's twenty steps fall into four **bands** of five levels and the crown: b
 
 ### 3.4 Points and the character level
 
-- One point per character level, as built. With sixteen schools (section 4) the character level tops at 1 + 16 * 20 = 321 and so does the lifetime count of points.
-- The tree's price (section 4.6) is about 850 points at the first full catalogue, so a finished character holds under forty percent of the tree. Skyrim's figure is about thirty. The check enforces it: `tree_buyable_max_permille` (proposed 450) of the tree's total point cost is at most what a character of the maximum level could have; above it the catalogue is too small and the row goes red.
-- A specialist is served by construction: a school's **main line** (trunk nodes plus one branch, 4.3) costs at most the twenty points its own twenty levels pay, so a player who only ever cooks fills cooking's main line from cooking alone; the second and third branch of a school are paid by levels in other schools. That is the breadth pull, in points, with no wall.
+- One point per character level, as built. With the first full catalogue's sixteen schools (section 4) the character level tops at 1 + 16 * 20 = 321 and so does the lifetime count of points; all twenty-two raise it to 441.
+- The tree's price (section 4.6) is about 820 points at the first full catalogue, so a finished character holds under forty percent of the tree. Skyrim's figure is about thirty. The check enforces it: `tree_buyable_max_permille` (proposed 450) of the tree's total point cost is at most what a character of the maximum level could have; above it the catalogue is too small and the row goes red.
+- A specialist is served by construction: a school's **main line** (its twelve trunk nodes, 4.3) and the race's corner cost 19 of the twenty points its own twenty levels pay, so a player who only ever cooks fills cooking's main line and corner from cooking alone; a school's branches and crown are paid by levels in other schools. That is the breadth pull, in points, with no wall.
 - Unspent points keep (as built; Skyrim banks them too).
 
 ### 3.5 What reads the character level
@@ -99,7 +99,7 @@ A school's twenty steps fall into four **bands** of five levels and the crown: b
 Exactly three things, by rule (G89 of GROWTH, extended):
 1. **The power cap.** The table is extended by a formula past its last entry: `cap(level) = table[min(level, 14)] + power_cap_step_permille * max(0, level - 14)`, clamped to `power_cap_max_permille` (proposed step 20, max 4000, range 2000..8000); 4000 is reached at character level 64, three mastered schools (about 155 active hours at `t1` 28 s). Everything a player wears, has learned and holds in slots still sums under this one number (R9).
 2. **The slots.** `growth.slot_levels` re-spaced to the long scale: proposed [1, 1, 10, 30, 60] for five slots (today [1, 1, 5, 10, 15]); the fifth slot is a three-school character. Values only; the format of 23.10 stands.
-3. **Travel.** Every faster form of travel names the character level it is earned at (DECISIONS 2026-10-23, item 7); on this scale the first (a trail step) sits around 10, a mount or a boat line around 40, the far forms past 100. Numbers for the world pages to set; this page only fixes the scale they are set on.
+3. **Travel.** Every faster form of travel names the character level it is earned at (DECISIONS 2026-10-23, item 7); on this scale the first (a trail step) sits around 10, a mount or a boat line around 40, the far forms past 100. Numbers for the world pages to set; this page only fixes the scale they are set on. A Travel crossing (4.8) is not a faster form: it is a way over (G68), opened by the Travel level as G61 allows, and the long way round always stays; a boat of one's own, a boat line, a mount and a teleport stay on the character level.
 
 Quests, dialogue, prices, foes and recipes read the character level never. A quest that wants a capable player asks for a school's band or an attribute key (CR-10 closes that way: "a quest may name a school and a band", never a character level).
 
@@ -139,7 +139,7 @@ Decision 38 as written: the race is the vertical axis (three wings), the schools
 
 ### 4.2 The catalogue (proposed names; the five built schools keep theirs)
 
-Sixteen schools in five families. "Now" is built or in flight; "foundation" waits for the first hand-made map and the server; "with combat" waits for G35 to lift. What a school's nodes may change is its **effect list**, a closed list the kernel applies (GROWTH 3.5); the lists below are the target, each name core-only and added with its first node, never before.
+Twenty-two schools in five families: **sixteen in the first full catalogue** (now, in flight, foundation, and Trade with the market) and six that wait for combat or the city's machines (Hunting, Leatherwork, Strike, Aim, Guard, Tinkering). "Now" is built or in flight; "foundation" waits for the first hand-made map and the server; "with combat" waits for G35 to lift. What a school's nodes may change is its **effect list**, a closed list the kernel applies (GROWTH 3.5); the lists below are the target, each name core-only and added with its first node, never before.
 
 **Gathering** (verbs that take from the world; their nodes move speed, yield, sight and reach)
 
@@ -179,9 +179,9 @@ Hunting is the bridge: its gathering half (tracks, harvest) is written with the 
 
 | School | State | What its nodes may change |
 |---|---|---|
-| Travel | foundation | `walk_step_pct` on a kind of ground (trail, scree, snow; the W9 form, past the first third of the school), `load_pct` (the light-load limit higher), `camp_quick` (a fire laid faster), `path_read` (a shortcut shown for a beat) |
-| Survival | foundation | `weather_read` (a sight: a place's conditions for the next game hours shown on its card), `tent_quick` (a tent pitched faster), `dark_sight` (a longer sight in the dark; the torch's light is still the item's), `fall_soft` (a drop costs less). No node answers a place's condition: that is the garment's (4.5) |
-| Climbing | foundation (the drops of the south need gear and a hand) | `climb_reach` (a one-level drop crossed with rope), `rope_uses`, `grip` (a fall from a climb is not a fall), `ledge_read` |
+| Travel | foundation; a full school (4.8, the owner 25.10) | carrying: `load_pct` (the weight limit higher), `load_step_pct` (the heavy pace less slow), `edge_pct` (more picked up past the limit), `belt_tools`; ways over by its level: `ford`, `scramble`, `ledge`, `leap`, `cross_speed_pct`; water: `row_step_pct`; the step: `walk_step_pct` (the W9 form, past the first third of the school); the sense of a route: `path_read` (a way over marked as it comes into view), `map_wide`, `way_home`; the `sled`. Nodes, hours, crossings and sources in 4.8 |
+| Survival | foundation | `weather_read` (a sight: a place's conditions for the next game hours shown on its card), `tent_quick` (a tent pitched faster), `camp_quick` (a fire laid faster), `dark_sight` (a longer sight in the dark; the torch's light is still the item's), `fall_soft` (a drop costs less). No node answers a place's condition: that is the garment's (4.5) |
+| Climbing | foundation (the drops of the south need gear and a hand) | `climb_reach` (a drop of two or three levels crossed with rope; a one-level step by hand is Travel's `scramble`, 4.8), `rope_uses`, `grip` (a fall from a climb is not a fall), `hold_read` (the hand-holds of a face shown) |
 
 **Social and trade** (nodes change capacity and reading, never a price: R8, GROWTH 5.4)
 
@@ -191,7 +191,7 @@ Hunting is the bridge: its gathering half (tracks, harvest) is written with the 
 | Lore | foundation; the ancient language of 9.10 ⏸ lives here if magic comes | `read_old` (an inscription read without firelight), `book_fast` (a book read in one sitting), `map_mark`, `riddle_hint` (a `riddle` step's second clue) |
 | Company | later (pets with a skill each, companions: GAP section 9) | `pet_slot`, `pet_carry`, `ally_hold` (a companion stands longer); the format leaves the place, the content waits |
 
-Sixteen schools (Company is the seventeenth and outside the count until its format exists). Every school is core-only content (`CORE_ONLY_TYPES`, GROWTH 3.1); a creator proposes a book, later a node, never a school.
+Sixteen schools in the first full catalogue, twenty-two with combat and the machines (Company is outside the count until its format exists). Every school is core-only content (`CORE_ONLY_TYPES`, GROWTH 3.1); a creator proposes a book, later a node, never a school.
 
 ### 4.3 How a school grows: the main line, branches, the crown
 
@@ -199,10 +199,10 @@ A school at the first full catalogue (proposed sizes, all params with ranges):
 
 - **Main line:** twelve nodes over the four bands (three a band): per band two small and one major, the second band's major being the school's signature verb change; costs 4 * (1 + 1 + 2) = 16 points.
 - **Corner nodes:** three, one per race, each needing the first major (as the placeholders of 23.10 have it), 3 points each; a player takes only their race's, 3 points.
-- **Branches:** past band 2 the school forks into two (later three) named **branches** of eight nodes each (bands 3-4, four a band: three small, one major; the branch's first node is its major), 2 * (3 + 2) * 2 = 20 points a branch. Handcraft forks into Reedwork and Stonework; Smithing into Blades, Armour and Tools; Cooking into the Hearth and the Road (meals that keep); Travel into the Trail and the Pack.
+- **Branches:** past band 2 the school forks into two (later three) named **branches** of eight nodes each (bands 3-4, four a band: three small, one major; the branch's first node is its major), 2 * (3 * 1 + 2) = 10 points a branch. Handcraft forks into Reedwork and Stonework; Smithing into Blades, Armour and Tools; Cooking into the Hearth and the Road (meals that keep); Travel into the Trail and the Pack.
 - **The crown:** one node at mastery (level 21), 3 points, a technique that is the school's name made flesh (the forager who hears a plant; the smith whose blade does not dull), and the race's third corner answer if its wing names one.
 
-Count: 12 + 3 + 2 * 8 + 1 = 32 nodes, 16 + 3 + 40 + 3 = 62 points a school; a player's reachable share (own race only) 59. Sixteen schools: 512 nodes. The race wings: three wings of eight nodes each (two small and two major a band for bands 1-2, the wing's verb changes), 24 nodes. The shared centre: six attributes as pips (not nodes; `spend`) and twelve small nodes any race may take (a wider bag pocket, a steadier hand). **First full catalogue: about 550 nodes, about 1,000 points of cost; a character's lifetime is 320.** With a third branch in every school (+128) and the combat schools' technique rows (+~60) the map holds about 750; a thousand and more comes only the way Skyrim's and Path of Exile's did, by more branches as data, never by longer main lines. The skill screen in flight should be sized for 1,000 nodes, not 300.
+Count: 12 + 3 + 2 * 8 + 1 = 32 nodes, 16 + 3 * 3 + 2 * 10 + 3 = 48 points a school; a player's reachable share (own race only) 16 + 3 + 20 + 3 = 42 (corrected 25.10 with Travel's worked example, 4.8: the first count doubled the branches). Sixteen schools: 512 nodes. The race wings: three wings of eight nodes each (two small and two major a band for bands 1-2, the wing's verb changes), 24 nodes. The shared centre: six attributes as pips (not nodes; `spend`) and twelve small nodes any race may take (a wider bag pocket, a steadier hand). **First full catalogue: about 550 nodes, about 820 points of cost (sixteen schools 768, the race wings 36, the centre 12); a character's lifetime is 320.** With a third branch in every school (+128) and the combat schools' technique rows (+~60) the map holds about 750; a thousand and more comes only the way Skyrim's and Path of Exile's did, by more branches as data, never by longer main lines. The skill screen in flight should be sized for 1,000 nodes, not 300.
 
 ### 4.4 What a node may be (the closed effect grammar)
 
@@ -240,12 +240,13 @@ The owner's concern: hard fixed caps would kill the chase for better sets, and f
 - **(a) No loop.** No source may amplify another source that amplifies it back: the effect graph is acyclic, and an effect never raises the strength of the effect kinds that raised it. The case to avoid is Skyrim's: Fortify Restoration potions strengthened the enchanted gear that strengthened the next potions, and players reached damage in the millions. The structural rule that keeps the graph acyclic: **the strength, quality, tier and duration of a made thing read only its recipe, its inputs' tier, the maker's tree and the maker's base levels**, never worn gear or an active dish. Worn and eaten effects may change how fast and how surely a thing is made (`craft_speed_pct`, `craft_chance_pct` as built: success, not strength), never how strong it comes out. A ceiling raiser (2 below) raises a ceiling, never an effect's strength, and nothing raises a raiser. The economy line stays with it: craft, sell, buy and repeat nets at most 0 at a vendor (R8, read as CR-1 settles it).
 - **(b) Nothing grants experience except the mentor's +20%** (3.7). No effect, node, trait, dish, raiser or item may name experience.
 
-**2. Rising ceilings instead of fixed caps.** Each stat category has a ceiling that is a function of the wearer's band, as Diablo II and Path of Exile cap a resistance at 75% while rare late items raise the cap itself (Path of Exile's to 90%). Sets, dishes and traits combine freely, and are meant to: every source of a category adds (nodes, worn effects, traits, a master step, dishes), and the sum stops at the ceiling of the wearer's band, plus the raisers held. Categories then apply one after another to the final value; penalties (a place's slow, low health) apply last and a ceiling never clamps a penalty away. The wearer's band in a category is their own tier in its governing school, read on base levels as Q5 reads it (5.6): `work` the school at work, `move` Travel, `find` the gathering school in use, `health`, `sustain`, `sense` and `place` Survival. Attributes are outside the ceilings (Q5: gear bonuses with no fixed cap); each item's `attr_bonus_max` and the slots bound them, and the top builds report watches them.
+**2. Rising ceilings instead of fixed caps.** Each stat category has a ceiling that is a function of the wearer's band, as Diablo II and Path of Exile cap a resistance at 75% while rare late items raise the cap itself (Path of Exile's to 90%). Sets, dishes and traits combine freely, and are meant to: every source of a category adds (nodes, worn effects, traits, a master step, dishes), and the sum stops at the ceiling of the wearer's band, plus the raisers held. Categories then apply one after another to the final value; penalties (a place's slow, low health) apply last and a ceiling never clamps a penalty away. The wearer's band in a category comes from the category's owner (the owner, 25.10: DECISIONS "The progression map: who owns each ceiling"), read on base levels and base pips as Q5 reads them (5.6): `health` from the **stamina** attribute (the band is the base stamina, at least 1: stamina 0 or 1 is band 1, 5 is band 5; the cap itself stays 100 + 20 a stamina point, Fallout's split of hit points by Endurance and of healing by the Survival skill); `sustain`, `sense` and `place` from **Survival**; `move` and `carry` from **Travel** (4.8); `work` from the school at work; `find` from the gathering school in use; `strike`, `aim` and `guard` from their own schools when combat lands. An attribute's own bonuses stay outside the ceilings (Q5: gear bonuses with no fixed cap), and stamina only picks which band of the health ceiling applies; each item's `attr_bonus_max` and the slots bound them, and the top builds report watches them.
 
 | Category | What it sums | Band 1 | 2 | 3 | 4 | 5 | Raisers (count x step) | Top, every raiser held |
 |---|---|---|---|---|---|---|---|---|
 | `work` | time off a school's work, all sources | 25% | 35% | 45% | 55% | 65% | 2 x 5 points | 75% (4x speed, `power_cap_max_permille` 4000) |
-| `move` | time off a step | 10% | 15% | 20% | 25% | 30% | 2 x 5 | 40% |
+| `move` | time off a step, a crossing or an oar stroke (each action its own sum, 4.8) | 10% | 15% | 20% | 25% | 30% | 2 x 5 (one is Travel's crown) | 40% |
+| `carry` | the weight limit above might's and the bag's (4.8) | +10% | +15% | +20% | +25% | +30% | none | +30% |
 | `health` | health cap above the attributes' cap | +10% | +20% | +30% | +40% | +50% | 2 x 10 | +70% |
 | `sustain` | health back a game hour while a place drains, regen and food together, of the cap | 5% | 7% | 9% | 12% | 15% | 1 x 5 | 20% |
 | `find` | `rare_find_pct` points | +3 | +5 | +8 | +11 | +15 | 2 x 3 | +21 |
@@ -289,6 +290,152 @@ Combat walls (foes' damage against guard and sustain) join with the combat layer
 | `proof_enum_max` | 10,000,000 combinations, then dominance |
 | `common_plain` | a common item or dish carries at most 1 effect, at most its stat's smallest step (5.7) |
 | `rarity_effects_max`, `rarity_band_permille` | [1, 1, 2, 2] effects; common the step, uncommon 500-750, rare 750-1000, legendary 1000 (5.7) |
+
+### 4.8 Travel, a full school: carrying, ways over, water and the sense of a route (the owner, 25.10)
+
+The owner: Travel was far too empty to be a skill. It is the school of how the body crosses the world: what it carries and how fast under it, the ways over that open by its level, the water, and the sense of a route. Every part is taken from what the repo has built or planned, and each says what it waits on; a node that waits on a system not built keeps its place in the tree until that system lands (4.9).
+
+**The parts and their sources.**
+
+- **Carrying** (#297, branch `feat/races-bags`; DECISIONS 2026-10-23 "Weight and the three paces" and "Bags on the back"): every item weighs; the weight limit is 30 and 10 for each point of might, and a frame pack adds 10; three paces, light up to three fifths of the limit at 170 ms a tile, steady up to the limit at 190 ms, heavy above it at 230 ms; nothing more is picked up past one and a half times the limit; one tool hangs at the belt. Might keeps the base; Travel raises the limit (`load_pct`), shortens the heavy pace (`load_step_pct`), moves the hard edge (`edge_pct`) and hangs a second tool at the belt (`belt_tools`). Fallout sets carry weight by Strength and its Strong Back perk adds to it; Skyrim's Extra Pockets does the same; Old School RuneScape lets weight drain run energy.
+- **Ways over, by Travel level** (OPEN_WORLD G61: "a shortcut is gated by a trait or skill and is measured in steps saved, like OSRS agility shortcuts"; NEXT 19 b lists "a shortcut" among what a place opens; G68's crossings and the height layer with rock faces of NEXT 19 a and 19 c): the kinds below. Below its level a crossing is not taken ("Not yet. You would fall." in the world's voice) and the long way round always stays: the checks of NEXT 19 g read reach with every Travel crossing closed, so a shortcut makes a place nearer, never reachable. Each crossing names the steps it saves, as the check measures them.
+- **Fords** (OPEN_WORLD: every river border names a crossing, "a broken bridge, a ferry post, a ford"; REACTIONS `close`: "a ford under high water"; QUEST_PATTERNS' stepping stones at the ford): a wild ford is a Travel crossing; a ford restored in a community slot is open to everyone, as the slot is.
+- **Boats** (NEXT 19 f, the boathouse on a lake with a keeper; the boat and the mooring post of the art ladder, frames 2026-10-20): the keeper lends a rowboat, and rowing is a verb with its own active time on water tiles (proposed `row_step_ms` 300). A boat of one's own and a boat line between places are faster forms of travel, earned by character level (3.5; "The world's structure", item 7), never nodes; Travel's nodes make the oars pull further. The keeper is the school's first teacher (3.6): a lesson is rowed on the lake.
+- **The sense of a route** (the chart as built, "only the ground the player has walked", in 8 by 8 chunks: `game/src/ui/map.ts`): a way over in view is marked, open or not yet at the player's level (`path_read`); the chart holds a ring more around walked ground (`map_wide`); in an unanswered harsh place or after dark the way back to the nearest safe place shows on the chart (`way_home`).
+
+**What pays Travel.** Its verb is the way over, not the walk (3.6: the verb's own active time):
+
+- a crossing taken: its active time, in full (a few seconds on stones, longer along a ledge);
+- a ford waded and a lake rowed: the time in the water;
+- a heavy step: the time the load adds over a steady step (40 ms of 230), so a load past the limit trains the back; a light or steady step pays nothing (an owner call, section 9);
+- a trail course: a loop of crossings at a place, walked again and again, each lap paying its crossings' time (Old School RuneScape's Agility courses); one course a band, at places of rising danger, set against NEXT 19 b's table (an owner call, section 9);
+- a quest that pays Travel, and a lesson from its teacher (3.6).
+
+A plain step pays nothing at any pace. Every player walks to every other school; if walking paid Travel, its fifty hours would come free inside the other fifteen schools' walking, every player would master it without choosing it, and the catalogue's 800 hours (3.2) would count those hours twice. A new check row holds it: `xp_one_school`, every active millisecond pays exactly one school (the mentor's +20% aside, 3.7).
+
+**The hours** (`t1` 28 s, the one curve of 3.2; active Travel time only):
+
+| Stand at Travel level | Active time | Opens | Where a player finds the time (proposed) |
+|---|---|---|---|
+| 2 | 28 s | the first point | the valley's stepping stones: about seven crossings of 4 s |
+| 4 | 2.2 min | `way-eye`, the first major | the first map's open crossings |
+| 6 | 6.2 min | band 2: `ford-wise`, the race's corner | the first map's level 1-5 crossings; a heavy haul of the opening's logs and stones |
+| 11 | 53 min | band 3: `scramble`, the Trail and the Pack | the first map's fords and shortcuts; the boathouse lake rowed |
+| 16 | 6.8 h | band 4: `way-home`, `leap`, `sled` | the first trail course (a lap about 60 s active, 90 s on the clock); the ring's ledges |
+| 20 | 34.5 h | the last step begins | the courses of the far regions, long fords, rowing |
+| 21 | 51.7 h | the crown, `wayfarer` | the last step alone is 17.2 h |
+
+From band 4 to the crown is 44.9 active hours: about 2,700 laps of a 60 s course if nothing else paid. RuneScape's Agility is its grindiest skill for the same reason, and the mix above (fords, rowing, the haul, quests, lessons) is what keeps the road varied. A heavy haul pays about ten minutes of Travel for an hour of walking heavy: a trickle, never the main road.
+
+**The catalogue still holds.** Travel at 28 s is 51.7 h. The first full catalogue's sixteen schools (Travel among them, 4.2) at 28 s are 827 h, past `catalogue_hours_min` (800); all twenty-two, with combat and the machines, are 1,138 h; and with `xp_one_school` none of Travel's hours hide inside another school's. The per-school spread keeps its margin: up to four schools at 25 s leave the catalogue at 805 h; a fifth goes red at 799.7 h.
+
+**The crossing kinds** (Travel's; G68's open steps and ramps stay open to everyone, and Climbing keeps the rope):
+
+| Kind | What it is | Opens at Travel level | Node it needs | Active time (proposed) | Waits on |
+|---|---|---|---|---|---|
+| `stones` | stepping stones over a stream | 1-10 | none | 4 s | NEXT 19 a, 19 c |
+| `log` | a fallen trunk over a stream or a gap (REACTIONS `open`; GROWTH 5.2's felled tree as a bridge) | 1-10 | none | 5 s | 19 a, 19 c |
+| `squeeze` | a gap between rocks, a hole in a hedge | 1-15 | none | 6 s | 19 a, 19 c |
+| `ford` | a shallow river, waded | 6-20 | `ford-wise` | 2 s a water tile | 19 a, 19 c; high water shuts it (REACTIONS `close`) |
+| `scramble` | a rock step of one level, by hand | 11-20 | `scramble` | 8 s | 19 a's levels, 19 c |
+| `ledge` | a narrow way along a rock face | 11-21 | `ledge-walk` | 2 s a tile | 19 a's levels, 19 c |
+| `leap` | a gap one tile wide | 16-21 | `leap` | 3 s | 19 c |
+| `rope` | a drop of two or three levels | Climbing's | Climbing's `climb_reach` | Climbing's | Climbing (4.5) |
+
+A crossing tile carries `crossing: { kind, travel, secs }` where today it carries `crossing: true` (true stays the open steps or ramp; a shared-file change, its own small pull request in 19 a). The step check of 19 c reads the kind, the player's Travel level and the node, in the one function the BFS of G56 shares, so reach and walking cannot disagree. A place's crossings are set against NEXT 19 b's table: where the expected level puts a player in band b, its crossings sit at band b or one above, a reason to come back. A crossing is never in two schools, and its time pays its own school only.
+
+**The nodes, in the school file's format (#302).** `id`, `name`, `text` (words, never a number), `size`, `needs`, `effect`, `value`, `slot`, `race`, plus this page's `band` (3.3). Thirty-two nodes as 4.3 shapes a school: the main line (twelve), three corners, two branches of eight (the Trail and the Pack) and the crown. "Waits on" names the system a node needs beyond its own kernel or client line; a node with a wait is **reserved** (4.9).
+
+| Band | id | Name | Size | Needs | Effect | Value | Text | Waits on |
+|---|---|---|---|---|---|---|---|---|
+| 1 | `steady-load` | Steady under load | small | none | `load_pct` | 5 | You carry a little more before the load tells. | #297 |
+| 1 | `way-eye` | Eye for a way | major | `steady-load` | `path_read` | 8 | A way over that you could take catches your eye as it comes into view. | 19 a |
+| 1 | `sure-footing` | Sure footing | small | `way-eye` | `cross_speed_pct` | 5 | Stones and logs go by quicker underfoot. | 19 a, 19 c |
+| 2 | `heavy-going` | Heavy going | small | `way-eye` | `load_step_pct` | 25 | A heavy load drags at you less. | #297 |
+| 2 | `quick-crossing` | Quick crossing | small | `sure-footing` | `cross_speed_pct` | 5 | Ways over take you less time. | 19 a, 19 c |
+| 2 | `ford-wise` | Ford-wise | major | `quick-crossing` | `ford` | 0 | You can wade a river where it runs shallow enough. | 19 a, 19 c |
+| 3 | `long-stride` | Long stride | small | `ford-wise` | `walk_step_pct` | 5 | Your stride carries you further each step. | none |
+| 3 | `strong-back` | Strong back | small | `heavy-going` | `load_pct` | 5 | Your back takes more before your pace gives. | #297 |
+| 3 | `scramble` | Scramble | major | `long-stride` | `scramble` | 0 | You climb a single rock step by hand, without a rope. | 19 a's levels, 19 c |
+| 4 | `ground-sense` | Ground sense | small | `scramble` | `walk_step_pct` | 5 | Rough or smooth, the ground slows you less. | none |
+| 4 | `tireless-stride` | Tireless stride | small | `ground-sense` | `walk_step_pct` | 5 | You keep your pace on the longest day. | none |
+| 4 | `way-home` | The way home | major | `scramble` | `way_home` | 0 | In a harsh place or after dark, the way back to safety shows on your chart. | none |
+| 2 (human) | `road-packer` | Road packer | corner | `way-eye` | `load_pct` | 10, slot | On a long road you carry more than most. | #297 |
+| 2 (elf) | `leaf-step` | Leaf step | corner | `way-eye` | `cross_speed_pct` | 10, slot | You cross stones and logs as lightly as a leaf. | 19 a, 19 c |
+| 2 (skeleton) | `tireless-bones` | Tireless bones | corner | `way-eye` | `load_step_pct` | 50, slot | Bones that never tire carry a heavy load at an even pace. | #297 |
+| 3, Trail | `ledge-walk` | Ledge walk | major | `ford-wise` | `ledge` | 0 | You walk a narrow ledge along a rock face. | 19 a's levels, 19 c |
+| 3, Trail | `swift-crossing` | Swift crossing | small | `ledge-walk` | `cross_speed_pct` | 5 | Ways over go quicker still. | 19 a, 19 c |
+| 3, Trail | `oar-hand` | Oar hand | small | `ledge-walk` | `row_step_pct` | 10 | The oars pull the boat further each stroke. | 19 f, the `row` verb |
+| 3, Trail | `wide-chart` | Wide chart | small | `ledge-walk` | `map_wide` | 1 | Your chart holds a little more around the ground you have walked. | none |
+| 4, Trail | `leap` | Leap | major | `ledge-walk` | `leap` | 0 | You jump a gap a step wide. | 19 c |
+| 4, Trail | `trail-stride` | Trail stride | small | `leap` | `walk_step_pct` | 5 | On a trail your feet find their rhythm. | none |
+| 4, Trail | `long-oar` | Long oar | small | `leap` | `row_step_pct` | 10 | A long pull carries the boat further. | 19 f, the `row` verb |
+| 4, Trail | `far-chart` | Far chart | small | `leap` | `map_wide` | 1 | Your chart holds more of the land around your ways. | none |
+| 3, Pack | `shoulder` | Shoulder the load | major | `heavy-going` | `edge_pct` | 25 | You can still pick things up past where others must stop. | #297 |
+| 3, Pack | `broad-back` | Broad back | small | `shoulder` | `load_pct` | 5 | You carry more before the load tells. | #297 |
+| 3, Pack | `slow-burden` | Slow burden | small | `shoulder` | `load_step_pct` | 25 | A heavy load drags at you less again. | #297 |
+| 3, Pack | `belt-loop` | Belt loop | small | `shoulder` | `belt_tools` | 1 | A second tool hangs at your belt and takes no place. | #297 |
+| 4, Pack | `sled` | Sled hauler | major | `shoulder`, Woodcraft's `joinery` (a bridge, 6.5) | `sled` | 0 | You drag a sled behind you, and it carries a load. | a sled item (Woodcraft), #297's back slot |
+| 4, Pack | `bearer` | Bearer | small | `sled` | `load_pct` | 5 | You carry more again before the load tells. | #297 |
+| 4, Pack | `even-burden` | Even burden | small | `sled` | `load_step_pct` | 25 | Even a heavy load barely slows you. | #297 |
+| 4, Pack | `last-stone` | One more stone | small | `sled` | `edge_pct` | 25 | You can pick up even more before the load stops you. | #297 |
+| crown | `wayfarer` | Wayfarer | major | `way-home` | `raise_move` | 5 | The road knows you: your pace can rise past any other walker's. | the crown's format (4.3) |
+
+Cost: the main line 16 points, a corner 3, a branch 10, the crown 3: 42 for a player of one race, inside the 20 its own levels pay for the main line and the corner (19). Sums by effect, against the ceilings of 4.7 read on the Travel band: `walk_step_pct` 20 from nodes (the first in band 3, past the first third of the school as GROWTH 5.2 asks), under `move`'s 20-30% from band 3 up, leaving room for boots and dishes; `load_pct` 20 (the human 30), under `carry`'s 10-30%; `cross_speed_pct` 15 (the elf 25); `row_step_pct` 20; `load_step_pct` 75 (the skeleton 100, the bound); `edge_pct` 50 (the limit's hard edge from one and a half times to twice); `map_wide` 2 chunks.
+
+**Travel's effects** (each a closed definition; a name arrives with its first node, its kernel line, its property test and its check row, 4.4):
+
+| Effect | Kind | Category (4.7) | Exactly | Waits on |
+|---|---|---|---|---|
+| `walk_step_pct` | rate | `move` | a step's time is cut by the value in percent | its kernel line only |
+| `cross_speed_pct` | rate | `move` | a Travel crossing's active time is cut by the value in percent | 19 a, 19 c |
+| `row_step_pct` | rate | `move` | a stroke's time on water is cut by the value in percent | 19 f, the `row` verb |
+| `load_pct` | rate | `carry` (new) | the weight limit (30 + 10 a might point + the bag's `load_bonus`) rises by the value in percent, rounded down | #297 |
+| `load_step_pct` | rate | none, bounded | the heavy pace's extra over the steady pace (40 ms) is cut by the value in percent; at 100 a heavy step is a steady one, never quicker | #297 |
+| `edge_pct` | rate | none, bounded | the hard edge (one and a half times the limit) rises by the value in points of the limit, at most to twice the limit (`edge_max_pct` 200) | #297 |
+| `belt_tools` | count | none, bounded | one more tool hangs at the belt with no place; two in all at most (`belt_tools_max` 2) | #297 |
+| `path_read` | sight | none (4.4) | a Travel crossing within the value in tiles is marked as it comes into view, open or not yet at the player's level | 19 a |
+| `map_wide` | sight | none (4.4) | the chart shows the value in more 8 by 8 chunks around walked ground | its client line only |
+| `way_home` | sight | none (4.4) | in an unanswered harsh grade (BODY_CLOCKS 5) or after dark, the chart shows the walk to the nearest safe place (G30) by the BFS of G56 | its client line only |
+| `ford`, `scramble`, `ledge`, `leap` | verb change | none | the crossing kind of the same name may be taken, at its level | as the kind |
+| `sled` | verb change | none | a sled (a Woodcraft item on the back) carries a load behind: its places and weight ride on it, at the steady pace on snow and grass and the heavy pace elsewhere | a sled item, #297's back slot |
+| `raise_move` | raiser | `move` | the `move` ceiling rises one step (one of 4.7's two `move` raisers) | the crown's format |
+
+**The stacking rule with harsh places (Q8a).** A step's time is three factors, each with one owner, and each is cancelled only by its own owner:
+
+```
+step_ms    = pace * slow * (100 - move) / 100
+pace       = 170 light, 190 steady, 190 + 40 * (100 - load_step) / 100 heavy      the load against the limit (#297); the Pack
+grade_left = max(0, grade - answer)                                                answer: trait strength + a master step + a dish step,
+                                                                                   under the `place` ceiling (Q8a, 4.7): what is worn and eaten
+slow       = 1.0, 1.15, 1.3, 1.5, 2.0 by grade_left                                BODY_CLOCKS 5.2
+move       = walk_step_pct of nodes, worn pieces and dishes, under the `move`     Travel's band
+             ceiling of the walker's Travel band
+```
+
+- **Travel never lowers a grade, and a place answer never touches the pace or `move`.** `snow_shod` takes `deep_snow` down a grade; a `walk_step_pct` node shortens every step; neither does the other's work, so the same slow is never cancelled twice.
+- **One dish effect is either a place step or a move bonus, never both**, and each counts under its own ceiling (`place`, `move`).
+- **A slow is a penalty and applies after the clamp** (4.7): the ceiling clamps `move`, never the slow, so in an unanswered grade a walker is always slower than the same walker on calm ground. The drain is the place's (BODY_CLOCKS 5), and Travel never touches it; a quicker walker only spends less time in the place, which a wall's pass already counts (T, 4.7).
+- A crossing reads `cross_speed_pct` the same way, and rowing `row_step_pct`; each action's own sum is clamped by the one `move` ceiling.
+
+Worked: a band-3 traveller (`move` ceiling 20%; `long-stride` 5 and boots of 10 make 15), lightly loaded, in deep snow at grade 2 with nothing worn for snow: 170 x 1.3 x 0.85 = 188 ms a tile, against 145 ms on calm ground. With `snow_shod` of strength 1 (grade 1 left): 170 x 1.15 x 0.85 = 166 ms. Loaded heavy, with `heavy-going` (25): (190 + 30) x 1.15 x 0.85 = 215 ms.
+
+**Who owns its ceilings.** `move` and `carry` read the walker's Travel band (the owner's answer, DECISIONS "The progression map: who owns each ceiling"); `carry` is a new row of 4.7.
+
+### 4.9 Tree first, both ways (the owner, 25.10)
+
+The owner's standing rule (DECISIONS 2026-10-25 "Tree first, both ways", made enforceable in #341):
+
+- **The tree from the work.** Every new mechanic, stat, effect, item property or system that a player can grow in is placed in the tree when it is designed: on an existing school's nodes, or in a proposal that extends the tree (a new branch or node group, in the school file's node format). The builder makes the call, and review sees it. Travel above is the first worked case: carrying (#297), the crossings of NEXT 19 a and 19 c and the boathouse of 19 f had no node; now each has a place, reserved until it lands.
+- **The work from the tree.** An agent starting any task reads the tree first and says where the work sits, or which nodes it serves, before it builds. The quest designer reads the tree first and starts from its thin spots; every pitch names the schools it trains and the nodes it needs or opens (the skill's seventh pitch line), and the pull request's `Tree:` line carries them beside `Quest review:`.
+- **The line.** Every pull request's body: `Tree: <school>/<node ids>`, `Tree: extends the tree: <path of the proposal>`, or `Tree: none: <why nothing a player can grow in changes>`. CI refuses a body without one (`tools/src/pr-rules.ts`, #341). This pull request's own: `Tree: extends the tree: docs/design/PROGRESSION.md`.
+
+**The coverage report (spec only; a follow-up, built neither here nor in #341).** A read-only script, proposed name `pnpm tree:coverage` (the name is an owner call, section 9), that prints the tree's thin spots; it informs and never fails, and the quest designer reads it first.
+
+- A node is **touched** when content names it, or its school at its band: a quest that pays the school (`xp: {school, seconds}`, 3.6) or asks for the node's band; a recipe of the school's profession whose level sits in the node's band; a place, a crossing or a course that opens or trains it (for Travel, a crossing's `kind` and `travel` level); a teacher whose `teaches.band_max` reaches it (3.6); a book that teaches it (6.5).
+- A node is **reserved** when its effect has no kernel reader yet (the static grep of 4.6) or the proposal names a system it waits on (the "Waits on" column above); reserved nodes are listed first, each with what it waits on.
+- Per school: the nodes touched, untouched and reserved, and the thinnest band (the fewest touches); then one line for the whole tree, the schools ordered by their untouched share. It reads `content/` and the proposals' tables; pure and integer, the same output on two machines.
+- What it would print today: five schools built (#302) and seventeen proposed on this page (eleven of them in the first full catalogue); Travel untouched, 25 of its 32 nodes reserved (on #297, NEXT 19 a, c and f, the sled and the crown's format) and seven waiting only on their own line.
 
 ## 5. Gear: crafted weapons, armour and clothing on the map
 
@@ -384,7 +531,7 @@ Six attributes, a fixed profile per race (total 7) plus the grade's shift on the
 
 - **The race wing**: eight nodes, bands 1-2 of the race's own path (the skeleton's rest, the elf's step, the human's made-thing bonus), reachable by the race alone, taught to another race only by a book (decision 38) and only for its small nodes (a wing's majors are the race: no book).
 - **Corner nodes**: one per race in every school, needing the school's first major; the reason a skeleton smith and an elf smith differ.
-- **Cross-links** (proposed, the one change to GROWTH's "same school only"): a node may carry `needs` across schools for a **bridge node**: Leatherwork's first branch needs Hunting's `harvest_yield`; Smithing's `alloy_read` needs Mining's `vein_sense`; Travel's Pack branch needs Handcraft's bag. At most `cross_links_max` (2) per school and never into a combat school from a trade (a smith need not fight). Cross-links are the edges that make the tree a graph the in-flight screen already draws, and they are the breadth pull in shape, as 3.4 is in points.
+- **Cross-links** (proposed, the one change to GROWTH's "same school only"): a node may carry `needs` across schools for a **bridge node**: Leatherwork's first branch needs Hunting's `harvest_yield`; Smithing's `alloy_read` needs Mining's `vein_sense`; Travel's `sled` needs Woodcraft's `joinery` (the sled is Woodcraft's make; 4.8). At most `cross_links_max` (2) per school and never into a combat school from a trade (a smith need not fight). Cross-links are the edges that make the tree a graph the in-flight screen already draws, and they are the breadth pull in shape, as 3.4 is in points.
 - **Books**: as GROWTH 3.7; the rarity budget prices them; a book for a bridge node teaches it without its cross-link.
 
 ## 7. Kernel shape (proposed; additive; integer; FORMAT_VERSION unchanged)
@@ -396,6 +543,7 @@ Six attributes, a fixed profile per race (total 7) plus the grade's shift on the
 - A technique gains nothing here; its format is GROWTH 3.5 and COMBAT 4.3.
 - Items gain `quality?: 'plain'|'fine'|'true'|'master'` on an instance (a stack of made things splits by quality the way it splits by tier), `guard_pct`, `quiet_wear` in `WORN_EFFECTS` when their schools land; `trait?:` one name from `TRAITS` on a garment (Q8); `weapon?: {reach, harm_band, school}` with combat; `attrs?: Partial<Record<Attribute, number>>` and `req?: { school, level, attr? }` (5.6). A new read `attrTotal` (base + the active part of worn bonuses) for the verbs; `attrAt` stays the base for keys and requirements.
 - Recipes gain `family: Id` (the quality node names a family, not a recipe).
+- Travel (4.8): a crossing prop's `crossing: true` may become `{ kind, travel, secs }` (19 a, a shared-file pull request of its own); actions `row` (with the boathouse, 19 f); params `row_step_ms` (300), `edge_max_pct` (200), `belt_tools_max` (2), `ceiling_carry`; check rows `xp_one_school` (every active millisecond pays one school, the mentor's +20% aside), `shortcut_reach_closed` (19 g's reach is read with every Travel crossing closed: an error), `shortcut_saves_min` (8 steps saved, a warning).
 - Quests gain `xp?: {school, seconds}` in the reward; characters gain `teaches?: {school, band_max}`.
 - Actions: `unlearn` (6.3), `lesson` (3.6); `learn_node` checks the band; `craft` rolls quality.
 - Params (`growth`): `t1_min_s` (25), `t1_max_s` (30), `catalogue_hours_min` (800), `band_size` (5), `slot_levels` re-spaced, `power_cap_step_permille`, `power_cap_max_permille`, `main_line_points_max`, `nodes_max`, `branches_max`, `cross_links_max`, `tree_buyable_max_permille`, `key_max`, `respec_free`, `respec_mg`, `quality_bp` by band, `attr_bonus_max` by tier and its step, the balance rows of 4.7 (`effect_graph_acyclic`, `loop_profit_max`, `xp_sources`, `ceiling_<category>` with their raisers, the wall rows, `top_builds_n`, `top_over_median_max_permille`, `proof_enum_max`), `group_share_max_permille` (250), `mentor_bonus_pct` (20), `mentor_band_gap` (1), `mentor_reach_tiles` (12), `pair_full_min` (60); each with min, max and step (R12). The place conditions' params are listed in BODY_CLOCKS.md section 9.
@@ -407,7 +555,7 @@ Numbers provisional (P1 onward; the rules pull request assigns G numbers after G
 
 - **P1 Rise by use opens, points buy.** A school's level rises only with the active time of its own verb, on one curve whose ratio is the game's difficulty step; every level anywhere pays one point; a node is bought with points in a band the school's level has reached. Nothing else pays a level and nothing shortens one.
 - **P2 The character level is read by three things.** The power cap, the slots and the forms of travel; never a quest, a price, a foe or a recipe. A quest that wants a capable player names a school's band or a key.
-- **P3 A band gates nodes, never verbs.** No level, band or node walls an attempt, a recipe, a region or a door; a band says which nodes are for sale, a node says how well.
+- **P3 A band gates nodes, never verbs.** No level, band or node walls an attempt, a recipe, a region or a door; a band says which nodes are for sale, a node says how well. One exception, G61's: a Travel crossing opens at its Travel level, because the long way round always stays and the check proves it (4.8).
 - **P4 The tree cannot be bought whole.** The catalogue's cost stays above what a character of the highest level could hold (the check's permille), so every character is a choice; a school's main line stays inside the points its own levels pay, so a specialist is never forced to wander.
 - **P5 A made thing has a tier, a rarity and a quality.** The tier caps it, the rarity prices it, the quality moves it inside the cap; the quality roll is what a crafting node opens, and the attempt needs knowledge, a place and materials and never a node.
 - **P6 Knowledge is found, skill is done, lessons are time.** Recipes above tier 1 and books come from the world; a teacher gives time at the ordinary rate and asks standing, never gold for a level; a quest pays a named school, bounded by its own active time and each player's.
@@ -416,6 +564,8 @@ Numbers provisional (P1 onward; the rules pull request assigns G numbers after G
 - **P9 A cross-link is a bridge, not a wall.** A node may need a node of another school only as a bridge between trades, at most two per school, never from a trade into combat; a book teaches a bridge node without its link.
 - **P10 Gear lends attributes, one tier ahead.** Worn gear adds attribute bonuses that rise with tier, with no fixed cap; each item names a school level and an attribute it asks, read on the base; below it the item helps up to what gear one tier above the wearer's own gives, and says what unlocks the rest. Gear never meets a key, and a look never carries a bonus.
 - **P11 Help, never a carry.** Experience comes only from the player's own actions. In a group a newcomer gets at most a quarter of their own earned experience as a share of the group's and a fifth more of their own while a stronger player is near, both falling for the same pair over a real day; the veteran earns standing and the giving board, never experience; a carry sold for gold is an exploit loop.
+- **P12 Travel's verb is the way over.** A crossing, a ford, an oar stroke, a course lap and the time a heavy load adds pay Travel; a plain step pays nothing, and every active millisecond pays one school only.
+- **P13 Tree first, both ways.** Everything a player can grow in has its place in the tree when it is designed, and every task and quest starts from the tree; every pull request says where, in its `Tree:` line.
 
 ## 9. Direction calls: all eight answered, and Q8's two follow-ups
 
@@ -434,12 +584,18 @@ Each is the owner's. All eight were answered on 25.10, one at a time; each answe
 | Balance (a refinement of Q8b) | everything computable: two red lines (no loop; experience only from the mentor), rising ceilings by band with a few rare raisers, walls proven solvable and not cheesable | 4.7 |
 | Common things are plain | common food, accessories and gear carry no effect or one very small one, never two | 5.7, BODY_CLOCKS.md 6.2 and 7.3 |
 | Q8b Food and sleep | food heals; cooked dishes give timed effects from a closed list, the catalogue huge; one or two at once; sleep only saves and passes the night (no Rested, Fed folded into dishes) | 4.5, 4.2 Cooking, BODY_CLOCKS.md sections 7-8 |
+| Ceiling owners | **health from stamina** (100 + 20 a point; Fallout's Endurance split); Survival sets health back, the senses and the answer to places; Travel the walking speed | 4.7, 4.8 |
+| Travel carries weight | a full school: carrying, ways over that open by Travel level (RuneScape's Agility), fords, the boathouse's boat, the sense of a route; a real 51.7 h path; the stacking rule with harsh places | 4.8 |
+| Tree first, both ways | every feature a player grows in takes its place in the tree when designed; every task and quest pitch starts from the tree; a `Tree:` line on every pull request, checked by CI (#341) | 4.9, AGENTS.md, the quest-designer skill |
 | Q7 Teachers | **A**: time at the ordinary rate, standing earned, never gold for a level; and no industrial carry: own actions only, a share of at most a quarter of one's own, +20% near a stronger player, the veteran on the giving board, diminishing returns for a pair, sold carries an exploit loop | 3.6, 3.7, P6, P11 |
 
-**Still open, each with a recommended default (⏸):**
+**Still open, each with a recommended default (⏸):** (the ceiling band's owner, open until round 5, is answered above: "Ceiling owners")
 
 - **Does an attribute bonus count as a common piece's one effect?** Recommended: yes, a common piece carries one thing at most (+1 to one attribute, or one worn effect at 5, or a strength-1 trait); from uncommon up attribute bonuses ride beside the effects (Q5). Other option: attributes ride beside even at common, so a common piece may carry +1 and one small effect. Today's content passes either (no common piece carries an attribute).
-- **Which school sets the ceiling band for health, sustain, senses and the place answer (4.7)?** Recommended: Survival (Travel for the step), so readiness for the long way runs through one school. Other option: the character level.
+- **Does a heavy step pay Travel (4.8)?** Recommended: yes, only the time the load adds over a steady step (40 ms of 230), about ten minutes of Travel an hour of walking heavy. Other option: only crossings, fords, rowing, courses, quests and lessons pay.
+- **Trail courses as Travel's training ground (4.8)?** Recommended: yes, one course a band at places of rising danger, a loop of crossings walked again (RuneScape's Agility courses); without them the last 45 hours rest on shortcuts met by chance. Other option: no courses; the world's crossings, fords and the lake alone.
+- **Is the `Tree:` line owed by a creator's extension too (4.9)?** Recommended: yes, one rule for every pull request; most extensions write `Tree: none: <why>`, and the template shows the forms. Other option: excused when every changed file sits under `content/extensions/`.
+- **The coverage report's name (4.9).** Recommended: `pnpm tree:coverage`.
 - **How are the ceiling raisers had (4.7)?** Recommended: half crown nodes, half legendary finds in band-5 places, never sold or made, bound to the one who found or learned them. Other option: the finds trade on the free market.
 
 **Q8a and Q8b, the two follow-ups, answered by the owner the same day:**
@@ -502,8 +658,18 @@ Each is the owner's. All eight were answered on 25.10, one at a time; each answe
 | Sleep gives no bonus (Q8b) | G32 "a night's sleep in town ... give[s] it back" | agrees | sleep keeps G32's health and saves the game; it adds nothing more |
 | Drops crossed with rope and a node | "One height layer" (25.10); G68 crossings | extends | a `rope` crossing kind |
 | Trade nodes move capacity, never a price | "Prices and gold" (10.10); R8; GROWTH 5.4 | agrees | `stall_slots`, `price_memory`; the band is untouched |
-| Travel nodes past the first third of the school | "The world's structure" (23.10, item 7); W9; G64 | agrees | GROWTH 5.2 kept |
-| Sixteen core-only schools; creators never add a school | GROWTH 3.1; CRAFTING_AUDIT D-CRAFT-4 (CR-7) | agrees | a later decision may open it; not this page |
+| Travel nodes past the first third of the school | "The world's structure" (23.10, item 7); W9; G64 | agrees | GROWTH 5.2 kept: Travel's first `walk_step_pct` sits in band 3 (4.8) |
+| Health's ceiling band read from stamina | 4.7 as first written (the governing school); Q5 "attributes outside the ceilings" | extends | the owner's answer (25.10); an attribute's own bonuses stay uncapped, stamina only picks the band |
+| A Travel crossing opens at its Travel level | P3 (this page: "no level walls an attempt"); "The crafting economy: no level wall" (9.10) | amended | G61 gates a shortcut by a trait or skill, and the owner's "open by Travel level"; P3 names the one exception; the long way round always stays (`shortcut_reach_closed`) |
+| Travel crossings are not faster forms | "The world's structure" item 7 (each faster form earned by player level); 3.5 | agrees | a crossing is a way over (G68); a boat of one's own, a boat line, a mount, a teleport stay on the character level |
+| A plain step pays no experience | R6; 3.6 (the verb's own active time) | agrees | Travel's verb is the way over; `xp_one_school` keeps every school's hours its own |
+| A heavy step pays the time its load adds | R6 (a reward is an activity record) | extends | **open** (owner call, section 9): recommended yes, only the added time |
+| Travel never lowers a grade; a place answer never adds speed | Q8a (gear cancels the cost fully or one grade down) | agrees | one slow, one owner: the stacking rule of 4.8 |
+| Travel's `scramble` (one level, by hand) beside Climbing's rope | G68; "One height layer" (25.10); 4.5 drops | extends | one face, two kinds of crossing, never one crossing in two schools |
+| A rowboat lent at the boathouse | NEXT 19 f (the keeper's errand uses a ramp or a boat lift) | extends | the boat is lent, not owned and not a form; the errand stays the keeper's |
+| Carrying's limit read from might, raised by Travel | "Weight and the three paces" (23.10, #297) | extends | might keeps the base; Travel's `load_pct` sits in the new `carry` ceiling; the frame pack's +10 stays the bag's base |
+| A `Tree:` line on every pull request | #331 (three lines, each owed by the paths it is about) | extends | owed always, since any change may grow the player; mirrored in the same CI job (#341) |
+| Core-only schools (sixteen in the first full catalogue, twenty-two in all); creators never add a school | GROWTH 3.1; CRAFTING_AUDIT D-CRAFT-4 (CR-7) | agrees | a later decision may open it; not this page |
 | No percentage on the skill screen; five node states | "No percentages on screen" (decision 39); "The skill screen is a tree of wings" (23.10) | agrees | the states are words; the number is a long press |
 | The tree screen sized for 1,000 nodes | the tree-foundations stream (in flight; a 300-node fixture) | extends | a target for that stream, not a change to it |
 | A death leaves a pack; gear is a soft gate | "Open ends of the world plan ... a death leaves a pack" (23.10) | agrees | section 5.5 |
@@ -541,13 +707,18 @@ Small holes this page closes by the reference games the decisions name (Skyrim, 
 24. **A mentor's bonus** (Final Fantasy XIV's mentors and level sync, World of Warcraft's rested experience): +20% of the newcomer's own while a stronger player is near; the mentor's reward is standing and a board line, as XIV marks its mentors with a crown.
 25. **Diminishing returns for the same pair** (World of Warcraft's honour fell for killing the same player again and again): the pair schedule, an hour full, an hour half, then nothing, each real day.
 26. **Respec one node at a time** (Path of Exile's refund points and Dimraeth's paid reset): three free, then gold; a pip never.
+27. **Shortcuts by skill level, and courses to train it** (Old School RuneScape's Agility shortcuts, each opened by an Agility level, and its Agility courses): Travel's crossings and trail courses.
+28. **Carry weight from strength, raised by a perk** (Fallout's Strength and Strong Back, Skyrim's Extra Pockets; Old School RuneScape's weight draining run energy): might sets the base limit, Travel's Pack raises it.
+29. **Hit points from the body, healing from a skill** (Fallout 3 and New Vegas: Endurance gives 20 hit points a point, the Survival skill what food and drink restore): stamina owns the health ceiling, Survival the health back.
 
 ## 12. The order, and what this page does not do
 
-- Now: this page; the owner's answers Q1-Q8 (25.10, eight ✅ entries) folded in; Q8a and Q8b answered the same day; the balance model answered (4.7: two red lines, rising ceilings, walls proven both ways); the tree-foundations stream reads the thousand-node target, the five node states and the three closed combat spokes (Q2); the mining and fishing stream reads the band form and the effect lists of 4.2 as the shape to land in, with the placeholder sizes of 23.10 until the content wave.
+- Now: this page; the owner's answers Q1-Q8 (25.10, eight ✅ entries) folded in; Q8a and Q8b answered the same day; the balance model answered (4.7: two red lines, rising ceilings, walls proven both ways); the ceiling owners, Travel as a full school (4.8) and tree first, both ways (4.9) answered in round 5, the `Tree:` line's CI check in its own pull request (#341); the tree-foundations stream reads the thousand-node target, the five node states and the three closed combat spokes (Q2); the mining and fishing stream reads the band form and the effect lists of 4.2 as the shape to land in, with the placeholder sizes of 23.10 until the content wave.
 - Next (the growth format's build, GROWTH section 9 stage 3): `band`, the generated `xp_levels` at `t1` 25-30 with the catalogue-hours row, the power cap formula, the slot values, `unlearn`, the quality roll, the cross-link check row, gear's `attrs` and `req` with the stats panel's split total. One pull request per piece.
 - With presence and groups (PRESENCE builds): the group rule of 3.7 and the giving board's count of help.
 - With the first hand-made map and the city: Travel, Survival, Climbing, Tailoring, Woodcraft, Smithing, Remedies, Lore as schools with real nodes; the place conditions and the garment traits (Q8); the balance check-row family (4.7), a follow-up script once the catalogue exists; quests that pay a school; teachers.
+- With #297 (weight, paces, bags): Travel's carrying nodes. With NEXT 19 a, c and f: Travel's crossings, fords and the boathouse's boat; the trail courses with the first map's places.
+- After the catalogue: the tree coverage report (4.9), a follow-up script.
 - With combat (G35 lifted): Strike, Aim, Guard, Hunting's kills, Leatherwork, armour's worn effects, weapons in the hand.
 - Not done here: any real node (the content wave writes them to this map); the numbers beyond their ranges (tuning in play); pets and companions (the Company school waits for its format); magic (⏸ 9.10); creators proposing nodes or schools; any screen.
 - Pages this map touches when its rules pull request lands: GAME_RULES (P1-P9 after G92), GROWTH.md 3.6 and 4.5 (bands, cross-links, slot values), COMBAT.md 4.3 (the hand's weapon record), CRAFTING_AUDIT CR-10, CR-20, CR-21, CR-32 (closed by sections 3.5, 5.3, 5.4), NEXT 19 (the difficulty reckoning reads the band and the quest's school experience), the tree-foundations stream's size target.
@@ -562,4 +733,6 @@ Small holes this page closes by the reference games the decisions name (Skyrim, 
 - Red Dead Redemption 2 (Rockstar, 2018): hunting that skins and harvests what is killed (DECISIONS 2026-10-25).
 - Final Fantasy XIV (Square Enix): the mentor system and level sync, where a veteran beside a newcomer is rewarded with recognition; World of Warcraft (Blizzard): rested experience, the character sheet's base and bonus, and honour's diminishing returns for the same victim.
 - Diablo II and IV (Blizzard), Elden Ring and Dark Souls (FromSoftware): equipment requirements by attribute; the Souls games' under-requirement wielding at a penalty, the softer form taken in 5.6.
+- Old School RuneScape (Jagex): Agility, its shortcuts opened by level and its courses; weight draining run energy (the Old School RuneScape Wiki, "Agility", "Shortcuts", "Weight").
+- Fallout 3, New Vegas and 4: Strength and carry weight, the Strong Back perk; Endurance's 20 hit points a point and the Survival skill's food and drink healing in New Vegas (the Fallout Wiki, "Endurance", "Survival (Fallout: New Vegas)", "Strong Back"). Skyrim's Extra Pockets perk (UESP, "Skyrim:Pickpocket").
 - The body clocks' sources (Skyrim's Survival Mode, Fallout 4 and New Vegas, The Long Dark, Valheim, Red Dead Redemption 2, Don't Starve, Minecraft, Stardew Valley, Old School RuneScape) are listed in BODY_CLOCKS.md.

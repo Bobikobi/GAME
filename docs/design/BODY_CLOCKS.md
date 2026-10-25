@@ -129,7 +129,7 @@ A place's card shows its conditions by sign and count (a snowflake, a gust, an i
 
 ### 5.6 What it does not do
 
-No meter, no slow fill and empty, no "warm" state carried out of the place: the cost is the place's, at this moment, and ends when the player leaves it or reaches a safe place. Nothing runs while away (G28): the world waits at the hour it was left. No condition is a door (P3), and no node answers a condition (that is the garment's and the dish's).
+No meter, no slow fill and empty, no "warm" state carried out of the place: the cost is the place's, at this moment, and ends when the player leaves it or reaches a safe place. Nothing runs while away (G28): the world waits at the hour it was left. No condition is a door (P3), and no node answers a condition (that is the garment's and the dish's). Travel never lowers a grade either: its nodes make the step itself quicker and leave the place's slow to the answer, so Travel and a garment never cancel the same slow twice (PROGRESSION 4.8, the stacking rule).
 
 ## 6. Garments and traits (Q8)
 
