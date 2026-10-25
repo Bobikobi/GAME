@@ -133,6 +133,7 @@ async function run(page: Page, url: string, touch: boolean): Promise<void> {
   await page.press('Enter');
   await page.waitFor(`__fish.phases().includes('wait')`, 'the float to land', 5000);
   await page.waitFor('__fish.drawn().over > 0', 'the line and float drawn in the world', 5000);
+  await page.screenshot(join(OUT, `fishing-${touch ? 'phone' : 'desktop'}-wait.png`));
   const shown = await solveMinigame(page, touch, 'the fishing minigame');
   const phases = await page.eval<string[]>('__fish.phases()');
   const order = ['cast', 'wait', 'nibble', 'bite', 'reel'];
