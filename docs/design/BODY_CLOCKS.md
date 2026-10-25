@@ -106,7 +106,7 @@ The strength `s` of the answer lowers the grade: remaining = max(0, grade - s). 
 | 3 extreme | 1 min 23 s | 2 min 23 s | 4 min 10 s | none | none | none |
 | 4 deadly | 50 s | 1 min 23 s | 2 min 23 s | 4 min 10 s | 4 min 10 s | none |
 
-A dish's "health back over time" (section 7) stretches a time: at tier 3 (4% a game hour) grade 1 bare goes from 4 min 10 s to 5 min 12 s. Food eaten heals in points, as today.
+A dish's "health back over time" (section 7) stretches a time: at tier 3 (4% a game hour) grade 1 bare goes from 4 min 10 s to 5 min 12 s. Food eaten heals in points, as today. While a place drains, all health back, food eaten included, comes in at most at the `sustain` ceiling of the wearer's band (PROGRESSION 4.7: 5% to 15% of the cap a game hour); outside a draining place a meal heals at once, as built. So no place is eaten through: below the drain, food only stretches the time.
 
 ### 5.4 Conditions and where a grade comes from (closed, proposed)
 
@@ -148,7 +148,7 @@ No meter, no slow fill and empty, no "warm" state carried out of the place: the 
 - A garment's trait strength: **1 at tiers 1-2, 2 at tiers 3-4, 3 at tier 5** (`trait_strength_by_tier`), +1 for a master piece of Tailoring's `quality_pct` roll (the quality is the lever; there is no warmth number). The strongest piece of one trait counts; two pieces of one trait never add.
 - The trait follows the Q5 one-tier-ahead rule (PROGRESSION 5.6): a piece worn below its requirement counts as one tier above the wearer's own, so `s` = strength of min(piece tier, own tier + 1).
 - A dish of the same condition adds +1, whatever its tier, and only one dish counts (section 7.6). The garment is the main answer, the dish the last step.
-- **The ceiling**: the total, garment + master step + dish, never exceeds the strength of the wearer's own tier + 1 (`answer_over_tier_max` 1): `s = min(garment + master + dish, trait_strength_by_tier[own tier] + 1)`. No combination answers more than one grade above the wearer's tier.
+- **The ceiling**: the total, garment + master step + dish, stops at the `place` ceiling of the wearer's band (PROGRESSION 4.7: 2, 2, 3, 3, 4 for bands 1-5, the band read in Survival). There is no rule tying the answer to one grade above the wearer's tier: the end-game's harsh places are walls, proven solvable at their band and not cheesable two bands below (PROGRESSION 4.7).
 - Every garment still carries its tree points (attribute bonuses, shown as base + gear in another colour, PROGRESSION 5.6) and its worn effects. A trait is on **some** pieces only: one trait a piece at most, set by its recipe, or added at the bench by Tailoring's `trait_sew`.
 - **A trait never adds experience.** Experience stays active work time a second (PROGRESSION 3.2), so a slower step in a harsh place is the same experience a second and fewer things an hour; a harsh place never pays more.
 - A look (the look layer) never carries a trait.
@@ -157,11 +157,11 @@ No meter, no slow fill and empty, no "warm" state carried out of the place: the 
 
 ### 7.1 The model in one line
 
-Food gives health back, as today. A **cooked dish** also gives up to two **timed effects**. The effect list may grow as large as content needs (the screen explains each effect, so nothing has to be remembered); what keeps it safe is that **every effect is a closed numeric definition**, so the whole space is computable (the balance proof, PROGRESSION 4.7, is pending). The richness lives in the **catalogue**: many ingredients a region, each with one or two effect tags, and dishes that combine them. Finding dishes and ingredients is part of exploring (Skyrim's alchemy: about 55 effects over more than 100 ingredients; Valheim: about 40 foods, three at once).
+Food gives health back, as today. A **cooked dish** also gives up to two **timed effects**. The effect list may grow as large as content needs (the screen explains each effect, so nothing has to be remembered); what keeps it safe is that **every effect is a closed numeric definition**, so the whole space is computable (PROGRESSION 4.7: two red lines, rising ceilings, walls proven both ways). The richness lives in the **catalogue**: many ingredients a region, each with one or two effect tags, and dishes that combine them. Finding dishes and ingredients is part of exploring (Skyrim's alchemy: about 55 effects over more than 100 ingredients; Valheim: about 40 foods, three at once).
 
 ### 7.2 The effects: each a closed numeric definition (proposed)
 
-Every effect is one row in content with five fields, and nothing else: its **stat** (what the kernel reads), its **kind** (`flat`: adds a number; `mult`: multiplies a time or a rate, in permille; `cancel_grade`: lowers one condition's grade by whole steps), its **strength by tier** (five numbers), its **duration by tier** (the dish's, 7.5), and its **category** (`food` for every dish effect; how categories stack waits on the balance proof, PROGRESSION 4.7). One kernel reader serves each kind, so a new effect is a data row, never new code, and the content check refuses a row with a stat no reader knows.
+Every effect is one row in content with five fields, and nothing else: its **stat** (what the kernel reads), its **kind** (`flat`: adds a number; `mult`: multiplies a time or a rate, in permille; `cancel_grade`: lowers one condition's grade by whole steps), its **strength by tier** (five numbers), its **duration by tier** (the dish's, 7.5), and its **category**, one of the ceiling categories of PROGRESSION 4.7 (`work`, `move`, `health`, `sustain`, `find`, `sense`, `place`): place answers `place`, `work_*` `work`, `hp_max` `health`, `regen` and `mend` `sustain`, `find_sense` `find`, the other senses `sense`, `fleet` `move`. One kernel reader serves each kind, so a new effect is a data row, never new code, and the content check refuses a row with a stat no reader knows.
 
 | Effect | Stat | Kind | Strength, tiers 1-5 |
 |---|---|---|---|
@@ -207,7 +207,7 @@ Cooking's `long_simmer` lengthens a dish's time; no node adds strength beyond it
 ### 7.6 Bounded: two at once
 
 - **Two dish slots.** At most two dishes count at once, so at most four effects. A third dish replaces the one with less time left, and the card says which effect would end before it is eaten.
-- The same effect in both slots: the **stronger counts**, never the sum. Only one dish's place answer counts (+1 step). How dish effects stack with the tree and gear, and each stat's hard cap, wait on the balance proof (PROGRESSION 4.7, pending).
+- The same effect in both slots: the **stronger counts**, never the sum. Only one dish's place answer counts (+1 step). Dish effects add with every other source of their category (nodes, worn effects, traits) and stop at the band's ceiling (PROGRESSION 4.7); no dish raises a ceiling, and no dish raises the strength of a made thing (the no-loop line).
 - When `hp_max` ends, health above the cap falls to the cap; nothing else is lost. A lapsed dish is the absence of a bonus, never a penalty (the research's point 2).
 - **A dish never adds experience.** Faster work in a school is the same experience a second (PROGRESSION 3.2); the mentor's +20% stays the one multiplier (3.7).
 - What it replaces: the first draft's "Fed" is folded into the dish effects; Cooking's `meal_fill_pct` stays the health a meal gives back.
@@ -219,7 +219,7 @@ Sleep saves the game and passes the night: in one's own valley, sleeping in a to
 ## 9. Kernel shape (proposed; additive; integer)
 
 - Schema: `CONDITIONS` = `frost | deep_snow | storm | ice | heat`; `TRAITS` = `cold_proof | snow_shod | storm_proof | ice_grip | heat_ward` with `TRAIT_ANSWERS` (trait -> condition); `DISH_EFFECTS` (section 7.2); an item's `trait?: Trait`; a resource's `tags?: DishEffect[]` (one or two); a recipe's effects derived and checked.
-- Params, `place`: `grades` = `[ {walk_pct: 100, work_pct: 100, drain_bp_h: 0}, {115, 115, 2000}, {130, 130, 3500}, {150, 150, 6000}, {200, 200, 10000} ]`, `trait_strength_by_tier` [1, 1, 2, 2, 3], `master_step` 1, `dish_place_step` 1, `answer_over_tier_max` 1, `deadly_places_max` 2. Params, `dish`: `slots` 2, `effects_max` 2, `ingredients` [2, 4], `dur_gh_by_tier` [6, 9, 12, 18, 24]. Content: `effects/*.json`, one row an effect with `stat`, `kind`, `by_tier`, `category` (7.2).
+- Params, `place`: `grades` = `[ {walk_pct: 100, work_pct: 100, drain_bp_h: 0}, {115, 115, 2000}, {130, 130, 3500}, {150, 150, 6000}, {200, 200, 10000} ]`, `trait_strength_by_tier` [1, 1, 2, 2, 3], `master_step` 1, `dish_place_step` 1, `deadly_places_max` 2. Params, `dish`: `slots` 2, `effects_max` 2, `ingredients` [2, 4], `dur_gh_by_tier` [6, 9, 12, 18, 24]. Content: `effects/*.json`, one row an effect with `stat`, `kind`, `by_tier`, `category` (7.2).
 - A region of the map plan: `conditions?: { [c in Condition]?: grade }`; `climates.json` per climate: `night`, `noon`, `weather` steps per condition.
 - Player: `dishes?: { effects: DishEffect[]; tier: number; until: number }[]` (at most two). No body field for places: the grade at a tile is a pure function `harshAt(bundle, tile, time, weather)`, capped by `dangerAt`, and the drain is applied on the step that moves time, as `hurt` is, only while the player is in the world.
 - The move check reads the place's walk multiplier with `walk_step_ms`; work times read the work multiplier where `hp_low_pct` is read.
@@ -241,6 +241,8 @@ Sleep saves the game and passes the night: in one's own valley, sleeping in a to
 | P3 a band gates nodes, never verbs | agrees | no grade is a door; grade 4 is enterable bare for 50 s |
 | R6, 3.7 the one multiplier on experience | agrees | traits, dishes and sleep add none |
 | Q5 one tier ahead | agrees | the trait reads min(piece tier, own tier + 1) |
+| G32 "eating is how the player heals" | **bends** (the balance answer) | inside a draining grade, health back is clamped at the `sustain` ceiling; elsewhere a meal heals at once |
+| The balance answer: two red lines, rising ceilings, walls proven both ways (PROGRESSION 4.7) | agrees | dish effects never feed a made thing's strength; the `place` and `sustain` ceilings by band and the wall proofs replace the dropped "one grade above the tier" rule |
 | The forbidden pattern "Hunger clock" | agrees | food is bonus and healing, never a need |
 
 ## 11. The answers (25.10)
@@ -255,6 +257,7 @@ Sleep saves the game and passes the night: in one's own valley, sleeping in a to
 - Fallout 4 Survival and Fallout: New Vegas Hardcore (Bethesda, Obsidian): https://fallout.fandom.com/wiki/Survival_mode, https://fallout.fandom.com/wiki/Hunger, https://fallout.fandom.com/wiki/Thirst, https://fallout.fandom.com/wiki/Resting, https://fallout.fandom.com/wiki/Well_Rested, https://fallout.fandom.com/wiki/Lover%27s_Embrace, https://fallout.fandom.com/wiki/Hardcore_mode, https://fallout.fandom.com/wiki/Starvation, https://fallout.fandom.com/wiki/Dehydration. Flagged: hourly rates against "days to death".
 - The Long Dark (Hinterland): https://thelongdark.fandom.com/wiki/Hunger, https://thelongdark.fandom.com/wiki/Thirst, https://thelongdark.fandom.com/wiki/Fatigue, https://thelongdark.fandom.com/wiki/Condition, https://thelongdark.fandom.com/wiki/Feels_Like, https://thelongdark.fandom.com/wiki/Warmth, https://thelongdark.fandom.com/wiki/Fire, https://thelongdark.fandom.com/wiki/Clothing, https://thelongdark.fandom.com/wiki/Warming_Up. Flagged: the fuels' heat values.
 - The Elder Scrolls V: Skyrim, alchemy: https://en.uesp.net/wiki/Skyrim:Alchemy, https://en.uesp.net/wiki/Skyrim:Ingredients.
+- The Skyrim restoration loop: https://en.uesp.net/wiki/Skyrim:Fortify_Restoration. Raised resistance caps: https://www.poewiki.net/wiki/Resistance (Path of Exile, 75% and up to 90%), https://diablo2.diablowiki.net/Resistances (Diablo II, 75% and items that raise the maximum).
 - Valheim (Iron Gate): https://valheim.fandom.com/wiki/Food, https://valheim.fandom.com/wiki/Rested, https://valheim.fandom.com/wiki/Comfort, https://valheim.fandom.com/wiki/Cold, https://valheim.fandom.com/wiki/Freezing, https://valheim.fandom.com/wiki/Wet, https://valheim.fandom.com/wiki/Frost_resistance_mead.
 - Red Dead Redemption 2 (Rockstar): https://reddeadredemption.fandom.com/wiki/Core, https://reddeadredemption.fandom.com/wiki/Conditions_in_Redemption_2, https://reddeadredemption.fandom.com/wiki/Weather_in_Redemption_2, https://reddeadredemption.fandom.com/wiki/Sleeping.
 - Don't Starve (Klei): https://dontstarve.fandom.com/wiki/Hunger, https://dontstarve.fandom.com/wiki/Sanity, https://dontstarve.fandom.com/wiki/Freezing, https://dontstarve.fandom.com/wiki/Winter_Hat, https://dontstarve.fandom.com/wiki/Puffy_Vest, https://dontstarve.fandom.com/wiki/Day-Night_Cycle.
