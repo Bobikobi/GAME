@@ -67,6 +67,15 @@ const nodeBox = (page: Page, key: string) =>
     return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height };
   })()`);
 
+/** Where a node's button is once it is drawn: after an action the page is drawn again on the next frame. */
+const drawnBox = (page: Page, key: string) =>
+  page.waitFor<Box>(`(() => {
+    const el = document.querySelector('[data-node=${JSON.stringify(key)}]');
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height };
+  })()`, `the node ${key} drawn`);
+
 const viewBox = (page: Page) =>
   page.eval<Box>(`(() => { const r = document.querySelector('.tree-view').getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; })()`);
 
@@ -324,6 +333,11 @@ async function desktop(page: Page, url: string): Promise<void> {
     window.__stopFrames = false;
     requestAnimationFrame(tick);
   })()`);
+  // the page's own frame clock first, at rest: a headless Chrome on a busy or idle machine may tick far
+  // slower than 60 a second, and the pan is held to that clock, not to a number the machine cannot keep
+  await page.waitFor(`window.__frames.length > 8`, 'frames at rest');
+  const rest = await page.eval<number[]>(`window.__frames.slice(1)`);
+  await page.eval(`window.__frames = []`);
   await drag(page, false, { x: view.x + 30, y: view.y + 30 }, { x: 600, y: 300 }, 40);
   await sleep(100);
   const perf = await page.eval<{ frames: number[]; drawMax: number; drawn: number }>(`(() => {
@@ -331,11 +345,14 @@ async function desktop(page: Page, url: string): Promise<void> {
     const v = document.querySelector('.tree-view');
     return { frames: window.__frames.slice(1), drawMax: Number(v.dataset.drawMax), drawn: Number(v.dataset.drawn) };
   })()`);
-  const frames = [...perf.frames].sort((a, b) => a - b);
-  const median = frames[Math.floor(frames.length / 2)] ?? 0;
+  const medianOf = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? 0;
+  const median = medianOf(perf.frames);
+  const atRest = medianOf(rest);
+  // the draw itself is held to a frame; the frames while panning to half a frame over the clock at rest (50 ms at least)
+  const budget = Math.max(50, atRest * 1.5);
   if (perf.drawMax > 30) throw new Error(`a pan draw of the big tree took ${perf.drawMax} ms`);
-  if (median > 50) throw new Error(`the big tree pans at a median frame of ${median.toFixed(1)} ms`);
-  log(`${total} nodes: shown in ${first} ms, a full draw ${full} ms; panning ${perf.drawn} on screen, longest draw ${perf.drawMax} ms, median frame ${median.toFixed(1)} ms`);
+  if (median > budget) throw new Error(`the big tree pans at a median frame of ${median.toFixed(1)} ms, ${atRest.toFixed(1)} ms at rest`);
+  log(`${total} nodes: shown in ${first} ms, a full draw ${full} ms; panning ${perf.drawn} on screen, longest draw ${perf.drawMax} ms, median frame ${median.toFixed(1)} ms (${atRest.toFixed(1)} ms at rest)`);
   hadNoErrors(page);
 }
 
@@ -398,9 +415,9 @@ async function phone(page: Page, url: string): Promise<void> {
   log('a tap and Learn learn the root');
 
   // a finger pans; the zoom button zooms
-  const before = await nodeBox(page, facts.root);
+  const before = await drawnBox(page, facts.root);
   await drag(page, true, { x: view.x + 20, y: view.y + 20 }, { x: 80, y: 50 });
-  await page.waitFor(`(() => { const el = document.querySelector('[data-node=${JSON.stringify(facts.root)}]'); if (!el) return false; const r = el.getBoundingClientRect(); return Math.abs(r.left + r.width / 2 - ${before!.x} - 80) < 3 && Math.abs(r.top + r.height / 2 - ${before!.y} - 50) < 3; })()`, 'a finger to pan');
+  await page.waitFor(`(() => { const el = document.querySelector('[data-node=${JSON.stringify(facts.root)}]'); if (!el) return false; const r = el.getBoundingClientRect(); return Math.abs(r.left + r.width / 2 - ${before.x} - 80) < 3 && Math.abs(r.top + r.height / 2 - ${before.y} - 50) < 3; })()`, 'a finger to pan');
   await page.tap('.tree-zoom-in');
   await page.waitFor(`Number(document.querySelector('.tree-view').dataset.zoom) > 1.2`, 'the zoom button');
   log('a finger pans, the button zooms');
