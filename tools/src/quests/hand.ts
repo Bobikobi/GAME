@@ -90,8 +90,8 @@ function waysTo(b: Bundle, pocket: string, item: string): Way[] {
   const ways: Way[] = [];
   for (const r of Object.values(b.resources)) {
     if (r.output !== item) continue;
-    const q = r.opens_after === undefined ? undefined : b.quests[r.opens_after];
-    ways.push({ tool: r.tool, after: q && offered(q, pocket) ? q.id : undefined });
+    const q = (r.opens_after ?? []).map((w) => b.quests[w.quest]).find((x) => x !== undefined && offered(x, pocket));
+    ways.push({ tool: r.tool, after: q?.id });
   }
   for (const t of Object.values(b.treasures)) {
     if (offered(t, pocket) && t.finds.some((f) => f.item === item)) ways.push({ tool: t.tool });

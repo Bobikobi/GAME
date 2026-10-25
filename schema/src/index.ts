@@ -280,11 +280,23 @@ export const ResourceBody = Type.Object(
           'The node blocks the way, ready or not, as a tree does: a stump stays in the way until the tree is grown again. Left out: the player walks through it.',
       }),
     ),
-    opens_after: Type.Optional({
-      ...Id,
-      description:
-        'A quest id. The node cannot be struck by a character who was offered that quest and has not finished it; a character who was never offered it strikes the node as usual. The refusal says one short line and costs nothing.',
-    }),
+    opens_after: Type.Optional(
+      Type.Array(
+        Type.Object(
+          {
+            quest: Id,
+            line: Type.Optional(Type.String({ minLength: 1, maxLength: 80, description: 'The one short line the refusal says. Left out: "It is not ready yet."' })),
+          },
+          { additionalProperties: false },
+        ),
+        {
+          minItems: 1,
+          maxItems: 4,
+          description:
+            'Quests the node waits for, each with the line its refusal says. The node cannot be struck by a character who was offered one of them and has not finished it; a character who was offered none strikes the node as usual. Two entries may not both be offered to one wake pocket. The refusal costs nothing.',
+        },
+      ),
+    ),
     tool: Type.Optional(ToolKind),
     level: Int(1, 20, 'Level required, in the profession the node trains: felling when the tool is an axe, foraging otherwise.'),
     game: Type.Optional(

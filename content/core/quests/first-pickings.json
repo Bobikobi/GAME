@@ -3,12 +3,12 @@
   "format": 1,
   "type": "quest",
   "id": "core/first-pickings",
-  "title": "First pickings",
+  "title": "What holds the keystone",
   "creator": "core",
   "quest": {
     "pocket": "core/west-bank",
-    "type": "discovery",
-    "summary": "Something on the west bank fits your basket. Walk the bank and see what it will take.",
+    "type": "investigation",
+    "summary": "The bridge's missing stone will not come free. Something grows thick over it in the shallows. Look closer, and pick what you find.",
     "steps": [
       {
         "kind": "bring",

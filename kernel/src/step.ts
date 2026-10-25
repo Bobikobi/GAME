@@ -527,7 +527,8 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   const r = resourceOf(b, nodeId)!;
   checkAt(ctx, at, { x: inst.x, y: inst.y, w: 1, h: 1 });
   checkGrade(grade);
-  if (nodeLocked(b, s, r)) refuse('Something else catches the light first.');
+  const waits = nodeWait(b, s, r);
+  if (waits !== undefined) refuse(waits);
   const appear = appearSlot(b, nodeId);
   if (appear && !reactionHolds(b, s, appear.reaction, appear.parent, ctx.tick)) refuse('Nothing is there now.');
   // the waits on its respawn are read before the gather changes the node
@@ -983,12 +984,20 @@ export function offeredTo(q: { pocket?: string }, s: PublicState): boolean {
 }
 
 /**
- * A node with `opens_after` waits for that quest, but only for a character the
- * quest is offered to: another start strikes it as ever.
+ * A node with `opens_after` waits for the quest offered to this character, one per wake pocket: another
+ * start strikes it as ever.
  */
-export function nodeLocked(bundle: Bundle, state: State, node: { opens_after?: string }): boolean {
-  const q = node.opens_after === undefined ? undefined : bundle.quests[node.opens_after];
-  return q !== undefined && offeredTo(q, state) && state.player.quests[q.id] !== 'done';
+export function nodeLocked(bundle: Bundle, state: State, node: { opens_after?: { quest: string; line?: string }[] }): boolean {
+  return nodeWait(bundle, state, node) !== undefined;
+}
+
+/** The refusal's line when a node still waits for a quest this character was offered: its own, or a plain default. */
+export function nodeWait(bundle: Bundle, state: State, node: { opens_after?: { quest: string; line?: string }[] }): string | undefined {
+  for (const w of node.opens_after ?? []) {
+    const q = bundle.quests[w.quest];
+    if (q !== undefined && offeredTo(q, state) && state.player.quests[q.id] !== 'done') return w.line ?? 'It is not ready yet.';
+  }
+  return undefined;
 }
 
 /**
