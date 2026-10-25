@@ -8,7 +8,7 @@ import type { Bundle, SchoolDef, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.15.0';
+export const KERNEL_VERSION = '0.16.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -162,7 +162,7 @@ export interface Player {
   attrs: Record<Attribute, number>;
   /** skill points spent: on attribute pips and on the nodes of the tree */
   spent: number;
-  /** the learned nodes of the skill tree, "<school id>/<node id>", sorted; absent until the first one (saves from before kernel 0.15) */
+  /** the learned nodes of the skill tree, "<school id>/<node id>", sorted; absent until the first one (saves from before kernel 0.16) */
   nodes?: string[];
   /** the build: the techniques in the active slots, in slot order; absent until the first one is put in */
   build?: string[];
