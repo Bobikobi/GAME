@@ -274,6 +274,10 @@
                   {
                     "const": "pick",
                     "type": "string"
+                  },
+                  {
+                    "const": "rod",
+                    "type": "string"
                   }
                 ]
               },
@@ -535,6 +539,10 @@
             },
             {
               "const": "dig",
+              "type": "string"
+            },
+            {
+              "const": "fish",
               "type": "string"
             },
             {

@@ -314,7 +314,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   const r = records as unknown as Pick<Bundle, RecordKey>;
   // one profession per gathering verb; the one craft verb has a profession per station family
   // (DECISIONS.md, 2026-10-09), and the check reports a station worked twice
-  const verbs = { gather: '', fell: '', dig: '', craft: '' };
+  const verbs = { gather: '', fell: '', dig: '', fish: '', craft: '' };
   const stations: Record<string, string> = {};
   const crafters: string[] = [];
   for (const id of Object.keys(r.professions).sort()) {

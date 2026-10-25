@@ -186,7 +186,7 @@ export interface Bundle {
   /** The items whose value comes from a recipe, sorted: the trader pays `k_craft_permille` for them (CR-18). */
   made: string[];
   /** Which profession each verb trains; for craft, the one at the fire, since each station has its own (`stations`). */
-  verbs: { gather: string; fell: string; dig: string; craft: string };
+  verbs: { gather: string; fell: string; dig: string; fish: string; craft: string };
   /** The craft profession that works each station: a recipe that names no profession takes its station's. */
   stations: Record<string, string>;
   credits: Credit[];

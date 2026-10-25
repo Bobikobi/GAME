@@ -276,6 +276,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -613,17 +617,21 @@
                 {
                   "const": "pick",
                   "type": "string"
+                },
+                {
+                  "const": "rod",
+                  "type": "string"
                 }
               ]
             },
             "level": {
               "minimum": 1,
               "maximum": 20,
-              "description": "Level required, in the profession the node trains: felling when the tool is an axe, foraging otherwise.",
+              "description": "Level required, in the profession the node trains: felling when the tool is an axe, fishing when it is a rod, foraging otherwise.",
               "type": "integer"
             },
             "game": {
-              "description": "The minigame played when gathering: \"timing\" (stop a marker in the middle, the default), \"strike\" (three timed hammer strikes, for stone), \"pick\" (press only for the ripe ones, for plants) or \"snap\" (press fast, for wood).",
+              "description": "The minigame played when gathering: \"timing\" (stop a marker in the middle, the default), \"strike\" (three timed hammer strikes, for stone), \"pick\" (press only for the ripe ones, for plants), \"snap\" (press fast, for wood) or \"fish\" (cast, wait for the bite and strike as the float goes under, then reel in; for a node fished with a rod).",
               "anyOf": [
                 {
                   "const": "timing",
@@ -639,6 +647,10 @@
                 },
                 {
                   "const": "snap",
+                  "type": "string"
+                },
+                {
+                  "const": "fish",
                   "type": "string"
                 }
               ]
@@ -687,6 +699,11 @@
                     "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
                     "type": "string"
                   }
+                },
+                "water": {
+                  "description": "The nodes lie on the water tiles of the slot that touch the land, and are worked from the bank: fishing spots. Left out, they lie on the land tiles of the slot.",
+                  "const": true,
+                  "type": "boolean"
                 }
               }
             }
@@ -968,6 +985,10 @@
                       },
                       {
                         "const": "pick",
+                        "type": "string"
+                      },
+                      {
+                        "const": "rod",
                         "type": "string"
                       }
                     ]
@@ -1262,6 +1283,10 @@
                 },
                 {
                   "const": "pick",
+                  "type": "string"
+                },
+                {
+                  "const": "rod",
                   "type": "string"
                 }
               ],
@@ -1607,6 +1632,10 @@
                       },
                       {
                         "const": "pick",
+                        "type": "string"
+                      },
+                      {
+                        "const": "rod",
                         "type": "string"
                       }
                     ]
@@ -2248,6 +2277,10 @@
                       },
                       {
                         "const": "pick",
+                        "type": "string"
+                      },
+                      {
+                        "const": "rod",
                         "type": "string"
                       }
                     ]
@@ -2973,6 +3006,10 @@
                       },
                       {
                         "const": "pick",
+                        "type": "string"
+                      },
+                      {
+                        "const": "rod",
                         "type": "string"
                       }
                     ]
@@ -3886,6 +3923,10 @@
                       },
                       {
                         "const": "pick",
+                        "type": "string"
+                      },
+                      {
+                        "const": "rod",
                         "type": "string"
                       }
                     ]
@@ -5078,6 +5119,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -5734,6 +5779,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -6383,6 +6432,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -6992,6 +7045,10 @@
                       },
                       {
                         "const": "pick",
+                        "type": "string"
+                      },
+                      {
+                        "const": "rod",
                         "type": "string"
                       }
                     ]
@@ -7667,6 +7724,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -8177,6 +8238,10 @@
                       },
                       {
                         "const": "pick",
+                        "type": "string"
+                      },
+                      {
+                        "const": "rod",
                         "type": "string"
                       }
                     ]
@@ -8784,6 +8849,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -9310,6 +9379,10 @@
                             {
                               "const": "pick",
                               "type": "string"
+                            },
+                            {
+                              "const": "rod",
+                              "type": "string"
                             }
                           ]
                         },
@@ -9692,6 +9765,10 @@
                       },
                       {
                         "const": "pick",
+                        "type": "string"
+                      },
+                      {
+                        "const": "rod",
                         "type": "string"
                       }
                     ]
@@ -10244,6 +10321,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -10505,6 +10586,10 @@
                 },
                 {
                   "const": "dig",
+                  "type": "string"
+                },
+                {
+                  "const": "fish",
                   "type": "string"
                 },
                 {
@@ -10899,6 +10984,10 @@
                       },
                       {
                         "const": "pick",
+                        "type": "string"
+                      },
+                      {
+                        "const": "rod",
                         "type": "string"
                       }
                     ]
@@ -13044,6 +13133,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -13733,6 +13826,10 @@
                       },
                       {
                         "const": "pick",
+                        "type": "string"
+                      },
+                      {
+                        "const": "rod",
                         "type": "string"
                       }
                     ]
@@ -15216,6 +15313,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -15813,6 +15914,10 @@
                       },
                       {
                         "const": "pick",
+                        "type": "string"
+                      },
+                      {
+                        "const": "rod",
                         "type": "string"
                       }
                     ]

@@ -1,0 +1,48 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/fishing-rod",
+  "title": "Fishing rod",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/fishing-rod",
+      "name": "Fishing rod",
+      "description": "A long branch, a cord and a bent hook. For the fish of the river.",
+      "kind": "tool",
+      "rarity": "common",
+      "class": "tool",
+      "tier": 1,
+      "sprite": "core/base-kit:items/branch",
+      "tool": {
+        "kind": "rod",
+        "tier": 1,
+        "uses": 40
+      }
+    }
+  ],
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 4000,
+    "level": 1,
+    "inputs": [
+      {
+        "item": "core/branch",
+        "qty": 2
+      },
+      {
+        "item": "core/reed-cord",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/fishing-rod",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start"
+  }
+}

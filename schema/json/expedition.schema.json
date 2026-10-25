@@ -274,6 +274,10 @@
                   {
                     "const": "pick",
                     "type": "string"
+                  },
+                  {
+                    "const": "rod",
+                    "type": "string"
                   }
                 ]
               },

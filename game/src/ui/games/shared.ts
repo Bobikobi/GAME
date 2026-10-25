@@ -19,6 +19,8 @@ export interface GameOptions {
   onBeat?: (i: number, grade: Grade) => void;
   /** Injectable randomness keeps item sequences deterministic in tests. */
   random?: () => number;
+  /** Fishing only: each state of the cast, so the world can draw the line and float. */
+  onPhase?: (phase: FishPhase) => void;
 }
 
 export type Minigame = (ui: UI, opts: GameOptions) => Promise<Grade | null>;
@@ -131,4 +133,52 @@ export function timingGrade(
   if (d <= z[1]) return 2;
   if (d <= z[2]) return 1;
   return random() < 0.5 ? 0 : 1;
+}
+
+// ------------------------------------------------------------ fish: cast, wait, strike on the bite
+
+/** The separable states of a cast (DECISIONS.md, 2026-10-25: fishing); the world draws the line and float from them. */
+export type FishPhase = 'cast' | 'wait' | 'nibble' | 'bite' | 'reel' | 'lost';
+
+/** The float flies out and lands in this long. */
+export const FISH_CAST_MS = 650;
+/** From the last nibble to the bite: always the same, so a player who reads the nibble can be ready. */
+export const FISH_TELL_MS = 520;
+
+export interface FishPlan {
+  /** ms after the float lands, one per nibble: the float twitches */
+  nibbles: number[];
+  /** ms after the float lands that the fish takes the hook */
+  bite: number;
+}
+
+/** One to three nibbles over a wait of 1.4 to 3.4 s; the bite always follows the last one by the same tell. */
+export function fishPlan(random: () => number = Math.random): FishPlan {
+  const count = 1 + Math.min(2, Math.floor(random() * 3));
+  const nibbles: number[] = [];
+  let at = 900 + random() * 900;
+  for (let i = 0; i < count; i += 1) {
+    nibbles.push(Math.round(at));
+    at += 450 + random() * 600;
+  }
+  return { nibbles, bite: nibbles[nibbles.length - 1]! + FISH_TELL_MS };
+}
+
+/** How long the fish holds the hook before it lets go. */
+export function fishWindow(scalePct: number): number {
+  return widen(620, scalePct, 1200);
+}
+
+/**
+ * The press measured from the bite. Before it the fish is only frightened off; after the window it is gone.
+ * Inside, sooner is better, and the first fifth of the base window, quicker than a reaction to the dip, is the
+ * jackpot: it needs the player to have read the nibble. The jackpot strip does not widen with the window.
+ */
+export function fishGrade(sinceBite: number, window: number): Grade {
+  if (sinceBite < 0 || sinceBite > window) return 0;
+  if (sinceBite <= 620 * 0.2) return 4;
+  const share = sinceBite / window;
+  if (share <= 0.45) return 3;
+  if (share <= 0.7) return 2;
+  return 1;
 }
