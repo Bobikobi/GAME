@@ -15,7 +15,8 @@
       "class": "relic",
       "family": "coin",
       "tier": 1,
-      "sprite": "core/base-kit:items/old-coin"
+      "sprite": "core/base-kit:items/old-coin",
+      "weight": 0
     }
   ],
   "dig": {

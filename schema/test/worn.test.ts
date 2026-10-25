@@ -11,6 +11,7 @@ const piece = (wear: object, extra: object = {}) => ({
   class: 'garment',
   tier: 1,
   sprite: 'core/base-kit:items/herb',
+  weight: 1,
   wear,
   ...extra,
 });

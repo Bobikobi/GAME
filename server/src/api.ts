@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { ATTRIBUTES, STEP_MILLI, WEAR_SLOTS, appearSlots, appears, step, walkCharge, type Action, type Bundle, type GameEvent, type State, type Tile } from '@game/kernel';
+import { ATTRIBUTES, STEP_MILLI, WEAR_SLOTS, appearSlots, appears, step, walkCharge, walkStepMs, type Action, type Bundle, type GameEvent, type State, type Tile } from '@game/kernel';
 
 import { goldRowsOf, type BookedStep, type LedgerRow } from './ledger';
 import { publicState, statePatch, type MergePatch, type PublicState } from './patch';
@@ -216,6 +216,10 @@ export function isAction(value: unknown): value is Action {
       return hasOnlyKeys(value, ['t', 'slot', 'look'])
         && WEAR_SLOTS.some((slot) => slot === value.slot)
         && (value.look === undefined || typeof value.look === 'boolean');
+    case 'drop':
+      return hasOnlyKeys(value, ['t', 'item', 'qty', 'at']) && typeof value.item === 'string' && Number.isSafeInteger(value.qty) && isTile(value.at);
+    case 'pickup':
+      return hasOnlyKeys(value, ['t', 'item', 'at']) && typeof value.item === 'string' && isTile(value.at);
     case 'move':
       return hasOnlyKeys(value, ['t', 'at']) && isTile(value.at);
     default:
@@ -300,7 +304,9 @@ export function spendWalk(
   movementCreditMs: number,
   leg: Tile | null = null,
 ): { at: number; creditMs: number; leg: Tile | null } | undefined {
-  const { walk_step_ms: stepMs, move_reach_max: maxReach } = bundle.params;
+  // the pace the load allows (the 23.10 decision): a heavy player cannot report a light walk
+  const stepMs = walkStepMs(bundle, state);
+  const maxReach = bundle.params.move_reach_max;
   const elapsedSinceMove = Math.max(0, tick - state.player.movedAt);
   const reach = Math.min(2 + Math.floor(elapsedSinceMove / stepMs), maxReach);
   // the octile length of the walk (G56): a free walk on a diagonal pays for its distance, not its staircase

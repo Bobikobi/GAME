@@ -16,6 +16,7 @@
       "class": "tool",
       "tier": 1,
       "sprite": "core/base-kit:items/basket",
+      "weight": 1,
       "tool": {
         "kind": "basket",
         "tier": 1,
@@ -31,6 +32,7 @@
       "class": "tool",
       "tier": 1,
       "sprite": "core/base-kit:items/trowel",
+      "weight": 1,
       "tool": {
         "kind": "trowel",
         "tier": 1,
@@ -46,6 +48,7 @@
       "class": "tool",
       "tier": 1,
       "sprite": "core/base-kit:items/axe",
+      "weight": 1,
       "tool": {
         "kind": "axe",
         "tier": 1,
@@ -61,6 +64,7 @@
       "class": "tool",
       "tier": 1,
       "sprite": "core/base-kit:items/branch",
+      "weight": 1,
       "tool": {
         "kind": "staff",
         "tier": 1,

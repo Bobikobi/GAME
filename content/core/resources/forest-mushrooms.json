@@ -16,6 +16,7 @@
       "family": "mushroom",
       "tier": 1,
       "sprite": "core/base-kit:items/mushroom",
+      "weight": 1,
       "food": {
         "satiety": 3
       }

@@ -9,6 +9,7 @@ import { say } from './dialog';
 import { gameServer, offerSignup } from './signup';
 import { button, h, sprite } from './dom';
 import type { UI } from './ui';
+import './race-body.css';
 
 /** What the title knows about the game that exists: in this browser, and on the server when signed in. */
 export interface TitleState {
@@ -194,13 +195,20 @@ export function showTitle(ui: UI): Promise<void> {
         );
       };
 
+      // as many pips as the highest number any race holds: the skeleton's stamina 4 shows whole (DECISIONS.md, 2026-10-23)
+      const pipCount = Math.max(3, ...races.flatMap(([, r]) => Object.values(r.attributes)));
       const drawCards = () =>
         cards.replaceChildren(
           ...races.map(([id, st]) => {
             const spr = look === 1 && st.sprite_alt ? st.sprite_alt : st.sprite;
             return h(
               'button',
-              { class: `card race ${picked === id ? 'on' : ''}`, type: 'button', 'data-race': id, onclick: () => ((picked = id), drawToggle(), drawCards()) },
+              {
+                class: `card race ${picked === id ? 'on' : ''}`,
+                type: 'button',
+                'data-race': id,
+                onclick: () => ((picked = id), drawToggle(), drawCards()),
+              },
               sprite(b, spr, 3, 1),
               h('b', null, st.name),
               h('p', null, st.about),
@@ -208,9 +216,11 @@ export function showTitle(ui: UI): Promise<void> {
                 'div',
                 { class: 'mini-attrs' },
                 Object.entries(st.attributes).map(([a, v]) =>
-                  h('div', { title: ATTRIBUTE_TEXT[a] ?? a }, h('span', null, ATTRIBUTE_LABEL[a] ?? a), h('span', { class: 'pips' }, Array.from({ length: 3 }, (_, i) => h('i', { class: i < v ? 'on' : '' })))),
+                  h('div', { title: ATTRIBUTE_TEXT[a] ?? a }, h('span', null, ATTRIBUTE_LABEL[a] ?? a), h('span', { class: 'pips' }, Array.from({ length: pipCount }, (_, i) => h('i', { class: i < v ? 'on' : '' })))),
                 ),
               ),
+              // the race's one body fact, in words on the card (DECISIONS.md, 2026-10-23)
+              ...(st.body ? [h('p', { class: 'race-body', 'data-body': st.body.name }, h('b', null, st.body.name), ` - ${st.body.about}`)] : []),
             );
           }),
         );
