@@ -50,6 +50,12 @@ it, and the owner decides what moves (the review below).
    a riddle gets at least three ways to the answer (the three clue rule): a miss teaches.
 5. **The reward.** It changes what the player can do or where they can go (G4): a recipe, a
    place, a tool, a line of character. Gold alone is an errand's pay.
+6. **Told by play, not by instructions.** Each beat is something the player hears, sees or
+   chooses in the world - a sound that draws them, a quest window that names only the next
+   pull ("Follow the sound"), a thing that moves when they arrive - never a list of steps and
+   never prose to read. Leave the next step to the player where it can be: the owner's opening
+   ends with nobody waiting, and the player decides where to go. The model is the opening's
+   bell (DECISIONS 2026-10-25, "A bell calls every new returner to the stone").
 
 ## Three pitches, then the owner picks
 

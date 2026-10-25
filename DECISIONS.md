@@ -2919,7 +2919,9 @@ The quest designer reviewed the branch of 17.10 (feat/night-ruins, never merged)
 Also from the review: the inscription keeps one line and the belief readings move into people's mouths; two order fixes (the yard quest requires the arch; the gamble pays something other than logs). The map rows are redrawn by the hand-made first map (NEXT 19), so the layout carries over as a plan, not as tiles. A fresh branch from develop carries the content, the bell and walk-out code and the tests; the old branch stays as it is until then.
 **Retry when:** the first hand-made map lands, or the owner decides the bell-rope question. Model: claude-opus-5-5.
 
-## 2026-10-25 ✅ The forager wakes to a returner's basket, and carving a name on the stone is choosing the player's name
+## 2026-10-25 ⏸ The forager wakes to a returner's basket, and carving a name on the stone is choosing the player's name
+
+Superseded the same day by "A bell calls every new returner to the stone": a found trace that one player keeps leaves nothing for the next.
 
 The owner read the west bank fix of #327 told as the player lives it (pick the herbs in the shallows, find the bridge's missing stone under them, strike it) and answered: the story is bad. Three story-first versions were written (a name in the basket's handle, the mist stepping back from each picked herb, a stone knocking in the shallows); the owner picked the first, with a change.
 - **The basket by the forager's path carries a name cut in its handle**, and its dry herbs smell of the shallows by the bridge: the trace leads to the herbs over the keystone (#327's build), the strike mends the bridge, and on the returners' stone beside it the same name stands among the others above the empty line. The question it leaves (whoever cut that name mended this bridge once - why is the basket here and its owner not?) is chapter 1's open question at minute 1. The handle and the stone speak; the narrator states no past (S1).
@@ -2927,3 +2929,14 @@ The owner read the west bank fix of #327 told as the player lives it (pick the h
 - Until a server answers (no account, offline, or too few players), the stone shows the written names already in the content. A name shown to other players passes the same filter as any player text (the safety contract), and the player's chosen name is what carves.
 - **Every start passes through the same moment** (the owner, the same day): the digger's and the explorer's openings share the forager's weakness (no one, no thread) and are rewritten as a set on the same thread - one returner's name found in each pocket (the forager's basket handle, a name on the digger's buried axe, a name on the bridge post by the explorer's axe), each opening ending at the stone on a name the player already read, where every player carves the name they choose.
 **Retry when:** the stone's names cannot be read from the server at the opening (then the written names stay until they can), or the owner wants the name chosen before the world loads. Model: claude-opus-5-5.
+
+## 2026-10-25 ✅ A bell calls every new returner to the stone, the name comes first, and the tools come after
+
+The owner caught a break in the found-trace opening of the entry above: if the digger takes a former player's axe, what does the next player find, and where did the axe go? A shared valley repeats every start, so a trace one player keeps cannot also wait for the next (the story keeper's ninth question since). The owner rejected a step-by-step version as a chore and corrected a story version into this one:
+- **Each start wakes in its own place** (the north meadow, the slid bank, the west bank). A bell rings once from the river, and a quest window opens: "Follow the sound."
+- **The stone by the broken bridge carries a ghost bell.** A few seconds after the player arrives it rings, animated. It rings for every new player who signs in, so every player in the valley hears a far bell when a new returner arrives.
+- **At the stone the player only decides who they are**: they carve their name on the empty line under the other players' names. No tool waits at the stone.
+- **After the carve, a quest by race finds the player's own tool and a hammer.** The hammer is a new tool every player gets: each race's hammer is drawn for that race, with small fixed differences in effect; it takes no slot and is never swapped.
+- **The bridge is mended with them, and nobody is waiting on the other side.** The player decides where to go from there.
+The stone's names follow the entry above (players who signed in, the written names until a server answers; the safety filter). Kept from it: carving is the only naming, for every start.
+**Retry when:** the owner changes the opening, or the bell for every signed-in player is too loud for a busy valley (then it rings only within a distance or a rate). Model: claude-opus-5-5.
