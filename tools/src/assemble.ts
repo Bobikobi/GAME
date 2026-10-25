@@ -55,6 +55,7 @@ type RecordKey =
   | 'races'
   | 'pockets'
   | 'professions'
+  | 'schools'
   | 'shops'
   | 'reactions';
 const KEY_OF: Record<string, RecordKey | undefined> = {
@@ -69,6 +70,7 @@ const KEY_OF: Record<string, RecordKey | undefined> = {
   race: 'races',
   pocket: 'pockets',
   profession: 'professions',
+  school: 'schools',
   shop: 'shops',
   reaction: 'reactions',
 };
@@ -85,6 +87,7 @@ const BODY_OF: Record<string, string> = {
   race: 'race',
   pocket: 'pocket',
   profession: 'profession',
+  school: 'school',
   shop: 'shop',
   reaction: 'reaction',
   params: 'params',
@@ -163,6 +166,12 @@ export function flattenParams(p: ParamsBody): Params {
       stamina: p.per_point.stamina.value,
       spirit: p.per_point.spirit.value,
     },
+    growth: p.growth
+      ? {
+          cost: { small: p.growth.cost.small.value, major: p.growth.cost.major.value, corner: p.growth.cost.corner.value },
+          slot_levels: [...p.growth.slot_levels],
+        }
+      : undefined,
     light: p.light
       ? {
           keys: p.light.keys.map((k) => ({ at: k.at, tint: k.tint, pct: k.pct })),
@@ -200,6 +209,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
     races: {},
     pockets: {},
     professions: {},
+    schools: {},
     shops: {},
     reactions: {},
   };
