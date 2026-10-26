@@ -1,7 +1,7 @@
 # The story: folds, returners, beliefs
 
 This page is the product owner's, like [GAME_RULES.md](GAME_RULES.md) beside
-it: the story of Openfold is told by what this page allows, and a line, a
+it: the story of Loomvale is told by what this page allows, and a line, a
 quest or an extension that breaks it goes to the owner first (GAME_RULES
 section 6). Every part of it is approved (2026-10-10) and changes only by the
 owner's word, written the same day in [DECISIONS.md](../../DECISIONS.md). The

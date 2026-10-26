@@ -1,6 +1,6 @@
 # Roadmap
 
-Openfold is a free pixel-art browser game that its players build together. You can play it today at [theopenfold.vercel.app](https://theopenfold.vercel.app). Much of the valley (bushes, recipes, quests, treasures) lives in small data files, and anyone can propose an addition.
+Loomvale is a free pixel-art browser game that its players build together. You can play it today at [theopenfold.vercel.app](https://theopenfold.vercel.app). Much of the valley (bushes, recipes, quests, treasures) lives in small data files, and anyone can propose an addition.
 
 This page says where the game stands, what comes next, and where help is most welcome. The full rules of play live in [docs/design/GAME_RULES.md](docs/design/GAME_RULES.md), and every design choice is logged in [DECISIONS.md](DECISIONS.md).
 

@@ -76,7 +76,7 @@ describe('the hole check', () => {
 });
 
 describe('holes in the kit', () => {
-  const root = mkdtempSync(join(tmpdir(), 'openfold-holes-'));
+  const root = mkdtempSync(join(tmpdir(), 'loomvale-holes-'));
   afterAll(() => rmSync(root, { recursive: true, force: true }));
   cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
   cpSync(join(CONTENT_DIR, 'kit'), join(root, 'kit'), { recursive: true });

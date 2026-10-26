@@ -364,7 +364,7 @@ describe('an expedition is never the only road (G37)', () => {
 });
 
 describe('what an expedition gives, in the content check', () => {
-  const root = mkdtempSync(join(tmpdir(), 'openfold-expedition-'));
+  const root = mkdtempSync(join(tmpdir(), 'loomvale-expedition-'));
   afterAll(() => rmSync(root, { recursive: true, force: true }));
 
   cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });

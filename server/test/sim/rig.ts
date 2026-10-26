@@ -122,7 +122,7 @@ export async function startRig(bundle: Bundle): Promise<Rig> {
     if (pool) {
       await pool.query('insert into accounts (id, email, name) values ($1, $2, $3)', [
         id,
-        `${id}@sim.openfold.test`,
+        `${id}@sim.loomvale.test`,
         // a name is unique since #272, and the boards test opens two players of one starter
         `${name} ${id}`,
       ]);

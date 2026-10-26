@@ -12,7 +12,7 @@ Many things in the world can be searched: a drawer, a cupboard, a book, a shelf,
 - **Fallout and Skyrim** fill every desk, cupboard and crate with a small loot list, shown in a window with "take all". Containers in the open refill after some in-game days; containers the player owns never refill and keep what is put in them.
 - **Animal Crossing** hides furniture and the odd wasps' nest in trees: a shake is free, the result a small surprise.
 
-Openfold takes Stardew's daily refill and luck, Fallout's window, and Animal Crossing's surprise. It differs from Fallout in one way: nothing is stored in a searchable (the owner's word); storage stays the camp's chest and Maru's house.
+Loomvale takes Stardew's daily refill and luck, Fallout's window, and Animal Crossing's surprise. It differs from Fallout in one way: nothing is stored in a searchable (the owner's word); storage stays the camp's chest and Maru's house.
 
 ## 3. The rules
 

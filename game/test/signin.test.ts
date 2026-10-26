@@ -175,7 +175,7 @@ describe('the fake sign-in server (NEXT 18 d handover, on the fake)', () => {
     const answer = auth.signup({ name: 'Kid', birthDate: '2015-01-01', oneAccount: true });
     expect(answer.status).toBe(403);
     expect(answer.body).toEqual({
-      error: 'You cannot make an Openfold account. The demo stays open to you.',
+      error: 'You cannot make an Loomvale account. The demo stays open to you.',
       reason: 'under-age',
       demo: '/',
     });
