@@ -17,8 +17,7 @@ import {
   newState,
   npcTile,
   replay,
-  satietyAt,
-  satietyCap,
+  hpCap,
   serialize,
   step,
 } from '@game/kernel';
@@ -150,8 +149,8 @@ function checkedStep(state: State, action: Action, tick: number): State {
     for (const [id, n] of Object.entries(worn)) invariant(n <= (result.state.player.bag[id] ?? 0), `${id} is worn but not in the bag`);
   }
   for (const n of Object.values(result.state.player.tries)) invariant(Number.isInteger(n) && n > 0, 'a craft counter is not a positive count');
-  const satiety = satietyAt(bundle, result.state, result.state.tick);
-  invariant(satiety >= 0 && satiety <= satietyCap(bundle, result.state), 'satiety is outside its bounds');
+  const hp = result.state.player.hp;
+  invariant(Number.isInteger(hp) && hp >= 0 && hp <= hpCap(bundle, result.state), 'health is outside its bounds');
   invariant(result.state.tick === tick, 'accepted action did not store its tick');
   expectQuestProgress(previousQuests, result.state.player.quests);
   return result.state;

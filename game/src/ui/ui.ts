@@ -17,8 +17,7 @@ import {
   pickRemark,
   resourceOf,
   rewardItem,
-  satietyAt,
-  satietyCap,
+  hpCap,
   skillPoints,
   talkLines,
 } from '@game/kernel';
@@ -267,8 +266,8 @@ export class UI {
     const b = app.bundle;
     const st = s.state;
     const p = this.hudParts ?? (this.hudParts = this.buildHud());
-    const cap = satietyCap(b, st);
-    const sat = satietyAt(b, st, s.tick);
+    const cap = hpCap(b, st);
+    const sat = st.player.hp;
     const pct = Math.round((sat / cap) * 100);
     const points = skillPoints(b, st);
     const night = isNight(b, s.tick);

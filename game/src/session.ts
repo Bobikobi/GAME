@@ -4,7 +4,7 @@
  * the current tick and remembers the result.
  *
  * The tick is game time in ms. It runs while the world is on screen and
- * stops while a menu or a dialogue is open, so reading never costs satiety.
+ * stops while a menu or a dialogue is open, so reading never costs game time.
  */
 import {
   type Action,

@@ -8,7 +8,7 @@ import type { BodyEffectName, Bundle, SchoolDef, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.18.0';
+export const KERNEL_VERSION = '0.19.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -152,11 +152,11 @@ export interface Player {
   /** uses already taken from the tool unit in hand, per tool item */
   wear: Record<string, number>;
   /**
-   * The health bar, in milli-points, as of tick satietyAt. It began as a food bar that a hunger drain empties by the clock;
-   * hazards take from it too (DECISIONS.md, 2026-10-10), and the name waits for the rename.
+   * The health bar, in milli-points. It began as a food bar named satiety that a hunger drain emptied by the clock;
+   * hazards take from it, food and a fall's reappearance give it back, and nothing drains it by the clock (G28;
+   * DECISIONS.md, 2026-10-08 and 2026-10-10). A save from before kernel 0.19 carries its satiety over (`migrateState`).
    */
-  satiety: number;
-  satietyAt: number;
+  hp: number;
   busyUntil: number;
   /** active ms per profession id */
   xp: Record<string, number>;
@@ -250,8 +250,7 @@ export function newState(bundle: Bundle, seed: number): State {
       boundGold: 0,
       bag: {},
       wear: {},
-      satiety: 0,
-      satietyAt: 0,
+      hp: 0,
       busyUntil: 0,
       xp: {},
       attrs,
@@ -297,6 +296,14 @@ export function migrateState(saved: State): State {
   s.player.boundGold ??= 0;
   // a save from before kernel 0.17 has searched nothing: it reads as empty, whatever its format
   s.searched ??= {};
+  // kernel 0.19: the health bar is named hp and has no clock; a save from before it carries its satiety over
+  // (the core drained nothing since P-5c, so the stored value is the value now), whatever its format
+  const named = s.player as Player & { satiety?: number; satietyAt?: number };
+  if (named.satiety !== undefined) {
+    named.hp ??= named.satiety;
+    delete named.satiety;
+  }
+  delete named.satietyAt;
   if ((s.format ?? 1) >= STATE_FORMAT) return s;
   const p = s.player;
   const attrs = p.attrs ?? {};
@@ -346,15 +353,9 @@ export function attrAt(bundle: Bundle, state: PublicState, attr: Attribute): num
   return Math.max(0, (state.player.attrs[attr] ?? 0) + gradeShift(bundle, state, attr));
 }
 
-export function satietyCap(bundle: Bundle, state: PublicState): number {
-  return (bundle.params.satiety_cap + bundle.params.per_point.stamina * attrAt(bundle, state, 'stamina')) * 1000;
-}
-
-/** Satiety at a tick: it drains with play time and stops at zero. */
-export function satietyAt(bundle: Bundle, state: PublicState, tick: number): number {
-  const p = state.player;
-  const elapsed = Math.max(0, tick - p.satietyAt);
-  return Math.max(0, p.satiety - mulDiv(elapsed, bundle.params.satiety_drain_per_min, 60_000));
+/** The health bar's top, in milli-points: the base cap plus what stamina adds. */
+export function hpCap(bundle: Bundle, state: PublicState): number {
+  return (bundle.params.hp_cap + bundle.params.per_point.stamina * attrAt(bundle, state, 'stamina')) * 1000;
 }
 
 /**
