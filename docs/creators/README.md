@@ -59,7 +59,7 @@ cp -r templates/extension content/extensions/<your-handle>
 
 The template holds a fruit (`resources/wild-plums.json`) and two optional extras: a windfall reaction (`reactions/`, see [A world that answers](#a-world-that-answers-reactions)) and a quest (`quests/`, which brings a quest review and a story review into your pull request). For a plain fruit, delete `quests/`, `reactions/` and the template's `README.md`, and keep `resources/wild-plums.json`.
 
-In every file you keep, replace `your-handle` with your handle. Everything you add has an id that starts with it, so two creators can never clash.
+In every file you keep, replace `your-handle` with your handle (`grep -rn your-handle content/extensions/<your-handle>` lists every place). Everything you add has an id that starts with it, so two creators can never clash.
 
 ## 3. Make it yours (4 minutes)
 
@@ -94,7 +94,7 @@ Each problem names the file, the field and what to do about it. A line that star
 
 ## 5. See it in the game (1 minute)
 
-Add `content/extensions/<your-handle>/profile.json` (see [Your creator profile](#your-creator-profile); the check passes without it; with it the signs and the Creators menu show your name and signature). Run `pnpm dev` again and continue your game, or start a new one. Walk west from where you wake up: the bushes grow in the glade, and its sign now reads "Added by <your-handle>".
+Add `content/extensions/<your-handle>/profile.json` (see [Your creator profile](#your-creator-profile); the check passes without it; with it the signs and the Creators menu show your name and signature). Stop the first `pnpm dev` with Ctrl-C and run it again (it bundles the content when it starts), then continue your game or start a new one. Walk west from where you wake up: the bushes grow in the glade, and its sign now reads "Added by <your-handle>".
 
 ## 6. Open a pull request (1 minute)
 
