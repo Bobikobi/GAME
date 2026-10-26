@@ -31,6 +31,7 @@ import { checkHands } from './hands';
 import { checkRichness } from './richness';
 import { checkSearch } from './search';
 import { checkStarts } from './starts';
+import { checkBalance } from './balance/check';
 import { mergedPullRequests, gitReader, resolveBase } from './decisions/base';
 import { NEXT_FILE, checkNext } from './decisions/next';
 import { RATCHETS, checkRatchets } from './decisions/ratchets';
@@ -70,6 +71,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkSearch(b, assembled.origin));
     issues.push(...checkMapPlan(b, assembled.origin));
     issues.push(...checkHands(b, assembled.origin));
+    issues.push(...checkBalance(b, paramsFile?.type === 'params' ? paramsFile.params : undefined));
   }
   return { issues: dedupe(issues), files: files.length, assembled };
 }

@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { decide, parseNameStatus } from './pr-rules';
 
 const verdict = decide(parseNameStatus(readFileSync(0, 'utf8')), process.env.PR_BODY ?? '');
-console.log(`quest files changed: ${verdict.quests.length}; story files changed: ${verdict.stories.length}; pictures added under content/kit/: ${verdict.pictures.length}`);
+console.log(`quest files changed: ${verdict.quests.length}; story files changed: ${verdict.stories.length}; pictures added under content/kit/: ${verdict.pictures.length}; tree line: ${verdict.tree}`);
 for (const p of verdict.problems) console.log(`::error::${p}`);
 if (verdict.problems.length === 0) console.log('The body says what the tools that fire on this pull request ask.');
 process.exit(verdict.problems.length === 0 ? 0 : 1);

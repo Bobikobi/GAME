@@ -741,8 +741,8 @@ export class UI {
 
   /**
    * The bridge's stone after the mend (NEXT 16 e): the camera comes down to it while the stone speaks of the purse,
-   * then the name is cut, last. A player who typed a name at the start has it cut; one who did not is asked, and may
-   * leave it to the stone's default. The camera is always let go.
+   * then the name is cut, last. Every start comes here with no name: the player is asked, and may leave it to the
+   * stone's default (a saved game that already holds a name keeps it). The camera is always let go.
    */
   private async stoneBeat(restoreId: string, pay = true): Promise<void> {
     const s = app.session;

@@ -34,6 +34,8 @@
     "loop": "tsx tools/src/loop/cli.ts",
     "streams": "tsx tools/src/streams/cli.ts",
     "quests": "tsx tools/src/quests/cli.ts",
+    "map:difficulty": "tsx tools/src/balance/reckon-cli.ts",
+    "balance": "tsx tools/src/balance/cli.ts",
     "tree:coverage": "tsx tools/src/tree/cli.ts",
     "hub:data": "tsx tools/src/hub/cli.ts",
     "hub:same": "tsx tools/src/hub/same.ts",

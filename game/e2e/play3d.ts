@@ -15,7 +15,7 @@ import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page, type Viewport } from './cdp';
 import { FreeWalk, VEC, type Dir } from './walk';
-import { TAKE_GROUND, seedQuery } from './wakes';
+import { TAKE_GROUND, carveIn, seedQuery } from './wakes';
 import { solveMinigame } from './minigame';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -257,10 +257,10 @@ async function run(browser: Browser, base: string, viewport: Viewport, name: str
     await page.waitFor(`!!document.querySelector('.card.race')`, 'the race cards');
     await page.tap('.card.race', viewport.mobile ? 'Elf' : 'Human');
     if (!viewport.mobile) await page.tap('.look-toggle button', 'Female');
-    await page.tap('input.name');
-    await page.type('Tess');
     await page.tap('.title-screen button', 'Wake up');
     await page.waitFor('!!window.__game.session && window.__game.session.started', 'the game to start');
+    // the name is cut at the bridge's stone, and this script is not about the stone: it is cut here
+    await page.eval(carveIn('Tess'));
     await me.dismissDialogue();
     // the pocket's tools lie on the ground by the wake; handed over here, so the 3D door can fell with the west bank's axe
     await page.eval(TAKE_GROUND);
