@@ -27,7 +27,7 @@ This guide walks through adding the smallest useful thing: a fruit bush in an em
 ## What you need
 
 - A GitHub account.
-- Node 24 (the current LTS) and pnpm 10 (`npm install -g pnpm@10`).
+- Node 24 (the version in `.nvmrc`; with nvm, `nvm install` in the checkout reads it; without nvm, install Node 24 from nodejs.org. CI runs Node 24, so check with it) and pnpm 10 (`npm install -g pnpm@10`).
 - No drawing skills. You start with the core art and can swap in your own later.
 
 ## 1. Run the game on your machine (2 minutes)
@@ -37,27 +37,37 @@ Fork the repository on GitHub, then:
 ```bash
 git clone https://github.com/<you>/GAME
 cd GAME
+git remote add upstream https://github.com/Bobikobi/GAME
+git fetch upstream
+git switch -c add-my-fruit upstream/develop   # cloned the main repository itself? use origin/develop
 pnpm install
 pnpm dev
 ```
 
 Open the address it prints. You are playing your own copy.
 
+Your branch starts from `develop`, not from `main`. `main` is the default branch because it holds releases (a release is `develop` merged into `main`), and every pull request goes into `develop`: CI refuses any other base, and one aimed at `main` is asked to retarget.
+
 ## 2. Copy the template (1 minute)
 
-Your handle is your GitHub name in lowercase. Copy the template into a folder with that name:
+Your handle is your GitHub name in lowercase: letters, digits, `-` and `_`, up to 39 characters. Copy the template into a folder with that name (`content/extensions/` does not exist until the first extension, so make it):
 
 ```bash
+mkdir -p content/extensions
 cp -r templates/extension content/extensions/<your-handle>
 ```
 
-In every file of the new folder, replace `your-handle` with your handle. Everything you add has an id that starts with it, so two creators can never clash.
+The template holds a fruit (`resources/wild-plums.json`) and two optional extras: a windfall reaction (`reactions/`, see [A world that answers](#a-world-that-answers-reactions)) and a quest (`quests/`, which brings a quest review and a story review into your pull request). For a plain fruit, delete `quests/`, `reactions/` and the template's `README.md`, and keep `resources/wild-plums.json`.
+
+In every file you keep, replace `your-handle` with your handle (`grep -rn your-handle content/extensions/<your-handle>` lists every place). Everything you add has an id that starts with it, so two creators can never clash.
 
 ## 3. Make it yours (4 minutes)
 
-Open `content/extensions/<your-handle>/resources/wild-plums.json`. Rename the file and the ids if you grow something else. The fields worth changing:
+Open `content/extensions/<your-handle>/resources/wild-plums.json`. Rename the file and the ids if you grow something else: the file name, the file's `id`, `items[0].id` and `node.output` all name the fruit, so change them together. The picture fields (`sprite`, `sprite_empty`, and `items[0].sprite`) point at core art; leave them as they are, and draw your own later (see [Your own art](#your-own-art-optional)). The fields worth changing:
 
-- `items[0].name` and `description` - what the player reads.
+- the top-level `title` and `description` - what the sign and the journal say about the bush.
+
+- `items[0].name` and `items[0].description` - what the player reads.
 - `items[0].class`, `family` and `tier` - what the fruit is: `plant`, family `plum`, tier 1. See [Classes and tiers](#classes-and-tiers).
 - `items[0].weight` - how heavy one is, a whole number from 0 to 20. Most things weigh 1; a log or a stone 3; a herb or a coin 0. The load sets the player's pace.
 - `food.satiety` - how much one fruit fills, 1 to 100. A redberry gives 4, a cooked berry mash 15.
@@ -72,7 +82,7 @@ Open `content/extensions/<your-handle>/resources/wild-plums.json`. Rename the fi
 - `node.solid` - optional. `true` keeps the tile blocked ready or not, as a tree does: the stump stays in the way until the tree is grown again. Left out, the player walks through it.
 - `node.growth` - optional, up to 3 sprites between `sprite_empty` and `sprite`. While the node grows back, the game shows them one after the other by how much of `respawn_ms` has passed, so a felled oak goes stump, sapling, young tree, oak. Needs a `sprite_empty`.
 - `node.place.water` - optional. `true` puts the node on the slot's water tiles beside the bank, for a fishing spot; the slot needs water in it. Left out, a node stands on the ground.
-- `node.place.slot` - where it grows. The empty resource slot today: `core/west-glade` (by the meadow where you wake up); the garden in the ruins grows the bell bushes since P-3. One extension per slot.
+- `node.place.slot` - where it grows. The empty resource slot today: `core/west-glade` (by the meadow where you wake up); the garden in the ruins grows the bell bushes since P-3. One extension per slot: this guide sends every newcomer to the glade, so if another fruit is already waiting there for review, yours competes with it and the vote decides ([CONTRIBUTING.md](../../CONTRIBUTING.md)). The `slots` tool of the MCP server (below) lists the slots that are still free.
 
 You never set a price. The game works out every item's value from the effort it takes to get, and the trader pays from that. A rarer, slower fruit is worth more on its own. The trader pays a share of the value: 75 percent for a thing someone made, an item whose value comes from a recipe (`k_craft_permille`), and 50 percent for anything else (`k_permille`). The shop charges at least the full value.
 
@@ -82,15 +92,15 @@ You never set a price. The game works out every item's value from the effort it 
 pnpm check
 ```
 
-Each problem names the file, the field and what to do about it. Fix them until it prints no errors. `pnpm check --json` prints the same report for an AI tool to read.
+Each problem names the file, the field and what to do about it. A line that starts with `x` is an error: fix those until none are left. A line that starts with `!` is a warning, and a clean checkout of the game already prints about thirty of them (about the core map, the core art and the core quests, none from your files). It is done when the last lines read "0 errors" and "Everything passes". `pnpm check --json` prints the same report for an AI tool to read.
 
 ## 5. See it in the game (1 minute)
 
-Run `pnpm dev` again and continue your game, or start a new one. Walk west from where you wake up: the bushes grow in the glade, and its sign now reads "Added by <your-handle>".
+Add `content/extensions/<your-handle>/profile.json` (see [Your creator profile](#your-creator-profile); the check passes without it; with it the signs and the Creators menu show your name and signature). Stop the first `pnpm dev` with Ctrl-C and run it again (it bundles the content when it starts), then continue your game or start a new one. Walk west from where you wake up: the bushes grow in the glade, and its sign now reads "Added by <your-handle>".
 
 ## 6. Open a pull request (1 minute)
 
-Commit only your own folder, push it to your fork, and open a pull request. The same check runs on it automatically, and the pull request template lists what reviewers look at. A preview of the game with your change is built for the pull request; for a first pull request from a fork, a maintainer approves that build first.
+Commit only your own folder, push your branch to your fork, and open a pull request with **`develop`** as its base (GitHub offers `main` first: change it). The first time, a bot asks you to sign the [contributor agreement](../../CLA.md) with one comment. The pull request template has three lines to answer, `Quest review:`, `Story review:` and `Source:`; for a fruit with no quest, no story text and no new picture they read "no quest changed", "no story text changed" and "no new picture". Before you push, `pnpm verify` runs everything CI does (it takes a few minutes; `pnpm check` is the part that matters for content). The same check runs on the pull request automatically, and the pull request template lists what reviewers look at. A preview of the game with your change is built for the pull request; for a first pull request from a fork, a maintainer approves that build first.
 
 ## Classes and tiers
 
@@ -245,7 +255,7 @@ Sprites live in a kit: `content/kit/<your-handle>/kit.json` plus PNG files next 
 - A generated sprite may name where it came from: `"source": {"spec": "tools/kit-gen/<spec>.json", "manifest": "<path>/manifest.jsonl:<line>"}`.
 - Only the 32 colors of the core palette, and every pixel fully clear or fully solid.
 - How the world looks (grounds, light and shadow, height): [docs/design/STYLE.md](../design/STYLE.md). Never draw a shadow into a sprite; the game casts it.
-- AI images are welcome. Run any image through the importer and it snaps to the grid and the palette: `pnpm kit:import my-plum.png content/kit/<your-handle>/items/plum.png 16 16`.
+- AI images are welcome. Run any image through the importer and it snaps to the grid and the palette: `pnpm kit:import my-plum.png content/kit/<your-handle>/items/plum.png 64 64`.
 - Frames, sheets and a prompt-to-sprite path: the `um` tool of universal-modder (free sprite commands; the drawing recipes on your own fal.ai key). The recipe and its limits: [docs/design/ASSET_PATH.md](../design/ASSET_PATH.md) section 2. List it in `ai_tools` like any other tool.
 
 A kit file looks like this:
@@ -258,7 +268,7 @@ A kit file looks like this:
   "title": "Plum art",
   "creator": "<your-handle>",
   "ai_tools": ["Nano Banana (Gemini)"],
-  "kit": { "sprites": { "items/plum": { "file": "items/plum.png", "w": 16, "h": 16 } } }
+  "kit": { "sprites": { "items/plum": { "file": "items/plum.png", "w": 64, "h": 64, "density": 4 } } }
 }
 ```
 
@@ -366,4 +376,4 @@ What the tools answer:
 
 ## License
 
-Content you contribute is published under CC BY-SA 4.0 (see `content/LICENSE`), and code under the AGPL-3.0. Opening a pull request means you agree to that.
+Content you contribute is published under CC BY-SA 4.0 (see `content/LICENSE`), and code under the AGPL-3.0. Before your first pull request is merged you sign the [contributor agreement](../../CLA.md) once, by a comment the bot asks for: you keep your copyright, and the project may publish your work and move it to another licence later. The game's name and logo are not licensed by either licence; see [TRADEMARKS.md](../../TRADEMARKS.md).
