@@ -15,6 +15,7 @@
       "class": "meal",
       "tier": 1,
       "sprite": "core/base-kit:items/herb-tea",
+      "weight": 1,
       "food": {
         "satiety": 10
       }

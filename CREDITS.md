@@ -9,6 +9,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Work stone (camp) - `content/core/camp/work-stone.json`
 - Workbench (camp) - `content/core/camp/workbench.json`
 - Workshop (camp) - `content/core/camp/workshop.json`
+- Bags (items) - `content/core/items/bags.json`
 - Healing (items) - `content/core/items/healing.json`
 - Outfits (items) - `content/core/items/outfits.json`
 - Tools (items) - `content/core/items/tools.json`
@@ -21,6 +22,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - The west bank (pocket) - `content/core/pockets/west-bank.json`
 - Cooking (profession) - `content/core/professions/cooking.json`
 - Digging (profession) - `content/core/professions/digging.json`
+- Fishing (profession) - `content/core/professions/fishing.json`
 - Foraging (profession) - `content/core/professions/foraging.json`
 - Handcraft (profession) - `content/core/professions/handcraft.json`
 - Woodcutting (profession) - `content/core/professions/woodcutting.json`
@@ -50,7 +52,9 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Bandage (recipe) - `content/core/recipes/bandage.json`
 - Berry mash (recipe) - `content/core/recipes/berry-mash.json`
 - Fine basket (recipe) - `content/core/recipes/fine-basket.json`
+- Fishing rod (recipe) - `content/core/recipes/fishing-rod.json`
 - Flint trowel (recipe) - `content/core/recipes/flint-trowel.json`
+- Grilled fish (recipe) - `content/core/recipes/grilled-fish.json`
 - Herb stew (recipe) - `content/core/recipes/herb-stew.json`
 - Herb tea (recipe) - `content/core/recipes/herb-tea.json`
 - Lucky charm (recipe) - `content/core/recipes/lucky-charm.json`
@@ -59,6 +63,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Reed cord (recipe) - `content/core/recipes/reed-cord.json`
 - Reed hat (recipe) - `content/core/recipes/reed-hat.json`
 - Reed sandals (recipe) - `content/core/recipes/reed-sandals.json`
+- Satchel (recipe) - `content/core/recipes/satchel.json`
 - Split a log (recipe) - `content/core/recipes/split-log.json`
 - Stone blade (recipe) - `content/core/recipes/stone-blade.json`
 - Stone flakes (recipe) - `content/core/recipes/stone-flakes.json`
@@ -73,6 +78,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Moon reeds (resource) - `content/core/resources/moon-reeds.json`
 - Oak trees (resource) - `content/core/resources/oak-trees.json`
 - Reed bank (resource) - `content/core/resources/reed-bank.json`
+- River fish (resource) - `content/core/resources/river-fish.json`
 - River stones (resource) - `content/core/resources/river-stones.json`
 - Sun herbs (resource) - `content/core/resources/sun-herbs.json`
 - Wild herbs (resource) - `content/core/resources/wild-herbs.json`
@@ -80,6 +86,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Old bridge (restore) - `content/core/restores/old-bridge.json`
 - Cooking (school) - `content/core/schools/cooking.json`
 - Digging (school) - `content/core/schools/digging.json`
+- Fishing (school) - `content/core/schools/fishing.json`
 - Foraging (school) - `content/core/schools/foraging.json`
 - Handcraft (school) - `content/core/schools/handcraft.json`
 - Woodcutting (school) - `content/core/schools/woodcutting.json`

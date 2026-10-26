@@ -40,11 +40,13 @@ import {
   riddleSlots,
   sees,
   spotOpen,
+  walkStepMs,
   windowOpen,
 } from '@game/kernel';
 import { app } from '../app';
+import { Piles, pileAt } from './piles';
 import { sound, type SfxId, type SongId } from '../audio';
-import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, STEP_MS, T } from '../config';
+import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, T } from '../config';
 import { FAR_BELL, SMOKE_PUFFS, farBellDue, nearestChimney, smokeAlpha, smokeAt } from '../hookbridge';
 import { sunTableOf } from '../cast';
 import { CastLayer } from '../cast-layer';
@@ -69,6 +71,8 @@ import { BIRDS, CUE_LOOK, cueGain } from '../cues';
 import { nodeLook } from '../growth';
 import { peekOnStep, type Tile } from '../peek';
 import { MazePeek } from './peek';
+import { FishingView } from './fishing-view';
+import type { FishPhase } from '../ui/games/shared';
 import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
 import type { WorkKind } from '../ui/ui';
 import { type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, treasureKind } from '../work';
@@ -382,12 +386,18 @@ export class WorldScene extends Phaser.Scene {
   private busyFrom = 0;
   private busyMs = 0;
   private work: { node: string; kind: WorkKind } | null = null;
+  /** the line, float and fish shapes of fishing, drawn in code */
+  private fishing?: FishingView;
+  /** the fishing spots, found once */
+  private fishSpots?: string[];
   private swingUntil = 0;
   private auto: Auto | null = null;
   /** nodes whose look the work keeps: a tree stays a tree until it falls */
   private held = new Set<string>();
   private nextSwing = 0;
   private refreshIn = 0;
+  /** what the player put down, drawn on its tiles */
+  private piles?: Piles;
   private zoneIn = 0;
   private nextBird = 0;
   private idleSince = 0;
@@ -467,6 +477,7 @@ export class WorldScene extends Phaser.Scene {
     this.events.on(Phaser.Scenes.Events.POST_UPDATE, () => this.cutPlayer());
     this.veil = this.add.container(0, 0, [this.mist, ...this.banks.map((b) => b.img), ...this.fogs, ...this.fogMotes]).setDepth(DEPTH.mist);
     this.bar = this.add.graphics().setDepth(DEPTH.fx);
+    this.fishing = new FishingView(this, { under: DEPTH.flat + 0.1, over: DEPTH.fx - 1 }, { ink: PALETTE.ink, paper: PALETTE.paper, red: PALETTE.red2, wood: PALETTE.wood });
     this.marker = this.add.image(0, 0, 'fx-arrow').setOrigin(0.5, 1).setDepth(DEPTH.marker).setVisible(false);
     this.tweens.add({ targets: this.marker, displayOriginY: 7, duration: 380, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     this.bang = this.add.image(0, 0, 'fx-bang').setOrigin(0.5, 1).setDepth(DEPTH.fx).setVisible(false);
@@ -525,6 +536,8 @@ export class WorldScene extends Phaser.Scene {
     make('fx-leaf', 2, 2, () => px(PALETTE.green3, 0, 0, 2, 2));
     make('fx-chip', 2, 1, () => px(PALETTE.wood2, 0, 0, 2));
     make('fx-dirt', 2, 2, () => px(PALETTE.wood, 0, 0, 2, 2));
+    // a drop of water thrown up by a fish on the line
+    make('fx-drop', 1, 2, () => px(PALETTE.paper, 0, 0, 1, 2));
     make('fx-spark', 1, 1, () => px(PALETTE.yellow, 0, 0));
     // the flame of a tended fire, drawn so its four stages read by size (NEXT 21b): a red rim, gold body, yellow heart
     make('fx-flame', 7, 15, () => {
@@ -1848,6 +1861,7 @@ export class WorldScene extends Phaser.Scene {
     }
     this.refreshNodes();
     this.refreshFires(s);
+    (this.piles ??= new Piles(this, this.b, DEPTH.dig, DIG_SPOT_SPRITE)).refresh(s.state);
     if (RICH.motion) this.refreshGlints(s);
   }
 
@@ -1977,6 +1991,7 @@ export class WorldScene extends Phaser.Scene {
     this.placeLantern(s);
     if (RICH.motion) this.idle(s, time);
     this.workTick(s);
+    this.drawFishing(s, time);
     this.drawBusy(s, time);
     this.updatePrompt(s);
     this.haunt(s, time);
@@ -2215,7 +2230,7 @@ export class WorldScene extends Phaser.Scene {
     const turned = facing !== s.facing || look !== this.look;
     s.facing = facing;
     this.look = agrees(look, facing) ? look : facing;
-    for (const tile of this.body.frame(input, delta, STEP_MS, (x, y) => this.canWalk(s, x, y))) {
+    for (const tile of this.body.frame(input, delta, walkStepMs(this.b, s.state), (x, y) => this.canWalk(s, x, y))) {
       if (RICH.motion) this.puffAt(s.pos[0], s.pos[1]);
       // the kernel hears of each new tile; a hazard there may hurt, and a fall ends the walk
       landStep(s, tile);
@@ -2553,6 +2568,37 @@ export class WorldScene extends Phaser.Scene {
     this.workFrame(true);
     this.swingUntil = this.time.now + 160;
     this.impact(nodeId, kind, grade);
+  }
+
+  /** A cast moved on: the player faces the water, the arm comes over on the cast, and the view draws the rest. */
+  fishPhase(nodeId: string, phase: FishPhase): void {
+    const s = this.session;
+    if (!s) return;
+    this.faceNode(s, nodeId);
+    if (phase === 'cast' || phase === 'reel') {
+      this.work = { node: nodeId, kind: 'fish' };
+      this.workFrame(true);
+      this.swingUntil = this.time.now + 220;
+    }
+    this.fishing?.phase(nodeId, phase, this.time.now);
+  }
+
+  /** The dark shapes under every fishing spot that has fish, and the line while a cast is on. */
+  private drawFishing(s: GameSession, time: number): void {
+    if (!this.fishing) return;
+    this.fishSpots ??= Object.keys(this.b.instances).filter((id) => this.b.resources[this.b.instances[id]!.source]?.game === 'fish');
+    const view = this.cameras.main.worldView;
+    const spots: { id: string; at: { x: number; y: number } }[] = [];
+    for (const id of this.fishSpots) {
+      const inst = this.b.instances[id]!;
+      const x = inst.x * T + T / 2;
+      const y = inst.y * T + T / 2;
+      if (x < view.x - T || x > view.right + T || y < view.y - T || y > view.bottom + T) continue;
+      if (this.ready(s, id) || this.work?.node === id) spots.push({ id, at: { x, y } });
+    }
+    const node = this.work?.kind === 'fish' ? placedAt(this.b, this.work.node) : undefined;
+    const toward = node && node.x * T + T / 2 < this.player.x ? -1 : 1;
+    this.fishing.draw(time, spots, { x: this.player.x + toward * 3, y: this.player.y - 9 }, toward);
   }
 
   private faceNode(s: GameSession, nodeId: string): void {
@@ -2905,6 +2951,7 @@ export class WorldScene extends Phaser.Scene {
     this.refreshNodes();
     this.faceFrame();
     if (ghost) this.fall(ghost, w.facing, w.node);
+    else if (w.kind === 'mine') this.breakStone(w.node);
     else this.burst(w.kind === 'dig' ? 'fx-dirt' : 'fx-dust', (placedAt(this.b, w.node)!.x + 0.5) * T, (placedAt(this.b, w.node)!.y + 0.6) * T, 8);
     w.onDone?.();
   }
@@ -2926,8 +2973,11 @@ export class WorldScene extends Phaser.Scene {
       if (progress > 0.4 && img) this.burst('fx-leaf', x, y - img.displayHeight * 0.6, 2 + Math.round(progress * 4));
     } else if (w.kind === 'mine') {
       sound.sfx('strike', { pan });
+      // the stone starts to give as the wood does: a crack under the blows past the middle, more chips each time
+      if (progress > 0.5) sound.sfx('crack', { pan, gain: 0.2 + 0.4 * progress });
       this.burst('fx-dust', x, y, 5);
       this.burst('fx-spark', x, y - 4, 3);
+      this.burst('fx-chip', x, y - 2, 2 + Math.round(progress * 4));
     } else {
       sound.sfx('dig', { pan });
       this.burst('fx-dirt', x, y, 6);
@@ -2940,6 +2990,18 @@ export class WorldScene extends Phaser.Scene {
     const shake = w.kind === 'dig' ? 0 : progress > 0.6 ? 2 : 1;
     const lean = w.kind === 'fell' && (w.facing === 'left' || w.facing === 'right') ? (w.facing === 'left' ? -1 : 1) * progress * 3 : 0;
     this.tweens.add({ targets: img, x: x0 + shake, scaleY: rel(img, 1, w.kind === 'dig' ? 0.92 : 1).y, angle: lean, duration: 50, yoyo: true, repeat: 1, onComplete: () => setRel(img.setX(x0), 1).setAngle(lean) });
+  }
+
+  /** The last blow splits the stone: a sharp crack, chips and dust thrown wide, and a small jolt as a tree's fall has. */
+  private breakStone(id: string): void {
+    const inst = placedAt(this.b, id)!;
+    const x = (inst.x + 0.5) * T;
+    const y = (inst.y + 0.6) * T;
+    sound.sfx('crack', { gain: 0.8 });
+    this.burst('fx-chip', x, y - 2, 10);
+    this.burst('fx-dust', x, y, 10);
+    this.burst('fx-spark', x, y - 4, 4);
+    this.cameras.main.shake(90, 0.002);
   }
 
   /** The tree goes over, away from the one who cut it, and lies there a moment before it fades. */
@@ -3089,6 +3151,9 @@ export class WorldScene extends Phaser.Scene {
     const k = key(x, y);
     const tile: [number, number] = [x, y];
     const top = this.tops.get(k) ?? T;
+    // a pile the player put down, under their feet
+    const dropped = x === s.pos[0] && y === s.pos[1] ? pileAt(s.state, x, y) : undefined;
+    if (dropped) return { label: `Pick up ${b.items[dropped]?.name ?? dropped}`, run: () => app.ui.pickUp(dropped), tile, top: T };
     const npc = this.npcAt.get(k);
     if (npc) return { label: `Talk to ${b.npcs[npc]?.name ?? npc}`, run: () => app.ui.talk(npc), tile, top };
     const nodeId = this.nodeAt.get(k);
@@ -3292,8 +3357,8 @@ export interface SignInfo {
 const SIGN_SPRITE = 'core/base-kit:props/sign';
 const DIRS_4: readonly [number, number][] = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 
-const WORK_SOUND: Record<WorkKind, SfxId> = { strike: 'strike', pick: 'pluck', snap: 'tug', timing: 'rustle', dig: 'dig' };
-const WORK_DUST: Record<WorkKind, string> = { strike: 'fx-dust', pick: 'fx-leaf', snap: 'fx-chip', timing: 'fx-leaf', dig: 'fx-dirt' };
+const WORK_SOUND: Record<WorkKind, SfxId> = { strike: 'strike', pick: 'pluck', snap: 'tug', timing: 'rustle', dig: 'dig', fish: 'plop' };
+const WORK_DUST: Record<WorkKind, string> = { strike: 'fx-dust', pick: 'fx-leaf', snap: 'fx-chip', timing: 'fx-leaf', dig: 'fx-dirt', fish: 'fx-drop' };
 
 function key(x: number, y: number): string {
   return `${x},${y}`;

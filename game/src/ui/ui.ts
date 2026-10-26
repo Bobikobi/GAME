@@ -49,9 +49,10 @@ import { carveName } from './carve';
 import { button, h, sprite } from './dom';
 import { miniMapSvg } from './map';
 import { feedback } from './feedback';
-import { type Minigame, pick, snap, strike, timing } from './games';
+import { type Minigame, fish, pick, snap, strike, timing } from './games';
 import { BEAT, buzz } from './haptics';
 import { openLevelUp } from './levelup';
+import { FULL_BAG, HEAVY_LINE, flashFull, loadChip, loadView, paintLoad, turnedHeavy } from './load';
 import {
   openBag,
   openCraft,
@@ -70,9 +71,9 @@ import { showTitle } from './title';
 import { mountTouch } from './touch';
 
 /** What the hands are doing, for the world's animation and sound. */
-export type WorkKind = 'timing' | 'strike' | 'pick' | 'snap' | 'dig';
+export type WorkKind = 'timing' | 'strike' | 'pick' | 'snap' | 'dig' | 'fish';
 
-const GAMES: Record<'timing' | 'strike' | 'pick' | 'snap', Minigame> = { timing, strike, pick, snap };
+const GAMES: Record<'timing' | 'strike' | 'pick' | 'snap' | 'fish', Minigame> = { timing, strike, pick, snap, fish };
 
 export interface Layer {
   el: HTMLElement;
@@ -100,6 +101,8 @@ interface HudParts {
   darkText: Text;
   level: HTMLElement;
   bag: HTMLButtonElement;
+  /** the load on the bag button: "14 / 24" and one coloured word (DECISIONS.md, 2026-10-23) */
+  load: HTMLElement;
   log: HTMLButtonElement;
 }
 
@@ -129,6 +132,8 @@ export class UI {
   private warnedNight: number | undefined;
   /** the burns (fire and lit tick) whose running-low warning was shown, so it opens once per burn */
   private warnedFires = new Set<string>();
+  /** the pace at the last look, so turning heavy is said once */
+  private loadSeen: { band?: 'light' | 'steady' | 'heavy' } = {};
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -289,6 +294,9 @@ export class UI {
     setTitle(p.level, points > 0 ? 'A skill point to spend: open the journal' : 'Character level');
     setText(p.level, `Lv ${characterLevel(b, st)}${points > 0 ? ' +' : ''}`);
     p.bag.hidden = !unlocked.bag;
+    const load = loadView(b, st);
+    paintLoad(p.load, load);
+    if (turnedHeavy(this.loadSeen, load.band)) this.toast(HEAVY_LINE, 'info');
     p.log.hidden = !unlocked.log;
     this.renderTracker(s);
     this.renderHudMap(s);
@@ -340,7 +348,8 @@ export class UI {
     const darkText = document.createTextNode('');
     const dark = h('span', { class: 'chip dark', title: 'Dark falls: be in town or by a burning camp', hidden: true }, h('i', { class: 'moon' }), darkText);
     const level = h('span', { class: 'chip', title: 'Character level' });
-    const bag = button('Bag', () => this.panel(() => openBag(this)), 'small');
+    const load = loadChip();
+    const bag = button([h('span', { class: 'load-label' }, 'Bag'), load], () => this.panel(() => openBag(this)), 'small');
     const log = button('Journal', () => this.panel(() => openJournal(this)), 'small');
     const feedbackBtn = button('Feedback', () => openFeedback(this), 'small');
     this.hud.replaceChildren(
@@ -361,7 +370,7 @@ export class UI {
       ),
       h('div', { class: 'hud-right' }, feedbackBtn, bag, log, button('Menu', () => this.panel(() => openMenu(this)), 'small')),
     );
-    return { meter, bar, num, goldText, boundChip, boundText, clockChip, clockIcon, clockText, dark, darkText, level, bag, log };
+    return { meter, bar, num, goldText, boundChip, boundText, clockChip, clockIcon, clockText, dark, darkText, level, bag, load, log };
   }
 
   /**
@@ -436,6 +445,7 @@ export class UI {
 
   /** A toast joins the line (toasts.ts): two at most stand at once, a bad one goes ahead, and none is dropped. */
   private queueToast(t: Toast): void {
+    if (t.lines.some((l) => FULL_BAG.test(l))) flashFull(this.hud);
     const el = h('div', { class: `toast ${t.tone}` }, t.icon ? sprite(app.bundle, t.icon, 1) : null, h('span', { class: 'toast-text' }, t.lines.join('\n')));
     this.band.add(el, { urgent: urgent(t), read: readTime(t) });
   }
@@ -626,6 +636,14 @@ export class UI {
     if (!res.ok) this.toast(res.error, 'bad');
   }
 
+  /** Pick a thing put down back up, from the tile the player stands on. */
+  async pickUp(itemId: string): Promise<void> {
+    const s = app.session;
+    if (!s) return;
+    const r = await s.act({ t: 'pickup', item: itemId, at: s.pos });
+    if (!r.ok) this.toast(r.error, 'bad');
+  }
+
   async dig(spotId: string): Promise<void> {
     const s = app.session;
     if (!s) return;
@@ -673,6 +691,7 @@ export class UI {
         buzz(BEAT[grade]);
         app.world?.beat(nodeId, kind, grade);
       },
+      onPhase: (phase) => app.world?.fishPhase?.(nodeId, phase),
     });
   }
 

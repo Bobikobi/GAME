@@ -13,8 +13,10 @@ import { readBoard } from './board';
 import { holeProblems } from './kit/holes';
 import { CORE_PALETTE, coreRamp } from './kit/palette';
 import { accentsOf, allowedColors, rampProblems } from './kit/ramps';
+import { CORE_KIT, richProblem, staleLeft } from './kit/rich';
 import { scaleProblems } from './kit/scale';
 import { checkColors } from './colors';
+import { checkInk } from './ink-check';
 import { LOCK_FILE, REPO_ROOT, loadAll, toRepoPath, type Issue } from './load';
 import { baseOf } from './material';
 import { checkHazards } from './hazards';
@@ -56,6 +58,7 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkRetiredWords());
     issues.push(...checkKits(assembled));
     issues.push(...checkColors(assembled));
+    issues.push(...checkInk(assembled));
     issues.push(...checkPlay(b, assembled.origin));
     issues.push(...checkRaces(b, assembled.origin));
     issues.push(...checkSchools(b, assembled.origin));
@@ -293,6 +296,12 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
   for (let i = 1; i < wornCaps.length; i++) {
     if (wornCaps[i]! < wornCaps[i - 1]!) err(PARAMS_FILE, `params.wear_effect_max_pct.${i}`, 'the cap on a worn effect never falls with the tier');
   }
+  // the three paces run light, steady, heavy, and the hard edge lies beyond the limit (DECISIONS.md, 2026-10-23)
+  if (!(p.load.light_step_ms <= p.walk_step_ms && p.walk_step_ms <= p.load.heavy_step_ms)) {
+    err(PARAMS_FILE, 'params.load', 'the paces run light, steady, heavy: load.light_step_ms <= walk_step_ms <= load.heavy_step_ms');
+  }
+  if (p.load.light_permille >= 1000) err(PARAMS_FILE, 'params.load.light_permille', 'the light pace ends before the limit: under 1000');
+  if (p.load.max_permille <= 1000) err(PARAMS_FILE, 'params.load.max_permille', 'the hard edge lies beyond the limit: over 1000');
 
   for (const [id, it] of Object.entries(b.items)) {
     const where = `items.${id}`;
@@ -452,6 +461,11 @@ function checkWear(b: Bundle): Issue[] {
     } else if (base !== 'garment') {
       err(it.file, `${where}.wear.slot`, `the ${w.slot} takes items of class "garment"`);
     }
+    // a bag on the back gives places, and a frame bag a weight bonus (DECISIONS.md, 2026-10-23)
+    if ((w.places !== undefined || w.load_bonus !== undefined) && (w.slot !== 'back' || w.look)) {
+      err(it.file, `${where}.wear.places`, 'only a work piece worn on the back gives places or a weight bonus');
+    }
+    if (w.load_bonus !== undefined && w.places === undefined) err(it.file, `${where}.wear.load_bonus`, 'a weight bonus comes with a bag: give it "places" too');
     if (w.look) {
       if (w.effects) err(it.file, `${where}.wear.effects`, 'a look shows and counts for nothing: it has no effects (G44)');
       if (w.set) err(it.file, `${where}.wear.set`, 'a look belongs to no set');
@@ -584,7 +598,10 @@ export function spriteSizeProblem(name: string, s: { w: number; h: number; densi
   return `${here.what} ${said(here)} at density ${density} (${said(there)} at density ${other}), this one is ${s.w}x${s.h}${hint}`;
 }
 
-/** V-1: every sprite exists, has the published size, and uses the core palette and its own declared ramps. */
+/**
+ * V-1: every sprite exists, has the published size, and uses the core palette and its own declared ramps;
+ * and it is drawn rich at 64 px per tile unless the core kit still waits to redraw it (DECISIONS.md, 2026-10-23).
+ */
 function checkKits(a: Assembled): Issue[] {
   const issues: Issue[] = [];
   const core = CORE_PALETTE.map((h) => h.toLowerCase());
@@ -613,6 +630,8 @@ function checkKits(a: Assembled): Issue[] {
       const where = `kit.sprites.${name}`;
       const problem = spriteSizeProblem(name, s);
       if (problem) issues.push({ file: kitFile, where, message: problem, level: 'error' });
+      const rich = richProblem(kitId, name, s);
+      if (rich) issues.push({ file: kitFile, where, message: rich, level: 'error' });
       // A declared height in characters is held to its kind's floor (NATURE section 1, STYLE 1b).
       for (const message of scaleProblems(name, s.scale)) issues.push({ file: kitFile, where, message, level: 'warning' });
       const abs = join(kit.dir, s.file);
@@ -681,7 +700,11 @@ function checkKits(a: Assembled): Issue[] {
         }
       }
     }
-    void kitId;
+    if (kitId === CORE_KIT) {
+      for (const name of staleLeft(kit.sprites)) {
+        issues.push({ file: 'tools/src/kit/rich.ts', where: 'SIXTEEN_PX_LEFT', message: `names "${name}", which the core kit does not hold: take it off the list`, level: 'error' });
+      }
+    }
   }
   return issues;
 }

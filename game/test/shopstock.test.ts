@@ -48,11 +48,12 @@ function withKeepers(b: Bundle): Bundle {
 }
 
 describe('a shop in named groups (decision 51)', () => {
-  test("Pell's stall: the tools apart from the food and the medicine, each group named", () => {
+  test("Pell's stall: the tools apart from the satchel, the food and the medicine, each group named", () => {
     const groups = names(bundle, bundle.shops['core/trader-shop']!.sells);
-    expect(groups.map(([label]) => label)).toEqual(['Tools', 'Food and drink', 'Medicine']);
+    expect(groups.map(([label]) => label)).toEqual(['Tools', 'To wear', 'Food and drink', 'Medicine']);
     expect(groups[0]![1]).toEqual(['core/basket', 'core/trowel', 'core/axe', 'core/walking-staff']);
-    expect(groups[2]![1]).toEqual(['core/first-aid-kit']);
+    expect(groups[1]![1]).toEqual(['core/satchel']);
+    expect(groups[3]![1]).toEqual(['core/first-aid-kit']);
   });
 
   test('every item lands in exactly one group, in the order of the counter', () => {

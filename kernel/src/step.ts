@@ -22,6 +22,7 @@ import { bitesAfter, dangerAt, distanceTo, fireArea, harmOf, hazardsOf, isSafe, 
 import { bellTicks, inside as insideExpedition, lastBellAt, visitNight, windowOpen as expeditionWindowOpen } from './expedition';
 import { clamp, idiv, idivUp, mulDiv, mulDivUp } from './num';
 import { appearSlot, cuesOnStep, placedAt, reactionHolds, resourceOf, waitPermille } from './reactions';
+import { foodFillPermille, itemWeight, loadMax, loadWeight, walkStepMs, weightRoom } from './load';
 import { drawBasisPoints } from './rng';
 import {
   ATTRIBUTES,
@@ -37,6 +38,9 @@ import {
   attrAt,
   bagCapacity,
   bagUsed,
+  placeRoom,
+  placesWith,
+  groundKey,
   burnsAsWood,
   campBuilt,
   effectValue,
@@ -105,12 +109,17 @@ export type Action =
   | { t: 'unequip'; slot: number; at: Tile }
   | { t: 'wear'; item: string; slot?: WearSlot }
   | { t: 'unwear'; slot: WearSlot; look?: boolean }
+  /** put down `qty` of a thing on the tile the player stands on (`at`); it stays there for a later pick-up */
+  | { t: 'drop'; item: string; qty: number; at: Tile }
+  /** pick a dropped thing up again from the tile the player stands on */
+  | { t: 'pickup'; item: string; at: Tile }
   | { t: 'move'; at: Tile };
 
 export type GameEvent =
   | { e: 'gain'; item: string; qty: number }
   | { e: 'spend'; item: string; qty: number }
   | { e: 'bag_full'; item: string; qty: number }
+  | { e: 'drop'; item: string; qty: number; at: Tile }
   | { e: 'gold'; delta: number }
   /** the bound starting gold moved (milli-gold); the purse's own movements are `gold` */
   | { e: 'bound'; delta: number }
@@ -241,6 +250,9 @@ export function missOutcome(bundle: Bundle, recipe: RecipeDef): { keep: { item: 
 }
 
 class Refusal extends Error {}
+/** Beyond the most the player carries nothing more is picked up (DECISIONS.md, 2026-10-23). */
+const TOO_HEAVY = 'Too heavy to carry more. Lighten the load first.';
+
 function refuse(message: string): never {
   throw new Refusal(message);
 }
@@ -416,7 +428,19 @@ function tileOf(a: Action, last: Tile): Tile {
   return 'at' in a && Array.isArray(a.at) && a.at.length === 2 && Number.isSafeInteger(a.at[0]) && Number.isSafeInteger(a.at[1]) ? a.at : last;
 }
 
+/**
+ * Every action but a start or a move: no action may leave the bag holding more than its places (DECISIONS.md,
+ * 2026-10-23). A worn thing takes no place, so taking it off, swapping a bag for a smaller one or parting with
+ * the bag on the back is refused while the rest would not fit.
+ */
 function perform(ctx: Ctx, a: Action): void {
+  const { b, s } = ctx;
+  const over = bagUsed(b, s) > bagCapacity(b, s);
+  act(ctx, a);
+  if (!over && bagUsed(b, s) > bagCapacity(b, s)) refuse('Your bag has no room for that. Make room first.');
+}
+
+function act(ctx: Ctx, a: Action): void {
   switch (a.t) {
     case 'gather':
       return gather(ctx, a.node, a.grade, a.at);
@@ -465,6 +489,10 @@ function perform(ctx: Ctx, a: Action): void {
       return wear(ctx, a.item, a.slot);
     case 'unwear':
       return unwear(ctx, a.slot, a.look === true);
+    case 'drop':
+      return drop(ctx, a.item, a.qty);
+    case 'pickup':
+      return pickUp(ctx, a.item);
     default:
       refuse('Unknown action.');
   }
@@ -575,9 +603,13 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   const verb = nodeVerb(r);
   if (verbLevel(b, s, verb) < r.level) refuse(`Needs ${b.professions[b.verbs[verb]]?.name ?? 'gathering'} level ${r.level}.`);
   const tool = r.tool ? requireTool(ctx, r.tool) : undefined;
-  if (bagCapacity(b, s) - bagUsed(s) <= 0) refuse('Your bag is full.');
+  // a mined node takes bare hands, and a pick or a hammer in the bag breaks it faster (the best one; it wears as any tool)
+  const helper = !r.tool && r.work === 'mine' ? bestTool(ctx, MINE_TOOLS) : undefined;
+  if (placeRoom(b, s, r.output) < 1) refuse('Your bag is full.');
+  if (weightRoom(b, s, r.output) < 1) refuse(TOO_HEAVY);
 
-  const ms = duration(ctx, r.active_ms, speedPermille(ctx, (tool ? 150 * (toolTier(ctx, tool) - 1) : 0) + 10 * effectValue(b, s, 'gather_speed_pct')));
+  const toolBonus = tool ? 150 * (toolTier(ctx, tool) - 1) : helper ? 150 * toolTier(ctx, helper) : 0;
+  const ms = duration(ctx, r.active_ms, speedPermille(ctx, toolBonus + 10 * effectValue(b, s, 'gather_speed_pct')));
   let qty = gradeYield(r.yield, grade);
   if (grade === 0) {
     if (drawBasisPoints(s.seed, nodeId, node.draws) < missKeepBp(b, s)) qty = 1;
@@ -586,6 +618,7 @@ function gather(ctx: Ctx, nodeId: string, grade: Grade, at: Tile): void {
   if (qty > 0) take(ctx, r.output, qty);
   else ctx.events.push({ e: 'nothing', verb: 'gather' });
   if (tool) wearTool(ctx, tool);
+  if (helper) wearTool(ctx, helper);
   node.readyAt = ctx.tick + ms + mulDiv(r.respawn_ms, wait, 1000);
   s.nodes[nodeId] = node;
   busy(ctx, 'gather', ms);
@@ -608,7 +641,9 @@ function dig(ctx: Ctx, spotId: string, grade: Grade, at: Tile): void {
   if (verbLevel(b, s, 'dig') < d.level) refuse(`Needs ${b.professions[b.verbs.dig]?.name ?? 'digging'} level ${d.level}.`);
   // a find picked up by hand asks for no tool and wears none
   const tool = d.tool ? requireTool(ctx, d.tool) : undefined;
-  if (bagCapacity(b, s) - bagUsed(s) <= 0) refuse('Your bag is full.');
+  // full means no find of this spot still fits: a stack with room left takes one more
+  if (d.finds.every((f) => placeRoom(b, s, f.item) < 1)) refuse('Your bag is full.');
+  if (loadWeight(b, s) >= loadMax(b, s)) refuse(TOO_HEAVY);
 
   const ms = duration(ctx, d.active_ms, speedPermille(ctx, (tool ? 150 * (toolTier(ctx, tool) - 1) : 0) + 10 * effectValue(b, s, 'dig_speed_pct')));
   // luck and the rare-find technique raise only rare and legendary chances, inside the power cap
@@ -683,14 +718,14 @@ function takeRows(ctx: Ctx, spotId: string, row: number | undefined, at: Tile): 
   const held = s.searched?.[spotId];
   if (!held || held.dawn !== searchDawn(b, ctx.tick) || held.rows.length === 0) refuse('There is nothing to take.');
   if (row !== undefined && (!Number.isSafeInteger(row) || row < 0 || row >= held.rows.length)) refuse('That is not here.');
-  let room = Math.max(0, bagCapacity(b, s) - bagUsed(s));
-  if (room <= 0) refuse('Your bag is full.');
+  // a row fits while its kind has a place and its weight stays under the edge, asked again after each take
+  const fits = (item: string) => Math.min(placeRoom(b, s, item), weightRoom(b, s, item)) > 0;
+  if (!held.rows.some((item, i) => (row === undefined || i === row) && fits(item))) refuse('Your bag is full.');
   const kept: string[] = [];
   const left: Record<string, number> = {};
   held.rows.forEach((item, i) => {
     if (row !== undefined && i !== row) return void kept.push(item);
-    if (room > 0) {
-      room -= 1;
+    if (fits(item)) {
       take(ctx, item, 1);
     } else {
       kept.push(item);
@@ -733,12 +768,22 @@ function craft(ctx: Ctx, recipeId: string, at: Tile): void {
   }
   // the bag must hold what either outcome leaves
   const miss = missOutcome(b, c);
-  const used = c.inputs.reduce((n, i) => n + i.qty, 0);
-  const growth = Math.max(
-    c.outputs.reduce((n, o) => n + o.qty, 0) - used,
-    miss.keep.reduce((n, k) => n + k.qty, 0) - used,
+  const placesNow = bagUsed(b, s);
+  const outcome = (out: readonly { item: string; qty: number }[]): number => {
+    const delta: Record<string, number> = {};
+    for (const i of c.inputs) delta[i.item] = (delta[i.item] ?? 0) - i.qty;
+    for (const o of out) delta[o.item] = (delta[o.item] ?? 0) + o.qty;
+    return placesWith(b, s, delta);
+  };
+  const after = Math.max(outcome(c.outputs), outcome(miss.keep));
+  if (after > placesNow && after > bagCapacity(b, s)) refuse('Your bag is too full for what this makes.');
+  // and the weight: what either outcome adds must stay under the most the player carries
+  const inWeight = c.inputs.reduce((n, i) => n + i.qty * itemWeight(b, i.item), 0);
+  const heavier = Math.max(
+    c.outputs.reduce((n, o) => n + o.qty * itemWeight(b, o.item), 0) - inWeight,
+    miss.keep.reduce((n, k, i) => n + k.qty * itemWeight(b, c.inputs[i]?.item ?? ''), 0) - inWeight,
   );
-  if (growth > bagCapacity(b, s) - bagUsed(s)) refuse('Your bag is too full for what this makes.');
+  if (heavier > 0 && loadWeight(b, s) + heavier > loadMax(b, s)) refuse('What this makes would be too heavy to carry.');
 
   const ms = duration(ctx, c.active_ms, speedPermille(ctx, 10 * effectValue(b, s, 'craft_speed_pct', profession)));
   // one draw per try of this recipe (rule R4); a sure craft takes its turn of the counter too
@@ -770,8 +815,13 @@ function eat(ctx: Ctx, itemId: string): void {
   // only a food that does nothing but good can be too much; a bad fruit is eaten full or not
   const hurts = item.food.hurt ?? 0;
   if (hurts === 0 && s.player.satiety >= cap) refuse('You are full.');
-  // a hearty eater gets more from a meal, not from a bandage
-  const fill = mulDiv(item.food.satiety * 1000, 100 + (item.kind === 'food' ? effectValue(b, s, 'meal_fill_pct') : 0), 100);
+  // a hearty eater gets more from a meal, not from a bandage; a body with nothing to digest gets less from food, never from a bandage (2026-10-23)
+  const meal = item.kind === 'food';
+  const fill = mulDiv(
+    mulDiv(item.food.satiety * 1000, 100 + (meal ? effectValue(b, s, 'meal_fill_pct') : 0), 100),
+    meal ? foodFillPermille(b, s) : 1000,
+    1000,
+  );
   removeItem(ctx, itemId, 1);
   s.player.satiety = Math.min(cap, s.player.satiety + fill);
   ctx.events.push({ e: 'eat', item: itemId, satiety: s.player.satiety });
@@ -891,7 +941,8 @@ function buy(ctx: Ctx, npcId: string, itemId: string, qty: number, at: Tile): vo
   if (!offer) refuse('That is not for sale here.');
   const total = offer.price_mg * qty;
   if (s.player.boundGold + s.player.gold < total) refuse('You do not have enough gold.');
-  if (bagCapacity(b, s) - bagUsed(s) < qty) refuse('Your bag is too full.');
+  if (placeRoom(b, s, itemId) < qty) refuse('Your bag is too full.');
+  if (weightRoom(b, s, itemId) < qty) refuse('That would be too heavy to carry.');
   // the bound starting gold pays first, the purse the rest; this is the only place the bound balance is spent
   const fromBound = Math.min(s.player.boundGold, total);
   const fromPurse = total - fromBound;
@@ -1403,7 +1454,7 @@ function moveTo(ctx: Ctx, at: Tile, validateTravel: boolean): void {
   const { b, s } = ctx;
   if (!Array.isArray(at) || at.length !== 2 || !Number.isSafeInteger(at[0]) || !Number.isSafeInteger(at[1])) refuse('Where are you?');
   if (!walkableFor(b)(at[0], at[1], s.player)) refuse('You cannot stand there.');
-  const reach = 2 + idiv(ctx.tick - s.player.movedAt, b.params.walk_step_ms);
+  const reach = 2 + idiv(ctx.tick - s.player.movedAt, walkStepMs(b, s));
   if (Math.max(Math.abs(at[0] - s.player.at[0]), Math.abs(at[1] - s.player.at[1])) > reach) refuse('That is further than a walk goes in that time.');
   arrive(ctx, at);
 }
@@ -1414,7 +1465,8 @@ function checkTravel(ctx: Ctx, target: Tile): void {
   const from = s.player.at;
   if (!Array.isArray(target) || target.length !== 2 || !target.every(Number.isSafeInteger)) refuse('Where are you?');
   const elapsed = Math.max(0, tick - s.player.movedAt);
-  const reach = Math.min(2 + idiv(elapsed, b.params.walk_step_ms), b.params.move_reach_max);
+  // the pace the load allows (DECISIONS.md, 2026-10-23): a heavy player cannot report a light walk
+  const reach = Math.min(2 + idiv(elapsed, walkStepMs(b, s)), b.params.move_reach_max);
   const dx = target[0] - from[0];
   const dy = target[1] - from[1];
   if (Math.abs(dx) > reach || Math.abs(dy) > reach) refuse('That is further than a walk goes in that time.');
@@ -1650,14 +1702,23 @@ function toolTier(ctx: Ctx, itemId: string): number {
   return ctx.b.items[itemId]?.tool?.tier ?? 1;
 }
 
-function requireTool(ctx: Ctx, kind: string): string {
+/** The tool kinds that help break a mined node; none is needed. */
+const MINE_TOOLS: readonly string[] = ['pick', 'hammer'];
+
+/** The highest-tier tool of these kinds in the bag (by id on a tie), or none. */
+function bestTool(ctx: Ctx, kinds: readonly string[]): string | undefined {
   const { b, s } = ctx;
   let best: string | undefined;
   for (const id of Object.keys(s.player.bag).sort()) {
     const tool = b.items[id]?.tool;
-    if (!tool || tool.kind !== kind || (s.player.bag[id] ?? 0) < 1) continue;
+    if (!tool || !kinds.includes(tool.kind) || (s.player.bag[id] ?? 0) < 1) continue;
     if (!best || tool.tier > toolTier(ctx, best)) best = id;
   }
+  return best;
+}
+
+function requireTool(ctx: Ctx, kind: string): string {
+  const best = bestTool(ctx, [kind]);
   if (!best) refuse(`You need ${/^[aeiou]/.test(kind) ? 'an' : 'a'} ${kind} for this.`);
   return best;
 }
@@ -1677,10 +1738,41 @@ function wearTool(ctx: Ctx, itemId: string): void {
   }
 }
 
+/** Put down what is not worn on the player's tile (DECISIONS.md, 2026-10-23): it stays there, saved, until picked up. */
+function drop(ctx: Ctx, itemId: string, qty: number): void {
+  const p = ctx.s.player;
+  checkQty(qty);
+  let worn = 0;
+  for (const layer of [p.worn, p.looks]) for (const id of Object.values(layer)) if (id === itemId) worn++;
+  if ((p.bag[itemId] ?? 0) - worn < qty) refuse(worn > 0 ? 'Take it off before you put it down.' : 'You do not have enough.');
+  removeItem(ctx, itemId, qty, true);
+  const at: Tile = [p.at[0], p.at[1]];
+  const ground = (p.ground ??= {});
+  const pile = (ground[groundKey(at)] ??= {});
+  pile[itemId] = (pile[itemId] ?? 0) + qty;
+  ctx.events.push({ e: 'drop', item: itemId, qty, at });
+}
+
+/** Pick up a dropped thing from the tile the player stands on: as much as the places and the weight take. */
+function pickUp(ctx: Ctx, itemId: string): void {
+  const { b, s } = ctx;
+  const p = s.player;
+  const key = groundKey(p.at);
+  const pile = p.ground?.[key];
+  const n = pile?.[itemId] ?? 0;
+  if (!pile || n < 1) refuse('There is nothing like that here.');
+  if (placeRoom(b, s, itemId) < 1) refuse('Your bag is full.');
+  if (weightRoom(b, s, itemId) < 1) refuse(TOO_HEAVY);
+  const kept = addItem(ctx, itemId, n);
+  if (kept < n) pile[itemId] = n - kept;
+  else delete pile[itemId];
+  if (Object.keys(pile).length === 0) delete p.ground![key];
+}
+
 /** Put something into the bag; returns how many fit. */
 function addItem(ctx: Ctx, itemId: string, qty: number): number {
   const { b, s } = ctx;
-  const room = Math.max(0, bagCapacity(b, s) - bagUsed(s));
+  const room = Math.min(placeRoom(b, s, itemId), weightRoom(b, s, itemId));
   const kept = Math.min(qty, room);
   if (kept > 0) {
     s.player.bag[itemId] = (s.player.bag[itemId] ?? 0) + kept;

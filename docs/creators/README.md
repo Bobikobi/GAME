@@ -59,15 +59,19 @@ Open `content/extensions/<your-handle>/resources/wild-plums.json`. Rename the fi
 
 - `items[0].name` and `description` - what the player reads.
 - `items[0].class`, `family` and `tier` - what the fruit is: `plant`, family `plum`, tier 1. See [Classes and tiers](#classes-and-tiers).
+- `items[0].weight` - how heavy one is, a whole number from 0 to 20. Most things weigh 1; a log or a stone 3; a herb or a coin 0. The load sets the player's pace.
 - `food.satiety` - how much one fruit fills, 1 to 100. A redberry gives 4, a cooked berry mash 15.
 - `node.yield` - fruit per pick with perfect timing, 1 to 20.
 - `node.active_ms` - how long one pick takes, from 1000 to 15000 ms.
 - `node.respawn_ms` - how long before the same bush gives again. Waiting is never paid.
 - `node.count` - how many bushes grow in the slot, 1 to 12.
 - `node.hours` - optional. `[18, 6]` makes a fruit that only ripens at night.
-- `node.tool` - optional. `basket`, `trowel` or `axe`: the tool the player must carry to gather it. With `axe` the node is a tree: gathering it is felling, which trains Woodcutting (`core/woodcutting`) instead of Foraging, and `node.level` is the Woodcutting level it asks for. Wood comes only this way: the check refuses an item of class `wood` from any other node, and from a dig spot.
+- `node.tool` - optional. `basket`, `trowel` or `axe`: the tool the player must carry to gather it. With `axe` the node is a tree: gathering it is felling, which trains Woodcutting (`core/woodcutting`) instead of Foraging, and `node.level` is the Woodcutting level it asks for. Wood comes only this way: the check refuses an item of class `wood` from any other node, and from a dig spot. With `rod` the node is a fishing spot: gathering it is fishing, which trains Fishing (`core/fishing`), and `node.level` is the Fishing level it asks for.
+- `node.work` - optional, `"mine"` on a node with no `tool`: it is mined, broken with blows that run by themselves after one press, as a tree is felled, with no minigame. It trains Digging (`core/digging`), and `node.level` is the Digging level it asks for. Bare hands mine; a pick or a hammer in the bag makes it faster and wears a little each time. The river stones are mined.
+- `node.game` - optional: the minigame, `timing` (the default), `strike`, `pick`, `snap` or `fish`. `fish` is the cast, the wait, the nibble and the bite: give it to a node fished with `rod`.
 - `node.solid` - optional. `true` keeps the tile blocked ready or not, as a tree does: the stump stays in the way until the tree is grown again. Left out, the player walks through it.
 - `node.growth` - optional, up to 3 sprites between `sprite_empty` and `sprite`. While the node grows back, the game shows them one after the other by how much of `respawn_ms` has passed, so a felled oak goes stump, sapling, young tree, oak. Needs a `sprite_empty`.
+- `node.place.water` - optional. `true` puts the node on the slot's water tiles beside the bank, for a fishing spot; the slot needs water in it. Left out, a node stands on the ground.
 - `node.place.slot` - where it grows. The empty resource slot today: `core/west-glade` (by the meadow where you wake up); the garden in the ruins grows the bell bushes since P-3. One extension per slot.
 
 You never set a price. The game works out every item's value from the effort it takes to get, and the trader pays from that. A rarer, slower fruit is worth more on its own. The trader pays a share of the value: 75 percent for a thing someone made, an item whose value comes from a recipe (`k_craft_permille`), and 50 percent for anything else (`k_permille`). The shop charges at least the full value.
@@ -167,18 +171,19 @@ The check then asks one thing more: a try never loses value on average. Take the
 
 `content/core/recipes/reed-hat.json` makes a hat you wear while you gather. An item you wear has `wear`:
 
-- `wear.slot` - `head`, `top`, `legs`, `outfit` (the top and the legs at once), `feet`, `jewelry` (two places) or `hand`. A piece of class `garment` goes on the head, top, legs, outfit or feet, a piece of class `jewelry` in a jewelry place, and the hand holds a tool.
+- `wear.slot` - `head`, `top`, `legs`, `outfit` (the top and the legs at once), `feet`, `jewelry` (two places), `hand` or `back`. A piece of class `garment` goes on the head, top, legs, outfit, feet or back, a piece of class `jewelry` in a jewelry place, and the hand holds a tool.
+- `wear.places`, `wear.load_bonus` - a bag on the back: how many places it gives (no bag gives 12, a satchel 24), and for a frame bag how much it adds to the weight limit. Only a work piece on the back has them.
 - `wear.effects` - one or two small bonuses from a closed list: `gather_speed_pct`, `dig_speed_pct`, `craft_speed_pct`, `craft_chance_pct` and `rare_find_pct`. Each is a percent, each effect once, at most the cap of the item's tier (`wear_effect_max_pct`, `[5, 8, 12]` today: 5 at tier 1, 8 at tier 2, 12 at tier 3). The reed hat is tier 2 and gives 5.
 - `wear.set` - optional: an id of your own that two or more of your pieces name, and that fits on the character at once (one piece per place, two jewelry pieces at most). Worn whole, a set's effects grow by `wear_set_bonus_pct` (20 percent today). The reed hat and the reed sandals make the set `core/reed-walker`.
 - `wear.look` - a look shows and counts for nothing: no effects and no set.
 
-Worn items are work clothes. They help the work and never protect you from a hazard; no effect on the list does that. A worn item stays in your bag and comes off when it leaves.
+Worn items are work clothes. They help the work and never protect you from a hazard; no effect on the list does that. A worn item stays in your bag and comes off when it leaves. It takes no place while worn, and neither do two tools: the one in the hand (worn there, or else one from the bag) and one at the belt; every other tool takes a place, and the weight of all of them still counts. Other things of one kind share a place, up to `place_stack` (ten) to a place.
 
 ### A tool
 
 `content/core/recipes/flint-trowel.json` makes a trowel that wears out, and `stone-trowel.json` one that lasts. A tool is an item of kind `tool` and class `tool`, with `tool`:
 
-- `tool.kind` - `basket` or `trowel`, the kinds the world uses today.
+- `tool.kind` - `basket`, `trowel`, `axe` or `rod`, the kinds the world uses today; `fishing-rod.json` makes the rod.
 - `tool.tier` - the same as the item's `tier`. Each tier above 1 adds 15 percent to the speed of the work, and the best tool of its kind in your bag does it.
 - `tool.uses` - optional: the tool breaks after this many uses. Leave it out and the tool lasts. The core's tier 2 tools wear out and its tier 3 tools last.
 
@@ -235,7 +240,7 @@ Run it from a full Git clone after commits exist. The generated board is committ
 
 Sprites live in a kit: `content/kit/<your-handle>/kit.json` plus PNG files next to it.
 
-- Two grids. A new sprite is drawn at 64 art pixels per tile and says `"density": 4` in its kit entry: items and tiles 64x64, character frames 64x96, props up to 384x384 (six tiles a side). The 16 pixel grid is still accepted, with no `density` or `"density": 1`: items and tiles 16x16, character frames 16x24, props up to 64x64. A size that belongs to the other grid is an error: a 64x64 tile with no `density: 4` is refused, and the message says so.
+- Two grids. A new sprite is drawn at 64 art pixels per tile and says `"density": 4` in its kit entry: items and tiles 64x64, character frames 64x96, props up to 384x384 (six tiles a side). The 16 pixel grid (no `density`, or `"density": 1`: items and tiles 16x16, character frames 16x24, props up to 64x64) is closed to new art: the whole game is drawn rich (DECISIONS.md, 2026-10-23), `pnpm check` refuses a new sprite on it, and only the core kit's sprites still waiting for their redraw keep it, by name in `tools/src/kit/rich.ts`. A size that belongs to the other grid is an error: a 64x64 tile with no `density: 4` is refused, and the message says so.
 - Character work poses have two frames, tool raised, then tool down: 128x128 at density 4, 32x32 at density 1.
 - A generated sprite may name where it came from: `"source": {"spec": "tools/kit-gen/<spec>.json", "manifest": "<path>/manifest.jsonl:<line>"}`.
 - Only the 32 colors of the core palette, and every pixel fully clear or fully solid.
@@ -261,7 +266,7 @@ Then point your item at it: `"sprite": "<your-handle>/kit:items/plum"`.
 
 ## Tools and the first morning
 
-A tool is an item with a `tool` block: its `kind` (`basket`, `trowel`, `axe`, `staff`, `hammer` or `pick`), a `tier` and the `uses` it has before it wears out. Tools have no value of their own, so a shop prices them: Pell sells the basket, the trowel, the axe and the staff. A staff, a hammer and a pick ask for no work: they are worn in the hand for what their `wear` block helps.
+A tool is an item with a `tool` block: its `kind` (`basket`, `trowel`, `axe`, `staff`, `hammer` or `pick`), a `tier` and the `uses` it has before it wears out. Tools have no value of their own, so a shop prices them: Pell sells the basket, the trowel, the axe and the staff. A staff, a hammer and a pick ask for no work: they are worn in the hand for what their `wear` block helps, and a hammer or a pick in the bag also breaks a mined node (`node.work`) faster.
 
 A new game starts with two things. The player chooses a race; the world's seed draws the wake pocket, the same draw for every race. Every character meets the others at the bridge and the first fire.
 
@@ -283,6 +288,7 @@ A race (`"type": "race"`) is chosen at the title. It is a fixed profile, never a
 - `home`: the race's two home attributes, each at 1 or more.
 - `grades`: how each world takes the race, `weak`, `normal` or `strong`. A world left out is `normal`; the valley is neutral to every race. Where the world under the player is strong, each home attribute rises by one; where it is weak, each drops by one, never below 0. Home is always `strong`. The core names four worlds: `valley`, `north`, `south` and `city`; a map or a region of it names its `world`.
 - `outfit`: up to three `{ "item", "qty" }` stacks put in the bag and worn on the first morning, one per place, tier 1, never a weapon and never a tool a wake pocket lays on its ground.
+- `body`: optional, one fact about the race's body with one or two effects from a closed list: `rest_mend_permille` (what a rest by a fire mends, against 1000), `food_fill_permille` (what food fills, against 1000), `pace_load_permille` (how heavy the load counts for pace, against 1000) and `bag_places` (places added in any bag). Each effect once.
 - `sprite`, `sprite_alt`: the figure the race is drawn with, and an optional second look.
 
 The check keeps the starts fair over every pair of a race and a wake pocket. Every pocket gives an axe before the first fire, on its ground or on a spot of its own, because the first fire is built from a felled oak; a shop sells an axe, so a worn-out one can be bought again; and the opening never asks for more logs than the oaks of a new valley give. Every race's attributes add up to 7. The race's outfit with the pocket's own finds is worth about the same for every pair (within 25 percent of the poorest), and every pair reaches the bridge with its axe in about the same time (within 50 percent of the fastest). A pocket's own spot gives one find at 100 percent, needs only a tool the pocket's ground lays, and lies within the senses of the race with the fewest on the road to the bridge, on a tile where x + y is even.

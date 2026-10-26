@@ -14,7 +14,8 @@
       "rarity": "common",
       "class": "stone",
       "tier": 1,
-      "sprite": "core/base-kit:items/stone"
+      "sprite": "core/base-kit:items/stone",
+      "weight": 3
     }
   ],
   "node": {
@@ -25,7 +26,7 @@
     "count": 3,
     "sprite": "core/base-kit:props/rock_stones",
     "level": 1,
-    "game": "strike",
+    "work": "mine",
     "place": {
       "slot": "core/river-stones"
     }

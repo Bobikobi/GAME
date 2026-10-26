@@ -15,6 +15,7 @@
       "class": "meal",
       "tier": 1,
       "sprite": "core/base-kit:items/herb-stew",
+      "weight": 1,
       "food": {
         "satiety": 40
       }

@@ -202,12 +202,13 @@ async function run(page: Page, url: string, viewport: Viewport, name: string): P
     c,
     [
       ['Tools', ['Basket', 'Trowel', 'Axe', 'Walking staff']],
+      ['To wear', ['Satchel']],
       ['Food and drink', ['Redberry', 'Herb tea', 'Berry mash']],
       ['Medicine', ['First-aid kit']],
     ],
     "Pell's stall",
   );
-  if (c.jump.length !== 3 || !c.jump[0]!.startsWith('Tools')) throw new Error(`the strip reads ${JSON.stringify(c.jump)}`);
+  if (c.jump.length !== 4 || !c.jump[0]!.startsWith('Tools')) throw new Error(`the strip reads ${JSON.stringify(c.jump)}`);
   await shot('pell');
   log(`Pell: ${c.groups.map((g) => `${g.name} ${g.rows.length}`).join(', ')}`);
 
@@ -218,6 +219,13 @@ async function run(page: Page, url: string, viewport: Viewport, name: string): P
     'the medicine group in view',
     5000,
   );
+  // the jump scrolls smoothly: tap the row only once the list has come to rest, or the tap lands where the row was
+  for (let i = 0, last = -1; i < 40; i++) {
+    const top = await page.eval<number>(`document.querySelector('.panel.shop .panel-body').scrollTop`);
+    if (top === last) break;
+    last = top;
+    await sleep(100);
+  }
   const before = await page.eval<number>(`window.__game.session.state.player.bag['core/first-aid-kit'] ?? 0`);
   await tap(page, '.shop-group[data-group="medicine"] .row button', 'Buy');
   await page.waitFor(`(window.__game.session.state.player.bag['core/first-aid-kit'] ?? 0) === ${before + 1}`, 'a first-aid kit in the bag', 3000);

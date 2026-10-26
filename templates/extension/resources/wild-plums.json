@@ -17,6 +17,7 @@
       "family": "plum",
       "tier": 1,
       "sprite": "core/base-kit:items/berry",
+      "weight": 1,
       "food": {
         "satiety": 5
       }

@@ -17,10 +17,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  verify:
-    name: Check, test, build and play
+  # schemas, content, lint, types, unit tests, the build and the database: about 2.5 minutes green
+  checks:
+    name: Check, test and build
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 6
     # the base the checks against develop compare with (tools/src/decisions/base.ts): on a pull request
     # the checkout is the merge commit, so HEAD^1 is the tip of the base branch; a push has no base
     env:
@@ -99,20 +100,58 @@ jobs:
           DATABASE_URL: postgres://game:game@localhost:5432/game
         run: pnpm exec vitest run server/test/sim.test.ts server/test/boards.test.ts
 
-      # the opening flakes on slow runners (issue #25): one retry, and the screenshots of
-      # the failed attempt are kept so the flake stays visible and countable
-      - name: Play the opening in Chrome, on a phone screen and a desktop
+  # the groups of browser tests and each one's timeout, read from game/e2e/run.ts so a group added
+  # there is played here without a change to this file (plain node 24 runs it: it imports only node)
+  e2e-groups:
+    name: The browser test groups
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    outputs:
+      groups: ${{ steps.list.outputs.groups }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: game/e2e
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+      - id: list
+        run: echo "groups=$(node game/e2e/run.ts --list)" >> "$GITHUB_OUTPUT"
+
+  # the browser tests, one job per group beside the checks: the run lasts as long as the phone opening,
+  # not the sum of every script. A script that fails is played once more alone (game/e2e/run.ts), and
+  # the screenshots of its first attempt are kept, so a flake on a slow runner (issue #25) costs one
+  # script and stays visible and countable.
+  e2e:
+    name: Play in Chrome (${{ matrix.group }})
+    needs: e2e-groups
+    runs-on: ubuntu-24.04
+    timeout-minutes: ${{ matrix.minutes }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.e2e-groups.outputs.groups) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # what the scripts serve: the bundle, game/dist and the optional 3D door in game/dist-3d
+      - name: Build the game
         run: |
-          if pnpm e2e e2e-shots; then exit 0; fi
-          echo "::warning::The opening e2e failed on attempt 1; attempt 2 follows (known flake on slow runners, issue #25)."
-          rm -rf e2e-shots-attempt1
-          if [ -d e2e-shots ]; then mv e2e-shots e2e-shots-attempt1; fi
-          pnpm e2e e2e-shots
+          pnpm bundle
+          pnpm --filter game build
+          pnpm exec tsx tools/src/site/build-3d.ts
+      - name: Play ${{ matrix.group }}
+        run: pnpm e2e:group "${{ matrix.group }}" e2e-shots --retry
       - name: Keep the screenshots of a failed first attempt
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: e2e-screenshots-attempt1
+          name: e2e-screenshots-attempt1-${{ matrix.group }}
           path: e2e-shots-attempt1/
           if-no-files-found: ignore
           retention-days: 14
@@ -120,7 +159,23 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: e2e-screenshots
+          name: e2e-screenshots-${{ matrix.group }}
           path: e2e-shots/
           if-no-files-found: ignore
           retention-days: 14
+
+  # the required check, by this exact name: branch protection on main and develop and the landing
+  # scripts read it. Green only when every job above passed; a failed, skipped or cancelled one fails it.
+  verify:
+    name: Check, test, build and play
+    needs: [checks, e2e-groups, e2e]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Every job passed
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          echo "$NEEDS" | jq -e 'length == 3 and all(.[]; .result == "success")' > /dev/null

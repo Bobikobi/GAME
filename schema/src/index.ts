@@ -50,7 +50,7 @@ export const Rarity = Type.Union(RARITIES.map((r) => Type.Literal(r)), {
  * A staff, a hammer and a pick are worn in the hand for what they help; no work asks for one yet.
  * The hammer and the pick are the human's and the skeleton's outfit tools (DECISIONS.md, 2026-10-22).
  */
-export const TOOL_KINDS = ['basket', 'trowel', 'axe', 'staff', 'hammer', 'pick'] as const;
+export const TOOL_KINDS = ['basket', 'trowel', 'axe', 'staff', 'hammer', 'pick', 'rod'] as const;
 export const ToolKind = Type.Union(TOOL_KINDS.map((k) => Type.Literal(k)));
 
 export const STATIONS = ['fire', 'workshop'] as const;
@@ -146,10 +146,14 @@ export const Output = Type.Object(
   { additionalProperties: false },
 );
 
-/** The slots an item names: jewelry takes either of two places on the character, an outfit takes the top and the legs. */
-export const WORN_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'jewelry', 'hand'] as const;
+/**
+ * The slots an item names: jewelry takes either of two places on the character, an outfit takes the top and the legs,
+ * and the back holds one bag or one quiver (DECISIONS.md, 2026-10-23: races, weight and bags).
+ */
+export const WORN_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'jewelry', 'hand', 'back'] as const;
 export const WornSlot = Type.Union(WORN_SLOTS.map((k) => Type.Literal(k)), {
-  description: 'Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).',
+  description:
+    'Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).',
 });
 
 /** The effects a worn item may carry: rates of work, never the output of a craft (rule R9). Every one is in EFFECTS too. */
@@ -179,10 +183,21 @@ export const Wear = Type.Object(
       ...Id,
       description: 'A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.',
     }),
+    places: Type.Optional(
+      Int(
+        1,
+        99,
+        'A bag on the back: the places it gives, instead of the hands\' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).',
+      ),
+    ),
+    load_bonus: Type.Optional(
+      Int(1, 100, 'A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.'),
+    ),
   },
   {
     additionalProperties: false,
-    description: 'Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.',
+    description:
+      'Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).',
   },
 );
 
@@ -202,6 +217,11 @@ export const ItemDef = Type.Object(
       Int(1, 20, 'How advanced it is, from 1. The rarity says how often it appears; the tier says how far up the ladder it is. A tool has the tier of its "tool".'),
     ),
     sprite: SpriteRef,
+    weight: Int(
+      0,
+      20,
+      'How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.',
+    ),
     food: Type.Optional(
       Type.Object(
         {
@@ -286,10 +306,16 @@ export const ResourceBody = Type.Object(
         'A quest id. The node cannot be struck by a character who was offered that quest and has not finished it; a character who was never offered it strikes the node as usual. The refusal says one short line and costs nothing.',
     }),
     tool: Type.Optional(ToolKind),
-    level: Int(1, 20, 'Level required, in the profession the node trains: felling when the tool is an axe, foraging otherwise.'),
+    work: Type.Optional(
+      Type.Literal('mine', {
+        description:
+          'How the node is worked when it needs no tool. "mine": broken with blows that run by themselves after one press, as felling does; it trains digging, a pick or a hammer in the bag makes it faster (the best one, worn a little each time), and bare hands still do it. Left out: gathered by hand with the minigame of `game`.',
+      }),
+    ),
+    level: Int(1, 20, 'Level required, in the profession the node trains: felling when the tool is an axe, fishing when it is a rod, digging when the node is mined, foraging otherwise.'),
     game: Type.Optional(
-      Type.Union([Type.Literal('timing'), Type.Literal('strike'), Type.Literal('pick'), Type.Literal('snap')], {
-        description: 'The minigame played when gathering: "timing" (stop a marker in the middle, the default), "strike" (three timed hammer strikes, for stone), "pick" (press only for the ripe ones, for plants) or "snap" (press fast, for wood).',
+      Type.Union([Type.Literal('timing'), Type.Literal('strike'), Type.Literal('pick'), Type.Literal('snap'), Type.Literal('fish')], {
+        description: 'The minigame played when gathering: "timing" (stop a marker in the middle, the default), "strike" (three timed hammer strikes, for stone), "pick" (press only for the ripe ones, for plants), "snap" (press fast, for wood) or "fish" (cast, wait for the bite and strike as the float goes under, then reel in; for a node fished with a rod).',
       }),
     ),
     hours: Type.Optional(
@@ -303,6 +329,11 @@ export const ResourceBody = Type.Object(
             minItems: 1,
             uniqueItems: true,
             description: 'More resource slots that each hold exactly one of these nodes: a tree or a log standing where the map already shows one. They add supply only: `count`, the value and the opening\'s log floor follow the main slot.',
+          }),
+        ),
+        water: Type.Optional(
+          Type.Literal(true, {
+            description: 'The nodes lie on the water tiles of the slot that touch the land, and are worked from the bank: fishing spots. Left out, they lie on the land tiles of the slot.',
           }),
         ),
       },
@@ -817,6 +848,17 @@ const AttributeSet = Type.Object(
 );
 
 /**
+ * What a race's body does beyond its six numbers (DECISIONS.md, 2026-10-23): a closed list, read by the kernel.
+ * rest_mend_permille: what a rest by a fire mends, against everyone's 1000; food_fill_permille: what food fills,
+ * against 1000; pace_load_permille: how much of the load counts for the walking pace, against 1000; bag_places:
+ * places added to any bag on the back (never to bare hands).
+ */
+export const BODY_EFFECTS = ['rest_mend_permille', 'food_fill_permille', 'pace_load_permille', 'bag_places'] as const;
+export const BodyEffect = Type.Union(BODY_EFFECTS.map((k) => Type.Literal(k)), {
+  description: 'What the body changes: the mend of a rest by a fire, the fill of food, the share of the load that counts for pace, or the places of any bag.',
+});
+
+/**
  * A race (DECISIONS.md, 2026-10-22): chosen at the title, the player's fixed profile, the two home
  * attributes each world grades, and what it wears on the first morning. The race never gates a quest
  * step; a line may differ by race (`when.race`).
@@ -842,6 +884,23 @@ export const RaceBody = Type.Object(
         maxItems: 3,
         description: 'What the race wears on the first morning: put in the bag and worn at once. Never a weapon, never the pocket\'s tool.',
       }),
+    ),
+    body: Type.Optional(
+      Type.Object(
+        {
+          name: Name,
+          about: { ...Text, description: 'The body fact in one plain sentence: the good side and its cost.' },
+          effects: Type.Array(
+            Type.Object({ effect: BodyEffect, value: Int(1, 5000, 'Permille for the three rates, a count for bag_places.') }, { additionalProperties: false }),
+            { minItems: 1, maxItems: 2, description: 'One or two effects, each named once: the good side and, when the body pays for it here, the cost.' },
+          ),
+        },
+        {
+          additionalProperties: false,
+          description:
+            'One body fact per race, equal in size (DECISIONS.md, 2026-10-23): a weakness always matched by a real advantage. It never opens or closes a place (G70).',
+        },
+      ),
     ),
     sprite: { ...SpriteRef, description: 'The figure the race is drawn with. Until the race\'s own art comes, an existing sheet.' },
     sprite_alt: Type.Optional(
@@ -1005,7 +1064,7 @@ export const Effect = Type.Union(EFFECTS.map((k) => Type.Literal(k)), {
 export const ProfessionBody = Type.Object(
   {
     name: Name,
-    verb: Type.Union([Type.Literal('gather'), Type.Literal('fell'), Type.Literal('dig'), Type.Literal('craft')]),
+    verb: Type.Union([Type.Literal('gather'), Type.Literal('fell'), Type.Literal('dig'), Type.Literal('fish'), Type.Literal('craft')]),
     stations: Type.Optional(
       Type.Array(Station, {
         minItems: 1,
@@ -1276,14 +1335,36 @@ export const ParamsBody = Type.Object(
       },
       { additionalProperties: false, description: 'How hard each kind of hazard hits (G30, G34). A hazard is a rule, not a roll.' },
     ),
-    bag_base: Bounded,
+    bag_base: {
+      ...Bounded,
+      description: 'Places with nothing on the back: hands and belt (DECISIONS.md, 2026-10-23). A bag on the back gives its own `wear.places` instead.',
+    },
+    place_stack: {
+      ...Bounded,
+      description: 'Things of one kind that share one place: a place holds a stack of up to this many (DECISIONS.md, 2026-10-23). Weight still counts every unit.',
+    },
+    load: Type.Object(
+      {
+        base: { ...Bounded, description: 'The weight limit before might: the limit is this plus `per_point.might` for each point, plus a frame bag\'s `load_bonus`.' },
+        light_permille: { ...Bounded, description: 'Up to this share of the limit the pace is light; up to the whole limit it is steady; above it, heavy.' },
+        max_permille: { ...Bounded, description: 'Beyond this share of the limit nothing more is picked up.' },
+        light_step_ms: { ...Bounded, description: 'Milliseconds a tile at the light pace. The steady pace is `walk_step_ms`.' },
+        heavy_step_ms: { ...Bounded, description: 'Milliseconds a tile at the heavy pace.' },
+        heavy_breath_permille: { ...Bounded, description: 'How fast breath (stamina) refills in a fight while heavy, against 1000.' },
+      },
+      {
+        additionalProperties: false,
+        description:
+          'Weight and pace (DECISIONS.md, 2026-10-23): every item weighs, and the load against a limit from might sets one of three walking paces.',
+      },
+    ),
     starting_gold_mg: Bounded,
     per_point: Type.Object(
       { might: Bounded, senses: Bounded, agility_pct: Bounded, luck_permille: Bounded, stamina: Bounded, spirit: Bounded },
       {
         additionalProperties: false,
         description:
-          'What one point in an attribute adds: bag places (might), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina). Spirit is defined and read by no rule yet: its first readers come with the night layer and the tree.',
+          'What one point in an attribute adds: weight limit (might), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina). Spirit is defined and read by no rule yet: its first readers come with the night layer and the tree.',
       },
     ),
     growth: Type.Optional(
@@ -1368,7 +1449,7 @@ export const KitBody = Type.Object(
               minItems: 1,
               maxItems: 4,
               description:
-                'The ramps of this kit the sprite draws in, in order: the first is the one its outline comes from. A sprite that names none uses the core palette only.',
+                'The ramps of this kit the sprite draws in, in order. The outline is the one-pixel ink line #1b1a2e on every sprite, whatever the ramps. A sprite that names none uses the core palette only.',
             }),
           ),
           density: Type.Optional(
@@ -1905,6 +1986,7 @@ export type Stamp = Static<typeof Stamp>;
 export type EffectName = (typeof EFFECTS)[number];
 export type WornEffectName = (typeof WORN_EFFECTS)[number];
 export type WornSlotName = (typeof WORN_SLOTS)[number];
+export type BodyEffectName = (typeof BODY_EFFECTS)[number];
 export type WearDef = Static<typeof Wear>;
 export type ToolKind = (typeof TOOL_KINDS)[number];
 export type StationKind = (typeof STATIONS)[number];
