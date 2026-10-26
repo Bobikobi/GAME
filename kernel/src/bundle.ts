@@ -97,8 +97,8 @@ export interface Params {
   /** what a full set adds to its pieces' effects, in percent */
   wear_set_bonus_pct: number;
   drift_budget_permille: number;
-  satiety_cap: number;
-  satiety_drain_per_min: number;
+  /** the health bar's base top, in whole points (stamina adds to it) */
+  hp_cap: number;
   day_length_ms: number;
   /** milliseconds to walk one tile; the client's pace and the bound on a position report */
   walk_step_ms: number;

@@ -92,18 +92,13 @@ describe('what a node asks of the player', () => {
 });
 
 describe('food benefits', () => {
-  test('speak in health points and, while hunger drains, minutes of work', () => {
-    // the shipped valley drains nothing since P-5c; a world that still does says how long a food lasts
+  test('speak in health points, never in minutes of work (no hunger clock, G28)', () => {
     expect(itemBenefit(bundle, 'core/berry')).toBe('+4 health');
-    const b = structuredClone(bundle);
-    b.params.satiety_drain_per_min = 7000;
-    expect(itemBenefit(b, 'core/berry')).toBe('+4 health · about 34 s of work');
-    expect(itemBenefit(b, 'core/berry-mash')).toBe('+15 health · about 2 min of work');
+    expect(itemBenefit(bundle, 'core/berry-mash')).toBe('+15 health');
   });
 
   test('with no hunger clock nothing divides by it, and a food that hurts says so on its Eat button', () => {
     const b = structuredClone(bundle);
-    b.params.satiety_drain_per_min = 0;
     expect(itemBenefit(b, 'core/berry')).toBe('+4 health');
     const stamina = attributeEffects(b, newState(b, 1)).find((fx) => fx.attr === 'stamina')!;
     expect(stamina.next).toMatch(/^\d+ points$/);
@@ -117,7 +112,7 @@ describe('food benefits', () => {
     // what heals without being food is used, not eaten
     expect(eatLabel(bundle, 'core/bandage')).toBe('Use (+20)');
     expect(eatLabel(bundle, 'core/first-aid-kit')).toBe('Use (+50)');
-    expect(describeEvent(bundle, newState(bundle, 1), { e: 'eat', item: 'core/bandage', satiety: 50_000 })!.text).toBe('You used Bandage');
+    expect(describeEvent(bundle, newState(bundle, 1), { e: 'eat', item: 'core/bandage', hp: 50_000 })!.text).toBe('You used Bandage');
   });
 });
 
@@ -276,9 +271,6 @@ describe('skills in plain words (the owner, 10.10)', () => {
     expect(spirit.note).toMatch(/nothing yet/);
     const stamina = attributeEffects(bundle, s).find((fx) => fx.attr === 'stamina')!;
     expect(stamina.next).toMatch(/^\d+ points$/);
-    const draining = structuredClone(bundle);
-    draining.params.satiety_drain_per_min = 7000;
-    expect(attributeEffects(draining, s).find((fx) => fx.attr === 'stamina')!.next).toMatch(/^\d+ minutes$/);
   });
 });
 

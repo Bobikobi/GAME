@@ -22,7 +22,7 @@ Openfold takes all three: rules as data, keyed on tags, grown by the community t
 The kernel has no world loop. R1 says step "touches only the acting player and the entities the action names", and state stores absolute ticks, never countdowns. What looks like time passing is computed when it is asked for:
 - a predator stands where the clock puts it (`predatorAt`, kernel/src/danger.ts);
 - a fire burns until a stored tick (`fireBurns`);
-- health is a stored value minus a drain since a tick (`satietyAt`).
+- a quest window opens and closes by the hour it is asked at (health has no clock: it is a stored value, `player.hp`, G28).
 
 A reaction follows the same pattern. It is a pure function of:
 - the content;

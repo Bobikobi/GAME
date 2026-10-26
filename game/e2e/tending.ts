@@ -105,7 +105,6 @@ window.__tend = (() => {
     setTick(t) {
       const s = g().session;
       s.tick = t;
-      s.state.player.satietyAt = Math.max(s.state.player.satietyAt, s.state.tick);
     },
     hour() {
       const s = g().session, day = g().bundle.params.day_length_ms;
@@ -117,8 +116,7 @@ window.__tend = (() => {
       for (const id of Object.keys(p.quests)) if (p.quests[id] === 'active') p.quests[id] = 'done';
       for (const id of ['core/fix-the-bridge', 'core/first-fire', 'core/into-town', 'core/three-fruits', 'core/a-coin-for-maru', 'core/herbs-for-pell', 'core/a-whole-one', 'core/something-warm']) p.quests[id] = 'done';
       if (!p.restored.includes('core/old-bridge')) p.restored.push('core/old-bridge');
-      p.satiety = 100000;
-      p.satietyAt = g().session.tick;
+      p.hp = 100000;
       p.bag[LOG] = logs;
       g().session.met.add('core/elder');
     },
