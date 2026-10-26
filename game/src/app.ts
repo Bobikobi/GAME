@@ -5,6 +5,7 @@ import type { Controls } from './input';
 import { RemoteSession, WireRefusal, fetchWire } from './remote';
 import type { SignInfo } from './scenes/world';
 import type { GameSession } from './session-surface';
+import type { FishPhase } from './ui/games/shared';
 import type { UI, WorkKind } from './ui/ui';
 
 /** What the page UI asks of whichever world is on screen: the Phaser scene of /play/ or the three.js world of /play3d/. */
@@ -12,6 +13,8 @@ export interface WorldView {
   bind(session: GameSession): void;
   interact(): void;
   beat(nodeId: string, kind: WorkKind, grade: Grade): void;
+  /** a cast's state moved on (fishing): the view draws the line and float; a view without it shows the minigame only */
+  fishPhase?(nodeId: string, phase: FishPhase): void;
   signText(slotId: string): SignInfo;
   screenOf(x: number, y: number): { x: number; y: number };
   startWork(nodeId: string, onDone?: () => void): void | Promise<void>;

@@ -66,10 +66,12 @@ Open `content/extensions/<your-handle>/resources/wild-plums.json`. Rename the fi
 - `node.respawn_ms` - how long before the same bush gives again. Waiting is never paid.
 - `node.count` - how many bushes grow in the slot, 1 to 12.
 - `node.hours` - optional. `[18, 6]` makes a fruit that only ripens at night.
-- `node.tool` - optional. `basket`, `trowel` or `axe`: the tool the player must carry to gather it. With `axe` the node is a tree: gathering it is felling, which trains Woodcutting (`core/woodcutting`) instead of Foraging, and `node.level` is the Woodcutting level it asks for. Wood comes only this way: the check refuses an item of class `wood` from any other node, and from a dig spot.
+- `node.tool` - optional. `basket`, `trowel` or `axe`: the tool the player must carry to gather it. With `axe` the node is a tree: gathering it is felling, which trains Woodcutting (`core/woodcutting`) instead of Foraging, and `node.level` is the Woodcutting level it asks for. Wood comes only this way: the check refuses an item of class `wood` from any other node, and from a dig spot. With `rod` the node is a fishing spot: gathering it is fishing, which trains Fishing (`core/fishing`), and `node.level` is the Fishing level it asks for.
 - `node.work` - optional, `"mine"` on a node with no `tool`: it is mined, broken with blows that run by themselves after one press, as a tree is felled, with no minigame. It trains Digging (`core/digging`), and `node.level` is the Digging level it asks for. Bare hands mine; a pick or a hammer in the bag makes it faster and wears a little each time. The river stones are mined.
+- `node.game` - optional: the minigame, `timing` (the default), `strike`, `pick`, `snap` or `fish`. `fish` is the cast, the wait, the nibble and the bite: give it to a node fished with `rod`.
 - `node.solid` - optional. `true` keeps the tile blocked ready or not, as a tree does: the stump stays in the way until the tree is grown again. Left out, the player walks through it.
 - `node.growth` - optional, up to 3 sprites between `sprite_empty` and `sprite`. While the node grows back, the game shows them one after the other by how much of `respawn_ms` has passed, so a felled oak goes stump, sapling, young tree, oak. Needs a `sprite_empty`.
+- `node.place.water` - optional. `true` puts the node on the slot's water tiles beside the bank, for a fishing spot; the slot needs water in it. Left out, a node stands on the ground.
 - `node.place.slot` - where it grows. The empty resource slot today: `core/west-glade` (by the meadow where you wake up); the garden in the ruins grows the bell bushes since P-3. One extension per slot.
 
 You never set a price. The game works out every item's value from the effort it takes to get, and the trader pays from that. A rarer, slower fruit is worth more on its own. The trader pays a share of the value: 75 percent for a thing someone made, an item whose value comes from a recipe (`k_craft_permille`), and 50 percent for anything else (`k_permille`). The shop charges at least the full value.
@@ -181,7 +183,7 @@ Worn items are work clothes. They help the work and never protect you from a haz
 
 `content/core/recipes/flint-trowel.json` makes a trowel that wears out, and `stone-trowel.json` one that lasts. A tool is an item of kind `tool` and class `tool`, with `tool`:
 
-- `tool.kind` - `basket` or `trowel`, the kinds the world uses today.
+- `tool.kind` - `basket`, `trowel`, `axe` or `rod`, the kinds the world uses today; `fishing-rod.json` makes the rod.
 - `tool.tier` - the same as the item's `tier`. Each tier above 1 adds 15 percent to the speed of the work, and the best tool of its kind in your bag does it.
 - `tool.uses` - optional: the tool breaks after this many uses. Leave it out and the tool lasts. The core's tier 2 tools wear out and its tier 3 tools last.
 

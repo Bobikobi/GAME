@@ -57,7 +57,7 @@ const PITCH = 0.62;
 /** Signatures show over signs this close to the player, in tiles. */
 const SIGN_REACH = 5;
 const SWING_MS = 520;
-const WORK_SOUND: Record<WorkKind, SfxId> = { strike: 'strike', pick: 'pluck', snap: 'tug', timing: 'rustle', dig: 'dig' };
+const WORK_SOUND: Record<WorkKind, SfxId> = { strike: 'strike', pick: 'pluck', snap: 'tug', timing: 'rustle', dig: 'dig', fish: 'plop' };
 
 export interface Target {
   label: string;
