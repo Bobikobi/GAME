@@ -1,0 +1,19 @@
+{
+  "tool": "image_gen.imagegen",
+  "date": "2026-10-26",
+  "prompt": "Use case: stylized-concept. Asset type: one production transparent tree sprite for Openfold RICH, a top-down pixel-art RPG. Input image 1 is our approved grassy-gravel terrain atlas, STYLE REFERENCE ONLY; image 2 is our own mossy forest-floor material, STYLE REFERENCE ONLY. Draw ONE mature deciduous oak standing upright in elevated top-down 3/4 RPG view, full silhouette including roots. Portrait composition, intended logical sprite 192x320 art pixels, entire tree fits with a small transparent margin. A broad asymmetrical crown of distinct leafy masses above a visibly tall warm brown trunk; several irregular crown lobes, cool moss-green shaded underside, restrained warm olive and fresh green small highlights. Delicate broken foliage silhouette, clean readable bough structure, quiet areas inside leaf masses. Crown about 3 tiles wide, whole tree about 5 tiles tall relative to a 64x96 human sprite. Rich CRISP pixel clusters, small controlled dithering matching our terrain, no smooth painting or vector shapes. Lighting from upper left, material shading on the tree but NO cast shadow or ground patch. Transparent gaps between branches and around entire tree. Shared palette families: greens #15301f #1f3d2b #2e6b3b #4c9a3f #84c450 #c8e88a, moss #1b2a16 #2f4722 #4a6a2c #6f8d36 #9cb24c #cfd36e, bark #2a1810 #3d2618 #6e4226 #9e6b3c #c99a5e #ebd3a2. No fruit, face, fairy lights, ornaments, text, grid, other trees, background scenery or water. Tree is a separate rooted foreground layer, not painted into the terrain.",
+  "transparent_background": true,
+  "references": [
+    "../rich-river-kit-2026-10-25/bank-inner-quiet-source.png",
+    "../rich-world-2026-10-25/forest.png"
+  ],
+  "palette": "ramp-added",
+  "ramps": [
+    "green",
+    "moss",
+    "wood"
+  ],
+  "seen": "One mature deciduous oak; raised top-down RPG view; broad asymmetric crown, long trunk, rooted base; no ground or shadow",
+  "confirmed_by": "User authorized continuation of the approved RICH world direction; own-art style references only",
+  "review": "Generated source has transparent branch gaps, a readable trunk and distinct crown masses. Imported phone-scale result still requires visual review."
+}

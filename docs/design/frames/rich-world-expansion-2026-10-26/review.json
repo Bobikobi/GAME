@@ -1,0 +1,41 @@
+{
+  "status": "Connected visual study ready for owner review; new world appearance is not yet owner-approved.",
+  "preview": "http://127.0.0.1:5189/world-study.html",
+  "scope": "One connected 24x20-tile sample: meadow, winding path, woodland and grassy-gravel cove.",
+  "validation": {
+    "focusedTests": 22,
+    "pnpmCheck": "passed: 0 errors, 32 existing warnings",
+    "pnpmVerify": "passed",
+    "suiteTests": 1466,
+    "webTests": 81,
+    "browser": "Desktop 1050x850 and phone 390x844; all 4 viewpoints, walking, pause, wind, layers, plants, zoom, reduced motion; no browser errors. Previous open-sea/coast navigation and history also passed.",
+    "compositorParity": "Chunk pixels compare byte-for-byte with approved standalone renderer in focused tests.",
+    "headlessDesktopRenderMs": 38.15,
+    "performanceNote": "A local CPU measurement, not a real-phone frame-rate claim."
+  },
+  "resourceUse": {
+    "newImagegenCalls": 1,
+    "newRaster": "oak-source.png",
+    "reusedGeneratedGroundFields": 5,
+    "reusedWaterAtlas": true,
+    "reusedGrassAndReeds": true
+  },
+  "frames": [
+    "phone-meadow.png",
+    "phone-forest.png",
+    "phone-cove.png"
+  ],
+  "workingLoop": {
+    "nextStep": "Owner review of this connected sample; choose one concrete polish target.",
+    "perRound": "One visible objective, an explicit file scope and one completion check.",
+    "tools": "Search/read once; reuse existing art and importers; imagegen only for a named asset gap; add a helper only for an independent task that justifies its cost.",
+    "validation": "Focused checks first, full verification at the checkpoint; repeat only after a relevant change or failure.",
+    "stopRule": "After two iterations without a visual improvement, reassess the approach before generating or expanding further."
+  },
+  "limits": [
+    "Visual fixture only; no production map, quests, gameplay, save or 3D changes.",
+    "One shore material; sand, rock, cliff and swamp variants remain future work.",
+    "Depth and weather remain visual approximations as in approved study.",
+    "Tree art and connected composition await owner visual feedback."
+  ]
+}

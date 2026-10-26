@@ -1,9 +1,22 @@
-import * as Phaser from 'phaser';
+import type * as Phaser from 'phaser';
 import { buildWaterField, WATER_WEATHER, type WaterSample, type WaterWeather } from './water-response';
 import { waterLayers } from './layered-water';
 
 type Raster = { width: number; height: number; data: Uint8ClampedArray };
+type WaterRasters = Record<'bed' | 'body' | 'light' | 'foam', Raster>;
+const rasterCache = new WeakMap<Phaser.Textures.TextureManager, WaterRasters>();
 export type WaterLayer = 'bed' | 'reflection' | 'surface' | 'breakers';
+export interface WaterRenderBounds { left: number; top: number; right: number; bottom: number }
+/** Optional world-region plumbing; the standalone study keeps its original geometry path. */
+export interface CoastalWaterRegion {
+  x: number;
+  y: number;
+  height: number;
+  key: string;
+  field: (wind: readonly [number, number]) => WaterSample[];
+  sampleAt: (x: number, y: number) => WaterSample;
+  deferRender?: boolean;
+}
 const clamp = (v: number) => Math.max(0, Math.min(1, v));
 const offset = (r: Raster, x: number, y: number) => {
   const wrap = (v: number, n: number) => ((Math.floor(v) % n) + n) % n;
@@ -24,43 +37,67 @@ export class CoastalWaterStudy {
   private readonly resolution: number;
   private readonly texture: Phaser.Textures.CanvasTexture;
   private readonly pixels: ImageData;
-  private readonly rasters: Record<'bed' | 'body' | 'light' | 'foam', Raster>;
+  private readonly rasters: WaterRasters;
   private readonly image: Phaser.GameObjects.Image;
   private readonly land: Uint8Array;
   private readonly reflected: Uint8ClampedArray;
+  private readonly reflectionWidth: number;
+  private readonly reflectionPadding: number;
+  private readonly height: number;
+  private destroyed = false;
   private budget = 0;
+  private readonly dispose = () => this.destroy();
 
-  constructor(scene: Phaser.Scene, private readonly size: number, landAt: (x: number, y: number) => boolean,
-    private readonly landColor: (x: number, y: number) => readonly number[] | undefined) {
+  constructor(private readonly scene: Phaser.Scene, private readonly size: number, landAt: (x: number, y: number) => boolean,
+    private readonly landColor: (x: number, y: number) => readonly number[] | undefined, private readonly region?: CoastalWaterRegion) {
     this.resolution = size / 2;
-    this.land = new Uint8Array(size * size);
-    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) this.land[y * size + x] = Number(landAt(x, y));
+    this.height = region?.height ?? size;
+    this.land = new Uint8Array(region ? 0 : size * size);
+    if (!region) for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) this.land[y * size + x] = Number(landAt(x, y));
     const read = (key: string): Raster => {
       const source = scene.textures.get(`layered-${key}`).getSourceImage() as HTMLImageElement;
       const canvas = document.createElement('canvas'); canvas.width = source.width; canvas.height = source.height;
       const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
       ctx.drawImage(source, 0, 0); return ctx.getImageData(0, 0, canvas.width, canvas.height);
     };
-    this.rasters = { bed: read('bed'), body: read('body'), light: read('light'), foam: read('foam') };
-    this.texture = scene.textures.createCanvas('coastal-study-surface', this.resolution, this.resolution)!;
-    this.pixels = this.texture.getContext().createImageData(this.resolution, this.resolution);
-    this.reflected = new Uint8ClampedArray(this.pixels.data.length);
-    this.image = scene.add.image(0, 0, this.texture.key).setOrigin(0).setDisplaySize(size, size).setDepth(0);
+    let rasters = rasterCache.get(scene.textures);
+    if (!rasters) { rasters = { bed: read('bed'), body: read('body'), light: read('light'), foam: read('foam') }; rasterCache.set(scene.textures, rasters); }
+    this.rasters = rasters;
+    this.texture = scene.textures.createCanvas(region?.key ?? 'coastal-study-surface', this.resolution, this.height / 2)!;
+    this.pixels = this.texture.getContext().createImageData(this.resolution, this.height / 2);
+    this.reflectionPadding = region ? 4 : 0;
+    this.reflectionWidth = this.resolution + this.reflectionPadding * 2;
+    this.reflected = new Uint8ClampedArray(this.reflectionWidth * this.height / 2 * 4);
+    this.image = scene.add.image(region?.x ?? 0, region?.y ?? 0, this.texture.key).setOrigin(0).setDisplaySize(size, this.height).setDepth(0);
     this.rebuild();
-    scene.events.once('shutdown', () => { this.image.destroy(); scene.textures.remove(this.texture.key); });
+    scene.events.once('shutdown', this.dispose);
   }
 
   rebuild(): void {
     const landAt = (x: number, y: number) => x >= 0 && y >= 0 && x < this.size && y < this.size && this.land[Math.floor(y) * this.size + Math.floor(x)] === 1;
-    this.field = buildWaterField(this.size, 2, landAt, this.wind);
+    this.field = this.region ? this.region.field(this.wind) : buildWaterField(this.size, 2, landAt, this.wind);
     this.reflected.fill(0);
-    this.field.forEach((s, i) => {
-      if (s.land || !Number.isFinite(s.distance) || s.distance > 70) return;
+    for (let row = 0; row < this.height / 2; row++) for (let col = 0; col < this.reflectionWidth; col++) {
+      const localCol = col - this.reflectionPadding;
+      const s = localCol >= 0 && localCol < this.resolution ? this.field[row * this.resolution + localCol]!
+        : this.region!.sampleAt(this.region!.x + localCol * 2 + 1, this.region!.y + row * 2 + 1);
+      if (s.land || !Number.isFinite(s.distance) || s.distance > 70) continue;
       // Reflect actual bank art across its local shoreline, not an invented tree silhouette.
       const c = this.landColor(s.x - s.nx * (s.distance * 2 + 6), s.y - s.ny * (s.distance * 2 + 6));
-      if (c) { this.reflected.set(c.slice(0, 3), i * 4); this.reflected[i * 4 + 3] = 255; }
-    });
-    this.render();
+      const to = (row * this.reflectionWidth + col) * 4;
+      if (c) { this.reflected.set(c.slice(0, 3), to); this.reflected[to + 3] = 255; }
+    }
+    if (!this.region?.deferRender) this.render();
+  }
+
+  setVisible(visible: boolean): void { this.image.setVisible(visible); }
+
+  destroy(): void {
+    if (this.destroyed) return;
+    this.destroyed = true;
+    this.scene.events.off('shutdown', this.dispose);
+    this.image.destroy();
+    this.scene.textures.remove(this.texture.key);
   }
 
   advance(dt: number): void {
@@ -68,7 +105,7 @@ export class CoastalWaterStudy {
     if (this.budget >= 1 / 20) { this.budget %= 1 / 20; this.render(); }
   }
 
-  render(): void {
+  render(bounds?: WaterRenderBounds): void {
     const w = WATER_WEATHER[this.weather], t = this.time;
     const windLength = Math.hypot(...this.wind) || 1;
     const wx = this.wind[0] / windLength, wy = this.wind[1] / windLength;
@@ -76,6 +113,7 @@ export class CoastalWaterStudy {
     const dest = this.pixels.data;
     for (let i = 0; i < this.field.length; i++) {
       const s = this.field[i]!, to = i * 4;
+      if (bounds && (s.x < bounds.left || s.x >= bounds.right || s.y < bounds.top || s.y >= bounds.bottom)) continue;
       if (s.land) { dest[to + 3] = 0; continue; }
       const x = s.x, y = s.y, response = waterLayers(s, this.weather, this.slope, t);
       const roll = Math.sin(x * .035 + y * .045 - t * .8) * (1 + w.amplitude * .2);
@@ -90,8 +128,8 @@ export class CoastalWaterStudy {
       const foamLevel = (foam.data[f]! + foam.data[f + 1]! + foam.data[f + 2]!) / 765;
       const holes = clamp((foamLevel - .28) * 1.9);
       const foamAlpha = this.layers.breakers ? clamp((response.foam + response.retreat) * holes) : 0;
-      const refractX = Math.max(0, Math.min(this.resolution - 1, Math.floor((x + roll * 2) / 2)));
-      const reflectedIndex = (Math.floor(y / 2) * this.resolution + refractX) * 4;
+      const refractX = Math.max(0, Math.min(this.reflectionWidth - 1, Math.floor((x - (this.region?.x ?? 0) + roll * 2) / 2) + this.reflectionPadding));
+      const reflectedIndex = (Math.floor((y - (this.region?.y ?? 0)) / 2) * this.reflectionWidth + refractX) * 4;
       const reflectionAlpha = this.layers.reflection && this.reflected[reflectedIndex + 3] ? response.reflection : 0;
       for (let c = 0; c < 3; c++) {
         // Deep body stays quiet. Two low-contrast scales prevent one tiled net dominating.

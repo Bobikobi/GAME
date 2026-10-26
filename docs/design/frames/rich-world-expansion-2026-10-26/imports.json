@@ -1,0 +1,208 @@
+{
+  "density": 4,
+  "method": "Existing importTile/importSprite, shared palette snap; source-image border reconciliation only.",
+  "reports": [
+    {
+      "name": "meadow-a",
+      "source": "meadow-a-source.png",
+      "file": "meadow-a.png",
+      "ramps": [
+        "green",
+        "moss",
+        "wood"
+      ],
+      "field": [
+        128,
+        128
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "sourceGrid": [
+        418,
+        418
+      ],
+      "colors": 15,
+      "registration": "Original 128×128 field retained; four 64×64 quadrants are never shuffled.",
+      "repeat": {
+        "borderBlendPixels": 8,
+        "edgePairsBefore": {
+          "horizontal": 67,
+          "vertical": 80
+        },
+        "edgePairsAfter": {
+          "horizontal": 0,
+          "vertical": 0
+        }
+      }
+    },
+    {
+      "name": "meadow-b",
+      "source": "meadow-b-source.png",
+      "file": "meadow-b.png",
+      "ramps": [
+        "green",
+        "moss",
+        "wood"
+      ],
+      "field": [
+        128,
+        128
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "sourceGrid": [
+        418,
+        418
+      ],
+      "colors": 14,
+      "registration": "Original 128×128 field retained; four 64×64 quadrants are never shuffled.",
+      "repeat": {
+        "borderBlendPixels": 8,
+        "edgePairsBefore": {
+          "horizontal": 43,
+          "vertical": 56
+        },
+        "edgePairsAfter": {
+          "horizontal": 0,
+          "vertical": 0
+        }
+      }
+    },
+    {
+      "name": "meadow-c",
+      "source": "meadow-c-source.png",
+      "file": "meadow-c.png",
+      "ramps": [
+        "green",
+        "moss",
+        "wood"
+      ],
+      "field": [
+        128,
+        128
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "sourceGrid": [
+        418,
+        418
+      ],
+      "colors": 15,
+      "registration": "Original 128×128 field retained; four 64×64 quadrants are never shuffled.",
+      "repeat": {
+        "borderBlendPixels": 8,
+        "edgePairsBefore": {
+          "horizontal": 87,
+          "vertical": 80
+        },
+        "edgePairsAfter": {
+          "horizontal": 0,
+          "vertical": 0
+        }
+      }
+    },
+    {
+      "name": "path",
+      "source": "path-source.png",
+      "file": "path.png",
+      "ramps": [
+        "green",
+        "moss",
+        "wood"
+      ],
+      "field": [
+        128,
+        128
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "sourceGrid": [
+        345,
+        221
+      ],
+      "colors": 10,
+      "registration": "Original 128×128 field retained; four 64×64 quadrants are never shuffled.",
+      "repeat": {
+        "borderBlendPixels": 8,
+        "edgePairsBefore": {
+          "horizontal": 15,
+          "vertical": 30
+        },
+        "edgePairsAfter": {
+          "horizontal": 0,
+          "vertical": 0
+        }
+      }
+    },
+    {
+      "name": "woodland",
+      "source": "woodland-source.png",
+      "file": "woodland.png",
+      "ramps": [
+        "green",
+        "moss",
+        "wood"
+      ],
+      "field": [
+        128,
+        128
+      ],
+      "tile": [
+        64,
+        64
+      ],
+      "sourceGrid": [
+        418,
+        418
+      ],
+      "colors": 17,
+      "registration": "Original 128×128 field retained; four 64×64 quadrants are never shuffled.",
+      "repeat": {
+        "borderBlendPixels": 8,
+        "edgePairsBefore": {
+          "horizontal": 75,
+          "vertical": 81
+        },
+        "edgePairsAfter": {
+          "horizontal": 0,
+          "vertical": 0
+        }
+      }
+    },
+    {
+      "name": "oak",
+      "source": "oak-source.png",
+      "file": "oak.png",
+      "ramps": [
+        "green",
+        "moss",
+        "wood"
+      ],
+      "frame": [
+        192,
+        320
+      ],
+      "anchor": "bottom",
+      "padding": 2,
+      "outline": false,
+      "dither": true,
+      "sourceGrid": [
+        136,
+        224
+      ],
+      "colors": 18,
+      "alphaPreparation": "Only RGB of already-transparent source pixels keyed to magenta; visible source pixels and alpha retained.",
+      "normalization": "Visible imported alpha bounds fitted within188×316 by nearest sampling, aspect ratio retained; root centred with2px bottom padding.",
+      "status": "Separate transparent rooted tree; no ground or shadow painted during import."
+    }
+  ],
+  "review": "Exact opposite-edge equality is verified by the importer; material richness, internal motifs and in-engine transitions still require visual review."
+}

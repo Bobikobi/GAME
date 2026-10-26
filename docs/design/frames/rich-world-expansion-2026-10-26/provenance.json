@@ -1,0 +1,100 @@
+{
+  "date": "2026-10-26",
+  "scope": "Connected navigable visual world study; no production map, content, kernel or story changes.",
+  "tool": "image_gen.imagegen",
+  "water_approval": {
+    "date": "2026-10-26",
+    "coast_owner_words": "הדוגמא מעולה",
+    "open_sea_owner_words": "מעולה",
+    "baseline_commit": "de7640f3",
+    "coast": "../rich-layered-water-2026-10-25/provenance.json",
+    "open_sea": "/river-study.html?view=sea",
+    "equations": "Approved material and animation equations retained; world renderer caches only visible chunks with global sample coordinates."
+  },
+  "reused_ground_sources": [
+    {
+      "name": "meadow-a",
+      "prompt": "Create a production texture for Openfold, a top-down pixel-art RPG. A square seamless field of meadow grass, drawn on a strict 128 by 128 logical pixel grid and enlarged with nearest-neighbour pixels. This is four adjacent 64px ground tiles, but show NO grid, gaps, border or labels. Rich painterly pixel art: crisp small clusters, hue-shifted greens, subtle ordered dither, overlapping short grass blades, tiny clover leaves and rare dry leaf fragments. Roughly 12-16 irregular tufts per 64px square, with quiet areas between, scattered naturally rather than in rows. Low contrast overall so a player and collectable objects read clearly above it. Restrained green palette: #15301f #1f3d2b #2e6b3b #4c9a3f #84c450 #c8e88a plus moss #2f4722 #4a6a2c #6f8d36 #9cb24c, rare earth #6e4226 #9e6b3c. Mostly mid green, darkest tones only tiny root creases, sparse warm light green blade tips. Even diffuse overhead lighting, no broad baked light patches. All four sides wrap seamlessly with consistent density. Entire canvas opaque grass, edge to edge. No perspective or horizon, no trees, flowers, rocks, props, UI, cast shadows, outlines, magenta, text, watermarks, blur or photorealism. Output square.",
+      "tool": "image_gen.imagegen",
+      "date": "2026-10-24",
+      "original_source": "/home/elad-saadon/.codex/generated_images/01a16a7d-6831-7c93-9dad-4e5a15130a98/exec-20b44b7d-8992-4f06-b1d6-5665ec2b9909.png",
+      "source": "meadow-a-source.png",
+      "imported": "meadow-a.png"
+    },
+    {
+      "name": "meadow-b",
+      "prompt": "Create a production texture for Openfold, a top-down pixel-art RPG. A square seamless field of meadow grass, drawn on a strict 128 by 128 logical pixel grid and enlarged with nearest-neighbour pixels. This is four adjacent 64px ground tiles, but show NO grid, gaps, border or labels. Rich painterly pixel art: crisp small clusters, hue-shifted greens, subtle ordered dither, overlapping short grass blades, tiny clover leaves and rare dry leaf fragments. Roughly 12-16 irregular tufts per 64px square, with quiet areas between, scattered naturally rather than in rows. Low contrast overall so a player and collectable objects read clearly above it. Restrained green palette: #15301f #1f3d2b #2e6b3b #4c9a3f #84c450 #c8e88a plus moss #2f4722 #4a6a2c #6f8d36 #9cb24c, rare earth #6e4226 #9e6b3c. Mostly mid green, darkest tones only tiny root creases, sparse warm light green blade tips. Even diffuse overhead lighting, no broad baked light patches. All four sides wrap seamlessly with consistent density. Entire canvas opaque grass, edge to edge. No perspective or horizon, no trees, flowers, rocks, props, UI, cast shadows, outlines, magenta, text, watermarks, blur or photorealism. Output square.\nCandidate B: use much quieter medium-green areas, broader coherent blade clusters and far fewer isolated dark speckles. Dark roots should occupy under 8 percent; no neon yellow. Keep 40 percent calm midtone space.",
+      "tool": "image_gen.imagegen",
+      "date": "2026-10-24",
+      "original_source": "/home/elad-saadon/.codex/generated_images/01a16a7d-6831-7c93-9dad-4e5a15130a98/exec-c2795683-7307-4a64-9a57-0f6abfe3ec32.png",
+      "source": "meadow-b-source.png",
+      "imported": "meadow-b.png"
+    },
+    {
+      "name": "meadow-c",
+      "prompt": "Create a production texture for Openfold, a top-down pixel-art RPG. A square seamless field of meadow grass, drawn on a strict 128 by 128 logical pixel grid and enlarged with nearest-neighbour pixels. This is four adjacent 64px ground tiles, but show NO grid, gaps, border or labels. Rich painterly pixel art: crisp small clusters, hue-shifted greens, subtle ordered dither, overlapping short grass blades, tiny clover leaves and rare dry leaf fragments. Roughly 12-16 irregular tufts per 64px square, with quiet areas between, scattered naturally rather than in rows. Low contrast overall so a player and collectable objects read clearly above it. Restrained green palette: #15301f #1f3d2b #2e6b3b #4c9a3f #84c450 #c8e88a plus moss #2f4722 #4a6a2c #6f8d36 #9cb24c, rare earth #6e4226 #9e6b3c. Mostly mid green, darkest tones only tiny root creases, sparse warm light green blade tips. Even diffuse overhead lighting, no broad baked light patches. All four sides wrap seamlessly with consistent density. Entire canvas opaque grass, edge to edge. No perspective or horizon, no trees, flowers, rocks, props, UI, cast shadows, outlines, magenta, text, watermarks, blur or photorealism. Output square.\nCandidate C: varied short blade clusters arranged in loose irregular islands with a visible finer underlayer. Gentle olive-to-cool green hue shifts, fewer tall tufts, mostly 3-6 art-pixel blades, no repeated starburst silhouettes. Leave calm spaces.",
+      "tool": "image_gen.imagegen",
+      "date": "2026-10-24",
+      "original_source": "/home/elad-saadon/.codex/generated_images/01a16a7d-6831-7c93-9dad-4e5a15130a98/exec-4afc702b-08bb-4ec6-aad0-826b334d3114.png",
+      "source": "meadow-c-source.png",
+      "imported": "meadow-c.png"
+    },
+    {
+      "name": "path-a",
+      "prompt": "Production ground texture for Openfold top-down pixel-art RPG. Square seamless continuous field of compacted warm brown earth, a worn woodland footpath surface. Strict 128x128 logical pixel grid enlarged nearest-neighbour. It covers four adjacent 64px ground tiles with NO visible grid. Rich painterly pixel art, coherent small clusters and hue shifts, fine ordered dither. Mostly calm worn earth with shallow irregular compression marks, scattered tiny embedded pebbles and a few short dark crack fragments, never large cobbles. Restrained palette #2a1810 #3d2618 #6e4226 #9e6b3c #c99a5e #ebd3a2; sparse muted grey pebbles #4a5668 #6f7d8c #9aa7b0. Mid browns dominate, only small highlights and dark crevices. Even diffuse overhead lighting. Entire canvas opaque ground edge-to-edge, seamless across opposite sides and similar brightness at all four edges. This is ground fill, NOT a path drawn through grass: no grass border or defined road shape. No rocks larger than tiny pebbles, vegetation, objects, cast shadows, horizon, perspective, outlines, text, grid, magenta, gradients, blur or photorealism.\nA: dry, softly worn clay-rich earth with scattered small angular grains and a few pale embedded pebbles.",
+      "tool": "image_gen.imagegen",
+      "date": "2026-10-24",
+      "original_source": "/home/elad-saadon/.codex/generated_images/01a16a7d-6831-7c93-9dad-4e5a15130a98/exec-9c66dc49-0646-4748-8d3c-1267ec2eb398.png",
+      "source": "path-source.png",
+      "imported": "path.png"
+    },
+    {
+      "name": "woodland-a",
+      "prompt": "Create a production ground fill for Openfold top-down rich pixel-art RPG: square seamless woodland floor texture on a strict 128x128 logical pixel grid, enlarged nearest-neighbour. It spans four adjacent 64px ground tiles, no visible grid. Shaded earthy ground with low moss patches, small fallen leaves, short twigs and fine humus; rich painterly pixel clusters, hue shifts and fine ordered dither. Mostly calm muted brown and olive surfaces, readable at tiny game size. Leaves small (3-7 logical pixels), natural irregular scatter with restful bare patches. Diffuse overhead illumination, no cast shadows or broad lighting gradients. Restricted material colours: #1f1210 #3f1e17 #5e2e20 #7f452a #a3633a #cc8e55 #2a1810 #3d2618 #6e4226 #9e6b3c #c99a5e; moss #1b2a16 #2f4722 #4a6a2c #6f8d36 #9cb24c #cfd36e; rare faded rust leaves. Whole image fully opaque edge-to-edge, all edges seamless with matching tone. NO trees, trunks, tall plants, mushrooms, rocks, objects, grass border, path outline, horizon, perspective, borders, text, magenta, blur, photorealism.\nA: leaf litter gathered in loose small islands on cool dark humus, with moss connecting them.",
+      "tool": "image_gen.imagegen",
+      "date": "2026-10-24",
+      "original_source": "/home/elad-saadon/.codex/generated_images/01a16a7d-6831-7c93-9dad-4e5a15130a98/exec-b827e222-6aa9-4237-902e-53af012a134e.png",
+      "source": "woodland-source.png",
+      "imported": "woodland.png"
+    }
+  ],
+  "new_art": {
+    "oak": "oak-prompt.json",
+    "source": "oak-source.png",
+    "imported": "oak.png",
+    "status": "Generated and imported for this visual study; owner has not reviewed the new connected world yet."
+  },
+  "existing_art": {
+    "banks": "../rich-river-kit-2026-10-25/material.json",
+    "grass_and_reeds": "../rich-shore-2026-10-25/provenance.json",
+    "water": "../rich-layered-water-2026-10-25/provenance.json"
+  },
+  "composition_references": [
+    {
+      "title": "Eastward forest screenshot",
+      "page": "https://www.pcgamer.com/eastward-takes-a-trip-back-to-the-golden-age-of-asian-rpgs/",
+      "image": "https://cdn.mos.cms.futurecdn.net/xSHbtevXhNd96V2kSR8dDE.jpg",
+      "inspected": "Actual screenshot opened with view_image",
+      "takeaway": "Quiet ground between foliage clusters; tree masses frame a readable route. Composition reference only, not sent to imagegen."
+    },
+    {
+      "title": "Sea of Stars forest pool screenshot",
+      "page": "https://www.gamesradar.com/games/rpg/sea-of-stars-dev-assures-hungry-fans-that-its-dlc-and-co-op-mode-are-going-well-and-details-will-come-this-year-as-2023s-best-throwback-rpg-gets-even-better/",
+      "image": "https://cdn.mos.cms.futurecdn.net/RKPhgEFkwQ8m8752AGwVsd-1920-80.jpg",
+      "inspected": "Actual screenshot opened with view_image",
+      "takeaway": "Foreground foliage, readable warm route and deep quiet water are distinct visual layers. Composition reference only, not sent to imagegen."
+    }
+  ],
+  "assembly": {
+    "ground": "Whole registered128x128 generated fields sampled across64px tiles, macro blend among three meadows, authored soil route and woodland weights. Approved bank alpha and gravel retained near shore. Edge reconciliation performed by importer, no code-drawn organic motifs.",
+    "vegetation": "Generated transparent oak192x320 plus existing grass/reeds; separate root-anchored motion and player see-through.",
+    "layout": "layout.json"
+  },
+  "limitations": [
+    "One grassy-gravel shore family only; sandy beaches, cliffs and swamp families are not complete.",
+    "Depth remains distance-to-bank and manual slope; no height map or physical wave propagation.",
+    "No production weather, swimming or save/gameplay integration.",
+    "Existing character is a scale placeholder; no new character direction.",
+    "Connected-world appearance remains for owner review."
+  ]
+}

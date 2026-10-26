@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>מקטע עולם — RICH</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { height: 100dvh; display: flex; flex-direction: column; margin: 0; background: #17251e; color: #eee9d8; font: 16px/1.5 system-ui, sans-serif; }
+    header { flex: none; padding: 9px 14px; }
+    h1 { font-size: 21px; margin: 0; }
+    p { margin: 4px 0; }
+    button, select { font: inherit; color: inherit; background: #304d39; border: 1px solid #92a383; padding: 4px 10px; }
+    button { cursor: pointer; }
+    button[aria-pressed="true"] { background: #547047; border-color: #d3d7a4; }
+    button:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid #d3d7a4; outline-offset: 2px; }
+    .controls, .settings { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+    .settings label { display: inline-flex; align-items: center; gap: 5px; }
+    details { margin-top: 6px; }
+    summary { cursor: pointer; }
+    #status { display: inline-block; margin-inline-start: 8px; color: #ccd5c1; }
+    #game { flex: 1; min-height: 0; touch-action: none; direction: ltr; }
+    canvas { display: block; }
+    .note { font-size: 12px; color: #bdc9b6; }
+    @media (max-width: 480px) { header { padding: 8px 10px; } h1 { font-size: 20px; } .controls { gap: 5px; } button { padding: 4px 8px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>מקטע עולם — RICH</h1>
+    <p>חצים / WASD או לחיצה ממושכת להליכה.</p>
+    <nav class="controls" aria-label="מקומות לבדיקה">
+      <button data-view="meadow">אחו</button>
+      <button data-view="forest">יער</button>
+      <button data-view="cove">מפרץ</button>
+      <button data-view="shore">חוף</button>
+      <button id="motion" aria-pressed="true">עצירת תנועה</button>
+    </nav>
+    <details>
+      <summary>תצוגה ושכבות <span id="status" role="status">טוען…</span></summary>
+      <div class="settings">
+        <label>מצב מים <select id="weather"><option value="calm">שקט</option><option value="windy" selected>גלי</option><option value="storm">סוער</option></select></label>
+        <button id="wind">רוח ← החלפת כיוון</button>
+        <button id="zoom">קירוב ×2</button>
+        <label><input id="plants" type="checkbox" checked>צמחייה</label>
+        <label><input type="checkbox" data-layer="bed" checked>קרקעית</label>
+        <label><input type="checkbox" data-layer="reflection" checked>השתקפויות</label>
+        <label><input type="checkbox" data-layer="surface" checked>אור על המים</label>
+        <label><input type="checkbox" data-layer="breakers" checked>גלים וקצף</label>
+      </div>
+    </details>
+    <p class="note">הדגמה חזותית מקומית. אין כאן שמירה או משימות.</p>
+  </header>
+  <div id="game" aria-label="מקטע עולם שאפשר ללכת בו"></div>
+  <script type="module" src="/src/world-study.ts"></script>
+</body>
+</html>
