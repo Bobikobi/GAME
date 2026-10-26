@@ -78,10 +78,11 @@ describe('the opening recut B', () => {
 });
 
 describe('what a node asks of the player', () => {
-  test('a tree is felled, a fish is fished and everything else is gathered', () => {
+  test('a tree is felled, a fish is fished, stone is mined and everything else is gathered', () => {
     expect(nodeAction(bundle, bundle.resources['core/oak-trees']!)).toBe('Fell tree');
     expect(nodeAction(bundle, bundle.resources['core/river-fish']!)).toBe('Fish');
-    for (const r of Object.values(bundle.resources).filter((x) => x.tool !== 'axe' && x.tool !== 'rod')) {
+    expect(nodeAction(bundle, bundle.resources['core/river-stones']!)).toBe('Mine River stone');
+    for (const r of Object.values(bundle.resources).filter((x) => x.tool !== 'axe' && x.tool !== 'rod' && x.work !== 'mine')) {
       expect(nodeAction(bundle, r), r.id).toMatch(/^Gather /);
     }
     expect(nodeAction(bundle, bundle.resources['core/berry-bushes']!)).toBe('Gather Redberry');

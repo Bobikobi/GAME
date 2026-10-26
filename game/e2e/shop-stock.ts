@@ -219,6 +219,13 @@ async function run(page: Page, url: string, viewport: Viewport, name: string): P
     'the medicine group in view',
     5000,
   );
+  // the jump scrolls smoothly: tap the row only once the list has come to rest, or the tap lands where the row was
+  for (let i = 0, last = -1; i < 40; i++) {
+    const top = await page.eval<number>(`document.querySelector('.panel.shop .panel-body').scrollTop`);
+    if (top === last) break;
+    last = top;
+    await sleep(100);
+  }
   const before = await page.eval<number>(`window.__game.session.state.player.bag['core/first-aid-kit'] ?? 0`);
   await tap(page, '.shop-group[data-group="medicine"] .row button', 'Buy');
   await page.waitFor(`(window.__game.session.state.player.bag['core/first-aid-kit'] ?? 0) === ${before + 1}`, 'a first-aid kit in the bag', 3000);

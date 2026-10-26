@@ -67,6 +67,7 @@ Open `content/extensions/<your-handle>/resources/wild-plums.json`. Rename the fi
 - `node.count` - how many bushes grow in the slot, 1 to 12.
 - `node.hours` - optional. `[18, 6]` makes a fruit that only ripens at night.
 - `node.tool` - optional. `basket`, `trowel` or `axe`: the tool the player must carry to gather it. With `axe` the node is a tree: gathering it is felling, which trains Woodcutting (`core/woodcutting`) instead of Foraging, and `node.level` is the Woodcutting level it asks for. Wood comes only this way: the check refuses an item of class `wood` from any other node, and from a dig spot. With `rod` the node is a fishing spot: gathering it is fishing, which trains Fishing (`core/fishing`), and `node.level` is the Fishing level it asks for.
+- `node.work` - optional, `"mine"` on a node with no `tool`: it is mined, broken with blows that run by themselves after one press, as a tree is felled, with no minigame. It trains Digging (`core/digging`), and `node.level` is the Digging level it asks for. Bare hands mine; a pick or a hammer in the bag makes it faster and wears a little each time. The river stones are mined.
 - `node.game` - optional: the minigame, `timing` (the default), `strike`, `pick`, `snap` or `fish`. `fish` is the cast, the wait, the nibble and the bite: give it to a node fished with `rod`.
 - `node.solid` - optional. `true` keeps the tile blocked ready or not, as a tree does: the stump stays in the way until the tree is grown again. Left out, the player walks through it.
 - `node.growth` - optional, up to 3 sprites between `sprite_empty` and `sprite`. While the node grows back, the game shows them one after the other by how much of `respawn_ms` has passed, so a felled oak goes stump, sapling, young tree, oak. Needs a `sprite_empty`.
@@ -265,7 +266,7 @@ Then point your item at it: `"sprite": "<your-handle>/kit:items/plum"`.
 
 ## Tools and the first morning
 
-A tool is an item with a `tool` block: its `kind` (`basket`, `trowel`, `axe`, `staff`, `hammer` or `pick`), a `tier` and the `uses` it has before it wears out. Tools have no value of their own, so a shop prices them: Pell sells the basket, the trowel, the axe and the staff. A staff, a hammer and a pick ask for no work: they are worn in the hand for what their `wear` block helps.
+A tool is an item with a `tool` block: its `kind` (`basket`, `trowel`, `axe`, `staff`, `hammer` or `pick`), a `tier` and the `uses` it has before it wears out. Tools have no value of their own, so a shop prices them: Pell sells the basket, the trowel, the axe and the staff. A staff, a hammer and a pick ask for no work: they are worn in the hand for what their `wear` block helps, and a hammer or a pick in the bag also breaks a mined node (`node.work`) faster.
 
 A new game starts with two things. The player chooses a race; the world's seed draws the wake pocket, the same draw for every race. Every character meets the others at the bridge and the first fire.
 

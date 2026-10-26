@@ -306,7 +306,13 @@ export const ResourceBody = Type.Object(
         'A quest id. The node cannot be struck by a character who was offered that quest and has not finished it; a character who was never offered it strikes the node as usual. The refusal says one short line and costs nothing.',
     }),
     tool: Type.Optional(ToolKind),
-    level: Int(1, 20, 'Level required, in the profession the node trains: felling when the tool is an axe, fishing when it is a rod, foraging otherwise.'),
+    work: Type.Optional(
+      Type.Literal('mine', {
+        description:
+          'How the node is worked when it needs no tool. "mine": broken with blows that run by themselves after one press, as felling does; it trains digging, a pick or a hammer in the bag makes it faster (the best one, worn a little each time), and bare hands still do it. Left out: gathered by hand with the minigame of `game`.',
+      }),
+    ),
+    level: Int(1, 20, 'Level required, in the profession the node trains: felling when the tool is an axe, fishing when it is a rod, digging when the node is mined, foraging otherwise.'),
     game: Type.Optional(
       Type.Union([Type.Literal('timing'), Type.Literal('strike'), Type.Literal('pick'), Type.Literal('snap'), Type.Literal('fish')], {
         description: 'The minigame played when gathering: "timing" (stop a marker in the middle, the default), "strike" (three timed hammer strikes, for stone), "pick" (press only for the ripe ones, for plants), "snap" (press fast, for wood) or "fish" (cast, wait for the bite and strike as the float goes under, then reel in; for a node fished with a rod).',
