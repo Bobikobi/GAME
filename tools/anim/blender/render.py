@@ -26,7 +26,7 @@ OUT = cfg["out"]; os.makedirs(OUT, exist_ok=True)
 FW, FH = cfg.get("frame", [64, 96]); SS = cfg.get("ss", 4); W, H = FW * SS, FH * SS
 TARGET = cfg.get("target", "forager")
 IS_RIG = TARGET.startswith("rig:")
-ELEV = math.radians(cfg.get("elev", 30 if IS_RIG else 35)); PXM = cfg.get("pxm", 10.0 if IS_RIG else 53.0)
+ELEV = math.radians(cfg.get("elev", 50)); PXM = cfg.get("pxm", 10.0 if IS_RIG else 53.0)
 ANCHOR = tuple(cfg.get("anchor", [32, 84]))
 
 if IS_RIG:
@@ -478,7 +478,13 @@ cd.shift_x = (FW / 2 - ANCHOR[0]) / FH; cd.shift_y = (ANCHOR[1] - FH / 2) / FH
 cd.clip_start = 0.1; cd.clip_end = 300
 sun = bpy.data.objects.new("Sun", bpy.data.lights.new("Sun", "SUN")); sc.collection.objects.link(sun)
 sun.data.energy = cfg.get("sun", 3.2); sun.data.angle = 0.0
-Ld = Vector((0.45, 0.55, -0.70)).normalized()
+# The game's sun stands south (DECISIONS 2026-10-21, STYLE section 4): the cast shadow falls up-screen, behind the body,
+# so the lit side of the body is the one that faces the viewer. Its lean left (morning) or right (evening) changes by the
+# hour and a sprite is drawn once, so the render's sun stands due south, above the camera (the tops take the most light),
+# and the same in every view; the game's own shade, never the sprite, says the hour. No ground is drawn: the sprite bakes
+# no shadow of its own, and the game casts one from its alpha.
+SUN_ELEV = math.radians(cfg.get("sun_elev", 60))
+Ld = Vector((0.0, math.cos(SUN_ELEV), -math.sin(SUN_ELEV))).normalized()
 wd = bpy.data.worlds.new("W"); wd.use_nodes = True; sc.world = wd
 bg = wd.node_tree.nodes["Background"]; bg.inputs[0].default_value = (0.62, 0.62, 0.66, 1); bg.inputs[1].default_value = cfg.get("amb", 0.55)
 sc.render.engine = "CYCLES"; sc.cycles.device = "CPU"; sc.cycles.samples = int(cfg.get("cycles_samples", 12))
@@ -568,8 +574,7 @@ for i, s in enumerate(samples):
     rec = {"sample": s, "ground_shift": -z}
     for d, ang in DIRS.items():
         ROOT.rotation_euler = (0, 0, ang)
-        Ld2 = Vector((-Ld.x, Ld.y, Ld.z)) if d == "left" else Ld
-        sun.rotation_euler = Vector((0, 0, -1)).rotation_difference(Ld2).to_euler()
+        sun.rotation_euler = Vector((0, 0, -1)).rotation_difference(Ld).to_euler()
         bpy.context.view_layer.update()
         feet = {}
         for foot, nm in MAP["contacts"].items():

@@ -60,7 +60,7 @@ What happens if it goes wrong: the API refuses to start and says which variable;
 putting the two `dev-header` lines back brings the staging box back.
 Verify: the boot log carries one line beginning `AUTH_MODE=session`; `curl -sI https://<name>/auth/google/start`
 answers 302 to `accounts.google.com`; `curl -s https://<name>/state` answers 401; and a sign-in by the owner's
-test address (eladeladsaa@gmail.com, the client's one test user while it is in Testing) lands on the game.
+test address (the owner's test address, kept outside the repo, is the client's one test user while it is in Testing) lands on the game.
 
 The country for the age limit (the owner, 21.10: "align with the big companies"). The sign-up never asks the
 player where they are; the API reads the header named by `COUNTRY_HEADER`, and only our nginx may set it.
