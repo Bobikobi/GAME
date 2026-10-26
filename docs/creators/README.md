@@ -27,7 +27,7 @@ This guide walks through adding the smallest useful thing: a fruit bush in an em
 ## What you need
 
 - A GitHub account.
-- Node 24 (the version in `.nvmrc`; with nvm, `nvm install` in the checkout reads it) and pnpm 10 (`npm install -g pnpm@10`).
+- Node 24 (the version in `.nvmrc`; with nvm, `nvm install` in the checkout reads it; without nvm, install Node 24 from nodejs.org. CI runs Node 24, so check with it) and pnpm 10 (`npm install -g pnpm@10`).
 - No drawing skills. You start with the core art and can swap in your own later.
 
 ## 1. Run the game on your machine (2 minutes)
@@ -39,7 +39,7 @@ git clone https://github.com/<you>/GAME
 cd GAME
 git remote add upstream https://github.com/Bobikobi/GAME
 git fetch upstream
-git switch -c add-my-fruit upstream/develop
+git switch -c add-my-fruit upstream/develop   # cloned the main repository itself? use origin/develop
 pnpm install
 pnpm dev
 ```
@@ -50,19 +50,24 @@ Your branch starts from `develop`, not from `main`. `main` is the default branch
 
 ## 2. Copy the template (1 minute)
 
-Your handle is your GitHub name in lowercase. Copy the template into a folder with that name:
+Your handle is your GitHub name in lowercase: letters, digits, `-` and `_`, up to 39 characters. Copy the template into a folder with that name (`content/extensions/` does not exist until the first extension, so make it):
 
 ```bash
+mkdir -p content/extensions
 cp -r templates/extension content/extensions/<your-handle>
 ```
 
-In every file of the new folder, replace `your-handle` with your handle. Everything you add has an id that starts with it, so two creators can never clash.
+The template holds a fruit (`resources/wild-plums.json`) and two optional extras: a windfall reaction (`reactions/`, see [A world that answers](#a-world-that-answers-reactions)) and a quest (`quests/`, which brings a quest review and a story review into your pull request). For a plain fruit, delete `quests/`, `reactions/` and the template's `README.md`, and keep `resources/wild-plums.json`.
+
+In every file you keep, replace `your-handle` with your handle. Everything you add has an id that starts with it, so two creators can never clash.
 
 ## 3. Make it yours (4 minutes)
 
-Open `content/extensions/<your-handle>/resources/wild-plums.json`. Rename the file and the ids if you grow something else. The fields worth changing:
+Open `content/extensions/<your-handle>/resources/wild-plums.json`. Rename the file and the ids if you grow something else: the file name, the file's `id`, `items[0].id` and `node.output` all name the fruit, so change them together. The picture fields (`sprite`, `sprite_empty`, and `items[0].sprite`) point at core art; leave them as they are, and draw your own later (see [Your own art](#your-own-art-optional)). The fields worth changing:
 
-- `items[0].name` and `description` - what the player reads.
+- the top-level `title` and `description` - what the sign and the journal say about the bush.
+
+- `items[0].name` and `items[0].description` - what the player reads.
 - `items[0].class`, `family` and `tier` - what the fruit is: `plant`, family `plum`, tier 1. See [Classes and tiers](#classes-and-tiers).
 - `items[0].weight` - how heavy one is, a whole number from 0 to 20. Most things weigh 1; a log or a stone 3; a herb or a coin 0. The load sets the player's pace.
 - `food.satiety` - how much one fruit fills, 1 to 100. A redberry gives 4, a cooked berry mash 15.
@@ -85,15 +90,15 @@ You never set a price. The game works out every item's value from the effort it 
 pnpm check
 ```
 
-Each problem names the file, the field and what to do about it. Fix them until it prints no errors. `pnpm check --json` prints the same report for an AI tool to read.
+Each problem names the file, the field and what to do about it. A line that starts with `x` is an error: fix those until none are left. A line that starts with `!` is a warning, and a clean checkout of the game already prints about thirty of them (about the core map, the core art and the core quests, none from your files). It is done when the last lines read "0 errors" and "Everything passes". `pnpm check --json` prints the same report for an AI tool to read.
 
 ## 5. See it in the game (1 minute)
 
-Run `pnpm dev` again and continue your game, or start a new one. Walk west from where you wake up: the bushes grow in the glade, and its sign now reads "Added by <your-handle>".
+Add `content/extensions/<your-handle>/profile.json` (see [Your creator profile](#your-creator-profile); the check passes without it; with it the signs and the Creators menu show your name and signature). Run `pnpm dev` again and continue your game, or start a new one. Walk west from where you wake up: the bushes grow in the glade, and its sign now reads "Added by <your-handle>".
 
 ## 6. Open a pull request (1 minute)
 
-Commit only your own folder, push your branch to your fork, and open a pull request with **`develop`** as its base (GitHub offers `main` first: change it). The first time, a bot asks you to sign the [contributor agreement](../../CLA.md) with one comment. The pull request template has three lines to answer, `Quest review:`, `Story review:` and `Source:`; for a fruit with no quest, no story text and no new picture they read "no quest changed", "no story text changed" and "no new picture". The same check runs on it automatically, and the pull request template lists what reviewers look at. A preview of the game with your change is built for the pull request; for a first pull request from a fork, a maintainer approves that build first.
+Commit only your own folder, push your branch to your fork, and open a pull request with **`develop`** as its base (GitHub offers `main` first: change it). The first time, a bot asks you to sign the [contributor agreement](../../CLA.md) with one comment. The pull request template has three lines to answer, `Quest review:`, `Story review:` and `Source:`; for a fruit with no quest, no story text and no new picture they read "no quest changed", "no story text changed" and "no new picture". Before you push, `pnpm verify` runs everything CI does (it takes a few minutes; `pnpm check` is the part that matters for content). The same check runs on the pull request automatically, and the pull request template lists what reviewers look at. A preview of the game with your change is built for the pull request; for a first pull request from a fork, a maintainer approves that build first.
 
 ## Classes and tiers
 
