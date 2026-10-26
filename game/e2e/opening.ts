@@ -549,21 +549,17 @@ class Player {
 
   /** Taps the button labelled `label` in the panel row that mentions `row`. */
   async tapInRow(row: string, label: string): Promise<void> {
-    const at = await this.page.waitFor<[number, number]>(
+    await this.page.tapWhere(
       `(() => {
         for (const r of document.querySelectorAll('.panel .row')) {
           if (!r.textContent.includes(${JSON.stringify(row)})) continue;
           const b = [...r.querySelectorAll('button')].find((x) => x.textContent.includes(${JSON.stringify(label)}) && !x.disabled);
-          if (!b) continue;
-          b.scrollIntoView({ block: 'nearest' });
-          const q = b.getBoundingClientRect();
-          return [q.left + q.width / 2, q.top + q.height / 2];
+          if (b) return b;
         }
         return null;
       })()`,
       `"${label}" next to ${row}`,
     );
-    await this.page.tapAt(at[0], at[1]);
   }
 
   async idle(what: string, timeoutMs = 20_000): Promise<void> {
