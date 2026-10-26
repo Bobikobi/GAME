@@ -347,6 +347,7 @@ async function run(page: Page, base: string, viewport: Viewport): Promise<void> 
 }
 
 async function main(): Promise<void> {
+  if (process.env.CI) throw new Error('forced failure: a throwaway commit proving the per-script retry, reverted before landing');
   if (!existsSync(join(ROOTS['/play/']!, 'index.html'))) throw new Error('no game/dist: run "pnpm build" first');
   mkdirSync(OUT, { recursive: true });
   const { server, url } = await serve();
