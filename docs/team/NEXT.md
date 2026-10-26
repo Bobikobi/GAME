@@ -657,3 +657,21 @@ Measurable:
 The feel (speed, acceleration, the stick's dead zone and size) is for the owner on a preview: deploy one and open it with `~/.claude/tools/open-url.sh`, then iterate on his word without asking again about the numbers inside it.
 
 Before the proving run (AGENTS.md): grep the tests for every counted walk and every `DIRS[` use, fix all expectations in one pass, then the single test files, then `pnpm verify` through `~/.claude/tools/heavy.sh`, then push. If #254 lands first, merge `develop` in, never rebase. Send the manager session "PR ready #N" with the PASS/FAIL lines, or the owner if no manager is live (ListAgents). Model: opus, effort high (the walk in two doors, the server's check and every e2e).
+
+## 23. The characters through the pipeline: the owner's points of 26.10
+
+Status: recorded 26.10. Items a and b are current; c to f wait for their turn and are not built now.
+
+The owner, 26.10, after the contact sheet of the whole cast from `pnpm anim` (#343, DECISIONS 2026-10-25 "Characters are made industrially"): it passes in principle, with these points. Each one names its stage.
+
+a) **The walk looks natural** (current, with the sheets into `content/kit`, NEXT (a) and (b) of the 2026-10-25 entry). Everything that follows from it: the ground under the feet and the distance the body moves agree. The pose is picked from the distance walked (`travel_px_per_pose` in each strip's json), so a planted foot never skates. If the library walk cannot hold at the game's speed, a tile move uses the jog. Measurable: foot slide 1 px or less at every pace, in the game and not only in the tool.
+
+b) **The camera's height on the character** (current, a direction: stills first). The owner suspects that one display problem is that the character reads in profile. The render camera should sit higher, so more of the top of the head shows: a top-down view. Stills at 35 (today's), 50 and 65 degrees went to the owner on 26.10. His pick goes into DECISIONS, and the whole cast is rendered again at it before any sheet enters `content/`.
+
+c) **A jump** (next after a). A jump clip from the libraries on every body. Later, obstacles that fit the jump, or reasons in the world that call for one, go in with the map work (section 19), not before.
+
+d) **A run that costs more stamina** (later, not urgent, but it will happen). A pace above the three walking paces of #297 that drains stamina faster. The sprint clip exists already.
+
+e) **The controls are a full computer game's keys**, not simple joystick buttons (the owner: that question is behind us). Each new action (the jump, the run, the actions of a fight) gets its own key.
+
+f) **Being hit, and losing** (later: its own ladder of trials, done in order). The character's animation when it takes a blow, effects on the screen itself, and a defeat for each creature that fits it. For example, a skeleton that loses a fight falls apart. First the idea is broken into parts, then each part is tried and shown to the owner. Start from the tag `attempt/2026-10-hit-feel` (four strengths of a blow's hold, flash and knock, with a frame-by-frame capture tool) and DECISIONS 2026-10-26 "Hit feel from the engine is not for gathering".
