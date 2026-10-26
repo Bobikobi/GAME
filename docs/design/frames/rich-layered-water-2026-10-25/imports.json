@@ -1,0 +1,42 @@
+[
+  {
+    "name": "bed",
+    "colors": 18,
+    "size": [
+      128,
+      128
+    ],
+    "source": "source.png",
+    "quadrant": 0
+  },
+  {
+    "name": "body",
+    "colors": 6,
+    "size": [
+      128,
+      128
+    ],
+    "source": "source.png",
+    "quadrant": 1
+  },
+  {
+    "name": "light",
+    "colors": 14,
+    "size": [
+      128,
+      128
+    ],
+    "source": "source.png",
+    "quadrant": 2
+  },
+  {
+    "name": "foam",
+    "colors": 19,
+    "size": [
+      128,
+      128
+    ],
+    "source": "source.png",
+    "quadrant": 3
+  }
+]

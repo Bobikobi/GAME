@@ -1,16 +1,14 @@
 /// <reference types="vite/client" />
 /** Dev-only Phaser study: the normal Vite build still enters index.html/main.ts. */
 import * as Phaser from 'phaser';
-import { CoastalWaterStudy } from './coastal-water-study';
+import { CoastalWaterStudy, type WaterLayer } from './coastal-water-study';
 import type { WaterWeather } from './water-response';
 import { chooseShoreVariant, type ShoreMaterial } from './shore-material';
 import materialJson from '../../docs/design/frames/rich-river-kit-2026-10-25/material.json';
 import importReport from '../../docs/design/frames/rich-river-kit-2026-10-25/imports.json';
-import waterUrl from '../../docs/design/frames/rich-world-2026-10-25/water.png?url';
-import depthUrl from '../../docs/design/frames/rich-river-kit-2026-10-25/depth-transition.png?url';
-import foamUrl from '../../docs/design/frames/rich-world-2026-10-25/foam.png?url';
 import playerUrl from '../../content/kit/core/chars/player_down.png?url';
 
+const waterUrls = import.meta.glob('../../docs/design/frames/rich-layered-water-2026-10-25/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 const bankUrls = import.meta.glob('../../docs/design/frames/rich-river-kit-2026-10-25/bank-*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 const material: ShoreMaterial = materialJson;
 const grid = importReport.seams.find(s => s.name === 'inlet')!.grid;
@@ -30,9 +28,10 @@ class RiverStudy extends Phaser.Scene {
   constructor() { super('river-study'); }
 
   preload(): void {
-    this.load.image('water', waterUrl);
-    this.load.image('depth', depthUrl);
-    this.load.image('foam', foamUrl);
+    for (const name of ['bed', 'body', 'light', 'foam']) {
+      const url = Object.entries(waterUrls).find(([path]) => path.endsWith(`/${name}.png`))![1];
+      this.load.image(`layered-${name}`, url);
+    }
     this.load.spritesheet('player', playerUrl, { frameWidth: 16, frameHeight: 24 });
     for (const v of material.variants) {
       const entry = Object.entries(bankUrls).find(([path]) => path.endsWith(`/${v.texture}.png`));
@@ -42,7 +41,6 @@ class RiverStudy extends Phaser.Scene {
   }
 
   create(): void {
-    this.add.image(0, 0, material.water.bed).setOrigin(0).setDisplaySize(extent, extent);
     const motifs: string[][] = [];
     for (let y = 0; y < grid.length; y++) {
       this.selected[y] = [];
@@ -59,7 +57,7 @@ class RiverStudy extends Phaser.Scene {
         this.add.image(x * tileSize, y * tileSize, choice.variant.texture).setOrigin(0).setDepth(2);
       }
     }
-    this.water = new CoastalWaterStudy(this, extent, (x, y) => this.landAt(x, y), material.water.surface, material.water.foam);
+    this.water = new CoastalWaterStudy(this, extent, (x, y) => this.landAt(x, y), (x, y) => this.landColor(x, y));
     this.actor = this.add.sprite(125, 140, 'player', 1).setOrigin(.5, 1).setScale(4).setDepth(10);
     this.keys = this.input.keyboard!.addKeys('UP,DOWN,LEFT,RIGHT,W,A,S,D') as Record<string, Phaser.Input.Keyboard.Key>;
     const camera = this.cameras.main;
@@ -86,9 +84,20 @@ class RiverStudy extends Phaser.Scene {
       this.water.rebuild();
       document.getElementById('wind')!.textContent = this.water.wind[0] < 0 ? 'רוח ← החלפת כיוון' : 'רוח → החלפת כיוון';
     };
+    for (const input of document.querySelectorAll<HTMLInputElement>('[data-layer]')) {
+      input.onchange = () => { this.water.layers[input.dataset.layer as WaterLayer] = input.checked; this.water.render(); };
+    }
     updateLabel();
     document.getElementById('status')!.textContent = `דשא וחצץ · ${this.repeats} חזרות שעדיין חסרה להן חלופה`;
     (window as unknown as { __riverStudy: RiverStudy }).__riverStudy = this;
+  }
+
+  private landColor(x: number, y: number): readonly number[] | undefined {
+    const tx = Math.floor(x / tileSize), ty = Math.floor(y / tileSize);
+    const texture = this.selected[ty]?.[tx];
+    if (!texture) return undefined;
+    const c = this.textures.getPixel(Math.floor(x) - tx * tileSize, Math.floor(y) - ty * tileSize, texture);
+    return c && c.alpha >= 128 ? [c.red, c.green, c.blue] : undefined;
   }
 
   private landAt(x: number, y: number): boolean {
