@@ -66,7 +66,6 @@ export interface Settings {
   tile_px: number;
   fps: number;
   supersample: number;
-  outline: string;
   paces: Record<Pace, string>;
   limits: Limits;
   targets: Record<string, Target>;

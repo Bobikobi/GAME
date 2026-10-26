@@ -3,7 +3,6 @@
   "tile_px": 64,
   "fps": 24,
   "supersample": 4,
-  "outline": "#1b1a2e",
   "paces": { "light": "load.light_step_ms", "steady": "walk_step_ms", "heavy": "load.heavy_step_ms" },
   "limits": { "palette_pct": 100, "foot_slide_px": 1, "silhouette_dev_pct": 10, "poses_per_s_max": 30 },
   "targets": {

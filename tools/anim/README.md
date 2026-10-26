@@ -73,8 +73,10 @@ supersampled renders, the ID pass, the projected feet) and `job.json` (what Blen
 ## The four measures, and what fails
 
 1. **Palette**: every opaque pixel is in the clip's ramps (`tools/src/kit/palette.ts`), the fire ramp, the
-   target's metal and leaf ramps, or the one outline `#1b1a2e`. Fails under 100 %.
-2. **Outline**: every frame has the 1 px outline all round, and nothing touches the frame's edge.
+   target's metal and leaf ramps, or the one ink `#1b1a2e`. Fails under 100 %.
+2. **Outline**: every frame has the 1 px ink edge all round, and nothing touches the frame's edge. The ink colour and the
+   edge are the kit's one definition (`tools/src/kit/ink.ts`), the same that `pnpm check` (`art.ink`) and `pnpm kit:ink`
+   use; `anim.json` holds no outline setting of its own.
 3. **Silhouette** (locomotion): the opaque area of each frame against the view's mean. Fails over 10 % (the jog
    and the sprint move it to 15 %: side-on their spread stride changes the area, with no limb lost).
 4. **Foot slide at the game's pace** (locomotion): the ball of each planted foot, projected to art pixels by the

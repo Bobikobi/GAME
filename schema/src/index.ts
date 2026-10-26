@@ -1444,7 +1444,7 @@ export const KitBody = Type.Object(
               minItems: 1,
               maxItems: 4,
               description:
-                'The ramps of this kit the sprite draws in, in order: the first is the one its outline comes from. A sprite that names none uses the core palette only.',
+                'The ramps of this kit the sprite draws in, in order. The outline is the one-pixel ink line #1b1a2e on every sprite, whatever the ramps. A sprite that names none uses the core palette only.',
             }),
           ),
           density: Type.Optional(

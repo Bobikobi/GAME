@@ -92,7 +92,7 @@ People and animals, seen by the owner on 20.10 on `frames/2026-10-21-nature-scal
   - fire: `#b8661f #eda83a #f8de62`
   - skin: `#d38c66 #f3c7a0`
   - purples: `#5b3373 #9a5bb0`
-- **Outline:** characters, items and props have a one-pixel outline in `#1b1a2e`. Ground tiles have none.
+- **Outline:** the one-pixel ink line `#1b1a2e` on every sprite (owner's decision of 23.10, PR #305): characters, items and props, at both densities. An outline is the sprite's own edge pixels recoloured to ink (`pnpm kit:ink`), not a ring added outside it. Ground tiles have none. `pnpm check` measures it: a 64 px sprite needs ink on at least 95% of its edge pixels, and the 16 px sprites are reported in one summary line.
 - **Baked light comes from above.** Tops are lightest and undersides darkest, with left and right even. Light from the side is added while the game runs (section 4), and side light baked into the art would fight it.
 - **Never draw a shadow into a sprite.** The engine casts it from the sprite's own shape, starting at the lowest solid row: that row is where the thing touches the ground.
 
