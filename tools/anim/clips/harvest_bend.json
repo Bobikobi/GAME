@@ -1,0 +1,135 @@
+{
+  "about": "Harvest, bending: the low part of the library's farm harvest held as the body; the right hand picks two herbs per cycle, each straight from the plant to the pouch on the hip. The arm is an IK overlay to fixed spots by the body.",
+  "target": "forager",
+  "base": {
+    "library": "ual2",
+    "action": "Farm_Harvest"
+  },
+  "frames": [
+    18,
+    20,
+    22,
+    26,
+    30,
+    26,
+    22,
+    20
+  ],
+  "ik": {
+    "side": "R",
+    "anchor": "body",
+    "pole": [
+      0.8,
+      -0.3,
+      -0.4
+    ],
+    "points": [
+      "pouch",
+      [
+        0.3,
+        0.42,
+        0.4
+      ],
+      [
+        0.3,
+        0.4,
+        0.46
+      ],
+      [
+        0.3,
+        0.28,
+        0.7
+      ],
+      "pouch",
+      [
+        0.42,
+        0.18,
+        0.44
+      ],
+      [
+        0.42,
+        0.16,
+        0.5
+      ],
+      [
+        0.34,
+        0.06,
+        0.72
+      ],
+      "pouch"
+    ],
+    "t": [
+      0,
+      0.125,
+      0.25,
+      0.375,
+      0.5,
+      0.625,
+      0.75,
+      0.875
+    ]
+  },
+  "prop": {
+    "kind": "sprig",
+    "hand": "R",
+    "poses": [
+      2,
+      3,
+      6,
+      7
+    ]
+  },
+  "set": [
+    {
+      "kind": "herb",
+      "at": [
+        0.3,
+        0.42
+      ],
+      "size": 1.25
+    },
+    {
+      "kind": "herb",
+      "at": [
+        0.42,
+        0.18
+      ],
+      "size": 1.35
+    }
+  ],
+  "worn": [
+    {
+      "kind": "pouch",
+      "at": [
+        0.24,
+        0.06,
+        -0.02
+      ]
+    }
+  ],
+  "ms": [
+    130,
+    170,
+    110,
+    130,
+    130,
+    170,
+    110,
+    130
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      112
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}
