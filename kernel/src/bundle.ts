@@ -21,9 +21,12 @@ import type {
   Resource,
   Restore,
   School,
+  Search,
   Shop,
   Treasure,
 } from '@game/schema';
+
+export type { BodyEffectName } from '@game/schema';
 
 export interface Meta {
   id: string;
@@ -39,6 +42,7 @@ export type ItemInfo = ItemDef & { creator: string; file: string };
 export type ClassInfo = ClassDef & { creator: string; file: string };
 export type ResourceDef = Meta & Resource;
 export type TreasureDef = Meta & Treasure;
+export type SearchDef = Meta & Search;
 /** `template`: the recipe template the assembler expanded this recipe from. */
 export type RecipeDef = Meta & Recipe & { template?: string };
 export type NpcDef = Meta & Npc;
@@ -111,7 +115,16 @@ export interface Params {
     trap: { harm_pct: number };
     deep_water: { harm_pct: number };
   };
+  /** places with nothing on the back: hands and belt (a bag on the back gives its own `wear.places`) */
   bag_base: number;
+  /** things of one kind that share one place (a stack) */
+  place_stack: number;
+  /**
+   * Weight and pace (DECISIONS.md, 2026-10-23): the limit is `base` + `per_point.might` per point + a frame bag's
+   * `load_bonus`; light up to `light_permille` of it, steady up to all of it, heavy above; nothing more is picked up
+   * beyond `max_permille`. The steady pace is `walk_step_ms`.
+   */
+  load: { base: number; light_permille: number; max_permille: number; light_step_ms: number; heavy_step_ms: number; heavy_breath_permille: number };
   starting_gold_mg: number;
   /** what one attribute point adds; see the params schema */
   per_point: { might: number; senses: number; agility_pct: number; luck_permille: number; stamina: number; spirit: number };
@@ -165,6 +178,8 @@ export interface Bundle {
   classes: Record<string, ClassInfo>;
   resources: Record<string, ResourceDef>;
   treasures: Record<string, TreasureDef>;
+  /** Things to search (docs/design/SEARCH.md), by the id of the treasure file that declares them. Apart from `treasures`: no dig fields, no placed instance. */
+  searchables: Record<string, SearchDef>;
   recipes: Record<string, RecipeDef>;
   npcs: Record<string, NpcDef>;
   quests: Record<string, QuestDef>;

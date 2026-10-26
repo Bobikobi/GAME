@@ -4,11 +4,11 @@
  * stable and a save is just that text.
  */
 import type { NodeSizeName, SchoolNodeDef } from '@game/schema';
-import type { Bundle, SchoolDef, Verb } from './bundle';
+import type { BodyEffectName, Bundle, SchoolDef, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.16.0';
+export const KERNEL_VERSION = '0.18.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -45,8 +45,8 @@ export function legacyNodeId(id: string): string {
   return now === undefined ? id : now + id.slice(hash);
 }
 
-/** Places on the character (DECISIONS.md, 2026-10-09: the upgrade). An outfit takes the top and the legs. */
-export const WEAR_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'jewelry1', 'jewelry2', 'hand'] as const;
+/** Places on the character (DECISIONS.md, 2026-10-09: the upgrade). An outfit takes the top and the legs; the back holds a bag or a quiver (2026-10-23). */
+export const WEAR_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'jewelry1', 'jewelry2', 'hand', 'back'] as const;
 export type WearSlot = (typeof WEAR_SLOTS)[number];
 
 const SLOTS_OF: Record<string, readonly WearSlot[]> = {
@@ -57,6 +57,7 @@ const SLOTS_OF: Record<string, readonly WearSlot[]> = {
   feet: ['feet'],
   jewelry: ['jewelry1', 'jewelry2'],
   hand: ['hand'],
+  back: ['back'],
 };
 
 /** The places an item's wear slot fits: jewelry takes either of two. */
@@ -192,6 +193,8 @@ export interface Player {
   bitten: string[];
   /** tended fires by map prop id */
   fires: Record<string, FireState>;
+  /** what the player dropped, by tile (`groundKey`): it stays there until picked up again (DECISIONS.md, 2026-10-23) */
+  ground?: Record<string, Record<string, number>>;
   /** the fire the player kindled outside the town, if any; one stands at a time (null in saves from before kernel 0.12) */
   own: OwnFire | null;
   /** Expedition progress by expedition id. Chain quests persist separately in `quests`. */
@@ -202,6 +205,16 @@ export interface Player {
   movedAt: number;
 }
 
+/**
+ * What a searchable holds (docs/design/SEARCH.md): the rows drawn for one dawn, one item per row, in table order.
+ * Taking a row removes it; nothing is drawn again before the next dawn, so an emptied searchable stays empty all day.
+ */
+export interface SearchState {
+  /** the dawn these rows were drawn for (`searchDawn`) */
+  dawn: number;
+  rows: string[];
+}
+
 export interface State {
   format: number;
   kernel: string;
@@ -210,6 +223,8 @@ export interface State {
   tick: number;
   player: Player;
   nodes: Record<string, NodeState>;
+  /** what each searchable the player has searched holds, by searchable id; a save from before kernel 0.17 has none and reads as empty */
+  searched: Record<string, SearchState>;
   /** every milli-gold that entered or left the world (rule R6: one ledger); the purse and the bound balance together are minted less burned */
   ledger: { minted: number; burned: number };
 }
@@ -264,6 +279,7 @@ export function newState(bundle: Bundle, seed: number): State {
       movedAt: 0,
     },
     nodes: {},
+    searched: {},
     ledger: { minted: 0, burned: 0 },
   };
 }
@@ -279,6 +295,8 @@ export function migrateState(saved: State): State {
   const s = structuredClone(saved) as State & { player: Player & { starter?: string; attrs: Record<string, number> } };
   // kernel 0.15: the bound balance is a field of its own; a save without it holds none
   s.player.boundGold ??= 0;
+  // a save from before kernel 0.17 has searched nothing: it reads as empty, whatever its format
+  s.searched ??= {};
   if ((s.format ?? 1) >= STATE_FORMAT) return s;
   const p = s.player;
   const attrs = p.attrs ?? {};
@@ -339,11 +357,61 @@ export function satietyAt(bundle: Bundle, state: PublicState, tick: number): num
   return Math.max(0, p.satiety - mulDiv(elapsed, bundle.params.satiety_drain_per_min, 60_000));
 }
 
-export function bagUsed(state: PublicState): number {
-  let n = 0;
-  for (const k of Object.keys(state.player.bag)) n += state.player.bag[k] ?? 0;
-  return n;
+/**
+ * The places the bag's things take (DECISIONS.md, 2026-10-23): things of one kind share a place, up to
+ * `place_stack` of them, so a place holds a stack. What is on the body takes none: the units worn on
+ * either layer, the tool in the hand and ONE tool at the belt - the owner's answer of 23.10, not one of
+ * each kind. A hand with no tool worn in it holds one of the bag's tools. Every other tool goes in the
+ * places. Weight still counts every unit (`loadWeight`).
+ */
+export function bagUsed(bundle: Bundle, state: PublicState): number {
+  return placesWith(bundle, state, {});
 }
+
+/** The places the bag would take with `delta` units added to (or taken from) it. */
+export function placesWith(bundle: Bundle, state: PublicState, delta: Record<string, number>): number {
+  const p = state.player;
+  const stack = Math.max(1, bundle.params.place_stack);
+  const worn = onBodyCounts(state);
+  let n = 0;
+  let single = 0;
+  for (const id of new Set([...Object.keys(p.bag), ...Object.keys(delta)])) {
+    const loose = Math.max(0, (p.bag[id] ?? 0) + (delta[id] ?? 0) - (worn[id] ?? 0));
+    n += idivUp(loose, stack);
+    // a tool carried on the body saves a place where that tool's last stack holds just one
+    if (bundle.items[id]?.tool !== undefined && loose % stack === 1) single++;
+  }
+  // the belt holds one tool, and the hand one more unless a tool is worn there already
+  const onBody = p.worn.hand === undefined ? 2 : 1;
+  return n - Math.min(onBody, single);
+}
+
+/** How many more units of one kind fit in the places: up to the free places, or into what is left of its own stacks when over. */
+export function placeRoom(bundle: Bundle, state: PublicState, itemId: string): number {
+  const ceiling = Math.max(bagCapacity(bundle, state), bagUsed(bundle, state));
+  const stack = Math.max(1, bundle.params.place_stack);
+  let lo = 0;
+  let hi = (ceiling + 2) * stack;
+  while (lo < hi) {
+    const mid = hi - idiv(hi - lo, 2);
+    if (placesWith(bundle, state, { [itemId]: mid }) <= ceiling) lo = mid;
+    else hi = mid - 1;
+  }
+  return lo;
+}
+
+/** The key of a tile in `player.ground`. */
+export function groundKey(at: readonly [number, number]): string {
+  return `${at[0]},${at[1]}`;
+}
+
+function onBodyCounts(state: PublicState): Record<string, number> {
+  const p = state.player;
+  const worn: Record<string, number> = {};
+  for (const layer of [p.worn, p.looks]) for (const id of Object.values(layer)) if (id !== undefined) worn[id] = (worn[id] ?? 0) + 1;
+  return worn;
+}
+
 
 /** Whether a camp part stands, itself or under an upgrade built over it. */
 export function campBuilt(bundle: Bundle, state: PublicState, campId: string): boolean {
@@ -362,10 +430,30 @@ export function senseReach(bundle: Bundle, senses: number): number {
   return 2 + bundle.params.per_point.senses * senses;
 }
 
+/**
+ * The places the player has (DECISIONS.md, 2026-10-23): what is on the back decides, `bag_base` with
+ * nothing there (hands and belt) and the bag's own `wear.places` with a bag, plus the race's
+ * `bag_places` in any bag (never bare hands), plus a camp chest's `bag_bonus`. Might no longer adds
+ * places: it raises the weight limit (`loadLimit`).
+ */
 export function bagCapacity(bundle: Bundle, state: PublicState): number {
-  let cap = bundle.params.bag_base + bundle.params.per_point.might * attrAt(bundle, state, 'might');
+  const places = backBag(bundle, state)?.places;
+  let cap = places === undefined ? bundle.params.bag_base : places + bodyValue(bundle, state, 'bag_places', 0);
   for (const id of state.player.camp) cap += bundle.camps[id]?.bag_bonus ?? 0;
   return cap;
+}
+
+/** The bag on the back's work layer: its places and what it adds to the weight limit, or undefined with none there. */
+export function backBag(bundle: Bundle, state: PublicState): { item: string; places: number; load_bonus: number } | undefined {
+  const id = state.player.worn.back;
+  const w = id === undefined ? undefined : bundle.items[id]?.wear;
+  if (!w || w.look || w.places === undefined) return undefined;
+  return { item: id!, places: w.places, load_bonus: w.load_bonus ?? 0 };
+}
+
+/** One effect of the race's body fact (DECISIONS.md, 2026-10-23), or `fallback` when its body names none. */
+export function bodyValue(bundle: Bundle, state: PublicState, effect: BodyEffectName, fallback: number): number {
+  return bundle.races[state.player.race]?.body?.effects.find((e) => e.effect === effect)?.value ?? fallback;
 }
 
 export function professionLevel(bundle: Bundle, state: PublicState, professionId: string): number {
@@ -572,6 +660,16 @@ export function hourOf(bundle: Bundle, tick: number): number {
   const day = bundle.params.day_length_ms;
   const t = (tick + idiv(day, 2)) % day;
   return idiv(t * 24, day);
+}
+
+/**
+ * The count of dawns (05:00) the world has seen at this tick: 0 until the first dawn, then one more at each. A searchable
+ * is drawn fresh when this number has moved since it was last drawn (docs/design/SEARCH.md rule 5). It flips at dawn, not at
+ * noon like `dayOf`, and tick 0 is noon.
+ */
+export function searchDawn(bundle: Bundle, tick: number): number {
+  const day = bundle.params.day_length_ms;
+  return idiv(tick + idiv(day, 2) - idivUp(5 * day, 24), day);
 }
 
 /** Night for the rules: 20:00 to 05:00, the hours the client darkens fully and plays the night song. */

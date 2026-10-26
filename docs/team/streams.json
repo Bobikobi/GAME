@@ -119,6 +119,14 @@
       "plan": ["the valley map plan v2 (the owner, 22.10 and 23.10)", "GAME_RULES G68-G71", "DECISIONS 2026-10-22 decisions 25 and 49-51", "DECISIONS 2026-10-23 the map plan block"],
       "branches": ["feat/map-plan-block", "feat/valley-v2"],
       "owner": null
+    },
+    {
+      "id": "races-bags",
+      "title": "Races, weight and bags: a weight on every item, three walking paces, the back slot with a satchel and a frame pack, one body fact per race",
+      "plan": ["DECISIONS 2026-10-23 races, weight and bags (the owner's answers)", "GAME_RULES section 2"],
+      "branches": ["feat/races-bags"],
+      "owner": null,
+      "cross_cutting": true
     }
   ]
 }
