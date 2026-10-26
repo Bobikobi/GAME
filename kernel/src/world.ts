@@ -95,11 +95,11 @@ export function layoutInstances(
   const solid = staticSolid(map);
   const used = new Set<number>();
   const instances: Record<string, Instance> = {};
-  const sources: { id: string; kind: Instance['kind']; slot: string; count: number; scattered?: boolean }[] = [
+  const sources: { id: string; kind: Instance['kind']; slot: string; count: number; scattered?: boolean; water?: boolean }[] = [
     ...Object.keys(resources)
       .sort()
       .flatMap((id) => [
-        { id, kind: 'resource' as const, slot: resources[id]!.place.slot, count: resources[id]!.count },
+        { id, kind: 'resource' as const, slot: resources[id]!.place.slot, count: resources[id]!.count, water: resources[id]!.place.water === true },
         ...(resources[id]!.place.scatter ?? []).map((slot) => ({ id, kind: 'resource' as const, slot, count: 1, scattered: true })),
       ]),
     ...Object.keys(treasures)
@@ -114,7 +114,11 @@ export function layoutInstances(
     for (let y = slot.y; y < slot.y + slot.h; y++) {
       for (let x = slot.x; x < slot.x + slot.w; x++) {
         const i = y * map.width + x;
-        if ((source.scattered || (x + y) % 2 === 0) && !solid[i] && !used.has(i) && tagAt(map, x, y) !== 'path') candidates.push([x, y]);
+        if (used.has(i)) continue;
+        // a fishing spot lies on the water, beside land the player can stand on (DECISIONS.md, 2026-10-25: fishing)
+        if (source.water) {
+          if (tagAt(map, x, y) === 'water' && besideLand(map, solid, x, y)) candidates.push([x, y]);
+        } else if ((source.scattered || (x + y) % 2 === 0) && !solid[i] && tagAt(map, x, y) !== 'path') candidates.push([x, y]);
       }
     }
     const [cx, cy] = [slot.x * 2 + slot.w - 1, slot.y * 2 + slot.h - 1]; // doubled center, stays integral
@@ -142,6 +146,14 @@ export function layoutInstances(
     }
   }
   return instances;
+}
+
+/** Whether a tile has a land tile beside it, side by side, that is not solid. */
+function besideLand(map: MapDef, solid: Uint8Array, x: number, y: number): boolean {
+  return ([[0, -1], [1, 0], [0, 1], [-1, 0]] as const).some(([dx, dy]) => {
+    const [nx, ny] = [x + dx, y + dy];
+    return nx >= 0 && ny >= 0 && nx < map.width && ny < map.height && !solid[ny * map.width + nx] && tagAt(map, nx, ny) !== 'water';
+  });
 }
 
 /** Tile an NPC stands on. */

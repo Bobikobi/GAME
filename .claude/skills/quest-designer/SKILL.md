@@ -19,6 +19,13 @@ it, and the owner decides what moves (the review below).
 4. `DECISIONS.md` entries whose heading names a quest, a type or the opening.
 5. The story-keeper skill (`.claude/skills/story-keeper`): its questions run on every pitch
    and on the built file, from the start, not after.
+6. The skill tree (AGENTS.md, "Tree first, both ways"): the schools and nodes in
+   `content/core/schools/` and section 4 of `docs/design/PROGRESSION.md`. Start from its thin
+   spots: the nodes that no quest, recipe or place trains or opens yet, the reserved ones first
+   (a node that waits on a system not built). The coverage report lists them once it exists
+   (`pnpm tree:coverage`, specified in PROGRESSION.md section 4.9); until then, the map's list of
+   reserved nodes. A pitch that trains a thin school or opens a reserved node beats one that
+   trains a school the valley already feeds.
 
 ## The picture
 
@@ -61,7 +68,7 @@ it, and the owner decides what moves (the review below).
 
 ## Three pitches, then the owner picks
 
-Give three pitches, each on a different type and a different card, six lines each:
+Give three pitches, each on a different type and a different card, seven lines each:
 
 ```text
 <title> - <type> (<the need it serves>)
@@ -71,6 +78,7 @@ The player: <the beats as actions, under 15 seconds each to start>
 Pays: <what it changes> · Card: <pattern card> (<source>)
 Hand: <quests open beside it> · same type beside it: none
 Story: <who speaks of the past and what it leans on in STORY.md or DECISIONS> · story-keeper: clear | open, sent to the manager
+Tree: <the schools it trains> · needs: <a school's band or nodes it asks for, or none> · opens: <nodes, books or crossings it opens, or none>
 ```
 
 A pitch whose story-keeper line is open goes to the manager with the open rows before the
@@ -87,6 +95,9 @@ keep the rules, never a free hand.
 3a. The story keeper on the built file: every line a player reads, against its questions.
    Its verdict is the pull request's `Story review:` line; a finding that needs an answer
    goes to the manager before the pull request, and a fix that adds a fact waits for it.
+3b. The pull request's `Tree:` line, beside `Quest review:`, carries the pitch's tree line as
+   built: the schools the quest trains and the nodes it needs or opens
+   (`Tree: travel/ford-sense, foraging/see-ripe`), or the proposal that extends the tree.
 4. A riddle or a chain of three or more: a puzzle dependency chart (TOOLKIT.md, Puzzlon)
    pasted into the pull request.
 5. The critic: hand the file and `GAME_RULES.md` section 7 to Codex

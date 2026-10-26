@@ -8,7 +8,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page } from './cdp';
-import { TAKE_GROUND, seedQuery } from './wakes';
+import { TAKE_GROUND, carveIn, seedQuery } from './wakes';
 import { solveMinigame } from './minigame';
 import { FreeWalk, VEC, type Dir } from './walk';
 
@@ -241,10 +241,10 @@ async function start(page: Page): Promise<void> {
   );
   if (choice === 'ask') await page.tap('.title-screen button', 'Start a new game');
   await page.tap('.card.race', 'Elf');
-  await page.tap('input.name');
-  await page.type('Tess');
   await page.tap('.title-screen button', 'Wake up');
   await page.waitFor('!!window.__game.session && window.__game.session.started', 'the character to wake', 10_000);
+  // the name is cut at the bridge's stone, and this script is not about the stone: it is cut here
+  await page.eval(carveIn('Tess'));
   // the west bank's basket and axe lie on the ground by the wake: this script tests what comes later, so they are handed over
   await page.eval(TAKE_GROUND);
 }

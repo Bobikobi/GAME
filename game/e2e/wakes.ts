@@ -34,3 +34,11 @@ export const TAKE_GROUND = `(() => {
   }
   return ground.length;
 })()`;
+
+/**
+ * In the page: the character's name cut, as the stone's carve does it. A start leaves the name empty, and the
+ * stone at the bridge is the only place it is chosen; the scripts that do not play the mend cut it with this.
+ */
+export function carveIn(name: string): string {
+  return `window.__game.session.act({ t: 'carve', name: ${JSON.stringify(name)} })`;
+}

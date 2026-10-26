@@ -280,6 +280,10 @@
                   {
                     "const": "pick",
                     "type": "string"
+                  },
+                  {
+                    "const": "rod",
+                    "type": "string"
                   }
                 ]
               },
@@ -589,6 +593,10 @@
             },
             {
               "const": "pick",
+              "type": "string"
+            },
+            {
+              "const": "rod",
               "type": "string"
             }
           ],

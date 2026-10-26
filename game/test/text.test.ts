@@ -78,9 +78,11 @@ describe('the opening recut B', () => {
 });
 
 describe('what a node asks of the player', () => {
-  test('a tree is felled and everything else is gathered', () => {
+  test('a tree is felled, a fish is fished, stone is mined and everything else is gathered', () => {
     expect(nodeAction(bundle, bundle.resources['core/oak-trees']!)).toBe('Fell tree');
-    for (const r of Object.values(bundle.resources).filter((x) => x.tool !== 'axe')) {
+    expect(nodeAction(bundle, bundle.resources['core/river-fish']!)).toBe('Fish');
+    expect(nodeAction(bundle, bundle.resources['core/river-stones']!)).toBe('Mine River stone');
+    for (const r of Object.values(bundle.resources).filter((x) => x.tool !== 'axe' && x.tool !== 'rod' && x.work !== 'mine')) {
       expect(nodeAction(bundle, r), r.id).toMatch(/^Gather /);
     }
     expect(nodeAction(bundle, bundle.resources['core/berry-bushes']!)).toBe('Gather Redberry');
@@ -294,7 +296,7 @@ describe('class and tier (crafting wave 4)', () => {
     };
     expect(classLine(withDye, 'test/indigo')).toBe('Dye, tier 2');
     expect(classLine(withDye, 'test/plain')).toBe('Tier 1');
-    expect(journalGroups(withDye).map((g) => g.label)).toEqual(['Clay', 'Dye', 'Fibre', 'Garment', 'Jewelry', 'Meal', 'Other', 'Plant', 'Relic', 'Stone', 'Tool', 'Wood']);
+    expect(journalGroups(withDye).map((g) => g.label)).toEqual(['Animal', 'Clay', 'Dye', 'Fibre', 'Garment', 'Jewelry', 'Meal', 'Other', 'Plant', 'Relic', 'Stone', 'Tool', 'Wood']);
   });
 
   test('where a recipe is made names the tier past the first', () => {
