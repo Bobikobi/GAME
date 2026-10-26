@@ -27,7 +27,7 @@ This guide walks through adding the smallest useful thing: a fruit bush in an em
 ## What you need
 
 - A GitHub account.
-- Node 24 (the current LTS) and pnpm 10 (`npm install -g pnpm@10`).
+- Node 24 (the version in `.nvmrc`; with nvm, `nvm install` in the checkout reads it) and pnpm 10 (`npm install -g pnpm@10`).
 - No drawing skills. You start with the core art and can swap in your own later.
 
 ## 1. Run the game on your machine (2 minutes)
@@ -37,11 +37,16 @@ Fork the repository on GitHub, then:
 ```bash
 git clone https://github.com/<you>/GAME
 cd GAME
+git remote add upstream https://github.com/Bobikobi/GAME
+git fetch upstream
+git switch -c add-my-fruit upstream/develop
 pnpm install
 pnpm dev
 ```
 
 Open the address it prints. You are playing your own copy.
+
+Your branch starts from `develop`, not from `main`. `main` is the default branch because it holds releases (a release is `develop` merged into `main`), and every pull request goes into `develop`: CI refuses any other base, and one aimed at `main` is asked to retarget.
 
 ## 2. Copy the template (1 minute)
 
@@ -70,7 +75,7 @@ Open `content/extensions/<your-handle>/resources/wild-plums.json`. Rename the fi
 - `node.work` - optional, `"mine"` on a node with no `tool`: it is mined, broken with blows that run by themselves after one press, as a tree is felled, with no minigame. It trains Digging (`core/digging`), and `node.level` is the Digging level it asks for. Bare hands mine; a pick or a hammer in the bag makes it faster and wears a little each time. The river stones are mined.
 - `node.solid` - optional. `true` keeps the tile blocked ready or not, as a tree does: the stump stays in the way until the tree is grown again. Left out, the player walks through it.
 - `node.growth` - optional, up to 3 sprites between `sprite_empty` and `sprite`. While the node grows back, the game shows them one after the other by how much of `respawn_ms` has passed, so a felled oak goes stump, sapling, young tree, oak. Needs a `sprite_empty`.
-- `node.place.slot` - where it grows. The empty resource slot today: `core/west-glade` (by the meadow where you wake up); the garden in the ruins grows the bell bushes since P-3. One extension per slot.
+- `node.place.slot` - where it grows. The empty resource slot today: `core/west-glade` (by the meadow where you wake up); the garden in the ruins grows the bell bushes since P-3. One extension per slot: this guide sends every newcomer to the glade, so if another fruit is already waiting there for review, yours competes with it and the vote decides ([CONTRIBUTING.md](../../CONTRIBUTING.md)). The `slots` tool of the MCP server (below) lists the slots that are still free.
 
 You never set a price. The game works out every item's value from the effort it takes to get, and the trader pays from that. A rarer, slower fruit is worth more on its own. The trader pays a share of the value: 75 percent for a thing someone made, an item whose value comes from a recipe (`k_craft_permille`), and 50 percent for anything else (`k_permille`). The shop charges at least the full value.
 
@@ -88,7 +93,7 @@ Run `pnpm dev` again and continue your game, or start a new one. Walk west from 
 
 ## 6. Open a pull request (1 minute)
 
-Commit only your own folder, push it to your fork, and open a pull request. The same check runs on it automatically, and the pull request template lists what reviewers look at. A preview of the game with your change is built for the pull request; for a first pull request from a fork, a maintainer approves that build first.
+Commit only your own folder, push your branch to your fork, and open a pull request with **`develop`** as its base (GitHub offers `main` first: change it). The first time, a bot asks you to sign the [contributor agreement](../../CLA.md) with one comment. The pull request template has three lines to answer, `Quest review:`, `Story review:` and `Source:`; for a fruit with no quest, no story text and no new picture they read "no quest changed", "no story text changed" and "no new picture". The same check runs on it automatically, and the pull request template lists what reviewers look at. A preview of the game with your change is built for the pull request; for a first pull request from a fork, a maintainer approves that build first.
 
 ## Classes and tiers
 
@@ -238,12 +243,12 @@ Run it from a full Git clone after commits exist. The generated board is committ
 
 Sprites live in a kit: `content/kit/<your-handle>/kit.json` plus PNG files next to it.
 
-- Two grids. A new sprite is drawn at 64 art pixels per tile and says `"density": 4` in its kit entry: items and tiles 64x64, character frames 64x96, props up to 384x384 (six tiles a side). The 16 pixel grid is still accepted, with no `density` or `"density": 1`: items and tiles 16x16, character frames 16x24, props up to 64x64. A size that belongs to the other grid is an error: a 64x64 tile with no `density: 4` is refused, and the message says so.
+- Two grids. A new sprite is drawn at 64 art pixels per tile and says `"density": 4` in its kit entry (the project is moving to 64, so draw there): items and tiles 64x64, character frames 64x96, props up to 384x384 (six tiles a side). The 16 pixel grid is still accepted, with no `density` or `"density": 1`: items and tiles 16x16, character frames 16x24, props up to 64x64. A size that belongs to the other grid is an error: a 64x64 tile with no `density: 4` is refused, and the message says so.
 - Character work poses have two frames, tool raised, then tool down: 128x128 at density 4, 32x32 at density 1.
 - A generated sprite may name where it came from: `"source": {"spec": "tools/kit-gen/<spec>.json", "manifest": "<path>/manifest.jsonl:<line>"}`.
 - Only the 32 colors of the core palette, and every pixel fully clear or fully solid.
 - How the world looks (grounds, light and shadow, height): [docs/design/STYLE.md](../design/STYLE.md). Never draw a shadow into a sprite; the game casts it.
-- AI images are welcome. Run any image through the importer and it snaps to the grid and the palette: `pnpm kit:import my-plum.png content/kit/<your-handle>/items/plum.png 16 16`.
+- AI images are welcome. Run any image through the importer and it snaps to the grid and the palette: `pnpm kit:import my-plum.png content/kit/<your-handle>/items/plum.png 64 64`.
 - Frames, sheets and a prompt-to-sprite path: the `um` tool of universal-modder (free sprite commands; the drawing recipes on your own fal.ai key). The recipe and its limits: [docs/design/ASSET_PATH.md](../design/ASSET_PATH.md) section 2. List it in `ai_tools` like any other tool.
 
 A kit file looks like this:
@@ -256,7 +261,7 @@ A kit file looks like this:
   "title": "Plum art",
   "creator": "<your-handle>",
   "ai_tools": ["Nano Banana (Gemini)"],
-  "kit": { "sprites": { "items/plum": { "file": "items/plum.png", "w": 16, "h": 16 } } }
+  "kit": { "sprites": { "items/plum": { "file": "items/plum.png", "w": 64, "h": 64, "density": 4 } } }
 }
 ```
 
@@ -364,4 +369,4 @@ What the tools answer:
 
 ## License
 
-Content you contribute is published under CC BY-SA 4.0 (see `content/LICENSE`), and code under the AGPL-3.0. Opening a pull request means you agree to that.
+Content you contribute is published under CC BY-SA 4.0 (see `content/LICENSE`), and code under the AGPL-3.0. Before your first pull request is merged you sign the [contributor agreement](../../CLA.md) once, by a comment the bot asks for: you keep your copyright, and the project may publish your work and move it to another licence later. The game's name and logo are not licensed by either licence; see [TRADEMARKS.md](../../TRADEMARKS.md).

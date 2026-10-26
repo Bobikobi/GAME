@@ -140,7 +140,7 @@ two answers, step back to the whole day.
    - The rung: does the ladder's payoff still land at its minute (GAME_RULES section 2)?
 3. **A second eye.** Give Codex the same files and facts, read-only
    (`codex exec --sandbox read-only --skip-git-repo-check -C <worktree> "..." < /dev/null`,
-   through `~/.claude/tools/heavy.sh`), for its own ranked list. Check every claim in the
+   one heavy job at a time on a shared machine), for its own ranked list. Check every claim in the
    files before using it; say which you took and which you did not, and why.
 4. **Report.** Ranked by harm to a first-time player: the problem, the evidence (file and the
    exact text or field), the smallest fix inside the rules, and who decides it. The agent:
