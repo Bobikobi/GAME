@@ -80,6 +80,8 @@ import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagon
 import { GroundChunks } from '../groundchunks';
 import { adopt, baseOf, densityOf, drawScaled, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
 import { cameraK, cameraZoom, pixelRatio, worldToPage } from '../view';
+import { addLook, type TiltShift } from '../look';
+import { parseLook } from '../look-spec';
 
 /** px from the view's edge that the smoke marker keeps, so its column fits above the base. */
 const SMOKE_INSET = 30;
@@ -311,6 +313,8 @@ export class WorldScene extends Phaser.Scene {
   /** the mist and the fogs as one layer; the player is cut out of it and of the dark frame (WebGL) */
   private veil!: Phaser.GameObjects.Container;
   /** the player's shape in the stencil that keeps the haze and the frame off the player, a copy of every frame */
+  /** the look trial's filter, when the page asked for one (`?look=`); `active` false draws the world as it is */
+  look: TiltShift | undefined;
   private cutout: Phaser.GameObjects.Sprite | undefined;
   /** where the cut ends while no lantern burns; with the lantern lit it runs on through the night and the glow */
   private uncut: Phaser.GameObjects.Stencil | undefined;
@@ -1651,6 +1655,9 @@ export class WorldScene extends Phaser.Scene {
     try {
       const cm = cam.filters.external.addColorMatrix();
       cm.colorMatrix.saturate(-0.16).contrast(0.07, true);
+      // the HD-2D look trial (stills only): `?look=tiltshift` or `?look=tiltshift-persp`, after the colour matrix
+      const asked = parseLook(location.search);
+      if (asked) this.look = addLook(cam, this.renderer as Phaser.Renderer.WebGL.WebGLRenderer, asked, this.scale.width);
     } catch {
       // a renderer without filters still plays; it only looks newer
       return;
@@ -3272,6 +3279,7 @@ export class WorldScene extends Phaser.Scene {
     this.cameras.main.setZoom(this.stoneHeld ? this.heldZoom() : zoom);
     this.shade.setSize(w, h);
     this.dusk?.setSize(w, h);
+    this.look?.resize(w);
     this.frameKey = '';
     this.drawFrame();
   }
