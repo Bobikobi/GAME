@@ -64,7 +64,8 @@ describe('a jackpot', () => {
     const perfect = gatherStone(started(3), 3);
     const jackpot = gatherStone(started(3), 4);
     expect(jackpot.player.bag).toEqual(perfect.player.bag);
-    const profession = bundle.verbs.gather;
+    // the river stones are mined, which trains digging (DECISIONS.md, 2026-10-25)
+    const profession = bundle.verbs.dig;
     expect(perfect.player.xp[profession]).toBeGreaterThan(0);
     expect(jackpot.player.xp[profession]).toBe(perfect.player.xp[profession]! * JACKPOT_XP);
   });
