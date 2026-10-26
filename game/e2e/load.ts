@@ -15,7 +15,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page, type Viewport } from './cdp';
-import { seedQuery } from './wakes';
+import { carveIn, seedQuery } from './wakes';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ROOTS: Record<string, string> = { '/play/': join(GAME_DIR, 'dist'), '/play3d/': join(GAME_DIR, 'dist-3d') };
@@ -194,10 +194,10 @@ async function newGame(page: Page, base: string, viewport: Viewport, race: strin
   if (facts.cards === 0 || facts.facts !== facts.cards) throw new Error(`${facts.facts} of ${facts.cards} race cards show the body fact`);
   await capture(page, viewport, '01-race-body-facts');
   await page.tap('.card.race', race);
-  await page.tap('input.name');
-  await page.type('Carrier');
   await page.tap('.title-screen button', 'Wake up');
   await page.waitFor(`!!window.__game?.session?.started`, 'the game', 30_000);
+  // the name is cut at the bridge's stone, and this script is not about the stone: it is cut here
+  await page.eval(carveIn('Carrier'));
   for (let i = 0; i < 40; i++) {
     if (!(await page.eval<boolean>(`!!document.querySelector('.dialog')`))) break;
     if (viewport.mobile) await page.tap('.tbtn.a');
