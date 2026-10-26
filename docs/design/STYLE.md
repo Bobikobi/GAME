@@ -36,7 +36,7 @@ A section marked *proposal* is the art session's recommendation, not yet the own
 
 - **The screen.** The canvas draws at the device's own pixels, and one art pixel is always a whole number of device pixels: 2 on a 2K phone (1440 px across, about 11 tiles), 1 on a 1080 px phone (about 17 tiles, crisp but small; older phones are not a target). The camera's rule is in NEXT 15.
 - **A face.** At 64x96 the head is about 24 to 28 px wide and the face about 20. Eyes are 2 to 3 px, each with a white and a dark pupil; brows, a nose and a mouth are drawn, not implied. The frame `density-64` is the measure.
-- The check takes both grids since the engine step (NEXT 15): 16 px at density 1 (the default) and 64 px at density 4, and a size that belongs to the other grid is an error. The redraw waves move the kit to 64. Nothing drawn at 32 goes into a kit.
+- The check takes both grids since the engine step (NEXT 15): 16 px at density 1 (the default) and 64 px at density 4, and a size that belongs to the other grid is an error. The redraw waves move the kit to 64. Since 23.10 the whole game is rich (DECISIONS.md): a new sprite at density 1 is refused, the core kit's 16 px sprites wait by name in `tools/src/kit/rich.ts` until their wave takes them off, and a rich sprite of the core kit names its ramps. Nothing drawn at 32 goes into a kit.
 
 ## 1b. Proportions (decided that they rule; the numbers wait for one look)
 

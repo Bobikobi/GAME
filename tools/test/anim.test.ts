@@ -11,7 +11,10 @@ import { type Clip, clipNames, clipProblems, job, type Library, paces, poseMs, r
 import { onTarget, outDir } from '../src/anim/cli';
 import { archiveProblems, itchUploads, sha256, unpack } from '../src/anim/fetch';
 import { measureClip, outlineOf, paletteShare, plantedRuns, type RenderMeta, sharedSlope, silhouette, slideAtPace, stride } from '../src/anim/measure';
-import { classPalettes, flipX, type Picture, rampColours, snap } from '../src/anim/snap';
+import { classPalettes, flipX, type Picture, rampColours, sheetRamps, snap } from '../src/anim/snap';
+import { CORE_PALETTE, CORE_RAMPS } from '../src/kit/palette';
+import { allowedColors } from '../src/kit/ramps';
+import { CORE_KIT, richProblem } from '../src/kit/rich';
 import { applyInk, INK_HEX, inkShare } from '../src/kit/ink';
 import { zipEntries, zipFile, zipRead } from '../src/anim/zip';
 import { CONTENT_DIR, REPO_ROOT } from '../src/load';
@@ -280,6 +283,19 @@ describe('snap', () => {
   it('mirrors left to right', () => {
     const p = picture(3, 1, (x) => (x === 0 ? [1, 2, 3, 255] : undefined));
     expect([...flipX(p).data.subarray(8, 12)]).toEqual([1, 2, 3, 255]);
+  });
+});
+
+describe('a sheet and the rich rule', () => {
+  const core = CORE_PALETTE.map((h) => h.toLowerCase());
+  it('names shared ramps that hold every colour a target can draw, and the core kit takes it at density 4', () => {
+    for (const [id, t] of Object.entries(settings.targets)) {
+      const ramps = sheetRamps(t.ramps, t.metal, t.leaf);
+      expect(richProblem(CORE_KIT, 'chars/x', { density: 4, ramps }), id).toBeUndefined();
+      const pal = classPalettes(t.ramps, t.metal, t.leaf);
+      const allowed = allowedColors(core, CORE_RAMPS, ramps);
+      for (const c of [...pal.body, ...pal.fire, ...pal.metal, ...pal.leaf]) expect(allowed.has(c.toLowerCase()), `${id} ${c}`).toBe(true);
+    }
   });
 });
 
