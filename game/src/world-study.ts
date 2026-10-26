@@ -153,8 +153,8 @@ class WorldStudy extends Phaser.Scene {
     const length = Math.hypot(dx, dy);
     if (length) {
       dx = dx / length * 125 * dt; dy = dy / length * 125 * dt;
-      if (this.ground.landAt(this.actor.x + dx - 6, this.actor.y) && this.ground.landAt(this.actor.x + dx + 6, this.actor.y)) this.actor.x += dx;
-      if (this.ground.landAt(this.actor.x, this.actor.y + dy - 4) && this.ground.landAt(this.actor.x, this.actor.y + dy + 4)) this.actor.y += dy;
+      if (this.ground.canStand(this.actor.x + dx, this.actor.y)) this.actor.x += dx;
+      if (this.ground.canStand(this.actor.x, this.actor.y + dy)) this.actor.y += dy;
       this.walkClock += dt;
       this.actor.setFrame(Math.floor(this.walkClock * 8) % 3).setDepth(this.actor.y);
       this.updatePlaceLabel();

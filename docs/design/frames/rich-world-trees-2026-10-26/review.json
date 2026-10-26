@@ -1,7 +1,7 @@
 {
   "project": "LoomVale",
   "date": "2026-10-26",
-  "status": "Visual polish ready for owner review; no owner approval claimed for the new tree mix.",
+  "status": "Owner accepted the demonstration, with the requested correction that the character must not pass through trees.",
   "preview": "http://127.0.0.1:5189/world-study.html",
   "scope": "Existing connected 2D world study: tree silhouette diversity, grounded shadows and precise player see-through.",
   "resources": {
@@ -29,5 +29,16 @@
   "nextTask": {
     "ownerInstruction": "Project and game renamed to LoomVale; adapt the home page in a later focused task.",
     "state": "Recorded for continuation; homepage not changed in this iteration."
+  },
+  "ownerFeedback": {
+    "date": "2026-10-26",
+    "words": "הדגמה עוברת, כמובן הדמות לא אמורה לעבור דרך העצים עצמם",
+    "interpretation": "Tree/body footprints must block walking; canopy overhang remains walkable."
+  },
+  "collision": {
+    "scope": "Local world-study walking only; no production map or kernel changes.",
+    "method": "Feet rectangle checked against land and each rooted tree ellipse; independent axis movement permits sliding around trunks. Footprints remain active when vegetation is hidden or motion paused.",
+    "tests": "Three pure collision tests passed; six tests passed including layout. Browser movement stopped before the trunk from all four sides; canopy space and all four viewpoints remained open; no browser errors.",
+    "pnpmVerify": "passed: 1469 suite tests and 81 web tests; content check 0 errors and 32 existing warnings"
   }
 }

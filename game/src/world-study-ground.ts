@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 import * as Phaser from 'phaser';
 import { WORLD_TILE_SIZE as TILE, worldStudyLayout, worldStudyMask, worldStudyPathDistance } from './world-study-layout';
+import { worldStudyCanStand, type WorldStudyTreeFootprint } from './world-study-collision';
 
 const assets = import.meta.glob('../../docs/design/frames/rich-world-expansion-2026-10-26/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 const banks = import.meta.glob('../../docs/design/frames/rich-river-kit-2026-10-25/bank-*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
@@ -96,6 +97,7 @@ export function createWorldStudyGround(scene: Phaser.Scene) {
   };
   type Plant = { image: Phaser.GameObjects.Image; x: number; y: number; tree: boolean; phase: number };
   const foliage: Plant[] = [];
+  const treeFootprints: WorldStudyTreeFootprint[] = [];
   const place = (name: string, x: number, y: number, tree: boolean, variant: number) => {
     const plant = scene.add.image(x, y, key(name)).setOrigin(.5, 1).setDepth(y);
     if (tree) {
@@ -105,6 +107,8 @@ export function createWorldStudyGround(scene: Phaser.Scene) {
       const height = 320 + ((variant >>> 12) % 5) * 8;
       const width = name === 'oak-broad' ? height : Math.round(height * (192 / 320) * (1 + ((variant >>> 17) % 3) * .035));
       plant.setDisplaySize(width, height);
+      // Roots occupy a shallow patch of ground; leaves and upright bark are an overhang.
+      treeFootprints.push({ x, y: y - 14 * height / 320, radiusX: width * .17, radiusY: 18 * height / 320 });
     }
     if (!tree) plant.setDisplaySize(name === 'grass' ? 38 : 48, name === 'grass' ? 38 : 48);
     if (!tree && variant % 2) plant.setFlipX(true);
@@ -145,6 +149,8 @@ export function createWorldStudyGround(scene: Phaser.Scene) {
   scene.events.once('shutdown', () => { image.destroy(); for (const p of foliage) p.image.destroy(); scene.textures.remove(texture.key); });
   return {
     image, landAt, landColor, advance,
+    treeFootprints,
+    canStand: (x: number, y: number) => worldStudyCanStand(x, y, landAt, treeFootprints),
     trees: foliage.filter(p => p.tree).map(p => p.image),
     setPlantsVisible: (visible: boolean) => { for (const p of foliage) p.image.setVisible(visible); },
     setMotion: (enabled: boolean) => { motion = enabled; },

@@ -1,6 +1,6 @@
 # LoomVale — RICH tree and depth polish, 2026-10-26
 
-Continue the existing connected world study at `/world-study.html`; the owner's positive world feedback and approval of the sea remain the baseline. This iteration addresses repeated tree facing and weak grounding. Visual acceptance of this polish is pending owner review.
+Continue the existing connected world study at `/world-study.html`; the owner's positive world feedback and approval of the sea remain the baseline. This iteration addresses repeated tree facing and weak grounding. The owner accepted the demonstration and requested the follow-up collision correction below.
 
 ## Starting state and parallel work
 
@@ -27,3 +27,7 @@ Validation results are recorded in `review.json`. The importer is reproducible w
 ## Owner follow-up
 
 The owner states the project and game are now named **LoomVale**. A later focused task should adapt the home page to that name and branding. This is a recorded next task; the home page was not edited in this tree/depth iteration. Continue from the existing page and design when that task begins.
+
+## Follow-up: solid tree bases
+
+Owner feedback: "הדגמה עוברת, כמובן הדמות לא אמורה לעבור דרך העצים עצמם". Walking now checks a small feet rectangle against a shallow root/trunk ellipse for each tree. The ellipse scales with the displayed tree, while the crown remains an overhang that can be walked behind. Tree hiding and wind sway do not remove or move these obstacles. Land alpha remains separate so water and shadow clipping still describe terrain alone. The character slides around a blocked axis rather than stopping both axes. Three pure tests cover contact from every side, feet-width overlap, clear canopy/corners and shore clearance. Browser input verified approach and stop from all four sides without entering or crossing a trunk, plus open canopy space and all four viewpoints.
