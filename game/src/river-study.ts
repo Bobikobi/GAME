@@ -15,6 +15,7 @@ const grid = importReport.seams.find(s => s.name === 'inlet')!.grid;
 const tileSize = 64;
 const extent = grid.length * tileSize;
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+const openSea = new URLSearchParams(location.search).get('view') === 'sea';
 
 class RiverStudy extends Phaser.Scene {
   private actor!: Phaser.GameObjects.Sprite;
@@ -47,7 +48,7 @@ class RiverStudy extends Phaser.Scene {
       motifs[y] = [];
       for (let x = 0; x < grid[y]!.length; x++) {
         const mask = grid[y]![x]!;
-        if (!mask) continue;
+        if (!mask || openSea) continue;
         const nearby = [motifs[y]?.[x - 1], motifs[y - 1]?.[x]].filter((v): v is string => !!v);
         const choice = chooseShoreVariant(material, mask, x, y, nearby);
         if (!choice) throw new Error(`Missing compatible shore: ${material.id}/${mask}`);
@@ -58,19 +59,41 @@ class RiverStudy extends Phaser.Scene {
       }
     }
     this.water = new CoastalWaterStudy(this, extent, (x, y) => this.landAt(x, y), (x, y) => this.landColor(x, y));
-    this.actor = this.add.sprite(125, 140, 'player', 1).setOrigin(.5, 1).setScale(4).setDepth(10);
+    this.actor = this.add.sprite(125, 140, 'player', 1).setOrigin(.5, 1).setScale(4).setDepth(10).setVisible(!openSea);
     this.keys = this.input.keyboard!.addKeys('UP,DOWN,LEFT,RIGHT,W,A,S,D') as Record<string, Phaser.Input.Keyboard.Key>;
     const camera = this.cameras.main;
-    camera.setBounds(-48, -48, extent + 96, extent + 96);
-    camera.startFollow(this.actor, true, .15, .15);
-    camera.setFollowOffset(0, 32);
+    let wideZoom = 1;
+    if (openSea) {
+      const fitSea = () => {
+        wideZoom = Math.max(this.scale.width, this.scale.height) / extent;
+        camera.setZoom(wideZoom).centerOn(extent / 2, extent / 2);
+        document.getElementById('zoom')!.textContent = 'קירוב ×2';
+      };
+      fitSea();
+      this.scale.on('resize', fitSea);
+      this.events.once('shutdown', () => this.scale.off('resize', fitSea));
+    }
+    else {
+      camera.setBounds(-48, -48, extent + 96, extent + 96);
+      camera.startFollow(this.actor, true, .15, .15);
+      camera.setFollowOffset(0, 32);
+    }
+    const view = document.getElementById('view') as HTMLSelectElement;
+    view.value = openSea ? 'sea' : 'coast';
+    view.onchange = () => {
+      const url = new URL(location.href);
+      if (view.value === 'sea') url.searchParams.set('view', 'sea');
+      else url.searchParams.delete('view');
+      location.assign(url.href);
+    };
+    if (openSea) document.getElementById('movement')!.textContent = 'ים פתוח, רחוק מהחוף. גוף המים והאור ללא קרקעית, השתקפות גדה או קצף חוף.';
     const waterButton = document.getElementById('water')!;
     const updateLabel = () => { waterButton.textContent = this.flowing ? 'עצירת מים' : 'הפעלת מים'; waterButton.setAttribute('aria-pressed', String(this.flowing)); };
     waterButton.onclick = () => { this.flowing = !this.flowing; updateLabel(); };
     document.getElementById('zoom')!.onclick = () => {
-      const zoom = camera.zoom === 1 ? 2 : 1;
+      const zoom = camera.zoom === wideZoom ? wideZoom * 2 : wideZoom;
       camera.setZoom(zoom);
-      document.getElementById('zoom')!.textContent = zoom === 1 ? 'קירוב ×2' : 'מבט רחב';
+      document.getElementById('zoom')!.textContent = zoom === wideZoom ? 'קירוב ×2' : 'מבט רחב';
     };
     const onReduced = () => { this.flowing = !reduced.matches; updateLabel(); };
     reduced.addEventListener('change', onReduced);
@@ -78,6 +101,7 @@ class RiverStudy extends Phaser.Scene {
     const weather = document.getElementById('weather') as HTMLSelectElement;
     weather.onchange = () => { this.water.weather = weather.value as WaterWeather; this.water.render(); };
     const slope = document.getElementById('slope') as HTMLSelectElement;
+    slope.disabled = openSea;
     slope.onchange = () => { this.water.slope = Number(slope.value); this.water.render(); };
     document.getElementById('wind')!.onclick = () => {
       this.water.wind = [-this.water.wind[0], -this.water.wind[1]];
@@ -85,10 +109,17 @@ class RiverStudy extends Phaser.Scene {
       document.getElementById('wind')!.textContent = this.water.wind[0] < 0 ? 'רוח ← החלפת כיוון' : 'רוח → החלפת כיוון';
     };
     for (const input of document.querySelectorAll<HTMLInputElement>('[data-layer]')) {
+      if (openSea && input.dataset.layer !== 'surface') {
+        input.checked = false;
+        input.disabled = true;
+        this.water.layers[input.dataset.layer as WaterLayer] = false;
+      }
       input.onchange = () => { this.water.layers[input.dataset.layer as WaterLayer] = input.checked; this.water.render(); };
     }
     updateLabel();
-    document.getElementById('status')!.textContent = `דשא וחצץ · ${this.repeats} חזרות שעדיין חסרה להן חלופה`;
+    document.getElementById('status')!.textContent = openSea
+      ? 'ים פתוח · שתי שכבות גוף ואור משתנה · עדיין ללא גלי עומק נפרדים'
+      : `דשא וחצץ · ${this.repeats} חזרות שעדיין חסרה להן חלופה`;
     (window as unknown as { __riverStudy: RiverStudy }).__riverStudy = this;
   }
 
@@ -101,6 +132,7 @@ class RiverStudy extends Phaser.Scene {
   }
 
   private landAt(x: number, y: number): boolean {
+    if (openSea) return false;
     const tx = Math.floor(x / tileSize), ty = Math.floor(y / tileSize);
     const texture = this.selected[ty]?.[tx];
     return !!texture && (this.textures.getPixel(Math.floor(x) - tx * tileSize, Math.floor(y) - ty * tileSize, texture)?.alpha ?? 0) >= 128;
@@ -110,6 +142,7 @@ class RiverStudy extends Phaser.Scene {
     if (!this.actor || document.hidden) return;
     const dt = Math.min(delta, 50) / 1000;
     if (this.flowing) this.water.advance(dt);
+    if (openSea) return;
     let dx = Number(this.keys.RIGHT!.isDown || this.keys.D!.isDown) - Number(this.keys.LEFT!.isDown || this.keys.A!.isDown);
     let dy = Number(this.keys.DOWN!.isDown || this.keys.S!.isDown) - Number(this.keys.UP!.isDown || this.keys.W!.isDown);
     const pointer = this.input.activePointer;
@@ -132,4 +165,4 @@ class RiverStudy extends Phaser.Scene {
 
 const host = document.getElementById('game')!;
 const game = new Phaser.Game({ type: Phaser.AUTO, parent: host, pixelArt: true, roundPixels: true, banner: false, backgroundColor: '#172a52', scale: { mode: Phaser.Scale.RESIZE, width: host.clientWidth, height: host.clientHeight }, scene: [RiverStudy] });
-window.addEventListener('pagehide', () => game.destroy(true), { once: true });
+window.addEventListener('pagehide', event => { if (!event.persisted) game.destroy(true); });
