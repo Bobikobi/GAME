@@ -102,7 +102,7 @@ What the check does not verify today, and a crafting core needs: that some camp 
 | tool kinds | basket, trowel | `schema/src/index.ts:49` |
 | stations | fire, workshop | `schema/src/index.ts:52` |
 | item kinds | material, food, tool, fragment, treasure | `schema/src/index.ts:55` |
-| attributes | carry, senses, agility, luck, stamina | `schema/src/index.ts:63` |
+| attributes | might, senses, agility, luck, stamina, spirit | `schema/src/index.ts:76` |
 | a tool's tier and uses | tier 1 to 5 ("Better tools work faster"), uses 1 to 1000 | `schema/src/index.ts:101-102` |
 | a recipe | station, active_ms, level 1 to 20 ("Cooking level required."), 1 to 6 inputs, 1 to 4 outputs with `share_pct`, known start or found | `schema/src/index.ts:168-180` |
 | a camp part | slot fire, storage, workshop or shelf; 1 to 6 inputs; an optional station it provides; an optional bag bonus | `schema/src/index.ts:334-344` |
@@ -263,7 +263,7 @@ All twelve were asked on 2026-10-09 and answered the same day; each answer is an
 | D-CRAFT-9 | Q7 | Where does rare value come from? | "Rare value comes from capacity and gates, paid by work and chance". Count, respawn, hours, level, tool and find tables, under the 10% budget; no event timers. | R6, R7, 8.2, G28 | kernel, check (wave 1) |
 | D-CRAFT-10 | Q10 | What does the workshop make? | "The workshop makes better tools that no shop sells; the 30-gold tools stay". Higher-tier tools come from recipes only; the basket and the trowel keep their price; R8 is untouched. | R8, DECISIONS 2026-10-07 (parked entry) | content (wave 3), docs |
 | D-CRAFT-11 | Q1 | What may money ever buy around crafting? | "Crafting and money: power is never sold; a look may carry a marker for a later premium sale". Nothing crafted is sold or gated for money; a marker is allowed only on look items with no effect, and the check enforces that; the recipe itself is always obtainable in the game. | G28, spec 5:157, 17:765, 6:205 | schema, check (wave 2), roadmap (stage 6) |
-| D-CRAFT-12 | Q2 | How does a non-crafter progress? | "Crafting is optional: a player who never crafts progresses by the roads already written". Hard quests, treasure and digging, riddles, mastery of the minigames, the expedition and reputation; combat stays out until stage 8 or a vote. | G35, G36, G37, G28, D6 | docs (G38), roadmap |
+| D-CRAFT-12 | Q2 | How does a non-crafter progress? | "Crafting is optional: a player who never crafts progresses by the roads already written". Hard quests, treasure and digging, riddles, mastery of the minigames, the expedition and reputation; combat comes after the foundation (DECISIONS 2026-10-19, G35); theft only in areas between players once combat comes. | G35, G36, G37, G28, D6 | docs (G38), roadmap |
 
 ## 6. The build waves, adjusted to the answers
 
@@ -442,11 +442,10 @@ Read for the two ladders (D-CRAFT-2), the slots (D-CRAFT-6) and the miss (D-CRAF
 
 ## Appendix D. The open ends
 
-Mirrored in `docs/team/GRUNT.md`, section "Open ends". An item leaves the list when its "closes when" is true on `develop`.
+Mirrored in `docs/team/GRUNT.md`, section "Open ends", which is the live register; this table may lag it. An item leaves the list when its "closes when" is true on `develop`. CR-1 is closed: the trader pays at most k*r*V and the shop charges at least r*V (DECISIONS 2026-10-09 and 2026-10-10, the R8 naming).
 
 | Id | What is open | Where | Closes when |
 |---|---|---|---|
-| CR-1 | The shop floor in the code is r * V; R8 writes k * r * V. One of the two is wrong. | `kernel/src/values.ts:178-180`, `docs/kernel-review-v1.md:109` | the owner's word is in DECISIONS.md and either the review or `minChargeFor` matches it |
 | CR-2 | A removed item is dropped from a save, not converted (R5). | `game/src/session.ts:250-261` | a conversion record exists in the schema and `adapt` applies it, before stage 2a saves |
 | CR-3 | R12 names min, max, step and cooldown per parameter; the params carry min, max and step, no cooldown, the check reads min and max only, and r is votable though "fixed for good". | `content/core/params.json:16-21`, `tools/src/check.ts:51-74` | the check reads the step and a cooldown, or the review is amended |
 | CR-4 | G3 has no check and no checklist question. | `docs/design/GAME_RULES.md:91-92`, `tools/src/play.ts` | a play rule counts visible steps, or section 8 records G3 as reviewed by hand |
@@ -454,7 +453,7 @@ Mirrored in `docs/team/GRUNT.md`, section "Open ends". An item leaves the list w
 | CR-6 | Stale texts about the check: "!" lines, rules G1 to G16, kernel rules R1 to R11. | `docs/design/GAME_RULES.md:4`, `:76-77`, `:332`, `:382-383`; `AGENTS.md:9`; `CONTRIBUTING.md:15`; `docs/design/TOOLKIT.md:48-49` | one docs sweep |
 | CR-7 | Professions are core-only, against spec 8 line 248 and 11 line 475; held so by D-CRAFT-4 for now. | `schema/src/index.ts:575`, `tools/src/assemble.ts:136` | the stage that opens professions to extensions, with its own decision |
 | CR-10 | Quest gates by profession or character level for the non-crafter's roads. | `schema/src/index.ts:307` | a quest may name a level, or DECISIONS.md says it never will |
-| CR-12 | A weapon slot waits for G35 (stage 8 or a vote). | roadmap | that stage or vote |
+| CR-12 | A weapon slot waits for the combat wave, after the foundation (DECISIONS 2026-10-19, G35 is the demo's rule). | roadmap | the combat wave |
 | CR-13 | Metal content waits for its discovery. | roadmap | a vote or an accepted proposal |
 | CR-14 | A broad template can pass its bound today and fail on a later merge when another creator adds fitting items; the guide says to keep templates narrow. | `tools/src/assemble.ts` (wave 1) | the first such failure is handled, or the fit is scoped per creator |
 | CR-19 | The trader pays one price whatever the supply. Decided 9.10: a free market, a stock per item that moves the trader's and the shop's prices inside R8's band and drains with game time. Timing decided 9.10: the build right after crafting wave 4, one market per world, tuned in the demo; at stage 4 the players of a world share it. | `kernel/src/state.ts`, `kernel/src/step.ts` | the market stock and its prices exist with tests, and the trader shows today's price |

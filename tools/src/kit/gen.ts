@@ -37,8 +37,8 @@
  *
  * `--drawer` picks the route an image prompt goes down (`drawers.ts`, docs/art/DRAWERS.md): `codex`, the agent
  * on its subscription; `gemini`, one HTTP call on a `GEMINI_API_KEY` (a project with billing); `local`, Stable
- * Diffusion with a pixel-art LoRA in a ComfyUI on your own machine, free; `kaggle`, Stable Diffusion (1.5 or SDXL,
- * its own short prompt) in a private Kaggle kernel on its free GPU, the whole wave in one kernel run (drawn before the loop, then imported entry by
+ * Diffusion with a pixel-art LoRA in a ComfyUI on your own machine, free; `kaggle`, an open model (SD 1.5, SDXL,
+ * Qwen-Image or FLUX.1-schnell, its own prompt) in a private Kaggle kernel on its free GPU, the whole wave in one kernel run (drawn before the loop, then imported entry by
  * entry as usual). Text routes (grid, scatter) stay with Codex. The manifest line says which route drew each image and the prompt it was given.
  *
  * Nothing is written into `content/`: a result goes into the kit by hand, in a wave. `--dry` writes
@@ -535,7 +535,7 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
     if (route === 'kaggle') line.prompt = kagglePrompt(entry, kaggleSettings().recipe);
     const call = { out: options.out, name: entry.name, stamp, prompt: line.prompt, images: [refPath, ...(entry.style_refs ?? []).map((p) => join(ROOT, p))], expect: file, timeoutSeconds: options.timeoutSeconds };
     const drawn = route === 'gemini' ? drawWithGemini(call) : route === 'local' ? drawWithLocal(call)
-      : route === 'kaggle' ? options.predrawn?.get(entry.name) ?? drawWithKaggle({ ...call, subject: kaggleSubject(entry.ref) }) : null;
+      : route === 'kaggle' ? options.predrawn?.get(entry.name) ?? drawWithKaggle({ ...call, subject: kaggleSubject(entry.ref), grid: { width: entry.width, height: entry.height } }) : null;
     const asked = drawn === null
       ? askCodex(options, version, entry.name, stamp, line.prompt, grid ? [] : ['-i', refPath, ...styleRefs], grid ? `${entry.name}.txt` : file)
       : { codex: { version: drawn.version, exit: drawn.exit, seconds: drawn.seconds, tokens: drawn.tokens, log: drawn.log }, saved: drawn.saved, error: drawn.error };
@@ -757,6 +757,7 @@ function drawKaggleWave(entries: readonly GenEntry[], options: Options): Map<str
     out: options.out, stamp, timeoutSeconds: options.timeoutSeconds,
     requests: wave.map((entry) => ({
       name: entry.name, prompt: kagglePrompt(entry, recipe), reference: writeReference(entry, options.out).refPath, expect: `${entry.name}.png`, subject: kaggleSubject(entry.ref),
+      grid: { width: entry.width, height: entry.height },
     })),
   });
 }

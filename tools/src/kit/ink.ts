@@ -18,34 +18,72 @@ import { CORE_PALETTE, hexToRgb } from './palette.js';
 export const INK_HEX: string = CORE_PALETTE[0]!;
 const INK = hexToRgb(INK_HEX);
 
-/** Edge pixels of a frame: opaque pixels with a 4-neighbour that is not opaque or lies outside the frame. */
-function edgePixels(png: PNG, frameWidth: number): number[] {
-  const { width, height, data } = png;
-  if (!Number.isInteger(frameWidth) || frameWidth <= 0 || width % frameWidth !== 0) {
-    throw new Error(`frame width ${frameWidth} does not divide the image width ${width}`);
+/** RGBA rows, as pngjs reads them; the anim tool's `Picture` has the same shape. */
+export interface Raster {
+  width: number;
+  height: number;
+  data: Uint8Array;
+}
+
+/**
+ * The one definition of the ink edge, used by the kit check, `kit:ink` and the anim tool: an opaque pixel is
+ * solid, and a frame's border counts as outside. `frameWidth` splits a strip into frames (a single picture:
+ * its width).
+ */
+const solidAt = (r: Raster, x: number, y: number, x0: number, frameWidth: number): boolean =>
+  x >= x0 && x < x0 + frameWidth && y >= 0 && y < r.height && r.data[(y * r.width + x) * 4 + 3] === 255;
+
+function frameCheck(r: Raster, frameWidth: number): void {
+  if (!Number.isInteger(frameWidth) || frameWidth <= 0 || r.width % frameWidth !== 0) {
+    throw new Error(`frame width ${frameWidth} does not divide the image width ${r.width}`);
   }
-  const opaque = (x: number, y: number, x0: number): boolean =>
-    x >= x0 && x < x0 + frameWidth && y >= 0 && y < height && data[(y * width + x) * 4 + 3] === 255;
+}
+
+/** Edge pixels of a frame: solid pixels with a 4-neighbour that is not solid or lies outside the frame. */
+export function edgePixels(r: Raster, frameWidth: number = r.width): number[] {
+  frameCheck(r, frameWidth);
   const out: number[] = [];
-  for (let x0 = 0; x0 < width; x0 += frameWidth) {
-    for (let y = 0; y < height; y++) {
+  for (let x0 = 0; x0 < r.width; x0 += frameWidth) {
+    for (let y = 0; y < r.height; y++) {
       for (let x = x0; x < x0 + frameWidth; x++) {
-        if (!opaque(x, y, x0)) continue;
-        if (!opaque(x - 1, y, x0) || !opaque(x + 1, y, x0) || !opaque(x, y - 1, x0) || !opaque(x, y + 1, x0)) out.push(y * width + x);
+        if (!solidAt(r, x, y, x0, frameWidth)) continue;
+        if (!solidAt(r, x - 1, y, x0, frameWidth) || !solidAt(r, x + 1, y, x0, frameWidth) || !solidAt(r, x, y - 1, x0, frameWidth) || !solidAt(r, x, y + 1, x0, frameWidth)) out.push(y * r.width + x);
       }
     }
   }
   return out;
 }
 
+/** The pixels just outside a silhouette (clear, with a solid 4-neighbour in the frame): where a ring of ink goes. */
+export function ringPixels(r: Raster, frameWidth: number = r.width): number[] {
+  frameCheck(r, frameWidth);
+  const out: number[] = [];
+  for (let x0 = 0; x0 < r.width; x0 += frameWidth) {
+    for (let y = 0; y < r.height; y++) {
+      for (let x = x0; x < x0 + frameWidth; x++) {
+        if (solidAt(r, x, y, x0, frameWidth)) continue;
+        if (solidAt(r, x - 1, y, x0, frameWidth) || solidAt(r, x + 1, y, x0, frameWidth) || solidAt(r, x, y - 1, x0, frameWidth) || solidAt(r, x, y + 1, x0, frameWidth)) out.push(y * r.width + x);
+      }
+    }
+  }
+  return out;
+}
+
+/** Whether pixel `p` of the raster is exactly the ink colour. */
+export const isInk = (r: Raster, p: number): boolean => r.data[p * 4] === INK[0] && r.data[p * 4 + 1] === INK[1] && r.data[p * 4 + 2] === INK[2];
+
+/** Paint pixel `p` the ink colour, fully opaque. */
+export function paintInk(r: Raster, p: number): void {
+  r.data[p * 4] = INK[0];
+  r.data[p * 4 + 1] = INK[1];
+  r.data[p * 4 + 2] = INK[2];
+  r.data[p * 4 + 3] = 255;
+}
+
 /** The PNG with its edge pixels recoloured to ink, frame by frame. Returns the new bytes. */
 export function applyInk(buffer: Buffer, frameWidth: number): Buffer {
   const png = PNG.sync.read(buffer);
-  for (const p of edgePixels(png, frameWidth)) {
-    png.data[p * 4] = INK[0];
-    png.data[p * 4 + 1] = INK[1];
-    png.data[p * 4 + 2] = INK[2];
-  }
+  for (const p of edgePixels(png, frameWidth)) paintInk(png, p);
   return PNG.sync.write(png);
 }
 
@@ -54,7 +92,7 @@ export function inkShare(buffer: Buffer, frameWidth: number): number {
   const png = PNG.sync.read(buffer);
   const edge = edgePixels(png, frameWidth);
   if (edge.length === 0) return 1;
-  const ink = edge.filter((p) => png.data[p * 4] === INK[0] && png.data[p * 4 + 1] === INK[1] && png.data[p * 4 + 2] === INK[2]).length;
+  const ink = edge.filter((p) => isInk(png, p)).length;
   return ink / edge.length;
 }
 

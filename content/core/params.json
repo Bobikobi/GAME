@@ -287,16 +287,89 @@
       }
     },
     "bag_base": {
-      "value": 30,
-      "min": 20,
-      "max": 60,
-      "step": 5
+      "value": 12,
+      "min": 8,
+      "max": 30,
+      "step": 2
+    },
+    "place_stack": {
+      "value": 10,
+      "min": 1,
+      "max": 99,
+      "step": 1
+    },
+    "load": {
+      "base": {
+        "value": 30,
+        "min": 20,
+        "max": 60,
+        "step": 5
+      },
+      "light_permille": {
+        "value": 600,
+        "min": 400,
+        "max": 800,
+        "step": 50
+      },
+      "max_permille": {
+        "value": 1500,
+        "min": 1200,
+        "max": 2000,
+        "step": 100
+      },
+      "light_step_ms": {
+        "value": 170,
+        "min": 120,
+        "max": 190,
+        "step": 10
+      },
+      "heavy_step_ms": {
+        "value": 230,
+        "min": 190,
+        "max": 400,
+        "step": 10
+      },
+      "heavy_breath_permille": {
+        "value": 500,
+        "min": 250,
+        "max": 1000,
+        "step": 50
+      }
     },
     "starting_gold_mg": {
       "value": 0,
       "min": 0,
       "max": 50000,
       "step": 5000
+    },
+    "growth": {
+      "cost": {
+        "small": {
+          "value": 1,
+          "min": 1,
+          "max": 2,
+          "step": 1
+        },
+        "major": {
+          "value": 2,
+          "min": 1,
+          "max": 4,
+          "step": 1
+        },
+        "corner": {
+          "value": 3,
+          "min": 2,
+          "max": 5,
+          "step": 1
+        }
+      },
+      "slot_levels": [
+        1,
+        1,
+        5,
+        10,
+        15
+      ]
     },
     "per_point": {
       "might": {
@@ -386,42 +459,42 @@
           {
             "at": "06:00",
             "right": -103,
-            "down": 39
+            "down": -39
           },
           {
             "at": "08:00",
             "right": -86,
-            "down": 37
+            "down": -37
           },
           {
             "at": "10:00",
             "right": -22,
-            "down": 16
+            "down": -16
           },
           {
             "at": "12:00",
             "right": 0,
-            "down": 11
+            "down": -11
           },
           {
             "at": "14:00",
             "right": 22,
-            "down": 16
+            "down": -16
           },
           {
             "at": "16:00",
             "right": 86,
-            "down": 37
+            "down": -37
           },
           {
             "at": "16:30",
             "right": 102,
-            "down": 41
+            "down": -41
           },
           {
             "at": "18:00",
             "right": 103,
-            "down": 39
+            "down": -39
           }
         ]
       }

@@ -4,6 +4,12 @@
 
 <!-- One or two sentences, and where a player finds it (for example "a plum bush in the quiet glade west of the river"). -->
 
+## Tools that fire on this pull request
+
+Quest review: <verdict of the quest-designer skill in one line, or "no quest changed">
+Story review: <verdict of the story-keeper skill in one line, or "no story text changed">
+Source: <where each picture added under content/kit/ came from (docs/art/PROP_FROM_REF.md), or "no new picture">
+
 ## Author checklist
 
 - [ ] `pnpm check` passes on my machine
@@ -13,7 +19,7 @@
 
 ## Reviewer checklist
 
-An extension merges with a green check and one approval, a maintainer's, until five creators have had an extension merged; from then on, three approvals. Before you approve, confirm each point:
+An extension merges with a green check and one approval, the owner's, until five creators have had an extension merged; from then on, three approvals. Before you approve, confirm each point:
 
 - [ ] **It plays.** I opened the preview, found it, and it does what the description says.
 - [ ] **It fits.** Names, text and art suit the valley: cosy, plain words for every age, menace within its limit (GAME_RULES.md G22 and G46), handheld-era pixel art.

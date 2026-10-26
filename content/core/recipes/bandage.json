@@ -15,6 +15,7 @@
       "class": "fibre",
       "tier": 1,
       "sprite": "core/base-kit:items/bandage",
+      "weight": 1,
       "food": {
         "satiety": 20
       }

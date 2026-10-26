@@ -10,6 +10,7 @@ import { type Bundle, computeValues, idiv, minChargeFor, missOutcome, rarityBudg
 import { RARITIES, type ParamsBody } from '@game/schema';
 import { assemble, type Assembled } from './assemble';
 import { readBoard } from './board';
+import { holeProblems } from './kit/holes';
 import { CORE_PALETTE, coreRamp } from './kit/palette';
 import { accentsOf, allowedColors, rampProblems } from './kit/ramps';
 import { scaleProblems } from './kit/scale';
@@ -22,9 +23,16 @@ import { checkReactions } from './reactions';
 import { checkPlay, rewardItems } from './play';
 import { checkDeadProps } from './deadprops';
 import { checkReach } from './reach';
+import { checkMapPlan } from './mapplan';
 import { checkRaces } from './races';
+import { checkSchools } from './schools';
+import { checkHands } from './hands';
 import { checkRichness } from './richness';
+import { checkSearch } from './search';
 import { checkStarts } from './starts';
+import { mergedPullRequests, gitReader, resolveBase } from './decisions/base';
+import { NEXT_FILE, checkNext } from './decisions/next';
+import { RATCHETS, checkRatchets } from './decisions/ratchets';
 
 export interface CheckResult {
   issues: Issue[];
@@ -52,13 +60,46 @@ export function runCheck(root?: string): CheckResult {
     issues.push(...checkInk(assembled));
     issues.push(...checkPlay(b, assembled.origin));
     issues.push(...checkRaces(b, assembled.origin));
+    issues.push(...checkSchools(b, assembled.origin));
     issues.push(...checkStarts(b, assembled.origin));
     issues.push(...checkReach(b, assembled.origin));
     issues.push(...checkDeadProps(b, assembled.origin));
     issues.push(...checkHazards(b, assembled.origin));
     issues.push(...checkRichness(b, assembled.origin));
+    issues.push(...checkSearch(b, assembled.origin));
+    issues.push(...checkMapPlan(b, assembled.origin));
+    issues.push(...checkHands(b, assembled.origin));
   }
   return { issues: dedupe(issues), files: files.length, assembled };
+}
+
+/**
+ * `pnpm check`: runCheck() over the content, then the checks over the repository itself (next-status,
+ * list-shrinks against the base, base-available). runCheck() stays content-only for its many callers.
+ */
+export function runRepoCheck(opts: { root?: string; repo?: string; env?: Readonly<Record<string, string | undefined>> } = {}): CheckResult {
+  const result = runCheck(opts.root);
+  const repo = opts.repo ?? REPO_ROOT;
+  const issues = [...result.issues];
+  const env = opts.env ?? process.env;
+  const base = resolveBase(env, repo);
+  issues.push(...base.issues);
+  const readHead = (file: string): string | null => {
+    const path = join(repo, file);
+    return existsSync(path) ? readFileSync(path, 'utf8') : null;
+  };
+  const next = readHead(NEXT_FILE);
+  if (next !== null) {
+    const streams = readHead('docs/team/streams.json');
+    const ids = streams ? (JSON.parse(streams) as { streams: { id: string }[] }).streams.map((s) => s.id) : [];
+    // a pull request counts as merged when the base names it: CI's base is the tip of develop; on a machine
+    // the merge base is where the branch started, so the tip of origin/develop is read instead
+    const mergedRef = env.DECISIONS_BASE?.trim() && base.ref ? base.ref : 'origin/develop';
+    issues.push(...checkNext(next, ids, mergedPullRequests(repo, mergedRef) ?? undefined));
+  }
+  const atBase = base.ref ? gitReader(base.ref, RATCHETS.map((r) => r.file), repo) : null;
+  issues.push(...checkRatchets(readHead, atBase ? (file) => atBase.get(file) ?? null : null));
+  return { ...result, issues: dedupe(issues) };
 }
 
 function dedupe(issues: Issue[]): Issue[] {
@@ -254,6 +295,12 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
   for (let i = 1; i < wornCaps.length; i++) {
     if (wornCaps[i]! < wornCaps[i - 1]!) err(PARAMS_FILE, `params.wear_effect_max_pct.${i}`, 'the cap on a worn effect never falls with the tier');
   }
+  // the three paces run light, steady, heavy, and the hard edge lies beyond the limit (DECISIONS.md, 2026-10-23)
+  if (!(p.load.light_step_ms <= p.walk_step_ms && p.walk_step_ms <= p.load.heavy_step_ms)) {
+    err(PARAMS_FILE, 'params.load', 'the paces run light, steady, heavy: load.light_step_ms <= walk_step_ms <= load.heavy_step_ms');
+  }
+  if (p.load.light_permille >= 1000) err(PARAMS_FILE, 'params.load.light_permille', 'the light pace ends before the limit: under 1000');
+  if (p.load.max_permille <= 1000) err(PARAMS_FILE, 'params.load.max_permille', 'the hard edge lies beyond the limit: over 1000');
 
   for (const [id, it] of Object.entries(b.items)) {
     const where = `items.${id}`;
@@ -413,6 +460,11 @@ function checkWear(b: Bundle): Issue[] {
     } else if (base !== 'garment') {
       err(it.file, `${where}.wear.slot`, `the ${w.slot} takes items of class "garment"`);
     }
+    // a bag on the back gives places, and a frame bag a weight bonus (DECISIONS.md, 2026-10-23)
+    if ((w.places !== undefined || w.load_bonus !== undefined) && (w.slot !== 'back' || w.look)) {
+      err(it.file, `${where}.wear.places`, 'only a work piece worn on the back gives places or a weight bonus');
+    }
+    if (w.load_bonus !== undefined && w.places === undefined) err(it.file, `${where}.wear.load_bonus`, 'a weight bonus comes with a bag: give it "places" too');
     if (w.look) {
       if (w.effects) err(it.file, `${where}.wear.effects`, 'a look shows and counts for nothing: it has no effects (G44)');
       if (w.set) err(it.file, `${where}.wear.set`, 'a look belongs to no set');
@@ -626,6 +678,8 @@ function checkKits(a: Assembled): Issue[] {
           level: 'error',
         });
       }
+      // A see-through speck inside the drawing at density 4 is the importer's, not the drawing's (tools/src/kit/holes.ts).
+      for (const message of holeProblems(s, png, `${kit.rel}/${s.file}`)) issues.push({ file: `${kit.rel}/${s.file}`, where, message, level: 'error' });
       // A ground tile is its ramp plus at most two accents (STYLE section 9).
       const first = named[0] ? rampById.get(named[0]) : undefined;
       if (name.startsWith('tiles/') && first) {

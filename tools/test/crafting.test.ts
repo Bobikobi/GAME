@@ -84,6 +84,7 @@ const item = (name: string, extra: object = {}) => ({
   class: 'plant',
   tier: 1,
   sprite: 'core/base-kit:items/herb',
+  weight: 1,
   ...extra,
 });
 const items = (...list: object[]) => ({ ...envelope('items', 'items'), items: list });

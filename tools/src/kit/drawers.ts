@@ -15,13 +15,14 @@
  *   local   Stable Diffusion 1.5 with a pixel-art LoRA in a ComfyUI on your own machine, free and
  *           unlimited, image to image from the reference. On the laptop's CPU about 90-300 s per
  *           image by size and steps (21.10: 512 px, 20 steps, 290 s); seconds on a GPU. Settings in
- *           the environment (`COMFYUI_URL`, `LOCAL_DENOISE`, `LOCAL_STEPS` 20, `LOCAL_SIZE` 512; 384/12 is 94 s but speckled); the prompt
+ *           the environment (`COMFYUI_URL`, `LOCAL_DENOISE`, `LOCAL_STEPS` 20, `LOCAL_SIZE` 512; 384/12 is 94 s but speckled; `LOCAL_SEED` 7); the prompt
  *           is the compact one, since the model reads about 75 tokens.
- *   kaggle  Stable Diffusion with `diffusers` in a private Kaggle kernel on its free GPU, driven by the `kaggle`
- *           CLI: SD 1.5 with the local route's LoRA (`KAGGLE_MODEL` sd15, the default) or SDXL with a pixel-art
- *           LoRA (`KAGGLE_MODEL=sdxl`). Its own short prompt (`kagglePrompt`, checked against CLIP's 77 tokens in
- *           the kernel, never cut), a negative prompt, a canvas in the reference's shape and a denoise of its
- *           own for characters. A kernel takes minutes to start, so `kit:gen` sends the whole wave in one run
+ *   kaggle  open image models with `diffusers` in a private Kaggle kernel on its free GPU, driven by the `kaggle`
+ *           CLI: SD 1.5 with the local route's LoRA (`KAGGLE_MODEL` sd15, the default), SDXL with a pixel-art
+ *           LoRA (`KAGGLE_MODEL=sdxl`), or text to image with a long-prompt model in 4-bit (`qwen`, Qwen-Image;
+ *           `flux`, FLUX.1-schnell). Its own prompt (`kagglePrompt`, checked in the kernel against the encoder's
+ *           real window: CLIP's 77 tokens on Stable Diffusion, never cut), a negative prompt, a canvas in the
+ *           reference's shape and a denoise of its own for characters. A kernel takes minutes to start, so `kit:gen` sends the whole wave in one run
  *           (`drawWaveWithKaggle`): push, poll, fetch the output.
  *
  * `--drawer <id>` picks the route, else `KIT_DRAWER`, else codex. A text route (a grid tile, a scatter
@@ -186,6 +187,7 @@ export const LOCAL_DEFAULTS = {
   steps: 20,
   size: 512,
   cfg: 7,
+  seed: 7,
 } as const;
 
 /** The negative prompt of the local route: what Stable Diffusion drifts to and a sprite never is. */
@@ -210,9 +212,10 @@ export interface LocalSettings {
   steps: number;
   size: number;
   cfg: number;
+  seed: number;
 }
 
-/** The local route's settings from the environment (`COMFYUI_URL`, `LOCAL_DENOISE`, `LOCAL_STEPS`, `LOCAL_SIZE`, `LOCAL_LORA`, `LOCAL_CHECKPOINT`), else the defaults. */
+/** The local route's settings from the environment (`COMFYUI_URL`, `LOCAL_DENOISE`, `LOCAL_STEPS`, `LOCAL_SIZE`, `LOCAL_SEED`, `LOCAL_LORA`, `LOCAL_CHECKPOINT`), else the defaults. */
 /** A positive number from the environment, else the fallback; anything else is refused by name. */
 function envNumber(env: NodeJS.ProcessEnv, name: string, fallback: number): number {
   const raw = env[name];
@@ -221,7 +224,6 @@ function envNumber(env: NodeJS.ProcessEnv, name: string, fallback: number): numb
   if (!Number.isFinite(value) || value <= 0) throw new Error(`${name} takes a positive number, not ${JSON.stringify(raw)}`);
   return value;
 }
-
 export function localSettings(env: NodeJS.ProcessEnv = process.env): LocalSettings {
   const num = (name: string, fallback: number): number => envNumber(env, name, fallback);
   return {
@@ -233,6 +235,7 @@ export function localSettings(env: NodeJS.ProcessEnv = process.env): LocalSettin
     steps: Math.round(num('LOCAL_STEPS', LOCAL_DEFAULTS.steps)),
     size: Math.round(num('LOCAL_SIZE', LOCAL_DEFAULTS.size)),
     cfg: num('LOCAL_CFG', LOCAL_DEFAULTS.cfg),
+    seed: Math.round(num('LOCAL_SEED', LOCAL_DEFAULTS.seed)),
   };
 }
 
@@ -280,7 +283,7 @@ function curl(args: readonly string[], timeoutSeconds: number): { status: number
 }
 
 /**
- * One image through the local ComfyUI (`~/ceos-server/scripts/comfyui.sh start` on the laptop that
+ * One image through the local ComfyUI (start the local ComfyUI on the laptop that
  * holds it; any machine with ComfyUI on `COMFYUI_URL`): upload the reference, queue the workflow,
  * poll its history, fetch the picture. The prompt is the compact one (`localPrompt`), not the agent's.
  */
@@ -308,7 +311,7 @@ export function drawWithLocal(call: DrawCall & { seed?: number }): Drawn {
   } catch {
     return done(0, null, `upload answered: ${up.stdout.slice(0, 160)}`);
   }
-  const seed = call.seed ?? 7;
+  const seed = call.seed ?? settings.seed;
   const bodyPath = join(call.out, 'work', `${call.name}-${call.stamp}.workflow.json`);
   writeFileSync(bodyPath, JSON.stringify({ prompt: localWorkflow(uploaded, call.prompt, seed, settings), client_id: `kitgen-${call.stamp}` }));
   lines.push(`workflow ${bodyPath.replace(`${call.out}/`, '')}`, `seed ${seed}`);
@@ -341,12 +344,29 @@ export function drawWithLocal(call: DrawCall & { seed?: number }): Drawn {
 
 /* ---------------------------------------------------------------- the kaggle route */
 
+/** CLIP's window: 77 tokens with the start and end marks, so 75 for the words. Past it the encoder cuts silently. */
+export const CLIP_TOKENS = 77;
+
 /**
- * Stable Diffusion on Kaggle's free GPU, in two recipes. `sd15` is the local route's weights (SD 1.5 and
+ * Open image models on Kaggle's free GPU, in four recipes. `sd15` is the local route's weights (SD 1.5 and
  * PixelArtRedmond15V, here from Hugging Face) with its steps, size, CFG and LoRA strength; `sdxl` is SDXL base
  * with the fp16-safe VAE and the pixel-art-xl LoRA, in half precision with the VAE tiled so a T4's 16 GB
  * holds it. Both read `kagglePrompt` (not the local route's), the negative `KAGGLE_NEGATIVE`, a canvas in the
  * reference's shape (`kaggleCanvas`) and a denoise by subject (`kaggleSubject`), each recipe with its own.
+ *
+ * `qwen` (Qwen-Image 2512, Apache 2.0) and `flux` (FLUX.1-schnell, Apache 2.0) are bigger models with long-prompt
+ * text encoders (Qwen2.5-VL, T5), which read what a sentence says rather than a bag of 75 tokens. Neither fits a
+ * T4 in full precision, so each loads its transformer in 4-bit NF4 (bitsandbytes; Qwen pre-quantized, FLUX
+ * quantized on load), and the kernel runs the text encoders first, alone, for the whole wave, frees them, then
+ * loads the transformer: the two never share the card. FLUX computes in fp16, a T4 having no fast bf16; Qwen's
+ * activations pass fp16's range, so it computes in fp32 from 16-bit storage (`dtype`, `KAGGLE_DTYPE`). They draw
+ * text to image from the prompt (the reference only sets the canvas shape), so their denoise is 1. Qwen runs the
+ * 4-step Lightning LoRA (Apache 2.0) with its scheduler and no CFG; FLUX schnell 4 steps at guidance 0.
+ *
+ * `post` (`KAGGLE_POST`): `grid` keys the background to flat magenta and downscales each picture with nearest
+ * neighbour to the spec's art grid inside the kernel (`kaggleKernelScript`); the default for `qwen` and `flux`,
+ * off for `sd15` and `sdxl` so their pictures do not change unasked.
+ *
  * The kernel is a private script on the account the `kaggle` CLI is signed in to; the token is the CLI's
  * own (`~/.kaggle`), never read here.
  */
@@ -370,6 +390,15 @@ export const KAGGLE_RECIPES = {
     denoiseCharacter: 0.7,
     /** The LoRA's trigger words, first in the prompt. */
     trigger: 'Pixel Art, PixArFK',
+    /** How the transformer or UNet is loaded: as published (`''`), pre-quantized on the hub, or quantized to NF4 on load. */
+    quant: '',
+    /** A scheduler other than the pipeline's: `euler` (Stable Diffusion's Euler), `lightning` (the Lightning LoRA's). */
+    scheduler: 'euler',
+    /** The text encoder's real window, in tokens of the pipeline's own tokenizer; a longer prompt is refused, never cut. */
+    tokenLimit: CLIP_TOKENS,
+    /** The compute precision on a GPU: `fp16` (a T4's fast one), `bf16` or `fp32`. */
+    dtype: 'fp16',
+    post: 'off',
   },
   sdxl: {
     model: 'stabilityai/stable-diffusion-xl-base-1.0',
@@ -385,9 +414,76 @@ export const KAGGLE_RECIPES = {
     denoise: 0.6,
     denoiseCharacter: 0.8,
     trigger: 'pixel art',
+    quant: '',
+    scheduler: 'euler',
+    tokenLimit: CLIP_TOKENS,
+    dtype: 'fp16',
+    post: 'off',
+  },
+  qwen: {
+    /** Qwen-Image 2512 (the current Qwen-Image weights) with its transformer and text encoder in NF4, published by its quantizer. */
+    model: 'unsloth/Qwen-Image-2512-unsloth-bnb-4bit',
+    vae: '',
+    loraRepo: 'lightx2v/Qwen-Image-2512-Lightning',
+    /** The 4-step file: in fp32 a step costs about 25 s on a T4, and 4 steps already draw clean pixels (23.10). */
+    loraFile: 'Qwen-Image-2512-Lightning-4steps-V1.0-bf16.safetensors',
+    loraStrength: 1,
+    steps: 4,
+    size: 1024,
+    /** Qwen's true CFG; 1 is off, as the Lightning LoRA is distilled for. */
+    cfg: 1,
+    denoise: 1,
+    denoiseCharacter: 1,
+    trigger: '',
+    quant: 'prequantized',
+    scheduler: 'lightning',
+    /** The pipeline's `max_sequence_length` for the prompt (its encoder reads far more; 512 is past any spec). */
+    tokenLimit: 512,
+    /**
+     * Qwen-Image's activations pass fp16's ceiling (65504) from its second block on, and the picture comes back
+     * NaN, black; bf16 runs slower than fp32 on a T4 (no bf16 units). So fp32 compute, from 16-bit storage.
+     */
+    dtype: 'fp32',
+    post: 'grid',
+  },
+  flux: {
+    /** FLUX.1-schnell as published, from a mirror that needs no sign-in (the original asks for a Hugging Face login). */
+    model: 'unsloth/FLUX.1-schnell',
+    vae: '',
+    loraRepo: '',
+    loraFile: '',
+    loraStrength: 1,
+    steps: 4,
+    size: 1024,
+    /** schnell is guidance-distilled: guidance 0. */
+    cfg: 0,
+    denoise: 1,
+    denoiseCharacter: 1,
+    trigger: '',
+    quant: 'nf4',
+    scheduler: '',
+    /** T5's window as schnell allows it (`max_sequence_length` 256); its CLIP encoder only adds a pooled summary. */
+    tokenLimit: 256,
+    dtype: 'fp16',
+    post: 'grid',
   },
 } as const;
 export type KaggleRecipe = keyof typeof KAGGLE_RECIPES;
+export const KAGGLE_RECIPE_NAMES = Object.keys(KAGGLE_RECIPES) as KaggleRecipe[];
+
+/** A recipe that draws text to image with a long-prompt encoder (the reference sets the canvas only). */
+export function kaggleFromPrompt(recipe: KaggleRecipe): boolean {
+  return recipe === 'qwen' || recipe === 'flux';
+}
+
+/** What the kernel does to a picture before it comes back: `grid` keys the background and downscales to the art grid. */
+export type KagglePost = 'grid' | 'off';
+
+/** The compute precisions `KAGGLE_DTYPE` takes. */
+export type KaggleDtype = 'fp16' | 'bf16' | 'fp32';
+
+/** The pixels per art pixel of a `grid` picture as it comes back: the importer finds a grid from 4 up. */
+export const KAGGLE_POST_SCALE = 8;
 
 export const KAGGLE_DEFAULTS = {
   kernel: 'kitgen-drawer',
@@ -428,14 +524,23 @@ export interface KaggleSettings {
   setupSeconds: number;
   pollSeconds: number;
   embedLimit: number;
+  /** How the weights load (`''`, `prequantized`, `nf4`) and which scheduler runs, from the recipe. */
+  quant: string;
+  scheduler: string;
+  /** The prompt's limit in the pipeline's own tokens. */
+  tokenLimit: number;
+  /** The compute precision on the GPU, from the recipe: `fp16` (a T4's fast one), `bf16`, or `fp32` (qwen). */
+  dtype: KaggleDtype;
+  post: KagglePost;
 }
 
 /**
  * The kaggle route's settings: `KAGGLE_KERNEL`, `KAGGLE_CLI`, `KAGGLE_GPU` (0 for a CPU run), `KAGGLE_ACCELERATOR`,
- * `KAGGLE_MODEL` (`sd15`, the default, or `sdxl`; any other value is a Hugging Face repo id drawn with the
- * recipe in `KAGGLE_RECIPE`, default sd15), `KAGGLE_VAE`, `KAGGLE_LORA_REPO`, `KAGGLE_LORA_FILE`, `KAGGLE_LORA_STRENGTH`,
+ * `KAGGLE_MODEL` (`sd15`, the default, `sdxl`, `qwen` or `flux`; any other value is a Hugging Face repo id drawn
+ * with the recipe in `KAGGLE_RECIPE`, default sd15), `KAGGLE_VAE`, `KAGGLE_LORA_REPO`, `KAGGLE_LORA_FILE`, `KAGGLE_LORA_STRENGTH`,
  * `KAGGLE_DENOISE` (props, 0.6), `KAGGLE_DENOISE_CHARACTER` (0.7 on sd15, 0.8 on sdxl), `KAGGLE_STEPS`, `KAGGLE_SIZE` (the short side),
- * `KAGGLE_CFG`, `KAGGLE_SEED`, `KAGGLE_SETUP_SECONDS`, `KAGGLE_POLL_SECONDS`; the rest default to the recipe's.
+ * `KAGGLE_CFG`, `KAGGLE_SEED`, `KAGGLE_SETUP_SECONDS`, `KAGGLE_POLL_SECONDS`, `KAGGLE_POST` (`grid` or `off`), `KAGGLE_DTYPE`
+ * (`fp16`, `bf16` or `fp32`); the rest default to the recipe's. `qwen` and `flux` draw from the prompt, so a denoise below 1 is refused.
  */
 export function kaggleSettings(env: NodeJS.ProcessEnv = process.env): KaggleSettings {
   const num = (name: string, fallback: number): number => envNumber(env, name, fallback);
@@ -443,18 +548,28 @@ export function kaggleSettings(env: NodeJS.ProcessEnv = process.env): KaggleSett
     const raw = env[name];
     return raw === undefined || raw.trim() === '' ? fallback : raw.trim();
   };
+  const choice = <T extends string>(name: string, allowed: readonly T[], fallback: T): T => {
+    const value = text(name, fallback).toLowerCase();
+    if (!(allowed as readonly string[]).includes(value)) throw new Error(`${name} takes ${allowed.join(' or ')}, not ${JSON.stringify(value)}`);
+    return value as T;
+  };
   const gpu = text('KAGGLE_GPU', '1').toLowerCase();
   const model = text('KAGGLE_MODEL', 'sd15');
   const named = model.toLowerCase();
-  const recipeName = named === 'sd15' || named === 'sdxl' ? named : text('KAGGLE_RECIPE', 'sd15').toLowerCase();
-  if (recipeName !== 'sd15' && recipeName !== 'sdxl') throw new Error(`KAGGLE_RECIPE takes sd15 or sdxl, not ${JSON.stringify(recipeName)}`);
-  const recipe = KAGGLE_RECIPES[recipeName];
+  const recipeName = (KAGGLE_RECIPE_NAMES as readonly string[]).includes(named) ? named as KaggleRecipe : text('KAGGLE_RECIPE', 'sd15').toLowerCase();
+  if (!(KAGGLE_RECIPE_NAMES as readonly string[]).includes(recipeName)) throw new Error(`KAGGLE_RECIPE takes ${KAGGLE_RECIPE_NAMES.join(', ')}, not ${JSON.stringify(recipeName)}`);
+  const recipe = KAGGLE_RECIPES[recipeName as KaggleRecipe];
+  if (kaggleFromPrompt(recipeName as KaggleRecipe)) {
+    for (const name of ['KAGGLE_DENOISE', 'KAGGLE_DENOISE_CHARACTER']) {
+      if (num(name, 1) < 1) throw new Error(`${recipeName} draws from the prompt alone: ${name} must be 1 or unset, not ${env[name] ?? ''}`);
+    }
+  }
   return {
     cli: text('KAGGLE_CLI', KAGGLE_DEFAULTS.cli),
     kernel: text('KAGGLE_KERNEL', KAGGLE_DEFAULTS.kernel),
     gpu: !['0', 'false', 'no', 'off'].includes(gpu),
     accelerator: text('KAGGLE_ACCELERATOR', ''),
-    recipe: recipeName,
+    recipe: recipeName as KaggleRecipe,
     model: named === recipeName ? recipe.model : model,
     vae: env['KAGGLE_VAE'] === undefined ? recipe.vae : env['KAGGLE_VAE'].trim(),
     loraRepo: text('KAGGLE_LORA_REPO', recipe.loraRepo),
@@ -469,6 +584,11 @@ export function kaggleSettings(env: NodeJS.ProcessEnv = process.env): KaggleSett
     setupSeconds: num('KAGGLE_SETUP_SECONDS', KAGGLE_DEFAULTS.setupSeconds),
     pollSeconds: num('KAGGLE_POLL_SECONDS', KAGGLE_DEFAULTS.pollSeconds),
     embedLimit: num('KAGGLE_EMBED_LIMIT', KAGGLE_DEFAULTS.embedLimit),
+    quant: recipe.quant,
+    scheduler: recipe.scheduler,
+    tokenLimit: recipe.tokenLimit,
+    dtype: choice('KAGGLE_DTYPE', ['fp16', 'bf16', 'fp32'] as const, recipe.dtype),
+    post: choice('KAGGLE_POST', ['grid', 'off'] as const, recipe.post),
   };
 }
 
@@ -497,9 +617,6 @@ export type KaggleSubject = 'character' | 'prop';
 export function kaggleSubject(ref: string): KaggleSubject {
   return ref.startsWith('chars/') ? 'character' : 'prop';
 }
-
-/** CLIP's window: 77 tokens with the start and end marks, so 75 for the words. Past it the encoder cuts silently. */
-export const CLIP_TOKENS = 77;
 
 /**
  * An upper estimate of the CLIP tokens a prompt takes (start and end marks included), with no vocabulary at
@@ -552,6 +669,7 @@ function clauses(text: string | undefined): string[] {
  * most are never the ones cut. The local route keeps `localPrompt`.
  */
 export function kagglePrompt(entry: { what: string; detail?: string; ref: string }, recipe: KaggleRecipe = 'sd15'): string {
+  if (kaggleFromPrompt(recipe)) return kaggleSentencePrompt(entry);
   const head = [KAGGLE_RECIPES[recipe].trigger, ...(kaggleSubject(entry.ref) === 'character' ? ['one single character alone', 'full body', 'front view'] : ['game sprite', 'top-down three-quarter view'])];
   const tail = ['thick dark navy outline', 'crisp square pixels', 'flat pure magenta background'];
   const subject = clauses(entry.what).map(sdClause).filter((c): c is string => c !== null);
@@ -559,6 +677,31 @@ export function kagglePrompt(entry: { what: string; detail?: string; ref: string
   const build = (): string => [...new Map([...head, ...subject, ...detail, ...tail].map((c) => [c.toLowerCase(), c])).values()].join(', ');
   while (detail.length > 0 && clipTokenEstimate(build()) > CLIP_TOKENS - 4) detail.pop();
   return build();
+}
+
+/**
+ * The prompt of a long-prompt recipe (`qwen`, `flux`): sentences rather than a tag list, since its encoder reads
+ * the whole spec and what a clause says (one object, "no leaves"). The subject, the spec's detail without pixel
+ * or shade counts, alone and centred (a character as one figure, full body), the spec's own view where it names
+ * one, and the three things the importer needs. Nothing is dropped: the kernel counts it against the encoder's
+ * real window.
+ */
+export function kaggleSentencePrompt(entry: { what: string; detail?: string; ref: string }): string {
+  const subject = clauses(entry.what).map(sdClause).filter((c): c is string => c !== null).join(', ');
+  const detail = clauses(entry.detail).map(sdClause).filter((c): c is string => c !== null);
+  const character = kaggleSubject(entry.ref) === 'character';
+  const view = detail.some((c) => /\bview\b/iu.test(c)) ? [] : [character ? 'full body, front view' : 'top-down three-quarter view'];
+  const sentence = (parts: readonly string[]): string => {
+    const text = parts.filter((p) => p !== '').join(', ');
+    return text === '' ? '' : `${text.charAt(0).toUpperCase()}${text.slice(1)}.`;
+  };
+  return [
+    `Pixel art game sprite: ${subject}.`,
+    sentence(detail),
+    sentence([character ? 'one single character alone, centred' : 'alone and centred, filling most of the picture', ...view]),
+    'Crisp square pixels, a thick dark navy outline, a limited palette.',
+    'Flat pure magenta background, no shadow on the ground, no text, no other objects.',
+  ].filter((s) => s !== '').join(' ');
 }
 
 /** A PNG's width and height from its header, or null when the bytes are not a PNG. */
@@ -586,6 +729,8 @@ export interface KaggleRequest {
   png: Buffer;
   seed: number;
   subject?: KaggleSubject;
+  /** The spec's art grid (its width x height), which a `grid` post-process downscales to; else the canvas over 16. */
+  grid?: { width: number; height: number };
 }
 
 /** What the kernel reads: the settings of the recipe and each request with its reference, canvas and denoise. */
@@ -595,13 +740,16 @@ export function kaggleWave(requests: readonly KaggleRequest[], s: KaggleSettings
       recipe: s.recipe, model: s.model, vae: s.vae, lora_repo: s.loraRepo, lora_file: s.loraFile, lora_strength: s.loraStrength,
       denoise: s.denoise, steps: s.steps, inference_steps: kaggleInferenceSteps(s.steps, s.denoise),
       size: s.size, cfg: s.cfg, negative: KAGGLE_NEGATIVE, clip_tokens: CLIP_TOKENS,
+      quant: s.quant, scheduler: s.scheduler, token_limit: s.tokenLimit, dtype: s.dtype, post: s.post, post_scale: KAGGLE_POST_SCALE,
     },
     requests: requests.map((r) => {
       const denoise = r.subject === 'character' ? s.denoiseCharacter : s.denoise;
       const canvas = kaggleCanvas(pngSize(r.png), s.size);
+      const grid = r.grid ?? { width: Math.max(1, Math.round(canvas.width / 16)), height: Math.max(1, Math.round(canvas.height / 16)) };
       return {
         name: r.name, file: kaggleFileName(r.name), prompt: r.prompt, seed: r.seed, subject: r.subject ?? 'prop',
         denoise, inference_steps: kaggleInferenceSteps(s.steps, denoise), width: canvas.width, height: canvas.height,
+        grid_width: grid.width, grid_height: grid.height,
         png: r.png.toString('base64'),
       };
     }),
@@ -630,23 +778,36 @@ export function splitWave<T extends { png: Buffer }>(requests: readonly T[], lim
 export const KAGGLE_WAVE_MARK = 'WAVE_B64';
 
 /**
- * The kernel: a Python script with the wave inline. It loads the recipe's image-to-image pipeline (SD 1.5, or
- * SDXL in fp16 with its VAE swapped and tiled) with the Euler sampler and the LoRA at the recipe's strength,
- * counts each prompt with the pipeline's own tokenizers and refuses one past CLIP's window rather than let it
- * be cut, pads each reference to its canvas's shape and scales it up with nearest neighbour, draws it at its
- * subject's denoise, and writes `<name>.png` plus `kitgen-manifest.json` (device, load time, per image
- * seconds, tokens, canvas, or error) to the kernel's output.
+ * The kernel: a Python script with the wave inline, one of two paths by recipe.
+ *
+ * `sd15` and `sdxl` load the recipe's image-to-image pipeline (SD 1.5, or SDXL in fp16 with its VAE swapped and
+ * tiled) with the Euler sampler and the LoRA at the recipe's strength, count each prompt with the pipeline's own
+ * tokenizers and refuse one past CLIP's window rather than let it be cut, pad each reference to its canvas's shape
+ * and scale it up with nearest neighbour, and draw it at its subject's denoise.
+ *
+ * `qwen` and `flux` draw text to image in two phases so a T4 holds them: the text encoders alone first (on the
+ * second GPU when there is one), every prompt counted with the pipeline's own tokenizer against its real window
+ * and encoded, then freed; then the transformer in NF4 (Qwen's Lightning LoRA and scheduler), computing in the
+ * recipe's precision (fp32 widens each 16-bit layer per call, `compute_in_fp32`), drawing from the stored
+ * embeddings at the canvas's size. A non-finite encoding or a black picture (a NaN) is an error, not a draw.
+ *
+ * With `post` `grid`, every recipe keys the picture's background (what touches the border and is near its colour,
+ * magenta-like, or a darker shade of it such as a ground shadow) to flat #FF00FF, drops a small speck far from the
+ * subject so it does not widen the box, and downscales the subject's box with nearest neighbour onto the spec's
+ * art grid (a cell that is mostly background stays magenta), then scales it up by `post_scale` so the importer
+ * reads a clean grid; the full-size picture is kept as `<name>.full.png`. Each run writes `<name>.png` plus
+ * `kitgen-manifest.json` (device, GPUs, load and encode times, per image seconds, tokens, canvas, or error).
  */
 export function kaggleKernelScript(wave: Record<string, unknown>): string {
   const b64 = Buffer.from(JSON.stringify(wave)).toString('base64');
   return `# kit:gen wave for the kaggle drawer, written by tools/src/kit/drawers.ts; pushed as a private script kernel.
-import base64, io, json, math, os, subprocess, sys, time, traceback
+import base64, gc, io, json, math, os, subprocess, sys, time, traceback
 
 ${KAGGLE_WAVE_MARK} = "${b64}"
 WAVE = json.loads(base64.b64decode(${KAGGLE_WAVE_MARK}).decode("utf-8"))
 OUT = "/kaggle/working" if os.path.isdir("/kaggle/working") else os.getcwd()
 START = time.time()
-MANIFEST = {"device": None, "load_seconds": None, "seconds": None, "error": None, "settings": WAVE["settings"], "images": []}
+MANIFEST = {"device": None, "gpus": None, "load_seconds": None, "encode_seconds": None, "seconds": None, "error": None, "settings": WAVE["settings"], "images": []}
 
 
 def save():
@@ -658,31 +819,97 @@ def say(text):
     print(f"[kitgen {time.time() - START:7.1f}s] {text}", flush=True)
 
 
-try:
-    from importlib import metadata
-    try:
-        torchao = tuple(int(x) for x in metadata.version("torchao").split(".")[:2])
-    except Exception:
-        torchao = None
-    if torchao is not None and torchao < (0, 16):
-        # peft refuses an old torchao when it wraps the LoRA layers; nothing here quantizes, so it goes
-        say(f"removing torchao {torchao}, too old for peft")
-        subprocess.run([sys.executable, "-m", "pip", "uninstall", "-y", "-q", "torchao"], check=True)
-    try:
-        import diffusers, peft  # noqa: F401
-    except ImportError:
-        say("installing diffusers and peft")
-        subprocess.run([sys.executable, "-m", "pip", "install", "-q", "diffusers", "peft"], check=True)
+def pip_install(*names):
+    say("installing " + " ".join(names))
+    subprocess.run([sys.executable, "-m", "pip", "install", "-q", *names], check=True)
+
+
+def to_grid(image, grid_width, grid_height, scale):
+    # key the background to flat magenta and downscale the subject onto the art grid with nearest neighbour
+    import numpy as np
+    from PIL import Image
+    from scipy import ndimage
+    a = np.asarray(image.convert("RGB")).astype(np.int32)
+    border = np.concatenate([a[:2].reshape(-1, 3), a[-2:].reshape(-1, 3), a[:, :2].reshape(-1, 3), a[:, -2:].reshape(-1, 3)])
+    background = np.median(border, axis=0)
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    near = np.sqrt(((a - background) ** 2).sum(-1)) < 64
+    magentaish = (r > 90) & (b > 90) & (g < 0.6 * np.minimum(r, b))
+    # a shadow on the ground, or an edge blended into the background, is a darker shade of it: the same
+    # colour direction, no brighter (near-black pixels have no direction to speak of and stay)
+    length = np.sqrt((a ** 2).sum(-1))
+    toward = (a * background).sum(-1) / np.maximum(length * float(np.sqrt((background ** 2).sum())), 1.0)
+    shade = (toward > 0.99) & (length > 40) & (a.max(-1) <= background.max() + 16)
+    labels, _ = ndimage.label(near | magentaish | shade)
+    edge = np.unique(np.concatenate([labels[0], labels[-1], labels[:, 0], labels[:, -1]]))
+    back = np.isin(labels, edge[edge != 0]) | (np.sqrt(((a - np.array([255, 0, 255])) ** 2).sum(-1)) < 60)
+    # a speck far from the subject (a stray pebble in a corner, a crumb of shadow) would widen the box the
+    # subject is fitted to: a part under a hundredth of the largest that reaches outside the big parts' box,
+    # widened by a twentieth of the picture, goes to the background
+    parts, count = ndimage.label(~back)
+    if count > 1:
+        sizes = ndimage.sum(np.ones(parts.shape), parts, np.arange(1, count + 1))
+        big = np.isin(parts, 1 + np.nonzero(sizes >= sizes.max() / 100)[0])
+        bys, bxs = np.nonzero(big)
+        m = max(a.shape[:2]) // 20
+        inside = np.zeros(parts.shape, bool)
+        inside[max(0, bys.min() - m):bys.max() + 1 + m, max(0, bxs.min() - m):bxs.max() + 1 + m] = True
+        back |= np.isin(parts, np.unique(parts[~big & ~inside & (parts > 0)]))
+    ys, xs = np.nonzero(~back)
+    if len(xs) == 0:
+        raise ValueError("the picture is all background after the magenta key")
+    y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+    pad = max(1, round(min(grid_width, grid_height) / 32))
+    bw, bh = x1 - x0, y1 - y0
+    k = min((grid_width - 2 * pad) / bw, (grid_height - 2 * pad) / bh)
+    aw, ah = max(1, min(grid_width, round(bw * k))), max(1, min(grid_height, round(bh * k)))
+    out = np.zeros((grid_height, grid_width, 3), np.uint8)
+    out[...] = (255, 0, 255)
+    ox, oy = (grid_width - aw) // 2, (grid_height - ah) // 2
+    for j in range(ah):
+        sy0 = y0 + (j * bh) // ah
+        sy1 = max(sy0 + 1, y0 + ((j + 1) * bh) // ah)
+        for i in range(aw):
+            sx0 = x0 + (i * bw) // aw
+            sx1 = max(sx0 + 1, x0 + ((i + 1) * bw) // aw)
+            cell = back[sy0:sy1, sx0:sx1]
+            if cell.mean() > 0.5:
+                continue
+            cy, cx = (sy0 + sy1) // 2, (sx0 + sx1) // 2
+            colour = a[cy, cx] if not back[cy, cx] else np.median(a[sy0:sy1, sx0:sx1][~cell], axis=0)
+            out[oy + j, ox + i] = colour
+    return Image.fromarray(out).resize((grid_width * scale, grid_height * scale), Image.NEAREST)
+
+
+def finish(r, item, image):
+    # the post-process, then the PNG the importer reads
+    s = WAVE["settings"]
+    if s["post"] == "grid":
+        image.save(os.path.join(OUT, r["file"][:-4] + ".full.png"), format="PNG")
+        image = to_grid(image, r["grid_width"], r["grid_height"], s["post_scale"])
+    image.save(os.path.join(OUT, r["file"]), format="PNG")
+    item["file"] = r["file"]
+
+
+def new_item(r):
+    return {"name": r["name"], "file": None, "seconds": None, "error": None, "tokens": None,
+            "width": r["width"], "height": r["height"], "denoise": r["denoise"]}
+
+
+def log_item(r, item):
+    MANIFEST["images"].append(item)
+    save()
+    say(f"{r['name']} {r['width']}x{r['height']} denoise {r['denoise']} {item['tokens']} tokens {item['seconds']}s {item['error'] or 'ok'}")
+
+
+def draw_sd(s):
     import torch
     from PIL import Image
     from diffusers import AutoencoderKL, EulerDiscreteScheduler, StableDiffusionImg2ImgPipeline, StableDiffusionXLImg2ImgPipeline
 
-    s = WAVE["settings"]
     cuda = torch.cuda.is_available()
     device = "cuda" if cuda else "cpu"
     dtype = torch.float16 if cuda else torch.float32
-    MANIFEST["device"] = torch.cuda.get_device_name(0) if cuda else "cpu"
-    say(f"device {MANIFEST['device']}, recipe {s['recipe']}, {len(WAVE['requests'])} requests")
     extra = {}
     if s["vae"]:
         extra["vae"] = AutoencoderKL.from_pretrained(s["vae"], torch_dtype=dtype)
@@ -734,8 +961,7 @@ try:
         raise ValueError(negative_error)
     for r in WAVE["requests"]:
         began = time.time()
-        item = {"name": r["name"], "file": None, "seconds": None, "error": None, "tokens": None,
-                "width": r["width"], "height": r["height"], "denoise": r["denoise"]}
+        item = new_item(r)
         try:
             item["tokens"] = clip_tokens(r["prompt"])
             item["error"] = too_long("prompt", r["prompt"])
@@ -745,14 +971,194 @@ try:
                     strength=r["denoise"], num_inference_steps=r["inference_steps"], guidance_scale=s["cfg"],
                     generator=torch.Generator(device="cpu").manual_seed(r["seed"]),
                 ).images[0]
-                image.save(os.path.join(OUT, r["file"]), format="PNG")
-                item["file"] = r["file"]
+                finish(r, item, image)
         except Exception as error:  # one bad request does not lose the wave
             item["error"] = f"{type(error).__name__}: {error}"[:400]
         item["seconds"] = round(time.time() - began, 1)
-        MANIFEST["images"].append(item)
-        save()
-        say(f"{r['name']} {r['width']}x{r['height']} denoise {r['denoise']} {item['tokens']} tokens {item['seconds']}s {item['error'] or 'ok'}")
+        log_item(r, item)
+
+
+def compute_in(model, dtype):
+    # a pre-quantized checkpoint names bf16 compute and keeps its unquantized layers in bf16; a T4 runs bf16 about
+    # three times slower than fp16, and a mix of the two fails in the first matmul, so the 4-bit layers compute in
+    # dtype and every other weight is cast to it (buffers such as rotary frequencies stay as they are); the compute
+    # type is pinned, or bitsandbytes switches a layer to its input's dtype on the first call
+    for module in model.modules():
+        if type(module).__name__ == "Linear4bit":
+            module.compute_dtype = dtype
+            module.compute_type_is_set = True
+    for param in model.parameters():
+        if type(param).__name__ != "Params4bit" and param.dtype.is_floating_point and param.dtype != dtype:
+            param.data = param.data.to(dtype)
+
+
+def compute_in_fp32(model):
+    # fp32 compute from 16-bit storage, for a transformer whose activations pass fp16's range: the 4-bit layers
+    # dequantize to fp32, the unquantized linear layers keep their 16-bit weights and multiply from an fp32 copy
+    # per call (holding them all in fp32 leaves a T4 no room to draw), norms and biases are cast (they are small),
+    # and the LoRA runs in bf16, which has fp32's range at half the memory
+    import torch
+    import torch.nn.functional as F
+
+    def wide(module):
+        return lambda x: F.linear(x.float(), module.weight.float(), None if module.bias is None else module.bias.float())
+
+    for name, module in model.named_modules():
+        if type(module).__name__ == "Linear4bit":
+            module.compute_dtype = torch.float32
+            module.compute_type_is_set = True
+        elif type(module) is torch.nn.Linear and "lora_" not in name:
+            module.forward = wide(module)
+    for name, param in model.named_parameters():
+        if "lora_" in name:
+            param.data = param.data.to(torch.bfloat16)
+        elif type(param).__name__ != "Params4bit" and param.dtype.is_floating_point and param.dim() == 1:
+            param.data = param.data.float()
+
+
+LIGHTNING_SCHEDULER = {
+    "base_image_seq_len": 256, "base_shift": math.log(3), "invert_sigmas": False, "max_image_seq_len": 8192,
+    "max_shift": math.log(3), "num_train_timesteps": 1000, "shift": 1.0, "shift_terminal": None,
+    "stochastic_sampling": False, "time_shift_type": "exponential", "use_beta_sigmas": False,
+    "use_dynamic_shifting": True, "use_exponential_sigmas": False, "use_karras_sigmas": False,
+}
+
+
+def draw_from_prompt(s):
+    import numpy as np
+    import torch
+    import diffusers
+    from diffusers import BitsAndBytesConfig, FlowMatchEulerDiscreteScheduler
+
+    if not torch.cuda.is_available():
+        raise RuntimeError(f"{s['recipe']} needs a GPU: set KAGGLE_GPU=1")
+    dtype = {"fp16": torch.float16, "bf16": torch.bfloat16, "fp32": torch.float32}[s["dtype"]]
+    # the transformer and FLUX's T5 (19 GB in fp32) load in 16 bits whatever the compute; fp32 compute widens the
+    # transformer's layers per call (compute_in_fp32), and Qwen's 4-bit encoder fits a card in fp32 as it is
+    stored = torch.float16 if dtype == torch.float32 else dtype
+    qwen = s["recipe"] == "qwen"
+    gpus = torch.cuda.device_count()
+    MANIFEST["gpus"] = gpus
+    encode_on = "cuda:1" if gpus > 1 else "cuda:0"
+    Pipe = diffusers.QwenImagePipeline if qwen else diffusers.FluxPipeline
+    Model = diffusers.QwenImageTransformer2DModel if qwen else diffusers.FluxTransformer2DModel
+
+    # phase one: the text encoders alone, every prompt of the wave counted and encoded, then freed
+    if qwen:
+        from transformers import Qwen2_5_VLForConditionalGeneration
+        encoder = Qwen2_5_VLForConditionalGeneration.from_pretrained(s["model"], subfolder="text_encoder", dtype=dtype, device_map={"": encode_on})
+        compute_in(encoder, dtype)
+        enc = Pipe.from_pretrained(s["model"], text_encoder=encoder, transformer=None, vae=None, torch_dtype=dtype)
+    else:
+        enc = Pipe.from_pretrained(s["model"], transformer=None, vae=None, torch_dtype=stored)
+        enc.text_encoder.to(encode_on)
+        enc.text_encoder_2.to(encode_on)
+    say(f"text encoders loaded on {encode_on}")
+    embeds, items = {}, {}
+    with torch.no_grad():
+        for r in WAVE["requests"]:
+            item = new_item(r)
+            items[r["name"]] = item
+            try:
+                main = enc.tokenizer if qwen else enc.tokenizer_2
+                item["tokens"] = len(main(r["prompt"]).input_ids)
+                if not qwen:
+                    item["clip_tokens"] = len(enc.tokenizer(r["prompt"]).input_ids)
+                if item["tokens"] > s["token_limit"]:
+                    item["error"] = f"the prompt is {item['tokens']} tokens, past the encoder's {s['token_limit']}: it would be cut silently, so it is not drawn; shorten it"
+                    continue
+                if qwen:
+                    pe, mask = enc.encode_prompt(prompt=r["prompt"], device=encode_on, max_sequence_length=s["token_limit"])
+                    given = {"prompt_embeds": pe.cpu(), "prompt_embeds_mask": None if mask is None else mask.cpu()}
+                else:
+                    pe, pooled, _ = enc.encode_prompt(prompt=r["prompt"], prompt_2=None, device=encode_on, max_sequence_length=s["token_limit"])
+                    given = {"prompt_embeds": pe.cpu(), "pooled_prompt_embeds": pooled.cpu()}
+                if not all(torch.isfinite(v).all() for k, v in given.items() if v is not None and v.is_floating_point()):
+                    item["error"] = f"the prompt's encoding overflowed in {s['dtype']}: try KAGGLE_DTYPE=fp32"
+                    continue
+                embeds[r["name"]] = given
+            except Exception as error:
+                item["error"] = f"{type(error).__name__}: {error}"[:400]
+    del enc
+    if qwen:
+        del encoder
+    gc.collect()
+    torch.cuda.empty_cache()
+    MANIFEST["encode_seconds"] = round(time.time() - START, 1)
+    say(f"{len(embeds)} prompts encoded, encoders freed")
+
+    # phase two: the transformer in 4-bit, drawing from the stored embeddings
+    load = {}
+    if s["quant"] == "nf4":
+        load["quantization_config"] = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=stored)
+    transformer = Model.from_pretrained(s["model"], subfolder="transformer", torch_dtype=stored, **load)
+    if dtype != torch.float32:
+        compute_in(transformer, dtype)
+    blank = {"text_encoder": None} if qwen else {"text_encoder": None, "text_encoder_2": None}
+    pipe = Pipe.from_pretrained(s["model"], transformer=transformer, torch_dtype=stored, **blank)
+    pipe.vae.to("cuda:0")
+    pipe.vae.enable_tiling()
+    if s["scheduler"] == "lightning":
+        pipe.scheduler = FlowMatchEulerDiscreteScheduler.from_config(LIGHTNING_SCHEDULER)
+    if s["lora_repo"]:
+        pipe.load_lora_weights(s["lora_repo"], weight_name=s["lora_file"], adapter_name="speed")
+        pipe.set_adapters(["speed"], adapter_weights=[s["lora_strength"]])
+    if dtype == torch.float32:
+        compute_in_fp32(transformer)
+        gc.collect()
+        torch.cuda.empty_cache()
+    pipe.set_progress_bar_config(disable=True)
+    MANIFEST["load_seconds"] = round(time.time() - START, 1)
+    MANIFEST["vram_gb"] = round(torch.cuda.memory_allocated(0) / 1e9, 2)
+    save()
+    say(f"transformer loaded, {MANIFEST['vram_gb']} GB on cuda:0")
+    for r in WAVE["requests"]:
+        began = time.time()
+        item = items[r["name"]]
+        try:
+            if r["name"] in embeds:
+                # float embeddings in the compute dtype: the pipeline draws its latents in theirs
+                given = {k: (None if v is None else v.to("cuda:0", dtype) if v.is_floating_point() else v.to("cuda:0")) for k, v in embeds[r["name"]].items()}
+                guide = {"true_cfg_scale": s["cfg"]} if qwen else {"guidance_scale": s["cfg"], "max_sequence_length": s["token_limit"]}
+                with torch.no_grad():
+                    image = pipe(**given, width=r["width"], height=r["height"], num_inference_steps=s["steps"],
+                                 generator=torch.Generator(device="cpu").manual_seed(r["seed"]), **guide).images[0]
+                if np.asarray(image).max() < 8:
+                    item["error"] = f"the picture came back black (a NaN in {s['dtype']})" + ("" if s["dtype"] == "fp32" else ": try KAGGLE_DTYPE=fp32")
+                else:
+                    finish(r, item, image)
+        except Exception as error:  # one bad request does not lose the wave
+            item["error"] = f"{type(error).__name__}: {error}"[:400]
+        item["seconds"] = round(time.time() - began, 1)
+        log_item(r, item)
+
+
+try:
+    from importlib import metadata
+    try:
+        torchao = tuple(int(x) for x in metadata.version("torchao").split(".")[:2])
+    except Exception:
+        torchao = None
+    if torchao is not None and torchao < (0, 16):
+        # peft refuses an old torchao when it wraps the LoRA layers; nothing here quantizes with it, so it goes
+        say(f"removing torchao {torchao}, too old for peft")
+        subprocess.run([sys.executable, "-m", "pip", "uninstall", "-y", "-q", "torchao"], check=True)
+    s = WAVE["settings"]
+    from importlib.util import find_spec
+    if s["recipe"] in ("qwen", "flux") and find_spec("bitsandbytes") is None:
+        # before diffusers is imported: it looks for bitsandbytes once, at import
+        pip_install("bitsandbytes")
+    try:
+        import diffusers, peft  # noqa: F401
+    except ImportError:
+        pip_install("diffusers", "peft")
+    import torch
+    MANIFEST["device"] = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu"
+    say(f"device {MANIFEST['device']} x{torch.cuda.device_count()}, recipe {s['recipe']}, {len(WAVE['requests'])} requests")
+    if s["recipe"] in ("qwen", "flux"):
+        draw_from_prompt(s)
+    else:
+        draw_sd(s)
 except Exception as error:
     MANIFEST["error"] = f"{type(error).__name__}: {error}"[:600]
     traceback.print_exc()
@@ -800,12 +1206,12 @@ export function kagglePushAnswer(text: string): { ok: boolean; error: string | n
 export interface KaggleManifestImage { name: string; file: string | null; seconds: number | null; error: string | null; tokens?: number }
 
 /** The kernel's `kitgen-manifest.json`, read defensively. */
-export function kaggleManifest(body: string): { device: string | null; loadSeconds: number | null; seconds: number | null; error: string | null; images: KaggleManifestImage[] } {
-  let json: { device?: unknown; load_seconds?: unknown; seconds?: unknown; error?: unknown; images?: unknown };
+export function kaggleManifest(body: string): { device: string | null; loadSeconds: number | null; encodeSeconds: number | null; seconds: number | null; error: string | null; images: KaggleManifestImage[] } {
+  let json: { device?: unknown; load_seconds?: unknown; encode_seconds?: unknown; seconds?: unknown; error?: unknown; images?: unknown };
   try {
     json = JSON.parse(body) as typeof json;
   } catch {
-    return { device: null, loadSeconds: null, seconds: null, error: `the kernel manifest is not JSON: ${body.slice(0, 120)}`, images: [] };
+    return { device: null, loadSeconds: null, encodeSeconds: null, seconds: null, error: `the kernel manifest is not JSON: ${body.slice(0, 120)}`, images: [] };
   }
   const str = (v: unknown): string | null => (typeof v === 'string' && v !== '' ? v : null);
   const n = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
@@ -815,7 +1221,7 @@ export function kaggleManifest(body: string): { device: string | null; loadSecon
     const tokens = n(item['tokens']);
     return name === null ? [] : [{ name, file: str(item['file']), seconds: n(item['seconds']), error: str(item['error']), ...(tokens === null ? {} : { tokens }) }];
   });
-  return { device: str(json.device), loadSeconds: n(json.load_seconds), seconds: n(json.seconds), error: str(json.error), images };
+  return { device: str(json.device), loadSeconds: n(json.load_seconds), encodeSeconds: n(json.encode_seconds), seconds: n(json.seconds), error: str(json.error), images };
 }
 
 function runCli(cli: string, args: readonly string[], timeoutSeconds: number): { status: number | null; text: string; error?: Error } {
@@ -838,7 +1244,7 @@ export interface KaggleWaveCall {
   /** The run folder: `work/`, `log/` and `kaggle/` are under it. */
   out: string;
   stamp: string;
-  requests: readonly { name: string; prompt: string; reference: string; expect: string; seed?: number; subject?: KaggleSubject }[];
+  requests: readonly { name: string; prompt: string; reference: string; expect: string; seed?: number; subject?: KaggleSubject; grid?: { width: number; height: number } }[];
   /** Per picture; the wave waits the setup time plus this for each picture. */
   timeoutSeconds: number;
   env?: NodeJS.ProcessEnv;
@@ -853,7 +1259,7 @@ export interface KaggleWaveCall {
 export function drawWaveWithKaggle(call: KaggleWaveCall): Map<string, Drawn> {
   const env = call.env ?? process.env;
   const s = kaggleSettings(env);
-  const version = `${s.model}+${s.loraFile}`;
+  const version = s.loraFile === '' ? s.model : `${s.model}+${s.loraFile}`;
   const result = new Map<string, Drawn>();
   const fail = (names: readonly string[], lines: readonly string[], error: string, seconds: number, exit: number | null): void => {
     for (const name of names) {
@@ -877,13 +1283,13 @@ export function drawWaveWithKaggle(call: KaggleWaveCall): Map<string, Drawn> {
     mkdirSync(src, { recursive: true });
     mkdirSync(got, { recursive: true });
     const codeFile = 'kitgen_wave.py';
-    writeFileSync(join(src, codeFile), kaggleKernelScript(kaggleWave(chunk.map((r) => ({ name: r.name, prompt: r.prompt, png: r.png, seed: r.seed ?? s.seed, ...(r.subject === undefined ? {} : { subject: r.subject }) })), s)));
+    writeFileSync(join(src, codeFile), kaggleKernelScript(kaggleWave(chunk.map((r) => ({ name: r.name, prompt: r.prompt, png: r.png, seed: r.seed ?? s.seed, ...(r.subject === undefined ? {} : { subject: r.subject }), ...(r.grid === undefined ? {} : { grid: r.grid }) })), s)));
     writeFileSync(join(src, 'kernel-metadata.json'), JSON.stringify(kaggleMetadata(kernel.id ?? '', codeFile, s), null, 1));
     const limit = Math.round(s.setupSeconds + call.timeoutSeconds * chunk.length);
     const lines = [
       `kaggle kernel ${(kernel.id ?? '').split('/')[1] ?? ''} run ${index + 1}, ${chunk.length} pictures, ${s.gpu ? `gpu ${s.accelerator || 'any'}` : 'cpu'}`,
-      `recipe ${s.recipe}, model ${s.model}${s.vae === '' ? '' : `, vae ${s.vae}`}`, `lora ${s.loraRepo}/${s.loraFile} x${s.loraStrength}`,
-      `denoise ${s.denoise} (characters ${s.denoiseCharacter}) steps ${s.steps} short side ${s.size} cfg ${s.cfg}`,
+      `recipe ${s.recipe}, model ${s.model}${s.vae === '' ? '' : `, vae ${s.vae}`}${s.quant === '' ? '' : `, ${s.quant}`}, ${s.dtype}`, s.loraRepo === '' ? 'no lora' : `lora ${s.loraRepo}/${s.loraFile} x${s.loraStrength}`,
+      `denoise ${s.denoise} (characters ${s.denoiseCharacter}) steps ${s.steps} short side ${s.size} cfg ${s.cfg} post ${s.post}`,
       `kernel ${src.replace(`${call.out}/`, '')}`,
     ];
     const elapsed = (): number => Math.round((Date.now() - since) / 1000);
@@ -916,12 +1322,12 @@ export function drawWaveWithKaggle(call: KaggleWaveCall): Map<string, Drawn> {
       return;
     }
     const manifest = kaggleManifest(readFileSync(manifestPath, 'utf8'));
-    lines.push(`device ${manifest.device ?? '?'}, start and queue ${manifest.seconds === null ? '?' : Math.round(elapsed() - manifest.seconds)} s, model load ${manifest.loadSeconds ?? '?'} s, kernel ${manifest.seconds ?? '?'} s, wall ${elapsed()} s`);
+    lines.push(`device ${manifest.device ?? '?'}, start and queue ${manifest.seconds === null ? '?' : Math.round(elapsed() - manifest.seconds)} s, ${manifest.encodeSeconds === null ? '' : `prompts encoded at ${manifest.encodeSeconds} s, `}model load ${manifest.loadSeconds ?? '?'} s, kernel ${manifest.seconds ?? '?'} s, wall ${elapsed()} s`);
     const share = Math.round(elapsed() / chunk.length);
     for (const request of chunk) {
       const logPath = join(call.out, 'log', `${request.name}-${call.stamp}.txt`);
       const image = manifest.images.find((i) => i.name === request.name);
-      const own = [...lines, image === undefined ? 'not drawn' : `drawn in ${image.seconds ?? '?'} s${image.tokens === undefined ? '' : `, prompt ${image.tokens} CLIP tokens`}`];
+      const own = [...lines, image === undefined ? 'not drawn' : `drawn in ${image.seconds ?? '?'} s${image.tokens === undefined ? '' : `, prompt ${image.tokens} ${s.tokenLimit === CLIP_TOKENS ? 'CLIP ' : ''}tokens`}`];
       const drawn = (saved: string | null, error: string): Drawn => {
         writeFileSync(logPath, [...own, saved === null ? error : ''].filter((l) => l !== '').join('\n'));
         return { version, exit: 0, seconds: share, tokens: null, log: logPath.replace(`${call.out}/`, ''), saved, error };
@@ -944,7 +1350,7 @@ export function drawWaveWithKaggle(call: KaggleWaveCall): Map<string, Drawn> {
 }
 
 /** One picture down the kaggle route: a wave of one. `kit:gen` sends a whole wave at once instead. */
-export function drawWithKaggle(call: DrawCall & { seed?: number; subject?: KaggleSubject }): Drawn {
+export function drawWithKaggle(call: DrawCall & { seed?: number; subject?: KaggleSubject; grid?: { width: number; height: number } }): Drawn {
   const reference = call.images[0];
   const logPath = join(call.out, 'log', `${call.name}-${call.stamp}.txt`);
   if (reference === undefined) {
@@ -956,6 +1362,7 @@ export function drawWithKaggle(call: DrawCall & { seed?: number; subject?: Kaggl
     requests: [{
       name: call.name, prompt: call.prompt, reference, expect: call.expect,
       ...(call.seed === undefined ? {} : { seed: call.seed }), ...(call.subject === undefined ? {} : { subject: call.subject }),
+      ...(call.grid === undefined ? {} : { grid: call.grid }),
     }],
   });
   return wave.get(call.name) ?? { version: 'kaggle', exit: null, seconds: 0, tokens: null, log: logPath.replace(`${call.out}/`, ''), saved: null, error: 'the kaggle route returned nothing' };
