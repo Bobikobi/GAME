@@ -12,6 +12,19 @@ Read [docs/creators/README.md](docs/creators/README.md) before changing content.
 
 Learned on the first three days of building, each line from a real cost.
 
+### Model choice and session checkpoints
+
+- At the start of substantial work, recommend a specific available model and supported reasoning effort in one short Hebrew sentence, with the task-specific reason. Reassess when moving from investigation/design to routine implementation, when the scope becomes harder, or after two attempts without meaningful progress. Do not repeat the recommendation on every small turn or block authorized work waiting for a model switch.
+- Prefer an economical capable option for bounded edits, sorting and documentation; a balanced coding option for ordinary implementation; stronger reasoning for unresolved architecture, difficult debugging or visual/spatial decisions. Check missing evidence and unclear requirements before escalating. This is a task-based recommendation, not a claim that the largest model is always best.
+- Use models actually available in the user's environment. Verify current model capabilities, supported settings and any price claims against official documentation when needed; do not hardcode a permanent model ranking. If the user's model picker is unknown, state that limitation. Never claim to have changed the current session's model unless a tool confirms it; tell the user what to select when a switch is advisable.
+- Proactively recommend continuing here or opening a new session at a meaningful checkpoint. Recommend a fresh session when a completed work unit gives way to a distinct objective, accumulated unrelated context causes repeated rediscovery or mistakes, or a long investigation has a stable handoff. Continue here for the same focused iteration. Do not use a fixed message count, invent context percentages, promise token savings, or stop unfinished work just because the conversation is long.
+- Before recommending the move, preserve a reviewable checkpoint and provide a ready-to-paste handoff: verified worktree/branch/commit and dirty state, objective, owner approvals and rejected directions, key files and demo command/URL, checks actually run, unresolved limits, parallel-session ownership, and one concrete next action. Include the recommended model/effort and an explicit instruction to inspect and continue rather than restart. Distinguish technical checks from visual approval.
+- Keep these notices brief and useful: "מודל מומלץ: …; רמת חשיבה: …; הסיבה: …" and "סשן: ממשיכים כאן / כדאי חדש אחרי …; הסיבה: …". Recommendations are proactive advice, not repeated permission requests.
+
+Model-setting reference: [OpenAI reasoning guidance](https://developers.openai.com/api/docs/guides/reasoning).
+
+### Branches and contribution flow
+
 - Every branch starts from `origin/develop` and every pull request targets `develop`; a release is `develop` into `main`. Never stack a pull request on another branch: it lands there, not in `develop`, and CI refuses a different base.
 - Several sessions build at once. Read [docs/team/PARALLEL.md](docs/team/PARALLEL.md) before you start and run `pnpm streams` to see the other streams; generated files (`schema/json`, `content/values.lock.json`, `CREDITS.md`, `content/board.json`) are taken from `develop` and regenerated, never merged by hand, and a change to a shared file lands as its own small pull request first.
 - Before taking GRUNT item P-n, check that P-(n-1) is closed on `develop`. The P items build on each other.
