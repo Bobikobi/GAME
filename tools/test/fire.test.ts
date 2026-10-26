@@ -85,7 +85,7 @@ describe('the fire params the check refuses (G48)', () => {
 
   /** The errors on `params.fire` for a copy of the core world with this cap and burn per log. */
   function fireErrors(cap: number, logMs: number): string[] {
-    const root = mkdtempSync(join(tmpdir(), 'openfold-fire-'));
+    const root = mkdtempSync(join(tmpdir(), 'loomvale-fire-'));
     roots.push(root);
     cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
     cpSync(join(CONTENT_DIR, 'kit'), join(root, 'kit'), { recursive: true });

@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "openfold": {
+    "loomvale": {
       "command": "pnpm",
       "args": ["-s", "mcp"]
     }

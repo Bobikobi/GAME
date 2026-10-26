@@ -1,4 +1,4 @@
-# Openfold
+# Loomvale
 
 A free pixel-art browser game that its players build and run together. You wake up by a broken bridge in a misty valley, gather and cook, dig in the ruins and bring the valley back to life. Every bush, recipe, quest and ruin in it is a small data file that anyone can add.
 

@@ -144,7 +144,7 @@ export async function handle(request: Request, env: Record<string, string | unde
         authorization: `Bearer ${token}`,
         accept: 'application/vnd.github+json',
         'content-type': 'application/json',
-        'user-agent': 'openfold-feedback',
+        'user-agent': 'loomvale-feedback',
         'x-github-api-version': '2022-11-28',
       },
       body: JSON.stringify(issueFrom(parsed)),

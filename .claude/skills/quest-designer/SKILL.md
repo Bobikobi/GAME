@@ -34,7 +34,7 @@ it, and the owner decides what moves (the review below).
   character can hold at once and which two of one type it can finish back to back by its
   own choice. G17 only reads the requires links; the hand reads every order the player can
   choose, with the orders items force. `--json` for a script.
-- The `openfold` MCP server (`.mcp.json`): `rules`, `schema`, `template`, `slots` (the named
+- The `loomvale` MCP server (`.mcp.json`): `rules`, `schema`, `template`, `slots` (the named
   places a step can point at), `value`, `check`.
 - The NPC files in `content/core/npcs/` and the map props with ids in `content/core/map.json`.
 

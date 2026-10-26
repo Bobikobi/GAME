@@ -54,7 +54,7 @@ export class Browser {
   ) {}
 
   static async launch(): Promise<Browser> {
-    const profile = mkdtempSync(join(tmpdir(), 'mistvale-e2e-'));
+    const profile = mkdtempSync(join(tmpdir(), 'loomvale-e2e-'));
     const args = [
       '--headless=new',
       '--remote-debugging-port=0',

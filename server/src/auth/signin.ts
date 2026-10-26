@@ -235,8 +235,8 @@ export function createSignIn(options: SignInOptions): SignIn {
       await store.saveEmailLink({ tokenHash: tokenHash(token), email, createdAt: at, expiresAt: at + LINK_TTL_MS });
       await mailer.send({
         to: email,
-        subject: 'Your Openfold sign-in link',
-        text: `Open this link to sign in to Openfold. It works once, for ${LINK_TTL_MS / MINUTE} minutes:\n${options.publicOrigin}/auth/email/link?token=${token}\n\nIf you did not ask for it, ignore this message.`,
+        subject: 'Your Loomvale sign-in link',
+        text: `Open this link to sign in to Loomvale. It works once, for ${LINK_TTL_MS / MINUTE} minutes:\n${options.publicOrigin}/auth/email/link?token=${token}\n\nIf you did not ask for it, ignore this message.`,
       });
     }
     sendJson(response, 202, { sent: true });
@@ -250,7 +250,7 @@ export function createSignIn(options: SignInOptions): SignIn {
     const token = url.searchParams.get('token');
     const valid = isToken(token);
     const body = valid
-      ? `<form method="post" action="/auth/email/confirm"><input type="hidden" name="token" value="${escapeHtml(token)}"><button type="submit">Sign in to Openfold</button></form>`
+      ? `<form method="post" action="/auth/email/confirm"><input type="hidden" name="token" value="${escapeHtml(token)}"><button type="submit">Sign in to Loomvale</button></form>`
       : '<p>This sign-in link is not complete. Ask for a new one in the game.</p>';
     response.writeHead(valid ? 200 : 400, {
       'cache-control': 'no-store',
@@ -259,7 +259,7 @@ export function createSignIn(options: SignInOptions): SignIn {
       'referrer-policy': 'no-referrer',
       'x-content-type-options': 'nosniff',
     });
-    response.end(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Openfold sign-in</title>${body}</html>`);
+    response.end(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Loomvale sign-in</title>${body}</html>`);
   }
 
   async function emailConfirm(request: IncomingMessage, response: ServerResponse): Promise<void> {
@@ -288,7 +288,7 @@ export function createSignIn(options: SignInOptions): SignIn {
   async function refuseAge(response: ServerResponse, ticketHash: string, cookies: string[]): Promise<void> {
     await store.dropTicket(ticketHash);
     sendJson(response, 403, {
-      error: 'You cannot make an Openfold account. The demo stays open to you.',
+      error: 'You cannot make an Loomvale account. The demo stays open to you.',
       reason: 'under-age',
       demo: '/',
     }, [...cookies, clearCookie(SIGNUP_COOKIE)]);

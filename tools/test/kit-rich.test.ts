@@ -55,7 +55,7 @@ describe('richProblem', () => {
 });
 
 describe('the check, end to end', () => {
-  const root = mkdtempSync(join(tmpdir(), 'openfold-rich-'));
+  const root = mkdtempSync(join(tmpdir(), 'loomvale-rich-'));
   afterAll(() => rmSync(root, { recursive: true, force: true }));
   cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
   cpSync(join(CONTENT_DIR, 'kit'), join(root, 'kit'), { recursive: true });

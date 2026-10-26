@@ -55,7 +55,7 @@ describe('spriteSizeProblem', () => {
 });
 
 describe('density in a kit', () => {
-  const root = mkdtempSync(join(tmpdir(), 'openfold-density-'));
+  const root = mkdtempSync(join(tmpdir(), 'loomvale-density-'));
   afterAll(() => rmSync(root, { recursive: true, force: true }));
   cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
   cpSync(join(CONTENT_DIR, 'kit'), join(root, 'kit'), { recursive: true });

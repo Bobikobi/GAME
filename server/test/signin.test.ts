@@ -366,7 +366,7 @@ describe('the sign-up (NEXT 18 e; CR-49, CR-53)', () => {
     const response = await signUp(w, { ...SIGNUP, birthDate: '2014-01-01' });
     expect(response.status).toBe(403);
     const body = await response.json();
-    expect(body).toEqual({ error: 'You cannot make an Openfold account. The demo stays open to you.', reason: 'under-age', demo: '/' });
+    expect(body).toEqual({ error: 'You cannot make an Loomvale account. The demo stays open to you.', reason: 'under-age', demo: '/' });
     expect(body.error).not.toMatch(/\d/);
     expect(w.store.accounts.size).toBe(0);
     expect(w.store.tickets.size).toBe(0);

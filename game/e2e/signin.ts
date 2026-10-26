@@ -164,8 +164,8 @@ async function play(browser: Browser, url: string, auth: FakeAuthServer, bundle:
   const token = auth.linkFor('tess@example.com');
   assert(token !== undefined, `the fake sent a link to that address, got ${JSON.stringify([...auth.links.entries()])}`);
   await page.goto(`${url}auth/email/link?token=${token}`);
-  await page.waitFor(`document.body.textContent.includes('Sign in to Openfold')`, 'the link page');
-  await page.tap('button', 'Sign in to Openfold');
+  await page.waitFor(`document.body.textContent.includes('Sign in to Loomvale')`, 'the link page');
+  await page.tap('button', 'Sign in to Loomvale');
   await page.waitFor(`!!document.querySelector('.panel.signup select[aria-label="Day"]')`, 'the sign-up form back from the email link', 30_000);
   await fillSignup(page, 'Tess', '2000');
   await page.waitFor(`document.querySelector('.panel.signup')?.textContent.includes('Your account starts fresh')`, 'the fresh notice', 30_000);

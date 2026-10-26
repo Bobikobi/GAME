@@ -1,4 +1,4 @@
-# Game rules: what keeps Openfold fun
+# Game rules: what keeps Loomvale fun
 
 This page is the product owner's. Developers, creators and AI agents
 follow it the way `kernel/` follows its rules R1-R12: a request that breaks a
