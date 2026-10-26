@@ -1,0 +1,129 @@
+{
+  "about": "Harvest, kneeling: the library's kneeling fix for the body, its left hand working a second herb; the right hand reaches from the pouch on the hip down to a herb, pulls a sprig, lifts it and puts it in the pouch. The arm is an IK overlay to fixed spots by the body.",
+  "target": "forager",
+  "base": {
+    "library": "ual1",
+    "action": "Fixing_Kneeling"
+  },
+  "frames": [
+    40,
+    45,
+    50,
+    55,
+    60,
+    65,
+    70,
+    75
+  ],
+  "ik": {
+    "side": "R",
+    "anchor": "body",
+    "pole": [
+      0.8,
+      -0.3,
+      -0.4
+    ],
+    "points": [
+      "pouch",
+      [
+        0.42,
+        0.3,
+        0.64
+      ],
+      [
+        0.38,
+        0.32,
+        0.46
+      ],
+      [
+        0.38,
+        0.32,
+        0.42
+      ],
+      [
+        0.42,
+        0.26,
+        0.74
+      ],
+      [
+        0.34,
+        0.12,
+        0.7
+      ],
+      "pouch"
+    ],
+    "t": [
+      0,
+      0.1667,
+      0.3333,
+      0.5,
+      0.6,
+      0.6667,
+      0.8333,
+      0.9333
+    ]
+  },
+  "prop": {
+    "kind": "sprig",
+    "hand": "R",
+    "poses": [
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  "set": [
+    {
+      "kind": "herb",
+      "at": [
+        0.38,
+        0.32
+      ],
+      "size": 1.4
+    },
+    {
+      "kind": "herb",
+      "at": [
+        -0.24,
+        0.52
+      ],
+      "size": 1.1
+    }
+  ],
+  "worn": [
+    {
+      "kind": "pouch",
+      "at": [
+        0.24,
+        0.04,
+        0.0
+      ]
+    }
+  ],
+  "ms": [
+    200,
+    150,
+    150,
+    250,
+    120,
+    150,
+    150,
+    150
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      112
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}
