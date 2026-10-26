@@ -306,7 +306,13 @@ export const ResourceBody = Type.Object(
         'A quest id. The node cannot be struck by a character who was offered that quest and has not finished it; a character who was never offered it strikes the node as usual. The refusal says one short line and costs nothing.',
     }),
     tool: Type.Optional(ToolKind),
-    level: Int(1, 20, 'Level required, in the profession the node trains: felling when the tool is an axe, foraging otherwise.'),
+    work: Type.Optional(
+      Type.Literal('mine', {
+        description:
+          'How the node is worked when it needs no tool. "mine": broken with blows that run by themselves after one press, as felling does; it trains digging, a pick or a hammer in the bag makes it faster (the best one, worn a little each time), and bare hands still do it. Left out: gathered by hand with the minigame of `game`.',
+      }),
+    ),
+    level: Int(1, 20, 'Level required, in the profession the node trains: felling when the tool is an axe, digging when the node is mined, foraging otherwise.'),
     game: Type.Optional(
       Type.Union([Type.Literal('timing'), Type.Literal('strike'), Type.Literal('pick'), Type.Literal('snap')], {
         description: 'The minigame played when gathering: "timing" (stop a marker in the middle, the default), "strike" (three timed hammer strikes, for stone), "pick" (press only for the ripe ones, for plants) or "snap" (press fast, for wood).',
@@ -1438,7 +1444,7 @@ export const KitBody = Type.Object(
               minItems: 1,
               maxItems: 4,
               description:
-                'The ramps of this kit the sprite draws in, in order: the first is the one its outline comes from. A sprite that names none uses the core palette only.',
+                'The ramps of this kit the sprite draws in, in order. The outline is the one-pixel ink line #1b1a2e on every sprite, whatever the ramps. A sprite that names none uses the core palette only.',
             }),
           ),
           density: Type.Optional(

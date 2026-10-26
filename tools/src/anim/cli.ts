@@ -17,6 +17,7 @@ import { cpus } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { PNG } from 'pngjs';
+import { INK_HEX } from '../kit/ink.js';
 import { CONTENT_DIR } from '../load.js';
 import { ANIM_DIR, CACHE_DIR, type Clip, clipNames, clipProblems, job, type Library, modelPath, paces, poseMs, readClip, readLibraries, readSettings, type Settings, stepFrames, type View } from './clip.js';
 import { archiveProblems, itchDownload, libraryGlb, unpack } from './fetch.js';
@@ -106,7 +107,7 @@ function measure(name: string, clip: Clip, ctx: Context, cast?: string): ClipMea
   if (target === undefined) throw new Error(`${name}: no target ${clip.target}`);
   const ramps = clip.ramps ?? target.ramps;
   const pal = classPalettes(ramps, target.metal, target.leaf);
-  const allowed = new Set([...pal.body, ...pal.fire, ...pal.metal, ...pal.leaf, ctx.settings.outline]);
+  const allowed = new Set([...pal.body, ...pal.fire, ...pal.metal, ...pal.leaf, INK_HEX]);
   const frames: Partial<Record<View, Picture[]>> = {};
   const n = poseMs(clip, ctx.libs).length;
   for (const view of clip.views) frames[view] = Array.from({ length: n }, (_, i) => readPng(join(out, 'sprites', `${name}_${view}_${String(i).padStart(2, '0')}.png`)));
@@ -116,7 +117,6 @@ function measure(name: string, clip: Clip, ctx: Context, cast?: string): ClipMea
   const m = measureClip({
     frames,
     allowed,
-    outline: ctx.settings.outline,
     limits,
     meta,
     locomotion: clip.locomotion,
@@ -181,7 +181,7 @@ function render(name: string, ctx: Context, cast?: string): ClipMeasures {
         hi = flipX(hi);
         ids = ids && flipX(ids);
       }
-      const sprite = snap(hi, ids, ctx.settings.supersample, pal, ctx.settings.outline);
+      const sprite = snap(hi, ids, ctx.settings.supersample, pal);
       writePng(join(out, 'sprites', `${name}_${view}_${String(i).padStart(2, '0')}.png`), sprite);
       for (let y = 0; y < fh; y += 1) strip.data.set(sprite.data.subarray(y * fw * 4, (y + 1) * fw * 4), (y * strip.width + i * fw) * 4);
     });

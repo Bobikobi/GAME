@@ -469,9 +469,10 @@ export function verbLevel(bundle: Bundle, state: PublicState, verb: Verb): numbe
   return professionLevel(bundle, state, bundle.verbs[verb]);
 }
 
-/** The verb a node trains: a node worked with an axe is felled, any other is gathered. */
-export function nodeVerb(resource: { tool?: string }): Verb {
-  return resource.tool === 'axe' ? 'fell' : 'gather';
+/** The verb a node trains: a node worked with an axe is felled, a mined one trains digging, any other is gathered. */
+export function nodeVerb(resource: { tool?: string; work?: string }): Verb {
+  if (resource.tool === 'axe') return 'fell';
+  return resource.work === 'mine' ? 'dig' : 'gather';
 }
 
 /** Character level: one more for every profession level gained. */
