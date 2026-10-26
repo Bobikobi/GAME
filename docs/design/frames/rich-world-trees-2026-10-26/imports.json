@@ -1,0 +1,39 @@
+{
+  "density": 4,
+  "method": "Existing importSprite and paletteWithRamps; visible bounds fitted by nearest sampling, with aspect preserved.",
+  "reports": [
+    {
+      "name": "oak-broad",
+      "source": "oak-broad-source.png",
+      "sourceSha256": "8318a0aeffc8bcf958f874691e1c7c55b7b0523985b7f006a162d6264490dbe1",
+      "file": "oak-broad.png",
+      "sha256": "8641200bf186c428526d98c2ffbb516ed292a6275bc10e31bbd27caa1e53d600",
+      "ramps": [
+        "green",
+        "moss",
+        "wood"
+      ],
+      "frame": [
+        320,
+        320
+      ],
+      "anchor": "bottom",
+      "padding": 2,
+      "outline": false,
+      "dither": true,
+      "sourceGrid": [
+        166,
+        175
+      ],
+      "colors": 21,
+      "visibleBounds": {
+        "x": 10,
+        "y": 2,
+        "width": 300,
+        "height": 316
+      },
+      "normalization": "Uniform nearest fit of visible imported pixels within 316×316; bottom-centred with 2px root padding.",
+      "status": "Reused draft for the visual study only; owner visual approval pending."
+    }
+  ]
+}

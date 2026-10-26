@@ -5,12 +5,14 @@ import { WORLD_TILE_SIZE as TILE, worldStudyLayout, worldStudyMask, worldStudyPa
 const assets = import.meta.glob('../../docs/design/frames/rich-world-expansion-2026-10-26/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 const banks = import.meta.glob('../../docs/design/frames/rich-river-kit-2026-10-25/bank-*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 const plants = import.meta.glob('../../docs/design/frames/rich-shore-2026-10-25/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+import broadOakUrl from '../../docs/design/frames/rich-world-trees-2026-10-26/oak-broad.png?url';
 const masks = [1, 2, 3, 4, 6, 7, 8, 9, 11, 12, 13, 14, 15];
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const hash = (x: number, y: number) => (Math.imul(x + 23, 73856093) ^ Math.imul(y + 37, 19349663)) >>> 0;
 const key = (name: string) => `world-ground-${name}`;
 
 export function preloadWorldStudyGround(scene: Phaser.Scene): void {
+  scene.load.image(key('oak-broad'), broadOakUrl);
   for (const name of ['meadow-a', 'meadow-b', 'meadow-c', 'path', 'woodland', 'oak']) {
     const entry = Object.entries(assets).find(([path]) => path.endsWith(`/${name}.png`));
     if (!entry) throw new Error(`Missing imported world material: ${name}`);
@@ -96,6 +98,14 @@ export function createWorldStudyGround(scene: Phaser.Scene) {
   const foliage: Plant[] = [];
   const place = (name: string, x: number, y: number, tree: boolean, variant: number) => {
     const plant = scene.add.image(x, y, key(name)).setOrigin(.5, 1).setDepth(y);
+    if (tree) {
+      // Keep the trunk upright: mirror a branching silhouette, never rotate it to fake a new camera angle.
+      // Independent hash bits avoid the alternating rows of the placement lattice.
+      plant.setFlipX(Boolean((variant >>> 8) & 1));
+      const height = 320 + ((variant >>> 12) % 5) * 8;
+      const width = name === 'oak-broad' ? height : Math.round(height * (192 / 320) * (1 + ((variant >>> 17) % 3) * .035));
+      plant.setDisplaySize(width, height);
+    }
     if (!tree) plant.setDisplaySize(name === 'grass' ? 38 : 48, name === 'grass' ? 38 : 48);
     if (!tree && variant % 2) plant.setFlipX(true);
     foliage.push({ image: plant, x, y, tree, phase: variant % 37 });
@@ -105,7 +115,13 @@ export function createWorldStudyGround(scene: Phaser.Scene) {
     if (!landAt(x, y) || worldStudyPathDistance(x, y) < 52) continue;
     const inForest = worldStudyLayout.regions.some(r => x > r.x * TILE && y > r.y * TILE && x < (r.x + r.width) * TILE && y < (r.y + r.height) * TILE);
     const nearWater = !landAt(x + 48, y) || !landAt(x - 48, y) || !landAt(x, y + 48);
-    if (inForest && tx % 3 === 1 && ty % 4 === 3 && landAt(x - 36, y) && landAt(x + 36, y)) place('oak', x, y, true, seed);
+    if (inForest && tx % 3 === 1 && ty % 4 === 3 && landAt(x - 36, y) && landAt(x + 36, y)) {
+      const treeX = x + (((seed >>> 6) % 81) - 40);
+      const treeY = y + (((seed >>> 15) % 101) - 50);
+      // Stagger the roots while retaining the clear route and the existing land footprint.
+      const clear = landAt(treeX - 36, treeY) && landAt(treeX + 36, treeY) && worldStudyPathDistance(treeX, treeY) >= 58;
+      place((seed >>> 3) % 5 === 2 ? 'oak-broad' : 'oak', clear ? treeX : x, clear ? treeY : y, true, seed);
+    }
     else if (nearWater && seed % 3 === 0) place('reeds', x, y, false, seed);
     else if (seed % (inForest ? 4 : 3) === 0) place('grass', x, y, false, seed);
   }
@@ -115,13 +131,21 @@ export function createWorldStudyGround(scene: Phaser.Scene) {
       const sway = motion ? Math.sin(time * (p.tree ? .55 : 1.5) + p.phase) + Math.sin(time * .37 + p.x * .006) * .4 : 0;
       // Rotate the generated image around its root; no terrain pixels or trunks translate.
       p.image.setRotation(sway * (p.tree ? .004 : .025) * Math.sign(wind[0] || 1));
-      const behind = p.tree && actor && actor.y < p.y && actor.y > p.y - 300 && Math.abs(actor.x - p.x) < 90;
+      const behind = p.tree && actor && actor.y < p.y && actor.y > p.y - p.image.displayHeight && Math.abs(actor.x - p.x) < p.image.displayWidth / 2
+        && [24, 52, 72].some(up => {
+          // Fade only when actual painted leaves or bark cover the character, not an empty frame corner.
+          let px = Math.floor((actor.x - p.x) / p.image.scaleX + p.image.width / 2);
+          if (p.image.flipX) px = p.image.width - 1 - px;
+          const py = Math.floor((actor.y - up - p.y) / p.image.scaleY + p.image.height);
+          return (scene.textures.getPixelAlpha(px, py, p.image.texture.key) ?? 0) >= 128;
+        });
       p.image.setAlpha(behind ? .42 : 1);
     }
   };
   scene.events.once('shutdown', () => { image.destroy(); for (const p of foliage) p.image.destroy(); scene.textures.remove(texture.key); });
   return {
     image, landAt, landColor, advance,
+    trees: foliage.filter(p => p.tree).map(p => p.image),
     setPlantsVisible: (visible: boolean) => { for (const p of foliage) p.image.setVisible(visible); },
     setMotion: (enabled: boolean) => { motion = enabled; },
   };

@@ -3,6 +3,7 @@
 import * as Phaser from 'phaser';
 import { preloadWorldStudyGround, createWorldStudyGround } from './world-study-ground';
 import { WorldStudyWater } from './world-study-water';
+import { createWorldStudyShadows } from './world-study-shadows';
 import { WORLD_TILE_SIZE, worldStudyLayout } from './world-study-layout';
 import type { WaterLayer } from './coastal-water-study';
 import type { WaterWeather } from './water-response';
@@ -17,6 +18,7 @@ class WorldStudy extends Phaser.Scene {
   private actor!: Phaser.GameObjects.Sprite;
   private ground!: ReturnType<typeof createWorldStudyGround>;
   private water!: WorldStudyWater;
+  private shadows!: ReturnType<typeof createWorldStudyShadows>;
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
   private moving = !reduced.matches;
   private elapsed = 0;
@@ -41,6 +43,9 @@ class WorldStudy extends Phaser.Scene {
     this.actor = this.add.sprite((spawn.x + .5) * WORLD_TILE_SIZE, (spawn.y + .5) * WORLD_TILE_SIZE, 'world-study-player', 1)
       .setOrigin(.5, 1).setScale(4);
     this.actor.setDepth(this.actor.y);
+    this.shadows = createWorldStudyShadows(this, this.ground.trees, this.ground.landAt);
+    this.shadows.advance(this.actor);
+    this.events.once('shutdown', () => this.shadows.destroy());
     this.keys = this.input.keyboard!.addKeys('UP,DOWN,LEFT,RIGHT,W,A,S,D') as Record<string, Phaser.Input.Keyboard.Key>;
     this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
     this.cameras.main.startFollow(this.actor, true, .16, .16);
@@ -69,7 +74,11 @@ class WorldStudy extends Phaser.Scene {
     this.events.once('shutdown', () => reduced.removeEventListener('change', onReduced));
 
     const weather = document.getElementById('weather') as HTMLSelectElement;
-    weather.onchange = () => { this.water.weather = weather.value as WaterWeather; this.water.render(); };
+    weather.onchange = () => {
+      this.water.weather = weather.value as WaterWeather;
+      this.water.render();
+      this.shadows.setSunEnabled(weather.value !== 'storm');
+    };
     document.getElementById('wind')!.onclick = () => {
       this.water.wind = [-this.water.wind[0], -this.water.wind[1]];
       this.water.rebuild();
@@ -84,7 +93,10 @@ class WorldStudy extends Phaser.Scene {
       document.getElementById('zoom')!.textContent = camera.zoom === 1 ? 'קירוב ×2' : 'מבט רחב';
     };
     const plants = document.getElementById('plants') as HTMLInputElement;
-    plants.onchange = () => this.ground.setPlantsVisible(plants.checked);
+    const shadows = document.getElementById('shadows') as HTMLInputElement;
+    const updateShadows = () => this.shadows.setVisible(plants.checked && shadows.checked);
+    plants.onchange = () => { this.ground.setPlantsVisible(plants.checked); updateShadows(); };
+    shadows.onchange = updateShadows;
     for (const input of document.querySelectorAll<HTMLInputElement>('[data-layer]')) {
       input.onchange = () => {
         this.water.layers[input.dataset.layer as WaterLayer] = input.checked;
@@ -106,6 +118,7 @@ class WorldStudy extends Phaser.Scene {
     this.cameras.main.centerOn(x, y);
     this.water.setView(this.cameras.main);
     this.ground.advance(this.elapsed, this.water.wind, this.actor);
+    this.shadows.advance(this.actor);
     this.updatePlaceLabel();
   }
 
@@ -148,6 +161,7 @@ class WorldStudy extends Phaser.Scene {
     } else this.actor.setFrame(1);
     this.water.setView(this.cameras.main);
     this.ground.advance(this.elapsed, this.water.wind, this.actor);
+    this.shadows.advance(this.actor);
   }
 }
 

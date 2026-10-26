@@ -1,0 +1,117 @@
+{
+  "date": "2026-10-26",
+  "scope": "Agent reuse selection for the existing connected visual study, separate from owner approval or runtime-kit integration.",
+  "assets": [
+    {
+      "id": "sha256:f4a3366cd2f546a66adb2f515e1860a72c636bd7205a62486b0d7e72f3a1e4fc",
+      "source": "../rich-world-expansion-2026-10-26/oak.png",
+      "provenance": "../rich-world-expansion-2026-10-26/provenance.json",
+      "sourceBranch": "art/rich-opening-ground",
+      "sourceCommit": "e519b19f",
+      "family": "rich-world-oak",
+      "intendedSubject": "Rooted mature oak for the connected world study",
+      "depicts": "Tall narrow branching oak with exposed roots and many small leaf clusters",
+      "tags": [
+        "vegetation"
+      ],
+      "reuse": [
+        "Whole existing tree",
+        "Rooted mirror and size variants",
+        "Caster silhouette for engine shadow"
+      ],
+      "status": "keep",
+      "decidedBy": "agent",
+      "approval": "Agent selection inside the existing study only; tree polish awaits owner visual review.",
+      "reason": "Retains existing world material and detailed leaf and bark structure."
+    },
+    {
+      "id": "sha256:8318a0aeffc8bcf958f874691e1c7c55b7b0523985b7f006a162d6264490dbe1",
+      "source": "oak-broad-source.png",
+      "provenance": "provenance.json",
+      "originalManifest": "source-manifest.jsonl:1",
+      "sourceBranch": "art/props-wave-1",
+      "sourceCheckoutCommit": "a9b28235f9c63a06efc8bfd99eb5cf34c861f2fc",
+      "family": "props-identity-1/tree_oak",
+      "intendedSubject": "Redraw of the old oak of the grove from props/tree_oak",
+      "depicts": "Broad rounded crown, short gnarled trunk with a hollow, roots and moss",
+      "tags": [
+        "vegetation"
+      ],
+      "reuse": [
+        "Whole broad-crowned tree as a study variant",
+        "Leaf-cluster and branching reference"
+      ],
+      "status": "keep",
+      "decidedBy": "agent",
+      "approval": "Candidate for the current visual study; owner visual approval pending.",
+      "reason": "Existing rich draft provides a genuinely different crown and trunk silhouette without generating another image.",
+      "derivatives": [
+        "oak-broad-original.png",
+        "oak-broad.png"
+      ]
+    },
+    {
+      "id": "sha256:2018c8d31a25a77155934465b8a6adf9424f18bbf6772ff726a55c2d34f31a4c",
+      "source": "/home/elad-saadon/Projects/GAME.worktrees/feat-art-ground-64/assets/gen/landmarks-woodland-64/refinement-v2/tree_broadleaf_alt.png",
+      "sourceBranch": "feat/art-ground-64",
+      "sourceCheckoutCommit": "e1b14311f54c1e4e4c4f5864c2e18e655bd40ba0",
+      "provenance": "/home/elad-saadon/Projects/GAME.worktrees/feat-art-ground-64/assets/gen/landmarks-woodland-64/refinement-v2/manifest.jsonl",
+      "family": "landmarks-woodland-64/tree_broadleaf_alt",
+      "intendedSubject": "Alternative woodland tree silhouette",
+      "depicts": "Tall rounded leaf tiers and branching trunk",
+      "tags": [
+        "vegetation"
+      ],
+      "reuse": [
+        "Silhouette and branching reference for future rework"
+      ],
+      "status": "rework",
+      "decidedBy": "agent",
+      "approval": "No owner approval asserted; not used in the study.",
+      "reason": "Coarse logical art and substantial empty frame area compare poorly with the existing detailed oak; retain the useful structural idea.",
+      "archive": "Discovery reference only; not copied or integrated in this bounded task. Original remains in the other worktree."
+    },
+    {
+      "id": "sha256:41be5aa0ed5085167a1c76d0c9c82269712a2a71acabef709ec7989b0142b656",
+      "source": "/home/elad-saadon/Projects/GAME.worktrees/feat-art-ground-64/assets/gen/landmarks-woodland-64/refinement-v2/tree_wind_bent.png",
+      "sourceBranch": "feat/art-ground-64",
+      "sourceCheckoutCommit": "e1b14311f54c1e4e4c4f5864c2e18e655bd40ba0",
+      "provenance": "/home/elad-saadon/Projects/GAME.worktrees/feat-art-ground-64/assets/gen/landmarks-woodland-64/refinement-v2/manifest.jsonl",
+      "family": "landmarks-woodland-64/tree_wind_bent",
+      "intendedSubject": "Alternative woodland tree silhouette",
+      "depicts": "Leaning trunk and crown",
+      "tags": [
+        "vegetation"
+      ],
+      "reuse": [
+        "Silhouette and branching reference for future rework"
+      ],
+      "status": "rework",
+      "decidedBy": "agent",
+      "approval": "No owner approval asserted; not used in the study.",
+      "reason": "Coarse logical art and substantial empty frame area compare poorly with the existing detailed oak; retain the useful structural idea.",
+      "archive": "Discovery reference only; not copied or integrated in this bounded task. Original remains in the other worktree."
+    },
+    {
+      "id": "sha256:e9b7f12494088f79ea1a9aaee78499ffa7b9fc3d30638ae7c235d133a892a005",
+      "source": "/home/elad-saadon/Projects/GAME.worktrees/feat-art-ground-64/assets/gen/landmarks-woodland-64/refinement/tree_multi_trunk.png",
+      "sourceBranch": "feat/art-ground-64",
+      "sourceCheckoutCommit": "e1b14311f54c1e4e4c4f5864c2e18e655bd40ba0",
+      "provenance": "/home/elad-saadon/Projects/GAME.worktrees/feat-art-ground-64/assets/gen/landmarks-woodland-64/refinement/manifest.jsonl",
+      "family": "landmarks-woodland-64/tree_multi_trunk",
+      "intendedSubject": "Alternative woodland tree silhouette",
+      "depicts": "Three trunks sharing a clustered crown",
+      "tags": [
+        "vegetation"
+      ],
+      "reuse": [
+        "Silhouette and branching reference for future rework"
+      ],
+      "status": "rework",
+      "decidedBy": "agent",
+      "approval": "No owner approval asserted; not used in the study.",
+      "reason": "Coarse logical art and substantial empty frame area compare poorly with the existing detailed oak; retain the useful structural idea.",
+      "archive": "Discovery reference only; not copied or integrated in this bounded task. Original remains in the other worktree."
+    }
+  ]
+}

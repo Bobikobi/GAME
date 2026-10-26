@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-26",
+  "scope": "Existing connected world-study vegetation polish; no new raster generation, production kit or map changes.",
+  "source": {
+    "file": "oak-broad-source.png",
+    "sha256": "8318a0aeffc8bcf958f874691e1c7c55b7b0523985b7f006a162d6264490dbe1",
+    "originalLocation": "/home/elad-saadon/Projects/GAME.worktrees/art-props-wave-1/.scratch/kit-gen/props-identity-1/raw/tree_oak-2026-10-22T13-39-39-867Z.png",
+    "sourceBranch": "art/props-wave-1",
+    "sourceCheckoutCommit": "a9b28235f9c63a06efc8bfd99eb5cf34c861f2fc",
+    "tracking": "Local ignored draft at discovery; checkout commit identifies context, not storage of these bytes. Preserved here byte-for-byte.",
+    "manifest": "source-manifest.jsonl:1",
+    "generatedAt": "2026-10-22T13:39:39.867Z",
+    "drawer": "codex",
+    "licence": "Unknown specifically for this draft; no independent licence statement found in its manifest.",
+    "projectContributionTerms": "../../../creators/README.md#license documents project contribution terms; this is not evidence of author or owner approval of this draft."
+  },
+  "originalDerivative": {
+    "file": "oak-broad-original.png",
+    "sha256": "c83f90f4d377cdefc8267ad976e257cb116ce907c8e14b098c74b0ed518d9835",
+    "frame": [
+      128,
+      128
+    ],
+    "note": "Original palette-snapped derivative retained independently; no bytes replaced."
+  },
+  "import": {
+    "script": "../../../../tools/src/kit/import-world-trees.ts",
+    "report": "imports.json",
+    "frame": [
+      320,
+      320
+    ],
+    "ramps": [
+      "green",
+      "moss",
+      "wood"
+    ],
+    "method": "Existing importer and nearest visible-bound fit, maintaining source aspect ratio."
+  },
+  "review": "Agent-selected reuse candidate for the visual study; owner visual approval pending. Approval into a library does not approve live-game integration.",
+  "newImageGenerationCalls": 0
+}

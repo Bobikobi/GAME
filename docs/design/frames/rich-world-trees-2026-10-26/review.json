@@ -1,0 +1,33 @@
+{
+  "project": "LoomVale",
+  "date": "2026-10-26",
+  "status": "Visual polish ready for owner review; no owner approval claimed for the new tree mix.",
+  "preview": "http://127.0.0.1:5189/world-study.html",
+  "scope": "Existing connected 2D world study: tree silhouette diversity, grounded shadows and precise player see-through.",
+  "resources": {
+    "newGenerationCalls": 0,
+    "reusedTreeSources": 2,
+    "trees": 7,
+    "broadTrees": 2
+  },
+  "validation": {
+    "focusedTests": "31 passed: world-study-layout, world-study-water and cast",
+    "pnpmVerify": "passed: 0 errors, 32 existing content warnings; 1466 suite tests and 81 web tests passed",
+    "browser": "Passed final desktop 1050x850 and phone 390x844 captures: two silhouettes, both mirrors, seven trees at or above320px, 51659 static shadow pixels clipped to land; walking and attached actor shadow, shadow toggle, storm sun suppression, three viewpoints and reduced motion; no browser errors.",
+    "gitDiffCheck": "passed",
+    "visualInspection": "Opened final desktop forest and phone forest/cove images; broad oak limited to two foreground trees to retain the detailed narrow oak as the dominant material."
+  },
+  "limits": [
+    "Mirrors and two drawn silhouettes are not genuine new 3D camera views.",
+    "Broad oak pixel clusters differ from the narrow oak; owner review remains necessary.",
+    "Static tree shadows ignore small sway and see-through fades to retain fixed grounding.",
+    "A moving actor shadow can overlap and darken a static tree shadow, as in the existing CastLayer exception.",
+    "The moving actor shadow is not shoreline-clipped; the actor stays on land but a projected edge may cross it.",
+    "Fixed 10:00 sun table sample for this fixture; no new day/night or production lighting integration.",
+    "This is a visual fixture; no production map or 3D integration."
+  ],
+  "nextTask": {
+    "ownerInstruction": "Project and game renamed to LoomVale; adapt the home page in a later focused task.",
+    "state": "Recorded for continuation; homepage not changed in this iteration."
+  }
+}
