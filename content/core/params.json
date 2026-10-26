@@ -148,17 +148,11 @@
       "max": 300,
       "step": 25
     },
-    "satiety_cap": {
+    "hp_cap": {
       "value": 100,
       "min": 60,
       "max": 200,
       "step": 10
-    },
-    "satiety_drain_per_min": {
-      "value": 0,
-      "min": 0,
-      "max": 15000,
-      "step": 500
     },
     "day_length_ms": {
       "value": 1200000,

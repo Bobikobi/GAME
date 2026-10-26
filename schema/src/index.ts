@@ -1387,8 +1387,10 @@ export const ParamsBody = Type.Object(
       { additionalProperties: false },
     ),
     drift_budget_permille: Bounded,
-    satiety_cap: Bounded,
-    satiety_drain_per_min: Bounded,
+    hp_cap: {
+      ...Bounded,
+      description: 'The health bar\'s base top in whole points; each point of stamina adds per_point.stamina. Nothing drains it by the clock (G28).',
+    },
     day_length_ms: Bounded,
     walk_step_ms: {
       ...Bounded,

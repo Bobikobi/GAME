@@ -31,7 +31,7 @@ P-5a, the kernel slice, is in `develop` (aee8491). Read DECISIONS 2026-10-08 "Th
 What the kernel gives:
 - The action `{t:'move', at:[x,y]}` reports a position. It is valid if the tile is walkable and within Chebyshev `2 + floor(elapsed / walk_step_ms)` of the last one. It is accepted while busy and needs a character.
 - Player fields: `town`, `outing {gained, solved, visited} | null`, `chase {hazard, since, bites} | null`, `falls`, `movedAt`. `Session.restore` defaults them.
-- Health is still `player.satiety` (milli-points).
+- Health was `player.satiety` (milli-points); item 7 renamed it `player.hp`.
 - Events: `{e:'hurt', by, id?, hp}` and `{e:'fall', from, at, lost[]}`.
 - Hazards are map props with an id and `hazard {kind: predator|pit|trap|deep_water, window:['night'], reach?}`; none ship yet.
 - `Slot.safe: true` marks safe ground. Town cobble and the first built camp slot are safe.
@@ -57,7 +57,7 @@ P-5c, the content, a second pull request after P-5b:
 4. Raise `hp_low_pct`.
 5. Add the GAME_RULES G30 and G34 rows.
 6. An e2e: at night, step one tile past the ruins' entrance, fall, and reappear in town with nothing lost. The safe threshold has just closed the outing, so the bag, the basket and the quests stay whole (DECISIONS 2026-10-10: a fall takes back only what the outing brought); a fall that takes the outing's finds is proven in the kernel tests until P-6 opens another way in.
-7. Rename `satiety` to `hp` last, in its own commit, after crafting has landed.
+7. Rename `satiety` to `hp` last, in its own commit, after crafting has landed. Built: `player.hp`, `hpCap`, `params.hp_cap`, no hunger drain left (DECISIONS 2026-10-26).
 
 Known wart, in DECISIONS: a quest that completed by itself during an outing keeps its reward after a fall. Mist hazards wait for P-6.
 

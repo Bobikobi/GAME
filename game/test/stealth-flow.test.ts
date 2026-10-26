@@ -9,7 +9,7 @@
  */
 import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { type Bundle, type Hazard, type Tile, coverAt, hazardsOf, headingOf, makeWalkable, predatorAt, satietyCap, sees } from '@game/kernel';
+import { type Bundle, type Hazard, type Tile, coverAt, hazardsOf, headingOf, makeWalkable, predatorAt, hpCap, sees } from '@game/kernel';
 import { STEP_MS } from '../src/config';
 import { DIRS, type Dir } from '../src/input';
 import { s1Use } from '../src/net/s1';
@@ -194,10 +194,9 @@ describe('the south bank, played without a browser (game/e2e/stealth.ts)', () =>
     p.quests['core/the-night-arch'] = 'done';
     p.camp = ['core/campfire'];
     if (!p.restored.includes('core/old-bridge')) p.restored.push('core/old-bridge');
-    const cap = satietyCap(b, s.state);
+    const cap = hpCap(b, s.state);
     const bite = Math.floor((cap * b.params.hazard.predator.bite_pct) / 100);
-    p.satiety = 10 * cap;
-    p.satietyAt = s.tick;
+    p.hp = 10 * cap;
     s.met.add('core/trader');
     me.place(34, 11);
     s.facing = 'right';
@@ -272,7 +271,7 @@ describe('the south bank, played without a browser (game/e2e/stealth.ts)', () =>
     // back to cover; as soon as the open tile north of the crossing is in the wolf's sight, step into it
     me.step('right');
     me.waitFor(() => sees(b, wolf, s.tick, [11, 32]), 'the open tile to enter the wolf cone', 20_000);
-    const before = { hp: s.state.player.satiety, falls: s.state.player.falls };
+    const before = { hp: s.state.player.hp, falls: s.state.player.falls };
     me.step('left');
     me.step('up');
     const chase = me.waitFor(() => s.state.player.chase, 'the wolf chase to start', 3000);
@@ -284,7 +283,7 @@ describe('the south bank, played without a browser (game/e2e/stealth.ts)', () =>
     me.snap('camp-safe');
     const home = s.state.player;
     me.check(home.falls === before.falls, `the chase ended in a fall: falls ${before.falls} -> ${home.falls}`);
-    me.check(before.hp - home.satiety >= bite, `the chase never bit: health ${before.hp} -> ${home.satiety}, a bite takes ${bite}`);
+    me.check(before.hp - home.hp >= bite, `the chase never bit: health ${before.hp} -> ${home.hp}, a bite takes ${bite}`);
     me.check(home.movedAt > chase.since, 'the camp was reached before the chase began');
   });
 });

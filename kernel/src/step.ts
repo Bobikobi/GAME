@@ -57,8 +57,7 @@ import {
   nodeVerb,
   powerCap,
   professionLevel,
-  satietyAt,
-  satietyCap,
+  hpCap,
   nodeCost,
   nodeRefusal,
   searchDawn,
@@ -130,7 +129,7 @@ export type GameEvent =
   | { e: 'riddle'; quest: string }
   | { e: 'restore'; restore: string }
   | { e: 'build'; camp: string }
-  | { e: 'eat'; item: string; satiety: number }
+  | { e: 'eat'; item: string; hp: number }
   | { e: 'fire'; id: string; until: number }
   /** a fire a `tend` step of an open quest keeps went out in the night it was keeping, so that night is lost: once per burn, at the first step at or after its `until` */
   | { e: 'fire_out'; id: string }
@@ -402,9 +401,6 @@ function apply(ctx: Ctx, a: Action, options: StepOptions): void {
   if (s.player.race === '') refuse('Pick a character first.');
   // a position report and a carved name are not work: they go through while the player is busy
   if (a.t !== 'move' && a.t !== 'carve' && ctx.tick < s.player.busyUntil) refuse('You are still busy.');
-  // satiety is kept lazily: bring it up to now before anything reads it
-  s.player.satiety = satietyAt(ctx.b, s, ctx.tick);
-  s.player.satietyAt = ctx.tick;
   if (a.t === 'move') return moveTo(ctx, a.at, options.validateTravel === true);
   // past an expedition's last bell the mist walks the player out first: the action is not made, and its tile is not read (G49)
   if (ctx.walkOut !== undefined) {
@@ -565,8 +561,7 @@ function start(ctx: Ctx, a: Extract<Action, { t: 'start' }>): void {
   // the starting gold is a bound balance beside the purse, not purse gold (DECISIONS.md, 2026-10-10)
   s.player.boundGold = b.params.starting_gold_mg;
   if (b.params.starting_gold_mg > 0) s.ledger.minted += b.params.starting_gold_mg;
-  s.player.satiety = satietyCap(b, s);
-  s.player.satietyAt = ctx.tick;
+  s.player.hp = hpCap(b, s);
   s.player.movedAt = ctx.tick;
   s.player.recipes = Object.keys(b.recipes)
     .filter((id) => b.recipes[id]!.known === 'start')
@@ -811,10 +806,10 @@ function eat(ctx: Ctx, itemId: string): void {
   const item = b.items[itemId];
   if (!item?.food) refuse('That is not something to eat.');
   if ((s.player.bag[itemId] ?? 0) < 1) refuse('You do not have that.');
-  const cap = satietyCap(b, s);
+  const cap = hpCap(b, s);
   // only a food that does nothing but good can be too much; a bad fruit is eaten full or not
   const hurts = item.food.hurt ?? 0;
-  if (hurts === 0 && s.player.satiety >= cap) refuse('You are full.');
+  if (hurts === 0 && s.player.hp >= cap) refuse('You are full.');
   // a hearty eater gets more from a meal, not from a bandage; a body with nothing to digest gets less from food, never from a bandage (2026-10-23)
   const meal = item.kind === 'food';
   const fill = mulDiv(
@@ -823,8 +818,8 @@ function eat(ctx: Ctx, itemId: string): void {
     1000,
   );
   removeItem(ctx, itemId, 1);
-  s.player.satiety = Math.min(cap, s.player.satiety + fill);
-  ctx.events.push({ e: 'eat', item: itemId, satiety: s.player.satiety });
+  s.player.hp = Math.min(cap, s.player.hp + fill);
+  ctx.events.push({ e: 'eat', item: itemId, hp: s.player.hp });
   if (hurts > 0) hurt(ctx, hurts * 1000, 'food');
 }
 
@@ -1521,14 +1516,14 @@ function arrive(ctx: Ctx, at: Tile): boolean {
  */
 function strike(ctx: Ctx, before: Tile, at: Tile): void {
   const { b, s, tick } = ctx;
-  const cap = satietyCap(b, s);
+  const cap = hpCap(b, s);
   const awake = hazardsOf(b).filter((h) => windowOpen(b, h, tick));
   for (const h of awake) {
     if (h.kind !== 'predator' && inRect(at[0], at[1], h.rect) && !inRect(before[0], before[1], h.rect)) {
       hurt(ctx, harmOf(b, cap, h.kind), h.kind, h.id);
     }
   }
-  if (ctx.hurt && s.player.satiety === 0) return;
+  if (ctx.hurt && s.player.hp === 0) return;
   for (const h of awake) {
     if (h.kind !== 'predator' || s.player.chase !== null) continue;
     if (h.round ? sees(b, h, tick, at) : distanceTo(at, h.rect) <= h.reach) {
@@ -1552,7 +1547,7 @@ function chaseBites(ctx: Ctx): void {
   // the night's last tick is the one before `shut`, which is the first tick of day; a walk-out stops the clock at its bell (G49)
   const due = bitesAfter(b, Math.min(tick, shut - 1, ctx.walkOut?.bell ?? tick) - chase.since);
   if (due > chase.bites) {
-    hurt(ctx, (due - chase.bites) * harmOf(b, satietyCap(b, s), 'predator'), 'predator', h.id);
+    hurt(ctx, (due - chase.bites) * harmOf(b, hpCap(b, s), 'predator'), 'predator', h.id);
     chase.bites = due;
     markBitten(ctx);
   }
@@ -1599,22 +1594,22 @@ function reachSafety(ctx: Ctx): void {
   p.chase = null;
   closeOuting(ctx);
   if (chase === null) return;
-  const cap = satietyCap(b, s);
+  const cap = hpCap(b, s);
   const floor = mulDiv(cap, b.params.hazard.predator.refill_bp, 10_000);
-  p.satiety = Math.max(p.satiety, Math.min(floor, p.satiety + chase.bites * harmOf(b, cap, 'predator')));
+  p.hp = Math.max(p.hp, Math.min(floor, p.hp + chase.bites * harmOf(b, cap, 'predator')));
   ctx.events.push({ e: 'safe', id: chase.hazard, bitten: chase.bites > 0 });
 }
 
 function hurt(ctx: Ctx, amount: number, by: string, id?: string): void {
   const p = ctx.s.player;
-  p.satiety = Math.max(0, p.satiety - amount);
+  p.hp = Math.max(0, p.hp - amount);
   ctx.hurt = true;
-  ctx.events.push(id === undefined ? { e: 'hurt', by, hp: p.satiety } : { e: 'hurt', by, id, hp: p.satiety });
+  ctx.events.push(id === undefined ? { e: 'hurt', by, hp: p.hp } : { e: 'hurt', by, id, hp: p.hp });
 }
 
 /** Zero health after something took health is a fall (G33). Hunger alone never is. Returns whether the player fell. */
 function fallIfDown(ctx: Ctx): boolean {
-  if (!ctx.hurt || ctx.s.player.satiety > 0) return false;
+  if (!ctx.hurt || ctx.s.player.hp > 0) return false;
   fall(ctx);
   return true;
 }
@@ -1647,8 +1642,7 @@ function fall(ctx: Ctx): void {
   p.at = at;
   p.movedAt = ctx.tick;
   p.busyUntil = ctx.tick;
-  p.satiety = satietyCap(b, s);
-  p.satietyAt = ctx.tick;
+  p.hp = hpCap(b, s);
   p.chase = null;
   p.outing = null;
   ctx.fell = true;
@@ -1689,7 +1683,7 @@ function speedPermille(ctx: Ctx, bonusPermille: number): number {
 function duration(ctx: Ctx, baseMs: number, speed: number): number {
   let ms = Math.max(ctx.b.params.t_min_ms, mulDivUp(baseMs, 1000, speed));
   // low health slows work (G32): at or below hp_low_pct of the bar, and 0 means only when it is empty
-  if (ctx.s.player.satiety * 100 <= satietyCap(ctx.b, ctx.s) * ctx.b.params.hp_low_pct) ms = idivUp(ms * 3, 2);
+  if (ctx.s.player.hp * 100 <= hpCap(ctx.b, ctx.s) * ctx.b.params.hp_low_pct) ms = idivUp(ms * 3, 2);
   return ms;
 }
 

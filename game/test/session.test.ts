@@ -477,7 +477,6 @@ describe('position reports (P-5b)', () => {
   /** The bundle with a pit on a tile beside the forager's wake, outside the safe ground, and no hunger clock. */
   function withPit(): { b: Bundle; session: Session; pit: [number, number] } {
     const b = structuredClone(bundle);
-    b.params.satiety_drain_per_min = 0;
     const probe = Session.fresh(b);
     probe.act({ t: 'start', starter: 'core/forager', name: 'Tester' });
     const walkable = makeWalkable(b);
@@ -526,8 +525,7 @@ describe('position reports (P-5b)', () => {
     session.tick += 2000;
     session.report(wake);
     expect(session.state.player.at).toEqual(wake);
-    session.state.player.satiety = 1;
-    session.state.player.satietyAt = session.tick;
+    session.state.player.hp = 1;
     seen.length = 0;
     session.tick += 2000;
     session.report(pit);
