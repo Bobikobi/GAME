@@ -3042,3 +3042,10 @@ The owner caught a break in the found-trace opening of the entry above: if the d
 - **The bridge is mended with them, and nobody is waiting on the other side.** The player decides where to go from there.
 The stone's names follow the entry above (players who signed in, the written names until a server answers; the safety filter). Kept from it: carving is the only naming, for every start.
 **Retry when:** the owner changes the opening, or the bell for every signed-in player is too loud for a busy valley (then it rings only within a distance or a rate). Model: claude-opus-5-5.
+
+## 2026-10-26 🔁 Hit feel from the engine is not for gathering; its strengths are kept for fights and monsters
+
+Animation trial 2 (draft #338, the owner's ask of 25.10): on the blow of a chop, a mine or a dig, a hold of 60-90 ms, a 1-2 frame white flash on the struck thing, a camera knock of 1-2 art px for 80-100 ms and the chips when the swing lets go, all client-side and off with `?juice=0`. The owner was shown one chop frame by frame in four strengths side by side (as built; no flash and a 1 px knock; no flash and no knock; off).
+Result: the owner, 26.10: too strong and too visible; a tree, or anything else that is gathered, needs neither the hold nor the knock. It is only chopping wood, and it can stay minimal. Gathering stays as it was before the trial. The flash also showed a flaw of its own: on a tree the player stands behind, the see-through tree turned into a large white blot.
+Kept for later: the four strengths and their numbers, to be tried against fights and monsters. The code (`game/src/hitfeel.ts`, the hooks in the world scene) and a capture tool that records a blow frame by frame in each strength (`game/tools/hitfeel/`) are on the tag `attempt/2026-10-hit-feel`; #338 is closed unmerged.
+**Retry when:** a fight or a monster's blow exists in the game. Start from the tag, put the feel on a hit that lands on a creature, never on a gathering node, and show the owner the four strengths side by side the same way. Model: claude-opus-5-5. Link: #338, tag attempt/2026-10-hit-feel.
