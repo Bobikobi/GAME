@@ -8,7 +8,7 @@
  *   pnpm build && pnpm e2e:load [out-dir]
  *
  * Serves game/dist at /play/ and, when it is built, game/dist-3d at /play3d/. Every check waits on a
- * condition, never a fixed time; the walk is timed against the page's own clock.
+ * condition, never a fixed time; the walk is timed in game time, the game's loop stepped by hand.
  */
 import { createReadStream, existsSync, mkdirSync, statSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
@@ -126,9 +126,12 @@ async function chipReads(page: Page, word: string, count?: RegExp): Promise<Chip
   return (await chip(page))!;
 }
 
+/** A frame of game time while the walk is timed: under the light 170 ms a tile, so no frame is held to one tile. */
+const WALK_FRAME_MS = 25;
+
 /**
  * Holds an arrow key along the longest open straight line from where the player stands and times the
- * tiles with the page's clock: the milliseconds a tile, from the second tile to the sixth.
+ * tiles in game time: the milliseconds a tile, from the second tile to the sixth, to within a frame over four tiles.
  */
 async function walkMs(page: Page): Promise<number> {
   const dir = await page.eval<{ key: string; run: number }>(`(() => {
@@ -144,23 +147,37 @@ async function walkMs(page: Page): Promise<number> {
   })()`);
   if (dir.run < 7) throw new Error(`no straight walk of 7 tiles from where the player stands (best ${dir.run})`);
   await page.waitFor('!window.__game.session.busy && !window.__game.ui.blocking && !window.__game.world.move', 'the player to be free to walk');
-  await page.eval(`(() => {
-    const w = (window.__walk = { times: [], last: window.__game.session.pos.join(','), on: true });
-    const tick = () => {
-      const p = window.__game.session.pos.join(',');
-      if (p !== w.last) { w.last = p; w.times.push(performance.now()); }
-      if (w.on) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  })()`);
   await page.key(dir.key, 'keyDown');
+  let times: number[];
   try {
-    await page.waitFor('window.__walk.times.length >= 6', 'six tiles walked', 20_000);
+    await page.waitFor('window.__game.controls.vector().some((v) => v !== 0)', 'the held arrow to reach the controls');
+    // the game's own loop, stepped by hand at a frame of WALK_FRAME_MS: the wall clock cannot time the pace, since
+    // a frame walks one tile at most (walking.ts), and a runner drawing a frame slower than the light 170 ms walks
+    // every load at its frame rate (CI run 40279090004: 228 ms light against 229 ms heavy)
+    times = await page.eval<number[]>(`(async () => {
+      const loop = window.__game.world.game.loop, s = window.__game.session;
+      const times = [];
+      let t = loop.lastTime, last = s.pos.join(',');
+      loop.sleep();
+      try {
+        for (let n = 1; n <= 400 && times.length < 6; n++) {
+          t += ${WALK_FRAME_MS};
+          loop.step(t);
+          const p = s.pos.join(',');
+          if (p !== last) { last = p; times.push(n * ${WALK_FRAME_MS}); }
+          // the page's events and the test's calls go on between frames
+          await new Promise((ok) => setTimeout(ok, 0));
+        }
+      } finally {
+        loop.lastTime = performance.now();
+        loop.wake();
+      }
+      return times;
+    })()`);
   } finally {
     await page.key(dir.key, 'keyUp');
-    await page.eval('window.__walk.on = false');
   }
-  const times = await page.eval<number[]>('window.__walk.times');
+  if (times.length < 6) throw new Error(`${times.length} tiles walked in 400 frames`);
   await page.waitFor('!window.__game.world.move', 'the walk to stop');
   return (times[5]! - times[1]!) / 4;
 }
@@ -309,7 +326,7 @@ async function run(page: Page, base: string, viewport: Viewport): Promise<void> 
   await capture(page, viewport, '04-load-heavy');
   const heavy = await walkMs(page);
   log(`a heavy tile takes ${heavy.toFixed(0)} ms`);
-  // 230 against 170 ms a tile: a frame can only add to a step, so the heavy walk stays the slower by a margin
+  // 230 against 170 ms a tile in game time, whatever the runner's frame rate: the heavy walk is the slower by a margin
   if (heavy < 200 || heavy < light * 1.15) throw new Error(`a heavy tile took ${heavy.toFixed(0)} ms against ${light.toFixed(0)} ms light: the load does not slow the walk`);
 
   // 5. put a stone down: it leaves the weight, lies on the tile, the prompt offers it back, and a pick-up returns it
