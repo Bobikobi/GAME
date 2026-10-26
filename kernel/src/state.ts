@@ -469,9 +469,10 @@ export function verbLevel(bundle: Bundle, state: PublicState, verb: Verb): numbe
   return professionLevel(bundle, state, bundle.verbs[verb]);
 }
 
-/** The verb a node trains: a node worked with an axe is felled, a mined one trains digging, any other is gathered. */
+/** The verb a node trains: a node worked with an axe is felled, one worked with a rod is fished, a mined one trains digging, any other is gathered. */
 export function nodeVerb(resource: { tool?: string; work?: string }): Verb {
   if (resource.tool === 'axe') return 'fell';
+  if (resource.tool === 'rod') return 'fish';
   return resource.work === 'mine' ? 'dig' : 'gather';
 }
 

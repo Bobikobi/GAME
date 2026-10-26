@@ -688,8 +688,8 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
     // the skeleton is one figure: no look to pick
     const toggle = await page.eval<boolean>(`!document.querySelector('.look-toggle').hidden`);
     if (toggle !== (run.race !== 'Skeleton')) throw new Error(`the look toggle is ${toggle ? 'shown' : 'hidden'} for the ${run.race}`);
-    await page.tap('input.name');
-    await page.type('Tess');
+    // the title has no name field: the name is chosen on the stone, the only place (DECISIONS 2026-10-25)
+    if (await page.eval<boolean>(`!!document.querySelector('.title-screen input')`)) throw new Error('the title still asks for a name');
     await me.snap('choose');
     await page.tap('.title-screen button', 'Wake up');
 
@@ -823,7 +823,16 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
     await me.a();
     await me.talkThrough('Mend it');
     await me.done('mending the bridge');
-    const mended = await me.talkThrough();
+    // the purse lines, then the stone's box with its empty line: the name is cut here, for every start
+    const purseLines = await me.talkThrough();
+    await page.waitFor(`!!document.querySelector('.dialog input.name')`, 'the stone asks for a name', 10_000);
+    const stoneAsk = await page.eval<string>(`document.querySelector('.dialog .dialog-text').textContent`);
+    if (!stoneAsk.includes('Cut your name there')) throw new Error(`the stone's box does not say the name is the player's: "${stoneAsk}"`);
+    await page.tap('.dialog input.name');
+    await page.type('Tess');
+    await page.tap('.dialog-options button', 'Cut it');
+    const cut = await me.talkThrough();
+    const mended = [...purseLines, ...cut];
     await me.idle('the bridge story');
     if (!mended.some((l) => l.includes('You cut Tess into the last line'))) throw new Error(`no cut name "Tess" after the bridge: ${mended.join(' / ')}`);
     if ((await me.quest('core/fix-the-bridge')) !== 'done') throw new Error('fix-the-bridge is not done');

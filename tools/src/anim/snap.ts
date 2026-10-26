@@ -1,10 +1,11 @@
 /**
  * A supersampled render to a sprite: every sub-pixel takes the nearest colour (CIELAB) of the ramps its class may
- * use, each ss x ss block becomes one pixel by majority and is opaque when at least half of it is, and a 1 px outline
- * is drawn outside the silhouette (4-neighbours). The class comes from the renderer's flat ID pass: blue body, red
+ * use, each ss x ss block becomes one pixel by majority and is opaque when at least half of it is, and a 1 px ink outline
+ * is drawn outside the silhouette (4-neighbours, as the kit's ink pass defines it). The class comes from the renderer's flat ID pass: blue body, red
  * flame (the fire ramp only), green tool metal (the metal ramp only), yellow leaves (the leaf ramp only). No blended
  * colour exists in the output.
  */
+import { paintInk, ringPixels } from '../kit/ink.js';
 import { coreRamp, hexToRgb } from '../kit/palette.js';
 
 /** RGBA rows, as pngjs reads them. */
@@ -30,6 +31,14 @@ export function rampColours(ids: readonly string[]): string[] {
 /** The colours each class may use: the body ramps, the fire ramp, the metal ramp, the leaf ramp. */
 export function classPalettes(body: readonly string[], metal: string, leaf = 'green'): Record<SnapClass, string[]> {
   return { body: rampColours(body), fire: rampColours(['fire']), metal: rampColours([metal]), leaf: rampColours([leaf]) };
+}
+
+/**
+ * The shared ramps a sheet draws in, by id: what its json names as `ramps`, and what a kit entry for it must name
+ * (the rich rule, tools/src/kit/rich.ts) so that every colour of the sheet is one of the sprite's ramps.
+ */
+export function sheetRamps(body: readonly string[], metal: string, leaf = 'green'): string[] {
+  return [...new Set([...body, 'fire', metal, leaf])];
 }
 
 export function lab(r: number, g: number, b: number): [number, number, number] {
@@ -60,7 +69,7 @@ function classAt(ids: Picture | undefined, i: number): SnapClass {
   return 'body';
 }
 
-export function snap(hi: Picture, ids: Picture | undefined, ss: number, palettes: Record<SnapClass, string[]>, outline: string): Picture {
+export function snap(hi: Picture, ids: Picture | undefined, ss: number, palettes: Record<SnapClass, string[]>): Picture {
   if (hi.width % ss !== 0 || hi.height % ss !== 0) throw new Error(`a ${hi.width}x${hi.height} render is not a multiple of ${ss}`);
   if (ids !== undefined && (ids.width !== hi.width || ids.height !== hi.height)) throw new Error('the ID pass is not the size of the render');
   const order: string[] = [];
@@ -119,14 +128,8 @@ export function snap(hi: Picture, ids: Picture | undefined, ss: number, palettes
       solid[by * W + bx] = 1;
     }
   }
-  const [or, og, ob] = hexToRgb(outline);
-  for (let y = 0; y < H; y += 1) {
-    for (let x = 0; x < W; x += 1) {
-      if (solid[y * W + x]) continue;
-      const near = (x > 0 && solid[y * W + x - 1]) || (x < W - 1 && solid[y * W + x + 1]) || (y > 0 && solid[(y - 1) * W + x]) || (y < H - 1 && solid[(y + 1) * W + x]);
-      if (near) out.data.set([or, og, ob, 255], (y * W + x) * 4);
-    }
-  }
+  // the ink ring outside the silhouette: the kit's one definition of the ink edge (tools/src/kit/ink.ts)
+  for (const p of ringPixels(out)) paintInk(out, p);
   return out;
 }
 

@@ -32,7 +32,7 @@ whatever admission the machine uses for heavy jobs: a clip of eight poses in thr
 | `tools/src/anim/` | the TypeScript half: configs, fetch (with the zip reader), snap, measures, the CLI |
 
 Outputs, per clip, in `tools/.cache/anim/out/<clip>/`: `<clip>_<view>.png` (the strips, frames side by side, right =
-left mirrored), `<clip>.json` (frame, anchor, time per pose; for locomotion the playback and the art px walked per
+left mirrored), `<clip>.json` (frame, anchor, `ramps` (the shared ramps the sheet draws in: what a kit entry for it names, so `pnpm check`'s rich rule takes it at density 4), time per pose; for locomotion the playback and the art px walked per
 pose in each view, what a player needs to lock the feet), `measures.json`, `sprites/` (each frame), `raw/` (the
 supersampled renders, the ID pass, the projected feet) and `job.json` (what Blender was given).
 
@@ -46,7 +46,7 @@ supersampled renders, the ID pass, the projected feet) and `job.json` (what Blen
   "frames": { "even": 8 },
   "layer": { "library": "ual1", "action": "Idle_Torch_Loop", "mask": ["arm_l"], "frame": "follow" },
   "prop": { "kind": "torch", "hand": "L" },
-  "frame": { "size": [128, 128], "anchor": [64, 112] },
+  "frame": { "size": [128, 128], "anchor": [64, 100] },
   "views": ["down", "up", "left"],
   "locomotion": { "playback": "distance" }
 }
@@ -73,8 +73,10 @@ supersampled renders, the ID pass, the projected feet) and `job.json` (what Blen
 ## The four measures, and what fails
 
 1. **Palette**: every opaque pixel is in the clip's ramps (`tools/src/kit/palette.ts`), the fire ramp, the
-   target's metal and leaf ramps, or the one outline `#1b1a2e`. Fails under 100 %.
-2. **Outline**: every frame has the 1 px outline all round, and nothing touches the frame's edge.
+   target's metal and leaf ramps, or the one ink `#1b1a2e`. Fails under 100 %.
+2. **Outline**: every frame has the 1 px ink edge all round, and nothing touches the frame's edge. The ink colour and the
+   edge are the kit's one definition (`tools/src/kit/ink.ts`), the same that `pnpm check` (`art.ink`) and `pnpm kit:ink`
+   use; `anim.json` holds no outline setting of its own.
 3. **Silhouette** (locomotion): the opaque area of each frame against the view's mean. Fails over 10 % (the jog
    and the sprint move it to 15 %: side-on their spread stride changes the area, with no limb lost).
 4. **Foot slide at the game's pace** (locomotion): the ball of each planted foot, projected to art pixels by the
@@ -98,6 +100,16 @@ floor. The render is orthographic Cycles on the CPU at 4x the frame (flat albedo
 second pass draws each object in one flat colour: body, flame, tool metal, leaves. The snap takes each sub-pixel to the
 nearest colour (CIELAB) its class may use, each 4x4 block to one pixel by majority (opaque when at least half is),
 and adds the outline outside the silhouette. The left view is rendered facing right and mirrored.
+
+The camera looks down at 50 degrees for every target (`elev` in `anim.json`, DECISIONS 2026-10-26). The sun of the
+render stands due south, above and behind the camera, at 60 degrees (`sun_elev`), the same in every view: the game's
+sun is south (DECISIONS 2026-10-21), so the side of the body the viewer sees is the lit side and the game's cast
+shadow falls up the screen, behind it. The lean of the shadow by the hour is the game's to draw; a sprite never bakes a
+ground shadow (no ground is rendered), and the game casts one from the sprite's alpha.
+
+Each clip's frame is sized on the tallest body: the anchor sits where the farthest reach of the cast over the clip,
+in every view, keeps a gap of at least 3 px to every edge, so no body touches an edge (a frame with an opaque pixel
+on its border fails the check as clipped).
 
 ## Licences
 

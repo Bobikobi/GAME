@@ -8,6 +8,7 @@
  * The travel per pose is fitted once per view from the planted feet at every source frame (one shared slope, an
  * intercept per planted run), so a fast cycle with one drawn pose per plant still has a measured stride.
  */
+import { edgePixels, isInk } from '../kit/ink.js';
 import type { Pace, View } from './clip.js';
 import { hexOf, type Picture } from './snap.js';
 
@@ -40,24 +41,19 @@ export function paletteShare(frames: readonly Picture[], allowed: ReadonlySet<st
   return { opaque, inside, pct: opaque === 0 ? 0 : Math.round((10000 * inside) / opaque) / 100 };
 }
 
-/** Whether every opaque pixel at the silhouette's edge is the outline colour, and whether the drawing touches the frame's edge. */
-export function outlineOf(p: Picture, outline: string): { outlined: boolean; clipped: boolean } {
-  const W = p.width;
-  const H = p.height;
-  const on = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H && (p.data[(y * W + x) * 4 + 3] ?? 0) > 0;
-  let edges = 0;
-  let bad = 0;
+/** Whether every opaque pixel at the silhouette's edge is ink (the kit's one definition, tools/src/kit/ink.ts), and whether the drawing touches the frame's edge. */
+export function outlineOf(p: Picture): { outlined: boolean; clipped: boolean } {
+  const edge = edgePixels(p);
   let clipped = false;
-  for (let y = 0; y < H; y += 1) {
-    for (let x = 0; x < W; x += 1) {
-      if (!on(x, y)) continue;
-      if (x === 0 || y === 0 || x === W - 1 || y === H - 1) clipped = true;
-      if (on(x - 1, y) && on(x + 1, y) && on(x, y - 1) && on(x, y + 1)) continue;
-      edges += 1;
-      if (hexOf(p, (y * W + x) * 4) !== outline) bad += 1;
+  for (let y = 0; y < p.height && !clipped; y += 1) {
+    for (let x = 0; x < p.width; x += 1) {
+      if ((x === 0 || y === 0 || x === p.width - 1 || y === p.height - 1) && (p.data[(y * p.width + x) * 4 + 3] ?? 0) > 0) {
+        clipped = true;
+        break;
+      }
     }
   }
-  return { outlined: edges > 0 && bad === 0, clipped };
+  return { outlined: edge.length > 0 && edge.every((i) => isInk(p, i)), clipped };
 }
 
 export function silhouette(frames: readonly Picture[]): { areas: number[]; maxDevPct: number; rangePct: number } {
@@ -199,7 +195,6 @@ export interface ClipMeasures {
 export interface MeasureInput {
   frames: Partial<Record<View, Picture[]>>;
   allowed: ReadonlySet<string>;
-  outline: string;
   limits: { palette_pct: number; foot_slide_px: number; silhouette_dev_pct: number; poses_per_s_max: number };
   meta?: RenderMeta;
   locomotion?: { playback: 'distance' | 'time' };
@@ -216,7 +211,7 @@ export function measureClip(input: MeasureInput): ClipMeasures {
   if (palette.pct < input.limits.palette_pct) problems.push(`palette ${palette.pct}% of opaque pixels in the ramps, under ${input.limits.palette_pct}%`);
   const views: Partial<Record<View, ViewMeasures>> = {};
   for (const [view, frames] of Object.entries(input.frames) as [View, Picture[]][]) {
-    const outs = frames.map((p) => outlineOf(p, input.outline));
+    const outs = frames.map((p) => outlineOf(p));
     const vm: ViewMeasures = {
       frames: frames.length,
       outlined: outs.filter((o) => o.outlined).length,

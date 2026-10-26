@@ -12,7 +12,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, byText, sleep, type Page, type Viewport } from './cdp';
-import { TAKE_GROUND, seedQuery } from './wakes';
+import { TAKE_GROUND, carveIn, seedQuery } from './wakes';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(GAME_DIR, 'dist');
@@ -164,10 +164,10 @@ async function run(page: Page, url: string, viewport: Viewport, name: string): P
   if (ask === 'ask') await page.tap('.title-screen button', 'Start a new game');
   await page.waitFor(`!!document.querySelector('.card.race')`, 'the race cards');
   await page.tap('.card.race', 'Human');
-  await page.tap('input.name');
-  await page.type('Counter');
   await page.tap('.title-screen button', 'Wake up');
   await page.waitFor(`!!window.__game?.session?.started`, 'the game', 30_000);
+  // the name is cut at the bridge's stone, and this script is not about the stone: it is cut here
+  await page.eval(carveIn('Counter'));
   await page.eval(TAKE_GROUND);
   for (let i = 0; i < 40; i++) {
     if (!(await page.eval<boolean>(`!!document.querySelector('.dialog')`))) break;

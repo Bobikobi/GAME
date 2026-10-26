@@ -5,18 +5,23 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { crc32, deflateRawSync } from 'node:zlib';
+import { PNG } from 'pngjs';
 import { describe, expect, it } from 'vitest';
 import { type Clip, clipNames, clipProblems, job, type Library, paces, poseMs, readClip, readLibraries, readSettings, samples, stepFrames } from '../src/anim/clip';
 import { onTarget, outDir } from '../src/anim/cli';
 import { archiveProblems, itchUploads, sha256, unpack } from '../src/anim/fetch';
 import { measureClip, outlineOf, paletteShare, plantedRuns, type RenderMeta, sharedSlope, silhouette, slideAtPace, stride } from '../src/anim/measure';
-import { classPalettes, flipX, type Picture, rampColours, snap } from '../src/anim/snap';
+import { classPalettes, flipX, type Picture, rampColours, sheetRamps, snap } from '../src/anim/snap';
+import { CORE_PALETTE, CORE_RAMPS } from '../src/kit/palette';
+import { allowedColors } from '../src/kit/ramps';
+import { CORE_KIT, richProblem } from '../src/kit/rich';
+import { applyInk, INK_HEX, inkShare } from '../src/kit/ink';
 import { zipEntries, zipFile, zipRead } from '../src/anim/zip';
 import { CONTENT_DIR, REPO_ROOT } from '../src/load';
 
 const settings = readSettings();
 const libs = readLibraries();
-const OUTLINE = settings.outline;
+const OUTLINE = INK_HEX;
 
 function picture(width: number, height: number, fill?: (x: number, y: number) => readonly [number, number, number, number] | undefined): Picture {
   const data = new Uint8Array(width * height * 4);
@@ -237,17 +242,24 @@ describe('snap', () => {
   const ids = picture(48, 48, (x, y) => (x >= 16 && x < 32 && y >= 16 && y < 32 ? (x >= 28 ? [255, 0, 0, 255] : [0, 0, 255, 255]) : undefined));
 
   it('draws only ramp colours, one block per pixel, and the outline all round', () => {
-    const s = snap(hi, undefined, 4, pal, OUTLINE);
+    const s = snap(hi, undefined, 4, pal);
     expect([s.width, s.height]).toEqual([12, 12]);
     expect(paletteShare([s], allowed).pct).toBe(100);
     expect(at(s, 3, 5)).toBe(OUTLINE);
     expect(at(s, 8, 5)).toBe(OUTLINE);
     expect(alpha(s, 2, 5)).toBe(0);
-    expect(outlineOf(s, OUTLINE)).toEqual({ outlined: true, clipped: false });
+    expect(outlineOf(s)).toEqual({ outlined: true, clipped: false });
+  });
+
+  it('draws the one ink edge: the kit measure reads 100 % and the kit ink pass changes nothing', () => {
+    const s = snap(hi, undefined, 4, pal);
+    const png = PNG.sync.write(Object.assign(new PNG({ width: s.width, height: s.height }), { data: Buffer.from(s.data) }));
+    expect(inkShare(png, s.width)).toBe(1);
+    expect(PNG.sync.read(applyInk(png, s.width)).data.equals(PNG.sync.read(png).data)).toBe(true);
   });
 
   it('a pixel the ID pass marks as flame takes the fire ramp only', () => {
-    const s = snap(hi, ids, 4, pal, OUTLINE);
+    const s = snap(hi, ids, 4, pal);
     expect(pal.fire).toContain(at(s, 7, 5));
     expect(pal.body).toContain(at(s, 5, 5));
     expect(pal.fire).not.toContain(at(s, 5, 5));
@@ -255,7 +267,7 @@ describe('snap', () => {
 
   it('a pixel the ID pass marks as leaf takes the leaf ramp only', () => {
     const leafIds = picture(48, 48, (x, y) => (x >= 16 && x < 32 && y >= 16 && y < 32 ? (x >= 28 ? [255, 255, 0, 255] : [0, 0, 255, 255]) : undefined));
-    const s = snap(hi, leafIds, 4, pal, OUTLINE);
+    const s = snap(hi, leafIds, 4, pal);
     expect(pal.leaf).toContain(at(s, 7, 5));
     expect(pal.body).not.toContain(at(s, 7, 5));
     expect(pal.body).toContain(at(s, 5, 5));
@@ -264,7 +276,7 @@ describe('snap', () => {
 
   it('a block less than half covered stays clear', () => {
     const thin = picture(8, 8, (x, y) => (x === 0 && y < 4 ? [180, 120, 80, 255] : undefined));
-    const s = snap(thin, undefined, 4, pal, OUTLINE);
+    const s = snap(thin, undefined, 4, pal);
     expect([alpha(s, 0, 0), alpha(s, 1, 0), alpha(s, 0, 1)]).toEqual([0, 0, 0]);
   });
 
@@ -274,10 +286,23 @@ describe('snap', () => {
   });
 });
 
+describe('a sheet and the rich rule', () => {
+  const core = CORE_PALETTE.map((h) => h.toLowerCase());
+  it('names shared ramps that hold every colour a target can draw, and the core kit takes it at density 4', () => {
+    for (const [id, t] of Object.entries(settings.targets)) {
+      const ramps = sheetRamps(t.ramps, t.metal, t.leaf);
+      expect(richProblem(CORE_KIT, 'chars/x', { density: 4, ramps }), id).toBeUndefined();
+      const pal = classPalettes(t.ramps, t.metal, t.leaf);
+      const allowed = allowedColors(core, CORE_RAMPS, ramps);
+      for (const c of [...pal.body, ...pal.fire, ...pal.metal, ...pal.leaf]) expect(allowed.has(c.toLowerCase()), `${id} ${c}`).toBe(true);
+    }
+  });
+});
+
 describe('measures', () => {
   it('palette: an off-ramp pixel fails the clip', () => {
     const p = picture(4, 4, (x, y) => (x === 1 && y === 1 ? [1, 2, 3, 255] : undefined));
-    const m = measureClip({ frames: { down: [p] }, allowed: new Set([OUTLINE]), outline: OUTLINE, limits: settings.limits, ms: [100], paces: { light: 1, steady: 1, heavy: 1 } });
+    const m = measureClip({ frames: { down: [p] }, allowed: new Set([OUTLINE]), limits: settings.limits, ms: [100], paces: { light: 1, steady: 1, heavy: 1 } });
     expect(m.palette.pct).toBe(0);
     expect(m.problems.join(' ')).toMatch(/palette 0%/);
     expect(m.problems.join(' ')).toMatch(/without the full outline/);
@@ -285,7 +310,7 @@ describe('measures', () => {
 
   it('outline: a drawing that touches the frame edge is clipped', () => {
     const p = picture(3, 3, () => [0x1b, 0x1a, 0x2e, 255]);
-    expect(outlineOf(p, OUTLINE)).toEqual({ outlined: true, clipped: true });
+    expect(outlineOf(p)).toEqual({ outlined: true, clipped: true });
   });
 
   it('silhouette: the largest deviation from the mean area', () => {
@@ -330,14 +355,14 @@ describe('measures', () => {
 
   it('a locomotion clip fails on slide over 1 px at a pace, and passes with its feet locked', () => {
     const frames = { down: Array.from({ length: 8 }, () => picture(5, 5, (x, y) => (x > 0 && x < 4 && y > 0 && y < 4 ? (x === 2 && y === 2 ? [0x9e, 0x6b, 0x3c, 255] : [0x1b, 0x1a, 0x2e, 255]) : undefined))) };
-    const base = { frames, allowed: new Set(['#9e6b3c', OUTLINE]), outline: OUTLINE, limits: settings.limits, meta, poseStep: 4, ms: Array(8).fill(100), paces: { light: 160, steady: 150, heavy: 120 } };
+    const base = { frames, allowed: new Set(['#9e6b3c', OUTLINE]), limits: settings.limits, meta, poseStep: 4, ms: Array(8).fill(100), paces: { light: 160, steady: 150, heavy: 120 } };
     expect(measureClip({ ...base, locomotion: { playback: 'distance' } }).problems).toEqual([]);
     expect(measureClip({ ...base, locomotion: { playback: 'time' } }).problems.join(' ')).toMatch(/feet slide .* at the steady pace/);
   });
 
   it('a distance-locked cycle fails when its short stride needs more poses a second than the screen can show', () => {
     const frames = { down: Array.from({ length: 8 }, () => picture(5, 5, (x, y) => (x > 0 && x < 4 && y > 0 && y < 4 ? (x === 2 && y === 2 ? [0x9e, 0x6b, 0x3c, 255] : [0x1b, 0x1a, 0x2e, 255]) : undefined))) };
-    const m = measureClip({ frames, allowed: new Set(['#9e6b3c', OUTLINE]), outline: OUTLINE, limits: settings.limits, meta, poseStep: 4, ms: Array(8).fill(100), paces: { light: 376, steady: 337, heavy: 278 }, locomotion: { playback: 'distance' } });
+    const m = measureClip({ frames, allowed: new Set(['#9e6b3c', OUTLINE]), limits: settings.limits, meta, poseStep: 4, ms: Array(8).fill(100), paces: { light: 376, steady: 337, heavy: 278 }, locomotion: { playback: 'distance' } });
     expect(m.problems).toHaveLength(3);
     expect(m.problems[1]).toMatch(/needs 56.2 poses a second at the steady pace/);
     expect(m.views.down?.paces?.steady.slidePx).toBe(0);
