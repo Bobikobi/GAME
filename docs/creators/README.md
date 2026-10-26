@@ -238,7 +238,7 @@ Run it from a full Git clone after commits exist. The generated board is committ
 
 Sprites live in a kit: `content/kit/<your-handle>/kit.json` plus PNG files next to it.
 
-- Two grids. A new sprite is drawn at 64 art pixels per tile and says `"density": 4` in its kit entry: items and tiles 64x64, character frames 64x96, props up to 384x384 (six tiles a side). The 16 pixel grid is still accepted, with no `density` or `"density": 1`: items and tiles 16x16, character frames 16x24, props up to 64x64. A size that belongs to the other grid is an error: a 64x64 tile with no `density: 4` is refused, and the message says so.
+- Two grids. A new sprite is drawn at 64 art pixels per tile and says `"density": 4` in its kit entry: items and tiles 64x64, character frames 64x96, props up to 384x384 (six tiles a side). The 16 pixel grid (no `density`, or `"density": 1`: items and tiles 16x16, character frames 16x24, props up to 64x64) is closed to new art: the whole game is drawn rich (DECISIONS.md, 2026-10-23), `pnpm check` refuses a new sprite on it, and only the core kit's sprites still waiting for their redraw keep it, by name in `tools/src/kit/rich.ts`. A size that belongs to the other grid is an error: a 64x64 tile with no `density: 4` is refused, and the message says so.
 - Character work poses have two frames, tool raised, then tool down: 128x128 at density 4, 32x32 at density 1.
 - A generated sprite may name where it came from: `"source": {"spec": "tools/kit-gen/<spec>.json", "manifest": "<path>/manifest.jsonl:<line>"}`.
 - Only the 32 colors of the core palette, and every pixel fully clear or fully solid.

@@ -33,6 +33,14 @@ export function classPalettes(body: readonly string[], metal: string, leaf = 'gr
   return { body: rampColours(body), fire: rampColours(['fire']), metal: rampColours([metal]), leaf: rampColours([leaf]) };
 }
 
+/**
+ * The shared ramps a sheet draws in, by id: what its json names as `ramps`, and what a kit entry for it must name
+ * (the rich rule, tools/src/kit/rich.ts) so that every colour of the sheet is one of the sprite's ramps.
+ */
+export function sheetRamps(body: readonly string[], metal: string, leaf = 'green'): string[] {
+  return [...new Set([...body, 'fire', metal, leaf])];
+}
+
 export function lab(r: number, g: number, b: number): [number, number, number] {
   const lin = (c: number) => {
     const v = c / 255;
