@@ -3042,3 +3042,11 @@ The owner caught a break in the found-trace opening of the entry above: if the d
 - **The bridge is mended with them, and nobody is waiting on the other side.** The player decides where to go from there.
 The stone's names follow the entry above (players who signed in, the written names until a server answers; the safety filter). Kept from it: carving is the only naming, for every start.
 **Retry when:** the owner changes the opening, or the bell for every signed-in player is too loud for a busy valley (then it rings only within a distance or a rate). Model: claude-opus-5-5.
+
+## 2026-10-26 ✅ Everything that moves is rendered at a 50 degree camera
+
+The owner, 26.10, after the contact sheet of the cast from `pnpm anim` (#343): the character may read in profile, and the camera should sit higher so the top of the head shows. Three stills of the same body and clips went to him at phone size, testing only the camera's height: A 35 degrees (the tool's default), B 50, C 65. He picked B.
+- At 50 the top of the head and the shoulders show, and the face, hands and stride still read. At 65 the body and legs shorten and the side walk looks squashed. At 35 the figure reads as a profile.
+- The angle holds for every animated thing in the world (the cast, creatures, NPCs, moving props), so nothing looks shot from another place than the ground it stands on. Every target in `tools/anim/anim.json` takes `"elev": 50`, and the cast is rendered again before any sheet enters `content/`.
+- One angle per sprite in the pixel game, with the zoom changing only the size. Sprites at three angles tied to the zoom were weighed and set aside: they would not match the world's drawn tiles and would pop at a zoom step. A depth illusion with the zoom is a later research item (NEXT, character-pipeline g). In the 3D door the camera may tilt with the zoom.
+**Retry when:** the world's tiles and props are themselves rendered from 3D at a chosen angle (then the angle can be revisited for both together), or the owner finds 50 wrong once in the game. Model: claude-opus-5-5. Link: #348.
