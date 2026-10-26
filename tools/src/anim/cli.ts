@@ -22,7 +22,7 @@ import { CONTENT_DIR } from '../load.js';
 import { ANIM_DIR, CACHE_DIR, type Clip, clipNames, clipProblems, job, type Library, modelPath, paces, poseMs, readClip, readLibraries, readSettings, type Settings, stepFrames, type View } from './clip.js';
 import { archiveProblems, itchDownload, libraryGlb, unpack } from './fetch.js';
 import { type ClipMeasures, measureClip, type RenderMeta, type ViewMeasures } from './measure.js';
-import { classPalettes, flipX, type Picture, snap } from './snap.js';
+import { classPalettes, flipX, type Picture, sheetRamps, snap } from './snap.js';
 
 const say = (line: string) => process.stdout.write(`${line}\n`);
 
@@ -196,7 +196,7 @@ function render(name: string, ctx: Context, cast?: string): ClipMeasures {
     : {};
   writeFileSync(
     join(out, `${name}.json`),
-    `${JSON.stringify({ clip: name, frame: clip.frame.size, anchor: clip.frame.anchor, poses: ms.length, ms, views: clip.views, ...playback, right: 'the left strip mirrored', target: clip.target, credit: target.credit ?? null })}\n`,
+    `${JSON.stringify({ clip: name, frame: clip.frame.size, anchor: clip.frame.anchor, poses: ms.length, ms, views: clip.views, ...playback, right: 'the left strip mirrored', target: clip.target, ramps: sheetRamps(clip.ramps ?? target.ramps, target.metal, target.leaf), credit: target.credit ?? null })}\n`,
   );
   say(`${summary(cast === undefined ? name : `${name} on ${cast}`, m)}  (Blender ${blenderS.toFixed(0)} s, all ${((Date.now() - t0) / 1000).toFixed(0)} s)`);
   return m;

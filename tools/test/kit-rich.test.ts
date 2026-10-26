@@ -9,6 +9,7 @@ import { PNG } from 'pngjs';
 import { afterAll, describe, expect, it } from 'vitest';
 import { runCheck } from '../src/check';
 import { parseSpec } from '../src/kit/gen';
+import { applyInk } from '../src/kit/ink';
 import { CORE_KIT, SIXTEEN_PX_LEFT, richProblem, staleLeft } from '../src/kit/rich';
 import { CONTENT_DIR, REPO_ROOT } from '../src/load';
 
@@ -62,7 +63,8 @@ describe('the check, end to end', () => {
   const png = (file: string, w: number, h: number) => {
     const image = new PNG({ width: w, height: h });
     for (let i = 0; i < image.data.length; i += 4) image.data.set([0x4c, 0x9a, 0x3f, 255], i);
-    writeFileSync(join(root, 'kit', 'core', file), PNG.sync.write(image));
+    // the ink edge (tools/src/kit/ink.ts) is held too, so the fixture carries it
+    writeFileSync(join(root, 'kit', 'core', file), applyInk(PNG.sync.write(image), w));
   };
   png('props/rich_16.png', 16, 16);
   png('props/rich_64.png', 64, 64);

@@ -32,7 +32,7 @@ whatever admission the machine uses for heavy jobs: a clip of eight poses in thr
 | `tools/src/anim/` | the TypeScript half: configs, fetch (with the zip reader), snap, measures, the CLI |
 
 Outputs, per clip, in `tools/.cache/anim/out/<clip>/`: `<clip>_<view>.png` (the strips, frames side by side, right =
-left mirrored), `<clip>.json` (frame, anchor, time per pose; for locomotion the playback and the art px walked per
+left mirrored), `<clip>.json` (frame, anchor, `ramps` (the shared ramps the sheet draws in: what a kit entry for it names, so `pnpm check`'s rich rule takes it at density 4), time per pose; for locomotion the playback and the art px walked per
 pose in each view, what a player needs to lock the feet), `measures.json`, `sprites/` (each frame), `raw/` (the
 supersampled renders, the ID pass, the projected feet) and `job.json` (what Blender was given).
 
