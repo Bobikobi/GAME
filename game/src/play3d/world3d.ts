@@ -57,7 +57,7 @@ const PITCH = 0.62;
 /** Signatures show over signs this close to the player, in tiles. */
 const SIGN_REACH = 5;
 const SWING_MS = 520;
-const WORK_SOUND: Record<WorkKind, SfxId> = { strike: 'strike', pick: 'pluck', snap: 'tug', timing: 'rustle', dig: 'dig' };
+const WORK_SOUND: Record<WorkKind, SfxId> = { strike: 'strike', pick: 'pluck', snap: 'tug', timing: 'rustle', dig: 'dig', fish: 'plop' };
 
 export interface Target {
   label: string;
@@ -1189,7 +1189,10 @@ export class World3D implements WorldView {
     if (w.kind === 'fell') {
       sound.sfx('thud', { pan });
       if (progress > 0.5) sound.sfx('crack', { pan, gain: 0.25 + 0.5 * progress });
-    } else sound.sfx(w.kind === 'mine' ? 'strike' : 'dig', { pan });
+    } else if (w.kind === 'mine') {
+      sound.sfx('strike', { pan });
+      if (progress > 0.5) sound.sfx('crack', { pan, gain: 0.2 + 0.4 * progress });
+    } else sound.sfx('dig', { pan });
     const art = this.nodes.get(w.node)?.art;
     if (!art) return;
     const x0 = inst.x + 0.5;

@@ -1,0 +1,121 @@
+{
+  "about": "Harvest: the library's chest-opening lean for the body; the right hand takes berries from the top of a berry bush at the front right and puts them in the pouch on the hip. The arm is an IK overlay to fixed spots by the body. The clearest of the three harvests tried (harvest_kneel and harvest_bend are the others): the berries in the hand show what was picked.",
+  "target": "forager",
+  "base": {
+    "library": "ual2",
+    "action": "Chest_Open"
+  },
+  "frames": [
+    8,
+    10,
+    12,
+    14,
+    16,
+    14,
+    12,
+    10
+  ],
+  "ik": {
+    "side": "R",
+    "anchor": "body",
+    "pole": [
+      0.8,
+      -0.3,
+      -0.4
+    ],
+    "points": [
+      "pouch",
+      [
+        0.4,
+        0.26,
+        1.0
+      ],
+      [
+        0.34,
+        0.38,
+        0.88
+      ],
+      [
+        0.34,
+        0.38,
+        0.85
+      ],
+      [
+        0.38,
+        0.28,
+        1.0
+      ],
+      [
+        0.3,
+        0.1,
+        0.94
+      ],
+      "pouch"
+    ],
+    "t": [
+      0,
+      0.1667,
+      0.3333,
+      0.5,
+      0.6,
+      0.6667,
+      0.8333,
+      0.9333
+    ]
+  },
+  "prop": {
+    "kind": "berries",
+    "hand": "R",
+    "poses": [
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  "set": [
+    {
+      "kind": "bush",
+      "at": [
+        0.5,
+        0.55
+      ],
+      "size": 1.1
+    }
+  ],
+  "worn": [
+    {
+      "kind": "pouch",
+      "at": [
+        0.24,
+        0.04,
+        0.0
+      ]
+    }
+  ],
+  "ms": [
+    200,
+    150,
+    150,
+    250,
+    120,
+    150,
+    150,
+    150
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      108
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

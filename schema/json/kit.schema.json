@@ -281,6 +281,10 @@
                   {
                     "const": "pick",
                     "type": "string"
+                  },
+                  {
+                    "const": "rod",
+                    "type": "string"
                   }
                 ]
               },
@@ -656,7 +660,7 @@
                 "ramps": {
                   "minItems": 1,
                   "maxItems": 4,
-                  "description": "The ramps of this kit the sprite draws in, in order: the first is the one its outline comes from. A sprite that names none uses the core palette only.",
+                  "description": "The ramps of this kit the sprite draws in, in order. The outline is the one-pixel ink line #1b1a2e on every sprite, whatever the ramps. A sprite that names none uses the core palette only.",
                   "type": "array",
                   "items": {
                     "pattern": "^[a-z0-9][a-z0-9-]*$",

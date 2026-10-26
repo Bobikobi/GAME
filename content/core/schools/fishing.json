@@ -1,0 +1,106 @@
+{
+  "$schema": "../../../schema/json/school.schema.json",
+  "format": 1,
+  "type": "school",
+  "id": "core/fishing-school",
+  "title": "Fishing",
+  "creator": "core",
+  "school": {
+    "name": "Fishing",
+    "profession": "core/fishing",
+    "nodes": [
+      {
+        "id": "still-water",
+        "name": "Still water",
+        "text": "The moment the float goes under lasts a little longer.",
+        "size": "small",
+        "effect": "timing_window_pct",
+        "value": 5,
+        "icon": "core/river-fish"
+      },
+      {
+        "id": "patient-line",
+        "name": "Patient line",
+        "text": "You feel the bite before you see it: every timing window is wider.",
+        "size": "major",
+        "needs": [
+          "still-water"
+        ],
+        "effect": "timing_window_pct",
+        "value": 10,
+        "slot": true,
+        "icon": "core/fishing-rod"
+      },
+      {
+        "id": "quick-reel",
+        "name": "Quick reel",
+        "text": "A fish comes in sooner, and so does all hand work.",
+        "size": "small",
+        "needs": [
+          "patient-line"
+        ],
+        "effect": "gather_speed_pct",
+        "value": 5,
+        "icon": "core/reed-cord"
+      },
+      {
+        "id": "deep-pool",
+        "name": "Deep pool",
+        "text": "You read where the water is deep: hand work goes much faster.",
+        "size": "major",
+        "needs": [
+          "quick-reel"
+        ],
+        "key": {
+          "senses": 2
+        },
+        "effect": "gather_speed_pct",
+        "value": 10,
+        "slot": true,
+        "icon": "core/river-fish"
+      },
+      {
+        "id": "net-mender",
+        "name": "Net mender",
+        "text": "Cord and knots come easy to you: a fish comes in sooner.",
+        "size": "corner",
+        "needs": [
+          "patient-line"
+        ],
+        "effect": "gather_speed_pct",
+        "value": 10,
+        "slot": true,
+        "race": "core/human",
+        "icon": "core/reed-cord"
+      },
+      {
+        "id": "river-listener",
+        "name": "River listener",
+        "text": "The river tells you when the fish turns.",
+        "size": "corner",
+        "needs": [
+          "patient-line"
+        ],
+        "effect": "timing_window_pct",
+        "value": 15,
+        "slot": true,
+        "race": "core/elf",
+        "icon": "core/herb"
+      },
+      {
+        "id": "still-as-bone",
+        "name": "Still as bone",
+        "text": "Nothing in you moves while you wait: the bite is never missed for a twitch.",
+        "size": "corner",
+        "needs": [
+          "patient-line"
+        ],
+        "effect": "timing_window_pct",
+        "value": 15,
+        "slot": true,
+        "race": "core/skeleton",
+        "icon": "core/rust-pick"
+      }
+    ]
+  }
+}

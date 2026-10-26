@@ -50,7 +50,7 @@ export const Rarity = Type.Union(RARITIES.map((r) => Type.Literal(r)), {
  * A staff, a hammer and a pick are worn in the hand for what they help; no work asks for one yet.
  * The hammer and the pick are the human's and the skeleton's outfit tools (DECISIONS.md, 2026-10-22).
  */
-export const TOOL_KINDS = ['basket', 'trowel', 'axe', 'staff', 'hammer', 'pick'] as const;
+export const TOOL_KINDS = ['basket', 'trowel', 'axe', 'staff', 'hammer', 'pick', 'rod'] as const;
 export const ToolKind = Type.Union(TOOL_KINDS.map((k) => Type.Literal(k)));
 
 export const STATIONS = ['fire', 'workshop'] as const;
@@ -306,10 +306,16 @@ export const ResourceBody = Type.Object(
         'A quest id. The node cannot be struck by a character who was offered that quest and has not finished it; a character who was never offered it strikes the node as usual. The refusal says one short line and costs nothing.',
     }),
     tool: Type.Optional(ToolKind),
-    level: Int(1, 20, 'Level required, in the profession the node trains: felling when the tool is an axe, foraging otherwise.'),
+    work: Type.Optional(
+      Type.Literal('mine', {
+        description:
+          'How the node is worked when it needs no tool. "mine": broken with blows that run by themselves after one press, as felling does; it trains digging, a pick or a hammer in the bag makes it faster (the best one, worn a little each time), and bare hands still do it. Left out: gathered by hand with the minigame of `game`.',
+      }),
+    ),
+    level: Int(1, 20, 'Level required, in the profession the node trains: felling when the tool is an axe, fishing when it is a rod, digging when the node is mined, foraging otherwise.'),
     game: Type.Optional(
-      Type.Union([Type.Literal('timing'), Type.Literal('strike'), Type.Literal('pick'), Type.Literal('snap')], {
-        description: 'The minigame played when gathering: "timing" (stop a marker in the middle, the default), "strike" (three timed hammer strikes, for stone), "pick" (press only for the ripe ones, for plants) or "snap" (press fast, for wood).',
+      Type.Union([Type.Literal('timing'), Type.Literal('strike'), Type.Literal('pick'), Type.Literal('snap'), Type.Literal('fish')], {
+        description: 'The minigame played when gathering: "timing" (stop a marker in the middle, the default), "strike" (three timed hammer strikes, for stone), "pick" (press only for the ripe ones, for plants), "snap" (press fast, for wood) or "fish" (cast, wait for the bite and strike as the float goes under, then reel in; for a node fished with a rod).',
       }),
     ),
     hours: Type.Optional(
@@ -323,6 +329,11 @@ export const ResourceBody = Type.Object(
             minItems: 1,
             uniqueItems: true,
             description: 'More resource slots that each hold exactly one of these nodes: a tree or a log standing where the map already shows one. They add supply only: `count`, the value and the opening\'s log floor follow the main slot.',
+          }),
+        ),
+        water: Type.Optional(
+          Type.Literal(true, {
+            description: 'The nodes lie on the water tiles of the slot that touch the land, and are worked from the bank: fishing spots. Left out, they lie on the land tiles of the slot.',
           }),
         ),
       },
@@ -1053,7 +1064,7 @@ export const Effect = Type.Union(EFFECTS.map((k) => Type.Literal(k)), {
 export const ProfessionBody = Type.Object(
   {
     name: Name,
-    verb: Type.Union([Type.Literal('gather'), Type.Literal('fell'), Type.Literal('dig'), Type.Literal('craft')]),
+    verb: Type.Union([Type.Literal('gather'), Type.Literal('fell'), Type.Literal('dig'), Type.Literal('fish'), Type.Literal('craft')]),
     stations: Type.Optional(
       Type.Array(Station, {
         minItems: 1,
@@ -1438,7 +1449,7 @@ export const KitBody = Type.Object(
               minItems: 1,
               maxItems: 4,
               description:
-                'The ramps of this kit the sprite draws in, in order: the first is the one its outline comes from. A sprite that names none uses the core palette only.',
+                'The ramps of this kit the sprite draws in, in order. The outline is the one-pixel ink line #1b1a2e on every sprite, whatever the ramps. A sprite that names none uses the core palette only.',
             }),
           ),
           density: Type.Optional(
