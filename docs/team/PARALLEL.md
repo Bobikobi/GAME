@@ -59,7 +59,7 @@ once. Mark its stream `"cross_cutting": true` in `streams.json` so the order put
 
 ## Merge order
 
-The owner presses merge; `pnpm streams` only proposes. The proposal follows four rules:
+`pnpm streams` only proposes. The session that made a pull request merges it into `develop` once the owner has approved it (the owner's rule of 23.10). A release to the public, `develop` into `main`, stays the owner's alone. The proposal follows four rules:
 
 1. A cross-cutting stream first.
 2. A branch that others are built on goes before them: it frees their pull requests.
@@ -121,8 +121,8 @@ reached through the repository, so for them the owner pastes the instruction, an
 on this page are what they read first.
 
 It never edits, merges, rebases, pushes or deletes in another session's branch or worktree. It
-proposes; the owner presses merge. If the owner wants merges into `develop` delegated, that
-goes into `DECISIONS.md` the same day, with its limits.
+proposes the order; the session that made each pull request merges it, after the owner's
+approval, and never a pull request that is another session's. The integrator merges nothing.
 
 A session that started before this page landed has the old `AGENTS.md` and no `pnpm streams`:
 once the pull request is merged, it merges `origin/develop` and is told once to

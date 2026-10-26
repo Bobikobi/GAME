@@ -81,7 +81,7 @@ People and animals, seen by the owner on 20.10 on `frames/2026-10-21-nature-scal
 
 ## 2. Pixels and colour
 
-- **Colours:** only the 32 core colours (`tools/src/kit/palette.ts`).
+- **Colours:** the 32 core colours plus the shared `CORE_RAMPS` a sprite names (`tools/src/kit/palette.ts`), and a kit's own ramps for materials the shared set lacks.
 - **Pixels:** every pixel fully clear or fully solid. No anti-aliasing, no gradients, no half-clear pixels. This is the rule for a sprite and a ground tile. A layer the engine draws over them (a shadow, the night, a pool, the hour's wash, cloud shade, fog) is a blend at one alpha per step, and the result is still a fully solid pixel; such a layer never has more than four steps, and where two steps meet it may dither (ART_SYSTEM 2, NATURE 4 and 5).
 - **Ramps** run dark to light:
   - greys: `#1b1a2e #3a3554 #5d6177 #8f94a8 #c6cad6 #f5f4ef`
@@ -92,7 +92,7 @@ People and animals, seen by the owner on 20.10 on `frames/2026-10-21-nature-scal
   - fire: `#b8661f #eda83a #f8de62`
   - skin: `#d38c66 #f3c7a0`
   - purples: `#5b3373 #9a5bb0`
-- **Outline:** characters, items and props have a one-pixel outline in `#1b1a2e`. Ground tiles have none.
+- **Outline:** the one-pixel ink line `#1b1a2e` on every sprite (owner's decision of 23.10, PR #305): characters, items and props, at both densities. An outline is the sprite's own edge pixels recoloured to ink (`pnpm kit:ink`), not a ring added outside it. Ground tiles have none. `pnpm check` measures it: a 64 px sprite needs ink on at least 95% of its edge pixels, and the 16 px sprites are reported in one summary line.
 - **Baked light comes from above.** Tops are lightest and undersides darkest, with left and right even. Light from the side is added while the game runs (section 4), and side light baked into the art would fight it.
 - **Never draw a shadow into a sprite.** The engine casts it from the sprite's own shape, starting at the lowest solid row: that row is where the thing touches the ground.
 
@@ -123,13 +123,13 @@ The engine draws the edges between grounds, so a new ground ships only its fill 
 - Later grounds (mud, ash, ice, moss, swamp) each add a row of their own.
 - **On one level:** the higher-ranked ground lies over the lower on a ragged line, never along a tile edge. The pixels of the lower ground along that line are one step darker (frame `terrain-T1`).
 
-## 4. Light and shadow (decided: C)
+## 4. Light and shadow (decided: C; the direction moved with the GK2 B sun)
 
 | Part | Rule |
 |---|---|
 | Cast shadow | The caster's silhouette, sheared away from the light. A pixel z rows above the lowest solid row lands at (x + z·sx, feet + z·sy). Colour `#1b1a2e` at 30%. Where shadows overlap, the ground is no darker than under one |
 | Length | 0.8 to 1.1 times the caster's height at 08:00 and 16:30. At 12:00, no more than 12 art px past the feet |
-| Direction | Free (the owner's word). The convention: a little toward the viewer, left in the morning, right in the evening. Every caster in a frame points the same way |
+| Direction | The sun stands south (DECISIONS 2026-10-21, the GK2 method B), so the shadow falls **away** from the viewer: up-screen, behind its caster, which the depth order draws over it, and a thing standing north covers the shadow of the thing before it. Left in the morning, right in the evening: up-left at 08:00, up-right at 16:30, straight back at noon. Every caster in a frame points the same way |
 | Contact line | Four rows under the feet, `#1b1a2e` at 45% |
 | Body light | The 4 art px on the side away from the light one step darker, the side toward it one step lighter. None at noon |
 | Night | No sun shadow. Inside a light's pool, shadow and body light come from that light. Outside every pool, nothing casts |
@@ -192,11 +192,9 @@ The owner, 18.10: "users will be able to change existing areas, even completely"
 
 ## 9. What the check enforces
 
-- **Today:** the palette, hard alpha and the sizes.
-- **With the engine step:** the sizes for each density (NEXT 15).
+- **Today:** the palette, hard alpha, the sizes for each density (NEXT 15) and, for a ground tile, its own ramp plus at most two accent colours (all errors in `tools/src/check.ts`).
 - **Proposed with the ground wave:**
-  - a ground tile fills its square edge to edge;
-  - a ground uses only its own ramp plus at most two accent colours.
+  - a ground tile fills its square edge to edge.
 
 ## 10. Frames
 
@@ -206,5 +204,6 @@ The owner, 18.10: "users will be able to change existing areas, even completely"
 - `2026-10-18-shadow-*`: A, B, C and a day.
 - `2026-10-18-night-*`: N1 to N3.
 - `2026-10-18-terrain-*`: T1 to T3.
+- `2026-10-21-cast-*`: the cast pass with the sun in the south (GK2 B), at 08:00 and 16:30, phone size at 3x (390x844, 1170x2532): up-left in the morning, up-right in the evening.
 
 How each set was made: [2026-10-18-density.md](frames/2026-10-18-density.md), [2026-10-18-art-size.md](frames/2026-10-18-art-size.md) and [2026-10-18-light-and-ground.md](frames/2026-10-18-light-and-ground.md).

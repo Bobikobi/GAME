@@ -52,6 +52,7 @@ import { feedback } from './feedback';
 import { type Minigame, pick, snap, strike, timing } from './games';
 import { BEAT, buzz } from './haptics';
 import { openLevelUp } from './levelup';
+import { FULL_BAG, HEAVY_LINE, flashFull, loadChip, loadView, paintLoad, turnedHeavy } from './load';
 import {
   openBag,
   openCraft,
@@ -64,6 +65,7 @@ import {
   confirmRestore,
   openFeedback,
   openOpeningReview,
+  openSearch,
 } from './panels';
 import { showTitle } from './title';
 import { mountTouch } from './touch';
@@ -88,6 +90,9 @@ interface HudParts {
   bar: HTMLElement;
   num: HTMLElement;
   goldText: Text;
+  /** the starter gold chip: shown only while the bound balance is above 0 */
+  boundChip: HTMLElement;
+  boundText: Text;
   clockChip: HTMLElement;
   clockIcon: HTMLElement;
   clockText: Text;
@@ -96,6 +101,8 @@ interface HudParts {
   darkText: Text;
   level: HTMLElement;
   bag: HTMLButtonElement;
+  /** the load on the bag button: "14 / 24" and one coloured word (DECISIONS.md, 2026-10-23) */
+  load: HTMLElement;
   log: HTMLButtonElement;
 }
 
@@ -125,6 +132,8 @@ export class UI {
   private warnedNight: number | undefined;
   /** the burns (fire and lit tick) whose running-low warning was shown, so it opens once per burn */
   private warnedFires = new Set<string>();
+  /** the pace at the last look, so turning heavy is said once */
+  private loadSeen: { band?: 'light' | 'steady' | 'heavy' } = {};
 
   constructor(root: HTMLElement) {
     this.root = root;
@@ -268,6 +277,8 @@ export class UI {
     p.bar.style.width = `${pct}%`;
     setText(p.num, String(Math.ceil(sat / 1000)));
     setText(p.goldText, gold(st.player.gold));
+    p.boundChip.hidden = !(st.player.boundGold > 0);
+    setText(p.boundText, gold(st.player.boundGold));
     setTitle(p.clockChip, night ? 'Night' : 'Day');
     setClass(p.clockIcon, night ? 'moon' : 'sun');
     setText(p.clockText, clock(minuteOfDay(b, s.tick)));
@@ -283,6 +294,9 @@ export class UI {
     setTitle(p.level, points > 0 ? 'A skill point to spend: open the journal' : 'Character level');
     setText(p.level, `Lv ${characterLevel(b, st)}${points > 0 ? ' +' : ''}`);
     p.bag.hidden = !unlocked.bag;
+    const load = loadView(b, st);
+    paintLoad(p.load, load);
+    if (turnedHeavy(this.loadSeen, load.band)) this.toast(HEAVY_LINE, 'info');
     p.log.hidden = !unlocked.log;
     this.renderTracker(s);
     this.renderHudMap(s);
@@ -326,13 +340,16 @@ export class UI {
       num,
     );
     const goldText = document.createTextNode('');
+    const boundText = document.createTextNode('');
+    const boundChip = h('span', { class: 'chip gold', title: 'Starter gold: spent first, and only at the shop', hidden: true }, h('i', { class: 'coin' }), boundText, ' starter gold');
     const clockIcon = h('i', { class: 'sun' });
     const clockText = document.createTextNode('');
     const clockChip = h('span', { class: 'chip', title: 'Day' }, clockIcon, clockText);
     const darkText = document.createTextNode('');
     const dark = h('span', { class: 'chip dark', title: 'Dark falls: be in town or by a burning camp', hidden: true }, h('i', { class: 'moon' }), darkText);
     const level = h('span', { class: 'chip', title: 'Character level' });
-    const bag = button('Bag', () => this.panel(() => openBag(this)), 'small');
+    const load = loadChip();
+    const bag = button([h('span', { class: 'load-label' }, 'Bag'), load], () => this.panel(() => openBag(this)), 'small');
     const log = button('Journal', () => this.panel(() => openJournal(this)), 'small');
     const feedbackBtn = button('Feedback', () => openFeedback(this), 'small');
     this.hud.replaceChildren(
@@ -344,6 +361,7 @@ export class UI {
           'div',
           { class: 'hud-row' },
           h('span', { class: 'chip gold', title: 'Gold' }, h('i', { class: 'coin' }), goldText),
+          boundChip,
           clockChip,
           dark,
           level,
@@ -352,7 +370,7 @@ export class UI {
       ),
       h('div', { class: 'hud-right' }, feedbackBtn, bag, log, button('Menu', () => this.panel(() => openMenu(this)), 'small')),
     );
-    return { meter, bar, num, goldText, clockChip, clockIcon, clockText, dark, darkText, level, bag, log };
+    return { meter, bar, num, goldText, boundChip, boundText, clockChip, clockIcon, clockText, dark, darkText, level, bag, load, log };
   }
 
   /**
@@ -427,6 +445,7 @@ export class UI {
 
   /** A toast joins the line (toasts.ts): two at most stand at once, a bad one goes ahead, and none is dropped. */
   private queueToast(t: Toast): void {
+    if (t.lines.some((l) => FULL_BAG.test(l))) flashFull(this.hud);
     const el = h('div', { class: `toast ${t.tone}` }, t.icon ? sprite(app.bundle, t.icon, 1) : null, h('span', { class: 'toast-text' }, t.lines.join('\n')));
     this.band.add(el, { urgent: urgent(t), read: readTime(t) });
   }
@@ -617,6 +636,14 @@ export class UI {
     if (!res.ok) this.toast(res.error, 'bad');
   }
 
+  /** Pick a thing put down back up, from the tile the player stands on. */
+  async pickUp(itemId: string): Promise<void> {
+    const s = app.session;
+    if (!s) return;
+    const r = await s.act({ t: 'pickup', item: itemId, at: s.pos });
+    if (!r.ok) this.toast(r.error, 'bad');
+  }
+
   async dig(spotId: string): Promise<void> {
     const s = app.session;
     if (!s) return;
@@ -635,6 +662,15 @@ export class UI {
     const res = await s.act({ t: 'dig', spot: spotId, grade, at: s.pos });
     if (!res.ok) return this.toast(res.error, 'bad');
     if (!res.events.some((e) => e.e === 'riddle')) this.digCatch(spotId, res.events.find((e) => e.e === 'busy'));
+  }
+
+  /** Look inside a searchable: the kernel draws or keeps today's contents, and a small window shows them (docs/design/SEARCH.md). */
+  async search(spotId: string): Promise<void> {
+    const s = app.session;
+    if (!s) return;
+    const r = await s.act({ t: 'search', spot: spotId, at: s.pos });
+    if (!r.ok) return this.toast(r.error, 'bad');
+    openSearch(this, spotId);
   }
 
   /** The catch (G6): while a riddle waits on a dig somewhere else, a dig here says so once the hands stop. */

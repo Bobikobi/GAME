@@ -4,7 +4,8 @@
  * each under a fixed seed (wakes.ts): the elf on the west bank on a phone screen
  * with touch only (d-pad, A button, taps), the human in the north meadow on a
  * desktop with the keyboard, and the skeleton on the slid bank on a desktop up
- * to the mended bridge. E2E_ONLY=phone|desktop|slid-bank plays one of them.
+ * to the mended bridge. E2E_ONLY=phone|desktop|slid-bank plays one of them; E2E_SKIP=phone
+ * plays the others (CI plays the phone run in a job of its own, game/e2e/run.ts).
  *
  *   pnpm build && pnpm e2e [out-dir]
  *   E2E_URL=https://<deployment> pnpm e2e    (play a deployed copy instead)
@@ -22,6 +23,7 @@ import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page, type Viewport } from './cdp';
 import { solveMinigame } from './minigame';
+import { FreeWalk, OPPOSITE, VEC, type Dir } from './walk';
 import { LUCKY_BOWL, type WakePocket, seedQuery } from './wakes';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -75,7 +77,7 @@ window.__e2e = (() => {
   return {
     state() {
       const s = g().session, w = g().world, p = document.querySelector('.prompt');
-      return { pos: [...s.pos], facing: s.facing, busy: s.busy, moving: !!w.move, blocking: g().ui.blocking,
+      return { pos: [...s.pos], facing: s.facing, busy: s.busy, moving: !!w.body.moving, blocking: g().ui.blocking,
         prompt: p && !p.hidden ? p.textContent.slice(1).trim() : '' };
     },
     player() { return g().session.state.player; },
@@ -166,33 +168,10 @@ window.__e2e = (() => {
       }
       return null;
     },
-    /**
-     * Lets go of a held direction in the frame its step starts, or the player turns.
-     * Phaser asks for its next frame before this does, so this runs right after the
-     * update that started the step and lets go before the next one: one tile per
-     * press, however slow the frames are.
-     */
-    releaseOnStep(dir, touch) {
-      const s = g().session, w = g().world, facing = s.facing, t0 = performance.now();
-      const gen = (window.__e2eGen = (window.__e2eGen ?? 0) + 1);
-      window.__e2eStepped = false;
-      const look = () => {
-        if (window.__e2eGen !== gen) return;
-        if (w.move || s.facing !== facing) {
-          window.__e2eStepped = true;
-          if (touch) g().controls.setTouchDir(null);
-          else window.dispatchEvent(new KeyboardEvent('keyup', { code: KEY[dir] }));
-          return;
-        }
-        if (performance.now() - t0 < 1000) requestAnimationFrame(look);
-      };
-      requestAnimationFrame(look);
-      return true;
-    },
     /** What the player's sprite shows: the sheet, the frame, whether it is mirrored, and whether a step is under way. */
     look() {
       const w = g().world, p = w.player;
-      return { key: p.texture.key, frame: Number(p.frame.name), flip: p.flipX, moving: !!w.move };
+      return { key: p.texture.key, frame: Number(p.frame.name), flip: p.flipX, moving: !!w.body.moving };
     },
     /** Starts or stops writing down what the player's sprite shows at every frame. */
     watchLook(on) {
@@ -232,11 +211,6 @@ window.__e2e = (() => {
 })();
 true`;
 
-type Dir = 'up' | 'down' | 'left' | 'right';
-const ARROW: Record<Dir, string> = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
-const PAD_OFFSET: Record<Dir, [number, number]> = { up: [0, -48], down: [0, 48], left: [-48, 0], right: [48, 0] };
-const VEC: Record<Dir, [number, number]> = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
-const OPPOSITE: Record<Dir, Dir> = { up: 'down', down: 'up', left: 'right', right: 'left' };
 
 interface Rect {
   x: number;
@@ -274,11 +248,15 @@ class Player {
   private shot = 0;
   /** how many A presses talkThrough made while a dialogue was open */
   talkPresses = 0;
+  /** the free walk: the input is held until the feet stand on a tile, not pressed a tile at a time (NEXT 22 d) */
+  private readonly walk: FreeWalk;
   constructor(
     readonly page: Page,
     readonly touch: boolean,
     readonly name: string,
-  ) {}
+  ) {
+    this.walk = new FreeWalk(page, touch);
+  }
 
   state(): Promise<State> {
     return this.page.eval<State>('__e2e.state()');
@@ -318,24 +296,6 @@ class Player {
     if (last) throw new Stop(label);
   }
 
-  private async padCenter(): Promise<[number, number]> {
-    return this.page.eval<[number, number]>(
-      `(() => { const r = document.querySelector('.pad').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; })()`,
-    );
-  }
-
-  private async holdDir(dir: Dir): Promise<void> {
-    if (!this.touch) return this.page.key(ARROW[dir], 'keyDown');
-    const [cx, cy] = await this.padCenter();
-    const [dx, dy] = PAD_OFFSET[dir];
-    await this.page.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx + dx, y: cy + dy, id: 1 }] });
-  }
-
-  private async releaseDir(dir: Dir): Promise<void> {
-    if (!this.touch) return this.page.key(ARROW[dir], 'keyUp');
-    await this.page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  }
-
   /** The A button: Enter on a keyboard, the round A on a phone. */
   async a(): Promise<void> {
     await this.settle();
@@ -343,41 +303,34 @@ class Player {
     else await this.page.press('Enter');
   }
 
-  /** One tile in a direction, or just a turn when the way is blocked. True when the player moved. */
+  /**
+   * One tile in a direction, or just a turn when the way is blocked, holding the input until the feet stand on
+   * the tile and letting go there (NEXT 22 d). True when the player moved.
+   */
   async step(dir: Dir): Promise<boolean> {
     await this.settle();
     const before = await this.state();
     const want: [number, number] = [before.pos[0] + VEC[dir][0], before.pos[1] + VEC[dir][1]];
-    await this.press(dir);
-    // software rendering can drop a hold whole (no frame saw the key down): while the player
-    // has not moved and the tile ahead is open, press again, twice at most
-    for (let tries = 0; tries < 2; tries++) {
-      const at = (await this.state()).pos;
-      if (at[0] !== before.pos[0] || at[1] !== before.pos[1]) break;
-      const open = await this.page.eval<boolean>(`__game.world.canWalk(__game.session, ${want[0]}, ${want[1]})`);
-      if (!open) break;
-      await this.press(dir);
+    const open = await this.page.eval<boolean>(`__game.world.canWalk(__game.session, ${want[0]}, ${want[1]})`);
+    if (!open) {
+      // toward a wall the player does not yet face, the held input only turns it
+      await this.walk.turnTo(dir, before.pos, `the ${dir} way out of ${before.pos.join(',')}`);
+      return false;
     }
-    // a press should walk one tile; if it ever walks two, walk back to the one tile wanted
-    for (let i = 0; i < 3; i++) {
-      const at = (await this.state()).pos;
-      const over = (at[0] - want[0]) * VEC[dir][0] + (at[1] - want[1]) * VEC[dir][1];
-      if (over <= 0) break;
-      await this.press(OPPOSITE[dir]);
+    // a box can open by itself under a walk (the night's warning): it holds the body where it stands, so it
+    // is tapped away and the step taken again, twice at most; a box that is the test's own stops the step
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await this.walk.holdTo(want, `the ${dir} tile from ${(await this.state()).pos.join(',')}`);
+      const after = (await this.state()).pos;
+      if (after[0] !== before.pos[0] || after[1] !== before.pos[1]) return true;
+      // the lantern warning is read where dark finds the player (pastDusk), not tapped away unread
+      if (await this.lanternOpen()) {
+        await this.readLantern(`the ${dir} tile from ${before.pos.join(',')}`);
+        continue;
+      }
+      if (!(await this.walk.closeBox())) return false;
     }
-    const after = (await this.state()).pos;
-    return after[0] !== before.pos[0] || after[1] !== before.pos[1];
-  }
-
-  private async press(dir: Dir): Promise<void> {
-    // letting go from here, a poll after the step started, can leave the direction held
-    // into a second step when frames are slow (CI renders in software), so the page lets go
-    await this.page.eval(`__e2e.releaseOnStep(${JSON.stringify(dir)}, ${this.touch})`);
-    await this.holdDir(dir);
-    // a press toward a wall the player already faces neither turns nor steps
-    await this.page.waitFor('window.__e2eStepped', 'the step to start', 600).catch(() => undefined);
-    await this.releaseDir(dir);
-    await this.page.waitFor('!__e2e.state().moving', 'the step to end', 3000);
+    return false;
   }
 
   private async planTo(rect: Rect, what: string): Promise<Plan> {
@@ -388,7 +341,17 @@ class Player {
 
   /** Walks a planned path; false at the first step that does not move the player. */
   private async follow(path: Dir[]): Promise<boolean> {
-    for (const d of path) if (!(await this.step(d))) return false;
+    // the tiles the plan named, counted from where the walk starts: the body holds toward a tile, not a distance
+    let at = (await this.state()).pos;
+    for (const d of path) {
+      const next: [number, number] = [at[0] + VEC[d][0], at[1] + VEC[d][1]];
+      const open = await this.page.eval<boolean>(`__game.world.canWalk(__game.session, ${next[0]}, ${next[1]})`);
+      if (!open) return false;
+      await this.walk.holdTo(next, `the ${d} tile of the way`);
+      const now = (await this.state()).pos;
+      if (now[0] !== next[0] || now[1] !== next[1]) return false;
+      at = next;
+    }
     return true;
   }
 
@@ -400,17 +363,8 @@ class Player {
     for (let again = 0; !(await this.follow(plan.path)) && again < 3; again++) plan = await this.planTo(rect, what);
     const at = await this.state();
     if (at.pos.join(',') !== plan.goal.join(',')) throw new Error(`walking to ${what} ended at ${at.pos.join(',')}, not ${plan.goal.join(',')}`);
-    if (at.facing === plan.face) return;
-    const v = VEC[plan.face];
-    const open = (dx: number, dy: number) => this.page.eval<boolean>(`__game.world.canWalk(__game.session, ${at.pos[0] + dx}, ${at.pos[1] + dy})`);
-    if (!(await open(v[0], v[1]))) {
-      await this.step(plan.face); // blocked ahead: pressing toward it only turns
-      return;
-    }
-    if (!(await open(-v[0], -v[1]))) throw new Error(`cannot turn toward ${what} at ${at.pos.join(',')}`);
-    // open ahead: back up one tile and step forward again, which leaves the player facing it
-    await this.step(OPPOSITE[plan.face]);
-    await this.step(plan.face);
+    // the action reads the tile in front of the feet, so the last turn faces what was walked to
+    if (at.facing !== plan.face) await this.walk.turnTo(plan.face, plan.goal, what);
   }
 
   /** the lantern warning's lines, once dark has found the player on the way (pastDusk) */
@@ -429,13 +383,38 @@ class Player {
         await act();
         return;
       } catch (err) {
-        const darkBox = await this.page.eval<boolean>("(__e2e.dialog()?.text ?? '').includes('lantern is lit') && (__e2e.hour() >= 20 || __e2e.hour() < 5)");
-        if (!darkBox || readOnRoad) throw err;
-        this.lantern = await this.talkThrough();
-        await this.idle('the lantern warning');
-        console.log(`[${this.name}] dark came on the way to ${what}, at ${(await this.state()).pos.join(',')}: the lantern warning was read there`);
+        if (readOnRoad || !(await this.lanternOpen())) throw err;
+        await this.readLantern(what);
       }
     }
+  }
+
+  /**
+   * Whether the box open now is the lantern warning, at a dark hour (G31). The box types its line out, and a
+   * held walk (NEXT 22 d) gives up on the tile the moment the box stops the feet, so the line is first let finish:
+   * read half typed ("Dark. Your lan"), the warning was taken for another box (CI, 23.10).
+   */
+  private async lanternOpen(): Promise<boolean> {
+    let text = '';
+    for (let i = 0; i < 30; i++) {
+      const now = await this.page.eval<string | null>('__e2e.dialog()?.text ?? null');
+      if (now === null) return false;
+      if (now === text && now !== '') break;
+      text = now;
+      await sleep(150);
+    }
+    return text.includes('lantern is lit') && (await this.page.eval<boolean>('__e2e.hour() >= 20 || __e2e.hour() < 5'));
+  }
+
+  /**
+   * Reads the lantern warning where dark found the player, as a player would, and keeps its lines for the
+   * arch's check. A held walk (NEXT 22 d) meets it inside a step, where any other box that opened by itself
+   * is tapped away; this one is read, so the night's one warning is never lost on the road.
+   */
+  private async readLantern(what: string): Promise<void> {
+    this.lantern = await this.talkThrough();
+    await this.idle('the lantern warning');
+    console.log(`[${this.name}] dark came on the way to ${what}, at ${(await this.state()).pos.join(',')}: the lantern warning was read there`);
   }
 
   /** walkTo for a walk that can meet 20:00 on the road (pastDusk). */
@@ -976,8 +955,10 @@ async function play(browser: Browser, url: string, run: Run): Promise<void> {
     if ((await me.quest('core/into-town')) !== 'done') throw new Error('into-town is not done');
     if (!town.some((l) => l.includes('Whom you help first'))) throw new Error(`no word of whom to help first: ${town.join(' / ')}`);
     log('reached the town: Maru and Pell could use a hand');
-    // 4b criterion: each source is quieter the farther you stand from it
-    const inTown = await me.bedWhen('fire', (l) => l === 0, 'the fire out of earshot in town');
+    // 4b criterion: each source is quieter the farther you stand from it. The feet walk freely (NEXT 22) and
+    // rest anywhere inside the square's tile, so the fire's edge (12 tiles) can fall a hair inside it (a level of
+    // 0.0000015 on CI, 23.10): out of earshot is under a thousandth, 60 dB down, not an exact zero
+    const inTown = await me.bedWhen('fire', (l) => l < 0.001, 'the fire out of earshot in town');
     if (!(atFire.fire! > inTown.fire!)) throw new Error('the fire is not quieter in town');
     await me.bedWhen('stream', (l) => l < atBridge.stream!, 'the stream quieter than at the bridge');
     log(`beds in town: ${JSON.stringify(inTown)}; fire ${atFire.fire} -> ${inTown.fire}`);
@@ -1338,9 +1319,10 @@ async function main(): Promise<void> {
   const url = remote ?? local?.url ?? '';
   const browser = await Browser.launch();
   const only = process.env.E2E_ONLY;
+  const skip = (process.env.E2E_SKIP ?? '').split(',');
   try {
     for (const run of RUNS) {
-      if (only ? only !== run.name : run.lucky) continue;
+      if (only ? only !== run.name : run.lucky || skip.includes(run.name)) continue;
       const t0 = Date.now();
       await play(browser, url, run);
       console.log(`[${run.name}] opening finished in ${Math.round((Date.now() - t0) / 1000)} s`);

@@ -33,7 +33,7 @@ do.
 | Hub data builder | `tools/src/hub/` (new) | tsx, reuses `tools/src/loop/github.ts`, `board.ts`, `load.ts` | writes `web/public/api/hub-data.json` |
 | Document schema | `schema/src/hub.ts` (this branch) | TypeBox, emitted to `schema/json/hub-data.schema.json` | `/api/schema/` |
 | Creator tools | `mcp/` (this branch: definitions; GRUNT: the server) | TypeBox types, later `@modelcontextprotocol/sdk`, stdio | the creator's machine |
-| Stage-1 service (spec S-1) | `web/src/pages/api/s1/` (GRUNT, after Elad's yes) | Astro server endpoints on Vercel Functions + Upstash Redis | `/api/s1/*` |
+| Stage-1 service (spec S-1) | `web/src/pages/api/s1/` | Astro server endpoints on Vercel Functions + Upstash Redis | `/api/s1/*` |
 | Tokens | `design/tokens.css` (this branch) | CSS custom properties | imported by both apps |
 
 ### Why Astro for `web/`
@@ -226,8 +226,8 @@ Upstash Redis from the Vercel Marketplace (free tier) as the store.
 - Stage 2a inherits the endpoint contract and moves the keys into its own store;
   the client does not change.
 - Stage 2a is designed only when this service is live and has numbers, and runs
-  the same way: functions on the site's host with a managed database, no machine
-  to operate (owner, 8.10; DECISIONS.md). The spec's dedicated server waits for
+  the same way: the API and the database run as containers on the owner's box
+  (owner, 18.10; DECISIONS 2026-10-18, "Accounts and a server: the owner's answers"). The spec's dedicated server waits for
   stage 7, the first stage with a live connection per player.
 
 Rejected: the analytics vendor's custom events (reports do not fit, and the
@@ -295,8 +295,8 @@ import the sheet; until then the test keeps the copies equal.
 
 ### 5.2 Type
 
-The game keeps Pixelify Sans everywhere inside it (DECISIONS.md, pixel font
-everywhere); the site does not wear it (DECISIONS.md 2026-10-10, "The site
+The game sets titles and numbers in Pixelify Sans and its body, buttons, item facts and
+dialogue in Atkinson Hyperlegible Next (DECISIONS 2026-10-20, Field Kit); the site does not wear it (DECISIONS.md 2026-10-10, "The site
 leaves the pixel face and the shadow frame"). Platypi is the site's display
 face, for what is signed or counted: the wordmark, headings, door names,
 builder handles, points. Atkinson Hyperlegible Next is its reading face, for
@@ -440,15 +440,16 @@ New rows in `docs/team/WORKFLOW.md` and lines in `.github/CODEOWNERS`
 
 ### 9.2 CI
 
-The one required job keeps its name, "Check, test, build and play", so the
-loop's `required_checks` and the branch rule stay valid. Inside the job, a
-first step lists the changed paths and the expensive steps are conditioned on
-them: the game build and `pnpm e2e` run when `game/`, `kernel/`, `schema/`,
-`content/`, `tools/` or the lockfile changed; the site build and its tests run
-when `web/`, `design/`, `docs/`, `schema/` or `tools/src/hub/` changed; a
-docs-only pull request runs lint, types and unit tests and finishes green in a
-minute. A path-filtered workflow would leave the required check "Expected" on
-a docs pull request and block the merge; a condition inside the job does not.
+The required check keeps its name, "Check, test, build and play", so the
+loop's `required_checks`, the branch rule and the landing scripts stay valid.
+Since 26.10 it is a gate job: the checks (`pnpm verify` and the database steps)
+and the browser tests run beside it as jobs of their own, one per group in
+`game/e2e/run.ts`, and the gate goes green only when every one of them passed;
+a failed, skipped or cancelled job fails it. A run lasts as long as its
+longest group, the phone opening. A script that fails is played once more
+alone, and the screenshots of its first attempt are kept as an artifact.
+Every pull request runs it, docs-only included: a path-filtered workflow would
+leave the required check "Expected" and block the merge.
 
 `pnpm verify` gains `pnpm --filter web build` and the `web/` tests once the
 package exists (GRUNT item 4).

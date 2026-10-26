@@ -1,4 +1,5 @@
 @import '../../design/tokens.css';
+@import './ui/theme.css';
 @import './ui/kit.css';
 
 /* Handheld-era UI drawn with the core palette (tools/src/kit/palette.ts). */
@@ -19,8 +20,18 @@
   font-display: swap;
 }
 
+/* The game's one face since the theme of 23.10 (DECISIONS 2026-10-23, Jersey 15): the titles, the
+   numbers and the reading text are all drawn in it. The site keeps its own faces (design/tokens.css). */
+@font-face {
+  font-family: 'Jersey 15';
+  src: url('/fonts/jersey-15/jersey-15-latin.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
-  --font-body: var(--font-reading);
+  --font: 'Jersey 15', ui-monospace, monospace;
+  --font-body: var(--font);
   color-scheme: light;
 }
 
@@ -45,8 +56,10 @@ body {
   background: var(--ink);
   color: var(--ink);
   font-family: var(--font-body);
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1.35;
+  /* Jersey 15 has one weight: a bold is never smeared out of it */
+  font-synthesis: none;
   /* Pixelify Sans draws its "fi" ligature as a broken glyph ("Fire" read "Are") */
   font-variant-ligatures: none;
   font-feature-settings:
@@ -983,6 +996,33 @@ body {
 .price::after {
   content: ' g';
   color: var(--grey);
+}
+
+/* a trader's counter in named groups (decision 51); the look follows the kit's tokens until the UI is redrawn */
+.shop-jump {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 4px 0;
+  background: var(--paper);
+}
+
+.shop-jump .btn.tab {
+  flex: none;
+}
+
+.shop-group + .shop-group {
+  margin-top: 8px;
+}
+
+.shop-group-name {
+  margin: 8px 0 0;
+  font-size: 16px;
+  color: var(--wood2);
+  border-bottom: 3px solid var(--paper2);
 }
 
 .needs span {
@@ -1965,4 +2005,66 @@ body {
   .toast {
     transition: none;
   }
+}
+
+/* ------------------------------------------------------------ search (docs/design/SEARCH.md) */
+
+.panel.search {
+  width: min(100%, 420px);
+}
+
+.panel.search .search-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  margin: 0 0 8px;
+  padding: 4px 12px;
+  font: inherit;
+  font-family: var(--font-body);
+  font-size: 18px;
+  color: var(--ink);
+  text-align: left;
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.panel.search .search-row:hover,
+.panel.search .search-row:focus-visible {
+  background: var(--yellow);
+  outline: none;
+}
+
+.panel.search .search-row.r-rare,
+.panel.search .search-row.r-legendary {
+  border-color: var(--blue2);
+}
+
+.panel.search .search-row .grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.panel.search .search-take {
+  font-size: 16px;
+  color: var(--grey);
+}
+
+.panel.search .search-all {
+  width: 100%;
+  min-height: 48px;
+  font-size: 18px;
+}
+
+.panel.search .search-empty {
+  margin: 8px 0;
+  font-size: 18px;
+}
+
+.panel.search .search-luck {
+  margin: 10px 0 0;
+  font-size: 16px;
 }

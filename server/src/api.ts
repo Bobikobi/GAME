@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { ATTRIBUTES, WEAR_SLOTS, appearSlots, appears, step, walkDistance, type Action, type Bundle, type GameEvent, type State, type Tile } from '@game/kernel';
+import { ATTRIBUTES, STEP_MILLI, WEAR_SLOTS, appearSlots, appears, step, walkCharge, walkStepMs, type Action, type Bundle, type GameEvent, type State, type Tile } from '@game/kernel';
 
 import { goldRowsOf, type BookedStep, type LedgerRow } from './ledger';
 import { publicState, statePatch, type MergePatch, type PublicState } from './patch';
@@ -164,6 +164,13 @@ export function isAction(value: unknown): value is Action {
         && (value.grade as number) >= 0
         && (value.grade as number) <= 4
         && isTile(value.at);
+    case 'search':
+      return hasOnlyKeys(value, ['t', 'spot', 'at']) && typeof value.spot === 'string' && isTile(value.at);
+    case 'take':
+      return hasOnlyKeys(value, ['t', 'spot', 'row', 'at'])
+        && typeof value.spot === 'string'
+        && (value.row === undefined || (Number.isSafeInteger(value.row) && (value.row as number) >= 0))
+        && isTile(value.at);
     case 'craft':
       return hasOnlyKeys(value, ['t', 'recipe', 'at']) && typeof value.recipe === 'string' && isTile(value.at);
     case 'eat':
@@ -195,6 +202,12 @@ export function isAction(value: unknown): value is Action {
       return hasOnlyKeys(value, ['t', 'item']) && typeof value.item === 'string';
     case 'spend':
       return hasOnlyKeys(value, ['t', 'attr']) && ATTRIBUTES.some((attribute) => attribute === value.attr);
+    case 'learn_node':
+      return hasOnlyKeys(value, ['t', 'node', 'at']) && typeof value.node === 'string' && isTile(value.at);
+    case 'equip':
+      return hasOnlyKeys(value, ['t', 'node', 'slot', 'at']) && typeof value.node === 'string' && Number.isSafeInteger(value.slot) && isTile(value.at);
+    case 'unequip':
+      return hasOnlyKeys(value, ['t', 'slot', 'at']) && Number.isSafeInteger(value.slot) && isTile(value.at);
     case 'wear':
       return hasOnlyKeys(value, ['t', 'item', 'slot'])
         && typeof value.item === 'string'
@@ -203,6 +216,10 @@ export function isAction(value: unknown): value is Action {
       return hasOnlyKeys(value, ['t', 'slot', 'look'])
         && WEAR_SLOTS.some((slot) => slot === value.slot)
         && (value.look === undefined || typeof value.look === 'boolean');
+    case 'drop':
+      return hasOnlyKeys(value, ['t', 'item', 'qty', 'at']) && typeof value.item === 'string' && Number.isSafeInteger(value.qty) && isTile(value.at);
+    case 'pickup':
+      return hasOnlyKeys(value, ['t', 'item', 'at']) && typeof value.item === 'string' && isTile(value.at);
     case 'move':
       return hasOnlyKeys(value, ['t', 'at']) && isTile(value.at);
     default:
@@ -285,22 +302,26 @@ export function spendWalk(
   tick: number,
   movementAt: number,
   movementCreditMs: number,
-): { at: number; creditMs: number } | undefined {
-  const { walk_step_ms: stepMs, move_reach_max: maxReach } = bundle.params;
+  leg: Tile | null = null,
+): { at: number; creditMs: number; leg: Tile | null } | undefined {
+  // the pace the load allows (the 23.10 decision): a heavy player cannot report a light walk
+  const stepMs = walkStepMs(bundle, state);
+  const maxReach = bundle.params.move_reach_max;
   const elapsedSinceMove = Math.max(0, tick - state.player.movedAt);
   const reach = Math.min(2 + Math.floor(elapsedSinceMove / stepMs), maxReach);
-  const distance = walkDistance(bundle, state, from, target, reach);
-  if (distance === undefined) return { at: tick, creditMs: movementCreditMs };
+  // the octile length of the walk (G56): a free walk on a diagonal pays for its distance, not its staircase
+  const charge = walkCharge(bundle, state, from, target, reach, leg);
+  if (charge === undefined) return { at: tick, creditMs: movementCreditMs, leg: null };
 
   const maxCreditMs = maxReach * stepMs;
   const elapsedSinceCredit = Math.max(0, tick - movementAt);
   const available = Math.min(maxCreditMs, movementCreditMs + elapsedSinceCredit);
-  const cost = distance * stepMs;
+  const cost = Math.floor((charge.milli * stepMs) / STEP_MILLI);
   if (cost > available) return undefined;
-  return { at: tick, creditMs: available - cost };
+  return { at: tick, creditMs: available - cost, leg: charge.leg };
 }
 
-function nextMovementCredit(...walk: Parameters<typeof spendWalk>): { at: number; creditMs: number } {
+function nextMovementCredit(...walk: Parameters<typeof spendWalk>): { at: number; creditMs: number; leg: Tile | null } {
   const next = spendWalk(...walk);
   if (!next) throw new RequestError('That is further than a walk goes in that time.', 409, 'walk-credit');
   return next;
@@ -407,6 +428,8 @@ async function route(request: IncomingMessage, response: ServerResponse, options
       previousTick = report.tick;
     }
     checkClock(previousTick, record, now);
+    // the unpaired step a diagonal pair may close; a batch starts with none
+    let leg: Tile | null = null;
     for (const report of reports) {
       const nextCredit = nextMovementCredit(
         options.bundle,
@@ -416,6 +439,7 @@ async function route(request: IncomingMessage, response: ServerResponse, options
         report.tick,
         movementAt,
         movementCreditMs,
+        leg,
       );
       const result = step(options.bundle, state, { t: 'move', at: report.at }, report.tick, { validateTravel: true });
       if (!result.ok) refused(result.error);
@@ -423,6 +447,7 @@ async function route(request: IncomingMessage, response: ServerResponse, options
       events.push(...result.events);
       movementAt = nextCredit.at;
       movementCreditMs = nextCredit.creditMs;
+      leg = nextCredit.leg;
       // the report is the action that paid, at the report's own tick, and the replay reads the same two
       played.push({ action: { t: 'move', at: report.at }, tick: report.tick, events: result.events });
     }

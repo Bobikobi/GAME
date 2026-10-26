@@ -412,7 +412,8 @@ describe('a fall', () => {
     expect(after.falls).toBe(1);
     expect(after.busyUntil).toBeLessThanOrEqual(NIGHT + 190);
     // what the outing earned that is not a thing in the bag stays: the experience, and what the gather did to the node
-    expect(after.xp[b.verbs.gather]).toBeGreaterThan(0);
+    // (the stone is mined, which trains digging)
+    expect(after.xp[b.verbs.dig]).toBeGreaterThan(0);
     expect(r.state.nodes[stone]).toBeDefined();
   });
 

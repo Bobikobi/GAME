@@ -24,10 +24,12 @@ import {
   npcTile,
   riddleSlots,
   spotOpen,
+  walkStepMs,
 } from '@game/kernel';
+import { pileAt } from '../scenes/piles';
 import { app, type WorldView } from '../app';
 import { sound, type SfxId } from '../audio';
-import { DIG_SPOT_SPRITE, STEP_MS } from '../config';
+import { DIG_SPOT_SPRITE } from '../config';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, pickOf } from '../lore';
 import { emptySlots, slotContent } from '../places';
@@ -40,9 +42,9 @@ import type { GameSession } from '../session-surface';
 import { stoneView } from '../stone';
 import { heightOf, questTargets } from '../targets';
 import { nodeLook } from '../growth';
-import { hintDistance, lanternNight, nodeAction } from '../text';
+import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
 import { beatAt, blowsDue, resourceKind, treasureKind, type AutoKind } from '../work';
-import { StandingReports, canEnter, landStep } from '../walking';
+import { ART_PX, StandingReports, Walker, canEnter, facedTile, facingFor, landStep } from '../walking';
 import type { WorkKind } from '../ui/ui';
 
 const NEIGHBOURS: readonly [number, number][] = [
@@ -63,12 +65,6 @@ export interface Target {
   /** the tile the marker points at, and how tall the thing standing there is, in metres */
   tile: [number, number];
   top: number;
-}
-
-interface Move {
-  from: [number, number];
-  to: [number, number];
-  t: number;
 }
 
 interface Hero {
@@ -205,9 +201,10 @@ export class World3D implements WorldView {
   private heroKey = '';
   private walking = false;
   private yaw = Math.PI;
-  /** the player's drawn place, between tiles while a step lasts */
+  /** the player's drawn place */
   private readonly pos = new THREE.Vector3();
-  private move: Move | null = null;
+  /** the body walking freely between tiles, by the 2D scene's rules (walking.ts) */
+  private readonly body = new Walker();
   private zoom = 11;
   private first = true;
   private time = 0;
@@ -216,6 +213,7 @@ export class World3D implements WorldView {
   private readonly nodeAt = new Map<string, string>();
   private readonly npcAt = new Map<string, string>();
   private readonly signs = new Map<string, string>();
+  private readonly searches = new Map<string, string>();
   private readonly notes = new Map<string, { text: string; name: string; top: number }>();
   private readonly tops = new Map<string, number>();
   private readonly signSpots: { slot: string; x: number; y: number; label: HTMLElement }[] = [];
@@ -393,6 +391,8 @@ export class World3D implements WorldView {
         for (let x = p.x; x < p.x + p.w; x++) {
           if (p.sign) this.signs.set(key(x, y), p.sign);
           if (p.note) this.notes.set(key(x, y), { text: p.note, name: spriteName(p.sprite), top: info.h / info.density / 16 });
+          const searchable = p.id === undefined ? undefined : searchableOn(b, p.id);
+          if (searchable) this.searches.set(key(x, y), searchable);
           this.tops.set(key(x, y), info.h / info.density / 16);
         }
       }
@@ -558,7 +558,7 @@ export class World3D implements WorldView {
   bind(session: GameSession): void {
     for (const off of this.unbind) off();
     this.session = session;
-    this.move = null;
+    this.body.place(session.pos);
     this.work = null;
     this.auto = null;
     this.held.clear();
@@ -576,7 +576,7 @@ export class World3D implements WorldView {
       session.on('events', (events) => {
         if (!events.some((e) => e.e === 'fall')) return;
         this.fell = true;
-        this.move = null;
+        this.body.moving = false;
         if (this.auto) this.endWork(this.auto);
         this.inside.clear();
         this.first = true;
@@ -870,7 +870,7 @@ export class World3D implements WorldView {
       this.showSignatures(s);
     }
     this.walk(s, delta);
-    this.stillReports.frame(this.b, s, [], !this.move, app.ui.blocking);
+    this.stillReports.frame(this.b, s, [], !this.body.moving, app.ui.blocking);
     this.shade(s, dt);
     this.workTick(s);
     this.drawBusy(s);
@@ -895,40 +895,19 @@ export class World3D implements WorldView {
     return !s.paused && !s.busy && !s.waiting && !app.ui.blocking;
   }
 
+  /** The free walk, by the 2D scene's rules (NEXT 22 a); the hero turns to the motion itself, at any angle. */
   private walk(s: GameSession, delta: number): void {
-    if (this.move) {
-      this.move.t += delta;
-      const k = Math.min(1, this.move.t / STEP_MS);
-      const [fx, fy] = this.move.from;
-      const [tx, ty] = this.move.to;
-      this.pos.x = fx + (tx - fx) * k + 0.5;
-      this.pos.z = fy + (ty - fy) * k + 0.5;
-      if (k < 1) return;
-      const carry = this.move.t - STEP_MS;
-      this.move = null;
-      this.fell = false;
+    this.body.follow(s.pos);
+    const input: [number, number] = this.canControl(s) ? app.controls.vector() : [0, 0];
+    s.facing = facingFor(input, s.facing);
+    if (input[0] !== 0 || input[1] !== 0) this.yaw = Math.atan2(input[0], input[1]);
+    this.fell = false;
+    for (const tile of this.body.frame(input, delta, walkStepMs(this.b, s.state), (x, y) => this.canWalk(s, x, y))) {
       // the kernel hears of each new tile; a hazard there may hurt, and a fall ends the walk
-      landStep(s, [tx, ty]);
+      landStep(s, tile);
       if (this.fell) return;
       this.arrive(s);
-      this.tryStep(s, carry);
-      return;
     }
-    if (this.canControl(s)) this.tryStep(s, 0);
-  }
-
-  /** Start walking one tile if a direction is held. Returns true if moving. */
-  private tryStep(s: GameSession, carry: number): boolean {
-    if (!this.canControl(s)) return false;
-    const dir = app.controls.direction();
-    if (!dir) return false;
-    if (s.facing !== dir) s.facing = dir;
-    const [dx, dy] = DIRS[dir];
-    this.yaw = Math.atan2(dx, dy);
-    const to: [number, number] = [s.pos[0] + dx, s.pos[1] + dy];
-    if (!this.canWalk(s, to[0], to[1])) return false;
-    this.move = { from: [s.pos[0], s.pos[1]], to, t: carry };
-    return true;
   }
 
   /** The kernel's rule, and a plant or stone that is ready stands in the way (walking.ts). */
@@ -1016,11 +995,12 @@ export class World3D implements WorldView {
   private placeHero(s: GameSession, dt: number): void {
     const hero = this.hero;
     if (!hero) return;
-    if (!this.move) this.pos.set(s.pos[0] + 0.5, 0, s.pos[1] + 0.5);
+    this.body.follow(s.pos);
+    this.pos.set(this.body.x / ART_PX, 0, this.body.y / ART_PX);
     this.pos.y = walkY(this.pos.x, this.pos.z);
     hero.holder.position.copy(this.pos);
     hero.holder.rotation.y = lerpAngle(hero.holder.rotation.y, this.yaw, 1 - Math.exp(-dt * 14));
-    const moving = !!this.move;
+    const moving = this.body.moving;
     if (moving !== this.walking) {
       this.walking = moving;
       const from = moving ? hero.idle : hero.walk;
@@ -1209,7 +1189,10 @@ export class World3D implements WorldView {
     if (w.kind === 'fell') {
       sound.sfx('thud', { pan });
       if (progress > 0.5) sound.sfx('crack', { pan, gain: 0.25 + 0.5 * progress });
-    } else sound.sfx(w.kind === 'mine' ? 'strike' : 'dig', { pan });
+    } else if (w.kind === 'mine') {
+      sound.sfx('strike', { pan });
+      if (progress > 0.5) sound.sfx('crack', { pan, gain: 0.2 + 0.4 * progress });
+    } else sound.sfx('dig', { pan });
     const art = this.nodes.get(w.node)?.art;
     if (!art) return;
     const x0 = inst.x + 0.5;
@@ -1242,7 +1225,7 @@ export class World3D implements WorldView {
   }
 
   private updatePrompt(s: GameSession): void {
-    const t = this.canControl(s) && !this.move ? this.target(s) : undefined;
+    const t = this.canControl(s) ? this.target(s) : undefined;
     const label = t?.label ?? '';
     if (label !== this.prompt) {
       this.prompt = label;
@@ -1259,14 +1242,14 @@ export class World3D implements WorldView {
   /** The A button: act on what the player faces, stands on, or stands next to. */
   interact(): void {
     const s = this.session;
-    if (!s || this.move || !this.canControl(s)) return;
+    if (!s || !this.canControl(s)) return;
     this.target(s)?.run();
   }
 
   private target(s: GameSession): Target | undefined {
     const [x, y] = s.pos;
     const [fx, fy] = DIRS[s.facing];
-    const order: [number, number][] = [[x + fx, y + fy], [x, y]];
+    const order: [number, number][] = [facedTile(s), [x, y]];
     for (const [dx, dy] of NEIGHBOURS) {
       if (dx === fx && dy === fy) continue;
       order.push([x + dx, y + dy]);
@@ -1284,6 +1267,9 @@ export class World3D implements WorldView {
     const k = key(x, y);
     const tile: [number, number] = [x, y];
     const top = this.tops.get(k) ?? 1;
+    // a pile the player put down, under their feet (drawn in the 2D door; here the prompt finds it)
+    const dropped = x === s.pos[0] && y === s.pos[1] ? pileAt(s.state, x, y) : undefined;
+    if (dropped) return { label: `Pick up ${b.items[dropped]?.name ?? dropped}`, run: () => app.ui.pickUp(dropped), tile, top: 0.4 };
     const npc = this.npcAt.get(k);
     if (npc) return { label: `Talk to ${b.npcs[npc]?.name ?? npc}`, run: () => app.ui.talk(npc), tile, top };
     const nodeId = this.nodeAt.get(k);
@@ -1321,8 +1307,11 @@ export class World3D implements WorldView {
     if (sign) return { label: 'Read the sign', run: () => app.ui.sign(sign), tile, top };
     const note = this.notes.get(k);
     if (note) return { label: `Look at the ${note.name}`, run: () => app.ui.note(note.text), tile, top: note.top };
+    const searchable = this.searches.get(k);
+    if (searchable) return { label: 'Search', run: () => void app.ui.search(searchable), tile, top };
     const fog = this.empty.find((slot) => inRect(x, y, slot));
-    if (fog && x === s.pos[0] + DIRS[s.facing][0] && y === s.pos[1] + DIRS[s.facing][1]) {
+    const faced = facedTile(s);
+    if (fog && x === faced[0] && y === faced[1]) {
       return { label: `Look at the ${fog.label ?? 'mist'}`, run: () => app.ui.sign(fog.id), tile, top: 0.6 };
     }
     return undefined;

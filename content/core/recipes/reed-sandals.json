@@ -15,6 +15,7 @@
       "class": "garment",
       "tier": 2,
       "sprite": "core/base-kit:items/branch",
+      "weight": 1,
       "wear": {
         "slot": "feet",
         "effects": [

@@ -116,7 +116,7 @@ here starts it. What this page does is keep it possible.
 
 ## 5. Recommendations for the owner
 
-1. Open a fal.ai account for the project and keep the key in your own shell.
+1. Not now - no paid services (DECISIONS 2026-10-22, decision 7): open a fal.ai account for the project and keep the key in your own shell.
    Prices change weekly: `um fal price <endpoint>` before a batch, a small
    prepaid balance for the first cast.
 2. Run the Maru trial of section 2 and judge it in the game on a phone. If it

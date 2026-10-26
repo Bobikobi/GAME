@@ -102,12 +102,13 @@ export async function postScores(pool: Pool, bundle: Bundle, accountId: string, 
   const gap = gapIn(log);
   if (gap !== undefined) throw new ForgedLog(gap);
 
-  const ledgerRows = await pool.query<{ delta_mg: string; action: unknown; tick: string }>(
-    'select delta_mg, action, tick from gold_ledger where account_id = $1 order by id',
+  const ledgerRows = await pool.query<{ delta_mg: string; fund: string; action: unknown; tick: string }>(
+    'select delta_mg, fund, action, tick from gold_ledger where account_id = $1 order by id',
     [accountId],
   );
   const ledger: LedgerRow[] = ledgerRows.rows.map((entry) => ({
     deltaMg: Number(entry.delta_mg),
+    ...(entry.fund === 'bound' ? { fund: 'bound' as const } : {}),
     action: entry.action,
     tick: Number(entry.tick),
   }));

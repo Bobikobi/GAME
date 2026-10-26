@@ -287,6 +287,8 @@ export class Session implements GameSession {
     // a save from before kernel 0.9 holds no record of bites
     const bites = state.player as Partial<Pick<State['player'], 'bitten'>>;
     bites.bitten ??= [];
+    // a save from before kernel 0.17 has searched nothing (migrateState also fills it)
+    (state as Partial<Pick<State, 'searched'>>).searched ??= {};
     // a save from before the races (state format 2, kernel 0.14): carry is read as might, spirit starts at 0,
     // and the starter becomes its race and its wake pocket; the pocket's tools it carried stay in the bag,
     // so the spots that lay them by the wake are spent
@@ -673,6 +675,10 @@ function adapt(bundle: Bundle, state: State): boolean {
   p.restored = p.restored.filter((id) => id in bundle.restores);
   p.camp = p.camp.filter((id) => id in bundle.camps);
   p.visited = p.visited.filter((id) => bundle.map.slots.some((s) => s.id === id));
+  // what a searchable holds goes with it, and a row whose item left the content is dropped
+  state.searched = Object.fromEntries(
+    Object.entries(keepKeys(state.searched ?? {}, bundle.searchables)).map(([id, held]) => [id, { ...held, rows: held.rows.filter((item) => item in bundle.items) }]),
+  );
   // a world that changed may have moved the hazards and the safe ground: nothing carries over
   p.outing = null;
   p.chase = null;
