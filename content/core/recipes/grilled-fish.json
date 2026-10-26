@@ -1,0 +1,47 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/grilled-fish",
+  "title": "Grilled fish",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/grilled-fish",
+      "name": "Grilled fish",
+      "description": "A river fish on a stick over the coals. Crisp skin, soft inside.",
+      "kind": "food",
+      "rarity": "common",
+      "class": "meal",
+      "tier": 1,
+      "sprite": "core/base-kit:items/mushroom-skewer",
+      "weight": 1,
+      "food": {
+        "satiety": 10
+      }
+    }
+  ],
+  "recipe": {
+    "station": "fire",
+    "active_ms": 4000,
+    "level": 1,
+    "inputs": [
+      {
+        "item": "core/river-fish",
+        "qty": 1
+      },
+      {
+        "item": "core/branch",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/grilled-fish",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start"
+  }
+}
