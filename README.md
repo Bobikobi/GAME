@@ -1,14 +1,12 @@
 # Loomvale
 
-*The mist does not forget. It only waits.*
+**WAKE BY THE BROKEN BRIDGE. FOLLOW THE LANTERNS. LEAVE YOUR MARK ON THE MIST.**
 
-Something sleeps beneath Loomvale. The bridge lies broken, the ruins have lost their names, and the lanterns wake only when the light goes. After dark, a way opens under the broken arch. Out past the last fire, two eyes keep their distance.
+Loomvale is a free pixel-art adventure about a valley that is never finished. Gather, cook and dig through ruins whose names are lost. Stay near the fire after dark - the eyes beyond it are patient.
 
-You wake at noon. Down by the bridge stands a stone with one empty line, cut for a name.
+Every herb, quest, stranger and ruin was made by a player. The next one is yours.
 
-The valley is not finished, and it never will be. Every herb, every word a stranger says, every ruin and whatever lies buried under it is a thread someone wove into the mist, and anyone can weave the next. What you add stays there with your name on it, for everyone who wakes after you.
-
-**[Enter the valley](https://theopenfold.vercel.app)**. Free, in any browser, on a phone or a computer. No install, no account.
+**[Enter the valley](https://theopenfold.vercel.app)** - free, in any browser, on a phone or a computer. No install, no account.
 
 **Stage 1 is a demo.** Progress is saved in your browser only and will not move to an account later; demo players get a title and a cosmetic item instead.
 
