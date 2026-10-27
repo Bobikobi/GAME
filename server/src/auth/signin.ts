@@ -1,6 +1,6 @@
-import { createHash, randomInt } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import type { Bundle } from '@game/kernel';
+import { SEED_BYTES, seedFromBytes, type Bundle, type Seed } from '@game/kernel';
 
 import { takeOpening } from '../handover';
 
@@ -42,8 +42,8 @@ export interface SignInOptions {
   store: AuthStore;
   /** the world the sign-up replays a handed-over opening in (NEXT 18 d) */
   bundle: Bundle;
-  /** the account's secret seed; a test passes its own */
-  newSeed?: () => number;
+  /** the account's secret key, 128 bits; a test passes its own */
+  newSeed?: () => Seed;
   mailer: Mailer;
   /** Google, when its client id and secret are set; Discord is a slot that is not open yet */
   google?: OAuthProvider;
@@ -165,7 +165,8 @@ function slowDown(): SignInRefusal {
 export function createSignIn(options: SignInOptions): SignIn {
   const { store, mailer } = options;
   const now = options.now ?? Date.now;
-  const newSeed = options.newSeed ?? (() => randomInt(0, 2 ** 32));
+  // 16 bytes from the system's secure source: the key every draw of the account is made under (finding 3)
+  const newSeed = options.newSeed ?? (() => seedFromBytes(randomBytes(SEED_BYTES)));
   /** every non-GET call comes from the game's pages */
   const gameOrigins: ReadonlySet<string> = new Set([options.appOrigin]);
   /** but one: the email link page is this API's own, and its button posts from here (finding 1 of the 27.10 review) */

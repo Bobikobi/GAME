@@ -23,7 +23,7 @@ import { bellTicks, inside as insideExpedition, lastBellAt, visitNight, windowOp
 import { clamp, idiv, idivUp, mulDiv, mulDivUp } from './num';
 import { appearSlot, cuesOnStep, placedAt, reactionHolds, resourceOf, waitPermille } from './reactions';
 import { foodFillPermille, itemWeight, loadMax, loadWeight, walkStepMs, weightRoom } from './load';
-import { drawBasisPoints } from './rng';
+import { drawBasisPoints, type Seed } from './rng';
 import {
   ATTRIBUTES,
   type Attribute,
@@ -512,10 +512,10 @@ function carve(ctx: Ctx, name: string): void {
  * The wake pocket the world's seed draws for a new game (DECISIONS.md, 2026-10-22): one of the
  * bundle's pockets, by id order, never chosen and never the race's. '' when the content has none.
  */
-export function wakePocket(bundle: Bundle, seed: number): string {
+export function wakePocket(bundle: Bundle, seed: Seed): string {
   const ids = Object.keys(bundle.pockets).sort();
   if (ids.length === 0) return '';
-  return ids[idiv(drawBasisPoints(seed >>> 0, 'pocket', 0) * ids.length, 10_000)]!;
+  return ids[idiv(drawBasisPoints(seed, 'pocket', 0) * ids.length, 10_000)]!;
 }
 
 /**

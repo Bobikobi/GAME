@@ -13,12 +13,14 @@ import {
   KERNEL_VERSION,
   OPENING_LOG_MAX,
   type OpeningUpload,
+  type Seed,
   type State,
   appearSlots,
   appears,
   fitWorn,
   groundSpots,
   hourOf,
+  isSeed,
   makeWalkable,
   migrateState,
   newState,
@@ -99,8 +101,8 @@ interface SaveFile {
   stall?: string;
   /** the stall the kit is arranging, one entry per place; absent in old saves and while it is empty */
   stallDraft?: (StallDraft | null)[];
-  /** the opening log of NEXT 18 d: the seed the game began under, and every step played since; absent in older saves */
-  opening?: { seed: number; log: { a: Action; tick: number }[]; full?: boolean };
+  /** the opening log of NEXT 18 d: the key the game began under, and every step played since; absent in older saves */
+  opening?: { seed: Seed; log: { a: Action; tick: number }[]; full?: boolean };
 }
 
 type Listener = (payload: never) => void;
@@ -129,7 +131,7 @@ export class Session implements GameSession {
    * to the server, which plays it again. The tail above is for bug reports and stays at 40; this one runs to
    * `OPENING_LOG_MAX`, and past that the opening is too long to hand over and the account starts fresh.
    */
-  private opening: { seed: number; log: { a: Action; tick: number }[]; full: boolean } | undefined;
+  private opening: { seed: Seed; log: { a: Action; tick: number }[]; full: boolean } | undefined;
   /** set when the save was made with other content and had to be adapted */
   adapted = false;
   private pauses = 0;
@@ -151,12 +153,14 @@ export class Session implements GameSession {
     this.pos = [state.player.at[0], state.player.at[1]];
   }
 
-  /** A new world. The seed is random; a test may fix it (`?debug&seed=N`, see debugSeed), and the seed draws the wake pocket. */
+  /**
+   * A new world. The key is 128 random bits; a test may fix a 32-bit seed instead (`?debug&seed=N`, see
+   * debugSeed), which widens as an old save's does. The key draws the wake pocket.
+   */
   static fresh(bundle: Bundle, fixed?: number): Session {
-    const seed = new Uint32Array(1);
-    if (fixed !== undefined) seed[0] = fixed;
-    else crypto.getRandomValues(seed);
-    return new Session(bundle, newState(bundle, seed[0] ?? 1));
+    if (fixed !== undefined) return new Session(bundle, newState(bundle, fixed));
+    const words = crypto.getRandomValues(new Uint32Array(4));
+    return new Session(bundle, newState(bundle, [words[0]!, words[1]!, words[2]!, words[3]!]));
   }
 
   /**
@@ -190,7 +194,7 @@ export class Session implements GameSession {
   }
 
   /** Keep one played step in the opening log; the log begins at the start and stops growing at its cap. */
-  private keep(action: Action, tick: number, seed: number): void {
+  private keep(action: Action, tick: number, seed: Seed): void {
     if (action.t === 'start') this.opening = { seed, log: [], full: false };
     const opening = this.opening;
     if (!opening || opening.full) return;
@@ -314,7 +318,9 @@ export class Session implements GameSession {
     }
     session.tail = file.tail.slice(-TAIL);
     const kept = file.opening;
-    if (kept && Number.isSafeInteger(kept.seed) && Array.isArray(kept.log) && state.content === file.content) {
+    // an opening kept before kernel 0.20 holds a 32-bit seed and was played under the old draw: no replay can
+    // land on it now, so it is let go and the sign-up starts the account fresh, as it would have anyway
+    if (kept && isSeed(kept.seed) && Array.isArray(kept.log) && state.content === file.content) {
       session.opening = { seed: kept.seed, log: kept.log, full: kept.full === true };
     }
     const walkable = makeWalkable(bundle);
