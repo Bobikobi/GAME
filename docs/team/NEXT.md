@@ -691,3 +691,27 @@ Measurable:
 1. Per kind, the opaque height in tiles against the character (1.5 tiles) is in the pull request and inside its STYLE 1b row.
 2. Phone stills at the closer camera of the opening's wake window and the bridge, with no wake tile, pickup or task prop covered over more than half its area (STYLE 1b's wave measure).
 3. `pnpm check` (the kit's density and size check) and `pnpm verify` exit 0.
+
+## townsperson-who-plays. A townsperson who lives the valley the way a player does
+
+Status: paused - the owner's idea of 27.10, waits for v0.1.10, the newcomer guide (docs/creators, a townsperson first) and the owner's pick of the first version below
+
+The owner asked (27.10) for an NPC that works like a player, a bot. Today every townsperson stands in a slot and talks; nobody else picks, chops, cooks or sells, so the valley is empty between the player's own actions until live presence (ROADMAP stage 7) brings other players.
+
+What the big games do, and where each fits here:
+- A day routine (Stardew Valley's villagers, Animal Crossing): a named character walks between places by the clock and does visible work. Fully single-player, no server. Fits now.
+- Ghosts of real players (Dark Souls' phantoms, Trackmania's ghosts, Death Stranding's shared structures): a recorded run of another player replayed in your world. The kernel is deterministic and replayable, so a run is its inputs; storing and serving them needs accounts and the server (stage 2a). Fits after the server.
+- Bots that pass for real players (some mobile games fill empty lobbies this way): players feel cheated when they find out. Not here, at any stage.
+
+The recommended first version is the day routine, as a creator-made kind, so a newcomer's townsperson can later get a day of their own:
+a) A townsperson file may carry a routine: by hour, a slot to walk to and an action there (pick, chop, dig, cook at the fire, sell at the stall, rest). The kernel moves them on the walk rules and runs the action on the same timers and yields as the player's (one pure step, integers only, the seed decides the rest).
+b) Fairness: what they take comes off the world the player shares, so a routine never empties a resource the player's open task needs and never stands on a tile a task names; the check refuses a routine that does.
+c) Honesty: they are named, sign their work like any creator content, and never pass for a player; the dialogue tiers still apply when the player walks up to them.
+d) The same routine runs headless as a playtest: a night run of the bot through a day of the valley, in CI, is the cheapest proof that the world still works end to end.
+
+Measurable (first version):
+1. One core townsperson walks a day of at least four stops and is seen at each at its hour, in a phone still per stop.
+2. Over a full day the player's open tasks never fail for a resource the townsperson took (a kernel test over every core task).
+3. `pnpm check` refuses a routine that names a missing slot or takes from a task's resource; `pnpm verify` exit 0.
+
+Not here: ghosts of real players (after the server), chat, combat, houses (paused, DECISIONS 2026-10-10).
