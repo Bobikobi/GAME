@@ -610,10 +610,31 @@
               "type": "boolean"
             },
             "opens_after": {
-              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
-              "maxLength": 80,
-              "description": "A quest id. The node cannot be struck by a character who was offered that quest and has not finished it; a character who was never offered it strikes the node as usual. The refusal says one short line and costs nothing.",
-              "type": "string"
+              "minItems": 1,
+              "maxItems": 4,
+              "description": "Quests the node waits for, each with the line its refusal says. The node cannot be struck by a character who was offered one of them and has not finished it; a character who was offered none strikes the node as usual. Two entries may not both be offered to one wake pocket. The refusal costs nothing.",
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "quest"
+                ],
+                "properties": {
+                  "quest": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "line": {
+                    "minLength": 1,
+                    "maxLength": 80,
+                    "description": "The one short line the refusal says. Left out: \"It is not ready yet.\"",
+                    "type": "string"
+                  }
+                }
+              }
             },
             "tool": {
               "anyOf": [
