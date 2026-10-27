@@ -440,15 +440,16 @@ New rows in `docs/team/WORKFLOW.md` and lines in `.github/CODEOWNERS`
 
 ### 9.2 CI
 
-The one required job keeps its name, "Check, test, build and play", so the
-loop's `required_checks` and the branch rule stay valid. Inside the job, a
-first step lists the changed paths and the expensive steps are conditioned on
-them: the game build and `pnpm e2e` run when `game/`, `kernel/`, `schema/`,
-`content/`, `tools/` or the lockfile changed; the site build and its tests run
-when `web/`, `design/`, `docs/`, `schema/` or `tools/src/hub/` changed; a
-docs-only pull request runs lint, types and unit tests and finishes green in a
-minute. A path-filtered workflow would leave the required check "Expected" on
-a docs pull request and block the merge; a condition inside the job does not.
+The required check keeps its name, "Check, test, build and play", so the
+loop's `required_checks`, the branch rule and the landing scripts stay valid.
+Since 26.10 it is a gate job: the checks (`pnpm verify` and the database steps)
+and the browser tests run beside it as jobs of their own, one per group in
+`game/e2e/run.ts`, and the gate goes green only when every one of them passed;
+a failed, skipped or cancelled job fails it. A run lasts as long as its
+longest group, the phone opening. A script that fails is played once more
+alone, and the screenshots of its first attempt are kept as an artifact.
+Every pull request runs it, docs-only included: a path-filtered workflow would
+leave the required check "Expected" and block the merge.
 
 `pnpm verify` gains `pnpm --filter web build` and the `web/` tests once the
 package exists (GRUNT item 4).

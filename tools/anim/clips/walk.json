@@ -1,0 +1,29 @@
+{
+  "about": "The library walk, as it is.",
+  "target": "forager",
+  "base": {
+    "library": "ual1",
+    "action": "Walk_Loop"
+  },
+  "frames": {
+    "even": 8
+  },
+  "frame": {
+    "size": [
+      64,
+      96
+    ],
+    "anchor": [
+      32,
+      74
+    ]
+  },
+  "locomotion": {
+    "playback": "distance"
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

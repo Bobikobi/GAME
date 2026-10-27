@@ -281,6 +281,10 @@
                   {
                     "const": "pick",
                     "type": "string"
+                  },
+                  {
+                    "const": "rod",
+                    "type": "string"
                   }
                 ]
               },
@@ -554,8 +558,7 @@
         "wear_set_bonus_pct",
         "rarity_bonus_ms",
         "drift_budget_permille",
-        "satiety_cap",
-        "satiety_drain_per_min",
+        "hp_cap",
         "day_length_ms",
         "walk_step_ms",
         "hp_low_pct",
@@ -1196,7 +1199,7 @@
             }
           }
         },
-        "satiety_cap": {
+        "hp_cap": {
           "additionalProperties": false,
           "type": "object",
           "required": [
@@ -1220,33 +1223,8 @@
               "description": "Largest change one decision may make.",
               "type": "integer"
             }
-          }
-        },
-        "satiety_drain_per_min": {
-          "additionalProperties": false,
-          "type": "object",
-          "required": [
-            "value",
-            "min",
-            "max",
-            "step"
-          ],
-          "properties": {
-            "value": {
-              "type": "integer"
-            },
-            "min": {
-              "type": "integer"
-            },
-            "max": {
-              "type": "integer"
-            },
-            "step": {
-              "minimum": 0,
-              "description": "Largest change one decision may make.",
-              "type": "integer"
-            }
-          }
+          },
+          "description": "The health bar's base top in whole points; each point of stamina adds per_point.stamina. Nothing drains it by the clock (G28)."
         },
         "day_length_ms": {
           "additionalProperties": false,
@@ -2398,6 +2376,899 @@
               "items": {
                 "minimum": 1,
                 "maximum": 40,
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "difficulty": {
+          "additionalProperties": false,
+          "description": "The difficulty reckoning (pnpm map:difficulty): it recommends, never places.",
+          "type": "object",
+          "required": [
+            "ratio_permille",
+            "hazard_bp",
+            "grind_passes_max",
+            "quest_share_pct",
+            "quest_minutes_max",
+            "quests_max"
+          ],
+          "properties": {
+            "ratio_permille": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Each step of the scale multiplies effort and the health a hazard takes by this, in permille (9.10: 1500). The growth curve of a school uses the same ratio (PROGRESSION 3.2)."
+            },
+            "hazard_bp": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "How often a hazard shows grows by this per step of d: the chance in a game minute after dark or in the mist is hazard_bp * d basis points (SETTLEMENT 3.5). A spawn model; today hazards are authored."
+            },
+            "grind_passes_max": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "The reckoning: how many times a player is assumed to work each nearer node on the way (each pass waits for the node to grow back)."
+            },
+            "quest_share_pct": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "The reckoning: the share of the next level's active time a place's quests should pay, in percent; the rest is grinding."
+            },
+            "quest_minutes_max": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "The reckoning: the longest active time one recommended quest asks, in real minutes."
+            },
+            "quests_max": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "The reckoning: the most quests it recommends at one place."
+            }
+          }
+        },
+        "balance": {
+          "additionalProperties": false,
+          "description": "The balance model (PROGRESSION 4.7): two red lines, rising ceilings, walls proven both ways. Read by tools only, until the kernel reads it.",
+          "type": "object",
+          "required": [
+            "t1_ms",
+            "school_steps",
+            "band_size",
+            "catalogue_hours_min",
+            "mentor_bonus_pct",
+            "group_share_max_permille",
+            "loop_profit_max_mg",
+            "ceilings",
+            "raise_step",
+            "raisers_max",
+            "wall_margin_bp",
+            "wall_cheese_gap",
+            "top_builds_n",
+            "top_over_median_max_permille",
+            "proof_enum_max",
+            "rarity_effects_max",
+            "rarity_band_permille",
+            "trait_strength_by_tier",
+            "master_step",
+            "dish_place_step",
+            "dish_slots",
+            "grade_walk_permille",
+            "grade_drain_pct"
+          ],
+          "properties": {
+            "t1_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "A school's first step, in active milliseconds; step i takes t1 * ratio^(i-1) (PROGRESSION 3.2). The bounds are the owner's range, 25 to 30 seconds."
+            },
+            "school_steps": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Steps from level 1 to mastery (PROGRESSION 3.2: twenty, so mastery is level 21)."
+            },
+            "band_size": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Levels in one band (PROGRESSION 3.3)."
+            },
+            "catalogue_hours_min": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "The fewest active hours that master every school of the catalogue (PROGRESSION 3.2: 800)."
+            },
+            "mentor_bonus_pct": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "The one experience source beside the work itself: the mentor's bonus, in percent (PROGRESSION 3.7, red line B)."
+            },
+            "group_share_max_permille": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "The most a group member earns from another's work, in permille of the member's own (PROGRESSION 3.7, Q7)."
+            },
+            "loop_profit_max_mg": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "The most gold any buy, craft and sell cycle at a vendor may make, in milligold (red line A: 0)."
+            },
+            "ceilings": {
+              "additionalProperties": false,
+              "description": "Each category's ceiling by the wearer's band (PROGRESSION 4.7): every source adds and the sum stops here. Never falls with the band.",
+              "type": "object",
+              "required": [
+                "work",
+                "move",
+                "carry",
+                "health",
+                "sustain",
+                "find",
+                "sense",
+                "place"
+              ],
+              "properties": {
+                "work": {
+                  "minItems": 5,
+                  "maxItems": 5,
+                  "description": "Time off a school's work, all sources, in percent.",
+                  "type": "array",
+                  "items": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "type": "integer"
+                  }
+                },
+                "move": {
+                  "minItems": 5,
+                  "maxItems": 5,
+                  "description": "Time off a step, a crossing or an oar stroke, in percent.",
+                  "type": "array",
+                  "items": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "type": "integer"
+                  }
+                },
+                "carry": {
+                  "minItems": 5,
+                  "maxItems": 5,
+                  "description": "The weight limit above might's and the bag's, in percent.",
+                  "type": "array",
+                  "items": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "type": "integer"
+                  }
+                },
+                "health": {
+                  "minItems": 5,
+                  "maxItems": 5,
+                  "description": "The health cap above the attributes' cap, in percent.",
+                  "type": "array",
+                  "items": {
+                    "minimum": 0,
+                    "maximum": 200,
+                    "type": "integer"
+                  }
+                },
+                "sustain": {
+                  "minItems": 5,
+                  "maxItems": 5,
+                  "description": "Health back a game hour while a place drains, regen and food together, in percent of the cap.",
+                  "type": "array",
+                  "items": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "type": "integer"
+                  }
+                },
+                "find": {
+                  "minItems": 5,
+                  "maxItems": 5,
+                  "description": "Rare-find points.",
+                  "type": "array",
+                  "items": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "type": "integer"
+                  }
+                },
+                "sense": {
+                  "minItems": 5,
+                  "maxItems": 5,
+                  "description": "Tiles of sight in the dark or of a trail.",
+                  "type": "array",
+                  "items": {
+                    "minimum": 0,
+                    "maximum": 20,
+                    "type": "integer"
+                  }
+                },
+                "place": {
+                  "minItems": 5,
+                  "maxItems": 5,
+                  "description": "Answer steps on one condition: garment, master step and dish together.",
+                  "type": "array",
+                  "items": {
+                    "minimum": 0,
+                    "maximum": 4,
+                    "type": "integer"
+                  }
+                }
+              }
+            },
+            "raise_step": {
+              "additionalProperties": false,
+              "description": "What one ceiling raiser adds to its category's top-band ceiling (PROGRESSION 4.7).",
+              "type": "object",
+              "required": [
+                "work",
+                "move",
+                "carry",
+                "health",
+                "sustain",
+                "find",
+                "sense",
+                "place"
+              ],
+              "properties": {
+                "work": {
+                  "minimum": 0,
+                  "maximum": 100,
+                  "type": "integer"
+                },
+                "move": {
+                  "minimum": 0,
+                  "maximum": 100,
+                  "type": "integer"
+                },
+                "carry": {
+                  "minimum": 0,
+                  "maximum": 100,
+                  "type": "integer"
+                },
+                "health": {
+                  "minimum": 0,
+                  "maximum": 100,
+                  "type": "integer"
+                },
+                "sustain": {
+                  "minimum": 0,
+                  "maximum": 100,
+                  "type": "integer"
+                },
+                "find": {
+                  "minimum": 0,
+                  "maximum": 100,
+                  "type": "integer"
+                },
+                "sense": {
+                  "minimum": 0,
+                  "maximum": 100,
+                  "type": "integer"
+                },
+                "place": {
+                  "minimum": 0,
+                  "maximum": 100,
+                  "type": "integer"
+                }
+              }
+            },
+            "raisers_max": {
+              "additionalProperties": false,
+              "description": "How many raisers of each category exist (PROGRESSION 4.7: ten in all today).",
+              "type": "object",
+              "required": [
+                "work",
+                "move",
+                "carry",
+                "health",
+                "sustain",
+                "find",
+                "sense",
+                "place"
+              ],
+              "properties": {
+                "work": {
+                  "minimum": 0,
+                  "maximum": 10,
+                  "type": "integer"
+                },
+                "move": {
+                  "minimum": 0,
+                  "maximum": 10,
+                  "type": "integer"
+                },
+                "carry": {
+                  "minimum": 0,
+                  "maximum": 10,
+                  "type": "integer"
+                },
+                "health": {
+                  "minimum": 0,
+                  "maximum": 10,
+                  "type": "integer"
+                },
+                "sustain": {
+                  "minimum": 0,
+                  "maximum": 10,
+                  "type": "integer"
+                },
+                "find": {
+                  "minimum": 0,
+                  "maximum": 10,
+                  "type": "integer"
+                },
+                "sense": {
+                  "minimum": 0,
+                  "maximum": 10,
+                  "type": "integer"
+                },
+                "place": {
+                  "minimum": 0,
+                  "maximum": 10,
+                  "type": "integer"
+                }
+              }
+            },
+            "wall_margin_bp": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "A wall's witness ends with at least this share of the health cap and of the timer to spare, in basis points."
+            },
+            "wall_cheese_gap": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Nothing from this many bands below a wall's band passes it (PROGRESSION 4.7: 2)."
+            },
+            "top_builds_n": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "How many strongest builds a band the prover lists (a warning, never a failure)."
+            },
+            "top_over_median_max_permille": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "The strongest build of a band warns when its score stands more than this above the band's median, in permille."
+            },
+            "proof_enum_max": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Combinations walked in full; above it the proof walks each slot's Pareto front."
+            },
+            "rarity_effects_max": {
+              "minItems": 4,
+              "maxItems": 4,
+              "description": "The most effects a thing carries by rarity, common, uncommon, rare, legendary (PROGRESSION 5.7); a trait and a dish effect count.",
+              "type": "array",
+              "items": {
+                "minimum": 0,
+                "maximum": 4,
+                "type": "integer"
+              }
+            },
+            "rarity_band_permille": {
+              "minItems": 4,
+              "maxItems": 4,
+              "description": "Each rarity's share of the tier's full strength, low and high, in permille (PROGRESSION 5.7); common is the smallest step, read as 0 here.",
+              "type": "array",
+              "items": {
+                "minItems": 2,
+                "maxItems": 2,
+                "type": "array",
+                "items": {
+                  "minimum": 0,
+                  "maximum": 1000,
+                  "type": "integer"
+                }
+              }
+            },
+            "trait_strength_by_tier": {
+              "minItems": 1,
+              "maxItems": 10,
+              "description": "A garment trait's strength by the tier it counts as, from tier 1 (BODY_CLOCKS 6.2).",
+              "type": "array",
+              "items": {
+                "minimum": 0,
+                "maximum": 4,
+                "type": "integer"
+              }
+            },
+            "master_step": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "What a master piece adds to its trait (BODY_CLOCKS 6.2)."
+            },
+            "dish_place_step": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "What a dish of the same condition adds; only one dish counts (BODY_CLOCKS 6.2)."
+            },
+            "dish_slots": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "How many dishes act at once (BODY_CLOCKS 7)."
+            },
+            "grade_walk_permille": {
+              "minItems": 5,
+              "maxItems": 5,
+              "description": "The slow of a remaining grade 0 to 4, in permille of a step's time (BODY_CLOCKS 5.2).",
+              "type": "array",
+              "items": {
+                "minimum": 1000,
+                "maximum": 5000,
+                "type": "integer"
+              }
+            },
+            "grade_drain_pct": {
+              "minItems": 5,
+              "maxItems": 5,
+              "description": "The drain of a remaining grade 0 to 4, in percent of the health cap a game hour (BODY_CLOCKS 5.2).",
+              "type": "array",
+              "items": {
+                "minimum": 0,
+                "maximum": 100,
                 "type": "integer"
               }
             }

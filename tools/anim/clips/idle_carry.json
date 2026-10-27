@@ -1,0 +1,41 @@
+{
+  "about": "Standing with the crate: the library idle, both arms (clavicle to fingers) held at the carry walk's first frame. The free library has no carry idle.",
+  "target": "forager",
+  "base": {
+    "library": "ual1",
+    "action": "Idle_Loop"
+  },
+  "frames": [
+    0,
+    15,
+    30,
+    45
+  ],
+  "layer": {
+    "library": "ual2",
+    "action": "Walk_Carry_Loop",
+    "mask": [
+      "arm_l",
+      "arm_r"
+    ],
+    "frame": 0
+  },
+  "prop": {
+    "kind": "crate"
+  },
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

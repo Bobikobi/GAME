@@ -17,6 +17,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Bundle } from '@game/kernel';
+import { widenSeed } from '@game/kernel';
 
 import { Browser, type Page } from './cdp';
 import { FakeAuthServer } from '../test/fake-auth';
@@ -164,8 +165,8 @@ async function play(browser: Browser, url: string, auth: FakeAuthServer, bundle:
   const token = auth.linkFor('tess@example.com');
   assert(token !== undefined, `the fake sent a link to that address, got ${JSON.stringify([...auth.links.entries()])}`);
   await page.goto(`${url}auth/email/link?token=${token}`);
-  await page.waitFor(`document.body.textContent.includes('Sign in to Openfold')`, 'the link page');
-  await page.tap('button', 'Sign in to Openfold');
+  await page.waitFor(`document.body.textContent.includes('Sign in to Loomvale')`, 'the link page');
+  await page.tap('button', 'Sign in to Loomvale');
   await page.waitFor(`!!document.querySelector('.panel.signup select[aria-label="Day"]')`, 'the sign-up form back from the email link', 30_000);
   await fillSignup(page, 'Tess', '2000');
   await page.waitFor(`document.querySelector('.panel.signup')?.textContent.includes('Your account starts fresh')`, 'the fresh notice', 30_000);
@@ -188,15 +189,19 @@ async function play(browser: Browser, url: string, auth: FakeAuthServer, bundle:
   const cards = await page.eval<number>(`document.querySelectorAll('.card.race').length`);
   assert(cards === 3, `three race cards, got ${cards}`);
   await page.tap('.card.race');
-  await page.tap('input.name');
-  await page.type('Tess');
+  // the title has no name field: the name is cut on the stone at the bridge
+  assert(await page.eval<boolean>(`!document.querySelector('.title-screen input')`), 'no name field on the choice of character');
   await page.tap('.title-screen button', 'Wake up');
   await page.waitFor(`!!window.__game && window.__game.session && window.__game.session.state.player.race`, 'the world on the server', 30_000);
   const started = await sessionOf(page);
   const firstRace = Object.keys(bundle.races).sort()[0];
-  assert(started.race === firstRace && started.name === 'Tess' && started.remote, `${started.race} "${started.name}" on the wire, remote=${started.remote}`);
-  assert(auth.wire.state.player.name === 'Tess' && auth.wire.state.player.race === firstRace, 'the server holds the started game');
+  assert(started.race === firstRace && started.name === '' && started.remote, `${started.race} "${started.name}" on the wire, remote=${started.remote}`);
+  assert(auth.wire.state.player.name === '' && auth.wire.state.player.race === firstRace, 'the server holds the started game, with no name yet');
   log(`the new game started over the wire as ${started.race}, remote`);
+  // the stone's carve is the one action that names the character; over the wire it is kept like any other
+  const carved = await page.eval<{ ok: boolean }>(`window.__game.session.act({ t: 'carve', name: 'Tess' })`);
+  assert(carved.ok && auth.wire.state.player.name === 'Tess', 'the carved name reaches the server');
+  started.name = 'Tess';
 
   // 6. a reload continues the same game from the server, no save in the browser
   const pos = started.pos;
@@ -221,7 +226,7 @@ async function main(): Promise<void> {
   console.log('[signin] building the game with VITE_GAME_SERVER empty (the wire on its own origin)');
   buildSignInDist();
   const bundle = loadBundle();
-  const auth = new FakeAuthServer(bundle, { now: () => NOW, secretSeed: () => 7 });
+  const auth = new FakeAuthServer(bundle, { now: () => NOW, secretSeed: () => widenSeed(7) });
   const { server, url } = await serve(auth);
   const browser = await Browser.launch();
   try {

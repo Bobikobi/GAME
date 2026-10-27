@@ -62,7 +62,7 @@ describe('the head of a page', () => {
     expect(meta(html, 'og:title')).toBe(title);
     expect(meta(html, 'og:description')).toBe(tag(html, /<meta name="description" content="([^"]*)"/));
     expect(meta(html, 'og:type')).toBe('website');
-    expect(meta(html, 'og:site_name')).toBe('Openfold');
+    expect(meta(html, 'og:site_name')).toBe('Loomvale');
     expect(meta(html, 'twitter:card')).toMatch(/^summary/);
   });
 
@@ -88,7 +88,7 @@ describe('structured data', () => {
   it('describes the game on the home page as a free browser game, with only what the site holds', () => {
     const game = blocks(read('index.html')).find((b) => b['@type'] === 'VideoGame')!;
     expect(game).toBeDefined();
-    expect(game['name']).toBe('Openfold');
+    expect(game['name']).toBe('Loomvale');
     expect(game['isAccessibleForFree']).toBe(true);
     expect(game['url']).toBe(`${ORIGIN}/`);
     expect((game['offers'] as { price: string }).price).toBe('0');

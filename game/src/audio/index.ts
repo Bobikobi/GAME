@@ -1,4 +1,4 @@
-/** Lazy, self-contained sound system for Openfold's music, ambience, and cues. */
+/** Lazy, self-contained sound system for Loomvale's music, ambience, and cues. */
 import { AmbiencePlayer } from './ambience';
 import { BED_IDS, BedPlayer } from './beds';
 import { Crackle } from './crackle';

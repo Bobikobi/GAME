@@ -23,7 +23,7 @@ import {
   makeWalkable,
   mulDiv,
   npcTile,
-  satietyCap,
+  hpCap,
   watchOf,
 } from '@game/kernel';
 import { s1Use } from '../src/net/s1';
@@ -117,10 +117,9 @@ class Tender {
     this.setTick(t);
   }
 
-  /** A jump to an exact game tick, for the four stages of one burn: the clock jump is not hunger. */
+  /** A jump to an exact game tick, for the four stages of one burn. */
   setTick(t: number): void {
     this.s.tick = t;
-    this.s.state.player.satietyAt = Math.max(this.s.state.player.satietyAt, this.s.state.tick);
   }
 
   hour(): number {
@@ -174,8 +173,7 @@ class Tender {
     for (const id of Object.keys(p.quests)) if (p.quests[id] === 'active') p.quests[id] = 'done';
     for (const id of ['core/fix-the-bridge', 'core/first-fire', 'core/into-town', 'core/three-fruits', 'core/a-coin-for-maru', 'core/herbs-for-pell', 'core/a-whole-one', 'core/something-warm']) p.quests[id] = 'done';
     if (!p.restored.includes('core/old-bridge')) p.restored.push('core/old-bridge');
-    p.satiety = 10 * satietyCap(this.b, s.state);
-    p.satietyAt = s.tick;
+    p.hp = 10 * hpCap(this.b, s.state);
     p.bag[LOG] = logs;
     s.met.add('core/elder');
     this.setHour(17);

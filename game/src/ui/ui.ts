@@ -17,8 +17,7 @@ import {
   pickRemark,
   resourceOf,
   rewardItem,
-  satietyAt,
-  satietyCap,
+  hpCap,
   skillPoints,
   talkLines,
 } from '@game/kernel';
@@ -49,7 +48,7 @@ import { carveName } from './carve';
 import { button, h, sprite } from './dom';
 import { miniMapSvg } from './map';
 import { feedback } from './feedback';
-import { type Minigame, pick, snap, strike, timing } from './games';
+import { type Minigame, fish, pick, snap, strike, timing } from './games';
 import { BEAT, buzz } from './haptics';
 import { openLevelUp } from './levelup';
 import { FULL_BAG, HEAVY_LINE, flashFull, loadChip, loadView, paintLoad, turnedHeavy } from './load';
@@ -71,9 +70,9 @@ import { showTitle } from './title';
 import { mountTouch } from './touch';
 
 /** What the hands are doing, for the world's animation and sound. */
-export type WorkKind = 'timing' | 'strike' | 'pick' | 'snap' | 'dig';
+export type WorkKind = 'timing' | 'strike' | 'pick' | 'snap' | 'dig' | 'fish';
 
-const GAMES: Record<'timing' | 'strike' | 'pick' | 'snap', Minigame> = { timing, strike, pick, snap };
+const GAMES: Record<'timing' | 'strike' | 'pick' | 'snap' | 'fish', Minigame> = { timing, strike, pick, snap, fish };
 
 export interface Layer {
   el: HTMLElement;
@@ -267,8 +266,8 @@ export class UI {
     const b = app.bundle;
     const st = s.state;
     const p = this.hudParts ?? (this.hudParts = this.buildHud());
-    const cap = satietyCap(b, st);
-    const sat = satietyAt(b, st, s.tick);
+    const cap = hpCap(b, st);
+    const sat = st.player.hp;
     const pct = Math.round((sat / cap) * 100);
     const points = skillPoints(b, st);
     const night = isNight(b, s.tick);
@@ -691,6 +690,7 @@ export class UI {
         buzz(BEAT[grade]);
         app.world?.beat(nodeId, kind, grade);
       },
+      onPhase: (phase) => app.world?.fishPhase?.(nodeId, phase),
     });
   }
 
@@ -740,8 +740,8 @@ export class UI {
 
   /**
    * The bridge's stone after the mend (NEXT 16 e): the camera comes down to it while the stone speaks of the purse,
-   * then the name is cut, last. A player who typed a name at the start has it cut; one who did not is asked, and may
-   * leave it to the stone's default. The camera is always let go.
+   * then the name is cut, last. Every start comes here with no name: the player is asked, and may leave it to the
+   * stone's default (a saved game that already holds a name keeps it). The camera is always let go.
    */
   private async stoneBeat(restoreId: string, pay = true): Promise<void> {
     const s = app.session;

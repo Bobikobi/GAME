@@ -27,7 +27,7 @@ import {
   rareFindPermille,
   searchDawn,
   salePrice,
-  satietyCap,
+  hpCap,
   slotsFor,
   techniqueValue, type PublicState } from '@game/kernel';
 import { feedTooLate, fireName, tendLine } from './fires';
@@ -38,7 +38,9 @@ export function itemName(b: Bundle, id: string): string {
 
 /** The verb on a node's prompt and its minigame: a tree is felled, anything else gathered. */
 export function nodeAction(b: Bundle, r: Bundle['resources'][string]): string {
-  return r.tool === 'axe' ? 'Fell tree' : `Gather ${itemName(b, r.output)}`;
+  if (r.tool === 'axe') return 'Fell tree';
+  if (r.tool === 'rod') return 'Fish';
+  return r.work === 'mine' ? `Mine ${itemName(b, r.output)}` : `Gather ${itemName(b, r.output)}`;
 }
 
 /** milli-gold as gold, at most two decimals: 2500 -> "2.5" */
@@ -102,9 +104,8 @@ export interface AttributeEffect {
 /** What one more point in each attribute really changes, as numbers. */
 export function attributeEffects(b: Bundle, s: PublicState): AttributeEffect[] {
   const plus = (a: Attribute): PublicState => ({ ...s, player: { ...s.player, attrs: { ...s.player.attrs, [a]: s.player.attrs[a] + 1 } } });
-  // with no hunger clock (G32) a point of stamina is health, not minutes of work
-  const drain = b.params.satiety_drain_per_min;
-  const minutes = (st: PublicState) => Math.floor(satietyCap(b, st) / (drain > 0 ? drain : 1000));
+  // with no hunger clock (G28, G32) a point of stamina is health, not minutes of work
+  const points = (st: PublicState) => Math.floor(hpCap(b, st) / 1000);
   const pct = (bp: number) => `${Math.round(bp / 100)}%`;
   const times = (permille: number) => `x${(permille / 1000).toFixed(2).replace(/0$/, '')}`;
   const luckNext = plus('luck');
@@ -125,9 +126,9 @@ export function attributeEffects(b: Bundle, s: PublicState): AttributeEffect[] {
     {
       attr: 'stamina',
       name: 'Stamina',
-      what: drain > 0 ? 'Work before you must eat' : 'Your health holds',
-      now: `${minutes(s)}`,
-      next: `${minutes(plus('stamina'))} ${drain > 0 ? 'minutes' : 'points'}`,
+      what: 'Your health holds',
+      now: `${points(s)}`,
+      next: `${points(plus('stamina'))} points`,
     },
     // spirit has no rule that reads it yet (schema per_point): the row shows the points and says so plainly
     {
@@ -564,21 +565,16 @@ export function itemBenefit(b: Bundle, id: string): string {
           .sort()
       : [];
     const unlocks = [
-      resources.length ? `${it.tool.kind === 'axe' ? 'fells' : 'gathers'} ${resources.join(' & ')}` : '',
+      resources.length ? `${it.tool.kind === 'axe' ? 'fells' : it.tool.kind === 'rod' ? 'fishes for' : 'gathers'} ${resources.join(' & ')}` : '',
       digSites.length ? `digs ${digSites.join(' & ')}` : '',
     ].filter(Boolean).join(' · ') || `tool for ${it.tool.kind}`;
     return `${tier} · ${unlocks} · ${uses}${speed}`;
   }
   if (it.food) {
-    // food is in whole points of health; while a hunger clock runs it drains thousandths of a point a minute
+    // food is in whole points of health (`food.satiety` in the content); nothing drains the bar by the clock (G28)
     const parts: string[] = [];
-    const drain = b.params.satiety_drain_per_min;
     if (it.food.satiety > 0) parts.push(`+${it.food.satiety} health`);
     if (it.food.hurt) parts.push(`hurts: -${it.food.hurt} health`);
-    if (it.food.satiety > 0 && drain > 0) {
-      const workMs = Math.round((it.food.satiety * 1000 * 60_000) / drain);
-      parts.push(`about ${workMs >= 60_000 ? `${Math.round(workMs / 60_000)} min` : `${Math.round(workMs / 1000)} s`} of work`);
-    }
     return parts.join(' · ');
   }
   if (it.wear?.places !== undefined) {

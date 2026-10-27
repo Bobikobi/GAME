@@ -36,7 +36,7 @@ describe('the core content', () => {
 });
 
 describe('a fixture that breaks each rule', () => {
-  const root = mkdtempSync(join(tmpdir(), 'openfold-starts-'));
+  const root = mkdtempSync(join(tmpdir(), 'loomvale-starts-'));
   afterAll(() => rmSync(root, { recursive: true, force: true }));
   cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
   cpSync(join(CONTENT_DIR, 'kit'), join(root, 'kit'), { recursive: true });

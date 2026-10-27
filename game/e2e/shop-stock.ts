@@ -11,8 +11,8 @@ import { createReadStream, existsSync, mkdirSync, statSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Browser, sleep, type Page, type Viewport } from './cdp';
-import { TAKE_GROUND, seedQuery } from './wakes';
+import { Browser, byText, sleep, type Page, type Viewport } from './cdp';
+import { TAKE_GROUND, carveIn, seedQuery } from './wakes';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(GAME_DIR, 'dist');
@@ -48,22 +48,7 @@ function serve(): Promise<{ server: Server; url: string }> {
 
 /** Taps the element matching the selector whose text holds `text` (the first when `text` is empty). */
 async function tap(page: Page, selector: string, text = ''): Promise<void> {
-  const at = await page.waitFor<{ x: number; y: number }>(
-    `(() => {
-      for (const el of document.querySelectorAll(${JSON.stringify(selector)})) {
-        if (!el.textContent.includes(${JSON.stringify(text)})) continue;
-        const r = el.getBoundingClientRect();
-        if (r.width === 0 || r.height === 0) continue;
-        el.scrollIntoView({ block: 'nearest' });
-        const q = el.getBoundingClientRect();
-        return { x: q.left + q.width / 2, y: q.top + q.height / 2 };
-      }
-      return null;
-    })()`,
-    `${selector} "${text}"`,
-    10_000,
-  );
-  await page.tapAt(at.x, at.y);
+  await page.tapWhere(byText(selector, text, true), `${selector} "${text}"`, 10_000);
   await sleep(120);
 }
 
@@ -179,10 +164,10 @@ async function run(page: Page, url: string, viewport: Viewport, name: string): P
   if (ask === 'ask') await page.tap('.title-screen button', 'Start a new game');
   await page.waitFor(`!!document.querySelector('.card.race')`, 'the race cards');
   await page.tap('.card.race', 'Human');
-  await page.tap('input.name');
-  await page.type('Counter');
   await page.tap('.title-screen button', 'Wake up');
   await page.waitFor(`!!window.__game?.session?.started`, 'the game', 30_000);
+  // the name is cut at the bridge's stone, and this script is not about the stone: it is cut here
+  await page.eval(carveIn('Counter'));
   await page.eval(TAKE_GROUND);
   for (let i = 0; i < 40; i++) {
     if (!(await page.eval<boolean>(`!!document.querySelector('.dialog')`))) break;
@@ -214,11 +199,26 @@ async function run(page: Page, url: string, viewport: Viewport, name: string): P
 
   // the strip jumps to a group, and a buy from it works
   await tap(page, '.shop-jump button', 'Medicine');
+  // the strip scrolls smoothly: the group is in view once the scroll has come to rest, not as it passes by
   await page.waitFor(
-    `(() => { const s = document.querySelector('.shop-group[data-group="medicine"]'), b = document.querySelector('.panel.shop .panel-body'); const r = s.getBoundingClientRect(), q = b.getBoundingClientRect(); return r.top >= q.top - 2 && r.top < q.bottom - 40; })()`,
-    'the medicine group in view',
-    5000,
+    `(async () => {
+      const s = document.querySelector('.shop-group[data-group="medicine"]'), b = document.querySelector('.panel.shop .panel-body');
+      const top = b.scrollTop;
+      await new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok)));
+      if (b.scrollTop !== top) return false;
+      const r = s.getBoundingClientRect(), q = b.getBoundingClientRect();
+      return r.top >= q.top - 2 && r.top < q.bottom - 40;
+    })()`,
+    'the medicine group in view, the scroll at rest',
+    10_000,
   );
+  // the jump scrolls smoothly: tap the row only once the list has come to rest, or the tap lands where the row was
+  for (let i = 0, last = -1; i < 40; i++) {
+    const top = await page.eval<number>(`document.querySelector('.panel.shop .panel-body').scrollTop`);
+    if (top === last) break;
+    last = top;
+    await sleep(100);
+  }
   const before = await page.eval<number>(`window.__game.session.state.player.bag['core/first-aid-kit'] ?? 0`);
   await tap(page, '.shop-group[data-group="medicine"] .row button', 'Buy');
   await page.waitFor(`(window.__game.session.state.player.bag['core/first-aid-kit'] ?? 0) === ${before + 1}`, 'a first-aid kit in the bag', 3000);

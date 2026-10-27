@@ -130,8 +130,7 @@ export function flattenParams(p: ParamsBody): Params {
     wear_effect_max_pct: [...p.wear_effect_max_pct],
     wear_set_bonus_pct: p.wear_set_bonus_pct.value,
     drift_budget_permille: p.drift_budget_permille.value,
-    satiety_cap: p.satiety_cap.value,
-    satiety_drain_per_min: p.satiety_drain_per_min.value,
+    hp_cap: p.hp_cap.value,
     day_length_ms: p.day_length_ms.value,
     walk_step_ms: p.walk_step_ms.value,
     move_reach_max: p.move_reach_max?.value ?? 32,
@@ -338,7 +337,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   const r = records as unknown as Pick<Bundle, RecordKey>;
   // one profession per gathering verb; the one craft verb has a profession per station family
   // (DECISIONS.md, 2026-10-09), and the check reports a station worked twice
-  const verbs = { gather: '', fell: '', dig: '', craft: '' };
+  const verbs = { gather: '', fell: '', dig: '', fish: '', craft: '' };
   const stations: Record<string, string> = {};
   const crafters: string[] = [];
   for (const id of Object.keys(r.professions).sort()) {

@@ -12,7 +12,7 @@ import {
   newState,
   predatorAt,
   replay,
-  satietyCap,
+  hpCap,
   sees,
   serialize,
   step,
@@ -61,7 +61,6 @@ function cover(x: number, y: number): Prop {
 function world(props: Prop[]): Bundle {
   const b = structuredClone(base);
   b.map.props = [...b.map.props.filter((p) => !p.hazard && p.cover !== true), ...props];
-  b.params.satiety_drain_per_min = 0;
   return b;
 }
 
@@ -75,7 +74,6 @@ function place(s: State, at: Tile, tick: number): State {
   const out = structuredClone(s);
   out.player.at = [...at];
   out.player.movedAt = tick;
-  out.player.satietyAt = tick;
   out.player.busyUntil = Math.min(out.player.busyUntil, tick);
   out.tick = tick;
   return out;
@@ -130,7 +128,7 @@ describe('a predator round', () => {
     expect(start.events).toContainEqual({ e: 'seen', id: 'test/wolf' });
     const bitten = move(b, start.state, [11, 22], DUSK + b.params.hazard.predator.catch_ms);
     expect(bitten.state.player.chase).toEqual({ hazard: 'test/wolf', since: DUSK, bites: 1 });
-    const cap = satietyCap(b, start.state);
+    const cap = hpCap(b, start.state);
     expect(bitten.events).toEqual([{ e: 'hurt', by: 'predator', id: 'test/wolf', hp: cap - (cap * b.params.hazard.predator.bite_pct) / 100 }]);
   });
 

@@ -22,8 +22,7 @@ import {
   nightEnds,
   nightFalls,
   replay,
-  satietyAt,
-  satietyCap,
+  hpCap,
   serialize,
   step,
 } from '@game/kernel';
@@ -56,7 +55,6 @@ const pit = (x: number, y: number): Prop => prop('test/pit', x, y, { kind: 'pit'
 function world(props: Prop[], tweak?: (b: Bundle) => void): Bundle {
   const b = structuredClone(base);
   b.map.props = [...b.map.props.filter((p) => !p.hazard), ...props];
-  b.params.satiety_drain_per_min = 0;
   tweak?.(b);
   return b;
 }
@@ -72,7 +70,6 @@ function place(s: State, at: Tile, tick: number): State {
   const out = structuredClone(s);
   out.player.at = [...at];
   out.player.movedAt = tick;
-  out.player.satietyAt = tick;
   out.player.busyUntil = Math.min(out.player.busyUntil, tick);
   out.tick = tick;
   return out;
@@ -162,43 +159,36 @@ describe('what the vocabularies and the shipped content say', () => {
     }
     expect(fell).toMatchObject({ e: 'fall', from: [36, 21], lost: [] });
     expect(state.player.bag).toEqual(bag);
-    expect(state.player.satiety).toBe(satietyCap(base, state));
+    expect(state.player.hp).toBe(hpCap(base, state));
   });
 
   test('a pit that takes the last of the health is a fall, and no hunt begins over it: nothing is told seen', () => {
     const s = place(begin(base), [36, 20], NIGHT);
     s.player.restored = [...s.player.restored, 'core/arch-way'];
-    s.player.satiety = harmOf(base, satietyCap(base, s), 'pit');
+    s.player.hp = harmOf(base, hpCap(base, s), 'pit');
     const r = move(base, s, [36, 21], NIGHT + 190);
     expect(kinds(r.events)).toEqual(['hurt', 'fall']);
     expect(r.state.player.chase).toBeNull();
   });
 
-  test('the shipped valley drains nothing by the clock (G32): an hour away, health is where it was', () => {
+  test('nothing drains health by the clock (G28, G32): an hour away, health is where it was', () => {
     const s = begin(base);
-    const cap = satietyCap(base, s);
+    const cap = hpCap(base, s);
+    expect(s.player.hp).toBe(cap);
     const r = move(base, s, [6, 18], 3_600_000);
-    expect(r.state.player.satiety).toBe(cap);
-    expect(satietyAt(base, r.state, 7_200_000)).toBe(cap);
+    expect(r.state.player.hp).toBe(cap);
+    const later = move(base, r.state, [6, 19], 7_200_000);
+    expect(kinds(later.events)).toEqual([]);
+    expect(later.state.player.hp).toBe(cap);
   });
 
-  test('a world that still drains: health is the old satiety, it empties by the clock, and empty is not a fall', () => {
-    const b = structuredClone(base);
-    b.params.satiety_drain_per_min = 7000;
-    const s = begin(b);
-    const cap = satietyCap(b, s);
-    expect(s.player.satiety).toBe(cap);
-    const tenMin = 600_000;
-    const r = move(b, s, [6, 18], tenMin);
+  test('an empty bar slows work and is not a fall: hunger alone never fells anyone (G32, G33)', () => {
+    const s = begin(base);
+    s.player.hp = 0;
+    const r = move(base, s, [6, 18], 600_000);
     expect(kinds(r.events)).toEqual([]);
-    expect(r.state.player.satiety).toBe(cap - Math.floor((tenMin * b.params.satiety_drain_per_min) / 60_000));
-    // an hour later it is empty: the work is slower, and nobody falls from hunger
-    const hour = 3_600_000;
-    const later = move(b, r.state, [6, 19], hour);
-    expect(kinds(later.events)).toEqual([]);
-    expect(later.state.player.satiety).toBe(0);
-    expect(later.state.player.falls).toBe(0);
-    expect(satietyAt(b, later.state, hour)).toBe(0);
+    expect(r.state.player.hp).toBe(0);
+    expect(r.state.player.falls).toBe(0);
   });
 });
 
@@ -272,7 +262,7 @@ describe('a predator', () => {
     expect(bitesAfter(b, 2500)).toBe(1);
     expect(bitesAfter(b, 4499)).toBe(1);
     expect(bitesAfter(b, 4500)).toBe(2);
-    const cap = satietyCap(b, s);
+    const cap = hpCap(b, s);
     const bite = cap / 4;
 
     // reports every few hundred ms ...
@@ -283,12 +273,12 @@ describe('a predator', () => {
     // ... and one in between give the same health and the same hunt
     const twice = move(b, move(b, s, at, NIGHT + 3000).state, at, NIGHT + 4500).state;
     for (const x of [often, once, twice]) {
-      expect(x.player.satiety).toBe(cap - 2 * bite);
+      expect(x.player.hp).toBe(cap - 2 * bite);
       expect(x.player.chase).toEqual({ hazard: 'test/wolf', since: NIGHT, bites: 2 });
     }
-    expect(move(b, s, at, NIGHT + 2499).state.player.satiety).toBe(cap);
+    expect(move(b, s, at, NIGHT + 2499).state.player.hp).toBe(cap);
     const first = move(b, s, at, NIGHT + 2500);
-    expect(first.state.player.satiety).toBe(cap - bite);
+    expect(first.state.player.hp).toBe(cap - bite);
     expect(first.events).toEqual([{ e: 'hurt', by: 'predator', id: 'test/wolf', hp: cap - bite }]);
   });
 
@@ -296,41 +286,41 @@ describe('a predator', () => {
     const b = world([wolf(8, 22)]);
     const day = move(b, place(begin(b), at, NOON), at, NOON).state;
     expect(day.player.chase).toBeNull();
-    expect(move(b, day, at, NOON + 600_000).state.player.satiety).toBe(satietyCap(b, day));
+    expect(move(b, day, at, NOON + 600_000).state.player.hp).toBe(hpCap(b, day));
     const far = move(b, place(begin(b), [3, 27], NIGHT), [3, 27], NIGHT).state;
     expect(far.player.chase).toBeNull();
   });
 
   test('is outrun at a safe place: the hunt ends there, and the bites it had made before stay', () => {
     const b = world([wolf(19, 7, 4)]);
-    const cap = satietyCap(b, begin(b));
+    const cap = hpCap(b, begin(b));
     let s = place(begin(b), [21, 7], NIGHT);
     s = move(b, s, [21, 7], NIGHT).state;
     expect(s.player.chase).not.toBeNull();
     // inside the catch time: no bite, the hunt is simply over
     const quick = move(b, s, [22, 7], NIGHT + 1000).state;
     expect(quick.player.chase).toBeNull();
-    expect(quick.player.satiety).toBe(cap);
+    expect(quick.player.hp).toBe(cap);
     // one bite came due before the report from the cobbles
     const late = move(b, s, [22, 7], NIGHT + 2600);
     expect(late.state.player.chase).toBeNull();
-    expect(late.state.player.satiety).toBe(cap - cap / 4);
+    expect(late.state.player.hp).toBe(cap - cap / 4);
     // and in the town nothing bites, however long the player stays
-    expect(move(b, late.state, [23, 7], NIGHT + 60_000).state.player.satiety).toBe(cap - cap / 4);
+    expect(move(b, late.state, [23, 7], NIGHT + 60_000).state.player.hp).toBe(cap - cap / 4);
   });
 
   test('stops at dawn: only the night counts, and a hunt that began just before it never bites', () => {
     const b = world([wolf(8, 22)]);
-    const cap = satietyCap(b, begin(b));
+    const cap = hpCap(b, begin(b));
     const s = move(b, place(begin(b), at, DAWN - 1000), at, DAWN - 1000).state;
     expect(s.player.chase).not.toBeNull();
     const morning = move(b, s, at, DAWN + 60_000).state;
     expect(morning.player.chase).toBeNull();
-    expect(morning.player.satiety).toBe(cap);
+    expect(morning.player.hp).toBe(cap);
     // a hunt that had the whole night to bite: only the bites before dawn count
     const early = move(b, place(begin(b), at, DAWN - 5000), at, DAWN - 5000).state;
     const after = move(b, early, at, DAWN + 60_000).state;
-    expect(after.player.satiety).toBe(cap - (cap / 4) * bitesAfter(b, 5000));
+    expect(after.player.hp).toBe(cap - (cap / 4) * bitesAfter(b, 5000));
     expect(after.player.chase).toBeNull();
   });
 
@@ -338,9 +328,9 @@ describe('a predator', () => {
     const b = world([wolf(8, 22)]);
     let s = place(begin(b), at, DAWN - 2500);
     s.player.chase = { hazard: 'test/wolf', since: DAWN - 2500, bites: 0 };
-    const cap = satietyCap(b, s);
+    const cap = hpCap(b, s);
     s = move(b, s, at, DAWN).state;
-    expect(s.player.satiety).toBe(cap);
+    expect(s.player.hp).toBe(cap);
     expect(s.player.chase).toBeNull();
   });
 
@@ -350,33 +340,33 @@ describe('a predator', () => {
     s = { ...s, player: { ...s.player, chase: { hazard: 'test/gone', since: NIGHT, bites: 0 } } };
     const r = move(b, s, at, NIGHT + 9000);
     expect(r.state.player.chase).toBeNull();
-    expect(r.state.player.satiety).toBe(satietyCap(b, s));
+    expect(r.state.player.hp).toBe(hpCap(b, s));
   });
 });
 
 describe('a pit', () => {
   test('hurts once each time the player steps in at night, and not by day', () => {
     const b = world([pit(7, 22)]);
-    const cap = satietyCap(b, begin(b));
+    const cap = hpCap(b, begin(b));
     let s = move(b, place(begin(b), [6, 22], NIGHT), [6, 22], NIGHT).state;
-    expect(s.player.satiety).toBe(cap);
+    expect(s.player.hp).toBe(cap);
     const step1 = move(b, s, [7, 22], NIGHT + 190);
     expect(step1.events).toEqual([{ e: 'hurt', by: 'pit', id: 'test/pit', hp: cap - (cap * 30) / 100 }]);
     s = step1.state;
     // standing in it is not stepping in again
     s = move(b, s, [7, 22], NIGHT + 380).state;
-    expect(s.player.satiety).toBe(cap - (cap * 30) / 100);
+    expect(s.player.hp).toBe(cap - (cap * 30) / 100);
     s = move(b, move(b, s, [8, 22], NIGHT + 570).state, [7, 22], NIGHT + 760).state;
-    expect(s.player.satiety).toBe(cap - (cap * 60) / 100);
+    expect(s.player.hp).toBe(cap - (cap * 60) / 100);
     const noon = move(b, move(b, place(begin(b), [6, 22], NOON), [6, 22], NOON).state, [7, 22], NOON + 190).state;
-    expect(noon.player.satiety).toBe(cap);
+    expect(noon.player.hp).toBe(cap);
   });
 
   test('is harmless where it is safe: a pit on the cobbles does nothing', () => {
     const b = world([pit(23, 7)]);
-    const cap = satietyCap(b, begin(b));
+    const cap = hpCap(b, begin(b));
     const s = move(b, place(begin(b), [22, 7], NIGHT), [23, 7], NIGHT + 190).state;
-    expect(s.player.satiety).toBe(cap);
+    expect(s.player.hp).toBe(cap);
   });
 });
 
@@ -406,13 +396,14 @@ describe('a fall', () => {
     expect(after.bag['core/stone']).toBeUndefined();
     expect(after.bag['core/axe']).toBe(1);
     expect(after.at).toEqual([6, 17]);
-    expect(after.satiety).toBe(satietyCap(b, r.state));
+    expect(after.hp).toBe(hpCap(b, r.state));
     expect(after.outing).toBeNull();
     expect(after.chase).toBeNull();
     expect(after.falls).toBe(1);
     expect(after.busyUntil).toBeLessThanOrEqual(NIGHT + 190);
     // what the outing earned that is not a thing in the bag stays: the experience, and what the gather did to the node
-    expect(after.xp[b.verbs.gather]).toBeGreaterThan(0);
+    // (the stone is mined, which trains digging)
+    expect(after.xp[b.verbs.dig]).toBeGreaterThan(0);
     expect(r.state.nodes[stone]).toBeDefined();
   });
 
@@ -458,7 +449,7 @@ describe('a fall', () => {
     s.player.bag['core/berry'] = 9;
     s = move(b, place(s, [6, 20], 1000), [6, 21], 1190).state;
     s.player.outing!.gained['core/berry'] = 5; // five of the nine came from this walk
-    s.player.satiety = 10_000;
+    s.player.hp = 10_000;
     s = ok(b, s, { t: 'eat', item: 'core/berry' }, 2000).state;
     s = ok(b, s, { t: 'eat', item: 'core/berry' }, 3000).state;
     s = ok(b, s, { t: 'eat', item: 'core/berry' }, 4000).state;
@@ -522,9 +513,9 @@ describe('food that hurts', () => {
     let s = begin(b);
     s.player.bag['test/bad-fruit'] = 2;
     s = place(s, [6, 17], NOON);
-    const cap = satietyCap(b, s);
+    const cap = hpCap(b, s);
     const r = ok(b, s, { t: 'eat', item: 'test/bad-fruit' }, NOON);
-    expect(r.state.player.satiety).toBe(cap - 40_000);
+    expect(r.state.player.hp).toBe(cap - 40_000);
     expect(kinds(r.events)).toEqual(['spend', 'eat', 'hurt']);
     expect(r.events[2]).toEqual({ e: 'hurt', by: 'food', hp: cap - 40_000 });
     // a plain food at full health is still refused
@@ -538,12 +529,12 @@ describe('food that hurts', () => {
     s = move(b, place(s, [6, 17], NOON - 1000), [6, 18], NOON - 810).state;
     s.player.outing!.gained['core/berry'] = 3;
     s.player.bag['core/berry'] = 3;
-    s.player.satiety = 30_000;
+    s.player.hp = 30_000;
     const r = ok(b, s, { t: 'eat', item: 'test/bad-fruit' }, NOON);
     expect(kinds(r.events)).toEqual(['spend', 'eat', 'hurt', 'fall']);
     expect(r.events[3]).toMatchObject({ e: 'fall', lost: [{ item: 'core/berry', qty: 3 }] });
     expect(r.state.player.bag['core/berry']).toBeUndefined();
-    expect(r.state.player.satiety).toBe(satietyCap(b, r.state));
+    expect(r.state.player.hp).toBe(hpCap(b, r.state));
   });
 });
 
@@ -552,7 +543,7 @@ describe('low health', () => {
     const inst = b.instances['core/river-stones#0']!;
     const standing: Tile = [inst.x, inst.y + 1];
     const s = place(begin(b), standing, 100);
-    s.player.satiety = hp;
+    s.player.hp = hp;
     const r = ok(b, s, { t: 'gather', node: 'core/river-stones#0', grade: 3, at: standing }, 100);
     const e = r.events.find((x) => x.e === 'busy');
     return e && e.e === 'busy' ? e.ms : 0;
@@ -562,7 +553,7 @@ describe('low health', () => {
     const plain = world([], (b) => {
       b.params.hp_low_pct = 0;
     });
-    const cap = satietyCap(plain, begin(plain));
+    const cap = hpCap(plain, begin(plain));
     const normal = busyMs(plain, cap);
     expect(busyMs(plain, 1)).toBe(normal);
     expect(busyMs(plain, 0)).toBe(Math.ceil((normal * 3) / 2));
@@ -583,16 +574,16 @@ describe('healing (P-5c)', () => {
       for (const t of w.professions['core/cooking']!.techniques) if (t.effect === 'meal_fill_pct') t.level = 1;
     });
     const s = begin(b);
-    s.player.satiety = 10_000;
+    s.player.hp = 10_000;
     s.player.bag['core/bandage'] = 1;
     s.player.bag['core/first-aid-kit'] = 1;
     s.player.bag['core/herb-tea'] = 1;
     const bandaged = ok(b, s, { t: 'eat', item: 'core/bandage' }, 100).state;
-    expect(bandaged.player.satiety).toBe(30_000);
+    expect(bandaged.player.hp).toBe(30_000);
     const kit = ok(b, bandaged, { t: 'eat', item: 'core/first-aid-kit' }, 200).state;
-    expect(kit.player.satiety).toBe(80_000);
+    expect(kit.player.hp).toBe(80_000);
     const tea = ok(b, kit, { t: 'eat', item: 'core/herb-tea' }, 300).state;
-    expect(tea.player.satiety).toBe(92_500);
+    expect(tea.player.hp).toBe(92_500);
   });
 });
 
@@ -639,9 +630,9 @@ describe('a long night of wandering', () => {
         log.push({ a, tick });
         s = r.state;
         const p = s.player;
-        const cap = satietyCap(b, s);
-        expect(p.satiety).toBeGreaterThanOrEqual(0);
-        expect(p.satiety).toBeLessThanOrEqual(cap);
+        const cap = hpCap(b, s);
+        expect(p.hp).toBeGreaterThanOrEqual(0);
+        expect(p.hp).toBeLessThanOrEqual(cap);
         for (const [item, n] of Object.entries(p.outing?.gained ?? {})) {
           expect(n).toBeGreaterThan(0);
           expect(n).toBeLessThanOrEqual(p.bag[item] ?? 0);
@@ -654,7 +645,7 @@ describe('a long night of wandering', () => {
         const fall = r.events.find((e) => e.e === 'fall');
         if (fall) {
           falls++;
-          expect(p.satiety).toBe(cap);
+          expect(p.hp).toBe(cap);
           expect(p.chase).toBeNull();
           expect(p.outing).toBeNull();
           expect(walkable(p.at[0], p.at[1], p)).toBe(true);

@@ -50,7 +50,7 @@ export const Rarity = Type.Union(RARITIES.map((r) => Type.Literal(r)), {
  * A staff, a hammer and a pick are worn in the hand for what they help; no work asks for one yet.
  * The hammer and the pick are the human's and the skeleton's outfit tools (DECISIONS.md, 2026-10-22).
  */
-export const TOOL_KINDS = ['basket', 'trowel', 'axe', 'staff', 'hammer', 'pick'] as const;
+export const TOOL_KINDS = ['basket', 'trowel', 'axe', 'staff', 'hammer', 'pick', 'rod'] as const;
 export const ToolKind = Type.Union(TOOL_KINDS.map((k) => Type.Literal(k)));
 
 export const STATIONS = ['fire', 'workshop'] as const;
@@ -306,10 +306,16 @@ export const ResourceBody = Type.Object(
         'A quest id. The node cannot be struck by a character who was offered that quest and has not finished it; a character who was never offered it strikes the node as usual. The refusal says one short line and costs nothing.',
     }),
     tool: Type.Optional(ToolKind),
-    level: Int(1, 20, 'Level required, in the profession the node trains: felling when the tool is an axe, foraging otherwise.'),
+    work: Type.Optional(
+      Type.Literal('mine', {
+        description:
+          'How the node is worked when it needs no tool. "mine": broken with blows that run by themselves after one press, as felling does; it trains digging, a pick or a hammer in the bag makes it faster (the best one, worn a little each time), and bare hands still do it. Left out: gathered by hand with the minigame of `game`.',
+      }),
+    ),
+    level: Int(1, 20, 'Level required, in the profession the node trains: felling when the tool is an axe, fishing when it is a rod, digging when the node is mined, foraging otherwise.'),
     game: Type.Optional(
-      Type.Union([Type.Literal('timing'), Type.Literal('strike'), Type.Literal('pick'), Type.Literal('snap')], {
-        description: 'The minigame played when gathering: "timing" (stop a marker in the middle, the default), "strike" (three timed hammer strikes, for stone), "pick" (press only for the ripe ones, for plants) or "snap" (press fast, for wood).',
+      Type.Union([Type.Literal('timing'), Type.Literal('strike'), Type.Literal('pick'), Type.Literal('snap'), Type.Literal('fish')], {
+        description: 'The minigame played when gathering: "timing" (stop a marker in the middle, the default), "strike" (three timed hammer strikes, for stone), "pick" (press only for the ripe ones, for plants), "snap" (press fast, for wood) or "fish" (cast, wait for the bite and strike as the float goes under, then reel in; for a node fished with a rod).',
       }),
     ),
     hours: Type.Optional(
@@ -323,6 +329,11 @@ export const ResourceBody = Type.Object(
             minItems: 1,
             uniqueItems: true,
             description: 'More resource slots that each hold exactly one of these nodes: a tree or a log standing where the map already shows one. They add supply only: `count`, the value and the opening\'s log floor follow the main slot.',
+          }),
+        ),
+        water: Type.Optional(
+          Type.Literal(true, {
+            description: 'The nodes lie on the water tiles of the slot that touch the land, and are worked from the bank: fishing spots. Left out, they lie on the land tiles of the slot.',
           }),
         ),
       },
@@ -1053,7 +1064,7 @@ export const Effect = Type.Union(EFFECTS.map((k) => Type.Literal(k)), {
 export const ProfessionBody = Type.Object(
   {
     name: Name,
-    verb: Type.Union([Type.Literal('gather'), Type.Literal('fell'), Type.Literal('dig'), Type.Literal('craft')]),
+    verb: Type.Union([Type.Literal('gather'), Type.Literal('fell'), Type.Literal('dig'), Type.Literal('fish'), Type.Literal('craft')]),
     stations: Type.Optional(
       Type.Array(Station, {
         minItems: 1,
@@ -1239,6 +1250,107 @@ export const LightParams = Type.Object(
   { additionalProperties: false },
 );
 
+/** Five numbers, one for each band of five levels (PROGRESSION 3.3), from band 1. */
+const Band5 = (min: number, max: number, description: string) =>
+  Type.Array(Type.Integer({ minimum: min, maximum: max }), { minItems: 5, maxItems: 5, description });
+
+/** One whole number for each ceiling category of PROGRESSION 4.7. */
+const PerCategory = (max: number, description: string) =>
+  Type.Object(
+    Object.fromEntries(['work', 'move', 'carry', 'health', 'sustain', 'find', 'sense', 'place'].map((k) => [k, Type.Integer({ minimum: 0, maximum: max })])),
+    { additionalProperties: false, description },
+  );
+
+/** The one internal difficulty scale (DECISIONS 2026-10-09) and the knobs of the difficulty reckoning (NEXT 19 b). The tool reads them; the kernel does not yet. */
+const DifficultyParams = Type.Object(
+  {
+    ratio_permille: {
+      ...Bounded,
+      description: 'Each step of the scale multiplies effort and the health a hazard takes by this, in permille (9.10: 1500). The growth curve of a school uses the same ratio (PROGRESSION 3.2).',
+    },
+    hazard_bp: {
+      ...Bounded,
+      description: 'How often a hazard shows grows by this per step of d: the chance in a game minute after dark or in the mist is hazard_bp * d basis points (SETTLEMENT 3.5). A spawn model; today hazards are authored.',
+    },
+    grind_passes_max: {
+      ...Bounded,
+      description: 'The reckoning: how many times a player is assumed to work each nearer node on the way (each pass waits for the node to grow back).',
+    },
+    quest_share_pct: {
+      ...Bounded,
+      description: 'The reckoning: the share of the next level\'s active time a place\'s quests should pay, in percent; the rest is grinding.',
+    },
+    quest_minutes_max: { ...Bounded, description: 'The reckoning: the longest active time one recommended quest asks, in real minutes.' },
+    quests_max: { ...Bounded, description: 'The reckoning: the most quests it recommends at one place.' },
+  },
+  { additionalProperties: false, description: 'The difficulty reckoning (pnpm map:difficulty): it recommends, never places.' },
+);
+
+/** The balance model of PROGRESSION 4.7 and BODY_CLOCKS 5-7, as numbers the balance prover (pnpm balance) reads. */
+const BalanceParams = Type.Object(
+  {
+    t1_ms: {
+      ...Bounded,
+      description: 'A school\'s first step, in active milliseconds; step i takes t1 * ratio^(i-1) (PROGRESSION 3.2). The bounds are the owner\'s range, 25 to 30 seconds.',
+    },
+    school_steps: { ...Bounded, description: 'Steps from level 1 to mastery (PROGRESSION 3.2: twenty, so mastery is level 21).' },
+    band_size: { ...Bounded, description: 'Levels in one band (PROGRESSION 3.3).' },
+    catalogue_hours_min: { ...Bounded, description: 'The fewest active hours that master every school of the catalogue (PROGRESSION 3.2: 800).' },
+    mentor_bonus_pct: { ...Bounded, description: 'The one experience source beside the work itself: the mentor\'s bonus, in percent (PROGRESSION 3.7, red line B).' },
+    group_share_max_permille: { ...Bounded, description: 'The most a group member earns from another\'s work, in permille of the member\'s own (PROGRESSION 3.7, Q7).' },
+    loop_profit_max_mg: { ...Bounded, description: 'The most gold any buy, craft and sell cycle at a vendor may make, in milligold (red line A: 0).' },
+    ceilings: Type.Object(
+      {
+        work: Band5(0, 100, 'Time off a school\'s work, all sources, in percent.'),
+        move: Band5(0, 100, 'Time off a step, a crossing or an oar stroke, in percent.'),
+        carry: Band5(0, 100, 'The weight limit above might\'s and the bag\'s, in percent.'),
+        health: Band5(0, 200, 'The health cap above the attributes\' cap, in percent.'),
+        sustain: Band5(0, 100, 'Health back a game hour while a place drains, regen and food together, in percent of the cap.'),
+        find: Band5(0, 100, 'Rare-find points.'),
+        sense: Band5(0, 20, 'Tiles of sight in the dark or of a trail.'),
+        place: Band5(0, 4, 'Answer steps on one condition: garment, master step and dish together.'),
+      },
+      { additionalProperties: false, description: 'Each category\'s ceiling by the wearer\'s band (PROGRESSION 4.7): every source adds and the sum stops here. Never falls with the band.' },
+    ),
+    raise_step: PerCategory(100, 'What one ceiling raiser adds to its category\'s top-band ceiling (PROGRESSION 4.7).'),
+    raisers_max: PerCategory(10, 'How many raisers of each category exist (PROGRESSION 4.7: ten in all today).'),
+    wall_margin_bp: { ...Bounded, description: 'A wall\'s witness ends with at least this share of the health cap and of the timer to spare, in basis points.' },
+    wall_cheese_gap: { ...Bounded, description: 'Nothing from this many bands below a wall\'s band passes it (PROGRESSION 4.7: 2).' },
+    top_builds_n: { ...Bounded, description: 'How many strongest builds a band the prover lists (a warning, never a failure).' },
+    top_over_median_max_permille: { ...Bounded, description: 'The strongest build of a band warns when its score stands more than this above the band\'s median, in permille.' },
+    proof_enum_max: { ...Bounded, description: 'Combinations walked in full; above it the proof walks each slot\'s Pareto front.' },
+    rarity_effects_max: Type.Array(Type.Integer({ minimum: 0, maximum: 4 }), {
+      minItems: 4,
+      maxItems: 4,
+      description: 'The most effects a thing carries by rarity, common, uncommon, rare, legendary (PROGRESSION 5.7); a trait and a dish effect count.',
+    }),
+    rarity_band_permille: Type.Array(Type.Array(Type.Integer({ minimum: 0, maximum: 1000 }), { minItems: 2, maxItems: 2 }), {
+      minItems: 4,
+      maxItems: 4,
+      description: 'Each rarity\'s share of the tier\'s full strength, low and high, in permille (PROGRESSION 5.7); common is the smallest step, read as 0 here.',
+    }),
+    trait_strength_by_tier: Type.Array(Type.Integer({ minimum: 0, maximum: 4 }), {
+      minItems: 1,
+      maxItems: 10,
+      description: 'A garment trait\'s strength by the tier it counts as, from tier 1 (BODY_CLOCKS 6.2).',
+    }),
+    master_step: { ...Bounded, description: 'What a master piece adds to its trait (BODY_CLOCKS 6.2).' },
+    dish_place_step: { ...Bounded, description: 'What a dish of the same condition adds; only one dish counts (BODY_CLOCKS 6.2).' },
+    dish_slots: { ...Bounded, description: 'How many dishes act at once (BODY_CLOCKS 7).' },
+    grade_walk_permille: Type.Array(Type.Integer({ minimum: 1000, maximum: 5000 }), {
+      minItems: 5,
+      maxItems: 5,
+      description: 'The slow of a remaining grade 0 to 4, in permille of a step\'s time (BODY_CLOCKS 5.2).',
+    }),
+    grade_drain_pct: Type.Array(Type.Integer({ minimum: 0, maximum: 100 }), {
+      minItems: 5,
+      maxItems: 5,
+      description: 'The drain of a remaining grade 0 to 4, in percent of the health cap a game hour (BODY_CLOCKS 5.2).',
+    }),
+  },
+  { additionalProperties: false, description: 'The balance model (PROGRESSION 4.7): two red lines, rising ceilings, walls proven both ways. Read by tools only, until the kernel reads it.' },
+);
+
 export const ParamsBody = Type.Object(
   {
     k_permille: Bounded,
@@ -1309,8 +1421,10 @@ export const ParamsBody = Type.Object(
       { additionalProperties: false },
     ),
     drift_budget_permille: Bounded,
-    satiety_cap: Bounded,
-    satiety_drain_per_min: Bounded,
+    hp_cap: {
+      ...Bounded,
+      description: 'The health bar\'s base top in whole points; each point of stamina adds per_point.stamina. Nothing drains it by the clock (G28).',
+    },
     day_length_ms: Bounded,
     walk_step_ms: {
       ...Bounded,
@@ -1410,6 +1524,8 @@ export const ParamsBody = Type.Object(
         { additionalProperties: false, description: 'The skill tree: what a node costs and when the build\'s slots open. Left out: the tree is closed.' },
       ),
     ),
+    difficulty: Type.Optional(DifficultyParams),
+    balance: Type.Optional(BalanceParams),
   },
   { additionalProperties: false },
 );
@@ -1476,7 +1592,7 @@ export const KitBody = Type.Object(
               minItems: 1,
               maxItems: 4,
               description:
-                'The ramps of this kit the sprite draws in, in order: the first is the one its outline comes from. A sprite that names none uses the core palette only.',
+                'The ramps of this kit the sprite draws in, in order. The outline is the one-pixel ink line #1b1a2e on every sprite, whatever the ramps. A sprite that names none uses the core palette only.',
             }),
           ),
           density: Type.Optional(

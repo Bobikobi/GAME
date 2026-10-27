@@ -148,17 +148,11 @@
       "max": 300,
       "step": 25
     },
-    "satiety_cap": {
+    "hp_cap": {
       "value": 100,
       "min": 60,
       "max": 200,
       "step": 10
-    },
-    "satiety_drain_per_min": {
-      "value": 0,
-      "min": 0,
-      "max": 15000,
-      "step": 500
     },
     "day_length_ms": {
       "value": 1200000,
@@ -505,6 +499,259 @@
           }
         ]
       }
+    },
+    "difficulty": {
+      "ratio_permille": {
+        "value": 1500,
+        "min": 1100,
+        "max": 3000,
+        "step": 100
+      },
+      "hazard_bp": {
+        "value": 50,
+        "min": 0,
+        "max": 2000,
+        "step": 10
+      },
+      "grind_passes_max": {
+        "value": 3,
+        "min": 0,
+        "max": 20,
+        "step": 1
+      },
+      "quest_share_pct": {
+        "value": 50,
+        "min": 0,
+        "max": 100,
+        "step": 10
+      },
+      "quest_minutes_max": {
+        "value": 10,
+        "min": 1,
+        "max": 120,
+        "step": 1
+      },
+      "quests_max": {
+        "value": 6,
+        "min": 1,
+        "max": 12,
+        "step": 1
+      }
+    },
+    "balance": {
+      "t1_ms": {
+        "value": 28000,
+        "min": 25000,
+        "max": 30000,
+        "step": 1000
+      },
+      "school_steps": {
+        "value": 20,
+        "min": 1,
+        "max": 40,
+        "step": 1
+      },
+      "band_size": {
+        "value": 5,
+        "min": 1,
+        "max": 10,
+        "step": 1
+      },
+      "catalogue_hours_min": {
+        "value": 800,
+        "min": 0,
+        "max": 5000,
+        "step": 50
+      },
+      "mentor_bonus_pct": {
+        "value": 20,
+        "min": 0,
+        "max": 50,
+        "step": 5
+      },
+      "group_share_max_permille": {
+        "value": 250,
+        "min": 0,
+        "max": 1000,
+        "step": 50
+      },
+      "loop_profit_max_mg": {
+        "value": 0,
+        "min": 0,
+        "max": 0,
+        "step": 0
+      },
+      "ceilings": {
+        "work": [
+          25,
+          35,
+          45,
+          55,
+          65
+        ],
+        "move": [
+          10,
+          15,
+          20,
+          25,
+          30
+        ],
+        "carry": [
+          10,
+          15,
+          20,
+          25,
+          30
+        ],
+        "health": [
+          10,
+          20,
+          30,
+          40,
+          50
+        ],
+        "sustain": [
+          5,
+          7,
+          9,
+          12,
+          15
+        ],
+        "find": [
+          3,
+          5,
+          8,
+          11,
+          15
+        ],
+        "sense": [
+          1,
+          2,
+          2,
+          3,
+          4
+        ],
+        "place": [
+          2,
+          2,
+          3,
+          3,
+          4
+        ]
+      },
+      "raise_step": {
+        "work": 5,
+        "move": 5,
+        "carry": 0,
+        "health": 10,
+        "sustain": 5,
+        "find": 3,
+        "sense": 1,
+        "place": 0
+      },
+      "raisers_max": {
+        "work": 2,
+        "move": 2,
+        "carry": 0,
+        "health": 2,
+        "sustain": 1,
+        "find": 2,
+        "sense": 1,
+        "place": 0
+      },
+      "wall_margin_bp": {
+        "value": 1000,
+        "min": 0,
+        "max": 5000,
+        "step": 100
+      },
+      "wall_cheese_gap": {
+        "value": 2,
+        "min": 1,
+        "max": 4,
+        "step": 1
+      },
+      "top_builds_n": {
+        "value": 5,
+        "min": 1,
+        "max": 20,
+        "step": 1
+      },
+      "top_over_median_max_permille": {
+        "value": 1600,
+        "min": 1000,
+        "max": 5000,
+        "step": 100
+      },
+      "proof_enum_max": {
+        "value": 10000000,
+        "min": 1000,
+        "max": 100000000,
+        "step": 1000000
+      },
+      "rarity_effects_max": [
+        1,
+        1,
+        2,
+        2
+      ],
+      "rarity_band_permille": [
+        [
+          0,
+          0
+        ],
+        [
+          500,
+          750
+        ],
+        [
+          750,
+          1000
+        ],
+        [
+          1000,
+          1000
+        ]
+      ],
+      "trait_strength_by_tier": [
+        1,
+        1,
+        2,
+        2,
+        3
+      ],
+      "master_step": {
+        "value": 1,
+        "min": 0,
+        "max": 2,
+        "step": 1
+      },
+      "dish_place_step": {
+        "value": 1,
+        "min": 0,
+        "max": 2,
+        "step": 1
+      },
+      "dish_slots": {
+        "value": 2,
+        "min": 0,
+        "max": 4,
+        "step": 1
+      },
+      "grade_walk_permille": [
+        1000,
+        1150,
+        1300,
+        1500,
+        2000
+      ],
+      "grade_drain_pct": [
+        0,
+        20,
+        35,
+        60,
+        100
+      ]
     }
   }
 }

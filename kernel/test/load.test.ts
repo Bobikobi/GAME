@@ -309,8 +309,8 @@ describe('the body facts', () => {
       .sort((x, y) => x.id.localeCompare(y.id))[0]!;
     const fed = (s: State) => {
       s.player.bag = { [food.id]: 1 };
-      s.player.satiety = 0;
-      return ok(s, { t: 'eat', item: food.id }).player.satiety;
+      s.player.hp = 0;
+      return ok(s, { t: 'eat', item: food.id }).player.hp;
     };
     expect(fed(bones) * 2).toBe(fed(human));
   });

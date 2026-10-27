@@ -24,7 +24,7 @@ type Edit = (root: string) => void;
 
 /** A copy of the core world plus the files of the creator "tester", with some core files edited. */
 function world(files: Record<string, object>, edits: Edit[] = []): CheckResult {
-  const root = mkdtempSync(join(tmpdir(), 'openfold-crafting-'));
+  const root = mkdtempSync(join(tmpdir(), 'loomvale-crafting-'));
   roots.push(root);
   cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
   cpSync(join(CONTENT_DIR, 'kit'), join(root, 'kit'), { recursive: true });

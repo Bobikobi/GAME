@@ -78,9 +78,11 @@ describe('the opening recut B', () => {
 });
 
 describe('what a node asks of the player', () => {
-  test('a tree is felled and everything else is gathered', () => {
+  test('a tree is felled, a fish is fished, stone is mined and everything else is gathered', () => {
     expect(nodeAction(bundle, bundle.resources['core/oak-trees']!)).toBe('Fell tree');
-    for (const r of Object.values(bundle.resources).filter((x) => x.tool !== 'axe')) {
+    expect(nodeAction(bundle, bundle.resources['core/river-fish']!)).toBe('Fish');
+    expect(nodeAction(bundle, bundle.resources['core/river-stones']!)).toBe('Mine River stone');
+    for (const r of Object.values(bundle.resources).filter((x) => x.tool !== 'axe' && x.tool !== 'rod' && x.work !== 'mine')) {
       expect(nodeAction(bundle, r), r.id).toMatch(/^Gather /);
     }
     expect(nodeAction(bundle, bundle.resources['core/berry-bushes']!)).toBe('Gather Redberry');
@@ -92,18 +94,13 @@ describe('what a node asks of the player', () => {
 });
 
 describe('food benefits', () => {
-  test('speak in health points and, while hunger drains, minutes of work', () => {
-    // the shipped valley drains nothing since P-5c; a world that still does says how long a food lasts
+  test('speak in health points, never in minutes of work (no hunger clock, G28)', () => {
     expect(itemBenefit(bundle, 'core/berry')).toBe('+4 health');
-    const b = structuredClone(bundle);
-    b.params.satiety_drain_per_min = 7000;
-    expect(itemBenefit(b, 'core/berry')).toBe('+4 health · about 34 s of work');
-    expect(itemBenefit(b, 'core/berry-mash')).toBe('+15 health · about 2 min of work');
+    expect(itemBenefit(bundle, 'core/berry-mash')).toBe('+15 health');
   });
 
   test('with no hunger clock nothing divides by it, and a food that hurts says so on its Eat button', () => {
     const b = structuredClone(bundle);
-    b.params.satiety_drain_per_min = 0;
     expect(itemBenefit(b, 'core/berry')).toBe('+4 health');
     const stamina = attributeEffects(b, newState(b, 1)).find((fx) => fx.attr === 'stamina')!;
     expect(stamina.next).toMatch(/^\d+ points$/);
@@ -117,7 +114,7 @@ describe('food benefits', () => {
     // what heals without being food is used, not eaten
     expect(eatLabel(bundle, 'core/bandage')).toBe('Use (+20)');
     expect(eatLabel(bundle, 'core/first-aid-kit')).toBe('Use (+50)');
-    expect(describeEvent(bundle, newState(bundle, 1), { e: 'eat', item: 'core/bandage', satiety: 50_000 })!.text).toBe('You used Bandage');
+    expect(describeEvent(bundle, newState(bundle, 1), { e: 'eat', item: 'core/bandage', hp: 50_000 })!.text).toBe('You used Bandage');
   });
 });
 
@@ -276,9 +273,6 @@ describe('skills in plain words (the owner, 10.10)', () => {
     expect(spirit.note).toMatch(/nothing yet/);
     const stamina = attributeEffects(bundle, s).find((fx) => fx.attr === 'stamina')!;
     expect(stamina.next).toMatch(/^\d+ points$/);
-    const draining = structuredClone(bundle);
-    draining.params.satiety_drain_per_min = 7000;
-    expect(attributeEffects(draining, s).find((fx) => fx.attr === 'stamina')!.next).toMatch(/^\d+ minutes$/);
   });
 });
 
@@ -302,7 +296,7 @@ describe('class and tier (crafting wave 4)', () => {
     };
     expect(classLine(withDye, 'test/indigo')).toBe('Dye, tier 2');
     expect(classLine(withDye, 'test/plain')).toBe('Tier 1');
-    expect(journalGroups(withDye).map((g) => g.label)).toEqual(['Clay', 'Dye', 'Fibre', 'Garment', 'Jewelry', 'Meal', 'Other', 'Plant', 'Relic', 'Stone', 'Tool', 'Wood']);
+    expect(journalGroups(withDye).map((g) => g.label)).toEqual(['Animal', 'Clay', 'Dye', 'Fibre', 'Garment', 'Jewelry', 'Meal', 'Other', 'Plant', 'Relic', 'Stone', 'Tool', 'Wood']);
   });
 
   test('where a recipe is made names the tier past the first', () => {
