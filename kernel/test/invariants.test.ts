@@ -289,7 +289,8 @@ function digState(seed: number): State {
   const state = result.state;
   state.player.bag['core/trowel'] = 3;
   state.player.attrs.might = 100;
-  state.player.restored = ['core/old-bridge'];
+  // the gate's digs lie inside the night place, whose one way in is the arch (DECISIONS 2026-10-16)
+  state.player.restored = ['core/old-bridge', 'core/arch-way'];
   return state;
 }
 
