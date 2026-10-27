@@ -143,8 +143,7 @@ async function newGame(page: Page, url: string, viewport: Viewport, race: string
   if (ask === 'ask') await page.tap('.title-screen button', 'Start a new game');
   await page.waitFor(`!!document.querySelector('.card.race')`, 'the race cards');
   await page.tap('.card.race', race);
-  await page.tap('input.name');
-  await page.type('Tree');
+  // the title has no name field: the name is cut on the stone after the bridge (DECISIONS 2026-10-25)
   await page.tap('.title-screen button', 'Wake up');
   await page.waitFor(`!!window.__game?.session?.started`, 'the game', 30_000);
   await page.eval(TAKE_GROUND);
