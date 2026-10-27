@@ -1,25 +1,24 @@
 {
   "project": "LoomVale",
   "date": "2026-10-26",
-  "status": "Owner accepted the demonstration, with the requested correction that the character must not pass through trees.",
+  "status": "Owner prefers the original detailed oak; broad oak removed from the demo and retained for rework.",
   "preview": "http://127.0.0.1:5189/world-study.html",
   "scope": "Existing connected 2D world study: tree silhouette diversity, grounded shadows and precise player see-through.",
   "resources": {
     "newGenerationCalls": 0,
-    "reusedTreeSources": 2,
+    "reusedTreeSources": 1,
     "trees": 7,
-    "broadTrees": 2
+    "broadTrees": 0
   },
   "validation": {
-    "focusedTests": "31 passed: world-study-layout, world-study-water and cast",
-    "pnpmVerify": "passed: 0 errors, 32 existing content warnings; 1466 suite tests and 81 web tests passed",
-    "browser": "Passed final desktop 1050x850 and phone 390x844 captures: two silhouettes, both mirrors, seven trees at or above320px, 51659 static shadow pixels clipped to land; walking and attached actor shadow, shadow toggle, storm sun suppression, three viewpoints and reduced motion; no browser errors.",
+    "focusedTests": "36 passed in collision, layout, water and cast tests",
+    "pnpmVerify": "passed:1472 suite tests and81 web tests; content0 errors and32 existing warnings",
+    "browser": "Desktop1050x850 and phone390x844: seven trees all use original oak, broad oak texture is not loaded, both mirror directions remain, seven tree footprints retained, reduced-motion phone and touch forest navigation; no browser errors",
     "gitDiffCheck": "passed",
-    "visualInspection": "Opened final desktop forest and phone forest/cove images; broad oak limited to two foreground trees to retain the detailed narrow oak as the dominant material."
+    "visualInspection": "Opened current phone and desktop forest-unified captures; all trees share original leaf-cluster detail, trunk treatment and palette."
   },
   "limits": [
     "Mirrors and two drawn silhouettes are not genuine new 3D camera views.",
-    "Broad oak pixel clusters differ from the narrow oak; owner review remains necessary.",
     "Static tree shadows ignore small sway and see-through fades to retain fixed grounding.",
     "A moving actor shadow can overlap and darken a static tree shadow, as in the existing CastLayer exception.",
     "The moving actor shadow is not shoreline-clipped; the actor stays on land but a projected edge may cross it.",
@@ -40,5 +39,12 @@
     "method": "Feet rectangle checked against land and each rooted tree ellipse; independent axis movement permits sliding around trunks. Footprints remain active when vegetation is hidden or motion paused.",
     "tests": "Three pure collision tests passed; six tests passed including layout. Browser movement stopped before the trunk from all four sides; canopy space and all four viewpoints remained open; no browser errors.",
     "pnpmVerify": "passed: 1469 suite tests and 81 web tests; content check 0 errors and 32 existing warnings"
+  },
+  "styleCorrection": {
+    "date": "2026-10-27",
+    "ownerWords": "ההבדלים בין העצים נראים משמעותיים כאילו אין קשר בסגנון, העץ הישן יותר יפה מהחדש. צריך שיהיה שפה משותפת לאזורים",
+    "implemented": "All seven trees now use the original oak, with the existing small size variation, independent mirrors, staggered roots, shadows and collision. The broad oak is no longer preloaded or placed.",
+    "geography": "Owner says a Claude agent will advance geographical design. This session is limited to read-only location/orientation for that work; no geography or regional design changes.",
+    "validation": "Browser checks and full verify passed; corrected captures retained beside this record."
   }
 }

@@ -20,9 +20,9 @@
         "Caster silhouette for engine shadow"
       ],
       "status": "keep",
-      "decidedBy": "agent",
-      "approval": "Agent selection inside the existing study only; tree polish awaits owner visual review.",
-      "reason": "Retains existing world material and detailed leaf and bark structure."
+      "decidedBy": "owner",
+      "approval": "Owner preferred the original oak as the visual reference on2026-10-27. This does not approve unseen future variants.",
+      "reason": "Fine irregular leaf clusters and consistent bark/foliage detail are the reference for subsequent tree variants."
     },
     {
       "id": "sha256:8318a0aeffc8bcf958f874691e1c7c55b7b0523985b7f006a162d6264490dbe1",
@@ -41,10 +41,10 @@
         "Whole broad-crowned tree as a study variant",
         "Leaf-cluster and branching reference"
       ],
-      "status": "keep",
-      "decidedBy": "agent",
-      "approval": "Candidate for the current visual study; owner visual approval pending.",
-      "reason": "Existing rich draft provides a genuinely different crown and trunk silhouette without generating another image.",
+      "status": "rework",
+      "decidedBy": "owner",
+      "approval": "Owner rejected this variant for the current shared visual language on2026-10-27; preserve sources for rework.",
+      "reason": "The broad oak reads as a different drawing style. Owner prefers the original detailed oak and requires a common visual language across regions. Removed from the scene; raw, original derivative, imported variant and manifest retained.",
       "derivatives": [
         "oak-broad-original.png",
         "oak-broad.png"

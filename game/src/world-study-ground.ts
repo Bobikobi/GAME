@@ -6,7 +6,6 @@ import { worldStudyCanStand, type WorldStudyTreeFootprint } from './world-study-
 const assets = import.meta.glob('../../docs/design/frames/rich-world-expansion-2026-10-26/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 const banks = import.meta.glob('../../docs/design/frames/rich-river-kit-2026-10-25/bank-*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 const plants = import.meta.glob('../../docs/design/frames/rich-shore-2026-10-25/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
-import broadOakUrl from '../../docs/design/frames/rich-world-trees-2026-10-26/oak-broad.png?url';
 import pavingUrl from '../../docs/design/frames/rich-world-ground-2026-10-27/paving.png?url';
 import wornUrl from '../../docs/design/frames/rich-world-ground-2026-10-27/worn.png?url';
 import sandUrl from '../../docs/design/frames/rich-world-ground-2026-10-27/sand.png?url';
@@ -16,7 +15,6 @@ const hash = (x: number, y: number) => (Math.imul(x + 23, 73856093) ^ Math.imul(
 const key = (name: string) => `world-ground-${name}`;
 
 export function preloadWorldStudyGround(scene: Phaser.Scene): void {
-  scene.load.image(key('oak-broad'), broadOakUrl);
   scene.load.image(key('paving'), pavingUrl);
   scene.load.image(key('worn'), wornUrl);
   scene.load.image(key('sand'), sandUrl);
@@ -127,7 +125,7 @@ export function createWorldStudyGround(scene: Phaser.Scene) {
       // Independent hash bits avoid the alternating rows of the placement lattice.
       plant.setFlipX(Boolean((variant >>> 8) & 1));
       const height = 320 + ((variant >>> 12) % 5) * 8;
-      const width = name === 'oak-broad' ? height : Math.round(height * (192 / 320) * (1 + ((variant >>> 17) % 3) * .035));
+      const width = Math.round(height * (192 / 320) * (1 + ((variant >>> 17) % 3) * .035));
       plant.setDisplaySize(width, height);
       // Roots occupy a shallow patch of ground; leaves and upright bark are an overhang.
       treeFootprints.push({ x, y: y - 14 * height / 320, radiusX: width * .17, radiusY: 18 * height / 320 });
@@ -147,7 +145,7 @@ export function createWorldStudyGround(scene: Phaser.Scene) {
       const treeY = y + (((seed >>> 15) % 101) - 50);
       // Stagger the roots while retaining the clear route and the existing land footprint.
       const clear = landAt(treeX - 36, treeY) && landAt(treeX + 36, treeY) && worldStudyPathDistance(treeX, treeY) >= 58;
-      place((seed >>> 3) % 5 === 2 ? 'oak-broad' : 'oak', clear ? treeX : x, clear ? treeY : y, true, seed);
+      place('oak', clear ? treeX : x, clear ? treeY : y, true, seed);
     }
     else if (nearWater && seed % 3 === 0) place('reeds', x, y, false, seed);
     else if (seed % (inForest ? 4 : 3) === 0) place('grass', x, y, false, seed);
