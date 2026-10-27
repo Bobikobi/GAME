@@ -1,12 +1,14 @@
 # Loomvale
 
-*A magical valley hidden in the mist, built together by everyone who plays it, with no last page.*
+*The mist does not forget. It only waits.*
 
-Something old sleeps under the mist of Loomvale: ruins nobody remembers, lanterns that wake only at dusk, ways that open only after dark. Every player wakes into the same valley, and every player can add to it.
+Something sleeps beneath Loomvale. The bridge lies broken, the ruins have lost their names, and the lanterns wake only when the light goes. After dark, a way opens under the broken arch. Out past the last fire, two eyes keep their distance.
 
-Not only a quest or an item. A herb and the recipe it goes into, a townsperson and the words they say, a ruin and what is buried in it, a craft, a place, a picture. Every layer of the world is a small file that anyone can write, and once it is in, it belongs to the shared valley and carries its maker's name. Wherever the mist still hangs, something is waiting to be made.
+You wake at noon. Down by the bridge stands a stone with one empty line, cut for a name.
 
-**[Enter the valley](https://theopenfold.vercel.app)**: free in any browser, on a phone or a computer. No install, no account.
+The valley is not finished, and it never will be. Every herb, every word a stranger says, every ruin and whatever lies buried under it is a thread someone wove into the mist, and anyone can weave the next. What you add stays there with your name on it, for everyone who wakes after you.
+
+**[Enter the valley](https://theopenfold.vercel.app)**. Free, in any browser, on a phone or a computer. No install, no account.
 
 **Stage 1 is a demo.** Progress is saved in your browser only and will not move to an account later; demo players get a title and a cosmetic item instead.
 
