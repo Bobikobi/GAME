@@ -11,8 +11,8 @@
 <p>אותו אזור ואותו גודל צילום. לפני: עצים משתי שפות ציור. אחרי: משפחה אחת סביב האלון המקורי שהעדפת, עם הבדלי גודל והיפוך כיוון.</p>
 <nav aria-label="תצוגת השוואה"><button id="before" aria-pressed="false">לפני</button><button id="both" aria-pressed="true">השוואה</button><button id="after" aria-pressed="false">אחרי</button><a class="button" href="/world-study.html">כניסה להדגמה החיה</a></nav>
 <div class="compare">
-<img id="before-image" alt="לפני: עצים רחבים בעלי אשכולות גדולים לצד האלונים המפורטים">
-<div class="after"><img id="after-image" alt="אחרי: עצי האלון המקוריים בשפה אחידה לאורך השביל"></div>
+<img id="before-image" src="/art-comparison/forest-before.png" width="1050" height="850" alt="לפני: עצים רחבים בעלי אשכולות גדולים לצד האלונים המפורטים">
+<div class="after"><img id="after-image" src="/art-comparison/forest-after.png" width="1050" height="850" alt="אחרי: עצי האלון המקוריים בשפה אחידה לאורך השביל"></div>
 <div class="line"></div><span class="label left">לפני</span><span class="label right">אחרי</span>
 </div>
 <label>גררו להשוואה באותה נקודה<input id="split" type="range" min="0" max="100" value="50" aria-label="חלוקת לפני ואחרי"></label>
@@ -20,11 +20,7 @@
 <p class="note">תצלומי לפני ואחרי שמורים מהעבודה על היער; זו הדגמת התיקון הקיים, לא תוצאה חדשה של סוכן הגיאוגרפיה. הכפתורים בסרגל העליון השתנו בין הצילומים. בדיקות הקוד נוספו כעת, והמצב הנוכחי נבדק שוב בדפדפן.</p>
 <p><a href="/art-review/rich-world-oak/index.html">פתיחת דוח מדידות העצים</a></p>
 </main>
-<script type="module">
-import beforeUrl from '../docs/design/frames/rich-world-trees-2026-10-26/desktop-forest.png?url';
-import afterUrl from '../docs/design/frames/rich-world-trees-2026-10-26/desktop-forest-unified.png?url';
-document.getElementById('before-image').src=beforeUrl;
-document.getElementById('after-image').src=afterUrl;
+<script>
 const slider=document.querySelector('#split');
 function show(value, selected){value=Number(value);slider.value=String(value);document.querySelector('.after').style.clipPath=`inset(0 0 0 ${value}%)`;document.querySelector('.line').style.left=`${value}%`;document.querySelector('.left').hidden=value===0;document.querySelector('.right').hidden=value===100;for(const id of ['before','both','after'])document.getElementById(id).setAttribute('aria-pressed',String(id===selected));}
 slider.addEventListener('input',()=>show(slider.value,'both'));
