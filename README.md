@@ -1,8 +1,12 @@
 # Loomvale
 
-A free pixel-art browser game that its players build and run together. You wake up by a broken bridge in a misty valley, gather and cook, dig in the ruins and bring the valley back to life. Every bush, recipe, quest and ruin in it is a small data file that anyone can add.
+*A magical valley hidden in the mist, built together by everyone who plays it, with no last page.*
 
-**[Play it now](https://theopenfold.vercel.app)** in any browser, on a phone or a computer. No install, no account.
+Something old sleeps under the mist of Loomvale: ruins nobody remembers, lanterns that wake only at dusk, ways that open only after dark. Every player wakes into the same valley, and every player can add to it.
+
+Not only a quest or an item. A herb and the recipe it goes into, a townsperson and the words they say, a ruin and what is buried in it, a craft, a place, a picture. Every layer of the world is a small file that anyone can write, and once it is in, it belongs to the shared valley and carries its maker's name. Wherever the mist still hangs, something is waiting to be made.
+
+**[Enter the valley](https://theopenfold.vercel.app)**: free in any browser, on a phone or a computer. No install, no account.
 
 **Stage 1 is a demo.** Progress is saved in your browser only and will not move to an account later; demo players get a title and a cosmetic item instead.
 
