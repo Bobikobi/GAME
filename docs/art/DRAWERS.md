@@ -13,6 +13,8 @@ says which route drew each image, so a gallery can mix them.
 | `kaggle` | Open image models with `diffusers` in a **private** Kaggle script kernel on its free GPU, the whole wave in one kernel run (push, poll `kaggle kernels status`, `kaggle kernels output`). Four recipes (`KAGGLE_MODEL`). Image to image from the reference: `sd15` (the default: SD 1.5 with PixelArtRedmond15V at 0.8, Euler, 20 steps, 512 px short side, CFG 7) and `sdxl` (SDXL base in fp16 with the fp16-safe VAE, tiled, and the `nerijs/pixel-art-xl` LoRA, 25 steps, 1024 px short side); both read their own short prompt (`kagglePrompt`), the negative `KAGGLE_NEGATIVE`, a canvas in the reference's shape (multiples of 64, the elder 512x704) and a denoise by subject (props 0.6; characters, `chars/` refs, 0.7 on sd15 and 0.8 on sdxl). Text to image from a sentence (`kaggleSentencePrompt`; the reference only sets the canvas): `flux` (FLUX.1-schnell in NF4, 4 steps, guidance 0) and `qwen` (Qwen-Image 2512 in NF4 with the 4-step Lightning LoRA, computing in fp32), each picture keyed to flat magenta and downscaled to the spec's grid inside the kernel (`KAGGLE_POST`) | free within Kaggle's weekly GPU hours; two GPU kernels at a time per account. Measured 22.10 on a T4: **sd15** 3.5-3.6 s per prop at 512x512 and 5-7 s for the elder at 512x704, plus 95-110 s per wave (25-40 s kernel start and queue, 65-95 s loading the weights), a wave of three about 110 s from push to pictures back; **sdxl** 26-30 s per prop at 1024x1024 and 38-44 s per character at 1024x1408, a wave of three 217-219 s (80-95 s loading about 7 GB of weights). Measured 23.10, waves of ten at 1024x1024: **flux** 19-25 s a picture, 8.4-9.2 GPU minutes a wave (5.2-5.8 of them loading), 9-10 minutes from push to pictures; **qwen** 93-112 s a picture, 19.4-21.9 GPU minutes a wave (3.0-3.8 loading), 21-23 minutes from push to pictures | the `kaggle` CLI signed in (`KAGGLE_CLI` if it is not on the PATH; the token stays the CLI's own) and a phone-verified account for the GPU. Kernel: `KAGGLE_KERNEL` (default `kitgen-drawer` under the signed-in user; a second wave at the same time needs its own name). Recipe: `KAGGLE_MODEL` (`sd15`, `sdxl`, `flux`, `qwen`, or a Hugging Face repo id with `KAGGLE_RECIPE`), `KAGGLE_VAE`, `KAGGLE_LORA_REPO`, `KAGGLE_LORA_FILE`, `KAGGLE_DTYPE` (the compute precision: `fp16`, `bf16`, `fp32`), `KAGGLE_POST` (`grid` or `off`). Tuning: `KAGGLE_DENOISE` (props), `KAGGLE_DENOISE_CHARACTER`, `KAGGLE_STEPS`, `KAGGLE_SIZE` (short side), `KAGGLE_CFG`, `KAGGLE_LORA_STRENGTH`, `KAGGLE_SEED`; `KAGGLE_GPU=0` for a CPU run, `KAGGLE_ACCELERATOR` for the GPU type | a wave from our own sprites at GPU speed for nothing, when the laptop's minutes per picture are too slow; `sd15` for a wave on the grid, `sdxl` to try a richer character, `qwen` for a wave of props and items from the prompt alone, `flux` for the same at a fifth of the drawing time and with more variety between seeds (both drew the right object on the ten entries the Stable Diffusion recipes misread; next section); terms: the kernel and its inputs are private to our own account and only our own sprites go up, so the free-tier rule below holds; a third-party reference still goes down `codex` |
 | `gemini` | Google's image model over the Generative Language API, one HTTP call through curl | 10-20 s; **not on the free tier**: the first live run (21.10, a fresh key) answered `RESOURCE_EXHAUSTED ... limit: 0` for every image-model metric, which means no free allocation for image models at all, not a cap reached. A project with billing (Tier 1) pays per image, in the cents; a new billing account starts with trial credit | `GEMINI_API_KEY` from a project with billing; `GEMINI_IMAGE_MODEL` to change the model (default `gemini-2.5-flash-image`) | volume: a wave of props from themselves, best of three in minutes, once the owner puts billing on the project |
 
+The production line that runs these routes in bulk (pools of entries with a status each, waves cut by a runner, every draft kept, the owner's pick as a recorded action) is planned in [PRODUCTION_LINE.md](PRODUCTION_LINE.md).
+
 Rules that hold for every route:
 
 - **The key lives in the environment**, never in a spec, a log or the repository. The Gemini route
@@ -213,6 +215,33 @@ Left open:
 - **The negative prompt adds `glow, vignette, light rays, halo`** (`KAGGLE_NEGATIVE`, still inside the 77
   tokens of the Stable Diffusion encoders). On the same seed the cottage still came back with a round halo of
   light above its roof, a smaller one than the wedge, so the words help but the importer's key stays the guard.
+
+## The pick feeds the next round
+
+The owner's pick used to live in the owner's head and in DECISIONS prose, so every round of "best of three" began
+from three blind seeds. Two small pieces close the loop, and neither adds a second record of a pick:
+
+- **The picks manifest is the record.** `tools/kit-gen/rich-wave.manifest.jsonl` has one line per picked image
+  (`picked`, `drawer`, `seed`, `model_key`, `round`). `kit:gen` reads it (`--picks <manifest.jsonl>`, default that
+  file; `--no-picks` ignores it) and draws an entry that has a pick again from the picked draw's **seed** (kaggle and
+  local) and, on kaggle, its **recipe** (`model_key`: `sdxl`, `flux`, `qwen`). A recipe set by `KAGGLE_MODEL` or
+  `KAGGLE_RECIPE` wins over the picked one; the seed still carries. A seed means something only on the route that
+  drew it, so a pick from another route changes nothing. An entry with no pick is drawn as before, and entries
+  that pick different recipes go up in separate kernel runs (a kernel loads one model). `--dry` prints a
+  `pick of <date>: seed, recipe` line for each entry that carries one. The manifest itself is never written by
+  tools: `content/kit/core/kit.json` cites its lines by number.
+- **One run with the pick, one with a new seed.** Run the wave once as it is (the picked seed is drawn again, a
+  safe baseline), then once with `--no-picks` and a new `KAGGLE_SEED`, and compare the two in the gallery: two
+  draws replace three blind seeds. A new winner is recorded in the picks manifest the way the earlier ones were.
+- **The rule of two.** `pnpm kit:notes --runs <run manifest.jsonl>... <spec.json>` reads the manifests of earlier
+  rounds (`.scratch/kit-gen/<spec>/manifest.jsonl`). A warning that came back on two or more draws of one entry
+  (numbers ignored) becomes a clause in that entry's `notes`; a warning seen once is noise and is not copied. The
+  importer's two grid warnings become the advice they end in (`more fine detail`, `fewer, bigger details`); any other
+  warning is kept as it is. Existing notes stay, nothing is added twice, and a spec with nothing new is not
+  rewritten. Read the notes before the next run: a warning that is a known false alarm on a recipe (the coarse-grid
+  one on `flux` and `qwen`, above) is not worth a clause, and the spec is yours to edit.
+- **Notes ride last.** Every prompt builder (`buildPrompt`, `kagglePrompt`, `kaggleSentencePrompt`, `localPrompt`)
+  appends `notes` after the entry's own `detail`, so a prompt cut to the 77-token window loses them first.
 
 ## What is free, honestly
 

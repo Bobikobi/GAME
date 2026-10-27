@@ -39,7 +39,7 @@ const applied = await migrate(pool);
 if (applied.length > 0) console.log(`applied ${applied.length} migration(s): ${applied.join(', ')}`);
 
 // the session mode signs players in over the same pool; the header mode has no sign-in at all
-function identity(chosen: Auth): Pick<ApiOptions, 'resolvePlayerId' | 'signIn'> {
+function identity(chosen: Auth): Pick<ApiOptions, 'resolvePlayerId' | 'signIn' | 'nameOf'> {
   if (chosen.mode === 'dev-header') return { resolvePlayerId: chosen.resolve };
   const signIn = createSignIn({
     store: createPgAuthStore(pool),
@@ -54,7 +54,7 @@ function identity(chosen: Auth): Pick<ApiOptions, 'resolvePlayerId' | 'signIn'> 
   // the expired flows, links, tickets and sessions go on a timer, never on a player's request: a database
   // error here is a log line, not someone's failed sign-in (finding 10 of the 27.10 review)
   setInterval(() => void signIn.sweep().catch((error: unknown) => console.error('the sign-in sweep failed', error)), SIGN_IN_SWEEP_MS).unref();
-  return { resolvePlayerId: signIn.resolve, signIn };
+  return { resolvePlayerId: signIn.resolve, signIn, nameOf: signIn.accountName };
 }
 
 // accounts closed more than 30 days ago lose their personal details: at start, then once a day
