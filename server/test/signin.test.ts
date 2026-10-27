@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
 import type { Server } from 'node:http';
-import { newState, serialize, step, type Bundle, type State } from '@game/kernel';
+import { isSeed, newState, serialize, step, widenSeed, type Bundle, type Seed, type State } from '@game/kernel';
 
 import { createGameApi, createPlayerRecord, createSignIn, googleProvider, listen, type Mail, type PlayerRecord, type PlayerStore, type SignIn } from '../src';
 import { ageGate, ageOn, consentAge, parseBirthDate, UNKNOWN_COUNTRY_AGE } from '../src/auth/age';
@@ -18,8 +18,8 @@ vi.mock('../src/handover', async (importOriginal) => {
 });
 
 const APP = 'http://localhost:5173';
-/** the seed every account of these tests is given: the server's own, never the phone's */
-const SECRET_SEED = 424242;
+/** the key every account of these tests is given: the server's own, never the phone's */
+const SECRET_SEED: Seed = [424242, 0x9e3779b9, 0x7f4a7c15, 0xf39cc060];
 let bundle: Bundle;
 let server: Server | undefined;
 
@@ -55,7 +55,7 @@ function started(): State {
 }
 
 /** The API in the session mode, on a free port, with Google, a mail outbox and a clock the test moves. */
-async function ready(options: { google?: boolean; countryHeader?: string; addressHeader?: string; googleTimeoutMs?: number } = {}) {
+async function ready(options: { google?: boolean; countryHeader?: string; addressHeader?: string; googleTimeoutMs?: number; ownKeys?: boolean } = {}) {
   const clock = { now: Date.UTC(2026, 9, 21, 12) };
   const store = new MemoryAuthStore();
   const players = new Players(store);
@@ -75,7 +75,8 @@ async function ready(options: { google?: boolean; countryHeader?: string; addres
   late.signIn = createSignIn({
     store,
     bundle,
-    newSeed: () => SECRET_SEED,
+    // `ownKeys` leaves the key to the sign-in's own source, as the API runs it
+    ...(options.ownKeys ? {} : { newSeed: () => SECRET_SEED }),
     mailer: { name: 'test', send: (mail) => Promise.resolve(void outbox.push(mail)) },
     google: options.google === false ? undefined : googleProvider({ clientId: CLIENT_ID, clientSecret: CLIENT_SECRET, fetch: google.fetch, timeoutMs: options.googleTimeoutMs }),
     publicOrigin: base,
@@ -429,7 +430,7 @@ describe('sign-in by an email link (NEXT 18 e)', () => {
 });
 
 describe('the sign-up (NEXT 18 e; CR-49, CR-53)', () => {
-  async function ticket(options: { countryHeader?: string } = {}) {
+  async function ticket(options: { countryHeader?: string; ownKeys?: boolean } = {}) {
     const w = await ready(options);
     await googleSignIn(w);
     return w;
@@ -471,9 +472,29 @@ describe('the sign-up (NEXT 18 e; CR-49, CR-53)', () => {
     expect((await signUp(w, { ...SIGNUP, birthDate: '1990-01-01' })).status).toBe(401);
   });
 
+  test('each account is given 128 bits of its own from the secure source, and no reply carries them (finding 3)', async () => {
+    const keys: Seed[] = [];
+    for (let i = 0; i < 2; i++) {
+      const w = await ticket({ ownKeys: true });
+      expect((await signUp(w, SIGNUP)).status).toBe(201);
+      const game = [...w.store.games.values()][0]!;
+      keys.push(game.record.state.seed);
+      const served = await (await w.browser.request('/state')).text();
+      expect(served).not.toMatch(/"seed"/);
+      // a word long enough not to turn up by chance among the state's own numbers
+      for (const word of game.record.state.seed) if (word >= 1_000_000) expect(served).not.toContain(String(word));
+      await new Promise<void>((resolve) => server!.close(() => resolve()));
+      server = undefined;
+    }
+    for (const key of keys) expect(isSeed(key)).toBe(true);
+    expect(keys[0]).not.toEqual(keys[1]);
+    // four random words: all three upper ones zero, as a widened 32-bit seed has them, is a 2^-96 chance
+    for (const key of keys) expect(key.slice(1).some((word) => word !== 0)).toBe(true);
+  });
+
   test('the opening the phone played comes along: replayed, kept under the server\'s seed, and served as the account\'s game', async () => {
     const w = await ticket();
-    const phone = new LocalPhone(bundle, 77);
+    const phone = new LocalPhone(bundle, widenSeed(77));
     await playOpening(phone, STARTS[1]);
     const response = await signUp(w, { ...SIGNUP, opening: phone.upload() });
     expect(response.status).toBe(201);
@@ -481,10 +502,10 @@ describe('the sign-up (NEXT 18 e; CR-49, CR-53)', () => {
 
     const accountId = [...w.store.accounts.keys()][0]!;
     const game = w.store.games.get(accountId)!;
-    expect(game.record.state.seed).toBe(SECRET_SEED);
+    expect(game.record.state.seed).toEqual(SECRET_SEED);
     expect(serialize(game.record.state)).toBe(serialize({ ...phone.state, seed: SECRET_SEED }));
     // the account's books begin with the opening, and its grants are booked beside it
-    expect(game.books?.action).toMatchObject({ kind: 'opening', seed: 77 });
+    expect(game.books?.action).toMatchObject({ kind: 'opening', seed: widenSeed(77) });
     expect(game.books?.gold.reduce((total, row) => total + row.deltaMg, 0)).toBe(phone.state.player.gold);
 
     const state = await w.browser.request('/state');
@@ -496,7 +517,7 @@ describe('the sign-up (NEXT 18 e; CR-49, CR-53)', () => {
 
   test('an opening that does not prove, or none at all, starts the account fresh, and the reply says so', async () => {
     const w = await ticket();
-    const phone = new LocalPhone(bundle, 77);
+    const phone = new LocalPhone(bundle, widenSeed(77));
     await playOpening(phone, STARTS[0]);
     const upload = phone.upload();
     const forged = upload.state.replace(`"gold":${phone.state.player.gold}`, `"gold":${phone.state.player.gold + 1}`);
@@ -787,7 +808,7 @@ describe('the limits, the sweep and the retried sign-up (the 27.10 review)', () 
     const other = new Browser(w.base, APP);
     w.google.claims = (nonce, now) => ({ ...new FakeGoogle().claims(nonce, now), sub: 'another', email: 'other@example.com' });
     await googleSignIn({ ...w, browser: other });
-    const phone = new LocalPhone(bundle, 77);
+    const phone = new LocalPhone(bundle, widenSeed(77));
     await playOpening(phone, STARTS[1]);
     const replays = vi.mocked(takeOpening);
     replays.mockClear();

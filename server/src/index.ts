@@ -16,7 +16,7 @@ export {
 } from './ledger';
 export { OPENING_PAY_MAX_MG, OPENING_TIME_MAX_MS, replayOpening, takeOpening, type Handover, type OpeningCaps, type OpeningRow } from './handover';
 export { databaseUrl, migrate } from './migrate';
-export { createPgStore, insertPlayer } from './store-pg';
+export { createPgStore, insertPlayer, seedColumn, seedOfColumn } from './store-pg';
 export { authFromEnv, BootError, type Auth, type SessionConfig } from './boot';
 export { createSignIn, SWEEP_EVERY_MS as SIGN_IN_SWEEP_MS, type SignIn, type SignInOptions } from './auth/signin';
 export { createPgAuthStore } from './auth/store-pg';

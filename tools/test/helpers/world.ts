@@ -6,6 +6,7 @@ import {
   makeWalkable,
   near,
   wakePocket,
+  widenSeed,
 } from '@game/kernel';
 
 import { runCheck } from '../../src/check.js';
@@ -130,6 +131,6 @@ function buildPath(previous: Map<string, string | undefined>, end: Tile): Tile[]
 
 /** The first world seed from `from` whose wake draw lands in a pocket (kernel wakePocket): a test wakes where it means to. */
 export function seedFor(bundle: Bundle, pocket: string, from = 1): number {
-  for (let seed = from; seed < from + 10_000; seed++) if (wakePocket(bundle, seed) === pocket) return seed;
+  for (let seed = from; seed < from + 10_000; seed++) if (wakePocket(bundle, widenSeed(seed)) === pocket) return seed;
   throw new Error(`No seed draws ${pocket}.`);
 }

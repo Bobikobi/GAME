@@ -7,8 +7,8 @@
  * confirm starts the account fresh), and the age gate is the real `ageGate`.
  */
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import type { Bundle } from '@game/kernel';
-import { newState } from '@game/kernel';
+import type { Bundle, Seed } from '@game/kernel';
+import { newState, widenSeed } from '@game/kernel';
 
 import { ageGate, parseBirthDate } from '../../server/src/auth/age';
 import { takeOpening } from '../../server/src/handover';
@@ -19,7 +19,7 @@ export interface FakeAuthOptions {
   /** the server's clock, in ms; the age gate and the wire's clock checks read it */
   now?: () => number;
   /** the secret seed an account's game runs under; fixed so a test can name it */
-  secretSeed?: () => number;
+  secretSeed?: () => Seed;
 }
 
 export interface SignupReply {
@@ -54,13 +54,13 @@ export class FakeAuthServer {
 
   private readonly bundle: Bundle;
   private readonly now: () => number;
-  private readonly secretSeed: () => number;
+  private readonly secretSeed: () => Seed;
   private nextLink = 1;
 
   constructor(bundle: Bundle, options: FakeAuthOptions = {}) {
     this.bundle = bundle;
     this.now = options.now ?? (() => 0);
-    this.secretSeed = options.secretSeed ?? (() => 7);
+    this.secretSeed = options.secretSeed ?? (() => widenSeed(7));
     this.wire = new FakeServer(bundle, newState(bundle, this.secretSeed()), this.now);
   }
 

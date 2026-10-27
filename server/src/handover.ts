@@ -1,7 +1,7 @@
 /**
  * From the demo to an account: the opening handover (NEXT 18 d; the owner's Q4, option A).
  *
- * The phone plays the opening under its own seed, as the demo always has, and keeps every step it played.
+ * The phone plays the opening under its own key, as the demo always has, and keeps every step it played.
  * At the sign-up it hands over that log, the seed and the state it ended on. The server plays the log
  * again from `newState(bundle, seed)` with the rules it applies to a request of its own (the kernel with
  * the travel check, and the movement-time credit of `/moves`), checks that the opening's game time and
@@ -17,7 +17,7 @@
  * 'opening', seed, log }`, with one `gold_ledger` row per grant it made, so `replayAccount` plays the same
  * opening under the phone's seed, switches to the account's seed, and lands on the stored state.
  */
-import { OPENING_LOG_MAX, newState, salePrice, serialize, step, type Action, type Bundle, type OpeningUpload, type State, type Tile } from '@game/kernel';
+import { OPENING_LOG_MAX, isSeed, newState, salePrice, serialize, step, type Action, type Bundle, type OpeningUpload, type Seed, type State, type Tile } from '@game/kernel';
 
 import { createPlayerRecord, isAction, spendWalk, type PlayerRecord } from './api';
 import { goldRowsOf, type LedgerRow } from './ledger';
@@ -44,16 +44,17 @@ export interface OpeningCaps {
 
 const CAPS: OpeningCaps = { timeMs: OPENING_TIME_MAX_MS, payMg: OPENING_PAY_MAX_MG };
 
-/** The largest seed a state holds: the kernel keeps it as an unsigned 32-bit number. */
-const SEED_MAX = 0xffff_ffff;
 /** A serialized state of the opening is a few kilobytes; this is far past any honest one. */
 const STATE_TEXT_MAX = 256 * 1024;
 
 /** The action an account's first log row holds when its opening was kept. */
 export interface OpeningRow {
   kind: 'opening';
-  /** the phone's seed, the one the opening's draws were made under; the account plays on under its own */
-  seed: number;
+  /**
+   * the phone's key, the one the opening's draws were made under; the account plays on under its own. A row
+   * written before kernel 0.20 holds the phone's 32-bit seed here, which the replay widens as a save is.
+   */
+  seed: Seed | number;
   log: { a: Action; tick: number }[];
 }
 
@@ -75,7 +76,8 @@ function readUpload(value: unknown): OpeningUpload | string {
   if (value === undefined) return 'no opening was sent';
   if (!isRecord(value) || !hasOnlyKeys(value, ['seed', 'log', 'state'])) return 'the opening holds a seed, a log and a state, nothing else';
   const { seed, log, state } = value;
-  if (!Number.isSafeInteger(seed) || (seed as number) < 0 || (seed as number) > SEED_MAX) return 'the opening has no seed';
+  // a phone of kernel 0.19 or before sent a 32-bit number: its opening was played under the old draw and cannot land
+  if (!isSeed(seed)) return 'the opening has no seed';
   if (typeof state !== 'string' || state.length > STATE_TEXT_MAX) return 'the opening has no state';
   if (!Array.isArray(log) || log.length === 0) return 'the opening has no log';
   if (log.length > OPENING_LOG_MAX) return `the opening log runs past ${OPENING_LOG_MAX} steps`;
@@ -84,7 +86,7 @@ function readUpload(value: unknown): OpeningUpload | string {
       return `step ${index} is not an action with a tick`;
     }
   }
-  return { seed: seed as number, log: log as OpeningUpload['log'], state };
+  return { seed, log: log as OpeningUpload['log'], state };
 }
 
 /** Gold plus what the bag would sell for: the whole pay an opening carries. */
@@ -133,7 +135,7 @@ export function replayOpening(bundle: Bundle, upload: OpeningUpload, timeMaxMs =
  * secret seed when every check holds, else a fresh state under it, with the reason the opening was not
  * kept. Never throws on what a phone sent.
  */
-export function takeOpening(bundle: Bundle, sent: unknown, secretSeed: number, now: number, caps: OpeningCaps = CAPS): Handover {
+export function takeOpening(bundle: Bundle, sent: unknown, secretSeed: Seed, now: number, caps: OpeningCaps = CAPS): Handover {
   const fresh = (problem: string): Handover => ({ kept: false, record: createPlayerRecord(bundle, newState(bundle, secretSeed), now), problem });
   const upload = readUpload(sent);
   if (typeof upload === 'string') return fresh(upload);
@@ -142,7 +144,8 @@ export function takeOpening(bundle: Bundle, sent: unknown, secretSeed: number, n
   if (serialize(played.state) !== upload.state) return fresh('the replay does not land on the phone\'s state');
   const worth = worthMg(bundle, played.state);
   if (worth > caps.payMg) return fresh(`the opening carries ${worth} mg, past the cap of ${caps.payMg}`);
-  const state: State = { ...played.state, seed: secretSeed >>> 0 };
+  // the phone's key is the phone's: from here on every draw is under the server's, which no reply carries
+  const state: State = { ...played.state, seed: secretSeed };
   return {
     kept: true,
     record: createPlayerRecord(bundle, state, now),
