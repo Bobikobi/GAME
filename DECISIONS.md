@@ -3182,3 +3182,59 @@ Finding 3 of the 27.10 security review: `draw(seed, entity, counter)` was a fast
 ## 2026-10-27 ✅ The email sign-in finishes in a real browser: the token in the fragment, the link page's own origin, and limits by the proxy's address
 The 27.10 security review found that the email link could not complete from a browser: the link page was served with `no-referrer`, under which a form POST carries `Origin: null`, and its CSP `form-action 'self'` blocked the 303 to the game in Chromium and WebKit. The suite was green only because its test browser set Origin by hand. Chosen: the page is `same-origin` and its CSP names the game's origin, the confirm accepts the API's own origin and no other route does, and the token rides in the link's fragment, read by one hashed inline script, so no log holds it. The old `?token=` form is moved to the fragment for one release, then removed. The test browser now opens the link and presses the button the way a browser does, deriving the Origin from the page's referrer policy and checking `form-action` on the redirect. A headless Chrome run on the local pair landed on `#signin=ok` signed in, with no CSP violation. Also: `MAILER=log` starts only beside `ALLOW_LOG_MAILER=staging-only`, the in-process limits count by `CLIENT_ADDRESS_HEADER` (required off loopback), a sign-up checks the name before it replays an opening instead of caching the replay, and the OAuth flow is still spent before the code exchange (the code is single-use at Google, so a reload could not finish anyway).
 **Retry when:** the game and the API become one origin (finding 4): the confirm's origin set and `form-action` then collapse to `'self'`. Model: claude-opus-5-5.
+## 2026-10-27 ✅ The art production line keeps its drafts in a separate repo, one release per kernel run
+Every draw of the production line (`docs/art/PRODUCTION_LINE.md`, #370) is kept and never deleted, but at about 1 MB a raw picture and hundreds of them the files do not belong in this public repo. The owner's pick: a separate drafts repo with one release per kernel run; this repo keeps the append-only index `tools/kit-gen/drafts.jsonl`, which cites each draft by its SHA-256, tag and asset, and a local cache under `.scratch/` fills from the releases.
+Weighed:
+- (a) Git LFS in this repo: one repo, but every clone and CI checkout spends the account's LFS quota.
+- (b) A separate drafts repo with a release per kernel run: no quota and this clone does not grow, one more repo to keep. Chosen.
+- (c) A folder outside git with the index here: free, but one disk holds the only copy.
+The owner, 27.10: (b), the plan's recommended default.
+**Retry when:** release uploads fail or slow the runner, or the drafts repo's visibility needs to differ from the game's. Model: claude-opus-5-5.
+## 2026-10-27 ✅ The owner picks the line's art, and whom he names in `pickers.json`
+A pick lands a sprite in the kit, so who may pick is recorded, not assumed. The owner's pick: the owner, and whomever he names in `tools/kit-gen/pickers.json`; `art:pick` refuses a picker not in that file, and an agent's opinion stays a suggestion (REUSE.md), never a pick.
+Weighed:
+- (a) The owner and whom he names: the pace is not his alone, the record says who. Chosen.
+- (b) The owner only: every sprite waits for his sitting.
+- (c) The manager session picks polish, the owner direction: fastest, but a builder's eye lands art.
+The owner, 27.10: (a), the plan's recommended default.
+**Retry when:** a named picker's picks are reversed by the owner more than once in a wave, or picks pile up unreviewed. Model: claude-opus-5-5.
+## 2026-10-27 ✅ The line spends 20 of Kaggle's 30 GPU hours a week, with a 6-hour floor kept for re-draws
+The owner's pick: the production line spends at most 20 GPU hours a week, keeps a floor of 6 hours for re-draws and urgent trials, and leaves 4 spare for other GPU work. The meter is the drafts index (each kernel run's own GPU seconds since the weekly reset); the runner stops before a kernel that would cut into the floor. At the 27.10 measure the whole list costs a few hours, so the owner's review, not the budget, sets the pace.
+Weighed:
+- (a) 20 hours, a 6-hour floor, 4 spare: the line can never starve a re-draw or a trial. Chosen.
+- (b) 12 hours: half left for other GPU work, nothing slower at today's rate.
+- (c) 26 hours: the fastest drafts, no room for an urgent trial.
+The owner, 27.10: (a), the plan's recommended default.
+**Retry when:** Kaggle changes its weekly hours, or the floor goes unused for three weeks running while waves wait. Model: claude-opus-5-5.
+## 2026-10-27 ✅ A wave of the production line is 12 entries
+The owner's pick: the runner cuts waves of 12 entries, each kernel under 30 GPU minutes (about 5 + 1.8 N minutes on `qwen`, 6 + 0.4 N on `flux`, measured 27.10), so a failed run loses little and one review sitting is about 36 cards (qwen one seed, flux two).
+Weighed:
+- (a) 6 entries: short reviews, more of each run spent loading.
+- (b) 12 entries: under 30 GPU minutes a kernel, one sitting of about 36 cards. Chosen.
+- (c) 24 entries: the fewest loads, a 72-card review and a long run to lose on failure.
+The owner, 27.10: (b), the plan's recommended default.
+**Retry when:** a review of 36 cards is regularly left half done, or the loading time changes enough to move the balance. Model: claude-opus-5-5.
+## 2026-10-27 ✅ The pick is made in the gallery: its buttons write a picks file, and `art:pick --from` applies it
+The owner's pick: the gallery of every draft is the pick surface. Each card has pick, again and wrong-object buttons; the page has no server and writes a `picks-<date>.json` the browser downloads, which is the recorded act. `pnpm art:pick --from <file>` applies it: the PNG and the kit entry land, the picks manifest gains a line with the draft id and the picker, and one pull request goes up per wave of picks.
+Weighed:
+- (a) The gallery's buttons writing a picks file, applied by `art:pick --from`: the owner clicks, the file is the record. Chosen.
+- (b) A command per pick: the simplest to build, but someone types for him.
+- (c) A small local server that writes the pick at the click: no download step, a server to keep running.
+The owner, 27.10: (a), the plan's recommended default.
+**Retry when:** the download step loses picks in practice, or the owner wants to pick from a phone where a downloaded file is awkward. Model: claude-opus-5-5.
+## 2026-10-27 ✅ The asked size alone sets the drawing canvas; the old 16 px sprite only names the object
+The 27.10 proof run drew an oak asked at 192x320 on a 1024x1024 canvas, because `kaggleCanvas` took its shape from the old 16 px sprite, and it came back 180x170. The owner's pick: the asked size of STYLE 1b alone sets the canvas (the long side capped and measured on a T4, the short side by the ratio, multiples of 64); the old sprite names the object and is no shape hint. A drawing off the asked ratio by more than a tenth is an error on its gallery card.
+Weighed:
+- (a) The asked size alone: the oak is drawn tall as STYLE 1b asks. Chosen.
+- (b) The old sprite's shape stretched to the asked ratio: keeps today's silhouettes, which the tall props are leaving.
+- (c) The asked size, with the old sprite as a low-denoise reference for small props: a second path to tune.
+The owner, 27.10: (a), the plan's recommended default.
+**Retry when:** a kind drawn from its asked size alone loses an identity the old sprite carried (then that kind gets a reference, by name). Model: claude-opus-5-5.
+## 2026-10-27 ✅ The family check of the world study becomes a warning on the gallery card, after it lands on its own
+The world study on `art/rich-opening-ground` built a family check (`tools/src/art`, `docs/art/families/*.json`): an approved anchor such as the original oak, and an aspect and edge-density comparison against it. The owner's pick: once that branch lands on its own, the production line runs the check on every draft of an entry with an `anchor` and shows a deviation as a warning on its gallery card; it never blocks a pick.
+Weighed:
+- (a) Adopt it after it lands, as a card warning: one check of likeness, not two. Chosen.
+- (b) Keep the line's own checks only: the family stays a study tool.
+- (c) Make a family warning block a pick: stricter, but its thresholds are tested on one oak.
+The owner, 27.10: (a), the plan's recommended default.
+**Retry when:** the thresholds are tested on more families than the oak and their warnings agree with the owner's picks (then a block may be weighed again). Model: claude-opus-5-5.
