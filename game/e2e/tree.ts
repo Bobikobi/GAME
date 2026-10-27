@@ -395,7 +395,8 @@ async function phone(page: Page, url: string): Promise<void> {
         if (hit !== el) out.push(el.dataset.node + ' at ' + dx + ',' + dy + ' (' + Math.round(r.width) + ' px)');
       }
     }
-    return checked >= 5 ? out : ['only ' + checked + ' nodes in view'];
+    // the starting view holds 3 or more nodes away from the edges (3 with develop's six schools, 354 nodes)
+    return checked >= 3 ? out : ['only ' + checked + ' nodes in view'];
   })()`);
   if (misses.length > 0) throw new Error(`taps miss: ${misses.join('; ')}`);
   log('every node in view takes a 44 px tap');
