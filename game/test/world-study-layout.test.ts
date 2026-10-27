@@ -29,7 +29,7 @@ test('the coast uses supported shore pieces and every full land tile connects to
 });
 
 test('the added ground patches have rounded edges and reachable authored centres on land', () => {
-  for (const id of ['paving', 'worn'] as const) {
+  for (const id of ['paving', 'worn', 'sand'] as const) {
     const view = worldStudyLayout.viewpoints.find(p => p.id === id)!;
     expect(worldStudyMaterial((view.x + .5) * WORLD_TILE_SIZE, (view.y + .5) * WORLD_TILE_SIZE)).toBe(id);
     expect(worldStudyLandTile(view.x, view.y)).toBe(true);
@@ -43,6 +43,26 @@ test('the added ground patches have rounded edges and reachable authored centres
   for (let x = branch[0]!.x; x <= end.x; x += .125) {
     expect(worldStudyLandTile(Math.floor(x), branch[0]!.y)).toBe(true);
     expect(worldStudyPathDistance((x + .5) * WORLD_TILE_SIZE, (branch[0]!.y + .5) * WORLD_TILE_SIZE)).toBeLessThan(.001);
+  }
+});
+
+test('ground-study spurs join the existing route without a water crossing or a long straight run', () => {
+  const network = [...worldStudyLayout.path.points];
+  for (const branch of worldStudyLayout.path.branches ?? []) {
+    expect(branch.some(point => network.some(p => p.x === point.x && p.y === point.y))).toBe(true);
+    for (let i = 1; i < branch.length; i++) {
+      const a = branch[i - 1]!, b = branch[i]!;
+      const dx = b.x - a.x, dy = b.y - a.y;
+      expect((dx === 0) !== (dy === 0)).toBe(true);
+      const length = Math.abs(dx) + Math.abs(dy);
+      expect(length).toBeLessThanOrEqual(8);
+      for (let at = 0; at <= length * 8; at++) {
+        const x = a.x + .5 + dx * at / (length * 8), y = a.y + .5 + dy * at / (length * 8);
+        expect(worldStudyLandTile(Math.floor(x), Math.floor(y))).toBe(true);
+        expect(worldStudyPathDistance(x * WORLD_TILE_SIZE, y * WORLD_TILE_SIZE)).toBeLessThan(.001);
+      }
+    }
+    network.push(...branch);
   }
 });
 

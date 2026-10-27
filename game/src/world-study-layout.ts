@@ -2,15 +2,15 @@ import layoutJson from '../../docs/design/frames/rich-world-expansion-2026-10-26
 
 /** This visual fixture uses art pixels directly; it is not a gameplay/kernel map. */
 export const WORLD_TILE_SIZE = 64;
-export type WorldStudyMaterial = 'meadow' | 'forest' | 'path' | 'paving' | 'worn';
+export type WorldStudyMaterial = 'meadow' | 'forest' | 'path' | 'paving' | 'worn' | 'sand';
 /** Integer tile indices. For spawn, viewpoints and path points, the location is the tile centre. */
 export interface WorldStudyPoint { x: number; y: number }
 export interface WorldStudyViewpoint extends WorldStudyPoint {
-  id: 'meadow' | 'forest' | 'cove' | 'shore' | 'paving' | 'worn';
+  id: 'meadow' | 'forest' | 'cove' | 'shore' | 'paving' | 'worn' | 'sand';
   label: string;
 }
 export interface WorldStudyRegion extends WorldStudyPoint {
-  material: 'forest' | 'paving' | 'worn';
+  material: 'forest' | 'paving' | 'worn' | 'sand';
   width: number;
   height: number;
 }

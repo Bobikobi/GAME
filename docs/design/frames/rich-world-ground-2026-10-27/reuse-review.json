@@ -50,6 +50,31 @@
       "tool": "image_gen.imagegen",
       "prompt": "Create a full square seamless 128x128 logical pixel-art ruined floor texture field, intended as four 64x64 ground tiles in Openfold RICH. Top-down flat walkable stone, blue-grey aged small paving slabs partially sunk into dark soil, short uneven cracks, restrained moss in a few seams and occasional tiny flat stone chips. Cool slate grey shadows, muted stone highlights, some warm soil; atmospheric but easily readable and not black. This is ground for the southern ruins, no lore or symbols. NO skulls, bones, graves, runes, buildings, upright rocks, debris piles, grass tufts, props, water, shadows or text. 60% quieter worn surfaces, remaining details in irregular groups. Crisp painterly pixel clusters and selective dithering, not smooth painting. Seamless opposite edges, no tile grid. Reference only for common pixel language.",
       "licence": "No separate source licence statement in this generation record; retained project-generated study art."
+    },
+    {
+      "id": "sha256:aa32d352af868af9bb4870a7ea9ec32017ef9f3a96fd3be1918dc95697f6b378",
+      "source": "sand-source.png",
+      "previousImport": "sand-original.png",
+      "originalLocation": "/home/elad-saadon/Projects/GAME.worktrees/art-tiles-64/.scratch/kit-gen/tiles-64/raw/sand-2026-10-23T18-06-52-379Z.png",
+      "sourceBranch": "art/tiles-64",
+      "sourceCheckoutCommit": "9d07a8075a74a73d9229d750f8b9945621446825",
+      "tracking": "Local draft at discovery; exact raw and previous derivative preserved here. Checkout commit identifies context only.",
+      "family": "tiles-64/sand",
+      "intendedSubject": "Sand ground fill",
+      "depicts": "Quiet warm sand with shallow diagonal ripple fragments and occasional small grains/pebbles",
+      "reuse": [
+        "Whole surface field for an inland dry clearing"
+      ],
+      "tags": [
+        "terrain"
+      ],
+      "status": "keep",
+      "decidedBy": "agent",
+      "reason": "Already-generated sand source supplies a quieter ground family without a new generation call. The raw source retains finer detail than the old64px derivative.",
+      "approval": "Visual study only; owner review pending",
+      "prompt": "sand-source-manifest.jsonl:1",
+      "derivative": "sand.png",
+      "licence": "Unknown separately for this local draft; original generation manifest retained."
     }
   ],
   "otherCandidates": [
@@ -57,7 +82,50 @@
       "source": "art-props-wave-1/.scratch/kit-gen/tiles-built-1-A/cobble.png",
       "status": "rework",
       "decidedBy": "agent",
-      "reason": "Inspected by eye; simple repeated geometric slabs are too coarse for the current detailed world. Original remains in its source worktree; this is a discovery reference, not a durable copied archive."
+      "reason": "Inspected by eye; simple repeated geometric slabs are too coarse for the current detailed world. Original remains in its source worktree; this is a discovery reference, not a durable copied archive.",
+      "id": "sha256:eca1505577d7a288427d2dfab300fc1373cf5acb2c8c9369e504135618203309",
+      "sourceBranch": "art/props-wave-1",
+      "sourceCheckoutCommit": "a9b28235f9c63a06efc8bfd99eb5cf34c861f2fc",
+      "tags": [
+        "terrain"
+      ],
+      "reuse": [
+        "Slab layout reference for later rework"
+      ]
+    },
+    {
+      "id": "sha256:9d9ea0a2fdceab2cad47bc842b1d892a555d7811abbea7f913937ed56496eb0f",
+      "source": "/home/elad-saadon/Projects/GAME.worktrees/art-tiles-64/.scratch/kit-gen/tiles-64/out/sand_1-2026-10-23T18-49-04-202Z.png",
+      "sourceBranch": "art/tiles-64",
+      "sourceCheckoutCommit": "9d07a8075a74a73d9229d750f8b9945621446825",
+      "family": "tiles-64/sand",
+      "depicts": "Very quiet, flat warm sand with sparse grains",
+      "tags": [
+        "terrain"
+      ],
+      "reuse": [
+        "Possible quiet underlayer for later material rework"
+      ],
+      "status": "rework",
+      "decidedBy": "agent",
+      "reason": "Inspected; flatter and less varied than the selected raw sand. Retain in original worktree; not copied into this task archive or used in the scene."
+    },
+    {
+      "id": "sha256:ccdff2aee3e08f9d58cd047c07fd41e4fe604cdb721754b154c3a919da1c5de9",
+      "source": "/home/elad-saadon/Projects/GAME.worktrees/art-tiles-64/.scratch/kit-gen/tiles-64/out/sand_2-2026-10-23T18-52-39-700Z.png",
+      "sourceBranch": "art/tiles-64",
+      "sourceCheckoutCommit": "9d07a8075a74a73d9229d750f8b9945621446825",
+      "family": "tiles-64/sand",
+      "depicts": "Very quiet, flat warm sand with sparse grains",
+      "tags": [
+        "terrain"
+      ],
+      "reuse": [
+        "Possible quiet underlayer for later material rework"
+      ],
+      "status": "rework",
+      "decidedBy": "agent",
+      "reason": "Inspected; flatter and less varied than the selected raw sand. Retain in original worktree; not copied into this task archive or used in the scene."
     }
   ],
   "newImageGenerationCalls": 0

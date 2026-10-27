@@ -1,5 +1,5 @@
 {
-  "method": "Existing importTile and palette, followed by the established border-strip reconciliation; no motif painting or crop shuffling.",
+  "method": "Existing importTile/importSprite and palette, followed by the established border-strip reconciliation; no motif painting or crop shuffling.",
   "reports": [
     {
       "name": "paving",
@@ -20,6 +20,7 @@
         418,
         418
       ],
+      "importer": "importTile",
       "repeat": {
         "borderBlendPixels": 8,
         "before": {
@@ -52,6 +53,7 @@
         418,
         418
       ],
+      "importer": "importTile",
       "repeat": {
         "borderBlendPixels": 8,
         "before": {
@@ -64,6 +66,38 @@
         }
       },
       "originalPrompt": "../rich-world-2026-10-25/prompts.json:jobs[name=ruins]"
+    },
+    {
+      "name": "sand",
+      "source": "sand-source.png",
+      "sourceSha256": "aa32d352af868af9bb4870a7ea9ec32017ef9f3a96fd3be1918dc95697f6b378",
+      "file": "sand.png",
+      "sha256": "33b59d4ce4a48aed5a9dc69b2d968b87415daa0b4ea5d701d8c1a173ab3af625",
+      "ramps": [
+        "wood",
+        "stone"
+      ],
+      "field": [
+        128,
+        128
+      ],
+      "sourceGrid": [
+        170,
+        170
+      ],
+      "importer": "importSprite: existing ordered dither, no padding or outline",
+      "repeat": {
+        "borderBlendPixels": 8,
+        "before": {
+          "horizontal": 0,
+          "vertical": 0
+        },
+        "after": {
+          "horizontal": 0,
+          "vertical": 0
+        }
+      },
+      "originalPrompt": "sand-source-manifest.jsonl:1"
     }
   ]
 }
