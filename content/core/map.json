@@ -3513,10 +3513,10 @@
       {
         "id": "core/bank-herbs",
         "kind": "resource",
-        "x": 9,
-        "y": 19,
-        "w": 2,
-        "h": 2,
+        "x": 10,
+        "y": 20,
+        "w": 1,
+        "h": 1,
         "tag": "riverbank"
       },
       {
