@@ -33,7 +33,9 @@ export type SignInReason =
   | 'email-taken'
   | 'no-signup'
   | 'origin'
-  | 'request';
+  | 'request'
+  /** too many sign-ins asked for from one client address in a short time (429) */
+  | 'slow-down';
 
 export class SignInRefusal extends Error {
   constructor(

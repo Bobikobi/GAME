@@ -18,7 +18,7 @@ export { OPENING_PAY_MAX_MG, OPENING_TIME_MAX_MS, replayOpening, takeOpening, ty
 export { databaseUrl, migrate } from './migrate';
 export { createPgStore, insertPlayer, seedColumn, seedOfColumn } from './store-pg';
 export { authFromEnv, BootError, type Auth, type SessionConfig } from './boot';
-export { createSignIn, type SignIn, type SignInOptions } from './auth/signin';
+export { createSignIn, SWEEP_EVERY_MS as SIGN_IN_SWEEP_MS, type SignIn, type SignInOptions } from './auth/signin';
 export { createPgAuthStore } from './auth/store-pg';
 export { CLOSED_ACCOUNT_GRACE_MS } from './auth/store';
 export { googleProvider } from './auth/google';

@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 
 import { authFromEnv, BootError } from '../src/boot';
@@ -44,14 +45,42 @@ describe('the identity gate at boot', () => {
 });
 
 describe('the session mode at boot (NEXT 18 e)', () => {
-  const ready = { AUTH_MODE: 'session', PUBLIC_ORIGIN: 'https://api.example.org', APP_ORIGIN: 'https://play.example.org' };
+  const ready = {
+    AUTH_MODE: 'session',
+    PUBLIC_ORIGIN: 'https://api.example.org',
+    APP_ORIGIN: 'https://play.example.org',
+    ALLOW_LOG_MAILER: 'staging-only',
+    CLIENT_ADDRESS_HEADER: 'X-Real-IP',
+  };
 
   test('starts with the two origins, the log mailer by default, and Google closed without its pair', () => {
     const auth = authFromEnv(ready);
     if (auth.mode !== 'session') throw new Error('expected the session mode');
-    expect(auth.session).toEqual({ publicOrigin: 'https://api.example.org', appOrigin: 'https://play.example.org', google: undefined, mailer: 'log' });
+    expect(auth.session).toEqual({ publicOrigin: 'https://api.example.org', appOrigin: 'https://play.example.org', google: undefined, mailer: 'log', addressHeader: 'x-real-ip' });
     expect(auth.notice).toMatch(/session cookie/);
+    expect(auth.notice).toContain('staging only');
     expect(auth.notice).not.toContain('Google');
+  });
+
+  test('the log mailer starts only beside ALLOW_LOG_MAILER=staging-only: it writes live links to the log (finding 5)', () => {
+    const { ALLOW_LOG_MAILER: _allowed, ...unflagged } = ready;
+    expect(() => authFromEnv(unflagged)).toThrow(/ALLOW_LOG_MAILER/);
+    expect(() => authFromEnv({ ...unflagged, MAILER: 'log' })).toThrow(/ALLOW_LOG_MAILER/);
+    for (const value of ['', '1', 'true', 'staging', 'Staging-Only']) {
+      expect(() => authFromEnv({ ...unflagged, ALLOW_LOG_MAILER: value }), value).toThrow(BootError);
+    }
+  });
+
+  test('names the address header off a loopback origin, since behind nginx every request comes from nginx (finding 6)', () => {
+    const { CLIENT_ADDRESS_HEADER: _header, ...unnamed } = ready;
+    expect(() => authFromEnv(unnamed)).toThrow(/CLIENT_ADDRESS_HEADER/);
+    const laptop = authFromEnv({ ...unnamed, PUBLIC_ORIGIN: 'http://localhost:8080', APP_ORIGIN: 'http://localhost:5173' });
+    if (laptop.mode !== 'session') throw new Error('expected the session mode');
+    expect(laptop.session.addressHeader).toBeUndefined();
+    expect(laptop.notice).toContain('the socket address');
+    for (const bad of ['X Real IP', 'x-real-ip:', 'x_real_ip']) {
+      expect(() => authFromEnv({ ...ready, CLIENT_ADDRESS_HEADER: bad }), bad).toThrow(/CLIENT_ADDRESS_HEADER/);
+    }
   });
 
   test('takes Google only as a pair, and the notice never carries the secret', () => {
@@ -112,5 +141,25 @@ describe('the process itself', () => {
       expect(run.stdout).not.toContain('openfold api on');
       expect(run.stderr).toMatch(/AUTH_MODE|ALLOW_DEV_HEADER/);
     }
+  });
+});
+
+describe('the nginx site file (the 27.10 review)', () => {
+  const conf = readFileSync(new URL('../../deploy/nginx-openfold.conf', import.meta.url), 'utf8');
+  const auth = /location \/auth\/ \{([^}]*)\}/.exec(conf)?.[1] ?? '';
+
+  test('sign-in has a request limit and a log line without the query string (findings 5, 6)', () => {
+    expect(conf).toMatch(/^limit_req_zone \$binary_remote_addr zone=openfold_auth:\S+ rate=\d+r\/m;$/m);
+    expect(auth).toMatch(/limit_req zone=openfold_auth /);
+    expect(auth).toMatch(/access_log \S+ openfold_auth;/);
+    const format = /^log_format openfold_auth (.*);$/m.exec(conf)?.[1] ?? '';
+    expect(format).toContain('$uri');
+    for (const leaks of ['$request ', '$request"', '$request_uri', '$args', '$query_string', '$http_referer']) expect(format).not.toContain(leaks);
+  });
+
+  test('the client address the API counts by is set by nginx, never passed through', () => {
+    expect(conf).toContain('proxy_set_header X-Real-IP $remote_addr;');
+    // the headers sit on the server, so neither location may set its own and drop them
+    for (const location of conf.matchAll(/location [^{]*\{([^}]*)\}/g)) expect(location[1]).not.toContain('proxy_set_header');
   });
 });
