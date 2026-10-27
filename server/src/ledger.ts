@@ -18,7 +18,7 @@
  * one row `{ kind: 'opening', seed, log }`. The replay plays it from `newState(bundle, seed)` under the
  * phone's seed, then gives the state the account's own seed, as the sign-up did, and goes on from there.
  */
-import { newState, serialize, step, type Action, type Bundle, type GameEvent, type State } from '@game/kernel';
+import { isSeed, newState, serialize, step, type Action, type Bundle, type GameEvent, type Seed, type State } from '@game/kernel';
 
 /** One row of `action_log`: the action as the client sent it (a `moves` batch included) and its tick. */
 export interface LoggedAction {
@@ -39,8 +39,8 @@ export interface LedgerRow {
 
 /** The books of one account, as the database holds them. */
 export interface AccountBooks {
-  /** the state's secret seed: the server's alone, and the key the replay's luck is drawn from */
-  seed: number;
+  /** the state's secret key: the server's alone, and the key the replay's luck is drawn from */
+  seed: Seed;
   log: readonly LoggedAction[];
   state: State;
   ledger: readonly LedgerRow[];
@@ -141,9 +141,12 @@ function stepsOf(action: unknown, tick: number): { action: Action; tick: number 
 }
 
 /** The opening a log row hands over (NEXT 18 d): the phone's seed and its steps, or undefined for any other row. */
-function openingOf(action: unknown): { seed: number; steps: { action: Action; tick: number }[] } | string | undefined {
+function openingOf(action: unknown): { seed: Seed | number; steps: { action: Action; tick: number }[] } | string | undefined {
   if (!isRecord(action) || action.kind !== 'opening') return undefined;
-  if (!Number.isSafeInteger(action.seed) || !Array.isArray(action.log)) return 'the opening row holds no seed or log';
+  // a row written before kernel 0.20 holds the phone's 32-bit seed, which `newState` widens as a save is
+  const seed = action.seed;
+  const old = typeof seed === 'number' && Number.isSafeInteger(seed) && seed >= 0 && seed <= 0xffff_ffff;
+  if ((!old && !isSeed(seed)) || !Array.isArray(action.log)) return 'the opening row holds no seed or log';
   const steps: { action: Action; tick: number }[] = [];
   for (const entry of action.log) {
     if (!isRecord(entry) || !isRecord(entry.a) || typeof entry.a.t !== 'string' || !Number.isSafeInteger(entry.tick)) {
@@ -151,7 +154,7 @@ function openingOf(action: unknown): { seed: number; steps: { action: Action; ti
     }
     steps.push({ action: entry.a as unknown as Action, tick: entry.tick as number });
   }
-  return { seed: action.seed as number, steps };
+  return { seed: seed as Seed | number, steps };
 }
 
 /**
@@ -159,7 +162,7 @@ function openingOf(action: unknown): { seed: number; steps: { action: Action; ti
  * ledger the log implies. The first refusal is the answer: an action the server accepted must play
  * again, so a log that stops replaying at row N is a finding about either the log or the rules.
  */
-export function replayAccount(bundle: Bundle, seed: number, log: readonly LoggedAction[]): ReplayResult {
+export function replayAccount(bundle: Bundle, seed: Seed, log: readonly LoggedAction[]): ReplayResult {
   let state = newState(bundle, seed);
   const ledger: LedgerRow[] = [];
   for (const [index, row] of log.entries()) {
@@ -175,7 +178,7 @@ export function replayAccount(bundle: Bundle, seed: number, log: readonly Logged
         ledger.push(...goldRowsOf(bundle, [{ action: one.action, tick: one.tick, events: result.events }]));
         state = result.state;
       }
-      state = { ...state, seed: seed >>> 0 };
+      state = { ...state, seed };
       continue;
     }
     const steps = stepsOf(row.action, row.tick);

@@ -9,7 +9,7 @@
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import type { IncomingMessage, Server } from 'node:http';
 
-import { LEGACY_STARTERS, OPENING_LOG_MAX, newState, npcTile, publicState, serialize, step, type Action, type Bundle, type OpeningUpload, type State } from '@game/kernel';
+import { LEGACY_STARTERS, OPENING_LOG_MAX, newState, npcTile, publicState, serialize, step, type Action, type Bundle, type OpeningUpload, type Seed, type State, widenSeed } from '@game/kernel';
 
 import {
   OPENING_PAY_MAX_MG,
@@ -23,10 +23,10 @@ import { openingQuests } from '../../tools/src/play.js';
 import { loadBundle } from '../../tools/test/helpers/world.js';
 import { LocalPhone, MemoryStore, PLAYER, STARTS, Wire, playOpening, type Start } from './support/phone.js';
 
-/** The phone's seed: the demo draws under it, and the account never plays under it again. */
-const PHONE_SEED = 77;
-/** The seed the server gives the account: its own, and nobody else's. */
-const SECRET_SEED = 424242;
+/** The phone's key: the demo draws under it, and the account never plays under it again. */
+const PHONE_SEED: Seed = widenSeed(77);
+/** The key the server gives the account: its own, and nobody else's, all 128 bits of it. */
+const SECRET_SEED: Seed = [424242, 0x9e3779b9, 0x7f4a7c15, 0xf39cc060];
 const NOW = 5_000_000;
 
 let bundle: Bundle;
@@ -189,6 +189,35 @@ describe('the opening handover (NEXT 18 d)', () => {
     expectFresh(takeOpening(bundle, { ...upload, log: [{ a: { t: 'start' }, tick: -1 }] }, SECRET_SEED, NOW), /^step 0 is not/);
     expectFresh(takeOpening(bundle, undefined, SECRET_SEED, NOW), /no opening was sent/);
     expectFresh(takeOpening(bundle, 'opening', SECRET_SEED, NOW), /nothing else/);
+  });
+
+  test('a phone of kernel 0.19 or before sent a 32-bit seed: its opening was drawn under the old draw and starts the account fresh', async () => {
+    const { upload } = await captured();
+    expectFresh(takeOpening(bundle, { ...upload, seed: 77 }, SECRET_SEED, NOW), /no seed/);
+    expectFresh(takeOpening(bundle, { ...upload, seed: [77, 0, 0] }, SECRET_SEED, NOW), /no seed/);
+    expectFresh(takeOpening(bundle, { ...upload, seed: [77, 0, 0, 2 ** 32] }, SECRET_SEED, NOW), /no seed/);
+    expectFresh(takeOpening(bundle, { ...upload, seed: [77, 0, 0, -1] }, SECRET_SEED, NOW), /no seed/);
+  });
+
+  test('the phone\'s key stays the phone\'s: the account plays under its own, and the books keep only the phone\'s', async () => {
+    const { upload } = await captured();
+    const handover = kept(takeOpening(bundle, upload, SECRET_SEED, NOW));
+    expect(handover.record.state.seed).toEqual(SECRET_SEED);
+    expect(handover.opening.seed).toEqual(PHONE_SEED);
+    expect(JSON.stringify(handover.opening)).not.toContain(String(SECRET_SEED[1]));
+    expect(publicState(handover.record.state)).not.toHaveProperty('seed');
+  });
+
+  test('books written before kernel 0.20 still replay: an opening row with the phone\'s 32-bit seed widens as a save does', async () => {
+    const { upload } = await captured();
+    const handover = kept(takeOpening(bundle, upload, SECRET_SEED, NOW));
+    // PHONE_SEED is widenSeed(77): the row the old server wrote held the number itself
+    const oldRow = { ...handover.opening, seed: 77 };
+    const books = { seed: SECRET_SEED, log: [{ seq: 1, action: oldRow, tick: handover.tick }], state: handover.record.state, ledger: handover.gold };
+    expect(checkAccount(bundle, books)).toEqual([]);
+    expect(checkAccount(bundle, { ...books, log: [{ seq: 1, action: { ...oldRow, seed: 2 ** 32 }, tick: handover.tick }] })).toEqual([
+      'seq 1: the opening row holds no seed or log',
+    ]);
   });
 
   test('a kept account proves itself: its log, opening first, replays to the stored state after it plays on over the wire', async () => {

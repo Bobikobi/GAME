@@ -11,7 +11,7 @@
 import type { WeatherName } from '@game/schema';
 import type { Bundle, Instance, ReactionDef, ResourceDef } from './bundle';
 import { idiv } from './num';
-import { drawBasisPoints } from './rng';
+import { drawBasisPoints, type Seed } from './rng';
 import { type State, attrAt, hourOf, isNight, senseReach, techniqueValue , type PublicState } from './state';
 import { spotOpen } from './step';
 import { regionAt, tagAt } from './world';
@@ -167,7 +167,7 @@ export const WEATHER_ODDS: readonly (readonly [WeatherName, number])[] = [
  * phone never computes it: the seed is the server's, which sends the day's sky with its reply, as it
  * sends the appear nodes that stand (DECISIONS 2026-10-20, a drawn outcome is the server's to say).
  */
-export function weatherOf(seed: number, region: string, day: number): WeatherName {
+export function weatherOf(seed: Seed, region: string, day: number): WeatherName {
   let roll = drawBasisPoints(seed, `weather@${region}`, day);
   for (const [kind, bp] of WEATHER_ODDS) {
     if (roll < bp) return kind;

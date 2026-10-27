@@ -29,7 +29,7 @@ describe('the health bar is hp', () => {
     const saved = JSON.parse(serialize(s)) as { player: Record<string, unknown> };
     expect(saved.player).not.toHaveProperty('satiety');
     expect(saved.player).not.toHaveProperty('satietyAt');
-    expect(KERNEL_VERSION).toBe('0.19.0');
+    expect(KERNEL_VERSION).toBe('0.20.0');
   });
 
   test('a save from before kernel 0.19 carries its satiety over as hp, and the old fields go', () => {

@@ -6,9 +6,10 @@
 import type { NodeSizeName, SchoolNodeDef } from '@game/schema';
 import type { BodyEffectName, Bundle, SchoolDef, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
+import { widenSeed, type Seed } from './rng';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.19.0';
+export const KERNEL_VERSION = '0.20.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -16,9 +17,10 @@ export type Attribute = (typeof ATTRIBUTES)[number];
 /**
  * The shape of a saved state. Format 2 (kernel 0.14, the races): `attrs.carry` is `attrs.might`,
  * `attrs.spirit` is new, and the player's `starter` became a `race` and a wake `pocket`.
- * `migrateState` brings a format 1 save forward; a save always loads.
+ * Format 3 (kernel 0.20, the keyed luck): the seed is a 128-bit key, four 32-bit words (`Seed`), where it
+ * was one 32-bit number. `migrateState` brings an older save forward; a save always loads.
  */
-export const STATE_FORMAT = 2;
+export const STATE_FORMAT = 3;
 
 /**
  * The three starters of format 1 and what each became (DECISIONS.md, 2026-10-22): the race it reads
@@ -219,7 +221,8 @@ export interface State {
   format: number;
   kernel: string;
   content: string;
-  seed: number;
+  /** the world's secret key (rule R4): every draw is keyed by it. Never on a screen or in a reply (`PublicState`) */
+  seed: Seed;
   tick: number;
   player: Player;
   nodes: Record<string, NodeState>;
@@ -232,13 +235,17 @@ export interface State {
 /** The state as a screen or a reply sees it: the seed is the server's alone (kernel-review R4). */
 export type PublicState = Omit<State, 'seed'>;
 
-export function newState(bundle: Bundle, seed: number): State {
+/**
+ * A world at its start. The key is a `Seed`; a plain number is a 32-bit seed of the kind kernel 0.19 kept,
+ * widened as an old save is (`widenSeed`): a test's or a debug link's fixed world, never a live secret.
+ */
+export function newState(bundle: Bundle, seed: Seed | number): State {
   const attrs = Object.fromEntries(ATTRIBUTES.map((a) => [a, 0])) as Record<Attribute, number>;
   return {
     format: STATE_FORMAT,
     kernel: KERNEL_VERSION,
     content: bundle.tag,
-    seed: seed >>> 0,
+    seed: typeof seed === 'number' ? widenSeed(seed) : [seed[0], seed[1], seed[2], seed[3]],
     tick: 0,
     player: {
       name: '',
@@ -284,7 +291,8 @@ export function newState(bundle: Bundle, seed: number): State {
 }
 
 /**
- * Brings a saved state of an older format forward (format 1 to 2: the races). Pure: returns a new
+ * Brings a saved state of an older format forward (format 1 to 2: the races; 2 to 3: the seed widens
+ * to a key, `widenSeed`, the same key wherever the save is loaded). Pure: returns a new
  * object and leaves the input as it was. `carry` is read as `might`, `spirit` starts at 0, and the
  * starter becomes its race and its pocket (LEGACY_STARTERS); an unknown starter keeps its id as the
  * race with no pocket, and the caller decides whether the content still holds it. The old six-point
@@ -304,7 +312,18 @@ export function migrateState(saved: State): State {
     delete named.satiety;
   }
   delete named.satietyAt;
-  if ((s.format ?? 1) >= STATE_FORMAT) return s;
+  const format = s.format ?? 1;
+  if (format < 2) toFormat2(s);
+  // kernel 0.20: the 32-bit seed widens to a 128-bit key; its draws differ from before, as every draw does.
+  // A state the server stored has no seed at all (its key is a column of its own): it stays without one.
+  const seed: unknown = s.seed;
+  if (typeof seed === 'number') s.seed = widenSeed(seed);
+  if (format < STATE_FORMAT) s.format = STATE_FORMAT;
+  return s;
+}
+
+/** Format 1 to 2, in place: the races. */
+function toFormat2(s: State & { player: Player & { starter?: string; attrs: Record<string, number> } }): void {
   const p = s.player;
   const attrs = p.attrs ?? {};
   if (attrs.might === undefined) attrs.might = attrs.carry ?? 0;
@@ -326,8 +345,6 @@ export function migrateState(saved: State): State {
     s.nodes[now] ??= s.nodes[id]!;
     delete s.nodes[id];
   }
-  s.format = STATE_FORMAT;
-  return s;
 }
 
 // ------------------------------------------------------------ derived numbers

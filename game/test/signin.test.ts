@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, test } from 'vitest';
 import type { Bundle } from '@game/kernel';
-import { newState, publicState, step, serialize } from '@game/kernel';
+import { newState, publicState, step, serialize, type Seed } from '@game/kernel';
 
 import { joinRemote } from '../src/app';
 import { WireGap } from '../src/remote';
@@ -125,7 +125,7 @@ describe("the title screen's sign-in (the screen logic)", () => {
 describe('the fake sign-in server (NEXT 18 d handover, on the fake)', () => {
   // 1 June 2026: a fixed "today" for the age gate
   const NOW = Date.UTC(2026, 5, 1);
-  const SECRET = 11;
+  const SECRET: Seed = [11, 0x9e3779b9, 0x7f4a7c15, 0xf39cc060];
 
   test('an opening the replay confirms is kept: the account plays it under the secret seed', () => {
     const auth = new FakeAuthServer(bundle, { now: () => NOW, secretSeed: () => SECRET });
@@ -149,7 +149,7 @@ describe('the fake sign-in server (NEXT 18 d handover, on the fake)', () => {
     expect(auth.account).toEqual({ email: 'tess@example.com', name: 'Tess' });
     // the kept opening is the account's game, under a seed the phone never saw
     expect(auth.wire.state.player.name).toBe('Tess');
-    expect(auth.wire.state.seed).toBe(SECRET);
+    expect(auth.wire.state.seed).toEqual(SECRET);
   });
 
   test('a log the replay cannot confirm starts the account fresh, with the one-line answer the screen reads', () => {
@@ -165,7 +165,7 @@ describe('the fake sign-in server (NEXT 18 d handover, on the fake)', () => {
     const answer = auth.signup({ name: 'Tess', birthDate: '2000-05-07', oneAccount: true, opening: upload });
     expect(answer.status).toBe(201);
     expect(answer.body).toEqual({ name: 'Tess', opening: 'fresh' });
-    expect(auth.wire.state.seed).toBe(SECRET);
+    expect(auth.wire.state.seed).toEqual(SECRET);
     expect(auth.wire.state.player.race).toBe('');
   });
 

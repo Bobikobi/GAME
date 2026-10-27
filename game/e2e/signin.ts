@@ -17,6 +17,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Bundle } from '@game/kernel';
+import { widenSeed } from '@game/kernel';
 
 import { Browser, type Page } from './cdp';
 import { FakeAuthServer } from '../test/fake-auth';
@@ -225,7 +226,7 @@ async function main(): Promise<void> {
   console.log('[signin] building the game with VITE_GAME_SERVER empty (the wire on its own origin)');
   buildSignInDist();
   const bundle = loadBundle();
-  const auth = new FakeAuthServer(bundle, { now: () => NOW, secretSeed: () => 7 });
+  const auth = new FakeAuthServer(bundle, { now: () => NOW, secretSeed: () => widenSeed(7) });
   const { server, url } = await serve(auth);
   const browser = await Browser.launch();
   try {
