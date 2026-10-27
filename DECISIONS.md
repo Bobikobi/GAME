@@ -3121,6 +3121,7 @@ PROGRESSION.md Q7, options A (a lesson is time at the ordinary rate, asking stan
 - Diminishing returns for the same pair.
 - Selling carries falls under "An exploit loop costs its accounts and the gold it made" (9.10).
 The builder's fill (proposed, PROGRESSION 3.7): the terms per school, so a quarter of nothing is nothing; "stronger" one band above in that school, "near" the same group within 12 tiles; the pair's help full for its first 60 active minutes in a real day, half for the next 60, none after, reset at 00:00 UTC. The +20% is declared as the one multiplier on experience (against R6's activity record); no body state or node adds another.
+**Superseded in part (26.10):** the group share is a split of experience the group already earned, moved from the earners and never made; the mentor's +20% stays the one bonus (the ✅ entry "Balance prover finding 2" below; PROGRESSION 3.7).
 **Retry when:** pairs or rings of accounts farm the share (then the pair schedule shortens and the exploit-loop rule acts), or newcomers in groups still fall behind solo players (then the share, never a carry). Model: claude-opus-5-5.
 
 ## 2026-10-25 ⏸ Body clocks: the research for Q8, a recommended set, and the call open
@@ -3211,76 +3212,88 @@ Corrected on the way: section 4.3's point count (48 a school, 42 a player's shar
 Open, owner calls (PROGRESSION section 9): does a heavy step pay Travel (recommended: yes, only the added time); trail courses (recommended: yes, one a band).
 **Retry when:** walking heavy becomes the cheapest Travel training (then the heavy step pays nothing), a shortcut feels like a wall (then its level comes down, never fewer long ways round), or a place needs both Travel and a garment to cross (then the stacking rule is checked, never a third source). Model: claude-opus-5-5.
 
-## 2026-10-25 ⏸ Balance prover finding 1: the berry-mash vendor loop breaks red line A (proposed: off the stall, or a higher price)
+## 2026-10-25 ✅ Balance prover finding 1: the berry-mash vendor loop breaks red line A (proposed: off the stall, or a higher price)
 
 The balance prover (`pnpm balance`, #342) run on content: buy two raw berries at the trader (5,000 mg each), make berry mash (4 s, level 1, a sure craft), sell it for 31,500 mg: +21,500 mg a craft, a money loop the 4.7 red line A forbids (craft, sell, buy and repeat nets at most 0).
 Proposed value: take raw berries off the trader's stall, or price a berry at no less than 15,750 mg (half the mash's sale price). Effect: `loop_profit_max` passes on content and can then be wired into `pnpm check`; gathering berries stays the only way into mash money.
+**Accepted 2026-10-26, as proposed:** a raw berry costs 15,750 mg at the trader's stall (`content/core/shops/trader-shop.json`), half the mash's sale price, so a craft nets 0 and `loop_profit_max` passes on content; the other form, berries off the stall, would break the recorded openings and the simulated player, which buy a berry there.
 **Retry when:** the owner picks one of the two (then a ✅ entry, the content change and the row wired). Model: claude-opus-5-5.
 
-## 2026-10-25 ⏸ Balance prover finding 2: the group share (Q7) is an experience source beside the mentor (proposed: it splits experience already earned)
+## 2026-10-25 ✅ Balance prover finding 2: the group share (Q7) is an experience source beside the mentor (proposed: it splits experience already earned)
 
 Red line B (4.7: nothing grants experience except the mentor's +20%) against Q7's group rule: a newcomer's share of the group's earned experience (at most a quarter of their own) adds experience nobody earned, so it is a second source.
 Proposed value: the share is a split of experience the group already earned (moved from the earners, never created); the mentor's +20% stays the only bonus. Effect: `xp_sources` holds for groups; a carry stays bounded as Q7 meant, and the sum of a group's experience equals its members' own work.
+**Accepted 2026-10-26, as proposed:** PROGRESSION 3.7 words the share as moved from the earners, never made; the Q7 entry carries a superseding note.
 **Retry when:** the owner answers (then Q7's ✅ entry gets a superseding note and PROGRESSION 3.7 its wording). Model: claude-opus-5-5.
 
-## 2026-10-25 ⏸ Balance prover finding 3: the grade-4 jackpot pays 3x experience in the kernel (proposed: pay in goods, experience x1)
+## 2026-10-25 ✅ Balance prover finding 3: the grade-4 jackpot pays 3x experience in the kernel (proposed: pay in goods, experience x1)
 
 `kernel/src/step.ts` gives gather and dig `JACKPOT_XP = 3` times the active time on a grade-4 roll: experience from luck, not from time, against red line B.
 Proposed value: the jackpot pays in goods (a larger or rarer yield); experience stays x1 of the active time. Effect: experience is time again everywhere (#302 curve, 51.7 h a school holds exactly); a kernel change with its own test, in a later code PR.
+**Accepted 2026-10-26, as proposed:** PROGRESSION 4.7 (red line B) says luck pays goods, never experience; the kernel multiplier comes out in a code pull request of its own.
 **Retry when:** the owner answers (then a code PR removes the multiplier). Model: claude-opus-5-5.
 
-## 2026-10-25 ⏸ Balance prover finding 4: legendary is no stronger than the best rare (proposed: rare band 750-900 permille)
+## 2026-10-25 ✅ Balance prover finding 4: legendary is no stronger than the best rare (proposed: rare band 750-900 permille)
 
 On the stand-in catalogue built by 5.7's rules, rare things reach 75-100% of a tier's full strength and legendary 100%, both with two effects, so the best rare equals a legendary.
 Proposed value: the rare band is [750, 900] permille; legendary keeps [1000]. Effect: a legendary is always at least 10% stronger than any rare of its tier, and the rarity reads in numbers.
+**Accepted 2026-10-26, as proposed:** `rarity_band_permille` rare is [750, 900] in `content/core/params.json`; PROGRESSION 4.7 and 5.7 quote it.
 **Retry when:** the owner answers (then 5.7's table and the `rarity_band_permille` row). Model: claude-opus-5-5.
 
-## 2026-10-25 ⏸ Balance prover finding 5: deep snow and ice are both answered only on the feet (proposed: ice grip may also be worn on the hands)
+## 2026-10-25 ✅ Balance prover finding 5: deep snow and ice are both answered only on the feet (proposed: ice grip may also be worn on the hands)
 
 `condition_pairs` on the stand-in catalogue: at the top grade the top band cannot answer deep snow and ice together; both answers sit in the feet slot, so grade 3 is left.
 Proposed value: an ice-grip effect may also sit on the hand slot (crampons on the feet or claws in the hands). Effect: the top band answers every pair of conditions in full, as 4.7 asks; the row stops warning.
+**Accepted 2026-10-26, as proposed:** BODY_CLOCKS 6.1 lets `ice_grip` sit on the feet and the hands.
 **Retry when:** the owner answers, or a place pairs the two conditions. Model: claude-opus-5-5.
 
-## 2026-10-25 ⏸ Balance prover finding 6: 19 stand-in effects round to 0 inside their rarity band (proposed: round down, never below 1)
+## 2026-10-25 ✅ Balance prover finding 6: 19 stand-in effects round to 0 inside their rarity band (proposed: round down, never below 1)
 
 `rarity_band_permille` on the fixture: where an effect's full value is small (1-3), its rarity's permille band rounds the strength to 0, so a common or uncommon thing carries an effect that does nothing.
 Proposed value: strengths round down, with a floor of 1. Effect: every listed effect does something; the default "rarity strengths round down" stays, with the floor added.
+**Accepted 2026-10-26, as proposed:** PROGRESSION 5.7 words the rounding (down, floor 1).
 **Retry when:** the owner answers (then 5.7 gets the rounding line). Model: claude-opus-5-5.
 
-## 2026-10-25 ⏸ Balance prover finding 7: the strongest build runs 1.70-1.89x the median at every band (proposed: the warning line at 2.00)
+## 2026-10-25 ✅ Balance prover finding 7: the strongest build runs 1.70-1.89x the median at every band (proposed: the warning line at 2.00)
 
 `top_builds` on the fixture: the strongest build per band scores 1,707-1,887 permille of the median (line 1,600), at all five bands; free stacking up to the ceilings does this by design (4.7).
 Proposed value: raise the warning line to 2,000 permille, and keep it a warning, never a failure. Effect: the row flags a real outlier (a combination far past what the ceilings intend) and stays quiet about the chase the owner wants.
+**Accepted 2026-10-26, as proposed:** `top_over_median_max_permille` is 2000 in `content/core/params.json`, still a warning; PROGRESSION 4.7 quotes it.
 **Retry when:** the owner answers, or a band's strongest build passes 2.00x. Model: claude-opus-5-5.
 
-## 2026-10-25 ⏸ Balance prover finding 8: grades 1-2 never make a wall above band 2 (proposed: walls at band 3+ are grade 3-4)
+## 2026-10-25 ✅ Balance prover finding 8: grades 1-2 never make a wall above band 2 (proposed: walls at band 3+ are grade 3-4)
 
 `wall_not_cheesable` on the fixture: at grades 1 and 2 a player two bands below gets through at any length, so such a place cannot be a wall above band 2.
 Proposed value: a wall at band 3 or more is grade 3 or 4, with the length windows the prover prints for each band. Effect: every flagged wall is provable both ways; designers read the window before setting a length.
+**Accepted 2026-10-26, as proposed:** PROGRESSION 4.7 section 3 says a wall at band 3 or more is grade 3 or 4.
 **Retry when:** the owner answers, or a grade-2 place is wanted as a wall. Model: claude-opus-5-5.
 
-## 2026-10-25 ⏸ Balance prover finding 9: calm snow empties a band-1 player in about four minutes (proposed: grade-1 drain 10%)
+## 2026-10-25 ✅ Balance prover finding 9: calm snow empties a band-1 player in about four minutes (proposed: grade-1 drain 10%)
 
 On the fixture: grade-1 calm snow empties a band-1 player without snowshoes in 4 min 10 s real (5 min 33 s while eating), short for the gentlest grade.
 Proposed value: the grade-1 drain is 10% of the cap (BODY_CLOCKS 5). Effect: calm snow reads as a warning a beginner can walk through and learn from, while grades 3-4 stay walls.
+**Accepted 2026-10-26, as proposed:** `grade_drain_pct` grade 1 is 10 in `content/core/params.json`; BODY_CLOCKS 5.2, 5.3 and 9 and PROGRESSION 4.7 carry the new times (8 min 20 s bare).
 **Retry when:** the owner answers (then BODY_CLOCKS 5's grade table). Model: claude-opus-5-5.
 
-## 2026-10-25 ⏸ Balance prover finding 10: drain as a share of the cap makes the health ceiling buy no time in a wall (proposed: drain in points of the base cap)
+## 2026-10-25 ✅ Balance prover finding 10: drain as a share of the cap makes the health ceiling buy no time in a wall (proposed: drain in points of the base cap)
 
 BODY_CLOCKS 5 drains a share of the health cap, so a higher cap drains faster in the same proportion and a health raiser buys no seconds in a draining place.
 Proposed value: drain in points of the base cap (the share of the cap a band-1 player has). Effect: health gear and the health ceiling's raisers matter in a wall; a wall's witness can be a health build.
+**Accepted 2026-10-26, as proposed:** drain and `sustain` are counted in points of the base cap (BODY_CLOCKS 5.2, PROGRESSION 4.7 pass rule, the schema descriptions); the numbers in `grade_drain_pct` are unchanged.
 **Retry when:** the owner answers (then BODY_CLOCKS 5 and the prover's pass rule). Model: claude-opus-5-5.
 
-## 2026-10-25 ⏸ Balance prover finding 11: regen and mend dishes add nothing while food is carried (proposed: +2 sustain while one lasts)
+## 2026-10-25 ✅ Balance prover finding 11: regen and mend dishes add nothing while food is carried (proposed: +2 sustain while one lasts)
 
 With the default "while a place drains, carried food brings sustain up to the band's ceiling", sustain already sits at the ceiling, so a regeneration or mend dish adds nothing there.
 Proposed value: a regen or mend dish adds +2 sustain on top while it lasts (inside the `sustain` raisers' room). Effect: those dishes have a reason to exist in a wall; the clamp still holds the ceiling for everything else.
+**Accepted 2026-10-26, as proposed:** BODY_CLOCKS 5.3 and 7.6 and PROGRESSION 4.7 word the +2 on top of the sustain ceiling.
 **Retry when:** the owner answers (then BODY_CLOCKS 5.6 and the dish definitions). Model: claude-opus-5-5.
 
-## 2026-10-25 ⏸ Balance prover finding 12: danger by level and the G-check by distance disagree (proposed: recommend by band until the map grows)
+## 2026-10-25 ✅ Balance prover finding 12: danger by level and the G-check by distance disagree (proposed: recommend by band until the map grows)
 
 `pnpm map:difficulty` recommends danger from the arriving level (up to 4 at tangle-heart), while the reach check measures danger by distance (within one of steps / 64); on today's small map the two disagree.
 Proposed value: recommend danger by band (ceil(level / 5)) until the map is large enough for distance to separate places. Effect: one danger scale on today's map; the distance check returns as the map grows.
+**Accepted 2026-10-26, as proposed:** `pnpm map:difficulty` recommends danger by band (`tools/src/balance/reckon.ts`, its test updated).
 **Retry when:** the map passes the size where steps / 64 spans the bands. Model: claude-opus-5-5.
 ## 2026-10-25 ✅ The camera comes closer; the character is the measure; tall props grow to the table
 

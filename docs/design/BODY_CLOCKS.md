@@ -81,17 +81,17 @@ Two bars, health and experience, and nothing else on the body. A place carries *
 
 ### 5.2 The ladder (closed, proposed)
 
-The drain is a **share of the player's own maximum health per game hour** (health cap = 100 + 20 a point of stamina), so a grade means the same thing to a new player and a strong one, and stamina never makes a place harmless; what moves the time is the answer worn and eaten. Shown per real second for a new player (cap 100) and a mid one (stamina 5, cap 200).
+The drain is a **number of points per game hour, counted on the base cap of 100** (balance findings 9 and 10, accepted 26.10), the same for every player: a bigger health cap (100 + 20 a point of stamina, and the health ceiling's raisers) is more points to lose, so health buys time in a place, and what stops the drain is the answer worn and eaten. `sustain` and the dish's `regen` are counted in the same points. Shown per real second, and as the time from full to zero for a new player (cap 100) and a mid one (stamina 5, cap 200); a game hour is 50 real seconds.
 
-| Grade | Name | Walk x | Work x | Drain, of the cap a game hour | New (100) | Mid (200) | Bare, full to zero |
+| Grade | Name | Walk x | Work x | Drain, points of the base cap a game hour | A second, any player | New (100), bare, full to zero | Mid (200), bare, full to zero |
 |---|---|---|---|---|---|---|---|
-| 0 | calm | 1.0 | 1.0 | none | none | none | never |
-| 1 | rough | 1.15 | 1.15 | 20% | 0.4 a second (a point every 2.5 s) | 0.8 a second | 5 game hours, **4 min 10 s** |
-| 2 | severe | 1.3 | 1.3 | 35% | 0.7 a second | 1.4 a second | 2.9 game hours, 2 min 23 s |
-| 3 | extreme | 1.5 | 1.5 | 60% | 1.2 a second | 2.4 a second | 1.7 game hours, 1 min 23 s |
-| 4 | deadly | 2.0 | 2.0 | 100% | 2 a second | 4 a second | 1 game hour, 50 s |
+| 0 | calm | 1.0 | 1.0 | none | none | never | never |
+| 1 | rough | 1.15 | 1.15 | 10 | 0.2 (a point every 5 s) | 10 game hours, **8 min 20 s** | 16 min 40 s |
+| 2 | severe | 1.3 | 1.3 | 35 | 0.7 | 2.9 game hours, 2 min 23 s | 4 min 46 s |
+| 3 | extreme | 1.5 | 1.5 | 60 | 1.2 | 1.7 game hours, 1 min 23 s | 2 min 47 s |
+| 4 | deadly | 2.0 | 2.0 | 100 | 2 | 1 game hour, 50 s | 1 min 40 s |
 
-Calm snow is grade 1: a new player in it with nothing on loses about a point every two and a half seconds and has a little over four minutes from full, the owner's "tolerable for a few real minutes". Grade 4 is for one or two places at the end of the long way only, and still never a door (P3): a bare player can step in for fifty seconds and back out.
+Calm snow is grade 1: a new player in it with nothing on loses a point every five seconds and has a little over eight minutes from full, the owner's "tolerable for a few real minutes" (the first draft's 20 gave four minutes, short for the gentlest grade). Grade 4 is for one or two places at the end of the long way only, and still never a door (P3): a bare player can step in for fifty seconds and back out.
 
 The slow is on the step (`walk_step_ms` x the grade's walk) and on every work time (as `hp_low_pct`'s x1.5 is); the two multiply when both apply. The drain is counted in the kernel per game millisecond in integer basis points with the remainder carried, so it is exact and replayable.
 
@@ -101,12 +101,12 @@ The strength `s` of the answer lowers the grade: remaining = max(0, grade - s). 
 
 | Grade | Bare | New, tier 1-2 trait (s 1) | Mid, tier 3-4 trait (s 2) | Mid + a matching dish (s 3) | Late, tier 5 trait (s 3) | Late + dish or a master piece (s 4) |
 |---|---|---|---|---|---|---|
-| 1 rough | 4 min 10 s | none | none | none | none | none |
-| 2 severe | 2 min 23 s | 4 min 10 s (as grade 1) | none | none | none | none |
-| 3 extreme | 1 min 23 s | 2 min 23 s | 4 min 10 s | none | none | none |
-| 4 deadly | 50 s | 1 min 23 s | 2 min 23 s | 4 min 10 s | 4 min 10 s | none |
+| 1 rough | 8 min 20 s | none | none | none | none | none |
+| 2 severe | 2 min 23 s | 8 min 20 s (as grade 1) | none | none | none | none |
+| 3 extreme | 1 min 23 s | 2 min 23 s | 8 min 20 s | none | none | none |
+| 4 deadly | 50 s | 1 min 23 s | 2 min 23 s | 8 min 20 s | 8 min 20 s | none |
 
-A dish's "health back over time" (section 7) stretches a time: at tier 3 (4% a game hour) grade 1 bare goes from 4 min 10 s to 5 min 12 s. Food eaten heals in points, as today. While a place drains, all health back, food eaten included, comes in at most at the `sustain` ceiling of the wearer's band (PROGRESSION 4.7: 5% to 15% of the cap a game hour); outside a draining place a meal heals at once, as built. So no place is eaten through: below the drain, food only stretches the time.
+A dish's "health back over time" (section 7) stretches a time: at tier 3 (4 points a game hour) grade 1 bare goes from 8 min 20 s to 13 min 53 s (a new player). Food eaten heals in points, as today. While a place drains, all health back, food eaten included, comes in at most at the `sustain` ceiling of the wearer's band (PROGRESSION 4.7: 5 to 15 points of the base cap a game hour); outside a draining place a meal heals at once, as built. A `regen` or `mend` dish adds +2 on top of the ceiling while it lasts, inside the room a `sustain` raiser gives (balance finding 11, accepted 26.10), so those dishes still count in a place after carried food has brought `sustain` to the ceiling. So no place is eaten through: below the drain, food only stretches the time.
 
 ### 5.4 Conditions and where a grade comes from (closed, proposed)
 
@@ -140,7 +140,7 @@ No meter, no slow fill and empty, no "warm" state carried out of the place: the 
 | `cold_proof` | `frost` | top, back, head | Tailoring (wool, fur), Leatherwork (lined hide) | wool from the farm, fur from Hunting |
 | `snow_shod` | `deep_snow` | feet | Woodcraft (snowshoes), Leatherwork (high boots) | ash and gut, hide |
 | `storm_proof` | `storm` | back, top | Tailoring (oiled cloth), Leatherwork (waxed hide) | linen and oil, hide and wax |
-| `ice_grip` | `ice` | feet | Handcraft's Stonework (stone studs, tiers 1-2), Smithing (iron cleats, tier 3 and up; city only, decision 51) | stone, iron |
+| `ice_grip` | `ice` | feet, hands (crampons on the feet, claws in the hands) | Handcraft's Stonework (stone studs, tiers 1-2), Smithing (iron cleats, tier 3 and up; city only, decision 51) | stone, iron |
 | `heat_ward` | `heat` | head, top | Tailoring (light cloth, a wide hat) | linen, reed |
 
 ### 6.2 Strength by tier
@@ -169,7 +169,7 @@ Every effect is one row in content with five fields, and nothing else: its **sta
 | `cold_proof`, `snow_shod`, `storm_proof`, `ice_grip`, `heat_ward` | the grade of `frost`, `deep_snow`, `storm`, `ice`, `heat` | `cancel_grade` | 1, 1, 1, 1, 1 step |
 | `work_<school>` (one per working school: Foraging, Woodcutting, Digging, Mining, Fishing, Hunting, Cooking, Handcraft, Woodcraft, Tailoring, Leatherwork, Smithing, Remedies, Tinkering) | that school's work time | `mult` | 950, 920, 880, 840, 800 permille |
 | `hp_max` | the health cap | `mult` | 1050, 1100, 1150, 1200, 1250 |
-| `regen` | health back a game hour, of the cap | `flat` | 200, 300, 400, 500, 600 bp |
+| `regen` | health back a game hour, in points of the base cap | `flat` | 200, 300, 400, 500, 600 bp |
 | `mend` | health from food, kits and bandages | `mult` | 1100, 1150, 1200, 1250, 1300 |
 | `light_sense` | sight in the dark, tiles (the torch's light stays the item's) | `flat` | 1, 1, 2, 2, 3 |
 | `find_sense` | the rare-find roll (`rare_find_pct`) | `flat` | 2, 3, 4, 5, 6 points |
@@ -212,6 +212,7 @@ Cooking's `long_simmer` lengthens a dish's time; no node adds strength beyond it
 - The same effect in both slots: the **stronger counts**, never the sum. Only one dish's place answer counts (+1 step). Dish effects add with every other source of their category (nodes, worn effects, traits) and stop at the band's ceiling (PROGRESSION 4.7); no dish raises a ceiling, and no dish raises the strength of a made thing (the no-loop line).
 - When `hp_max` ends, health above the cap falls to the cap; nothing else is lost. A lapsed dish is the absence of a bonus, never a penalty (the research's point 2).
 - **A dish never adds experience.** Faster work in a school is the same experience a second (PROGRESSION 3.2); the mentor's +20% stays the one multiplier (3.7).
+- **Regeneration and mend in a draining place** (balance finding 11): carried food brings `sustain` to the band's ceiling; a `regen` or `mend` dish adds +2 on top while it lasts, inside the room one raiser gives. It is a sum above the clamp for these two effects only, never a raised ceiling.
 - What it replaces: the first draft's "Fed" is folded into the dish effects; Cooking's `meal_fill_pct` stays the health a meal gives back.
 
 ## 8. Sleep (Q8b)
@@ -221,7 +222,7 @@ Sleep saves the game and passes the night: in one's own valley, sleeping in a to
 ## 9. Kernel shape (proposed; additive; integer)
 
 - Schema: `CONDITIONS` = `frost | deep_snow | storm | ice | heat`; `TRAITS` = `cold_proof | snow_shod | storm_proof | ice_grip | heat_ward` with `TRAIT_ANSWERS` (trait -> condition); `DISH_EFFECTS` (section 7.2); an item's `trait?: Trait`; a resource's `tags?: DishEffect[]` (one or two); a recipe's effects derived and checked.
-- Params, `place`: `grades` = `[ {walk_pct: 100, work_pct: 100, drain_bp_h: 0}, {115, 115, 2000}, {130, 130, 3500}, {150, 150, 6000}, {200, 200, 10000} ]`, `trait_strength_by_tier` [1, 1, 2, 2, 3], `master_step` 1, `dish_place_step` 1, `deadly_places_max` 2. Params, `dish`: `slots` 2, `effects_max` 2, `ingredients` [2, 4], `dur_gh_by_tier` [6, 9, 12, 18, 24]. Content: `effects/*.json`, one row an effect with `stat`, `kind`, `by_tier`, `category` (7.2).
+- Params, `place`: `grades` = `[ {walk_pct: 100, work_pct: 100, drain_bp_h: 0}, {115, 115, 1000}, {130, 130, 3500}, {150, 150, 6000}, {200, 200, 10000} ]` (`drain_bp_h` is basis points of the base cap of 100 a game hour, the same for every cap; the params file's `grade_drain_pct` holds the same numbers in points), `trait_strength_by_tier` [1, 1, 2, 2, 3], `master_step` 1, `dish_place_step` 1, `deadly_places_max` 2. Params, `dish`: `slots` 2, `effects_max` 2, `ingredients` [2, 4], `dur_gh_by_tier` [6, 9, 12, 18, 24]. Content: `effects/*.json`, one row an effect with `stat`, `kind`, `by_tier`, `category` (7.2).
 - A region of the map plan: `conditions?: { [c in Condition]?: grade }`; `climates.json` per climate: `night`, `noon`, `weather` steps per condition.
 - Player: `dishes?: { effects: DishEffect[]; tier: number; until: number }[]` (at most two). No body field for places: the grade at a tile is a pure function `harshAt(bundle, tile, time, weather)`, capped by `dangerAt`, and the drain is applied on the step that moves time, as `hurt` is, only while the player is in the world.
 - The move check reads the place's walk multiplier with `walk_step_ms`; work times read the work multiplier where `hp_low_pct` is read.

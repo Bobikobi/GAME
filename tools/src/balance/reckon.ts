@@ -67,7 +67,7 @@ export interface PlaceRow {
   levelMax: number;
   band: number;
   charLevel: number;
-  /** the recommended danger on the 9.10 scale: 0 on safe ground, else the arrival's level */
+  /** the recommended danger on the 9.10 scale: 0 on safe ground, else the arrival's band (balance finding 12: by band until the map is large enough for distance to separate places) */
   dRec: number;
   quests: { count: number; kinds: string[]; eachMs: number; nextStepMs: number };
   monsters: { tier: string; oneInMinutes: number; strengthPermille: number; authored: string[] } | null;
@@ -334,7 +334,7 @@ export function reckon(b: Bundle, rules: Rules): PlaceRow[] {
     const steps = reached.length > 0 ? Math.min(...reached.map((p) => p.steps!)) : null;
     const centre: [number, number] = [slot.x + Math.trunc(slot.w / 2), slot.y + Math.trunc(slot.h / 2)];
     const dNow = dangerAt(b, centre);
-    const dRec = dNow === 0 ? 0 : level;
+    const dRec = dNow === 0 ? 0 : bandOf(rules, level);
     const nextStepMs = stepMs(rules.t1Ms, rules.ratioPermille, level);
     const share = Math.trunc((nextStepMs * rules.questSharePct) / 100);
     const count = Math.min(rules.questsMax, Math.max(1, Math.trunc((share + rules.questMinutesMax * 60_000 - 1) / (rules.questMinutesMax * 60_000))));
@@ -371,7 +371,7 @@ export function reckon(b: Bundle, rules: Rules): PlaceRow[] {
         dRec === 0
           ? null
           : {
-              tier: `T${bandOf(rules, dRec)}`,
+              tier: `T${dRec}`,
               oneInMinutes: rules.hazardBp > 0 ? Math.trunc((10_000 + rules.hazardBp * dRec - 1) / (rules.hazardBp * dRec)) : 0,
               strengthPermille: scalePermille(rules.ratioPermille, dRec),
               authored: [...new Set(authored)].sort(),
