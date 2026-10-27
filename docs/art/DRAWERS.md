@@ -193,6 +193,26 @@ Left open:
 - **A shadow in another hue stays.** The shade key takes a darker shade of the background's own colour and
   nothing else; FLUX's purple ground shadows are partly kept, and a wider key ate FLUX's reddish earth in a
   trial, so it stays narrow.
+- **From the prompt alone the canvas follows the ASKED size, not the old sprite's (27.10).** `kaggleCanvas`
+  read the reference PNG, so a 192x320 tree or cottage with a 32x32 reference was drawn on 1024x1024 and came
+  back 180x170 art pixels, and a 64x160 stone drawn on 1024x1856 came back 60x99. `kaggleCanvasFor` takes the
+  spec's grid (width x height) when the recipe draws from the prompt (`qwen`, `flux`) or the denoise is 1, and
+  keeps the reference's shape for image to image: the cottage and the oak are now drawn on 1024x1728 and the
+  stone on 1024x2048 (the long side stays at twice the short one). Same seed, the stone came back 60x108; the
+  cottage 180x188, because the model draws it as wide as it is tall, which no canvas changes.
+- **The background key drops a glow, and the hue band was measured and left out (27.10).** The model paints a
+  soft wedge or halo of warm light on the magenta (`house_small`, `market_stall`); it is nowhere near the
+  background's colour, so the key kept it and the importer drew it as a coloured patch (2868 pixels of the
+  cottage's 21568, and it widened the box the sprite is fitted to). `clearGlows` in `import.ts` floods from the
+  cleared background through pixels that are not the dark outline and a smooth step apart, and clears a region
+  only when it is small, holds a block (not a halo ring), a narrow colour range, and is open to the
+  background along 0.3 or more of its rim (a glow measured 0.65-0.73, a body entered through a gap in its
+  outline 0.01-0.02). Replayed on 45 imports of 39 raws, 41 stayed pixel-identical; the 4 that changed are the two glow
+  pictures, each imported with two anchors, which lost their wedge. A hue band of 20 degrees around the background's hue changed all 50 of the first set (it takes
+  the blended fringe pixels around every outline), so it was dropped.
+- **The negative prompt adds `glow, vignette, light rays, halo`** (`KAGGLE_NEGATIVE`, still inside the 77
+  tokens of the Stable Diffusion encoders). On the same seed the cottage still came back with a round halo of
+  light above its roof, a smaller one than the wedge, so the words help but the importer's key stays the guard.
 
 ## What is free, honestly
 
