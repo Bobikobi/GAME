@@ -15,7 +15,7 @@
     "steps": [
       {
         "kind": "riddle",
-        "clue": "Maru's coin lies under one of the two lantern statues. The marked stone by the river says which. Dig there.",
+        "clue": "Maru's coin lies under one of the two lanterns. The marked stone by the river says which. Dig there.",
         "props": [
           "core/marked-stone",
           "core/town-lantern",
