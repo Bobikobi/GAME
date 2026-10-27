@@ -31,7 +31,7 @@ P-5a, the kernel slice, is in `develop` (aee8491). Read DECISIONS 2026-10-08 "Th
 What the kernel gives:
 - The action `{t:'move', at:[x,y]}` reports a position. It is valid if the tile is walkable and within Chebyshev `2 + floor(elapsed / walk_step_ms)` of the last one. It is accepted while busy and needs a character.
 - Player fields: `town`, `outing {gained, solved, visited} | null`, `chase {hazard, since, bites} | null`, `falls`, `movedAt`. `Session.restore` defaults them.
-- Health is still `player.satiety` (milli-points).
+- Health was `player.satiety` (milli-points); item 7 renamed it `player.hp`.
 - Events: `{e:'hurt', by, id?, hp}` and `{e:'fall', from, at, lost[]}`.
 - Hazards are map props with an id and `hazard {kind: predator|pit|trap|deep_water, window:['night'], reach?}`; none ship yet.
 - `Slot.safe: true` marks safe ground. Town cobble and the first built camp slot are safe.
@@ -57,7 +57,7 @@ P-5c, the content, a second pull request after P-5b:
 4. Raise `hp_low_pct`.
 5. Add the GAME_RULES G30 and G34 rows.
 6. An e2e: at night, step one tile past the ruins' entrance, fall, and reappear in town with nothing lost. The safe threshold has just closed the outing, so the bag, the basket and the quests stay whole (DECISIONS 2026-10-10: a fall takes back only what the outing brought); a fall that takes the outing's finds is proven in the kernel tests until P-6 opens another way in.
-7. Rename `satiety` to `hp` last, in its own commit, after crafting has landed.
+7. Rename `satiety` to `hp` last, in its own commit, after crafting has landed. Built: `player.hp`, `hpCap`, `params.hp_cap`, no hunger drain left (DECISIONS 2026-10-26).
 
 Known wart, in DECISIONS: a quest that completed by itself during an outing keeps its reward after a fall. Mist hazards wait for P-6.
 
@@ -657,6 +657,40 @@ Measurable:
 The feel (speed, acceleration, the stick's dead zone and size) is for the owner on a preview: deploy one and open it in his browser, then iterate on his word without asking again about the numbers inside it.
 
 Before the proving run (AGENTS.md): grep the tests for every counted walk and every `DIRS[` use, fix all expectations in one pass, then the single test files, then `pnpm verify` (one heavy job at a time on a shared machine), then push. If #254 lands first, merge `develop` in, never rebase. Post "PR ready #N" with the PASS/FAIL lines on the pull request. Model: opus, effort high (the walk in two doors, the server's check and every e2e).
+
+## camera-closer. The camera comes closer: the owner's picked view in the real client
+
+Status: open
+
+Read DECISIONS 2026-10-25 "The camera comes closer; the character is the measure; tall props grow to the table" first. The owner picked the closer camera on 25.10. Today `cameraZoom` (`game/src/view.ts`) gives the world zoom 4k with k whole from the short side: 8 on a 390x844 phone at 3x, 4 on a 1440x900 desktop at 1x. The picked view is the whole zoom step at or above 1.5 times that, `4 * ceil(1.5 * base / 4)`: 12 on that phone (6 x 13 tiles in view instead of 9 x 20), 8 on that desktop. The cut-out demo (#336, never merged) shows it.
+
+a) The world's zoom is the picked step everywhere the base zoom is used today; the hold on the stone keeps its own zoom, and a resize recomputes both.
+b) `game/e2e/camera.ts` (zoom 8 at a 3x phone today) expects the new step; every e2e that counts tiles in the window, or walks by screen distance, is checked against it.
+c) The HUD, the dialogue box, the quest tracker and the touch controls still leave the player and the tile in front of the feet in view at 390x844.
+d) Records: the DECISIONS entry marked built.
+
+Measurable:
+1. At 390x844 on a 3x screen the world zoom is 12, at 1440x900 on a 1x screen 8, and every art pixel covers a whole number of device pixels (density 1 and 4).
+2. The camera e2e and the opening e2e are green in CI on a phone and a desktop screen; `pnpm verify` exit 0 in the pull request body.
+3. Phone and desktop stills of the opening's first frame in the pull request, the character at 1x.
+
+Not here: the size of the character (it stays at 1x, each body at its rig height ratio) and the props (`tall-props-to-table`).
+
+## tall-props-to-table. The tall props at the STYLE 1b table's sizes
+
+Status: open
+
+Read DECISIONS 2026-10-25 "The camera comes closer; the character is the measure; tall props grow to the table" and `docs/art/PRE_RICH_REDRAW.md` (#328) first. The character is the measure at 1x (1.5 tiles), and the tall props grow to STYLE.md section 1b's table, approved by the owner on the grown-props still. Today they stand at the 16 px grid's sizes: the oak 2 tiles (the table 5), the young tree 1.44 (3), the dead tree 2 (4), the lantern post 2 (3), the standing stone 1.81 (2.25 to 3), the small house 3 with a door of 0.875 (5, a door of 1.75), the market stall 2 (3), the canopies 2 x 2 (3 x 3), the ruin arch, wall, pillar, statues and totem 1.4 to 2.
+
+a) Every one of them is on the pre-rich redraw list (#328): rows 7 (the canopies), 11 (the trees), 14 (the standing stone), 22 (the house, the well, the stall, the lantern post) and 28 (the ruin set and the statues). The real fix is that redraw, at the table's sizes, in the rich style at 64 px a tile, in the list's order; where a row is a direction (a tree, the forest mass), its stills go to the owner first, as the list says.
+b) A nearest-neighbour upscale of the 16 px art is only a stopgap: it reads blocky beside the rich sprites. If one ships before the redraw, it is named a stopgap in DECISIONS and each kind is replaced by its redraw.
+c) STYLE 1b's rules hold: the map does not move (a bigger drawing grows upward and over its neighbours, never into a new solid tile), a thing that draws over the player shows the player through it, and nothing a task names is hidden.
+d) Records: STYLE 1b's header says the tall props' numbers were seen by the owner (25.10), and the DECISIONS entry is marked built per kind.
+
+Measurable:
+1. Per kind, the opaque height in tiles against the character (1.5 tiles) is in the pull request and inside its STYLE 1b row.
+2. Phone stills at the closer camera of the opening's wake window and the bridge, with no wake tile, pickup or task prop covered over more than half its area (STYLE 1b's wave measure).
+3. `pnpm check` (the kit's density and size check) and `pnpm verify` exit 0.
 
 ## character-pipeline. The characters through the pipeline: the owner's points of 26.10
 

@@ -116,7 +116,7 @@ export function offerSignup(ui: UI): void {
           }
           if (reply.body.reason === 'under-age') {
             // the demo stays open: the one place this box sends a player
-            say(h('p', null, reply.body.error ?? 'You cannot make an Openfold account.'), h('a', { class: 'btn big', href: reply.body.demo ?? '/' }, 'Back to the demo'));
+            say(h('p', null, reply.body.error ?? 'You cannot make an Loomvale account.'), h('a', { class: 'btn big', href: reply.body.demo ?? '/' }, 'Back to the demo'));
             return;
           }
           note.textContent = reply.body.error ?? 'The account could not be made.';

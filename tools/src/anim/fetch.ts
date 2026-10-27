@@ -57,7 +57,7 @@ class Jar {
   }
 }
 
-const AGENT = 'Mozilla/5.0 (X11; Linux x86_64) openfold-tools-anim';
+const AGENT = 'Mozilla/5.0 (X11; Linux x86_64) loomvale-tools-anim';
 
 function csrf(html: string): string {
   const m = /name="csrf_token" value="([^"]+)"/.exec(html);

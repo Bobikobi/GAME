@@ -1,13 +1,13 @@
 # Welcome Developers and Creators
 
-Everything in Openfold - every bush, recipe, quest, shop, and ruin - is an open JSON file in the game's repository. You build the world the same way the core team does: copy a template, tweak declarative fields, run `pnpm check`, and open a pull request. Once merged, the sign at that spot in the valley carries your name, creator points, and invested hours.
+Everything in Loomvale - every bush, recipe, quest, shop, and ruin - is an open JSON file in the game's repository. You build the world the same way the core team does: copy a template, tweak declarative fields, run `pnpm check`, and open a pull request. Once merged, the sign at that spot in the valley carries your name, creator points, and invested hours.
 
 ### Quick Start with AI
 
 Copy and paste this prompt into your AI coding tool (Claude, Cursor, ChatGPT, Antigravity):
 
 ```text
-I want to add a new content extension to Openfold (a community-built 2D RPG).
+I want to add a new content extension to Loomvale (a community-built 2D RPG).
 Repository guidelines:
 - Read docs/creators/README.md and templates/extension/.
 - Place files in content/extensions/<my-handle>/ (resources, recipes, items, npcs, or quests).
@@ -351,13 +351,13 @@ Using them is fine, and so is saying so. List every tool you used for the file o
 The repository carries an MCP server: nine tools your AI tool can ask while you build. They answer from your checkout, write nothing, need no token and never talk to GitHub. Claude Code and Cursor find it on their own through `.mcp.json` and `.cursor/mcp.json` once you open the folder. For a tool that does not read those files, add it once from the checkout:
 
 ```sh
-claude mcp add openfold -- pnpm -s mcp
+claude mcp add loomvale -- pnpm -s mcp
 ```
 
 Codex reads TOML, in `~/.codex/config.toml`; start Codex from the checkout:
 
 ```toml
-[mcp_servers.openfold]
+[mcp_servers.loomvale]
 command = "pnpm"
 args = ["-s", "mcp"]
 ```

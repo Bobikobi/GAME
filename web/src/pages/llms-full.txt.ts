@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 import type { APIRoute } from 'astro';
 
 const PARTS: readonly [string, string][] = [
-  ['README.md', 'What Openfold is and how it is built'],
+  ['README.md', 'What Loomvale is and how it is built'],
   ['CONTRIBUTING.md', 'How a pull request is reviewed and merged'],
   ['ROADMAP.md', 'The stages: where the project is going'],
   ['docs/creators/README.md', 'The creator guide: add a record to the valley'],
@@ -15,6 +15,6 @@ const PARTS: readonly [string, string][] = [
 export const GET: APIRoute = () => {
   const root = resolve(process.cwd(), '..');
   const body = PARTS.map(([file, what]) => `# ${what} (${file})\n\n${readFileSync(resolve(root, file), 'utf8').trim()}\n`).join('\n---\n\n');
-  const head = `# Openfold, in full\n\nA free pixel-art game in the browser whose places, quests and items are data records that builders add to an open repository. Code is AGPL-3.0, content is CC BY-SA 4.0. The index of this site for AI readers is /llms.txt.\n\n---\n\n`;
+  const head = `# Loomvale, in full\n\nA free pixel-art game in the browser whose places, quests and items are data records that builders add to an open repository. Code is AGPL-3.0, content is CC BY-SA 4.0. The index of this site for AI readers is /llms.txt.\n\n---\n\n`;
   return new Response(head + body, { headers: { 'content-type': 'text/plain; charset=utf-8' } });
 };

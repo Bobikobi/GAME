@@ -17,6 +17,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Bundle } from '@game/kernel';
+import { widenSeed } from '@game/kernel';
 
 import { Browser, type Page } from './cdp';
 import { FakeAuthServer } from '../test/fake-auth';
@@ -164,8 +165,8 @@ async function play(browser: Browser, url: string, auth: FakeAuthServer, bundle:
   const token = auth.linkFor('tess@example.com');
   assert(token !== undefined, `the fake sent a link to that address, got ${JSON.stringify([...auth.links.entries()])}`);
   await page.goto(`${url}auth/email/link?token=${token}`);
-  await page.waitFor(`document.body.textContent.includes('Sign in to Openfold')`, 'the link page');
-  await page.tap('button', 'Sign in to Openfold');
+  await page.waitFor(`document.body.textContent.includes('Sign in to Loomvale')`, 'the link page');
+  await page.tap('button', 'Sign in to Loomvale');
   await page.waitFor(`!!document.querySelector('.panel.signup select[aria-label="Day"]')`, 'the sign-up form back from the email link', 30_000);
   await fillSignup(page, 'Tess', '2000');
   await page.waitFor(`document.querySelector('.panel.signup')?.textContent.includes('Your account starts fresh')`, 'the fresh notice', 30_000);
@@ -225,7 +226,7 @@ async function main(): Promise<void> {
   console.log('[signin] building the game with VITE_GAME_SERVER empty (the wire on its own origin)');
   buildSignInDist();
   const bundle = loadBundle();
-  const auth = new FakeAuthServer(bundle, { now: () => NOW, secretSeed: () => 7 });
+  const auth = new FakeAuthServer(bundle, { now: () => NOW, secretSeed: () => widenSeed(7) });
   const { server, url } = await serve(auth);
   const browser = await Browser.launch();
   try {

@@ -558,8 +558,7 @@
         "wear_set_bonus_pct",
         "rarity_bonus_ms",
         "drift_budget_permille",
-        "satiety_cap",
-        "satiety_drain_per_min",
+        "hp_cap",
         "day_length_ms",
         "walk_step_ms",
         "hp_low_pct",
@@ -1200,7 +1199,7 @@
             }
           }
         },
-        "satiety_cap": {
+        "hp_cap": {
           "additionalProperties": false,
           "type": "object",
           "required": [
@@ -1224,33 +1223,8 @@
               "description": "Largest change one decision may make.",
               "type": "integer"
             }
-          }
-        },
-        "satiety_drain_per_min": {
-          "additionalProperties": false,
-          "type": "object",
-          "required": [
-            "value",
-            "min",
-            "max",
-            "step"
-          ],
-          "properties": {
-            "value": {
-              "type": "integer"
-            },
-            "min": {
-              "type": "integer"
-            },
-            "max": {
-              "type": "integer"
-            },
-            "step": {
-              "minimum": 0,
-              "description": "Largest change one decision may make.",
-              "type": "integer"
-            }
-          }
+          },
+          "description": "The health bar's base top in whole points; each point of stamina adds per_point.stamina. Nothing drains it by the clock (G28)."
         },
         "day_length_ms": {
           "additionalProperties": false,

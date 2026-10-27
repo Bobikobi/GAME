@@ -23,6 +23,7 @@ import {
   publicState,
   salePrice,
   serialize,
+  widenSeed,
 } from '@game/kernel';
 
 import {
@@ -146,6 +147,7 @@ describe('the ledger and the replay (NEXT 18 f)', () => {
 
     // and a seed on the other side of that same draw cannot have written this state
     const other = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597]
+      .map(widenSeed)
       .find((seed) => (drawBasisPoints(seed, run.careless, 0) < keepBp) !== kept);
     expect(other, 'no seed of this list lands on the other side of the draw').toBeDefined();
     const problems = checkAccount(bundle, booksOf(run.store, { seed: other! }));

@@ -8,7 +8,7 @@ import { createReadStream, existsSync, mkdirSync, statSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Browser, sleep, type Page, type Viewport } from './cdp';
+import { Browser, byText, sleep, type Page, type Viewport } from './cdp';
 import { TAKE_GROUND, carveIn, seedQuery } from './wakes';
 
 const GAME_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -46,22 +46,7 @@ function serve(): Promise<{ server: Server; url: string }> {
 
 /** Taps the element matching the selector whose text holds `text` (the first when `text` is empty). */
 async function tap(page: Page, selector: string, text = ''): Promise<void> {
-  const at = await page.waitFor<{ x: number; y: number }>(
-    `(() => {
-      for (const el of document.querySelectorAll(${JSON.stringify(selector)})) {
-        if (!el.textContent.includes(${JSON.stringify(text)})) continue;
-        const r = el.getBoundingClientRect();
-        if (r.width === 0 || r.height === 0) continue;
-        el.scrollIntoView({ block: 'nearest' });
-        const q = el.getBoundingClientRect();
-        return { x: q.left + q.width / 2, y: q.top + q.height / 2 };
-      }
-      return null;
-    })()`,
-    `${selector} "${text}"`,
-    10_000,
-  );
-  await page.tapAt(at.x, at.y);
+  await page.tapWhere(byText(selector, text, true), `${selector} "${text}"`, 10_000);
   await sleep(120);
 }
 

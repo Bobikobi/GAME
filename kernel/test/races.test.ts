@@ -26,6 +26,7 @@ import {
   talkLines,
   wakePocket,
   weight,
+  widenSeed,
 } from '@game/kernel';
 
 import { loadBundle } from '../../tools/test/helpers/world.js';
@@ -40,7 +41,7 @@ const RACES = ['core/elf', 'core/human', 'core/skeleton'];
 const POCKETS = ['core/north-meadow', 'core/slid-bank', 'core/west-bank'];
 
 function seedFor(bundle: Bundle, pocket: string): number {
-  for (let seed = 1; seed < 10_000; seed++) if (wakePocket(bundle, seed) === pocket) return seed;
+  for (let seed = 1; seed < 10_000; seed++) if (wakePocket(bundle, widenSeed(seed)) === pocket) return seed;
   throw new Error(`no seed wakes in ${pocket}`);
 }
 
@@ -74,8 +75,8 @@ describe('the wake pocket', () => {
   test('is drawn by the seed: the same seed wakes in the same pocket, and every pocket is drawn', () => {
     const seen = new Set<string>();
     for (let seed = 1; seed <= 300; seed++) {
-      const p = wakePocket(b, seed);
-      expect(wakePocket(b, seed)).toBe(p);
+      const p = wakePocket(b, widenSeed(seed));
+      expect(wakePocket(b, widenSeed(seed))).toBe(p);
       seen.add(p);
     }
     expect([...seen].sort()).toEqual(POCKETS);

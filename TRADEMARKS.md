@@ -4,7 +4,7 @@ The code of this game is free software and its content is free content, and anyo
 
 **The Name.** In this policy, "the Name" is the game's name as the home page shows it. It is written here once, and only here:
 
-> `Openfold` (a working name; it may change, and when it does this line is the one line to change)
+> `Loomvale` (a working name; it may change, and when it does this line is the one line to change)
 
 **The Logo** is the game's logo as published on the home page.
 

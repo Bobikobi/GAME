@@ -5,7 +5,7 @@
  */
 import { beforeAll, describe, expect, test } from 'vitest';
 
-import type { Bundle } from '@game/kernel';
+import { widenSeed, type Bundle } from '@game/kernel';
 
 import { loadBundle } from '../../tools/test/helpers/world.js';
 import { bookedGoldMg, boundSumMg, checkAccount, ledgerSumMg, replayAccount } from '../src';
@@ -20,7 +20,7 @@ beforeAll(() => {
 
 describe('the bound book', () => {
   test('the grant and a shop purchase are bound rows, and the account verifies', () => {
-    const seed = 7;
+    const seed = widenSeed(7);
     const started = replayAccount(bundle, seed, [{ seq: 2, action: { t: 'start', starter: 'core/forager', name: 'Tess' }, tick: 0 }]);
     if (!started.ok) throw new Error(started.problem);
     expect(started.replay.ledger).toEqual([{ deltaMg: START, fund: 'bound', action: { t: 'start', starter: 'core/forager', name: 'Tess' }, tick: 0 }]);

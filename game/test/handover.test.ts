@@ -52,7 +52,7 @@ describe('the phone keeps the opening (NEXT 18 d)', () => {
     const seed = session.state.seed;
     walk(session, 12);
     const upload = session.openingUpload()!;
-    expect(upload.seed).toBe(seed);
+    expect(upload.seed).toEqual(seed);
     expect(upload.log[0]!.a.t).toBe('start');
     expect(upload.log.length).toBeGreaterThan(5);
     let state = newState(bundle, upload.seed);
