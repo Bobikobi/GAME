@@ -3251,3 +3251,8 @@ The owner, 23.10.
 
 **The hall is dug by day, the night place still has one way in.** The opening sends the player to dig the collapsed hall for Pell's whole bowl in the afternoon, before the arch opens. A wall at row 27 (x 35-38) now closes the hall off from the rest of the walled night place, the south wall has a doorway at (37,32) from the lane south of the ruins, and the terrace face a gap at (39,29). Fallen rubble at (35,28), (37,28) and (38,31) leaves every dig spot a tile to stand on with room to turn. The threshold stays the night place's only way in; the hall, its six digs, the knight and the stair keep their tiles.
 **Retry when:** the expedition needs the hall reached from inside the night place. Model: claude-opus-5-5.
+
+## 2026-10-27 ✅ CREDITS.md is regenerated in the release's prep pull request; the bot's push to main is gone
+
+The loop's `credits` job pushed a regenerated CREDITS.md straight to `main` after each push there. Since the ruleset "protect main and develop" (15.10) requires a pull request, every one of those pushes was refused (GH013 on 18.10, 23.10 twice and 27.10 after #377), so the job failed on each release and CREDITS.md on `main` stopped moving. The job and the `push` trigger it alone used are removed; the release's prep pull request into `develop` reruns `pnpm credits` beside the version bump and the CHANGELOG entry (WORKFLOW.md, Releasing), so a release carries current credits through the normal gate. The 2026-10-07 entry still holds: pull requests are not checked for credits.
+**Retry when:** a bot identity with a ruleset bypass is wanted for other writes to `main` as well. Model: claude-opus-5-5.
