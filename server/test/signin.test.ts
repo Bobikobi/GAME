@@ -69,6 +69,7 @@ async function ready(options: { google?: boolean; countryHeader?: string; addres
     store: players,
     now: () => clock.now,
     resolvePlayerId: (request) => late.signIn!.resolve(request),
+    nameOf: (playerId) => late.signIn!.accountName(playerId),
     signIn: { handle: (request, response, url) => late.signIn!.handle(request, response, url) },
   });
   const base = `http://127.0.0.1:${(await listen(server, 0)).port}`;
@@ -510,9 +511,24 @@ describe('the sign-up (NEXT 18 e; CR-49, CR-53)', () => {
 
     const state = await w.browser.request('/state');
     const served = (await state.json()).state;
+    // the account's name is the name the character carved (finding 11)
+    expect(served.player.name).toBe('Tess');
     expect(served.player.race).toBe('core/skeleton');
     expect(served.tick).toBe(phone.state.tick);
     expect(served).not.toHaveProperty('seed');
+  });
+
+  test('an opening that carved another name than the account\'s is not kept: the account starts fresh and no character shows a name it did not sign up with (finding 11)', async () => {
+    const w = await ticket();
+    const phone = new LocalPhone(bundle, widenSeed(77));
+    await playOpening(phone, STARTS[0]);
+    expect(phone.state.player.name).toBe('Tess');
+    const response = await signUp(w, { ...SIGNUP, name: 'Wren', opening: phone.upload() });
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({ name: 'Wren', opening: 'fresh' });
+    const game = w.store.games.get([...w.store.accounts.keys()][0]!)!;
+    expect(serialize(game.record.state)).toBe(serialize(newState(bundle, SECRET_SEED)));
+    expect(game.books).toBeUndefined();
   });
 
   test('an opening that does not prove, or none at all, starts the account fresh, and the reply says so', async () => {
@@ -673,6 +689,60 @@ describe('the session (NEXT 18 e)', () => {
     expect(header.status).toBe(401);
   });
 
+  describe('the name (finding 11 of the 27.10 review)', () => {
+    /** An account named `name` on its own browser, with its fresh game in the player store, ready to take an action. */
+    async function account(w: Awaited<ReturnType<typeof ready>>, browser: Browser, name: string, sub: string) {
+      w.google.claims = (nonce, now) => ({ ...new FakeGoogle().claims(nonce, now), sub, email: `${sub}@example.com` });
+      await googleSignIn({ ...w, browser });
+      expect((await browser.request('/auth/signup', { method: 'POST', json: { ...SIGNUP, name } })).status).toBe(201);
+      const id = [...w.store.accounts.entries()].find(([, made]) => made.name === name)![0];
+      w.players.rows.set(id, structuredClone(w.store.games.get(id)!.record));
+      return id;
+    }
+    const send = (browser: Browser, version: number, action: unknown) => browser.request('/action', { method: 'POST', json: { version, tick: 0, action } });
+
+    test('a start or a carve that names another name than the account\'s is refused, and the state row is not touched', async () => {
+      const w = await ready();
+      const tess = await account(w, w.browser, 'Tess', 'one');
+      const other = new Browser(w.base, APP);
+      const wren = await account(w, other, 'Wren', 'two');
+      const before = serialize(w.players.rows.get(wren)!.state);
+
+      // two accounts cannot show one name: the second "Tess" is refused at the sign-up and again on the wire
+      for (const name of ['Tess', 'tess', ' Tess ', 'Wrenn']) {
+        const refused = await send(other, 1, { t: 'start', starter: 'core/forager', name });
+        expect(refused.status, name).toBe(409);
+        expect(await refused.json()).toEqual({ error: 'Your name in this world is Wren.', reason: 'refused' });
+      }
+      const carve = await send(other, 1, { t: 'carve', name: 'Tess' });
+      expect(carve.status).toBe(409);
+      expect(await carve.json()).toMatchObject({ reason: 'refused' });
+      expect(w.players.rows.get(wren)!.version).toBe(1);
+      expect(serialize(w.players.rows.get(wren)!.state)).toBe(before);
+      expect(w.players.rows.get(tess)!.state.player.name).toBe('');
+
+      // the account's own name goes through, trimmed, and it is the name the state carries
+      const started = await send(other, 1, { t: 'start', starter: 'core/forager', name: ' Wren ' });
+      expect(started.status).toBe(200);
+      expect(w.players.rows.get(wren)!.state.player.name).toBe('Wren');
+      expect((await (await other.request('/state')).json()).state.player.name).toBe('Wren');
+    });
+
+    test('a start with an empty name leaves the line to the stone, and the stone cuts the account\'s name or none', async () => {
+      const w = await ready();
+      const wren = await account(w, w.browser, 'Wren', 'two');
+      expect((await send(w.browser, 1, { t: 'start', starter: 'core/forager', name: '' })).status).toBe(200);
+      expect(w.players.rows.get(wren)!.state.player.name).toBe('');
+      const wrong = await send(w.browser, 2, { t: 'carve', name: 'Tess' });
+      expect(wrong.status).toBe(409);
+      expect(w.players.rows.get(wren)!.version).toBe(2);
+      const empty = await send(w.browser, 2, { t: 'carve', name: '' });
+      expect(empty.status).toBe(409);
+      expect((await send(w.browser, 2, { t: 'carve', name: 'Wren' })).status).toBe(200);
+      expect(w.players.rows.get(wren)!.state.player.name).toBe('Wren');
+    });
+  });
+
   test('a POST from another origin stands for no one, so a forged form on another site cannot act', async () => {
     const w = await signedIn();
     w.players.rows.set(w.accountId, createPlayerRecord(bundle, started(), w.clock.now));
@@ -820,7 +890,8 @@ describe('the limits, the sweep and the retried sign-up (the 27.10 review)', () 
     expect(replays).not.toHaveBeenCalled();
     const made = await other.request('/auth/signup', { method: 'POST', json: { ...SIGNUP, name: 'Wren', opening: phone.upload() } });
     expect(made.status).toBe(201);
-    expect(await made.json()).toEqual({ name: 'Wren', opening: 'kept' });
+    // the opening carved "Tess"; this account is "Wren", so the opening is not kept (finding 11), after one replay all the same
+    expect(await made.json()).toEqual({ name: 'Wren', opening: 'fresh' });
     expect(replays).toHaveBeenCalledTimes(1);
   });
 
