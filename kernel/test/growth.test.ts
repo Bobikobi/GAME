@@ -14,6 +14,7 @@ import {
   isSafe,
   makeWalkable,
   newState,
+  nodeCost,
   nodeKey,
   nodeRefusal,
   skillPoints,
@@ -22,6 +23,7 @@ import {
   treeNode,
 } from '@game/kernel';
 
+import { bigTree } from '../../tools/test/helpers/bigtree.js';
 import { loadBundle, seedFor } from '../../tools/test/helpers/world.js';
 
 let b: Bundle;
@@ -93,8 +95,8 @@ describe('the core schools', () => {
     expect(treeNode(b, 'core/nowhere/steady')).toBeUndefined();
   });
 
-  test('cost one, two and three points by size, and open two slots at level one, then one at 5, 10 and 15', () => {
-    expect(b.params.growth?.cost).toEqual({ small: 1, major: 2, corner: 3 });
+  test('cost one, two, three and four points by size, and open two slots at level one, then one at 5, 10 and 15', () => {
+    expect(b.params.growth?.cost).toEqual({ small: 1, major: 2, corner: 3, keystone: 4 });
     expect(b.params.growth?.slot_levels).toEqual([1, 1, 5, 10, 15]);
     const s = started('core/human');
     expect(slotsOpen(b, s)).toBe(2);
@@ -227,5 +229,24 @@ describe('a save from before the tree', () => {
     expect(slotsOpen(b, s)).toBe(2);
     const r = act(s, { t: 'learn_node', node: STEADY, at: safe });
     expect(r.ok).toBe(true);
+  });
+});
+
+describe('a tree of hundreds of nodes', () => {
+  test('asks a need in another wing by its name, and charges a node its own price', () => {
+    const big = bigTree(b);
+    const ids = Object.keys(big.schools).sort();
+    const [first, second] = [ids[0]!, ids[1]!];
+    const fork = nodeKey(first, 'fork-6-2');
+    const s = grown('core/human', 9);
+    s.player.nodes = ['root', 'spine-1', 'spine-2', 'spine-3', 'spine-4', 'spine-5', 'spine-6', 'branch-6-1', 'branch-6-2', 'branch-6-3', 'fork-6-1'].map((n) => nodeKey(first, n));
+    expect(nodeRefusal(big, s, fork)).toBe('Learn Spine 6 first.');
+    s.player.nodes.push(nodeKey(second, 'spine-6'));
+    s.player.spent = 0;
+    expect(nodeRefusal(big, s, fork)).toBeUndefined();
+    const small = treeNode(big, nodeKey(first, 'branch-1-1'))!.node;
+    expect(nodeCost(big, small)).toBe(1);
+    expect(nodeCost(big, { ...small, cost: 2 })).toBe(2);
+    expect(nodeCost(big, treeNode(big, nodeKey(first, 'keystone-1'))!.node)).toBe(4);
   });
 });

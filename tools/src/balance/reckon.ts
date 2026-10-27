@@ -298,7 +298,7 @@ export function reckon(b: Bundle, rules: Rules): PlaceRow[] {
       const passes = (respawn: number) => Math.min(rules.grindPassesMax, 1 + Math.trunc(elapsed / Math.max(1, respawn)));
       for (const r of Object.values(b.resources)) {
         const d = w.steps(r.place.slot);
-        if (d === null || d >= here || (r.opens_after !== undefined && !before.has(r.opens_after))) continue;
+        if (d === null || d >= here || (r.opens_after ?? []).some((x) => { const wq = b.quests[x.quest]; return wq !== undefined && (wq.pocket === undefined || wq.pocket === w.pocket) && !before.has(x.quest); })) continue;
         const school = b.verbs[nodeVerb(r)];
         grind.set(school, (grind.get(school) ?? 0) + passes(r.respawn_ms) * r.count * r.active_ms);
       }
