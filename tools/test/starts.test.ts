@@ -36,7 +36,7 @@ describe('the core content', () => {
 });
 
 describe('a fixture that breaks each rule', () => {
-  const root = mkdtempSync(join(tmpdir(), 'openfold-starts-'));
+  const root = mkdtempSync(join(tmpdir(), 'loomvale-starts-'));
   afterAll(() => rmSync(root, { recursive: true, force: true }));
   cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
   cpSync(join(CONTENT_DIR, 'kit'), join(root, 'kit'), { recursive: true });
@@ -78,7 +78,7 @@ describe('a fixture that breaks each rule', () => {
     j.pocket!.wake = { x: 0, y: 0 };
   });
   edit('races/skeleton.json', (j) => {
-    (j.race!.attributes as unknown as Record<string, number>).stamina = 3;
+    (j.race!.attributes as unknown as Record<string, number>).stamina = 5;
   });
   edit('races/human.json', (j) => {
     j.race!.outfit = [

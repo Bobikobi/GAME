@@ -15,7 +15,8 @@
       "class": "clay",
       "family": "pottery",
       "tier": 1,
-      "sprite": "core/base-kit:items/pottery-shard"
+      "sprite": "core/base-kit:items/pottery-shard",
+      "weight": 1
     },
     {
       "id": "core/old-coin",
@@ -26,7 +27,8 @@
       "class": "relic",
       "family": "coin",
       "tier": 1,
-      "sprite": "core/base-kit:items/old-coin"
+      "sprite": "core/base-kit:items/old-coin",
+      "weight": 0
     },
     {
       "id": "core/stew-scrap",
@@ -38,6 +40,7 @@
       "family": "scrap",
       "tier": 1,
       "sprite": "core/base-kit:items/stew-scrap",
+      "weight": 1,
       "fragment": {
         "unlocks": "core/herb-stew"
       }

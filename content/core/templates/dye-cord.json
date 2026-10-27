@@ -14,7 +14,8 @@
       "rarity": "uncommon",
       "class": "fibre",
       "tier": 2,
-      "sprite": "core/base-kit:items/berry"
+      "sprite": "core/base-kit:items/berry",
+      "weight": 1
     }
   ],
   "template": {

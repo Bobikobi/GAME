@@ -1,0 +1,30 @@
+{
+  "about": "Standing with a torch held up: the library's torch idle, the torch built by the renderer in the left hand.",
+  "target": "forager",
+  "base": {
+    "library": "ual1",
+    "action": "Idle_Torch_Loop"
+  },
+  "frames": {
+    "even": 8
+  },
+  "prop": {
+    "kind": "torch",
+    "hand": "L"
+  },
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      99
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

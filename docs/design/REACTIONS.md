@@ -6,14 +6,14 @@ Facts are read from `origin/develop` @ 2932f334.
 
 ## 1. Why rules, and why now
 
-The world has no end (DECISIONS 2026-10-17). A thing placed by hand makes one screen richer. A rule works on every screen, the generated ones included, and it costs nothing more as the world grows. Openfold has to be rich in a world nobody can fill by hand, so this is the logic step that most closes the distance to Dimraeth's depth.
+The world has no end (DECISIONS 2026-10-17). A thing placed by hand makes one screen richer. A rule works on every screen, the generated ones included, and it costs nothing more as the world grows. Loomvale has to be rich in a world nobody can fill by hand, so this is the logic step that most closes the distance to Dimraeth's depth.
 
 Three games show the method:
 - **Breath of the Wild** calls it a "chemistry engine", in Nintendo's GDC 2017 talk. Elements change materials, elements change each other, and materials do not change each other. A few rules give thousands of situations the designers never placed.
 - **Stardew Valley** keys forage, fish and crops to season, weather and hour as data. The next day's weather is decided ahead and shown on the TV, so a player can plan on it.
 - **Dwarf Fortress** keeps its reactions in plain-text data files that players mod. The community grows the rules, not only the content.
 
-Openfold takes all three: rules as data, keyed on tags, grown by the community through the loop.
+Loomvale takes all three: rules as data, keyed on tags, grown by the community through the loop.
 
 **Why before the first ring (NEXT 19).** The generator writes tile tags. If reactions key on those tags (`meadow`, `riverbank`, `grove`), every generated chunk reacts from the day it exists, with nothing placed. If the ring is built first, its richness has to be placed by hand and later replaced.
 
@@ -22,7 +22,7 @@ Openfold takes all three: rules as data, keyed on tags, grown by the community t
 The kernel has no world loop. R1 says step "touches only the acting player and the entities the action names", and state stores absolute ticks, never countdowns. What looks like time passing is computed when it is asked for:
 - a predator stands where the clock puts it (`predatorAt`, kernel/src/danger.ts);
 - a fire burns until a stored tick (`fireBurns`);
-- health is a stored value minus a drain since a tick (`satietyAt`).
+- a quest window opens and closes by the hour it is asked at (health has no clock: it is a stored value, `player.hp`, G28).
 
 A reaction follows the same pattern. It is a pure function of:
 - the content;

@@ -15,6 +15,7 @@ import type { Pool } from 'pg';
 import { type Bundle, type PublicState, type State, professionLevel, salePrice } from '@game/kernel';
 
 import { type AccountBooks, type LedgerRow, type LoggedAction, checkAccount, replayAccount } from './ledger';
+import { seedOfColumn } from './store-pg';
 
 export type BoardName = 'wealth' | 'collection' | 'levels';
 
@@ -72,7 +73,7 @@ export function weekStart(at: Date): string {
 
 interface StateRow {
   state: PublicState;
-  seed: string;
+  seed: Buffer;
 }
 
 /**
@@ -87,7 +88,7 @@ export async function postScores(pool: Pool, bundle: Bundle, accountId: string, 
   const row = await pool.query<StateRow>('select state, seed from player_state where account_id = $1', [accountId]);
   const stored = row.rows[0];
   if (!stored) throw new Error('No game state exists for this account.');
-  const seed = Number(stored.seed);
+  const seed = seedOfColumn(stored.seed);
   const state: State = { ...stored.state, seed };
 
   const logRows = await pool.query<{ seq: string; action: unknown; tick: string }>(
@@ -102,12 +103,13 @@ export async function postScores(pool: Pool, bundle: Bundle, accountId: string, 
   const gap = gapIn(log);
   if (gap !== undefined) throw new ForgedLog(gap);
 
-  const ledgerRows = await pool.query<{ delta_mg: string; action: unknown; tick: string }>(
-    'select delta_mg, action, tick from gold_ledger where account_id = $1 order by id',
+  const ledgerRows = await pool.query<{ delta_mg: string; fund: string; action: unknown; tick: string }>(
+    'select delta_mg, fund, action, tick from gold_ledger where account_id = $1 order by id',
     [accountId],
   );
   const ledger: LedgerRow[] = ledgerRows.rows.map((entry) => ({
     deltaMg: Number(entry.delta_mg),
+    ...(entry.fund === 'bound' ? { fund: 'bound' as const } : {}),
     action: entry.action,
     tick: Number(entry.tick),
   }));

@@ -29,7 +29,7 @@ const failure = (text: string): CallToolResult => ({ isError: true, content: [{ 
 /** A server for the checkout at `root`, not yet connected to a transport. */
 export function createServer(root: string = REPO_ROOT): McpServer {
   const ctx: Context = { root };
-  const server = new McpServer({ name: 'openfold', version: packageVersion() }, { capabilities: { tools: {} } });
+  const server = new McpServer({ name: 'loomvale', version: packageVersion() }, { capabilities: { tools: {} } });
 
   server.server.setRequestHandler(ListToolsRequestSchema, () => ({
     tools: TOOL_LIST.map((t) => ({

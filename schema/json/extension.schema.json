@@ -65,7 +65,8 @@
               "name",
               "kind",
               "rarity",
-              "sprite"
+              "sprite",
+              "weight"
             ],
             "properties": {
               "id": {
@@ -222,6 +223,12 @@
                 "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
                 "type": "string"
               },
+              "weight": {
+                "minimum": 0,
+                "maximum": 20,
+                "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+                "type": "integer"
+              },
               "food": {
                 "additionalProperties": false,
                 "type": "object",
@@ -276,6 +283,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -311,14 +322,14 @@
               },
               "wear": {
                 "additionalProperties": false,
-                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
                 "type": "object",
                 "required": [
                   "slot"
                 ],
                 "properties": {
                   "slot": {
-                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                     "anyOf": [
                       {
                         "const": "head",
@@ -346,6 +357,10 @@
                       },
                       {
                         "const": "hand",
+                        "type": "string"
+                      },
+                      {
+                        "const": "back",
                         "type": "string"
                       }
                     ]
@@ -406,6 +421,18 @@
                     "maxLength": 80,
                     "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
                     "type": "string"
+                  },
+                  "places": {
+                    "minimum": 1,
+                    "maximum": 99,
+                    "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                    "type": "integer"
+                  },
+                  "load_bonus": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
                   }
                 }
               },
@@ -634,17 +661,26 @@
                 {
                   "const": "pick",
                   "type": "string"
+                },
+                {
+                  "const": "rod",
+                  "type": "string"
                 }
               ]
+            },
+            "work": {
+              "description": "How the node is worked when it needs no tool. \"mine\": broken with blows that run by themselves after one press, as felling does; it trains digging, a pick or a hammer in the bag makes it faster (the best one, worn a little each time), and bare hands still do it. Left out: gathered by hand with the minigame of `game`.",
+              "const": "mine",
+              "type": "string"
             },
             "level": {
               "minimum": 1,
               "maximum": 20,
-              "description": "Level required, in the profession the node trains: felling when the tool is an axe, foraging otherwise.",
+              "description": "Level required, in the profession the node trains: felling when the tool is an axe, fishing when it is a rod, digging when the node is mined, foraging otherwise.",
               "type": "integer"
             },
             "game": {
-              "description": "The minigame played when gathering: \"timing\" (stop a marker in the middle, the default), \"strike\" (three timed hammer strikes, for stone), \"pick\" (press only for the ripe ones, for plants) or \"snap\" (press fast, for wood).",
+              "description": "The minigame played when gathering: \"timing\" (stop a marker in the middle, the default), \"strike\" (three timed hammer strikes, for stone), \"pick\" (press only for the ripe ones, for plants), \"snap\" (press fast, for wood) or \"fish\" (cast, wait for the bite and strike as the float goes under, then reel in; for a node fished with a rod).",
               "anyOf": [
                 {
                   "const": "timing",
@@ -660,6 +696,10 @@
                 },
                 {
                   "const": "snap",
+                  "type": "string"
+                },
+                {
+                  "const": "fish",
                   "type": "string"
                 }
               ]
@@ -708,6 +748,11 @@
                     "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
                     "type": "string"
                   }
+                },
+                "water": {
+                  "description": "The nodes lie on the water tiles of the slot that touch the land, and are worked from the bank: fishing spots. Left out, they lie on the land tiles of the slot.",
+                  "const": true,
+                  "type": "boolean"
                 }
               }
             }
@@ -724,8 +769,7 @@
         "id",
         "title",
         "creator",
-        "type",
-        "dig"
+        "type"
       ],
       "properties": {
         "$schema": {
@@ -779,7 +823,8 @@
               "name",
               "kind",
               "rarity",
-              "sprite"
+              "sprite",
+              "weight"
             ],
             "properties": {
               "id": {
@@ -936,6 +981,12 @@
                 "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
                 "type": "string"
               },
+              "weight": {
+                "minimum": 0,
+                "maximum": 20,
+                "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+                "type": "integer"
+              },
               "food": {
                 "additionalProperties": false,
                 "type": "object",
@@ -990,6 +1041,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -1025,14 +1080,14 @@
               },
               "wear": {
                 "additionalProperties": false,
-                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
                 "type": "object",
                 "required": [
                   "slot"
                 ],
                 "properties": {
                   "slot": {
-                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                     "anyOf": [
                       {
                         "const": "head",
@@ -1060,6 +1115,10 @@
                       },
                       {
                         "const": "hand",
+                        "type": "string"
+                      },
+                      {
+                        "const": "back",
                         "type": "string"
                       }
                     ]
@@ -1120,6 +1179,18 @@
                     "maxLength": 80,
                     "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
                     "type": "string"
+                  },
+                  "places": {
+                    "minimum": 1,
+                    "maximum": 99,
+                    "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                    "type": "integer"
+                  },
+                  "load_bonus": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
                   }
                 }
               },
@@ -1284,6 +1355,10 @@
                 {
                   "const": "pick",
                   "type": "string"
+                },
+                {
+                  "const": "rod",
+                  "type": "string"
                 }
               ],
               "description": "The tool the dig asks for and wears. Left out: the find is picked up by hand, with no timing window and no tool worn."
@@ -1349,6 +1424,60 @@
               "maxLength": 80,
               "description": "A wake pocket's own spot: only a character who woke in this pocket sees it and digs it, once, and it always gives its one find. A gift of the start, so it prices nothing (it is no source in the value table).",
               "type": "string"
+            }
+          }
+        },
+        "search": {
+          "additionalProperties": false,
+          "description": "A searchable: a table of rows drawn once a day. It takes no tool and has no timing window. A treasure file carries `search` or `dig`, never both.",
+          "type": "object",
+          "required": [
+            "rows",
+            "place"
+          ],
+          "properties": {
+            "rows": {
+              "minItems": 1,
+              "maxItems": 8,
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "item",
+                  "chance_pct"
+                ],
+                "properties": {
+                  "item": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "chance_pct": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "Chance of this row being inside after a refill. Each row is drawn on its own; a rare or legendary row is tilted by luck like a dig's rare find.",
+                    "type": "integer"
+                  }
+                }
+              }
+            },
+            "place": {
+              "additionalProperties": false,
+              "description": "The map prop (its `id`) that can be searched: pressing A beside it opens a window of what is inside. Nothing is put into it; it refills once a day at dawn (docs/design/SEARCH.md).",
+              "type": "object",
+              "required": [
+                "prop"
+              ],
+              "properties": {
+                "prop": {
+                  "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                  "maxLength": 80,
+                  "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                  "type": "string"
+                }
+              }
             }
           }
         }
@@ -1418,7 +1547,8 @@
               "name",
               "kind",
               "rarity",
-              "sprite"
+              "sprite",
+              "weight"
             ],
             "properties": {
               "id": {
@@ -1575,6 +1705,12 @@
                 "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
                 "type": "string"
               },
+              "weight": {
+                "minimum": 0,
+                "maximum": 20,
+                "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+                "type": "integer"
+              },
               "food": {
                 "additionalProperties": false,
                 "type": "object",
@@ -1629,6 +1765,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -1664,14 +1804,14 @@
               },
               "wear": {
                 "additionalProperties": false,
-                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
                 "type": "object",
                 "required": [
                   "slot"
                 ],
                 "properties": {
                   "slot": {
-                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                     "anyOf": [
                       {
                         "const": "head",
@@ -1699,6 +1839,10 @@
                       },
                       {
                         "const": "hand",
+                        "type": "string"
+                      },
+                      {
+                        "const": "back",
                         "type": "string"
                       }
                     ]
@@ -1759,6 +1903,18 @@
                     "maxLength": 80,
                     "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
                     "type": "string"
+                  },
+                  "places": {
+                    "minimum": 1,
+                    "maximum": 99,
+                    "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                    "type": "integer"
+                  },
+                  "load_bonus": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
                   }
                 }
               },
@@ -2059,7 +2215,8 @@
               "name",
               "kind",
               "rarity",
-              "sprite"
+              "sprite",
+              "weight"
             ],
             "properties": {
               "id": {
@@ -2216,6 +2373,12 @@
                 "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
                 "type": "string"
               },
+              "weight": {
+                "minimum": 0,
+                "maximum": 20,
+                "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+                "type": "integer"
+              },
               "food": {
                 "additionalProperties": false,
                 "type": "object",
@@ -2270,6 +2433,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -2305,14 +2472,14 @@
               },
               "wear": {
                 "additionalProperties": false,
-                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
                 "type": "object",
                 "required": [
                   "slot"
                 ],
                 "properties": {
                   "slot": {
-                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                     "anyOf": [
                       {
                         "const": "head",
@@ -2340,6 +2507,10 @@
                       },
                       {
                         "const": "hand",
+                        "type": "string"
+                      },
+                      {
+                        "const": "back",
                         "type": "string"
                       }
                     ]
@@ -2400,6 +2571,18 @@
                     "maxLength": 80,
                     "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
                     "type": "string"
+                  },
+                  "places": {
+                    "minimum": 1,
+                    "maximum": 99,
+                    "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                    "type": "integer"
+                  },
+                  "load_bonus": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
                   }
                 }
               },
@@ -2784,7 +2967,8 @@
               "name",
               "kind",
               "rarity",
-              "sprite"
+              "sprite",
+              "weight"
             ],
             "properties": {
               "id": {
@@ -2941,6 +3125,12 @@
                 "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
                 "type": "string"
               },
+              "weight": {
+                "minimum": 0,
+                "maximum": 20,
+                "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+                "type": "integer"
+              },
               "food": {
                 "additionalProperties": false,
                 "type": "object",
@@ -2995,6 +3185,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -3030,14 +3224,14 @@
               },
               "wear": {
                 "additionalProperties": false,
-                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
                 "type": "object",
                 "required": [
                   "slot"
                 ],
                 "properties": {
                   "slot": {
-                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                     "anyOf": [
                       {
                         "const": "head",
@@ -3065,6 +3259,10 @@
                       },
                       {
                         "const": "hand",
+                        "type": "string"
+                      },
+                      {
+                        "const": "back",
                         "type": "string"
                       }
                     ]
@@ -3125,6 +3323,18 @@
                     "maxLength": 80,
                     "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
                     "type": "string"
+                  },
+                  "places": {
+                    "minimum": 1,
+                    "maximum": 99,
+                    "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                    "type": "integer"
+                  },
+                  "load_bonus": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
                   }
                 }
               },
@@ -3697,7 +3907,8 @@
               "name",
               "kind",
               "rarity",
-              "sprite"
+              "sprite",
+              "weight"
             ],
             "properties": {
               "id": {
@@ -3854,6 +4065,12 @@
                 "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
                 "type": "string"
               },
+              "weight": {
+                "minimum": 0,
+                "maximum": 20,
+                "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+                "type": "integer"
+              },
               "food": {
                 "additionalProperties": false,
                 "type": "object",
@@ -3908,6 +4125,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -3943,14 +4164,14 @@
               },
               "wear": {
                 "additionalProperties": false,
-                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
                 "type": "object",
                 "required": [
                   "slot"
                 ],
                 "properties": {
                   "slot": {
-                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                     "anyOf": [
                       {
                         "const": "head",
@@ -3978,6 +4199,10 @@
                       },
                       {
                         "const": "hand",
+                        "type": "string"
+                      },
+                      {
+                        "const": "back",
                         "type": "string"
                       }
                     ]
@@ -4038,6 +4263,18 @@
                     "maxLength": 80,
                     "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
                     "type": "string"
+                  },
+                  "places": {
+                    "minimum": 1,
+                    "maximum": 99,
+                    "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                    "type": "integer"
+                  },
+                  "load_bonus": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
                   }
                 }
               },
@@ -4888,7 +5125,8 @@
               "name",
               "kind",
               "rarity",
-              "sprite"
+              "sprite",
+              "weight"
             ],
             "properties": {
               "id": {
@@ -5045,6 +5283,12 @@
                 "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
                 "type": "string"
               },
+              "weight": {
+                "minimum": 0,
+                "maximum": 20,
+                "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+                "type": "integer"
+              },
               "food": {
                 "additionalProperties": false,
                 "type": "object",
@@ -5099,6 +5343,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -5134,14 +5382,14 @@
               },
               "wear": {
                 "additionalProperties": false,
-                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
                 "type": "object",
                 "required": [
                   "slot"
                 ],
                 "properties": {
                   "slot": {
-                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                     "anyOf": [
                       {
                         "const": "head",
@@ -5169,6 +5417,10 @@
                       },
                       {
                         "const": "hand",
+                        "type": "string"
+                      },
+                      {
+                        "const": "back",
                         "type": "string"
                       }
                     ]
@@ -5229,6 +5481,18 @@
                     "maxLength": 80,
                     "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
                     "type": "string"
+                  },
+                  "places": {
+                    "minimum": 1,
+                    "maximum": 99,
+                    "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                    "type": "integer"
+                  },
+                  "load_bonus": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
                   }
                 }
               },
@@ -5544,7 +5808,8 @@
               "name",
               "kind",
               "rarity",
-              "sprite"
+              "sprite",
+              "weight"
             ],
             "properties": {
               "id": {
@@ -5701,6 +5966,12 @@
                 "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
                 "type": "string"
               },
+              "weight": {
+                "minimum": 0,
+                "maximum": 20,
+                "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+                "type": "integer"
+              },
               "food": {
                 "additionalProperties": false,
                 "type": "object",
@@ -5755,6 +6026,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -5790,14 +6065,14 @@
               },
               "wear": {
                 "additionalProperties": false,
-                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
                 "type": "object",
                 "required": [
                   "slot"
                 ],
                 "properties": {
                   "slot": {
-                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                     "anyOf": [
                       {
                         "const": "head",
@@ -5825,6 +6100,10 @@
                       },
                       {
                         "const": "hand",
+                        "type": "string"
+                      },
+                      {
+                        "const": "back",
                         "type": "string"
                       }
                     ]
@@ -5885,6 +6164,18 @@
                     "maxLength": 80,
                     "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
                     "type": "string"
+                  },
+                  "places": {
+                    "minimum": 1,
+                    "maximum": 99,
+                    "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                    "type": "integer"
+                  },
+                  "load_bonus": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
                   }
                 }
               },
@@ -6193,7 +6484,8 @@
               "name",
               "kind",
               "rarity",
-              "sprite"
+              "sprite",
+              "weight"
             ],
             "properties": {
               "id": {
@@ -6350,6 +6642,12 @@
                 "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
                 "type": "string"
               },
+              "weight": {
+                "minimum": 0,
+                "maximum": 20,
+                "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+                "type": "integer"
+              },
               "food": {
                 "additionalProperties": false,
                 "type": "object",
@@ -6404,6 +6702,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -6439,14 +6741,14 @@
               },
               "wear": {
                 "additionalProperties": false,
-                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
                 "type": "object",
                 "required": [
                   "slot"
                 ],
                 "properties": {
                   "slot": {
-                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                     "anyOf": [
                       {
                         "const": "head",
@@ -6474,6 +6776,10 @@
                       },
                       {
                         "const": "hand",
+                        "type": "string"
+                      },
+                      {
+                        "const": "back",
                         "type": "string"
                       }
                     ]
@@ -6534,6 +6840,18 @@
                     "maxLength": 80,
                     "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
                     "type": "string"
+                  },
+                  "places": {
+                    "minimum": 1,
+                    "maximum": 99,
+                    "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                    "type": "integer"
+                  },
+                  "load_bonus": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
                   }
                 }
               },
@@ -6803,7 +7121,8 @@
               "name",
               "kind",
               "rarity",
-              "sprite"
+              "sprite",
+              "weight"
             ],
             "properties": {
               "id": {
@@ -6960,6 +7279,12 @@
                 "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
                 "type": "string"
               },
+              "weight": {
+                "minimum": 0,
+                "maximum": 20,
+                "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+                "type": "integer"
+              },
               "food": {
                 "additionalProperties": false,
                 "type": "object",
@@ -7014,6 +7339,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -7049,14 +7378,14 @@
               },
               "wear": {
                 "additionalProperties": false,
-                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
                 "type": "object",
                 "required": [
                   "slot"
                 ],
                 "properties": {
                   "slot": {
-                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                     "anyOf": [
                       {
                         "const": "head",
@@ -7084,6 +7413,10 @@
                       },
                       {
                         "const": "hand",
+                        "type": "string"
+                      },
+                      {
+                        "const": "back",
                         "type": "string"
                       }
                     ]
@@ -7144,6 +7477,18 @@
                     "maxLength": 80,
                     "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
                     "type": "string"
+                  },
+                  "places": {
+                    "minimum": 1,
+                    "maximum": 99,
+                    "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                    "type": "integer"
+                  },
+                  "load_bonus": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
                   }
                 }
               },
@@ -7399,6 +7744,72 @@
                 }
               }
             },
+            "body": {
+              "additionalProperties": false,
+              "description": "One body fact per race, equal in size (DECISIONS.md, 2026-10-23): a weakness always matched by a real advantage. It never opens or closes a place (G70).",
+              "type": "object",
+              "required": [
+                "name",
+                "about",
+                "effects"
+              ],
+              "properties": {
+                "name": {
+                  "minLength": 1,
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                "about": {
+                  "minLength": 1,
+                  "maxLength": 240,
+                  "type": "string",
+                  "description": "The body fact in one plain sentence: the good side and its cost."
+                },
+                "effects": {
+                  "minItems": 1,
+                  "maxItems": 2,
+                  "description": "One or two effects, each named once: the good side and, when the body pays for it here, the cost.",
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "effect",
+                      "value"
+                    ],
+                    "properties": {
+                      "effect": {
+                        "description": "What the body changes: the mend of a rest by a fire, the fill of food, the share of the load that counts for pace, or the places of any bag.",
+                        "anyOf": [
+                          {
+                            "const": "rest_mend_permille",
+                            "type": "string"
+                          },
+                          {
+                            "const": "food_fill_permille",
+                            "type": "string"
+                          },
+                          {
+                            "const": "pace_load_permille",
+                            "type": "string"
+                          },
+                          {
+                            "const": "bag_places",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "value": {
+                        "minimum": 1,
+                        "maximum": 5000,
+                        "description": "Permille for the three rates, a count for bag_places.",
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            },
             "sprite": {
               "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
               "maxLength": 120,
@@ -7477,7 +7888,8 @@
               "name",
               "kind",
               "rarity",
-              "sprite"
+              "sprite",
+              "weight"
             ],
             "properties": {
               "id": {
@@ -7634,6 +8046,12 @@
                 "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
                 "type": "string"
               },
+              "weight": {
+                "minimum": 0,
+                "maximum": 20,
+                "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+                "type": "integer"
+              },
               "food": {
                 "additionalProperties": false,
                 "type": "object",
@@ -7688,6 +8106,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -7723,14 +8145,14 @@
               },
               "wear": {
                 "additionalProperties": false,
-                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
                 "type": "object",
                 "required": [
                   "slot"
                 ],
                 "properties": {
                   "slot": {
-                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                     "anyOf": [
                       {
                         "const": "head",
@@ -7758,6 +8180,10 @@
                       },
                       {
                         "const": "hand",
+                        "type": "string"
+                      },
+                      {
+                        "const": "back",
                         "type": "string"
                       }
                     ]
@@ -7818,6 +8244,18 @@
                     "maxLength": 80,
                     "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
                     "type": "string"
+                  },
+                  "places": {
+                    "minimum": 1,
+                    "maximum": 99,
+                    "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                    "type": "integer"
+                  },
+                  "load_bonus": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
                   }
                 }
               },
@@ -7988,7 +8426,8 @@
               "name",
               "kind",
               "rarity",
-              "sprite"
+              "sprite",
+              "weight"
             ],
             "properties": {
               "id": {
@@ -8145,6 +8584,12 @@
                 "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
                 "type": "string"
               },
+              "weight": {
+                "minimum": 0,
+                "maximum": 20,
+                "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+                "type": "integer"
+              },
               "food": {
                 "additionalProperties": false,
                 "type": "object",
@@ -8199,6 +8644,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -8234,14 +8683,14 @@
               },
               "wear": {
                 "additionalProperties": false,
-                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
                 "type": "object",
                 "required": [
                   "slot"
                 ],
                 "properties": {
                   "slot": {
-                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                     "anyOf": [
                       {
                         "const": "head",
@@ -8269,6 +8718,10 @@
                       },
                       {
                         "const": "hand",
+                        "type": "string"
+                      },
+                      {
+                        "const": "back",
                         "type": "string"
                       }
                     ]
@@ -8329,6 +8782,18 @@
                     "maxLength": 80,
                     "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
                     "type": "string"
+                  },
+                  "places": {
+                    "minimum": 1,
+                    "maximum": 99,
+                    "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                    "type": "integer"
+                  },
+                  "load_bonus": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
                   }
                 }
               },
@@ -8594,7 +9059,8 @@
               "name",
               "kind",
               "rarity",
-              "sprite"
+              "sprite",
+              "weight"
             ],
             "properties": {
               "id": {
@@ -8751,6 +9217,12 @@
                 "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
                 "type": "string"
               },
+              "weight": {
+                "minimum": 0,
+                "maximum": 20,
+                "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+                "type": "integer"
+              },
               "food": {
                 "additionalProperties": false,
                 "type": "object",
@@ -8805,6 +9277,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -8840,14 +9316,14 @@
               },
               "wear": {
                 "additionalProperties": false,
-                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
                 "type": "object",
                 "required": [
                   "slot"
                 ],
                 "properties": {
                   "slot": {
-                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                     "anyOf": [
                       {
                         "const": "head",
@@ -8875,6 +9351,10 @@
                       },
                       {
                         "const": "hand",
+                        "type": "string"
+                      },
+                      {
+                        "const": "back",
                         "type": "string"
                       }
                     ]
@@ -8935,6 +9415,18 @@
                     "maxLength": 80,
                     "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
                     "type": "string"
+                  },
+                  "places": {
+                    "minimum": 1,
+                    "maximum": 99,
+                    "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                    "type": "integer"
+                  },
+                  "load_bonus": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
                   }
                 }
               },
@@ -9331,6 +9823,10 @@
                             {
                               "const": "pick",
                               "type": "string"
+                            },
+                            {
+                              "const": "rod",
+                              "type": "string"
                             }
                           ]
                         },
@@ -9503,7 +9999,8 @@
               "name",
               "kind",
               "rarity",
-              "sprite"
+              "sprite",
+              "weight"
             ],
             "properties": {
               "id": {
@@ -9660,6 +10157,12 @@
                 "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
                 "type": "string"
               },
+              "weight": {
+                "minimum": 0,
+                "maximum": 20,
+                "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+                "type": "integer"
+              },
               "food": {
                 "additionalProperties": false,
                 "type": "object",
@@ -9714,6 +10217,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -9749,14 +10256,14 @@
               },
               "wear": {
                 "additionalProperties": false,
-                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
                 "type": "object",
                 "required": [
                   "slot"
                 ],
                 "properties": {
                   "slot": {
-                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                     "anyOf": [
                       {
                         "const": "head",
@@ -9784,6 +10291,10 @@
                       },
                       {
                         "const": "hand",
+                        "type": "string"
+                      },
+                      {
+                        "const": "back",
                         "type": "string"
                       }
                     ]
@@ -9844,6 +10355,18 @@
                     "maxLength": 80,
                     "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
                     "type": "string"
+                  },
+                  "places": {
+                    "minimum": 1,
+                    "maximum": 99,
+                    "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                    "type": "integer"
+                  },
+                  "load_bonus": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
                   }
                 }
               },
@@ -10054,7 +10577,8 @@
               "name",
               "kind",
               "rarity",
-              "sprite"
+              "sprite",
+              "weight"
             ],
             "properties": {
               "id": {
@@ -10211,6 +10735,12 @@
                 "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
                 "type": "string"
               },
+              "weight": {
+                "minimum": 0,
+                "maximum": 20,
+                "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+                "type": "integer"
+              },
               "food": {
                 "additionalProperties": false,
                 "type": "object",
@@ -10265,6 +10795,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -10300,14 +10834,14 @@
               },
               "wear": {
                 "additionalProperties": false,
-                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
                 "type": "object",
                 "required": [
                   "slot"
                 ],
                 "properties": {
                   "slot": {
-                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                     "anyOf": [
                       {
                         "const": "head",
@@ -10335,6 +10869,10 @@
                       },
                       {
                         "const": "hand",
+                        "type": "string"
+                      },
+                      {
+                        "const": "back",
                         "type": "string"
                       }
                     ]
@@ -10395,6 +10933,18 @@
                     "maxLength": 80,
                     "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
                     "type": "string"
+                  },
+                  "places": {
+                    "minimum": 1,
+                    "maximum": 99,
+                    "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                    "type": "integer"
+                  },
+                  "load_bonus": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
                   }
                 }
               },
@@ -10526,6 +11076,10 @@
                 },
                 {
                   "const": "dig",
+                  "type": "string"
+                },
+                {
+                  "const": "fish",
                   "type": "string"
                 },
                 {
@@ -10710,7 +11264,8 @@
               "name",
               "kind",
               "rarity",
-              "sprite"
+              "sprite",
+              "weight"
             ],
             "properties": {
               "id": {
@@ -10867,6 +11422,12 @@
                 "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
                 "type": "string"
               },
+              "weight": {
+                "minimum": 0,
+                "maximum": 20,
+                "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+                "type": "integer"
+              },
               "food": {
                 "additionalProperties": false,
                 "type": "object",
@@ -10921,6 +11482,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -10956,14 +11521,14 @@
               },
               "wear": {
                 "additionalProperties": false,
-                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
                 "type": "object",
                 "required": [
                   "slot"
                 ],
                 "properties": {
                   "slot": {
-                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                     "anyOf": [
                       {
                         "const": "head",
@@ -10991,6 +11556,10 @@
                       },
                       {
                         "const": "hand",
+                        "type": "string"
+                      },
+                      {
+                        "const": "back",
                         "type": "string"
                       }
                     ]
@@ -11051,6 +11620,18 @@
                     "maxLength": 80,
                     "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
                     "type": "string"
+                  },
+                  "places": {
+                    "minimum": 1,
+                    "maximum": 99,
+                    "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                    "type": "integer"
+                  },
+                  "load_bonus": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
                   }
                 }
               },
@@ -11178,14 +11759,15 @@
             "wear_set_bonus_pct",
             "rarity_bonus_ms",
             "drift_budget_permille",
-            "satiety_cap",
-            "satiety_drain_per_min",
+            "hp_cap",
             "day_length_ms",
             "walk_step_ms",
             "hp_low_pct",
             "fire",
             "hazard",
             "bag_base",
+            "place_stack",
+            "load",
             "starting_gold_mg",
             "per_point"
           ],
@@ -11818,7 +12400,7 @@
                 }
               }
             },
-            "satiety_cap": {
+            "hp_cap": {
               "additionalProperties": false,
               "type": "object",
               "required": [
@@ -11842,33 +12424,8 @@
                   "description": "Largest change one decision may make.",
                   "type": "integer"
                 }
-              }
-            },
-            "satiety_drain_per_min": {
-              "additionalProperties": false,
-              "type": "object",
-              "required": [
-                "value",
-                "min",
-                "max",
-                "step"
-              ],
-              "properties": {
-                "value": {
-                  "type": "integer"
-                },
-                "min": {
-                  "type": "integer"
-                },
-                "max": {
-                  "type": "integer"
-                },
-                "step": {
-                  "minimum": 0,
-                  "description": "Largest change one decision may make.",
-                  "type": "integer"
-                }
-              }
+              },
+              "description": "The health bar's base top in whole points; each point of stamina adds per_point.stamina. Nothing drains it by the clock (G28)."
             },
             "day_length_ms": {
               "additionalProperties": false,
@@ -12475,6 +13032,211 @@
                   "description": "Largest change one decision may make.",
                   "type": "integer"
                 }
+              },
+              "description": "Places with nothing on the back: hands and belt (DECISIONS.md, 2026-10-23). A bag on the back gives its own `wear.places` instead."
+            },
+            "place_stack": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Things of one kind that share one place: a place holds a stack of up to this many (DECISIONS.md, 2026-10-23). Weight still counts every unit."
+            },
+            "load": {
+              "additionalProperties": false,
+              "description": "Weight and pace (DECISIONS.md, 2026-10-23): every item weighs, and the load against a limit from might sets one of three walking paces.",
+              "type": "object",
+              "required": [
+                "base",
+                "light_permille",
+                "max_permille",
+                "light_step_ms",
+                "heavy_step_ms",
+                "heavy_breath_permille"
+              ],
+              "properties": {
+                "base": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The weight limit before might: the limit is this plus `per_point.might` for each point, plus a frame bag's `load_bonus`."
+                },
+                "light_permille": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Up to this share of the limit the pace is light; up to the whole limit it is steady; above it, heavy."
+                },
+                "max_permille": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Beyond this share of the limit nothing more is picked up."
+                },
+                "light_step_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Milliseconds a tile at the light pace. The steady pace is `walk_step_ms`."
+                },
+                "heavy_step_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Milliseconds a tile at the heavy pace."
+                },
+                "heavy_breath_permille": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "How fast breath (stamina) refills in a fight while heavy, against 1000."
+                }
               }
             },
             "starting_gold_mg": {
@@ -12505,7 +13267,7 @@
             },
             "per_point": {
               "additionalProperties": false,
-              "description": "What one point in an attribute adds: bag places (might), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina). Spirit is defined and read by no rule yet: its first readers come with the night layer and the tree.",
+              "description": "What one point in an attribute adds: weight limit (might), tiles of dig-hint distance (senses), percent wider timing windows in every minigame (agility), permille on rare and legendary finds inside the power cap and on keeping one unit after a missed gather (luck), and fullness (stamina). Spirit is defined and read by no rule yet: its first readers come with the night layer and the tree.",
               "type": "object",
               "required": [
                 "might",
@@ -12673,6 +13435,1011 @@
                   }
                 }
               }
+            },
+            "growth": {
+              "additionalProperties": false,
+              "description": "The skill tree: what a node costs and when the build's slots open. Left out: the tree is closed.",
+              "type": "object",
+              "required": [
+                "cost",
+                "slot_levels"
+              ],
+              "properties": {
+                "cost": {
+                  "additionalProperties": false,
+                  "description": "Skill points a node costs, by its size (GROWTH section 3.6).",
+                  "type": "object",
+                  "required": [
+                    "small",
+                    "major",
+                    "corner"
+                  ],
+                  "properties": {
+                    "small": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "major": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "corner": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "value",
+                        "min",
+                        "max",
+                        "step"
+                      ],
+                      "properties": {
+                        "value": {
+                          "type": "integer"
+                        },
+                        "min": {
+                          "type": "integer"
+                        },
+                        "max": {
+                          "type": "integer"
+                        },
+                        "step": {
+                          "minimum": 0,
+                          "description": "Largest change one decision may make.",
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                },
+                "slot_levels": {
+                  "minItems": 1,
+                  "maxItems": 8,
+                  "description": "The character level each active slot of the build opens at, from the first slot, never falling (GROWTH section 3.3: two at level 1, then one more at 5, 10 and 15).",
+                  "type": "array",
+                  "items": {
+                    "minimum": 1,
+                    "maximum": 40,
+                    "type": "integer"
+                  }
+                }
+              }
+            },
+            "difficulty": {
+              "additionalProperties": false,
+              "description": "The difficulty reckoning (pnpm map:difficulty): it recommends, never places.",
+              "type": "object",
+              "required": [
+                "ratio_permille",
+                "hazard_bp",
+                "grind_passes_max",
+                "quest_share_pct",
+                "quest_minutes_max",
+                "quests_max"
+              ],
+              "properties": {
+                "ratio_permille": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Each step of the scale multiplies effort and the health a hazard takes by this, in permille (9.10: 1500). The growth curve of a school uses the same ratio (PROGRESSION 3.2)."
+                },
+                "hazard_bp": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "How often a hazard shows grows by this per step of d: the chance in a game minute after dark or in the mist is hazard_bp * d basis points (SETTLEMENT 3.5). A spawn model; today hazards are authored."
+                },
+                "grind_passes_max": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The reckoning: how many times a player is assumed to work each nearer node on the way (each pass waits for the node to grow back)."
+                },
+                "quest_share_pct": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The reckoning: the share of the next level's active time a place's quests should pay, in percent; the rest is grinding."
+                },
+                "quest_minutes_max": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The reckoning: the longest active time one recommended quest asks, in real minutes."
+                },
+                "quests_max": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The reckoning: the most quests it recommends at one place."
+                }
+              }
+            },
+            "balance": {
+              "additionalProperties": false,
+              "description": "The balance model (PROGRESSION 4.7): two red lines, rising ceilings, walls proven both ways. Read by tools only, until the kernel reads it.",
+              "type": "object",
+              "required": [
+                "t1_ms",
+                "school_steps",
+                "band_size",
+                "catalogue_hours_min",
+                "mentor_bonus_pct",
+                "group_share_max_permille",
+                "loop_profit_max_mg",
+                "ceilings",
+                "raise_step",
+                "raisers_max",
+                "wall_margin_bp",
+                "wall_cheese_gap",
+                "top_builds_n",
+                "top_over_median_max_permille",
+                "proof_enum_max",
+                "rarity_effects_max",
+                "rarity_band_permille",
+                "trait_strength_by_tier",
+                "master_step",
+                "dish_place_step",
+                "dish_slots",
+                "grade_walk_permille",
+                "grade_drain_pct"
+              ],
+              "properties": {
+                "t1_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "A school's first step, in active milliseconds; step i takes t1 * ratio^(i-1) (PROGRESSION 3.2). The bounds are the owner's range, 25 to 30 seconds."
+                },
+                "school_steps": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Steps from level 1 to mastery (PROGRESSION 3.2: twenty, so mastery is level 21)."
+                },
+                "band_size": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Levels in one band (PROGRESSION 3.3)."
+                },
+                "catalogue_hours_min": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The fewest active hours that master every school of the catalogue (PROGRESSION 3.2: 800)."
+                },
+                "mentor_bonus_pct": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The one experience source beside the work itself: the mentor's bonus, in percent (PROGRESSION 3.7, red line B)."
+                },
+                "group_share_max_permille": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The most a group member earns from another's work, in permille of the member's own (PROGRESSION 3.7, Q7)."
+                },
+                "loop_profit_max_mg": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The most gold any buy, craft and sell cycle at a vendor may make, in milligold (red line A: 0)."
+                },
+                "ceilings": {
+                  "additionalProperties": false,
+                  "description": "Each category's ceiling by the wearer's band (PROGRESSION 4.7): every source adds and the sum stops here. Never falls with the band.",
+                  "type": "object",
+                  "required": [
+                    "work",
+                    "move",
+                    "carry",
+                    "health",
+                    "sustain",
+                    "find",
+                    "sense",
+                    "place"
+                  ],
+                  "properties": {
+                    "work": {
+                      "minItems": 5,
+                      "maxItems": 5,
+                      "description": "Time off a school's work, all sources, in percent.",
+                      "type": "array",
+                      "items": {
+                        "minimum": 0,
+                        "maximum": 100,
+                        "type": "integer"
+                      }
+                    },
+                    "move": {
+                      "minItems": 5,
+                      "maxItems": 5,
+                      "description": "Time off a step, a crossing or an oar stroke, in percent.",
+                      "type": "array",
+                      "items": {
+                        "minimum": 0,
+                        "maximum": 100,
+                        "type": "integer"
+                      }
+                    },
+                    "carry": {
+                      "minItems": 5,
+                      "maxItems": 5,
+                      "description": "The weight limit above might's and the bag's, in percent.",
+                      "type": "array",
+                      "items": {
+                        "minimum": 0,
+                        "maximum": 100,
+                        "type": "integer"
+                      }
+                    },
+                    "health": {
+                      "minItems": 5,
+                      "maxItems": 5,
+                      "description": "The health cap above the attributes' cap, in percent.",
+                      "type": "array",
+                      "items": {
+                        "minimum": 0,
+                        "maximum": 200,
+                        "type": "integer"
+                      }
+                    },
+                    "sustain": {
+                      "minItems": 5,
+                      "maxItems": 5,
+                      "description": "Health back a game hour while a place drains, regen and food together, in percent of the cap.",
+                      "type": "array",
+                      "items": {
+                        "minimum": 0,
+                        "maximum": 100,
+                        "type": "integer"
+                      }
+                    },
+                    "find": {
+                      "minItems": 5,
+                      "maxItems": 5,
+                      "description": "Rare-find points.",
+                      "type": "array",
+                      "items": {
+                        "minimum": 0,
+                        "maximum": 100,
+                        "type": "integer"
+                      }
+                    },
+                    "sense": {
+                      "minItems": 5,
+                      "maxItems": 5,
+                      "description": "Tiles of sight in the dark or of a trail.",
+                      "type": "array",
+                      "items": {
+                        "minimum": 0,
+                        "maximum": 20,
+                        "type": "integer"
+                      }
+                    },
+                    "place": {
+                      "minItems": 5,
+                      "maxItems": 5,
+                      "description": "Answer steps on one condition: garment, master step and dish together.",
+                      "type": "array",
+                      "items": {
+                        "minimum": 0,
+                        "maximum": 4,
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "raise_step": {
+                  "additionalProperties": false,
+                  "description": "What one ceiling raiser adds to its category's top-band ceiling (PROGRESSION 4.7).",
+                  "type": "object",
+                  "required": [
+                    "work",
+                    "move",
+                    "carry",
+                    "health",
+                    "sustain",
+                    "find",
+                    "sense",
+                    "place"
+                  ],
+                  "properties": {
+                    "work": {
+                      "minimum": 0,
+                      "maximum": 100,
+                      "type": "integer"
+                    },
+                    "move": {
+                      "minimum": 0,
+                      "maximum": 100,
+                      "type": "integer"
+                    },
+                    "carry": {
+                      "minimum": 0,
+                      "maximum": 100,
+                      "type": "integer"
+                    },
+                    "health": {
+                      "minimum": 0,
+                      "maximum": 100,
+                      "type": "integer"
+                    },
+                    "sustain": {
+                      "minimum": 0,
+                      "maximum": 100,
+                      "type": "integer"
+                    },
+                    "find": {
+                      "minimum": 0,
+                      "maximum": 100,
+                      "type": "integer"
+                    },
+                    "sense": {
+                      "minimum": 0,
+                      "maximum": 100,
+                      "type": "integer"
+                    },
+                    "place": {
+                      "minimum": 0,
+                      "maximum": 100,
+                      "type": "integer"
+                    }
+                  }
+                },
+                "raisers_max": {
+                  "additionalProperties": false,
+                  "description": "How many raisers of each category exist (PROGRESSION 4.7: ten in all today).",
+                  "type": "object",
+                  "required": [
+                    "work",
+                    "move",
+                    "carry",
+                    "health",
+                    "sustain",
+                    "find",
+                    "sense",
+                    "place"
+                  ],
+                  "properties": {
+                    "work": {
+                      "minimum": 0,
+                      "maximum": 10,
+                      "type": "integer"
+                    },
+                    "move": {
+                      "minimum": 0,
+                      "maximum": 10,
+                      "type": "integer"
+                    },
+                    "carry": {
+                      "minimum": 0,
+                      "maximum": 10,
+                      "type": "integer"
+                    },
+                    "health": {
+                      "minimum": 0,
+                      "maximum": 10,
+                      "type": "integer"
+                    },
+                    "sustain": {
+                      "minimum": 0,
+                      "maximum": 10,
+                      "type": "integer"
+                    },
+                    "find": {
+                      "minimum": 0,
+                      "maximum": 10,
+                      "type": "integer"
+                    },
+                    "sense": {
+                      "minimum": 0,
+                      "maximum": 10,
+                      "type": "integer"
+                    },
+                    "place": {
+                      "minimum": 0,
+                      "maximum": 10,
+                      "type": "integer"
+                    }
+                  }
+                },
+                "wall_margin_bp": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "A wall's witness ends with at least this share of the health cap and of the timer to spare, in basis points."
+                },
+                "wall_cheese_gap": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Nothing from this many bands below a wall's band passes it (PROGRESSION 4.7: 2)."
+                },
+                "top_builds_n": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "How many strongest builds a band the prover lists (a warning, never a failure)."
+                },
+                "top_over_median_max_permille": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The strongest build of a band warns when its score stands more than this above the band's median, in permille."
+                },
+                "proof_enum_max": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Combinations walked in full; above it the proof walks each slot's Pareto front."
+                },
+                "rarity_effects_max": {
+                  "minItems": 4,
+                  "maxItems": 4,
+                  "description": "The most effects a thing carries by rarity, common, uncommon, rare, legendary (PROGRESSION 5.7); a trait and a dish effect count.",
+                  "type": "array",
+                  "items": {
+                    "minimum": 0,
+                    "maximum": 4,
+                    "type": "integer"
+                  }
+                },
+                "rarity_band_permille": {
+                  "minItems": 4,
+                  "maxItems": 4,
+                  "description": "Each rarity's share of the tier's full strength, low and high, in permille (PROGRESSION 5.7); common is the smallest step, read as 0 here.",
+                  "type": "array",
+                  "items": {
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "type": "array",
+                    "items": {
+                      "minimum": 0,
+                      "maximum": 1000,
+                      "type": "integer"
+                    }
+                  }
+                },
+                "trait_strength_by_tier": {
+                  "minItems": 1,
+                  "maxItems": 10,
+                  "description": "A garment trait's strength by the tier it counts as, from tier 1 (BODY_CLOCKS 6.2).",
+                  "type": "array",
+                  "items": {
+                    "minimum": 0,
+                    "maximum": 4,
+                    "type": "integer"
+                  }
+                },
+                "master_step": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "What a master piece adds to its trait (BODY_CLOCKS 6.2)."
+                },
+                "dish_place_step": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "What a dish of the same condition adds; only one dish counts (BODY_CLOCKS 6.2)."
+                },
+                "dish_slots": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "How many dishes act at once (BODY_CLOCKS 7)."
+                },
+                "grade_walk_permille": {
+                  "minItems": 5,
+                  "maxItems": 5,
+                  "description": "The slow of a remaining grade 0 to 4, in permille of a step's time (BODY_CLOCKS 5.2).",
+                  "type": "array",
+                  "items": {
+                    "minimum": 1000,
+                    "maximum": 5000,
+                    "type": "integer"
+                  }
+                },
+                "grade_drain_pct": {
+                  "minItems": 5,
+                  "maxItems": 5,
+                  "description": "The drain of a remaining grade 0 to 4, in percent of the health cap a game hour (BODY_CLOCKS 5.2).",
+                  "type": "array",
+                  "items": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "type": "integer"
+                  }
+                }
+              }
             }
           }
         }
@@ -12742,7 +14509,8 @@
               "name",
               "kind",
               "rarity",
-              "sprite"
+              "sprite",
+              "weight"
             ],
             "properties": {
               "id": {
@@ -12899,6 +14667,12 @@
                 "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
                 "type": "string"
               },
+              "weight": {
+                "minimum": 0,
+                "maximum": 20,
+                "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+                "type": "integer"
+              },
               "food": {
                 "additionalProperties": false,
                 "type": "object",
@@ -12953,6 +14727,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -12988,14 +14766,14 @@
               },
               "wear": {
                 "additionalProperties": false,
-                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
                 "type": "object",
                 "required": [
                   "slot"
                 ],
                 "properties": {
                   "slot": {
-                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                     "anyOf": [
                       {
                         "const": "head",
@@ -13023,6 +14801,10 @@
                       },
                       {
                         "const": "hand",
+                        "type": "string"
+                      },
+                      {
+                        "const": "back",
                         "type": "string"
                       }
                     ]
@@ -13083,6 +14865,18 @@
                     "maxLength": 80,
                     "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
                     "type": "string"
+                  },
+                  "places": {
+                    "minimum": 1,
+                    "maximum": 99,
+                    "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                    "type": "integer"
+                  },
+                  "load_bonus": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
                   }
                 }
               },
@@ -13312,7 +15106,7 @@
                     "ramps": {
                       "minItems": 1,
                       "maxItems": 4,
-                      "description": "The ramps of this kit the sprite draws in, in order: the first is the one its outline comes from. A sprite that names none uses the core palette only.",
+                      "description": "The ramps of this kit the sprite draws in, in order. The outline is the one-pixel ink line #1b1a2e on every sprite, whatever the ramps. A sprite that names none uses the core palette only.",
                       "type": "array",
                       "items": {
                         "pattern": "^[a-z0-9][a-z0-9-]*$",
@@ -13432,7 +15226,8 @@
               "name",
               "kind",
               "rarity",
-              "sprite"
+              "sprite",
+              "weight"
             ],
             "properties": {
               "id": {
@@ -13589,6 +15384,12 @@
                 "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
                 "type": "string"
               },
+              "weight": {
+                "minimum": 0,
+                "maximum": 20,
+                "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+                "type": "integer"
+              },
               "food": {
                 "additionalProperties": false,
                 "type": "object",
@@ -13643,6 +15444,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -13678,14 +15483,14 @@
               },
               "wear": {
                 "additionalProperties": false,
-                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
                 "type": "object",
                 "required": [
                   "slot"
                 ],
                 "properties": {
                   "slot": {
-                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                     "anyOf": [
                       {
                         "const": "head",
@@ -13713,6 +15518,10 @@
                       },
                       {
                         "const": "hand",
+                        "type": "string"
+                      },
+                      {
+                        "const": "back",
                         "type": "string"
                       }
                     ]
@@ -13773,6 +15582,18 @@
                     "maxLength": 80,
                     "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
                     "type": "string"
+                  },
+                  "places": {
+                    "minimum": 1,
+                    "maximum": 99,
+                    "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                    "type": "integer"
+                  },
+                  "load_bonus": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
                   }
                 }
               },
@@ -14117,6 +15938,365 @@
                 "type": "string"
               }
             },
+            "levels": {
+              "minItems": 8,
+              "description": "The height layer beside the ground layer (STYLE section 6): one digit 0 to 9 per tile, integers only. Absent: every tile is level 0.",
+              "type": "array",
+              "items": {
+                "pattern": "^[0-9]+$",
+                "description": "One level digit (0 to 9) per tile, rows like the ground (STYLE section 6).",
+                "type": "string"
+              }
+            },
+            "plan": {
+              "additionalProperties": false,
+              "type": "object",
+              "properties": {
+                "regions": {
+                  "maxItems": 64,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "purpose",
+                      "cells"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                        "type": "string"
+                      },
+                      "purpose": {
+                        "anyOf": [
+                          {
+                            "const": "stop",
+                            "type": "string"
+                          },
+                          {
+                            "const": "passage",
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "cells": {
+                        "minItems": 1,
+                        "maxItems": 8,
+                        "description": "The rectangles the region covers: x, y, width, height.",
+                        "type": "array",
+                        "items": {
+                          "type": "array",
+                          "items": [
+                            {
+                              "minimum": 0,
+                              "maximum": 1023,
+                              "type": "integer"
+                            },
+                            {
+                              "minimum": 0,
+                              "maximum": 1023,
+                              "type": "integer"
+                            },
+                            {
+                              "minimum": 1,
+                              "maximum": 1024,
+                              "type": "integer"
+                            },
+                            {
+                              "minimum": 1,
+                              "maximum": 1024,
+                              "type": "integer"
+                            }
+                          ],
+                          "additionalItems": false,
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      },
+                      "height": {
+                        "minimum": 0,
+                        "maximum": 9,
+                        "description": "The level the region stands on, read against `levels`.",
+                        "type": "integer"
+                      },
+                      "tags": {
+                        "maxItems": 8,
+                        "uniqueItems": true,
+                        "type": "array",
+                        "items": {
+                          "pattern": "^[a-z0-9:_-]+$",
+                          "maxLength": 40,
+                          "type": "string"
+                        }
+                      },
+                      "cover": {
+                        "description": "The scatter line: per mille of the walkable tiles each small prop covers.",
+                        "type": "object",
+                        "patternProperties": {
+                          "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$": {
+                            "minimum": 0,
+                            "maximum": 300,
+                            "type": "integer"
+                          }
+                        }
+                      },
+                      "opens_by": {
+                        "description": "\"wake\": open from the first wake. Otherwise the quest whose reward opens the way in (decision 25 of 22.10); a quest not yet written is a warning, never an error. Left out: ground nobody walks (water, the woods, a mountain band).",
+                        "anyOf": [
+                          {
+                            "const": "wake",
+                            "type": "string"
+                          },
+                          {
+                            "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                            "maxLength": 80,
+                            "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                "paths": {
+                  "maxItems": 64,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "width",
+                      "via"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                        "type": "string"
+                      },
+                      "width": {
+                        "minimum": 1,
+                        "maximum": 2,
+                        "description": "1 for feet, 2 for a barrow or a cart.",
+                        "type": "integer"
+                      },
+                      "via": {
+                        "minItems": 2,
+                        "maxItems": 32,
+                        "description": "The corners of the path, each pair on one row or one column; every tile between is a path tile or a mended crossing (G69).",
+                        "type": "array",
+                        "items": {
+                          "description": "A tile: x, then y.",
+                          "type": "array",
+                          "items": [
+                            {
+                              "minimum": 0,
+                              "maximum": 1023,
+                              "type": "integer"
+                            },
+                            {
+                              "minimum": 0,
+                              "maximum": 1023,
+                              "type": "integer"
+                            }
+                          ],
+                          "additionalItems": false,
+                          "minItems": 2,
+                          "maxItems": 2
+                        }
+                      }
+                    }
+                  }
+                },
+                "routes": {
+                  "maxItems": 32,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "who",
+                      "hours",
+                      "via"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                        "type": "string"
+                      },
+                      "who": {
+                        "minLength": 1,
+                        "maxLength": 40,
+                        "type": "string"
+                      },
+                      "hours": {
+                        "description": "From (inclusive) to (exclusive), game hours; a later from than to runs over midnight.",
+                        "type": "array",
+                        "items": [
+                          {
+                            "minimum": 0,
+                            "maximum": 23,
+                            "type": "integer"
+                          },
+                          {
+                            "minimum": 1,
+                            "maximum": 24,
+                            "type": "integer"
+                          }
+                        ],
+                        "additionalItems": false,
+                        "minItems": 2,
+                        "maxItems": 2
+                      },
+                      "via": {
+                        "minItems": 1,
+                        "maxItems": 48,
+                        "description": "Points a person walks through, each a tile a foot can stand on.",
+                        "type": "array",
+                        "items": {
+                          "description": "A tile: x, then y.",
+                          "type": "array",
+                          "items": [
+                            {
+                              "minimum": 0,
+                              "maximum": 1023,
+                              "type": "integer"
+                            },
+                            {
+                              "minimum": 0,
+                              "maximum": 1023,
+                              "type": "integer"
+                            }
+                          ],
+                          "additionalItems": false,
+                          "minItems": 2,
+                          "maxItems": 2
+                        }
+                      }
+                    }
+                  }
+                },
+                "rests": {
+                  "maxItems": 32,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "description": "The top-left tile of a plain 3x3 the scatter leaves empty.",
+                    "type": "object",
+                    "required": [
+                      "x",
+                      "y"
+                    ],
+                    "properties": {
+                      "x": {
+                        "minimum": 0,
+                        "maximum": 1023,
+                        "type": "integer"
+                      },
+                      "y": {
+                        "minimum": 0,
+                        "maximum": 1023,
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "wakes": {
+                  "maxItems": 16,
+                  "description": "The spawn pool: every wake the seed may draw, with its first task.",
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "pocket",
+                      "quest"
+                    ],
+                    "properties": {
+                      "pocket": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "A wake pocket of the pool (content/core/pockets): its file holds the wake tile and the tools on the ground.",
+                        "type": "string"
+                      },
+                      "quest": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "The first task of that pocket: a quest whose `pocket` names it.",
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "exits": {
+                  "maxItems": 16,
+                  "description": "The ways out of the first region: the first night is held by the length of the road beyond each one, never by the gate (DECISIONS.md, 2026-10-23).",
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "to",
+                      "min_road_steps"
+                    ],
+                    "properties": {
+                      "id": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                        "type": "string"
+                      },
+                      "slot": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "The gate: the slot a region quest opens (decision 25). Give this or `at`.",
+                        "type": "string"
+                      },
+                      "at": {
+                        "description": "A way out with no gate slot (the jetty where the boat waits): the last tile a foot stands on.",
+                        "type": "array",
+                        "items": [
+                          {
+                            "minimum": 0,
+                            "maximum": 1023,
+                            "type": "integer"
+                          },
+                          {
+                            "minimum": 0,
+                            "maximum": 1023,
+                            "type": "integer"
+                          }
+                        ],
+                        "additionalItems": false,
+                        "minItems": 2,
+                        "maxItems": 2
+                      },
+                      "to": {
+                        "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                        "maxLength": 80,
+                        "description": "The plan region the way leads into.",
+                        "type": "string"
+                      },
+                      "min_road_steps": {
+                        "minimum": 1,
+                        "maximum": 100000,
+                        "description": "G71: the fewest steps the road beyond this exit must run before the next region's ground, so that no wake reaches that ground before the first dusk with every gate open. The daylight in steps at the fastest wake, less its steps to this exit, plus a margin; the check refuses a smaller number and any stitched map whose road beyond is shorter.",
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            },
             "props": {
               "type": "array",
               "items": {
@@ -14175,6 +16355,11 @@
                   },
                   "fire": {
                     "description": "A fire the player may feed by hand. It needs an id.",
+                    "const": true,
+                    "type": "boolean"
+                  },
+                  "crossing": {
+                    "description": "Steps or a ramp: the way across a change of level (G68), on the lower tile, facing the face.",
                     "const": true,
                     "type": "boolean"
                   },
@@ -14550,7 +16735,8 @@
               "name",
               "kind",
               "rarity",
-              "sprite"
+              "sprite",
+              "weight"
             ],
             "properties": {
               "id": {
@@ -14707,6 +16893,12 @@
                 "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
                 "type": "string"
               },
+              "weight": {
+                "minimum": 0,
+                "maximum": 20,
+                "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+                "type": "integer"
+              },
               "food": {
                 "additionalProperties": false,
                 "type": "object",
@@ -14761,6 +16953,10 @@
                       {
                         "const": "pick",
                         "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
                       }
                     ]
                   },
@@ -14796,14 +16992,14 @@
               },
               "wear": {
                 "additionalProperties": false,
-                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag.",
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
                 "type": "object",
                 "required": [
                   "slot"
                 ],
                 "properties": {
                   "slot": {
-                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places) or hand (a tool).",
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
                     "anyOf": [
                       {
                         "const": "head",
@@ -14831,6 +17027,10 @@
                       },
                       {
                         "const": "hand",
+                        "type": "string"
+                      },
+                      {
+                        "const": "back",
                         "type": "string"
                       }
                     ]
@@ -14891,6 +17091,18 @@
                     "maxLength": 80,
                     "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
                     "type": "string"
+                  },
+                  "places": {
+                    "minimum": 1,
+                    "maximum": 99,
+                    "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                    "type": "integer"
+                  },
+                  "load_bonus": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
                   }
                 }
               },
@@ -15076,6 +17288,732 @@
                     "minimum": 1,
                     "maximum": 999,
                     "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "additionalProperties": false,
+      "$id": "school",
+      "type": "object",
+      "required": [
+        "format",
+        "id",
+        "title",
+        "creator",
+        "type",
+        "school"
+      ],
+      "properties": {
+        "$schema": {
+          "type": "string"
+        },
+        "format": {
+          "description": "Format version of this file.",
+          "const": 1,
+          "type": "number"
+        },
+        "id": {
+          "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+          "maxLength": 80,
+          "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+          "type": "string"
+        },
+        "title": {
+          "minLength": 1,
+          "maxLength": 40,
+          "type": "string"
+        },
+        "creator": {
+          "pattern": "^[a-z0-9_-]+$",
+          "maxLength": 39,
+          "description": "GitHub handle, lowercase.",
+          "type": "string"
+        },
+        "description": {
+          "minLength": 1,
+          "maxLength": 240,
+          "type": "string"
+        },
+        "ai_tools": {
+          "maxItems": 8,
+          "description": "AI tools used to make this file or its art. Required when any were used.",
+          "type": "array",
+          "items": {
+            "minLength": 1,
+            "maxLength": 60,
+            "type": "string"
+          }
+        },
+        "items": {
+          "maxItems": 40,
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "rarity",
+              "sprite",
+              "weight"
+            ],
+            "properties": {
+              "id": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              },
+              "name": {
+                "minLength": 1,
+                "maxLength": 40,
+                "type": "string"
+              },
+              "description": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string"
+              },
+              "kind": {
+                "anyOf": [
+                  {
+                    "const": "material",
+                    "type": "string"
+                  },
+                  {
+                    "const": "food",
+                    "type": "string"
+                  },
+                  {
+                    "const": "tool",
+                    "type": "string"
+                  },
+                  {
+                    "const": "fragment",
+                    "type": "string"
+                  },
+                  {
+                    "const": "treasure",
+                    "type": "string"
+                  }
+                ]
+              },
+              "rarity": {
+                "description": "Declared rarity. The check compares it with the rarity computed from the data.",
+                "anyOf": [
+                  {
+                    "const": "common",
+                    "type": "string"
+                  },
+                  {
+                    "const": "uncommon",
+                    "type": "string"
+                  },
+                  {
+                    "const": "rare",
+                    "type": "string"
+                  },
+                  {
+                    "const": "legendary",
+                    "type": "string"
+                  }
+                ]
+              },
+              "class": {
+                "description": "A base class (plant, wood, fibre, ...) or the id of a class an extension declares under one of them.",
+                "anyOf": [
+                  {
+                    "const": "plant",
+                    "type": "string"
+                  },
+                  {
+                    "const": "wood",
+                    "type": "string"
+                  },
+                  {
+                    "const": "fibre",
+                    "type": "string"
+                  },
+                  {
+                    "const": "stone",
+                    "type": "string"
+                  },
+                  {
+                    "const": "clay",
+                    "type": "string"
+                  },
+                  {
+                    "const": "mineral",
+                    "type": "string"
+                  },
+                  {
+                    "const": "metal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "animal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "meal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "tool",
+                    "type": "string"
+                  },
+                  {
+                    "const": "garment",
+                    "type": "string"
+                  },
+                  {
+                    "const": "jewelry",
+                    "type": "string"
+                  },
+                  {
+                    "const": "relic",
+                    "type": "string"
+                  },
+                  {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  }
+                ]
+              },
+              "family": {
+                "pattern": "^[a-z0-9_-]+$",
+                "maxLength": 24,
+                "description": "A group inside the class, for example \"berry\" for every berry. Open: any lowercase word.",
+                "type": "string"
+              },
+              "tags": {
+                "maxItems": 8,
+                "uniqueItems": true,
+                "description": "Open words that describe it, for example \"sweet\" or \"night\".",
+                "type": "array",
+                "items": {
+                  "pattern": "^[a-z0-9_-]+$",
+                  "maxLength": 24,
+                  "description": "A lowercase word.",
+                  "type": "string"
+                }
+              },
+              "tier": {
+                "minimum": 1,
+                "maximum": 20,
+                "description": "How advanced it is, from 1. The rarity says how often it appears; the tier says how far up the ladder it is. A tool has the tier of its \"tool\".",
+                "type": "integer"
+              },
+              "sprite": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
+                "maxLength": 120,
+                "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
+                "type": "string"
+              },
+              "weight": {
+                "minimum": 0,
+                "maximum": 20,
+                "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+                "type": "integer"
+              },
+              "food": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "satiety"
+                ],
+                "properties": {
+                  "satiety": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                    "type": "integer"
+                  },
+                  "hurt": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
+                    "type": "integer"
+                  }
+                }
+              },
+              "tool": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "kind",
+                  "tier"
+                ],
+                "properties": {
+                  "kind": {
+                    "anyOf": [
+                      {
+                        "const": "basket",
+                        "type": "string"
+                      },
+                      {
+                        "const": "trowel",
+                        "type": "string"
+                      },
+                      {
+                        "const": "axe",
+                        "type": "string"
+                      },
+                      {
+                        "const": "staff",
+                        "type": "string"
+                      },
+                      {
+                        "const": "hammer",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pick",
+                        "type": "string"
+                      },
+                      {
+                        "const": "rod",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "tier": {
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Better tools work faster. The calculator clamps the total.",
+                    "type": "integer"
+                  },
+                  "uses": {
+                    "minimum": 1,
+                    "maximum": 1000,
+                    "description": "The tool wears out after this many uses. Left out, the tool lasts (DECISIONS.md, 2026-10-09: the crafting economy).",
+                    "type": "integer"
+                  }
+                }
+              },
+              "fragment": {
+                "additionalProperties": false,
+                "description": "A found scrap that teaches a recipe.",
+                "type": "object",
+                "required": [
+                  "unlocks"
+                ],
+                "properties": {
+                  "unlocks": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  }
+                }
+              },
+              "wear": {
+                "additionalProperties": false,
+                "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
+                "type": "object",
+                "required": [
+                  "slot"
+                ],
+                "properties": {
+                  "slot": {
+                    "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
+                    "anyOf": [
+                      {
+                        "const": "head",
+                        "type": "string"
+                      },
+                      {
+                        "const": "top",
+                        "type": "string"
+                      },
+                      {
+                        "const": "legs",
+                        "type": "string"
+                      },
+                      {
+                        "const": "outfit",
+                        "type": "string"
+                      },
+                      {
+                        "const": "feet",
+                        "type": "string"
+                      },
+                      {
+                        "const": "jewelry",
+                        "type": "string"
+                      },
+                      {
+                        "const": "hand",
+                        "type": "string"
+                      },
+                      {
+                        "const": "back",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "look": {
+                    "description": "A look: worn on the look layer over the work clothes. It shows and counts for nothing, so it has no effects and no set.",
+                    "type": "boolean"
+                  },
+                  "effects": {
+                    "minItems": 1,
+                    "maxItems": 2,
+                    "description": "Small bonuses while it is worn on the work layer. Two at most, each effect once.",
+                    "type": "array",
+                    "items": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "effect",
+                        "value"
+                      ],
+                      "properties": {
+                        "effect": {
+                          "description": "What a worn item helps: gathering, digging or crafting speed, the craft chance, or rare finds.",
+                          "anyOf": [
+                            {
+                              "const": "gather_speed_pct",
+                              "type": "string"
+                            },
+                            {
+                              "const": "dig_speed_pct",
+                              "type": "string"
+                            },
+                            {
+                              "const": "craft_speed_pct",
+                              "type": "string"
+                            },
+                            {
+                              "const": "craft_chance_pct",
+                              "type": "string"
+                            },
+                            {
+                              "const": "rare_find_pct",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "value": {
+                          "minimum": 1,
+                          "maximum": 100,
+                          "description": "Percent, at most the cap of the item's tier (params.wear_effect_max_pct).",
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  },
+                  "set": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
+                    "type": "string"
+                  },
+                  "places": {
+                    "minimum": 1,
+                    "maximum": 99,
+                    "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                    "type": "integer"
+                  },
+                  "load_bonus": {
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "premium_later": {
+                "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "classes": {
+          "maxItems": 10,
+          "description": "Classes of your own, each under one base class.",
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "description": "A class of your own, declared under one base class. Every rule written for the base class holds for it.",
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "base"
+            ],
+            "properties": {
+              "id": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              },
+              "name": {
+                "minLength": 1,
+                "maxLength": 40,
+                "type": "string"
+              },
+              "base": {
+                "description": "plant (leaves, herbs, berries, fruit, roots, mushrooms), wood, fibre (reeds, grass, thread, cloth), stone, clay (clay, sand, pottery, brick), mineral (crystals, gems, salt, ore), metal (waits for its discovery), animal (feathers, wool, hide, bone), meal (cooked food), tool, garment (worn clothes), jewelry, relic (old things from the ruins).",
+                "anyOf": [
+                  {
+                    "const": "plant",
+                    "type": "string"
+                  },
+                  {
+                    "const": "wood",
+                    "type": "string"
+                  },
+                  {
+                    "const": "fibre",
+                    "type": "string"
+                  },
+                  {
+                    "const": "stone",
+                    "type": "string"
+                  },
+                  {
+                    "const": "clay",
+                    "type": "string"
+                  },
+                  {
+                    "const": "mineral",
+                    "type": "string"
+                  },
+                  {
+                    "const": "metal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "animal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "meal",
+                    "type": "string"
+                  },
+                  {
+                    "const": "tool",
+                    "type": "string"
+                  },
+                  {
+                    "const": "garment",
+                    "type": "string"
+                  },
+                  {
+                    "const": "jewelry",
+                    "type": "string"
+                  },
+                  {
+                    "const": "relic",
+                    "type": "string"
+                  }
+                ]
+              },
+              "description": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string"
+              }
+            }
+          }
+        },
+        "type": {
+          "const": "school",
+          "type": "string"
+        },
+        "school": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "name",
+            "profession",
+            "nodes"
+          ],
+          "properties": {
+            "name": {
+              "minLength": 1,
+              "maxLength": 40,
+              "type": "string"
+            },
+            "profession": {
+              "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+              "maxLength": 80,
+              "description": "The profession whose wing this is. The profession keeps its levels; the school is what the points buy.",
+              "type": "string"
+            },
+            "nodes": {
+              "minItems": 1,
+              "maxItems": 24,
+              "description": "The path and the corners. At most 12 nodes for each race (the path and that race's corner).",
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "id",
+                  "name",
+                  "text",
+                  "size",
+                  "effect",
+                  "value"
+                ],
+                "properties": {
+                  "id": {
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+                    "maxLength": 40,
+                    "description": "The node's name inside its school, for example \"steady\". A learned node is kept as \"<school id>/<node id>\".",
+                    "type": "string"
+                  },
+                  "name": {
+                    "minLength": 1,
+                    "maxLength": 40,
+                    "type": "string",
+                    "description": "A thing the player knows how to do, for example \"Depth sense\"."
+                  },
+                  "text": {
+                    "minLength": 1,
+                    "maxLength": 240,
+                    "type": "string",
+                    "description": "One sentence in words, never a number or a percentage (the number stays in the code)."
+                  },
+                  "size": {
+                    "anyOf": [
+                      {
+                        "const": "small",
+                        "type": "string"
+                      },
+                      {
+                        "const": "major",
+                        "type": "string"
+                      },
+                      {
+                        "const": "corner",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "needs": {
+                    "maxItems": 3,
+                    "uniqueItems": true,
+                    "description": "The nodes of the same school learned before this one: its place on the path.",
+                    "type": "array",
+                    "items": {
+                      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+                      "maxLength": 40,
+                      "description": "The node's name inside its school, for example \"steady\". A learned node is kept as \"<school id>/<node id>\".",
+                      "type": "string"
+                    }
+                  },
+                  "key": {
+                    "additionalProperties": false,
+                    "description": "Keys: the attribute pips the node asks for, for example { \"senses\": 3 }. A key opens the node; it is never spent.",
+                    "type": "object",
+                    "properties": {
+                      "might": {
+                        "minimum": 1,
+                        "maximum": 10,
+                        "type": "integer"
+                      },
+                      "senses": {
+                        "minimum": 1,
+                        "maximum": 10,
+                        "type": "integer"
+                      },
+                      "agility": {
+                        "minimum": 1,
+                        "maximum": 10,
+                        "type": "integer"
+                      },
+                      "luck": {
+                        "minimum": 1,
+                        "maximum": 10,
+                        "type": "integer"
+                      },
+                      "stamina": {
+                        "minimum": 1,
+                        "maximum": 10,
+                        "type": "integer"
+                      },
+                      "spirit": {
+                        "minimum": 1,
+                        "maximum": 10,
+                        "type": "integer"
+                      }
+                    }
+                  },
+                  "effect": {
+                    "description": "What a technique does. A closed list: the kernel knows how to apply each one. A craft effect of a technique (craft_speed_pct, craft_chance_pct) helps the recipes of its own profession.",
+                    "anyOf": [
+                      {
+                        "const": "see_ripe",
+                        "type": "string"
+                      },
+                      {
+                        "const": "timing_window_pct",
+                        "type": "string"
+                      },
+                      {
+                        "const": "second_hint",
+                        "type": "string"
+                      },
+                      {
+                        "const": "rare_find_pct",
+                        "type": "string"
+                      },
+                      {
+                        "const": "craft_speed_pct",
+                        "type": "string"
+                      },
+                      {
+                        "const": "meal_fill_pct",
+                        "type": "string"
+                      },
+                      {
+                        "const": "gather_speed_pct",
+                        "type": "string"
+                      },
+                      {
+                        "const": "dig_speed_pct",
+                        "type": "string"
+                      },
+                      {
+                        "const": "craft_chance_pct",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "value": {
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "The number the effect moves. Shown only on a long press, never on the tree.",
+                    "type": "integer"
+                  },
+                  "slot": {
+                    "description": "A technique: it works only while it sits in an active slot of the build. Left out: always on once learned. Never on a small node.",
+                    "type": "boolean"
+                  },
+                  "race": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "A corner node only: the race whose node this is. Only a player of that race sees and learns it.",
+                    "type": "string"
+                  },
+                  "icon": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "An item whose sprite pictures the node on the tree.",
+                    "type": "string"
                   }
                 }
               }

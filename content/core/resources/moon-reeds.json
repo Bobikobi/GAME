@@ -14,7 +14,8 @@
       "rarity": "uncommon",
       "class": "fibre",
       "tier": 1,
-      "sprite": "core/base-kit:items/herb"
+      "sprite": "core/base-kit:items/herb",
+      "weight": 1
     }
   ],
   "node": {

@@ -20,7 +20,8 @@ import {
   hashText,
   layoutInstances,
 } from '@game/kernel';
-import { BASE_CLASSES, CORE_ONLY_TYPES, type CreatorProfile, type ParamsBody, type Template, type WhenDef } from '@game/schema';
+import { BASE_CLASSES, CORE_ONLY_TYPES, type ChunkFile, type CreatorProfile, type ParamsBody, type Template, type WhenDef } from '@game/schema';
+import { chunkProblems, levelsProblems } from './chunks';
 import { toRepoPath, type Issue, type Loaded } from './load';
 import { findableItems, startFinds } from './play';
 
@@ -33,7 +34,7 @@ export interface Assembled {
     {
       dir: string;
       rel: string;
-      sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4; ramps?: string[]; scale?: number }>;
+      sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4; ramps?: string[]; scale?: number; source?: { spec: string; manifest: string } }>;
       palette?: string[];
       ramps?: { id: string; for?: string; steps: string[] }[];
     }
@@ -45,6 +46,7 @@ export interface Assembled {
 type RecordKey =
   | 'resources'
   | 'treasures'
+  | 'searchables'
   | 'recipes'
   | 'npcs'
   | 'quests'
@@ -54,6 +56,7 @@ type RecordKey =
   | 'races'
   | 'pockets'
   | 'professions'
+  | 'schools'
   | 'shops'
   | 'reactions';
 const KEY_OF: Record<string, RecordKey | undefined> = {
@@ -68,6 +71,7 @@ const KEY_OF: Record<string, RecordKey | undefined> = {
   race: 'races',
   pocket: 'pockets',
   profession: 'professions',
+  school: 'schools',
   shop: 'shops',
   reaction: 'reactions',
 };
@@ -84,6 +88,7 @@ const BODY_OF: Record<string, string> = {
   race: 'race',
   pocket: 'pocket',
   profession: 'profession',
+  school: 'school',
   shop: 'shop',
   reaction: 'reaction',
   params: 'params',
@@ -125,8 +130,7 @@ export function flattenParams(p: ParamsBody): Params {
     wear_effect_max_pct: [...p.wear_effect_max_pct],
     wear_set_bonus_pct: p.wear_set_bonus_pct.value,
     drift_budget_permille: p.drift_budget_permille.value,
-    satiety_cap: p.satiety_cap.value,
-    satiety_drain_per_min: p.satiety_drain_per_min.value,
+    hp_cap: p.hp_cap.value,
     day_length_ms: p.day_length_ms.value,
     walk_step_ms: p.walk_step_ms.value,
     move_reach_max: p.move_reach_max?.value ?? 32,
@@ -153,6 +157,15 @@ export function flattenParams(p: ParamsBody): Params {
       deep_water: { harm_pct: p.hazard.deep_water.harm_pct.value },
     },
     bag_base: p.bag_base.value,
+    place_stack: p.place_stack.value,
+    load: {
+      base: p.load.base.value,
+      light_permille: p.load.light_permille.value,
+      max_permille: p.load.max_permille.value,
+      light_step_ms: p.load.light_step_ms.value,
+      heavy_step_ms: p.load.heavy_step_ms.value,
+      heavy_breath_permille: p.load.heavy_breath_permille.value,
+    },
     starting_gold_mg: p.starting_gold_mg.value,
     per_point: {
       might: p.per_point.might.value,
@@ -162,6 +175,12 @@ export function flattenParams(p: ParamsBody): Params {
       stamina: p.per_point.stamina.value,
       spirit: p.per_point.spirit.value,
     },
+    growth: p.growth
+      ? {
+          cost: { small: p.growth.cost.small.value, major: p.growth.cost.major.value, corner: p.growth.cost.corner.value },
+          slot_levels: [...p.growth.slot_levels],
+        }
+      : undefined,
     light: p.light
       ? {
           keys: p.light.keys.map((k) => ({ at: k.at, tint: k.tint, pct: k.pct })),
@@ -190,6 +209,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   const records: Record<RecordKey, Record<string, unknown>> = {
     resources: {},
     treasures: {},
+    searchables: {},
     recipes: {},
     npcs: {},
     quests: {},
@@ -199,6 +219,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
     races: {},
     pockets: {},
     professions: {},
+    schools: {},
     shops: {},
     reactions: {},
   };
@@ -242,9 +263,15 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
     }
     if (d.type !== 'creator') credits.push({ id: d.id, type: d.type, title: d.title, creator: d.creator, file, ai_tools: d.ai_tools ?? [] });
 
-    const body = (d as unknown as Record<string, unknown>)[BODY_OF[d.type] ?? ''];
+    // a treasure file is a dig spot or a searchable, never both and never neither
+    if (d.type === 'treasure' && (d.dig === undefined) === (d.search === undefined)) {
+      err(f, d.dig === undefined ? 'dig' : 'search', 'a treasure file carries "dig" (a spot to dig) or "search" (a thing to search), one of them');
+      continue;
+    }
+    const searchable = d.type === 'treasure' && d.search !== undefined && d.dig === undefined;
+    const body = (d as unknown as Record<string, unknown>)[searchable ? 'search' : (BODY_OF[d.type] ?? '')];
     const meta = { id: d.id, creator: d.creator, title: d.title, file, ...(d.ai_tools ? { ai_tools: d.ai_tools } : {}) };
-    const key = KEY_OF[d.type];
+    const key = searchable ? 'searchables' : KEY_OF[d.type];
     if (key) {
       records[key][d.id] = { ...meta, ...(body as object) };
     } else if (d.type === 'template') {
@@ -259,6 +286,9 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
     } else if (d.type === 'map') {
       if (map) err(f, '', 'there is more than one map file (a second region comes later)');
       map = { ...meta, ...d.map };
+    } else if ((d as { type: string }).type === 'chunk') {
+      // a chunk is not in the bundle yet (NEXT section 19 b streams it); its shape is checked here all the same
+      for (const p of chunkProblems((d as unknown as ChunkFile).chunk)) err(f, p.where, p.message);
     } else if (d.type === 'kit') {
       kits[d.id] = {
         dir: dirname(f.abs),
@@ -275,6 +305,8 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
               ...(s.ramps ? { ramps: s.ramps } : {}),
               // read by the scale check (tools/src/kit/scale.ts); the bundle does not carry it
               ...(s.scale === undefined ? {} : { scale: s.scale }),
+              // read by the hole check (tools/src/kit/holes.ts) to name the re-import; the bundle does not carry it
+              ...(s.source === undefined ? {} : { source: s.source }),
             },
           ]),
         ),
@@ -298,7 +330,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   const r = records as unknown as Pick<Bundle, RecordKey>;
   // one profession per gathering verb; the one craft verb has a profession per station family
   // (DECISIONS.md, 2026-10-09), and the check reports a station worked twice
-  const verbs = { gather: '', fell: '', dig: '', craft: '' };
+  const verbs = { gather: '', fell: '', dig: '', fish: '', craft: '' };
   const stations: Record<string, string> = {};
   const crafters: string[] = [];
   for (const id of Object.keys(r.professions).sort()) {
@@ -473,6 +505,16 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     if (t.pocket !== undefined && !b.pockets[t.pocket]) err(id, 'dig.pocket', `no wake pocket "${t.pocket}"`);
     place(id, 'treasure', t.place.slot);
   }
+  for (const [id, sr] of Object.entries(b.searchables)) {
+    sr.rows.forEach((row, i) => item(id, `search.rows.${i}.item`, row.item));
+    const dup = sr.rows.find((row, i) => sr.rows.findIndex((o) => o.item === row.item) !== i);
+    if (dup) err(id, 'search.rows', `"${dup.item}" is in the table twice: one row per item`);
+    const prop = b.map.props.find((p) => p.id === sr.place.prop);
+    if (!prop) err(id, 'search.place.prop', `no prop "${sr.place.prop}" on the map: give a map prop that id`);
+    else if (prop.hazard || prop.fire || prop.sign || prop.note !== undefined) err(id, 'search.place.prop', `"${sr.place.prop}" already does something else (hazard, fire, sign or note): search a plain prop`);
+    const other = Object.values(b.searchables).find((o) => o.id < id && o.place.prop === sr.place.prop);
+    if (other) err(id, 'search.place.prop', `"${sr.place.prop}" is already searched through ${other.id}`);
+  }
   for (const [id, c] of Object.entries(b.recipes)) {
     c.inputs.forEach((s, i) => item(id, `recipe.inputs.${i}.item`, s.item));
     c.outputs.forEach((s, i) => item(id, `recipe.outputs.${i}.item`, s.item));
@@ -601,6 +643,8 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     sprite(id, 'race.sprite', r.sprite);
     if (r.sprite_alt) sprite(id, 'race.sprite_alt', r.sprite_alt);
     r.outfit?.forEach((k, i) => item(id, `race.outfit.${i}.item`, k.item));
+    const named = r.body?.effects.map((e) => e.effect) ?? [];
+    if (new Set(named).size !== named.length) err(id, 'race.body.effects', 'each body effect is named once');
     const total = Object.values(r.attributes).reduce((n, v) => n + v, 0);
     if (total !== RACE_POINTS) err(id, 'race.attributes', `attributes add up to ${total}; every race has exactly ${RACE_POINTS}`);
   }
@@ -625,6 +669,7 @@ function checkMap(b: Bundle, origin: Record<string, string>, issues: Issue[]): v
     if (row.length !== m.width) err(`map.ground.${y}`, `row is ${row.length} wide, the map is ${m.width} wide`);
     for (const ch of new Set(row)) if (!m.legend[ch]) err(`map.ground.${y}`, `"${ch}" is not in the legend`);
   });
+  if (m.levels) for (const p of levelsProblems(m.levels, m.ground, 'map.levels')) err(p.where, p.message);
   for (const [ch, tile] of Object.entries(m.legend)) {
     if (!b.sprites[tile.sprite]) err(`map.legend.${ch}`, `no sprite "${tile.sprite}"`);
   }

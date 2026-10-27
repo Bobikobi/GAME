@@ -1,5 +1,5 @@
 import type { ClientBase, Pool } from 'pg';
-import type { State } from '@game/kernel';
+import { seedBytes, seedFromBytes, type Seed, type State } from '@game/kernel';
 
 import type { Books, PlayerRecord, PlayerStore } from './api';
 import { publicState } from './patch';
@@ -9,18 +9,28 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface PlayerRow {
   state: State;
-  seed: string;
+  seed: Buffer;
   clock_anchor_ms: string;
   movement_at: string;
   movement_credit_ms: number;
   version: string;
 }
 
+/** The key as its column holds it: 16 bytes (migration 0007), the bytes `seedFromBytes` reads back. */
+export function seedColumn(seed: Seed): Buffer {
+  return Buffer.from(seedBytes(seed));
+}
+
+/** The key from its column. */
+export function seedOfColumn(raw: Buffer): Seed {
+  return seedFromBytes(raw);
+}
+
 /** The columns a record is written to, without the seed: that one has a column of its own (NEXT 18 b). */
 function rowOf(record: PlayerRecord): unknown[] {
   return [
     JSON.stringify(publicState(record.state)),
-    record.state.seed,
+    seedColumn(record.state.seed),
     record.state.kernel,
     record.state.content,
     record.acceptedAt,
@@ -31,7 +41,7 @@ function rowOf(record: PlayerRecord): unknown[] {
 
 function recordOf(row: PlayerRow): PlayerRecord {
   return {
-    state: { ...row.state, seed: Number(row.seed) },
+    state: { ...row.state, seed: seedOfColumn(row.seed) },
     version: Number(row.version),
     acceptedAt: Number(row.clock_anchor_ms),
     movementAt: Number(row.movement_at),
@@ -93,8 +103,8 @@ export function createPgStore(pool: Pool): PlayerStore {
         for (const row of books.gold) {
           if (row.deltaMg === 0) continue; // the table refuses a zero, and a zero moved nothing
           await client.query(
-            'insert into gold_ledger (account_id, delta_mg, action, tick) values ($1, $2, $3, $4)',
-            [playerId, row.deltaMg, JSON.stringify(row.action), row.tick],
+            'insert into gold_ledger (account_id, delta_mg, action, tick, fund) values ($1, $2, $3, $4, $5)',
+            [playerId, row.deltaMg, JSON.stringify(row.action), row.tick, row.fund ?? 'purse'],
           );
         }
         await client.query('commit');

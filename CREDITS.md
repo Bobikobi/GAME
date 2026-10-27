@@ -9,6 +9,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Work stone (camp) - `content/core/camp/work-stone.json`
 - Workbench (camp) - `content/core/camp/workbench.json`
 - Workshop (camp) - `content/core/camp/workshop.json`
+- Bags (items) - `content/core/items/bags.json`
 - Healing (items) - `content/core/items/healing.json`
 - Outfits (items) - `content/core/items/outfits.json`
 - Tools (items) - `content/core/items/tools.json`
@@ -21,6 +22,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - The west bank (pocket) - `content/core/pockets/west-bank.json`
 - Cooking (profession) - `content/core/professions/cooking.json`
 - Digging (profession) - `content/core/professions/digging.json`
+- Fishing (profession) - `content/core/professions/fishing.json`
 - Foraging (profession) - `content/core/professions/foraging.json`
 - Handcraft (profession) - `content/core/professions/handcraft.json`
 - Woodcutting (profession) - `content/core/professions/woodcutting.json`
@@ -50,7 +52,9 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Bandage (recipe) - `content/core/recipes/bandage.json`
 - Berry mash (recipe) - `content/core/recipes/berry-mash.json`
 - Fine basket (recipe) - `content/core/recipes/fine-basket.json`
+- Fishing rod (recipe) - `content/core/recipes/fishing-rod.json`
 - Flint trowel (recipe) - `content/core/recipes/flint-trowel.json`
+- Grilled fish (recipe) - `content/core/recipes/grilled-fish.json`
 - Herb stew (recipe) - `content/core/recipes/herb-stew.json`
 - Herb tea (recipe) - `content/core/recipes/herb-tea.json`
 - Lucky charm (recipe) - `content/core/recipes/lucky-charm.json`
@@ -59,6 +63,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Reed cord (recipe) - `content/core/recipes/reed-cord.json`
 - Reed hat (recipe) - `content/core/recipes/reed-hat.json`
 - Reed sandals (recipe) - `content/core/recipes/reed-sandals.json`
+- Satchel (recipe) - `content/core/recipes/satchel.json`
 - Split a log (recipe) - `content/core/recipes/split-log.json`
 - Stone blade (recipe) - `content/core/recipes/stone-blade.json`
 - Stone flakes (recipe) - `content/core/recipes/stone-flakes.json`
@@ -73,11 +78,18 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Moon reeds (resource) - `content/core/resources/moon-reeds.json`
 - Oak trees (resource) - `content/core/resources/oak-trees.json`
 - Reed bank (resource) - `content/core/resources/reed-bank.json`
+- River fish (resource) - `content/core/resources/river-fish.json`
 - River stones (resource) - `content/core/resources/river-stones.json`
 - Sun herbs (resource) - `content/core/resources/sun-herbs.json`
 - Wild herbs (resource) - `content/core/resources/wild-herbs.json`
 - Broken arch (restore) - `content/core/restores/arch-way.json`
 - Old bridge (restore) - `content/core/restores/old-bridge.json`
+- Cooking (school) - `content/core/schools/cooking.json`
+- Digging (school) - `content/core/schools/digging.json`
+- Fishing (school) - `content/core/schools/fishing.json`
+- Foraging (school) - `content/core/schools/foraging.json`
+- Handcraft (school) - `content/core/schools/handcraft.json`
+- Woodcutting (school) - `content/core/schools/woodcutting.json`
 - Pell's stall (shop) - `content/core/shops/trader-shop.json`
 - Dyed cord (template) - `content/core/templates/dye-cord.json`
 - An axe on the bank (treasure) - `content/core/treasures/bank-axe.json`
@@ -88,14 +100,18 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Deep ruins (treasure) - `content/core/treasures/ruins-deep.json`
 - Gate rubble (treasure) - `content/core/treasures/ruins-gate.json`
 - Hall rubble (treasure) - `content/core/treasures/ruins-hall.json`
+- A heap of branches (treasure) - `content/core/treasures/search-branch-heap.json`
+- A hollow log (treasure) - `content/core/treasures/search-hollow-log.json`
+- A hollow dead tree (treasure) - `content/core/treasures/search-hollow-tree.json`
 - The slid bank (treasure) - `content/core/treasures/slid-bank-dig.json`
 - A trowel in the grass (treasure) - `content/core/treasures/slid-trowel.json`
 - Base kit (kit) - `content/kit/core/kit.json`
 
-AI tools: Claude Code: text-grid sprites and frames via a PIL script; Codex image generation via kit:gen; Codex: text-grid sprites in tools/src/kit/sketches.ts; Nano Banana (gemini-3.1-flash-image) via Antigravity; Stable Diffusion 1.5 and SDXL, pixel-art LoRAs, via kit:gen.
+AI tools: Claude Code: text-grid sprites and frames via a PIL script; Codex image generation via kit:gen; Codex: text-grid sprites in tools/src/kit/sketches.ts; FLUX.1 schnell and Qwen-Image 2512 via kit:gen; Nano Banana (gemini-3.1-flash-image) via Antigravity; Stable Diffusion 1.5 and SDXL, pixel-art LoRAs, via kit:gen.
 
 ## Libraries and fonts
 
 - [Phaser](https://phaser.io) game framework - MIT license.
 - [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) by Stefie Justprince - SIL Open Font License 1.1 (`game/public/fonts/OFL.txt`).
 - [Atkinson Hyperlegible Next](https://github.com/googlefonts/atkinson-hyperlegible-next) by the Braille Institute of America - SIL Open Font License 1.1 (`game/public/fonts/atkinson-hyperlegible-next/OFL.txt`).
+- [Jersey 15](https://github.com/scfried/soft-type-jersey) by The Soft Type Project Authors - SIL Open Font License 1.1 (`game/public/fonts/jersey-15/OFL.txt`).

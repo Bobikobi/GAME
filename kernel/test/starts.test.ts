@@ -7,7 +7,7 @@
  */
 import { beforeAll, describe, expect, test } from 'vitest';
 
-import { type Bundle, type State, type StepResult, newState, npcTile, rewardItem, spotOpen, step, wakePocket } from '@game/kernel';
+import { type Bundle, type State, type StepResult, newState, npcTile, rewardItem, spotOpen, step, wakePocket, widenSeed } from '@game/kernel';
 
 import { type Tile, bfsNear, loadBundle } from '../../tools/test/helpers/world.js';
 
@@ -19,7 +19,7 @@ beforeAll(() => {
 
 /** The first seed that wakes in this pocket. */
 function seedFor(pocket: string): number {
-  for (let seed = 1; seed < 10_000; seed++) if (wakePocket(b, seed) === pocket) return seed;
+  for (let seed = 1; seed < 10_000; seed++) if (wakePocket(b, widenSeed(seed)) === pocket) return seed;
   throw new Error(`no seed wakes in ${pocket}`);
 }
 

@@ -20,9 +20,13 @@ import type {
   Recipe,
   Resource,
   Restore,
+  School,
+  Search,
   Shop,
   Treasure,
 } from '@game/schema';
+
+export type { BodyEffectName } from '@game/schema';
 
 export interface Meta {
   id: string;
@@ -38,6 +42,7 @@ export type ItemInfo = ItemDef & { creator: string; file: string };
 export type ClassInfo = ClassDef & { creator: string; file: string };
 export type ResourceDef = Meta & Resource;
 export type TreasureDef = Meta & Treasure;
+export type SearchDef = Meta & Search;
 /** `template`: the recipe template the assembler expanded this recipe from. */
 export type RecipeDef = Meta & Recipe & { template?: string };
 export type NpcDef = Meta & Npc;
@@ -50,6 +55,8 @@ export type RaceDef = Meta & Race;
 /** A wake pocket a new game is drawn into by the seed (DECISIONS.md, 2026-10-22). */
 export type PocketDef = Meta & Pocket;
 export type ProfessionDef = Meta & Profession;
+/** A wing of the skill tree (docs/design/GROWTH.md section 4): a profession's nodes and the races' corners. */
+export type SchoolDef = Meta & School;
 export type ShopDef = Meta & Shop;
 export type MapDef = Meta & GameMap;
 /** A world reaction (docs/design/REACTIONS.md): read by reactions.ts, never run. */
@@ -90,8 +97,8 @@ export interface Params {
   /** what a full set adds to its pieces' effects, in percent */
   wear_set_bonus_pct: number;
   drift_budget_permille: number;
-  satiety_cap: number;
-  satiety_drain_per_min: number;
+  /** the health bar's base top, in whole points (stamina adds to it) */
+  hp_cap: number;
   day_length_ms: number;
   /** milliseconds to walk one tile; the client's pace and the bound on a position report */
   walk_step_ms: number;
@@ -108,10 +115,21 @@ export interface Params {
     trap: { harm_pct: number };
     deep_water: { harm_pct: number };
   };
+  /** places with nothing on the back: hands and belt (a bag on the back gives its own `wear.places`) */
   bag_base: number;
+  /** things of one kind that share one place (a stack) */
+  place_stack: number;
+  /**
+   * Weight and pace (DECISIONS.md, 2026-10-23): the limit is `base` + `per_point.might` per point + a frame bag's
+   * `load_bonus`; light up to `light_permille` of it, steady up to all of it, heavy above; nothing more is picked up
+   * beyond `max_permille`. The steady pace is `walk_step_ms`.
+   */
+  load: { base: number; light_permille: number; max_permille: number; light_step_ms: number; heavy_step_ms: number; heavy_breath_permille: number };
   starting_gold_mg: number;
   /** what one attribute point adds; see the params schema */
   per_point: { might: number; senses: number; agility_pct: number; luck_permille: number; stamina: number; spirit: number };
+  /** the skill tree: skill points per node size, and the character level each active slot opens at; absent, the tree is closed */
+  growth?: { cost: { small: number; major: number; corner: number }; slot_levels: number[] };
 }
 
 export interface SpriteInfo {
@@ -160,6 +178,8 @@ export interface Bundle {
   classes: Record<string, ClassInfo>;
   resources: Record<string, ResourceDef>;
   treasures: Record<string, TreasureDef>;
+  /** Things to search (docs/design/SEARCH.md), by the id of the treasure file that declares them. Apart from `treasures`: no dig fields, no placed instance. */
+  searchables: Record<string, SearchDef>;
   recipes: Record<string, RecipeDef>;
   npcs: Record<string, NpcDef>;
   quests: Record<string, QuestDef>;
@@ -169,6 +189,8 @@ export interface Bundle {
   races: Record<string, RaceDef>;
   pockets: Record<string, PocketDef>;
   professions: Record<string, ProfessionDef>;
+  /** The wings of the skill tree, by id (core only). */
+  schools: Record<string, SchoolDef>;
   shops: Record<string, ShopDef>;
   reactions: Record<string, ReactionDef>;
   map: MapDef;
@@ -179,7 +201,7 @@ export interface Bundle {
   /** The items whose value comes from a recipe, sorted: the trader pays `k_craft_permille` for them (CR-18). */
   made: string[];
   /** Which profession each verb trains; for craft, the one at the fire, since each station has its own (`stations`). */
-  verbs: { gather: string; fell: string; dig: string; craft: string };
+  verbs: { gather: string; fell: string; dig: string; fish: string; craft: string };
   /** The craft profession that works each station: a recipe that names no profession takes its station's. */
   stations: Record<string, string>;
   credits: Credit[];

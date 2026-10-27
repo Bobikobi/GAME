@@ -23,7 +23,7 @@ import {
   newState,
   npcTile,
   replay,
-  satietyCap,
+  hpCap,
   serialize,
   step,
   tendHolds,
@@ -70,7 +70,6 @@ function wolf(x = 19, y = 7, reach = 4): Prop {
 function world(props: Prop[] = [wolf()], tweak?: (b: Bundle) => void): Bundle {
   const b = structuredClone(base);
   b.map.props = [...b.map.props.filter((p) => !p.hazard), ...props];
-  b.params.satiety_drain_per_min = 0;
   tweak?.(b);
   return b;
 }
@@ -99,7 +98,6 @@ function place(s: State, at: Tile, tick: number): State {
   const out = structuredClone(s);
   out.player.at = [...at];
   out.player.movedAt = tick;
-  out.player.satietyAt = tick;
   out.player.busyUntil = Math.min(out.player.busyUntil, tick);
   out.tick = tick;
   return out;
@@ -122,7 +120,7 @@ const kinds = (events: GameEvent[]): string[] => events.map((e) => e.e).filter((
 /** Seen by the wolf on OUT at NIGHT, with health at `pct` percent of the cap. */
 function hunted(b: Bundle, pct = 100): State {
   const s = move(b, place(begin(b), OUT, NIGHT), OUT, NIGHT).state;
-  s.player.satiety = mulDiv(satietyCap(b, s), pct, 100);
+  s.player.hp = mulDiv(hpCap(b, s), pct, 100);
   return s;
 }
 
@@ -245,7 +243,7 @@ describe('safe', () => {
     const at = beside(b, begin(b), fire, camp);
     const s = place(begin(b), at, NIGHT);
     expect(isSafe(b, s, at)).toBe(false);
-    const cap = satietyCap(b, s);
+    const cap = hpCap(b, s);
     s.player.bag[LOG] = 2;
     // two bites fall due as the player stops to build
     s.player.chase = { hazard: WOLF, since: NIGHT - 4600, bites: 0 };
@@ -256,7 +254,7 @@ describe('safe', () => {
       { e: 'safe', id: WOLF, bitten: true },
     ]);
     expect(r.state.player.chase).toBeNull();
-    expect(r.state.player.satiety).toBe(mulDiv(cap, 7500, 10_000));
+    expect(r.state.player.hp).toBe(mulDiv(cap, 7500, 10_000));
   });
 });
 
@@ -267,27 +265,27 @@ describe('health after a hunt', () => {
 
   test('a hunt outrun gives back what its bites took, up to three quarters of the cap', () => {
     const b = world();
-    const cap = satietyCap(b, begin(b));
+    const cap = hpCap(b, begin(b));
     const pct = (n: number) => mulDiv(cap, n, 100);
     // two bites from full: half is left on the cobbles, and three quarters after
     const twice = move(b, hunted(b), TOWN, NIGHT + 4600);
     expect(only(twice.events, 'hurt')).toEqual([{ e: 'hurt', by: 'predator', id: WOLF, hp: pct(50) }]);
-    expect(twice.state.player.satiety).toBe(pct(75));
+    expect(twice.state.player.hp).toBe(pct(75));
     // three bites from full, a quarter left: three quarters after
-    expect(move(b, hunted(b), TOWN, NIGHT + 6600).state.player.satiety).toBe(pct(75));
+    expect(move(b, hunted(b), TOWN, NIGHT + 6600).state.player.hp).toBe(pct(75));
     // hurt before the hunt: the bites come back, the hurt from before does not
-    expect(move(b, hunted(b, 60), TOWN, NIGHT + 4600).state.player.satiety).toBe(pct(60));
-    expect(move(b, hunted(b, 40), TOWN, NIGHT + 2600).state.player.satiety).toBe(pct(40));
+    expect(move(b, hunted(b, 60), TOWN, NIGHT + 4600).state.player.hp).toBe(pct(60));
+    expect(move(b, hunted(b, 40), TOWN, NIGHT + 2600).state.player.hp).toBe(pct(40));
   });
 
   test('a hunt that never bit gives nothing back: stepping in and out of reach heals nothing', () => {
     const b = world();
-    const low = mulDiv(satietyCap(b, begin(b)), 30, 100);
+    const low = mulDiv(hpCap(b, begin(b)), 30, 100);
     let s = hunted(b, 30);
     for (const t of [NIGHT + 1000, NIGHT + 3000, NIGHT + 5000]) {
       const home = move(b, s, TOWN, t);
       expect(only(home.events, 'safe')).toEqual([{ e: 'safe', id: WOLF, bitten: false }]);
-      expect(home.state.player.satiety).toBe(low);
+      expect(home.state.player.hp).toBe(low);
       const out = move(b, home.state, OUT, t + 1000);
       expect(only(out.events, 'seen')).toEqual([{ e: 'seen', id: WOLF }]);
       s = out.state;
@@ -296,28 +294,28 @@ describe('health after a hunt', () => {
 
   test('health at or above three quarters stays where it is', () => {
     const b = world();
-    const cap = satietyCap(b, begin(b));
-    expect(move(b, hunted(b, 90), TOWN, NIGHT + 1000).state.player.satiety).toBe(mulDiv(cap, 90, 100));
-    expect(move(b, hunted(b), TOWN, NIGHT + 1000).state.player.satiety).toBe(cap);
+    const cap = hpCap(b, begin(b));
+    expect(move(b, hunted(b, 90), TOWN, NIGHT + 1000).state.player.hp).toBe(mulDiv(cap, 90, 100));
+    expect(move(b, hunted(b), TOWN, NIGHT + 1000).state.player.hp).toBe(cap);
     // one bite from full leaves three quarters, and two bites from 90% come back only that far
-    expect(move(b, hunted(b), TOWN, NIGHT + 2600).state.player.satiety).toBe(mulDiv(cap, 7500, 10_000));
-    expect(move(b, hunted(b, 90), TOWN, NIGHT + 4600).state.player.satiety).toBe(mulDiv(cap, 7500, 10_000));
+    expect(move(b, hunted(b), TOWN, NIGHT + 2600).state.player.hp).toBe(mulDiv(cap, 7500, 10_000));
+    expect(move(b, hunted(b, 90), TOWN, NIGHT + 4600).state.player.hp).toBe(mulDiv(cap, 7500, 10_000));
   });
 
   test('no hunt outrun, nothing given back: safe ground by day, a hunt ended at dawn, a fall', () => {
     const b = world();
-    const cap = satietyCap(b, begin(b));
+    const cap = hpCap(b, begin(b));
     const low = mulDiv(cap, 30, 100);
     const day = place(begin(b), OUT, NOON);
-    day.player.satiety = low;
-    expect(move(b, move(b, day, OUT, NOON).state, TOWN, NOON + 1000).state.player.satiety).toBe(low);
+    day.player.hp = low;
+    expect(move(b, move(b, day, OUT, NOON).state, TOWN, NOON + 1000).state.player.hp).toBe(low);
 
     const early = move(b, place(begin(b), OUT, DAWN - 1000), OUT, DAWN - 1000).state;
-    early.player.satiety = low;
-    expect(move(b, early, TOWN, DAWN + 60_000).state.player.satiety).toBe(low);
+    early.player.hp = low;
+    expect(move(b, early, TOWN, DAWN + 60_000).state.player.hp).toBe(low);
 
     // a fall wakes the player whole (G33), and that is the fall's, not the hunt's
-    expect(move(b, hunted(b, 25), TOWN, NIGHT + 2600).state.player.satiety).toBe(cap);
+    expect(move(b, hunted(b, 25), TOWN, NIGHT + 2600).state.player.hp).toBe(cap);
   });
 
   test('the cap of what comes back is the param: a whole bar and half of one', () => {
@@ -325,11 +323,11 @@ describe('health after a hunt', () => {
     const full = world([wolf()], (b) => {
       b.params.hazard.predator.refill_bp = 10_000;
     });
-    expect(move(full, hunted(full), TOWN, NIGHT + 6600).state.player.satiety).toBe(satietyCap(full, begin(full)));
+    expect(move(full, hunted(full), TOWN, NIGHT + 6600).state.player.hp).toBe(hpCap(full, begin(full)));
     const half = world([wolf()], (b) => {
       b.params.hazard.predator.refill_bp = 5000;
     });
-    expect(move(half, hunted(half), TOWN, NIGHT + 6600).state.player.satiety).toBe(mulDiv(satietyCap(half, begin(half)), 5000, 10_000));
+    expect(move(half, hunted(half), TOWN, NIGHT + 6600).state.player.hp).toBe(mulDiv(hpCap(half, begin(half)), 5000, 10_000));
   });
 });
 
@@ -483,7 +481,7 @@ describe('the record of bites and the line at the hand-in', () => {
     const home = move(b, s, TOWN, NIGHT + 2600).state;
     expect(home.player.bitten).toContain(SOUTH_BANK);
     const again = move(b, home, OUT, NIGHT + 10_000).state;
-    again.player.satiety = mulDiv(satietyCap(b, again), 25, 100);
+    again.player.hp = mulDiv(hpCap(b, again), 25, 100);
     const down = move(b, again, OUT, NIGHT + 12_600);
     expect(only(down.events, 'fall')).toHaveLength(1);
     expect(down.state.player.bitten).toEqual(home.player.bitten);
@@ -551,7 +549,7 @@ describe('a replay and an old save', () => {
   test('the same log tells the same events and leaves the same state, however it is cut (R4)', () => {
     const b = hearth([wolf()]);
     const start = tending(b);
-    const cap = satietyCap(b, start);
+    const cap = hpCap(b, start);
     const one = replay(b, start, LOG_OF_A_NIGHT);
     const two = replay(b, start, LOG_OF_A_NIGHT);
     expect(one.error).toBeUndefined();
@@ -563,7 +561,7 @@ describe('a replay and an old save', () => {
       { e: 'hurt', by: 'predator', id: WOLF, hp: cap / 2 },
       { e: 'safe', id: WOLF, bitten: true },
     ]);
-    expect(one.state.player.satiety).toBe(mulDiv(cap, 7500, 10_000));
+    expect(one.state.player.hp).toBe(mulDiv(cap, 7500, 10_000));
     expect(one.state.player.bitten).toContain(VIGIL);
     // saved after any step and played on from the save: the same events, the same state
     for (let cut = 1; cut < LOG_OF_A_NIGHT.length; cut++) {

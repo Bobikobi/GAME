@@ -1,0 +1,1115 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "$id": "https://github.com/Bobikobi/GAME/schema/json/chunk.schema.json",
+  "type": "object",
+  "required": [
+    "format",
+    "id",
+    "title",
+    "creator",
+    "type",
+    "chunk"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "format": {
+      "description": "Format version of this file.",
+      "const": 1,
+      "type": "number"
+    },
+    "id": {
+      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+      "maxLength": 80,
+      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+      "type": "string"
+    },
+    "title": {
+      "minLength": 1,
+      "maxLength": 40,
+      "type": "string"
+    },
+    "creator": {
+      "pattern": "^[a-z0-9_-]+$",
+      "maxLength": 39,
+      "description": "GitHub handle, lowercase.",
+      "type": "string"
+    },
+    "description": {
+      "minLength": 1,
+      "maxLength": 240,
+      "type": "string"
+    },
+    "ai_tools": {
+      "maxItems": 8,
+      "description": "AI tools used to make this file or its art. Required when any were used.",
+      "type": "array",
+      "items": {
+        "minLength": 1,
+        "maxLength": 60,
+        "type": "string"
+      }
+    },
+    "items": {
+      "maxItems": 40,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "rarity",
+          "sprite",
+          "weight"
+        ],
+        "properties": {
+          "id": {
+            "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+            "maxLength": 80,
+            "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+            "type": "string"
+          },
+          "name": {
+            "minLength": 1,
+            "maxLength": 40,
+            "type": "string"
+          },
+          "description": {
+            "minLength": 1,
+            "maxLength": 240,
+            "type": "string"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "const": "material",
+                "type": "string"
+              },
+              {
+                "const": "food",
+                "type": "string"
+              },
+              {
+                "const": "tool",
+                "type": "string"
+              },
+              {
+                "const": "fragment",
+                "type": "string"
+              },
+              {
+                "const": "treasure",
+                "type": "string"
+              }
+            ]
+          },
+          "rarity": {
+            "description": "Declared rarity. The check compares it with the rarity computed from the data.",
+            "anyOf": [
+              {
+                "const": "common",
+                "type": "string"
+              },
+              {
+                "const": "uncommon",
+                "type": "string"
+              },
+              {
+                "const": "rare",
+                "type": "string"
+              },
+              {
+                "const": "legendary",
+                "type": "string"
+              }
+            ]
+          },
+          "class": {
+            "description": "A base class (plant, wood, fibre, ...) or the id of a class an extension declares under one of them.",
+            "anyOf": [
+              {
+                "const": "plant",
+                "type": "string"
+              },
+              {
+                "const": "wood",
+                "type": "string"
+              },
+              {
+                "const": "fibre",
+                "type": "string"
+              },
+              {
+                "const": "stone",
+                "type": "string"
+              },
+              {
+                "const": "clay",
+                "type": "string"
+              },
+              {
+                "const": "mineral",
+                "type": "string"
+              },
+              {
+                "const": "metal",
+                "type": "string"
+              },
+              {
+                "const": "animal",
+                "type": "string"
+              },
+              {
+                "const": "meal",
+                "type": "string"
+              },
+              {
+                "const": "tool",
+                "type": "string"
+              },
+              {
+                "const": "garment",
+                "type": "string"
+              },
+              {
+                "const": "jewelry",
+                "type": "string"
+              },
+              {
+                "const": "relic",
+                "type": "string"
+              },
+              {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              }
+            ]
+          },
+          "family": {
+            "pattern": "^[a-z0-9_-]+$",
+            "maxLength": 24,
+            "description": "A group inside the class, for example \"berry\" for every berry. Open: any lowercase word.",
+            "type": "string"
+          },
+          "tags": {
+            "maxItems": 8,
+            "uniqueItems": true,
+            "description": "Open words that describe it, for example \"sweet\" or \"night\".",
+            "type": "array",
+            "items": {
+              "pattern": "^[a-z0-9_-]+$",
+              "maxLength": 24,
+              "description": "A lowercase word.",
+              "type": "string"
+            }
+          },
+          "tier": {
+            "minimum": 1,
+            "maximum": 20,
+            "description": "How advanced it is, from 1. The rarity says how often it appears; the tier says how far up the ladder it is. A tool has the tier of its \"tool\".",
+            "type": "integer"
+          },
+          "sprite": {
+            "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
+            "maxLength": 120,
+            "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
+            "type": "string"
+          },
+          "weight": {
+            "minimum": 0,
+            "maximum": 20,
+            "description": "How heavy one unit is (DECISIONS.md, 2026-10-23): 0 for herbs, seeds and coins, 1 for most things, 3 for logs, stone and ore. The load against the weight limit sets the walking pace.",
+            "type": "integer"
+          },
+          "food": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "satiety"
+            ],
+            "properties": {
+              "satiety": {
+                "minimum": 0,
+                "maximum": 100,
+                "description": "Health points restored when eaten (the meter holds 100 at the start). 0 for a food that only hurts.",
+                "type": "integer"
+              },
+              "hurt": {
+                "minimum": 1,
+                "maximum": 100,
+                "description": "Health points it takes when eaten, at any hour: a bad fruit or a raw herb (G30).",
+                "type": "integer"
+              }
+            }
+          },
+          "tool": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "kind",
+              "tier"
+            ],
+            "properties": {
+              "kind": {
+                "anyOf": [
+                  {
+                    "const": "basket",
+                    "type": "string"
+                  },
+                  {
+                    "const": "trowel",
+                    "type": "string"
+                  },
+                  {
+                    "const": "axe",
+                    "type": "string"
+                  },
+                  {
+                    "const": "staff",
+                    "type": "string"
+                  },
+                  {
+                    "const": "hammer",
+                    "type": "string"
+                  },
+                  {
+                    "const": "pick",
+                    "type": "string"
+                  },
+                  {
+                    "const": "rod",
+                    "type": "string"
+                  }
+                ]
+              },
+              "tier": {
+                "minimum": 1,
+                "maximum": 5,
+                "description": "Better tools work faster. The calculator clamps the total.",
+                "type": "integer"
+              },
+              "uses": {
+                "minimum": 1,
+                "maximum": 1000,
+                "description": "The tool wears out after this many uses. Left out, the tool lasts (DECISIONS.md, 2026-10-09: the crafting economy).",
+                "type": "integer"
+              }
+            }
+          },
+          "fragment": {
+            "additionalProperties": false,
+            "description": "A found scrap that teaches a recipe.",
+            "type": "object",
+            "required": [
+              "unlocks"
+            ],
+            "properties": {
+              "unlocks": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              }
+            }
+          },
+          "wear": {
+            "additionalProperties": false,
+            "description": "Something the character wears (DECISIONS.md, 2026-10-09: the upgrade). A worn item stays in the bag; it takes no place there, but its weight counts (2026-10-23).",
+            "type": "object",
+            "required": [
+              "slot"
+            ],
+            "properties": {
+              "slot": {
+                "description": "Where it is worn: head, top, legs (trousers), outfit (takes the top and the legs), feet, jewelry (two places), hand (a tool) or back (one bag or one quiver).",
+                "anyOf": [
+                  {
+                    "const": "head",
+                    "type": "string"
+                  },
+                  {
+                    "const": "top",
+                    "type": "string"
+                  },
+                  {
+                    "const": "legs",
+                    "type": "string"
+                  },
+                  {
+                    "const": "outfit",
+                    "type": "string"
+                  },
+                  {
+                    "const": "feet",
+                    "type": "string"
+                  },
+                  {
+                    "const": "jewelry",
+                    "type": "string"
+                  },
+                  {
+                    "const": "hand",
+                    "type": "string"
+                  },
+                  {
+                    "const": "back",
+                    "type": "string"
+                  }
+                ]
+              },
+              "look": {
+                "description": "A look: worn on the look layer over the work clothes. It shows and counts for nothing, so it has no effects and no set.",
+                "type": "boolean"
+              },
+              "effects": {
+                "minItems": 1,
+                "maxItems": 2,
+                "description": "Small bonuses while it is worn on the work layer. Two at most, each effect once.",
+                "type": "array",
+                "items": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "effect",
+                    "value"
+                  ],
+                  "properties": {
+                    "effect": {
+                      "description": "What a worn item helps: gathering, digging or crafting speed, the craft chance, or rare finds.",
+                      "anyOf": [
+                        {
+                          "const": "gather_speed_pct",
+                          "type": "string"
+                        },
+                        {
+                          "const": "dig_speed_pct",
+                          "type": "string"
+                        },
+                        {
+                          "const": "craft_speed_pct",
+                          "type": "string"
+                        },
+                        {
+                          "const": "craft_chance_pct",
+                          "type": "string"
+                        },
+                        {
+                          "const": "rare_find_pct",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "value": {
+                      "minimum": 1,
+                      "maximum": 100,
+                      "description": "Percent, at most the cap of the item's tier (params.wear_effect_max_pct).",
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              "set": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "A set of one creator: when every piece of it is worn, their effects grow by params.wear_set_bonus_pct.",
+                "type": "string"
+              },
+              "places": {
+                "minimum": 1,
+                "maximum": 99,
+                "description": "A bag on the back: the places it gives, instead of the hands' `bag_base`. Only a work piece on the back carries it (DECISIONS.md, 2026-10-23).",
+                "type": "integer"
+              },
+              "load_bonus": {
+                "minimum": 1,
+                "maximum": 100,
+                "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                "type": "integer"
+              }
+            }
+          },
+          "premium_later": {
+            "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "classes": {
+      "maxItems": 10,
+      "description": "Classes of your own, each under one base class.",
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "description": "A class of your own, declared under one base class. Every rule written for the base class holds for it.",
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "base"
+        ],
+        "properties": {
+          "id": {
+            "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+            "maxLength": 80,
+            "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+            "type": "string"
+          },
+          "name": {
+            "minLength": 1,
+            "maxLength": 40,
+            "type": "string"
+          },
+          "base": {
+            "description": "plant (leaves, herbs, berries, fruit, roots, mushrooms), wood, fibre (reeds, grass, thread, cloth), stone, clay (clay, sand, pottery, brick), mineral (crystals, gems, salt, ore), metal (waits for its discovery), animal (feathers, wool, hide, bone), meal (cooked food), tool, garment (worn clothes), jewelry, relic (old things from the ruins).",
+            "anyOf": [
+              {
+                "const": "plant",
+                "type": "string"
+              },
+              {
+                "const": "wood",
+                "type": "string"
+              },
+              {
+                "const": "fibre",
+                "type": "string"
+              },
+              {
+                "const": "stone",
+                "type": "string"
+              },
+              {
+                "const": "clay",
+                "type": "string"
+              },
+              {
+                "const": "mineral",
+                "type": "string"
+              },
+              {
+                "const": "metal",
+                "type": "string"
+              },
+              {
+                "const": "animal",
+                "type": "string"
+              },
+              {
+                "const": "meal",
+                "type": "string"
+              },
+              {
+                "const": "tool",
+                "type": "string"
+              },
+              {
+                "const": "garment",
+                "type": "string"
+              },
+              {
+                "const": "jewelry",
+                "type": "string"
+              },
+              {
+                "const": "relic",
+                "type": "string"
+              }
+            ]
+          },
+          "description": {
+            "minLength": 1,
+            "maxLength": 240,
+            "type": "string"
+          }
+        }
+      }
+    },
+    "type": {
+      "const": "chunk",
+      "type": "string"
+    },
+    "chunk": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "x",
+        "y",
+        "grounds",
+        "props",
+        "stamps"
+      ],
+      "properties": {
+        "x": {
+          "minimum": 0,
+          "maximum": 1023,
+          "multipleOf": 64,
+          "description": "The chunk's top-left tile x in the world grid. A multiple of 64: chunks align to the grid's corner (G51).",
+          "type": "integer"
+        },
+        "y": {
+          "minimum": 0,
+          "maximum": 1023,
+          "multipleOf": 64,
+          "description": "The chunk's top-left tile y in the world grid. A multiple of 64 (G51).",
+          "type": "integer"
+        },
+        "grounds": {
+          "minItems": 64,
+          "maxItems": 64,
+          "description": "The chunk's ground: 64 rows of 64 tiles. The world has one shared legend; a chunk carries none (G52).",
+          "type": "array",
+          "items": {
+            "pattern": "^.{64}$",
+            "description": "A row of 64 ground tiles, in the shared legend's characters (G52).",
+            "type": "string"
+          }
+        },
+        "levels": {
+          "minItems": 64,
+          "maxItems": 64,
+          "description": "The chunk's height layer: one digit 0 to 9 per tile, 64 rows like the grounds. Absent: every tile is level 0.",
+          "type": "array",
+          "items": {
+            "pattern": "^[0-9]{64}$",
+            "description": "A row of 64 level digits, one per tile (STYLE section 6).",
+            "type": "string"
+          }
+        },
+        "props": {
+          "description": "The chunk's props, in chunk coordinates.",
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "sprite",
+              "x",
+              "y",
+              "w",
+              "h",
+              "solid"
+            ],
+            "properties": {
+              "id": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "description": "Names the prop so a quest riddle can cite it. Unique on the map.",
+                "type": "string"
+              },
+              "sprite": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
+                "maxLength": 120,
+                "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
+                "type": "string"
+              },
+              "x": {
+                "minimum": 0,
+                "maximum": 63,
+                "description": "Left tile of the footprint.",
+                "type": "integer"
+              },
+              "y": {
+                "minimum": 0,
+                "maximum": 63,
+                "description": "Top tile of the footprint.",
+                "type": "integer"
+              },
+              "w": {
+                "minimum": 1,
+                "maximum": 8,
+                "description": "Footprint width in tiles. The sprite is drawn bottom-centered on it.",
+                "type": "integer"
+              },
+              "h": {
+                "minimum": 1,
+                "maximum": 8,
+                "description": "Footprint height in tiles.",
+                "type": "integer"
+              },
+              "solid": {
+                "type": "boolean"
+              },
+              "cover": {
+                "description": "Hides a player standing on this non-solid prop from a predator's eyes, but never from an adjacent predator.",
+                "type": "boolean"
+              },
+              "fire": {
+                "description": "A fire the player may feed by hand. It needs an id.",
+                "const": true,
+                "type": "boolean"
+              },
+              "crossing": {
+                "description": "Steps or a ramp: the way across a change of level (G68), on the lower tile, facing the face.",
+                "const": true,
+                "type": "boolean"
+              },
+              "lit_by": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Id of the fire prop while whose fire burns this prop's note and sign may be read.",
+                "type": "string"
+              },
+              "sign": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Makes the prop a readable sign that names whoever filled this slot, or says it awaits restoration.",
+                "type": "string"
+              },
+              "note": {
+                "minLength": 1,
+                "maxLength": 240,
+                "type": "string",
+                "description": "A line shown when the player looks at this prop, for example an old inscription."
+              },
+              "hazard": {
+                "additionalProperties": false,
+                "description": "Makes the prop a hazard (G30-G35). It needs an id.",
+                "type": "object",
+                "required": [
+                  "kind",
+                  "window"
+                ],
+                "properties": {
+                  "kind": {
+                    "description": "A predator hunts the player in its reach and bites until the player stands somewhere safe; a pit, a trap or deep water hurts once each time the player steps onto its footprint.",
+                    "anyOf": [
+                      {
+                        "const": "predator",
+                        "type": "string"
+                      },
+                      {
+                        "const": "pit",
+                        "type": "string"
+                      },
+                      {
+                        "const": "trap",
+                        "type": "string"
+                      },
+                      {
+                        "const": "deep_water",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "window": {
+                    "minItems": 1,
+                    "uniqueItems": true,
+                    "description": "When it acts (G30). Outside its window it is harmless and shows.",
+                    "type": "array",
+                    "items": {
+                      "const": "night",
+                      "type": "string"
+                    }
+                  },
+                  "reach": {
+                    "minimum": 1,
+                    "maximum": 12,
+                    "description": "A predator only: how many tiles from its footprint it notices the player. The params hold the default.",
+                    "type": "integer"
+                  },
+                  "round": {
+                    "minItems": 4,
+                    "maxItems": 64,
+                    "description": "A predator only: the closed, four-adjacent loop of tiles it walks after dark. The first tile is inside its prop footprint.",
+                    "type": "array",
+                    "items": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "minimum": 0,
+                          "maximum": 63,
+                          "type": "integer"
+                        },
+                        {
+                          "minimum": 0,
+                          "maximum": 63,
+                          "type": "integer"
+                        }
+                      ],
+                      "additionalItems": false,
+                      "minItems": 2,
+                      "maxItems": 2
+                    }
+                  },
+                  "pace_ms": {
+                    "minimum": 100,
+                    "maximum": 10000,
+                    "description": "A predator on a round only: game milliseconds per tile. The params hold the default.",
+                    "type": "integer"
+                  },
+                  "eyes": {
+                    "minimum": 1,
+                    "maximum": 12,
+                    "description": "A predator on a round only: how many tiles ahead it sees. The params hold the default.",
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "stamps": {
+          "description": "The hand-made places stamped onto the chunk.",
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "id",
+              "x",
+              "y"
+            ],
+            "properties": {
+              "id": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "The place's id, unique on the chunk, so a quest or a check can name it.",
+                "type": "string"
+              },
+              "x": {
+                "minimum": 0,
+                "maximum": 63,
+                "description": "Left tile of the place inside the chunk.",
+                "type": "integer"
+              },
+              "y": {
+                "minimum": 0,
+                "maximum": 63,
+                "description": "Top tile of the place inside the chunk.",
+                "type": "integer"
+              },
+              "height": {
+                "minimum": 0,
+                "maximum": 9,
+                "default": 0,
+                "description": "The level the place sits on (STYLE section 6). Absent: 0.",
+                "type": "integer"
+              },
+              "grounds": {
+                "minItems": 1,
+                "maxItems": 64,
+                "description": "The place's hand-made ground, written over the chunk's ground at (x, y). Absent: the generated ground stays.",
+                "type": "array",
+                "items": {
+                  "pattern": "^.{1,64}$",
+                  "description": "A row of the place's own ground, in the shared legend's characters; every row the same length.",
+                  "type": "string"
+                }
+              },
+              "levels": {
+                "minItems": 1,
+                "maxItems": 64,
+                "description": "The place's per-tile levels. Absent: every tile of the place sits at the stamp's height.",
+                "type": "array",
+                "items": {
+                  "pattern": "^[0-9]{1,64}$",
+                  "description": "A row of level digits for the place's tiles, the same shape as the grounds (STYLE section 6).",
+                  "type": "string"
+                }
+              },
+              "props": {
+                "description": "The place's props, in tiles inside the place: x and y counted from the stamp's (x, y).",
+                "type": "array",
+                "items": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "sprite",
+                    "x",
+                    "y",
+                    "w",
+                    "h",
+                    "solid"
+                  ],
+                  "properties": {
+                    "id": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "description": "Names the prop so a quest riddle can cite it. Unique on the map.",
+                      "type": "string"
+                    },
+                    "sprite": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+:[a-z0-9_/-]+$",
+                      "maxLength": 120,
+                      "description": "A frame of an art kit: \"<kit id>:<frame name>\", for example \"core/base-kit:items/berry\".",
+                      "type": "string"
+                    },
+                    "x": {
+                      "minimum": 0,
+                      "maximum": 63,
+                      "description": "Left tile of the footprint.",
+                      "type": "integer"
+                    },
+                    "y": {
+                      "minimum": 0,
+                      "maximum": 63,
+                      "description": "Top tile of the footprint.",
+                      "type": "integer"
+                    },
+                    "w": {
+                      "minimum": 1,
+                      "maximum": 8,
+                      "description": "Footprint width in tiles. The sprite is drawn bottom-centered on it.",
+                      "type": "integer"
+                    },
+                    "h": {
+                      "minimum": 1,
+                      "maximum": 8,
+                      "description": "Footprint height in tiles.",
+                      "type": "integer"
+                    },
+                    "solid": {
+                      "type": "boolean"
+                    },
+                    "cover": {
+                      "description": "Hides a player standing on this non-solid prop from a predator's eyes, but never from an adjacent predator.",
+                      "type": "boolean"
+                    },
+                    "fire": {
+                      "description": "A fire the player may feed by hand. It needs an id.",
+                      "const": true,
+                      "type": "boolean"
+                    },
+                    "crossing": {
+                      "description": "Steps or a ramp: the way across a change of level (G68), on the lower tile, facing the face.",
+                      "const": true,
+                      "type": "boolean"
+                    },
+                    "lit_by": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Id of the fire prop while whose fire burns this prop's note and sign may be read.",
+                      "type": "string"
+                    },
+                    "sign": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Makes the prop a readable sign that names whoever filled this slot, or says it awaits restoration.",
+                      "type": "string"
+                    },
+                    "note": {
+                      "minLength": 1,
+                      "maxLength": 240,
+                      "type": "string",
+                      "description": "A line shown when the player looks at this prop, for example an old inscription."
+                    },
+                    "hazard": {
+                      "additionalProperties": false,
+                      "description": "Makes the prop a hazard (G30-G35). It needs an id.",
+                      "type": "object",
+                      "required": [
+                        "kind",
+                        "window"
+                      ],
+                      "properties": {
+                        "kind": {
+                          "description": "A predator hunts the player in its reach and bites until the player stands somewhere safe; a pit, a trap or deep water hurts once each time the player steps onto its footprint.",
+                          "anyOf": [
+                            {
+                              "const": "predator",
+                              "type": "string"
+                            },
+                            {
+                              "const": "pit",
+                              "type": "string"
+                            },
+                            {
+                              "const": "trap",
+                              "type": "string"
+                            },
+                            {
+                              "const": "deep_water",
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "window": {
+                          "minItems": 1,
+                          "uniqueItems": true,
+                          "description": "When it acts (G30). Outside its window it is harmless and shows.",
+                          "type": "array",
+                          "items": {
+                            "const": "night",
+                            "type": "string"
+                          }
+                        },
+                        "reach": {
+                          "minimum": 1,
+                          "maximum": 12,
+                          "description": "A predator only: how many tiles from its footprint it notices the player. The params hold the default.",
+                          "type": "integer"
+                        },
+                        "round": {
+                          "minItems": 4,
+                          "maxItems": 64,
+                          "description": "A predator only: the closed, four-adjacent loop of tiles it walks after dark. The first tile is inside its prop footprint.",
+                          "type": "array",
+                          "items": {
+                            "type": "array",
+                            "items": [
+                              {
+                                "minimum": 0,
+                                "maximum": 63,
+                                "type": "integer"
+                              },
+                              {
+                                "minimum": 0,
+                                "maximum": 63,
+                                "type": "integer"
+                              }
+                            ],
+                            "additionalItems": false,
+                            "minItems": 2,
+                            "maxItems": 2
+                          }
+                        },
+                        "pace_ms": {
+                          "minimum": 100,
+                          "maximum": 10000,
+                          "description": "A predator on a round only: game milliseconds per tile. The params hold the default.",
+                          "type": "integer"
+                        },
+                        "eyes": {
+                          "minimum": 1,
+                          "maximum": 12,
+                          "description": "A predator on a round only: how many tiles ahead it sees. The params hold the default.",
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "slots": {
+                "description": "The place's slots (a keeper's npc, a building, an area inside it), x and y counted from the stamp's (x, y).",
+                "type": "array",
+                "items": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "kind",
+                    "x",
+                    "y",
+                    "w",
+                    "h"
+                  ],
+                  "properties": {
+                    "id": {
+                      "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                      "maxLength": 80,
+                      "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                      "type": "string"
+                    },
+                    "kind": {
+                      "anyOf": [
+                        {
+                          "const": "resource",
+                          "type": "string"
+                        },
+                        {
+                          "const": "ruin",
+                          "type": "string"
+                        },
+                        {
+                          "const": "npc",
+                          "type": "string"
+                        },
+                        {
+                          "const": "building",
+                          "type": "string"
+                        },
+                        {
+                          "const": "restore",
+                          "type": "string"
+                        },
+                        {
+                          "const": "camp",
+                          "type": "string"
+                        },
+                        {
+                          "const": "area",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "x": {
+                      "minimum": 0,
+                      "maximum": 1023,
+                      "type": "integer"
+                    },
+                    "y": {
+                      "minimum": 0,
+                      "maximum": 1023,
+                      "type": "integer"
+                    },
+                    "w": {
+                      "minimum": 1,
+                      "maximum": 64,
+                      "type": "integer"
+                    },
+                    "h": {
+                      "minimum": 1,
+                      "maximum": 64,
+                      "type": "integer"
+                    },
+                    "tag": {
+                      "anyOf": [
+                        {
+                          "const": "grove",
+                          "type": "string"
+                        },
+                        {
+                          "const": "meadow",
+                          "type": "string"
+                        },
+                        {
+                          "const": "riverbank",
+                          "type": "string"
+                        },
+                        {
+                          "const": "ruin",
+                          "type": "string"
+                        },
+                        {
+                          "const": "town",
+                          "type": "string"
+                        },
+                        {
+                          "const": "water",
+                          "type": "string"
+                        },
+                        {
+                          "const": "path",
+                          "type": "string"
+                        },
+                        {
+                          "const": "interior",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "label": {
+                      "minLength": 1,
+                      "maxLength": 40,
+                      "type": "string"
+                    },
+                    "safe": {
+                      "description": "A safe area (G30): no hazard acts inside it at any hour, a chase ends when the player stands in it, and what the player carries in is theirs. The cobbles of the town and the camp once a part stands are safe without this.",
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

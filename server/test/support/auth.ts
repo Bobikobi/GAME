@@ -1,9 +1,9 @@
 /**
  * Helpers for the sign-in tests (NEXT 18 e): a store in memory that keeps the rules the postgres one keeps,
- * a Google that answers from a key pair made here, and a browser that keeps its cookies and sends an Origin.
- * They assert nothing; the tests do.
+ * a Google that answers from a key pair made here, and a browser that keeps its cookies and sends the Origin a
+ * browser would. They assert nothing; the tests do.
  */
-import { generateKeyPairSync, sign, type KeyObject } from 'node:crypto';
+import { createHash, generateKeyPairSync, sign, type KeyObject } from 'node:crypto';
 
 import type { AuthStore, EmailLink, NewAccount, NewGame, OAuthFlow, SignupTicket } from '../../src/auth/store';
 import type { ProviderId } from '../../src/auth/provider';
@@ -14,6 +14,7 @@ export class MemoryAuthStore implements AuthStore {
   tickets = new Map<string, SignupTicket>();
   sessions = new Map<string, { accountId: string; expiresAt: number; revokedAt?: number }>();
   accounts = new Map<string, NewAccount>();
+  closedAt = new Map<string, number>();
   identities = new Map<string, string>();
   /** the game each account was made with (NEXT 18 d), as postgres writes it in the same transaction */
   games = new Map<string, NewGame>();
@@ -49,6 +50,9 @@ export class MemoryAuthStore implements AuthStore {
   async addIdentity(provider: ProviderId, subject: string, accountId: string) {
     if (!this.identities.has(`${provider}:${subject}`)) this.identities.set(`${provider}:${subject}`, accountId);
   }
+  async nameTaken(name: string) {
+    return [...this.accounts.values()].some((account) => account.name.toLowerCase() === name.toLowerCase());
+  }
   async saveTicket(ticket: SignupTicket) {
     this.tickets.set(ticket.ticketHash, { ...ticket });
   }
@@ -83,14 +87,31 @@ export class MemoryAuthStore implements AuthStore {
     if (session && session.revokedAt === undefined) session.revokedAt = now;
   }
   async account(accountId: string) {
-    const account = this.accounts.get(accountId);
+    const account = this.closedAt.has(accountId) ? undefined : this.accounts.get(accountId);
     return account && { name: account.name, email: account.email };
   }
-  async closeAccount(accountId: string) {
-    this.accounts.delete(accountId);
-    this.games.delete(accountId);
-    for (const [key, id] of this.identities) if (id === accountId) this.identities.delete(key);
+  async isClosed(accountId: string) {
+    return this.closedAt.has(accountId);
+  }
+  async closeAccount(accountId: string, now: number) {
+    if (!this.accounts.has(accountId) || this.closedAt.has(accountId)) return;
+    this.closedAt.set(accountId, now);
     for (const [hash, session] of this.sessions) if (session.accountId === accountId) this.sessions.delete(hash);
+  }
+  async reopenAccount(accountId: string) {
+    return this.closedAt.delete(accountId);
+  }
+  async eraseClosed(now: number, graceMs: number) {
+    let n = 0;
+    for (const [accountId, closed] of this.closedAt) {
+      if (closed > now - graceMs) continue;
+      this.closedAt.delete(accountId);
+      this.accounts.delete(accountId);
+      this.games.delete(accountId);
+      for (const [key, id] of this.identities) if (id === accountId) this.identities.delete(key);
+      n++;
+    }
+    return n;
   }
   async sweep(now: number) {
     for (const [key, flow] of this.flows) if (flow.expiresAt <= now) this.flows.delete(key);
@@ -143,6 +164,8 @@ export class FakeGoogle {
   });
   forge = false;
   tokenStatus = 200;
+  /** how the token endpoint fails, when it does: the call rejects, answers a page that is not JSON, or never answers */
+  tokenFault: 'reject' | 'not-json' | 'hang' | undefined;
   /** the nonce of the last authorize URL, read by the test from the redirect */
   nonce = '';
   clock = () => Date.now();
@@ -161,6 +184,12 @@ export class FakeGoogle {
     if (url === TOKEN_URL) {
       const form = new URLSearchParams(String(init?.body ?? ''));
       this.exchanges.push(form);
+      if (this.tokenFault === 'reject') throw new TypeError('fetch failed');
+      if (this.tokenFault === 'not-json') return new Response('<html>busy</html>', { status: 200, headers: { 'content-type': 'text/html' } });
+      if (this.tokenFault === 'hang') {
+        // a Google that never answers: only the caller's signal ends the wait
+        return new Promise<Response>((_resolve, reject) => init?.signal?.addEventListener('abort', () => reject(init.signal!.reason)));
+      }
       if (this.tokenStatus !== 200) return Response.json({ error: 'invalid_grant' }, { status: this.tokenStatus });
       return Response.json({ access_token: 'unused', token_type: 'Bearer', id_token: this.idToken(this.claims(this.nonce, this.clock())) });
     }
@@ -168,7 +197,36 @@ export class FakeGoogle {
   };
 }
 
-/** A browser with a cookie jar: it sends its cookies and an Origin, and never follows a redirect. */
+/** The parts of a Content-Security-Policy header, by directive. */
+function policy(header: string | null): Map<string, string[]> {
+  const directives = new Map<string, string[]>();
+  for (const part of (header ?? '').split(';')) {
+    const [name, ...sources] = part.trim().split(/\s+/);
+    if (name) directives.set(name.toLowerCase(), sources);
+  }
+  return directives;
+}
+
+/** Whether a CSP source list lets a page of `self` send a form to `target` (form-action has no fallback to default-src). */
+function formMayGo(sources: string[] | undefined, self: string, target: URL): boolean {
+  if (sources === undefined) return true;
+  return sources.some((source) => (source === "'self'" ? target.origin === self : source.replace(/\/$/, '') === target.origin));
+}
+
+/** The email link page as a browser opened it. */
+export interface OpenedPage {
+  response: Response;
+  /** where the browser stands, fragment included */
+  url: URL;
+  html: string;
+}
+
+/**
+ * A browser with a cookie jar: it sends its cookies, and on a non-GET call the Origin of the page it stands
+ * on (`origin`, the game's page, unless a test moves it). It never follows a redirect by itself. The email
+ * link page is opened and pressed as a browser does it (`open`, `press`): the Origin of that POST comes from
+ * the page's own referrer policy, never from the test.
+ */
 export class Browser {
   readonly jar = new Map<string, string>();
 
@@ -177,10 +235,67 @@ export class Browser {
     public origin: string | undefined,
   ) {}
 
+  /**
+   * Open a link by navigating to it: the fragment stays in the browser, a redirect is followed with its
+   * own fragment (or the link's, when it has none), and the page it lands on is returned.
+   */
+  async open(link: string): Promise<OpenedPage> {
+    let url = new URL(link, this.base);
+    for (let hop = 0; hop < 3; hop++) {
+      const response = await this.request(`${url.origin}${url.pathname}${url.search}`, { headers: { accept: 'text/html' } });
+      const location = response.headers.get('location');
+      if (response.status < 300 || response.status >= 400 || location === null) return { response, url, html: await response.text() };
+      const next = new URL(location, url);
+      if (next.hash === '') next.hash = url.hash;
+      url = next;
+    }
+    throw new Error(`more than three redirects from ${link}`);
+  }
+
+  /**
+   * Press the link page's button as a browser would: the page's script runs only when the CSP names its
+   * hash, the form posts with the Origin the page's referrer policy gives (Fetch: under `no-referrer` a
+   * POST carries `Origin: null`), and CSP `form-action` is checked on the action and on the redirect that
+   * answers it, as Chromium and WebKit do. Throws where a browser would stop.
+   */
+  async press(page: OpenedPage): Promise<Response> {
+    const csp = policy(page.response.headers.get('content-security-policy'));
+    const script = /<script>([\s\S]*?)<\/script>/.exec(page.html)?.[1];
+    if (script === undefined) throw new Error('the page has no script to read the link');
+    const hash = `'sha256-${createHash('sha256').update(script, 'utf8').digest('base64')}'`;
+    if (!(csp.get('script-src') ?? csp.get('default-src') ?? []).includes(hash)) throw new Error('the CSP does not allow the page\'s script');
+    const action = /<form method="post" action="([^"]+)">/.exec(page.html)?.[1];
+    if (action === undefined) throw new Error('the page has no form');
+
+    // the page's script against the few parts of a document it touches
+    const input = { value: '' };
+    const button = { disabled: /<button[^>]* disabled/.test(page.html) };
+    const form = { hidden: false, elements: { token: input }, querySelector: () => button };
+    const missing = { hidden: true };
+    const location = { hash: page.url.hash, pathname: page.url.pathname };
+    const history = { replaceState: (_state: unknown, _title: string, path: string) => Object.assign(location, { hash: '', pathname: path }) };
+    const document = { forms: [form], getElementById: (id: string) => (id === 'missing' ? missing : null) };
+    new Function('document', 'location', 'history', script)(document, location, history);
+    if (location.hash !== '') throw new Error('the token stayed in the address bar');
+    if (form.hidden || button.disabled) throw new Error('the page offers no button to press');
+
+    const self = page.url.origin;
+    const target = new URL(action, page.url);
+    if (!formMayGo(csp.get('form-action'), self, target)) throw new Error(`CSP form-action blocks the form's post to ${target.origin}`);
+    const referrerPolicy = page.response.headers.get('referrer-policy') ?? 'strict-origin-when-cross-origin';
+    const origin = referrerPolicy === 'no-referrer' || (referrerPolicy === 'same-origin' && target.origin !== self) ? 'null' : self;
+    const response = await this.request(target.toString(), { method: 'POST', form: { token: input.value }, headers: { origin } });
+    const location3xx = response.headers.get('location');
+    if (response.status >= 300 && response.status < 400 && location3xx !== null && !formMayGo(csp.get('form-action'), self, new URL(location3xx, target))) {
+      throw new Error(`CSP form-action blocks the redirect to ${new URL(location3xx, target).origin}`);
+    }
+    return response;
+  }
+
   async request(path: string, init: { method?: string; json?: unknown; form?: Record<string, string>; headers?: Record<string, string> } = {}): Promise<Response> {
     const headers: Record<string, string> = { accept: 'application/json', ...init.headers };
     if (this.jar.size > 0) headers.cookie = [...this.jar].map(([name, value]) => `${name}=${value}`).join('; ');
-    if (this.origin !== undefined && (init.method ?? 'GET') !== 'GET') headers.origin = this.origin;
+    if (this.origin !== undefined && (init.method ?? 'GET') !== 'GET' && init.headers?.origin === undefined) headers.origin = this.origin;
     let body: string | undefined;
     if (init.json !== undefined) {
       headers['content-type'] = 'application/json';

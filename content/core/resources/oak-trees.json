@@ -14,7 +14,8 @@
       "rarity": "common",
       "class": "wood",
       "tier": 1,
-      "sprite": "core/base-kit:items/log"
+      "sprite": "core/base-kit:items/log",
+      "weight": 3
     }
   ],
   "node": {

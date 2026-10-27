@@ -1,0 +1,48 @@
+{
+  "$schema": "../../../schema/json/recipe.schema.json",
+  "format": 1,
+  "type": "recipe",
+  "id": "core/satchel",
+  "title": "Satchel",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/satchel",
+      "name": "Satchel",
+      "description": "Rope and woven cloth over one shoulder. Worn on the back, it holds twice what the hands do.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "garment",
+      "tier": 2,
+      "sprite": "core/base-kit:items/basket",
+      "weight": 1,
+      "wear": {
+        "slot": "back",
+        "places": 24
+      }
+    }
+  ],
+  "recipe": {
+    "station": "workshop",
+    "active_ms": 6000,
+    "level": 3,
+    "inputs": [
+      {
+        "item": "core/reed-cord",
+        "qty": 2
+      },
+      {
+        "item": "core/woven-mat",
+        "qty": 1
+      }
+    ],
+    "outputs": [
+      {
+        "item": "core/satchel",
+        "qty": 1,
+        "share_pct": 100
+      }
+    ],
+    "known": "start"
+  }
+}

@@ -1,13 +1,14 @@
 # Contributing
 
-Welcome. Openfold is built by the people who play it, and a first contribution is worth more than a perfect one: reviewers help you get it over the line. There are two ways to help: add something to the valley (content), or improve the game itself (code). Most people start with content. Where the game is going, and where help is most welcome now, is in [ROADMAP.md](ROADMAP.md).
+Welcome. Loomvale is built by the people who play it, and a first contribution is worth more than a perfect one: reviewers help you get it over the line. There are two ways to help: add something to the valley (content), or improve the game itself (code). Most people start with content. Where the game is going, and where help is most welcome now, is in [ROADMAP.md](ROADMAP.md).
 
 ## Adding content
 
 1. Follow [Add a fruit in 10 minutes](docs/creators/README.md). It walks through a whole extension, from copying the template to opening a pull request.
 2. Your files live in `content/extensions/<your-handle>/`, and art in `content/kit/<your-handle>/`. Ids start with your handle.
 3. Run `pnpm check` until it reports no errors. CI runs the same check on every pull request and shows its report on the run's summary page.
-4. Open a pull request. Fill in the author checklist from the template.
+4. Open a pull request against **`develop`**, not `main`. `main` is the default branch because it holds releases (a release is `develop` merged into `main`), so GitHub offers it first: change the base. CI refuses any other base, and a pull request aimed at `main` is asked to retarget. Fill in the author checklist from the template.
+5. The first time, a bot asks you to sign the [contributor agreement](CLA.md) by posting one comment. You keep the copyright on what you make; the agreement lets the project publish it and move it to another licence later. It takes a minute and holds for every later pull request.
 
 ### How a pull request is merged
 
@@ -28,7 +29,12 @@ If you are joining the core team, read [How the team works](docs/team/WORKFLOW.m
 - A change to any value anchor (`content/values.lock.json`) is a core maintainer decision: run `pnpm values` and say why in the pull request.
 - Write down a design choice, or an approach that did not work, in [DECISIONS.md](DECISIONS.md).
 - A change to play that collides with a rule in [docs/design/GAME_RULES.md](docs/design/GAME_RULES.md) goes to the owner before code is written (its section 6).
+- Keep the owner's machine out of the tree: no home-directory paths, no private tool names, no personal addresses. `pnpm verify` fails on them (`tools/src/private-strings.ts`).
 - Before a pull request: `pnpm verify`; CI plays the opening e2e on the pull request (run `pnpm e2e` locally, under the lock, only to debug a red run).
+
+## The name
+
+"Made for" the game is welcome on extensions, fan sites, videos and streams. A different game or a fork may not use the name or the logo: [TRADEMARKS.md](TRADEMARKS.md) says where the line is.
 
 ## Conduct
 

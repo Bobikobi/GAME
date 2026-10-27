@@ -234,3 +234,52 @@ export class StandingReports {
     }
   }
 }
+
+/**
+ * The eight facings a drawn body can show (the rig of 23.10): the four axes and the four diagonals between
+ * them. The faced tile stays four-way (`facingFor`, `facedTile`); this is only what the body is drawn as.
+ */
+export type Facing8 = Dir | 'down_left' | 'down_right' | 'up_left' | 'up_right';
+
+/** The eight facings by angle, clockwise from the right in steps of 45 degrees (y grows down the screen). */
+const EIGHT: readonly Facing8[] = ['right', 'down_right', 'down', 'down_left', 'left', 'up_left', 'up', 'up_right'];
+
+/**
+ * How far past a sector's edge the motion leads before the drawn facing turns, in degrees: the four-way pick's
+ * own lead (`TURN_LEAD`, 51.3 degrees off the axis against an edge at 45), so both picks hold alike.
+ */
+export const SECTOR_LEAD_DEG = (Math.atan(TURN_LEAD) * 180) / Math.PI - 45;
+
+/**
+ * The drawn facing for a held direction: the nearest of the eight to the motion's angle (sectors of 45
+ * degrees), kept while the motion stays inside its sector widened by `SECTOR_LEAD_DEG`, so a walk along a
+ * sector's edge does not flicker. No motion keeps the facing it had.
+ */
+export function facing8For(input: readonly [number, number], current: Facing8): Facing8 {
+  const [x, y] = input;
+  if (x === 0 && y === 0) return current;
+  const deg = (((Math.atan2(y, x) * 180) / Math.PI) % 360 + 360) % 360;
+  const held = EIGHT.indexOf(current) * 45;
+  const off = Math.abs(((deg - held + 540) % 360) - 180);
+  if (off <= 22.5 + SECTOR_LEAD_DEG) return current;
+  return EIGHT[Math.round(deg / 45) % 8]!;
+}
+
+/** Whether a drawn facing agrees with the four-way facing: the same axis, or a diagonal that leans on it. */
+export function agrees(look: Facing8, facing: Dir): boolean {
+  return look === facing || look.split('_').includes(facing);
+}
+
+/**
+ * The diagonal sheet a body is drawn from, and whether it is mirrored, or undefined to draw the four-way
+ * facing as before. The rig draws five facings (down, down_left, left, up_left, up) and mirrors the right
+ * side; a sheet is named after the look's down sheet with the facing in place of `down`
+ * (`chars/forager_down_left`). A diagonal that does not lean on the four-way facing, or whose sheet the look
+ * does not have yet, is not drawn.
+ */
+export function diagonalSheet(stem: string, look: Facing8, facing: Dir, has: (key: string) => boolean): { key: string; flip: boolean } | undefined {
+  if (!look.includes('_') || !agrees(look, facing)) return undefined;
+  const mirrored = look.endsWith('_right');
+  const key = stem.replace(/_down$/, `_${mirrored ? look.replace(/_right$/, '_left') : look}`);
+  return key !== stem && has(key) ? { key, flip: mirrored } : undefined;
+}

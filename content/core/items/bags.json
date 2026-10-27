@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../schema/json/items.schema.json",
+  "format": 1,
+  "type": "items",
+  "id": "core/bags",
+  "title": "Bags",
+  "creator": "core",
+  "description": "What rides on the back (DECISIONS.md, 2026-10-23). The satchel is made at the workshop and sold by Pell; the frame pack is a made thing of the city and waits for it. Stand-in sprite until the bag art comes.",
+  "items": [
+    {
+      "id": "core/frame-pack",
+      "name": "Frame pack",
+      "description": "A wooden frame that moves the load onto the hips. Holds the most, and weighs the most itself.",
+      "kind": "material",
+      "rarity": "uncommon",
+      "class": "garment",
+      "tier": 3,
+      "sprite": "core/base-kit:items/basket",
+      "weight": 4,
+      "wear": {
+        "slot": "back",
+        "places": 36,
+        "load_bonus": 10
+      }
+    }
+  ]
+}

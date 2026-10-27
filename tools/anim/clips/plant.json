@@ -1,0 +1,33 @@
+{
+  "about": "Kneeling to plant a seed: the library's farm plant, eight of its frames.",
+  "target": "forager",
+  "base": {
+    "library": "ual2",
+    "action": "Farm_PlantSeed"
+  },
+  "frames": [
+    0,
+    10,
+    18,
+    26,
+    34,
+    42,
+    52,
+    62
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      88
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

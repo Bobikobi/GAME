@@ -54,7 +54,7 @@ export const FOOT: readonly { label: string; href: string }[] = [
 export const GAME_LD = {
   '@context': 'https://schema.org',
   '@type': 'VideoGame',
-  name: 'Openfold',
+  name: 'Loomvale',
   description: 'A free pixel-art game in the browser: wake by the river, mend the old bridge and bring the valley back. Every place and quest in it was added by a builder.',
   url: '/',
   genre: ['Role-playing', 'Pixel art', 'Community-built'],
@@ -72,8 +72,8 @@ export const GAME_LD = {
 export const CODE_LD = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareSourceCode',
-  name: 'Openfold',
-  description: 'The Openfold game: a deterministic TypeScript simulation, a JSON Schema format for game content, and the tools that check it.',
+  name: 'Loomvale',
+  description: 'The Loomvale game: a deterministic TypeScript simulation, a JSON Schema format for game content, and the tools that check it.',
   codeRepository: REPO,
   programmingLanguage: 'TypeScript',
   runtimePlatform: 'Node.js',
