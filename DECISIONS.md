@@ -3182,3 +3182,36 @@ Finding 3 of the 27.10 security review: `draw(seed, entity, counter)` was a fast
 ## 2026-10-27 ✅ The email sign-in finishes in a real browser: the token in the fragment, the link page's own origin, and limits by the proxy's address
 The 27.10 security review found that the email link could not complete from a browser: the link page was served with `no-referrer`, under which a form POST carries `Origin: null`, and its CSP `form-action 'self'` blocked the 303 to the game in Chromium and WebKit. The suite was green only because its test browser set Origin by hand. Chosen: the page is `same-origin` and its CSP names the game's origin, the confirm accepts the API's own origin and no other route does, and the token rides in the link's fragment, read by one hashed inline script, so no log holds it. The old `?token=` form is moved to the fragment for one release, then removed. The test browser now opens the link and presses the button the way a browser does, deriving the Origin from the page's referrer policy and checking `form-action` on the redirect. A headless Chrome run on the local pair landed on `#signin=ok` signed in, with no CSP violation. Also: `MAILER=log` starts only beside `ALLOW_LOG_MAILER=staging-only`, the in-process limits count by `CLIENT_ADDRESS_HEADER` (required off loopback), a sign-up checks the name before it replays an opening instead of caching the replay, and the OAuth flow is still spent before the code exchange (the code is single-use at Google, so a reload could not finish anyway).
 **Retry when:** the game and the API become one origin (finding 4): the confirm's origin set and `form-action` then collapse to `'self'`. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The valley v2 on the map: 64x64, the plan block filled
+
+**The core map grows to 64x64 as the valley plan v2 draws it.** No opening tile a quest names moves. New: the bay with the jetty's planks (the boat keeps its place, nothing drawn yet), the shore way, the tangle's cutting and the descent's four ragged bands into the undead world, the east hills (toe, foot, hill, mountain band, `heights` 0-7), the town shelf and the ruins terrace at height 1, the lane's two jogs with a boulder in each, the night place's wall line, three statues, eleven lamps, the workshop stall (its slot opened later by a quest), the trainers' stall (reserved, empty), the ember camp, the cutting stone. The `plan` block holds the 23 regions with `opens_by`, the 8 paths, the 8 routes, the 7 rests and the 3 wakes. The four gates (north, descent, shore, the hall's stair) are marked as `area` slots on ground that stays shut; each becomes a restore in the pull request that writes the region quest opening it (a restore no quest opens fails the check), and until then the plan's `opens_by` names a quest not written yet (warnings). Every new piece wears the closest kit sprite as a stand-in (heath and rock as grass and rubble, the crossings as pebbles and rubble, the knight as rubble); new art replaces them in place.
+The owner, 22.10 and 23.10 (the plan's answers).
+**Retry when:** the art for heath, rock, steps, ramps and statues lands, or the kernel walks levels. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The riddle pair are two lanterns; the bridge slot is 3x2
+
+**The riddle's two lantern statues become two lanterns:** an iron post in town and a stone fire bowl on the hill, about 1.6 characters tall (both `lantern_post` until the bowl is drawn); the clue reads "one of the two lanterns". **The bridge's slot is 3x2**, two rows of planks over the river; two mossy rocks sit on the bank at its foot, (11,18) and (9,17), beside the keystone's shallows.
+The owner, 23.10.
+**Retry when:** the owner changes his word on it. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The wake tools are personal in the opening
+
+**A pocket's tools are its own character's:** another player neither sees nor takes them (the kernel already refuses a dig by another pocket; the clients filter by pocket). Nothing more is built: no trade, and nothing blocks a trade later. Test: `kernel/test/starts.test.ts`. Three tools moved off the new paths: the basket to (7,17), the axe to (4,18), the trowel to (7,23).
+The owner, 23.10.
+**Retry when:** players share one world. Model: claude-opus-5-5.
+
+## 2026-10-23 ⏸ The inn waits for the content wave
+
+**The inn stays the ruin at the town's edge on this map.** The opening's own walk reads that ruin as "Awaiting restoration"; rebuilding it, with the innkeeper and the drunk's post, belongs to the wave that writes their quests and lines (decision 50 of 22.10 stands).
+**Retry when:** the content wave opens. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The valley's four exits and the road each one needs
+
+**Four ways out of the valley, each with the road its neighbour owes.** `plan.exits` in `content/core/map.json`, every gate open, against 2106 steps of daylight (400 s at 190 ms a step), margin 10: the north gate to the north wood, 6 steps from the nearest wake (north meadow), needs 2110; the ferry from the jetty end (8,36) across the bay, 14 from the slid bank, needs 2102; the shore gate to the shore way, 28 from the slid bank, needs 2088; the descent gate to the cutting, 57 from the slid bank, needs 2059. The steps the descent and the shore way already run on this map count toward their roads. No wake leaves the valley by any other way. The region plans that stitch onto these exits must provide these roads, or `pnpm check` fails them.
+The owner, 23.10.
+**Retry when:** a region beyond an exit is drawn, the clock or the walk speed changes, or a wake moves. Model: claude-opus-5-5.
+## 2026-10-23 ✅ The collapsed hall is its own room, with a door in the south wall
+
+**The hall is dug by day, the night place still has one way in.** The opening sends the player to dig the collapsed hall for Pell's whole bowl in the afternoon, before the arch opens. A wall at row 27 (x 35-38) now closes the hall off from the rest of the walled night place, the south wall has a doorway at (37,32) from the lane south of the ruins, and the terrace face a gap at (39,29). Fallen rubble at (35,28), (37,28) and (38,31) leaves every dig spot a tile to stand on with room to turn. The threshold stays the night place's only way in; the hall, its six digs, the knight and the stair keep their tiles.
+**Retry when:** the expedition needs the hall reached from inside the night place. Model: claude-opus-5-5.
