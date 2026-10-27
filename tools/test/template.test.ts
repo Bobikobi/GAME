@@ -34,6 +34,8 @@ describe('templates/extension', () => {
     expect(wren.shop).toBeUndefined();
     for (const tier of ['first', 'stranger', 'acquaintance', 'friend'] as const) expect(wren.dialogue[tier]?.length).toBeGreaterThan(0);
     expect(b.quests['your-handle/a-coin-for-the-road']?.giver).toBe('your-handle/wren');
+    expect(b.quests['your-handle/a-coin-for-the-road']?.reward.items?.[0]?.item).toBe('your-handle/mended-cup');
+    expect(b.items['your-handle/mended-cup']?.creator).toBe('your-handle');
   });
 
   it('grows its fruit in the empty glade, credited to the creator', () => {

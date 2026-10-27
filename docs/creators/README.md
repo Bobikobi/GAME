@@ -80,7 +80,9 @@ The words follow the valley's rules ("Dialogue and voice" in [GAME_RULES.md](../
 - One voice. Two of your character's lines next to two of another's must be tellable apart with the names hidden. Decide how they talk, what they want and what they never say; put it in two sentences in your pull request, because the owner approves a new voice before the character speaks.
 - The past has a speaker. The narrator never states the past, and neither does a bare line: a thing about how the valley was is said by someone, as their own memory or hearsay ("my gran said", "I heard"), so a reader can doubt it. Your character is that speaker. Wren's lines are an example: she says what her gran said and what she herself saw, and never what the bells "really" are. See [STORY.md](../design/STORY.md), rules S1 to S6.
 
-You never write a price, a stat or a reward in a character's file: they have none. What they ask of the player is a quest (below).
+- `items` - the file also holds one thing only your character gives, the mended cup that Wren's quest pays (see [Your next step](#your-next-step)). Keep it for then or delete the block. You never set its value: the game works it out, as for a fruit.
+
+A townsperson has no price, stat or reward of their own. What they ask of the player is a quest (below).
 
 ## 4. Check it (1 minute)
 
@@ -94,13 +96,13 @@ Each problem names the file, the field and what to do about it. A line that star
 
 Add `content/extensions/<your-handle>/profile.json` (see [Your creator profile](#your-creator-profile); the check passes without it; with it the signs and the Creators menu show your name and signature). Stop the first `pnpm dev` with Ctrl-C and run it again (it bundles the content when it starts).
 
-The town is a few minutes into a new game, so to meet your character at once open the printed address with `?debug` on the end (for example `http://localhost:5173/?debug`), start a new game, press F12 for the console and paste this one line. It stands you beside the character:
+A new game starts far from town, and the mist hides everything the player has not opened yet. To meet your character at once, open the printed address with `?debug` on the end (for example `http://localhost:5173/?debug`), start a new game, press F12 for the browser console and paste this one line, with your handle and the character's file name in place of `<your-handle>/<name>`. It lifts the mist around their stall and stands you beside them, in this browser tab only; reloading the page undoes it:
 
 ```js
-{ const g = window.__game, s = g.session, c = g.bundle.npcs['<your-handle>/<name>'].place.slot, t = g.bundle.map.slots.find((x) => x.id === c); s.pos = [t.x, t.y + 2]; s.state.player.at = [t.x, t.y + 2]; s.seeAt(); }
+{ const g = window.__game, s = g.session, t = g.bundle.map.slots.find((x) => x.id === g.bundle.npcs['<your-handle>/<name>'].place.slot), p = g.bundle.pockets[s.state.player.pocket]; p.wake = { x: t.x, y: t.y }; p.pocket = p.pocket_grown = 8; s.pos = [t.x, t.y + 1]; s.state.player.at = [t.x, t.y + 1]; s.seeAt(); }
 ```
 
-Walk up to them and talk: the first thing they say is your first `first` line, and the next visits bring the others. Their sign reads "Added by <your-handle>".
+Press **Space** (the **A** button on a phone) next to them: "Talk to <name>" appears, and the first thing they say is your first `first` line. Talk again for the `stranger` line, and so on as the standing grows. Their sign reads "Added by <your-handle>". To reach the town the way a player does, play the opening: mend the bridge, light the first fire and follow the road into town.
 
 ## 6. Open a pull request (1 minute)
 
@@ -117,7 +119,7 @@ Before you push, `pnpm verify` runs everything CI does (it takes a few minutes; 
 
 Once the townsperson stands, the valley can start to need them. Each of these is a small pull request of its own, built on the files you have:
 
-1. **A quest your townsperson gives.** Copy `templates/extension/quests/a-coin-for-the-road.json` into `content/extensions/<your-handle>/quests/`, replace `your-handle`, and set `quest.giver` to your character (`<your-handle>/<name>`). The template quest sends the player to dig an old coin out of the gate rubble (a `find` step: the journal shows a clue, never a count). Rewrite `summary` and `clue` in your character's voice. The reward in the template is three plums from the fruit file; without that file, give `"reward": { "rep": 5 }` or an item of your own. The quest brings a quest review into your pull request (`Quest review:`, the quest-designer skill at `.claude/skills/quest-designer`). Step kinds that exist today: `bring`, `make`, `find`, `riddle`, `visit`, `restore`, `build` and `tend`; the quest's `type` is one of the fourteen kinds in [GAME_RULES.md](../design/GAME_RULES.md).
+1. **A quest your townsperson gives.** Copy `templates/extension/quests/a-coin-for-the-road.json` into `content/extensions/<your-handle>/quests/`, replace `your-handle`, and set `quest.giver` to your character (`<your-handle>/<name>`; the template already names Wren). It sends the player to dig an old coin out of the gate rubble (a `find` step: the journal shows a clue, never a count), and pays one mended cup, the item defined in the character's file. Rewrite `summary` and `clue` in your character's voice. A reward must give the player something new to do: an item, a recipe or a place opened. Gold and reputation alone fail the check. The check may also warn that your quest's `type` can be open together with a core quest of the same type (G17): choose another of the fourteen kinds in [GAME_RULES.md](../design/GAME_RULES.md) if it does. Step kinds that exist today: `bring`, `make`, `find`, `riddle`, `visit`, `restore`, `build` and `tend`. The quest brings a `Quest review:` into your pull request (the quest-designer skill, `.claude/skills/quest-designer`).
 2. **Words that follow the world.** The character's file also takes `remarks` (a line that appears once a quest is done, a place restored or a thing owned) and `topics` (a question the player can ask, which gives a clue). Add one remark that notices your quest being done: coming back should pay. The core's `content/core/npcs/trader.json` shows both.
 3. **A tree, a plant or a herb for the valley.** A resource with `node.tool: "axe"` is a tree; it needs a free resource slot (see [Smaller things](#smaller-things-a-fruit-a-herb-a-recipe) and the `slots` tool).
 4. **A camp part.** A thing a player builds at their camp, with the inputs it takes ([A camp part and its upgrade](#a-camp-part-and-its-upgrade)).

@@ -6,6 +6,20 @@
   "title": "Wren the mender",
   "creator": "your-handle",
   "description": "A townsperson with no shop: a mender who stands at the trainers' stall, and who speaks of the past only as her gran's saying.",
+  "items": [
+    {
+      "id": "your-handle/mended-cup",
+      "name": "Mended cup",
+      "description": "A cup that was cracked and is whole again.",
+      "kind": "material",
+      "rarity": "uncommon",
+      "class": "clay",
+      "family": "pottery",
+      "tier": 1,
+      "sprite": "core/base-kit:items/pottery-shard",
+      "weight": 1
+    }
+  ],
   "npc": {
     "name": "Wren",
     "sprite": "core/base-kit:chars/woman_idle_down",
