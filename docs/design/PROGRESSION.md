@@ -257,7 +257,7 @@ The owner's concern: hard fixed caps would kill the chase for better sets, and f
 | `place` | answer steps on one condition (garment, master step, dish) | 2 | 2 | 3 | 3 | 4 | none (the ladder tops at 4) | 4 |
 | `strike`, `aim`, `guard` | reserved: rows with the combat layer | | | | | | 2 each, then | |
 
-**The raisers**: ten today (`work` 2, `move` 2, `health` 2, `sustain` 1, `find` 2, `sense` 1), each raising one category's ceiling by one step: rare, late and few. Proposed form: half are crown nodes of a school (4.3), half are unique pieces found in band-5 places or at the end of a band-5 wall; never sold, never made, bound to the one who found or learned it; one of each counts. They are the end-game chase: a band-5 player full of sets and dishes stands at the band's ceiling, and only raisers lift it.
+**The raisers**: ten today (`work` 2, `move` 2, `health` 2, `sustain` 1, `find` 2, `sense` 1), each raising one category's ceiling by one step: rare, late and few. The owner's pick (27.10): half are crown nodes of a school (4.3), half are unique pieces found in band-5 places or at the end of a band-5 wall; never sold, never made, bound to the one who found or learned it; one of each counts. The count of ten is `raisers_max` in `content/core/params.json` and stays tunable. They are the end-game chase: a band-5 player full of sets and dishes stands at the band's ceiling, and only raisers lift it.
 
 `sustain` is the one ceiling the game itself enforces in a new place: while a place drains (BODY_CLOCKS 5), all health back, food eaten included, comes in at most at that rate; outside a draining place eating heals at once, as today. A regeneration or mend dish adds +2 on top of the ceiling while it lasts (balance finding 11, accepted 26.10), inside the room a `sustain` raiser gives, so those dishes still count in a wall after carried food has brought `sustain` to the ceiling; food alone never lifts it past. Without the clamp a wall could be eaten through and no proof would hold.
 
@@ -274,7 +274,7 @@ The owner's concern: hard fixed caps would kill the chase for better sets, and f
 - **Timer**: where the wall has one (a quest step's time, the night, a fire's logs), T is at most `timer_gh` (the witness: within the margin).
 - **Requirement**: the school levels and base attributes the wall names, met on base levels (Q5). In play a requirement refuses nothing: below it the attempt's chance falls to nothing as a recipe above its level does (9.10, "no level wall"); the proof reads it as unmet.
 
-An example (proposed): a band-5 pass, frost and storm at grade 4, `length_gh` 12 (ten real minutes). The witness, band 5: a tier-5 `cold_proof` coat (3) and a dish (+1) take frost to 0; a master tier-5 `storm_proof` cloak (3 + 1) takes storm to 0; no drain, passed. Band 4 (`place` 3, `sustain` 12, `move` 25%): grade 1 remains, T = 12 x 1.15 x (1 - 25%) = 10.4 game hours; the drain of grade 1 is 10 points a game hour and `sustain` 12 covers it, so nothing is lost: the near-end player, as the owner wants. Band 3, the best below `b - 1`: tier-4 pieces worn one ahead (2), a master step and a dish come to 4, clamped by the band-3 `place` ceiling to 3; grade 1 remains, T = 12 x 1.15 x (1 - 20% `move`) = 11.0 game hours, net drain 10 - 9 = 1 point a game hour, 11 points of 100 lost: it **passes**. With the grade-1 drain at 10 (balance finding 9, accepted 26.10) a remaining grade 1 cannot stop band 3 at any length that fits a game (it would take 100 game hours), so a wall made of drain alone is cheesable from band 3 and `wall_cheese_gap` 2 is not met; the example is kept to show that. The prover's stand-in walls carry a clock or a level requirement for this reason; how a wall holds in content is the open call in section 9.
+An example (proposed): a band-5 pass, frost and storm at grade 4, `length_gh` 12 (ten real minutes). The witness, band 5: a tier-5 `cold_proof` coat (3) and a dish (+1) take frost to 0; a master tier-5 `storm_proof` cloak (3 + 1) takes storm to 0; no drain, passed. Band 4 (`place` 3, `sustain` 12, `move` 25%): grade 1 remains, T = 12 x 1.15 x (1 - 25%) = 10.4 game hours; the drain of grade 1 is 10 points a game hour and `sustain` 12 covers it, so nothing is lost: the near-end player, as the owner wants. Band 3, the best below `b - 1`: tier-4 pieces worn one ahead (2), a master step and a dish come to 4, clamped by the band-3 `place` ceiling to 3; grade 1 remains, T = 12 x 1.15 x (1 - 20% `move`) = 11.0 game hours, net drain 10 - 9 = 1 point a game hour, 11 points of 100 lost: it **passes**. With the grade-1 drain at 10 (balance finding 9, accepted 26.10) a remaining grade 1 cannot stop band 3 at any length that fits a game (it would take 100 game hours), so a wall made of drain alone is cheesable from band 3 and `wall_cheese_gap` 2 is not met; the example is kept to show that. The prover's stand-in walls carry a clock or a level requirement for this reason; how a wall holds in content is answered in section 9 (27.10): a clock or a level requirement.
 
 Combat walls (foes' damage against guard and sustain) join with the combat layer, in the same form.
 
@@ -312,8 +312,8 @@ The owner: Travel was far too empty to be a skill. It is the school of how the b
 
 - a crossing taken: its active time, in full (a few seconds on stones, longer along a ledge);
 - a ford waded and a lake rowed: the time in the water;
-- a heavy step: the time the load adds over a steady step (40 ms of 230), so a load past the limit trains the back; a light or steady step pays nothing (an owner call, section 9);
-- a trail course: a loop of crossings at a place, walked again and again, each lap paying its crossings' time (Old School RuneScape's Agility courses); one course a band, at places of rising danger, set against NEXT 19 b's table (an owner call, section 9);
+- a heavy step pays Travel nothing (the owner's pick, 27.10): a load matters only through the carrying nodes of the school, which raise the load limit and the stamina of carrying; a step is a step;
+- a trail course: a loop of crossings at a place, walked again and again, each lap paying its crossings' time (Old School RuneScape's Agility courses); one course a band, at places of rising danger, set against NEXT 19 b's table (the owner's pick, 27.10);
 - a quest that pays Travel, and a lesson from its teacher (3.6).
 
 A plain step pays nothing at any pace. Every player walks to every other school; if walking paid Travel, its fifty hours would come free inside the other fifteen schools' walking, every player would master it without choosing it, and the catalogue's 800 hours (3.2) would count those hours twice. A new check row holds it: `xp_one_school`, every active millisecond pays exactly one school (the mentor's +20% aside, 3.7).
@@ -324,13 +324,13 @@ A plain step pays nothing at any pace. Every player walks to every other school;
 |---|---|---|---|
 | 2 | 28 s | the first point | the valley's stepping stones: about seven crossings of 4 s |
 | 4 | 2.2 min | `way-eye`, the first major | the first map's open crossings |
-| 6 | 6.2 min | band 2: `ford-wise`, the race's corner | the first map's level 1-5 crossings; a heavy haul of the opening's logs and stones |
+| 6 | 6.2 min | band 2: `ford-wise`, the race's corner | the first map's level 1-5 crossings and the first quest steps |
 | 11 | 53 min | band 3: `scramble`, the Trail and the Pack | the first map's fords and shortcuts; the boathouse lake rowed |
 | 16 | 6.8 h | band 4: `way-home`, `leap`, `sled` | the first trail course (a lap about 60 s active, 90 s on the clock); the ring's ledges |
 | 20 | 34.5 h | the last step begins | the courses of the far regions, long fords, rowing |
 | 21 | 51.7 h | the crown, `wayfarer` | the last step alone is 17.2 h |
 
-From band 4 to the crown is 44.9 active hours: about 2,700 laps of a 60 s course if nothing else paid. RuneScape's Agility is its grindiest skill for the same reason, and the mix above (fords, rowing, the haul, quests, lessons) is what keeps the road varied. A heavy haul pays about ten minutes of Travel for an hour of walking heavy: a trickle, never the main road.
+From band 4 to the crown is 44.9 active hours: about 2,700 laps of a 60 s course if nothing else paid. RuneScape's Agility is its grindiest skill for the same reason, and the mix above (fords, rowing, quests, lessons) is what keeps the road varied. A heavy haul pays Travel nothing (the owner's pick, 27.10); the load is answered by the carrying nodes alone.
 
 **The catalogue still holds.** Travel at 28 s is 51.7 h. The first full catalogue's sixteen schools (Travel among them, 4.2) at 28 s are 827 h, past `catalogue_hours_min` (800); all twenty-two, with combat and the machines, are 1,138 h; and with `xp_one_school` none of Travel's hours hide inside another school's. The per-school spread keeps its margin: up to four schools at 25 s leave the catalogue at 805 h; a fifth goes red at 799.7 h.
 
@@ -433,9 +433,9 @@ The owner's standing rule (DECISIONS 2026-10-25 "Tree first, both ways", made en
 
 - **The tree from the work.** Every new mechanic, stat, effect, item property or system that a player can grow in is placed in the tree when it is designed: on an existing school's nodes, or in a proposal that extends the tree (a new branch or node group, in the school file's node format). The builder makes the call, and review sees it. Travel above is the first worked case: carrying (#297), the crossings of NEXT 19 a and 19 c and the boathouse of 19 f had no node; now each has a place, reserved until it lands.
 - **The work from the tree.** An agent starting any task reads the tree first and says where the work sits, or which nodes it serves, before it builds. The quest designer reads the tree first and starts from its thin spots; every pitch names the schools it trains and the nodes it needs or opens (the skill's seventh pitch line), and the pull request's `Tree:` line carries them beside `Quest review:`.
-- **The line.** Every pull request's body: `Tree: <school>/<node ids>`, `Tree: extends the tree: <path of the proposal>`, or `Tree: none: <why nothing a player can grow in changes>`. CI refuses a body without one (`tools/src/pr-rules.ts`, #341). This pull request's own: `Tree: extends the tree: docs/design/PROGRESSION.md`.
+- **The line.** Every pull request's body: `Tree: <school>/<node ids>`, `Tree: extends the tree: <path of the proposal>`, or `Tree: none: <why nothing a player can grow in changes>`; an extension owes it too (the owner's pick, 27.10; most write `none: <why>`). CI refuses a body without one (`tools/src/pr-rules.ts`, #341). This pull request's own: `Tree: extends the tree: docs/design/PROGRESSION.md`.
 
-**The coverage report (spec only; a follow-up, built neither here nor in #341).** A read-only script, proposed name `pnpm tree:coverage` (the name is an owner call, section 9), that prints the tree's thin spots; it informs and never fails, and the quest designer reads it first.
+**The coverage report (spec only; a follow-up, built neither here nor in #341).** A read-only script, proposed name `pnpm tree:coverage` (the owner's pick, 27.10), that prints the tree's thin spots; it informs and never fails, and the quest designer reads it first.
 
 - A node is **touched** when content names it, or its school at its band: a quest that pays the school (`xp: {school, seconds}`, 3.6) or asks for the node's band; a recipe of the school's profession whose level sits in the node's band; a place, a crossing or a course that opens or trains it (for Travel, a crossing's `kind` and `travel` level); a teacher whose `teaches.band_max` reaches it (3.6); a book that teaches it (6.5).
 - A node is **reserved** when its effect has no kernel reader yet (the static grep of 4.6) or the proposal names a system it waits on (the "Waits on" column above); reserved nodes are listed first, each with what it waits on.
@@ -569,7 +569,7 @@ Numbers provisional (P1 onward; the rules pull request assigns G numbers after G
 - **P9 A cross-link is a bridge, not a wall.** A node may need a node of another school only as a bridge between trades, at most two per school, never from a trade into combat; a book teaches a bridge node without its link.
 - **P10 Gear lends attributes, one tier ahead.** Worn gear adds attribute bonuses that rise with tier, with no fixed cap; each item names a school level and an attribute it asks, read on the base; below it the item helps up to what gear one tier above the wearer's own gives, and says what unlocks the rest. Gear never meets a key, and a look never carries a bonus.
 - **P11 Help, never a carry.** Experience comes only from the player's own actions. In a group a newcomer gets at most a quarter of their own earned experience as a share of the group's and a fifth more of their own while a stronger player is near, both falling for the same pair over a real day; the veteran earns standing and the giving board, never experience; a carry sold for gold is an exploit loop.
-- **P12 Travel's verb is the way over.** A crossing, a ford, an oar stroke, a course lap and the time a heavy load adds pay Travel; a plain step pays nothing, and every active millisecond pays one school only.
+- **P12 Travel's verb is the way over.** A crossing, a ford, an oar stroke and a course lap pay Travel; a plain or heavy step pays nothing, and every active millisecond pays one school only.
 - **P13 Tree first, both ways.** Everything a player can grow in has its place in the tree when it is designed, and every task and quest starts from the tree; every pull request says where, in its `Tree:` line.
 
 ## 9. Direction calls: all eight answered, and Q8's two follow-ups
@@ -595,15 +595,19 @@ Each is the owner's. All eight were answered on 25.10, one at a time; each answe
 | Q7 Teachers | **A**: time at the ordinary rate, standing earned, never gold for a level; and no industrial carry: own actions only, a share of at most a quarter of one's own, +20% near a stronger player, the veteran on the giving board, diminishing returns for a pair, sold carries an exploit loop | 3.6, 3.7, P6, P11 |
 | The balance prover's twelve findings (#342) | **every proposed value as proposed** (26.10, red lines first): a raw berry at 15,750 mg at the trader's stall; the group share splits experience already earned; the grade-4 jackpot pays goods, experience x1; rare 750-900; ice grip also on the hands; rarity strengths round down, floor 1; warning line 2000; walls at band 3+ are grade 3-4; grade-1 drain 10; drain in points of the base cap; regen and mend dishes +2 sustain; danger recommended by band | 3.7, 4.7, 5.7, BODY_CLOCKS.md sections 5-7, `content/core/params.json` |
 
-**Still open, each with a recommended default (⏸):** (the ceiling band's owner, open until round 5, is answered above: "Ceiling owners")
+**Answered by the owner on 27.10 (seven calls, each its own ✅ entry; none is open):**
 
-- **Does an attribute bonus count as a common piece's one effect?** Recommended: yes, a common piece carries one thing at most (+1 to one attribute, or one worn effect at 5, or a strength-1 trait); from uncommon up attribute bonuses ride beside the effects (Q5). Other option: attributes ride beside even at common, so a common piece may carry +1 and one small effect. Today's content passes either (no common piece carries an attribute).
-- **Does a heavy step pay Travel (4.8)?** Recommended: yes, only the time the load adds over a steady step (40 ms of 230), about ten minutes of Travel an hour of walking heavy. Other option: only crossings, fords, rowing, courses, quests and lessons pay.
-- **Trail courses as Travel's training ground (4.8)?** Recommended: yes, one course a band at places of rising danger, a loop of crossings walked again (RuneScape's Agility courses); without them the last 45 hours rest on shortcuts met by chance. Other option: no courses; the world's crossings, fords and the lake alone.
-- **How does a wall at band 3 or more hold now that grade 1 drains 10 (found while proving the findings)?** Recommended: such a wall carries a clock or a school-level requirement as well as the drain (the night, a fire's logs, a quest step's time, a level), as the prover's stand-in walls now do. Other option: grade 1 goes back to 20, calm snow gives four minutes again (finding 9 undone) and drain-only walls prove as drafted.
-- **Is the `Tree:` line owed by a creator's extension too (4.9)?** Recommended: yes, one rule for every pull request; most extensions write `Tree: none: <why>`, and the template shows the forms. Other option: excused when every changed file sits under `content/extensions/`.
-- **The coverage report's name (4.9).** Recommended: `pnpm tree:coverage`.
-- **How are the ceiling raisers had (4.7)?** Recommended: half crown nodes, half legendary finds in band-5 places, never sold or made, bound to the one who found or learned them. Other option: the finds trade on the free market.
+| Call | Pick | Lands in |
+|---|---|---|
+| An attribute bonus and a common piece's one effect | it counts: a common piece carries one thing; from uncommon up attribute bonuses ride beside the effects | 5.7, section 10 |
+| A heavy step and Travel | no: a heavy step pays Travel nothing; a load matters only through the carrying nodes (the owner's recommended default of an earlier draft, the time the load adds, is dropped) | 4.8, P12, section 10 |
+| Trail courses | yes, one course a band, at places of rising danger | 4.8 |
+| How a wall at band 3 or more holds | a clock or a school-level requirement beside the drain, as the stand-in walls carry | 4.7 |
+| The `Tree:` line and extensions | owed by every pull request, extensions included | 4.9 |
+| The coverage report's name | `pnpm tree:coverage` | 4.9 |
+| How the ceiling raisers are had | half crown nodes, half bound legendary finds; ten stays `raisers_max` | 4.7 |
+
+Also recorded 27.10: the ceiling bands read as drawn (health from stamina; sustain, sense and place from Survival; move and carry from Travel). One idea of the owner is not yet rules, a fog of total darkness and unbeatable titans past the map's edge (DECISIONS 2026-10-27 ⏸).
 
 **Q8a and Q8b, the two follow-ups, answered by the owner the same day:**
 
@@ -661,7 +665,7 @@ Each is the owner's. All eight were answered on 25.10, one at a time; each answe
 | Rarity sets the count and band of effects, orthogonal to tier | the schema's "the rarity says how often it appears; the tier says how far up the ladder it is"; the rarity budget (kernel review 8.2) | agrees | rarity keeps pricing supply; it now also bounds what a thing carries |
 | Common things are plain | the built outfits and tools (every common piece 0 or 1 worn effect at 5) | agrees | today's content passes `common_plain` as it stands |
 | A master piece's second worn effect needs rare or above | 5.2 (proposed by this page) | amended | the owner's rule wins over the page's own proposal |
-| An attribute bonus as a common piece's one effect | Q8 "every garment keeps the tree points it adds"; Q5 | **open** (owner call, section 9) | recommended: it counts, so a common piece carries one thing (+1 to one attribute, or one small worn effect, or a strength-1 trait); from uncommon up attribute bonuses ride beside the effects as Q5 wrote |
+| An attribute bonus as a common piece's one effect | Q8 "every garment keeps the tree points it adds"; Q5 | **decided** (owner's pick, 27.10) | it counts, so a common piece carries one thing (+1 to one attribute, or one small worn effect, or a strength-1 trait); from uncommon up attribute bonuses ride beside the effects as Q5 wrote |
 | Sleep gives no bonus (Q8b) | G32 "a night's sleep in town ... give[s] it back" | agrees | sleep keeps G32's health and saves the game; it adds nothing more |
 | Drops crossed with rope and a node | "One height layer" (25.10); G68 crossings | extends | a `rope` crossing kind |
 | Trade nodes move capacity, never a price | "Prices and gold" (10.10); R8; GROWTH 5.4 | agrees | `stall_slots`, `price_memory`; the band is untouched |
@@ -670,7 +674,7 @@ Each is the owner's. All eight were answered on 25.10, one at a time; each answe
 | A Travel crossing opens at its Travel level | P3 (this page: "no level walls an attempt"); "The crafting economy: no level wall" (9.10) | amended | G61 gates a shortcut by a trait or skill, and the owner's "open by Travel level"; P3 names the one exception; the long way round always stays (`shortcut_reach_closed`) |
 | Travel crossings are not faster forms | "The world's structure" item 7 (each faster form earned by player level); 3.5 | agrees | a crossing is a way over (G68); a boat of one's own, a boat line, a mount, a teleport stay on the character level |
 | A plain step pays no experience | R6; 3.6 (the verb's own active time) | agrees | Travel's verb is the way over; `xp_one_school` keeps every school's hours its own |
-| A heavy step pays the time its load adds | R6 (a reward is an activity record) | extends | **open** (owner call, section 9): recommended yes, only the added time |
+| A heavy step pays Travel | R6 (a reward is an activity record) | extends | **decided** (owner's pick, 27.10): no; a heavy step pays Travel nothing, a load matters only through the carrying nodes (supersedes the recommended default) |
 | Travel never lowers a grade; a place answer never adds speed | Q8a (gear cancels the cost fully or one grade down) | agrees | one slow, one owner: the stacking rule of 4.8 |
 | Travel's `scramble` (one level, by hand) beside Climbing's rope | G68; "One height layer" (25.10); 4.5 drops | extends | one face, two kinds of crossing, never one crossing in two schools |
 | A rowboat lent at the boathouse | NEXT 19 f (the keeper's errand uses a ramp or a boat lift) | extends | the boat is lent, not owned and not a form; the errand stays the keeper's |
