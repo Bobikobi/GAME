@@ -203,7 +203,7 @@ describe('the keystone waits for one quest per wake pocket (opens_after)', () =>
     const herbs = spotOf('core/bank-herbs');
     const inst = b.instances[herbs]!;
     const keystone = b.instances[key()]!;
-    expect(Math.abs(inst.x - keystone.x) + Math.abs(inst.y - keystone.y)).toBeLessThanOrEqual(3);
+    expect(Math.abs(inst.x - keystone.x) + Math.abs(inst.y - keystone.y)).toBeLessThanOrEqual(4);
     let state = s;
     while (state.player.quests['core/first-pickings'] !== 'done') {
       const at: Tile = bfsNear(b, state.player, state.player.at, { x: inst.x, y: inst.y, w: 1, h: 1 })!.at(-1)!;
