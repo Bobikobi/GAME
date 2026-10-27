@@ -238,13 +238,13 @@ Add `content/extensions/<your-handle>/profile.json` so signs and the Creators me
 
 ## Creator points and hours
 
-The Creators menu shows points for accepted content and an estimate of invested hours based on commit sessions. `pnpm board` rebuilds `content/board.json` from the repository's Git history:
+The Creators menu shows points, records and commits for accepted content (`.github/points.json` holds the weights). `content/board.json` is rebuilt from the repository's Git history, on a branch as `develop` will have it once the pull request lands as one commit:
 
 ```bash
-pnpm board
+git fetch origin && pnpm board --base origin/develop
 ```
 
-Run it from a full Git clone after commits exist. The generated board is committed by maintainers; do not edit it by hand.
+Run it from a full Git clone, after merging `develop`, and commit the file. CI compares it with the board the merged history gives and refuses a stale copy or a number written by hand; do not edit it.
 
 ## Your own art (optional)
 
