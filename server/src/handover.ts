@@ -134,14 +134,23 @@ export function replayOpening(bundle: Bundle, upload: OpeningUpload, timeMaxMs =
  * The account's first game state, from what the sign-up was handed: the replayed opening under the
  * secret seed when every check holds, else a fresh state under it, with the reason the opening was not
  * kept. Never throws on what a phone sent.
+ *
+ * `accountName`, when the sign-up has one, is the name the account and its character share (finding 11 of
+ * the 27.10 review). The opening's log is replayed byte for byte, so the state cannot be rewritten to carry
+ * it: an opening that carved another name is not kept (the account starts fresh, as for any opening that
+ * does not prove), and one that carved none yet is kept, its stone line left for the account's own name.
  */
-export function takeOpening(bundle: Bundle, sent: unknown, secretSeed: Seed, now: number, caps: OpeningCaps = CAPS): Handover {
+export function takeOpening(bundle: Bundle, sent: unknown, secretSeed: Seed, now: number, caps: OpeningCaps = CAPS, accountName?: string): Handover {
   const fresh = (problem: string): Handover => ({ kept: false, record: createPlayerRecord(bundle, newState(bundle, secretSeed), now), problem });
   const upload = readUpload(sent);
   if (typeof upload === 'string') return fresh(upload);
   const played = replayOpening(bundle, upload, caps.timeMs);
   if (typeof played === 'string') return fresh(played);
   if (serialize(played.state) !== upload.state) return fresh('the replay does not land on the phone\'s state');
+  const carved = played.state.player.name;
+  if (accountName !== undefined && carved !== '' && carved !== accountName) {
+    return fresh(`the opening carved the name ${JSON.stringify(carved)}, the account is ${JSON.stringify(accountName)}`);
+  }
   const worth = worthMg(bundle, played.state);
   if (worth > caps.payMg) return fresh(`the opening carries ${worth} mg, past the cap of ${caps.payMg}`);
   // the phone's key is the phone's: from here on every draw is under the server's, which no reply carries
