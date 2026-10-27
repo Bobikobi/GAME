@@ -26,7 +26,7 @@ Start with **[Add a fruit in 10 minutes](docs/creators/README.md)**, then read [
 
 What you get when it is merged: your name and signature on what you added in the game, a creator page on the site, points on the public board and a line in [CREDITS.md](CREDITS.md) ([ROADMAP.md](ROADMAP.md) has the details and what is planned later).
 
-For your own art, a new sprite is drawn at 64 pixels per tile and says `"density": 4` in its kit entry: items and tiles are 64x64, character frames 64x96, work poses 128x128 with two frames (tool raised, then tool down). The old 16 pixel grid is closed to new art: the whole game is drawn at 64, and `pnpm check` refuses a new sprite on the 16 grid. The sizes, the 32 core colours and the look of the world are in [docs/design/STYLE.md](docs/design/STYLE.md) and the art section of the guide.
+For your own art, a new sprite is drawn at 64 pixels per tile and says `"density": 4` in its kit entry: items and tiles are 64x64, character frames 128x128 (the animation tool's frame, feet at 64,90), work poses 128x128 with two frames (tool raised, then tool down). The old 16 pixel grid is closed to new art: the whole game is drawn at 64, and `pnpm check` refuses a new sprite on the 16 grid. The sizes, the 32 core colours and the look of the world are in [docs/design/STYLE.md](docs/design/STYLE.md) and the art section of the guide.
 
 ## How it is built
 

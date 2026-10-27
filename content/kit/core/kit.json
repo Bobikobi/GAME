@@ -1374,6 +1374,294 @@
         "w": 32,
         "h": 32,
         "frames": 2
+      },
+      "chars/human_down": {
+        "file": "chars/human_down.png",
+        "w": 128,
+        "h": 128,
+        "frames": 11,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "stride": {
+          "travel_mpx": 14428,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_up": {
+        "file": "chars/human_up.png",
+        "w": 128,
+        "h": 128,
+        "frames": 11,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "stride": {
+          "travel_mpx": 14530,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_left": {
+        "file": "chars/human_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 11,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "red",
+          "skin"
+        ],
+        "stride": {
+          "travel_mpx": 18901,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_w_down": {
+        "file": "chars/human_w_down.png",
+        "w": 128,
+        "h": 128,
+        "frames": 11,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark",
+          "skin"
+        ],
+        "stride": {
+          "travel_mpx": 15049,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_w_up": {
+        "file": "chars/human_w_up.png",
+        "w": 128,
+        "h": 128,
+        "frames": 11,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark",
+          "skin"
+        ],
+        "stride": {
+          "travel_mpx": 15025,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/human_w_left": {
+        "file": "chars/human_w_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 11,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark",
+          "skin"
+        ],
+        "stride": {
+          "travel_mpx": 19629,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/elf_down": {
+        "file": "chars/elf_down.png",
+        "w": 128,
+        "h": 128,
+        "frames": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin",
+          "water"
+        ],
+        "stride": {
+          "travel_mpx": 14239,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/elf_up": {
+        "file": "chars/elf_up.png",
+        "w": 128,
+        "h": 128,
+        "frames": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin",
+          "water"
+        ],
+        "stride": {
+          "travel_mpx": 15135,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/elf_left": {
+        "file": "chars/elf_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin",
+          "water"
+        ],
+        "stride": {
+          "travel_mpx": 19167,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/elf_w_down": {
+        "file": "chars/elf_w_down.png",
+        "w": 128,
+        "h": 128,
+        "frames": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin",
+          "water"
+        ],
+        "stride": {
+          "travel_mpx": 14527,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/elf_w_up": {
+        "file": "chars/elf_w_up.png",
+        "w": 128,
+        "h": 128,
+        "frames": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin",
+          "water"
+        ],
+        "stride": {
+          "travel_mpx": 14557,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/elf_w_left": {
+        "file": "chars/elf_w_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 16,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "moss",
+          "skin",
+          "water"
+        ],
+        "stride": {
+          "travel_mpx": 18984,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/skeleton_down": {
+        "file": "chars/skeleton_down.png",
+        "w": 128,
+        "h": 128,
+        "frames": 13,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "stride": {
+          "travel_mpx": 13617,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/skeleton_up": {
+        "file": "chars/skeleton_up.png",
+        "w": 128,
+        "h": 128,
+        "frames": 13,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "stride": {
+          "travel_mpx": 12675,
+          "anchor": [
+            64,
+            90
+          ]
+        }
+      },
+      "chars/skeleton_left": {
+        "file": "chars/skeleton_left.png",
+        "w": 128,
+        "h": 128,
+        "frames": 13,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "bark"
+        ],
+        "stride": {
+          "travel_mpx": 17164,
+          "anchor": [
+            64,
+            90
+          ]
+        }
       }
     }
   }

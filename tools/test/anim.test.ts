@@ -42,10 +42,10 @@ describe('clip configs', () => {
   });
 
   it('every target of the cast has its model in the repo, shared ramps and a credit line naming its licence', () => {
-    const cast = Object.entries(settings.targets).filter(([, t]) => !t.model.startsWith('$'));
+    const cast = Object.entries(settings.targets).filter(([, t]) => t.model !== undefined && !t.model.startsWith('$'));
     expect(cast.length).toBeGreaterThan(1);
     for (const [id, t] of cast) {
-      expect(existsSync(join(REPO_ROOT, t.model)), id).toBe(true);
+      expect(existsSync(join(REPO_ROOT, t.model ?? '')), id).toBe(true);
       expect(() => classPalettes(t.ramps, t.metal, t.leaf), id).not.toThrow();
       expect(rampColours(t.ramps).length, id).toBeGreaterThan(0);
       expect(t.credit ?? '', id).toMatch(/CC BY 4\.0|CC0/);

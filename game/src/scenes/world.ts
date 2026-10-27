@@ -75,10 +75,10 @@ import { FishingView } from './fishing-view';
 import type { FishPhase } from '../ui/games/shared';
 import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
 import type { WorkKind } from '../ui/ui';
-import { type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, treasureKind } from '../work';
+import { type AutoKind, POSES, beatAt, blowsDue, poseFrame, resourceKind, standingFrame, strideFrame, treasureKind } from '../work';
 import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep } from '../walking';
 import { GroundChunks } from '../groundchunks';
-import { adopt, baseOf, densityOf, drawScaled, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
+import { adopt, baseOf, densityOf, drawScaled, footOrigin, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
 import { cameraK, cameraZoom, pixelRatio, worldToPage } from '../view';
 
 /** px from the view's edge that the smoke marker keeps, so its column fits above the base. */
@@ -470,7 +470,8 @@ export class WorldScene extends Phaser.Scene {
     this.buildSigns();
     this.buildAtmosphere();
     if (RICH.light) this.buildDapple();
-    this.player = kitSprite(this, 0, 0, this.playerFrame('down').key, 1).setOrigin(0.5, 1).setVisible(false);
+    const firstKey = this.playerFrame('down').key;
+    this.player = kitSprite(this, 0, 0, firstKey, standingFrame(this.b.sprites[firstKey], 1)).setOrigin(0.5, footOrigin(firstKey)).setVisible(false);
     if (RICH.detail) this.buildCasters();
     // the haze is one layer over the valley; addFilters cuts the player out of it, so the mist covers the
     // ground, the props and the other figures but never the player or what the player holds
@@ -1670,7 +1671,7 @@ export class WorldScene extends Phaser.Scene {
     const c = this.cutout;
     if (!c) return;
     const p = this.player;
-    c.setVisible(p.visible).setTexture(p.texture.key, p.frame.name).setPosition(p.x, p.y).setFlipX(p.flipX).setAngle(p.angle).setScale(p.scaleX, p.scaleY);
+    c.setVisible(p.visible).setTexture(p.texture.key, p.frame.name).setOrigin(p.originX, p.originY).setPosition(p.x, p.y).setFlipX(p.flipX).setAngle(p.angle).setScale(p.scaleX, p.scaleY);
   }
 
   /**
@@ -1795,19 +1796,52 @@ export class WorldScene extends Phaser.Scene {
     return pose !== 'walk' ? none : { key: stem, flip: false };
   }
 
+  /** The first row of a frame that has any solid pixel near its middle, in art pixels: where the figure's head begins in a frame with room above it. */
+  private figureTop(k: string, frame: number): number {
+    const info = this.b.sprites[k];
+    if (!info) return 0;
+    const mid = Math.floor(info.w / 2);
+    for (let y = 0; y < info.h; y++) {
+      for (let x = mid - 6; x <= mid + 6; x++) if ((this.textures.getPixelAlpha(x, y, k, frame) ?? 0) > 0) return y;
+    }
+    return 0;
+  }
+
   /** The drawn facing, or the four-way one when something else turned the player (a load, a turn in place). */
   private lookOf(s: GameSession): Facing8 {
     return agrees(this.look, s.facing) ? this.look : s.facing;
   }
 
-  private faceFrame(frame?: number): void {
+  /** Shows a frame of a sheet on the player: the flip, and the origin on the feet (a stride sheet has room below them). */
+  private showPlayer(k: string, frame: number | undefined, flip: boolean): void {
+    retex(this.player, k, frame);
+    this.player.setFlipX(flip).setOrigin(0.5, footOrigin(k));
+  }
+
+  /**
+   * The body at rest, or at `frame` of a time-based sheet. A stride sheet (a race's walk, tools/anim) rests on its
+   * last frame, and shows a pose only for the distance walked (`pose`, from `walkFrame`).
+   */
+  private faceFrame(frame?: number, pose?: number): void {
     const s = this.session;
     if (!s) return;
     const { key: k, flip } = this.playerFrame(s.facing, 'walk', this.lookOf(s));
-    const frames = this.b.sprites[k]?.frames ?? 1;
-    if (frames === 1) retex(this.player, k);
-    else retex(this.player, k, Math.min(frames - 1, frame ?? (frames >= 3 ? 1 : 0)));
-    this.player.setFlipX(flip);
+    const info = this.b.sprites[k];
+    const frames = info?.frames ?? 1;
+    if (info?.stride) this.showPlayer(k, pose ?? frames - 1, flip);
+    else if (frames === 1) this.showPlayer(k, undefined, flip);
+    else this.showPlayer(k, Math.min(frames - 1, frame ?? (frames >= 3 ? 1 : 0)), flip);
+  }
+
+  /** The frame of the walk: the pose for the distance walked on a stride sheet, the leg of the step on the others. */
+  private walkFrame(): void {
+    const s = this.session;
+    if (!s) return;
+    const k = this.playerFrame(s.facing, 'walk', this.look).key;
+    const info = this.b.sprites[k];
+    if (info?.stride) return this.faceFrame(undefined, poseFrame(this.body.walked, info.stride.travel_mpx / 1000, info.frames));
+    const walked = this.body.walked / ART_PX;
+    this.faceFrame(strideFrame(walked % 1, Math.floor(walked), info?.frames ?? 1));
   }
 
   /** The work pose: arm up (frame 0) or down on the thing (frame 1). Falls back to a bob when the art is missing. */
@@ -1822,8 +1856,7 @@ export class WorldScene extends Phaser.Scene {
     }
     const { key: k, flip } = found;
     if (!k) return this.faceFrame(down ? 0 : 2);
-    retex(this.player, k, down ? 1 : 0);
-    this.player.setFlipX(flip);
+    this.showPlayer(k, down ? 1 : 0, flip);
   }
 
   /** Redraw what depends on the state: bridges, camp, plants, dig spots. */
@@ -2197,8 +2230,7 @@ export class WorldScene extends Phaser.Scene {
     this.nextBlink = time + 3000 + Math.random() * 2000;
     const { key: k, flip } = this.playerFrame(s.facing, 'idle', this.lookOf(s));
     if (!k || (this.b.sprites[k]?.frames ?? 1) < 2) return;
-    retex(this.player, k, 1);
-    this.player.setFlipX(flip);
+    this.showPlayer(k, 1, flip);
     this.blinkUntil = time + 120;
   }
 
@@ -2239,8 +2271,7 @@ export class WorldScene extends Phaser.Scene {
     }
     if (!this.body.moving && !was && !turned && !moved) return;
     this.drawBody();
-    const walked = this.body.walked / ART_PX;
-    if (this.body.moving) this.faceFrame(strideFrame(walked % 1, Math.floor(walked), this.b.sprites[this.playerFrame(s.facing, 'walk', this.look).key]?.frames ?? 1));
+    if (this.body.moving) this.walkFrame();
     else this.faceFrame();
   }
 
@@ -2829,14 +2860,19 @@ export class WorldScene extends Phaser.Scene {
     this.busyMs = 0;
     this.placePlayer(from[0], from[1]);
     const { key: k, flip } = this.playerFrame('down');
-    retex(this.player, k, (this.b.sprites[k]?.frames ?? 1) >= 3 ? 1 : 0).setFlipX(flip);
-    // the eyes of a 16x24 body sit on its sixth row, three pixels apart
-    const top = this.player.y - this.player.displayHeight;
-    const eyes = [-3, 2].map((dx) => this.add.image(this.player.x + dx, top + 6, 'fx-cross').setOrigin(0.5).setDepth(this.player.depth + 0.5));
-    const baseY = this.player.y;
-    // the body's height in world units; the crop is in the texture's own pixels
-    const height = this.player.displayHeight;
+    const frames = this.b.sprites[k]?.frames ?? 1;
+    this.showPlayer(k, this.b.sprites[k]?.stride ? frames - 1 : frames >= 3 ? 1 : 0, flip);
+    // the body's height above the ground line in world units (a stride sheet has room below its feet); the crop is in the texture's own pixels
+    const height = this.player.displayHeight * this.player.originY;
     const back = 1 / baseOf(this.player);
+    // the eyes sit a quarter of the way down the body, three pixels apart: the sixth row of a 16x24 body, and on a
+    // stride sheet's figure a quarter down from its first opaque row to the ground line
+    const info = this.b.sprites[k];
+    const frameTop = this.player.y - this.player.displayHeight * this.player.originY;
+    const headTop = frameTop + (info?.stride ? this.figureTop(k, frames - 1) * baseOf(this.player) : 0);
+    const eyeY = info?.stride ? headTop + (this.player.y - headTop) / 4 : headTop + 6;
+    const eyes = [-3, 2].map((dx) => this.add.image(this.player.x + dx, eyeY, 'fx-cross').setOrigin(0.5).setDepth(this.player.depth + 0.5));
+    const baseY = this.player.y;
     this.tweens.addCounter({
       from: 0,
       to: 1,
@@ -2849,7 +2885,7 @@ export class WorldScene extends Phaser.Scene {
         // the part below the ground line is cut away as the body goes down
         this.player.setY(baseY + sunk).setCrop(0, 0, this.player.width, (height - sunk) * back);
         this.cutout?.setCrop(0, 0, this.player.width, (height - sunk) * back);
-        for (const eye of eyes) eye.setY(top + 6 + sunk).setVisible(sunk < 6);
+        for (const eye of eyes) eye.setY(eyeY + sunk).setVisible(sunk < 6);
       },
       onComplete: () => {
         for (const eye of eyes) eye.destroy();

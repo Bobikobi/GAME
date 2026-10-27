@@ -80,3 +80,26 @@ export function strideFrame(k: number, step: number, frames: number): number {
   if (k >= STRIDE) return 1;
   return step % 2 === 0 ? 0 : 2;
 }
+
+/** The part of a sprite entry the pose rule reads: a stride sheet names the art pixels one pose is walked for. */
+export interface StrideInfo {
+  frames: number;
+  stride?: { travel_mpx: number; anchor: [number, number] };
+}
+
+/**
+ * The pose of a distance-locked walk (tools/anim): the sheet's frames are its poses in order and, last, the standing
+ * pose, and the pose shown is the nearest to the distance walked, `round(walked / travel)` round the cycle (a pose is
+ * exact when the body is at it and out by half a pose at most before the next one: the foot is never more than
+ * half a pose from the ground). `walked` is the art pixels the feet have gone (Walker.walked).
+ */
+export function poseFrame(walked: number, travel: number, frames: number): number {
+  const poses = frames - 1;
+  if (poses < 1 || !(travel > 0)) return 0;
+  return Math.floor(Math.max(0, walked) / travel + 0.5) % poses;
+}
+
+/** The frame of a body at rest: the last of a stride sheet, `fallback` for a time-based one. */
+export function standingFrame(info: StrideInfo | undefined, fallback: number): number {
+  return info?.stride ? info.frames - 1 : fallback;
+}

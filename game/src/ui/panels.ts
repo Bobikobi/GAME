@@ -45,6 +45,7 @@ import { s1, s1Available } from '../net/s1';
 import { shopGroups } from '../shopstock';
 import { STALL_SLOT, canPlaceStall, directionOf, localMapState, mapPlaces } from '../places';
 import { say } from './dialog';
+import { standingFrame } from '../work';
 import { button, h, sprite } from './dom';
 import { mapSvg, placeKind } from './map';
 import type { Layer, UI } from './ui';
@@ -201,7 +202,7 @@ export function openBag(ui: UI): void {
   const figure = () => {
     const race = b.races[s.state.player.race] ?? Object.entries(b.races).sort(([x], [y]) => x.localeCompare(y))[0]?.[1];
     const ref = (s.state.player.look === 1 && race?.sprite_alt) || race?.sprite;
-    return sprite(b, ref, 3, 1);
+    return sprite(b, ref, 3, standingFrame(ref ? b.sprites[ref] : undefined, 1));
   };
   const pick = (id: string) => {
     selected = id;
