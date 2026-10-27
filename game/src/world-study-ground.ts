@@ -2,6 +2,7 @@
 import * as Phaser from 'phaser';
 import { WORLD_TILE_SIZE as TILE, worldStudyLayout, worldStudyMask, worldStudyPathDistance, worldStudyRegionInset } from './world-study-layout';
 import { worldStudyCanStand, type WorldStudyTreeFootprint } from './world-study-collision';
+import { worldStudyTreeFamily, worldStudyTreePlacement } from './world-study-tree-family';
 
 const assets = import.meta.glob('../../docs/design/frames/rich-world-expansion-2026-10-26/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 const banks = import.meta.glob('../../docs/design/frames/rich-river-kit-2026-10-25/bank-*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
@@ -18,7 +19,14 @@ export function preloadWorldStudyGround(scene: Phaser.Scene): void {
   scene.load.image(key('paving'), pavingUrl);
   scene.load.image(key('worn'), wornUrl);
   scene.load.image(key('sand'), sandUrl);
-  for (const name of ['meadow-a', 'meadow-b', 'meadow-c', 'path', 'woodland', 'oak']) {
+  for (const id of worldStudyTreeFamily.sceneAssets) {
+    const asset = worldStudyTreeFamily.assets.find(a => a.id === id);
+    if (!asset || asset.review.status !== 'approved') throw new Error(`Unapproved world-study tree: ${id}`);
+    const url = assets[`../../${asset.file}`];
+    if (!url) throw new Error(`Tree source is not in the study import set: ${asset.file}`);
+    scene.load.image(key(id), url);
+  }
+  for (const name of ['meadow-a', 'meadow-b', 'meadow-c', 'path', 'woodland']) {
     const entry = Object.entries(assets).find(([path]) => path.endsWith(`/${name}.png`));
     if (!entry) throw new Error(`Missing imported world material: ${name}`);
     scene.load.image(key(name), entry[1]);
@@ -121,14 +129,10 @@ export function createWorldStudyGround(scene: Phaser.Scene) {
   const place = (name: string, x: number, y: number, tree: boolean, variant: number) => {
     const plant = scene.add.image(x, y, key(name)).setOrigin(.5, 1).setDepth(y);
     if (tree) {
-      // Keep the trunk upright: mirror a branching silhouette, never rotate it to fake a new camera angle.
-      // Independent hash bits avoid the alternating rows of the placement lattice.
-      plant.setFlipX(Boolean((variant >>> 8) & 1));
-      const height = 320 + ((variant >>> 12) % 5) * 8;
-      const width = Math.round(height * (192 / 320) * (1 + ((variant >>> 17) % 3) * .035));
-      plant.setDisplaySize(width, height);
-      // Roots occupy a shallow patch of ground; leaves and upright bark are an overhang.
-      treeFootprints.push({ x, y: y - 14 * height / 320, radiusX: width * .17, radiusY: 18 * height / 320 });
+      const placement = worldStudyTreePlacement(variant, x, y);
+      plant.setTexture(key(placement.id)).setOrigin(placement.originX, placement.originY);
+      plant.setFlipX(placement.flipX).setDisplaySize(placement.width, placement.height);
+      treeFootprints.push(placement.footprint);
     }
     if (!tree) plant.setDisplaySize(name === 'grass' ? 38 : 48, name === 'grass' ? 38 : 48);
     if (!tree && variant % 2) plant.setFlipX(true);

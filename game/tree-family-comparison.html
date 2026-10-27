@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LoomVale — היער, לפני ואחרי</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#15221c;color:#edf0df;font:18px/1.6 system-ui}main{max-width:1280px;margin:auto;padding:24px}h1{font-size:clamp(24px,4vw,38px);margin:0}p{max-width:850px;color:#c7d3c1}a{color:#c3e7a7}nav{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0}button,a.button{font:inherit;border:1px solid #889b73;border-radius:6px;padding:8px 16px;background:#263d2d;color:#edf0df;cursor:pointer;text-decoration:none}button[aria-pressed=true]{background:#507247}.compare{position:relative;direction:ltr;max-width:1050px;margin:auto;border:1px solid #83936d;border-radius:8px;overflow:hidden;background:#21392b}.compare img{display:block;width:100%;height:auto}.after{position:absolute;inset:0;clip-path:inset(0 0 0 50%)}.line{position:absolute;top:0;bottom:0;left:50%;width:2px;background:#f6eec4;pointer-events:none}.label{position:absolute;top:22%;padding:5px 12px;background:#15221cee;color:white;border-radius:4px}.left{left:12px}.right{right:12px}label{display:block;margin:18px auto;max-width:1050px}input{display:block;width:100%;accent-color:#b1d58c;direction:ltr}.note{font-size:15px;color:#adbea5}ul{padding-right:22px}@media(max-width:600px){main{padding:12px}.label{font-size:13px;padding:3px 6px}nav{gap:6px}button,a.button{padding:6px 10px;font-size:16px}}
+</style>
+<main>
+<h1>LoomVale · אזור היער — לפני ואחרי</h1>
+<p>אותו אזור ואותו גודל צילום. לפני: עצים משתי שפות ציור. אחרי: משפחה אחת סביב האלון המקורי שהעדפת, עם הבדלי גודל והיפוך כיוון.</p>
+<nav aria-label="תצוגת השוואה"><button id="before" aria-pressed="false">לפני</button><button id="both" aria-pressed="true">השוואה</button><button id="after" aria-pressed="false">אחרי</button><a class="button" href="/world-study.html">כניסה להדגמה החיה</a></nav>
+<div class="compare">
+<img id="before-image" alt="לפני: עצים רחבים בעלי אשכולות גדולים לצד האלונים המפורטים">
+<div class="after"><img id="after-image" alt="אחרי: עצי האלון המקוריים בשפה אחידה לאורך השביל"></div>
+<div class="line"></div><span class="label left">לפני</span><span class="label right">אחרי</span>
+</div>
+<label>גררו להשוואה באותה נקודה<input id="split" type="range" min="0" max="100" value="50" aria-label="חלוקת לפני ואחרי"></label>
+<ul><li>העצים הרחבים שנדחו הוצאו מהסצנה ונשמרו במאגר לעיבוד חוזר.</li><li>האלון המקורי הוא העוגן. הצללים, החפיפה והחסימה ליד הגזע נשמרים בהדגמה.</li><li>כלי הבדיקה החדש מזהה חריגות בצורת העץ ובצפיפות הפרטים ומונע בחירה בנכס שנדחה.</li></ul>
+<p class="note">תצלומי לפני ואחרי שמורים מהעבודה על היער; זו הדגמת התיקון הקיים, לא תוצאה חדשה של סוכן הגיאוגרפיה. הכפתורים בסרגל העליון השתנו בין הצילומים. בדיקות הקוד נוספו כעת, והמצב הנוכחי נבדק שוב בדפדפן.</p>
+<p><a href="/art-review/rich-world-oak/index.html">פתיחת דוח מדידות העצים</a></p>
+</main>
+<script type="module">
+import beforeUrl from '../docs/design/frames/rich-world-trees-2026-10-26/desktop-forest.png?url';
+import afterUrl from '../docs/design/frames/rich-world-trees-2026-10-26/desktop-forest-unified.png?url';
+document.getElementById('before-image').src=beforeUrl;
+document.getElementById('after-image').src=afterUrl;
+const slider=document.querySelector('#split');
+function show(value, selected){value=Number(value);slider.value=String(value);document.querySelector('.after').style.clipPath=`inset(0 0 0 ${value}%)`;document.querySelector('.line').style.left=`${value}%`;document.querySelector('.left').hidden=value===0;document.querySelector('.right').hidden=value===100;for(const id of ['before','both','after'])document.getElementById(id).setAttribute('aria-pressed',String(id===selected));}
+slider.addEventListener('input',()=>show(slider.value,'both'));
+document.getElementById('before').addEventListener('click',()=>show(100,'before'));
+document.getElementById('both').addEventListener('click',()=>show(50,'both'));
+document.getElementById('after').addEventListener('click',()=>show(0,'after'));
+</script>
+</html>
