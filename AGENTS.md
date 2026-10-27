@@ -42,7 +42,7 @@ Learned on the first three days of building, each line from a real cost.
 | `pnpm verify` | Before handing work back. No e2e inside it. |
 | `pnpm values` | Core maintainers only, when an anchor must move ([CONTRIBUTING.md](CONTRIBUTING.md)). After a merge, take `develop`'s `content/values.lock.json` and regenerate it instead of merging by hand. |
 | prop-from-ref skill, `pnpm kit:gen`, `pnpm kit:import` | A sprite, prop or tile from a picture outside the game: follow [docs/art/PROP_FROM_REF.md](docs/art/PROP_FROM_REF.md). `kit:gen` calls the importer itself; run `kit:import` alone to bring a finished picture onto the grid. CI refuses a pull request that adds a picture under `content/kit/` unless its body has a line `Source: <where it came from>`. |
-| `pnpm e2e` | Last in a proving run, after `pnpm verify`, one browser at a time; CI runs it on every pull request. |
+| `pnpm e2e` | Last in a proving run, after `pnpm verify`, one browser at a time; CI runs it on every pull request, skipped by CI on a docs-only pull request. |
 | `pnpm loop` | The community loop, run by `.github/workflows/loop.yml` (hourly and on pull request events). By hand only with `--dry-run`, and it needs `GITHUB_TOKEN` and `GITHUB_REPOSITORY`. |
 
 - Read [docs/design/STORY.md](docs/design/STORY.md) before writing lore, a line about the past, a new character or an extension's setting. The narrator never states the past, and every claim about it has a speaker (S1-S6 there).

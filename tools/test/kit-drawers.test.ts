@@ -7,7 +7,7 @@ import { afterAll, describe, expect, test } from 'vitest';
 
 import {
   CLIP_TOKENS, KAGGLE_DEFAULTS, KAGGLE_NEGATIVE, KAGGLE_POST_SCALE, KAGGLE_RECIPES, KAGGLE_RECIPE_NAMES, KAGGLE_WAVE_MARK, LOCAL_DEFAULTS, LOCAL_NEGATIVE, clipTokenEstimate, drawWaveWithKaggle, drawWithGemini, drawWithKaggle, drawWithLocal, geminiAnswer, geminiRequest,
-  kaggleCanvas, kaggleFileName, kaggleFromPrompt, kaggleSentencePrompt, kaggleInferenceSteps, kagglePrompt, kaggleSubject, pngSize, sdClause, kaggleKernelScript, kaggleManifest, kaggleMetadata, kaggleOwner, kagglePushAnswer, kaggleSettings, kaggleStatus, kaggleWave,
+  kaggleCanvas, kaggleCanvasFor, kaggleFileName, kaggleFromPrompt, kaggleSentencePrompt, kaggleInferenceSteps, kagglePrompt, kaggleSubject, pngSize, sdClause, kaggleKernelScript, kaggleManifest, kaggleMetadata, kaggleOwner, kagglePushAnswer, kaggleSettings, kaggleStatus, kaggleWave,
   localHistory, localPrompt, localSettings, localWorkflow, parseDrawer, promptForModel, splitWave,
 } from '../src/kit/drawers.js';
 
@@ -222,6 +222,41 @@ describe('the kaggle route', () => {
     header.writeUInt32BE(448, 20);
     expect(pngSize(header)).toEqual({ width: 320, height: 448 });
     expect(pngSize(Buffer.from('tree'))).toBeNull();
+  });
+
+  test('from the prompt alone the canvas takes the asked size, image to image it keeps the reference shape', () => {
+    const old = { width: 32, height: 32 };
+    // the three entries of the 27.10 proof, each asked tall and each referenced by a small square-ish sprite
+    expect(kaggleCanvasFor(old, { width: 192, height: 320 }, 1024, true)).toEqual({ width: 1024, height: 1728 });
+    expect(kaggleCanvasFor({ width: 48, height: 48 }, { width: 192, height: 320 }, 1024, true)).toEqual({ width: 1024, height: 1728 });
+    expect(kaggleCanvasFor({ width: 16, height: 32 }, { width: 64, height: 160 }, 1024, true)).toEqual({ width: 1024, height: 2048 });
+    expect(kaggleCanvasFor(old, { width: 128, height: 128 }, 1024, true)).toEqual({ width: 1024, height: 1024 });
+    // a wide ask is drawn wide
+    expect(kaggleCanvasFor(old, { width: 256, height: 128 }, 512, true)).toEqual({ width: 1024, height: 512 });
+    // image to image: today's behaviour, the reference's shape
+    expect(kaggleCanvasFor(old, { width: 192, height: 320 }, 512, false)).toEqual({ width: 512, height: 512 });
+    expect(kaggleCanvasFor({ width: 32, height: 48 }, { width: 192, height: 320 }, 512, false)).toEqual(kaggleCanvas({ width: 32, height: 48 }, 512));
+    // from the prompt with no asked size falls back to the reference
+    expect(kaggleCanvasFor({ width: 32, height: 48 }, null, 512, true)).toEqual({ width: 512, height: 768 });
+  });
+
+  test('the wave gives a prompt-only request the asked canvas and an image to image one the reference canvas', () => {
+    const png = Buffer.alloc(24);
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(png);
+    png.writeUInt32BE(400, 16);
+    png.writeUInt32BE(400, 20);
+    const request = { name: 'house', prompt: 'a house', png, seed: 7, grid: { width: 192, height: 320 } };
+    const canvas = (env: Record<string, string>): [number, number] => {
+      const r = (kaggleWave([request], kaggleSettings(env)).requests as { width: number; height: number }[])[0];
+      return [r?.width ?? 0, r?.height ?? 0];
+    };
+    expect(canvas({ KAGGLE_MODEL: 'qwen' })).toEqual([1024, 1728]);
+    expect(canvas({ KAGGLE_MODEL: 'sd15' })).toEqual([512, 512]);
+    expect(canvas({ KAGGLE_MODEL: 'sd15', KAGGLE_DENOISE: '1' })).toEqual([512, 832]);
+  });
+
+  test('the negative prompt names the light the model paints on the background', () => {
+    for (const word of ['glow', 'vignette', 'light rays', 'halo']) expect(KAGGLE_NEGATIVE).toContain(word);
   });
 
   test('the schedule is stretched so image to image runs the local step count', () => {

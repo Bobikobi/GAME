@@ -1,9 +1,10 @@
 name: CI
 
 on:
-  # every pull request runs the job, docs-only included: "Check, test, build and play" is a required
+  # every pull request starts the workflow, docs-only included: "Check, test, build and play" is a required
   # check on main and develop, and a path filter here would leave it "Expected" and block the merge
-  # (docs/team/PLATFORM.md 9.2). A push of prose only still runs no build.
+  # (docs/team/PLATFORM.md 9.2). A docs-only pull request skips the browser jobs from inside (job "The browser
+  # test groups" decides, the gate accepts it); a push of prose only still runs no build.
   pull_request:
   push:
     branches: [main, develop]
@@ -108,22 +109,39 @@ jobs:
         run: pnpm exec vitest run server/test/sim.test.ts server/test/boards.test.ts
 
   # the groups of browser tests and each one's timeout, read from game/e2e/run.ts so a group added
-  # there is played here without a change to this file (plain node 24 runs it: it imports only node)
+  # there is played here without a change to this file (plain node 24 runs it: it imports only node);
+  # and whether the pull request is docs only (tools/src/docs-only.ts), in which case the browser jobs
+  # below are skipped. This job always runs and always succeeds, so the gate has something to read.
   e2e-groups:
     name: The browser test groups
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     outputs:
       groups: ${{ steps.list.outputs.groups }}
+      docs_only: ${{ steps.kind.outputs.docs_only }}
     steps:
+      # two commits: on a pull request the checkout is the merge commit and HEAD^1 is the tip of the base
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          sparse-checkout: game/e2e
+          sparse-checkout: |
+            game/e2e
+            tools/src
+          fetch-depth: 2
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
       - id: list
         run: echo "groups=$(node game/e2e/run.ts --list)" >> "$GITHUB_OUTPUT"
+      # the changed files are printed to the log with their kind; a diff that cannot be read fails the job
+      # (pipefail), which fails the gate, and never reads as docs only
+      - id: kind
+        run: |
+          set -o pipefail
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            git diff -z --no-renames --name-only HEAD^1 HEAD | node tools/src/docs-only.ts | tee -a "$GITHUB_OUTPUT"
+          else
+            echo "docs_only=false" | tee -a "$GITHUB_OUTPUT"
+          fi
 
   # the browser tests, one job per group beside the checks: the run lasts as long as the phone opening,
   # not the sum of every script. A script that fails is played once more alone (game/e2e/run.ts), and
@@ -132,6 +150,8 @@ jobs:
   e2e:
     name: Play in Chrome (${{ matrix.group }})
     needs: e2e-groups
+    # nothing the game builds or plays changed in a docs-only pull request: skipped, and the gate below says so
+    if: needs.e2e-groups.outputs.docs_only != 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ matrix.minutes }}
     strategy:
@@ -173,6 +193,7 @@ jobs:
 
   # the required check, by this exact name: branch protection on main and develop and the landing
   # scripts read it. Green only when every job above passed; a failed, skipped or cancelled one fails it.
+  # The one exception: on a docs-only pull request the browser jobs must be skipped (and then only they are).
   verify:
     name: Check, test, build and play
     needs: [checks, e2e-groups, e2e]
@@ -185,4 +206,9 @@ jobs:
           NEEDS: ${{ toJSON(needs) }}
         run: |
           echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
-          echo "$NEEDS" | jq -e 'length == 3 and all(.[]; .result == "success")' > /dev/null
+          if [ "$(echo "$NEEDS" | jq -r '.["e2e-groups"].outputs.docs_only')" = true ]; then
+            echo "docs only: the browser tests are skipped, the checks and the group list must have passed"
+            echo "$NEEDS" | jq -e 'length == 3 and .checks.result == "success" and .["e2e-groups"].result == "success" and .e2e.result == "skipped"' > /dev/null
+          else
+            echo "$NEEDS" | jq -e 'length == 3 and all(.[]; .result == "success")' > /dev/null
+          fi
