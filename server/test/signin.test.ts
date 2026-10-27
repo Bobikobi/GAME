@@ -808,7 +808,7 @@ describe('the limits, the sweep and the retried sign-up (the 27.10 review)', () 
     const other = new Browser(w.base, APP);
     w.google.claims = (nonce, now) => ({ ...new FakeGoogle().claims(nonce, now), sub: 'another', email: 'other@example.com' });
     await googleSignIn({ ...w, browser: other });
-    const phone = new LocalPhone(bundle, 77);
+    const phone = new LocalPhone(bundle, widenSeed(77));
     await playOpening(phone, STARTS[1]);
     const replays = vi.mocked(takeOpening);
     replays.mockClear();
