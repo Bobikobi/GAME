@@ -110,8 +110,8 @@ export async function playOpening(bundle: Bundle, player: Player, start: Start):
     else await player.dig(spot[0]);
   };
 
-  // the explorer's senses answer first: the keystone waits for the glint's axe
-  if (start.starter === 'core/explorer') await ownTask();
+  // the keystone waits for the start's own first task: the explorer's glint, the forager's herbs over the stone
+  if (start.starter !== 'core/digger') await ownTask();
 
   // the taught strike: one keystone in the shallows mends the bridge
   const [keystone] = instancesOf(bundle, 'core/keystone');
@@ -120,7 +120,7 @@ export async function playOpening(bundle: Bundle, player: Player, start: Start):
     throw new Error('The keystone was gathered but not discovered.');
   }
 
-  if (start.starter !== 'core/explorer') await ownTask();
+  if (start.starter === 'core/digger') await ownTask();
 
   await player.actNear(player.slot('core/old-bridge'), (tile) => ({ t: 'restore', restore: 'core/old-bridge', at: tile }));
 

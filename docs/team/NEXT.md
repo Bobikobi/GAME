@@ -509,11 +509,11 @@ f) **Luck and the ledger on the server** (`feat/server-luck`). The draws `draw(s
 g) **The simulated player in CI and the verified boards** (`feat/server-sim`). A script plays a starter's whole opening, the first expedition and the first sale through the real server in CI (against the service container), and the run must reach the same state as `replay` on the laptop. The boards read only the verified log: a score that did not replay is not posted.
 h) **Provisioning and cutover** (docs plus the owner's gates; the builder prepares everything and executes nothing alone). `deploy/RUNBOOK.md` is the runbook, with a gate per step; each is three lines to the owner first:
    1. Read-only inventory of the box (containers, ports, nginx sites, disk, RAM) written into the runbook.
-   2. A new nginx site file for the game's name only, `nginx -t` first, reload only after the test; the other product's sites are not edited. The hostname and its DNS record are the owner's to choose and add.
+   2. A new nginx site file for the game's name only, `nginx -t` first, reload only after the test; the other product's sites are not edited. The hostname and its DNS record are the owner's to choose and add. The same file serves the game's build as files at the root of that name and proxies the API's paths, so the game and its API are one origin (DECISIONS 2026-10-27, "One origin"); the site's `/play/` stays the demo.
    3. The two containers with their caps and their own database user; the database is not reachable from outside the box.
    4. The nightly backup off the box with a restore test run once on a scratch database.
    5. The OAuth apps' redirect addresses and the mail sender.
-   6. The cutover: a build whose client points at the new host, behind a flag, tried by the owner on the preview first.
+   6. The cutover: the build on the box names its own origin (`VITE_GAME_SERVER` set and empty), so the flag is the site's door pointing at the name, tried by the owner on the preview first.
 
 - Before every proving run (AGENTS.md): grep the tests for every string the change renamed, fix them in one pass, then the single test file, then `pnpm verify`, and push: CI runs the opening e2e. A local e2e only to debug a red run, one heavy job at a time on a shared machine.
 - Measurable at the end:
@@ -524,6 +524,7 @@ h) **Provisioning and cutover** (docs plus the owner's gates; the builder prepar
   - A memory cap shows in `docker stats` for both game containers and the other product's containers are untouched (their image ids and uptimes unchanged).
   - With the wire cut for 10 s the client takes no input and, once back, the state equals the server's.
   - The sign-up asks for a name, a full date of birth and the one-account agreement, and refuses a player under 13 or under the country's higher age (DECISIONS 2026-10-21, the age-gate entry).
+  - The sign-in e2e (`game/e2e/signin.ts`, group `map-and-shops`) drives the real `createSignIn` on one origin in headless Chrome (`game/test/signin-box.ts`): the email link page's own POST is accepted, its 303 reaches the game's `#signin=signup`, the game's `GET /state` and `POST /action` carry the session cookie, and the same token posted from another origin is refused with the link unspent (DECISIONS 2026-10-27).
 - For the owner: the wording of the sign-up and the pause box; whether the pause on a dropped line feels too sharp on a real phone; and the three-line gates, which he answers one by one.
 
 ## 19. The first map by hand, and a generator that sets the difficulty

@@ -11,6 +11,10 @@ const STAGING_ONLY = 'staging-only';
 /** hosts a browser treats as secure over plain http, so a laptop can run the session mode */
 const LOOPBACK = ['localhost', '127.0.0.1', '[::1]'];
 
+function isLoopback(origin: string): boolean {
+  return LOOPBACK.includes(new URL(origin).hostname);
+}
+
 /** A refusal to start: main.ts prints it and exits non-zero, before the API listens or opens a database. */
 export class BootError extends Error {}
 
@@ -18,7 +22,11 @@ export class BootError extends Error {}
 export interface SessionConfig {
   /** the origin this API answers on (the OAuth redirect and the email link are built on it) */
   publicOrigin: string;
-  /** the origin the game is served from */
+  /**
+   * the origin the game is served from: the public origin itself, since the game's build sits beside the API
+   * behind one nginx name (finding 4 of the 27.10 review). It differs only on a laptop, where the dev client
+   * and the API are two loopback ports.
+   */
   appOrigin: string;
   /** absent when neither variable is set: Google then answers "not open yet" */
   google?: { clientId: string; clientSecret: string };
@@ -79,7 +87,13 @@ function sessionMode(env: NodeJS.ProcessEnv): Auth {
     throw new BootError('ALLOW_DEV_HEADER is set with AUTH_MODE=session: the header mode and sign-in never run together. Remove it.');
   }
   const publicOrigin = origin(env, 'PUBLIC_ORIGIN');
-  const appOrigin = origin(env, 'APP_ORIGIN');
+  // The game is served beside the API, on the same origin: the session cookie is __Host- and same-site, the
+  // API sends no CORS headers, and the client fetches with credentials: 'same-origin'. So APP_ORIGIN is the
+  // public origin, and may be left unset. A second origin is a laptop's dev client only: two loopback ports.
+  const appOrigin = env.APP_ORIGIN ? origin(env, 'APP_ORIGIN') : publicOrigin;
+  if (appOrigin !== publicOrigin && !(isLoopback(publicOrigin) && isLoopback(appOrigin))) {
+    throw new BootError(`APP_ORIGIN=${appOrigin} is not PUBLIC_ORIGIN=${publicOrigin}: the game is served beside the API on one origin (the session cookie never crosses origins and the API sends no CORS headers). Leave APP_ORIGIN unset; only a loopback pair, a laptop's dev client beside its API, may differ.`);
+  }
   const clientId = env.GOOGLE_CLIENT_ID ?? '';
   const clientSecret = env.GOOGLE_CLIENT_SECRET ?? '';
   if ((clientId === '') !== (clientSecret === '')) {
@@ -96,12 +110,12 @@ function sessionMode(env: NodeJS.ProcessEnv): Auth {
   const google = clientId === '' ? undefined : { clientId, clientSecret };
   const countryHeader = headerName(env, 'COUNTRY_HEADER', 'X-Country');
   const addressHeader = headerName(env, 'CLIENT_ADDRESS_HEADER', 'X-Real-IP');
-  if (addressHeader === undefined && !LOOPBACK.includes(new URL(publicOrigin).hostname)) {
+  if (addressHeader === undefined && !isLoopback(publicOrigin)) {
     throw new BootError('CLIENT_ADDRESS_HEADER is not set: behind nginx every request comes from nginx, so the sign-in limits would count all players as one. Set it to the header nginx fills, X-Real-IP.');
   }
   return {
     mode: 'session',
-    notice: `AUTH_MODE=session: players are who their session cookie says; sign-in by email (links to the ${mailer} mailer${mailer === 'log' ? ', staging only' : ''})${google ? ' and Google' : ''}, the game at ${appOrigin}; the age limit ${countryHeader ? `by the country in ${countryHeader}` : 'is the highest (no COUNTRY_HEADER)'}; limits by ${addressHeader ?? 'the socket address'}.`,
+    notice: `AUTH_MODE=session: players are who their session cookie says; sign-in by email (links to the ${mailer} mailer${mailer === 'log' ? ', staging only' : ''})${google ? ' and Google' : ''}, ${appOrigin === publicOrigin ? 'the game beside it' : `the game at ${appOrigin}`}; the age limit ${countryHeader ? `by the country in ${countryHeader}` : 'is the highest (no COUNTRY_HEADER)'}; limits by ${addressHeader ?? 'the socket address'}.`,
     session: { publicOrigin, appOrigin, google, mailer: mailer as MailerName, countryHeader, addressHeader },
   };
 }
