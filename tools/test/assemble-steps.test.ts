@@ -144,8 +144,8 @@ describe('a node that opens after a quest', () => {
   const path = join(root, 'core', 'resources', 'keystone.json');
   const read = () => runCheck(root).issues.filter((i) => i.level === 'error').map((i) => `${i.where}: ${i.message}`);
   const gate = (id: string) => {
-    const f = JSON.parse(readFileSync(path, 'utf8')) as { node: { opens_after?: string } };
-    f.node.opens_after = id;
+    const f = JSON.parse(readFileSync(path, 'utf8')) as { node: { opens_after?: { quest: string }[] } };
+    f.node.opens_after = [{ quest: id }];
     writeFileSync(path, JSON.stringify(f, null, 2));
   };
 
@@ -153,6 +153,6 @@ describe('a node that opens after a quest', () => {
     gate('core/fix-the-bridge');
     expect(read()).toEqual([]);
     gate('core/nowhere');
-    expect(read()).toContainEqual('node.opens_after: no quest "core/nowhere"');
+    expect(read()).toContainEqual('node.opens_after.0.quest: no quest "core/nowhere"');
   });
 });

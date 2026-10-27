@@ -8,12 +8,14 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { TREE_TINTS } from '@game/schema';
 import { CORE_PALETTE } from '../src/kit/palette';
 import { REPO_ROOT } from '../src/load';
 
 const UI = join(REPO_ROOT, 'game', 'src', 'ui');
 const theme = readFileSync(join(UI, 'theme.css'), 'utf8');
 const kit = readFileSync(join(UI, 'kit.css'), 'utf8');
+const tree = readFileSync(join(UI, 'tree.css'), 'utf8');
 const style = readFileSync(join(REPO_ROOT, 'game', 'src', 'style.css'), 'utf8');
 
 /** The tokens of theme.css's :root, name to hex. */
@@ -43,13 +45,23 @@ describe('the kit theme', () => {
     }
   });
 
-  it('has no scrims, gradients or rounded corners, here or in the Field Kit rules', () => {
+  it('has no scrims, gradients or rounded corners, here, in the Field Kit rules or on the skill tree', () => {
     const fieldKit = kit.split('/* ------------------------------------------------------------ the map */')[0]!;
     expect(fieldKit.length).toBeLessThan(kit.length);
-    for (const css of [theme, fieldKit]) {
+    for (const css of [theme, fieldKit, tree]) {
       expect(css).not.toMatch(/rgba?\(|hsla?\(|gradient\(|border-radius:\s*[1-9]/);
     }
     expect(fieldKit, 'the Field Kit names its colours through the theme').not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+    expect(tree, 'the skill tree names its colours through the theme').not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+  });
+
+  it("gives every school colour the content may name a fill and a name colour", () => {
+    const t = tokens();
+    for (const tint of TREE_TINTS) {
+      expect(t[`--kit-tree-${tint}`], tint).toBeDefined();
+      expect(t[`--kit-tree-${tint}-ink`], tint).toBeDefined();
+      expect(tree).toContain(`.tint-${tint} {`);
+    }
   });
 
   it('reads at 4.5:1 or more: each text on the ground it is drawn on', () => {
@@ -65,6 +77,8 @@ describe('the kit theme', () => {
       ['--kit-plate-ink', '--kit-wood'],
       ['--kit-brass', '--kit-plate'],
       ['--kit-ink', '--kit-brass'],
+      ['--kit-paper', '--kit-tree-trunk'],
+      ...TREE_TINTS.map((tint): [string, string] => [`--kit-tree-${tint}-ink`, '--kit-plate']),
     ];
     for (const [text, ground] of pairs) {
       expect(t[text], text).toBeDefined();

@@ -196,6 +196,33 @@ Left open:
   nothing else; FLUX's purple ground shadows are partly kept, and a wider key ate FLUX's reddish earth in a
   trial, so it stays narrow.
 
+## The pick feeds the next round
+
+The owner's pick used to live in the owner's head and in DECISIONS prose, so every round of "best of three" began
+from three blind seeds. Two small pieces close the loop, and neither adds a second record of a pick:
+
+- **The picks manifest is the record.** `tools/kit-gen/rich-wave.manifest.jsonl` has one line per picked image
+  (`picked`, `drawer`, `seed`, `model_key`, `round`). `kit:gen` reads it (`--picks <manifest.jsonl>`, default that
+  file; `--no-picks` ignores it) and draws an entry that has a pick again from the picked draw's **seed** (kaggle and
+  local) and, on kaggle, its **recipe** (`model_key`: `sdxl`, `flux`, `qwen`). A recipe set by `KAGGLE_MODEL` or
+  `KAGGLE_RECIPE` wins over the picked one; the seed still carries. A seed means something only on the route that
+  drew it, so a pick from another route changes nothing. An entry with no pick is drawn as before, and entries
+  that pick different recipes go up in separate kernel runs (a kernel loads one model). `--dry` prints a
+  `pick of <date>: seed, recipe` line for each entry that carries one. The manifest itself is never written by
+  tools: `content/kit/core/kit.json` cites its lines by number.
+- **One run with the pick, one with a new seed.** Run the wave once as it is (the picked seed is drawn again, a
+  safe baseline), then once with `--no-picks` and a new `KAGGLE_SEED`, and compare the two in the gallery: two
+  draws replace three blind seeds. A new winner is recorded in the picks manifest the way the earlier ones were.
+- **The rule of two.** `pnpm kit:notes --runs <run manifest.jsonl>... <spec.json>` reads the manifests of earlier
+  rounds (`.scratch/kit-gen/<spec>/manifest.jsonl`). A warning that came back on two or more draws of one entry
+  (numbers ignored) becomes a clause in that entry's `notes`; a warning seen once is noise and is not copied. The
+  importer's two grid warnings become the advice they end in (`more fine detail`, `fewer, bigger details`); any other
+  warning is kept as it is. Existing notes stay, nothing is added twice, and a spec with nothing new is not
+  rewritten. Read the notes before the next run: a warning that is a known false alarm on a recipe (the coarse-grid
+  one on `flux` and `qwen`, above) is not worth a clause, and the spec is yours to edit.
+- **Notes ride last.** Every prompt builder (`buildPrompt`, `kagglePrompt`, `kaggleSentencePrompt`, `localPrompt`)
+  appends `notes` after the entry's own `detail`, so a prompt cut to the 77-token window loses them first.
+
 ## What is free, honestly
 
 The `local` route: your own machine, open weights, no key, no terms on the request. Its price is

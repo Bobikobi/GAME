@@ -74,31 +74,36 @@ describe('opening sequence', () => {
       const ownTask = () => {
         expect(planner.state.player.quests[own]).toBe('active');
         const [spot] = instancesOf(bundle, place);
-        if (spot![1].kind === 'resource') planner.gather(spot![0]);
-        else planner.dig(spot![0]);
+        const events = spot![1].kind === 'resource' ? planner.gather(spot![0]) : planner.dig(spot![0]);
         expect(planner.state.player.quests[own]).toBe('done');
+        return events;
       };
 
       // the taught strike: one keystone in the shallows mends the bridge
       const keystones = instancesOf(bundle, 'core/keystone');
       expect(keystones).toHaveLength(1);
-      // in the north meadow the senses answer first: the keystone waits for the glint's axe
-      if (pocket === 'core/north-meadow') {
+      // the keystone waits for the pocket's own first task: the glint's axe in the north meadow, the herbs over it on the west bank
+      const waits: Record<string, string> = {
+        'core/north-meadow': 'Something else catches the light first.',
+        'core/west-bank': 'Herbs grow thick around the stone. Clear them first.',
+      };
+      let firstTask: GameEvent[] = [];
+      if (waits[pocket]) {
         const key = keystones[0]![1];
         const before = JSON.stringify(planner.state);
         const near = required(bfsNear(bundle, planner.state.player, planner.state.player.at, { x: key.x, y: key.y, w: 1, h: 1 }), 'The keystone is out of reach.');
         const tried = step(bundle, planner.state, { t: 'gather', node: keystones[0]![0], grade: 3, at: near.at(-1)! }, Math.max(planner.state.tick, planner.state.player.busyUntil));
-        expect(tried).toEqual({ ok: false, error: 'Something else catches the light first.' });
+        expect(tried).toEqual({ ok: false, error: waits[pocket] });
         expect(JSON.stringify(planner.state)).toBe(before);
-        ownTask();
+        firstTask = ownTask();
       }
       const strike = planner.gather(keystones[0]![0]);
       expect(strike).toContainEqual({ e: 'discover', item: 'core/keystone' });
-      // the first level comes with the first strike, and a point to spend now
-      expect(strike).toContainEqual({ e: 'level', profession: 'core/foraging', level: 2 });
+      // the first level comes with the first pick or strike (the forager's herbs come first), and a point to spend now
+      expect(pocket === 'core/west-bank' ? firstTask : strike).toContainEqual({ e: 'level', profession: 'core/foraging', level: 2 });
       expect(planner.state.player.bag['core/keystone']).toBe(1);
 
-      if (pocket !== 'core/north-meadow') ownTask();
+      if (!waits[pocket]) ownTask();
 
       const known = [...planner.state.player.recipes];
       const bridge = required(findSlot(bundle.map, 'core/old-bridge'), 'The bridge slot is missing.');

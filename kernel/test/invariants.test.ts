@@ -268,6 +268,11 @@ function openingLog(): { a: Action; tick: number }[] {
     state = result.state;
   };
   append({ t: 'start', starter: 'core/forager', name: 'Replay' }, 0);
+  // the forager's herbs over the keystone come first: the stone waits for that pick
+  const [herb, herbSpot] = Object.entries(bundle.instances).filter(([, instance]) => instance.source === 'core/bank-herbs').sort(([a], [b]) => a.localeCompare(b))[0]!;
+  const near = nearTile(state, { x: herbSpot.x, y: herbSpot.y, w: 1, h: 1 });
+  if (!near) throw new Error(`No path to ${herb}.`);
+  append({ t: 'gather', node: herb, grade: 3, at: near }, state.player.busyUntil);
   const stones = Object.entries(bundle.instances)
     .filter(([, instance]) => instance.source === 'core/keystone')
     .sort(([a], [b]) => a.localeCompare(b));
@@ -289,7 +294,8 @@ function digState(seed: number): State {
   const state = result.state;
   state.player.bag['core/trowel'] = 3;
   state.player.attrs.might = 100;
-  state.player.restored = ['core/old-bridge'];
+  // the gate's digs lie inside the night place, whose one way in is the arch (DECISIONS 2026-10-16)
+  state.player.restored = ['core/old-bridge', 'core/arch-way'];
   return state;
 }
 
