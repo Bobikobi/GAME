@@ -8,6 +8,7 @@
   "school": {
     "name": "Foraging",
     "profession": "core/foraging",
+    "tint": "green",
     "nodes": [
       {
         "id": "quick-fingers",

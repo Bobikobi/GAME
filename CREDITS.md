@@ -30,7 +30,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - A whole one (quest) - `content/core/quests/a-whole-one.json`
 - The slid bank (quest) - `content/core/quests/buried-axe.json`
 - A fire across the river (quest) - `content/core/quests/first-fire.json`
-- First pickings (quest) - `content/core/quests/first-pickings.json`
+- What holds the keystone (quest) - `content/core/quests/first-pickings.json`
 - Mend the bridge (quest) - `content/core/quests/fix-the-bridge.json`
 - A glint by the bridge (quest) - `content/core/quests/glint-by-the-bridge.json`
 - Herbs for Pell (quest) - `content/core/quests/herbs-for-pell.json`
