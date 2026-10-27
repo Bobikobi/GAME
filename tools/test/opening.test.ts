@@ -85,7 +85,7 @@ describe('opening sequence', () => {
       // the keystone waits for the pocket's own first task: the glint's axe in the north meadow, the herbs over it on the west bank
       const waits: Record<string, string> = {
         'core/north-meadow': 'Something else catches the light first.',
-        'core/west-bank': 'Herbs grow thick over the stone. Clear them first.',
+        'core/west-bank': 'Herbs grow thick around the stone. Clear them first.',
       };
       let firstTask: GameEvent[] = [];
       if (waits[pocket]) {

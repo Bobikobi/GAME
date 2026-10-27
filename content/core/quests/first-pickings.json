@@ -8,7 +8,7 @@
   "quest": {
     "pocket": "core/west-bank",
     "type": "investigation",
-    "summary": "The bridge's missing stone will not come free. Something grows thick over it in the shallows. Look closer, and pick what you find.",
+    "summary": "The bridge's missing stone will not come free. Something grows thick around it on the bank. Look closer, and pick what you find.",
     "steps": [
       {
         "kind": "bring",

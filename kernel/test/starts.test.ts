@@ -180,7 +180,7 @@ describe('the keystone waits for one quest per wake pocket (opens_after)', () =>
   test('the west bank is refused with a line that points at the herbs, until the herbs are picked', () => {
     const s = pickUpGround(started('core/west-bank'));
     const refused = strike(s);
-    expect(refused).toEqual({ ok: false, error: 'Herbs grow thick over the stone. Clear them first.' });
+    expect(refused).toEqual({ ok: false, error: 'Herbs grow thick around the stone. Clear them first.' });
     expect(refused.ok ? 0 : refused.error.length).toBeLessThanOrEqual(80);
     expect(refused.ok).toBe(false);
     expect(s.player.bag['core/keystone']).toBeUndefined();
