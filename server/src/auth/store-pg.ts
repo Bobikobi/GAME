@@ -101,6 +101,12 @@ export function createPgAuthStore(pool: Pool): AuthStore {
       );
     },
 
+    async nameTaken(name) {
+      // the same rows the unique index accounts_name holds the rule over: live and closed, not erased
+      const { rows } = await pool.query('select 1 from accounts where lower(name) = lower($1) and erased_at is null limit 1', [name]);
+      return rows.length > 0;
+    },
+
     async saveTicket(ticket) {
       await pool.query(
         `insert into signup_tickets (ticket_hash, provider, subject, email, created_at, expires_at)
@@ -243,7 +249,9 @@ export function createPgAuthStore(pool: Pool): AuthStore {
       await pool.query('delete from oauth_flows where expires_at <= $1', [before]);
       await pool.query('delete from email_links where expires_at <= $1', [before]);
       await pool.query('delete from signup_tickets where expires_at <= $1', [before]);
-      await pool.query('delete from sessions where expires_at <= $1 or revoked_at is not null', [before]);
+      // two statements, so each reads its own index (migration 0006) instead of one scan for the `or`
+      await pool.query('delete from sessions where expires_at <= $1', [before]);
+      await pool.query('delete from sessions where revoked_at is not null');
     },
   };
 }

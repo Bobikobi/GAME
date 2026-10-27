@@ -36,7 +36,7 @@ A section marked *proposal* is the art session's recommendation, not yet the own
 
 - **The screen.** The canvas draws at the device's own pixels, and one art pixel is always a whole number of device pixels: 2 on a 2K phone (1440 px across, about 11 tiles), 1 on a 1080 px phone (about 17 tiles, crisp but small; older phones are not a target). The camera's rule is in NEXT 15.
 - **A face.** At 64x96 the head is about 24 to 28 px wide and the face about 20. Eyes are 2 to 3 px, each with a white and a dark pupil; brows, a nose and a mouth are drawn, not implied. The frame `density-64` is the measure.
-- The check takes both grids since the engine step (NEXT 15): 16 px at density 1 (the default) and 64 px at density 4, and a size that belongs to the other grid is an error. The redraw waves move the kit to 64. Nothing drawn at 32 goes into a kit.
+- The check takes both grids since the engine step (NEXT 15): 16 px at density 1 (the default) and 64 px at density 4, and a size that belongs to the other grid is an error. The redraw waves move the kit to 64. Since 23.10 the whole game is rich (DECISIONS.md): a new sprite at density 1 is refused, the core kit's 16 px sprites wait by name in `tools/src/kit/rich.ts` until their wave takes them off, and a rich sprite of the core kit names its ramps. Nothing drawn at 32 goes into a kit.
 
 ## 1b. Proportions (decided that they rule; the numbers wait for one look)
 
@@ -92,7 +92,7 @@ People and animals, seen by the owner on 20.10 on `frames/2026-10-21-nature-scal
   - fire: `#b8661f #eda83a #f8de62`
   - skin: `#d38c66 #f3c7a0`
   - purples: `#5b3373 #9a5bb0`
-- **Outline:** characters, items and props have a one-pixel outline in `#1b1a2e`. Ground tiles have none.
+- **Outline:** the one-pixel ink line `#1b1a2e` on every sprite (owner's decision of 23.10, PR #305): characters, items and props, at both densities. An outline is the sprite's own edge pixels recoloured to ink (`pnpm kit:ink`), not a ring added outside it. Ground tiles have none. `pnpm check` measures it: a 64 px sprite needs ink on at least 95% of its edge pixels, and the 16 px sprites are reported in one summary line.
 - **Baked light comes from above.** Tops are lightest and undersides darkest, with left and right even. Light from the side is added while the game runs (section 4), and side light baked into the art would fight it.
 - **Never draw a shadow into a sprite.** The engine casts it from the sprite's own shape, starting at the lowest solid row: that row is where the thing touches the ground.
 

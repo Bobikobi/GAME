@@ -68,6 +68,9 @@ export interface AuthStore {
   isClosed(accountId: string): Promise<boolean>;
   addIdentity(provider: ProviderId, subject: string, accountId: string): Promise<void>;
 
+  /** Whether a live account already has the name, in any case: the sign-up asks before it replays an opening. */
+  nameTaken(name: string): Promise<boolean>;
+
   saveTicket(ticket: SignupTicket): Promise<void>;
   loadTicket(ticketHash: string): Promise<SignupTicket | undefined>;
   dropTicket(ticketHash: string): Promise<void>;

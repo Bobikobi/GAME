@@ -17,6 +17,7 @@
       "tags": ["medicine"],
       "tier": 1,
       "sprite": "core/base-kit:items/first-aid-kit",
+      "weight": 1,
       "food": {
         "satiety": 50
       }

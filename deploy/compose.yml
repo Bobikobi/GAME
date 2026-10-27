@@ -50,6 +50,9 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       MAILER: ${MAILER:-log}
+      # empty unless .env sets it; the log mailer refuses to start without ALLOW_LOG_MAILER=staging-only
+      ALLOW_LOG_MAILER: ${ALLOW_LOG_MAILER:-}
+      CLIENT_ADDRESS_HEADER: ${CLIENT_ADDRESS_HEADER:-}
       COUNTRY_HEADER: ${COUNTRY_HEADER:-}
     depends_on:
       db:

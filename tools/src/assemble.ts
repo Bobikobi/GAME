@@ -130,8 +130,7 @@ export function flattenParams(p: ParamsBody): Params {
     wear_effect_max_pct: [...p.wear_effect_max_pct],
     wear_set_bonus_pct: p.wear_set_bonus_pct.value,
     drift_budget_permille: p.drift_budget_permille.value,
-    satiety_cap: p.satiety_cap.value,
-    satiety_drain_per_min: p.satiety_drain_per_min.value,
+    hp_cap: p.hp_cap.value,
     day_length_ms: p.day_length_ms.value,
     walk_step_ms: p.walk_step_ms.value,
     move_reach_max: p.move_reach_max?.value ?? 32,
@@ -158,6 +157,15 @@ export function flattenParams(p: ParamsBody): Params {
       deep_water: { harm_pct: p.hazard.deep_water.harm_pct.value },
     },
     bag_base: p.bag_base.value,
+    place_stack: p.place_stack.value,
+    load: {
+      base: p.load.base.value,
+      light_permille: p.load.light_permille.value,
+      max_permille: p.load.max_permille.value,
+      light_step_ms: p.load.light_step_ms.value,
+      heavy_step_ms: p.load.heavy_step_ms.value,
+      heavy_breath_permille: p.load.heavy_breath_permille.value,
+    },
     starting_gold_mg: p.starting_gold_mg.value,
     per_point: {
       might: p.per_point.might.value,
@@ -322,7 +330,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   const r = records as unknown as Pick<Bundle, RecordKey>;
   // one profession per gathering verb; the one craft verb has a profession per station family
   // (DECISIONS.md, 2026-10-09), and the check reports a station worked twice
-  const verbs = { gather: '', fell: '', dig: '', craft: '' };
+  const verbs = { gather: '', fell: '', dig: '', fish: '', craft: '' };
   const stations: Record<string, string> = {};
   const crafters: string[] = [];
   for (const id of Object.keys(r.professions).sort()) {
@@ -625,6 +633,8 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     sprite(id, 'race.sprite', r.sprite);
     if (r.sprite_alt) sprite(id, 'race.sprite_alt', r.sprite_alt);
     r.outfit?.forEach((k, i) => item(id, `race.outfit.${i}.item`, k.item));
+    const named = r.body?.effects.map((e) => e.effect) ?? [];
+    if (new Set(named).size !== named.length) err(id, 'race.body.effects', 'each body effect is named once');
     const total = Object.values(r.attributes).reduce((n, v) => n + v, 0);
     if (total !== RACE_POINTS) err(id, 'race.attributes', `attributes add up to ${total}; every race has exactly ${RACE_POINTS}`);
   }

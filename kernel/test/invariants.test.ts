@@ -17,8 +17,7 @@ import {
   newState,
   npcTile,
   replay,
-  satietyAt,
-  satietyCap,
+  hpCap,
   serialize,
   step,
 } from '@game/kernel';
@@ -72,14 +71,21 @@ describe('determinism', () => {
   });
 
   test('changes at least one find in 100 digs when the seed changes', () => {
-    const startOne = digState(1);
-    const log = digLog(startOne, 100);
-    const one = replay(bundle, digState(1), log);
-    const two = replay(bundle, digState(2), log);
+    // places no longer grow with might (DECISIONS.md, 2026-10-23): a bag of 400 holds every find of 100 digs
+    const bagBase = bundle.params.bag_base;
+    bundle.params.bag_base = 400;
+    try {
+      const startOne = digState(1);
+      const log = digLog(startOne, 100);
+      const one = replay(bundle, digState(1), log);
+      const two = replay(bundle, digState(2), log);
 
-    expect(one.error).toBeUndefined();
-    expect(two.error).toBeUndefined();
-    expect(findSignature(one.events)).not.toEqual(findSignature(two.events));
+      expect(one.error).toBeUndefined();
+      expect(two.error).toBeUndefined();
+      expect(findSignature(one.events)).not.toEqual(findSignature(two.events));
+    } finally {
+      bundle.params.bag_base = bagBase;
+    }
   });
 });
 
@@ -135,7 +141,7 @@ function checkedStep(state: State, action: Action, tick: number): State {
   for (const count of Object.values(result.state.player.bag)) {
     invariant(Number.isInteger(count) && count > 0, 'bag contains a non-positive or fractional stack');
   }
-  invariant(bagUsed(result.state) <= bagCapacity(bundle, result.state), 'bag exceeds capacity');
+  invariant(bagUsed(bundle, result.state) <= bagCapacity(bundle, result.state), 'bag exceeds capacity');
   // a worn item stays in the bag: never more worn units than the bag holds
   for (const layer of [result.state.player.worn, result.state.player.looks]) {
     const worn: Record<string, number> = {};
@@ -143,8 +149,8 @@ function checkedStep(state: State, action: Action, tick: number): State {
     for (const [id, n] of Object.entries(worn)) invariant(n <= (result.state.player.bag[id] ?? 0), `${id} is worn but not in the bag`);
   }
   for (const n of Object.values(result.state.player.tries)) invariant(Number.isInteger(n) && n > 0, 'a craft counter is not a positive count');
-  const satiety = satietyAt(bundle, result.state, result.state.tick);
-  invariant(satiety >= 0 && satiety <= satietyCap(bundle, result.state), 'satiety is outside its bounds');
+  const hp = result.state.player.hp;
+  invariant(Number.isInteger(hp) && hp >= 0 && hp <= hpCap(bundle, result.state), 'health is outside its bounds');
   invariant(result.state.tick === tick, 'accepted action did not store its tick');
   expectQuestProgress(previousQuests, result.state.player.quests);
   return result.state;

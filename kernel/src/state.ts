@@ -4,11 +4,12 @@
  * stable and a save is just that text.
  */
 import type { NodeSizeName, SchoolNodeDef } from '@game/schema';
-import type { Bundle, SchoolDef, Verb } from './bundle';
+import type { BodyEffectName, Bundle, SchoolDef, Verb } from './bundle';
 import { clamp, idiv, idivUp, mulDiv } from './num';
+import { widenSeed, type Seed } from './rng';
 import { tagAt, worldAt } from './world';
 
-export const KERNEL_VERSION = '0.17.0';
+export const KERNEL_VERSION = '0.20.0';
 
 /** Same list as the schema's ATTRIBUTES (a test keeps them equal); kept here so the kernel needs no runtime import. */
 export const ATTRIBUTES = ['might', 'senses', 'agility', 'luck', 'stamina', 'spirit'] as const;
@@ -16,9 +17,10 @@ export type Attribute = (typeof ATTRIBUTES)[number];
 /**
  * The shape of a saved state. Format 2 (kernel 0.14, the races): `attrs.carry` is `attrs.might`,
  * `attrs.spirit` is new, and the player's `starter` became a `race` and a wake `pocket`.
- * `migrateState` brings a format 1 save forward; a save always loads.
+ * Format 3 (kernel 0.20, the keyed luck): the seed is a 128-bit key, four 32-bit words (`Seed`), where it
+ * was one 32-bit number. `migrateState` brings an older save forward; a save always loads.
  */
-export const STATE_FORMAT = 2;
+export const STATE_FORMAT = 3;
 
 /**
  * The three starters of format 1 and what each became (DECISIONS.md, 2026-10-22): the race it reads
@@ -45,8 +47,8 @@ export function legacyNodeId(id: string): string {
   return now === undefined ? id : now + id.slice(hash);
 }
 
-/** Places on the character (DECISIONS.md, 2026-10-09: the upgrade). An outfit takes the top and the legs. */
-export const WEAR_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'jewelry1', 'jewelry2', 'hand'] as const;
+/** Places on the character (DECISIONS.md, 2026-10-09: the upgrade). An outfit takes the top and the legs; the back holds a bag or a quiver (2026-10-23). */
+export const WEAR_SLOTS = ['head', 'top', 'legs', 'outfit', 'feet', 'jewelry1', 'jewelry2', 'hand', 'back'] as const;
 export type WearSlot = (typeof WEAR_SLOTS)[number];
 
 const SLOTS_OF: Record<string, readonly WearSlot[]> = {
@@ -57,6 +59,7 @@ const SLOTS_OF: Record<string, readonly WearSlot[]> = {
   feet: ['feet'],
   jewelry: ['jewelry1', 'jewelry2'],
   hand: ['hand'],
+  back: ['back'],
 };
 
 /** The places an item's wear slot fits: jewelry takes either of two. */
@@ -151,11 +154,11 @@ export interface Player {
   /** uses already taken from the tool unit in hand, per tool item */
   wear: Record<string, number>;
   /**
-   * The health bar, in milli-points, as of tick satietyAt. It began as a food bar that a hunger drain empties by the clock;
-   * hazards take from it too (DECISIONS.md, 2026-10-10), and the name waits for the rename.
+   * The health bar, in milli-points. It began as a food bar named satiety that a hunger drain emptied by the clock;
+   * hazards take from it, food and a fall's reappearance give it back, and nothing drains it by the clock (G28;
+   * DECISIONS.md, 2026-10-08 and 2026-10-10). A save from before kernel 0.19 carries its satiety over (`migrateState`).
    */
-  satiety: number;
-  satietyAt: number;
+  hp: number;
   busyUntil: number;
   /** active ms per profession id */
   xp: Record<string, number>;
@@ -192,6 +195,8 @@ export interface Player {
   bitten: string[];
   /** tended fires by map prop id */
   fires: Record<string, FireState>;
+  /** what the player dropped, by tile (`groundKey`): it stays there until picked up again (DECISIONS.md, 2026-10-23) */
+  ground?: Record<string, Record<string, number>>;
   /** the fire the player kindled outside the town, if any; one stands at a time (null in saves from before kernel 0.12) */
   own: OwnFire | null;
   /** Expedition progress by expedition id. Chain quests persist separately in `quests`. */
@@ -216,7 +221,8 @@ export interface State {
   format: number;
   kernel: string;
   content: string;
-  seed: number;
+  /** the world's secret key (rule R4): every draw is keyed by it. Never on a screen or in a reply (`PublicState`) */
+  seed: Seed;
   tick: number;
   player: Player;
   nodes: Record<string, NodeState>;
@@ -229,13 +235,17 @@ export interface State {
 /** The state as a screen or a reply sees it: the seed is the server's alone (kernel-review R4). */
 export type PublicState = Omit<State, 'seed'>;
 
-export function newState(bundle: Bundle, seed: number): State {
+/**
+ * A world at its start. The key is a `Seed`; a plain number is a 32-bit seed of the kind kernel 0.19 kept,
+ * widened as an old save is (`widenSeed`): a test's or a debug link's fixed world, never a live secret.
+ */
+export function newState(bundle: Bundle, seed: Seed | number): State {
   const attrs = Object.fromEntries(ATTRIBUTES.map((a) => [a, 0])) as Record<Attribute, number>;
   return {
     format: STATE_FORMAT,
     kernel: KERNEL_VERSION,
     content: bundle.tag,
-    seed: seed >>> 0,
+    seed: typeof seed === 'number' ? widenSeed(seed) : [seed[0], seed[1], seed[2], seed[3]],
     tick: 0,
     player: {
       name: '',
@@ -247,8 +257,7 @@ export function newState(bundle: Bundle, seed: number): State {
       boundGold: 0,
       bag: {},
       wear: {},
-      satiety: 0,
-      satietyAt: 0,
+      hp: 0,
       busyUntil: 0,
       xp: {},
       attrs,
@@ -282,7 +291,8 @@ export function newState(bundle: Bundle, seed: number): State {
 }
 
 /**
- * Brings a saved state of an older format forward (format 1 to 2: the races). Pure: returns a new
+ * Brings a saved state of an older format forward (format 1 to 2: the races; 2 to 3: the seed widens
+ * to a key, `widenSeed`, the same key wherever the save is loaded). Pure: returns a new
  * object and leaves the input as it was. `carry` is read as `might`, `spirit` starts at 0, and the
  * starter becomes its race and its pocket (LEGACY_STARTERS); an unknown starter keeps its id as the
  * race with no pocket, and the caller decides whether the content still holds it. The old six-point
@@ -294,7 +304,26 @@ export function migrateState(saved: State): State {
   s.player.boundGold ??= 0;
   // a save from before kernel 0.17 has searched nothing: it reads as empty, whatever its format
   s.searched ??= {};
-  if ((s.format ?? 1) >= STATE_FORMAT) return s;
+  // kernel 0.19: the health bar is named hp and has no clock; a save from before it carries its satiety over
+  // (the core drained nothing since P-5c, so the stored value is the value now), whatever its format
+  const named = s.player as Player & { satiety?: number; satietyAt?: number };
+  if (named.satiety !== undefined) {
+    named.hp ??= named.satiety;
+    delete named.satiety;
+  }
+  delete named.satietyAt;
+  const format = s.format ?? 1;
+  if (format < 2) toFormat2(s);
+  // kernel 0.20: the 32-bit seed widens to a 128-bit key; its draws differ from before, as every draw does.
+  // A state the server stored has no seed at all (its key is a column of its own): it stays without one.
+  const seed: unknown = s.seed;
+  if (typeof seed === 'number') s.seed = widenSeed(seed);
+  if (format < STATE_FORMAT) s.format = STATE_FORMAT;
+  return s;
+}
+
+/** Format 1 to 2, in place: the races. */
+function toFormat2(s: State & { player: Player & { starter?: string; attrs: Record<string, number> } }): void {
   const p = s.player;
   const attrs = p.attrs ?? {};
   if (attrs.might === undefined) attrs.might = attrs.carry ?? 0;
@@ -316,8 +345,6 @@ export function migrateState(saved: State): State {
     s.nodes[now] ??= s.nodes[id]!;
     delete s.nodes[id];
   }
-  s.format = STATE_FORMAT;
-  return s;
 }
 
 // ------------------------------------------------------------ derived numbers
@@ -343,22 +370,66 @@ export function attrAt(bundle: Bundle, state: PublicState, attr: Attribute): num
   return Math.max(0, (state.player.attrs[attr] ?? 0) + gradeShift(bundle, state, attr));
 }
 
-export function satietyCap(bundle: Bundle, state: PublicState): number {
-  return (bundle.params.satiety_cap + bundle.params.per_point.stamina * attrAt(bundle, state, 'stamina')) * 1000;
+/** The health bar's top, in milli-points: the base cap plus what stamina adds. */
+export function hpCap(bundle: Bundle, state: PublicState): number {
+  return (bundle.params.hp_cap + bundle.params.per_point.stamina * attrAt(bundle, state, 'stamina')) * 1000;
 }
 
-/** Satiety at a tick: it drains with play time and stops at zero. */
-export function satietyAt(bundle: Bundle, state: PublicState, tick: number): number {
+/**
+ * The places the bag's things take (DECISIONS.md, 2026-10-23): things of one kind share a place, up to
+ * `place_stack` of them, so a place holds a stack. What is on the body takes none: the units worn on
+ * either layer, the tool in the hand and ONE tool at the belt - the owner's answer of 23.10, not one of
+ * each kind. A hand with no tool worn in it holds one of the bag's tools. Every other tool goes in the
+ * places. Weight still counts every unit (`loadWeight`).
+ */
+export function bagUsed(bundle: Bundle, state: PublicState): number {
+  return placesWith(bundle, state, {});
+}
+
+/** The places the bag would take with `delta` units added to (or taken from) it. */
+export function placesWith(bundle: Bundle, state: PublicState, delta: Record<string, number>): number {
   const p = state.player;
-  const elapsed = Math.max(0, tick - p.satietyAt);
-  return Math.max(0, p.satiety - mulDiv(elapsed, bundle.params.satiety_drain_per_min, 60_000));
+  const stack = Math.max(1, bundle.params.place_stack);
+  const worn = onBodyCounts(state);
+  let n = 0;
+  let single = 0;
+  for (const id of new Set([...Object.keys(p.bag), ...Object.keys(delta)])) {
+    const loose = Math.max(0, (p.bag[id] ?? 0) + (delta[id] ?? 0) - (worn[id] ?? 0));
+    n += idivUp(loose, stack);
+    // a tool carried on the body saves a place where that tool's last stack holds just one
+    if (bundle.items[id]?.tool !== undefined && loose % stack === 1) single++;
+  }
+  // the belt holds one tool, and the hand one more unless a tool is worn there already
+  const onBody = p.worn.hand === undefined ? 2 : 1;
+  return n - Math.min(onBody, single);
 }
 
-export function bagUsed(state: PublicState): number {
-  let n = 0;
-  for (const k of Object.keys(state.player.bag)) n += state.player.bag[k] ?? 0;
-  return n;
+/** How many more units of one kind fit in the places: up to the free places, or into what is left of its own stacks when over. */
+export function placeRoom(bundle: Bundle, state: PublicState, itemId: string): number {
+  const ceiling = Math.max(bagCapacity(bundle, state), bagUsed(bundle, state));
+  const stack = Math.max(1, bundle.params.place_stack);
+  let lo = 0;
+  let hi = (ceiling + 2) * stack;
+  while (lo < hi) {
+    const mid = hi - idiv(hi - lo, 2);
+    if (placesWith(bundle, state, { [itemId]: mid }) <= ceiling) lo = mid;
+    else hi = mid - 1;
+  }
+  return lo;
 }
+
+/** The key of a tile in `player.ground`. */
+export function groundKey(at: readonly [number, number]): string {
+  return `${at[0]},${at[1]}`;
+}
+
+function onBodyCounts(state: PublicState): Record<string, number> {
+  const p = state.player;
+  const worn: Record<string, number> = {};
+  for (const layer of [p.worn, p.looks]) for (const id of Object.values(layer)) if (id !== undefined) worn[id] = (worn[id] ?? 0) + 1;
+  return worn;
+}
+
 
 /** Whether a camp part stands, itself or under an upgrade built over it. */
 export function campBuilt(bundle: Bundle, state: PublicState, campId: string): boolean {
@@ -377,10 +448,30 @@ export function senseReach(bundle: Bundle, senses: number): number {
   return 2 + bundle.params.per_point.senses * senses;
 }
 
+/**
+ * The places the player has (DECISIONS.md, 2026-10-23): what is on the back decides, `bag_base` with
+ * nothing there (hands and belt) and the bag's own `wear.places` with a bag, plus the race's
+ * `bag_places` in any bag (never bare hands), plus a camp chest's `bag_bonus`. Might no longer adds
+ * places: it raises the weight limit (`loadLimit`).
+ */
 export function bagCapacity(bundle: Bundle, state: PublicState): number {
-  let cap = bundle.params.bag_base + bundle.params.per_point.might * attrAt(bundle, state, 'might');
+  const places = backBag(bundle, state)?.places;
+  let cap = places === undefined ? bundle.params.bag_base : places + bodyValue(bundle, state, 'bag_places', 0);
   for (const id of state.player.camp) cap += bundle.camps[id]?.bag_bonus ?? 0;
   return cap;
+}
+
+/** The bag on the back's work layer: its places and what it adds to the weight limit, or undefined with none there. */
+export function backBag(bundle: Bundle, state: PublicState): { item: string; places: number; load_bonus: number } | undefined {
+  const id = state.player.worn.back;
+  const w = id === undefined ? undefined : bundle.items[id]?.wear;
+  if (!w || w.look || w.places === undefined) return undefined;
+  return { item: id!, places: w.places, load_bonus: w.load_bonus ?? 0 };
+}
+
+/** One effect of the race's body fact (DECISIONS.md, 2026-10-23), or `fallback` when its body names none. */
+export function bodyValue(bundle: Bundle, state: PublicState, effect: BodyEffectName, fallback: number): number {
+  return bundle.races[state.player.race]?.body?.effects.find((e) => e.effect === effect)?.value ?? fallback;
 }
 
 export function professionLevel(bundle: Bundle, state: PublicState, professionId: string): number {
@@ -396,9 +487,11 @@ export function verbLevel(bundle: Bundle, state: PublicState, verb: Verb): numbe
   return professionLevel(bundle, state, bundle.verbs[verb]);
 }
 
-/** The verb a node trains: a node worked with an axe is felled, any other is gathered. */
-export function nodeVerb(resource: { tool?: string }): Verb {
-  return resource.tool === 'axe' ? 'fell' : 'gather';
+/** The verb a node trains: a node worked with an axe is felled, one worked with a rod is fished, a mined one trains digging, any other is gathered. */
+export function nodeVerb(resource: { tool?: string; work?: string }): Verb {
+  if (resource.tool === 'axe') return 'fell';
+  if (resource.tool === 'rod') return 'fish';
+  return resource.work === 'mine' ? 'dig' : 'gather';
 }
 
 /** Character level: one more for every profession level gained. */

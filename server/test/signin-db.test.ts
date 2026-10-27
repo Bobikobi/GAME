@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { Pool } from 'pg';
-import { newState, step, type Bundle, type State } from '@game/kernel';
+import { newState, step, widenSeed, type Bundle, type Seed, type State } from '@game/kernel';
 
 import { checkAccount, createPgAuthStore, createPgStore, createPlayerRecord, takeOpening, type AuthStore, type NewGame } from '../src';
 import { CLOSED_ACCOUNT_GRACE_MS } from '../src/auth/store';
@@ -13,6 +13,8 @@ import { LocalPhone, STARTS, playOpening } from './support/phone.js';
 const DATABASE_URL = process.env.DATABASE_URL;
 const NOW = Date.UTC(2026, 9, 21, 12);
 const MINUTE = 60 * 1000;
+/** the key the server gives each account here: a full 128 bits */
+const ACCOUNT_KEY: Seed = [424242, 0x9e3779b9, 0x7f4a7c15, 0xf39cc060];
 
 let bundle: Bundle;
 let pool: Pool;
@@ -109,9 +111,9 @@ describe.skipIf(!DATABASE_URL)('sign-in in postgres (NEXT 18 e)', () => {
   });
 
   test('a kept opening is written with the account in one go: its state, its log row and its grants, and the books prove it', async () => {
-    const phone = new LocalPhone(bundle, 77);
+    const phone = new LocalPhone(bundle, widenSeed(77));
     await playOpening(phone, STARTS[0]);
-    const handover = takeOpening(bundle, phone.upload(), 424242, NOW);
+    const handover = takeOpening(bundle, phone.upload(), ACCOUNT_KEY, NOW);
     if (!handover.kept) throw new Error(handover.problem);
     const accountId = await account(undefined, { record: handover.record, books: { action: handover.opening, tick: handover.tick, gold: handover.gold } });
 
@@ -120,7 +122,7 @@ describe.skipIf(!DATABASE_URL)('sign-in in postgres (NEXT 18 e)', () => {
     const stored = (await createPgStore(pool).load(accountId))!;
     expect(log.rows.map((row) => Number(row.seq))).toEqual([1]);
     expect(ledger.rows).toHaveLength(3);
-    expect(stored.state.seed).toBe(424242);
+    expect(stored.state.seed).toEqual(ACCOUNT_KEY);
     expect(checkAccount(bundle, {
       seed: stored.state.seed,
       log: log.rows.map((row) => ({ seq: Number(row.seq), action: row.action, tick: Number(row.tick) })),
@@ -134,9 +136,9 @@ describe.skipIf(!DATABASE_URL)('sign-in in postgres (NEXT 18 e)', () => {
     const ticket = { ticketHash: tokenHash(newToken()), provider: 'email' as const, subject: 'ash2@example.com', email: 'ash2@example.com', createdAt: NOW, expiresAt: NOW + MINUTE };
     await store.saveTicket(ticket);
     const before = await pool.query<{ n: string }>('select (select count(*) from player_state) + (select count(*) from action_log) + (select count(*) from gold_ledger) as n');
-    const phone = new LocalPhone(bundle, 77);
+    const phone = new LocalPhone(bundle, widenSeed(77));
     await playOpening(phone, STARTS[0]);
-    const handover = takeOpening(bundle, phone.upload(), 424242, NOW);
+    const handover = takeOpening(bundle, phone.upload(), ACCOUNT_KEY, NOW);
     if (!handover.kept) throw new Error(handover.problem);
     const game = { record: handover.record, books: { action: handover.opening, tick: handover.tick, gold: handover.gold } };
     expect(await store.createAccount({ email: 'ash2@example.com', name: 'ash', country: 'IL' }, ticket, game)).toBe('name-taken');
@@ -235,5 +237,30 @@ describe.skipIf(!DATABASE_URL)('sign-in in postgres (NEXT 18 e)', () => {
     await store.sweep(NOW);
     expect(await store.countEmailLinks('sweep@example.com', 0)).toBe(1);
     expect(await store.useEmailLink(open, NOW)).toMatchObject({ email: 'sweep@example.com' });
+  });
+
+  test('the sweep ends the sessions past their end and the revoked ones, each by its own index (finding 10)', async () => {
+    const accountId = await account();
+    const [ended, revoked, live] = [tokenHash(newToken()), tokenHash(newToken()), tokenHash(newToken())];
+    await store.createSession(ended, accountId, NOW - 2 * MINUTE, NOW - MINUTE);
+    await store.createSession(revoked, accountId, NOW, NOW + MINUTE);
+    await store.createSession(live, accountId, NOW, NOW + MINUTE);
+    await store.revokeSession(revoked, NOW);
+    await store.sweep(NOW);
+    const left = await pool.query<{ token_hash: string }>('select token_hash from sessions where account_id = $1', [accountId]);
+    expect(left.rows.map((row) => row.token_hash)).toEqual([live]);
+    const indexes = await pool.query<{ indexname: string }>("select indexname from pg_indexes where tablename = 'sessions' and schemaname = current_schema()");
+    expect(indexes.rows.map((row) => row.indexname)).toEqual(expect.arrayContaining(['sessions_expires', 'sessions_revoked']));
+  });
+
+  test('a name is taken in any case while a live or closed account holds it, and free once that account is erased (finding 12)', async () => {
+    const accountId = await played('Juniper');
+    expect(await store.nameTaken('juniper')).toBe(true);
+    expect(await store.nameTaken('JUNIPER')).toBe(true);
+    expect(await store.nameTaken('Juniper2')).toBe(false);
+    await store.closeAccount(accountId, NOW);
+    expect(await store.nameTaken('Juniper')).toBe(true);
+    await store.eraseClosed(NOW + CLOSED_ACCOUNT_GRACE_MS, CLOSED_ACCOUNT_GRACE_MS);
+    expect(await store.nameTaken('Juniper')).toBe(false);
   });
 });

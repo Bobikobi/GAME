@@ -24,10 +24,12 @@ import {
   npcTile,
   riddleSlots,
   spotOpen,
+  walkStepMs,
 } from '@game/kernel';
+import { pileAt } from '../scenes/piles';
 import { app, type WorldView } from '../app';
 import { sound, type SfxId } from '../audio';
-import { DIG_SPOT_SPRITE, STEP_MS } from '../config';
+import { DIG_SPOT_SPRITE } from '../config';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, pickOf } from '../lore';
 import { emptySlots, slotContent } from '../places';
@@ -55,7 +57,7 @@ const PITCH = 0.62;
 /** Signatures show over signs this close to the player, in tiles. */
 const SIGN_REACH = 5;
 const SWING_MS = 520;
-const WORK_SOUND: Record<WorkKind, SfxId> = { strike: 'strike', pick: 'pluck', snap: 'tug', timing: 'rustle', dig: 'dig' };
+const WORK_SOUND: Record<WorkKind, SfxId> = { strike: 'strike', pick: 'pluck', snap: 'tug', timing: 'rustle', dig: 'dig', fish: 'plop' };
 
 export interface Target {
   label: string;
@@ -900,7 +902,7 @@ export class World3D implements WorldView {
     s.facing = facingFor(input, s.facing);
     if (input[0] !== 0 || input[1] !== 0) this.yaw = Math.atan2(input[0], input[1]);
     this.fell = false;
-    for (const tile of this.body.frame(input, delta, STEP_MS, (x, y) => this.canWalk(s, x, y))) {
+    for (const tile of this.body.frame(input, delta, walkStepMs(this.b, s.state), (x, y) => this.canWalk(s, x, y))) {
       // the kernel hears of each new tile; a hazard there may hurt, and a fall ends the walk
       landStep(s, tile);
       if (this.fell) return;
@@ -1187,7 +1189,10 @@ export class World3D implements WorldView {
     if (w.kind === 'fell') {
       sound.sfx('thud', { pan });
       if (progress > 0.5) sound.sfx('crack', { pan, gain: 0.25 + 0.5 * progress });
-    } else sound.sfx(w.kind === 'mine' ? 'strike' : 'dig', { pan });
+    } else if (w.kind === 'mine') {
+      sound.sfx('strike', { pan });
+      if (progress > 0.5) sound.sfx('crack', { pan, gain: 0.2 + 0.4 * progress });
+    } else sound.sfx('dig', { pan });
     const art = this.nodes.get(w.node)?.art;
     if (!art) return;
     const x0 = inst.x + 0.5;
@@ -1262,6 +1267,9 @@ export class World3D implements WorldView {
     const k = key(x, y);
     const tile: [number, number] = [x, y];
     const top = this.tops.get(k) ?? 1;
+    // a pile the player put down, under their feet (drawn in the 2D door; here the prompt finds it)
+    const dropped = x === s.pos[0] && y === s.pos[1] ? pileAt(s.state, x, y) : undefined;
+    if (dropped) return { label: `Pick up ${b.items[dropped]?.name ?? dropped}`, run: () => app.ui.pickUp(dropped), tile, top: 0.4 };
     const npc = this.npcAt.get(k);
     if (npc) return { label: `Talk to ${b.npcs[npc]?.name ?? npc}`, run: () => app.ui.talk(npc), tile, top };
     const nodeId = this.nodeAt.get(k);
