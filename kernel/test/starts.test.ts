@@ -161,7 +161,7 @@ describe('a reward item', () => {
   });
 });
 
-describe('the keystone waits for the glint (opens_after)', () => {
+describe('the keystone waits for one quest per wake pocket (opens_after)', () => {
   const key = (): string => spotOf('core/keystone');
   function strike(s: State): StepResult {
     const inst = b.instances[key()]!;
@@ -185,11 +185,40 @@ describe('the keystone waits for the glint (opens_after)', () => {
     expect(after.ok && after.state.player.bag['core/keystone']).toBe(1);
   });
 
-  test('the west bank and the slid bank strike it at once, as before', () => {
-    for (const pocket of ['core/west-bank', 'core/slid-bank']) {
-      const r = strike(started(pocket));
-      expect(r.ok, pocket).toBe(true);
-      expect(r.ok && r.state.player.bag['core/keystone'], pocket).toBe(1);
+  test('the slid bank strikes it at once, as before', () => {
+    const r = strike(started('core/slid-bank'));
+    expect(r.ok).toBe(true);
+    expect(r.ok && r.state.player.bag['core/keystone']).toBe(1);
+  });
+
+  test('the west bank is refused with a line that points at the herbs, until the herbs are picked', () => {
+    const s = pickUpGround(started('core/west-bank'));
+    const refused = strike(s);
+    expect(refused).toEqual({ ok: false, error: 'Herbs grow thick around the stone. Clear them first.' });
+    expect(refused.ok ? 0 : refused.error.length).toBeLessThanOrEqual(80);
+    expect(refused.ok).toBe(false);
+    expect(s.player.bag['core/keystone']).toBeUndefined();
+
+    // the herbs lie on the bank by the keystone, and the pick finishes the quest
+    const herbs = spotOf('core/bank-herbs');
+    const inst = b.instances[herbs]!;
+    const keystone = b.instances[key()]!;
+    expect(Math.abs(inst.x - keystone.x) + Math.abs(inst.y - keystone.y)).toBeLessThanOrEqual(4);
+    let state = s;
+    while (state.player.quests['core/first-pickings'] !== 'done') {
+      const at: Tile = bfsNear(b, state.player, state.player.at, { x: inst.x, y: inst.y, w: 1, h: 1 })!.at(-1)!;
+      const r = step(b, state, { t: 'gather', node: herbs, grade: 3, at }, Math.max(state.tick, state.player.busyUntil) + 60_000);
+      if (!r.ok) throw new Error(r.error);
+      state = r.state;
     }
+    const after = strike(state);
+    expect(after.ok).toBe(true);
+    expect(after.ok && after.state.player.bag['core/keystone']).toBe(1);
+  });
+
+  test('the glint does not hold the west bank, and the herbs do not hold the north meadow', () => {
+    const north = started('core/north-meadow');
+    expect(north.player.quests['core/first-pickings']).toBeUndefined();
+    expect(strike(north)).toEqual({ ok: false, error: 'Something else catches the light first.' });
   });
 });
