@@ -20,5 +20,16 @@
     "originalDerivative": "sand-original.png",
     "scope": "Quiet inland dry ground, not a replacement beach or shoreline.",
     "remainingGap": "Source relief is subtle in the fixed palette; stronger readable sand ripple bodies remain polish."
+  },
+  "ownerFeedback20261027": {
+    "verdict": "Current scene is not aligned with the new design rules.",
+    "issues": [
+      "Paving/material presentation",
+      "Viewing distance",
+      "Camera/render angle",
+      "Old placeholder player appearance"
+    ],
+    "scope": "Owner feedback on the full-area capture; earlier sea approval remains separate.",
+    "next": "Align the scene with the 2026-10-25 close-camera decision, the 50-degree rendered cast and approved race picks; paving requires the place plan and visual approval. Do not use the overview capture as a current gameplay/design reference."
   }
 }
