@@ -25,6 +25,7 @@ import { checkRaces } from './races';
 import { checkHands } from './hands';
 import { checkRichness } from './richness';
 import { checkStarts } from './starts';
+import { inspectFamilies } from './art/family';
 
 export interface CheckResult {
   issues: Issue[];
@@ -37,6 +38,12 @@ export function runCheck(root?: string): CheckResult {
   const { files, issues } = loadAll(root);
   const assembled = assemble(files, root ? {} : readBoard());
   issues.push(...assembled.issues);
+  // Family manifests describe repository art fixtures, not a caller's temporary content tree.
+  if (!root) for (const { file, report } of inspectFamilies(REPO_ROOT)) {
+    // Comparisons of archived/rejected candidates belong in the art report, not
+    // the content's actionable warnings. Technical failures still block every check.
+    issues.push(...report.findings.filter(f => f.level === 'error').map(f => ({ file, where: f.asset, level: f.level, message: `[art:${f.code}] ${f.message}` })));
+  }
   const b = assembled.bundle;
   if (b) {
     const paramsFile = files.find((f) => f.data.type === 'params')?.data;

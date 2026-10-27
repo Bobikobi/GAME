@@ -25,3 +25,6 @@ tools/.cache/
 *.key
 *.pfx
 client_secret*.json
+
+# generated sprite-family reports (tools/src/art/cli.ts)
+game/public/art-review/
