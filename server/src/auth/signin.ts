@@ -67,6 +67,8 @@ export interface SignInOptions {
 export interface SignIn {
   /** The account the request's session cookie stands for, or undefined. A POST from another origin stands for no one. */
   resolve(request: IncomingMessage): Promise<string | undefined>;
+  /** The name of an open account: the one name its character carves and starts with (finding 11 of the 27.10 review). */
+  accountName(accountId: string): Promise<string | undefined>;
   /** Answer a request under `/auth/`; false for any other path. */
   handle(request: IncomingMessage, response: ServerResponse, url: URL): Promise<boolean>;
   /** Remove what has expired: the store's flows, links, tickets and sessions, and the limits' old counts. Run on a timer, never on a player's request. */
@@ -414,7 +416,8 @@ export function createSignIn(options: SignInOptions): SignIn {
     const nameTaken = () => new SignInRefusal('That name is taken in this world. Choose another.', 'name-taken', 409);
     if (await store.nameTaken(name)) throw nameTaken();
     // the opening the phone played comes with the account, replayed and proven, or the game starts fresh (NEXT 18 d)
-    const handover = takeOpening(options.bundle, body.opening, newSeed(), at);
+    // the account's name is its character's name: an opening that carved another one is not kept (finding 11)
+    const handover = takeOpening(options.bundle, body.opening, newSeed(), at, undefined, name);
     const game = handover.kept
       ? { record: handover.record, books: { action: handover.opening, tick: handover.tick, gold: handover.gold } }
       : { record: handover.record };
@@ -507,6 +510,10 @@ export function createSignIn(options: SignInOptions): SignIn {
     async resolve(request) {
       if (request.method !== 'GET' && !fromOrigin(request)) return undefined;
       return (await sessionHash(request))?.accountId;
+    },
+
+    async accountName(accountId) {
+      return (await store.account(accountId))?.name;
     },
 
     async handle(request, response, url) {
