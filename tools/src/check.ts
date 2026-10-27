@@ -578,14 +578,15 @@ function animFrame(): [number, number] {
 function sizeRule(name: string, m: number): { w: number; h: number; exact: boolean; what: string } {
   const group = name.split('/')[0];
   if (group === 'tiles' || group === 'items') return { w: 16 * m, h: 16 * m, exact: true, what: `${group} are` };
-  // a work pose is twice a walk frame so a raised tool fits; its feet stay on the same spot as the walk frames
-  if (group === 'chars' && /_work_(down|left|up|right)$/.test(name)) return { w: 32 * m, h: 32 * m, exact: true, what: 'work poses are' };
-  // at density 4 a character frame is the anim tool's one frame (tools/anim/anim.json `frame`), the size its clips are
-  // drawn at; the old 16x24 grid is the density 1 size
+  const work = group === 'chars' && /_work_(down|left|up|right)$/.test(name);
+  // at density 4 every character frame, a walk or a work pose, is the anim tool's one frame (tools/anim/anim.json
+  // `frame`), the size its clips are drawn at: one size definition for the kit and the tool
   if (group === 'chars' && m === 4) {
     const [w, h] = animFrame();
-    return { w, h, exact: true, what: 'character frames are' };
+    return { w, h, exact: true, what: work ? 'work poses are' : 'character frames are' };
   }
+  // on the old 16 grid a work pose is twice a walk frame so a raised tool fits; its feet stay on the same spot as the walk frames
+  if (work) return { w: 32 * m, h: 32 * m, exact: true, what: 'work poses are' };
   if (group === 'chars') return { w: 16 * m, h: 24 * m, exact: true, what: 'character frames are' };
   // a prop reaches six tiles a side at density 4 (STYLE.md section 1b), four at density 1
   const top = m === 4 ? 384 : 64;

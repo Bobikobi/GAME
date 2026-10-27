@@ -47,7 +47,7 @@ Each row is a query someone could type or ask, the page that should answer it, a
 
 | Query | Answer | Page |
 |---|---|---|
-| where can I show my pixel art in a game | custom character art, sizes (64x96 or 16x24, 128x128 or 32x32), the signature on what you add | `/docs/#your-own-art-optional` |
+| where can I show my pixel art in a game | custom character art, sizes (128x128 or 16x24, 128x128 or 32x32), the signature on what you add | `/docs/#your-own-art-optional` |
 | pixel art contributions credited in the game | the signature and the board | `/hub/boards/` |
 
 ### People who like games built together
