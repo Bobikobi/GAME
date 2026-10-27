@@ -62,6 +62,7 @@ import { CORE_PALETTE, CORE_RAMPS, type Rgb, hexToRgb, paletteWithRamps } from '
 import {
   type Motif, type ScatterEntry, motifPrompt, motifWarnings, parseMotif, renderMotif, scatterProblem, scatterTile, tileWarnings, variantsOf,
 } from './scatter.js';
+import { noteDraft } from '../art/drafts.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -775,7 +776,10 @@ function runCli(args: readonly string[]): void {
   let failed = 0;
   for (const entry of entries) {
     for (const line of entry.route === 'scatter' ? generateScatter(entry, options, version, earlier) : [generateOne(entry, options, version, earlier)]) {
-      if (!options.dry) appendFileSync(manifestPath, `${JSON.stringify(line)}\n`);
+      if (!options.dry) {
+        appendFileSync(manifestPath, `${JSON.stringify(line)}\n`);
+        noteDraft(options.out, line);
+      }
       if (line.error !== null) failed += 1;
       const said = options.dry ? line.prompt : line.error ?? [line.out, ...line.warnings].join(' - ');
       process.stdout.write(`${line.name}: ${said}\n`);
