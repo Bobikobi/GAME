@@ -20,6 +20,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "db:migrate": "tsx server/src/migrate-cli.ts",
     "kit:gen": "tsx tools/src/kit/gen.ts",
+    "kit:notes": "tsx tools/src/kit/notes.ts",
     "kit:import": "tsx tools/src/kit/import.ts",
     "kit:ink": "tsx tools/src/kit/ink.ts",
     "kit:sketches": "tsx tools/src/kit/sketches.ts",
