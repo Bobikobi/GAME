@@ -25,6 +25,8 @@ export interface SessionConfig {
   mailer: MailerName;
   /** the header our nginx sets to the visitor's country (lower case); absent, every sign-up is held to the highest age */
   countryHeader?: string;
+  /** the header our nginx sets to the client's address (lower case); the sign-in limits count by it. Absent only on a loopback origin */
+  addressHeader?: string;
 }
 
 export type Auth =
@@ -43,6 +45,16 @@ export type Auth =
 function headerId(request: IncomingMessage): Promise<string | undefined> {
   const id = request.headers[PLAYER_HEADER];
   return Promise.resolve(typeof id === 'string' && id.length > 0 && id.length <= 64 ? id : undefined);
+}
+
+/** A request header's name as an env variable gives it, lower case; undefined when unset. */
+function headerName(env: NodeJS.ProcessEnv, name: string, example: string): string | undefined {
+  const raw = env[name];
+  const value = raw ? raw.toLowerCase() : undefined;
+  if (value !== undefined && !/^[a-z0-9-]+$/.test(value)) {
+    throw new BootError(`${name}=${JSON.stringify(raw)} is not a header name, such as ${example}.`);
+  }
+  return value;
 }
 
 /** An origin as a browser sends it: a scheme, a host and a port, no path; https unless the host is a loopback. */
@@ -77,15 +89,20 @@ function sessionMode(env: NodeJS.ProcessEnv): Auth {
   if (!MAILERS.some((known) => known === mailer)) {
     throw new BootError(`MAILER=${JSON.stringify(mailer)} is not a mailer this build has. Known: ${MAILERS.join(', ')}.`);
   }
+  // the log mailer writes every live sign-in link into the API's log, where anyone who reads it can use one
+  if (mailer === 'log' && env.ALLOW_LOG_MAILER !== STAGING_ONLY) {
+    throw new BootError(`MAILER=log writes each sign-in link to the log, so anyone who reads the log can sign in as anyone; it starts only with ALLOW_LOG_MAILER=${STAGING_ONLY}, on a box no real player reaches.`);
+  }
   const google = clientId === '' ? undefined : { clientId, clientSecret };
-  const countryHeader = env.COUNTRY_HEADER ? env.COUNTRY_HEADER.toLowerCase() : undefined;
-  if (countryHeader !== undefined && !/^[a-z0-9-]+$/.test(countryHeader)) {
-    throw new BootError(`COUNTRY_HEADER=${JSON.stringify(env.COUNTRY_HEADER)} is not a header name, such as X-Country.`);
+  const countryHeader = headerName(env, 'COUNTRY_HEADER', 'X-Country');
+  const addressHeader = headerName(env, 'CLIENT_ADDRESS_HEADER', 'X-Real-IP');
+  if (addressHeader === undefined && !LOOPBACK.includes(new URL(publicOrigin).hostname)) {
+    throw new BootError('CLIENT_ADDRESS_HEADER is not set: behind nginx every request comes from nginx, so the sign-in limits would count all players as one. Set it to the header nginx fills, X-Real-IP.');
   }
   return {
     mode: 'session',
-    notice: `AUTH_MODE=session: players are who their session cookie says; sign-in by email (links to the ${mailer} mailer)${google ? ' and Google' : ''}, the game at ${appOrigin}; the age limit ${countryHeader ? `by the country in ${countryHeader}` : 'is the highest (no COUNTRY_HEADER)'}.`,
-    session: { publicOrigin, appOrigin, google, mailer: mailer as MailerName, countryHeader },
+    notice: `AUTH_MODE=session: players are who their session cookie says; sign-in by email (links to the ${mailer} mailer${mailer === 'log' ? ', staging only' : ''})${google ? ' and Google' : ''}, the game at ${appOrigin}; the age limit ${countryHeader ? `by the country in ${countryHeader}` : 'is the highest (no COUNTRY_HEADER)'}; limits by ${addressHeader ?? 'the socket address'}.`,
+    session: { publicOrigin, appOrigin, google, mailer: mailer as MailerName, countryHeader, addressHeader },
   };
 }
 
