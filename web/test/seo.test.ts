@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 const DIST = join(import.meta.dirname, '../dist');
 const read = (path: string): string => readFileSync(join(DIST, path), 'utf8');
-const ORIGIN = 'https://theopenfold.vercel.app';
+const ORIGIN = 'https://loomvale.vercel.app';
 
 const tag = (html: string, re: RegExp): string | undefined => re.exec(html)?.[1];
 const meta = (html: string, key: string): string | undefined =>

@@ -3218,3 +3218,8 @@ The owner, 23.10.
 
 **The hall is dug by day, the night place still has one way in.** The opening sends the player to dig the collapsed hall for Pell's whole bowl in the afternoon, before the arch opens. A wall at row 27 (x 35-38) now closes the hall off from the rest of the walled night place, the south wall has a doorway at (37,32) from the lane south of the ruins, and the terrace face a gap at (39,29). Fallen rubble at (35,28), (37,28) and (38,31) leaves every dig spot a tile to stand on with room to turn. The threshold stays the night place's only way in; the hall, its six digs, the knight and the stair keep their tiles.
 **Retry when:** the expedition needs the hall reached from inside the night place. Model: claude-opus-5-5.
+
+## 2026-10-27 ✅ The site's address is loomvale.vercel.app
+
+**Every link, the canonical address, the sitemap, the MCP answers and the hourly loop read `loomvale.vercel.app`.** The owner moved the production address from `theopenfold.vercel.app` on 27.10, after the name became Loomvale (2026-10-26); the old address now answers 404. The hourly loop compared hub-data against the old address, so on `main` it reads "could not be read" and fires the deploy hook each hour until this reaches a release. Kept: the old name inside the share card picture and `INTRO_HE.pdf` (pictures, redrawn separately), and the browser storage keys (renaming them wipes saves).
+**Retry when:** a bought domain replaces the Vercel address (the owner, 27.10: when the game can be tried). Model: claude-opus-5-5.
