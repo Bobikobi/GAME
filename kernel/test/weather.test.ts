@@ -20,6 +20,7 @@ import {
   step,
   waitPermille,
   weatherOf,
+  widenSeed,
 } from '@game/kernel';
 import type { WeatherName } from '@game/schema';
 
@@ -31,7 +32,7 @@ beforeAll(() => {
   base = loadBundle();
 });
 
-const SEED = 5;
+const SEED = widenSeed(5);
 const LOG = 'core/fallen-logs#0';
 const REEDS = 'core/reed-bank#0';
 const MUSHROOMS = `core/mushrooms-after-rain@${LOG}`;

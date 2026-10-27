@@ -1,0 +1,29 @@
+{
+  "about": "The library walk on the 19-bone body rig (ANIM_RIG_BLEND), to compare a body of our own with the forager.",
+  "target": "rig",
+  "base": {
+    "library": "ual1",
+    "action": "Walk_Loop"
+  },
+  "frames": {
+    "even": 8
+  },
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      114
+    ]
+  },
+  "locomotion": {
+    "playback": "distance"
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

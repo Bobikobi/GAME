@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
-import { makeWalkable, newState, npcTile, salePrice, serialize, step, type Bundle, type State, type Tile } from '@game/kernel';
+import { appearSlots, appears, makeWalkable, newState, npcTile, salePrice, serialize, step, type Bundle, type State, type Tile } from '@game/kernel';
 import type { IncomingMessage, Server } from 'node:http';
 
 import { createGameApi, createPlayerRecord, listen, type Books, type PlayerRecord, type PlayerStore } from '../src';
@@ -73,6 +73,11 @@ function started(): State {
   const result = step(bundle, newState(bundle, 17), { t: 'start', starter: 'core/forager', name: 'Tester' }, 0);
   if (!result.ok) throw new Error(result.error);
   return result.state;
+}
+
+/** The appear nodes the state's key makes stand now, as the kernel draws them: what a reply must list. */
+function standing(state: State): string[] {
+  return [...appearSlots(bundle).keys()].filter((id) => appears(bundle, state, id, state.tick)).sort();
 }
 
 function move(at: Tile, tick: number): { kind: 'move'; at: Tile; tick: number } {
@@ -321,7 +326,7 @@ describe('Stage 2a server protocol', () => {
     const response = await post(base, '/session', {});
     expect(response.status).toBe(200);
     const resumed = await response.json() as { state: Record<string, unknown>; version: number };
-    expect(resumed).toEqual({ state: publicState(store.record.state), version: 1, appears: [] });
+    expect(resumed).toEqual({ state: publicState(store.record.state), version: 1, appears: standing(store.record.state) });
     expect(resumed.state).not.toHaveProperty('seed');
     const forged = await post(base, '/session', { state: newState(bundle, 1) });
     expect(forged.status).toBe(400);
@@ -333,7 +338,7 @@ describe('Stage 2a server protocol', () => {
     const response = await fetch(`${base}/state`, { headers: { authorization: 'Bearer test' } });
     expect(response.status).toBe(200);
     const body = await response.json() as { state: Record<string, unknown>; version: number };
-    expect(body).toEqual({ state: publicState(state), version: 1, appears: [] });
+    expect(body).toEqual({ state: publicState(state), version: 1, appears: standing(state) });
     expect(body.state).not.toHaveProperty('seed');
   });
 

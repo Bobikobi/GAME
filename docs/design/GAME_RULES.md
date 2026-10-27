@@ -1,4 +1,4 @@
-# Game rules: what keeps Openfold fun
+# Game rules: what keeps Loomvale fun
 
 This page is the product owner's. Developers, creators and AI agents
 follow it the way `kernel/` follows its rules R1-R12: a request that breaks a
@@ -349,9 +349,9 @@ The valley has no combat; its danger is the hour, and what the player eats.
   16.10).
   Nothing drains it by the clock (G28): there is no hunger timer, eating is how
   the player heals, and cooking keeps its purpose. Since P-5c (11.10) the
-  core content sets `satiety_drain_per_min` to 0, in the same change that
-  brought the first hazards; the field takes the name hp with the rename
-  (DECISIONS.md, 10.10 and 11.10).
+  core content set the hunger drain to 0, in the same change that brought
+  the first hazards; since kernel 0.19 the drain is gone and the bar is
+  `player.hp`, its top `hp_cap` (DECISIONS.md, 10.10, 11.10 and 26.10).
 - **G33 A fall is clear, and it costs the outing.** At zero health the player
   falls: crosses for eyes, the body sinks into the ground, one plain box says
   what happened; no gravestone, nothing left in the world. The player reappears

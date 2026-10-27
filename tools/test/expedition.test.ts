@@ -364,7 +364,7 @@ describe('an expedition is never the only road (G37)', () => {
 });
 
 describe('what an expedition gives, in the content check', () => {
-  const root = mkdtempSync(join(tmpdir(), 'openfold-expedition-'));
+  const root = mkdtempSync(join(tmpdir(), 'loomvale-expedition-'));
   afterAll(() => rmSync(root, { recursive: true, force: true }));
 
   cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
@@ -409,6 +409,7 @@ describe('what an expedition gives, in the content check', () => {
     class: 'garment',
     tier: 1,
     sprite: 'core/base-kit:items/herb',
+    weight: 1,
     wear: { slot: 'head', look: true },
     premium_later: true,
   });
@@ -416,7 +417,7 @@ describe('what an expedition gives, in the content check', () => {
   write('items', 'items', {
     ...envelope('items', 'items'),
     items: [
-      { id: 'tester/bell-shard', name: 'bell shard', kind: 'material', rarity: 'common', class: 'relic', tier: 1, sprite: 'core/base-kit:items/herb' },
+      { id: 'tester/bell-shard', name: 'bell shard', kind: 'material', rarity: 'common', class: 'relic', tier: 1, sprite: 'core/base-kit:items/herb', weight: 1 },
       // given in place of a trowel to a start whose kit holds one: only the expedition gives it
       look('bell-veil'),
       // given by nothing at all

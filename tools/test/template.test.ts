@@ -11,7 +11,7 @@ import { runCheck } from '../src/check';
 import { CONTENT_DIR, REPO_ROOT } from '../src/load';
 
 describe('templates/extension', () => {
-  const root = mkdtempSync(join(tmpdir(), 'openfold-template-'));
+  const root = mkdtempSync(join(tmpdir(), 'loomvale-template-'));
   afterAll(() => rmSync(root, { recursive: true, force: true }));
 
   cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });

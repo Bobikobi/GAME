@@ -7,8 +7,8 @@
  * confirm starts the account fresh), and the age gate is the real `ageGate`.
  */
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import type { Bundle } from '@game/kernel';
-import { newState } from '@game/kernel';
+import type { Bundle, Seed } from '@game/kernel';
+import { newState, widenSeed } from '@game/kernel';
 
 import { ageGate, parseBirthDate } from '../../server/src/auth/age';
 import { takeOpening } from '../../server/src/handover';
@@ -19,7 +19,7 @@ export interface FakeAuthOptions {
   /** the server's clock, in ms; the age gate and the wire's clock checks read it */
   now?: () => number;
   /** the secret seed an account's game runs under; fixed so a test can name it */
-  secretSeed?: () => number;
+  secretSeed?: () => Seed;
 }
 
 export interface SignupReply {
@@ -54,13 +54,13 @@ export class FakeAuthServer {
 
   private readonly bundle: Bundle;
   private readonly now: () => number;
-  private readonly secretSeed: () => number;
+  private readonly secretSeed: () => Seed;
   private nextLink = 1;
 
   constructor(bundle: Bundle, options: FakeAuthOptions = {}) {
     this.bundle = bundle;
     this.now = options.now ?? (() => 0);
-    this.secretSeed = options.secretSeed ?? (() => 7);
+    this.secretSeed = options.secretSeed ?? (() => widenSeed(7));
     this.wire = new FakeServer(bundle, newState(bundle, this.secretSeed()), this.now);
   }
 
@@ -80,7 +80,7 @@ export class FakeAuthServer {
     if ('underAge' in gate) {
       // the ticket ends with the refusal, as the real one does
       this.ticket = undefined;
-      return { status: 403, body: { error: 'You cannot make an Openfold account. The demo stays open to you.', reason: 'under-age', demo: '/' } };
+      return { status: 403, body: { error: 'You cannot make an Loomvale account. The demo stays open to you.', reason: 'under-age', demo: '/' } };
     }
     const handover = takeOpening(this.bundle, body.opening, this.secretSeed(), this.now());
     this.wire.state = handover.record.state;
@@ -128,7 +128,7 @@ export class FakeAuthServer {
       response.writeHead(status, { location, ...extra });
       response.end();
     };
-    const sessionCookie = { 'set-cookie': 'openfold_session=fake; Path=/; HttpOnly; SameSite=Lax' };
+    const sessionCookie = { 'set-cookie': 'loomvale_session=fake; Path=/; HttpOnly; SameSite=Lax' };
 
     // the game wire: nothing answers while the browser is not signed in
     if (url.pathname === '/session' || url.pathname === '/state' || url.pathname === '/action' || url.pathname === '/moves') {
@@ -191,8 +191,8 @@ export class FakeAuthServer {
         return true;
       }
       const html =
-        '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Openfold sign-in</title>' +
-        `<form method="post" action="/auth/email/confirm"><input type="hidden" name="token" value="${token}"><button type="submit">Sign in to Openfold</button></form></html>`;
+        '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Loomvale sign-in</title>' +
+        `<form method="post" action="/auth/email/confirm"><input type="hidden" name="token" value="${token}"><button type="submit">Sign in to Loomvale</button></form></html>`;
       response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
       response.end(html);
       return true;

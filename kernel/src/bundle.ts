@@ -26,6 +26,8 @@ import type {
   Treasure,
 } from '@game/schema';
 
+export type { BodyEffectName } from '@game/schema';
+
 export interface Meta {
   id: string;
   creator: string;
@@ -95,8 +97,8 @@ export interface Params {
   /** what a full set adds to its pieces' effects, in percent */
   wear_set_bonus_pct: number;
   drift_budget_permille: number;
-  satiety_cap: number;
-  satiety_drain_per_min: number;
+  /** the health bar's base top, in whole points (stamina adds to it) */
+  hp_cap: number;
   day_length_ms: number;
   /** milliseconds to walk one tile; the client's pace and the bound on a position report */
   walk_step_ms: number;
@@ -113,7 +115,16 @@ export interface Params {
     trap: { harm_pct: number };
     deep_water: { harm_pct: number };
   };
+  /** places with nothing on the back: hands and belt (a bag on the back gives its own `wear.places`) */
   bag_base: number;
+  /** things of one kind that share one place (a stack) */
+  place_stack: number;
+  /**
+   * Weight and pace (DECISIONS.md, 2026-10-23): the limit is `base` + `per_point.might` per point + a frame bag's
+   * `load_bonus`; light up to `light_permille` of it, steady up to all of it, heavy above; nothing more is picked up
+   * beyond `max_permille`. The steady pace is `walk_step_ms`.
+   */
+  load: { base: number; light_permille: number; max_permille: number; light_step_ms: number; heavy_step_ms: number; heavy_breath_permille: number };
   starting_gold_mg: number;
   /** what one attribute point adds; see the params schema */
   per_point: { might: number; senses: number; agility_pct: number; luck_permille: number; stamina: number; spirit: number };
@@ -190,7 +201,7 @@ export interface Bundle {
   /** The items whose value comes from a recipe, sorted: the trader pays `k_craft_permille` for them (CR-18). */
   made: string[];
   /** Which profession each verb trains; for craft, the one at the fire, since each station has its own (`stations`). */
-  verbs: { gather: string; fell: string; dig: string; craft: string };
+  verbs: { gather: string; fell: string; dig: string; fish: string; craft: string };
   /** The craft profession that works each station: a recipe that names no profession takes its station's. */
   stations: Record<string, string>;
   credits: Credit[];

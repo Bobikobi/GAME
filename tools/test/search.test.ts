@@ -59,7 +59,7 @@ describe('a searchable that breaks a rule', () => {
 });
 
 describe('a content folder that breaks a rule', () => {
-  const root = mkdtempSync(join(tmpdir(), 'openfold-search-'));
+  const root = mkdtempSync(join(tmpdir(), 'loomvale-search-'));
   afterAll(() => rmSync(root, { recursive: true, force: true }));
   cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
   cpSync(join(CONTENT_DIR, 'kit'), join(root, 'kit'), { recursive: true });

@@ -1,9 +1,10 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { Pool } from 'pg';
-import { newState, publicState, step, type Bundle, type State } from '@game/kernel';
+import { readFileSync, readdirSync } from 'node:fs';
+import { newState, publicState, step, widenSeed, type Bundle, type Seed, type State } from '@game/kernel';
 
 import { checkAccount, createGameApi, createPlayerRecord, listen } from '../src';
-import { createPgStore, insertPlayer, type Books } from '../src';
+import { createPgStore, insertPlayer, seedOfColumn, type Books } from '../src';
 import { migrate } from '../src/migrate';
 import { loadBundle } from '../../tools/test/helpers/world.js';
 import { SEED, STARTS, Wire, playOpening } from './support/phone.js';
@@ -62,7 +63,7 @@ function started(): State {
 describe.skipIf(!DATABASE_URL)('the database of Stage 2a (NEXT 18 b)', () => {
   test('the migrations apply once, and a second run applies nothing', async () => {
     const first = await migrate(pool);
-    expect(first).toEqual(['0001_accounts.sql', '0002_player_state.sql', '0003_signin.sql', '0004_bound_gold.sql', '0005_close_grace.sql']);
+    expect(first).toEqual(['0001_accounts.sql', '0002_player_state.sql', '0003_signin.sql', '0004_bound_gold.sql', '0005_close_grace.sql', '0006_sweep_index.sql', '0007_keyed_luck.sql']);
     expect(await migrate(pool)).toEqual([]);
   });
 
@@ -250,5 +251,72 @@ describe.skipIf(!DATABASE_URL)('the database of Stage 2a (NEXT 18 b)', () => {
       ledger: ledger.rows.map((row) => ({ deltaMg: Number(row.delta_mg), action: row.action, tick: Number(row.tick) })),
     });
     expect(problems).toEqual([]);
+  });
+});
+
+/** The migrations folder, read here so a test can stop short of one migration and run it by hand. */
+const MIGRATIONS = new URL('../migrations/', import.meta.url);
+const migration = (name: string) => readFileSync(new URL(name, MIGRATIONS), 'utf8');
+
+describe.skipIf(!DATABASE_URL)('the keyed luck in the database (migration 0007, finding 3)', () => {
+  let old: Pool;
+  let oldSchema: string;
+
+  beforeAll(async () => {
+    oldSchema = `dbkey_${process.pid}_${Date.now()}`;
+    const setup = new Pool({ connectionString: DATABASE_URL });
+    await setup.query(`create schema ${oldSchema}`);
+    await setup.end();
+    old = new Pool({ connectionString: DATABASE_URL, options: `-c search_path=${oldSchema}` });
+    // the database as it stood before the key: every migration before 0007, run as `migrate` runs them
+    for (const name of readdirSync(MIGRATIONS).filter((file) => file.endsWith('.sql') && file < '0007').sort()) {
+      await old.query(migration(name));
+    }
+  });
+
+  afterAll(async () => {
+    if (!old) return;
+    await old.end();
+    const cleanup = new Pool({ connectionString: DATABASE_URL });
+    await cleanup.query(`drop schema ${oldSchema} cascade`);
+    await cleanup.end();
+  });
+
+  test('a row with a 32-bit seed widens to the key the kernel widens it to, and its state reads as format 3', async () => {
+    const { rows } = await old.query<{ id: string }>("insert into accounts (email, name) values ('old@example.com', 'Old') returning id");
+    const id = rows[0]!.id;
+    const state = { ...publicState(started()), format: 2 };
+    await old.query(
+      `insert into player_state (account_id, state, seed, kernel_version, content_version, clock_anchor_ms, movement_at, movement_credit_ms)
+       values ($1, $2, $3, '0.19.0', $4, 0, 0, 0)`,
+      [id, JSON.stringify(state), 3_987_654_321, state.content],
+    );
+    await old.query('begin');
+    await old.query(migration('0007_keyed_luck.sql'));
+    await old.query('commit');
+
+    const after = await old.query<{ seed: Buffer; format: number; has_seed: boolean }>(
+      "select seed, (state->>'format')::int as format, state ? 'seed' as has_seed from player_state where account_id = $1",
+      [id],
+    );
+    const row = after.rows[0]!;
+    expect(row.seed.toString('hex')).toBe('b1c6aeed000000000000000000000000');
+    expect(seedOfColumn(row.seed)).toEqual(widenSeed(3_987_654_321));
+    expect(row.format).toBe(3);
+    expect(row.has_seed).toBe(false);
+    // the column holds 16 bytes, no other length, and the state still holds no seed
+    await expect(old.query('update player_state set seed = $1 where account_id = $2', [Buffer.alloc(15), id])).rejects.toThrow(/player_state_seed_is_128_bit/);
+    await expect(old.query("update player_state set state = state || '{\"seed\": 1}' where account_id = $1", [id])).rejects.toThrow(/state_has_no_seed/);
+  });
+
+  test('a key of all 128 bits goes into its column and comes back whole', async () => {
+    const { rows } = await old.query<{ id: string }>("insert into accounts (email, name) values ('new@example.com', 'New') returning id");
+    const id = rows[0]!.id;
+    const key: Seed = [0xdeadbeef, 0x01234567, 0x89abcdef, 0xfffffffe];
+    const record = createPlayerRecord(bundle, { ...started(), seed: key }, 1_000_000);
+    await insertPlayer(old, id, record);
+    expect((await createPgStore(old).load(id))!.state.seed).toEqual(key);
+    const raw = await old.query<{ seed: Buffer }>('select seed from player_state where account_id = $1', [id]);
+    expect(raw.rows[0]!.seed.toString('hex')).toBe('efbeadde67452301efcdab89feffffff');
   });
 });

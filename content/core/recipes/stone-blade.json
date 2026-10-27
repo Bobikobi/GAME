@@ -14,7 +14,8 @@
       "rarity": "uncommon",
       "class": "stone",
       "tier": 2,
-      "sprite": "core/base-kit:items/pottery-shard"
+      "sprite": "core/base-kit:items/pottery-shard",
+      "weight": 1
     }
   ],
   "recipe": {

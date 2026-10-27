@@ -17,7 +17,7 @@ const canonical = new URL(Astro.url.pathname, site).href;
 // a card is a look the owner picks: the tags point at it only when the file is in web/public/og/
 const card = Object.keys(import.meta.glob('../../public/og/card.png')).length > 0 ? new URL('/og/card.png', site).href : undefined;
 const data = [
-  { '@context': 'https://schema.org', '@type': 'WebSite', name: 'Openfold', url: new URL('/', site).href, description: 'A free pixel-art browser game that its players build together.', inLanguage: 'en' },
+  { '@context': 'https://schema.org', '@type': 'WebSite', name: 'Loomvale', url: new URL('/', site).href, description: 'A free pixel-art browser game that its players build together.', inLanguage: 'en' },
   ...jsonld,
 ];
 // "</" inside a JSON-LD block must not close it
@@ -35,7 +35,7 @@ const current = (s?: Section) => (s && s === section ? 'page' : undefined);
     <title>{title}</title>
     <link rel="canonical" href={canonical} />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Openfold" />
+    <meta property="og:site_name" content="Loomvale" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
@@ -65,7 +65,7 @@ const current = (s?: Section) => (s && s === section ? 'page' : undefined);
     <a class="skip" href="#main">Skip to the content</a>
     <header class="top">
       <div class="wrap bar">
-        <a class="wordmark" href="/" aria-label="Openfold, home">Openfold</a>
+        <a class="wordmark" href="/" aria-label="Loomvale, home">Loomvale</a>
         <nav class="nav" aria-label="Main">
           {NAV.map((l) => <a href={l.href} aria-current={current(l.section)}>{l.label}</a>)}
         </nav>
@@ -85,7 +85,7 @@ const current = (s?: Section) => (s && s === section ? 'page' : undefined);
     <footer class="foot">
       <div class="wrap foot-grid">
         <div class="foot-brand">
-          <a class="wordmark" href="/">Openfold</a>
+          <a class="wordmark" href="/">Loomvale</a>
           <p>A free pixel-art valley in your browser, written by its players. Every place and quest carries its builder's name.</p>
         </div>
         {
@@ -104,7 +104,7 @@ const current = (s?: Section) => (s && s === section ? 'page' : undefined);
         }
       </div>
       <div class="wrap foot-legal">
-        <p>&copy; 2026 Openfold. Free to play, built in the open by its builders.</p>
+        <p>&copy; 2026 Loomvale. Free to play, built in the open by its builders.</p>
         <p class="build">
           Kernel {source.kernel_version}, content {source.content_tag}, commit {source.sha}, built {dateTime(built_at)} UTC{fromFixture && ' (fixture)'}.
         </p>

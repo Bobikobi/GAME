@@ -12,13 +12,12 @@ import {
   type Bundle,
   type State,
   type StepResult,
-  bagCapacity,
-  bagUsed,
   canonical,
   hourOf,
   makeWalkable,
   newState,
   npcTile,
+  placeRoom,
   skillPoints,
   step,
 } from '@game/kernel';
@@ -135,8 +134,8 @@ describe('buying at the trader', () => {
 
   test('refuses a full bag, and the state does not change', () => {
     const { s, at } = buyState(100_000);
-    // fill the bag to its kernel-computed capacity with a stackable item
-    s.player.bag[item] = bagCapacity(b, s) - bagUsed(s) + (s.player.bag[item] ?? 0);
+    // fill the bag's places with the item itself: as many more as the kernel says still fit
+    s.player.bag[item] = placeRoom(b, s, item) + (s.player.bag[item] ?? 0);
     const before = canonical(s);
     const r = act(s, { t: 'buy', npc: trader, item, qty: 1, at });
     expect(r.ok).toBe(false);

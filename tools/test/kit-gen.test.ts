@@ -119,12 +119,13 @@ describe('the prompt', () => {
     expect(prompt).not.toContain('same colors');
   });
 
-  test('ramps name the shared ramps a sprite imports in, and rich with none means all of them', () => {
+  test('ramps name the shared ramps a sprite imports in, and a sprite with none draws in all of them', () => {
     const tub: GenEntry = { ...elder, name: 'tub', ref: 'refs/tub.png', what: 'round wooden tub', seen: 'a round plum tub', confirmed_by: 'owner', palette: 'ramp-added', ramps: ['plum', 'wood'] };
     expect(importRamps(tub)).toEqual(['plum', 'wood']);
     expect(importPalette(tub)).toHaveLength(32 + 4 + 1);
-    expect(importRamps({ style: 'rich' })).toEqual(CORE_RAMPS.map((r) => r.id));
-    expect(importPalette({})).toEqual(CORE_PALETTE);
+    expect(importRamps({})).toEqual(CORE_RAMPS.map((r) => r.id));
+    expect(importRamps({ kind: 'tile' })).toEqual([]);
+    expect(importPalette({ kind: 'tile' })).toEqual(CORE_PALETTE);
     expect(buildPrompt(tub, { width: 75, height: 69, data: Buffer.alloc(0) }, 'tub.png')).toContain('its plum, wood ramps');
     expect(() => parseSpec(spec([{ ...tub, ramps: ['neon'] }]))).toThrow(/not a shared ramp/);
     expect(() => parseSpec(spec([{ ...tub, ramps: ['plum', 'plum'] }]))).toThrow(/twice/);
@@ -133,13 +134,16 @@ describe('the prompt', () => {
     expect(parseSpec(spec([tub]))[0]?.ramps).toEqual(['plum', 'wood']);
   });
 
-  test('style rich asks for painterly pixel art and points at the style examples', () => {
+  test('every entry is drawn rich: painterly pixel art, the style examples named, the kit style refused', () => {
     const rich: GenEntry = { ...elder, name: 'tub', ref: 'refs/tub.png', what: 'round wooden tub', seen: 'a round plum tub', confirmed_by: 'owner', palette: 'ramp-added', style: 'rich', style_refs: ['refs/a.png', 'refs/b.png'] };
     const prompt = buildPrompt(rich, { width: 75, height: 69, data: Buffer.alloc(0) }, 'tub.png');
     expect(prompt).toContain('Painterly pixel art');
     expect(prompt).toContain('other attached images show');
     expect(prompt).not.toContain('two-tone');
-    expect(buildPrompt(elder, { width: 16, height: 24, data: Buffer.alloc(0) }, 'elder.png')).toContain('two-tone');
+    expect(buildPrompt(elder, { width: 16, height: 24, data: Buffer.alloc(0) }, 'elder.png')).toContain('Painterly pixel art');
+    expect(buildPrompt(elder, { width: 16, height: 24, data: Buffer.alloc(0) }, 'elder.png')).not.toContain('two-tone');
+    expect(buildPrompt({ ...elder, kind: 'tile' }, { width: 16, height: 16, data: Buffer.alloc(0) }, 'grass.png')).not.toContain('an outline whose colour');
+    expect(() => parseSpec(spec([{ ...rich, style: 'kit' }]))).toThrow(/retired.*2026-10-23/);
     expect(() => parseSpec(spec([{ ...rich, style: 'fancy' }]))).toThrow(/style/);
     expect(() => parseSpec(spec([{ ...rich, style_refs: ['refs/a.jpg'] }]))).toThrow(/style_refs/);
   });

@@ -16,6 +16,7 @@
       "class": "garment",
       "tier": 1,
       "sprite": "core/base-kit:items/branch",
+      "weight": 1,
       "wear": {
         "slot": "top",
         "effects": [
@@ -35,6 +36,7 @@
       "class": "tool",
       "tier": 1,
       "sprite": "core/base-kit:items/axe",
+      "weight": 1,
       "tool": {
         "kind": "hammer",
         "tier": 1
@@ -58,6 +60,7 @@
       "class": "garment",
       "tier": 1,
       "sprite": "core/base-kit:items/branch",
+      "weight": 1,
       "wear": {
         "slot": "feet",
         "look": true
@@ -72,6 +75,7 @@
       "class": "garment",
       "tier": 1,
       "sprite": "core/base-kit:items/branch",
+      "weight": 1,
       "wear": {
         "slot": "top",
         "effects": [
@@ -91,6 +95,7 @@
       "class": "garment",
       "tier": 1,
       "sprite": "core/base-kit:items/branch",
+      "weight": 1,
       "wear": {
         "slot": "feet",
         "look": true
@@ -105,6 +110,7 @@
       "class": "jewelry",
       "tier": 1,
       "sprite": "core/base-kit:items/herb",
+      "weight": 1,
       "wear": {
         "slot": "jewelry",
         "effects": [
@@ -124,6 +130,7 @@
       "class": "tool",
       "tier": 1,
       "sprite": "core/base-kit:items/trowel",
+      "weight": 1,
       "tool": {
         "kind": "pick",
         "tier": 1
@@ -147,6 +154,7 @@
       "class": "jewelry",
       "tier": 1,
       "sprite": "core/base-kit:items/old-coin",
+      "weight": 1,
       "wear": {
         "slot": "jewelry",
         "effects": [

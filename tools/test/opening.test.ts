@@ -14,6 +14,7 @@ import {
   npcTile,
   step,
   wakePocket,
+  widenSeed,
 } from '@game/kernel';
 
 import {
@@ -309,7 +310,7 @@ class Planner {
 
 /** A seed whose world wakes in this pocket. */
 function seedFor(bundle: Bundle, pocket: string): number {
-  for (let seed = 2026; seed < 12_026; seed++) if (wakePocket(bundle, seed) === pocket) return seed;
+  for (let seed = 2026; seed < 12_026; seed++) if (wakePocket(bundle, widenSeed(seed)) === pocket) return seed;
   throw new Error(`no seed wakes in ${pocket}`);
 }
 

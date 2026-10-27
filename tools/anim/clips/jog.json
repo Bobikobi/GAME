@@ -1,0 +1,32 @@
+{
+  "about": "The library jog, a stride nearer the game's pace. The silhouette limit is 15%: side-on the spread stride changes the area by up to 14%, with no limb lost (checked in the strips).",
+  "target": "forager",
+  "base": {
+    "library": "ual1",
+    "action": "Jog_Fwd_Loop"
+  },
+  "frames": {
+    "even": 8
+  },
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      85
+    ]
+  },
+  "locomotion": {
+    "playback": "distance"
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ],
+  "limits": {
+    "silhouette_dev_pct": 15
+  }
+}
