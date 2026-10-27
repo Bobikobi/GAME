@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-27",
+  "assets": [
+    {
+      "id": "sha256:f0518fe94026ea666266a300ee55ab9836f2c11d4a2a03751571fcd49a51d340",
+      "source": "../rich-world-2026-10-25/city-source.png",
+      "previousImport": "../rich-world-2026-10-25/city.png",
+      "sourceBranch": "art/rich-opening-ground",
+      "sourceCommit": "6413ea2210ffa1e2272348bccbc848c6a3dbf04b",
+      "family": "rich-world-ground-2026-10-25",
+      "intendedSubject": "city ground field",
+      "depicts": "Warm close-set stone paving with individual joints and occasional cool stones",
+      "reuse": [
+        "Whole field as authored",
+        "Existing colour palette and stone/soil detail"
+      ],
+      "tags": [
+        "terrain"
+      ],
+      "status": "keep",
+      "decidedBy": "agent",
+      "reason": "Existing detailed material fits the ground-stage objective; reuse and reconcile borders instead of another generation.",
+      "approval": "Visual study only; not owner-approved production kit art.",
+      "derivative": "paving.png",
+      "tool": "image_gen.imagegen",
+      "prompt": "Create a full square seamless 128x128 logical pixel-art town paving texture field, intended to become four 64x64 ground tiles in Openfold RICH. Crisp painterly pixel clusters, top-down flat warm-grey hand-set stone pavement with varied small rectangular and irregular pavers, occasional repaired sections, a few small muted moss seams and subtle worn centres. Restrained stone/wood/moss palette families, no white outlines. Earthy medieval riverside human city, not futuristic, not ornate cathedral. Quiet readable floor with material variation. NO buildings, props, plants standing up, debris piles, shadows, water, road borders, symbols or text. All pavers at compatible scale, not one giant slab per tile. Seamless opposite edges; no visible grid for tiles. Reference only for common pixel language, not river composition.",
+      "licence": "No separate source licence statement in this generation record; retained project-generated study art."
+    },
+    {
+      "id": "sha256:8a390db8e231c7fb5299f375c7368efcf4f0285713abbfe8591f3eaca2cf3fb7",
+      "source": "../rich-world-2026-10-25/ruins-source.png",
+      "previousImport": "../rich-world-2026-10-25/ruins.png",
+      "sourceBranch": "art/rich-opening-ground",
+      "sourceCommit": "6413ea2210ffa1e2272348bccbc848c6a3dbf04b",
+      "family": "rich-world-ground-2026-10-25",
+      "intendedSubject": "ruins ground field",
+      "depicts": "Broken stone paving interspersed with earth, moss and small surface fragments",
+      "reuse": [
+        "Whole field as authored",
+        "Existing colour palette and stone/soil detail"
+      ],
+      "tags": [
+        "terrain"
+      ],
+      "status": "keep",
+      "decidedBy": "agent",
+      "reason": "Existing detailed material fits the ground-stage objective; reuse and reconcile borders instead of another generation.",
+      "approval": "Visual study only; not owner-approved production kit art.",
+      "derivative": "worn.png",
+      "tool": "image_gen.imagegen",
+      "prompt": "Create a full square seamless 128x128 logical pixel-art ruined floor texture field, intended as four 64x64 ground tiles in Openfold RICH. Top-down flat walkable stone, blue-grey aged small paving slabs partially sunk into dark soil, short uneven cracks, restrained moss in a few seams and occasional tiny flat stone chips. Cool slate grey shadows, muted stone highlights, some warm soil; atmospheric but easily readable and not black. This is ground for the southern ruins, no lore or symbols. NO skulls, bones, graves, runes, buildings, upright rocks, debris piles, grass tufts, props, water, shadows or text. 60% quieter worn surfaces, remaining details in irregular groups. Crisp painterly pixel clusters and selective dithering, not smooth painting. Seamless opposite edges, no tile grid. Reference only for common pixel language.",
+      "licence": "No separate source licence statement in this generation record; retained project-generated study art."
+    }
+  ],
+  "otherCandidates": [
+    {
+      "source": "art-props-wave-1/.scratch/kit-gen/tiles-built-1-A/cobble.png",
+      "status": "rework",
+      "decidedBy": "agent",
+      "reason": "Inspected by eye; simple repeated geometric slabs are too coarse for the current detailed world. Original remains in its source worktree; this is a discovery reference, not a durable copied archive."
+    }
+  ],
+  "newImageGenerationCalls": 0
+}

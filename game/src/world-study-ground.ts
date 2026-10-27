@@ -1,12 +1,14 @@
 /// <reference types="vite/client" />
 import * as Phaser from 'phaser';
-import { WORLD_TILE_SIZE as TILE, worldStudyLayout, worldStudyMask, worldStudyPathDistance } from './world-study-layout';
+import { WORLD_TILE_SIZE as TILE, worldStudyLayout, worldStudyMask, worldStudyPathDistance, worldStudyRegionInset } from './world-study-layout';
 import { worldStudyCanStand, type WorldStudyTreeFootprint } from './world-study-collision';
 
 const assets = import.meta.glob('../../docs/design/frames/rich-world-expansion-2026-10-26/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 const banks = import.meta.glob('../../docs/design/frames/rich-river-kit-2026-10-25/bank-*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 const plants = import.meta.glob('../../docs/design/frames/rich-shore-2026-10-25/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 import broadOakUrl from '../../docs/design/frames/rich-world-trees-2026-10-26/oak-broad.png?url';
+import pavingUrl from '../../docs/design/frames/rich-world-ground-2026-10-27/paving.png?url';
+import wornUrl from '../../docs/design/frames/rich-world-ground-2026-10-27/worn.png?url';
 const masks = [1, 2, 3, 4, 6, 7, 8, 9, 11, 12, 13, 14, 15];
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const hash = (x: number, y: number) => (Math.imul(x + 23, 73856093) ^ Math.imul(y + 37, 19349663)) >>> 0;
@@ -14,6 +16,8 @@ const key = (name: string) => `world-ground-${name}`;
 
 export function preloadWorldStudyGround(scene: Phaser.Scene): void {
   scene.load.image(key('oak-broad'), broadOakUrl);
+  scene.load.image(key('paving'), pavingUrl);
+  scene.load.image(key('worn'), wornUrl);
   for (const name of ['meadow-a', 'meadow-b', 'meadow-c', 'path', 'woodland', 'oak']) {
     const entry = Object.entries(assets).find(([path]) => path.endsWith(`/${name}.png`));
     if (!entry) throw new Error(`Missing imported world material: ${name}`);
@@ -57,6 +61,8 @@ export function createWorldStudyGround(scene: Phaser.Scene) {
     return nearest;
   }));
   const soil = fields[3]!, forest = fields[4]!;
+  const paving = raster('paving'), worn = raster('worn');
+  const patches = worldStudyLayout.regions.filter(region => region.material !== 'forest');
   for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
     const to = (y * width + x) * 4;
     if (pixels.data[to + 3]! < 128) continue;
@@ -69,6 +75,7 @@ export function createWorldStudyGround(scene: Phaser.Scene) {
     const grain = (forest.data[forestAt + 1]! - 75) / 5;
     let forestWeight = 0;
     for (const region of worldStudyLayout.regions) {
+      if (region.material !== 'forest') continue;
       const rx = region.x * TILE, ry = region.y * TILE, right = rx + region.width * TILE, bottom = ry + region.height * TILE;
       const inside = Math.min(x - rx, right - x, y - ry, bottom - y);
       forestWeight = Math.max(forestWeight, clamp(.5 + (inside + grain) / 110));
@@ -78,12 +85,24 @@ export function createWorldStudyGround(scene: Phaser.Scene) {
     const mx = Math.floor(x / 256), my = Math.floor(y / 256), blendX = (x % 256) / 256, blendY = (y % 256) / 256;
     const choices = [fields[hash(mx, my) % 3]!, fields[hash(mx + 1, my) % 3]!, fields[hash(mx, my + 1) % 3]!, fields[hash(mx + 1, my + 1) % 3]!];
     const offsets = choices.map(field => sampleOffset(field, x, y));
+    let patchWeight = 0, patchField = paving, patchOffset = 0;
+    for (const region of patches) {
+      // Reject distant pixels before consulting rounded geometry or the imported stone/soil edge detail.
+      if (x < region.x * TILE - 48 || y < region.y * TILE - 48 || x > (region.x + region.width) * TILE + 48 || y > (region.y + region.height) * TILE + 48) continue;
+      const field = region.material === 'paving' ? paving : worn;
+      const at = sampleOffset(field, x, y);
+      const detail = (field.data[at]! + field.data[at + 1]! + field.data[at + 2]!) / 3;
+      const edge = worldStudyRegionInset(region, x, y) + (detail - 100) * .16 + grain * .5;
+      const weight = Math.round(clamp(.5 + edge / 48) * 3) / 3;
+      if (weight > patchWeight) { patchWeight = weight; patchField = field; patchOffset = at; }
+    }
     for (let c = 0; c < 3; c++) {
       const upper = choices[0]!.data[offsets[0]! + c]! * (1 - blendX) + choices[1]!.data[offsets[1]! + c]! * blendX;
       const lower = choices[2]!.data[offsets[2]! + c]! * (1 - blendX) + choices[3]!.data[offsets[3]! + c]! * blendX;
       const meadow = upper * (1 - blendY) + lower * blendY;
       const ground = meadow * (1 - forestWeight) + forest.data[forestAt + c]! * forestWeight;
-      const material = ground * (1 - pathWeight) + soil.data[soilAt + c]! * pathWeight;
+      const path = ground * (1 - pathWeight) + soil.data[soilAt + c]! * pathWeight;
+      const material = path * (1 - patchWeight) + patchField.data[patchOffset + c]! * patchWeight;
       pixels.data[to + c] = Math.round(pixels.data[to + c]! * (1 - cover) + material * cover);
     }
   }
@@ -117,7 +136,8 @@ export function createWorldStudyGround(scene: Phaser.Scene) {
   for (let ty = 1; ty < worldStudyLayout.height - 1; ty++) for (let tx = 1; tx < worldStudyLayout.width - 1; tx++) {
     const seed = hash(tx, ty), x = (tx + .25 + (seed % 41) / 100) * TILE, y = (ty + .3 + (seed % 31) / 100) * TILE;
     if (!landAt(x, y) || worldStudyPathDistance(x, y) < 52) continue;
-    const inForest = worldStudyLayout.regions.some(r => x > r.x * TILE && y > r.y * TILE && x < (r.x + r.width) * TILE && y < (r.y + r.height) * TILE);
+    if (patches.some(region => worldStudyRegionInset(region, x, y) > -20)) continue;
+    const inForest = worldStudyLayout.regions.some(r => r.material === 'forest' && x > r.x * TILE && y > r.y * TILE && x < (r.x + r.width) * TILE && y < (r.y + r.height) * TILE);
     const nearWater = !landAt(x + 48, y) || !landAt(x - 48, y) || !landAt(x, y + 48);
     if (inForest && tx % 3 === 1 && ty % 4 === 3 && landAt(x - 36, y) && landAt(x + 36, y)) {
       const treeX = x + (((seed >>> 6) % 81) - 40);

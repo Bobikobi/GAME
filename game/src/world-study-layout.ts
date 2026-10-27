@@ -2,15 +2,15 @@ import layoutJson from '../../docs/design/frames/rich-world-expansion-2026-10-26
 
 /** This visual fixture uses art pixels directly; it is not a gameplay/kernel map. */
 export const WORLD_TILE_SIZE = 64;
-export type WorldStudyMaterial = 'meadow' | 'forest' | 'path';
+export type WorldStudyMaterial = 'meadow' | 'forest' | 'path' | 'paving' | 'worn';
 /** Integer tile indices. For spawn, viewpoints and path points, the location is the tile centre. */
 export interface WorldStudyPoint { x: number; y: number }
 export interface WorldStudyViewpoint extends WorldStudyPoint {
-  id: 'meadow' | 'forest' | 'cove' | 'shore';
+  id: 'meadow' | 'forest' | 'cove' | 'shore' | 'paving' | 'worn';
   label: string;
 }
 export interface WorldStudyRegion extends WorldStudyPoint {
-  material: 'forest';
+  material: 'forest' | 'paving' | 'worn';
   width: number;
   height: number;
 }
@@ -22,8 +22,8 @@ export interface WorldStudyLayout {
   spawn: WorldStudyPoint;
   viewpoints: WorldStudyViewpoint[];
   /** Width is in tiles. Adjacent points form a continuous centre line. */
-  path: { width: number; points: WorldStudyPoint[] };
-  /** Overlapping forest rectangles make one forest patch; remaining ground is meadow. */
+  path: { width: number; points: WorldStudyPoint[]; branches?: WorldStudyPoint[][] };
+  /** Authored material patches; the renderer blends their boundaries into the surrounding field. */
   regions: WorldStudyRegion[];
 }
 
@@ -47,9 +47,8 @@ export function worldStudyLandTile(tx: number, ty: number): boolean {
 /** Shortest distance in world/art pixels from a point to the authored winding path centre line. */
 export function worldStudyPathDistance(x: number, y: number): number {
   if (!Number.isFinite(x) || !Number.isFinite(y)) return Infinity;
-  const points = worldStudyLayout.path.points;
   let distanceSquared = Infinity;
-  for (let i = 1; i < points.length; i++) {
+  for (const points of [worldStudyLayout.path.points, ...worldStudyLayout.path.branches ?? []]) for (let i = 1; i < points.length; i++) {
     const a = points[i - 1]!, b = points[i]!;
     const ax = (a.x + .5) * WORLD_TILE_SIZE, ay = (a.y + .5) * WORLD_TILE_SIZE;
     const bx = (b.x + .5) * WORLD_TILE_SIZE, by = (b.y + .5) * WORLD_TILE_SIZE;
@@ -63,10 +62,23 @@ export function worldStudyPathDistance(x: number, y: number): number {
 
 /** Centre-material selection only. The renderer owns ragged transitions and the shoreline alpha. */
 export function worldStudyMaterial(x: number, y: number): WorldStudyMaterial {
+  for (const region of worldStudyLayout.regions) {
+    if (region.material !== 'forest' && worldStudyRegionInset(region, x, y) >= 0) return region.material;
+  }
   if (worldStudyPathDistance(x, y) <= worldStudyLayout.path.width * WORLD_TILE_SIZE / 2) return 'path';
   for (const region of worldStudyLayout.regions) {
+    if (region.material !== 'forest') continue;
     if (x >= region.x * WORLD_TILE_SIZE && y >= region.y * WORLD_TILE_SIZE
       && x < (region.x + region.width) * WORLD_TILE_SIZE && y < (region.y + region.height) * WORLD_TILE_SIZE) return region.material;
   }
   return 'meadow';
+}
+
+/** Signed distance inside a rounded material patch; independent of art and walking/shore masks. */
+export function worldStudyRegionInset(region: WorldStudyRegion, x: number, y: number): number {
+  const halfWidth = region.width * WORLD_TILE_SIZE / 2, halfHeight = region.height * WORLD_TILE_SIZE / 2;
+  const radius = Math.min(WORLD_TILE_SIZE, halfWidth, halfHeight);
+  const dx = Math.abs(x - (region.x * WORLD_TILE_SIZE + halfWidth)) - halfWidth + radius;
+  const dy = Math.abs(y - (region.y * WORLD_TILE_SIZE + halfHeight)) - halfHeight + radius;
+  return radius - Math.hypot(Math.max(dx, 0), Math.max(dy, 0)) - Math.min(Math.max(dx, dy), 0);
 }

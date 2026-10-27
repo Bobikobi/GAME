@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { WORLD_TILE_SIZE, worldStudyLandTile, worldStudyLayout, worldStudyMask, worldStudyMaterial, worldStudyPathDistance } from '../src/world-study-layout';
+import { WORLD_TILE_SIZE, worldStudyLandTile, worldStudyLayout, worldStudyMask, worldStudyMaterial, worldStudyPathDistance, worldStudyRegionInset } from '../src/world-study-layout';
 
 test('the coast uses supported shore pieces and every full land tile connects to the spawn', () => {
   const { width, height, corners, spawn, viewpoints } = worldStudyLayout;
@@ -26,6 +26,24 @@ test('the coast uses supported shore pieces and every full land tile connects to
   for (const view of viewpoints) expect(reached.has(`${view.x},${view.y}`), view.id).toBe(true);
   expect(worldStudyLandTile(-1, 4)).toBe(false);
   expect(worldStudyLandTile(width, 4)).toBe(false);
+});
+
+test('the added ground patches have rounded edges and reachable authored centres on land', () => {
+  for (const id of ['paving', 'worn'] as const) {
+    const view = worldStudyLayout.viewpoints.find(p => p.id === id)!;
+    expect(worldStudyMaterial((view.x + .5) * WORLD_TILE_SIZE, (view.y + .5) * WORLD_TILE_SIZE)).toBe(id);
+    expect(worldStudyLandTile(view.x, view.y)).toBe(true);
+    const region = worldStudyLayout.regions.find(r => r.material === id)!;
+    expect(worldStudyRegionInset(region, (region.x + region.width / 2) * WORLD_TILE_SIZE, (region.y + region.height / 2) * WORLD_TILE_SIZE)).toBeGreaterThan(0);
+    expect(worldStudyRegionInset(region, region.x * WORLD_TILE_SIZE, region.y * WORLD_TILE_SIZE)).toBeLessThan(0);
+  }
+  const branch = worldStudyLayout.path.branches![0]!;
+  const end = branch.at(-1)!;
+  expect(worldStudyLayout.path.points).toContainEqual(end);
+  for (let x = branch[0]!.x; x <= end.x; x += .125) {
+    expect(worldStudyLandTile(Math.floor(x), branch[0]!.y)).toBe(true);
+    expect(worldStudyPathDistance((x + .5) * WORLD_TILE_SIZE, (branch[0]!.y + .5) * WORLD_TILE_SIZE)).toBeLessThan(.001);
+  }
 });
 
 test('the authored route stays on land and turns before a straight run exceeds eight tiles', () => {

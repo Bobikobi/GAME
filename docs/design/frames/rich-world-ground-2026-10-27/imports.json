@@ -1,0 +1,69 @@
+{
+  "method": "Existing importTile and palette, followed by the established border-strip reconciliation; no motif painting or crop shuffling.",
+  "reports": [
+    {
+      "name": "paving",
+      "source": "../rich-world-2026-10-25/city-source.png",
+      "sourceSha256": "f0518fe94026ea666266a300ee55ab9836f2c11d4a2a03751571fcd49a51d340",
+      "file": "paving.png",
+      "sha256": "d7b3358bed786f514bd1914bdd0a3e1e5ca94611042d28d196c5fb5669ca54ad",
+      "ramps": [
+        "stone",
+        "moss",
+        "wood"
+      ],
+      "field": [
+        128,
+        128
+      ],
+      "sourceGrid": [
+        418,
+        418
+      ],
+      "repeat": {
+        "borderBlendPixels": 8,
+        "before": {
+          "horizontal": 67,
+          "vertical": 59
+        },
+        "after": {
+          "horizontal": 0,
+          "vertical": 0
+        }
+      },
+      "originalPrompt": "../rich-world-2026-10-25/prompts.json:jobs[name=city]"
+    },
+    {
+      "name": "worn",
+      "source": "../rich-world-2026-10-25/ruins-source.png",
+      "sourceSha256": "8a390db8e231c7fb5299f375c7368efcf4f0285713abbfe8591f3eaca2cf3fb7",
+      "file": "worn.png",
+      "sha256": "814272424fc221bf9cab488e694af1afc558615deb00891264414132f02794c4",
+      "ramps": [
+        "stone",
+        "moss",
+        "wood"
+      ],
+      "field": [
+        128,
+        128
+      ],
+      "sourceGrid": [
+        418,
+        418
+      ],
+      "repeat": {
+        "borderBlendPixels": 8,
+        "before": {
+          "horizontal": 61,
+          "vertical": 58
+        },
+        "after": {
+          "horizontal": 0,
+          "vertical": 0
+        }
+      },
+      "originalPrompt": "../rich-world-2026-10-25/prompts.json:jobs[name=ruins]"
+    }
+  ]
+}
