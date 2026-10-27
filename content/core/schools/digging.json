@@ -8,6 +8,7 @@
   "school": {
     "name": "Digging",
     "profession": "core/digging",
+    "tint": "skin",
     "nodes": [
       {
         "id": "steady",
