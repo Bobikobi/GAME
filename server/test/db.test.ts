@@ -62,7 +62,7 @@ function started(): State {
 describe.skipIf(!DATABASE_URL)('the database of Stage 2a (NEXT 18 b)', () => {
   test('the migrations apply once, and a second run applies nothing', async () => {
     const first = await migrate(pool);
-    expect(first).toEqual(['0001_accounts.sql', '0002_player_state.sql', '0003_signin.sql', '0004_bound_gold.sql', '0005_close_grace.sql']);
+    expect(first).toEqual(['0001_accounts.sql', '0002_player_state.sql', '0003_signin.sql', '0004_bound_gold.sql', '0005_close_grace.sql', '0006_sweep_index.sql']);
     expect(await migrate(pool)).toEqual([]);
   });
 

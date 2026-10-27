@@ -236,4 +236,29 @@ describe.skipIf(!DATABASE_URL)('sign-in in postgres (NEXT 18 e)', () => {
     expect(await store.countEmailLinks('sweep@example.com', 0)).toBe(1);
     expect(await store.useEmailLink(open, NOW)).toMatchObject({ email: 'sweep@example.com' });
   });
+
+  test('the sweep ends the sessions past their end and the revoked ones, each by its own index (finding 10)', async () => {
+    const accountId = await account();
+    const [ended, revoked, live] = [tokenHash(newToken()), tokenHash(newToken()), tokenHash(newToken())];
+    await store.createSession(ended, accountId, NOW - 2 * MINUTE, NOW - MINUTE);
+    await store.createSession(revoked, accountId, NOW, NOW + MINUTE);
+    await store.createSession(live, accountId, NOW, NOW + MINUTE);
+    await store.revokeSession(revoked, NOW);
+    await store.sweep(NOW);
+    const left = await pool.query<{ token_hash: string }>('select token_hash from sessions where account_id = $1', [accountId]);
+    expect(left.rows.map((row) => row.token_hash)).toEqual([live]);
+    const indexes = await pool.query<{ indexname: string }>("select indexname from pg_indexes where tablename = 'sessions' and schemaname = current_schema()");
+    expect(indexes.rows.map((row) => row.indexname)).toEqual(expect.arrayContaining(['sessions_expires', 'sessions_revoked']));
+  });
+
+  test('a name is taken in any case while a live or closed account holds it, and free once that account is erased (finding 12)', async () => {
+    const accountId = await played('Juniper');
+    expect(await store.nameTaken('juniper')).toBe(true);
+    expect(await store.nameTaken('JUNIPER')).toBe(true);
+    expect(await store.nameTaken('Juniper2')).toBe(false);
+    await store.closeAccount(accountId, NOW);
+    expect(await store.nameTaken('Juniper')).toBe(true);
+    await store.eraseClosed(NOW + CLOSED_ACCOUNT_GRACE_MS, CLOSED_ACCOUNT_GRACE_MS);
+    expect(await store.nameTaken('Juniper')).toBe(false);
+  });
 });

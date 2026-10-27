@@ -1,4 +1,4 @@
-import { randomInt } from 'node:crypto';
+import { createHash, randomInt } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Bundle } from '@game/kernel';
 
@@ -6,6 +6,7 @@ import { takeOpening } from '../handover';
 
 import { ageGate, parseBirthDate } from './age';
 import { AGE_COOKIE, clearCookie, cookie, FLOW_COOKIE, readCookie, SESSION_COOKIE, SIGNUP_COOKIE } from './cookies';
+import { inboxOf, RateLimit } from './limits';
 import type { Mailer } from './mailer';
 import { SignInRefusal, type OAuthProvider, type ProvenIdentity } from './provider';
 import { CLOSED_ACCOUNT_GRACE_MS, type AuthStore } from './store';
@@ -21,7 +22,14 @@ const SESSION_TTL_MS = 30 * 24 * 60 * MINUTE;
 const AGE_REFUSAL_TTL_MS = 24 * 60 * MINUTE;
 /** links sent to one address within a link's life; past it the request is answered the same and nothing is sent */
 const LINKS_PER_ADDRESS = 3;
-const SWEEP_EVERY_MS = MINUTE;
+/** links sent to one inbox (`+tag` dropped) within a link's life, counted in this process; past it, the same answer and nothing sent */
+const LINKS_PER_INBOX = 3;
+/** email sign-ins one client address may ask for within a link's life; past it, 429 */
+const EMAIL_STARTS_PER_CLIENT = 10;
+/** Google or Discord sign-ins one client address may start within a flow's life; past it, back to the game */
+const OAUTH_STARTS_PER_CLIENT = 20;
+/** how often `sweep` is meant to run; main.ts runs it on a timer, off every request */
+export const SWEEP_EVERY_MS = MINUTE;
 const BODY_LIMIT = 4 * 1024;
 /** the sign-up carries the opening the phone played: up to 2000 steps and the state they end on (NEXT 18 d) */
 const SIGNUP_BODY_LIMIT = 512 * 1024;
@@ -48,6 +56,11 @@ export interface SignInOptions {
    * Unset, no header is read and every sign-up is held to the highest age; the player never says where they are.
    */
   countryHeader?: string;
+  /**
+   * The request header our nginx sets to the client's address (X-Real-IP), overwriting any the client sent;
+   * the per-address limits count by it. Unset (a laptop with no proxy), the socket's address is used.
+   */
+  addressHeader?: string;
   now?: () => number;
 }
 
@@ -56,6 +69,8 @@ export interface SignIn {
   resolve(request: IncomingMessage): Promise<string | undefined>;
   /** Answer a request under `/auth/`; false for any other path. */
   handle(request: IncomingMessage, response: ServerResponse, url: URL): Promise<boolean>;
+  /** Remove what has expired: the store's flows, links, tickets and sessions, and the limits' old counts. Run on a timer, never on a player's request. */
+  sweep(): Promise<void>;
 }
 
 function sendJson(response: ServerResponse, status: number, body: unknown, cookies: string[] = []): void {
@@ -94,9 +109,11 @@ async function readJsonObject(request: IncomingMessage, limit = BODY_LIMIT): Pro
   if (!/^application\/json(?:\s*;|$)/.test(request.headers['content-type']?.toLowerCase() ?? '')) {
     throw new SignInRefusal('Send JSON with content-type application/json.', 'request', 415);
   }
+  // read outside the parse, as api.ts does: a body too large keeps its 413, and a broken socket is not called bad JSON
+  const text = await readBody(request, limit);
   let value: unknown;
   try {
-    value = JSON.parse(await readBody(request, limit)) as unknown;
+    value = JSON.parse(text) as unknown;
   } catch {
     throw new SignInRefusal('The request is not valid JSON.', 'request');
   }
@@ -121,8 +138,23 @@ function normalEmail(value: unknown): string {
   return email;
 }
 
-function escapeHtml(text: string): string {
-  return text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+/**
+ * The email link page's one script. The token rides in the link's fragment, which a browser never sends, so
+ * no server log, proxy log or Referer carries it; the script reads it into the form and takes it out of the
+ * address bar and the history. The page's CSP allows this script by its hash and nothing else.
+ */
+export const LINK_SCRIPT =
+  "var m=/^#token=([A-Za-z0-9_-]{43})$/.exec(location.hash);history.replaceState(null,'',location.pathname);var f=document.forms[0];" +
+  "if(m){f.elements.token.value=m[1];f.querySelector('button').disabled=false}else{f.hidden=true;document.getElementById('missing').hidden=false}";
+const LINK_SCRIPT_SOURCE = `'sha256-${createHash('sha256').update(LINK_SCRIPT, 'utf8').digest('base64')}'`;
+const INCOMPLETE_LINK = 'This sign-in link is not complete. Ask for a new one in the game.';
+
+function linkPageHtml(body: string): string {
+  return `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Loomvale sign-in</title>${body}</html>`;
+}
+
+function slowDown(): SignInRefusal {
+  return new SignInRefusal('Too many sign-ins were asked for from here. Wait a few minutes and try again.', 'slow-down', 429);
 }
 
 /**
@@ -134,23 +166,32 @@ export function createSignIn(options: SignInOptions): SignIn {
   const { store, mailer } = options;
   const now = options.now ?? Date.now;
   const newSeed = options.newSeed ?? (() => randomInt(0, 2 ** 32));
-  const allowedOrigins = new Set([options.publicOrigin, options.appOrigin]);
+  /** every non-GET call comes from the game's pages */
+  const gameOrigins: ReadonlySet<string> = new Set([options.appOrigin]);
+  /** but one: the email link page is this API's own, and its button posts from here (finding 1 of the 27.10 review) */
+  const linkPageOrigins: ReadonlySet<string> = new Set([options.publicOrigin]);
   const redirectUri = (provider: string) => `${options.publicOrigin}/auth/${provider}/callback`;
-  let sweptAt = 0;
+  const emailStartsByClient = new RateLimit(EMAIL_STARTS_PER_CLIENT, LINK_TTL_MS);
+  const linksByInbox = new RateLimit(LINKS_PER_INBOX, LINK_TTL_MS);
+  const oauthStartsByClient = new RateLimit(OAUTH_STARTS_PER_CLIENT, FLOW_TTL_MS);
+  const limits = [emailStartsByClient, linksByInbox, oauthStartsByClient];
 
-  async function sweep(at: number): Promise<void> {
-    if (at - sweptAt < SWEEP_EVERY_MS) return;
-    sweptAt = at;
-    await store.sweep(at);
-  }
-
-  function fromAllowedOrigin(request: IncomingMessage): boolean {
+  function fromOrigin(request: IncomingMessage, allowed: ReadonlySet<string> = gameOrigins): boolean {
     const origin = request.headers.origin;
-    return typeof origin === 'string' && allowedOrigins.has(origin);
+    return typeof origin === 'string' && allowed.has(origin);
   }
 
-  function requireOrigin(request: IncomingMessage): void {
-    if (!fromAllowedOrigin(request)) throw new SignInRefusal('That request did not come from the game.', 'origin', 403);
+  function requireOrigin(request: IncomingMessage, allowed: ReadonlySet<string> = gameOrigins): void {
+    if (!fromOrigin(request, allowed)) throw new SignInRefusal('That request did not come from the game.', 'origin', 403);
+  }
+
+  /** The client's address as our proxy names it, never as a body or a header the client wrote says. */
+  function clientAddress(request: IncomingMessage): string {
+    if (options.addressHeader) {
+      const value = request.headers[options.addressHeader];
+      if (typeof value === 'string' && value.length > 0 && value.length <= 64) return value;
+    }
+    return request.socket.remoteAddress ?? 'unknown';
   }
 
   /** The browser goes back to the game, with what happened in the fragment, which no server log sees. */
@@ -192,7 +233,6 @@ export function createSignIn(options: SignInOptions): SignIn {
 
   async function oauthStart(response: ServerResponse, provider: OAuthProvider): Promise<void> {
     const at = now();
-    await sweep(at);
     const state = newToken();
     const verifier = newToken();
     const nonce = newToken();
@@ -210,6 +250,10 @@ export function createSignIn(options: SignInOptions): SignIn {
     if (!isToken(state) || !isToken(bound) || !sameSecret(state, bound)) {
       throw new SignInRefusal('That sign-in did not start in this browser. Start again.', 'state');
     }
+    // The flow is spent before the code is exchanged, on purpose: a state answers once even when two
+    // callbacks race, and the code it guards is single-use at Google (RFC 6749 4.1.2), so a reload after a
+    // failed exchange could not finish anyway. A failed exchange goes back to the game as `provider`, and
+    // the player starts again with a fresh state.
     const flow = await store.takeFlow(tokenHash(state));
     if (!flow || flow.provider !== provider.id || flow.expiresAt <= at) {
       throw new SignInRefusal('That sign-in is no longer open. Start again.', 'state');
@@ -227,16 +271,19 @@ export function createSignIn(options: SignInOptions): SignIn {
     onlyKeys(body, ['email']);
     const email = normalEmail(body.email);
     const at = now();
-    await sweep(at);
+    // a client asking for many links is told to wait: that says nothing about any address
+    if (!emailStartsByClient.take(clientAddress(request), at)) throw slowDown();
     // the answer is the same whether a link went out, was held back, or the address has no account,
-    // so the endpoint tells no one which addresses play here
-    if ((await store.countEmailLinks(email, at - LINK_TTL_MS)) < LINKS_PER_ADDRESS) {
+    // so the endpoint tells no one which addresses play here; the links counted are the ones still alive
+    const send = linksByInbox.take(inboxOf(email), at) && (await store.countEmailLinks(email, at - LINK_TTL_MS + 1)) < LINKS_PER_ADDRESS;
+    if (send) {
       const token = newToken();
       await store.saveEmailLink({ tokenHash: tokenHash(token), email, createdAt: at, expiresAt: at + LINK_TTL_MS });
       await mailer.send({
         to: email,
         subject: 'Your Loomvale sign-in link',
-        text: `Open this link to sign in to Loomvale. It works once, for ${LINK_TTL_MS / MINUTE} minutes:\n${options.publicOrigin}/auth/email/link?token=${token}\n\nIf you did not ask for it, ignore this message.`,
+        // the token after `#`: a browser never sends the fragment, so no server or proxy log ever holds it
+        text: `Open this link to sign in to Loomvale. It works once, for ${LINK_TTL_MS / MINUTE} minutes:\n${options.publicOrigin}/auth/email/link#token=${token}\n\nIf you did not ask for it, ignore this message.`,
       });
     }
     sendJson(response, 202, { sent: true });
@@ -245,25 +292,51 @@ export function createSignIn(options: SignInOptions): SignIn {
   /**
    * The page the emailed link opens. It changes nothing: a mail scanner that follows links must not spend
    * the link, so the sign-in happens only when the player presses the button, which posts the token.
+   *
+   * The token is in the fragment, read by the page's own script (LINK_SCRIPT). The page is served with
+   * `referrer-policy: same-origin`, so its button's POST carries this API's origin (under `no-referrer` a
+   * browser sends `Origin: null`), and `form-action` names the game's origin, which the confirm's 303 goes
+   * to (Chromium and WebKit check a form's redirect against it too).
    */
   function emailLinkPage(response: ServerResponse, url: URL): void {
-    const token = url.searchParams.get('token');
-    const valid = isToken(token);
-    const body = valid
-      ? `<form method="post" action="/auth/email/confirm"><input type="hidden" name="token" value="${escapeHtml(token)}"><button type="submit">Sign in to Loomvale</button></form>`
-      : '<p>This sign-in link is not complete. Ask for a new one in the game.</p>';
-    response.writeHead(valid ? 200 : 400, {
+    if (url.search !== '') {
+      // TODO(remove one release after the fragment link ships, finding 5 of the 27.10 review): a link mailed
+      // before it carries `?token=`. It is moved to the fragment at once, before any page is drawn, so the
+      // page and its button see only the new form; the request line that brought it was logged as before.
+      const token = url.searchParams.get('token');
+      if (isToken(token) && [...url.searchParams.keys()].length === 1) {
+        redirect(response, `${options.publicOrigin}/auth/email/link#token=${token}`);
+        return;
+      }
+      response.writeHead(400, {
+        'cache-control': 'no-store',
+        'content-type': 'text/html; charset=utf-8',
+        'content-security-policy': "default-src 'none'; frame-ancestors 'none'",
+        'referrer-policy': 'no-referrer',
+        'x-content-type-options': 'nosniff',
+      });
+      response.end(linkPageHtml(`<p>${INCOMPLETE_LINK}</p>`));
+      return;
+    }
+    response.writeHead(200, {
       'cache-control': 'no-store',
       'content-type': 'text/html; charset=utf-8',
-      'content-security-policy': "default-src 'none'; form-action 'self'; frame-ancestors 'none'",
-      'referrer-policy': 'no-referrer',
+      'content-security-policy': `default-src 'none'; script-src ${LINK_SCRIPT_SOURCE}; form-action 'self' ${options.appOrigin}; base-uri 'none'; frame-ancestors 'none'`,
+      'referrer-policy': 'same-origin',
       'x-content-type-options': 'nosniff',
     });
-    response.end(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Loomvale sign-in</title>${body}</html>`);
+    response.end(
+      linkPageHtml(
+        '<form method="post" action="/auth/email/confirm"><input type="hidden" name="token"><button type="submit" disabled>Sign in to Loomvale</button></form>' +
+          `<p id="missing" hidden>${INCOMPLETE_LINK}</p><noscript><p>This page needs JavaScript to read the link.</p></noscript>` +
+          `<script>${LINK_SCRIPT}</script>`,
+      ),
+    );
   }
 
   async function emailConfirm(request: IncomingMessage, response: ServerResponse): Promise<void> {
-    requireOrigin(request);
+    // the one POST that comes from this API's own page, never from the game's
+    requireOrigin(request, linkPageOrigins);
     if (!/^application\/x-www-form-urlencoded(?:\s*;|$)/.test(request.headers['content-type']?.toLowerCase() ?? '')) {
       throw new SignInRefusal('Send the form as the link page sends it.', 'request', 415);
     }
@@ -329,20 +402,30 @@ export function createSignIn(options: SignInOptions): SignIn {
     if (typeof body.name !== 'string' || !NAME.test(body.name) || body.name.trim() === '') {
       throw new SignInRefusal('A name is 1 to 16 letters, digits, spaces, "_" or "-".', 'request');
     }
+    const name = body.name.trim();
     const birth = parseBirthDate(body.birthDate, at);
     if (!birth) throw new SignInRefusal('Give the day you were born.', 'request');
     const gate = ageGate(birth, countryOf(request), at);
     if ('underAge' in gate) return refuseAge(response, ticket.ticketHash, [cookie(AGE_COOKIE, '1', AGE_REFUSAL_TTL_MS / 1000)]);
+    // A taken name is refused before the opening is replayed, so a ticket retried with one name after
+    // another replays its opening once, for the name that lands (finding 12 of the 27.10 review). The
+    // insert below still holds the rule for a name taken in between.
+    const nameTaken = () => new SignInRefusal('That name is taken in this world. Choose another.', 'name-taken', 409);
+    if (await store.nameTaken(name)) throw nameTaken();
     // the opening the phone played comes with the account, replayed and proven, or the game starts fresh (NEXT 18 d)
     const handover = takeOpening(options.bundle, body.opening, newSeed(), at);
     const game = handover.kept
       ? { record: handover.record, books: { action: handover.opening, tick: handover.tick, gold: handover.gold } }
       : { record: handover.record };
-    const made = await store.createAccount({ email: ticket.email, name: body.name.trim(), country: countryOf(request) }, ticket, game);
-    if (made === 'name-taken') throw new SignInRefusal('That name is taken in this world. Choose another.', 'name-taken', 409);
-    if (made === 'email-taken') throw new SignInRefusal('That address already has an account. Sign in instead.', 'email-taken', 409);
+    const made = await store.createAccount({ email: ticket.email, name, country: countryOf(request) }, ticket, game);
+    if (made === 'name-taken') throw nameTaken();
+    if (made === 'email-taken') {
+      // the address or the identity has an account by now: this ticket can never make one, so it ends
+      await store.dropTicket(ticket.ticketHash);
+      throw new SignInRefusal('That address already has an account. Sign in instead.', 'email-taken', 409);
+    }
     const session = await startSession(request, made.accountId, at);
-    sendJson(response, 201, { name: body.name.trim(), opening: handover.kept ? 'kept' : 'fresh' }, [session, clearCookie(SIGNUP_COOKIE)]);
+    sendJson(response, 201, { name, opening: handover.kept ? 'kept' : 'fresh' }, [session, clearCookie(SIGNUP_COOKIE)]);
   }
 
   async function sessionHash(request: IncomingMessage): Promise<{ hash: string; accountId: string } | undefined> {
@@ -386,11 +469,13 @@ export function createSignIn(options: SignInOptions): SignIn {
     // TODO(NEXT 18 e, gate h5): Discord's OAuth app needs the owner's own login, so the slot answers "not
     // open" until it exists; a `discordProvider` then fills `open` like Google's.
     const closed: Route = () => Promise.reject(new SignInRefusal(`Sign-in with ${provider === 'google' ? 'Google' : 'Discord'} is not open yet.`, 'not-open', 501));
-    if (!open) return { start: closed, callback: closed };
-    return {
-      start: (_request, response) => oauthStart(response, open),
-      callback: (request, response, url) => oauthCallback(request, response, url, open),
+    // every start writes a flow row, so one client address starts only so many (finding 6 of the 27.10 review)
+    const start: Route = async (request, response, url) => {
+      if (!oauthStartsByClient.take(clientAddress(request), now())) throw slowDown();
+      await (open ? oauthStart(response, open) : closed(request, response, url));
     };
+    if (!open) return { start, callback: closed };
+    return { start, callback: (request, response, url) => oauthCallback(request, response, url, open) };
   }
 
   const google = oauth('google');
@@ -409,11 +494,17 @@ export function createSignIn(options: SignInOptions): SignIn {
     '/auth/close': { POST: close },
   };
   /** the routes a browser reaches by navigating: a refusal there goes back to the game, not to a JSON page */
-  const navigations = new Set(['/auth/google/callback', '/auth/discord/callback', '/auth/email/confirm']);
+  const navigations = new Set(['/auth/google/start', '/auth/google/callback', '/auth/discord/start', '/auth/discord/callback', '/auth/email/confirm']);
 
   return {
+    async sweep() {
+      const at = now();
+      for (const limit of limits) limit.prune(at);
+      await store.sweep(at);
+    },
+
     async resolve(request) {
-      if (request.method !== 'GET' && !fromAllowedOrigin(request)) return undefined;
+      if (request.method !== 'GET' && !fromOrigin(request)) return undefined;
       return (await sessionHash(request))?.accountId;
     },
 
