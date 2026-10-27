@@ -1,6 +1,6 @@
 # How the team works
 
-This page is for the people who build the game itself: developers, artists, and the AI agents working beside them. If you want to add a fruit, a quest or a ruin to the valley, you want [CONTRIBUTING.md](../../CONTRIBUTING.md) and the [creator guide](../creators/README.md) instead.
+This page is for the people who build the game itself: developers, artists, and the AI agents working beside them. If you want to add a townsperson, a fruit, a quest or a ruin to the valley, you want [CONTRIBUTING.md](../../CONTRIBUTING.md) and the [creator guide](../creators/README.md) instead.
 
 ## Branches
 

@@ -110,7 +110,7 @@ describe('the files for AI readers', () => {
   it('llms.txt links the full text, and the full text holds the guide and the roadmap', () => {
     expect(read('llms.txt')).toContain('/llms-full.txt');
     const full = read('llms-full.txt');
-    expect(full).toContain('Add a fruit in 10 minutes');
+    expect(full).toContain('Add a townsperson in 15 minutes');
     expect(full).toContain('ROADMAP.md');
     expect(full.length).toBeGreaterThan(20_000);
   });

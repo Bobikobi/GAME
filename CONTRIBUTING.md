@@ -4,7 +4,7 @@ Welcome. Loomvale is built by the people who play it, and a first contribution i
 
 ## Adding content
 
-1. Follow [Add a fruit in 10 minutes](docs/creators/README.md). It walks through a whole extension, from copying the template to opening a pull request.
+1. Follow [Add a townsperson in 15 minutes](docs/creators/README.md). It walks through a whole extension, from copying the template to opening a pull request.
 2. Your files live in `content/extensions/<your-handle>/`, and art in `content/kit/<your-handle>/`. Ids start with your handle.
 3. Run `pnpm check` until it reports no errors. CI runs the same check on every pull request and shows its report on the run's summary page.
 4. Open a pull request against **`develop`**, not `main`. `main` is the default branch because it holds releases (a release is `develop` merged into `main`), so GitHub offers it first: change the base. CI refuses any other base, and a pull request aimed at `main` is asked to retarget. Fill in the author checklist from the template.
