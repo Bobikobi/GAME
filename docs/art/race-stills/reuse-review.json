@@ -1,0 +1,828 @@
+{
+ "note": "Agent-written under docs/art/REUSE.md. Statuses are suggestions except where an ownerDecisions entry (relayed by the manager) names the pick. Sources moved from the ignored .scratch of the anim-cast worktree into this folder on 27.10 (scratchSource keeps the old path as a discovery aid). Provenance: no generation manifests exist for these stills, marked unknown. The numbers that make the picked elf are in tools/anim/races/elf.json and the cloak and build code in tools/anim/blender/garments.py; the skeleton's piece fit is tools/anim/races/skeleton.json. The other jobs and the stills scripts stay in the ignored .scratch of the anim-cast worktree (discovery aid only, not an archive).",
+ "assets": [
+  {
+   "id": "race-stills-r1-elf-A",
+   "sha256": "6ec4560022d6d57f9da2c98f5756a44f51f498e3565ba75f5abfa615fa1e008e",
+   "source": "docs/art/race-stills/round1/elf-A.png",
+   "round": 1,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [
+    ".scratch/stills/j/elf_a_m.json",
+    ".scratch/stills/j/elf_a_f.json"
+   ],
+   "modelSources": "tools/.cache/anim/step2/src/ubc, tools/.cache/anim/step2/src/outfits, tools/.cache/anim/lib/ual1 (gitignored cache)",
+   "licence": "Quaternius Universal Base Characters, Modular Outfits - Fantasy, Hairstyles and Universal Animation Library 1: CC0",
+   "family": "race-stills-elf",
+   "intendedSubject": "elf race (player or NPC), game-size sprite study",
+   "depicts": "Quaternius ranger, hood up, face in shade, no ears showing; man and woman",
+   "tags": [
+    "future-npc",
+    "equipment"
+   ],
+   "reuse": [
+    "whole character as a hooded ranger NPC",
+    "hood-up outfit"
+   ],
+   "status": "unreviewed",
+   "suggestedBy": "agent",
+   "reason": "Round 1 baseline; the hood hides the ears. Keep for a hooded ranger NPC.",
+   "scratchSource": ".scratch/stills/elf-A.png"
+  },
+  {
+   "id": "race-stills-r1-elf-B",
+   "sha256": "c91c3417d894bda81860046406c1a95dde1309c9b8ff496f8d6f9db6070b9767",
+   "source": "docs/art/race-stills/round1/elf-B.png",
+   "round": 1,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [
+    ".scratch/stills/j/elf_b_m.json",
+    ".scratch/stills/j/elf_b_f.json"
+   ],
+   "modelSources": "tools/.cache/anim/step2/src/ubc, tools/.cache/anim/step2/src/outfits, tools/.cache/anim/lib/ual1 (gitignored cache)",
+   "licence": "Quaternius Universal Base Characters, Modular Outfits - Fantasy, Hairstyles and Universal Animation Library 1: CC0",
+   "family": "race-stills-elf",
+   "intendedSubject": "elf race",
+   "depicts": "Elf A with the hood down: pointed ears (pulled by vertex displacement, ears 0.18) and brown hair; man and woman",
+   "tags": [
+    "future-npc"
+   ],
+   "reuse": [
+    "whole character",
+    "the pulled-ear head, which the owner preferred to round 2's ears"
+   ],
+   "status": "unreviewed",
+   "suggestedBy": "agent",
+   "reason": "The owner preferred round 1's ears and head; only the hair colour was too close to the skin (fixed in round 3).",
+   "scratchSource": ".scratch/stills/elf-B.png"
+  },
+  {
+   "id": "race-stills-r1-elf-C",
+   "sha256": "98d98d996ae8b9145540ad91b65c272c6b02aaa8ed837e1e55793e7ca084ecbd",
+   "source": "docs/art/race-stills/round1/elf-C.png",
+   "round": 1,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [
+    ".scratch/stills/j/elf_c_m.json",
+    ".scratch/stills/j/elf_c_f.json"
+   ],
+   "modelSources": "tools/.cache/anim/step2/src/ubc, tools/.cache/anim/step2/src/outfits, tools/.cache/anim/lib/ual1 (gitignored cache)",
+   "licence": "Quaternius Universal Base Characters, Modular Outfits - Fantasy, Hairstyles and Universal Animation Library 1: CC0",
+   "family": "race-stills-elf",
+   "intendedSubject": "elf race",
+   "depicts": "Elf B 6 cm taller and 14 percent narrower; man and woman",
+   "tags": [
+    "future-npc"
+   ],
+   "reuse": [
+    "whole character",
+    "slim body proportion"
+   ],
+   "status": "unreviewed",
+   "suggestedBy": "agent",
+   "reason": "Round 1 variant, taller and slimmer; kept as a second elf silhouette.",
+   "scratchSource": ".scratch/stills/elf-C.png"
+  },
+  {
+   "id": "race-stills-r2-elf-A",
+   "sha256": "8ccd423946d38e7db77773ada6944a5341db3e95b88e55da85f894bc33c84cb3",
+   "source": "docs/art/race-stills/round2/elf-A.png",
+   "round": 2,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [
+    ".scratch/stills/round2/j/elfA_m.json",
+    ".scratch/stills/round2/j/elfA_f.json"
+   ],
+   "modelSources": "tools/.cache/anim/step2/src/ubc, tools/.cache/anim/step2/src/outfits, tools/.cache/anim/lib/ual1 (gitignored cache)",
+   "licence": "Quaternius Universal Base Characters, Modular Outfits - Fantasy, Hairstyles and Universal Animation Library 1: CC0; ear mesh modelled in the scripts",
+   "family": "race-stills-elf",
+   "intendedSubject": "elf race",
+   "depicts": "Round 1's hood-down elf with a real leaf-shaped ear scaled up until the tip stands clear of the head",
+   "tags": [
+    "future-npc",
+    "equipment"
+   ],
+   "reuse": [
+    "big-eared elf as an NPC",
+    "leaf ear mesh (round2/mk_ears.py, round2/ears.py)"
+   ],
+   "status": "unreviewed",
+   "suggestedBy": "agent",
+   "reason": "Owner (relayed): round-2 ears are exaggerated. Big-eared elves remain future-npc candidates.",
+   "scratchSource": ".scratch/stills/round2/elf-A.png"
+  },
+  {
+   "id": "race-stills-r2-elf-B",
+   "sha256": "5025dd3813bdffbcc1f16105f5ef9ac515919963614374ef38bef52d7283cfb4",
+   "source": "docs/art/race-stills/round2/elf-B.png",
+   "round": 2,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [
+    ".scratch/stills/round2/j/elfB_m.json",
+    ".scratch/stills/round2/j/elfB_f.json"
+   ],
+   "modelSources": "tools/.cache/anim/step2/src/ubc, tools/.cache/anim/step2/src/outfits, tools/.cache/anim/lib/ual1 (gitignored cache)",
+   "licence": "Quaternius Universal Base Characters, Modular Outfits - Fantasy, Hairstyles and Universal Animation Library 1: CC0; ear mesh modelled in the scripts",
+   "family": "race-stills-elf",
+   "intendedSubject": "elf race",
+   "depicts": "As round-2 A with longer, swept-back ears, the classic elf",
+   "tags": [
+    "future-npc"
+   ],
+   "reuse": [
+    "big swept-back-eared elf as an NPC",
+    "swept ear mesh"
+   ],
+   "status": "unreviewed",
+   "suggestedBy": "agent",
+   "reason": "Owner (relayed): round-2 ears are exaggerated. Future-npc candidate.",
+   "scratchSource": ".scratch/stills/round2/elf-B.png"
+  },
+  {
+   "id": "race-stills-r2-elf-C",
+   "sha256": "06acf2b3cfe7fe27badfb9c6af70259c2aa201154fc01caccf551695ec6a1bb4",
+   "source": "docs/art/race-stills/round2/elf-C.png",
+   "round": 2,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [
+    ".scratch/stills/round2/j/elfC_m.json",
+    ".scratch/stills/round2/j/elfC_f.json"
+   ],
+   "modelSources": "tools/.cache/anim/step2/src/ubc, tools/.cache/anim/step2/src/outfits, tools/.cache/anim/lib/ual1 (gitignored cache)",
+   "licence": "Quaternius Universal Base Characters, Modular Outfits - Fantasy, Hairstyles and Universal Animation Library 1: CC0; ear mesh modelled in the scripts",
+   "family": "race-stills-elf",
+   "intendedSubject": "elf race",
+   "depicts": "Different hair from the same set (man cropped short, woman in a bun), near-black, with B's ears",
+   "tags": [
+    "future-npc",
+    "hair"
+   ],
+   "reuse": [
+    "near-black cropped and bun hairstyles",
+    "big-eared elf NPC"
+   ],
+   "status": "unreviewed",
+   "suggestedBy": "agent",
+   "reason": "Owner (relayed): round-2 ears are exaggerated. The near-black hair idea was carried to round 3.",
+   "scratchSource": ".scratch/stills/round2/elf-C.png"
+  },
+  {
+   "id": "race-stills-r3-elf-R1-dark",
+   "sha256": "2a42cb2a0238c6c9608bda29fa244b8c1c2a123b4eb124cf52e4693f38d5f0f0",
+   "source": "docs/art/race-stills/round3/elf-R1-dark.png",
+   "round": 3,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [
+    ".scratch/stills/round3/j/r1dark_m.json",
+    ".scratch/stills/round3/j/r1dark_f.json"
+   ],
+   "modelSources": "tools/.cache/anim/step2/src/ubc, tools/.cache/anim/step2/src/outfits, tools/.cache/anim/lib/ual1 (gitignored cache)",
+   "licence": "Quaternius Universal Base Characters, Modular Outfits - Fantasy, Hairstyles and Universal Animation Library 1: CC0",
+   "family": "race-stills-elf",
+   "intendedSubject": "elf race",
+   "depicts": "Round-1 elf B with near-black hair; geometry identical to round 1",
+   "tags": [
+    "future-npc"
+   ],
+   "reuse": [
+    "whole character",
+    "hair-colour tint recipe"
+   ],
+   "status": "unreviewed",
+   "suggestedBy": "agent",
+   "reason": "Round 3 answer to the owner's hair verdict; see round3/crit.json.",
+   "scratchSource": ".scratch/stills/round3/elf-R1-dark.png"
+  },
+  {
+   "id": "race-stills-r3-elf-R1-light",
+   "sha256": "2d437476b9f71dbd3017e954521fa8cf0375457b659e92437d5bc01d2230ddcf",
+   "source": "docs/art/race-stills/round3/elf-R1-light.png",
+   "round": 3,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [
+    ".scratch/stills/round3/j/r1light_m.json",
+    ".scratch/stills/round3/j/r1light_f.json"
+   ],
+   "modelSources": "tools/.cache/anim/step2/src/ubc, tools/.cache/anim/step2/src/outfits, tools/.cache/anim/lib/ual1 (gitignored cache)",
+   "licence": "Quaternius Universal Base Characters, Modular Outfits - Fantasy, Hairstyles and Universal Animation Library 1: CC0",
+   "family": "race-stills-elf",
+   "intendedSubject": "elf race",
+   "depicts": "Round-1 elf B with pale silver-blond hair (overbright tint 2.8x so the lit hair snaps to the two palette top steps); geometry identical to round 1",
+   "tags": [
+    "future-npc"
+   ],
+   "reuse": [
+    "whole character",
+    "hair-colour tint recipe"
+   ],
+   "status": "unreviewed",
+   "suggestedBy": "agent",
+   "reason": "Round 3 answer to the owner's hair verdict; see round3/crit.json.",
+   "scratchSource": ".scratch/stills/round3/elf-R1-light.png"
+  },
+  {
+   "id": "race-stills-r3-elf-R1C-dark",
+   "sha256": "32dc68470ba99bb4181725f0e4d0149d70abb0b50b61f5ba8fc7d565f4054f44",
+   "source": "docs/art/race-stills/round3/elf-R1C-dark.png",
+   "round": 3,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [
+    ".scratch/stills/round3/j/r1cdark_m.json",
+    ".scratch/stills/round3/j/r1cdark_f.json"
+   ],
+   "modelSources": "tools/.cache/anim/step2/src/ubc, tools/.cache/anim/step2/src/outfits, tools/.cache/anim/lib/ual1 (gitignored cache)",
+   "licence": "Quaternius Universal Base Characters, Modular Outfits - Fantasy, Hairstyles and Universal Animation Library 1: CC0",
+   "family": "race-stills-elf",
+   "intendedSubject": "elf race",
+   "depicts": "Round-1 elf C (taller, narrower) with near-black hair; geometry identical to round 1",
+   "tags": [
+    "future-npc"
+   ],
+   "reuse": [
+    "whole character"
+   ],
+   "status": "unreviewed",
+   "suggestedBy": "agent",
+   "reason": "Round 3; one skin pixel on the man shares the hair's darkest step (see crit.json).",
+   "scratchSource": ".scratch/stills/round3/elf-R1C-dark.png"
+  },
+  {
+   "id": "race-stills-r4-elf-E4-0",
+   "sha256": "f716dd8af768315117d4eedb7d2cad5486462d4f7c5ef214930085d49587dbd2",
+   "source": "docs/art/race-stills/round4/elf-E4-0.png",
+   "round": 4,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [
+    ".scratch/stills/round4/j/e40_m.json",
+    ".scratch/stills/round4/j/e40_f.json"
+   ],
+   "modelSources": "tools/.cache/anim/step2/src/ubc, tools/.cache/anim/step2/src/outfits, tools/.cache/anim/lib/ual1 (gitignored cache)",
+   "licence": "Quaternius Universal Base Characters, Modular Outfits - Fantasy, Hairstyles and Universal Animation Library 1: CC0",
+   "family": "race-stills-elf",
+   "intendedSubject": "elf race",
+   "depicts": "Round 3's R1C-dark in the green ranger outfit with only the bones thinned (shoulders in 5.5 cm, chest, waist, upper arm and thigh narrower, arms and legs 8 percent longer; the woman 10 and 13 percent): clothed width 79 percent of the human's",
+   "tags": [
+    "future-npc",
+    "animation"
+   ],
+   "reuse": [
+    "bone-thinning recipe (ubc_build and thin in round4/still4.py): any garment skinned to the UBC rig follows the elf build",
+    "tall thin ranger NPC"
+   ],
+   "status": "unreviewed",
+   "suggestedBy": "agent",
+   "reason": "Round 4: shows whether the build alone separates the elf from the human.",
+   "scratchSource": ".scratch/stills/round4/elf-E4-0.png"
+  },
+  {
+   "id": "race-stills-r4-elf-E4-A",
+   "sha256": "203414269f9e87a929c391b260869f1cdb707acafbea4b2eb7dbfb77f4ce0530",
+   "source": "docs/art/race-stills/round4/elf-E4-A.png",
+   "round": 4,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [
+    ".scratch/stills/round4/j/a_m.json",
+    ".scratch/stills/round4/j/a_f.json"
+   ],
+   "modelSources": "tools/.cache/anim/step2/src/ubc, tools/.cache/anim/step2/src/outfits, tools/.cache/anim/lib/ual1 (gitignored cache)",
+   "licence": "Quaternius Universal Base Characters, Modular Outfits - Fantasy, Hairstyles and Universal Animation Library 1: CC0; cloak and robe geometry modelled in .scratch/stills/round4/still4.py (own work, no outside licence)",
+   "family": "race-stills-elf",
+   "intendedSubject": "elf race",
+   "depicts": "E4-0 plus a large hooded cloak in pastel sky blue, hood down, open at the front, legs never cutting the cloth (version 3); thin and tall, ranger outfit below. Owner's pick.",
+   "tags": [
+    "future-npc",
+    "equipment"
+   ],
+   "reuse": [
+    "the sky-blue cloak mesh (garment loft in round4/still4.py), skinned to the UBC rig",
+    "whole character"
+   ],
+   "status": "keep",
+   "suggestedBy": "agent",
+   "reason": "Owner's pick, 27.10 (version 3). Round 4 decided the elf's big item is a light sky-blue hooded cloak.",
+   "reviewNote": "file replaced after the first review (version 3 of the cloak); hash is the archived file's",
+   "scratchSource": ".scratch/stills/round4/elf-E4-A.png",
+   "decision": "owner-elf-pick"
+  },
+  {
+   "id": "race-stills-r4-elf-E4-B",
+   "sha256": "147d4df26d902487a4c942872dbbb447fd1dd60e1c954f77df1eb2781f67cdba",
+   "source": "docs/art/race-stills/round4/elf-E4-B.png",
+   "round": 4,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [
+    ".scratch/stills/round4/j/b_m.json",
+    ".scratch/stills/round4/j/b_f.json"
+   ],
+   "modelSources": "tools/.cache/anim/step2/src/ubc, tools/.cache/anim/step2/src/outfits, tools/.cache/anim/lib/ual1 (gitignored cache)",
+   "licence": "Quaternius Universal Base Characters, Modular Outfits - Fantasy, Hairstyles and Universal Animation Library 1: CC0; cloak and robe geometry modelled in .scratch/stills/round4/still4.py (own work, no outside licence)",
+   "family": "race-stills-elf",
+   "intendedSubject": "elf race",
+   "depicts": "E4-A with the tunic, belt, boots, trousers and bracers replaced by a long plain pale robe (ranger sleeves recoloured pale)",
+   "tags": [
+    "future-npc",
+    "equipment"
+   ],
+   "reuse": [
+    "the long robe mesh (garment loft)",
+    "the cloak over the robe",
+    "whole character as a mage-like elf NPC"
+   ],
+   "status": "unreviewed",
+   "suggestedBy": "agent",
+   "reason": "Round 4; tests a little magic.",
+   "scratchSource": ".scratch/stills/round4/elf-E4-B.png"
+  },
+  {
+   "id": "race-stills-r4-elf-E4-C",
+   "sha256": "a3f2076390b215f5e754e722c7fa4ea1494d3c7178d4f6302bb73388f63920d7",
+   "source": "docs/art/race-stills/round4/elf-E4-C.png",
+   "round": 4,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [
+    ".scratch/stills/round4/j/c_m.json",
+    ".scratch/stills/round4/j/c_f.json"
+   ],
+   "modelSources": "tools/.cache/anim/step2/src/ubc, tools/.cache/anim/step2/src/outfits, tools/.cache/anim/lib/ual1 (gitignored cache)",
+   "licence": "Quaternius Universal Base Characters, Modular Outfits - Fantasy, Hairstyles and Universal Animation Library 1: CC0; cloak and robe geometry modelled in .scratch/stills/round4/still4.py (own work, no outside licence)",
+   "family": "race-stills-elf",
+   "intendedSubject": "elf race",
+   "depicts": "E4-B with the hood up (the ranger hood recoloured sky blue and widened 35 percent so the ears stay inside)",
+   "tags": [
+    "future-npc",
+    "equipment"
+   ],
+   "reuse": [
+    "hood-up cloaked figure as a mysterious NPC",
+    "the recoloured hood"
+   ],
+   "status": "unreviewed",
+   "suggestedBy": "agent",
+   "reason": "Round 4; hood-up variant of B.",
+   "scratchSource": ".scratch/stills/round4/elf-E4-C.png"
+  },
+  {
+   "id": "race-stills-r1-skeleton-A",
+   "sha256": "bef897059c88c3ea17d1d4326c44bd11607977b8178f4e918de8f9776693c9db",
+   "source": "docs/art/race-stills/round1/skeleton-A.png",
+   "round": 1,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [
+    ".scratch/stills/j/skel_a.json"
+   ],
+   "modelSources": "tools/.cache/anim/step2/src/kaykit (gitignored cache)",
+   "licence": "KayKit Skeletons 1.1 (Free), Kay Lousberg: CC0",
+   "family": "race-stills-skeleton",
+   "intendedSubject": "skeleton race (enemy or NPC)",
+   "depicts": "KayKit Skeleton_Minion as shipped: a big round skull on a short body, scaled to 1.75 m",
+   "tags": [
+    "future-npc",
+    "enemy"
+   ],
+   "reuse": [
+    "whole character as a chunky skeleton NPC"
+   ],
+   "status": "unreviewed",
+   "suggestedBy": "agent",
+   "reason": "Owner (relayed): all round-1 skeletons too fat. Suggest archive.",
+   "scratchSource": ".scratch/stills/skeleton-A.png"
+  },
+  {
+   "id": "race-stills-r1-skeleton-B",
+   "sha256": "ecac55b5b1e64eeee7d957e57540e3ce4ff182bfa68332cce4b0a923df5121c2",
+   "source": "docs/art/race-stills/round1/skeleton-B.png",
+   "round": 1,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [
+    ".scratch/stills/j/skel_b.json"
+   ],
+   "modelSources": "tools/.cache/anim/step2/src/kaykit (gitignored cache)",
+   "licence": "KayKit Skeletons 1.1 (Free), Kay Lousberg: CC0",
+   "family": "race-stills-skeleton",
+   "intendedSubject": "skeleton race",
+   "depicts": "Skeleton A with the skull at 55 percent (head share of the human cast)",
+   "tags": [
+    "future-npc",
+    "enemy"
+   ],
+   "reuse": [
+    "whole character"
+   ],
+   "status": "unreviewed",
+   "suggestedBy": "agent",
+   "reason": "Owner (relayed): all round-1 skeletons too fat. Suggest archive.",
+   "scratchSource": ".scratch/stills/skeleton-B.png"
+  },
+  {
+   "id": "race-stills-r1-skeleton-C",
+   "sha256": "f7893bc055e973e21efa8bd9515a248faa2da76e9f774d9e4899631ed95538d1",
+   "source": "docs/art/race-stills/round1/skeleton-C.png",
+   "round": 1,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [
+    ".scratch/stills/j/skel_c.json"
+   ],
+   "modelSources": "tools/.cache/anim/step2/src/kaykit (gitignored cache)",
+   "licence": "KayKit Skeletons 1.1 (Free), Kay Lousberg: CC0",
+   "family": "race-stills-skeleton",
+   "intendedSubject": "skeleton race",
+   "depicts": "Skeleton B narrowed to 72 percent: shoulders and ribs as wide as the human's",
+   "tags": [
+    "future-npc",
+    "enemy"
+   ],
+   "reuse": [
+    "whole character"
+   ],
+   "status": "unreviewed",
+   "suggestedBy": "agent",
+   "reason": "Owner (relayed): all round-1 skeletons too fat. Suggest archive.",
+   "scratchSource": ".scratch/stills/skeleton-C.png"
+  },
+  {
+   "id": "race-stills-r2-skeleton-A",
+   "sha256": "a4f726920048a5cdc1857b8a39aea4830ef3591586055f9a6281e01f7023777e",
+   "source": "docs/art/race-stills/round2/skeleton-A.png",
+   "round": 2,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [
+    ".scratch/stills/round2/j/skelA3.json"
+   ],
+   "modelSources": "tools/.cache/anim/step2/src/kaykit (gitignored cache)",
+   "licence": "KayKit Skeletons 1.1 (Free), Kay Lousberg: CC0",
+   "family": "race-stills-skeleton",
+   "intendedSubject": "skeleton race",
+   "depicts": "KayKit skeleton with ribcage, arms and legs narrowed bone by bone and the skull cut down",
+   "tags": [
+    "future-npc",
+    "enemy"
+   ],
+   "reuse": [
+    "whole character (basis of A3)"
+   ],
+   "status": "unreviewed",
+   "suggestedBy": "agent",
+   "reason": "Owner (relayed): wins if its arms are fixed; round 3 made A3 and A3-white.",
+   "scratchSource": ".scratch/stills/round2/skeleton-A.png"
+  },
+  {
+   "id": "race-stills-r2-skeleton-B",
+   "sha256": "f7b05aa49d749c322da4e5bff58c1d685d060afdc614df09933026db1e41041b",
+   "source": "docs/art/race-stills/round2/skeleton-B.png",
+   "round": 2,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [
+    ".scratch/stills/round2/j/skelB2.json"
+   ],
+   "modelSources": "tools/.cache/anim/step2/src/round2/brodin_skeleton.glb (gitignored cache); tools/.cache/anim/step2/src/ubc, tools/.cache/anim/step2/src/outfits, tools/.cache/anim/lib/ual1 (gitignored cache)",
+   "licence": "\"Skeleton\" by Alexander Brodin, CC BY 3.0 (credit required), poly.pizza/m/frU5VxsCGZJ; Quaternius human rig and Walk_Loop: CC0",
+   "family": "race-stills-skeleton",
+   "intendedSubject": "skeleton race",
+   "depicts": "A thin anatomical skeleton (Brodin) fitted piece by piece onto the Quaternius human rig, so it walks with the same animation",
+   "tags": [
+    "future-npc",
+    "enemy",
+    "animation"
+   ],
+   "reuse": [
+    "whole character as a thin skeleton NPC",
+    "its arms and the fit-onto-human-rig recipe (reuse-parts)"
+   ],
+   "status": "keep",
+   "suggestedBy": "agent",
+   "reason": "Owner's pick, 26.10. Credit to Alexander Brodin is required (CC BY 3.0).",
+   "scratchSource": ".scratch/stills/round2/skeleton-B.png",
+   "decision": "owner-skeleton-pick"
+  },
+  {
+   "id": "race-stills-r2-skeleton-C",
+   "sha256": "ec872d0c2be4e9b6dd162f02c8ef447be71ddcd5cb4dbf8e685779378866516e",
+   "source": "docs/art/race-stills/round2/skeleton-C.png",
+   "round": 2,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [
+    ".scratch/stills/round2/j/skelC3.json"
+   ],
+   "modelSources": "tools/.cache/anim/step2/src/round2/brodin_skeleton.glb (gitignored cache); tools/.cache/anim/step2/src/ubc, tools/.cache/anim/step2/src/outfits, tools/.cache/anim/lib/ual1 (gitignored cache)",
+   "licence": "\"Skeleton\" by Alexander Brodin, CC BY 3.0 (credit required), poly.pizza/m/frU5VxsCGZJ; Quaternius human rig and Walk_Loop: CC0",
+   "family": "race-stills-skeleton",
+   "intendedSubject": "skeleton race",
+   "depicts": "B shorter still (about 75 percent of the human) and bent forward at the spine",
+   "tags": [
+    "future-npc",
+    "enemy"
+   ],
+   "reuse": [
+    "hunched pose as a skeleton NPC variant"
+   ],
+   "status": "unreviewed",
+   "suggestedBy": "agent",
+   "reason": "Round 2 variant; the owner gave no verdict on it. Credit to Alexander Brodin is required (CC BY 3.0).",
+   "scratchSource": ".scratch/stills/round2/skeleton-C.png"
+  },
+  {
+   "id": "race-stills-r3-skeleton-A3",
+   "sha256": "830be875e41b2e73cef1c9f9d6aaf6e4ace79758d13f1396580ca72d8ea45772",
+   "source": "docs/art/race-stills/round3/skeleton-A3.png",
+   "round": 3,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [
+    ".scratch/stills/round3/j/a3.json"
+   ],
+   "modelSources": "tools/.cache/anim/step2/src/kaykit (gitignored cache)",
+   "licence": "KayKit Skeletons 1.1 (Free), Kay Lousberg: CC0",
+   "family": "race-stills-skeleton",
+   "intendedSubject": "skeleton race",
+   "depicts": "Round-2 A with the arms rebuilt: long, thin, human-proportioned (shoulder to wrist 44 percent of body height)",
+   "tags": [
+    "future-npc",
+    "enemy"
+   ],
+   "reuse": [
+    "whole character",
+    "arm-lengthening recipe (arm_len in round2/still2.py)"
+   ],
+   "status": "unreviewed",
+   "suggestedBy": "agent",
+   "reason": "Round 3 answer to the owner's verdict on round 2's A.",
+   "scratchSource": ".scratch/stills/round3/skeleton-A3.png"
+  },
+  {
+   "id": "race-stills-r3-skeleton-A3-white",
+   "sha256": "7b50d99920dd1268c811e41c077dbf2ab4e55917a601b0f5f6ac25df69bbee8b",
+   "source": "docs/art/race-stills/round3/skeleton-A3-white.png",
+   "round": 3,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [
+    ".scratch/stills/round3/j/a3w.json"
+   ],
+   "modelSources": "tools/.cache/anim/step2/src/kaykit (gitignored cache)",
+   "licence": "KayKit Skeletons 1.1 (Free), Kay Lousberg: CC0",
+   "family": "race-stills-skeleton",
+   "intendedSubject": "skeleton race",
+   "depicts": "A3 with the bones in the grey/white ramp (stone, grey, bark; no skin ramp)",
+   "tags": [
+    "future-npc",
+    "enemy"
+   ],
+   "reuse": [
+    "whole character"
+   ],
+   "status": "unreviewed",
+   "suggestedBy": "agent",
+   "reason": "Round 3; compares bone colour only.",
+   "scratchSource": ".scratch/stills/round3/skeleton-A3-white.png"
+  },
+  {
+   "id": "race-stills-r1-human-A",
+   "sha256": "7ab1225d3a95f8307ca8ee0cb4abf4b7027f3bdd3b4cfae80c5e6b015cc4181b",
+   "source": "docs/art/race-stills/round1/human-A.png",
+   "round": 1,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [],
+   "modelSources": "game/public3d/models (in the repository); rendered by pnpm anim at 50 degrees",
+   "licence": "Meshy (meshy.ai) cast models in game/public3d/models: CC BY 4.0 (credit required)",
+   "family": "race-stills-human",
+   "intendedSubject": "human race (the game's cast)",
+   "depicts": "plain traveller clothes and no pack (the forager pair, recommended in round 1)",
+   "tags": [
+    "future-npc"
+   ],
+   "reuse": [
+    "whole character"
+   ],
+   "status": "keep",
+   "suggestedBy": "agent",
+   "reason": "Owner's pick, 27.10 (human = A, the forager pair in plain traveller clothes).",
+   "scratchSource": ".scratch/stills/human-A.png",
+   "decision": "owner-human-pick"
+  },
+  {
+   "id": "race-stills-r1-human-B",
+   "sha256": "2f8b65f3ac6a1ee0aeda81e9ca9b67552268165ac2364c8ad93e4f63c3e4e10b",
+   "source": "docs/art/race-stills/round1/human-B.png",
+   "round": 1,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [],
+   "modelSources": "game/public3d/models (in the repository); rendered by pnpm anim at 50 degrees",
+   "licence": "Meshy (meshy.ai) cast models in game/public3d/models: CC BY 4.0 (credit required)",
+   "family": "race-stills-human",
+   "intendedSubject": "human race (the game's cast)",
+   "depicts": "a tall leather backpack and blanket roll modelled onto the body (the explorer pair)",
+   "tags": [
+    "future-npc",
+    "equipment"
+   ],
+   "reuse": [
+    "backpack and blanket roll"
+   ],
+   "status": "unreviewed",
+   "suggestedBy": "agent",
+   "reason": "Round 1 reference rendering of the cast; the models themselves are in the repo.",
+   "scratchSource": ".scratch/stills/human-B.png"
+  },
+  {
+   "id": "race-stills-r1-human-C",
+   "sha256": "b4aaf5eb309b4f92fc9ddbdd1b4c41acb577fe286049d5d9121397664efa0a63",
+   "source": "docs/art/race-stills/round1/human-C.png",
+   "round": 1,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [],
+   "modelSources": "game/public3d/models (in the repository); rendered by pnpm anim at 50 degrees",
+   "licence": "Meshy (meshy.ai) cast models in game/public3d/models: CC BY 4.0 (credit required)",
+   "family": "race-stills-human",
+   "intendedSubject": "human race (the game's cast)",
+   "depicts": "an indigo hood and a short shoulder cape (the digger pair)",
+   "tags": [
+    "future-npc",
+    "equipment"
+   ],
+   "reuse": [
+    "hood and shoulder cape"
+   ],
+   "status": "unreviewed",
+   "suggestedBy": "agent",
+   "reason": "Round 1 reference rendering of the cast; the models themselves are in the repo.",
+   "scratchSource": ".scratch/stills/human-C.png"
+  },
+  {
+   "id": "race-stills-r4-elf-E4-A-v1",
+   "sha256": "125d03724cd0e8b49f6ab78073f5f26dd36bcf5f1f805b62ba9322c8574ee5be",
+   "source": "docs/art/race-stills/round4/elf-E4-A-v1.png",
+   "round": 4,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [
+    ".scratch/stills/round4/j/a_m.json",
+    ".scratch/stills/round4/j/a_f.json"
+   ],
+   "modelSources": "tools/.cache/anim/step2/src/ubc, tools/.cache/anim/step2/src/outfits, tools/.cache/anim/lib/ual1 (gitignored cache)",
+   "licence": "Quaternius Universal Base Characters, Modular Outfits - Fantasy, Hairstyles and Universal Animation Library 1: CC0; cloak and robe geometry modelled in .scratch/stills/round4/still4.py (own work, no outside licence)",
+   "family": "race-stills-elf",
+   "intendedSubject": "elf race",
+   "depicts": "E4-A earlier version v1: the cloak with the legs cutting through the cloth (owner 26.10: legs must never cut it)",
+   "tags": [
+    "future-npc",
+    "equipment"
+   ],
+   "reuse": [
+    "whole character"
+   ],
+   "status": "archive",
+   "suggestedBy": "agent",
+   "reason": "Superseded by E4-A version 3 (the owner's pick); kept as the record of what was tried. the cloak with the legs cutting through the cloth (owner 26.10: legs must never cut it).",
+   "scratchSource": ".scratch/gallery/r4-elf-E4-A-v1.png"
+  },
+  {
+   "id": "race-stills-r4-elf-E4-A-v2",
+   "sha256": "b29468e11fd1a04efdfab88d94614df8ad865ab8ff53d9a63f7dc4c1a0c6fd0f",
+   "source": "docs/art/race-stills/round4/elf-E4-A-v2.png",
+   "round": 4,
+   "provenance": "unknown: no generation manifest; built by the stills scripts (jobs under .scratch/stills), Blender 5.2.3 headless, tool camera 50 degrees, palette snap in tools/src/anim/snap.ts",
+   "jobs": [
+    ".scratch/stills/round4/j/a_m.json",
+    ".scratch/stills/round4/j/a_f.json"
+   ],
+   "modelSources": "tools/.cache/anim/step2/src/ubc, tools/.cache/anim/step2/src/outfits, tools/.cache/anim/lib/ual1 (gitignored cache)",
+   "licence": "Quaternius Universal Base Characters, Modular Outfits - Fantasy, Hairstyles and Universal Animation Library 1: CC0; cloak and robe geometry modelled in .scratch/stills/round4/still4.py (own work, no outside licence)",
+   "family": "race-stills-elf",
+   "intendedSubject": "elf race",
+   "depicts": "E4-A earlier version v2: the cloak closed at the front (owner 26.10: the front must be open)",
+   "tags": [
+    "future-npc",
+    "equipment"
+   ],
+   "reuse": [
+    "whole character"
+   ],
+   "status": "archive",
+   "suggestedBy": "agent",
+   "reason": "Superseded by E4-A version 3 (the owner's pick); kept as the record of what was tried. the cloak closed at the front (owner 26.10: the front must be open).",
+   "scratchSource": ".scratch/gallery/r4-elf-E4-A-v2.png"
+  }
+ ],
+ "ownerDecisions": [
+  {
+   "id": "owner-r2-elf-ears",
+   "applies": [
+    "race-stills-r2-elf-A",
+    "race-stills-r2-elf-B",
+    "race-stills-r2-elf-C"
+   ],
+   "decidedBy": "owner (relayed by the manager, BRIEF-race-stills-3)",
+   "date": "2026-10-26",
+   "decision": "round-2 ears are exaggerated",
+   "reason": "the ears stand out too far"
+  },
+  {
+   "id": "owner-r1-elf-preferred",
+   "applies": [
+    "race-stills-r1-elf-A",
+    "race-stills-r1-elf-B",
+    "race-stills-r1-elf-C"
+   ],
+   "decidedBy": "owner (relayed)",
+   "date": "2026-10-26",
+   "decision": "round 1 preferred in ears, head and body; only the hair colour was wrong",
+   "reason": "the hair was too close in colour to the body"
+  },
+  {
+   "id": "owner-r1-skeleton-fat",
+   "applies": [
+    "race-stills-r1-skeleton-A",
+    "race-stills-r1-skeleton-B",
+    "race-stills-r1-skeleton-C"
+   ],
+   "decidedBy": "owner (relayed)",
+   "date": "2026-10-26",
+   "decision": "all round-1 skeletons too fat",
+   "reason": "too wide a body for a skeleton"
+  },
+  {
+   "id": "owner-r2-skeleton-A",
+   "applies": [
+    "race-stills-r2-skeleton-A"
+   ],
+   "decidedBy": "owner (relayed)",
+   "date": "2026-10-26",
+   "decision": "wins if its arms are fixed",
+   "reason": "the arms were the only fault: round 3 A3 and A3-white"
+  },
+  {
+   "id": "owner-r2-skeleton-B",
+   "applies": [
+    "race-stills-r2-skeleton-B"
+   ],
+   "decidedBy": "owner (relayed)",
+   "date": "2026-10-26",
+   "decision": "not bad",
+   "reason": "no reason given"
+  },
+  {
+   "id": "owner-skeleton-pick",
+   "applies": [
+    "race-stills-r2-skeleton-B"
+   ],
+   "decidedBy": "owner (relayed by the manager, BRIEF-race-stills-4)",
+   "date": "2026-10-26",
+   "decision": "picked: round-2 B, the thin white skeleton by Brodin (CC BY 3.0, credit required); the other skeletons are not chosen",
+   "resultingStatus": "keep",
+   "reason": "the owner's choice among the skeleton stills; do not touch it further"
+  },
+  {
+   "id": "owner-r3-elf-reads-human",
+   "applies": [
+    "race-stills-r3-elf-R1C-dark",
+    "race-stills-r3-elf-R1-dark",
+    "race-stills-r3-elf-R1-light"
+   ],
+   "decidedBy": "owner (relayed)",
+   "date": "2026-10-26",
+   "decision": "round 3 looks better but the elf still reads as the human",
+   "reason": "its clothed width equals the human's (not the colour); fix by thinning at the bones so every garment fits the elf's build, and a cloak that hangs close"
+  },
+  {
+   "id": "owner-skeleton-A3-rejected",
+   "applies": [
+    "race-stills-r3-skeleton-A3",
+    "race-stills-r3-skeleton-A3-white"
+   ],
+   "decidedBy": "owner (relayed by the manager, BRIEF-race-picks)",
+   "date": "2026-10-26",
+   "decision": "A with its arms fixed (A3) tried and rejected; round-2 B stays the skeleton",
+   "reason": "the owner's choice among the skeleton stills"
+  },
+  {
+   "id": "owner-elf-open-front",
+   "applies": [
+    "race-stills-r4-elf-E4-A-v1",
+    "race-stills-r4-elf-E4-A-v2"
+   ],
+   "decidedBy": "owner (relayed by the manager, BRIEF-race-picks)",
+   "date": "2026-10-26",
+   "decision": "the front of the cloak must be open; the legs never cut through the cloak",
+   "reason": "owner at 22:05: 'the front must be open'"
+  },
+  {
+   "id": "owner-elf-pick",
+   "applies": [
+    "race-stills-r4-elf-E4-A"
+   ],
+   "decidedBy": "owner (relayed by the manager, BRIEF-race-picks)",
+   "date": "2026-10-27",
+   "decision": "picked: round-4 E4-A, version 3, tall and thin, pastel sky-blue hooded cloak open at the front; accepted that the open front shows the shared outfit, so 31 percent (man) and 33 percent (woman) of its colours are shared with the human, past the 20 percent target",
+   "resultingStatus": "keep",
+   "reason": "the owner approved the elf on 27.10"
+  },
+  {
+   "id": "owner-human-pick",
+   "applies": [
+    "race-stills-r1-human-A"
+   ],
+   "decidedBy": "owner (relayed by the manager, BRIEF-race-picks)",
+   "date": "2026-10-27",
+   "decision": "picked: human = A (round 1)",
+   "resultingStatus": "keep",
+   "reason": "the owner approved the human on 27.10"
+  }
+ ]
+}
