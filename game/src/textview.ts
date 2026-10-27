@@ -85,7 +85,7 @@ function status(b: Bundle, m: Moment, awake: ReturnType<typeof hazardsOf>): stri
   const minute = minuteOfDay(b, m.tick);
   const clock = `${String(Math.floor(minute / 60)).padStart(2, '0')}:${String(minute % 60).padStart(2, '0')}`;
   const p = m.state.player;
-  const parts = [`${clock} tick ${m.tick}`, `@ ${m.pos[0]},${m.pos[1]}`, `health ${p.satiety}`, `falls ${p.falls}`];
+  const parts = [`${clock} tick ${m.tick}`, `@ ${m.pos[0]},${m.pos[1]}`, `health ${p.hp}`, `falls ${p.falls}`];
   parts.push(p.chase ? `hunted by ${p.chase.hazard} since ${p.chase.since}` : 'not hunted');
   for (const h of awake) {
     const [x, y] = predatorAt(b, h, m.tick);

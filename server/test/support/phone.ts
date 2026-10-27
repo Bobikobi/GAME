@@ -17,6 +17,7 @@ import {
   type OpeningUpload,
   type PublicState,
   type Rect,
+  type Seed,
   type State,
   type Tile,
   applyStatePatch,
@@ -26,6 +27,7 @@ import {
   salePrice,
   serialize,
   step,
+  widenSeed,
 } from '@game/kernel';
 
 import {
@@ -41,8 +43,8 @@ import { bfsNear, firstOpenTick } from '../../../tools/test/helpers/world.js';
 
 /** The one player an in-memory server serves; a test that needs two starts two servers. */
 export const PLAYER = 'player-1';
-/** A fixed seed: the draws under it are the ones the tests here name. */
-export const SEED = 2026;
+/** A fixed key: the draws under it are the ones the tests here name. */
+export const SEED: Seed = widenSeed(2026);
 
 /** The store of a test: one player in memory, and the two books written as postgres writes them. */
 export class MemoryStore implements PlayerStore {
@@ -200,7 +202,7 @@ export class LocalPhone extends Player {
   state: State;
   readonly log: { a: Action; tick: number }[] = [];
 
-  constructor(bundle: Bundle, readonly seed: number) {
+  constructor(bundle: Bundle, readonly seed: Seed) {
     super(bundle);
     this.state = newState(bundle, seed);
   }

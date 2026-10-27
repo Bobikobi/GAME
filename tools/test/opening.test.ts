@@ -14,6 +14,7 @@ import {
   npcTile,
   step,
   wakePocket,
+  widenSeed,
 } from '@game/kernel';
 
 import {
@@ -217,7 +218,7 @@ describe('opening sequence', () => {
       planner.visit(threshold);
       expect(planner.state.player.visited).toContain('core/night-threshold');
 
-      expect(planner.state.player.gold).toBe(planner.state.ledger.minted - planner.state.ledger.burned);
+      expect(planner.state.player.gold + planner.state.player.boundGold).toBe(planner.state.ledger.minted - planner.state.ledger.burned);
     },
   );
 });
@@ -309,7 +310,7 @@ class Planner {
 
 /** A seed whose world wakes in this pocket. */
 function seedFor(bundle: Bundle, pocket: string): number {
-  for (let seed = 2026; seed < 12_026; seed++) if (wakePocket(bundle, seed) === pocket) return seed;
+  for (let seed = 2026; seed < 12_026; seed++) if (wakePocket(bundle, widenSeed(seed)) === pocket) return seed;
   throw new Error(`no seed wakes in ${pocket}`);
 }
 

@@ -7,8 +7,7 @@ import {
   type GameEvent,
   type RecipeDef,
   type WearSlot,
-  bagCapacity,
-  bagUsed,
+  loadLimit,
   campBuilt,
   campTile,
   findSlot,
@@ -26,8 +25,9 @@ import {
   recipeTier,
   riddleKey,
   rareFindPermille,
+  searchDawn,
   salePrice,
-  satietyCap,
+  hpCap,
   slotsFor,
   techniqueValue, type PublicState } from '@game/kernel';
 import { feedTooLate, fireName, tendLine } from './fires';
@@ -38,7 +38,9 @@ export function itemName(b: Bundle, id: string): string {
 
 /** The verb on a node's prompt and its minigame: a tree is felled, anything else gathered. */
 export function nodeAction(b: Bundle, r: Bundle['resources'][string]): string {
-  return r.tool === 'axe' ? 'Fell tree' : `Gather ${itemName(b, r.output)}`;
+  if (r.tool === 'axe') return 'Fell tree';
+  if (r.tool === 'rod') return 'Fish';
+  return r.work === 'mine' ? `Mine ${itemName(b, r.output)}` : `Gather ${itemName(b, r.output)}`;
 }
 
 /** milli-gold as gold, at most two decimals: 2500 -> "2.5" */
@@ -102,15 +104,15 @@ export interface AttributeEffect {
 /** What one more point in each attribute really changes, as numbers. */
 export function attributeEffects(b: Bundle, s: PublicState): AttributeEffect[] {
   const plus = (a: Attribute): PublicState => ({ ...s, player: { ...s.player, attrs: { ...s.player.attrs, [a]: s.player.attrs[a] + 1 } } });
-  // with no hunger clock (G32) a point of stamina is health, not minutes of work
-  const drain = b.params.satiety_drain_per_min;
-  const minutes = (st: PublicState) => Math.floor(satietyCap(b, st) / (drain > 0 ? drain : 1000));
+  // with no hunger clock (G28, G32) a point of stamina is health, not minutes of work
+  const points = (st: PublicState) => Math.floor(hpCap(b, st) / 1000);
   const pct = (bp: number) => `${Math.round(bp / 100)}%`;
   const times = (permille: number) => `x${(permille / 1000).toFixed(2).replace(/0$/, '')}`;
   const luckNext = plus('luck');
   const capped = rareFindPermille(b, luckNext) === rareFindPermille(b, s) && rareFindPermille(b, s) >= powerCap(b, s);
   return [
-    { attr: 'might', name: 'Might', what: 'Your bag holds', now: `${bagCapacity(b, s)}`, next: `${bagCapacity(b, plus('might'))} things` },
+    // might carries weight, not places (DECISIONS.md, 2026-10-23): the bag on the back gives the places
+    { attr: 'might', name: 'Might', what: 'Your load limit', now: `${loadLimit(b, s)}`, next: `${loadLimit(b, plus('might'))}` },
     { attr: 'senses', name: 'Keen eyes', what: 'You see hidden finds from', now: `${hintDistance(b, s)}`, next: `${hintDistance(b, plus('senses'))} steps away` },
     { attr: 'agility', name: 'Steady hands', what: 'The good zone in a minigame', now: `${windowScalePct(b, s)}%`, next: `${windowScalePct(b, plus('agility'))}% wide` },
     {
@@ -124,9 +126,9 @@ export function attributeEffects(b: Bundle, s: PublicState): AttributeEffect[] {
     {
       attr: 'stamina',
       name: 'Stamina',
-      what: drain > 0 ? 'Work before you must eat' : 'Your health holds',
-      now: `${minutes(s)}`,
-      next: `${minutes(plus('stamina'))} ${drain > 0 ? 'minutes' : 'points'}`,
+      what: 'Your health holds',
+      now: `${points(s)}`,
+      next: `${points(plus('stamina'))} points`,
     },
     // spirit has no rule that reads it yet (schema per_point): the row shows the points and says so plainly
     {
@@ -237,7 +239,8 @@ export function readyToHandIn(b: Bundle, s: PublicState, questId: string, tick =
 export function hudUnlocks(s: PublicState, points = 0): { bag: boolean; log: boolean } {
   const p = s.player;
   const log = p.journal.length > 0 || points > 0 || Object.values(p.quests).some((q) => q === 'done');
-  return { bag: log || bagUsed(s) > 0, log };
+  // anything in the bag, worn things too: a worn piece takes no place (2026-10-23) but is still carried
+  return { bag: log || Object.values(p.bag).some((q) => q > 0), log };
 }
 
 /** An active quest still waits on a riddle that a dig at another spot than `treasure` answers: this is the wrong place. */
@@ -412,14 +415,44 @@ export function lanternNight(b: Bundle, s: PublicState, at: readonly [number, nu
   return nightEnds(b, tick);
 }
 
+/** The searchable that hangs on a map prop, by the prop's id (docs/design/SEARCH.md). */
+export function searchableOn(b: Bundle, propId: string): string | undefined {
+  return Object.values(b.searchables).find((sr) => sr.place.prop === propId)?.id;
+}
+
+/** What an empty searchable's window says: one line (G14). */
+export const SEARCH_EMPTY = 'Nothing here.';
+
+/** The line under a window when the character's luck tilts the rare rows, in words (decision 39). */
+export const SEARCH_LUCK_LINE = 'You have a feel for hidden things.';
+
+export interface SearchRow {
+  /** the place in the searchable's list, the `row` a take names */
+  index: number;
+  item: string;
+  name: string;
+  sprite: string | undefined;
+}
+
+/** The rows a searchable holds now: those drawn for today's dawn and not yet taken, in the order the kernel keeps them. */
+export function searchRows(b: Bundle, s: PublicState, tick: number, spotId: string): SearchRow[] {
+  const held = s.searched?.[spotId];
+  if (!held || held.dawn !== searchDawn(b, tick)) return [];
+  return held.rows.map((item, index) => ({ index, item, name: itemName(b, item), sprite: b.items[item]?.sprite }));
+}
+
 export function describe(b: Bundle, s: PublicState, e: GameEvent): { text: string; icon?: string; tone?: 'good' | 'bad' | 'info' } | undefined {
   switch (e.e) {
     case 'gain':
       return { text: `+${e.qty} ${itemName(b, e.item)}`, icon: b.items[e.item]?.sprite, tone: 'good' };
     case 'bag_full':
       return { text: `Bag full - ${e.qty} ${itemName(b, e.item)} left behind`, tone: 'bad' };
+    case 'drop':
+      return { text: `Put down ${e.qty} ${itemName(b, e.item)}`, icon: b.items[e.item]?.sprite, tone: 'info' };
     case 'gold':
       return { text: `${e.delta > 0 ? '+' : '-'}${gold(Math.abs(e.delta))} gold`, tone: e.delta > 0 ? 'good' : 'info' };
+    case 'bound':
+      return { text: `${e.delta > 0 ? '+' : '-'}${gold(Math.abs(e.delta))} starter gold`, tone: e.delta > 0 ? 'good' : 'info' };
     case 'level': {
       const prof = b.professions[e.profession];
       const tech = prof?.techniques.find((t) => t.level === e.level);
@@ -532,22 +565,21 @@ export function itemBenefit(b: Bundle, id: string): string {
           .sort()
       : [];
     const unlocks = [
-      resources.length ? `${it.tool.kind === 'axe' ? 'fells' : 'gathers'} ${resources.join(' & ')}` : '',
+      resources.length ? `${it.tool.kind === 'axe' ? 'fells' : it.tool.kind === 'rod' ? 'fishes for' : 'gathers'} ${resources.join(' & ')}` : '',
       digSites.length ? `digs ${digSites.join(' & ')}` : '',
     ].filter(Boolean).join(' · ') || `tool for ${it.tool.kind}`;
     return `${tier} · ${unlocks} · ${uses}${speed}`;
   }
   if (it.food) {
-    // food is in whole points of health; while a hunger clock runs it drains thousandths of a point a minute
+    // food is in whole points of health (`food.satiety` in the content); nothing drains the bar by the clock (G28)
     const parts: string[] = [];
-    const drain = b.params.satiety_drain_per_min;
     if (it.food.satiety > 0) parts.push(`+${it.food.satiety} health`);
     if (it.food.hurt) parts.push(`hurts: -${it.food.hurt} health`);
-    if (it.food.satiety > 0 && drain > 0) {
-      const workMs = Math.round((it.food.satiety * 1000 * 60_000) / drain);
-      parts.push(`about ${workMs >= 60_000 ? `${Math.round(workMs / 60_000)} min` : `${Math.round(workMs / 1000)} s`} of work`);
-    }
     return parts.join(' · ');
+  }
+  if (it.wear?.places !== undefined) {
+    const bonus = it.wear.load_bonus ? ` · carries ${it.wear.load_bonus} more weight` : '';
+    return `On the back: ${it.wear.places} places${bonus}`;
   }
   if (it.fragment) {
     return `Unlocks recipe: ${b.recipes[it.fragment.unlocks]?.title ?? it.fragment.unlocks}`;

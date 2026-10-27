@@ -1,6 +1,6 @@
 # Roadmap
 
-Openfold is a free pixel-art browser game that its players build together. You can play it today at [theopenfold.vercel.app](https://theopenfold.vercel.app). Much of the valley (bushes, recipes, quests, treasures) lives in small data files, and anyone can propose an addition.
+Loomvale is a free pixel-art browser game that its players build together. You can play it today at [theopenfold.vercel.app](https://theopenfold.vercel.app). Much of the valley (bushes, recipes, quests, treasures) lives in small data files, and anyone can propose an addition.
 
 This page says where the game stands, what comes next, and where help is most welcome. The full rules of play live in [docs/design/GAME_RULES.md](docs/design/GAME_RULES.md), and every design choice is logged in [DECISIONS.md](DECISIONS.md).
 
@@ -45,7 +45,7 @@ A 3D client of the same valley is in progress. It uses the same simulation, cont
 ## Where help is most welcome
 
 - **Content:** a fruit, a herb, a recipe, a quest, a treasure or a place to restore. Start with [Add a fruit in 10 minutes](docs/creators/README.md).
-- **Pixel art:** 16x24 characters and 32x32 work poses, in the kit's palette (the guide covers it).
+- **Pixel art:** 64x96 characters and 128x128 work poses at 64 pixels per tile, in the kit's palette (the guide covers it).
 - **Reviewing:** every extension proposal needs three approvals once five creators have had an extension merged (until then, one approval, the owner's), and an approval earns points when that proposal is merged.
 - **3D:** models and scenes for the 3D door.
 - **Code:** read [CONTRIBUTING.md](CONTRIBUTING.md) first. The simulation in `kernel/` stays pure and integer-only.

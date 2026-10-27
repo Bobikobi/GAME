@@ -7,14 +7,28 @@ const good = {
   text: 'The bridge is hard to find @someone',
   context: { map: 'core/world', tile: [12, 7], quest: 'core/first', hour: '18:30', build: 'content abcd1234 kernel 1.0.0' },
 };
+// the game posts from the site's own page, so its POST carries the site's origin
 const post = (body: unknown, headers: Record<string, string> = {}) =>
-  new Request('https://x.test/api/feedback', { method: 'POST', body: typeof body === 'string' ? body : JSON.stringify(body), headers });
+  new Request('https://x.test/api/feedback', { method: 'POST', body: typeof body === 'string' ? body : JSON.stringify(body), headers: { origin: 'https://x.test', ...headers } });
 const github = (status = 201) => vi.fn(async () => new Response('{"secret":"nope"}', { status }));
 const asFetch = (f: ReturnType<typeof github>) => f as unknown as typeof fetch;
 
 beforeEach(() => resetRateLimit());
 
 describe('POST /api/feedback', () => {
+  test('refuses a POST that is not from the site itself: no Origin, "null", or another site, and calls nothing', async () => {
+    const f = github();
+    const bare = new Request('https://x.test/api/feedback', { method: 'POST', body: JSON.stringify(good) });
+    expect((await handle(bare, { FEEDBACK_GITHUB_TOKEN: 't' }, asFetch(f))).status).toBe(403);
+    for (const origin of ['null', 'https://evil.test', 'http://x.test', 'https://x.test.evil.test', 'not a url']) {
+      const res = await handle(post(good, { origin }), { FEEDBACK_GITHUB_TOKEN: 't' }, asFetch(f));
+      expect(res.status, origin).toBe(403);
+      expect(await res.json()).toEqual({ error: 'origin' });
+    }
+    expect(f).not.toHaveBeenCalled();
+    expect((await handle(post(good), { FEEDBACK_GITHUB_TOKEN: 't' }, asFetch(f))).status).toBe(200);
+  });
+
   test('without the token it answers 503 and calls nothing', async () => {
     const f = github();
     const res = await handle(post(good), {}, asFetch(f));

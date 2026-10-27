@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { OWN_FIRE, type Bundle, type GameEvent, type Tile, isSafe, makeWalkable, npcTile } from '@game/kernel';
+import { OWN_FIRE, STATE_FORMAT, type Bundle, type GameEvent, type Tile, isSafe, isSeed, makeWalkable, npcTile } from '@game/kernel';
 import { app } from '../src/app';
 import { LEGACY_SAVE_KEY, SAVE_KEY } from '../src/config';
 import { s1Use } from '../src/net/s1';
@@ -140,9 +140,39 @@ describe('session persistence', () => {
     expect(p.attrs).toMatchObject({ might, spirit: 0 });
     expect('carry' in p.attrs).toBe(false);
     expect((p as { starter?: string }).starter).toBeUndefined();
-    expect(restored.state.format).toBe(2);
+    expect(restored.state.format).toBe(STATE_FORMAT);
     // the old start carried the basket and the axe: the spots that lay them by the wake are spent
     for (const id of ['core/bank-basket#0', 'core/bank-axe#0']) expect(restored.state.nodes[id]).toBeDefined();
+  });
+
+  test('a new world holds a 128-bit key of its own, and a debug seed widens as an old save does', () => {
+    const one = Session.fresh(bundle).state.seed;
+    const two = Session.fresh(bundle).state.seed;
+    expect(isSeed(one)).toBe(true);
+    expect(one).not.toEqual(two);
+    // four random words: the chance that the three upper ones are all zero is 2^-96
+    expect(one.slice(1).some((word) => word !== 0)).toBe(true);
+    expect(Session.fresh(bundle, 4242).state.seed).toEqual([4242, 0, 0, 0]);
+  });
+
+  test('a save from before kernel 0.20 keeps playing: its 32-bit seed widens, and its opening log is let go', () => {
+    const session = startedSession();
+    session.save();
+    const file = JSON.parse(storage.getItem(SAVE_KEY)!) as { state: string; opening?: { seed: unknown } };
+    expect(file.opening).toBeDefined();
+    const old = JSON.parse(file.state) as { format: number; seed: unknown };
+    old.format = 2;
+    old.seed = 987_654_321;
+    file.state = JSON.stringify(old);
+    file.opening!.seed = 987_654_321;
+    storage.setItem(SAVE_KEY, JSON.stringify(file));
+
+    const restored = Session.restore(bundle)!;
+    expect(restored.started).toBe(true);
+    expect(restored.state.format).toBe(STATE_FORMAT);
+    expect(restored.state.seed).toEqual([987_654_321, 0, 0, 0]);
+    // the old opening was drawn under the old draw: no replay lands on it, so the sign-up starts fresh
+    expect(restored.openingUpload()).toBeUndefined();
   });
 
   test('carries a save made under the working title over to the new key', () => {
@@ -477,7 +507,6 @@ describe('position reports (P-5b)', () => {
   /** The bundle with a pit on a tile beside the forager's wake, outside the safe ground, and no hunger clock. */
   function withPit(): { b: Bundle; session: Session; pit: [number, number] } {
     const b = structuredClone(bundle);
-    b.params.satiety_drain_per_min = 0;
     const probe = Session.fresh(b);
     probe.act({ t: 'start', starter: 'core/forager', name: 'Tester' });
     const walkable = makeWalkable(b);
@@ -526,8 +555,7 @@ describe('position reports (P-5b)', () => {
     session.tick += 2000;
     session.report(wake);
     expect(session.state.player.at).toEqual(wake);
-    session.state.player.satiety = 1;
-    session.state.player.satietyAt = session.tick;
+    session.state.player.hp = 1;
     seen.length = 0;
     session.tick += 2000;
     session.report(pit);

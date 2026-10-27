@@ -7,7 +7,7 @@ import { computeBoard, readPoints, type Commit, type PointsConfig } from '../src
 import { REPO_ROOT } from '../src/load';
 
 describe('board and points', () => {
-  const tempDir = mkdtempSync(join(tmpdir(), 'openfold-points-test-'));
+  const tempDir = mkdtempSync(join(tmpdir(), 'loomvale-points-test-'));
   afterAll(() => rmSync(tempDir, { recursive: true, force: true }));
 
   it('reads points from .github/points.json correctly', () => {

@@ -83,7 +83,7 @@ describe('the check on today content', () => {
 describe('the check, end to end, on a kit that declares a height', () => {
   // the whole content in a copy, one oak and one creature sprite given a `scale`: the warning has to come
   // out of `pnpm check` itself, not only out of the function above, or the field would be read by nobody
-  const root = mkdtempSync(join(tmpdir(), 'openfold-scale-'));
+  const root = mkdtempSync(join(tmpdir(), 'loomvale-scale-'));
   afterAll(() => rmSync(root, { recursive: true, force: true }));
   cpSync(join(CONTENT_DIR, 'core'), join(root, 'core'), { recursive: true });
   cpSync(join(CONTENT_DIR, 'kit'), join(root, 'kit'), { recursive: true });

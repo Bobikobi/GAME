@@ -45,7 +45,7 @@ describe('the API folder', () => {
 
 describe('llms.txt', () => {
   it('starts with the product name and lists the hub-data document', () => {
-    expect(llms.startsWith('# Openfold\n')).toBe(true);
+    expect(llms.startsWith('# Loomvale\n')).toBe(true);
     expect(llms).toContain('(/api/hub-data.json)');
   });
 

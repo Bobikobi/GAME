@@ -1,4 +1,4 @@
-# Research: Mobile Game Onboarding (FTUE) & Openfold Gap Analysis
+# Research: Mobile Game Onboarding (FTUE) & Loomvale Gap Analysis
 
 ## 1. Executive Summary
 
@@ -8,7 +8,7 @@ First-Time User Experience (FTUE) on mobile devices determines whether a player 
 - The goal is not immediately visible or understood within the viewport.
 - Rewards and progression mechanics do not provide instant positive reinforcement within the first 60 seconds.
 
-This document reviews established FTUE standards from leading mobile and handheld cozy/adventure RPGs (*Animal Crossing: Pocket Camp*, *Stardew Valley Mobile*, *A Short Hike*, *Sky: Children of the Light*) and audits Openfold's current opening against those benchmarks.
+This document reviews established FTUE standards from leading mobile and handheld cozy/adventure RPGs (*Animal Crossing: Pocket Camp*, *Stardew Valley Mobile*, *A Short Hike*, *Sky: Children of the Light*) and audits Loomvale's current opening against those benchmarks.
 
 ---
 
@@ -36,9 +36,9 @@ This document reviews established FTUE standards from leading mobile and handhel
 
 ---
 
-## 3. Openfold Current FTUE Walkthrough
+## 3. Loomvale Current FTUE Walkthrough
 
-Openfold's opening flow today:
+Loomvale's opening flow today:
 1. **Title & Character Select**:
    - Player picks between Forager and Explorer.
    - Gender/look toggle (Male / Female appearance).
@@ -63,7 +63,7 @@ Openfold's opening flow today:
 
 ---
 
-## 4. Identified Gaps in Openfold
+## 4. Identified Gaps in Loomvale
 
 | Dimension | Current State | Gap / Issue | Recommended Solution |
 | :--- | :--- | :--- | :--- |

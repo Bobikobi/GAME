@@ -74,6 +74,8 @@ beforeAll(() => {
     techniques: [],
   };
   b.stations = { ...b.stations, workshop: 'x/carpentry' };
+  // places no longer grow with might (DECISIONS.md, 2026-10-23): these tests carry 62 things in one bag
+  b.params = { ...b.params, bag_base: 200 };
 });
 
 /** Profession experience for a level, or for the last level with no level given. */

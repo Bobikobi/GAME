@@ -302,7 +302,7 @@ Files:
 - `web/src/pages/api/index.astro`: a list: `hub-data.json` (format, `built_at`),
   each `schema/<name>.schema.json` with its `$id`, each as a link; one line
   on the stage-2 plan (same paths, served by the server).
-- `web/public/llms.txt`: H1 with the product name, Openfold (question 2,
+- `web/public/llms.txt`: H1 with the product name, Loomvale, named Openfold when this was written (question 2,
   settled on 9.10 in `DECISIONS.md`), one sentence, then sections `## Guide`,
   `## Schemas`, `## Data`, `## MCP`, `## Rules`, each a list of links with a
   short description, per llmstxt.org.
@@ -556,7 +556,7 @@ a step, and the hub shows the one-line setup.
 Files:
 - `.mcp.json` (repository root): `{"mcpServers": {"<name>": {"command": "pnpm",
   "args": ["-s", "mcp"]}}}` with the product name from question 2,
-  `openfold`.
+  `loomvale`.
 - `.cursor/mcp.json`: the same shape.
 - `docs/creators/README.md`: a section "Your AI tool and the project" with the
   two lines for a tool that does not read `.mcp.json` (`claude mcp add` and the
@@ -1155,7 +1155,7 @@ Closed ends the code still cites: CR-8, CR-16 and CR-22 were closed by DECISIONS
 | CR-52 | Two funds and the premium currency (decided 10.10, the sweep): nothing keeps money and gold apart. | the stage 4 server (the pool and royalties), the stage 6 payments | royalties are cut from gold already leaving, with the reason `royalty`, and never minted; the money fund and the gold pool never convert; premium currency is bought with money only, is never traded, given or turned into gold, buys only bound things and counts on no board |
 | CR-53 | One person, one account in a world (decided 10.10, the sweep): nothing counts accounts per person. | the stage 2a design (sign-up says it), the stage 4 server (loops, inputs) | one person's accounts trading in a world are an exploit loop, trade for money is a loop for both sides, input sent to two accounts at once is flagged as a program, and accounts found to be one person's count as one for every limit |
 | CR-54 | Bounds on the flow of gold (decided 10.10, the sweep): the daily cap follows the reference player, refunds count as nothing, the pool and the trader's share can add up to a pump, the step is not per world, and r keeps a range. | `content/core/params.json` (`trader_day_cap`, `creator_pool_permille`, `k_craft_permille`, `r_mg_per_value_ms`), the stage 4 server (the books) | the daily cap is 8 active hours at the kernel's ceiling for the account's level and resets at 00:00 UTC; the pool and the step count burns net of refunds; the check refuses top bounds of `creator_pool_permille` and `k_craft_permille` that reach 1000 together; accounts under `new_account_hold` give no creator seconds; the step is per shared world and never above its start; `r_mg_per_value_ms` has its min and max at its value |
-| CR-55 | Starting gold and the kit (decided 10.10, the sweep): starting gold is ordinary gold, and kit items trade. | `kernel/src/state.ts` (a bound balance), `schema/src/index.ts` (bound kit items), `pnpm check` (the kit's band) | starting gold is a bound balance spent first and only at the shop, the trainers and the settlement; kit items are bound to the character; the kit's band is measured at the shop's price, or at V where no shop sells the item |
+| CR-55 | Starting gold and the kit (decided 10.10, the sweep): the starting gold is a bound balance beside the purse (built in kernel 0.15.0: `player.boundGold`, spent first at the shop, its own `bound` fund in the gold ledger, shown as "starter gold"; the trainers and the settlement spend it when they exist), and kit items trade until the bound-kit part is built. | `kernel/src/state.ts` (a bound balance), `schema/src/index.ts` (bound kit items), `pnpm check` (the kit's band) | starting gold is a bound balance spent first and only at the shop, the trainers and the settlement; kit items are bound to the character; the kit's band is measured at the shop's price, or at V where no shop sells the item |
 | CR-56 | The miss table's ceiling (decided 10.10, the sweep): a miss table could pay more per miss than missing costs. | `content/core/params.json` (`miss_value_max_permille`, 500), `pnpm check` | the check refuses a miss table whose expected value per miss reaches `miss_value_max_permille` of the hit's output value |
 | CR-57 | The ledger's reasons (decided 10.10, the sweep): mints and some movements have no reason in the closed list. | `kernel/src/state.ts` (the ledger), `docs/design/SETTLEMENT.md` 3.9 | the closed list carries `pay`, `reward` and `find` for mints and `gift`, `donation`, `escrow` and `closed` for movements, and a gift to the town counts in worth at that day's trader pay |
 | CR-58 | The store, a full bag and selling offline (decided 10.10, the sweep): nothing says where returns go, what a full bag does, or where a player with no house sells offline. | `kernel/src/step.ts` (an action needs room for its output), the stage 4 server (the store, the town's market board) | a gather or a craft does not start without room for its output, a reward that does not fit waits with its giver, returns go to the one store and may run over it, and a player sells offline from the town's market board (houses are paused since 10.10) |

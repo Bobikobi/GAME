@@ -1,7 +1,7 @@
 /** Where the project lives. Bug reports link here. */
 export const REPO_URL = 'https://github.com/Bobikobi/GAME';
 /** The game's name (DECISIONS.md, 9.10). */
-export const GAME_TITLE = 'Openfold';
+export const GAME_TITLE = 'Loomvale';
 export const SAVE_KEY = 'openfold.save.1';
 /** Set once the one-time development review was answered or skipped; cleared with the save. */
 export const REVIEW_KEY = 'openfold.review.1';

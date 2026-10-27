@@ -39,7 +39,7 @@ Verify: `nginx -t` passes, `systemctl reload nginx`, then the same curl through 
 ## 4. The certificate
 
 Prepare: the owner's choice of tool; the name must point at the box first.
-Verify: `curl -sI https://<name>/state` answers 401 without a player header.
+Verify: `curl -s -o /dev/null -w '%{http_code}\n' https://<name>/state` prints 401 without a player header (a GET: the API answers GET and POST only, so a `-I` HEAD would be 405).
 
 ## 5. The nightly backup
 
@@ -52,15 +52,20 @@ Verify: run it by hand once, then `zcat` the newest file and see `CREATE TABLE p
 Waits for: the Fable auth review of `server/src/auth/`, the name and its certificate (steps 3 and 4), and the
 owner's choice of a mail sender (NEXT 18 h5; until then the only mailer writes the link to the API's log).
 Prepare: in `~/openfold/.env`, remove `ALLOW_DEV_HEADER` (the session mode refuses to start beside it) and set
-`AUTH_MODE=session`, `PUBLIC_ORIGIN=https://<name>`, `APP_ORIGIN=https://<the game's name>`, and the Google pair
+`AUTH_MODE=session`, `PUBLIC_ORIGIN=https://<name>`, `APP_ORIGIN=https://<the game's name>`,
+`CLIENT_ADDRESS_HEADER=X-Real-IP` (the nginx file sets it; the sign-in limits count by it), and the Google pair
 `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` from the owner's secrets folder on the laptop (Google project
 `openfold-game`). On the Google client, add `https://<name>/auth/google/callback` as a redirect; it lists only the
-laptop's `http://localhost:8080/auth/google/callback` today. Then `docker compose -f compose.yml up -d --no-build`.
+laptop's `http://localhost:8080/auth/google/callback` today. While the only mailer is `log`, the API starts only
+beside `ALLOW_LOG_MAILER=staging-only`: every link lands in its log, so such a box is a staging one and the name
+is not given to players until a real sender replaces it. Then `docker compose -f compose.yml up -d --no-build`.
 What happens if it goes wrong: the API refuses to start and says which variable; the database is untouched, and
 putting the two `dev-header` lines back brings the staging box back.
-Verify: the boot log carries one line beginning `AUTH_MODE=session`; `curl -sI https://<name>/auth/google/start`
-answers 302 to `accounts.google.com`; `curl -s https://<name>/state` answers 401; and a sign-in by the owner's
-test address (eladeladsaa@gmail.com, the client's one test user while it is in Testing) lands on the game.
+Verify: the boot log carries one line beginning `AUTH_MODE=session`;
+`curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' https://<name>/auth/google/start` prints 302 and an
+`accounts.google.com` address (a GET: `-I` sends HEAD, which the API answers 405); `curl -s https://<name>/state`
+answers 401; and a sign-in by the owner's
+test address (the owner's test address, kept outside the repo, is the client's one test user while it is in Testing) lands on the game.
 
 The country for the age limit (the owner, 21.10: "align with the big companies"). The sign-up never asks the
 player where they are; the API reads the header named by `COUNTRY_HEADER`, and only our nginx may set it.
@@ -75,8 +80,8 @@ Verify: the boot log line ends `the age limit by the country in x-country`; `cur
 loopback port is answered as Israel, and the same through the name is answered by the caller's real country.
 
 On the laptop, the same mode runs against the dev client: `AUTH_MODE=session PUBLIC_ORIGIN=http://localhost:8080
-APP_ORIGIN=http://localhost:5173` with the Google pair exported from the secrets file, never pasted into a shell
-history or a chat.
+APP_ORIGIN=http://localhost:5173 ALLOW_LOG_MAILER=staging-only` with the Google pair exported from the secrets
+file, never pasted into a shell history or a chat.
 
 ## Never
 

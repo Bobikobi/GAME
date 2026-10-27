@@ -61,7 +61,6 @@ const overlaps = (r: { x: number; y: number; w: number; h: number }): boolean =>
 /** The bundle with a clean meadow in the patch (a town tile and a water tile in it), no shipped hazard, no hunger drain, and these props. */
 function world(props: Prop[] = [], tweak?: (b: Bundle) => void): Bundle {
   const b = structuredClone(base);
-  b.params.satiety_drain_per_min = 0;
   const rows = b.map.ground.map((row) => row.split(''));
   for (let y = PATCH.y; y < PATCH.y + PATCH.h; y++) for (let x = PATCH.x; x < PATCH.x + PATCH.w; x++) rows[y]![x] = '.';
   rows[TOWN[1]]![TOWN[0]] = '=';
@@ -114,7 +113,6 @@ function begin(b: Bundle, bag: Record<string, number> = { [WOOD]: 20 }, at: Tile
   const s = structuredClone(r.state);
   s.player.at = [...at];
   s.player.movedAt = tick;
-  s.player.satietyAt = tick;
   s.player.attrs.might = 100;
   s.player.bag = { ...bag };
   s.tick = tick;

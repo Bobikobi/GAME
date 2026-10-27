@@ -7,7 +7,9 @@
 ## Tools that fire on this pull request
 
 Quest review: <verdict of the quest-designer skill in one line, or "no quest changed">
+Story review: <verdict of the story-keeper skill in one line, or "no story text changed">
 Source: <where each picture added under content/kit/ came from (docs/art/PROP_FROM_REF.md), or "no new picture">
+Tree: <school>/<node ids> | extends the tree: <path of the proposal> | none: <why nothing a player can grow in changes>
 
 ## Author checklist
 

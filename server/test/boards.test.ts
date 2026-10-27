@@ -6,7 +6,7 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
-import { type Action, type Bundle, type State, newState, step } from '@game/kernel';
+import { type Action, type Bundle, type Seed, type State, newState, step, widenSeed } from '@game/kernel';
 
 import { RemoteSession, fetchWire } from '../../game/src/remote.js';
 import { loadBundle } from '../../tools/test/helpers/world.js';
@@ -19,8 +19,9 @@ import { hasDatabase, startRig, type Account, type Rig } from './sim/rig.js';
 let bundle: Bundle;
 
 /** The first action of every account, the log it leaves and the ledger that log pays. */
-function opened(seed: number): { seed: number; log: { seq: number; action: unknown; tick: number }[]; state: State } {
+function opened(old: number): { seed: Seed; log: { seq: number; action: unknown; tick: number }[]; state: State } {
   const action: Action = { t: 'start', starter: 'core/forager', name: 'Tess' };
+  const seed = widenSeed(old);
   const result = step(bundle, newState(bundle, seed), action, 0);
   if (!result.ok) throw new Error(result.error);
   return {
@@ -37,7 +38,7 @@ beforeAll(() => {
 describe('a log that replays (NEXT 18 g)', () => {
   test('lands on the state its row holds, and a state that is not the log\'s is refused', () => {
     const { seed, log, state } = opened(42);
-    const ledger = bookedGoldMg(bundle, log[0]!.action, []).map((deltaMg) => ({ deltaMg, action: log[0]!.action, tick: 0 }));
+    const ledger = bookedGoldMg(bundle, log[0]!.action, []).map((row) => ({ ...row, action: log[0]!.action, tick: 0 }));
     expect(checkAccount(bundle, { seed, state, log, ledger })).toEqual([]);
 
     // a client that writes itself a purse: the log still says what it says, so the row is not its state

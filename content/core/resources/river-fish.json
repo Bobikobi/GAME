@@ -1,0 +1,36 @@
+{
+  "$schema": "../../../schema/json/resource.schema.json",
+  "format": 1,
+  "type": "resource",
+  "id": "core/river-fish",
+  "title": "River fish",
+  "creator": "core",
+  "items": [
+    {
+      "id": "core/river-fish",
+      "name": "River fish",
+      "description": "Silver along the back and still cold from the river. Better over a fire.",
+      "kind": "material",
+      "rarity": "common",
+      "class": "animal",
+      "tier": 1,
+      "sprite": "core/base-kit:items/stone",
+      "weight": 1
+    }
+  ],
+  "node": {
+    "output": "core/river-fish",
+    "yield": 1,
+    "active_ms": 3000,
+    "respawn_ms": 45000,
+    "count": 3,
+    "sprite": "core/base-kit:props/reeds",
+    "tool": "rod",
+    "level": 1,
+    "game": "fish",
+    "place": {
+      "slot": "core/river-fishing",
+      "water": true
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "about": "Walking with a crate in both hands: the library's carry walk, the crate built by the renderer.",
+  "target": "forager",
+  "base": {
+    "library": "ual2",
+    "action": "Walk_Carry_Loop"
+  },
+  "frames": {
+    "even": 8
+  },
+  "prop": {
+    "kind": "crate"
+  },
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      91
+    ]
+  },
+  "locomotion": {
+    "playback": "distance"
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

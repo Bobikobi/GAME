@@ -8,7 +8,7 @@ import { createServer, type Server } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Browser, sleep, type Page } from './cdp';
-import { TAKE_GROUND, seedQuery } from './wakes';
+import { TAKE_GROUND, carveIn, seedQuery } from './wakes';
 import { solveMinigame } from './minigame';
 import { FreeWalk, VEC, type Dir } from './walk';
 
@@ -87,20 +87,19 @@ window.__stealth = (() => {
       s.state.player.camp = ['core/campfire'];
       if (!s.state.player.restored.includes('core/old-bridge')) s.state.player.restored.push('core/old-bridge');
       // Health far above anything the chase leg can bite away, so the run home
-      // never races a fall (satietyAt never clamps it to the cap; eating would).
-      const cap = (params.satiety_cap + params.per_point.stamina * s.state.player.attrs.stamina) * 1000;
-      s.state.player.satiety = 10 * cap;
-      s.state.player.satietyAt = s.tick;
+      // never races a fall (nothing clamps it to the cap; eating would).
+      const cap = (params.hp_cap + params.per_point.stamina * s.state.player.attrs.stamina) * 1000;
+      s.state.player.hp = 10 * cap;
       s.met.add('core/trader');
       s.pos = [34, 11];
       s.state.player.at = [34, 11];
       s.facing = 'right';
       g().world.bind(s);
-      return { cap, bite: Math.floor((cap * params.hazard.predator.bite_pct) / 100), drain: params.satiety_drain_per_min };
+      return { cap, bite: Math.floor((cap * params.hazard.predator.bite_pct) / 100) };
     },
     health() {
       const p = g().session.state.player;
-      return { hp: p.satiety, falls: p.falls, movedAt: p.movedAt, since: p.chase ? p.chase.since : null };
+      return { hp: p.hp, falls: p.falls, movedAt: p.movedAt, since: p.chase ? p.chase.since : null };
     },
     moveTo(x, y) {
       const s = g().session;
@@ -242,10 +241,10 @@ async function start(page: Page): Promise<void> {
   );
   if (choice === 'ask') await page.tap('.title-screen button', 'Start a new game');
   await page.tap('.card.race', 'Elf');
-  await page.tap('input.name');
-  await page.type('Tess');
   await page.tap('.title-screen button', 'Wake up');
   await page.waitFor('!!window.__game.session && window.__game.session.started', 'the character to wake', 10_000);
+  // the name is cut at the bridge's stone, and this script is not about the stone: it is cut here
+  await page.eval(carveIn('Tess'));
   // the west bank's basket and axe lie on the ground by the wake: this script tests what comes later, so they are handed over
   await page.eval(TAKE_GROUND);
 }
@@ -259,7 +258,7 @@ async function run(page: Page, url: string): Promise<void> {
   await me.clearPlainDialog();
 
   // The earlier quest and camp are setup; the stealth quest itself is accepted through Pell.
-  const health = await page.eval<{ cap: number; bite: number; drain: number }>('__stealth.prepare()');
+  const health = await page.eval<{ cap: number; bite: number }>('__stealth.prepare()');
   await page.eval(`void __game.ui.talk('core/trader')`);
   await me.choose('The south bank');
   await me.choose('I will do it');
@@ -326,7 +325,7 @@ async function run(page: Page, url: string): Promise<void> {
   const home = await page.eval<Health>('__stealth.health()');
   console.log(
     `stealth chase: camp reached ${home.movedAt - (chased.since ?? home.movedAt)} game ms after the chase began (${wallMs} ms wall), ` +
-      `health ${before.hp} -> ${home.hp} (a bite takes ${health.bite}, the cap is ${health.cap}, the drain is ${health.drain} a minute)`,
+      `health ${before.hp} -> ${home.hp} (a bite takes ${health.bite}, the cap is ${health.cap})`,
   );
   if (home.falls !== before.falls) throw new Error(`the chase ended in a fall: falls ${before.falls} -> ${home.falls}`);
   if (before.hp - home.hp < health.bite) throw new Error(`the chase never bit: health ${before.hp} -> ${home.hp}`);

@@ -38,7 +38,7 @@ export function carveName(ui: UI, defaultName: string): Promise<string> {
       'div',
       { class: 'dialog', role: 'dialog' },
       h('div', { class: 'dialog-name' }, STONE_SPEAKER),
-      h('p', { class: 'dialog-text' }, 'One line is empty under the names.'),
+      h('p', { class: 'dialog-text' }, 'One line is empty under the names. Cut your name there. It is yours from now on.'),
       input,
       error,
       h('div', { class: 'dialog-options' }, button('Cut it', cut, 'option'), button('Leave it to the stone', () => finish(defaultName), 'option')),

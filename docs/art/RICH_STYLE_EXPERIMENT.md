@@ -97,6 +97,15 @@ the materials it is made of and `style: rich` for the hand. The order:
    per material, best of three, the gallery judged by eye, the picks into the kit with their
    `ramps` and `source`. About three to four minutes of model time per image through the Codex
    agent today; a direct image API call is the step that makes dozens a day cheap.
+   The props, wave 1: `tools/kit-gen/props-wave-1.json` (all 50 core props, 4x their size, ramps per
+   material, style rich) on the free local route, best of three by `LOCAL_SEED` 7, 11 and 13; the five
+   rich picks of the experiment imported again onto the shared ramps: `tools/kit-gen/rich-resnap.json`.
+   What the first pass taught (22.10): the local model draws at most ~60 art px, so sprites of 64 and
+   under pass and the large or thin ones shrink or collapse; those go down Codex, which keeps the size
+   at about two minutes a picture. A redraw from today's sprite keeps today's identity, so a prop that
+   reads as generic gets its identity from the wording: `tools/kit-gen/props-styles-1.json` draws three
+   lanterns and three statues, each still testing one named difference; all six are kept, because a
+   prop's look follows its place and every settlement picks its own in its map plan.
 3. The cast waits for L1 (the outline pick), as decided on 20.10.
 
 ## To reproduce the experiment
