@@ -74,6 +74,20 @@ describe('waking', () => {
       expect(picked.player.wear, p.id).toEqual({});
     }
   });
+
+  test("the pocket's tools are its own: a character of another pocket neither sees nor takes them (DECISIONS.md, 2026-10-23)", () => {
+    for (const p of Object.values(b.pockets)) {
+      for (const other of Object.values(b.pockets)) {
+        if (other.id === p.id) continue;
+        const s = started(other.id);
+        for (const [id, inst] of Object.entries(b.instances)) {
+          if (inst.kind !== 'treasure' || b.treasures[inst.source]?.pocket !== p.id) continue;
+          expect(spotOpen(b, s, id), `${other.id} sees ${id}`).toBe(false);
+          expect(dig(s, id), `${other.id} digs ${id}`).toEqual({ ok: false, error: 'There is nothing to dig here.' });
+        }
+      }
+    }
+  });
 });
 
 describe("a pocket's own first task", () => {

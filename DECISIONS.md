@@ -3194,3 +3194,39 @@ The owner picked the look of the three player races after four rounds of stills 
 Human, elf and skeleton walk with sheets from the anim tool: pose = nearest of the cycle's poses to the distance walked (art px, 64 a tile), so the foot stays planted at every pace instead of cycling on a clock. Poses per race are what the 30 poses/s ceiling at the steady pace allows: elf 15, skeleton 12, human 10 (the Mixamo jog is a longer stride).
 Measured: foot slide at the pose instants 0.25-0.75 px (limit 1); frame by frame at 60 Hz the foot swings up to 6.5-9.9 px around the ground, which is half a pose and is the price of showing a pose at a time. One frame for all sheets (128x128, anchor [64,90], the kit's size rule), 16 frames at most. Clothed width: the elf is 78.5 % of the human man (73.4 % the woman), 81.7 % against the human woman; the skeleton is 60.8 %.
 Why: proven in `game/test/stride.test.ts` (real walker, real rule). **Retry when:** the in-pose swing reads as skating on the live site (then more poses per cycle, which needs a higher poses/s ceiling, or a blend between poses). Model: claude-sonnet-5-5.
+## 2026-10-27 ✅ The pick feeds the next round: a picked entry is drawn again from its seed and recipe, and a warning that repeats goes into the prompt
+A wave drew every entry "best of three, judged by eye", and the pick lived only in the owner's head and in DECISIONS prose, so each round began from blind seeds. The record of the picks already exists (`tools/kit-gen/rich-wave.manifest.jsonl`, one line per picked image with its drawer, seed, recipe and round, cited by line number from the kit), so it stays the single record and nothing is written into the spec to duplicate it. Chosen: `kit:gen` reads it (`--picks`, default that file, `--no-picks` to ignore it) and draws a picked entry again from the picked seed (kaggle, local) and, on kaggle, the picked recipe unless `KAGGLE_MODEL` or `KAGGLE_RECIPE` names one; entries that pick different recipes go up in separate kernel runs, and `--dry` lists the picks it would use. `pnpm kit:notes --runs <run manifests> <spec.json>` copies a warning that came back on two or more draws of one entry into a new optional `notes` list on that spec entry, which every prompt builder appends after the entry's detail so a token-window cut loses it first (a warning seen once is noise). One run with the pick plus one new seed replaces three blind seeds. Tests cover the seed and recipe in the first request, the explicit recipe winning, the rule of two, the idempotent rewrite and the order of the notes in each prompt; no picture was drawn.
+**Retry when:** a round's gallery shows the picked seed no longer draws the picked picture (the recipe, its weights or the prompt moved under it: re-pick and record the new line), or the notes grow past a few clauses an entry and start to crowd the window. Model: claude-sonnet-5-5. Branch `feat/kit-pick-loop`.
+
+## 2026-10-23 ✅ The valley v2 on the map: 64x64, the plan block filled
+
+**The core map grows to 64x64 as the valley plan v2 draws it.** No opening tile a quest names moves. New: the bay with the jetty's planks (the boat keeps its place, nothing drawn yet), the shore way, the tangle's cutting and the descent's four ragged bands into the undead world, the east hills (toe, foot, hill, mountain band, `heights` 0-7), the town shelf and the ruins terrace at height 1, the lane's two jogs with a boulder in each, the night place's wall line, three statues, eleven lamps, the workshop stall (its slot opened later by a quest), the trainers' stall (reserved, empty), the ember camp, the cutting stone. The `plan` block holds the 23 regions with `opens_by`, the 8 paths, the 8 routes, the 7 rests and the 3 wakes. The four gates (north, descent, shore, the hall's stair) are marked as `area` slots on ground that stays shut; each becomes a restore in the pull request that writes the region quest opening it (a restore no quest opens fails the check), and until then the plan's `opens_by` names a quest not written yet (warnings). Every new piece wears the closest kit sprite as a stand-in (heath and rock as grass and rubble, the crossings as pebbles and rubble, the knight as rubble); new art replaces them in place.
+The owner, 22.10 and 23.10 (the plan's answers).
+**Retry when:** the art for heath, rock, steps, ramps and statues lands, or the kernel walks levels. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The riddle pair are two lanterns; the bridge slot is 3x2
+
+**The riddle's two lantern statues become two lanterns:** an iron post in town and a stone fire bowl on the hill, about 1.6 characters tall (both `lantern_post` until the bowl is drawn); the clue reads "one of the two lanterns". **The bridge's slot is 3x2**, two rows of planks over the river; two mossy rocks sit on the bank at its foot, (11,18) and (9,17), beside the keystone's shallows.
+The owner, 23.10.
+**Retry when:** the owner changes his word on it. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The wake tools are personal in the opening
+
+**A pocket's tools are its own character's:** another player neither sees nor takes them (the kernel already refuses a dig by another pocket; the clients filter by pocket). Nothing more is built: no trade, and nothing blocks a trade later. Test: `kernel/test/starts.test.ts`. Three tools moved off the new paths: the basket to (7,17), the axe to (4,18), the trowel to (7,23).
+The owner, 23.10.
+**Retry when:** players share one world. Model: claude-opus-5-5.
+
+## 2026-10-23 ⏸ The inn waits for the content wave
+
+**The inn stays the ruin at the town's edge on this map.** The opening's own walk reads that ruin as "Awaiting restoration"; rebuilding it, with the innkeeper and the drunk's post, belongs to the wave that writes their quests and lines (decision 50 of 22.10 stands).
+**Retry when:** the content wave opens. Model: claude-opus-5-5.
+
+## 2026-10-23 ✅ The valley's four exits and the road each one needs
+
+**Four ways out of the valley, each with the road its neighbour owes.** `plan.exits` in `content/core/map.json`, every gate open, against 2106 steps of daylight (400 s at 190 ms a step), margin 10: the north gate to the north wood, 6 steps from the nearest wake (north meadow), needs 2110; the ferry from the jetty end (8,36) across the bay, 14 from the slid bank, needs 2102; the shore gate to the shore way, 28 from the slid bank, needs 2088; the descent gate to the cutting, 57 from the slid bank, needs 2059. The steps the descent and the shore way already run on this map count toward their roads. No wake leaves the valley by any other way. The region plans that stitch onto these exits must provide these roads, or `pnpm check` fails them.
+The owner, 23.10.
+**Retry when:** a region beyond an exit is drawn, the clock or the walk speed changes, or a wake moves. Model: claude-opus-5-5.
+## 2026-10-23 ✅ The collapsed hall is its own room, with a door in the south wall
+
+**The hall is dug by day, the night place still has one way in.** The opening sends the player to dig the collapsed hall for Pell's whole bowl in the afternoon, before the arch opens. A wall at row 27 (x 35-38) now closes the hall off from the rest of the walled night place, the south wall has a doorway at (37,32) from the lane south of the ruins, and the terrace face a gap at (39,29). Fallen rubble at (35,28), (37,28) and (38,31) leaves every dig spot a tile to stand on with room to turn. The threshold stays the night place's only way in; the hall, its six digs, the knight and the stair keep their tiles.
+**Retry when:** the expedition needs the hall reached from inside the night place. Model: claude-opus-5-5.

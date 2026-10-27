@@ -146,13 +146,14 @@ describe('cues', () => {
     const spot = b.instances[FIND]!;
     const outside: Tile = [spot.x - 9, spot.y];
     const edge: Tile = [spot.x - 8, spot.y];
-    const hits = cuesOnStep(b, s, 100_000, outside, edge);
+    // the gate's other finds lie further off along this row; only this find's edge is crossed here
+    const hits = cuesOnStep(b, s, 100_000, outside, edge).filter((h) => h.anchor === FIND);
     expect(hits).toHaveLength(1);
     expect(hits[0]!.cue).toBe('birds_lift');
     expect(Math.abs(hits[0]!.x - spot.x)).toBeLessThanOrEqual(2);
     expect(Math.abs(hits[0]!.y - spot.y)).toBeLessThanOrEqual(2);
     // the same day draws the same tile
-    expect(cuesOnStep(b, s, 100_500, outside, edge)).toEqual(hits);
+    expect(cuesOnStep(b, s, 100_500, outside, edge).filter((h) => h.anchor === FIND)).toEqual(hits);
     // a step inside the reach starts nothing for this find, nor does a seen find; the hall's spots nearby have reaches of their
     // own, so what the step does start is theirs alone, one cue a spot
     const inside = cuesOnStep(b, s, 100_000, edge, [spot.x - 7, spot.y]);
