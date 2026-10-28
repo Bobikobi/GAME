@@ -528,7 +528,7 @@ export interface KaggleSettings {
   denoise: number;
   denoiseCharacter: number;
   steps: number;
-  /** The canvas's short side; the long side follows the reference (`kaggleCanvas`). */
+  /** The canvas's short side; the long side follows the reference, or the asked size when drawing from the prompt (`kaggleCanvasFor`). */
   size: number;
   cfg: number;
   seed: number;
@@ -648,8 +648,11 @@ export function clipTokenEstimate(text: string): number {
   return count;
 }
 
-/** The negative prompt of the kaggle route: the local one, plus what split the elder into two figures (22.10). */
-export const KAGGLE_NEGATIVE = 'multiple characters, two figures, extra figure, animal, duplicate, cropped, blurry, photo, realistic, 3d render, text, watermark, gradient background, shadow on the ground';
+/**
+ * The negative prompt of the kaggle route: the local one, plus what split the elder into two figures (22.10), plus
+ * the light the model paints on the background (a wedge, a halo) that the importer then keeps as part of the sprite (27.10).
+ */
+export const KAGGLE_NEGATIVE = 'multiple characters, two figures, extra figure, animal, duplicate, cropped, blurry, photo, realistic, 3d render, text, watermark, gradient background, shadow on the ground, glow, vignette, light rays, halo';
 
 const NUMBER_WORD = '(?:\\d+|two|three|four|five|six)';
 
@@ -734,6 +737,21 @@ export function kaggleCanvas(ref: { width: number; height: number } | null, size
   return ref.width >= ref.height ? { width: long, height: short } : { width: short, height: long };
 }
 
+/**
+ * The canvas of one request. Drawing from the prompt alone (a long-prompt recipe, or denoise 1) the picture has no
+ * shape to follow, so the canvas takes the ASKED size's proportion (`asked`, the spec's art grid): a 192x320 tree
+ * is drawn on a tall canvas, not on the 32x32 square of the sprite it replaces. Drawing image to image the
+ * reference's shape is kept, since the model redraws what the reference holds.
+ */
+export function kaggleCanvasFor(
+  ref: { width: number; height: number } | null,
+  asked: { width: number; height: number } | null,
+  size: number,
+  fromPrompt: boolean,
+): { width: number; height: number } {
+  return kaggleCanvas(fromPrompt && asked !== null ? asked : ref, size);
+}
+
 export interface KaggleRequest {
   name: string;
   prompt: string;
@@ -755,7 +773,7 @@ export function kaggleWave(requests: readonly KaggleRequest[], s: KaggleSettings
     },
     requests: requests.map((r) => {
       const denoise = r.subject === 'character' ? s.denoiseCharacter : s.denoise;
-      const canvas = kaggleCanvas(pngSize(r.png), s.size);
+      const canvas = kaggleCanvasFor(pngSize(r.png), r.grid ?? null, s.size, kaggleFromPrompt(s.recipe) || denoise >= 1);
       const grid = r.grid ?? { width: Math.max(1, Math.round(canvas.width / 16)), height: Math.max(1, Math.round(canvas.height / 16)) };
       return {
         name: r.name, file: kaggleFileName(r.name), prompt: r.prompt, seed: r.seed, subject: r.subject ?? 'prop',
