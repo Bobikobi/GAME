@@ -33,8 +33,10 @@ export interface SessionConfig {
   mailer: MailerName;
   /** present only with MAILER=resend: its key and the sender address */
   resend?: ResendConfig;
-  /** the header our nginx sets to the visitor's country (lower case); absent, every sign-up is held to the highest age */
+  /** the header our nginx sets to the visitor's country (lower case), an override of the file below; absent, it is not read */
   countryHeader?: string;
+  /** the country database file (COUNTRY_DB) the client's address is looked up in; absent, with no header either, every sign-up is held to the highest age */
+  countryDb?: string;
   /** the header our nginx sets to the client's address (lower case); the sign-in limits count by it. Absent only on a loopback origin */
   addressHeader?: string;
 }
@@ -123,14 +125,18 @@ function sessionMode(env: NodeJS.ProcessEnv): Auth {
   const resend = mailer === 'resend' ? resendFromEnv(env) : undefined;
   const google = clientId === '' ? undefined : { clientId, clientSecret };
   const countryHeader = headerName(env, 'COUNTRY_HEADER', 'X-Country');
+  const countryDb = env.COUNTRY_DB ? env.COUNTRY_DB : undefined;
+  if (countryDb !== undefined && !countryDb.startsWith('/')) {
+    throw new BootError(`COUNTRY_DB=${JSON.stringify(countryDb)} is not an absolute path to a country database file, such as /app/country.mmdb.`);
+  }
   const addressHeader = headerName(env, 'CLIENT_ADDRESS_HEADER', 'X-Real-IP');
   if (addressHeader === undefined && !isLoopback(publicOrigin)) {
     throw new BootError('CLIENT_ADDRESS_HEADER is not set: behind nginx every request comes from nginx, so the sign-in limits would count all players as one. Set it to the header nginx fills, X-Real-IP.');
   }
   return {
     mode: 'session',
-    notice: `AUTH_MODE=session: players are who their session cookie says; sign-in by email (links to the ${mailer} mailer${mailer === 'log' ? ', staging only' : ''})${google ? ' and Google' : ''}, ${appOrigin === publicOrigin ? 'the game beside it' : `the game at ${appOrigin}`}; the age limit ${countryHeader ? `by the country in ${countryHeader}` : 'is the highest (no COUNTRY_HEADER)'}; limits by ${addressHeader ?? 'the socket address'}.`,
-    session: { publicOrigin, appOrigin, google, mailer: mailer as MailerName, ...(resend && { resend }), countryHeader, addressHeader },
+    notice: `AUTH_MODE=session: players are who their session cookie says; sign-in by email (links to the ${mailer} mailer${mailer === 'log' ? ', staging only' : ''})${google ? ' and Google' : ''}, ${appOrigin === publicOrigin ? 'the game beside it' : `the game at ${appOrigin}`}; the age limit ${countryHeader || countryDb ? `by the country in ${[countryHeader, countryDb && `the file ${countryDb}`].filter(Boolean).join(', else in ')}` : 'is the highest (no COUNTRY_HEADER, no COUNTRY_DB)'}; limits by ${addressHeader ?? 'the socket address'}.`,
+    session: { publicOrigin, appOrigin, google, mailer: mailer as MailerName, ...(resend && { resend }), countryHeader, ...(countryDb && { countryDb }), addressHeader },
   };
 }
 
