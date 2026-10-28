@@ -2254,8 +2254,9 @@ export class WorldScene extends Phaser.Scene {
       if (this.falling) return;
       this.arrive(s);
     }
-    // pushing up into a shop's door from the step in front of it walks in
-    const door = input[1] < 0 && s.facing === 'up' ? this.doors.get(key(s.pos[0], s.pos[1] - 1)) : undefined;
+    // pushing up into a shop's door from the step in front of it walks in, once the body has stopped against it:
+    // a walk that only passes over the step, or a turn, does not open the door
+    const door = input[1] < 0 && s.facing === 'up' && !this.body.moving ? this.doors.get(key(s.pos[0], s.pos[1] - 1)) : undefined;
     if (door) {
       this.enter(door);
       return;
