@@ -1,4 +1,5 @@
-import { beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeAll, describe, expect, test } from 'vitest';
+import { createServer, type Server } from 'node:http';
 import type { Bundle } from '@game/kernel';
 import { newState, publicState, step, serialize, type Seed } from '@game/kernel';
 
@@ -6,9 +7,10 @@ import { joinRemote } from '../src/app';
 import { WireGap } from '../src/remote';
 import { Session } from '../src/session';
 import { probeRedraws, titleActions } from '../src/ui/title';
+import { Browser } from '../../server/test/support/auth';
 import { loadBundle } from '../../tools/test/helpers/world';
-import { FakeAuthServer } from './fake-auth';
 import { FakeServer } from './fake-server';
+import { SignInBox } from './signin-box';
 
 let bundle: Bundle;
 
@@ -122,13 +124,52 @@ describe("the title screen's sign-in (the screen logic)", () => {
   });
 });
 
-describe('the fake sign-in server (NEXT 18 d handover, on the fake)', () => {
+describe('the real sign-in on one origin (NEXT 18 d handover, through createSignIn)', () => {
   // 1 June 2026: a fixed "today" for the age gate
   const NOW = Date.UTC(2026, 5, 1);
   const SECRET: Seed = [11, 0x9e3779b9, 0x7f4a7c15, 0xf39cc060];
+  let server: Server | undefined;
 
-  test('an opening the replay confirms is kept: the account plays it under the secret seed', () => {
-    const auth = new FakeAuthServer(bundle, { now: () => NOW, secretSeed: () => SECRET });
+  afterEach(async () => {
+    if (!server) return;
+    await new Promise<void>((resolve) => server!.close(() => resolve()));
+    server = undefined;
+  });
+
+  /** The box on a free port, and a browser standing on its one origin (the game and the API alike). */
+  async function boxed() {
+    const box = new SignInBox(bundle, { now: () => NOW, secretSeed: () => SECRET });
+    server = createServer((request, response) => {
+      void box
+        .handle(request, response, new URL(request.url ?? '/', 'http://localhost'))
+        .then((handled) => {
+          if (handled) return;
+          response.writeHead(404);
+          response.end();
+        })
+        .catch(() => {
+          response.writeHead(500);
+          response.end();
+        });
+    });
+    await new Promise<void>((ok) => server!.listen(0, '127.0.0.1', () => ok()));
+    const address = server.address();
+    const origin = `http://127.0.0.1:${typeof address === 'object' && address ? address.port : 0}`;
+    box.open(origin);
+    return { box, origin, browser: new Browser(origin, origin) };
+  }
+
+  /** An email link asked for, read from the mail, opened and pressed: the browser holds a sign-up ticket. */
+  async function ticketFor(w: Awaited<ReturnType<typeof boxed>>, email: string): Promise<void> {
+    const asked = await w.browser.request('/auth/email/start', { method: 'POST', json: { email } });
+    expect(asked.status).toBe(202);
+    const pressed = await w.browser.press(await w.browser.open(w.box.linkFor(email)!));
+    expect(pressed.status).toBe(303);
+    expect(pressed.headers.get('location')).toBe(`${w.origin}/#signin=signup`);
+  }
+
+  test('an opening the replay confirms is kept: the account plays it under the secret seed', async () => {
+    const w = await boxed();
     const session = begun(123);
     walk(session, 12);
     const upload = session.openingUpload()!;
@@ -141,19 +182,25 @@ describe('the fake sign-in server (NEXT 18 d handover, on the fake)', () => {
     }
     expect(serialize(state)).toBe(upload.state);
 
-    auth.ticket = 'tess@example.com';
-    const answer = auth.signup({ name: 'Tess', birthDate: '2000-05-07', oneAccount: true, opening: upload });
+    await ticketFor(w, 'tess@example.com');
+    const answer = await w.browser.request('/auth/signup', { method: 'POST', json: { name: 'Tess', birthDate: '2000-05-07', oneAccount: true, opening: upload } });
     expect(answer.status).toBe(201);
-    expect(answer.body).toEqual({ name: 'Tess', opening: 'kept' });
-    expect(auth.signedIn).toBe(true);
-    expect(auth.account).toEqual({ email: 'tess@example.com', name: 'Tess' });
+    expect(await answer.json()).toEqual({ name: 'Tess', opening: 'kept' });
+    const account = w.box.account('tess@example.com')!;
+    expect(account.name).toBe('Tess');
     // the kept opening is the account's game, under a seed the phone never saw
-    expect(auth.wire.state.player.name).toBe('Tess');
-    expect(auth.wire.state.seed).toEqual(SECRET);
+    const game = w.box.store.games.get(account.id)!.record.state;
+    expect(game.player.name).toBe('Tess');
+    expect(game.seed).toEqual(SECRET);
+    // and the wire answers the account its cookie stands for
+    const read = await w.browser.request('/state');
+    expect(read.status).toBe(200);
+    expect(((await read.json()) as { state: { player: { name: string } } }).state.player.name).toBe('Tess');
+    expect(w.box.seenOn('GET', '/state').at(-1)!.account).toBe(account.id);
   });
 
-  test('a log the replay cannot confirm starts the account fresh, with the one-line answer the screen reads', () => {
-    const auth = new FakeAuthServer(bundle, { now: () => NOW, secretSeed: () => SECRET });
+  test('a log the replay cannot confirm starts the account fresh, with the one-line answer the screen reads', async () => {
+    const w = await boxed();
     const session = begun(456);
     walk(session, 8);
     const upload = session.openingUpload()!;
@@ -161,61 +208,35 @@ describe('the fake sign-in server (NEXT 18 d handover, on the fake)', () => {
     const last = upload.log[upload.log.length - 1]!;
     upload.log[upload.log.length - 1] = { a: { ...last.a, at: [999, 999] } as typeof last.a, tick: last.tick };
 
-    auth.ticket = 'tess@example.com';
-    const answer = auth.signup({ name: 'Tess', birthDate: '2000-05-07', oneAccount: true, opening: upload });
+    await ticketFor(w, 'tess@example.com');
+    const answer = await w.browser.request('/auth/signup', { method: 'POST', json: { name: 'Tess', birthDate: '2000-05-07', oneAccount: true, opening: upload } });
     expect(answer.status).toBe(201);
-    expect(answer.body).toEqual({ name: 'Tess', opening: 'fresh' });
-    expect(auth.wire.state.seed).toEqual(SECRET);
-    expect(auth.wire.state.player.race).toBe('');
+    expect(await answer.json()).toEqual({ name: 'Tess', opening: 'fresh' });
+    const game = w.box.store.games.get(w.box.account('tess@example.com')!.id)!.record.state;
+    expect(game.seed).toEqual(SECRET);
+    expect(game.player.race).toBe('');
   });
 
-  test('a date under the consent age is refused whole and points to the demo, which stays open', () => {
-    const auth = new FakeAuthServer(bundle, { now: () => NOW, secretSeed: () => SECRET });
-    auth.ticket = 'kid@example.com';
-    const answer = auth.signup({ name: 'Kid', birthDate: '2015-01-01', oneAccount: true });
+  test('a date under the consent age is refused whole and points to the demo, which stays open', async () => {
+    const w = await boxed();
+    await ticketFor(w, 'kid@example.com');
+    const answer = await w.browser.request('/auth/signup', { method: 'POST', json: { name: 'Kid', birthDate: '2015-01-01', oneAccount: true } });
     expect(answer.status).toBe(403);
-    expect(answer.body).toEqual({
+    expect(await answer.json()).toEqual({
       error: 'You cannot make an Loomvale account. The demo stays open to you.',
       reason: 'under-age',
       demo: '/',
     });
-    expect(auth.signedIn).toBe(false);
-    // the ticket ends with the refusal, as the real one does
-    expect(auth.ticket).toBeUndefined();
+    expect(w.box.store.accounts.size).toBe(0);
+    expect(w.box.store.sessions.size).toBe(0);
+    // the ticket ends with the refusal
+    expect(w.box.store.tickets.size).toBe(0);
   });
 
   test('the wire answers 401 while the browser is not signed in', async () => {
-    const auth = new FakeAuthServer(bundle, { now: () => NOW });
-    const reply = (await fakeFetch(auth, '/session', '{}'))!;
+    const w = await boxed();
+    const reply = await w.browser.request('/session', { method: 'POST', json: {} });
     expect(reply.status).toBe(401);
     expect(await reply.json()).toEqual({ error: 'Sign in to continue.' });
   });
 });
-
-/** One request against the fake, as the game's fetch sends it. */
-async function fakeFetch(auth: FakeAuthServer, path: string, body: string): Promise<Response> {
-  const { createServer } = await import('node:http');
-  const server = createServer((request, response) => {
-    const url = new URL(request.url ?? '/', 'http://localhost');
-    void auth
-      .handle(request, response, url)
-      .then((handled) => {
-        if (!handled) {
-          response.writeHead(404);
-          response.end();
-        }
-      })
-      .catch(() => {
-        response.writeHead(500);
-        response.end();
-      });
-  });
-  await new Promise<void>((ok) => server.listen(0, '127.0.0.1', () => ok()));
-  const address = server.address();
-  const port = typeof address === 'object' && address ? address.port : 0;
-  try {
-    return await fetch(`http://127.0.0.1:${port}${path}`, { method: 'POST', body });
-  } finally {
-    server.close();
-  }
-}

@@ -54,10 +54,10 @@ Before you open it:
 
 ```bash
 pnpm verify                # schemas, content check, lint, types, tests, build
-# CI plays the opening e2e; run it locally only to debug a red run, under flock /tmp/game-e2e.lock
+# CI plays the opening e2e (skipped on a docs-only pull request); run it locally only to debug a red run, under flock /tmp/game-e2e.lock
 ```
 
-The description says what changed and why, not a list of files, and how you checked it. CI runs the same checks; the required job is "Check, test, build and play". Vercel posts a preview link; reviewers play that, not the code alone.
+The description says what changed and why, not a list of files, and how you checked it. CI runs the same checks; the required job is "Check, test, build and play". A pull request that changes only prose (everything under `docs/`, any Markdown file outside `game/`, `DECISIONS.md`, `.github/prompts/`, `tools/kit-gen/*.json`) skips the browser tests; the required job still reports. Vercel posts a preview link; reviewers play that, not the code alone.
 
 The reviewer checks four things:
 
@@ -70,7 +70,7 @@ The session that made a pull request merges it into `develop` once the owner has
 
 ## Releasing
 
-1. `develop` is green, and the owner has played its preview.
+1. `develop` is green, and the owner has played its preview. The release's prep pull request into `develop` bumps `kernel/package.json`, writes the CHANGELOG entry and reruns `pnpm credits`: `main` takes no direct pushes, so no bot writes CREDITS.md there.
 2. The lead asks the owner for a yes, then merges `develop` into `main`.
 3. Vercel deploys `main`. The lead opens the live game and checks the opening.
 4. The release gets a tag, `v0.<stage>.<n>`, and a short note of what players will notice.
