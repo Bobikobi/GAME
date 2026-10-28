@@ -2,10 +2,11 @@
  * Proves a trader's counter in a real browser, on a phone and on a desktop (DECISIONS 2026-10-22,
  * decision 51: a shop never shows one unsorted list). Pell's stall shows its stock in named groups,
  * every offer inside one, with the item drawn, its price and what it does; the strip of group names
- * jumps to a group; a buy from a group works. Two keepers the content does not have yet, an inn and a
- * workshop stall, are put into the page's bundle as test fixtures and open with no code of their own:
- * the inn shows its food and its medicine, and sells nothing back; the workshop shows a recipe, marked
- * as known once the player knows it. Every check waits on a condition, never a fixed time.
+ * jumps to a group; a buy from a group works. Pell keeps the gear and the inn keeps the food and the
+ * first-aid kit (decision 32): the inn shows its food and its medicine, and sells nothing back. A keeper
+ * the content does not have yet, a workshop stall, is put into the page's bundle as a test fixture and
+ * opens with no code of its own: it shows a recipe, marked as known once the player knows it. Every
+ * check waits on a condition, never a fixed time.
  */
 import { createReadStream, existsSync, mkdirSync, statSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
@@ -53,35 +54,32 @@ async function tap(page: Page, selector: string, text = ''): Promise<void> {
 }
 
 /**
- * In the page: an inn and a workshop stall that the content does not have yet, as plain data in the
- * bundle the game runs (an npc with a shop, the shop, one recipe scrap). Both keepers stand on Pell's
- * place, so the same tile trades with all three.
+ * In the page: a workshop stall that the content does not have yet, as plain data in the bundle the game
+ * runs (an npc with a shop, the shop, one recipe scrap). The keeper stands on Pell's place, so the same
+ * tile trades with both.
  */
 const FIXTURES = `(() => {
   const b = window.__game.bundle;
   const recipe = Object.keys(b.recipes).sort()[0];
   b.items['test/rope-scrap'] = { ...b.items['core/berry'], id: 'test/rope-scrap', name: 'How to twist rope', kind: 'fragment', food: undefined, fragment: { unlocks: recipe } };
   const meta = { creator: 'test', file: 'test.json' };
-  b.shops['test/inn'] = { ...meta, id: 'test/inn', title: 'The inn', buys: false,
-    sells: ['core/herb-tea', 'core/first-aid-kit', 'core/berry', 'core/berry-mash'].map((item) => ({ item, price_mg: 5000 })) };
   b.shops['test/workshop'] = { ...meta, id: 'test/workshop', title: 'The workshop stall', buys: false, sells: [{ item: 'test/rope-scrap', price_mg: 20000 }] };
   const pell = b.npcs['core/trader'];
   const keeper = (id, name, shop) => ({ ...pell, id, name, shop, topics: [], remarks: [], dialogue: { stranger: ['Have a look.'] } });
-  b.npcs['test/innkeeper'] = keeper('test/innkeeper', 'Wenna', 'test/inn');
   b.npcs['test/workshop-keeper'] = keeper('test/workshop-keeper', 'Ketil', 'test/workshop');
   return recipe;
 })()`;
 
-/** In the page: the player stands on a tile Pell trades from, with gold enough for the counter. */
-const AT_PELL = `(() => {
+/** In the page: the player stands on a tile the keeper trades from, with gold enough for the counter. */
+const AT_KEEPER = (npc: string, item: string) => `(() => {
   const g = window.__game, s = g.session, b = g.bundle;
   s.state.player.gold = 1000000;
-  const slot = b.map.slots.find((x) => x.id === b.npcs['core/trader'].place.slot);
+  const slot = b.map.slots.find((x) => x.id === b.npcs[${JSON.stringify(npc)}].place.slot);
   for (let r = 0; r < 4; r++)
     for (let dy = -r; dy <= r + slot.h; dy++)
       for (let dx = -r; dx <= r + slot.w; dx++) {
         const at = [slot.x + dx, slot.y + dy];
-        if (s.check({ t: 'buy', npc: 'core/trader', item: 'core/basket', qty: 1, at }) === undefined) {
+        if (s.check({ t: 'buy', npc: ${JSON.stringify(npc)}, item: ${JSON.stringify(item)}, qty: 1, at }) === undefined) {
           s.pos = at;
           return at;
         }
@@ -176,7 +174,7 @@ async function run(page: Page, url: string, viewport: Viewport, name: string): P
     await sleep(220);
   }
   const recipe = await page.eval<string>(FIXTURES);
-  const at = await page.eval<[number, number] | null>(AT_PELL);
+  const at = await page.eval<[number, number] | null>(AT_KEEPER('core/trader', 'core/basket'));
   if (!at) throw new Error('no tile near Pell trades');
   log(`at Pell's counter from ${at.join(',')}`);
 
@@ -188,14 +186,59 @@ async function run(page: Page, url: string, viewport: Viewport, name: string): P
     [
       ['Tools', ['Basket', 'Trowel', 'Axe', 'Walking staff']],
       ['To wear', ['Satchel']],
-      ['Food and drink', ['Redberry', 'Herb tea', 'Berry mash']],
-      ['Medicine', ['First-aid kit']],
     ],
     "Pell's stall",
   );
-  if (c.jump.length !== 4 || !c.jump[0]!.startsWith('Tools')) throw new Error(`the strip reads ${JSON.stringify(c.jump)}`);
+  if (c.jump.length !== 2 || !c.jump[0]!.startsWith('Tools')) throw new Error(`the strip reads ${JSON.stringify(c.jump)}`);
   await shot('pell');
   log(`Pell: ${c.groups.map((g) => `${g.name} ${g.rows.length}`).join(', ')}`);
+
+  // the Sell tab is grouped the same way: a few finds of different kinds in the bag to sell
+  await page.eval(`(() => {
+    const g = window.__game, b = g.bundle, bag = g.session.state.player.bag;
+    const sold = new Set(b.shops['core/trader-shop'].sells.map((o) => o.item));
+    const seen = new Set();
+    for (const id of Object.keys(b.values).sort()) {
+      const it = b.items[id];
+      if (!it || sold.has(id) || it.tool || seen.has(it.kind) || !(b.values[id] > 0)) continue;
+      seen.add(it.kind);
+      bag[id] = 2;
+    }
+  })()`);
+  await tap(page, '.panel.shop .tabs button', 'Sell');
+  c = await counter(page);
+  if (c.loose || !c.groups.length) throw new Error(`the sell side shows ${JSON.stringify(c.groups.map((g) => g.name))} with ${c.loose} loose rows`);
+  log(`Pell buys back: ${c.groups.map((g) => g.name).join(', ')}`);
+
+  // the workshop stall: a recipe, and one the player knows is marked and not sold twice
+  c = await trade(page, viewport, 'test/workshop-keeper');
+  expectGroups(c, [['Recipes', ['How to twist rope']]], 'the workshop stall');
+  if (c.jump.length) throw new Error('a counter of one group shows the strip');
+  await page.eval(`(() => { const p = window.__game.session.state.player; p.recipes = [...new Set([...p.recipes, ${JSON.stringify(recipe)}])]; })()`);
+  await trade(page, viewport, 'test/workshop-keeper');
+  const known = await page.eval<{ said: boolean; off: boolean }>(
+    `(() => { const r = document.querySelector('.shop-group[data-group="recipe"] .row'); return { said: !!r.querySelector('[data-known]'), off: !!r.querySelector('button').disabled }; })()`,
+  );
+  if (!known.said || !known.off) throw new Error(`a known recipe reads ${JSON.stringify(known)}`);
+  await shot('workshop');
+  log('the workshop stall: a recipe, marked once known');
+  // the inn, further down the street: Wenna's food and medicine, no sell side, and a buy from a group
+  await page.eval(`window.__game.ui.closeAll()`);
+  const atInn = await page.eval<[number, number] | null>(AT_KEEPER('core/innkeeper', 'core/berry'));
+  if (!atInn) throw new Error('no tile near the inn trades');
+  c = await trade(page, viewport, 'core/innkeeper');
+  if (!c.title.includes('The inn')) throw new Error(`the inn is titled "${c.title}"`);
+  expectGroups(
+    c,
+    [
+      ['Food and drink', ['Redberry', 'Herb tea', 'Berry mash']],
+      ['Medicine', ['First-aid kit']],
+    ],
+    'the inn',
+  );
+  if (c.tabs.join() !== 'Buy') throw new Error(`the inn shows the tabs ${JSON.stringify(c.tabs)}`);
+  await shot('inn');
+  log('the inn: food and drink, medicine, nothing bought back');
 
   // the strip jumps to a group, and a buy from it works
   await tap(page, '.shop-jump button', 'Medicine');
@@ -222,53 +265,8 @@ async function run(page: Page, url: string, viewport: Viewport, name: string): P
   const before = await page.eval<number>(`window.__game.session.state.player.bag['core/first-aid-kit'] ?? 0`);
   await tap(page, '.shop-group[data-group="medicine"] .row button', 'Buy');
   await page.waitFor(`(window.__game.session.state.player.bag['core/first-aid-kit'] ?? 0) === ${before + 1}`, 'a first-aid kit in the bag', 3000);
-  await shot('pell-medicine');
-  log('the strip jumps to Medicine, and the kit is bought from there');
-
-  // the Sell tab is grouped the same way: a few finds of different kinds in the bag to sell
-  await page.eval(`(() => {
-    const g = window.__game, b = g.bundle, bag = g.session.state.player.bag;
-    const sold = new Set(b.shops['core/trader-shop'].sells.map((o) => o.item));
-    const seen = new Set();
-    for (const id of Object.keys(b.values).sort()) {
-      const it = b.items[id];
-      if (!it || sold.has(id) || it.tool || seen.has(it.kind) || !(b.values[id] > 0)) continue;
-      seen.add(it.kind);
-      bag[id] = 2;
-    }
-  })()`);
-  await tap(page, '.panel.shop .tabs button', 'Sell');
-  c = await counter(page);
-  if (c.loose || !c.groups.length) throw new Error(`the sell side shows ${JSON.stringify(c.groups.map((g) => g.name))} with ${c.loose} loose rows`);
-  log(`Pell buys back: ${c.groups.map((g) => g.name).join(', ')}`);
-
-  // a keeper added later as data: the inn, food and medicine, no sell side
-  c = await trade(page, viewport, 'test/innkeeper');
-  if (!c.title.includes('The inn')) throw new Error(`the inn is titled "${c.title}"`);
-  expectGroups(
-    c,
-    [
-      ['Food and drink', ['Herb tea', 'Redberry', 'Berry mash']],
-      ['Medicine', ['First-aid kit']],
-    ],
-    'the inn',
-  );
-  if (c.tabs.join() !== 'Buy') throw new Error(`the inn shows the tabs ${JSON.stringify(c.tabs)}`);
-  await shot('inn');
-  log('the inn: food and drink, medicine, nothing bought back');
-
-  // the workshop stall: a recipe, and one the player knows is marked and not sold twice
-  c = await trade(page, viewport, 'test/workshop-keeper');
-  expectGroups(c, [['Recipes', ['How to twist rope']]], 'the workshop stall');
-  if (c.jump.length) throw new Error('a counter of one group shows the strip');
-  await page.eval(`(() => { const p = window.__game.session.state.player; p.recipes = [...new Set([...p.recipes, ${JSON.stringify(recipe)}])]; })()`);
-  await trade(page, viewport, 'test/workshop-keeper');
-  const known = await page.eval<{ said: boolean; off: boolean }>(
-    `(() => { const r = document.querySelector('.shop-group[data-group="recipe"] .row'); return { said: !!r.querySelector('[data-known]'), off: !!r.querySelector('button').disabled }; })()`,
-  );
-  if (!known.said || !known.off) throw new Error(`a known recipe reads ${JSON.stringify(known)}`);
-  await shot('workshop');
-  log('the workshop stall: a recipe, marked once known');
+  await shot('inn-medicine');
+  log('the inn: the strip jumps to Medicine, and the kit is bought from there');
   await page.eval(`window.__game.ui.closeAll()`);
 }
 
