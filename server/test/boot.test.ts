@@ -129,6 +129,22 @@ describe('the session mode at boot (NEXT 18 e)', () => {
     expect(() => authFromEnv({ ...ready, MAILER: 'smtp' })).toThrow(/MAILER/);
   });
 
+  test('MAILER=resend takes its key and a sender, needs no staging flag, and the notice never carries the key', () => {
+    const { ALLOW_LOG_MAILER: _allowed, ...live } = ready;
+    const resend = { ...live, MAILER: 'resend', RESEND_API_KEY: 're_not_for_the_log', MAIL_FROM: 'Loomvale <play@example.org>' };
+    const auth = authFromEnv(resend);
+    if (auth.mode !== 'session') throw new Error('expected the session mode');
+    expect(auth.session.mailer).toBe('resend');
+    expect(auth.session.resend).toEqual({ apiKey: 're_not_for_the_log', from: 'Loomvale <play@example.org>' });
+    expect(auth.notice).toContain('resend mailer');
+    expect(auth.notice).not.toContain('re_not_for_the_log');
+    expect(authFromEnv({ ...resend, MAIL_FROM: 'play@example.org' }).mode).toBe('session');
+    expect(() => authFromEnv({ ...resend, RESEND_API_KEY: '' })).toThrow(/RESEND_API_KEY/);
+    for (const bad of ['', 'Loomvale', 'Loomvale <play>', 'a@b', 'Loomvale <play@example.org>\nBcc: x@y.z']) {
+      expect(() => authFromEnv({ ...resend, MAIL_FROM: bad }), bad).toThrow(/MAIL_FROM/);
+    }
+  });
+
   test('reads a country header only when COUNTRY_HEADER names one, and says so in the notice', () => {
     const unset = authFromEnv(ready);
     if (unset.mode !== 'session') throw new Error('expected the session mode');

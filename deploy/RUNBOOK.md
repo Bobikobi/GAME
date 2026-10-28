@@ -89,16 +89,17 @@ it. The scratch database lives in the same volume for those minutes and nothing 
 ## 6. Sign-in on (NEXT 18 e)
 
 Waits for: the Fable auth review of `server/src/auth/`, the name and its certificate (steps 3 and 4), and the
-owner's choice of a mail sender (NEXT 18 h5; until then the only mailer writes the link to the API's log).
+Resend as the mail sender (the owner's choice, 28.10): its domain verified, click tracking off for it.
 Prepare: in `~/openfold/.env`, remove `ALLOW_DEV_HEADER` (the session mode refuses to start beside it) and set
 `AUTH_MODE=session`, `PUBLIC_ORIGIN=https://<name>` (the game is served beside the API under it, so `APP_ORIGIN`
 stays unset: the API refuses a second origin off a laptop), `CLIENT_ADDRESS_HEADER=X-Real-IP` (the nginx file sets
 it; the sign-in limits count by it), and the Google pair `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` from the
 owner's secrets folder on the laptop (Google project `openfold-game`). On the Google client, add
 `https://<name>/auth/google/callback` as a redirect; it lists only the laptop's
-`http://localhost:8080/auth/google/callback` today. While the only mailer is `log`, the API starts only
+`http://localhost:8080/auth/google/callback` today. Set `MAILER=resend`, `RESEND_API_KEY` (from the owner's
+secrets folder) and `MAIL_FROM=Loomvale <play@<verified domain>>`. With `MAILER=log` instead, the API starts only
 beside `ALLOW_LOG_MAILER=staging-only`: every link lands in its log, so such a box is a staging one and the name
-is not given to players until a real sender replaces it. Then `docker compose -f compose.yml up -d --no-build`.
+is not given to players. Then `docker compose -f compose.yml up -d --no-build`.
 What happens if it goes wrong: the API refuses to start and says which variable; the database is untouched, and
 putting the two `dev-header` lines back brings the staging box back.
 Verify: the boot log carries one line beginning `AUTH_MODE=session` and saying `the game beside it`;
