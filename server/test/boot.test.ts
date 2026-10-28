@@ -1,5 +1,7 @@
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 
 import { authFromEnv, BootError } from '../src/boot';
@@ -149,13 +151,41 @@ describe('the session mode at boot (NEXT 18 e)', () => {
     const unset = authFromEnv(ready);
     if (unset.mode !== 'session') throw new Error('expected the session mode');
     expect(unset.session.countryHeader).toBeUndefined();
-    expect(unset.notice).toMatch(/highest \(no COUNTRY_HEADER\)/);
+    expect(unset.notice).toMatch(/highest \(no COUNTRY_HEADER, no COUNTRY_DB\)/);
     const set = authFromEnv({ ...ready, COUNTRY_HEADER: 'X-Country' });
     if (set.mode !== 'session') throw new Error('expected the session mode');
     expect(set.session.countryHeader).toBe('x-country');
     expect(set.notice).toContain('x-country');
     for (const bad of ['X Country', 'x-country:', 'x_country']) {
       expect(() => authFromEnv({ ...ready, COUNTRY_HEADER: bad }), bad).toThrow(/COUNTRY_HEADER/);
+    }
+  });
+});
+
+/** a session-mode environment that starts, for the tests below */
+const SESSION_ENV = {
+  AUTH_MODE: 'session',
+  PUBLIC_ORIGIN: 'https://play.example.org',
+  ALLOW_LOG_MAILER: 'staging-only',
+  CLIENT_ADDRESS_HEADER: 'X-Real-IP',
+};
+
+describe('the country database (COUNTRY_DB)', () => {
+  const ready = SESSION_ENV;
+  test('is read when set, named in the notice beside the header, and refused unless it is an absolute path', () => {
+    const none = authFromEnv(ready);
+    if (none.mode !== 'session') throw new Error('expected the session mode');
+    expect(none.session.countryDb).toBeUndefined();
+    expect(none.notice).toMatch(/highest \(no COUNTRY_HEADER, no COUNTRY_DB\)/);
+    const file = authFromEnv({ ...ready, COUNTRY_DB: '/app/country.mmdb' });
+    if (file.mode !== 'session') throw new Error('expected the session mode');
+    expect(file.session.countryDb).toBe('/app/country.mmdb');
+    expect(file.notice).toContain('the file /app/country.mmdb');
+    expect(file.notice).not.toMatch(/highest/);
+    const both = authFromEnv({ ...ready, COUNTRY_DB: '/app/country.mmdb', COUNTRY_HEADER: 'X-Country' });
+    expect(both.notice).toContain('x-country, else in the file /app/country.mmdb');
+    for (const bad of ['country.mmdb', './country.mmdb', '../x']) {
+      expect(() => authFromEnv({ ...ready, COUNTRY_DB: bad }), bad).toThrow(/COUNTRY_DB/);
     }
   });
 });
@@ -176,6 +206,21 @@ describe('the process itself', () => {
       expect(run.status, JSON.stringify(env)).toBe(1);
       expect(run.stdout).not.toContain('openfold api on');
       expect(run.stderr).toMatch(/AUTH_MODE|ALLOW_DEV_HEADER/);
+    }
+  });
+
+  test('exits non-zero before a database is needed when COUNTRY_DB is a file that is not a country database', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'country-boot-'));
+    try {
+      writeFileSync(join(dir, 'broken.mmdb'), 'not a database');
+      for (const path of [join(dir, 'broken.mmdb'), join(dir, 'missing.mmdb')]) {
+        const run = boot({ ...SESSION_ENV, COUNTRY_DB: path });
+        expect(run.status, path).toBe(1);
+        expect(run.stdout).not.toContain('openfold api on');
+        expect(run.stderr).toMatch(/COUNTRY_DB=.*does not open as a country database/);
+      }
+    } finally {
+      rmSync(dir, { recursive: true });
     }
   });
 });

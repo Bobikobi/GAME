@@ -3,12 +3,14 @@ import type { Server } from 'node:http';
 import { isSeed, newState, serialize, step, widenSeed, type Bundle, type Seed, type State } from '@game/kernel';
 
 import { createGameApi, createPlayerRecord, createSignIn, googleProvider, listen, type Mail, type PlayerRecord, type PlayerStore, type SignIn } from '../src';
+import { countryLookup, type CountryLookup } from '../src/auth/country';
 import { ageGate, ageOn, consentAge, parseBirthDate, UNKNOWN_COUNTRY_AGE } from '../src/auth/age';
 import { takeOpening } from '../src/handover';
 import { LINK_SCRIPT } from '../src/auth/signin';
 import { pkceChallenge, tokenHash } from '../src/auth/tokens';
 import { loadBundle } from '../../tools/test/helpers/world.js';
 import { Browser, CLIENT_ID, CLIENT_SECRET, FakeGoogle, MemoryAuthStore } from './support/auth.js';
+import { buildCountryDb, FIXTURE } from './support/mmdb.js';
 import { LocalPhone, STARTS, playOpening } from './support/phone.js';
 
 // the opening's replay, counted: a sign-up retried after a taken name must not replay it again (finding 12)
@@ -55,7 +57,7 @@ function started(): State {
 }
 
 /** The API in the session mode, on a free port, with Google, a mail outbox and a clock the test moves. */
-async function ready(options: { google?: boolean; countryHeader?: string; addressHeader?: string; googleTimeoutMs?: number; ownKeys?: boolean } = {}) {
+async function ready(options: { google?: boolean; countryHeader?: string; countryLookup?: CountryLookup; addressHeader?: string; googleTimeoutMs?: number; ownKeys?: boolean } = {}) {
   const clock = { now: Date.UTC(2026, 9, 21, 12) };
   const store = new MemoryAuthStore();
   const players = new Players(store);
@@ -83,6 +85,7 @@ async function ready(options: { google?: boolean; countryHeader?: string; addres
     publicOrigin: base,
     appOrigin: APP,
     countryHeader: options.countryHeader,
+    countryLookup: options.countryLookup,
     addressHeader: options.addressHeader,
     now: () => clock.now,
   });
@@ -431,7 +434,7 @@ describe('sign-in by an email link (NEXT 18 e)', () => {
 });
 
 describe('the sign-up (NEXT 18 e; CR-49, CR-53)', () => {
-  async function ticket(options: { countryHeader?: string; ownKeys?: boolean } = {}) {
+  async function ticket(options: { countryHeader?: string; countryLookup?: CountryLookup; addressHeader?: string; ownKeys?: boolean } = {}) {
     const w = await ready(options);
     await googleSignIn(w);
     return w;
@@ -609,6 +612,38 @@ describe('the sign-up (NEXT 18 e; CR-49, CR-53)', () => {
       const w = await ticket({ countryHeader: 'x-country' });
       expect((await signUp(w, fifteen, value)).status, value).toBe(403);
     }
+  });
+
+  describe('the country from the client\'s address (COUNTRY_DB)', () => {
+    const lookup = countryLookup(buildCountryDb(FIXTURE));
+    const fifteen = { ...SIGNUP, birthDate: '2011-01-01' };
+    async function from(address: string | undefined, header?: string, options: { countryHeader?: string } = {}) {
+      const w = await ticket({ ...options, countryLookup: lookup, addressHeader: 'x-real-ip' });
+      return (await w.browser.request('/auth/signup', { method: 'POST', json: fifteen, headers: { ...(address && { 'x-real-ip': address }), ...(header !== undefined && { 'x-country': header }) } })).status;
+    }
+
+    test('the address our proxy names sets the age limit: a 15-year-old is let in from Israel and refused from Germany', async () => {
+      expect(await from('192.0.2.50')).toBe(201);
+      expect(await from('198.51.100.9')).toBe(403);
+    });
+
+    test('an address the file does not know holds the highest age, and so does no address at all', async () => {
+      expect(await from('8.8.8.8')).toBe(403);
+      expect(await from('203.0.113.5')).toBe(403);
+      expect(await from(undefined)).toBe(403);
+    });
+
+    test('a country header the server was not told to read changes nothing: the address decides', async () => {
+      expect(await from('198.51.100.9', 'IL')).toBe(403);
+      expect(await from('192.0.2.50', 'DE')).toBe(201);
+    });
+
+    test('COUNTRY_HEADER, when set and answering, overrides the address; a header that does not answer falls back to it', async () => {
+      expect(await from('198.51.100.9', 'IL', { countryHeader: 'x-country' })).toBe(201);
+      expect(await from('192.0.2.50', 'DE', { countryHeader: 'x-country' })).toBe(403);
+      expect(await from('192.0.2.50', '', { countryHeader: 'x-country' })).toBe(201);
+      expect(await from('198.51.100.9', 'il', { countryHeader: 'x-country' })).toBe(403);
+    });
   });
 
   test('a name the world already shows, in any case, is refused', async () => {
