@@ -144,6 +144,8 @@ export interface ManifestLine {
   motifs?: string[];
   /** The shared ramps the sprite was imported in, for its kit entry's `ramps`. */
   ramps?: string[];
+  /** The kaggle route's recipe and seed that drew it, so a gallery of a wave tells its draws apart. */
+  kaggle?: { recipe: KaggleRecipe; seed: number };
 }
 
 export function parseSpec(text: string): GenEntry[] {
@@ -581,6 +583,7 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
       ? askCodex(options, version, entry.name, stamp, line.prompt, grid ? [] : ['-i', refPath, ...styleRefs], grid ? `${entry.name}.txt` : file)
       : { codex: { version: drawn.version, exit: drawn.exit, seconds: drawn.seconds, tokens: drawn.tokens, log: drawn.log }, saved: drawn.saved, error: drawn.error };
     line.drawer = route;
+    if (route === 'kaggle') line.kaggle = { recipe, seed: plan?.seed ?? kaggleSettings(kaggleEnv).seed };
     line.codex = asked.codex;
     const saved = asked.saved;
     if (saved === null) {
@@ -760,6 +763,7 @@ export function galleryHtml(lines: readonly ManifestLine[]): string {
       line.grid === null ? null : `grid ${line.grid}`,
       line.colors === null ? null : `${line.colors} colours`,
       line.codex === null ? null : `${line.drawer ?? 'codex'} ${line.codex.seconds} s, ${line.codex.tokens ?? '?'} tokens`,
+      line.kaggle === undefined ? null : `${line.kaggle.recipe} seed ${line.kaggle.seed}`,
     ].filter((fact) => fact !== null).join(' · ');
     const warnings = line.warnings.map((w) => `<p class="warn">${escapeHtml(w)}</p>`).join('');
     const raw = line.raw === null ? '' : line.raw.endsWith('.txt') ? `<a href="${line.raw}">letters</a>` : `<a href="${line.raw}"><img class="raw" src="${line.raw}" alt="raw"></a>`;
