@@ -1,6 +1,6 @@
 import type { IncomingMessage } from 'node:http';
 
-import { MAILERS, type MailerName } from './auth/mailer';
+import { MAILERS, type MailerName, type ResendConfig } from './auth/mailer';
 
 /** The identity modes this build knows: a signed-in session (NEXT 18 e), and the staging header. */
 const MODES = ['session', 'dev-header'] as const;
@@ -31,6 +31,8 @@ export interface SessionConfig {
   /** absent when neither variable is set: Google then answers "not open yet" */
   google?: { clientId: string; clientSecret: string };
   mailer: MailerName;
+  /** present only with MAILER=resend: its key and the sender address */
+  resend?: ResendConfig;
   /** the header our nginx sets to the visitor's country (lower case); absent, every sign-up is held to the highest age */
   countryHeader?: string;
   /** the header our nginx sets to the client's address (lower case); the sign-in limits count by it. Absent only on a loopback origin */
@@ -82,6 +84,17 @@ function origin(env: NodeJS.ProcessEnv, name: string): string {
   return value;
 }
 
+/** MAILER=resend takes its key and a sender: `Name <address>` or a bare address, on the domain Resend verified. */
+function resendFromEnv(env: NodeJS.ProcessEnv): ResendConfig {
+  const apiKey = env.RESEND_API_KEY ?? '';
+  if (apiKey === '') throw new BootError('MAILER=resend needs RESEND_API_KEY.');
+  const from = env.MAIL_FROM ?? '';
+  if (!/^(?:[^<>@\r\n]+ <[^<>@\s]+@[^<>@\s]+\.[^<>@\s]+>|[^<>@\s]+@[^<>@\s]+\.[^<>@\s]+)$/.test(from)) {
+    throw new BootError(`MAIL_FROM=${JSON.stringify(from)} is not a sender: write \`Loomvale <play@your-domain>\` on the domain verified in Resend.`);
+  }
+  return { apiKey, from };
+}
+
 function sessionMode(env: NodeJS.ProcessEnv): Auth {
   if (env.ALLOW_DEV_HEADER) {
     throw new BootError('ALLOW_DEV_HEADER is set with AUTH_MODE=session: the header mode and sign-in never run together. Remove it.');
@@ -107,6 +120,7 @@ function sessionMode(env: NodeJS.ProcessEnv): Auth {
   if (mailer === 'log' && env.ALLOW_LOG_MAILER !== STAGING_ONLY) {
     throw new BootError(`MAILER=log writes each sign-in link to the log, so anyone who reads the log can sign in as anyone; it starts only with ALLOW_LOG_MAILER=${STAGING_ONLY}, on a box no real player reaches.`);
   }
+  const resend = mailer === 'resend' ? resendFromEnv(env) : undefined;
   const google = clientId === '' ? undefined : { clientId, clientSecret };
   const countryHeader = headerName(env, 'COUNTRY_HEADER', 'X-Country');
   const addressHeader = headerName(env, 'CLIENT_ADDRESS_HEADER', 'X-Real-IP');
@@ -116,7 +130,7 @@ function sessionMode(env: NodeJS.ProcessEnv): Auth {
   return {
     mode: 'session',
     notice: `AUTH_MODE=session: players are who their session cookie says; sign-in by email (links to the ${mailer} mailer${mailer === 'log' ? ', staging only' : ''})${google ? ' and Google' : ''}, ${appOrigin === publicOrigin ? 'the game beside it' : `the game at ${appOrigin}`}; the age limit ${countryHeader ? `by the country in ${countryHeader}` : 'is the highest (no COUNTRY_HEADER)'}; limits by ${addressHeader ?? 'the socket address'}.`,
-    session: { publicOrigin, appOrigin, google, mailer: mailer as MailerName, countryHeader, addressHeader },
+    session: { publicOrigin, appOrigin, google, mailer: mailer as MailerName, ...(resend && { resend }), countryHeader, addressHeader },
   };
 }
 
