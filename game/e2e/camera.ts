@@ -41,7 +41,7 @@ function serve(): Promise<{ server: Server; url: string }> {
  * The camera rule at a real 3x phone: the one e2e at device scale 3 (the others
  * run at 1, since software GL draws a 1170x2532 canvas about 8x slower). A
  * 390x844 screen at 3x is a 1170x2532 canvas, so k = floor(1170 / 576) = 2 and
- * the world zoom is 4k = 8.
+ * the world zoom is the whole step at or above 1.5k: 4 * ceil(1.5 * 2) = 12.
  */
 async function main(): Promise<void> {
   const remote = process.env.E2E_URL;
@@ -58,7 +58,7 @@ async function main(): Promise<void> {
           `({ w: document.querySelector('#game canvas').width, h: document.querySelector('#game canvas').height, zoom: __game.world.cameras.main.zoom })`,
         );
         if (seen.w !== 1170 || seen.h !== 2532) throw new Error(`canvas is ${seen.w}x${seen.h}, expected 1170x2532 device pixels`);
-        if (seen.zoom !== 8) throw new Error(`camera zoom is ${seen.zoom}, expected 8 (k=2)`);
+        if (seen.zoom !== 12) throw new Error(`camera zoom is ${seen.zoom}, expected 12 (k=2, 1.5 times closer)`);
         console.log(`camera: canvas ${seen.w}x${seen.h}, zoom ${seen.zoom}`);
         if (page.errors.length > 0) throw new Error(`page errors:\n${page.errors.join('\n')}`);
       } finally {

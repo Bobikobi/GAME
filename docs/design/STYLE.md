@@ -34,7 +34,7 @@ A section marked *proposal* is the art session's recommendation, not yet the own
 | Work pose | 128 x 128, two frames (tool raised, tool down) |
 | Prop | up to 384 x 384 (six tiles a side) |
 
-- **The screen.** The canvas draws at the device's own pixels, and one art pixel is always a whole number of device pixels: 2 on a 2K phone (1440 px across, about 11 tiles), 1 on a 1080 px phone (about 17 tiles, crisp but small; older phones are not a target). The camera's rule is in NEXT 15.
+- **The screen.** The canvas draws at the device's own pixels, and one art pixel is always a whole number of device pixels: 3 on a 2K phone (1440 px across, 7.5 tiles) and on a 390 x 844 phone at 3x (6.1 x 13.2 tiles), 2 on a 1080 px phone (about 8.4 tiles; older phones are not a target). The world is shown one whole step at or above 1.5 times the screen's own step (`4 * ceil(1.5k)`, built 28.10; DECISIONS 2026-10-25, the camera comes closer). The camera's first rule is in NEXT 15.
 - **A face.** At 64x96 the head is about 24 to 28 px wide and the face about 20. Eyes are 2 to 3 px, each with a white and a dark pupil; brows, a nose and a mouth are drawn, not implied. The frame `density-64` is the measure.
 - The check takes both grids since the engine step (NEXT 15): 16 px at density 1 (the default) and 64 px at density 4, and a size that belongs to the other grid is an error. The redraw waves move the kit to 64. Since 23.10 the whole game is rich (DECISIONS.md): a new sprite at density 1 is refused, the core kit's 16 px sprites wait by name in `tools/src/kit/rich.ts` until their wave takes them off, and a rich sprite of the core kit names its ramps. Nothing drawn at 32 goes into a kit.
 

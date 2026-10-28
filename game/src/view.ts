@@ -1,7 +1,9 @@
 /**
  * The canvas at the device's own pixels, and the camera's whole-number zoom (NEXT 15, DECISIONS 2026-10-18).
- * The world keeps 16 units per tile; the zoom is 4k canvas pixels per unit, so an art pixel at 64 px per tile
- * is k device pixels and one of the 16 px art is 4k. Everything the page lays over the world is in CSS pixels.
+ * The world keeps 16 units per tile; the zoom is 4j canvas pixels per unit, so an art pixel at 64 px per tile
+ * is j device pixels and one of the 16 px art is 4j. Everything the page lays over the world is in CSS pixels.
+ * The screen's own step is k (cameraK); the world is shown at the whole step at or above 1.5 times that
+ * (DECISIONS 2026-10-25, the camera comes closer).
  */
 import type * as Phaser from 'phaser';
 
@@ -13,9 +15,12 @@ export function cameraK(shortSide: number): number {
   return Math.max(1, Math.floor(shortSide / MIN_SIDE));
 }
 
-/** The camera zoom: canvas pixels per world unit, always a multiple of 4. */
+/**
+ * The camera zoom: canvas pixels per world unit, always a multiple of 4. The picked closer view is the whole step at
+ * or above 1.5 times the screen's own, 4 * ceil(1.5k): k 1 gives 8, k 2 gives 12 (6 x 13 tiles on a 390 x 844 phone at 3x).
+ */
 export function cameraZoom(shortSide: number): number {
-  return 4 * cameraK(shortSide);
+  return 4 * Math.ceil((3 * cameraK(shortSide)) / 2);
 }
 
 /** A world point as a CSS-pixel point on the page, for what the page lays over the world: the camera's zoom is in canvas pixels. */
