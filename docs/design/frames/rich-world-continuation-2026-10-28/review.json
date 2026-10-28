@@ -1,0 +1,104 @@
+{
+  "date": "2026-10-28",
+  "baseline": "dac30f433",
+  "branch": "art/rich-opening-ground",
+  "scope": "Connected material fixture camera, picked human cast and sand relief; no production map/runtime changes",
+  "ownerApproval": "Existing sea/oak and human A/camera directions retained. Sand material and place composition remain pending owner review.",
+  "validation": {
+    "focused": {
+      "status": "passed",
+      "files": 7,
+      "tests": 25
+    },
+    "verify": {
+      "status": "passed",
+      "command": "VITEST_MAX_WORKERS=4 TMPDIR=<dedicated directory outside repository> pnpm verify",
+      "projectFilesPassed": 139,
+      "projectFilesSkipped": 2,
+      "projectTestsPassed": 1489,
+      "projectTestsSkipped": 23,
+      "webTestsPassed": 81,
+      "contentErrors": 0,
+      "existingContentWarnings": 32,
+      "log": ".scratch/verify-world-continuation-final-2026-10-28.log"
+    },
+    "fixtureBrowser": {
+      "status": "passed",
+      "command": "WORLD_STUDY_FRAMES=game/public/art-review/world-2026-10-28 pnpm exec tsx game/e2e/world-study.ts",
+      "checks": [
+        "device-pixel canvas",
+        "default close zoom: desktop 2 / phone DPR3 zoom3",
+        "DPR and resize/rotation retain close or wide mode",
+        "CSS pointer walking",
+        "native-scale directional 50-degree human A",
+        "seven standable viewpoints",
+        "four-side root collision",
+        "blocked strides stop",
+        "canopy walk-behind space",
+        "reduced-motion phone water",
+        "no browser errors"
+      ],
+      "desktop": {
+        "css": [
+          1440,
+          900
+        ],
+        "dpr": 1
+      },
+      "phone": {
+        "css": [
+          390,
+          844
+        ],
+        "dpr": 3
+      }
+    },
+    "projectBrowser": {
+      "status": "failed",
+      "command": "pnpm e2e",
+      "stage": "phone opening",
+      "error": "could not stand on 36,31 facing right for core/ruins-hall#3",
+      "laterGroups": "Not reached",
+      "scope": "Normal opening/map/walking/kernel unchanged in this unit"
+    },
+    "staticReview": {
+      "status": "passed",
+      "page": "/art-review/world-2026-10-28/index.html",
+      "attribution": "/art-review/world-character-2026-10-28/index.html",
+      "images": "All four direct PNG files returned200 with image/png. Explicit index.html paths are required by the dev server."
+    }
+  },
+  "newImageEditCalls": 2,
+  "previousGroundFilesUnchanged": [
+    "docs/design/frames/rich-world-ground-2026-10-27/sand-source.png",
+    "docs/design/frames/rich-world-ground-2026-10-27/sand.png",
+    "docs/design/frames/rich-world-ground-2026-10-27/imports.json",
+    "docs/design/frames/rich-world-ground-2026-10-27/paving.png",
+    "docs/design/frames/rich-world-ground-2026-10-27/worn.png"
+  ],
+  "frames": [
+    {
+      "file": "game/public/art-review/world-2026-10-28/desktop-forest.png",
+      "sha256": "38e12748f7a306cd91834bd5bbd453369bab3fdad44ef6b9091a1ba0ec09c5a2"
+    },
+    {
+      "file": "game/public/art-review/world-2026-10-28/desktop-shore.png",
+      "sha256": "81d332ccb57a992d413375a1e61ffe9d236b123bffefa510e3f5b4084ba94a93"
+    },
+    {
+      "file": "game/public/art-review/world-2026-10-28/desktop-sand.png",
+      "sha256": "555950cc040dd733e979fa3080caf066a200345270e7ab9adddcdc958e97f240"
+    },
+    {
+      "file": "game/public/art-review/world-2026-10-28/phone-cove.png",
+      "sha256": "f31595129f45e9e7f8e293229509b661227f1abdf66c4f540dc1550f2f1b8efb"
+    }
+  ],
+  "remaining": [
+    "Paving and place-specific composition",
+    "Integrate approved first-map plan A through its map stream",
+    "Retained props do not all have verified 50-degree render provenance",
+    "Source cast retains documented discrete-pose foot swing",
+    "Single 128px sand field repeats over large areas"
+  ]
+}

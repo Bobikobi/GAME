@@ -5,9 +5,11 @@ import { preloadWorldStudyGround, createWorldStudyGround } from './world-study-g
 import { WorldStudyWater } from './world-study-water';
 import { createWorldStudyShadows } from './world-study-shadows';
 import { WORLD_TILE_SIZE, worldStudyLayout } from './world-study-layout';
+import { worldStudyCameraZoom } from './world-study-camera';
+import { preloadWorldStudyActor, createWorldStudyActor } from './world-study-actor';
+import { bindDeviceCanvas, deviceSize } from './view';
 import type { WaterLayer } from './coastal-water-study';
 import type { WaterWeather } from './water-response';
-import playerUrl from '../../content/kit/core/chars/player_down.png?url';
 
 const waterUrls = import.meta.glob('../../docs/design/frames/rich-layered-water-2026-10-25/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -16,19 +18,21 @@ const worldHeight = worldStudyLayout.height * WORLD_TILE_SIZE;
 
 class WorldStudy extends Phaser.Scene {
   private actor!: Phaser.GameObjects.Sprite;
+  private actorView!: ReturnType<typeof createWorldStudyActor>;
   private ground!: ReturnType<typeof createWorldStudyGround>;
   private water!: WorldStudyWater;
   private shadows!: ReturnType<typeof createWorldStudyShadows>;
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
   private moving = !reduced.matches;
   private elapsed = 0;
-  private walkClock = 0;
+  private closeView = true;
+  private canvasDpr = window.devicePixelRatio || 1;
 
   constructor() { super('world-study'); }
 
   preload(): void {
     preloadWorldStudyGround(this);
-    this.load.spritesheet('world-study-player', playerUrl, { frameWidth: 16, frameHeight: 24 });
+    preloadWorldStudyActor(this);
     for (const name of ['bed', 'body', 'light', 'foam']) {
       const entry = Object.entries(waterUrls).find(([path]) => path.endsWith(`/${name}.png`));
       if (!entry) throw new Error(`Missing approved water layer: ${name}`);
@@ -40,9 +44,8 @@ class WorldStudy extends Phaser.Scene {
     this.ground = createWorldStudyGround(this);
     this.water = new WorldStudyWater(this, worldWidth, worldHeight, this.ground.landAt, this.ground.landColor);
     const spawn = worldStudyLayout.spawn;
-    this.actor = this.add.sprite((spawn.x + .5) * WORLD_TILE_SIZE, (spawn.y + .5) * WORLD_TILE_SIZE, 'world-study-player', 1)
-      .setOrigin(.5, 1).setScale(4);
-    this.actor.setDepth(this.actor.y);
+    this.actorView = createWorldStudyActor(this, (spawn.x + .5) * WORLD_TILE_SIZE, (spawn.y + .5) * WORLD_TILE_SIZE);
+    this.actor = this.actorView.sprite;
     this.shadows = createWorldStudyShadows(this, this.ground.trees, this.ground.landAt);
     this.shadows.advance(this.actor);
     this.events.once('shutdown', () => this.shadows.destroy());
@@ -50,8 +53,18 @@ class WorldStudy extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
     this.cameras.main.startFollow(this.actor, true, .16, .16);
     this.cameras.main.setFollowOffset(0, 24);
-    this.cameras.main.centerOn(this.actor.x, this.actor.y);
-    this.water.setView(this.cameras.main);
+    const fitCamera = () => {
+      const camera = this.cameras.main;
+      camera.setZoom(worldStudyCameraZoom(this.scale.width, this.scale.height, this.closeView));
+      camera.centerOn(this.actor.x, this.actor.y);
+      this.water.setView(camera);
+      const button = document.getElementById('zoom')!;
+      button.textContent = this.closeView ? 'מבט רחב לחומרים' : 'חזרה למבט הקרוב';
+      button.setAttribute('aria-pressed', String(!this.closeView));
+    };
+    fitCamera();
+    this.scale.on('resize', fitCamera);
+    this.events.once('shutdown', () => this.scale.off('resize', fitCamera));
     this.ground.setMotion(this.moving);
     this.ground.advance(0, this.water.wind, this.actor);
 
@@ -86,11 +99,8 @@ class WorldStudy extends Phaser.Scene {
       document.getElementById('wind')!.textContent = this.water.wind[0] < 0 ? 'רוח ← החלפת כיוון' : 'רוח → החלפת כיוון';
     };
     document.getElementById('zoom')!.onclick = () => {
-      const camera = this.cameras.main;
-      camera.setZoom(camera.zoom === 1 ? 2 : 1);
-      camera.centerOn(this.actor.x, this.actor.y);
-      this.water.setView(camera);
-      document.getElementById('zoom')!.textContent = camera.zoom === 1 ? 'קירוב ×2' : 'מבט רחב';
+      this.closeView = !this.closeView;
+      fitCamera();
     };
     const plants = document.getElementById('plants') as HTMLInputElement;
     const shadows = document.getElementById('shadows') as HTMLInputElement;
@@ -114,7 +124,8 @@ class WorldStudy extends Phaser.Scene {
     if (!view) return;
     const x = (view.x + .5) * WORLD_TILE_SIZE, y = (view.y + .5) * WORLD_TILE_SIZE;
     if (!this.ground.landAt(x, y)) throw new Error(`Viewpoint is not on ground: ${id}`);
-    this.actor.setPosition(x, y).setDepth(y).setFrame(1);
+    this.actor.setPosition(x, y).setDepth(y);
+    this.actorView.reset();
     this.cameras.main.centerOn(x, y);
     this.water.setView(this.cameras.main);
     this.ground.advance(this.elapsed, this.water.wind, this.actor);
@@ -137,6 +148,15 @@ class WorldStudy extends Phaser.Scene {
 
   override update(_time: number, delta: number): void {
     if (!this.actor || document.hidden) return;
+    // Some displays and browser emulation change DPR without a resize or media
+    // event. Check the cheap ratio here; measure the host only when it changes.
+    const dpr = window.devicePixelRatio || 1;
+    if (dpr !== this.canvasDpr) {
+      this.canvasDpr = dpr;
+      const css = host.getBoundingClientRect();
+      const size = deviceSize(css.width, css.height, dpr);
+      this.scale.resize(size.w, size.h);
+    }
     const dt = Math.min(delta, 50) / 1000;
     if (this.moving) {
       this.elapsed += dt;
@@ -151,14 +171,14 @@ class WorldStudy extends Phaser.Scene {
       if (Math.hypot(dx, dy) < 8) dx = dy = 0;
     }
     const length = Math.hypot(dx, dy);
+    const beforeX = this.actor.x, beforeY = this.actor.y;
     if (length) {
       dx = dx / length * 125 * dt; dy = dy / length * 125 * dt;
       if (this.ground.canStand(this.actor.x + dx, this.actor.y)) this.actor.x += dx;
       if (this.ground.canStand(this.actor.x, this.actor.y + dy)) this.actor.y += dy;
-      this.walkClock += dt;
-      this.actor.setFrame(Math.floor(this.walkClock * 8) % 3).setDepth(this.actor.y);
       this.updatePlaceLabel();
-    } else this.actor.setFrame(1);
+    }
+    this.actorView.advance(this.actor.x - beforeX, this.actor.y - beforeY);
     this.water.setView(this.cameras.main);
     this.ground.advance(this.elapsed, this.water.wind, this.actor);
     this.shadows.advance(this.actor);
@@ -166,10 +186,12 @@ class WorldStudy extends Phaser.Scene {
 }
 
 const host = document.getElementById('game')!;
+const first = deviceSize(host.clientWidth, host.clientHeight, window.devicePixelRatio || 1);
 const game = new Phaser.Game({
   type: Phaser.AUTO, parent: host, pixelArt: true, roundPixels: true, banner: false,
   backgroundColor: '#1c4a49',
-  scale: { mode: Phaser.Scale.RESIZE, width: host.clientWidth, height: host.clientHeight },
+  scale: { mode: Phaser.Scale.NONE, width: first.w, height: first.h },
   scene: [WorldStudy],
 });
+bindDeviceCanvas(game, host);
 window.addEventListener('pagehide', event => { if (!event.persisted) game.destroy(true); });

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Forager — character attribution</title>
+  <style>
+    body { margin: 3rem auto; padding: 0 1.25rem; max-width: 46rem; background: #172a24; color: #f5f4ef; font: 1rem/1.65 system-ui, sans-serif; }
+    h1 { line-height: 1.2; } a { color: #c8e88a; } code { overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <h1>Forager — human A</h1>
+  <p>The connected world material study reuses the picked human A character, the male Forager, rendered to pixel sprites at a 50-degree camera elevation.</p>
+  <p><strong>Attribution:</strong> Forager, generated with <a href="https://www.meshy.ai/">Meshy</a> (meshy.ai), licensed under <a href="https://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International (CC BY 4.0)</a>.</p>
+  <p>The original model is <code>game/public3d/models/character-forager-m.glb</code>. Its recorded modifications are: scaled to 1.64 m; skeleton and skin weights added in Blender by fitting the warrior's Mixamo-named rig to the body, with the belt end cut free where it touched the left hand; Idle, Walk and Run clips retargeted from the warrior; two empty prop sockets added; reduced from 84,584 to 50,000 triangles and texture maps reduced from 2048 to 1024 pixels.</p>
+  <p>The sprite derivative is posed with library motion, rendered at 50 degrees and snapped to the game's palette by <code>tools/anim</code>. Motion uses <a href="https://quaternius.itch.io/universal-animation-library">Quaternius Universal Animation Library</a>, CC0 1.0, action <code>Jog_Fwd_Loop</code>, retargeted to the Forager's Mixamo rig.</p>
+  <p>These three sheets are copied without pixel changes from repository <code>GAME</code>, branch <code>feat/races-in-game</code>, commit <code>d6e324803</code>: <code>content/kit/core/chars/human_down.png</code>, <code>human_up.png</code> and <code>human_left.png</code>. The right-facing view mirrors the left sheet.</p>
+  <p>Each frame is 128 × 128 art pixels, with its ground anchor at [64,90]. Ten walking poses are followed by a standing pose. The study displays the sprite at native scale 1 and selects walking poses from actual distance travelled. The source records are <code>tools/anim/anim.json:targets.forager</code>, <code>tools/anim/clips/jog_human.json</code>, <code>content/kit/core/kit.json</code> and <code>game/public3d/models/README.md</code>.</p>
+  <p>The owner's 27 October 2026 human A selection is recorded in the source branch's <code>DECISIONS.md</code>. The study's copies and SHA-256 hashes are documented in <code>docs/design/frames/rich-world-character-2026-10-28/provenance.json</code>.</p>
+  <p><a href="../../../world-study.html">Return to the connected world study</a></p>
+</body>
+</html>

@@ -43,3 +43,41 @@ The family validator added in this branch checks registered sprite bytes,
 palettes, frame sizes and explicit selections. It does **not** prove scene camera
 settings, render elevation, actor identity or the suitability of a paved region.
 Those gaps are not solved by its passing result.
+
+## Continuation — 2026-10-28
+
+The original audit and owner rejection above remain the historical baseline.
+This continuation resolves the fixture's camera and old-player integration gaps:
+
+- The default close view follows `4 * ceil(1.5k)` in production's 16-unit grid,
+  divided by four in the fixture's 64-unit grid. The canvas uses device pixels;
+  resizing and a DPR change retain the selected close/wide mode. The wide mode
+  is labelled as a material-comparison aid.
+- The actor reuses the picked human A sheets from `feat/races-in-game` at
+  `d6e324803`, rendered at 50 degrees. Its 128px frame stays at scale 1, with
+  ground anchor [64,90]. All three source views and right-facing mirroring are
+  used. Strides follow actual collision-resolved distance; blocked walking uses
+  the standing pose. Hashes, source metadata and attribution are retained in
+  `docs/design/frames/rich-world-character-2026-10-28/`.
+- Sand relief was edited from the retained source with the built-in image tool,
+  then imported through the existing fill/border pipeline. Its source, exact
+  prompt, derivative and unused palette trial are retained separately in
+  `docs/design/frames/rich-world-ground-2026-10-28/`. This is material polish for
+  review, not acceptance of a beach family or a new place.
+
+Live refresh found that the close-camera change has now landed on develop as
+`c47f1c7f4` (#390), with the same rule. The owner also picked the first-map plan A
+(`#394`, `e612194b3`, `docs/design/FIRST_MAP.md`). That plan's snowy mountains,
+far-bank human city and faint paths outside the opening belong to the geography
+stream. This continuation leaves the fixture's land, routes and placements alone.
+The plan pick does not approve the fixture's isolated paving samples.
+
+Paving/place composition still needs its place-specific review. Only the reused
+actor has verified 50-degree render provenance; a camera zoom does not certify
+the elevation of every retained tree or material. The source race pipeline also
+records discrete-pose foot swing between samples; importing its sheets does not
+claim to remove that limitation. The whole fixture remains a material laboratory.
+
+Current direct browser captures and the review page are served from
+`game/public/art-review/world-2026-10-28/`. Their checks and limits are recorded in
+`docs/design/frames/rich-world-continuation-2026-10-28/README.md`.

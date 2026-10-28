@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-28",
+  "checks": [
+    {
+      "name": "paving",
+      "dimensions": [
+        128,
+        128
+      ],
+      "colors": 16,
+      "opaque": true,
+      "repeat": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "sha256": "d7b3358bed786f514bd1914bdd0a3e1e5ca94611042d28d196c5fb5669ca54ad"
+    },
+    {
+      "name": "worn",
+      "dimensions": [
+        128,
+        128
+      ],
+      "colors": 24,
+      "opaque": true,
+      "repeat": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "sha256": "814272424fc221bf9cab488e694af1afc558615deb00891264414132f02794c4"
+    },
+    {
+      "name": "sand",
+      "dimensions": [
+        128,
+        128
+      ],
+      "colors": 9,
+      "opaque": true,
+      "repeat": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "sha256": "0952373d0dc4b711f420feae45ffc71726d591c73fb9ef9f1584d7cc7826eafa"
+    }
+  ],
+  "previousFilesByteIdentical": [
+    "docs/design/frames/rich-world-ground-2026-10-27/sand-source.png",
+    "docs/design/frames/rich-world-ground-2026-10-27/sand.png",
+    "docs/design/frames/rich-world-ground-2026-10-27/imports.json",
+    "docs/design/frames/rich-world-ground-2026-10-27/paving.png",
+    "docs/design/frames/rich-world-ground-2026-10-27/worn.png"
+  ]
+}

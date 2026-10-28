@@ -9,7 +9,7 @@ const banks = import.meta.glob('../../docs/design/frames/rich-river-kit-2026-10-
 const plants = import.meta.glob('../../docs/design/frames/rich-shore-2026-10-25/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 import pavingUrl from '../../docs/design/frames/rich-world-ground-2026-10-27/paving.png?url';
 import wornUrl from '../../docs/design/frames/rich-world-ground-2026-10-27/worn.png?url';
-import sandUrl from '../../docs/design/frames/rich-world-ground-2026-10-27/sand.png?url';
+import sandUrl from '../../docs/design/frames/rich-world-ground-2026-10-28/sand-v2.png?url';
 const masks = [1, 2, 3, 4, 6, 7, 8, 9, 11, 12, 13, 14, 15];
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const hash = (x: number, y: number) => (Math.imul(x + 23, 73856093) ^ Math.imul(y + 37, 19349663)) >>> 0;

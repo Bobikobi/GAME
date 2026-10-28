@@ -20,8 +20,9 @@
     summary { cursor: pointer; }
     #status { display: inline-block; margin-inline-start: 8px; color: #ccd5c1; }
     #game { flex: 1; min-height: 0; touch-action: none; direction: ltr; }
-    canvas { display: block; }
+    canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
     .note { font-size: 12px; color: #bdc9b6; }
+    a { color: #b6dfc3; }
     @media (max-width: 480px) { header { padding: 8px 10px; } h1 { font-size: 20px; } .controls { gap: 5px; } button { padding: 4px 8px; } }
   </style>
 </head>
@@ -44,7 +45,7 @@
       <div class="settings">
         <label>מצב מים <select id="weather"><option value="calm">שקט</option><option value="windy" selected>גלי</option><option value="storm">סוער</option></select></label>
         <button id="wind">רוח ← החלפת כיוון</button>
-        <button id="zoom">קירוב ×2</button>
+        <button id="zoom" aria-pressed="false">מבט רחב לחומרים</button>
         <label><input id="plants" type="checkbox" checked>צמחייה</label>
         <label><input id="shadows" type="checkbox" checked>צללים</label>
         <label><input type="checkbox" data-layer="bed" checked>קרקעית</label>
@@ -53,7 +54,7 @@
         <label><input type="checkbox" data-layer="breakers" checked>גלים וקצף</label>
       </div>
     </details>
-    <p class="note">דוגמת חומרים קיימת, שטרם הותאמה לעיצוב החדש: הדמות, המצלמה והריצוף אינם תצוגת המשחק המאושרת.</p>
+    <p class="note">המבט הקרוב והדמות ב־50° שולבו לפי הבחירות הקיימות. הריצוף ותכנון המקום עדיין בבדיקה. <a href="/art-review/world-character-2026-10-28/index.html">מקור הדמות ורישיון</a></p>
   </header>
   <div id="game" aria-label="מקטע עולם שאפשר ללכת בו"></div>
   <script type="module" src="/src/world-study.ts"></script>

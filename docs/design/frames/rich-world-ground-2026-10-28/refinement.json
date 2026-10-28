@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-28",
+  "reason": "Browser inspection found that the first imported edit still flattened the generated broad relief. A second edit separated the source into the established earth ramp before the unchanged importer.",
+  "tool": {
+    "name": "image_gen.imagegen",
+    "mode": "built-in edit",
+    "callsThisRefinement": 1,
+    "totalCallsThisUnit": 2,
+    "outputPath": "/home/elad-saadon/.codex/generated_images/01a182db-2b85-7423-a237-cd5127f22a2f/exec-bf7fa089-793f-4a52-b1d4-8da576205d49.png",
+    "model": "Not specified by tool invocation"
+  },
+  "editTarget": {
+    "file": "sand-source.png",
+    "sha256": "f6747e940a148ee995226aae317724b22aed27c87cc2cfd13b2f3ea17aa01de2"
+  },
+  "source": {
+    "file": "sand-source-v2.png",
+    "sha256": "d6eb7145aaa0fdd571cbe77974c5838ec5e716f9683d831e0a79626c5bf981a6",
+    "prompt": "sand-prompt-v2.txt"
+  },
+  "derivative": {
+    "file": "sand-v2.png",
+    "sha256": "7a7a8cd0ff954216ac9dc3cc0b72e97c949b39d7009a9a6af2da329d3810274c",
+    "recipe": "imports-v2.json:reports[name=sand]"
+  },
+  "review": {
+    "status": "keep",
+    "decidedBy": "agent",
+    "ownerApproval": "pending",
+    "previousDerivative": {
+      "file": "sand.png",
+      "status": "rework",
+      "reason": "Relief flattened during import; retained and no longer loaded"
+    }
+  },
+  "validation": {
+    "width": 128,
+    "height": 128,
+    "colors": 9,
+    "opaque": true,
+    "paletteValid": true,
+    "repeat": {
+      "horizontal": 0,
+      "vertical": 0
+    }
+  },
+  "remainingLimit": "A128px field repeats over large distances. This material polish does not approve geography, paving or a complete place."
+}
