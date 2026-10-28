@@ -8,7 +8,7 @@ import type { ToolInput, ToolOutput } from '../tools';
 import type { Answer, Context } from './context';
 
 /** The site that publishes schema/json/ under /api/schema/. */
-export const SITE = 'https://theopenfold.vercel.app';
+export const SITE = 'https://loomvale.vercel.app';
 
 export function schema(ctx: Context, input: ToolInput<'schema'>): Answer<ToolOutput<'schema'>> {
   const types = [...CREATOR_TYPES, ...CORE_ONLY_TYPES, ...Object.keys(DOCUMENT_SCHEMAS)];
