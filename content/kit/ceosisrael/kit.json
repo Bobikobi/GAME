@@ -1,0 +1,13 @@
+{
+  "format": 1,
+  "type": "kit",
+  "id": "ceosisrael/kit",
+  "title": "Traveller's cap art",
+  "creator": "ceosisrael",
+  "ai_tools": ["Claude (Anthropic)", "Qwen-Image 2512 (kit:gen, kaggle drawer)"],
+  "kit": {
+    "sprites": {
+      "items/travellers_cap": { "file": "items/travellers_cap.png", "w": 64, "h": 64, "density": 4, "ramps": ["wood", "moss", "rust"] }
+    }
+  }
+}

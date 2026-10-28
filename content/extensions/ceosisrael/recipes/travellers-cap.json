@@ -16,7 +16,7 @@
       "class": "garment",
       "family": "cap",
       "tier": 1,
-      "sprite": "core/base-kit:items/basket",
+      "sprite": "ceosisrael/kit:items/travellers_cap",
       "weight": 1,
       "wear": {
         "slot": "head",
