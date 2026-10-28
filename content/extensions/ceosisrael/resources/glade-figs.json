@@ -19,7 +19,7 @@
       "class": "plant",
       "family": "fig",
       "tier": 1,
-      "sprite": "core/base-kit:items/berry",
+      "sprite": "ceosisrael/kit:items/fig",
       "weight": 2,
       "food": {
         "satiety": 10
@@ -32,8 +32,8 @@
     "active_ms": 3500,
     "respawn_ms": 90000,
     "count": 3,
-    "sprite": "core/base-kit:props/bush_berry",
-    "sprite_empty": "core/base-kit:props/bush_empty",
+    "sprite": "ceosisrael/kit:props/fig_bush",
+    "sprite_empty": "ceosisrael/kit:props/fig_bush_empty",
     "level": 1,
     "game": "pick",
     "place": {
