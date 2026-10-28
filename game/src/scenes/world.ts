@@ -79,7 +79,7 @@ import { type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, trea
 import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep } from '../walking';
 import { GroundChunks } from '../groundchunks';
 import { adopt, baseOf, densityOf, drawScaled, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
-import { cameraK, cameraZoom, pixelRatio, worldToPage } from '../view';
+import { cameraZoom, pixelRatio, worldToPage } from '../view';
 
 /** px from the view's edge that the smoke marker keeps, so its column fits above the base. */
 const SMOKE_INSET = 30;
@@ -3265,7 +3265,7 @@ export class WorldScene extends Phaser.Scene {
   private fit(): void {
     const w = this.scale.width;
     const h = this.scale.height;
-    // 4k canvas pixels per unit, k whole (view.ts): the short side shows at least 9 tiles of 64 art pixels
+    // 4j canvas pixels per unit, j whole (view.ts): the whole step at or above 1.5 times the screen's own
     const zoom = cameraZoom(Math.min(w, h));
     this.baseZoom = zoom;
     // a hold on the stone keeps its own zoom through a resize
@@ -3317,12 +3317,12 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
-  /** The stone's zoom: the screen's own, STONE_STEPS whole camera steps closer, so its art pixels stay whole device pixels. */
+  /** The stone's zoom: the world's own, STONE_STEPS whole camera steps closer, so its art pixels stay whole device pixels. */
   private heldZoom(): number {
-    return 4 * (cameraK(Math.min(this.scale.width, this.scale.height)) + STONE_STEPS);
+    return cameraZoom(Math.min(this.scale.width, this.scale.height)) + 4 * STONE_STEPS;
   }
 
-  /** The hold is over: the zoom comes back to the screen's own and the camera follows the player again. */
+  /** The hold is over: the zoom comes back to the world's own and the camera follows the player again. */
   stoneRelease(): void {
     if (!this.stoneHeld) return;
     this.stoneHeld = false;

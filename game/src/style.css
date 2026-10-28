@@ -555,11 +555,13 @@ textarea {
   color: var(--green2);
 }
 
+/* on a desktop they stand under the tracker, at the left: the camera keeps the player in the middle of the
+   screen and, at the closer view (DECISIONS 2026-10-25), the player's head is near the top of it */
 .toasts {
-  align-self: center;
+  align-self: flex-start;
   display: grid;
   gap: 6px;
-  justify-items: center;
+  justify-items: start;
   width: min(100%, 420px);
 }
 
@@ -1976,10 +1978,13 @@ body {
     right: max(8px, env(safe-area-inset-right));
     bottom: calc(max(8px, env(safe-area-inset-bottom)) + var(--prompt-lift) + 44px);
     width: auto;
+    justify-items: center;
   }
   /* where the camera stops at the foot of the map the player stands that low: they go up (ui.ts) */
   .toasts.up {
     position: static;
+    align-self: center;
+    justify-items: center;
     width: min(100%, 420px);
   }
 }
