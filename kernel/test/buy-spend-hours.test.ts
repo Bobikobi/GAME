@@ -87,9 +87,9 @@ function gatherAt(source: string, hour: number): StepResult {
 
 // ------------------------------------------------------------------ buy
 
-describe('buying at the trader', () => {
-  const trader = 'core/trader'; // content/core/npcs/trader.json
-  // an item the shop sells that stacks in the bag: core/berry, content/core/shops/trader-shop.json
+describe('buying at the inn', () => {
+  const trader = 'core/innkeeper'; // content/core/npcs/innkeeper.json
+  // an item the shop sells that stacks in the bag: core/berry, content/core/shops/inn.json
   const item = 'core/berry';
 
   function buyState(gold: number, bag: Record<string, number> = {}): { s: State; at: [number, number] } {
@@ -100,7 +100,7 @@ describe('buying at the trader', () => {
   }
 
   test('takes the exact price from the gold, burns the same amount, and the bag grows', () => {
-    const offer = b.shops['core/trader-shop']!.sells.find((o) => o.item === item)!; // content/core/shops/trader-shop.json
+    const offer = b.shops['core/inn']!.sells.find((o) => o.item === item)!; // content/core/shops/trader-shop.json
     const { s, at } = buyState(100_000);
     const before = s.player.bag[item] ?? 0;
     const r = ok(s, { t: 'buy', npc: trader, item, qty: 2, at });
@@ -123,7 +123,7 @@ describe('buying at the trader', () => {
   });
 
   test('refuses short gold, and the state does not change', () => {
-    const offer = b.shops['core/trader-shop']!.sells.find((o) => o.item === item)!;
+    const offer = b.shops['core/inn']!.sells.find((o) => o.item === item)!;
     const { s, at } = buyState(offer.price_mg - 1);
     const before = canonical(s);
     const r = act(s, { t: 'buy', npc: trader, item, qty: 1, at });

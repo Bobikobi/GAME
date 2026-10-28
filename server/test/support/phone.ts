@@ -287,10 +287,13 @@ export async function playOpening(wire: Player, start: Start): Promise<PlayedRun
   await wire.gather(oak, 3);
   if ((wire.state.player.bag['core/log'] ?? 0) < 1) throw new Error('The oak gave no log.');
 
+  // food is the inn's (decision 32); Pell buys what the player found
+  const inn = required(npcTile(bundle, 'core/innkeeper'), 'The innkeeper is missing.');
+  await wire.walkNear({ x: inn[0], y: inn[1], w: 1, h: 1 });
+  await wire.act({ t: 'buy', npc: 'core/innkeeper', item: 'core/berry', qty: 1, at: wire.state.player.at });
   const trader = required(npcTile(bundle, 'core/trader'), 'The trader is missing.');
   await wire.walkNear({ x: trader[0], y: trader[1], w: 1, h: 1 });
   const at = wire.state.player.at;
-  await wire.act({ t: 'buy', npc: 'core/trader', item: 'core/berry', qty: 1, at });
   required(salePrice(bundle, wire.state, 'core/log', 1), 'The trader does not buy a log.');
   await wire.act({ t: 'sell', npc: 'core/trader', item: 'core/log', qty: 1, at });
 

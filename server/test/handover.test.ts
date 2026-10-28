@@ -257,10 +257,10 @@ describe('the opening handover (NEXT 18 d)', () => {
     const address = await listen(server, 0);
     const wire = new Wire(bundle, `http://127.0.0.1:${address.port}`, publicState(store.record.state), clock);
 
-    // the walk back to the stall and one more berry: a movement batch and a payment, under the account's seed
-    const trader = npcTile(bundle, 'core/trader')!;
-    await wire.walkNear({ x: trader[0], y: trader[1], w: 1, h: 1 });
-    const buy: Action = { t: 'buy', npc: 'core/trader', item: 'core/berry', qty: 1, at: wire.state.player.at };
+    // the walk to the inn and one more berry: a movement batch and a payment, under the account's seed
+    const inn = npcTile(bundle, 'core/innkeeper')!;
+    await wire.walkNear({ x: inn[0], y: inn[1], w: 1, h: 1 });
+    const buy: Action = { t: 'buy', npc: 'core/innkeeper', item: 'core/berry', qty: 1, at: wire.state.player.at };
     await wire.act(buy);
     expect(store.actionLog.length).toBeGreaterThanOrEqual(2);
 

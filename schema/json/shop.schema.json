@@ -572,6 +572,11 @@
         "buys": {
           "description": "Whether the shop buys anything that has a value.",
           "type": "boolean"
+        },
+        "bed": {
+          "description": "The keeper gives a bed for the night (G16, G32): from 19:00 to dawn the player may sleep here, and wakes at 05:00 with full health. The night passes; nothing in it is skipped.",
+          "const": true,
+          "type": "boolean"
         }
       }
     }

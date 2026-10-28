@@ -75,6 +75,36 @@
         "say": [
           "My mother put less salt in. Do not tell Pell I said so."
         ]
+      },
+      {
+        "when": {
+          "race": [
+            "core/human"
+          ]
+        },
+        "say": [
+          "You have the look of the ones who left. Come back, or only passing through?"
+        ]
+      },
+      {
+        "when": {
+          "race": [
+            "core/elf"
+          ]
+        },
+        "say": [
+          "Ears like yours are cut on a stone in the ruins. It never said whose."
+        ]
+      },
+      {
+        "when": {
+          "race": [
+            "core/skeleton"
+          ]
+        },
+        "say": [
+          "I know your kind from the ground under the town. Welcome back, if it is back."
+        ]
       }
     ],
     "topics": [
@@ -112,6 +142,160 @@
         "lines": [
           "They light at dusk. Nobody fills them. Nobody ever did, that I saw.",
           "I think they watch the hills, where the mist comes from."
+        ]
+      }
+    ],
+    "round": [
+      {
+        "hours": [
+          7,
+          10
+        ],
+        "via": [
+          [
+            29,
+            7
+          ],
+          [
+            31,
+            7
+          ],
+          [
+            31,
+            10
+          ],
+          [
+            33,
+            10
+          ],
+          [
+            33,
+            12
+          ],
+          [
+            36,
+            12
+          ],
+          [
+            36,
+            13
+          ],
+          [
+            36,
+            14
+          ],
+          [
+            36,
+            18
+          ],
+          [
+            36,
+            17
+          ],
+          [
+            39,
+            17
+          ],
+          [
+            39,
+            18
+          ],
+          [
+            45,
+            18
+          ],
+          [
+            45,
+            21
+          ],
+          [
+            46,
+            21
+          ],
+          [
+            46,
+            23
+          ],
+          [
+            45,
+            23
+          ],
+          [
+            45,
+            29
+          ],
+          [
+            46,
+            29
+          ],
+          [
+            46,
+            31
+          ],
+          [
+            45,
+            31
+          ],
+          [
+            45,
+            33
+          ],
+          [
+            39,
+            33
+          ]
+        ]
+      },
+      {
+        "hours": [
+          10,
+          15
+        ],
+        "via": [
+          [
+            29,
+            18
+          ],
+          [
+            28,
+            17
+          ],
+          [
+            17,
+            16
+          ],
+          [
+            17,
+            19
+          ],
+          [
+            24,
+            31
+          ],
+          [
+            17,
+            16
+          ],
+          [
+            10,
+            17
+          ],
+          [
+            10,
+            18
+          ],
+          [
+            6,
+            18
+          ],
+          [
+            6,
+            17
+          ],
+          [
+            7,
+            6
+          ]
         ]
       }
     ]

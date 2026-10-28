@@ -32,6 +32,7 @@
     "e2e:shop": "tsx game/e2e/shop.ts",
     "e2e:load": "tsx game/e2e/load.ts",
     "e2e:3d": "tsx game/e2e/play3d.ts",
+    "e2e:inn": "tsx game/e2e/inn.ts",
     "credits": "tsx tools/src/cli.ts credits",
     "board": "tsx tools/src/cli.ts board",
     "loop": "tsx tools/src/loop/cli.ts",
