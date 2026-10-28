@@ -1,6 +1,8 @@
 # How the team works
 
-This page is for the people who build the game itself: developers, artists, and the AI agents working beside them. If you want to add a townsperson, a fruit, a quest or a ruin to the valley, you want [CONTRIBUTING.md](../../CONTRIBUTING.md) and the [creator guide](../creators/README.md) instead.
+This page is the core team's: the people who build the game itself with write access to the repository (developers, artists, and the AI agents working beside them). A developer outside the core team, working from a fork with their own account, follows [Your first code pull request](ONBOARDING.md) instead; the rules here about branches, owners and reviews hold for them too. If you want to add a townsperson, a fruit, a quest or a ruin to the valley, you want [CONTRIBUTING.md](../../CONTRIBUTING.md) and the [creator guide](../creators/README.md) instead.
+
+"The owner", "the lead" and "a core maintainer" on this page are today all one GitHub account, `Bobikobi`.
 
 ## Branches
 
@@ -10,6 +12,7 @@ This page is for the people who build the game itself: developers, artists, and 
 | `develop` | Integration. Its preview is "the latest version". | Reviewed pull requests, each merged by the session that made it once the owner has approved it. |
 | `feat/<topic>`, `fix/<topic>`, `chore/<topic>`, `docs/<topic>` | One task each. | The person or agent doing that task. |
 
+- These branch names are the one convention for every branch, a creator's and an outside developer's included: a townsperson goes on `feat/<topic>` too.
 - Start every task from the newest `origin/develop` and open the pull request into `develop`.
 - One concern per pull request. A refactor, a feature and a content change are three pull requests.
 - Never push to `main` or `develop` directly. Never force-push a branch someone else is reviewing.
@@ -66,7 +69,7 @@ The reviewer checks four things:
 3. Tests come with the change.
 4. It does one thing.
 
-The session that made a pull request merges it into `develop` once the owner has approved it. It never merges another session's pull request, and never touches `main`. Pull requests are merged with squash, so the history of `develop` reads one line per task.
+The session that made a pull request merges it into `develop` once the owner has approved it; a pull request from a fork is merged by the owner. It never merges another session's pull request, and never touches `main`. Pull requests are merged with squash, so the history of `develop` reads one line per task.
 
 ## Releasing
 

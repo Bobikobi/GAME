@@ -23,7 +23,11 @@ Anyone can ask for something with the "Request for the valley" issue form. Other
 
 ## Changing the game
 
+**Without write access** (your own GitHub account, a fork): follow [Your first code pull request](docs/team/ONBOARDING.md). It goes step by step from the fork to an open pull request against `develop`, with the command for each step, and says what to ask about before you start.
+
 If you are joining the core team, read [How the team works](docs/team/WORKFLOW.md) first: branches, worktrees, who owns what and how a release happens.
+
+Who merges: the owner, the GitHub account `Bobikobi`, reviews, approves and merges every code pull request into `develop`. "The owner", "the lead" and "a core maintainer" in these docs are all that account today.
 
 - `kernel/` is the simulation. It must stay pure: no clocks, timers, randomness, floats or I/O. ESLint enforces this, and `kernel/test/invariants.test.ts` replays thousands of random actions to check it.
 - A change to any value anchor (`content/values.lock.json`) is a core maintainer decision: run `pnpm values` and say why in the pull request.
