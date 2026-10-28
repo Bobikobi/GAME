@@ -969,8 +969,7 @@ function sleep(ctx: Ctx, placeId: string, at: Tile): void {
   const until = sleepUntil(b, ctx.tick);
   if (until === undefined) refuse('The beds are for the night. Come back at dusk.');
   if (!isSafe(b, s, s.player.at)) refuse('Nobody sleeps with a hunt at the door.');
-  s.player.satiety = satietyCap(b, s);
-  s.player.satietyAt = ctx.tick;
+  s.player.hp = hpCap(b, s);
   s.player.busyUntil = until;
   ctx.events.push({ e: 'sleep', place: placeId, until });
 }

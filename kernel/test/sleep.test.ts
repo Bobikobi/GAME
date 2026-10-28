@@ -1,5 +1,5 @@
 /**
- * The inn's bed (G16, G32): from 19:00 a keeper's bed takes the player to the night's 05:00, fed in
+ * The inn's bed (G16, G32): from 19:00 a keeper's bed takes the player to the night's 05:00, health in
  * full. Sleeping spends the night rather than skipping it: a fire burns out unattended, so a vigil is
  * never kept asleep (G48), and nothing outside the town is safer for it (G71). And Maru walks his round
  * by day (decision 27 of 22.10): a talk finds him where he stands, and his hearth burns from dusk while
@@ -20,7 +20,7 @@ import {
   npcTile,
   newState,
   roundWalk,
-  satietyCap,
+  hpCap,
   serialize,
   sleepPlace,
   sleepUntil,
@@ -111,14 +111,14 @@ describe('the bed at the inn', () => {
     expect(result).toEqual({ ok: false, error: 'That is too far away.' });
   });
 
-  test('a night in the bed wakes the player at 05:00, fed in full', () => {
+  test('a night in the bed wakes the player at 05:00, health in full', () => {
     const state = begin();
-    state.player.satiety = 0;
+    state.player.hp = 1000;
     const result = step(b, state, { t: 'sleep', place: INN, at: state.player.at }, at(20));
     if (!result.ok) throw new Error(result.error);
     expect(result.events).toEqual([{ e: 'sleep', place: INN, until: at(5) }]);
     expect(result.state.player.busyUntil).toBe(at(5));
-    expect(result.state.player.satiety).toBe(satietyCap(b, result.state));
+    expect(result.state.player.hp).toBe(hpCap(b, result.state));
 
     const early = step(b, result.state, { t: 'sleep', place: INN, at: result.state.player.at }, at(2));
     expect(early).toEqual({ ok: false, error: 'You are still busy.' });
