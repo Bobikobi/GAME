@@ -195,6 +195,26 @@ Left open:
 - **A shadow in another hue stays.** The shade key takes a darker shade of the background's own colour and
   nothing else; FLUX's purple ground shadows are partly kept, and a wider key ate FLUX's reddish earth in a
   trial, so it stays narrow.
+- **From the prompt alone the canvas follows the ASKED size, not the old sprite's (27.10).** `kaggleCanvas`
+  read the reference PNG, so a 192x320 tree or cottage with a 32x32 reference was drawn on 1024x1024 and came
+  back 180x170 art pixels, and a 64x160 stone drawn on 1024x1856 came back 60x99. `kaggleCanvasFor` takes the
+  spec's grid (width x height) when the recipe draws from the prompt (`qwen`, `flux`) or the denoise is 1, and
+  keeps the reference's shape for image to image: the cottage and the oak are now drawn on 1024x1728 and the
+  stone on 1024x2048 (the long side stays at twice the short one). Same seed, the stone came back 60x108; the
+  cottage 180x188, because the model draws it as wide as it is tall, which no canvas changes.
+- **The background key drops a glow, and the hue band was measured and left out (27.10).** The model paints a
+  soft wedge or halo of warm light on the magenta (`house_small`, `market_stall`); it is nowhere near the
+  background's colour, so the key kept it and the importer drew it as a coloured patch (2868 pixels of the
+  cottage's 21568, and it widened the box the sprite is fitted to). `clearGlows` in `import.ts` floods from the
+  cleared background through pixels that are not the dark outline and a smooth step apart, and clears a region
+  only when it is small, holds a block (not a halo ring), a narrow colour range, and is open to the
+  background along 0.3 or more of its rim (a glow measured 0.65-0.73, a body entered through a gap in its
+  outline 0.01-0.02). Replayed on 45 imports of 39 raws, 41 stayed pixel-identical; the 4 that changed are the two glow
+  pictures, each imported with two anchors, which lost their wedge. A hue band of 20 degrees around the background's hue changed all 50 of the first set (it takes
+  the blended fringe pixels around every outline), so it was dropped.
+- **The negative prompt adds `glow, vignette, light rays, halo`** (`KAGGLE_NEGATIVE`, still inside the 77
+  tokens of the Stable Diffusion encoders). On the same seed the cottage still came back with a round halo of
+  light above its roof, a smaller one than the wedge, so the words help but the importer's key stays the guard.
 
 ## The pick feeds the next round
 
@@ -261,3 +281,11 @@ overnight.
 
 Adding one: a function in `drawers.ts` returning `Drawn`, its id in `DRAWERS`, a row here, a test
 of its request and answer parsing with no network.
+
+## Pools and status
+
+The routes above are meant to run in bulk, and the plan for that line is [PRODUCTION_LINE.md](PRODUCTION_LINE.md) (pools of entries with a status each, waves cut from them, every draft kept, the pick as a recorded action). Its wave 2 is built: the pools and the status.
+
+- **The pools** are `tools/kit-gen/pools/ground.json`, `trees.json`, `props.json`, `items.json` and `cast.json`, seeded from the inventory in `docs/art/PRE_RICH_REDRAW.md` in its rank order, at the sizes of `docs/design/STYLE.md` section 1b. Each is a `kit:gen` spec (`parseSpec` reads it, so a wave can be cut from it) with five pool fields: `kit_id` (the sprite it becomes), `rank` (its row in the inventory), `blocked_by` (an open call of the inventory, or the DECISIONS title that holds it), `new` (the kit does not hold the id yet) and `retired` (the DECISIONS title that retired it). The cast is tracked only: the line never draws a character.
+- **The status is never written by hand.** `tools/src/art/status.ts` derives it from files, first rule that holds wins: `retired` (the entry says so), `imported` (the kit holds `kit_id` at density 4 at the asked size and its `source.manifest` cites a picks line of that sprite), `picked` (a picks manifest line names it), `drafted` (a draft exists), `missing`. Until the drafts index exists (wave 3) a draft is read from the run folders `.scratch/kit-gen/*/manifest.jsonl` when they are on disk, and with none the report says a draft cannot be known.
+- **`pnpm art:status`** prints one line a pool (counts by status), what blocks, the GPU minutes of the week (not tracked yet: the meter is the drafts index), and the next missing entries of each pool in rank order (`--next N`, default 5). `--json` gives the same for a tool. It reads and writes nothing.
