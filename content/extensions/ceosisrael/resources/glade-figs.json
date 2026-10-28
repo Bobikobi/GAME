@@ -1,0 +1,43 @@
+{
+  "$schema": "../../../../schema/json/resource.schema.json",
+  "format": 1,
+  "type": "resource",
+  "id": "ceosisrael/glade-figs",
+  "title": "Glade fig bushes",
+  "creator": "ceosisrael",
+  "ai_tools": [
+    "Claude (Anthropic)"
+  ],
+  "description": "Low fig bushes in the quiet glade by the meadow. Slow to fruit, but one fig fills you well.",
+  "items": [
+    {
+      "id": "ceosisrael/fig",
+      "name": "Glade fig",
+      "description": "Soft and honey-sweet. One fills you like a handful of berries.",
+      "kind": "food",
+      "rarity": "common",
+      "class": "plant",
+      "family": "fig",
+      "tier": 1,
+      "sprite": "core/base-kit:items/berry",
+      "weight": 2,
+      "food": {
+        "satiety": 10
+      }
+    }
+  ],
+  "node": {
+    "output": "ceosisrael/fig",
+    "yield": 2,
+    "active_ms": 3500,
+    "respawn_ms": 90000,
+    "count": 3,
+    "sprite": "core/base-kit:props/bush_berry",
+    "sprite_empty": "core/base-kit:props/bush_empty",
+    "level": 1,
+    "game": "pick",
+    "place": {
+      "slot": "core/west-glade"
+    }
+  }
+}
