@@ -70,7 +70,7 @@ The session that made a pull request merges it into `develop` once the owner has
 
 ## Releasing
 
-1. `develop` is green, and the owner has played its preview. The release's prep pull request into `develop` bumps `kernel/package.json`, writes the CHANGELOG entry and reruns `pnpm credits`: `main` takes no direct pushes, so no bot writes CREDITS.md there.
+1. `develop` is green, and the owner has played its preview. The release's prep pull request into `develop` bumps `kernel/package.json`, writes the CHANGELOG entry and reruns `pnpm credits` and `pnpm board --base origin/develop`: `main` takes no direct pushes, so no bot writes CREDITS.md there.
 2. The lead asks the owner for a yes, then merges `develop` into `main`.
 3. Vercel deploys `main`. The lead opens the live game and checks the opening.
 4. The release gets a tag, `v0.<stage>.<n>`, and a short note of what players will notice.
