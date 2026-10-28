@@ -14,7 +14,7 @@ type Offer = { item: string; price_mg: number };
 const names = (b: Bundle, offers: readonly Offer[]) =>
   shopGroups(b, offers, (o) => o.item).map((g) => [g.label, g.entries.map((o) => o.item)] as const);
 
-/** Keepers that are not in the content yet (the inn, the workshop stall): shops built from today's items plus a scrap and a bed-less inn. */
+/** A keeper that is not in the content yet (the workshop stall): a shop built from today's items plus a scrap. */
 function withKeepers(b: Bundle): Bundle {
   const recipe = Object.keys(b.recipes).sort()[0]!;
   const scrap = { ...b.items['core/berry']!, id: 'test/rope-scrap', name: 'How to twist rope', kind: 'fragment' as const, food: undefined, fragment: { unlocks: recipe } };
@@ -24,13 +24,6 @@ function withKeepers(b: Bundle): Bundle {
     items: { ...b.items, [scrap.id]: scrap },
     shops: {
       ...b.shops,
-      'test/inn': {
-        ...meta,
-        id: 'test/inn',
-        title: 'The inn',
-        buys: false,
-        sells: ['core/herb-tea', 'core/first-aid-kit', 'core/berry', 'core/berry-mash'].map((item) => ({ item, price_mg: 5000 })),
-      },
       'test/workshop': {
         ...meta,
         id: 'test/workshop',
@@ -41,19 +34,24 @@ function withKeepers(b: Bundle): Bundle {
     },
     npcs: {
       ...b.npcs,
-      'test/innkeeper': { ...b.npcs['core/trader']!, id: 'test/innkeeper', name: 'Wenna', shop: 'test/inn' },
       'test/workshop-keeper': { ...b.npcs['core/trader']!, id: 'test/workshop-keeper', name: 'Ketil', shop: 'test/workshop' },
     },
   };
 }
 
 describe('a shop in named groups (decision 51)', () => {
-  test("Pell's stall: the tools apart from the satchel, the food and the medicine, each group named", () => {
+  test("Pell's stall: the tools apart from the satchel, each group named; the food and the medicine are the inn's", () => {
     const groups = names(bundle, bundle.shops['core/trader-shop']!.sells);
-    expect(groups.map(([label]) => label)).toEqual(['Tools', 'To wear', 'Food and drink', 'Medicine']);
+    expect(groups.map(([label]) => label)).toEqual(['Tools', 'To wear']);
     expect(groups[0]![1]).toEqual(['core/basket', 'core/trowel', 'core/axe', 'core/walking-staff']);
     expect(groups[1]![1]).toEqual(['core/satchel']);
-    expect(groups[3]![1]).toEqual(['core/first-aid-kit']);
+  });
+
+  test("Wenna's counter: the food and the first-aid kit, in two groups", () => {
+    expect(names(bundle, bundle.shops['core/inn']!.sells)).toEqual([
+      ['Food and drink', ['core/berry', 'core/herb-tea', 'core/berry-mash']],
+      ['Medicine', ['core/first-aid-kit']],
+    ]);
   });
 
   test('every item lands in exactly one group, in the order of the counter', () => {
@@ -64,12 +62,8 @@ describe('a shop in named groups (decision 51)', () => {
     expect(groups.map((g) => order.indexOf(g.key))).toEqual([...groups.map((g) => order.indexOf(g.key))].sort((x, y) => x - y));
   });
 
-  test('a keeper added later is grouped with no code: the inn and the workshop stall', () => {
+  test('a keeper added later is grouped with no code: the workshop stall', () => {
     const b = withKeepers(bundle);
-    expect(names(b, b.shops['test/inn']!.sells)).toEqual([
-      ['Food and drink', ['core/herb-tea', 'core/berry', 'core/berry-mash']],
-      ['Medicine', ['core/first-aid-kit']],
-    ]);
     expect(names(b, b.shops['test/workshop']!.sells)).toEqual([['Recipes', ['test/rope-scrap']]]);
   });
 
