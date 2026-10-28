@@ -1,7 +1,7 @@
 /**
  * Proves the inn in a real browser, on a desktop first and on a phone: Wenna keeps the inn at the town's
  * edge, her counter sells the food and the first-aid kit (decision 32) and buys nothing back, her bed is
- * refused by day and taken from dusk, the night in it wakes the player at 05:00 fed in full (G16, G32),
+ * refused by day and taken from dusk, the night in it wakes the player at 05:00 with full health (G16, G32),
  * and Maru, home at dawn, is out on his round by mid-morning (decision 27). Every check waits on a
  * condition, never a fixed time.
  */
@@ -54,7 +54,6 @@ window.__inn = (() => {
       let t = s.tick - ((s.tick + q) % day) + Math.round((h / 24) * day);
       if (t < s.tick) t += day;
       s.tick = t;
-      s.state.player.satietyAt = Math.max(s.state.player.satietyAt, s.state.tick);
     },
     hour() {
       const s = g().session, day = g().bundle.params.day_length_ms;
@@ -86,12 +85,8 @@ window.__inn = (() => {
       g().world.bind(s);
       return at;
     },
-    hungry() {
-      const p = g().session.state.player;
-      p.satiety = 0;
-      p.satietyAt = g().session.tick;
-    },
-    satiety() { return g().session.state.player.satiety; },
+    hurt() { g().session.state.player.hp = 1000; },
+    hp() { return g().session.state.player.hp; },
     toasts() { return [...document.querySelectorAll('.toast')].map((e) => e.textContent).join(' | '); },
     dialog() { const d = document.querySelector('.dialog'); return d ? d.textContent : ''; },
     /** Where the Phaser scene draws a walking keeper (the 2D map's walkers). */
@@ -202,14 +197,14 @@ async function run(page: Page, url: string, viewport: Viewport, name: string): P
   log('the bed by day: refused');
   await sleep(400);
 
-  // the bed at dusk: a night in it, awake at 05:00, fed in full. On the way, Maru's hearth, lit while he is home
+  // the bed at dusk: a night in it, awake at 05:00, health in full. On the way, Maru's hearth, lit while he is home
   await page.eval('__inn.setHour(19.5)');
   await page.eval('__inn.toHearth()');
   await sleep(800);
   await shot('hearth');
   await page.eval('__inn.toInn()');
   await sleep(300);
-  await page.eval('__inn.hungry()');
+  await page.eval('__inn.hurt()');
   await page.eval(`void __game.ui.talk(${JSON.stringify(INN)})`);
   await choose(page, 'Sleep until dawn');
   await page.waitFor(`__inn.dialog().includes('You sleep')`, 'the night box', 5000);
@@ -217,10 +212,10 @@ async function run(page: Page, url: string, viewport: Viewport, name: string): P
   await clear(page);
   const hour = await page.eval<number>('__inn.hour()');
   if (hour < 5 || hour >= 5.5) throw new Error(`woke at ${hour.toFixed(2)}, not 05:00`);
-  const cap = await page.eval<number>('__inn.satiety()');
-  if (cap <= 0) throw new Error('slept hungry: satiety still 0');
+  const hp = await page.eval<number>('__inn.hp()');
+  if (hp <= 1000) throw new Error('slept hurt: health still 1000');
   await shot('dawn');
-  log(`slept: awake at ${hour.toFixed(2)}, fed to ${cap}`);
+  log(`slept: awake at ${hour.toFixed(2)}, health ${hp}`);
 
   // Maru sees the dawn in at home, and walks his round by mid-morning
   const home = await page.eval<string>(`__inn.home('core/elder')`);
