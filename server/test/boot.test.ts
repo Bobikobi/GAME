@@ -47,19 +47,39 @@ describe('the identity gate at boot', () => {
 describe('the session mode at boot (NEXT 18 e)', () => {
   const ready = {
     AUTH_MODE: 'session',
-    PUBLIC_ORIGIN: 'https://api.example.org',
-    APP_ORIGIN: 'https://play.example.org',
+    PUBLIC_ORIGIN: 'https://play.example.org',
     ALLOW_LOG_MAILER: 'staging-only',
     CLIENT_ADDRESS_HEADER: 'X-Real-IP',
   };
 
-  test('starts with the two origins, the log mailer by default, and Google closed without its pair', () => {
+  test('starts with one origin for the game and the API, the log mailer by default, and Google closed without its pair', () => {
     const auth = authFromEnv(ready);
     if (auth.mode !== 'session') throw new Error('expected the session mode');
-    expect(auth.session).toEqual({ publicOrigin: 'https://api.example.org', appOrigin: 'https://play.example.org', google: undefined, mailer: 'log', addressHeader: 'x-real-ip' });
+    expect(auth.session).toEqual({ publicOrigin: 'https://play.example.org', appOrigin: 'https://play.example.org', google: undefined, mailer: 'log', addressHeader: 'x-real-ip' });
     expect(auth.notice).toMatch(/session cookie/);
+    expect(auth.notice).toContain('the game beside it');
     expect(auth.notice).toContain('staging only');
     expect(auth.notice).not.toContain('Google');
+  });
+
+  test('the game is served beside the API: APP_ORIGIN is the public origin, and a second one is a loopback pair only (finding 4)', () => {
+    // set to the same origin, or left empty as compose passes it: both are the one origin
+    for (const same of [{ ...ready, APP_ORIGIN: ready.PUBLIC_ORIGIN }, { ...ready, APP_ORIGIN: '' }]) {
+      const auth = authFromEnv(same);
+      if (auth.mode !== 'session') throw new Error('expected the session mode');
+      expect(auth.session.appOrigin).toBe('https://play.example.org');
+    }
+    // the deployment the review found: the API on its own name, the game on another. The cookie never crosses.
+    expect(() => authFromEnv({ ...ready, APP_ORIGIN: 'https://api.example.org' })).toThrow(/APP_ORIGIN=https:\/\/api\.example\.org is not PUBLIC_ORIGIN/);
+    expect(() => authFromEnv({ ...ready, APP_ORIGIN: 'https://play.example.org:8443' })).toThrow(/APP_ORIGIN/);
+    // the laptop: the dev client on one loopback port, the API on another
+    const laptop = authFromEnv({ ...ready, PUBLIC_ORIGIN: 'http://localhost:8080', APP_ORIGIN: 'http://127.0.0.1:5173' });
+    if (laptop.mode !== 'session') throw new Error('expected the session mode');
+    expect(laptop.session.appOrigin).toBe('http://127.0.0.1:5173');
+    expect(laptop.notice).toContain('the game at http://127.0.0.1:5173');
+    // a loopback on one side only is not a pair
+    expect(() => authFromEnv({ ...ready, APP_ORIGIN: 'http://localhost:5173' })).toThrow(/APP_ORIGIN/);
+    expect(() => authFromEnv({ ...ready, PUBLIC_ORIGIN: 'http://localhost:8080', APP_ORIGIN: 'https://play.example.org' })).toThrow(/APP_ORIGIN/);
   });
 
   test('the log mailer starts only beside ALLOW_LOG_MAILER=staging-only: it writes live links to the log (finding 5)', () => {
@@ -94,10 +114,10 @@ describe('the session mode at boot (NEXT 18 e)', () => {
   });
 
   test('refuses a missing origin, a path, a trailing slash, and plain http off a loopback host', () => {
-    expect(() => authFromEnv({ AUTH_MODE: 'session', APP_ORIGIN: ready.APP_ORIGIN })).toThrow(/PUBLIC_ORIGIN/);
-    expect(() => authFromEnv({ AUTH_MODE: 'session', PUBLIC_ORIGIN: ready.PUBLIC_ORIGIN })).toThrow(/APP_ORIGIN/);
-    for (const bad of ['https://api.example.org/', 'https://api.example.org/auth', 'http://api.example.org', 'api.example.org', 'ftp://api.example.org']) {
+    expect(() => authFromEnv({ AUTH_MODE: 'session', APP_ORIGIN: ready.PUBLIC_ORIGIN })).toThrow(/PUBLIC_ORIGIN/);
+    for (const bad of ['https://play.example.org/', 'https://play.example.org/auth', 'http://play.example.org', 'play.example.org', 'ftp://play.example.org']) {
       expect(() => authFromEnv({ ...ready, PUBLIC_ORIGIN: bad }), bad).toThrow(BootError);
+      expect(() => authFromEnv({ ...ready, APP_ORIGIN: bad }), bad).toThrow(BootError);
     }
     for (const local of ['http://localhost:8080', 'http://127.0.0.1:8080']) {
       expect(authFromEnv({ ...ready, PUBLIC_ORIGIN: local }).mode, local).toBe('session');
@@ -159,7 +179,27 @@ describe('the nginx site file (the 27.10 review)', () => {
 
   test('the client address the API counts by is set by nginx, never passed through', () => {
     expect(conf).toContain('proxy_set_header X-Real-IP $remote_addr;');
-    // the headers sit on the server, so neither location may set its own and drop them
+    // the headers sit on the server, so no location may set its own and drop them
     for (const location of conf.matchAll(/location [^{]*\{([^}]*)\}/g)) expect(location[1]).not.toContain('proxy_set_header');
+  });
+
+  test('one name serves the game as files and the API by its exact paths, so the session cookie never crosses an origin (finding 4)', () => {
+    const blocks = new Map([...conf.matchAll(/location (=? ?\S+) \{([^}]*)\}/g)].map((hit) => [(hit[1] ?? '').replace(/\s+/g, ' '), hit[2] ?? '']));
+    // the game's build is the root: index.html at /, the hashed files under /assets/
+    expect(conf).toMatch(/^\s+root \S+;/m);
+    expect(conf).toMatch(/^\s+index index\.html;/m);
+    const game = blocks.get('/') ?? '';
+    expect(game).toMatch(/try_files \$uri /);
+    expect(game).not.toContain('proxy_pass');
+    expect(game).toMatch(/add_header Cache-Control "no-cache"/);
+    expect(blocks.get('/assets/') ?? '').toMatch(/add_header Cache-Control "public, max-age=\d+, immutable"/);
+    // the API answers these five and nothing else (api.ts): each is an exact location, so /state.html is a file, not the API
+    for (const path of ['/session', '/state', '/action', '/moves']) {
+      expect(blocks.get(`= ${path}`), path).toMatch(/^\s*proxy_pass http:\/\/127\.0\.0\.1:\d+;\s*$/);
+    }
+    expect(auth).toMatch(/proxy_pass http:\/\/127\.0\.0\.1:\d+;/);
+    expect(blocks.get('= /health')).toMatch(/return 404;/);
+    // the proxied paths are the API's own: nothing of the game's static build is under them
+    expect(conf).not.toMatch(/location \/ \{[^}]*proxy_pass/);
   });
 });
