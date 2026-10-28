@@ -8,7 +8,7 @@ import type { RestoreDef } from '@game/kernel';
 
 export const STONE_RESTORE = 'core/old-bridge';
 export const STONE_SPEAKER = 'The stone';
-/** Seconds the camera takes to come down to the stone, and how many whole camera steps (view.ts) closer than the screen's own it holds (frame hook-2-stop-close: zoom 3 against 2 on a phone, 1.5 times closer; k to k+1 is the same at k = 2). */
+/** Seconds the camera takes to come down to the stone, and how many whole camera steps (view.ts) closer than the world's own it holds (frame hook-2-stop-close was one step over the old view; the world itself came closer on 25.10, so the hold is one step over that: 16 against 12 on a 3x phone, 12 against 8 on a desktop). */
 export const STONE_GLIDE_MS = 1200;
 export const STONE_STEPS = 1;
 
