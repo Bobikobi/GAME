@@ -7,7 +7,7 @@ import { afterAll, describe, expect, test } from 'vitest';
 
 import {
   CLIP_TOKENS, KAGGLE_DEFAULTS, KAGGLE_NEGATIVE, KAGGLE_POST_SCALE, KAGGLE_RECIPES, KAGGLE_RECIPE_NAMES, KAGGLE_WAVE_MARK, LOCAL_DEFAULTS, LOCAL_NEGATIVE, clipTokenEstimate, drawWaveWithKaggle, drawWithGemini, drawWithKaggle, drawWithLocal, geminiAnswer, geminiRequest,
-  kaggleCanvas, kaggleCanvasFor, kaggleFileName, kaggleFromPrompt, kaggleSentencePrompt, kaggleInferenceSteps, kagglePrompt, kaggleSubject, pngSize, sdClause, kaggleKernelScript, kaggleManifest, kaggleMetadata, kaggleOwner, kagglePushAnswer, kaggleSettings, kaggleStatus, kaggleWave,
+  kaggleCanvas, kaggleCanvasFor, shapeOf, kaggleFileName, kaggleFromPrompt, kaggleSentencePrompt, kaggleInferenceSteps, kagglePrompt, kaggleSubject, pngSize, sdClause, kaggleKernelScript, kaggleManifest, kaggleMetadata, kaggleOwner, kagglePushAnswer, kaggleSettings, kaggleStatus, kaggleWave,
   localHistory, localPrompt, localSettings, localWorkflow, parseDrawer, promptForModel, splitWave,
 } from '../src/kit/drawers.js';
 
@@ -454,6 +454,28 @@ describe('the long-prompt recipes (qwen, flux)', () => {
     const long = kaggleSentencePrompt({ ref: 'props/x', what: 'barrel', detail: Array.from({ length: 30 }, (_, i) => `hoop number ${i} with rivets`).join(', ') });
     expect(long).toContain('hoop number 29 with rivets');
     expect(clipTokenEstimate(long)).toBeGreaterThan(CLIP_TOKENS);
+  });
+
+  test('the asked size sets the shape words in both prompt builders (27.10): tall and wide above 1.3, a square says nothing', () => {
+    expect(shapeOf({ width: 192, height: 320 })).toBe('tall');
+    expect(shapeOf({ width: 128, height: 64 })).toBe('wide');
+    expect(shapeOf({ width: 64, height: 64 })).toBeNull();
+    // 1.3 itself is not past the line; 5:4 is not told a shape, 4:3 is
+    expect(shapeOf({ width: 100, height: 130 })).toBeNull();
+    expect(shapeOf({ width: 100, height: 131 })).toBe('tall');
+    expect(shapeOf({ width: 120, height: 96 })).toBeNull();
+    expect(shapeOf({ width: 128, height: 96 })).toBe('wide');
+    expect(shapeOf({})).toBeNull();
+    const house = { ref: 'props/house_small', what: 'small village cottage with a red tiled roof', detail: 'a steep roof of red clay tiles, a wooden door' };
+    expect(kaggleSentencePrompt({ ...house, width: 192, height: 320 })).toContain('Alone and centred, filling most of the picture, tall and narrow, filling the height of the picture, top-down three-quarter view.');
+    expect(kaggleSentencePrompt({ ...house, width: 128, height: 64 })).toContain('wide and low, filling the width of the picture');
+    expect(kaggleSentencePrompt({ ...house, width: 64, height: 64 })).toBe(kaggleSentencePrompt(house));
+    expect(kagglePrompt({ ...house, width: 192, height: 320 }, 'qwen')).toBe(kaggleSentencePrompt({ ...house, width: 192, height: 320 }));
+    const tree = kagglePrompt({ ref: 'props/tree_oak', what: 'oak tree', width: 192, height: 320 }, 'sd15');
+    expect(tree).toContain('game sprite, top-down three-quarter view, tall, narrow, oak tree');
+    expect(kagglePrompt({ ref: 'props/rubble', what: 'rubble', width: 128, height: 64 }, 'sd15')).toContain('wide, low');
+    expect(kagglePrompt({ ref: 'props/x', what: 'barrel', width: 64, height: 64 }, 'sd15')).not.toMatch(/tall|wide/u);
+    expect(clipTokenEstimate(tree)).toBeLessThanOrEqual(CLIP_TOKENS);
   });
 
   test('the wave carries the recipe and each request its art grid; the kernel has both paths and the post-process', () => {

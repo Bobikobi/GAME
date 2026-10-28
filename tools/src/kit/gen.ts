@@ -740,13 +740,14 @@ function escapeHtml(text: string): string {
 }
 
 /**
- * The latest image of each name beside its reference. CSS pixels are device pixels on a desktop
+ * Every draw of the run beside its reference, a name's draws together (a wave draws an entry on more than one recipe
+ * and seed, and a run folder keeps its rounds). CSS pixels are device pixels on a desktop
  * screen, so the reference at 6 per art pixel and the result at 3 are both their size on a 3x phone.
  */
 export function galleryHtml(lines: readonly ManifestLine[]): string {
-  const latest = new Map<string, ManifestLine>();
-  for (const line of lines) latest.set(line.name, line);
-  const rows = [...latest.values()].map((line) => {
+  const byName = new Map<string, ManifestLine[]>();
+  for (const line of lines) byName.set(line.name, [...(byName.get(line.name) ?? []), line]);
+  const rows = [...byName.values()].flatMap((draws) => draws.map((line, at) => ({ line, at, of: draws.length }))).map(({ line, at, of }) => {
     const refImg = `<img src="ref/${line.name}-1x.png" alt="" style="width:${line.refSize[0] * 6}px">`;
     const result = line.out === null
       ? `<p class="bad">${escapeHtml(line.error ?? 'not generated yet')}</p>`
@@ -762,7 +763,8 @@ export function galleryHtml(lines: readonly ManifestLine[]): string {
     ].filter((fact) => fact !== null).join(' · ');
     const warnings = line.warnings.map((w) => `<p class="warn">${escapeHtml(w)}</p>`).join('');
     const raw = line.raw === null ? '' : line.raw.endsWith('.txt') ? `<a href="${line.raw}">letters</a>` : `<a href="${line.raw}"><img class="raw" src="${line.raw}" alt="raw"></a>`;
-    return `<section><h2>${escapeHtml(line.name)}</h2><p>${escapeHtml(facts)}</p>${warnings}<div class="row">${refImg}${result}${raw}</div></section>`;
+    const title = of === 1 ? line.name : `${line.name} (${at + 1} of ${of}, ${line.at})`;
+    return `<section><h2>${escapeHtml(title)}</h2><p>${escapeHtml(facts)}</p>${warnings}<div class="row">${refImg}${result}${raw}</div></section>`;
   });
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>kit:gen gallery</title>
