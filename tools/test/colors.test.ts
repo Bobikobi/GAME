@@ -39,12 +39,16 @@ describe('the colours today art carries', () => {
     for (const set of colors.values()) expect(set.size).toBeGreaterThan(0);
   });
 
-  test('tile colours are counted per sprite, and none of today is at 64 px', () => {
+  test('tile colours are counted per sprite, and only the floor of the shop room is at 64 px', () => {
     const a = assembled();
     const tiles = tileColorCounts(a);
     expect(tiles.length).toBeGreaterThan(0);
     expect(tiles.every((t) => t.colors >= 1)).toBe(true);
-    expect(tiles.filter((t) => t.density === 4)).toEqual([]);
+    expect(tiles.filter((t) => t.density === 4).map((t) => t.ref)).toEqual([
+      'core/base-kit:tiles/planks',
+      'core/base-kit:tiles/planks_1',
+      'core/base-kit:tiles/planks_2',
+    ]);
   });
 
   test('a phone window counts the colours its ground and props carry together', () => {
