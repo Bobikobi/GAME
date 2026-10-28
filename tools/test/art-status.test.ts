@@ -5,7 +5,8 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, describe, expect, test } from 'vitest';
 
-import { POOLS, POOL_DIR, STATUSES, type PoolEntry, artStatus, formatStatus, loadEvidence, parsePool, readPool, statusCli } from '../src/art/status.js';
+import { type Draft, gpuSecondsSince } from '../src/art/drafts.js';
+import { DRAFTS_INDEX, POOLS, POOL_DIR, STATUSES, type PoolEntry, artStatus, draftsOf, formatStatus, loadEvidence, parsePool, readPool, statusCli } from '../src/art/status.js';
 import { parseSpec } from '../src/kit/gen.js';
 import { SIXTEEN_PX_LEFT } from '../src/kit/rich.js';
 
@@ -113,7 +114,22 @@ describe('a pool entry', () => {
   });
 });
 
-/** A repository root with one entry of each status, a run folder and a picks manifest. */
+/** The Monday the fixture's meter is read at; its drafts are dated in the days before. */
+const NOW = new Date('2026-10-28T12:00:00Z');
+
+/** An index line for a draft of `name`; the id is the first 16 hex of the raw hash, as `parseIndex` checks. */
+const idOf = (n: number): string => n.toString(16).padStart(16, '0');
+
+function draftLine(name: string, n: number, extra: Partial<Draft> = {}): object {
+  const sha = idOf(n).repeat(4);
+  return {
+    id: idOf(n), pool: null, name, spec: null, round: null, route: 'kaggle', recipe: 'qwen', model: null, model_version: null, seed: 1, denoise: 1,
+    canvas: null, asked: null, ramps: null, prompt: null, negative: null, warnings: [], errors: [], run: null,
+    files: { raw: { sha256: sha, bytes: 1 }, full: null, imported: null }, stored: null, review: 'unreviewed', at: '2026-10-27T10:00:00.000Z', sources: [], ...extra,
+  };
+}
+
+/** A repository root with one entry of each status, a drafts index and a picks manifest. */
 function fixture(): string {
   const dir = mkdtempSync(join(scratch, 'root-'));
   const write = (path: string, text: string): void => {
@@ -165,11 +181,20 @@ function fixture(): string {
     JSON.stringify({ sprite: 'props/retired_imported', picked: 'the owner, by eye' }),
     '',
   ].join('\n'));
-  write('.scratch/kit-gen/run-1/manifest.jsonl', [
-    JSON.stringify({ name: 'drafted_one', ref: 'props/drafted_one', out: 'out/drafted_one.png', error: null }),
-    JSON.stringify({ name: 'failed_draft', ref: 'props/failed_draft', out: null, error: 'the kaggle run did not finish' }),
-    '{"name": "half a lin',
-  ].join('\n'));
+  const run = (id: string, seconds: number): Pick<Draft, 'run'> => ({ run: { id, gpu_seconds: seconds } });
+  write(DRAFTS_INDEX, [
+    // drafted_one: two draws of one kernel run (600 s), one of them sent back for another round by an amendment line
+    draftLine('drafted_one', 1, run('run-a', 600)),
+    draftLine('drafted_one', 2, run('run-a', 600)),
+    { id: idOf(2), amend: true, review: 'rework', review_by: 'owner', review_note: 'darker' },
+    // failed_draft: its only draw was a wrong object, archived, so the entry is still missing
+    draftLine('failed_draft', 3, run('run-b', 300)),
+    { id: idOf(3), amend: true, review: 'archive', looks_like: 'a cutting board' },
+    // a draft of a name in no pool, a run too old for the meter, and a props draft of a name the ground pool also has
+    draftLine('nowhere', 4, run('run-c', 120)),
+    draftLine('nowhere', 5, { ...run('run-old', 9000), at: '2026-10-01T10:00:00.000Z' }),
+    draftLine('moss', 6, { pool: 'props' }),
+  ].map((l) => JSON.stringify(l)).join('\n'));
   return dir;
 }
 
@@ -191,9 +216,18 @@ describe('the status', () => {
     expect(statusOf('wrong_cite')).toBe('picked');
   });
 
-  test('a failed draft is no draft, and a pick line without a pick is no pick', () => {
+  test('an archived draw is no draft, and a pick line without a pick is no pick', () => {
     expect(statusOf('failed_draft')).toBe('missing');
-    expect(loadEvidence(dir).drafts.size).toBe(1);
+    expect(loadEvidence(dir).drafts).toHaveLength(6);
+  });
+
+  test('a draft that names a pool counts only in that pool', () => {
+    const evidence = loadEvidence(dir);
+    const moss = readPool('ground', dir).find((e) => e.name === 'moss');
+    if (moss === undefined) throw new Error('no moss in the fixture');
+    expect(draftsOf(moss, 'ground', evidence)).toEqual([]);
+    expect(draftsOf(moss, 'props', evidence)).toHaveLength(1);
+    expect(artStatus(dir, { now: NOW }).pools.find((p) => p.pool === 'ground')?.counts.drafted).toBe(0);
   });
 
   test('retired wins over every other file', () => {
@@ -211,6 +245,22 @@ describe('the status', () => {
     expect(props(artStatus(dir, { next: 2 }))?.next.map((e) => e.name)).toEqual(['missing_b', 'missing_a']);
   });
 
+  test('the drafts of a pool are counted by review state, archived ones included', () => {
+    expect(props()?.reviews).toEqual({ unreviewed: 1, keep: 0, 'reuse-parts': 0, rework: 1, archive: 1 });
+    expect(artStatus(dir, { now: NOW }).pools.find((p) => p.pool === 'ground')?.reviews).toEqual({ unreviewed: 0, keep: 0, 'reuse-parts': 0, rework: 0, archive: 0 });
+  });
+
+  test('the GPU meter counts each kernel run once, and only the last seven days', () => {
+    const status = artStatus(dir, { now: NOW });
+    // run-a 600 s (two draws), run-b 300 s, run-c 120 s = 1020 s = 17 min; run-old is 27 days back; the sum per draft would be 27 min
+    expect(status.gpu_minutes_week).toBe(17);
+    expect(status.gpu_runs_week).toBe(3);
+    expect(artStatus(dir, { now: new Date('2026-11-03T10:00:00Z') }).gpu_minutes_week).toBe(17);
+    // a draft dated after `now` is not in the week, and a week that has moved on forgets the runs
+    expect(artStatus(dir, { now: new Date('2026-10-27T09:00:00Z') }).gpu_minutes_week).toBe(0);
+    expect(artStatus(dir, { now: new Date('2026-11-04T12:00:00Z') }).gpu_minutes_week).toBe(0);
+  });
+
   test('the cast is tracked only: counted, never listed as next', () => {
     const cast = artStatus(dir).pools.find((p) => p.pool === 'cast');
     expect(cast?.counts.missing).toBe(1);
@@ -218,7 +268,7 @@ describe('the status', () => {
   });
 
   test('the text report', () => {
-    expect(formatStatus(artStatus(dir))).toBe([
+    expect(formatStatus(artStatus(dir, { now: NOW }))).toBe([
       'art pools',
       'ground    1 entries: 1 missing, 0 drafted, 0 picked, 0 imported, 0 retired',
       'trees     1 entries: 1 missing, 0 drafted, 0 picked, 0 imported, 0 retired',
@@ -229,8 +279,9 @@ describe('the status', () => {
       'blocked (missing or drafted entries held by an open call):',
       '  #328 open 4: trees 1, props 1',
       '',
-      'gpu minutes this week: not tracked yet (the meter is the drafts index, wave 3)',
-      'drafts: read from 1 run folder (.scratch/kit-gen/*/manifest.jsonl)',
+      'gpu minutes, last 7 days: 17 from 3 kernel runs, each run counted once',
+      "drafts: 6 in the index (tools/kit-gen/drafts.jsonl); of the pools' entries:",
+      '  props   1 unreviewed, 1 rework, 1 archive',
       '',
       'next missing, in rank order, 5 a pool (the cast is tracked only):',
       '  ground  moss          64x64    row 4',
@@ -244,23 +295,26 @@ describe('the status', () => {
     ].join('\n'));
   });
 
-  test('with no run folder the report says a draft cannot be known', () => {
+  test('with no drafts index the report says a draft cannot be known', () => {
     const bare = fixture();
-    rmSync(join(bare, '.scratch'), { recursive: true });
-    const status = artStatus(bare);
-    expect(status.drafts).toEqual({ source: '.scratch/kit-gen/*/manifest.jsonl', run_folders: 0, known: false });
+    rmSync(join(bare, DRAFTS_INDEX));
+    const status = artStatus(bare, { now: NOW });
+    expect(status.drafts).toEqual({ source: DRAFTS_INDEX, count: 0, known: false });
+    expect(status.gpu_minutes_week).toBeNull();
     expect(formatStatus(status)).toContain('so a draft cannot be known');
+    expect(formatStatus(status)).toContain('gpu minutes, last 7 days: not known');
     expect(props(status)?.counts.drafted).toBe(0);
   });
 
   test('--json has the shape a tool reads', () => {
-    const json = JSON.parse(statusCli(['--json', '--next', '1'], dir)) as ReturnType<typeof artStatus>;
-    expect(Object.keys(json)).toEqual(['pools', 'next_per_pool', 'gpu_minutes_week', 'drafts']);
+    const json = JSON.parse(statusCli(['--json', '--next', '1'], dir, NOW)) as ReturnType<typeof artStatus>;
+    expect(Object.keys(json)).toEqual(['pools', 'next_per_pool', 'gpu_minutes_week', 'gpu_runs_week', 'drafts']);
     expect(json.pools.map((p) => p.pool)).toEqual([...POOLS]);
-    expect(json.gpu_minutes_week).toBeNull();
+    expect(json.gpu_minutes_week).toBe(17);
+    expect(json.drafts).toEqual({ source: DRAFTS_INDEX, count: 6, known: true });
     expect(json.next_per_pool).toBe(1);
     for (const p of json.pools) {
-      expect(Object.keys(p)).toEqual(['pool', 'total', 'counts', 'blocked', 'next', 'entries']);
+      expect(Object.keys(p)).toEqual(['pool', 'total', 'counts', 'blocked', 'reviews', 'next', 'entries']);
       expect(Object.keys(p.counts)).toEqual([...STATUSES]);
       expect(p.entries).toHaveLength(p.total);
     }
@@ -269,7 +323,7 @@ describe('the status', () => {
   });
 
   test('the same files give the same report twice, and a bad argument stops', () => {
-    expect(statusCli([], dir)).toBe(statusCli([], dir));
+    expect(statusCli([], dir, NOW)).toBe(statusCli([], dir, NOW));
     expect(() => statusCli(['--next', 'x'], dir)).toThrow(/--next/);
     expect(() => statusCli(['--wave'], dir)).toThrow(/Usage/);
   });
@@ -281,5 +335,20 @@ describe('the real repository', () => {
     for (const p of status.pools) expect(Object.values(p.counts).reduce((a, b) => a + b, 0)).toBe(p.total);
     const items = status.pools.find((p) => p.pool === 'items');
     expect(items?.counts.imported).toBe(items?.total);
+  });
+
+  test('the backfilled drafts read as drafted, and the meter counts each kernel run once', () => {
+    const now = new Date('2026-10-28T20:00:00Z');
+    const status = artStatus(root, { now });
+    expect(status.drafts.known).toBe(true);
+    expect(status.pools.reduce((n, p) => n + p.counts.drafted, 0)).toBeGreaterThan(0);
+    const drafts = loadEvidence(root).drafts.filter((d) => d.at !== null && Date.parse(d.at) <= now.getTime());
+    const since = new Date(now.getTime() - 7 * 86_400_000);
+    const perDraft = drafts.filter((d) => d.at !== null && Date.parse(d.at) >= since.getTime()).reduce((n, d) => n + (d.run?.gpu_seconds ?? 0), 0);
+    // the 27.10 index: 32 kernel runs in the week; adding the seconds draft by draft would say 2332.7 minutes
+    expect(status.gpu_runs_week).toBe(32);
+    expect(status.gpu_minutes_week).toBe(198.2);
+    expect(perDraft / 60).toBeGreaterThan(2300);
+    expect(gpuSecondsSince(drafts, since) / 60).toBeCloseTo(198.2, 1);
   });
 });
