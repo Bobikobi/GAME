@@ -238,13 +238,7 @@ Add `content/extensions/<your-handle>/profile.json` so signs and the Creators me
 
 ## Creator points and hours
 
-The Creators menu shows points, records and commits for accepted content (`.github/points.json` holds the weights). `content/board.json` is rebuilt from the repository's Git history, on a branch as `develop` will have it once the pull request lands as one commit:
-
-```bash
-git fetch origin && pnpm board --base origin/develop
-```
-
-Run it from a full Git clone, after merging `develop`, and commit the file. CI compares it with the board the merged history gives and refuses a stale copy or a number written by hand; do not edit it.
+The Creators menu shows points, records and commits for accepted content (`.github/points.json` holds the weights). `content/board.json` is rebuilt from the repository's Git history by each release, so your points appear with the first release after your pull request lands. Leave the file alone: CI refuses a pull request that changes it to anything but what the merged history gives.
 
 ## Your own art (optional)
 
