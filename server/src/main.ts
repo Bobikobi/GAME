@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs';
 import { Pool } from 'pg';
 import type { Bundle } from '@game/kernel';
 
-import { authFromEnv, BootError, createGameApi, CLOSED_ACCOUNT_GRACE_MS, createPgAuthStore, createPgStore, createSignIn, googleProvider, listen, logMailer, resendMailer, SIGN_IN_SWEEP_MS, type ApiOptions, type Auth } from './index';
+import { authFromEnv, BootError, createGameApi, loadCountryDb, CLOSED_ACCOUNT_GRACE_MS, createPgAuthStore, createPgStore, createSignIn, googleProvider, listen, logMailer, resendMailer, SIGN_IN_SWEEP_MS, type ApiOptions, type Auth } from './index';
 import { databaseUrl, migrate } from './migrate';
 
 // the identity gate comes first: a refusal here has touched nothing
@@ -23,6 +23,17 @@ try {
   process.exit(1);
 }
 console.warn(auth.notice);
+
+// a country file that does not open stops the boot, like a bad variable: a server that silently lost it would hold every sign-up to the highest age
+function countryLookupFrom(path: string) {
+  try {
+    return loadCountryDb(path);
+  } catch (error) {
+    console.error(`openfold api refuses to start: COUNTRY_DB=${path} does not open as a country database (${error instanceof Error ? error.message : String(error)})`);
+    process.exit(1);
+  }
+}
+const countryLookup = auth.mode === 'session' && auth.session.countryDb ? countryLookupFrom(auth.session.countryDb) : undefined;
 
 function bundleFrom(path: string): Bundle {
   const text = readFileSync(path, 'utf8');
@@ -49,6 +60,7 @@ function identity(chosen: Auth): Pick<ApiOptions, 'resolvePlayerId' | 'signIn' |
     publicOrigin: chosen.session.publicOrigin,
     appOrigin: chosen.session.appOrigin,
     countryHeader: chosen.session.countryHeader,
+    countryLookup,
     addressHeader: chosen.session.addressHeader,
   });
   // the expired flows, links, tickets and sessions go on a timer, never on a player's request: a database
