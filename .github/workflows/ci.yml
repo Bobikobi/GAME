@@ -69,6 +69,21 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
 
+      # the creators board a branch commits (`pnpm board --base origin/develop`) must be the one develop gets when
+      # the pull request lands as one commit: a stale copy or a number written by hand fails here, before it reaches
+      # the site. HEAD^1 is the base (above). A release into main is not checked: the board follows develop.
+      # a pull request that leaves the board alone passes; one that changes it must carry exactly the board the
+      # merged history gives. The release's prep pull request regenerates it (WORKFLOW.md, Releasing), so a branch
+      # never has to chase develop's commit count.
+      - name: The creators board equals the merged history
+        if: github.event_name == 'pull_request' && github.base_ref == 'develop'
+        run: |
+          if git diff --quiet HEAD^1 HEAD -- content/board.json; then
+            echo "content/board.json is unchanged: nothing to verify"
+          else
+            pnpm board --verify --base HEAD^1
+          fi
+
       # the same report a creator gets from `pnpm check`, also shown on the run's summary page
       - name: Content check
         run: |
