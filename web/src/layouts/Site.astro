@@ -12,7 +12,7 @@ interface Props {
   jsonld?: object[];
 }
 const { title, description, section, jsonld = [] } = Astro.props;
-const site = Astro.site ?? new URL('https://theopenfold.vercel.app');
+const site = Astro.site ?? new URL('https://loomvale.vercel.app');
 const canonical = new URL(Astro.url.pathname, site).href;
 // a card is a look the owner picks: the tags point at it only when the file is in web/public/og/
 const card = Object.keys(import.meta.glob('../../public/og/card.png')).length > 0 ? new URL('/og/card.png', site).href : undefined;

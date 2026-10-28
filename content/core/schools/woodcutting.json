@@ -8,6 +8,7 @@
   "school": {
     "name": "Woodcutting",
     "profession": "core/woodcutting",
+    "tint": "wood",
     "nodes": [
       {
         "id": "sure-swing",

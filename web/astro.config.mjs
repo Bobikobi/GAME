@@ -9,7 +9,7 @@ const host = process.env['VERCEL_PROJECT_PRODUCTION_URL'];
 
 export default defineConfig({
   // canonical links, Open Graph addresses and the sitemap need an address even off Vercel: the production one
-  site: host ? `https://${host}` : 'https://theopenfold.vercel.app',
+  site: host ? `https://${host}` : 'https://loomvale.vercel.app',
   output: 'static',
   // the four /api/s1/ routes opt out of prerendering; every other page stays a file (GRUNT item 17)
   adapter: vercel(),

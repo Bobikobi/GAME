@@ -17,7 +17,7 @@ Written 2026-10-11 when the first round of sessions closed. Each section is the 
   - Before ready, a bug-only review of the diff from Codex (`codex exec --sandbox read-only --skip-git-repo-check "..." < /dev/null`) and Gemini (`ask-agy`; an empty answer is a blocked tool, not a reply), each claim checked against the build. Web lookups go to `ask-agy`.
   - The pull request body names what went to Codex or Gemini and how many corrections it needed.
   - Keep `STATE.md` in the session scratchpad, updated at each step.
-- Generated files (`schema/json`, `content/values.lock.json`, `CREDITS.md`, `content/board.json`) are taken from `develop` and regenerated (`pnpm schemas`, `pnpm values`, `pnpm credits`, `pnpm board`), never merged by hand. GitHub ignores the union merge of `DECISIONS.md`: resolve it locally and keep both sides.
+- Generated files (`schema/json`, `content/values.lock.json`, `CREDITS.md`, `content/board.json`) are taken from `develop` and regenerated (`pnpm schemas`, `pnpm values`; `CREDITS.md` and `content/board.json` only in a release's prep pull request, with `pnpm credits` and `pnpm board --base origin/develop`), never merged by hand; CI refuses a board changed to anything but what the merged history gives. GitHub ignores the union merge of `DECISIONS.md`: resolve it locally and keep both sides.
 - Toolchain: node 24 from nvm on the PATH, then `pnpm install --frozen-lockfile` in each new worktree.
 - Houses and plots are paused (DECISIONS 2026-10-10): build nothing toward them. A direction (art style, camera, look of a character, UI frame) goes to the owner as two or three phone-size stills first; a detail inside an agreed direction is polish.
 - At the end: the pull request is landed or handed back with its state, `STATE.md` is turned into a short note under the stream here if work is left, and the session stops.
@@ -509,11 +509,11 @@ f) **Luck and the ledger on the server** (`feat/server-luck`). The draws `draw(s
 g) **The simulated player in CI and the verified boards** (`feat/server-sim`). A script plays a starter's whole opening, the first expedition and the first sale through the real server in CI (against the service container), and the run must reach the same state as `replay` on the laptop. The boards read only the verified log: a score that did not replay is not posted.
 h) **Provisioning and cutover** (docs plus the owner's gates; the builder prepares everything and executes nothing alone). `deploy/RUNBOOK.md` is the runbook, with a gate per step; each is three lines to the owner first:
    1. Read-only inventory of the box (containers, ports, nginx sites, disk, RAM) written into the runbook.
-   2. A new nginx site file for the game's name only, `nginx -t` first, reload only after the test; the other product's sites are not edited. The hostname and its DNS record are the owner's to choose and add.
+   2. A new nginx site file for the game's name only, `nginx -t` first, reload only after the test; the other product's sites are not edited. The hostname and its DNS record are the owner's to choose and add. The same file serves the game's build as files at the root of that name and proxies the API's paths, so the game and its API are one origin (DECISIONS 2026-10-27, "One origin"); the site's `/play/` stays the demo.
    3. The two containers with their caps and their own database user; the database is not reachable from outside the box.
    4. The nightly backup off the box with a restore test run once on a scratch database.
    5. The OAuth apps' redirect addresses and the mail sender.
-   6. The cutover: a build whose client points at the new host, behind a flag, tried by the owner on the preview first.
+   6. The cutover: the build on the box names its own origin (`VITE_GAME_SERVER` set and empty), so the flag is the site's door pointing at the name, tried by the owner on the preview first.
 
 - Before every proving run (AGENTS.md): grep the tests for every string the change renamed, fix them in one pass, then the single test file, then `pnpm verify`, and push: CI runs the opening e2e. A local e2e only to debug a red run, one heavy job at a time on a shared machine.
 - Measurable at the end:
@@ -524,6 +524,7 @@ h) **Provisioning and cutover** (docs plus the owner's gates; the builder prepar
   - A memory cap shows in `docker stats` for both game containers and the other product's containers are untouched (their image ids and uptimes unchanged).
   - With the wire cut for 10 s the client takes no input and, once back, the state equals the server's.
   - The sign-up asks for a name, a full date of birth and the one-account agreement, and refuses a player under 13 or under the country's higher age (DECISIONS 2026-10-21, the age-gate entry).
+  - The sign-in e2e (`game/e2e/signin.ts`, group `map-and-shops`) drives the real `createSignIn` on one origin in headless Chrome (`game/test/signin-box.ts`): the email link page's own POST is accepted, its 303 reaches the game's `#signin=signup`, the game's `GET /state` and `POST /action` carry the session cookie, and the same token posted from another origin is refused with the link unspent (DECISIONS 2026-10-27).
 - For the owner: the wording of the sign-up and the pause box; whether the pause on a dropped line feels too sharp on a real phone; and the three-line gates, which he answers one by one.
 
 ## 19. The first map by hand, and a generator that sets the difficulty
@@ -691,3 +692,27 @@ Measurable:
 1. Per kind, the opaque height in tiles against the character (1.5 tiles) is in the pull request and inside its STYLE 1b row.
 2. Phone stills at the closer camera of the opening's wake window and the bridge, with no wake tile, pickup or task prop covered over more than half its area (STYLE 1b's wave measure).
 3. `pnpm check` (the kit's density and size check) and `pnpm verify` exit 0.
+
+## townsperson-who-plays. A townsperson who lives the valley the way a player does
+
+Status: paused - the owner's idea of 27.10, waits for v0.1.10, the newcomer guide (docs/creators, a townsperson first) and the owner's pick of the first version below
+
+The owner asked (27.10) for an NPC that works like a player, a bot. Today every townsperson stands in a slot and talks; nobody else picks, chops, cooks or sells, so the valley is empty between the player's own actions until live presence (ROADMAP stage 7) brings other players.
+
+What the big games do, and where each fits here:
+- A day routine (Stardew Valley's villagers, Animal Crossing): a named character walks between places by the clock and does visible work. Fully single-player, no server. Fits now.
+- Ghosts of real players (Dark Souls' phantoms, Trackmania's ghosts, Death Stranding's shared structures): a recorded run of another player replayed in your world. The kernel is deterministic and replayable, so a run is its inputs; storing and serving them needs accounts and the server (stage 2a). Fits after the server.
+- Bots that pass for real players (some mobile games fill empty lobbies this way): players feel cheated when they find out. Not here, at any stage.
+
+The recommended first version is the day routine, as a creator-made kind, so a newcomer's townsperson can later get a day of their own:
+a) A townsperson file may carry a routine: by hour, a slot to walk to and an action there (pick, chop, dig, cook at the fire, sell at the stall, rest). The kernel moves them on the walk rules and runs the action on the same timers and yields as the player's (one pure step, integers only, the seed decides the rest).
+b) Fairness: what they take comes off the world the player shares, so a routine never empties a resource the player's open task needs and never stands on a tile a task names; the check refuses a routine that does.
+c) Honesty: they are named, sign their work like any creator content, and never pass for a player; the dialogue tiers still apply when the player walks up to them.
+d) The same routine runs headless as a playtest: a night run of the bot through a day of the valley, in CI, is the cheapest proof that the world still works end to end.
+
+Measurable (first version):
+1. One core townsperson walks a day of at least four stops and is seen at each at its hour, in a phone still per stop.
+2. Over a full day the player's open tasks never fail for a resource the townsperson took (a kernel test over every core task).
+3. `pnpm check` refuses a routine that names a missing slot or takes from a task's resource; `pnpm verify` exit 0.
+
+Not here: ghosts of real players (after the server), chat, combat, houses (paused, DECISIONS 2026-10-10).

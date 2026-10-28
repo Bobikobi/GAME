@@ -3513,11 +3513,11 @@
       {
         "id": "core/bank-herbs",
         "kind": "resource",
-        "x": 4,
-        "y": 19,
-        "w": 2,
-        "h": 2,
-        "tag": "meadow"
+        "x": 10,
+        "y": 20,
+        "w": 1,
+        "h": 1,
+        "tag": "riverbank"
       },
       {
         "id": "core/slid-bank",

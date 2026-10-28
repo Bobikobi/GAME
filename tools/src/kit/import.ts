@@ -123,6 +123,27 @@ const TIGHT_MARGIN = 8;
 const OPENING_SHARE = 0.9;
 
 /**
+ * A glow: a smooth patch the model painted on the background (a light wedge, a halo). Its colour is far from the
+ * background's, so the key does not take it, but it opens onto the background with no outline between. It is
+ * flooded from the cleared background through pixels that are not the dark outline (`GLOW_DARK`, a luminance) and
+ * differ from the last by at most `GLOW_STEP`; a flooded region is a glow only when all of these hold, each
+ * measured on the raws of the drawn waves so that a sprite that imports cleanly is left alone:
+ * - it is small: at most `GLOW_MAX_SHARE` of the picture and smaller than the rest of the drawing;
+ * - it is a patch, not the halo that blends an outline into the background: at least `GLOW_CORE` of its pixels
+ *   have a square of `2 x (shorter side / GLOW_BLOCK) + 1` pixels all inside it;
+ * - it holds a narrow colour range: the 1st to 99th percentile of each channel within `GLOW_RANGE`;
+ * - it is open: at least `GLOW_OPEN` of its rim touches the cleared background, which a sprite's own body, entered
+ *   through a gap in its outline, does not (measured 0.01 to 0.02 against 0.65 to 0.73 for a glow).
+ */
+const GLOW_STEP = 36;
+const GLOW_DARK = 80;
+const GLOW_MAX_SHARE = 0.3;
+const GLOW_RANGE = 90;
+const GLOW_BLOCK = 48;
+const GLOW_CORE = 0.25;
+const GLOW_OPEN = 0.3;
+
+/**
  * Grow regions of background-like pixels (`kind` above 0) from the queued pixels, four-connected,
  * marking each pixel reached; returns the queue's new end.
  */
@@ -152,11 +173,144 @@ function growRegion(
   return tail;
 }
 
+function luminance(r: number, g: number, b: number): number {
+  return 0.299 * r + 0.587 * g + 0.114 * b;
+}
+
+/**
+ * Clear the glows the model painted on the background: flood from the cleared background through pixels that are
+ * neither the dark outline nor a step apart, and clear each flooded region that passes `GLOW_*` (see there).
+ */
+function clearGlows(image: ImageData, kind: Uint8Array, cleared: Uint8Array): void {
+  const { width, height } = image;
+  const count = width * height;
+  const at = (index: number): readonly [number, number, number] => [image.data[index * 4] ?? 0, image.data[index * 4 + 1] ?? 0, image.data[index * 4 + 2] ?? 0];
+  const eligible = (index: number): boolean => {
+    if (cleared[index] !== 0 || kind[index] !== 0 || (image.data[index * 4 + 3] ?? 255) < 128) return false;
+    const [r, g, b] = at(index);
+    return luminance(r, g, b) >= GLOW_DARK;
+  };
+  const glow = new Uint8Array(count);
+  const queue = new Int32Array(count);
+  let tail = 0;
+  for (let index = 0; index < count; index += 1) if (cleared[index] !== 0) queue[tail++] = index;
+  const flooded: number[] = [];
+  // the queue holds the cleared background first (a step from it is free), then the glow pixels as they join
+  for (let head = 0; head < tail; head += 1) {
+    const index = queue[head] ?? 0;
+    const x = index % width;
+    const r = image.data[index * 4] ?? 0;
+    const g = image.data[index * 4 + 1] ?? 0;
+    const b = image.data[index * 4 + 2] ?? 0;
+    const visit = (neighbor: number): void => {
+      if (glow[neighbor] !== 0 || !eligible(neighbor)) return;
+      if (cleared[index] === 0) {
+        const dr = (image.data[neighbor * 4] ?? 0) - r;
+        const dg = (image.data[neighbor * 4 + 1] ?? 0) - g;
+        const db = (image.data[neighbor * 4 + 2] ?? 0) - b;
+        if (Math.hypot(dr, dg, db) > GLOW_STEP) return;
+      }
+      glow[neighbor] = 1;
+      queue[tail++] = neighbor;
+      flooded.push(neighbor);
+    };
+    if (x > 0) visit(index - 1);
+    if (x + 1 < width) visit(index + 1);
+    if (index >= width) visit(index - width);
+    if (index + width < count) visit(index + width);
+  }
+  if (flooded.length === 0) return;
+
+  // a summed-area table of the flooded pixels, to ask whether a region holds a square block (a glow is a patch,
+  // not the one-pixel halo that blends the drawing's outline into its background)
+  const side = Math.max(2, Math.round(Math.min(width, height) / GLOW_BLOCK));
+  const table = new Uint32Array((width + 1) * (height + 1));
+  for (let y = 0; y < height; y += 1) {
+    let row = 0;
+    for (let x = 0; x < width; x += 1) {
+      row += glow[y * width + x] ?? 0;
+      table[(y + 1) * (width + 1) + x + 1] = (table[y * (width + 1) + x + 1] ?? 0) + row;
+    }
+  }
+  const holdsBlock = (region: readonly number[]): number => {
+    let blocks = 0;
+    for (const index of region) {
+      const x = index % width;
+      const y = Math.floor(index / width);
+      if (x < side || y < side || x + side >= width || y + side >= height) continue;
+      const sum = (table[(y + side + 1) * (width + 1) + x + side + 1] ?? 0) - (table[(y - side) * (width + 1) + x + side + 1] ?? 0)
+        - (table[(y + side + 1) * (width + 1) + x - side] ?? 0) + (table[(y - side) * (width + 1) + x - side] ?? 0);
+      if (sum === (2 * side + 1) ** 2) blocks += 1;
+    }
+    return blocks;
+  };
+
+  let drawing = 0;
+  for (let index = 0; index < count; index += 1) {
+    if (cleared[index] === 0 && (image.data[index * 4 + 3] ?? 255) >= 128) drawing += 1;
+  }
+  // each connected region of the flooded pixels is judged on its own
+  const seen = new Uint8Array(count);
+  for (const start of flooded) {
+    if (seen[start] !== 0) continue;
+    seen[start] = 1;
+    const region: number[] = [start];
+    for (let head = 0; head < region.length; head += 1) {
+      const index = region[head] ?? 0;
+      const x = index % width;
+      const visit = (neighbor: number): void => {
+        if (glow[neighbor] !== 0 && seen[neighbor] === 0) {
+          seen[neighbor] = 1;
+          region.push(neighbor);
+        }
+      };
+      if (x > 0) visit(index - 1);
+      if (x + 1 < width) visit(index + 1);
+      if (index >= width) visit(index - width);
+      if (index + width < count) visit(index + width);
+    }
+    if (region.length > count * GLOW_MAX_SHARE || region.length * 2 > drawing) continue;
+    if (holdsBlock(region) < region.length * GLOW_CORE) continue;
+    const histogram = [new Uint32Array(256), new Uint32Array(256), new Uint32Array(256)] as const;
+    for (const index of region) {
+      const colour = at(index);
+      for (let c = 0; c < 3; c += 1) {
+        const bin = histogram[c];
+        const value = colour[c] ?? 0;
+        if (bin !== undefined) bin[value] = (bin[value] ?? 0) + 1;
+      }
+    }
+    const quantile = (bin: Uint32Array, share: number): number => {
+      let sum = 0;
+      for (let value = 0; value < 256; value += 1) {
+        sum += bin[value] ?? 0;
+        if (sum >= region.length * share) return value;
+      }
+      return 255;
+    };
+    let contact = 0;
+    let rim = 0;
+    for (const index of region) {
+      const x = index % width;
+      const around = [x > 0 ? index - 1 : -1, x + 1 < width ? index + 1 : -1, index >= width ? index - width : -1, index + width < count ? index + width : -1];
+      if (around.some((n) => n >= 0 && cleared[n] !== 0)) contact += 1;
+      if (around.some((n) => n < 0 || glow[n] === 0)) rim += 1;
+    }
+    // a glow lies open to the background along much of its rim; a sprite's body that the flood leaked into through a gap in its outline does not
+    if (contact < rim * GLOW_OPEN) continue;
+    const narrow = histogram.every((bin) => quantile(bin, 0.99) - quantile(bin, 0.01) <= GLOW_RANGE);
+    if (!narrow) continue;
+    for (const index of region) cleared[index] = 1;
+    drawing -= region.length;
+  }
+}
+
 /**
  * The drawing: every pixel but the background. The background is what lies near the border's colour (or
  * in its magenta fringe) and reaches the picture's edge through such pixels. A region of that colour the
  * drawing encloses stays drawing (a pale face, a pink bowl), unless nearly all of it is the border's colour
- * within the border's own noise: then it is an opening the drawing leaves, and background too.
+ * within the border's own noise: then it is an opening the drawing leaves, and background too. A smooth glow
+ * painted on the background and reaching it without the outline between is background as well (`clearGlows`).
  */
 function initialMask(image: ImageData, background: readonly [number, number, number]): Uint8Array {
   const borderDistances: number[] = [];
@@ -229,6 +383,8 @@ function initialMask(image: ImageData, background: readonly [number, number, num
     if (itself < size * OPENING_SHARE) continue;
     for (let at = 0; at < size; at += 1) cleared[queue[at] ?? 0] = 1;
   }
+
+  clearGlows(image, kind, cleared);
 
   const mask = new Uint8Array(count);
   for (let index = 0; index < count; index += 1) {

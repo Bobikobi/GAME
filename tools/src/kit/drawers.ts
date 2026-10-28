@@ -194,12 +194,23 @@ export const LOCAL_DEFAULTS = {
 export const LOCAL_NEGATIVE = 'blurry, photo, realistic, 3d render, smooth gradient, text, watermark, extra objects, shadow on the ground';
 
 /**
+ * The spec's detail with the entry's `notes` after it (DECISIONS 2026-10-27): what earlier rounds learned about
+ * this entry comes last, so a prompt that is cut under the 77-token window loses the notes before the spec's own
+ * words. Undefined when there is neither.
+ */
+export function detailWithNotes(entry: { detail?: string; notes?: readonly string[] }): string | undefined {
+  const parts = [entry.detail ?? '', ...(entry.notes ?? [])].map((p) => p.trim()).filter((p) => p !== '');
+  return parts.length === 0 ? undefined : parts.join(', ');
+}
+
+/**
  * The compact prompt a Stable Diffusion model reads (its text encoder keeps about 75 tokens, so
  * the agent's prose would be cut mid-sentence): the LoRA's trigger words, the object, the view, the
  * detail, and the three things the importer needs (outline, crisp pixels, flat magenta).
  */
-export function localPrompt(entry: { what: string; detail?: string }): string {
-  const detail = entry.detail === undefined || entry.detail.trim() === '' ? '' : `, ${entry.detail.trim()}`;
+export function localPrompt(entry: { what: string; detail?: string; notes?: readonly string[] }): string {
+  const spelled = detailWithNotes(entry);
+  const detail = spelled === undefined ? '' : `, ${spelled}`;
   return `Pixel Art, PixArFK, ${entry.what}, top-down three-quarter view game sprite${detail}, thick dark navy outline, crisp square pixels, flat pure magenta background`;
 }
 
@@ -517,7 +528,7 @@ export interface KaggleSettings {
   denoise: number;
   denoiseCharacter: number;
   steps: number;
-  /** The canvas's short side; the long side follows the reference (`kaggleCanvas`). */
+  /** The canvas's short side; the long side follows the reference, or the asked size when drawing from the prompt (`kaggleCanvasFor`). */
   size: number;
   cfg: number;
   seed: number;
@@ -637,8 +648,11 @@ export function clipTokenEstimate(text: string): number {
   return count;
 }
 
-/** The negative prompt of the kaggle route: the local one, plus what split the elder into two figures (22.10). */
-export const KAGGLE_NEGATIVE = 'multiple characters, two figures, extra figure, animal, duplicate, cropped, blurry, photo, realistic, 3d render, text, watermark, gradient background, shadow on the ground';
+/**
+ * The negative prompt of the kaggle route: the local one, plus what split the elder into two figures (22.10), plus
+ * the light the model paints on the background (a wedge, a halo) that the importer then keeps as part of the sprite (27.10).
+ */
+export const KAGGLE_NEGATIVE = 'multiple characters, two figures, extra figure, animal, duplicate, cropped, blurry, photo, realistic, 3d render, text, watermark, gradient background, shadow on the ground, glow, vignette, light rays, halo';
 
 const NUMBER_WORD = '(?:\\d+|two|three|four|five|six)';
 
@@ -668,12 +682,12 @@ function clauses(text: string | undefined): string[] {
  * magenta). Detail clauses go from the end while the estimate is past the window, so the words that matter
  * most are never the ones cut. The local route keeps `localPrompt`.
  */
-export function kagglePrompt(entry: { what: string; detail?: string; ref: string }, recipe: KaggleRecipe = 'sd15'): string {
+export function kagglePrompt(entry: { what: string; detail?: string; notes?: readonly string[]; ref: string }, recipe: KaggleRecipe = 'sd15'): string {
   if (kaggleFromPrompt(recipe)) return kaggleSentencePrompt(entry);
   const head = [KAGGLE_RECIPES[recipe].trigger, ...(kaggleSubject(entry.ref) === 'character' ? ['one single character alone', 'full body', 'front view'] : ['game sprite', 'top-down three-quarter view'])];
   const tail = ['thick dark navy outline', 'crisp square pixels', 'flat pure magenta background'];
   const subject = clauses(entry.what).map(sdClause).filter((c): c is string => c !== null);
-  const detail = clauses(entry.detail).map(sdClause).filter((c): c is string => c !== null);
+  const detail = clauses(detailWithNotes(entry)).map(sdClause).filter((c): c is string => c !== null);
   const build = (): string => [...new Map([...head, ...subject, ...detail, ...tail].map((c) => [c.toLowerCase(), c])).values()].join(', ');
   while (detail.length > 0 && clipTokenEstimate(build()) > CLIP_TOKENS - 4) detail.pop();
   return build();
@@ -686,9 +700,9 @@ export function kagglePrompt(entry: { what: string; detail?: string; ref: string
  * one, and the three things the importer needs. Nothing is dropped: the kernel counts it against the encoder's
  * real window.
  */
-export function kaggleSentencePrompt(entry: { what: string; detail?: string; ref: string }): string {
+export function kaggleSentencePrompt(entry: { what: string; detail?: string; notes?: readonly string[]; ref: string }): string {
   const subject = clauses(entry.what).map(sdClause).filter((c): c is string => c !== null).join(', ');
-  const detail = clauses(entry.detail).map(sdClause).filter((c): c is string => c !== null);
+  const detail = clauses(detailWithNotes(entry)).map(sdClause).filter((c): c is string => c !== null);
   const character = kaggleSubject(entry.ref) === 'character';
   const view = detail.some((c) => /\bview\b/iu.test(c)) ? [] : [character ? 'full body, front view' : 'top-down three-quarter view'];
   const sentence = (parts: readonly string[]): string => {
@@ -723,6 +737,21 @@ export function kaggleCanvas(ref: { width: number; height: number } | null, size
   return ref.width >= ref.height ? { width: long, height: short } : { width: short, height: long };
 }
 
+/**
+ * The canvas of one request. Drawing from the prompt alone (a long-prompt recipe, or denoise 1) the picture has no
+ * shape to follow, so the canvas takes the ASKED size's proportion (`asked`, the spec's art grid): a 192x320 tree
+ * is drawn on a tall canvas, not on the 32x32 square of the sprite it replaces. Drawing image to image the
+ * reference's shape is kept, since the model redraws what the reference holds.
+ */
+export function kaggleCanvasFor(
+  ref: { width: number; height: number } | null,
+  asked: { width: number; height: number } | null,
+  size: number,
+  fromPrompt: boolean,
+): { width: number; height: number } {
+  return kaggleCanvas(fromPrompt && asked !== null ? asked : ref, size);
+}
+
 export interface KaggleRequest {
   name: string;
   prompt: string;
@@ -744,7 +773,7 @@ export function kaggleWave(requests: readonly KaggleRequest[], s: KaggleSettings
     },
     requests: requests.map((r) => {
       const denoise = r.subject === 'character' ? s.denoiseCharacter : s.denoise;
-      const canvas = kaggleCanvas(pngSize(r.png), s.size);
+      const canvas = kaggleCanvasFor(pngSize(r.png), r.grid ?? null, s.size, kaggleFromPrompt(s.recipe) || denoise >= 1);
       const grid = r.grid ?? { width: Math.max(1, Math.round(canvas.width / 16)), height: Math.max(1, Math.round(canvas.height / 16)) };
       return {
         name: r.name, file: kaggleFileName(r.name), prompt: r.prompt, seed: r.seed, subject: r.subject ?? 'prop',
