@@ -6,7 +6,7 @@ Loomvale is a free pixel-art adventure about a valley that is never finished. Ga
 
 Every herb, quest, stranger and ruin was made by a player. The next one is yours.
 
-**[Enter the valley](https://theopenfold.vercel.app)** - free, in any browser, on a phone or a computer. No install, no account.
+**[Enter the valley](https://loomvale.vercel.app)** - free, in any browser, on a phone or a computer. No install, no account.
 
 **Stage 1 is a demo.** Progress is saved in your browser only and will not move to an account later; demo players get a title and a cosmetic item instead.
 

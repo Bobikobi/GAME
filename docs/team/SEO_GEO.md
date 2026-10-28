@@ -16,7 +16,7 @@ Two things are meant by the two names. **Search** is a person typing a query and
 | Card image | none |
 | Structured data | none |
 | Repository | description and homepage set, no topics |
-| Site address | `theopenfold.vercel.app`; the config knows it only when Vercel builds |
+| Site address | `loomvale.vercel.app`; the config knows it only when Vercel builds |
 
 ## 2. Who is searching, and for what
 

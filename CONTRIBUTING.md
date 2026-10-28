@@ -30,7 +30,7 @@ If you are joining the core team, read [How the team works](docs/team/WORKFLOW.m
 - Write down a design choice, or an approach that did not work, in [DECISIONS.md](DECISIONS.md).
 - A change to play that collides with a rule in [docs/design/GAME_RULES.md](docs/design/GAME_RULES.md) goes to the owner before code is written (its section 6).
 - Keep the owner's machine out of the tree: no home-directory paths, no private tool names, no personal addresses. `pnpm verify` fails on them (`tools/src/private-strings.ts`).
-- Before a pull request: `pnpm verify`; CI plays the opening e2e on the pull request (run `pnpm e2e` locally, under the lock, only to debug a red run).
+- Before a pull request: `pnpm verify`; CI plays the opening e2e on the pull request (not on a docs-only one; run `pnpm e2e` locally, under the lock, only to debug a red run).
 
 ## The name
 
