@@ -3,7 +3,7 @@
  * and 64 (density 4). The check accepts each size at its density and refuses a mixed one; the bundle carries
  * the density to the client.
  */
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PNG } from 'pngjs';
@@ -91,11 +91,15 @@ describe('density in a kit', () => {
     expect(sprites['core/base-kit:tiles/dense_forgot']?.density).toBe(1);
     const others = Object.entries(sprites).filter(([k]) => !k.includes('dense_'));
     expect(others.length).toBeGreaterThan(100);
-    // every real sprite carries what its kit entry says, 1 where it says nothing (the rich wave landed density-4 picks)
-    const declared = (JSON.parse(readFileSync(join(CONTENT_DIR, 'kit/core/kit.json'), 'utf8')) as { kit: { sprites: Record<string, { density?: number }> } }).kit.sprites;
-    for (const [k, s] of others) {
-      const own = k.startsWith('core/base-kit:') ? declared[k.slice('core/base-kit:'.length)] : undefined;
-      expect(s.density, k).toBe(own?.density ?? 1);
+    // every real sprite carries what its kit entry says, 1 where it says nothing (the rich wave landed density-4 picks);
+    // every kit is read, the core's and each creator's, so a creator's own 64 px art is held to its own entry
+    const declared: Record<string, { density?: number }> = {};
+    for (const dir of readdirSync(join(CONTENT_DIR, 'kit'))) {
+      const file = join(CONTENT_DIR, 'kit', dir, 'kit.json');
+      if (!existsSync(file)) continue;
+      const kit = JSON.parse(readFileSync(file, 'utf8')) as { id: string; kit: { sprites: Record<string, { density?: number }> } };
+      for (const [path, entry] of Object.entries(kit.kit.sprites)) declared[`${kit.id}:${path}`] = entry;
     }
+    for (const [k, s] of others) expect(s.density, k).toBe(declared[k]?.density ?? 1);
   });
 });
