@@ -195,6 +195,26 @@ Left open:
 - **A shadow in another hue stays.** The shade key takes a darker shade of the background's own colour and
   nothing else; FLUX's purple ground shadows are partly kept, and a wider key ate FLUX's reddish earth in a
   trial, so it stays narrow.
+- **From the prompt alone the canvas follows the ASKED size, not the old sprite's (27.10).** `kaggleCanvas`
+  read the reference PNG, so a 192x320 tree or cottage with a 32x32 reference was drawn on 1024x1024 and came
+  back 180x170 art pixels, and a 64x160 stone drawn on 1024x1856 came back 60x99. `kaggleCanvasFor` takes the
+  spec's grid (width x height) when the recipe draws from the prompt (`qwen`, `flux`) or the denoise is 1, and
+  keeps the reference's shape for image to image: the cottage and the oak are now drawn on 1024x1728 and the
+  stone on 1024x2048 (the long side stays at twice the short one). Same seed, the stone came back 60x108; the
+  cottage 180x188, because the model draws it as wide as it is tall, which no canvas changes.
+- **The background key drops a glow, and the hue band was measured and left out (27.10).** The model paints a
+  soft wedge or halo of warm light on the magenta (`house_small`, `market_stall`); it is nowhere near the
+  background's colour, so the key kept it and the importer drew it as a coloured patch (2868 pixels of the
+  cottage's 21568, and it widened the box the sprite is fitted to). `clearGlows` in `import.ts` floods from the
+  cleared background through pixels that are not the dark outline and a smooth step apart, and clears a region
+  only when it is small, holds a block (not a halo ring), a narrow colour range, and is open to the
+  background along 0.3 or more of its rim (a glow measured 0.65-0.73, a body entered through a gap in its
+  outline 0.01-0.02). Replayed on 45 imports of 39 raws, 41 stayed pixel-identical; the 4 that changed are the two glow
+  pictures, each imported with two anchors, which lost their wedge. A hue band of 20 degrees around the background's hue changed all 50 of the first set (it takes
+  the blended fringe pixels around every outline), so it was dropped.
+- **The negative prompt adds `glow, vignette, light rays, halo`** (`KAGGLE_NEGATIVE`, still inside the 77
+  tokens of the Stable Diffusion encoders). On the same seed the cottage still came back with a round halo of
+  light above its roof, a smaller one than the wedge, so the words help but the importer's key stays the guard.
 
 ## The pick feeds the next round
 
@@ -249,6 +269,27 @@ Python 3.12 venv (uv) and CPU torch; `models/checkpoints/v1-5-pruned-emaonly.saf
 the step that makes this route the best of the three; it needs a GPU for a few hours, rented or
 overnight.
 
+## Drafts are kept: the index and the drafts repo
+
+Every picture a draw makes is kept and cited (DECISIONS 2026-10-23; [REUSE.md](REUSE.md); [PRODUCTION_LINE.md](PRODUCTION_LINE.md) section 3). Wave 3 of the plan builds the record. The code is `tools/src/art/drafts.ts`, the command `pnpm art:drafts`.
+
+- **The index is `tools/kit-gen/drafts.jsonl`, in this repo, append-only.** One line per draft. The id is the first 16 hex of the SHA-256 of its raw PNG, so identical bytes are one draft and every run or study that made them is a `sources` entry on it. A line carries: `pool`, `name`, `spec`, `round`, `route`, `recipe` and `model_version`, `seed`, `denoise`, `canvas` (what the model drew on) and `asked` (what the spec wanted), `ramps`, `prompt`, `negative`, `warnings`, `errors`, the kernel `run` (its id and its own total GPU seconds), `files` (hash and size of the three files), `stored`, `review` (`unreviewed` on arrival, then REUSE.md's states) and `looks_like` once someone writes it. A field that is not known is `null`; nothing is invented, and a `provenance` note on the source says what was reconstructed.
+- **Nothing in the file is rewritten.** What is learned later (where the files are stored, a review, a `looks_like`, one more source) is a second line for the same id with `"amend": true` and only the changed fields; reading folds the lines by id. `pnpm art:drafts verify --base origin/develop` checks that develop's file is a prefix of the branch's (`indexGrewOnly`); a CI step that runs it is the owner's to add.
+- **`kit:gen` appends as it imports.** One call where the run's manifest line is written (`noteDraft`): a line with a picture gets its draft line, a failed draw gets none, a failed import keeps the picture with its error. It never stops a run. `.scratch/kit-gen/<spec>/manifest.jsonl` stays the run's own log, and the kernel's seed, canvas, denoise and total seconds are read from the run folder's `kaggle/<run>/` files, so `drawers.ts` is untouched.
+- **The GPU meter is the index.** Each draft repeats its kernel run's total seconds, so a weekly sum counts a run once (`gpuSecondsSince` groups by run id), never the per-picture shares.
+
+**The pictures are in `Bobikobi/GAME-art-drafts`** (private, never deleted), one GitHub release per kernel run, tag `run-<YYYYMMDD>-<6 hex of the run id>`; a draft with no kernel run goes under `run-<YYYYMMDD>-<route>`, and the drafts of before the index under `run-backfill-<source>`. A draft has up to three assets named by its id: `<id>.png` (the raw picture, what the importer read), `<id>.full.png` (the kernel's picture before the grid, when `KAGGLE_POST=grid` kept one) and `<id>.imported.png` (what the importer made). `stored` in the index cites the tag and the asset names and `files` the hashes, so a draft found in the index is found in the repo. A release holds at most 300 drafts; a larger run is `-2`, `-3`.
+
+| Command | What it does |
+|---|---|
+| `pnpm art:drafts push <run folder> --label <source>` | Indexes the run folder's drafts (if `kit:gen` has not) and uploads the files that are not stored yet, one release per run, then writes `stored` into the index. Never overwrites an asset. A folder of loose pictures (a study) works too: `--route`, `--pool`, `--provenance`. `--no-upload` indexes only, `--dry` counts. |
+| `pnpm art:drafts fetch [ids\|--all]` | Fills the local cache `.scratch/art-drafts/` (`<id>.png`, `.full.png`, `.imported.png`), only what is missing. The gallery reads this cache. |
+| `pnpm art:drafts verify [ids] [--base <ref>]` | Re-hashes every cached or fetchable draft against the index; exit 0 when all match, else the mismatches and the missing files. A draft not pushed yet is listed and fails only with `--strict`. `--no-fetch` checks the cache alone. |
+| `pnpm art:drafts annotate-wrong-draws`, `view wrong-draws [--write]` | The wrong-draws library as a view: each PNG listed in `docs/art/wrong-draws/library.jsonl` is matched by hash to its draft, which gets `looks_like`, review `archive` and the keep note; `view` prints the drafts that have a `looks_like` in the library's shape, `--write` writes the file. The library gains no more PNGs. |
+| `pnpm art:drafts stats` | Counts by route, review and source; bytes; releases. |
+
+A draw in `.scratch` is not an archive (REUSE.md): once a run is finished, `push` it, and the folder may go.
+
 ## Routes not built, and what each would take
 
 - **Hugging Face Inference** (free tier, rate limited): image-to-image on an open model such as a
@@ -261,3 +302,11 @@ overnight.
 
 Adding one: a function in `drawers.ts` returning `Drawn`, its id in `DRAWERS`, a row here, a test
 of its request and answer parsing with no network.
+
+## Pools and status
+
+The routes above are meant to run in bulk, and the plan for that line is [PRODUCTION_LINE.md](PRODUCTION_LINE.md) (pools of entries with a status each, waves cut from them, every draft kept, the pick as a recorded action). Its wave 2 is built: the pools and the status.
+
+- **The pools** are `tools/kit-gen/pools/ground.json`, `trees.json`, `props.json`, `items.json` and `cast.json`, seeded from the inventory in `docs/art/PRE_RICH_REDRAW.md` in its rank order, at the sizes of `docs/design/STYLE.md` section 1b. Each is a `kit:gen` spec (`parseSpec` reads it, so a wave can be cut from it) with five pool fields: `kit_id` (the sprite it becomes), `rank` (its row in the inventory), `blocked_by` (an open call of the inventory, or the DECISIONS title that holds it), `new` (the kit does not hold the id yet) and `retired` (the DECISIONS title that retired it). The cast is tracked only: the line never draws a character.
+- **The status is never written by hand.** `tools/src/art/status.ts` derives it from files, first rule that holds wins: `retired` (the entry says so), `imported` (the kit holds `kit_id` at density 4 at the asked size and its `source.manifest` cites a picks line of that sprite), `picked` (a picks manifest line names it), `drafted` (a draft exists), `missing`. Until the drafts index exists (wave 3) a draft is read from the run folders `.scratch/kit-gen/*/manifest.jsonl` when they are on disk, and with none the report says a draft cannot be known.
+- **`pnpm art:status`** prints one line a pool (counts by status), what blocks, the GPU minutes of the week (not tracked yet: the meter is the drafts index), and the next missing entries of each pool in rank order (`--next N`, default 5). `--json` gives the same for a tool. It reads and writes nothing.

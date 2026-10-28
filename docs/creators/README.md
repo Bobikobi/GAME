@@ -20,15 +20,15 @@ Please help me create a new extension.
 
 ---
 
-# Add a fruit in 10 minutes
+# Add a townsperson in 15 minutes
 
-This guide walks through adding the smallest useful thing: a fruit bush in an empty slot of the map.
+This guide walks through adding someone to the valley: a named character who stands in town with their own words for each time you meet them, and whose sign carries your name. A fruit, a herb or a recipe is the smaller kind of first contribution (see [Smaller things](#smaller-things-a-fruit-a-herb-a-recipe)); a townsperson is the one that makes the valley feel lived in.
 
 ## What you need
 
 - A GitHub account.
 - Node 24 (the version in `.nvmrc`; with nvm, `nvm install` in the checkout reads it; without nvm, install Node 24 from nodejs.org. CI runs Node 24, so check with it) and pnpm 10 (`npm install -g pnpm@10`).
-- No drawing skills. You start with the core art and can swap in your own later.
+- No drawing skills. Your character wears one of the core's figures and you can swap in your own later (see [Your own art](#your-own-art-optional)).
 
 ## 1. Run the game on your machine (2 minutes)
 
@@ -39,7 +39,7 @@ git clone https://github.com/<you>/GAME
 cd GAME
 git remote add upstream https://github.com/Bobikobi/GAME
 git fetch upstream
-git switch -c add-my-fruit upstream/develop   # cloned the main repository itself? use origin/develop
+git switch -c add-my-townsperson upstream/develop   # cloned the main repository itself? use origin/develop
 pnpm install
 pnpm dev
 ```
@@ -57,11 +57,81 @@ mkdir -p content/extensions
 cp -r templates/extension content/extensions/<your-handle>
 ```
 
-The template holds a fruit (`resources/wild-plums.json`) and two optional extras: a windfall reaction (`reactions/`, see [A world that answers](#a-world-that-answers-reactions)) and a quest (`quests/`, which brings a quest review and a story review into your pull request). For a plain fruit, delete `quests/`, `reactions/` and the template's `README.md`, and keep `resources/wild-plums.json`.
+The template holds a townsperson (`npcs/wren.json`: Wren the mender) and three optional extras: a quest Wren gives (`quests/`), a fruit bush (`resources/`) and a windfall reaction (`reactions/`, see [A world that answers](#a-world-that-answers-reactions)). For a townsperson alone, delete `quests/`, `resources/`, `reactions/` and the template's `README.md`, and keep `npcs/wren.json`. You come back to the quest in [Your next step](#your-next-step).
 
 In every file you keep, replace `your-handle` with your handle (`grep -rn your-handle content/extensions/<your-handle>` lists every place). Everything you add has an id that starts with it, so two creators can never clash.
 
-## 3. Make it yours (4 minutes)
+## 3. Make it yours (7 minutes)
+
+Rename `content/extensions/<your-handle>/npcs/wren.json` to your character's name (`mira.json`), and change the file's `id` to match (`<your-handle>/mira`). The fields worth changing:
+
+- the top-level `title` (up to 40 characters, the character's name and what they do) and `description` (what a reviewer reads first).
+- `npc.name` - the name above the dialogue box.
+- `npc.sprite` - how they look. It points at a frame of the core art: `core/base-kit:chars/woman_idle_down` is a standing figure, and the other `*_idle_down` frames in `content/kit/core/chars/` are the same kind. `elder` and `trader` belong to Maru and Pell: leave those two to them.
+- `npc.place.slot` - where they stand. It must be a slot of the kind `npc` that no one has filled. Today that is `core/trainers-stall` (in town, three tiles north of Pell's stall), which is why the template uses it. One extension per slot, so if another townsperson is already waiting for review there, yours competes with it and the vote decides ([CONTRIBUTING.md](../../CONTRIBUTING.md)). The `slots` tool of the MCP server (below) lists the slots still free; the others on the map are kept for the core (the player's stall, the traveller's camp). A shop is the core's: leave `shop` out.
+- `npc.dialogue` - what they say: one list of boxes for each standing the player has with them, which grows as the player comes back.
+  - `first`: the first time the player talks to them (at most three boxes).
+  - `stranger`, `acquaintance`, `friend`: one box or two each, said as the player returns and the standing grows.
+
+The words follow the valley's rules ("Dialogue and voice" in [GAME_RULES.md](../design/GAME_RULES.md); the check enforces what it can):
+
+- A box holds 80 characters at most, about two lines on a phone. The check refuses a longer one.
+- Every line does one job: it asks, gives a clue, shows who is talking, or lands a laugh. Plain words a child of eight reads, English only, and the valley's own names: the mist, the bells, the ruins, the hills, the grove.
+- One voice. Two of your character's lines next to two of another's must be tellable apart with the names hidden. Decide how they talk, what they want and what they never say; put it in two sentences in your pull request, because the owner approves a new voice before the character speaks.
+- The past has a speaker. The narrator never states the past, and neither does a bare line: a thing about how the valley was is said by someone, as their own memory or hearsay ("my gran said", "I heard"), so a reader can doubt it. Your character is that speaker. Wren's lines are an example: she says what her gran said and what she herself saw, and never what the bells "really" are. See [STORY.md](../design/STORY.md), rules S1 to S6.
+
+- `items` - the file also holds one thing only your character gives, the mended cup that Wren's quest pays (see [Your next step](#your-next-step)). Keep it for then or delete the block. You never set its value: the game works it out, as for a fruit.
+
+A townsperson has no price, stat or reward of their own. What they ask of the player is a quest (below).
+
+## 4. Check it (1 minute)
+
+```bash
+pnpm check
+```
+
+Each problem names the file, the field and what to do about it. A line that starts with `x` is an error: fix those until none are left. A line that starts with `!` is a warning, and a clean checkout of the game already prints dozens of them (about the core map, the core art and the core quests, none from your files). It is done when the last lines read "0 errors" and "Everything passes". `pnpm check --json` prints the same report for an AI tool to read.
+
+## 5. See it in the game (3 minutes)
+
+Add `content/extensions/<your-handle>/profile.json` (see [Your creator profile](#your-creator-profile); the check passes without it; with it the signs and the Creators menu show your name and signature). Stop the first `pnpm dev` with Ctrl-C and run it again (it bundles the content when it starts).
+
+A new game starts far from town, and the mist hides everything the player has not opened yet. To meet your character at once, open the printed address with `?debug` on the end (for example `http://localhost:5173/?debug`), start a new game, press F12 for the browser console and paste this one line, with your handle and the character's file name in place of `<your-handle>/<name>`. It lifts the mist around their stall and stands you beside them, in this browser tab only; reloading the page undoes it:
+
+```js
+{ const g = window.__game, s = g.session, t = g.bundle.map.slots.find((x) => x.id === g.bundle.npcs['<your-handle>/<name>'].place.slot), p = g.bundle.pockets[s.state.player.pocket]; p.wake = { x: t.x, y: t.y }; p.pocket = p.pocket_grown = 8; s.pos = [t.x, t.y + 1]; s.state.player.at = [t.x, t.y + 1]; s.seeAt(); }
+```
+
+Press **Space** (the **A** button on a phone) next to them: "Talk to <name>" appears, and the first thing they say is your first `first` line. Talk again for the `stranger` line, and so on as the standing grows. Their sign reads "Added by <your-handle>". To reach the town the way a player does, play the opening: mend the bridge, light the first fire and follow the road into town.
+
+## 6. Open a pull request (1 minute)
+
+Commit only your own folder, push your branch to your fork, and open a pull request with **`develop`** as its base (GitHub offers `main` first: change it). The first time, a bot asks you to sign the [contributor agreement](../../CLA.md) with one comment. The pull request template has four lines to answer, and a character's words are story text, so the answers differ from a fruit's:
+
+- `Story review:` one line saying that every claim about the past in your character's lines has a speaker, and who it is. If your AI tool has the repository's story-keeper skill (`.claude/skills/story-keeper`), ask it to read your file and paste its verdict. "No story text changed" is refused for a character.
+- `Quest review:` "no quest changed", until you add the quest below.
+- `Source:` "no new picture" while you use the core's figures.
+- `Tree:` `none:` and why, for example "none: a townsperson with words, nothing a player can grow in changes".
+
+Before you push, `pnpm verify` runs everything CI does (it takes a few minutes; `pnpm check` is the part that matters for content). The same check runs on the pull request automatically, and the pull request template lists what reviewers look at. A preview of the game with your change is built for the pull request; for a first pull request from a fork, a maintainer approves that build first.
+
+## Your next step
+
+Once the townsperson stands, the valley can start to need them. Each of these is a small pull request of its own, built on the files you have:
+
+1. **A quest your townsperson gives.** Copy `templates/extension/quests/a-coin-for-the-road.json` into `content/extensions/<your-handle>/quests/`, replace `your-handle`, and set `quest.giver` to your character (`<your-handle>/<name>`; the template already names Wren). It sends the player to dig an old coin out of the gate rubble (a `find` step: the journal shows a clue, never a count), and pays one mended cup, the item defined in the character's file. Rewrite `summary` and `clue` in your character's voice. A reward must give the player something new to do: an item, a recipe or a place opened. Gold and reputation alone fail the check. The check may also warn that your quest's `type` can be open together with a core quest of the same type (G17): choose another of the fourteen kinds in [GAME_RULES.md](../design/GAME_RULES.md) if it does. Step kinds that exist today: `bring`, `make`, `find`, `riddle`, `visit`, `restore`, `build` and `tend`. The quest brings a `Quest review:` into your pull request (the quest-designer skill, `.claude/skills/quest-designer`).
+2. **Words that follow the world.** The character's file also takes `remarks` (a line that appears once a quest is done, a place restored or a thing owned) and `topics` (a question the player can ask, which gives a clue). Add one remark that notices your quest being done: coming back should pay. The core's `content/core/npcs/trader.json` shows both.
+3. **A tree, a plant or a herb for the valley.** A resource with `node.tool: "axe"` is a tree; it needs a free resource slot (see [Smaller things](#smaller-things-a-fruit-a-herb-a-recipe) and the `slots` tool).
+4. **A camp part.** A thing a player builds at their camp, with the inputs it takes ([A camp part and its upgrade](#a-camp-part-and-its-upgrade)).
+5. **Your own art** for the character: [Your own art](#your-own-art-optional).
+
+Not yet possible today: a new place on the map, a new ruin to restore (every restore slot is taken), a second townsperson (one npc slot waits), anything that needs the core map. If your idea needs one of those, open a "Request for the valley" issue: the community votes it into an open call, and the core team adds the slot.
+
+## Smaller things: a fruit, a herb, a recipe
+
+A fruit bush in an empty slot of the map is the smallest useful thing, and it works the same way: steps 1, 2, 4, 5 and 6 above. In step 2 keep `resources/wild-plums.json` and delete `npcs/`, `quests/` and `reactions/` instead. The pull request then reads "no quest changed", "no story text changed" and "no new picture". The bushes grow in the glade west of where you wake up, and its sign reads "Added by <your-handle>".
+
+### The fruit file
 
 Open `content/extensions/<your-handle>/resources/wild-plums.json`. Rename the file and the ids if you grow something else: the file name, the file's `id`, `items[0].id` and `node.output` all name the fruit, so change them together. The picture fields (`sprite`, `sprite_empty`, and `items[0].sprite`) point at core art; leave them as they are, and draw your own later (see [Your own art](#your-own-art-optional)). The fields worth changing:
 
@@ -82,25 +152,9 @@ Open `content/extensions/<your-handle>/resources/wild-plums.json`. Rename the fi
 - `node.solid` - optional. `true` keeps the tile blocked ready or not, as a tree does: the stump stays in the way until the tree is grown again. Left out, the player walks through it.
 - `node.growth` - optional, up to 3 sprites between `sprite_empty` and `sprite`. While the node grows back, the game shows them one after the other by how much of `respawn_ms` has passed, so a felled oak goes stump, sapling, young tree, oak. Needs a `sprite_empty`.
 - `node.place.water` - optional. `true` puts the node on the slot's water tiles beside the bank, for a fishing spot; the slot needs water in it. Left out, a node stands on the ground.
-- `node.place.slot` - where it grows. The empty resource slot today: `core/west-glade` (by the meadow where you wake up); the garden in the ruins grows the bell bushes since P-3. One extension per slot: this guide sends every newcomer to the glade, so if another fruit is already waiting there for review, yours competes with it and the vote decides ([CONTRIBUTING.md](../../CONTRIBUTING.md)). The `slots` tool of the MCP server (below) lists the slots that are still free.
+- `node.place.slot` - where it grows. The empty resource slot today: `core/west-glade` (by the meadow where you wake up); the garden in the ruins grows the bell bushes since P-3. One extension per slot: the fruit in this guide goes to the glade, so if another fruit is already waiting there for review, yours competes with it and the vote decides ([CONTRIBUTING.md](../../CONTRIBUTING.md)). The `slots` tool of the MCP server (below) lists the slots that are still free.
 
 You never set a price. The game works out every item's value from the effort it takes to get, and the trader pays from that. A rarer, slower fruit is worth more on its own. The trader pays a share of the value: 75 percent for a thing someone made, an item whose value comes from a recipe (`k_craft_permille`), and 50 percent for anything else (`k_permille`). The shop charges at least the full value.
-
-## 4. Check it (1 minute)
-
-```bash
-pnpm check
-```
-
-Each problem names the file, the field and what to do about it. A line that starts with `x` is an error: fix those until none are left. A line that starts with `!` is a warning, and a clean checkout of the game already prints about thirty of them (about the core map, the core art and the core quests, none from your files). It is done when the last lines read "0 errors" and "Everything passes". `pnpm check --json` prints the same report for an AI tool to read.
-
-## 5. See it in the game (1 minute)
-
-Add `content/extensions/<your-handle>/profile.json` (see [Your creator profile](#your-creator-profile); the check passes without it; with it the signs and the Creators menu show your name and signature). Stop the first `pnpm dev` with Ctrl-C and run it again (it bundles the content when it starts), then continue your game or start a new one. Walk west from where you wake up: the bushes grow in the glade, and its sign now reads "Added by <your-handle>".
-
-## 6. Open a pull request (1 minute)
-
-Commit only your own folder, push your branch to your fork, and open a pull request with **`develop`** as its base (GitHub offers `main` first: change it). The first time, a bot asks you to sign the [contributor agreement](../../CLA.md) with one comment. The pull request template has three lines to answer, `Quest review:`, `Story review:` and `Source:`; for a fruit with no quest, no story text and no new picture they read "no quest changed", "no story text changed" and "no new picture". Before you push, `pnpm verify` runs everything CI does (it takes a few minutes; `pnpm check` is the part that matters for content). The same check runs on the pull request automatically, and the pull request template lists what reviewers look at. A preview of the game with your change is built for the pull request; for a first pull request from a fork, a maintainer approves that build first.
 
 ## Classes and tiers
 
@@ -238,13 +292,7 @@ Add `content/extensions/<your-handle>/profile.json` so signs and the Creators me
 
 ## Creator points and hours
 
-The Creators menu shows points for accepted content and an estimate of invested hours based on commit sessions. `pnpm board` rebuilds `content/board.json` from the repository's Git history:
-
-```bash
-pnpm board
-```
-
-Run it from a full Git clone after commits exist. The generated board is committed by maintainers; do not edit it by hand.
+The Creators menu shows points, records and commits for accepted content (`.github/points.json` holds the weights). `content/board.json` is rebuilt from the repository's Git history by each release, so your points appear with the first release after your pull request lands. Leave the file alone: CI refuses a pull request that changes it to anything but what the merged history gives.
 
 ## Your own art (optional)
 

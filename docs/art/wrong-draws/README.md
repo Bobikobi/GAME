@@ -15,3 +15,5 @@ Every PNG is the 64x64 import the run produced, in the core palette plus the ram
 | rock_mossy-sdxl-r4-s43.png | a grey boulder with moss on top | a green lump with stones | SDXL + pixel-art-xl, seed 43, round 4 |
 | sapling-sdxl-r4-s41.png | a young tree sapling | an ornamental pot plant for a festive place or indoors | SDXL + pixel-art-xl, seed 41, round 4 |
 | campfire_unlit-sdxl-r3-s23.png | an unlit campfire | a campfire, lightly lit and much browner | SDXL + pixel-art-xl, seed 23, round 3 (the kit's unlit campfire until 2026-10-23) |
+
+`library.jsonl` is a view of the drafts index (`tools/kit-gen/drafts.jsonl`): it lists the index entries that carry a `looks_like` note, each with its `draft` id. Change a note by appending an amendment line to the index, then regenerate the view with `pnpm art:drafts view wrong-draws --write`; the test suite fails when the file and the view differ. The pictures of every draft are kept in the drafts repo (docs/art/DRAWERS.md, "Drafts are kept").
