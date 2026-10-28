@@ -11,7 +11,7 @@ import type { Account, ChangedFile, CheckRun, Comment, Issue, PullRequest, React
 import {
   countVotes,
   decideVote,
-  optionKey,
+  optionOf,
   parseVoteMarker,
   replaceResults,
   showResults,
@@ -109,7 +109,7 @@ export async function runVotes(options: RunOptions): Promise<void> {
     const key = groupKey(group);
     if (ready.length < 2 || open.some((issue) => parseVoteMarker(issue.body)?.group === key)) continue;
     const closes = new Date(options.now.getTime() + options.config.vote_days * 86_400_000).toISOString();
-    const body = proposalVoteBody(key, closes, options.config);
+    const body = proposalVoteBody(key, closes, options.config, ready.map((member) => String(member.number)));
     const created = await options.client.write<Issue>('POST', repoPath(options, '/issues'), {
       title: `Vote: ${groupTitle(group)}`,
       body,
@@ -151,7 +151,7 @@ export async function runDiscovery(options: RunOptions): Promise<void> {
   }
   const repository = await options.client.get<{ default_branch: string }>(repoPath(options, ''));
   const closes = new Date(options.now.getTime() + options.config.vote_days * 86_400_000).toISOString();
-  const body = discoveryVoteBody(closes, options.config);
+  const body = discoveryVoteBody(closes, options.config, files.map((file) => basename(file, '.md')));
   const created = await options.client.write<Issue>('POST', repoPath(options, '/issues'), {
     title: 'Vote: the next discovery',
     body,
@@ -360,11 +360,13 @@ async function updateVote(options: RunOptions, issue: Issue, accounts: Map<strin
 }
 
 export async function readVote(options: RunOptions, issue: Issue, users: Map<string, AccountDate>): Promise<{ options: CountedOption[]; display: string }> {
+  const marker = parseVoteMarker(issue.body);
   const comments = await options.client.list<Comment>(repoPath(options, `/issues/${issue.number}/comments?per_page=100`));
   const voteOptions: VoteOption[] = [];
   for (const comment of comments) {
-    const key = optionKey(comment.body);
-    if (!key) continue;
+    const key = optionOf(comment, issue, marker);
+    // the loop posts each option once; a later comment under a key the vote already has is not a second option
+    if (key === undefined || voteOptions.some((option) => option.key === key)) continue;
     voteOptions.push({
       key,
       label: comment.body.match(/^##\s+(.+)$/m)?.[1] ?? key,
@@ -381,7 +383,7 @@ export async function readVote(options: RunOptions, issue: Issue, users: Map<str
   return { options: counted, display: showResults(counted, options.config.min_votes_for_percent) };
 }
 
-function proposalVoteBody(group: string, closes: string, config: LoopConfig): string {
+function proposalVoteBody(group: string, closes: string, config: LoopConfig, voteOptions: string[]): string {
   return [
     `# Choose a proposal`,
     '',
@@ -389,14 +391,14 @@ function proposalVoteBody(group: string, closes: string, config: LoopConfig): st
     '',
     `The vote closes at ${closes}. It needs ${config.min_votes_to_decide} eligible choices and no tie for first place.`,
     '',
-    voteMarker({ closes, group, kind: 'proposals' }),
+    voteMarker({ closes, group, kind: 'proposals', options: voteOptions }),
     '<!-- loop:results -->',
     'Results will appear here.',
     '<!-- /loop:results -->',
   ].join('\n');
 }
 
-function discoveryVoteBody(closes: string, config: LoopConfig): string {
+function discoveryVoteBody(closes: string, config: LoopConfig, voteOptions: string[]): string {
   return [
     '# Choose the next discovery',
     '',
@@ -404,7 +406,7 @@ function discoveryVoteBody(closes: string, config: LoopConfig): string {
     '',
     `The vote closes at ${closes}. It needs ${config.min_votes_to_decide} eligible choices and no tie for first place.`,
     '',
-    voteMarker({ closes, group: 'next-discovery', kind: 'discovery' }),
+    voteMarker({ closes, group: 'next-discovery', kind: 'discovery', options: voteOptions }),
     '<!-- loop:results -->',
     'Results will appear here.',
     '<!-- /loop:results -->',
