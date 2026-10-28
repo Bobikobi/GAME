@@ -1,0 +1,49 @@
+{
+  "$schema": "../../../../schema/json/npc.schema.json",
+  "format": 1,
+  "type": "npc",
+  "id": "your-handle/wren",
+  "title": "Wren the mender",
+  "creator": "your-handle",
+  "description": "A townsperson with no shop: a mender who stands at the trainers' stall, and who speaks of the past only as her gran's saying.",
+  "items": [
+    {
+      "id": "your-handle/mended-cup",
+      "name": "Mended cup",
+      "description": "A cup that was cracked and is whole again.",
+      "kind": "material",
+      "rarity": "uncommon",
+      "class": "clay",
+      "family": "pottery",
+      "tier": 1,
+      "sprite": "core/base-kit:items/pottery-shard",
+      "weight": 1
+    }
+  ],
+  "npc": {
+    "name": "Wren",
+    "sprite": "core/base-kit:chars/woman_idle_down",
+    "place": {
+      "slot": "core/trainers-stall"
+    },
+    "dialogue": {
+      "first": [
+        "Oh, hello! I am Wren. I mend what people bring me: cups, straps, the odd hinge.",
+        "This stall was empty when I came. Somebody had left a stool and a lantern.",
+        "What have you got in your bag that is cracked?"
+      ],
+      "stranger": [
+        "Bring me anything with a crack in it. I like to know what it was before.",
+        "My gran said the bells ring for what is lost. I only know they ring after dark."
+      ],
+      "acquaintance": [
+        "Every mended thing tells me something. A cup mended twice was loved twice.",
+        "Whoever laid the old cobbles took care. You can tell by the corners."
+      ],
+      "friend": [
+        "You bring me more cracks than anyone. Thank you. I mean it.",
+        "Gran also said a town is never mended, only kept. Maru would nod at that."
+      ]
+    }
+  }
+}
