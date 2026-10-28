@@ -12,6 +12,8 @@ Welcome. Loomvale is built by the people who play it, and a first contribution i
 
 ### How a pull request is merged
 
+This section is written for content, but a pull request that changes code is merged the same way: a green check, then the owner's approval, then a squash. "Who merges", under "Changing the game", and [Your first code pull request](docs/team/ONBOARDING.md) cover what is different for code.
+
 - The check is green, and the opening still plays in Chrome (CI does this too).
 - Quests, camps, inscriptions and dialogue follow [the rules of play](docs/design/GAME_RULES.md): `pnpm check` prints a `!` line for each rule it can test, and a reviewer answers the checklist in its section 7.
 - Reviewers approve, each going through the reviewer checklist in the pull request. Until five creators have had an extension merged, one approval is enough and the owner gives it; from then on, three reviewers approve.

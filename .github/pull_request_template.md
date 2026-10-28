@@ -17,9 +17,9 @@ Tree: <school>/<node ids> | extends the tree: <path of the proposal> | none: <wh
 
 - [ ] `pnpm check` passes on my machine (a code pull request: `pnpm verify`)
 - [ ] I played it, locally with `pnpm dev` or in this pull request's preview
-- [ ] Every AI tool I used is listed in `ai_tools` (a code pull request: in a `Co-Authored-By:` line of the commit)
+- [ ] Every AI tool I used is credited: in `ai_tools` for a kit or an extension (content), in a `Co-Authored-By:` line of the commit for code (docs/team/ONBOARDING.md, step 7)
 - [ ] My files are only under `content/extensions/<my-handle>/` and `content/kit/<my-handle>/` (a code pull request: n/a - code change)
-- [ ] A design choice, an abandoned approach or something found broken has its entry at the end of `DECISIONS.md` (or: none made)
+- [ ] A design choice, an abandoned approach or a recorded result found broken has its entry at the end of `DECISIONS.md` (or: none made; an ordinary bug fix owes none)
 
 ## Reviewer checklist
 
@@ -30,3 +30,12 @@ An extension merges with a green check and one approval, the owner's, until five
 - [ ] **It is fair.** Nothing is much better than what exists for the same effort, and the rarity feels right.
 - [ ] **It is clean.** No copied art or text, and no ads, links or personal data in the content.
 - [ ] **It is credited.** The creator and every AI tool used are named.
+
+### A code change
+
+For a change to the game's code, confirm these as well (they are explained in `docs/team/ONBOARDING.md`, "What the reviewer checks"):
+
+- [ ] **It is correct against the kernel.** The client never decides an outcome, and `kernel/` stays pure: integers only, no clocks, timers, randomness, floats or I/O.
+- [ ] **Its text is accurate.** Anything a player reads is correct and has no em dash.
+- [ ] **It has tests.** The behaviour it adds or changes is covered.
+- [ ] **It does one thing.**
