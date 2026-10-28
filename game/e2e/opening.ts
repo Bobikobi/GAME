@@ -458,6 +458,8 @@ class Player {
       await sleep(300); // the room fades in
     }
     await this.walkTo({ x: COUNTER[0], y: COUNTER[1], w: 1, h: 1 }, 'the counter');
+    // the prompt follows the feet by a frame: an A pressed before it shows finds nothing to talk to
+    await this.expectPrompt(/^Talk to /, 'the keeper across the counter');
   }
 
   /** Back down the runner and out through the door, which puts the valley back on the doorstep. */
