@@ -26,6 +26,11 @@ the cutover (NEXT 18 h6), a release of its own.
   user (step 3). The other product's auto-updater recreated the game's `db` container on 27.10 at its daily hour:
   the first compose file on the box carried the floating tag; the pinned digest below ends that at step 2's
   next `up`. No backup cron line is installed yet (step 5).
+- 28.10: steps 2 to 6 ran, each with the owner's yes, under a temporary name: a subdomain of the owner's own
+  domain, lent to the game until he buys the game's domain (DECISIONS 2026-10-28, "The box's public name is
+  typed once"). The name is typed once, as `PUBLIC_ORIGIN` in `.env`; the site file is derived from it (step 3)
+  and the certificate is asked for it (step 4). The GeoIP part of step 6 waits for the owner's choice of a
+  country database. The box is a staging one (the log mailer), so the name is not given to players.
 
 ## 1. A directory of its own
 
@@ -50,8 +55,10 @@ Prepare, on the laptop: the game's build that names its own origin, `VITE_GAME_S
 (the variable set and empty: the client then fetches `/state` and the rest from the page's own origin, as
 `game/src/ui/signup.ts` reads it), which leaves `game/dist/`. On the box, three actions with sudo, each its own
 yes: the web root, `install -d -o <the owner's user> -g <the owner's user> -m 755 /var/www/loomvale`; the site
-file, `nginx-openfold.conf` copied to `/etc/nginx/sites-available/` as a **new** file with the real name in
-`server_name`, and linked into `sites-enabled/`; then `nginx -t`, and only after it passes, `systemctl reload nginx`.
+file, derived from `nginx-openfold.conf` with the name read from `.env`, the one place the name is typed
+(`NAME=$(grep -oE '^PUBLIC_ORIGIN=https://[^/]+' .env | cut -d/ -f3); sed "s/play\.loomvale\.example/$NAME/" nginx-openfold.conf > openfold.site.conf`),
+installed into `/etc/nginx/sites-available/` as a **new** file and linked into `sites-enabled/`; then `nginx -t`,
+and only after it passes, `systemctl reload nginx`.
 Without sudo, after the root exists: `game/dist/` copied into `/var/www/loomvale/` (the owner's user owns it, so
 every later build is a copy without sudo; a build replaces `index.html` and adds hashed files under `assets/`, so
 the old files may be removed first, nothing else is there).
@@ -71,12 +78,17 @@ in step 2 is made on the loopback port, never through nginx. A box the name is g
 
 Prepare: the owner's choice of tool; the name must point at the box first. With certbot, `certbot --nginx -d <name>`
 edits the game's own site file (the 443 block and the redirect from 80): that file is ours, the other product's files
-are not touched; `nginx -t` after it, as always.
+are not touched; `nginx -t` after it, as always. certbot writes into the installed copy, never into the repo's file
+or the derived one. A changed name (the one in use is temporary, see "What exists before step 1") is: edit
+`PUBLIC_ORIGIN` in `.env`, derive and install the site file again (step 3), `certbot --nginx -d <new name>`,
+`up -d` (step 6), and the new redirect on the Google client.
 Verify: `curl -s -o /dev/null -w '%{http_code}\n' https://<name>/state` prints 401 without a player header (a GET: the API answers GET and POST only, so a `-I` HEAD would be 405), and `https://<name>/` prints 200.
 
 ## 5. The nightly backup
 
-Prepare: one cron line for the owner's user, `15 3 * * * ~/openfold/backup.sh >> ~/openfold/backups/log 2>&1`.
+Prepare: one cron line for the owner's user, `15 3 * * * ~/openfold/backup.sh >> ~/openfold/backups/log 2>&1`,
+appended to the lines already there (`(crontab -l; echo '<the line>') | crontab -`): the crontab carries another
+product's lines, which are never replaced.
 What happens if it goes wrong: no dump is written; the game is unaffected (`set -eu` stops on the first error).
 Verify: run it by hand once, then `zcat` the newest file and see `CREATE TABLE player_state`.
 The restore test, once (NEXT 18 h4), on a scratch database inside the game's own `db` container, never on the live

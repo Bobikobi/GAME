@@ -33,12 +33,21 @@ export class ForgedLog extends Error {}
 /** The first version a log row can carry: the player row is written at version 1, and every write adds one. */
 const FIRST_SEQ = 2;
 
+/** The one row written with the account rather than after it: a kept opening (NEXT 18 d), `{ kind: 'opening', ... }`. */
+function isOpening(action: unknown): boolean {
+  return typeof action === 'object' && action !== null && (action as { kind?: unknown }).kind === 'opening';
+}
+
 /**
  * The log is the write history: version 1 is the first state row, so a verified log starts at 2 and steps
- * by one. A hole is not a log any more, whatever its rows replay to, and the board refuses it as such.
+ * by one. The one row that may carry version 1 is a kept opening: the sign-up writes it in the same
+ * transaction as the state row it produced (`createAccount`), and the log steps on from it. A hole is not a
+ * log any more, whatever its rows replay to, and the board refuses it as such.
  */
 export function gapIn(log: readonly LoggedAction[]): string | undefined {
-  let expected = FIRST_SEQ;
+  const first = log[0];
+  if (first?.seq === 1 && !isOpening(first.action)) return 'the log starts at version 1, which only a kept opening may carry';
+  let expected = first?.seq === 1 ? 1 : FIRST_SEQ;
   for (const row of log) {
     if (row.seq !== expected) return `the log skips from version ${expected - 1} to ${row.seq}`;
     expected += 1;
