@@ -565,6 +565,12 @@ export const ShopBody = Type.Object(
       { maxItems: 40 },
     ),
     buys: Type.Boolean({ description: 'Whether the shop buys anything that has a value.' }),
+    interior: Type.Optional(
+      Type.Union([Type.Literal('food')], {
+        description:
+          'The room its keeper trades in (DECISIONS.md, 2026-10-11, the shop interior). With it, the keeper stands inside: their place is the door, the player walks in, and the trade opens by talking across the counter. `food`: worn planks, a runner to the counter, a lit stove in a brick chimney. Left out, the keeper trades in the open.',
+      }),
+    ),
   },
   { additionalProperties: false },
 );
