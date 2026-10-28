@@ -15,7 +15,7 @@
       "rarity": "uncommon",
       "class": "meal",
       "tier": 1,
-      "sprite": "core/base-kit:items/herb-stew",
+      "sprite": "ceosisrael/kit:items/sunleaf_mushrooms",
       "weight": 1,
       "food": {
         "satiety": 30
