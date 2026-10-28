@@ -17,7 +17,7 @@
       "family": "seasoning",
       "tags": ["dried"],
       "tier": 1,
-      "sprite": "core/base-kit:items/herb",
+      "sprite": "ceosisrael/kit:items/dried_herbs",
       "weight": 0
     }
   ],

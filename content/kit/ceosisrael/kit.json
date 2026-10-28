@@ -1,0 +1,13 @@
+{
+  "format": 1,
+  "type": "kit",
+  "id": "ceosisrael/kit",
+  "title": "Dried herbs art",
+  "creator": "ceosisrael",
+  "ai_tools": ["Claude (Anthropic)", "Qwen-Image 2512 (kit:gen, kaggle drawer)"],
+  "kit": {
+    "sprites": {
+      "items/dried_herbs": { "file": "items/dried_herbs.png", "w": 64, "h": 64, "density": 4, "ramps": ["moss", "wood", "grey"] }
+    }
+  }
+}
