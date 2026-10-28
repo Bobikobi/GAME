@@ -269,6 +269,27 @@ Python 3.12 venv (uv) and CPU torch; `models/checkpoints/v1-5-pruned-emaonly.saf
 the step that makes this route the best of the three; it needs a GPU for a few hours, rented or
 overnight.
 
+## Drafts are kept: the index and the drafts repo
+
+Every picture a draw makes is kept and cited (DECISIONS 2026-10-23; [REUSE.md](REUSE.md); [PRODUCTION_LINE.md](PRODUCTION_LINE.md) section 3). Wave 3 of the plan builds the record. The code is `tools/src/art/drafts.ts`, the command `pnpm art:drafts`.
+
+- **The index is `tools/kit-gen/drafts.jsonl`, in this repo, append-only.** One line per draft. The id is the first 16 hex of the SHA-256 of its raw PNG, so identical bytes are one draft and every run or study that made them is a `sources` entry on it. A line carries: `pool`, `name`, `spec`, `round`, `route`, `recipe` and `model_version`, `seed`, `denoise`, `canvas` (what the model drew on) and `asked` (what the spec wanted), `ramps`, `prompt`, `negative`, `warnings`, `errors`, the kernel `run` (its id and its own total GPU seconds), `files` (hash and size of the three files), `stored`, `review` (`unreviewed` on arrival, then REUSE.md's states) and `looks_like` once someone writes it. A field that is not known is `null`; nothing is invented, and a `provenance` note on the source says what was reconstructed.
+- **Nothing in the file is rewritten.** What is learned later (where the files are stored, a review, a `looks_like`, one more source) is a second line for the same id with `"amend": true` and only the changed fields; reading folds the lines by id. `pnpm art:drafts verify --base origin/develop` checks that develop's file is a prefix of the branch's (`indexGrewOnly`); a CI step that runs it is the owner's to add.
+- **`kit:gen` appends as it imports.** One call where the run's manifest line is written (`noteDraft`): a line with a picture gets its draft line, a failed draw gets none, a failed import keeps the picture with its error. It never stops a run. `.scratch/kit-gen/<spec>/manifest.jsonl` stays the run's own log, and the kernel's seed, canvas, denoise and total seconds are read from the run folder's `kaggle/<run>/` files, so `drawers.ts` is untouched.
+- **The GPU meter is the index.** Each draft repeats its kernel run's total seconds, so a weekly sum counts a run once (`gpuSecondsSince` groups by run id), never the per-picture shares.
+
+**The pictures are in `Bobikobi/GAME-art-drafts`** (private, never deleted), one GitHub release per kernel run, tag `run-<YYYYMMDD>-<6 hex of the run id>`; a draft with no kernel run goes under `run-<YYYYMMDD>-<route>`, and the drafts of before the index under `run-backfill-<source>`. A draft has up to three assets named by its id: `<id>.png` (the raw picture, what the importer read), `<id>.full.png` (the kernel's picture before the grid, when `KAGGLE_POST=grid` kept one) and `<id>.imported.png` (what the importer made). `stored` in the index cites the tag and the asset names and `files` the hashes, so a draft found in the index is found in the repo. A release holds at most 300 drafts; a larger run is `-2`, `-3`.
+
+| Command | What it does |
+|---|---|
+| `pnpm art:drafts push <run folder> --label <source>` | Indexes the run folder's drafts (if `kit:gen` has not) and uploads the files that are not stored yet, one release per run, then writes `stored` into the index. Never overwrites an asset. A folder of loose pictures (a study) works too: `--route`, `--pool`, `--provenance`. `--no-upload` indexes only, `--dry` counts. |
+| `pnpm art:drafts fetch [ids\|--all]` | Fills the local cache `.scratch/art-drafts/` (`<id>.png`, `.full.png`, `.imported.png`), only what is missing. The gallery reads this cache. |
+| `pnpm art:drafts verify [ids] [--base <ref>]` | Re-hashes every cached or fetchable draft against the index; exit 0 when all match, else the mismatches and the missing files. A draft not pushed yet is listed and fails only with `--strict`. `--no-fetch` checks the cache alone. |
+| `pnpm art:drafts annotate-wrong-draws`, `view wrong-draws [--write]` | The wrong-draws library as a view: each PNG listed in `docs/art/wrong-draws/library.jsonl` is matched by hash to its draft, which gets `looks_like`, review `archive` and the keep note; `view` prints the drafts that have a `looks_like` in the library's shape, `--write` writes the file. The library gains no more PNGs. |
+| `pnpm art:drafts stats` | Counts by route, review and source; bytes; releases. |
+
+A draw in `.scratch` is not an archive (REUSE.md): once a run is finished, `push` it, and the folder may go.
+
 ## Routes not built, and what each would take
 
 - **Hugging Face Inference** (free tier, rate limited): image-to-image on an open model such as a
