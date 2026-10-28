@@ -82,6 +82,7 @@ People and animals, seen by the owner on 20.10 on `frames/2026-10-21-nature-scal
 ## 2. Pixels and colour
 
 - **Colours:** the 32 core colours plus the shared `CORE_RAMPS` a sprite names (`tools/src/kit/palette.ts`), and a kit's own ramps for materials the shared set lacks.
+- **The windows' colours** (`UI_PALETTE`, DECISIONS 2026-10-28, frame D): the 32 plus eight for the UI alone, the antique gold `#2a2114 #4d3c22 #7a5f33 #a6854a #c9a96a #e8d4a2` and the blacks `#0c0b12 #131220`. No sprite or ground tile draws in them; the sprites stay on the colours above.
 - **Pixels:** every pixel fully clear or fully solid. No anti-aliasing, no gradients, no half-clear pixels. This is the rule for a sprite and a ground tile. A layer the engine draws over them (a shadow, the night, a pool, the hour's wash, cloud shade, fog) is a blend at one alpha per step, and the result is still a fully solid pixel; such a layer never has more than four steps, and where two steps meet it may dither (ART_SYSTEM 2, NATURE 4 and 5).
 - **Ramps** run dark to light:
   - greys: `#1b1a2e #3a3554 #5d6177 #8f94a8 #c6cad6 #f5f4ef`
