@@ -126,6 +126,11 @@ export interface Params {
    * beyond `max_permille`. The steady pace is `walk_step_ms`.
    */
   load: { base: number; light_permille: number; max_permille: number; light_step_ms: number; heavy_step_ms: number; heavy_breath_permille: number };
+  /**
+   * The gaits: a run takes the pace the load allows divided by `run_div`, a sneak takes it times `sneak_mul`
+   * (whole milliseconds, checked), and each gait is heard at its own radius in tiles (`noise_*`, still to run).
+   */
+  gait: { run_div: number; sneak_mul: number; noise_still: number; noise_sneak: number; noise_walk: number; noise_run: number };
   starting_gold_mg: number;
   /** what one attribute point adds; see the params schema */
   per_point: { might: number; senses: number; agility_pct: number; luck_permille: number; stamina: number; spirit: number };
