@@ -58,9 +58,9 @@ interface Panel {
 
 function panel(ui: UI, title: string, cls = '', subtitle?: string): Panel {
   const body = h('div', { class: 'panel-body' });
-  const titleEl = h('div', { class: 'panel-head' }, h('h2', null, title), subtitle ? h('p', { class: 'panel-sub' }, subtitle) : null);
+  const titleEl = h('div', { class: 'panel-head' }, h('h2', { class: 'ui-plaque' }, title), subtitle ? h('p', { class: 'panel-sub' }, subtitle) : null);
   const closeBtn = button('Close', () => ui.pop(layer), 'close small');
-  const box = h('div', { class: `panel ${cls}`.trim(), role: 'dialog', 'aria-label': title }, h('header', null, titleEl, closeBtn), body);
+  const box = h('div', { class: `panel ui-window ${cls}`.trim(), role: 'dialog', 'aria-label': title }, h('header', null, titleEl, closeBtn), body);
   const el = h('div', { class: 'layer panel-layer' }, box);
   el.addEventListener('click', (e) => {
     if (e.target === el) ui.pop(layer);
@@ -77,6 +77,11 @@ function tabs(names: string[], active: string, onPick: (name: string) => void): 
     { class: 'tabs' },
     names.map((n) => button(n[0]!.toUpperCase() + n.slice(1), () => onPick(n), n === active ? 'tab on' : 'tab')),
   );
+}
+
+/** An item's name in its rarity's colour (theme.css), so a rare thing reads as rare wherever it is named. */
+function itemTitle(rarity: string | undefined, text: string): HTMLElement {
+  return h('b', { class: `item-name rarity-${rarity ?? 'common'}` }, text);
 }
 
 function need(have: number, qty: number): HTMLElement {
@@ -609,7 +614,7 @@ export function openBag(ui: UI): void {
           'div',
           { class: 'detail-head' },
           sprite(b, item.sprite, 3),
-          h('div', null, h('b', null, item.name), h('div', { class: `rarity r-${item.rarity}` }, item.rarity), h('div', { class: 'muted' }, classLine(b, id))),
+          h('div', null, itemTitle(item.rarity, item.name), h('div', { class: `rarity r-${item.rarity}` }, item.rarity), h('div', { class: 'muted' }, classLine(b, id))),
         ),
         h('p', { class: 'kit-desc' }, item.description),
         facts.map((f) => h('p', { class: 'muted' }, f)),
@@ -668,7 +673,7 @@ export function openJournal(ui: UI, tab: JournalTab = 'tasks'): void {
     const entry = (id: string) => {
       const it = b.items[id]!;
       return known.has(id)
-        ? h('div', { class: 'entry' }, sprite(b, it.sprite, 2), h('div', null, h('b', null, it.name), h('div', { class: 'credit' }, it.creator === 'core' ? 'core team' : it.creator)))
+        ? h('div', { class: 'entry' }, sprite(b, it.sprite, 2), h('div', null, itemTitle(it.rarity, it.name), h('div', { class: 'credit' }, it.creator === 'core' ? 'core team' : it.creator)))
         : h('div', { class: 'entry unknown' }, h('span', { class: 'sprite qmark' }, '?'), h('div', null, h('b', null, '???')));
     };
     // by class, and inside a class a row per family (C12)
@@ -749,7 +754,7 @@ export function openShop(ui: UI, npcId: string): void {
         h(
           'div',
           { class: 'grow' },
-          h('b', null, it?.name ?? o.item),
+          itemTitle(it?.rarity, it?.name ?? o.item),
           h('div', { class: 'muted' }, itemBenefit(b, o.item)),
           opens.length ? h('div', { class: 'muted', 'data-opens': '' }, `Opens: ${opens.join(', ')}`) : null,
           known ? h('div', { class: 'muted', 'data-known': '' }, 'You know this recipe.') : null,
@@ -765,7 +770,7 @@ export function openShop(ui: UI, npcId: string): void {
         'div',
         { class: 'row', 'data-item': id },
         sprite(b, b.items[id]?.sprite, 2),
-        h('div', { class: 'grow' }, h('b', null, `${itemName(b, id)} x${count}`), h('div', { class: 'muted' }, `${gold(each)} gold each`)),
+        h('div', { class: 'grow' }, itemTitle(b.items[id]?.rarity, `${itemName(b, id)} x${count}`), h('div', { class: 'muted' }, `${gold(each)} gold each`)),
         button('Sell 1', () => deal(() => s.act({ t: 'sell', npc: npcId, item: id, qty: 1, at: s.pos })), 'small'),
         count > 1 ? button('All', () => deal(() => s.act({ t: 'sell', npc: npcId, item: id, qty: Math.min(99, count), at: s.pos })), 'small') : null,
       );
