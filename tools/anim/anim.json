@@ -106,6 +106,20 @@
       "metal": "stone",
       "leaf": "green",
       "colours": { "head": "#e9903a", "neck": "#e9903a", "chest": "#e9903a", "shoulder": "#e9903a", "upper_arm": "#e9903a", "elbow": "#e9903a", "forearm": "#e9903a", "hand": "#e9903a", "thigh": "#e9903a", "knee": "#e9903a", "shin": "#e9903a", "foot": "#e9903a", "pelvis": "#6f7d8c" }
+    },
+    "wolf": {
+      "about": "The wolf, dark grey (character-wolf-grim.glb): a four-legged body that carries its own Idle, Walk and Run, so nothing is retargeted ('native'). The feet are the tails of the last bone of each leg. The camera is the forager's; the scale makes the wolf about 0.9 m at the ears.",
+      "model": "game/public3d/models/character-wolf-grim.glb",
+      "map": "native",
+      "fps": 24,
+      "actions": { "Idle": 144, "Walk": 24, "Run": 13.6 },
+      "contacts": { "LB": "backleg2", "RB": "R_backleg2", "LF": "frontleg2", "RF": "R_frontleg2" },
+      "elev": 50,
+      "pxm": 66,
+      "ramps": ["stone", "bark"],
+      "metal": "grey",
+      "leaf": "green",
+      "credit": "Wolf, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: the emission input removed (it repeated the colour map) and the colour map cut from 2048 to 1024 px; scaled to 0.9 m at the ears; Meshy's walk renamed Walk; Run made from the walk and Idle made from the standing pose in Blender (game/tools/blender/quad_pass.py); posed with its own actions and rendered to pixels by tools/anim"
     }
   }
 }
