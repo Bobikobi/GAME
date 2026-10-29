@@ -87,35 +87,42 @@ window.__e2e = (() => {
       : { pos: s.pos, facing: s.facing, moving: !!w.body.moving, open: (x, y, from) => w.canWalk(s, x, y, from) };
   };
   // The shortest walk to a tile from which a tile of rect is the one in front. canWalk(x, y, from) says whether the step from the tile "from"
-  // into (x, y) is open; every step is asked from the tile the search leaves, and a goal tile on its own (from = itself).
+  // into (x, y) is open; every step is asked from the tile the search leaves, and a goal tile on its own (from = itself). The walk ends where
+  // the last turn can be made (FreeWalk.turnTo): into a closed tile the held input only turns the body, onto an open one (a dig spot is one)
+  // the body steps back and returns, which takes the tile behind. A goal with neither would throw, so it is taken only when no walk reaches another.
   const search = (rect, pos, canWalk) => {
-    const goals = new Map();
+    const goals = new Map(), turns = new Map();
     for (let x = rect.x; x < rect.x + rect.w; x++) for (let y = rect.y; y < rect.y + rect.h; y++) {
       for (const [d, [dx, dy]] of Object.entries(DIRS)) {
         const sx = x - dx, sy = y - dy;
         if (inRect(sx, sy, rect)) continue;
         const here = sx === pos[0] && sy === pos[1];
-        if (here || canWalk(sx, sy, [sx, sy])) goals.set(sx + ',' + sy, d);
+        if (!here && !canWalk(sx, sy, [sx, sy])) continue;
+        goals.set(sx + ',' + sy, d);
+        if (!canWalk(x, y, [sx, sy]) || canWalk(sx - dx, sy - dy, [sx, sy])) turns.set(sx + ',' + sy, d);
       }
     }
-    const prev = new Map([[pos[0] + ',' + pos[1], null]]);
-    const queue = [[pos[0], pos[1]]];
-    while (queue.length) {
-      const [x, y] = queue.shift();
-      const k = x + ',' + y;
-      if (goals.has(k)) {
-        const path = [];
-        for (let cur = k; prev.get(cur); cur = prev.get(cur)[0]) path.unshift(prev.get(cur)[1]);
-        return { path, face: goals.get(k), goal: [x, y] };
+    const reach = (ends) => {
+      const prev = new Map([[pos[0] + ',' + pos[1], null]]);
+      const queue = [[pos[0], pos[1]]];
+      while (queue.length) {
+        const [x, y] = queue.shift();
+        const k = x + ',' + y;
+        if (ends.has(k)) {
+          const path = [];
+          for (let cur = k; prev.get(cur); cur = prev.get(cur)[0]) path.unshift(prev.get(cur)[1]);
+          return { path, face: ends.get(k), goal: [x, y] };
+        }
+        for (const [d, [dx, dy]] of Object.entries(DIRS)) {
+          const nx = x + dx, ny = y + dy, nk = nx + ',' + ny;
+          if (prev.has(nk) || !canWalk(nx, ny, [x, y])) continue;
+          prev.set(nk, [k, d]);
+          queue.push([nx, ny]);
+        }
       }
-      for (const [d, [dx, dy]] of Object.entries(DIRS)) {
-        const nx = x + dx, ny = y + dy, nk = nx + ',' + ny;
-        if (prev.has(nk) || !canWalk(nx, ny, [x, y])) continue;
-        prev.set(nk, [k, d]);
-        queue.push([nx, ny]);
-      }
-    }
-    return null;
+      return null;
+    };
+    return reach(turns) || reach(goals);
   };
   return {
     state() {

@@ -420,10 +420,45 @@ describe('the opening e2e plans its walks by the same rule, as its page runs it'
     return { end: at, refused, changes };
   }
 
+  /**
+   * Whether the walk's last turn can be made on the goal (`FreeWalk.turnTo`, game/e2e/walk.ts): into a closed tile the held input only turns the body,
+   * onto an open one it steps back and returns, which takes the tile behind. A stand with neither throws "both tiles beside it are closed".
+   */
+  function canFace(page: OpeningPage, goal: Tile, face: string): boolean {
+    const [dx, dy] = DELTA[face]!;
+    return !page.open(goal[0] + dx, goal[1] + dy, goal) || page.open(goal[0] - dx, goal[1] - dy, goal);
+  }
+
   /** What the content names, found by its id: a missing one says which. */
   function named<T>(found: T | undefined, what: string): T {
     if (found === undefined) throw new Error(`the content has no ${what} any more: teach this test its new name`);
     return found;
+  }
+
+  /**
+   * The walk to `rect` from `from` as the script makes it (`Player.planTo`): plan, and while no walk gets there take the ready node that shuts the
+   * road, a few times at most. The world once those nodes are taken, what was taken, and the plan in it.
+   */
+  function walkTo(r: Rig, from: Tile, rect: Rect): { world: Rig; taken: string[]; plan: ReturnType<OpeningPage['plan']> } {
+    let world = r;
+    const taken: string[] = [];
+    let plan = openingPage(world, from).plan(rect);
+    for (let round = 0; plan === null && round < 3; round++) {
+      const block = openingPage(world, from).blocker(rect);
+      expect(block, `no walk reaches ${rect.x},${rect.y} from ${from}, and no ready node is to blame`).not.toBeNull();
+      taken.push(block!.id);
+      world = { ...world, state: { ...world.state, nodes: { ...world.state.nodes, [block!.id]: { readyAt: 1_000_000, draws: 1 } } } };
+      plan = openingPage(world, from).plan(rect);
+    }
+    return { world, taken, plan };
+  }
+
+  /** The collapsed hall's dig spots, and the doorstep of Pell's stall, where the walk to them begins: the shop puts the player back on the valley there. */
+  function hall(r: Rig): { doorstep: Tile; spots: Rect[] } {
+    const stall = named(r.b.map.slots.find((x) => x.id === 'core/trader-stall'), 'trader stall');
+    const spots = Object.values(r.b.instances).filter((i) => i.source === 'core/ruins-hall').map((i): Rect => ({ x: i.x, y: i.y, w: 1, h: 1 }));
+    expect(spots.length).toBeGreaterThan(0);
+    return { doorstep: [stall.x, stall.y + 1], spots };
   }
 
   test('the probe asks a step from the tile it is given, and from the player\'s own when none is', () => {
@@ -439,24 +474,27 @@ describe('the opening e2e plans its walks by the same rule, as its page runs it'
   test('from the foot of the town face, where CI stood, the plan to the square goes round to the steps and over the face once, on a crossing', () => {
     const r = valley();
     const square = named(r.b.map.slots.find((x) => x.id === 'core/town-square'), 'town square');
-    const plan = openingPage(r, [21, 9]).plan(square);
+    const page = openingPage(r, [21, 9]);
+    const plan = page.plan(square);
     expect(plan).not.toBeNull();
     const walked = replay(r, [21, 9], plan!.path);
     expect(walked.refused).toEqual([]);
     expect(walked.end).toEqual(plan!.goal);
     expect(walked.changes).toEqual([[[28, 14], [28, 13]]]);
+    expect(canFace(page, plan!.goal, plan!.face)).toBe(true);
   });
 
-  test('from the fire the plan reaches every place the opening walks to, each step by the rule', () => {
+  test('from the fire and from Pell\'s doorstep the plan reaches every place the opening walks to, each step by the rule, to a stand the body can turn on', () => {
     const r = mended();
     const b = r.b;
     const slot = (id: string) => named(b.map.slots.find((x) => x.id === id), `slot ${id}`);
     const prop = (id: string) => named(b.map.props.find((x) => x.id === id), `prop ${id}`);
     const nodes = (source: string): Rect[] => Object.values(b.instances).filter((i) => i.source === source).map((i) => ({ x: i.x, y: i.y, w: 1, h: 1 }));
     const camp = slot('core/camp');
-    const fire: Tile = [camp.x + 2, camp.y + 2];
     const elder = slot('core/elder-house');
     const trader = slot('core/trader-stall');
+    // the day's first walks begin at the fire, and every walk after the shop at Pell's doorstep
+    const starts: [string, Tile][] = [['the fire', [camp.x + 2, camp.y + 2]], ["Pell's doorstep", [trader.x, trader.y + 1]]];
     const places: [string, Rect][] = [
       ['the town square', slot('core/town-square')],
       ['Elder Maru', { x: elder.x + 1, y: elder.y + 1, w: 1, h: 1 }],
@@ -469,47 +507,63 @@ describe('the opening e2e plans its walks by the same rule, as its page runs it'
         nodes(source).map((rect, i): [string, Rect] => [`${source} #${i}`, rect]),
       ),
     ];
-    const page = openingPage(r, fire);
     const lost: string[] = [];
-    for (const [what, rect] of places) {
-      const plan = page.plan(rect);
-      if (!plan) {
-        lost.push(`${what}: no way`);
-        continue;
+    for (const [from, start] of starts) {
+      const page = openingPage(r, start);
+      for (const [what, rect] of places) {
+        const plan = page.plan(rect);
+        if (!plan) {
+          lost.push(`${from} > ${what}: no way`);
+          continue;
+        }
+        const walked = replay(r, start, plan.path);
+        if (walked.refused.length > 0 || walked.end.join(',') !== plan.goal.join(',')) lost.push(`${from} > ${what}: refused [${walked.refused.join('; ')}], ends ${walked.end} not ${plan.goal}`);
+        else if (!canFace(page, plan.goal, plan.face)) lost.push(`${from} > ${what}: the stand ${plan.goal} cannot face ${plan.face}`);
       }
-      const walked = replay(r, fire, plan.path);
-      if (walked.refused.length > 0 || walked.end.join(',') !== plan.goal.join(',')) lost.push(`${what}: refused [${walked.refused.join('; ')}], ends ${walked.end} not ${plan.goal}`);
     }
     expect(lost).toEqual([]);
   });
 
-  test('the collapsed hall is dug by day from the lane south of the ruins: a ready log across the east lane shuts the way until it is taken', () => {
+  test('the collapsed hall is dug by day: from Pell\'s doorstep every dig spot is reached by the rule, once the ready nodes that shut the road are taken', () => {
     const r = mended();
-    const stall = named(r.b.map.slots.find((x) => x.id === 'core/trader-stall'), 'trader stall');
-    // where the walk to the hall begins: the doorstep of Pell's stall, as the shop puts the player back on the valley
-    const doorstep: Tile = [stall.x, stall.y + 1];
-    const spots = Object.values(r.b.instances).filter((i) => i.source === 'core/ruins-hall').map((i): Rect => ({ x: i.x, y: i.y, w: 1, h: 1 }));
-    expect(spots.length).toBeGreaterThan(0);
-    const shut = openingPage(r, doorstep);
-    const blockers = new Set<string>();
+    const { doorstep, spots } = hall(r);
     for (const spot of spots) {
-      expect(shut.plan(spot)).toBeNull();
-      const block = shut.blocker(spot);
-      expect(block?.source).toBe('core/fallen-logs');
-      blockers.add(block!.id);
-    }
-    // every dig spot is shut by the same log: taking it opens the lane, and each walk then keeps to the rule
-    expect([...blockers]).toHaveLength(1);
-    const [log] = [...blockers];
-    const taken: Rig = { ...r, state: { ...r.state, nodes: { ...r.state.nodes, [log!]: { readyAt: 1_000_000, draws: 1 } } } };
-    const open = openingPage(taken, doorstep);
-    for (const spot of spots) {
-      const plan = open.plan(spot);
-      expect(plan).not.toBeNull();
-      const walked = replay(taken, doorstep, plan!.path);
+      const { world, taken, plan } = walkTo(r, doorstep, spot);
+      expect(plan, `the dig spot ${spot.x},${spot.y} after taking [${taken.join(', ')}]`).not.toBeNull();
+      const walked = replay(world, doorstep, plan!.path);
       expect(walked.refused).toEqual([]);
       expect(walked.end).toEqual(plan!.goal);
+      // a dig spot is a tile the body can walk onto: the stand must be one it can turn on
+      expect(canFace(openingPage(world, doorstep), plan!.goal, plan!.face), `the stand ${plan!.goal} for the dig spot ${spot.x},${spot.y} cannot face ${plan!.face}`).toBe(true);
     }
+  });
+
+  test('the dig loop goes from spot to spot: from the stand of any dig, every spot has a stand the body can turn on, the same spot again too', () => {
+    // the dig that CI stopped on: after six shards the loop came back to the first spot from the stand of the last, 38,29, where the step
+    // behind (39,29) is a face with no crossing, so the body could neither turn there toward 37,29 nor step back and return
+    const r = mended();
+    const { doorstep, spots } = hall(r);
+    // the first walk to the hall takes the log that shuts the road; the digs after it walk in a world without it
+    const world = walkTo(r, doorstep, spots[0]!).world;
+    const bad: string[] = [];
+    for (const dug of spots) {
+      const left = walkTo(world, doorstep, dug).plan;
+      expect(left, `the dig spot ${dug.x},${dug.y} from the doorstep`).not.toBeNull();
+      const stand = left!.goal;
+      for (const next of spots) {
+        const page = openingPage(world, stand);
+        const plan = page.plan(next);
+        const to = `${stand} > ${next.x},${next.y}`;
+        if (!plan) {
+          bad.push(`${to}: no way`);
+          continue;
+        }
+        const walked = replay(world, stand, plan.path);
+        if (walked.refused.length > 0 || walked.end.join(',') !== plan.goal.join(',')) bad.push(`${to}: refused [${walked.refused.join('; ')}], ends ${walked.end} not ${plan.goal}`);
+        else if (!canFace(page, plan.goal, plan.face)) bad.push(`${to}: the stand ${plan.goal} cannot face ${plan.face}`);
+      }
+    }
+    expect(bad).toEqual([]);
   });
 
   test('the night ruins stay out of reach before the arch, as the script checks, and no node is to blame', () => {
