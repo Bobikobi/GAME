@@ -179,6 +179,13 @@
     var(--ui-corner-br) right bottom no-repeat;
 }
 
+/* A scroll inside a window is a gold thumb in the well, never the browser's light bar. */
+.ui-window,
+.ui-window * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-gold-3) var(--ui-well);
+}
+
 /* The plaque: the window's name in Cinzel on a gold bar notched at both ends, two engraved lines inside it. */
 .ui-plaque {
   position: relative;
