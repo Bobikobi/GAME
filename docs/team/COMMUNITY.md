@@ -2,24 +2,29 @@
 
 Written 2026-10-28 for the owner's word of 28.10 (translated from Hebrew): "You are going to be the marketing and image agent of the product we are building. I will connect all the relevant accounts in all the relevant groups on every platform that is needed, from TikTok to Facebook. You will be a UGC expert and get players and developers to try it the moment we launch. Build the necessary foundations, look for the tools safely and connect the relevant add-ons. It will take time and we will work slowly. I want you learning the users' slang automatically, with a human delay, and answering videos, posts and every relevant piece of content in its language, so that they want to come in and play."
 
+Corrected by the owner on 29.10 (translated): "This is not hidden advertising. It is a personal assistant that takes over the grunt work I hate. I am a solo developer; I can do it, but I have no time and no energy. So you are my worker who creates." The agent is the game's community manager on the game's own accounts, and section 0 is the mandate it works under. The first version of this page made every post wait for his yes; that was the agent's reading of "UGC", not his request.
+
 Stage: 2b, opening to developers, is current (the repository has been public since 15.10). The player launch is tied to the owner's word of 27.10: a bought domain comes "when the game can be tried". Search and AI-answer visibility is a separate plan, [SEO_GEO.md](SEO_GEO.md); this page takes over its section 9 items 4 to 11 (the posts, the listings, the video) and repeats none of the on-site work.
 
 The baseline, measured on 28.10: production v0.1.9; the repository has 0 stars, 0 forks and one pull request from outside the team (#115, 16.10); no Discord, no letter, no account on any platform; the share card still carries the old name (DECISIONS 2026-10-27). Marketing starts from zero, which is also the cleanest place to start honestly.
 
-## 0. The one rule, proposed to the owner
+## 0. The one rule, and the owner's mandate (29.10)
 
-**Every public word about the game is said in the game's name or in a team member's own name, and a person reads it before it is posted.** No account that poses as a player who is not us, no reply timed to look human, no engagement bought or automated. The listening and the learning of words are automatic; the drafting is the agent's; the posting is the owner's yes, on one page of cards (section 4).
+**Every public word about the game is said in the game's name, on the game's own accounts, or in a team member's own name.** No account that poses as a player who is not us, no engagement bought, no burst of posts. Inside that line the agent is the game's community manager end to end: it listens, learns the words, writes and posts, without asking the owner per post. He reads the daily log, and one word from him stops it.
 
-Why this, and not the undisclosed version the owner described:
+The mandate, held as code in the private repository (`pnpm post --mandate` prints it):
 
-- **The platforms forbid it, each in its own words.** Reddit's content policy asks for authentic content and bans content manipulation, and its developer terms want a registered app and a bot that says it is one. Meta's standards ban inauthentic behaviour, and its platform terms forbid automating comments on other people's content. TikTok's guidelines ban spam and deceptive account behaviour, and its API posts only the account's own videos. Discord bans self-bots: a bot runs on a bot account. YouTube has its spam and deceptive-practices policy, X its platform-manipulation policy. An account caught takes the official account with it, and the game's pages lose the trust the search plan is building.
-- **It is hidden advertising.** Israel's Consumer Protection Law forbids advertising that hides that it is advertising; the EU's Unfair Commercial Practices Directive lists "falsely representing oneself as a consumer" among the practices that are unfair in all circumstances; the FTC's endorsement guides and its 2024 rule on fake reviews say the same for the United States.
-- **The game's own line.** DECISIONS 2026-10-09: no bots, no program that plays for a player, an exploit loop costs its accounts. A game that bans bots cannot be sold by bots.
-- **It does not hold.** Communities of players and developers are the fastest at spotting it, and the thread that catches it is the post that lasts.
+1. Every word in the game's name, on the game's own accounts; no account that poses as a player who is not us.
+2. At most five posts a platform in 24 hours, at a natural pace, never a burst; a thread is answered once.
+3. Money, a date or a promise, an answer to criticism or drama, anything legal: the owner first.
+4. A glossary term marked `use: no` is never said.
+5. Every post is a line in `posted.jsonl`, the disclosure trail; the owner reads the daily log.
 
-What the studios do: a named community manager who answers as "[Dev] Name", an official Discord, devlogs, a creator program with keys and a press kit, players' clips featured with credit. No studio with a reputation runs sockpuppets; the ones caught became news. Where we differ: no advertising budget and no paid creators at the start; the game is free in the browser, so the "key" is a link; and our incentive for user-made content is stronger than most, since a creator's townsperson enters the one shared valley with their signature on it.
+Why the first line is the one that never moves: the platforms forbid accounts that pose as someone else (Reddit's content-manipulation rule, Meta's inauthentic-behaviour standard, TikTok's deceptive-account rule, Discord's ban on self-bots, YouTube's and X's manipulation policies), and an account caught takes the official one with it; Israel's Consumer Protection Law and the EU's Unfair Commercial Practices Directive name a seller posing as a consumer as hidden advertising; DECISIONS 2026-10-09 bans bots from the game itself. None of that touches a community manager posting as the game on the game's account: that is what every studio does, and it is what the owner asked for.
 
-The "human delay" the owner asked for stays, honestly: one batch of replies a day, read by a person, posted from accounts that say who they are. That rhythm is slower than any bot and faster than silence.
+What the studios do: a community manager who answers as the studio, on the studio's accounts, inside a voice guide, and takes money, dates and drama to the producer first; an official Discord, devlogs, a creator program with keys and a press kit, players' clips featured with credit. Where we differ: no advertising budget and no paid creators at the start; the game is free in the browser, so the "key" is a link; and our incentive for user-made content is stronger than most, since a creator's townsperson enters the one shared valley with their signature on it.
+
+The "human delay" the owner asked for is the pace of line 2: a few replies a day on each platform, spread over the day, each read before it goes.
 
 ## 1. Who we talk to, and the one line each hears
 
@@ -51,15 +56,15 @@ The owner opens each account under the name Loomvale ([TRADEMARKS.md](../../TRAD
 | 7 | Facebook groups (the Israeli ones) | Groups accept a person, not a page; most forbid automation | Drafts in Hebrew; the owner posts from his own profile |
 | 8 | X | Later, if the others show an audience there | - |
 
-## 4. The engine: listen, learn, draft, approve, post, measure
+## 4. The engine: listen, learn, draft, check, post, measure
 
 Built in the private repository `Bobikobi/loomvale-community`, on the pattern of DECISIONS 2026-10-27 (the private drafts repository beside the public game): the public tree holds the rules, the private one holds the operation, the queue and the log. No secret in either.
 
 1. **Listen** (automatic, daily). Public feeds that need no login: subreddit RSS (new posts and searches), Hacker News through the Algolia API, Mastodon tag timelines, Lemmy communities, itch.io's new HTML5 games and devlogs. With an account later: Bluesky search (it answered 403 without one on 28.10), the YouTube Data API, our own Discord, our itch page. TikTok and Instagram have no listening API: they are read by hand, once a day, in the app. Each item keeps its source, link, author, time, text, language and the watch terms it matched; the reader names itself in its user agent and pauses between feeds; items older than 90 days are dropped. Reddit gives a reader without a login one request a minute (measured 28.10 from its rate-limit headers), so the seven subreddit feeds take seven minutes a run until the registered app of home 5 lifts the limit.
 2. **Learn** (automatic). The glossary counts the words and two-word phrases of each community, with how many different people used them and one example with its link. A term enters our mouth only after three different people used it in that community, and only after the agent has read the examples and written its meaning and whether we use it. Forced slang is the fastest way to be laughed at, so when in doubt the reply is plain English.
 3. **Draft** (the agent). A reply answers a question or adds to the conversation; it says who we are; it carries at most one link, and none where the game is not what the thread is about. A post follows the subreddit's or group's own rules, read that day. Each draft names the item it answers and the one line of why.
-4. **Approve** (the owner). One page of cards, Like / No / a note, and one Send that writes `picks.json`: the format the owner picked for the art picks. One batch a day, about ten cards at most.
-5. **Post.** From the official account, through the platform's own API where it allows it (Mastodon, Bluesky, Discord, Reddit with a registered app, comments under our own YouTube videos); by the owner's hand where it does not (TikTok, Instagram, Facebook groups, comments under other people's videos), from the approved text. Every post goes into `posted.jsonl`: when, where, what, the link. That log is the disclosure trail.
+4. **Check** (the mandate, as code). The poster refuses what the mandate refuses: over the daily cap, a thread already answered, a term the glossary marks `use: no`, money or a date or a promise without the owner's word. What waits for him goes to the page of cards, Like / No / a note, one Send that writes `picks.json` (the format he picked for the art picks); everything else goes.
+5. **Post** (the tool). From the game's own account, through the platform's own API where it has one (Discord, Mastodon, Bluesky, Reddit with a registered script app; later YouTube comments and the Meta pages API); by the owner's hand from the agent's text where it has none (Facebook groups, TikTok and Instagram comments), because browser automation on a personal account gets it locked. Every post goes into `posted.jsonl`: when, where, what, the link. That log is the disclosure trail, and `pnpm log` is the owner's daily read of it.
 6. **Measure.** Referrers in the site's Web Analytics, the stage-1 counters (visits, pickups, where the opening stops), GitHub (stars, forks, issues and pull requests from outside), Discord members, letter subscribers. Targets are set after two weeks of baseline, in DECISIONS.md, not guessed here.
 
 ## 5. The creator program (the user-made content)
@@ -95,14 +100,21 @@ Every item that publishes outward waits for the owner's yes, one by one, as in S
 | Platform MCP servers | per platform | None installed; each is vetted (source, scan, pinned version, the audit log) when its account exists |
 | Refused | Engagement pods, bought followers, comment bots, scraping behind a login, any tool whose purpose is to look human | - |
 
-## 8. What the owner decides, one by one
+## 8. What the owner does, one by one
 
-1. The rule of section 0.
-2. Home 1: the Discord server, named Loomvale.
-3. The handles: register `Loomvale` on every platform of section 3 now, post later.
+1. Done 29.10: the mandate of section 0, in his words.
+2. The accounts, in this order, each under the handle `Loomvale`: the Discord server with a bot, Mastodon on gamedev.place, Bluesky, Reddit with a script app, the itch.io page; then the Facebook page, TikTok, YouTube, Instagram. Their tokens go into his secrets folder, outside every repository, one file per platform, as the private repository's README lays out; `pnpm check` says which are connected.
+3. The daily log, and the cards of what waits for him.
 
 ## 9. Done on 28.10
 
 - This page.
 - The private repository `Bobikobi/loomvale-community`: the listener (`pnpm listen`), the glossary (`pnpm glossary`), the digest (`pnpm digest`), the queue folders and the log format, with tests; its README carries section 0 as its first lines.
 - The first run, 28.10: 401 items kept from 12 of 18 feeds; of the last 48 hours, 86 of 237 items matched a watch term; the glossary lists 400 terms, 389 of them used by three or more people, none described yet. The top of the list is the plain vocabulary of the communities (game, free, demo, feedback, wishlist, screenshotsaturday); the ranking by what is particular to one community comes next.
+
+## 10. Done on 29.10
+
+- The owner's correction, and sections 0, 4 and 8 of this page rewritten to it.
+- The poster in the private repository: four clients over plain `fetch` (Discord, Mastodon, Bluesky, Reddit), the mandate as code, `pnpm post`, `pnpm check`, `pnpm log`; 31 tests. The repository is on GitHub, private, pushed by the owner.
+- The listener reads Reddit at its one request a minute: 7 of 7 subreddit feeds, 563 items. A security pass: hidden characters out of every feed text, a link kept only when it is a plain http(s) address, the digest quotes what strangers wrote and says so up top.
+- The sign-up and token pages of the first five homes opened in the owner's browser.
