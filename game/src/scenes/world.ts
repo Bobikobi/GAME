@@ -2230,7 +2230,7 @@ export class WorldScene extends Phaser.Scene {
     const turned = facing !== s.facing || look !== this.look;
     s.facing = facing;
     this.look = agrees(look, facing) ? look : facing;
-    for (const tile of this.body.frame(input, delta, walkStepMs(this.b, s.state), (x, y) => this.canWalk(s, x, y))) {
+    for (const tile of this.body.frame(input, delta, walkStepMs(this.b, s.state), (x, y, from) => this.canWalk(s, x, y, from))) {
       if (RICH.motion) this.puffAt(s.pos[0], s.pos[1]);
       // the kernel hears of each new tile; a hazard there may hurt, and a fall ends the walk
       landStep(s, tile);
@@ -2266,9 +2266,9 @@ export class WorldScene extends Phaser.Scene {
     emitter.explode(texture === 'fx-leaf' ? 1 : 2 + Math.floor(Math.random() * 2), this.player.x, this.player.y - 1);
   }
 
-  /** The kernel's rule, and a plant or stone that is ready stands in the way (walking.ts). */
-  canWalk(s: GameSession, x: number, y: number): boolean {
-    return canEnter(this.b, this.walkable, this.nodeAt, s, x, y);
+  /** The kernel's rule, a rock face's, and a plant or stone that is ready stands in the way (walking.ts); `from` is the tile left, the player's own when none is given. */
+  canWalk(s: GameSession, x: number, y: number, from?: readonly [number, number]): boolean {
+    return canEnter(this.b, this.walkable, this.nodeAt, s, x, y, from);
   }
 
   private arrive(s: GameSession): void {

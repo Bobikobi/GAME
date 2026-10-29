@@ -136,7 +136,7 @@ window.__e2e = (() => {
       return Object.entries(g().bundle.instances).filter(([, i]) => i.source === source)
         .map(([id, i]) => ({ id, x: i.x, y: i.y, ready: (s.state.nodes[id]?.readyAt ?? 0) <= s.tick }));
     },
-    /** Shortest walk to a tile from which a tile of rect is the one in front. */
+    /** Shortest walk to a tile from which a tile of rect is the one in front; each step is asked from the tile it leaves, so a rock face is crossed only at a crossing (G68). */
     plan(rect) {
       const s = g().session, w = g().world;
       const goals = new Map();
@@ -145,7 +145,7 @@ window.__e2e = (() => {
           const sx = x - dx, sy = y - dy;
           if (inRect(sx, sy, rect)) continue;
           const here = sx === s.pos[0] && sy === s.pos[1];
-          if (here || w.canWalk(s, sx, sy)) goals.set(sx + ',' + sy, d);
+          if (here || w.canWalk(s, sx, sy, [sx, sy])) goals.set(sx + ',' + sy, d);
         }
       }
       const start = s.pos[0] + ',' + s.pos[1];
@@ -161,7 +161,7 @@ window.__e2e = (() => {
         }
         for (const [d, [dx, dy]] of Object.entries(DIRS)) {
           const nx = x + dx, ny = y + dy, nk = nx + ',' + ny;
-          if (prev.has(nk) || !w.canWalk(s, nx, ny)) continue;
+          if (prev.has(nk) || !w.canWalk(s, nx, ny, [x, y])) continue;
           prev.set(nk, [k, d]);
           queue.push([nx, ny]);
         }
