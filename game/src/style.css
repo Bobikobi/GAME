@@ -121,10 +121,8 @@ body {
 
 /* ------------------------------------------------------------ frames */
 
+/* the HUD's paper frames; a window wears frame D (theme.css .ui-window) */
 .frame,
-.dialog,
-.panel,
-.title-box,
 .toast,
 .prompt,
 .tracker,
@@ -192,7 +190,7 @@ body {
 
 .credit {
   color: var(--blue);
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .sprite {
@@ -254,8 +252,9 @@ body {
 .title-box {
   max-width: 440px;
   width: 100%;
-  padding: 18px 20px;
+  padding: 28px 24px 22px;
   text-align: center;
+  animation: ui-open var(--ui-open) ease-out;
 }
 
 .title-box.wide {
@@ -264,12 +263,9 @@ body {
 
 .logo {
   margin: 4px 0 2px;
-  font-size: clamp(40px, 12vw, 64px);
-  letter-spacing: 2px;
-  color: var(--green);
-  text-shadow:
-    3px 3px 0 var(--green4),
-    6px 6px 0 var(--ink);
+  font: 600 clamp(36px, 11vw, 56px) / 1.1 var(--ui-display);
+  letter-spacing: 0.04em;
+  color: var(--ui-gold-5);
 }
 
 .tagline {
@@ -286,7 +282,7 @@ body {
 }
 
 .demo-note {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--blue);
   margin: 12px 0 0;
 }
@@ -306,7 +302,7 @@ body {
 
 .card {
   background: var(--paper);
-  border: 3px solid var(--paper2);
+  border: 1px solid var(--paper2);
   border-radius: 0;
   padding: 10px;
   margin: 8px 0;
@@ -315,6 +311,7 @@ body {
 
 .card.race {
   font: inherit;
+  color: var(--ink);
   cursor: pointer;
   display: grid;
   justify-items: center;
@@ -324,9 +321,9 @@ body {
 }
 
 .card.race.on {
-  border-color: var(--ink);
-  background: #fffbe9;
-  box-shadow: inset 0 0 0 2px var(--yellow);
+  border-color: var(--ui-gold-4);
+  background: var(--ui-well);
+  box-shadow: inset 0 0 0 2px var(--ui-gold-5);
 }
 
 .card.race p {
@@ -339,8 +336,8 @@ body {
   display: grid;
   gap: 2px;
   width: 100%;
-  max-width: 180px;
-  font-size: 13px;
+  max-width: 200px;
+  font-size: 16px;
 }
 
 .mini-attrs div {
@@ -357,7 +354,7 @@ body {
 .pips i {
   width: 8px;
   height: 8px;
-  border: 2px solid var(--ink2);
+  border: 1px solid var(--ink2);
   background: var(--paper);
 }
 
@@ -378,8 +375,8 @@ textarea {
   font: inherit;
   font-size: 18px;
   color: var(--ink);
-  background: #fff;
-  border: 3px solid var(--ink);
+  background: var(--cream);
+  border: 1px solid var(--ui-gold-3);
   border-radius: 0;
   padding: 6px 8px;
   user-select: text;
@@ -388,6 +385,7 @@ textarea {
 
 input.name {
   width: 220px;
+  min-height: 44px;
 }
 
 textarea {
@@ -399,7 +397,7 @@ textarea {
   color: var(--red);
   min-height: 1em;
   margin: 6px 0 0;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 /* ------------------------------------------------------------ HUD */
@@ -773,7 +771,7 @@ body {
   justify-self: center;
   width: min(100%, 640px);
   min-height: 92px;
-  padding: 12px 16px 14px;
+  padding: 18px 18px 16px;
   font-size: 18px;
   cursor: pointer;
 }
@@ -782,15 +780,19 @@ body {
   padding-bottom: calc(max(10px, env(safe-area-inset-bottom)) + 168px);
 }
 
+/* the speaker on a small gold plaque over the box's edge */
 .dialog-name {
   position: absolute;
-  top: -18px;
-  left: 12px;
-  padding: 0 8px;
-  background: var(--cream);
-  border: 3px solid var(--ink);
-  border-radius: 0;
-  font-size: 15px;
+  z-index: 4;
+  top: -16px;
+  left: 40px;
+  min-height: 30px;
+  padding: 6px 22px;
+  background: var(--ui-gold-5);
+  color: var(--ui-black);
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
+  font: 600 var(--ui-group) / 1.15 var(--ui-display);
+  letter-spacing: 0.06em;
 }
 
 .dialog-text.page {
@@ -806,9 +808,9 @@ body {
 
 .dialog-arrow {
   position: absolute;
-  right: 12px;
-  bottom: 6px;
-  color: var(--red2);
+  right: 18px;
+  bottom: 8px;
+  color: var(--ui-gold-5);
   animation: blink 0.8s steps(2) infinite;
 }
 
@@ -818,20 +820,56 @@ body {
   }
 }
 
+/* the answers: a list of choices down the box, one under the other, the one in focus marked in gold
+   (DECISIONS 2026-10-28: never a popup over a character) */
 .dialog-options {
   display: grid;
-  gap: 6px;
+  gap: 0;
   margin-top: 10px;
+  border-top: var(--ui-hair);
 }
 
-.btn.option {
+.dialog .dialog-options .btn.option {
+  position: relative;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px 8px 30px;
   text-align: left;
+  background: transparent;
+  color: var(--ui-paper-soft);
+  border: 0;
+  border-bottom: var(--ui-hair);
+}
+
+.dialog .dialog-options .btn.option::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin-top: -4px;
+  rotate: 45deg;
+  border: 1px solid var(--ui-gold-3);
+}
+
+.dialog .dialog-options .btn.option:hover,
+.dialog .dialog-options .btn.option:focus {
+  background: var(--ui-well);
+  color: var(--ui-gold-6);
+  box-shadow: inset 2px 0 0 var(--ui-gold-4);
+}
+
+.dialog .dialog-options .btn.option:hover::before,
+.dialog .dialog-options .btn.option:focus::before {
+  background: var(--ui-gold-5);
+  border-color: var(--ui-gold-5);
 }
 
 .panel-layer {
   place-items: center;
-  padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
-  background: rgba(27, 26, 46, 0.45);
+  padding: max(10px, env(safe-area-inset-top)) 8px max(10px, env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--ui-well) 82%, transparent);
 }
 
 .panel {
@@ -841,32 +879,78 @@ body {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  animation: ui-open var(--ui-open) ease-out;
 }
 
 .panel.wide {
   width: min(100%, 680px);
 }
 
+/* the name on its plaque in the middle, the close button set into the right-hand corner over its piece */
 .panel header {
+  position: relative;
+  flex: none;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  padding: 8px 10px 6px 14px;
-  border-bottom: 3px solid var(--paper2);
+  min-height: 64px;
+  padding: 12px 60px 8px;
+  border-bottom: 0;
 }
 
 .panel h2 {
   margin: 0;
-  font-size: 22px;
+}
+
+.panel header .btn.close {
+  position: absolute;
+  z-index: 4;
+  right: 8px;
+  top: 8px;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  font-size: 0;
+  color: var(--ui-gold-5);
+  background: var(--ui-black);
+  border: 1px solid var(--ui-gold-3);
+  box-shadow: none;
+}
+
+/* the word stays "Close" for a screen reader and a test; the eye reads the cross */
+.panel header .btn.close::before {
+  content: '\00d7';
+  font: 400 var(--ui-big) / 1 var(--font);
+}
+
+.panel header .btn.close:hover,
+.panel header .btn.close:focus-visible {
+  background: var(--ui-gold-5);
+  color: var(--ui-black);
 }
 
 .panel h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 14px 0 4px;
-  font-size: 17px;
+  font: 600 var(--ui-group) / 1.2 var(--ui-display);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ui-gold-5);
+}
+
+.panel h3::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--ui-gold-2);
 }
 
 .panel-body {
-  padding: 10px 14px 14px;
+  padding: 0 14px 16px;
   overflow-y: auto;
   -webkit-user-select: text;
   user-select: text;
@@ -874,21 +958,34 @@ body {
 
 .tabs {
   display: flex;
-  gap: 4px;
+  gap: 0;
   flex-wrap: wrap;
   margin-bottom: 8px;
+  border-bottom: var(--ui-hair);
 }
 
 .btn.tab {
-  min-height: 30px;
-  padding: 2px 10px;
-  font-size: 15px;
-  background: var(--paper2);
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 14px;
+  font-size: var(--ui-text);
+  color: var(--ui-gold-5);
+  background: transparent;
+  border: 0;
   box-shadow: none;
 }
 
+.btn.tab:hover:not(:disabled),
+.btn.tab:focus-visible {
+  background: transparent;
+  color: var(--ui-gold-6);
+  box-shadow: inset 0 -1px 0 var(--ui-gold-3);
+}
+
 .btn.tab.on {
-  background: var(--yellow);
+  background: transparent;
+  color: var(--ui-gold-6);
+  box-shadow: inset 0 -2px 0 var(--ui-gold-4);
 }
 
 .slots {
@@ -904,16 +1001,16 @@ body {
   height: 52px;
   display: grid;
   place-items: center;
-  background: var(--cream);
-  border: 3px solid var(--wood2);
+  background: var(--ui-well);
+  border: var(--ui-hair);
   border-radius: 0;
   cursor: pointer;
   padding: 0;
 }
 
 .slot.on {
-  border-color: var(--ink);
-  background: var(--yellow);
+  border-color: var(--ui-gold-5);
+  box-shadow: inset 0 0 0 1px var(--ui-gold-5);
 }
 
 .slot .count {
@@ -921,7 +1018,7 @@ body {
   position: absolute;
   right: 2px;
   bottom: 0;
-  font-size: 13px;
+  font-size: 16px;
   text-shadow:
     1px 1px 0 var(--paper),
     -1px -1px 0 var(--paper);
@@ -940,13 +1037,13 @@ body {
 }
 
 .rarity {
-  font-size: 13px;
+  font-size: 16px;
   color: var(--grey);
   text-transform: capitalize;
 }
 
 .detail {
-  border-top: 3px solid var(--paper2);
+  border-top: var(--ui-hair);
   padding-top: 8px;
 }
 
@@ -978,9 +1075,24 @@ body {
 .row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 0;
-  border-bottom: 2px solid var(--paper2);
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: var(--ui-hair);
+}
+
+/* the thing a row names sits in a socket, as in the bag */
+.panel .row > .sprite {
+  box-sizing: content-box;
+  padding: 7px;
+  background-color: var(--ui-well);
+  background-origin: content-box;
+  border: var(--ui-hair);
+}
+
+.panel .row .price {
+  color: var(--ui-gold-6);
+  min-width: 44px;
+  text-align: right;
 }
 
 .row .grow {
@@ -989,7 +1101,7 @@ body {
 }
 
 .row .muted {
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .price {
@@ -1007,30 +1119,32 @@ body {
   top: 0;
   z-index: 1;
   display: flex;
-  gap: 4px;
+  gap: 8px;
   overflow-x: auto;
-  padding: 4px 0;
-  background: var(--paper);
+  padding: 6px 0;
+  background: var(--ui-black) var(--ui-grain) repeat;
+  scrollbar-width: none;
 }
 
+/* a group's chip: the thin line, a paper word */
 .shop-jump .btn.tab {
   flex: none;
+  padding: 0 12px;
+  color: var(--ui-paper);
+  border: 1px solid var(--ui-gold-3);
 }
 
 .shop-group + .shop-group {
   margin-top: 8px;
 }
 
-.shop-group-name {
-  margin: 8px 0 0;
-  font-size: 16px;
-  color: var(--wood2);
-  border-bottom: 3px solid var(--paper2);
+.panel .shop-group-name {
+  margin: 14px 0 2px;
 }
 
 .needs span {
   margin-right: 8px;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .have {
@@ -1067,7 +1181,7 @@ body {
   gap: 8px;
   align-items: center;
   padding: 4px;
-  border: 2px solid var(--paper2);
+  border: var(--ui-hair);
   border-radius: 0;
 }
 
@@ -1094,7 +1208,7 @@ body {
   row-gap: 2px;
   align-items: center;
   padding: 4px 0 6px;
-  border-bottom: 2px solid var(--paper2);
+  border-bottom: var(--ui-hair);
   font-size: 16px;
 }
 
@@ -1105,7 +1219,7 @@ body {
 
 .attr > .muted {
   grid-column: 1 / 3;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .attr > .btn {
@@ -1114,12 +1228,13 @@ body {
 }
 
 .btn.plus {
-  min-height: 26px;
+  min-height: 44px;
+  min-width: 44px;
   padding: 0 8px;
 }
 
 .tech {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--green);
 }
 
@@ -1129,7 +1244,7 @@ body {
 }
 
 .version {
-  font-size: 12px;
+  font-size: 16px;
   margin-top: 14px;
 }
 
@@ -1144,7 +1259,7 @@ body {
   gap: 6px;
   align-items: center;
   margin: 8px 0;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .md {
@@ -1176,12 +1291,12 @@ body {
   padding: 0 3px;
   border-radius: 0;
   font-family: ui-monospace, monospace;
-  font-size: 13px;
+  font-size: 16px;
 }
 
 .md pre {
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--cream);
+  color: var(--ink);
   padding: 8px;
   border-radius: 0;
   overflow-x: auto;
@@ -1321,39 +1436,30 @@ body {
 
 .card.dev-welcome {
   border-color: var(--blue2);
-  background: #eef6fd;
+  background: var(--ui-well);
 }
 
 /* ------------------------------------------------------------ level up */
-
-.levelup-layer {
-  background: rgba(27, 26, 46, 0.6);
-}
 
 .panel.levelup {
   position: relative;
   overflow: hidden;
   width: min(100%, 460px);
-  border-color: var(--ink);
-  box-shadow:
-    inset 0 0 0 2px var(--yellow),
-    0 4px 0 rgba(27, 26, 46, 0.5);
 }
 
 .levelup-body {
   position: relative;
-  padding: 14px 14px 12px;
+  padding: 26px 18px 18px;
   overflow-y: auto;
 }
 
+/* the level in Cinzel gold, the window's biggest word */
 .levelup-body h2 {
   margin: 0;
-  font-size: 40px;
+  font: 600 var(--ui-big) / 1.15 var(--ui-display);
+  letter-spacing: 0.06em;
   text-align: center;
-  color: var(--green);
-  text-shadow:
-    2px 2px 0 var(--green4),
-    4px 4px 0 var(--ink);
+  color: var(--ui-gold-5);
 }
 
 .levelup-sub {
@@ -1390,50 +1496,46 @@ body {
   font: inherit;
   font-size: 16px;
   text-align: left;
-  color: var(--ink);
-  background: var(--cream);
-  border: 3px solid var(--ink);
+  color: var(--ui-paper);
+  background: var(--ui-well);
+  border: 1px solid var(--ui-gold-3);
   border-radius: 0;
-  box-shadow: inset 0 -3px 0 var(--wood2);
+  box-shadow: none;
   cursor: pointer;
 }
 
-.choice:hover:not(:disabled) {
-  background: #f3e2b8;
-}
-
+.choice:hover:not(:disabled),
 .choice:focus-visible {
-  background: var(--yellow);
+  border-color: var(--ui-gold-5);
+  box-shadow: inset 2px 0 0 var(--ui-gold-4);
   outline: none;
 }
 
 .choice:active:not(:disabled) {
   transform: translateY(2px);
-  box-shadow: inset 0 -1px 0 var(--wood2);
 }
 
 .choice:disabled {
   cursor: default;
-  background: var(--paper);
+  background: transparent;
   box-shadow: none;
-  border-color: var(--paper2);
-  color: var(--grey);
+  border-color: var(--ui-gold-2);
+  color: var(--ui-paper-soft);
 }
 
 .choice.spent {
-  background: var(--green4);
-  border-color: var(--green);
+  border-color: var(--ui-good);
+  box-shadow: inset 0 0 0 1px var(--ui-good);
   animation: pop 0.25s ease-out;
 }
 
 .choice-name {
   grid-area: name;
-  font-size: 17px;
-  font-weight: 600;
+  font-size: var(--ui-text);
 }
 
 .choice-name small {
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 400;
   color: var(--grey);
 }
@@ -1459,7 +1561,7 @@ body {
 
 .choice-note {
   grid-area: note;
-  font-size: 13px;
+  font-size: 16px;
   color: var(--blue);
 }
 
@@ -1467,19 +1569,18 @@ body {
   grid-area: plus;
   display: grid;
   place-items: center;
-  min-width: 40px;
-  min-height: 40px;
-  font-size: 18px;
-  color: var(--paper);
-  background: var(--green2);
-  border: 3px solid var(--ink);
-  box-shadow: inset 0 -3px 0 var(--green);
+  min-width: 44px;
+  min-height: 44px;
+  font-size: var(--ui-text);
+  color: var(--ui-black);
+  background: var(--ui-gold-5);
+  border: 1px solid var(--ui-gold-3);
 }
 
 .choice:disabled .choice-plus {
-  background: var(--paper2);
-  box-shadow: none;
-  border-color: var(--grey2);
+  color: var(--ui-paper-soft);
+  background: transparent;
+  border-color: var(--ui-gold-2);
 }
 
 .levelup-actions {
@@ -1506,6 +1607,7 @@ body {
 .panel.levelup > .burst {
   top: 46px;
   z-index: 0;
+  background: repeating-conic-gradient(color-mix(in srgb, var(--ui-gold-5) 24%, transparent) 0deg 12deg, transparent 12deg 30deg);
 }
 
 @keyframes burst-turn {
@@ -1820,10 +1922,6 @@ body {
 
 .panel.sign-card {
   width: min(100%, 420px);
-  background: #f3e6c4;
-  box-shadow:
-    inset 0 0 0 3px var(--wood2),
-    0 4px 0 rgba(27, 26, 46, 0.5);
 }
 
 .sign-card .panel-body {
@@ -1852,8 +1950,8 @@ body {
 
 .sign-who small {
   display: block;
-  font-size: 15px;
-  color: var(--ink2);
+  font-size: 16px;
+  color: var(--ui-paper-soft);
 }
 
 .sign-stats {
@@ -1865,25 +1963,26 @@ body {
 
 .sign-stat {
   padding: 6px 4px;
-  background: var(--paper);
-  border: 2px solid var(--wood2);
+  background: var(--ui-well);
+  border: var(--ui-hair);
 }
 
 .sign-stat b {
   display: block;
-  font-size: 22px;
-  color: var(--wood);
+  font-size: var(--ui-title);
+  font-weight: 400;
+  color: var(--ui-gold-6);
 }
 
 .sign-stat span {
-  font-size: 13px;
-  color: var(--ink2);
+  font-size: var(--ui-group);
+  color: var(--ui-paper-soft);
 }
 
 .sign-note {
   margin: 0;
-  font-size: 13px;
-  color: var(--grey);
+  font-size: var(--ui-group);
+  color: var(--ui-paper-soft);
 }
 
 .sign-tools {
@@ -1895,17 +1994,16 @@ body {
 
 .sign-tools span {
   padding: 1px 6px;
-  font-size: 14px;
-  background: var(--sky);
-  border: 2px solid var(--ink);
+  font-size: var(--ui-group);
+  color: var(--ui-paper);
+  border: var(--ui-hair);
 }
 
 .sign-mended {
   margin: 0;
   padding: 4px 10px;
-  color: var(--green);
-  background: var(--green4);
-  border: 2px dashed var(--green);
+  color: var(--ui-good);
+  border: 1px dashed var(--ui-good);
 }
 
 .stone {
@@ -1913,9 +2011,9 @@ body {
   padding: 8px 10px;
   list-style: none;
   text-align: center;
-  color: var(--ink);
-  background: var(--sky);
-  border: 2px solid var(--ink);
+  color: var(--ui-paper);
+  background: var(--ui-well);
+  border: var(--ui-hair);
 }
 
 .stone li {
@@ -1923,12 +2021,12 @@ body {
 }
 
 .stone .carved {
-  color: var(--green);
-  border-top: 2px dashed var(--green);
+  color: var(--ui-good);
+  border-top: 1px dashed var(--ui-good);
 }
 
 .stone .blank {
-  border-top: 2px dashed var(--ink);
+  border-top: 1px dashed var(--ui-gold-2);
 }
 
 @media (max-width: 420px) {
@@ -1942,7 +2040,7 @@ body {
   }
   .dialog {
     font-size: 16px;
-    padding: 10px 14px 14px;
+    padding: 18px 14px 14px;
   }
   .dialog-text {
     font-size: 17px;
@@ -1990,6 +2088,8 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .panel,
+  .title-box,
   .toast,
   .dialog-arrow,
   .burst,
@@ -2032,15 +2132,16 @@ body {
   font-size: 18px;
   color: var(--ink);
   text-align: left;
-  background: var(--cream);
-  border: 3px solid var(--ink);
+  background: var(--ui-well);
+  border: 1px solid var(--ui-gold-3);
   border-radius: 0;
   cursor: pointer;
 }
 
 .panel.search .search-row:hover,
 .panel.search .search-row:focus-visible {
-  background: var(--yellow);
+  border-color: var(--ui-gold-5);
+  box-shadow: inset 2px 0 0 var(--ui-gold-4);
   outline: none;
 }
 
@@ -2073,4 +2174,66 @@ body {
 .panel.search .search-luck {
   margin: 10px 0 0;
   font-size: 16px;
+}
+
+/* ------------------------------------------------------------ frame D: a button in a window */
+
+/* (DECISIONS 2026-10-28, theme.css) inside a window a button is the thin gold line round the
+   brightest gold word, 44 px at the least; picked or pointed at, it fills with gold and the word
+   turns black. The HUD's buttons keep their own look. */
+:is(.panel, .dialog, .title-box) .btn:not(.tab, .option) {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 4px 14px;
+  font: 400 var(--ui-text) / 1 var(--font);
+  color: var(--ui-gold-6);
+  background: transparent;
+  border: var(--ui-line);
+  box-shadow: none;
+}
+
+:is(.panel, .dialog, .title-box) .btn:not(.tab, .option):hover:not(:disabled),
+:is(.panel, .dialog, .title-box) .btn:not(.tab, .option):focus-visible {
+  color: var(--ui-black);
+  background: var(--ui-gold-5);
+  outline: none;
+}
+
+:is(.panel, .dialog, .title-box) .btn:not(.tab, .option):active:not(:disabled) {
+  box-shadow: none;
+}
+
+:is(.panel, .dialog, .title-box) .btn:not(.tab, .option):disabled {
+  opacity: 1;
+  color: var(--ui-paper-soft);
+  border-color: var(--ui-gold-2);
+}
+
+:is(.panel, .dialog, .title-box) .btn.big:not(.tab, .option) {
+  min-height: 52px;
+  padding: 8px 28px;
+  font-size: var(--ui-title);
+}
+
+/* a step that cannot be taken back: the warning's colour in place of the gold */
+:is(.panel, .dialog, .title-box) .btn.danger:not(.tab, .option) {
+  color: var(--ui-warn);
+  border-color: var(--ui-warn);
+}
+
+:is(.panel, .dialog, .title-box) .btn.danger:not(.tab, .option):hover:not(:disabled),
+:is(.panel, .dialog, .title-box) .btn.danger:not(.tab, .option):focus-visible {
+  color: var(--ui-black);
+  background: var(--ui-warn);
+}
+
+/* a desktop: the window keeps the phone's frame and proportions, centred, never edge to edge */
+@media (min-width: 1280px) {
+  .panel {
+    width: min(100%, 560px);
+  }
+
+  .panel.wide {
+    width: min(100%, 720px);
+  }
 }

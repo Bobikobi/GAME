@@ -259,14 +259,18 @@ describe('the gallery', () => {
     warnings: [], error: null, at: '2026-10-18T00:00:00.000Z', ...over,
   });
 
-  test('shows the latest image of each name, its warnings and its failures', () => {
+  test('shows every draw of each name, its warnings and its failures', () => {
     const html = galleryHtml([
       line({ error: 'Codex saved no image' }),
-      line({ raw: 'raw/elder-1.png', out: 'elder.png', logical: [20, 30], grid: 30, colors: 12, warnings: ['drawn on a coarser grid'] }),
+      line({ raw: 'raw/elder-1.png', out: 'elder.png', logical: [20, 30], grid: 30, colors: 12, warnings: ['drawn on a coarser grid'], at: '2026-10-18T01:00:00.000Z' }),
       line({ name: 'grass', kind: 'tile', ref: 'tiles/grass', refSize: [16, 16], width: 32, height: 32, error: 'import: <bad>' }),
     ]);
     expect(html).toContain('src="elder.png"');
-    expect(html).not.toContain('Codex saved no image');
+    // a wave draws one entry more than once: the failed first draw and the second both stay, titled by their order
+    expect(html).toContain('Codex saved no image');
+    expect(html).toContain('elder (1 of 2, 2026-10-18T00:00:00.000Z)');
+    expect(html).toContain('elder (2 of 2, 2026-10-18T01:00:00.000Z)');
+    expect(html).toContain('<h2>grass</h2>');
     expect(html).toContain('drawn on a coarser grid');
     expect(html).toContain('style="width:96px"');
     expect(html).toContain('import: &lt;bad&gt;');
