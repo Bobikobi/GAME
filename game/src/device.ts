@@ -15,6 +15,8 @@ export type Tier = 'low' | 'mid' | 'high';
 
 export interface Device {
   tier: Tier;
+  /** automated or software-drawn (webdriver, SwiftShader): not a phone, so Auto changes nothing there */
+  headless: boolean;
   /** the screen's measured refresh in Hz, or 0 while it is not measured yet */
   refreshHz: number;
   /** frame time in ms of the world, 0 while not measured */
@@ -100,6 +102,8 @@ export interface Hardware {
 
 /** A GPU name that is a software renderer or an old mobile part. */
 const WEAK_GPU = /swiftshader|llvmpipe|software|mali-4|mali-t|adreno \(?[2-4]\d\d\b|powervr|videocore/i;
+/** A GPU name that is a software renderer: a test browser or a machine without a graphics chip. */
+const SOFTWARE_GPU = /swiftshader|llvmpipe|software/i;
 /** A GPU name that is a recent desktop or phone part. */
 const STRONG_GPU = /apple (m|a1[5-9])|rtx|radeon rx|adreno \(?[7-9]\d\d\b|mali-g7|mali-g[89]/i;
 /** Fewer cores than this is a low tier, at least HIGH_CORES with the memory below is a high tier. */
@@ -142,5 +146,6 @@ export function readDevice(): Device {
     dpr: typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1,
     gpu: typeof document === 'undefined' ? '' : gpuName(),
   };
-  return { tier: tierOf(hw), refreshHz: 0, p50: 0, p95: 0 };
+  const headless = nav.webdriver === true || SOFTWARE_GPU.test(hw.gpu);
+  return { tier: tierOf(hw), headless, refreshHz: 0, p50: 0, p95: 0 };
 }

@@ -84,9 +84,10 @@ function autoCap(d: Device): Effective['frameCap'] {
 
 /** The preset and cap in force: a chosen value stands (a cap is bounded by the screen), Auto resolves from the device. */
 export function resolve(s: Settings, d: Device): Effective {
-  const quality = s.quality === 'auto' ? qualityOfTier(d.tier) : s.quality;
+  // a headless or software-drawn browser is no phone: Auto keeps the full game and withholds no frame
+  const quality = s.quality === 'auto' ? (d.headless ? 'high' : qualityOfTier(d.tier)) : s.quality;
   let frameCap: Effective['frameCap'];
-  if (s.frameCap === 'auto') frameCap = autoCap(d);
+  if (s.frameCap === 'auto') frameCap = d.headless ? 0 : autoCap(d);
   else if (s.frameCap === 'max') frameCap = 0;
   else frameCap = s.frameCap;
   // a cap above the screen's refresh changes nothing, so it is the screen's own rate

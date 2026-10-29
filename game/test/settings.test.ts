@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Device } from '../src/device';
 import { AUTO_SETTINGS, SETTINGS_KEY, readSettings, resolve, richOf, writeSettings, type Settings } from '../src/settings';
 
-const dev = (tier: Device['tier'], refreshHz = 60, p95 = 0): Device => ({ tier, refreshHz, p50: p95 / 2, p95 });
+const dev = (tier: Device['tier'], refreshHz = 60, p95 = 0, headless = false): Device => ({ tier, headless, refreshHz, p50: p95 / 2, p95 });
 const mem = (): { store: Record<string, string>; getItem(k: string): string | null; setItem(k: string, v: string): void } => {
   const store: Record<string, string> = {};
   return { store, getItem: (k) => store[k] ?? null, setItem: (k, v) => void (store[k] = v) };
@@ -24,6 +24,15 @@ describe('resolve, Auto', () => {
     expect(resolve(AUTO_SETTINGS, dev('low', 60, 20))).toEqual({ quality: 'low', frameCap: 30 });
     expect(resolve(AUTO_SETTINGS, dev('low', 60, 12))).toEqual({ quality: 'low', frameCap: 60 });
     expect(resolve(AUTO_SETTINGS, dev('low', 60, 0)).frameCap).toBe(60);
+  });
+});
+
+describe('resolve, headless', () => {
+  it('Auto on a headless device keeps high and no cap, even when slow', () => {
+    expect(resolve(AUTO_SETTINGS, dev('low', 60, 40, true))).toEqual({ quality: 'high', frameCap: 0 });
+  });
+  it('a chosen value still stands there', () => {
+    expect(resolve({ ...AUTO_SETTINGS, quality: 'low', frameCap: 30 }, dev('low', 60, 40, true))).toEqual({ quality: 'low', frameCap: 30 });
   });
 });
 

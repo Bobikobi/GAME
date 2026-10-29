@@ -32,7 +32,8 @@ export function startPerf(query: string, storage: Storage | null): Perf {
 /** Hands the cap to Phaser's loop; 0 removes the limit. */
 export function applyCap(game: Phaser.Game, perf: Perf): void {
   perf.effective = resolve(perf.settings, perf.device);
-  game.loop.setFPSLimit(perf.effective.frameCap);
+  // setFPSLimit restarts a running loop, so it is called only when the limit really changes
+  if (game.loop.fpsLimit !== perf.effective.frameCap) game.loop.setFPSLimit(perf.effective.frameCap);
 }
 
 /** Measures the refresh, feeds the frame timer, and settles the cap once the world has run for SETTLE_FRAMES frames. */
