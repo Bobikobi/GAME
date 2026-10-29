@@ -11773,6 +11773,7 @@
             "bag_base",
             "place_stack",
             "load",
+            "gait",
             "starting_gold_mg",
             "per_point"
           ],
@@ -13241,6 +13242,183 @@
                     }
                   },
                   "description": "How fast breath (stamina) refills in a fight while heavy, against 1000."
+                }
+              }
+            },
+            "gait": {
+              "additionalProperties": false,
+              "description": "The three gaits (docs/design/ANIMATION.md, section 2): walk is the pace the load allows, run is faster and sneak slower, and each is heard at its own radius. The noise table is shared with the hunting rules; the radii only grow from still to run.",
+              "type": "object",
+              "required": [
+                "run_div",
+                "sneak_mul",
+                "noise_still",
+                "noise_sneak",
+                "noise_walk",
+                "noise_run"
+              ],
+              "properties": {
+                "run_div": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "A run takes the pace the load allows divided by this: 2 is half the time a tile. Every pace divides evenly."
+                },
+                "sneak_mul": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "A sneak takes the pace the load allows times this: 2 is twice the time a tile."
+                },
+                "noise_still": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Tiles within which a creature that listens turns its head at a player standing still."
+                },
+                "noise_sneak": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The same, at a sneak."
+                },
+                "noise_walk": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The same, at a walk."
+                },
+                "noise_run": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "The same, at a run."
                 }
               }
             },

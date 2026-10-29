@@ -166,6 +166,14 @@ export function flattenParams(p: ParamsBody): Params {
       heavy_step_ms: p.load.heavy_step_ms.value,
       heavy_breath_permille: p.load.heavy_breath_permille.value,
     },
+    gait: {
+      run_div: p.gait.run_div.value,
+      sneak_mul: p.gait.sneak_mul.value,
+      noise_still: p.gait.noise_still.value,
+      noise_sneak: p.gait.noise_sneak.value,
+      noise_walk: p.gait.noise_walk.value,
+      noise_run: p.gait.noise_run.value,
+    },
     starting_gold_mg: p.starting_gold_mg.value,
     per_point: {
       might: p.per_point.might.value,
