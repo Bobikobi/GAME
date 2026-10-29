@@ -17,6 +17,8 @@ What players notice
 - Pell's counter is sorted into named groups instead of one long list.
 - The game's interface has its new look: a wooden frame, canvas panels and the Jersey 15 face.
 - The skill tree screen pans and zooms over a tree of any size: drag or the wheel on a computer, one finger and a pinch on a phone.
+- The camera comes closer: a phone shows about 6 by 13 tiles instead of 9 by 20, and a computer screen about 11 by 7 instead of 22 by 14. The character keeps its size, so the world around you is the part that grows.
+- Pell's shop is a room you walk into. Her stall is now a small house: step into its door, talk to her across the counter, buy or sell there, and walk down to go back out to the valley.
 
 What creators notice
 - New art is drawn at 64 pixels a tile: the check refuses a new 16 px sprite, and every rich sprite gets an ink edge the check measures.
