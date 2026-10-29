@@ -70,7 +70,7 @@ import {
   type PublicState,
 } from './state';
 import { rarityRank, payFor } from './values';
-import { campTile, findSlot, inRect, makeWalkable, near, npcTile, type Rect } from './world';
+import { campTile, findSlot, inRect, makeStepRule, makeWalkable, near, npcTile, type Rect } from './world';
 
 export type Tile = [number, number];
 export type Grade = 0 | 1 | 2 | 3 | 4;
@@ -266,12 +266,24 @@ function walkableFor(bundle: Bundle) {
   return fn;
 }
 
+const stepRuleCache = new WeakMap<Bundle, ReturnType<typeof makeStepRule>>();
+/** The height rule of a step (G68), built once per bundle: the one function walking, G56's BFS and the tools share. */
+export function stepRuleFor(bundle: Bundle) {
+  let fn = stepRuleCache.get(bundle);
+  if (!fn) {
+    fn = makeStepRule(bundle);
+    stepRuleCache.set(bundle, fn);
+  }
+  return fn;
+}
+
 /** The shortest four-way path to a tile, limited to a square and a maximum number of steps. */
 export function walkDistance(bundle: Bundle, state: State, from: Tile, target: Tile, maxSteps: number): number | undefined {
   const validTile = (tile: Tile): boolean =>
     Array.isArray(tile) && tile.length === 2 && tile.every(Number.isSafeInteger);
   if (!validTile(from) || !validTile(target) || !Number.isSafeInteger(maxSteps) || maxSteps < 0) return undefined;
   const walkable = walkableFor(bundle);
+  const stepOpen = stepRuleFor(bundle);
   if (!walkable(target[0], target[1], state.player)) return undefined;
   if (from[0] === target[0] && from[1] === target[1]) return 0;
 
@@ -291,7 +303,7 @@ export function walkDistance(bundle: Bundle, state: State, from: Tile, target: T
       const y = current.y + stepY;
       if (x < minX || x > from[0] + maxSteps || y < minY || y > from[1] + maxSteps) continue;
       const nextKey = key(x, y);
-      if (seen.has(nextKey) || !walkable(x, y, state.player)) continue;
+      if (seen.has(nextKey) || !walkable(x, y, state.player) || !stepOpen(current.x, current.y, x, y)) continue;
       const steps = current.steps + 1;
       if (x === target[0] && y === target[1]) return steps;
       seen.add(nextKey);

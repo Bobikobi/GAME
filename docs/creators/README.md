@@ -39,7 +39,7 @@ git clone https://github.com/<you>/GAME
 cd GAME
 git remote add upstream https://github.com/Bobikobi/GAME
 git fetch upstream
-git switch -c add-my-townsperson upstream/develop   # cloned the main repository itself? use origin/develop
+git switch -c feat/my-townsperson upstream/develop   # cloned the main repository itself? use origin/develop
 pnpm install
 pnpm dev
 ```
