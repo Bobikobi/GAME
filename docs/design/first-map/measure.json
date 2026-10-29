@@ -208,5 +208,89 @@
    190,
    823
   ]
+ },
+ "A2": {
+  "legs": {
+   "N": 55,
+   "W": 17,
+   "S": 30
+  },
+  "pairs": {
+   "NW": 66,
+   "NS": 85,
+   "SW": 25
+  },
+  "manhattan": {
+   "NW": 60,
+   "NS": 85,
+   "SW": 25
+  },
+  "nearest_pair": 25,
+  "bridge_view_shows_start_area": {
+   "N": false,
+   "W": false,
+   "S": false
+  },
+  "d_town_max": 169,
+  "d_levels": {
+   "0": 4642,
+   "1": 6239,
+   "2": 775,
+   "3": 0
+  },
+  "unreachable_walkable": 0,
+  "g62_worst_steps": 69,
+  "g62_limit": 241,
+  "straight_run_max": {
+   "east-road": 6,
+   "east-pass": 7,
+   "elf-trail-W": 6,
+   "elf-trail-C": 5,
+   "elf-trail-E": 7,
+   "elf-dead-1": 6,
+   "elf-dead-2": 6,
+   "elf-dead-3": 5,
+   "north-pass": 6,
+   "shore-pass": 7,
+   "descent-south": 7,
+   "bank-road-W": 7,
+   "bank-road-S": 7,
+   "shore-way-in": 6,
+   "tangle-brook": 5,
+   "town-east-road": 6,
+   "west-foot": 7,
+   "bank-road-N": 6,
+   "city-bridge-road": 6,
+   "city-south": 4,
+   "north-track": 5,
+   "ruins-climb": 6,
+   "falls-climb": 6,
+   "lookout-path": 4,
+   "terrace-track": 6
+  },
+  "pass_reach": {
+   "N": 68,
+   "E": 55,
+   "SW": 74,
+   "boathouse": 72,
+   "tarn": 88,
+   "dock": 139,
+   "hall": 106,
+   "stall1": 118,
+   "stall3": 128,
+   "city": 64,
+   "ruins": 81,
+   "falls": 56,
+   "lookout": 82,
+   "darktower": 116
+  },
+  "floor_walkable": 6622,
+  "pixels_differing_from_A": 96622,
+  "diff_bbox": [
+   3,
+   40,
+   388,
+   832
+  ]
  }
 }
