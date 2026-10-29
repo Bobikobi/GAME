@@ -345,10 +345,10 @@ describe('the real repository', () => {
     const drafts = loadEvidence(root).drafts.filter((d) => d.at !== null && Date.parse(d.at) <= now.getTime());
     const since = new Date(now.getTime() - 7 * 86_400_000);
     const perDraft = drafts.filter((d) => d.at !== null && Date.parse(d.at) >= since.getTime()).reduce((n, d) => n + (d.run?.gpu_seconds ?? 0), 0);
-    // the 27.10 index: 32 kernel runs in the week; adding the seconds draft by draft would say 2332.7 minutes
-    expect(status.gpu_runs_week).toBe(32);
-    expect(status.gpu_minutes_week).toBe(198.2);
+    // the 28.10 index: 35 kernel runs in the week (the first props wave added three); adding the seconds draft by draft would say over 2300 minutes
+    expect(status.gpu_runs_week).toBe(35);
+    expect(status.gpu_minutes_week).toBe(241.5);
     expect(perDraft / 60).toBeGreaterThan(2300);
-    expect(gpuSecondsSince(drafts, since) / 60).toBeCloseTo(198.2, 1);
+    expect(gpuSecondsSince(drafts, since) / 60).toBeCloseTo(241.5, 1);
   });
 });
