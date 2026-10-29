@@ -100,6 +100,18 @@
     { "name":"sign","ref":"props/sign","kit_id":"props/sign","kind":"sprite","width":64,"height":64,"ramps":["wood","bark"],
       "what":"wooden signboard on a post","detail":"a flat plank board with grain and nail heads, set on one sturdy post" },
     { "name":"stump","ref":"props/stump","kit_id":"props/stump","kind":"sprite","width":64,"height":64,"ramps":["bark","wood"],
-      "what":"tree stump","detail":"rough bark sides, a pale flat top with growth rings, two roots at its foot" }
+      "what":"tree stump","detail":"rough bark sides, a pale flat top with growth rings, two roots at its foot" },
+    { "name":"dock_pier","ref":"props/dock_pier","kit_id":"props/dock_pier","rank":30,"new":true,"kind":"sprite","width":128,"height":192,"ramps":["wood", "bark", "stone"],
+      "what":"wooden dock reaching into the water","detail":"a straight pier of weathered planks on dark posts seen from above at an angle, rope cleats, a coiled rope, wet dark planks near the end, a mooring post" },
+    { "name":"boat_small","ref":"props/boat_small","kit_id":"props/boat_small","rank":30,"new":true,"kind":"sprite","width":128,"height":96,"ramps":["wood", "bark", "red"],
+      "what":"small wooden rowing boat","detail":"a short clinker-built rowing boat with a pointed bow, two oars laid across, a rope coiled at the front, worn dark planks, tied up beside a dock" },
+    { "name":"city_skyline","ref":"props/city_skyline","kit_id":"props/city_skyline","rank":30,"new":true,"kind":"sprite","width":320,"height":96,"ramps":["grey", "stone", "red", "water"],
+      "what":"far shore city skyline seen across water","detail":"a low grey stone city on the far bank seen from a distance: towers, slate roofs, a harbour wall, thin chimney smoke, hazy and muted, all in cool greys" },
+    { "name":"sign_stone","ref":"props/sign_stone","kit_id":"props/sign_stone","rank":30,"new":true,"kind":"sprite","width":64,"height":64,"ramps":["stone", "grey", "moss"],
+      "what":"weathered stone waymarker","detail":"a short upright slab of grey stone with a carved arrow and worn marks, moss at its foot, leaning slightly" },
+    { "name":"snow_pine","ref":"props/snow_pine","kit_id":"props/snow_pine","rank":30,"new":true,"kind":"sprite","width":128,"height":192,"ramps":["green", "grey", "bark"],
+      "what":"dark pine tree with snow on its branches","detail":"a tall narrow pine with dark green layered branches carrying clumps of snow, a thin trunk, snow piled at its foot" },
+    { "name":"ice_pit","ref":"props/ice_pit","kit_id":"props/ice_pit","rank":30,"new":true,"kind":"sprite","width":64,"height":64,"ramps":["grey", "water"],
+      "what":"ice pit in the snow","detail":"a dark round hole in the ice with a jagged rim of pale blue ice, snow crumbs at its edge, a deep blue-black shadow inside" }
   ]
 }
