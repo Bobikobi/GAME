@@ -59,7 +59,7 @@ Each question shows the default the pages are built on.
 
 - `pnpm check`: unchanged, 0 errors, 54 warnings, as on develop.
 - `pnpm verify`: green, including 13 test files and 82 tests in its last suite.
-- `grep -c -E '—|–'` prints 0 on every touched file.
+- The grep for em and en dashes prints 0 on every touched file.
 - No machine paths and no prices in the diff.
 
 ## Tools that fire on this pull request
