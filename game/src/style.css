@@ -746,6 +746,26 @@ body {
     0 3px 0 rgba(27, 26, 46, 0.5);
 }
 
+.tbtn.sneak {
+  /* frame D: the thin antique-gold line round the gold word on black, 44 px at the least */
+  width: auto;
+  min-width: 44px;
+  height: 44px;
+  margin-bottom: 40px;
+  padding: 0 12px;
+  border-radius: 0;
+  font-size: 16px;
+  color: var(--ui-gold-6);
+  background: var(--ui-black);
+  border: var(--ui-line);
+  box-shadow: none;
+}
+
+.tbtn.sneak[aria-pressed='true'] {
+  color: var(--ui-black);
+  background: var(--ui-gold-5);
+}
+
 .tbtn.down {
   transform: translateY(3px);
 }
