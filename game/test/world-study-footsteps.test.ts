@@ -42,7 +42,7 @@ test('a relocation or repeated start in place cannot draw a trail through the ma
 });
 
 test('marks have four opacity levels and expire at twenty seconds, with bounded memory', () => {
-  expect([0, 4999, 5000, 10_000, 15_000, 19_999, 20_000].map(footprintAlpha)).toEqual([.32, .32, .24, .16, .08, .08, 0]);
+  expect([0, 4999, 5000, 10_000, 15_000, 19_999, 20_000].map(footprintAlpha)).toEqual([.8, .8, .6, .4, .2, .2, 0]);
   const trail = new WorldStudyFootsteps(() => true);
   for (let i = 0; i < 100; i++) {
     trail.advance(i * 2, body(i * 10, 1, false));

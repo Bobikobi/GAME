@@ -56,3 +56,13 @@ captures are served from
 uses real keyboard/touch walking, checks the trail, layer toggle and bounded
 image allocation, then drives the effect clock beyond twenty seconds to verify
 resource removal. Pure tests cover all four fade steps and edge rejection.
+
+## Visibility correction after owner review
+
+The owner reported no visible footprints. The initial 32% opacity was too close
+to the sand grain. Fresh marks now use 80%, then 60%, 40% and 20%, with the same
+twenty-second expiry. No source drawing or approved ground asset changed.
+`/world-study.html?view=sand` opens directly on the existing sand viewpoint; the
+default spawn remains unchanged. A real keyboard walk and same-frame layer
+on/off capture measured 350 visibly darker pixels (at least 30 RGB levels),
+rather than relying on display-object counts alone.

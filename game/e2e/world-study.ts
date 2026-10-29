@@ -50,8 +50,11 @@ let browser: Browser | undefined;
 try {
   browser = await Browser.launch();
   const desktop = await browser.newPage({ width: 1440, height: 900, mobile: false });
-  await desktop.goto(url);
+  const sandUrl = new URL(url);
+  sandUrl.searchParams.set('view', 'sand');
+  await desktop.goto(sandUrl.href);
   await desktop.waitFor('!!window.__worldStudy', 'desktop world fixture', 60000);
+  if (await desktop.eval<string>('document.getElementById("status").textContent') !== 'חול יבש') throw Error('sand review link did not open on sand');
   if (await desktop.eval<number>('window.__worldStudy.footprints.stats.marks') !== 0) throw Error('standing created footprints');
   await checkCamera(desktop, 1, false);
   if (await desktop.eval<number>('window.__worldStudy.cameras.main.zoom') !== 2) throw Error('desktop default must be the picked close view');

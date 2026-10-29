@@ -12,10 +12,10 @@
     "lifetimeMs": 20000,
     "maximumMarksAndImages": 64,
     "opacityLevels": [
-      0.32,
-      0.24,
-      0.16,
-      0.08
+      0.8,
+      0.6,
+      0.4,
+      0.2
     ],
     "contact": "Actual resolved displacement and supporting-foot transitions",
     "surface": "Entire rotated footprint bounds must fit existing sand and land mask"
@@ -36,13 +36,14 @@
       "projectTestsSkipped": 23,
       "webTestsPassed": 81,
       "existingContentWarnings": 32,
-      "log": ".scratch/world-footprints-2026-10-29/verify.log"
+      "log": ".scratch/world-footprints-visibility-2026-10-29/verify.log"
     },
     "browser": {
       "status": "passed",
       "command": "WORLD_STUDY_FRAMES=game/public/art-review/world-footprints-2026-10-29 pnpm exec tsx game/e2e/world-study.ts",
-      "log": ".scratch/world-footprints-2026-10-29/browser.log",
+      "log": ".scratch/world-footprints-visibility-2026-10-29/browser.log",
       "checks": [
+        "Direct ?view=sand review link starts on sand",
         "No footprints at rest, on grass or blocked at roots",
         "Real keyboard walking in sand",
         "Layer visibility toggle",
@@ -59,18 +60,33 @@
   "assets": [
     {
       "file": "game/public/art-review/world-footprints-2026-10-29/desktop-footprints.png",
-      "sha256": "f7ac9658b39be9a8da527f0f0f46f90d2897fa53c4b5e5e34b21ffae67712e65",
-      "bytes": 662614
+      "sha256": "2a1ac2a44f85c3b8a8996c6fad6a6d99959ab1ea4c07e4bbb6ec2f8a2372cf5a",
+      "bytes": 665418
     },
     {
       "file": "game/public/art-review/world-footprints-2026-10-29/phone-footprints.png",
-      "sha256": "a1d0c4903e4a12f76f0a14f1dd4b1a851ec7c74bf8b196b6dc8f0a6dbc4eb508",
-      "bytes": 591321
+      "sha256": "fa98d6070eed17815148d5ea038839f388b1ff4b8f4ab5be093327d478fe0188",
+      "bytes": 587425
     }
   ],
   "remaining": [
     "Production integration is separate; 3D door remains paused",
     "Nearest of eight headings used for stamp rotation",
     "Paving and place composition remain separate review"
-  ]
+  ],
+  "visibilityCorrection20261029": {
+    "ownerFeedback": "אין עבות",
+    "cause": "Original 32-percent opacity blended into sand grain; default entry was grass where footprints intentionally do not appear",
+    "changes": [
+      "Fresh mark opacity increased from 0.32 to 0.8; four fade bands retained",
+      "Direct review URL supports ?view=sand without changing default spawn"
+    ],
+    "pixelProof": {
+      "method": "Real keyboard walking, pause scene, capture same frame with footprint layer visible and hidden",
+      "changedPixels": 357,
+      "pixelsWithAtLeast30LevelsDarker": 350,
+      "maximumChannelDarkening": 83,
+      "log": ".scratch/world-footprints-visibility-2026-10-29/proof.log"
+    }
+  }
 }

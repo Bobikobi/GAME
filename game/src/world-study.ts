@@ -121,6 +121,8 @@ class WorldStudy extends Phaser.Scene {
     }
     updateMotionLabel();
     this.updatePlaceLabel();
+    const initialView = new URLSearchParams(location.search).get('view');
+    if (initialView) this.jumpToView(initialView);
     (window as unknown as { __worldStudy: WorldStudy }).__worldStudy = this;
   }
 

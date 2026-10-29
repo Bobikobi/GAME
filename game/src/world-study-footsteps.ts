@@ -2,7 +2,7 @@ import type { StudyFoot } from './world-study-contact';
 
 export const FOOTPRINT_LIFE_MS = 20_000;
 export const FOOTPRINT_LIMIT = 64;
-export const FOOTPRINT_ALPHA = [.32, .24, .16, .08] as const;
+export const FOOTPRINT_ALPHA = [.8, .6, .4, .2] as const;
 export interface StepFoot extends StudyFoot { foot: string }
 export interface FootstepBody {
   x: number; y: number; dx: number; dy: number; mirrored: boolean;
