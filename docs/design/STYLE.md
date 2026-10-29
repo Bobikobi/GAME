@@ -19,6 +19,7 @@ The look in one place, for creators and for every session that draws or renders 
   - The shadows, the night with the town's lights, and depth cues 1 to 5 come with or after that step, in one window of `game/src/scenes/world.ts`.
   - The layers above the sprite (the light module, ramps per material and region, motion, composition) and the ladder of stills that decides their look: [ART_SYSTEM.md](ART_SYSTEM.md) (2026-10-20).
   - The world's natural laws (scale in characters, a climate per region, the seasons, the weathers as a look, the light's laws) and their sheets of stills: [NATURE.md](NATURE.md) (2026-10-21, proposal).
+  - The movement set, the code feel layer and how a body is made to move: [ANIMATION.md](ANIMATION.md) (2026-10-29, proposal).
   - Grounds and height come with the open world's first ring ([OPEN_WORLD.md](OPEN_WORLD.md)).
 
 **Both doors (owner, 18.10).** The whole standard holds for the 3D game at `/play3d/` too, in its own means: the proportions as ratios to a character's height, the light and shadow, the night, height and the depth cues. Only the pixel numbers are 2D's alone. The pixel game is built first, and the 3D game follows it. The 3D game may be desktop-only where a phone would block a rule. How it is carried across: docs/team/NEXT.md section 8 e.
@@ -34,7 +35,7 @@ A section marked *proposal* is the art session's recommendation, not yet the own
 | Work pose | 128 x 128, two frames (tool raised, tool down) |
 | Prop | up to 384 x 384 (six tiles a side) |
 
-- **The screen.** The canvas draws at the device's own pixels, and one art pixel is always a whole number of device pixels: 2 on a 2K phone (1440 px across, about 11 tiles), 1 on a 1080 px phone (about 17 tiles, crisp but small; older phones are not a target). The camera's rule is in NEXT 15.
+- **The screen.** The canvas draws at the device's own pixels, and one art pixel is always a whole number of device pixels: 3 on a 2K phone (1440 px across, 7.5 tiles) and on a 390 x 844 phone at 3x (6.1 x 13.2 tiles), 2 on a 1080 px phone (about 8.4 tiles; older phones are not a target). The world is shown one whole step at or above 1.5 times the screen's own step (`4 * ceil(1.5k)`, built 28.10; DECISIONS 2026-10-25, the camera comes closer). The camera's first rule is in NEXT 15.
 - **A face.** At 64x96 the head is about 24 to 28 px wide and the face about 20. Eyes are 2 to 3 px, each with a white and a dark pupil; brows, a nose and a mouth are drawn, not implied. The frame `density-64` is the measure.
 - The check takes both grids since the engine step (NEXT 15): 16 px at density 1 (the default) and 64 px at density 4, and a size that belongs to the other grid is an error. The redraw waves move the kit to 64. Since 23.10 the whole game is rich (DECISIONS.md): a new sprite at density 1 is refused, the core kit's 16 px sprites wait by name in `tools/src/kit/rich.ts` until their wave takes them off, and a rich sprite of the core kit names its ramps. Nothing drawn at 32 goes into a kit.
 
@@ -82,6 +83,7 @@ People and animals, seen by the owner on 20.10 on `frames/2026-10-21-nature-scal
 ## 2. Pixels and colour
 
 - **Colours:** the 32 core colours plus the shared `CORE_RAMPS` a sprite names (`tools/src/kit/palette.ts`), and a kit's own ramps for materials the shared set lacks.
+- **The windows' colours** (`UI_PALETTE`, DECISIONS 2026-10-28, frame D): the 32 plus eight for the UI alone, the antique gold `#2a2114 #4d3c22 #7a5f33 #a6854a #c9a96a #e8d4a2` and the blacks `#0c0b12 #131220`. No sprite or ground tile draws in them; the sprites stay on the colours above.
 - **Pixels:** every pixel fully clear or fully solid. No anti-aliasing, no gradients, no half-clear pixels. This is the rule for a sprite and a ground tile. A layer the engine draws over them (a shadow, the night, a pool, the hour's wash, cloud shade, fog) is a blend at one alpha per step, and the result is still a fully solid pixel; such a layer never has more than four steps, and where two steps meet it may dither (ART_SYSTEM 2, NATURE 4 and 5).
 - **Ramps** run dark to light:
   - greys: `#1b1a2e #3a3554 #5d6177 #8f94a8 #c6cad6 #f5f4ef`

@@ -1,6 +1,6 @@
 /**
  * Proves a trader's counter in a real browser, on a phone and on a desktop (DECISIONS 2026-10-22,
- * decision 51: a shop never shows one unsorted list). Pell's stall shows its stock in named groups,
+ * decision 51: a shop never shows one unsorted list). Pell's shop shows its stock in named groups,
  * every offer inside one, with the item drawn, its price and what it does; the strip of group names
  * jumps to a group; a buy from a group works. Two keepers the content does not have yet, an inn and a
  * workshop stall, are put into the page's bundle as test fixtures and open with no code of their own:
@@ -180,9 +180,9 @@ async function run(page: Page, url: string, viewport: Viewport, name: string): P
   if (!at) throw new Error('no tile near Pell trades');
   log(`at Pell's counter from ${at.join(',')}`);
 
-  // Pell's stall: the stock in named groups, every offer in one, drawn, priced and saying what it does
+  // Pell's shop: the stock in named groups, every offer in one, drawn, priced and saying what it does
   let c = await trade(page, viewport, 'core/trader');
-  if (!c.title.includes("Pell's stall")) throw new Error(`the counter is titled "${c.title}"`);
+  if (!c.title.includes("Pell's shop")) throw new Error(`the counter is titled "${c.title}"`);
   expectGroups(
     c,
     [
@@ -191,7 +191,7 @@ async function run(page: Page, url: string, viewport: Viewport, name: string): P
       ['Food and drink', ['Redberry', 'Herb tea', 'Berry mash']],
       ['Medicine', ['First-aid kit']],
     ],
-    "Pell's stall",
+    "Pell's shop",
   );
   if (c.jump.length !== 4 || !c.jump[0]!.startsWith('Tools')) throw new Error(`the strip reads ${JSON.stringify(c.jump)}`);
   await shot('pell');

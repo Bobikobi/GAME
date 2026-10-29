@@ -57,13 +57,13 @@
   padding: 2px 8px;
   background: var(--kit-plate);
   color: var(--kit-plate-ink);
-  border: 2px solid var(--kit-edge);
+  border: 1px solid var(--kit-edge);
   white-space: nowrap;
 }
 
 .tree-points.some {
   background: var(--kit-brass);
-  color: var(--kit-ink);
+  color: var(--kit-on-gold);
 }
 
 .tree-schools {
@@ -100,9 +100,8 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
-  background: var(--kit-canvas);
-  border: 2px solid var(--kit-edge);
-  box-shadow: inset 0 0 0 2px var(--kit-wood-light);
+  background: var(--kit-paper);
+  border: 1px solid var(--kit-brass-dark);
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
@@ -112,7 +111,7 @@
 }
 
 .tree-view:focus-visible {
-  box-shadow: inset 0 0 0 3px var(--kit-brass);
+  box-shadow: inset 0 0 0 2px var(--kit-brass);
 }
 
 .tree-view.dragging {
@@ -140,13 +139,13 @@
   top: 0;
 }
 
-/* the trunk: the race, in plum with a brass ring; paper on plum reads at 8.8:1 */
+/* the trunk: the race, in plum with a gold ring; the window's paper on plum reads at 8.8:1 */
 .tree-trunk {
   display: grid;
   place-items: center;
   background: var(--kit-tree-trunk);
-  color: var(--kit-paper);
-  border: 3px solid var(--kit-brass);
+  color: var(--kit-ink);
+  border: 2px solid var(--kit-brass);
   box-shadow: 0 0 0 2px var(--kit-edge);
   text-align: center;
   overflow: hidden;
@@ -185,7 +184,7 @@
 .tree-node.size-keystone {
   border-width: 4px;
   box-shadow:
-    inset 0 0 0 2px var(--kit-paper),
+    inset 0 0 0 2px var(--kit-ink),
     inset 0 0 0 4px var(--kit-edge);
 }
 
@@ -278,7 +277,7 @@
   padding: 6px 8px 8px;
   background: var(--kit-wood-dark);
   color: var(--kit-plate-ink);
-  border: 2px solid var(--kit-edge);
+  border: 1px solid var(--kit-edge);
 }
 
 .tree-build-head {
@@ -314,7 +313,7 @@
 .tree-slot.filled {
   background: var(--kit-socket);
   color: var(--kit-plate-ink);
-  border: 2px solid var(--kit-brass-dark);
+  border: 1px solid var(--kit-brass-dark);
 }
 
 .tree-slot.filled {
@@ -331,7 +330,7 @@
 .tree-slot.closed {
   background: var(--kit-wood);
   color: var(--kit-plate-ink);
-  border: 2px dashed var(--kit-wood-light);
+  border: 1px dashed var(--kit-wood-light);
 }
 
 /* ------------------------------------------------------------ the card and the keys */
@@ -370,8 +369,8 @@
 
 .tree-keys summary {
   cursor: pointer;
-  min-height: 32px;
-  line-height: 32px;
+  min-height: 44px;
+  line-height: 44px;
 }
 
 .tree-key-list {
@@ -385,7 +384,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 40px;
+  min-height: 44px;
 }
 
 .tree-key-name {
@@ -401,7 +400,7 @@
   width: 8px;
   height: 14px;
   background: var(--kit-paper);
-  border: 2px solid var(--kit-paper-line);
+  border: 1px solid var(--kit-paper-line);
 }
 
 .tree-pips i.on {
@@ -410,7 +409,7 @@
 }
 
 .panel.bag .tree-key .tree-plus {
-  min-width: 40px;
+  min-width: 44px;
   margin-left: auto;
   padding: 0;
 }

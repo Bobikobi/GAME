@@ -63,4 +63,4 @@ Node 24 (the version in `.nvmrc`) and pnpm 10. Design decisions and abandoned ap
 
 ## License and name
 
-Code: [AGPL-3.0](LICENSE). Content in `content/`: [CC BY-SA 4.0](content/LICENSE). Fonts: Pixelify Sans, Atkinson Hyperlegible Next and Platypi, SIL OFL 1.1. Everyone who made something in the valley is in [CREDITS.md](CREDITS.md). The licences cover the code and the content, not the game's name or logo: those are covered by [TRADEMARKS.md](TRADEMARKS.md), which says how to say "made for" the game.
+Code: [AGPL-3.0](LICENSE). Content in `content/`: [CC BY-SA 4.0](content/LICENSE). Fonts: Pixelify Sans, Atkinson Hyperlegible Next and Platypi, SIL OFL 1.1. The server's country lookup for the age limit of an account uses the free country file of [IP Geolocation by DB-IP](https://db-ip.com), CC BY 4.0, read with [mmdb-lib](https://github.com/runk/mmdb-lib) (MIT). Everyone who made something in the valley is in [CREDITS.md](CREDITS.md). The licences cover the code and the content, not the game's name or logo: those are covered by [TRADEMARKS.md](TRADEMARKS.md), which says how to say "made for" the game.

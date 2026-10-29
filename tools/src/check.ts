@@ -302,6 +302,13 @@ function checkCrafting(b: Bundle, origin: Record<string, string>): Issue[] {
   if (!(p.load.light_step_ms <= p.walk_step_ms && p.walk_step_ms <= p.load.heavy_step_ms)) {
     err(PARAMS_FILE, 'params.load', 'the paces run light, steady, heavy: load.light_step_ms <= walk_step_ms <= load.heavy_step_ms');
   }
+  // the gaits (ANIMATION.md section 2): a run divides every pace into whole milliseconds, and the noise only grows from still to run
+  for (const pace of [p.load.light_step_ms, p.walk_step_ms, p.load.heavy_step_ms]) {
+    if (pace % p.gait.run_div !== 0) err(PARAMS_FILE, 'params.gait.run_div', `a run is a whole number of milliseconds a tile: ${pace} does not divide by ${p.gait.run_div}`);
+  }
+  if (!(p.gait.noise_still <= p.gait.noise_sneak && p.gait.noise_sneak <= p.gait.noise_walk && p.gait.noise_walk <= p.gait.noise_run)) {
+    err(PARAMS_FILE, 'params.gait', 'the noise grows with the pace: noise_still <= noise_sneak <= noise_walk <= noise_run');
+  }
   if (p.load.light_permille >= 1000) err(PARAMS_FILE, 'params.load.light_permille', 'the light pace ends before the limit: under 1000');
   if (p.load.max_permille <= 1000) err(PARAMS_FILE, 'params.load.max_permille', 'the hard edge lies beyond the limit: over 1000');
 

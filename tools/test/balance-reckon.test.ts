@@ -22,7 +22,9 @@ beforeAll(() => {
 describe('the walk', () => {
   it('on open ground the steps are the four-way distance', () => {
     const { width, height } = bundle.map;
-    const dist = walkFrom(bundle, new Uint8Array(width * height).fill(1), [0, 0]);
+    // flat ground: the valley's height layer (G68) is taken off, so that only the open bitmap is under test
+    const { levels: _levels, ...flatMap } = bundle.map;
+    const dist = walkFrom({ ...bundle, map: flatMap }, new Uint8Array(width * height).fill(1), [0, 0]);
     expect(dist[0]).toBe(0);
     expect(dist[3 * width + 4]).toBe(7);
     expect(dist[(height - 1) * width + (width - 1)]).toBe(width - 1 + height - 1);

@@ -565,6 +565,12 @@ export const ShopBody = Type.Object(
       { maxItems: 40 },
     ),
     buys: Type.Boolean({ description: 'Whether the shop buys anything that has a value.' }),
+    interior: Type.Optional(
+      Type.Union([Type.Literal('food')], {
+        description:
+          'The room its keeper trades in (DECISIONS.md, 2026-10-11, the shop interior). With it, the keeper stands inside: their place is the door, the player walks in, and the trade opens by talking across the counter. `food`: worn planks, a runner to the counter, a lit stove in a brick chimney. Left out, the keeper trades in the open.',
+      }),
+    ),
   },
   { additionalProperties: false },
 );
@@ -1505,6 +1511,21 @@ export const ParamsBody = Type.Object(
         additionalProperties: false,
         description:
           'Weight and pace (DECISIONS.md, 2026-10-23): every item weighs, and the load against a limit from might sets one of three walking paces.',
+      },
+    ),
+    gait: Type.Object(
+      {
+        run_div: { ...Bounded, description: 'A run takes the pace the load allows divided by this: 2 is half the time a tile. Every pace divides evenly.' },
+        sneak_mul: { ...Bounded, description: 'A sneak takes the pace the load allows times this: 2 is twice the time a tile.' },
+        noise_still: { ...Bounded, description: 'Tiles within which a creature that listens turns its head at a player standing still.' },
+        noise_sneak: { ...Bounded, description: 'The same, at a sneak.' },
+        noise_walk: { ...Bounded, description: 'The same, at a walk.' },
+        noise_run: { ...Bounded, description: 'The same, at a run.' },
+      },
+      {
+        additionalProperties: false,
+        description:
+          'The three gaits (docs/design/ANIMATION.md, section 2): walk is the pace the load allows, run is faster and sneak slower, and each is heard at its own radius. The noise table is shared with the hunting rules; the radii only grow from still to run.',
       },
     ),
     starting_gold_mg: Bounded,
