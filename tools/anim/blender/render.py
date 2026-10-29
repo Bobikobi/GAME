@@ -26,6 +26,7 @@ OUT = cfg["out"]; os.makedirs(OUT, exist_ok=True)
 FW, FH = cfg.get("frame", [64, 96]); SS = cfg.get("ss", 4); W, H = FW * SS, FH * SS
 TARGET = cfg.get("target", "forager")
 IS_RIG = TARGET.startswith("rig:")
+NATIVE = cfg.get("map") == "native"   # a body that carries its own actions (the four-legged wolf): played as they are, nothing retargeted
 ELEV = math.radians(cfg.get("elev", 50)); PXM = cfg.get("pxm", 10.0 if IS_RIG else 53.0)
 ANCHOR = tuple(cfg.get("anchor", [32, 84]))
 
@@ -85,10 +86,12 @@ else:
     for o in tobjs:
         if o.type == "MESH" and o is not tmesh:
             bpy.data.objects.remove(o, do_unlink=True)
+    if NATIVE:   # keep the model's own actions; the feet are the tails of the last bone of each leg
+        for ac in bpy.data.actions: ac.use_fake_user = True
     tarm.animation_data_clear()
     BODY = [tmesh]
-    P = "mixamorig:"
-    MAP = {
+    P = "" if NATIVE else "mixamorig:"
+    MAP = {"order": [], "contacts": cfg["contacts"]} if NATIVE else {
         "delta": {"Hips": "pelvis", "Spine": "spine_01", "Spine1": "spine_02", "Spine2": "spine_03",
                   "Neck": "neck_01", "Head": "Head", "LeftShoulder": "clavicle_l", "RightShoulder": "clavicle_r",
                   "LeftUpLeg": "thigh_l", "LeftLeg": "calf_l", "LeftFoot": "foot_l", "LeftToeBase": "ball_l",
@@ -123,7 +126,7 @@ if cfg.get("basket") and not IS_RIG:   # the repo's own basket (prop-basket.glb,
 
 # ------------------------------------------------------------------ source: both libraries on one armature
 sarm = None
-for g in cfg["libs"]:
+for g in ([] if NATIVE else cfg["libs"]):
     objs = imp(g)
     a = next(o for o in objs if o.type == "ARMATURE")
     for o in objs:
@@ -133,8 +136,10 @@ for g in cfg["libs"]:
     else:
         bpy.data.objects.remove(a, do_unlink=True)
 for ac in bpy.data.actions: ac.use_fake_user = True
-sarm.animation_data_create()
-smix = sarm.copy(); smix.animation_data_clear(); sc.collection.objects.link(smix)
+smix = None
+if not NATIVE:
+    sarm.animation_data_create()
+    smix = sarm.copy(); smix.animation_data_clear(); sc.collection.objects.link(smix)
 
 def act(name):
     a = bpy.data.actions.get(name)
@@ -222,13 +227,16 @@ def pose_rot(arm, name): return (arm.matrix_world @ arm.pose.bones[name].matrix)
 def pose_head(arm, name): return arm.matrix_world @ arm.pose.bones[name].head
 def pose_tail(arm, name): return arm.matrix_world @ arm.pose.bones[name].tail
 
-s_rest = {b: rest_rot(smix, b) for b in smix.data.bones.keys()}
-t_rest = {b: rest_rot(tarm, b) for b in tarm.data.bones.keys()}
-HIPS = P + MAP["hips"]
-t_hip_rest = rest_head(tarm, HIPS)
-s_hip_rest = rest_head(smix, "pelvis")
-SCALE_V = rest_head(tarm, P + MAP["thigh"]).z / rest_head(smix, "thigh_l").z
-SCALE_H = SCALE_V / cfg.get("kz", 1.0)
+if NATIVE:
+    SCALE_V = SCALE_H = 1.0
+else:
+    s_rest = {b: rest_rot(smix, b) for b in smix.data.bones.keys()}
+    t_rest = {b: rest_rot(tarm, b) for b in tarm.data.bones.keys()}
+    HIPS = P + MAP["hips"]
+    t_hip_rest = rest_head(tarm, HIPS)
+    s_hip_rest = rest_head(smix, "pelvis")
+    SCALE_V = rest_head(tarm, P + MAP["thigh"]).z / rest_head(smix, "thigh_l").z
+    SCALE_H = SCALE_V / cfg.get("kz", 1.0)
 TWIST_K = cfg.get("twist", 1.0)
 
 def set_world(pb, rot3, head_world):
@@ -247,7 +255,18 @@ def twist_of(sb):
     ang = 2 * math.atan2(qs.y, qs.w)
     return (ang + math.pi) % (2 * math.pi) - math.pi
 
+def native_pose(sample):
+    """The model's own action at a frame (seconds are frames at the render fps): the pose a library would have retargeted."""
+    name, fr = sample["base"]
+    a = act(name)
+    tarm.animation_data_create(); tarm.animation_data.action = a
+    if hasattr(tarm.animation_data, "action_slot") and a.slots:
+        tarm.animation_data.action_slot = a.slots[0]
+    sc.frame_set(int(math.floor(fr)), subframe=fr - math.floor(fr))
+    bpy.context.view_layer.update()
+
 def retarget():
+    if NATIVE: return
     for pb in tarm.pose.bones:
         pb.rotation_mode = "QUATERNION"; pb.rotation_quaternion = (1, 0, 0, 0); pb.location = (0, 0, 0)
     bpy.context.view_layer.update()
@@ -409,6 +428,7 @@ for j, wp in enumerate(cfg.get("worn", [])):
     WORN[wp["kind"]] = (e, wp)
 
 def place_worn():
+    if NATIVE: return
     nm = P + MAP["hips"]
     Rd = pose_rot(tarm, nm) @ t_rest[nm].inverted()
     for e, wp in WORN.values():
@@ -532,7 +552,7 @@ def feet_now():
     feet = {}
     for foot, nm in MAP["contacts"].items():
         pb = tarm.pose.bones[P + nm]
-        wp = tarm.matrix_world @ (pb.tail if IS_RIG else pb.head)
+        wp = tarm.matrix_world @ (pb.tail if (IS_RIG or NATIVE) else pb.head)
         feet[foot] = {"world": [round(c, 4) for c in wp], "px": to_px(wp)}
     return feet
 
@@ -551,7 +571,8 @@ for i, s in enumerate(samples):
     if BASKET is not None: BASKET.parent = None
     bpy.context.view_layer.update()
     if SETP is not None: SETP.parent = None
-    source_pose(s, clip)
+    if NATIVE: native_pose(s)
+    else: source_pose(s, clip)
     retarget()
     place_worn()
     info = None
@@ -579,7 +600,7 @@ for i, s in enumerate(samples):
         feet = {}
         for foot, nm in MAP["contacts"].items():
             pb = tarm.pose.bones[P + nm]
-            wp = tarm.matrix_world @ (pb.tail if IS_RIG else pb.head)
+            wp = tarm.matrix_world @ (pb.tail if (IS_RIG or NATIVE) else pb.head)
             feet[foot] = {"world": [round(c, 4) for c in wp], "px": to_px(wp)}
         sc.render.filepath = os.path.join(OUT, f"{cfg['name']}_{d}_{i:02d}.png")
         if cfg.get("render", True):
@@ -595,7 +616,9 @@ if dn:   # the feet at every source frame (no render): the travel fit needs more
         if PROP is not None: PROP.parent = None
         if BASKET is not None: BASKET.parent = None
         bpy.context.view_layer.update()
-        source_pose({"base": [base_a, f]}, {}); retarget(); bpy.context.view_layer.update()
+        if NATIVE: native_pose({"base": [base_a, f]})
+        else: source_pose({"base": [base_a, f]}, {}); retarget()
+        bpy.context.view_layer.update()
         ROOT.location = (0, 0, -ground_z() + cfg.get("ground_lift", 0.0)); bpy.context.view_layer.update()
         rec = {"f": round(f, 3)}
         for d, ang in DIRS.items():

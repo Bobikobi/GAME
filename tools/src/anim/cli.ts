@@ -19,7 +19,7 @@ import { pathToFileURL } from 'node:url';
 import { PNG } from 'pngjs';
 import { INK_HEX } from '../kit/ink.js';
 import { CONTENT_DIR } from '../load.js';
-import { ANIM_DIR, CACHE_DIR, type Clip, clipNames, clipProblems, job, type Library, modelPath, paces, poseMs, readClip, readLibraries, readSettings, type Settings, stepFrames, type View } from './clip.js';
+import { ANIM_DIR, CACHE_DIR, type Clip, clipNames, clipPaces, clipProblems, job, type Library, modelPath, paces, poseMs, readClip, readLibraries, readSettings, type Settings, stepFrames, type View, withNative } from './clip.js';
 import { archiveProblems, itchDownload, libraryGlb, unpack } from './fetch.js';
 import { type ClipMeasures, measureClip, type RenderMeta, type ViewMeasures } from './measure.js';
 import { classPalettes, flipX, type Picture, sheetRamps, snap } from './snap.js';
@@ -46,14 +46,15 @@ const writePng = (path: string, p: Picture) => {
   writeFileSync(path, PNG.sync.write(png));
 };
 
+/** The libraries a clip loads into Blender: a native body's own actions (`self:`) are not a file. */
 function libsOf(clip: Clip): string[] {
-  return [...new Set([clip.base.library, ...(clip.layer ? [clip.layer.library] : [])])];
+  return [...new Set([clip.base.library, ...(clip.layer ? [clip.layer.library] : [])])].filter((id) => !id.startsWith('self:'));
 }
 
 async function fetchLibraries(libs: Record<string, Library>, only: string | undefined, from: string | undefined): Promise<number> {
   let failed = 0;
   for (const [id, lib] of Object.entries(libs)) {
-    if (only !== undefined && id !== only) continue;
+    if (id.startsWith('self:') || (only !== undefined && id !== only)) continue;
     if (libraryGlb(id, lib).ready && from === undefined) {
       say(`${id}: already fetched and checked`);
       continue;
@@ -88,7 +89,7 @@ interface Context {
 function context(): Context {
   const settings = readSettings();
   const params = JSON.parse(readFileSync(join(CONTENT_DIR, 'core', 'params.json'), 'utf8')) as unknown;
-  return { settings, libs: readLibraries(), paces: paces(settings, params) };
+  return { settings, libs: withNative(readLibraries(), settings), paces: paces(settings, params) };
 }
 
 /** Where a clip's output goes: out/<clip>/ on its own target, cast/<target>/<clip>/ when --target moves it. */
@@ -122,7 +123,7 @@ function measure(name: string, clip: Clip, ctx: Context, cast?: string): ClipMea
     locomotion: clip.locomotion,
     poseStep: stepFrames(clip, ctx.libs),
     ms: poseMs(clip, ctx.libs),
-    paces: ctx.paces,
+    paces: clipPaces(clip, ctx.settings, ctx.paces),
   });
   writeFileSync(join(out, 'measures.json'), `${JSON.stringify(m, null, 1)}\n`);
   return m;
@@ -133,6 +134,7 @@ function summary(name: string, m: ClipMeasures): string {
   for (const [view, v] of Object.entries(m.views)) {
     let s = `${view}: outline ${v.outlined}/${v.frames}, silhouette ${v.silhouette.maxDevPct}%`;
     if (v.stride && v.paces) s += `, cycle ${v.stride.cyclePx} px, slide ${v.paces.steady.slidePx} px, ${v.paces.steady.lockedPoseRate} poses/s at steady`;
+    if (v.footfalls) s += `, footfalls ${v.footfalls.order.join(' ')} (gaps ${v.footfalls.gaps.join(' ')})`;
     parts.push(s);
   }
   return `${m.problems.length === 0 ? 'PASS' : 'FAIL'} ${name}: ${parts.join(' | ')}`;
@@ -218,7 +220,7 @@ export async function main(argv: readonly string[]): Promise<number> {
   const rendered = clipNames().filter((n) => existsSync(join(outDir(n, cast), `${n}.json`)));
   const names = rest.includes('--all') ? clipNames() : cmd === 'check' && named.length === 0 ? rendered : named;
   if (cmd === 'list') {
-    for (const [id, lib] of Object.entries(ctx.libs)) say(`library ${id}: ${lib.title}, ${lib.licence}; ${libraryGlb(id, lib).ready ? 'fetched' : 'not fetched (pnpm anim fetch)'}`);
+    for (const [id, lib] of Object.entries(ctx.libs)) if (!id.startsWith('self:')) say(`library ${id}: ${lib.title}, ${lib.licence}; ${libraryGlb(id, lib).ready ? 'fetched' : 'not fetched (pnpm anim fetch)'}`);
     for (const name of clipNames()) {
       const c = readClip(name);
       const bad = clipProblems(name, c, ctx.libs, ctx.settings);

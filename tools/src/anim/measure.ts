@@ -3,6 +3,7 @@
  *  1. palette: every opaque pixel is in the clip's ramps or is the outline (fails under 100 %);
  *  2. outline: every frame has the one outline all round and nothing touches the frame's edge;
  *  3. silhouette: the opaque area of each frame against the view's mean (fails over the limit, locomotion only);
+ *  5. footfalls (a clip marked `gait: four-beat`): the four feet land one after another, evenly, hind and fore in turn;
  *  4. foot slide at the game's pace (locomotion only): a planted foot, projected to art pixels by the renderer,
  *     against a foot fixed on the ground while the sprite moves at the game's speed (fails over 1 px).
  * The travel per pose is fitted once per view from the planted feet at every source frame (one shared slope, an
@@ -16,7 +17,8 @@ export interface FootPoint {
   px: [number, number];
   world: [number, number, number];
 }
-export type Feet = Record<'Left' | 'Right', FootPoint>;
+/** A biped's feet are Left and Right; a quadruped's are LB, RB, LF, RF (side, then hind or fore). */
+export type Feet = Record<string, FootPoint>;
 export type ViewFeet = Partial<Record<View, Feet>>;
 
 /** What the renderer writes next to the frames (<clip>_meta.json). */
@@ -120,14 +122,57 @@ export interface Stride {
   runs: [string, number[]][];
 }
 
+/** The feet the renderer reported for a view, in the order it wrote them. */
+export function footNames(meta: RenderMeta, view: View): string[] {
+  return Object.keys(meta.poses.find((p) => p[view] !== undefined)?.[view] ?? {});
+}
+
+export interface Footfalls {
+  /** the feet in the order they land, from the start of the cycle */
+  order: string[];
+  /** the share of the cycle from each landing to the next, the last wrapping to the first (a perfect walk: 0.25 each) */
+  gaps: number[];
+}
+
+/** Where in the cycle each foot lands, from the renderer's feet at every source frame (the dense list when there is one). Feet with no single plant a cycle are left out of `order`, and named in `bad`. */
+export function footfalls(meta: RenderMeta, view: View, plantTol = 0.015): Footfalls & { bad: string[] } {
+  const list = meta.dense !== undefined && meta.dense.length > 2 ? meta.dense : meta.poses;
+  const n = list.length;
+  const tol = plantTol * (meta.scale_v || 1);
+  const landed: [string, number][] = [];
+  const bad: string[] = [];
+  for (const foot of footNames(meta, view)) {
+    const heights = list.map((p) => p[view]?.[foot]?.world[2]).filter((z): z is number => z !== undefined);
+    const runs = plantedRuns(heights, tol);
+    if (runs.length !== 1) bad.push(`${foot} plants ${runs.length} times a cycle`);
+    else landed.push([foot, (runs[0]?.[0] ?? 0) / n]);
+  }
+  landed.sort((a, b) => a[1] - b[1]);
+  const gaps = landed.map(([, at], i) => Math.round((((landed[(i + 1) % landed.length]?.[1] ?? at) - at + 1) % 1) * 1000) / 1000);
+  return { order: landed.map(([foot]) => foot), gaps, bad };
+}
+
+/** The problems of a four-beat walk's footfalls: four plants, evenly spread (each gap a fifth to a third of the cycle: 0.2 to 0.35), hind and fore in turn. */
+export function fourBeatProblems(f: ReturnType<typeof footfalls>, view: View): string[] {
+  const out = f.bad.map((b) => `${view}: ${b}, a four-beat walk plants each foot once`);
+  if (f.bad.length > 0) return out;
+  if (f.order.length !== 4) return [...out, `${view}: ${f.order.length} feet landed, a four-beat walk has four`];
+  const uneven = f.gaps.filter((g) => g < 0.2 || g > 0.35);
+  if (uneven.length > 0) out.push(`${view}: the feet land ${f.order.join(' ')} with gaps ${f.gaps.join(', ')} of the cycle, not four even beats (each 0.2 to 0.35)`);
+  const ends = f.order.map((foot) => foot.slice(-1));
+  if (!ends.every((e, i) => e !== ends[(i + 1) % 4])) out.push(`${view}: the feet land ${f.order.join(' ')}, hind and fore should take turns`);
+  return out;
+}
+
 /** The stride of one view of a locomotion clip, from the renderer's projected feet. */
 export function stride(meta: RenderMeta, view: View, poseStep: number, plantTol = 0.015): Stride {
   const W = meta.frame[0];
   const along = (f: FootPoint) => (view === 'left' ? W - f.px[0] : f.px[1]);
   const tol = plantTol * (meta.scale_v || 1);
-  const feetOf = (list: readonly ViewFeet[], foot: 'Left' | 'Right') => list.map((p) => p[view]?.[foot]).filter((f): f is FootPoint => f !== undefined);
+  const feetOf = (list: readonly ViewFeet[], foot: string) => list.map((p) => p[view]?.[foot]).filter((f): f is FootPoint => f !== undefined);
+  const names = footNames(meta, view);
   const runsOf = (list: readonly ViewFeet[]) =>
-    (['Left', 'Right'] as const).flatMap((foot) => {
+    names.flatMap((foot) => {
       const pts = feetOf(list, foot);
       return plantedRuns(pts.map((f) => f.world[2]), tol).map((idx) => [foot, idx, idx.map((i) => along(pts[i] as FootPoint))] as const);
     });
@@ -184,6 +229,7 @@ export interface ViewMeasures {
   silhouette: ReturnType<typeof silhouette>;
   stride?: Stride;
   paces?: Record<Pace, PaceSlide>;
+  footfalls?: Footfalls;
 }
 
 export interface ClipMeasures {
@@ -197,7 +243,7 @@ export interface MeasureInput {
   allowed: ReadonlySet<string>;
   limits: { palette_pct: number; foot_slide_px: number; silhouette_dev_pct: number; poses_per_s_max: number };
   meta?: RenderMeta;
-  locomotion?: { playback: 'distance' | 'time' };
+  locomotion?: { playback: 'distance' | 'time'; gait?: 'four-beat' };
   poseStep?: number;
   ms: readonly number[];
   paces: Record<Pace, number>;
@@ -239,6 +285,11 @@ export function measureClip(input: MeasureInput): ClipMeasures {
         }
         vm.stride = s;
         vm.paces = paces;
+        if (input.locomotion.gait === 'four-beat') {
+          const f = footfalls(input.meta, view);
+          problems.push(...fourBeatProblems(f, view));
+          vm.footfalls = { order: f.order, gaps: f.gaps };
+        }
       }
     }
     views[view] = vm;
