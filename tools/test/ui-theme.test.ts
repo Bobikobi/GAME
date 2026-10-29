@@ -1,15 +1,19 @@
 /**
- * The kit's theme "B, canvas" (DECISIONS 2026-10-23): game/src/ui/theme.css holds every colour the
- * Field Kit wears, each one of the core palette, with no scrims, gradients or rounded corners; the
- * Field Kit's own rules in kit.css name no colour but the theme's tokens; each text token reads at
- * 4.5:1 or more on the ground it is drawn on; and the game's face is Jersey 15, self-hosted with its
- * licence.
+ * The windows' theme. Begun as the kit's "B, canvas" (DECISIONS 2026-10-23); the colours widen with
+ * frame D (DECISIONS 2026-10-28, "The windows' direction: black lacquer with antique gold"):
+ * game/src/ui/theme.css holds every colour the windows wear, each one of UI_PALETTE (the 32 core
+ * colours, the antique-gold ramp and the two deep blacks), with no scrims, gradients or rounded
+ * corners. Frame D's leather grain is a small tiled picture in the UI's palette, not a gradient, so
+ * the no-gradient rule stands. The Field Kit's own rules in kit.css name no colour but the theme's
+ * tokens; each text token reads at 4.5:1 or more on the ground it is drawn on; and the game's body
+ * face is Jersey 15, self-hosted with its licence. The sprites stay on CORE_PALETTE.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { TREE_TINTS } from '@game/schema';
-import { CORE_PALETTE } from '../src/kit/palette';
+import { ANTIQUE_GOLD, CORE_PALETTE, UI_BLACKS, UI_PALETTE } from '../src/kit/palette';
+import { rampProblems } from '../src/kit/ramps';
 import { REPO_ROOT } from '../src/load';
 
 const UI = join(REPO_ROOT, 'game', 'src', 'ui');
@@ -35,13 +39,24 @@ function contrast(a: string, b: string): number {
 }
 
 describe('the kit theme', () => {
-  it('draws in core-palette colours only, written as six-digit hex', () => {
-    const palette = new Set(CORE_PALETTE.map((c) => c.toLowerCase()));
+  it("adds frame D's antique gold and two blacks to the core for the UI only, the gold a true ramp", () => {
+    expect(CORE_PALETTE).toHaveLength(32);
+    expect(UI_PALETTE).toHaveLength(32 + 6 + 2);
+    expect(new Set(UI_PALETTE).size, 'no colour twice').toBe(UI_PALETTE.length);
+    for (const hex of [...ANTIQUE_GOLD.steps, ...UI_BLACKS]) {
+      expect(hex).toMatch(/^#[0-9a-f]{6}$/);
+      expect(CORE_PALETTE, `${hex} stays out of the sprites' palette`).not.toContain(hex);
+    }
+    expect(rampProblems(ANTIQUE_GOLD)).toEqual([]);
+  });
+
+  it('draws in UI-palette colours only, written as six-digit hex', () => {
+    const palette = new Set(UI_PALETTE.map((c) => c.toLowerCase()));
     const hexes = [...theme.matchAll(/#[0-9a-fA-F]{3,8}\b/g)].map((m) => m[0].toLowerCase());
     expect(hexes.length).toBeGreaterThan(10);
     for (const hex of hexes) {
       expect(hex).toMatch(/^#[0-9a-f]{6}$/);
-      expect(palette.has(hex), `${hex} is not in CORE_PALETTE`).toBe(true);
+      expect(palette.has(hex), `${hex} is not in UI_PALETTE`).toBe(true);
     }
   });
 
