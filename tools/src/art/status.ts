@@ -25,6 +25,7 @@ import { fileURLToPath } from 'node:url';
 
 import { type Draft, REVIEW_STATES, type ReviewState, foldIndex, gpuSecondsSince, parseIndex } from './drafts.js';
 import { type GenEntry, parseSpec } from '../kit/gen.js';
+import { formatQueue, queueSummary } from './queue.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -203,7 +204,7 @@ export interface ArtStatus {
 }
 
 /** Rank order: the row of #328 first, entries with no row after, the file's order inside a row. */
-function byRank(a: { rank: number | null; index: number }, b: { rank: number | null; index: number }): number {
+export function byRank(a: { rank: number | null; index: number }, b: { rank: number | null; index: number }): number {
   return (a.rank ?? Number.MAX_SAFE_INTEGER) - (b.rank ?? Number.MAX_SAFE_INTEGER) || a.index - b.index;
 }
 
@@ -234,7 +235,7 @@ export function poolReport(pool: PoolName, entries: readonly PoolEntry[], eviden
 }
 
 /** The meter: each kernel run's own seconds once, over the `GPU_WINDOW_DAYS` days up to `now`. */
-function gpuWeek(all: readonly Draft[], now: Date): { minutes: number; runs: number } {
+export function gpuWeek(all: readonly Draft[], now: Date): { minutes: number; runs: number } {
   const since = new Date(now.getTime() - GPU_WINDOW_DAYS * 86_400_000);
   const drafts = all.filter((d) => d.at !== null && Date.parse(d.at) <= now.getTime());
   const runs = new Set(drafts.filter((d) => d.run !== null && d.run.gpu_seconds !== null && Date.parse(d.at ?? '') >= since.getTime()).map((d) => d.run?.id));
@@ -297,5 +298,5 @@ export function statusCli(args: readonly string[], root = ROOT, now = new Date()
   const unknown = args.filter((a, i) => a !== '--json' && a !== '--next' && !(i > 0 && args[i - 1] === '--next'));
   if (unknown.length > 0) throw new Error(`Usage: art:status [--json] [--next N] (not: ${unknown.join(' ')})`);
   const status = artStatus(root, { next, now });
-  return args.includes('--json') ? `${JSON.stringify(status, null, 2)}\n` : formatStatus(status);
+  return args.includes('--json') ? `${JSON.stringify(status, null, 2)}\n` : `${formatStatus(status)}${formatQueue(queueSummary(root))}`;
 }
