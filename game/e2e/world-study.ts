@@ -3,6 +3,7 @@ import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'vite';
+import walkMetadata from '../../docs/design/frames/rich-world-motion-2026-10-29/walk-metadata.json';
 import { Browser, sleep, type Page } from './cdp';
 
 const localServer = process.env.WORLD_STUDY_URL ? undefined : await createServer({
@@ -13,6 +14,7 @@ const localServer = process.env.WORLD_STUDY_URL ? undefined : await createServer
 await localServer?.listen();
 const url = process.env.WORLD_STUDY_URL ?? `${localServer!.resolvedUrls!.local[0]}world-study.html`;
 const frames = process.env.WORLD_STUDY_FRAMES;
+const motionFrames = process.env.WORLD_STUDY_MOTION;
 if (frames) mkdirSync(frames, { recursive: true });
 
 async function screenshot(page: Page, name: string): Promise<void> {
@@ -95,7 +97,7 @@ try {
     for (const id of ['meadow', 'forest', 'cove', 'shore', 'paving', 'worn', 'sand']) {
       s.jumpToView(id);
       if (!s.ground.canStand(a.x, a.y)) throw Error('blocked review viewpoint: ' + id);
-      if (a.frame.name !== 10) throw Error('review jump must use the standing pose');
+      if (a.frame.name !== ${walkMetadata.walkingFrames}) throw Error('review jump must use the standing pose');
     }
   })()`);
   for (const [code, axis, sign] of [
@@ -114,7 +116,7 @@ try {
       for (let i = 0; i < 32; i++) s.update(0, 50);
       if (!s.ground.canStand(s.actor.x, s.actor.y) || (s.actor.${axis} - t.${axis}) * ${sign} <= 0) throw Error('walk crossed the trunk');
       if (Math.abs(s.actor.${axis} - before) < 5) throw Error('walk did not approach the trunk');
-      if (s.actor.frame.name !== 10) throw Error('blocked walk must stop the stride');
+      if (s.actor.frame.name !== ${walkMetadata.walkingFrames}) throw Error('blocked walk must stop the stride');
       if (!s.ground.canStand(t.x, t.y - 80)) throw Error('canopy blocks the walk-behind space');
     })()`);
     await desktop.key(code, 'keyUp');
@@ -124,6 +126,27 @@ try {
     await sleep(150);
     await screenshot(desktop, `desktop-${view}`);
   }
+  // Real input and real camera follow: preserve an inspectable moving scene,
+  // including turns and a stop, rather than only a sprite-strip preview.
+  await desktop.eval("window.__worldStudy.jumpToView('sand')");
+  await sleep(200);
+  if (motionFrames) await desktop.record(motionFrames);
+  for (const [keys, sheet, flip] of [
+    [['ArrowDown', 'ArrowRight'], 'down-left', true],
+    [['ArrowUp', 'ArrowRight'], 'up-left', true],
+    [['ArrowUp', 'ArrowLeft'], 'up-left', false],
+    [['ArrowDown', 'ArrowLeft'], 'down-left', false],
+    [['ArrowRight'], 'left', true],
+    [['ArrowLeft'], 'left', false],
+  ] as const) {
+    for (const key of keys) await desktop.key(key, 'keyDown');
+    await desktop.waitFor(`window.__worldStudy.actor.texture.key === 'world-study-human-${sheet}' && window.__worldStudy.actor.flipX === ${flip}`, 'rendered movement direction');
+    await sleep(650);
+    for (const key of keys) await desktop.key(key, 'keyUp');
+  }
+  await desktop.waitFor(`window.__worldStudy.actor.frame.name === ${walkMetadata.walkingFrames}`, 'standing after input release');
+  await sleep(450);
+  if (motionFrames) await desktop.send('Page.stopScreencast');
   // Keep the desktop from consuming software-rendering time while the 3x phone runs.
   await desktop.send('Page.setWebLifecycleState', { state: 'frozen' });
 

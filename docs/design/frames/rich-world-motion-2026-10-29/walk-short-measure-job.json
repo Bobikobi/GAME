@@ -1,0 +1,431 @@
+{
+  "name": "walk",
+  "out": "/home/elad-saadon/Projects/GAME.worktrees/codex-rich-opening/.scratch/world-motion-2026-10-29/measure",
+  "libs": [
+    "/home/elad-saadon/Projects/GAME.worktrees/feat-races-in-game/tools/.cache/anim/lib/ual1/UAL1_Standard.glb"
+  ],
+  "target": "forager",
+  "target_path": "/home/elad-saadon/Projects/GAME.worktrees/feat-races-in-game/game/public3d/models/character-forager-m.glb",
+  "map": "mixamo",
+  "elev": 50,
+  "pxm": 53,
+  "kz": 1,
+  "frame": [
+    128,
+    128
+  ],
+  "anchor": [
+    64,
+    90
+  ],
+  "ss": 4,
+  "dirs": [
+    "down",
+    "down-left",
+    "left",
+    "up-left",
+    "up"
+  ],
+  "samples": [
+    {
+      "base": [
+        "Walk_Loop",
+        0
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        0.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        1
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        1.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        2
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        2.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        3
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        3.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        4
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        4.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        5.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        6
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        6.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        7
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        7.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        8
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        8.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        9
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        9.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        10
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        10.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        11
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        11.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        12
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        12.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        13
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        13.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        14
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        14.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        15
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        15.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        16
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        16.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        17
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        17.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        18
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        18.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        19
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        19.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        20
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        20.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        21
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        21.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        22
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        22.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        23
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        23.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        24
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        24.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        25
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        25.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        26
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        26.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        27
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        27.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        28
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        28.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        29
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        29.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        30
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        30.5
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        31
+      ]
+    },
+    {
+      "base": [
+        "Walk_Loop",
+        31.5
+      ]
+    }
+  ],
+  "threads": 2,
+  "fps": 24,
+  "dense": {
+    "length": 32,
+    "step": 0.5
+  },
+  "renderer": "/home/elad-saadon/Projects/GAME.worktrees/feat-races-in-game/tools/anim/blender/render.py",
+  "renderer_sha256": "50bcf8ec89e72675fdcc4d7ffe636d0ea19010720b108f14a9e1d53596bd6162",
+  "view_angles": {
+    "down": 0,
+    "down-left": 0.6536907233900772,
+    "left": 1.5707963267948966,
+    "up-left": 2.487901930199716,
+    "up": 3.141592653589793
+  },
+  "render": false
+}

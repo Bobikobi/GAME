@@ -1,0 +1,127 @@
+{
+  "date": "2026-10-29",
+  "baseline": "c2ba13067",
+  "ownerFeedback": {
+    "sand": "Looks like small clouds",
+    "movement": "Character feels pasted onto the ground; animation does not match displacement"
+  },
+  "scope": "Correction of existing connected material fixture only",
+  "validation": {
+    "focused": {
+      "status": "passed",
+      "files": 8,
+      "tests": 31
+    },
+    "verify": {
+      "status": "passed",
+      "command": "VITEST_MAX_WORKERS=4 TMPDIR=<dedicated directory outside Git> pnpm verify",
+      "projectFilesPassed": 140,
+      "projectFilesSkipped": 2,
+      "projectTestsPassed": 1495,
+      "projectTestsSkipped": 23,
+      "webTestsPassed": 81,
+      "existingContentWarnings": 32,
+      "log": ".scratch/world-motion-2026-10-29/verify.log"
+    },
+    "browser": {
+      "status": "passed",
+      "log": ".scratch/world-motion-2026-10-29/browser.log",
+      "checks": [
+        "native character size and authored anchor",
+        "whole device-pixel close framing",
+        "DPR and orientation changes",
+        "real keyboard diagonal and mirrored views",
+        "pointer movement",
+        "four-sided trunk collision",
+        "blocked gait stops",
+        "seven viewpoints",
+        "phone reduced motion",
+        "no browser errors"
+      ]
+    },
+    "contactPixels": {
+      "checkedOrientationsAndPoses": 248,
+      "missing": []
+    },
+    "sand": {
+      "opaque": true,
+      "paletteValid": true,
+      "dimensions": [
+        128,
+        128
+      ],
+      "repeat": {
+        "horizontal": 0,
+        "vertical": 0
+      }
+    },
+    "video": {
+      "capture": "Real CDP screencast with actual input and camera follow",
+      "sourceFrames": 63,
+      "sourceTimestampSpanSeconds": 5.333,
+      "containerSeconds": 5.566,
+      "cadence": "Variable capture cadence; CFR encoding repeats captured frames and does not establish gameplay FPS"
+    },
+    "ordinaryOpening": "Not rerun for this correction. Previous unrelated broad opening failure remains recorded with the 2026-10-28 continuation."
+  },
+  "playback": {
+    "walkingPoses": 30,
+    "renderedViews": [
+      "down",
+      "down-left",
+      "left",
+      "up-left",
+      "up"
+    ],
+    "directionsIncludingMirroring": 8,
+    "phase": "Integrated per displacement; preserved on turns and stops",
+    "speedArtPxPerSecond": 125,
+    "posesPerSecond": {
+      "down": 24.875291870091274,
+      "down-left": 22.18396720322289,
+      "left": 19.027130150644133,
+      "up-left": 22.064664175811245,
+      "up": 24.798143115043544
+    },
+    "limits": "At most30 poses/s at the unchanged study speed; strips3968px wide"
+  },
+  "assets": [
+    {
+      "file": "game/public/art-review/world-2026-10-29/desktop-forest.png",
+      "sha256": "e8a9c45d25117743ad164e067804d8c0c2154e12bb1c99758868f12c9bf0daa7",
+      "bytes": 476833
+    },
+    {
+      "file": "game/public/art-review/world-2026-10-29/desktop-shore.png",
+      "sha256": "4bd5adad82da79405d237667b102a2e746be50dcf0dc41b3c234d242faf16e0d",
+      "bytes": 491286
+    },
+    {
+      "file": "game/public/art-review/world-2026-10-29/desktop-sand.png",
+      "sha256": "74d4fbe6074d9673e2315f49df8e915502a69e59ad18f31280781bf4189931fc",
+      "bytes": 661994
+    },
+    {
+      "file": "game/public/art-review/world-2026-10-29/phone-cove.png",
+      "sha256": "f5ba59dc83a13cf7c3a70255cdae42994aef1b79da36ae0e8a6b5737cf3ec9dd",
+      "bytes": 760765
+    },
+    {
+      "file": "game/public/art-review/world-2026-10-29/sand-before.png",
+      "sha256": "555950cc040dd733e979fa3080caf066a200345270e7ab9adddcdc958e97f240",
+      "bytes": 674669
+    },
+    {
+      "file": "game/public/art-review/world-2026-10-29/walk.webm",
+      "sha256": "e31d054c90820d7eaa93c2e4336e8cd4454f0b09b7560142acf0efe877f8f79a",
+      "bytes": 5940606
+    }
+  ],
+  "approval": "Agent correction for owner review, not owner acceptance of sand, animation quality or the whole scene",
+  "remaining": [
+    "Discrete-pose foot hold remains; reduced rather than perfect continuous locking",
+    "Pointer headings between eight views still use the nearest rendered view",
+    "Sand repeats over large areas",
+    "Paving and place composition need separate review"
+  ]
+}

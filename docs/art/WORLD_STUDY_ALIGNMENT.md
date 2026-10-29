@@ -81,3 +81,26 @@ claim to remove that limitation. The whole fixture remains a material laboratory
 Current direct browser captures and the review page are served from
 `game/public/art-review/world-2026-10-28/`. Their checks and limits are recorded in
 `docs/design/frames/rich-world-continuation-2026-10-28/README.md`.
+
+## Owner feedback and motion correction — 2026-10-29
+
+The owner rejected the sand's raised/cloud-like appearance and said that the
+actor felt pasted onto the ground, with animation that did not match its travel.
+This overrides any implication that the earlier technical checks accepted those
+qualities. The previous images and sheets remain preserved.
+
+The fixture now integrates one gait phase across turns, uses projected diagonal
+views, and re-renders the same picked human and library action with 30 poses at
+the unchanged study speed. The contact line follows supporting shoes rather
+than the lowest swinging toe. Flat pale sand with shallow wind marks replaces
+the raised bright strokes. The close camera, native character size, 50-degree
+elevation, retained world and production content are unchanged.
+
+The correction's sources, measurements and limitations are in
+`docs/design/frames/rich-world-motion-2026-10-29/README.md`; direct screenshots and
+a real browser recording are served from
+`/art-review/world-2026-10-29/index.html`. The denser sheets are fixture outputs,
+not a replacement of the production race pipeline or its import limits. Poses
+remain discrete, so this reduces visible sliding without claiming perfect
+continuous foot locking. Owner review of the result remains separate from the
+passing checks; paving/place composition still has its own unresolved review.

@@ -46,7 +46,7 @@ class WorldStudy extends Phaser.Scene {
     const spawn = worldStudyLayout.spawn;
     this.actorView = createWorldStudyActor(this, (spawn.x + .5) * WORLD_TILE_SIZE, (spawn.y + .5) * WORLD_TILE_SIZE);
     this.actor = this.actorView.sprite;
-    this.shadows = createWorldStudyShadows(this, this.ground.trees, this.ground.landAt);
+    this.shadows = createWorldStudyShadows(this, this.ground.trees, this.ground.landAt, () => this.actorView.contacts());
     this.shadows.advance(this.actor);
     this.events.once('shutdown', () => this.shadows.destroy());
     this.keys = this.input.keyboard!.addKeys('UP,DOWN,LEFT,RIGHT,W,A,S,D') as Record<string, Phaser.Input.Keyboard.Key>;

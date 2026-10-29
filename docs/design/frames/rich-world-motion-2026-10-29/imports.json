@@ -1,0 +1,215 @@
+{
+  "method": "Existing importTile and palette, followed by the established border-strip reconciliation; no motif painting or crop shuffling. Previous sand sources, imports and reports remain unchanged.",
+  "reports": [
+    {
+      "name": "paving",
+      "source": "../rich-world-2026-10-25/city-source.png",
+      "sourceSha256": "f0518fe94026ea666266a300ee55ab9836f2c11d4a2a03751571fcd49a51d340",
+      "file": "../rich-world-ground-2026-10-27/paving.png",
+      "sha256": "d7b3358bed786f514bd1914bdd0a3e1e5ca94611042d28d196c5fb5669ca54ad",
+      "ramps": [
+        "stone",
+        "moss",
+        "wood"
+      ],
+      "palette": [
+        "#1b1a2e",
+        "#3a3554",
+        "#5d6177",
+        "#8f94a8",
+        "#c6cad6",
+        "#f5f4ef",
+        "#1f3d2b",
+        "#2e6b3b",
+        "#4c9a3f",
+        "#84c450",
+        "#c8e88a",
+        "#3d2618",
+        "#6e4226",
+        "#9e6b3c",
+        "#c99a5e",
+        "#ebd3a2",
+        "#172a52",
+        "#275a99",
+        "#3f8fd1",
+        "#7cc4ec",
+        "#c4ecf8",
+        "#5e1c28",
+        "#a8302f",
+        "#e2533f",
+        "#f6a07f",
+        "#b8661f",
+        "#eda83a",
+        "#f8de62",
+        "#d38c66",
+        "#f3c7a0",
+        "#5b3373",
+        "#9a5bb0",
+        "#1e2230",
+        "#333b4c",
+        "#4a5668",
+        "#6f7d8c",
+        "#9aa7b0",
+        "#d6ddd8",
+        "#1b2a16",
+        "#2f4722",
+        "#4a6a2c",
+        "#6f8d36",
+        "#9cb24c",
+        "#cfd36e",
+        "#2a1810"
+      ],
+      "field": [
+        128,
+        128
+      ],
+      "sourceGrid": [
+        418,
+        418
+      ],
+      "importer": "importTile",
+      "repeat": {
+        "borderBlendPixels": 8,
+        "before": {
+          "horizontal": 67,
+          "vertical": 59
+        },
+        "after": {
+          "horizontal": 0,
+          "vertical": 0
+        }
+      },
+      "originalPrompt": "../rich-world-2026-10-25/prompts.json:jobs[name=city]"
+    },
+    {
+      "name": "worn",
+      "source": "../rich-world-2026-10-25/ruins-source.png",
+      "sourceSha256": "8a390db8e231c7fb5299f375c7368efcf4f0285713abbfe8591f3eaca2cf3fb7",
+      "file": "../rich-world-ground-2026-10-27/worn.png",
+      "sha256": "814272424fc221bf9cab488e694af1afc558615deb00891264414132f02794c4",
+      "ramps": [
+        "stone",
+        "moss",
+        "wood"
+      ],
+      "palette": [
+        "#1b1a2e",
+        "#3a3554",
+        "#5d6177",
+        "#8f94a8",
+        "#c6cad6",
+        "#f5f4ef",
+        "#1f3d2b",
+        "#2e6b3b",
+        "#4c9a3f",
+        "#84c450",
+        "#c8e88a",
+        "#3d2618",
+        "#6e4226",
+        "#9e6b3c",
+        "#c99a5e",
+        "#ebd3a2",
+        "#172a52",
+        "#275a99",
+        "#3f8fd1",
+        "#7cc4ec",
+        "#c4ecf8",
+        "#5e1c28",
+        "#a8302f",
+        "#e2533f",
+        "#f6a07f",
+        "#b8661f",
+        "#eda83a",
+        "#f8de62",
+        "#d38c66",
+        "#f3c7a0",
+        "#5b3373",
+        "#9a5bb0",
+        "#1e2230",
+        "#333b4c",
+        "#4a5668",
+        "#6f7d8c",
+        "#9aa7b0",
+        "#d6ddd8",
+        "#1b2a16",
+        "#2f4722",
+        "#4a6a2c",
+        "#6f8d36",
+        "#9cb24c",
+        "#cfd36e",
+        "#2a1810"
+      ],
+      "field": [
+        128,
+        128
+      ],
+      "sourceGrid": [
+        418,
+        418
+      ],
+      "importer": "importTile",
+      "repeat": {
+        "borderBlendPixels": 8,
+        "before": {
+          "horizontal": 61,
+          "vertical": 58
+        },
+        "after": {
+          "horizontal": 0,
+          "vertical": 0
+        }
+      },
+      "originalPrompt": "../rich-world-2026-10-25/prompts.json:jobs[name=ruins]"
+    },
+    {
+      "name": "sand",
+      "source": "sand-source.png",
+      "sourceSha256": "f3ff13bb2e9c7246fec05e90f48b5f4ce0d88343e8ffda91678350f8d43ebc67",
+      "file": "sand.png",
+      "sha256": "d580696530aec218f3b84362e80415dfa47980a036e28c861ff03d802a9008ca",
+      "ramps": [
+        "wood",
+        "stone"
+      ],
+      "palette": [
+        "#2a1810",
+        "#3d2618",
+        "#6e4226",
+        "#9e6b3c",
+        "#c99a5e",
+        "#ebd3a2",
+        "#1e2230",
+        "#333b4c",
+        "#4a5668",
+        "#6f7d8c",
+        "#9aa7b0",
+        "#d6ddd8",
+        "#5d6177",
+        "#8f94a8",
+        "#c6cad6",
+        "#f5f4ef"
+      ],
+      "field": [
+        128,
+        128
+      ],
+      "sourceGrid": [
+        156,
+        156
+      ],
+      "importer": "importTile",
+      "repeat": {
+        "borderBlendPixels": 8,
+        "before": {
+          "horizontal": 18,
+          "vertical": 24
+        },
+        "after": {
+          "horizontal": 0,
+          "vertical": 0
+        }
+      },
+      "originalPrompt": "sand-prompt.txt"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-29",
+  "assets": [
+    {
+      "id": "sand-20261028-v2",
+      "file": "../rich-world-ground-2026-10-28/sand-v2.png",
+      "sha256": "7a7a8cd0ff954216ac9dc3cc0b72e97c949b39d7009a9a6af2da329d3810274c",
+      "status": "rework",
+      "decidedBy": "owner",
+      "reason": "Owner says the raised white forms look like small clouds; retain source and derivative, do not load as the current sand"
+    },
+    {
+      "id": "sand-20261029-flat-grain",
+      "file": "sand-source.png",
+      "sha256": "f3ff13bb2e9c7246fec05e90f48b5f4ce0d88343e8ffda91678350f8d43ebc67",
+      "source": "../rich-world-ground-2026-10-28/sand-source-v2.png",
+      "sourceSha256": "d6eb7145aaa0fdd571cbe77974c5838ec5e716f9683d831e0a79626c5bf981a6",
+      "prompt": "sand-prompt.txt",
+      "tool": "image_gen.imagegen",
+      "mode": "built-in edit",
+      "calls": 1,
+      "model": "Not specified in tool invocation",
+      "toolOutput": "/home/elad-saadon/.codex/generated_images/01a182db-2b85-7423-a237-cd5127f22a2f/exec-8c040efc-37a6-422c-ac72-f9cc3bf5eead.png",
+      "status": "keep",
+      "decidedBy": "agent",
+      "ownerApproval": "pending",
+      "derivative": {
+        "file": "sand.png",
+        "sha256": "d580696530aec218f3b84362e80415dfa47980a036e28c861ff03d802a9008ca",
+        "recipe": "imports.json:reports[name=sand]"
+      }
+    },
+    {
+      "id": "human-a-dense-directional-walk",
+      "metadata": "walk-metadata.json",
+      "status": "keep",
+      "decidedBy": "agent",
+      "ownerApproval": "Human A appearance is picked; corrected motion remains for owner review",
+      "source": {
+        "branch": "feat/races-in-game",
+        "commit": "d6e32480399ec41b539f0344d501ed2d6acba664",
+        "rendererSha256": "50bcf8ec89e72675fdcc4d7ffe636d0ea19010720b108f14a9e1d53596bd6162",
+        "modelSha256": "fd1fa106e2231a5fce8486242b297f9fc88744b315087f2eb6628e31f70aa5cc",
+        "librarySha256": "69591853d817488edaa8fd9bf8fc1d821eaeaf789f8627b3cd23b41c4ed67997",
+        "action": "Jog_Fwd_Loop",
+        "sourceFramesPerCycle": 22.4
+      },
+      "licence": "Forager by Meshy CC BY4.0; Quaternius Universal Animation Library CC0. Full attribution is in the public character page.",
+      "reuse": [
+        "Existing picked body and outfit",
+        "Existing library action",
+        "New denser projected directional render"
+      ]
+    }
+  ]
+}

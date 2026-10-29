@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Forager — character attribution</title>
+  <style>
+    body { margin: 3rem auto; padding: 0 1.25rem; max-width: 46rem; background: #172a24; color: #f5f4ef; font: 1rem/1.65 system-ui, sans-serif; }
+    h1 { line-height: 1.2; } a { color: #c8e88a; } code { overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <h1>Forager — human A</h1>
+  <p>The connected world material study reuses the picked human A character, the male Forager, rendered to pixel sprites at a 50-degree camera elevation.</p>
+  <p><strong>Attribution:</strong> Forager, generated with <a href="https://www.meshy.ai/">Meshy</a> (meshy.ai), licensed under <a href="https://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International (CC BY 4.0)</a>.</p>
+  <p>The original model is <code>game/public3d/models/character-forager-m.glb</code>. Its recorded modifications are: scaled to 1.64 m; skeleton and skin weights added in Blender by fitting the warrior's Mixamo-named rig to the body, with the belt end cut free where it touched the left hand; Idle, Walk and Run clips retargeted from the warrior; two empty prop sockets added; reduced from 84,584 to 50,000 triangles and texture maps reduced from 2048 to 1024 pixels.</p>
+  <p>The sprite derivative is posed with library motion, rendered at 50 degrees and snapped to the game's palette by <code>tools/anim</code>. Motion uses <a href="https://quaternius.itch.io/universal-animation-library">Quaternius Universal Animation Library</a>, CC0 1.0, action <code>Jog_Fwd_Loop</code>, retargeted to the Forager's Mixamo rig.</p>
+  <p>On 29 October 2026 the same model and library action were rendered again with the retained renderer from <code>feat/races-in-game</code>, commit <code>d6e324803</code>. Five views include projected diagonals; right-facing views mirror the corresponding left views. The previous three copied sheets remain preserved as historical comparison material.</p>
+  <p>Each frame is 128 × 128 art pixels, with its ground anchor at [64,90]. Thirty walking poses are followed by a standing pose. Native scale 1 is retained. Actual travelled distance advances one continuous cycle phase, including when direction changes. At the study's 125 art px/s speed, playback remains under 30 poses/s.</p>
+  <p>The owner's human A selection remains the appearance reference. The new render's source hashes, frame geometry, projected feet and per-view cycle distances are in <code>docs/design/frames/rich-world-motion-2026-10-29/walk-metadata.json</code>. The source action is still <code>Jog_Fwd_Loop</code>; the study's denser strips do not replace production race sheets or change their import limits.</p>
+  <p><a href="../../../world-study.html">Return to the connected world study</a></p>
+</body>
+</html>

@@ -2,10 +2,11 @@ import * as Phaser from 'phaser';
 
 import { SHADOW, SUN_TODAY, maskOfAlpha, shadowBox, shadowOf, sunAt, type Mask, type Shadow } from './cast';
 import { WORLD_TILE_SIZE, worldStudyLayout } from './world-study-layout';
+import { worldStudyFootContacts, type StudyFoot } from './world-study-contact';
 
 const INK = `#${SHADOW.ink.toString(16).padStart(6, '0')}`;
 const SUN = sunAt(SUN_TODAY, 10 * 60);
-const MAX_ACTOR_FRAMES = 24;
+const MAX_ACTOR_FRAMES = 256;
 let serial = 0;
 
 interface Shape {
@@ -54,6 +55,7 @@ export function createWorldStudyShadows(
   scene: Phaser.Scene,
   trees: readonly Phaser.GameObjects.Image[],
   landAt: (x: number, y: number) => boolean,
+  contactFeet?: () => readonly StudyFoot[],
 ) {
   const prefix = `world-study-shadow-${++serial}`;
   const width = worldStudyLayout.width * WORLD_TILE_SIZE;
@@ -121,8 +123,15 @@ export function createWorldStudyShadows(
     const feet = Math.round(actor.y + entry.shape.top + entry.shape.mask.feet);
     if (!movingCast) movingCast = scene.add.image(0, 0, entry.key).setOrigin(0).setDepth(2.5).setAlpha(SUN.alpha);
     movingCast.setTexture(entry.key).setPosition(x + entry.box.x, feet + entry.box.y).setVisible(sunEnabled);
-    movingContact.clear().fillStyle(SHADOW.ink, SHADOW.contact).setPosition(x, feet).setVisible(true);
-    for (const [a, b] of entry.shape.shadow.contact) movingContact.fillRect(a, 0, b - a + 1, 4);
+    movingContact.clear().fillStyle(SHADOW.ink, SHADOW.contact).setVisible(true);
+    if (contactFeet) {
+      const spans = worldStudyFootContacts(entry.shape.mask, -entry.shape.left, -entry.shape.top, contactFeet());
+      movingContact.setPosition(actor.x, actor.y).setVisible(spans.length > 0);
+      for (const span of spans) movingContact.fillRect(span.x, span.y, span.width, 1);
+    } else {
+      movingContact.setPosition(x, feet);
+      for (const [a, b] of entry.shape.shadow.contact) movingContact.fillRect(a, 0, b - a + 1, 4);
+    }
     while (frames.size > MAX_ACTOR_FRAMES) {
       const oldest = frames.keys().next().value!;
       scene.textures.remove(frames.get(oldest)!.key);
