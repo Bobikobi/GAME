@@ -612,7 +612,7 @@ CORE FINDING: the games that run a real server tick keep ALL combat time as whol
 - Thin evidence: ALttP numbers come from one blog; Moonlighter and Core Keeper i-frames, Stardew post-hit invincibility, HLD frame counts, WoW leash distance, Albion tick rate and the OSRS bar size were not found; do not present them as known.
 - Scope: G47 (GAME_RULES.md:387) was cited for the cone and smell but lies outside the G30-G36 range this research was told to read; its rule that noise never turns a head is superseded by round 4 (DECISIONS.md:2924).
 ## sources
-- docs/design/GAME_RULES.md:313,333,341,355,368,381,387,418 (repo worktree /home/elad-saadon/Projects/GAME.worktrees/develop-read at e612194b3)
+- docs/design/GAME_RULES.md:313,333,341,355,368,381,387,418 (the repo at develop e612194b3)
 - DECISIONS.md:2904,2912,2918,2924,2931 (same worktree)
 - https://oldschool.runescape.wiki/w/Attack_speed
 - https://oldschool.runescape.wiki/w/Game_tick
