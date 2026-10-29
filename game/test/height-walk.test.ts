@@ -5,6 +5,9 @@
  * run, the planners of the e2e) go through the crossing. A small map with one face and one crossing first, then the valley's own town face
  * (x=21|22) and its steps (28,14).
  */
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { runInNewContext } from 'node:vm';
 import { beforeAll, describe, expect, test } from 'vitest';
 
 import { type Bundle, type Rect, type State, type Tile, MAX_LEVEL_STEP, levelAt, makeWalkable, newState, step, stepRuleFor } from '@game/kernel';
@@ -350,5 +353,171 @@ describe('the valley', () => {
       }
     }
     expect(changes).toBe(1);
+  });
+});
+
+/** What the page of the opening e2e answers: its planner, the node that shuts a way and its probe of a step, as game/e2e/opening.ts ships them. */
+interface OpeningPage {
+  plan(rect: Rect): { path: string[]; face: string; goal: Tile } | null;
+  blocker(rect: Rect): { id: string; source: string; x: number; y: number } | null;
+  open(x: number, y: number, from?: Tile): boolean;
+}
+
+/**
+ * The in-page helpers of the opening e2e (`IN_PAGE`, game/e2e/opening.ts) run over the real valley with the player on `at`. The source
+ * is read, not imported: the script starts a browser when it loads. A copy of the planner in this file would stay right while the
+ * shipped one drifted, which is how the merge of 29.10 sent both CI openings into the town face: develop's room-aware `walker()` took
+ * only (x, y), so every step of the search arrived as a single-tile probe and the plan ran straight over x=21|22.
+ */
+function openingPage(r: Rig, at: Tile): OpeningPage {
+  const src = readFileSync(fileURLToPath(new URL('../e2e/opening.ts', import.meta.url)), 'utf8');
+  const raw = /const IN_PAGE = `([\s\S]*?)`;\n/.exec(src)?.[1];
+  if (raw === undefined) throw new Error('game/e2e/opening.ts has no "const IN_PAGE = `...`;" any more: teach this test where the in-page helpers went');
+  // the template as TypeScript reads it, escapes and all; an interpolation in it would throw here, which says the test must learn it
+  const code = runInNewContext('`' + raw + '`', {}) as string;
+  const session = { pos: [at[0], at[1]], facing: 'down', busy: false, tick: 0, state: r.state };
+  const world = {
+    room: null,
+    body: { moving: false },
+    canWalk: (s: Pick<GameSession, 'pos' | 'tick' | 'state'>, x: number, y: number, from?: readonly [number, number]) => canEnter(r.b, r.walkable, r.nodeAt, s, x, y, from),
+  };
+  const window: { addEventListener: () => void; __game: unknown; __e2e?: OpeningPage } = {
+    addEventListener: () => undefined,
+    __game: { session, world, bundle: r.b, ui: { blocking: false } },
+  };
+  runInNewContext(code, { window });
+  const page = window.__e2e;
+  if (!page) throw new Error('the in-page helpers did not define __e2e');
+  // what the page hands back is made in the other realm: plain data again
+  return {
+    plan: (rect) => JSON.parse(JSON.stringify(page.plan(rect))),
+    blocker: (rect) => JSON.parse(JSON.stringify(page.blocker(rect))),
+    open: (x, y, from) => page.open(x, y, from),
+  };
+}
+
+describe('the opening e2e plans its walks by the same rule, as its page runs it', () => {
+  const DELTA: Record<string, Tile> = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+
+  /** The valley as the opening finds it once the bridge is mended, which is where every walk after the bridge begins. */
+  function mended(): Rig {
+    const r = valley();
+    return { ...r, state: { ...r.state, player: { ...r.state.player, restored: [...r.state.player.restored, 'core/old-bridge'] } } };
+  }
+
+  /** The planned path, replayed from where it starts over the kernel's rule: where it ends, the steps the rule refuses and the steps over a change of level. */
+  function replay(r: Rig, from: Tile, path: string[]): { end: Tile; refused: string[]; changes: Tile[][] } {
+    const rule = stepRuleFor(r.b);
+    const refused: string[] = [];
+    const changes: Tile[][] = [];
+    let at = from;
+    for (const d of path) {
+      const next: Tile = [at[0] + DELTA[d]![0], at[1] + DELTA[d]![1]];
+      if (!rule(at[0], at[1], next[0], next[1])) refused.push(`${at} > ${next}`);
+      if (levelAt(r.b.map, at[0], at[1]) !== levelAt(r.b.map, next[0], next[1])) changes.push([at, next]);
+      at = next;
+    }
+    return { end: at, refused, changes };
+  }
+
+  /** What the content names, found by its id: a missing one says which. */
+  function named<T>(found: T | undefined, what: string): T {
+    if (found === undefined) throw new Error(`the content has no ${what} any more: teach this test its new name`);
+    return found;
+  }
+
+  test('the probe asks a step from the tile it is given, and from the player\'s own when none is', () => {
+    const page = openingPage(valley(), [21, 9]);
+    expect(page.open(22, 9)).toBe(false);
+    expect(page.open(22, 9, [21, 9])).toBe(false);
+    // the player is far from the steps and the face beside them: a search asks from the tile it has reached
+    expect(page.open(28, 13, [28, 14])).toBe(true);
+    expect(page.open(27, 13, [27, 14])).toBe(false);
+    expect(page.open(29, 13, [29, 14])).toBe(false);
+  });
+
+  test('from the foot of the town face, where CI stood, the plan to the square goes round to the steps and over the face once, on a crossing', () => {
+    const r = valley();
+    const square = named(r.b.map.slots.find((x) => x.id === 'core/town-square'), 'town square');
+    const plan = openingPage(r, [21, 9]).plan(square);
+    expect(plan).not.toBeNull();
+    const walked = replay(r, [21, 9], plan!.path);
+    expect(walked.refused).toEqual([]);
+    expect(walked.end).toEqual(plan!.goal);
+    expect(walked.changes).toEqual([[[28, 14], [28, 13]]]);
+  });
+
+  test('from the fire the plan reaches every place the opening walks to, each step by the rule', () => {
+    const r = mended();
+    const b = r.b;
+    const slot = (id: string) => named(b.map.slots.find((x) => x.id === id), `slot ${id}`);
+    const prop = (id: string) => named(b.map.props.find((x) => x.id === id), `prop ${id}`);
+    const nodes = (source: string): Rect[] => Object.values(b.instances).filter((i) => i.source === source).map((i) => ({ x: i.x, y: i.y, w: 1, h: 1 }));
+    const camp = slot('core/camp');
+    const fire: Tile = [camp.x + 2, camp.y + 2];
+    const elder = slot('core/elder-house');
+    const trader = slot('core/trader-stall');
+    const places: [string, Rect][] = [
+      ['the town square', slot('core/town-square')],
+      ['Elder Maru', { x: elder.x + 1, y: elder.y + 1, w: 1, h: 1 }],
+      ["Pell's door", { x: trader.x, y: trader.y, w: 1, h: 1 }],
+      ['the ruined house', slot('core/town-edge')],
+      ['the broken arch', slot('core/arch-mouth')],
+      ['the grove', slot('core/forest-mushrooms')],
+      ...['core/marked-stone', 'core/town-lantern', 'core/hill-lantern', 'core/arch-stone'].map((id): [string, Rect] => [id, prop(id)]),
+      ...['core/lantern-foot', 'core/bell-bushes', 'core/sun-herbs', 'core/berry-bushes', 'core/wild-herbs', 'core/oak-trees'].flatMap((source) =>
+        nodes(source).map((rect, i): [string, Rect] => [`${source} #${i}`, rect]),
+      ),
+    ];
+    const page = openingPage(r, fire);
+    const lost: string[] = [];
+    for (const [what, rect] of places) {
+      const plan = page.plan(rect);
+      if (!plan) {
+        lost.push(`${what}: no way`);
+        continue;
+      }
+      const walked = replay(r, fire, plan.path);
+      if (walked.refused.length > 0 || walked.end.join(',') !== plan.goal.join(',')) lost.push(`${what}: refused [${walked.refused.join('; ')}], ends ${walked.end} not ${plan.goal}`);
+    }
+    expect(lost).toEqual([]);
+  });
+
+  test('the collapsed hall is dug by day from the lane south of the ruins: a ready log across the east lane shuts the way until it is taken', () => {
+    const r = mended();
+    const stall = named(r.b.map.slots.find((x) => x.id === 'core/trader-stall'), 'trader stall');
+    // where the walk to the hall begins: the doorstep of Pell's stall, as the shop puts the player back on the valley
+    const doorstep: Tile = [stall.x, stall.y + 1];
+    const spots = Object.values(r.b.instances).filter((i) => i.source === 'core/ruins-hall').map((i): Rect => ({ x: i.x, y: i.y, w: 1, h: 1 }));
+    expect(spots.length).toBeGreaterThan(0);
+    const shut = openingPage(r, doorstep);
+    const blockers = new Set<string>();
+    for (const spot of spots) {
+      expect(shut.plan(spot)).toBeNull();
+      const block = shut.blocker(spot);
+      expect(block?.source).toBe('core/fallen-logs');
+      blockers.add(block!.id);
+    }
+    // every dig spot is shut by the same log: taking it opens the lane, and each walk then keeps to the rule
+    expect([...blockers]).toHaveLength(1);
+    const [log] = [...blockers];
+    const taken: Rig = { ...r, state: { ...r.state, nodes: { ...r.state.nodes, [log!]: { readyAt: 1_000_000, draws: 1 } } } };
+    const open = openingPage(taken, doorstep);
+    for (const spot of spots) {
+      const plan = open.plan(spot);
+      expect(plan).not.toBeNull();
+      const walked = replay(taken, doorstep, plan!.path);
+      expect(walked.refused).toEqual([]);
+      expect(walked.end).toEqual(plan!.goal);
+    }
+  });
+
+  test('the night ruins stay out of reach before the arch, as the script checks, and no node is to blame', () => {
+    const r = mended();
+    const threshold = named(r.b.map.slots.find((x) => x.id === 'core/night-threshold'), 'night threshold');
+    const camp = named(r.b.map.slots.find((x) => x.id === 'core/camp'), 'camp');
+    const page = openingPage(r, [camp.x + 2, camp.y + 2]);
+    expect(page.plan(threshold)).toBeNull();
+    expect(page.blocker(threshold)).toBeNull();
   });
 });
