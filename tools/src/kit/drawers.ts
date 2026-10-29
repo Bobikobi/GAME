@@ -671,6 +671,21 @@ export function sdClause(clause: string): string | null {
   return c;
 }
 
+/** A subject taller or wider than this ratio is told so in the prompt (27.10): the model draws a cottage as wide as tall unless it is asked. */
+export const SHAPE_RATIO = 1.3;
+
+/**
+ * The shape the asked size implies, from the spec's art grid alone (decided 27.10, never written by hand per entry):
+ * `tall` above 1.3 tall, `wide` above 1.3 wide, null for a square-ish size or one that is not given.
+ */
+export function shapeOf(size: { width?: number; height?: number }): 'tall' | 'wide' | null {
+  const { width, height } = size;
+  if (width === undefined || height === undefined || width <= 0 || height <= 0) return null;
+  if (height / width > SHAPE_RATIO) return 'tall';
+  if (width / height > SHAPE_RATIO) return 'wide';
+  return null;
+}
+
 function clauses(text: string | undefined): string[] {
   return (text ?? '').split(/[,;()]/u).map((c) => c.trim()).filter((c) => c !== '');
 }
@@ -682,15 +697,25 @@ function clauses(text: string | undefined): string[] {
  * magenta). Detail clauses go from the end while the estimate is past the window, so the words that matter
  * most are never the ones cut. The local route keeps `localPrompt`.
  */
-export function kagglePrompt(entry: { what: string; detail?: string; notes?: readonly string[]; ref: string }, recipe: KaggleRecipe = 'sd15'): string {
+export function kagglePrompt(entry: { what: string; detail?: string; notes?: readonly string[]; ref: string; width?: number; height?: number }, recipe: KaggleRecipe = 'sd15'): string {
   if (kaggleFromPrompt(recipe)) return kaggleSentencePrompt(entry);
-  const head = [KAGGLE_RECIPES[recipe].trigger, ...(kaggleSubject(entry.ref) === 'character' ? ['one single character alone', 'full body', 'front view'] : ['game sprite', 'top-down three-quarter view'])];
+  const shape = shapeOf(entry);
+  const head = [
+    KAGGLE_RECIPES[recipe].trigger,
+    ...(kaggleSubject(entry.ref) === 'character' ? ['one single character alone', 'full body', 'front view'] : ['game sprite', 'top-down three-quarter view']),
+    ...(shape === 'tall' ? ['tall, narrow'] : shape === 'wide' ? ['wide, low'] : []),
+  ];
   const tail = ['thick dark navy outline', 'crisp square pixels', 'flat pure magenta background'];
   const subject = clauses(entry.what).map(sdClause).filter((c): c is string => c !== null);
   const detail = clauses(detailWithNotes(entry)).map(sdClause).filter((c): c is string => c !== null);
   const build = (): string => [...new Map([...head, ...subject, ...detail, ...tail].map((c) => [c.toLowerCase(), c])).values()].join(', ');
   while (detail.length > 0 && clipTokenEstimate(build()) > CLIP_TOKENS - 4) detail.pop();
   return build();
+}
+
+/** The sentence recipes' words for a shape: the subject is tall and narrow and fills the picture's height, or wide and low and fills its width. */
+function shapeWords(shape: 'tall' | 'wide' | null): string[] {
+  return shape === 'tall' ? ['tall and narrow, filling the height of the picture'] : shape === 'wide' ? ['wide and low, filling the width of the picture'] : [];
 }
 
 /**
@@ -700,7 +725,7 @@ export function kagglePrompt(entry: { what: string; detail?: string; notes?: rea
  * one, and the three things the importer needs. Nothing is dropped: the kernel counts it against the encoder's
  * real window.
  */
-export function kaggleSentencePrompt(entry: { what: string; detail?: string; notes?: readonly string[]; ref: string }): string {
+export function kaggleSentencePrompt(entry: { what: string; detail?: string; notes?: readonly string[]; ref: string; width?: number; height?: number }): string {
   const subject = clauses(entry.what).map(sdClause).filter((c): c is string => c !== null).join(', ');
   const detail = clauses(detailWithNotes(entry)).map(sdClause).filter((c): c is string => c !== null);
   const character = kaggleSubject(entry.ref) === 'character';
@@ -712,7 +737,7 @@ export function kaggleSentencePrompt(entry: { what: string; detail?: string; not
   return [
     `Pixel art game sprite: ${subject}.`,
     sentence(detail),
-    sentence([character ? 'one single character alone, centred' : 'alone and centred, filling most of the picture', ...view]),
+    sentence([character ? 'one single character alone, centred' : 'alone and centred, filling most of the picture', ...shapeWords(shapeOf(entry)), ...view]),
     'Crisp square pixels, a thick dark navy outline, a limited palette.',
     'Flat pure magenta background, no shadow on the ground, no text, no other objects.',
   ].filter((s) => s !== '').join(' ');
