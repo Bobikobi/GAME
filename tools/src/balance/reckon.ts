@@ -18,7 +18,7 @@
  * - Levels on the one curve of PROGRESSION 3.2 (t1, the 9.10 ratio); the leading
  *   school's level is the place's expected level.
  */
-import { type Bundle, type QuestDef, type Rect, dangerAt, hazardsOf, makeWalkable, near, nodeVerb } from '@game/kernel';
+import { type Bundle, type QuestDef, type Rect, dangerAt, hazardsOf, makeStepRule, makeWalkable, near, nodeVerb } from '@game/kernel';
 import { QUEST_TYPES } from '@game/schema';
 import { orderOf } from '../quests/hand';
 import { fmtMs, fmtPermille, levelOf, scalePermille, stepMs, thresholdsMs } from './curve';
@@ -93,6 +93,8 @@ function bitmap(b: Bundle, restored: string[]): Uint8Array {
 /** Steps from one tile to every tile, four ways; -1 where it cannot walk. */
 export function walkFrom(b: Bundle, open: Uint8Array, from: readonly [number, number]): Int32Array {
   const { width, height } = b.map;
+  // the height rule of a step (G68), the kernel's own, so this reckoning and the walk cannot disagree
+  const stepOpen = makeStepRule(b);
   const dist = new Int32Array(width * height).fill(-1);
   const start = from[1] * width + from[0];
   dist[start] = 0;
@@ -106,7 +108,7 @@ export function walkFrom(b: Bundle, open: Uint8Array, from: readonly [number, nu
       const ny = y + dy;
       if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
       const k = ny * width + nx;
-      if (dist[k] !== -1 || open[k] !== 1) continue;
+      if (dist[k] !== -1 || open[k] !== 1 || !stepOpen(x, y, nx, ny)) continue;
       dist[k] = dist[at]! + 1;
       queue.push(k);
     }

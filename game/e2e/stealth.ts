@@ -128,7 +128,7 @@ window.__stealth = (() => {
         }
         for (const [d, [dx, dy]] of Object.entries(DIRS)) {
           const nx = x + dx, ny = y + dy, nk = nx + ',' + ny;
-          if (prev.has(nk) || !w.canWalk(s, nx, ny)) continue;
+          if (prev.has(nk) || !w.canWalk(s, nx, ny, [x, y])) continue;
           prev.set(nk, [k, d]);
           queue.push([nx, ny]);
         }

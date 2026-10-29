@@ -158,7 +158,7 @@ class Door {
           for (const [d, [dx, dy]] of Object.entries(DIRS)) {
             const sx = x - dx, sy = y - dy;
             if (inside(sx, sy)) continue;
-            if ((sx === s.pos[0] && sy === s.pos[1]) || w.canWalk(s, sx, sy)) goals.set(sx + ',' + sy, d);
+            if ((sx === s.pos[0] && sy === s.pos[1]) || w.canWalk(s, sx, sy, [sx, sy])) goals.set(sx + ',' + sy, d);
           }
         }
         const start = s.pos[0] + ',' + s.pos[1];
@@ -174,7 +174,7 @@ class Door {
           }
           for (const [d, [dx, dy]] of Object.entries(DIRS)) {
             const nx = x + dx, ny = y + dy, nk = nx + ',' + ny;
-            if (prev.has(nk) || !w.canWalk(s, nx, ny)) continue;
+            if (prev.has(nk) || !w.canWalk(s, nx, ny, [x, y])) continue;
             prev.set(nk, [k, d]);
             queue.push([nx, ny]);
           }
