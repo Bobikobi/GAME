@@ -48,7 +48,7 @@ function withKeepers(b: Bundle): Bundle {
 }
 
 describe('a shop in named groups (decision 51)', () => {
-  test("Pell's stall: the tools apart from the satchel, the food and the medicine, each group named", () => {
+  test("Pell's shop: the tools apart from the satchel, the food and the medicine, each group named", () => {
     const groups = names(bundle, bundle.shops['core/trader-shop']!.sells);
     expect(groups.map(([label]) => label)).toEqual(['Tools', 'To wear', 'Food and drink', 'Medicine']);
     expect(groups[0]![1]).toEqual(['core/basket', 'core/trowel', 'core/axe', 'core/walking-staff']);

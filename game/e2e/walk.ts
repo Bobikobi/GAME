@@ -26,8 +26,12 @@ const POLL = 25;
 /** In the page: let go of the walk on the frame the feet's centre stands on the tile, or the player faces the way asked. */
 const IN_PAGE = `window.__walk = (() => {
   const g = () => window.__game;
+  // inside a shop the room scene walks the player, and the valley's body waits on the doorstep
+  const room = () => { const r = g().world.room; return r && r.ready && !r.leaving ? r : null; };
+  const bodyOf = () => (room() ?? g().world).body;
+  const facing = () => (room() ?? g().session).facing;
   const tileOf = () => {
-    const b = g().world.body;
+    const b = bodyOf();
     return [Math.floor(b.x / 64), Math.floor(b.y / 64)];
   };
   const letGo = (touch) => {
@@ -52,10 +56,15 @@ const IN_PAGE = `window.__walk = (() => {
     /** Let go once the feet's centre is on the tile. */
     until(tile, touch) { watch(touch, () => { const t = tileOf(); return t[0] === tile[0] && t[1] === tile[1]; }); },
     /** Let go once the player faces a direction. */
-    turn(dir, touch) { watch(touch, () => g().session.facing === dir); },
+    turn(dir, touch) { watch(touch, () => facing() === dir); },
     /** True once the page has let go. */
     done() { return window.__walkDone === true; },
-    feet() { const b = g().world.body; return [b.x, b.y]; },
+    feet() { const b = bodyOf(); return [b.x, b.y]; },
+    facing() { return facing(); },
+    /** Whether the walk may enter a tile, by the rule of the place the player is in. */
+    open(x, y) { const r = room(); return r ? r.canWalk(x, y) : g().world.canWalk(g().session, x, y); },
+    /** In a shop's room, built and not on its way out. */
+    inside() { return !!room(); },
     /**
      * The feet's place, the tile under them, and whether a window holds the world: a box must not be pushed past
      * by the walk. Work under way is not a stop: a held direction is what takes the work back (world.ts workTick).
@@ -64,7 +73,7 @@ const IN_PAGE = `window.__walk = (() => {
       const g2 = g(), s = g2.session;
       const peek = !!(g2.world.peek && g2.world.peek.active);
       return {
-        feet: [g2.world.body.x, g2.world.body.y],
+        feet: [bodyOf().x, bodyOf().y],
         tile: tileOf(),
         stop: s.paused || g2.ui.blocking || peek,
         why: {
@@ -125,7 +134,7 @@ export class FreeWalk {
 
   /** The way the player faces: the axis of the last motion. */
   facing(): Promise<Dir> {
-    return this.page.eval<Dir>('window.__game.session.facing');
+    return this.page.eval<Dir>('window.__walk.facing()');
   }
 
   /**
@@ -219,6 +228,21 @@ export class FreeWalk {
     }
   }
 
+  /**
+   * Push toward `dir` until the page says `until` is true, then let go: through a door, where the game itself
+   * changes scene when the feet press into it. The caller names what ends the push; a timeout throws.
+   */
+  async pushUntil(dir: Dir, until: string, what: string, timeoutMs = 5000): Promise<void> {
+    await this.install();
+    const [x, y] = VEC[dir];
+    await this.steer(x, y);
+    try {
+      await this.page.waitFor(until, what, timeoutMs);
+    } finally {
+      await this.release();
+    }
+  }
+
   /** Hold a direction until the player faces it, the page letting go on that frame; a wall stops the body there. */
   private async holdTurn(dir: Dir, what: string): Promise<void> {
     await this.page.eval(`window.__walk.turn(${JSON.stringify(dir)}, ${this.touch})`);
@@ -233,7 +257,7 @@ export class FreeWalk {
 
   /** Whether the walk may enter a tile, by the world's own rule. */
   private open(at: readonly number[]): Promise<boolean> {
-    return this.page.eval<boolean>(`window.__game.world.canWalk(window.__game.session, ${at[0]}, ${at[1]})`);
+    return this.page.eval<boolean>(`window.__walk.open(${at[0]}, ${at[1]})`);
   }
 
   /** Hold the axes wanted: two keys on a keyboard, the stick pushed that way on a phone. */

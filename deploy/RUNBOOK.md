@@ -29,8 +29,8 @@ the cutover (NEXT 18 h6), a release of its own.
 - 28.10: steps 2 to 6 ran, each with the owner's yes, under a temporary name: a subdomain of the owner's own
   domain, lent to the game until he buys the game's domain (DECISIONS 2026-10-28, "The box's public name is
   typed once"). The name is typed once, as `PUBLIC_ORIGIN` in `.env`; the site file is derived from it (step 3)
-  and the certificate is asked for it (step 4). The GeoIP part of step 6 waits for the owner's choice of a
-  country database. The box is a staging one (the log mailer), so the name is not given to players.
+  and the certificate is asked for it (step 4). The country for the age limit is the API's own lookup in
+  a file of its image (step 6), so it needs no host change. The box is a staging one (the log mailer), so the name is not given to players.
 
 ## 1. A directory of its own
 
@@ -121,16 +121,20 @@ answers 401; and a sign-in by the owner's
 test address (the owner's test address, kept outside the repo, is the client's one test user while it is in Testing) lands on the game at the name.
 
 The country for the age limit (the owner, 21.10: "align with the big companies"). The sign-up never asks the
-player where they are; the API reads the header named by `COUNTRY_HEADER`, and only our nginx may set it.
-Prepare: the GeoIP2 module and a country database on the host (a new package and a new file, nothing existing
-edited), then in the game's own site file replace `proxy_set_header X-Country "";` with
-`proxy_set_header X-Country $geoip2_data_country_iso_code;` (the `geoip2` block that defines it goes in the same
-file), and add `COUNTRY_HEADER=X-Country` to `~/openfold/.env`. `proxy_set_header` replaces whatever the client
-sent, so a forged header never reaches the API, and the API port listens on 127.0.0.1 only.
-What happens if it goes wrong: `nginx -t` refuses the file and nginx keeps serving the old one; without the
-header the API holds every sign-up to the highest age (16), which refuses more players, never fewer.
-Verify: the boot log line ends `the age limit by the country in x-country`; `curl -s -H 'X-Country: IL'` to the
-loopback port is answered as Israel, and the same through the name is answered by the caller's real country.
+player where they are; the API looks the client's address (`X-Real-IP`, which nginx sets and the client cannot) up in
+a country file inside its own image (DECISIONS 2026-10-28, "The server looks the country up itself"): DB-IP's free
+country file, fetched at image build time from a pinned month and checked against its sha256 (`deploy/Dockerfile`),
+read by a pure-JavaScript reader. Nothing is installed on the host, so there is no sudo step and no nginx change.
+Prepare: nothing in `.env` (`COUNTRY_DB` defaults to `/app/country.mmdb`; `COUNTRY_DB=` empty runs without it). It
+arrives with the next image (step 2's procedure). `COUNTRY_HEADER` stays an override: set it only to take the country
+from a header nginx fills.
+What happens if it goes wrong: a file that does not open stops the boot with a line naming `COUNTRY_DB`, the old image
+is the way back; an address the file does not know holds the sign-up to the highest age (16), which refuses more
+players, never fewer.
+Verify: the boot log line says `the age limit by the country in the file /app/country.mmdb`, and
+`docker compose -f compose.yml exec api ls -l /app/country.mmdb` shows the file (about 8 MB). A month's file is
+replaced by taking the next month's name and sha256 into `deploy/Dockerfile` and building again; DB-IP's credit
+(CC BY 4.0, https://db-ip.com) stays in the game's credits panel and in the README.
 
 On the laptop, the same mode runs against the dev client: `AUTH_MODE=session PUBLIC_ORIGIN=http://localhost:8080
 APP_ORIGIN=http://localhost:5173 ALLOW_LOG_MAILER=staging-only` with the Google pair exported from the secrets

@@ -21,6 +21,7 @@ export { authFromEnv, BootError, type Auth, type SessionConfig } from './boot';
 export { createSignIn, SWEEP_EVERY_MS as SIGN_IN_SWEEP_MS, type SignIn, type SignInOptions } from './auth/signin';
 export { createPgAuthStore } from './auth/store-pg';
 export { CLOSED_ACCOUNT_GRACE_MS } from './auth/store';
+export { countryLookup, loadCountryDb, type CountryLookup } from './auth/country';
 export { googleProvider } from './auth/google';
 export { logMailer, resendMailer, type Mail, type Mailer, type ResendConfig } from './auth/mailer';
 export { SignInRefusal, type OAuthProvider, type ProvenIdentity, type SignInReason } from './auth/provider';
