@@ -61,6 +61,15 @@ export function bob(motion: boolean, moving: boolean, walked: number, stride: nu
   return lift === 0 ? 0 : -lift;
 }
 
+/**
+ * The bob of a walker that takes one step a tile (the game's stride): the peak is where the walk sheet lands the foot,
+ * `landedAt` of the way through the step (work.ts STRIDE), so the body is highest as the feet come together.
+ * `walked` is the art px walked so far, `tile` the art px of a step.
+ */
+export function walkBob(motion: boolean, moving: boolean, walked: number, tile: number, landedAt: number): number {
+  return bob(motion, moving, walked + Math.round(tile * (1 - landedAt)), tile);
+}
+
 /** The chest at rest: 0, or `FEEL.breath.px` for the second half of a period of 1.0 to 1.5 s (by id). Zero at time 0. */
 export function breath(motion: boolean, id: string, time: number): number {
   if (!motion) return 0;

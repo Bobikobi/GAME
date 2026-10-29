@@ -16,6 +16,7 @@ import {
   shake,
   squash,
   swingPhase,
+  walkBob,
 } from '../src/feel';
 
 const STRIDE = 94;
@@ -43,6 +44,31 @@ describe('bob', () => {
     // from the peak at the landing the body is lowest by its last zero, then rises the whole way back
     const lowest = values.lastIndexOf(0);
     expect(STRIDE - lowest).toBeLessThan(lowest / 2);
+  });
+});
+
+describe('walkBob', () => {
+  const TILE = 64;
+  const LANDED = 0.7;
+
+  test('peaks as the sheet lands the foot, one step a tile, and is zero at rest and under reduced motion', () => {
+    const landing = Math.round(TILE * LANDED);
+    for (const step of [0, 1, 5]) expect(walkBob(true, true, step * TILE + landing, TILE, LANDED)).toBe(-FEEL.bob);
+    expect(walkBob(false, true, landing, TILE, LANDED)).toBe(0);
+    expect(walkBob(true, false, landing, TILE, LANDED)).toBe(0);
+  });
+
+  test('over a walk it only ever lifts, never below the ground, in whole art px, and is back at the ground each step', () => {
+    const values = Array.from({ length: TILE * 4 }, (_, w) => walkBob(true, true, w, TILE, LANDED));
+    expect(Math.max(...values)).toBe(0);
+    expect(Math.min(...values)).toBe(-FEEL.bob);
+    expect(values.every(Number.isInteger)).toBe(true);
+    expect(values.filter((v) => v === 0).length).toBeGreaterThan(0);
+  });
+
+  test('at the start of a walk from rest the body is lifted by at most the amplitude, then the world px is a quarter of it', () => {
+    expect(Math.abs(walkBob(true, true, 0, TILE, LANDED))).toBeLessThanOrEqual(FEEL.bob);
+    expect((FEEL.bob * 16) / TILE).toBe(1);
   });
 });
 

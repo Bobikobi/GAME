@@ -75,7 +75,8 @@ import { FishingView } from './fishing-view';
 import type { FishPhase } from '../ui/games/shared';
 import { hintDistance, lanternNight, nodeAction, searchableOn } from '../text';
 import type { WorkKind } from '../ui/ui';
-import { type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, treasureKind } from '../work';
+import { STRIDE, type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFrame, treasureKind } from '../work';
+import { blinking, breath, walkBob } from '../feel';
 import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep } from '../walking';
 import { GroundChunks } from '../groundchunks';
 import { adopt, baseOf, densityOf, drawScaled, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
@@ -225,8 +226,16 @@ interface Cycle {
 /** A character that closes its eyes now and then (frame 1 of its blink sheet). */
 interface Blink {
   spr: Phaser.GameObjects.Sprite;
-  next: number;
-  until: number;
+  id: string;
+  closed: boolean;
+}
+
+/** A standing figure's chest (feel.ts): its images (the fire's cut-out copy too), its id, its height in art px and the lift now showing. */
+interface Breather {
+  imgs: Standing[];
+  id: string;
+  height: number;
+  dh: number;
 }
 
 /** A soft light that comes up with the night and flickers. */
@@ -351,6 +360,7 @@ export class WorldScene extends Phaser.Scene {
   private dapples: Phaser.GameObjects.TileSprite[] = [];
   private cycles: Cycle[] = [];
   private blinks: Blink[] = [];
+  private breathers: Breather[] = [];
   private glows: Glow[] = [];
   private locals: Local[] = [];
   /** sparks over the targets of the first open step of the main task; rebuilt by refresh() */
@@ -1277,7 +1287,7 @@ export class WorldScene extends Phaser.Scene {
       let img: Standing;
       if (RICH.motion && this.has(blinkRef) && (this.b.sprites[blinkRef]?.frames ?? 1) > 1) {
         const spr = kitSprite(this, cx, bottom, blinkRef, 0);
-        this.blinks.push({ spr, next: this.time.now + 3000 + Math.random() * 3000, until: 0 });
+        this.blinks.push({ spr, id, closed: false });
         img = spr;
       } else {
         img = kitImage(this, cx, bottom, npc.sprite);
@@ -1286,8 +1296,9 @@ export class WorldScene extends Phaser.Scene {
       const fire = this.b.map.props.find((p) => p.fire === true && p.id !== undefined && Math.max(Math.abs(p.x - t[0]), Math.abs(p.y - t[1])) <= 2);
       const cut = fire?.id === undefined ? undefined : adopt(new Phaser.GameObjects.Image(this, cx, bottom, img.texture.key, img.frame.name)).setOrigin(0.5, 1).setVisible(false);
       if (cut && fire?.id !== undefined) this.fireSide.push({ img, cut, fire: fire.id });
-      // a slow breath so people read as alive
-      this.tweens.add({ targets: cut ? [img, cut] : img, scaleY: rel(img, 1, 1.04).y, duration: 900 + (id.length % 5) * 120, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      // a breath so people read as alive: the chest lifts one art px for half a period (feel.ts), and not at all under reduced motion
+      const height = (unitOf(npc.sprite)?.h ?? 24) * (ART_PX / T);
+      if (RICH.motion) this.breathers.push({ imgs: cut ? [img, cut] : [img], id, height, dh: 0 });
       this.npcAt.set(key(t[0], t[1]), id);
       this.tops.set(key(t[0], t[1]), unitOf(npc.sprite)?.h ?? 24);
     }
@@ -1683,7 +1694,7 @@ export class WorldScene extends Phaser.Scene {
     const c = this.cutout;
     if (!c) return;
     const p = this.player;
-    c.setVisible(p.visible).setTexture(p.texture.key, p.frame.name).setPosition(p.x, p.y).setFlipX(p.flipX).setAngle(p.angle).setScale(p.scaleX, p.scaleY);
+    c.setVisible(p.visible).setTexture(p.texture.key, p.frame.name).setOrigin(p.originX, p.originY).setPosition(p.x, p.y).setFlipX(p.flipX).setAngle(p.angle).setScale(p.scaleX, p.scaleY);
   }
 
   /**
@@ -1786,6 +1797,10 @@ export class WorldScene extends Phaser.Scene {
     const y = Math.round(this.body.y) * unit + T / 2;
     this.player.setPosition(x, y);
     this.player.setDepth(Math.round(y) + 1);
+    // the bob of a step (feel.ts) lifts the drawing, not the body: the camera, the light and the shadow keep the ground's y.
+    // It peaks as the foot lands, which is where the walk sheet puts the feet together (STRIDE of the way through a tile)
+    const bob = walkBob(RICH.motion, this.body.moving, this.body.walked, ART_PX, STRIDE);
+    this.player.setOrigin(0.5, 1 - (bob * unit) / (this.player.displayHeight || 1));
     // the cast layer draws the player's shadow (buildCasters); light-cast has no fx-shadow ellipse
   }
 
@@ -2030,16 +2045,17 @@ export class WorldScene extends Phaser.Scene {
       c.spr.setFrame(c.frame);
     }
     for (const b of this.blinks) {
-      if (b.until > 0) {
-        if (time >= b.until) {
-          b.until = 0;
-          b.spr.setFrame(0);
-        }
-      } else if (time >= b.next) {
-        b.until = time + 120;
-        b.next = time + 3000 + Math.random() * 3000;
-        b.spr.setFrame(1);
+      const closed = blinking(RICH.motion, b.id, time);
+      if (closed !== b.closed) {
+        b.closed = closed;
+        b.spr.setFrame(closed ? 1 : 0);
       }
+    }
+    for (const b of this.breathers) {
+      const dh = breath(RICH.motion, b.id, time);
+      if (dh === b.dh) continue;
+      b.dh = dh;
+      for (const img of b.imgs) setRel(img, 1, 1 + dh / b.height);
     }
     // a burning flame breathes: a small sway and a flicker in its size, never a count of anything.
     // the valley's wind leans it, the same slow gust on every fire, while the burn itself is untouched (G48)
