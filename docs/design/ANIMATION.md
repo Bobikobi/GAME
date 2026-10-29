@@ -3,8 +3,8 @@
 The owner, 28.10: "movements for everything, smooth and rich ... and the demo activity itself: design, animation, and jump, crouch, run." This page is the frame for that work: what a body can do (the verbs), how each verb is made (drawn, rendered or code), what it costs in frames, and the numbers of the code layer that makes a few frames feel rich. It sits under [STYLE.md](STYLE.md) (the grid and the look), [ART_SYSTEM.md](ART_SYSTEM.md) section 4 (the alive layer of props and the format of clips) and [GAP_DIMRAETH_DRAKANTOS.md](GAP_DIMRAETH_DRAKANTOS.md) section 7 (the art as a production system), and it changes none of them.
 
 **Where it stands (2026-10-29)**
-- Decided: nothing on this page is the owner's pick yet. It is the builder's frame, marked **proposal** where a number is a starting point.
-- Waiting for the owner: the direction gate of section 6 (three short loops, one named difference each). Until the pick, no sprite sheet is made for a verb; the feel layer's pure module and the clip tool's quadruped target are built because every answer to the gate uses them.
+- Decided (the owner, 29.10, the direction gate of section 6): the code bob on the human walk is in (A), four poses are enough for a wolf's walk (B), and two poses plus the code layer is not (C): the code layer sits on top of real poses, at least four a loop, and never replaces them. The rest of the page is the builder's frame, marked **proposal** where a number is a starting point.
+- Built: the feel layer's pure module (`game/src/feel.ts`, not yet in the scene) and the gait params (`gait` in `params.json`, `gaitStepMs`, `noiseRadius`). Next: the feel layer into the scene, the quadruped target as a four-pose sheet target.
 - The hop (section 2) waits for its own pick.
 - Fights wait for COMBAT (G35: no fighting in the demo); the hitstop and shake of section 4 are written and kept unused until a blow lands on a creature (DECISIONS 2026-10-26, the hit feel is not for gathering).
 
@@ -22,7 +22,7 @@ A verb is one thing a body does that the player or the world can read. A new ver
 
 | Verb | Status | Made by | Poses | Notes |
 |---|---|---|---|---|
-| idle | built (breath) | rendered + code | 4 | code: breath and blink (section 4) |
+| idle | built (breath) | rendered + code | 4 | code: breath and blink (section 4); a creature has four poses at least |
 | walk | built | rendered, distance-locked | 8 | **at 190 ms a tile the library walk is far too slow a cycle, see 5.1: the walk-pace clip is `jog`** |
 | run | proposal | rendered, distance-locked | 8 | the `gait: run` of the kernel (step time halved) |
 | sneak / crouch | proposal | rendered (library `Crouch_Fwd_Loop`) | 8 | the `gait: sneak` (step time doubled); the stealth beat reads it |
@@ -84,7 +84,7 @@ Two consequences for the gaits. The walk-pace clip is `jog`, not `walk`: the lib
 | Body | Poses per verb | Poses | Frames at 3 views |
 |---|---|---|---|
 | human | idle 4, walk 6 to 8, run 6 to 8, attack 6, hurt 2, death 5, gather 4, swim 4 | 37 | 111 (129 with a second attack) |
-| quadruped | idle 3, walk 8, run 6, hurt 2, death 4 (attack 4 when it bites) | 23 to 27 | 69 or fewer (81 with the bite) |
+| quadruped | idle 4, walk 4, run 4, hurt 2, death 4 (attack 4 when it bites) | 18 to 22 | 54 (66 with the bite), inside the cap of 69 |
 | bird | flap 4, idle 2, hurt 1, death 2 | 9 | 27 |
 | fish | swim 5, idle 2, flop 2 | 9 | 9 to 18 |
 
@@ -100,7 +100,7 @@ A body that carries its own actions (the Meshy wolves in `game/public3d/models`,
 
 Measured on the Meshy wolf, left view at 64 px: the walk cycle is 39.1 px of ground and the run cycle 56.9 px. At the wolf's round (`pace_ms` 600, 107 px/s) an 8-pose walk needs 22 poses a second, inside the cap of 30. The run cycle travels 7.1 px a pose, so the cap of 30 poses a second is reached at 213 px/s; a chase faster than that is time-driven (a fixed cycle rate with the foot slide measured), not distance-locked.
 
-The wolf's frame budget is section 5.2's: idle 3, walk 8, run 6, hurt 2, death 4 and, if it bites, attack 4; at three views that is 69 frames or 81 with the bite. The tail and the ears are separate bones, so the tail chain of section 4 can be a swap frame set instead of a rotation.
+The wolf's frame budget is section 5.2's, on the owner's pick of 29.10: four poses a looping verb at least (idle, walk, run), hurt 2, death 4 and, if it bites, attack 4; at three views that is 54 frames or 66 with the bite, inside the cap of 69. The render may sample more than four poses to choose from; the sheet keeps four. The tail and the ears are separate bones, so the tail chain of section 4 can be a swap frame set instead of a rotation.
 
 ## 6. The direction gate (Step 0)
 
@@ -112,13 +112,18 @@ Movement for everything changes how every body looks in motion, so it is a direc
 
 The loops are 2 s at 60 fps, each panel 160 art px shown at 3x on the game's own ground, the body fixed and the ground scrolling at the clip's pace, the pose chosen by the distance walked. A is a real render; B and C are stand-ins (labelled as such on the loop) because no wolf drawing exists.
 
-**Result: pending.** The owner's pick, with its frame, is written here and in DECISIONS.md when made; until then no sheet is made. Nothing here has a drawn wolf: the loops use a render of a Meshy wolf already in the repository (CC BY 4.0, rigged four-legged with Idle, Walk and Run) as the source of every pose, and say so.
+**Result (the owner, 29.10, on the pick page, no notes):**
+- **A: like.** The code bob is on the human walk-pace clip.
+- **B: like.** Four poses are enough for a wolf's walk on a phone, so a quadruped sheet is four poses a loop, rendered through the native target of 5.4.
+- **C: no.** Two poses plus the code layer reads cheap. Small animals get real poses too, four at least, with the code layer on top and never instead.
+
+Recorded in DECISIONS.md (2026-10-29). Nothing here has a drawn wolf: the loops used a render of a Meshy wolf already in the repository (CC BY 4.0, rigged four-legged with Idle, Walk and Run) as the source of every pose, and said so; B is a pick about that stand-in.
 
 ## 7. Order
 
-1. This page, and one cross-reference line in STYLE.md.
-2. The quadruped target in the clip tool and the wolf's clips (after the pick).
-3. The feel layer, pure module first, then applied in the world scene.
+1. This page, and one cross-reference line in STYLE.md (this pull request).
+2. The quadruped target in the clip tool and the wolf's clips, four poses a loop.
+3. The feel layer, pure module first (landed), then applied in the world scene, the bob first.
 4. The gaits (`walk`, `run`, `sneak`) in the kernel, params first and in their own small pull request, coordinated with COMBAT's breath and noise numbers.
 5. The hop, only on the owner's yes.
 6. The opening's activity pass: a run along the path to the bridge, the sneak past the wolf, the hop down the terrace if picked. `game/e2e/opening.ts` is protected; the change is sent to the manager first, and the state tests carry the rest.
