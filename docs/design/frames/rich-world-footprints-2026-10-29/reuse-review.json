@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-29",
+  "search": {
+    "locations": [
+      "game/public/kit",
+      "docs/art",
+      "docs/design/frames"
+    ],
+    "terms": [
+      "footprint",
+      "footstep",
+      "sole",
+      "boot print"
+    ],
+    "result": "No existing reusable footprint stamp found"
+  },
+  "assets": [
+    {
+      "id": "sand-footprint-20261029",
+      "file": "footprint-source.png",
+      "sha256": "7c92e13e247f8450a507f4c7d781ed170a2934631975c2c62ecaec75e8c1f93f",
+      "prompt": "prompt.txt",
+      "tool": "image_gen.imagegen",
+      "mode": "built-in generation",
+      "calls": 1,
+      "model": "Not specified in tool invocation",
+      "toolOutput": "/home/elad-saadon/.codex/generated_images/01a182db-2b85-7423-a237-cd5127f22a2f/exec-674e749e-6db8-4c61-84a8-f30d58c6700d.png",
+      "status": "keep",
+      "decidedBy": "agent",
+      "ownerReview": "Pending review of this detail; previous sand and motion approval is separate",
+      "derivative": {
+        "file": "footprint.png",
+        "sha256": "6868e53061b0e06f2851a58ee1ed6ce6cd575af6132895a14b14606b5cf80193",
+        "recipe": "tools/src/kit/import-world-footprint.ts",
+        "report": "import.json"
+      }
+    }
+  ]
+}

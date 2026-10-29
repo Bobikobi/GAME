@@ -52,6 +52,7 @@ try {
   const desktop = await browser.newPage({ width: 1440, height: 900, mobile: false });
   await desktop.goto(url);
   await desktop.waitFor('!!window.__worldStudy', 'desktop world fixture', 60000);
+  if (await desktop.eval<number>('window.__worldStudy.footprints.stats.marks') !== 0) throw Error('standing created footprints');
   await checkCamera(desktop, 1, false);
   if (await desktop.eval<number>('window.__worldStudy.cameras.main.zoom') !== 2) throw Error('desktop default must be the picked close view');
   await desktop.eval("document.getElementById('motion').click(); window.__worldStudy.jumpToView('forest')");
@@ -121,6 +122,7 @@ try {
     })()`);
     await desktop.key(code, 'keyUp');
   }
+  if (await desktop.eval<number>('window.__worldStudy.footprints.stats.marks') !== 0) throw Error('grass or blocked roots created sand prints');
   for (const view of ['forest', 'shore', 'sand']) {
     await desktop.eval(`window.__worldStudy.jumpToView('${view}')`);
     await sleep(150);
@@ -147,6 +149,20 @@ try {
   await desktop.waitFor(`window.__worldStudy.actor.frame.name === ${walkMetadata.walkingFrames}`, 'standing after input release');
   await sleep(450);
   if (motionFrames) await desktop.send('Page.stopScreencast');
+  await desktop.eval(`(() => {
+    const s = window.__worldStudy, stats = s.footprints.stats;
+    if (stats.marks < 2 || stats.marks > 64 || stats.images !== stats.marks) throw Error('sand trail or bounded image allocation failed: ' + JSON.stringify(stats));
+    const toggle = document.getElementById('footprints');
+    toggle.checked = false; toggle.dispatchEvent(new Event('change'));
+    if (s.footprints.stats.visible) throw Error('footprint toggle failed');
+    toggle.checked = true; toggle.dispatchEvent(new Event('change'));
+  })()`);
+  await screenshot(desktop, 'desktop-footprints');
+  await desktop.eval(`(() => {
+    const s = window.__worldStudy;
+    s.footprints.advance(s.time.now + 20001, { x: s.actor.x, y: s.actor.y, dx: 0, dy: 0, mirrored: s.actor.flipX, feet: s.actorView.contacts() });
+    if (s.footprints.stats.marks || s.footprints.stats.images) throw Error('expired footprint resources retained');
+  })()`);
   // Keep the desktop from consuming software-rendering time while the 3x phone runs.
   await desktop.send('Page.setWebLifecycleState', { state: 'frozen' });
 
@@ -171,8 +187,24 @@ try {
   await checkCamera(phone, 3, true);
   await phone.eval("document.getElementById('zoom').click()");
   await checkCamera(phone, 3, false);
+  await phone.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
+  await checkCamera(phone, 3, false);
+  await phone.eval("window.__worldStudy.jumpToView('sand')");
+  await sleep(150);
+  const touch = await phone.eval<{ x: number; y: number }>(`(() => {
+    const s = window.__worldStudy, c = s.cameras.main, r = document.querySelector('canvas').getBoundingClientRect();
+    const left = c.scrollX + c.width / 2 - c.width / c.zoom / 2;
+    const top = c.scrollY + c.height / 2 - c.height / c.zoom / 2;
+    return { x: r.left + (s.actor.x + 72 - left) * c.zoom * r.width / c.width, y: r.top + (s.actor.y - top) * c.zoom * r.height / c.height };
+  })()`);
+  await phone.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: touch.x, y: touch.y }] });
+  await phone.waitFor('window.__worldStudy.footprints.stats.marks > 0', 'touch walking leaves footprints');
+  await sleep(750);
+  await phone.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await sleep(100);
+  await screenshot(phone, 'phone-footprints');
   if (desktop.errors.length || phone.errors.length) throw Error([...desktop.errors, ...phone.errors].join('\n'));
-  console.log('PASS: framing, device resolution, DPR/resize, pointer walking, native 50-degree actor, blocked strides, four-side root collision, seven viewpoints, phone and reduced motion; no browser errors.');
+  console.log('PASS: framing, device resolution, DPR/resize, pointer walking, native 50-degree actor, blocked strides, root collision, viewpoints, sand-only footprints, bounded expiry, touch walking and reduced motion; no browser errors.');
 } finally {
   await browser?.close();
   await localServer?.close();

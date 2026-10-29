@@ -1,0 +1,76 @@
+{
+  "date": "2026-10-29",
+  "baseline": "6f8c68615",
+  "scope": "Sand footprints in the connected 2D material fixture; no map, gameplay, production race or 3D rollout",
+  "approvedBaselinePreserved": [
+    "Corrected sand asset",
+    "Native human directional sheets and gait",
+    "Approved water and oak",
+    "Geography and placements"
+  ],
+  "behaviour": {
+    "lifetimeMs": 20000,
+    "maximumMarksAndImages": 64,
+    "opacityLevels": [
+      0.32,
+      0.24,
+      0.16,
+      0.08
+    ],
+    "contact": "Actual resolved displacement and supporting-foot transitions",
+    "surface": "Entire rotated footprint bounds must fit existing sand and land mask"
+  },
+  "validation": {
+    "focused": {
+      "status": "passed",
+      "files": 9,
+      "tests": 36,
+      "log": ".scratch/world-footprints-2026-10-29/focused.log"
+    },
+    "verify": {
+      "status": "passed",
+      "command": "VITEST_MAX_WORKERS=4 TMPDIR=<dedicated directory outside Git> pnpm verify",
+      "projectFilesPassed": 141,
+      "projectFilesSkipped": 2,
+      "projectTestsPassed": 1500,
+      "projectTestsSkipped": 23,
+      "webTestsPassed": 81,
+      "existingContentWarnings": 32,
+      "log": ".scratch/world-footprints-2026-10-29/verify.log"
+    },
+    "browser": {
+      "status": "passed",
+      "command": "WORLD_STUDY_FRAMES=game/public/art-review/world-footprints-2026-10-29 pnpm exec tsx game/e2e/world-study.ts",
+      "log": ".scratch/world-footprints-2026-10-29/browser.log",
+      "checks": [
+        "No footprints at rest, on grass or blocked at roots",
+        "Real keyboard walking in sand",
+        "Layer visibility toggle",
+        "64-mark allocation bound",
+        "Image destruction after twenty scene seconds",
+        "Real touch walking on reduced-motion phone",
+        "Existing framing, camera, DPR, resize, collision and viewpoints",
+        "No browser errors"
+      ]
+    },
+    "visualReview": "Agent inspected desktop and phone direct captures; new footprint detail awaits owner review",
+    "ordinaryOpening": "Not rerun; previous unrelated broad opening failure remains separately documented with the 2026-10-28 continuation"
+  },
+  "assets": [
+    {
+      "file": "game/public/art-review/world-footprints-2026-10-29/desktop-footprints.png",
+      "sha256": "f7ac9658b39be9a8da527f0f0f46f90d2897fa53c4b5e5e34b21ffae67712e65",
+      "bytes": 662614
+    },
+    {
+      "file": "game/public/art-review/world-footprints-2026-10-29/phone-footprints.png",
+      "sha256": "a1d0c4903e4a12f76f0a14f1dd4b1a851ec7c74bf8b196b6dc8f0a6dbc4eb508",
+      "bytes": 591321
+    }
+  ],
+  "remaining": [
+    "Production integration is separate; 3D door remains paused",
+    "Nearest of eight headings used for stamp rotation",
+    "Paving and place composition remain separate review"
+  ]
+}
