@@ -26,6 +26,7 @@ import {
   newState,
   inRect,
   placedAt,
+  relocationOf,
   serialize,
   step,
 } from '@game/kernel';
@@ -303,6 +304,7 @@ export class Session implements GameSession {
     }
     const session = new Session(bundle, state);
     stampDemo();
+    const stoodAt = state.player.at.join();
     if (state.content !== bundle.tag) {
       // a new version of the world was published: keep what still exists
       if (!adapt(bundle, state)) return undefined;
@@ -325,7 +327,7 @@ export class Session implements GameSession {
     }
     const walkable = makeWalkable(bundle);
     const [x, y] = file.pos;
-    session.pos = walkable(x, y, state.player) ? [x, y] : [state.player.at[0], state.player.at[1]];
+    session.pos = walkable(x, y, state.player) && state.player.at.join() === stoodAt ? [x, y] : [state.player.at[0], state.player.at[1]];
     if (!walkable(session.pos[0], session.pos[1], state.player)) session.pos = [bundle.map.spawn.x, bundle.map.spawn.y];
     // the map: what an older save remembers of places, plus what it has walked since; the
     // slots it visited are places it has stood in, so they are named too
@@ -685,6 +687,9 @@ function adapt(bundle: Bundle, state: State): boolean {
   state.searched = Object.fromEntries(
     Object.entries(keepKeys(state.searched ?? {}, bundle.searchables)).map(([id, held]) => [id, { ...held, rows: held.rows.filter((item) => item in bundle.items) }]),
   );
+  // a height layer may have walled the old tile off from every wake (G68): stand on the nearest tile a foot can reach, never a fall
+  const stand = relocationOf(bundle, state);
+  if (stand) p.at = stand;
   // a world that changed may have moved the hazards and the safe ground: nothing carries over
   p.outing = null;
   p.chase = null;

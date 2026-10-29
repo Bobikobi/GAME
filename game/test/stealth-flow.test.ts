@@ -131,7 +131,7 @@ class Play {
     this.check(at[0] === s.pos[0] && at[1] === s.pos[1], `the kernel did not hear the ${dir} step: it has the player at ${at.join(',')}`);
   }
 
-  /** The shortest walk over what the scene lets the player enter now, as the e2e plans it. */
+  /** The shortest walk over what the scene lets the player enter now, as the e2e plans it: each step asked from the tile it leaves (G68). */
   walkTo(x: number, y: number, what: string): void {
     const s = this.s;
     const goal = `${x},${y}`;
@@ -142,7 +142,7 @@ class Play {
       for (const [d, [dx, dy]] of Object.entries(DIRS) as [Dir, readonly [number, number]][]) {
         const nx = cx + dx;
         const ny = cy + dy;
-        if (prev.has(`${nx},${ny}`) || !canEnter(this.b, this.walkable, this.nodeAt, s, nx, ny)) continue;
+        if (prev.has(`${nx},${ny}`) || !canEnter(this.b, this.walkable, this.nodeAt, s, nx, ny, [cx, cy])) continue;
         prev.set(`${nx},${ny}`, [`${cx},${cy}`, d]);
         queue.push([nx, ny]);
       }
