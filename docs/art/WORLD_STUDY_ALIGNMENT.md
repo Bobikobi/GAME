@@ -113,3 +113,13 @@ continuity, denser directional movement and supporting-shoe contact in the
 material fixture. The approved result is preserved for subsequent polish.
 The approval does not cover paving/place composition, a new geography or
 promotion of these fixture sheets into the production race pipeline.
+
+## Sand footprint prototype deferred — 2026-10-29
+
+The owner found that the marks did not match individual feet and authorized
+deferral if the proper fix was involved. The prototype has been disconnected
+from the live fixture, including preload, tracking, images and its checkbox.
+Art, implementation and historical evidence remain in
+`docs/design/frames/rich-world-footprints-2026-10-29/`. Reintroduction requires
+validated per-foot touchdown intervals and projected sole placement, proved
+visually against both shoes. The approved sand/motion result stays in place.

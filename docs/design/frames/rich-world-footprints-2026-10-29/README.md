@@ -1,4 +1,15 @@
-# Sand footfalls — 2026-10-29
+# Sand footfalls — deferred after owner review
+
+The owner reported that the marks did not match individual feet and authorized
+deferral if a proper fix was involved. The prototype is now disconnected from
+the scene: no preload, tracking, rendering or checkbox. Source art, pure model,
+tests and historical captures remain for future work. Existing `support` metadata
+selects the lower ankle relative to the other ankle; it is suitable only as an
+approximate contact hint, not validated per-foot touchdown events. Reintroduction
+requires actual contact intervals and ground-projected sole placement, reviewed
+against both feet throughout the cycle and turns. Approved sand/motion remain.
+
+## Historical implementation — 2026-10-29
 
 Continues the approved sand/motion result `f7a4d16d6`, recorded as approved in
 `6f8c68615`. Footprints in sand, fading after twenty seconds, are the existing

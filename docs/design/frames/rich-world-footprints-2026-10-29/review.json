@@ -88,5 +88,27 @@
       "maximumChannelDarkening": 83,
       "log": ".scratch/world-footprints-visibility-2026-10-29/proof.log"
     }
+  },
+  "currentStatus": "deferred; disconnected from live scene",
+  "deferral20261029": {
+    "ownerFeedback": "יש אבל זה לא פר רגל, אם זה מורכב מידי נרד מזה כרגע",
+    "decision": "Remove the prototype from live review now; retain sources offline",
+    "reason": "The support flag chooses the lower ankle per pose, not validated touchdown intervals for each foot. The sole is a rotated flat stamp, not a ground projection matched to each shoe. Object counts and contrast checks did not establish per-foot visual alignment.",
+    "requiredBeforeReintroduction": [
+      "Validated per-foot contact intervals",
+      "Ground-projected sole position and orientation",
+      "Visual evidence of both feet throughout cycles, turns and stops"
+    ],
+    "runtime": "No preload, footstep tracker, display images or checkbox",
+    "validationLog": ".scratch/world-footprints-deferred-2026-10-29/verify.log",
+    "browserLog": ".scratch/world-footprints-deferred-2026-10-29/browser.log",
+    "validation": {
+      "focusedTestsPassed": 10,
+      "verify": "passed",
+      "projectTestsPassed": 1500,
+      "webTestsPassed": 81,
+      "browser": "passed; deferred prototype and checkbox absent; keyboard and touch walking, collision, camera and reduced motion still pass",
+      "ordinaryOpening": "Not rerun"
+    }
   }
 }

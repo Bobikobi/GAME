@@ -4,8 +4,7 @@ import * as Phaser from 'phaser';
 import { preloadWorldStudyGround, createWorldStudyGround } from './world-study-ground';
 import { WorldStudyWater } from './world-study-water';
 import { createWorldStudyShadows } from './world-study-shadows';
-import { WORLD_TILE_SIZE, worldStudyLayout, worldStudyMaterial } from './world-study-layout';
-import { preloadWorldStudyFootprints, createWorldStudyFootprints } from './world-study-footprints';
+import { WORLD_TILE_SIZE, worldStudyLayout } from './world-study-layout';
 import { worldStudyCameraZoom } from './world-study-camera';
 import { preloadWorldStudyActor, createWorldStudyActor } from './world-study-actor';
 import { bindDeviceCanvas, deviceSize } from './view';
@@ -23,7 +22,6 @@ class WorldStudy extends Phaser.Scene {
   private ground!: ReturnType<typeof createWorldStudyGround>;
   private water!: WorldStudyWater;
   private shadows!: ReturnType<typeof createWorldStudyShadows>;
-  private footprints!: ReturnType<typeof createWorldStudyFootprints>;
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
   private moving = !reduced.matches;
   private elapsed = 0;
@@ -35,7 +33,6 @@ class WorldStudy extends Phaser.Scene {
   preload(): void {
     preloadWorldStudyGround(this);
     preloadWorldStudyActor(this);
-    preloadWorldStudyFootprints(this);
     for (const name of ['bed', 'body', 'light', 'foam']) {
       const entry = Object.entries(waterUrls).find(([path]) => path.endsWith(`/${name}.png`));
       if (!entry) throw new Error(`Missing approved water layer: ${name}`);
@@ -49,7 +46,6 @@ class WorldStudy extends Phaser.Scene {
     const spawn = worldStudyLayout.spawn;
     this.actorView = createWorldStudyActor(this, (spawn.x + .5) * WORLD_TILE_SIZE, (spawn.y + .5) * WORLD_TILE_SIZE);
     this.actor = this.actorView.sprite;
-    this.footprints = createWorldStudyFootprints(this, (x, y) => this.ground.landAt(x, y) && worldStudyMaterial(x, y) === 'sand');
     this.shadows = createWorldStudyShadows(this, this.ground.trees, this.ground.landAt, () => this.actorView.contacts());
     this.shadows.advance(this.actor);
     this.events.once('shutdown', () => this.shadows.destroy());
@@ -111,8 +107,6 @@ class WorldStudy extends Phaser.Scene {
     const updateShadows = () => this.shadows.setVisible(plants.checked && shadows.checked);
     plants.onchange = () => { this.ground.setPlantsVisible(plants.checked); updateShadows(); };
     shadows.onchange = updateShadows;
-    const footprints = document.getElementById('footprints') as HTMLInputElement;
-    footprints.onchange = () => this.footprints.setVisible(footprints.checked);
     for (const input of document.querySelectorAll<HTMLInputElement>('[data-layer]')) {
       input.onchange = () => {
         this.water.layers[input.dataset.layer as WaterLayer] = input.checked;
@@ -134,7 +128,6 @@ class WorldStudy extends Phaser.Scene {
     if (!this.ground.landAt(x, y)) throw new Error(`Viewpoint is not on ground: ${id}`);
     this.actor.setPosition(x, y).setDepth(y);
     this.actorView.reset();
-    this.footprints.relocate();
     this.cameras.main.centerOn(x, y);
     this.water.setView(this.cameras.main);
     this.ground.advance(this.elapsed, this.water.wind, this.actor);
@@ -188,7 +181,6 @@ class WorldStudy extends Phaser.Scene {
       this.updatePlaceLabel();
     }
     this.actorView.advance(this.actor.x - beforeX, this.actor.y - beforeY);
-    this.footprints.advance(this.time.now, { x: this.actor.x, y: this.actor.y, dx: this.actor.x - beforeX, dy: this.actor.y - beforeY, mirrored: this.actor.flipX, feet: this.actorView.contacts() });
     this.water.setView(this.cameras.main);
     this.ground.advance(this.elapsed, this.water.wind, this.actor);
     this.shadows.advance(this.actor);
