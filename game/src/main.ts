@@ -7,6 +7,7 @@ import { sound } from './audio';
 import { RICH } from './config';
 import { Controls } from './input';
 import { BootScene } from './scenes/boot';
+import { RoomScene } from './scenes/room';
 import { WorldScene } from './scenes/world';
 import { UI } from './ui/ui';
 import { bindDeviceCanvas, firstSize } from './view';
@@ -28,7 +29,7 @@ const game = new Phaser.Game({
   banner: false,
   // the canvas takes the device's pixels (view.ts) instead of the window's CSS pixels
   scale: { mode: Phaser.Scale.NONE, width: first.w, height: first.h },
-  scene: [BootScene, WorldScene],
+  scene: [BootScene, WorldScene, RoomScene],
 });
 
 bindDeviceCanvas(game, document.getElementById('game')!);

@@ -1327,7 +1327,18 @@ function openCredits(ui: UI): void {
         tools.length ? h('div', { class: 'muted' }, `Made with: ${tools.join(', ')}`) : null,
       );
     }),
-    h('div', { class: 'card' }, h('b', null, 'Also'), h('div', { class: 'muted' }, 'Engine: Phaser (MIT). Font: Pixelify Sans by Stefie Justprince (SIL Open Font License).')),
+    h(
+      'div',
+      { class: 'card' },
+      h('b', null, 'Also'),
+      h(
+        'div',
+        { class: 'muted' },
+        'Engine: Phaser (MIT). Font: Pixelify Sans by Stefie Justprince (SIL Open Font License). The age limit of an account uses the country file ',
+        h('a', { href: 'https://db-ip.com', target: '_blank', rel: 'noopener' }, 'IP Geolocation by DB-IP'),
+        ' (CC BY 4.0).',
+      ),
+    ),
   );
 }
 
