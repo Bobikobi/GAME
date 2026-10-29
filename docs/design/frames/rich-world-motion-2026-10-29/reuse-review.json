@@ -22,8 +22,8 @@
       "model": "Not specified in tool invocation",
       "toolOutput": "/home/elad-saadon/.codex/generated_images/01a182db-2b85-7423-a237-cd5127f22a2f/exec-8c040efc-37a6-422c-ac72-f9cc3bf5eead.png",
       "status": "keep",
-      "decidedBy": "agent",
-      "ownerApproval": "pending",
+      "decidedBy": "owner",
+      "ownerApproval": "approved2026-10-29, owner: מאשר. תמשיך, commit f7a4d16d6",
       "derivative": {
         "file": "sand.png",
         "sha256": "d580696530aec218f3b84362e80415dfa47980a036e28c861ff03d802a9008ca",
@@ -34,8 +34,8 @@
       "id": "human-a-dense-directional-walk",
       "metadata": "walk-metadata.json",
       "status": "keep",
-      "decidedBy": "agent",
-      "ownerApproval": "Human A appearance is picked; corrected motion remains for owner review",
+      "decidedBy": "owner",
+      "ownerApproval": "approved2026-10-29, owner: מאשר. תמשיך, commit f7a4d16d6",
       "source": {
         "branch": "feat/races-in-game",
         "commit": "d6e32480399ec41b539f0344d501ed2d6acba664",

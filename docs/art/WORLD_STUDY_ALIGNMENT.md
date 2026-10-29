@@ -104,3 +104,12 @@ not a replacement of the production race pipeline or its import limits. Poses
 remain discrete, so this reduces visible sliding without claiming perfect
 continuous foot locking. Owner review of the result remains separate from the
 passing checks; paving/place composition still has its own unresolved review.
+
+## Owner approval — 2026-10-29
+
+The owner approved the sand and motion correction at `f7a4d16d6` with
+"מאשר. תמשיך". This resolves visual review of the corrected sand, cycle
+continuity, denser directional movement and supporting-shoe contact in the
+material fixture. The approved result is preserved for subsequent polish.
+The approval does not cover paving/place composition, a new geography or
+promotion of these fixture sheets into the production race pipeline.

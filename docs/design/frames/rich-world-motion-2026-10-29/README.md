@@ -52,6 +52,10 @@ and inspect the result. The original models/library and renderer remain with
 their source commit. Temporary supersampled renders are reproducible derivatives,
 not the sole art originals.
 
+Owner approval, 2026-10-29: "מאשר. תמשיך" for `f7a4d16d6` accepts the corrected
+sand and motion/contact presentation. The approval is recorded in `review.json`;
+paving, place composition and production integration remain separate.
+
 A metadata-only `Walk_Loop` trial was rejected: its measured 37–49 art px cycle
 would need too few displayed poses at the study's speed under the 30 poses/s
 limit. Its job and cycle measurement remain in `walk-short-*`. The existing
@@ -74,6 +78,6 @@ combinations, including mirrored views (`contact-check.json`).
 
 This reduces sampled-pose sliding; it does not claim perfect continuous foot
 locking. The sprite still uses discrete poses, pointer headings between the
-eight views choose the nearest view, and the sand field still repeats. Visual
-acceptance remains with the owner. Paving/place composition and production map
+eight views choose the nearest view, and the sand field still repeats. These
+limits remain alongside the owner's approval. Paving/place composition and production map
 integration retain their separate reviews.

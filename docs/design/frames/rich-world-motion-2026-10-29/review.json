@@ -117,11 +117,26 @@
       "bytes": 5940606
     }
   ],
-  "approval": "Agent correction for owner review, not owner acceptance of sand, animation quality or the whole scene",
+  "approval": "Owner approved the corrected sand, movement and contact presentation on2026-10-29, commit f7a4d16d6.",
   "remaining": [
     "Discrete-pose foot hold remains; reduced rather than perfect continuous locking",
     "Pointer headings between eight views still use the nearest rendered view",
     "Sand repeats over large areas",
     "Paving and place composition need separate review"
-  ]
+  ],
+  "ownerApproval20261029": {
+    "verdict": "approved",
+    "evidence": "מאשר. תמשיך",
+    "commit": "f7a4d16d6",
+    "scope": [
+      "Corrected sand appearance",
+      "Gait phase continuity and dense directional motion",
+      "Supporting-shoe contact presentation"
+    ],
+    "excludes": [
+      "Paving and place composition",
+      "Production map and geography",
+      "Production race pipeline promotion"
+    ]
+  }
 }
