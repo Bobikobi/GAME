@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { STICK_DEAD, STICK_FULL, stickFrom } from '../src/input';
-import { FloatingStick, STICK_RING, inZone, stickZone } from '../src/ui/stick';
+import { FloatingStick, GAP, type Placed, STICK_RING, controlsLayout, inZone, stickZone } from '../src/ui/stick';
 
 const zone = stickZone(800, 360, 90);
 
@@ -65,8 +65,50 @@ describe('the floating stick', () => {
     expect(s.down(3, 50, 330, zone)).toBe(true);
     expect(s.center).toEqual({ x: 50, y: 330 });
   });
+});
 
-  it('is at least the owner\'s 120 px ring', () => {
-    expect(STICK_RING).toBeGreaterThanOrEqual(120);
+/** The gap between two round buttons' edges. */
+const gap = (p: Placed, q: Placed) => Math.hypot(p.right - q.right, p.bottom - q.bottom) - (p.d + q.d) / 2;
+
+describe('the landscape controls in Wild Rift\'s size and density', () => {
+  it('cuts a 2400x1080 phone (H 360) to the measured shares', () => {
+    const at = controlsLayout(360);
+    expect(at.a).toEqual({ right: 68, bottom: 68, d: 68 }); // 0.19 H across, its center 0.19 H from both edges
+    expect(at.b.d).toBe(48); // 0.13 H is 47: the thumb's floor
+    expect(at.bag.d).toBe(44); // 0.11 H is 40: the floor
+    expect(at.ring).toBe(96); // 0.26 H is 94: the floor
+    expect(at.knob).toBe(38);
+    expect(at.b.bottom).toBe(at.a.bottom); // B straight left of A
+    expect(at.sneakDeg).toBeGreaterThan(125);
+    expect(at.sneakDeg).toBeLessThan(135);
+  });
+
+  for (const H of [320, 360, 390, 412, 480]) {
+    it(`keeps one gap of a fifth of the smaller button between neighbours at H ${H}`, () => {
+      const at = controlsLayout(H);
+      expect(Math.abs(gap(at.a, at.b) - GAP * at.b.d)).toBeLessThanOrEqual(2);
+      expect(Math.abs(gap(at.a, at.sneak) - GAP * at.sneak.d)).toBeLessThanOrEqual(2);
+      expect(Math.abs(gap(at.b, at.sneak) - GAP * at.sneak.d)).toBeLessThanOrEqual(2);
+      expect(Math.abs(gap(at.bag, at.journal) - GAP * at.bag.d)).toBeLessThanOrEqual(2);
+      expect(Math.abs(gap(at.journal, at.menu) - GAP * at.bag.d)).toBeLessThanOrEqual(2);
+      // the column stands above Sneak, at the right edge, and stays on the screen
+      expect(at.bag.bottom - at.bag.d / 2).toBeGreaterThan(at.sneak.bottom + at.sneak.d / 2);
+      expect(at.bag.right - at.bag.d / 2).toBeGreaterThanOrEqual(2);
+      expect(at.menu.bottom + at.menu.d / 2).toBeLessThan(H);
+      // every hit target keeps its floor
+      expect(at.a.d).toBeGreaterThanOrEqual(60);
+      expect(Math.min(at.b.d, at.sneak.d)).toBeGreaterThanOrEqual(48);
+      expect(Math.min(at.bag.d, at.journal.d, at.menu.d)).toBeGreaterThanOrEqual(44);
+      expect(at.ring).toBeGreaterThanOrEqual(96);
+    });
+  }
+
+  it('grows with the screen', () => {
+    const at = controlsLayout(480);
+    expect(at.a.d).toBe(91);
+    expect(at.b.d).toBe(62);
+    expect(at.bag.d).toBe(53);
+    expect(at.ring).toBe(125);
+    expect(STICK_RING).toBe(96);
   });
 });

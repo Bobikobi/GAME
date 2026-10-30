@@ -1,10 +1,11 @@
 /**
  * Proves the phone's landscape layout in a real browser (the owner, 30.10: landscape play with a floating stick and
  * buttons in the Wild Rift grammar). A phone on its side, 800 by 360 CSS px: the body wears `landscape`, the portrait
- * pad is gone, the HUD stands in one band along the top and clear of every button, every button is at least 48 px
+ * pad is gone, the HUD stands in one band along the top and clear of every button, every button keeps its floor
+ * (A 60 px, B and Sneak 48, the column 44: Wild Rift's size and density, the owner through the manager, 30.10)
  * and in the right half, no two overlap, nothing reads under 12 px; a thumb landing in the left half raises the
- * stick at that point (a ring of 120 px or more), its push walks the player, its lift lets the stick fade and the
- * walk stop; the arc's Menu opens the menu (a window covers the buttons, as in portrait, so B arrives as the controls' press). Every check waits on a condition, never on a fixed time.
+ * stick at that point (a ring of 96 px or more), its push walks the player, its lift lets the stick fade and the
+ * walk stop; the column's Menu opens the menu (a window covers the buttons, as in portrait, so B arrives as the controls' press). Every check waits on a condition, never on a fixed time.
  */
 import { createReadStream, existsSync, mkdirSync, statSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
@@ -54,14 +55,15 @@ const LAYOUT = `(() => {
   const buttons = [...document.querySelectorAll('.touch .tbtn')].filter((b) => b.getBoundingClientRect().width > 0)
     .map((b) => ({ name: b.className.replace(' down', ''), ...box(b) }));
   let band = 0;
-  for (const el of document.querySelectorAll('.top > .hud, .top > .tracker')) { const r = el.getBoundingClientRect(); if (r.height > 0) band = Math.max(band, r.bottom); }
+  const hud = [];
+  for (const el of document.querySelectorAll('.top > .hud, .top > .tracker, .hud .btn, .hud .chip, .hud .meter')) { const r = el.getBoundingClientRect(); if (r.height > 0 && !el.matches('.top > .hud')) hud.push({ name: el.className, ...box(el) }); if (r.height > 0 && el.matches('.top > .hud, .top > .tracker')) band = Math.max(band, r.bottom); }
   let smallest = 99, where = '';
   for (const el of document.querySelectorAll('.top *, .touch *')) {
     if (!el.getBoundingClientRect().width || ![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue;
     const size = parseFloat(getComputedStyle(el).fontSize);
     if (size < smallest) { smallest = size; where = el.className || el.tagName; }
   }
-  return { landscape: document.body.classList.contains('landscape'), pad: box(document.querySelector('.pad')), buttons, band, smallest, where };
+  return { landscape: document.body.classList.contains('landscape'), pad: box(document.querySelector('.pad')), buttons, hud, band, smallest, where };
 })()`;
 
 interface Box {
@@ -107,15 +109,20 @@ async function main(): Promise<void> {
     await page.waitFor(`!!document.querySelector('.title-screen button')`, 'the title screen', 30_000);
     await start(page);
 
-    const seen = await page.eval<{ landscape: boolean; pad: Box; buttons: (Box & { name: string })[]; band: number; smallest: number; where: string }>(LAYOUT);
+    const seen = await page.eval<{ landscape: boolean; pad: Box; buttons: (Box & { name: string })[]; hud: (Box & { name: string })[]; band: number; smallest: number; where: string }>(LAYOUT);
     if (!seen.landscape) throw new Error('the body does not wear "landscape" on a phone on its side');
     if (seen.pad.w !== 0) throw new Error('the portrait pad still shows in landscape');
     const names = seen.buttons.map((b) => b.name);
     for (const want of ['tbtn a', 'tbtn b', 'tbtn sneak', 'tbtn nav menu']) if (!names.includes(want)) throw new Error(`no ${want} in landscape: ${names.join(', ')}`);
     for (const b of seen.buttons) {
-      if (b.w < 48 || b.h < 48) throw new Error(`${b.name} is ${b.w}x${b.h}, under 48 px`);
+      const floor = b.name.includes('tbtn a') ? 60 : b.name.includes('nav') ? 44 : 48;
+      if (b.w < floor || b.h < floor) throw new Error(`${b.name} is ${b.w}x${b.h}, under ${floor} px`);
       if (b.x < W / 2 || b.x + b.w > W || b.y + b.h > H) throw new Error(`${b.name} stands outside the right half of the screen`);
-      if (b.y < seen.band) throw new Error(`${b.name} reaches into the HUD's band (its top ${b.y}, the band's bottom ${seen.band})`);
+      // the column climbs beside the tracker's row, so the band is held to the boxes the HUD draws, not its row's bottom
+      for (const part of seen.hud) {
+        const hit = b.x < part.x + part.w && part.x < b.x + b.w && b.y < part.y + part.h && part.y < b.y + b.h;
+        if (hit) throw new Error(`${b.name} overlaps the HUD's ${part.name}`);
+      }
     }
     for (const [i, a] of seen.buttons.entries()) for (const b of seen.buttons.slice(i + 1)) if (overlap(a, b)) throw new Error(`${a.name} overlaps ${b.name}`);
     if (seen.smallest < 12) throw new Error(`${seen.where} reads at ${seen.smallest} px, under 12`);
@@ -130,7 +137,7 @@ async function main(): Promise<void> {
       'the stick to rise under the thumb',
       5000,
     );
-    if (ring.w < 120) throw new Error(`the stick's ring is ${ring.w} px, under 120`);
+    if (ring.w < 96) throw new Error(`the stick's ring is ${ring.w} px, under 96`);
     if (Math.abs(ring.x + ring.w / 2 - at.x) > 1 || Math.abs(ring.y + ring.h / 2 - at.y) > 1) throw new Error(`the stick rose at ${ring.x + ring.w / 2},${ring.y + ring.h / 2}, not under the thumb at ${at.x},${at.y}`);
     const still = await page.eval<[number, number]>(`__game.controls.vector()`);
     if (still[0] !== 0 || still[1] !== 0) throw new Error(`the stick walks where the thumb landed: ${still.join(',')}`);
@@ -154,13 +161,13 @@ async function main(): Promise<void> {
     await page.waitFor(`!document.querySelector('.stick').classList.contains('on') && __game.controls.vector()[0] === 0 && __game.controls.vector()[1] === 0`, 'the stick to let go', 5000);
     console.log(`landscape: the stick rose under the thumb (${ring.w} px), walked ${walked} and let go`);
 
-    // the arc's Menu opens the menu, B closes it
+    // the column's Menu opens the menu, B closes it
     await page.tap('.tbtn.menu');
     await page.waitFor(`!!document.querySelector('#ui > .layer')`, 'the menu to open', 5000);
     // a window covers the buttons (as in portrait), so B arrives as the controls' press
     await page.eval(`__game.controls.press('b')`);
     await page.waitFor(`!document.querySelector('#ui > .layer')`, 'B to close the menu', 5000);
-    console.log('landscape: the arc opens the menu, B closes it');
+    console.log("landscape: the column's Menu opens the menu, B closes it");
 
     if (page.errors.length > 0) throw new Error(`page errors:\n${page.errors.join('\n')}`);
   } catch (err) {

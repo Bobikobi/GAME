@@ -7,8 +7,8 @@
  */
 import { STICK_FULL, stickFrom } from '../input';
 
-/** The floating stick's ring, in CSS px: the owner's floor is 120. */
-export const STICK_RING = 132;
+/** The floating stick's ring at its floor, in CSS px; on a screen the ring is `controlsLayout(H).ring`, 0.26 H. */
+export const STICK_RING = 96;
 
 /** Where a thumb may land to raise the stick: a box in CSS px. */
 export interface Zone {
@@ -36,7 +36,7 @@ export class FloatingStick {
   /** the pointer that raised it */
   pointer: number | null = null;
 
-  constructor(readonly ring = STICK_RING) {}
+  constructor(public ring = STICK_RING) {}
 
   /** A thumb lands: inside the zone it raises the stick there (and reads no walk yet), elsewhere nothing. */
   down(pointer: number, x: number, y: number, zone: Zone): boolean {
@@ -72,4 +72,70 @@ export class FloatingStick {
     this.center = null;
     return true;
   }
+}
+
+/** A button's center, measured from the screen's right and bottom edges, and its diameter, in CSS px. */
+export interface Placed {
+  right: number;
+  bottom: number;
+  d: number;
+}
+
+export interface ControlsLayout {
+  a: Placed;
+  b: Placed;
+  sneak: Placed;
+  bag: Placed;
+  journal: Placed;
+  menu: Placed;
+  /** the floating stick's ring and its knob */
+  ring: number;
+  knob: number;
+  /** Sneak's angle on the ability arc round A, in degrees (180 is straight left) */
+  sneakDeg: number;
+  /** how far from the right edge the cluster reaches, for a dialogue to stand clear of it */
+  cluster: number;
+}
+
+/** The gap between two buttons that stand side by side: a fifth of the smaller one's diameter, as Wild Rift's. */
+export const GAP = 0.2;
+
+/**
+ * The landscape controls for a screen `H` CSS px tall, in Wild Rift's size and density (the owner, 30.10, through
+ * the manager's measure of a Wild Rift screen): every size a share of H with a floor for the thumb.
+ * - A, the attack: 0.19 H across (60 at the least), its center 0.19 H from the right and the bottom edge.
+ * - B and Sneak, the ability arc: 0.13 H (48 at the least), on one arc round A at A's radius, their own and a gap;
+ *   B straight left, Sneak up-left at the angle that leaves one gap between B's edge and its own. The rest of the
+ *   arc stays open for the hunt's buttons.
+ * - Bag, Journal and Menu, the column at the right edge: 0.11 H (44 at the least), centers 0.07 H from the edge,
+ *   from just above Sneak's top upward, one gap apart.
+ * - The stick: a ring of 0.26 H (96 at the least), the knob 0.4 of it.
+ */
+export function controlsLayout(H: number): ControlsLayout {
+  const aD = Math.max(60, Math.round(0.19 * H));
+  const aC = Math.round(0.19 * H);
+  const sD = Math.max(48, Math.round(0.13 * H));
+  const arc = aD / 2 + sD / 2 + GAP * sD;
+  // the chord between B's and Sneak's centers is one diameter and one gap
+  const sneakDeg = 180 - (2 * Math.asin(((1 + GAP) * sD) / (2 * arc)) * 180) / Math.PI;
+  const rad = (sneakDeg * Math.PI) / 180;
+  const sneak = { right: aC - arc * Math.cos(rad), bottom: aC + arc * Math.sin(rad), d: sD };
+  const cD = Math.max(44, Math.round(0.11 * H));
+  const cR = Math.max(Math.round(0.07 * H), cD / 2 + 2);
+  const step = cD + GAP * cD;
+  const bagBottom = sneak.bottom + sD / 2 + GAP * cD + cD / 2;
+  const ring = Math.max(96, Math.round(0.26 * H));
+  const round = (p: Placed): Placed => ({ right: Math.round(p.right), bottom: Math.round(p.bottom), d: p.d });
+  return {
+    a: { right: aC, bottom: aC, d: aD },
+    b: round({ right: aC + arc, bottom: aC, d: sD }),
+    sneak: round(sneak),
+    bag: round({ right: cR, bottom: bagBottom, d: cD }),
+    journal: round({ right: cR, bottom: bagBottom + step, d: cD }),
+    menu: round({ right: cR, bottom: bagBottom + 2 * step, d: cD }),
+    ring,
+    knob: Math.round(0.4 * ring),
+    sneakDeg: Math.round(sneakDeg * 10) / 10,
+    cluster: Math.ceil(aC + arc + sD / 2 + 12),
+  };
 }

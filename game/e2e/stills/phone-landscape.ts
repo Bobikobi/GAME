@@ -49,8 +49,8 @@ const SKINS: Record<string, string> = {
   // A: lacquer disc with a thin antique-gold rim; the knob a smaller lacquer disc with a gold dot; gold glyphs
   A: `
     ${L} .stick { background: rgb(19 18 32 / 0.78); border: 1px solid var(--ui-gold-4); }
-    ${L} .stick-knob { width: 50px; height: 50px; background: var(--ui-black); border: 1px solid var(--ui-gold-4); display: grid; place-items: center; }
-    ${L} .stick-knob::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--ui-gold-5); }
+    ${L} .stick-knob { width: calc(var(--knob) * 0.9); height: calc(var(--knob) * 0.9); background: var(--ui-black); border: 1px solid var(--ui-gold-4); display: grid; place-items: center; }
+    ${L} .stick-knob::after { content: ''; width: 26%; height: 26%; border-radius: 50%; background: var(--ui-gold-5); }
     ${L} .tbtn { background: var(--ui-black); border: 1px solid var(--ui-gold-4); color: var(--ui-gold-5); }
     ${L} .tbtn.a { color: var(--ui-gold-6); }
   `,
@@ -74,6 +74,27 @@ const SKINS: Record<string, string> = {
     ${L} .tbtn.a { color: var(--ui-gold-6); }
   `,
 };
+
+/**
+ * The density as the page draws the frame, in CSS px and in the still's own pixels (3 a CSS px): the edge gaps
+ * between A and B, B and Sneak, and the column's neighbours, against a fifth of the smaller button, and A's center
+ * from the right and the bottom edge, against 0.19 H.
+ */
+const DENSITY = `(() => {
+  const c = (sel) => { const r = document.querySelector(sel).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, d: r.width }; };
+  const gap = (p, q) => Math.hypot(p.x - q.x, p.y - q.y) - (p.d + q.d) / 2;
+  const [a, b, s, bag, journal, menu] = ['.tbtn.a', '.tbtn.b', '.tbtn.sneak', '.tbtn.bag', '.tbtn.journal', '.tbtn.menu'].map(c);
+  const H = innerHeight, r1 = (n) => Math.round(n * 10) / 10;
+  const rows = {
+    'A-B gap': [gap(a, b), 0.2 * Math.min(a.d, b.d)],
+    'B-Sneak gap': [gap(b, s), 0.2 * Math.min(b.d, s.d)],
+    'Bag-Journal gap': [gap(bag, journal), 0.2 * Math.min(bag.d, journal.d)],
+    'Journal-Menu gap': [gap(journal, menu), 0.2 * Math.min(journal.d, menu.d)],
+    'A center from the right': [innerWidth - a.x, 0.19 * H],
+    'A center from the bottom': [H - a.y, 0.19 * H],
+  };
+  return Object.fromEntries(Object.entries(rows).map(([k, [got, want]]) => [k, { css: r1(got), still: r1(got * devicePixelRatio), want: r1(want), wantStill: r1(want * devicePixelRatio) }]));
+})()`;
 
 function serve(): Promise<{ server: Server; url: string }> {
   return new Promise((ok) => {
@@ -131,6 +152,7 @@ async function main(): Promise<void> {
         await page.screenshot(join(out, `${date}-phone-landscape-${name}.png`));
         await page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
         console.log(`${name}: ${join(out, `${date}-phone-landscape-${name}.png`)}`);
+        if (name === 'plain') console.log(`density: ${JSON.stringify(await page.eval(DENSITY))}`);
       } finally {
         page.close();
       }

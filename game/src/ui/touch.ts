@@ -16,12 +16,23 @@ import { app } from '../app';
 import { type Button, type Dir, stickFrom } from '../input';
 import { h } from './dom';
 import { TAP, buzz } from './haptics';
-import { FloatingStick, stickZone } from './stick';
+import { type ControlsLayout, FloatingStick, type Placed, controlsLayout, stickZone } from './stick';
 
 /** The one line a portrait phone may show once, after it wakes (dismissable, never over the world's middle). */
 export const ROTATE_HINT = 'Turn your phone for the full view';
 const HINT_KEY = 'loomvale.rotate-hint';
 const HINT_MS = 10_000;
+
+/** The column's glyphs, drawn in the button's own colour: a satchel, a bound book, the menu's three lines. */
+const ICONS = {
+  bag: svg('<path d="M5 9h14l-1.2 11H6.2z"/><path d="M9 9V7a3 3 0 0 1 6 0v2"/>'),
+  journal: svg('<path d="M6 4h11a1 1 0 0 1 1 1v15H7a1 1 0 0 1-1-1z"/><path d="M9 4v16"/><path d="M12 9h3"/>'),
+  menu: svg('<path d="M5 7h14"/><path d="M5 12h14"/><path d="M5 17h14"/>'),
+};
+
+function svg(body: string): string {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+}
 
 export function mountTouch(root: HTMLElement): void {
   const pad = h('div', { class: 'pad', 'aria-label': 'Direction pad' }, h('i', { class: 'up' }), h('i', { class: 'right' }), h('i', { class: 'down' }), h('i', { class: 'left' }));
@@ -29,9 +40,13 @@ export function mountTouch(root: HTMLElement): void {
   const sneak = h('button', { class: 'tbtn sneak', type: 'button', 'aria-pressed': 'false' }, 'Sneak');
   const b = h('button', { class: 'tbtn b', type: 'button', 'aria-label': 'B' }, 'B');
   // the landscape arc above A: the HUD's own buttons, for the right thumb
-  const bag = h('button', { class: 'tbtn nav bag', type: 'button' }, 'Bag');
-  const journal = h('button', { class: 'tbtn nav journal', type: 'button' }, 'Journal');
-  const menu = h('button', { class: 'tbtn nav menu', type: 'button' }, 'Menu');
+  const bag = h('button', { class: 'tbtn nav bag', type: 'button', 'aria-label': 'Bag' });
+  const journal = h('button', { class: 'tbtn nav journal', type: 'button', 'aria-label': 'Journal' });
+  const menu = h('button', { class: 'tbtn nav menu', type: 'button', 'aria-label': 'Menu' });
+  // the column's buttons are too small for a word at 16 px (G29): each wears a line glyph, its name in its label
+  bag.innerHTML = ICONS.bag;
+  journal.innerHTML = ICONS.journal;
+  menu.innerHTML = ICONS.menu;
   const knob = h('i', { class: 'stick-knob' });
   const stick = h('div', { class: 'stick', 'aria-hidden': 'true' }, knob);
   const zone = h('div', { class: 'stick-zone', 'aria-label': 'Walk: touch and slide' });
@@ -58,12 +73,31 @@ export function mountTouch(root: HTMLElement): void {
     e.preventDefault();
     hideHint();
   });
+  const floating = new FloatingStick();
+  const placed: [HTMLElement, keyof ControlsLayout][] = [[a, 'a'], [b, 'b'], [sneak, 'sneak'], [bag, 'bag'], [journal, 'journal'], [menu, 'menu']];
+  // every size of the landscape controls is a share of the screen's height (controlsLayout)
+  const layOut = () => {
+    const at = controlsLayout(window.innerHeight);
+    for (const [btn, name] of placed) {
+      const p = at[name] as Placed;
+      btn.style.setProperty('--cx', `${p.right}px`);
+      btn.style.setProperty('--cy', `${p.bottom}px`);
+      btn.style.setProperty('--d', `${p.d}px`);
+    }
+    el.style.setProperty('--ring', `${at.ring}px`);
+    el.style.setProperty('--knob', `${at.knob}px`);
+    document.body.style.setProperty('--cluster', `${at.cluster}px`);
+    floating.ring = at.ring;
+  };
+
   const landscape = matchMedia('(orientation: landscape)');
   const setLandscape = () => {
     document.body.classList.toggle('landscape', landscape.matches);
     if (landscape.matches) hideHint();
+    layOut();
   };
   landscape.addEventListener('change', setLandscape);
+  window.addEventListener('resize', layOut);
   setLandscape();
 
   const setStick = (v: readonly [number, number] | null) => {
@@ -98,7 +132,6 @@ export function mountTouch(root: HTMLElement): void {
   pad.addEventListener('pointercancel', release);
 
   // landscape: the floating stick, raised where the thumb lands below the HUD's band
-  const floating = new FloatingStick();
   const bandBottom = () => {
     let bottom = 0;
     for (const part of root.querySelectorAll('.top > .hud, .top > .tracker')) {

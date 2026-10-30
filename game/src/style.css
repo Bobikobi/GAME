@@ -789,10 +789,6 @@ body {
    lacquer black and one antique-gold rim; the owner picks the skin from three stills. */
 .touch-on.landscape {
   --prompt-lift: 10px;
-  /* A's center from the screen's bottom-right corner, and the space the button cluster keeps */
-  --a-right: calc(max(14px, env(safe-area-inset-right)) + 48px);
-  --a-bottom: calc(max(12px, env(safe-area-inset-bottom)) + 48px);
-  --cluster: 250px;
 }
 
 .touch-on.landscape:not(.at-title) .touch {
@@ -818,13 +814,14 @@ body {
   touch-action: none;
 }
 
+/* every size below is a share of the screen's height, set by touch.ts from controlsLayout (stick.ts) */
 .touch-on.landscape .stick {
   display: grid;
   place-items: center;
   position: absolute;
-  width: 132px;
-  height: 132px;
-  margin: -66px 0 0 -66px;
+  width: var(--ring, 96px);
+  height: var(--ring, 96px);
+  transform: translate(-50%, -50%);
   border-radius: 50%;
   background: rgb(19 18 32 / 0.7);
   border: 2px solid var(--ui-gold-4);
@@ -839,42 +836,45 @@ body {
 }
 
 .stick-knob {
-  width: 56px;
-  height: 56px;
+  width: var(--knob, 38px);
+  height: var(--knob, 38px);
   border-radius: 50%;
   background: var(--ui-black);
   border: 2px solid var(--ui-gold-4);
   box-shadow: 0 3px 0 rgb(12 11 18 / 0.5);
 }
 
-/* every button is placed by its center, from A's center */
+/* the buttons stand on the screen's bottom-right corner, each placed by its center; their box covers the
+   screen, so only the buttons take a touch (the id outranks #ui > .touch .tbtns) */
 .touch-on.landscape .tbtns {
   display: block;
   position: absolute;
-  right: var(--a-right);
-  bottom: var(--a-bottom);
-  width: 0;
-  height: 0;
+  inset: 0;
+}
+
+.touch-on.landscape #ui > .touch .tbtns {
+  pointer-events: none;
 }
 
 .touch-on.landscape .tbtn {
   display: grid;
   place-items: center;
   position: absolute;
-  left: var(--x);
-  top: var(--y);
+  right: calc(var(--cx) + env(safe-area-inset-right));
+  bottom: calc(var(--cy) + env(safe-area-inset-bottom));
   width: var(--d);
   height: var(--d);
   min-width: 0;
   margin: 0;
   padding: 0;
-  transform: translate(-50%, -50%);
+  transform: translate(50%, 50%);
   border-radius: 50%;
   background: var(--ui-black);
   border: 2px solid var(--ui-gold-4);
   color: var(--ui-paper);
   box-shadow: 0 3px 0 rgb(12 11 18 / 0.5);
   line-height: 1;
+  pointer-events: auto;
 }
 
 .touch-on.landscape .tbtn.sneak[aria-pressed='true'] {
@@ -887,51 +887,26 @@ body {
 }
 
 .touch-on.landscape .tbtn.down {
-  transform: translate(-50%, calc(-50% + 3px));
+  transform: translate(50%, calc(50% + 3px));
 }
 
+/* the glyphs grow with their buttons */
 .touch-on.landscape .tbtn.a {
-  --x: 0px;
-  --y: 0px;
-  --d: 88px;
-  font-size: 32px;
+  font-size: max(26px, calc(var(--d) * 0.44));
 }
 
 .touch-on.landscape .tbtn.b {
-  --x: -106px;
-  --y: 0px;
-  --d: 60px;
-  font-size: 22px;
+  font-size: max(18px, calc(var(--d) * 0.42));
 }
 
 .touch-on.landscape .tbtn.sneak {
-  --x: -64px;
-  --y: -64px;
-  --d: 60px;
-  right: auto;
-  bottom: auto;
-  font-size: 16px;
+  font-size: max(16px, calc(var(--d) * 0.34));
 }
 
-/* the arc above A, 158 px out, at 95, 125 and 155 degrees */
-.touch-on.landscape .tbtn.nav {
-  --d: 56px;
-  font-size: 16px;
-}
-
-.touch-on.landscape .tbtn.menu {
-  --x: -14px;
-  --y: -157px;
-}
-
-.touch-on.landscape .tbtn.journal {
-  --x: -91px;
-  --y: -129px;
-}
-
-.touch-on.landscape .tbtn.bag {
-  --x: -143px;
-  --y: -67px;
+/* the column at the right edge: a line glyph each, half the button across */
+.touch-on.landscape .tbtn.nav svg {
+  width: 52%;
+  height: 52%;
 }
 
 /* the HUD in one band along the top: meter and chips in a row, the tracker and the toasts under it */
@@ -965,11 +940,12 @@ body {
   max-width: min(23em, 44vw);
 }
 
-/* the toasts stand in the right half beside the tracker, out of the player's column in the middle and above the arc */
+/* the toasts stand in the right half beside the tracker, out of the player's column in the middle and clear of the column */
 .touch-on.landscape .toasts {
   flex: 1 1 0;
   justify-items: end;
   width: auto;
+  margin-right: 48px;
 }
 
 .touch-on.landscape .toast {
@@ -987,7 +963,7 @@ body {
 /* a dialogue stands low between the stick's half and the buttons, A reachable beside it */
 .touch-on.landscape .dialog-layer {
   padding-bottom: max(10px, env(safe-area-inset-bottom));
-  padding-right: calc(var(--cluster) + max(8px, env(safe-area-inset-right)));
+  padding-right: calc(var(--cluster, 172px) + env(safe-area-inset-right));
 }
 
 /* ------------------------------------------------------------ the rotate hint */
