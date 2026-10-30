@@ -151,8 +151,42 @@
           "width": 5,
           "height": 5,
           "what": "a small daisy"
+        },
+        {
+          "name": "bladea",
+          "weight": 1,
+          "width": 5,
+          "height": 7,
+          "what": "a fine two-tone grass blade stroke",
+          "fine": true
+        },
+        {
+          "name": "bladeb",
+          "weight": 1,
+          "width": 7,
+          "height": 5,
+          "what": "a fine two-tone grass blade stroke",
+          "fine": true
+        },
+        {
+          "name": "bladec",
+          "weight": 1,
+          "width": 4,
+          "height": 6,
+          "what": "a fine two-tone grass blade stroke",
+          "fine": true
+        },
+        {
+          "name": "bladefan",
+          "weight": 1,
+          "width": 5,
+          "height": 5,
+          "what": "a fine two-tone grass blade stroke",
+          "fine": true
         }
-      ]
+      ],
+      "fine_cell": 8,
+      "fine_chance": 0.9
     },
     {
       "names": [
@@ -268,9 +302,43 @@
           "width": 9,
           "height": 3,
           "what": "a twig"
+        },
+        {
+          "name": "bladea",
+          "weight": 1,
+          "width": 5,
+          "height": 7,
+          "what": "a fine two-tone grass blade stroke",
+          "fine": true
+        },
+        {
+          "name": "bladeb",
+          "weight": 1,
+          "width": 7,
+          "height": 5,
+          "what": "a fine two-tone grass blade stroke",
+          "fine": true
+        },
+        {
+          "name": "bladec",
+          "weight": 1,
+          "width": 4,
+          "height": 6,
+          "what": "a fine two-tone grass blade stroke",
+          "fine": true
+        },
+        {
+          "name": "bladefan",
+          "weight": 1,
+          "width": 5,
+          "height": 5,
+          "what": "a fine two-tone grass blade stroke",
+          "fine": true
         }
       ],
-      "motifs_from": "meadow"
+      "motifs_from": "meadow",
+      "fine_cell": 8,
+      "fine_chance": 0.9
     },
     {
       "names": [
@@ -379,9 +447,43 @@
           "width": 7,
           "height": 6,
           "what": "a white wildflower"
+        },
+        {
+          "name": "bladea",
+          "weight": 1,
+          "width": 5,
+          "height": 7,
+          "what": "a fine two-tone grass blade stroke",
+          "fine": true
+        },
+        {
+          "name": "bladeb",
+          "weight": 1,
+          "width": 7,
+          "height": 5,
+          "what": "a fine two-tone grass blade stroke",
+          "fine": true
+        },
+        {
+          "name": "bladec",
+          "weight": 1,
+          "width": 4,
+          "height": 6,
+          "what": "a fine two-tone grass blade stroke",
+          "fine": true
+        },
+        {
+          "name": "bladefan",
+          "weight": 1,
+          "width": 5,
+          "height": 5,
+          "what": "a fine two-tone grass blade stroke",
+          "fine": true
         }
       ],
-      "motifs_from": "meadow"
+      "motifs_from": "meadow",
+      "fine_cell": 8,
+      "fine_chance": 0.9
     },
     {
       "names": [

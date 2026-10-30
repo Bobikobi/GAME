@@ -51,18 +51,18 @@ export function edgeRows(kind: EdgeKind, seed = 1): string[] {
   const grass = kind === 'fringe';
   for (let x = 0; x < SIZE; x += 1) {
     // how far the overlay reaches down this column, and how far its dithered fringe goes beyond that
-    const reach = grass ? 3 + wander(seed, x, 15) * 15 + wander(seed + 1, x, 5) * 6 : 0 + wander(seed, x, 14) * 5 + wander(seed + 1, x, 5) * 3;
-    const fade = grass ? 9 : 7;
+    const reach = grass ? 3 + wander(seed, x, 15) * 15 + wander(seed + 1, x, 5) * 6 : 3 + wander(seed, x, 14) * 8 + wander(seed + 1, x, 5) * 4;
+    const fade = grass ? 14 : 16;
     for (let y = 0; y < reach + fade && y < SIZE; y += 1) {
       const row = rows[y];
       if (row === undefined) continue;
       if (y < reach) {
         if (grass) row[x] = y === 0 || h(seed, x, y) < 0.78 ? pick('3332244', seed + 2, x, y) : pick('34', seed + 3, x, y);
-        else if (h(seed + 4, x, y) < 0.4) row[x] = pick('vvxv', seed + 5, x, y);
+        else if (h(seed + 4, x, y) < 0.6) row[x] = pick('vvxv', seed + 5, x, y);
       } else {
         const left = (y - reach) / fade;
         // dithered: a checker that thins out, then single stray pixels
-        const keep = (grass ? 1 : 0.55) * ((x + y) % 2 === 0 ? 0.85 - left * 0.85 : 0.35 - left * 0.35);
+        const keep = (grass ? 1 : 0.8) * ((x + y) % 2 === 0 ? 0.85 - left * 0.85 : 0.35 - left * 0.35);
         if (h(seed + 6, x, y) < keep) row[x] = grass ? pick('3344', seed + 7, x, y) : pick('vxvv', seed + 8, x, y);
       }
     }
