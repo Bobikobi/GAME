@@ -43,7 +43,8 @@ const GROUPS: Record<string, Group> = {
   // every other opening run, so a run added to opening.ts is played here without a change to this file
   'opening-desktop': { entries: [{ name: 'opening-desktop', script: 'opening', env: { E2E_SKIP: 'phone' } }], minutes: 8 },
   'night-and-hud': { entries: ['stealth', 'tending', 'hud'].map(plain), minutes: 8 },
-  '3d-and-load': { entries: ['play3d', 'load', 'camera', 'tree', 'landscape'].map(plain), minutes: 8 },
+  // 11: with landscape the group is about 5.5 min green, and a play3d retry alone took 314 s (run 41073597376)
+  '3d-and-load': { entries: ['play3d', 'load', 'camera', 'tree', 'landscape'].map(plain), minutes: 11 },
   'map-and-shops': { entries: ['map', 'shop', 'shop-stock', 'shop-interior', 'fishing', 'signin'].map(plain), minutes: 8 },
 };
 
