@@ -423,7 +423,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:56"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:147"
         }
       },
       "props/bush_empty": {
@@ -444,7 +444,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:53"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:144"
         }
       },
       "props/campfire_unlit": {
@@ -554,7 +554,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:44"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:135"
         }
       },
       "props/fence_post": {
@@ -568,7 +568,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:45"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:136"
         }
       },
       "props/flowers": {
@@ -583,7 +583,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:38"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:129"
         }
       },
       "props/flowers_blue": {
@@ -604,7 +604,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:39"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:130"
         }
       },
       "props/fog": {
@@ -624,7 +624,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:46"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:137"
         }
       },
       "props/grass_tall": {
@@ -638,7 +638,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:47"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:138"
         }
       },
       "props/hazard_pit": {
@@ -687,7 +687,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:50"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:141"
         }
       },
       "props/house_small": {
@@ -788,7 +788,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:40"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:131"
         }
       },
       "props/rock_mossy": {
@@ -894,7 +894,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:41"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:132"
         }
       },
       "props/statue_head": {
@@ -940,7 +940,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:42"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:133"
         }
       },
       "tiles/bank_e": {
@@ -979,109 +979,308 @@
       },
       "tiles/cobble": {
         "file": "tiles/cobble.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "stone"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:55"
+        }
       },
       "tiles/cobble_1": {
         "file": "tiles/cobble_1.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "stone"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:56"
+        }
       },
       "tiles/cobble_2": {
         "file": "tiles/cobble_2.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "stone"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:57"
+        }
       },
       "tiles/forest": {
         "file": "tiles/forest.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:49"
+        }
       },
       "tiles/forest_1": {
         "file": "tiles/forest_1.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:50"
+        }
       },
       "tiles/forest_2": {
         "file": "tiles/forest_2.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:51"
+        }
       },
       "tiles/fringe_e": {
         "file": "tiles/fringe_e.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "moss",
+          "green",
+          "wood"
+        ],
+        "source": {
+          "spec": "tools/src/art/edges.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:117"
+        }
       },
       "tiles/fringe_n": {
         "file": "tiles/fringe_n.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "moss",
+          "green",
+          "wood"
+        ],
+        "source": {
+          "spec": "tools/src/art/edges.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:116"
+        }
       },
       "tiles/fringe_s": {
         "file": "tiles/fringe_s.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "moss",
+          "green",
+          "wood"
+        ],
+        "source": {
+          "spec": "tools/src/art/edges.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:118"
+        }
       },
       "tiles/fringe_w": {
         "file": "tiles/fringe_w.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "moss",
+          "green",
+          "wood"
+        ],
+        "source": {
+          "spec": "tools/src/art/edges.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:119"
+        }
       },
       "tiles/grass": {
         "file": "tiles/grass.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:124"
+        }
       },
       "tiles/grass_1": {
         "file": "tiles/grass_1.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:125"
+        }
       },
       "tiles/grass_2": {
         "file": "tiles/grass_2.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:126"
+        }
       },
       "tiles/grass_3": {
         "file": "tiles/grass_3.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:127"
+        }
       },
       "tiles/grass_flowers": {
         "file": "tiles/grass_flowers.png",
-        "w": 16,
-        "h": 16,
-        "frames": 2
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss",
+          "fire"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:128"
+        }
       },
       "tiles/grove": {
         "file": "tiles/grove.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:52"
+        }
       },
       "tiles/grove_1": {
         "file": "tiles/grove_1.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:53"
+        }
       },
       "tiles/grove_2": {
         "file": "tiles/grove_2.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:54"
+        }
       },
       "tiles/path": {
         "file": "tiles/path.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark",
+          "moss",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:113"
+        }
       },
       "tiles/path_1": {
         "file": "tiles/path_1.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark",
+          "moss",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:114"
+        }
       },
       "tiles/path_2": {
         "file": "tiles/path_2.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark",
+          "moss",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:115"
+        }
       },
       "tiles/rubble": {
         "file": "tiles/rubble.png",
@@ -1090,23 +1289,60 @@
       },
       "tiles/ruin_floor": {
         "file": "tiles/ruin_floor.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "stone",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:58"
+        }
       },
       "tiles/sand": {
         "file": "tiles/sand.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:43"
+        }
       },
       "tiles/sand_1": {
         "file": "tiles/sand_1.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:59"
+        }
       },
       "tiles/sand_2": {
         "file": "tiles/sand_2.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:45"
+        }
       },
       "tiles/shore_e": {
         "file": "tiles/shore_e.png",
@@ -1967,6 +2203,62 @@
           "bark"
         ]
       },
+      "tiles/worn_n": {
+        "file": "tiles/worn_n.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/src/art/edges.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:120"
+        }
+      },
+      "tiles/worn_e": {
+        "file": "tiles/worn_e.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/src/art/edges.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:121"
+        }
+      },
+      "tiles/worn_s": {
+        "file": "tiles/worn_s.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/src/art/edges.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:122"
+        }
+      },
+      "tiles/worn_w": {
+        "file": "tiles/worn_w.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/src/art/edges.ts",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:123"
+        }
+      },
       "props/well_old_b": {
         "file": "props/well_old_b.png",
         "w": 128,
@@ -1980,7 +2272,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:43"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:134"
         }
       },
       "props/grass_tall_b": {
@@ -1994,7 +2286,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:48"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:139"
         }
       },
       "props/grass_tall_c": {
@@ -2008,7 +2300,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:49"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:140"
         }
       },
       "props/herb_plant_b": {
@@ -2023,7 +2315,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:51"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:142"
         }
       },
       "props/herb_plant_c": {
@@ -2038,7 +2330,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:52"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:143"
         }
       },
       "props/campfire_lit_b": {
@@ -2053,7 +2345,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:54"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:145"
         }
       },
       "props/campfire_lit_c": {
@@ -2068,7 +2360,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:55"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:146"
         }
       },
       "props/bush_berry_b": {
@@ -2083,7 +2375,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:57"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:148"
         }
       },
       "props/bush_berry_c": {
@@ -2098,7 +2390,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/props.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:58"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:149"
         }
       }
     }

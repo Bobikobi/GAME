@@ -104,5 +104,5 @@ export function measureSprite(png: PNG, ramps: readonly string[], want: { width:
   if (detail > L.maxDetail) failures.push(`detail: ${detail.toFixed(2)} > ${L.maxDetail} (noise)`);
   // detail is best near 0.7, where the accepted rich sprites sit (0.42 to 0.87); colours count up to 32; each piece beyond the first costs 0.3: a stray speck is a defect
   const score = Math.min(seen.size, 32) / 32 + Math.max(0, 1 - Math.abs(detail - 0.7) / 0.7) + largest - 0.3 * Math.max(0, count - 1);
-  return { width, height, clear, colours: seen.size, offPalette: solid === 0 ? 0 : off / solid, seam: 0, detail, echo: 0, failures, pass: failures.length === 0, score };
+  return { width, height, clear, colours: seen.size, offPalette: solid === 0 ? 0 : off / solid, seam: 0, seamZ: 0, detail, echo: 0, failures, pass: failures.length === 0, score };
 }

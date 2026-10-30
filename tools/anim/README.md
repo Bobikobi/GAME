@@ -84,7 +84,9 @@ supersampled renders, the ID pass, the projected feet) and `job.json` (what Blen
 ## A body with its own actions (native targets)
 
 A four-legged body does not take the human libraries: the Meshy wolf (`character-wolf-grim.glb`) carries its own
-`Idle`, `Walk` and `Run`. A target with `"map": "native"` (the `wolf` in `anim.json`) is played by those: its clips use
+`Idle`, `Walk` and `Run`, and the hunt's `Alert`, `Graze` and `Lie` (keyed from the bind pose by
+`game/tools/blender/quad_pass.py --states`, which adds them to a finished body and keeps every other byte). A target
+with `"map": "native"` (the `wolf` in `anim.json`) is played by those: its clips use
 `"base": { "library": "self:<target>", "action": "Walk" }` (the `self:` library is made from the target's `actions`,
 each with its length in frames at the target's `fps`), and take no layer, IK, prop, set piece, worn part or basket. The
 renderer poses the body by the action's own bones (no retargeting, no scale), and the feet are the tails of the four

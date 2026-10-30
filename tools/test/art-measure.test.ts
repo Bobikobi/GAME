@@ -2,7 +2,7 @@ import { PNG } from 'pngjs';
 import { describe, expect, it } from 'vitest';
 
 import { paletteWithRamps } from '../src/kit/palette.js';
-import { bestPerEntry, echo, measureTile, seamRatio } from '../src/art/measure.js';
+import { bestPerEntry, echo, measureTile, seamOf } from '../src/art/measure.js';
 
 const GREENS = paletteWithRamps(['green', 'moss']).slice(-6);
 const rgb = (hex: string): [number, number, number] => [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16)) as [number, number, number];
@@ -41,8 +41,8 @@ describe('art:measure', () => {
   });
   it('sees a seam where the right edge does not meet the left', () => {
     const ramp = tile((x) => GREENS[Math.min(5, Math.floor(x / 11))] ?? GREENS[0] ?? '#000000');
-    expect(seamRatio(ramp)).toBeGreaterThan(1.35);
-    expect(seamRatio(tile((x, y) => noise(x, y)))).toBeLessThan(1.35);
+    expect(seamOf(ramp).z).toBeGreaterThan(3);
+    expect(seamOf(tile((x, y) => scatter(x, y))).z).toBeLessThan(3);
   });
   it('sees rows: a tile that repeats every 8 px echoes, a random one does not', () => {
     expect(echo(tile((x, y) => noise(x % 8, y % 8)))).toBeGreaterThan(0.9);
@@ -53,5 +53,19 @@ describe('art:measure', () => {
     const best = bestPerEntry([row('a', '1', true, 1), row('a', '2', true, 2), row('b', '3', false, 9)]);
     expect(best.get('a')?.draft.id).toBe('2');
     expect(best.has('b')).toBe(false);
+  });
+});
+
+describe('wrapTile', () => {
+  it('makes a tile that does not wrap wrap, with no new colour', async () => {
+    const { wrapTile } = await import('../src/kit/wrap.js');
+    const ramp = tile((x, y) => GREENS[(Math.floor(x / 11) + Math.floor(y / 13)) % 6] ?? '#000000');
+    const before = seamOf(ramp).z;
+    const wrapped = PNG.sync.read(wrapTile(PNG.sync.write(ramp)));
+    expect(before).toBeGreaterThan(3);
+    expect(seamOf(wrapped).z).toBeLessThan(before);
+    const colours = new Set<number>();
+    for (let i = 0; i < wrapped.data.length; i += 4) colours.add(((wrapped.data[i] ?? 0) << 16) | ((wrapped.data[i + 1] ?? 0) << 8) | (wrapped.data[i + 2] ?? 0));
+    expect(colours.size).toBeLessThanOrEqual(6);
   });
 });

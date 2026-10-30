@@ -602,7 +602,7 @@ export function kaggleSettings(env: NodeJS.ProcessEnv = process.env): KaggleSett
     tokenLimit: recipe.tokenLimit,
     dtype: choice('KAGGLE_DTYPE', ['fp16', 'bf16', 'fp32'] as const, recipe.dtype),
     post: choice('KAGGLE_POST', ['grid', 'off'] as const, recipe.post),
-    negative: choice('KAGGLE_NEGATIVE_KIND', ['default', 'creature'] as const, 'default') === 'creature' ? KAGGLE_CREATURE_NEGATIVE : KAGGLE_NEGATIVE,
+    negative: NEGATIVE_BY_KIND[choice('KAGGLE_NEGATIVE_KIND', ['default', 'creature', 'ground'] as const, 'default')],
   };
 }
 
@@ -663,6 +663,15 @@ export const KAGGLE_NEGATIVE = 'multiple characters, two figures, extra figure, 
  */
 export const KAGGLE_CREATURE_NEGATIVE = KAGGLE_NEGATIVE.split(', ').filter((w) => w !== 'animal').join(', ');
 
+/**
+ * The negative prompt of a ground fill (`KAGGLE_NEGATIVE_KIND=ground`): a ground is no object, so the figure words go and
+ * what the first first-map draws turned into (a cube, a block with a side, a vignette with rounded corners, a frame) is
+ * named instead.
+ */
+export const KAGGLE_GROUND_NEGATIVE = 'object, character, animal, cube, block, isometric, perspective, horizon, border, frame, outline, rounded corners, vignette, centred composition, blurry, photo, realistic, 3d render, text, watermark, gradient, shadow, glow, light rays, halo';
+
+const NEGATIVE_BY_KIND = { default: KAGGLE_NEGATIVE, creature: KAGGLE_CREATURE_NEGATIVE, ground: KAGGLE_GROUND_NEGATIVE } as const;
+
 const NUMBER_WORD = '(?:\\d+|two|three|four|five|six)';
 
 /**
@@ -706,7 +715,7 @@ function clauses(text: string | undefined): string[] {
  * magenta). Detail clauses go from the end while the estimate is past the window, so the words that matter
  * most are never the ones cut. The local route keeps `localPrompt`.
  */
-export function kagglePrompt(entry: { what: string; detail?: string; notes?: readonly string[]; ref: string; width?: number; height?: number }, recipe: KaggleRecipe = 'sd15'): string {
+export function kagglePrompt(entry: { what: string; detail?: string; notes?: readonly string[]; ref: string; width?: number; height?: number; kind?: string }, recipe: KaggleRecipe = 'sd15'): string {
   if (kaggleFromPrompt(recipe)) return kaggleSentencePrompt(entry);
   const shape = shapeOf(entry);
   const head = [
@@ -734,7 +743,8 @@ function shapeWords(shape: 'tall' | 'wide' | null): string[] {
  * one, and the three things the importer needs. Nothing is dropped: the kernel counts it against the encoder's
  * real window.
  */
-export function kaggleSentencePrompt(entry: { what: string; detail?: string; notes?: readonly string[]; ref: string; width?: number; height?: number }): string {
+export function kaggleSentencePrompt(entry: { what: string; detail?: string; notes?: readonly string[]; ref: string; width?: number; height?: number; kind?: string }): string {
+  if (entry.kind === 'tile') return kaggleFillPrompt(entry);
   const subject = clauses(entry.what).map(sdClause).filter((c): c is string => c !== null).join(', ');
   const detail = clauses(detailWithNotes(entry)).map(sdClause).filter((c): c is string => c !== null);
   const character = kaggleSubject(entry.ref) === 'character';
@@ -750,6 +760,23 @@ export function kaggleSentencePrompt(entry: { what: string; detail?: string; not
     'Crisp square pixels, a thick dark navy outline, a limited palette.',
     'Flat pure magenta background, no shadow on the ground, no text, no other objects.',
   ].filter((s) => s !== '').join(' ');
+}
+
+/**
+ * The prompt of a ground fill on a long-prompt recipe: a texture seen straight from above that fills the whole
+ * picture, with no object, outline, background or border (the sprite prompt drew isometric cubes and rounded
+ * tiles on magenta: the first first-map ground, 30.10). Wrapping is the script's (`wrapTile`), not the model's.
+ */
+export function kaggleFillPrompt(entry: { what: string; detail?: string; notes?: readonly string[] }): string {
+  const subject = clauses(entry.what).map(sdClause).filter((c): c is string => c !== null).join(', ');
+  const detail = clauses(detailWithNotes(entry)).map(sdClause).filter((c): c is string => c !== null).join(', ');
+  return [
+    `Pixel art game ground texture, seen straight from above: ${subject}.`,
+    detail === '' ? '' : `${detail.charAt(0).toUpperCase()}${detail.slice(1)}.`,
+    'The texture fills the entire picture edge to edge, an even field with no object in the middle, no border, no frame, no outline, no background, no horizon.',
+    'Many small details spread over the whole picture in several shades, light from the upper left, shading and texture drawn in pixels.',
+    'Crisp square pixels, a limited palette.',
+  ].filter((t) => t !== '').join(' ');
 }
 
 /** A PNG's width and height from its header, or null when the bytes are not a PNG. */
