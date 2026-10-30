@@ -31,7 +31,7 @@ interface Entry {
 
 interface Group {
   entries: Entry[];
-  /** The job's timeout: about twice its green time on a runner (26.10), which leaves room for one retry. */
+  /** The job's timeout: about three times its green time on a runner (30.10: a slow evening cancelled jobs at twice), which leaves room for one retry. */
   minutes: number;
   /** Whether a script of the group serves game/dist-3d (the 3D door): only then does CI build it for the job. */
   build3d?: boolean;
@@ -42,14 +42,14 @@ const plain = (script: string): Entry => ({ name: script, script });
 // balanced by the times of run 41084544483 (30.10): the phone opening alone is 550 s, the desktop and slid-bank
 // openings 150 s, and each of the other groups 120-200 s. A group is a job, and the jobs run side by side.
 const GROUPS: Record<string, Group> = {
-  'opening-phone': { entries: [{ name: 'opening-phone', script: 'opening', env: { E2E_ONLY: 'phone' } }], minutes: 20 },
+  'opening-phone': { entries: [{ name: 'opening-phone', script: 'opening', env: { E2E_ONLY: 'phone' } }], minutes: 30 },
   // every other opening run, so a run added to opening.ts is played here without a change to this file
-  'opening-desktop': { entries: [{ name: 'opening-desktop', script: 'opening', env: { E2E_SKIP: 'phone' } }], minutes: 8 },
-  'night-and-hud': { entries: ['stealth', 'tending', 'hud', 'tree'].map(plain), minutes: 8 },
+  'opening-desktop': { entries: [{ name: 'opening-desktop', script: 'opening', env: { E2E_SKIP: 'phone' } }], minutes: 11 },
+  'night-and-hud': { entries: ['stealth', 'tending', 'hud', 'tree'].map(plain), minutes: 12 },
   // the only scripts that serve game/dist-3d: play3d, and load for its bag button
-  '3d-and-load': { entries: ['play3d', 'load', 'camera'].map(plain), minutes: 8, build3d: true },
-  'map-and-shop': { entries: ['map', 'shop', 'fishing'].map(plain), minutes: 8 },
-  'shop-rooms-and-signin': { entries: ['shop-stock', 'shop-interior', 'signin'].map(plain), minutes: 8 },
+  '3d-and-load': { entries: ['play3d', 'load', 'camera'].map(plain), minutes: 14, build3d: true },
+  'map-and-shop': { entries: ['map', 'shop', 'fishing'].map(plain), minutes: 10 },
+  'shop-rooms-and-signin': { entries: ['shop-stock', 'shop-interior', 'signin'].map(plain), minutes: 10 },
 };
 
 /**
