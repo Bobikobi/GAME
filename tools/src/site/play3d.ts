@@ -1,10 +1,11 @@
 /**
  * The 3D door (DECISIONS.md, 2026-10-09; docs/team/PLATFORM.md, "The 3D door at /play3d/"): an optional build
  * step after the game. When the game package has a `build:3d` script, it builds the 3D client into
- * game/dist-3d/; the copy step ships that folder at /play3d/ and the home page shows the 3D door. When there is no
- * such script, or it fails, the build still ships and the door stays hidden.
+ * game/dist-3d/; the copy step ships that folder at /play3d/, so the address keeps working. When there is no such
+ * script, or it fails, the build still ships.
  *
- * SITE_3D_DOOR=force shows the door without a 3D build, for screenshots of the home page only.
+ * The door on the home page is hidden while 3D is paused (DECISIONS.md, 2026-10-30). SITE_3D_DOOR=force still
+ * shows it, for screenshots of the home page only.
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, rmSync } from 'node:fs';
@@ -18,9 +19,9 @@ export function has3dBuild(root: string): boolean {
   return existsSync(join(root, PLAY3D_OUT, 'index.html'));
 }
 
-/** True when the home page shows the 3D door: a 3D build exists, or a screenshot asks for the door. */
+/** True when the home page shows the 3D door: only when a screenshot forces it, whatever builds exist. */
 export function show3dDoor(root: string, env: Record<string, string | undefined> = process.env): boolean {
-  return env['SITE_3D_DOOR'] === 'force' || has3dBuild(root);
+  return env['SITE_3D_DOOR'] === 'force';
 }
 
 /** Runs the game's `build:3d` script when it has one. Returns whether a 3D build is there afterwards. */

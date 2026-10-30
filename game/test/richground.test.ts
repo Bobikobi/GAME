@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from 'vitest';
 
 import type { Bundle } from '@game/kernel';
-import { GREENS, canopyGroups, hash, remapTone, toneField, valueNoise } from '../src/richground';
+import { GREENS, canopyGroups, groundMask, hash, leanAt, movesAs, remapTone, swayOn, toneField, valueNoise } from '../src/richground';
 import { loadBundle } from '../../tools/test/helpers/world';
 
 let bundle: Bundle;
@@ -203,5 +203,37 @@ describe('tone remap', () => {
     const data = sheet();
     remapTone(data, W, 0, FRAME);
     expect(data).toEqual(sheet());
+  });
+});
+
+describe('the pixels that may move (LIGHTING C)', () => {
+  test('only the meadow\'s two lightest greens and the water\'s two dashes move', () => {
+    expect(movesAs(0x84c450)).toBe(1);
+    expect(movesAs(0xc8e88a)).toBe(1);
+    expect(movesAs(0x7cc4ec)).toBe(2);
+    expect(movesAs(0xc4ecf8)).toBe(2);
+    expect(movesAs(0x4c9a3f)).toBe(0);
+    expect(movesAs(0x1b1a2e)).toBe(0);
+    const px = new Uint8ClampedArray([0x84, 0xc4, 0x50, 255, 0x84, 0xc4, 0x50, 0, 0x7c, 0xc4, 0xec, 255, 0x4c, 0x9a, 0x3f, 255]);
+    expect([...groundMask(px, 4, 1)]).toEqual([1, 0, 2, 0]);
+  });
+
+  test('the gust leans whole art pixels, 0 to 2, and a row band every 6 px a step less', () => {
+    const seen = new Set<number>();
+    for (let x = 0; x < 400; x++) seen.add(leanAt(x, 0, 0));
+    expect([...seen].sort()).toEqual([0, 1, 2]);
+    for (let x = 0; x < 400; x++) expect(leanAt(x, 6, 0)).toBeLessThanOrEqual(1);
+  });
+});
+
+describe('where the sway runs', () => {
+  test('on a graphics chip of any tier, not in software WebGL, and as the address asks', () => {
+    expect(swayOn('Adreno (TM) 610', '')).toBe(true);
+    expect(swayOn('Mali-G52', '')).toBe(true);
+    expect(swayOn('', '')).toBe(true);
+    expect(swayOn('ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)), SwiftShader driver)', '')).toBe(false);
+    expect(swayOn('llvmpipe (LLVM 15.0.7, 256 bits)', '')).toBe(false);
+    expect(swayOn('SwiftShader', '?debug&sway=on')).toBe(true);
+    expect(swayOn('Apple M2', '?sway=off')).toBe(false);
   });
 });

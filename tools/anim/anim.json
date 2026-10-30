@@ -112,7 +112,7 @@
       "colours": { "head": "#e9903a", "neck": "#e9903a", "chest": "#e9903a", "shoulder": "#e9903a", "upper_arm": "#e9903a", "elbow": "#e9903a", "forearm": "#e9903a", "hand": "#e9903a", "thigh": "#e9903a", "knee": "#e9903a", "shin": "#e9903a", "foot": "#e9903a", "pelvis": "#6f7d8c" }
     },
     "elf-m": {
-      "about": "The elf, the man (round 4 E4-A, version 3): the Universal Base Characters body thinned at the bones and lengthened on the shared rig, in the ranger outfit under a pastel sky-blue open hooded cloak (tools/anim/races/elf.json).",
+      "about": "The elf, the man (round 4 E4-A, version 3): the Universal Base Characters body thinned at the bones and lengthened on the shared rig, in the ranger outfit under a pastel green open hooded cloak (green since 30.10; sky blue at the pick) (tools/anim/races/elf.json).",
       "map": "ual",
       "race": "elf",
       "body": "m",
@@ -120,7 +120,7 @@
       "pxm": 53,
       "ramps": ["wood", "moss", "skin"],
       "metal": "grey",
-      "leaf": "water",
+      "leaf": "green",
       "ships": { "sheet": "elf", "bob": false },
       "credit": "Elf, built from Quaternius Universal Base Characters and Modular Character Outfits - Fantasy (CC0 1.0); the cloak is own geometry; posed with Quaternius Universal Animation Library motion (CC0 1.0) and rendered to pixels by tools/anim"
     },
@@ -133,7 +133,7 @@
       "pxm": 53,
       "ramps": ["wood", "moss", "skin"],
       "metal": "grey",
-      "leaf": "water",
+      "leaf": "green",
       "ships": { "sheet": "elf_w", "bob": false },
       "credit": "Elf, built from Quaternius Universal Base Characters and Modular Character Outfits - Fantasy (CC0 1.0); the cloak is own geometry; posed with Quaternius Universal Animation Library motion (CC0 1.0) and rendered to pixels by tools/anim"
     },
@@ -150,18 +150,18 @@
       "credit": "Skeleton by Alexander Brodin (https://poly.pizza/m/frU5VxsCGZJ), CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/); modified: cut into bone pieces, each fitted to a bone of the Quaternius Universal Base Characters skeleton, posed with Quaternius Universal Animation Library motion (CC0 1.0) and rendered to pixels by tools/anim"
     },
     "wolf": {
-      "about": "The wolf, dark grey (character-wolf-grim.glb): a four-legged body that carries its own Idle, Walk and Run, so nothing is retargeted ('native'). The feet are the tails of the last bone of each leg. The camera is the forager's; the scale makes the wolf about 0.9 m at the ears.",
+      "about": "The wolf, dark grey (character-wolf-grim.glb): a four-legged body that carries its own Idle, Walk and Run, and the hunt's Alert, Graze and Lie, so nothing is retargeted ('native'). The feet are the tails of the last bone of each leg. The camera is the forager's; the scale makes the wolf about 0.9 m at the ears.",
       "model": "game/public3d/models/character-wolf-grim.glb",
       "map": "native",
       "fps": 24,
-      "actions": { "Idle": 144, "Walk": 24, "Run": 13.6 },
+      "actions": { "Idle": 144, "Walk": 24, "Run": 13.6, "Alert": 96, "Graze": 48, "Lie": 24 },
       "contacts": { "LB": "backleg2", "RB": "R_backleg2", "LF": "frontleg2", "RF": "R_frontleg2" },
       "elev": 50,
       "pxm": 66,
       "ramps": ["stone", "bark"],
       "metal": "grey",
       "leaf": "green",
-      "credit": "Wolf, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: the emission input removed (it repeated the colour map) and the colour map cut from 2048 to 1024 px; scaled to 0.9 m at the ears; Meshy's walk renamed Walk; Run made from the walk and Idle made from the standing pose in Blender (game/tools/blender/quad_pass.py); posed with its own actions and rendered to pixels by tools/anim"
+      "credit": "Wolf, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: the emission input removed (it repeated the colour map) and the colour map cut from 2048 to 1024 px; scaled to 0.9 m at the ears; Meshy's walk renamed Walk; Run made from the walk, Idle made from the standing pose, and Alert, Graze and Lie keyed from the bind pose in Blender (game/tools/blender/quad_pass.py); posed with its own actions and rendered to pixels by tools/anim"
     },
     "boar": {
       "about": "The wild boar (animal-boar.glb): a four-legged body that carries its own Idle, Walk, Run, Alert, Graze and Lie (and Charge, kept for the fight, not rendered), so nothing is retargeted ('native'). The feet are the tails of the hoof bones; the file names its sides as seen from the front, so its _R bones are the boar's left legs. The camera is the forager's; the scale makes the boar about 0.8 m at the withers. The coat is drawn on wood alone (coat B, no stone, so no blue-grey; the alternatives D, A and C are on docs/design/frames/2026-10-30-boar-coat.png and in DECISIONS 2026-10-30).",
@@ -176,6 +176,34 @@
       "metal": "grey",
       "leaf": "green",
       "credit": "Boar by Teh_Bucket (created at the request of bloons), OpenGameArt, CC0, https://opengameart.org/content/boar; modified: the mirror, edge-split and triangulate modifiers applied (one whole mesh) and the unused projection-test UV layer and the file's scene properties dropped; the Blender Internal material rebuilt as a Principled BSDF on the packed colour map, the coat lifted from near black to a dark grey-brown with grey bristle tips and the lighter hairs of the rump and the brow brought down to the coat's middle value (written into the map, the tusks left white), the snout's disc and the hooves given a plain dark material; the colour map re-encoded as JPEG (quality 90); turned to face -Y, centred over the origin and scaled to 0.8 m at the withers with the turn and the scale baked into the bones and the mesh, and a tip bone under each hoof (the renderer reads a foot from its bone's tail); Idle (from the rest pose), Walk (a calm four-beat pace; the file's walk, a trot, dropped), Run (a four-beat rotary gallop), Alert (the bluff: the head low, a snort, a toss and a forefoot stamp), Graze (rooting, the snout at the ground) and Lie (down on its belly, the legs folded under it and the chin on the ground, held still; its legs posed bone by bone) keyed in Blender on the rig's leg IK (game/tools/blender/boar_pass.py), every action baked to bone keys and the IK targets and constraints dropped; the file's attack kept as Charge (not rendered); posed with its own actions and rendered to pixels by tools/anim"
+    },
+    "deer": {
+      "about": "The roe deer (animal-deer.glb): a four-legged body that carries its own Idle, Walk, Run, Alert, Graze and Lie, so nothing is retargeted ('native'). The feet are the tails of the hoof bones. The camera is the forager's; the scale makes the deer about 0.75 m at the withers.",
+      "model": "game/public3d/models/animal-deer.glb",
+      "map": "native",
+      "fps": 24,
+      "actions": { "Idle": 160, "Walk": 32, "Run": 12, "Alert": 96, "Graze": 48, "Lie": 8 },
+      "contacts": { "LB": "Backleg_L.002", "RB": "Backleg_R.002", "LF": "Frontleg_L.002", "RF": "Frontleg_R.002" },
+      "elev": 50,
+      "pxm": 66,
+      "ramps": ["wood", "bark"],
+      "metal": "grey",
+      "leaf": "green",
+      "credit": "Deer Female by CDmir (collaborator: TinyWorlds), OpenGameArt, CC0, https://opengameart.org/content/deer-female; modified: the camera, the lamps and the ground plane removed; the body, head and eye meshes joined; the Blender Internal materials rebuilt as Principled BSDFs on the packed colour maps, the eye given a plain dark material and the tip of the muzzle the same dark material (a nose); the colour maps re-encoded as JPEG (quality 90); the body centred over the origin and scaled to 0.75 m at the withers with the scale baked into the bones, and a tip bone under each hoof (the renderer reads a foot from its bone's tail); the ears carried spread outward in every action; Idle, Graze (Eat held at its lowest with a small chew and an ear flick) and Lie (the last pose of the second Die, the legs drawn in, held still) resampled from the file's actions; Walk (a calm four-beat pace), Run (a four-beat rotary gallop) and Alert (from the standing pose: the head carried high and a slow look to each side) keyed in Blender (game/tools/blender/deer_pass.py); the other actions dropped; posed with its own actions and rendered to pixels by tools/anim"
+    },
+    "hart": {
+      "about": "The white hart (animal-hart.glb): the roe deer's body and actions in a second look, the colour map washed to an even silver white, the ears smaller, the neck thicker and a pair of branched antlers skinned to the head, about 1.1 m at the withers. The tool recolours a body only through its ramps, so the pale look is a second glb from the same pass (deer_pass.py --look hart), drawn in pale ramps.",
+      "model": "game/public3d/models/animal-hart.glb",
+      "map": "native",
+      "fps": 24,
+      "actions": { "Idle": 160, "Walk": 32, "Run": 12, "Alert": 96, "Graze": 48, "Lie": 8 },
+      "contacts": { "LB": "Backleg_L.002", "RB": "Backleg_R.002", "LF": "Frontleg_L.002", "RF": "Frontleg_R.002" },
+      "elev": 50,
+      "pxm": 66,
+      "ramps": ["grey", "stone"],
+      "metal": "grey",
+      "leaf": "green",
+      "credit": "Deer Female by CDmir (collaborator: TinyWorlds), OpenGameArt, CC0, https://opengameart.org/content/deer-female; modified: the camera, the lamps and the ground plane removed; the body, head and eye meshes joined; the Blender Internal materials rebuilt as Principled BSDFs on the packed colour maps, the eye given a plain dark material and the tip of the muzzle the same dark material (a nose); the colour maps re-encoded as JPEG (quality 90); the body centred over the origin and scaled to 1.1 m at the withers with the scale baked into the bones, and a tip bone under each hoof (the renderer reads a foot from its bone's tail); the colour maps washed to an even silver white; the ears made smaller and the neck thicker (the bind-pose mesh moved along its own bone weights); a pair of branched antlers modelled and skinned to the head; the ears carried spread outward in every action; Idle, Graze (Eat held at its lowest with a small chew and an ear flick) and Lie (the last pose of the second Die, the legs drawn in, held still) resampled from the file's actions; Walk (a calm four-beat pace), Run (a four-beat rotary gallop) and Alert (from the standing pose: the head carried high and a slow look to each side) keyed in Blender (game/tools/blender/deer_pass.py); the other actions dropped; posed with its own actions and rendered to pixels by tools/anim"
     }
   }
 }

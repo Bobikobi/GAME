@@ -88,7 +88,9 @@ supersampled renders, the ID pass, the projected feet) and `job.json` (what Blen
 ## A body with its own actions (native targets)
 
 A four-legged body does not take the human libraries: the Meshy wolf (`character-wolf-grim.glb`) carries its own
-`Idle`, `Walk` and `Run`. A target with `"map": "native"` (the `wolf` in `anim.json`) is played by those: its clips use
+`Idle`, `Walk` and `Run`, and the hunt's `Alert`, `Graze` and `Lie` (keyed from the bind pose by
+`game/tools/blender/quad_pass.py --states`, which adds them to a finished body and keeps every other byte). A target
+with `"map": "native"` (the `wolf` in `anim.json`) is played by those: its clips use
 `"base": { "library": "self:<target>", "action": "Walk" }` (the `self:` library is made from the target's `actions`,
 each with its length in frames at the target's `fps`), and take no layer, IK, prop, set piece, worn part or basket. The
 renderer poses the body by the action's own bones (no retargeting, no scale), and the feet are the tails of the four
@@ -158,9 +160,9 @@ on its border fails the check as clipped).
 - The forager and the rest of the cast (`game/public3d/models/character-*.glb` but the two Kenney minis): made with
   Meshy, **CC BY 4.0**. A sprite rendered from one is a derivative and carries that model's credit line from
   `game/public3d/models/README.md` (each target's `credit` in `anim.json`, written into every `<clip>.json`).
-- The animals (`game/public3d/models/animal-*.glb`): from OpenGameArt, **CC0 1.0** (the wild boar from "Boar" by
-  Teh_Bucket). CC0 asks for no attribution; each target still carries its credit line from
-  `game/public3d/models/README.md`.
+- The animals (`game/public3d/models/animal-*.glb`): from OpenGameArt, **CC0 1.0** (the roe deer and the white hart
+  from "Deer Female" by CDmir, collaborator TinyWorlds; the wild boar from "Boar" by Teh_Bucket). CC0 asks for no
+  attribution; each target still carries its credit line from `game/public3d/models/README.md`.
 - A target's body ramps: the two shared ramps, plus `skin`, whose steps leave the smallest mean CIELAB error over the
   model's colour map (for the forager this gives the hand-picked `wood`, `red`, `skin`).
 - Blender is a tool (GPL); its output is ours. The props are built in `blender/render.py`.
