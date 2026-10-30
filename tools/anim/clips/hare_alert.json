@@ -1,0 +1,32 @@
+{
+  "about": "The hare on alert (HUNTING 2, ALERT): up on its haunches, the ears pricked, the head turning: ahead, to one side, the nose up, to the other side. Four poses of the body's own Alert, played by time while the state lasts.",
+  "target": "hare",
+  "base": {
+    "library": "self:hare",
+    "action": "Alert"
+  },
+  "frames": {
+    "even": 4
+  },
+  "ms": [
+    800,
+    600,
+    500,
+    600
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

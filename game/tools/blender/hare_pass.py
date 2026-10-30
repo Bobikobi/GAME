@@ -11,7 +11,10 @@ What it does, in the manner of game/tools/blender/quad_pass.py (the wolf):
 - renames Guarding -> Idle; makes Walk from Running (one cycle played 1.6 times slower, the paw swings and the body
   bob at 0.3 of the bound's around their means, the paws' lift at 0.55 of it; the planted paws keep the ground) and
   Run from Running at its own tempo (swings and bob at 0.5, lift at 0.7); drops the rest,
-- caps every map at --tex pixels and exports one GLB with the three clips on NLA tracks.
+- keys three held poses for the hunt's states on the rig's own controls: Alert (Guarding's sit-up, the ears pricked,
+  the head turning: four poses), Graze (Guarding's crouch, the nose solved onto the floor, nibbling: four poses) and
+  Lie (Dying's last frame only, rolled onto its side with the legs drawn in: one pose, held),
+- caps every map at --tex pixels and exports one GLB with the six clips on NLA tracks.
 Prints one DIAG line per fact.
 """
 import sys
@@ -31,6 +34,12 @@ WALK_LIFT = 0.55    # the walk's paw lift off the floor, as a share of the bound
                     # too much of it swings the silhouette seen from the front)
 RUN_DAMP = 0.5      # the run's swings and bob
 RUN_LIFT = 0.7      # the run's paw lift
+ALERT_FRAME = 220   # Guarding's sit-up: the hare upright on its haunches, the base of Alert
+ALERT_TURN = 28.0   # degrees, Alert's head turn to each side
+GRAZE_CLEAR = 0.002  # metres between the nose and the floor in Graze (the renderer grounds the lowest point)
+GRAZE_LIFT = 0.035  # metres, the nibble: the head comes up this much between bites
+LIE_FOLD = 0.6      # Lie: each paw drawn this share of the way in toward its leg's root
+LIE_ROLL = 25.0     # Lie: degrees the rest is rolled about the body's long axis
 
 
 def diag(*a):
@@ -152,6 +161,26 @@ run.name = "Run"
 idle.name = "Idle"
 run.use_fake_user = True
 idle.use_fake_user = True
+
+
+def pose_of(action, t):
+    """every pose channel of an action at frame t: {bone: {prop: {index: value}}}"""
+    out = {}
+    for fc in all_fcurves(action):
+        if fc.data_path.startswith('pose.bones["'):
+            bone = fc.data_path.split('"')[1]
+            prop = fc.data_path.rsplit(".", 1)[-1]
+            out.setdefault(bone, {}).setdefault(prop, {})[fc.array_index] = fc.evaluate(t)
+    return out
+
+
+# the hunt's held poses start from the file's own: the sit-up of Guarding, its crouch, and the last frame of Dying
+# (its rest only: the fall is never played). Read here, before the other actions are dropped.
+dying = acts["Dying.000"]
+SRC_UP = pose_of(idle, ALERT_FRAME)
+SRC_LOW = pose_of(idle, 0)
+SRC_REST = pose_of(dying, dying.frame_range[1])
+diag("hunt poses read: Guarding at", ALERT_FRAME, "(sitting up) and 0 (crouched), Dying at", dying.frame_range[1], "(its rest)")
 for name, a in list(acts.items()):
     if a not in (run, idle):
         bpy.data.actions.remove(a)
@@ -294,6 +323,161 @@ for act in (walk, run):
         act["groundSpeed"] = round(float(np.mean(sp)), 3)
     diag("ground speed", act.name, [round(v, 3) for v in sp], "mean", act.get("groundSpeed"), "m/s at", HEIGHT, "m; stride per cycle", round(float(np.mean(sp)) * (act.frame_range[1] - act.frame_range[0]) / FPS, 3) if sp else None, "m")
 
+# ------------------------------------------------------------------ the hunt's held poses: Alert, Graze, Lie
+# Keyed by hand on the rig's own controls (the IK targets, the hips, the ears), from the poses read above. Each is a
+# few poses a clip draws evenly (keys on those frames, the loop closed on the first), so a sheet takes them as keyed.
+AW = arm.matrix_world.copy()
+AWI = AW.inverted()
+HEAD_GROUPS = {"Head", "Neck", "Ear_L", "Ear_R"}
+gi = {g.index: g.name for g in mesh.vertex_groups}
+head_v = np.array([any(gi.get(g.group) in HEAD_GROUPS and g.weight >= 0.5 for g in v.groups) for v in mesh.data.vertices])
+
+
+def put_pose(p):
+    for bn, props in p.items():
+        pb = arm.pose.bones[bn]
+        pb.rotation_mode = "QUATERNION"
+        q = props.get("rotation_quaternion", {})
+        lo_ = props.get("location", {})
+        s_ = props.get("scale", {})
+        pb.rotation_quaternion = [q.get(i, (1.0, 0.0, 0.0, 0.0)[i]) for i in range(4)]
+        pb.location = [lo_.get(i, 0.0) for i in range(3)]
+        pb.scale = [s_.get(i, 1.0) for i in range(3)]
+    bpy.context.view_layer.update()
+
+
+def move_world(name, d):
+    """move a control by d (world metres)"""
+    pb = arm.pose.bones[name]
+    pb.matrix = Matrix.Translation(AWI.to_3x3() @ Vector(d)) @ pb.matrix
+    bpy.context.view_layer.update()
+
+
+def turn_world(name, axis, deg):
+    """turn a control about its head, the axis in world space"""
+    pb = arm.pose.bones[name]
+    a = (AWI.to_3x3() @ Vector(axis)).normalized()
+    head = pb.head.copy()
+    pb.matrix = Matrix.Translation(head) @ Quaternion(a, np.radians(deg)).to_matrix().to_4x4() @ Matrix.Translation(-head) @ pb.matrix
+    bpy.context.view_layer.update()
+
+
+def wpos(name, end="head"):
+    return AW @ getattr(arm.pose.bones[name], end)
+
+
+def ears_up(lean_out=0.3, lean_fwd=0.12):
+    """prick both ears: each ear's IK target straight above its root, a little outward and forward"""
+    for side, sx in (("L", 1.0), ("R", -1.0)):
+        root = wpos("Ear_" + side)
+        tgt = wpos("IK_Ear_" + side)
+        ln = (tgt - root).length
+        d = Vector((sx * lean_out, -lean_fwd, 1.0)).normalized()
+        move_world("IK_Ear_" + side, root + d * ln - tgt)
+
+
+def mesh_z():
+    dg = bpy.context.evaluated_depsgraph_get()
+    ev = mesh.evaluated_get(dg)
+    me = ev.to_mesh()
+    co = np.empty(len(me.vertices) * 3)
+    me.vertices.foreach_get("co", co)
+    co = (co.reshape(-1, 3) @ np.array(ev.matrix_world)[:3, :3].T) + np.array(ev.matrix_world)[:3, 3]
+    ev.to_mesh_clear()
+    assert len(co) == len(head_v), "the evaluated mesh changed its vertex count"
+    return float(co[head_v, 2].min()), float(co[~head_v, 2].min())
+
+
+HUNT_BONES = sorted({b for p in (SRC_UP, SRC_LOW, SRC_REST) for b in p})
+
+
+def key_pose(frame):
+    for b in HUNT_BONES:
+        pb = arm.pose.bones[b]
+        for prop in ("rotation_quaternion", "location", "scale"):
+            pb.keyframe_insert(prop, frame=frame)
+
+
+def hunt_action(name, length, poses):
+    """an action of len(poses) poses keyed evenly over `length` frames, the loop closed on the first"""
+    act = new_action(name)
+    n = len(poses)
+    for i in range(n + 1):
+        poses[i % n]()
+        key_pose(round(length * i / n))
+    return act
+
+
+# Alert: up on the haunches (Guarding's sit-up), the ears pricked straight up, the head turning: ahead, to one side,
+# ahead with the nose up (a sniff), to the other side. HUNTING 2: the head-up tell a player reads.
+def alert_pose(turn=0.0, nod=0.0):
+    def f():
+        put_pose(SRC_UP)
+        ears_up()
+        if nod:
+            turn_world("IK_Head", (1, 0, 0), nod)
+        if turn:
+            turn_world("IK_Head", (0, 0, 1), turn)
+    return f
+
+
+alert = hunt_action("Alert", 96, [alert_pose(), alert_pose(ALERT_TURN), alert_pose(0.0, -12.0), alert_pose(-ALERT_TURN)])
+diag("Alert 96 frames, four poses: ahead, head turned", ALERT_TURN, "deg, nose up 12 deg, turned", -ALERT_TURN, "deg; ears pricked")
+
+
+# Graze: the crouch with the head down, the nose solved onto the floor (never below it: the renderer grounds the
+# lowest point, so a nose under the paws would lift the feet), then lifted a little between bites.
+def graze_pose(lift=0.0, turn=0.0):
+    def f():
+        put_pose(SRC_LOW)
+        turn_world("IK_Head", (1, 0, 0), 35.0)
+        move_world("IK_Head", (0, -0.02, 0))
+        # the head goes down on the neck, and the shoulders follow when the neck runs out of reach
+        for _ in range(12):
+            hz, fz = mesh_z()
+            err = hz - (fz + GRAZE_CLEAR + lift)
+            if abs(err) < 2e-4:
+                break
+            before = hz
+            move_world("IK_Head", (0, 0, -err))
+            if mesh_z()[0] > before - 0.5 * err:
+                move_world("IK_Spine.001", (0, 0, -0.5 * err))
+        if turn:
+            turn_world("IK_Head", (0, 0, 1), turn)
+    return f
+
+
+graze = hunt_action("Graze", 96, [graze_pose(), graze_pose(GRAZE_LIFT), graze_pose(0.0, 8.0), graze_pose(GRAZE_LIFT)])
+graze_pose()()
+hz, fz = mesh_z()
+diag("Graze 96 frames, four poses: nose to the floor, lifted", GRAZE_LIFT, "m, to the floor turned 8 deg, lifted; nose", round(hz - fz, 4), "m above the paws' floor")
+
+
+# Lie: Dying's last frame held, nothing moves (HUNTING 10: no throes, no twitch). The clip draws one pose; the
+# client fades it out for the take.
+def turn_about(names, axis, deg, pivot):
+    """turn controls together about one world pivot, the axis in world space"""
+    a = (AWI.to_3x3() @ Vector(axis)).normalized()
+    c = AWI @ Vector(pivot)
+    m = Matrix.Translation(c) @ Quaternion(a, np.radians(deg)).to_matrix().to_4x4() @ Matrix.Translation(-c)
+    for n in names:
+        pb = arm.pose.bones[n]
+        pb.matrix = m @ pb.matrix
+        bpy.context.view_layer.update()
+
+
+def lie_pose():
+    """Dying's rest rolled onto its side, the legs drawn in toward the body: lying still, not legs out stiff"""
+    put_pose(SRC_REST)
+    if LIE_ROLL:
+        turn_about(["Main", "Hips"], (0, 1, 0), LIE_ROLL, wpos("Hips"))
+    for paw, root in (("FrontPaw_L", "FrontUpLeg_L"), ("FrontPaw_R", "FrontUpLeg_R"), ("BackPaw_L", "BackUpLeg_L"), ("BackPaw_R", "BackUpLeg_R")):
+        move_world("IK_" + paw, (wpos(root) - wpos("IK_" + paw)) * LIE_FOLD)
+
+
+lie = hunt_action("Lie", 24, [lie_pose])
+diag("Lie 24 frames, one pose: Dying's rest, held, the paws drawn", LIE_FOLD, "of the way in toward the hips and shoulders")
+
 # ------------------------------------------------------------------ bake the object transforms into the data
 # The clip renderer imports the glb with Blender's glTF importer, which guesses every bone's length from its child's
 # distance in the skeleton's own units and then places the tail in the scaled object's space: a scaled armature
@@ -370,7 +554,7 @@ ad = arm.animation_data
 ad.action = None
 for tr in list(ad.nla_tracks):
     ad.nla_tracks.remove(tr)
-for act in (idle, walk, run):
+for act in (idle, walk, run, alert, graze, lie):
     tr = ad.nla_tracks.new()
     tr.name = act.name
     st = tr.strips.new(act.name, int(act.frame_range[0]), act)

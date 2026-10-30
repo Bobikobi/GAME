@@ -15,6 +15,10 @@ What it does, in the manner of game/tools/blender/quad_pass.py (the wolf):
     Lift  36 frames : stand, crouch, spring with the wings opening, wings at the top of the stroke;
   and keeps the flight as Fly. The tail is held up a little in every clip so the bird stands on its feet, not on
   its tail tip (the sprite renderer grounds each pose on the body's lowest point).
+  Three held poses for the hunt's states, two poses at most (a bird's idle budget):
+    Alert 48 frames : standing tall, the head up; then a tail flick with the head turned a little;
+    Peck  24 frames : tipped forward, the beak solved onto the floor; then the head part way back up;
+    Lie   24 frames : on its side, the legs tucked back, the wings closed: one pose, held.
 - caps every map at --tex pixels and exports one GLB with the clips on NLA tracks.
 Prints one DIAG line per fact.
 """
@@ -36,6 +40,12 @@ TOES = ["toe.L", "toe.R"]
 LEG_CHAIN = {"leg.L", "leg.R", "leg.001.L", "leg.001.R", "toe.L", "toe.R", "toe.001.L", "toe.001.R", "toe.002.L", "toe.002.R", "toe.003.L", "toe.003.R"}
 HEAD, BODY, ROOTB = "Bone", "Bone.001", "ROOT"
 TAIL_BONES = ["Bone.004", "Bone.005"]
+ALERT_PITCH, ALERT_HEAD, ALERT_TAIL, ALERT_FLICK = -32.0, -10.0, 56.0, 24.0   # degrees; negative pitch = nose up
+PECK_PITCH, PECK_BODY, PECK_HEAD = 50.0, 30.0, 40.0   # degrees at the full reach: body, chest and head tipped forward
+PECK_CLEAR = 0.002                    # metres between the beak and the floor
+PECK_UP = 0.6                         # the second pose: the reach at this share of the first (the head comes up)
+LIE_ROLL, LIE_LEGS, LIE_KNEE = 90.0, -85.0, 0.0   # degrees: on its side, the legs tucked back along the body
+LIE_YAW = 22.0                        # degrees: the lying body turned across every view, so its length reads
 
 
 def diag(*a):
@@ -476,6 +486,95 @@ for f in range(0, 37):
         diag("Lift frame", f, "lowest", lowest(), "toes", round(toe_z(), 4), "parts z", parts())
 diag("Lift 36 frames: crouch to 9, spring to 18, wings at the top at 27, first downstroke to 36")
 
+# ------------------------------------------------------------------ the hunt's held poses: Alert, Peck, Lie
+# Two poses at most a verb (a bird's idle budget), keyed on the frames a clip draws evenly, the loop closed on the
+# first. A body pitch is matched by swinging the legs the same amount, so the feet stay under the body.
+
+
+def pitched(pitch, head=0.0, tail=0.0):
+    """the stand with the body pitched (positive = nose down), the head turned further, the tail lifted, feet under it"""
+    put(STAND)
+    rot_world(ROOTB, rot_x(pitch))
+    if head:
+        rot_world(HEAD, rot_x(head))
+    for tb in TAIL_BONES:
+        rot_world(tb, rot_x(tail / len(TAIL_BONES)))
+    legs_to(PSI0 + math.radians(pitch))
+    for tb in TOE_BONES:            # legs_to levels the soles against the stand; take the body's pitch off them too
+        rot_world(tb, rot_x(-pitch))
+
+
+def held(name, length, poses):
+    act = new_action(name)
+    n = len(poses)
+    for i in range(n + 1):
+        poses[i % n]()
+        key_all(round(length * i / n))
+    return act
+
+
+# Alert: standing tall (the body raised toward upright, the head up), then the same with a tail flick and the head
+# turned a little. HUNTING 2: the head-up tell.
+def alert_pose(flick):
+    def f():
+        pitched(ALERT_PITCH, ALERT_HEAD, ALERT_TAIL + (ALERT_FLICK if flick else 0.0))
+        if flick:
+            rot_world(HEAD, rot_z(15))
+        ground()
+    return f
+
+
+alert = held("Alert", 48, [alert_pose(False), alert_pose(True)])
+alert_pose(False)()
+diag("Alert 48 frames, two poses: body", ALERT_PITCH, "deg, head", ALERT_HEAD, "deg, tail", ALERT_TAIL, "then a flick of", ALERT_FLICK, "deg and the head turned 15; lowest", lowest(), "toes", round(toe_z(), 4))
+
+
+# Peck: the body tipped forward and the head down, the beak solved onto the floor (never below the feet: the
+# renderer grounds the lowest point), then the head half up between pecks.
+def beak_z():
+    return (arm.matrix_world @ arm.pose.bones[HEAD].tail).z
+
+
+def peck_reach(s):
+    """the peck at a share s of the full reach: body, chest and head tipped forward together, the feet under it"""
+    pitched(PECK_PITCH * s, PECK_HEAD * s, PECK_PITCH * s * 0.5)
+    rot_world(BODY, rot_x(PECK_BODY * s))
+    ground()
+
+
+def peck_pose(share):
+    """the beak on the floor (share 1), or the head part way back up (the reach at that share of it)"""
+    def f():
+        lo_s, hi_s = 0.0, 1.0
+        for _ in range(24):          # bisect the reach until the beak meets the floor
+            s = 0.5 * (lo_s + hi_s)
+            peck_reach(s)
+            if beak_z() > toe_z() + PECK_CLEAR:
+                lo_s = s
+            else:
+                hi_s = s
+        peck_reach(lo_s * share)
+    return f
+
+
+peck = held("Peck", 24, [peck_pose(1.0), peck_pose(PECK_UP)])
+peck_pose(1.0)()
+diag("Peck 24 frames, two poses: beak", round(beak_z() - toe_z(), 4), "m above the toes; then the reach at", PECK_UP, "of it; lowest", lowest(), "toes", round(toe_z(), 4))
+
+
+# Lie: on its side, the legs folded in, the wings closed, nothing moving (HUNTING 10). One pose; the client fades it.
+def lie_pose():
+    put(STAND)
+    legs_to(math.radians(LIE_LEGS), math.radians(LIE_KNEE))
+    rot_world(HEAD, rot_x(10))
+    rot_world(ROOTB, rot_y(LIE_ROLL))
+    rot_world(ROOTB, rot_z(LIE_YAW))
+
+
+lie = held("Lie", 24, [lie_pose])
+lie_pose()
+diag("Lie 24 frames, one pose: rolled", LIE_ROLL, "deg onto its side, turned", LIE_YAW, "deg, legs forward", LIE_LEGS, "deg with the knee", LIE_KNEE, "deg; lowest", lowest(), "parts z", parts())
+
 # ------------------------------------------------------------------ keep the flight, drop the rest
 fly.name = "Fly"
 fly.use_fake_user = True
@@ -560,7 +659,7 @@ bake_object_transforms(arm, mesh)
 ad = arm.animation_data
 for tr in list(ad.nla_tracks):
     ad.nla_tracks.remove(tr)
-for act in (idle, hop, lift_a, fly):
+for act in (idle, hop, lift_a, fly, alert, peck, lie):
     tr = ad.nla_tracks.new()
     tr.name = act.name
     st = tr.strips.new(act.name, int(act.frame_range[0]), act)
