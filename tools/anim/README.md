@@ -15,6 +15,8 @@ pnpm anim render chop --target digger-f   # the same clip on another body of the
 `--target <id>` moves a clip onto another target for render or check: the motion, prop, set pieces and frame stay,
 the body, its scale and its ramps are the target's, and the output goes to `tools/.cache/anim/cast/<id>/<clip>/`.
 A model whose skeleton lacks a bone its map drives is refused in one line before a frame is drawn.
+A native clip moved this way plays the same action of the other body's own (`self:<id>`), so a second body of one
+animal (the hare's pied body, `hare-pied`) renders every clip of the first.
 
 Blender 5.2 (any recent 4.x or 5.x with the glTF importer should do) is found by `BLENDER`, else
 `tools/.cache/anim/local.json` (`{"blender": "/path/to/blender"}`), else `blender` on the `PATH`. No add-on.
@@ -98,6 +100,20 @@ The Meshy `Walk` measured (24 source frames, the feet as projected): the left fe
 left swing at about 0.1 to 0.13 of the cycle) and the right feet together (about 0.54 to 0.62): a pacing walk, two beats,
 not four. Switched on, the four-beat measure fails it (each foot "plants 2 times a cycle", the right fore 3). Four poses of it read as a
 walk, which is what the owner approved; a true four-beat wolf walk needs its own motion.
+
+## Coats
+
+A target may list `coats`: the looks one creature of its kind may wear, each picked by weight. A coat is
+`{ "id", "name", "weight", "map": { "<ramp>": { "to": "<ramp>", "shift": n } }, "body": "<target>" }`. The map is
+pure step to step: a pixel at step i of a mapped ramp becomes step clamp(i + shift, 0, 5) of ramp `to` (shift
+optional, whole, -5 to 5), only opaque pixels, never the ink, so every colour written is a palette colour and the
+frames of a sheet do not swim. A ramp left out keeps its colours; an empty map is the sheet as drawn. A pattern a
+map cannot make (white patches) comes from `body`: another target whose model carries the pattern on its colour map
+(the hare's `hare-pied`, painted by `game/tools/blender/hare_pass.py --pied`), whose sheets the coat recolours.
+`clipProblems` refuses unknown ramps, a ramp the body does not draw in, a weight that is not positive, a repeated id
+and a body that is not another target. The client picks and draws a coat with `game/src/coat.ts` (a fixed hash of
+the creature's id and a world number, never a roll); a coat is look only. DECISIONS 2026-10-30 holds the coats and
+their weights.
 
 ## The four measures, and what fails
 

@@ -3487,3 +3487,35 @@ Four poses per animal for the states of HUNTING 2 and 10, keyed in the two pass 
 **Why:** HUNTING 10's rules hold by construction: no blood is drawn, the lying pose has no throes, cry or twitch because it is one frame, and the take is a fade, so nothing is shown dying. A nose or a beak that went below the feet would make the renderer ground the pose on it and lift the feet, so both are solved onto the floor in the pass. Keying the held poses in the pass scripts keeps the glb reproducible from its CC0 source: the existing actions come out byte for byte as before (Idle, Walk and Run of the hare, Idle, Hop, Lift and Fly of the crow, compared sampler by sampler), and a second run of each script writes the same file.
 **Evidence:** `pnpm anim check`: all six pass (palette 100 % and outline on every frame everywhere; silhouette, down / up / left, reported but not limited off locomotion: hare_alert 5.5 / 1.9 / 2.9 %, hare_graze 1.3 / 3.7 / 2.1 %, crow_alert 5.3 / 4.5 / 0.0 %, crow_peck 2.3 / 10.6 / 9.3 % (the head's dip is the move), the two lying stills 0 %; no foot slide is measured, none is locomotion). The six loops above measure as before, hare_run keeping its two silhouette flags.
 **Retry when:** a lying pose reads as hurt or as asleep on a phone (then the hare's roll and fold, or the crow's tuck, move in the pass constants), or the owner's look pick for either animal is a drawn body (then the clips keep their frames and take the new body). Model: Claude Opus 5.5 (an outside developer's pull request; the pick is the owner's).
+
+## 2026-10-30 ✅ A coat per animal: one of its kind's coats by weight, the same creature in the same coat on every client, look only, and the hare's pied body
+
+**Every hare and every crow draws in one of its kind's coats, picked by weight from a fixed hash of the creature's id and a world number, and a coat changes nothing but the look.**
+The owner asked for a random palette per animal that fits the kind ("rabbits from white to black, brown, grey and spots"). A sheet is snapped to the shared ramps (`tools/src/kit/palette.ts`), so a coat is a pure step to step recolour of the rendered sheets: a pixel at step i of a mapped ramp becomes step clamp(i + shift, 0, 5) of another ramp, only opaque pixels, never the ink, the precedent being richground's `remapTone`. Every colour written is a palette colour, and the frames of a sheet cannot swim, since the map is the same on every frame. A pattern a recolour cannot make, the white patches of a pied hare, comes from a second body: `game/public3d/models/animal-hare-pied.glb`, the hare's model and actions with the patches painted on its colour map in texture space by `game/tools/blender/hare_pass.py --pied` (seeded 3D noise over the body on the back, the flanks and the face, the belly white: 38 % of the surface, 22 % of it belly), rendered as the target `hare-pied`. The coats are listed on each target in `tools/anim/anim.json` and checked by `clipProblems`; `game/src/coat.ts` picks (`coatOf`) and draws (`remapCoat`) them; `pnpm anim render <clip> --target hare-pied` now plays a native clip on a second body of the same animal. Pick pages: `docs/design/frames/2026-10-30-hare-coats.png` and `-crow-coats.png`, drawn by the client's own module on the rendered sheets.
+
+The hare's sheet draws its body in skin, with wood for a few accents, so the maps move skin first. The crow draws in stone; its grey is the outline's ink, which no coat touches.
+
+| Kind | Coat | Weight | Map |
+|---|---|---|---|
+| hare | agouti brown | 40 | as drawn |
+| hare | grey brown | 14 | skin to stone +1, wood to bark +1 |
+| hare | dark brown | 14 | skin to bark, wood to bark -1 |
+| hare | ash grey | 9 | skin and wood to grey +2 |
+| hare | black | 6 | skin and wood to stone -1 (the belly darkened with the rest) |
+| hare | white | 3 | skin and wood to grey +4 |
+| hare | brown pied | 9 | the pied body, as drawn |
+| hare | black pied | 5 | the pied body, skin and wood to stone -1, the patches kept white |
+| crow | black | 70 | as drawn |
+| crow | sooty brown-black | 15 | stone and grey to bark |
+| crow | grey-washed | 12 | stone +2, grey +1 |
+| crow | pale leucistic | 3 | stone to grey +4, grey +3 |
+
+**Determinism:** the coat comes from FNV-1a of the creature's id, mixed with the world number through murmur3's finaliser in `Math.imul` (richground's tile hash multiplies in doubles and would drop an id's low bits), never `Math.random`, so every client draws one creature in one coat. The world number must be one every client sees: the state's rng seed is kept from the client (`publicState`), so it is not that seed.
+**Look only:** a coat changes no goods, no value, no count the server keeps; the server never reads it.
+**Not wired yet:** the client does not draw the hare or the crow today, so no scene calls `coat.ts`; when one does, it passes the shared ramps and the world number.
+**What it fixes:** eight hare coats from white to black with brown, grey and two pied, and four crow coats, each read apart from the others at 2x on the pick pages (two greys that looked alike were set apart by lightness: grey brown is a mid slate, ash grey a light silver). The black hare takes stone, not grey: grey's darkest step is the ink, and a body drawn in it would melt into its outline.
+**Why:** a recolour of rendered sheets costs no render per coat and cannot leave the palette, and a second body keeps a pattern fixed to the animal; a fixed hash keeps a shared world the same for everyone without sending a coat over the wire.
+**Evidence:** `pnpm anim check --target hare-pied`: the pied body passes as the hare does (palette 100 % and outline on every frame in every view), hare_run keeping the hare's two silhouette flags (11.6 % down, 13.6 % up). `game/test/coat.test.ts` (9: the pick is stable for an id and a world, each coat's share is its weight's within 1.5 points over 40,000 ids, every pixel written is a palette colour, the ink and clear pixels are untouched, the step map clamps) and `tools/test/anim.test.ts` (39: every target's coats validate, bad coats are refused, a hare clip moved onto the pied body plays its own action).
+**What the owner picks:** the coats on the two pages to keep, merge or drop, and their weights.
+**Open, with a recommended default:** should a rare coat ever mean anything (a white hare worth more, a quest for a pale crow)? Default: no, look only, since HUNTING 10 keeps no score of kills, and a coat that pays would make one.
+**Retry when:** the client draws an animal (then a scene calls `coatOf` with the world number and the creature's id), the owner's look pick for the hare or the crow is a drawn body (then the coats move onto its ramps), or a coat is found to look like another on a phone at tile size (then it is merged or dropped). Model: claude-opus-5-5.

@@ -19,7 +19,7 @@ import { pathToFileURL } from 'node:url';
 import { PNG } from 'pngjs';
 import { INK_HEX } from '../kit/ink.js';
 import { CONTENT_DIR } from '../load.js';
-import { ANIM_DIR, CACHE_DIR, type Clip, clipNames, clipPaces, clipProblems, job, type Library, modelPath, paces, poseMs, readClip, readLibraries, readSettings, type Settings, stepFrames, type View, withNative } from './clip.js';
+import { ANIM_DIR, CACHE_DIR, type Clip, clipNames, clipPaces, clipProblems, job, type Library, modelPath, paces, poseMs, readClip, readLibraries, readSettings, selfLibrary, type Settings, stepFrames, type View, withNative } from './clip.js';
 import { archiveProblems, itchDownload, libraryGlb, unpack } from './fetch.js';
 import { type ClipMeasures, measureClip, type RenderMeta, type ViewMeasures } from './measure.js';
 import { classPalettes, flipX, type Picture, sheetRamps, snap } from './snap.js';
@@ -97,9 +97,15 @@ export function outDir(name: string, cast?: string): string {
   return cast === undefined ? join(CACHE_DIR, 'out', name) : join(CACHE_DIR, 'cast', cast, name);
 }
 
-/** The clip as written, or moved to another target: the motion, props and frame stay; the body, scale and ramps are the target's. */
+/**
+ * The clip as written, or moved to another target: the motion, props and frame stay; the body, scale and ramps are the
+ * target's. A native clip takes the same action of the other body's own (`self:<target>`), so a second body of one
+ * animal (the hare's pied body) plays every clip of the first.
+ */
 export function onTarget(clip: Clip, cast: string | undefined): Clip {
-  return cast === undefined ? clip : { ...clip, target: cast };
+  if (cast === undefined) return clip;
+  const base = clip.base.library === selfLibrary(clip.target) ? { ...clip.base, library: selfLibrary(cast) } : clip.base;
+  return { ...clip, target: cast, base };
 }
 
 function measure(name: string, clip: Clip, ctx: Context, cast?: string): ClipMeasures {

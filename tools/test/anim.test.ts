@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { crc32, deflateRawSync } from 'node:zlib';
 import { PNG } from 'pngjs';
 import { describe, expect, it } from 'vitest';
-import { type Clip, clipNames, clipPaces, clipProblems, job, type Library, paces, poseMs, readClip, readLibraries, readSettings, samples, stepFrames, withNative } from '../src/anim/clip';
+import { type Clip, clipNames, clipPaces, clipProblems, coatProblems, job, type Library, paces, poseMs, readClip, readLibraries, readSettings, samples, type Settings, stepFrames, withNative } from '../src/anim/clip';
 import { onTarget, outDir } from '../src/anim/cli';
 import { archiveProblems, itchUploads, sha256, unpack } from '../src/anim/fetch';
 import { fourBeatProblems, footfalls, measureClip, outlineOf, paletteShare, plantedRuns, type RenderMeta, sharedSlope, silhouette, slideAtPace, stride } from '../src/anim/measure';
@@ -64,6 +64,53 @@ describe('clip configs', () => {
     expect(clipProblems('chop', onTarget(chop, 'nobody'), libs, settings).join(' ')).toContain('nobody');
     expect(outDir('chop', 'digger-f').split(/[\\/]/).slice(-3)).toEqual(['cast', 'digger-f', 'chop']);
     expect(outDir('chop').split(/[\\/]/).slice(-2)).toEqual(['out', 'chop']);
+  });
+
+  it('a native clip moved onto a second body of the same animal plays that body\'s own action', () => {
+    for (const name of clipNames().filter((n) => readClip(n).target === 'hare')) {
+      const moved = onTarget(readClip(name), 'hare-pied');
+      expect(moved.base.library, name).toBe('self:hare-pied');
+      expect(moved.base.action, name).toBe(readClip(name).base.action);
+      expect(clipProblems(name, moved, libs, settings), name).toEqual([]);
+    }
+  });
+
+  it('every target\'s coats can be drawn: unique ids, positive weights, shared ramps the body draws in, a body that exists', () => {
+    const withCoats = Object.keys(settings.targets).filter((id) => settings.targets[id]?.coats !== undefined);
+    expect(withCoats.sort()).toEqual(['crow', 'hare']);
+    for (const id of Object.keys(settings.targets)) expect(coatProblems(id, settings), id).toEqual([]);
+    const hare = settings.targets.hare!;
+    const first = hare.coats?.[0];
+    expect(first?.map).toEqual({});
+    expect(Math.max(...(hare.coats ?? []).map((c) => c.weight))).toBe(first?.weight);
+    expect((hare.coats ?? []).filter((c) => c.body === 'hare-pied').length).toBeGreaterThan(0);
+  });
+
+  it('refuses a coat with an unknown ramp, a ramp the body does not draw, a weight of zero, a repeated id, a shift past 5 and a missing body', () => {
+    const hare = settings.targets.hare!;
+    const bad: Settings = {
+      ...settings,
+      targets: {
+        ...settings.targets,
+        hare: {
+          ...hare,
+          coats: [
+            { id: 'a', name: 'a', weight: 0, map: { velvet: { to: 'grey' } } },
+            { id: 'a', name: 'b', weight: 1, map: { stone: { to: 'grey' }, skin: { to: 'nowhere', shift: 9 } } },
+            { id: 'c', name: 'c', weight: 1, map: {}, body: 'nobody' },
+          ],
+        },
+      },
+    };
+    const problems = coatProblems('hare', bad).join('\n');
+    expect(problems).toMatch(/each coat id once/);
+    expect(problems).toMatch(/weight is a positive number/);
+    expect(problems).toMatch(/ramp "velvet" is not a shared ramp/);
+    expect(problems).toMatch(/ramp "stone" is not one the body draws in/);
+    expect(problems).toMatch(/"nowhere", not a shared ramp/);
+    expect(problems).toMatch(/shift is a whole number from -5 to 5/);
+    expect(problems).toMatch(/body "nobody"/);
+    expect(clipProblems('hare_idle', readClip('hare_idle'), libs, bad).join(' ')).toMatch(/hare coats/);
   });
 
   it('refuses an action the library lacks, a frame past its end, a short IK curve and a locomotion clip with picked frames', () => {

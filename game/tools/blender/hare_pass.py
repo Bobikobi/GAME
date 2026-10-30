@@ -1,6 +1,6 @@
 """Make a game-ready hare from the CC0 "Rabbit" by CDmir / TinyWorlds (OpenGameArt, rabbit.blend, Blender 2.76).
 
-Run:  blender -b --factory-startup -P hare_pass.py -- <rabbit.blend> <out.glb> [--height 0.35] [--tex 1024]
+Run:  blender -b --factory-startup -P hare_pass.py -- <rabbit.blend> <out.glb> [--height 0.35] [--tex 1024] [--pied <pied.glb>]
 
 What it does, in the manner of game/tools/blender/quad_pass.py (the wolf):
 - keeps the Rabbit mesh and the armature; drops the fur shells (a second mesh of alpha cards that reads as noise at
@@ -15,7 +15,10 @@ What it does, in the manner of game/tools/blender/quad_pass.py (the wolf):
   the head turning: four poses), Graze (Guarding's crouch, the forequarters and the head turned to one side with
   the ears back apart, the nose solved onto the floor, nibbling: four poses) and
   Lie (Dying's last frame only, rolled onto its side with the legs drawn in: one pose, held),
-- caps every map at --tex pixels and exports one GLB with the six clips on NLA tracks.
+- caps every map at --tex pixels and exports one GLB with the six clips on NLA tracks,
+- with --pied, exports a second GLB of the same body and clips whose colour map carries white patches (a pied coat:
+  patches on the back, the flanks and the face from seeded 3D noise over the body, the belly white), painted in
+  texture space so the pattern is fixed to the body and cannot swim between frames.
 Prints one DIAG line per fact.
 """
 import sys
@@ -28,6 +31,7 @@ argv = sys.argv[sys.argv.index("--") + 1:]
 SRC, OUT = argv[0], argv[1]
 HEIGHT = float(argv[argv.index("--height") + 1]) if "--height" in argv else 0.35
 TEX = int(argv[argv.index("--tex") + 1]) if "--tex" in argv else 1024
+PIED = argv[argv.index("--pied") + 1] if "--pied" in argv else None
 FPS = 24
 WALK_SLOWDOWN = 1.6
 WALK_SWING = 0.3    # the walk's swings and bob, as a share of the bound's
@@ -51,6 +55,11 @@ GRAZE_EAR_NEAR = -28.0  # degrees, Graze: the ear on the side of the turn this m
                         # already), the far ear higher so its tip shows over the shoulder
 LIE_FOLD = 0.6      # Lie: each paw drawn this share of the way in toward its leg's root
 LIE_ROLL = 25.0     # Lie: degrees the rest is rolled about the body's long axis
+PIED_SEED = 11      # the pied body: the noise's seed (a fixed pattern, the same file every run)
+PIED_CELL = 0.06    # metres, the noise lattice: patches a few pixels across at the tile's scale
+PIED_SHARE = 0.38   # the share of the surface painted white, belly included
+PIED_BELLY = -0.45  # a face whose normal points further down than this (z of the unit normal) is belly: white
+PIED_WHITE = (0.94, 0.93, 0.9)  # the patches' colour in the map (lit and snapped, it lands on the grey ramp's light steps)
 
 
 def diag(*a):
@@ -607,3 +616,97 @@ arm.select_set(True)
 bpy.context.view_layer.objects.active = arm
 bpy.ops.export_scene.gltf(**kw)
 diag("wrote", OUT, "options skipped", sorted(set(want) - set(kw)))
+
+
+# ------------------------------------------------------------------ the pied body: the same body and clips, white patches on the colour map
+def noise3(p, seed):
+    """smooth value noise over 3D points (n x 3, in lattice units), 0 to 1: the lattice values from an integer hash"""
+    i = np.floor(p).astype(np.int64)
+    f = p - i
+    f = f * f * (3 - 2 * f)
+
+    def at(ix, iy, iz):
+        h = (ix * 73856093 ^ iy * 19349663 ^ iz * 83492791 ^ seed * 2654435761) & 0xFFFFFFFF
+        h = ((h ^ (h >> 13)) * 1274126177) & 0xFFFFFFFF
+        return ((h ^ (h >> 16)) & 0xFFFFFF) / float(0xFFFFFF)
+
+    out = 0.0
+    for dx in (0, 1):
+        for dy in (0, 1):
+            for dz in (0, 1):
+                w = (f[:, 0] if dx else 1 - f[:, 0]) * (f[:, 1] if dy else 1 - f[:, 1]) * (f[:, 2] if dz else 1 - f[:, 2])
+                out = out + w * at(i[:, 0] + dx, i[:, 1] + dy, i[:, 2] + dz)
+    return out
+
+
+def pied_field(p):
+    """two octaves of the noise at the body's points (metres)"""
+    q = p / PIED_CELL
+    return 0.7 * noise3(q, PIED_SEED) + 0.3 * noise3(q * 2.1 + 17.0, PIED_SEED + 1)
+
+
+def paint_pied(src_img):
+    """a copy of the colour map with the white patches: each triangle rasterised in UV space, its texels' body points
+    interpolated, white where the noise is over the threshold or the face is belly. The threshold is set so the
+    white covers PIED_SHARE of the surface by area."""
+    me = mesh.data
+    me.calc_loop_triangles()
+    uvl = me.uv_layers[0].data
+    co = np.array([v.co[:] for v in me.vertices])
+    tris = list(me.loop_triangles)
+    P = np.array([[co[me.loops[li].vertex_index] for li in t.loops] for t in tris])
+    UV = np.array([[uvl[li].uv[:] for li in t.loops] for t in tris])
+    N = np.array([t.normal[:] for t in tris])
+    area = np.array([t.area for t in tris])
+    belly = N[:, 2] < PIED_BELLY
+    # the threshold: area-weighted, at the face centres, so that noise over it or belly makes PIED_SHARE
+    v = pied_field(P.mean(axis=1))
+    order = np.argsort(-v)
+    acc = np.cumsum(np.where(belly[order], 0.0, area[order]))
+    need = PIED_SHARE * area.sum() - area[belly].sum()
+    k = int(np.searchsorted(acc, max(0.0, need)))
+    thr = float(v[order[min(k, len(order) - 1)]])
+    white_faces = (v >= thr) | belly
+    w, h = src_img.size
+    px = np.array(src_img.pixels[:], dtype=np.float32).reshape(h, w, 4)
+    mask = np.zeros((h, w), dtype=bool)
+    for t in range(len(tris)):
+        uv = UV[t] * np.array([w, h])
+        x0, y0 = np.floor(uv.min(axis=0)).astype(int) - 1
+        x1, y1 = np.ceil(uv.max(axis=0)).astype(int) + 1
+        x0, y0, x1, y1 = max(x0, 0), max(y0, 0), min(x1, w - 1), min(y1, h - 1)
+        if x1 < x0 or y1 < y0:
+            continue
+        gx, gy = np.meshgrid(np.arange(x0, x1 + 1) + 0.5, np.arange(y0, y1 + 1) + 0.5)
+        a, b, c = uv
+        d = (b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1])
+        if abs(d) < 1e-12:
+            continue
+        l1 = ((b[1] - c[1]) * (gx - c[0]) + (c[0] - b[0]) * (gy - c[1])) / d
+        l2 = ((c[1] - a[1]) * (gx - c[0]) + (a[0] - c[0]) * (gy - c[1])) / d
+        l3 = 1 - l1 - l2
+        inside = (l1 >= -0.02) & (l2 >= -0.02) & (l3 >= -0.02)
+        if not inside.any():
+            continue
+        if belly[t]:
+            on = inside
+        else:
+            pts = l1[inside][:, None] * P[t, 0] + l2[inside][:, None] * P[t, 1] + l3[inside][:, None] * P[t, 2]
+            on = np.zeros_like(inside)
+            on[inside] = pied_field(pts) >= thr
+        mask[y0:y1 + 1, x0:x1 + 1] |= on
+    px[mask, 0], px[mask, 1], px[mask, 2] = PIED_WHITE
+    out = bpy.data.images.new(src_img.name + "-pied", w, h, alpha=True)
+    out.pixels.foreach_set(px.reshape(-1))
+    out.pack()
+    share = float(area[white_faces].sum() / area.sum())
+    diag("pied map: threshold", round(thr, 4), "white faces", int(white_faces.sum()), "of", len(tris), "(", round(100 * share, 1), "% of the surface,",
+         round(100 * float(area[belly].sum() / area.sum()), 1), "% belly ); texels painted", int(mask.sum()))
+    return out
+
+
+if PIED:
+    tex_node = next(n for n in mat.node_tree.nodes if n.type == "TEX_IMAGE")
+    tex_node.image = paint_pied(tex_node.image)
+    bpy.ops.export_scene.gltf(**{**kw, "filepath": PIED})
+    diag("wrote", PIED)
