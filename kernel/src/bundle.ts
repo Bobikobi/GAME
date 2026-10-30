@@ -131,6 +131,11 @@ export interface Params {
    * (whole milliseconds, checked), and each gait is heard at its own radius in tiles (`noise_*`, still to run).
    */
   gait: { run_div: number; sneak_mul: number; noise_still: number; noise_sneak: number; noise_walk: number; noise_run: number };
+  /**
+   * Dressing a taken animal (docs/design/HUNTING.md sections 5-6): what one step takes, how many game days a carcass
+   * keeps its meat and then anything, and how often an animal appears fine or true (basis points).
+   */
+  hunt: { dress_step_ms: number; meat_spoil_d: number; hide_spoil_d: number; grade2_bp: number; grade3_bp: number };
   starting_gold_mg: number;
   /** what one attribute point adds; see the params schema */
   per_point: { might: number; senses: number; agility_pct: number; luck_permille: number; stamina: number; spirit: number };
@@ -154,6 +159,8 @@ export interface SpriteInfo {
   frames: number;
   /** Art pixels per tile side: 1 is 16 per tile, 4 is 64 per tile. A frame of `w` x `h` shows at 1 / density. */
   density: 1 | 4;
+  /** A cycle that follows the distance walked: art pixels per pose and the feet's point in the frame. Its last frame is the standing pose. */
+  stride?: { travel_mpx: number; anchor: [number, number]; bob?: boolean };
 }
 
 /** One placed node or dig spot: `<resource id>#<n>`. */

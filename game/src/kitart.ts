@@ -20,6 +20,15 @@ export function unitOf(ref: string): { w: number; h: number } | undefined {
   return info && { w: info.w / info.density, h: info.h / info.density };
 }
 
+/**
+ * Where the feet stand in a sprite's frame, as a share of its height, for the sprite's origin: the bottom row (1) for a
+ * sprite drawn to its feet, the ground point a stride sheet names (tools/anim/anim.json `frame.anchor`) for one with room below.
+ */
+export function footOrigin(ref: string): number {
+  const info = app.bundle?.sprites[ref];
+  return info?.stride ? info.stride.anchor[1] / info.h : 1;
+}
+
 /** The scale an image of this texture shows at with no effect on it. */
 export function baseScale(ref: string): number {
   return 1 / densityOf(ref);
