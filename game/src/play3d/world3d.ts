@@ -29,6 +29,7 @@ import {
 import { pileAt } from '../scenes/piles';
 import { app, type WorldView } from '../app';
 import { sound, type SfxId } from '../audio';
+import { BLOW_GAIN } from '../audio/heard';
 import { DIG_SPOT_SPRITE } from '../config';
 import { DIRS, type Dir } from '../input';
 import { ECHOES, pickOf } from '../lore';
@@ -1186,13 +1187,14 @@ export class World3D implements WorldView {
     if (!inst) return;
     const at = this.screenOf(inst.x, inst.y);
     const pan = Math.max(-0.8, Math.min(0.8, (at.x / Math.max(1, window.innerWidth) - 0.5) * 1.2));
+    // one sound per blow, as the pixel game (SOUND.md section 1.3): past the middle the crack is the blow
     if (w.kind === 'fell') {
-      sound.sfx('thud', { pan });
       if (progress > 0.5) sound.sfx('crack', { pan, gain: 0.25 + 0.5 * progress });
+      else sound.sfx('thud', { pan, gain: BLOW_GAIN.thud });
     } else if (w.kind === 'mine') {
-      sound.sfx('strike', { pan });
       if (progress > 0.5) sound.sfx('crack', { pan, gain: 0.2 + 0.4 * progress });
-    } else sound.sfx('dig', { pan });
+      else sound.sfx('strike', { pan, gain: BLOW_GAIN.strike });
+    } else sound.sfx('dig', { pan, gain: BLOW_GAIN.dig });
     const art = this.nodes.get(w.node)?.art;
     if (!art) return;
     const x0 = inst.x + 0.5;

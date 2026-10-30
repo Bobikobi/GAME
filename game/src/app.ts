@@ -1,6 +1,6 @@
 /** The pieces every module reaches for, wired together once in main.ts. */
 import type { Bundle, Grade } from '@game/kernel';
-import type { SoundApi } from './audio';
+import type { Heard, SoundApi } from './audio';
 import type { Controls } from './input';
 import { RemoteSession, WireRefusal, fetchWire } from './remote';
 import type { SignInfo } from './scenes/world';
@@ -26,6 +26,8 @@ export interface WorldView {
   /** the camera lets go of the hold and follows the player again */
   stoneRelease?(): void;
   sees?(r: { x: number; y: number; w: number; h: number }): boolean;
+  /** where a predator stands as the player hears it (SOUND.md section 1.4); a view without it plays its growl whole */
+  hazardHeard?(id: string): Heard | undefined;
 }
 
 export interface App {

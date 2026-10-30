@@ -99,6 +99,40 @@ The result on the same run, counted by replaying the log under these rules:
 
 What stays as it is: `click` (one per press; the e2e asserts it), `growl`, the fall's bell, `whisper`, `step`, `ui`, the beds and the night bell.
 
+### 1.4 As built, and the sound by distance
+
+Built in `feat/sound-effects-cut` (30.10) as section 1.3 wrote it, with one addition the batch rule needed: a danger cue (seen, a fall, hurt) ranks before the earned cues, so a growl is never the cue a batch drops. The rules live in `game/src/audio/heard.ts`, tested in `game/test/audio/heard.test.ts`; the 3D door's blows follow the same rule (`play3d/world3d.ts`).
+
+**The distance curve** (CR-113). Each effect call may say where its cause is: `heard: { owner, tiles, offscreen }`. The level is:
+
+| Tiles from the player's character to the cause (the larger axis) | Level |
+|---|---|
+| 0 to 4 | whole (1) |
+| over 4 and under 24 | 4 / tiles: half for each doubling, 6 dB down (0.5 at 8 tiles, 0.25 at 16) |
+| 24 or more | silent |
+| off-screen, at any distance under 24 | the level above times 0.7, through a 1,200 Hz low-pass: it sounds distant |
+
+It is the inverse distance of a point source with a near zone, so a sound beside the player does not jump as they step, and a cause at the edge of a phone's view (about 7 tiles across) is already near half.
+
+**Whose cause it is.** `owner` is `self` (the default), `world` (a wolf, a ruin, birds) or `other` (another player). Another player's own cues are silent by rule whatever the distance: `coin`, `pickup`, `journal`, `ui`, `back`, `perfect`, `good`, `miss`, `click` and `safe`, the sounds of a purse, a bag, a page or a press. Their work in the world (`thud`, `strike`, `dig`, `crack`) follows the curve: a chop nearby is heard, a fight off-screen near by sounds distant, one 24 tiles away is not heard. No call passes `other` yet; it waits for the server to send other players' beats.
+
+**Today's cases.** The wolf's growl when it sees the player is placed at the wolf (`hazardHeard`): in the replayed opening it was 4.5 tiles away and off-screen, so it played at 0.62 of its level through the low-pass. The ruin's whisper is placed at the ruin tile it comes from. The world's cues (birds, a fish) keep their own curve (`cueGain` in `cues.ts`: a hint is never quieter than a third), and the far bell keeps its fixed far level. No NPC makes a blow sound today; when one does, its call passes `owner: 'world'` and its tile, and the curve does the rest.
+
+**Measured.** The same phone opening played headless on the new build, every call logged with whether the rules silenced it (524 s, the effects from the title to the wake):
+
+| | Before (develop) | After (built) | Section 1.3 projected |
+|---|---|---|---|
+| Effects that sounded | 535 in 8.48 min | 406 in 8.54 min | 410 |
+| Effects a minute | 63.1 | 47.6 (-25 %) | 48.4 |
+| Without click and voice, a minute | 36.8 | 27.9 | 28.3 |
+| Jingles (found) | 31 (18) | 13 (2, both the kernel's riddle event) | 12 (1) |
+| `voice` | 107 | 52 | 54 |
+| `wings` | 47 | 14 (33 inside the 1.5 s gap) | 15 |
+| `pickup` / `journal` | 24 / 0 | 6 / 11 | 6 / 12 |
+| `coin` | 6 | 3 | 3 |
+| `thud` / `strike` / `crack` | 17 / 7 / 8 | 11 / 7 / 8 | 11 / 7 / 8 |
+| Gaps under 1 s between two effects | 452 | 317 | 324 |
+
 ## 2. The listens
 
 Three one-minute samples of the valley song by day as the town theme, each testing one named difference against A. All three have the same day ambience under them (the wind of `audio/ambience.ts` and four bird calls at fixed times inside its 8 to 20 s spacing), go through the game's own buses and compressor (music 0.45, ambience 0.5, master 0.8), and were rendered offline at 44.1 kHz in headless Chromium, peak-normalised to -1 dBFS and encoded as Ogg Vorbis at 96 kbps (about 570 KB each). The scores and the render script are not in the repository; the scores of B are written out in 2.2.
