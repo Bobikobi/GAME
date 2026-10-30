@@ -413,9 +413,18 @@
       },
       "props/bush_berry": {
         "file": "props/bush_berry.png",
-        "w": 16,
-        "h": 16,
-        "frames": 2
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss",
+          "red"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:56"
+        }
       },
       "props/bush_empty": {
         "file": "props/bush_empty.png",
@@ -425,9 +434,18 @@
       },
       "props/campfire_lit": {
         "file": "props/campfire_lit.png",
-        "w": 16,
-        "h": 16,
-        "frames": 3
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "fire",
+          "wood"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:53"
+        }
       },
       "props/campfire_unlit": {
         "file": "props/campfire_unlit.png",
@@ -527,19 +545,46 @@
       },
       "props/fence": {
         "file": "props/fence.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:44"
+        }
       },
       "props/fence_post": {
         "file": "props/fence_post.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:45"
+        }
       },
       "props/flowers": {
         "file": "props/flowers.png",
-        "w": 16,
-        "h": 16,
-        "frames": 2
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "fire",
+          "plum"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:38"
+        }
       },
       "props/flowers_blue": {
         "file": "props/flowers_blue.png",
@@ -549,9 +594,18 @@
       },
       "props/flowers_white": {
         "file": "props/flowers_white.png",
-        "w": 16,
-        "h": 16,
-        "frames": 2
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "grey",
+          "fire"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:39"
+        }
       },
       "props/fog": {
         "file": "props/fog.png",
@@ -560,15 +614,32 @@
       },
       "props/glow_mushrooms": {
         "file": "props/glow_mushrooms.png",
-        "w": 16,
-        "h": 16,
-        "frames": 2
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "water",
+          "teal",
+          "skin"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:46"
+        }
       },
       "props/grass_tall": {
         "file": "props/grass_tall.png",
-        "w": 16,
-        "h": 16,
-        "frames": 2
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:47"
+        }
       },
       "props/hazard_pit": {
         "file": "props/hazard_pit.png",
@@ -606,9 +677,18 @@
       },
       "props/herb_plant": {
         "file": "props/herb_plant.png",
-        "w": 16,
-        "h": 16,
-        "frames": 2
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:50"
+        }
       },
       "props/house_small": {
         "file": "props/house_small.png",
@@ -698,9 +778,18 @@
       },
       "props/reeds": {
         "file": "props/reeds.png",
-        "w": 16,
-        "h": 16,
-        "frames": 2
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss",
+          "bark"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:40"
+        }
       },
       "props/rock_mossy": {
         "file": "props/rock_mossy.png",
@@ -795,8 +884,18 @@
       },
       "props/standing_stone": {
         "file": "props/standing_stone.png",
-        "w": 16,
-        "h": 32
+        "w": 64,
+        "h": 160,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "grey",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:41"
+        }
       },
       "props/statue_head": {
         "file": "props/statue_head.png",
@@ -830,8 +929,19 @@
       },
       "props/well_old": {
         "file": "props/well_old.png",
-        "w": 32,
-        "h": 32
+        "w": 128,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "wood",
+          "bark",
+          "water"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:42"
+        }
       },
       "tiles/bank_e": {
         "file": "tiles/bank_e.png",
@@ -1856,6 +1966,140 @@
           "wood",
           "bark"
         ]
+      },
+      "props/well_old_b": {
+        "file": "props/well_old_b.png",
+        "w": 128,
+        "h": 128,
+        "density": 4,
+        "ramps": [
+          "stone",
+          "wood",
+          "bark",
+          "water"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:43"
+        }
+      },
+      "props/grass_tall_b": {
+        "file": "props/grass_tall_b.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:48"
+        }
+      },
+      "props/grass_tall_c": {
+        "file": "props/grass_tall_c.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:49"
+        }
+      },
+      "props/herb_plant_b": {
+        "file": "props/herb_plant_b.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:51"
+        }
+      },
+      "props/herb_plant_c": {
+        "file": "props/herb_plant_c.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:52"
+        }
+      },
+      "props/campfire_lit_b": {
+        "file": "props/campfire_lit_b.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "fire",
+          "wood"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:54"
+        }
+      },
+      "props/campfire_lit_c": {
+        "file": "props/campfire_lit_c.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "fire",
+          "wood"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:55"
+        }
+      },
+      "props/bush_berry_b": {
+        "file": "props/bush_berry_b.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss",
+          "red"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:57"
+        }
+      },
+      "props/bush_berry_c": {
+        "file": "props/bush_berry_c.png",
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss",
+          "red"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/props.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:58"
+        }
       }
     }
   }
