@@ -14,8 +14,9 @@ What it does, in the manner of game/tools/blender/quad_pass.py (the wolf):
   bob at 0.3 of the bound's around their means, the paws' lift at 0.55 of it; the planted paws keep the ground) and
   Run from Running at its own tempo (swings and bob at 0.5, lift at 0.7); drops the rest,
 - keys three held poses for the hunt's states on the rig's own controls: Alert (Guarding's sit-up, the ears pricked,
-  the head turning: four poses), Graze (Guarding's crouch, the forequarters and the head turned to the hare's left,
-  one ear laid out beside the head and the other upright, the nose solved onto the floor, nibbling: four poses) and
+  the head turning: four poses), Graze (Guarding's crouch with the forequarters lowered, the head reaching forward
+  and down and turned a little to the hare's left, one ear laid flat out sideways and the other upright, the nose
+  solved onto the floor, nibbling: four poses) and
   Lie (Dying's last frame only, rolled onto its side with the legs drawn in: one pose, held),
 - caps every map at --tex pixels and exports one GLB with the six clips on NLA tracks,
 - with --pied, exports a second GLB of the same body and clips whose colour map carries white patches (a pied coat:
@@ -45,14 +46,20 @@ ALERT_FRAME = 220   # Guarding's sit-up: the hare upright on its haunches, the b
 ALERT_TURN = 28.0   # degrees, Alert's head turn to each side
 GRAZE_CLEAR = 0.002  # metres between the nose and the floor in Graze (the renderer grounds the lowest point)
 GRAZE_LIFT = 0.035  # metres, the nibble: the head comes up this much between bites
-GRAZE_FORE_TURN = 15.0  # degrees, Graze: the forequarters swing to the cropping side, about the middle of the back
-GRAZE_HEAD_TURN = 38.0  # degrees, Graze: the head swings this much further, about the base of the neck
-GRAZE_REACH = 10.0      # degrees, Graze: the second bite is taken this much further round
+GRAZE_PITCH = 60.0      # degrees, Graze: the head pitched nose down, so the face points at the floor and not ahead
+GRAZE_FWD = 0.04        # metres, Graze: the head reaches this far forward of the crouch, the neck stretched
+GRAZE_DROP = 0.03       # metres, Graze: the shoulders and the head lowered (the front legs bend under them), so the
+                        # back slopes down to the head and the head drops below the shoulder line in the side view
+GRAZE_HEAD_TURN = 25.0  # degrees, Graze: the head alone swings this much to the cropping side, about the base of the
+                        # neck; the forequarters stay square (turned, at the side view's 50 degrees the far side of
+                        # the body drew high and the hare looked hunched, the nose above the floor line)
+GRAZE_REACH = 8.0       # degrees, Graze: the second bite is taken this much further round
 GRAZE_SIDE = 1.0        # Graze turns to the hare's left. The side view is rendered facing right and mirrored, so the
                         # hare's left is away from its camera and that view keeps the head in profile below the
                         # shoulder (turned to the right, toward that camera, the head hid end-on in front of the body)
-GRAZE_EAR_OUT = (75.0, 30.0)  # degrees, Graze: the ear on the side of the turn, out from the head's line and raised off
-                              # the horizontal: laid out and a little back, so it breaks the outline beside the head
+GRAZE_EAR_OUT = (90.0, 10.0)  # degrees, Graze: the ear on the side of the turn, straight out from the head's line and
+                              # nearly flat: seen from above it breaks the outline beside the head, a lobe and not a
+                              # teardrop
 GRAZE_EAR_IN = (0.0, 72.0)    # degrees, Graze: the other ear, on the head's line and nearly upright, so its light inner
                               # face shows over the shoulder from above and the two ears part in a V
 LIE_FOLD = 0.6      # Lie: each paw drawn this share of the way in toward its leg's root
@@ -460,9 +467,10 @@ diag("Alert 96 frames, four poses: ahead, head turned", ALERT_TURN, "deg, nose u
 
 # Graze: the crouch with the head down, the nose solved onto the floor (never below it: the renderer grounds the
 # lowest point, so a nose under the paws would lift the feet), then lifted a little between bites. Seen from above
-# a head straight down hides in front of the body and the crouch reads as a ball, so the forequarters and the head
-# swing to one side as the hare crops (the front paws stay planted: their IK targets do not move), the ears part in
-# a V, and the second bite is taken a little further round.
+# a head straight down hides in front of the body and the crouch reads as a teardrop, so the head reaches forward
+# and turns a little to one side as the hare crops, one ear is laid flat out beside it, and the second bite is taken a
+# little further round. Only the head turns: the shoulders drop (the front paws stay planted on their IK targets, so
+# the front legs bend) and the back slopes down to the nose, which the side view needs to read as eating.
 def ears_apart(side, yaw_deg):
     """the ears apart in a V along the turned head: the ear on the side of the turn laid out, clearing the outline
     beside the head; the other nearly upright, its light inner face over the shoulder seen from above"""
@@ -479,11 +487,12 @@ def ears_apart(side, yaw_deg):
 def graze_pose(lift=0.0, reach=0.0, side=GRAZE_SIDE):
     def f():
         put_pose(SRC_LOW)
-        turn_world("IK_Head", (1, 0, 0), 35.0)
-        move_world("IK_Head", (0, -0.02, 0))
-        turn_about(["IK_Spine.001", "IK_Head"], (0, 0, 1), side * GRAZE_FORE_TURN, wpos("Spine"))
+        turn_world("IK_Head", (1, 0, 0), GRAZE_PITCH)
+        move_world("IK_Head", (0, -GRAZE_FWD, 0))
+        move_world("IK_Spine.001", (0, 0, -GRAZE_DROP))
+        move_world("IK_Head", (0, 0, -GRAZE_DROP))
         turn_about(["IK_Head"], (0, 0, 1), side * (GRAZE_HEAD_TURN + reach), wpos("Neck"))
-        ears_apart(side, GRAZE_FORE_TURN + GRAZE_HEAD_TURN + reach)
+        ears_apart(side, GRAZE_HEAD_TURN + reach)
         # the head goes down on the neck, and the shoulders follow when the neck runs out of reach
         for _ in range(12):
             hz, fz = mesh_z()
@@ -500,8 +509,8 @@ def graze_pose(lift=0.0, reach=0.0, side=GRAZE_SIDE):
 graze = hunt_action("Graze", 96, [graze_pose(), graze_pose(GRAZE_LIFT), graze_pose(0.0, GRAZE_REACH), graze_pose(GRAZE_LIFT, GRAZE_REACH)])
 graze_pose()()
 hz, fz = mesh_z()
-diag("Graze 96 frames, four poses: nose to the floor, lifted", GRAZE_LIFT, "m, to the floor", GRAZE_REACH, "deg further round, lifted; forequarters turned",
-     GRAZE_FORE_TURN, "deg to the hare's", "right" if GRAZE_SIDE < 0 else "left", "and the head", GRAZE_HEAD_TURN, "deg more; ears apart; nose",
+diag("Graze 96 frames, four poses: nose to the floor, lifted", GRAZE_LIFT, "m, to the floor", GRAZE_REACH, "deg further round, lifted; shoulders lowered",
+     GRAZE_DROP, "m, the head", GRAZE_HEAD_TURN, "deg to the hare's", "right" if GRAZE_SIDE < 0 else "left", "alone; ears apart; nose",
      round(hz - fz, 4), "m above the paws' floor")
 
 

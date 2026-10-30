@@ -137,7 +137,7 @@
         {"id": "agouti", "name": "agouti brown", "weight": 40, "map": {}},
         {"id": "grey-brown", "name": "grey brown", "weight": 14, "map": {"skin": {"steps": ["wood:1", "wood:2", "wood:3", "wood:3", "stone:4", "stone:5"]}, "wood": {"to": "wood"}}},
         {"id": "dark-brown", "name": "dark brown", "weight": 14, "map": {"skin": {"to": "bark"}, "wood": {"to": "bark", "shift": -1}}},
-        {"id": "ash-grey", "name": "ash grey", "weight": 9, "map": {"skin": {"to": "grey", "shift": 2}, "wood": {"to": "grey", "shift": 2}}},
+        {"id": "ash-grey", "name": "ash grey", "weight": 9, "map": {"skin": {"steps": ["stone:2", "stone:3", "stone:3", "stone:4", "stone:4", "stone:5"]}, "wood": {"to": "stone"}}},
         {"id": "black", "name": "black", "weight": 6, "map": {"skin": {"steps": ["stone:0", "stone:1", "stone:1", "stone:2", "stone:2", "stone:3"]}, "wood": {"steps": ["stone:0", "stone:0", "stone:1", "stone:1", "stone:2", "stone:2"]}}},
         {"id": "white", "name": "white", "weight": 3, "map": {"skin": {"steps": ["grey:3", "grey:4", "grey:4", "grey:5", "grey:5", "grey:5"]}, "wood": {"steps": ["grey:1", "grey:2", "grey:3", "grey:4", "grey:5", "grey:5"]}}},
         {"id": "brown-pied", "name": "brown pied", "weight": 9, "map": {}, "body": "hare-pied"},

@@ -15,6 +15,42 @@ const rgb = (hex: string): [number, number, number] => {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 };
 
+/** CIELAB of a colour (sRGB, D65), for telling two coats apart the way an eye does. */
+function lab(hex: string): [number, number, number] {
+  const [r, g, b] = rgb(hex).map((v) => {
+    const c = v / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  }) as [number, number, number];
+  const f = (t: number) => (t > 216 / 24389 ? Math.cbrt(t) : (24389 / 27 * t + 16) / 116);
+  const x = f((0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047);
+  const y = f(0.2126 * r + 0.7152 * g + 0.0722 * b);
+  const z = f((0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883);
+  return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
+}
+
+/**
+ * The share of each body step on the rendered sheets (idle, walk and graze or peck, three views each), rounded: the
+ * hare's body is mostly skin 1 with skin 4 ticking, the crow's mostly stone 0.
+ */
+const BODY: Record<string, { ramp: string; share: readonly number[] }> = {
+  hare: { ramp: 'skin', share: [7, 50, 4, 0, 29, 10] },
+  crow: { ramp: 'stone', share: [87, 12, 0, 0, 1, 0] },
+};
+
+/** A coat's mean body colour in CIELAB, each step of the body ramp weighted by its share on the sheets. */
+function meanBody(kind: string, coat: Coat): [number, number, number] {
+  const { ramp, share } = BODY[kind]!;
+  const total = share.reduce((a, b) => a + b, 0);
+  const table = coatTable(coat.map, RAMPS);
+  const sum: [number, number, number] = [0, 0, 0];
+  RAMPS[ramp]!.forEach((step, i) => {
+    const c = Number.parseInt(step.slice(1), 16);
+    const out = table.get(c) ?? c;
+    lab(`#${out.toString(16).padStart(6, '0')}`).forEach((v, k) => { sum[k] += (v * share[i]!) / total; });
+  });
+  return sum;
+}
+
 /** A made-up sheet: every step of every shared ramp, opaque, then the ink, a half-transparent pixel and a clear one. */
 function sheet(): Uint8ClampedArray {
   const colours = [...CORE_RAMPS.flatMap((r) => r.steps), INK_HEX];
@@ -137,6 +173,26 @@ describe('coat recolour', () => {
         expect(out.size, `${kind} ${coat.id}`).toBeGreaterThanOrEqual(3);
       }
     }
+  });
+
+  test('no two coats on one body look alike: their mean body colours lie 12 or more apart in CIELAB', () => {
+    for (const kind of KINDS) {
+      const coats = coatsOf(kind);
+      for (const [i, a] of coats.entries()) {
+        for (const b of coats.slice(i + 1)) {
+          if ((a.body ?? kind) !== (b.body ?? kind)) continue;
+          const [la, lb] = [meanBody(kind, a), meanBody(kind, b)];
+          expect(Math.hypot(la[0]! - lb[0]!, la[1]! - lb[1]!, la[2]! - lb[2]!), `${kind} ${a.id} and ${b.id}`).toBeGreaterThanOrEqual(12);
+        }
+      }
+    }
+  });
+
+  test('the grey hares stay apart in lightness: black, ash grey and white each 15 or more apart on the body', () => {
+    const coats = new Map(coatsOf('hare').map((c) => [c.id, c]));
+    const [black, ash, white] = ['black', 'ash-grey', 'white'].map((id) => meanBody('hare', coats.get(id)!)[0]) as [number, number, number];
+    expect(ash - black, 'ash grey over black').toBeGreaterThanOrEqual(15);
+    expect(white - ash, 'white over ash grey').toBeGreaterThanOrEqual(15);
   });
 
   test('refuses a ramp it does not know', () => {
