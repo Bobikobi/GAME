@@ -120,6 +120,32 @@ describe('a predator round', () => {
     expect(sees(hidden, hazard, DUSK, [9, 22])).toBe(true);
   });
 
+  test('the wolf hears the gait: a run at 8 tiles, a walk at 5, a sneak at 3 (the cone is the same)', () => {
+    const b = world([wolf()]);
+    const hazard = hazardsOf(b)[0]!;
+    // at DUSK the wolf stands on [8, 22] and looks east
+    expect(sees(b, hazard, DUSK, [16, 22], 'run')).toBe(true);
+    expect(sees(b, hazard, DUSK, [17, 22], 'run')).toBe(false);
+    expect(sees(b, hazard, DUSK, [16, 22], 'walk')).toBe(false);
+    expect(sees(b, hazard, DUSK, [13, 22])).toBe(true);
+    expect(sees(b, hazard, DUSK, [14, 22])).toBe(false);
+    expect(sees(b, hazard, DUSK, [12, 22], 'sneak')).toBe(false);
+    expect(sees(b, hazard, DUSK, [11, 22], 'sneak')).toBe(true);
+    expect(sees(b, hazard, DUSK, [13, 24], 'run')).toBe(true);
+  });
+
+  test('a sneaking step 4 tiles off is not seen, the same step walked is', () => {
+    const b = world([wolf()]);
+    const at = place(begin(b), [12, 22], DUSK);
+    const step4 = (gait: 'walk' | 'sneak') => {
+      const r = step(b, at, { t: 'move', at: [12, 23], gait }, DUSK);
+      if (!r.ok) throw new Error(r.error);
+      return r.events.some((e) => e.e === 'seen');
+    };
+    expect(step4('walk')).toBe(true);
+    expect(step4('sneak')).toBe(false);
+  });
+
   test('being seen starts the ordinary chase with its ordinary bites', () => {
     const b = world([wolf()]);
     const start = move(b, place(begin(b), [11, 22], DUSK), [11, 22], DUSK);

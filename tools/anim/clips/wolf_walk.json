@@ -1,0 +1,33 @@
+{
+  "about": "The wolf's walk: four poses of the body's own Walk, side-on, down and up, at the wolf's round (hazard.predator.pace_ms). The owner picked four poses for a quadruped's walk (DECISIONS 2026-10-29).",
+  "target": "wolf",
+  "base": {
+    "library": "self:wolf",
+    "action": "Walk"
+  },
+  "frames": {
+    "even": 4
+  },
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "locomotion": {
+    "playback": "distance",
+    "pace_ms": 600
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ],
+  "limits": {
+    "foot_slide_px": 2
+  }
+}

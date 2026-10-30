@@ -34,7 +34,7 @@ export interface Assembled {
     {
       dir: string;
       rel: string;
-      sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4; ramps?: string[]; scale?: number; source?: { spec: string; manifest: string } }>;
+      sprites: Record<string, { file: string; w: number; h: number; frames: number; density: 1 | 4; ramps?: string[]; scale?: number; stride?: { travel_mpx: number; anchor: [number, number] }; source?: { spec: string; manifest: string } }>;
       palette?: string[];
       ramps?: { id: string; for?: string; steps: string[] }[];
     }
@@ -165,6 +165,14 @@ export function flattenParams(p: ParamsBody): Params {
       light_step_ms: p.load.light_step_ms.value,
       heavy_step_ms: p.load.heavy_step_ms.value,
       heavy_breath_permille: p.load.heavy_breath_permille.value,
+    },
+    gait: {
+      run_div: p.gait.run_div.value,
+      sneak_mul: p.gait.sneak_mul.value,
+      noise_still: p.gait.noise_still.value,
+      noise_sneak: p.gait.noise_sneak.value,
+      noise_walk: p.gait.noise_walk.value,
+      noise_run: p.gait.noise_run.value,
     },
     starting_gold_mg: p.starting_gold_mg.value,
     per_point: {
@@ -310,6 +318,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
               frames: s.frames ?? 1,
               density: s.density ?? 1,
               ...(s.ramps ? { ramps: s.ramps } : {}),
+              ...(s.stride ? { stride: { travel_mpx: s.stride.travel_mpx, anchor: [s.stride.anchor[0], s.stride.anchor[1]] as [number, number] } } : {}),
               // read by the scale check (tools/src/kit/scale.ts); the bundle does not carry it
               ...(s.scale === undefined ? {} : { scale: s.scale }),
               // read by the hole check (tools/src/kit/holes.ts) to name the re-import; the bundle does not carry it
@@ -330,7 +339,7 @@ export function assemble(files: Loaded[], board: Record<string, BoardEntry> = {}
   const sprites: Record<string, SpriteInfo> = {};
   for (const [kitId, kit] of Object.entries(kits)) {
     for (const [name, s] of Object.entries(kit.sprites)) {
-      sprites[`${kitId}:${name}`] = { url: `kit/${kitId}/${s.file}`, w: s.w, h: s.h, frames: s.frames, density: s.density };
+      sprites[`${kitId}:${name}`] = { url: `kit/${kitId}/${s.file}`, w: s.w, h: s.h, frames: s.frames, density: s.density, ...(s.stride ? { stride: s.stride } : {}) };
     }
   }
 

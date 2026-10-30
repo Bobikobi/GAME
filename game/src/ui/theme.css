@@ -1,45 +1,109 @@
-/* The kit's theme, "B, canvas" (DECISIONS 2026-10-23): a mid-tone canvas inset
-   inside the oiled-wood frame, dark ink on it, names on small dark plates, and
-   the face Jersey 15. Every colour is one of the core palette's 32
-   (tools/src/kit/palette.ts); tools/test/ui-theme.test.ts holds this file to
-   that, with no scrims, gradients or rounded corners. Each pair of a text and
-   the ground it sits on reads at 4.5:1 or more (the ratios beside them).
+/* The windows' token sheet, frame D (DECISIONS 2026-10-28 "The windows' direction: black lacquer with
+   antique gold, frame D"): a black window under a leather grain, one thin antique-gold line round it,
+   engraved gold corners and a gold plaque for its name, paper-white words. Every colour is one of
+   UI_PALETTE (tools/src/kit/palette.ts: the core's 32, the antique-gold ramp and the two blacks);
+   tools/test/ui-theme.test.ts holds this file to that, with no scrims, gradients or rounded corners,
+   and checks that each text reads at 4.5:1 or more on the ground it is drawn on.
 
-   The parts: the frame (.kit-frame), the inset (.kit-inset), a plate
-   (.kit-plate), a tab (.kit-tab), a button (.kit-btn), a card (.kit-paper),
-   a socket (.kit-socket) and the four states of a node on the skill tree. */
+   The four roles: the black (the window's ground), the well (a deeper black for sockets, inputs and
+   what sits behind the window), the gold (the line and the titles) and the paper (the words). The
+   ramp's other steps are the same gold, lighter or darker: a hairline, a pressed edge, the brightest
+   word. The four sizes: 22 the window's name, 18 the body, 16 a group's name, 27 a big number.
+
+   The kit's --kit-* names stay, so kit.css and tree.css take frame D without new names; inside a
+   window the site's own tokens (design/tokens.css) take frame D's roles too, so a rule written for
+   the old paper windows draws in D. */
+
+@font-face {
+  font-family: 'Cinzel';
+  src: url('/fonts/cinzel/cinzel-latin.woff2') format('woff2');
+  font-weight: 600 800;
+  font-display: swap;
+}
 
 :root {
-  /* the frame: oiled wood, outlined in ink */
-  --kit-wood: #6e4226;
-  --kit-wood-dark: #3d2618;
-  --kit-wood-light: #9e6b3c;
-  --kit-edge: #1b1a2e;
+  /* the four roles */
+  --ui-black: #131220;
+  --ui-well: #0c0b12;
+  --ui-gold: #a6854a;
+  --ui-paper: #f5f4ef;
 
-  /* the inset: canvas, and the ink on it (6.7:1), a softer ink (5.55:1) */
-  --kit-canvas: #c99a5e;
-  --kit-canvas-line: #9e6b3c;
-  --kit-ink: #1b1a2e;
-  --kit-ink-soft: #3d2618;
+  /* the antique-gold ramp, dark to light: a hairline (2), an edge (3), the line (4), gold words (5), the brightest word (6) */
+  --ui-gold-1: #2a2114;
+  --ui-gold-2: #4d3c22;
+  --ui-gold-3: #7a5f33;
+  --ui-gold-4: #a6854a;
+  --ui-gold-5: #c9a96a;
+  --ui-gold-6: #e8d4a2;
 
-  /* the card: paper on the canvas, ink on it (11.65:1), a warning in deep red (8.59:1) */
-  --kit-paper: #ebd3a2;
-  --kit-paper-line: #9e6b3c;
-  --kit-warn: #5e1c28;
+  /* the paper's softer word (11.2:1 on the black) and the grain's raised fleck, a pressed socket */
+  --ui-paper-soft: #c6cad6;
+  --ui-raised: #1b1a2e;
 
-  /* a plate and a tab: dark wood, cream on it (9.65:1); a socket where a thing sits */
-  --kit-plate: #3d2618;
-  --kit-plate-ink: #ebd3a2;
-  --kit-socket: #3d2618;
-  --kit-socket-line: #9e6b3c;
+  /* an item's name takes its rarity's colour, each at 4.5:1 or more on the black and the well */
+  --ui-rarity-common: #f5f4ef;
+  --ui-rarity-uncommon: #84c450;
+  --ui-rarity-rare: #7cc4ec;
+  --ui-rarity-legendary: #eda83a;
 
-  /* brass: what is picked or can be taken now; dark ink on it (8.32:1) */
-  --kit-brass: #eda83a;
-  --kit-brass-dark: #b8661f;
+  /* a word that warns or lacks, a word that is met (on the black: 9.6:1, 9.4:1) */
+  --ui-warn: #f6a07f;
+  --ui-good: #84c450;
 
-  /* the skill tree: a learned node fills with its school's colour, and the school's name on dark wood
-     reads in a lighter one of the same family (on --kit-plate: green 6.71, wood 5.55, skin 9.06,
-     red 6.89, water 7.36, plum 9.65, fire 6.89, grey 8.61); the trunk is plum, paper on it 8.8 */
+  /* the four sizes, and the two faces: Cinzel for a window's name and a group's name, Jersey 15 for the rest */
+  --ui-title: 22px;
+  --ui-text: 18px;
+  --ui-group: 16px;
+  --ui-big: 27px;
+  --ui-display: 'Cinzel', Georgia, serif;
+
+  /* the lines: the one thin line round a window, and the hairline between its parts */
+  --ui-line: 1px solid var(--ui-gold-4);
+  --ui-hair: 1px solid var(--ui-gold-2);
+
+  /* the grain: one 64 px tile drawn by tools/src/ui/grain.ts in three of the palette's blacks */
+  --ui-grain: url('/ui/grain.png');
+
+  /* the engraved corners: one piece, drawn as vectors so it stays sharp at 1x, 2x and 3x, turned for each corner */
+  --ui-corner-tl: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='54' height='54'><g transform='translate(1 1)' fill='none'><path d='M2 40V8Q2 2 8 2H40' stroke='%23c9a96a' stroke-width='3'/><path d='M2 40V8Q2 2 8 2H40' stroke='%234d3c22'/><path d='M9 30V14Q9 9 14 9H30' stroke='%23a6854a' stroke-width='1.5'/><path d='M14 22Q14 14 22 14Q18 18 22 22Q18 22 14 22Z' fill='%23c9a96a' stroke='%234d3c22' stroke-width='.8'/><path d='M40 2h8M2 40v5' stroke='%23c9a96a' stroke-width='3'/><rect x='44' y='-1.5' width='7' height='7' transform='rotate(45 47.5 2)' fill='%23c9a96a' stroke='%234d3c22' stroke-width='.8'/><rect x='-1.5' y='44' width='7' height='7' transform='rotate(45 2 47.5)' fill='%23c9a96a' stroke='%234d3c22' stroke-width='.8'/></g></svg>");
+  --ui-corner-tr: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='54' height='54'><g transform='translate(53 1) scale(-1 1)' fill='none'><path d='M2 40V8Q2 2 8 2H40' stroke='%23c9a96a' stroke-width='3'/><path d='M2 40V8Q2 2 8 2H40' stroke='%234d3c22'/><path d='M9 30V14Q9 9 14 9H30' stroke='%23a6854a' stroke-width='1.5'/><path d='M14 22Q14 14 22 14Q18 18 22 22Q18 22 14 22Z' fill='%23c9a96a' stroke='%234d3c22' stroke-width='.8'/><path d='M40 2h8M2 40v5' stroke='%23c9a96a' stroke-width='3'/><rect x='44' y='-1.5' width='7' height='7' transform='rotate(45 47.5 2)' fill='%23c9a96a' stroke='%234d3c22' stroke-width='.8'/><rect x='-1.5' y='44' width='7' height='7' transform='rotate(45 2 47.5)' fill='%23c9a96a' stroke='%234d3c22' stroke-width='.8'/></g></svg>");
+  --ui-corner-bl: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='54' height='54'><g transform='translate(1 53) scale(1 -1)' fill='none'><path d='M2 40V8Q2 2 8 2H40' stroke='%23c9a96a' stroke-width='3'/><path d='M2 40V8Q2 2 8 2H40' stroke='%234d3c22'/><path d='M9 30V14Q9 9 14 9H30' stroke='%23a6854a' stroke-width='1.5'/><path d='M14 22Q14 14 22 14Q18 18 22 22Q18 22 14 22Z' fill='%23c9a96a' stroke='%234d3c22' stroke-width='.8'/><path d='M40 2h8M2 40v5' stroke='%23c9a96a' stroke-width='3'/><rect x='44' y='-1.5' width='7' height='7' transform='rotate(45 47.5 2)' fill='%23c9a96a' stroke='%234d3c22' stroke-width='.8'/><rect x='-1.5' y='44' width='7' height='7' transform='rotate(45 2 47.5)' fill='%23c9a96a' stroke='%234d3c22' stroke-width='.8'/></g></svg>");
+  --ui-corner-br: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='54' height='54'><g transform='translate(53 53) scale(-1 -1)' fill='none'><path d='M2 40V8Q2 2 8 2H40' stroke='%23c9a96a' stroke-width='3'/><path d='M2 40V8Q2 2 8 2H40' stroke='%234d3c22'/><path d='M9 30V14Q9 9 14 9H30' stroke='%23a6854a' stroke-width='1.5'/><path d='M14 22Q14 14 22 14Q18 18 22 22Q18 22 14 22Z' fill='%23c9a96a' stroke='%234d3c22' stroke-width='.8'/><path d='M40 2h8M2 40v5' stroke='%23c9a96a' stroke-width='3'/><rect x='44' y='-1.5' width='7' height='7' transform='rotate(45 47.5 2)' fill='%23c9a96a' stroke='%234d3c22' stroke-width='.8'/><rect x='-1.5' y='44' width='7' height='7' transform='rotate(45 2 47.5)' fill='%23c9a96a' stroke='%234d3c22' stroke-width='.8'/></g></svg>");
+
+  /* a window opens with a 150 ms fade and an 8 px rise (none when the player asks for less motion) */
+  --ui-open: 150ms;
+  --ui-rise: 8px;
+
+  /* the kit's names, worn in frame D: the frame and the inset are the black, a card or a socket the
+     well, the hairlines gold, the words paper (on the black 17.1:1, the softer 11.2:1; on the well
+     18.5:1), a warning salmon (10.4:1 on the well), a plate's word the brightest gold (13.0:1) */
+  --kit-wood: #131220;
+  --kit-wood-dark: #0c0b12;
+  --kit-wood-light: #4d3c22;
+  --kit-edge: #4d3c22;
+
+  --kit-canvas: #131220;
+  --kit-canvas-line: #4d3c22;
+  --kit-ink: #f5f4ef;
+  --kit-ink-soft: #c6cad6;
+
+  --kit-paper: #0c0b12;
+  --kit-paper-line: #4d3c22;
+  --kit-warn: #f6a07f;
+
+  --kit-plate: #131220;
+  --kit-plate-ink: #e8d4a2;
+  --kit-socket: #0c0b12;
+  --kit-socket-line: #4d3c22;
+
+  /* gold: what is picked or can be taken now (8.6:1 on the black); the black on a gold fill (8.6:1) */
+  --kit-brass: #c9a96a;
+  --kit-brass-dark: #a6854a;
+  --kit-on-gold: #131220;
+
+  /* the skill tree: a learned node fills with its school's colour, and the school's name on the black
+     reads in a lighter one of the same family (on --kit-plate: green 9.8, wood 7.9, skin 12.8,
+     red 9.6, water 10.4, plum 13.0, fire 9.4, grey 11.2); the trunk is plum, paper on it 9.9 */
   --kit-tree-green: #4c9a3f;
   --kit-tree-green-ink: #84c450;
   --kit-tree-wood: #9e6b3c;
@@ -51,32 +115,211 @@
   --kit-tree-water: #3f8fd1;
   --kit-tree-water-ink: #7cc4ec;
   --kit-tree-plum: #9a5bb0;
-  --kit-tree-plum-ink: #ebd3a2;
+  --kit-tree-plum-ink: #e8d4a2;
   --kit-tree-fire: #eda83a;
   --kit-tree-fire-ink: #eda83a;
   --kit-tree-grey: #8f94a8;
   --kit-tree-grey-ink: #c6cad6;
   --kit-tree-trunk: #5b3373;
 
-  /* the face: Jersey 15 draws a pixel at 1/27 of its size, so 18px and 27px sit on whole device pixels at 3x */
+  /* Jersey 15 draws a pixel at 1/27 of its size, so 18px and 27px sit on whole device pixels at 3x;
+     16 keeps G29's floor for the smallest word */
   --kit-text: 18px;
   --kit-text-l: 27px;
-  --kit-text-s: 15px;
+  --kit-text-s: 16px;
 }
 
+/* Inside a window the site's tokens take frame D's roles: a ground becomes the black, a word the
+   paper, a line the gold hairline, and the colours chosen to read on paper turn to the lighter ones
+   of the same family, which read on the black. */
+.panel,
+.dialog,
+.title-screen {
+  --paper: var(--ui-black);
+  --paper2: var(--ui-gold-2);
+  --cream: var(--ui-well);
+  --ink: var(--ui-paper);
+  --ink2: var(--ui-paper-soft);
+  --grey: var(--ui-paper-soft);
+  --grey2: var(--ui-paper-soft);
+  --wood: var(--ui-black);
+  --wood2: var(--ui-gold-5);
+  --green: var(--ui-good);
+  --green2: var(--ui-good);
+  --red: var(--ui-warn);
+  --red2: var(--ui-warn);
+  --blue: var(--ui-rarity-rare);
+  --blue2: var(--ui-rarity-rare);
+  --yellow: var(--ui-gold-5);
+  --gold: var(--ui-gold-5);
+  --purple2: var(--ui-rarity-legendary);
+  --frame: var(--ui-hair);
+  color: var(--ui-paper);
+}
+
+/* The window: the black under the grain, the one thin line, the four engraved corners over it all. */
+.ui-window {
+  position: relative;
+  background: var(--ui-black) var(--ui-grain) repeat;
+  border: var(--ui-line);
+  box-shadow: none;
+  color: var(--ui-paper);
+}
+
+.ui-window::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background:
+    var(--ui-corner-tl) left top no-repeat,
+    var(--ui-corner-tr) right top no-repeat,
+    var(--ui-corner-bl) left bottom no-repeat,
+    var(--ui-corner-br) right bottom no-repeat;
+}
+
+/* A scroll inside a window is a gold thumb in the well, never the browser's light bar. */
+.ui-window,
+.ui-window * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-gold-3) var(--ui-well);
+}
+
+/* The plaque: the window's name in Cinzel on a gold bar notched at both ends, two engraved lines inside it. */
+.ui-plaque {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  margin: 0;
+  padding: 6px 30px;
+  background: var(--ui-gold-5);
+  color: var(--ui-black);
+  clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0 50%);
+  font: 600 var(--ui-title) / 1.1 var(--ui-display);
+  letter-spacing: 0.03em;
+  text-align: center;
+}
+
+.ui-plaque::after {
+  content: '';
+  position: absolute;
+  inset: 3px 3px;
+  border-top: 1px solid var(--ui-gold-3);
+  border-bottom: 1px solid var(--ui-gold-3);
+  pointer-events: none;
+}
+
+/* A group's name: Cinzel in capitals, letter-spaced, gold, and a hairline running on to the edge. */
+.ui-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: 600 var(--ui-group) / 1.2 var(--ui-display);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ui-gold-5);
+}
+
+.ui-group::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--ui-gold-2);
+}
+
+/* A button in a window: the thin line in gold, the brightest gold word, 44 px at the least. Picked or
+   hovered, it fills with gold and the word turns black. */
+.ui-btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 4px 14px;
+  background: transparent;
+  color: var(--ui-gold-6);
+  border: var(--ui-line);
+  border-radius: 0;
+  box-shadow: none;
+  font: 400 var(--ui-text) / 1 var(--font);
+  cursor: pointer;
+}
+
+.ui-btn:hover:not(:disabled),
+.ui-btn:focus-visible {
+  background: var(--ui-gold-5);
+  color: var(--ui-black);
+  outline: none;
+}
+
+.ui-btn:disabled {
+  border-color: var(--ui-gold-2);
+  color: var(--ui-paper-soft);
+  cursor: default;
+}
+
+/* A tab: no box, the gold word, and under the open one the gold line twice as thick. */
+.ui-tab {
+  min-height: 44px;
+  padding: 0 14px;
+  background: transparent;
+  color: var(--ui-gold-5);
+  border: 0;
+  box-shadow: none;
+  font: 400 var(--ui-text) / 1 var(--font);
+}
+
+.ui-tab.on,
+.ui-tab[aria-selected='true'] {
+  color: var(--ui-gold-6);
+  box-shadow: inset 0 -2px 0 var(--ui-gold-4);
+}
+
+/* A socket: where a thing sits, a well with a gold hairline. */
+.ui-socket {
+  background: var(--ui-well);
+  border: var(--ui-hair);
+  box-shadow: none;
+}
+
+@keyframes ui-open {
+  from {
+    opacity: 0;
+    transform: translateY(var(--ui-rise));
+  }
+}
+
+/* An item's name in its rarity's colour (panels.ts itemTitle; RARITIES in schema/src/index.ts). */
+.rarity-common {
+  color: var(--ui-rarity-common);
+}
+
+.rarity-uncommon {
+  color: var(--ui-rarity-uncommon);
+}
+
+.rarity-rare {
+  color: var(--ui-rarity-rare);
+}
+
+.rarity-legendary {
+  color: var(--ui-rarity-legendary);
+}
+
+/* The kit's parts, kept for the skill tree's node, card and plate (tree.ts). */
 .kit-frame {
-  background: var(--kit-wood);
-  border: 3px solid var(--kit-edge);
-  box-shadow:
-    inset 0 0 0 3px var(--kit-wood-dark),
-    inset 0 0 0 5px var(--kit-wood-light);
+  background: var(--ui-black) var(--ui-grain) repeat;
+  border: var(--ui-line);
 }
 
 .kit-inset {
   background: var(--kit-canvas);
   color: var(--kit-ink);
-  border: 2px solid var(--kit-edge);
-  box-shadow: inset 0 0 0 2px var(--kit-wood-light);
+  border: 1px solid var(--kit-edge);
 }
 
 .kit-plate {
@@ -84,31 +327,30 @@
   padding: 2px 8px;
   background: var(--kit-plate);
   color: var(--kit-plate-ink);
-  border: 2px solid var(--kit-wood-light);
+  border: 1px solid var(--kit-edge);
   font: 400 var(--kit-text) / 1.1 var(--font);
 }
 
 .kit-tab {
-  background: var(--kit-plate);
-  color: var(--kit-plate-ink);
-  border: 2px solid var(--kit-edge);
-  border-bottom: 0;
+  background: transparent;
+  color: var(--ui-gold-5);
+  border: 0;
   font: 400 var(--kit-text) / 1 var(--font);
 }
 
 .kit-tab.on,
 .kit-tab[aria-selected='true'] {
-  background: var(--kit-canvas);
-  color: var(--kit-ink);
+  color: var(--ui-gold-6);
+  box-shadow: inset 0 -2px 0 var(--ui-gold-4);
 }
 
 .kit-btn {
-  min-height: 40px;
+  min-height: 44px;
   padding: 4px 14px;
-  background: var(--kit-plate);
-  color: var(--kit-plate-ink);
-  border: 2px solid var(--kit-edge);
-  box-shadow: inset 0 0 0 2px var(--kit-brass-dark);
+  background: transparent;
+  color: var(--ui-gold-6);
+  border: var(--ui-line);
+  box-shadow: none;
   font: 400 var(--kit-text) / 1 var(--font);
   cursor: pointer;
 }
@@ -116,41 +358,39 @@
 .kit-btn:hover:not(:disabled),
 .kit-btn:focus-visible {
   background: var(--kit-brass);
-  color: var(--kit-ink);
+  color: var(--kit-on-gold);
   outline: none;
 }
 
 .kit-btn:disabled {
-  background: var(--kit-canvas);
+  background: transparent;
   color: var(--kit-ink-soft);
-  box-shadow: inset 0 0 0 2px var(--kit-canvas-line);
+  border-color: var(--ui-gold-2);
   cursor: default;
 }
 
 .kit-paper {
   background: var(--kit-paper);
   color: var(--kit-ink);
-  border: 2px solid var(--kit-edge);
-  box-shadow: inset 0 0 0 2px var(--kit-paper-line);
+  border: 1px solid var(--kit-paper-line);
 }
 
 .kit-socket {
   background: var(--kit-socket);
-  border: 2px solid var(--kit-edge);
-  box-shadow: inset 0 0 0 2px var(--kit-socket-line);
+  border: 1px solid var(--kit-socket-line);
 }
 
-/* the four states of a node: learned (filled in its school's colour, an ink ring and a light halo),
-   open to learn (brass ring), locked (a shallow quiet outline on the canvas), touched (a second ring) */
+/* the four states of a node: learned (filled in its school's colour, a paper ring), open to learn (a
+   gold ring), locked (a quiet hairline on the black), touched (a second ring) */
 .kit-node {
   border: 2px solid var(--kit-canvas-line);
-  background: var(--kit-canvas);
+  background: var(--kit-socket);
   color: var(--kit-ink);
 }
 
 .kit-node.learned {
   border-color: var(--kit-ink);
-  box-shadow: 0 0 0 2px var(--kit-paper);
+  box-shadow: 0 0 0 2px var(--kit-socket);
 }
 
 .kit-node.open {

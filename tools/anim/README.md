@@ -10,10 +10,21 @@ pnpm anim list             # the clips, what each is made of, whether the librar
 pnpm anim render walk_torch chop      # or --all; needs Blender (below)
 pnpm anim check            # the four measures of every rendered clip; exit 1 on a failure
 pnpm anim render chop --target digger-f   # the same clip on another body of the cast (anim.json targets)
+pnpm anim render jog stand --target elf-m # the races' walk: the distance-locked jog and the standing pose, per target that ships
+pnpm anim sheets           # the shipped targets' renders into content/kit/core/chars (+ kit.json, feet.json); fails the clothed-width rule
 ```
 
 `--target <id>` moves a clip onto another target for render or check: the motion, prop, set pieces and frame stay,
 the body, its scale and its ramps are the target's, and the output goes to `tools/.cache/anim/cast/<id>/<clip>/`.
+`pnpm anim sheets` is the only step that writes into `content/`: for each target with `ships` (anim.json) it joins the
+poses of its walk clip (`jog`, or the clip `ships.clip` names) and, last, the standing pose of `stand` into
+`chars/<sheet>_down|up|left.png` (one frame of `frame.size`, `density: 4`), writes the matching `kit.json` entries
+(`stride: {travel, anchor}`, the art px walked per pose in that view and the ground point) and `tools/anim/feet.json`
+(the planted feet by pose, which the game's `stride.test.ts` plays back at the three paces). It refuses to write when a clip
+has an open problem or when an elf is wider than `clothed_width.max_pct` of the human in the standing frame. The game
+shows the pose nearest to the distance walked (`poseFrame`, game/src/work.ts), so the feet stay on the ground to the
+half of one pose.
+
 A model whose skeleton lacks a bone its map drives is refused in one line before a frame is drawn.
 
 Blender 5.2 (any recent 4.x or 5.x with the glTF importer should do) is found by `BLENDER`, else
@@ -69,6 +80,29 @@ supersampled renders, the ID pass, the projected feet) and `job.json` (what Blen
 - `set`: pieces fixed on the ground by the body, `herb` (a leafy tuft, about 0.32 m) and `bush` (a berry bush, about
   0.8 m), at `[x, y]` metres in body axes on the IK side, `size` scaling them. They turn with the body in each view.
 - `worn`: parts carried on the hips, `pouch`, at `[x, y, z]` metres from the hips joint in body axes.
+
+## A body with its own actions (native targets)
+
+A four-legged body does not take the human libraries: the Meshy wolf (`character-wolf-grim.glb`) carries its own
+`Idle`, `Walk` and `Run`. A target with `"map": "native"` (the `wolf` in `anim.json`) is played by those: its clips use
+`"base": { "library": "self:<target>", "action": "Walk" }` (the `self:` library is made from the target's `actions`,
+each with its length in frames at the target's `fps`), and take no layer, IK, prop, set piece, worn part or basket. The
+renderer poses the body by the action's own bones (no retargeting, no scale), and the feet are the tails of the four
+bones named in the target's `contacts` (`LB`, `RB`, `LF`, `RF`: left or right, back or front). The measures are the same
+four, over four feet instead of two.
+
+- `locomotion.pace_ms`: the clip is judged at this pace (ms a tile) in place of the player's three, for a body that
+  does not walk at the player's pace (the wolf's round is `hazard.predator.pace_ms`, 600).
+- `locomotion.gait: "four-beat"`: adds the footfall measure. Each foot must plant once a cycle, the four landings must
+  be evenly spread (each gap 0.2 to 0.35 of the cycle) and hind and fore must take turns. `pnpm anim render` prints
+  the order and the gaps. Left off the Meshy `Walk` and `Run` on purpose: they are not four-beat, see below.
+- Four poses a loop is the owner's pick for a quadruped (DECISIONS 2026-10-29), so a planted foot slides up to about
+  2 px between two poses; the wolf clips carry `limits: { "foot_slide_px": 2 }` for that.
+
+The Meshy `Walk` measured (24 source frames, the feet as projected): the left feet lift together (the hind and the fore
+left swing at about 0.1 to 0.13 of the cycle) and the right feet together (about 0.54 to 0.62): a pacing walk, two beats,
+not four. Switched on, the four-beat measure fails it (each foot "plants 2 times a cycle", the right fore 3). Four poses of it read as a
+walk, which is what the owner approved; a true four-beat wolf walk needs its own motion.
 
 ## The four measures, and what fails
 

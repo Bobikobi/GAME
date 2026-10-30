@@ -590,8 +590,9 @@ export class World3D implements WorldView {
 
   private async loadHero(session: GameSession): Promise<void> {
     const p = session.state.player;
-    // a race wears today's model of the sheet its sprite names (human -> explorer, elf -> forager, skeleton -> digger) until its own art
-    const short = (this.b.races[p.race]?.sprite ?? '').split('/').pop()?.replace(/_down$/, '') ?? '';
+    // a race wears today's model until its own 3D art: the 2D sheets are named for the race, the models for the old starters
+    const stem = (this.b.races[p.race]?.sprite ?? '').split('/').pop()?.replace(/_down$/, '') ?? '';
+    const short = ({ human: 'explorer', elf: 'forager', skeleton: 'digger' } as Record<string, string>)[stem] ?? stem;
     const wanted = `character-${short}-${p.look === 1 ? 'f' : 'm'}`;
     const fallback = p.look === 1 ? 'character-female-a' : 'character-male-a';
     if (this.heroKey === wanted && this.hero) return;
@@ -902,7 +903,7 @@ export class World3D implements WorldView {
     s.facing = facingFor(input, s.facing);
     if (input[0] !== 0 || input[1] !== 0) this.yaw = Math.atan2(input[0], input[1]);
     this.fell = false;
-    for (const tile of this.body.frame(input, delta, walkStepMs(this.b, s.state), (x, y) => this.canWalk(s, x, y))) {
+    for (const tile of this.body.frame(input, delta, walkStepMs(this.b, s.state), (x, y, from) => this.canWalk(s, x, y, from))) {
       // the kernel hears of each new tile; a hazard there may hurt, and a fall ends the walk
       landStep(s, tile);
       if (this.fell) return;
@@ -910,9 +911,9 @@ export class World3D implements WorldView {
     }
   }
 
-  /** The kernel's rule, and a plant or stone that is ready stands in the way (walking.ts). */
-  canWalk(s: GameSession, x: number, y: number): boolean {
-    return canEnter(this.b, this.walkable, this.nodeAt, s, x, y);
+  /** The kernel's rule, a rock face's, and a plant or stone that is ready stands in the way (walking.ts); `from` is the tile left, the player's own when none is given. */
+  canWalk(s: GameSession, x: number, y: number, from?: readonly [number, number]): boolean {
+    return canEnter(this.b, this.walkable, this.nodeAt, s, x, y, from);
   }
 
   private arrive(s: GameSession): void {

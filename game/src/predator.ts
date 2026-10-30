@@ -4,7 +4,7 @@
  * running after the player while the kernel's hunt names it, and the music of a hunt. Display only:
  * every input is the kernel's state and clock, and nothing here decides a sight, a bite or a safe place.
  */
-import { type Bundle, type Hazard, type WorldView, headingOf, isSafe, lastDusk, predatorAt, windowOpen, type PublicState } from '@game/kernel';
+import { type Bundle, type Hazard, type WorldView, headingOf, isSafe, lastDusk, predatorAt, stepRuleFor, windowOpen, type PublicState } from '@game/kernel';
 import type { SongId } from './audio';
 
 export type Spot = readonly [number, number];
@@ -118,16 +118,24 @@ export function huntGround(b: Bundle, s: PublicState, walkable: (x: number, y: n
 /**
  * The first step of a shortest four-way walk from `from` to a tile within `near` steps of `goal`,
  * over the tiles `walk` allows and the goal's own; undefined once there, or when no walk gets there.
+ * `stepOpen` says whether one step between two four-adjacent tiles is open (the kernel's height rule,
+ * G68: a rock face stops a run as it stops a player); with none given every step is.
  */
-export function firstStep(from: Spot, goal: Spot, near: number, walk: (x: number, y: number) => boolean): [number, number] | undefined {
+export function firstStep(
+  from: Spot,
+  goal: Spot,
+  near: number,
+  walk: (x: number, y: number) => boolean,
+  stepOpen: (x1: number, y1: number, x2: number, y2: number) => boolean = () => true,
+): [number, number] | undefined {
   const within = (x: number, y: number) => Math.abs(x - goal[0]) + Math.abs(y - goal[1]) <= near;
   if (within(from[0], from[1])) return undefined;
   const seen = new Set<string>([`${from[0]},${from[1]}`]);
   // each tile in the queue carries the first step of the walk that reached it
   const queue: { x: number; y: number; first: [number, number] }[] = [];
-  const visit = (x: number, y: number, first: [number, number] | undefined): [number, number] | undefined => {
+  const visit = (x: number, y: number, first: [number, number] | undefined, fromX: number, fromY: number): [number, number] | undefined => {
     const k = `${x},${y}`;
-    if (seen.has(k) || !(walk(x, y) || (x === goal[0] && y === goal[1]))) return undefined;
+    if (seen.has(k) || !(walk(x, y) || (x === goal[0] && y === goal[1])) || !stepOpen(fromX, fromY, x, y)) return undefined;
     seen.add(k);
     const step = first ?? [x, y];
     if (within(x, y)) return step;
@@ -135,13 +143,13 @@ export function firstStep(from: Spot, goal: Spot, near: number, walk: (x: number
     return undefined;
   };
   for (const [dx, dy] of STEPS) {
-    const found = visit(from[0] + dx, from[1] + dy, undefined);
+    const found = visit(from[0] + dx, from[1] + dy, undefined, from[0], from[1]);
     if (found) return found;
   }
   for (let head = 0; head < queue.length; head++) {
     const t = queue[head]!;
     for (const [dx, dy] of STEPS) {
-      const found = visit(t.x + dx, t.y + dy, t.first);
+      const found = visit(t.x + dx, t.y + dy, t.first, t.x, t.y);
       if (found) return found;
     }
   }
@@ -235,16 +243,18 @@ export function wolfDrawn(
 ): { at: Spot; heading: Spot; run?: Run } {
   const round = predatorSpriteAt(b, rule, tick);
   const chase = s.player.chase;
+  // the run goes where a foot can, rock faces included (G68)
+  const stepOpen = stepRuleFor(b);
   if (chase !== null && chase.hazard === rule.id) {
     const goal = s.player.at;
     const run: Run = last ? { ...last, home: false } : startRun(b, rule, tick, round, goal);
     const from = Math.max(run.tick, chase.since + SEEN.hold);
-    const next = tick > from ? runOn({ ...run, tick: from }, tick, rule.pace, (t) => firstStep(t, goal, 1, walk)) : { ...run, tick };
+    const next = tick > from ? runOn({ ...run, tick: from }, tick, rule.pace, (t) => firstStep(t, goal, 1, walk, stepOpen)) : { ...run, tick };
     return { at: next.at, heading: runHeading(next, goal), run: next };
   }
   if (last) {
     const tile = predatorAt(b, rule, tick);
-    const next = homeOn({ ...last, home: true }, tick, rule.pace / HOME_SPEED, round, (t) => firstStep(t, tile, 0, walk));
+    const next = homeOn({ ...last, home: true }, tick, rule.pace / HOME_SPEED, round, (t) => firstStep(t, tile, 0, walk, stepOpen));
     if (next) return { at: next.at, heading: runHeading(next, round), run: next };
   }
   return { at: round, heading: headingOf(b, rule, tick) };

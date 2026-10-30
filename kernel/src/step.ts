@@ -22,7 +22,7 @@ import { bitesAfter, dangerAt, distanceTo, fireArea, harmOf, hazardsOf, isSafe, 
 import { bellTicks, inside as insideExpedition, lastBellAt, visitNight, windowOpen as expeditionWindowOpen } from './expedition';
 import { clamp, idiv, idivUp, mulDiv, mulDivUp } from './num';
 import { appearSlot, cuesOnStep, placedAt, reactionHolds, resourceOf, waitPermille } from './reactions';
-import { foodFillPermille, itemWeight, loadMax, loadWeight, walkStepMs, weightRoom } from './load';
+import { GAITS, type Gait, foodFillPermille, gaitStepMs, itemWeight, loadMax, loadWeight, weightRoom } from './load';
 import { drawBasisPoints, type Seed } from './rng';
 import {
   ATTRIBUTES,
@@ -70,7 +70,7 @@ import {
   type PublicState,
 } from './state';
 import { rarityRank, payFor } from './values';
-import { campTile, findSlot, inRect, makeWalkable, near, npcTile, type Rect } from './world';
+import { campTile, findSlot, inRect, makeStepRule, makeWalkable, near, npcTile, type Rect } from './world';
 
 export type Tile = [number, number];
 export type Grade = 0 | 1 | 2 | 3 | 4;
@@ -112,7 +112,8 @@ export type Action =
   | { t: 'drop'; item: string; qty: number; at: Tile }
   /** pick a dropped thing up again from the tile the player stands on */
   | { t: 'pickup'; item: string; at: Tile }
-  | { t: 'move'; at: Tile };
+  /** `gait` is how the step was taken (default walk: an old save or client without it reads walk) */
+  | { t: 'move'; at: Tile; gait?: Gait };
 
 export type GameEvent =
   | { e: 'gain'; item: string; qty: number }
@@ -266,12 +267,24 @@ function walkableFor(bundle: Bundle) {
   return fn;
 }
 
+const stepRuleCache = new WeakMap<Bundle, ReturnType<typeof makeStepRule>>();
+/** The height rule of a step (G68), built once per bundle: the one function walking, G56's BFS and the tools share. */
+export function stepRuleFor(bundle: Bundle) {
+  let fn = stepRuleCache.get(bundle);
+  if (!fn) {
+    fn = makeStepRule(bundle);
+    stepRuleCache.set(bundle, fn);
+  }
+  return fn;
+}
+
 /** The shortest four-way path to a tile, limited to a square and a maximum number of steps. */
 export function walkDistance(bundle: Bundle, state: State, from: Tile, target: Tile, maxSteps: number): number | undefined {
   const validTile = (tile: Tile): boolean =>
     Array.isArray(tile) && tile.length === 2 && tile.every(Number.isSafeInteger);
   if (!validTile(from) || !validTile(target) || !Number.isSafeInteger(maxSteps) || maxSteps < 0) return undefined;
   const walkable = walkableFor(bundle);
+  const stepOpen = stepRuleFor(bundle);
   if (!walkable(target[0], target[1], state.player)) return undefined;
   if (from[0] === target[0] && from[1] === target[1]) return 0;
 
@@ -291,7 +304,7 @@ export function walkDistance(bundle: Bundle, state: State, from: Tile, target: T
       const y = current.y + stepY;
       if (x < minX || x > from[0] + maxSteps || y < minY || y > from[1] + maxSteps) continue;
       const nextKey = key(x, y);
-      if (seen.has(nextKey) || !walkable(x, y, state.player)) continue;
+      if (seen.has(nextKey) || !walkable(x, y, state.player) || !stepOpen(current.x, current.y, x, y)) continue;
       const steps = current.steps + 1;
       if (x === target[0] && y === target[1]) return steps;
       seen.add(nextKey);
@@ -401,7 +414,7 @@ function apply(ctx: Ctx, a: Action, options: StepOptions): void {
   if (s.player.race === '') refuse('Pick a character first.');
   // a position report and a carved name are not work: they go through while the player is busy
   if (a.t !== 'move' && a.t !== 'carve' && ctx.tick < s.player.busyUntil) refuse('You are still busy.');
-  if (a.t === 'move') return moveTo(ctx, a.at, options.validateTravel === true);
+  if (a.t === 'move') return moveTo(ctx, a.at, options.validateTravel === true, a.gait);
   // past an expedition's last bell the mist walks the player out first: the action is not made, and its tile is not read (G49)
   if (ctx.walkOut !== undefined) {
     arrive(ctx, s.player.at);
@@ -1449,28 +1462,29 @@ function gradeEvents(ctx: Ctx, from: readonly [number, number]): void {
 // ------------------------------------------------------------------ danger
 
 /** A position report (DECISIONS.md, 2026-10-10): the tile the player stands on now. It is the one place travel is checked. */
-function moveTo(ctx: Ctx, at: Tile, validateTravel: boolean): void {
+function moveTo(ctx: Ctx, at: Tile, validateTravel: boolean, gait: Gait = 'walk'): void {
+  if (!GAITS.includes(gait)) refuse('That is not a way to walk.');
   if (validateTravel) {
-    checkTravel(ctx, at);
-    arrive(ctx, at);
+    checkTravel(ctx, at, gait);
+    arrive(ctx, at, gait);
     return;
   }
   const { b, s } = ctx;
   if (!Array.isArray(at) || at.length !== 2 || !Number.isSafeInteger(at[0]) || !Number.isSafeInteger(at[1])) refuse('Where are you?');
   if (!walkableFor(b)(at[0], at[1], s.player)) refuse('You cannot stand there.');
-  const reach = 2 + idiv(ctx.tick - s.player.movedAt, walkStepMs(b, s));
+  const reach = 2 + idiv(ctx.tick - s.player.movedAt, gaitStepMs(b, s, gait));
   if (Math.max(Math.abs(at[0] - s.player.at[0]), Math.abs(at[1] - s.player.at[1])) > reach) refuse('That is further than a walk goes in that time.');
-  arrive(ctx, at);
+  arrive(ctx, at, gait);
 }
 
 /** G56: travel and action tiles must be reachable by a four-way walk inside the elapsed-time square. */
-function checkTravel(ctx: Ctx, target: Tile): void {
+function checkTravel(ctx: Ctx, target: Tile, gait: Gait = 'walk'): void {
   const { b, s, tick } = ctx;
   const from = s.player.at;
   if (!Array.isArray(target) || target.length !== 2 || !target.every(Number.isSafeInteger)) refuse('Where are you?');
   const elapsed = Math.max(0, tick - s.player.movedAt);
   // the pace the load allows (DECISIONS.md, 2026-10-23): a heavy player cannot report a light walk
-  const reach = Math.min(2 + idiv(elapsed, walkStepMs(b, s)), b.params.move_reach_max);
+  const reach = Math.min(2 + idiv(elapsed, gaitStepMs(b, s, gait)), b.params.move_reach_max);
   const dx = target[0] - from[0];
   const dy = target[1] - from[1];
   if (Math.abs(dx) > reach || Math.abs(dy) > reach) refuse('That is further than a walk goes in that time.');
@@ -1486,7 +1500,7 @@ function checkTravel(ctx: Ctx, target: Tile): void {
  * hunt and the outing, a hazard that wakes under their feet hurts, and at zero
  * health they fall. Returns true when they fell: that step does nothing else.
  */
-function arrive(ctx: Ctx, at: Tile): boolean {
+function arrive(ctx: Ctx, at: Tile, gait: Gait = 'walk'): boolean {
   const { b, s, tick } = ctx;
   const p = s.player;
   const before = p.at;
@@ -1507,7 +1521,7 @@ function arrive(ctx: Ctx, at: Tile): boolean {
   } else {
     p.outing ??= { gained: {}, solved: [], visited: [] };
     // past an expedition's last bell the mist walks the player out: nothing wakes under this tile (G49)
-    if (ctx.walkOut === undefined) strike(ctx, before, at);
+    if (ctx.walkOut === undefined) strike(ctx, before, at, gait);
   }
   // the signs this step raised, told here so a phone that holds no seed can show them too (REACTIONS 5)
   if (before[0] !== at[0] || before[1] !== at[1]) {
@@ -1523,7 +1537,7 @@ function arrive(ctx: Ctx, at: Tile): boolean {
  * predator that has noticed them. Ground that took the last of the health is a fall (G33), and no
  * hunt begins over it, so nothing is told seen as the player falls.
  */
-function strike(ctx: Ctx, before: Tile, at: Tile): void {
+function strike(ctx: Ctx, before: Tile, at: Tile, gait: Gait): void {
   const { b, s, tick } = ctx;
   const cap = hpCap(b, s);
   const awake = hazardsOf(b).filter((h) => windowOpen(b, h, tick));
@@ -1535,7 +1549,7 @@ function strike(ctx: Ctx, before: Tile, at: Tile): void {
   if (ctx.hurt && s.player.hp === 0) return;
   for (const h of awake) {
     if (h.kind !== 'predator' || s.player.chase !== null) continue;
-    if (h.round ? sees(b, h, tick, at) : distanceTo(at, h.rect) <= h.reach) {
+    if (h.round ? sees(b, h, tick, at, gait) : distanceTo(at, h.rect) <= h.reach) {
       s.player.chase = { hazard: h.id, since: tick, bites: 0 };
       ctx.events.push({ e: 'seen', id: h.id });
     }

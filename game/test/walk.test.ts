@@ -262,7 +262,7 @@ describe('after a diagonal walk an action hits the tile in front of the feet (me
     const walkable = makeWalkable(b);
     const nodeAt = new Map<string, string>();
     for (const [id, inst] of Object.entries(b.instances)) nodeAt.set(`${inst.x},${inst.y}`, id);
-    const enter = (x: number, y: number) => canEnter(b, walkable, nodeAt, s, x, y);
+    const enter = (x: number, y: number, from?: readonly [number, number]) => canEnter(b, walkable, nodeAt, s, x, y, from);
     for (const d of Object.keys(DIRS) as Dir[]) {
       const [dx, dy] = DIRS[d];
       const end: Tile = [target[0] - dx, target[1] - dy];

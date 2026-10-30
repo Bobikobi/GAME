@@ -4,24 +4,41 @@
  * or a hunt runs (P-5b). The 2D scene and the 3D door both walk by them. Pure apart from the GameSession it is handed, so the walk
  * can be played on the real map without a renderer (game/test/stealth-flow.test.ts).
  */
-import { type Bundle, type Hazard, type Tile, type makeWalkable, sees, windowOpen } from '@game/kernel';
+import { type Bundle, type Gait, type Hazard, type Tile, type makeWalkable, sees, stepRuleFor, windowOpen } from '@game/kernel';
 
 import { DIRS, type Dir } from './input';
 import type { GameSession } from './session-surface';
 
 type Walkable = ReturnType<typeof makeWalkable>;
 
-/** The kernel's rule, and a plant or stone that is ready stands in the way. `nodeAt` holds each node and find by its tile, `x,y`. */
-export function canEnter(b: Bundle, walkable: Walkable, nodeAt: ReadonlyMap<string, string>, s: GameSession, x: number, y: number): boolean {
+/**
+ * The kernel's rule, a rock face's, and a plant or stone that is ready stands in the way. `nodeAt` holds each node and find by its tile, `x,y`.
+ *
+ * A step into a four-adjacent tile also asks the kernel's height rule (G68, `stepRuleFor`: built once per bundle, and the very function
+ * `walkDistance` reads for the server's check), so a face between levels stops the body as a wall does and a crossing lets it by, and the
+ * server never refuses a step the client took. `from` is the tile the body leaves: the player's own (`s.pos`) when none is given, which is what
+ * one step asks, and the tile a search expands from when it asks tile by tile. A target that is not four-adjacent to `from` is no step and is
+ * judged by its own tile alone.
+ */
+export function canEnter(
+  b: Bundle,
+  walkable: Walkable,
+  nodeAt: ReadonlyMap<string, string>,
+  s: Pick<GameSession, 'pos' | 'tick' | 'state'>,
+  x: number,
+  y: number,
+  from: readonly [number, number] = s.pos,
+): boolean {
   if (!walkable(x, y, s.state.player)) return false;
+  if (Math.abs(x - from[0]) + Math.abs(y - from[1]) === 1 && !stepRuleFor(b)(from[0], from[1], x, y)) return false;
   const node = nodeAt.get(`${x},${y}`);
   return !(node && b.instances[node]?.kind === 'resource' && (s.state.nodes[node]?.readyAt ?? 0) <= s.tick);
 }
 
 /** The last frame of a step: the tile is the player's, and the kernel hears of it. A hazard there may hurt, and a fall moves the player to town. */
-export function landStep(s: GameSession, to: Tile): void {
+export function landStep(s: GameSession, to: Tile, gait: Gait = 'walk'): void {
   s.pos = [to[0], to[1]];
-  s.report(s.pos);
+  s.report(s.pos, false, gait);
 }
 
 /** Art pixels per tile: the body's place is kept on the art's own grid (DECISIONS 2026-10-18, 64 px per tile). */
@@ -52,9 +69,15 @@ export function facedTile(s: Pick<GameSession, 'pos' | 'facing'>): [number, numb
 }
 
 /**
+ * Whether the body's box may cross from the tile `from` into the tile (x, y), the two four-adjacent: a tile the walk refuses is a wall, and a
+ * rock face between levels is one too, except across a crossing (`canEnter`, G68). The box asks once for each row or column of tiles it spans.
+ */
+export type Open = (x: number, y: number, from: readonly [number, number]) => boolean;
+
+/**
  * The body walking freely over a world of tiles (NEXT 22 a): its feet at art-pixel precision, a velocity from
  * the held input at one tile per `walk_step_ms` whatever the angle, and a box at the feet that never overlaps a
- * tile the walk refuses. The x and y of each piece are resolved apart, so the body slides along a wall; a box
+ * tile the walk refuses or crosses a face it does not. The x and y of each piece are resolved apart, so the body slides along a wall; a box
  * has width, so it never cuts the corner between two refused tiles. The tile under the feet's centre is the
  * player's, and every tile the centre enters is told in order, each beside the one before (G56).
  */
@@ -89,10 +112,10 @@ export class Walker {
 
   /**
    * One frame of walking. `input` is the held direction (a length of 1 is full speed, more is cut to 1), `ms` the
-   * frame, `stepMs` the time a tile takes at full speed, `open` the tiles the body may overlap. Returns the tiles
+   * frame, `stepMs` the time a tile takes at full speed, `open` the tiles the body may cross into. Returns the tiles
    * the feet's centre entered, in order.
    */
-  frame(input: readonly [number, number], ms: number, stepMs: number, open: (x: number, y: number) => boolean): [number, number][] {
+  frame(input: readonly [number, number], ms: number, stepMs: number, open: Open): [number, number][] {
     const entered: [number, number][] = [];
     const length = Math.hypot(input[0], input[1]);
     const x0 = this.x;
@@ -130,18 +153,23 @@ export class Walker {
   }
 
   /** Move along one axis (0 is x) as far as the box may go, up to `d` art pixels. Returns how far it went. */
-  private slide(axis: 0 | 1, d: number, open: (x: number, y: number) => boolean): number {
+  private slide(axis: 0 | 1, d: number, open: Open): number {
     if (d === 0) return 0;
     const half = axis === 0 ? BODY_BOX.w / 2 : BODY_BOX.h / 2;
     const across = axis === 0 ? BODY_BOX.h / 2 : BODY_BOX.w / 2;
     const pos = axis === 0 ? this.x : this.y;
     const other = axis === 0 ? this.y : this.x;
-    const isOpen = (along: number, side: number) => (axis === 0 ? open(along, side) : open(side, along));
+    // a face is met on its own edge (G68): a line is entered from the one behind it, each of its tiles from the tile beside it in the line left,
+    // and the tiles of the line lie side by side across the box, each from the one before it. Every pair is four-adjacent, whatever the frame's
+    // length, so the box never crosses a refused edge and never straddles one
+    const behind = d > 0 ? -1 : 1;
+    const isOpen = (along: number, side: number) => (axis === 0 ? open(along, side, [along + behind, side]) : open(side, along, [side, along + behind]));
+    const meets = (along: number, side: number) => (axis === 0 ? open(along, side, [along, side - 1]) : open(side, along, [side - 1, along]));
     // the lines of tiles the box spans across the motion
     const first = Math.floor((other - across) / ART_PX);
     const last = Math.ceil((other + across) / ART_PX) - 1;
     const blocked = (line: number) => {
-      for (let side = first; side <= last; side++) if (!isOpen(line, side)) return true;
+      for (let side = first; side <= last; side++) if (!isOpen(line, side) || (side > first && !meets(line, side))) return true;
       return false;
     };
     let to = pos + d;
@@ -176,9 +204,9 @@ export class Walker {
    * Ease the body across `axis` toward the middle of the line of tiles its feet stand in, by up to `budget` art
    * pixels, when the tile ahead in that line (the way `ahead` points along the other axis) is open.
    */
-  private toLane(axis: 0 | 1, budget: number, ahead: number, open: (x: number, y: number) => boolean): void {
+  private toLane(axis: 0 | 1, budget: number, ahead: number, open: Open): void {
     const [tx, ty] = this.tile();
-    const next = axis === 1 ? open(tx + ahead, ty) : open(tx, ty + ahead);
+    const next = axis === 1 ? open(tx + ahead, ty, [tx, ty]) : open(tx, ty + ahead, [tx, ty]);
     if (!next) return;
     const pos = axis === 0 ? this.x : this.y;
     const middle = (axis === 0 ? tx : ty) * ART_PX + ART_PX / 2;

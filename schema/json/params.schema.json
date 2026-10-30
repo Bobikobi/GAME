@@ -567,6 +567,7 @@
         "bag_base",
         "place_stack",
         "load",
+        "gait",
         "starting_gold_mg",
         "per_point"
       ],
@@ -2038,6 +2039,183 @@
             }
           }
         },
+        "gait": {
+          "additionalProperties": false,
+          "description": "The three gaits (docs/design/ANIMATION.md, section 2): walk is the pace the load allows, run is faster and sneak slower, and each is heard at its own radius. The noise table is shared with the hunting rules; the radii only grow from still to run.",
+          "type": "object",
+          "required": [
+            "run_div",
+            "sneak_mul",
+            "noise_still",
+            "noise_sneak",
+            "noise_walk",
+            "noise_run"
+          ],
+          "properties": {
+            "run_div": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "A run takes the pace the load allows divided by this: 2 is half the time a tile. Every pace divides evenly."
+            },
+            "sneak_mul": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "A sneak takes the pace the load allows times this: 2 is twice the time a tile."
+            },
+            "noise_still": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Tiles within which a creature that listens turns its head at a player standing still."
+            },
+            "noise_sneak": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "The same, at a sneak."
+            },
+            "noise_walk": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "The same, at a walk."
+            },
+            "noise_run": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "The same, at a run."
+            }
+          }
+        },
         "starting_gold_mg": {
           "additionalProperties": false,
           "type": "object",
@@ -2748,7 +2926,7 @@
                   "type": "integer"
                 }
               },
-              "description": "The most a group member earns from another's work, in permille of the member's own (PROGRESSION 3.7, Q7)."
+              "description": "The most a newcomer takes from the experience the other members already earned, in permille of the newcomer's own: a split, never new experience (PROGRESSION 3.7, Q7)."
             },
             "loop_profit_max_mg": {
               "additionalProperties": false,
@@ -2839,7 +3017,7 @@
                 "sustain": {
                   "minItems": 5,
                   "maxItems": 5,
-                  "description": "Health back a game hour while a place drains, regen and food together, in percent of the cap.",
+                  "description": "Health back a game hour while a place drains, regen and food together, in points of the base cap of 100 (the drain's unit).",
                   "type": "array",
                   "items": {
                     "minimum": 0,
@@ -3264,7 +3442,7 @@
             "grade_drain_pct": {
               "minItems": 5,
               "maxItems": 5,
-              "description": "The drain of a remaining grade 0 to 4, in percent of the health cap a game hour (BODY_CLOCKS 5.2).",
+              "description": "The drain of a remaining grade 0 to 4, in points of the base cap of 100 a game hour, the same for every cap (BODY_CLOCKS 5.2).",
               "type": "array",
               "items": {
                 "minimum": 0,
