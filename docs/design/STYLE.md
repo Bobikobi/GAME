@@ -31,7 +31,7 @@ A section marked *proposal* is the art session's recommendation, not yet the own
 | What | Size in art pixels |
 |---|---|
 | Ground tile, item | 64 x 64 |
-| Character frame | 64 x 96 |
+| Character frame | 128 x 128, the feet at (64, 90): the anim tool's one frame (`tools/anim/anim.json` `frame`), the size the kit check holds a character to |
 | Work pose | 128 x 128, two frames (tool raised, tool down) |
 | Prop | up to 384 x 384 (six tiles a side) |
 
