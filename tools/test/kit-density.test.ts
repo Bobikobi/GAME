@@ -3,7 +3,7 @@
  * and 64 (density 4). The check accepts each size at its density and refuses a mixed one; the bundle carries
  * the density to the client.
  */
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PNG } from 'pngjs';
@@ -29,7 +29,7 @@ describe('spriteSizeProblem', () => {
     for (const [name, w, h] of [
       ['tiles/grass', 64, 64],
       ['items/axe', 64, 64],
-      ['chars/pell', 64, 96],
+      ['chars/pell', 128, 128],
       ['chars/pell_work_down', 128, 128],
       ['props/oak', 128, 192],
       ['props/six_tiles', 384, 384],
@@ -50,7 +50,7 @@ describe('spriteSizeProblem', () => {
     const problem = spriteSizeProblem('tiles/grass', { w: 32, h: 32, density: 4 });
     expect(problem).toContain('tiles are 64x64 at density 4');
     expect(problem).not.toContain('set "density"');
-    expect(spriteSizeProblem('chars/pell', { w: 16, h: 16 })).toContain('character frames are 16x24 at density 1 (64x96 at density 4)');
+    expect(spriteSizeProblem('chars/pell', { w: 16, h: 16 })).toContain('character frames are 16x24 at density 1 (128x128 at density 4)');
   });
 });
 
@@ -91,11 +91,15 @@ describe('density in a kit', () => {
     expect(sprites['core/base-kit:tiles/dense_forgot']?.density).toBe(1);
     const others = Object.entries(sprites).filter(([k]) => !k.includes('dense_'));
     expect(others.length).toBeGreaterThan(100);
-    // every real sprite carries what its kit entry says, 1 where it says nothing (the rich wave landed density-4 picks)
-    const declared = (JSON.parse(readFileSync(join(CONTENT_DIR, 'kit/core/kit.json'), 'utf8')) as { kit: { sprites: Record<string, { density?: number }> } }).kit.sprites;
-    for (const [k, s] of others) {
-      const own = k.startsWith('core/base-kit:') ? declared[k.slice('core/base-kit:'.length)] : undefined;
-      expect(s.density, k).toBe(own?.density ?? 1);
+    // every real sprite carries what its kit entry says, 1 where it says nothing (the rich wave landed density-4 picks);
+    // every kit is read, the core's and each creator's, so a creator's own 64 px art is held to its own entry
+    const declared: Record<string, { density?: number }> = {};
+    for (const dir of readdirSync(join(CONTENT_DIR, 'kit'))) {
+      const file = join(CONTENT_DIR, 'kit', dir, 'kit.json');
+      if (!existsSync(file)) continue;
+      const kit = JSON.parse(readFileSync(file, 'utf8')) as { id: string; kit: { sprites: Record<string, { density?: number }> } };
+      for (const [path, entry] of Object.entries(kit.kit.sprites)) declared[`${kit.id}:${path}`] = entry;
     }
+    for (const [k, s] of others) expect(s.density, k).toBe(declared[k]?.density ?? 1);
   });
 });

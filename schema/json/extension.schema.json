@@ -15344,6 +15344,46 @@
                         }
                       ]
                     },
+                    "stride": {
+                      "additionalProperties": false,
+                      "description": "A walk cycle that follows the distance walked (tools/anim). Its frames are the poses of the cycle in order and, last, the standing pose; `frames` is the poses plus one. Left out for a sheet whose frames are time-based.",
+                      "type": "object",
+                      "required": [
+                        "travel_mpx",
+                        "anchor"
+                      ],
+                      "properties": {
+                        "travel_mpx": {
+                          "minimum": 1000,
+                          "maximum": 128000,
+                          "description": "Thousandths of an art pixel (64 per tile) the body walks for one pose of the cycle: the pose shown is the nearest to art pixels walked / (travel_mpx / 1000), so a planted foot is where the ground is.",
+                          "type": "integer"
+                        },
+                        "anchor": {
+                          "description": "The point of the ground under the feet, in pixels of the frame: the sprite is drawn with it on the body's feet.",
+                          "type": "array",
+                          "items": [
+                            {
+                              "minimum": 0,
+                              "maximum": 384,
+                              "type": "integer"
+                            },
+                            {
+                              "minimum": 0,
+                              "maximum": 384,
+                              "type": "integer"
+                            }
+                          ],
+                          "additionalItems": false,
+                          "minItems": 2,
+                          "maxItems": 2
+                        },
+                        "bob": {
+                          "description": "false when the sheet carries its own head travel and the feel layer's code bob is dropped for it (DECISIONS 2026-10-29: the bob is dropped for a clip that carries its own); left out, the bob plays on top of the poses.",
+                          "type": "boolean"
+                        }
+                      }
+                    },
                     "scale": {
                       "minimum": 0.1,
                       "maximum": 40,
