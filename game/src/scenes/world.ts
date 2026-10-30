@@ -2873,8 +2873,9 @@ export class WorldScene extends Phaser.Scene {
     if (this.wasNight === undefined) return;
     const state = musicState(signalsOf(this.b, s.state, this.wasNight));
     if (state === this.musicNow) return;
-    sound.music(SONG_OF[state], crossfadeMs(this.musicNow, state));
+    const from = this.musicNow;
     this.musicNow = state;
+    sound.music(SONG_OF[state], crossfadeMs(from, state));
   }
 
   /** Reeds and tall grass marked as cover soften the player, then release them at the next tile. */

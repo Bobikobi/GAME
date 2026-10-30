@@ -65,7 +65,8 @@ export const SONG_OF: Readonly<Record<MusicState, SongId>> = {
  * (HUNTING.md), so it is never on. The combat and hunt code fills this in when it lands.
  */
 export function danger(state: PublicState): { attacked: boolean; hunting: boolean } {
-  return { attacked: state.player.chase !== null, hunting: false };
+  // a save from before the hunt has no chase at all: absent is no hunt, as null is
+  return { attacked: state.player.chase != null, hunting: false };
 }
 
 /** The signals of a session's state, with the night as the scene sees it. */

@@ -117,6 +117,13 @@ describe('the signals of the game', () => {
     expect(musicState(signalsOf(b, s, true))).toBe('night');
   });
 
+  test('a save that carries no chase at all is no fight', () => {
+    const old = at(s.player.at, (st) => {
+      delete (st.player as { chase?: unknown }).chase;
+    });
+    expect(musicState(signalsOf(b, old, false))).toBe('routine');
+  });
+
   test('a bar under the kernel\'s low mark is near death', () => {
     const cap = signalsOf(b, s, false).hpCap;
     const low = at(s.player.at, (st) => {

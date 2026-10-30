@@ -963,8 +963,9 @@ export class World3D implements WorldView {
     // the music follows the state as in the pixel game (audio/state.ts): night outside the town, a fight, near death
     const state = musicState(signalsOf(this.b, s.state, dark));
     if (state !== this.musicNow) {
-      sound.music(SONG_OF[state], crossfadeMs(this.musicNow, state));
+      const from = this.musicNow;
       this.musicNow = state;
+      sound.music(SONG_OF[state], crossfadeMs(from, state));
     }
     this.showHazards(s);
     this.placeLantern(s);

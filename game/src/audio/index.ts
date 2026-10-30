@@ -185,9 +185,14 @@ function syncRequests(): void {
   // the music is asked for (and its file fetched) once the first gesture made the graph, even while the
   // context is still waking: a suspended context holds it still until it runs
   if (graph && (appliedSong !== requestedSong || appliedSource !== musicSource)) {
-    graph.pieces.play(requestedSong ? STATE_OF[requestedSong] : null, musicSource, requestedFade);
     appliedSong = requestedSong;
     appliedSource = musicSource;
+    try {
+      graph.pieces.play(requestedSong ? STATE_OF[requestedSong] : null, musicSource, requestedFade);
+    } catch (error) {
+      // the music is never worth a frame: a browser that refuses it plays on without it (G27)
+      console.warn('the music could not start', error);
+    }
   }
   if (!context || context.state !== 'running') return;
   const audio = ensureGraph();
