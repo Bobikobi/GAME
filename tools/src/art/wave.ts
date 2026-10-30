@@ -164,7 +164,8 @@ export function planJobs(id: string, pool: PoolName, candidates: readonly Candid
   for (const round of rounds) {
     const inRound = candidates.filter((c) => c.round === round);
     // a creature is drawn with its own negative prompt (no "animal") and a ground fill with its own (no object, no frame),
-    // so neither shares a kernel with the rest
+    // so neither shares a kernel with the rest. A ground job also turns the kernel's `grid` post off: it keys the picture's corner colour
+    // to background, and a fill's corner is its ground (the first ground trial, 30.10: sand and grass came back as navy)
     for (const negative of ['default', 'creature', 'ground'] as const) {
       const these = inRound.filter((c) => (c.entry.creature === true ? 'creature' : c.entry.kind === 'tile' ? 'ground' : 'default') === negative);
       if (these.length === 0) continue;
@@ -176,7 +177,7 @@ export function planJobs(id: string, pool: PoolName, candidates: readonly Candid
           jobs.push({
             id: `${id}-${String(n).padStart(2, '0')}-${recipe}-s${seed}`, wave: id, pool, kind, round, recipe, seed,
             entries: these.map((c) => c.entry.name), spec, out,
-            env: { KAGGLE_MODEL: recipe, KAGGLE_SEED: String(seed), ...(negative === 'default' ? {} : { KAGGLE_NEGATIVE_KIND: negative }) },
+            env: { KAGGLE_MODEL: recipe, KAGGLE_SEED: String(seed), ...(negative === 'default' ? {} : { KAGGLE_NEGATIVE_KIND: negative }), ...(negative === 'ground' ? { KAGGLE_POST: 'off' } : {}) },
             args: [spec, '--out', out, '--drawer', 'kaggle', '--no-picks'],
             estimate_minutes: Math.round(estimateMinutes(recipe, these.length) * 10) / 10, created,
           });

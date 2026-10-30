@@ -52,6 +52,8 @@ export interface ScatterEntry {
   base?: string;
   /** Tiles to bake, each from its own seed (default 4, STYLE.md: at least four variants). */
   variants?: number;
+  /** The name each baked variant takes, in order (the pool entry it becomes); a variant past the list is `<entry>_<n>`. */
+  names?: string[];
   /** One motif at most per cell of this many art pixels, anywhere inside its cell's reach (default 16). */
   cell?: number;
   /** The share of cells that hold a motif (default 0.85). */
@@ -89,6 +91,7 @@ export function scatterProblem(entry: ScatterEntry): string | null {
   if (entry.width % cell !== 0) return `cell ${cell} must divide the tile's ${entry.width}`;
   if (!isLetter(entry.base)) return 'base must be a palette letter';
   const variants = entry.variants ?? 4;
+  if (entry.names !== undefined && !(Array.isArray(entry.names) && entry.names.every((n) => typeof n === 'string' && /^[a-z][a-z0-9_]*$/u.test(n)))) return 'names must be a list of lowercase names';
   if (!Number.isInteger(variants) || variants < 1 || variants > 16) return 'variants must be an integer from 1 to 16';
   const chance = entry.chance ?? 0.85;
   if (typeof chance !== 'number' || !(chance > 0 && chance <= 1)) return 'chance must be above 0 and at most 1';

@@ -652,6 +652,9 @@ export function entryMatches(entry: GenEntry, only: ReadonlySet<string> | null):
   return (entry.motifs ?? []).some((m) => only.has(`${entry.name}_${m.name}`));
 }
 
+/** Motifs written by hand or by an agent, named `<entry>_<motif>.txt`; one here is used instead of a Codex call. */
+const MOTIF_DIR = 'tools/kit-gen/motifs';
+
 /** The frame of the measure in STYLE.md section 3: a 1440x3120 phone at 64 px per tile. */
 const PHONE_FRAME = { x: 23, y: 49 };
 
@@ -679,7 +682,13 @@ function generateScatter(entry: GenEntry, options: Options, version: string, ear
     lines.push(line);
     if (options.dry) continue;
     const redraw = !options.reimport && (options.only === null || options.only.has(entry.name) || options.only.has(name));
-    if (redraw) {
+    // a motif written by hand or by an agent other than Codex lives in tools/kit-gen/motifs/<name>.txt and is used as it is
+    const authored = join(ROOT, MOTIF_DIR, `${name}.txt`);
+    if (existsSync(authored)) {
+      line.raw = `raw/${name}-${stamp}.txt`;
+      writeFileSync(join(options.out, line.raw), readFileSync(authored));
+      line.prompt = `authored: ${MOTIF_DIR}/${name}.txt`;
+    } else if (redraw) {
       const asked = askCodex(options, version, name, stamp, line.prompt, [], `${name}.txt`);
       line.codex = asked.codex;
       if (asked.saved === null) {
@@ -721,7 +730,7 @@ function generateScatter(entry: GenEntry, options: Options, version: string, ear
   const grids = throws.map(scatterTile);
   const warnings = tileWarnings(ground, variants, PHONE_FRAME);
   grids.forEach((grid, i) => {
-    const name = `${entry.name}_${i + 1}`;
+    const name = entry.names?.[i] ?? `${entry.name}_${i + 1}`;
     const line = blank(name, 'tile', 'scatter', entry.width, entry.height, `scattered from ${sources.join(', ')}`);
     const own = `out/${name}-${stamp}.png`;
     writeFileSync(join(options.out, own), PNG.sync.write(renderGrid(grid)));
