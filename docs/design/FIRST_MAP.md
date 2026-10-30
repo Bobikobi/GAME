@@ -64,7 +64,7 @@ Picture positions are pixels of the jpg (x, y from the top left); plan positions
 | The river: enters from the north-east distance (x 650-850, y 400-540), passes the town's east side, is widest at the bridge (x 440-800, y 640-720), then turns toward the viewer and swings south-west to the lower left (x 200-600, y 740-960) | Runs straight north to south from a spring at (80,51) along x 79-81 to the bay | Re-routed from the north-east: spring (128,49), down through (121,55), (110,61), (100,64), (90,68), the bend at (84,71)-(82,75), then (80,79) into the old river top at (80,84); 3 tiles wide. A's channel x 77-83, y 52-83 is meadow again. Below y 84 the river and the bay are unchanged | The authored block's river, bridge and bay do not move |
 | A lake with wooded islets where the river leaves the hills (x 650-900, y 430-540) | Missing | A mere at (114,58), 5 x 3 tiles, on the river; its islets are forest | The pocket rule turns the islets to trees |
 | The waterfall: several cascades off a cliff on the west heights, level with the bridge (x 40-130, y 640-760, about 90 x 120 px) | Missing; the west of the floor is flat meadow with a forest edge | The west heights: a shelf x 48-56, y 68-92 at level 2, pines on it; the falls drop off its east face at (56-57, 80-84); a brook runs east along y 82-83 from x 57 to the river at x 78, under the city's south wall; a stair beside the falls (53-63, 87-89) climbs the shelf | The brook gets a footbridge where the city's south road crosses it (64,83) |
-| The town with red roofs: about twenty houses, the largest built thing in the picture (x 240-720, y 440-640), on the river's west bank, smoke from the chimneys | The valley town at (96,92) is on the river's east bank; the human city is scenery on the far bank (x 0-24, y 150-191) | Reading (b) drawn: a walled city x 58-75, y 64-80 (18 x 17 tiles) on the west bank inside the bend; red-roofed blocks between streets, a square at (64-69, 70-74); gates south (66-67, 80), north (66-67, 64), east (75, 77-78), dock gate (75, 71-73) | The authored town keeps its place east of the river; in the picture that spot is behind the elf |
+| The town with red roofs: about twenty houses, the largest built thing in the picture (x 240-720, y 440-640), on the river's west bank, smoke from the chimneys | The valley town at (96,92) is on the river's east bank; the human city is scenery on the far bank (x 0-24, y 150-191) | A walled city x 58-75, y 64-80 (18 x 17 tiles) on the west bank inside the bend; red-roofed blocks between streets, a square at (64-69, 70-74); gates south (66-67, 80), north (66-67, 64), east (75, 77-78), dock gate (75, 71-73) | A city of all races (owner, 30.10); the authored wake town keeps its place east of the river, behind the elf in the picture |
 | Its tall tower: a stone tower with a smoking top, the tallest building (x 278-342, y 445-550), on the town's west side | Missing | Tower tiles (60-61, 66-67), the city's north-west corner | The city's landmark seen from the meadow |
 | A red-roofed spire on a wooded rise behind the town (x 520-550, y 385-460) | Missing | Spire tile (73, 59-60), on the rise north-east of the city | |
 | The bridge: a stone bridge of five arches with lamps (x 440-790, y 630-710), from the town's south-east to the east bank | One bridge, the first bridge (79-81, 100-101), on the authored block | A second bridge, the city bridge: rows 77-78 over the river (x 79-83), from the city's east gate to the east bank; a road from its east end (83,78) to the town's north side (94,85) | The first bridge stays as it is; the opening's way to it is untouched |
@@ -91,18 +91,29 @@ stand, south of the block at (91,151); start 1 moves from (72,68), now inside th
 **Measured on A2** (`measure.json`, key `A2`; A's numbers unchanged). Wake to bridge 55 / 17 / 30 (A 39 / 17 / 30); pairs 66 / 85 / **25**
 (nearest = west bank - slid bank, 2.8 x today's 9, as in A); the first bridge's view shows none of the three areas; every pass is walkable
 from the town (N 68, E 55, SW 74 steps); the city's east gate is 36 steps from the town, its square 50 (d0); no walkable tile is cut off;
-no path has a straight run over 7 (limit 8); danger tiles d0 4642, d1 6239, d2 775 (A 4541 / 6142 / 994). The authored block keeps its
+no path has a straight run over 7 (limit 8); danger tiles d0 4594, d1 6287, d2 775 since the ridge (A 4541 / 6142 / 994). The authored block keeps its
 ground and paths; the three passes stay where A has them.
 
-### The human city: two readings (the owner picks)
+### The city: the owner's reading (c), 30.10
 
-**(a) The picture's town is the valley town.** The walled town with the tall tower is the town the player starts near, the one the
-opening already has; the human city stays across the bay as scenery (G55 as it stands). The town stays east of the river where the
-authored block puts it (the picture's left and right are the painter's for this one place): its tall tower goes to the square's west edge
-(about (88,88)) and its dock and crane to the river beside it (about (82,90)); the first bridge is the picture's bridge, so the city bridge
-is not built; the west bank at x 58-75, y 64-80 is meadow again and start 1 can return to (72,68).
+The owner picked A2 and turned down both readings drawn on 29.10 (the picture's town as the wake town, or as the human city). His notes:
+- On A2: "Note that there is a city and above it there are ruins of a building, and the geography cannot be seen from the map: everything
+  has different angles and heights, the city sits on a certain ridge and below and above it there are more places. The game has to convey this."
+- On the wake town: "He wakes, as we decided, in another small town that is not seen in the picture (maybe the valley between the
+  mountains, or before or after the details of the picture)."
+- On the city: "This can be a mixed city of all the races (the vendors and the characters in the city will be random among them)."
 
-**(b) The picture's town is the human city, in the valley.** The walled town on the river's west bank, reached on foot over its own
-bridge, is the human city; it is no longer scenery sailed to, so G55 changes, and the far bank at the south-west corner is a skyline with
-no city. The human world opens from the valley's north-west instead of across the bay. The opening's town stays the town by the first
-bridge. A2 draws this reading; the caption of the still names what (a) would move.
+So A2's geography stands: the picture's walled town at the bend, with its own bridge and dock, is a city of all three races, its
+townspeople and vendors drawn at random from them; it is not the human city. The player wakes in the small town of the authored block,
+outside the picture, as A2 already lays it. G55 (the human city across the bay, scenery on the first map) is not changed by this pick; where
+the human city stands now that the valley has a city of all races is an open question for STORY.
+
+**Heights.** The picture's vertical structure is in the plan's height layer and shows in the still (STYLE 6: a light lip on a top's edge,
+a dark foot under a face). The city and the spire's rise stand on a ridge at level 1 (x 57-75, y 63-81, and round (73,60)), one level above
+the river meadow (0). Below the city: the dock (76-83, 71-73) and the river bank at level 0. Above it: the ruins hill round (55,55) and
+the falls' heights (x 48-56, y 68-92) at level 2, and the peak at (30,32) at 9. Every gate is a crossing (G68): steps down from the south
+gate (66-67, 79-82) and the north gate (66-67, 62-65), a ramp down to the bridge (74-77, 77-78), a stair down to the dock (74-77, 71-73);
+the ruins climb, the falls climb and the north track carry their own crossings. No step anywhere changes more than 3 levels; paths still
+run straight for at most 7. What changed on 30.10: the city's ridge went from level 0 to 1 (it stood on the meadow on 29.10); nothing else
+moved. Re-measured: the legs, pairs, passes and the city's distances are unchanged (the gates are crossings); danger tiles d0 4594, d1 6287,
+d2 775.

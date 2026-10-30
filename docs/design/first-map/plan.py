@@ -35,15 +35,16 @@ BRIDGE = (80, 101)  # the old bridge's middle (old (13..15, 17..18) + shift)
 TOWN = (96, 92)  # the town square's middle (old (26..29, 7..10) + shift is (92..95, 91..94))
 AREA_R = 7  # pocket_grown in content/core/pockets
 
-# A2: the valley re-laid to the key art (FIRST_MAP.md "The picture is the map"). The picture looks north from the south meadow:
-# west is its left, the low sun its right (east). Reading (b) is drawn: the walled town with the tall tower is the human city,
-# on the river's west bank at the bend, reached by its own bridge.
+# A2: the valley re-laid to the key art (FIRST_MAP.md "The picture is the map"), picked by the owner on 30.10. The picture looks
+# north from the south meadow: west is its left, the low sun its right (east). The walled town with the tall tower is a city of all
+# races on the river's west bank at the bend, on a ridge, reached by its own bridge; the wake town is the authored block.
 STARTS_A2 = {'N': ('North meadow', (106, 74)), 'W': ('West bank', (67, 95)), 'S': ('Slid bank', (68, 121))}
 CITY = (66, 72)  # the walled town's middle: walls x 58..75, y 64..80
 CITY_BOX = (58, 64, 75, 80)
 CITY_BRIDGE = (80, 78)  # the picture's arched bridge: the city's east gate to the east bank, rows 77..78
 PEAK = (30, 32)  # the one high peak, north-west (level 9; the rest of the ring tops out at 7)
-HILL = (55, 55)  # the ruins hill, level 2
+HILL = (55, 55)  # the ruins hill, level 2, above the city's ridge
+RIDGE_LV = 1  # the city's ridge: one level above the river meadow
 SHELF = (48, 68, 56, 92)  # the west heights, level 2; the falls drop off its east face at (57, 82)
 FALLS = (57, 82)
 LOOKOUT = (91, 151)  # the picture's eye: the south meadow where the three stand
@@ -429,7 +430,8 @@ def build(variant='A'):
         for i, (key, pts) in enumerate(PATHS_A2.items()):
             p.paths[key] = wind(pts, 40 + i, maxrun=6)
         keys = list(PATHS_A2) + keys[1:3] + keys[4:]
-        for key, how in (('ruins-climb', 'stair cut in the hill'), ('falls-climb', 'stair beside the falls'), ('terrace-track', 'cart ramp')):
+        for key, how in (('ruins-climb', 'stair cut in the hill'), ('falls-climb', 'stair beside the falls'), ('terrace-track', 'cart ramp'),
+                         ('north-track', 'steps down from the ridge'), ('city-south', 'steps down from the ridge')):
             p.crossings(p.paths[key], 1, how)
         brook = set(p.brook)
         for x, y in p.paths['city-south']:
@@ -546,6 +548,22 @@ def picture_places(p):
         for x in range(cx1 + 1, cx1 + 11):
             if p.g[y, x] == '~':
                 p.g[y, x] = 'j'
+    # heights (owner, 30.10: "the city sits on a certain ridge and below and above it there are more places"): the city and the
+    # spire's rise stand on a ridge at level 1, one above the river meadow (0) and the dock; the ruins hill and the falls' heights
+    # (2) and the peak (9) stand above it. Every gate is a crossing (G68): steps down to the meadow, a ramp to the bridge, a stair
+    # to the dock.
+    for y in range(cy0 - 1, cy1 + 2):
+        for x in range(cx0 - 1, cx1 + 1):
+            p.lv[y, x] = RIDGE_LV
+    for y in range(56, 64):
+        for x in range(69, 77):
+            if math.hypot((x - 73) / 4, (y - 60) / 4) <= 1 and p.g[y, x] in '.O':
+                p.lv[y, x] = RIDGE_LV
+    for (x0, y0, x1, y1), how in (((66, 79, 67, 82), 'steps down from the south gate'), ((66, 62, 67, 65), 'steps down from the north gate'),
+                                  ((74, 77, 77, 78), 'ramp down to the bridge'), ((74, 71, 77, 73), 'stair down to the dock')):
+        for y in range(y0, y1 + 1):
+            for x in range(x0, x1 + 1):
+                p.stairs[(x, y)] = how
     # the south meadow where the three stand: flowers, rocks, the mossy stones of an old wall on its north rim
     p.disc(LOOKOUT[0], LOOKOUT[1], 6, 4, '.', 0, only=set('^P'))
     for y in range(LOOKOUT[1] - 4, LOOKOUT[1] + 5):
@@ -740,6 +758,14 @@ def tile_image(p):
                 c = PAL.get(ch, (255, 0, 255))
                 if p.lv[y, x] > 0 and ch in 'kh.fT':
                     c = tuple(min(255, int(v + 6 * p.lv[y, x])) for v in c)
+                if getattr(p, 'variant', 'A') == 'A2':  # STYLE 6: a light lip on a top's edge, a dark foot under a face
+                    up = y > 0 and p.g[y - 1, x] not in '^P' and p.lv[y - 1, x] > p.lv[y, x]
+                    side = any(0 <= x + dx < N and p.g[y, x + dx] not in '^P' and p.lv[y, x + dx] > p.lv[y, x] for dx in (-1, 1))
+                    lip = y < N - 1 and p.g[y + 1, x] not in '^P' and p.lv[y + 1, x] < p.lv[y, x]
+                    if up or side:
+                        c = tuple(int(v * 0.55) for v in c)
+                    elif lip:
+                        c = tuple(min(255, int(v * 0.6 + 255 * 0.4)) for v in c)
                 img[y, x] = c
     return img
 
@@ -955,7 +981,7 @@ def main():
             'A': ('A: the proposal as written', 'floor 96 x 96, 3 passes (E, N, SW), starts 1-3 well apart'),
             'B': ('B tests: the size of the valley floor', 'floor 72 x 72 (A\'s outer 12 tiles are foothill forest); all else as A'),
             'C': ('C tests: how many passes', '2 passes (E, N): the south-west pass is closed; all else as A'),
-            'A2': ('A2: the valley re-laid to the key art, reading (b)', '(a) moves: CITY to the far bank; tower and dock to TOWN'),
+            'A2': ('A2: the valley re-laid to the key art (picked 30.10)', 'city of all races on a ridge (level 1); wake town outside the picture'),
         }[v]
         img = compose(p, d_town, cap[0], cap[1], m)
         img.save(WORK / f'still-{v}.png')

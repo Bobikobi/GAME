@@ -233,8 +233,8 @@
   },
   "d_town_max": 169,
   "d_levels": {
-   "0": 4642,
-   "1": 6239,
+   "0": 4594,
+   "1": 6287,
    "2": 775,
    "3": 0
   },
@@ -285,7 +285,7 @@
    "darktower": 116
   },
   "floor_walkable": 6622,
-  "pixels_differing_from_A": 96622,
+  "pixels_differing_from_A": 101748,
   "diff_bbox": [
    3,
    40,
