@@ -94,6 +94,37 @@ So A and B together cost about one pass, the price of one more fog bank. C is ch
 **1. How strong is the hour's tint?** A shows 18% at 17:30 from the table proposed in ART_SYSTEM 2 (12% at 16:30, 28% at 19:00).
 Recommendation: keep that table, no stronger. A multiply only darkens; a stronger one makes the afternoon dim, not golden, and eats the margin between the dusk and the night's 92% that tells a player the dangerous hour is coming. The warmth comes from B.
 
+*The owner, 30.10: "compare to the reference pictures, and if there is no conclusion compare to more pictures from the internet". The comparison, measured (boards [1730](frames/2026-10-30-tint-compare-1730.png) and [1900](frames/2026-10-30-tint-compare-1900.png)):*
+
+- **What is compared.** The square of still A at 17:30 with `#eda83a` at 0, 12, 18, 28 and 40%, and at 19:00 with `#e2533f` at 0, 18, 28, 40 and 55%, each 1170x2532 over the same base, with the build's pools at the hour (`poolAt`: 0.625 of B's alphas at 17:30, full at 19:00), Pell's window lit and the body light, so only the tint differs along a row. The 19:00 row uses the 17:30 base: at 19:00 the game's night shade is still 0, and the fog banks (20% then) are left out so the row shows the tint alone.
+- **The measure.** For every picture the mean a*, the mean b* and the mean chroma C of the midtones (luma 0.25 to 0.75, Rec. 709) in CIELAB D65, sky and ground read apart (`tools/src/light/tint.ts`, pinned by `tools/test/light-tint.test.ts` on one fixture). Our frames look straight down, so the whole frame is ground and they have no sky. The pick is the strength whose ground numbers sit closest (straight distance over a*, b* and C) to the references' median ground. `python3 tools/stills/tint_compare.py` re-makes both boards and every number.
+- **The references.** The repository names one picture for the golden hour: the key art. No page under `docs/art` or `docs/design` names another for light or dusk (grep for reference, golden and dusk). The key art comes as a poster and a 17-second video whose light warms as it runs, so the poster and five frames of the video were read, each with its sky and ground boxes drawn on the board (`tools/stills/refs/refs.json`).
+- **The web references were not fetched.** This session's network refuses Wikimedia Commons, Unsplash, Pixabay, Openverse, Flickr and Poly Haven (403 at the proxy), so no outside picture is in the table. Six to ten openly licensed golden-hour and dusk photographs of a village or a meadow can be added to `refs.json` (file, page URL, licence) and the boards re-made by the one command; the table below is ready for them.
+
+| Reference | Licence and page | Ground a* / b* / C | Sky a* / b* / C |
+|---|---|---|---|
+| Key art, poster (`web/public/keyart/hero-poster.jpg`) | The game's own | 3.4 / 4.7 / 11.3 | 3.1 / -14.1 / 19.4 |
+| Key art, video at 0.5 s (`web/public/keyart/hero.mp4`) | The game's own | 4.4 / 4.3 / 11.8 | 4.3 / -14.2 / 19.8 |
+| Key art, video at 4 s | The game's own | 4.8 / 5.5 / 12.4 | 5.4 / -7.1 / 16.5 |
+| Key art, video at 8 s | The game's own | 4.8 / 5.8 / 12.4 | 5.4 / -5.8 / 16.1 |
+| Key art, video at 12 s | The game's own | 4.8 / 5.7 / 12.4 | 5.9 / -3.6 / 17.7 |
+| Key art, video at 16 s | The game's own | 4.5 / 4.8 / 12.0 | 4.8 / -9.8 / 19.8 |
+| **Median** | | **4.6 / 5.1 / 12.2** | 5.1 / -8.5 / 18.5 |
+
+| 17:30, `#eda83a` | 0% | 12% | 18% | 28% | **40%** |
+|---|---|---|---|---|---|
+| a* / b* / C | 3.7 / -4.3 / 10.3 | 3.9 / -0.8 / 8.2 | 4.1 / 0.9 / 7.5 | 4.2 / 4.1 / 7.4 | 4.2 / 8.2 / 9.7 |
+| Distance to the median | 9.7 | 7.2 | 6.4 | 4.9 | **4.0** |
+
+| 19:00, `#e2533f` | 0% | 18% | **28%** | 40% | 55% |
+|---|---|---|---|---|---|
+| a* / b* / C | 4.0 / -2.9 / 10.3 | 7.1 / 0.0 / 10.3 | 8.8 / 2.4 / 11.4 | 11.2 / 5.6 / 13.9 | 14.6 / 9.9 / 18.5 |
+| Distance to the median | 8.3 | 6.0 | **5.0** | 6.8 | 12.7 |
+
+**What the numbers say.** At 19:00 the table's 28% is the closest: weaker leaves the cobbles blue-grey (b* under 0, the references' ground is warm at b* 5), stronger overshoots into red (a* 11 and up against 4.6). At 17:30 the closest is 40%, the strongest in the row, with 28% next (4.9 against 4.0): the gold multiply warms b* slowly and lowers the chroma first (it greys the blue cobbles before it yellows them), so it takes a strong gold to reach the key art's warm ground. The 17:30 row's best sits at its edge, so the curve may still fall a little past 40%.
+
+**Recommendation from the measure:** 19:00 stays at 28%. 17:30 moves from 18% to 28% (the table's 19:00 strength one key earlier, the next closest at 4.9) or to 40% (the closest at 4.0); 40% at 17:30 makes the late afternoon as dim as the dusk, which is the cost the first recommendation named. The references are one painting, so the measure narrows the pick to 28 or 40 at 17:30 and does not settle it; more photographs in `refs.json` would. The build ships the provisional table (16:30 12%, 17:30 18%, 19:00 28%) as numbers in `content/core/params.json` `light.keys`, so the owner's pick is a one-line change.
+
 **2. Do light sources colour the day and the dusk, or only the night?** B shows the lamps, the window and the hearth at full at 17:30.
 Recommendation: dusk and night, not the day. The lamps and windows light at 17:00 and their pools rise from half to B's numbers by 19:00; a burning fire shows its pool from 16:30, since a fire is lit by choice. A pool at noon reads as a mistake and says nothing; a pool coming on at 17:00 is the town telling the player the evening has begun, a cue that is not colour alone.
 
