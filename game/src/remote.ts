@@ -107,6 +107,7 @@ function isStale(refusal: WireRefusal): boolean {
 }
 
 const TAIL = 40;
+const RECHECK_ACTION = 'The game state changed; try the action again.';
 /** How many movement reports one batch carries at most: the server's own cap (NEXT 18 a). */
 const MOVE_BATCH = 256;
 
@@ -136,6 +137,10 @@ export class RemoteSession implements GameSession {
   private pauses = 0;
   private deferred: GameEvent[] = [];
   private moves: { kind: 'move'; at: Tile; tick: number }[] = [];
+  /** A removed batch is still owed until its reply arrives. */
+  private sendingMoves = false;
+  /** Inputs queued before a server correction must not act at the corrected location. */
+  private positionRevision = 0;
   private listeners = new Map<keyof SessionEvents, Set<(payload: never) => void>>();
   private wire: Wire;
   /** the in-game hour of the last frame: when it turns, what depends on the hour redraws */
@@ -268,7 +273,7 @@ export class RemoteSession implements GameSession {
   report(at: readonly [number, number], again = false): void {
     if (!this.started || !this.open) return;
     const p = this.state.player;
-    if (!again && p.at[0] === at[0] && p.at[1] === at[1]) return;
+    if (!again && !this.sendingMoves && this.moves.length === 0 && p.at[0] === at[0] && p.at[1] === at[1]) return;
     this.moves.push({ kind: 'move', at: [at[0], at[1]], tick: this.tick });
     if (this.moves.length >= MOVE_BATCH) void this.flushMoves().catch(() => undefined);
   }
@@ -294,6 +299,7 @@ export class RemoteSession implements GameSession {
     while (this.moves.length > 0) {
       const batch = this.moves.splice(0, MOVE_BATCH);
       let reply: ChangeReply | undefined;
+      this.sendingMoves = true;
       try {
         reply = await this.call('/moves', { version: this.version, moves: batch });
       } catch (error) {
@@ -304,6 +310,8 @@ export class RemoteSession implements GameSession {
           return;
         }
         throw error;
+      } finally {
+        this.sendingMoves = false;
       }
       if (!reply) {
         this.moves.unshift(...batch);
@@ -323,17 +331,20 @@ export class RemoteSession implements GameSession {
    * events until the player is free, as the local session does, so an animation and its yield stay in step.
    */
   async act(action: Action): Promise<ActResult> {
+    const positionRevision = this.positionRevision;
     this.acting += 1;
     try {
-      return await this.enqueue(() => this.sendAction(action));
+      return await this.enqueue(() => this.sendAction(action, positionRevision));
     } finally {
       this.acting -= 1;
     }
   }
 
-  private async sendAction(action: Action): Promise<ActResult> {
+  private async sendAction(action: Action, positionRevision: number): Promise<ActResult> {
+    if (positionRevision !== this.positionRevision) return { ok: false, error: RECHECK_ACTION };
     await this.sendMoves();
     if (!this.open) return { ok: false, error: 'Waiting for the connection' };
+    if (positionRevision !== this.positionRevision) return { ok: false, error: RECHECK_ACTION };
     let reply: ChangeReply | undefined;
     try {
       reply = await this.call('/action', { version: this.version, tick: this.tick, action });
@@ -402,6 +413,7 @@ export class RemoteSession implements GameSession {
     this.pos = [this.state.player.at[0], this.state.player.at[1]];
     this.moves = [];
     this.deferred = [];
+    this.positionRevision++;
     // a burn that ran out since the server's last step is asked about again, once: a report lost to a refusal
     // or a dropped line would otherwise never tell it to a player who stands still
     this.outSeen = 0;
@@ -441,6 +453,7 @@ export class RemoteSession implements GameSession {
   private wake(events: readonly GameEvent[]): void {
     const fall = events.find((e) => e.e === 'fall');
     if (fall?.e !== 'fall') return;
+    this.positionRevision++;
     this.pos = [fall.at[0], fall.at[1]];
     this.deferred = [];
   }
