@@ -23,3 +23,9 @@ python3 tools/stills/lighting.py
 ```
 
 The numbers are in [LIGHTING.md](../../docs/design/LIGHTING.md) section 3.
+
+The tint comparison (LIGHTING.md section 5, question 1) renders the 17:30 and 19:00 squares at five tint strengths each, measures them and the references of `refs/refs.json` in CIELAB with `tools/src/light/tint.ts`, and writes the two boards `docs/design/frames/2026-10-30-tint-compare-1730.png` and `-1900.png`:
+
+```sh
+python3 tools/stills/tint_compare.py
+```
