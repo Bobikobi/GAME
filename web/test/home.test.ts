@@ -46,16 +46,17 @@ describe('the home page', () => {
     expect(html).toContain(`.rows li:nth-child(1) .count { --to: ${first![1].points}; }`);
   });
 
-  it('weighs under 300KB on a phone with its stylesheets, faces, key-art still, scene and loop', () => {
+  it('weighs under 450KB on a phone with its stylesheets, faces, key-art still, scene and loop', () => {
     const css = [...html.matchAll(/href="(\/_astro\/[^"]+\.css)"/g)].map((m) => m[1]!.slice(1));
     const faces = [...html.matchAll(/<link rel="preload" href="\/([^"]+\.woff2)"/g)].map((m) => m[1]!);
+    // 298 KB before the phone still (DECISIONS.md, 2026-10-30), so the budget moves from 300 KB to 450 KB
     // the phone's own still and the one extra face its headline signs in (DECISIONS.md, 2026-10-30)
     const parts = ['index.html', ...css, ...faces, 'keyart/hero-phone.webp', 'fonts/cinzel/cinzel-latin.woff2', ...files('scene'), ...files('media')];
     const total = parts.reduce((sum, path) => sum + size(path), 0);
     console.log(`home page weight: ${total} bytes in ${parts.length} files`);
     expect(faces).toHaveLength(2);
     expect(files('scene').length).toBeGreaterThan(0);
-    expect(total).toBeLessThan(300_000);
+    expect(total).toBeLessThan(450_000);
   });
 
   it('shows the desktop key art from 1024px only: a looping video and its still, nothing on the phone', () => {
