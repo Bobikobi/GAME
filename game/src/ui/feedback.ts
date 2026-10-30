@@ -5,15 +5,14 @@
  */
 import type { GameEvent } from '@game/kernel';
 import { app } from '../app';
-import { sound, type JingleId, type SfxId } from '../audio';
+import { sound } from '../audio';
+import { planBatch, type Cue } from '../audio/heard';
 import { feedTooLate } from '../fires';
 import { gold } from '../text';
 import { h } from './dom';
 
 /** Cues of one batch play one after another, never on top of each other. */
 const CUE_GAP_MS = 140;
-
-type Cue = { sfx: SfxId; gain?: number; detune?: number } | { jingle: JingleId };
 
 export function feedback(root: HTMLElement, events: readonly GameEvent[]): void {
   const cues: Cue[] = [];
@@ -48,7 +47,8 @@ export function feedback(root: HTMLElement, events: readonly GameEvent[]): void 
         add(e.state === 'done' ? { jingle: 'quest' } : { sfx: 'ui' });
         break;
       case 'discover':
-        add({ jingle: 'found' });
+        // a first-of-kind item is a page of the journal, not a rare find (G24, G25): the found jingle stays rare
+        add({ sfx: 'journal' });
         break;
       case 'riddle':
         add({ jingle: 'found' });
@@ -86,7 +86,8 @@ export function feedback(root: HTMLElement, events: readonly GameEvent[]): void 
         add({ sfx: 'bell', detune: -1200 });
         break;
       case 'seen':
-        add({ sfx: 'growl' });
+        // heard from where the predator stands: whole beside the player, fainter and dulled when it is far or off-screen
+        add({ sfx: 'growl', heard: app.world?.hazardHeard?.(e.id) });
         break;
       case 'safe':
         add({ sfx: 'safe' });
@@ -100,12 +101,13 @@ export function feedback(root: HTMLElement, events: readonly GameEvent[]): void 
         break;
     }
   }
-  // a jingle carries a batch on its own; the small cues go first
-  cues.sort((x, y) => Number('jingle' in x) - Number('jingle' in y));
-  cues.forEach((cue, i) =>
+  // one gold, one coin: when coins fly to the purse, their landing is the batch's coin
+  const batch = goldIn > 0 && purse() ? cues.filter((c) => !('sfx' in c && c.sfx === 'coin')) : cues;
+  // a jingle carries a batch on its own; without one, two small cues speak for it (SOUND.md section 1.3)
+  planBatch(batch).forEach((cue, i) =>
     window.setTimeout(() => {
       if ('jingle' in cue) sound.jingle(cue.jingle);
-      else sound.sfx(cue.sfx, { gain: cue.gain, detune: cue.detune });
+      else sound.sfx(cue.sfx, { gain: cue.gain, detune: cue.detune, heard: cue.heard });
     }, i * CUE_GAP_MS),
   );
   if (goldIn > 0) coinsToPurse(root, goldIn);

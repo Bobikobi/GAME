@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'vitest';
 
-import { DUSK, HOLE, LIGHT_POOL, NIGHT, dappleAt, duskAt, frameAt, hourAt, nightAt, shadeAt, tableOf, washAt, warmth } from '../src/light.js';
+import {
+  DUSK, HEAD_GLOW, HOLE, LIGHT_POOL, NIGHT, POOL_DITHER, POOL_RADIUS, POOL_STEPS, READ, bankAt, bodyLight, bodyStep, cloudAt, cutAt, cutKeep, dappleAt, duskAt, frameAt, hourAt,
+  litSide, lumaOf, nightAt, poolAt, poolColour, poolDisc, poolStep, poolSun, readableAlpha, shadeAt, shaftAt, tableOf, washAt, warmth,
+} from '../src/light.js';
 
 /**
  * ART_SYSTEM section 2: one module holds the light, and its numbers are today's numbers. Every
@@ -120,5 +123,123 @@ describe('the hour table from params', () => {
       // whole percents, so a minute is at most a percent: no step in the circle is bigger than that
       expect(Math.abs(washAt(night, (m + 1) % 1440).alpha - washAt(night, m).alpha)).toBeLessThanOrEqual(0.0101);
     }
+  });
+});
+
+describe('the wash steps its colour', () => {
+  const t = tableOf([
+    { at: '16:30', tint: '#eda83a', pct: 12 },
+    { at: '17:30', tint: '#eda83a', pct: 28 },
+    { at: '19:00', tint: '#e2533f', pct: 40 },
+  ]);
+
+  test('on a key the key colour, past it the next key colour, never a mix of the two', () => {
+    expect(washAt(t, 19 * 60)).toEqual({ tint: 0xe2533f, alpha: 0.4 });
+    expect(washAt(t, 17 * 60 + 30).tint).toBe(0xeda83a);
+    expect(washAt(t, 18 * 60).tint).toBe(0xe2533f);
+    expect(washAt(t, 18 * 60 + 15).alpha).toBe(0.34);
+  });
+});
+
+describe('the lighting ladder (LIGHTING.md, C)', () => {
+  test('the pool keeps the four steps and the dither it was picked with', () => {
+    expect(POOL_STEPS.map((s) => [s.edge, s.tint, s.pct])).toEqual([[0.25, 0xf8de62, 24], [0.5, 0xeda83a, 18], [0.75, 0xeda83a, 12], [1, 0xb8661f, 8]]);
+    expect(POOL_DITHER).toBe(0.03);
+    expect(POOL_RADIUS).toEqual({ lamp: [1.5, 1.5], fire: [2, 2], window: [1, 0.625] });
+    expect(HEAD_GLOW.steps).toEqual([{ r: 6, pct: 50 }, { r: 12, pct: 25 }]);
+  });
+
+  test('lamps and windows paint from 17:00 at half, full by 19:00, none by day; a fire from 16:30', () => {
+    expect(poolAt(12 * 60, 'lamp')).toBe(0);
+    expect(poolAt(16 * 60 + 59, 'lamp')).toBe(0);
+    expect(poolAt(17 * 60, 'lamp')).toBe(0.5);
+    expect(poolAt(17 * 60 + 30, 'lamp')).toBe(0.625);
+    expect(poolAt(19 * 60, 'window')).toBe(1);
+    expect(poolAt(2 * 60, 'lamp')).toBe(1);
+    expect(poolAt(6 * 60, 'lamp')).toBe(0.75);
+    expect(poolAt(7 * 60, 'lamp')).toBe(0);
+    expect(poolAt(16 * 60 + 29, 'fire')).toBe(0);
+    expect(poolAt(16 * 60 + 30, 'fire')).toBe(0.5);
+    expect(poolAt(18 * 60 + 30, 'fire')).toBe(1);
+  });
+
+  test('a step is whole pixels, checkered only within the dither of its edge', () => {
+    expect(poolStep(0, false)).toBe(0);
+    expect(poolStep(0.24, false)).toBe(0);
+    expect(poolStep(0.24, true)).toBe(1);
+    expect(poolStep(0.6, true)).toBe(2);
+    expect(poolStep(1.02, false)).toBe(3);
+    expect(poolStep(1.04, false)).toBe(-1);
+    const d = poolDisc(4, 4, 3);
+    expect([d.w, d.h]).toEqual([9, 9]);
+    expect(d.mask[4 * 9 + 4]).toBe(1);
+    expect(d.mask[0]).toBe(0);
+  });
+
+  test('a step stores its colour times its strength times the gate', () => {
+    expect(poolColour(POOL_STEPS[0]!, 1)).toBe((Math.round(0xf8 * 0.24) << 16) | (Math.round(0xde * 0.24) << 8) | Math.round(0x62 * 0.24));
+    expect(poolColour(POOL_STEPS[0]!, 0)).toBe(0);
+  });
+
+  test('a light cuts the shade clean inside half its radius and to half in the ring (STYLE 5)', () => {
+    expect(cutAt(0.2, false)).toBe(0);
+    expect(cutAt(0.8, false)).toBe(0.5);
+    expect(cutAt(1.2, false)).toBe(1);
+    expect(cutKeep(0, 0.5)).toBe(0.5);
+    expect(cutKeep(0.5, 1)).toBe(0.5);
+  });
+
+  test('the readable shade keeps the meadow green at the floor under the night ink', () => {
+    const ground = lumaOf(READ.ground);
+    const ink = lumaOf(0x172a52);
+    const a = readableAlpha(READ.floor / 100, ground, ink);
+    expect(ground * (1 - a + a * ink)).toBeCloseTo(READ.floor / 100, 6);
+    expect(a).toBeLessThan(0.92);
+    expect(readableAlpha(0.6, 0.5, 0.1)).toBe(0);
+  });
+
+  test('cloud shade is gone by 20:00, and a fog bank cannot stack past its cap at night', () => {
+    expect(cloudAt(nightAt(12 * 60))).toBe(1);
+    expect(cloudAt(nightAt(19 * 60 + 30))).toBe(0.5);
+    expect(cloudAt(nightAt(20 * 60))).toBe(0);
+    expect(bankAt(1, 1, 1, 0.4)).toBe(0.4);
+    expect(bankAt(0.3, 1, 0, 0.4)).toBeCloseTo(0.3, 6);
+    expect(bankAt(1, 1, 0, 0.4)).toBe(0.95);
+  });
+
+  test('body light: the lit side a step up its ramp, the far side a step down, ink stays ink, none at noon', () => {
+    expect(litSide(0.5)).toBe('left');
+    expect(litSide(-0.5)).toBe('right');
+    expect(litSide(0.05)).toBeUndefined();
+    expect(bodyStep(0x4c9a3f, 1)).toBe(0x84c450);
+    expect(bodyStep(0x4c9a3f, -1)).toBe(0x2e6b3b);
+    expect(bodyStep(0x1b1a2e, 1)).toBe(0x1b1a2e);
+    // a row of ten solid pixels, lit from the left: four lighter, four darker, the middle untouched
+    const src = new Uint8ClampedArray(10 * 4);
+    for (let x = 0; x < 10; x++) src.set([0x4c, 0x9a, 0x3f, 255], 4 * x);
+    const out = new Uint8ClampedArray(10 * 4);
+    bodyLight(src, 10, 1, 'left', out);
+    expect([...out.slice(0, 4)]).toEqual([0x84, 0xc4, 0x50, 255]);
+    expect([...out.slice(16, 20)]).toEqual([0, 0, 0, 0]);
+    expect([...out.slice(36, 40)]).toEqual([0x2e, 0x6b, 0x3b, 255]);
+  });
+
+  test('by night a body in a pool casts away from the light; outside it nothing casts', () => {
+    const s = poolSun(0, -10, 24, 0.3, 1)!;
+    expect(s.sy).toBeLessThan(0);
+    expect(s.sx).toBe(0);
+    expect(s.alpha).toBe(0.3);
+    expect(poolSun(0, 30, 24, 0.3, 1)).toBeUndefined();
+    expect(poolSun(0, 5, 24, 0.3, 0)).toBeUndefined();
+  });
+});
+
+describe('the sun shaft', () => {
+  test('in the late afternoon of a cloudy day, at 6%, and never with the sun down or the sky clear', () => {
+    expect(shaftAt(17 * 60, true, true)).toBeCloseTo(0.06, 6);
+    expect(shaftAt(16 * 60, true, true)).toBeCloseTo(0.03, 6);
+    expect(shaftAt(12 * 60, true, true)).toBe(0);
+    expect(shaftAt(17 * 60, false, true)).toBe(0);
+    expect(shaftAt(17 * 60, true, false)).toBe(0);
   });
 });

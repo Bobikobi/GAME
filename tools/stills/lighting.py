@@ -19,8 +19,9 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[2]
-S = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / 'tools/stills/inputs'
-OUT = Path(sys.argv[2]) if len(sys.argv) > 2 else ROOT / 'docs/design/frames'
+ARGS = sys.argv[1:] if __name__ == '__main__' else []  # imported by tint_compare.py, which has its own arguments
+S = Path(ARGS[0]) if len(ARGS) > 0 else ROOT / 'tools/stills/inputs'
+OUT = Path(ARGS[1]) if len(ARGS) > 1 else ROOT / 'docs/design/frames'
 W, H, K = 390, 844, 3
 VIEW = (482.0, 30.0)  # the camera's world corner; 4 art px per world unit
 
@@ -104,7 +105,7 @@ def wash(img):
     return multiply(img, w['tint'], np.full((H, W), w['pct'] / 100.0))
 
 
-def pools(img, flicker=False):
+def pools(img, flicker=False, gain=1.0):
     rank = np.full((H, W), 99)
     steps = RULES['pool_steps']
     for i, l in enumerate(RULES['lights']):
@@ -123,7 +124,7 @@ def pools(img, flicker=False):
     for k, (_, c, pct) in enumerate(steps):
         m = rank == k
         colour[m] = hexc(c)
-        alpha[m] = pct / 100.0
+        alpha[m] = gain * pct / 100.0
     img = add(img, colour, alpha)
     # the lit heads
     colour = np.zeros((H, W, 3))
@@ -136,7 +137,7 @@ def pools(img, flicker=False):
         for r, c, pct in reversed(RULES['head_glow']):
             m = d <= r
             colour[m] = hexc(c)
-            alpha[m] = pct / 100.0
+            alpha[m] = gain * pct / 100.0
     return add(img, colour, alpha)
 
 
@@ -321,27 +322,32 @@ def save(arr, path):
     return path.stat().st_size
 
 
-OUT.mkdir(parents=True, exist_ok=True)
-a = still_a()
-b = still_b()
-c, placed = still_c()
-sizes = {}
-for tag, arr in (('A', a), ('B', b), ('C', c)):
-    sizes[tag] = save(arr, OUT / f'2026-10-30-lighting-{tag}.png')
+def main():
+    OUT.mkdir(parents=True, exist_ok=True)
+    a = still_a()
+    b = still_b()
+    c, placed = still_c()
+    sizes = {}
+    for tag, arr in (('A', a), ('B', b), ('C', c)):
+        sizes[tag] = save(arr, OUT / f'2026-10-30-lighting-{tag}.png')
 
-# the side by side: three thirds at 1x, with a label strip
-strip = 64
-sheet = Image.new('RGB', (W * 3, H + strip), tuple(int(v) for v in hexc('#1b1a2e')))
-draw = ImageDraw.Draw(sheet)
-try:
-    font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 22)
-except OSError:
-    font = ImageFont.load_default()
-labels = ['A  tint by hour', 'B  + light pools, body light', 'C  + cloud shade, motion']
-for i, arr in enumerate((a, b, c)):
-    small = Image.fromarray(np.clip(np.rint(arr), 0, 255).astype(np.uint8)).resize((W, H), Image.NEAREST)
-    sheet.paste(small, (i * W, strip))
-    draw.text((i * W + 12, 18), labels[i], fill=tuple(int(v) for v in hexc('#f5f4ef')), font=font)
-sheet.save(OUT / '2026-10-30-lighting-A-B-C.png', optimize=True)
-sizes['A-B-C'] = (OUT / '2026-10-30-lighting-A-B-C.png').stat().st_size
-print(json.dumps({'sizes': sizes, 'placed': placed, 'player_px': int(PMASK.sum())}, default=str))
+    # the side by side: three thirds at 1x, with a label strip
+    strip = 64
+    sheet = Image.new('RGB', (W * 3, H + strip), tuple(int(v) for v in hexc('#1b1a2e')))
+    draw = ImageDraw.Draw(sheet)
+    try:
+        font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 22)
+    except OSError:
+        font = ImageFont.load_default()
+    labels = ['A  tint by hour', 'B  + light pools, body light', 'C  + cloud shade, motion']
+    for i, arr in enumerate((a, b, c)):
+        small = Image.fromarray(np.clip(np.rint(arr), 0, 255).astype(np.uint8)).resize((W, H), Image.NEAREST)
+        sheet.paste(small, (i * W, strip))
+        draw.text((i * W + 12, 18), labels[i], fill=tuple(int(v) for v in hexc('#f5f4ef')), font=font)
+    sheet.save(OUT / '2026-10-30-lighting-A-B-C.png', optimize=True)
+    sizes['A-B-C'] = (OUT / '2026-10-30-lighting-A-B-C.png').stat().st_size
+    print(json.dumps({'sizes': sizes, 'placed': placed, 'player_px': int(PMASK.sum())}, default=str))
+
+
+if __name__ == '__main__':
+    main()
