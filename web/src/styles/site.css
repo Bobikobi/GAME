@@ -30,8 +30,8 @@
 }
 
 /* the site's roles (DECISIONS.md, 2026-10-23): every page is night - ink ground, paper words - like the desktop
-   home. Rules read these roles, never a palette name for ground, words or lines. The phone home keeps its day
-   look until it gets its own pass, so it resets the roles to day below. */
+   home. Rules read these roles, never a palette name for ground, words or lines. The phone home wears them
+   too (DECISIONS.md, 2026-10-30). */
 :root {
   --bg: var(--ink);
   --fg: var(--paper);
@@ -44,21 +44,6 @@
   --frame: var(--px) solid var(--rule);
   color-scheme: dark;
 }
-@media (max-width: 1023px) {
-  body[data-section='home'] {
-    --bg: var(--paper);
-    --fg: var(--ink);
-    --fg2: var(--ink2);
-    --muted: var(--grey);
-    --line: var(--paper2);
-    --rule: var(--ink);
-    --raise: var(--paper2);
-    --accent: var(--green);
-    --frame: var(--px) solid var(--ink);
-    color-scheme: light;
-  }
-}
-
 *,
 *::before,
 *::after {
@@ -102,9 +87,10 @@ a {
 .skip {
   position: absolute;
   left: var(--s-4);
-  top: calc(-1 * var(--s-12));
+  top: calc(-2 * var(--s-12));
   z-index: 3;
-  padding: var(--s-2) var(--s-3);
+  min-height: 44px;
+  padding: var(--s-3);
   background: var(--fg);
   color: var(--bg);
 }
@@ -203,6 +189,9 @@ h1 {
   height: 56px;
 }
 .wordmark {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   font-size: 24px;
   line-height: 28px;
   letter-spacing: var(--track-mark);
