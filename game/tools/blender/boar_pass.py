@@ -1,6 +1,7 @@
 """Make the game-ready wild boar from the CC0 "Boar" by Teh_Bucket (OpenGameArt, boar_0.blend, Blender 2.74).
 
 Run:  blender -b --factory-startup --disable-autoexec -P boar_pass.py -- <boar_0.blend> <out.glb> [--height 0.8] [--tex 1024]
+      [--marks 1.0] [--lie belly|side]
 
 The file is opened with its scripts off (`--disable-autoexec`, and `use_scripts=False` here as well), so nothing it
 carries ever runs.
@@ -12,15 +13,18 @@ What it does, in the manner of quad_pass.py (the wolf) and deer_pass.py (the dee
   at export) on the mesh's `UVMap` layer, and drops the unused `projection-test` layer; the map draws nearly black on
   the ramps (the coat's median value 0.27 of white), so the coat is lifted to a dark grey-brown with grey bristle
   tips and written into a new packed map (--coat-gain, --coat-gamma, --coat-grey, --grizzle; the tusks' white is left
-  alone; the boar target draws it on the wood and stone ramps, an even dark brown with a few stone flecks: coat B,
-  the other coats in the comment at the coat below), and the snout's disc and the hooves get a plain dark material,
+  alone; the boar target draws it on the wood ramp alone, an even dark brown: coat B, the other coats in the comment
+  at the coat below); the lighter hairs on the faces that turn full to the render's sun (the rump seen from behind,
+  the brow seen from the front) are brought down to the coat's middle value in the same map (--marks), and the
+  snout's disc and the hooves get a plain dark material,
 - clears the file's scene properties (its sprite-sheet settings and a project time), so the glb carries no extras but
   the walk's and the run's groundSpeed,
 - turns the body to face -Y (the file's boar faces +Y), centres it over the origin, scales it to --height metres at the
   withers (bind pose) and bakes the turn and the scale into the bones and the mesh; adds a tip bone under each hoof
   (the renderer reads a foot from its bone's tail, and glTF loses a leaf bone's length),
 - makes seven actions, every bone keyed on every frame, all from the file's rest pose ('default') with the leg IK of the
-  rig, then bakes each to plain bone keys (visual keying) and drops the IK targets and every constraint before export:
+  rig (Lie's legs posed bone by bone with it off), then bakes each to plain bone keys (visual keying) and drops the IK
+  targets and every constraint before export:
   Idle   from the rest pose: a breath, a lift of the snout to sniff, a tail flick; four poses that differ.
   Walk   keyed here on the leg IK targets: a calm four-beat pace (hind left, fore left, hind right, fore right, a
          quarter of the cycle apart), three hooves on the ground in every drawn pose, the body low and level and the
@@ -36,8 +40,10 @@ What it does, in the manner of quad_pass.py (the wolf) and deer_pass.py (the dee
   Graze  rooting: the snout down to the earth, pushing forward and up, then a lift and a toss of the head (no soil is
          drawn; the ground is not rendered). Each key's neck and head bend is solved so the snout touches the floor
          the hooves stand on and never goes below it (the renderer stands a pose on its lowest point).
-  Lie    its sleep in the den (SLEEP only): on its side, the legs drawn in, held still; no fall is played and
-         nothing twitches. A take fades whatever pose the boar holds (HUNTING 10 names no pose), not this one.
+  Lie    its sleep in the den (SLEEP only): down on its belly, the legs folded under it and the chin on the
+         ground, held still, its legs posed bone by bone (--lie side keeps the earlier pose on its side, the legs
+         drawn in); no fall is played and nothing twitches, and its breath is left to the feel layer
+         (game/src/feel.ts). A take fades whatever pose the boar holds (HUNTING 10 names no pose), not this one.
   Charge the file's attack (a lowered head and an upward toss), renamed and baked; kept for the defender's charge once
          the fight exists, not rendered now,
 - caps the map at --tex pixels and exports one GLB with the seven clips on NLA tracks.
@@ -126,10 +132,26 @@ RUN_TANGENT_MAX = 0.7   # the hind swing (swing_y); the fore swing reaches (reac
 ALERT_FRAMES = 48
 # Graze (rooting): four poses by time, 400 ms each (frames 0, 12, 24, 36 of 48)
 GRAZE_FRAMES = 48
-# Lie: held still
+# Lie: held still. --lie belly (the default): down on its belly, the legs folded under it and the chin on the ground,
+# a resting animal from every side; --lie side: rolled onto its side with the legs drawn in (the first pose: side-on it
+# reads as asleep, but from above and from behind the four hooves stick out sideways in a row, close to a downed animal)
 LIE_FRAMES = 8
-LIE_ROLL = opt("--lie-roll", 80.0, float)   # degrees the body is rolled onto its left side
-LIE_TUCK = 0.55        # each hoof moved this share of the way toward its leg's root: the legs drawn in
+LIE_POSE = opt("--lie", "belly")
+if LIE_POSE not in ("belly", "side"):
+    raise SystemExit(f"--lie is belly or side, not {LIE_POSE}")
+LIE_ROLL = opt("--lie-roll", 80.0, float)   # side: degrees the body is rolled onto its left side
+LIE_TUCK = 0.55        # side: each hoof moved this share of the way toward its leg's root: the legs drawn in
+# belly, in metres above the floor the hooves stood on: the legs are posed bone by bone (the leg IK is off for this
+# pose), each bone aimed so its joint lands at these heights
+LIE_BELLY = 0.0        # the lowest point of the trunk: on the floor
+LIE_ELBOW = 0.08       # each elbow, under the chest; the forearm runs forward and down from it
+LIE_LOW_JOINT = 0.035  # the knee of the foreleg (the carpus) and the hock, resting on the floor
+LIE_HOOF = 0.03        # each hoof's tip, folded back under the chest (fore) or forward under the belly (hind)
+LIE_FORE_OUT = 0.04    # each forearm turned this far outward (a share of its length), clear of the chest
+LIE_THIGH = 55.0       # degrees each thigh swings forward of straight down: the hind leg folded under the haunch
+LIE_HEAD = -8.0        # degrees the head is turned nose down, so the jaw lies along the ground
+LIE_CHIN = 0.003       # the lowest point of the head above the floor (the neck's bend is solved for it)
+LIE_TAIL_SIDE = 30.0   # degrees the tail is laid round to the side
 
 
 def diag(*a):
@@ -206,11 +228,12 @@ def principled(name):
 # (half its pixels under 8 % luminance); its value is lifted (v -> COAT_GAIN * v ** COAT_GAMMA, the hue kept), a share
 # COAT_GREY of it is turned grey and its lighter bristle tips greyer still (a share GRIZZLE, from COAT_GRIZZLE_FROM to
 # COAT_GRIZZLE_TO luminance). In the map that is a dark grey-brown; how it draws is the target's ramps. The boar
-# target's wood and stone (coat B) put it on wood's two darkest steps (#3d2618 and #2a1810, 86 % of a sheet's opaque
-# pixels: an even dark brown) with a few of the lighter hairs and the hooves' lit faces on stone (4 %). On bark and
-# stone (coat A, the first default) the same map took bark's two darkest steps (a dark red-brown) with the lighter
-# hairs as blue-grey patches on stone (#4a5668, 9 % of the Idle); on bark with wood's lighter steps (coat D, `bark`
-# and `wood:2-5`) the lighter hairs take wood's warm #6e4226 and no stone is drawn. The lift does not reach either
+# target's wood ramp alone (coat B) puts it on wood's two darkest steps (#3d2618 69 % and #2a1810 21 % of the six
+# clips' opaque pixels, the outline's ink most of the rest: an even dark brown). A draft on wood and stone sent the
+# lighter hairs and the hooves' lit faces to stone, small blue-grey spots on a brown animal, so stone is left out. On
+# bark and stone (coat A, the first default) the same map takes bark's two darkest steps (a dark red-brown) with the
+# lighter hairs as blue-grey patches on stone (6 % of the Idle); on bark with wood's lighter steps (coat D, `bark` and
+# `wood:2-5`) the lighter hairs take wood's warm #6e4226 (2.6 %) and no stone is drawn. The lift does not reach either
 # ramp's middle steps. The pale tusks (the white of the map) are left as they are and fall on the ramps' palest steps.
 COAT_GAIN, COAT_GAMMA = opt("--coat-gain", 1.0, float), opt("--coat-gamma", 0.6, float)
 COAT_GREY = opt("--coat-grey", 0.5, float)   # the share of grey in the whole coat (in the map, grey-brown and not red)
@@ -231,6 +254,71 @@ w = (COAT_GREY + (GRIZZLE - COAT_GREY) * w * w * (3 - 2 * w))[:, None]
 grey = lifted[:, None] * np.array([0.97, 1.0, 1.04], dtype=np.float32)
 out = np.clip(brown * (1 - w) + grey * w, 0, 1)
 rgb[coat] = out[coat]
+
+
+def uv_mask(polys):
+    """The texels of the colour map under these faces' UV triangles (rows from the bottom, as Blender stores them)."""
+    m = np.zeros((H_, W_), dtype=bool)
+    uvs = mesh.data.uv_layers[UV].data
+    for pl in polys:
+        t = np.array([[uvs[li].uv[0] * W_, uvs[li].uv[1] * H_] for li in pl.loop_indices])
+        x0, y0 = np.floor(t.min(axis=0)).astype(int)
+        x1, y1 = np.ceil(t.max(axis=0)).astype(int)
+        xs, ys = np.meshgrid(np.arange(max(0, x0), min(W_, x1 + 1)) + 0.5, np.arange(max(0, y0), min(H_, y1 + 1)) + 0.5)
+        for k in range(1, len(t) - 1):
+            a, b, c = t[0], t[k], t[k + 1]
+            den = (b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1])
+            if abs(den) < 1e-12:
+                continue
+            l1 = ((b[1] - c[1]) * (xs - c[0]) + (c[0] - b[0]) * (ys - c[1])) / den
+            l2 = ((c[1] - a[1]) * (xs - c[0]) + (a[0] - c[0]) * (ys - c[1])) / den
+            inside = (l1 >= -0.02) & (l2 >= -0.02) & (1 - l1 - l2 >= -0.02)
+            m[ys[inside].astype(int), xs[inside].astype(int)] = True
+    return m
+
+
+# two marks: the render's sun stands behind the camera at 60 degrees in every view, so the faces that look back at that
+# angle are lit full on. From behind (the up view: a boar walking or running away) those are the faces of the rump over
+# the tail, and toward the camera (the down view) those of the brow; the file's map is lighter there than on most of the
+# body, and with the mirror each draws one mark in the middle: on wood and stone a blue-grey ring on the rump, a
+# crescent on the haunch side-on and a bar across the brow, on warm ramps a light brown blot and cross. The lighter
+# texels under those faces are brought down to the body's median value (the median of the texels the mesh uses), so the
+# rump and the brow draw as the rest of the coat. The faces: near the middle and facing that view's sun, the rump's from
+# just under the tail's root up and forward over the haunch, the brow's from the root of the head forward (file units,
+# before the scale; the brow's faces slope more, so they are taken a little further from facing the sun)
+MARK_DARK = opt("--marks", 1.0, float)   # 1: down to the body's median; 0: the map's marks as they were
+MARK_HALF, RUMP_FORWARD = 0.4, 0.9
+SUN_UP = math.radians(60)
+MW0 = np.array(mesh.matrix_world)
+vco = np.array([v.co[:] for v in mesh.data.vertices]) @ MW0[:3, :3].T + MW0[:3, 3]
+tail_root = arm.matrix_world @ arm.data.bones["tail.001"].head_local   # where the tail leaves the rump
+head_root = arm.matrix_world @ arm.data.bones["head"].head_local
+# the file's boar faces +Y: the sun of the view from behind shines from -Y, that of the view from ahead from +Y
+MARKS = {
+    "rump": (np.array([0.0, -math.cos(SUN_UP), math.sin(SUN_UP)]), 0.85,
+             lambda c: c[2] > tail_root.z - 0.1 and c[1] < tail_root.y + RUMP_FORWARD),
+    "brow": (np.array([0.0, math.cos(SUN_UP), math.sin(SUN_UP)]), 0.75, lambda c: c[1] > head_root.y - 0.1),
+}
+lum_now = rgb @ np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
+used = uv_mask(mesh.data.polygons).reshape(-1) & coat
+med = float(np.median(lum_now[used]))
+for mark, (sun, facing, near) in MARKS.items():
+    faces = []
+    for pl in mesh.data.polygons:
+        cen = vco[list(pl.vertices)].mean(axis=0)
+        nrm = MW0[:3, :3] @ np.array(pl.normal[:])
+        nrm = nrm / max(1e-9, float(np.linalg.norm(nrm)))
+        if abs(cen[0] - tail_root.x) < MARK_HALF and near(cen) and float(nrm @ sun) > facing:
+            faces.append(pl)
+    patch = uv_mask(faces).reshape(-1) & coat
+    light = patch & (lum_now > med)
+    before = float(lum_now[light].mean()) if light.any() else 0.0
+    rgb *= np.where(light, (med / np.maximum(lum_now, 1e-4)) ** MARK_DARK, 1.0).astype(np.float32)[:, None]
+    lum_now = rgb @ np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
+    after = round(float(lum_now[light].mean()) if light.any() else 0.0, 3)
+    diag("mark", mark, ":", len(faces), "faces facing the sun,", int(patch.sum()), "texels;", int(light.sum()),
+         "lighter than the body's median", round(med, 3), "brought down to it (their mean", round(before, 3), "->",
+         after, ")")
 px[:, :3] = rgb
 coat_img = bpy.data.images.new("boar-coat", W_, H_, alpha=False)
 coat_img.pixels.foreach_set(px.reshape(-1))
@@ -246,7 +334,8 @@ tex = nt.nodes.new("ShaderNodeTexImage")
 tex.image = coat_img
 nt.links.new(uvn.outputs["UV"], tex.inputs["Vector"])
 nt.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
-# the tip of the snout (its disc) and the hooves in one plain dark material: they fall on the ramps' dark steps
+# the tip of the snout (its disc) and the hooves in one plain dark material: they fall on the ramps' darkest steps
+# (on wood alone #2a1810 and the outline's ink; with stone in the coat their lit faces drew blue-grey)
 dark, dark_bsdf = principled("Dark")
 dark_bsdf.inputs["Base Color"].default_value = (0.035, 0.028, 0.024, 1.0)
 mesh.data.materials.clear()
@@ -638,30 +727,139 @@ graze = [graze_pose(blend_keys(GRAZE_KEYS, GRAZE_FRAMES, i)) for i in range(GRAZ
 store("Graze", graze)
 
 # ------------------------------------------------------------------ Lie
-p = copy_pose(REST)
-put(p)
-goals = {}
-for leg, (ik, hoof, root) in LEGS.items():
-    f = arm.pose.bones[ik].matrix.translation.copy()
-    r = arm.pose.bones[root].head.copy()
-    goals[ik] = f + (r - f) * LIE_TUCK
-for ik, g in goals.items():
-    move(p, ik, tuple(g - arm.pose.bones[ik].matrix.translation))
-head_carriage(p, neck=-6.0, head=-4.0)
-tail_carriage(p, lift=-10.0, side=20.0)
-# rolled onto its left side about the long axis through the middle of the body, the body brought back to the floor
-pivot = Vector((AW.inverted() @ Vector(((lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2))))
-R = Matrix.Rotation(math.radians(-LIE_ROLL), 4, "Y")
-q, loc, sc = p["ROOT"]
-rest_root = arm.data.bones["ROOT"].matrix_local
-posed = Matrix.Translation(pivot) @ R @ Matrix.Translation(-pivot) @ rest_root
-basis = rest_root.inverted() @ posed
-p["ROOT"] = (basis.to_quaternion() @ q, loc + basis.to_translation(), sc)
-# the roll carries the body off its spot and through the floor: bring it back over where it stood, on the floor
+# the leg IK, switched off while the belly pose is built and evaluated (its legs are posed bone by bone)
+LEG_IK = [c for h in HOOVES for c in arm.pose.bones[h].constraints if c.type == "IK"]
+
+
+def legs_ik(on):
+    for c in LEG_IK:
+        c.mute = not on
+
+
+# each vertex's strongest bone, so the belly pose can measure its parts against the floor
+_groups = {g.index: g.name for g in mesh.vertex_groups}
+_strongest = np.array([_groups[max(v.groups, key=lambda g: g.weight).group] if len(v.groups) else ""
+                       for v in mesh.data.vertices])
+PARTS = {
+    "trunk": np.isin(_strongest, ["Hips", "body", "body.001", "body_L", "body_R", "body.001_L", "body.001_R"]),
+    "head": np.isin(_strongest, ["body.002", "head", "nose"]),
+    "fore": np.array([s.startswith("body.001_") and "." in s[len("body.001_"):] for s in _strongest]),
+    "hind": np.array([(s.startswith("body_L.") or s.startswith("body_R.")) for s in _strongest]),
+    "tail": np.array([s.startswith("tail") for s in _strongest]),
+}
+FLOOR = float(REST_BOX[0][2])
+
+
+def part_lows(p):
+    """The lowest point of each part above the floor the hooves stood on (units)."""
+    put(p)
+    c = world_verts()
+    return {k: float(c[m, 2].min()) - FLOOR for k, m in PARTS.items() if m.any()}
+
+
+def joint(bone, end="tail"):
+    pb = arm.pose.bones[bone]
+    return AW @ (pb.tail if end == "tail" else pb.head)
+
+
+def aim(p, bone, d_world):
+    """Turn a bone about its head so it points along a world direction (its parents as posed in p)."""
+    put(p)
+    pb = arm.pose.bones[bone]
+    want = (AW.inverted().to_3x3() @ Vector(d_world)).normalized()
+    rot = (pb.tail - pb.head).normalized().rotation_difference(want).to_matrix().to_4x4()
+    head = pb.matrix.translation.copy()
+    pb.matrix = Matrix.Translation(head) @ rot @ Matrix.Translation(-head) @ pb.matrix
+    bpy.context.view_layer.update()
+    p[bone] = (pb.rotation_quaternion.copy(), pb.location.copy(), pb.scale.copy())
+
+
+def drop_to(height, length):
+    """The angle below the horizontal (radians) that brings a bone's end down by height, within its length."""
+    return math.asin(max(-1.0, min(1.0, height / length)))
+
+
+def lie_belly():
+    p = copy_pose(REST)
+    # the body down until the trunk's lowest point rests on the floor (the hips carry the spine and both leg roots)
+    body_shift(p, dz=-(part_lows(p)["trunk"] - m2u(LIE_BELLY)) / AW.to_scale()[2])
+    for leg, (_ik, hoof, root) in LEGS.items():
+        upper, mid = root + ".001", root + ".003"
+        side = 1.0 if root.endswith("_L") else -1.0   # the file's _L bones are the boar's right (+X)
+        lens = [arm.data.bones[b].length * AW.to_scale()[0] for b in (upper, mid, hoof)]
+        put(p)
+        top = joint(upper, "head").z - FLOOR
+        if leg in ("LF", "RF"):
+            # the upper arm down and back to the elbow under the chest; the forearm forward and down to the knee on
+            # the floor; the cannon and the hoof folded back under it, the hoof's tip on the floor under the chest
+            a = math.acos(max(-1.0, min(1.0, (top - m2u(LIE_ELBOW)) / lens[0])))
+            aim(p, upper, (0.0, -math.sin(a), -math.cos(a)))
+            put(p)
+            b = drop_to(joint(upper).z - FLOOR - m2u(LIE_LOW_JOINT), lens[1])
+            aim(p, mid, (side * LIE_FORE_OUT, math.cos(b), -math.sin(b)))
+            put(p)
+            g = drop_to(joint(mid).z - FLOOR - m2u(LIE_HOOF), lens[2])
+            aim(p, hoof, (0.0, -math.cos(g), -math.sin(g)))
+        else:
+            # the thigh forward and down under the haunch; the shank back and down to the hock on the floor; the cannon
+            # and the hoof forward along the floor under the belly
+            t = math.radians(LIE_THIGH)
+            aim(p, upper, (0.0, math.sin(t), -math.cos(t)))
+            put(p)
+            s = drop_to(joint(upper).z - FLOOR - m2u(LIE_LOW_JOINT), lens[1])
+            aim(p, mid, (0.0, -math.cos(s), -math.sin(s)))
+            put(p)
+            g = drop_to(joint(mid).z - FLOOR - m2u(LIE_HOOF), lens[2])
+            aim(p, hoof, (0.0, math.cos(g), -math.sin(g)))
+    tail_carriage(p, side=LIE_TAIL_SIDE)
+    # the head down to the ground: the neck's bend solved so the lowest point of the head sits just above the floor
+    def with_neck(n):
+        q = copy_pose(p)
+        head_carriage(q, neck=n, head=LIE_HEAD)
+        return q
+    lo_n, hi_n = -40.0, 40.0
+    for _ in range(30):
+        mid_n = (lo_n + hi_n) / 2
+        lo_n, hi_n = (lo_n, mid_n) if part_lows(with_neck(mid_n))["head"] >= m2u(LIE_CHIN) else (mid_n, hi_n)
+    p = with_neck(hi_n)
+    diag("lie on the belly: the neck bent", round(hi_n, 2), "deg, the head", LIE_HEAD,
+         "; each part's lowest point above the floor (cm)",
+         {k: round(v * UNIT * 100, 1) for k, v in part_lows(p).items()})
+    return p
+
+
+def lie_side():
+    p = copy_pose(REST)
+    put(p)
+    goals = {}
+    for leg, (ik, hoof, root) in LEGS.items():
+        f = arm.pose.bones[ik].matrix.translation.copy()
+        r = arm.pose.bones[root].head.copy()
+        goals[ik] = f + (r - f) * LIE_TUCK
+    for ik, g in goals.items():
+        move(p, ik, tuple(g - arm.pose.bones[ik].matrix.translation))
+    head_carriage(p, neck=-6.0, head=-4.0)
+    tail_carriage(p, lift=-10.0, side=20.0)
+    # rolled onto its left side about the long axis through the middle of the body
+    pivot = Vector((AW.inverted() @ Vector(((lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2))))
+    R = Matrix.Rotation(math.radians(-LIE_ROLL), 4, "Y")
+    q, loc, sc = p["ROOT"]
+    rest_root = arm.data.bones["ROOT"].matrix_local
+    posed = Matrix.Translation(pivot) @ R @ Matrix.Translation(-pivot) @ rest_root
+    basis = rest_root.inverted() @ posed
+    p["ROOT"] = (basis.to_quaternion() @ q, loc + basis.to_translation(), sc)
+    return p
+
+
+LIE_FK = LIE_POSE == "belly"
+legs_ik(not LIE_FK)
+p = lie_belly() if LIE_FK else lie_side()
+# bring the body back over where it stood, its lowest point on the floor (the roll carries it off its spot)
 put(p)
 c = world_verts()
 rest_c = (REST_BOX[0] + REST_BOX[1]) / 2
 move(p, "ROOT", (float(rest_c[0] - (c[:, 0].min() + c[:, 0].max()) / 2), float(rest_c[1] - (c[:, 1].min() + c[:, 1].max()) / 2), float(REST_BOX[0][2] - c[:, 2].min())))
+legs_ik(True)
 lie = [p for _ in range(LIE_FRAMES + 1)]
 store("Lie", lie)
 
@@ -676,12 +874,15 @@ store("Charge", charge)
 
 
 # ------------------------------------------------------------------ bake the IK: armature-space matrices per frame
-def evaluate(pose):
+def evaluate(pose, fk=False):
+    legs_ik(not fk)
     put(pose)
-    return {b: arm.pose.bones[b].matrix.copy() for b in BONES}
+    mats = {b: arm.pose.bones[b].matrix.copy() for b in BONES}
+    legs_ik(True)
+    return mats
 
 
-baked = {name: [evaluate(p) for p in poses] for name, poses in actions.items()}
+baked = {name: [evaluate(p, fk=name == "Lie" and LIE_FK) for p in poses] for name, poses in actions.items()}
 diag("evaluated with the IK:", {k: len(v) for k, v in baked.items()})
 
 # drop the constraints and the IK targets
