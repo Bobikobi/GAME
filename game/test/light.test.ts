@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import {
-  DUSK, HEAD_GLOW, HOLE, LIGHT_POOL, NIGHT, POOL_DITHER, POOL_RADIUS, POOL_STEPS, READ, bankAt, bodyLight, bodyStep, cloudAt, cutAt, cutKeep, dappleAt, duskAt, frameAt, hourAt,
+  DUSK, HEAD_GLOW, HOLE, LIGHT_POOL, NIGHT, POOL_DITHER, POOL_RADIUS, POOL_STEPS, READ, bankAt, bodyLight, bodyStep, cloudAt, cutAt, cutKeep, dappleAt, duskAt, frameAlpha, frameAt, hourAt,
   litSide, lumaOf, nightAt, poolAt, poolColour, poolDisc, poolStep, poolSun, readableAlpha, shadeAt, shaftAt, tableOf, washAt, warmth,
 } from '../src/light.js';
 
@@ -241,5 +241,29 @@ describe('the sun shaft', () => {
     expect(shaftAt(12 * 60, true, true)).toBe(0);
     expect(shaftAt(17 * 60, false, true)).toBe(0);
     expect(shaftAt(17 * 60, true, false)).toBe(0);
+  });
+});
+
+describe('frameAlpha: the frame is an edge by day and whole by night', () => {
+  const day = frameAt(0, true);
+  test('by day the grass 25% and 40% of the way out is untouched, and the ink shows only in the outer part', () => {
+    expect(frameAlpha(0.125, day, 0)).toBe(0);
+    expect(frameAlpha(0.2, day, 0)).toBe(0);
+    expect(frameAlpha(0.3, day, 0)).toBe(0);
+    expect(frameAlpha(0.5, day, 0)).toBeGreaterThan(0.4);
+  });
+  test('by night it is the vignette curve as it was', () => {
+    const night = frameAt(1, true);
+    for (const d of [0.1, 0.25, 0.4, 0.55]) {
+      expect(frameAlpha(d, night, 1)).toBeCloseTo(Math.max(0, Math.sin((d / night.radius) * 3.14 * night.strength)), 10);
+    }
+  });
+  test('it never rises toward the middle', () => {
+    let last = 0;
+    for (let d = 0; d <= 0.7; d += 0.01) {
+      const a = frameAlpha(d, day, 0);
+      expect(a).toBeGreaterThanOrEqual(last - 1e-9);
+      last = a;
+    }
   });
 });
