@@ -43,13 +43,35 @@ describe('clip configs', () => {
   });
 
   it('every target of the cast has its model in the repo, shared ramps and a credit line naming its licence', () => {
-    const cast = Object.entries(settings.targets).filter(([, t]) => !t.model.startsWith('$'));
+    const cast = Object.entries(settings.targets).filter(([, t]) => t.model !== undefined && !t.model.startsWith('$'));
     expect(cast.length).toBeGreaterThan(1);
     for (const [id, t] of cast) {
-      expect(existsSync(join(REPO_ROOT, t.model)), id).toBe(true);
+      expect(existsSync(join(REPO_ROOT, t.model ?? '')), id).toBe(true);
       expect(() => classPalettes(t.ramps, t.metal, t.leaf), id).not.toThrow();
       expect(rampColours(t.ramps).length, id).toBeGreaterThan(0);
       expect(t.credit ?? '', id).toMatch(/CC BY 4\.0|CC0/);
+    }
+  });
+
+  it('a native target declares each action at the length its glb plays it', () => {
+    /** The animations of a glb by name, each with its length in seconds (the largest time of its keyframe inputs). */
+    const glbAnimations = (path: string): Map<string, number> => {
+      const bin = readFileSync(path);
+      const json = JSON.parse(bin.subarray(20, 20 + bin.readUInt32LE(12)).toString('utf8')) as {
+        animations?: { name?: string; samplers: { input: number }[] }[];
+        accessors: { max?: number[] }[];
+      };
+      return new Map((json.animations ?? []).map((a) => [a.name ?? '', Math.max(...a.samplers.map((sm) => json.accessors[sm.input]?.max?.[0] ?? 0))]));
+    };
+    const natives = Object.entries(settings.targets).filter(([, t]) => t.map === 'native');
+    expect(natives.length).toBeGreaterThan(0);
+    for (const [id, t] of natives) {
+      expect(t.model, id).toBeDefined();
+      const played = glbAnimations(join(REPO_ROOT, t.model ?? ''));
+      for (const [action, frames] of Object.entries(t.actions ?? {})) {
+        expect(played.has(action), `${id} ${action}`).toBe(true);
+        expect((played.get(action) ?? 0) * (t.fps ?? 24), `${id} ${action}`).toBeCloseTo(frames, 1);
+      }
     }
   });
 

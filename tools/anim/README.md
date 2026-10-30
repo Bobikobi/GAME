@@ -10,10 +10,21 @@ pnpm anim list             # the clips, what each is made of, whether the librar
 pnpm anim render walk_torch chop      # or --all; needs Blender (below)
 pnpm anim check            # the four measures of every rendered clip; exit 1 on a failure
 pnpm anim render chop --target digger-f   # the same clip on another body of the cast (anim.json targets)
+pnpm anim render jog stand --target elf-m # the races' walk: the distance-locked jog and the standing pose, per target that ships
+pnpm anim sheets           # the shipped targets' renders into content/kit/core/chars (+ kit.json, feet.json); fails the clothed-width rule
 ```
 
 `--target <id>` moves a clip onto another target for render or check: the motion, prop, set pieces and frame stay,
 the body, its scale and its ramps are the target's, and the output goes to `tools/.cache/anim/cast/<id>/<clip>/`.
+`pnpm anim sheets` is the only step that writes into `content/`: for each target with `ships` (anim.json) it joins the
+poses of its walk clip (`jog`, or the clip `ships.clip` names) and, last, the standing pose of `stand` into
+`chars/<sheet>_down|up|left.png` (one frame of `frame.size`, `density: 4`), writes the matching `kit.json` entries
+(`stride: {travel, anchor}`, the art px walked per pose in that view and the ground point) and `tools/anim/feet.json`
+(the planted feet by pose, which the game's `stride.test.ts` plays back at the three paces). It refuses to write when a clip
+has an open problem or when an elf is wider than `clothed_width.max_pct` of the human in the standing frame. The game
+shows the pose nearest to the distance walked (`poseFrame`, game/src/work.ts), so the feet stay on the ground to the
+half of one pose.
+
 A model whose skeleton lacks a bone its map drives is refused in one line before a frame is drawn.
 
 Blender 5.2 (any recent 4.x or 5.x with the glTF importer should do) is found by `BLENDER`, else
@@ -143,6 +154,9 @@ on its border fails the check as clipped).
 - The forager and the rest of the cast (`game/public3d/models/character-*.glb` but the two Kenney minis): made with
   Meshy, **CC BY 4.0**. A sprite rendered from one is a derivative and carries that model's credit line from
   `game/public3d/models/README.md` (each target's `credit` in `anim.json`, written into every `<clip>.json`).
+- The animals (`game/public3d/models/animal-*.glb`): from OpenGameArt, **CC0 1.0** (the roe deer and the white hart
+  from "Deer Female" by CDmir, collaborator TinyWorlds). CC0 asks for no attribution; each target still carries its
+  credit line from `game/public3d/models/README.md`.
 - A target's body ramps: the two shared ramps, plus `skin`, whose steps leave the smallest mean CIELAB error over the
   model's colour map (for the forager this gives the hand-picked `wood`, `red`, `skin`).
 - Blender is a tool (GPL); its output is ours. The props are built in `blender/render.py`.
