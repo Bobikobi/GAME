@@ -647,15 +647,10 @@ textarea {
   box-shadow: none;
 }
 
-/* a thumb's reach: a HUD button, the Demo chip or the tracker takes a tap 44 px tall, though it may be drawn
-   smaller. A top-row button reaches up into the screen's edge and down to the gap, so it never covers a chip; the
-   Demo chip reaches down over the gap and the tracker's top edge, which stays 44 px or more, so the HUD stands
-   over it; a tracker of one line reaches down past its edge. */
-.hud {
-  position: relative;
-  z-index: 1;
-}
-
+/* a thumb's reach: a HUD button or the Demo chip takes a tap 44 px tall, though it is drawn smaller. A top-row
+   button reaches up into the screen's edge and down to the gap, so it never covers a chip; the Demo chip reaches
+   down over the gap and the tracker's top edge (the tracker is not positioned, so the chip's reach lies over it,
+   and a tracker with a step stays more than 44 px under it). No z-index: a window opened over the HUD takes every tap. */
 .hud .btn::after,
 .chip.demo::after {
   content: '';
@@ -677,18 +672,6 @@ textarea {
   height: 44px;
 }
 
-.tracker {
-  position: relative;
-}
-
-.tracker::after {
-  content: '';
-  position: absolute;
-  left: -3px;
-  right: -3px;
-  top: -3px;
-  height: max(100% + 6px, 44px);
-}
 
 /* how high the action prompt stands over the bottom edge: the touch controls lift it, and a phone's toasts sit on it */
 body {
