@@ -181,6 +181,27 @@ export function flattenParams(p: ParamsBody): Params {
       grade2_bp: p.hunt.grade2_bp.value,
       grade3_bp: p.hunt.grade3_bp.value,
     },
+    wild: {
+      tick_ms: p.wild.tick_ms.value,
+      think_ticks: p.wild.think_ticks.value,
+      wake_tiles: p.wild.wake_tiles.value,
+      awake_max: p.wild.awake_max.value,
+      catchup_max_steps: p.wild.catchup_max_steps.value,
+      flee_avoid_steps: p.wild.flee_avoid_steps.value,
+      refill_clear_tiles: p.wild.refill_clear_tiles.value,
+      spread_tiles: p.wild.spread_tiles.value,
+      print_ring: p.wild.print_ring.value,
+      print_fade_ms: p.wild.print_fade_ms.value,
+      den_stay_steps: p.wild.den_stay_steps.value,
+      bolt_min_tiles: p.wild.bolt_min_tiles.value,
+      bolt_max_tiles: p.wild.bolt_max_tiles.value,
+      throw_ms: p.wild.throw_ms.value,
+      strike_noise: p.wild.strike_noise.value,
+      fire_keep_day: p.wild.fire_keep_day.value,
+      fire_keep_night: p.wild.fire_keep_night.value,
+      town_keep_day: p.wild.town_keep_day.value,
+      town_keep_night: p.wild.town_keep_night.value,
+    },
     starting_gold_mg: p.starting_gold_mg.value,
     per_point: {
       might: p.per_point.might.value,
@@ -723,7 +744,8 @@ function checkMap(b: Bundle, origin: Record<string, string>, issues: Issue[]): v
   if (m.creatures) {
     const kinds = m.creatures.kinds;
     for (const [id, k] of Object.entries(kinds)) {
-      if (k.hours && k.hours[0] >= k.hours[1]) err(`map.creatures.kinds.${id}.hours`, 'must run from an earlier hour to a later one');
+      // a night kind wraps midnight (the wolf's 20 to 5, CREATURE_BEHAVIOUR section 4): only an empty window is refused
+      if (k.hours && k.hours[0] === k.hours[1]) err(`map.creatures.kinds.${id}.hours`, 'an empty window: from and to are the same hour');
     }
     m.creatures.spots.forEach((c, i) => {
       const kind = kinds[c.kind];

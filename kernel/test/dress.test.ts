@@ -227,7 +227,9 @@ describe('dressing a taken animal', () => {
   });
 
   test('nobody buys a good of the hunt raw: no price anywhere, and the sale says why', () => {
-    expect([...huntGoods(b)].sort()).toEqual(['test/hare-bone', 'test/hare-hide', 'test/hare-hide-fine', 'test/hare-meat']);
+    // the core's own hunted kinds (the creature schema) drop goods too; these are the test hare's
+    expect([...huntGoods(b)].filter((id) => id.startsWith('test/')).sort()).toEqual(['test/hare-bone', 'test/hare-hide', 'test/hare-hide-fine', 'test/hare-meat']);
+    expect(huntGoods(b).has('core/roe-hide')).toBe(true);
     const s = started();
     s.player.bag['test/hare-hide'] = 1;
     expect(salePrice(b, s, 'test/hare-hide', 1)).toBeUndefined();

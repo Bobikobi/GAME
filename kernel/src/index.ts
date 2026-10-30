@@ -14,3 +14,4 @@ export * from './step';
 export * from './story';
 export * from './values';
 export * from './world';
+export * from './wild/den';
