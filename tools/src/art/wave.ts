@@ -1,5 +1,5 @@
 /**
- * `pnpm art:wave <pool> [--size N] [--dry] [--prompts]`: cut a wave from a pool and queue it
+ * `pnpm art:wave <pool> [--size N] [--dry] [--prompts] [--unheld]`: cut a wave from a pool and queue it
  * (docs/art/PRODUCTION_LINE.md section 2).
  *
  * A wave is cut by rank: entries nobody drew yet (missing) first, then entries the owner sent back to be drawn
@@ -74,7 +74,7 @@ function lastRound(drafts: readonly Draft[]): number {
  * The entries of a wave, in the order they are drawn. `queued` are the names already waiting in the queue.
  * Missing entries first in rank order, then the drafted entries sent back; at most `size`.
  */
-export function cutWave(pool: PoolName, entries: readonly PoolEntry[], evidence: Evidence, size: number, queued: ReadonlySet<string>): Cut {
+export function cutWave(pool: PoolName, entries: readonly PoolEntry[], evidence: Evidence, size: number, queued: ReadonlySet<string>, unheld = false): Cut {
   const skipped = new Map<string, string[]>();
   const skip = (why: string, name: string): void => void skipped.set(why, [...(skipped.get(why) ?? []), name]);
   const ranked = entries.map((entry, index) => ({ entry, index, rank: entry.rank ?? null })).sort(byRank);
@@ -84,6 +84,7 @@ export function cutWave(pool: PoolName, entries: readonly PoolEntry[], evidence:
     const status = entryStatus(entry, evidence, pool);
     if (entry.route === 'grid' || entry.route === 'scatter') skip('written as text by Codex, not drawn on the GPU', entry.name);
     else if (queued.has(entry.name)) skip('already in the queue', entry.name);
+    else if (unheld && entry.blocked_by !== undefined) skip('held by an open owner call (--unheld)', entry.name);
     else if (status === 'retired') skip('retired', entry.name);
     else if (status === 'imported' || status === 'picked') skip(`already ${status}`, entry.name);
     else if (status === 'missing') fresh.push({ entry, kind: 'new', round: 1, status });
@@ -143,31 +144,36 @@ export function planJobs(id: string, pool: PoolName, candidates: readonly Candid
   const rounds = [...new Set(candidates.map((c) => c.round))].sort((a, b) => a - b);
   const jobs: Job[] = [];
   for (const round of rounds) {
-    const these = candidates.filter((c) => c.round === round);
-    const kind: WaveKind = these.every((c) => c.kind === 'new') ? 'new' : 'again';
-    for (const { recipe, seeds } of WAVE_RECIPES) {
-      for (let s = 0; s < seeds; s += 1) {
-        const seed = seedBase(round) + (recipe === 'qwen' ? 0 : 1 + s);
-        const n = jobs.length + 1;
-        jobs.push({
-          id: `${id}-${String(n).padStart(2, '0')}-${recipe}-s${seed}`, wave: id, pool, kind, round, recipe, seed,
-          entries: these.map((c) => c.entry.name), spec, out,
-          env: { KAGGLE_MODEL: recipe, KAGGLE_SEED: String(seed) },
-          args: [spec, '--out', out, '--drawer', 'kaggle', '--no-picks'],
-          estimate_minutes: Math.round(estimateMinutes(recipe, these.length) * 10) / 10, created,
-        });
+    const inRound = candidates.filter((c) => c.round === round);
+    // a creature is drawn with its own negative prompt (no "animal"), so it never shares a kernel with the rest
+    for (const creature of [false, true]) {
+      const these = inRound.filter((c) => (c.entry.creature === true) === creature);
+      if (these.length === 0) continue;
+      const kind: WaveKind = these.every((c) => c.kind === 'new') ? 'new' : 'again';
+      for (const { recipe, seeds } of WAVE_RECIPES) {
+        for (let s = 0; s < seeds; s += 1) {
+          const seed = seedBase(round) + (recipe === 'qwen' ? 0 : 1 + s);
+          const n = jobs.length + 1;
+          jobs.push({
+            id: `${id}-${String(n).padStart(2, '0')}-${recipe}-s${seed}`, wave: id, pool, kind, round, recipe, seed,
+            entries: these.map((c) => c.entry.name), spec, out,
+            env: { KAGGLE_MODEL: recipe, KAGGLE_SEED: String(seed), ...(creature ? { KAGGLE_NEGATIVE_KIND: 'creature' } : {}) },
+            args: [spec, '--out', out, '--drawer', 'kaggle', '--no-picks'],
+            estimate_minutes: Math.round(estimateMinutes(recipe, these.length) * 10) / 10, created,
+          });
+        }
       }
     }
   }
   return jobs;
 }
 
-export function planWave(root: string, pool: PoolName, options: { size?: number; now?: Date } = {}): WavePlan {
+export function planWave(root: string, pool: PoolName, options: { size?: number; now?: Date; unheld?: boolean } = {}): WavePlan {
   if (TRACKED_ONLY.includes(pool)) throw new Error(`the ${pool} pool is tracked only: the line never draws it (docs/art/PRODUCTION_LINE.md, out of scope)`);
   const size = options.size ?? DEFAULT_SIZE;
   const now = options.now ?? new Date();
   const evidence = loadEvidence(root);
-  const cut = cutWave(pool, readPool(pool, root), evidence, size, queuedNames(root, pool));
+  const cut = cutWave(pool, readPool(pool, root), evidence, size, queuedNames(root, pool), options.unheld === true);
   const id = `${pool}-${waveStamp(now)}`;
   const jobs = planJobs(id, pool, cut.candidates, now.toISOString());
   const meter = weeklyMeter(root, evidence.drafts, now);
@@ -236,7 +242,7 @@ export function enqueueWave(root: string, plan: WavePlan): void {
 
 /** `pnpm art:wave`: the text to print and the exit code. Throws on a bad argument. */
 export function waveCli(args: readonly string[], root = ROOT, now = new Date()): { text: string; code: number } {
-  const flags = new Set(['--dry', '--prompts']);
+  const flags = new Set(['--dry', '--prompts', '--unheld']);
   const positional: string[] = [];
   let size: number | undefined;
   for (let i = 0; i < args.length; i += 1) {
@@ -244,14 +250,14 @@ export function waveCli(args: readonly string[], root = ROOT, now = new Date()):
     if (a === '--size') {
       size = Number(args[i + 1]);
       i += 1;
-    } else if (a.startsWith('--') && !flags.has(a)) throw new Error(`Usage: art:wave <pool> [--size N] [--dry] [--prompts] (not: ${a})`);
+    } else if (a.startsWith('--') && !flags.has(a)) throw new Error(`Usage: art:wave <pool> [--size N] [--dry] [--prompts] [--unheld] (not: ${a})`);
     else if (!a.startsWith('--')) positional.push(a);
   }
   if (size !== undefined && (!Number.isInteger(size) || size < 1)) throw new Error('--size takes a whole number from 1');
   const [pool, ...extra] = positional;
-  if (pool === undefined || extra.length > 0 || !(POOLS as readonly string[]).includes(pool)) throw new Error(`Usage: art:wave <${POOLS.join('|')}> [--size N] [--dry] [--prompts]`);
+  if (pool === undefined || extra.length > 0 || !(POOLS as readonly string[]).includes(pool)) throw new Error(`Usage: art:wave <${POOLS.join('|')}> [--size N] [--dry] [--prompts] [--unheld]`);
   const dry = args.includes('--dry');
-  const plan = planWave(root, pool as PoolName, { ...(size === undefined ? {} : { size }), now });
+  const plan = planWave(root, pool as PoolName, { ...(size === undefined ? {} : { size }), now, unheld: args.includes('--unheld') });
   const text = formatPlan(plan, { dry, prompts: args.includes('--prompts') });
   if (dry || plan.candidates.length === 0) return { text, code: 0 };
   if (!plan.fits) return { text: `${text}not queued: the wave does not fit the week's GPU budget\n`, code: 1 };

@@ -85,6 +85,13 @@ describe('cutting a wave', () => {
     expect(cut.skipped.get('drafted, and held by an open owner call (one round of stills only)')).toEqual(['sent_back_blocked']);
   });
 
+  test('--unheld leaves out the entries an owner call holds, even ones never drawn', () => {
+    const dir = fixture();
+    const cut = cutWave('props', readPool('props', dir), loadEvidence(dir), 12, new Set(), true);
+    expect(cut.candidates.map((c) => c.entry.name)).toEqual(['missing_b', 'square', 'late_one', 'sent_back']);
+    expect(cut.skipped.get('held by an open owner call (--unheld)')).toEqual(['missing_a', 'sent_back_blocked']);
+  });
+
   test('a wave is at most N, and entries already in the queue are not cut twice', () => {
     const dir = fixture();
     expect(names(dir, 2)).toEqual(['missing_a', 'missing_b']);
@@ -100,6 +107,18 @@ describe('cutting a wave', () => {
 
 describe('the jobs of a wave', () => {
   const cand = (dir: string): ReturnType<typeof cutWave>['candidates'] => cutWave('props', readPool('props', dir), loadEvidence(dir), 12, new Set()).candidates;
+
+  test('a creature entry gets its own kernels with the creature negative prompt, and the rest keep the default', () => {
+    const dir = fixture();
+    const first = cand(dir).filter((c) => c.round === 1);
+    const marked = first.map((c, i) => (i === 0 ? { ...c, entry: { ...c.entry, creature: true } } : c));
+    const jobs = planJobs('props-x', 'props', marked, '2026-10-28T20:00:00.000Z');
+    expect(jobs).toHaveLength(6);
+    const creature = jobs.filter((j) => j.env['KAGGLE_NEGATIVE_KIND'] === 'creature');
+    expect(creature.map((j) => j.entries)).toEqual([[first[0]?.entry.name], [first[0]?.entry.name], [first[0]?.entry.name]]);
+    for (const j of jobs.filter((x) => x.env['KAGGLE_NEGATIVE_KIND'] === undefined)) expect(j.entries).not.toContain(first[0]?.entry.name);
+    expect(new Set(jobs.map((j) => j.id)).size).toBe(6);
+  });
 
   test('qwen on one seed and flux on two, each spelling its recipe and seed in the environment and refusing picks', () => {
     const dir = fixture();
