@@ -60,6 +60,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { PNG } from 'pngjs';
 
 import { colourCount, gridPrompt, parseGrid, pngToGrid, renderGrid, seamWarnings } from './gengrid.js';
+import { wrapTile } from './wrap.js';
 import { type DrawerId, type Drawn, type KaggleRecipe, detailWithNotes, drawWaveWithKaggle, drawWithGemini, drawWithKaggle, drawWithLocal, kagglePrompt, kaggleSettings, kaggleSubject, localPrompt, parseDrawer } from './drawers.js';
 import { importSprite, nearestPaletteIndex } from './import.js';
 import { applyInk } from './ink.js';
@@ -607,7 +608,8 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
       line.warnings.push(...seamWarnings(rows));
     } else if (kind === 'tile') {
       const result = importTile(raw, entry.width, entry.height, importPalette(entry));
-      writeFileSync(outPath, result.png);
+      // a picture drawn by a model does not tile: the kaggle route's fills are made to wrap (kit/wrap.ts)
+      writeFileSync(outPath, options.drawer === 'kaggle' ? wrapTile(result.png) : result.png);
       line.logical = result.logical;
       line.colors = result.colors;
       line.warnings.push(...gridWarnings(result.logical, entry));

@@ -55,3 +55,17 @@ describe('art:measure', () => {
     expect(best.has('b')).toBe(false);
   });
 });
+
+describe('wrapTile', () => {
+  it('makes a tile that does not wrap wrap, with no new colour', async () => {
+    const { wrapTile } = await import('../src/kit/wrap.js');
+    const ramp = tile((x, y) => GREENS[(Math.floor(x / 11) + Math.floor(y / 13)) % 6] ?? '#000000');
+    const before = seamRatio(ramp);
+    const wrapped = PNG.sync.read(wrapTile(PNG.sync.write(ramp)));
+    expect(before).toBeGreaterThan(1.35);
+    expect(seamRatio(wrapped)).toBeLessThan(before);
+    const colours = new Set<number>();
+    for (let i = 0; i < wrapped.data.length; i += 4) colours.add(((wrapped.data[i] ?? 0) << 16) | ((wrapped.data[i + 1] ?? 0) << 8) | (wrapped.data[i + 2] ?? 0));
+    expect(colours.size).toBeLessThanOrEqual(6);
+  });
+});
