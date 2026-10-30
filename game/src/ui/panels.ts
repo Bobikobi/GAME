@@ -24,6 +24,8 @@ import {
 } from '@game/kernel';
 import { app } from '../app';
 import { loadChipFor } from './load';
+import { SettingsApplier } from '../settings-apply';
+import { settingsBody } from './settings-window';
 import { sound } from '../audio';
 import { GAME_TITLE, REPO_URL, REVIEW_KEY } from '../config';
 import {
@@ -1097,6 +1099,8 @@ export function openMenu(ui: UI): void {
           sound.setMuted(!sound.muted);
           render();
         }),
+        // the 3D door has no settings host yet (it is paused): no row there rather than a dead one
+        ...(app.perf && app.game ? [button('Settings', go(() => openSettings(ui)))] : []),
         button('Controls', go(() => openControls(ui))),
         button('Creators', go(() => openCreators(ui))),
         button('Credits', go(() => openCredits(ui))),
@@ -1277,6 +1281,22 @@ export function openOpeningReview(ui: UI): Promise<void> {
     const closeBtn = p.layer.el.querySelector('.close');
     closeBtn?.addEventListener('click', () => finish());
   });
+}
+
+/** The Settings window: quality, frame rate, sound, reduced motion and text size, applied at once and kept (settings-apply.ts). */
+export function openSettings(ui: UI): void {
+  const perf = app.perf;
+  const game = app.game;
+  if (!perf || !game) return;
+  const p = panel(ui, 'Settings', 'settings');
+  let storage: Storage | null = null;
+  try {
+    storage = window.localStorage;
+  } catch {
+    // the settings still apply for this visit
+  }
+  const apply = new SettingsApplier({ perf, game, storage, root: document.documentElement, richFromUrl: new URLSearchParams(location.search).has('rich') });
+  p.body.replaceChildren(settingsBody(apply, app.sound, p.close));
 }
 
 function openControls(ui: UI): void {
