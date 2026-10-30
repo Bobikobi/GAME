@@ -543,6 +543,8 @@ export interface KaggleSettings {
   /** The compute precision on the GPU, from the recipe: `fp16` (a T4's fast one), `bf16`, or `fp32` (qwen). */
   dtype: KaggleDtype;
   post: KagglePost;
+  /** The negative prompt: `KAGGLE_NEGATIVE`, or the creature list when `KAGGLE_NEGATIVE_KIND=creature`. */
+  negative: string;
 }
 
 /**
@@ -551,7 +553,7 @@ export interface KaggleSettings {
  * with the recipe in `KAGGLE_RECIPE`, default sd15), `KAGGLE_VAE`, `KAGGLE_LORA_REPO`, `KAGGLE_LORA_FILE`, `KAGGLE_LORA_STRENGTH`,
  * `KAGGLE_DENOISE` (props, 0.6), `KAGGLE_DENOISE_CHARACTER` (0.7 on sd15, 0.8 on sdxl), `KAGGLE_STEPS`, `KAGGLE_SIZE` (the short side),
  * `KAGGLE_CFG`, `KAGGLE_SEED`, `KAGGLE_SETUP_SECONDS`, `KAGGLE_POLL_SECONDS`, `KAGGLE_POST` (`grid` or `off`), `KAGGLE_DTYPE`
- * (`fp16`, `bf16` or `fp32`); the rest default to the recipe's. `qwen` and `flux` draw from the prompt, so a denoise below 1 is refused.
+ * (`fp16`, `bf16` or `fp32`), `KAGGLE_NEGATIVE_KIND` (`default` or `creature`); the rest default to the recipe's. `qwen` and `flux` draw from the prompt, so a denoise below 1 is refused.
  */
 export function kaggleSettings(env: NodeJS.ProcessEnv = process.env): KaggleSettings {
   const num = (name: string, fallback: number): number => envNumber(env, name, fallback);
@@ -600,6 +602,7 @@ export function kaggleSettings(env: NodeJS.ProcessEnv = process.env): KaggleSett
     tokenLimit: recipe.tokenLimit,
     dtype: choice('KAGGLE_DTYPE', ['fp16', 'bf16', 'fp32'] as const, recipe.dtype),
     post: choice('KAGGLE_POST', ['grid', 'off'] as const, recipe.post),
+    negative: choice('KAGGLE_NEGATIVE_KIND', ['default', 'creature'] as const, 'default') === 'creature' ? KAGGLE_CREATURE_NEGATIVE : KAGGLE_NEGATIVE,
   };
 }
 
@@ -653,6 +656,12 @@ export function clipTokenEstimate(text: string): number {
  * the light the model paints on the background (a wedge, a halo) that the importer then keeps as part of the sprite (27.10).
  */
 export const KAGGLE_NEGATIVE = 'multiple characters, two figures, extra figure, animal, duplicate, cropped, blurry, photo, realistic, 3d render, text, watermark, gradient background, shadow on the ground, glow, vignette, light rays, halo';
+
+/**
+ * The negative prompt of a creature job (`KAGGLE_NEGATIVE_KIND=creature`): the same list without `animal`, which
+ * would forbid the very subject. The figure words stay, so a hare is still one hare.
+ */
+export const KAGGLE_CREATURE_NEGATIVE = KAGGLE_NEGATIVE.split(', ').filter((w) => w !== 'animal').join(', ');
 
 const NUMBER_WORD = '(?:\\d+|two|three|four|five|six)';
 
@@ -793,7 +802,7 @@ export function kaggleWave(requests: readonly KaggleRequest[], s: KaggleSettings
     settings: {
       recipe: s.recipe, model: s.model, vae: s.vae, lora_repo: s.loraRepo, lora_file: s.loraFile, lora_strength: s.loraStrength,
       denoise: s.denoise, steps: s.steps, inference_steps: kaggleInferenceSteps(s.steps, s.denoise),
-      size: s.size, cfg: s.cfg, negative: KAGGLE_NEGATIVE, clip_tokens: CLIP_TOKENS,
+      size: s.size, cfg: s.cfg, negative: s.negative, clip_tokens: CLIP_TOKENS,
       quant: s.quant, scheduler: s.scheduler, token_limit: s.tokenLimit, dtype: s.dtype, post: s.post, post_scale: KAGGLE_POST_SCALE,
     },
     requests: requests.map((r) => {
