@@ -25,6 +25,7 @@ import {
 import { app } from '../app';
 import { loadChipFor } from './load';
 import { sound } from '../audio';
+import { SOURCE_LABEL } from '../audio/source';
 import { GAME_TITLE, REPO_URL, REVIEW_KEY } from '../config';
 import {
   type FeedbackContext,
@@ -1097,6 +1098,11 @@ export function openMenu(ui: UI): void {
           sound.setMuted(!sound.muted);
           render();
         }),
+        // the player's own choice, kept on this device (DECISIONS.md, 2026-10-30): the settings window takes it when it lands
+        button(`Music: ${SOURCE_LABEL[sound.source]}`, () => {
+          sound.setSource(sound.source === 'real' ? 'synth' : 'real');
+          render();
+        }),
         button('Controls', go(() => openControls(ui))),
         button('Creators', go(() => openCreators(ui))),
         button('Credits', go(() => openCredits(ui))),
@@ -1340,7 +1346,7 @@ function openCredits(ui: UI): void {
       h(
         'div',
         { class: 'muted' },
-        'Engine: Phaser (MIT). Font: Pixelify Sans by Stefie Justprince (SIL Open Font License). The age limit of an account uses the country file ',
+        'Engine: Phaser (MIT). Font: Pixelify Sans by Stefie Justprince (SIL Open Font License). Music: our own tunes played on the FluidR3_GM soundfont by Frank Wen (CC BY 3.0). The age limit of an account uses the country file ',
         h('a', { href: 'https://db-ip.com', target: '_blank', rel: 'noopener' }, 'IP Geolocation by DB-IP'),
         ' (CC BY 4.0).',
       ),

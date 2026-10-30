@@ -7,7 +7,7 @@ const here = (path: string): string => fileURLToPath(new URL(path, import.meta.u
 /**
  * The 3D door's build (`pnpm --filter game build:3d`): the client at game/play3d, shipped as game/dist-3d and then
  * at /play3d/ (tools/src/site/play3d.ts). Its own public folder holds the 3D models; the sprites of the bundle, the
- * font and the icon are the classic game's and are copied in from game/public after the build.
+ * font, the music and the icon are the classic game's and are copied in from game/public after the build.
  */
 export default defineConfig({
   root: here('./play3d'),
@@ -25,7 +25,7 @@ export default defineConfig({
     {
       name: 'copy-classic-public',
       closeBundle() {
-        for (const name of ['kit', 'fonts', 'favicon.png']) cpSync(here(`./public/${name}`), here(`./dist-3d/${name}`), { recursive: true });
+        for (const name of ['kit', 'fonts', 'music', 'favicon.png']) cpSync(here(`./public/${name}`), here(`./dist-3d/${name}`), { recursive: true });
       },
     },
   ],
