@@ -92,6 +92,20 @@ describe('cutting a wave', () => {
     expect(cut.skipped.get('held by an open owner call (--unheld)')).toEqual(['missing_a', 'sent_back_blocked']);
   });
 
+  test('--redo cuts an imported entry that carries a rework draft, as another round, and only then', () => {
+    const dir = fixture([draftLine('imported_one', 7, { round: 1, pool: 'props' }), { id: idOf(7), amend: true, review: 'rework' }]);
+    const pool = readPool('props', dir);
+    const without = cutWave('props', pool, loadEvidence(dir), 12, new Set());
+    expect(without.candidates.map((c) => c.entry.name)).not.toContain('imported_one');
+    expect(without.skipped.get('already imported')).toEqual(['imported_one']);
+    const cut = cutWave('props', pool, loadEvidence(dir), 12, new Set(), false, true);
+    expect(cut.candidates.find((c) => c.entry.name === 'imported_one')).toMatchObject({ kind: 'again', round: 2 });
+    expect(cut.skipped.get('already imported')).toBeUndefined();
+    // once a later round exists, the same rework mark no longer asks for another
+    const answered = fixture([draftLine('imported_one', 7, { round: 1, pool: 'props' }), { id: idOf(7), amend: true, review: 'rework' }, draftLine('imported_one', 8, { round: 2, pool: 'props' })]);
+    expect(cutWave('props', readPool('props', answered), loadEvidence(answered), 12, new Set(), false, true).candidates.map((c) => c.entry.name)).not.toContain('imported_one');
+  });
+
   test('a wave is at most N, and entries already in the queue are not cut twice', () => {
     const dir = fixture();
     expect(names(dir, 2)).toEqual(['missing_a', 'missing_b']);
