@@ -12,15 +12,20 @@ export function stepMs(t1Ms: number, ratioPermille: number, i: number): number {
   return Number((BigInt(t1Ms) * BigInt(ratioPermille) ** n) / 1000n ** n);
 }
 
-/** Active milliseconds from level 1 to each level: entry k is level k + 2 (the first entry is level 2). */
-export function thresholdsMs(rules: Rules, t1Ms = rules.t1Ms): number[] {
+/** Active milliseconds from level 1 to each level over `steps` steps: entry k is level k + 2 (the first entry is level 2). */
+export function thresholdsOf(t1Ms: number, ratioPermille: number, steps: number): number[] {
   const out: number[] = [];
   let sum = 0;
-  for (let i = 1; i <= rules.steps; i++) {
-    sum += stepMs(t1Ms, rules.ratioPermille, i);
+  for (let i = 1; i <= steps; i++) {
+    sum += stepMs(t1Ms, ratioPermille, i);
     out.push(sum);
   }
   return out;
+}
+
+/** Active milliseconds from level 1 to each level: entry k is level k + 2 (the first entry is level 2). */
+export function thresholdsMs(rules: Rules, t1Ms = rules.t1Ms): number[] {
+  return thresholdsOf(t1Ms, rules.ratioPermille, rules.steps);
 }
 
 /** The level an active time reaches on the curve, 1 to mastery (steps + 1). */
