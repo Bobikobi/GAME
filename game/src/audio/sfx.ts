@@ -5,7 +5,7 @@ export type SfxId =
   | 'strike' | 'crack' | 'snap' | 'tug' | 'rustle' | 'pluck' | 'dig' | 'thud' | 'douse'
   | 'hammer' | 'sizzle' | 'coin' | 'pickup' | 'ui' | 'back' | 'miss' | 'good'
   | 'perfect' | 'step' | 'whisper' | 'bell' | 'click' | 'voice' | 'growl' | 'safe'
-  | 'wings' | 'plop';
+  | 'wings' | 'plop' | 'journal';
 
 export interface SfxOptions {
   pan?: number;
@@ -14,6 +14,20 @@ export interface SfxOptions {
   /** A low-pass cutoff in Hz: the sound as heard from far off. */
   lowpass?: number;
 }
+
+/**
+ * Each effect's own level under the call's gain (docs/design/SOUND.md section 1.3): the cues the player earns
+ * sit near -17 dBFS at the speaker, under the tune rather than over it; the step is a breath.
+ */
+const BASE_GAIN: Partial<Record<SfxId, number>> = {
+  step: 0.15,
+  pickup: 0.55,
+  journal: 0.55,
+  perfect: 0.5,
+  snap: 0.55,
+  douse: 0.55,
+  sizzle: 0.55,
+};
 
 /** Build and start one effect, returning its audible duration in seconds. */
 export function playSfx(
@@ -25,7 +39,7 @@ export function playSfx(
 ): number {
   const output = context.createGain();
   const panner = context.createStereoPanner();
-  output.gain.value = Math.max(0, Math.min(1, options.gain ?? 1)) * (id === 'step' ? 0.15 : 1);
+  output.gain.value = Math.max(0, Math.min(1, options.gain ?? 1)) * (BASE_GAIN[id] ?? 1);
   panner.pan.value = Math.max(-1, Math.min(1, options.pan ?? 0));
   if (options.lowpass !== undefined) {
     const filter = context.createBiquadFilter();
@@ -51,6 +65,7 @@ export function playSfx(
     case 'douse': return douse(context, output, when);
     case 'coin': return coin(context, output, when, detune);
     case 'pickup': return arpeggio(context, output, when, [659.25, 830.61, 987.77], 0.04, detune);
+    case 'journal': return journal(context, output, when, detune);
     case 'ui': return pulseBlip(context, output, when, 1_046.5, 0.03, detune);
     case 'back': return pulseBlip(context, output, when, 783.99, 0.03, detune);
     case 'miss': return miss(context, output, when, detune);
@@ -68,7 +83,7 @@ export function playSfx(
   }
 }
 
-/** Birds lift: a soft flutter of wingbeats, quick at first and slowing as they climb away. */
+/** Birds lift: a soft flutter of four wingbeats, quick at first and slowing as they climb away; about half a second. */
 function wings(context: BaseAudioContext, out: AudioNode, at: number): number {
   const filter = context.createBiquadFilter();
   filter.type = 'bandpass';
@@ -76,14 +91,14 @@ function wings(context: BaseAudioContext, out: AudioNode, at: number): number {
   filter.Q.value = 0.7;
   const envelope = context.createGain();
   envelope.gain.setValueAtTime(0, at);
-  // eight beats, each a short swell of air, further apart and fainter as the birds climb
+  // four beats, each a short swell of air, further apart and fainter as the birds climb
   let t = at;
-  for (let i = 0; i < 8; i++) {
-    const peak = 0.22 * (1 - i / 10);
+  for (let i = 0; i < 4; i++) {
+    const peak = 0.22 * (1 - i / 6);
     envelope.gain.setValueAtTime(0, t);
     envelope.gain.linearRampToValueAtTime(peak, t + 0.015);
     envelope.gain.linearRampToValueAtTime(0, t + 0.06);
-    t += 0.07 + i * 0.012;
+    t += 0.1 + i * 0.02;
   }
   filter.connect(envelope).connect(out);
   noiseSource(context, filter, at, t - at);
@@ -260,11 +275,11 @@ function dig(context: BaseAudioContext, out: AudioNode, at: number, detune: numb
   const filter = context.createBiquadFilter();
   filter.type = 'lowpass';
   filter.frequency.setValueAtTime(900, at);
-  filter.frequency.exponentialRampToValueAtTime(250, at + 0.22);
-  filter.connect(decay(context, out, at, 0.22, 0.32));
-  noiseSource(context, filter, at, 0.22);
+  filter.frequency.exponentialRampToValueAtTime(250, at + 0.14);
+  filter.connect(decay(context, out, at, 0.14, 0.32));
+  noiseSource(context, filter, at, 0.14);
   tone(context, out, at, 0.06, 180, 0.22, 'sine', detune);
-  return 0.22;
+  return 0.14;
 }
 
 function thud(context: BaseAudioContext, out: AudioNode, at: number, detune: number): number {
@@ -299,13 +314,13 @@ function sizzle(context: BaseAudioContext, out: AudioNode, at: number): number {
   filter.frequency.value = 3_000;
   const gain = context.createGain();
   gain.gain.setValueAtTime(0.05, at);
-  for (let time = 0; time < 0.5; time += 0.025) {
+  for (let time = 0; time < 0.35; time += 0.025) {
     gain.gain.linearRampToValueAtTime(0.04 + Math.random() * 0.22, at + time);
   }
-  gain.gain.linearRampToValueAtTime(0, at + 0.5);
+  gain.gain.linearRampToValueAtTime(0, at + 0.35);
   filter.connect(gain).connect(out);
-  noiseSource(context, filter, at, 0.5);
-  return 0.5;
+  noiseSource(context, filter, at, 0.35);
+  return 0.35;
 }
 
 /** A fire going out: a hiss that sinks and thins over a soft low drop. */
@@ -314,17 +329,24 @@ function douse(context: BaseAudioContext, out: AudioNode, at: number): number {
   filter.type = 'bandpass';
   filter.Q.value = 0.9;
   filter.frequency.setValueAtTime(2_600, at);
-  filter.frequency.exponentialRampToValueAtTime(350, at + 0.8);
-  filter.connect(decay(context, out, at, 0.85, 0.32));
-  noiseSource(context, filter, at, 0.85);
+  filter.frequency.exponentialRampToValueAtTime(350, at + 0.47);
+  filter.connect(decay(context, out, at, 0.5, 0.32));
+  noiseSource(context, filter, at, 0.5);
   const low = context.createOscillator();
   low.type = 'sine';
   low.frequency.setValueAtTime(140, at);
-  low.frequency.exponentialRampToValueAtTime(60, at + 0.35);
-  low.connect(decay(context, out, at, 0.35, 0.3));
+  low.frequency.exponentialRampToValueAtTime(60, at + 0.3);
+  low.connect(decay(context, out, at, 0.3, 0.3));
   low.start(at);
-  low.stop(at + 0.35);
-  return 0.85;
+  low.stop(at + 0.3);
+  return 0.5;
+}
+
+/** A first-of-kind item reaches the journal: the pickup's three notes and a page's soft tick after them. */
+function journal(context: BaseAudioContext, out: AudioNode, at: number, detune: number): number {
+  arpeggio(context, out, at, [659.25, 830.61, 987.77], 0.04, detune);
+  noiseBurst(context, out, at + 0.13, 0.03, 'bandpass', 1_900, 0.2);
+  return 0.2;
 }
 
 function coin(context: BaseAudioContext, out: AudioNode, at: number, detune: number): number {
