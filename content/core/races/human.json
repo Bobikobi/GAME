@@ -49,7 +49,7 @@
         }
       ]
     },
-    "sprite": "core/base-kit:chars/explorer_down",
-    "sprite_alt": "core/base-kit:chars/explorer_w_down"
+    "sprite": "core/base-kit:chars/human_down",
+    "sprite_alt": "core/base-kit:chars/human_w_down"
   }
 }

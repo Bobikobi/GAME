@@ -53,6 +53,8 @@ export interface PoolEntry extends GenEntry {
   anchor_sprite?: string;
   /** True when the kit does not hold `kit_id` yet: a regional variant it gains on pick. */
   new?: boolean;
+  /** True for a living thing: its kernel runs with the creature negative prompt (`KAGGLE_NEGATIVE_KIND`), which does not forbid animals. */
+  creature?: boolean;
   /** The DECISIONS title that retired the entry. */
   retired?: string;
 }
@@ -74,6 +76,7 @@ export function parsePool(text: string): PoolEntry[] {
       if (value !== undefined && (typeof value !== 'string' || value.trim() === '')) throw new Error(`${where}.${field} must be text`);
     }
     if (entry.new !== undefined && typeof entry.new !== 'boolean') throw new Error(`${where}.new must be true or false`);
+    if (entry.creature !== undefined && typeof entry.creature !== 'boolean') throw new Error(`${where}.creature must be true or false`);
   });
   return entries;
 }

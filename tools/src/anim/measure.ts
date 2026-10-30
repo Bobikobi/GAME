@@ -120,6 +120,12 @@ export interface Stride {
   lockedSlidePx: number;
   /** each planted run of the drawn poses: [foot, pose indices] */
   runs: [string, number[]][];
+  /**
+   * The same runs with what a player of the sheet needs to hold a foot on the ground (tools/anim/feet.json): the
+   * pose indices in order, the foot's place along the walk (frame px, whole pixels as drawn) in each, and the
+   * intercept of the fitted ground, so the foot should stand at `icpt + slope * k` in the run's k-th pose.
+   */
+  plants: { foot: string; poses: number[]; ys: number[]; icpt: number }[];
 }
 
 /** The feet the renderer reported for a view, in the order it wrote them. */
@@ -184,11 +190,13 @@ export function stride(meta: RenderMeta, view: View, poseStep: number, plantTol 
   }
   slope ??= sharedSlope(poseRuns.map(([, , ys]) => ys)) ?? 0;
   let worst = 0;
-  for (const [, , ys] of poseRuns) {
+  const plants: Stride['plants'] = [];
+  for (const [foot, idx, ys] of poseRuns) {
     const icpt = ys.reduce((a, y, k) => a + y - slope * k, 0) / ys.length;
     ys.forEach((y, k) => {
       worst = Math.max(worst, Math.abs(Math.round(y) - (icpt + slope * k)));
     });
+    plants.push({ foot, poses: [...idx], ys: ys.map((y) => Math.round(y)), icpt: Math.round(icpt * 1000) / 1000 });
   }
   const n = meta.poses.length;
   const r3 = (v: number) => Math.round(v * 1000) / 1000;
@@ -198,7 +206,40 @@ export function stride(meta: RenderMeta, view: View, poseStep: number, plantTol 
     cyclePx: Math.round(Math.abs(slope) * n * 10) / 10,
     lockedSlidePx: r3(worst),
     runs: poseRuns.map(([foot, idx]) => [foot, [...idx]]),
+    plants,
   };
+}
+
+/** The widest row of a picture's opaque pixels, outline included: the width of the clothed body at its broadest, in frame px. */
+export function widestRow(p: Picture): number {
+  let widest = 0;
+  for (let y = 0; y < p.height; y += 1) {
+    let first = -1;
+    let last = -1;
+    for (let x = 0; x < p.width; x += 1) {
+      if ((p.data[(y * p.width + x) * 4 + 3] ?? 0) === 0) continue;
+      if (first < 0) first = x;
+      last = x;
+    }
+    if (first >= 0) widest = Math.max(widest, last - first + 1);
+  }
+  return widest;
+}
+
+/**
+ * The planted foot's slide in a played-back sheet: how far the foot drawn in pose `pose` is from the ground when the
+ * body has walked `u` poses' worth of the stride (continuous), or undefined when that pose has no planted foot.
+ */
+export function plantSlide(plants: Stride['plants'], slope: number, poses: number, pose: number, u: number): number | undefined {
+  for (const run of plants) {
+    const k = run.poses.indexOf(pose);
+    if (k < 0) continue;
+    // where in the run the body is: the pose's own index, and the way the walk has gone on from the pose (within half a pose)
+    const d = u - pose;
+    const into = k + (d - poses * Math.round(d / poses));
+    return (run.ys[k] as number) - (run.icpt + slope * into);
+  }
+  return undefined;
 }
 
 export interface PaceSlide {
