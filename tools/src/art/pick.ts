@@ -13,7 +13,7 @@
  * file has been checked, and the drafts index and the picks manifest only grow.
  */
 import { appendFileSync, copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 
 import { CACHE_DIR, type Draft, DraftIndex, pngDims } from './drafts.js';
 import { ROOT } from './queue.js';
@@ -104,12 +104,12 @@ export function planPicks(file: PicksFile, ctx: PickContext = {}): Step[] {
       const other = picked.get(entry.name);
       if (other !== undefined) throw new Error(`${entry.name} has two picks in the file (${other} and ${draft.id}): one pick an entry`);
       picked.set(entry.name, draft.id);
-      const imported = join(cache, `${draft.id}.imported.png`);
+      const imported = ['imported.png', 'png'].map((n) => join(cache, `${draft.id}.${n}`)).find((f) => existsSync(f)) ?? join(cache, `${draft.id}.imported.png`);
       if (!existsSync(imported)) throw new Error(`draft ${draft.id}: ${imported} is missing; run pnpm art:drafts fetch`);
       const dims = pngDims(readFileSync(imported));
       if (dims === null || dims[0] !== entry.width || dims[1] !== entry.height) throw new Error(`draft ${draft.id}: the picture is ${dims?.join('x') ?? '?'}, the entry asks ${entry.width}x${entry.height}`);
       lines.push(
-        `copy ${draft.id}.imported.png -> content/kit/core/${entry.kit_id}.png (${entry.width}x${entry.height})`,
+        `copy ${basename(imported)} -> content/kit/core/${entry.kit_id}.png (${entry.width}x${entry.height})`,
         `kit.json: ${entry.kit_id} = density 4, ramps ${JSON.stringify(entry.ramps ?? draft.ramps ?? [])}, source ${entry.name} of tools/kit-gen/pools/${pool}.json`,
         `${PICKS_MANIFEST}: append a line (draft ${draft.id}, ${draft.recipe ?? draft.route} seed ${draft.seed}, picked_by ${file.picked_by})`,
         `drafts index: ${draft.id} review keep`,
@@ -143,7 +143,7 @@ export function applyPicks(file: PicksFile, steps: readonly Step[], ctx: PickCon
     if (action.action === 'pick') {
       const target = join(root, 'content/kit/core', `${entry.kit_id}.png`);
       mkdirSync(dirname(target), { recursive: true });
-      copyFileSync(join(cache, `${draft.id}.imported.png`), target);
+      copyFileSync(['imported.png', 'png'].map((n) => join(cache, `${draft.id}.${n}`)).find((f) => existsSync(f)) ?? '', target);
       const before = existsSync(manifestPath) ? readFileSync(manifestPath, 'utf8') : '';
       const lead = before === '' || before.endsWith('\n') ? '' : '\n';
       const line = {

@@ -869,33 +869,87 @@
       },
       "tiles/cobble": {
         "file": "tiles/cobble.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "stone"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:55"
+        }
       },
       "tiles/cobble_1": {
         "file": "tiles/cobble_1.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "stone"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:56"
+        }
       },
       "tiles/cobble_2": {
         "file": "tiles/cobble_2.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "stone"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:57"
+        }
       },
       "tiles/forest": {
         "file": "tiles/forest.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:49"
+        }
       },
       "tiles/forest_1": {
         "file": "tiles/forest_1.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:50"
+        }
       },
       "tiles/forest_2": {
         "file": "tiles/forest_2.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:51"
+        }
       },
       "tiles/fringe_e": {
         "file": "tiles/fringe_e.png",
@@ -919,59 +973,158 @@
       },
       "tiles/grass": {
         "file": "tiles/grass.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:38"
+        }
       },
       "tiles/grass_1": {
         "file": "tiles/grass_1.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:39"
+        }
       },
       "tiles/grass_2": {
         "file": "tiles/grass_2.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:40"
+        }
       },
       "tiles/grass_3": {
         "file": "tiles/grass_3.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:41"
+        }
       },
       "tiles/grass_flowers": {
         "file": "tiles/grass_flowers.png",
-        "w": 16,
-        "h": 16,
-        "frames": 2
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss",
+          "fire"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:42"
+        }
       },
       "tiles/grove": {
         "file": "tiles/grove.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:52"
+        }
       },
       "tiles/grove_1": {
         "file": "tiles/grove_1.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:53"
+        }
       },
       "tiles/grove_2": {
         "file": "tiles/grove_2.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "green",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:54"
+        }
       },
       "tiles/path": {
         "file": "tiles/path.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:46"
+        }
       },
       "tiles/path_1": {
         "file": "tiles/path_1.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:47"
+        }
       },
       "tiles/path_2": {
         "file": "tiles/path_2.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "bark"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:48"
+        }
       },
       "tiles/rubble": {
         "file": "tiles/rubble.png",
@@ -980,23 +1133,60 @@
       },
       "tiles/ruin_floor": {
         "file": "tiles/ruin_floor.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "grey",
+          "stone",
+          "moss"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:58"
+        }
       },
       "tiles/sand": {
         "file": "tiles/sand.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:43"
+        }
       },
       "tiles/sand_1": {
         "file": "tiles/sand_1.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:59"
+        }
       },
       "tiles/sand_2": {
         "file": "tiles/sand_2.png",
-        "w": 16,
-        "h": 16
+        "w": 64,
+        "h": 64,
+        "density": 4,
+        "ramps": [
+          "wood",
+          "grey"
+        ],
+        "source": {
+          "spec": "tools/kit-gen/pools/ground.json",
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:45"
+        }
       },
       "tiles/shore_e": {
         "file": "tiles/shore_e.png",
