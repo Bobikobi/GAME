@@ -565,6 +565,15 @@ class Player {
         if (!(await this.page.eval('__e2e.dialog()'))) return seen;
         continue;
       }
+      // the box types its line out; a slow runner reads it half typed ("Not tonigh"). Record it once two reads agree.
+      for (let k = 0; k < 40; k++) {
+        await sleep(60);
+        const again = await this.page.eval<{ text: string; options: string[] } | null>('__e2e.dialog()');
+        if (!again) break;
+        const same = again.text === d.text && again.options.length === d.options.length;
+        d = again;
+        if (same) break;
+      }
       if (d.text && seen[seen.length - 1] !== d.text) seen.push(d.text);
       if (d.options.length > 0) {
         const want = pick ? d.options.findIndex((o) => o.includes(pick)) : -1;
