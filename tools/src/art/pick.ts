@@ -9,7 +9,7 @@
  * - again: the draft becomes `rework` with the note, and the entry joins the next wave;
  * - wrong: the draft is `archive` with `looks_like` (the note), kept for another role.
  *
- * Only a name in `tools/kit-gen/pickers.json` may pick; a builder never does. Nothing is written until every action in the
+ * Only a name in `tools/kit-gen/pickers/owner.json` may pick; a builder never does. Nothing is written until every action in the
  * file has been checked, and the drafts index and the picks manifest only grow.
  */
 import { appendFileSync, copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -19,7 +19,7 @@ import { CACHE_DIR, type Draft, DraftIndex, pngDims } from './drafts.js';
 import { ROOT } from './queue.js';
 import { POOLS, type PoolEntry, type PoolName, readPool } from './status.js';
 
-export const PICKERS_PATH = 'tools/kit-gen/pickers.json';
+export const PICKERS_PATH = 'tools/kit-gen/pickers/owner.json';
 export const PICKS_MANIFEST = 'tools/kit-gen/rich-wave.manifest.jsonl';
 export const KIT_JSON = 'content/kit/core/kit.json';
 export const ACTIONS = ['pick', 'again', 'wrong'] as const;

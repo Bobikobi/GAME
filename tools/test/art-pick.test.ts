@@ -45,7 +45,7 @@ function fixture(): { dir: string; cache: string } {
   };
   const entry = (name: string): object => ({ name, ref: 'tiles/grass', kit_id: `tiles/${name}`, new: true, kind: 'tile', width: 64, height: 64, ramps: ['grey'], what: 'snow tile', detail: 'white drifts' });
   write('tools/kit-gen/pools/ground.json', JSON.stringify({ entries: [entry('snow'), entry('ice')] }));
-  write('tools/kit-gen/pickers.json', JSON.stringify({ pickers: ['elad'] }));
+  write('tools/kit-gen/pickers/owner.json', JSON.stringify({ pickers: ['elad'] }));
   write('content/kit/core/kit.json', `${JSON.stringify({ kit: { sprites: { 'tiles/grass': { file: 'tiles/grass.png', w: 16, h: 16 } } } }, null, 2)}\n`);
   write('tools/kit-gen/rich-wave.manifest.jsonl', '{"name":"old","picked":"x"}\n');
   write('tools/kit-gen/drafts.jsonl', [draftLine('snow', 1), draftLine('snow', 2), draftLine('ice', 3)].map((l) => JSON.stringify(l)).join('\n') + '\n');
@@ -79,7 +79,7 @@ describe('art:pick', () => {
     const { dir, cache } = fixture();
     const ctx = { root: dir, cacheDir: cache };
     const pick = (picked_by: string, picks: object[]): ReturnType<typeof planPicks> => planPicks(parsePicksFile(JSON.stringify({ picked_by, picks })), ctx);
-    expect(() => pick('codex', [{ draft: ID(1), action: 'pick' }])).toThrow(/not in tools\/kit-gen\/pickers.json/);
+    expect(() => pick('codex', [{ draft: ID(1), action: 'pick' }])).toThrow(/not in tools\/kit-gen\/pickers\/owner.json/);
     expect(() => pick('elad', [{ draft: ID(1), action: 'pick' }, { draft: ID(2), action: 'pick' }])).toThrow(/one pick an entry/);
     expect(() => pick('elad', [{ draft: ID(9), action: 'pick' }])).toThrow(/no draft/);
     expect(() => parsePicksFile(JSON.stringify({ picked_by: 'elad', picks: [{ draft: ID(1), action: 'wrong' }] }))).toThrow(/looks like/);
