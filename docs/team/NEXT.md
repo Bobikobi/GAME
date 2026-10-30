@@ -524,7 +524,7 @@ h) **Provisioning and cutover** (docs plus the owner's gates; the builder prepar
   - A memory cap shows in `docker stats` for both game containers and the other product's containers are untouched (their image ids and uptimes unchanged).
   - With the wire cut for 10 s the client takes no input and, once back, the state equals the server's.
   - The sign-up asks for a name, a full date of birth and the one-account agreement, and refuses a player under 13 or under the country's higher age (DECISIONS 2026-10-21, the age-gate entry).
-  - The sign-in e2e (`game/e2e/signin.ts`, group `map-and-shops`) drives the real `createSignIn` on one origin in headless Chrome (`game/test/signin-box.ts`): the email link page's own POST is accepted, its 303 reaches the game's `#signin=signup`, the game's `GET /state` and `POST /action` carry the session cookie, and the same token posted from another origin is refused with the link unspent (DECISIONS 2026-10-27).
+  - The sign-in e2e (`game/e2e/signin.ts`, group `shop-rooms-and-signin`) drives the real `createSignIn` on one origin in headless Chrome (`game/test/signin-box.ts`): the email link page's own POST is accepted, its 303 reaches the game's `#signin=signup`, the game's `GET /state` and `POST /action` carry the session cookie, and the same token posted from another origin is refused with the link unspent (DECISIONS 2026-10-27).
 - For the owner: the wording of the sign-up and the pause box; whether the pause on a dropped line feels too sharp on a real phone; and the three-line gates, which he answers one by one.
 
 ## 19. The first map by hand, and a generator that sets the difficulty
