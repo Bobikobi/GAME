@@ -93,6 +93,9 @@ four, over four feet instead of two.
 
 - `locomotion.pace_ms`: the clip is judged at this pace (ms a tile) in place of the player's three, for a body that
   does not walk at the player's pace (the wolf's round is `hazard.predator.pace_ms`, 600).
+- `locomotion.airborne: true`: the gait has time in the air (the hare's lope and bound), so the renderer sets the body
+  on the ground once for the whole cycle, at its lowest point over every source frame, in place of at every pose (which
+  would pull a pose with every foot up down onto its lowest paw and read it as planted).
 - `locomotion.gait: "four-beat"`: adds the footfall measure. Each foot must plant once a cycle, the four landings must
   be evenly spread (each gap 0.2 to 0.35 of the cycle) and hind and fore must take turns. `pnpm anim render` prints
   the order and the gaps. Left off the Meshy `Walk` and `Run` on purpose: they are not four-beat, see below.
@@ -154,6 +157,9 @@ on its border fails the check as clipped).
 - The forager and the rest of the cast (`game/public3d/models/character-*.glb` but the two Kenney minis): made with
   Meshy, **CC BY 4.0**. A sprite rendered from one is a derivative and carries that model's credit line from
   `game/public3d/models/README.md` (each target's `credit` in `anim.json`, written into every `<clip>.json`).
+- The animals (`game/public3d/models/animal-*.glb`): from OpenGameArt, **CC0 1.0** (the ground fowl from
+  "Chicken (animated)" by CDmir, collaborator TinyWorlds, its colour map derived from photos by Rick Hoppmann).
+  CC0 asks for no attribution; each target still carries its credit line from `game/public3d/models/README.md`.
 - A target's body ramps: the two shared ramps, plus `skin`, whose steps leave the smallest mean CIELAB error over the
   model's colour map (for the forager this gives the hand-picked `wood`, `red`, `skin`).
 - Blender is a tool (GPL); its output is ours. The props are built in `blender/render.py`.

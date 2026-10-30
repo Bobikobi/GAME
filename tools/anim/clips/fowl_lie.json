@@ -1,0 +1,29 @@
+{
+  "about": "The ground fowl lying still on its side after a take (HUNTING 10): the wings closed, the legs drawn in, no blood, nothing moving. One pose, a still (a one-frame list); the take's fade is the client fading this pose out, not a clip.",
+  "target": "fowl",
+  "base": {
+    "library": "self:fowl",
+    "action": "Lie"
+  },
+  "frames": [
+    0
+  ],
+  "ms": [
+    1000
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "about": "The ground fowl on alert (HUNTING 2, ALERT): the neck stretched up tall and the head up, then the head turned to one side. Two poses of the body's own Alert, as the crow's, played by time while the state lasts.",
+  "target": "fowl",
+  "base": {
+    "library": "self:fowl",
+    "action": "Alert"
+  },
+  "frames": {
+    "even": 2
+  },
+  "ms": [
+    900,
+    300
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

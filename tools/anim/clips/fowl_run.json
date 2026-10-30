@@ -1,0 +1,34 @@
+{
+  "about": "The ground fowl's run: four poses of the body's own Run (the walk's keying, longer and faster: the body leaned forward and low, the neck out, the wings held a little out, a bob in the flight), at the run of 95 ms a tile (`walk_step_ms` over `gait.run_div`; small prey flees at the run, HUNTING.md section 2), rendered airborne. The foot-slide limit is 2 px for a four-pose loop.",
+  "target": "fowl",
+  "base": {
+    "library": "self:fowl",
+    "action": "Run"
+  },
+  "frames": {
+    "even": 4
+  },
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "locomotion": {
+    "playback": "distance",
+    "pace_ms": 95,
+    "airborne": true
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ],
+  "limits": {
+    "foot_slide_px": 2
+  }
+}

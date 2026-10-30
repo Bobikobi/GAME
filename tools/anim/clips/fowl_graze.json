@@ -1,0 +1,32 @@
+{
+  "about": "The ground fowl pecking (GRAZE, HUNTING.md section 2): four poses of the body's own Graze (tipped forward with the beak on the ground, the head a little up, a second peck, the head part way up), played by time.",
+  "target": "fowl",
+  "base": {
+    "library": "self:fowl",
+    "action": "Graze"
+  },
+  "frames": {
+    "even": 4
+  },
+  "ms": [
+    250,
+    250,
+    250,
+    350
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}
