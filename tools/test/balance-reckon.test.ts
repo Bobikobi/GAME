@@ -70,13 +70,13 @@ describe('the level a player brings', () => {
 });
 
 describe('the recommendation', () => {
-  it('safe ground stays at danger 0 with no monsters; elsewhere the danger is the level', () => {
+  it('safe ground stays at danger 0 with no monsters; elsewhere the danger is the band', () => {
     for (const r of rows) {
       if (r.dNow === 0) {
         expect(r.dRec, r.slot).toBe(0);
         expect(r.monsters, r.slot).toBeNull();
       } else {
-        expect(r.dRec, r.slot).toBe(r.level);
+        expect(r.dRec, r.slot).toBe(r.band);
         expect(r.monsters!.tier, r.slot).toBe(`T${r.band}`);
         expect(r.monsters!.oneInMinutes, r.slot).toBe(Math.ceil(10_000 / (rules.hazardBp * r.dRec)));
       }
