@@ -23,6 +23,13 @@
 import * as Phaser from 'phaser';
 
 import { type Mask, type Shadow, type Sun, type SunTable, SHADOW, downsampleAlpha, footRows, maskOfAlpha, mirrorMask, shadowBox, shadowOf, sunAt, sunKey } from './cast';
+import { bodyLight, litSide } from './light';
+
+/**
+ * By night the sun is down, and a body inside a light's pool casts from that light (STYLE 4 "Night"): the scene
+ * answers, for the feet at (x, y), the light's own sun, or undefined outside every pool, where nothing casts.
+ */
+export type NightSun = (x: number, y: number) => Sun | undefined;
 
 export type CastLayerName = 'under' | 'standing';
 
@@ -38,6 +45,8 @@ export interface Caster {
   readonly layer: CastLayerName;
   readonly mode: CastMode;
   enabled: boolean;
+  /** a body (the player, the people): STYLE 4's body light, one step on each side, baked per sun key */
+  readonly body: boolean;
 }
 
 /** A moving caster's own shadow: its image, its contact line, and the texture both show now. */
@@ -114,6 +123,12 @@ export class CastLayer {
   private readonly owns = new Map<Caster, Own>();
   /** the moving casters' textures under the sun of `shadowsSun`, by key, with the corner of each shadow's box */
   private readonly ownTex = new Map<string, { x: number; y: number }>();
+  /** each body's light: an image over it holding only the pixels the light moved a step */
+  private readonly bodies = new Map<Caster, Phaser.GameObjects.Image>();
+  /** the body-light textures made so far, by texture and lit side */
+  private readonly bodyTex = new Set<string>();
+  /** the lights' suns by night, when the scene has a light layer */
+  night: NightSun | undefined;
 
   constructor(scene: Phaser.Scene, sun: SunTable, density = 1, densityOf: (key: string) => number = () => 1) {
     this.scene = scene;
@@ -138,8 +153,8 @@ export class CastLayer {
   }
 
   /** Registers one thing that casts; the scene keeps the returned caster to turn it off. */
-  add(image: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite, layer: CastLayerName, mode: CastMode = 'drawn'): Caster {
-    const caster: Caster = { image, layer, mode, enabled: true };
+  add(image: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite, layer: CastLayerName, mode: CastMode = 'drawn', body = false): Caster {
+    const caster: Caster = { image, layer, mode, enabled: true, body };
     this.casters.push(caster);
     return caster;
   }
@@ -158,6 +173,8 @@ export class CastLayer {
       own.contact.destroy();
     }
     this.owns.clear();
+    for (const img of this.bodies.values()) img.destroy();
+    this.bodies.clear();
   }
 
   /**
@@ -166,12 +183,13 @@ export class CastLayer {
    * then drawn once at the table's alpha. A layer is painted only when what it shows moved.
    */
   update(minute: number, view?: Phaser.Geom.Rectangle): void {
-    const sun = sunAt(this.sun, minute);
-    if (!sun.up) {
+    const day = sunAt(this.sun, minute);
+    if (!day.up && !this.night) {
       this.hide();
       return;
     }
-    const shear = sunKey(sun);
+    // by night every caster has its own sun, the light whose pool it stands in; the cache is then keyed per sun
+    const shear = day.up ? sunKey(day) : 'night';
     const stale = shear !== this.shadowsSun ? [...this.ownTex.keys()] : [];
     if (shear !== this.shadowsSun) {
       this.shadows.clear();
@@ -190,10 +208,16 @@ export class CastLayer {
     const draws: Record<CastLayerName, Draw[]> = { under: [], standing: [] };
     const head = `${shear}|${ox},${oy},${ww},${wh}`;
     const sig: Record<CastLayerName, string> = { under: head, standing: head };
+    const lit = new Set<Caster>();
+    let nightAlpha = 0;
     for (const caster of this.casters) {
       if (!caster.enabled) continue;
       const img = caster.image;
       if (!img.visible || img.alpha <= MIN_ALPHA) continue;
+      const sun = day.up ? day : this.night?.(img.x, img.y);
+      if (!sun) continue;
+      const own = day.up ? '' : `@${sunKey(sun)}`;
+      if (caster.body && this.placeBody(caster, sun)) lit.add(caster);
       // a thing on a beat casts its first frame, so the beat leaves the layer as it is
       const frame = caster.mode === 'rest' && img.texture.has('0') ? img.texture.get('0') : img.frame;
       if (!frame) continue;
@@ -207,10 +231,10 @@ export class CastLayer {
       if (!this.inView(left, feet - height, width, height, area)) continue;
       const maskKey = `${tex}#${frame.name}`;
       const flip = img.flipX;
-      const shadow = this.shadowFor(maskKey, frame, density, flip, sun);
+      const shadow = this.shadowFor(maskKey, frame, density, flip, sun, own);
       if (!shadow || shadow.spans.length === 0) continue;
       if (caster.mode === 'moving') {
-        this.placeOwn(caster, shadow, `${maskKey}${flip ? '~' : ''}`, left, feet, sun.alpha);
+        this.placeOwn(caster, shadow, `${maskKey}${flip ? '~' : ''}${own}`, left, feet, sun.alpha);
         placed.add(caster);
         continue;
       }
@@ -218,15 +242,19 @@ export class CastLayer {
       // the shadow's row 0 on the sprite's lowest row, not on the frame's edge under it (footRows)
       const y = footRows(Math.round((feet - oy) * this.density), shadow).shadow;
       draws[caster.layer].push({ layer: caster.layer, shadow, x, y });
-      sig[caster.layer] += `|${maskKey}${flip ? '~' : ''}@${x},${y}`;
+      // a plane is drawn at one alpha: by night, the strongest of the gated lights its shadows come from
+      nightAlpha = Math.max(nightAlpha, sun.alpha);
+      sig[caster.layer] += `|${maskKey}${flip ? '~' : ''}${own}@${x},${y}`;
     }
+    for (const [caster, img] of this.bodies) if (!lit.has(caster) && img.visible) img.setVisible(false);
+    const alpha = day.up ? day.alpha : nightAlpha;
     for (const name of ['under', 'standing'] as const) {
       const p = this.planes[name];
       if (sig[name] !== p.painted) {
         this.paint(p, draws[name], ww * this.density, wh * this.density, ox, oy);
         p.painted = sig[name];
       }
-      for (let i = 0; i < p.used; i++) p.cells[i]!.setAlpha(sun.alpha);
+      for (let i = 0; i < p.used; i++) p.cells[i]!.setAlpha(alpha);
       p.contact.setPosition(ox, oy).setVisible(true);
     }
     for (const [caster, own] of this.owns) if (!placed.has(caster)) this.hideOwn(own);
@@ -243,6 +271,76 @@ export class CastLayer {
       p.painted = '';
     }
     for (const own of this.owns.values()) this.hideOwn(own);
+    for (const img of this.bodies.values()) img.setVisible(false);
+  }
+
+  /**
+   * A body's light (STYLE 4): an image over the body showing its frame with the lit side a step lighter and the far
+   * side a step darker, from a copy of its texture baked once per side. False at noon, when no side is lit.
+   */
+  private placeBody(caster: Caster, sun: Sun): boolean {
+    const side = litSide(sun.sx);
+    const img = caster.image;
+    if (!side) return false;
+    // a mirrored sprite shows its texture's right on the left, so its lit side in the texture is the other one
+    const texSide = img.flipX ? (side === 'left' ? 'right' : 'left') : side;
+    const key = this.bodyTexture(img.texture.key, texSide);
+    if (!key) return false;
+    let over = this.bodies.get(caster);
+    if (!over) {
+      over = this.scene.add.image(0, 0, key);
+      this.bodies.set(caster, over);
+    }
+    if (over.texture.key !== key || over.frame.name !== img.frame.name) over.setTexture(key, img.frame.name);
+    over
+      .setPosition(img.x, img.y)
+      .setOrigin(img.originX, img.originY)
+      .setScale(img.scaleX, img.scaleY)
+      .setFlipX(img.flipX)
+      .setAngle(img.angle)
+      .setDepth(img.depth + 0.0005)
+      .setAlpha(img.alpha)
+      .setVisible(true);
+    if (img.isTinted) over.setTint(img.tintTopLeft);
+    else over.clearTint();
+    return true;
+  }
+
+  /** The body-light copy of a texture, every frame lit from one side; made once and kept. Undefined when the pixels are refused. */
+  private bodyTexture(tex: string, side: 'left' | 'right'): string | undefined {
+    const key = `body:${tex}:${side}`;
+    if (this.bodyTex.has(key)) return key;
+    const texture = this.scene.textures.get(tex);
+    const source = texture.getSourceImage() as CanvasImageSource & { width: number; height: number };
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = source.width;
+      canvas.height = source.height;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) return undefined;
+      ctx.drawImage(source, 0, 0);
+
+      const out = ctx.createImageData(canvas.width, canvas.height);
+      const names = texture.getFrameNames();
+      const frames = names.length > 0 ? names.map((n) => texture.get(n)) : [texture.get()];
+      for (const f of frames) {
+        const sub = ctx.getImageData(f.cutX, f.cutY, f.cutWidth, f.cutHeight);
+        const lit = new Uint8ClampedArray(sub.data.length);
+        // the body's own pixels, at the frame's density: STYLE 4's 4 art px are 4 of the sprite's pixels at 64 a tile
+        bodyLight(sub.data, f.cutWidth, f.cutHeight, side, lit, Math.max(1, Math.round((4 * this.densityOf(tex)) / 4)));
+        for (let y = 0; y < f.cutHeight; y++) out.data.set(lit.subarray(y * f.cutWidth * 4, (y + 1) * f.cutWidth * 4), ((f.cutY + y) * canvas.width + f.cutX) * 4);
+      }
+      if (this.scene.textures.exists(key)) this.scene.textures.remove(key);
+      const made = this.scene.textures.createCanvas(key, canvas.width, canvas.height) as Phaser.Textures.CanvasTexture;
+      made.getContext().putImageData(out, 0, 0);
+      for (const f of frames) if (f.name !== '__BASE') made.add(f.name, 0, f.cutX, f.cutY, f.cutWidth, f.cutHeight);
+      made.refresh();
+      made.setFilter(Phaser.Textures.FilterMode.NEAREST);
+      this.bodyTex.add(key);
+      return key;
+    } catch {
+      return undefined;
+    }
   }
 
   destroy(): void {
@@ -358,8 +456,8 @@ export class CastLayer {
   }
 
   /** A mask's shadow under this sun, mirrored for a flipped sprite, kept until the shear moves. */
-  private shadowFor(maskKey: string, frame: Phaser.Textures.Frame, density: number, flip: boolean, sun: Sun): Shadow | null {
-    const key = flip ? `${maskKey}~` : maskKey;
+  private shadowFor(maskKey: string, frame: Phaser.Textures.Frame, density: number, flip: boolean, sun: Sun, own = ''): Shadow | null {
+    const key = `${flip ? `${maskKey}~` : maskKey}${own}`;
     const hit = this.shadows.get(key);
     if (hit) return hit;
     let mask = this.maskFor(maskKey, frame, density);

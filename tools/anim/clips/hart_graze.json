@@ -1,0 +1,32 @@
+{
+  "about": "The white hart grazing (GRAZE, HUNTING.md section 2): four poses of the body's own Graze, the head down with a small chew and an ear flick, played by time.",
+  "target": "hart",
+  "base": {
+    "library": "self:hart",
+    "action": "Graze"
+  },
+  "frames": {
+    "even": 4
+  },
+  "ms": [
+    400,
+    400,
+    400,
+    400
+  ],
+  "frame": {
+    "size": [
+      176,
+      176
+    ],
+    "anchor": [
+      88,
+      124
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}
