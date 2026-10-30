@@ -253,6 +253,21 @@ export class Page {
     // E2E_CPU_SLOWDOWN=4 makes a fast machine render as slowly as CI does
     const slowdown = Number(process.env.E2E_CPU_SLOWDOWN ?? 1);
     if (slowdown > 1) await this.send('Emulation.setCPUThrottlingRate', { rate: slowdown });
+    if (process.env.E2E_PROFILE || process.env.CI) await this.profile();
+  }
+
+  /** E2E_PROFILE=1: every 30 s print the frame gaps, the longest ground chunk bake, the bytes fetched and the game-clock hour. */
+  private async profile(): Promise<void> {
+    await this.send('Page.addScriptToEvaluateOnNewDocument', {
+      source: `window.__gaps = []; (() => { let last = performance.now(); const f = () => { const n = performance.now(); window.__gaps.push(n - last); last = n; requestAnimationFrame(f); }; requestAnimationFrame(f); })();`,
+    });
+    const expr = `(() => { const g = (window.__gaps || []).splice(0).sort((a, b) => a - b); const r = performance.getEntriesByType('resource'); const c = window.__game?.world?.chunks; const t = performance.getEntriesByType('navigation')[0]; return JSON.stringify({ frames: g.length, p50: g[g.length >> 1] | 0, p95: g[Math.floor(g.length * 0.95)] | 0, bake: c ? Math.round(c.longest) : null, kb: Math.round(r.reduce((a, e) => a + (e.transferSize || 0), 0) / 1024), loaded_ms: t ? Math.round(t.loadEventEnd) : null, hour: window.__e2e?.hour?.() ?? null }); })()`;
+    const timer = setInterval(() => {
+      this.send<{ result: { value?: string } }>('Runtime.evaluate', { expression: expr, returnByValue: true })
+        .then((r) => console.log(`e2e profile: ${r.result.value ?? ''}`))
+        .catch(() => clearInterval(timer));
+    }, 30000);
+    timer.unref();
   }
 
   async goto(url: string): Promise<void> {
