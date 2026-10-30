@@ -40,7 +40,7 @@ import {
   riddleSlots,
   sees,
   spotOpen,
-  walkStepMs,
+  gaitStepMs,
   windowOpen,
 } from '@game/kernel';
 import { app } from '../app';
@@ -79,6 +79,7 @@ import { STRIDE, type AutoKind, POSES, beatAt, blowsDue, resourceKind, strideFra
 import { blinking, breath, walkBob } from '../feel';
 import { ART_PX, type Facing8, StandingReports, Walker, agrees, canEnter, diagonalSheet, facedTile, facing8For, facingFor, landStep } from '../walking';
 import { GroundChunks } from '../groundchunks';
+import { ChunkStream, WORLD_CHUNK } from '../stream';
 import { adopt, baseOf, densityOf, drawScaled, kitImage, kitSprite, rel, retex, setRel, unitOf } from '../kitart';
 import { cameraZoom, pixelRatio, worldToPage } from '../view';
 import { ROOM, doorsOf, type RoomScene } from './room';
@@ -297,6 +298,8 @@ export class WorldScene extends Phaser.Scene {
   private ground!: Phaser.GameObjects.Image;
   /** the ground in chunks, once any ground sprite is at density 4 (groundchunks.ts); `ground` is then unused */
   private chunks: GroundChunks | undefined;
+  /** the 3 by 3 world chunks around the player (stream.ts); the valley is one chunk, so it holds that one */
+  private stream: ChunkStream<true> | undefined;
   private groundFrames = 2;
   private waterFrame = 0;
   private player!: Phaser.GameObjects.Sprite;
@@ -818,7 +821,9 @@ export class WorldScene extends Phaser.Scene {
       this.ground = this.add.image(0, 0, 'ground-0').setOrigin(0).setDepth(DEPTH.ground);
     } else {
       // built as the camera moves (update), so nothing is held for the map's far corners
-      this.chunks = new GroundChunks(this, m.width, m.height, gd, T, this.groundFrames, DEPTH.ground, paint);
+      const stream = new ChunkStream<true>((cx, cy) => (cx >= 0 && cy >= 0 && cx * WORLD_CHUNK < m.width && cy * WORLD_CHUNK < m.height ? true : undefined));
+      this.stream = stream;
+      this.chunks = new GroundChunks(this, m.width, m.height, gd, T, this.groundFrames, DEPTH.ground, paint, (tx, ty) => stream.holds(tx, ty));
     }
     if (RICH.motion) {
       this.meadowZone = new TileZone(meadow);
@@ -1987,7 +1992,9 @@ export class WorldScene extends Phaser.Scene {
       if (seen) fog.x = home + Math.sin(time * 0.0004 + i) * (i % 2 === 0 ? 3 : -3);
     });
     this.animate(time, delta);
-    this.chunks?.update(this.cameras.main.worldView);
+    if (this.stream) this.stream.update(this.player ? Math.floor(this.player.x / T) : 0, this.player ? Math.floor(this.player.y / T) : 0);
+    const at = this.stream?.centre;
+    this.chunks?.update(this.cameras.main.worldView, at ? `${at.cx},${at.cy}` : '');
     this.placePinned();
     const s = this.session;
     if (!s || !s.started) {
@@ -2258,15 +2265,16 @@ export class WorldScene extends Phaser.Scene {
     const moved = this.body.follow(s.pos);
     const was = this.body.moving;
     const input: [number, number] = this.canControl(s) ? app.controls.vector() : [0, 0];
+    const gait = app.controls.gait(performance.now());
     const facing = facingFor(input, s.facing);
     const look = facing8For(input, this.lookOf(s));
     const turned = facing !== s.facing || look !== this.look;
     s.facing = facing;
     this.look = agrees(look, facing) ? look : facing;
-    for (const tile of this.body.frame(input, delta, walkStepMs(this.b, s.state), (x, y, from) => this.canWalk(s, x, y, from))) {
+    for (const tile of this.body.frame(input, delta, gaitStepMs(this.b, s.state, gait), (x, y, from) => this.canWalk(s, x, y, from))) {
       if (RICH.motion) this.puffAt(s.pos[0], s.pos[1]);
       // the kernel hears of each new tile; a hazard there may hurt, and a fall ends the walk
-      landStep(s, tile);
+      landStep(s, tile, gait);
       if (this.falling) return;
       this.arrive(s);
     }
