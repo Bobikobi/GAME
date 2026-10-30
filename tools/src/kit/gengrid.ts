@@ -10,7 +10,7 @@ import { PNG } from 'pngjs';
 
 import { nearestPaletteIndex } from './import.js';
 import { CORE_PALETTE, hexToRgb } from './palette.js';
-import { PALETTE_LEGEND } from './sketches.js';
+import { LETTER_PALETTE, PALETTE_LEGEND } from './sketches.js';
 
 export type Grid = readonly string[];
 
@@ -18,7 +18,7 @@ const LETTERS = Object.keys(PALETTE_LEGEND);
 
 /** The legend as the prompt spells it: one line per colour, `letter #hex`. */
 export function legendText(): string {
-  return LETTERS.map((letter) => `${letter} ${CORE_PALETTE[PALETTE_LEGEND[letter] ?? 0]}`).join(', ');
+  return LETTERS.map((letter) => `${letter} ${LETTER_PALETTE[PALETTE_LEGEND[letter] ?? 0]}`).join(', ');
 }
 
 /** The rows of a tile written as letters, ignoring fences and prose around them. */
@@ -38,7 +38,7 @@ export function parseGrid(text: string, width: number, height: number): Grid {
 /** A kit tile read back as letters: the style reference of a grid prompt. */
 export function pngToGrid(image: { width: number; height: number; data: Uint8Array | Buffer }): Grid {
   const palette = CORE_PALETTE.map(hexToRgb);
-  const letterOf = new Map(Object.entries(PALETTE_LEGEND).map(([letter, index]) => [index, letter]));
+  const letterOf = new Map(Object.entries(PALETTE_LEGEND).filter(([, index]) => index < CORE_PALETTE.length).map(([letter, index]) => [index, letter]));
   const rows: string[] = [];
   for (let y = 0; y < image.height; y += 1) {
     let row = '';
@@ -55,7 +55,7 @@ export function renderGrid(grid: Grid): PNG {
   const png = new PNG({ width: grid[0]?.length ?? 0, height: grid.length });
   grid.forEach((row, y) => {
     [...row].forEach((letter, x) => {
-      const [r, g, b] = hexToRgb(CORE_PALETTE[PALETTE_LEGEND[letter] ?? 0] ?? '#000000');
+      const [r, g, b] = hexToRgb(LETTER_PALETTE[PALETTE_LEGEND[letter] ?? 0] ?? '#000000');
       const at = (y * png.width + x) * 4;
       png.data[at] = r;
       png.data[at + 1] = g;

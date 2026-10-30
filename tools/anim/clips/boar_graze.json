@@ -1,0 +1,32 @@
+{
+  "about": "The wild boar rooting, for the GRAZE state: four poses of the body's own Graze, played by time: the snout down to the earth, pushing forward and up, then a lift and a toss of the head. No soil is drawn (the ground is not rendered).",
+  "target": "boar",
+  "base": {
+    "library": "self:boar",
+    "action": "Graze"
+  },
+  "frames": {
+    "even": 4
+  },
+  "ms": [
+    400,
+    400,
+    400,
+    400
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

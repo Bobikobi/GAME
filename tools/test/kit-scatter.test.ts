@@ -121,7 +121,7 @@ describe('the spec', () => {
 
   test('the 64 px ground spec reads, and its grounds are scatter tiles with references in the kit', () => {
     const entries = parseSpec(readFileSync(join(root, 'tools/kit-gen/ground-64.json'), 'utf8'));
-    expect(entries.map((e) => e.name)).toEqual(['meadow', 'sand']);
+    expect(entries.map((e) => e.name)).toEqual(['meadow', 'meadow_dry', 'meadow_lush', 'flowers', 'sand', 'path', 'cobble', 'ruin_floor', 'forest', 'grove']);
     expect(entries.every((e) => e.route === 'scatter' && e.kind === 'tile' && e.width === 64)).toBe(true);
   });
 
