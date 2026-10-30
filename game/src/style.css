@@ -170,7 +170,7 @@ body {
 .btn.small {
   padding: 3px 9px;
   min-height: 32px;
-  font-size: 15px;
+  font-size: 16px;
 }
 
 .btn.big {
@@ -445,7 +445,7 @@ textarea {
   align-items: center;
   gap: 6px;
   padding: 2px 8px;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .meter-bar {
@@ -628,7 +628,7 @@ body {
   background: var(--red2);
   color: var(--paper);
   border: 2px solid var(--ink);
-  font-size: 13px;
+  font-size: 16px;
 }
 
 /* ------------------------------------------------------------ touch */
@@ -1803,7 +1803,7 @@ body {
   align-items: center;
   gap: 0.3em;
   padding: 1px 0.5em 2px;
-  font-size: clamp(14px, 1.2vw + 6px, 20px);
+  font-size: clamp(16px, 1.2vw + 6px, 20px);
   line-height: 1.2;
   border: 2px solid var(--ink);
   box-shadow: 0 2px 0 rgba(27, 26, 46, 0.45);
@@ -1915,7 +1915,7 @@ body {
 }
 
 .whisper {
-  font-size: 15px;
+  font-size: 16px;
   color: #d9d4f0;
   text-shadow:
     0 0 6px rgba(154, 91, 176, 0.9),
@@ -2060,14 +2060,14 @@ body {
   }
   .hud-right .btn.small {
     padding: 2px 6px;
-    font-size: 14px;
+    font-size: 16px;
   }
   .dialog {
-    font-size: 16px;
+    font-size: 18px;
     padding: 18px 14px 14px;
   }
   .dialog-text {
-    font-size: 17px;
+    font-size: 18px;
     line-height: 1.4;
   }
   .md p,
