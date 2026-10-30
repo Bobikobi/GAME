@@ -18,7 +18,7 @@
  * - Levels on the one curve of PROGRESSION 3.2 (t1, the 9.10 ratio); the leading
  *   school's level is the place's expected level.
  */
-import { type Bundle, type QuestDef, type Rect, dangerAt, hazardsOf, makeWalkable, near, nodeVerb } from '@game/kernel';
+import { type Bundle, type QuestDef, type Rect, dangerAt, hazardsOf, makeStepRule, makeWalkable, near, nodeVerb } from '@game/kernel';
 import { QUEST_TYPES } from '@game/schema';
 import { orderOf } from '../quests/hand';
 import { fmtMs, fmtPermille, levelOf, scalePermille, stepMs, thresholdsMs } from './curve';
@@ -93,6 +93,8 @@ function bitmap(b: Bundle, restored: string[]): Uint8Array {
 /** Steps from one tile to every tile, four ways; -1 where it cannot walk. */
 export function walkFrom(b: Bundle, open: Uint8Array, from: readonly [number, number]): Int32Array {
   const { width, height } = b.map;
+  // the height rule of a step (G68), the kernel's own, so this reckoning and the walk cannot disagree
+  const stepOpen = makeStepRule(b);
   const dist = new Int32Array(width * height).fill(-1);
   const start = from[1] * width + from[0];
   dist[start] = 0;
@@ -106,7 +108,7 @@ export function walkFrom(b: Bundle, open: Uint8Array, from: readonly [number, nu
       const ny = y + dy;
       if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
       const k = ny * width + nx;
-      if (dist[k] !== -1 || open[k] !== 1) continue;
+      if (dist[k] !== -1 || open[k] !== 1 || !stepOpen(x, y, nx, ny)) continue;
       dist[k] = dist[at]! + 1;
       queue.push(k);
     }
@@ -298,7 +300,7 @@ export function reckon(b: Bundle, rules: Rules): PlaceRow[] {
       const passes = (respawn: number) => Math.min(rules.grindPassesMax, 1 + Math.trunc(elapsed / Math.max(1, respawn)));
       for (const r of Object.values(b.resources)) {
         const d = w.steps(r.place.slot);
-        if (d === null || d >= here || (r.opens_after !== undefined && !before.has(r.opens_after))) continue;
+        if (d === null || d >= here || (r.opens_after ?? []).some((x) => { const wq = b.quests[x.quest]; return wq !== undefined && (wq.pocket === undefined || wq.pocket === w.pocket) && !before.has(x.quest); })) continue;
         const school = b.verbs[nodeVerb(r)];
         grind.set(school, (grind.get(school) ?? 0) + passes(r.respawn_ms) * r.count * r.active_ms);
       }

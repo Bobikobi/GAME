@@ -4,13 +4,15 @@ Welcome. Loomvale is built by the people who play it, and a first contribution i
 
 ## Adding content
 
-1. Follow [Add a fruit in 10 minutes](docs/creators/README.md). It walks through a whole extension, from copying the template to opening a pull request.
+1. Follow [Add a townsperson in 15 minutes](docs/creators/README.md). It walks through a whole extension, from copying the template to opening a pull request.
 2. Your files live in `content/extensions/<your-handle>/`, and art in `content/kit/<your-handle>/`. Ids start with your handle.
 3. Run `pnpm check` until it reports no errors. CI runs the same check on every pull request and shows its report on the run's summary page.
 4. Open a pull request against **`develop`**, not `main`. `main` is the default branch because it holds releases (a release is `develop` merged into `main`), so GitHub offers it first: change the base. CI refuses any other base, and a pull request aimed at `main` is asked to retarget. Fill in the author checklist from the template.
 5. The first time, a bot asks you to sign the [contributor agreement](CLA.md) by posting one comment. You keep the copyright on what you make; the agreement lets the project publish it and move it to another licence later. It takes a minute and holds for every later pull request.
 
 ### How a pull request is merged
+
+This section is written for content, but a pull request that changes code is merged the same way: a green check, then the owner's approval, then a squash. "Who merges", under "Changing the game", and [Your first code pull request](docs/team/ONBOARDING.md) cover what is different for code.
 
 - The check is green, and the opening still plays in Chrome (CI does this too).
 - Quests, camps, inscriptions and dialogue follow [the rules of play](docs/design/GAME_RULES.md): `pnpm check` prints a `!` line for each rule it can test, and a reviewer answers the checklist in its section 7.
@@ -23,14 +25,18 @@ Anyone can ask for something with the "Request for the valley" issue form. Other
 
 ## Changing the game
 
+**Without write access** (your own GitHub account, a fork): follow [Your first code pull request](docs/team/ONBOARDING.md). It goes step by step from the fork to an open pull request against `develop`, with the command for each step, and says what to ask about before you start.
+
 If you are joining the core team, read [How the team works](docs/team/WORKFLOW.md) first: branches, worktrees, who owns what and how a release happens.
+
+Who merges: the owner, the GitHub account `Bobikobi`, reviews, approves and merges every code pull request into `develop`. "The owner", "the lead" and "a core maintainer" in these docs are all that account today.
 
 - `kernel/` is the simulation. It must stay pure: no clocks, timers, randomness, floats or I/O. ESLint enforces this, and `kernel/test/invariants.test.ts` replays thousands of random actions to check it.
 - A change to any value anchor (`content/values.lock.json`) is a core maintainer decision: run `pnpm values` and say why in the pull request.
 - Write down a design choice, or an approach that did not work, in [DECISIONS.md](DECISIONS.md).
 - A change to play that collides with a rule in [docs/design/GAME_RULES.md](docs/design/GAME_RULES.md) goes to the owner before code is written (its section 6).
 - Keep the owner's machine out of the tree: no home-directory paths, no private tool names, no personal addresses. `pnpm verify` fails on them (`tools/src/private-strings.ts`).
-- Before a pull request: `pnpm verify`; CI plays the opening e2e on the pull request (run `pnpm e2e` locally, under the lock, only to debug a red run).
+- Before a pull request: `pnpm verify`; CI plays the opening e2e on the pull request (not on a docs-only one; run `pnpm e2e` locally, under the lock, only to debug a red run).
 
 ## The name
 

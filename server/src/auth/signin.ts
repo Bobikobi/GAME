@@ -6,6 +6,7 @@ import { takeOpening } from '../handover';
 
 import { ageGate, parseBirthDate } from './age';
 import { AGE_COOKIE, clearCookie, cookie, FLOW_COOKIE, readCookie, SESSION_COOKIE, SIGNUP_COOKIE } from './cookies';
+import type { CountryLookup } from './country';
 import { inboxOf, RateLimit } from './limits';
 import type { Mailer } from './mailer';
 import { SignInRefusal, type OAuthProvider, type ProvenIdentity } from './provider';
@@ -52,10 +53,15 @@ export interface SignInOptions {
   /** where the game is: a browser is sent there after a sign-in, and a POST must come from it or from publicOrigin */
   appOrigin: string;
   /**
-   * The request header our nginx sets to the visitor's country from GeoIP, overwriting any the client sent.
-   * Unset, no header is read and every sign-up is held to the highest age; the player never says where they are.
+   * The request header our nginx sets to the visitor's country, overwriting any the client sent: an override
+   * that wins over `countryLookup` when it carries a country. Unset, no header is read.
    */
   countryHeader?: string;
+  /**
+   * The country of the client's address, looked up in a database the server holds (COUNTRY_DB). With neither
+   * this nor a header that answers, every sign-up is held to the highest age; the player never says where they are.
+   */
+  countryLookup?: CountryLookup;
   /**
    * The request header our nginx sets to the client's address (X-Real-IP), overwriting any the client sent;
    * the per-address limits count by it. Unset (a laptop with no proxy), the socket's address is used.
@@ -67,6 +73,8 @@ export interface SignInOptions {
 export interface SignIn {
   /** The account the request's session cookie stands for, or undefined. A POST from another origin stands for no one. */
   resolve(request: IncomingMessage): Promise<string | undefined>;
+  /** The name of an open account: the one name its character carves and starts with (finding 11 of the 27.10 review). */
+  accountName(accountId: string): Promise<string | undefined>;
   /** Answer a request under `/auth/`; false for any other path. */
   handle(request: IncomingMessage, response: ServerResponse, url: URL): Promise<boolean>;
   /** Remove what has expired: the store's flows, links, tickets and sessions, and the limits' old counts. Run on a timer, never on a player's request. */
@@ -368,11 +376,16 @@ export function createSignIn(options: SignInOptions): SignIn {
     }, [...cookies, clearCookie(SIGNUP_COOKIE)]);
   }
 
-  /** The country our proxy says the request comes from; undefined without the header, or with a value that is not one. */
+  /**
+   * The country the request comes from: the one our proxy's header names when it holds one plain code, else the
+   * one the country database gives the client's address (as our proxy names it); undefined when neither knows.
+   */
   function countryOf(request: IncomingMessage): string | undefined {
-    if (!options.countryHeader) return undefined;
-    const value = request.headers[options.countryHeader];
-    return typeof value === 'string' && COUNTRY.test(value) ? value : undefined;
+    if (options.countryHeader) {
+      const value = request.headers[options.countryHeader];
+      if (typeof value === 'string' && COUNTRY.test(value)) return value;
+    }
+    return options.countryLookup?.(clientAddress(request));
   }
 
   async function signupShow(request: IncomingMessage, response: ServerResponse): Promise<void> {
@@ -414,7 +427,8 @@ export function createSignIn(options: SignInOptions): SignIn {
     const nameTaken = () => new SignInRefusal('That name is taken in this world. Choose another.', 'name-taken', 409);
     if (await store.nameTaken(name)) throw nameTaken();
     // the opening the phone played comes with the account, replayed and proven, or the game starts fresh (NEXT 18 d)
-    const handover = takeOpening(options.bundle, body.opening, newSeed(), at);
+    // the account's name is its character's name: an opening that carved another one is not kept (finding 11)
+    const handover = takeOpening(options.bundle, body.opening, newSeed(), at, undefined, name);
     const game = handover.kept
       ? { record: handover.record, books: { action: handover.opening, tick: handover.tick, gold: handover.gold } }
       : { record: handover.record };
@@ -507,6 +521,10 @@ export function createSignIn(options: SignInOptions): SignIn {
     async resolve(request) {
       if (request.method !== 'GET' && !fromOrigin(request)) return undefined;
       return (await sessionHash(request))?.accountId;
+    },
+
+    async accountName(accountId) {
+      return (await store.account(accountId))?.name;
     },
 
     async handle(request, response, url) {

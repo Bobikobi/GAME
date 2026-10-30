@@ -8,6 +8,7 @@
   "school": {
     "name": "Cooking",
     "profession": "core/cooking",
+    "tint": "red",
     "nodes": [
       {
         "id": "practiced",

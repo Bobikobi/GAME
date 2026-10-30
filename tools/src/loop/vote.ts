@@ -1,5 +1,5 @@
-/** Pure vote counting, private-result display, markers, and close decisions. */
-import type { Reaction } from './types';
+/** Pure vote counting, private-result display, markers, option comments, and close decisions. */
+import type { Comment, Issue, Reaction } from './types';
 
 export interface VoteOption {
   key: string;
@@ -22,6 +22,8 @@ export interface VoteMarker {
   closes: string;
   group: string;
   kind: 'proposals' | 'discovery';
+  /** the keys of the option comments the loop posted when it opened the vote; absent on votes opened before 27.10.2026 */
+  options?: string[];
 }
 
 export function countVotes(options: VoteOption[], accounts: AccountDate[], openedAt: Date, minimumAgeDays: number): CountedOption[] {
@@ -77,7 +79,8 @@ export function parseVoteMarker(body: string | null): VoteMarker | undefined {
   if (!match) return undefined;
   try {
     const value = JSON.parse(match[1]!) as VoteMarker;
-    if ((value.kind === 'proposals' || value.kind === 'discovery') && typeof value.closes === 'string' && typeof value.group === 'string') return value;
+    const options = value.options === undefined || (Array.isArray(value.options) && value.options.every((key) => typeof key === 'string'));
+    if ((value.kind === 'proposals' || value.kind === 'discovery') && typeof value.closes === 'string' && typeof value.group === 'string' && options) return value;
   } catch {
     return undefined;
   }
@@ -95,4 +98,19 @@ export function replaceResults(body: string | null, results: string): string {
 
 export function optionKey(body: string): string | undefined {
   return body.match(/<!-- loop:option:([^ ]+) -->/)?.[1];
+}
+
+/**
+ * The key of the option a comment is, or undefined for any other comment. An option is a comment the loop
+ * itself posted when it opened the vote: written by the vote's own author, under one of the keys the marker
+ * recorded at the opening. A comment anyone else writes with the marker in it is a reply, not an option: it
+ * adds no choice, counts no reaction and labels nothing. A vote opened before the marker held its keys has
+ * the author rule alone.
+ */
+export function optionOf(comment: Comment, issue: Issue, marker: VoteMarker | undefined): string | undefined {
+  const key = optionKey(comment.body);
+  if (key === undefined) return undefined;
+  if (comment.user?.login.toLowerCase() !== issue.user.login.toLowerCase()) return undefined;
+  if (marker?.options && !marker.options.includes(key)) return undefined;
+  return key;
 }

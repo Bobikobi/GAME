@@ -10,11 +10,13 @@ import { type Action, type Bundle, type Seed, type State, newState, step, widenS
 
 import { RemoteSession, fetchWire } from '../../game/src/remote.js';
 import { loadBundle } from '../../tools/test/helpers/world.js';
-import { bookedGoldMg, checkAccount } from '../src';
+import { bookedGoldMg, checkAccount, createPgAuthStore, takeOpening } from '../src';
+import { newToken, tokenHash } from '../src/auth/tokens';
 import { ForgedLog, gapIn, postScores, readBoard, scoresOf, weekStart } from '../src/boards.js';
 import { Player } from './sim/player.js';
 import { STARTS, playSession } from './sim/session.js';
 import { hasDatabase, startRig, type Account, type Rig } from './sim/rig.js';
+import { LocalPhone, STARTS as OPENINGS, playOpening } from './support/phone.js';
 
 let bundle: Bundle;
 
@@ -54,6 +56,16 @@ describe('a log that replays (NEXT 18 g)', () => {
     expect(gapIn(log)).toBeUndefined();
     expect(gapIn([{ ...log[0]!, seq: 4 }])).toMatch(/skips from version 1 to 4/);
     expect(gapIn([...log, { ...log[0]!, seq: 9 }])).toMatch(/skips from version 2 to 9/);
+  });
+
+  test('a kept opening is the one row at version 1: the sign-up wrote it with the state row, and the log steps on from it', () => {
+    const { log } = opened(45);
+    const opening = { seq: 1, action: { kind: 'opening', seed: [1, 2, 3, 4], log: [] }, tick: 0 };
+    expect(gapIn([opening])).toBeUndefined();
+    expect(gapIn([opening, { ...log[0]!, seq: 2 }])).toBeUndefined();
+    expect(gapIn([opening, { ...log[0]!, seq: 3 }])).toMatch(/skips from version 1 to 3/);
+    // any other row at version 1 is not the write history: version 1 is the state row itself
+    expect(gapIn([{ ...log[0]!, seq: 1 }])).toMatch(/only a kept opening/);
   });
 
   test('the measures are CR-40\'s, read off the state alone', () => {
@@ -154,5 +166,27 @@ describe.skipIf(!hasDatabase())('the boards over the books (NEXT 18 g)', () => {
     );
     await expect(postScores(rig.pool!, bundle, paid.id, week)).rejects.toBeInstanceOf(ForgedLog);
     expect(await readBoard(rig.pool!, week, 'wealth')).toEqual(before);
+  }, 240_000);
+
+  test('an account that kept its phone opening is scored: its log starts at version 1 with that opening', async () => {
+    // the account the way the sign-up makes one (NEXT 18 d): the opening played on the phone, handed over, written with the account
+    const now = Date.UTC(2026, 9, 21, 12);
+    const phone = new LocalPhone(bundle, widenSeed(2034));
+    await playOpening(phone, OPENINGS[0]);
+    const handover = takeOpening(bundle, phone.upload(), widenSeed(2035), now);
+    if (!handover.kept) throw new Error(handover.problem);
+    const auth = createPgAuthStore(rig.pool!);
+    const ticket = { ticketHash: tokenHash(newToken()), provider: 'email' as const, subject: 'kept@example.com', email: 'kept@example.com', createdAt: now, expiresAt: now + 60_000 };
+    await auth.saveTicket(ticket);
+    const made = await auth.createAccount({ email: 'kept@example.com', name: 'Kept', country: 'IL' }, ticket, {
+      record: handover.record,
+      books: { action: handover.opening, tick: handover.tick, gold: handover.gold },
+    });
+    if (typeof made === 'string') throw new Error(made);
+
+    const week = weekStart(new Date());
+    const scores = await postScores(rig.pool!, bundle, made.accountId, week);
+    expect(scores.map((score) => score.board)).toEqual(['wealth', 'collection', 'levels']);
+    expect((await readBoard(rig.pool!, week, 'wealth')).some((row) => row.account === made.accountId)).toBe(true);
   }, 240_000);
 });

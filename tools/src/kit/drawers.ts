@@ -194,12 +194,23 @@ export const LOCAL_DEFAULTS = {
 export const LOCAL_NEGATIVE = 'blurry, photo, realistic, 3d render, smooth gradient, text, watermark, extra objects, shadow on the ground';
 
 /**
+ * The spec's detail with the entry's `notes` after it (DECISIONS 2026-10-27): what earlier rounds learned about
+ * this entry comes last, so a prompt that is cut under the 77-token window loses the notes before the spec's own
+ * words. Undefined when there is neither.
+ */
+export function detailWithNotes(entry: { detail?: string; notes?: readonly string[] }): string | undefined {
+  const parts = [entry.detail ?? '', ...(entry.notes ?? [])].map((p) => p.trim()).filter((p) => p !== '');
+  return parts.length === 0 ? undefined : parts.join(', ');
+}
+
+/**
  * The compact prompt a Stable Diffusion model reads (its text encoder keeps about 75 tokens, so
  * the agent's prose would be cut mid-sentence): the LoRA's trigger words, the object, the view, the
  * detail, and the three things the importer needs (outline, crisp pixels, flat magenta).
  */
-export function localPrompt(entry: { what: string; detail?: string }): string {
-  const detail = entry.detail === undefined || entry.detail.trim() === '' ? '' : `, ${entry.detail.trim()}`;
+export function localPrompt(entry: { what: string; detail?: string; notes?: readonly string[] }): string {
+  const spelled = detailWithNotes(entry);
+  const detail = spelled === undefined ? '' : `, ${spelled}`;
   return `Pixel Art, PixArFK, ${entry.what}, top-down three-quarter view game sprite${detail}, thick dark navy outline, crisp square pixels, flat pure magenta background`;
 }
 
@@ -517,7 +528,7 @@ export interface KaggleSettings {
   denoise: number;
   denoiseCharacter: number;
   steps: number;
-  /** The canvas's short side; the long side follows the reference (`kaggleCanvas`). */
+  /** The canvas's short side; the long side follows the reference, or the asked size when drawing from the prompt (`kaggleCanvasFor`). */
   size: number;
   cfg: number;
   seed: number;
@@ -532,6 +543,8 @@ export interface KaggleSettings {
   /** The compute precision on the GPU, from the recipe: `fp16` (a T4's fast one), `bf16`, or `fp32` (qwen). */
   dtype: KaggleDtype;
   post: KagglePost;
+  /** The negative prompt: `KAGGLE_NEGATIVE`, or the creature list when `KAGGLE_NEGATIVE_KIND=creature`. */
+  negative: string;
 }
 
 /**
@@ -540,7 +553,7 @@ export interface KaggleSettings {
  * with the recipe in `KAGGLE_RECIPE`, default sd15), `KAGGLE_VAE`, `KAGGLE_LORA_REPO`, `KAGGLE_LORA_FILE`, `KAGGLE_LORA_STRENGTH`,
  * `KAGGLE_DENOISE` (props, 0.6), `KAGGLE_DENOISE_CHARACTER` (0.7 on sd15, 0.8 on sdxl), `KAGGLE_STEPS`, `KAGGLE_SIZE` (the short side),
  * `KAGGLE_CFG`, `KAGGLE_SEED`, `KAGGLE_SETUP_SECONDS`, `KAGGLE_POLL_SECONDS`, `KAGGLE_POST` (`grid` or `off`), `KAGGLE_DTYPE`
- * (`fp16`, `bf16` or `fp32`); the rest default to the recipe's. `qwen` and `flux` draw from the prompt, so a denoise below 1 is refused.
+ * (`fp16`, `bf16` or `fp32`), `KAGGLE_NEGATIVE_KIND` (`default` or `creature`); the rest default to the recipe's. `qwen` and `flux` draw from the prompt, so a denoise below 1 is refused.
  */
 export function kaggleSettings(env: NodeJS.ProcessEnv = process.env): KaggleSettings {
   const num = (name: string, fallback: number): number => envNumber(env, name, fallback);
@@ -589,6 +602,7 @@ export function kaggleSettings(env: NodeJS.ProcessEnv = process.env): KaggleSett
     tokenLimit: recipe.tokenLimit,
     dtype: choice('KAGGLE_DTYPE', ['fp16', 'bf16', 'fp32'] as const, recipe.dtype),
     post: choice('KAGGLE_POST', ['grid', 'off'] as const, recipe.post),
+    negative: choice('KAGGLE_NEGATIVE_KIND', ['default', 'creature'] as const, 'default') === 'creature' ? KAGGLE_CREATURE_NEGATIVE : KAGGLE_NEGATIVE,
   };
 }
 
@@ -637,8 +651,17 @@ export function clipTokenEstimate(text: string): number {
   return count;
 }
 
-/** The negative prompt of the kaggle route: the local one, plus what split the elder into two figures (22.10). */
-export const KAGGLE_NEGATIVE = 'multiple characters, two figures, extra figure, animal, duplicate, cropped, blurry, photo, realistic, 3d render, text, watermark, gradient background, shadow on the ground';
+/**
+ * The negative prompt of the kaggle route: the local one, plus what split the elder into two figures (22.10), plus
+ * the light the model paints on the background (a wedge, a halo) that the importer then keeps as part of the sprite (27.10).
+ */
+export const KAGGLE_NEGATIVE = 'multiple characters, two figures, extra figure, animal, duplicate, cropped, blurry, photo, realistic, 3d render, text, watermark, gradient background, shadow on the ground, glow, vignette, light rays, halo';
+
+/**
+ * The negative prompt of a creature job (`KAGGLE_NEGATIVE_KIND=creature`): the same list without `animal`, which
+ * would forbid the very subject. The figure words stay, so a hare is still one hare.
+ */
+export const KAGGLE_CREATURE_NEGATIVE = KAGGLE_NEGATIVE.split(', ').filter((w) => w !== 'animal').join(', ');
 
 const NUMBER_WORD = '(?:\\d+|two|three|four|five|six)';
 
@@ -657,6 +680,21 @@ export function sdClause(clause: string): string | null {
   return c;
 }
 
+/** A subject taller or wider than this ratio is told so in the prompt (27.10): the model draws a cottage as wide as tall unless it is asked. */
+export const SHAPE_RATIO = 1.3;
+
+/**
+ * The shape the asked size implies, from the spec's art grid alone (decided 27.10, never written by hand per entry):
+ * `tall` above 1.3 tall, `wide` above 1.3 wide, null for a square-ish size or one that is not given.
+ */
+export function shapeOf(size: { width?: number; height?: number }): 'tall' | 'wide' | null {
+  const { width, height } = size;
+  if (width === undefined || height === undefined || width <= 0 || height <= 0) return null;
+  if (height / width > SHAPE_RATIO) return 'tall';
+  if (width / height > SHAPE_RATIO) return 'wide';
+  return null;
+}
+
 function clauses(text: string | undefined): string[] {
   return (text ?? '').split(/[,;()]/u).map((c) => c.trim()).filter((c) => c !== '');
 }
@@ -668,15 +706,25 @@ function clauses(text: string | undefined): string[] {
  * magenta). Detail clauses go from the end while the estimate is past the window, so the words that matter
  * most are never the ones cut. The local route keeps `localPrompt`.
  */
-export function kagglePrompt(entry: { what: string; detail?: string; ref: string }, recipe: KaggleRecipe = 'sd15'): string {
+export function kagglePrompt(entry: { what: string; detail?: string; notes?: readonly string[]; ref: string; width?: number; height?: number }, recipe: KaggleRecipe = 'sd15'): string {
   if (kaggleFromPrompt(recipe)) return kaggleSentencePrompt(entry);
-  const head = [KAGGLE_RECIPES[recipe].trigger, ...(kaggleSubject(entry.ref) === 'character' ? ['one single character alone', 'full body', 'front view'] : ['game sprite', 'top-down three-quarter view'])];
+  const shape = shapeOf(entry);
+  const head = [
+    KAGGLE_RECIPES[recipe].trigger,
+    ...(kaggleSubject(entry.ref) === 'character' ? ['one single character alone', 'full body', 'front view'] : ['game sprite', 'top-down three-quarter view']),
+    ...(shape === 'tall' ? ['tall, narrow'] : shape === 'wide' ? ['wide, low'] : []),
+  ];
   const tail = ['thick dark navy outline', 'crisp square pixels', 'flat pure magenta background'];
   const subject = clauses(entry.what).map(sdClause).filter((c): c is string => c !== null);
-  const detail = clauses(entry.detail).map(sdClause).filter((c): c is string => c !== null);
+  const detail = clauses(detailWithNotes(entry)).map(sdClause).filter((c): c is string => c !== null);
   const build = (): string => [...new Map([...head, ...subject, ...detail, ...tail].map((c) => [c.toLowerCase(), c])).values()].join(', ');
   while (detail.length > 0 && clipTokenEstimate(build()) > CLIP_TOKENS - 4) detail.pop();
   return build();
+}
+
+/** The sentence recipes' words for a shape: the subject is tall and narrow and fills the picture's height, or wide and low and fills its width. */
+function shapeWords(shape: 'tall' | 'wide' | null): string[] {
+  return shape === 'tall' ? ['tall and narrow, filling the height of the picture'] : shape === 'wide' ? ['wide and low, filling the width of the picture'] : [];
 }
 
 /**
@@ -686,9 +734,9 @@ export function kagglePrompt(entry: { what: string; detail?: string; ref: string
  * one, and the three things the importer needs. Nothing is dropped: the kernel counts it against the encoder's
  * real window.
  */
-export function kaggleSentencePrompt(entry: { what: string; detail?: string; ref: string }): string {
+export function kaggleSentencePrompt(entry: { what: string; detail?: string; notes?: readonly string[]; ref: string; width?: number; height?: number }): string {
   const subject = clauses(entry.what).map(sdClause).filter((c): c is string => c !== null).join(', ');
-  const detail = clauses(entry.detail).map(sdClause).filter((c): c is string => c !== null);
+  const detail = clauses(detailWithNotes(entry)).map(sdClause).filter((c): c is string => c !== null);
   const character = kaggleSubject(entry.ref) === 'character';
   const view = detail.some((c) => /\bview\b/iu.test(c)) ? [] : [character ? 'full body, front view' : 'top-down three-quarter view'];
   const sentence = (parts: readonly string[]): string => {
@@ -698,7 +746,7 @@ export function kaggleSentencePrompt(entry: { what: string; detail?: string; ref
   return [
     `Pixel art game sprite: ${subject}.`,
     sentence(detail),
-    sentence([character ? 'one single character alone, centred' : 'alone and centred, filling most of the picture', ...view]),
+    sentence([character ? 'one single character alone, centred' : 'alone and centred, filling most of the picture', ...shapeWords(shapeOf(entry)), ...view]),
     'Crisp square pixels, a thick dark navy outline, a limited palette.',
     'Flat pure magenta background, no shadow on the ground, no text, no other objects.',
   ].filter((s) => s !== '').join(' ');
@@ -723,6 +771,21 @@ export function kaggleCanvas(ref: { width: number; height: number } | null, size
   return ref.width >= ref.height ? { width: long, height: short } : { width: short, height: long };
 }
 
+/**
+ * The canvas of one request. Drawing from the prompt alone (a long-prompt recipe, or denoise 1) the picture has no
+ * shape to follow, so the canvas takes the ASKED size's proportion (`asked`, the spec's art grid): a 192x320 tree
+ * is drawn on a tall canvas, not on the 32x32 square of the sprite it replaces. Drawing image to image the
+ * reference's shape is kept, since the model redraws what the reference holds.
+ */
+export function kaggleCanvasFor(
+  ref: { width: number; height: number } | null,
+  asked: { width: number; height: number } | null,
+  size: number,
+  fromPrompt: boolean,
+): { width: number; height: number } {
+  return kaggleCanvas(fromPrompt && asked !== null ? asked : ref, size);
+}
+
 export interface KaggleRequest {
   name: string;
   prompt: string;
@@ -739,12 +802,12 @@ export function kaggleWave(requests: readonly KaggleRequest[], s: KaggleSettings
     settings: {
       recipe: s.recipe, model: s.model, vae: s.vae, lora_repo: s.loraRepo, lora_file: s.loraFile, lora_strength: s.loraStrength,
       denoise: s.denoise, steps: s.steps, inference_steps: kaggleInferenceSteps(s.steps, s.denoise),
-      size: s.size, cfg: s.cfg, negative: KAGGLE_NEGATIVE, clip_tokens: CLIP_TOKENS,
+      size: s.size, cfg: s.cfg, negative: s.negative, clip_tokens: CLIP_TOKENS,
       quant: s.quant, scheduler: s.scheduler, token_limit: s.tokenLimit, dtype: s.dtype, post: s.post, post_scale: KAGGLE_POST_SCALE,
     },
     requests: requests.map((r) => {
       const denoise = r.subject === 'character' ? s.denoiseCharacter : s.denoise;
-      const canvas = kaggleCanvas(pngSize(r.png), s.size);
+      const canvas = kaggleCanvasFor(pngSize(r.png), r.grid ?? null, s.size, kaggleFromPrompt(s.recipe) || denoise >= 1);
       const grid = r.grid ?? { width: Math.max(1, Math.round(canvas.width / 16)), height: Math.max(1, Math.round(canvas.height / 16)) };
       return {
         name: r.name, file: kaggleFileName(r.name), prompt: r.prompt, seed: r.seed, subject: r.subject ?? 'prop',

@@ -218,9 +218,9 @@ describe('the bridge draws the mist back (criterion 4)', () => {
     return { ...fresh, player: { ...fresh.player, restored: ['core/old-bridge'] } };
   };
 
-  test.each(POCKETS)('%s: a mended bridge clears at least 13 tiles around (14,17), all three wake tiles inside', (id) => {
+  test.each(POCKETS)('%s: a mended bridge clears at least 13 tiles around (14,18), the middle of its two rows, all three wake tiles inside', (id) => {
     const clears = mistClears(b, mended(id));
-    const bridge = clears.find((c) => c.x === 14 && c.y === 17)!;
+    const bridge = clears.find((c) => c.x === 14 && c.y === 18)!;
     expect(bridge.r).toBeGreaterThanOrEqual(13);
     const { width, height } = b.map;
     for (const w of POCKETS) {

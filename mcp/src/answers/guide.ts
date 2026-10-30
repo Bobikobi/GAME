@@ -29,5 +29,5 @@ export function guide(ctx: Context): Answer<ToolOutput<'guide'>> {
     const anchor = slug(h[2]!, seen);
     if (h[1] === '##') sections.push({ title: h[2]!, anchor });
   }
-  return { result: { meta: meta(ctx.root), markdown, sections }, note: `${sections.length} sections; the same guide is at https://theopenfold.vercel.app/docs/` };
+  return { result: { meta: meta(ctx.root), markdown, sections }, note: `${sections.length} sections; the same guide is at https://loomvale.vercel.app/docs/` };
 }

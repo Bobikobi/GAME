@@ -5,12 +5,22 @@ import { app } from './app';
 import raw from './generated/bundle.json';
 import { sound } from './audio';
 import { RICH } from './config';
+import { showStats, startPerf, watchPerf } from './perf';
 import { Controls } from './input';
 import { BootScene } from './scenes/boot';
+import { RoomScene } from './scenes/room';
 import { WorldScene } from './scenes/world';
 import { UI } from './ui/ui';
 import { bindDeviceCanvas, firstSize } from './view';
 import './style.css';
+
+function safeStorage(): Storage | null {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
 
 app.bundle = raw as unknown as Bundle;
 app.controls = new Controls();
@@ -18,6 +28,8 @@ app.ui = new UI(document.getElementById('ui')!);
 app.sound = sound;
 app.controls.onButton((b) => app.ui.handle(b));
 
+const query = location.search;
+const perf = startPerf(query, safeStorage());
 const first = firstSize();
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -28,9 +40,11 @@ const game = new Phaser.Game({
   banner: false,
   // the canvas takes the device's pixels (view.ts) instead of the window's CSS pixels
   scale: { mode: Phaser.Scale.NONE, width: first.w, height: first.h },
-  scene: [BootScene, WorldScene],
+  scene: [BootScene, WorldScene, RoomScene],
 });
 
+watchPerf(game, perf);
+if (new URLSearchParams(query).get('stats') === '1') showStats(game, perf);
 bindDeviceCanvas(game, document.getElementById('game')!);
 
 document.addEventListener('visibilitychange', () => {

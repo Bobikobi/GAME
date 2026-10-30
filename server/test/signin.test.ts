@@ -3,12 +3,14 @@ import type { Server } from 'node:http';
 import { isSeed, newState, serialize, step, widenSeed, type Bundle, type Seed, type State } from '@game/kernel';
 
 import { createGameApi, createPlayerRecord, createSignIn, googleProvider, listen, type Mail, type PlayerRecord, type PlayerStore, type SignIn } from '../src';
+import { countryLookup, type CountryLookup } from '../src/auth/country';
 import { ageGate, ageOn, consentAge, parseBirthDate, UNKNOWN_COUNTRY_AGE } from '../src/auth/age';
 import { takeOpening } from '../src/handover';
 import { LINK_SCRIPT } from '../src/auth/signin';
 import { pkceChallenge, tokenHash } from '../src/auth/tokens';
 import { loadBundle } from '../../tools/test/helpers/world.js';
 import { Browser, CLIENT_ID, CLIENT_SECRET, FakeGoogle, MemoryAuthStore } from './support/auth.js';
+import { buildCountryDb, FIXTURE } from './support/mmdb.js';
 import { LocalPhone, STARTS, playOpening } from './support/phone.js';
 
 // the opening's replay, counted: a sign-up retried after a taken name must not replay it again (finding 12)
@@ -55,7 +57,7 @@ function started(): State {
 }
 
 /** The API in the session mode, on a free port, with Google, a mail outbox and a clock the test moves. */
-async function ready(options: { google?: boolean; countryHeader?: string; addressHeader?: string; googleTimeoutMs?: number; ownKeys?: boolean } = {}) {
+async function ready(options: { google?: boolean; countryHeader?: string; countryLookup?: CountryLookup; addressHeader?: string; googleTimeoutMs?: number; ownKeys?: boolean } = {}) {
   const clock = { now: Date.UTC(2026, 9, 21, 12) };
   const store = new MemoryAuthStore();
   const players = new Players(store);
@@ -69,6 +71,7 @@ async function ready(options: { google?: boolean; countryHeader?: string; addres
     store: players,
     now: () => clock.now,
     resolvePlayerId: (request) => late.signIn!.resolve(request),
+    nameOf: (playerId) => late.signIn!.accountName(playerId),
     signIn: { handle: (request, response, url) => late.signIn!.handle(request, response, url) },
   });
   const base = `http://127.0.0.1:${(await listen(server, 0)).port}`;
@@ -82,6 +85,7 @@ async function ready(options: { google?: boolean; countryHeader?: string; addres
     publicOrigin: base,
     appOrigin: APP,
     countryHeader: options.countryHeader,
+    countryLookup: options.countryLookup,
     addressHeader: options.addressHeader,
     now: () => clock.now,
   });
@@ -430,7 +434,7 @@ describe('sign-in by an email link (NEXT 18 e)', () => {
 });
 
 describe('the sign-up (NEXT 18 e; CR-49, CR-53)', () => {
-  async function ticket(options: { countryHeader?: string; ownKeys?: boolean } = {}) {
+  async function ticket(options: { countryHeader?: string; countryLookup?: CountryLookup; addressHeader?: string; ownKeys?: boolean } = {}) {
     const w = await ready(options);
     await googleSignIn(w);
     return w;
@@ -510,9 +514,24 @@ describe('the sign-up (NEXT 18 e; CR-49, CR-53)', () => {
 
     const state = await w.browser.request('/state');
     const served = (await state.json()).state;
+    // the account's name is the name the character carved (finding 11)
+    expect(served.player.name).toBe('Tess');
     expect(served.player.race).toBe('core/skeleton');
     expect(served.tick).toBe(phone.state.tick);
     expect(served).not.toHaveProperty('seed');
+  });
+
+  test('an opening that carved another name than the account\'s is not kept: the account starts fresh and no character shows a name it did not sign up with (finding 11)', async () => {
+    const w = await ticket();
+    const phone = new LocalPhone(bundle, widenSeed(77));
+    await playOpening(phone, STARTS[0]);
+    expect(phone.state.player.name).toBe('Tess');
+    const response = await signUp(w, { ...SIGNUP, name: 'Wren', opening: phone.upload() });
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({ name: 'Wren', opening: 'fresh' });
+    const game = w.store.games.get([...w.store.accounts.keys()][0]!)!;
+    expect(serialize(game.record.state)).toBe(serialize(newState(bundle, SECRET_SEED)));
+    expect(game.books).toBeUndefined();
   });
 
   test('an opening that does not prove, or none at all, starts the account fresh, and the reply says so', async () => {
@@ -595,6 +614,38 @@ describe('the sign-up (NEXT 18 e; CR-49, CR-53)', () => {
     }
   });
 
+  describe('the country from the client\'s address (COUNTRY_DB)', () => {
+    const lookup = countryLookup(buildCountryDb(FIXTURE));
+    const fifteen = { ...SIGNUP, birthDate: '2011-01-01' };
+    async function from(address: string | undefined, header?: string, options: { countryHeader?: string } = {}) {
+      const w = await ticket({ ...options, countryLookup: lookup, addressHeader: 'x-real-ip' });
+      return (await w.browser.request('/auth/signup', { method: 'POST', json: fifteen, headers: { ...(address && { 'x-real-ip': address }), ...(header !== undefined && { 'x-country': header }) } })).status;
+    }
+
+    test('the address our proxy names sets the age limit: a 15-year-old is let in from Israel and refused from Germany', async () => {
+      expect(await from('192.0.2.50')).toBe(201);
+      expect(await from('198.51.100.9')).toBe(403);
+    });
+
+    test('an address the file does not know holds the highest age, and so does no address at all', async () => {
+      expect(await from('8.8.8.8')).toBe(403);
+      expect(await from('203.0.113.5')).toBe(403);
+      expect(await from(undefined)).toBe(403);
+    });
+
+    test('a country header the server was not told to read changes nothing: the address decides', async () => {
+      expect(await from('198.51.100.9', 'IL')).toBe(403);
+      expect(await from('192.0.2.50', 'DE')).toBe(201);
+    });
+
+    test('COUNTRY_HEADER, when set and answering, overrides the address; a header that does not answer falls back to it', async () => {
+      expect(await from('198.51.100.9', 'IL', { countryHeader: 'x-country' })).toBe(201);
+      expect(await from('192.0.2.50', 'DE', { countryHeader: 'x-country' })).toBe(403);
+      expect(await from('192.0.2.50', '', { countryHeader: 'x-country' })).toBe(201);
+      expect(await from('198.51.100.9', 'il', { countryHeader: 'x-country' })).toBe(403);
+    });
+  });
+
   test('a name the world already shows, in any case, is refused', async () => {
     const w = await ticket();
     await signUp(w, SIGNUP);
@@ -671,6 +722,60 @@ describe('the session (NEXT 18 e)', () => {
     expect((await stranger.request('/state')).status).toBe(401);
     const header = await fetch(`${w.base}/state`, { headers: { 'x-player-id': w.accountId } });
     expect(header.status).toBe(401);
+  });
+
+  describe('the name (finding 11 of the 27.10 review)', () => {
+    /** An account named `name` on its own browser, with its fresh game in the player store, ready to take an action. */
+    async function account(w: Awaited<ReturnType<typeof ready>>, browser: Browser, name: string, sub: string) {
+      w.google.claims = (nonce, now) => ({ ...new FakeGoogle().claims(nonce, now), sub, email: `${sub}@example.com` });
+      await googleSignIn({ ...w, browser });
+      expect((await browser.request('/auth/signup', { method: 'POST', json: { ...SIGNUP, name } })).status).toBe(201);
+      const id = [...w.store.accounts.entries()].find(([, made]) => made.name === name)![0];
+      w.players.rows.set(id, structuredClone(w.store.games.get(id)!.record));
+      return id;
+    }
+    const send = (browser: Browser, version: number, action: unknown) => browser.request('/action', { method: 'POST', json: { version, tick: 0, action } });
+
+    test('a start or a carve that names another name than the account\'s is refused, and the state row is not touched', async () => {
+      const w = await ready();
+      const tess = await account(w, w.browser, 'Tess', 'one');
+      const other = new Browser(w.base, APP);
+      const wren = await account(w, other, 'Wren', 'two');
+      const before = serialize(w.players.rows.get(wren)!.state);
+
+      // two accounts cannot show one name: the second "Tess" is refused at the sign-up and again on the wire
+      for (const name of ['Tess', 'tess', ' Tess ', 'Wrenn']) {
+        const refused = await send(other, 1, { t: 'start', starter: 'core/forager', name });
+        expect(refused.status, name).toBe(409);
+        expect(await refused.json()).toEqual({ error: 'Your name in this world is Wren.', reason: 'refused' });
+      }
+      const carve = await send(other, 1, { t: 'carve', name: 'Tess' });
+      expect(carve.status).toBe(409);
+      expect(await carve.json()).toMatchObject({ reason: 'refused' });
+      expect(w.players.rows.get(wren)!.version).toBe(1);
+      expect(serialize(w.players.rows.get(wren)!.state)).toBe(before);
+      expect(w.players.rows.get(tess)!.state.player.name).toBe('');
+
+      // the account's own name goes through, trimmed, and it is the name the state carries
+      const started = await send(other, 1, { t: 'start', starter: 'core/forager', name: ' Wren ' });
+      expect(started.status).toBe(200);
+      expect(w.players.rows.get(wren)!.state.player.name).toBe('Wren');
+      expect((await (await other.request('/state')).json()).state.player.name).toBe('Wren');
+    });
+
+    test('a start with an empty name leaves the line to the stone, and the stone cuts the account\'s name or none', async () => {
+      const w = await ready();
+      const wren = await account(w, w.browser, 'Wren', 'two');
+      expect((await send(w.browser, 1, { t: 'start', starter: 'core/forager', name: '' })).status).toBe(200);
+      expect(w.players.rows.get(wren)!.state.player.name).toBe('');
+      const wrong = await send(w.browser, 2, { t: 'carve', name: 'Tess' });
+      expect(wrong.status).toBe(409);
+      expect(w.players.rows.get(wren)!.version).toBe(2);
+      const empty = await send(w.browser, 2, { t: 'carve', name: '' });
+      expect(empty.status).toBe(409);
+      expect((await send(w.browser, 2, { t: 'carve', name: 'Wren' })).status).toBe(200);
+      expect(w.players.rows.get(wren)!.state.player.name).toBe('Wren');
+    });
   });
 
   test('a POST from another origin stands for no one, so a forged form on another site cannot act', async () => {
@@ -820,7 +925,8 @@ describe('the limits, the sweep and the retried sign-up (the 27.10 review)', () 
     expect(replays).not.toHaveBeenCalled();
     const made = await other.request('/auth/signup', { method: 'POST', json: { ...SIGNUP, name: 'Wren', opening: phone.upload() } });
     expect(made.status).toBe(201);
-    expect(await made.json()).toEqual({ name: 'Wren', opening: 'kept' });
+    // the opening carved "Tess"; this account is "Wren", so the opening is not kept (finding 11), after one replay all the same
+    expect(await made.json()).toEqual({ name: 'Wren', opening: 'fresh' });
     expect(replays).toHaveBeenCalledTimes(1);
   });
 

@@ -87,6 +87,22 @@ export function paletteWithRamps(named: readonly string[]): readonly string[] {
 /** The whole of palette v2: the 32 and every shared ramp's steps, 78 colours. */
 export const DEEP_PALETTE: readonly string[] = paletteWithRamps(CORE_RAMPS.map((ramp) => ramp.id));
 
+/**
+ * The windows' antique gold (DECISIONS 2026-10-28 "The windows' direction: black lacquer with
+ * antique gold, frame D"): six steps for the one thin line, the titles and the plaque. It passes
+ * the ramp rule (`ui-theme.test.ts` holds it to that). A UI colour only: no sprite draws in it.
+ */
+export const ANTIQUE_GOLD: RampLike = { id: 'antique_gold', steps: ['#2a2114', '#4d3c22', '#7a5f33', '#a6854a', '#c9a96a', '#e8d4a2'] };
+
+/** Frame D's two deep blacks: behind the window, and the window's own ground under its grain. */
+export const UI_BLACKS: readonly string[] = ['#0c0b12', '#131220'];
+
+/**
+ * Every colour the UI may draw in (game/src/ui/): the 32, the antique gold and the two blacks, 40.
+ * The sprites stay on CORE_PALETTE and its ramps; nothing here reaches the kit check.
+ */
+export const UI_PALETTE: readonly string[] = [...CORE_PALETTE, ...ANTIQUE_GOLD.steps, ...UI_BLACKS];
+
 export type Rgb = readonly [number, number, number];
 
 export function hexToRgb(hex: string): Rgb {

@@ -6,6 +6,7 @@ export * from './load';
 export * from './num';
 export * from './patch';
 export * from './reactions';
+export * from './relocate';
 export * from './rng';
 export * from './state';
 export * from './step';

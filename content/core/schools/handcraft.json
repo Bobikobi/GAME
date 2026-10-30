@@ -8,6 +8,7 @@
   "school": {
     "name": "Handcraft",
     "profession": "core/handcraft",
+    "tint": "water",
     "nodes": [
       {
         "id": "sure-hands",

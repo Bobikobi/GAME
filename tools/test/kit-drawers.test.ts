@@ -6,8 +6,8 @@ import { join } from 'node:path';
 import { afterAll, describe, expect, test } from 'vitest';
 
 import {
-  CLIP_TOKENS, KAGGLE_DEFAULTS, KAGGLE_NEGATIVE, KAGGLE_POST_SCALE, KAGGLE_RECIPES, KAGGLE_RECIPE_NAMES, KAGGLE_WAVE_MARK, LOCAL_DEFAULTS, LOCAL_NEGATIVE, clipTokenEstimate, drawWaveWithKaggle, drawWithGemini, drawWithKaggle, drawWithLocal, geminiAnswer, geminiRequest,
-  kaggleCanvas, kaggleFileName, kaggleFromPrompt, kaggleSentencePrompt, kaggleInferenceSteps, kagglePrompt, kaggleSubject, pngSize, sdClause, kaggleKernelScript, kaggleManifest, kaggleMetadata, kaggleOwner, kagglePushAnswer, kaggleSettings, kaggleStatus, kaggleWave,
+  CLIP_TOKENS, KAGGLE_CREATURE_NEGATIVE, KAGGLE_DEFAULTS, KAGGLE_NEGATIVE, KAGGLE_POST_SCALE, KAGGLE_RECIPES, KAGGLE_RECIPE_NAMES, KAGGLE_WAVE_MARK, LOCAL_DEFAULTS, LOCAL_NEGATIVE, clipTokenEstimate, drawWaveWithKaggle, drawWithGemini, drawWithKaggle, drawWithLocal, geminiAnswer, geminiRequest,
+  kaggleCanvas, kaggleCanvasFor, shapeOf, kaggleFileName, kaggleFromPrompt, kaggleSentencePrompt, kaggleInferenceSteps, kagglePrompt, kaggleSubject, pngSize, sdClause, kaggleKernelScript, kaggleManifest, kaggleMetadata, kaggleOwner, kagglePushAnswer, kaggleSettings, kaggleStatus, kaggleWave,
   localHistory, localPrompt, localSettings, localWorkflow, parseDrawer, promptForModel, splitWave,
 } from '../src/kit/drawers.js';
 
@@ -224,6 +224,52 @@ describe('the kaggle route', () => {
     expect(pngSize(Buffer.from('tree'))).toBeNull();
   });
 
+  test('from the prompt alone the canvas takes the asked size, image to image it keeps the reference shape', () => {
+    const old = { width: 32, height: 32 };
+    // the three entries of the 27.10 proof, each asked tall and each referenced by a small square-ish sprite
+    expect(kaggleCanvasFor(old, { width: 192, height: 320 }, 1024, true)).toEqual({ width: 1024, height: 1728 });
+    expect(kaggleCanvasFor({ width: 48, height: 48 }, { width: 192, height: 320 }, 1024, true)).toEqual({ width: 1024, height: 1728 });
+    expect(kaggleCanvasFor({ width: 16, height: 32 }, { width: 64, height: 160 }, 1024, true)).toEqual({ width: 1024, height: 2048 });
+    expect(kaggleCanvasFor(old, { width: 128, height: 128 }, 1024, true)).toEqual({ width: 1024, height: 1024 });
+    // a wide ask is drawn wide
+    expect(kaggleCanvasFor(old, { width: 256, height: 128 }, 512, true)).toEqual({ width: 1024, height: 512 });
+    // image to image: today's behaviour, the reference's shape
+    expect(kaggleCanvasFor(old, { width: 192, height: 320 }, 512, false)).toEqual({ width: 512, height: 512 });
+    expect(kaggleCanvasFor({ width: 32, height: 48 }, { width: 192, height: 320 }, 512, false)).toEqual(kaggleCanvas({ width: 32, height: 48 }, 512));
+    // from the prompt with no asked size falls back to the reference
+    expect(kaggleCanvasFor({ width: 32, height: 48 }, null, 512, true)).toEqual({ width: 512, height: 768 });
+  });
+
+  test('the wave gives a prompt-only request the asked canvas and an image to image one the reference canvas', () => {
+    const png = Buffer.alloc(24);
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(png);
+    png.writeUInt32BE(400, 16);
+    png.writeUInt32BE(400, 20);
+    const request = { name: 'house', prompt: 'a house', png, seed: 7, grid: { width: 192, height: 320 } };
+    const canvas = (env: Record<string, string>): [number, number] => {
+      const r = (kaggleWave([request], kaggleSettings(env)).requests as { width: number; height: number }[])[0];
+      return [r?.width ?? 0, r?.height ?? 0];
+    };
+    expect(canvas({ KAGGLE_MODEL: 'qwen' })).toEqual([1024, 1728]);
+    expect(canvas({ KAGGLE_MODEL: 'sd15' })).toEqual([512, 512]);
+    expect(canvas({ KAGGLE_MODEL: 'sd15', KAGGLE_DENOISE: '1' })).toEqual([512, 832]);
+  });
+
+  test('a creature job drops "animal" from the negative prompt and keeps the rest', () => {
+    expect(kaggleSettings({}).negative).toBe(KAGGLE_NEGATIVE);
+    const s = kaggleSettings({ KAGGLE_NEGATIVE_KIND: 'creature' });
+    expect(s.negative).toBe(KAGGLE_CREATURE_NEGATIVE);
+    expect(s.negative.split(', ')).not.toContain('animal');
+    expect(KAGGLE_CREATURE_NEGATIVE.split(', ')).toHaveLength(KAGGLE_NEGATIVE.split(', ').length - 1);
+    expect(s.negative).toContain('multiple characters');
+    expect((kaggleWave([], s) as { settings: { negative: string } }).settings.negative).toBe(KAGGLE_CREATURE_NEGATIVE);
+    expect(() => kaggleSettings({ KAGGLE_NEGATIVE_KIND: 'cat' })).toThrow(/KAGGLE_NEGATIVE_KIND/);
+  });
+
+  test('the negative prompt names the light the model paints on the background', () => {
+    for (const word of ['glow', 'vignette', 'light rays', 'halo']) expect(KAGGLE_NEGATIVE).toContain(word);
+  });
+
   test('the schedule is stretched so image to image runs the local step count', () => {
     expect(kaggleInferenceSteps(20, 0.6)).toBe(34);
     expect(Math.floor(kaggleInferenceSteps(20, 0.6) * 0.6)).toBe(20);
@@ -419,6 +465,28 @@ describe('the long-prompt recipes (qwen, flux)', () => {
     const long = kaggleSentencePrompt({ ref: 'props/x', what: 'barrel', detail: Array.from({ length: 30 }, (_, i) => `hoop number ${i} with rivets`).join(', ') });
     expect(long).toContain('hoop number 29 with rivets');
     expect(clipTokenEstimate(long)).toBeGreaterThan(CLIP_TOKENS);
+  });
+
+  test('the asked size sets the shape words in both prompt builders (27.10): tall and wide above 1.3, a square says nothing', () => {
+    expect(shapeOf({ width: 192, height: 320 })).toBe('tall');
+    expect(shapeOf({ width: 128, height: 64 })).toBe('wide');
+    expect(shapeOf({ width: 64, height: 64 })).toBeNull();
+    // 1.3 itself is not past the line; 5:4 is not told a shape, 4:3 is
+    expect(shapeOf({ width: 100, height: 130 })).toBeNull();
+    expect(shapeOf({ width: 100, height: 131 })).toBe('tall');
+    expect(shapeOf({ width: 120, height: 96 })).toBeNull();
+    expect(shapeOf({ width: 128, height: 96 })).toBe('wide');
+    expect(shapeOf({})).toBeNull();
+    const house = { ref: 'props/house_small', what: 'small village cottage with a red tiled roof', detail: 'a steep roof of red clay tiles, a wooden door' };
+    expect(kaggleSentencePrompt({ ...house, width: 192, height: 320 })).toContain('Alone and centred, filling most of the picture, tall and narrow, filling the height of the picture, top-down three-quarter view.');
+    expect(kaggleSentencePrompt({ ...house, width: 128, height: 64 })).toContain('wide and low, filling the width of the picture');
+    expect(kaggleSentencePrompt({ ...house, width: 64, height: 64 })).toBe(kaggleSentencePrompt(house));
+    expect(kagglePrompt({ ...house, width: 192, height: 320 }, 'qwen')).toBe(kaggleSentencePrompt({ ...house, width: 192, height: 320 }));
+    const tree = kagglePrompt({ ref: 'props/tree_oak', what: 'oak tree', width: 192, height: 320 }, 'sd15');
+    expect(tree).toContain('game sprite, top-down three-quarter view, tall, narrow, oak tree');
+    expect(kagglePrompt({ ref: 'props/rubble', what: 'rubble', width: 128, height: 64 }, 'sd15')).toContain('wide, low');
+    expect(kagglePrompt({ ref: 'props/x', what: 'barrel', width: 64, height: 64 }, 'sd15')).not.toMatch(/tall|wide/u);
+    expect(clipTokenEstimate(tree)).toBeLessThanOrEqual(CLIP_TOKENS);
   });
 
   test('the wave carries the recipe and each request its art grid; the kernel has both paths and the post-process', () => {

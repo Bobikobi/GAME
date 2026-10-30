@@ -1,0 +1,33 @@
+{
+  "about": "The wolf's run: four poses of the body's own Run, judged at a chase of 250 ms a tile (a placeholder inside the pose-rate cap; the hunting rules set the real pace).",
+  "target": "wolf",
+  "base": {
+    "library": "self:wolf",
+    "action": "Run"
+  },
+  "frames": {
+    "even": 4
+  },
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "locomotion": {
+    "playback": "distance",
+    "pace_ms": 250
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ],
+  "limits": {
+    "foot_slide_px": 2
+  }
+}
