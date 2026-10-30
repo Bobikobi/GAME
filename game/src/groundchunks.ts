@@ -5,8 +5,13 @@
  * 38 MB each. So it is baked per chunk of 16x16 tiles (1024x1024): only the chunks in view and one ring around
  * them are kept, built as the camera moves and dropped as it leaves. A chunk with no animated tile in it shares
  * one texture across the water's frames.
+ *
+ * The pages the view touches are baked at once; the ring around them is queued and baked in idle slices, one page a
+ * slice (stream.ts), so crossing into a new page never blocks a frame (NEXT 19 d). `allow` limits the pages to the
+ * world chunks the stream holds.
  */
 import type * as Phaser from 'phaser';
+import { IdleQueue } from './stream';
 
 /** Tiles on a chunk's side. */
 export const CHUNK = 16;
@@ -56,6 +61,8 @@ export class GroundChunks {
     private readonly frames: number,
     private readonly depth: number,
     private readonly paint: ChunkPainter,
+    private readonly allow: (tx: number, ty: number) => boolean = () => true,
+    private readonly queue: IdleQueue = new IdleQueue(),
   ) {}
 
   /** How many chunks are held now. */
@@ -63,20 +70,50 @@ export class GroundChunks {
     return this.live.size;
   }
 
-  /** Builds the chunks the view needs (with one ring) and drops the rest. Cheap while the camera stays in a chunk. */
-  update(view: { x: number; y: number; right: number; bottom: number }): void {
+  /** Pages waiting for an idle slice. */
+  get waiting(): number {
+    return this.queue.pending;
+  }
+
+  /** The longest single page bake so far, in ms. */
+  get longest(): number {
+    return this.queue.longest;
+  }
+
+  /** Bakes every waiting page now. */
+  flush(): void {
+    this.queue.flush();
+  }
+
+  /**
+   * Bakes the pages the view touches, queues the ring around them and drops the rest. `epoch` changes when the
+   * stream's window does, so a page that was not held yet is asked again. Cheap while the camera stays in a page.
+   */
+  update(view: { x: number; y: number; right: number; bottom: number }, epoch = ''): void {
     const r = chunkRange(view, this.unit, this.tilesW, this.tilesH);
-    const span = `${r.x0},${r.y0},${r.x1},${r.y1}`;
+    const span = `${r.x0},${r.y0},${r.x1},${r.y1},${epoch}`;
     if (span === this.span) return;
     this.span = span;
+    const seen = chunkRange(view, this.unit, this.tilesW, this.tilesH, 0);
     const want = new Set<string>();
     for (let cy = r.y0; cy <= r.y1; cy++) {
       for (let cx = r.x0; cx <= r.x1; cx++) {
+        if (!this.allow(cx * CHUNK, cy * CHUNK)) continue;
         const id = `${cx},${cy}`;
         want.add(id);
-        if (!this.live.has(id)) this.live.set(id, this.build(cx, cy));
+        if (this.live.has(id)) continue;
+        if (cx >= seen.x0 && cx <= seen.x1 && cy >= seen.y0 && cy <= seen.y1) {
+          this.queue.cancel(id);
+          this.live.set(id, this.build(cx, cy));
+        } else {
+          this.queue.push(id, () => {
+            if (this.live.has(id) || !want.has(id)) return;
+            this.live.set(id, this.build(cx, cy));
+          });
+        }
       }
     }
+    for (const id of [...this.queue.keys()]) if (!want.has(id)) this.queue.cancel(id);
     for (const [id, chunk] of this.live) {
       if (want.has(id)) continue;
       for (const key of chunk.keys) this.scene.textures.remove(key);
@@ -92,6 +129,7 @@ export class GroundChunks {
   }
 
   destroy(): void {
+    this.queue.clear();
     for (const chunk of this.live.values()) {
       for (const key of chunk.keys) this.scene.textures.remove(key);
       chunk.img.destroy();

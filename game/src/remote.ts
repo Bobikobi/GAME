@@ -9,6 +9,7 @@
  * a walk waits for the reply, because the seed is the server's and a drawn outcome cannot be predicted.
  */
 import {
+  type Gait,
   type Action,
   type Bundle,
   type GameEvent,
@@ -270,7 +271,8 @@ export class RemoteSession implements GameSession {
   }
 
   /** Report the tile the player stands on. Reports batch, and go out with the next action or on their own. */
-  report(at: readonly [number, number], again = false): void {
+  // the wire's move report carries no gait yet: the server checks every step at the walk's pace
+  report(at: readonly [number, number], again = false, _gait?: Gait): void {
     if (!this.started || !this.open) return;
     const p = this.state.player;
     if (!again && !this.sendingMoves && this.moves.length === 0 && p.at[0] === at[0] && p.at[1] === at[1]) return;
