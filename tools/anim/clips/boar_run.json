@@ -1,0 +1,30 @@
+{
+  "about": "The wild boar's run: four poses of the body's own Run (a short, heavy four-beat rotary gallop keyed on the leg targets in boar_pass.py: hind left, hind right, fore right, fore left; the body near its standing height with little bounce and the fore hooves reaching ahead before they land), judged at the run of 95 ms a tile (`walk_step_ms` over `gait.run_div`): FLEE runs at it now (HUNTING.md section 2), and DEFEND's charge in a line will once the fight exists.",
+  "target": "boar",
+  "base": {
+    "library": "self:boar",
+    "action": "Run"
+  },
+  "frames": {
+    "even": 4
+  },
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "locomotion": {
+    "playback": "distance",
+    "pace_ms": 95
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

@@ -609,6 +609,16 @@ if IS_UAL:   # a race's size: a given scale, or the height in frame pixels it is
 
 clip = cfg
 samples = cfg["samples"]
+CYCLE_Z = None
+if cfg.get("ground") == "cycle":   # an airborne gait: one floor for the whole cycle, its lowest point over every source frame
+    base_a = samples[0]["base"][0]; zs = []
+    for f in [float(k) for k in range(int(round(cfg.get("dense", {}).get("length", 0))) + 1)] + [s["base"][1] for s in samples]:
+        ROOT.rotation_euler = (0, 0, 0); ROOT.location = (0, 0, 0); bpy.context.view_layer.update()
+        if NATIVE: native_pose({"base": [base_a, f]})
+        else: source_pose({"base": [base_a, f]}, {}); retarget()
+        bpy.context.view_layer.update()
+        zs.append(ground_z())
+    CYCLE_Z = min(zs)
 meta = {"frame": [FW, FH], "anchor": list(ANCHOR), "pxm": PXM, "elev_deg": math.degrees(ELEV), "name": cfg["name"],
         "target": TARGET, "race_scale": RACE_K, "scale_v": SCALE_V, "scale_h": SCALE_H, "samples": samples, "poses": []}
 for i, s in enumerate(samples):
@@ -635,6 +645,7 @@ for i, s in enumerate(samples):
         mwp = ob.matrix_world.copy(); ob.parent = ROOT; ob.matrix_world = mwp
     bpy.context.view_layer.update()
     z = body_min_z() if not cfg.get("ground_from_feet") else min((tarm.matrix_world @ tarm.pose.bones[P + n].head).z for n in MAP["contacts"].values())
+    if CYCLE_Z is not None: z = CYCLE_Z
     ROOT.location = (0, 0, -z + cfg.get("ground_lift", 0.0)); bpy.context.view_layer.update()
     if SETP is not None:   # on the floor under the body, turning with it
         SETP.parent = ROOT; SETP.matrix_world = Matrix.Identity(4); bpy.context.view_layer.update()
@@ -665,7 +676,7 @@ if dn:   # the feet at every source frame (no render): the travel fit needs more
         if NATIVE: native_pose({"base": [base_a, f]})
         else: source_pose({"base": [base_a, f]}, {}); retarget()
         bpy.context.view_layer.update()
-        ROOT.location = (0, 0, -ground_z() + cfg.get("ground_lift", 0.0)); bpy.context.view_layer.update()
+        ROOT.location = (0, 0, -(ground_z() if CYCLE_Z is None else CYCLE_Z) + cfg.get("ground_lift", 0.0)); bpy.context.view_layer.update()
         rec = {"f": round(f, 3)}
         for d, ang in DIRS.items():
             ROOT.rotation_euler = (0, 0, ang); bpy.context.view_layer.update()
