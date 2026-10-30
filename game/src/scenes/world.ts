@@ -45,7 +45,8 @@ import {
 } from '@game/kernel';
 import { app } from '../app';
 import { Piles, pileAt } from './piles';
-import { sound, type SfxId, type SongId } from '../audio';
+import { sound, type Heard, type Owner, type SfxId, type SongId } from '../audio';
+import { BLOW_GAIN } from '../audio/heard';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, T } from '../config';
 import { FAR_BELL, SMOKE_PUFFS, farBellDue, nearestChimney, smokeAlpha, smokeAt } from '../hookbridge';
 import { sunAt, sunTableOf } from '../cast';
@@ -2766,7 +2767,7 @@ export class WorldScene extends Phaser.Scene {
     const wx = (slot.x + Math.random() * slot.w) * T;
     const wy = (slot.y + Math.random() * slot.h) * T;
     const pan = Math.max(-0.8, Math.min(0.8, (wx / T - px) / 8));
-    sound.sfx('whisper', { pan });
+    sound.sfx('whisper', { pan, heard: this.heardAt(wx, wy, 'world') });
     const el = document.createElement('div');
     el.className = 'whisper';
     el.textContent = pickOf(WHISPERS);
@@ -3233,21 +3234,22 @@ export class WorldScene extends Phaser.Scene {
     const at = this.worldToPage(x, y);
     const pan = Math.max(-0.8, Math.min(0.8, (at.x / Math.max(1, this.scale.width / pixelRatio()) - 0.5) * 1.2));
     const img = this.nodes.get(w.node) ?? this.digs.get(w.node);
+    // one sound per blow (SOUND.md section 1.3): past the middle the crack is the blow
     if (w.kind === 'fell') {
-      sound.sfx('thud', { pan });
       // the wood starts to give: a crack under the blows past the middle
       if (progress > 0.5) sound.sfx('crack', { pan, gain: 0.25 + 0.5 * progress });
+      else sound.sfx('thud', { pan, gain: BLOW_GAIN.thud });
       this.burst('fx-chip', x, y, 6);
       if (progress > 0.4 && img) this.burst('fx-leaf', x, y - img.displayHeight * 0.6, 2 + Math.round(progress * 4));
     } else if (w.kind === 'mine') {
-      sound.sfx('strike', { pan });
       // the stone starts to give as the wood does: a crack under the blows past the middle, more chips each time
       if (progress > 0.5) sound.sfx('crack', { pan, gain: 0.2 + 0.4 * progress });
+      else sound.sfx('strike', { pan, gain: BLOW_GAIN.strike });
       this.burst('fx-dust', x, y, 5);
       this.burst('fx-spark', x, y - 4, 3);
       this.burst('fx-chip', x, y - 2, 2 + Math.round(progress * 4));
     } else {
-      sound.sfx('dig', { pan });
+      sound.sfx('dig', { pan, gain: BLOW_GAIN.dig });
       this.burst('fx-dirt', x, y, 6);
     }
     if (!img) return;
@@ -3591,6 +3593,18 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Where a tile is on the page, for UI that points at the world. */
+  /** Where a world point is as the player's character hears it: tiles away (the larger axis) and whether it is in view. */
+  private heardAt(wx: number, wy: number, owner: Owner): Heard {
+    const tiles = Math.max(Math.abs(wx - this.player.x), Math.abs(wy - this.player.y)) / T;
+    return { owner, tiles, offscreen: !this.cameras.main.worldView.contains(wx, wy) };
+  }
+
+  /** Where a predator stands as the player hears it, for its growl when it sees the player (SOUND.md section 1.4). */
+  hazardHeard(id: string): Heard | undefined {
+    const h = this.hazards.find((z) => z.rule?.id === id);
+    return h ? this.heardAt(h.spr.x, h.spr.y, 'world') : undefined;
+  }
+
   screenOf(x: number, y: number): { x: number; y: number } {
     return this.worldToPage(x * T + T / 2, y * T);
   }
