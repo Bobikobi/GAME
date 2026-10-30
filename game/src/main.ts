@@ -6,6 +6,7 @@ import raw from './generated/bundle.json';
 import { sound } from './audio';
 import { RICH } from './config';
 import { showStats, startPerf, watchPerf } from './perf';
+import { applyDisplay } from './settings-apply';
 import { Controls } from './input';
 import { BootScene } from './scenes/boot';
 import { RoomScene } from './scenes/room';
@@ -30,6 +31,7 @@ app.controls.onButton((b) => app.ui.handle(b));
 
 const query = location.search;
 const perf = startPerf(query, safeStorage());
+applyDisplay(document.documentElement, perf.settings);
 const first = firstSize();
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -43,6 +45,8 @@ const game = new Phaser.Game({
   scene: [BootScene, WorldScene, RoomScene],
 });
 
+app.perf = perf;
+app.game = game;
 watchPerf(game, perf);
 if (new URLSearchParams(query).get('stats') === '1') showStats(game, perf);
 bindDeviceCanvas(game, document.getElementById('game')!);

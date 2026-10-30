@@ -1,10 +1,12 @@
 {
   "about": "Settings of the library-motion tool (tools/anim/README.md). The frames are drawn 1:1 at the 64 px tile: today's 16 px tile shown at 4x, the scale the cut-out demo draws at. The paces are read from content/core/params.json by these keys. The limits are what `pnpm anim check` fails on.",
   "tile_px": 64,
+  "frame": { "size": [128, 128], "anchor": [64, 90] },
   "fps": 24,
   "supersample": 4,
   "paces": { "light": "load.light_step_ms", "steady": "walk_step_ms", "heavy": "load.heavy_step_ms" },
   "limits": { "palette_pct": 100, "foot_slide_px": 1, "silhouette_dev_pct": 10, "poses_per_s_max": 30 },
+  "clothed_width": { "max_pct": 80, "pairs": [["elf", "human"], ["elf_w", "human"]] },
   "targets": {
     "forager": {
       "about": "The forager, the man (character-forager-m.glb), as the 3D game uses him (Mixamo bone names), lit and snapped to his ramps.",
@@ -16,6 +18,7 @@
       "ramps": ["wood", "red", "skin"],
       "metal": "grey",
       "leaf": "green",
+      "ships": { "sheet": "human", "clip": "jog_human" },
       "credit": "Forager, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/ (game/public3d/models/README.md); modified: posed with library motion and rendered to pixels by tools/anim"
     },
     "forager-f": {
@@ -27,6 +30,7 @@
       "ramps": ["wood", "bark", "skin"],
       "metal": "grey",
       "leaf": "green",
+      "ships": { "sheet": "human_w", "clip": "jog_human" },
       "credit": "Forager, generated with Meshy (meshy.ai), CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; modified: scaled to 1.56 m; skeleton and skin weights added in Blender by fitting the warrior's Mixamo-named rig to the body (game/tools/blender/person_rig.py) on arm joints measured by hand, with the arms cut free where they touched the body; clips Idle, Walk and Run retargeted from the warrior; two empty prop sockets added; reduced from 88,512 to 50,000 triangles and the maps cut from 2048 to 1024 px; posed with library motion and rendered to pixels by tools/anim (game/public3d/models/README.md)"
     },
     "digger-m": {
@@ -106,6 +110,44 @@
       "metal": "stone",
       "leaf": "green",
       "colours": { "head": "#e9903a", "neck": "#e9903a", "chest": "#e9903a", "shoulder": "#e9903a", "upper_arm": "#e9903a", "elbow": "#e9903a", "forearm": "#e9903a", "hand": "#e9903a", "thigh": "#e9903a", "knee": "#e9903a", "shin": "#e9903a", "foot": "#e9903a", "pelvis": "#6f7d8c" }
+    },
+    "elf-m": {
+      "about": "The elf, the man (round 4 E4-A, version 3): the Universal Base Characters body thinned at the bones and lengthened on the shared rig, in the ranger outfit under a pastel green open hooded cloak (green since 30.10; sky blue at the pick) (tools/anim/races/elf.json).",
+      "map": "ual",
+      "race": "elf",
+      "body": "m",
+      "elev": 50,
+      "pxm": 53,
+      "ramps": ["wood", "moss", "skin"],
+      "metal": "grey",
+      "leaf": "green",
+      "ships": { "sheet": "elf", "bob": false },
+      "credit": "Elf, built from Quaternius Universal Base Characters and Modular Character Outfits - Fantasy (CC0 1.0); the cloak is own geometry; posed with Quaternius Universal Animation Library motion (CC0 1.0) and rendered to pixels by tools/anim"
+    },
+    "elf-f": {
+      "about": "The elf, the woman (round 4 E4-A, version 3): as the man, in the female base body and outfit, long hair.",
+      "map": "ual",
+      "race": "elf",
+      "body": "f",
+      "elev": 50,
+      "pxm": 53,
+      "ramps": ["wood", "moss", "skin"],
+      "metal": "grey",
+      "leaf": "green",
+      "ships": { "sheet": "elf_w", "bob": false },
+      "credit": "Elf, built from Quaternius Universal Base Characters and Modular Character Outfits - Fantasy (CC0 1.0); the cloak is own geometry; posed with Quaternius Universal Animation Library motion (CC0 1.0) and rendered to pixels by tools/anim"
+    },
+    "skeleton": {
+      "about": "The skeleton (round 2 B): the thin white Brodin skeleton, cut into bone pieces and fitted piece by piece onto the shared rig (tools/anim/races/skeleton.json), 81 percent of the human's height.",
+      "map": "ual",
+      "race": "skeleton",
+      "elev": 50,
+      "pxm": 53,
+      "ramps": ["grey", "stone", "bark"],
+      "metal": "grey",
+      "leaf": "green",
+      "ships": { "sheet": "skeleton", "clip": "jog_short", "bob": false },
+      "credit": "Skeleton by Alexander Brodin (https://poly.pizza/m/frU5VxsCGZJ), CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/); modified: cut into bone pieces, each fitted to a bone of the Quaternius Universal Base Characters skeleton, posed with Quaternius Universal Animation Library motion (CC0 1.0) and rendered to pixels by tools/anim"
     },
     "wolf": {
       "about": "The wolf, dark grey (character-wolf-grim.glb): a four-legged body that carries its own Idle, Walk and Run, so nothing is retargeted ('native'). The feet are the tails of the last bone of each leg. The camera is the forager's; the scale makes the wolf about 0.9 m at the ears.",

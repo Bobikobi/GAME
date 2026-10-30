@@ -1,8 +1,8 @@
 {
- "about": "The skeleton of the 26.10 pick (round-2 B): the Brodin anatomical skeleton ('Skeleton' by Alexander Brodin, CC BY 3.0, https://poly.pizza/m/frU5VxsCGZJ, credit required), cut into bone pieces and fitted piece by piece onto the Quaternius Universal Base Characters rig (`pieces`, g = girth factor per role), so it walks with the library clips. $CACHE is tools/.cache/anim. The body mesh of the base character is dropped (`drop`). `fit_px` 52 puts it at 81 percent of the human's height.",
- "job": {
+ "about": "The skeleton of the 26.10 pick (round-2 B): the Brodin anatomical skeleton ('Skeleton' by Alexander Brodin, CC BY 3.0, https://poly.pizza/m/frU5VxsCGZJ, credit required), cut into bone pieces and fitted piece by piece onto the Quaternius Universal Base Characters rig (`pieces`, g = girth factor per role), so it walks with the library clips. $MODELS is tools/.cache/anim/models. The body mesh of the base character is dropped (`drop`). `fit_px` 52 puts it at 81 percent of the human's height.",
+ "common": {
   "models": [
-   "$CACHE/step2/src/ubc/Universal Base Characters[Standard]/Base Characters/Godot - UE/Superhero_Male_FullBody.gltf"
+   "$MODELS/ubc/Universal Base Characters[Standard]/Base Characters/Godot - UE/Superhero_Male_FullBody.gltf"
   ],
   "drop": [
    "SuperHero",
@@ -10,13 +10,8 @@
    "Eyes",
    "Eyebrows"
   ],
-  "pose": {
-   "glb": "$CACHE/lib/ual1/UAL1_Standard.glb",
-   "action": "Walk_Loop",
-   "frame": 0
-  },
   "pieces": {
-   "glb": "$CACHE/step2/src/round2/brodin_skeleton.glb",
+   "glb": "$MODELS/brodin-skeleton/brodin_skeleton.glb",
    "parts": [
     {
      "role": "skull",
@@ -248,55 +243,10 @@
     "hand": 1.4
    }
   },
-  "measure": {
-   "head": [
-    "Head"
-   ],
-   "extra": {
-    "ribcage": {
-     "groups": [
-      "spine_02"
-     ],
-     "mode": "extent"
-    },
-    "arm_l": {
-     "groups": [
-      "upperarm_l"
-     ],
-     "mode": "thick",
-     "bone": "upperarm_l"
-    },
-    "arm_r": {
-     "groups": [
-      "upperarm_r"
-     ],
-     "mode": "thick",
-     "bone": "upperarm_r"
-    },
-    "leg_l": {
-     "groups": [
-      "thigh_l"
-     ],
-     "mode": "thick",
-     "bone": "thigh_l"
-    },
-    "leg_r": {
-     "groups": [
-      "thigh_r"
-     ],
-     "mode": "thick",
-     "bone": "thigh_r"
-    }
-   }
-  },
   "fit_px": 52,
-  "frame": [
-   128,
-   128
-  ],
-  "anchor": [
-   64,
-   100
-  ]
+  "fit_pose": {
+   "action": "Walk_Loop",
+   "frame": 0
+  }
  }
 }
