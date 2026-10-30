@@ -152,3 +152,15 @@ For the owner. Prices are 2026 market ranges as commonly quoted, not quotes; thi
 A middle way exists and is what C is: the same live scores played through a few sampled instruments. A small set (three instruments, a few notes each, Opus) is about 1 to 2 MB and stays adaptive, at the price of the bytes and an attribution line.
 
 **Recommendation: B.** Keep the synth as the game's sound and enrich it: a second voice per place, the walking bass, the slow pad, and the effects cut of section 1. It answers "the soundtrack will need enriching" at no cost in money or page size, keeps the music following the place and the hour (G26), and keeps the chip sound that suits the pixel game. Revisit a composer when the game earns, starting with the town theme alone; C is the sound that commission would aim at.
+
+## 4. The owner's answers, 30.10
+
+On the listen page, 30.10 at 10:09.
+
+- **Listen A** (today): no mark.
+- **Listen B** (the synth enriched): no.
+- **Listen C** (played by people): liked. "nice, but I want something longer for the game, so it does not feel repetitive over a long game; free libraries, like we do in graphics. I want medieval lofi cozy playing in the routine, and other music by task and state: night outside the town, hunting, combat, near death, and so on."
+- **The source and its cost** (section 3): "make a sample of each except the paid one; if B can answer all of this, I prefer it."
+- **The effects cut** (section 1.3): liked. "make sure the sounds also take the distance from the character into account, with multiplayer in mind: another player chopping nearby is fine, another player picking up a coin is not relevant, a fight close by off-screen sounds distant accordingly."
+
+What it opens: the quality of C is the bar and B as played is not, so the source stays open until round 2: a long routine piece and one piece per state, both through the synth pushed as far as it goes and through sampled instruments, beside open-licence tracks (sections 5 and 6, a pull request of their own). The music by state is CR-112 and the sound by distance CR-113 in `docs/team/GRUNT.md`. The effects cut of section 1.3 is built with the distance rule in a pull request of its own.
