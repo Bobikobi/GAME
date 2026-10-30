@@ -683,11 +683,12 @@ function generateScatter(entry: GenEntry, options: Options, version: string, ear
     if (options.dry) continue;
     const redraw = !options.reimport && (options.only === null || options.only.has(entry.name) || options.only.has(name));
     // a motif written by hand or by an agent other than Codex lives in tools/kit-gen/motifs/<name>.txt and is used as it is
-    const authored = join(ROOT, MOTIF_DIR, `${name}.txt`);
+    const authoredName = `${entry.motifs_from ?? entry.name}_${m.name}`;
+    const authored = join(ROOT, MOTIF_DIR, `${authoredName}.txt`);
     if (existsSync(authored)) {
       line.raw = `raw/${name}-${stamp}.txt`;
       writeFileSync(join(options.out, line.raw), readFileSync(authored));
-      line.prompt = `authored: ${MOTIF_DIR}/${name}.txt`;
+      line.prompt = `authored: ${MOTIF_DIR}/${authoredName}.txt`;
     } else if (redraw) {
       const asked = askCodex(options, version, name, stamp, line.prompt, [], `${name}.txt`);
       line.codex = asked.codex;

@@ -1,4 +1,4 @@
 {
-  "note": "Who may pick a draft (docs/art/PRODUCTION_LINE.md section 4): the owner, and whom the owner names here; a builder or an agent never adds a name on its own. art:pick refuses a picked_by that is not listed. \"measure\" is the owner's order of 30.10: after \"focus on the rich 64 development\" (17:2x) and \"focus mainly on the rich 64 development\" (19:00), and the manager's wave order of 17:35, a wave picks each draft by the numbers of `pnpm art:measure` (fill, palette, colours, seam, detail, echo) and the owner sees one in-game still per wave and says like or no; a no is a redo of the named tiles. A manifest line says \"by measure\", never \"by eye\". DECISIONS 2026-10-30.",
-  "pickers": ["elad", "measure"]
+  "note": "Who may pick a draft (docs/art/PRODUCTION_LINE.md section 4): the owner only. A name is added here by the owner, never by a builder or an agent; art:pick refuses a picked_by that is not listed.",
+  "pickers": ["elad"]
 }
