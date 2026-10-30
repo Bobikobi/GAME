@@ -983,11 +983,14 @@ export class WorldScene extends Phaser.Scene {
     );
   }
 
-  /** A building's lit window (STYLE 5), drawn in code over its own sprite, and its pool on the ground in front of the wall. */
+  /**
+   * A building's lit window (STYLE 5), drawn in code over its own sprite and lifted over the hour's shade (as a fire is
+   * at night), so it shines through the dark; and its pool on the ground in front of the wall.
+   */
   private lightWindow(img: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite, bottom: number): void {
     const win = litWindow(this, img.texture.key, img.frame.name);
     if (!win) return;
-    const glass = this.add.image(img.x, img.y, win.key).setOrigin(img.originX, img.originY).setScale(img.scaleX, img.scaleY).setDepth(img.depth + 0.001).setVisible(false);
+    const glass = this.add.image(img.x, img.y, win.key).setOrigin(img.originX, img.originY).setScale(img.scaleX, img.scaleY).setDepth(DEPTH.shade + 0.3).setVisible(false);
     const left = img.x - img.displayWidth * img.originX;
     this.light?.add({ kind: 'window', x: left + (win.box.x + win.box.w / 2) * img.scaleX, y: bottom + 4, glass });
   }
@@ -1246,9 +1249,14 @@ export class WorldScene extends Phaser.Scene {
       if (depth < DEPTH.flat || depth > 1000) continue;
       // a dig spot and a puff lie at 3 and 3.5; the props and the people stand at their own feet
       if (depth > DEPTH.flat && depth <= DEPTH.puff) continue;
-      this.cast.add(obj, depth === DEPTH.flat ? 'under' : 'standing', walks.has(obj) ? 'moving' : beats.has(obj) ? 'rest' : 'drawn');
+      // the people carry STYLE 4's body light, as the player does
+      this.cast.add(obj, depth === DEPTH.flat ? 'under' : 'standing', walks.has(obj) ? 'moving' : beats.has(obj) ? 'rest' : 'drawn', key.includes(':chars/'));
     }
-    this.cast.add(this.player, 'standing', 'moving');
+    this.cast.add(this.player, 'standing', 'moving', true);
+    // by night a body in a light's pool casts from that light, and nothing casts outside every pool (STYLE 4)
+    const light = this.light;
+    const alpha = (this.b.params.light?.sun?.alpha ?? 30) / 100;
+    if (light) this.cast.night = (x, y) => (this.session ? light.nightSun(x, y, minuteOfDay(this.b, this.session.tick), alpha) : undefined);
   }
 
   private glow(x: number, y: number, lit: boolean, key = 'fx-glow', scale = 1): Glow {
@@ -1792,7 +1800,11 @@ export class WorldScene extends Phaser.Scene {
     // a quarter of the screen in CSS pixels, so the work does not grow with the device's density
     const w = Math.max(8, Math.ceil(this.scale.width / (4 * pixelRatio())));
     const h = Math.max(8, Math.ceil(this.scale.height / (4 * pixelRatio())));
-    const key = `${w}x${h}:${strength.toFixed(2)}:${radius.toFixed(2)}`;
+    // the night kept readable: with the light layer on, the frame keeps out of the ring around the player (the camera
+    // holds the player in the middle), as the shade does
+    const view = this.cameras.main.worldView;
+    const ring = this.light && this.night > 0 && view.width > 0 ? { x: (READ.ring * T) / view.width, y: (READ.ring * T) / view.height } : undefined;
+    const key = `${w}x${h}:${strength.toFixed(2)}:${radius.toFixed(2)}:${ring ? `${ring.x.toFixed(3)},${ring.y.toFixed(3)}` : ''}`;
     if (key === this.frameKey) return;
     this.frameKey = key;
     let tex = this.textures.exists('fx-frame') ? (this.textures.get('fx-frame') as Phaser.Textures.CanvasTexture) : undefined;
@@ -1810,7 +1822,8 @@ export class WorldScene extends Phaser.Scene {
         data.data[i] = (PALETTE.ink >> 16) & 255;
         data.data[i + 1] = (PALETTE.ink >> 8) & 255;
         data.data[i + 2] = PALETTE.ink & 255;
-        data.data[i + 3] = Math.round(255 * (d <= radius ? Math.max(0, Math.sin((d / radius) * 3.14 * strength)) : 1));
+        const inRing = ring !== undefined && Math.hypot(((x + 0.5) / w - 0.5) / ring.x, ((y + 0.5) / h - 0.5) / ring.y) <= 1;
+        data.data[i + 3] = inRing ? 0 : Math.round(255 * (d <= radius ? Math.max(0, Math.sin((d / radius) * 3.14 * strength)) : 1));
       }
     }
     ctx.putImageData(data, 0, 0);

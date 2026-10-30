@@ -338,11 +338,13 @@ export function bodyLight(src: Uint8ClampedArray | Uint8Array, w: number, h: num
 export function poolSun(dx: number, dy: number, radius: number, alpha: number, gate: number): { up: true; sx: number; sy: number; length: number; alpha: number } | undefined {
   const d = Math.hypot(dx, dy);
   if (gate <= 0 || d > radius || radius <= 0) return undefined;
-  const length = 0.3 + 0.8 * (d / radius);
+  // in whole steps (a sixteenth of a turn, a tenth of a height), so a body walking in a pool reuses a few shadows
+  const length = Math.round(10 * (0.3 + 0.8 * (d / radius))) / 10;
   // a body right on the light's foot casts straight back, as under a noon sun
-  const ux = d === 0 ? 0 : dx / d;
-  const uy = d === 0 ? -1 : dy / d;
-  return { up: true, sx: ux * length, sy: uy * length, length, alpha: alpha * gate };
+  const turn = d === 0 ? -Math.PI / 2 : Math.round((Math.atan2(dy, dx) / (2 * Math.PI)) * 16) * ((2 * Math.PI) / 16);
+  const sx = Math.round(Math.cos(turn) * length * 1000) / 1000;
+  const sy = Math.round(Math.sin(turn) * length * 1000) / 1000;
+  return { up: true, sx, sy, length, alpha: alpha * gate };
 }
 
 /**

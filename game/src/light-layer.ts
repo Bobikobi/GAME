@@ -4,8 +4,8 @@
  *
  * - **The shade.** One render texture over the view holds the hour's shade (params `light.keys`: the dusk's gold and
  *   red and the night's ink, one colour per minute), multiplied over everything under it. Every light cuts its pool
- *   out of it in STYLE 5's two hard steps (clean inside, half in a ring); a lit window cuts its own glass; and the
- *   ring around the player is cut down to the shade that keeps the ground at the readable floor (`light.read`).
+ *   out of it in STYLE 5's two hard steps (clean inside, half in a ring), and the ring around the player holds only
+ *   the shade that keeps the ground at the readable floor (`light.read`). A lit window's glass is drawn over it.
  * - **The pools.** A second render texture holds the added light of every pool: each step a disc, drawn from the
  *   outermost step of every light to the innermost, opaque, so a pixel ends at the brightest step that reaches it
  *   and two pools never sum. Then the lamps' heads. It is added over the shade.
@@ -26,6 +26,7 @@ import {
   poolAt,
   poolColour,
   poolDisc,
+  poolSun,
   readableAlpha,
   washAt,
   type LightKey,
@@ -48,7 +49,7 @@ export interface Light {
   /** a burning fire dims with its last wood, 0 to 1 */
   strength: number;
   on: boolean;
-  /** a lit window's own glass, cut out of the shade so it shines through the night */
+  /** a lit window's own glass, drawn over the shade so it shines through the night */
   glass?: Phaser.GameObjects.Image;
   /** the flicker's phase: a flame's pool breathes (with motion on) */
   phase: number;
@@ -125,20 +126,16 @@ export class LightLayer {
       // opaque, at the multiply's own factor (1 - a + a x colour a channel): the layer then multiplies the valley by it
       // exactly, and a cut that takes alpha away leaves the valley as it is
       this.shade.fill(shadeFactor(this.wash.tint, this.wash.alpha), 1);
-      for (const { l, gate, flick } of lit) {
-        const p = at(l.x, l.y);
-        this.shade.stamp(`light-cut-${l.kind}`, undefined, p.x, p.y, { alpha: gate, scale: flick, blendMode: Phaser.BlendModes.ERASE });
-        if (l.glass) {
-          const g = l.glass;
-          const q = at(g.x, g.y);
-          this.shade.stamp(g.texture.key, undefined, q.x, q.y, { alpha: gate, scale: ART * g.scaleX, originX: g.originX, originY: g.originY, blendMode: Phaser.BlendModes.ERASE });
-        }
-      }
-      // the ring around the player keeps the ground at the floor: cut down to the readable shade, never darker
+      // the ring around the player keeps the ground at the floor: the readable shade there, never darker; drawn first,
+      // so a pool inside the ring still cuts it
       const keep = this.ringAlpha(this.wash.alpha, this.wash.tint);
       if (player && keep < this.wash.alpha) {
         const p = at(player.x, player.y);
-        this.shade.stamp('light-ring', undefined, p.x, p.y, { alpha: 1 - keep / this.wash.alpha, blendMode: Phaser.BlendModes.ERASE });
+        this.shade.stamp('light-ring', undefined, p.x, p.y, { tint: shadeFactor(this.wash.tint, keep) });
+      }
+      for (const { l, gate, flick } of lit) {
+        const p = at(l.x, l.y);
+        this.shade.stamp(`light-cut-${l.kind}`, undefined, p.x, p.y, { alpha: gate, scale: flick, blendMode: Phaser.BlendModes.ERASE });
       }
       this.shade.render();
     }
@@ -161,6 +158,25 @@ export class LightLayer {
       }
     }
     this.pools.render();
+  }
+
+  /**
+   * The sun of the light whose pool the feet at (x, y) stand in, by night (STYLE 4): the nearest lit pool that holds
+   * them. A light's own post (its foot within a quarter tile) casts nothing from it.
+   */
+  nightSun(x: number, y: number, minute: number, alpha: number): ReturnType<typeof poolSun> {
+    let best: ReturnType<typeof poolSun>;
+    let near = Infinity;
+    for (const l of this.lights) {
+      const gate = l.on ? poolAt(minute, l.kind) * l.strength : 0;
+      if (gate <= 0) continue;
+      const r = POOL_RADIUS[l.kind][0] * TILE;
+      const d = Math.hypot(x - l.x, y - l.y);
+      if (d < TILE / 4 || d > r || d >= near) continue;
+      near = d;
+      best = poolSun(x - l.x, y - l.y, r, alpha, gate);
+    }
+    return best;
   }
 
   /** Hides both layers, for the plain valley or a scene that is leaving. */
