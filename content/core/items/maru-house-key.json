@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../schema/json/items.schema.json",
+  "format": 1,
+  "type": "items",
+  "id": "core/maru-house-key",
+  "title": "Maru's house key",
+  "creator": "core",
+  "description": "A key a quest gives and nobody sells: it opens a door, not a purse.",
+  "items": [
+    {
+      "id": "core/maru-house-key",
+      "name": "Maru's house key",
+      "description": "A plain key on a worn cord. It fits Maru's door.",
+      "kind": "treasure",
+      "rarity": "uncommon",
+      "class": "relic",
+      "family": "key",
+      "tier": 1,
+      "sprite": "core/base-kit:items/old-coin",
+      "weight": 1
+    }
+  ]
+}

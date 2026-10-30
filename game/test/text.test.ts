@@ -396,6 +396,7 @@ describe('the journal by class and family (C12)', () => {
     expect(core('Relic')).toEqual([
       { ids: ['core/stone-idol'] },
       { family: 'coin', ids: ['core/maru-coin', 'core/old-coin'] },
+      { family: 'key', ids: ['core/maru-house-key'] },
       { family: 'scrap', ids: ['core/stew-scrap'] },
     ]);
     // every item is in exactly one row
