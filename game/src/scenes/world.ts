@@ -52,6 +52,7 @@ import { sunAt, sunTableOf } from '../cast';
 import { CastLayer } from '../cast-layer';
 import { HOLE, LIGHT_POOL, READ, SHAFT, bankAt, cloudAt, dappleAt, frameAt, nightAt, shadeAt, shaftAt, tableOf } from '../light';
 import { LightLayer, litWindow, type Light } from '../light-layer';
+import { Flame, Sway, installMotion } from '../motion';
 import { STONE_GLIDE_MS, STONE_STEPS, type StoneView, stoneView } from '../stone';
 import { type Clear, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../mist';
 import { FOG_ATLAS, FOG_ATLAS_W, FOG_FEATHER, FOG_OFFSETS, FOG_TILE, fogPixels } from '../fog';
@@ -170,6 +171,8 @@ interface Fire {
   glow: Glow | undefined;
   /** its pool in the light layer (LIGHTING.md): from 16:30, dimming with its last wood */
   light?: Light;
+  /** the flame shader on its drawn tongue (with motion on): the outline licks a texel at a time */
+  lick?: Flame;
   /** how much wood is left, by quarters of the fire's own log (NEXT 21b) */
   stage: FireStage;
   /** the tile's own depth, where the fire sits by day */
@@ -313,6 +316,8 @@ export class WorldScene extends Phaser.Scene {
   private shade!: Phaser.GameObjects.Rectangle;
   /** the hour's shade with every light's pool cut out of it, the pools added over it (LIGHTING.md, C) */
   private light: LightLayer | undefined;
+  /** the gust over the meadow's light greens and the water's dashes (motion.ts), with motion on and WebGL */
+  private gust: Sway | undefined;
   private bar!: Phaser.GameObjects.Graphics;
   private marker!: Phaser.GameObjects.Image;
   /** B2's mist: the whole map as one image of dots, redrawn only when the places it leaves clear change */
@@ -532,6 +537,12 @@ export class WorldScene extends Phaser.Scene {
     const cam = this.cameras.main;
     cam.setBounds(0, 0, this.b.map.width * T, this.b.map.height * T);
     cam.setRoundPixels(true);
+    // the sway goes on before the camera's grade, so it reads the palette's own colours
+    if (RICH.motion && this.motionReady()) {
+      this.gust = new Sway(cam);
+      cam.filters.internal.add(this.gust);
+      for (const f of this.fires.values()) this.lickFlame(f);
+    }
     this.addFilters(cam);
     this.scale.on('resize', () => this.fit());
     this.fit();
@@ -1761,6 +1772,28 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /** Whether the motion shaders are registered (motion.ts): WebGL with filters, once per game. */
+  private motionReady(): boolean {
+    try {
+      return installMotion(this.game);
+    } catch {
+      // a renderer without custom filters still plays; the valley only holds still
+      return false;
+    }
+  }
+
+  /** The flame shader on a fire's drawn tongue. */
+  private lickFlame(f: Fire): void {
+    if (f.lick || !this.gust) return;
+    try {
+      f.flame.enableFilters();
+      f.lick = new Flame(this.cameras.main, f.phase);
+      f.flame.filters?.internal.add(f.lick);
+    } catch {
+      f.lick = undefined;
+    }
+  }
+
   /** An old, worn picture: a little less colour, a dark frame that closes in at night. WebGL only. */
   private addFilters(cam: Phaser.Cameras.Scene2D.Camera): void {
     if (this.renderer.type !== Phaser.WEBGL) return;
@@ -2160,10 +2193,21 @@ export class WorldScene extends Phaser.Scene {
     }
     // a burning flame breathes: a small sway and a flicker in its size, never a count of anything.
     // the valley's wind leans it, the same slow gust on every fire, while the burn itself is untouched (G48)
+    if (this.gust) {
+      const cam = this.cameras.main;
+      this.gust.time = time / 1000;
+      this.gust.artPx = cam.zoom / 4;
+      this.gust.scroll = [cam.worldView.x * cam.zoom, cam.worldView.y * cam.zoom];
+    }
     if (RICH.motion) {
       const wind = Math.sin(time / 1700) * 0.6 + Math.sin(time / 4700 + 1.3) * 0.4;
       for (const f of this.fires.values()) {
         if (!f.flame.visible) continue;
+        if (!f.lick && this.gust) this.lickFlame(f);
+        if (f.lick) {
+          f.lick.time = time / 1000;
+          f.lick.cell = this.cameras.main.zoom * f.flame.scaleY;
+        }
         f.flame.setScale(
           f.baseX * (1 + 0.07 * Math.sin(time / 130 + f.phase)),
           f.baseY * (1 + 0.05 * Math.sin(time / 170 + f.phase * 1.3)),

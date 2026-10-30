@@ -160,3 +160,44 @@ export function remapTone(data: Uint8ClampedArray, width: number, tone: Tone, fr
     data[i + 2] = out & 255;
   }
 }
+
+/**
+ * The pixels that may move (LIGHTING.md section 3 C, the owner's C of 30.10): the meadow's two lightest greens, which
+ * lean with the gust wherever they are drawn (a tile, a tall grass, a canopy's highlights), and the water's two light
+ * dashes, which drift along the stream. Every other colour holds still, so a trunk, a path or a body never moves.
+ */
+export const MOVES = { meadow: [0x84c450, 0xc8e88a], water: [0x7cc4ec, 0xc4ecf8] } as const;
+
+/**
+ * The gust the sway shader reads: how close a screen colour must be to a moving one (a share of a channel, so a
+ * colour the camera's grade nudged still counts), how fast the gust runs, and how wide its bands are a pixel.
+ */
+export const GUST = { tolerance: 0.035, speed: 1.3, scale: 0.035 } as const;
+
+/** 0 still, 1 a meadow green that leans, 2 a water dash that drifts: the mask the sway shader applies by colour. */
+export function movesAs(rgb: number): 0 | 1 | 2 {
+  if ((MOVES.meadow as readonly number[]).includes(rgb)) return 1;
+  if ((MOVES.water as readonly number[]).includes(rgb)) return 2;
+  return 0;
+}
+
+/** The mask of a picture's pixels that may move (RGBA bytes): one entry a pixel, as `movesAs`; clear pixels hold still. */
+export function groundMask(data: Uint8ClampedArray | Uint8Array, width: number, height: number): Uint8Array {
+  const out = new Uint8Array(width * height);
+  for (let p = 0; p < width * height; p++) {
+    if ((data[4 * p + 3] ?? 0) < 128) continue;
+    out[p] = movesAs(((data[4 * p] ?? 0) << 16) | ((data[4 * p + 1] ?? 0) << 8) | (data[4 * p + 2] ?? 0));
+  }
+  return out;
+}
+
+/**
+ * How far the gust leans a meadow pixel at art pixel (x, y) at `time` seconds, in whole art px: 2 at its heart, 1 at
+ * its edge, 0 between gusts, and a row band every 6 px a step less. The shader runs the same sum.
+ */
+export function leanAt(x: number, y: number, time: number): 0 | 1 | 2 {
+  const g = Math.sin(x * GUST.scale + y * GUST.scale * 0.6 - time * GUST.speed);
+  let lean = g > 0.85 ? 2 : g > 0.55 ? 1 : 0;
+  if (Math.floor(y / 6) % 2 === 1) lean = Math.max(0, lean - 1);
+  return lean as 0 | 1 | 2;
+}
