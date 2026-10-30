@@ -107,10 +107,11 @@ export const songs = {
   },
 } satisfies Record<'valley' | 'night' | 'chase', Song>;
 
+// 0.55 of their first level (docs/design/SOUND.md section 1.3): a jingle peaks near -10 dBFS, not -4
 const jingleVoices = {
-  lead: { kind: 'pulse', duty: 0.25, gain: 0.24 },
-  harmony: { kind: 'pulse', duty: 0.125, gain: 0.1 },
-  bass: { kind: 'wave', gain: 0.2 },
+  lead: { kind: 'pulse', duty: 0.25, gain: 0.13 },
+  harmony: { kind: 'pulse', duty: 0.125, gain: 0.055 },
+  bass: { kind: 'wave', gain: 0.11 },
 } as const;
 
 export const jingles = {
