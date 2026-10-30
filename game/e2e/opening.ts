@@ -253,6 +253,7 @@ window.__e2e = (() => {
       if (!d) return null;
       const o = d.querySelector('.dialog-options');
       return { text: d.querySelector('.dialog-text')?.textContent ?? '',
+        typed: !d.querySelector('.dialog-arrow')?.hidden || !!(o && !o.hidden),
         options: o && !o.hidden ? [...o.querySelectorAll('button')].map((b) => b.textContent) : [] };
     },
   };
@@ -552,11 +553,11 @@ class Player {
   async talkThrough(pick?: string): Promise<string[]> {
     const seen: string[] = [];
     for (let i = 0; i < 80; i++) {
-      let d = await this.page.eval<{ text: string; options: string[] } | null>('__e2e.dialog()');
+      let d = await this.page.eval<{ text: string; typed: boolean; options: string[] } | null>('__e2e.dialog()');
       if (!d) {
         for (let wait = 0; !d && wait < 20; wait++) {
           await sleep(150);
-          d = await this.page.eval<{ text: string; options: string[] } | null>('__e2e.dialog()');
+          d = await this.page.eval<{ text: string; typed: boolean; options: string[] } | null>('__e2e.dialog()');
         }
       }
       if (!d) {
@@ -565,14 +566,13 @@ class Player {
         if (!(await this.page.eval('__e2e.dialog()'))) return seen;
         continue;
       }
-      // the box types its line out; a slow runner reads it half typed ("Not tonigh"). Record it once two reads agree.
-      for (let k = 0; k < 40; k++) {
-        await sleep(60);
-        const again = await this.page.eval<{ text: string; options: string[] } | null>('__e2e.dialog()');
+      // the box types its line out; a slow runner reads it half typed ("Not tonigh", "gathered nothing out").
+      // The box shows its arrow (or its options) only when the line is whole: wait for that, no tap, then record.
+      for (let k = 0; k < 100 && !d.typed; k++) {
+        await sleep(80);
+        const again = await this.page.eval<{ text: string; typed: boolean; options: string[] } | null>('__e2e.dialog()');
         if (!again) break;
-        const same = again.text === d.text && again.options.length === d.options.length;
         d = again;
-        if (same) break;
       }
       if (d.text && seen[seen.length - 1] !== d.text) seen.push(d.text);
       if (d.options.length > 0) {
