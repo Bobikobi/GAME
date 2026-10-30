@@ -112,7 +112,7 @@
       "colours": { "head": "#e9903a", "neck": "#e9903a", "chest": "#e9903a", "shoulder": "#e9903a", "upper_arm": "#e9903a", "elbow": "#e9903a", "forearm": "#e9903a", "hand": "#e9903a", "thigh": "#e9903a", "knee": "#e9903a", "shin": "#e9903a", "foot": "#e9903a", "pelvis": "#6f7d8c" }
     },
     "elf-m": {
-      "about": "The elf, the man (round 4 E4-A, version 3): the Universal Base Characters body thinned at the bones and lengthened on the shared rig, in the ranger outfit under a pastel sky-blue open hooded cloak (tools/anim/races/elf.json).",
+      "about": "The elf, the man (round 4 E4-A, version 3): the Universal Base Characters body thinned at the bones and lengthened on the shared rig, in the ranger outfit under a pastel green open hooded cloak (green since 30.10; sky blue at the pick) (tools/anim/races/elf.json).",
       "map": "ual",
       "race": "elf",
       "body": "m",
@@ -120,7 +120,7 @@
       "pxm": 53,
       "ramps": ["wood", "moss", "skin"],
       "metal": "grey",
-      "leaf": "water",
+      "leaf": "green",
       "ships": { "sheet": "elf", "bob": false },
       "credit": "Elf, built from Quaternius Universal Base Characters and Modular Character Outfits - Fantasy (CC0 1.0); the cloak is own geometry; posed with Quaternius Universal Animation Library motion (CC0 1.0) and rendered to pixels by tools/anim"
     },
@@ -133,7 +133,7 @@
       "pxm": 53,
       "ramps": ["wood", "moss", "skin"],
       "metal": "grey",
-      "leaf": "water",
+      "leaf": "green",
       "ships": { "sheet": "elf_w", "bob": false },
       "credit": "Elf, built from Quaternius Universal Base Characters and Modular Character Outfits - Fantasy (CC0 1.0); the cloak is own geometry; posed with Quaternius Universal Animation Library motion (CC0 1.0) and rendered to pixels by tools/anim"
     },

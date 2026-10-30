@@ -25,6 +25,8 @@
     "art:wave": "tsx tools/src/art/wave-cli.ts",
     "art:measure": "tsx tools/src/art/measure-cli.ts",
     "art:run": "tsx tools/src/art/run-cli.ts",
+    "art:pick": "tsx tools/src/art/pick-cli.ts",
+    "art:gallery": "tsx tools/src/art/gallery-cli.ts",
     "kit:notes": "tsx tools/src/kit/notes.ts",
     "kit:import": "tsx tools/src/kit/import.ts",
     "kit:ink": "tsx tools/src/kit/ink.ts",
