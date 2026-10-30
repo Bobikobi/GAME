@@ -1261,8 +1261,17 @@ export const LightParams = Type.Object(
       minItems: 2,
       maxItems: 12,
       description:
-        'The hours the valley is washed in a colour (ART_SYSTEM section 2). Today\'s curve is the gold #eda83a at 40% around 05:30 and 20:00 and none at noon; the cool and dusk hour tints land with the L2 pick. The scene multiplies by the wash between keys, in whole percent.',
+        'The hours the valley is washed in a colour (ART_SYSTEM section 2, LIGHTING.md section 5): one shade that the scene multiplies in, the dusk and the night alike. Its strength steps evenly between keys, in whole percent; its colour is the next key\'s, so every minute is a palette colour. The owner\'s pick of 30.10: 16:30 #eda83a 12%, 17:30 28%, 19:00 #e2533f 40%, the night #172a52 at STYLE 5\'s 92%.',
     }),
+    read: Type.Optional(
+      Type.Object(
+        {
+          floor: Int(0, 100, 'The night kept readable (the owner, 30.10): inside a light\'s pool and in the ring of three tiles around the player, the meadow\'s middle green keeps at least this luma, in whole percent.'),
+          fog: Int(0, 100, 'The most a fog bank may cover at full night, in whole percent, so fog cannot stack on the night\'s shade past the floor.'),
+        },
+        { additionalProperties: false },
+      ),
+    ),
     sun: Type.Optional(
       Type.Object(
         {
