@@ -111,6 +111,8 @@
   right: var(--s-2);
   width: 44px;
   height: 44px;
+  /* the hidden label is nowrap and would widen the page on a narrow phone */
+  overflow: hidden;
   background: var(--ink);
   border: var(--px) solid var(--paper);
   cursor: pointer;

@@ -28,11 +28,16 @@
     --ka-night: color-mix(in srgb, var(--ink) 70%, black);
     --ka-line: color-mix(in srgb, var(--paper) 16%, transparent);
     --ka-sign: 'Cinzel', var(--font-display);
+    /* the art's height: 52% of the screen, at least the still's own shape across the width, never over 72% of the
+       screen, so a landscape phone keeps the characters inside the section */
+    --ka-h: min(max(52svh, 92vw), 72svh);
   }
   body[data-section='home'] {
     background: var(--ka-night);
   }
   .keyart {
+    /* the words start inside the art's lowest fifth, whatever the art's height */
+    padding-top: calc(var(--ka-h) * 0.78);
     position: relative;
     display: flex;
     flex-direction: column;
@@ -49,14 +54,14 @@
     top: 0;
     left: 0;
     right: 0;
-    height: max(52svh, 92vw);
+    height: var(--ka-h);
   }
   .ka-art img {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: 70% bottom;
+    object-position: 70% 15%;
   }
   .ka-video {
     display: none;

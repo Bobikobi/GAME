@@ -284,6 +284,8 @@ h1 {
   border-top: 1px solid var(--line);
 }
 .foot .build {
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-variant-numeric: tabular-nums;
 }
 
