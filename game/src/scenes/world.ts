@@ -48,9 +48,9 @@ import { Piles, pileAt } from './piles';
 import { sound, type SfxId, type SongId } from '../audio';
 import { DIG_SPOT_SPRITE, FOG_SPRITE, RICH, T } from '../config';
 import { FAR_BELL, SMOKE_PUFFS, farBellDue, nearestChimney, smokeAlpha, smokeAt } from '../hookbridge';
-import { sunTableOf } from '../cast';
+import { sunAt, sunTableOf } from '../cast';
 import { CastLayer } from '../cast-layer';
-import { HOLE, LIGHT_POOL, READ, bankAt, cloudAt, dappleAt, frameAt, nightAt, shadeAt, tableOf } from '../light';
+import { HOLE, LIGHT_POOL, READ, SHAFT, bankAt, cloudAt, dappleAt, frameAt, nightAt, shadeAt, shaftAt, tableOf } from '../light';
 import { LightLayer, litWindow, type Light } from '../light-layer';
 import { STONE_GLIDE_MS, STONE_STEPS, type StoneView, stoneView } from '../stone';
 import { type Clear, mistClears, mistDensity, mistPixels, mistRadius, mistStep, moteAt } from '../mist';
@@ -357,6 +357,10 @@ export class WorldScene extends Phaser.Scene {
   private fogs: Phaser.GameObjects.Image[] = [];
   /** the cloud shade over the ground by day, one patch repeated, and the fog banks that lie in the valley (sky.ts) */
   private clouds: Phaser.GameObjects.Image[] = [];
+  /** the sun's table, read once for the shaft */
+  private sunTable: ReturnType<typeof sunTableOf> | undefined;
+  /** the sun shaft of a cloudy late afternoon, its centre line, and the dust drifting in it (LIGHTING C) */
+  private shaft: { band: Phaser.GameObjects.Rectangle; line: Phaser.Geom.Line; dust?: Emitter } | undefined;
   /** the sky's weight today: an index into CLOUD_BUCKETS, and 0 is a clear day with the patches hidden */
   private cloudDay = -1;
   /** a sky picked by `?debug&cloud=0..3`, for a still or a test; unset in play */
@@ -1609,6 +1613,24 @@ export class WorldScene extends Phaser.Scene {
    */
   private buildAir(): void {
     if (!RICH.light) return;
+    // the sun shaft: one band along the sun's line, added light, laid across the view every frame (placeShaft)
+    const band = this.add.rectangle(0, 0, 10, SHAFT.width * T, SHAFT.tint, 1).setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.motes - 1).setAlpha(0).setVisible(false);
+    const line = new Phaser.Geom.Line(0, 0, 1, 1);
+    const dust = RICH.motion
+      ? this.add
+          .particles(0, 0, 'fx-mote', {
+            emitZone: { type: 'random', source: line as unknown as Phaser.Types.GameObjects.Particles.RandomZoneSource },
+            lifespan: { min: 2500, max: 4500 },
+            speedX: { min: 1, max: 4 },
+            speedY: { min: -3, max: 1 },
+            alpha: { values: [0, 0.45, 0.45, 0] },
+            frequency: 260,
+            maxAliveParticles: 14,
+            emitting: false,
+          })
+          .setDepth(DEPTH.motes)
+      : undefined;
+    this.shaft = { band, line, dust };
     // both textures are baked at the world's own density, so a texel lands on a screen pixel and no shape is
     // drawn twice its size; a tile is then a quarter of its own pixels, which tileScale says
     const side = CLOUD_TILE * AIR_DENSITY;
@@ -1694,6 +1716,32 @@ export class WorldScene extends Phaser.Scene {
       const drift = ((b.moved % BANK_PERIOD) + BANK_PERIOD) % BANK_PERIOD;
       b.img.setPosition(view.x - BANK_PERIOD + drift, view.y + view.height * b.at - b.tile / 2);
     }
+  }
+
+  /** The sun shaft across the view, along the sun's line, on a cloudy late afternoon; its dust drifts in it. */
+  private placeShaft(minute: number): void {
+    const sh = this.shaft;
+    if (!sh) return;
+    this.sunTable ??= sunTableOf(this.b.params.light?.sun);
+    const sun = sunAt(this.sunTable, minute);
+    const alpha = shaftAt(minute, sun.up, (this.cloudDay ?? 0) > 0);
+    const on = alpha > 0 && (sun.sx !== 0 || sun.sy !== 0);
+    sh.band.setVisible(on);
+    if (sh.dust && sh.dust.emitting !== on) {
+      if (on) sh.dust.start();
+      else sh.dust.stop();
+    }
+    if (!on) return;
+    const v = this.cameras.main.worldView;
+    const len = Math.hypot(v.width, v.height);
+    const angle = Math.atan2(sun.sy, sun.sx);
+    // the band crosses the view a third of the way up, where it reads over the ground in front of the player
+    const cx = Math.round(v.centerX);
+    const cy = Math.round(v.y + v.height * 0.62);
+    sh.band.setPosition(cx, cy).setSize(len, SHAFT.width * T).setOrigin(0.5).setRotation(angle).setAlpha(alpha);
+    const dx = (Math.cos(angle) * len) / 2;
+    const dy = (Math.sin(angle) * len) / 2;
+    sh.line.setTo(cx - dx, cy - dy, cx + dx, cy + dy);
   }
 
   /** Dappled light over the groves by day: one tiled layer of specks per rectangle of grove or forest tiles. */
@@ -2054,6 +2102,7 @@ export class WorldScene extends Phaser.Scene {
     this.walk(s, real);
     this.cast?.update(minuteOfDay(this.b, s.tick), this.cameras.main.worldView);
     this.light?.update(minuteOfDay(this.b, s.tick), this.cameras.main.worldView, this.player.visible ? { x: this.player.x, y: this.player.y - 8 } : undefined, time, RICH.motion);
+    this.placeShaft(minuteOfDay(this.b, s.tick));
     const playerCaster = this.cast?.of(this.player);
     if (playerCaster) playerCaster.enabled = !this.falling;
     this.dimInCover(s);

@@ -344,3 +344,16 @@ export function poolSun(dx: number, dy: number, radius: number, alpha: number, g
   const uy = d === 0 ? -1 : dy / d;
   return { up: true, sx: ux * length, sy: uy * length, length, alpha: alpha * gate };
 }
+
+/**
+ * The sun shaft (LIGHTING section 3 C): one band a tile wide along the sun's line, `#f8de62` added at 6%, in the low
+ * sun of the late afternoon and only on a day with cloud, where the light comes through between clouds. Dust motes
+ * drift in it (with motion on). Its strength rises from `from` to full by `full`.
+ */
+export const SHAFT = { tint: 0xf8de62, pct: 6, width: 1, from: 15 * 60 + 30, full: 16 * 60 + 30 } as const;
+
+/** The shaft's alpha at a minute: nothing with the sun down, on a clear day, or before the late afternoon. */
+export function shaftAt(minute: Minute, sunUp: boolean, cloudy: boolean): number {
+  if (!sunUp || !cloudy || minute < SHAFT.from) return 0;
+  return (SHAFT.pct / 100) * Math.min(1, (minute - SHAFT.from) / (SHAFT.full - SHAFT.from));
+}

@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import {
   DUSK, HEAD_GLOW, HOLE, LIGHT_POOL, NIGHT, POOL_DITHER, POOL_RADIUS, POOL_STEPS, READ, bankAt, bodyLight, bodyStep, cloudAt, cutAt, cutKeep, dappleAt, duskAt, frameAt, hourAt,
-  litSide, lumaOf, nightAt, poolAt, poolColour, poolDisc, poolStep, poolSun, readableAlpha, shadeAt, tableOf, washAt, warmth,
+  litSide, lumaOf, nightAt, poolAt, poolColour, poolDisc, poolStep, poolSun, readableAlpha, shadeAt, shaftAt, tableOf, washAt, warmth,
 } from '../src/light.js';
 
 /**
@@ -231,5 +231,15 @@ describe('the lighting ladder (LIGHTING.md, C)', () => {
     expect(s.alpha).toBe(0.3);
     expect(poolSun(0, 30, 24, 0.3, 1)).toBeUndefined();
     expect(poolSun(0, 5, 24, 0.3, 0)).toBeUndefined();
+  });
+});
+
+describe('the sun shaft', () => {
+  test('in the late afternoon of a cloudy day, at 6%, and never with the sun down or the sky clear', () => {
+    expect(shaftAt(17 * 60, true, true)).toBeCloseTo(0.06, 6);
+    expect(shaftAt(16 * 60, true, true)).toBeCloseTo(0.03, 6);
+    expect(shaftAt(12 * 60, true, true)).toBe(0);
+    expect(shaftAt(17 * 60, false, true)).toBe(0);
+    expect(shaftAt(17 * 60, true, false)).toBe(0);
   });
 });
