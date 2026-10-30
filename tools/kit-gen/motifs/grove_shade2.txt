@@ -1,0 +1,7 @@
+....ccc.c.c...
+...c.c.c.c.c..
+c.c.c.c.c.c.c.
+...c.c.c.c.c..
+c.c.c.c.c.c.c.
+.....c.c.c.c..
+....c.c.c.c...
