@@ -9,9 +9,10 @@ What it does, in the manner of game/tools/blender/quad_pass.py (the wolf):
 - turns the body to face -Y and scales it to --height metres standing,
 - the file has one standing pose and a 34-frame flight. From them it makes three clips:
     Idle  144 frames: breath, a head turn, a head bob and a tail flick (poses chosen so four even frames differ);
-    Hop   12 frames : six frames on the ground (both feet planted, swinging back under the body along a straight
-                      line, the body riding the arc of the legs) and six in the air (legs swing forward, a small
-                      wing flare), looping;
+    Hop   16 frames : three frames on the ground (both feet planted, swinging back under the body along a straight
+                      line, the body riding the arc of the legs) and thirteen in the air (legs swing forward, a
+                      wing flare), looping: a skimming hop of about 0.95 m, so a planted foot keeps its ground at
+                      the kernel's walk of 190 ms a tile in four poses (ANIMATION 5.4);
     Lift  36 frames : stand, crouch, spring with the wings opening, wings at the top of the stroke;
   and keeps the flight as Fly. The tail is held up a little in every clip so the bird stands on its feet, not on
   its tail tip (the sprite renderer grounds each pose on the body's lowest point).
@@ -19,6 +20,13 @@ What it does, in the manner of game/tools/blender/quad_pass.py (the wolf):
     Alert 48 frames : standing tall, the head up; then a tail flick with the head turned a little;
     Peck  24 frames : tipped forward, the beak solved onto the floor; then the head part way back up;
     Lie   24 frames : on its side, the legs tucked back, the wings closed: one pose, held.
+  Four fidgets for life between the states (HUNT_FAMILIES 7, game/src/fidget.ts), short and played over the base loop:
+    Tilt   24 frames : the body tipped up and the head turned far to one side, then cocked (one eye to the sky):
+                       two poses, mirrored by the client for the other side;
+    Caw    24 frames : a bow with the beak open, then back up with it shut: two poses;
+    Ruffle 24 frames : the wings loosened and the body rolled one way, then less and the other: two poses;
+    Preen  48 frames : the left wing lifted a little and the head turned back and down to it, then further: two
+                       poses.
 - caps every map at --tex pixels and exports one GLB with the clips on NLA tracks.
 Prints one DIAG line per fact.
 """
@@ -367,9 +375,16 @@ for f in range(0, 145, 3):
         diag("Idle frame", f, "lowest", lowest(), "toes", round(toe_z(), 4))
 diag("Idle 144 frames: breath 3 s (cosine, so the even poses sit on its extremes), head turn 6 s, head bob with the breath, tail 2 s")
 
-# ------------------------------------------------------------------ Hop: 12 frames, loops
+# ------------------------------------------------------------------ Hop: 16 frames, loops
+# Judged at the kernel's walk (HUNTING 2: 190 ms a tile, 337 px/s): four poses keep a planted foot only when a cycle
+# carries at least 45 px of ground in every view (ANIMATION 5.4), about 0.89 m in the down view. The legs sweep
+# 0.12 m on the ground, so the plant is short (three frames, two steps) and the rest of the cycle is a low skim with
+# the wings flared: about 0.95 m a hop. The clip is rendered airborne (one floor a cycle), so the skim leaves the
+# ground.
 hop = new_action("Hop")
-N_HOP, N_STANCE = 12, 6
+N_HOP, N_STANCE = 16, 3
+HOP_REACH = 1.6    # the legs finish their forward swing at 1 / this of the time in the air
+HOP_FLARE = 0.14   # the wings' share of the way to the flight's lowered stroke, at the top of the skim
 # straight legs swing from 35 degrees forward to 35 degrees back about the hip (the ankle's angle), the sole level:
 # the body rides the arc (lowest at the landing and the push, highest mid-stance) and the heel stays its lowest point
 PSI_LAND, PSI_OFF = math.radians(35), math.radians(-35)
@@ -385,11 +400,11 @@ def hop_frame(i):
         pitch, knee, wing, lift = 0.0, 0.0, 0.0, 0.0
     else:              # in the air: legs swing forward for the next landing, a small wing flare, nose up, the body on an arc
         u = (i - N_STANCE + 1) / (N_HOP - N_STANCE + 1)
-        psi = PSI_OFF + (PSI_LAND - PSI_OFF) * ease(u)
+        psi = PSI_OFF + (PSI_LAND - PSI_OFF) * ease(u * HOP_REACH)   # the feet come forward early and wait for the floor
         pitch = -6 * math.sin(math.pi * u)
         knee = math.radians(6) * math.sin(math.pi * u)
-        wing = 0.18 * math.sin(math.pi * min(1.0, u * 1.4))
-        lift = 0.18 * HEIGHT * math.sin(math.pi * u)
+        wing = HOP_FLARE * math.sin(math.pi * min(1.0, u * 1.4))
+        lift = 0.18 * HEIGHT * math.sin(math.pi * u) ** 0.5   # off the floor at once: no frame in the air reads as planted
     if wing > 0:
         put(blend(STAND, FLY[8], wing) | {n: STAND[n] for n in bones if n in LEG_CHAIN or n in (ROOTB, HEAD, BODY)})
     if pitch:
@@ -429,9 +444,9 @@ for f in range(0, N_HOP + 1):
     key_all(f)
     t = arm.matrix_world @ arm.pose.bones["toe.L"].tail
     toe_track.append((f, round(t.y, 4), round(t.z, 4)))
-    if f in (0, 3, 6, 9):
+    if f in (0, 4, 8, 12):
         diag("Hop frame", f, "lowest", lowest(), "toes", round(toe_z(), 4), "parts z", parts())
-diag("Hop 12 frames, stance 0-5: toe.L tail (f, y, z)", toe_track)
+diag("Hop", N_HOP, "frames, stance 0 -", N_STANCE - 1, ": toe.L tail (f, y, z)", toe_track)
 stance_y = [y for f, y, z in toe_track[:N_STANCE]]
 steps = [round(stance_y[i + 1] - stance_y[i], 4) for i in range(N_STANCE - 1)]
 stride = stance_y[-1] - stance_y[0]
@@ -575,6 +590,94 @@ lie = held("Lie", 24, [lie_pose])
 lie_pose()
 diag("Lie 24 frames, one pose: rolled", LIE_ROLL, "deg onto its side, turned", LIE_YAW, "deg, legs forward", LIE_LEGS, "deg with the knee", LIE_KNEE, "deg; lowest", lowest(), "parts z", parts())
 
+
+# ------------------------------------------------------------------ fidgets: short one-shots between the states
+# Life between IDLE and the peck (HUNT_FAMILIES 7): after a random delay the idle plays one of these and returns to
+# it. Each starts from the stand (the idle's pose), two poses each, and changes what reads at the tile: the head's
+# direction and tilt, the bow of a call, the wings' outline, the head turned back into a wing.
+WINGS = {n for n in bones if n.startswith("Bone.001_")}
+WING_L = {n for n in WINGS if n.startswith("Bone.001_L")}
+TILT_TURN = 80.0                      # degrees, Tilt: the head turned toward the bird's left, the beak out past the head's
+                                      # outline in the down view (the down and up views mirror it)
+TILT_RISE = -14.0                     # degrees, Tilt: the body tipped up toward upright and the head lifted with it, so the head
+                                      # rises above the shoulders' outline (a black bird shows no head turn inside its outline)
+TILT_COCK = 45.0                      # degrees, Tilt's second pose: the turned head tipped over sideways, an eye to the ground
+CAW_BOW = (20.0, -30.0, 0.0, 0.12)    # Caw's first pose: body pitch (nose down), head (nose up against it), tail up, wings
+                                      # loosened (a share of the flight's opened pose)
+CAW_UP = (-8.0, -14.0, 6.0, 0.0)      # Caw's second pose: the body back up past the stand, the head raised, the tail lifted a
+                                      # little less than the bow's (lower, its tip would sink under the feet as the body tips back)
+CAW_BEAK = 30.0                       # degrees, the beak bone opened up in the bow
+RUFFLE = ((0.4, 3.0), (0.25, -3.0))   # Ruffle's poses: the wings opened this share of the flight's raised pose, the body
+                                      # rolled (more roll sinks the low wing tip under the feet)
+PREEN = ((115.0, 30.0, 0.3), (135.0, 42.0, 0.5))    # Preen's poses: the head turned back (deg) toward the left wing, bowed
+                                                    # into it (deg), the left wing lifted (a share of the flight's pose)
+
+
+def wings_open(share, only=None):
+    """the stand with the wings (or only those named) part way to the flight's raised pose (frame 0, the top of the
+    stroke: a lowered wing tip would sink under the feet, and the renderer grounds the lowest point)"""
+    names = WINGS if only is None else only
+    put(STAND | {n: blend(STAND, FLY[0], share)[n] for n in names})
+
+
+def tilt_pose(cock):
+    def f():
+        pitched(TILT_RISE, TILT_RISE, 4.0 - TILT_RISE)   # the tail lifted back against the tip, or its tip sinks under the feet
+        rot_world(HEAD, rot_z(TILT_TURN if not cock else TILT_TURN * 0.75))
+        if cock:
+            rot_world(HEAD, rot_y(TILT_COCK))
+        ground()
+    return f
+
+
+def caw_pose(spec, beak):
+    def f():
+        pitch, head, tail, wing = spec
+        if wing:
+            wings_open(wing)
+            cur = grab()
+            pitched(pitch, head, tail)
+            put(grab() | {n: cur[n] for n in WINGS})
+        else:
+            pitched(pitch, head, tail)
+        if beak and "beak" in arm.pose.bones:
+            rot_world("beak", rot_x(-beak))
+        ground()
+    return f
+
+
+def ruffle_pose(i):
+    def f():
+        share, roll = RUFFLE[i]
+        wings_open(share)
+        rot_world(BODY, rot_y(roll))
+        ground()
+    return f
+
+
+def preen_pose(i):
+    def f():
+        turn, bow, wing = PREEN[i]
+        wings_open(wing, WING_L)
+        rot_world(HEAD, rot_z(turn))
+        rot_world(HEAD, rot_x(bow))
+        ground()
+    return f
+
+
+FIDGET_POSES = {"Tilt": (24, [tilt_pose(False), tilt_pose(True)]), "Caw": (24, [caw_pose(CAW_BOW, CAW_BEAK), caw_pose(CAW_UP, 0.0)]),
+                "Ruffle": (24, [ruffle_pose(0), ruffle_pose(1)]), "Preen": (48, [preen_pose(0), preen_pose(1)])}
+put(STAND)
+STAND_LOW = lowest()[2]   # the stand's lowest point: the soles' mesh, a little under the toe bones
+for name, (_, poses) in FIDGET_POSES.items():
+    for i, pose in enumerate(poses):
+        pose()
+        low = lowest()
+        diag("fidget", name, "pose", i + 1, "lowest point", low, "toes", round(toe_z(), 4), "stand's lowest", round(STAND_LOW, 4), "WARNING: a part under the soles lifts the feet" if low[2] < STAND_LOW - 0.002 else "")
+tilt, caw, ruffle, preen = (held(n, *FIDGET_POSES[n]) for n in ("Tilt", "Caw", "Ruffle", "Preen"))
+diag("fidgets: Tilt 24 frames (turned", TILT_TURN, "then cocked", TILT_COCK, "); Caw 24 frames (bow", CAW_BOW, "beak", CAW_BEAK, "then up", CAW_UP,
+     "); Ruffle 24 frames", RUFFLE, "; Preen 48 frames", PREEN, "; lowest", lowest())
+
 # ------------------------------------------------------------------ keep the flight, drop the rest
 fly.name = "Fly"
 fly.use_fake_user = True
@@ -659,7 +762,7 @@ bake_object_transforms(arm, mesh)
 ad = arm.animation_data
 for tr in list(ad.nla_tracks):
     ad.nla_tracks.remove(tr)
-for act in (idle, hop, lift_a, fly, alert, peck, lie):
+for act in (idle, hop, lift_a, fly, alert, peck, lie, tilt, caw, ruffle, preen):
     tr = ad.nla_tracks.new()
     tr.name = act.name
     st = tr.strips.new(act.name, int(act.frame_range[0]), act)

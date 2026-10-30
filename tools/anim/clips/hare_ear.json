@@ -1,0 +1,30 @@
+{
+  "about": "The hare's ear twitch, a fidget between the states (HUNT_FAMILIES 7): from the idle's crouch the left ear swings out and down, then both ears swing out into a wide V. Two poses of the body's own Ear, played once or twice by time, then back to the idle; a fidget scheduler (game/src/fidget.ts) picks it. The down and up views may be mirrored by the client for the other ear.",
+  "target": "hare",
+  "base": {
+    "library": "self:hare",
+    "action": "Ear"
+  },
+  "frames": {
+    "even": 2
+  },
+  "ms": [
+    90,
+    90
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

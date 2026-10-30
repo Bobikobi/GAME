@@ -1,5 +1,5 @@
 {
-  "about": "The hare's run: four poses of the body's own Run (its bound, damped to 0.5 of the file's stretch and tuck so four poses keep a steadier silhouette), judged at 520 ms a tile (a placeholder inside the pose-rate cap: a stride of 17 to 22 px across the views, drawn in four poses, holds its feet only up to about 125 px/s; the hunting rules set the real pace). The foot-slide limit is the wolf's 2 px for a quadruped's four-pose loop.",
+  "about": "The hare's run: four poses of the body's own Run, a bound keyed on the paw targets (each paw planted for 0.1 of the cycle and carried back 0.22 m: about 2.2 m of ground a cycle, the body's stretch and tuck at 0.3 of the file's), side-on, down and up, at the kernel's run of 95 ms a tile (HUNTING 2: small prey flee at the run). Rendered airborne (one floor a cycle). The foot-slide limit is the wolf's 2 px for a quadruped's four-pose loop.",
   "target": "hare",
   "base": {
     "library": "self:hare",
@@ -20,7 +20,8 @@
   },
   "locomotion": {
     "playback": "distance",
-    "pace_ms": 520
+    "pace_ms": 95,
+    "airborne": true
   },
   "views": [
     "down",

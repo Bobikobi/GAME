@@ -1,5 +1,5 @@
 {
-  "about": "The hare's walk: four poses of the body's own Walk (a slow lope made from its bound), side-on, down and up, at a browsing pace of 1000 ms a tile (a placeholder inside the pose-rate cap: a stride of 9 to 12 px across the views, drawn in four poses, holds its feet only up to about 65 px/s). The foot-slide limit is the wolf's 2 px for a quadruped's four-pose loop. Four poses a loop, as the owner picked for the wolf (DECISIONS 2026-10-29).",
+  "about": "The hare's walk: four poses of the body's own Walk, a lope keyed on the paw targets (each paw planted for 0.15 of the cycle and carried back 0.17 m: about 1.1 m of ground a cycle, the body's bob at 0.2 of the file's bound), side-on, down and up, at the kernel's walk of 190 ms a tile (HUNTING 2: a hare wanders at the walk). The cycle has time in the air, so it is rendered airborne (one floor a cycle). The foot-slide limit is the wolf's 2 px for a quadruped's four-pose loop. Four poses a loop, as the owner picked for the wolf (DECISIONS 2026-10-29).",
   "target": "hare",
   "base": {
     "library": "self:hare",
@@ -20,7 +20,8 @@
   },
   "locomotion": {
     "playback": "distance",
-    "pace_ms": 1000
+    "pace_ms": 190,
+    "airborne": true
   },
   "views": [
     "down",

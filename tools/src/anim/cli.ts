@@ -20,7 +20,7 @@ import { pathToFileURL } from 'node:url';
 import { PNG } from 'pngjs';
 import { INK_HEX } from '../kit/ink.js';
 import { CONTENT_DIR } from '../load.js';
-import { ANIM_DIR, CACHE_DIR, type Clip, clipNames, clipPaces, clipProblems, frameOf, job, type Library, type ModelPack, missingModels, modelPath, paces, raceSpec, poseMs, readClip, readLibraries, readModels, readSettings, selfLibrary, type Settings, stepFrames, type View, withNative } from './clip.js';
+import { ANIM_DIR, CACHE_DIR, type Clip, clipNames, clipPaces, clipProblems, fidgetProblems, frameOf, job, type Library, type ModelPack, missingModels, modelPath, paces, raceSpec, poseMs, readClip, readClips, readLibraries, readModels, readSettings, selfLibrary, type Settings, stepFrames, type View, withNative } from './clip.js';
 import { archiveProblems, itchDownload, libraryGlb, MODEL_DIR, modelDir, packProblems, unpack, unpackModel, urlDownload } from './fetch.js';
 import { type ClipMeasures, measureClip, type RenderMeta, type ViewMeasures } from './measure.js';
 import { buildSheets } from './sheets.js';
@@ -262,7 +262,10 @@ export async function main(argv: readonly string[]): Promise<number> {
   }
   const rendered = clipNames().filter((n) => existsSync(join(outDir(n, cast), `${n}.json`)));
   const names = rest.includes('--all') ? clipNames() : cmd === 'check' && named.length === 0 ? rendered : named;
+  const allClips = readClips();
+  const fidgetBad = Object.keys(ctx.settings.targets).flatMap((id) => fidgetProblems(id, ctx.settings, allClips));
   if (cmd === 'list') {
+    for (const p of fidgetBad) say(`INVALID ${p}`);
     for (const [id, lib] of Object.entries(ctx.libs)) if (!id.startsWith('self:')) say(`library ${id}: ${lib.title}, ${lib.licence}; ${libraryGlb(id, lib).ready ? 'fetched' : 'not fetched (pnpm anim fetch)'}`);
     for (const name of clipNames()) {
       const c = readClip(name);
@@ -302,7 +305,8 @@ export async function main(argv: readonly string[]): Promise<number> {
       }
     }
     say(`${names.length - failed} of ${names.length} clips pass`);
-    return failed > 0 ? 1 : 0;
+    if (cmd === 'check') for (const p of fidgetBad) say(`FAIL ${p}`);
+    return failed > 0 || (cmd === 'check' && fidgetBad.length > 0) ? 1 : 0;
   }
   say('usage: pnpm anim list | fetch [--lib <id>] [--from <zip>] | render <clip ...>|--all [--target <id>] | check [<clip ...>] [--target <id>] | sheets');
   return 2;

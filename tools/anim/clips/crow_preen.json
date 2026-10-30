@@ -1,0 +1,30 @@
+{
+  "about": "The crow preens, a grooming fidget (HUNT_FAMILIES 7): the head turned back with the beak in the shoulder of a lifted wing, then deeper under it. Two poses of the body's own Preen, played twice by time; never while the crow is suspicious.",
+  "target": "crow",
+  "base": {
+    "library": "self:crow",
+    "action": "Preen"
+  },
+  "frames": {
+    "even": 2
+  },
+  "ms": [
+    200,
+    200
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

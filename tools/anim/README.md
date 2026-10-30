@@ -140,6 +140,20 @@ pick in the kernel's whole-number steps (`mulDiv`), so the pull request that ste
 it stands, since the server does not import `game/`. A coat changes no value, weight or count, and the hide carries
 it. DECISIONS 2026-10-30 holds the coats and their weights.
 
+## Fidgets
+
+A target may list `fidgets`: the short clips one of its kind plays while it stands in IDLE or GRAZE, between two runs
+of the base loop. The table is `{ "class": "prey" | "hunter" | "bird", "alarm": "<clip>", "entries": [ { "clip",
+"kind", "weight", "cooldown_ms", "repeats": [least, most], "mirror" } ] }`; the class's delay between two fidgets is
+`fidget_delay_ms` at the top of `anim.json` ([least, most] ms). A kind is one of look, ear, call, sit, shake, groom
+and feed: suspicion turns groom and feed off and makes look, ear and the alarm clip three times as likely, and the
+first fidget after a flight is a look. `fidgetProblems` (run by `pnpm anim list` and `pnpm anim check`) refuses a
+class with no delay range, fewer than two entries, a clip that is not this target's or is locomotion or has no whole
+`ms`, an unknown kind, a weight that is not a positive integer, a negative or fractional cooldown, bad repeats, a
+clip listed twice, a table with no look, and an alarm that is not an entry or is a groom or a feed. The client picks
+them with `game/src/fidget.ts` (the coat hash of the creature's id and the episode's start: integer milliseconds,
+never a roll). The hare's and the crow's tables are DECISIONS 2026-10-30.
+
 ## The four measures, and what fails
 
 1. **Palette**: every opaque pixel is in the clip's ramps (`tools/src/kit/palette.ts`), the fire ramp, the

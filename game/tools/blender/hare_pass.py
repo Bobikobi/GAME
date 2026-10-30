@@ -10,15 +10,22 @@ What it does, in the manner of game/tools/blender/quad_pass.py (the wolf):
 - rebuilds the material as a Principled BSDF with the packed colour map (the Blender Internal material of 2.76 does
   not survive), and warms it a little toward a sandy hare,
 - scales the body to --height metres at the ears (bind pose); it already faces -Y,
-- renames Guarding -> Idle; makes Walk from Running (one cycle played 1.6 times slower, the paw swings and the body
-  bob at 0.3 of the bound's around their means, the paws' lift at 0.55 of it; the planted paws keep the ground) and
-  Run from Running at its own tempo (swings and bob at 0.5, lift at 0.7); drops the rest,
+- renames Guarding -> Idle; makes Walk (a lope, 16 frames) and Run (a bound, 20 frames) from Running: the body's
+  swings and bob at 0.2 and 0.3 of the file's around their means, and each paw target keyed on its own track at its
+  phase in the file's bound (planted for 0.15 and 0.1 of the cycle, carried back 0.17 and 0.22 m, then swung forward
+  and lifted), so a planted paw covers about 1.1 and 2.2 m of ground a cycle: enough for four poses to keep it
+  planted at the kernel's walk of 190 ms a tile and run of 95 ms (ANIMATION 5.4); drops the rest,
 - keys three held poses for the hunt's states on the rig's own controls: Alert (Guarding's sit-up, the ears pricked,
   the head turning: four poses), Graze (Guarding's crouch with the forequarters lowered, the head reaching forward
   and down and turned a little to the hare's left, one ear laid flat out sideways and the other upright, the nose
   solved onto the floor, nibbling: four poses) and
   Lie (Dying's last frame only, rolled onto its side with the legs drawn in: one pose, held),
-- caps every map at --tex pixels and exports one GLB with the six clips on NLA tracks,
+- keys four fidgets for life between the states (HUNT_FAMILIES 7, game/src/fidget.ts), short and played over the
+  base loop: Ear (one ear flicked out while the other pricks, then both out: two poses), Look (the head turned to the
+  hare's right and up a little: one pose, mirrored by the client for the other side), SitUp (halfway, then Alert's
+  top: two poses) and Wash (sitting up with both fore paws at the face, the head bowing and turning: three poses);
+  the graze serves as the drink,
+- caps every map at --tex pixels and exports one GLB with the ten clips on NLA tracks,
 - with --pied, exports a second GLB of the same body and clips whose colour map carries white patches (a pied coat:
   patches on the back, the flanks and the face from seeded 3D noise over the body, the belly white), painted in
   texture space so the pattern is fixed to the body and cannot swim between frames.
@@ -36,12 +43,21 @@ HEIGHT = float(argv[argv.index("--height") + 1]) if "--height" in argv else 0.35
 TEX = int(argv[argv.index("--tex") + 1]) if "--tex" in argv else 1024
 PIED = argv[argv.index("--pied") + 1] if "--pied" in argv else None
 FPS = 24
-WALK_SLOWDOWN = 1.6
-WALK_SWING = 0.3    # the walk's swings and bob, as a share of the bound's
-WALK_LIFT = 0.55    # the walk's paw lift off the floor, as a share of the bound's (a clear lift keeps a plant a plant;
-                    # too much of it swings the silhouette seen from the front)
-RUN_DAMP = 0.5      # the run's swings and bob
-RUN_LIFT = 0.7      # the run's paw lift
+WALK_FRAMES = 16    # one cycle of the walk (a lope); its four poses sit at frames 0, 4, 8 and 12
+WALK_SWING = 0.2    # the walk's body swings and bob, as a share of the file's bound
+WALK_STRIDE = 0.17  # metres a planted paw is carried back under the body
+WALK_DUTY = 0.15    # the share of the cycle a paw is on the floor: 1.13 m of ground a cycle
+WALK_PAW_LIFT = 0.05  # metres a swinging paw rises (clear of the clip tool's 15 mm plant band in its first frame)
+RUN_FRAMES = 20     # one cycle of the run (a bound)
+RUN_DAMP = 0.3      # the run's body swings and bob
+RUN_STRIDE = 0.22   # metres a planted paw is carried back
+RUN_DUTY = 0.1      # the share of the cycle a paw is on the floor: 2.2 m of ground a cycle
+RUN_PAW_LIFT = 0.08   # metres a swinging paw rises
+TRACK_SHIFT = 0.25  # share of the stride a paw's track sits under the body: the fore paws' back, the hind paws'
+                    # forward, so a paw reaching out ahead of the head (seen from above) or behind the rump (from
+                    # below) changes the outline less from pose to pose
+PAW_LIFT_SHAPE = 0.6  # a swing's height as sin ** this: under 1 the paw clears the floor at once, so a lifted frame
+                      # is never read as planted
 ALERT_FRAME = 220   # Guarding's sit-up: the hare upright on its haunches, the base of Alert
 ALERT_TURN = 28.0   # degrees, Alert's head turn to each side
 GRAZE_CLEAR = 0.002  # metres between the nose and the floor in Graze (the renderer grounds the lowest point)
@@ -313,12 +329,82 @@ def shrunk_copy(name, R, swing, lift=None):
     return act
 
 
-walk = shrunk_copy("Walk", max(2, round(cycle * WALK_SLOWDOWN)), WALK_SWING, WALK_LIFT)
-# Run: the file's bound at its own tempo, its stretch and tuck damped so four poses of it keep a steady silhouette
-# (the loop rule: the area of a pose within 10 % of the loop's mean)
+# Where in the file's bound each paw lands: the start of its longest run of frames on its floor, as a share of the
+# cycle. The paw tracks below keep these phases, so the body's own bob and flex stay in step with the paws.
+def paw_phase(b):
+    u = up_axis[b]
+    h = [float((Vector(l) - mean_loc[b]).dot(u)) - floor_up[b] for _, l, _ in samples[b][:N]]
+    tol = 0.15 * (max(h) - min(h))
+    best, cur, start, best_start = 0, 0, 0, 0
+    for i in range(2 * N):
+        if h[i % N] <= tol:
+            if cur == 0:
+                start = i
+            cur += 1
+            if cur > best and cur <= N:
+                best, best_start = cur, start
+        else:
+            cur = 0
+    return (best_start % N) / N
+
+
+PAW_PHASE = {b: paw_phase(b) for b in paws}
+
+
+def paw_offset(b, phase, stride, duty, lift):
+    """a paw target's offset (world metres: back, up) at a phase of the cycle: on the floor for `duty` of it, carried
+    back under the body by `stride` at a steady speed, then swung forward over the ground and set down ahead"""
+    x = (phase - PAW_PHASE[b]) % 1.0
+    c = stride * TRACK_SHIFT * (1.0 if "Front" in b else -1.0)
+    if x < duty:
+        return c - stride / 2 + stride * x / duty, 0.0
+    w = (x - duty) / (1.0 - duty)
+    ease_ = 0.5 - 0.5 * np.cos(np.pi * w)
+    return c + stride / 2 - stride * ease_, lift * np.sin(np.pi * w) ** PAW_LIFT_SHAPE
+
+
+def gait_copy(name, R, swing, stride, duty, lift):
+    """the run's cycle resampled to R frames, the body's swings at `swing` of the file's around their means, and each
+    paw target on its own track instead: planted for `duty` of the cycle, carried back `stride` metres, swung forward
+    and lifted `lift` metres, at its phase in the file's bound. The planted paw's speed under the body is
+    stride / duty a cycle: what the clip tool measures as the cycle's length of ground."""
+    act = new_action(name)
+    # the cycle is turned so the fore paws' plant is centred on the fourth of four even poses (and, a quarter later,
+    # the hind paws' on the first): every paw is drawn planted once, wherever in the file's bound the plants fall
+    turn = (PAW_PHASE[next(b for b in paws if "Front" in b)] + duty / 2 - 0.75) % 1.0
+    for i in range(R + 1):
+        ph = (i / R + turn) % 1.0
+        t = f0 + cycle * ph
+        for b in keyed:
+            pb = arm.pose.bones[b]
+            q, loc, sc = sample(b, t)
+            m = mean_q[b]
+            d = m.inverted() @ q
+            if d.w < 0:
+                d.negate()
+            axis, ang = d.to_axis_angle()
+            q = m @ Quaternion(axis, ang * swing)
+            if b in paws:
+                back, up = paw_offset(b, ph, stride, duty, lift)
+                to_local = (A3 @ arm.data.bones[b].matrix_local.to_3x3()).inverted()
+                loc = mean_loc[b] + floor_up[b] * up_axis[b] + to_local @ Vector((0.0, back, up))
+            else:
+                loc = mean_loc[b] + (loc - mean_loc[b]) * swing
+            key(pb, i, q, loc, sc)
+    diag(name, R, "frames =", round(R / FPS, 3), "s; body x", swing, "; paws planted", duty, "of the cycle, carried back", stride, "m, lifted", lift,
+         "m; phases", {b: round(v, 3) for b, v in PAW_PHASE.items()}, "turned by", round(turn, 3), "; ground a cycle", round(stride / duty, 3), "m")
+    return act
+
+
+# Walk and Run are judged at the rules' paces (HUNTING 2: the kernel's walk of 190 ms a tile, the run of 95 ms): a
+# planted paw must cover at least 45 px (walk) and 90 px (run) of ground a cycle in every view, or four poses would
+# need more than 30 poses a second to keep it planted (ANIMATION 5.4). The down view sees the ground at sin 50, so a
+# cycle needs stride / duty of at least 0.89 m at the walk and 1.78 m at the run (66 px a metre): a hare's lope and
+# its bound, carried by the paws' tracks, with short plants and the rest of the cycle in the air.
+walk = gait_copy("Walk", WALK_FRAMES, WALK_SWING, WALK_STRIDE, WALK_DUTY, WALK_PAW_LIFT)
 bound = run
 bound.name = "Bound"
-run = shrunk_copy("Run", int(cycle), RUN_DAMP, RUN_LIFT)
+run = gait_copy("Run", RUN_FRAMES, RUN_DAMP, RUN_STRIDE, RUN_DUTY, RUN_PAW_LIFT)
 bpy.data.actions.remove(bound)
 
 # ------------------------------------------------------------------ how fast each gait carries the body (a planted paw's speed back under the body)
@@ -528,6 +614,114 @@ def lie_pose():
 lie = hunt_action("Lie", 24, [lie_pose])
 diag("Lie 24 frames, one pose: Dying's rest, held, the paws drawn", LIE_FOLD, "of the way in toward the hips and shoulders")
 
+
+# ------------------------------------------------------------------ fidgets: short one-shots between the states
+# Life between IDLE and GRAZE (HUNT_FAMILIES 7): after a random delay the idle plays one of these and returns to it.
+# Each starts from Guarding's crouch (the idle's first pose), so it leaves and rejoins the loop without a jump, and
+# changes what reads at the tile: the ears, the head's direction, the height of the head, the paws at the face.
+# Drinking is the graze at the water's edge (no poses of its own).
+def blend_pose(a, b, w):
+    """two read poses mixed: locations and scales lerped, rotations slerped (the shorter way)"""
+    out = {}
+    for bn in set(a) | set(b):
+        pa, pb_ = a.get(bn, {}), b.get(bn, {})
+        out[bn] = {}
+        qa = Quaternion([pa.get("rotation_quaternion", {}).get(i, (1.0, 0.0, 0.0, 0.0)[i]) for i in range(4)])
+        qb = Quaternion([pb_.get("rotation_quaternion", {}).get(i, (1.0, 0.0, 0.0, 0.0)[i]) for i in range(4)])
+        q = qa.slerp(qb, w)
+        out[bn]["rotation_quaternion"] = {i: q[i] for i in range(4)}
+        for prop, rest in (("location", 0.0), ("scale", 1.0)):
+            va, vb = pa.get(prop, {}), pb_.get(prop, {})
+            out[bn][prop] = {i: va.get(i, rest) + (vb.get(i, rest) - va.get(i, rest)) * w for i in range(3)}
+    return out
+
+
+def ear_to(side, out_deg, up_deg, yaw=0.0):
+    """one ear's IK target on a line from its root: `out_deg` round from straight back toward the hare's side, `up_deg`
+    above the horizontal, the whole turned `yaw` degrees with the head"""
+    sx = 1.0 if side == "L" else -1.0
+    root = wpos("Ear_" + side)
+    tgt = wpos("IK_Ear_" + side)
+    ln = (tgt - root).length
+    v, e = np.radians(out_deg), np.radians(up_deg)
+    d = Quaternion((0, 0, 1), np.radians(yaw)) @ Vector((sx * np.sin(v) * np.cos(e), np.cos(v) * np.cos(e), np.sin(e)))
+    move_world("IK_Ear_" + side, root + d.normalized() * ln - tgt)
+
+
+EAR_TWITCH = ((90.0, 10.0), (80.0, 25.0))   # degrees (out, up): pose 1 the left ear swung straight out sideways; pose 2 both
+                                           # ears out sideways, a spike on each side
+EAR_PRICKED = (15.0, 75.0)                  # degrees (out, up): pose 1's right ear, pricked nearly upright, so one ear is up
+                                           # and one out in every view
+LOOK_TURN = 45.0      # degrees: the head alone turned toward the hare's right (toward the side view's camera, so that
+                      # view shows the face and both ears instead of the profile); the down and up views mirror it
+LOOK_LIFT = -10.0     # degrees: the nose a little up as it looks
+SITUP_MID = 0.5       # the sit-up's first pose: halfway from the crouch to Alert's top
+WASH_UP = 0.8         # the wash: this share of the way from the crouch to the sit-up, so the front paws come free
+WASH_PAW = ((0.012, -0.020, -0.020), (0.014, -0.012, 0.020), (0.016, -0.018, -0.015))   # metres from the head control
+                      # (out, back, up) to each front paw, per pose: at the muzzle, up over the face, at the muzzle again
+WASH_PITCH = (25.0, 50.0, 25.0)   # degrees, the head bowed onto the paws
+WASH_TURN = (0.0, 0.0, 22.0)      # degrees, the third pose washes one cheek: the head turned toward the hare's left
+
+
+def fidget_base():
+    put_pose(SRC_LOW)
+
+
+# Lie rolls the Main control, which no read pose keys and put_pose does not reset; the export plays every action with
+# it at rest, so the fidgets are keyed with it at rest too
+arm.pose.bones["Main"].matrix_basis.identity()
+bpy.context.view_layer.update()
+
+
+def ear_twitch(i):
+    def f():
+        fidget_base()
+        if i == 0:
+            ear_to("L", *EAR_TWITCH[0])
+            ear_to("R", *EAR_PRICKED)
+        else:
+            ear_to("L", *EAR_TWITCH[1])
+            ear_to("R", *EAR_TWITCH[1])
+    return f
+
+
+def look_pose():
+    fidget_base()
+    turn_world("IK_Head", (1, 0, 0), LOOK_LIFT)
+    turn_about(["IK_Head"], (0, 0, 1), -LOOK_TURN, wpos("Neck"))
+
+
+def situp_pose(w):
+    def f():
+        if w >= 1.0:
+            alert_pose()()
+            return
+        put_pose(blend_pose(SRC_LOW, SRC_UP, w))
+        ears_up()
+    return f
+
+
+def wash_pose(i):
+    def f():
+        put_pose(blend_pose(SRC_LOW, SRC_UP, WASH_UP))
+        ears_up(lean_out=0.35, lean_fwd=-0.25)
+        turn_world("IK_Head", (1, 0, 0), WASH_PITCH[i])
+        if WASH_TURN[i]:
+            turn_about(["IK_Head"], (0, 0, 1), WASH_TURN[i], wpos("Neck"))
+        head = wpos("IK_Head")
+        ox, oy, oz = WASH_PAW[i]
+        for side, sx in (("L", 1.0), ("R", -1.0)):
+            move_world("IK_FrontPaw_" + side, head + Vector((sx * ox, oy - 0.01, oz)) - wpos("IK_FrontPaw_" + side))
+    return f
+
+
+ear = hunt_action("Ear", 24, [ear_twitch(0), ear_twitch(1)])
+look = hunt_action("Look", 24, [look_pose])
+situp = hunt_action("SitUp", 48, [situp_pose(SITUP_MID), situp_pose(1.0)])
+wash = hunt_action("Wash", 72, [wash_pose(0), wash_pose(1), wash_pose(2)])
+diag("fidgets: Ear 24 frames (left ear out and the right pricked, then both out)", EAR_TWITCH, EAR_PRICKED, "; Look 24 frames, one pose, the head", LOOK_TURN, "deg to the right, nose up",
+     -LOOK_LIFT, "; SitUp 48 frames (halfway, then Alert's top); Wash 72 frames, three poses, paws", WASH_PAW, "pitch", WASH_PITCH, "turn", WASH_TURN)
+
 # ------------------------------------------------------------------ bake the object transforms into the data
 # The clip renderer imports the glb with Blender's glTF importer, which guesses every bone's length from its child's
 # distance in the skeleton's own units and then places the tail in the scaled object's space: a scaled armature
@@ -604,7 +798,7 @@ ad = arm.animation_data
 ad.action = None
 for tr in list(ad.nla_tracks):
     ad.nla_tracks.remove(tr)
-for act in (idle, walk, run, alert, graze, lie):
+for act in (idle, walk, run, alert, graze, lie, ear, look, situp, wash):
     tr = ad.nla_tracks.new()
     tr.name = act.name
     st = tr.strips.new(act.name, int(act.frame_range[0]), act)

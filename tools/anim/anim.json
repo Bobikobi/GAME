@@ -7,6 +7,7 @@
   "paces": { "light": "load.light_step_ms", "steady": "walk_step_ms", "heavy": "load.heavy_step_ms" },
   "limits": { "palette_pct": 100, "foot_slide_px": 1, "silhouette_dev_pct": 10, "poses_per_s_max": 30 },
   "clothed_width": { "max_pct": 80, "pairs": [["elf", "human"], ["elf_w", "human"]] },
+  "fidget_delay_ms": { "about": "The delay between two fidgets of an animal standing in IDLE or GRAZE, [least, most] ms by class, drawn again after each one (HUNT_FAMILIES 7; halved under suspicion by game/src/fidget.ts).", "prey": [2500, 6000], "hunter": [4000, 8000], "bird": [1500, 4000] },
   "targets": {
     "forager": {
       "about": "The forager, the man (character-forager-m.glb), as the 3D game uses him (Mixamo bone names), lit and snapped to his ramps.",
@@ -196,7 +197,7 @@
       "model": "game/public3d/models/animal-hare.glb",
       "map": "native",
       "fps": 24,
-      "actions": { "Idle": 400, "Walk": 26, "Run": 16, "Alert": 96, "Graze": 96, "Lie": 24 },
+      "actions": { "Idle": 400, "Walk": 16, "Run": 20, "Alert": 96, "Graze": 96, "Lie": 24, "Ear": 24, "Look": 24, "SitUp": 48, "Wash": 72 },
       "contacts": { "LB": "BackPaw_L", "RB": "BackPaw_R", "LF": "FrontPaw_L", "RF": "FrontPaw_R" },
       "elev": 50,
       "pxm": 66,
@@ -213,6 +214,18 @@
         {"id": "brown-pied", "name": "brown pied", "weight": 9, "map": {}, "body": "hare-pied"},
         {"id": "black-pied", "name": "black pied", "weight": 5, "map": {"skin": {"steps": ["stone:0", "stone:1", "stone:1", "stone:2", "stone:2", "stone:3"]}, "wood": {"steps": ["stone:0", "stone:0", "stone:1", "stone:1", "stone:2", "stone:2"]}}, "body": "hare-pied"}
       ],
+      "fidgets": {
+        "about": "The hare's fidgets (HUNT_FAMILIES 7, game/src/fidget.ts): an entry is a clip of this body, its kind, a weight, a cooldown after it ends, how many times it runs through its poses, and whether the client may mirror the down and up views. Drinking is the graze at the water's edge, not a fidget.",
+        "class": "prey",
+        "alarm": "hare_situp",
+        "entries": [
+          {"clip": "hare_ear", "kind": "ear", "weight": 35, "cooldown_ms": 0, "repeats": [1, 2], "mirror": true},
+          {"clip": "hare_look", "kind": "look", "weight": 25, "cooldown_ms": 0, "mirror": true},
+          {"clip": "hare_situp", "kind": "sit", "weight": 15, "cooldown_ms": 8000},
+          {"clip": "hare_wash", "kind": "groom", "weight": 10, "cooldown_ms": 20000, "repeats": [2, 3]},
+          {"clip": "hare_graze", "kind": "feed", "weight": 15, "cooldown_ms": 0}
+        ]
+      },
       "credit": "Rabbit by CDmir (with TinyWorlds), OpenGameArt, CC0, https://opengameart.org/content/rabbit-0; modified: the fur-shell mesh, the lights, the camera and the ground plane removed; the Blender Internal material rebuilt as a Principled BSDF on the packed colour map, warmed and lightened toward a sandy hare; scaled to 0.35 m at the ears with the scale baked into the bones, and a tip bone under each paw (the renderer reads a foot from its bone's tail); Guarding renamed Idle; Walk and Run made from Running in Blender (game/tools/blender/hare_pass.py: Walk 1.6x slower with the swings and the bob at 0.3 of the bound's around their means and the paws' lift at 0.55 of it, Run at the bound's tempo with them at 0.5 and the lift at 0.7, the planted paws kept on the ground); Alert, Graze and Lie keyed in Blender on the rig's own controls (the same script: Guarding's sit-up with the ears pricked and the head turning, its crouch with the nose on the floor, and Dying's last frame only, rolled onto its side with the legs drawn in); the other actions dropped; posed with its own actions and rendered to pixels by tools/anim"
     },
     "hare-pied": {
@@ -220,7 +233,7 @@
       "model": "game/public3d/models/animal-hare-pied.glb",
       "map": "native",
       "fps": 24,
-      "actions": { "Idle": 400, "Walk": 26, "Run": 16, "Alert": 96, "Graze": 96, "Lie": 24 },
+      "actions": { "Idle": 400, "Walk": 16, "Run": 20, "Alert": 96, "Graze": 96, "Lie": 24, "Ear": 24, "Look": 24, "SitUp": 48, "Wash": 72 },
       "contacts": { "LB": "BackPaw_L", "RB": "BackPaw_R", "LF": "FrontPaw_L", "RF": "FrontPaw_R" },
       "elev": 50,
       "pxm": 66,
@@ -234,7 +247,7 @@
       "model": "game/public3d/models/animal-crow.glb",
       "map": "native",
       "fps": 24,
-      "actions": { "Idle": 144, "Hop": 12, "Lift": 36, "Fly": 34, "Alert": 48, "Peck": 24, "Lie": 24 },
+      "actions": { "Idle": 144, "Hop": 16, "Lift": 36, "Fly": 34, "Alert": 48, "Peck": 24, "Lie": 24, "Tilt": 24, "Caw": 24, "Ruffle": 24, "Preen": 48 },
       "contacts": { "LB": "toe.L", "RB": "toe.R", "LF": "toe.L", "RF": "toe.R" },
       "elev": 50,
       "pxm": 66,
@@ -247,6 +260,18 @@
         {"id": "grey-washed", "name": "grey-washed", "weight": 12, "map": {"stone": {"to": "stone", "shift": 2}}},
         {"id": "leucistic", "name": "pale leucistic", "weight": 3, "map": {"stone": {"steps": ["grey:4", "grey:5", "grey:5", "grey:3", "grey:3", "grey:3"]}}}
       ],
+      "fidgets": {
+        "about": "The crow's fidgets (HUNT_FAMILIES 7, game/src/fidget.ts), as the hare's; the peck is the Stardew bird's, one to four pecks.",
+        "class": "bird",
+        "alarm": "crow_caw",
+        "entries": [
+          {"clip": "crow_tilt", "kind": "look", "weight": 30, "cooldown_ms": 0, "mirror": true},
+          {"clip": "crow_caw", "kind": "call", "weight": 20, "cooldown_ms": 6000, "repeats": [2, 3]},
+          {"clip": "crow_ruffle", "kind": "shake", "weight": 15, "cooldown_ms": 0, "repeats": [2, 2]},
+          {"clip": "crow_preen", "kind": "groom", "weight": 10, "cooldown_ms": 20000, "repeats": [2, 2]},
+          {"clip": "crow_peck", "kind": "feed", "weight": 25, "cooldown_ms": 0, "repeats": [1, 4]}
+        ]
+      },
       "credit": "Raven by Teh_Bucket, OpenGameArt, CC0, https://opengameart.org/content/raven-0; modified: the mirror and edge-split modifiers applied (one whole mesh); the Blender Internal material rebuilt as a Principled BSDF on the packed colour map, lightened; turned to face -Y and scaled to 0.3 m standing, both baked into the bones, and a tip bone under each foot (the renderer reads a foot from its bone's tail); the tail held up so the bird stands on its feet; Idle, Hop, Lift, Alert, Peck and Lie made in Blender from the file's standing pose and its flight (game/tools/blender/crow_pass.py), the flight kept as Fly; posed with its own actions and rendered to pixels by tools/anim"
     },
     "deer": {

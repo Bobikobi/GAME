@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { crc32, deflateRawSync } from 'node:zlib';
 import { PNG } from 'pngjs';
 import { describe, expect, it } from 'vitest';
-import { type Clip, clipNames, clipPaces, clipProblems, coatProblems, job, type Library, paces, poseMs, readClip, readLibraries, readSettings, samples, type Settings, stepFrames, withNative } from '../src/anim/clip';
+import { type Clip, clipNames, clipPaces, clipProblems, coatProblems, fidgetProblems, job, type Library, paces, poseMs, readClip, readClips, readLibraries, readSettings, samples, type Settings, stepFrames, withNative } from '../src/anim/clip';
 import { onTarget, outDir } from '../src/anim/cli';
 import { archiveProblems, itchUploads, sha256, unpack } from '../src/anim/fetch';
 import { fourBeatProblems, footfalls, measureClip, outlineOf, paletteShare, plantedRuns, type RenderMeta, sharedSlope, silhouette, slideAtPace, stride } from '../src/anim/measure';
@@ -153,6 +153,55 @@ describe('clip configs', () => {
     expect(clipProblems('hare_idle', readClip('hare_idle'), libs, bad).join(' ')).toMatch(/hare coats/);
   });
 
+  it('every fidget table can be scheduled: clips of its own body played by time, known kinds, whole weights and cooldowns, a look, an alarm', () => {
+    const clips = readClips();
+    const withFidgets = Object.keys(settings.targets).filter((id) => settings.targets[id]?.fidgets !== undefined);
+    expect(withFidgets.sort()).toEqual(['crow', 'hare']);
+    for (const id of Object.keys(settings.targets)) expect(fidgetProblems(id, settings, clips), id).toEqual([]);
+    for (const id of withFidgets) for (const e of settings.targets[id]!.fidgets!.entries) expect(settings.targets[id]!.actions?.[clips[e.clip]!.base.action], e.clip).toBeDefined();
+  });
+
+  it('refuses a fidget table with an unknown clip, a clip of another body, a locomotion clip, a bad kind, weight, cooldown or repeats, no look, a repeated clip, a bad alarm and an unknown class', () => {
+    const clips = readClips();
+    const hare = settings.targets.hare!;
+    const bad: Settings = {
+      ...settings,
+      targets: {
+        ...settings.targets,
+        hare: {
+          ...hare,
+          fidgets: {
+            class: 'rock',
+            alarm: 'hare_wash',
+            entries: [
+              { clip: 'hare_nope', kind: 'ear', weight: 1, cooldown_ms: 0 },
+              { clip: 'crow_caw', kind: 'call', weight: 1, cooldown_ms: 0 },
+              { clip: 'hare_walk', kind: 'sit', weight: 1, cooldown_ms: 0 },
+              { clip: 'hare_wash', kind: 'groom', weight: 0, cooldown_ms: -1, repeats: [3, 2] },
+              { clip: 'hare_ear', kind: 'dance' as 'ear', weight: 1.5, cooldown_ms: 0 },
+              { clip: 'hare_ear', kind: 'ear', weight: 1, cooldown_ms: 0 },
+            ],
+          },
+        },
+      },
+    };
+    const problems = fidgetProblems('hare', bad, clips).join('\n');
+    expect(problems).toMatch(/class "rock" has no delay range/);
+    expect(problems).toMatch(/hare_nope: not a clip/);
+    expect(problems).toMatch(/crow_caw: a clip of crow, not of hare/);
+    expect(problems).toMatch(/hare_walk: a locomotion clip is not a fidget/);
+    expect(problems).toMatch(/hare_wash: weight is a positive whole number/);
+    expect(problems).toMatch(/hare_wash: cooldown_ms is a whole number of 0 or more/);
+    expect(problems).toMatch(/hare_wash: repeats is \[least, most\]/);
+    expect(problems).toMatch(/hare_ear: kind "dance"/);
+    expect(problems).toMatch(/hare_ear: weight is a positive whole number/);
+    expect(problems).toMatch(/hare_ear: each clip once/);
+    expect(problems).toMatch(/a look among the entries/);
+    expect(problems).toMatch(/alarm "hare_wash" is groom/);
+    const one: Settings = { ...settings, targets: { ...settings.targets, hare: { ...hare, fidgets: { class: 'prey', entries: [{ clip: 'hare_look', kind: 'look', weight: 1, cooldown_ms: 0 }] } } } };
+    expect(fidgetProblems('hare', one, clips).join(' ')).toMatch(/two fidgets or more/);
+  });
+
   it('refuses an action the library lacks, a frame past its end, a short IK curve and a locomotion clip with picked frames', () => {
     const bad: Clip = {
       about: 'made up',
@@ -206,6 +255,13 @@ describe('clip configs', () => {
     expect(clipProblems('j', { ...human, base: { library: 'self:wolf', action: 'Walk' } }, libs, settings).join(' ')).toMatch(/belongs to a native target/);
     expect(clipProblems('j', { ...human, locomotion: { playback: 'distance', gait: 'four-beat' } }, libs, settings).join(' ')).toMatch(/only a native/);
     expect(clipProblems('w', { ...walk, locomotion: { playback: 'distance', pace_ms: 0 } }, libs, settings).join(' ')).toMatch(/pace_ms/);
+    expect(clipProblems('w', { ...walk, locomotion: { playback: 'distance', airborne: 1 as unknown as boolean } }, libs, settings).join(' ')).toMatch(/airborne/);
+  });
+
+  it('an airborne gait asks the renderer for one floor a cycle; a grounded one does not', () => {
+    const paths = { out: '/o', libs: [], model: '/m.glb', threads: 1 };
+    expect(job('hare_run', readClip('hare_run'), libs, settings, paths).ground).toBe('cycle');
+    expect(job('wolf_walk', readClip('wolf_walk'), libs, settings, paths).ground).toBeUndefined();
   });
 
   it('a clip with its own pace is judged at that pace in place of the player\'s three', () => {

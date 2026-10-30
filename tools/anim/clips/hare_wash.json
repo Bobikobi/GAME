@@ -1,0 +1,31 @@
+{
+  "about": "The hare washes its face, a grooming fidget (HUNT_FAMILIES 7): half sat up, the front paws at the muzzle, drawn up over the face with the head bowed, then at the muzzle with the head turned to wash a cheek. Three poses of the body's own Wash, looped two or three times by time; never while the hare is suspicious.",
+  "target": "hare",
+  "base": {
+    "library": "self:hare",
+    "action": "Wash"
+  },
+  "frames": {
+    "even": 3
+  },
+  "ms": [
+    130,
+    130,
+    130
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

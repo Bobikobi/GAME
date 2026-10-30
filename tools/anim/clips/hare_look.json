@@ -1,0 +1,29 @@
+{
+  "about": "The hare looks to the side, a fidget (HUNT_FAMILIES 7): from the idle's crouch the head alone turns toward the hare's right with the nose a little up, so the side view shows the face and both ears instead of the profile. One pose (`even` needs two or more, so a one-frame list), held 600 to 1200 ms; the other side is the down or up frame mirrored by the client (a horizontal flip of the sprite, as the right view is the left view mirrored), never a second render. Also the first fidget after a flight.",
+  "target": "hare",
+  "base": {
+    "library": "self:hare",
+    "action": "Look"
+  },
+  "frames": [
+    0
+  ],
+  "ms": [
+    900
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

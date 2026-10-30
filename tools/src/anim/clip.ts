@@ -84,6 +84,29 @@ export interface Target {
   colours?: Record<string, string>;
   /** the coats one creature of this kind may wear, each by weight (game/src/coat.ts picks and draws them) */
   coats?: CoatSpec[];
+  /** the short clips it plays between the states, by weight (game/src/fidget.ts schedules them) */
+  fidgets?: FidgetsSpec;
+}
+
+/** What a fidget does (game/src/fidget.ts FidgetKind): it decides how the animal's awareness weighs it. */
+export const FIDGET_KINDS = ['look', 'ear', 'call', 'sit', 'shake', 'groom', 'feed'] as const;
+
+/** One fidget of a kind: a clip of its body and how often, how long apart and how many times through it plays. */
+export interface FidgetSpec {
+  clip: string;
+  kind: (typeof FIDGET_KINDS)[number];
+  weight: number;
+  cooldown_ms: number;
+  repeats?: [number, number];
+  mirror?: boolean;
+}
+
+/** A kind's fidget table: its delay class (anim.json "fidget_delay_ms"), its sign of suspicion and its entries. */
+export interface FidgetsSpec {
+  about?: string;
+  class: string;
+  alarm?: string;
+  entries: FidgetSpec[];
 }
 
 /**
@@ -118,6 +141,8 @@ export interface Settings {
   tile_px: number;
   /** the one frame of the clips that leave `frame` out, and of a character sheet in content/kit at density 4 (tools/src/check.ts `sizeRule`) */
   frame: Frame;
+  /** the delay between two fidgets, [least, most] ms, by class (prey, hunter, bird) */
+  fidget_delay_ms?: Record<string, unknown>;
   fps: number;
   supersample: number;
   paces: Record<Pace, string>;
@@ -261,6 +286,56 @@ export function coatProblems(id: string, settings: Settings): string[] {
         if (src !== undefined && hex !== undefined && src.steps[i] !== INK_HEX && hex.toLowerCase() === INK_HEX.toLowerCase()) say(`${name}: ${from} step ${i} lands on the ink`);
       });
     }
+  }
+  return out;
+}
+
+/**
+ * The problems of a target's fidget table, in plain words; empty when it can be scheduled: a class with a delay range
+ * in "fidget_delay_ms" (two whole numbers, the least above 0 and not over the most), at least two entries (a fidget
+ * never follows itself), each a clip of this target (or of the body it is drawn on) played by time with whole
+ * positive pose times, a known kind, a positive whole weight, a whole cooldown of 0 or more, repeats of whole numbers
+ * from 1 with the least not over the most, each clip once, a look among them (the first fidget after a flight), and
+ * an alarm that is one of the entries and not grooming or feeding (suspicion turns those off).
+ */
+export function fidgetProblems(id: string, settings: Settings, clips: Readonly<Record<string, Clip>>): string[] {
+  const out: string[] = [];
+  const spec = settings.targets[id]?.fidgets;
+  if (spec === undefined) return out;
+  const say = (text: string) => out.push(`${id} fidgets: ${text}`);
+  const range = settings.fidget_delay_ms?.[spec.class];
+  if (!Array.isArray(range) || range.length !== 2 || !range.every(isInt) || (range[0] as number) <= 0 || (range[0] as number) > (range[1] as number)) {
+    say(`class "${String(spec.class)}" has no delay range [least, most] of whole ms in "fidget_delay_ms"`);
+  }
+  if (!Array.isArray(spec.entries) || spec.entries.length < 2) {
+    say('"entries" lists two fidgets or more (one never follows itself)');
+    return out;
+  }
+  const seen = new Set<string>();
+  for (const e of spec.entries) {
+    const name = typeof e.clip === 'string' && e.clip.length > 0 ? e.clip : '?';
+    if (seen.has(name)) say(`${name}: each clip once`);
+    seen.add(name);
+    const clip = clips[name];
+    if (clip === undefined) say(`${name}: not a clip in tools/anim/clips`);
+    else {
+      if (clip.target !== id) say(`${name}: a clip of ${clip.target}, not of ${id}`);
+      if (clip.locomotion !== undefined) say(`${name}: a locomotion clip is not a fidget`);
+      if (!Array.isArray(clip.ms) || clip.ms.length === 0 || !clip.ms.every((m) => isInt(m) && m > 0)) say(`${name}: a fidget plays by time, so its clip gives "ms", whole and positive`);
+    }
+    if (!(FIDGET_KINDS as readonly string[]).includes(e.kind)) say(`${name}: kind "${String(e.kind)}" is not one of ${FIDGET_KINDS.join(', ')}`);
+    if (!isInt(e.weight) || e.weight <= 0) say(`${name}: weight is a positive whole number`);
+    if (!isInt(e.cooldown_ms) || e.cooldown_ms < 0) say(`${name}: cooldown_ms is a whole number of 0 or more`);
+    if (e.repeats !== undefined && (!Array.isArray(e.repeats) || e.repeats.length !== 2 || !e.repeats.every(isInt) || e.repeats[0] < 1 || e.repeats[0] > e.repeats[1])) {
+      say(`${name}: repeats is [least, most], whole numbers from 1`);
+    }
+    if (e.mirror !== undefined && typeof e.mirror !== 'boolean') say(`${name}: mirror is true or false`);
+  }
+  if (!spec.entries.some((e) => e.kind === 'look')) say('a look among the entries (the first fidget after a flight)');
+  if (spec.alarm !== undefined) {
+    const alarm = spec.entries.find((e) => e.clip === spec.alarm);
+    if (alarm === undefined) say(`alarm "${spec.alarm}" is not one of the entries`);
+    else if (alarm.kind === 'groom' || alarm.kind === 'feed') say(`alarm "${spec.alarm}" is ${alarm.kind}, which suspicion turns off`);
   }
   return out;
 }
@@ -512,6 +587,11 @@ export function clipNames(): string[] {
 
 export function readClip(name: string): Clip {
   return readJson<Clip>(join(CLIPS_DIR, `${name}.json`));
+}
+
+/** Every clip config by name. */
+export function readClips(): Record<string, Clip> {
+  return Object.fromEntries(clipNames().map((n) => [n, readClip(n)]));
 }
 
 /** The paces a clip is judged at: the player's three, or its own single pace (`locomotion.pace_ms`) for all three. */

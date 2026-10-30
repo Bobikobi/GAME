@@ -79,6 +79,8 @@ A distance-locked clip shows the pose that matches the distance walked, so the f
 
 Two consequences for the gaits. The walk-pace clip is `jog`, not `walk`: the library's walk is a stroll and the game's step is a jog. And a run at half the step needs a clip with at least 22.5 px a pose in the down view; the library sprint is 20, so a run needs either a longer-stride clip or a time-driven cycle at the cap with a measured foot slide. The run's step time is a parameter; the pace the owner prefers on a preview decides which.
 
+The hunted bodies are judged at the kernel's paces: an animal wanders at the walk and small prey flee at the run (HUNTING 2), so the hare's walk is judged at 190 ms a tile, its run at 95 and the crow's hop at 190. Four poses keep a planted foot only when a cycle carries at least 45 px of ground (90 at the run) in every view, about 0.89 m (1.78 m) in the down view at 66 px a metre. The hare's lope and bound and the crow's skimming hop reach it with short plants and the rest of the cycle in the air, so those clips are rendered `airborne`: one floor for the whole cycle instead of one a pose ([tools/anim/README.md](../../tools/anim/README.md)). Measured cycles, down / up / left: hare walk 57 / 57 / 75 px (23.5 poses a second at most), run 111 / 111 / 145 px (24.2), crow hop 48 / 48 / 63 px (28.1).
+
 ### 5.2 Frame budgets
 
 | Body | Poses per verb | Poses | Frames at 3 views |
@@ -87,8 +89,11 @@ Two consequences for the gaits. The walk-pace clip is `jog`, not `walk`: the lib
 | quadruped | idle 4, walk 4, run 4, hurt 2, death 4 (attack 4 when it bites) | 18 to 22 | 54 (66 with the bite), inside the cap of 69 |
 | bird | flap 4, idle 2, hurt 1, death 2 | 9 | 27 |
 | fish | swim 5, idle 2, flop 2 | 9 | 9 to 18 |
+| hunted animal, living (**proposed**, DECISIONS 2026-10-30) | its kind's sheet, plus fidgets for the time it stands in IDLE or GRAZE (an ear flick, a look, a call, grooming), up to 12 poses | the sheet's + up to 12 | the sheet's + up to 36 |
 
 Four facings, three of them drawn or rendered (down, up, left) and right mirrored. A hero or a body with asymmetric gear is checked before it is mirrored.
+
+**The proposed row, in memory.** A 128 px frame is 64 KiB as the GPU holds it (RGBA, uncompressed). Measured on the sheets of `tools/anim/clips`: the hare is 21 poses, 63 frames, 3.94 MiB before its fidgets and 29 poses, 87 frames, 5.44 MiB with its eight fidget poses (a pied hare on screen loads a second sheet of the same size); the crow is 17 poses, 51 frames, 3.19 MiB before and 25 poses, 75 frames, 4.69 MiB with eight. Each uses 8 of the 12 proposed fidget poses. The crow's sheet was already above the bird row's 27 frames before its fidgets: it walks (the hop) and has the hunt's states, which the bird row predates. Until the owner answers, the rows above stand and the fidgets are a proposal.
 
 ### 5.3 The checks
 

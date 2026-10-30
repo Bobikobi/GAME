@@ -1,0 +1,30 @@
+{
+  "about": "The crow caws, a fidget with its sound and the crow's sign of suspicion (HUNT_FAMILIES 7): bowed forward with the head stretched out, the beak open, the tail up and the wings loose, then back up with the head raised. Two poses of the body's own Caw, played two or three times by time.",
+  "target": "crow",
+  "base": {
+    "library": "self:crow",
+    "action": "Caw"
+  },
+  "frames": {
+    "even": 2
+  },
+  "ms": [
+    120,
+    120
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}
