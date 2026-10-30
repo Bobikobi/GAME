@@ -1,6 +1,6 @@
 # Tone and register: the line at PEGI 16
 
-**Status:** The line answered 19.10 (DECISIONS 2026-10-23 "The line is PEGI 16 and ESRB T", carried from #223); the rule lines it changes (G22, G33, G46 and checklist question 11) are rewritten in the next pull request.
+**Status:** The line answered 19.10 (DECISIONS 2026-10-23 "The line is PEGI 16 and ESRB T", carried from #223); the rule lines it changes (G22, G33, G46 and checklist question 11) were rewritten in GAME_RULES on 29.10.
 
 The owner, 19.10: "as mature as it can be, not necessarily sexual, but brutal
 in taste." Three lines were put to him with the games and the ratings on each,
