@@ -1,0 +1,32 @@
+{
+  "about": "The white hart on ALERT (HUNTING.md section 2): four poses of the body's own Alert, made from the standing pose: the head carried high, the ears up and spread, the body still, a slow look that loops (ahead, to one side, ahead, to the other side); played by time. The tell a player reads.",
+  "target": "hart",
+  "base": {
+    "library": "self:hart",
+    "action": "Alert"
+  },
+  "frames": {
+    "even": 4
+  },
+  "ms": [
+    600,
+    600,
+    600,
+    600
+  ],
+  "frame": {
+    "size": [
+      176,
+      176
+    ],
+    "anchor": [
+      88,
+      124
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}

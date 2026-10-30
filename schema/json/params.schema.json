@@ -434,6 +434,29 @@
               }
             }
           },
+          "grade": {
+            "additionalProperties": false,
+            "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+            "type": "object",
+            "required": [
+              "of",
+              "step"
+            ],
+            "properties": {
+              "of": {
+                "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                "maxLength": 80,
+                "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                "type": "string"
+              },
+              "step": {
+                "minimum": 2,
+                "maximum": 3,
+                "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                "type": "integer"
+              }
+            }
+          },
           "premium_later": {
             "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
             "type": "boolean"
@@ -568,6 +591,7 @@
         "place_stack",
         "load",
         "gait",
+        "hunt",
         "starting_gold_mg",
         "per_point"
       ],
@@ -2213,6 +2237,155 @@
                 }
               },
               "description": "The same, at a run."
+            }
+          }
+        },
+        "hunt": {
+          "additionalProperties": false,
+          "description": "Dressing a taken animal (docs/design/HUNTING.md sections 5-6): the time a step takes, how long a carcass keeps, and how often an animal is finer than plain. Nothing here prices a hunt: the hunt verb takes the effort weight of its tier like every verb (R6).",
+          "type": "object",
+          "required": [
+            "dress_step_ms",
+            "meat_spoil_d",
+            "hide_spoil_d",
+            "grade2_bp",
+            "grade3_bp"
+          ],
+          "properties": {
+            "dress_step_ms": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game milliseconds one dressing step takes: a small animal takes 6 steps, a medium one 12, a large one 24 (HUNTING section 6), six steps to a part and one action a part, so six steps stay inside max_action_ms (the check)."
+            },
+            "meat_spoil_d": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game days a carcass keeps its meat (its goods of kind \"food\"): dressed later, the meat is gone and the rest remains."
+            },
+            "hide_spoil_d": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Game days a carcass keeps anything: dressed later, nothing is left of it."
+            },
+            "grade2_bp": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Basis points of animals that appear fine (grade 2)."
+            },
+            "grade3_bp": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "value",
+                "min",
+                "max",
+                "step"
+              ],
+              "properties": {
+                "value": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "integer"
+                },
+                "max": {
+                  "type": "integer"
+                },
+                "step": {
+                  "minimum": 0,
+                  "description": "Largest change one decision may make.",
+                  "type": "integer"
+                }
+              },
+              "description": "Basis points of animals that appear true (grade 3). With grade2_bp at most 10000; the rest are plain."
             }
           }
         },
