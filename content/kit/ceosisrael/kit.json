@@ -1,0 +1,15 @@
+{
+  "format": 1,
+  "type": "kit",
+  "id": "ceosisrael/kit",
+  "title": "Glade fig art",
+  "creator": "ceosisrael",
+  "ai_tools": ["Claude (Anthropic)", "Qwen-Image 2512 (kit:gen, kaggle drawer)"],
+  "kit": {
+    "sprites": {
+      "props/fig_bush": { "file": "props/fig_bush.png", "w": 64, "h": 64, "density": 4, "ramps": ["green", "plum", "bark"] },
+      "props/fig_bush_empty": { "file": "props/fig_bush_empty.png", "w": 64, "h": 64, "density": 4, "ramps": ["green", "bark"] },
+      "items/fig": { "file": "items/fig.png", "w": 64, "h": 64, "density": 4, "ramps": ["plum", "red", "green"] }
+    }
+  }
+}
