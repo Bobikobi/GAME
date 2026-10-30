@@ -1098,7 +1098,8 @@ export function openMenu(ui: UI): void {
           sound.setMuted(!sound.muted);
           render();
         }),
-        button('Settings', go(() => openSettings(ui))),
+        // the 3D door has no settings host yet (it is paused): no row there rather than a dead one
+        ...(app.perf && app.game ? [button('Settings', go(() => openSettings(ui)))] : []),
         button('Controls', go(() => openControls(ui))),
         button('Creators', go(() => openCreators(ui))),
         button('Credits', go(() => openCredits(ui))),

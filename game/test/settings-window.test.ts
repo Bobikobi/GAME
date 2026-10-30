@@ -133,3 +133,35 @@ describe('the window keeps the floor at every text size (G29)', () => {
     for (const f of ['settings.css', 'settings-window.ts']) expect(readFileSync(new URL(`../src/ui/${f}`, import.meta.url), 'utf8')).not.toMatch(/[\u2013\u2014]/);
   });
 });
+
+describe("the stored preferences reach the rules the phone's own setting reaches", () => {
+  const read = (f: string) => readFileSync(new URL(`../src/${f}`, import.meta.url), 'utf8');
+  const settings = read('ui/settings.css');
+  /** every selector the stylesheets still its animations for under prefers-reduced-motion: reduce */
+  const reduced = (css: string): string[] => {
+    const out: string[] = [];
+    for (const m of css.matchAll(/@media \(prefers-reduced-motion: reduce\) \{/g)) {
+      let depth = 1;
+      let i = m.index! + m[0].length;
+      const start = i;
+      while (depth > 0) {
+        depth += css[i] === '{' ? 1 : css[i] === '}' ? -1 : 0;
+        i++;
+      }
+      const body = css.slice(start, i - 1).replace(/\/\*[\s\S]*?\*\//g, '');
+      for (const r of body.matchAll(/([^{}]+)\{/g)) out.push(...r[1]!.split(',').map((x) => x.trim()));
+    }
+    return out;
+  };
+  it('mirrors every reduced-motion selector of style.css and games.css under the attribute', () => {
+    const sels = [...reduced(read('style.css')), ...reduced(read('ui/games/games.css'))];
+    expect(sels.length).toBeGreaterThan(10);
+    for (const sel of sels) expect(settings, sel).toContain(`:root[data-motion='reduced'] ${sel}`);
+  });
+  it('scales the px sizes of the windows (dialog, minigames, search, notes) with the chosen size', () => {
+    for (const sel of ['.dialog-text', '.md p', '.version', '.row .muted', '.panel.search .search-row', '.minigame-title']) {
+      expect(settings, sel).toContain(`:root[data-text-size='20'] ${sel}`);
+    }
+  });
+});
+

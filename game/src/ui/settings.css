@@ -110,11 +110,122 @@
   --kit-text-l: calc(27px * 20 / 16);
 }
 
-/* Reduced motion set by the player (or asked by the phone) stills the windows as the phone's own setting does */
+/* Reduced motion set by the player (or asked by the phone) is the phone's own prefers-reduced-motion rules, mirrored under
+   the attribute applyDisplay sets, so a choice made here stills the same things (style.css and games/games.css hold the originals) */
 :root[data-motion='reduced'] .panel,
 :root[data-motion='reduced'] .title-box,
 :root[data-motion='reduced'] .toast,
 :root[data-motion='reduced'] .dialog-arrow,
-:root[data-motion='reduced'] .banner {
+:root[data-motion='reduced'] .burst,
+:root[data-motion='reduced'] .choice.spent,
+:root[data-motion='reduced'] .signature.on,
+:root[data-motion='reduced'] .minigame.jackpot,
+:root[data-motion='reduced'] .banner,
+:root[data-motion='reduced'] .purse-float,
+:root[data-motion='reduced'] .whisper {
   animation: none;
+}
+
+:root[data-motion='reduced'] .whisper {
+  opacity: 0.9;
+  filter: none;
+}
+
+:root[data-motion='reduced'] .toast {
+  transition: none;
+}
+
+:root[data-motion='reduced'] .strike-stone.hit,
+:root[data-motion='reduced'] .strike-puff.visible,
+:root[data-motion='reduced'] .pick-item.picked,
+:root[data-motion='reduced'] .pick-item.mistake {
+  animation: none;
+}
+
+:root[data-motion='reduced'] .snap-half {
+  transition: none;
+}
+
+:root[data-motion='reduced'] .fish-float,
+:root[data-motion='reduced'] .minigame[data-phase] .fish-float,
+:root[data-motion='reduced'] .minigame[data-phase='bite'] .fish-ring {
+  animation: none;
+}
+
+:root[data-motion='reduced'] .minigame[data-phase='bite'] .fish-ring {
+  opacity: 1;
+}
+
+:root[data-motion='reduced'] .minigame[data-phase='nibble'] .fish-float {
+  transform: translateY(3px);
+}
+
+/* Window rules that set their size in px in style.css and games/games.css (the 16 and the 18 of the kit) follow the chosen size too;
+   the HUD, the toasts and the touch buttons are not a window's words and keep theirs */
+:root[data-text-size='18'] .credit,
+:root[data-text-size='18'] .demo-note,
+:root[data-text-size='18'] .card.race p,
+:root[data-text-size='18'] .mini-attrs,
+:root[data-text-size='18'] .error,
+:root[data-text-size='18'] .slot .count,
+:root[data-text-size='18'] .rarity,
+:root[data-text-size='18'] .row .muted,
+:root[data-text-size='18'] .needs span,
+:root[data-text-size='18'] .attr > .muted,
+:root[data-text-size='18'] .tech,
+:root[data-text-size='18'] .version,
+:root[data-text-size='18'] .check,
+:root[data-text-size='18'] .md p,
+:root[data-text-size='18'] .md li,
+:root[data-text-size='18'] .md code,
+:root[data-text-size='18'] .choice-name small,
+:root[data-text-size='18'] .choice-note,
+:root[data-text-size='18'] .sign-who small,
+:root[data-text-size='18'] .panel.search .search-take,
+:root[data-text-size='18'] .panel.search .search-luck,
+:root[data-text-size='18'] .minigame,
+:root[data-text-size='20'] .credit,
+:root[data-text-size='20'] .demo-note,
+:root[data-text-size='20'] .card.race p,
+:root[data-text-size='20'] .mini-attrs,
+:root[data-text-size='20'] .error,
+:root[data-text-size='20'] .slot .count,
+:root[data-text-size='20'] .rarity,
+:root[data-text-size='20'] .row .muted,
+:root[data-text-size='20'] .needs span,
+:root[data-text-size='20'] .attr > .muted,
+:root[data-text-size='20'] .tech,
+:root[data-text-size='20'] .version,
+:root[data-text-size='20'] .check,
+:root[data-text-size='20'] .md p,
+:root[data-text-size='20'] .md li,
+:root[data-text-size='20'] .md code,
+:root[data-text-size='20'] .choice-name small,
+:root[data-text-size='20'] .choice-note,
+:root[data-text-size='20'] .sign-who small,
+:root[data-text-size='20'] .panel.search .search-take,
+:root[data-text-size='20'] .panel.search .search-luck,
+:root[data-text-size='20'] .minigame {
+  font-size: var(--kit-text-s);
+}
+
+:root[data-text-size='18'] input.name,
+:root[data-text-size='18'] textarea,
+:root[data-text-size='18'] .dialog,
+:root[data-text-size='18'] .dialog-text,
+:root[data-text-size='18'] .sign-who,
+:root[data-text-size='18'] .panel.search .search-row,
+:root[data-text-size='18'] .panel.search .search-all,
+:root[data-text-size='18'] .panel.search .search-empty,
+:root[data-text-size='18'] .minigame-title,
+:root[data-text-size='20'] input.name,
+:root[data-text-size='20'] textarea,
+:root[data-text-size='20'] .dialog,
+:root[data-text-size='20'] .dialog-text,
+:root[data-text-size='20'] .sign-who,
+:root[data-text-size='20'] .panel.search .search-row,
+:root[data-text-size='20'] .panel.search .search-all,
+:root[data-text-size='20'] .panel.search .search-empty,
+:root[data-text-size='20'] .minigame-title {
+  font-size: var(--kit-text);
 }
