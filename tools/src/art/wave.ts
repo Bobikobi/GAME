@@ -144,19 +144,24 @@ export function planJobs(id: string, pool: PoolName, candidates: readonly Candid
   const rounds = [...new Set(candidates.map((c) => c.round))].sort((a, b) => a - b);
   const jobs: Job[] = [];
   for (const round of rounds) {
-    const these = candidates.filter((c) => c.round === round);
-    const kind: WaveKind = these.every((c) => c.kind === 'new') ? 'new' : 'again';
-    for (const { recipe, seeds } of WAVE_RECIPES) {
-      for (let s = 0; s < seeds; s += 1) {
-        const seed = seedBase(round) + (recipe === 'qwen' ? 0 : 1 + s);
-        const n = jobs.length + 1;
-        jobs.push({
-          id: `${id}-${String(n).padStart(2, '0')}-${recipe}-s${seed}`, wave: id, pool, kind, round, recipe, seed,
-          entries: these.map((c) => c.entry.name), spec, out,
-          env: { KAGGLE_MODEL: recipe, KAGGLE_SEED: String(seed) },
-          args: [spec, '--out', out, '--drawer', 'kaggle', '--no-picks'],
-          estimate_minutes: Math.round(estimateMinutes(recipe, these.length) * 10) / 10, created,
-        });
+    const inRound = candidates.filter((c) => c.round === round);
+    // a creature is drawn with its own negative prompt (no "animal"), so it never shares a kernel with the rest
+    for (const creature of [false, true]) {
+      const these = inRound.filter((c) => (c.entry.creature === true) === creature);
+      if (these.length === 0) continue;
+      const kind: WaveKind = these.every((c) => c.kind === 'new') ? 'new' : 'again';
+      for (const { recipe, seeds } of WAVE_RECIPES) {
+        for (let s = 0; s < seeds; s += 1) {
+          const seed = seedBase(round) + (recipe === 'qwen' ? 0 : 1 + s);
+          const n = jobs.length + 1;
+          jobs.push({
+            id: `${id}-${String(n).padStart(2, '0')}-${recipe}-s${seed}`, wave: id, pool, kind, round, recipe, seed,
+            entries: these.map((c) => c.entry.name), spec, out,
+            env: { KAGGLE_MODEL: recipe, KAGGLE_SEED: String(seed), ...(creature ? { KAGGLE_NEGATIVE_KIND: 'creature' } : {}) },
+            args: [spec, '--out', out, '--drawer', 'kaggle', '--no-picks'],
+            estimate_minutes: Math.round(estimateMinutes(recipe, these.length) * 10) / 10, created,
+          });
+        }
       }
     }
   }

@@ -693,6 +693,18 @@ Measurable:
 2. Phone stills at the closer camera of the opening's wake window and the bridge, with no wake tile, pickup or task prop covered over more than half its area (STYLE 1b's wave measure).
 3. `pnpm check` (the kit's density and size check) and `pnpm verify` exit 0.
 
+## character-pipeline. The characters through the pipeline: the owner's points of 26.10 still open
+
+Status: open
+
+Points e and f wait for their turn and are not built now.
+
+The owner, 26.10, after the contact sheet of the whole cast from `pnpm anim` (#343, DECISIONS 2026-10-25 "Characters are made industrially"): it passes in principle, with seven points. Five live elsewhere: the walk that never skates (`docs/design/ANIMATION.md` sections 5.1 and 5.3), the camera at 50 degrees for everything that moves (DECISIONS 2026-10-26, built in #351), the jump (the hop of ANIMATION section 2, waiting for its own stills), a run that costs more (the gaits of DECISIONS 2026-10-29, its breath cost waiting for the fight kernel) and the 3D illusion with the zoom (DECISIONS 2026-10-26 on the camera's turn). Two stay here.
+
+e) **The controls are a full computer game's keys**, not simple joystick buttons (the owner: that question is behind us). Each new action (the hop, the actions of a fight) gets its own key, as the run already has Shift.
+
+f) **Being hit, and losing** (later: its own ladder of trials, done in order). The character's animation when it takes a blow, effects on the screen itself, and a defeat for each creature that fits it. For example, a skeleton that loses a fight falls apart. First the idea is broken into parts, then each part is tried and shown to the owner. Start from the tag `attempt/2026-10-hit-feel` and ANIMATION sections 2 and 4 (hurt and death are verbs "with fights").
+
 ## townsperson-who-plays. A townsperson who lives the valley the way a player does
 
 Status: paused - the owner's idea of 27.10, waits for v0.1.10, the newcomer guide (docs/creators, a townsperson first) and the owner's pick of the first version below

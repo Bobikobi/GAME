@@ -112,6 +112,12 @@ export interface Shadow {
   height: number;
   /** the runs at the feet, for the contact line */
   contact: Row;
+  /**
+   * The feet row, in rows from the frame's bottom edge (negative: up). A sprite stands on its bottom edge, so its
+   * lowest solid row is the row above that edge, -1 when nothing is clear below the feet. The shadow's row 0 is
+   * laid on this row and the contact line on the row under it, so neither starts below what stands there.
+   */
+  base: number;
 }
 
 const DOWN: Sun = { up: false, sx: 0, sy: 0, length: 0, alpha: 0 };
@@ -198,7 +204,7 @@ export function maskOfAlpha(alpha: Uint8Array, w: number, h: number): Mask {
  * the run's height. Rows below the feet are clear by definition and cast nothing.
  */
 export function shadowOf(mask: Mask, sun: Sun): Shadow {
-  if (!sun.up || mask.feet < 0) return { spans: [], minX: 0, maxX: -1, height: 0, contact: [] };
+  if (!sun.up || mask.feet < 0) return { spans: [], minX: 0, maxX: -1, height: 0, contact: [], base: mask.feet - mask.h };
   const spans: ShadowSpan[] = [];
   let minX = Number.POSITIVE_INFINITY;
   let maxX = Number.NEGATIVE_INFINITY;
@@ -216,7 +222,18 @@ export function shadowOf(mask: Mask, sun: Sun): Shadow {
       height = Math.max(height, dy + 1);
     }
   }
-  return { spans, minX: spans.length > 0 ? minX : 0, maxX, height, contact: mask.rows[mask.feet] ?? [] };
+  return { spans, minX: spans.length > 0 ? minX : 0, maxX, height, contact: mask.rows[mask.feet] ?? [], base: mask.feet - mask.h };
+}
+
+/**
+ * Where a caster stands on the layer's grid, from the bottom edge of its frame (`edge`, the row its origin sits on,
+ * which is the tile's foot for a thing placed on a tile): the lowest row of the sprite, the row the shadow's row 0
+ * is laid on, and the contact line's row. The first two are one row and the contact line is the row under it, so a
+ * shadow meets the feet and never shows ground between them.
+ */
+export function footRows(edge: number, shadow: Pick<Shadow, 'base'>): { feet: number; shadow: number; contact: number } {
+  const feet = edge + shadow.base;
+  return { feet, shadow: feet, contact: feet + 1 };
 }
 
 /** A stable key for the sun's shear, so the scene can tell when the direction moved. */
