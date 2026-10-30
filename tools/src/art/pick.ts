@@ -149,7 +149,7 @@ export function applyPicks(file: PicksFile, steps: readonly Step[], ctx: PickCon
       const line = {
         sprite: entry.kit_id, name: entry.name, spec: `tools/kit-gen/pools/${pool}.json`, round: draft.round, drawer: draft.route, model: draft.model,
         model_key: draft.recipe, model_version: draft.model_version, seed: draft.seed, ref: entry.ref, what: entry.what, detail: entry.detail,
-        ramps: entry.ramps ?? draft.ramps ?? [], prompt: draft.prompt, picked: `${by}, by eye, ${today}`, draft: draft.id, pool: draft.pool, picked_by: by,
+        ramps: entry.ramps ?? draft.ramps ?? [], prompt: draft.prompt, picked: `${by}, ${by === 'measure' ? 'by measure' : 'by eye'}, ${today}`, draft: draft.id, pool: draft.pool, picked_by: by,
       };
       appendFileSync(manifestPath, `${lead}${JSON.stringify(line)}\n`);
       const number = (before + lead).split('\n').filter((l) => l.trim() !== '').length + 1;
