@@ -3099,7 +3099,7 @@
                   "type": "integer"
                 }
               },
-              "description": "The most a group member earns from another's work, in permille of the member's own (PROGRESSION 3.7, Q7)."
+              "description": "The most a newcomer takes from the experience the other members already earned, in permille of the newcomer's own: a split, never new experience (PROGRESSION 3.7, Q7)."
             },
             "loop_profit_max_mg": {
               "additionalProperties": false,
@@ -3190,7 +3190,7 @@
                 "sustain": {
                   "minItems": 5,
                   "maxItems": 5,
-                  "description": "Health back a game hour while a place drains, regen and food together, in percent of the cap.",
+                  "description": "Health back a game hour while a place drains, regen and food together, in points of the base cap of 100 (the drain's unit).",
                   "type": "array",
                   "items": {
                     "minimum": 0,
@@ -3615,7 +3615,7 @@
             "grade_drain_pct": {
               "minItems": 5,
               "maxItems": 5,
-              "description": "The drain of a remaining grade 0 to 4, in percent of the health cap a game hour (BODY_CLOCKS 5.2).",
+              "description": "The drain of a remaining grade 0 to 4, in points of the base cap of 100 a game hour, the same for every cap (BODY_CLOCKS 5.2).",
               "type": "array",
               "items": {
                 "minimum": 0,
