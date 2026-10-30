@@ -102,10 +102,11 @@ describe('the ledger and the replay (NEXT 18 f)', () => {
     async (_starter, start) => {
       const { store } = await scriptedRun(start);
       const logPays = required(salePrice(bundle, store.record.state, 'core/log', 1), 'The trader does not buy a log.');
+      const berryMg = required(bundle.shops['core/trader-shop']!.sells.find((o) => o.item === 'core/berry'), 'The trader does not sell a berry.').price_mg;
       // the bridge's reward, the payment for a berry and the sale of a log, in the order the server took them
-      expect(store.goldLedger.map((row) => row.deltaMg)).toEqual([30_000, -5_000, logPays]);
+      expect(store.goldLedger.map((row) => row.deltaMg)).toEqual([30_000, -berryMg, logPays]);
       expect(ledgerSumMg(store.goldLedger)).toBe(store.record.state.player.gold);
-      expect(store.record.state.player.gold).toBe(25_000 + logPays);
+      expect(store.record.state.player.gold).toBe(30_000 - berryMg + logPays);
       // each row names the action that made it, at the tick it was made at
       for (const row of store.goldLedger) {
         expect(store.actionLog.some((entry) => entry.tick === row.tick && JSON.stringify(entry.action) === JSON.stringify(row.action))).toBe(true);

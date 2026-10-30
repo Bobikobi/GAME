@@ -94,6 +94,7 @@
       "conditions": ["frost", "storm"],
       "grade": 4,
       "length_gh": 12,
+      "timer_gh": 11,
       "by": "move",
       "witness": { "pieces": ["top.t5.uncommon.cold_proof", "back.t5.uncommon.storm_proof.master"], "dishes": ["dish.t5.uncommon.cold_proof"] }
     },
@@ -103,6 +104,7 @@
       "conditions": ["frost", "deep_snow"],
       "grade": 3,
       "length_gh": 8,
+      "timer_gh": 7.6,
       "by": "move",
       "witness": { "pieces": ["top.t4.uncommon.cold_proof.master", "feet.t4.uncommon.snow_shod.master"], "dishes": [] }
     },
@@ -112,6 +114,7 @@
       "conditions": ["ice"],
       "grade": 3,
       "length_gh": 9,
+      "timer_gh": 8.6,
       "by": "move",
       "witness": { "pieces": ["feet.t4.uncommon.ice_grip.master"], "dishes": [] }
     },
@@ -122,6 +125,7 @@
       "grade": 3,
       "length_gh": 10,
       "by": "move",
+      "needs_level": 11,
       "witness": { "pieces": ["head.t3.uncommon.heat_ward.master"], "dishes": [] }
     },
     {

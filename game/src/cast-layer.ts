@@ -22,7 +22,7 @@
  */
 import * as Phaser from 'phaser';
 
-import { type Mask, type Shadow, type Sun, type SunTable, SHADOW, downsampleAlpha, maskOfAlpha, mirrorMask, shadowBox, shadowOf, sunAt, sunKey } from './cast';
+import { type Mask, type Shadow, type Sun, type SunTable, SHADOW, downsampleAlpha, footRows, maskOfAlpha, mirrorMask, shadowBox, shadowOf, sunAt, sunKey } from './cast';
 
 export type CastLayerName = 'under' | 'standing';
 
@@ -66,7 +66,7 @@ const MIN_ALPHA = 0.02;
 interface Draw {
   layer: CastLayerName;
   shadow: Shadow;
-  /** the frame's left edge and the feet, in layer pixels from the layer's corner */
+  /** the frame's left edge and the feet row (the sprite's lowest solid row, footRows), in layer pixels from the layer's corner */
   x: number;
   y: number;
 }
@@ -215,7 +215,8 @@ export class CastLayer {
         continue;
       }
       const x = Math.round((left - ox) * this.density);
-      const y = Math.round((feet - oy) * this.density);
+      // the shadow's row 0 on the sprite's lowest row, not on the frame's edge under it (footRows)
+      const y = footRows(Math.round((feet - oy) * this.density), shadow).shadow;
       draws[caster.layer].push({ layer: caster.layer, shadow, x, y });
       sig[caster.layer] += `|${maskKey}${flip ? '~' : ''}@${x},${y}`;
     }
@@ -289,12 +290,12 @@ export class CastLayer {
       own.image.setTexture(key);
       own.contact.clear();
       own.contact.fillStyle(SHADOW.ink, SHADOW.contact);
-      for (const [a, b] of shadow.contact) own.contact.fillRect(a * scale, 0, (b - a + 1) * scale, scale);
+      for (const [a, b] of shadow.contact) own.contact.fillRect(a * scale, scale, (b - a + 1) * scale, scale);
       own.key = key;
     }
     // on the layer's grid, as a painted shadow would lie
     const x = Math.round(left * this.density) * scale;
-    const y = Math.round(feet * this.density) * scale;
+    const y = footRows(Math.round(feet * this.density), shadow).shadow * scale;
     own.image.setPosition(x + corner.x * scale, y + corner.y * scale).setScale(scale).setAlpha(alpha).setVisible(true);
     own.contact.setPosition(x, y).setVisible(true);
   }
@@ -316,8 +317,8 @@ export class CastLayer {
     const scale = 1 / this.density;
     for (const d of draws) {
       for (const span of d.shadow.spans) ctx.fillRect(d.x + span.x, d.y + span.y, span.w, 1);
-      // the contact line under the feet: the decided 45%, one layer pixel deep
-      for (const [a, b] of d.shadow.contact) p.contact.fillRect((d.x + a) * scale, d.y * scale, (b - a + 1) * scale, scale);
+      // the contact line under the feet: the decided 45%, one layer pixel deep, on the row under the feet row
+      for (const [a, b] of d.shadow.contact) p.contact.fillRect((d.x + a) * scale, (d.y + 1) * scale, (b - a + 1) * scale, scale);
     }
     // the canvas was painted after it was made, so it is uploaded now
     p.tex.refresh();
