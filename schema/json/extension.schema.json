@@ -436,6 +436,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -1194,6 +1217,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -1918,6 +1964,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -2586,6 +2655,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -2840,6 +2932,12 @@
                         "minimum": 1,
                         "maximum": 20,
                         "description": "The lowest tier that fits.",
+                        "type": "integer"
+                      },
+                      "min_grade": {
+                        "minimum": 2,
+                        "maximum": 3,
+                        "description": "Only a good of this grade or finer (HUNTING section 5). Left out, any grade fits.",
                         "type": "integer"
                       },
                       "qty": {
@@ -3334,6 +3432,29 @@
                     "minimum": 1,
                     "maximum": 100,
                     "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
                     "type": "integer"
                   }
                 }
@@ -4274,6 +4395,29 @@
                     "minimum": 1,
                     "maximum": 100,
                     "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
                     "type": "integer"
                   }
                 }
@@ -5496,6 +5640,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -6179,6 +6346,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -6855,6 +7045,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -7488,6 +7701,29 @@
                     "minimum": 1,
                     "maximum": 100,
                     "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
                     "type": "integer"
                   }
                 }
@@ -8259,6 +8495,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -8793,6 +9052,29 @@
                     "minimum": 1,
                     "maximum": 100,
                     "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
                     "type": "integer"
                   }
                 }
@@ -9426,6 +9708,29 @@
                     "minimum": 1,
                     "maximum": 100,
                     "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
                     "type": "integer"
                   }
                 }
@@ -10370,6 +10675,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -10949,6 +11277,29 @@
                     "minimum": 1,
                     "maximum": 100,
                     "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
                     "type": "integer"
                   }
                 }
@@ -11640,6 +11991,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -11774,6 +12148,7 @@
             "place_stack",
             "load",
             "gait",
+            "hunt",
             "starting_gold_mg",
             "per_point"
           ],
@@ -13419,6 +13794,155 @@
                     }
                   },
                   "description": "The same, at a run."
+                }
+              }
+            },
+            "hunt": {
+              "additionalProperties": false,
+              "description": "Dressing a taken animal (docs/design/HUNTING.md sections 5-6): the time a step takes, how long a carcass keeps, and how often an animal is finer than plain. Nothing here prices a hunt: the hunt verb takes the effort weight of its tier like every verb (R6).",
+              "type": "object",
+              "required": [
+                "dress_step_ms",
+                "meat_spoil_d",
+                "hide_spoil_d",
+                "grade2_bp",
+                "grade3_bp"
+              ],
+              "properties": {
+                "dress_step_ms": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game milliseconds one dressing step takes: a small animal takes 6 steps, a medium one 12, a large one 24 (HUNTING section 6), six steps to a part and one action a part, so six steps stay inside max_action_ms (the check)."
+                },
+                "meat_spoil_d": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game days a carcass keeps its meat (its goods of kind \"food\"): dressed later, the meat is gone and the rest remains."
+                },
+                "hide_spoil_d": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Game days a carcass keeps anything: dressed later, nothing is left of it."
+                },
+                "grade2_bp": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Basis points of animals that appear fine (grade 2)."
+                },
+                "grade3_bp": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "min",
+                    "max",
+                    "step"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "step": {
+                      "minimum": 0,
+                      "description": "Largest change one decision may make.",
+                      "type": "integer"
+                    }
+                  },
+                  "description": "Basis points of animals that appear true (grade 3). With grade2_bp at most 10000; the rest are plain."
                 }
               }
             },
@@ -15097,6 +15621,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -15814,6 +16361,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -15951,7 +16521,7 @@
             },
             "creatures": {
               "additionalProperties": false,
-              "description": "Cosmetic ambient life (the client draws it behind ?rich= motion; the kernel never sees it): kinds, and the spots where each sits until the player comes close.",
+              "description": "Ambient life the client draws behind ?rich= motion: kinds, and the spots where each sits until the player comes close. A kind with \"hunt\" is the kernel's too: it dresses its carcasses and the value table prices its goods, with its spots as the source's capacity (HUNTING sections 5-9).",
               "type": "object",
               "required": [
                 "kinds",
@@ -16039,6 +16609,158 @@
                           "additionalItems": false,
                           "minItems": 2,
                           "maxItems": 2
+                        },
+                        "hunt": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "size",
+                            "tier",
+                            "danger",
+                            "take_s",
+                            "drops",
+                            "spawn"
+                          ],
+                          "properties": {
+                            "size": {
+                              "description": "Small dresses in 6 steps, medium in 12, large in 24: parts of six, one action a part, the goods with the last.",
+                              "anyOf": [
+                                {
+                                  "const": "small",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "medium",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "large",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "tier": {
+                              "minimum": 1,
+                              "maximum": 20,
+                              "description": "How far up the ladder it is. Every good it drops sits at this tier or below.",
+                              "type": "integer"
+                            },
+                            "danger": {
+                              "description": "What it does when the player comes close (HUNTING section 8): 0 flees, 1 stands and defends, 2 hunts the player. A danger 2 kind is medium or large.",
+                              "anyOf": [
+                                {
+                                  "const": 0,
+                                  "type": "number"
+                                },
+                                {
+                                  "const": 1,
+                                  "type": "number"
+                                },
+                                {
+                                  "const": 2,
+                                  "type": "number"
+                                }
+                              ]
+                            },
+                            "take_s": {
+                              "minimum": 5,
+                              "maximum": 600,
+                              "description": "Real seconds a fair hunt of it takes, from first sight to the carcass: the active time the value table prices, before the dressing.",
+                              "type": "integer"
+                            },
+                            "drops": {
+                              "minItems": 1,
+                              "maxItems": 5,
+                              "description": "What dressing it gives: plain goods of the five goods classes, each class once.",
+                              "type": "array",
+                              "items": {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "required": [
+                                  "item",
+                                  "qty",
+                                  "share_pct"
+                                ],
+                                "properties": {
+                                  "item": {
+                                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                                    "maxLength": 80,
+                                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                                    "type": "string"
+                                  },
+                                  "qty": {
+                                    "minimum": 1,
+                                    "maximum": 20,
+                                    "description": "Units a carcass gives. A finer animal gives the same count of the finer grade.",
+                                    "type": "integer"
+                                  },
+                                  "share_pct": {
+                                    "minimum": 1,
+                                    "maximum": 100,
+                                    "description": "Part of the hunt its value carries. Shares of one kind sum to 100.",
+                                    "type": "integer"
+                                  }
+                                }
+                              }
+                            },
+                            "ways": {
+                              "minItems": 1,
+                              "maxItems": 3,
+                              "uniqueItems": true,
+                              "description": "How it can be taken, for the client to show. Absent: the client decides.",
+                              "type": "array",
+                              "items": {
+                                "anyOf": [
+                                  {
+                                    "const": "stalk",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "snare",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "lure",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "fish",
+                                    "type": "string"
+                                  },
+                                  {
+                                    "const": "fight",
+                                    "type": "string"
+                                  }
+                                ]
+                              }
+                            },
+                            "spawn": {
+                              "additionalProperties": false,
+                              "type": "object",
+                              "required": [
+                                "cap_per_1000",
+                                "refill_d"
+                              ],
+                              "properties": {
+                                "cap_per_1000": {
+                                  "minimum": 1,
+                                  "maximum": 20,
+                                  "description": "The most of this kind alive per 1000 tiles of its habitat (HUNTING section 8: at most 12 at danger 0, 8 at 1, 5 at 2). The kind's danger stands for its region's band until a spot carries a region.",
+                                  "type": "integer"
+                                },
+                                "refill_d": {
+                                  "minimum": 1,
+                                  "maximum": 30,
+                                  "description": "Game days before a taken animal is replaced at its spot: the respawn the value table counts.",
+                                  "type": "integer"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "protected": {
+                          "description": "A pet, a young animal or a person (HUNTING section 10): seen, never taken, never dressed. A protected kind carries no \"hunt\".",
+                          "type": "boolean"
                         }
                       }
                     }
@@ -17323,6 +18045,29 @@
                   }
                 }
               },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
+                    "type": "integer"
+                  }
+                }
+              },
               "premium_later": {
                 "description": "Marks a look that may also be sold for premium currency once stage 6 brings it. Only a look item with no effect may carry it, and it stays obtainable in the game (DECISIONS.md, 2026-10-09).",
                 "type": "boolean"
@@ -17944,6 +18689,29 @@
                     "minimum": 1,
                     "maximum": 100,
                     "description": "A bag on the back that moves the load to the hips: what it adds to the weight limit (`load.base` + might). Needs `places`.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "grade": {
+                "additionalProperties": false,
+                "description": "A finer grade of another item: the same good off a better animal. A stack splits by grade the way it splits by tier, so each grade is an item of its own; it keeps the plain item's class, kind, tier and value, and a recipe asks for it with \"min_grade\".",
+                "type": "object",
+                "required": [
+                  "of",
+                  "step"
+                ],
+                "properties": {
+                  "of": {
+                    "pattern": "^[a-z0-9_-]+/[a-z0-9_-]+$",
+                    "maxLength": 80,
+                    "description": "Stable id \"creator/name\": lowercase letters, digits, \"_\" and \"-\". Never reused once merged.",
+                    "type": "string"
+                  },
+                  "step": {
+                    "minimum": 2,
+                    "maximum": 3,
+                    "description": "2 is fine, 3 is true. A grade is read as a pose on the screen, never as a number (HUNTING section 5).",
                     "type": "integer"
                   }
                 }
