@@ -1,0 +1,29 @@
+{
+  "about": "The wild boar lying still on its side in its den (SLEEP, 09 to 19): one held pose of the body's own Lie, the legs drawn in, no fall played and no twitch. A take is the client's fade of this pose and a drop of goods (HUNTING.md section 10: no blood, no suffering).",
+  "target": "boar",
+  "base": {
+    "library": "self:boar",
+    "action": "Lie"
+  },
+  "frames": [
+    0
+  ],
+  "ms": [
+    1000
+  ],
+  "frame": {
+    "size": [
+      128,
+      128
+    ],
+    "anchor": [
+      64,
+      92
+    ]
+  },
+  "views": [
+    "down",
+    "up",
+    "left"
+  ]
+}
