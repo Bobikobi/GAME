@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { SUN_TODAY, downsampleAlpha, maskOfAlpha, mirrorMask, shadowBox, shadowOf, sunAt, sunKey, sunTableOf } from '../src/cast.js';
+import { SUN_TODAY, downsampleAlpha, footRows, maskOfAlpha, mirrorMask, shadowBox, shadowOf, sunAt, sunKey, sunTableOf } from '../src/cast.js';
 
 /**
  * STYLE section 4, the shadow the owner picked on 18.10: the caster's silhouette laid on
@@ -159,6 +159,41 @@ describe('the shadow', () => {
   test('nothing casts when the sun is down, or from an empty mask', () => {
     expect(shadowOf(mask, sunAt(SUN_TODAY, 22 * 60)).spans).toEqual([]);
     expect(shadowOf(maskOfAlpha(new Uint8Array(9), 3, 3), sunAt(SUN_TODAY, 12 * 60)).spans).toEqual([]);
+  });
+});
+
+/**
+ * The owner on 30.10: "the objects look like they are floating above the ground". The shadow's row 0 was laid on the
+ * frame's bottom edge, the row under the sprite, so every caster showed a band of its own shadow below its feet.
+ * A thing placed on a tile has its origin on the tile's foot; its lowest row, its shadow's row 0 and the tile's last
+ * row are one row, and only the contact line lies under it.
+ */
+describe('a caster stands on its tile', () => {
+  const sun = sunAt(SUN_TODAY, 10 * 60);
+
+  test("the sprite's lowest row, the shadow's anchor and the tile's last row meet", () => {
+    // a 16-row sprite whose bottom row is solid, its origin (0.5, 1) on the foot of the tile at row 13: y = 224
+    const alpha = new Uint8Array(16 * 16);
+    for (let y = 2; y < 16; y++) for (let x = 3; x < 13; x++) alpha[y * 16 + x] = 1;
+    const shadow = shadowOf(maskOfAlpha(alpha, 16, 16), sun);
+    const tileFoot = 14 * 16;
+    const rows = footRows(tileFoot, shadow);
+    expect(rows.feet).toBe(tileFoot - 1);
+    expect(rows.shadow).toBe(rows.feet);
+    expect(rows.contact).toBe(tileFoot);
+    // nothing of the cast shadow lies below the feet: the sun stands south, so it falls up-screen from there
+    expect(Math.max(...shadow.spans.map((s) => rows.shadow + s.y))).toBe(rows.feet);
+  });
+
+  test('a sprite with clear rows under its feet casts from its feet, not from its frame', () => {
+    const alpha = new Uint8Array(8 * 8);
+    for (let y = 1; y < 5; y++) for (let x = 2; x < 6; x++) alpha[y * 8 + x] = 1;
+    const shadow = shadowOf(maskOfAlpha(alpha, 8, 8), sun);
+    expect(shadow.base).toBe(-4);
+    const rows = footRows(64, shadow);
+    expect(rows.feet).toBe(64 - 8 + 4);
+    expect(rows.shadow).toBe(rows.feet);
+    expect(rows.contact).toBe(rows.feet + 1);
   });
 });
 

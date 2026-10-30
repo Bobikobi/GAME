@@ -4,6 +4,8 @@
  * and a menu reads the last one pressed. Buttons are presses that the app routes
  * to whatever is on top: the minigame, a dialogue, a menu, or the world.
  */
+import type { Gait } from '@game/kernel';
+
 export type Dir = 'up' | 'down' | 'left' | 'right';
 export type Button = 'a' | 'b' | 'bag' | 'journal' | 'menu' | 'up' | 'down';
 
@@ -58,10 +60,19 @@ function topWindow(): Element | null {
   return layers[layers.length - 1] ?? document.querySelector('#ui > .title-screen');
 }
 
+/** How long the thumb holds the stick before the walk becomes a run. */
+export const RUN_HOLD_MS = 400;
+
 export class Controls {
   private held: Dir[] = [];
   /** the phone's stick, with a length of 0 to 1; null while no finger is on it */
   private stick: readonly [number, number] | null = null;
+  /** when the thumb began pushing the stick, in ms of the page clock; null while it rests */
+  private pushedAt: number | null = null;
+  /** Shift held: the keyboard's run, since a key held down is also how a walk is made */
+  private shift = false;
+  /** the sneak button, a toggle */
+  private sneaking = false;
   private handlers = new Set<(b: Button) => boolean | void>();
 
   constructor() {
@@ -70,6 +81,8 @@ export class Controls {
     window.addEventListener('blur', () => {
       this.held = [];
       this.stick = null;
+      this.pushedAt = null;
+      this.shift = false;
     });
   }
 
@@ -98,7 +111,29 @@ export class Controls {
 
   /** The phone's stick: a vector of length 0 to 1, or null when the finger lifts. */
   setStick(v: readonly [number, number] | null): void {
+    const pushing = v !== null && (v[0] !== 0 || v[1] !== 0);
+    if (!pushing) this.pushedAt = null;
+    else if (this.pushedAt === null) this.pushedAt = performance.now();
     this.stick = v ? [v[0], v[1]] : null;
+  }
+
+  /** The sneak toggle: on, every step is a sneak until it is turned off (a thumb is busy steering). */
+  setSneak(on: boolean): void {
+    this.sneaking = on;
+  }
+
+  get sneak(): boolean {
+    return this.sneaking;
+  }
+
+  /**
+   * The gait of the step being taken: a sneak when the toggle is on, a run when the thumb has pushed the stick
+   * for `RUN_HOLD_MS` (or Shift is down), a walk otherwise.
+   */
+  gait(now: number): Gait {
+    if (this.sneaking) return 'sneak';
+    if (this.shift) return 'run';
+    return this.pushedAt !== null && now - this.pushedAt >= RUN_HOLD_MS ? 'run' : 'walk';
   }
 
   onButton(fn: (b: Button) => boolean | void): void {
@@ -115,6 +150,7 @@ export class Controls {
   }
 
   private keyDown(e: KeyboardEvent): void {
+    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.shift = true;
     if (this.typing(e) || e.ctrlKey || e.metaKey || e.altKey) return;
     const dir = KEY_DIR[e.code];
     if (dir) {
@@ -137,6 +173,7 @@ export class Controls {
   }
 
   private keyUp(e: KeyboardEvent): void {
+    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.shift = false;
     const dir = KEY_DIR[e.code];
     if (dir) this.held = this.held.filter((d) => d !== dir);
   }
