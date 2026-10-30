@@ -1165,7 +1165,8 @@ export class WorldScene extends Phaser.Scene {
       f.spr.setDepth(night ? DEPTH.shade + 0.8 : f.baseDepth);
       f.flame.setDepth(night ? DEPTH.shade + 1 : f.baseDepth + 0.01);
       f.sparks?.setDepth(night ? DEPTH.shade + 0.9 : f.baseDepth + 0.02);
-      f.nightLight.setAlpha(NIGHT_LIGHT[stage] * this.night);
+      // with the light layer on, the fire's pool lights its ring; the old soft disc would light it twice
+      f.nightLight.setAlpha(f.light ? 0 : NIGHT_LIGHT[stage] * this.night);
       // the last wood cools the tongue; a change from one tint to another (low to embers) is a tint too
       if (f.tint !== l.tint) {
         f.tint = l.tint;

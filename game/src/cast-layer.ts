@@ -209,6 +209,7 @@ export class CastLayer {
     const head = `${shear}|${ox},${oy},${ww},${wh}`;
     const sig: Record<CastLayerName, string> = { under: head, standing: head };
     const lit = new Set<Caster>();
+    let nightAlpha = 0;
     for (const caster of this.casters) {
       if (!caster.enabled) continue;
       const img = caster.image;
@@ -241,10 +242,12 @@ export class CastLayer {
       // the shadow's row 0 on the sprite's lowest row, not on the frame's edge under it (footRows)
       const y = footRows(Math.round((feet - oy) * this.density), shadow).shadow;
       draws[caster.layer].push({ layer: caster.layer, shadow, x, y });
+      // a plane is drawn at one alpha: by night, the strongest of the gated lights its shadows come from
+      nightAlpha = Math.max(nightAlpha, sun.alpha);
       sig[caster.layer] += `|${maskKey}${flip ? '~' : ''}${own}@${x},${y}`;
     }
     for (const [caster, img] of this.bodies) if (!lit.has(caster) && img.visible) img.setVisible(false);
-    const alpha = day.up ? day.alpha : this.sun.alpha;
+    const alpha = day.up ? day.alpha : nightAlpha;
     for (const name of ['under', 'standing'] as const) {
       const p = this.planes[name];
       if (sig[name] !== p.painted) {
