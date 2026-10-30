@@ -46,7 +46,7 @@ try {
   await page.eval(carveIn('Tess'));
   await page.eval(TAKE_GROUND);
   for (let i = 0; i < 20; i++) { if (!(await page.eval<boolean>('!!document.querySelector(".dialog")'))) break; await page.press('Enter'); await sleep(100); }
-  const info = await page.eval(`(() => { const g = window.__game, s = g.session;
+  await page.eval(`(() => { const g = window.__game, s = g.session;
     s.state.player.quests['core/herbs-for-pell'] = 'done';
     if (!s.state.player.restored.includes('core/old-bridge')) s.state.player.restored.push('core/old-bridge');
     s.met.add('core/trader');
