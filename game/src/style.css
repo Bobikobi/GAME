@@ -666,9 +666,11 @@ textarea {
   color: var(--ui-gold-6);
 }
 
-/* picked or pointed at, a HUD button fills with gold and its word turns black, as a window's does */
+/* picked or pointed at, a HUD button (and the Demo chip, a button too) fills with gold and its word turns black,
+   as a window's does */
 .hud .btn:hover:not(:disabled),
-.hud .btn:focus-visible {
+.hud .btn:focus-visible,
+.chip.demo:focus-visible {
   --hud-ground: var(--ui-gold-5);
   --hud-grain: none;
   color: var(--ui-black);

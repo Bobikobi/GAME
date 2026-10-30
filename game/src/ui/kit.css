@@ -1073,6 +1073,12 @@
   cursor: pointer;
 }
 
+/* the chart is the button's face, so the keyboard's focus rings it in the brightest gold rather than filling it */
+.hud-map:focus-visible {
+  outline: 2px solid var(--ui-gold-6);
+  outline-offset: 2px;
+}
+
 .hud-map-head {
   padding: 4px 6px;
   display: flex;
