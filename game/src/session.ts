@@ -7,6 +7,7 @@
  * stops while a menu or a dialogue is open, so reading never costs game time.
  */
 import {
+  type Gait,
   type Action,
   type Bundle,
   type GameEvent,
@@ -473,15 +474,17 @@ export class Session implements GameSession {
    * once a burn has run out (`tellOuts`); a refusal is dropped and walking goes
    * on. What it brings (a hurt, a fall, a fire out) is shown like any other event.
    */
-  report(at: readonly [number, number], again = false): void {
+  report(at: readonly [number, number], again = false, gait: Gait = 'walk'): void {
     // a step that was under way when a menu opened still lands: the kernel hears of every tile
     if (!this.started) return;
     const p = this.state.player;
     if (!again && p.at[0] === at[0] && p.at[1] === at[1]) return;
-    const r = step(this.bundle, this.state, { t: 'move', at: [at[0], at[1]] }, this.tick);
+    // a walk is the default and stays out of the log, so an old log and a walked one read alike
+    const action: Action = gait === 'walk' ? { t: 'move', at: [at[0], at[1]] } : { t: 'move', at: [at[0], at[1]], gait };
+    const r = step(this.bundle, this.state, action, this.tick);
     if (!r.ok) return;
     this.state = r.state;
-    this.keep({ t: 'move', at: [at[0], at[1]] }, this.tick, r.state.seed);
+    this.keep(action, this.tick, r.state.seed);
     // a hunt heard during work changes the world under it: that work can no longer be taken back
     this.undo = null;
     if (r.events.length === 0) return;
