@@ -12,8 +12,8 @@ What it does, in the manner of quad_pass.py (the wolf) and deer_pass.py (the dee
   at export) on the mesh's `UVMap` layer, and drops the unused `projection-test` layer; the map draws nearly black on
   the ramps (the coat's median value 0.27 of white), so the coat is lifted to a dark grey-brown with grey bristle
   tips and written into a new packed map (--coat-gain, --coat-gamma, --coat-grey, --grizzle; the tusks' white is left
-  alone; on the bark and stone ramps the snap still draws it on bark's two darkest steps, a dark red-brown, with
-  patches of stone), and the snout's disc and the hooves get a plain dark material,
+  alone; the boar target draws it on the wood and stone ramps, an even dark brown with a few stone flecks: coat B,
+  the other coats in the comment at the coat below), and the snout's disc and the hooves get a plain dark material,
 - clears the file's scene properties (its sprite-sheet settings and a project time), so the glb carries no extras but
   the walk's and the run's groundSpeed,
 - turns the body to face -Y (the file's boar faces +Y), centres it over the origin, scales it to --height metres at the
@@ -36,7 +36,8 @@ What it does, in the manner of quad_pass.py (the wolf) and deer_pass.py (the dee
   Graze  rooting: the snout down to the earth, pushing forward and up, then a lift and a toss of the head (no soil is
          drawn; the ground is not rendered). Each key's neck and head bend is solved so the snout touches the floor
          the hooves stand on and never goes below it (the renderer stands a pose on its lowest point).
-  Lie    on its side, the legs drawn in, held still: no fall is played and nothing twitches; the client fades it.
+  Lie    its sleep in the den (SLEEP only): on its side, the legs drawn in, held still; no fall is played and
+         nothing twitches. A take fades whatever pose the boar holds (HUNTING 10 names no pose), not this one.
   Charge the file's attack (a lowered head and an upward toss), renamed and baked; kept for the defender's charge once
          the fight exists, not rendered now,
 - caps the map at --tex pixels and exports one GLB with the seven clips on NLA tracks.
@@ -204,10 +205,13 @@ def principled(name):
 # the coat, written into the map itself (glTF carries the image, not a node chain): the file's coat is nearly black
 # (half its pixels under 8 % luminance); its value is lifted (v -> COAT_GAIN * v ** COAT_GAMMA, the hue kept), a share
 # COAT_GREY of it is turned grey and its lighter bristle tips greyer still (a share GRIZZLE, from COAT_GRIZZLE_FROM to
-# COAT_GRIZZLE_TO luminance). In the map that is a dark grey-brown. On the bark and stone ramps the snap still draws
-# it on bark's two darkest steps (#1f1210 and #3f1e17, about 80 % of a sheet's opaque pixels: a dark red-brown) with
-# the lighter hairs as patches on one stone step (#4a5668); the lift does not reach bark's middle steps. The pale
-# tusks (the white of the map) are left as they are and fall on stone's light steps.
+# COAT_GRIZZLE_TO luminance). In the map that is a dark grey-brown; how it draws is the target's ramps. The boar
+# target's wood and stone (coat B) put it on wood's two darkest steps (#3d2618 and #2a1810, 86 % of a sheet's opaque
+# pixels: an even dark brown) with a few of the lighter hairs and the hooves' lit faces on stone (4 %). On bark and
+# stone (coat A, the first default) the same map took bark's two darkest steps (a dark red-brown) with the lighter
+# hairs as blue-grey patches on stone (#4a5668, 9 % of the Idle); on bark with wood's lighter steps (coat D, `bark`
+# and `wood:2-5`) the lighter hairs take wood's warm #6e4226 and no stone is drawn. The lift does not reach either
+# ramp's middle steps. The pale tusks (the white of the map) are left as they are and fall on the ramps' palest steps.
 COAT_GAIN, COAT_GAMMA = opt("--coat-gain", 1.0, float), opt("--coat-gamma", 0.6, float)
 COAT_GREY = opt("--coat-grey", 0.5, float)   # the share of grey in the whole coat (in the map, grey-brown and not red)
 GRIZZLE, COAT_GRIZZLE_FROM, COAT_GRIZZLE_TO = opt("--grizzle", 0.9, float), 0.10, 0.22

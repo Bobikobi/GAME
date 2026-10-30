@@ -5,8 +5,8 @@
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { coreRamp } from '../kit/palette.js';
 import { REPO_ROOT } from '../load.js';
+import { rampSteps } from './snap.js';
 
 export const ANIM_DIR = join(REPO_ROOT, 'tools', 'anim');
 export const CLIPS_DIR = join(ANIM_DIR, 'clips');
@@ -228,7 +228,7 @@ export function clipProblems(name: string, clip: Clip, libs: Record<string, Libr
   else if (!isNum(ax) || !isNum(ay) || ax < 0 || ay < 0 || ax > w || ay > h) say('frame.anchor (the feet) lies inside the frame');
   if (!Array.isArray(clip.views) || clip.views.length === 0 || !clip.views.every((v) => VIEWS.includes(v))) say(`views are some of ${VIEWS.join(', ')} (right is left mirrored)`);
   if (clip.ms !== undefined && (!Array.isArray(clip.ms) || clip.ms.length !== count || !clip.ms.every((m) => isInt(m) && m > 0))) say(`ms is ${count} whole positive numbers, one per pose`);
-  for (const r of clip.ramps ?? []) if (coreRamp(r) === undefined) say(`ramp "${r}" is not a shared ramp`);
+  for (const r of clip.ramps ?? []) if (rampSteps(r) === undefined) say(`ramp "${r}" is not a shared ramp or a span of one (<id>:<a>-<b>)`);
   if (clip.locomotion !== undefined) {
     if (clip.locomotion.playback !== 'distance' && clip.locomotion.playback !== 'time') say('locomotion.playback is distance or time');
     if (clip.locomotion.pace_ms !== undefined && (!isInt(clip.locomotion.pace_ms) || clip.locomotion.pace_ms <= 0)) say('locomotion.pace_ms is a whole number of milliseconds a tile');

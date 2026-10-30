@@ -11,8 +11,8 @@ import { type Clip, clipNames, clipPaces, clipProblems, job, type Library, paces
 import { onTarget, outDir } from '../src/anim/cli';
 import { archiveProblems, itchUploads, sha256, unpack } from '../src/anim/fetch';
 import { fourBeatProblems, footfalls, measureClip, outlineOf, paletteShare, plantedRuns, type RenderMeta, sharedSlope, silhouette, slideAtPace, stride } from '../src/anim/measure';
-import { classPalettes, flipX, type Picture, rampColours, sheetRamps, snap } from '../src/anim/snap';
-import { CORE_PALETTE, CORE_RAMPS } from '../src/kit/palette';
+import { classPalettes, flipX, type Picture, rampColours, rampSteps, sheetRamps, snap } from '../src/anim/snap';
+import { CORE_PALETTE, CORE_RAMPS, coreRamp } from '../src/kit/palette';
 import { allowedColors } from '../src/kit/ramps';
 import { CORE_KIT, richProblem } from '../src/kit/rich';
 import { applyInk, INK_HEX, inkShare } from '../src/kit/ink';
@@ -327,6 +327,22 @@ describe('snap', () => {
 
 describe('a sheet and the rich rule', () => {
   const core = CORE_PALETTE.map((h) => h.toLowerCase());
+  it('a body ramp may be a span of one shared ramp, the sheet naming the whole ramp; a bad span is refused', () => {
+    const wood = coreRamp('wood')?.steps ?? [];
+    const bark = coreRamp('bark')?.steps ?? [];
+    expect(rampSteps('wood')).toEqual({ id: 'wood', steps: wood });
+    expect(rampColours(['wood:2-5'])).toEqual(wood.slice(2));
+    expect(rampColours(['bark', 'wood:2-5'])).toEqual([...bark, ...wood.slice(2)]);
+    expect(classPalettes(['bark', 'wood:2-5'], 'grey').body).not.toContain(wood[0]);
+    expect(sheetRamps(['bark', 'wood:2-5'], 'grey')).toEqual(['bark', 'wood', 'fire', 'grey', 'green']);
+    for (const bad of ['wood:4-2', 'wood:2-6', 'wood:2', 'wood:2-', 'velvet:0-1', 'wood:0-1:2', '']) {
+      expect(rampSteps(bad), bad).toBeUndefined();
+      expect(() => rampColours([bad]), bad).toThrow(/not a shared ramp/);
+    }
+    const lie = readClip('boar_lie');
+    expect(clipProblems('boar_lie', { ...lie, ramps: ['bark', 'wood:2-5'] }, libs, settings)).toEqual([]);
+    expect(clipProblems('boar_lie', { ...lie, ramps: ['wood:3-9'] }, libs, settings).join(' ')).toMatch(/ramp "wood:3-9"/);
+  });
   it('names shared ramps that hold every colour a target can draw, and the core kit takes it at density 4', () => {
     for (const [id, t] of Object.entries(settings.targets)) {
       const ramps = sheetRamps(t.ramps, t.metal, t.leaf);

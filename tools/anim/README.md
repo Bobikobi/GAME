@@ -69,6 +69,10 @@ supersampled renders, the ID pass, the projected feet) and `job.json` (what Blen
 - `set`: pieces fixed on the ground by the body, `herb` (a leafy tuft, about 0.32 m) and `bush` (a berry bush, about
   0.8 m), at `[x, y]` metres in body axes on the IK side, `size` scaling them. They turn with the body in each view.
 - `worn`: parts carried on the hips, `pouch`, at `[x, y, z]` metres from the hips joint in body axes.
+- `ramps`: the body ramps in place of the target's (a target names its own the same way). Each is a shared ramp's id
+  or `<id>:<a>-<b>`, that ramp's steps a to b only (0 is the darkest), so a coat can take one ramp's dark steps and
+  another's light ones and the snap never reaches for the rest; the wild boar's coat D is `["bark", "wood:2-5"]`.
+  The sheet's json names the whole ramp, so the rich rule is unchanged.
 
 ## A body with its own actions (native targets)
 
