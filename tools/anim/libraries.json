@@ -113,5 +113,42 @@
         "Zombie_Walk_Fwd_Loop": 32.0
       }
     }
+  },
+  "models": {
+    "about": "The bodies a race is built from, besides the Meshy cast of game/public3d/models/. Fetched by `pnpm anim fetch` into tools/.cache/anim/models/<id>/ after the bytes and sha256 match; nothing here is committed. The Quaternius packs are CC0; the skeleton is CC BY 3.0 and its credit reaches CREDITS.md through the generator.",
+    "ubc": {
+      "title": "Universal Base Characters [Standard], by Quaternius",
+      "page": "https://quaternius.itch.io/universal-base-characters",
+      "upload": "Universal Base Characters[Standard].zip",
+      "bytes": 128968391,
+      "sha256": "fdbf1804c90dfc1ea03e992bff7da2dfd1a79318e13270a660180f9308455f40",
+      "licence": "CC0 1.0 (License_Standard.txt in the archive; the itch page: Creative Commons Zero v1.0)",
+      "licence_file": "Universal Base Characters[Standard]/License_Standard.txt",
+      "unpack": [
+        "Universal Base Characters[Standard]/Base Characters/Godot - UE/",
+        "Universal Base Characters[Standard]/Hairstyles/Rigged to Head Bone/glTF (Godot -Unreal)/"
+      ]
+    },
+    "outfits": {
+      "title": "Modular Character Outfits - Fantasy [Standard], by Quaternius",
+      "page": "https://quaternius.itch.io/modular-character-outfits-fantasy",
+      "upload": "Modular Character Outfits - Fantasy[Standard].zip",
+      "bytes": 294347394,
+      "sha256": "c3468b18871cc8c8f05ab14df7712baf22cb9f389cbd870babf130e595187f70",
+      "licence": "CC0 1.0 (License_Standard.txt in the archive; the itch page: Creative Commons Zero v1.0)",
+      "licence_file": "Modular Character Outfits - Fantasy[Standard]/License_Standard.txt",
+      "unpack": [
+        "Modular Character Outfits - Fantasy[Standard]/Exports/glTF (Godot-Unreal)/Outfits/"
+      ]
+    },
+    "brodin-skeleton": {
+      "title": "Skeleton, by Alexander Brodin",
+      "page": "https://poly.pizza/m/frU5VxsCGZJ",
+      "url": "https://static.poly.pizza/0bfb69d5-6d3e-48cc-a768-ada9d3218452.glb",
+      "bytes": 676140,
+      "sha256": "15ba65112374558ba65f47a6e3cf984f5ea958e3f6b5adf6c25cd3d97d8c5f13",
+      "licence": "CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/): a credit line is required",
+      "file": "brodin_skeleton.glb"
+    }
   }
 }

@@ -90,7 +90,7 @@ Everyone whose work is in the valley. Written by `pnpm credits` from the content
 - Foraging (school) - `content/core/schools/foraging.json`
 - Handcraft (school) - `content/core/schools/handcraft.json`
 - Woodcutting (school) - `content/core/schools/woodcutting.json`
-- Pell's stall (shop) - `content/core/shops/trader-shop.json`
+- Pell's shop (shop) - `content/core/shops/trader-shop.json`
 - Dyed cord (template) - `content/core/templates/dye-cord.json`
 - An axe on the bank (treasure) - `content/core/treasures/bank-axe.json`
 - A basket on the bank (treasure) - `content/core/treasures/bank-basket.json`

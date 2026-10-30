@@ -30,4 +30,17 @@ describe('the gaits', () => {
   test('the noise table is still 2, sneak 3, walk 5, run 8 and only grows with the pace', () => {
     expect([noiseRadius(bundle, 'still'), noiseRadius(bundle, 'sneak'), noiseRadius(bundle, 'walk'), noiseRadius(bundle, 'run')]).toEqual([2, 3, 5, 8]);
   });
+
+  test('an old move without a gait reads walk, and the reach follows the gait', () => {
+    const far: [number, number] = [state.player.at[0] + 4, state.player.at[1]];
+    const walkMs = walkStepMs(bundle, state);
+    const plain = step(bundle, state, { t: 'move', at: far }, state.player.movedAt + 2 * walkMs);
+    const walked = step(bundle, state, { t: 'move', at: far, gait: 'walk' }, state.player.movedAt + 2 * walkMs);
+    expect(plain).toEqual(walked);
+    // two walk steps of time allow 2 + 2 tiles at a walk; a sneak (half the pace) allows 2 + 1
+    const sneaked = step(bundle, state, { t: 'move', at: far, gait: 'sneak' }, state.player.movedAt + 2 * walkMs);
+    expect(sneaked.ok).toBe(false);
+    const bad = step(bundle, state, { t: 'move', at: state.player.at, gait: 'gallop' as never }, state.player.movedAt + walkMs);
+    expect(bad.ok).toBe(false);
+  });
 });
