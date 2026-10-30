@@ -31,10 +31,12 @@ What it does, in the manner of quad_pass.py (the wolf) and the other animal pass
           one floor a cycle, `locomotion.airborne`).
   Run     the same keying, longer and faster: the body leaned forward and low, the neck out, a longer stride with a
           higher swing and a bob, the wings held a little out (about 1.8 m a cycle for the run of 95 ms a tile).
-  Alert   from the standing pose: the neck stretched up tall with the head up, then a head turn and a tail flick.
+  Alert   from the standing pose: the body tipped up, the neck stretched up tall with the head up, the wings held a
+          little out and the tail laid back, then a head turn and a tail flick.
   Graze   pecking, from the file's Pecking1, Pecking2 and EndPecking: tipped forward with the beak on the ground, the
-          head a little up, a second peck, then the head part way up. The beak is held just above the floor the
-          feet stand on (the renderer stands a pose on its lowest point).
+          head a little up, a second peck, then the head part way up (EndPecking half way from the pose between
+          pecks to standing): four poses that differ. The beak is held just above the floor the feet stand on (the
+          renderer stands a pose on its lowest point).
   Lie     the last pose of the file's Dying, on its side, the wings closed and the legs drawn in, turned to lie along
           its standing line and moved back to where the body stood, held still: no fall is played and nothing
           twitches; the client fades it.
@@ -113,11 +115,16 @@ RUN_HEAD = (-2.6, -2.3)    # the neck stretched forward
 RUN_WING = (35, 5)         # the wings held a little out (spread and raise as for Lift below)
 RUN_CURL = 0
 SWING_TANGENT_MAX = 1.0
-# Alert: the neck stretched up tall and the head up, then a head turn
-ALERT_RAISE = (0.4, 1.6)   # the head target moved back and up (y, z)
-ALERT_PITCH = -8           # degrees the body tips up about the hips
+# Alert: the body tipped up, the neck stretched up and the head up, the wings held a little out and the tail laid back,
+# then a head turn. Seen from in front (the view of a bird that faces what alarmed it) the tail is the top of the
+# outline and the head sits inside it, so the head's rise shows inside the body; the wings widen the outline and the
+# tail laid back raises its top. The standing legs are already straight: the hips cannot rise without lifting a foot.
+ALERT_RAISE = (1.2, 3.5)   # the head target moved back and up (y, z)
+ALERT_PITCH = -15          # degrees the body tips up about the hips
+ALERT_WINGS = (25, 0)      # the wings held a little out (spread and raise as for Lift below)
+ALERT_TAIL_BACK = 20       # degrees the tail is laid back (behind and down) in both poses
 ALERT_TURN = 55            # degrees the head turns in the second pose (to the bird's left)
-ALERT_TAIL = 14            # degrees the tail flicks up in the second pose
+ALERT_TAIL = 14            # degrees the tail flicks further back in the second pose
 # Idle: four poses, 700 ms each (frames 0, 24, 48, 72 of 96)
 IDLE_TURN = 40
 IDLE_BOB = (-0.7, -1.0)
@@ -534,7 +541,7 @@ def idle_pose(i):
         head_to(p, (0, 0.1, 0.25), yaw=IDLE_TURN)
     elif i == 2:    # a head bob: forward and down
         head_to(p, (0, IDLE_BOB[0], IDLE_BOB[1]), pitch=12)
-    else:           # a tail flick up and to the side, the head turned a little the other way
+    else:           # a tail flick to the side and back, the head turned a little the other way
         turn(p, "Bone.006", rz(IDLE_TAIL) @ rx(-IDLE_TAIL * 0.6))
         head_to(p, (0, 0, 0), yaw=-15)
     orient_toes(p, {"L": 0.0, "R": 0.0})     # the toes flat on the ground whatever the legs do above them
@@ -584,10 +591,10 @@ actions["Run"] = gait(RUN_FRAMES, RUN_STANCE, RUN_DUTY, RUN_LIFT, RUN_CENTRE, RU
 # ------------------------------------------------------------------ Alert
 def alert_pose(look):
     p = copy(stand)
-    lean(p, (ALERT_PITCH))
+    lean(p, ALERT_PITCH)
     head_to(p, (0, ALERT_RAISE[0], ALERT_RAISE[1]), yaw=ALERT_TURN if look else 0.0, pitch=-10)
-    if look:
-        turn(p, "Bone.006", rx(-ALERT_TAIL))
+    wings(p, *ALERT_WINGS)
+    turn(p, "Bone.006", rx(-(ALERT_TAIL_BACK + (ALERT_TAIL if look else 0))))   # rx: positive lifts what is behind the bone
     orient_toes(p, {"L": 0.0, "R": 0.0})
     return p
 
@@ -624,7 +631,7 @@ diag("beak above the toes (units): Pecking1", h1, "Pecking2", h2, "EndPecking", 
 down1 = min(h1, key=h1.get)
 up1 = max(h1, key=h1.get)
 down2 = min(h2, key=h2.get)
-half = (h1[down1] + max(he.values())) / 2
+half = (h1[up1] + max(he.values())) / 2      # half way from the pose between pecks to standing: a pose of its own
 part = min(he, key=lambda f: abs(he[f] - half))
 
 
