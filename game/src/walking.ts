@@ -4,7 +4,7 @@
  * or a hunt runs (P-5b). The 2D scene and the 3D door both walk by them. Pure apart from the GameSession it is handed, so the walk
  * can be played on the real map without a renderer (game/test/stealth-flow.test.ts).
  */
-import { type Bundle, type Hazard, type Tile, type makeWalkable, sees, stepRuleFor, windowOpen } from '@game/kernel';
+import { type Bundle, type Gait, type Hazard, type Tile, type makeWalkable, sees, stepRuleFor, windowOpen } from '@game/kernel';
 
 import { DIRS, type Dir } from './input';
 import type { GameSession } from './session-surface';
@@ -36,9 +36,9 @@ export function canEnter(
 }
 
 /** The last frame of a step: the tile is the player's, and the kernel hears of it. A hazard there may hurt, and a fall moves the player to town. */
-export function landStep(s: GameSession, to: Tile): void {
+export function landStep(s: GameSession, to: Tile, gait: Gait = 'walk'): void {
   s.pos = [to[0], to[1]];
-  s.report(s.pos);
+  s.report(s.pos, false, gait);
 }
 
 /** Art pixels per tile: the body's place is kept on the art's own grid (DECISIONS 2026-10-18, 64 px per tile). */
