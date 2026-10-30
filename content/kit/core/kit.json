@@ -963,7 +963,7 @@
         ],
         "source": {
           "spec": "tools/src/art/edges.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:93"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:117"
         }
       },
       "tiles/fringe_n": {
@@ -978,7 +978,7 @@
         ],
         "source": {
           "spec": "tools/src/art/edges.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:92"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:116"
         }
       },
       "tiles/fringe_s": {
@@ -993,7 +993,7 @@
         ],
         "source": {
           "spec": "tools/src/art/edges.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:94"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:118"
         }
       },
       "tiles/fringe_w": {
@@ -1008,7 +1008,7 @@
         ],
         "source": {
           "spec": "tools/src/art/edges.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:95"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:119"
         }
       },
       "tiles/grass": {
@@ -1022,7 +1022,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/ground.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:108"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:124"
         }
       },
       "tiles/grass_1": {
@@ -1036,7 +1036,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/ground.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:109"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:125"
         }
       },
       "tiles/grass_2": {
@@ -1050,7 +1050,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/ground.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:110"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:126"
         }
       },
       "tiles/grass_3": {
@@ -1064,7 +1064,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/ground.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:111"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:127"
         }
       },
       "tiles/grass_flowers": {
@@ -1079,7 +1079,7 @@
         ],
         "source": {
           "spec": "tools/kit-gen/pools/ground.json",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:112"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:128"
         }
       },
       "tiles/grove": {
@@ -2104,7 +2104,7 @@
         ],
         "source": {
           "spec": "tools/src/art/edges.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:96"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:120"
         }
       },
       "tiles/worn_e": {
@@ -2118,7 +2118,7 @@
         ],
         "source": {
           "spec": "tools/src/art/edges.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:97"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:121"
         }
       },
       "tiles/worn_s": {
@@ -2132,7 +2132,7 @@
         ],
         "source": {
           "spec": "tools/src/art/edges.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:98"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:122"
         }
       },
       "tiles/worn_w": {
@@ -2146,7 +2146,7 @@
         ],
         "source": {
           "spec": "tools/src/art/edges.ts",
-          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:99"
+          "manifest": "tools/kit-gen/rich-wave.manifest.jsonl:123"
         }
       }
     }

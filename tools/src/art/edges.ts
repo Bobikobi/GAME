@@ -58,12 +58,12 @@ export function edgeRows(kind: EdgeKind, seed = 1): string[] {
       if (row === undefined) continue;
       if (y < reach) {
         if (grass) row[x] = y === 0 || h(seed, x, y) < 0.78 ? pick('3332244', seed + 2, x, y) : pick('34', seed + 3, x, y);
-        else if (h(seed + 4, x, y) < 0.4) row[x] = pick('wwvx', seed + 5, x, y);
+        else if (h(seed + 4, x, y) < 0.4) row[x] = pick('vvxv', seed + 5, x, y);
       } else {
         const left = (y - reach) / fade;
         // dithered: a checker that thins out, then single stray pixels
         const keep = (grass ? 1 : 0.55) * ((x + y) % 2 === 0 ? 0.85 - left * 0.85 : 0.35 - left * 0.35);
-        if (h(seed + 6, x, y) < keep) row[x] = grass ? pick('3344', seed + 7, x, y) : pick('wvxw', seed + 8, x, y);
+        if (h(seed + 6, x, y) < keep) row[x] = grass ? pick('3344', seed + 7, x, y) : pick('vxvv', seed + 8, x, y);
       }
     }
   }
@@ -108,7 +108,7 @@ export function edgeRows(kind: EdgeKind, seed = 1): string[] {
     const [x, y] = stack.pop() as [number, number];
     visit(x + 1, y); visit(x - 1, y); visit(x, y + 1); visit(x, y - 1);
   }
-  for (let y = 0; y < SIZE; y += 1) for (let x = 0; x < SIZE; x += 1) if (rows[y]?.[x] === '.' && seen[y]?.[x] !== true) (rows[y] as string[])[x] = grass ? '3' : 'w';
+  for (let y = 0; y < SIZE; y += 1) for (let x = 0; x < SIZE; x += 1) if (rows[y]?.[x] === '.' && seen[y]?.[x] !== true) (rows[y] as string[])[x] = grass ? '3' : 'v';
   return rows.map((r) => r.join(''));
 }
 

@@ -12,7 +12,7 @@
       "route": "scatter",
       "width": 64,
       "height": 64,
-      "what": "meadow ground, olive grass with dry earth",
+      "what": "meadow ground, a continuous olive field",
       "base": "3",
       "variants": 2,
       "cell": 16,
@@ -20,7 +20,7 @@
       "speckles": [
         {
           "letter": "2",
-          "per_tile": 40
+          "per_tile": 38
         },
         {
           "letter": "4",
@@ -28,18 +28,10 @@
         },
         {
           "letter": "c",
-          "per_tile": 6
+          "per_tile": 5
         },
         {
           "letter": "e",
-          "per_tile": 2
-        },
-        {
-          "letter": "x",
-          "per_tile": 3
-        },
-        {
-          "letter": "w",
           "per_tile": 2
         },
         {
@@ -64,28 +56,28 @@
         },
         {
           "name": "tuft",
-          "weight": 3,
+          "weight": 4,
           "width": 9,
           "height": 11,
           "what": "a tuft of grass"
         },
         {
           "name": "tuft2",
-          "weight": 3,
+          "weight": 4,
           "width": 7,
           "height": 9,
           "what": "a small tuft"
         },
         {
           "name": "tuft3",
-          "weight": 2,
+          "weight": 3,
           "width": 11,
           "height": 7,
           "what": "a wide low tuft"
         },
         {
           "name": "tuftd",
-          "weight": 2,
+          "weight": 3,
           "width": 9,
           "height": 11,
           "what": "a dry olive tuft"
@@ -95,14 +87,14 @@
           "weight": 2,
           "width": 9,
           "height": 11,
-          "what": "a brown dry tuft"
+          "what": "a tuft with dry tips"
         },
         {
           "name": "tuftb2",
           "weight": 2,
           "width": 7,
-          "height": 8,
-          "what": "a small brown tuft"
+          "height": 9,
+          "what": "a small tuft with dry tips"
         },
         {
           "name": "seed",
@@ -119,85 +111,43 @@
           "what": "a small seed head"
         },
         {
-          "name": "dry",
-          "weight": 2,
-          "width": 16,
-          "height": 10,
-          "what": "a dry patch"
-        },
-        {
-          "name": "dry2",
-          "weight": 1.5,
-          "width": 12,
-          "height": 7,
-          "what": "a small dry patch"
-        },
-        {
-          "name": "soil",
-          "weight": 1.5,
-          "width": 14,
-          "height": 9,
-          "what": "bare soil"
-        },
-        {
-          "name": "soil2",
-          "weight": 1.5,
-          "width": 10,
-          "height": 6,
-          "what": "a small patch of bare soil"
-        },
-        {
           "name": "stone",
-          "weight": 1,
+          "weight": 0.5,
           "width": 5,
           "height": 4,
           "what": "a stone"
         },
         {
-          "name": "stone2",
-          "weight": 1,
-          "width": 5,
-          "height": 4,
-          "what": "a small stone"
-        },
-        {
-          "name": "stones",
-          "weight": 0.8,
-          "width": 8,
-          "height": 4,
-          "what": "two stones"
-        },
-        {
           "name": "twig",
-          "weight": 0.8,
+          "weight": 0.5,
           "width": 9,
           "height": 3,
           "what": "a twig"
         },
         {
           "name": "leaf",
-          "weight": 0.8,
+          "weight": 0.6,
           "width": 6,
           "height": 5,
           "what": "a fallen leaf"
         },
         {
           "name": "clover",
-          "weight": 1,
+          "weight": 1.5,
           "width": 7,
           "height": 6,
           "what": "a clover"
         },
         {
           "name": "flower",
-          "weight": 0.5,
+          "weight": 0.4,
           "width": 7,
           "height": 6,
           "what": "a white wildflower"
         },
         {
           "name": "daisy",
-          "weight": 0.4,
+          "weight": 0.3,
           "width": 5,
           "height": 5,
           "what": "a small daisy"
@@ -214,135 +164,40 @@
       "route": "scatter",
       "width": 64,
       "height": 64,
-      "what": "dry meadow, more earth than grass",
+      "what": "a lighter, yellower tone of the meadow",
       "base": "3",
       "variants": 1,
       "cell": 16,
       "chance": 0.95,
       "speckles": [
         {
-          "letter": "2",
-          "per_tile": 28
+          "letter": "4",
+          "per_tile": 62
         },
         {
-          "letter": "4",
-          "per_tile": 20
+          "letter": "2",
+          "per_tile": 16
+        },
+        {
+          "letter": "5",
+          "per_tile": 6
+        },
+        {
+          "letter": "c",
+          "per_tile": 3
         },
         {
           "letter": "x",
-          "per_tile": 12
-        },
-        {
-          "letter": "w",
-          "per_tile": 6
-        },
-        {
-          "letter": "y",
-          "per_tile": 6
-        },
-        {
-          "letter": "1",
-          "per_tile": 6
+          "per_tile": 3
         }
       ],
       "motifs": [
         {
-          "name": "dry",
+          "name": "shade2",
           "weight": 3,
-          "width": 16,
-          "height": 10,
-          "what": "a dry patch"
-        },
-        {
-          "name": "dry2",
-          "weight": 3,
-          "width": 12,
-          "height": 7,
-          "what": "a small dry patch"
-        },
-        {
-          "name": "soil",
-          "weight": 2.5,
           "width": 14,
-          "height": 9,
-          "what": "bare soil"
-        },
-        {
-          "name": "soil2",
-          "weight": 2.5,
-          "width": 10,
-          "height": 6,
-          "what": "a small patch of bare soil"
-        },
-        {
-          "name": "tuftb",
-          "weight": 3,
-          "width": 9,
-          "height": 11,
-          "what": "a brown dry tuft"
-        },
-        {
-          "name": "tuftb2",
-          "weight": 3,
-          "width": 7,
           "height": 8,
-          "what": "a small brown tuft"
-        },
-        {
-          "name": "tuftd",
-          "weight": 2,
-          "width": 9,
-          "height": 11,
-          "what": "a dry olive tuft"
-        },
-        {
-          "name": "seed",
-          "weight": 2,
-          "width": 5,
-          "height": 9,
-          "what": "a seed head"
-        },
-        {
-          "name": "seed2",
-          "weight": 2,
-          "width": 3,
-          "height": 7,
-          "what": "a small seed head"
-        },
-        {
-          "name": "tuft2",
-          "weight": 1.5,
-          "width": 7,
-          "height": 9,
-          "what": "a small tuft"
-        },
-        {
-          "name": "stone",
-          "weight": 1.5,
-          "width": 5,
-          "height": 4,
-          "what": "a stone"
-        },
-        {
-          "name": "stone2",
-          "weight": 1.5,
-          "width": 5,
-          "height": 4,
-          "what": "a small stone"
-        },
-        {
-          "name": "stones",
-          "weight": 1,
-          "width": 8,
-          "height": 4,
-          "what": "two stones"
-        },
-        {
-          "name": "twig",
-          "weight": 1,
-          "width": 9,
-          "height": 3,
-          "what": "a twig"
+          "what": "a light patch"
         },
         {
           "name": "shade",
@@ -350,6 +205,69 @@
           "width": 16,
           "height": 9,
           "what": "a dark patch"
+        },
+        {
+          "name": "tuft",
+          "weight": 3,
+          "width": 9,
+          "height": 11,
+          "what": "a tuft of grass"
+        },
+        {
+          "name": "tuft2",
+          "weight": 3,
+          "width": 7,
+          "height": 9,
+          "what": "a small tuft"
+        },
+        {
+          "name": "tuftd",
+          "weight": 3,
+          "width": 9,
+          "height": 11,
+          "what": "a dry olive tuft"
+        },
+        {
+          "name": "tuftb",
+          "weight": 4,
+          "width": 9,
+          "height": 11,
+          "what": "a tuft with dry tips"
+        },
+        {
+          "name": "tuftb2",
+          "weight": 4,
+          "width": 7,
+          "height": 9,
+          "what": "a small tuft with dry tips"
+        },
+        {
+          "name": "seed",
+          "weight": 2.5,
+          "width": 5,
+          "height": 9,
+          "what": "a seed head"
+        },
+        {
+          "name": "seed2",
+          "weight": 2.5,
+          "width": 3,
+          "height": 7,
+          "what": "a small seed head"
+        },
+        {
+          "name": "stone",
+          "weight": 0.4,
+          "width": 5,
+          "height": 4,
+          "what": "a stone"
+        },
+        {
+          "name": "twig",
+          "weight": 0.4,
+          "width": 9,
+          "height": 3,
+          "what": "a twig"
         }
       ],
       "motifs_from": "meadow"
@@ -364,7 +282,7 @@
       "route": "scatter",
       "width": 64,
       "height": 64,
-      "what": "lush meadow, deeper olive",
+      "what": "a darker, deeper tone of the meadow",
       "base": "3",
       "variants": 1,
       "cell": 16,
@@ -372,15 +290,15 @@
       "speckles": [
         {
           "letter": "2",
-          "per_tile": 44
+          "per_tile": 58
         },
         {
           "letter": "1",
-          "per_tile": 16
+          "per_tile": 18
         },
         {
           "letter": "4",
-          "per_tile": 14
+          "per_tile": 8
         },
         {
           "letter": "c",
@@ -388,10 +306,6 @@
         },
         {
           "letter": "e",
-          "per_tile": 2
-        },
-        {
-          "letter": "x",
           "per_tile": 2
         }
       ],
@@ -405,7 +319,7 @@
         },
         {
           "name": "shade2",
-          "weight": 2,
+          "weight": 1.5,
           "width": 14,
           "height": 8,
           "what": "a light patch"
@@ -453,20 +367,6 @@
           "what": "a fallen leaf"
         },
         {
-          "name": "stone",
-          "weight": 0.6,
-          "width": 5,
-          "height": 4,
-          "what": "a stone"
-        },
-        {
-          "name": "soil2",
-          "weight": 0.8,
-          "width": 10,
-          "height": 6,
-          "what": "a small patch of bare soil"
-        },
-        {
           "name": "seed",
           "weight": 1,
           "width": 5,
@@ -475,7 +375,7 @@
         },
         {
           "name": "flower",
-          "weight": 0.5,
+          "weight": 0.4,
           "width": 7,
           "height": 6,
           "what": "a white wildflower"
@@ -513,16 +413,12 @@
           "per_tile": 6
         },
         {
-          "letter": "x",
-          "per_tile": 3
-        },
-        {
-          "letter": "w",
-          "per_tile": 2
-        },
-        {
           "letter": "1",
           "per_tile": 8
+        },
+        {
+          "letter": "4",
+          "per_tile": 4
         }
       ],
       "motifs": [
