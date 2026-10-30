@@ -12,7 +12,10 @@ What it does, in the manner of quad_pass.py (the wolf) and deer_pass.py (the dee
   at export) on the mesh's `UVMap` layer, and drops the unused `projection-test` layer; the map draws nearly black on
   the ramps (the coat's median value 0.27 of white), so the coat is lifted to a dark grey-brown with grey bristle
   tips and written into a new packed map (--coat-gain, --coat-gamma, --coat-grey, --grizzle; the tusks' white is left
-  alone), and the snout's disc and the hooves get a plain dark material,
+  alone; on the bark and stone ramps the snap still draws it on bark's two darkest steps, a dark red-brown, with
+  patches of stone), and the snout's disc and the hooves get a plain dark material,
+- clears the file's scene properties (its sprite-sheet settings and a project time), so the glb carries no extras but
+  the walk's and the run's groundSpeed,
 - turns the body to face -Y (the file's boar faces +Y), centres it over the origin, scales it to --height metres at the
   withers (bind pose) and bakes the turn and the scale into the bones and the mesh; adds a tip bone under each hoof
   (the renderer reads a foot from its bone's tail, and glTF loses a leaf bone's length),
@@ -23,10 +26,13 @@ What it does, in the manner of quad_pass.py (the wolf) and deer_pass.py (the dee
          quarter of the cycle apart), three hooves on the ground in every drawn pose, the body low and level and the
          head carried low. The file's walk is a trot (the diagonal pairs swing together, half the cycle on the
          ground), so it is not used.
-  Run    keyed the same way: a short, heavy rotary gallop (hind left, hind right, fore right, fore left), the body low
-         with little bounce, the stride long enough for the run at half the walk's step.
+  Run    keyed the same way: a short, heavy rotary gallop (hind left, hind right, fore right, fore left), the body
+         near its standing height with little bounce and the fore hooves reaching ahead before they land, so the
+         gallop reads by its reach and not only by its rate, the stride long enough for the run at half the walk's
+         step.
   Alert  the bluff, from the rest pose: the head held low toward the front, the forelegs braced, a snort with a toss
-         of the head and a stamp of a forefoot, a loop of four poses.
+         of the head and a stamp of a forefoot (the hoof at the top of its lift in the fourth pose), a loop of four
+         poses.
   Graze  rooting: the snout down to the earth, pushing forward and up, then a lift and a toss of the head (no soil is
          drawn; the ground is not rendered). Each key's neck and head bend is solved so the snout touches the floor
          the hooves stand on and never goes below it (the renderer stands a pose on its lowest point).
@@ -102,13 +108,18 @@ RUN_FORE_LIFT = 0.9
 RUN_LIFT_SHAPE = 0.6   # the swing's height as sin ** this: the hoof clears the ground at once
 RUN_BOB = 0.015        # metres up and down: little bounce
 RUN_PITCH = 3.0        # degrees the trunk rocks (the shoulders and the hips rise and fall against each other)
-RUN_CROUCH = 0.10      # metres lower than standing: the body carried low
+# metres lower than standing: near full height, so the run stands as tall as the walk side-on (51 to 52 px against 51
+# to 53) and its legs show their reach; at 0.10 every run pose was shorter and lower than every walk pose (47 to 49 px
+# high) and the two loops read alike at a tile
+RUN_CROUCH = 0.03
 RUN_HEAD = -10         # degrees: the head carried low and forward, riding the body
-RUN_CENTRE = {"LH": 0.06, "RH": 0.06, "LF": 0.04, "RF": 0.04}
+# where each hoof's stance is centred, ahead (+) of its rest spot (metres): the fore hooves land well ahead of the
+# shoulders and the hind push off under the hips, a longer reach with every planted hoof still within its leg
+RUN_CENTRE = {"LH": 0.0, "RH": 0.0, "LF": 0.08, "RF": 0.08}
 RUN_DOWN = {"LH": 0.0, "RH": 0.25, "RF": 0.5, "LF": 0.75}   # each foot's touchdown, a share of the cycle
 RUN_PHASE = 1 / RUN_FRAMES   # the cycle starts one frame before the hind left lands, so no drawn pose sits on a touchdown
 SWING_TANGENT_MAX = 1.0
-RUN_TANGENT_MAX = 0.7
+RUN_TANGENT_MAX = 0.7   # the hind swing (swing_y); the fore swing reaches (reach_y)
 
 # Alert (the bluff): four poses by time, 600 ms each (frames 0, 12, 24, 36 of 48)
 ALERT_FRAMES = 48
@@ -191,12 +202,14 @@ def principled(name):
 
 
 # the coat, written into the map itself (glTF carries the image, not a node chain): the file's coat is nearly black
-# (half its pixels under 8 % luminance), which the snap draws as one dark blot; its value is lifted (v -> COAT_GAIN *
-# v ** COAT_GAMMA, the hue kept) so it lands in bark's middle steps, and its lighter bristle tips are turned grey
-# (a share GRIZZLE, from COAT_GRIZZLE_FROM to COAT_GRIZZLE_TO luminance), so the snap draws a grey grizzle in stone.
-# The pale tusks (the white of the map) are left as they are and fall on stone's top step.
+# (half its pixels under 8 % luminance); its value is lifted (v -> COAT_GAIN * v ** COAT_GAMMA, the hue kept), a share
+# COAT_GREY of it is turned grey and its lighter bristle tips greyer still (a share GRIZZLE, from COAT_GRIZZLE_FROM to
+# COAT_GRIZZLE_TO luminance). In the map that is a dark grey-brown. On the bark and stone ramps the snap still draws
+# it on bark's two darkest steps (#1f1210 and #3f1e17, about 80 % of a sheet's opaque pixels: a dark red-brown) with
+# the lighter hairs as patches on one stone step (#4a5668); the lift does not reach bark's middle steps. The pale
+# tusks (the white of the map) are left as they are and fall on stone's light steps.
 COAT_GAIN, COAT_GAMMA = opt("--coat-gain", 1.0, float), opt("--coat-gamma", 0.6, float)
-COAT_GREY = opt("--coat-grey", 0.5, float)   # the share of grey in the whole coat: a dark grey-brown, not a red one
+COAT_GREY = opt("--coat-grey", 0.5, float)   # the share of grey in the whole coat (in the map, grey-brown and not red)
 GRIZZLE, COAT_GRIZZLE_FROM, COAT_GRIZZLE_TO = opt("--grizzle", 0.9, float), 0.10, 0.22
 W_, H_ = img.size
 px = np.empty(W_ * H_ * 4, dtype=np.float32)
@@ -489,6 +502,16 @@ def swing_y(s, stance, duty, tangent_max):
     return h00 * (-stance / 2) + h10 * m + h01 * (stance / 2) + h11 * m
 
 
+def reach_y(s, stance, duty):
+    """A swinging fore hoof of the run that leaves and meets the ground at the ground's own speed, moving back: it
+    follows through a little behind its lift-off, reaches ahead of its landing spot and draws back onto it, the reach
+    of a gallop. The hind hooves keep swing_y: a hind follow-through stretched them toward the camera of the up view,
+    its silhouette over the 10 % limit and the hooves on the frame's edge."""
+    m = stance * (1 - duty) / duty
+    h00, h10, h01, h11 = 2 * s ** 3 - 3 * s ** 2 + 1, s ** 3 - 2 * s ** 2 + s, -2 * s ** 3 + 3 * s ** 2, s ** 3 - s ** 2
+    return h00 * (-stance / 2) - h10 * m + h01 * (stance / 2) - h11 * m
+
+
 WALK_STANCE = m2u(WALK_STRIDE_M) * WALK_DUTY
 walk = []
 for i in range(WALK_FRAMES + 1):
@@ -527,7 +550,7 @@ for i in range(RUN_FRAMES + 1):
             z = 0.0
         else:                                   # swing: behind to in front, lifted
             s = (ph - RUN_DUTY) / (1 - RUN_DUTY)
-            y = swing_y(s, RUN_STANCE, RUN_DUTY, RUN_TANGENT_MAX)
+            y = reach_y(s, RUN_STANCE, RUN_DUTY) if fore else swing_y(s, RUN_STANCE, RUN_DUTY, RUN_TANGENT_MAX)
             z = RUN_LIFT * (RUN_FORE_LIFT if fore else 1.0) * math.sin(math.pi * s) ** RUN_LIFT_SHAPE
         move(p, ik, (0, y + m2u(RUN_CENTRE[leg]), z))
     bob = -RUN_BOB * math.cos(2 * math.pi * (t - 0.6 - RUN_PHASE))
@@ -540,12 +563,17 @@ store("Run", run)
 
 # ------------------------------------------------------------------ Alert (the bluff)
 # four key poses (frames 0, 12, 24, 36): head low toward the front with the forelegs braced; the snort, the snout
-# driven lower and forward; the toss, the head flung up; the stamp, the left forefoot lifted with the head low again
+# driven lower and forward; the toss, the head flung up; the stamp, the right forefoot (the near one side-on) at the
+# top of its lift, the weight shifted back and the head lower again, so the hoof comes down by the first pose. The
+# lift peaks at the key: a drawn pose sits on a key, and a lift that rose and fell between two keys (sin(pi * stamp))
+# was back on the ground in every drawn pose
+STAMP_LIFT = 0.12      # metres the stamping hoof is lifted at the fourth pose
+STAMP_REACH = 0.03     # metres it is carried forward
 ALERT_KEYS = {
     0: {"neck": -16.0, "head": -10.0, "nose": 4.0, "brace": 1.0, "lean": -0.03},
     12: {"neck": -22.0, "head": -14.0, "nose": 8.0, "brace": 1.0, "lean": -0.05, "tail": 30.0},
     24: {"neck": 6.0, "head": 14.0, "nose": -4.0, "brace": 1.0, "lean": -0.01, "tail": 30.0, "turn": 10.0},
-    36: {"neck": -16.0, "head": -10.0, "nose": 4.0, "brace": 1.0, "lean": -0.03, "stamp": 1.0},
+    36: {"neck": -19.0, "head": -12.0, "nose": 6.0, "brace": 1.0, "lean": -0.05, "stamp": 1.0},
 }
 alert = []
 for i in range(ALERT_FRAMES + 1):
@@ -554,7 +582,7 @@ for i in range(ALERT_FRAMES + 1):
     for leg in ("LF", "RF"):
         move(p, LEGS[leg][0], (m2u(0.03) * (-1 if leg == "LF" else 1) * k.get("brace", 0.0), m2u(0.08) * k.get("brace", 0.0), 0))
     stamp = k.get("stamp", 0.0)
-    move(p, LF[0], (0, m2u(0.02) * stamp, m2u(0.09) * math.sin(math.pi * min(1.0, stamp))))
+    move(p, RF[0], (0, m2u(STAMP_REACH) * stamp, m2u(STAMP_LIFT) * stamp))
     body_shift(p, dz=-m2u(0.03), dy=m2u(k.get("lean", 0.0)))
     body_pitch(p, -4.0 * k.get("brace", 0.0))
     head_carriage(p, neck=k.get("neck", 0.0), head=k.get("head", 0.0), nose=k.get("nose", 0.0), turn=k.get("turn", 0.0))
@@ -853,6 +881,12 @@ for act in final:
         st.action_slot = act.slots[0]
 for pb in arm.pose.bones:
     pb.matrix_basis.identity()
+# the file's own scene properties (its sprite-sheet settings and a project time) would ride into the glb as the scene's
+# extras: dropped, so the only extras are the walk's and the run's groundSpeed
+dropped = [k for k in scene.keys() if k not in scene.bl_rna.properties]
+for k in dropped:
+    del scene[k]
+diag("scene properties dropped:", dropped)
 props = bpy.ops.export_scene.gltf.get_rna_type().properties.keys()
 want = dict(filepath=OUT, export_format="GLB", use_selection=True, export_animations=True,
             export_animation_mode="ACTIONS", export_extras=True, export_skins=True, export_image_format="JPEG",
