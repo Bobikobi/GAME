@@ -33,7 +33,7 @@ Coordinates below are art px in the 390x844 frame; world (wx, wy) maps to ((wx -
 | Layer | Rule |
 |---|---|
 | The wash | `#eda83a` at 18%, multiply, over the whole frame: the game's own dusk rectangle (`world.ts`, `this.dusk`) with a key the table does not have yet |
-| Where 18% comes from | The hour table ART_SYSTEM 2 proposes: 16:30 `#eda83a` 12%, 19:00 `#e2533f` 28%. 17:30 is 40% of the way, so 12 + 0.4 x 16 = 18%. The colour holds at `#eda83a`, since a mix of the two is not a palette colour |
+| Where 18% comes from | The hour table ART_SYSTEM 2 proposes: 16:30 `#eda83a` 12%, 19:00 `#e2533f` 28%. 17:30 is 40% of the way, so 12 + 0.4 x 16 = 18%. The colour holds at `#eda83a`, since a mix of the two is not a palette colour. Today's `washAt` mixes the channels between keys, so the build adds an explicit 17:30 key and makes the tint step to the next key's colour instead of mixing (section 6) |
 | Everything else | As the game draws it today: the shadows of STYLE 4, the fog slots, the chimney smoke |
 
 What A shows: a multiply only darkens. At 18% the blue cobbles go grey and a little warm, and the frame reads dimmer, not golden. The gold of a golden hour comes from light added, which is B.
@@ -59,7 +59,7 @@ What B shows: the evening reads warm where there is light and stays the hour's g
 | Layer | Rule |
 |---|---|
 | Cloud shade | Three soft shades, multiply `#172a52`, each an ellipse 1.25 times wider than tall: 8 tiles across at (-60, 150), 6 at (430, 690), 10 at (90, 1010). Full inside 0.6 of the radius, falling to nothing at the rim. Three steps, 4%, 8% and 12%, an ordered 4x4 dither between them (the mist's own matrix). One shade where clouds overlap. Drawn under the pools: a cloud shades the sun, not a lamp |
-| Sun shaft | One band 1 tile wide along the sun's line (1.03 right, 0.40 up, the 17:30 shadow's own direction) from (-20, 720), ADD `#f8de62` at 6%, only where the cloud shade is under 25% |
+| Sun shaft | One band 1 tile wide along the sun's line (1.03 right, 0.40 up, the 17:30 shadow's own direction) from (-20, 720), ADD `#f8de62` at 6%, only where a cloud's density (1 at its heart, 0 past its rim) is under 0.25, so the shaft runs in the gaps between clouds and stops where their first 4% step begins |
 | Dust motes | 14, 2x2 art px, `#f5f4ef` at 45%, inside the shaft, by a fixed seed |
 | Embers | 7, 2x2 art px, `#f8de62` and `#eda83a` in turn, rising 0.5 to 2 tiles over the hearth and carried right by the same wind |
 | Fireflies | 5, a 2x2 core of `#c8e88a` with a 1 px ring of `#84c450` at 40%, in the meadow at the bottom edge, where no pool reaches |
@@ -87,7 +87,7 @@ The unit is one full-screen blended pass: the game draws at the device's pixels 
 | C, sway on prop sprites (tall grass, canopies, flames) | about 0.1 ms | Per-vertex movement of a few dozen sprites |
 | C, a motion shader over the whole ground (meadow bend, water) | +1 to 3 ms | Every ground pixel pays a second texture read and a little arithmetic: one to one and a half passes |
 
-So A and B together cost about one pass, the price of one more fog bank. C is cheap with sway on props and particles, and is the only rung that can cost a third of a weak phone's frame, if the whole ground moves.
+So A and B together cost about one pass, the price of one more fog bank. C is cheap with sway on props and particles, and its ground shader is the largest single cost on this page: up to 3 ms, about a fifth of a 60 Hz frame (16.7 ms) and about a tenth of the 33 ms a low-tier phone gets at 30.
 
 ## 5. The owner's three questions, with a recommendation each
 
@@ -97,7 +97,7 @@ Recommendation: keep that table, no stronger. A multiply only darkens; a stronge
 **2. Do light sources colour the day and the dusk, or only the night?** B shows the lamps, the window and the hearth at full at 17:30.
 Recommendation: dusk and night, not the day. The lamps and windows light at 17:00 and their pools rise from half to B's numbers by 19:00; a burning fire shows its pool from 16:30, since a fire is lit by choice. A pool at noon reads as a mistake and says nothing; a pool coming on at 17:00 is the town telling the player the evening has begun, a cue that is not colour alone.
 
-**3. Are cloud shade and motion worth their cost on a phone?** C shows both at once.
+**3. Are cloud shade and motion worth their cost on a phone?** C shows both at once, as the brief set the rung. Its parts differ in cost and are not one choice: the owner can answer each part on its own (the cloud shade's strength, the particles, sway on props, the ground shader), and the recommendation below is split the same way. If a part needs its own still, it is one more frame from the same base and numbers.
 Recommendation: yes for the cheap part, later for the rest. Keep the built cloud shade at 34%: C's 10 to 15% does not read at phone size, as on 20.10. Build particles (embers, fireflies, motes) and sway on prop sprites now, behind `RICH.motion`. The ground shader for the meadow and the water waits for a measurement on a real 2K phone: it is the one rung that can cost 3 ms, and its gain is seen only in motion, so the owner judges it in the live game, not in a still.
 
 **For a colour-blind reader:** nothing here carries meaning by hue alone. A pool is brighter than its ground; a cloud is darker; the lit window is the brightest thing on the building; embers rise over a fire and fireflies sit low in the meadow with a ring around them. The red and green of the palette carry no light signal.
@@ -108,7 +108,7 @@ One engine session, in the `world.ts` window STYLE already names for the shadows
 
 | File | What changes |
 |---|---|
-| `game/src/light.ts` | The pool's four steps, radii and dither as numbers; the hour gate of question 2 (`poolAt(minute)`); the head glow; one function per number, pure, so a test pins them and the 3D door reads them |
+| `game/src/light.ts` | The pool's four steps, radii and dither as numbers; the hour gate of question 2 (`poolAt(minute)`); the head glow; one function per number, pure, so a test pins them and the 3D door reads them; `washAt` steps the tint to the next key's colour rather than mixing channels, so every minute's wash is a palette colour |
 | `content/core/params.json` | The `light.keys` table of question 1 (16:30, 17:30, 19:00 and the night) |
 | `game/src/scenes/world.ts` | The pool layer (ADD images, brightest step wins), the lit-window images and their pools, the dusk rectangle folded into the night's shade, the particles |
 | `game/src/cast-layer.ts` | Body light baked per sun key; by night, the shadow from the light whose pool a caster stands in (STYLE 4, "Night") |
