@@ -22,13 +22,15 @@ What it does, in the manner of quad_pass.py (the wolf):
 - makes six actions, every bone keyed on every frame so a stray channel of the file does not travel, the ears
   carried spread outward in all of them (seen from the front they stand out past the neck, so the head reads):
   Idle from the file's Idle.
-  Walk keyed on the leg IK targets: four beats (hind left, fore left, hind right, fore right, a quarter of the
-  cycle apart), each hoof on the ground for WALK_DUTY of the cycle moving back at one speed and held flat, so a
-  planted hoof keeps its spot; the swing leaves and meets the ground at that speed. The stride is as long as the
-  legs reach, so four poses keep the feet planted at the kernel's walk (HUNTING.md section 2).
-  Run keyed the same way, a four-beat gallop (hind left, hind right, fore left, fore right, a quarter of the cycle
-  apart), the body carried lower, pitching and flexing, the stride long enough for the run at half the walk's step. The file's own Run swings the legs
-  nearly in place (about 3 px of ground a cycle at the tile), so no pace could lock its feet.
+  Walk keyed on the leg IK targets: a calm four-beat pace (hind left, fore left, hind right, fore right, a quarter of
+  the cycle apart), each hoof on the ground for WALK_DUTY of the cycle moving back at one speed and held flat, so a
+  planted hoof keeps its spot; the swing is low and leaves and meets the ground at that speed. The body is carried
+  level (no bob) and the head low. The stride is as short as the kernel's walk allows with four poses (HUNTING.md
+  section 2), shorter in the body's units for the larger hart.
+  Run keyed the same way, a four-beat rotary gallop (hind left, hind right, fore right, fore left, a quarter of the
+  cycle apart), the body carried lower, pitching and flexing, the stride long enough for the run at half the walk's
+  step. The file's own Run swings the legs nearly in place (about 3 px of ground a cycle at the tile), so no pace
+  could lock its feet.
   Alert from the standing pose: the head carried high and a little forward, the ears up and spread, a still body
   and a slow look that loops (ahead, to one side, ahead, to the other side).
   Graze from the file's Eat held at its lowest head, with a small chew and an ear flick.
@@ -61,19 +63,33 @@ TEX = opt("--tex", 1024, int)
 HART_COAT = (0.72, 0.28)   # the hart's coat value: this floor plus this share of the doe's own light
 FPS = 24
 
-# the walk, in the file's units (the withers stand about 3.5 units high)
+# the walk, in the file's units (the withers stand about 3.5 units high): a calm pace, keyed on the leg IK targets.
+# Four poses of it are drawn (frames 0, 8, 16, 24), each with one hoof at the top of a low swing and the other three
+# planted, the body level (no bob) and the head carried low. A planted hoof sits a quarter of the stride ahead of or
+# behind its middle spot in the poses beside the one that shows it under the leg, whatever the duty, so the stride
+# alone sets how far the legs spread; the doe's fore leg stands straight at rest and reaches that far only with the
+# withers lowered.
 WALK_FRAMES = 32       # one cycle; four poses of it sit at frames 0, 8, 16, 24
-WALK_STANCE = 3.2      # how far a planted hoof travels back under the body in one stance
-WALK_LIFT = 0.6        # how high a swinging hoof rises
-WALK_DUTY = 0.6        # the share of the cycle a hoof is on the ground (over half: still a walk)
-WALK_CROUCH = 0.12     # the body carried a little lower than standing, so each leg reaches its whole stance
-WALK_BOB = 0.07        # the body's rise and fall, twice a cycle
-WALK_NOD = 0.12        # the head's nod, twice a cycle
-WALK_FLICK = 35        # degrees the hoof folds at the top of its swing
-# the run, keyed the same way: a four-beat gallop (hind left, hind right, fore left, fore right, a quarter of the
-# cycle apart), each hoof under a third of the cycle on the ground, the body pitching and the back flexing. The even
-# beat keeps the outline seen from the front steady over the four poses: with the hooves landing in pairs, two poses
-# show both fore legs reaching toward the camera below the chest and two show them folded out of sight
+WALK_DUTY = 0.6        # the share of the cycle a hoof is on the ground (over half: three hooves down in every pose)
+WALK_LIFT = 0.22       # how high a swinging hoof rises: low, a step, not a trot
+WALK_FLICK = 15        # degrees a fore hoof folds at the top of its swing
+WALK_HIND_FLICK = 8    # a hind hoof folds less: folded behind the hock it shows past the rump as a pale stub
+WALK_HEAD = (-0.1, -1.2)   # the head carried forward and low (y, z from standing): lower than in the run
+# per look: the ground covered in one cycle (as short as the kernel's walk allows: four poses at 190 ms a tile stay
+# under 30 poses a second with a cycle of at least 45 px seen from above, so the larger hart takes a shorter stride in
+# the body's units than the roe deer), the withers and the hips carried lower than standing (each planted hoof
+# reaches its spot in the drawn poses) and where each hoof's stance is centred behind its rest spot (+y: the hind
+# stance moved forward, as a hind hoof cannot reach far behind the hip; the fore set so the four footfalls stay even)
+WALK = {
+    "roe": dict(stride=5.25, crouch=0.36, hip_crouch=0.3, back={"IK-Backleg_L": -0.7, "IK-Backleg_R": -0.7, "IK-Frontleg_L": 0.1, "IK-Frontleg_R": 0.1}),
+    "hart": dict(stride=3.6, crouch=0.2, hip_crouch=0.2, back={"IK-Backleg_L": -0.3, "IK-Backleg_R": -0.3, "IK-Frontleg_L": 0.0, "IK-Frontleg_R": 0.0}),
+}[LOOK]
+WALK_STANCE = WALK["stride"] * WALK_DUTY   # how far a planted hoof travels back under the body in one stance
+# the run, keyed the same way: a four-beat rotary gallop (hind left, hind right, fore right, fore left, a quarter of
+# the cycle apart), each hoof under a third of the cycle on the ground, the body pitching and the back flexing. The
+# fore feet land in the same order as the hind feet (the rotary order): in the transverse order (hind left, hind
+# right, fore left, fore right) one pose gathers both far legs under the belly at once, the far hind about to land and
+# the far fore just lifted, and side-on their two hooves hang there with no thigh above them, a lump
 RUN_FRAMES = 12
 RUN_STANCE = 3.1       # long enough that four poses hold the feet at the run of HUNTING.md section 2 (95 ms a tile)
 RUN_LIFT = 0.35        # how high a swinging hind hoof rises: higher, a hind leg folded under the belly shows only its hoof, a stray lump
@@ -87,17 +103,20 @@ RUN_LIFT_SHAPE = 0.6   # the swing's height as sin ** this: under 1 the hoof cle
                        # beside a plant (slower than the stance, where the swing eases in and out) are not read as planted
 RUN_HIND_FLICK = 25    # a hind hoof folds less: folded far behind the rump it reads as a leg bent the wrong way
 RUN_CROUCH = 0.4       # the body carried lower and flatter than standing, so each leg reaches its whole stance
-RUN_BACK = {"IK-Backleg_L": 0.0, "IK-Backleg_R": 0.0, "IK-Frontleg_L": -0.1, "IK-Frontleg_R": -0.1}   # as STANCE_BACK: a galloping fore leg reaches forward
+RUN_BACK = {"IK-Backleg_L": 0.0, "IK-Backleg_R": 0.0, "IK-Frontleg_L": -0.1, "IK-Frontleg_R": -0.1}   # a galloping fore leg reaches forward
 # the touchdown of each foot as a share of the cycle
-RUN_DOWN = {"IK-Backleg_L": 0.0, "IK-Backleg_R": 0.25, "IK-Frontleg_L": 0.5, "IK-Frontleg_R": 0.75}
-# where the cycle starts: one frame after the hind left lands, so the four even poses (frames 0, 3, 6, 9) do not
+RUN_DOWN = {"IK-Backleg_L": 0.0, "IK-Backleg_R": 0.25, "IK-Frontleg_R": 0.5, "IK-Frontleg_L": 0.75}
+# where the cycle starts: one frame before the hind left lands, so the four even poses (frames 0, 3, 6, 9) do not
 # fall on a touchdown, where a hoof is still easing onto the ground and reads as sliding
 RUN_PHASE = 1 / RUN_FRAMES
 # the swing's speed where it leaves and meets the ground, at most this many stances per unit of swing: a short duty
 # asks for a fast swing, and a Hermite curve that leaves at that speed overshoots far behind the rump; the hind hoof
-# is held closer still (a hind leg flung far back reads as bent the wrong way)
+# is held closer still (a hind leg flung far back reads as bent the wrong way), and in the run the fore hoof too (a
+# fore hoof flung far forward hangs below the chest seen from the front and swells the outline); the walk's slow
+# swing stays under these
 SWING_TANGENT_MAX = 1.0
 RUN_HIND_TANGENT_MAX = 0.7
+RUN_FORE_TANGENT_MAX = 0.7
 # the ears: in every action each ear leans out from the head by EAR_SPREAD degrees from upright and a little back,
 # and turns its inner face to the camera of the down view, so seen from the front the two stand out past the neck
 # (the doe's ears face out and down at rest and show only their edge from above); in Alert they stand straighter
@@ -117,9 +136,6 @@ FEET = [("IK-Backleg_L", "Backleg_L.002", 0.0), ("IK-Frontleg_L", "Frontleg_L.00
         ("IK-Backleg_R", "Backleg_R.002", 0.5), ("IK-Frontleg_R", "Frontleg_R.002", 0.75)]
 HOOVES = [h for _, h, _ in FEET]
 LIE_FROM = opt("--lie-from", "Die.001")
-# where each hoof's stance is centred, behind its rest spot (+y): the fore leg cannot reach as far forward as it
-# can back, and a hoof that cannot reach the ground at the front of its stance lands late
-STANCE_BACK = {"IK-Backleg_L": 0.0, "IK-Backleg_R": 0.0, "IK-Frontleg_L": 0.55, "IK-Frontleg_R": 0.55}
 
 
 def diag(*a):
@@ -579,23 +595,23 @@ for i in range(WALK_FRAMES + 1):
         ph = (t - s0) % 1.0
         if ph < 1 - WALK_DUTY:                  # swing: from behind to in front, lifted
             s = ph / (1 - WALK_DUTY)
-            y = swing_y(s, WALK_STANCE, WALK_DUTY)  # +y is behind (the deer faces -Y)
+            hind = "Back" in ik
+            y = swing_y(s, WALK_STANCE, WALK_DUTY, RUN_HIND_TANGENT_MAX if hind else SWING_TANGENT_MAX)  # +y is behind (the deer faces -Y)
             z = WALK_LIFT * math.sin(math.pi * s)
-            flick = math.sin(math.pi * s) * math.radians(WALK_FLICK)
+            flick = math.sin(math.pi * s) * math.radians(WALK_HIND_FLICK if hind else WALK_FLICK)
         else:                                   # stance: from in front to behind at one speed
             s = (ph - (1 - WALK_DUTY)) / WALK_DUTY
             y = WALK_STANCE * (s - 0.5)
             z = 0.0
             flick = 0.0
         q, loc, sc = p[ik]
-        p[ik] = (q, loc + local_delta(ik, (0, y + STANCE_BACK[ik], z)), sc)
+        p[ik] = (q, loc + local_delta(ik, (0, y + WALK["back"][ik], z)), sc)
         flicks[hoof] = flick                    # the toe folds down and back as it lifts
-    bob = -WALK_BOB * math.cos(4 * math.pi * t)
-    for b in ("IK-Hip", "IK-Backbone"):
+    for b, crouch in (("IK-Hip", WALK["hip_crouch"]), ("IK-Backbone", WALK["crouch"])):
         q, loc, sc = p[b]
-        p[b] = (q, loc + local_delta(b, (0, 0, bob - WALK_CROUCH)), sc)
+        p[b] = (q, loc + local_delta(b, (0, 0, -crouch)), sc)
     q, loc, sc = p["IK-Head"]
-    p["IK-Head"] = (q, loc + local_delta("IK-Head", (0, -0.5 * WALK_NOD * math.sin(4 * math.pi * t), bob - WALK_CROUCH + WALK_NOD * math.sin(4 * math.pi * t + 0.6))), sc)
+    p["IK-Head"] = (q, loc + local_delta("IK-Head", (0, WALK_HEAD[0], WALK_HEAD[1] - WALK["crouch"])), sc)
     orient_hooves(p, flicks)
     walk.append(p)
 actions.append(write_action("Walk", walk))
@@ -615,7 +631,7 @@ for i in range(RUN_FRAMES + 1):
             flick = 0.0
         else:                                   # swing: behind to in front, lifted and folded
             s = (ph - RUN_DUTY) / (1 - RUN_DUTY)
-            y = swing_y(s, RUN_STANCE, RUN_DUTY, SWING_TANGENT_MAX if "Front" in ik else RUN_HIND_TANGENT_MAX)
+            y = swing_y(s, RUN_STANCE, RUN_DUTY, RUN_FORE_TANGENT_MAX if "Front" in ik else RUN_HIND_TANGENT_MAX)
             z = RUN_LIFT * (RUN_FORE_LIFT if "Front" in ik else 1.0) * math.sin(math.pi * s) ** RUN_LIFT_SHAPE
             flick = math.sin(math.pi * s) * math.radians(RUN_FLICK if "Front" in ik else RUN_HIND_FLICK)
         q, loc, sc = p[ik]
