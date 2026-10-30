@@ -21,8 +21,8 @@ What it does, in the manner of quad_pass.py (the wolf) and the other animal pass
   folded wing only (an ellipse on the side of the body, the side-facing surface), full weight inside and a smooth
   edge into the bones that carried them. The file has no wing bones; the lift and the flutter need them. A weighted
   patch opens as a flare, not a feathered wing: it reads at tile size, the texture stretches between it and the body,
-- makes eight actions with the rig's leg and head IK (six keyed from the file's standing pose 'Stand', two from its
-  own actions), then bakes each to plain bone keys and drops the IK targets and every constraint before export:
+- makes eight actions with the rig's leg and head IK (seven keyed from the file's standing pose 'Stand', Graze from its
+  own pecking actions), then bakes each to plain bone keys and drops the IK targets and every constraint before export:
   Idle    from the standing pose: a breath, a head turn, a head bob and a tail flick, four poses that differ.
   Walk    keyed here on the leg IK targets: alternate steps with a low swing, the body level and the head carried
           low with a bob each step. The file's Walk steps nearly in place (it is measured below); the kernel's walk
@@ -37,9 +37,14 @@ What it does, in the manner of quad_pass.py (the wolf) and the other animal pass
           head a little up, a second peck, then the head part way up (EndPecking half way from the pose between
           pecks to standing): four poses that differ. The beak is held just above the floor the feet stand on (the
           renderer stands a pose on its lowest point).
-  Lie     the last pose of the file's Dying, on its side, the wings closed and the legs drawn in, turned to lie along
-          its standing line and moved back to where the body stood, held still: no fall is played and nothing
-          twitches; the client fades it.
+  Lie     SLEEP and rest only (HUNTING.md section 2): a roosting hen keyed from the standing pose, the body settled
+          level on the ground as a round loaf, the legs folded under it out of sight, the wings closed, the feathers
+          a little puffed, the head drawn in onto the shoulders and the tail level, held still over the spot it stood
+          on. The file's Dying is not used: it ends a death, the bird tipped on its side with a wing out, and a rest
+          pose must read as a resting bird. A take is a fade and a drop of goods (HUNTING.md section 10, which names
+          no pose): no take pose is drawn; a bird taken in its sleep fades from the roost like any held pose, and the
+          bird is never laid down into this pose for a take (an owner question, default: fade the pose it holds; the
+          other animals' lie clips lie on their side as the pose a take fades).
   Lift    the burst: stand, crouch, spring as the wings open, the wings at the top of the stroke with the legs
           stretched below (the renderer grounds every pose, so the rise is in the pose).
   Fly     the short low flight of a ground fowl (BESTIARY: it runs, then flutters up): the wings beating, the body
@@ -131,10 +136,22 @@ IDLE_BOB = (-0.7, -1.0)
 IDLE_TAIL = 18
 # Graze: the beak this far above the floor the feet stand on
 BEAK_CLEAR = 0.1
-# Lie: the legs drawn in this share of the way to their hip joints
-LIE_TUCK = 0.5
-# Lie: the fall leaves the body across its standing line; it is turned back so its long axis lies along it, this many degrees off
-LIE_YAW = 20
+# Lie (SLEEP and rest only): a roosting hen, from the standing pose. The hips lowered so the belly rests on the ground
+# with the legs folded under it (the ankles drawn a little in, back and up from where they stood, so each leg folds at
+# the hock under the belly, and the toes curl up inside the belly: no leg or toe shows from any view, and the pass stops
+# if a leg or toe vertex ends below the body); the body tipped a little forward about the hip joints so
+# the back lies near level; the body puffed (scaled uniformly about the hips, the head kept at its own size); the head
+# carried down with the body and drawn back and down onto the shoulders; the tail laid back to level with its fan
+# folded. The wings stay folded against the body.
+ROOST_DROP = 3.0           # units the hips are lowered (the hip joints stand 4.5 units up)
+ROOST_LEVEL = 8            # degrees the body tips forward about the hip joints (the standing back rises 19 to the shoulders)
+ROOST_PUFF = 1.08          # the body's scale
+ROOST_FEET = (0.85, 0.4, 0.6)   # each ankle target: its standing x times the first, moved back by the second and up by the third
+ROOST_CURL = 40            # degrees the toes curl
+ROOST_HEAD = (0.8, -1.8, 0)     # the head target, carried with the body, then moved back and down (y, z), and a pitch in degrees (0: none)
+ROOST_CHAIN = 2            # the head IK bends the two neck bones only, so the back stays where the body put it (the rig's
+                           # chain of 3 would tip the breast down to lower the head, and the hen would read as fallen forward)
+ROOST_TAIL = (72, 0.7)     # degrees the tail is laid back (the standing tail rises 69), and the scale of its folded fan
 # Lift (36 frames, four poses at 0, 9, 18, 27) and Fly (16 frames, four poses at 0, 4, 8, 12): the wings' spread
 # (degrees out from the body on the hinge, 90 level and more above the back, then degrees the tip is raised)
 LIFT_WINGS = [(0, 0), (10, 0), (70, 10), (150, 25)]
@@ -654,50 +671,82 @@ diag("graze: Pecking1 frame", down1, "(beak down, solved to", lowest_parts(), "u
      ", EndPecking frame", part, "(the head part way up)")
 actions["Graze"] = keyed({0: graze_keys[0], 12: graze_keys[1], 24: graze_keys[2], 36: graze_keys[3], 48: graze_keys[0]}, 48)
 
-# ------------------------------------------------------------------ Lie: the last pose of Dying, the legs drawn in, held still
-die = src["Dying"]
-lie_pose = pose_at(die, die.frame_range[1])
-for b in BONES:
-    lie_pose.setdefault(b, REST_POSE[b])
-put(lie_pose)
-goals = {}
-for side, (ik, hip_bone, _, _) in LEGS.items():
-    f_ = arm.pose.bones[ik].matrix.translation.copy()
-    r_ = arm.pose.bones[hip_bone].head.copy()
-    goals[ik] = f_ + (r_ - f_) * LIE_TUCK
-for ik, g in goals.items():
-    move(lie_pose, ik, tuple(g - arm.pose.bones[ik].matrix.translation))
-    put(lie_pose)
+# ------------------------------------------------------------------ Lie: a roosting hen, for SLEEP and rest only
+LEG_BONES = set()   # each side's shank (its tail is the ankle) and the toes of LEGS, every segment of each toe
+for side, (_, _, toes, _) in LEGS.items():
+    LEG_BONES.add("Leg_" + side + ".002")
+    for n in toes:
+        LEG_BONES |= {n} | {b.name for b in arm.data.bones[n].children_recursive}
+LEG_VS = [v.index for v in mesh.data.vertices if dominant(v) in LEG_BONES]
+TAIL_VS = [v.index for v in mesh.data.vertices if dominant(v) == "Bone.006"]
+BODY_VS = sorted(set(range(len(mesh.data.vertices))) - set(LEG_VS))
+diag("roost: the leg and toe vertices", len(LEG_VS), "on", sorted({dominant(mesh.data.vertices[i]) for i in LEG_VS}), "; the body", len(BODY_VS))
+NECK_IK = next(c for c in arm.pose.bones["Bone.004"].constraints if c.type == "IK")
+NECK_CHAIN0 = NECK_IK.chain_count   # the rig's own head IK chain, read before anything changes it
+if NECK_CHAIN0 != 3:
+    raise SystemExit(f"the rig's head IK chain is {NECK_CHAIN0}, not 3: every action but Lie would bake with another neck")
+CHAIN = {"Lie": ROOST_CHAIN}   # the head IK's chain while an action is keyed and baked (the rig's own: the back bends with the neck)
 
 
-def body_line():
-    """The body's long axis seen from above (the main axis of its vertices), pointed toward the beak."""
-    co_ = world_verts()[:, :2]
-    c0 = co_ - co_.mean(axis=0)
-    w, v = np.linalg.eigh(c0.T @ c0)
-    ax = v[:, int(np.argmax(w))]
-    if float(c0[BEAK] @ ax) < 0:
-        ax = -ax
-    return math.atan2(float(ax[1]), float(ax[0]))
+def roost_pose():
+    """The roost: SLEEP and rest only. Keyed from the standing pose with the head IK on the two neck bones (ROOST_CHAIN)."""
+    p = copy(stand)
+    put(p)
+    hip0 = arm.pose.bones["Hip"].matrix.copy()
+    head0 = arm.pose.bones["IK-Head"].matrix.translation.copy()
+    q, loc, sc = p["Hip"]                      # the feathers puffed: the whole body scaled uniformly from the Hip bone
+    p["Hip"] = (q, loc, sc * ROOST_PUFF)
+    q, loc, sc = p["Head"]                     # and the head kept at its own size
+    p["Head"] = (q, loc, sc / ROOST_PUFF)
+    move(p, "Hip", (0, 0, -ROOST_DROP))
+    lean(p, ROOST_LEVEL)
+    put(p)
+    for side, (ik, _, _, _) in LEGS.items():   # the ankles drawn a little in, back and up from where they stood: each leg folds at the hock under the belly
+        a = arm.pose.bones[ik].matrix.translation
+        move(p, ik, (a.x * (ROOST_FEET[0] - 1), ROOST_FEET[1], ROOST_FEET[2]))
+    # the head carried down with the body (the standing head target moved as the hips moved), then drawn in onto the shoulders
+    carried = arm.pose.bones["Hip"].matrix @ hip0.inverted() @ head0
+    head_to(p, tuple(carried + Vector((0, ROOST_HEAD[0], ROOST_HEAD[1])) - head0), pitch=ROOST_HEAD[2])
+    turn(p, "Bone.006", rx(-ROOST_TAIL[0]))   # the tail laid back toward level and its fan folded (shorter and narrower)
+    q, loc, sc = p["Bone.006"]
+    p["Bone.006"] = (q, loc, sc * ROOST_TAIL[1])
+    orient_toes(p, {"L": ROOST_CURL, "R": ROOST_CURL})
+    return p
 
 
-put(stand)
-line_stand = body_line()
-put(lie_pose)
-yaw = math.degrees(line_stand - body_line()) + LIE_YAW
-yaw = (yaw + 180) % 360 - 180
-turn(lie_pose, "Main", rz(yaw))
-put(lie_pose)
-diag("lie: the body turned", round(yaw, 1), "degrees about the vertical to lie along its standing line,", LIE_YAW, "off")
+def slope(bone):
+    """Side-on, degrees above level: the back (Backbone) toward the shoulders, the tail toward its tip."""
+    pb = arm.pose.bones[bone]
+    d = pb.tail - pb.head
+    return round(math.degrees(math.atan2(d.z, abs(d.y))), 1)
+
+
 put(stand)
 c_stand = world_verts()
+stand_slopes = (slope("Backbone"), slope("Bone.006"))
+NECK_IK.chain_count = CHAIN["Lie"]
+lie_pose = roost_pose()
 put(lie_pose)
 c_lie = world_verts()
 shift = (c_stand.min(axis=0) + c_stand.max(axis=0)) / 2 - (c_lie.min(axis=0) + c_lie.max(axis=0)) / 2
-# the fall carries the body off its spot: move it back (Main is the root; the shift is in metres, the channel in units)
+# the body settled over the spot it stood on (Main is the root; the shift is in metres, the channel in units)
 move(lie_pose, "Main", tuple(arm.matrix_world.inverted().to_3x3() @ Vector((float(shift[0]), float(shift[1]), 0.0))))
 put(lie_pose)
-diag("lie: Dying frame", int(die.frame_range[1]), "legs drawn in by", LIE_TUCK, "moved back by", shift[:2].round(3), "m")
+c_lie = world_verts()
+low = float(c_lie[BODY_VS][:, 2].min())
+leg_low = float(c_lie[LEG_VS][:, 2].min())
+if leg_low < low:   # a resting pose shows no leg or toe: one below the body would be the pose's lowest point and show
+    raise SystemExit(f"the roost puts a leg or toe {round((low - leg_low) * 1000, 1)} mm below the body: look at the ROOST_* numbers")
+back = c_lie[TAIL_VS]
+diag("roost: the lowest leg or toe vertex", round((leg_low - low) * 1000, 1), "mm above the lowest body vertex; the toes reach",
+     round(float(c_lie[LEG_VS][:, 1].min() - c_lie[BODY_VS][:, 1].min()) * 1000, 1), "mm behind the body's front; the box (width, length, height mm)",
+     tuple(int(round(v * 1000)) for v in (c_lie.max(axis=0) - c_lie.min(axis=0))), "against standing", tuple(int(round(v * 1000)) for v in (c_stand.max(axis=0) - c_stand.min(axis=0))),
+     "; moved by", shift[:2].round(3), "m")
+diag("roost: the back rises", slope("Backbone"), "degrees toward the shoulders (standing", stand_slopes[0], "), the tail", slope("Bone.006"),
+     "degrees (standing", stand_slopes[1], "); the head's root", round((arm.pose.bones["Head"].head.z - arm.pose.bones["Backbone"].tail.z) * K * 1000, 1),
+     "mm above the shoulders (standing", round((arm.data.bones["Head"].head_local.z - arm.data.bones["Backbone"].tail_local.z) * K * 1000, 1),
+     "); the beak", round((float(c_lie[BEAK][2]) - low) * 1000, 1), "mm up, the tail's highest point", round((float(back[:, 2].max()) - low) * 1000, 1), "mm up")
+NECK_IK.chain_count = NECK_CHAIN0
 actions["Lie"] = [copy(lie_pose) for _ in range(9)]
 
 
@@ -753,6 +802,7 @@ def evaluate(p):
 
 miss = {}
 for name, poses in actions.items():
+    NECK_IK.chain_count = CHAIN.get(name, NECK_CHAIN0)
     worst = [0.0, 0.0]
     for p in poses:
         put(p)
@@ -762,8 +812,13 @@ for name, poses in actions.items():
             down = tgt.z < arm.data.bones[ik].head_local.z + 0.01
             worst[0 if down else 1] = max(worst[0 if down else 1], (ankle - tgt).length)
     miss[name] = (round(worst[0], 3), round(worst[1], 3))
+    NECK_IK.chain_count = NECK_CHAIN0
 diag("the legs' reach: worst ankle miss from its target (units), (feet down, feet up)", miss)
-baked = {name: [evaluate(p) for p in poses] for name, poses in actions.items()}
+baked = {}
+for name, poses in actions.items():
+    NECK_IK.chain_count = CHAIN.get(name, NECK_CHAIN0)
+    baked[name] = [evaluate(p) for p in poses]
+    NECK_IK.chain_count = NECK_CHAIN0
 diag("evaluated with the IK:", {k: len(v) for k, v in baked.items()})
 
 for pb in arm.pose.bones:
