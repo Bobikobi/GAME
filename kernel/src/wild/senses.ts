@@ -51,7 +51,7 @@ export function inFront(c: Creature, to: Tile): boolean {
 
 /**
  * The sight radius toward a tile before the rear halving (owner question 5 default: cover and the
- * head-down beat first, floor 1, then halve behind). Asleep, a third of its sight all round.
+ * head-down beat first, floor 1, then halve behind). Asleep, a third of its sight, halved behind too.
  */
 export function sightRadius(kind: WildKind, c: Creature, view: Pick<WildView, 'cover'>, to: Tile): number {
   if (c.state === 'SLEEP') return idivUp(kind.sight, 3);
@@ -65,7 +65,7 @@ export function sightRadius(kind: WildKind, c: Creature, view: Pick<WildView, 'c
 /** Whether the animal sees a tile; `r` is the radius that held. Within 2 tiles always, walls or not. */
 export function seesTile(kind: WildKind, c: Creature, view: Pick<WildView, 'cover' | 'blocks'>, to: Tile): { r: number } | undefined {
   const s = sightRadius(kind, c, view, to);
-  const r = c.state === 'SLEEP' || inFront(c, to) ? s : idivUp(s, 2);
+  const r = inFront(c, to) ? s : idivUp(s, 2);
   const dd = d2(c.at, to);
   if (dd <= 4) return { r };
   if (dd <= r * r && lineClear(view, c.at, to)) return { r };

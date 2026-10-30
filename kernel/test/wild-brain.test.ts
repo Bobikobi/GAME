@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest';
 
 import { settle, stepsToMove, think, threshold, tierState } from '../src/wild/brain';
 import { type Creature, type WildView, THINK_MS, awake } from '../src/wild/types';
-import { BOAR, HARE, NOISE, ROE, WOLF, creature, field, grid, lcg, player, view } from './wild-fixtures';
+import { BOAR, HARE, NOISE, NOON, ROE, WOLF, creature, field, grid, lcg, player, view } from './wild-fixtures';
 
 const OPEN = grid(field(41));
 /** A hare that runs on the ground, so a flight is not cut short by its burrow under its feet. */
@@ -186,7 +186,9 @@ describe('the states', () => {
     expect(awake(WOLF, 5)).toBe(false);
     expect(awake(WOLF, 12)).toBe(false);
     expect(awake(HARE, 4)).toBe(false);
-    expect(awake(HARE, 21)).toBe(true);
+    expect(awake(HARE, 19)).toBe(true);
+    expect(awake(HARE, 20)).toBe(false);
+    expect(awake(HARE, 21)).toBe(false);
     expect(awake(BOAR, 3)).toBe(true);
   });
 
@@ -243,6 +245,57 @@ describe('the states', () => {
     }
     expect([...seen]).toEqual(expect.arrayContaining(['ALERT', 'STALK', 'CHASE', 'RETURN']));
     expect((wolf.at[0] - 20) ** 2 + (wolf.at[1] - 20) ** 2).toBeLessThanOrEqual((7 + 5) ** 2);
+  });
+
+  test('a stray past its roam walks home by day', () => {
+    // 17 tiles out at noon: no WANDER tile lies inside the roam, so it returns to the anchor
+    const c = hare({ at: [37, 20], left: 2 });
+    const states = new Set<string>();
+    let i = 0;
+    for (; i < 300 && (c.at[0] - 20) ** 2 + (c.at[1] - 20) ** 2 > RUNNER.roam ** 2; i++) {
+      think(RUNNER, c, at({ tick: i * THINK_MS }));
+      states.add(c.state);
+    }
+    expect((c.at[0] - 20) ** 2 + (c.at[1] - 20) ** 2).toBeLessThanOrEqual(RUNNER.roam ** 2);
+    expect(states.has('RETURN')).toBe(true);
+    expect(i).toBeLessThan(300);
+  });
+
+  test('after a flight from the roam edge it is back inside its roam before nightfall', () => {
+    const big = grid(field(81));
+    const home: [number, number] = [40, 40];
+    const look = (over: Partial<WildView> = {}) => view(big, { anchorAt: home, ...over });
+    const roe = creature({ id: 3, at: [52, 40], anchor: 'core/roe@40,40', left: 100 });
+    think(ROE, roe, look({ player: player([48, 40], NOISE.run) }));
+    expect(roe.state).toBe('FLEE');
+    let far = 0;
+    // noon to 22 is far longer than 400 thinks; the walk home takes a few dozen
+    for (let i = 1; i <= 400; i++) {
+      think(ROE, roe, look({ tick: i * THINK_MS }));
+      far = Math.max(far, (roe.at[0] - 40) ** 2 + (roe.at[1] - 40) ** 2);
+    }
+    expect(far).toBeGreaterThan(ROE.roam ** 2);
+    expect((roe.at[0] - 40) ** 2 + (roe.at[1] - 40) ** 2).toBeLessThanOrEqual(ROE.roam ** 2);
+  });
+
+  test('out of hours a far anchor is reached by straight steps; a walled-off one is never gone under short of', () => {
+    // 35 tiles out, past the path box: straight steps take it home and it goes under on the anchor
+    const big = grid(field(81));
+    const far = creature({ at: [45, 40], anchor: 'core/hare@10,40' });
+    const night = view(big, { anchorAt: [10, 40], hour: 23 });
+    for (let i = 0; i < 30 && !far.under; i++) think(HARE, far, night);
+    expect(far.under).toBe(true);
+    expect(far.at).toEqual([10, 40]);
+    // a den inside a ring of wall: it walks up to the wall and keeps trying, it does not go under there
+    const ring = grid(field(41).map((row, y) => [...row].map((ch, x) => (Math.max(Math.abs(x - 20), Math.abs(y - 20)) === 2 ? '#' : ch)).join('')));
+    const shut = creature({ at: [25, 20], anchor: 'core/hare@20,20' });
+    const late = view(ring, { anchorAt: HOME, hour: 23 });
+    for (let i = 0; i < 20; i++) think(HARE, shut, late);
+    expect(shut).toMatchObject({ state: 'RETURN', at: [23, 20] });
+    expect(shut.under).toBeFalsy();
+    // awake, a walled-off walk home stands at IDLE instead
+    think(HARE, shut, view(ring, { anchorAt: HOME, hour: NOON }));
+    expect(shut.state).toBe('IDLE');
   });
 
   test('a long gap settles to the rest pose', () => {

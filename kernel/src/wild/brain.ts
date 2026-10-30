@@ -73,7 +73,11 @@ function enter(c: Creature, s: WildState, view: WildView): void {
 function enterQuiet(kind: WildKind, c: Creature, s: WildState, view: WildView, regroup = false): void {
   if (s === 'WANDER') {
     const target = wanderTarget(kind, c, view, regroup);
-    if (!target) return enterQuiet(kind, c, 'IDLE', view);
+    if (!target) {
+      // A stray past its roam (a flight, the spread of one) has no WANDER tile left: it walks home.
+      if (d2(c.at, view.anchorAt) > kind.roam * kind.roam) return homeward(kind, c, view);
+      return enterQuiet(kind, c, 'IDLE', view);
+    }
     enter(c, 'WANDER', view);
     c.target = [target[0], target[1]];
     return;
@@ -155,12 +159,29 @@ function homeward(kind: WildKind, c: Creature, view: WildView): void {
   c.target = [view.anchorAt[0], view.anchorAt[1]];
 }
 
-/** Walks toward the target at a pace: 'there' on it, 'stuck' when no step leads closer, else 'on'. */
+/** A step straight toward a target: the open neighbour that brings it closest, ties N E S W; none at a low point. */
+function towardStep(c: Creature, target: Tile, view: WildView): Tile | undefined {
+  let best: Tile | undefined;
+  let near = d2(c.at, target);
+  for (const [dx, dy] of NEIGHBOURS) {
+    const t: Tile = [c.at[0] + dx, c.at[1] + dy];
+    if (view.open(t[0], t[1]) && d2(t, target) < near) {
+      best = t;
+      near = d2(t, target);
+    }
+  }
+  return best;
+}
+
+/**
+ * Walks toward the target at a pace: down its breadth-first map, or a straight step when the target lies
+ * past the map's box; 'there' on it, 'stuck' when neither leads closer, else 'on'.
+ */
 function walk(c: Creature, target: Tile, paceMs: number, view: WildView, stopShort = false): 'there' | 'stuck' | 'on' {
   const n = stepsToMove(c, paceMs);
   for (let i = 0; i < n; i++) {
     if (same(c.at, target)) break;
-    const t = stepToward(view.open, c.at, target);
+    const t = stepToward(view.open, c.at, target) ?? towardStep(c, target, view);
     if (!t) return 'stuck';
     if (stopShort && same(t, target)) break;
     moveTo(c, t);
@@ -377,11 +398,14 @@ function react(
 /** The quiet states' own beats when nothing moved them (HUNTING 2). */
 function quiet(kind: WildKind, c: Creature, view: WildView, isAwake: boolean): void {
   if (c.state === 'RETURN') {
+    // Rest only on arrival. Stuck (walled off from the anchor): awake it stands at IDLE; out of hours it
+    // keeps RETURN and tries again next think, never going under where it stands.
     const target = c.target ?? view.anchorAt;
-    if (walk(c, target, view.pace.walk, view) !== 'on') {
+    const went = walk(c, target, view.pace.walk, view);
+    if (went === 'there') {
       if (isAwake) enterQuiet(kind, c, 'IDLE', view);
       else rest(kind, c, view);
-    }
+    } else if (went === 'stuck' && isAwake) enterQuiet(kind, c, 'IDLE', view);
     return;
   }
   if (c.state === 'SLEEP') {

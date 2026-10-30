@@ -2,7 +2,7 @@
 import type { Creature, Tile, WildKind, WildView } from '../src/wild/types';
 import { keyedRand } from '../src/wild/types';
 
-/** Hare: HUNTING 8 senses 6 / +2, BEHAVIOUR 5 row (30/50/20, roam 8, burrow, silent), solitary (5.1.6). */
+/** Hare: HUNTING 8 senses 6 / +2, BEHAVIOUR 5 row (30/50/20, roam 8, burrow, silent), solitary (5.1.6), awake 05 to 20. */
 export const HARE: WildKind = {
   id: 'core/hare',
   tier: 'flee',
@@ -15,7 +15,7 @@ export const HARE: WildKind = {
   bands: [100, 0, 0, 0],
   alarm: 0,
   looksBack: false,
-  hours: [5, 22],
+  hours: [5, 20],
   small: true,
 };
 
@@ -52,7 +52,7 @@ export const BOAR: WildKind = {
   small: false,
 };
 
-/** Wolf: 8 / +2, a hunter awake 20 to 05 (a window that wraps). */
+/** Wolf: 8 / +2, a hunter awake 20 to 05 (a window that wraps), a pack 10/30/60/0. */
 export const WOLF: WildKind = {
   id: 'core/wolf',
   tier: 'hunt',
@@ -62,7 +62,7 @@ export const WOLF: WildKind = {
   roam: 14,
   flight: 'ground',
   group: 'pack',
-  bands: [30, 60, 10, 0],
+  bands: [10, 30, 60, 0],
   alarm: 12,
   looksBack: true,
   hours: [20, 5],
