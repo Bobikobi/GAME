@@ -39,6 +39,11 @@ export class MusicPlayer {
     this.duck.connect(musicDestination);
   }
 
+  /** Where other music joins this player's: under the same duck, so a jingle ducks it too (G26). */
+  get input(): AudioNode {
+    return this.duck;
+  }
+
   play(song: Song | null, fadeMs: number): void {
     const now = this.context.currentTime;
     const fade = Math.max(0, fadeMs) / 1_000;

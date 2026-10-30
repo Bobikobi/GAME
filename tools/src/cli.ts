@@ -155,6 +155,10 @@ function creditsText(credits: { title: string; type: string; creator: string; fi
     '- [Atkinson Hyperlegible Next](https://github.com/googlefonts/atkinson-hyperlegible-next) by the Braille Institute of America - SIL Open Font License 1.1 (`game/public/fonts/atkinson-hyperlegible-next/OFL.txt`).',
     '- [Jersey 15](https://github.com/scfried/soft-type-jersey) by The Soft Type Project Authors - SIL Open Font License 1.1 (`game/public/fonts/jersey-15/OFL.txt`).',
     '',
+    '## Music',
+    '',
+    '- The music by state: our own tunes, played on the [FluidR3_GM](https://github.com/gleitz/midi-js-soundfonts) soundfont by Frank Wen - Creative Commons Attribution 3.0 (`game/public/music/LICENSE.txt`).',
+    '',
   );
   return lines.join('\n');
 }
