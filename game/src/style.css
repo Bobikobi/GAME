@@ -789,6 +789,9 @@ body {
    lacquer black and one antique-gold rim; the owner picks the skin from three stills. */
 .touch-on.landscape {
   --prompt-lift: 10px;
+  /* the landscape controls draw at 40% transparency, the whole control at once (lacquer, rim and glyph): the
+     owner's start, 30.10; one property, so a settings slider can move it later */
+  --controls-alpha: 0.6;
 }
 
 .touch-on.landscape:not(.at-title) .touch {
@@ -823,7 +826,7 @@ body {
   height: var(--ring, 96px);
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: rgb(19 18 32 / 0.7);
+  background: var(--ui-black);
   border: 2px solid var(--ui-gold-4);
   opacity: 0;
   transition: opacity 0.2s;
@@ -831,7 +834,7 @@ body {
 }
 
 .touch-on.landscape .stick.on {
-  opacity: 1;
+  opacity: var(--controls-alpha);
   transition: none;
 }
 
@@ -875,6 +878,7 @@ body {
   box-shadow: 0 3px 0 rgb(12 11 18 / 0.5);
   line-height: 1;
   pointer-events: auto;
+  opacity: var(--controls-alpha);
 }
 
 .touch-on.landscape .tbtn.sneak[aria-pressed='true'] {
@@ -888,6 +892,8 @@ body {
 
 .touch-on.landscape .tbtn.down {
   transform: translate(50%, calc(50% + 3px));
+  /* the press shows whole for its moment */
+  opacity: 1;
 }
 
 /* the glyphs grow with their buttons */

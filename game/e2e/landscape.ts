@@ -125,6 +125,9 @@ async function main(): Promise<void> {
       }
     }
     for (const [i, a] of seen.buttons.entries()) for (const b of seen.buttons.slice(i + 1)) if (overlap(a, b)) throw new Error(`${a.name} overlaps ${b.name}`);
+    // the controls draw at 40% transparency, the whole control at once (the owner, 30.10)
+    const alpha = await page.eval<string[]>(`[...document.querySelectorAll('.touch .tbtn')].filter((b) => b.getBoundingClientRect().width > 0 && !b.classList.contains('down')).map((b) => getComputedStyle(b).opacity)`);
+    if (alpha.some((o) => o !== '0.6')) throw new Error(`the controls draw at opacity ${alpha.join(', ')}, not 0.6`);
     if (seen.smallest < 12) throw new Error(`${seen.where} reads at ${seen.smallest} px, under 12`);
     console.log(`landscape: ${seen.buttons.length} buttons, the band to ${Math.round(seen.band)} px, the smallest text ${seen.smallest} px`);
 

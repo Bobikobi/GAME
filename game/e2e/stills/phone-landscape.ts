@@ -71,6 +71,7 @@ const SKINS: Record<string, string> = {
     ${L} .tbtn::before { content: ''; position: absolute; z-index: -1; inset: 10%; border: 1px solid var(--ui-gold-4); box-shadow: 0 3px 0 rgb(12 11 18 / 0.5);
       background: var(--ui-corner-tl) left top / 42% no-repeat, var(--ui-corner-tr) right top / 42% no-repeat,
         var(--ui-corner-bl) left bottom / 42% no-repeat, var(--ui-corner-br) right bottom / 42% no-repeat, var(--ui-grain), var(--ui-black); }
+    ${L} .tbtn.sneak::before { inset: 4%; } /* the word stays on the lacquer, never on bare ground */
     ${L} .tbtn.a { color: var(--ui-gold-6); }
   `,
 };
