@@ -715,6 +715,7 @@ body {
 }
 
 .tbtns {
+  position: relative;
   display: flex;
   gap: 14px;
   align-items: flex-end;
@@ -744,6 +745,29 @@ body {
   box-shadow:
     inset 0 -5px 0 var(--grey),
     0 3px 0 rgba(27, 26, 46, 0.5);
+}
+
+.tbtn.sneak {
+  /* frame D: the thin antique-gold line round the gold word on black, 44 px at the least */
+  /* above the round buttons, out of the row: the pad and A/B keep their places and their size */
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  width: auto;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 0;
+  font-size: 16px;
+  color: var(--ui-gold-6);
+  background: var(--ui-black);
+  border: var(--ui-line);
+  box-shadow: none;
+}
+
+.tbtn.sneak[aria-pressed='true'] {
+  color: var(--ui-black);
+  background: var(--ui-gold-5);
 }
 
 .tbtn.down {
