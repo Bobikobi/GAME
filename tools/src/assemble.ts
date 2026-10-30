@@ -166,6 +166,14 @@ export function flattenParams(p: ParamsBody): Params {
       heavy_step_ms: p.load.heavy_step_ms.value,
       heavy_breath_permille: p.load.heavy_breath_permille.value,
     },
+    gait: {
+      run_div: p.gait.run_div.value,
+      sneak_mul: p.gait.sneak_mul.value,
+      noise_still: p.gait.noise_still.value,
+      noise_sneak: p.gait.noise_sneak.value,
+      noise_walk: p.gait.noise_walk.value,
+      noise_run: p.gait.noise_run.value,
+    },
     starting_gold_mg: p.starting_gold_mg.value,
     per_point: {
       might: p.per_point.might.value,
@@ -177,8 +185,15 @@ export function flattenParams(p: ParamsBody): Params {
     },
     growth: p.growth
       ? {
-          cost: { small: p.growth.cost.small.value, major: p.growth.cost.major.value, corner: p.growth.cost.corner.value },
+          cost: { small: p.growth.cost.small.value, major: p.growth.cost.major.value, corner: p.growth.cost.corner.value, keystone: p.growth.cost.keystone.value },
+          cost_band: {
+            small: [p.growth.cost.small.min, p.growth.cost.small.max],
+            major: [p.growth.cost.major.min, p.growth.cost.major.max],
+            corner: [p.growth.cost.corner.min, p.growth.cost.corner.max],
+            keystone: [p.growth.cost.keystone.min, p.growth.cost.keystone.max],
+          },
           slot_levels: [...p.growth.slot_levels],
+          nodes_max: p.growth.nodes_max,
         }
       : undefined,
     light: p.light
@@ -484,7 +499,17 @@ function checkReferences(b: Bundle, origin: Record<string, string>, issues: Issu
     if (res.sprite_empty) sprite(id, 'node.sprite_empty', res.sprite_empty);
     res.growth?.forEach((g, i) => sprite(id, `node.growth.${i}`, g));
     if (res.growth && !res.sprite_empty) err(id, 'node.growth', 'growth stages come after "sprite_empty": name the stump or the bare ground first');
-    if (res.opens_after !== undefined && !b.quests[res.opens_after]) err(id, 'node.opens_after', `no quest "${res.opens_after}"`);
+    res.opens_after?.forEach((w, i) => {
+      if (!b.quests[w.quest]) err(id, `node.opens_after.${i}.quest`, `no quest "${w.quest}"`);
+    });
+    // one wait per wake pocket: a character is offered at most one of the quests, so the refusal has one line
+    for (const pocket of Object.keys(b.pockets)) {
+      const offered = (res.opens_after ?? []).filter((w) => {
+        const q = b.quests[w.quest];
+        return q !== undefined && (q.pocket === undefined || q.pocket === pocket);
+      });
+      if (offered.length > 1) err(id, 'node.opens_after', `${offered.map((w) => w.quest).join(' and ')} are both offered to ${pocket}: a node waits for one quest per wake pocket`);
+    }
     place(id, 'resource', res.place.slot);
     for (const extra of res.place.scatter ?? []) place(id, 'resource', extra);
   }

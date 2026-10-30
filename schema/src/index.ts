@@ -300,11 +300,23 @@ export const ResourceBody = Type.Object(
           'The node blocks the way, ready or not, as a tree does: a stump stays in the way until the tree is grown again. Left out: the player walks through it.',
       }),
     ),
-    opens_after: Type.Optional({
-      ...Id,
-      description:
-        'A quest id. The node cannot be struck by a character who was offered that quest and has not finished it; a character who was never offered it strikes the node as usual. The refusal says one short line and costs nothing.',
-    }),
+    opens_after: Type.Optional(
+      Type.Array(
+        Type.Object(
+          {
+            quest: Id,
+            line: Type.Optional(Type.String({ minLength: 1, maxLength: 80, description: 'The one short line the refusal says. Left out: "It is not ready yet."' })),
+          },
+          { additionalProperties: false },
+        ),
+        {
+          minItems: 1,
+          maxItems: 4,
+          description:
+            'Quests the node waits for, each with the line its refusal says. The node cannot be struck by a character who was offered one of them and has not finished it; a character who was offered none strikes the node as usual. Two entries may not both be offered to one wake pocket. The refusal costs nothing.',
+        },
+      ),
+    ),
     tool: Type.Optional(ToolKind),
     work: Type.Optional(
       Type.Literal('mine', {
@@ -553,6 +565,12 @@ export const ShopBody = Type.Object(
       { maxItems: 40 },
     ),
     buys: Type.Boolean({ description: 'Whether the shop buys anything that has a value.' }),
+    interior: Type.Optional(
+      Type.Union([Type.Literal('food')], {
+        description:
+          'The room its keeper trades in (DECISIONS.md, 2026-10-11, the shop interior). With it, the keeper stands inside: their place is the door, the player walks in, and the trade opens by talking across the counter. `food`: worn planks, a runner to the counter, a lit stove in a brick chimney. Left out, the keeper trades in the open.',
+      }),
+    ),
   },
   { additionalProperties: false },
 );
@@ -1094,15 +1112,24 @@ export const ProfessionBody = Type.Object(
  * percentages on screen"): a school is one wing of the tree, tied to a profession; its nodes are bought
  * with skill points by choice, never handed out by level. A small node moves one number and is always
  * on; a major node changes a verb or teaches a technique; a corner node is where the race (the trunk)
- * meets the school, one per race and school.
+ * meets the school, one per race and school; a keystone is always on and changes how a whole school
+ * plays. The tree is data, not layout: it carries hundreds of nodes in many wings, each wing laid out
+ * from its paths (or from places it gives), grouped in clusters and joined to other wings by needs.
  */
-export const NODE_SIZES = ['small', 'major', 'corner'] as const;
+export const NODE_SIZES = ['small', 'major', 'corner', 'keystone'] as const;
 export const NodeSize = Type.Union(NODE_SIZES.map((k) => Type.Literal(k)));
 const NodeId = Type.String({
   pattern: '^[a-z0-9]+(-[a-z0-9]+)*$',
   maxLength: 40,
   description: 'The node\'s name inside its school, for example "steady". A learned node is kept as "<school id>/<node id>".',
 });
+const NodeRef = Type.String({
+  pattern: '^([a-z0-9]+(-[a-z0-9]+)*/[a-z0-9]+(-[a-z0-9]+)*/)?[a-z0-9]+(-[a-z0-9]+)*$',
+  maxLength: 120,
+  description: 'A node of the same school by its id ("steady"), or of another school by "<school id>/<node id>" ("core/digging-school/steady").',
+});
+/** The colour families of the core palette a wing may be drawn in (tools/src/kit/palette.ts; the kit theme maps each to its colours). */
+export const TREE_TINTS = ['green', 'wood', 'skin', 'red', 'water', 'plum', 'fire', 'grey'] as const;
 const AttributeKey = Type.Object(
   {
     might: Type.Optional(Int(1, 10)),
@@ -1125,11 +1152,14 @@ export const SchoolNode = Type.Object(
     text: { ...Text, description: 'One sentence in words, never a number or a percentage (the number stays in the code).' },
     size: NodeSize,
     needs: Type.Optional(
-      Type.Array(NodeId, {
+      Type.Array(NodeRef, {
         maxItems: 3,
         uniqueItems: true,
-        description: 'The nodes of the same school learned before this one: its place on the path.',
+        description: 'The nodes learned before this one, all of them: its place on the path. Most are of the same school; a node of another school joins the two wings.',
       }),
+    ),
+    cost: Type.Optional(
+      Int(1, 20, 'Its price in skill points, inside the band of its size (params growth.cost, min to max). Left out: the size\'s price.'),
     ),
     key: Type.Optional(AttributeKey),
     effect: Effect,
@@ -1141,6 +1171,16 @@ export const SchoolNode = Type.Object(
     ),
     race: Type.Optional({ ...Id, description: 'A corner node only: the race whose node this is. Only a player of that race sees and learns it.' }),
     icon: Type.Optional({ ...Id, description: 'An item whose sprite pictures the node on the tree.' }),
+    cluster: Type.Optional({ ...NodeId, description: 'The cluster of its school it belongs to (the school\'s `clusters`): nodes that stand together.' }),
+    pos: Type.Optional(
+      Type.Object(
+        { x: Int(-400, 400), y: Int(-400, 400) },
+        {
+          additionalProperties: false,
+          description: 'Where it stands on the tree, in steps from the trunk (x to the right, y down). A school gives every node a place or none; with none, the screen lays the school out from its paths.',
+        },
+      ),
+    ),
   },
   { additionalProperties: false },
 );
@@ -1151,9 +1191,21 @@ export const SchoolBody = Type.Object(
     profession: { ...Id, description: 'The profession whose wing this is. The profession keeps its levels; the school is what the points buy.' },
     nodes: Type.Array(SchoolNode, {
       minItems: 1,
-      maxItems: 24,
-      description: 'The path and the corners. At most 12 nodes for each race (the path and that race\'s corner).',
+      maxItems: 400,
+      description: 'The paths and the corners. At most `growth.nodes_max` nodes for each race (the paths and that race\'s corner).',
     }),
+    tint: Type.Optional(
+      Type.Union(TREE_TINTS.map((k) => Type.Literal(k)), { description: 'The colour family of the core palette the wing is drawn in. Left out: wood.' }),
+    ),
+    angle: Type.Optional(
+      Int(0, 359, 'The direction the wing grows from the trunk, in degrees clockwise from the right. Left out: the wings share the circle in the order of their ids.'),
+    ),
+    clusters: Type.Optional(
+      Type.Array(Type.Object({ id: NodeId, name: Name }, { additionalProperties: false }), {
+        maxItems: 40,
+        description: 'Named groups of the school\'s nodes, for example "the trowel". A node names its cluster.',
+      }),
+    ),
   },
   { additionalProperties: false },
 );
@@ -1461,6 +1513,21 @@ export const ParamsBody = Type.Object(
           'Weight and pace (DECISIONS.md, 2026-10-23): every item weighs, and the load against a limit from might sets one of three walking paces.',
       },
     ),
+    gait: Type.Object(
+      {
+        run_div: { ...Bounded, description: 'A run takes the pace the load allows divided by this: 2 is half the time a tile. Every pace divides evenly.' },
+        sneak_mul: { ...Bounded, description: 'A sneak takes the pace the load allows times this: 2 is twice the time a tile.' },
+        noise_still: { ...Bounded, description: 'Tiles within which a creature that listens turns its head at a player standing still.' },
+        noise_sneak: { ...Bounded, description: 'The same, at a sneak.' },
+        noise_walk: { ...Bounded, description: 'The same, at a walk.' },
+        noise_run: { ...Bounded, description: 'The same, at a run.' },
+      },
+      {
+        additionalProperties: false,
+        description:
+          'The three gaits (docs/design/ANIMATION.md, section 2): walk is the pace the load allows, run is faster and sneak slower, and each is heard at its own radius. The noise table is shared with the hunting rules; the radii only grow from still to run.',
+      },
+    ),
     starting_gold_mg: Bounded,
     per_point: Type.Object(
       { might: Bounded, senses: Bounded, agility_pct: Bounded, luck_permille: Bounded, stamina: Bounded, spirit: Bounded },
@@ -1474,9 +1541,13 @@ export const ParamsBody = Type.Object(
       Type.Object(
         {
           cost: Type.Object(
-            { small: Bounded, major: Bounded, corner: Bounded },
-            { additionalProperties: false, description: 'Skill points a node costs, by its size (GROWTH section 3.6).' },
+            { small: Bounded, major: Bounded, corner: Bounded, keystone: Bounded },
+            {
+              additionalProperties: false,
+              description: 'Skill points a node costs, by its size (GROWTH section 3.6): the value is the price, and a node that names its own `cost` stays between min and max.',
+            },
           ),
+          nodes_max: Int(1, 400, 'At most this many nodes a player of one race sees in one school: its paths and that race\'s corner.'),
           slot_levels: Type.Array(Type.Integer({ minimum: 1, maximum: 40 }), {
             minItems: 1,
             maxItems: 8,
@@ -2078,6 +2149,7 @@ export type Pocket = Static<typeof PocketBody>;
 export type School = Static<typeof SchoolBody>;
 export type SchoolNodeDef = Static<typeof SchoolNode>;
 export type NodeSizeName = (typeof NODE_SIZES)[number];
+export type TreeTint = (typeof TREE_TINTS)[number];
 export type SchoolFile = Static<typeof SchoolFile>;
 export type Profession = Static<typeof ProfessionBody>;
 export type Shop = Static<typeof ShopBody>;

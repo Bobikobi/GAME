@@ -11,36 +11,37 @@ import { GREENS, remapTone } from '../src/richground';
 import { heightOf } from '../src/targets';
 import { cameraK, cameraZoom, deviceSize, ratioOf, worldToPage } from '../src/view';
 
-describe('the camera: k = max(1, floor(S / 576)), zoom 4k', () => {
-  // S is the canvas's shorter side in device pixels; the rows of the table in NEXT 15
+describe('the camera: k = max(1, floor(S / 576)), zoom 4 * ceil(1.5k)', () => {
+  // S is the canvas's shorter side in device pixels; the screen's own step k, and the picked closer view (DECISIONS 2026-10-25)
   test.each([
-    ['2K phone, 1440 x 3120', 1440, 2, 8],
-    ['e2e phone, 390 x 844 at 3x', 1170, 2, 8],
-    ['1080 px phone', 1080, 1, 4],
-    ['e2e desktop, 1440 x 900', 900, 1, 4],
-    ['1920 x 1080 desktop', 1080, 1, 4],
+    ['2K phone, 1440 x 3120', 1440, 2, 12],
+    ['e2e phone, 390 x 844 at 3x', 1170, 2, 12],
+    ['1080 px phone', 1080, 1, 8],
+    ['e2e desktop, 1440 x 900', 900, 1, 8],
+    ['1920 x 1080 desktop', 1080, 1, 8],
+    ['a 4K desktop, 2160 short side', 2160, 3, 20],
   ])('%s', (_name, side, k, zoom) => {
     expect(cameraK(side)).toBe(k);
     expect(cameraZoom(side)).toBe(zoom);
   });
 
-  test('the short side shows at least 9 tiles of 64 art pixels, and the zoom is always a multiple of 4', () => {
+  test('the zoom is always a multiple of 4, at or above 1.5 times the screen\'s own and less than one step over it', () => {
     for (let side = 1; side <= 6000; side += 7) {
       const zoom = cameraZoom(side);
-      expect(zoom % 4).toBe(0);
-      expect(zoom).toBeGreaterThanOrEqual(4);
-      const k = zoom / 4;
-      // tiles across the short side: side / (16 * zoom) * 16 per tile of 64 art px (k device px each)
-      if (side >= 576) expect(side / (64 * k)).toBeGreaterThanOrEqual(9);
+      const own = 4 * cameraK(side);
+      // an art pixel is a whole number of device pixels at density 1 (zoom) and at density 4 (zoom / 4)
+      expect(Number.isInteger(zoom / 4)).toBe(true);
+      expect(zoom).toBeGreaterThanOrEqual(1.5 * own);
+      expect(zoom).toBeLessThan(1.5 * own + 4);
     }
   });
 
-  test('tiles across x down, as the table says', () => {
+  test('tiles across x down at the picked view', () => {
     const across = (w: number, h: number) => [(w / (16 * cameraZoom(Math.min(w, h)))).toFixed(1), (h / (16 * cameraZoom(Math.min(w, h)))).toFixed(1)];
-    expect(across(1440, 3120)).toEqual(['11.3', '24.4']);
-    expect(across(1170, 2532)).toEqual(['9.1', '19.8']);
-    expect(across(1440, 900)).toEqual(['22.5', '14.1']);
-    expect(across(1920, 1080)).toEqual(['30.0', '16.9']);
+    expect(across(1440, 3120)).toEqual(['7.5', '16.3']);
+    expect(across(1170, 2532)).toEqual(['6.1', '13.2']);
+    expect(across(1440, 900)).toEqual(['11.3', '7.0']);
+    expect(across(1920, 1080)).toEqual(['15.0', '8.4']);
   });
 });
 
@@ -72,7 +73,7 @@ describe('the canvas at device pixels', () => {
   });
 
   test('the tile under the player is 16 x zoom / ratio css px wide, whole canvas pixels', () => {
-    for (const [side, ratio] of [[1440, 3], [1170, 3], [900, 1], [1080, 1]] as const) {
+    for (const [side, ratio] of [[1440, 3], [1170, 3], [900, 1], [1080, 1], [2160, 2]] as const) {
       const zoom = cameraZoom(side);
       const css = worldToPage({ x: 0, y: 0 }, zoom, ratio, 16, 0).x;
       expect(css * ratio).toBe(16 * zoom);

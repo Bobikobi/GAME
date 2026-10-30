@@ -24,6 +24,6 @@ export function rules(ctx: Context): Answer<ToolOutput<'rules'>> {
       licence: json<{ license: string }>(ctx.root, 'package.json').license,
       lines: LINES,
     },
-    note: 'the same rules are at https://theopenfold.vercel.app/hub/rules/',
+    note: 'the same rules are at https://loomvale.vercel.app/hub/rules/',
   };
 }

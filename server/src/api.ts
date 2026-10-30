@@ -59,6 +59,12 @@ export interface ApiOptions {
   store: PlayerStore;
   /** Must be supplied by trusted server-side authentication; identity is never read from request data. */
   resolvePlayerId(request: IncomingMessage): Promise<string | undefined>;
+  /**
+   * The name an account is known by, when players are accounts (the session mode); absent in the header
+   * mode, which has none. A `start` or a `carve` over the wire names it and nothing else: one person, one
+   * name, in the world and on the character (finding 11 of the 27.10 review).
+   */
+  nameOf?(playerId: string): Promise<string | undefined>;
   /** Whether the database answers; GET /health reports it and reads no player row. Absent, the process is the only thing checked. */
   health?(): Promise<boolean>;
   /** Sign-in's routes under `/auth/` (NEXT 18 e); absent in the header mode, where those paths are not found. */
@@ -335,6 +341,19 @@ function refused(error: string): never {
   throw new RequestError(error, 409, 'refused');
 }
 
+/**
+ * A character's name is its account's name: a `carve` cuts it, and a `start` either names it or leaves the
+ * line to the stone (the kernel lets a start carry none), so a name that is another's is refused here, before
+ * any step plays and nothing of the state changes. The names compare as the account holds them, trimmed.
+ */
+async function requireAccountName(nameOf: NonNullable<ApiOptions['nameOf']>, playerId: string, action: Extract<Action, { t: 'start' | 'carve' }>): Promise<void> {
+  const account = await nameOf(playerId);
+  if (account === undefined) throw new RequestError('Sign in to continue.', 401);
+  const named = (action.t === 'carve' ? action.name : (action.name ?? '')).trim();
+  if (action.t === 'start' && named === '') return;
+  if (named !== account) refused(`Your name in this world is ${account}.`);
+}
+
 async function playerIdFor(request: IncomingMessage, resolve: ApiOptions['resolvePlayerId']): Promise<string> {
   const playerId = await resolve(request);
   if (!playerId) throw new RequestError('Sign in to continue.', 401);
@@ -396,6 +415,9 @@ async function route(request: IncomingMessage, response: ServerResponse, options
   if (url.pathname === '/action') {
     if (!isAction(body.action) || body.action.t === 'move') throw new RequestError('Send one non-movement action.', 400);
     if (!validTick(body.tick)) throw new RequestError('A valid client tick is required.', 400);
+    if (options.nameOf && (body.action.t === 'start' || body.action.t === 'carve')) {
+      await requireAccountName(options.nameOf, playerId, body.action);
+    }
     checkClock(body.tick, record, now);
     let nextCredit = { at: movementAt, creditMs: movementCreditMs };
     if (body.action.t !== 'start') {

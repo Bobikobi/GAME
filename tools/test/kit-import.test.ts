@@ -325,3 +325,67 @@ describe('importSprite', () => {
     writeFileSync(join(outputDirectory, `${name}@8x.png`), nearestPreview(image, 8));
   });
 });
+
+describe('the background key and the glows the model paints on it', () => {
+  const SIZE = 400;
+  const GRID = 20;
+  const AT: readonly [number, number] = [130, 110];
+  const options = { width: 64, height: 64, palette: CORE_PALETTE, anchor: 'bottom' as const };
+
+  /** A wedge of warm light on the background, a smooth gradient that touches the sprite's outline. */
+  function withWedge(png: Buffer): Buffer {
+    const image = decode(png);
+    for (let y = 60; y < 170; y += 1) {
+      for (let x = 60; x < 230; x += 1) {
+        const o = (y * SIZE + x) * 4;
+        const background = image.data[o] === 255 && image.data[o + 1] === 0 && image.data[o + 2] === 255;
+        if (!background || x + y < 300) continue;
+        image.data[o] = 232 - Math.floor(x / 12);
+        image.data[o + 1] = 146 - Math.floor(y / 10);
+        image.data[o + 2] = 96;
+      }
+    }
+    return PNG.sync.write(image);
+  }
+
+  /** The 12x12 diamond with an orange upper half and a dark lower half, and an optional gap in its outline. */
+  function orangeSprite(gap: boolean): Pixel[] {
+    const outline = hexToRgb(CORE_PALETTE[0] ?? '#000000');
+    const orange: Pixel = [230, 120, 50];
+    return originalSprite().map((pixel, index) => {
+      if (pixel === null) return null;
+      const y = Math.floor(index / 12);
+      if (gap && index === 12 + 5) return null;
+      const isOutline = pixel[0] === outline[0] && pixel[1] === outline[1] && pixel[2] === outline[2];
+      return isOutline || y >= 6 ? outline : orange;
+    });
+  }
+
+  const upscale = (sprite: Pixel[]): Buffer => noisyUpscale([sprite], 12, 12, GRID, SIZE, SIZE, [AT], false);
+
+  test('a glow that touches the background is dropped: the drawing imports as if it were not there', () => {
+    const clean = upscale(originalSprite());
+    const plain = importSprite(clean, options);
+    const glowed = importSprite(withWedge(clean), options);
+    expect(glowed.png.equals(plain.png)).toBe(true);
+    expect(glowed.logical).toEqual(plain.logical);
+  });
+
+  test('a sprite with no glow is untouched by the key', () => {
+    const noisy = noisyUpscale([originalSprite()], 12, 12, GRID, SIZE, SIZE, [AT], true);
+    expect(importSprite(upscale(originalSprite()), options).logical).toEqual([12, 12]);
+    expect(importSprite(noisy, options).logical).toEqual([12, 12]);
+  });
+
+  test('a smooth body behind a gap in the outline is not mistaken for a glow', () => {
+    const whole = importSprite(upscale(orangeSprite(false)), options);
+    const gapped = importSprite(upscale(orangeSprite(true)), options);
+    const count = (png: Buffer): number => {
+      const image = decode(png);
+      let opaque = 0;
+      for (let i = 0; i < image.width * image.height; i += 1) if (image.data[i * 4 + 3] === 255) opaque += 1;
+      return opaque;
+    };
+    expect(count(gapped.png)).toBeGreaterThan(count(whole.png) * 0.9);
+  });
+});

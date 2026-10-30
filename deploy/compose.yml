@@ -52,8 +52,13 @@ services:
       MAILER: ${MAILER:-log}
       # empty unless .env sets it; the log mailer refuses to start without ALLOW_LOG_MAILER=staging-only
       ALLOW_LOG_MAILER: ${ALLOW_LOG_MAILER:-}
+      # MAILER=resend refuses to start without both
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      MAIL_FROM: ${MAIL_FROM:-}
       CLIENT_ADDRESS_HEADER: ${CLIENT_ADDRESS_HEADER:-}
       COUNTRY_HEADER: ${COUNTRY_HEADER:-}
+      # the country file the image carries; set empty in .env to run without it
+      COUNTRY_DB: ${COUNTRY_DB-/app/country.mmdb}
     depends_on:
       db:
         condition: service_healthy

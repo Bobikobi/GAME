@@ -5,7 +5,7 @@
  * sprite it redraws, what it is, the grid, and the detail to spell out. The prompt's house style
  * lives here, so the spec is the only thing that changes between waves.
  *
- *   pnpm kit:gen <spec.json> [--only a,b] [--out dir] [--dry] [--reimport] [--timeout seconds] [--drawer codex|gemini|local|kaggle]
+ *   pnpm kit:gen <spec.json> [--only a,b] [--out dir] [--dry] [--reimport] [--timeout seconds] [--drawer codex|gemini|local|kaggle] [--picks manifest.jsonl | --no-picks]
  *
  * For each entry: the reference is enlarged onto flat magenta (a white ground keys out a white
  * beard), Codex's image generation redraws it on the subscription, and the importer brings the
@@ -42,6 +42,11 @@
  * Qwen-Image or FLUX.1-schnell, its own prompt) in a private Kaggle kernel on its free GPU, the whole wave in one kernel run (drawn before the loop, then imported entry by
  * entry as usual). Text routes (grid, scatter) stay with Codex. The manifest line says which route drew each image and the prompt it was given.
  *
+ * The pick feeds the next round (`picks.ts`, DECISIONS 2026-10-27): an entry the owner already picked, in the picks
+ * manifest (`--picks`, default `tools/kit-gen/rich-wave.manifest.jsonl`), is drawn again from the picked draw's seed
+ * (kaggle, local) and recipe (kaggle, unless `KAGGLE_MODEL` or `KAGGLE_RECIPE` says otherwise); `--no-picks` draws
+ * every entry as if nothing had been picked, with the seed the environment names. `--dry` lists the picks it would use.
+ *
  * Nothing is written into `content/`: a result goes into the kit by hand, in a wave. `--dry` writes
  * the references and the prompts only; `--reimport` imports the last raw images again without
  * calling Codex. Each image costs one to two minutes and 14k to 37k Codex tokens (measured
@@ -55,13 +60,15 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { PNG } from 'pngjs';
 
 import { colourCount, gridPrompt, parseGrid, pngToGrid, renderGrid, seamWarnings } from './gengrid.js';
-import { type DrawerId, type Drawn, drawWaveWithKaggle, drawWithGemini, drawWithKaggle, drawWithLocal, kagglePrompt, kaggleSettings, kaggleSubject, localPrompt, parseDrawer } from './drawers.js';
+import { type DrawerId, type Drawn, type KaggleRecipe, detailWithNotes, drawWaveWithKaggle, drawWithGemini, drawWithKaggle, drawWithLocal, kagglePrompt, kaggleSettings, kaggleSubject, localPrompt, parseDrawer } from './drawers.js';
 import { importSprite, nearestPaletteIndex } from './import.js';
 import { applyInk } from './ink.js';
 import { CORE_PALETTE, CORE_RAMPS, type Rgb, hexToRgb, paletteWithRamps } from './palette.js';
+import { DEFAULT_PICKS, type PickContext, type PickLine, type PickPlan, describePick, pickPlan, readPicks } from './picks.js';
 import {
   type Motif, type ScatterEntry, motifPrompt, motifWarnings, parseMotif, renderMotif, scatterProblem, scatterTile, tileWarnings, variantsOf,
 } from './scatter.js';
+import { noteDraft } from '../art/drafts.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -96,6 +103,8 @@ export interface GenEntry extends ScatterEntry {
   style?: 'rich';
   /** PNG paths (repo root) attached after the reference as style examples; the prompt says to match their shading, hue shifts, texture and outline. */
   style_refs?: string[];
+  /** What earlier rounds learned about this entry, one clause each (`pnpm kit:notes`, or by hand): appended after `detail` in every prompt, so a prompt cut to a token window loses them first. */
+  notes?: string[];
 }
 
 /** A PNG that is not a kit sprite: a picture from outside the game, drawn in our style rather than redrawn. */
@@ -135,6 +144,8 @@ export interface ManifestLine {
   motifs?: string[];
   /** The shared ramps the sprite was imported in, for its kit entry's `ramps`. */
   ramps?: string[];
+  /** The kaggle route's recipe and seed that drew it, so a gallery of a wave tells its draws apart. */
+  kaggle?: { recipe: KaggleRecipe; seed: number };
 }
 
 export function parseSpec(text: string): GenEntry[] {
@@ -175,6 +186,7 @@ export function parseSpec(text: string): GenEntry[] {
       if (new Set(entry.ramps).size !== entry.ramps.length) throw new Error(`${where}.ramps names a ramp twice`);
       if (isOutsideReference(entry.ref) && entry.palette !== 'ramp-added') throw new Error(`${where}: an outside reference that draws in ramps sets palette to ramp-added (step 0b)`);
     }
+    if (entry.notes !== undefined && (!Array.isArray(entry.notes) || entry.notes.some((n) => typeof n !== 'string' || n.trim() === ''))) throw new Error(`${where}.notes must be a list of non-empty text clauses`);
     if (entry.style_refs !== undefined && (!Array.isArray(entry.style_refs) || entry.style_refs.some((p) => typeof p !== 'string' || extname(p) !== '.png'))) throw new Error(`${where}.style_refs must be PNG paths`);
     if (isOutsideReference(entry.ref)) {
       if (typeof entry.seen !== 'string' || entry.seen.trim() === '') throw new Error(`${where}.seen must say what the eye saw in the outside reference, confirmed before any name (docs/art/PROP_FROM_REF.md step 0a)`);
@@ -223,7 +235,8 @@ export function enlargeOnMagenta(image: Raster): PNG {
 
 export function buildPrompt(entry: GenEntry, reference: Raster, file: string): string {
   const grid = `${entry.width}x${entry.height}`;
-  const detail = entry.detail === undefined || entry.detail.trim() === '' ? '' : `, with ${entry.detail.trim()}`;
+  const spelled = detailWithNotes(entry);
+  const detail = spelled === undefined ? '' : `, with ${spelled}`;
   const kindLine = entry.kind === 'tile'
     ? `No outline: it is a ground texture that fills the whole ${grid} square edge to edge, centered on the magenta. Its left edge continues its right edge and its top continues its bottom, so it repeats without a seam.`
     : 'Thick dark navy outline one pixel wide.';
@@ -427,6 +440,10 @@ interface Options {
   reimport: boolean;
   timeoutSeconds: number;
   drawer: DrawerId;
+  /** The picks manifest to read, or null for none (`--no-picks`, or the default file is missing). */
+  picksPath: string | null;
+  /** Its lines, read once by `runCli`; empty until then. */
+  picks?: readonly PickLine[];
   /** Pictures a batch route drew for the whole wave before the loop (the kaggle route), by entry name. */
   predrawn?: Map<string, Drawn>;
 }
@@ -434,7 +451,7 @@ interface Options {
 export function parseArgs(args: readonly string[], env: NodeJS.ProcessEnv = process.env): Options {
   const spec = args[0];
   if (spec === undefined || spec.startsWith('--')) {
-    throw new Error('Usage: gen.ts <spec.json> [--only a,b] [--out dir] [--dry] [--reimport] [--timeout seconds] [--drawer codex|gemini|local|kaggle]');
+    throw new Error('Usage: gen.ts <spec.json> [--only a,b] [--out dir] [--dry] [--reimport] [--timeout seconds] [--drawer codex|gemini|local|kaggle] [--picks manifest.jsonl | --no-picks]');
   }
   const value = (flag: string): string | undefined => {
     const at = args.indexOf(flag);
@@ -443,6 +460,10 @@ export function parseArgs(args: readonly string[], env: NodeJS.ProcessEnv = proc
   const only = value('--only');
   const timeout = args.includes('--timeout') ? value('--timeout') ?? '' : undefined;
   const timeoutSeconds = timeout === undefined ? 300 : Number(timeout);
+  const picksFlag = args.includes('--picks') ? value('--picks') : undefined;
+  if (args.includes('--picks') && (picksFlag === undefined || picksFlag.startsWith('--'))) throw new Error('--picks takes a manifest path');
+  if (args.includes('--picks') && args.includes('--no-picks')) throw new Error('--picks and --no-picks cannot be used together');
+  const defaultPicks = join(ROOT, DEFAULT_PICKS);
   if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0) {
     throw new Error(`--timeout takes a positive number of seconds, not ${JSON.stringify(timeout)}`);
   }
@@ -454,6 +475,7 @@ export function parseArgs(args: readonly string[], env: NodeJS.ProcessEnv = proc
     reimport: args.includes('--reimport'),
     timeoutSeconds,
     drawer: parseDrawer(args.includes('--drawer') ? value('--drawer') ?? '' : env['KIT_DRAWER']),
+    picksPath: args.includes('--no-picks') ? null : picksFlag !== undefined ? resolve(picksFlag) : existsSync(defaultPicks) ? defaultPicks : null,
   };
 }
 
@@ -499,8 +521,25 @@ function writeReference(entry: GenEntry, out: string): { reference: PNG; refPath
   return { reference, refPath };
 }
 
+/** What the picks manifest says about drawing an entry again: its seed and recipe, or null (no pick, or a grid or scatter entry, which no picture route draws). */
+export function entryPlan(entry: GenEntry, picks: readonly PickLine[], ctx: PickContext): PickPlan | null {
+  return entry.route === 'grid' || entry.route === 'scatter' ? null : pickPlan(entry.name, picks, ctx);
+}
+
+function pickContext(options: Options): PickContext {
+  return { spec: options.spec.replace(`${ROOT}/`, ''), drawer: options.drawer, env: process.env };
+}
+
+/** The environment a picked recipe draws under: the process's own, with `KAGGLE_MODEL` set to the pick's recipe. */
+function recipeEnv(recipe: KaggleRecipe | undefined, env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  return recipe === undefined ? env : { ...env, KAGGLE_MODEL: recipe };
+}
+
 function generateOne(entry: GenEntry, options: Options, version: string, earlier: readonly ManifestLine[]): ManifestLine {
   const kind = entry.kind ?? 'sprite';
+  const plan = entryPlan(entry, options.picks ?? [], pickContext(options));
+  const kaggleEnv = recipeEnv(plan?.recipe, process.env);
+  const recipe: KaggleRecipe = options.drawer === 'kaggle' ? kaggleSettings(kaggleEnv).recipe : 'sd15';
   const { reference, refPath } = writeReference(entry, options.out);
   const file = `${entry.name}.png`;
   const grid = entry.route === 'grid';
@@ -511,7 +550,7 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
     raw: null, out: null, grid: null, logical: null, colors: null, warnings: [], error: null, at,
   };
   // a --dry run of the kaggle route shows the prompt the kernel will read, not the agent's
-  if (options.dry && options.drawer === 'kaggle' && !grid) line.prompt = kagglePrompt(entry, kaggleSettings().recipe);
+  if (options.dry && options.drawer === 'kaggle' && !grid) line.prompt = kagglePrompt(entry, recipe);
   if (options.dry) return line;
 
   if (options.reimport) {
@@ -533,14 +572,18 @@ function generateOne(entry: GenEntry, options: Options, version: string, earlier
     // a picture goes down the chosen route; letters (a grid tile) stay with Codex, a text model
     const route = grid ? 'codex' : options.drawer;
     if (route === 'local') line.prompt = localPrompt(entry);
-    if (route === 'kaggle') line.prompt = kagglePrompt(entry, kaggleSettings().recipe);
-    const call = { out: options.out, name: entry.name, stamp, prompt: line.prompt, images: [refPath, ...(entry.style_refs ?? []).map((p) => join(ROOT, p))], expect: file, timeoutSeconds: options.timeoutSeconds };
+    if (route === 'kaggle') line.prompt = kagglePrompt(entry, recipe);
+    const call = {
+      out: options.out, name: entry.name, stamp, prompt: line.prompt, images: [refPath, ...(entry.style_refs ?? []).map((p) => join(ROOT, p))], expect: file, timeoutSeconds: options.timeoutSeconds,
+      ...(plan?.seed === undefined ? {} : { seed: plan.seed }),
+    };
     const drawn = route === 'gemini' ? drawWithGemini(call) : route === 'local' ? drawWithLocal(call)
-      : route === 'kaggle' ? options.predrawn?.get(entry.name) ?? drawWithKaggle({ ...call, subject: kaggleSubject(entry.ref), grid: { width: entry.width, height: entry.height } }) : null;
+      : route === 'kaggle' ? options.predrawn?.get(entry.name) ?? drawWithKaggle({ ...call, subject: kaggleSubject(entry.ref), grid: { width: entry.width, height: entry.height }, env: kaggleEnv }) : null;
     const asked = drawn === null
       ? askCodex(options, version, entry.name, stamp, line.prompt, grid ? [] : ['-i', refPath, ...styleRefs], grid ? `${entry.name}.txt` : file)
       : { codex: { version: drawn.version, exit: drawn.exit, seconds: drawn.seconds, tokens: drawn.tokens, log: drawn.log }, saved: drawn.saved, error: drawn.error };
     line.drawer = route;
+    if (route === 'kaggle') line.kaggle = { recipe, seed: plan?.seed ?? kaggleSettings(kaggleEnv).seed };
     line.codex = asked.codex;
     const saved = asked.saved;
     if (saved === null) {
@@ -700,13 +743,14 @@ function escapeHtml(text: string): string {
 }
 
 /**
- * The latest image of each name beside its reference. CSS pixels are device pixels on a desktop
+ * Every draw of the run beside its reference, a name's draws together (a wave draws an entry on more than one recipe
+ * and seed, and a run folder keeps its rounds). CSS pixels are device pixels on a desktop
  * screen, so the reference at 6 per art pixel and the result at 3 are both their size on a 3x phone.
  */
 export function galleryHtml(lines: readonly ManifestLine[]): string {
-  const latest = new Map<string, ManifestLine>();
-  for (const line of lines) latest.set(line.name, line);
-  const rows = [...latest.values()].map((line) => {
+  const byName = new Map<string, ManifestLine[]>();
+  for (const line of lines) byName.set(line.name, [...(byName.get(line.name) ?? []), line]);
+  const rows = [...byName.values()].flatMap((draws) => draws.map((line, at) => ({ line, at, of: draws.length }))).map(({ line, at, of }) => {
     const refImg = `<img src="ref/${line.name}-1x.png" alt="" style="width:${line.refSize[0] * 6}px">`;
     const result = line.out === null
       ? `<p class="bad">${escapeHtml(line.error ?? 'not generated yet')}</p>`
@@ -719,10 +763,12 @@ export function galleryHtml(lines: readonly ManifestLine[]): string {
       line.grid === null ? null : `grid ${line.grid}`,
       line.colors === null ? null : `${line.colors} colours`,
       line.codex === null ? null : `${line.drawer ?? 'codex'} ${line.codex.seconds} s, ${line.codex.tokens ?? '?'} tokens`,
+      line.kaggle === undefined ? null : `${line.kaggle.recipe} seed ${line.kaggle.seed}`,
     ].filter((fact) => fact !== null).join(' · ');
     const warnings = line.warnings.map((w) => `<p class="warn">${escapeHtml(w)}</p>`).join('');
     const raw = line.raw === null ? '' : line.raw.endsWith('.txt') ? `<a href="${line.raw}">letters</a>` : `<a href="${line.raw}"><img class="raw" src="${line.raw}" alt="raw"></a>`;
-    return `<section><h2>${escapeHtml(line.name)}</h2><p>${escapeHtml(facts)}</p>${warnings}<div class="row">${refImg}${result}${raw}</div></section>`;
+    const title = of === 1 ? line.name : `${line.name} (${at + 1} of ${of}, ${line.at})`;
+    return `<section><h2>${escapeHtml(title)}</h2><p>${escapeHtml(facts)}</p>${warnings}<div class="row">${refImg}${result}${raw}</div></section>`;
   });
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>kit:gen gallery</title>
@@ -748,19 +794,49 @@ export function kaggleWaveRequests(entries: readonly GenEntry[]): GenEntry[] {
   return entries.filter((e) => e.route !== 'grid' && e.route !== 'scatter');
 }
 
+/** One kaggle request: a picture of the wave with its prompt for the recipe that draws it and, when it has a pick, its seed. */
+export interface WaveRequest {
+  name: string;
+  prompt: string;
+  reference: string;
+  expect: string;
+  subject: ReturnType<typeof kaggleSubject>;
+  grid: { width: number; height: number };
+  seed?: number;
+}
+
+/**
+ * The wave split by the recipe that draws it: a kernel run loads one model, so entries whose pick names another
+ * recipe go up in their own run, under `KAGGLE_MODEL` set to it. Entries with no pick (or a pick with no recipe)
+ * stay in the first group, drawn as the environment says; a pick's seed rides in its request.
+ */
+export function kaggleWaveGroups(
+  entries: readonly GenEntry[], picks: readonly PickLine[], ctx: PickContext, reference: (entry: GenEntry) => string,
+): { recipe: KaggleRecipe; env: NodeJS.ProcessEnv; requests: WaveRequest[] }[] {
+  const fallback = kaggleSettings(ctx.env).recipe;
+  const groups = new Map<KaggleRecipe, { recipe: KaggleRecipe; env: NodeJS.ProcessEnv; requests: WaveRequest[] }>();
+  for (const entry of kaggleWaveRequests(entries)) {
+    const plan = entryPlan(entry, picks, ctx);
+    const recipe = plan?.recipe ?? fallback;
+    const group = groups.get(recipe) ?? { recipe, env: recipeEnv(plan?.recipe, ctx.env), requests: [] };
+    groups.set(recipe, group);
+    group.requests.push({
+      name: entry.name, prompt: kagglePrompt(entry, recipe), reference: reference(entry), expect: `${entry.name}.png`, subject: kaggleSubject(entry.ref),
+      grid: { width: entry.width, height: entry.height }, ...(plan?.seed === undefined ? {} : { seed: plan.seed }),
+    });
+  }
+  return [...groups.values()];
+}
+
 function drawKaggleWave(entries: readonly GenEntry[], options: Options): Map<string, Drawn> {
-  const wave = kaggleWaveRequests(entries);
-  if (wave.length === 0) return new Map();
-  process.stdout.write(`kaggle: ${wave.length} pictures in one kernel run\n`);
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const { recipe } = kaggleSettings();
-  return drawWaveWithKaggle({
-    out: options.out, stamp, timeoutSeconds: options.timeoutSeconds,
-    requests: wave.map((entry) => ({
-      name: entry.name, prompt: kagglePrompt(entry, recipe), reference: writeReference(entry, options.out).refPath, expect: `${entry.name}.png`, subject: kaggleSubject(entry.ref),
-      grid: { width: entry.width, height: entry.height },
-    })),
-  });
+  const groups = kaggleWaveGroups(entries, options.picks ?? [], pickContext(options), (entry) => writeReference(entry, options.out).refPath);
+  const drawn = new Map<string, Drawn>();
+  for (const group of groups) {
+    process.stdout.write(`kaggle: ${group.requests.length} pictures in one kernel run (${group.recipe})\n`);
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    for (const [name, picture] of drawWaveWithKaggle({ out: options.out, stamp, timeoutSeconds: options.timeoutSeconds, env: group.env, requests: group.requests })) drawn.set(name, picture);
+  }
+  return drawn;
 }
 
 function runCli(args: readonly string[]): void {
@@ -771,11 +847,21 @@ function runCli(args: readonly string[]): void {
   const version = options.dry || options.reimport || options.drawer !== 'codex' ? 'none' : codexVersion();
   const manifestPath = join(options.out, 'manifest.jsonl');
   const earlier = readManifest(manifestPath);
+  options.picks = options.picksPath === null ? [] : readPicks(options.picksPath);
+  if (options.dry) {
+    for (const entry of entries) {
+      const plan = entryPlan(entry, options.picks, pickContext(options));
+      if (plan !== null) process.stdout.write(`${describePick(entry.name, plan)}\n`);
+    }
+  }
   if (options.drawer === 'kaggle' && !options.dry && !options.reimport) options.predrawn = drawKaggleWave(entries, options);
   let failed = 0;
   for (const entry of entries) {
     for (const line of entry.route === 'scatter' ? generateScatter(entry, options, version, earlier) : [generateOne(entry, options, version, earlier)]) {
-      if (!options.dry) appendFileSync(manifestPath, `${JSON.stringify(line)}\n`);
+      if (!options.dry) {
+        appendFileSync(manifestPath, `${JSON.stringify(line)}\n`);
+        noteDraft(options.out, line);
+      }
       if (line.error !== null) failed += 1;
       const said = options.dry ? line.prompt : line.error ?? [line.out, ...line.warnings].join(' - ');
       process.stdout.write(`${line.name}: ${said}\n`);

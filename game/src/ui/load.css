@@ -30,6 +30,24 @@
   color: var(--paper);
 }
 
+/* in a window the word sits on the frame's black: a bright plate with the black for its letters */
+.ui-window .load-word {
+  border: 1px solid var(--ui-gold-2);
+  color: var(--ui-black);
+}
+
+.ui-window .load-chip[data-band='light'] .load-word {
+  background: var(--ui-good);
+}
+
+.ui-window .load-chip[data-band='steady'] .load-word {
+  background: var(--ui-gold-5);
+}
+
+.ui-window .load-chip[data-band='heavy'] .load-word {
+  background: var(--ui-warn);
+}
+
 .btn .load-chip {
   margin-left: 6px;
 }
