@@ -1,0 +1,11 @@
+....f....
+...fe.e..
+..fe.ec..
+..e.ec.c.
+.ee.cc.cb
+.e.cc.cb.
+.cecbcbb.
+..cbcbb..
+..bbcbb..
+...bbb...
+....b....

@@ -13,8 +13,8 @@
 import { PNG } from 'pngjs';
 
 import { type Grid, colourCount, legendText } from './gengrid.js';
-import { CORE_PALETTE, hexToRgb } from './palette.js';
-import { PALETTE_LEGEND } from './sketches.js';
+import { hexToRgb } from './palette.js';
+import { LETTER_PALETTE, PALETTE_LEGEND } from './sketches.js';
 
 /** A clear pixel of a motif: the ground shows through it. */
 export const CLEAR = '.';
@@ -52,6 +52,10 @@ export interface ScatterEntry {
   base?: string;
   /** Tiles to bake, each from its own seed (default 4, STYLE.md: at least four variants). */
   variants?: number;
+  /** The name each baked variant takes, in order (the pool entry it becomes); a variant past the list is `<entry>_<n>`. */
+  names?: string[];
+  /** The entry whose authored motif files this one reads (tools/kit-gen/motifs/<entry>_<motif>.txt), when not its own. */
+  motifs_from?: string;
   /** One motif at most per cell of this many art pixels, anywhere inside its cell's reach (default 16). */
   cell?: number;
   /** The share of cells that hold a motif (default 0.85). */
@@ -89,6 +93,7 @@ export function scatterProblem(entry: ScatterEntry): string | null {
   if (entry.width % cell !== 0) return `cell ${cell} must divide the tile's ${entry.width}`;
   if (!isLetter(entry.base)) return 'base must be a palette letter';
   const variants = entry.variants ?? 4;
+  if (entry.names !== undefined && !(Array.isArray(entry.names) && entry.names.every((n) => typeof n === 'string' && /^[a-z][a-z0-9_]*$/u.test(n)))) return 'names must be a list of lowercase names';
   if (!Number.isInteger(variants) || variants < 1 || variants > 16) return 'variants must be an integer from 1 to 16';
   const chance = entry.chance ?? 0.85;
   if (typeof chance !== 'number' || !(chance > 0 && chance <= 1)) return 'chance must be above 0 and at most 1';
@@ -117,7 +122,7 @@ export function scatterProblem(entry: ScatterEntry): string | null {
 /** What the prompt asks Codex to write for one motif. */
 export function motifPrompt(opts: { what: string; width: number; height: number; detail?: string; base: string; file: string }): string {
   const { what, width, height, base, file } = opts;
-  const baseHex = CORE_PALETTE[PALETTE_LEGEND[base] ?? 0];
+  const baseHex = LETTER_PALETTE[PALETTE_LEGEND[base] ?? 0];
   const detail = opts.detail === undefined || opts.detail.trim() === '' ? '' : ` It has ${opts.detail.trim()}.`;
   return [
     `Do not generate an image. Write a text file named ${file} in the current directory that holds ${what}, a small pixel-art motif that a script scatters over a top-down ground, as exactly ${height} lines of exactly ${width} characters each, one character per pixel, and nothing else in the file.`,
@@ -160,7 +165,7 @@ export function renderMotif(grid: Grid): PNG {
     [...row].forEach((ch, x) => {
       const index = PALETTE_LEGEND[ch];
       if (index === undefined) return;
-      const [r, g, b] = hexToRgb(CORE_PALETTE[index] ?? '#000000');
+      const [r, g, b] = hexToRgb(LETTER_PALETTE[index] ?? '#000000');
       png.data.set([r, g, b, 255], (y * png.width + x) * 4);
     });
   });

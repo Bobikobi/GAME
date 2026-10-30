@@ -111,19 +111,21 @@ describe('clip configs', () => {
     expect(problems).toMatch(/ramp "velvet"/);
   });
 
-  it('a native body is played by its own actions, four poses a loop, and a sheet stays inside the budget of 69 frames', () => {
+  it('a native body is played by its own actions, four poses a loop (the lying pose held, until the owner answers), and a sheet stays inside the budget of 69 frames', () => {
     const wolf = settings.targets.wolf;
     expect(wolf?.map).toBe('native');
     expect(Object.keys(wolf?.contacts ?? {}).sort()).toEqual(['LB', 'LF', 'RB', 'RF']);
     const clips = clipNames().filter((n) => readClip(n).target === 'wolf');
-    expect(clips.sort()).toEqual(['wolf_idle', 'wolf_run', 'wolf_walk']);
+    expect(clips.sort()).toEqual(['wolf_alert', 'wolf_graze', 'wolf_idle', 'wolf_lie', 'wolf_run', 'wolf_walk']);
     let frames = 0;
     for (const n of clips) {
       const c = readClip(n);
       expect(clipProblems(n, c, libs, settings)).toEqual([]);
       expect(c.base.library).toBe('self:wolf');
       const poses = poseMs(c, libs).length;
-      expect(poses, n).toBe(4);
+      // Four poses a loop is the owner's rule (DECISIONS 2026-10-29, answer C). wolf_lie, one held pose, is the only
+      // exception, until the owner answers question 5 of DECISIONS 2026-10-30; the exception goes with that answer.
+      expect(poses, n).toBe(n === 'wolf_lie' ? 1 : 4);
       frames += poses * c.views.length;
     }
     expect(frames).toBeLessThanOrEqual(69);
