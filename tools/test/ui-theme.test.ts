@@ -132,21 +132,35 @@ describe('the kit theme', () => {
     expect(new Set(RARITIES.map((r) => t[`--ui-rarity-${r}`])).size, 'four different colours').toBe(RARITIES.length);
   });
 
-  it('dresses the HUD in frame D: the grain, the one gold line, the paper words, its colours named through the tokens', () => {
+  it('dresses the HUD in frame D: the grain, a gold hairline lit along its length, the paper words, its colours named through the tokens', () => {
     // DECISIONS 2026-10-30 "The HUD wears frame D too": the HUD's rules in style.css, from its heading to the touch controls'
     const hud = style.split('/* ------------------------------------------------------------ HUD */')[1]?.split('/* ------------------------------------------------------------ touch */')[0] ?? '';
     expect(hud.length).toBeGreaterThan(1000);
     expect(hud, 'the HUD names its colours through the theme').not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|gradient\(/);
     // one rule dresses the meter, the chips, the tracker, the toasts and the HUD buttons
     const frame = /\n\.toast,\s*\.tracker,\s*\.meter,\s*\.chip,\s*\.hud \.btn \{([^}]*)\}/.exec(hud);
-    expect(frame?.[1]).toMatch(/background:\s*var\(--ui-black\) var\(--ui-grain\) repeat;/);
-    expect(frame?.[1]).toMatch(/outline:\s*var\(--ui-line\);/);
+    expect(frame?.[1]).toMatch(/background:\s*var\(--hud-ground\) var\(--hud-grain\) repeat;/);
+    expect(frame?.[1]).toMatch(/--hud-ground:\s*var\(--ui-black\);/);
+    expect(frame?.[1]).toMatch(/--hud-grain:\s*var\(--ui-grain\);/);
+    expect(frame?.[1], 'the clear 3 px border keeps the paper frame\'s size').toMatch(/border:\s*3px solid transparent;/);
+    expect(frame?.[1]).toMatch(/border-image:\s*var\(--hud-line\) 3 \/ var\(--hud-edge\);/);
     expect(frame?.[1]).toMatch(/color:\s*var\(--ui-paper\);/);
+    expect(hud).toMatch(/\.meter,\s*\.tracker,\s*\.hud \.btn \{\s*--hud-line:\s*var\(--ui-hud-line-bevel\);/);
     expect(hud).toMatch(/\.tracker-title \{\s*font-family:\s*var\(--ui-display\);/);
-    // the pocket chart on a desktop wears the same ground and line
+    // the edge is 3 device pixels at 1x, 2x and 3x, so the frame's outer unit is one device pixel
+    expect(hud).toMatch(/--hud-edge:\s*3px;[\s\S]*min-resolution: 2dppx[\s\S]*--hud-edge:\s*1\.5px;[\s\S]*min-resolution: 3dppx[\s\S]*--hud-edge:\s*1px;/);
+    // the edges: a 100-unit frame with a 1-unit line, the gold lit from step 6 at the top-left to step 3 at the
+    // bottom-right (the owner, 30.10: "the gold is too thick and does not feel metallic"), the bevel step 1 inside it
+    const svg = (name: string) => new RegExp(`--ui-hud-${name}: url\\("data:image/svg\\+xml,<svg [^"]*width='100' height='100'>(.*?)</svg>"\\);`).exec(theme)?.[1] ?? '';
+    expect(svg('line')).toMatch(/stop-color='%23e8d4a2'[\s\S]*stop-color='%237a5f33'/);
+    expect(svg('line')).toContain("d='M0 0H100V100H0Z M1 1V99H99V1Z'");
+    expect(svg('line-bevel')).toContain("fill='%232a2114' fill-rule='evenodd' d='M1 1H99V99H1Z M2 2V98H98V2Z'");
+    expect(svg('line-good')).toContain("fill='%2384c450'");
+    expect(svg('line-warn')).toContain("fill='%23f6a07f'");
+    // the pocket chart on a desktop wears the same ground and edge
     const map = /\n\.hud-map \{([^}]*)\}/.exec(kit)?.[1] ?? '';
     expect(map).toMatch(/background:\s*var\(--ui-black\) var\(--ui-grain\) repeat;/);
-    expect(map).toMatch(/outline:\s*var\(--ui-line\);/);
+    expect(map).toMatch(/border-image:\s*var\(--ui-hud-line-bevel\) 3 \/ var\(--hud-edge\);/);
     // the HUD's meaning colours on the lacquer: the health fill, the dark's "soon", a toast's good and bad, the gold
     const t = tokens();
     for (const hex of ['#4c9a3f', '#eda83a', t['--ui-good']!, t['--ui-warn']!, t['--ui-gold-5']!, t['--ui-rarity-rare']!]) {

@@ -449,8 +449,7 @@ textarea {
   width: 96px;
   height: 10px;
   border: 2px solid var(--ui-well);
-  outline: var(--ui-hair);
-  outline-offset: -1px;
+  border-image: var(--ui-hud-hair) 3 / var(--hud-edge);
   background: var(--ui-well);
 }
 
@@ -470,7 +469,7 @@ textarea {
 }
 
 .meter.empty {
-  outline-color: var(--ui-warn);
+  --hud-line: var(--ui-hud-line-warn);
 }
 
 .meter.empty .meter-label {
@@ -493,7 +492,8 @@ textarea {
 }
 
 .chip.glow {
-  background: var(--yellow);
+  --hud-ground: var(--yellow);
+  --hud-grain: none;
   color: var(--ui-black);
 }
 
@@ -503,7 +503,8 @@ textarea {
 }
 
 .chip.dark.soon {
-  background: var(--gold);
+  --hud-ground: var(--gold);
+  --hud-grain: none;
   color: var(--ui-black);
 }
 
@@ -589,11 +590,11 @@ textarea {
 }
 
 .toast.good {
-  outline-color: var(--ui-good);
+  --hud-line: var(--ui-hud-line-good);
 }
 
 .toast.bad {
-  outline-color: var(--ui-warn);
+  --hud-line: var(--ui-hud-line-warn);
 }
 
 .toast.out {
@@ -611,23 +612,52 @@ textarea {
 /* ------------------------------------------------------------ frame D: the HUD */
 
 /* (DECISIONS 2026-10-30, "The HUD wears frame D too") the meter, the chips, the tracker, the toasts and the HUD's
-   buttons are the lacquer black under the grain with one thin antique-gold line for an edge and paper words. The
-   line is an outline drawn on the box's outer pixel over a clear 3 px border, so every piece keeps the paper
-   frame's size to the pixel and nothing in the HUD moves. A meaning colour (the health fill, the dark's "soon",
-   a toast's good or bad, the gold) stays the one it was. */
+   buttons are the lacquer black under the grain with paper words and one antique-gold hairline for an edge: one
+   device pixel at every density, lit along its length from the ramp's step 6 at the top-left to its step 3 at the
+   bottom-right (theme.css --ui-hud-line). The meter, the tracker and the buttons carry a bevel, a hairline of the
+   darkest gold just inside the line; the small pieces (the chips, the toasts) the line alone. The line is the
+   border image of the box's clear 3 px border, so every piece keeps the paper frame's size to the pixel and nothing
+   in the HUD moves. A meaning colour (the health fill, the dark's "soon", a toast's good or bad, the gold) stays
+   the one it was. */
+:root {
+  /* the border image's edge: 3 device pixels, its outer one the line */
+  --hud-edge: 3px;
+}
+
+@media (min-resolution: 2dppx) {
+  :root {
+    --hud-edge: 1.5px;
+  }
+}
+
+@media (min-resolution: 3dppx) {
+  :root {
+    --hud-edge: 1px;
+  }
+}
+
 .toast,
 .tracker,
 .meter,
 .chip,
 .hud .btn {
+  --hud-ground: var(--ui-black);
+  --hud-grain: var(--ui-grain);
+  --hud-line: var(--ui-hud-line);
   color: var(--ui-paper);
-  background: var(--ui-black) var(--ui-grain) repeat;
+  background: var(--hud-ground) var(--hud-grain) repeat;
   border: 3px solid transparent;
-  outline: var(--ui-line);
-  outline-offset: -1px;
+  border-image: var(--hud-line) 3 / var(--hud-edge);
+  outline: none;
   box-shadow: none;
   /* the grain's pixels stay its three blacks at 2x and 3x, as the world's do */
   image-rendering: pixelated;
+}
+
+.meter,
+.tracker,
+.hud .btn {
+  --hud-line: var(--ui-hud-line-bevel);
 }
 
 .hud .btn {
@@ -638,9 +668,9 @@ textarea {
 /* picked or pointed at, a HUD button fills with gold and its word turns black, as a window's does */
 .hud .btn:hover:not(:disabled),
 .hud .btn:focus-visible {
+  --hud-ground: var(--ui-gold-5);
+  --hud-grain: none;
   color: var(--ui-black);
-  background: var(--ui-gold-5);
-  outline: var(--ui-line);
 }
 
 .hud .btn:active:not(:disabled) {

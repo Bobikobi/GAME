@@ -1060,10 +1060,11 @@
   flex-direction: column;
   width: 176px;
   padding: 0;
+  /* frame D's HUD edge (style.css): the gold hairline lit from the top-left, and the bevel one hairline in */
   background: var(--ui-black) var(--ui-grain) repeat;
   border: 3px solid transparent;
-  outline: var(--ui-line);
-  outline-offset: -1px;
+  border-image: var(--ui-hud-line-bevel) 3 / var(--hud-edge);
+  outline: none;
   box-shadow: none;
   image-rendering: pixelated;
   color: var(--ui-paper);
@@ -1089,8 +1090,7 @@
   height: 148px;
   margin: 4px;
   border: 2px solid var(--ui-well);
-  outline: var(--ui-hair);
-  outline-offset: -1px;
+  border-image: var(--ui-hud-hair) 3 / var(--hud-edge);
   background: var(--paper);
   overflow: hidden;
 }

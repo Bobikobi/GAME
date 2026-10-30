@@ -30,30 +30,44 @@
   color: var(--paper);
 }
 
-/* in a window and on the HUD's bag button the word sits on frame D's black: a bright plate with the black for its letters */
-:is(.ui-window, .hud) .load-word {
+/* in a window the word sits on the frame's black: a bright plate with the black for its letters */
+.ui-window .load-word {
   border: 1px solid var(--ui-gold-2);
   color: var(--ui-black);
 }
 
-/* the HUD's word keeps the paper frame's 2 px edge, so the bag button keeps its size */
-.hud .load-word {
-  border-width: 2px;
-}
-
-:is(.ui-window, .hud) .load-chip[data-band='light'] .load-word {
+.ui-window .load-chip[data-band='light'] .load-word {
   background: var(--ui-good);
-  color: var(--ui-black);
 }
 
-:is(.ui-window, .hud) .load-chip[data-band='steady'] .load-word {
+.ui-window .load-chip[data-band='steady'] .load-word {
   background: var(--ui-gold-5);
-  color: var(--ui-black);
 }
 
-:is(.ui-window, .hud) .load-chip[data-band='heavy'] .load-word {
+.ui-window .load-chip[data-band='heavy'] .load-word {
   background: var(--ui-warn);
-  color: var(--ui-black);
+}
+
+/* on the HUD's bag button the word is a small piece of frame D (style.css): the lacquer and the grain inside the
+   paper frame's 2 px edge, kept clear so the button keeps its size, the gold hairline on its outer pixel, and the
+   word in its pace's colour (on the black: light 8.8:1, steady 8.3:1, heavy 9.0:1) */
+.hud .load-chip[data-band] .load-word {
+  border: 2px solid transparent;
+  border-image: var(--ui-hud-line) 3 / var(--hud-edge);
+  background: var(--ui-black) var(--ui-grain) repeat;
+  image-rendering: pixelated;
+}
+
+.hud .load-chip[data-band='light'] .load-word {
+  color: var(--ui-good);
+}
+
+.hud .load-chip[data-band='steady'] .load-word {
+  color: var(--ui-gold-5);
+}
+
+.hud .load-chip[data-band='heavy'] .load-word {
+  color: var(--ui-warn);
 }
 
 .btn .load-chip {
