@@ -1662,6 +1662,25 @@ export const KitBody = Type.Object(
                 'Art pixels per tile side: 1 means 16 per tile (the 16x16 grid, the default), 4 means 64 per tile (the 64x64 grid, the standard for new art). The size rules of w and h follow it.',
             }),
           ),
+          stride: Type.Optional(
+            Type.Object(
+              {
+                travel_mpx: Int(1000, 128000, 'Thousandths of an art pixel (64 per tile) the body walks for one pose of the cycle: the pose shown is the nearest to art pixels walked / (travel_mpx / 1000), so a planted foot is where the ground is.'),
+                anchor: Type.Tuple([Int(0, 384), Int(0, 384)], { description: 'The point of the ground under the feet, in pixels of the frame: the sprite is drawn with it on the body\'s feet.' }),
+                bob: Type.Optional(
+                  Type.Boolean({
+                    description:
+                      'false when the sheet carries its own head travel and the feel layer\'s code bob is dropped for it (DECISIONS 2026-10-29: the bob is dropped for a clip that carries its own); left out, the bob plays on top of the poses.',
+                  }),
+                ),
+              },
+              {
+                additionalProperties: false,
+                description:
+                  'A walk cycle that follows the distance walked (tools/anim). Its frames are the poses of the cycle in order and, last, the standing pose; `frames` is the poses plus one. Left out for a sheet whose frames are time-based.',
+              },
+            ),
+          ),
           scale: Type.Optional(
             Type.Number({
               minimum: 0.1,

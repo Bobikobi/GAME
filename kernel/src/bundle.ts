@@ -159,6 +159,8 @@ export interface SpriteInfo {
   frames: number;
   /** Art pixels per tile side: 1 is 16 per tile, 4 is 64 per tile. A frame of `w` x `h` shows at 1 / density. */
   density: 1 | 4;
+  /** A cycle that follows the distance walked: art pixels per pose and the feet's point in the frame. Its last frame is the standing pose. */
+  stride?: { travel_mpx: number; anchor: [number, number]; bob?: boolean };
 }
 
 /** One placed node or dig spot: `<resource id>#<n>`. */
