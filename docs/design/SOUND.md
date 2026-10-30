@@ -166,7 +166,7 @@ Measured on the same machine, each voice rendered alone for 60 s in an `OfflineA
 | B: struck line (grove) | 19 | 38 | 149 ms | 0 |
 | B: slow pad (two tones and a filter) | 22 | 45 | 439 ms | 0 |
 
-Only one of the place voices plays at a time, so B adds at most about 600 ms of CPU a minute to the 2.1 s the song costs today (about 1 % of one core, against about 3.5 % today, on a desktop CPU in a cloud sandbox; a mid-range phone is perhaps three to four times slower). It adds 0 bytes to the page and at most seven audio nodes alive at a time (the pad's two tones with their envelopes, its filter, one held counter note with its envelope).
+One place's voices play at a time, with the pad under both: the riverbank adds 166 + 439 = 605 ms of CPU a minute, the grove 176 + 149 + 439 = 764 ms, so B adds at most about 760 ms a minute to the 2.1 s the song costs today (about 1.3 % of one core, against about 3.5 % today, on a desktop CPU in a cloud sandbox; a mid-range phone is perhaps three to four times slower). It adds 0 bytes to the page and at most seven audio nodes alive at a time (the pad's two tones with their envelopes, its filter, one held counter note with its envelope).
 
 ### 2.3 Why C is rendered here and not taken from a library
 
