@@ -348,8 +348,8 @@ export class UI {
     const dark = h('span', { class: 'chip dark', title: 'Dark falls: be in town or by a burning camp', hidden: true }, h('i', { class: 'moon' }), darkText);
     const level = h('span', { class: 'chip', title: 'Character level' });
     const load = loadChip();
-    const bag = button([h('span', { class: 'load-label' }, 'Bag'), load], () => this.panel(() => openBag(this)), 'small');
-    const log = button('Journal', () => this.panel(() => openJournal(this)), 'small');
+    const bag = button([h('span', { class: 'load-label' }, 'Bag'), load], () => this.panel(() => openBag(this)), 'small hud-bag');
+    const log = button('Journal', () => this.panel(() => openJournal(this)), 'small hud-journal');
     const feedbackBtn = button('Feedback', () => openFeedback(this), 'small');
     this.hud.replaceChildren(
       h(
@@ -367,7 +367,7 @@ export class UI {
           h('button', { class: 'chip demo', type: 'button', onclick: () => this.aboutDemo() }, 'Demo'),
         ),
       ),
-      h('div', { class: 'hud-right' }, feedbackBtn, bag, log, button('Menu', () => this.panel(() => openMenu(this)), 'small')),
+      h('div', { class: 'hud-right' }, feedbackBtn, bag, log, button('Menu', () => this.panel(() => openMenu(this)), 'small hud-menu')),
     );
     return { meter, bar, num, goldText, boundChip, boundText, clockChip, clockIcon, clockText, dark, darkText, level, bag, load, log };
   }
