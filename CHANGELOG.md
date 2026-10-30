@@ -21,6 +21,7 @@ What players notice
 - Pell's shop is a room you walk into. Her stall is now a small house: step into its door, talk to her across the counter, buy or sell there, and walk down to go back out to the valley.
 - The ground has height now: you cannot step off a rock face. A climb of one to three levels is open only at a crossing, and a mountain band of more than three levels is never walked.
 - The walk has a bob, one step lifts the figure a little, and the townspeople breathe and blink on their own beat. Nothing of it moves with reduced motion.
+- You can run and sneak: hold the thumb on the stick (Shift on a keyboard) to run at twice the pace, or tap Sneak beside A and B to creep at half. The wolf hears you by your gait: a run is noticed at 8 tiles, a walk at 5 and a sneak at 3.
 - Every window wears a new frame: black lacquer with antique gold, a gold plaque for the name, and the Cinzel face for titles. Choices in a dialogue are a list.
 - The game picks its quality and its frame rate from the device (low, medium or high; 30, 60, 120 or the screen's own). There is no settings screen yet; `?stats=1` on the address shows the frame times.
 
@@ -39,7 +40,7 @@ What creators notice
 - `content/core/params.json` gains a `gait` group (run is half the step, sneak twice, and the noise radius by gait); `pnpm check` refuses a pace that does not divide by it.
 
 What changed underneath
-- kernel 0.1.10 (simulation 0.21.0). Saves from v0.1.8 load: a saved hunger value becomes health, and the luck seed is widened to a 128-bit key the same way wherever the save loads.
+- kernel 0.1.10 (simulation 0.21.1). Saves from v0.1.8 load: a saved hunger value becomes health, and the luck seed is widened to a 128-bit key the same way wherever the save loads.
 - The draw behind every random outcome is keyed with SipHash-2-4 over a 128-bit secret.
 - The game server (not live yet) gains the review's fixes: the email link completes in a real browser, one origin for the game and its API, the account name is the character's name, sign-in limits and timeouts, and the boards accept a kept opening. The sign-in link can now be mailed for real: `MAILER=resend` sends it through Resend, and the server refuses to start in that mode without a key and a sender address. `log` stays for a laptop or a staging box. The deploy runbook names the box's public name in one place (`PUBLIC_ORIGIN`) and records the staging run.
 - Docs-only pull requests skip the browser tests, the browser tests run in parallel jobs, and a flaky script retries once.
