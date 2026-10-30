@@ -1,380 +1,394 @@
 {
  "about": "The elf of the 27.10 pick (round 4, E4-A version 3): the Quaternius Universal Base Characters body thinned at the bones and lengthened on the shared rig, in the CC0 ranger outfit (hood off), with a pastel sky-blue hooded cloak open at the front made by garments.py. Numbers as shown to the owner; ears are pulled on the head (0.18). The robe is round 4's unused B variant, kept as a spare.",
- "rig": "ubc",
- "order": [
-  "thin_rest",
-  "ubc_build",
-  "garment"
- ],
- "thin": [
-  {
-   "groups": [
-    "spine_03"
-   ],
-   "kx": 0.8,
-   "ky": 0.9
-  },
-  {
-   "groups": [
-    "spine_01",
-    "spine_02",
-    "pelvis"
-   ],
-   "kx": 0.78,
-   "ky": 0.9
-  },
-  {
-   "groups": [
-    "upperarm_l",
-    "upperarm_r"
-   ],
-   "axis": 0.7
-  },
-  {
-   "groups": [
-    "lowerarm_l",
-    "lowerarm_r"
-   ],
-   "axis": 0.72
-  },
-  {
-   "groups": [
-    "hand_l",
-    "hand_r",
-    "thumb_01_l",
-    "thumb_01_r",
-    "thumb_02_l",
-    "thumb_02_r",
-    "thumb_03_l",
-    "thumb_03_r",
-    "index_01_l",
-    "index_01_r",
-    "index_02_l",
-    "index_02_r",
-    "index_03_l",
-    "index_03_r",
-    "middle_01_l",
-    "middle_01_r",
-    "middle_02_l",
-    "middle_02_r",
-    "middle_03_l",
-    "middle_03_r",
-    "ring_01_l",
-    "ring_01_r",
-    "ring_02_l",
-    "ring_02_r",
-    "ring_03_l",
-    "ring_03_r",
-    "pinky_01_l",
-    "pinky_01_r",
-    "pinky_02_l",
-    "pinky_02_r",
-    "pinky_03_l",
-    "pinky_03_r"
-   ],
-   "axis": 0.85
-  },
-  {
-   "groups": [
-    "thigh_l",
-    "thigh_r"
-   ],
-   "axis": 0.78
-  },
-  {
-   "groups": [
-    "calf_l",
-    "calf_r"
-   ],
-   "axis": 0.8
-  }
- ],
- "colours": {
-  "cloak": [
-   0.33,
-   0.75,
+ "sources": {
+  "body": "Quaternius Universal Base Characters [Standard], CC0",
+  "outfit": "Quaternius Modular Character Outfits - Fantasy [Standard], CC0",
+  "hair": "Quaternius Universal Base Characters hairstyles, CC0",
+  "cloak": "own geometry, garments.py"
+ },
+ "common": {
+  "head_only": true,
+  "ears_first": true,
+  "ears": 0.18,
+  "slim": [
+   0.86,
    1.0
   ],
-  "robe": [
-   0.8,
-   0.82,
-   0.88
-  ],
-  "hair": [
+  "hair_tint": [
    0.1,
    0.07,
    0.06
-  ]
+  ],
+  "thin": [
+   {
+    "groups": [
+     "spine_03"
+    ],
+    "kx": 0.8,
+    "ky": 0.9
+   },
+   {
+    "groups": [
+     "spine_01",
+     "spine_02",
+     "pelvis"
+    ],
+    "kx": 0.78,
+    "ky": 0.9
+   },
+   {
+    "groups": [
+     "upperarm_l",
+     "upperarm_r"
+    ],
+    "axis": 0.7
+   },
+   {
+    "groups": [
+     "lowerarm_l",
+     "lowerarm_r"
+    ],
+    "axis": 0.72
+   },
+   {
+    "groups": [
+     "hand_l",
+     "hand_r",
+     "thumb_01_l",
+     "thumb_01_r",
+     "thumb_02_l",
+     "thumb_02_r",
+     "thumb_03_l",
+     "thumb_03_r",
+     "index_01_l",
+     "index_01_r",
+     "index_02_l",
+     "index_02_r",
+     "index_03_l",
+     "index_03_r",
+     "middle_01_l",
+     "middle_01_r",
+     "middle_02_l",
+     "middle_02_r",
+     "middle_03_l",
+     "middle_03_r",
+     "ring_01_l",
+     "ring_01_r",
+     "ring_02_l",
+     "ring_02_r",
+     "ring_03_l",
+     "ring_03_r",
+     "pinky_01_l",
+     "pinky_01_r",
+     "pinky_02_l",
+     "pinky_02_r",
+     "pinky_03_l",
+     "pinky_03_r"
+    ],
+    "axis": 0.85
+   },
+   {
+    "groups": [
+     "thigh_l",
+     "thigh_r"
+    ],
+    "axis": 0.78
+   },
+   {
+    "groups": [
+     "calf_l",
+     "calf_r"
+    ],
+    "axis": 0.8
+   }
+  ],
+  "id_class": {
+   "Cloak": "leaf",
+   "Hood": "leaf"
+  }
  },
- "ears": 0.18,
- "slim": [
-  0.86,
-  1.0
- ],
  "bodies": {
   "m": {
-   "outfit": "Male_Ranger",
+   "models": [
+    "$MODELS/ubc/Universal Base Characters[Standard]/Base Characters/Godot - UE/Superhero_Male_FullBody.gltf",
+    "$MODELS/outfits/Modular Character Outfits - Fantasy[Standard]/Exports/glTF (Godot-Unreal)/Outfits/Male_Ranger.gltf",
+    "$MODELS/ubc/Universal Base Characters[Standard]/Hairstyles/Rigged to Head Bone/glTF (Godot -Unreal)/Hair_SimpleParted.gltf",
+    "$MODELS/ubc/Universal Base Characters[Standard]/Hairstyles/Rigged to Head Bone/glTF (Godot -Unreal)/Eyebrows_Regular.gltf"
+   ],
+   "hide": [
+    "Male_Ranger_Head_Hood"
+   ],
    "k_force": 1.013,
    "build": {
     "shoulder_in": 0.055,
     "arm_len": 1.08,
     "leg_len": 1.08
    },
-   "cloak": {
-    "rgb": [
-     0.33,
-     0.75,
-     1.0
-    ],
-    "rings": [
-     [
-      1.6,
-      0.105,
-      0.1,
-      0.03
+   "garments": {
+    "Cloak": {
+     "rgb": [
+      0.33,
+      0.75,
+      1.0
      ],
-     [
-      1.555,
-      0.15,
-      0.13,
-      0.03
+     "rings": [
+      [
+       1.6,
+       0.105,
+       0.1,
+       0.03
+      ],
+      [
+       1.555,
+       0.15,
+       0.13,
+       0.03
+      ],
+      [
+       1.5,
+       0.2,
+       0.16,
+       0.03
+      ],
+      [
+       1.44,
+       0.235,
+       0.18,
+       0.03
+      ],
+      [
+       1.2,
+       0.235,
+       0.18,
+       0.03
+      ],
+      [
+       0.9,
+       0.235,
+       0.21,
+       0.03
+      ],
+      [
+       0.15,
+       0.235,
+       0.25,
+       0.03
+      ]
      ],
-     [
-      1.5,
-      0.2,
-      0.16,
-      0.03
+     "slit": [
+      1.4,
+      40
      ],
-     [
-      1.44,
-      0.235,
-      0.18,
-      0.03
-     ],
-     [
-      1.2,
-      0.235,
-      0.18,
-      0.03
-     ],
-     [
-      0.9,
-      0.235,
-      0.21,
-      0.03
-     ],
-     [
-      0.15,
-      0.235,
-      0.25,
-      0.03
-     ]
-    ],
-    "slit": [
-     1.4,
-     40
-    ],
-    "thigh": 0.65,
-    "pouch": {
-     "c": [
-      0.0,
-      0.11,
-      1.52
-     ],
-     "r": [
-      0.12,
-      0.09,
-      0.11
-     ]
+     "thigh": 0.65,
+     "pouch": {
+      "c": [
+       0.0,
+       0.11,
+       1.52
+      ],
+      "r": [
+       0.12,
+       0.09,
+       0.11
+      ]
+     }
     }
    },
-   "robe": {
-    "rgb": [
-     0.8,
-     0.82,
-     0.88
-    ],
-    "rings": [
-     [
-      1.58,
-      0.09,
-      0.09,
-      0.03
-     ],
-     [
-      1.5,
-      0.17,
-      0.12,
-      0.03
-     ],
-     [
-      1.4,
-      0.17,
-      0.14,
-      0.03
-     ],
-     [
-      1.1,
-      0.17,
-      0.14,
-      0.03
-     ],
-     [
+   "spare": {
+    "Robe": {
+     "rgb": [
       0.8,
-      0.17,
-      0.145,
-      0.03
+      0.82,
+      0.88
      ],
-     [
-      0.4,
-      0.17,
-      0.15,
-      0.03
+     "rings": [
+      [
+       1.58,
+       0.09,
+       0.09,
+       0.03
+      ],
+      [
+       1.5,
+       0.17,
+       0.12,
+       0.03
+      ],
+      [
+       1.4,
+       0.17,
+       0.14,
+       0.03
+      ],
+      [
+       1.1,
+       0.17,
+       0.14,
+       0.03
+      ],
+      [
+       0.8,
+       0.17,
+       0.145,
+       0.03
+      ],
+      [
+       0.4,
+       0.17,
+       0.15,
+       0.03
+      ],
+      [
+       -0.06,
+       0.17,
+       0.15,
+       0.03
+      ]
      ],
-     [
-      -0.06,
-      0.17,
-      0.15,
-      0.03
-     ]
-    ],
-    "thigh": 0.5
+     "thigh": 0.5
+    }
    }
   },
   "f": {
-   "outfit": "Female_Ranger",
+   "models": [
+    "$MODELS/ubc/Universal Base Characters[Standard]/Base Characters/Godot - UE/Superhero_Female_FullBody.gltf",
+    "$MODELS/outfits/Modular Character Outfits - Fantasy[Standard]/Exports/glTF (Godot-Unreal)/Outfits/Female_Ranger.gltf",
+    "$MODELS/ubc/Universal Base Characters[Standard]/Hairstyles/Rigged to Head Bone/glTF (Godot -Unreal)/Hair_Long.gltf",
+    "$MODELS/ubc/Universal Base Characters[Standard]/Hairstyles/Rigged to Head Bone/glTF (Godot -Unreal)/Eyebrows_Female.gltf"
+   ],
+   "hide": [
+    "Female_Ranger_Head_Hood"
+   ],
    "k_force": 1.015,
    "build": {
     "shoulder_in": 0.055,
     "arm_len": 1.1,
     "leg_len": 1.13
    },
-   "cloak": {
-    "rgb": [
-     0.33,
-     0.75,
-     1.0
-    ],
-    "rings": [
-     [
-      1.5350000000000001,
-      0.0966,
-      0.095,
-      0.03
+   "garments": {
+    "Cloak": {
+     "rgb": [
+      0.33,
+      0.75,
+      1.0
      ],
-     [
-      1.49,
-      0.138,
-      0.1235,
-      0.03
+     "rings": [
+      [
+       1.5350000000000001,
+       0.0966,
+       0.095,
+       0.03
+      ],
+      [
+       1.49,
+       0.138,
+       0.1235,
+       0.03
+      ],
+      [
+       1.435,
+       0.18400000000000002,
+       0.152,
+       0.03
+      ],
+      [
+       1.375,
+       0.2162,
+       0.17099999999999999,
+       0.03
+      ],
+      [
+       1.135,
+       0.2162,
+       0.17099999999999999,
+       0.03
+      ],
+      [
+       0.846,
+       0.2162,
+       0.19949999999999998,
+       0.03
+      ],
+      [
+       0.141,
+       0.2162,
+       0.2375,
+       0.03
+      ]
      ],
-     [
-      1.435,
-      0.18400000000000002,
-      0.152,
-      0.03
+     "slit": [
+      1.4,
+      40
      ],
-     [
-      1.375,
-      0.2162,
-      0.17099999999999999,
-      0.03
-     ],
-     [
-      1.135,
-      0.2162,
-      0.17099999999999999,
-      0.03
-     ],
-     [
-      0.846,
-      0.2162,
-      0.19949999999999998,
-      0.03
-     ],
-     [
-      0.141,
-      0.2162,
-      0.2375,
-      0.03
-     ]
-    ],
-    "slit": [
-     1.4,
-     40
-    ],
-    "thigh": 0.65,
-    "pouch": {
-     "c": [
-      0.0,
-      0.11,
-      1.455
-     ],
-     "r": [
-      0.11,
-      0.09,
-      0.11
-     ]
+     "thigh": 0.65,
+     "pouch": {
+      "c": [
+       0.0,
+       0.11,
+       1.455
+      ],
+      "r": [
+       0.11,
+       0.09,
+       0.11
+      ]
+     }
     }
    },
-   "robe": {
-    "rgb": [
-     0.8,
-     0.82,
-     0.88
-    ],
-    "rings": [
-     [
-      1.5150000000000001,
-      0.0828,
-      0.08549999999999999,
-      0.03
+   "spare": {
+    "Robe": {
+     "rgb": [
+      0.8,
+      0.82,
+      0.88
      ],
-     [
-      1.435,
-      0.1564,
-      0.11399999999999999,
-      0.03
+     "rings": [
+      [
+       1.5150000000000001,
+       0.0828,
+       0.08549999999999999,
+       0.03
+      ],
+      [
+       1.435,
+       0.1564,
+       0.11399999999999999,
+       0.03
+      ],
+      [
+       1.335,
+       0.1564,
+       0.133,
+       0.03
+      ],
+      [
+       1.0350000000000001,
+       0.1564,
+       0.133,
+       0.03
+      ],
+      [
+       0.752,
+       0.1564,
+       0.13774999999999998,
+       0.03
+      ],
+      [
+       0.376,
+       0.1564,
+       0.1425,
+       0.03
+      ],
+      [
+       -0.09963999999999999,
+       0.1564,
+       0.1425,
+       0.03
+      ]
      ],
-     [
-      1.335,
-      0.1564,
-      0.133,
-      0.03
-     ],
-     [
-      1.0350000000000001,
-      0.1564,
-      0.133,
-      0.03
-     ],
-     [
-      0.752,
-      0.1564,
-      0.13774999999999998,
-      0.03
-     ],
-     [
-      0.376,
-      0.1564,
-      0.1425,
-      0.03
-     ],
-     [
-      -0.09963999999999999,
-      0.1564,
-      0.1425,
-      0.03
-     ]
-    ],
-    "thigh": 0.5
+     "thigh": 0.5
+    }
    }
   }
- },
- "sources": {
-  "body": "Quaternius Universal Base Characters [Standard], CC0",
-  "outfit": "Quaternius Modular Character Outfits - Fantasy [Standard], CC0",
-  "hair": "Quaternius Universal Base Characters hairstyles, CC0",
-  "cloak": "own geometry, garments.py"
  }
 }
