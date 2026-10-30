@@ -65,8 +65,8 @@ describe('the coming-soon boxes', () => {
     });
   }
 
-  it('the home page has the 3D door when a 3D build exists, and never links to a missing page', () => {
+  it('the home page has no 3D door while 3D is paused, unless a screenshot forces it', () => {
     const home = readFileSync(join(DIST, 'index.html'), 'utf8');
-    expect(home.includes('href="/play3d/"')).toBe(existsSync(join(DIST, 'play3d/index.html')));
+    expect(home.includes('href="/play3d/"')).toBe(process.env['SITE_3D_DOOR'] === 'force');
   });
 });
