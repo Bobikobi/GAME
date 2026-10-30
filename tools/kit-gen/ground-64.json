@@ -468,27 +468,31 @@
       "route": "scatter",
       "width": 64,
       "height": 64,
-      "what": "sand ground",
-      "base": "y",
+      "what": "the riverbank: damp, darker and greyer sand with pebbles, not the path's dry warm sand",
+      "base": "w",
       "variants": 3,
       "cell": 16,
       "chance": 0.9,
       "speckles": [
         {
           "letter": "x",
-          "per_tile": 44
+          "per_tile": 140
         },
         {
-          "letter": "w",
-          "per_tile": 12
+          "letter": "u",
+          "per_tile": 90
         },
         {
-          "letter": "W",
-          "per_tile": 3
+          "letter": "g",
+          "per_tile": 26
         },
         {
-          "letter": "K",
-          "per_tile": 2
+          "letter": "G",
+          "per_tile": 14
+        },
+        {
+          "letter": "y",
+          "per_tile": 6
         }
       ],
       "motifs": [

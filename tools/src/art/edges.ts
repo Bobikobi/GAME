@@ -57,13 +57,13 @@ export function edgeRows(kind: EdgeKind, seed = 1): string[] {
       const row = rows[y];
       if (row === undefined) continue;
       if (y < reach) {
-        if (grass) row[x] = y === 0 || h(seed, x, y) < 0.78 ? pick('cccccccce', seed + 2, x, y) : pick('cbcc', seed + 3, x, y);
+        if (grass) row[x] = y === 0 || h(seed, x, y) < 0.78 ? pick('2222223', seed + 2, x, y) : pick('2132', seed + 3, x, y);
         else if (h(seed + 4, x, y) < 0.6) row[x] = pick('yyIx', seed + 5, x, y);
       } else {
         const left = (y - reach) / fade;
         // dithered: a checker that thins out, then single stray pixels
         const keep = (grass ? 1 : 0.8) * ((x + y) % 2 === 0 ? 0.85 - left * 0.85 : 0.35 - left * 0.35);
-        if (h(seed + 6, x, y) < keep) row[x] = grass ? pick('ccce', seed + 7, x, y) : pick('yyIx', seed + 8, x, y);
+        if (h(seed + 6, x, y) < keep) row[x] = grass ? pick('2223', seed + 7, x, y) : pick('yyIx', seed + 8, x, y);
       }
     }
   }
@@ -82,7 +82,7 @@ export function edgeRows(kind: EdgeKind, seed = 1): string[] {
           const y = base + k;
           const tx = bx + Math.round(k * lean * 0.4);
           const row = rows[y];
-          if (row !== undefined && y < SIZE && tx >= 0 && tx < SIZE) row[tx] = k === len - 1 ? (h(seed + 13, bx, 2) < 0.5 ? 'f' : 'e') : k === 0 ? 'b' : 'e';
+          if (row !== undefined && y < SIZE && tx >= 0 && tx < SIZE) row[tx] = k === len - 1 ? (h(seed + 13, bx, 2) < 0.5 ? '5' : '4') : k === 0 ? '1' : '3';
         }
       }
       x += blades + 4;
@@ -115,7 +115,7 @@ export function edgeRows(kind: EdgeKind, seed = 1): string[] {
     const [x, y] = stack.pop() as [number, number];
     visit(x + 1, y); visit(x - 1, y); visit(x, y + 1); visit(x, y - 1);
   }
-  for (let y = 0; y < SIZE; y += 1) for (let x = 0; x < SIZE; x += 1) if (rows[y]?.[x] === '.' && seen[y]?.[x] !== true) (rows[y] as string[])[x] = grass ? 'c' : 'y';
+  for (let y = 0; y < SIZE; y += 1) for (let x = 0; x < SIZE; x += 1) if (rows[y]?.[x] === '.' && seen[y]?.[x] !== true) (rows[y] as string[])[x] = grass ? '2' : 'y';
   return rows.map((r) => r.join(''));
 }
 
