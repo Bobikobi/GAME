@@ -38,13 +38,34 @@ export interface Library {
   actions: Record<string, number>;
 }
 
+/** A body pack a race is built from (libraries.json `models`): an itch.io archive (`upload`, `unpack` prefixes) or one file by `url`. */
+export interface ModelPack {
+  title: string;
+  page: string;
+  upload?: string;
+  url?: string;
+  bytes: number;
+  sha256: string;
+  licence: string;
+  licence_file?: string;
+  /** archive folders unpacked whole, as they are named in the archive */
+  unpack?: string[];
+  /** the file a `url` pack is saved as */
+  file?: string;
+}
+
 export interface Target {
   about: string;
-  /** a repo path, or `$NAME` for a path from the environment */
-  model: string;
+  /** a repo path, or `$NAME` for a path from the environment; a race (`map: ual`) is built from tools/anim/races/<race>.json and has none */
+  model?: string;
   basket?: string;
-  /** `native`: a body that carries its own actions (the four-legged wolf): played as they are, nothing retargeted */
-  map: 'mixamo' | 'rig19' | 'native';
+  /** `ual`: a race on the libraries' own skeleton; `native`: a body that carries its own actions (the four-legged wolf): played as they are, nothing retargeted */
+  map: 'mixamo' | 'rig19' | 'ual' | 'native';
+  /** map `ual`: the race file (tools/anim/races/<race>.json) and the body in it (`m`, `f`; a race with one body has `common` only) */
+  race?: string;
+  body?: string;
+  /** the sheet this body is shipped as in content/kit (`chars/<sheet>_down|left|up`), once picked */
+  ships?: { sheet: string; /** the walk clip the sheet is made of; `jog` when left out */ clip?: string; /** false: the clip carries its own head travel and the game drops the code bob for this sheet */ bob?: boolean };
   /** native only: the body's own actions and their lengths in frames at `fps` */
   actions?: Record<string, number>;
   /** native only: the frames a second of those actions */
@@ -86,12 +107,22 @@ export interface Limits {
   poses_per_s_max: number;
 }
 
+/** A clip's frame: the size and the point of the ground under the feet, in frame pixels. */
+export interface Frame {
+  size: [number, number];
+  anchor: [number, number];
+}
+
 export interface Settings {
   tile_px: number;
+  /** the one frame of the clips that leave `frame` out, and of a character sheet in content/kit at density 4 (tools/src/check.ts `sizeRule`) */
+  frame: Frame;
   fps: number;
   supersample: number;
   paces: Record<Pace, string>;
   limits: Limits;
+  /** the clothed-width rule: in `pairs` the first sheet's walk (the median widest row of its poses, down view) is at most `max_pct` of the second's; the human man is the reference of both elves, as in the picks */
+  clothed_width: { max_pct: number; pairs: [string, string][] };
   targets: Record<string, Target>;
 }
 
@@ -137,7 +168,8 @@ export interface Clip {
   /** worn parts on the hips: `at` is [x, y, z] metres in body axes from the hips joint */
   worn?: { kind: string; at: number[] }[];
   basket?: boolean;
-  frame: { size: [number, number]; anchor: [number, number] };
+  /** left out: the settings' one frame, the size of a character sheet in the kit */
+  frame?: Frame;
   views: View[];
   /** time per pose; left out, each pose lasts until the next sampled frame at the library's fps */
   ms?: number[];
@@ -305,8 +337,8 @@ export function clipProblems(name: string, clip: Clip, libs: Record<string, Libr
     if (clip.prop.from === 'ik' && clip.ik === undefined) say('a prop placed from the IK needs an ik section');
     if (clip.prop.poses !== undefined && (!Array.isArray(clip.prop.poses) || !clip.prop.poses.every((i) => isInt(i) && i >= 0 && i < count))) say(`prop.poses are pose numbers from 0 to ${count - 1}`);
   }
-  const [w, h] = clip.frame?.size ?? [];
-  const [ax, ay] = clip.frame?.anchor ?? [];
+  const [w, h] = frameOf(clip, settings).size;
+  const [ax, ay] = frameOf(clip, settings).anchor;
   if (!isInt(w) || !isInt(h) || w <= 0 || h <= 0) say('frame.size is two whole numbers of pixels');
   else if (!isNum(ax) || !isNum(ay) || ax < 0 || ay < 0 || ax > w || ay > h) say('frame.anchor (the feet) lies inside the frame');
   if (!Array.isArray(clip.views) || clip.views.length === 0 || !clip.views.every((v) => VIEWS.includes(v))) say(`views are some of ${VIEWS.join(', ')} (right is left mirrored)`);
@@ -319,6 +351,11 @@ export function clipProblems(name: string, clip: Clip, libs: Record<string, Libr
   }
   for (const key of Object.keys(clip.limits ?? {})) if (!(key in settings.limits)) say(`limit "${key}" is not one of ${Object.keys(settings.limits).join(', ')}`);
   return out;
+}
+
+/** The clip's frame: its own, or the settings' one. */
+export function frameOf(clip: Clip, settings: Settings): Frame {
+  return clip.frame ?? settings.frame;
 }
 
 /** The base frames to draw. */
@@ -365,10 +402,30 @@ export function modelPath(model: string, env: Record<string, string | undefined>
   return join(REPO_ROOT, model);
 }
 
+export const MODELS_DIR = join(CACHE_DIR, 'models');
+export const RACES_DIR = join(ANIM_DIR, 'races');
+
+/** A race file merged for one body (`common` over nothing, then the body's part over it), with `$MODELS` made the fetched models folder. */
+export function raceSpec(race: string, body: string | undefined, modelsDir = MODELS_DIR): Record<string, unknown> {
+  const file = readJson<{ common?: Record<string, unknown>; bodies?: Record<string, Record<string, unknown>> }>(join(RACES_DIR, `${race}.json`));
+  const part = body === undefined ? {} : file.bodies?.[body];
+  if (part === undefined) throw new Error(`races/${race}.json has no body "${body}"`);
+  const fill = (v: unknown): unknown =>
+    typeof v === 'string' ? v.replace('$MODELS', modelsDir) : Array.isArray(v) ? v.map(fill) : v !== null && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, fill(x)])) : v;
+  return fill({ ...(file.common ?? {}), ...part }) as Record<string, unknown>;
+}
+
+/** The files a race is built from that are not on disk yet (the model folders `pnpm anim fetch` unpacks). */
+export function missingModels(spec: Record<string, unknown>): string[] {
+  const files = [...((spec.models as string[] | undefined) ?? []), ...(spec.pieces ? [(spec.pieces as { glb: string }).glb] : [])];
+  return files.filter((f) => !existsSync(f));
+}
+
 export interface JobPaths {
   out: string;
   libs: string[];
-  model: string;
+  /** a Meshy or rig target's model file; a race has none */
+  model?: string;
   basket?: string;
   threads: number;
 }
@@ -381,14 +438,15 @@ export function job(name: string, clip: Clip, libs: Record<string, Library>, set
     name,
     out: paths.out,
     libs: paths.libs,
-    target: target.map === 'rig19' ? `rig:${paths.model}` : 'forager',
+    target: target.map === 'rig19' ? `rig:${paths.model}` : target.map === 'ual' ? 'ual' : 'forager',
     target_path: paths.model,
+    ...(target.map === 'ual' ? { race: raceSpec(target.race ?? '', target.body) } : {}),
     map: target.map,
     elev: target.elev,
     pxm: target.pxm,
     kz: target.kz ?? 1,
-    frame: clip.frame.size,
-    anchor: clip.frame.anchor,
+    frame: frameOf(clip, settings).size,
+    anchor: frameOf(clip, settings).anchor,
     ss: settings.supersample,
     dirs: clip.views,
     samples: samples(clip, libs),
@@ -428,6 +486,11 @@ export function readSettings(): Settings {
 
 export function readLibraries(): Record<string, Library> {
   return readJson<{ libraries: Record<string, Library> }>(join(ANIM_DIR, 'libraries.json')).libraries;
+}
+
+export function readModels(): Record<string, ModelPack> {
+  const { models } = readJson<{ models?: Record<string, ModelPack | string> }>(join(ANIM_DIR, 'libraries.json'));
+  return Object.fromEntries(Object.entries(models ?? {}).filter((e): e is [string, ModelPack] => typeof e[1] !== 'string'));
 }
 
 export function clipNames(): string[] {
